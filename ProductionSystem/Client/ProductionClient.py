@@ -19,18 +19,6 @@ class ProductionClient( Client ):
 
     self.prodDescription =  {}
     self.stepCounter = 1
-    ##### Default values for transformation step parameters
-    self.stepDescription = 'description'
-    self.stepLongDescription = 'longDescription'
-    self.stepType = 'MCSimulation'
-    self.stepPlugin = 'Standard'
-    self.stepAgentType = 'Manual'
-    self.stepFileMask = ''
-    #########################################
-    self.stepInputquery = {}
-    self.stepOutputquery = {}
-    self.stepGroupSize = 1
-    self.stepBody = 'body'
 
   def setServer( self, url ):
     self.serverURL = url
@@ -49,49 +37,28 @@ class ProductionClient( Client ):
   def addStep( self, prodStep ):
     """ add a step to the production description
     """
-    ### Mandatory fields ###################
+
     stepName = 'Step' + str(self.stepCounter)
     self.stepCounter+=1
-    prodStep['name'] = stepName
+    prodStep.Name = stepName
 
-    if 'description' not in prodStep:
-      prodStep['description'] = self.stepDescription
-    if 'longDescription' not in prodStep:
-      prodStep['longDescription'] = self.stepLongDescription
-    if 'type' not in prodStep:
-      prodStep['type'] = self.stepType
-    if 'plugin' not in prodStep:
-      prodStep['plugin'] = self.stepPlugin
-    if 'agentType' not in prodStep:
-      prodStep['agentType'] = self.stepAgentType
-    if 'fileMask' not in prodStep:
-      prodStep['fileMask'] = self.stepFileMask
-    ### Optional fields ###################
-    if 'inputquery' not in prodStep:
-      prodStep['inputquery'] = self.stepInputquery
-    if 'outputquery' not in prodStep:
-      prodStep['outputquery'] = self.stepOutputquery
-    if 'groupsize' not in prodStep:
-      prodStep['groupsize'] = self.stepGroupSize
-    if 'body' not in prodStep:
-      prodStep['body'] = self.stepBody
+    res = prodStep.getAsDict()
+    if not res['OK']:
+      return S_ERROR('Failed to add step to production:', res['Message'])
+    prodStepDict = res['Value']
+    prodStepDict['name'] = stepName
 
-    self.prodDescription[stepName] = prodStep
+    self.prodDescription[prodStep.Name] = prodStepDict
+    return S_OK()
+
 
   ### Methods to contact the ProductionManager Service
 
-  ### Obsolete: to be replaced by createProduction
-  def addProduction( self, prodName, timeout = 1800 ):
-    """ add a new production
-    """
-    rpcClient = self._getRPC( timeout = timeout )
-    return rpcClient.addProduction( prodName )
-
-  def createProduction( self, prodName, prodDescription, timeout = 1800 ):
+  def addProduction( self, prodName, prodDescription, timeout = 1800 ):
     """ create a new production starting from its description
     """
     rpcClient = self._getRPC( timeout = timeout )
-    return rpcClient.createProduction( prodName, prodDescription )
+    return rpcClient.addProduction( prodName, prodDescription )
 
   def startProduction( self, prodID ):
     """ Instantiate the transformations of the production and start the production

@@ -26,28 +26,15 @@ class ProductionManagerHandlerBase( RequestHandler ):
   # These are the methods to manipulate the Productions table
   #
 
-  ### Obsolete: To be replaced by createProduction and startProduction
-  types_addProduction = [basestring]
+  types_addProduction = [basestring, basestring]
 
-  def export_addProduction(self, prodName):
+  def export_addProduction(self, prodName, prodDescription):
     credDict = self.getRemoteCredentials()
     authorDN = credDict['DN']
     authorGroup = credDict['group']
-    res = database.addProduction(prodName,authorDN, authorGroup)
+    res = database.addProduction(prodName, prodDescription, authorDN, authorGroup)
     if res['OK']:
       gLogger.info("Added production %d" % res['Value'])
-    return self._parseRes(res)
-
-  ## Replace addProduction
-  types_createProduction = [basestring, basestring]
-
-  def export_createProduction(self, prodName, prodDescription):
-    credDict = self.getRemoteCredentials()
-    authorDN = credDict['DN']
-    authorGroup = credDict['group']
-    res = database.createProduction(prodName, prodDescription, authorDN, authorGroup)
-    if res['OK']:
-      gLogger.info("Created production %d" % res['Value'])
     return self._parseRes(res)
 
   types_deleteProduction = [prodTypes]

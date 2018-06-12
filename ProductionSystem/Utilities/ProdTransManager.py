@@ -38,7 +38,7 @@ class ProdTransManager( object ):
     return S_OK()
 
 
-  def addStep( self, prodStep, prodID ):
+  def addTransformationStep( self, prodStep, prodID ):
 
     gLogger.notice( "Add step %s to production %s" % (prodStep['name'], prodID) )
 
