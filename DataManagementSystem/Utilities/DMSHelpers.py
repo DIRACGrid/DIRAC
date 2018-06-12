@@ -292,8 +292,10 @@ class DMSHelpers(object):
   def getLocalSiteForSE(self, se):
     """ Get the site at which the SE is """
     sites = self._getLocalSitesForSE(se)
-    if not sites['OK'] or not sites['Value']:
+    if not sites['OK']:
       return sites
+    if not sites['Value']:
+      return S_OK(None)
     return S_OK(sites['Value'][0])
 
   def _getLocalSitesForSE(self, se):
