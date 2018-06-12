@@ -854,8 +854,16 @@ class Dirac(API):
 
     arguments = parameters.get('Arguments', '')
 
-    command = '%s %s' % (executable, arguments)
+    # Replace argument placeholders for parametric jobs
+    # if we have Parameters then we have a parametric job
+    if 'Parameters' in parameters:
+      for par, value in parameters.iteritems():
+        if par.startswith('Parameters.'):
+          # we just use the first entry in all lists to run one job
+          parameters[par[len('Parameters.'):]] = value[0]
+      arguments = arguments % parameters
 
+    command = '%s %s' % (executable, arguments)
     # If not set differently in the CS use the root from the current DIRAC installation
     siteRoot = gConfig.getValue('/LocalSite/Root', DIRAC.rootPath)
 
