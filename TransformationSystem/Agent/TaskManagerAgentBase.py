@@ -260,6 +260,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
     # Each thread will have its own clients
     clients = self._getClients()
     method = '_execute'
+    operation = 'None'
 
     while True:
       startTime = time.time()
