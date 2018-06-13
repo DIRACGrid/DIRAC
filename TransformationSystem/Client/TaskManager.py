@@ -581,7 +581,7 @@ class WorkflowTasks(TaskBase):
                          transID=transID, method=method)
           continue
         for name, output in res['Value'].iteritems():
-          seqDict[name] = ';'.join(output)
+          seqDict[name] = output
           outputParameterList.append(name)
           if oJob.workflow.findParameter(name):
             oJob._setParamValue(name, "%%(%s)s" % name)  # pylint: disable=protected-access
