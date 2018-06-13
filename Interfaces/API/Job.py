@@ -1058,7 +1058,7 @@ class Job(API):
       paramsDict['Parameters.%s' % pName]['value'] = self.parameterSeqs[pName]
       paramsDict['Parameters.%s' % pName]['type'] = 'JDL'
       if pName in self.wfArguments:
-        arguments.append(' -p %s=%%(%s)s' % (self.wfArguments[pName],
+        arguments.append(" -p %s='%%(%s)s'" % (self.wfArguments[pName],
                                              pName))
 
     return paramsDict, arguments
