@@ -113,9 +113,9 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
     operationsOnTransformationDict = {}
     owner, ownerGroup, ownerDN = None, None, None
     # getting the credentials for submission
-    if getProxyInfo(False, False)['OK']:  # there is a shifterProxy
-      res = getProxyInfo(False, False)
-      proxyInfo = res['Value']  # must be there
+    resProxy = getProxyInfo(proxy=False, disableVOMS=False)
+    if resProxy['OK']:  # there is a shifterProxy
+      proxyInfo = resProxy['Value']
       owner = proxyInfo['username']
       ownerGroup = proxyInfo['group']
       ownerDN = proxyInfo['identity']
