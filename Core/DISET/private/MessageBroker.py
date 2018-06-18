@@ -35,7 +35,7 @@ class MessageBroker(object):
       transportPool = getGlobalTransportPool()
     self.__trPool = transportPool
     if not threadPool:
-      threadPool = ThreadPoolExecutor(max(0, self._cfg.getMaxThreads()))
+      threadPool = ThreadPoolExecutor(100)
     self.__threadPool = threadPool
     self.__listeningForMessages = False
     self.__listenThread = None
