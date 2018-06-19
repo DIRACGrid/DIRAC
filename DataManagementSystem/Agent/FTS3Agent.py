@@ -400,6 +400,20 @@ class FTS3Agent(AgentModule):
 
     return S_OK()
 
+  def kickJobs(self):
+    """ kick stuck jobs """
+
+    log = gLogger.getSubLogger("kickJobs", child=True)
+
+    res = self.fts3db.kickStuckJobs(limit=self.maxKick, kickDelay=self.kickDelay)
+    if not res['OK']:
+      return res
+
+    kickedJobs = res['Value']
+    log.info("Kicked %s stuck jobs" % kickedJobs)
+
+    return S_OK()
+
   def deleteOperations(self):
     """ delete final operations """
 
@@ -435,6 +449,13 @@ class FTS3Agent(AgentModule):
 
     if not res['OK']:
       log.error("Error treating operations", res)
+      return res
+
+    log.info("Kicking stuck jobs")
+    res = self.kickJobs()
+
+    if not res['OK']:
+      log.error("Error kicking jobs", res)
       return res
 
     log.info("Kicking stuck operations")
