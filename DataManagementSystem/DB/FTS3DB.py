@@ -314,44 +314,50 @@ class FTS3DB(object):
     """Update the file ftsStatus and error
         The update is only done if the file is not in a final state
 
-
+        TODO: maybe in should query first the status and filter the rows I want to update !
 
        :param fileStatusDict : { fileID : { status , error } }
 
     """
-    session = self.dbSession()
-    try:
 
-      for fileID, valueDict in fileStatusDict.iteritems():
+    # This here is inneficient as we update every files, even if it did not change, and we commit every time.
+    # It would probably be best to update only the files that changed.
+    # However, commiting every time is the recommendation of MySQL (https://dev.mysql.com/doc/refman/5.7/en/innodb-deadlocks-handling.html)
 
-        updateDict = {FTS3File.status: valueDict['status']}
+    for fileID, valueDict in fileStatusDict.iteritems():
 
-        # We only update error if it is specified
-        if 'error' in valueDict:
-          newError = valueDict['error']
-          # Replace empty string with None
-          if not newError:
-            newError = None
-          updateDict[FTS3File.error] = newError
+      session = self.dbSession()
+      try:
 
-        session.execute(update(FTS3File)
-                        .where(and_(FTS3File.fileID == fileID,
-                                    ~ FTS3File.status.in_(FTS3File.FINAL_STATES)
-                                    )
-                               )
-                        .values(updateDict)
-                        )
+          updateDict = {FTS3File.status: valueDict['status']}
 
-      session.commit()
+          # We only update error if it is specified
+          if 'error' in valueDict:
+            newError = valueDict['error']
+            # Replace empty string with None
+            if not newError:
+              newError = None
+            updateDict[FTS3File.error] = newError
 
-      return S_OK()
+          session.execute(update(FTS3File)
+                          .where(and_(FTS3File.fileID == fileID,
+                                      ~ FTS3File.status.in_(FTS3File.FINAL_STATES)
+                                      )
+                                 )
+                          .values(updateDict)
+                          )
 
-    except SQLAlchemyError as e:
-      session.rollback()
-      self.log.exception("updateFileFtsStatus: unexpected exception", lException=e)
-      return S_ERROR("updateFileFtsStatus: unexpected exception %s" % e)
-    finally:
-      session.close()
+          session.commit()
+
+
+      except SQLAlchemyError as e:
+        session.rollback()
+        self.log.exception("updateFileFtsStatus: unexpected exception", lException=e)
+        return S_ERROR("updateFileFtsStatus: unexpected exception %s" % e)
+      finally:
+        session.close()
+
+    return S_OK()
 
   def updateJobStatus(self, jobStatusDict):
     """ Update the job Status and error
