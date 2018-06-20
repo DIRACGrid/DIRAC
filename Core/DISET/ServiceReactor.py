@@ -35,7 +35,7 @@ from DIRAC.Core.DISET.private.Protocols import gProtocolDict
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.ConfigurationSystem.Client import PathFinder
 
-
+import os
 class ServiceReactor(object):
 
   __transportExtraKeywords = {'SSLSessionTimeout': False,
@@ -159,7 +159,8 @@ class ServiceReactor(object):
       if self.__services[svcName].getConfig().getCloneProcesses() > 0:
         isMultiProcessingAllowed = True
         break
-
+    import threading
+    print'serve', threading.current_thread(), os.getpid()
     if isMultiProcessingAllowed:
       signal.signal(signal.SIGTERM, self.stopChildProcesses)
       signal.signal(signal.SIGINT, self.stopChildProcesses)
@@ -167,6 +168,7 @@ class ServiceReactor(object):
         clones = self.__services[svcName].getConfig().getCloneProcesses()
         for i in range( 1, clones ):
           p = multiprocessing.Process( target = self.__startCloneProcess, args = ( svcName, i ) )
+          print '!!!!Start', p._name, os.getpid()
           self.__processes.append(p)
           p.start()
           gLogger.always( "Started clone process %s for %s" % ( i, svcName ) )
@@ -196,7 +198,7 @@ class ServiceReactor(object):
     self.__services[svcName].setCloneProcessId(i)
     self.__alive = i
     while self.__alive:
-      self.__acceptIncomingConnection(svcName)
+      self.__acceptIncomingConnection(svcName, i)
 
   def __getListeningSocketsList(self, svcName=False):
     if svcName:
@@ -207,7 +209,7 @@ class ServiceReactor(object):
         sockets.append(self.__listeningConnections[svcName]['socket'])
     return sockets
 
-  def __acceptIncomingConnection(self, svcName=False):
+  def __acceptIncomingConnection(self, svcName=False, worker=None):
     """
       This method just gets the incoming connection, checks IP address
       and generates job. SSL/TLS handshake and execution of the remote call
@@ -219,6 +221,7 @@ class ServiceReactor(object):
     """
     sockets = self.__getListeningSocketsList(svcName)
     while self.__alive:
+      print 'while', worker, os.getpid()
       try:
         inList, _outList, _exList = select.select(sockets, [], [], 10)
         if len(inList) == 0:

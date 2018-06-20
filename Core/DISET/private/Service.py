@@ -5,12 +5,6 @@
   - All useful functions for initialization
   - All useful functions to handle the requests
 """
-<<<<<<< HEAD
-=======
-
-__RCSID__ = "$Id$"
-
->>>>>>> autopep8
 # pylint: skip-file
 # __searchInitFunctions gives RuntimeError: maximum recursion depth exceeded
 
@@ -19,7 +13,7 @@ import time
 import threading
 
 import DIRAC
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.DErrno import ENOAUTH
@@ -65,6 +59,7 @@ class Service(object):
         Standalone is true if there is only one service started
         If it's false, every service is linked to a different MonitoringClient
     """
+    print '__init__'
     self._svcData = serviceData
     self._name = serviceData['modName']
     self._standalone = serviceData['standalone']
@@ -81,6 +76,9 @@ class Service(object):
     self.__maxFD = 0
 
   def setCloneProcessId(self, cloneId):
+    print 'setCloneProcessId', cloneId
+    import threading
+    print'setCloneProcessId', threading.current_thread(), os.getpid()
     self.__cloneId = cloneId
     if not self.activityMonitoring:
       self._monitor.setComponentName("%s-Clone:%s" % (self._name, cloneId))
@@ -349,7 +347,6 @@ class Service(object):
 
       :param clientTransport: Object wich describe opened connection (PlainTransport or SSLTransport)
     """
-
     self._stats['connections'] += 1
     if self.activityMonitoring:
       #  As ES accepts raw data these monitoring fields are being sent here because they are action dependant.
@@ -365,6 +362,7 @@ class Service(object):
       self._monitor.setComponentExtraParam('queries', self._stats['connections'])
 
     self._threadPool.submit(self._processInThread, clientTransport)
+
 
   # Threaded process function
   def _processInThread(self, clientTransport):
