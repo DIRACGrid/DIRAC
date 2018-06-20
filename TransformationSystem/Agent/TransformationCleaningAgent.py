@@ -204,7 +204,11 @@ class TransformationCleaningAgent(AgentModule):
       transDirectories = []
       if res['Value']:
         if not isinstance(res['Value'], list):
-          transDirectories = ast.literal_eval(res['Value'])
+          try:
+            transDirectories = ast.literal_eval(res['Value'])
+          except:
+            # It can happen if the res['Value'] is '/a/b/c' instead of '["/a/b/c"]'
+            transDirectories = list(res['Value'])
         else:
           transDirectories = res['Value']
       directories = self._addDirs(transID, transDirectories, directories)
