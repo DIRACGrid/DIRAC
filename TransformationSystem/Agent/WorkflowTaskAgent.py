@@ -1,5 +1,43 @@
-""" The Workflow Task Agent takes workflow tasks created in the
-    transformation database and submits to the workload management system.
+"""The Workflow Task Agent takes workflow tasks created in the transformation
+database and submits to the workload management system.
+
+
+The WorkflowTaskAgent takes workflow tasks created in the TransformationDB and submits them to the
+WMS. Since version v6r13 there are some new capabilities in the form of TaskManager plugins.
+
++------------------------------+-------------------------------------------+-------------------------------------+
+| **Name**                     | **Description**                           | **Example**                         |
++------------------------------+-------------------------------------------+-------------------------------------+
+| *TransType*                  |                                           |                                     |
++------------------------------+-------------------------------------------+-------------------------------------+
+| *TaskUpdateStatus*           |                                           |                                     |
++------------------------------+-------------------------------------------+-------------------------------------+
+| *shifterProxy*               | Use a dedicated proxy to submit jobs to   |                                     |
+|                              | the WMS                                   |                                     |
++------------------------------+-------------------------------------------+-------------------------------------+
+| *ShifterCredentials*         | Use delegated credentials, same values as |                                     |
+|                              | for shifterProxy, but there will not be   |                                     |
+|                              | any actual proxy used. (New in v6r21)     |                                     |
++------------------------------+-------------------------------------------+-------------------------------------+
+| *CheckReserved*              |                                           |                                     |
++------------------------------+-------------------------------------------+-------------------------------------+
+| *MonitorFiles*               |                                           |                                     |
++------------------------------+-------------------------------------------+-------------------------------------+
+| *SubmitTasks*                |                                           |                                     |
++------------------------------+-------------------------------------------+-------------------------------------+
+| *TasksPerLoop*               |                                           |                                     |
++------------------------------+-------------------------------------------+-------------------------------------+
+| *MonitorTasks*               |                                           |                                     |
++------------------------------+-------------------------------------------+-------------------------------------+
+
+.. versionadded:: v6r21
+
+ It is possible to run the WorkflowTaskAgent without a *shifterProxy* or
+ *ShifterCredentials*, in this case the credentials of the authors of the
+ transformations are used to submit the jobs to the WMS. This enables the use of
+ a single WorkflowTaskAgent for multiple VOs. See also the section about the
+ :ref:`trans-multi-vo`.
+
 """
 
 from DIRAC import S_OK

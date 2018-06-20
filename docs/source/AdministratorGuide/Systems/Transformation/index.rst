@@ -618,17 +618,20 @@ Actions on transformations
 * **Complete:** The transformation can be archived by the TransformationCleaningAgent. Archived means that the data produced stay, but not the entries in the TransformationDB
 * **Clean:** The transformation is cleaned by the TransformationCleaningAgent: jobs are killed and removed from WMS. Produced and stored files are removed from the Storage Elements, when "OutputDirectories" parameter is set for the transformation.
 
+.. _trans-multi-vo:
 
 ----------------------
 Multi VO Configuration
 ----------------------
+
+
 
 .. versionadded:: v6r21
 
 There are two possibilities to configure the agents of the transformation system for the use in a multi VO installation.
 
  - Use the same WorkflowTaskAgent and RequestTaskAgents for multiple VOs, no
-   **shifterProxy** or **ShifterCredential** must be set for these agents. If
+   *shifterProxy* or *ShifterCredential* must be set for these agents. If
    neither of those options are set the credentials of the owner of the
    transformations are used to submit Jobs or Requests.
 

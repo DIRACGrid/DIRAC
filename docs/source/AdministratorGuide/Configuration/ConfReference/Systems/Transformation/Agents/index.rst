@@ -3,6 +3,8 @@ Systems / Transformation / <INSTANCE> / Agents - Sub-subsection
 
 Agents associated with DataManagement System:
 
+See also the sections in :mod:`TransformationSystem.Agent`
+
 .. toctree::
    :maxdepth: 2
    
@@ -12,4 +14,4 @@ Agents associated with DataManagement System:
    transformationagent
    transformationcleaningagent
    validateoutputdataagent
-   workflowtaskagent
+
