@@ -10,7 +10,6 @@ See also the sections in :mod:`TransformationSystem.Agent`
    
    inputdataagent
    mcextensionagent
-   requesttaskagent
    transformationagent
    transformationcleaningagent
    validateoutputdataagent

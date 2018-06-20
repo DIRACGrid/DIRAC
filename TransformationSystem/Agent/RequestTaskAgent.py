@@ -1,5 +1,56 @@
-""" The Request Task Agent takes request tasks created in the transformation database
-    and submits to the request management system
+"""The Request Task Agent takes request tasks created in the
+TransformationDB and submits to the request management system.
+
++----------------------+---------------------------------------+-------------------------------------------------------+
+| **Name**             | **Description**                       | **Example**                                           |
++----------------------+---------------------------------------+-------------------------------------------------------+
+| *shifterProxy*       | Use a dedicated proxy to submit jobs  | DataManager                                           |
+|                      | to the WMS                            |                                                       |
++----------------------+---------------------------------------+-------------------------------------------------------+
+| *ShifterCredentials* | Use delegated credentials, same values|                                                       |
+|                      |as for                                 |                                                       |
+|                      | shifterProxy, but there will not be   |                                                       |
+|                      |any actual                             |                                                       |
+|                      | proxy used. (New in v6r21)            |                                                       |
+|                      |                                       |                                                       |
++----------------------+---------------------------------------+-------------------------------------------------------+
+| *TransType*          |                                       |                                                       |
++----------------------+---------------------------------------+-------------------------------------------------------+
+| *PluginLocation*     |                                       |  DIRAC.TransformationSystem.Client.TaskManagerPlugin  |
++----------------------+---------------------------------------+-------------------------------------------------------+
+| *maxNumberOfThreads* |                                       | 15                                                    |
++----------------------+---------------------------------------+-------------------------------------------------------+
+| *TasksPerLoop*       |                                       |                                                       |
++----------------------+---------------------------------------+-------------------------------------------------------+
+| *TaskUpdateStatus*   |                                       | Checking, Deleted, Killed, Staging, Stalled, Matched, |
+|                      |                                       | Scheduled, Rescheduled, Completed, Submitted,         |
+|                      |                                       | Assigned, Received, Waiting, Running                  |
++----------------------+---------------------------------------+-------------------------------------------------------+
+| *SubmitTasks*        |                                       |                                                       |
++----------------------+---------------------------------------+-------------------------------------------------------+
+| *SubmitStatus*       |                                       | Active, Completing                                    |
++----------------------+---------------------------------------+-------------------------------------------------------+
+| *MonitorTasks*       |                                       |                                                       |
++----------------------+---------------------------------------+-------------------------------------------------------+
+| *MonitorFiles*       |                                       |                                                       |
++----------------------+---------------------------------------+-------------------------------------------------------+
+| *CheckReserved*      |                                       |                                                       |
++----------------------+---------------------------------------+-------------------------------------------------------+
+| *CheckReservedStatus*|                                       | Active, Completing, Stopped                           |
++----------------------+---------------------------------------+-------------------------------------------------------+
+| *UpdateTaskStatus*   |                                       | Active, Completing, Stopped                           |
++----------------------+---------------------------------------+-------------------------------------------------------+
+| *UpdateFileStatus*   |                                       | Active, Completing, Stopped                           |
++----------------------+---------------------------------------+-------------------------------------------------------+
+
+.. versionadded:: v6r21
+
+ It is possible to run the RequestTaskAgent without a *shifterProxy* or
+ *ShifterCredentials*, in this case the credentials of the authors of the
+ transformations are used to submit the jobs to the RMS. This enables the use of
+ a single RequestTaskAgent for multiple VOs. See also the section about the
+ :ref:`trans-multi-vo`.
+
 """
 
 from DIRAC import S_OK
