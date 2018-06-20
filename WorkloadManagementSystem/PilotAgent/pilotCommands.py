@@ -515,6 +515,9 @@ class CheckWNCapabilities( CommandBase ):
       self.log.warn(
           "Could not retrieve MaxRAM, this parameter won't be filled")
 
+    if self.pp.strictMP:
+      self.cfg.append('-o "/Resources/Computing/CEDefaults/StrictMP=True"')
+
     if self.cfg:
       self.cfg.append( '-FDMH' )
 

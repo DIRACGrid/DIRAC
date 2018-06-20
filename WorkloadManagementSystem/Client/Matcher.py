@@ -208,6 +208,12 @@ class Matcher( object ):
         paramTags = [ '%d%s' % ( par, key ) for par in paramList ]
         if paramTags:
           resourceDict.setdefault( "Tag", [] ).extend( paramTags )
+    # If strict MP mode is requested, match jobs which only have
+    # _exactly_ same number of cores required as are avaialble.
+    if "StrictMP" in resourceDescription and nProcessors:
+      if resourceDescription["StrictMP"].lower() == 'true':
+        reqTag = [ "%uProcessors" % nProcessors ]
+        resourceDict.setdefault( "RequiredTag", [] ).extend( reqTag )
 
     if "WholeNode" in resourceDescription:
       resourceDict.setdefault( "Tag", [] ).append( "WholeNode" )

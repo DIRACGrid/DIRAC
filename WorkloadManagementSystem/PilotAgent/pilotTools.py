@@ -364,6 +364,9 @@ class PilotParams( object ):
     self.platform = ""
     # in case users want to specify the max number of processors requested, per pilot
     self.maxNumberOfProcessors = 0
+    # Enable strict multi-processing mode: Only match jobs which have exactly the
+    # same number of cores as the node.
+    self.strictMP = False
     self.minDiskSpace = 2560 #MB
     self.pythonVersion = '27'
     self.userGroup = ""
@@ -411,6 +414,7 @@ class PilotParams( object ):
                      ( 'p:', 'platform=', 'Use <platform> instead of local one' ),
                      ( 'm:', 'maxNumberOfProcessors=',
                       'specify a max number of processors to use'),
+                     ( 'T', 'strictMP', 'Enable strict-multiprocessing mode' ),
                      ( 'u:', 'url=', 'Use <url> to download tarballs' ),
                      ( 'r:', 'release=', 'DIRAC release to install' ),
                      ( 'n:', 'name=', 'Set <Site> as Site Name' ),
@@ -482,6 +486,8 @@ class PilotParams( object ):
         self.platform = v
       elif o == '-m' or o == '--maxNumberOfProcessors':
         self.maxNumberOfProcessors = v
+      elif o in ( '-T', '--strictMP' ):
+        self.strictMP = True
       elif o == '-D' or o == '--disk':
         try:
           self.minDiskSpace = int( v )
