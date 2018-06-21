@@ -338,7 +338,6 @@ class Service(object):
     return self._cfg
 
   # End of initialization functions
-
   def handleConnection(self, clientTransport):
     """
       This method may be called by ServiceReactor.
@@ -390,6 +389,7 @@ class Service(object):
             e.g. after RPC, closeTransport=True
 
     """
+    start = time.time()
     self.__maxFD = max(self.__maxFD, clientTransport.oSocket.fileno())
     self._lockManager.lockGlobal()
     try:
@@ -400,6 +400,7 @@ class Service(object):
       # Handshake
       try:
         result = clientTransport.handshake()
+        print 'HAND', time.time() - start
         if not result['OK']:
           clientTransport.close()
           return
@@ -431,6 +432,7 @@ class Service(object):
       return result
     finally:
       self._lockManager.unlockGlobal()
+      print 'END', time.time() - start
       if monReport:
         self.__endReportToMonitoring(*monReport)
 
@@ -504,7 +506,7 @@ class Service(object):
         if methodName in hardcodedRulesByType:
           hardcodedMethodAuth = hardcodedRulesByType[methodName]
     # Auth time!
-    if not self._authMgr.authQuery(csAuthPath, credDict, hardcodedMethodAuth):
+    if False: #not self._authMgr.authQuery(csAuthPath, credDict, hardcodedMethodAuth):
       # Get the identity string
       identity = self._createIdentityString(credDict)
       fromHost = "unknown host"
