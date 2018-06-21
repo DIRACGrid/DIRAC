@@ -12,7 +12,7 @@ import time
 import datetime
 from Queue import Queue
 
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK
 
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername, getUsernameForDN
@@ -235,23 +235,18 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
 
   #############################################################################
 
-  def _getClients(self):
-    """ returns the clients used in the threads - this is another function that should be extended.
+  def _getClients(self, ownerDN=None, ownerGroup=None):
+    """Returns the clients used in the threads
 
-        The clients provided here are defaults, and should be adapted
-    """
-    threadTransformationClient = TransformationClient()
-    threadTaskManager = WorkflowTasks()  # this is for wms tasks, replace it with something else if needed
-    threadTaskManager.pluginLocation = self.pluginLocation
+    This is another function that should be extended.
 
-    return {'TransformationClient': threadTransformationClient,
-            'TaskManager': threadTaskManager}
-
-  def _getDelegatedClients(self, ownerDN=None, ownerGroup=None):
-    """Set the clients for per transformation credentials.
-
-    Returns the clients used in the threads - this is another function that should be extended.
     The clients provided here are defaults, and should be adapted
+
+    If ownerDN and ownerGroup are not None the clients will delegate to these credentials
+
+    :param str ownerDN: DN of the owner of the submitted jobs
+    :param str ownerGroup: group of the owner of the submitted jobs
+    :returns: dict of Clients
     """
     threadTransformationClient = TransformationClient()
     threadTaskManager = WorkflowTasks(ownerDN=ownerDN, ownerGroup=ownerGroup)
@@ -265,7 +260,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
     """
     # Each thread will have its own clients if we use credentials/shifterProxy
     clients = self._getClients() if self.shifterProxy else \
-        self._getDelegatedClients(ownerGroup=self.credTuple[1], ownerDN=self.credTuple[2]) if self.credentials \
+        self._getClients(ownerGroup=self.credTuple[1], ownerDN=self.credTuple[2]) if self.credentials \
         else None
     method = '_execute'
     operation = 'None'
@@ -285,7 +280,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
           break
         if not (self.credentials or self.shifterProxy):
           ownerDN, group = transIDOPBody[transID]['OwnerDN'], transIDOPBody[transID]['OwnerGroup']
-          clients = self._getDelegatedClients(ownerDN=ownerDN, ownerGroup=group)
+          clients = self._getClients(ownerDN=ownerDN, ownerGroup=group)
         self.transInThread[transID] = ' [Thread%d] [%s] ' % (threadID, str(transID))
         self._logInfo("Start processing transformation", method=method, transID=transID)
         clients['TaskManager'].transInThread = self.transInThread

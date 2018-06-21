@@ -143,17 +143,14 @@ class RequestTaskAgent(TaskManagerAgentBase):
 
     return S_OK()
 
-  def _getClients(self):
-    """ Here the taskManager becomes a RequestTasks object
-    """
-    res = TaskManagerAgentBase._getClients(self)
-    threadTaskManager = RequestTasks()
-    res.update({'TaskManager': threadTaskManager})
-    return res
+  def _getClients(self, ownerDN=None, ownerGroup=None):
+    """Set the clients for task submission.
 
-  def _getDelegatedClients(self, ownerDN=None, ownerGroup=None):
-    """Set the clients for per transformation credentials."""
-    res = super(RequestTaskAgent, self)._getDelegatedClients(ownerDN=ownerDN, ownerGroup=ownerGroup)
+    Here the taskManager becomes a RequestTasks object.
+
+    See :func:`DIRAC.TransformationSystem.TaskManagerAgentBase._getClients`.
+    """
+    res = super(RequestTaskAgent, self)._getClients(ownerDN=ownerDN, ownerGroup=ownerGroup)
     threadTaskManager = RequestTasks(ownerDN=ownerDN, ownerGroup=ownerGroup)
     res.update({'TaskManager': threadTaskManager})
     return res
