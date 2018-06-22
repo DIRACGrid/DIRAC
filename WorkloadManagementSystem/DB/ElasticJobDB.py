@@ -5,6 +5,7 @@
   The following methods are provided for public usage:
 
   getJobParameters()
+  getJobParametersAndAttributes()
 
   setJobParameter()
 """
@@ -78,23 +79,97 @@ class ElasticJobDB(DB):
 
     return S_OK(resultDict)
 
-#############################################################################
-  def setJobParameter(self, jobID, key, value):
+############################################################################
+  def getJobParametersAndAttributes(self, jobID, paramList=None):
+    """ Get Job Parameters with Attributes defined for jobID.
+      Returns a dictionary with the Job Parameters.
+      If paramList is empty - all the parameters are returned.
 
-    """ Set a parameter specified by name,value pair for the job JobID
+    :param self: self reference
+    :param int jobID: Job ID
+    :param list paramList: list of parameters to be returned
+    """
+
+    self.log.debug('JobDB.getParameters: Getting Parameters for job %s' % jobID)
+
+    jobParameters = ["JobID", "Name", "Value", "JobGroup", "Owner", "Proxy", "SubmissionTime", "RunningTime"]
+    resultDict = {}
+
+    if paramList:
+      paramNameList = []
+
+      for x in paramList:
+        paramNameList.append(x)
+
+      query = {
+          "query": {
+              "bool": {
+                  "must": [
+                      {"match": {"JobID": jobID}}, {"match": {"Name": ','.join(paramNameList)}}]}},
+          "_source": jobParameters}
+
+    else:
+      query = {"query": {"match": {"JobID": jobID}}, "_source": jobParameters}
+
+    gLogger.debug("Getting results for ", jobID)
+    result = self.query('jobelasticdb*', query)
+
+    if not result['OK']:
+      return S_ERROR(result)
+
+    sources = result['Value']['hits']['hits']
+    jobParameters = ["Name", "Value", "JobGroup", "Owner", "Proxy", "SubmissionTime", "RunningTime"]
+
+    for source in sources:
+
+      jobID = source['_source']['JobID']
+      parametersDict = {}
+
+      for parameter in jobParameters:
+        parametersDict[parameter] = source['_source'][parameter]
+
+      resultDict[jobID] = parametersDict
+
+    return S_OK(resultDict)
+
+#############################################################################
+  def setJobParameter(
+          self,
+          jobID,
+          key,
+          value,
+          jobGroup="00000000",
+          owner='Unknown',
+          proxy=None,
+          subTime=None,
+          runTime=None):
+    """ Set parameters for the job JobID
 
     :param self: self reference
     :param int jobID: Job ID
     :param basestring key: Name
     :param keyword value: value
+    :param text jobGroup: JobGroup
+    :param text owner: Owner
+    :param text proxy: Proxy
+    :param date subTime: Submission Time
+    :param date runTime: Running Time
     """
 
     query = {
         "query": {
             "term": {
-                "JobID": jobID}}, "script": {
-            "inline": "ctx._source.Value = params.value; ctx._source.Name = params.name", "params": {
-                "value": value, "name": key}}}
+                "JobID": jobID}},
+        "script": {
+            "inline": "ctx._source.Value = params.value; ctx._source.Name = params.name; ctx._source.JobGroup = params.jobGroup; ctx._source.Owner = params.owner; ctx._source.Proxy = params.proxy; ctx._source.SubmissionTime = params.subTime; ctx._source.RunningTime = params.runTime",
+            "params": {
+                "value": value,
+                "name": key,
+                "jobGroup": jobGroup,
+                "owner": owner,
+                "proxy": proxy,
+                "subTime": subTime,
+                "runTime": runTime}}}
     indexName = self.generateFullIndexName('jobelasticdb')
     result = self.exists(indexName)
 
@@ -105,7 +180,12 @@ class ElasticJobDB(DB):
                   "JobID": {
                       "type": "long"}, "Name": {
                       "type": "text"}, "Value": {
-                      "type": "keyword"}}}}
+                      "type": "keyword"}, "JobGroup": {
+                      "type": "text"}, "Owner": {
+                      "type": "text"}, "Proxy": {
+                      "type": "text"}, "SubmissionTime": {
+                      "type": "date"}, "RunningTime": {
+                      "type": "date"}}}}
 
       gLogger.debug("Creating index ", indexName)
       result = self.createIndex('jobelasticdb', mapping)
@@ -122,7 +202,15 @@ class ElasticJobDB(DB):
     if result['Value']['updated'] == 0:
 
       gLogger.debug("Updated values: ", 0)
-      query = {"JobID": jobID, "Name": key, "Value": value}
+      query = {
+          "JobID": jobID,
+          "Name": key,
+          "Value": value,
+          "JobGroup": jobGroup,
+          "Owner": owner,
+          "Proxy": proxy,
+          "SubmissionTime": subTime,
+          "RunningTime": runTime}
 
       gLogger.debug("Inserting values in index ", indexName)
       result = self.update(indexName, 'JobParameters', query, updateByQuery=False, id=jobID)
