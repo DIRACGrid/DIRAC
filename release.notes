@@ -1,3 +1,19 @@
+[v6r20p4]
+
+*DMS
+FIX: (#3727) use proxy location in the SECache
+
+*RMS
+FIX: (#3727) use downloadVOMSProxyToFile in RequestTask
+
+*TS
+FIX: (#3720) TaskManager - pass output data arguments as lists rather 
+     than strings to the parametric job description
+
+Docs:
+FIX: (#3725) AdministratorGuide TransformationSystem spell check and added a few 
+     phrases, notably for bulk submission working in v6r20p3
+
 [v6r20p3]
 
 *Framework
@@ -160,6 +176,11 @@ FIX: Update of the FTS3 docs
 *Tests
 FIX: add MonitoringDB to the configuration
 FIX: Installing elasticSeach locally in Jenkins, with ComponentInstaller support.
+
+[v6r19p23]
+
+*TS
+FIX: (#3734) catch correct exception for ast.literal_eval
 
 [v6r19p22]
 
