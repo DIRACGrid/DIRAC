@@ -128,7 +128,9 @@ class PluginUtilities(object):
     if not self.groupSize:
       self.groupSize = self.getPluginParam('GroupSize', 10)
     flush = (status == 'Flush')
-    self.logVerbose("groupByReplicas: %d files, groupSize %d, flush %s" % (len(files), self.groupSize, flush))
+    self.logVerbose(
+        "groupByReplicas: %d files, groupSize %d, flush %s" %
+        (len(files), self.groupSize, flush))
 
     # Consider files by groups of SEs, a file is only in one group
     # Then consider files site by site, but a file can now be at more than one site
@@ -155,8 +157,10 @@ class PluginUtilities(object):
             # Remove files from other SEs
             for se in [se for se in seFiles if se != replicaSE]:
               seFiles[se] = [lfn for lfn in seFiles[se] if lfn not in lfnsInTasks]
-      self.logVerbose("groupByReplicas: %d tasks created (groupSE %s)" % (len(tasks) - nTasks, str(groupSE)),
-                      "%d files not included in tasks" % len(files))
+      self.logVerbose(
+          "groupByReplicas: %d tasks created (groupSE %s)" %
+          (len(tasks) - nTasks, str(groupSE)), "%d files not included in tasks" %
+          len(files))
       nTasks = len(tasks)
 
     return S_OK(tasks)
@@ -195,8 +199,9 @@ class PluginUtilities(object):
     if flush and taskLfns:
       tasks.append((replicaSE, taskLfns))
     if not tasks and not flush and taskLfns:
-      self.logVerbose('Not enough data to create a task, and flush not set (%d bytes for groupSize %d)' %
-                      (taskSize, self.groupSize))
+      self.logVerbose(
+          'Not enough data to create a task, and flush not set (%d bytes for groupSize %d)' %
+          (taskSize, self.groupSize))
     return tasks
 
   # @timeThis
@@ -216,7 +221,9 @@ class PluginUtilities(object):
       # input size in GB converted to bytes
       self.groupSize = float(self.getPluginParam('GroupSize', 1)) * 1000 * 1000 * 1000
     flush = (status == 'Flush')
-    self.logVerbose("groupBySize: %d files, groupSize: %d, flush: %s" % (len(files), self.groupSize, flush))
+    self.logVerbose(
+        "groupBySize: %d files, groupSize: %d, flush: %s" %
+        (len(files), self.groupSize, flush))
 
     # Get the file sizes
     res = self._getFileSize(files.keys())
@@ -247,7 +254,9 @@ class PluginUtilities(object):
         for lfn in lfnsInTasks:
           files.pop(lfn)
 
-      self.logVerbose("groupBySize: %d tasks created with groupSE %s" % (len(tasks) - nTasks, str(groupSE)))
+      self.logVerbose(
+          "groupBySize: %d tasks created with groupSE %s" %
+          (len(tasks) - nTasks, str(groupSE)))
       self.logVerbose("groupBySize: %d files have not been included in tasks" % len(files))
       nTasks = len(tasks)
 
@@ -289,7 +298,9 @@ class PluginUtilities(object):
     fileSizes = {}
     for lfn in [lfn for lfn in lfns if lfn in cachedLFNSize]:
       fileSizes[lfn] = cachedLFNSize[lfn]
-    self.logDebug("Found cache hit for File size for %d files out of %d" % (len(fileSizes), len(lfns)))
+    self.logDebug(
+        "Found cache hit for File size for %d files out of %d" %
+        (len(fileSizes), len(lfns)))
     lfns = [lfn for lfn in lfns if lfn not in cachedLFNSize]
     if lfns:
       fileSizes = self._getFileSizeFromCatalog(lfns, fileSizes)
@@ -329,7 +340,7 @@ class PluginUtilities(object):
         Caution: the type returned is that of the default value
     """
     # get the value of a parameter looking 1st in the CS
-    if default != None:
+    if default is not None:
       valueType = type(default)
     else:
       valueType = None
@@ -341,17 +352,23 @@ class PluginUtilities(object):
     optionPath = "TransformationPlugins/%s/%s" % (self.plugin, name)
     value = Operations().getValue(optionPath, value)
     self.logVerbose("Specific plugin param %s: '%s'" % (optionPath, value))
-    if value != None:
+    if value is not None:
       default = value
     # Finally look at a transformation-specific parameter
     value = self.params.get(name, default)
-    self.logVerbose("Transformation plugin param %s: '%s'. Convert to %s" % (name, value, str(valueType)))
+    self.logVerbose(
+        "Transformation plugin param %s: '%s'. Convert to %s" %
+        (name, value, str(valueType)))
     if valueType and not isinstance(value, valueType):
       if valueType is list:
         try:
           value = ast.literal_eval(value) if value and value != 'None' else []
-        except ValueError:
+        # literal_eval('SE-DST') -> ValueError
+        # literal_eval('SE_MC-DST') -> SyntaxError
+        # Don't ask...
+        except (ValueError, SyntaxError):
           value = [val for val in value.replace(' ', '').split(',') if val]
+
       elif valueType is int:
         value = int(value)
       elif valueType is float:
@@ -362,7 +379,9 @@ class PluginUtilities(object):
         else:
           value = bool(value)
       elif valueType is not str:
-        self.logWarn("Unknown parameter type (%s) for %s, passed as string" % (str(valueType), name))
+        self.logWarn(
+            "Unknown parameter type (%s) for %s, passed as string" %
+            (str(valueType), name))
     self.logVerbose("Final plugin param %s: '%s'" % (name, value))
     return value
 
@@ -370,7 +389,8 @@ class PluginUtilities(object):
   def _normaliseShares(originalShares):
     """ Normalize shares to 1 """
     total = sum(float(share) for share in originalShares.values())
-    return dict([(site, 100. * float(share) / total if total else 0.) for site, share in originalShares.items()])
+    return dict([(site, 100. * float(share) / total if total else 0.)
+                 for site, share in originalShares.items()])
 
   def uniqueSEs(self, ses):
     """ return a list of SEs that are not physically the same """

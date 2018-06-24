@@ -177,6 +177,11 @@ FIX: Update of the FTS3 docs
 FIX: add MonitoringDB to the configuration
 FIX: Installing elasticSeach locally in Jenkins, with ComponentInstaller support.
 
+[v6r19p23]
+
+*TS
+FIX: (#3734) catch correct exception for ast.literal_eval
+
 [v6r19p22]
 
 *Core
