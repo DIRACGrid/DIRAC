@@ -1,14 +1,18 @@
 """ This is the StorageElement class.
 """
 
-import re
 # # custom duty
-import time
-import datetime
+
 import copy
+import datetime
 import errno
-import threading
+import os
+import re
 import sys
+import threading
+import time
+
+
 from functools import reduce
 
 # # from DIRAC
@@ -19,6 +23,7 @@ from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR, returnSingleResult
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 from DIRAC.Core.Utilities.Pfn import pfnparse
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
+from DIRAC.Core.Security.Locations import getProxyLocation
 from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Utilities.DictCache import DictCache
@@ -47,7 +52,13 @@ class StorageElementCache(object):
         return
       vo = result['Value']
 
-    argTuple = (tId, name, plugins, vo)
+    # Because the gfal2 context caches the proxy location,
+    # we also use the proxy location as a key.
+    # In practice, there should almost always be one, except for the REA
+    # If we see its memory consumtpion exploding, this might be a place to look
+    proxyLoc = getProxyLocation()
+
+    argTuple = (tId, name, plugins, vo, proxyLoc)
     seObj = self.seCache.get(argTuple)
 
     if not seObj:
