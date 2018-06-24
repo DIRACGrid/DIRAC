@@ -10,7 +10,7 @@ Transformation System
 
 
 The Transformation System (TS) is used to automatise common tasks related to production activities.
-Just to make some baic examples, the TS can handle the generation of Simulation jobs,
+Just to make some basic examples, the TS can handle the generation of Simulation jobs,
 or Data Re-processing jobs as soon as a 'pre-defined' data-set is available,
 or Data Replication to 'pre-defined' SE destinations as soon as the first replica is registered in the Catalog.
 
@@ -35,7 +35,10 @@ Within the TS a user can (for example):
 
 Disadvantages:
 
-- For very large installations, the submission may be percieved as slow, since there is no use (not yet) of Parametric jobs.
+- For very large installations, the submission may be perceived as slow, since there is no use (not yet) of Parametric jobs.
+
+  .. versionadded:: v6r20p3
+     Bulk submission of jobs is working for the transformations, so job submission can be sped up considerably.
 
 Several improvements have been made in the TS to handle scalability, and extensibility issues.
 While the system structure remains intact, "tricks" like threading and caching have been extensively applied.
@@ -82,7 +85,7 @@ The TS is a standard DIRAC system, and therefore it is composed by components in
       +------------------------------+
 
 
-  **Note** that since version v6r10, there are important changes in the TransformatioDB, as explained in the `release notes <https://github.com/DIRACGrid/DIRAC/wiki/DIRAC-v6r10#transformationdb>`_ (for example the Replicas table can be removed). Also, it is highly suggested to move to InnoDB. For new installations, all these improvements will be installed automatically.
+  **Note** that since version v6r10, there are important changes in the TransformationDB, as explained in the `release notes <https://github.com/DIRACGrid/DIRAC/wiki/DIRAC-v6r10#transformationdb>`_ (for example the Replicas table can be removed). Also, it is highly suggested to move to InnoDB. For new installations, all these improvements will be installed automatically.
 
 * **Agents**
 
@@ -104,7 +107,7 @@ The complete list can be found in the `DIRAC project GitHub repository <https://
 
 * **Clients**
 
-  * TaskManager: it contains WorkflowsTasks and RequestTasks modules, for managing jobs and requests tasks, i.e. it contains classes wrapping the logic of how to 'transform' a Task in a job/request. WorkflowTaskAgent uses WorkflowTasks, RequestTaskAgent uses RequestTasks.
+  * TaskManager: it contains WorkflowTasks and RequestTasks modules, for managing jobs and requests tasks, i.e. it contains classes wrapping the logic of how to 'transform' a Task in a job/request. WorkflowTaskAgent uses WorkflowTasks, RequestTaskAgent uses RequestTasks.
 
   * TransformationClient: class that contains client access to the transformation DB handler (main client to the service/DB). It exposes the functionalities available in the DIRAC/TransformationHandler. This inherits the DIRAC base Client for direct execution of server functionality
 
@@ -116,7 +119,7 @@ Configuration
 
 * **Operations**
 
-  * In the Operations/[VO]/Transformations section, *Transformation Types* must be added
+  * In the Operations/[VO]/[SETUP]/Transformations or Operations/Defaults/Transformations section, *Transformation Types* must be added
   * By default, the WorkflowTaskAgent will treat all the *DataProcessing* transformations and the RequestTaskAgent all the *DataManipulation* ones
   * An example of working configuration is give below::
 
@@ -133,10 +136,10 @@ Configuration
 
 * **Agents**
 
-  * Agents must be configured in the Systems/Transformation/[VO]/Agents section
+  * Agents must be configured in the Systems/Transformation/[SETUP]/Agents section
   * The *Transformation Types* to be treated by the agent must be configured if and only if they are different from those set in the 'Operations' section. This is useful, for example, in case one wants several agents treating different transformation types, *e.g.*: one WorkflowTaskAgent for DataReprocessing transformations, a second for Merge and MCStripping, etc. Advantage is speedup.
   * For the WorkflowTaskAgent and RequestTaskAgent some options must be added manually
-  * An example of working configuration is give below, where 2 specific WorkflowTaskAgents, each treating a different subset of transformation types have been added. Also notice the shifterProxy set by each one.
+  * An example of working configuration is give below, where 2 specific WorkflowTaskAgents, each treating a different subset of transformation types have been added. Also notice the different shifterProxy set by each one.
 
   ::
 
@@ -158,7 +161,7 @@ Configuration
           TaskUpdateStatus += Completed
           TaskUpdateStatus += Failed
           shifterProxy = ProductionManager
-          #Flag to eanble task submission
+          #Flag to enable task submission
           SubmitTasks = yes
           #Flag for checking reserved tasks that failed submission
           CheckReserved = yes
@@ -611,6 +614,6 @@ Actions on transformations
 
 * **Start**
 * **Stop**
-* **Flush:** It has a meaning only depending on the plugin used, for example the 'BySize' plugin, used *e.g.* for merging productions, creates a task if there are enough files in input to have at least a certain size: 'flush' will make the 'BySize' plugin to ignore such requirement
+* **Flush:** It has a meaning only depending on the plugin used, for example the 'BySize' plugin, used *e.g.* for merging productions, creates a task if there are enough files in input to have at least a certain size: 'flush' will make the 'BySize' plugin to ignore such requirement. When a transformation is flushed also its replica cache will be re-created (instead of after 24 hours).
 * **Complete:** The transformation can be archived by the TransformationCleaningAgent. Archived means that the data produced stay, but not the entries in the TransformationDB
 * **Clean:** The transformation is cleaned by the TransformationCleaningAgent: jobs are killed and removed from WMS. Produced and stored files are removed from the Storage Elements, when "OutputDirectories" parameter is set for the transformation.
