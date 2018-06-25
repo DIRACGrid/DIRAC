@@ -96,16 +96,12 @@ class ElasticJobDB(DB):
     resultDict = {}
 
     if paramList:
-      paramNameList = []
-
-      for x in paramList:
-        paramNameList.append(x)
 
       query = {
           "query": {
               "bool": {
                   "must": [
-                      {"match": {"JobID": jobID}}, {"match": {"Name": ','.join(paramNameList)}}]}},
+                      {"match": {"JobID": jobID}}, {"match": {"Name": ','.join(paramList)}}]}},
           "_source": jobParameters}
 
     else:
@@ -115,10 +111,10 @@ class ElasticJobDB(DB):
     result = self.query('jobelasticdb*', query)
 
     if not result['OK']:
-      return S_ERROR(result)
+      return result
 
     sources = result['Value']['hits']['hits']
-    jobParameters = ["Name", "Value", "JobGroup", "Owner", "Proxy", "SubmissionTime", "RunningTime"]
+    jobParameters = jobParameters.remove("JobID")
 
     for source in sources:
 
