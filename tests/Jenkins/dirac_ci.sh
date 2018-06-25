@@ -289,6 +289,55 @@ function fullInstallDIRAC(){
 }
 
 
+#...............................................................................
+#
+# miniInstallDIRAC:
+#
+#   This function install the bare minimum of DIRAC
+#
+#...............................................................................
+
+function miniInstallDIRAC(){
+  echo '==> [miniInstallDIRAC]'
+
+  finalCleanup
+
+  #basic install, with only the CS (and ComponentMonitoring) running, together with DB InstalledComponentsDB, which is needed)
+  installSite
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: installSite failed'
+    return
+  fi
+
+  # Dealing with security stuff
+  # generateCertificates
+  generateUserCredentials
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: generateUserCredentials failed'
+    return
+  fi
+
+  diracCredentials
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: diracCredentials failed'
+    return
+  fi
+
+  #just add a site
+  diracAddSite
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: diracAddSite failed'
+    return
+  fi
+
+}
+
+
+
 function clean(){
 
   #Uninstalling the services

@@ -114,7 +114,7 @@ class ElasticJobDB(DB):
       return result
 
     sources = result['Value']['hits']['hits']
-    jobParameters = jobParameters.remove("JobID")
+    jobParameters.remove("JobID")
 
     for source in sources:
 
