@@ -286,16 +286,23 @@ class ReplaceDIRACCode( CommandBase ):
     from urllib2 import urlopen
     from zipfile import ZipFile
 
-    zipresp = urlopen(self.pp.genericOption)
-    zfile = ZipFile(BytesIO(zipresp.read()))
-    os.mkdir(os.getcwd() + os.path.sep + 'AlternativeCode')
-    zfile.extractall(os.getcwd() + os.path.sep + 'AlternativeCode')
-    zfile.close()
-    zipresp.close()
-    os.rename(os.getcwd() + os.path.sep + 'AlternativeCode' + os.path.sep + os.listdir('./AlternativeCode')[0],
-              os.getcwd() + os.path.sep + 'AlternativeCode' + os.path.sep + 'DIRAC')
-    self.pp.installEnv['PYTHONPATH'] = os.getcwd() + os.path.sep + 'AlternativeCode' + os.path.sep + 'DIRAC' ':' \
-                                       + self.pp.installEnv['PYTHONPATH']
+    genericOptionDict = {}
+    for opt in self.pp.genericOptions:
+      key,value = opt.split('=')
+      genericOptionDict[key] = value
+
+    if "AlternativeCodeArchive" in genericOptionDict:
+      zipUrl = genericOptionDict['AlternativeCodeArchive']
+      zipresp = urlopen(zipUrl)
+      zfile = ZipFile(BytesIO(zipresp.read()))
+      os.mkdir(os.getcwd() + os.path.sep + 'AlternativeCode')
+      zfile.extractall(os.getcwd() + os.path.sep + 'AlternativeCode')
+      zfile.close()
+      zipresp.close()
+      os.rename(os.getcwd() + os.path.sep + 'AlternativeCode' + os.path.sep + os.listdir('./AlternativeCode')[0],
+                os.getcwd() + os.path.sep + 'AlternativeCode' + os.path.sep + 'DIRAC')
+      self.pp.installEnv['PYTHONPATH'] = os.getcwd() + os.path.sep + 'AlternativeCode' + os.path.sep + 'DIRAC' ':' \
+                                         + self.pp.installEnv['PYTHONPATH']
 
 class ConfigureBasics( CommandBase ):
   """ This command completes DIRAC installation, e.g. calls dirac-configure to:
@@ -342,6 +349,7 @@ class ConfigureBasics( CommandBase ):
 
     self._getBasicsCFG()
     self._getSecurityCFG()
+    self._genericOptionsCFG()
 
     if self.pp.debugFlag:
       self.cfg.append( '-ddd' )
@@ -355,6 +363,22 @@ class ConfigureBasics( CommandBase ):
     if retCode:
       self.log.error( "Could not configure DIRAC basics [ERROR %d]" % retCode )
       self.exitWithError( retCode )
+
+  def _genericOptionsCFG(self):
+    """ Append pilot generic options
+    """
+    modList = []
+    for opt in self.pp.genericOptions:
+      key,value = opt.split('=')
+      if key.endswith('/Tag'):
+        self.pp.tags += value.split(',')
+      elif key.endswith('/RequiredTag'):
+        self.pp.reqtags += value.split(',')
+      else:
+        modList.append(opt)
+
+    # Do not continue "Tag" options
+    self.pp.genericOptions = modList
 
   def _getBasicsCFG( self ):
     """  basics (needed!)
@@ -421,6 +445,10 @@ class CheckCECapabilities( CommandBase ):
     for ceParam in [ "WholeNode", "NumberOfProcessors" ]:
       if ceParam in resourceDict:
         self.cfg.append( '-o  /Resources/Computing/CEDefaults/%s=%s' % ( ceParam, resourceDict[ ceParam ] ) )
+
+    # If MaxNumberOfProcessors not defined check for NumberOfProcessors and make it 1 by default
+    if self.pp.maxNumberOfProcessors == 0:
+      self.pp.maxNumberOfProcessors = int(resourceDict.get("MaxNumberOfProcessors", resourceDict.get("NumberOfProcessors", 1)))
 
     # Tags must be added to already defined tags if any
     if resourceDict.get( 'Tag' ):

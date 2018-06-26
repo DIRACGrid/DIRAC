@@ -377,7 +377,7 @@ class PilotParams( object ):
     self.gateway = ""
     self.useServerCertificate = False
     self.pilotScriptName = ''
-    self.genericOption = ''
+    self.genericOptions = []
     # DIRAC client installation environment
     self.diracInstalled = False
     self.diracExtensions = []
@@ -507,4 +507,4 @@ class PilotParams( object ):
         except ValueError:
           pass
       elif o in ( '-o', '--option' ):
-        self.genericOption = v
+        self.genericOptions.append(v)
