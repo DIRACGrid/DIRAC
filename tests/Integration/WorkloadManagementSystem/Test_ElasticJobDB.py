@@ -44,6 +44,9 @@ class JobParametersCase(JobDBTestCase):
     res = self.jobDB.getJobParameters(100)
     self.assertTrue(res['OK'])
     self.assertEqual(res['Value']['DIRAC'], 'dirac@cern')
+    res = self.jobDB.getJobParametersAndAttributes(100)
+    self.assertTrue(res['OK'])
+    self.assertEqual(res['Value'][100]['Name'], 'DIRAC')
 
 
 if __name__ == '__main__':

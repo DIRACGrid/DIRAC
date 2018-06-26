@@ -252,7 +252,15 @@ class JobMonitoringHandler(RequestHandler):
   @staticmethod
   def export_getJobOwner(jobID):
 
-    return gJobDB.getJobAttribute(jobID, 'Owner')
+    if gElasticJobDB:
+
+      result = gElasticJobDB.getJobParametersAndAttributes(jobID)
+      value = result['Value'][jobID]['Owner']
+
+      return S_OK(value)
+
+    else:
+      return gJobDB.getJobAttribute(jobID, 'Owner')
 
 ##############################################################################
   types_getJobSite = [int]
@@ -561,7 +569,16 @@ class JobMonitoringHandler(RequestHandler):
 
   @staticmethod
   def export_getJobAttribute(jobID, attribute):
-    return gJobDB.getJobAttribute(jobID, attribute)
+
+    if gElasticJobDB:
+
+      result = gElasticJobDB.getJobParametersAndAttributes(jobID)
+      value = result['Value'][jobID][attribute]
+
+      return S_OK(value)
+
+    else:
+      return gJobDB.getJobAttribute(jobID, attribute)
 
 ##############################################################################
   types_getSiteSummary = []
