@@ -422,6 +422,10 @@ class CheckCECapabilities( CommandBase ):
       if ceParam in resourceDict:
         self.cfg.append( '-o  /Resources/Computing/CEDefaults/%s=%s' % ( ceParam, resourceDict[ ceParam ] ) )
 
+    # If MaxNumberOfProcessors not defined check for NumberOfProcessors and make it 1 by default
+    if self.pp.maxNumberOfProcessors == 0:
+      self.pp.maxNumberOfProcessors = int(resourceDict.get("MaxNumberOfProcessors", resourceDict.get("NumberOfProcessors", 1)))
+
     # Tags must be added to already defined tags if any
     if resourceDict.get( 'Tag' ):
       self.pp.tags += resourceDict['Tag']
