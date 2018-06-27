@@ -423,6 +423,62 @@ class JobDB( DB ):
     return result
 
 #############################################################################
+  def getJobStatus(self, jobID):
+    """ Get all Job Status values for a given jobID.
+        Return a dictionary with all Job Status values,
+        return an empty dictionary if matching job not found
+    """
+
+    ret = self._escapeString(jobID)
+    if not ret['OK']:
+      return ret
+    jobID = ret['Value']
+
+    jobStatusNames = ["Status", "MinorStatus", "ApplicationStatus"]
+
+    statusNameList = []
+
+    for x in jobStatusNames:
+
+      ret = self._escapeString(x)
+
+      if not ret['OK']:
+        return ret
+        
+      x = "`" + ret['Value'][1:-1] + "`"
+      statusNameList.append(x)
+
+    statusNames = ','.join(statusNameList)
+
+    self.log.debug('JobDB.getAllJobStatusValues: Getting Status values for job = %s.' % jobID)
+
+    cmd = 'SELECT %s FROM JobsStatus WHERE JobID=%s' % (statusNames, jobID)
+    res = self._query(cmd)
+
+    if not res['OK']:
+      return res
+
+    if not res['Value']:
+
+      cmd = 'SELECT %s FROM Jobs WHERE JobID=%s' % (statusNames, jobID)
+      res = self._query(cmd)
+    
+    if not res['OK']:
+      return res
+    
+    if not res['Value']:
+      return S_OK ({})
+
+    values = res['Value'][0]
+
+    statusValues = {}
+
+    for i in xrange(len(jobStatusNames)):
+      statusValues[jobStatusNames[i]] = str(values[i])
+
+    return S_OK(statusValues)
+
+#############################################################################
   def getJobParameter( self, jobID, parameter ):
     """ Get the given parameter of a job specified by its jobID
     """
@@ -693,31 +749,46 @@ class JobDB( DB ):
     return result
 
 #############################################################################
-  def setJobStatus( self, jobID, status = '', minor = '', application = '', appCounter = None ):
+  def setJobStatus( self, jobID, status = '', minor = '', application = ''):
     """ Set status of the job specified by its jobID
     """
 
-    # Do not update the LastUpdate time stamp if setting the Stalled status
-    update_flag = True
-    if status == "Stalled":
-      update_flag = False
-
     attrNames = []
     attrValues = []
-    if status:
-      attrNames.append( 'Status' )
-      attrValues.append( status )
-    if minor:
-      attrNames.append( 'MinorStatus' )
-      attrValues.append( minor )
-    if application:
-      attrNames.append( 'ApplicationStatus' )
-      attrValues.append(application[:255])
-    if appCounter:
-      attrNames.append( 'ApplicationNumStatus' )
-      attrValues.append( appCounter )
 
-    result = self.setJobAttributes( jobID, attrNames, attrValues, update = update_flag )
+    if status:
+      attrNames.append('Status')
+      attrValues.append(status)
+
+    if minor:
+      attrNames.append('MinorStatus')
+      attrValues.append(minor)
+
+    if application:
+      attrNames.append('ApplicationStatus')
+      attrValues.append(application[:255])
+    
+    ret = self._escapeString(jobID)
+    if not ret['OK']:
+      return ret
+    jobID = [ret['Value']]
+    
+    attr = []
+
+    for i in xrange(len(attrNames)):
+
+      ret = self._escapeString(attrValues[i])
+
+      if not ret['OK']:
+        return ret
+
+      value = ret['Value']
+      attr.append("%s=%s" % ( attrNames[i], value ))
+
+    cmd = 'UPDATE JobsStatus SET %s WHERE JobID in ( %s )' % (', '.join(attr), ', '.join(jobID))
+
+    result = self._transaction([cmd])
+    
     if not result['OK']:
       return result
 

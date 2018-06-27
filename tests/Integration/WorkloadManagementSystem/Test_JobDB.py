@@ -68,9 +68,9 @@ class JobSubmissionCase(JobDBTestCase):
     res = self.jobDB.insertNewJobIntoDB(jdl, 'owner', '/DN/OF/owner', 'ownerGroup', 'someSetup')
     self.assertTrue(res['OK'])
     jobID = res['JobID']
-    res = self.jobDB.getJobAttribute(jobID, 'Status')
+    res = self.jobDB.getJobStatus(jobID)
     self.assertTrue(res['OK'])
-    self.assertEqual(res['Value'], 'Received')
+    self.assertEqual(res['Value']['Status'], 'Received')
     res = self.jobDB.getJobAttribute(jobID, 'MinorStatus')
     self.assertTrue(res['OK'])
     self.assertEqual(res['Value'], 'Job accepted')
