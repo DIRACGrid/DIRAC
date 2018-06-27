@@ -418,23 +418,26 @@ class CheckCECapabilities( CommandBase ):
 
     self.cfg = []
     # Pick up all the relevant resource parameters that will be used in the job matching
-    for ceParam in [ "WholeNode", "NumberOfProcessors" ]:
-      if ceParam in resourceDict:
-        self.cfg.append( '-o  /Resources/Computing/CEDefaults/%s=%s' % ( ceParam, resourceDict[ ceParam ] ) )
+    if "WholeNode" in resourceDict:
+      self.pp.tags.append('WholeNode')
 
-    # If MaxNumberOfProcessors not defined check for NumberOfProcessors and make it 1 by default
+    # If MaxNumberOfProcessors not defined check for NumberOfProcessors
     if self.pp.maxNumberOfProcessors == 0:
-      self.pp.maxNumberOfProcessors = int(resourceDict.get("MaxNumberOfProcessors", resourceDict.get("NumberOfProcessors", 1)))
+      self.pp.maxNumberOfProcessors = int(resourceDict.get("MaxNumberOfProcessors", resourceDict.get("NumberOfProcessors", 0)))
 
     # Tags must be added to already defined tags if any
     if resourceDict.get( 'Tag' ):
       self.pp.tags += resourceDict['Tag']
+
+    self.pp.tags = list(set(self.pp.tags))
     if self.pp.tags:
       self.cfg.append( '-o "/Resources/Computing/CEDefaults/Tag=%s"' % ','.join( ( str( x ) for x in self.pp.tags ) ) )
 
     # RequiredTags are similar to tags.
     if resourceDict.get( 'RequiredTag' ):
       self.pp.reqtags += resourceDict['RequiredTag']
+
+    self.pp.reqtags = list(set(self.pp.reqtags))
     if self.pp.reqtags:
       self.cfg.append( '-o "/Resources/Computing/CEDefaults/RequiredTag=%s"' % ','.join( ( str( x ) for x in self.pp.reqtags ) ) )
 
@@ -483,10 +486,10 @@ class CheckWNCapabilities( CommandBase ):
     if retCode:
       self.log.error( "Could not get resource parameters [ERROR %d]" % retCode )
       self.exitWithError( retCode )
-    numberOfProcessors = 0
+    numberOfProcessors = 1
     try:
       result = result.split( ' ' )
-      numberOfProcessors = int( result[0] )
+      numberOfProcessorsOnWN = int( result[0] )
       maxRAM = int( result[1] )
     except ValueError:
       self.log.error( "Wrong Command output %s" % result )
@@ -495,12 +498,10 @@ class CheckWNCapabilities( CommandBase ):
     self.cfg = []
     # If NumberOfProcessors or MaxRAM are defined in the resource configuration, these
     # values are preferred
-    numberOfProcessors = self.pp.queueParameters.get(
-        'NumberOfProcessors', numberOfProcessors)
-    # if maxNumberOfProcessors is asked in pilotWrapper
-    if self.pp.maxNumberOfProcessors:
-      self.log.debug("Overriding with a requested number of processors")
-      numberOfProcessors = self.pp.maxNumberOfProcessors
+    if "WholeNode" in self.pp.tags:
+      numberOfProcessors = numberOfProcessorsOnWN
+    if self.pp.maxNumberOfProcessors > 0:
+      numberOfProcessors = min(numberOfProcessorsOnWN, self.pp.maxNumberOfProcessors)
 
     if not numberOfProcessors:
       self.log.warn("Could not retrieve number of processors, assuming 1")
@@ -572,9 +573,6 @@ class ConfigureSite( CommandBase ):
     for o, v in self.pp.optList:
       if o == '-o' or o == '--option':
         self.cfg.append( '-o "%s"' % v )
-      elif o == '-s' or o == '--section':
-        self.cfg.append( '-s "%s"' % v )
-
 
     if self.pp.pilotReference != 'Unknown':
       self.cfg.append( '-o /LocalSite/PilotReference=%s' % self.pp.pilotReference )
@@ -594,7 +592,7 @@ class ConfigureSite( CommandBase ):
       self.cfg.append( "-o /DIRAC/Security/CertFile=%s/hostcert.pem" % self.pp.certsLocation )
       self.cfg.append( "-o /DIRAC/Security/KeyFile=%s/hostkey.pem" % self.pp.certsLocation )
 
-    # these are needed as this is not the fist time we call dirac-configure
+    # these are needed as this is not the first time we call dirac-configure
     self.cfg.append( '-FDMH' )
     if self.pp.localConfigFile:
       self.cfg.append( '-O %s' % self.pp.localConfigFile )
