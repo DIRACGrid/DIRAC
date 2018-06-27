@@ -434,8 +434,8 @@ class PilotParams( object ):
                      ( 'F:', 'pilotCFGFile=', 'Specify pilot CFG file' ),
                      ( 'R:', 'reference=', 'Use this pilot reference' ),
                      ( 'x:', 'execute=', 'Execute instead of JobAgent' ),
-                     ( 't:', 'tag=', 'extra tags for resource description',
-                     ( '', 'requiredTag=', 'extra required tags for resource description')  )
+                     ( 't:', 'tag=', 'extra tags for resource description' ),
+                     ( '', 'requiredTag=', 'extra required tags for resource description')
                    )
 
     self.__initOptions()
