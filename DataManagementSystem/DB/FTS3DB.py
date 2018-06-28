@@ -318,7 +318,7 @@ class FTS3DB(object):
     """Update the file ftsStatus and error
         The update is only done if the file is not in a final state
 
-        TODO: maybe in should query first the status and filter the rows I want to update !
+        TODO: maybe it should query first the status and filter the rows I want to update !
 
        :param fileStatusDict : { fileID : { status , error } }
 
