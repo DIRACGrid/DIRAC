@@ -353,7 +353,7 @@ class TransformationDB(DB):
     try:
       transName = long(transName)
       cmd = "SELECT TransformationID from Transformations WHERE TransformationID=%d;" % transName
-    except Exception:
+    except ValueError:
       if not isinstance(transName, basestring):
         return S_ERROR("Transformation should be ID or name")
       cmd = "SELECT TransformationID from Transformations WHERE TransformationName='%s';" % transName
