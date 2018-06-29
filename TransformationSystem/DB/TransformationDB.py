@@ -496,9 +496,8 @@ class TransformationDB(DB):
 
   def addFilesToTransformation(self, transName, lfns, connection=False):
     """ Add a list of LFNs to the transformation directly """
-    gLogger.info(
-        "TransformationDB.addFilesToTransformation: Attempting to add %s files to transformations: %s" %
-        (len(lfns), transName))
+    gLogger.info("TransformationDB.addFilesToTransformation:"
+                 " Attempting to add %s files to transformations: %s" % (len(lfns), transName))
     if not lfns:
       return S_ERROR('Zero length LFN list')
     res = self._getConnectionTransID(connection, transName)
@@ -632,8 +631,8 @@ class TransformationDB(DB):
     res = self.getCounters('TransformationFiles', ['TransformationID', 'Status'], {'TransformationID': transID})
     if not res['OK']:
       return res
-    statusDict = dict([(attrDict['Status'], count)
-                       for attrDict, count in res['Value'] if '-' not in attrDict['Status']])
+    statusDict = dict((attrDict['Status'], count)
+                      for attrDict, count in res['Value'] if '-' not in attrDict['Status'])
     statusDict['Total'] = sum(statusDict.values())
     return S_OK(statusDict)
 
@@ -652,7 +651,7 @@ class TransformationDB(DB):
     res = self.getCounters('TransformationFiles', ['TransformationID', field], selection)
     if not res['OK']:
       return res
-    countDict = dict([(attrDict[field], count) for attrDict, count in res['Value']])
+    countDict = dict((attrDict[field], count) for attrDict, count in res['Value'])
     countDict['Total'] = sum(countDict.values())
     return S_OK(countDict)
 
