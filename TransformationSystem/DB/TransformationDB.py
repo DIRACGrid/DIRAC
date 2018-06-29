@@ -1174,8 +1174,7 @@ class TransformationDB(DB):
     res = self._query(req, connection)
     if not res['OK']:
       return res
-    # Always return the last fileID for a given LFN but LFN may not be unique
-    lfns = dict(sorted(res['Value']))
+    lfns = dict(res['Value'])
     # Reverse dictionary
     fids = dict((fileID, lfn) for lfn, fileID in lfns.iteritems())
     return S_OK((fids, lfns))
@@ -1187,8 +1186,7 @@ class TransformationDB(DB):
     res = self._query(req, connection)
     if not res['OK']:
       return res
-    # Always return the last fileID for a given LFN but LFN may not be unique
-    fids = dict(sorted(res['Value']))
+    fids = dict(res['Value'])
     # Reverse dictionary
     lfns = dict((fileID, lfn) for lfn, fileID in fids.iteritems())
     return S_OK((fids, lfns))
@@ -1199,20 +1197,15 @@ class TransformationDB(DB):
     res = self.__getFileIDsForLfns(lfns, connection=connection)
     if not res['OK']:
       return res
-    # Insert only files not found, but may be duplicate if 2 transformations are competing
-    # FIXME: the real solution is to make LFN unique in the DataFiles table but it must be cleaned up first
-    for lfn in set(lfns) - set(res['Value'][1]):
+    # Insert only files not found, and assume the LFN is unique in the table
+    lfnFileIDs = res['Value'][1]
+    for lfn in set(lfns) - set(lfnFileIDs):
       req = "INSERT INTO DataFiles (LFN,Status) VALUES ('%s','New');" % lfn
       res = self._update(req, connection)
-      if not res['OK']:
-        return res
-    # Get the fileIDs once more in case there was a race condition
-    #   so let's wait one second to be sure
-    time.sleep(1)
-    res = self.__getFileIDsForLfns(lfns, connection=connection)
-    if not res['OK']:
-      return res
-    return S_OK(res['Value'][1])
+      # If the LFN is duplicate we get an error and ignore it
+      if res['OK']:
+        lfnFileIDs[lfn] = res['lastRowId']
+    return S_OK(lfnFileIDs)
 
   def __setDataFileStatus(self, fileIDs, status, connection=False):
     """ Set the status of the supplied files
