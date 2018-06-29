@@ -244,7 +244,12 @@ class JobMonitoringHandler(RequestHandler):
   @staticmethod
   def export_getJobStatus(jobID):
 
-    return gJobDB.getJobAttribute(jobID, 'Status')
+    result = gJobDB.getJobStatus(jobID)
+
+    if not result['OK']:
+      return result
+
+    return S_OK(result['Value']['Status'])
 
 ##############################################################################
   types_getJobOwner = [int]

@@ -73,7 +73,7 @@ class JobStateUpdateHandler(RequestHandler):
     infoStr = None
     trials = 10
     for i in range(trials):
-      result = jobDB.getJobAttributes(jobID, ['Status'])
+      result = jobDB.getJobStatus(jobID)
       if not result['OK']:
         return result
       if not result['Value']:
@@ -130,7 +130,7 @@ class JobStateUpdateHandler(RequestHandler):
     if status == 'Running' and minorStatus == 'Application':
       result = jobDB.setStartExecTime(jobID)
 
-    result = jobDB.getJobAttributes(jobID, ['Status', 'MinorStatus'])
+    result = jobDB.getJobStatus(jobID)
     if not result['OK']:
       return result
     if not result['Value']:

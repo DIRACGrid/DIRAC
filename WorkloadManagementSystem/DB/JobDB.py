@@ -14,6 +14,7 @@
     getAllJobParameters()
     getInputData()
     getJobJDL()
+    getJobStatus()
 
     selectJobs()
     selectJobsWithStatus()
