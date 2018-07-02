@@ -754,41 +754,24 @@ class JobDB( DB ):
     """ Set status of the job specified by its jobID
     """
 
-    attrNames = []
-    attrValues = []
-
-    if status:
-      attrNames.append('Status')
-      attrValues.append(status)
-
-    if minor:
-      attrNames.append('MinorStatus')
-      attrValues.append(minor)
-
-    if application:
-      attrNames.append('ApplicationStatus')
-      attrValues.append(application[:255])
-    
-    ret = self._escapeString(jobID)
+    ret = self._escapeString(status)
     if not ret['OK']:
       return ret
-    jobID = [ret['Value']]
+    status = ret['Value']
+
+    ret = self._escapeString(minor)
+    if not ret['OK']:
+      return ret
+    minor = ret['Value']
+
+    ret = self._escapeString(application)
+    if not ret['OK']:
+      return ret
+    application = ret['Value']
     
-    attr = []
+    cmd = 'REPLACE JobsStatus (JobID,Status,MinorStatus,ApplicationStatus) VALUES (%d,%s,%s,%s)' % (int(jobID), status, minor, application)
 
-    for i in xrange(len(attrNames)):
-
-      ret = self._escapeString(attrValues[i])
-
-      if not ret['OK']:
-        return ret
-
-      value = ret['Value']
-      attr.append("%s=%s" % ( attrNames[i], value ))
-
-    cmd = 'UPDATE JobsStatus SET %s WHERE JobID in ( %s )' % (', '.join(attr), ', '.join(jobID))
-
-    result = self._transaction([cmd])
+    result = self._update(cmd)
     
     if not result['OK']:
       return result
@@ -1388,6 +1371,7 @@ class JobDB( DB ):
                   'OptimizerParameters',
                   'JobCommands',
                   'Jobs',
+                  'JobsStatus',
                   'JobJDLs']:
 
       cmd = 'DELETE FROM %s WHERE JobID in (%s)' % ( table, jobIDString )
