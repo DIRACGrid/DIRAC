@@ -260,6 +260,10 @@ class JobMonitoringHandler(RequestHandler):
     if gElasticJobDB:
 
       result = gElasticJobDB.getJobParametersAndAttributes(jobID)
+
+      if not result['OK']:
+        return result
+
       value = result['Value'][jobID]['Owner']
 
       return S_OK(value)
@@ -578,6 +582,10 @@ class JobMonitoringHandler(RequestHandler):
     if gElasticJobDB:
 
       result = gElasticJobDB.getJobParametersAndAttributes(jobID)
+
+      if not result['OK']:
+        return result
+      
       value = result['Value'][jobID][attribute]
 
       return S_OK(value)
