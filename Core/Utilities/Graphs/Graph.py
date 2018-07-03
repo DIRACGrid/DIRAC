@@ -264,7 +264,7 @@ class Graph(object):
     for i in range(nPlots):
       plot_type = plot_prefs[i]['plot_type']
       try:
-        exec "import %s" % plot_type
+        exec("import %s" % plot_type)
       except ImportError as x:
         print "Failed to import graph type %s: %s" % ( plot_type, str( x ) )
         return None
