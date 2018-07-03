@@ -264,7 +264,7 @@ class FileHelper(object):
     closeAfter = True
     if isinstance( uFile, basestring ):
       try:
-        self.oFile = open( uFile, sFileMode )
+        self.oFile = open(uFile, sFileMode)
       except IOError:
         return S_ERROR( "%s can't be opened" % uFile )
       iFD = self.oFile.fileno()
@@ -283,7 +283,7 @@ class FileHelper(object):
     closeAfter = True
     if isinstance( uFile, basestring ):
       try:
-        oFile = open( uFile, "wb" )
+        oFile = open(uFile, "wb")
       except IOError:
         return S_ERROR( "%s can't be opened" % uFile )
     elif isinstance( uFile, file ):
@@ -327,7 +327,7 @@ class FileHelper(object):
         return S_ERROR( "Can't create temporary file to pregenerate the bulk: %s" % str( e ) )
       self.__createTar( fileList, filePipe, compress )
       try:
-        fo = open( filePath, 'rb' )
+        fo = open(filePath, 'rb')
       except Exception as e:
         return S_ERROR( "Can't read pregenerated bulk: %s" % str( e ) )
       result = self.DataSourceToNetwork( fo )

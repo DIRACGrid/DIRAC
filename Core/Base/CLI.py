@@ -144,4 +144,4 @@ class CLI( cmd.Cmd ):
       except:
         print "There's no such %s command" % command
         return
-      self.printPair( command, obj.__doc__[1:] )
+      self.printPair(command, obj.__doc__[1:])

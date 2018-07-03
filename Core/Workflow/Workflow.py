@@ -106,7 +106,7 @@ class Workflow( AttributeCollection ):
     # we also have to check versions of the modules and instances
     for type_o in step.module_definitions:
       if type_o not in self.module_definitions:
-        self.module_definitions.append( step.module_definitions[type_o] )
+        self.module_definitions.append(step.module_definitions[type_o])
     self.step_definitions.append( step )
     del step.module_definitions # we need to clean up all unwanted definitions
     step.module_definitions = None
@@ -117,11 +117,11 @@ class Workflow( AttributeCollection ):
     self.module_definitions.append( module )
     return module
 
-  def createStepInstance( self, type_o, name ):
+  def createStepInstance(self, type_o, name):
     """ Creates step instance of type 'type' with the name 'name'
     """
     if type_o in self.step_definitions:
-      stepi = StepInstance( name, self.step_definitions[type_o] )
+      stepi = StepInstance(name, self.step_definitions[type_o])
       self.step_instances.append( stepi )
       return stepi
     else:
@@ -286,7 +286,7 @@ class Workflow( AttributeCollection ):
     if not self.workflowStatus['OK']:
       #return S_ERROR( error_message )
       return self.workflowStatus
-    return S_OK( step_result )
+    return S_OK(step_result)
 
 from DIRAC.Core.Workflow.WorkflowReader import WorkflowXMLHandler
 

@@ -275,7 +275,7 @@ if __name__ == "__main__":
   asking for the necessary details.
   """
 
-  inp = input( "Do you want to continue ? [default=yes] [yes|no]: ")
+  inp = input("Do you want to continue ? [default=yes] [yes|no]: ")
   inp = inp.strip()
   if inp and inp.lower().startswith( 'n' ):
     sys.exit()
@@ -289,7 +289,7 @@ if __name__ == "__main__":
   overWriteFlag = False
   doneFlag = False
   while not doneFlag:
-    inp = input( "\nChoose the DIRAC client installation directory\n" \
+    inp = input("\nChoose the DIRAC client installation directory\n"
                      "[default=%s]: " % clientDir )
 
     inp = inp.strip()
@@ -300,11 +300,11 @@ if __name__ == "__main__":
         os.makedirs( clientDir )
 
       if os.path.exists( "%s/etc/dirac.cfg" % clientDir ):
-        inp = input( "\nThe requested directory already contains the DIRAC client installation.\n" \
+        inp = input("\nThe requested directory already contains the DIRAC client installation.\n"
                          "Do you want to overwrite it ? [default=yes] yes|no ")
         inp = inp.strip()
         if inp.lower().startswith( 'n' ):
-          inp = input( "\nDo you want to choose another directory ? [default=no] yes|no " )
+          inp = input("\nDo you want to choose another directory ? [default=no] yes|no ")
           inp = inp.strip()
           if inp.lower().startswith( 'y' ):
             continue
@@ -320,7 +320,7 @@ if __name__ == "__main__":
 
   doneFlag = False
   while not doneFlag:
-    inp = input( "\nChoose which pre-configured service your client will be connected to\n" \
+    inp = input("\nChoose which pre-configured service your client will be connected to\n"
                      "or choose to make a custom installation [default=custom, help=?] " )
 
     installConfig = "custom"
@@ -333,26 +333,26 @@ if __name__ == "__main__":
       installConfig = inp
       installDefaults = "-V %s" % installConfig
     else:
-      inp = input( '\nEnter the project name [default=DIRAC]: ' )
+      inp = input('\nEnter the project name [default=DIRAC]: ')
       inp = inp.strip()
       if inp:
         project = inp.strip()
       else:
         project = 'DIRAC'
 
-      inp = input( '\nEnter the project version (e.g. v6r13p8): ' )
+      inp = input('\nEnter the project version (e.g. v6r13p8): ')
       inp = inp.strip()
       version = inp
       if not version:
         print "please, provide a valid version"
         continue
 
-      inp = input( '\nEnter a comma separated list of extensions [default=no extensions] : ' )
+      inp = input('\nEnter a comma separated list of extensions [default=no extensions] : ')
       inp = inp.strip()
       extensions = [ e.strip() for e in inp.split( ',' ) ]
       extensions = ','.join( extensions )
 
-      inp = input( '\nEnter the lcg bindings version (e.g. 2015-06-26) [default=no bindings]: ' )
+      inp = input('\nEnter the lcg bindings version (e.g. 2015-06-26) [default=no bindings]: ')
       inp = inp.strip()
       lcgVersion = inp
 
@@ -406,11 +406,11 @@ if __name__ == "__main__":
   Do you want to install the certificate now ? [default=yes] [yes|no]:
   """
 
-    inp = input( input_message )
+    inp = input(input_message)
     if not inp or inp.lower().startswith( "y" ):
       doneFlag = False
       while not doneFlag:
-        inp = input( "\nType the name of the certificate file in the .p12 format: " )
+        inp = input("\nType the name of the certificate file in the .p12 format: ")
         p12File = inp.strip()
         p12File = os.path.expanduser( p12File )
         p12File = os.path.expandvars( p12File )
@@ -455,25 +455,25 @@ if __name__ == "__main__":
     setup = ''
     extensions = []
 
-    inp = input( '\nEnter the Configuration Server: ' )
+    inp = input('\nEnter the Configuration Server: ')
     csURL = inp.strip()
     if not csURL.endswith( "Configuration/Server" ):
       csURL = "dips://%s:9135/Configuration/Server" % csURL
 
-    inp = input( '\nEnter the DIRAC Setup: ' )
+    inp = input('\nEnter the DIRAC Setup: ')
     setup = inp.strip()
 
-    inp = input( "\nSkip CA checks [default=yes] yes|no : " )
+    inp = input("\nSkip CA checks [default=yes] yes|no : ")
     inp = inp.strip()
     if inp and inp.lower().startswith( 'n' ):
       configOptions += "-H "
 
-    inp = input( "\nSkip CA download [default=yes] yes|no : " )
+    inp = input("\nSkip CA download [default=yes] yes|no : ")
     inp = inp.strip()
     if inp and inp.lower().startswith( 'n' ):
       configOptions += "-D "
 
-    inp = input( "\nSkip VOMS download [default=yes] yes|no : " )
+    inp = input("\nSkip VOMS download [default=yes] yes|no : ")
     inp = inp.strip()
     if inp and inp.lower().startswith( 'n' ):
       configOptions += "-M "
@@ -497,7 +497,7 @@ if __name__ == "__main__":
 
   print "\nThe DIRAC client is installed and configured. In order to start working with it\n" \
         "you have to create a working proxy."
-  inp = input( "Choose your DIRAC group [default=default DIRAC group] : " )
+  inp = input("Choose your DIRAC group [default=default DIRAC group] : ")
   inp = inp.strip()
   groupInput = ''
   if inp:

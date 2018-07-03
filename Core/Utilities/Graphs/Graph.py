@@ -228,7 +228,7 @@ class Graph(object):
       if plot_title != "NoTitle":
         begin = ''
         end = ''
-        if 'starttime' in plot_prefs[i] and 'endtime'in  plot_prefs[i]:
+        if 'starttime' in plot_prefs[i] and 'endtime'in plot_prefs[i]:
           begin = to_timestamp(plot_prefs[i]['starttime'])
           end = to_timestamp(plot_prefs[i]['endtime'])
         elif gdata.key_type == "time" :

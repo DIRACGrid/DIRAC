@@ -30,7 +30,7 @@ def promptUser( message, choices = [], default = 'n', logger = None ):
       logger.notice( '%s %s :' % ( message, default ) )
     else:
       logger.notice( '%s :' % message )
-    response = input( '' )
+    response = input('')
     if ( not response ) and ( default ):
       return S_OK( default )
     elif ( not response ) and ( not default ):

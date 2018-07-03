@@ -180,7 +180,7 @@ class ClassAd:
       tempString = tempString[1:-1]
       listMode = True
 
-    tempString = tempString.replace( " ", "" ).replace( '\n','' )
+    tempString = tempString.replace(" ", "").replace('\n', '')
     if tempString.find('{') < 0:
       if not listMode:
         tempString = tempString.replace( "\"", "" )
@@ -197,7 +197,7 @@ class ClassAd:
       elif tempString.find( '"' ) == 0 :
         end = tempString[1:].find( '"' )
         resultList.append( tempString[1:end+1] )
-        tempString = tempString[end+2:]
+        tempString = tempString[end + 2:]
         if tempString.startswith(','):
           tempString = tempString[1:]
       else:
