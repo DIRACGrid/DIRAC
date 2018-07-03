@@ -261,7 +261,7 @@ class MySQL( object ):
         time.sleep( sleepTime )
       try:
         conn, lastName, thid = self.__innerGet()
-      except MySQLdb.MySQLError, excp:
+      except MySQLdb.MySQLError as excp:
         if retriesLeft >= 0:
           return self.__getWithRetry( dbName, totalRetries, retriesLeft - 1 )
         return S_ERROR( DErrno.EMYSQL, "Could not connect: %s" % excp )
@@ -278,7 +278,7 @@ class MySQL( object ):
       if lastName != dbName:
         try:
           conn.select_db( dbName )
-        except MySQLdb.MySQLError, excp:
+        except MySQLdb.MySQLError as excp:
           if retriesLeft >= 0:
             return self.__getWithRetry( dbName, totalRetries, retriesLeft - 1 )
           return S_ERROR( DErrno.EMYSQL, "Could not select db %s: %s" % ( dbName, excp ) )
@@ -352,7 +352,7 @@ class MySQL( object ):
       conn = result[ 'Value' ]
       try:
         return S_OK( self.__execute( conn, "START TRANSACTION WITH CONSISTENT SNAPSHOT" ) )
-      except MySQLdb.MySQLError, excp:
+      except MySQLdb.MySQLError as excp:
         return S_ERROR( DErrno.EMYSQL, "Could not begin transaction: %s" % excp )
 
     def transactionCommit( self, dbName ):
@@ -363,7 +363,7 @@ class MySQL( object ):
       try:
         result = self.__execute( conn, "COMMIT" )
         return S_OK( result )
-      except MySQLdb.MySQLError, excp:
+      except MySQLdb.MySQLError as excp:
         return S_ERROR( DErrno.EMYSQL, "Could not commit transaction: %s" % excp )
 
     def transactionRollback( self, dbName ):
@@ -374,7 +374,7 @@ class MySQL( object ):
       try:
         result = self.__execute( conn, "ROLLBACK" )
         return S_OK( result )
-      except MySQLdb.MySQLError, excp:
+      except MySQLdb.MySQLError as excp:
         return S_ERROR( DErrno.EMYSQL, "Could not rollback transaction: %s" % excp )
 
   __connectionPools = {}
@@ -433,7 +433,7 @@ class MySQL( object ):
 
     try:
       raise x
-    except MySQLdb.Error, e:
+    except MySQLdb.Error as e:
       self.log.debug( '%s: %s' % ( methodName, err ),
                       '%d: %s' % ( e.args[0], e.args[1] ) )
       return S_ERROR( DErrno.EMYSQL, '%s: ( %d: %s )' % ( err, e.args[0], e.args[1] ) )

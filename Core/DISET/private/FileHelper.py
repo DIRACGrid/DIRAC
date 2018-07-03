@@ -392,9 +392,9 @@ class FileHelper(object):
           entries.append( tarInfo.name )
       filePipe.close()
       return S_OK( entries )
-    except tarfile.ReadError, v:
+    except tarfile.ReadError as v:
       return S_ERROR( "Error reading bulk: %s" % str( v ) )
-    except tarfile.CompressionError, v:
+    except tarfile.CompressionError as v:
       return S_ERROR( "Error in bulk compression setting: %s" % str( v ) )
-    except Exception, v:
+    except Exception as v:
       return S_ERROR( "Error in listing bulk: %s" % str( v ) )

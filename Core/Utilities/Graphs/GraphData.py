@@ -490,7 +490,7 @@ class PlotData:
       return abs( item[0] )
     try:
       return abs( item )
-    except TypeError, te:
+    except TypeError as te:
       return - 1
 
   def parseKey( self, key ):

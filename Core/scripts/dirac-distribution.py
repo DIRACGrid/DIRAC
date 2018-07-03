@@ -326,7 +326,7 @@ class DistributionMaker:
                                       "release-%s-%s.cfg" % ( self.cliParams.projectName, relVersion ) ), "w" )
         relFile.write( projectCFGData )
         relFile.close()
-      except Exception, exc:
+      except Exception as exc:
         gLogger.fatal( "Could not write the release info: %s" % str( exc ) )
         return False
       try:
@@ -334,7 +334,7 @@ class DistributionMaker:
                                       "release-%s-%s.md5" % ( self.cliParams.projectName, relVersion ) ), "w" )
         relFile.write( hashlib.md5( projectCFGData ).hexdigest() )
         relFile.close()
-      except Exception, exc:
+      except Exception as exc:
         gLogger.fatal( "Could not write the release info: %s" % str( exc ) )
         return False
       #Check deps

@@ -48,7 +48,7 @@ class _MagicMethod:
         returnValue = apply( self.cMethod , args )
       except GSI.SSL.ZeroReturnError:
         returnValue = 0
-      except Exception, v:
+      except Exception as v:
         if v[0] == -1:
           return 0
         else:
