@@ -45,7 +45,7 @@ class _MagicMethod:
     self.lock()
     try:
       try:
-        returnValue = apply( self.cMethod , args )
+        returnValue = self.cMethod(*args)
       except GSI.SSL.ZeroReturnError:
         returnValue = 0
       except Exception as v:
