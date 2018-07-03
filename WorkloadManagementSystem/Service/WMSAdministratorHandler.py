@@ -325,7 +325,7 @@ class WMSAdministratorHandler(RequestHandler):
     pilotReference = ''
     # Get the pilot grid reference first from the job parameters
     if elasticJobDB:
-      result = elasticJobDB.getJobParameter(int(jobID), 'Pilot_Reference')
+      result = elasticJobDB.getJobParameters(int(jobID), 'Pilot_Reference')
     else:
       result = jobDB.getJobParameter(int(jobID), 'Pilot_Reference')
 

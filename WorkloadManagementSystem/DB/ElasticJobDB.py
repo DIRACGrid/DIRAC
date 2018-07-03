@@ -141,12 +141,17 @@ class ElasticJobDB(DB):
     attributesDict = {"jobGroup": "00000000", "owner": 'Unknown', "proxy": None, "subTime": None, "runTime": None}
     attributesDict.update(keywords)
 
+    paramsStr = "ctx._source.Value = params.value; ctx._source.Name = params.name; "
+    jobGroupStr = "ctx._source.JobGroup = params.jobGroup; "
+    attrStr = "ctx._source.Owner = params.owner; ctx._source.Proxy = params.proxy; "
+    timeStr = "ctx._source.SubmissionTime = params.subTime; ctx._source.RunningTime = params.runTime"
+
     query = {
         "query": {
             "term": {
                 "JobID": jobID}},
         "script": {
-            "inline": "ctx._source.Value = params.value; ctx._source.Name = params.name; ctx._source.JobGroup = params.jobGroup; ctx._source.Owner = params.owner; ctx._source.Proxy = params.proxy; ctx._source.SubmissionTime = params.subTime; ctx._source.RunningTime = params.runTime",
+            "inline": paramsStr + jobGroupStr + attrStr + timeStr,
             "params": {
                 "value": value,
                 "name": key,

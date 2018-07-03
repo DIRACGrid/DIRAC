@@ -150,20 +150,17 @@ class JobDB(DB):
     except BaseException as x:
       return S_ERROR('JobDB.getAttributesForJobList: Failed\n%s' % repr(x))
 
-
 #############################################################################
-
-  def getDistinctJobAttributes(self, attribute, condDict=None, older=None,
-                               newer=None, timeStamp='LastUpdateTime'):
+  def getDistinctJobAttributes(self, attribute, condDict=None, older=None, newer=None, timeStamp='LastUpdateTime'):
     """ Get distinct values of the job attribute under specified conditions
     """
+
     return self.getDistinctAttributeValues('Jobs', attribute, condDict=condDict,
                                            older=older, newer=newer, timeStamp=timeStamp)
 
-
 #############################################################################
-
   def traceJobParameter(self, site, localID, parameter, date=None, until=None):
+
     ret = self.traceJobParameters(site, localID, [parameter], None, date, until)
     if not ret['OK']:
       return ret
@@ -1010,7 +1007,6 @@ class JobDB(DB):
 
     return S_OK(jobID)
 
-
 #############################################################################
 
   def getJobJDL(self, jobID, original=False, status=''):
@@ -1325,7 +1321,6 @@ class JobDB(DB):
 
     return S_OK()
 
-
 #############################################################################
 
   def removeJobFromDB(self, jobIDs):
@@ -1492,18 +1487,6 @@ class JobDB(DB):
     jobAttrNames.append('Site')
     jobAttrValues.append(site)
 
-    jobAttrNames.append('Status')
-    jobAttrValues.append('Received')
-
-    jobAttrNames.append('MinorStatus')
-    jobAttrValues.append('Job Rescheduled')
-
-    jobAttrNames.append('ApplicationStatus')
-    jobAttrValues.append('Unknown')
-
-    jobAttrNames.append('ApplicationNumStatus')
-    jobAttrValues.append(0)
-
     jobAttrNames.append('LastUpdateTime')
     jobAttrValues.append(Time.toString())
 
@@ -1528,6 +1511,10 @@ class JobDB(DB):
       return result
 
     result = self.setJobAttributes(jobID, jobAttrNames, jobAttrValues)
+    if not result['OK']:
+      return result
+
+    result = self.setJobStatus(jobID, status='Received', minor='Job Rescheduled', application='Unknown')
     if not result['OK']:
       return result
 

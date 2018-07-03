@@ -585,7 +585,7 @@ class JobMonitoringHandler(RequestHandler):
 
       if not result['OK']:
         return result
-      
+
       value = result['Value'][jobID][attribute]
 
       return S_OK(value)
