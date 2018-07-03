@@ -891,19 +891,19 @@ class MySQL( object ):
         for field in thisTable['Fields'].keys():
           cmdList.append( '`%s` %s' % ( field, thisTable['Fields'][field] ) )
 
-        if thisTable.has_key( 'PrimaryKey' ):
+        if 'PrimaryKey' in thisTable:
           if isinstance( thisTable['PrimaryKey'], basestring ):
             cmdList.append( 'PRIMARY KEY ( `%s` )' % thisTable['PrimaryKey'] )
           else:
             cmdList.append( 'PRIMARY KEY ( %s )' % ", ".join( [ "`%s`" % str( f ) for f in thisTable['PrimaryKey'] ] ) )
 
-        if thisTable.has_key( 'Indexes' ):
+        if 'Indexes' in thisTable:
           indexDict = thisTable['Indexes']
           for index in indexDict:
             indexedFields = '`, `'.join( indexDict[index] )
             cmdList.append( 'INDEX `%s` ( `%s` )' % ( index, indexedFields ) )
 
-        if thisTable.has_key( 'UniqueIndexes' ):
+        if 'UniqueIndexes' in thisTable:
           indexDict = thisTable['UniqueIndexes']
           for index in indexDict:
             indexedFields = '`, `'.join( indexDict[index] )
@@ -921,12 +921,12 @@ class MySQL( object ):
             cmdList.append( 'FOREIGN KEY ( `%s` ) REFERENCES `%s` ( `%s` )'
                             ' ON DELETE RESTRICT' % ( key, forTable, forKey ) )
 
-        if thisTable.has_key( 'Engine' ):
+        if 'Engine' in thisTable:
           engine = thisTable['Engine']
         else:
           engine = 'InnoDB'
 
-        if thisTable.has_key( 'Charset' ):
+        if 'Charset' in thisTable:
           charset = thisTable['Charset']
         else:
           charset = 'latin1'

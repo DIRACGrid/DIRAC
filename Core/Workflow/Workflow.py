@@ -104,15 +104,9 @@ class Workflow( AttributeCollection ):
     # we have to join all Modules definition from all added steps in the single dictionary
     # and we have to share this dictionary between all included steps
     # we also have to check versions of the modules and instances
-    for type in step.module_definitions.keys():
-      #if self.module_definitions.has_key(type):
-        # we have the same ModuleDefinition in 2 places
-        # we need to find way to synchronise it
-        #print "Workflow:addStep - we need to write ModuleDefinitions synchronisation code"
-      #else:
-        # new module - just append it
-      if not self.module_definitions.has_key( type ):
-        self.module_definitions.append( step.module_definitions[type] )
+    for type_o in step.module_definitions:
+      if type_o not in self.module_definitions:
+        self.module_definitions.append( step.module_definitions[type_o] )
     self.step_definitions.append( step )
     del step.module_definitions # we need to clean up all unwanted definitions
     step.module_definitions = None
@@ -123,11 +117,11 @@ class Workflow( AttributeCollection ):
     self.module_definitions.append( module )
     return module
 
-  def createStepInstance( self, type, name ):
+  def createStepInstance( self, type_o, name ):
     """ Creates step instance of type 'type' with the name 'name'
     """
-    if self.step_definitions.has_key( type ):
-      stepi = StepInstance( name, self.step_definitions[type] )
+    if type_o in self.step_definitions:
+      stepi = StepInstance( name, self.step_definitions[type_o] )
       self.step_instances.append( stepi )
       return stepi
     else:
@@ -267,7 +261,7 @@ class Workflow( AttributeCollection ):
           error_message = result['Message']
         self.workflowStatus = S_ERROR( result['Message'] )
         self.workflowStatus['Errno'] = result['Errno']
-      if result.has_key( 'Value' ):
+      if 'Value' in result:
         step_result = result['Value']
 
     # now we need to copy output values to the STEP!!! parameters
@@ -292,8 +286,7 @@ class Workflow( AttributeCollection ):
     if not self.workflowStatus['OK']:
       #return S_ERROR( error_message )
       return self.workflowStatus
-    else:
-      return S_OK( step_result )
+    return S_OK( step_result )
 
 from DIRAC.Core.Workflow.WorkflowReader import WorkflowXMLHandler
 

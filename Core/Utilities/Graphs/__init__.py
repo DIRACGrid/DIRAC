@@ -111,7 +111,7 @@ graph_thumbnail_prefs = {
 def graph( data, fileName, *args, **kw ):
 
   prefs = evalPrefs( *args, **kw )
-  if prefs.has_key( 'graph_size' ):
+  if 'graph_size' in prefs:
     graph_size = prefs['graph_size']
   else:
     graph_size = "normal"
