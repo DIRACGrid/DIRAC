@@ -13,10 +13,14 @@ import unittest
 
 from DIRAC import gLogger
 
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.Core.Security.Properties import FULL_DELEGATION, LIMITED_DELEGATION
+
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
+
 
 from DIRAC.RequestManagementSystem.DB.RequestDB import RequestDB
 
@@ -50,10 +54,11 @@ class ReqClientTestCase(unittest.TestCase):
     self.operation.addFile(self.file)
     self.operation.addFile(self.file2)
 
+    proxyInfo = getProxyInfo()['Value']
     self.request = Request()
     self.request.RequestName = "RequestManagerHandlerTests"
-    self.request.OwnerDN = "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=cibak/CN=605919/CN=Krzysztof Ciba"
-    self.request.OwnerGroup = "dirac_user"
+    self.request.OwnerDN = proxyInfo['identity']
+    self.request.OwnerGroup = proxyInfo['group']
     self.request.JobID = 123
     self.request.addOperation(self.operation)
 
@@ -88,7 +93,7 @@ class ReqClientMix(ReqClientTestCase):
 
   def test01fullChain(self):
     put = self.requestClient.putRequest(self.request)
-    self.assertTrue(put['OK'])
+    self.assertTrue(put['OK'], put)
 
     self.assertEqual(type(put['Value']), long)
     reqID = put['Value']
@@ -128,11 +133,12 @@ class ReqClientMix(ReqClientTestCase):
     self.assertEqual(res['OK'], True, res['Message'] if 'Message' in res else 'OK')
     self.assertTrue(isinstance(res['Value']['Successful'][123], Request))
 
+    proxyInfo = getProxyInfo()['Value']
     # Adding new request
     request2 = Request()
     request2.RequestName = "RequestManagerHandlerTests-2"
-    request2.OwnerDN = "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=cibak/CN=605919/CN=Krzysztof Ciba"
-    request2.OwnerGroup = "dirac_user"
+    self.request.OwnerDN = proxyInfo['identity']
+    self.request.OwnerGroup = proxyInfo['group']
     request2.JobID = 456
     request2.addOperation(self.operation)
 
@@ -206,7 +212,8 @@ class ReqClientMix(ReqClientTestCase):
       self.assertEqual(put["OK"], True)
       reqIDs.append(put['Value'])
 
-    loops = self.stressRequests // self.bulkRequest + (1 if (self.stressRequests % self.bulkRequest) else 0)
+    loops = self.stressRequests // self.bulkRequest + \
+        (1 if (self.stressRequests % self.bulkRequest) else 0)
     totalSuccessful = 0
 
     time.sleep(1)
@@ -224,9 +231,12 @@ class ReqClientMix(ReqClientTestCase):
 
     print "getRequests duration %s " % (endTime - startTime)
 
-    self.assertEqual(totalSuccessful,
-                     self.stressRequests,
-                     "Did not retrieve all the requests: %s instead of %s" % (totalSuccessful, self.stressRequests))
+    self.assertEqual(
+        totalSuccessful,
+        self.stressRequests,
+        "Did not retrieve all the requests: %s instead of %s" %
+        (totalSuccessful,
+         self.stressRequests))
 
     for reqID in reqIDs:
       delete = db.deleteRequest(reqID)
@@ -239,7 +249,8 @@ class ReqClientMix(ReqClientTestCase):
 
     req = Request({"RequestName": "FTSTest"})
     op = Operation({"Type": "ReplicateAndRegister", "TargetSE": "CERN-USER"})
-    op += File({"LFN": "/a/b/c", "Status": "Scheduled", "Checksum": "123456", "ChecksumType": "ADLER32"})
+    op += File({"LFN": "/a/b/c", "Status": "Scheduled",
+                "Checksum": "123456", "ChecksumType": "ADLER32"})
     req += op
 
     put = db.putRequest(req)
@@ -268,13 +279,16 @@ class ReqClientMix(ReqClientTestCase):
     r.RequestName = "dirty"
 
     op1 = Operation({"Type": "ReplicateAndRegister", "TargetSE": "CERN-USER"})
-    op1 += File({"LFN": "/a/b/c/1", "Status": "Scheduled", "Checksum": "123456", "ChecksumType": "ADLER32"})
+    op1 += File({"LFN": "/a/b/c/1", "Status": "Scheduled",
+                 "Checksum": "123456", "ChecksumType": "ADLER32"})
 
     op2 = Operation({"Type": "ReplicateAndRegister", "TargetSE": "CERN-USER"})
-    op2 += File({"LFN": "/a/b/c/2", "Status": "Scheduled", "Checksum": "123456", "ChecksumType": "ADLER32"})
+    op2 += File({"LFN": "/a/b/c/2", "Status": "Scheduled",
+                 "Checksum": "123456", "ChecksumType": "ADLER32"})
 
     op3 = Operation({"Type": "ReplicateAndRegister", "TargetSE": "CERN-USER"})
-    op3 += File({"LFN": "/a/b/c/3", "Status": "Scheduled", "Checksum": "123456", "ChecksumType": "ADLER32"})
+    op3 += File({"LFN": "/a/b/c/3", "Status": "Scheduled",
+                 "Checksum": "123456", "ChecksumType": "ADLER32"})
 
     r += op1
     r += op2
@@ -302,7 +316,8 @@ class ReqClientMix(ReqClientTestCase):
     self.assertEqual(len(r), 2, "2. len wrong")
 
     op4 = Operation({"Type": "ReplicateAndRegister", "TargetSE": "CERN-USER"})
-    op4 += File({"LFN": "/a/b/c/4", "Status": "Scheduled", "Checksum": "123456", "ChecksumType": "ADLER32"})
+    op4 += File({"LFN": "/a/b/c/4", "Status": "Scheduled",
+                 "Checksum": "123456", "ChecksumType": "ADLER32"})
 
     r[0] = op4
     put = db.putRequest(r)
@@ -318,6 +333,27 @@ class ReqClientMix(ReqClientTestCase):
     delete = db.deleteRequest(reqID)
     self.assertEqual(delete["OK"], True, delete['Message'] if 'Message' in delete else 'OK')
 
+  def test07Authorization(self):
+    """ Test whether request sets on behalf of others are rejected, unless done with Delegation properties
+        This test is kind of stupid though, since we do the same thing than the server... not a real test !
+    """
+
+    request = Request({"RequestName": "unauthorized"})
+    request.OwnerDN = 'NotMe'
+    request.OwnerDN = 'AnotherGroup'
+    op = Operation({"Type": "RemoveReplica", "TargetSE": "CERN-USER"})
+    op += File({"LFN": "/lhcb/user/c/cibak/foo"})
+    request += op
+    res = self.requestClient.putRequest(request)
+    credProperties = getProxyInfo()['Value']['groupProperties']
+
+    # If the proxy with which we test has delegation, it should work
+    if FULL_DELEGATION in credProperties or LIMITED_DELEGATION in credProperties:
+      self.assertTrue(res['OK'], res)
+      self.requestClient.deleteRequest(res['Value'])
+    # otherwise no
+    else:
+      self.assertFalse(res['OK'], res)
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(ReqClientTestCase)

@@ -288,9 +288,9 @@ class PublisherHandler(RequestHandler):
                                                           'Severity']})
 
   types_getCachedDowntimes = [(basestring, NoneType, list), (basestring, NoneType, list), (basestring, NoneType, list),
-                              (basestring, NoneType, list), datetime, datetime]
+                              (basestring, NoneType, list)]
 
-  def export_getCachedDowntimes(self, element, elementType, name, severity, startDate, endDate):
+  def export_getCachedDowntimes(self, element, elementType, name, severity):
 
     if elementType == 'StorageElement':
       name = CSHelpers.getSEHost(name)
@@ -298,27 +298,15 @@ class PublisherHandler(RequestHandler):
         return name
       name = name['Value']
 
-    if startDate > endDate:
-      return S_ERROR('startDate > endDate')
+    columns = ['Element', 'Name', 'StartDate', 'EndDate', 'Severity', 'Description', 'Link']
 
     res = rmClient.selectDowntimeCache(element=element, name=name, severity=severity,
-                                       meta={'columns': ['Element', 'Name', 'StartDate',
-                                                         'EndDate', 'Severity',
-                                                         'Description', 'Link']})
+                                       meta={'columns': columns})
     if not res['OK']:
       return res
 
-    downtimes = []
-
-    for dt in res['Value']:
-
-      dtDict = dict(zip(res['Columns'], dt))
-
-      if dtDict['StartDate'] < endDate and dtDict['EndDate'] > startDate:
-        downtimes.append(dt)
-
-    result = S_OK(downtimes)
-    result['Columns'] = res['Columns']
+    result = S_OK(res['Value'])
+    result['Columns'] = columns
 
     return result
 

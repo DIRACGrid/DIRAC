@@ -141,9 +141,12 @@ class VOMS2CSAgent(AgentModule):
           else:
             mailMsg += 'Failed to produce a detailed user report'
             mailMsg += result['Message']
-        NotificationClient().sendMail(self.am_getOption('MailTo', voAdminMail),
-                                      "VOMS2CSAgent run log", mailMsg,
-                                      self.am_getOption('MailFrom', self.am_getOption('mailFrom', "DIRAC system")))
+        if self.dryRun:
+          self.log.info("Dry Run: mail won't be sent")
+        else:
+          NotificationClient().sendMail(self.am_getOption('MailTo', voAdminMail),
+                                        "VOMS2CSAgent run log", mailMsg,
+                                        self.am_getOption('MailFrom', self.am_getOption('mailFrom', "DIRAC system")))
 
     return S_OK()
 
