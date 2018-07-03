@@ -1,3 +1,50 @@
+[v6r21-pre1]
+
+*WorkloadManagementSystem
+
+NEW: Add JobElasticDB.py with getJobParameters and setJobParameter methods to work with ElasticSearch (ES) backend.
+NEW: Add gJobElasticDB variable and indicates the activation of ES backend.
+CHANGE: Modify export_getJobParameter(s) to report values from ES if available.
+
+*Core
+
+NEW: Add update method to the ElasticSearchDB.py to update or if not available create the values sent from the setJobParameter function. Uses update_by_query and index ES APIs.
+CHANGE: generateFullIndexName() method made static under the ElasticSearchDB class.
+
+*tests
+
+NEW: Add ChangeESFlag.py script to modify useES flag in dirac.cfg. To be integrated with Jenkins code.
+
+[v6r20p4]
+
+*DMS
+FIX: (#3727) use proxy location in the SECache
+
+*RMS
+FIX: (#3727) use downloadVOMSProxyToFile in RequestTask
+
+*TS
+FIX: (#3720) TaskManager - pass output data arguments as lists rather 
+     than strings to the parametric job description
+
+Docs:
+FIX: (#3725) AdministratorGuide TransformationSystem spell check and added a few 
+     phrases, notably for bulk submission working in v6r20p3
+
+[v6r20p3]
+
+*Framework
+FIX: SystemAdministrator - Get the correct cpu usage data for each component
+
+*TS
+NEW: new command dirac-transformation-replication to create replication transformation to copy files from some SEs to other SEs, resolves #3700
+
+*RMS
+FIX: fix integration tests to work with privileged and non privileged proxies
+
+*RSS
+FIX: Fix for downtime publisher: wrong column names. Avoiding dates (not reflected in web app)
+
 [v6r20p2]
 
 *Core
@@ -20,7 +67,7 @@ CHANGE: (#3699) for pilotCS2JSONSynchronizer: if pilotFileServer is not set, sti
 
 *WorkloadManagementSystem
 
-CHANGE: (#3693) introduce options for sites to choose usage of sinularity
+CHANGE: (#3693) introduce options for sites to choose usage of Singularity
 
 *TransformationSystem
 
@@ -146,6 +193,30 @@ FIX: Update of the FTS3 docs
 *Tests
 FIX: add MonitoringDB to the configuration
 FIX: Installing elasticSeach locally in Jenkins, with ComponentInstaller support.
+
+[v6r19p23]
+
+*TS
+FIX: (#3734) catch correct exception for ast.literal_eval
+
+[v6r19p22]
+
+*Core
+CHANGE: Backport from v6r20 - fixes the infamous "invalid action proposal" by speeding up 
+        the handshake and not looking up the user/group in the baseStub
+
+RMS:
+CHANGE: Backport from v6r20 - FowardDISET uses the owner/group of Request to execute the stub
+CHANGE: Backport from v6r20 - owner/group of the Requests are evaluated/authorized on the server side
+CHANGE: Backport from v6r20 - LimitedDelegation or FullDelegation are required to set requests on behalf 
+        of others -> pilot user and hosts should must them (which should already be the case)
+
+*API
+NEW: Dirac.py - running jobs locally now also works for parametric jobs. Only the first sequence will be run
+FIX: Dirac.py - running jobs locally will now properly work with LFNs in the inputSanbdox
+
+*DMS
+FIX: DMSHelpers - in getLocalSiteForSE() return None as LocalSite if an SE is at no site
 
 [v6r19p21]
 
