@@ -58,7 +58,7 @@ class X509Chain(object):
     Return : S_OK / S_ERROR
     """
     try:
-      with file(chainLocation) as fd:
+      with open(chainLocation) as fd:
         pemData = fd.read()
     except Exception as e:
       return S_ERROR(DErrno.EOF, "%s: %s" % (chainLocation, repr(e).replace(',)', ')')))
@@ -96,7 +96,7 @@ class X509Chain(object):
     Return : S_OK / S_ERROR
     """
     try:
-      with file(chainLocation) as fd:
+      with open(chainLocation) as fd:
         pemData = fd.read()
     except Exception as e:
       return S_ERROR(DErrno.EOF, "%s: %s" % (chainLocation, repr(e).replace(',)', ')')))
@@ -130,7 +130,7 @@ class X509Chain(object):
     Return : S_OK / S_ERROR
     """
     try:
-      with file(chainLocation) as fd:
+      with open(chainLocation) as fd:
         pemData = fd.read()
     except Exception as e:
       return S_ERROR(DErrno.EOF, "%s: %s" % (chainLocation, repr(e).replace(',)', ')')))
@@ -548,7 +548,7 @@ class X509Chain(object):
         os.write(fd, pemData)
         os.close(fd)
       else:
-        with file(filename, "w") as fd:
+        with open(filename, "w") as fd:
           fd.write(pemData)
     except Exception as e:
       return S_ERROR(DErrno.EWF, "%s :%s" % (filename, repr(e).replace(',)', ')')))

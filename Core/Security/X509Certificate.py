@@ -32,7 +32,7 @@ class X509Certificate( object ):
     Return : S_OK / S_ERROR
     """
     try:
-      fd = file( certLocation )
+      fd = open( certLocation )
       pemData = fd.read()
       fd.close()
     except IOError:
