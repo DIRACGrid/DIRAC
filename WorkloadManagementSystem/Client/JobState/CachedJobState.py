@@ -189,7 +189,7 @@ class CachedJobState(object):
         self.__cache[cKey] = data
       return S_OK(self.__cache[cKey])
     # Tuple/List
-    elif isinstance(keyType (list, tuple)):
+    elif isinstance(keyType, (list, tuple)):
       if not self.__cacheExists(cKey):
         if self.dOnlyCache:
           return S_ERROR("%s is not cached")
@@ -331,7 +331,7 @@ class CachedJobState(object):
   def getAttributes(self, nameList=None):
     return self.__cacheDict('att', self.__jobState.getAttributes, nameList)
 
-#JobParameters --- REMOVED
+# JobParameters --- REMOVED
 
 # Optimizer params
 
