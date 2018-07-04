@@ -1,7 +1,9 @@
 """ I wish who wrote this would have put some doc...
+
+    IIUC this is a wrapper around the JobState object. It basically tries to cache
+    everything locally instead of going to the DB.
 """
 
-import types
 import copy
 import time
 
@@ -119,26 +121,26 @@ class CachedJobState(object):
     if len(dataTuple) != 7:
       return S_ERROR("Invalid stub")
     # jid
-    if type(dataTuple[0]) not in (types.IntType, types.LongType):
+    if not isinstance(dataTuple[0], (int, long)):
       return S_ERROR("Invalid stub 0")
     # cache
-    if not isinstance(dataTuple[1], types.DictType):
+    if not isinstance(dataTuple[1], dict):
       return S_ERROR("Invalid stub 1")
     # trace
-    if not isinstance(dataTuple[2], types.ListType):
+    if not isinstance(dataTuple[2], list):
       return S_ERROR("Invalid stub 2")
     # manifest
     tdt3 = type(dataTuple[3])
-    if tdt3 != types.NoneType and (tdt3 != types.TupleType and len(dataTuple[3]) != 2):
+    if tdt3 is not None and (tdt3 is not tuple and len(dataTuple[3]) != 2):
       return S_ERROR("Invalid stub 3")
     # initstate
-    if not isinstance(dataTuple[4], types.DictType):
+    if not isinstance(dataTuple[4], dict):
       return S_ERROR("Invalid stub 4")
     # Insert into TQ
-    if not isinstance(dataTuple[5], types.BooleanType):
+    if not isinstance(dataTuple[5], bool):
       return S_ERROR("Invalid stub 5")
     # Dirty Keys
-    if not isinstance(dataTuple[6], types.TupleType):
+    if not isinstance(dataTuple[6], tuple):
       return S_ERROR("Invalid stub 6")
     cjs = CachedJobState(dataTuple[0], skipInitState=True)
     cjs.__cache = dataTuple[1]
@@ -164,7 +166,7 @@ class CachedJobState(object):
     self.__dirtyKeys.add(key)
 
   def __cacheExists(self, keyList):
-    if type(keyList) in types.StringTypes:
+    if isinstance(keyList, basestring):
       keyList = [keyList]
     for key in keyList:
       if key not in self.__cache:
@@ -174,7 +176,7 @@ class CachedJobState(object):
   def __cacheResult(self, cKey, functor, fArgs=None):
     keyType = type(cKey)
     # If it's a string
-    if keyType in types.StringTypes:
+    if isinstance(keyType, basestring):
       if cKey not in self.__cache:
         if self.dOnlyCache:
           return S_ERROR("%s is not cached")
@@ -187,7 +189,7 @@ class CachedJobState(object):
         self.__cache[cKey] = data
       return S_OK(self.__cache[cKey])
     # Tuple/List
-    elif keyType in (types.ListType, types.TupleType):
+    elif isinstance(keyType (list, tuple)):
       if not self.__cacheExists(cKey):
         if self.dOnlyCache:
           return S_ERROR("%s is not cached")
@@ -311,13 +313,13 @@ class CachedJobState(object):
 #
 
   def setAttribute(self, name, value):
-    if type(name) not in types.StringTypes:
+    if not isinstance(name, basestring):
       return S_ERROR("Attribute name has to be a string")
     self.__cacheAdd("att.%s" % name, value)
     return S_OK()
 
   def setAttributes(self, attDict):
-    if not isinstance(attDict, types.DictType):
+    if not isinstance(attDict, dict):
       return S_ERROR("Attributes has to be a dictionary and it's %s" % str(type(attDict)))
     for key in attDict:
       self.__cacheAdd("att.%s" % key, attDict[key])
@@ -334,13 +336,13 @@ class CachedJobState(object):
 # Optimizer params
 
   def setOptParameter(self, name, value):
-    if type(name) not in types.StringTypes:
+    if not isinstance(name, basestring):
       return S_ERROR("Optimizer parameter name has to be a string")
     self.__cacheAdd('optp.%s' % name, value)
     return S_OK()
 
   def setOptParameters(self, pDict):
-    if not isinstance(pDict, types.DictType):
+    if not isinstance(pDict, dict):
       return S_ERROR("Optimizer parameters has to be a dictionary")
     for key in pDict:
       self.__cacheAdd('optp.%s' % key, pDict[key])
