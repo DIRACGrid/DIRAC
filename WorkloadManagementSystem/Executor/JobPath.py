@@ -9,8 +9,6 @@
 """
 __RCSID__ = "$Id$"
 
-import types
-
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import List
 from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor  import OptimizerExecutor
@@ -29,7 +27,7 @@ class JobPath( OptimizerExecutor ):
     return S_OK()
 
   def __setOptimizerChain( self, jobState, opChain ):
-    if type( opChain ) not in types.StringTypes:
+    if not isinstance( opChain, basestring):
       opChain = ",".join( opChain )
     result = jobState.setOptParameter( "OptimizerChain", opChain )
     if not result[ 'OK' ]:
@@ -63,7 +61,7 @@ class JobPath( OptimizerExecutor ):
     if not result['OK']:
       return result
     extraPath = result[ 'Value' ]
-    if type( extraPath ) in types.StringTypes:
+    if isinstance( extraPath, basestring):
       extraPath = List.fromChar( result['Value'] )
     return S_OK( extraPath )
 

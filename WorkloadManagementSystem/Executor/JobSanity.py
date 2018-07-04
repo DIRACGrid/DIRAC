@@ -15,9 +15,9 @@ import re
 
 from DIRAC import S_OK, S_ERROR
 
-from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor  import OptimizerExecutor
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient   import SandboxStoreClient
+from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor  import OptimizerExecutor
 
 class JobSanity( OptimizerExecutor ):
   """
@@ -65,14 +65,6 @@ class JobSanity( OptimizerExecutor ):
       finalMsg.append( "%s LFNs" % result[ 'Value' ] )
       self.jobLog.info( "%s LFNs" % result[ 'Value' ] )
 
-    #Output data exists check # disabled
-    if self.ex_getOption( 'OutputDataCheck', False ):
-      if jobType != 'user':
-        result = self.checkOutputDataExists( jobState )
-        if not result[ 'OK' ]:
-          return result
-        finalMsg.append( "Output data OK" )
-        self.jobLog.info( "Output data OK" )
 
     #Input Sandbox uploaded check
     if self.ex_getOption( 'InputSandboxCheck', True ):
@@ -124,14 +116,6 @@ class JobSanity( OptimizerExecutor ):
 
     return S_OK( len( data ) )
 
-  #############################################################################
-  def  checkOutputDataExists( self, jobState ):
-    """If the job output data is already in the LFC, this
-       method will fail the job for the attention of the
-       data manager. To be tidied for DIRAC3...
-    """
-    # FIXME: To implement checkOutputDataExists
-    return S_OK()
 
   #############################################################################
   def checkInputSandbox( self, jobState, manifest ):

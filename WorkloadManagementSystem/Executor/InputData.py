@@ -3,19 +3,20 @@
   relevant information to the job optimizer parameters to be used during the scheduling decision.
 """
 
+__RCSID__ = "$Id$"
+
 import pprint
 import time
 
 from DIRAC                                                           import S_OK, S_ERROR
-from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor  import OptimizerExecutor
+from DIRAC.Core.Utilities.Proxy                                      import executeWithUserProxy
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations             import Operations
 from DIRAC.Resources.Storage.StorageElement                          import StorageElement
 from DIRAC.Resources.Catalog.FileCatalog                             import FileCatalog
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers                 import DMSHelpers
 from DIRAC.DataManagementSystem.Client.DataManager                   import DataManager
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations             import Operations
-from DIRAC.Core.Utilities.Proxy                                      import executeWithUserProxy
+from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor  import OptimizerExecutor
 
-__RCSID__ = "$Id$"
 
 
 class InputData( OptimizerExecutor ):
@@ -53,26 +54,26 @@ class InputData( OptimizerExecutor ):
   def __getDataManager( self, vo ):
     if vo in self.__dataManDict:
       return self.__dataManDict[vo]
-    else:
-      try:
-        self.__dataManDict[vo] = DataManager( vo = vo )
-      except Exception as _e:
-        msg = 'Failed to create DataManager'
-        self.log.exception( msg )
-        return None
-      return self.__dataManDict[vo]
+
+    try:
+      self.__dataManDict[vo] = DataManager( vo = vo )
+    except Exception as _e:
+      msg = 'Failed to create DataManager'
+      self.log.exception( msg )
+      return None
+    return self.__dataManDict[vo]
 
   def __getFileCatalog( self, vo ):
     if vo in self.__fcDict:
       return self.__fcDict[vo]
-    else:
-      try:
-        self.__fcDict[vo] = FileCatalog( vo = vo )
-      except Exception as _e:
-        msg = 'Failed to create FileCatalog'
-        self.log.exception( msg )
-        return None
-      return self.__fcDict[vo]
+
+    try:
+      self.__fcDict[vo] = FileCatalog( vo = vo )
+    except Exception as _e:
+      msg = 'Failed to create FileCatalog'
+      self.log.exception( msg )
+      return None
+    return self.__fcDict[vo]
 
   def optimizeJob( self, jid, jobState ):
     """ This is the method that needs to be implemented by each and every Executor
