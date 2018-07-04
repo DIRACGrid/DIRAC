@@ -327,26 +327,7 @@ class CachedJobState( object ):
   def getAttributes( self, nameList = None ):
     return self.__cacheDict( 'att', self.__jobState.getAttributes, nameList )
 
-#Job params
-
-  def setParameter( self, name, value ):
-    if type( name ) not in types.StringTypes:
-      return S_ERROR( "Job parameter name has to be a string" )
-    self.__cacheAdd( 'jobp.%s' % name, value )
-    return S_OK()
-
-  def setParameters( self, pDict ):
-    if type( pDict ) != types.DictType:
-      return S_ERROR( "Job parameters has to be a dictionary" )
-    for key in pDict:
-      self.__cacheAdd( 'jobp.%s' % key, pDict[ key ] )
-    return S_OK()
-
-  def getParameter( self, name ):
-    return self.__cacheResult( "jobp.%s" % name, self.__jobState.getParameter, ( name, ) )
-
-  def getParameters( self, nameList = None ):
-    return self.__cacheDict( 'jobp', self.__jobState.getParameters, nameList )
+#JobParameters --- REMOVED
 
 #Optimizer params
 

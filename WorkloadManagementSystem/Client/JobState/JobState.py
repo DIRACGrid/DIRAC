@@ -341,50 +341,9 @@ class JobState( object ):
       return S_ERROR( str( excp ) )
     return JobState.__db.job.getJobAttributes( self.__jid, nameList )
 
-#Job parameters
+#JobParameters --- REMOVED
 
-  right_setParameter = RIGHT_GET_INFO
-  @RemoteMethod
-  def setParameter( self, name, value ):
-    try:
-      self.__checkType( name, basestring )
-      self.__checkType( value, basestring )
-    except TypeError as excp:
-      return S_ERROR( str( excp ) )
-    return JobState.__db.job.setJobParameter( self.__jid, name, value )
-
-  right_setParameters = RIGHT_GET_INFO
-  @RemoteMethod
-  def setParameters( self, pDict ):
-    try:
-      self.__checkType( pDict, dict )
-    except TypeError as excp:
-      return S_ERROR( str( excp ) )
-    pList = []
-    for name in pDict:
-      pList.append( ( name, pDict[ name ] ) )
-    return JobState.__db.job.setJobParameters( self.__jid, pList )
-
-  right_getParameter = RIGHT_GET_INFO
-  @RemoteMethod
-  def getParameter( self, name ):
-    try:
-      self.__checkType( name, basestring )
-    except TypeError as excp:
-      return S_ERROR( str( excp ) )
-    return JobState.__db.job.getJobParameter( self.__jid, name )
-
-  right_getParameters = RIGHT_GET_INFO
-  @RemoteMethod
-  def getParameters( self, nameList = None ):
-    try:
-      self.__checkType( nameList, ( list, tuple ), canBeNone = True )
-    except TypeError as excp:
-      return S_ERROR( str( excp ) )
-    return JobState.__db.job.getJobParameters( self.__jid, nameList )
-
-
-#Optimizer parameters
+#OptimizerParameters
 
   right_setOptParameter = RIGHT_GET_INFO
   @RemoteMethod
