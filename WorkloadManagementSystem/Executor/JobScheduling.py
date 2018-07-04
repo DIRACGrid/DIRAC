@@ -560,7 +560,7 @@ class JobScheduling(OptimizerExecutor):
 
     rid = str(result['Value'])
     self.jobLog.info("Stage request %s sent" % rid)
-    jobState.setParameter("StageRequest", rid)
+    self.storeOptimizerParam('StageRequest', rid)
 
     result = jobState.setStatus(self.ex_getOption('StagingStatus', 'Staging'),
                                 self.ex_getOption('StagingMinorStatus', 'Request Sent'),

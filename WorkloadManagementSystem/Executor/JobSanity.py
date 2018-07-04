@@ -53,8 +53,6 @@ class JobSanity(OptimizerExecutor):
       return result
     manifest = result['Value']
 
-    finalMsg = []
-
     # Input data check
     if self.ex_getOption('InputDataCheck', True):
       voName = manifest.getOption("VirtualOrganization", "")
@@ -63,7 +61,6 @@ class JobSanity(OptimizerExecutor):
       result = self.checkInputData(jobState, jobType, voName)
       if not result['OK']:
         return result
-      finalMsg.append("%s LFNs" % result['Value'])
       self.jobLog.info("%s LFNs" % result['Value'])
 
     # Input Sandbox uploaded check
@@ -71,10 +68,8 @@ class JobSanity(OptimizerExecutor):
       result = self.checkInputSandbox(jobState, manifest)
       if not result['OK']:
         return result
-      finalMsg.append("Assigned %s ISBs" % result['Value'])
       self.jobLog.info("Assigned %s ISBs" % result['Value'])
 
-    jobState.setParameter('JobSanityCheck', " | ".join(finalMsg))
     return self.setNextOptimizer(jobState)
 
   #############################################################################
@@ -110,8 +105,6 @@ class JobSanity(OptimizerExecutor):
     if jobType == 'user':
       maxLFNs = self.ex_getOption('MaxInputDataPerJob', 100)
       if len(data) > maxLFNs:
-        message = '%s datasets selected. Max limit is %s.' % (len(data), maxLFNs)
-        jobState.setParameter("DatasetCheck", message)
         return S_ERROR("Exceeded Maximum Dataset Limit (%s)" % maxLFNs)
 
     return S_OK(len(data))

@@ -162,7 +162,7 @@ class InputData(OptimizerExecutor):
 
     self.jobLog.verbose("REPLICA DICT: %s" % replicaDict)
 
-    result = self.__checkReplicas(jobState, replicaDict, vo)
+    result = self.__checkReplicas(replicaDict, vo)
 
     if not result['OK']:
       self.jobLog.error("Failed to check replicas", result['Message'])
@@ -206,7 +206,7 @@ class InputData(OptimizerExecutor):
     return S_OK(resolvedData)
 
   #############################################################################
-  def __checkReplicas(self, jobState, replicaDict, vo):
+  def __checkReplicas(self, replicaDict, vo):
     """Check that all input lfns have valid replicas and can all be found at least in one single site.
     """
     badLFNs = []
@@ -227,7 +227,7 @@ class InputData(OptimizerExecutor):
     if badLFNs:
       errorMsg = "\n".join(badLFNs)
       self.jobLog.info('Found %s problematic LFN(s):\n%s' % (len(badLFNs), errorMsg))
-      result = jobState.setParameter(self.ex_getProperty('optimizerName'), errorMsg)
+      result = self.storeOptimizerParam(self.ex_getProperty('optimizerName'), errorMsg)
       if not result['OK']:
         self.log.error('Failed to set job parameter', result['Message'])
       return S_ERROR('Input data not available')
