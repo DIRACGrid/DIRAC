@@ -20,7 +20,7 @@ from DIRAC.WorkloadManagementSystem.Executor.JobScheduling import JobScheduling
     ([], ['MY.Site1.org', 'MY.Site3.org'], []),
     (['MY.Site1.org', 'MY.Site2.org'], ['MY.Site4.org'], ['MY.Site1.org', 'MY.Site2.org']),
     (['MY.Site1.org', 'MY.Site2.org', 'MY.Site3.org'], ['MY.Site4.org'],
-        ['MY.Site1.org', 'MY.Site2.org', 'MY.Site3.org']),
+     ['MY.Site1.org', 'MY.Site2.org', 'MY.Site3.org']),
     (['MY.Site1.org', 'MY.Site2.org'], ['MY.Site4.org'], ['MY.Site1.org', 'MY.Site2.org'])])
 def test__applySiteFilter(sites, banned, expected):
   js = JobScheduling()
