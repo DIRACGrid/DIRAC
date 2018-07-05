@@ -118,7 +118,7 @@ class Workflow( AttributeCollection ):
     return module
 
   def createStepInstance(self, type_o, name):
-    """ Creates step instance of type 'type' with the name 'name'
+    """ Creates step instance of type 'type_o' with the name 'name'
     """
     if type_o in self.step_definitions:
       stepi = StepInstance(name, self.step_definitions[type_o])
@@ -261,8 +261,8 @@ class Workflow( AttributeCollection ):
           error_message = result['Message']
         self.workflowStatus = S_ERROR( result['Message'] )
         self.workflowStatus['Errno'] = result['Errno']
-      if 'Value' in result:
-        step_result = result['Value']
+
+      step_result = result.get('Value', step_result)
 
     # now we need to copy output values to the STEP!!! parameters
     #print "WorkflowInstance output assignment"

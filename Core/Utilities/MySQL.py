@@ -921,15 +921,8 @@ class MySQL( object ):
             cmdList.append( 'FOREIGN KEY ( `%s` ) REFERENCES `%s` ( `%s` )'
                             ' ON DELETE RESTRICT' % ( key, forTable, forKey ) )
 
-        if 'Engine' in thisTable:
-          engine = thisTable['Engine']
-        else:
-          engine = 'InnoDB'
-
-        if 'Charset' in thisTable:
-          charset = thisTable['Charset']
-        else:
-          charset = 'latin1'
+        engine = thisTable.get('Engine', 'InnoDB')
+        charset = thisTable.get('Charset', 'latin1')
 
         cmd = 'CREATE TABLE `%s` (\n%s\n) ENGINE=%s DEFAULT CHARSET=%s' % ( table, ',\n'.join( cmdList ), engine, charset )
         retDict = self._update( cmd, debug = True )

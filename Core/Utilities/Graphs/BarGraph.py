@@ -48,7 +48,8 @@ class BarGraph( PlotBase ):
     if self.gdata.isEmpty():
       return None
 
-    tmp_x = []; tmp_y = []
+    tmp_x = []
+    tmp_y = []
 
     # Evaluate the bar width
     width = float(self.width)

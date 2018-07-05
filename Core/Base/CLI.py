@@ -19,10 +19,7 @@ from DIRAC import gLogger
 gColors = { 'red':1, 'green':2, 'yellow':3, 'blue':4 }
 
 def colorEnabled():
-  if 'TERM' in os.environ:
-    if os.environ['TERM'] in ( 'xterm', 'xterm-color' ):
-      return True
-  return False
+  return os.environ.get('TERM') in ('xterm', 'xterm-color')
 
 def colorize( text, color ):
   """Return colorized text"""

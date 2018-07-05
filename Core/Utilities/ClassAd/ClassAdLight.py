@@ -184,7 +184,7 @@ class ClassAd:
     if tempString.find('{') < 0:
       if not listMode:
         tempString = tempString.replace( "\"", "" )
-        return tempString.split( ',' ) 
+        return tempString.split(',')
 
     resultList = []
     while tempString:
@@ -290,15 +290,11 @@ class ClassAd:
   def getAttributeBool( self, name ):
     """ Get Boolean type attribute value
     """
-    if self.lookupAttribute( name ):
-      value = self.get_expression( name ).replace( '"', '' )
-    else:
+    if not self.lookupAttribute(name):
       return False
-    if value.lower() == "true":
-      return True
-    elif value.lower() == "false":
-      return False
-    return False
+
+    value = self.get_expression(name).replace('"', '')
+    return value.lower() == "true"
 
   def getAttributeFloat( self, name ):
     """ Get Float type attribute value
