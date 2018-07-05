@@ -626,7 +626,7 @@ Multi VO Configuration
 
 
 
-.. versionadded:: v6r21
+.. versionadded:: v6r20p5
 
 There are two possibilities to configure the agents of the transformation system for the use in a multi VO installation.
 

@@ -13,7 +13,7 @@ The following options can be set for the WorkflowTaskAgent.
   {
     # Use a dedicated proxy to submit jobs to the WMS
     shifterProxy = ProductionManager
-    # Use delegated credentials. Use this instead of the shifterProxy option (New in v6r21)
+    # Use delegated credentials. Use this instead of the shifterProxy option (New in v6r20p5)
     ShifterCredentials =
     # Transformation types to be taken into account by the agent
     TransType = MCSimulation,DataReconstruction,DataStripping,MCStripping,Merge
@@ -53,7 +53,7 @@ The following options can be set for the WorkflowTaskAgent.
 * The options *SubmitTasks*, *MonitorTasks*, *MonitorFiles*, and *CheckReserved*
   need to be assigned any non-empty value to be activated
 
-* .. versionadded:: v6r21
+* .. versionadded:: v6r20p5
 
    It is possible to run the RequestTaskAgent without a *shifterProxy* or
    *ShifterCredentials*, in this case the credentials of the authors of the
