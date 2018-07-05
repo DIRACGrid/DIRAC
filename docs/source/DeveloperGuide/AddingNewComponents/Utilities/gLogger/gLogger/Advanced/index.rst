@@ -138,7 +138,7 @@ Add a *Backend* object on a child *Logging*
 -------------------------------------------
 
 *registerBackend(s)* presentation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Now, it is possible to add some *Backend* objects to any *Logging* via
 the *registerBackend* method. This method takes two parameters, a name of a
@@ -153,7 +153,7 @@ names and their values associated. Here is an example of use:
     # An alternative:
     # logger.registerBackends(['stdout', 'file'], {'FileName': 'file.log'})
 
-This, will create *stdout* and *file Backend* objects in *logger*. The alternative method 
+This, will create *stdout* and *file Backend* objects in *logger*. The alternative method
 named *registerBackends* takes a *Backend* objects list as first argument. This method can be really efficient
 to add some *Backend* objects in one time but also restrictive due to the unicity of the dictionary keys.
 
@@ -192,7 +192,7 @@ current *Logging*. Thus, the boolean can be at *False* and the log
 record can appear in one of its parent anyway.
 
 The *registerBackend(s)* utility
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This functionality gives the possibility to isolate some log records
 from a specific *Logging* or isolate log records above a specific level.
@@ -209,11 +209,11 @@ snippet of this example:
     logger.verbose("appears only in stdout")
     logger.notice("appears only in stdout")
     logger.error("appears in stdout and in file.log")
-    # in stdout: 
+    # in stdout:
     # > ... UTC Framework/Atom/logger VERBOSE: appears only in stdout
     # > ... UTC Framework/Atom/logger NOTICE: appears only in stdout
     # > ... UTC Framework/Atom/logger ERROR: appears in stdout, in file.log
-    # in file.log: 
+    # in file.log:
     # > ... UTC Framework/Atom/logger ERROR: appears in stdout, in file.log
 
 Modify a display for different *Logging* objects
@@ -241,7 +241,7 @@ information that we do not want for example:
 
 ::
 
-    # gLogger: stdout Backend, NOTICE level, showHeaders at True 
+    # gLogger: stdout Backend, NOTICE level, showHeaders at True
     logger = gLogger.getSubLogger("logger")
     logger.registerBackend('file', {'FileName': 'file.log'})
     logger.setLevel("error")
@@ -249,11 +249,11 @@ information that we do not want for example:
     logger.verbose("appears only in stdout")
     logger.notice("appears only in stdout")
     logger.error("appears in stdout and in file.log")
-    # in stdout: 
+    # in stdout:
     # > ... UTC Framework/Atom/logger VERBOSE: appears only in stdout
     # > ... UTC Framework/Atom/logger NOTICE: appears only in stdout
     # > ... UTC Framework/Atom/logger ERROR: appears in stdout, in file.log
-    # in file.log: 
+    # in file.log:
     # > appears in stdout, in file.log
 
 The *LogColor* case
