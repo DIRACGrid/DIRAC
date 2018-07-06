@@ -30,21 +30,35 @@ class WMSClient(object):
   """
 
   def __init__(self, jobManagerClient=None, sbRPCClient=None, sbTransferClient=None,
-               useCertificates=False, timeout=600):
+               useCertificates=False, timeout=600, delegatedDN=None, delegatedGroup=None):
     """ WMS Client constructor
 
         Here we also initialize the needed clients and connections
     """
 
     self.useCertificates = useCertificates
+    self.delegatedDN = delegatedDN
+    self.delegatedGroup = delegatedGroup
     self.timeout = timeout
-    self.jobManager = jobManagerClient
+    self._jobManager = jobManagerClient
     self.operationsHelper = Operations()
     self.sandboxClient = None
     if sbRPCClient and sbTransferClient:
       self.sandboxClient = SandboxStoreClient(rpcClient=sbRPCClient,
                                               transferClient=sbTransferClient,
                                               useCertificates=useCertificates)
+
+  @property
+  def jobManager(self):
+    if not self._jobManager:
+      self._jobManager = RPCClient('WorkloadManagement/JobManager',
+                                   useCertificates=self.useCertificates,
+                                   delegatedDN=self.delegatedDN,
+                                   delegatedGroup=self.delegatedGroup,
+                                   timeout=self.timeout)
+
+    return self._jobManager
+
 
 ###############################################################################
 
@@ -109,7 +123,9 @@ class WMSClient(object):
 
     if okFiles:
       if not self.sandboxClient:
-        self.sandboxClient = SandboxStoreClient(useCertificates=self.useCertificates)
+        self.sandboxClient = SandboxStoreClient(useCertificates=self.useCertificates,
+                                                delegatedDN=self.delegatedDN,
+                                                delegatedGroup=self.delegatedGroup)
       result = self.sandboxClient.uploadFilesAsSandbox(okFiles)
       if not result['OK']:
         return result
@@ -159,12 +175,6 @@ class WMSClient(object):
       return result
     nJobs = result['Value']
     parametricJob = nJobs > 0
-
-    if not self.jobManager:
-      self.jobManager = RPCClient('WorkloadManagement/JobManager',
-                                  useCertificates=self.useCertificates,
-                                  timeout=self.timeout)
-
     result = self.jobManager.submitJob(classAdJob.asJDL())
 
     if parametricJob:
@@ -200,38 +210,22 @@ class WMSClient(object):
     """ Kill running job.
         jobID can be an integer representing a single DIRAC job ID or a list of IDs
     """
-    if not self.jobManager:
-      self.jobManager = RPCClient('WorkloadManagement/JobManager',
-                                  useCertificates=self.useCertificates,
-                                  timeout=self.timeout)
     return self.jobManager.killJob(jobID)
 
   def deleteJob(self, jobID):
     """ Delete job(s) from the WMS Job database.
         jobID can be an integer representing a single DIRAC job ID or a list of IDs
     """
-    if not self.jobManager:
-      self.jobManager = RPCClient('WorkloadManagement/JobManager',
-                                  useCertificates=self.useCertificates,
-                                  timeout=self.timeout)
     return self.jobManager.deleteJob(jobID)
 
   def rescheduleJob(self, jobID):
     """ Reschedule job(s) in WMS Job database.
         jobID can be an integer representing a single DIRAC job ID or a list of IDs
     """
-    if not self.jobManager:
-      self.jobManager = RPCClient('WorkloadManagement/JobManager',
-                                  useCertificates=self.useCertificates,
-                                  timeout=self.timeout)
     return self.jobManager.rescheduleJob(jobID)
 
   def resetJob(self, jobID):
     """ Reset job(s) in WMS Job database.
         jobID can be an integer representing a single DIRAC job ID or a list of IDs
     """
-    if not self.jobManager:
-      self.jobManager = RPCClient('WorkloadManagement/JobManager',
-                                  useCertificates=self.useCertificates,
-                                  timeout=self.timeout)
     return self.jobManager.resetJob(jobID)
