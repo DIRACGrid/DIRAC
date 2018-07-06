@@ -54,9 +54,16 @@ This sub-subsection specify the attributes of each particular CE of the site. Mu
 +------------------------------------------------+-------------------------------------------------------------+--------------------------------+
 | *<CE_NAME>/WholeNode*                          | CE allows *whole node* jobs                                 | WholeNode = True               |
 +------------------------------------------------+-------------------------------------------------------------+--------------------------------+
+| *<CE_NAME>/Tag*                                | List of tags specific for the CE                            | Tag = GPU,96RAM                |
++------------------------------------------------+-------------------------------------------------------------+--------------------------------+
+| *<CE_NAME>/RequiredTag*                        | List of required tags that a job to be eligible must have   | RequiredTag = GPU,96RAM        |
++------------------------------------------------+-------------------------------------------------------------+--------------------------------+
 | *<CE_NAME>/Queues*                             | Subsection. Queues available for this VO in the CE          | Queues                         |
 +------------------------------------------------+-------------------------------------------------------------+--------------------------------+
 | *<CE_NAME>/Queues/<QUEUE_NAME>*                | Name of the queue exactly how is published                  | jobmanager-pbs-formation       |
++------------------------------------------------+-------------------------------------------------------------+--------------------------------+
+| *<CE_NAME>/Queues/<QUEUE_NAME>/CEQueueName*    | Name of the queue in the corresponding CE if not the same   |                                |
+|                                                | as the name of the queue section                            | CEQueueName = pbs-grid         |
 +------------------------------------------------+-------------------------------------------------------------+--------------------------------+
 | *<CE_NAME>/Queues/<QUEUE_NAME>/maxCPUTime*     | Maximum time allowed to jobs to run in the queue            | maxCPUTime = 1440              |
 +------------------------------------------------+-------------------------------------------------------------+--------------------------------+
@@ -73,4 +80,8 @@ This sub-subsection specify the attributes of each particular CE of the site. Mu
 | *<CE_NAME>/Queues/<QUEUE_NAME>/MaxProcessors*  | overrides *<CE_NAME>/MaxProcessors* at queue level          | MaxProcessors = 12             |
 +------------------------------------------------+-------------------------------------------------------------+--------------------------------+
 | *<CE_NAME>/Queues/<QUEUE_NAME>/WholeNode*      | overrides *<CE_NAME>/WholeNode* at queue level              | WholeNode = True               |
++------------------------------------------------+-------------------------------------------------------------+--------------------------------+
+| *<CE_NAME>/Queues/<QUEUE_NAME>/Tag*            | List of tags specific for the Queue                         | Tag = GPU,96RAM                |
++------------------------------------------------+-------------------------------------------------------------+--------------------------------+
+| *<CE_NAME>/Queues/<QUEUE_NAME>/RequiredTag*    | List of required tags that a job to be eligible must have   | RequiredTag = GPU,96RAM        |
 +------------------------------------------------+-------------------------------------------------------------+--------------------------------+

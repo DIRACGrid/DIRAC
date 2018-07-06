@@ -434,6 +434,8 @@ class PilotParams( object ):
                      ( 'F:', 'pilotCFGFile=', 'Specify pilot CFG file' ),
                      ( 'R:', 'reference=', 'Use this pilot reference' ),
                      ( 'x:', 'execute=', 'Execute instead of JobAgent' ),
+                     ( 't:', 'tag=', 'extra tags for resource description' ),
+                     ( '', 'requiredTag=', 'extra required tags for resource description')
                    )
 
     self.__initOptions()
@@ -508,3 +510,7 @@ class PilotParams( object ):
           pass
       elif o in ( '-o', '--option' ):
         self.genericOption = v
+      elif o in ( '-t', '--tag' ):
+        self.tags.append(v)
+      elif o == '--requiredTag':
+        self.reqtags.append(v)
