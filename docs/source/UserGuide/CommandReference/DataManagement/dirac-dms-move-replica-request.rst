@@ -7,6 +7,7 @@ Create a DIRAC MoveReplica request to be executed by the RMS
 Usage::
 
   dirac-dms-move-replica-request [option|cfgfile] ... sourceSE LFN targetSE1 [targetSE2 ...]
+
 Arguments::
 
   sourceSE:   source SE
@@ -22,4 +23,3 @@ General options::
   -   --autoreload             : Automatically restart if there's any change in the module
   -   --license                : Show DIRAC's LICENSE
   -h  --help                   : Shows this help
-
