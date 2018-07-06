@@ -199,9 +199,11 @@ class JobManifest( object ):
 
   def getSection( self, secName ):
     self.__dirty = True
+    if secName not in self.__manifest:
+      return S_ERROR( "%s does not exist" % secName )
     sec = self.__manifest[ secName ]
     if not sec:
-      return S_ERROR( "%s does not exist" )
+      return S_ERROR( "%s section empty" % secName )
     return S_OK( sec )
 
 
