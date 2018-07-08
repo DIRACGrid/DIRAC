@@ -150,7 +150,8 @@ class TransferClient( BaseClient ):
       retVal = fileHelper.bulkToNetwork( fileList, compress, onthefly )
       if not retVal[ 'OK' ]:
         return retVal
-      retVal = transport.receiveData()      return retVal
+      retVal = transport.receiveData()
+      return retVal
     finally:
       self._disconnect( trid )
 

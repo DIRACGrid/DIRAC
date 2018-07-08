@@ -39,7 +39,7 @@ method. For instance :
 
     logger = gLogger.getSubLogger("logger")
     newLogger = gLogger.getSubLogger("logger")
-    # Here, logger and newlogger are a same and unique object 
+    # Here, logger and newlogger are a same and unique object
 
 Get its sub name
 ~~~~~~~~~~~~~~~~
@@ -105,7 +105,7 @@ DIRAC and here is a table describing them and their context of use.
 +------------+----------------------------------------------------------------------------------------------------+
 | Warn       | Used when a potentially undesired behaviour can occur.                                             |
 +------------+----------------------------------------------------------------------------------------------------+
-| Info       | Used to provide information.                                                                       | 
+| Info       | Used to provide information.                                                                       |
 +------------+----------------------------------------------------------------------------------------------------+
 | Verbose    | Used to provide extra information.                                                                 |
 +------------+----------------------------------------------------------------------------------------------------+
@@ -185,7 +185,7 @@ higher than the *Logging* level. Here is an example:
 
 ::
 
-    # logger level: NOTICE 
+    # logger level: NOTICE
     logger = gLogger.getSubLogger("logger")
     logger.error("appears")
     logger.notice("appears")
@@ -238,7 +238,7 @@ work for scripts. Here is an example of an agent with the root
         LogLevel = ALWAYS
         ...
       }
-    }   
+    }
 
 Set a level via the *setLevel* method
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -416,7 +416,7 @@ option at *False* in the configuration:
 
     LogColor = False
 
-We can find a configuration example containing different options in the `cfg file example`_ part.
+We can find a configuration example containing different options in the `Configuration example`_ part.
 
 Get the option values
 ~~~~~~~~~~~~~~~~~~~~~
@@ -430,7 +430,7 @@ have to be careful with its use. Here is an example:
 
     logger = gLogger.getSubLogger("logger")
     logger.getDisplayOptions()
-    # > {'Color': False, 'Path': False, 
+    # > {'Color': False, 'Path': False,
     #    'headerIsShown': True, 'threadIsShown': False}
 
 Send a log record in different outputs
@@ -441,17 +441,17 @@ Backend presentation
 
 *Backend* objects are used to receive the log record created before,
 format it according to the choice of the client, and send it in the
-right output. We can find an exhaustive list of the existing *Backend* types in the :ref:`gLogger_backends` part. 
+right output. We can find an exhaustive list of the existing *Backend* types in the :ref:`gLogger_backends` part.
 
 Backend resources
 ~~~~~~~~~~~~~~~~~
 
-A *Backend resource* is the representation of a *Backend* object in the configuration. It is represented by one or two elements depending on its nature. The first is an identifier, which can be a default identifier or a custom: 
+A *Backend resource* is the representation of a *Backend* object in the configuration. It is represented by one or two elements depending on its nature. The first is an identifier, which can be a default identifier or a custom:
 
-+ Default identifiers take the name of a *Backend* class name, *<backendID>* will refer to the *<BackendID>Backend* class, *stdout* and *StdoutBackend* for instance. 
++ Default identifiers take the name of a *Backend* class name, *<backendID>* will refer to the *<BackendID>Backend* class, *stdout* and *StdoutBackend* for instance.
 + Custom identifiers can take any name like *f015* or *Jwr8*, there is no construction rule.
 
-The second element is a set of parameters according to the *Backend* represented. Custom identifiers absolutely need to complete the *Plugin* option to indicate which *Backend* type they represent using a default identifier. This section can also be empty if the *Backend* do not need parameter and if the identifier is a default identifier. Here is a generic example of a *Backend resource*: 
+The second element is a set of parameters according to the *Backend* represented. Custom identifiers absolutely need to complete the *Plugin* option to indicate which *Backend* type they represent using a default identifier. This section can also be empty if the *Backend* do not need parameter and if the identifier is a default identifier. Here is a generic example of a *Backend resource*:
 
 ::
 
@@ -460,7 +460,7 @@ The second element is a set of parameters according to the *Backend* represented
         <param1> = <value1>
         <param2> = <value2>
     }
-    
+
     <backendCustomID>
     {
         Plugin = <backendDefaultID2>
@@ -470,12 +470,12 @@ The second element is a set of parameters according to the *Backend* represented
 Declare the *Backend* resources
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Before using them, *Backend resources* have to be declared in the configuration. 
+Before using them, *Backend resources* have to be declared in the configuration.
 They can be configured in a global way or in a local way.
-To declare them in the global way, we must put them in the */Resources/LogBackends* section of the configuration, like this: 
+To declare them in the global way, we must put them in the */Resources/LogBackends* section of the configuration, like this:
 
 ::
-    
+
     Resources
     {
         LogBackends
@@ -497,10 +497,10 @@ To declare them in the global way, we must put them in the */Resources/LogBacken
         }
     }
 
-Here is an example of a concrete configuration: 
+Here is an example of a concrete configuration:
 
 ::
-    
+
     Resources
     {
         LogBackends
@@ -525,10 +525,10 @@ Here is an example of a concrete configuration:
 
 In this case, we have 3 *Backend* identifiers, namely *f01* and *es2* which are custom identifiers respectively related on *FileBackend* and *ElasticSearchBackend*, and *file* which is a default identifier based on *FileBackend*.
 
-This configuration allows a *Backend resource* use in any component of the configuration, but we can also create some specific *Backend resources* inside a local component. To create local resources, you have to follow the same process in a *LogBackendsConfig* section like this: 
+This configuration allows a *Backend resource* use in any component of the configuration, but we can also create some specific *Backend resources* inside a local component. To create local resources, you have to follow the same process in a *LogBackendsConfig* section like this:
 
 ::
-    
+
     <Agent>
     {
         ...
@@ -551,10 +551,10 @@ This configuration allows a *Backend resource* use in any component of the confi
         }
     }
 
-Moreover, a same *Backend* identifier can be declared in the both sections in order to update it. Indeed, such a declaration triggers a parameters merger. In case of parameters conflicts, the local parameters are always choosen. Here is an example:   
+Moreover, a same *Backend* identifier can be declared in the both sections in order to update it. Indeed, such a declaration triggers a parameters merger. In case of parameters conflicts, the local parameters are always choosen. Here is an example:
 
 ::
-    
+
     <Systems>
     {
         Agents
@@ -565,7 +565,7 @@ Moreover, a same *Backend* identifier can be declared in the both sections in or
                 LogBackendsConfig
                 {
                     <backendID1>
-                    {                   
+                    {
                         <param1> = <value1>
                         <param2> = <value2>
                     }
@@ -585,8 +585,8 @@ Moreover, a same *Backend* identifier can be declared in the both sections in or
             }
         }
     }
-    
-In this case, *gLogger* in *<Agent1>* will have one *Backend* instance of the *<backendClass1>Backend* class which will have 3 parameters: 
+
+In this case, *gLogger* in *<Agent1>* will have one *Backend* instance of the *<backendClass1>Backend* class which will have 3 parameters:
 
 + <param1> = <value1>
 + <param2> = <value2>
@@ -595,10 +595,10 @@ In this case, *gLogger* in *<Agent1>* will have one *Backend* instance of the *<
 Use the *Backend* resources
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Once our *Backend* resources are declared, we have to specify where we want to use them and we have many possibilities. First of all, we can add them for the totality of the components. This can be made in the */Operations/defaults/* section. Here is the way to proceed: 
+Once our *Backend* resources are declared, we have to specify where we want to use them and we have many possibilities. First of all, we can add them for the totality of the components. This can be made in the */Operations/defaults/* section. Here is the way to proceed:
 
 ::
-    
+
     Operations
     {
         Defaults
@@ -610,10 +610,10 @@ Once our *Backend* resources are declared, we have to specify where we want to u
         }
     }
 
-We can also add them for a specific component type, the agents or the services for instance. Such a declaration will overwrite the previous one for the component type choosen: 
+We can also add them for a specific component type, the agents or the services for instance. Such a declaration will overwrite the previous one for the component type choosen:
 
 ::
-    
+
     Operations
     {
         Defaults
@@ -625,7 +625,7 @@ We can also add them for a specific component type, the agents or the services f
         }
     }
 
-Do not forget the *s* between *<componentType>* and *Backends*. In this case, all the *<componentType>* components will have the same resources if we do not overwritten locally. This can be made by the use of the *LogBackends* option used inside any component like this: 
+Do not forget the *s* between *<componentType>* and *Backends*. In this case, all the *<componentType>* components will have the same resources if we do not overwritten locally. This can be made by the use of the *LogBackends* option used inside any component like this:
 
 ::
 
@@ -634,19 +634,19 @@ Do not forget the *s* between *<componentType>* and *Backends*. In this case, al
         LogBackends = <backend1>, <backend2>, <backend3>
     }
 
-If none of these options is specified, the *stdout Backend* will be used. 
+If none of these options is specified, the *stdout Backend* will be used.
 
 Some examples and summaries
 ---------------------------
 
 Configuration example
-~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~
 
 Here is a configuration which contains *Logging* and *Backend*
 configuration:
 
 ::
-    
+
     Systems
     {
         FrameworkSystem
@@ -713,7 +713,7 @@ configuration:
         }
     }
 
-To summarize, this file configures two agents respectively named *SimplestAgent* and *AnotherAgent*. 
+To summarize, this file configures two agents respectively named *SimplestAgent* and *AnotherAgent*.
 In *SimplestAgent*, it sets the level of *gLogger* at *info*, adds 5 *Backend* objects to it, which
 are *stdout*, *stderr*, two *file Backend* objects and an *ElastiSearch* access. Thus, each log record superior to
 *info* level, created by a *Logging* object in the agent, will be sent
@@ -724,7 +724,7 @@ Summary of the command line argument configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Here is a complete table explaining the changes provided by the command
-line argument *-d*: 
+line argument *-d*:
 
 +--------------------------------------+----------------+----------------+-----------+
 | Argument                             | ShowHeader     | showThread     | Level     |
@@ -755,20 +755,20 @@ time. So, be careful to avoid the case.
 Multiple threads
 ~~~~~~~~~~~~~~~~
 
-*gLogger* is completely thread-safe, there is no conflict possible especially in the case when two threads 
-try to write on a same file at the same time. 
+*gLogger* is completely thread-safe, there is no conflict possible especially in the case when two threads
+try to write on a same file at the same time.
 
 About the use of external libraries
 -----------------------------------
 
 *DIRAC* uses some external libraries which have their own loggers, mainly based on the standard logging Python library like *gLogger*. Logs providing by these libraries can be useful in debugging, but not in production. The *enableLogsFromExternalLib* and *disableLogsFromExternalLib* methods allow us to enable or disable the display of these logs.
-The first method initializes a specific logger for external libraries like this: 
+The first method initializes a specific logger for external libraries like this:
 
 + a level at Debug
 + a display on the standard error output
 + a log format close to the one used in *DIRAC*
 
-We can call these methods each time that we use an external library and we want to see the logs inside or not. 
+We can call these methods each time that we use an external library and we want to see the logs inside or not.
 
 Advanced part
 ------------------------------------

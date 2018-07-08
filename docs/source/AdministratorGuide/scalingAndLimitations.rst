@@ -2,12 +2,13 @@
 Limitations
 ===========
 
-**************
-DataManagement
-**************
 
+DataManagement
+==============
+
+----------
 LFN length
-**********
+----------
 
 Because they are stored in a database, the LFNs are limited in size. The standard size is 255 characters. It is enforced in the following database:
 
@@ -38,9 +39,9 @@ In case of the Managers WithPkAndPs (LHCb):
 Scaling
 =======
 
-************
+
 Duplications
-************
+============
 
 In some cases, it is possible to run several instances of the same agent/service in order to scale.
 
@@ -220,8 +221,9 @@ Agents
 |                    | StatesMonitoringAgent       |           |            |
 +--------------------+-----------------------------+-----------+------------+
 
+--------
 FTSAgent
-^^^^^^^^
+--------
 
 This agent can be split in two: one agent for the failover transfers, and one for the others (coming from transformations and so on).
 For this you need to define two agents using both the FTSAgent module, and use the `ProcessJobRequests` flag: once to True, once to False.
