@@ -1,21 +1,25 @@
 [v6r20p5]
 
+*Docs
+
+FIX: (#3747) fix many warnings
+FIX: (#3735) GetReleaseNotes.py no longer depends on curl, but the python requests packe
+FIX: (#3740) Fix fake environments for sqlalchemy.ext import, some code documentation pages were not build, e.g. FTS3Agent
+
 *TransformationSystem
-FIX: If the result can not be evaluated, it can be converted to list
-FIX: TaskManagerAgentBase - add option ShifterCredentials to set the credentials to 
+
+FIX: (#3726) If the result can not be evaluated, it can be converted to list
+FIX: (#3723) TaskManagerAgentBase - add option ShifterCredentials to set the credentials to 
      use for all submissions, this is single VO only
-FIX: WorkflowTasks/RequestTasks: pass ownerDN and ownerGroup parameter to all the submission 
+FIX: (#3723) WorkflowTasks/RequestTasks: pass ownerDN and ownerGroup parameter to all the submission 
      clients if using shifterProxy ownerDN and ownerGroup are None thus reproducing the original behaviour
-FIX: TaskManagerAgentBase - refactor adding operations for transformation to separate function to 
+FIX: (#3723) TaskManagerAgentBase - refactor adding operations for transformation to separate function to 
      ensure presence of Owner/DN/Group in dict entries RequestTaskAgent no longer sets shifterProxy by default.
 
 *Resources
-CHANGE: Add the deprecated decorator to native XROOT plugin
 
-*Docs
-FIX: fix many warnings
-FIX: Fix fake environments for sqlalchemy.ext import, some code documentation pages were not build, e.g. FTS3Agent
-FIX: GetReleaseNotes.py no longer depends on curl, but the python requests packe
+CHANGE: (#3745) Add the deprecated decorator to native XROOT plugin
+
 
 [v6r20p4]
 
