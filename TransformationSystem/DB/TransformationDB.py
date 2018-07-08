@@ -322,7 +322,7 @@ class TransformationDB(DB):
     connection = self.__getConnection(connection)
     attributeValues = {}
     for attribute in attributes:
-      if possible and (not attribute in possible):
+      if possible and (attribute not in possible):
         return S_ERROR('Requested attribute (%s) does not exist in table %s' % (attribute, table))
       res = self.getDistinctAttributeValues(table, attribute, condDict=selectDict, older=older, newer=newer,
                                             timeStamp=timeStamp, connection=connection)
