@@ -200,6 +200,15 @@ FIX: Update of the FTS3 docs
 FIX: add MonitoringDB to the configuration
 FIX: Installing elasticSeach locally in Jenkins, with ComponentInstaller support.
 
+[v6r19p24]
+
+*WMS
+FIX: (#3739) pilotTools - added --tag and --requiredTag options
+FIX: (#3739) pilotCommands - make NumberOfProcessors = 1 if nowhere defined (default)
+
+*Resources
+FIX: (#3739) CREAMComputingElement - possibility to defined CEQueueName to be used in the pilot submission command
+
 [v6r19p23]
 
 *TS
