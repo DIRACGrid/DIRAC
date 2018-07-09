@@ -204,8 +204,8 @@ class CachedJobState(object):
               "CachedJobState.__memorize( %s, %s = %s ) doesn't receive the same amount of values as keys" %
               (cKey, functor, data))
           return data
-        for i in range(len(cKey)):
-          self.__cache[cKey[i]] = data[i]
+        for i, val in enumerate(cKey):
+          self.__cache[val] = data[i]
       # Prepare result
       return S_OK(tuple([self.__cache[cK] for cK in cKey]))
     else:

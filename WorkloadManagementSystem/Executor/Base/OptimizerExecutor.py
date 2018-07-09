@@ -5,6 +5,7 @@
 __RCSID__ = "$Id$"
 
 import threading
+import datetime
 # Because eval(valenc) might require it
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DEncode, List
