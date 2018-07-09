@@ -10,6 +10,7 @@ create and put 'PutAndRegister' request with a single local file
 Usage::
 
  dirac-dms-put-and-register-request [option|cfgfile] requestName LFN localFile targetSE
+
 Arguments::
 
  requestName: a request name
@@ -25,4 +26,3 @@ General options::
   -   --autoreload             : Automatically restart if there's any change in the module
   -   --license                : Show DIRAC's LICENSE
   -h  --help                   : Shows this help
-

@@ -211,7 +211,7 @@ these ones to its parent and so on. Thus, all log records from all
     subsublog.registerBackend('file')
 
     subsublog.verbose("message")
-    # file 
+    # file
     # > ...VERBOSE: message
     # stderr
     # > ...VERBOSE: message
@@ -279,23 +279,23 @@ will stay the same:
     # > message
     # stderr
     # > VERBOSE: message
-    
+
 *Backend* configuration
-----------------------
+-----------------------
 
 Now, the *Backend* configuration in the configuration becomes more readable
-and can be centralized. 
+and can be centralized.
 
 ::
 
-    LogBackends = <backend1>, <backend2>, <backend3>  
-    BackendOptions                
-    {                         
+    LogBackends = <backend1>, <backend2>, <backend3>
+    BackendOptions
+    {
         <param backend2> = <value1>
         <param backend3> = <value2>
     }
 
-This configuration becomes: 
+This configuration becomes:
 
 ::
 
@@ -311,8 +311,8 @@ This configuration becomes:
             <param backend3> = <value2>
         }
     }
- 
-The first main advantage of this new feature is that you can define many *Backend* objects of a same type and provide them different specifications like this: 
+
+The first main advantage of this new feature is that you can define many *Backend* objects of a same type and provide them different specifications like this:
 
 ::
 
@@ -331,11 +331,11 @@ The first main advantage of this new feature is that you can define many *Backen
         }
     }
 
-Here you have 3 *file Backend* objects which will send log records in 3 differents files. The only rule to this functionality is to precise the type of the *Backend* if it is non conventional. 
+Here you have 3 *file Backend* objects which will send log records in 3 differents files. The only rule to this functionality is to precise the type of the *Backend* if it is non conventional.
 
 The second main advantage is that you can centralize a configuration to have it either for some different components, or for all the components of a same type, or for all the components. Here is an example of a centralized configuration:
 
-:: 
+::
 
     Operations
     {
@@ -362,7 +362,7 @@ The second main advantage is that you can centralize a configuration to have it 
             }
         }
     }
-    
+
 In this example, *SimplestAgent* and *AnotherAgent* which have no *Backend* configuration will inherit the *DefaultAgentsBackends* configuration: *stdout* and *file*.
 
 Multiple processes and threads

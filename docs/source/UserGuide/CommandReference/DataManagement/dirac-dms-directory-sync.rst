@@ -11,6 +11,7 @@ Usage::
    dirac-dms-directory-sync LFN Path
   or Upload
    dirac-dms-directory-sync Path LFN SE
+
 Arguments::
 
   LFN:           Logical File Name (Path to directory)
@@ -31,4 +32,3 @@ Options::
 
   -D  --sync                   : Make target directory identical to source
   -j  --parallel <value>       : Multithreaded download and upload
-

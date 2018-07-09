@@ -15,6 +15,28 @@ CHANGE: generateFullIndexName() method made static under the ElasticSearchDB cla
 
 NEW: Add ChangeESFlag.py script to modify useES flag in dirac.cfg. To be integrated with Jenkins code.
 
+[v6r20p5]
+
+*Docs
+
+FIX: (#3747) fix many warnings
+FIX: (#3735) GetReleaseNotes.py no longer depends on curl, but the python requests packe
+FIX: (#3740) Fix fake environments for sqlalchemy.ext import, some code documentation pages were not build, e.g. FTS3Agent
+
+*TransformationSystem
+
+FIX: (#3726) If the result can not be evaluated, it can be converted to list
+FIX: (#3723) TaskManagerAgentBase - add option ShifterCredentials to set the credentials to 
+     use for all submissions, this is single VO only
+FIX: (#3723) WorkflowTasks/RequestTasks: pass ownerDN and ownerGroup parameter to all the submission 
+     clients if using shifterProxy ownerDN and ownerGroup are None thus reproducing the original behaviour
+FIX: (#3723) TaskManagerAgentBase - refactor adding operations for transformation to separate function to 
+     ensure presence of Owner/DN/Group in dict entries RequestTaskAgent no longer sets shifterProxy by default.
+
+*Resources
+
+CHANGE: (#3745) Add the deprecated decorator to native XROOT plugin
+
 [v6r20p4]
 
 *DMS
@@ -193,6 +215,15 @@ FIX: Update of the FTS3 docs
 *Tests
 FIX: add MonitoringDB to the configuration
 FIX: Installing elasticSeach locally in Jenkins, with ComponentInstaller support.
+
+[v6r19p24]
+
+*WMS
+FIX: (#3739) pilotTools - added --tag and --requiredTag options
+FIX: (#3739) pilotCommands - make NumberOfProcessors = 1 if nowhere defined (default)
+
+*Resources
+FIX: (#3739) CREAMComputingElement - possibility to defined CEQueueName to be used in the pilot submission command
 
 [v6r19p23]
 

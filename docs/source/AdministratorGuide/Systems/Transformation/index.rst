@@ -617,3 +617,49 @@ Actions on transformations
 * **Flush:** It has a meaning only depending on the plugin used, for example the 'BySize' plugin, used *e.g.* for merging productions, creates a task if there are enough files in input to have at least a certain size: 'flush' will make the 'BySize' plugin to ignore such requirement. When a transformation is flushed also its replica cache will be re-created (instead of after 24 hours).
 * **Complete:** The transformation can be archived by the TransformationCleaningAgent. Archived means that the data produced stay, but not the entries in the TransformationDB
 * **Clean:** The transformation is cleaned by the TransformationCleaningAgent: jobs are killed and removed from WMS. Produced and stored files are removed from the Storage Elements, when "OutputDirectories" parameter is set for the transformation.
+
+.. _trans-multi-vo:
+
+----------------------
+Multi VO Configuration
+----------------------
+
+
+
+.. versionadded:: v6r20p5
+
+There are two possibilities to configure the agents of the transformation system for the use in a multi VO installation.
+
+ - Use the same WorkflowTaskAgent and RequestTaskAgents for multiple VOs, no
+   *shifterProxy* or *ShifterCredential* must be set for these agents. If
+   neither of those options are set the credentials of the owner of the
+   transformations are used to submit Jobs or Requests.
+
+ - Use a set of WorkflowTaskAgent and RequestTaskAgent for each VO. This
+   requires that each VO uses a distinct set of Transformation Types,
+   e.g. MCSimulation_BigVO. This allows one to set VO specific
+   shifterProxies. This setup is recommended to create a dedicated
+   WorkflowTaskAgent or RequestTaskAgent for a VO that will create a large
+   number of jobs or requests.
+
+ It is possible to mix the two configurations and have one WorkflowTaskAgent
+ treat transformations of many smaller VOs, while installing a dedicated
+ instance for the larger ones::
+
+        WorkflowTaskAgent
+        {
+          ...
+          TransType = MCSimulation
+          TransType += MCReconstruction
+          ...
+          #No shifterProxy / ShifterCredentials
+        }
+        WorkflowTaskAgent-BigVO
+        {
+          ...
+          TransType = MCSimulation_BigVO
+          TransType += MCReconstruction_BigVO
+          Module = WorkflowTaskAgent
+          ...
+          #shifterProxy / ShifterCredentials are optional
+        }
