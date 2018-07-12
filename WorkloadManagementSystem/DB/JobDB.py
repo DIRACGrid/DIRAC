@@ -426,8 +426,11 @@ class JobDB(DB):
 #############################################################################
   def getJobStatus(self, jobID):
     """ Get all Job Status values for a given jobID.
-        Return a dictionary with all Job Status values,
-        return an empty dictionary if matching job not found
+
+    :param self: self reference
+    :param int jobID: Job ID
+
+    :return : dict with all Job Status values/empty dict if matching job not found
     """
 
     jobStatusNames = ['Status', 'MinorStatus', 'ApplicationStatus']
@@ -453,8 +456,8 @@ class JobDB(DB):
 
     statusValues = {}
 
-    for i in xrange(len(jobStatusNames)):
-      statusValues[jobStatusNames[i]] = str(values[i])
+    for status in enumerate(jobStatusNames):
+      statusValues[status[1]] = str(values[status[0]])   # status[1]: Status Name, status[0]: numeric index
 
     return S_OK(statusValues)
 

@@ -37,6 +37,8 @@ class ElasticJobDB(DB):
     :param self: self reference
     :param int jobID: Job ID
     :param list paramList: list of parameters to be returned
+
+    :return : dict with all Job Parameter values
     """
 
     self.log.debug('JobDB.getParameters: Getting Parameters for job %s' % jobID)
@@ -88,6 +90,8 @@ class ElasticJobDB(DB):
     :param self: self reference
     :param int jobID: Job ID
     :param list paramList: list of parameters to be returned
+
+    :return : dict with all Job Parameter and Attribute values
     """
 
     self.log.debug('JobDB.getParameters: Getting Parameters for job %s' % jobID)
@@ -129,17 +133,19 @@ class ElasticJobDB(DB):
     return S_OK(resultDict)
 
 #############################################################################
-  def setJobParameter(self, jobID, key, value, **keywords):
+  def setJobParameter(self, jobID, key, value, **kwargs):
     """ Set parameters for the job JobID
 
     :param self: self reference
     :param int jobID: Job ID
     :param basestring key: Name
     :param keyword value: value
+
+    :return : S_OK/S_ERROR
     """
 
     attributesDict = {"jobGroup": "00000000", "owner": 'Unknown', "proxy": None, "subTime": None, "runTime": None}
-    attributesDict.update(keywords)
+    attributesDict.update(kwargs)
 
     paramsStr = "ctx._source.Value = params.value; ctx._source.Name = params.name; "
     jobGroupStr = "ctx._source.JobGroup = params.jobGroup; "

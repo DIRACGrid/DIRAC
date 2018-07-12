@@ -72,7 +72,7 @@ class JobStateUpdateHandler(RequestHandler):
 
     infoStr = None
     trials = 10
-    for i in range(trials):
+    for i in xrange(trials):
       result = jobDB.getJobStatus(jobID)
       if not result['OK']:
         return result
