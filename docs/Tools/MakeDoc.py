@@ -28,6 +28,7 @@ BAD_FILES = ("lfc_dfc_copy",
              "JobWrapperTemplate",
              "PlotCache",  # PlotCache creates a thread on import, which keeps sphinx from exiting
              "PlottingHandler",
+             "setup.py",  # configuration for style check
              # "DataStoreClient", # instantiates itself
              # "ReportsClient", ## causes gDataCache to start
              # "ComponentInstaller", # tries to connect to a DB

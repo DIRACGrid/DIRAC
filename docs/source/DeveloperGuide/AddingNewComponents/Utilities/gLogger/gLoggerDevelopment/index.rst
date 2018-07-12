@@ -31,7 +31,7 @@ object in the existing code in order to minimize the changes.
 *LoggingRoot* inherits from *Logging*. It is specific because it is the
 first parent of the chain. In this context, it has more possibilities
 because it is the one and the only that can initialize the root logger
-of the standard *logging* library and it can configure it with the configuration 
+of the standard *logging* library and it can configure it with the configuration
 thanks to the *initialize* method.
 
 *LogLevels*
@@ -43,7 +43,7 @@ containing all the level names and their associated integer values. Its
 purpose is to make string-integer level conversion.
 
 *LogBackend* package
-~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~
 
 *Backend* objects are used to create an abstraction of the *Handler* and
 *Formatter* concepts from the standard library. It is an equivalent of
@@ -59,9 +59,9 @@ objects are located in this package which currently contains:
 -  ’server’: ServerBackend
 
 In order to create custom *Backend* objects, we just
-have to make a new class named *[Backendname]Backend* in 
+have to make a new class named *[Backendname]Backend* in
 this package inheriting from *AbstractBackend*.
-For instance, the class name of the *stdout Backend* is *StdoutBackend*. 
+For instance, the class name of the *stdout Backend* is *StdoutBackend*.
 
 Then, to use it, we just have to add its name in the configuration as usual.
 

@@ -12,3 +12,4 @@ Here the reader can find technical documentation for developing DIRAC systems
    Framework/index
    Transformation/index
    Monitoring/index
+   RequestManagement/index

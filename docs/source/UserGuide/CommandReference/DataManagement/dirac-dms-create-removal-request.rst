@@ -7,6 +7,7 @@ Create a DIRAC RemoveReplica|RemoveFile request to be executed by the RMS
 Usage::
 
   dirac-dms-create-removal-request [option|cfgfile] ... SE LFN ...
+
 Arguments::
 
   SE:       StorageElement|All
@@ -21,4 +22,3 @@ General options::
   -   --autoreload             : Automatically restart if there's any change in the module
   -   --license                : Show DIRAC's LICENSE
   -h  --help                   : Shows this help
-
