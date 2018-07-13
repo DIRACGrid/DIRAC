@@ -10,8 +10,12 @@ from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.DISET.private.Transports.SSL.SocketInfoFactory import gSocketInfoFactory
 from DIRAC.Core.Utilities.Devloader import Devloader
 from DIRAC.Core.Security import Locations
-from DIRAC.Core.Security.X509Chain import X509Chain
-from DIRAC.Core.Security.X509Certificate import X509Certificate
+if os.getenv('DIRAC_USE_M2CRYPTO', 'NO').lower() in ('yes', 'true'):
+  from DIRAC.Core.Security.m2crypto.X509Chain import X509Chain
+  from DIRAC.Core.Security.m2crypto.X509Certificate import X509Certificate
+else:
+  from DIRAC.Core.Security.X509Chain import X509Chain
+  from DIRAC.Core.Security.X509Certificate import X509Certificate
 
 GSI.SSL.set_thread_safe()
 
