@@ -7,6 +7,8 @@ __RCSID__ = "$Id$"
 import stat
 import os
 import tempfile
+import re
+import datetime
 
 import M2Crypto
 from DIRAC import S_OK, S_ERROR
@@ -52,6 +54,11 @@ class X509CRL(object):
     self.__pemData = pemData
     return S_OK()
 
+  def __str__(self):
+    if not self.__loadedCert:
+      return "No certificate loaded"
+    return self.__pemData
+
   def dumpAllToString(self):
     """
     Dump all to string
@@ -65,18 +72,16 @@ class X509CRL(object):
     """
     Dump all to file. If no filename specified a temporal one will be created
     """
-    retVal = self.dumpAllToString()
-    if not retVal['OK']:
-      return retVal
-    pemData = retVal['Value']
+    if not self.__loadedCert:
+      return S_ERROR("No certificate loaded")
     try:
       if not filename:
         fd, filename = tempfile.mkstemp()
-        os.write(fd, pemData)
+        os.write(fd, str(self))
         os.close(fd)
       else:
         fd = file(filename, "w")
-        fd.write(pemData)
+        fd.write(str(self))
         fd.close()
     except Exception as e:
       return S_ERROR(DErrno.EWF, "%s: %s" % (filename, repr(e).replace(',)', ')')))
@@ -86,12 +91,25 @@ class X509CRL(object):
       return S_ERROR(DErrno.ESPF, "%s: %s" % (filename, repr(e).replace(',)', ')')))
     return S_OK(filename)
 
-  def __str__(self):
+  def hasExpired(self):
+    if not self.__loadedCert:
+      return S_ERROR("No certificate loaded")
+    # XXX It sould be done better, for now M2Crypto doesn't offer access to fields like Next Update
+    txt = self.__revokedCert.as_text()
+    dateStr = re.search(r"Next Update: (?P<nextUpdate>.*)\n", txt).group('nextUpdate')
+    nextUpdate = datetime.datetime.strptime(dateStr, "%b %d %H:%M:%S %Y GMT")
+    return S_OK(datetime.datetime.now() > nextUpdate)
+
+  def getIssuer(self):
+    if not self.__loadedCert:
+      return S_ERROR("No certificate loaded")
+    # XXX It sould be done better, for now M2Crypto doesn't offer access to fields like Issuer
+    txt = self.__revokedCert.as_text()
+    return S_OK(re.search(r"Issuer: (?P<issuer>.*)\n", txt).group('issuer'))
+
+  def __repr__(self):
     repStr = "<X509CRL"
     if self.__loadedCert:
       repStr += ""  # self.__revokedCert.get_issuer().one_line()  # Why issuer?! XXX
     repStr += ">"
     return repStr
-
-  def __repr__(self):
-    return self.__str__()
