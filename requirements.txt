@@ -3,7 +3,9 @@ git+https://:@gitlab.cern.ch:8443/fts/fts-rest.git#egg=fts3
 git+https://github.com/DIRACGrid/pyGSI.git#egg=GSI
 
 # From pypi
+
 asn1
+autopep8==1.3.3
 certifi
 CMRESHandler>=1.0.0b4
 elasticsearch-dsl>=2.0.0

@@ -231,9 +231,6 @@ class X509Chain(object):
     if not self.__loadedPKey:
       return S_ERROR(DErrno.ENOPKEY)
 
-    if self.__isProxy:
-      rfc = self.isRFC().get('Value', False)
-
     issuerCert = self.__certList[0]
 
     if not proxyKey:
@@ -412,8 +409,6 @@ class X509Chain(object):
           if contraint[0] == LIMITED_PROXY_OID:
             limited = True
     else:
-      if self.__isRFC is None:
-        self.__isRFC = False
       if lastEntry[1] == "limited proxy":
         limited = True
     proxySubject.remove_entry(psEntries - 1)
@@ -439,13 +434,14 @@ class X509Chain(object):
       return S_ERROR(DErrno.EX509, "Chain does not contain a valid proxy")
     if self.isPUSP()['Value']:
       return self.getCertInChain(self.__firstProxyStep - 2)['Value'].getDIRACGroup(ignoreDefault=ignoreDefault)
-    # The code below will find the first match of the DIRAC group
-    for i in range(len(self.__certList) - 1, -1, -1):
-      retVal = self.getCertInChain(i)['Value'].getDIRACGroup(ignoreDefault=True)
-      if retVal['OK'] and 'Value' in retVal and retVal['Value']:
-        return retVal
-    # No DIRAC group found, try to get the default one
-    return self.getCertInChain(self.__firstProxyStep)['Value'].getDIRACGroup(ignoreDefault=ignoreDefault)
+    else:
+      # The code below will find the first match of the DIRAC group
+      for i in range(len(self.__certList) - 1, -1, -1):
+        retVal = self.getCertInChain(i)['Value'].getDIRACGroup(ignoreDefault=True)
+        if retVal['OK'] and 'Value' in retVal and retVal['Value']:
+          return retVal
+      # No DIRAC group found, try to get the default one
+      return self.getCertInChain(self.__firstProxyStep)['Value'].getDIRACGroup(ignoreDefault=ignoreDefault)
 
   def hasExpired(self):
     """
