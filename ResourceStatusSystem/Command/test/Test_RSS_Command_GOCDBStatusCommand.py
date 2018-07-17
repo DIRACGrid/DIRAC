@@ -1,6 +1,8 @@
 """ Test_RSS_Command_GOCDBStatusCommand
 """
 
+__RCSID__ = '$Id$'
+
 import unittest
 import importlib
 
@@ -8,11 +10,8 @@ from datetime import datetime, timedelta
 
 import mock
 
-from DIRAC.ResourceStatusSystem.Command.DowntimeCommand import DowntimeCommand
 from DIRAC import gLogger, S_OK
-
-
-__RCSID__ = '$Id:  $'
+from DIRAC.ResourceStatusSystem.Command.DowntimeCommand import DowntimeCommand
 
 ################################################################################
 

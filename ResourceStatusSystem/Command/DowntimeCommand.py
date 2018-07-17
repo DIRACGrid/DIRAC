@@ -1,6 +1,8 @@
 ''' DowntimeCommand module
 '''
 
+__RCSID__ = '$Id$'
+
 import urllib2
 import re
 
@@ -15,8 +17,6 @@ from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.Command.Command import Command
 from DIRAC.ResourceStatusSystem.Utilities import CSHelpers
-
-__RCSID__ = '$Id:  $'
 
 
 class DowntimeCommand(Command):
@@ -220,29 +220,21 @@ class DowntimeCommand(Command):
     uniformResult = []
 
     # Humanize the results into a dictionary, not the most optimal, but readable
-    for downtime, downDic in results.items():
+    for downtime, downDic in results.iteritems():
 
       dt = {}
 
-      if 'HOSTNAME' in downDic.keys():
-        dt['Name'] = downDic['HOSTNAME']
-      elif 'SITENAME' in downDic.keys():
-        dt['Name'] = downDic['SITENAME']
-      else:
-        return S_ERROR("SITENAME or HOSTNAME are missing")
+      dt['Name'] = downDic.get('HOSTNAME', downDic.get('SITENAME'))
+      if not dt['Name']:
+        return S_ERROR("SITENAME and HOSTNAME are missing from downtime dictionary")
 
-      if 'SERVICE_TYPE' in downDic.keys():
-        dt['gOCDBServiceType'] = downDic['SERVICE_TYPE']
-        if gOCDBServiceType:
-          gocdbST = gOCDBServiceType.lower()
-          csST = downDic['SERVICE_TYPE'].lower()
-          if gocdbST != csST:
-            return S_ERROR("SERVICE_TYPE mismatch between GOCDB (%s) and CS (%s) for %s" % (gocdbST,
-                                                                                            csST,
-                                                                                            dt['Name']))
-      else:
-        # WARNING: do we want None as default value?
-        dt['gOCDBServiceType'] = None
+      dt['gOCDBServiceType'] = downDic.get('SERVICE_TYPE')
+
+      if dt['gOCDBServiceType'] and gOCDBServiceType:
+        if gOCDBServiceType.lower() != downDic['SERVICE_TYPE'].lower():
+          return S_ERROR("SERVICE_TYPE mismatch between GOCDB (%s) and CS (%s) for %s" % (gOCDBServiceType,
+                                                                                          downDic['SERVICE_TYPE'],
+                                                                                          dt['Name']))
 
       dt['DowntimeID'] = downtime
       dt['Element'] = element
@@ -322,7 +314,7 @@ class DowntimeCommand(Command):
             dtOverlapping.append(dt)
 
     result = None
-    if len(dtOverlapping) > 0:
+    if dtOverlapping:
       dtTop = dtOverlapping[0]
       dtBottom = dtOverlapping[-1]
       if dtTop['Severity'].upper() == 'OUTAGE':
