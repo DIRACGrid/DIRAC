@@ -1,11 +1,11 @@
-# $HeadURL:  $
 ''' AlwaysBannedPolicy module
 '''
+
+__RCSID__ = '$Id$'
 
 from DIRAC                                              import S_OK
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyBase import PolicyBase
 
-__RCSID__ = '$Id:  $'
 
 class AlwaysBannedPolicy( PolicyBase ):
   '''
@@ -20,10 +20,8 @@ class AlwaysBannedPolicy( PolicyBase ):
       is completely ignored.
     '''
 
-    policyResult = {
-                     'Status' : 'Banned',
-                     'Reason' : 'AlwaysBanned'
-                   }
+    policyResult = {'Status' : 'Banned',
+                    'Reason' : 'AlwaysBanned'}
 
     return S_OK( policyResult )
 

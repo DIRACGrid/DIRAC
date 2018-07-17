@@ -1,10 +1,10 @@
 """ DowntimePolicy module
 """
 
+__RCSID__ = '$Id$'
+
 from DIRAC                                              import S_OK
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyBase import PolicyBase
-
-__RCSID__ = '$Id:  $'
 
 class DowntimePolicy( PolicyBase ):
   """ The DowntimePolicy checks for downtimes, scheduled or ongoing, depending on the command parameters.

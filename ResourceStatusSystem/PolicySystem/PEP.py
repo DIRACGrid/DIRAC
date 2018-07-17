@@ -174,8 +174,8 @@ class PEP( object ):
     if decisionParams['element'] == 'Site':
       unchangedRow = self.clients['SiteStatus'].getSiteStatuses([ decisionParams['name'] ])
     else:
-      unchangedRow = self.clients['ResourceStatusClient'].selectStatusElement( decisionParams['element'],
-                                                                             'Status', **selectParams )
+      unchangedRow = self.clients['ResourceStatusClient'].selectStatusElement(decisionParams['element'],
+                                                                              'Status', **selectParams)
     if not unchangedRow['OK']:
       return unchangedRow
 

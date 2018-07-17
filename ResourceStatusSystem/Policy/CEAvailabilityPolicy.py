@@ -1,11 +1,11 @@
-# $HeadURL:  $
 ''' CEAvailabilityPolicy module
 '''
+
+__RCSID__ = '$Id$'
 
 from DIRAC                                              import S_OK
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyBase import PolicyBase
 
-__RCSID__ = '$Id:  $'
 
 class CEAvailabilityPolicy( PolicyBase ):
   '''
@@ -31,10 +31,8 @@ class CEAvailabilityPolicy( PolicyBase ):
       Otherwise, it returns error.
     '''
 
-    result = {
-               'Status' : None,
-               'Reason' : None
-              }
+    result = {'Status' : None,
+              'Reason' : None}
 
     if not commandResult[ 'OK' ]:
       result[ 'Status' ] = 'Error'

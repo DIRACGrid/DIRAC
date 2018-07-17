@@ -1,11 +1,11 @@
-# $HeadURL:  $
 ''' AlwaysActivePolicy module
 '''
+
+__RCSID__ = '$Id$'
 
 from DIRAC                                              import S_OK
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyBase import PolicyBase
 
-__RCSID__ = '$Id:  $'
 
 class AlwaysActivePolicy( PolicyBase ):
   '''
@@ -20,10 +20,8 @@ class AlwaysActivePolicy( PolicyBase ):
       is completely ignored.
     '''
 
-    policyResult = {
-                     'Status' : 'Active',
-                     'Reason' : 'AlwaysActive'
-                   }
+    policyResult = {'Status' : 'Active',
+                    'Reason' : 'AlwaysActive'}
 
     return S_OK( policyResult )
 

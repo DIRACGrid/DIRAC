@@ -1,11 +1,10 @@
-# $HeadURL:  $
 ''' AlwaysProbingPolicy module
 '''
 
 from DIRAC                                              import S_OK
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyBase import PolicyBase
 
-__RCSID__ = '$Id:  $'
+__RCSID__ = '$Id$'
 
 class AlwaysProbingPolicy( PolicyBase ):
   '''
@@ -20,10 +19,8 @@ class AlwaysProbingPolicy( PolicyBase ):
       is completely ignored.
     '''
 
-    policyResult = {
-                     'Status' : 'Probing',
-                     'Reason' : 'AlwaysProbing'
-                   }
+    policyResult = {'Status' : 'Probing',
+                    'Reason' : 'AlwaysProbing'}
 
     return S_OK( policyResult )
 

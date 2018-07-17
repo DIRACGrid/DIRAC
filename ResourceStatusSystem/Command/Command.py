@@ -28,19 +28,16 @@ class Command(object):
   def doNew(self, masterParams=None):
     """ To be extended/replaced by real commands
     """
-    gLogger.warn("doNew not implemented in %s" % self.__class__.__name__)
     return S_OK((self.args, masterParams))
 
   def doCache(self):
     """ To be extended/replaced by real commands
     """
-    gLogger.warn("doCache not implemented in %s" % self.__class__.__name__)
     return S_OK(self.args)
 
   def doMaster(self):
     """ To be extended/replaced by real commands
     """
-    gLogger.warn("doMaster not implemented in %s" % self.__class__.__name__)
     return S_OK(self.metrics)
 
   def doCommand(self):

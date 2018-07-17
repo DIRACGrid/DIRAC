@@ -1,11 +1,11 @@
-# $HeadURL:  $
 ''' AlwaysDegradedPolicy module
 '''
+
+__RCSID__ = '$Id$'
 
 from DIRAC                                              import S_OK
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyBase import PolicyBase
 
-__RCSID__ = '$Id:  $'
 
 class AlwaysDegradedPolicy( PolicyBase ):
   '''
@@ -20,10 +20,8 @@ class AlwaysDegradedPolicy( PolicyBase ):
       is completely ignored.
     '''
 
-    policyResult = {
-                     'Status' : 'Degraded',
-                     'Reason' : 'AlwaysDegraded'
-                   }
+    policyResult = {'Status' : 'Degraded',
+                    'Reason' : 'AlwaysDegraded'}
 
     return S_OK( policyResult )
 

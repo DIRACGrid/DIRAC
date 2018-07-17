@@ -1,16 +1,16 @@
-# $HeadURL: $
 ''' CommandCaller
 
   Module that loads commands and executes them.
 
 '''
 
+__RCSID__ = '$Id$'
+
 import copy
 
 from DIRAC                                import S_ERROR, S_OK
 from DIRAC.ResourceStatusSystem.Utilities import Utils
 
-__RCSID__ = '$Id: $'
 
 def commandInvocation( commandTuple, pArgs = None, decisionParams = None, clients = None ):
   '''
@@ -24,7 +24,7 @@ def commandInvocation( commandTuple, pArgs = None, decisionParams = None, client
   if commandTuple is None:
     return S_OK( None )
 
-  # decission params can be a dictionary passed with all the element parameters
+  # decision params can be a dictionary passed with all the element parameters
   # used mostly by the PDP to inject all relevant information
   if decisionParams is None:
     decisionParams = {}
