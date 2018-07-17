@@ -338,7 +338,7 @@ class Dirac(API):
         if not result['OK']:
           self.log.error('Pre-submission checks failed for job with message: "%s"' % (result['Message']))
           return result
-      except Exception as x:
+      except BaseException as x:
         msg = 'Error in VO specific function preSubmissionChecks: "%s"' % (x)
         self.log.error(msg)
         return S_ERROR(msg)
@@ -421,7 +421,7 @@ class Dirac(API):
     return result
 
   @classmethod
-  def __forceLocal(self, job):
+  def __forceLocal(cls, job):
     """Update Job description to avoid pilot submission by WMS
     """
     if os.path.exists(job):
@@ -430,7 +430,7 @@ class Dirac(API):
     else:
       jdl = job
 
-    if not re.search('\[', jdl):
+    if not re.search(r'\[', jdl):
       jdl = '[' + jdl + ']'
     classAdJob = ClassAd(jdl)
 
@@ -588,7 +588,7 @@ class Dirac(API):
 
   #############################################################################
   @classmethod
-  def __getVOPolicyModule(self, module):
+  def __getVOPolicyModule(cls, module):
     """ Utility to get the VO Policy module name
     """
 
@@ -671,8 +671,7 @@ class Dirac(API):
                   'DiskSEList': diskSE,
                   'TapeSEList': tapeSE,
                   'SiteName': siteName,
-                  'CatalogName': fileName
-                  }
+                  'CatalogName': fileName}
 
     self.log.verbose(configDict)
     argumentsDict = {'FileCatalog': resolvedData, 'Configuration': configDict, 'InputData': lfns}
@@ -966,7 +965,7 @@ class Dirac(API):
 
   #############################################################################
   @classmethod
-  def __printOutput(self, fd=None, message=''):
+  def __printOutput(cls, fd=None, message=''):
     """Internal callback function to return standard output when running locally.
     """
     if fd:
