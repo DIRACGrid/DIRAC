@@ -82,6 +82,7 @@ function installSite(){
   killRunsv
   findRelease
 
+  generateCA
   generateCertificates
 
   getCFGFile
