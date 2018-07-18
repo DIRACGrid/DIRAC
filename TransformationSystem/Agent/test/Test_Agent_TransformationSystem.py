@@ -97,15 +97,19 @@ def test_updateFileStatusSuccess(tcMockGetTransformationFilesReturnValue,
   assert res['OK'] == expected
 
 
-@pytest.mark.parametrize("tcMockGetTransformationTasksReturnValue, tmMockUpdateTransformationReservedTasksReturnValue, tcMockSetTaskStatusAndWmsIDReturnValue, expected", [
-    (sError, None, None, False),  # errors getting
-    (sOk, None, None, True),  # no tasks
-    (tasks, sError, None, False),  # tasks, failing to update
-    (tasks, {'OK': True, 'Value': {'NoTasks': [], 'TaskNameIDs': {'1_1': 123, '2_1': 456}}},
-     sError, False),  # tasks, something to update, fail
-    (tasks, {'OK': True, 'Value': {'NoTasks': ['3_4', '5_6'], 'TaskNameIDs': {'1_1': 123, '2_1': 456}}},
-     {'OK': True}, True),  # tasks, something to update, no fail
-])
+@pytest.mark.parametrize("tcMockGetTransformationTasksReturnValue," +
+                         "tmMockUpdateTransformationReservedTasksReturnValue, " +
+                         "tcMockSetTaskStatusAndWmsIDReturnValue, " +
+                         "expected", [(sError, None, None, False),  # errors getting
+                                      (sOk, None, None, True),  # no tasks
+                                      (tasks, sError, None, False),  # tasks, failing to update
+                                      (tasks, {'OK': True,
+                                               'Value': {'NoTasks': [], 'TaskNameIDs': {'1_1': 123, '2_1': 456}}},
+                                       sError, False),  # tasks, something to update, fail
+                                      (tasks, {'OK': True,
+                                               'Value': {'NoTasks': ['3_4', '5_6'],
+                                                         'TaskNameIDs': {'1_1': 123, '2_1': 456}}},
+                                       {'OK': True}, True)])  # tasks, something to update, no fail
 def test_checkReservedTasks(tcMockGetTransformationTasksReturnValue,
                             tmMockUpdateTransformationReservedTasksReturnValue,
                             tcMockSetTaskStatusAndWmsIDReturnValue,
@@ -123,14 +127,17 @@ sOkJobDict = {'OK': True, 'Value': {'JobDictionary': {123: 'foo', 456: 'bar'}}}
 sOkJobs = {'OK': True, 'Value': {123: 'foo', 456: 'bar'}}
 
 
-@pytest.mark.parametrize("tcMockGetTasksToSubmitReturnValue, tmMockPrepareTransformationTasksReturnValue, tmMockSubmitTransformationTasksReturnValue, tmMockUpdateDBAfterTaskSubmissionReturnValue, expected", [
-    (sError, None, None, None, False),  # errors getting
-    ({'OK': True, 'Value': {'JobDictionary': {}}}, None, None, None, True),  # no tasks
-    (sOkJobDict, sError, None, None, False),  # tasks, errors
-    (sOkJobDict, sOkJobs, sError, None, False),  # tasks, still errors
-    (sOkJobDict, sOkJobs, sOk, sError, False),  # tasks, still errors
-    (sOkJobDict, sOkJobs, sOk, sOk, True),  # tasks, no errors
-])
+@pytest.mark.parametrize("tcMockGetTasksToSubmitReturnValue, " +
+                         "tmMockPrepareTransformationTasksReturnValue, " +
+                         "tmMockSubmitTransformationTasksReturnValue, " +
+                         "tmMockUpdateDBAfterTaskSubmissionReturnValue, " +
+                         "expected", [(sError, None, None, None, False),  # errors getting
+                                      ({'OK': True, 'Value': {'JobDictionary': {}}},
+                                       None, None, None, True),  # no tasks
+                                      (sOkJobDict, sError, None, None, False),  # tasks, errors
+                                      (sOkJobDict, sOkJobs, sError, None, False),  # tasks, still errors
+                                      (sOkJobDict, sOkJobs, sOk, sError, False),  # tasks, still errors
+                                      (sOkJobDict, sOkJobs, sOk, sOk, True)])  # tasks, no errors
 def test_submitTasks(tcMockGetTasksToSubmitReturnValue,
                      tmMockPrepareTransformationTasksReturnValue,
                      tmMockSubmitTransformationTasksReturnValue,
