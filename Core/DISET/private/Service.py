@@ -36,6 +36,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 __RCSID__ = "$Id$"
 
+#_monitor = MonitoringClient()
 
 class Service(object):
 
@@ -59,7 +60,6 @@ class Service(object):
         Standalone is true if there is only one service started
         If it's false, every service is linked to a different MonitoringClient
     """
-    print '__init__'
     self._svcData = serviceData
     self._name = serviceData['modName']
     self._standalone = serviceData['standalone']
@@ -74,10 +74,17 @@ class Service(object):
     self._transportPool = getGlobalTransportPool()
     self.__cloneId = 0
     self.__maxFD = 0
+    self._counter = 0
 
-  def setCloneProcessId(self, cloneId):
+  def initMonitoring(self, worker):
+    print 'initMonitoring', worker
+    return
+    if worker not in self._monitoringProcesses:
+      self._monitoringProcesses[worker] = MonitoringClient()
+    self._initMonitoring(self._monitoringProcesses[worker])
+
+  def setCloneProcessId(self, cloneId, moni=None):
     print 'setCloneProcessId', cloneId
-    import threading
     print'setCloneProcessId', threading.current_thread(), os.getpid()
     self.__cloneId = cloneId
     if not self.activityMonitoring:
@@ -103,6 +110,11 @@ class Service(object):
     # Initialize lock manager
     self._lockManager = LockManager(self._cfg.getMaxWaitingPetitions())
     self._threadPool = ThreadPoolExecutor(max(0, self._cfg.getMaxThreads()))
+
+    #self._initMonitoring(self._monitoringProcesses[0])
+    #self._initMonitoring(self._monitoringProcesses[1], 1)
+  
+    #self._initMonitoring()
 
     self._msgBroker = MessageBroker("%sMSB" % self._name, threadPool=self._threadPool)
     # Create static dict
@@ -258,7 +270,44 @@ class Service(object):
       gLogger.verbose("Meta action %s props are %s" % (actionType, authRules[actionType]))
 
     return S_OK({'methods': methodsList, 'auth': authRules, 'types': typeCheck})
+  
+  def _initMonitoring1(self, monitor, clone = None):
+    # Init extra bits of monitoring
+    print '_initMonitoring', self.__cloneId, os.getpid(), self._monitoringProcesses
+    monitor.setComponentType(MonitoringClient.COMPONENT_SERVICE)
+    monitor.setComponentName(self._name)
+    monitor.setComponentLocation(self._cfg.getURL())
+    monitor.initialize()
 
+    monitor.registerActivity(
+        "Connections", "Connections received", "Framework", "connections", MonitoringClient.OP_RATE)
+    monitor.registerActivity("Queries", "Queries served", "Framework", "queries", MonitoringClient.OP_RATE)
+    monitor.registerActivity('CPU', "CPU Usage", 'Framework', "CPU,%", MonitoringClient.OP_MEAN, 600)
+    monitor.registerActivity('MEM', "Memory Usage", 'Framework', 'Memory,MB', MonitoringClient.OP_MEAN, 600)
+    monitor.registerActivity(
+        'PendingQueries', "Pending queries", 'Framework', 'queries', MonitoringClient.OP_MEAN)
+    monitor.registerActivity('ActiveQueries', "Active queries", 'Framework', 'threads', MonitoringClient.OP_MEAN)
+    monitor.registerActivity(
+        'RunningThreads', "Running threads", 'Framework', 'threads', MonitoringClient.OP_MEAN)
+    monitor.registerActivity('MaxFD', "Max File Descriptors", 'Framework', 'fd', MonitoringClient.OP_MEAN)
+
+    monitor.setComponentExtraParam('DIRACVersion', DIRAC.version)
+    monitor.setComponentExtraParam('platform', DIRAC.getPlatform())
+    monitor.setComponentExtraParam('startTime', Time.dateTime())
+    for prop in (("__RCSID__", "version"), ("__doc__", "description")):
+      try:
+        value = getattr(self._handler['module'], prop[0])
+      except Exception as e:
+        gLogger.exception(e)
+        gLogger.error("Missing property", prop[0])
+        value = 'unset'
+      monitor.setComponentExtraParam(prop[1], value)
+    for secondaryName in self._cfg.registerAlsoAs():
+      gLogger.info("Registering %s also as %s" % (self._name, secondaryName))
+      self._validNames.append(secondaryName)
+    return S_OK()
+  
+  
   def _initMonitoring(self):
     if not self.activityMonitoring:
       # Init extra bits of monitoring
@@ -306,13 +355,12 @@ class Service(object):
           gLogger.error("Missing property", prop[0])
           value = 'unset'
         self._monitor.setComponentExtraParam(prop[1], value)
-
     for secondaryName in self._cfg.registerAlsoAs():
       gLogger.info("Registering %s also as %s" % (self._name, secondaryName))
       self._validNames.append(secondaryName)
 
     return S_OK()
-
+  
   def __reportThreadPoolContents(self):
     if self.activityMonitoring:
       # As ES accepts raw data these monitoring fields are being sent here because they are time dependant.
@@ -338,7 +386,7 @@ class Service(object):
     return self._cfg
 
   # End of initialization functions
-  def handleConnection(self, clientTransport):
+  def handleConnection(self, clientTransport, monitoring):
     """
       This method may be called by ServiceReactor.
       The method stacks openened connection in a queue, another thread
@@ -362,9 +410,8 @@ class Service(object):
 
     self._threadPool.submit(self._processInThread, clientTransport)
 
-
   # Threaded process function
-  def _processInThread(self, clientTransport):
+  def _processInThread(self, clientTransport, monitoring = None):
     """
     This method handles a RPC, FileTransfer or Connection.
     Connection may be opened via ServiceReactor.__acceptIncomingConnection
@@ -389,18 +436,17 @@ class Service(object):
             e.g. after RPC, closeTransport=True
 
     """
-    start = time.time()
+
     self.__maxFD = max(self.__maxFD, clientTransport.oSocket.fileno())
     self._lockManager.lockGlobal()
     try:
-      monReport = self.__startReportToMonitoring()
+      monReport = self.__startReportToMonitoring(monitoring)
     except Exception:
       monReport = False
     try:
       # Handshake
       try:
         result = clientTransport.handshake()
-        print 'HAND', time.time() - start
         if not result['OK']:
           clientTransport.close()
           return
@@ -431,10 +477,9 @@ class Service(object):
         self._transportPool.close(trid)
       return result
     finally:
-      self._lockManager.unlockGlobal()
-      print 'END', time.time() - start
       if monReport:
         self.__endReportToMonitoring(*monReport)
+      self._lockManager.unlockGlobal()
 
   def _createIdentityString(self, credDict, clientTransport=None):
     if 'username' in credDict:
@@ -506,7 +551,7 @@ class Service(object):
         if methodName in hardcodedRulesByType:
           hardcodedMethodAuth = hardcodedRulesByType[methodName]
     # Auth time!
-    if False: #not self._authMgr.authQuery(csAuthPath, credDict, hardcodedMethodAuth):
+    if not self._authMgr.authQuery(csAuthPath, credDict, hardcodedMethodAuth):
       # Get the identity string
       identity = self._createIdentityString(credDict)
       fromHost = "unknown host"
