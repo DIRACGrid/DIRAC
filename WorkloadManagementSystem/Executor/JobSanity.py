@@ -152,5 +152,3 @@ class JobSanity(OptimizerExecutor):
     if assigned != numSBsToAssign:
       self.jobLog.error("Could not assign all sandboxes (%s). Only assigned %s" % (numSBsToAssign, assigned))
     return S_OK(numSBsToAssign)
-
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

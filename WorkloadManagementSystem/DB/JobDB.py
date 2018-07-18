@@ -1350,7 +1350,7 @@ class JobDB( DB ):
     return result
 
 #############################################################################
-  def rescheduleJob( self, jobID ):
+  def rescheduleJob(self, jobID):
     """ Reschedule the given job to run again from scratch. Retain the already
         defined parameters in the parameter Attic
     """
