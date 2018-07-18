@@ -6,20 +6,14 @@
 
 # pylint: disable=unused-argument
 
-from DIRAC import S_OK
-from DIRAC.Core.DISET.RPCClient import RPCClient
-
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
-
-
 __RCSID__ = '$Id$'
 
-# a method that makes the first letter uppercase only (and leaves the rest letters unaffected)
+from DIRAC import S_OK
+from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
+from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import uppercase_first_letter
 
-
-def uppercase_first_letter(key):
-  return key[0].upper() + key[1:]
 
 
 class ResourceStatusClient(object):
