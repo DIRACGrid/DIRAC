@@ -4,6 +4,7 @@ __RCSID__ = "$Id$"
 import time
 import copy
 import os
+import tempfile
 import GSI
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
 from DIRAC.Core.Utilities.Network import checkHostsMatch
@@ -12,10 +13,15 @@ from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Security import Locations
 if os.getenv('DIRAC_USE_M2CRYPTO', 'NO').lower() in ('yes', 'true'):
   from DIRAC.Core.Security.m2crypto.X509Chain import X509Chain
+  from DIRAC.Core.Security.m2crypto.X509Certificate import X509Certificate
+  from DIRAC.Core.Security.m2crypto.X509CRL import X509CRL
+  import M2Crypto
 else:
   from DIRAC.Core.Security.X509Chain import X509Chain
 
 DEFAULT_SSL_CIPHERS = "ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:!aNULL:!MD5:!DSS"
+
+VERIFY_DEPTH = 50 # isn't it A BIT too deep?
 
 
 class SocketInfo:
@@ -54,10 +60,19 @@ class SocketInfo:
     return self.infoDict['localCredentialsLocation']
 
   def gatherPeerCredentials(self):
-    certList = self.sslSocket.get_peer_certificate_chain()
+    certList = []
+    if os.getenv('DIRAC_USE_M2CRYPTO', 'NO').lower() in ('yes', 'true'):
+      certStack = self.sslSocket.get_peer_cert_chain()
+      for cert in certStack:
+        certList.append(cert)
+    else:
+      certList = self.sslSocket.get_peer_certificate_chain()
     # Servers don't receive the whole chain, the last cert comes alone
     if not self.infoDict['clientMode']:
-      certList.insert(0, self.sslSocket.get_peer_certificate())
+      if os.getenv('DIRAC_USE_M2CRYPTO', 'NO').lower() in ('yes', 'true'):
+        certList.insert(0, self.sslSocket.get_peer_cert())
+      else:
+        certList.insert(0, self.sslSocket.get_peer_certificate())
     peerChain = X509Chain(certList=certList)
     isProxyChain = peerChain.isProxy()['Value']
     isLimitedProxyChain = peerChain.isLimitedProxy()['Value']
@@ -156,44 +171,86 @@ class SocketInfo:
         gLogger.debug("CAs location is %s" % casPath)
         casFound = 0
         crlsFound = 0
-        SocketInfo.__caStore = GSI.crypto.X509Store()
-        for fileName in os.listdir(casPath):
-          filePath = os.path.join(casPath, fileName)
-          if not os.path.isfile(filePath):
-            continue
-          fObj = open(filePath, "rb")
-          pemData = fObj.read()
-          fObj.close()
-          # Try to load CA Cert
-          try:
-            caCert = GSI.crypto.load_certificate(GSI.crypto.FILETYPE_PEM, pemData)
-            if caCert.has_expired():
+        if os.getenv('DIRAC_USE_M2CRYPTO', 'NO').lower() in ('yes', 'true'):
+          SocketInfo.__caStore = M2Crypto.X509.X509_Store()
+          for fileName in os.listdir(casPath):
+            filePath = os.path.join(casPath, fileName)
+            if not os.path.isfile(filePath):
               continue
-            caID = (caCert.get_subject().one_line(), caCert.get_issuer().one_line())
-            caNotAfter = caCert.get_not_after()
-            if caID not in casDict:
-              casDict[caID] = (caNotAfter, caCert)
-              casFound += 1
-            else:
-              if casDict[caID][0] < caNotAfter:
-                casDict[caID] = (caNotAfter, caCert)
-            continue
-          except:
-            if fileName.find(".0") == len(fileName) - 2:
-              gLogger.exception("LOADING %s" % filePath)
-          if 'IgnoreCRLs' not in self.infoDict or not self.infoDict['IgnoreCRLs']:
-            # Try to load CRL
+            fObj = file(filePath, "rb")
+            pemData = fObj.read()
+            fObj.close()
+            # Try to load CA Cert
             try:
-              crl = GSI.crypto.load_crl(GSI.crypto.FILETYPE_PEM, pemData)
-              if crl.has_expired():
+              caCert = X509Certificate(certString=pemData)
+              expired = caCert.hasExpired()
+              if expired['OK'] and expired['Value']:
                 continue
-              crlID = crl.get_issuer().one_line()
-              crlsDict[crlID] = crl
+              subject = caCert.getSubjectDN()
+              if not subject['OK']:
+                return subject
+              issuer = caCert.getIssuerDN()
+              if not issuer['OK']:
+                return issuer
+              caID = (str(subject['Value']), str(issuer['Value']))
+              caNotAfter = caCert.getNotAfterDate()
+              if caID not in casDict:
+                casDict[caID] = (caNotAfter, caCert)
+                casFound += 1
+              else:
+                if casDict[caID][0] < caNotAfter:
+                  casDict[caID] = (caNotAfter, caCert)
+              continue
+            except:
+              if fileName.find(".0") == len(fileName) - 2:
+                gLogger.exception("LOADING %s" % filePath)
+            if 'IgnoreCRLs' not in self.infoDict or not self.infoDict['IgnoreCRLs']:
+              # Try to load CRL
+              crl = X509CRL.instanceFromFile(filePath)
+              if crl.hasExpired():
+                continue
+              crlsDict[crl.getIssuer()] = crl
               crlsFound += 1
               continue
-            except Exception as e:
-              if fileName.find(".r0") == len(fileName) - 2:
-                gLogger.exception("LOADING %s ,Exception: %s" % (filePath, str(e)))
+        else:
+          SocketInfo.__caStore = GSI.crypto.X509Store()
+          for fileName in os.listdir(casPath):
+            filePath = os.path.join(casPath, fileName)
+            if not os.path.isfile(filePath):
+              continue
+            fObj = file(filePath, "rb")
+            pemData = fObj.read()
+            fObj.close()
+            # Try to load CA Cert
+            try:
+              caCert = GSI.crypto.load_certificate(GSI.crypto.FILETYPE_PEM, pemData)
+              if caCert.has_expired():
+                continue
+              caID = (caCert.get_subject().one_line(), caCert.get_issuer().one_line())
+              caNotAfter = caCert.get_not_after()
+              if caID not in casDict:
+                casDict[caID] = (caNotAfter, caCert)
+                casFound += 1
+              else:
+                if casDict[caID][0] < caNotAfter:
+                  casDict[caID] = (caNotAfter, caCert)
+              continue
+            except:
+              if fileName.find(".0") == len(fileName) - 2:
+                gLogger.exception("LOADING %s" % filePath)
+            if 'IgnoreCRLs' not in self.infoDict or not self.infoDict['IgnoreCRLs']:
+              # Try to load CRL
+              try:
+                crl = GSI.crypto.load_crl(GSI.crypto.FILETYPE_PEM, pemData)
+                if crl.has_expired():
+                  continue
+                crlID = crl.get_issuer().one_line()
+                crlsDict[crlID] = crl
+                crlsFound += 1
+                continue
+              except Exception as e:
+                if fileName.find(".r0") == len(fileName) - 2:
+                  gLogger.exception("LOADING %s ,Exception: %s" % (filePath, str(e)))
 
         gLogger.debug("Loaded %s CAs [%s CRLs]" % (casFound, crlsFound))
         SocketInfo.__cachedCAsCRLs = ([casDict[k][1] for k in casDict],
@@ -204,13 +261,20 @@ class SocketInfo:
     finally:
       SocketInfo.__cachedCAsCRLsLoadLock.release()
     # Generate CA Store
-    caStore = GSI.crypto.X509Store()
-    caList = SocketInfo.__cachedCAsCRLs[0]
-    for caCert in caList:
-      caStore.add_cert(caCert)
-    crlList = SocketInfo.__cachedCAsCRLs[1]
-    for crl in crlList:
-      caStore.add_crl(crl)
+    if os.getenv('DIRAC_USE_M2CRYPTO', 'NO').lower() in ('yes', 'true'):
+      caStore = M2Crypto.X509.X509_Store()
+      caList = SocketInfo.__cachedCAsCRLs[0]
+      for caCert in caList:
+        caStore.add_x509(caCert)
+      crlList = SocketInfo.__cachedCAsCRLs[1]
+    else:
+      caStore = GSI.crypto.X509Store()
+      caList = SocketInfo.__cachedCAsCRLs[0]
+      for caCert in caList:
+        caStore.add_cert(caCert)
+      crlList = SocketInfo.__cachedCAsCRLs[1]
+      for crl in crlList:
+        caStore.add_crl(crl)
     return S_OK(caStore)
 
   def __createContext(self):
@@ -252,6 +316,35 @@ class SocketInfo:
       self.sslContext.set_verify(GSI.SSL.VERIFY_NONE, None, gsiEnable)  # Demand a certificate
     return S_OK()
 
+  def __createContext_m2crypto(self):
+    clientContext = self.__getValue('clientMode', False)
+    # Initialize context
+    contextOptions = M2Crypto.SSL.op_all
+    if not clientContext:
+      contextOptions |= M2Crypto.m2.SSL_OP_NO_SSLv2 | M2Crypto.m2.SSL_OP_NO_SSLv3
+    if 'sslMethod' in self.infoDict:
+      methodName = self.infoDict['sslMethod'].lower()
+    else:
+      methodName = "tlsv1"
+    self.sslContext = M2Crypto.SSL.Context(methodName)
+    self.sslContext.set_cipher_list(self.infoDict.get('sslCiphers', DEFAULT_SSL_CIPHERS))
+    if contextOptions:
+      self.sslContext.set_options(contextOptions)
+    # Enable GSI? XXX
+    gsiEnable = False
+    # if not clientContext or self.__getValue('gsiEnable', False):
+    #   gsiEnable = True
+    # DO CA Checks?
+    if not self.__getValue('skipCACheck', False):
+      self.sslContext.set_verify(M2Crypto.SSL.verify_peer | M2Crypto.SSL.verify_fail_if_no_peer_cert, VERIFY_DEPTH)
+      self.sslContext.load_verify_locations(Locations.getCAsLocation())
+    else:
+      self.sslContext.set_verify(GSI.SSL.VERIFY_NONE)  # Demand a certificate
+    return S_OK()
+
+  if os.getenv('DIRAC_USE_M2CRYPTO', 'NO').lower() in ('yes', 'true'):
+    __createContext = __createContext_m2crypto
+
   def __generateContextWithCerts(self):
     certKeyTuple = Locations.getHostCertificateAndKeyLocation()
     if not certKeyTuple:
@@ -262,10 +355,25 @@ class SocketInfo:
     if not retVal['OK']:
       return retVal
     # Verify depth to 20 to ensure accepting proxies of proxies of proxies....
-    self.sslContext.set_verify_depth(50)
+    self.sslContext.set_verify_depth(VERIFY_DEPTH)
     self.sslContext.use_certificate_chain_file(certKeyTuple[0])
     self.sslContext.use_privatekey_file(certKeyTuple[1])
     return S_OK()
+
+  def __generateContextWithCerts_m2crypto(self):
+    certKeyTuple = Locations.getHostCertificateAndKeyLocation()
+    if not certKeyTuple:
+      return S_ERROR("No valid certificate or key found")
+    self.setLocalCredentialsLocation(certKeyTuple)
+    gLogger.debug("Using certificate %s\nUsing key %s" % certKeyTuple)
+    retVal = self.__createContext()
+    if not retVal['OK']:
+      return retVal
+    self.sslContext.load_cert_chain(certchainfile=certKeyTuple[0], keyfile=certKeyTuple[1])
+    return S_OK()
+
+  if os.getenv('DIRAC_USE_M2CRYPTO', 'NO').lower() in ('yes', 'true'):
+    __generateContextWithCerts = __generateContextWithCerts_m2crypto
 
   def __generateContextWithProxy(self):
     if 'proxyLocation' in self.infoDict:
@@ -285,6 +393,27 @@ class SocketInfo:
     self.sslContext.use_privatekey_file(proxyPath)
     return S_OK()
 
+  def __generateContextWithProxy_m2crypto(self, proxyPath=None):
+    if not proxyPath:
+      if 'proxyLocation' in self.infoDict:
+        proxyPath = self.infoDict['proxyLocation']
+        if not os.path.isfile(proxyPath):
+          return S_ERROR("Defined proxy is not a file")
+      else:
+        proxyPath = Locations.getProxyLocation()
+        if not proxyPath:
+          return S_ERROR("No valid proxy found")
+    self.setLocalCredentialsLocation((proxyPath, proxyPath))
+    gLogger.debug("Using proxy %s" % proxyPath)
+    retVal = self.__createContext()
+    if not retVal['OK']:
+      return retVal
+    self.sslContext.load_cert_chain(certchainfile=proxyPath, keyfile=proxyPath)
+    return S_OK()
+
+  if os.getenv('DIRAC_USE_M2CRYPTO', 'NO').lower() in ('yes', 'true'):
+    __generateContextWithProxy = __generateContextWithProxy_m2crypto
+
   def __generateContextWithProxyString(self):
     proxyString = self.infoDict['proxyString']
     self.setLocalCredentialsLocation((proxyString, proxyString))
@@ -294,6 +423,17 @@ class SocketInfo:
       return retVal
     self.sslContext.use_certificate_chain_string(proxyString)
     self.sslContext.use_privatekey_string(proxyString)
+    return S_OK()
+
+  def __generateContextWithProxyString_m2crypto(self):
+    # if bugs, maybe proxyFile gets deleted?
+    proxyString = self.infoDict['proxyString']
+    with tempfile.NamedTemporaryFile() as proxyFile:
+      proxyFile.write(proxyString)
+      proxyFile.flush()
+      retVal = self.__generateContextWithProxy_m2crypto(proxyPath=proxyFile.name)
+      if not retVal['OK']:
+        return retVal
     return S_OK()
 
   def __generateServerContext(self):
@@ -308,9 +448,35 @@ class SocketInfo:
       self.sslContext.set_session_timeout(timeout)
     return S_OK()
 
+  def __generateServerContext_m2crypto(self):
+    retVal = self.__generateContextWithCerts()
+    if not retVal['OK']:
+      return retVal
+    self.sslContext.set_session_id_ctx("DISETConnection%s" % str(time.time()))
+    if 'SSLSessionTimeout' in self.infoDict:
+      timeout = int(self.infoDict['SSLSessionTimeout'])
+      gLogger.debug("Setting session timeout to %s" % timeout)
+      self.sslContext.set_session_timeout(timeout)
+    return S_OK()
+
+  if os.getenv('DIRAC_USE_M2CRYPTO', 'NO').lower() in ('yes', 'true'):
+    __generateServerContext = __generateServerContext_m2crypto
+
   def doClientHandshake(self):
     self.sslSocket.set_connect_state()
     return self.__sslHandshake()
+
+  def doClientHandshake_m2crypto(self):
+    sslbio = M2Crypto.BIO.SSLBio()
+    readbio = M2Crypto.BIO.MemoryBuffer()
+    writebio = M2Crypto.BIO.MemoryBuffer()
+    sslbio.set_ssl(self.sslSocket)
+    self.sslSocket.set_bio(readbio, writebio)
+    self.sslSocket.set_connect_state()
+    return self.__sslHandshake()
+
+  if os.getenv('DIRAC_USE_M2CRYPTO', 'NO').lower() in ('yes', 'true'):
+    doClientHandshake = doClientHandshake_m2crypto
 
   def doServerHandshake(self):
     self.sslSocket.set_accept_state()
@@ -364,3 +530,48 @@ class SocketInfo:
                      "Connecting to %s and it's %s" % (self.infoDict['hostname'], hostnameCN))
     gLogger.debug("", "Authenticated peer (%s)" % credentialsDict['DN'])
     return S_OK(credentialsDict)
+
+  def __sslHandshake_m2crypto(self):
+    start = time.time()
+    timeout = self.infoDict['timeout']
+    while True:
+      if timeout:
+        if time.time() - start > timeout:
+          return S_ERROR("Handshake timeout exceeded")
+      try:
+        self.sslSocket.do_handshake()
+        break
+      except GSI.SSL.WantReadError:
+        time.sleep(0.001)
+      except GSI.SSL.WantWriteError:
+        time.sleep(0.001)
+      except GSI.SSL.Error, v:
+        if self.__retry < 3:
+          self.__retry += 1
+          return self.__sslHandshake()
+        else:
+          # gLogger.warn( "Error while handshaking", "\n".join( [ stError[2] for stError in v.args[0] ] ) )
+          gLogger.warn("Error while handshaking", v)
+          return S_ERROR("Error while handshaking")
+      except Exception, v:
+        gLogger.warn("Error while handshaking", v)
+        if self.__retry < 3:
+          self.__retry += 1
+          return self.__sslHandshake()
+        else:
+          # gLogger.warn( "Error while handshaking", "\n".join( [ stError[2] for stError in v.args[0] ] ) )
+          gLogger.warn("Error while handshaking", v)
+          return S_ERROR("Error while handshaking")
+
+    credentialsDict = self.gatherPeerCredentials()
+    if self.infoDict['clientMode']:
+      hostnameCN = credentialsDict['CN']
+      # if hostnameCN.split("/")[-1] != self.infoDict[ 'hostname' ]:
+      if not self.__isSameHost(hostnameCN, self.infoDict['hostname']):
+        gLogger.warn("Server is not who it's supposed to be",
+                     "Connecting to %s and it's %s" % (self.infoDict['hostname'], hostnameCN))
+    gLogger.debug("", "Authenticated peer (%s)" % credentialsDict['DN'])
+    return S_OK(credentialsDict)
+
+  if os.getenv('DIRAC_USE_M2CRYPTO', 'NO').lower() in ('yes', 'true'):
+    __sslHandshake = __sslHandshake_m2crypto
