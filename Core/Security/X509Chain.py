@@ -85,7 +85,7 @@ class X509Chain(object):
     self.__checkProxyness()
     return S_OK()
 
-  def __certListFromPemString( self, certString, format = M2Crypto.X509.FORMAT_PEM ):
+  def __certListFromPemString( self, certString, format=crypto.FILETYPE_PEM ):
     """
     Create certificates list from string. String sould contain certificates, just like plain text proxy file.
     """
@@ -107,9 +107,8 @@ class X509Chain(object):
     Return : S_OK / S_ERROR
     """
     try:
-      fd = file(chainLocation)
-      pemData = fd.read()
-      fd.close()
+      with open(chainLocation) as fd:
+        pemData = fd.read()
     except Exception as e:
       return S_ERROR(DErrno.EOF, "%s: %s" % (chainLocation, repr(e).replace(',)', ')')))
     return self.loadKeyFromString(pemData, password)
