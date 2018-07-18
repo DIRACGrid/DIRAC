@@ -80,7 +80,7 @@ class X509Chain(object):
     self.__checkProxyness()
     return S_OK()
 
-  def __certListFromPemString( self, certString, format = M2Crypto.X509.FORMAT_PEM ):
+  def __certListFromPemString( self, certString, format=crypto.FILETYPE_PEM ):
     """
     Create certificates list from string. String sould contain certificates, just like plain text proxy file.
     """

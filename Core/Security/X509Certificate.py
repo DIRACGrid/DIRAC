@@ -52,12 +52,11 @@ class X509Certificate( object ):
     Return : S_OK / S_ERROR
     """
     try:
-      fd = open(certLocation)
-      pemData = fd.read()
-      fd.close()
+      with open( certLocation, 'r' ) as fd:
+        pemData = fd.read()
+        return self.loadFromString( pemData )
     except IOError:
       return S_ERROR( DErrno.EOF, "Can't open %s file" % certLocation )
-    return self.loadFromString( pemData )
 
   def loadFromString( self, pemData ):
     """
