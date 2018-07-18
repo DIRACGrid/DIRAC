@@ -15,7 +15,6 @@ from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import uppercase_first_letter
 
 
-
 class ResourceStatusClient(object):
   """
   The :class:`ResourceStatusClient` class exposes the :mod:`DIRAC.ResourceStatus`

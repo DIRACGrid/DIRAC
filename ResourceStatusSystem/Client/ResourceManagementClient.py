@@ -8,6 +8,7 @@ __RCSID__ = '$Id$'
 
 from DIRAC.Core.DISET.RPCClient import RPCClient
 
+
 def uppercase_first_letter(key):
   """ a method that makes the first letter uppercase only (and leaves the remaining letters unaffected)
   """
