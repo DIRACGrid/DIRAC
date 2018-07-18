@@ -117,7 +117,7 @@ class JobReport(object):
                            'Source': self.source}
 
     if statusDict:
-      jobMonitor = JobStateUpdateClient(timeout=60)
+      jobMonitor = JobStateUpdateClient()
       result = jobMonitor.setJobStatusBulk(self.jobID, statusDict)
       if result['OK']:
         # Empty the internal status containers
@@ -138,7 +138,7 @@ class JobReport(object):
       parameters.append((pname, pvalue))
 
     if parameters:
-      jobMonitor = JobStateUpdateClient(timeout=60)
+      jobMonitor = JobStateUpdateClient()
       result = jobMonitor.setJobParameters(self.jobID, parameters)
       if not result['OK']:
         return result

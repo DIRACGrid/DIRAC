@@ -345,7 +345,7 @@ class DownloadInputData:
     if not self.jobID:
       return S_ERROR('JobID not defined')
 
-    jobReport = JobStateUpdateClient(timeout=120)
+    jobReport = JobStateUpdateClient()
     jobParam = jobReport.setJobParameter(int(self.jobID), str(name), str(value))
     self.log.verbose('setJobParameter(%s,%s,%s)' % (self.jobID, name, value))
     if not jobParam['OK']:

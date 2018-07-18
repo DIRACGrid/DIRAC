@@ -503,7 +503,7 @@ class JobWrapper(object):
     heartBeatDict = {}
     staticParamDict = {'StandardOutput': appStdOut}
     if self.jobID:
-      jobReport = JobStateUpdateClient(timeout=120)
+      jobReport = JobStateUpdateClient()
       result = jobReport.sendHeartBeat(self.jobID, heartBeatDict, staticParamDict)
       if not result['OK']:
         self.log.error('Problem sending final heartbeat from JobWrapper', result['Message'])
@@ -951,7 +951,7 @@ class JobWrapper(object):
       report = ', '.join(uploaded)
       # In case the VO payload has also uploaded data using the same parameter
       # name this should be checked prior to setting.
-      monitoring = JobMonitoringClient(timeout=120)
+      monitoring = JobMonitoringClient()
       result = monitoring.getJobParameter(int(self.jobID), 'UploadedOutputData')
       if result['OK']:
         if 'UploadedOutputData' in result['Value']:
