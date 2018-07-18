@@ -713,5 +713,4 @@ class ResourceManagementClient(object):
     return RPCClient("ResourceStatus/ResourceManagement").addOrModify('SpaceTokenOccupancyCache',
                                                                       self._prepare(locals()))
 
-#...............................................................................
 # EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
