@@ -189,5 +189,4 @@ class PEP(object):
 
     return S_OK()
 
-#...............................................................................
 # EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
