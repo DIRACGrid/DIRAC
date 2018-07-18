@@ -420,8 +420,8 @@ class Dirac(API):
 
     return result
 
-  @classmethod
-  def __forceLocal(cls, job):
+  @staticmethod
+  def __forceLocal(job):
     """Update Job description to avoid pilot submission by WMS
     """
     if os.path.exists(job):
@@ -587,8 +587,8 @@ class Dirac(API):
       time.sleep(pollingTime)
 
   #############################################################################
-  @classmethod
-  def __getVOPolicyModule(cls, module):
+  @staticmethod
+  def __getVOPolicyModule(module):
     """ Utility to get the VO Policy module name
     """
 
@@ -953,7 +953,8 @@ class Dirac(API):
 
     return S_OK('Execution completed successfully')
 
-  def _getLocalInputData(self, parameters):
+  @staticmethod
+  def _getLocalInputData(parameters):
     """ Resolve input data for locally run jobs.
         Here for reason of extensibility
     """
@@ -964,8 +965,8 @@ class Dirac(API):
     return S_OK(inputData)
 
   #############################################################################
-  @classmethod
-  def __printOutput(cls, fd=None, message=''):
+  @staticmethod
+  def __printOutput(fd=None, message=''):
     """Internal callback function to return standard output when running locally.
     """
     if fd:
@@ -1193,7 +1194,7 @@ class Dirac(API):
     replicaDict = self.getReplicasForJobs(lfns)
     if not replicaDict['OK']:
       return replicaDict
-    if len(replicaDict['Value']['Successful']) == 0:
+    if not replicaDict['Value']['Successful']:
       return self._errorReport(replicaDict['Value']['Failed'].items()[0], 'Failed to get replica information')
     siteLfns = {}
     for lfn, reps in replicaDict['Value']['Successful'].iteritems():
@@ -1307,7 +1308,7 @@ class Dirac(API):
 
        >>> print dirac.getFile('/lhcb/user/p/paterson/myFile.tar.gz')
        {'OK': True, 'Value':{'Failed': {},
-        'Successful': {'/lhcb/user/p/paterson/test/myFile.tar.gz': '/afs/cern.ch/user/p/paterson/w1/DIRAC3/myFile.tar.gz'}}}
+        'Successful': {'/lhcb/user/p/paterson/test/myFile.tar.gz': '/afs/cern.ch/user/p/paterson/myFile.tar.gz'}}}
 
        :param lfn: Logical File Name (LFN)
        :type lfn: string
@@ -2078,8 +2079,7 @@ class Dirac(API):
     if not jobIDs:
       self.log.error("No jobs selected", "with date '%s' for conditions: %s" % (str(date), conditions))
       return S_ERROR("No jobs selected")
-    else:
-      return result
+    return result
 
   #############################################################################
   def getJobSummary(self, jobID, outputFile=None, printOutput=False):
@@ -2585,7 +2585,7 @@ class Dirac(API):
 
     try:
       parameters = {}
-      if not re.search('\[', jdl):
+      if not re.search(r'\[', jdl):
         jdl = '[' + jdl + ']'
       classAdJob = ClassAd(jdl)
       paramsDict = classAdJob.contents
