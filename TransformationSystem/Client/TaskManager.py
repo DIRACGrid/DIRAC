@@ -109,8 +109,7 @@ class RequestTasks(TaskBase):
 
   def __init__(self, transClient=None, logger=None, requestClient=None,
                requestClass=None, requestValidator=None,
-               ownerDN=None, ownerGroup=None,
-               ):
+               ownerDN=None, ownerGroup=None):
     """ c'tor
 
         the requestClass is by default Request.
@@ -127,8 +126,7 @@ class RequestTasks(TaskBase):
     if not requestClient:
       self.requestClient = ReqClient(useCertificates=useCertificates,
                                      delegatedDN=ownerDN,
-                                     delegatedGroup=ownerGroup,
-                                     )
+                                     delegatedGroup=ownerGroup)
     else:
       self.requestClient = requestClient
 
@@ -332,8 +330,7 @@ class RequestTasks(TaskBase):
     """
     if isinstance(oRequest, self.requestClass):
       return self.requestClient.putRequest(oRequest, useFailoverProxy=False, retryMainService=2)
-    else:
-      return S_ERROR("Request should be a Request object")
+    return S_ERROR("Request should be a Request object")
 
   def updateTransformationReservedTasks(self, taskDicts):
     requestNameIDs = {}
@@ -424,8 +421,7 @@ class WorkflowTasks(TaskBase):
 
   def __init__(self, transClient=None, logger=None, submissionClient=None, jobMonitoringClient=None,
                outputDataModule=None, jobClass=None, opsH=None, destinationPlugin=None,
-               ownerDN=None, ownerGroup=None,
-               ):
+               ownerDN=None, ownerGroup=None):
     """ Generates some default objects.
         jobClass is by default "DIRAC.Interfaces.API.Job.Job". An extension of it also works:
         VOs can pass in their job class extension, if present
@@ -440,8 +436,7 @@ class WorkflowTasks(TaskBase):
     if not submissionClient:
       self.submissionClient = WMSClient(useCertificates=useCertificates,
                                         delegatedDN=ownerDN,
-                                        delegatedGroup=ownerGroup,
-                                        )
+                                        delegatedGroup=ownerGroup)
     else:
       self.submissionClient = submissionClient
 

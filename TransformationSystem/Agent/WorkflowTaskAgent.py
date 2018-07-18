@@ -48,6 +48,9 @@ The following options can be set for the WorkflowTaskAgent.
     # Status of transformations for which to check reserved tasks
     CheckReservedStatus = Active,Completing,Stopped
 
+    # Fill in this option if you want to activate bulk submission (for speed up)
+    BulkSubmission = yes
+
   }
 
 * The options *SubmitTasks*, *MonitorTasks*, *MonitorFiles*, and *CheckReserved*
@@ -63,12 +66,12 @@ The following options can be set for the WorkflowTaskAgent.
 
 """
 
+__RCSID__ = "$Id$"
+
 from DIRAC import S_OK
 
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
 from DIRAC.TransformationSystem.Agent.TaskManagerAgentBase  import TaskManagerAgentBase
-
-__RCSID__ = "$Id$"
 
 AGENT_NAME = 'Transformation/WorkflowTaskAgent'
 
