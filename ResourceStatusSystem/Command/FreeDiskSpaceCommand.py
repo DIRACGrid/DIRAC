@@ -8,7 +8,7 @@
 
 '''
 
-__RCSID__ = '$Id:$'
+__RCSID__ = '$Id$'
 
 import sys
 
