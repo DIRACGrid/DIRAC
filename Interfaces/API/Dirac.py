@@ -430,7 +430,7 @@ class Dirac(API):
     else:
       jdl = job
 
-    if not re.search(r'\[', jdl):
+    if '[' not in jdl:
       jdl = '[' + jdl + ']'
     classAdJob = ClassAd(jdl)
 
@@ -2585,7 +2585,7 @@ class Dirac(API):
 
     try:
       parameters = {}
-      if not re.search(r'\[', jdl):
+      if '[' not in jdl:
         jdl = '[' + jdl + ']'
       classAdJob = ClassAd(jdl)
       paramsDict = classAdJob.contents
