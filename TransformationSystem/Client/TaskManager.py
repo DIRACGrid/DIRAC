@@ -599,7 +599,6 @@ class WorkflowTasks(TaskBase):
                                "%%(%s)s" % name,
                                name)
 
-
       for pName, seq in seqDict.iteritems():
         paramSeqDict.setdefault(pName, []).append(seq)
 
@@ -651,7 +650,6 @@ class WorkflowTasks(TaskBase):
                                      'string',
                                      '00000000',
                                      "Initial JOB_ID")
-
 
       paramsDict['Site'] = site
       paramsDict['JobType'] = jobType

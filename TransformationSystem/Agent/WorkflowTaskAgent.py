@@ -70,32 +70,34 @@ __RCSID__ = "$Id$"
 
 from DIRAC import S_OK
 
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations    import Operations
-from DIRAC.TransformationSystem.Agent.TaskManagerAgentBase  import TaskManagerAgentBase
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.TransformationSystem.Agent.TaskManagerAgentBase import TaskManagerAgentBase
 
 AGENT_NAME = 'Transformation/WorkflowTaskAgent'
 
-class WorkflowTaskAgent( TaskManagerAgentBase ):
+
+class WorkflowTaskAgent(TaskManagerAgentBase):
   """ An AgentModule class to submit workflow tasks
   """
-  def __init__( self, *args, **kwargs ):
+
+  def __init__(self, *args, **kwargs):
     """ c'tor
     """
-    TaskManagerAgentBase.__init__( self, *args, **kwargs )
+    TaskManagerAgentBase.__init__(self, *args, **kwargs)
 
     self.transType = []
 
-  def initialize( self ):
+  def initialize(self):
     """ Standard initialize method
     """
-    res = TaskManagerAgentBase.initialize( self )
+    res = TaskManagerAgentBase.initialize(self)
     if not res['OK']:
       return res
 
-    agentTSTypes = self.am_getOption( 'TransType', [] )
+    agentTSTypes = self.am_getOption('TransType', [])
     if agentTSTypes:
       self.transType = agentTSTypes
     else:
-      self.transType = Operations().getValue( 'Transformations/DataProcessing', ['MCSimulation', 'Merge'] )
+      self.transType = Operations().getValue('Transformations/DataProcessing', ['MCSimulation', 'Merge'])
 
     return S_OK()

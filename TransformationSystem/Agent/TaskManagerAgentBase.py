@@ -195,8 +195,6 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
         self._addOperationForTransformations(operationsOnTransformationDict, 'submitTasks', transformations,
                                              owner=owner, ownerGroup=ownerGroup, ownerDN=ownerDN)
 
-
-
     self._fillTheQueue(operationsOnTransformationDict)
 
     return S_OK()
