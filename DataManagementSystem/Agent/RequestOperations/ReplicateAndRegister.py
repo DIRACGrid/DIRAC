@@ -691,7 +691,6 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
         # # call DataManager
         if targetSE in validReplicas:
           self.log.warn("Request to replicate %s to an existing location: %s" % (lfn, targetSE))
-          opFile.Status = 'Done'
           continue
         res = self.dm.replicateAndRegister(lfn, targetSE, sourceSE=sourceSE, catalog=catalogs)
         if res["OK"]:
