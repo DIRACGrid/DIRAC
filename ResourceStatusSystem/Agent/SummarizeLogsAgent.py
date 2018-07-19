@@ -173,8 +173,8 @@ class SummarizeLogsAgent( AgentModule ):
     lastStatus, lastToken = None, None
     if selectedRes:
       try:
-        lastStatus = selectedRes[0]
-        lastToken = selectedRes[1]
+        lastStatus = selectedRes[0][0]
+        lastToken = selectedRes[1][1]
       except IndexError:
         pass
 
