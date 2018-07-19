@@ -21,6 +21,7 @@ from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Security import Properties
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
+from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
 from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
 from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
 from DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper import rescheduleFailedJob
@@ -590,7 +591,7 @@ class JobAgent(AgentModule):
 
     self.log.warn('Failure during %s' % (message))
 
-    jobManager = RPCClient('WorkloadManagement/JobManager')
+    jobManager = JobManagerClient()
     jobReport = JobReport(int(jobID), 'JobAgent@%s' % self.siteName)
 
     # Setting a job parameter does not help since the job will be rescheduled,

@@ -37,6 +37,7 @@ from DIRAC.Core.Utilities.Adler import fileAdler
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
+from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
 
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
@@ -1444,7 +1445,7 @@ def rescheduleFailedJob(jobID, message, jobReport=None):
 
     gLogger.info('Job will be rescheduled after exception during execution of the JobWrapper')
 
-    jobManager = RPCClient('WorkloadManagement/JobManager')
+    jobManager = JobManagerClient()
     result = jobManager.rescheduleJob(int(jobID))
     if not result['OK']:
       gLogger.warn(result['Message'])
