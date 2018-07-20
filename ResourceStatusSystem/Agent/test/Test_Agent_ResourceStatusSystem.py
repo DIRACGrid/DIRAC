@@ -73,7 +73,7 @@ sla.rsClient = rsClientMock
     (sError, False, None),
     (sOk, True, (None, {})),
     ({'OK': True, 'Value': [], 'Columns': []}, True, (None, {})),
-    ( response1, True, (101, {('RRCKI-BUFFER', 'WriteAccess'): [dict(zip(columns, el101))]})),
+    (response1, True, (101, {('RRCKI-BUFFER', 'WriteAccess'): [dict(zip(columns, el101))]})),
     (response2, True, (102, {('RRCKI-BUFFER', 'WriteAccess'): [dict(zip(columns, el101))]})),
     (response3, True, (103, {('RRCKI-BUFFER', 'WriteAccess'): [dict(zip(columns, el101))],
                              ('RRCKI-BUFFER', 'ReadAccess'): [dict(zip(columns, el103))]})),
@@ -82,7 +82,7 @@ sla.rsClient = rsClientMock
     (response4_mixed, True, (101, {('RRCKI-BUFFER', 'WriteAccess'): [dict(zip(columns, el102))],
                                    ('RRCKI-BUFFER', 'ReadAccess'): [dict(zip(columns, el103))]})),
     (response5, True, (105, {('RRCKI-BUFFER', 'WriteAccess'): [dict(zip(columns, el101)), dict(zip(columns, el105))],
-                             ('RRCKI-BUFFER', 'ReadAccess'):  [dict(zip(columns, el103))]})),])
+                             ('RRCKI-BUFFER', 'ReadAccess'): [dict(zip(columns, el103))]})), ])
 def test__summarizeLogs(rsClientMockSelectStatusElementReturnValue, expected, expectedValue):
   rsClientMock.selectStatusElement.return_value = rsClientMockSelectStatusElementReturnValue
   res = sla._summarizeLogs('element')
@@ -96,13 +96,13 @@ def test__summarizeLogs(rsClientMockSelectStatusElementReturnValue, expected, ex
     ((None, None), [], sOk, True),
     ((None, None), [], {'OK': True, 'Value': [], 'Columns':['Status', 'TokenOwner']}, True),
     ((None, None), [], {'OK': True, 'Value': [['Active', 'rs_svc']], 'Columns':['status', 'tokenowner']}, True),
-    (('RRCKI-BUFFER', 'WriteAccess'),
+    (('RRCKI-BUFFER', 'WriteAccess'),  # this should remove everything
      [dict(zip(columns, el101))],
-     {'OK': True, 'Value': [['Active', 'rs_svc']], 'Columns':['status', 'tokenowner']}, True),  # this should remove everything
-    (('RRCKI-BUFFER', 'WriteAccess'),
+     {'OK': True, 'Value': [['Active', 'rs_svc']], 'Columns':['status', 'tokenowner']}, True),
+    (('RRCKI-BUFFER', 'WriteAccess'),  # this should keep it
      [dict(zip(columns, el101))],
-     {'OK': True, 'Value': [['Banned', 'rs_svc']], 'Columns':['status', 'tokenowner']}, True),  # this should keep it
-  ])
+     {'OK': True, 'Value': [['Banned', 'rs_svc']], 'Columns':['status', 'tokenowner']}, True),
+])
 def test__registerLogs(key, logs, rsClientMockSelectStatusElementReturnValue, expected):
   rsClientMock.selectStatusElement.return_value = rsClientMockSelectStatusElementReturnValue
   res = sla._registerLogs('Resource', key, logs)

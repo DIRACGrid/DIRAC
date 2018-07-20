@@ -15,7 +15,7 @@
 
 __RCSID__ = '$Id$'
 
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 
@@ -224,12 +224,9 @@ class SummarizeLogsAgent(AgentModule):
     tokenOwner = elementDict.get('TokenOwner')
     tokenExpiration = elementDict.get('TokenExpiration')
 
-    self.log.info('  %s %s %s %s' %(status, dateEffective, tokenOwner, reason))
+    self.log.info('  %s %s %s %s' % (status, dateEffective, tokenOwner, reason))
 
     return self.rsClient.insertStatusElement(element, 'History', name, statusType,
                                              status, elementType, reason,
                                              dateEffective, lastCheckTime,
                                              tokenOwner, tokenExpiration)
-
-#...............................................................................
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
