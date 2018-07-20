@@ -108,10 +108,14 @@ class SummarizeLogsAgent(AgentModule):
       return selectResults
 
     selectedItems = {}
+    latestID = None
+
+    if not selectResults['Value']:
+      return S_OK((latestID, selectedItems))
+
     selectColumns = selectResults['Columns']
     selectResults = selectResults['Value']
 
-    latestID = None
     if selectResults:
       latestID = dict(zip(selectColumns, selectResults[-1]))['ID']
 
@@ -152,6 +156,9 @@ class SummarizeLogsAgent(AgentModule):
 
     """
 
+    if not logs:
+      return S_OK()
+
     # Undo key
     name, statusType = key
 
@@ -164,23 +171,26 @@ class SummarizeLogsAgent(AgentModule):
     if not selectedRes['OK']:
       return selectedRes
     selectedRes = selectedRes['Value']
+    if not selectedRes:
+      return S_OK()
 
     # We want from the <element>History table the last Status, and TokenOwner
     lastStatus, lastToken = None, None
     if selectedRes:
       try:
         lastStatus = selectedRes[0][0]
-        lastToken = selectedRes[1][1]
+        lastToken = selectedRes[0][1]
       except IndexError:
         pass
 
     # If the first of the selected items has a different status than the latest
-    # on the history, we add it.
+    # on the history, we keep it, otherwise we remove it.
     if logs[0]['Status'] == lastStatus and logs[0]['TokenOwner'] == lastToken:
-      logs.remove(logs[0])
+      logs.pop(0)
 
     if logs:
-      self.log.info('%s ( %s )' % (name, statusType))
+      self.log.info('%s ( %s ):' % (name, statusType))
+      self.log.debug(logs)
 
     for selectedItemDict in logs:
 
@@ -204,22 +214,17 @@ class SummarizeLogsAgent(AgentModule):
 
     """
 
-    try:
+    name = elementDict.get('Name')
+    statusType = elementDict.get('StatusType')
+    status = elementDict.get('Status')
+    elementType = elementDict.get('ElementType')
+    reason = elementDict.get('Reason')
+    dateEffective = elementDict.get('DateEffective')
+    lastCheckTime = elementDict.get('LastCheckTime')
+    tokenOwner = elementDict.get('TokenOwner')
+    tokenExpiration = elementDict.get('TokenExpiration')
 
-      name = elementDict['Name']
-      statusType = elementDict['StatusType']
-      status = elementDict['Status']
-      elementType = elementDict['ElementType']
-      reason = elementDict['Reason']
-      dateEffective = elementDict['DateEffective']
-      lastCheckTime = elementDict['LastCheckTime']
-      tokenOwner = elementDict['TokenOwner']
-      tokenExpiration = elementDict['TokenExpiration']
-
-    except KeyError as e:
-      return S_ERROR(e)
-
-    self.log.info('  %(Status)s %(DateEffective)s %(TokenOwner)s %(Reason)s' % elementDict)
+    self.log.info('  %s %s %s %s' %(status, dateEffective, tokenOwner, reason))
 
     return self.rsClient.insertStatusElement(element, 'History', name, statusType,
                                              status, elementType, reason,
