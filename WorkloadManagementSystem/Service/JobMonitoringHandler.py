@@ -258,15 +258,7 @@ class JobMonitoringHandler(RequestHandler):
   def export_getJobOwner(jobID):
 
     if gElasticJobDB:
-
-      result = gElasticJobDB.getJobParametersAndAttributes(jobID)
-
-      if not result['OK']:
-        return result
-
-      value = result['Value'][jobID]['Owner']
-
-      return S_OK(value)
+      return gElasticJobDB.getJobParametersAndAttributes(jobID, 'Owner')
 
     else:
       return gJobDB.getJobAttribute(jobID, 'Owner')
@@ -446,10 +438,8 @@ class JobMonitoringHandler(RequestHandler):
           hbTime = Time.fromString(jobDict['HeartBeatTime'])
           # There is no way to express a timedelta of 0 ;-)
           # Not only Stalled jobs but also Failed jobs because Stalled
-          if ((hbTime - lastTime) > (lastTime - lastTime) or
-              jobDict['Status'] == "Stalled" or
-              jobDict['MinorStatus'].startswith('Job stalled') or
-              jobDict['MinorStatus'].startswith('Stalling')):
+          if ((hbTime - lastTime) > 0 or jobDict['Status'] == "Stalled" or jobDict['MinorStatus'].startswith(
+                  'Job stalled') or jobDict['MinorStatus'].startswith('Stalling')):
             jobDict['LastSignOfLife'] = jobDict['HeartBeatTime']
           else:
             jobDict['LastSignOfLife'] = jobDict['LastUpdateTime']
@@ -580,15 +570,7 @@ class JobMonitoringHandler(RequestHandler):
   def export_getJobAttribute(jobID, attribute):
 
     if gElasticJobDB:
-
-      result = gElasticJobDB.getJobParametersAndAttributes(jobID)
-
-      if not result['OK']:
-        return result
-
-      value = result['Value'][jobID][attribute]
-
-      return S_OK(value)
+      return gElasticJobDB.getJobParametersAndAttributes(jobID, attribute)
 
     else:
       return gJobDB.getJobAttribute(jobID, attribute)

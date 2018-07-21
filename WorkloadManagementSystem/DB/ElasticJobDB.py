@@ -82,13 +82,14 @@ class ElasticJobDB(DB):
     return S_OK(resultDict)
 
 ############################################################################
-  def getJobParametersAndAttributes(self, jobID, paramList=None):
+  def getJobParametersAndAttributes(self, jobID, attribute=None, paramList=None):
     """ Get Job Parameters with Attributes defined for jobID.
       Returns a dictionary with the Job Parameters.
       If paramList is empty - all the parameters are returned.
 
     :param self: self reference
     :param int jobID: Job ID
+    :param string attribute: Attribute
     :param list paramList: list of parameters to be returned
 
     :return : dict with all Job Parameter and Attribute values
@@ -130,7 +131,16 @@ class ElasticJobDB(DB):
 
       resultDict[jobID] = parametersDict
 
-    return S_OK(resultDict)
+    if attribute:
+
+      if attribute in jobParameters:
+        return S_OK(resultDict[jobID][attribute])
+
+      else:
+        return S_ERROR('Attribute %s not found' % attribute)
+
+    else:
+      return S_OK(resultDict)
 
 #############################################################################
   def setJobParameter(self, jobID, key, value, **kwargs):
