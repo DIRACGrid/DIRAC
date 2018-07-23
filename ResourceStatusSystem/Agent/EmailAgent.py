@@ -42,16 +42,14 @@ class EmailAgent(AgentModule):
     if os.path.isfile(self.cacheFile):
       with sqlite3.connect(self.cacheFile) as conn:
 
-        result = conn.execute("SELECT DISTINCT SiteName from ResourceStatusCache;")
-        for site in result:
-	  cursor = conn.execute(
-	      "SELECT StatusType, ResourceName, Status, Time, PreviousStatus from ResourceStatusCache " +
-	      "WHERE SiteName='" +
-	      site[0] +
-	      "';")
+	result = conn.execute("SELECT DISTINCT SiteName from ResourceStatusCache;")
+	for site in result:
+	  query = "SELECT StatusType, ResourceName, Status, Time, PreviousStatus from ResourceStatusCache "
+	  query += "WHERE SiteName='%s';" % site[0]
+	  cursor = conn.execute(query)
 
-          email = ""
-          html_body = ""
+	  email = ""
+	  html_body = ""
           html_elements = ""
 
           if gConfig.getValue('/DIRAC/Setup'):
