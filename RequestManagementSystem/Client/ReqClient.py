@@ -456,8 +456,12 @@ def printRequest(request, status=None, full=False, verbose=True, terse=False):
     if request.RequestID:
       from DIRAC.DataManagementSystem.Client.FTSClient import FTSClient
       ftsClient = FTSClient()
-  except Exception as e:
-    gLogger.debug("Could not instantiate FtsClient", repr(e))
+      res = ftsClient.ping()
+      if not res['OK']:
+        gLogger.debug("Could not instantiate FtsClient", res)
+        ftsClient = None
+  except ImportError as err:
+    gLogger.debug("Could not instantiate FtsClient because of Exception", repr(err))
 
   if full:
     output = ''

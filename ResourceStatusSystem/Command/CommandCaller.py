@@ -1,18 +1,18 @@
-# $HeadURL: $
 ''' CommandCaller
 
   Module that loads commands and executes them.
 
 '''
 
+__RCSID__ = '$Id$'
+
 import copy
 
-from DIRAC                                import S_ERROR, S_OK
+from DIRAC import S_ERROR, S_OK
 from DIRAC.ResourceStatusSystem.Utilities import Utils
 
-__RCSID__ = '$Id: $'
 
-def commandInvocation( commandTuple, pArgs = None, decisionParams = None, clients = None ):
+def commandInvocation(commandTuple, pArgs=None, decisionParams=None, clients=None):
   '''
   Returns a command object, given commandTuple
 
@@ -22,9 +22,9 @@ def commandInvocation( commandTuple, pArgs = None, decisionParams = None, client
   '''
 
   if commandTuple is None:
-    return S_OK( None )
+    return S_OK(None)
 
-  # decission params can be a dictionary passed with all the element parameters
+  # decision params can be a dictionary passed with all the element parameters
   # used mostly by the PDP to inject all relevant information
   if decisionParams is None:
     decisionParams = {}
@@ -34,22 +34,22 @@ def commandInvocation( commandTuple, pArgs = None, decisionParams = None, client
     pArgs = {}
 
   try:
-    cModule = commandTuple[ 0 ]
-    cClass  = commandTuple[ 1 ]
-    commandModule = Utils.voimport( 'DIRAC.ResourceStatusSystem.Command.' + cModule )
+    cModule = commandTuple[0]
+    cClass = commandTuple[1]
+    commandModule = Utils.voimport('DIRAC.ResourceStatusSystem.Command.' + cModule)
   except ImportError:
-    return S_ERROR( "Import error for command %s." % ( cModule ) )
+    return S_ERROR("Import error for command %s." % (cModule))
 
-  if not hasattr( commandModule, cClass ):
-    return S_ERROR( '%s has no %s' % ( cModule, cClass ) )
+  if not hasattr(commandModule, cClass):
+    return S_ERROR('%s has no %s' % (cModule, cClass))
 
   # We merge decision parameters and policy arguments.
-  newArgs = copy.deepcopy( decisionParams )
-  newArgs.update( pArgs )
+  newArgs = copy.deepcopy(decisionParams)
+  newArgs.update(pArgs)
 
-  commandObject = getattr( commandModule, cClass )( newArgs, clients )
+  commandObject = getattr(commandModule, cClass)(newArgs, clients)
 
-  return S_OK( commandObject )
+  return S_OK(commandObject)
 
 ################################################################################
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
+# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

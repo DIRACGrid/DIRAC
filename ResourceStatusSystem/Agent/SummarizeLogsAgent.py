@@ -15,27 +15,27 @@
 
 __RCSID__ = '$Id$'
 
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 
 AGENT_NAME = 'ResourceStatus/SummarizeLogsAgent'
 
-class SummarizeLogsAgent( AgentModule ):
+
+class SummarizeLogsAgent(AgentModule):
   """ SummarizeLogsAgent as extension of AgentModule.
   """
 
-  def __init__( self, *args, **kwargs ):
+  def __init__(self, *args, **kwargs):
     """ Constructor.
 
     """
 
-    AgentModule.__init__( self, *args, **kwargs )
+    AgentModule.__init__(self, *args, **kwargs)
 
     self.rsClient = None
 
-
-  def initialize( self ):
+  def initialize(self):
     """ Standard initialize.
 
     :return: S_OK
@@ -45,8 +45,7 @@ class SummarizeLogsAgent( AgentModule ):
     self.rsClient = ResourceStatusClient()
     return S_OK()
 
-
-  def execute( self ):
+  def execute(self):
     """ execute ( main method )
 
     The execute method runs over the three families of tables ( Site, Resource and
@@ -59,42 +58,40 @@ class SummarizeLogsAgent( AgentModule ):
     """
 
     # loop over the tables
-    for element in ( 'Site', 'Resource', 'Node' ):
+    for element in ('Site', 'Resource', 'Node'):
 
-      self.log.info( 'Summarizing %s' % element )
+      self.log.info('Summarizing %s' % element)
 
       # get all logs to be summarized
-      selectLogElements = self._summarizeLogs( element )
-      if not selectLogElements[ 'OK' ]:
-        self.log.error( selectLogElements[ 'Message' ] )
+      selectLogElements = self._summarizeLogs(element)
+      if not selectLogElements['OK']:
+        self.log.error(selectLogElements['Message'])
         continue
 
-      lastID, logElements = selectLogElements[ 'Value' ]
+      lastID, logElements = selectLogElements['Value']
 
       # logElements is a dictionary of key-value pairs as follows:
       # ( name, statusType ) : list( logs )
       for key, logs in logElements.iteritems():
 
-        sumResult = self._registerLogs( element, key, logs )
-        if not sumResult[ 'OK' ]:
-          self.log.error( sumResult[ 'Message' ] )
+        sumResult = self._registerLogs(element, key, logs)
+        if not sumResult['OK']:
+          self.log.error(sumResult['Message'])
           continue
 
       if lastID is not None:
-        self.log.info( 'Deleting %sLog till ID %s' % ( element, lastID ) )
-        deleteResult = self.rsClient.deleteStatusElement( element, 'Log',
-                                                          meta = { 'older' : ( 'ID', lastID ) } )
-        if not deleteResult[ 'OK' ]:
-          self.log.error( deleteResult[ 'Message' ] )
+        self.log.info('Deleting %sLog till ID %s' % (element, lastID))
+        deleteResult = self.rsClient.deleteStatusElement(element, 'Log',
+                                                         meta={'older': ('ID', lastID)})
+        if not deleteResult['OK']:
+          self.log.error(deleteResult['Message'])
           continue
 
     return S_OK()
 
-
   #.............................................................................
 
-
-  def _summarizeLogs( self, element ):
+  def _summarizeLogs(self, element):
     """ given an element, selects all logs in table <element>Log.
 
     :Parameters:
@@ -105,40 +102,43 @@ class SummarizeLogsAgent( AgentModule ):
 
     """
 
-    selectResults = self.rsClient.selectStatusElement( element, 'Log' )
+    selectResults = self.rsClient.selectStatusElement(element, 'Log')
 
-    if not selectResults[ 'OK' ]:
+    if not selectResults['OK']:
       return selectResults
 
     selectedItems = {}
-    selectColumns = selectResults[ 'Columns' ]
-    selectResults = selectResults[ 'Value' ]
-
     latestID = None
+
+    if not selectResults['Value']:
+      return S_OK((latestID, selectedItems))
+
+    selectColumns = selectResults['Columns']
+    selectResults = selectResults['Value']
+
     if selectResults:
-      latestID = dict( zip( selectColumns, selectResults[ -1 ] ) )[ 'ID' ]
+      latestID = dict(zip(selectColumns, selectResults[-1]))['ID']
 
     for selectResult in selectResults:
 
-      elementDict = dict( zip( selectColumns, selectResult ) )
+      elementDict = dict(zip(selectColumns, selectResult))
 
-      key = ( elementDict[ 'Name' ], elementDict[ 'StatusType' ] )
+      key = (elementDict['Name'], elementDict['StatusType'])
 
       if key not in selectedItems:
-        selectedItems[ key ] = [ elementDict ]
+        selectedItems[key] = [elementDict]
       else:
-        lastStatus = selectedItems[ key ][ -1 ][ 'Status' ]
-        lastToken  = selectedItems[ key ][ -1 ][ 'TokenOwner' ]
+        lastStatus = selectedItems[key][-1]['Status']
+        lastToken = selectedItems[key][-1]['TokenOwner']
 
         # If there are no changes on the Status or the TokenOwner with respect
         # the previous one, discards the log.
-        if lastStatus != elementDict[ 'Status' ] or lastToken != elementDict[ 'TokenOwner' ]:
-          selectedItems[ key ].append( elementDict )
+        if lastStatus != elementDict['Status'] or lastToken != elementDict['TokenOwner']:
+          selectedItems[key].append(elementDict)
 
-    return S_OK( ( latestID, selectedItems ) )
+    return S_OK((latestID, selectedItems))
 
-
-  def _registerLogs( self, element, key, logs ):
+  def _registerLogs(self, element, key, logs):
     """ Given an element, a key - which is a tuple ( <name>, <statusType> )
     and a list of dictionaries, this method inserts them on the <element>History
     table. Before inserting them, checks whether the first one is or is not on
@@ -156,6 +156,9 @@ class SummarizeLogsAgent( AgentModule ):
 
     """
 
+    if not logs:
+      return S_OK()
+
     # Undo key
     name, statusType = key
 
@@ -168,34 +171,36 @@ class SummarizeLogsAgent( AgentModule ):
     if not selectedRes['OK']:
       return selectedRes
     selectedRes = selectedRes['Value']
+    if not selectedRes:
+      return S_OK()
 
     # We want from the <element>History table the last Status, and TokenOwner
     lastStatus, lastToken = None, None
     if selectedRes:
       try:
-        lastStatus = selectedRes[0]
-        lastToken = selectedRes[1]
+        lastStatus = selectedRes[0][0]
+        lastToken = selectedRes[0][1]
       except IndexError:
         pass
 
     # If the first of the selected items has a different status than the latest
-    # on the history, we add it.
-    if logs[ 0 ][ 'Status' ] == lastStatus and logs[ 0 ][ 'TokenOwner' ] == lastToken:
-      logs.remove( logs[ 0 ] )
+    # on the history, we keep it, otherwise we remove it.
+    if logs[0]['Status'] == lastStatus and logs[0]['TokenOwner'] == lastToken:
+      logs.pop(0)
 
     if logs:
-      self.log.info( '%s ( %s )' % ( name, statusType ) )
+      self.log.info('%s ( %s ):' % (name, statusType))
+      self.log.debug(logs)
 
     for selectedItemDict in logs:
 
-      res = self.__logToHistoryTable( element, selectedItemDict )
-      if not res[ 'OK' ]:
+      res = self.__logToHistoryTable(element, selectedItemDict)
+      if not res['OK']:
         return res
 
     return S_OK()
 
-
-  def __logToHistoryTable( self, element, elementDict ):
+  def __logToHistoryTable(self, element, elementDict):
     """ Given an element and a dictionary with all the arguments, this method
     inserts a new entry on the <element>History table
 
@@ -209,27 +214,19 @@ class SummarizeLogsAgent( AgentModule ):
 
     """
 
-    try:
+    name = elementDict.get('Name')
+    statusType = elementDict.get('StatusType')
+    status = elementDict.get('Status')
+    elementType = elementDict.get('ElementType')
+    reason = elementDict.get('Reason')
+    dateEffective = elementDict.get('DateEffective')
+    lastCheckTime = elementDict.get('LastCheckTime')
+    tokenOwner = elementDict.get('TokenOwner')
+    tokenExpiration = elementDict.get('TokenExpiration')
 
-      name = elementDict['Name']
-      statusType = elementDict['StatusType']
-      status = elementDict['Status']
-      elementType = elementDict['ElementType']
-      reason = elementDict['Reason']
-      dateEffective = elementDict['DateEffective']
-      lastCheckTime = elementDict['LastCheckTime']
-      tokenOwner = elementDict['TokenOwner']
-      tokenExpiration = elementDict['TokenExpiration']
+    self.log.info('  %s %s %s %s' % (status, dateEffective, tokenOwner, reason))
 
-    except KeyError, e:
-      return S_ERROR( e )
-
-    self.log.info( '  %(Status)s %(DateEffective)s %(TokenOwner)s %(Reason)s' % elementDict )
-
-    return self.rsClient.insertStatusElement( element, 'History', name, statusType,
-                                              status, elementType, reason,
-                                              dateEffective, lastCheckTime,
-                                              tokenOwner, tokenExpiration )
-
-#...............................................................................
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
+    return self.rsClient.insertStatusElement(element, 'History', name, statusType,
+                                             status, elementType, reason,
+                                             dateEffective, lastCheckTime,
+                                             tokenOwner, tokenExpiration)
