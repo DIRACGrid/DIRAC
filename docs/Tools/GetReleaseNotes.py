@@ -5,6 +5,7 @@
 from collections import defaultdict
 from datetime import datetime, timedelta
 import argparse
+from pprint import pformat
 import logging
 import textwrap
 import requests
@@ -45,7 +46,7 @@ def req2Json(url, parameterDict=None, requestType='GET'):
     log.error("Unable to access API: %s", req.text)
     raise RuntimeError("Failed to access API")
 
-  log.debug("Result obtained: %s", req.text)
+  log.debug("Result obtained:\n %s", pformat(req.json()))
   return req.json()
 
 
@@ -139,9 +140,8 @@ def collateReleaseNotes(prs):
           systemChangesDict[system].append(line)
 
     for system, changes in systemChangesDict.iteritems():
-      if not system:
-        continue
-      releaseNotes += "*%s\n\n" % system
+      if system:
+        releaseNotes += "*%s\n\n" % system
       releaseNotes += "\n".join(changes)
       releaseNotes += "\n\n"
     releaseNotes += "\n"
@@ -156,13 +156,16 @@ class GithubInterface(object):
     """Set default values to parse release notes for DIRAC."""
     self.owner = owner
     self.repo = repo
-    self._options = dict(owner=self.owner, repo=self.repo)
-
     self.branches = ['Integration', 'rel-v6r19', 'rel-v6r20']
     self.openPRs = False
     self.startDate = str(datetime.now() - timedelta(days=14))[:10]
     self.printLevel = logging.WARNING
     LOGGER.setLevel(self.printLevel)
+
+  @property
+  def _options(self):
+    """Return options dictionary."""
+    return dict(owner=self.owner, repo=self.repo)
 
   def parseOptions(self):
     """Parse the command line options."""
@@ -182,6 +185,9 @@ class GithubInterface(object):
 
     parser.add_argument("-d", "--debug", action="count", dest="debug", help="d, dd, ddd", default=0)
 
+    parser.add_argument("-r", "--repo", action="store", dest="repo", help="Repository to check: [Group/]Repo",
+                        default='DiracGrid/Dirac')
+
     parsed = parser.parse_args()
 
     self.printLevel = _parsePrintLevel(parsed.debug)
@@ -194,11 +200,21 @@ class GithubInterface(object):
     self.openPRs = parsed.openPRs
     log.info('Also including openPRs?: %s', self.openPRs)
 
+    repo = parsed.repo
+    repos = repo.split('/')
+    if len(repos) == 1:
+      self.repo = repo
+    elif len(repos) == 2:
+      self.owner = repos[0]
+      self.repo = repos[1]
+    else:
+      raise RuntimeError("Cannot parse repo option: %s" % repo)
+
   def _github(self, action):
     """Return the url to perform actions on github.
 
     :param str action: command to use in the gitlab API, see documentation there
-    :returns: url to be used by curl
+    :returns: url to be used
     """
     log = LOGGER.getChild('GitHub')
     options = dict(self._options)
@@ -268,10 +284,11 @@ if __name__ == "__main__":
   try:
     RUNNER.parseOptions()
   except RuntimeError as e:
-    print ("Error during runtime: %s", e)
+    LOGGER.error("Error during argument parsing: %s", e)
     exit(1)
 
   try:
     RUNNER.getReleaseNotes()
   except RuntimeError as e:
+    LOGGER.error("Error during runtime: %s", e)
     exit(1)
