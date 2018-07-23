@@ -11,7 +11,7 @@ from DIRAC.Core.Base.AgentModule                                 import AgentMod
 from DIRAC.ResourceStatusSystem.Utilities                        import RssConfiguration
 from DIRAC.Interfaces.API.DiracAdmin                             import DiracAdmin
 
-__RCSID__ = '$Id: $'
+__RCSID__ = '$Id$'
 
 AGENT_NAME = 'ResourceStatus/EmailAgent'
 

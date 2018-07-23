@@ -45,7 +45,7 @@ def getPoliciesThatApply( decisionParams ):
   #   ...
 
   # Get policies that match the given decisionParameters
-  for policyName, policySetup in policiesConfig.items():
+  for policyName, policySetup in policiesConfig.iteritems():
 
     # The parameter policyType replaces policyName, so if it is not present,
     # we pick policyName
@@ -128,7 +128,7 @@ def getPolicyActionsThatApply( decisionParams, singlePolicyResults, policyCombin
       continue
 
   # Get policies that match the given decissionParameters
-  for policyActionName, policyActionConfig in policyActionsConfig.items():
+  for policyActionName, policyActionConfig in policyActionsConfig.iteritems():
 
     # The parameter policyType is mandatory. If not present, we pick policyActionName
     try:

@@ -163,7 +163,7 @@ class ElementInspectorAgent( AgentModule ):
       # be there, but in any case, it is not a big problem.
 
       lowerElementDict = { 'element' : self.elementType }
-      for key, value in elemDict.items():
+      for key, value in elemDict.iteritems():
         lowerElementDict[ key[0].lower() + key[1:] ] = value
 
       # We add lowerElementDict to the queue

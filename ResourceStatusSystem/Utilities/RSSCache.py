@@ -213,7 +213,7 @@ class RSSCache( object ):
 
     itemsCounter = 0
 
-    for cacheKey, cacheValue in newCache.items():
+    for cacheKey, cacheValue in newCache.iteritems():
       self.__rssCache.add( cacheKey, self.__lifeTime, value = cacheValue )
       itemsCounter += 1
 
