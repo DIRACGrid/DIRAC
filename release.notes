@@ -1,4 +1,4 @@
-[v6r21-pre2]
+[v7r0-pre1]
 
 *Accounting
 CHANGE: (Multi)AccountingDB - Grouping Type and Object loader together with the MonitoringSystem ones.
@@ -8,6 +8,10 @@ CHANGE: (Multi)AccountingDB - Grouping Type and Object loader together with the 
 NEW: Add JobElasticDB.py with getJobParameters and setJobParameter methods to work with ElasticSearch (ES) backend.
 NEW: Add gJobElasticDB variable and indicates the activation of ES backend.
 CHANGE: Modify export_getJobParameter(s) to report values from ES if available.
+CHANGE: (#3748) Reduced (removed, in fact) interactions of Optimizers with JobParameters, using only OptimizerParameters
+NEW: (#3760) Add Client/JobStateUpdateClient.py
+NEW: (#3760) Add Client/JobManagerClient.py
+CHANGE: (#3760) Use the above Client classes instead of invoking RPCClient()
 
 *Core
 
@@ -19,6 +23,7 @@ CHANGE: removed unused/outdated stuff from Distribution module
 *tests
 
 NEW: Add ChangeESFlag.py script to modify useES flag in dirac.cfg. To be integrated with Jenkins code.
+CHANGE: (#3760) Use the above Client classes instead of invoking RPCClient()
 
 *Docs
 FIX: Better dirac.cfg example configuration for web
