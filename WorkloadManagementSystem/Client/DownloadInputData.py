@@ -13,7 +13,7 @@ import tempfile
 import random
 
 from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Core.Utilities.Os import getDiskSpace
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
@@ -345,7 +345,7 @@ class DownloadInputData:
     if not self.jobID:
       return S_ERROR('JobID not defined')
 
-    jobReport = RPCClient('WorkloadManagement/JobStateUpdate', timeout=120)
+    jobReport = JobStateUpdateClient()
     jobParam = jobReport.setJobParameter(int(self.jobID), str(name), str(value))
     self.log.verbose('setJobParameter(%s,%s,%s)' % (self.jobID, name, value))
     if not jobParam['OK']:
