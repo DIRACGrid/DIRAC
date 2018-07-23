@@ -75,16 +75,7 @@ FTS3Agent
 
 This agent is in charge of performing and monitoring all the transfers. Note that this agent can be duplicated as many time as you wish.
 
-There are various configuration options for this system:
-
-* `OperationBulkSize` (default 20): How many Operation we will treat in one loop
-* `JobBulkSize` (default 20): How many Job we will monitor in one loop
-* `MaxFilesPerJob` (default 100): Max number of files to go in a single job
-* `maxAttemptsPerFile` (default 256): Max number of attempt per file
-* `DeleteGraceDays` (default 180): days before removing jobs
-* `DeleteLimitPerCycle` (default 100): Max number of deletes per cycle
-* `KickAssignedHours` (default 1): hours before kicking jobs with old assignment tag
-* `KickLimitPerCycle` (default 100):  Max number of kicks per cycle
+See :py:mod:`~DIRAC.DataManagementSystem.Agent.FTS3Agent` for configuration details.
 
 FTS3 system overview
 --------------------

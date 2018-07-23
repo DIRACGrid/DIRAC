@@ -1,5 +1,34 @@
 """
-  FTS3Agent implementation
+ .. versionadded:: v6r20
+
+  FTS3Agent implementation.
+  It is in charge of submitting and monitoring all the transfers. It can be duplicated.
+
+
+::
+
+  FTS3Agent
+  {
+    PollingTime = 120
+    MaxThreads = 10
+    # How many Operation we will treat in one loop
+    OperationBulkSize = 20
+    # How many Job we will monitor in one loop
+    JobBulkSize = 20
+    # Max number of files to go in a single job
+    MaxFilesPerJob = 100
+    # Max number of attempt per file
+    MaxAttemptsPerFile = 256
+    # days before removing jobs
+    DeleteGraceDays = 180
+    # Max number of deletes per cycle
+    DeleteLimitPerCycle = 100
+    # hours before kicking jobs with old assignment tag
+    KickAssignedHours  = 1
+    # Max number of kicks per cycle
+    KickLimitPerCycle = 100
+  }
+
 """
 
 __RCSID__ = "$Id$"
@@ -64,7 +93,7 @@ class FTS3Agent(AgentModule):
     # Number of Jobs we treat in one loop
     self.jobBulkSize = self.am_getOption("JobBulkSize", 20)
     self.maxFilesPerJob = self.am_getOption("MaxFilesPerJob", 100)
-    self.maxAttemptsPerFile = self.am_getOption("maxAttemptsPerFile", 256)
+    self.maxAttemptsPerFile = self.am_getOption("MaxAttemptsPerFile", 256)
     self.kickDelay = self.am_getOption("KickAssignedHours", 1)
     self.maxKick = self.am_getOption("KickLimitPerCycle", 100)
     self.deleteDelay = self.am_getOption("DeleteGraceDays", 180)
@@ -400,6 +429,20 @@ class FTS3Agent(AgentModule):
 
     return S_OK()
 
+  def kickJobs(self):
+    """ kick stuck jobs """
+
+    log = gLogger.getSubLogger("kickJobs", child=True)
+
+    res = self.fts3db.kickStuckJobs(limit=self.maxKick, kickDelay=self.kickDelay)
+    if not res['OK']:
+      return res
+
+    kickedJobs = res['Value']
+    log.info("Kicked %s stuck jobs" % kickedJobs)
+
+    return S_OK()
+
   def deleteOperations(self):
     """ delete final operations """
 
@@ -435,6 +478,13 @@ class FTS3Agent(AgentModule):
 
     if not res['OK']:
       log.error("Error treating operations", res)
+      return res
+
+    log.info("Kicking stuck jobs")
+    res = self.kickJobs()
+
+    if not res['OK']:
+      log.error("Error kicking jobs", res)
       return res
 
     log.info("Kicking stuck operations")
