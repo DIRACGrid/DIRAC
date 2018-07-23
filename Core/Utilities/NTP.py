@@ -7,7 +7,7 @@ import time as time
 import datetime
 from DIRAC import S_OK, S_ERROR
 
-TIME1970 = 2208988800L
+TIME1970 = 2208988800
 gDefaultNTPServers = [ "pool.ntp.org" ]
 
 def getNTPUTCTime( serverList = None, retries = 2 ):

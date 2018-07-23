@@ -16,7 +16,7 @@ class PlainTransport( BaseTransport ):
       timeout = self.extraArgsDict[ 'timeout' ]
     try:
       self.oSocket = socket.create_connection(self.stServerAddress, timeout)
-    except socket.error , e:
+    except socket.error as e:
       if e.args[0] != 115:
         return S_ERROR( "Can't connect: %s" % str( e ) )
       #Connect in progress
@@ -79,7 +79,7 @@ class PlainTransport( BaseTransport ):
       try:
         data = self.oSocket.recv( bufSize )
         return S_OK( data )
-      except socket.error, e:
+      except socket.error as e:
         if e[0] == 11:
           time.sleep( 0.001 )
         else:
@@ -104,7 +104,7 @@ class PlainTransport( BaseTransport ):
           return S_ERROR( "Connection closed by peer" )
         if sent > 0:
           sentBytes += sent
-      except socket.error, e:
+      except socket.error as e:
         if e[0] == 11:
           time.sleep( 0.001 )
         else:

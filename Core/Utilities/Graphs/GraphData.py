@@ -313,7 +313,7 @@ class GraphData:
     for label in self.labels:
       if label not in new_labels:
         for key in self.all_keys:
-          if self.subplots[label].parsed_data.has_key( key ):
+          if key in self.subplots[label].parsed_data:
             other_data[key] += self.subplots[label].parsed_data[key]
     self.otherPlot = PlotData( other_data )
 
@@ -322,7 +322,7 @@ class GraphData:
     """
 
     numData = self.getPlotNumData( zipFlag = False )
-    if not len( numData ):
+    if not numData:
       return 0, 0, 0, 0
 
     numData = numpy.array( numData )
@@ -438,7 +438,7 @@ class PlotData:
     self.max_key = self.keys[-1]
     self.sum_value = float( sum( self.real_values ) )
     self.last_value = float( self.real_values[-1] )
-    
+
     count = len( filter(lambda a: a != 0, self.real_values) )
     if count != 0:
       self.avg_nozeros = self.sum_value / float( count )
@@ -446,11 +446,11 @@ class PlotData:
       self.avg_nozeros = 0
 
   def expandKeys( self, all_keys ):
-    """ Fill zero values into the missing keys 
+    """ Fill zero values into the missing keys
     """
 
     for k in all_keys:
-      if not self.parsed_data.has_key( k ):
+      if k not in self.parsed_data:
         self.parsed_data[k] = 0.
 
     self.sorted_keys = []
@@ -490,7 +490,7 @@ class PlotData:
       return abs( item[0] )
     try:
       return abs( item )
-    except TypeError, te:
+    except TypeError as te:
       return - 1
 
   def parseKey( self, key ):
@@ -573,7 +573,7 @@ class PlotData:
   def getPlotData( self ):
 
     return self.parsed_data
-  
+
   def getPlotErrors( self ):
 
     return self.parsed_errors
@@ -586,7 +586,7 @@ class PlotData:
 
     result_pairs = []
     for key in keys:
-      if self.parsed_data.has_key( key ):
+      if key in self.parsed_data:
         result_pairs.append( key, self.parsed_data[key], self.parsed_errors[key] )
       else:
         result_pairs.append( key, None, 0. )

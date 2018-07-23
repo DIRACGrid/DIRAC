@@ -322,19 +322,19 @@ class DistributionMaker:
       projectCFG = self.relConf.getReleaseCFG( self.cliParams.projectName, relVersion )
       projectCFGData = projectCFG.toString() + "\n"
       try:
-        relFile = file( os.path.join( self.cliParams.destination,
+        relFile = open(os.path.join(self.cliParams.destination,
                                       "release-%s-%s.cfg" % ( self.cliParams.projectName, relVersion ) ), "w" )
         relFile.write( projectCFGData )
         relFile.close()
-      except Exception, exc:
+      except Exception as exc:
         gLogger.fatal( "Could not write the release info: %s" % str( exc ) )
         return False
       try:
-        relFile = file( os.path.join( self.cliParams.destination,
+        relFile = open(os.path.join(self.cliParams.destination,
                                       "release-%s-%s.md5" % ( self.cliParams.projectName, relVersion ) ), "w" )
         relFile.write( hashlib.md5( projectCFGData ).hexdigest() )
         relFile.close()
-      except Exception, exc:
+      except Exception as exc:
         gLogger.fatal( "Could not write the release info: %s" % str( exc ) )
         return False
       #Check deps
