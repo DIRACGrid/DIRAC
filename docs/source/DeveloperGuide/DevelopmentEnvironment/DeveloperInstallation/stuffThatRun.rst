@@ -87,7 +87,7 @@ You can implement all the principles above in more than one way.
 Using a Docker container [to expand]
 ====================================
 
-The following steps will try to guide 
+The following steps will try to guide
 you on setting up a development environment for DIRAC (or its extensions)
 that combines what you have learned in :ref:`editing_code`
 with a docker image with which you will run code that you develop.
@@ -249,8 +249,9 @@ The following commands should do the trick for you, by creating a fake CA, a fak
    cd $DEVROOT/DIRAC
    git checkout release/integration
    source tests/Jenkins/utilities.sh
+   generateCA
    generateCertificates 365
-   generateUserCredentials
+   generateUserCredentials 365
    mkdir -p ~/.globus/
    cp $DEVROOT/user/*.{pem,key} ~/.globus/
    mv ~/.globus/client.key ~/.globus/userkey.pem
@@ -258,7 +259,7 @@ The following commands should do the trick for you, by creating a fake CA, a fak
 
 Now we need to register those certificates in DIRAC. To do so you
 must modify *$DEVROOT/etc/dirac.cfg* file and set the correct
-certificate DNs for you and your development box. 
+certificate DNs for you and your development box.
 To register the host, replace "/your/box/dn/goes/here"
 (/Registry/Hosts/mydevbox/DN option) with the result of::
 
@@ -301,7 +302,7 @@ Let's do one more check, still from the host:
 
 Was this good? If it wasn't, again, then you should probably hit the "previous" button of this guide.
 
-The next test, also executed from the host, 
+The next test, also executed from the host,
 will verify if you will be able to produce a proxy starting from the user certificates that you have created above::
 
    X509_CERT_DIR=$DEVROOT/etc/grid-security/certificates ./FrameworkSystem/scripts/dirac-proxy-init.py -ddd
@@ -312,8 +313,8 @@ Should return you a user proxy. You can verify the content and location of the p
 
 Then, you can login on your running image (or your local installation) and try running a service, using the dips protocol.
 
-Do not think about you just typed right now. It will become more clear later. 
-Please, look into :ref:`check_your_installation` section for further checks. 
+Do not think about you just typed right now. It will become more clear later.
+Please, look into :ref:`check_your_installation` section for further checks.
 
 
 Ready!
