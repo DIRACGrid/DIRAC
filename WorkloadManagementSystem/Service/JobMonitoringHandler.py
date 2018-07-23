@@ -521,6 +521,13 @@ class JobMonitoringHandler(RequestHandler):
     return gJobDB.getJobParameters(jobID)
 
 ##############################################################################
+  types_getJobOptParameters = [int]
+
+  @staticmethod
+  def export_getJobOptParameters(jobID):
+    return gJobDB.getJobOptParameters(jobID)
+
+##############################################################################
   types_traceJobParameter = [basestring, [basestring, int, long, list],
                              basestring, [basestring, None],
                              [basestring, None]]
