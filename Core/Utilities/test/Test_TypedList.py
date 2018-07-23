@@ -62,20 +62,20 @@ class TypedListTestCase(unittest.TestCase):
 
   def test02_add_iadd_radd( self ):
     """ += +lvalue +rvalue """
-    NumericList = TypedList( (1, 1.0, 1L), self.numericTypes )
+    NumericList = TypedList((1, 1.0, 1), self.numericTypes)
     ## +=
-    NumericList += [ 2, 2.0, 2L ]
+    NumericList += [2, 2.0, 2]
     self.assertEqual( len(NumericList), 6 )
-    self.assertEqual( NumericList, [1, 1.0, 1L, 2, 2.0, 2L ] )
+    self.assertEqual(NumericList, [1, 1.0, 1, 2, 2.0, 2])
     ## +lvalue
-    lList = NumericList + [ 3, 3.0, 3L ]
+    lList = NumericList + [3, 3.0, 3]
     self.assertEqual( len(lList), 9 )
-    self.assertEqual( lList, [1, 1.0, 1L, 2, 2.0, 2L, 3, 3.0, 3L ] )
+    self.assertEqual(lList, [1, 1.0, 1, 2, 2.0, 2, 3, 3.0, 3])
 
     ## rvalue+
-    rList = [ 0, 0.0, 0L ] + NumericList
+    rList = [0, 0.0, 0] + NumericList
     self.assertEqual( len(rList), 9 )
-    self.assertEqual( rList, [ 0, 0.0, 0L, 1, 1.0, 1L, 2, 2.0, 2L ] )
+    self.assertEqual(rList, [0, 0.0, 0, 1, 1.0, 1, 2, 2.0, 2])
 
   def test03_setitem_append_extend_insert( self ):
     pass

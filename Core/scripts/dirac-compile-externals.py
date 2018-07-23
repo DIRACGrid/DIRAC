@@ -43,7 +43,7 @@ def copyFromDIRAC( filePath, destPath, isExecutable = False, filterLines = None 
   try:
     with open( os.path.join( DIRACRoot, filePath ), "r" ) as fd:
       data = fd.readlines()
-  except IOError, e:
+  except IOError as e:
     print "Could not open %s: %s" % ( filePath, e )
     sys.exit( 1 )
   destFilePath = os.path.join( destPath, os.path.basename( filePath ) )

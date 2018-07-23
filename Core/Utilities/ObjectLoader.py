@@ -93,7 +93,7 @@ class ObjectLoader( object ):
       impModule = imp.load_module( modName[0], *impData )
       if impData[0]:
         impData[0].close()
-    except ImportError, excp:
+    except ImportError as excp:
       if str( excp ).find( "No module named %s" % modName[0] ) == 0:
         return S_OK( None )
       errMsg = "Can't load %s in %s" % ( ".".join( modName ), parentModule.__path__[0] )

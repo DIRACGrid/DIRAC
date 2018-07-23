@@ -1,7 +1,3 @@
-########################################################################
-# $HeadURL$
-########################################################################
-
 """ ClassAd Class - a light purely Python representation of the
     Condor ClassAd library.
 """
@@ -80,7 +76,7 @@ class ClassAd:
 
     depth = 0
     ind = index
-    while ( depth < 10 ):
+    while depth < 10:
       ind1 = body.find( ']', ind + 1 )
       ind2 = body.find( '[', ind + 1 )
       if ind2 != -1 and ind2 < ind1:
@@ -94,8 +90,7 @@ class ClassAd:
           result = body[index:ind1 + 1]
           if body[ind1 + 1] == ";":
             return ( result, ind1 + 2 )
-          else:
-            return result, 0
+          return result, 0
 
     return result, 0
 
@@ -135,9 +130,9 @@ class ClassAd:
     tmp = map ( lambda x : str( x ), attributelist )
     tmpstr = ','.join( tmp )
     self.contents[name] = '{' + tmpstr + '}'
-    
+
   def insertAttributeVectorStringList( self, name, attributelist ):
-    """Insert a named list of string lists 
+    """Insert a named list of string lists
     """
 
     listOfLists = []
@@ -151,7 +146,7 @@ class ClassAd:
     """Check the presence of the given attribute
     """
 
-    return self.contents.has_key( name )
+    return name in self.contents
 
   def set_expression( self, name, attribute ):
     """Insert a named expression attribute
@@ -163,13 +158,11 @@ class ClassAd:
     """Get expression corresponding to a named attribute
     """
 
-    if self.contents.has_key( name ):
+    if name in self.contents:
       if isinstance( self.contents[name], ( int, long ) ):
         return str( self.contents[name] )
-      else :
-        return self.contents[name]
-    else:
-      return ""
+      return self.contents[name]
+    return ""
 
   def isAttributeList( self, name ):
     """ Check if the given attribute is of the List type
@@ -186,15 +179,15 @@ class ClassAd:
     if tempString.startswith('{'):
       tempString = tempString[1:-1]
       listMode = True
-      
-    tempString = tempString.replace( " ", "" ).replace( '\n','' )  
+
+    tempString = tempString.replace(" ", "").replace('\n', '')
     if tempString.find('{') < 0:
       if not listMode:
         tempString = tempString.replace( "\"", "" )
-        return tempString.split( ',' ) 
-    
-    resultList = []    
-    while tempString:      
+        return tempString.split(',')
+
+    resultList = []
+    while tempString:
       if tempString.find( '{' ) == 0 :
         end = tempString.find( '}' )
         resultList.append(tempString[:end+1])
@@ -204,15 +197,15 @@ class ClassAd:
       elif tempString.find( '"' ) == 0 :
         end = tempString[1:].find( '"' )
         resultList.append( tempString[1:end+1] )
-        tempString = tempString[end+2:]    
+        tempString = tempString[end + 2:]
         if tempString.startswith(','):
-          tempString = tempString[1:]          
+          tempString = tempString[1:]
       else:
         end = tempString.find( ',' )
         if end < 0:
           resultList.append( tempString.replace( "\"", "" ).replace( " ", "" ) )
           break
-        else:  
+        else:
           resultList.append( tempString[:end].replace( "\"", "" ).replace( " ", "" ) )
           tempString = tempString[end+1:]
 
@@ -236,11 +229,10 @@ class ClassAd:
     """Delete a named attribute
     """
 
-    if self.contents.has_key( name ):
+    if name in self.contents:
       del self.contents[name]
       return 1
-    else:
-      return 0
+    return 0
 
   def isOK( self ):
     """Check the JDL validity - to be defined
@@ -248,8 +240,7 @@ class ClassAd:
 
     if self.contents:
       return 1
-    else:
-      return 0
+    return 0
 
   def asJDL( self ):
     """Convert the JDL description into a string
@@ -299,16 +290,11 @@ class ClassAd:
   def getAttributeBool( self, name ):
     """ Get Boolean type attribute value
     """
-    if self.lookupAttribute( name ):
-      value = self.get_expression( name ).replace( '"', '' )
-    else:
+    if not self.lookupAttribute(name):
       return False
-    if value.lower() == "true":
-      return True
-    elif value.lower() == "false":
-      return False
-    else:
-      return False
+
+    value = self.get_expression(name).replace('"', '')
+    return value.lower() == "true"
 
   def getAttributeFloat( self, name ):
     """ Get Float type attribute value
