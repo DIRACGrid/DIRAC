@@ -22,6 +22,7 @@ from DIRAC.DataManagementSystem.private.FTS3Utilities import FTS3Serializable
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.RequestManagementSystem.Client.Operation import Operation as rmsOperation
 from DIRAC.RequestManagementSystem.Client.File import File as rmsFile
+from DIRAC.RequestManagementSystem.Client.Request import Request as rmsRequest
 
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 
@@ -424,15 +425,28 @@ class FTS3TransferOperation(FTS3Operation):
       return S_OK()
 
     # Now we check the status of the Request.
-    # If it is not scheduled, we do not perform the callback
-
+    # in principle, it should be scheduled
     res = self.reqClient.getRequestStatus(self.rmsReqID)
     if not res['OK']:
       log.error("Could not get request status", res)
       return res
     status = res['Value']
+
+    # If it is not scheduled, something went wrong
+    # and we will not modify it
     if status != 'Scheduled':
-      return S_ERROR("Request with id %s is not Scheduled:%s" % (self.rmsReqID, status))
+      # If the Request is in a final state, just leave it,
+      # and we consider our job done.
+      # (typically happens when the callback had already been done but not persisted to the FTS3DB)
+      if status in rmsRequest.FINAL_STATES:
+        log.warn(
+            "Request with id %s is not Scheduled (%s), but okay it is in a Final State" %
+            (self.rmsReqID, status))
+        return S_OK()
+      # If the Request is not in a final state, then something really wrong is going on,
+      # and we do not do anything, keep ourselves pending
+      else:
+        return S_ERROR("Request with id %s is not Scheduled:%s" % (self.rmsReqID, status))
 
     res = self._updateRmsOperationStatus()
 

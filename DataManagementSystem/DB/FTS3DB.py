@@ -47,7 +47,7 @@ fts3FileTable = Table('Files', metadata,
                              server_default=FTS3File.INIT_STATE,
                              index=True),
                       mysql_engine='InnoDB',
-                     )
+                      )
 
 mapper(FTS3File, fts3FileTable)
 
@@ -61,8 +61,10 @@ fts3JobTable = Table('Jobs', metadata,
                      Column('lastUpdate', DateTime, onupdate=func.utc_timestamp()),
                      Column('lastMonitor', DateTime),
                      Column('completeness', Float),
-                     Column('username', String(255)),  # Could be fetched from Operation, but bad for perf
-                     Column('userGroup', String(255)),  # Could be fetched from Operation, but bad for perf
+                     # Could be fetched from Operation, but bad for perf
+                     Column('username', String(255)),
+                     # Could be fetched from Operation, but bad for perf
+                     Column('userGroup', String(255)),
                      Column('ftsGUID', String(255)),
                      Column('ftsServer', String(255)),
                      Column('error', String(2048)),
@@ -80,7 +82,8 @@ fts3OperationTable = Table('Operations', metadata,
                            Column('operationID', Integer, primary_key=True),
                            Column('username', String(255)),
                            Column('userGroup', String(255)),
-                           Column('rmsReqID', Integer, server_default='-1'),  # -1 because with 0 we get any request
+                           # -1 because with 0 we get any request
+                           Column('rmsReqID', Integer, server_default='-1'),
                            Column('rmsOpID', Integer, server_default='0'),
                            Column('sourceSEs', String(255)),
                            Column('activity', String(255)),
@@ -94,7 +97,7 @@ fts3OperationTable = Table('Operations', metadata,
                            Column('type', String(255)),
                            Column('assignment', String(255), server_default=None),
                            mysql_engine='InnoDB',
-                          )
+                           )
 
 
 fts3Operation_mapper = mapper(FTS3Operation, fts3OperationTable,
@@ -225,7 +228,8 @@ class FTS3DB(object):
 
     """
 
-    # expire_on_commit is set to False so that we can still use the object after we close the session
+    # expire_on_commit is set to False so that we can still use the object
+    # after we close the session
     session = self.dbSession(expire_on_commit=False)
 
     try:
@@ -314,15 +318,21 @@ class FTS3DB(object):
     """Update the file ftsStatus and error
         The update is only done if the file is not in a final state
 
-
+        TODO: maybe it should query first the status and filter the rows I want to update !
 
        :param fileStatusDict : { fileID : { status , error } }
 
     """
-    session = self.dbSession()
-    try:
 
-      for fileID, valueDict in fileStatusDict.iteritems():
+    # This here is inneficient as we update every files, even if it did not change, and we commit every time.
+    # It would probably be best to update only the files that changed.
+    # However, commiting every time is the recommendation of MySQL
+    # (https://dev.mysql.com/doc/refman/5.7/en/innodb-deadlocks-handling.html)
+
+    for fileID, valueDict in fileStatusDict.iteritems():
+
+      session = self.dbSession()
+      try:
 
         updateDict = {FTS3File.status: valueDict['status']}
 
@@ -342,16 +352,16 @@ class FTS3DB(object):
                         .values(updateDict)
                         )
 
-      session.commit()
+        session.commit()
 
-      return S_OK()
+      except SQLAlchemyError as e:
+        session.rollback()
+        self.log.exception("updateFileFtsStatus: unexpected exception", lException=e)
+        return S_ERROR("updateFileFtsStatus: unexpected exception %s" % e)
+      finally:
+        session.close()
 
-    except SQLAlchemyError as e:
-      session.rollback()
-      self.log.exception("updateFileFtsStatus: unexpected exception", lException=e)
-      return S_ERROR("updateFileFtsStatus: unexpected exception %s" % e)
-    finally:
-      session.close()
+    return S_OK()
 
   def updateJobStatus(self, jobStatusDict):
     """ Update the job Status and error
@@ -485,13 +495,16 @@ class FTS3DB(object):
       rowCount = 0
 
       if opIDs:
-        result = session.execute(update(FTS3Operation)
-                                 .where(FTS3Operation.operationID.in_(opIDs))
-                                 .where(FTS3Operation.lastUpdate < (func.date_sub(func.utc_timestamp(),
-                                                                                  text('INTERVAL %d HOUR' % kickDelay
-                                                                                       ))))
-                                 .values({'assignment': None})
-                                 )
+        result = session.execute(
+            update(FTS3Operation) .where(
+                FTS3Operation.operationID.in_(opIDs)) .where(
+                FTS3Operation.lastUpdate < (
+                    func.date_sub(
+                        func.utc_timestamp(), text(
+                            'INTERVAL %d HOUR' %
+                            kickDelay)))) .values(
+                {
+                    'assignment': None}))
         rowCount = result.rowcount
 
       session.commit()
@@ -502,6 +515,54 @@ class FTS3DB(object):
     except SQLAlchemyError as e:
       session.rollback()
       return S_ERROR("kickStuckOperations: unexpected exception : %s" % e)
+    finally:
+      session.close()
+
+  def kickStuckJobs(self, limit=20, kickDelay=2):
+    """finds jobs that have not been updated for more than a given
+      time but are still assigned and resets the assignment
+
+    :param int limit: number of jobs to treat
+    :param int kickDelay: age of the lastUpdate in hours
+    :returns: S_OK/S_ERROR with number of kicked jobs
+
+    """
+
+    session = self.dbSession(expire_on_commit=False)
+
+    try:
+
+      ftsJobs = session.query(FTS3Job.jobID)\
+          .filter(FTS3Job.lastUpdate < (func.date_sub(func.utc_timestamp(),
+                                                      text('INTERVAL %d HOUR' % kickDelay
+                                                           ))))\
+          .filter(~FTS3Job.assignment.is_(None))\
+          .limit(limit)
+
+      jobIDs = [jobTuple[0] for jobTuple in ftsJobs]
+      rowCount = 0
+
+      if jobIDs:
+        result = session.execute(
+            update(FTS3Job) .where(
+                FTS3Job.jobID.in_(jobIDs)) .where(
+                FTS3Job.lastUpdate < (
+                    func.date_sub(
+                        func.utc_timestamp(), text(
+                            'INTERVAL %d HOUR' %
+                            kickDelay)))) .values(
+                {
+                    'assignment': None}))
+        rowCount = result.rowcount
+
+      session.commit()
+      session.expunge_all()
+
+      return S_OK(rowCount)
+
+    except SQLAlchemyError as e:
+      session.rollback()
+      return S_ERROR("kickStuckJobs: unexpected exception : %s" % e)
     finally:
       session.close()
 
@@ -517,11 +578,16 @@ class FTS3DB(object):
 
     try:
 
-      ftsOps = session.query(FTS3Operation.operationID)\
-          .filter(FTS3Operation.lastUpdate < (func.date_sub(func.utc_timestamp(),
-                                                            text('INTERVAL %d DAY' % deleteDelay))))\
-          .filter(FTS3Operation.status.in_(FTS3Operation.FINAL_STATES))\
-          .limit(limit)
+      ftsOps = session.query(
+          FTS3Operation.operationID) .filter(
+          FTS3Operation.lastUpdate < (
+              func.date_sub(
+                  func.utc_timestamp(),
+                  text(
+                      'INTERVAL %d DAY' %
+                      deleteDelay)))) .filter(
+          FTS3Operation.status.in_(
+              FTS3Operation.FINAL_STATES)) .limit(limit)
 
       opIDs = [opTuple[0] for opTuple in ftsOps]
       rowCount = 0
