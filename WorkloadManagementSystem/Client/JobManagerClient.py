@@ -1,5 +1,6 @@
 """ Class that contains client access to the JobManager handler. """
 
+from __future__ import absolute_import
 from DIRAC.Core.Base.Client import Client
 
 

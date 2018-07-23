@@ -4,6 +4,8 @@ Elasticsearch database.
 
 """
 
+from __future__ import absolute_import
+import six
 __RCSID__ = "$Id$"
 
 from datetime import datetime
@@ -305,7 +307,7 @@ class ElasticSearchDB(object):
       try:
         if isinstance(timestamp, datetime):
           body['_source']['timestamp'] = int(timestamp.strftime('%s')) * 1000
-        elif isinstance(timestamp, basestring):
+        elif isinstance(timestamp, six.string_types):
           timeobj = datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S.%f')
           body['_source']['timestamp'] = int(timeobj.strftime('%s')) * 1000
         else:  # we assume  the timestamp is an unix epoch time (integer).

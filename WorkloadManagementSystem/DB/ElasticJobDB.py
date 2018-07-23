@@ -9,6 +9,7 @@
   setJobParameter()
 """
 
+from __future__ import absolute_import
 __RCSID__ = "$Id$"
 
 from DIRAC import S_OK, S_ERROR, gLogger
