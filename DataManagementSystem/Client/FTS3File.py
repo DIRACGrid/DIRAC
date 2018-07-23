@@ -22,7 +22,10 @@ class FTS3File(FTS3Serializable):
   # These are the states that we consider final.
   # No new attempts will be done on our side for
   # FTS3Files reaching one of these
-  FINAL_STATES = ['Canceled', 'Finished', 'Defunct']
+  # Note that Canceled is not final state, because
+  # FTS fails some transfers as "Canceled" (gsiftp timeout)
+
+  FINAL_STATES = ['Finished', 'Defunct']
 
   FTS_SUCCESS_STATES = ['Finished']
   FTS_FAILED_STATES = ['Canceled', 'Failed']

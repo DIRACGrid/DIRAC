@@ -8,9 +8,10 @@
 
 '''
 
-__RCSID__ = '$Id:$'
+__RCSID__ = '$Id$'
 
 import sys
+import errno
 
 from datetime import datetime
 
@@ -117,6 +118,8 @@ class FreeDiskSpaceCommand(Command):
 
     if not result['OK']:
       return result
+    if not result['Value']:
+      return S_ERROR(errno.ENODATA, "No occupancy recorded")
 
     # results are normally in 'MB'
     free = result['Value'][0][3]

@@ -8,6 +8,8 @@
     initialize method and on the _getClients method.
 """
 
+__RCSID__ = "$Id$"
+
 import time
 import datetime
 from Queue import Queue
@@ -26,8 +28,6 @@ from DIRAC.TransformationSystem.Client.TaskManager import WorkflowTasks
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 from DIRAC.TransformationSystem.Agent.TransformationAgentsUtilities import TransformationAgentsUtilities
 from DIRAC.Core.Utilities.List import breakListIntoChunks
-
-__RCSID__ = "$Id$"
 
 AGENT_NAME = 'Transformation/TaskManagerAgentBase'
 
@@ -48,6 +48,11 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
     self.transType = []
 
     self.tasksPerLoop = 50
+
+    # credentials
+    self.shifterProxy = None
+    self.credentials = None
+    self.credTuple = (None, None, None)
 
     self.pluginLocation = ''
     self.bulkSubmissionFlag = False
@@ -77,12 +82,11 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
     self.transClient = TransformationClient()
 
     # Bulk submission flag
-    self.bulkSubmissionFlag = self.am_getOption('BulkSubmission', False)
+    self.bulkSubmissionFlag = self.am_getOption('BulkSubmission', self.bulkSubmissionFlag)
 
     # Shifter credentials to use, could replace the use of shifterProxy eventually
-    self.shifterProxy = self.am_getOption('shifterProxy', None)
-    self.credentials = self.am_getOption('ShifterCredentials', None)
-    self.credTuple = (None, None, None)
+    self.shifterProxy = self.am_getOption('shifterProxy', self.shifterProxy)
+    self.credentials = self.am_getOption('ShifterCredentials', self.credentials)
     resCred = self.__getCredentials()
     if not resCred['OK']:
       return resCred
@@ -190,8 +194,6 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
         self.tasksPerLoop = self.am_getOption('TasksPerLoop', self.tasksPerLoop)
         self._addOperationForTransformations(operationsOnTransformationDict, 'submitTasks', transformations,
                                              owner=owner, ownerGroup=ownerGroup, ownerDN=ownerDN)
-
-
 
     self._fillTheQueue(operationsOnTransformationDict)
 
@@ -580,8 +582,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
     transformationIDsAndBodies = [(transformation['TransformationID'],
                                    transformation['Body'],
                                    transformation['AuthorDN'],
-                                   transformation['AuthorGroup'],
-                                   ) for transformation in transformations['Value']]
+                                   transformation['AuthorGroup']) for transformation in transformations['Value']]
     for transID, body, t_ownerDN, t_ownerGroup in transformationIDsAndBodies:
       if transID in operationsOnTransformationDict:
         operationsOnTransformationDict[transID]['Operations'].append(operation)
@@ -589,8 +590,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
         operationsOnTransformationDict[transID] = {'Body': body, 'Operations': [operation],
                                                    'Owner': owner if owner else getUsernameForDN(t_ownerDN)['Value'],
                                                    'OwnerGroup': ownerGroup if owner else t_ownerGroup,
-                                                   'OwnerDN': ownerDN if owner else t_ownerDN
-                                                   }
+                                                   'OwnerDN': ownerDN if owner else t_ownerDN}
 
   def __getCredentials(self):
     """Get the credentials to use if ShifterCredentials are set, otherwise do nothing.
