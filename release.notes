@@ -33,6 +33,7 @@ FIX: (#3753) - style changes
 FIX: (#3747) fix many warnings
 FIX: (#3735) GetReleaseNotes.py no longer depends on curl, but the python requests packe
 FIX: (#3740) Fix fake environments for sqlalchemy.ext import, some code documentation pages were not build, e.g. FTS3Agent
+NEW: (#3762) Add --repo option, e.g. --repo DiracGrid/DiracOS, or just --repo DiracOS, fixes DIRACGrid/DIRACOS#30
 
 *TransformationSystem
 
