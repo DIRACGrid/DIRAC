@@ -2,6 +2,16 @@
 
   This agent inspect Sites, and evaluates policies that apply.
 
+The following options can be set for the SiteInspectorAgent.
+
+::
+
+  SiteInspectorAgent
+  {
+    # maximum number of threads to use in this agent (15 is the defaul)
+    maxNumberOfThreads = 15
+  }
+
 """
 
 __RCSID__  = '$Id$'
@@ -61,7 +71,7 @@ class SiteInspectorAgent( AgentModule ):
 
     self.siteClient  = SiteStatus()
 
-    self.clients['SiteStatus']               = self.siteClient
+    self.clients['SiteStatus']               = SiteStatus()
     self.clients['ResourceManagementClient'] = ResourceManagementClient()
 
     return S_OK()
