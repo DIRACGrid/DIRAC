@@ -44,11 +44,9 @@ class EmailAgent(AgentModule):
 
         result = conn.execute("SELECT DISTINCT SiteName from ResourceStatusCache;")
         for site in result:
-          cursor = conn.execute(
-              "SELECT StatusType, ResourceName, Status, Time, PreviousStatus from ResourceStatusCache " +
-              "WHERE SiteName='" +
-              site[0] +
-              "';")
+          query = "SELECT StatusType, ResourceName, Status, Time, PreviousStatus from ResourceStatusCache "
+          query += "WHERE SiteName='%s';" % site[0]
+          cursor = conn.execute(query)
 
           email = ""
           html_body = ""
