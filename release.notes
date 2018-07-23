@@ -1,3 +1,11 @@
+[v6r19p25]
+
+*TransformationSystem
+FIX: (#3742) TransformationDB - when adding files to transformations with a multi-threaded agent, 
+     it might happen that 2 threads are adding the same file at the same time. The LFN was not 
+     unique in the DataFiles table, which was a mistake... This fix assumes the LFN is unique, 
+     i.e. if not the table had been cleaned and the table updated to be unique.
+
 [v6r19p24]
 
 *WMS
