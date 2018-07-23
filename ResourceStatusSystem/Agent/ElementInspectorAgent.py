@@ -1,7 +1,19 @@
 """ ElementInspectorAgent
 
-  This agent inspect Resources, and evaluates policies that apply.
+  This agent inspect Resources (or maybe Nodes), and evaluates policies that apply.
 
+
+The following options can be set for the ElementInspectorAgent.
+
+::
+
+  ElementInspectorAgent
+  {
+    # maximum number of threads to use in this agent (15 is the defaul)
+    maxNumberOfThreads = 15
+    # element type to check (Resource -- which is the default, or Node)
+    elementType = Resource
+  }
 """
 
 import datetime
@@ -25,7 +37,7 @@ class ElementInspectorAgent(AgentModule):
   """ ElementInspectorAgent
 
   The ElementInspector agent is a generic agent used to check the elements
-  of one of the elementTypes ( e.g. Site, Resource, Node ).
+  of type "Resource" -- which includes ComputingElement, StorageElement, and other types
 
   This Agent takes care of the Elements. In order to do so, it gathers
   the eligible ones and then evaluates their statuses with the PEP.
@@ -51,8 +63,8 @@ class ElementInspectorAgent(AgentModule):
 
     AgentModule.__init__(self, *args, **kwargs)
 
-    # ElementType, to be defined among Site, Resource or Node
-    self.elementType = ''
+    # ElementType, to be defined among Resource or Node
+    self.elementType = 'Resource'
     self.elementsToBeChecked = None
     self.threadPool = None
     self.rsClient = None
@@ -66,9 +78,8 @@ class ElementInspectorAgent(AgentModule):
     self.threadPool = ThreadPool(maxNumberOfThreads, maxNumberOfThreads)
 
     self.elementType = self.am_getOption('elementType', self.elementType)
-    self.rsClient = ResourceStatusClient()
 
-    self.clients['ResourceStatusClient'] = self.rsClient
+    self.clients['ResourceStatusClient'] = ResourceStatusClient()
     self.clients['ResourceManagementClient'] = ResourceManagementClient()
 
     if not self.elementType:
@@ -130,7 +141,7 @@ class ElementInspectorAgent(AgentModule):
     toBeChecked = Queue.Queue()
 
     # We get all the elements, then we filter.
-    elements = self.rsClient.selectStatusElement(self.elementType, 'Status')
+    elements = ResourceStatusClient().selectStatusElement(self.elementType, 'Status')
     if not elements['OK']:
       return elements
 
@@ -152,9 +163,8 @@ class ElementInspectorAgent(AgentModule):
       if elemDict['TokenOwner'] != 'rs_svc':
 	self.log.verbose('Skipping %s ( %s ) with token %s' % (elemDict['Name'],
 							       elemDict['StatusType'],
-							       elemDict['TokenOwner']
-                                                               ))
-        continue
+							       elemDict['TokenOwner']))
+	continue
 
       # We are not checking if the item is already on the queue or not. It may
       # be there, but in any case, it is not a big problem.

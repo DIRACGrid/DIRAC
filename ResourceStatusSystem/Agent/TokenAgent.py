@@ -2,6 +2,19 @@
 
   This agent inspect all elements, and resets their tokens if necessary.
 
+The following options can be set for the TokenAgent.
+
+::
+
+  TokenAgent
+  {
+    # hours to notify the owner of the token in advance to the token expiration (12 is the default)
+    notifyHours = 12
+    # admin e-mail to where to notify about expiring tokens (on top of existing notifications to tokwn owners)
+    # (normally not set)
+    adminMail = 'send@to.me'
+  }
+
 '''
 
 __RCSID__ = '$Id$'
@@ -22,14 +35,8 @@ class TokenAgent(AgentModule):
     Notifications are sent to those users owning expiring tokens.
   '''
 
-  # Hours to notify a user
-  __notifyHours = 12
-
   # Rss token
   __rssToken = 'rs_svc'
-
-  # Admin mail
-  __adminMail = None
 
   def __init__(self, *args, **kwargs):
     ''' c'tor
@@ -37,8 +44,8 @@ class TokenAgent(AgentModule):
 
     AgentModule.__init__(self, *args, **kwargs)
 
-    self.notifyHours = self.__notifyHours
-    self.adminMail = self.__adminMail
+    self.notifyHours = 12
+    self.adminMail = None
 
     self.rsClient = None
     self.tokenDict = None

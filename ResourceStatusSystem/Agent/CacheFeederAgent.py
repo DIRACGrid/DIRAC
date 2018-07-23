@@ -2,6 +2,16 @@
 
   This agent feeds the Cache tables with the outputs of the cache commands.
 
+The following options can be set for the CacheFeederAgent.
+
+::
+
+  CacheFeederAgent
+  {
+    # Use a dedicated proxy to submit jobs to the WMS
+    shifterProxy = DataManager
+  }
+
 '''
 
 __RCSID__ = '$Id$'
@@ -27,9 +37,6 @@ class CacheFeederAgent(AgentModule):
   It runs periodically a set of commands, and stores it's results on the
   tables.
   '''
-
-  # Too many public methods
-  # pylint: disable=R0904
 
   def __init__(self, *args, **kwargs):
 
