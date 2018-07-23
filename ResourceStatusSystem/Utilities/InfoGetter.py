@@ -61,7 +61,6 @@ def getPoliciesThatApply(decisionParams):
 
     # FIXME: make sure the values in the policyConfigParams dictionary are typed !!
     policyConfigParams = {}
-    # policyConfigParams = policySetup.get( 'configParams', {} )
     policyMatch = Utils.configMatch(decisionParams, policyMatchParams)
     gLogger.debug("PolicyMatch for decisionParams %s: %s" % (decisionParams, str(policyMatch)))
 
@@ -90,8 +89,7 @@ def getPoliciesThatApply(decisionParams):
     # and future usage.
     policyDict = {'name': policyName,
                   'type': policyType,
-                  'args': {}
-                  }
+                  'args': {}}
 
     # args is one of the parameters we are going to use on the policies. We copy
     # the defaults and then we update if with whatever comes from the CS.

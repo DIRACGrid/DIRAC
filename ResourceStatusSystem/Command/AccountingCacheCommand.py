@@ -537,7 +537,7 @@ class SuccessfullJobsBySiteSplittedCommand(Command):
     successfulJobs = self.rClient.getReport('Job', 'NumberOfJobs', fromD, toD,
                                             {'FinalStatus': ['Done'],
                                              'Site': sites
-					    }, 'Site')
+                                            }, 'Site')
     if not successfulJobs['OK']:
       return successfulJobs
     successfulJobs = successfulJobs['Value']
@@ -619,7 +619,7 @@ class FailedJobsBySiteSplittedCommand(Command):
     failedJobs = self.rClient.getReport('Job', 'NumberOfJobs', fromD, toD,
                                         {'FinalStatus': ['Failed'],
                                          'Site': sites
-					}, 'Site')
+                                        }, 'Site')
     if not failedJobs['OK']:
       return failedJobs
     failedJobs = failedJobs['Value']
@@ -701,7 +701,7 @@ class SuccessfullPilotsBySiteSplittedCommand(Command):
     succesfulPilots = self.rClient.getReport('Pilot', 'NumberOfPilots', fromD, toD,
                                              {'GridStatus': ['Done'],
                                               'Site': sites
-					     }, 'Site')
+                                             }, 'Site')
     if not succesfulPilots['OK']:
       return succesfulPilots
     succesfulPilots = succesfulPilots['Value']
@@ -783,7 +783,7 @@ class FailedPilotsBySiteSplittedCommand(Command):
     failedPilots = self.rClient.getReport('Pilot', 'NumberOfPilots', fromD, toD,
                                           {'GridStatus': ['Aborted'],
                                            'Site': sites
-					  }, 'Site')
+                                          }, 'Site')
     if not failedPilots['OK']:
       return failedPilots
     failedPilots = failedPilots['Value']
@@ -867,7 +867,7 @@ class SuccessfullPilotsByCESplittedCommand(Command):
     successfulPilots = self.rClient.getReport('Pilot', 'NumberOfPilots', fromD, toD,
                                               {'GridStatus': ['Done'],
                                                'GridCE': ces
-					      }, 'GridCE')
+                                              }, 'GridCE')
     if not successfulPilots['OK']:
       return successfulPilots
     successfulPilots = successfulPilots['Value']
@@ -951,7 +951,7 @@ class FailedPilotsByCESplittedCommand(Command):
     failedPilots = self.rClient.getReport('Pilot', 'NumberOfPilots', fromD, toD,
                                           {'GridStatus': ['Aborted'],
                                            'GridCE': ces
-					  }, 'GridCE')
+                                          }, 'GridCE')
     if not failedPilots['OK']:
       return failedPilots
     failedPilots = failedPilots['Value']
