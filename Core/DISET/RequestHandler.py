@@ -127,7 +127,7 @@ class RequestHandler(object):
         retVal = self.__doConnection(actionTuple[1])
       else:
         return S_ERROR("Unknown action %s" % actionType)
-    except RequestHandler.ConnectionError, excp:
+    except RequestHandler.ConnectionError as excp:
       gLogger.error("ConnectionError", str(excp))
       return S_ERROR(excp)
     if not isReturnStructure(retVal):
@@ -314,7 +314,7 @@ class RequestHandler(object):
           return S_ERROR(sError)
       if len(args) < len(oTypesList):
         return S_ERROR("Function %s expects at least %s arguments" % (method, len(oTypesList)))
-    except Exception, v:
+    except Exception as v:
       sError = "Error in parameter check: %s" % str(v)
       gLogger.exception(sError)
       return S_ERROR(sError)

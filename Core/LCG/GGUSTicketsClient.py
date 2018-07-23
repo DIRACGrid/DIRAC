@@ -59,9 +59,9 @@ class GGUSTicketsClient:
     # the query must be into a try block. Empty queries, though formally correct, raise an exception
     try:
       ticketList = self.gclient.service.TicketGetList( query )
-    except WebFault, e:
+    except WebFault as e:
       return S_ERROR( e )
-    except urllib2.URLError, e:
+    except urllib2.URLError as e:
       return S_ERROR( e )
     
     return self.globalStatistics( ticketList )

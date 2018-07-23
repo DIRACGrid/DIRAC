@@ -515,8 +515,7 @@ class JobMonitoringHandler(RequestHandler):
 
     if gElasticJobDB:
       return gElasticJobDB.getJobParameters(jobID, [parName])
-    else:
-      return gJobDB.getJobParameters(jobID, [parName])
+    return gJobDB.getJobParameters(jobID, [parName])
 
 ##############################################################################
   types_getJobParameters = [[int, long]]
@@ -526,8 +525,7 @@ class JobMonitoringHandler(RequestHandler):
 
     if gElasticJobDB:
       return gElasticJobDB.getJobParameters(jobID)
-    else:
-      return gJobDB.getJobParameters(jobID)
+    return gJobDB.getJobParameters(jobID)
 
 ##############################################################################
   types_traceJobParameter = [basestring, [basestring, int, long, list],

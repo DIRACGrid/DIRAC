@@ -959,7 +959,7 @@ class CFG( object ):
       directory = os.path.dirname( fileName )
       if directory and ( not os.path.exists( directory ) ):
         os.makedirs( directory )
-      fd = file( fileName, "w" )
+      fd = open(fileName, "w")
       fd.write( str( self ) )
       fd.close()
       return True

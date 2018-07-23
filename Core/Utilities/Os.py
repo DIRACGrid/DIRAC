@@ -58,7 +58,7 @@ def getDiskSpace( path = '.' ):
       fields = output.split()
       try:
         value = int( fields[3] )
-      except Exception, error:
+      except Exception as error:
         print "Exception during disk space evaluation:", str( error )
         value = -1
       return value

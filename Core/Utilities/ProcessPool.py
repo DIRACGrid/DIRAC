@@ -435,7 +435,7 @@ class ProcessTask( object ):
     try:
       self.__timeOut = int( timeOut )
       return S_OK( self.__timeOut )
-    except ( TypeError, ValueError ), error:
+    except (TypeError, ValueError) as error:
       return S_ERROR( str( error ) )
 
   def getTimeOut( self ):
