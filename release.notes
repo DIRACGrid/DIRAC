@@ -23,6 +23,9 @@ FIX: (#3758) added BulkSubmission option in documentation for WorkflowTaskAgent
 *RequestManagementSystem
 FIX: (#3759) dirac-rms-request: silence a warning, when not using the old FTS Services
 
+*ResourceStatusSystem
+FIX: (#3753) - style changes
+
 [v6r20p5]
 
 *Docs
