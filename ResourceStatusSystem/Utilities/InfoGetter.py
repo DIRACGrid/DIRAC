@@ -129,7 +129,7 @@ def getPolicyActionsThatApply(decisionParams, singlePolicyResults, policyCombine
       continue
 
   # Get policies that match the given decissionParameters
-  for policyActionName, policyActionConfig in policyActionsConfig.items():
+  for policyActionName, policyActionConfig in policyActionsConfig.iteritems():
 
     # The parameter policyType is mandatory. If not present, we pick policyActionName
     try:
