@@ -19,10 +19,7 @@ from DIRAC import gLogger
 gColors = { 'red':1, 'green':2, 'yellow':3, 'blue':4 }
 
 def colorEnabled():
-  if os.environ.has_key( 'TERM' ):
-    if os.environ['TERM'] in ( 'xterm', 'xterm-color' ):
-      return True
-  return False
+  return os.environ.get('TERM') in ('xterm', 'xterm-color')
 
 def colorize( text, color ):
   """Return colorized text"""
@@ -144,4 +141,4 @@ class CLI( cmd.Cmd ):
       except:
         print "There's no such %s command" % command
         return
-      self.printPair( command, obj.__doc__[1:] )
+      self.printPair(command, obj.__doc__[1:])

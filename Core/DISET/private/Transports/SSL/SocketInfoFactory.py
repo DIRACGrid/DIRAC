@@ -72,7 +72,7 @@ class SocketInfoFactory(object):
       osSocket.settimeout( tsocket )  # we try to connect 3 times with 1 second timeout
     try:
       osSocket.connect( hostAddress )
-    except socket.error , e:
+    except socket.error as e:
       if e.args[0] == "timed out":
         osSocket.close()
         if retries:

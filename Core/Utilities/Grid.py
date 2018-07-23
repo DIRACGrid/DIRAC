@@ -34,9 +34,9 @@ def executeGridCommand( proxy, cmd, gridEnvScript = None ):
     #
     # Preserve some current settings if they are there
     #
-    if currentEnv.has_key( 'X509_VOMS_DIR' ):
+    if 'X509_VOMS_DIR' in currentEnv:
       gridEnv['X509_VOMS_DIR'] = currentEnv['X509_VOMS_DIR']
-    if currentEnv.has_key( 'X509_CERT_DIR' ):
+    if 'X509_CERT_DIR' in currentEnv:
       gridEnv['X509_CERT_DIR'] = currentEnv['X509_CERT_DIR']
   else:
     gridEnv = currentEnv
@@ -127,7 +127,7 @@ def ldapsearchBDII(filt=None, attr=None, host=None, base=None, selectionString="
         if index > 0:
           attr = line[:index]
           value = line[index + 1:].strip()
-          if record['attr'].has_key( attr ):
+          if attr in record['attr']:
             if isinstance( record['attr'][attr], list ):
               record['attr'][attr].append( value )
             else:
@@ -422,7 +422,7 @@ def getBdiiCEInfo(vo, host=None, glue2=False):
         ce = result['Value'][0]
       ceDict[ceID].update( ce )
 
-      if not siteID in siteDict:
+      if siteID not in siteDict:
         site = {}
         result = ldapSite( siteID, host = host )
         if result['OK'] and result['Value']:
