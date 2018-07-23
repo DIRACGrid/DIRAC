@@ -1,4 +1,7 @@
-[v6r21-pre1]
+[v6r21-pre2]
+
+*Accounting
+CHANGE: (Multi)AccountingDB - Grouping Type and Object loader together with the MonitoringSystem ones.
 
 *WorkloadManagementSystem
 
@@ -8,12 +11,17 @@ CHANGE: Modify export_getJobParameter(s) to report values from ES if available.
 
 *Core
 
-NEW: Add update method to the ElasticSearchDB.py to update or if not available create the values sent from the setJobParameter function. Uses update_by_query and index ES APIs.
+NEW: Add update method to the ElasticSearchDB.py to update or if not available create the values 
+     sent from the setJobParameter function. Uses update_by_query and index ES APIs.
 CHANGE: generateFullIndexName() method made static under the ElasticSearchDB class.
+CHANGE: removed unused/outdated stuff from Distribution module
 
 *tests
 
 NEW: Add ChangeESFlag.py script to modify useES flag in dirac.cfg. To be integrated with Jenkins code.
+
+*Docs
+FIX: Better dirac.cfg example configuration for web
 
 [v6r20p5]
 
