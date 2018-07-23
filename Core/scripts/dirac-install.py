@@ -426,7 +426,7 @@ class ReleaseConfig(object):
           self.__children[k] = cfg.getChild(k)
       for k in cfg.options():
         self.__data[k] = cfg.get(k)
-
+    
 ############################################################################
 # END OF CFG CLASS
 ############################################################################
@@ -507,7 +507,8 @@ class ReleaseConfig(object):
     :param str urlcfg: the location of the binary.
     :param bool checkHash: check if the file is corrupted.
     """
-
+    
+    print '__loadCFGFromURL', urlcfg
     # This can be a local file
     if os.path.exists(urlcfg):
       with open(urlcfg, 'r') as relFile:
@@ -555,7 +556,7 @@ class ReleaseConfig(object):
     if not result['OK']:
       return result
     return self.__loadObjectDefaults("Installations", self.__instName)
-
+  
   def loadProjectDefaults(self):
     """
     Load default configurations
@@ -587,8 +588,10 @@ class ReleaseConfig(object):
     :param str rootPath: the main section. for example: Installations
     :param str objectName: The name of the section. for example: DIRAC
     """
-
+    
+    print '__loadObjectDefaults', rootPath, objectName
     basePath = "%s/%s" % (rootPath, objectName)
+    print '__loadObjectDefaults', rootPath, objectName, basePath
     if basePath in self.__loadedCfgs:
       return S_OK()
 
@@ -653,9 +656,23 @@ class ReleaseConfig(object):
       fd.close()
     except Exception as excp:
       return S_ERROR("Could not load %s: %s" % (fileName, excp))
+    print cfg.toString()
     self.__globalDefaults.update("Installations/%s" % self.getInstallation(), cfg)
+    projectName = 'DIRAC'
+    if self.__projectName:
+      projectName = self.__projectName
+    self.__globalDefaults.update("Projects/%s" % projectName, cfg)
+
     return S_OK()
 
+  def getModuleVersionFromLocalCfg(self, moduleName):
+    """
+    It returns the version of a certain module defined in the LocalInstallation section
+    :param str moduleName:
+    :return str: the version of a certain module
+    """
+    return self.__globalDefaults.get("Installations/%s/LocalInstallation/%s" % (self.getInstallation(), moduleName), "")
+    
   def getInstallationCFG(self, instName=None):
     """
     Returns the installation name
@@ -686,18 +703,44 @@ class ReleaseConfig(object):
     """
     return project in self.__prjRelCFG
 
-  def getTarsLocation(self, project):
+  def getTarsLocation(self, project, module=None):
     """
-    Returns the location of the binaries for a given project for example: LHCb or DIRAC, etc...
+      Returns the location of the binaries for a given project for example: LHCb or DIRAC, etc...
+
+      :param str project: the name of the project
+      """
+    sourceUrl = self.__globalDefaults.get("Projects/%s/BaseURL" % project, "")
+    if module:
+      # in case we define a different URL in the CS
+      differntSourceUrl = self.__globalDefaults.get("Projects/%s/%s" % (project, module), "")
+      if differntSourceUrl:
+        sourceUrl = differntSourceUrl
+    if sourceUrl:
+      return S_OK(sourceUrl)
+    return S_ERROR("Don't know how to find the installation tarballs for project %s" % project)
+  
+  def getDiracOsLocation(self, project=None):
+    """
+    Returns the location of the DIRAC os binary for a given project for example: LHCb or DIRAC, etc...
 
     :param str project: the name of the project
     """
-
-    defLoc = self.__globalDefaults.get("Projects/%s/BaseURL" % project, "")
-    if defLoc:
-      return S_OK(defLoc)
-    return S_ERROR("Don't know how to find the installation tarballs for project %s" % project)
-
+    if project is None:
+      project = 'DIRAC'
+    
+    diracOsLoc = "Projects/%s/DIRACOS" % self.__projectName
+    if self.__globalDefaults.isOption(diracOsLoc):
+    # use from the VO specific configuration file
+      location = self.__globalDefaults.get(diracOsLoc, "")
+    else:
+      #use the default OS, provided by DIRAC
+      location = self.__globalDefaults.get("Projects/%s/DIRACOS" % project, "")
+    try:
+      print '!',self.__globalDefaults.get("Projects/DIRAC/BaseURL")
+    except Exception as a:
+      print a 
+    return S_OK(location)
+    
   def getUploadCommand(self, project=None):
     """
     It returns the command used to upload the binary
@@ -1108,10 +1151,6 @@ class ReleaseConfig(object):
       for modName in requiredModules:
         if modName not in extensions:
           extensions.append(modName)
-      result = self.getTarsLocation(project)
-      if not result['OK']:
-        return result
-      tarsPath = result['Value']
       self.__dbgMsg("Discovering modules to install for %s (%s)" % (project, relVersion))
       result = self.getModulesForRelease(relVersion, project)
       if not result['OK']:
@@ -1139,7 +1178,15 @@ class ReleaseConfig(object):
       modNameVer = ["%s:%s" % (modName, modVersions[modName]) for modName in modNames]
       self.__dbgMsg("Modules to be installed for %s are: %s" % (project, ", ".join(modNameVer)))
       for modName in modNames:
-        modsToInstall[modName] = (tarsPath, modVersions[modName])
+        result = self.getTarsLocation(project, modName)
+        if not result['OK']:
+          return result
+        tarsURL = result['Value']
+        modVersion = modVersions[modName]
+        defLoc = self.getModuleVersionFromLocalCfg(modName)
+        if defLoc:
+          modVersion = defLoc #this overwrite the version which are defined in the release.cfg
+        modsToInstall[modName] = (tarsURL, modVersion)
         modsOrder.insert(0, modName)
 
     for modName in extensions:
@@ -1630,15 +1677,7 @@ def loadConfiguration():
   result = releaseConfig.loadInstallationDefaults()
   if not result['OK']:
     logERROR("Could not load defaults: %s" % result['Message'])
-
-  for arg in args:
-    if len(arg) > 4 and arg.find(".cfg") == len(arg) - 4:
-      result = releaseConfig.loadInstallationLocalDefaults(arg)
-      if not result['OK']:
-        logERROR(result['Message'])
-      else:
-        logNOTICE("Loaded %s" % arg)
-
+        
   for opName in ('release', 'externalsType', 'installType', 'pythonVersion',
                  'buildExternals', 'noAutoBuild', 'debug', 'globalDefaults',
                  'lcgVer', 'useVersionsDir', 'targetPath',
@@ -1738,7 +1777,16 @@ def loadConfiguration():
 
   if not releaseConfig.isProjectLoaded("DIRAC"):
     return S_ERROR("DIRAC is not depended by this installation. Aborting")
-
+  
+  #at the end we load the local configuration and merge with the global cfg
+  for arg in args:
+    if len(arg) > 4 and arg.find(".cfg") == len(arg) - 4:
+      result = releaseConfig.loadInstallationLocalDefaults(arg)
+      if not result['OK']:
+        logERROR(result['Message'])
+      else:
+        logNOTICE("Loaded %s" % arg)
+        
   return S_OK(releaseConfig)
 
 
@@ -2178,12 +2226,19 @@ def installDiracOS(releaseConfig):
   if not diracOSVersion:
     logERROR("No diracos defined")
     return False
-
+  
+  tarsURL = None
   if cliParams.installSource:
     tarsURL = cliParams.installSource
   else:
+    tarsURL = releaseConfig.getDiracOsLocation()['Value']
+    
+  if not tarsURL:
     tarsURL = releaseConfig.getTarsLocation('DIRAC')['Value']
-
+    logWARN("DIRACOS location is not specified using %s" % tarsURL)
+  
+  print tarsURL
+  
   if not downloadAndExtractTarball(tarsURL, "diracos", diracOSVersion, cache=True):
     return False
   logNOTICE("Fixing externals paths...")
@@ -2463,20 +2518,25 @@ if __name__ == "__main__":
         tarsURL = cliParams.installSource
       if modName in cliParams.modules:
         sourceURL = cliParams.modules[modName].get('sourceUrl')
+        print '111', sourceURL
         if 'Version' in cliParams.modules[modName]:
+          print 'Version', cliParams.modules[modName]['Version']
           modVersion = cliParams.modules[modName]['Version']
         if not sourceURL:
           retVal = releaseConfig.getModSource(cliParams.release, modName)
           if retVal['OK']:
+            print '2', retVal
             tarsURL = retVal['Value'][1]  # this is the git repository url
             modVersion = cliParams.tag
         else:
+          print 'tarsURL', tarsURL
           tarsURL = sourceURL
         retVal = checkoutFromGit(modName, tarsURL, modVersion)
         if not retVal['OK']:
           logERROR("Cannot checkout %s" % retVal['Message'])
           sys.exit(1)
         continue
+      
       logNOTICE("Installing %s:%s" % (modName, modVersion))
       if not downloadAndExtractTarball(tarsURL, modName, modVersion):
         sys.exit(1)
