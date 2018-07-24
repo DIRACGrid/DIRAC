@@ -972,14 +972,17 @@ class ReleaseConfig(object):
 
   def getReleaseOption(self, project, release, option):
     """
-    Returns a given option
+      Returns a given option
 
-    :param str project: the name of the project
-    :param str release: the release version
-    :param str option: the option name
-    """
+      :param str project: the name of the project
+      :param str release: the release version
+      :param str option: the option name
+      """
     try:
-      return self.__prjRelCFG[project][release].get(option)
+      for project in self.__prjRelCFG:
+        for release in self.__prjRelCFG[project]:
+          if self.__prjRelCFG[project][release].isOption(option):
+            return self.__prjRelCFG[project][release].get(option)
     except KeyError:
       self.__dbgMsg("Missing option %s for %s:%s" % (option, project, release))
       return False
