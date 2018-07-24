@@ -979,12 +979,14 @@ class ReleaseConfig(object):
       :param str option: the option name
       """
     try:
+      return self.__prjRelCFG[project][release].get(option)
+    except KeyError:
+      self.__dbgMsg("Missing option %s for %s:%s" % (option, project, release))
+      # try to found the option in a different release
       for project in self.__prjRelCFG:
         for release in self.__prjRelCFG[project]:
           if self.__prjRelCFG[project][release].isOption(option):
             return self.__prjRelCFG[project][release].get(option)
-    except KeyError:
-      self.__dbgMsg("Missing option %s for %s:%s" % (option, project, release))
       return False
 
   def getReleaseDependencies(self, project, release):
