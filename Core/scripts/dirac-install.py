@@ -54,36 +54,60 @@ dirac.cfg  diracos-0.1.md5  diracos-0.1.tar.gz  DIRAC-v6r20-pre16.md5  DIRAC-v6r
 release-DIRAC-v6r20-pre16.cfg  release-DIRAC-v6r20-pre16.md5
 zmathe@dzmathe zmathe]$
 
-for example: ./dirac-install -r v6r20-pre16 -g v14r0  -O 0.1 -u /home/zmathe/tars
+for example: dirac-install -r v6r20-pre16 -g v14r0  -O 0.1 -u /home/zmathe/tars
 
 this command will use  /home/zmathe/tars for the code repository.
 It will install DIRAC v6r20-pre16, LCG v14r0 and DIRAC OS 0.1 version
 
 2. You can use your dedicated web server or the official DIRAC web server
 
-for example: ./dirac-install -r v6r20-pre16 -g v14r0
+for example: dirac-install -r v6r20-pre16 -g v14r0
 It will install DIRAC v6r20-pre16, LCG v14r0
 
 3. You have possibility to install a non release DIRAC,
 module or extension using -m or --tag options. The non release version can be specified:
 
 for example:
-./dirac-install -l DIRAC -r v6r20-pre16 -g v14r0 -t client -m DIRAC --tag=integration
+
+dirac-install -l DIRAC -r v6r20-pre16 -g v14r0 -t client -m DIRAC --tag=integration
 it will install DIRAC v6r20-pre16 but using DIRAC integration.
 The external version and other packages will be the same what is specified in v6r20-pre16
 
-./dirac-install -l DIRAC -r v6r20-pre16 -g v14r0 -t client  -m DIRAC --tag=v6r20-pre22
+dirac-install -l DIRAC -r v6r20-pre16 -g v14r0 -t client  -m DIRAC --tag=v6r20-pre22
 It install a specific tag
 
 Note: If the source is not provided, DIRAC repository is used.
 We can provide the repository url:code repository*Project*branch. for example:
-./dirac-install -l DIRAC -r v6r20-pre16 -g v14r0 -t client  -m \
+
+dirac-install -l DIRAC -r v6r20-pre16 -g v14r0 -t client  -m \
 https://github.com/zmathe/DIRAC.git*DIRAC*dev_main_branch, \
 https://github.com/zmathe/WebAppDIRAC.git*WebAppDIRAC*extjs6 -e WebAppDIRAC
 it will install DIRAC based on dev_main_branch and WebAppDIRAC based on extjs6
 
-./dirac-install -l DIRAC -r v6r20-pre16 -g v14r0 -t client -m WebAppDIRAC --tag=integration -e WebAppDIRAC
+dirac-install -l DIRAC -r v6r20-pre16 -g v14r0 -t client -m WebAppDIRAC --tag=integration -e WebAppDIRAC
 it will install DIRAC v6r20-pre16 and WebAppDIRAC integration branch
+
+You can use install.cfg configuration file:
+
+DIRACOS = http://lhcb-rpm.web.cern.ch/lhcb-rpm/dirac/DIRACOS/
+WebAppDIRAC = https://github.com/zmathe/WebAppDIRAC.git
+DIRAC=https://github.com/DIRACGrid/DIRAC.git
+LocalInstallation
+{
+  # Project = LHCbDIRAC
+  # The project LHCbDIRAC is not defined in the globalsDefaults.cfg
+  Project = LHCb
+  Release = v9r1p20
+  Extensions = LHCb
+  ConfigurationServer = dips://lhcb-conf-dirac.cern.ch:9135/Configuration/Server
+  Setup = LHCb-Production
+  SkipCAChecks = True
+  SkipCADownload = True
+  WebAppDIRAC=extjs6
+  DIRAC=rel-v6r20
+}
+
+dirac-install -l LHCb -r v9r2-pre8 -t server --dirac-os --dirac-os-version=0.0.6 install.cfg
 
 """
 
@@ -652,10 +676,10 @@ class ReleaseConfig(object):
     except Exception as excp:
       return S_ERROR("Could not load %s: %s" % (fileName, excp))
     self.__globalDefaults.update("Installations/%s" % self.getInstallation(), cfg)
-    projectName = 'DIRAC'
+    self.__globalDefaults.update("Projects/%s" % self.getInstallation(), cfg)
     if self.__projectName:
-      projectName = self.__projectName
-    self.__globalDefaults.update("Projects/%s" % projectName, cfg)
+      # we have an extension and have a local cfg file
+      self.__globalDefaults.update("Projects/%s" % self.__projectName, cfg)
 
     return S_OK()
 
