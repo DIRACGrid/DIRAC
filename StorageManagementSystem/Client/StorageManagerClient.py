@@ -9,7 +9,7 @@ from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 from DIRAC.Core.Base.Client                         import Client
 from DIRAC.Core.Utilities.DErrno                    import cmpError
-from DIRAC.Core.Utilities.Proxy                     import executeWithUserProxy
+from DIRAC.Core.Utilities.Proxy import UserProxy
 from DIRAC.DataManagementSystem.Client.DataManager  import DataManager
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.Resources.Storage.StorageElement         import StorageElement
@@ -157,12 +157,14 @@ def _checkFilesToStage( seToLFNs, onlineLFNs, offlineLFNs, absentLFNs,
     if not filesToCheck:
       continue
 
-    # Wrap the SE method with executeWithUserProxy
-    fileMetadata = ( executeWithUserProxy( seObj.getFileMetadata )
-                    ( filesToCheck,
-                      proxyUserName = proxyUserName,
-                      proxyUserGroup = proxyUserGroup,
-                      executionLock = executionLock ) )
+    # We have to use a new SE object because it caches the proxy!
+    with UserProxy(proxyUserName=proxyUserName,
+                   proxyUserGroup=proxyUserGroup,
+                   executionLock=executionLock) as proxyResult:
+      if proxyResult['OK']:
+        fileMetadata = StorageElement(se, vo=vo).getFileMetadata(filesToCheck)
+      else:
+        fileMetadata = proxyResult
 
     if not fileMetadata['OK']:
       failed[se] = dict.fromkeys( filesToCheck, fileMetadata['Message'] )
