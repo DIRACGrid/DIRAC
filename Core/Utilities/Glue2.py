@@ -70,7 +70,7 @@ def getGlue2CEInfo(vo, host):
       shareEndpoints = shareInfo['attr'].get('GLUE2ShareEndpointForeignKey', [])
       ceInfo = __getGlue2ShareInfo(host, shareEndpoints, shareInfo['attr'], siteDict[siteName]['CEs'])
       if not ceInfo['OK']:
-        gLogger.error("Could not get CE info for %s:" % shareID, ceInfo['Message'])
+        gLogger.warn("Could not get CE info for %s:" % shareID, ceInfo['Message'])
         continue
       gLogger.debug("Found ceInfo:\n%s" % pformat(siteDict[siteName]['CEs']))
 
