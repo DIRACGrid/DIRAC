@@ -1,14 +1,14 @@
 """
-Utilities to execute a function with a given proxy.
+Utilities to execute one or more functions with a given proxy.
 
-executeWithUserProxy decorator example usage::
+:func:`executeWithUserProxy` decorator example usage::
 
   @executeWithUserProxy
-  def testFcn( x, i, kw = 'qwerty' ):
+  def testFcn(x, i, kw='qwerty'):
 
     print "args", x, i
     print "kwargs", kw
-    print os.environ.get( 'X509_USER_PROXY' )
+    print os.environ.get('X509_USER_PROXY')
     return S_OK()
 
   ...
@@ -16,7 +16,16 @@ executeWithUserProxy decorator example usage::
   result = testFcn( 1.0, 1, kw = 'asdfghj', proxyUserName = 'atsareg', proxyUserGroup = 'biomed_user' )
 
 
-UserProxy context manager example::
+:func:`executeWithUserProxy` function wrapper example::
+
+  def undecoratedFunction(foo='bar'):
+     print foo, os.environ.get('X509_USER_PROXY')
+     return S_OK()
+
+  executeWithUserProxy(testFcn)(foo='baz', proxyUserName='atsareg', proxyUserGroup='biomed_user')
+
+
+:class:`UserProxy` context manager example::
 
   with userProxy(proxyUserName='user', proxyUserGroup='group') as proxyResult:
     if proxyResult['OK']:
@@ -166,15 +175,7 @@ def executeWithoutServerCertificate( fcn ):
 
 
 class UserProxy(object):
-  """Implement a Context Manager to execute functions with a user proxy.
-
-  Example:
-
-    with UserProxy(proxyUserName='user', proxyUserGroup='group') as proxyResult:
-      if proxyResult['OK']:
-        functionThatNeedsAProxy()
-        anotherFunction()
-  """
+  """Implement a context manager to execute functions with a user proxy."""
 
   def __init__(self,
                proxyUserName=None,
