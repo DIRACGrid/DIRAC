@@ -5,14 +5,14 @@
 
 '''
 
+__RCSID__ = '$Id$'
+
 import os
 import sqlite3
 from DIRAC import S_ERROR, S_OK
 from DIRAC.ResourceStatusSystem.PolicySystem.Actions.BaseAction import BaseAction
 from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
 from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE
-
-__RCSID__ = '$Id:  $'
 
 
 class EmailAction(BaseAction):
@@ -29,7 +29,7 @@ class EmailAction(BaseAction):
     else:
       self.cacheFile = os.path.realpath('cache.db')
 
-  def run( self ):
+  def run(self):
     ''' Checks it has the parameters it needs and writes the date to a cache file.
     '''
     # Minor security checks
@@ -96,11 +96,11 @@ class EmailAction(BaseAction):
       conn.execute("INSERT INTO ResourceStatusCache (SiteName, ResourceName, Status, PreviousStatus, StatusType)"
                    " VALUES ('" + siteName + "', '" + name + "', '" + status +
                    "', '" + previousStatus + "', '" + statusType + "' ); "
-                  )
+		   )
 
       conn.commit()
 
     return S_OK()
 
 ################################################################################
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
+# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

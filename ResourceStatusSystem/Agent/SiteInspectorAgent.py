@@ -178,6 +178,3 @@ class SiteInspectorAgent(AgentModule):
 
       # Used together with join !
       self.sitesToBeChecked.task_done()
-
-#...............................................................................
-# EOF

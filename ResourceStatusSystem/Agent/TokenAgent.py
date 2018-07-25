@@ -1,4 +1,4 @@
-''' TokenAgent
+""" TokenAgent
 
   This agent inspect all elements, and resets their tokens if necessary.
 
@@ -15,7 +15,7 @@ The following options can be set for the TokenAgent.
     adminMail = 'send@to.me'
   }
 
-'''
+"""
 
 __RCSID__ = '$Id$'
 
@@ -30,17 +30,17 @@ AGENT_NAME = 'ResourceStatus/TokenAgent'
 
 
 class TokenAgent(AgentModule):
-  '''
+  """
     TokenAgent is in charge of checking tokens assigned on resources.
     Notifications are sent to those users owning expiring tokens.
-  '''
+  """
 
   # Rss token
   __rssToken = 'rs_svc'
 
   def __init__(self, *args, **kwargs):
-    ''' c'tor
-    '''
+    """ c'tor
+    """
 
     AgentModule.__init__(self, *args, **kwargs)
 
@@ -52,8 +52,8 @@ class TokenAgent(AgentModule):
     self.diracAdmin = None
 
   def initialize(self):
-    ''' TokenAgent initialization
-    '''
+    """ TokenAgent initialization
+    """
 
     self.notifyHours = self.am_getOption('notifyHours', self.notifyHours)
     self.adminMail = self.am_getOption('adminMail', self.adminMail)
@@ -64,9 +64,9 @@ class TokenAgent(AgentModule):
     return S_OK()
 
   def execute(self):
-    '''
+    """
       Looks for user tokens. If they are expired, or expiring, it notifies users.
-    '''
+    """
 
     # Initialized here, as it is needed empty at the beginning of the execution
     self.tokenDict = {}
@@ -94,13 +94,11 @@ class TokenAgent(AgentModule):
 
     return S_OK()
 
-  ## Protected methods #########################################################
-
   def _getInterestingTokens(self, element):
-    '''
+    """
       Given an element, picks all the entries with TokenExpiration < now + X<hours>
       If the TokenOwner is not the rssToken ( rs_svc ), it is selected.
-    '''
+    """
 
     tokenExpLimit = datetime.utcnow() + timedelta(hours=self.notifyHours)
 
@@ -125,10 +123,10 @@ class TokenAgent(AgentModule):
     return S_OK(interestingTokens)
 
   def _processTokens(self, element, tokenElements):
-    '''
+    """
       Given an element and a list of interesting token elements, updates the
       database if the token is expired, logs a message and adds
-    '''
+    """
 
     never = datetime.max
 
@@ -167,10 +165,10 @@ class TokenAgent(AgentModule):
     return S_OK()
 
   def _notifyOfTokens(self):
-    '''
+    """
       Splits interesing tokens between expired and expiring. Also splits them
       among users. It ends sending notifications to the users.
-    '''
+    """
 
     now = datetime.utcnow()
 
@@ -201,10 +199,10 @@ class TokenAgent(AgentModule):
     return S_OK()
 
   def _notify(self, tokenOwner, expired, expiring):
-    '''
+    """
       Given a token owner and a list of expired and expiring tokens, sends an
       email to the user.
-    '''
+    """
 
     subject = 'RSS token summary for tokenOwner %s' % tokenOwner
 
@@ -231,6 +229,3 @@ class TokenAgent(AgentModule):
       return S_ERROR('Cannot send email to user "%s"' % tokenOwner)
 
     return resEmail
-
-################################################################################
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
