@@ -61,7 +61,7 @@ def getPoliciesThatApply(decisionParams):
 
     # FIXME: make sure the values in the policyConfigParams dictionary are typed !!
     policyConfigParams = {}
-    #policyConfigParams = policySetup.get( 'configParams', {} )
+    # policyConfigParams = policySetup.get( 'configParams', {} )
     policyMatch = Utils.configMatch(decisionParams, policyMatchParams)
     gLogger.debug("PolicyMatch for decisionParams %s: %s" % (decisionParams, str(policyMatch)))
     policyFilter = _filterPolicies(decisionParams, policyMatchParams)
@@ -162,14 +162,12 @@ def getPolicyActionsThatApply(decisionParams, singlePolicyResults, policyCombine
     if not policyCombinedMatch:
       continue
 
-    #policyActionsThatApply.append( policyActionName )
+    # policyActionsThatApply.append( policyActionName )
     # They may not be necessarily the same
     policyActionsThatApply.append((policyActionName, policyActionType))
 
   return S_OK(policyActionsThatApply)
 
-
-######### Utilities ###########
 
 def _sanitizedecisionParams(decisionParams):
   """ Function that filters the input parameters. If the input parameter keys

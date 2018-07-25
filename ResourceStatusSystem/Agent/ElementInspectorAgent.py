@@ -227,6 +227,3 @@ class ElementInspectorAgent(AgentModule):
 
       # Used together with join !
       self.elementsToBeChecked.task_done()
-
-#...............................................................................
-# EOF
