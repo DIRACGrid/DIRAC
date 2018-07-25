@@ -1392,12 +1392,20 @@ class JobDB(DB):
         defined parameters in the parameter Attic
     """
     # Check Verified Flag
-    result = self.getJobAttributes(jobID, ['Status', 'MinorStatus', 'VerifiedFlag', 'RescheduleCounter',
+    result = self.getJobAttributes(jobID, ['VerifiedFlag', 'RescheduleCounter',
                                            'Owner', 'OwnerDN', 'OwnerGroup', 'DIRACSetup'])
     if result['OK']:
       resultDict = result['Value']
     else:
       return S_ERROR('JobDB.getJobAttributes: can not retrieve job attributes')
+
+    result = self.getJobStatus(jobID)
+
+    if result['OK']:
+      resultDict['Status'] = result['Value']['Status']
+      resultDict['MinorStatus'] = result['Value']['MinorStatus']
+    else:
+      return S_ERROR('JobDB.getJobStatus: can not retrieve job statuses')
 
     if 'VerifiedFlag' not in resultDict:
       return S_ERROR('Job ' + str(jobID) + ' not found in the system')
@@ -1518,6 +1526,7 @@ class JobDB(DB):
       return result
 
     result = self.setJobStatus(jobID, status='Received', minor='Job Rescheduled', application='Unknown')
+
     if not result['OK']:
       return result
 
