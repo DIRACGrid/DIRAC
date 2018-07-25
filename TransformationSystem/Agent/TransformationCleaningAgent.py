@@ -1,10 +1,32 @@
-""" :mod: TransformationCleaningAgent
+"""TransformationCleaningAgent cleans up finalised transformations.
 
-    =================================
+::
 
-    .. module: TransformationCleaningAgent
+  {
+    #MetaData key to use to identify output data
+    TransfIDMeta=TransformationID
 
-    :synopsis: clean up of finalised transformations
+    # Location of the OutputData
+    DirectoryLocations=TransformationDB,MetadataCatalog
+
+    # From which SEs files will be removed If empty or not existing,
+    # only files in the Catalog will be removed, Default: []
+    ActiveSEs=CERNDisk, IN2P3DST
+
+    # Enable or disable, default enabled
+    EnableFlag=True
+
+    # How many days to wait before archiving transformations
+    ArchiveAfter=7
+
+    # Shifter to use for removal operations, default is empty, using transformation owner
+    shifterProxy=DataManager
+
+    # Which transformation types to clean, see also Operations/Transformations/DataManipulation
+    # and Operations/Transformations/DataProcessing
+    TransformationTypes=
+  }
+
 """
 
 __RCSID__ = "$Id$"
