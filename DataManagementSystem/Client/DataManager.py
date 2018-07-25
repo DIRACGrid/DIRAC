@@ -184,7 +184,7 @@ class DataManager(object):
                 "%s %s" % (lfn, reason))
     res = returnSingleResult(self.removeFile(['%s/dirac_directory' % folder]))
     if not res['OK']:
-      if not "No such file" in res['Message']:
+      if "No such file" not in res['Message']:
         log.warn('Failed to delete dirac_directory placeholder file')
 
     storageElements = gConfig.getValue(
