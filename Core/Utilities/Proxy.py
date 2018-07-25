@@ -15,10 +15,18 @@ executeWithUserProxy decorator example usage::
 
   result = testFcn( 1.0, 1, kw = 'asdfghj', proxyUserName = 'atsareg', proxyUserGroup = 'biomed_user' )
 
+
+UserProxy context manager example::
+
+  with userProxy(proxyUserName='user', proxyUserGroup='group') as proxyResult:
+    if proxyResult['OK']:
+      functionThatNeedsAProxy()
+      anotherFunction()
+
+
 """
 
 import os
-from contextlib import contextmanager
 
 from DIRAC import gConfig, gLogger, S_ERROR, S_OK
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
@@ -157,51 +165,53 @@ def executeWithoutServerCertificate( fcn ):
   return wrapped_fcn
 
 
-@contextmanager
-def userProxy(proxyUserName=None,
-              proxyUserGroup=None,
-              proxyUserDN=None,
-              proxyWithVOMS=True,
-              proxyFilePath=None,
-              executionLock=False,
-              ):
-  """Execute a block with a user proxy.
+class UserProxy(object):
+  """Implement a Context Manager to execute functions with a user proxy.
 
   Example:
 
-    with userProxy(proxyUserName='user', proxyUserGroup='group') as proxyResult:
+    with UserProxy(proxyUserName='user', proxyUserGroup='group') as proxyResult:
       if proxyResult['OK']:
         functionThatNeedsAProxy()
-
-  :param str proxyUserName: the user name of the proxy to be used
-  :param str proxyUserGroup: the user group of the proxy to be used
-  :param str proxyUserDN: the user DN of the proxy to be used
-  :param bool proxyWithVOMS: optional flag to dress or not the user proxy with VOMS extension ( default True )
-  :param str proxyFilePath: optional file location for the temporary proxy
-  :param bool executionLock: flag to execute with a lock for the time of user proxy application ( default False )
+        anotherFunction()
   """
-  if not ((proxyUserName or proxyUserDN) and proxyUserGroup):
-    yield S_OK()
-  else:  # Setup user proxy
-    proxyResults = _putProxy(userDN=proxyUserDN,
-                             userName=proxyUserName,
-                             userGroup=proxyUserGroup,
-                             vomsFlag=proxyWithVOMS,
-                             executionLockFlag=executionLock,
-                             proxyFilePath=proxyFilePath,
-                             )
-    if not proxyResults['OK']:
-      returnValue = proxyResults
-      originalUserProxy, useServerCertificate, executionLock = None, None, None
-    else:
-      returnValue = S_OK()
-      originalUserProxy, useServerCertificate, executionLock = proxyResults['Value']
 
-    try:
-      yield returnValue
-    finally:
-      if returnValue['OK']:
-        _restoreProxyState(originalUserProxy, useServerCertificate, executionLock)
+  def __init__(self,
+               proxyUserName=None,
+               proxyUserGroup=None,
+               proxyUserDN=None,
+               proxyWithVOMS=True,
+               proxyFilePath=None,
+               executionLock=False,
+               ):
+    """Construct the context manager for a user proxy.
+
+    :param str proxyUserName: the user name of the proxy to be used
+    :param str proxyUserGroup: the user group of the proxy to be used
+    :param str proxyUserDN: the user DN of the proxy to be used
+    :param bool proxyWithVOMS: optional flag to dress or not the user proxy with VOMS extension ( default True )
+    :param str proxyFilePath: optional file location for the temporary proxy
+    :param bool executionLock: flag to execute with a lock for the time of user proxy application ( default False )
+    """
+    if not ((proxyUserName or proxyUserDN) and proxyUserGroup):
+      self.result = S_OK()
+    else:
+      self.result = _putProxy(userDN=proxyUserDN,
+                              userName=proxyUserName,
+                              userGroup=proxyUserGroup,
+                              vomsFlag=proxyWithVOMS,
+                              executionLockFlag=executionLock,
+                              proxyFilePath=proxyFilePath,
+                              )
+
+  def __enter__(self):
+    return self.result
+
+  def __exit__(self, _type, _value, _traceback):
+    """Reset the proxy and certificate state at the end of the managed block."""
+    if self.result['OK'] and self.result['Value']:
+      originalUserProxy, useServerCertificate, executionLock = self.result['Value']
+      _restoreProxyState(originalUserProxy, useServerCertificate, executionLock)
 
 
 def _putProxy(userDN=None, userName=None, userGroup=None, vomsFlag=None, proxyFilePath=None, executionLockFlag=False):
