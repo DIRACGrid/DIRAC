@@ -45,7 +45,7 @@ def getPoliciesThatApply( decisionParams ):
   #   ...
 
   # Get policies that match the given decisionParameters
-  for policyName, policySetup in policiesConfig.items():
+  for policyName, policySetup in policiesConfig.iteritems():
 
     # The parameter policyType replaces policyName, so if it is not present,
     # we pick policyName
@@ -64,15 +64,16 @@ def getPoliciesThatApply( decisionParams ):
     #policyConfigParams = policySetup.get( 'configParams', {} )
     policyMatch = Utils.configMatch( decisionParams, policyMatchParams )
     gLogger.debug("PolicyMatch for decisionParams %s: %s" %(decisionParams, str(policyMatch)))
-    policyFilter = _filterPolicies( decisionParams, policyMatchParams )
 
     #WARNING: we need an additional filtering function when the matching
     #is not straightforward (e.g. when the policy specify a 'domain', while
     #the decisionParams has only the name of the element)
-    if policyMatch and policyFilter:
+    if policyMatch and _filterPolicies( decisionParams, policyMatchParams ):
       policiesThatApply.append( ( policyName, policyType, policyConfigParams ) )
 
-  gLogger.debug("policies that apply: %s" %str(policiesThatApply))
+  gLogger.debug("policies that apply (before post-processing): %s" % str(policiesThatApply))
+  policiesThatApply = postProcessingPolicyList(policiesThatApply)
+  gLogger.debug("policies that apply (after post-processing): %s" % str(policiesThatApply))
 
   policiesToBeLoaded = []
   # Gets policies parameters from code.
@@ -242,27 +243,45 @@ def _filterPolicies( decisionParams, policyMatchParams):
   """
     Method that checks if the given policy doesn't meet certain conditions
   """
-  #some policies may apply or not also depending on the VO's domain
+  elementType = decisionParams.get('elementType')
+  name = decisionParams.get('name')
+
+  # some policies may apply or not also depending on the VO's domain
   # 'CEAvailabilityPolicy' can be applied only if the CE is inside LCG
-  if 'elementType' in decisionParams and 'name' in decisionParams:
-    elementType = decisionParams['elementType']
-    name = decisionParams['name']
-    if elementType and elementType.upper() == 'CE' and 'domain' in policyMatchParams:
-      #WARNING: policyMatchParams['domain'] is a list of domains
-      domains = policyMatchParams['domain']
-      result = _getComputingElementsByDomainName( targetDomain = domains )
-      if result['OK']:
-        ces = result['Value']
-        #to verify that the given CE is in the list of the LCG CEs
-        if name not in ces:
-          gLogger.info( "ComputingElement %s NOT found in domains %s" % ( name, domains )  )
-          return False
-        else:
-          gLogger.info( "ComputingElement %s found in domains %s" % ( name, domains ) )
-      else:
-        gLogger.warn( "unable to verify if ComputingElement %s is in domains %s" % ( name, domains ) )
+  if elementType and elementType.upper() == 'CE' and 'domain' in policyMatchParams:
+    #WARNING: policyMatchParams['domain'] is a list of domains
+    domains = policyMatchParams['domain']
+    result = _getComputingElementsByDomainName( targetDomain = domains )
+    if result['OK']:
+      ces = result['Value']
+      #to verify that the given CE is in the list of the LCG CEs
+      if name not in ces:
+        gLogger.info( "ComputingElement %s NOT found in domains %s" % ( name, domains )  )
         return False
+      else:
+        gLogger.info( "ComputingElement %s found in domains %s" % ( name, domains ) )
+    else:
+      gLogger.warn( "unable to verify if ComputingElement %s is in domains %s" % ( name, domains ) )
+      return False
 
   return True
 
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
+def postProcessingPolicyList(policiesThatApply):
+  """ Put here any "hacky" post-processing
+  """
+  if ('FreeDiskSpaceMB', 'FreeDiskSpaceMB', {}) in policiesThatApply:
+    try:
+      policiesThatApply.remove(('FreeDiskSpaceGB', 'FreeDiskSpaceGB', {}))
+    except ValueError:
+      pass
+    try:
+      policiesThatApply.remove(('FreeDiskSpaceTB', 'FreeDiskSpaceTB', {}))
+    except ValueError:
+      pass
+  if ('FreeDiskSpaceGB', 'FreeDiskSpaceGB', {}) in policiesThatApply:
+    try:
+      policiesThatApply.remove(('FreeDiskSpaceTB', 'FreeDiskSpaceTB', {}))
+    except ValueError:
+      pass
+
+  return policiesThatApply
