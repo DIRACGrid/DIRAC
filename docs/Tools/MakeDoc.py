@@ -179,7 +179,9 @@ def createDoc(buildtype="full"):
   os.chdir(BASEPATH)
   print "MakeDoc: Now creating rst files"
   for root, direc, files in os.walk(DIRACPATH):
+    configTemplate = [os.path.join(root, _) for _ in files if _ == 'ConfigTemplate.cfg']
     files = [_ for _ in files if _.endswith(".py")]
+
     if "__init__.py" not in files:
       continue
 
@@ -236,7 +238,13 @@ def createDoc(buildtype="full"):
       # Remove some FrameworkServices because things go weird
       mkModuleRest(filename.split(".py")[0], fullclassname.split(".py")[0], buildtype)
 
+    if configTemplate:
+      shutil.copy(configTemplate[0], os.path.join(BASEPATH, abspath))
+
     os.chdir(BASEPATH)
+
+  shutil.copy(os.path.join(DIRACPATH, 'dirac.cfg'), BASEPATH)
+
   return 0
 
 
