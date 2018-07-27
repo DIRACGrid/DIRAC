@@ -190,8 +190,14 @@ def __getGlue2ExecutionEnvironmentInfo(host, executionEnvironment):
   response = __ldapsearchBDII(filt=filt, attr=None, host=host, base="o=glue", selectionString="GLUE2")
   if not response['OK']:
     return response
-  if len(response['Value']) != 1:
-    return S_ERROR("Unexpected response for ExecutionEnvironment: %s" % response['Value'])
+  if not response['Value']:
+    return S_ERROR("No information found for %s" % executionEnvironment)
+  if len(response['Value']) > 1:
+    gLogger.info('SCHEMA ERROR: Multiple execution environments with the same ID: %s' % executionEnvironment)
+    gLogger.debug('Multiple results:\n %s' % pformat(response['Value']))
+    # only take the first one
+    response['Value'] = response['Value'][:1]
+
   gLogger.debug("Found ExecutionEnvironment %s:\n%s" % (executionEnvironment, pformat(response)))
   exeInfo = response['Value'][0]['attr']  # pylint: disable=unsubscriptable-object
   maxRam = exeInfo.get('GLUE2ExecutionEnvironmentMainMemorySize', '')
