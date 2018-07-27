@@ -9,6 +9,9 @@ Known problems:
    execution environment vs. information for a share
  * Some execution environment IDs are used more than once
 
+Print outs with "SCHEMA PROBLEM" point -- in my opinion -- to errors in the
+published information, like a foreign key pointing to non-existant entry.
+
 """
 
 from pprint import pformat
@@ -66,7 +69,7 @@ def getGlue2CEInfo(vo, host):
       gLogger.error("Could not get share information for %s: %s" % (shareID, shareRes['Message']))
       continue
     if not shareRes['Value']:
-      gLogger.warn("Did not not find any share information for %s" % (shareID, ))
+      gLogger.info("SCHEMA PROBLEM: Did not not find any share information for %s" % (shareID, ))
       continue
     siteDict.setdefault(siteName, {'CEs': {}})
     for shareInfo in shareRes['Value']:
@@ -119,7 +122,8 @@ def __getGlue2ShareInfo(host, shareEndpoints, shareInfoDict, cesDict):
   for executionEnvironment in executionEnvironments:
     resExeInfo = __getGlue2ExecutionEnvironmentInfo(host, executionEnvironment)
     if not resExeInfo['OK']:
-      gLogger.warn("Cannot get execution environment info for %r" % executionEnvironment, resExeInfo['Message'])
+      gLogger.info("SCHEMA PROBLEM: Cannot get execution environment info for %r" % executionEnvironment,
+                   resExeInfo['Message'])
       continue
     exeInfo.append(resExeInfo['Value'])
   if not exeInfo:
@@ -193,7 +197,7 @@ def __getGlue2ExecutionEnvironmentInfo(host, executionEnvironment):
   if not response['Value']:
     return S_ERROR("No information found for %s" % executionEnvironment)
   if len(response['Value']) > 1:
-    gLogger.info('SCHEMA ERROR: Multiple execution environments with the same ID: %s' % executionEnvironment)
+    gLogger.info('SCHEMA PROBLEM: Multiple execution environments with the same ID: %s' % executionEnvironment)
     gLogger.debug('Multiple results:\n %s' % pformat(response['Value']))
     # only take the first one
     response['Value'] = response['Value'][:1]
