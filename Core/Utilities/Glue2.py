@@ -1,6 +1,13 @@
-""" Module collecting functions dealing with the GLUE2 information schema
+"""Module collecting functions dealing with the GLUE2 information schema
 
 :author: A.Sailer
+
+Known problems:
+
+ * ARC CEs do not seem to publish wall or CPU time per queue anywhere
+ * There is no consistency between which memory information is provided where,
+   execution environment vs. information for a share
+ * Some execution environment IDs are used more than once
 
 """
 
