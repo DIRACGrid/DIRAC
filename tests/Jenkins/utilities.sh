@@ -418,14 +418,24 @@ function diracInstall(){
 }
 
 #This is what VOs may replace
+# If DIRACOSVER env variable is defined, use diracos
 function diracInstallCommand(){
-  $SERVERINSTALLDIR/dirac-install -r `cat $SERVERINSTALLDIR/dirac.version` -t fullserver -d
+   # If DIRACOSVER is not defined, use Externals
+   if [ -z $DIRACOSVER ];
+   then
+     echo "Installing with externals";
+     $SERVERINSTALLDIR/dirac-install -r `cat $SERVERINSTALLDIR/dirac.version` -t fullserver -d
+   else
+     echo "Installing with DIRACOS $DIRACOSVER";
+     $SERVERINSTALLDIR/dirac-install -r `cat $SERVERINSTALLDIR/dirac.version` -t fullserver -d --dirac-os --dirac-os-version=$DIRACOSVER
+   fi
 }
 
 
 ####################################################
 # This installs the DIRAC client
 # it needs a $DIRAC_RELEASE env var defined
+# if DIRACOSVER env var is defined, it will install dirac with DIRACOS
 
 function installDIRAC(){
 
@@ -442,7 +452,17 @@ function installDIRAC(){
   fi
 
   # actually installing
-  ./dirac-install -r $DIRAC_RELEASE -t client $DEBUG
+  # If DIRACOSVER is not defined, use exterals
+  if [ -z $DIRACOSVER ];
+  then
+    echo "Installing with Externals";
+    ./dirac-install -r $DIRAC_RELEASE -t client $DEBUG
+  else
+    echo "Installing with DIRACOS $DIRACOSVER";
+    ./dirac-install -r $DIRAC_RELEASE -t client --dirac-os --dirac-os-version=$DIRACOSVER $DEBUG
+  fi
+
+
   if [ $? -ne 0 ]
   then
     echo 'ERROR: DIRAC client installation failed'
