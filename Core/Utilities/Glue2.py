@@ -116,7 +116,14 @@ def __getGlue2ShareInfo(host, shareEndpoints, shareInfoDict, cesDict):
       continue
     exeInfo.append(resExeInfo['Value'])
   if not exeInfo:
-    return S_ERROR("Cannot get execution environment information")
+    gLogger.warn('Did not find information for execution environment %s, using dummy values' % executionEnvironments)
+    exeInfo = [{'GlueHostMainMemoryRAMSize': '1999',  # intentionally identifiably dummy value
+                'GlueHostOperatingSystemVersion': '',
+                'GlueHostOperatingSystemName': '',
+                'GlueHostOperatingSystemRelease': '',
+                'GlueHostArchitecturePlatformType': 'x86_64',
+                'MANAGER': '',
+                }]
   try:
     # take the CE with the lowest MainMemory
     exeInfo = sorted(exeInfo, key=lambda k: int(k['GlueHostMainMemoryRAMSize']))
