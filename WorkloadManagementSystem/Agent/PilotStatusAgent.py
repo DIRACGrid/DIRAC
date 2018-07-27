@@ -38,6 +38,15 @@ class PilotStatusAgent(AgentModule):
   queryStateList = ['Ready', 'Submitted', 'Running', 'Waiting', 'Scheduled']
   finalStateList = ['Done', 'Aborted', 'Cleared', 'Deleted', 'Failed']
 
+  def __init__(self, *args, **kwargs):
+    """ c'tor
+    """
+    AgentModule.__init__(self, *args, **kwargs)
+
+    self.jobDB = None
+    self.pilotDB = None
+    self.diracadmin = None
+
   #############################################################################
   def initialize(self):
     """Sets defaults
@@ -223,7 +232,7 @@ class PilotStatusAgent(AgentModule):
             dbData[pref]['DestinationSite'] = pilotsToAccount[pref]['DestinationSite']
             dbData[pref]['LastUpdateTime'] = pilotsToAccount[pref]['StatusDate']
 
-      retVal = self.__addPilotsAccountingReport(dbData)
+      retVal = self._addPilotsAccountingReport(dbData)
       if not retVal['OK']:
         self.log.error('Fail to retrieve Info for pilots', retVal['Message'])
         return retVal
@@ -248,7 +257,7 @@ class PilotStatusAgent(AgentModule):
 
     return S_OK()
 
-  def __addPilotsAccountingReport(self, pilotsData):
+  def _addPilotsAccountingReport(self, pilotsData):
     """ fill accounting data
     """
     for pRef in pilotsData:

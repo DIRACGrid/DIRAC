@@ -253,7 +253,7 @@ class JobAgent(AgentModule):
       if key not in matcherParams:
         optimizerParams[key] = matcherInfo[key]
 
-    parameters = self.__getJDLParameters(jobJDL)
+    parameters = self._getJDLParameters(jobJDL)
     if not parameters['OK']:
       self.__report(jobID, 'Failed', 'Could Not Extract JDL Parameters')
       self.log.warn(parameters['Message'])
@@ -299,9 +299,9 @@ class JobAgent(AgentModule):
           jobReport.setJobParameter(thisp, gConfig.getValue('/LocalSite/%s' % thisp, 'Unknown'), sendFlag=False)
 
       jobReport.setJobStatus('Matched', 'Job Received by Agent')
-      result = self.__setupProxy(ownerDN, jobGroup)
+      result = self._setupProxy(ownerDN, jobGroup)
       if not result['OK']:
-        return self.__rescheduleFailedJob(jobID, result['Message'], self.stopOnApplicationFailure)
+        return self._rescheduleFailedJob(jobID, result['Message'], self.stopOnApplicationFailure)
       proxyChain = result.get('Value')
 
       # Save the job jdl for external monitoring
@@ -313,10 +313,10 @@ class JobAgent(AgentModule):
         errorMsg = software['Message']
         if not errorMsg:
           errorMsg = 'Failed software installation'
-        return self.__rescheduleFailedJob(jobID, errorMsg, self.stopOnApplicationFailure)
+        return self._rescheduleFailedJob(jobID, errorMsg, self.stopOnApplicationFailure)
 
       self.log.debug('Before %sCE submitJob()' % (self.ceName))
-      result = self.__submitJob(jobID, params, ceDict, optimizerParams, proxyChain, processors, wholeNode)
+      result = self._submitJob(jobID, params, ceDict, optimizerParams, proxyChain, processors, wholeNode)
       if not result['OK']:
         self.__report(jobID, 'Failed', result['Message'])
         return self.__finish(result['Message'])
@@ -331,7 +331,7 @@ class JobAgent(AgentModule):
       self.log.debug('After %sCE submitJob()' % (self.ceName))
     except Exception as subExcept:  # pylint: disable=broad-except
       self.log.exception("Exception in submission", "", lException=subExcept, lExcInfo=True)
-      return self.__rescheduleFailedJob(jobID, 'Job processing failed with exception', self.stopOnApplicationFailure)
+      return self._rescheduleFailedJob(jobID, 'Job processing failed with exception', self.stopOnApplicationFailure)
 
     # Sum all times but the last one (elapsed_time) and remove times at init (is this correct?)
     cpuTime = sum(os.times()[:-1]) - sum(self.initTimes[:-1])
@@ -372,7 +372,7 @@ class JobAgent(AgentModule):
     return timeleft
 
   #############################################################################
-  def __setupProxy(self, ownerDN, ownerGroup):
+  def _setupProxy(self, ownerDN, ownerGroup):
     """
     Retrieve a proxy for the execution of the job
     """
@@ -451,8 +451,8 @@ class JobAgent(AgentModule):
     return module.execute()
 
   #############################################################################
-  def __submitJob(self, jobID, jobParams, resourceParams, optimizerParams,
-                  proxyChain, processors, wholeNode=False):
+  def _submitJob(self, jobID, jobParams, resourceParams, optimizerParams,
+                 proxyChain, processors, wholeNode=False):
     """ Submit job to the Computing Element instance after creating a custom
         Job Wrapper with the available job parameters.
     """
@@ -519,7 +519,7 @@ class JobAgent(AgentModule):
     return matcher.requestJob(ceDict)
 
   #############################################################################
-  def __getJDLParameters(self, jdl):
+  def _getJDLParameters(self, jdl):
     """Returns a dictionary of JDL parameters.
     """
     try:
@@ -584,7 +584,7 @@ class JobAgent(AgentModule):
       return S_OK(message)
 
   #############################################################################
-  def __rescheduleFailedJob(self, jobID, message, stop=True):
+  def _rescheduleFailedJob(self, jobID, message, stop=True):
     """
     Set Job Status to "Rescheduled" and issue a reschedule command to the Job Manager
     """
