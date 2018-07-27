@@ -267,6 +267,14 @@ def _filterPolicies(decisionParams, policyMatchParams):
 def postProcessingPolicyList(policiesThatApply):
   """ Put here any "hacky" post-processing
   """
+
+  # FIXME: the following 2 "if" are a "hack" for dealing with the following case:
+  # an SE happens to be subject to, e.g., both the 'FreeDiskSpaceMB' and the 'FreeDiskSpaceGB' policies
+  # (currently, there is no way to avoid that this happens, see e.g. LogSE)
+  # When this is the case, supposing that an SE has 50 MB free, the policies evaluation will be the following:
+  # - 'FreeDiskSpaceMB' will evaluate 'Active'
+  # - 'FreeDiskSpaceGB' will evaluate 'Banned'
+  # so the SE will end up being banned, but we want only the 'FreeDiskSpaceMB' to be considered.
   if ('FreeDiskSpaceMB', 'FreeDiskSpaceMB', {}) in policiesThatApply:
     try:
       policiesThatApply.remove(('FreeDiskSpaceGB', 'FreeDiskSpaceGB', {}))
