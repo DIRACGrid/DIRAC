@@ -88,12 +88,21 @@ function installSite(){
   getCFGFile
 
   echo '==> Fixing install.cfg file'
-  if [ "$LcgVer" ]
+  # If DIRACOS is to be used, we remove the Lcg version from install.cfg
+  if [ -z $DIRACOSVER ];
   then
-    echo '==> Fixing LcgVer to ' $LcgVer
-    sed -i s/VAR_LcgVer/$LcgVer/g $SERVERINSTALLDIR/install.cfg
+     echo "==> Not using DIRACOS, setting LcgVer"
+     # DIRACOS is not used
+     if [ "$LcgVer" ]
+     then
+       echo '==> Fixing LcgVer to ' $LcgVer
+       sed -i s/VAR_LcgVer/$LcgVer/g $SERVERINSTALLDIR/install.cfg
+     else
+       sed -i s/VAR_LcgVer/$externalsVersion/g $SERVERINSTALLDIR/install.cfg
+     fi
   else
-    sed -i s/VAR_LcgVer/$externalsVersion/g $SERVERINSTALLDIR/install.cfg
+     echo "==> Using DIRACOS, removing LcgVer"
+     sed -i '/VAR_LcgVer/d' $SERVERINSTALLDIR/install.cfg
   fi
   sed -i s,VAR_TargetPath,$SERVERINSTALLDIR,g $SERVERINSTALLDIR/install.cfg
   fqdn=`hostname --fqdn`
@@ -109,7 +118,18 @@ function installSite(){
   sed -i s/VAR_NoSQLDB_Port/$NoSQLDB_PORT/g $SERVERINSTALLDIR/install.cfg
 
   echo '==> Started installing'
-  $SERVERINSTALLDIR/dirac-install.py -t fullserver $SERVERINSTALLDIR/install.cfg $DEBUG
+  # If DIRACOSVER is not defined, use LcgBundle
+  if [ -z $DIRACOSVER ];
+  then
+    echo "Installing with LcgBundle";
+    $SERVERINSTALLDIR/dirac-install.py -t fullserver $DEBUG $SERVERINSTALLDIR/install.cfg;
+  else
+    echo "Installing with DIRACOS $DIRACOSVER";
+    $SERVERINSTALLDIR/dirac-install.py -t fullserver $DEBUG --dirac-os --dirac-os-version=$DIRACOSVER $SERVERINSTALLDIR/install.cfg;
+  fi
+
+
+
   if [ $? -ne 0 ]
   then
     echo 'ERROR: dirac-install.py -t fullserver failed'

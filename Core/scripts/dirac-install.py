@@ -1819,7 +1819,7 @@ def createBashrcForDiracOS():
               proPath,
               'export DIRACOS=%s/diracos' %
               cliParams.basePath,
-              'export DIRACBIN=%s/sbin:$DIRACOS/bin:$DIRACOS/usr/bin' %
+              'export DIRACBIN=%s/sbin:$DIRACOS/bin:$DIRACOS/sbin:$DIRACOS/usr/bin:$DIRACOS/usr/sbin' %
               cliParams.basePath,
               'export DIRACSCRIPTS=%s' %
               os.path.join(
