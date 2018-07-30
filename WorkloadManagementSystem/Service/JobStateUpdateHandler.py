@@ -72,8 +72,8 @@ class JobStateUpdateHandler(RequestHandler):
 
     infoStr = None
     trials = 10
-    for i in range(trials):
-      result = jobDB.getJobAttributes(jobID, ['Status'])
+    for i in xrange(trials):
+      result = jobDB.getJobStatus(jobID)
       if not result['OK']:
         return result
       if not result['Value']:
@@ -130,7 +130,7 @@ class JobStateUpdateHandler(RequestHandler):
     if status == 'Running' and minorStatus == 'Application':
       result = jobDB.setStartExecTime(jobID)
 
-    result = jobDB.getJobAttributes(jobID, ['Status', 'MinorStatus'])
+    result = jobDB.getJobStatus(jobID)
     if not result['OK']:
       return result
     if not result['Value']:
@@ -278,7 +278,7 @@ class JobStateUpdateHandler(RequestHandler):
     """ Set the application status for job specified by its JobId.
     """
 
-    result = jobDB.getJobAttributes(int(jobID), ['Status', 'MinorStatus'])
+    result = jobDB.getJobStatus(int(jobID))
     if not result['OK']:
       return result
 
@@ -288,16 +288,16 @@ class JobStateUpdateHandler(RequestHandler):
 
     status = result['Value']['Status']
     if status == "Stalled" or status == "Matched":
-      new_status = 'Running'
+      newStatus = 'Running'
     else:
-      new_status = status
+      newStatus = status
     minorStatus = result['Value']['MinorStatus']
 
-    result = jobDB.setJobStatus(int(jobID), new_status, application=appStatus)
+    result = jobDB.setJobStatus(int(jobID), status=newStatus, minor=minorStatus, application=appStatus)
     if not result['OK']:
       return result
 
-    result = logDB.addLoggingRecord(int(jobID), new_status, minorStatus, appStatus, source=source)
+    result = logDB.addLoggingRecord(int(jobID), newStatus, minorStatus, appStatus, source=source)
     return result
 
   ###########################################################################
