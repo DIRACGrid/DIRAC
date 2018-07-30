@@ -1,7 +1,7 @@
 Systems / Transformation / <INSTANCE> / Agents - Sub-subsection
 ================================================================
 
-Agents associated with DataManagement System:
+Agents associated with the Transformation System:
 
 See also the sections in :mod:`TransformationSystem.Agent`
 
@@ -11,6 +11,5 @@ See also the sections in :mod:`TransformationSystem.Agent`
    inputdataagent
    mcextensionagent
    transformationagent
-   transformationcleaningagent
    validateoutputdataagent
 

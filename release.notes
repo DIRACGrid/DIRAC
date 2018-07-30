@@ -1,4 +1,4 @@
-[v7r0-pre1]
+[v7r0-pre2]
 
 *Accounting
 CHANGE: (Multi)AccountingDB - Grouping Type and Object loader together with the MonitoringSystem ones.
@@ -12,21 +12,54 @@ CHANGE: (#3748) Reduced (removed, in fact) interactions of Optimizers with JobPa
 NEW: (#3760) Add Client/JobStateUpdateClient.py
 NEW: (#3760) Add Client/JobManagerClient.py
 CHANGE: (#3760) Use the above Client classes instead of invoking RPCClient()
+NEW: Added ES backend to WMSAdministratorHandler to get JobParameters.
+NEW: Added separate MySQL table for JobsStatus in JobDB, and modified code accordingly.
+CHANGE: ElasticJobDB.py: Modify setJobParameter method to register JobAttributes like Owner, Proxy, JobGroup etc.
+CHANGE: ElasticJobDB.py: added getJobParametersAndAttributes method to retrieve both parameters and attributes for a given JobID.
 
 *Core
-
-NEW: Add update method to the ElasticSearchDB.py to update or if not available create the values 
+NEW: (#3744) Add update method to the ElasticSearchDB.py to update or if not available create the values 
      sent from the setJobParameter function. Uses update_by_query and index ES APIs.
-CHANGE: generateFullIndexName() method made static under the ElasticSearchDB class.
-CHANGE: removed unused/outdated stuff from Distribution module
+CHANGE: (#3744) generateFullIndexName() method made static under the ElasticSearchDB class.
+CHANGE: (#3744) removed unused/outdated stuff from Distribution module
 
 *tests
 
 NEW: Add ChangeESFlag.py script to modify useES flag in dirac.cfg. To be integrated with Jenkins code.
 CHANGE: (#3760) Use the above Client classes instead of invoking RPCClient()
+NEW: (#3744) Added performance tests for ES and MySQL for WMS DB backends
+NEW: (#3744) Added miniInstallDIRAC function for Jenkins jobs
 
 *Docs
 FIX: Better dirac.cfg example configuration for web
+NEW: (#3744) Add WMS documentation in DeveloperGuide/Systems
+
+[v6r20p7]
+
+*Core
+FIX: (#3768) The Glue2 parsing handles some common issues more gracefully:
+     handle cases where the execution environment just does not exist, use sensible;
+     dummy values in this case (many sites);
+     handle multiple execution environments at a single computing share (i.e., CERN);
+     handle multiple execution environments with the same ID (e.g., SARA)
+     
+CHANGE: (#3768) some print outs are prefixed with "SCHEMA PROBLEM", which seem to point to problems in the published information, i.e. keys pointing to non-existent entries, or non-unique IDs
+
+*Tests
+NEW: (#3769) allow to install DIRACOS if DIRACOSVER env variable is specified
+
+*ResourceStatusSystem
+CHANGE: (#3767) Added a post-processing function in InfoGetter, for handling special case of FreeDisk policies
+
+*WorkloadManagementSystem
+FIX: (#3767) corrected inconsistent option name for pilotFileServer CS option
+
+*TransformationSystem
+CHANGE: (#3766) TransformationCleaningAgent can now run without a shifterProxy, it uses 
+        the author of the transformation for the cleanup actions instead.
+CHANGE: (#3766) TransformationCleaningAgent: the default value for shifterProxy was removed
+FIX: (#3766) TaskManagerAgent: RequestTasks/WorkflowTasks: value for useCertficates to `False` 
+     instead of `None`. Fixes the broken submission when using a shifterProxy for the TaskManagerAgents
 
 [v6r20p6]
 

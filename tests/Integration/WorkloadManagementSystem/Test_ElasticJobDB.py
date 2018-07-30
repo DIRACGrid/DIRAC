@@ -2,6 +2,7 @@
 """
 
 import unittest
+import time
 
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
@@ -39,9 +40,13 @@ class JobParametersCase(JobDBTestCase):
     """
     res = self.jobDB.setJobParameter(100, 'DIRAC', 'dirac@cern')
     self.assertTrue(res['OK'])
+    time.sleep(1)
     res = self.jobDB.getJobParameters(100)
     self.assertTrue(res['OK'])
     self.assertEqual(res['Value']['DIRAC'], 'dirac@cern')
+    res = self.jobDB.getJobParametersAndAttributes(100)
+    self.assertTrue(res['OK'])
+    self.assertEqual(res['Value'][100]['Name'], 'DIRAC')
 
 
 if __name__ == '__main__':

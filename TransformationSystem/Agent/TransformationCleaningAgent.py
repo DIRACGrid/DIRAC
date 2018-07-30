@@ -1,10 +1,11 @@
-""" :mod: TransformationCleaningAgent
+"""TransformationCleaningAgent cleans up finalised transformations.
 
-    =================================
+.. literalinclude:: ../ConfigTemplate.cfg
+  :start-after: ##BEGIN TransformationCleaningAgent
+  :end-before: ##END
+  :dedent: 2
+  :caption: TransformationCleaningAgent options
 
-    .. module: TransformationCleaningAgent
-
-    :synopsis: clean up of finalised transformations
 """
 
 __RCSID__ = "$Id$"
@@ -18,6 +19,7 @@ from datetime import datetime, timedelta
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.List import breakListIntoChunks
+from DIRAC.Core.Utilities.Proxy import executeWithUserProxy
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
@@ -86,7 +88,7 @@ class TransformationCleaningAgent(AgentModule):
     # See cleanCatalogContents method: this proxy will be used ALSO when the file catalog used
     # is the DIRAC File Catalog (DFC).
     # This is possible because of unset of the "UseServerCertificate" option
-    self.am_setOption('shifterProxy', 'DataManager')
+    self.shifterProxy = self.am_getOption('shifterProxy', None)
 
     # # transformations types
     self.dataProcTTypes = Operations().getValue('Transformations/DataProcessing', self.dataProcTTypes)
@@ -137,35 +139,39 @@ class TransformationCleaningAgent(AgentModule):
       self.log.info('TransformationCleaningAgent is disabled by configuration option EnableFlag')
       return S_OK('Disabled via CS flag')
 
-    # # Obtain the transformations in Cleaning status and remove any mention of the jobs/files
+    # Obtain the transformations in Cleaning status and remove any mention of the jobs/files
     res = self.transClient.getTransformations({'Status': 'Cleaning',
                                                'Type': self.transformationTypes})
     if res['OK']:
       for transDict in res['Value']:
-        # # if transformation is of type `Replication` or `Removal`, there is nothing to clean.
-        # # We just archive
-        if transDict['Type'] in self.dataManipTTypes:
-          res = self.archiveTransformation(transDict['TransformationID'])
-          if not res['OK']:
-            self.log.error("Problems archiving transformation %s: %s" % (transDict['TransformationID'],
-                                                                         res['Message']))
+        if self.shifterProxy:
+          self._executeClean(transDict)
         else:
-          res = self.cleanTransformation(transDict['TransformationID'])
-          if not res['OK']:
-            self.log.error("Problems cleaning transformation %s: %s" % (transDict['TransformationID'],
-                                                                        res['Message']))
+          self.log.info("Cleaning transformation %(TransformationID)s with %(AuthorDN)s, %(AuthorGroup)s" %
+                        transDict)
+          executeWithUserProxy(self._executeClean)(transDict,
+                                                   proxyUserDN=transDict['AuthorDN'],
+                                                   proxyUserGroup=transDict['AuthorGroup'])
+    else:
+      self.log.error("Failed to get transformations", res['Message'])
 
-    # # Obtain the transformations in RemovingFiles status and (wait for it) removes the output files
+    # Obtain the transformations in RemovingFiles status and removes the output files
     res = self.transClient.getTransformations({'Status': 'RemovingFiles',
                                                'Type': self.transformationTypes})
     if res['OK']:
       for transDict in res['Value']:
-        res = self.removeTransformationOutput(transDict['TransformationID'])
-        if not res['OK']:
-          self.log.error("Problems removing transformation %s: %s" % (transDict['TransformationID'],
-                                                                      res['Message']))
+        if self.shifterProxy:
+          self._executeRemoval(transDict)
+        else:
+          self.log.info("Removing files for transformation %(TransformationID)s with %(AuthorDN)s, %(AuthorGroup)s" %
+                        transDict)
+          executeWithUserProxy(self._executeRemoval)(transDict,
+                                                     proxyUserDN=transDict['AuthorDN'],
+                                                     proxyUserGroup=transDict['AuthorGroup'])
+    else:
+      self.log.error("Could not get the transformations", res['Message'])
 
-    # # Obtain the transformations in Completed status and archive if inactive for X days
+    # Obtain the transformations in Completed status and archive if inactive for X days
     olderThanTime = datetime.utcnow() - timedelta(days=self.archiveAfter)
     res = self.transClient.getTransformations({'Status': 'Completed',
                                                'Type': self.transformationTypes},
@@ -173,12 +179,46 @@ class TransformationCleaningAgent(AgentModule):
                                               timeStamp='LastUpdate')
     if res['OK']:
       for transDict in res['Value']:
-        res = self.archiveTransformation(transDict['TransformationID'])
-        if not res['OK']:
-          self.log.error("Problems archiving transformation %s: %s" % (transDict['TransformationID'],
-                                                                       res['Message']))
+        if self.shifterProxy():
+          self._executeArchive(transDict)
+        else:
+          self.log.info("Archiving files for transformation %(TransformationID)s with %(AuthorDN)s, %(AuthorGroup)s" %
+                        transDict)
+          executeWithUserProxy(self._executeArchive)(transDict,
+                                                     proxyUserDN=transDict['AuthorDN'],
+                                                     proxyUserGroup=transDict['AuthorGroup'])
     else:
-      self.log.error("Could not get the transformations")
+      self.log.error("Could not get the transformations", res['Message'])
+    return S_OK()
+
+  def _executeClean(self, transDict):
+    """Clean transformation."""
+    # if transformation is of type `Replication` or `Removal`, there is nothing to clean.
+    # We just archive
+    if transDict['Type'] in self.dataManipTTypes:
+      res = self.archiveTransformation(transDict['TransformationID'])
+      if not res['OK']:
+        self.log.error("Problems archiving transformation %s: %s" % (transDict['TransformationID'],
+                                                                     res['Message']))
+    else:
+      res = self.cleanTransformation(transDict['TransformationID'])
+      if not res['OK']:
+        self.log.error("Problems cleaning transformation %s: %s" % (transDict['TransformationID'],
+                                                                    res['Message']))
+
+  def _executeRemoval(self, transDict):
+    """Remove files from given transformation."""
+    res = self.removeTransformationOutput(transDict['TransformationID'])
+    if not res['OK']:
+      self.log.error("Problems removing transformation %s: %s" % (transDict['TransformationID'],
+                                                                  res['Message']))
+
+  def _executeArchive(self, transDict):
+    """Archive the given transformation."""
+    res = self.archiveTransformation(transDict['TransformationID'])
+    if not res['OK']:
+      self.log.error("Problems archiving transformation %s: %s" % (transDict['TransformationID'],
+                                                                   res['Message']))
 
     return S_OK()
 
