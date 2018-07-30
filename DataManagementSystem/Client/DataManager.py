@@ -184,7 +184,7 @@ class DataManager(object):
                 "%s %s" % (lfn, reason))
     res = returnSingleResult(self.removeFile(['%s/dirac_directory' % folder]))
     if not res['OK']:
-      if not "No such file" in res['Message']:
+      if not DErrno.cmpError(res, errno.ENOENT):
         log.warn('Failed to delete dirac_directory placeholder file')
 
     storageElements = gConfig.getValue(
@@ -527,7 +527,7 @@ class DataManager(object):
     res = storageElement.isValid()
     if not res['OK']:
       errStr = "The storage element is not currently valid."
-      log.debug(errStr, "%s %s" % (diracSE, res['Message']))
+      log.verbose(errStr, "%s %s" % (diracSE, res['Message']))
       return S_ERROR("%s %s" % (errStr, res['Message']))
 
     fileDict = {lfn: fileName}
@@ -736,7 +736,7 @@ class DataManager(object):
     res = destStorageElement.isValid()
     if not res['OK']:
       errStr = "The storage element is not currently valid."
-      log.debug(errStr, "%s %s" % (destSEName, res['Message']))
+      log.verbose(errStr, "%s %s" % (destSEName, res['Message']))
       return S_ERROR("%s %s" % (errStr, res['Message']))
 
     # Get the real name of the SE
@@ -836,8 +836,8 @@ class DataManager(object):
       # Check that the SE is valid
       res = candidateSE.isValid()
       if not res['OK']:
-        log.debug("The storage element is not currently valid.",
-                  "%s %s" % (candidateSEName, res['Message']))
+        log.verbose("The storage element is not currently valid.",
+                    "%s %s" % (candidateSEName, res['Message']))
         continue
       else:
         log.debug("The storage is currently valid", candidateSEName)
@@ -1082,7 +1082,7 @@ class DataManager(object):
       res = destStorageElement.isValid()
       if not res['OK']:
         errStr = "The storage element is not currently valid."
-        log.debug(errStr, "%s %s" % (storageElementName, res['Message']))
+        log.verbose(errStr, "%s %s" % (storageElementName, res['Message']))
         for lfn, url in replicaTuple:
           failed[lfn] = errStr
       else:
@@ -1469,7 +1469,7 @@ class DataManager(object):
     res = storageElement.isValid()
     if not res['OK']:
       errStr = "The storage element is not currently valid."
-      log.debug(errStr, "%s %s" % (storageElementName, res['Message']))
+      log.verbose(errStr, "%s %s" % (storageElementName, res['Message']))
       return S_ERROR("%s %s" % (errStr, res['Message']))
     oDataOperation = _initialiseAccountingObject('removePhysicalReplica',
                                                  storageElementName,
@@ -1543,7 +1543,7 @@ class DataManager(object):
     res = storageElement.isValid()
     if not res['OK']:
       errStr = "The storage element is not currently valid."
-      log.debug(errStr, "%s %s" % (diracSE, res['Message']))
+      log.verbose(errStr, "%s %s" % (diracSE, res['Message']))
       return S_ERROR("%s %s" % (errStr, res['Message']))
     fileDict = {lfn: fileName}
 

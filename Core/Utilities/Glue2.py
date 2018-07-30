@@ -1,6 +1,16 @@
-""" Module collecting functions dealing with the GLUE2 information schema
+"""Module collecting functions dealing with the GLUE2 information schema
 
 :author: A.Sailer
+
+Known problems:
+
+ * ARC CEs do not seem to publish wall or CPU time per queue anywhere
+ * There is no consistency between which memory information is provided where,
+   execution environment vs. information for a share
+ * Some execution environment IDs are used more than once
+
+Print outs with "SCHEMA PROBLEM" point -- in my opinion -- to errors in the
+published information, like a foreign key pointing to non-existant entry.
 
 """
 
@@ -59,7 +69,7 @@ def getGlue2CEInfo(vo, host):
       gLogger.error("Could not get share information for %s: %s" % (shareID, shareRes['Message']))
       continue
     if not shareRes['Value']:
-      gLogger.warn("Did not not find any share information for %s" % (shareID, ))
+      gLogger.info("SCHEMA PROBLEM: Did not not find any share information for %s" % (shareID, ))
       continue
     siteDict.setdefault(siteName, {'CEs': {}})
     for shareInfo in shareRes['Value']:
@@ -105,11 +115,33 @@ def __getGlue2ShareInfo(host, shareEndpoints, shareInfoDict, cesDict):
     queueInfo['GlueCEPolicyMaxCPUTime'] = str(maxCPUTime * 60)
     queueInfo['GlueCEPolicyMaxWallClockTime'] = str(int(queueInfo['GlueCEPolicyMaxWallClockTime']) * 60)
 
-  executionEnvironment = shareInfoDict['GLUE2ComputingShareExecutionEnvironmentForeignKey']
-  resExeInfo = __getGlue2ExecutionEnvironmentInfo(host, executionEnvironment)
-  if not resExeInfo['OK']:
-    return S_ERROR("Cannot get execution environment info for %r" % executionEnvironment, resExeInfo['Message'])
-  ceInfo.update(resExeInfo['Value'])
+  exeInfo = []
+  executionEnvironments = shareInfoDict['GLUE2ComputingShareExecutionEnvironmentForeignKey']
+  if isinstance(executionEnvironments, basestring):
+    executionEnvironments = [executionEnvironments]
+  for executionEnvironment in executionEnvironments:
+    resExeInfo = __getGlue2ExecutionEnvironmentInfo(host, executionEnvironment)
+    if not resExeInfo['OK']:
+      gLogger.info("SCHEMA PROBLEM: Cannot get execution environment info for %r" % executionEnvironment,
+                   resExeInfo['Message'])
+      continue
+    exeInfo.append(resExeInfo['Value'])
+  if not exeInfo:
+    gLogger.warn('Did not find information for execution environment %s, using dummy values' % executionEnvironments)
+    exeInfo = [{'GlueHostMainMemoryRAMSize': '1999',  # intentionally identifiably dummy value
+                'GlueHostOperatingSystemVersion': '',
+                'GlueHostOperatingSystemName': '',
+                'GlueHostOperatingSystemRelease': '',
+                'GlueHostArchitecturePlatformType': 'x86_64',
+                'MANAGER': '',
+                }]
+  try:
+    # take the CE with the lowest MainMemory
+    exeInfo = sorted(exeInfo, key=lambda k: int(k['GlueHostMainMemoryRAMSize']))
+  except ValueError:
+    gLogger.debug("Failed to sort the execution environments: %s" % pformat(exeInfo))
+  ceInfo.update(exeInfo[0])
+
   if isinstance(shareEndpoints, basestring):
     shareEndpoints = [shareEndpoints]
   for endpoint in shareEndpoints:
@@ -162,8 +194,14 @@ def __getGlue2ExecutionEnvironmentInfo(host, executionEnvironment):
   response = __ldapsearchBDII(filt=filt, attr=None, host=host, base="o=glue", selectionString="GLUE2")
   if not response['OK']:
     return response
-  if len(response['Value']) != 1:
-    return S_ERROR("Unexpected response for ExecutionEnvironment")
+  if not response['Value']:
+    return S_ERROR("No information found for %s" % executionEnvironment)
+  if len(response['Value']) > 1:
+    gLogger.info('SCHEMA PROBLEM: Multiple execution environments with the same ID: %s' % executionEnvironment)
+    gLogger.debug('Multiple results:\n %s' % pformat(response['Value']))
+    # only take the first one
+    response['Value'] = response['Value'][:1]
+
   gLogger.debug("Found ExecutionEnvironment %s:\n%s" % (executionEnvironment, pformat(response)))
   exeInfo = response['Value'][0]['attr']  # pylint: disable=unsubscriptable-object
   maxRam = exeInfo.get('GLUE2ExecutionEnvironmentMainMemorySize', '')

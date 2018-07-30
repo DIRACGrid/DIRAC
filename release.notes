@@ -34,6 +34,33 @@ NEW: (#3744) Added miniInstallDIRAC function for Jenkins jobs
 FIX: Better dirac.cfg example configuration for web
 NEW: (#3744) Add WMS documentation in DeveloperGuide/Systems
 
+[v6r20p7]
+
+*Core
+FIX: (#3768) The Glue2 parsing handles some common issues more gracefully:
+     handle cases where the execution environment just does not exist, use sensible;
+     dummy values in this case (many sites);
+     handle multiple execution environments at a single computing share (i.e., CERN);
+     handle multiple execution environments with the same ID (e.g., SARA)
+     
+CHANGE: (#3768) some print outs are prefixed with "SCHEMA PROBLEM", which seem to point to problems in the published information, i.e. keys pointing to non-existent entries, or non-unique IDs
+
+*Tests
+NEW: (#3769) allow to install DIRACOS if DIRACOSVER env variable is specified
+
+*ResourceStatusSystem
+CHANGE: (#3767) Added a post-processing function in InfoGetter, for handling special case of FreeDisk policies
+
+*WorkloadManagementSystem
+FIX: (#3767) corrected inconsistent option name for pilotFileServer CS option
+
+*TransformationSystem
+CHANGE: (#3766) TransformationCleaningAgent can now run without a shifterProxy, it uses 
+        the author of the transformation for the cleanup actions instead.
+CHANGE: (#3766) TransformationCleaningAgent: the default value for shifterProxy was removed
+FIX: (#3766) TaskManagerAgent: RequestTasks/WorkflowTasks: value for useCertficates to `False` 
+     instead of `None`. Fixes the broken submission when using a shifterProxy for the TaskManagerAgents
+
 [v6r20p6]
 
 *Tests

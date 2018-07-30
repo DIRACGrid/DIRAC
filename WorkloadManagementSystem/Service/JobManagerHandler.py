@@ -264,7 +264,9 @@ class JobManagerHandler(RequestHandler):
     return not result['Value']
 
 ###########################################################################
-  def __getJobList(self, jobInput):
+
+  @staticmethod
+  def __getJobList(jobInput):
     """ Evaluate the jobInput into a list of ints
 
         :param jobInput: one or more job IDs in int or str form
@@ -329,7 +331,8 @@ class JobManagerHandler(RequestHandler):
     self.__sendJobsToOptimizationMind(validJobList)
     return result
 
-  def __deleteJob(self, jobID):
+  @staticmethod
+  def __deleteJob(jobID):
     """ Delete one job
     """
     result = gJobDB.setJobStatus(jobID, 'Deleted', 'Checking accounting')
@@ -368,7 +371,8 @@ class JobManagerHandler(RequestHandler):
 
     return S_OK()
 
-  def __killJob(self, jobID, sendKillCommand=True):
+  @staticmethod
+  def __killJob(jobID, sendKillCommand=True):
     """  Kill one job
     """
     if sendKillCommand:

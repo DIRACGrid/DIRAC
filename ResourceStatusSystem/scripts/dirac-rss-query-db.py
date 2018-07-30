@@ -32,6 +32,8 @@
         -o LogLevel=LEVEL     NOTICE by default, levels available: INFO, DEBUG, VERBOSE..
 """
 
+__RCSID__ = '$Id$'
+
 import datetime
 from DIRAC import gLogger, exit as DIRACExit, S_OK, version
 from DIRAC.Core.Base import Script
@@ -40,9 +42,6 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities.PrettyPrint import printTable
-
-
-__RCSID__ = '$Id:$'
 
 subLogger = None
 switchDict = {}
@@ -168,7 +167,8 @@ def checkStatusTypes(statusTypes):
     To check if values for 'statusType' are valid
   '''
 
-  opsH = Operations().getValue('ResourceStatus/Config/StatusTypes/StorageElement')
+  opsH = Operations().getValue('ResourceStatus/Config/StatusTypes/StorageElement',
+                               "ReadAccess,WriteAccess,CheckAccess,RemoveAccess")
   acceptableStatusTypes = opsH.replace(',', '').split()
 
   for statusType in statusTypes:
@@ -339,8 +339,7 @@ def add(args, switchDict):
                                               elementType=switchDict['elementType'],
                                               reason=switchDict['reason'],
                                               tokenOwner=getToken('owner'),
-                                              tokenExpiration=getToken('expiration')
-                                              )
+                                              tokenExpiration=getToken('expiration'))
 
   if output.get('Value'):
     result['match'] = int(output['Value'] if output['Value'] else 0)
@@ -394,8 +393,7 @@ def delete(args, switchDict):
                                          status=switchDict['status'],
                                          elementType=switchDict['elementType'],
                                          reason=switchDict['reason'],
-                                         tokenOwner=switchDict['tokenOwner'],
-                                         )
+                                         tokenOwner=switchDict['tokenOwner'])
 
   if 'Value' in output:
     result['match'] = int(output['Value'] if output['Value'] else 0)
