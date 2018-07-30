@@ -316,22 +316,21 @@ def cmpError( inErr, candidate ):
       If it is a String, we use strerror to check the error string
   """
 
-  if isinstance( inErr, basestring ) :  # old style
+  if isinstance(inErr, basestring):  # old style
     # Compare error message strings
-    errMsg = strerror( candidate )
+    errMsg = strerror(candidate)
     return errMsg in inErr
-  elif isinstance( inErr, dict ):  # if the S_ERROR structure is given
+  elif isinstance(inErr, dict):  # if the S_ERROR structure is given
     # Check if Errno defined in the dict
-    errorNumber = inErr.get( 'Errno' )
+    errorNumber = inErr.get('Errno')
     if errorNumber:
       return errorNumber == candidate
-    else:
-      errMsg = strerror( candidate )
-      return errMsg in inErr.get( 'Message', '' )
-  elif isinstance( inErr, int ):
+    errMsg = strerror(candidate)
+    return errMsg in inErr.get('Message', '')
+  elif isinstance(inErr, int):
     return inErr == candidate
   else:
-    raise TypeError( "Unknown input error type %s" % type( inErr ) )
+    raise TypeError("Unknown input error type %s" % type(inErr))
 
 
 def includeExtensionErrors():
