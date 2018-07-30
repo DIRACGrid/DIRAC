@@ -121,7 +121,7 @@ class RequestTasks(TaskBase):
       logger = gLogger.getSubLogger('RequestTasks')
 
     super(RequestTasks, self).__init__(transClient, logger)
-    useCertificates = True if (bool(ownerDN) and bool(ownerGroup)) else None
+    useCertificates = True if (bool(ownerDN) and bool(ownerGroup)) else False
 
     if not requestClient:
       self.requestClient = ReqClient(useCertificates=useCertificates,
@@ -432,7 +432,7 @@ class WorkflowTasks(TaskBase):
 
     super(WorkflowTasks, self).__init__(transClient, logger)
 
-    useCertificates = True if (bool(ownerDN) and bool(ownerGroup)) else None
+    useCertificates = True if (bool(ownerDN) and bool(ownerGroup)) else False
     if not submissionClient:
       self.submissionClient = WMSClient(useCertificates=useCertificates,
                                         delegatedDN=ownerDN,
