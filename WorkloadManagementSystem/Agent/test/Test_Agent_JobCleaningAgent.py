@@ -2,7 +2,8 @@
 """
 
 # imports
-from mock import MagicMock, patch
+import pytest
+from mock import MagicMock
 
 # DIRAC Components
 from DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent import JobCleaningAgent
@@ -12,21 +13,30 @@ from DIRAC import gLogger
 gLogger.setLevel('DEBUG')
 
 # Mock Objects
-mockAM = MagicMock()
 mockReply = MagicMock()
-mockReply.return_value = {'OK': True, 'Value': ''}
 
 
 class TestJobCleaningAgent(object):
   """ Testing the single methods of JobCleaningAgent
   """
 
-  @patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobDB.getDistinctJobAttributes", side_effect=mockReply)
-  @patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.AgentModule", side_effect=mockAM)
-  @patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.AgentModule.__init__", new=mockAM)
-  def test__getAllowedJobTypes(self, _patch1, _patch2):
+  @pytest.mark.parametrize(
+      "mockReplyInput, expected", [
+          ({
+              'OK': True, 'Value': ''}, {
+              'OK': True, 'Value': []}), ({
+                  'OK': False, 'Value': ''}, {
+                  'OK': False, 'Value': ''})])
+  def test__getAllowedJobTypes(self, mocker, mockReplyInput, expected):
     """ Testing JobCleaningAgent()._getAllowedJobTypes()
     """
+
+    mockReply.return_value = mockReplyInput
+
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule.__init__")
+    mocker.patch(
+        "DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobDB.getDistinctJobAttributes",
+        side_effect=mockReply)
 
     jobCleaningAgent = JobCleaningAgent()
     jobCleaningAgent.log = gLogger
@@ -35,15 +45,23 @@ class TestJobCleaningAgent(object):
     jobCleaningAgent.jobDB = JobDB()
     result = jobCleaningAgent._getAllowedJobTypes()
 
-    assert result['OK']
-    assert result['Value'] == []
+    assert result == expected
 
-  @patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobDB.selectJobs", side_effect=mockReply)
-  @patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.AgentModule", side_effect=mockAM)
-  @patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.AgentModule.__init__", new=mockAM)
-  def test_removeJobsByStatus(self, _patch1, _patch2):
+  @pytest.mark.parametrize(
+      "mockReplyInput, expected", [
+          ({
+              'OK': True, 'Value': ''}, {
+              'OK': True, 'Value': None}), ({
+                  'OK': False, 'Value': ''}, {
+                  'OK': False, 'Value': ''})])
+  def test_removeJobsByStatus(self, mocker, mockReplyInput, expected):
     """ Testing JobCleaningAgent().removeJobsByStatus()
     """
+
+    mockReply.return_value = mockReplyInput
+
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule.__init__")
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobDB.selectJobs", side_effect=mockReply)
 
     jobCleaningAgent = JobCleaningAgent()
     jobCleaningAgent.log = gLogger
@@ -52,15 +70,25 @@ class TestJobCleaningAgent(object):
     jobCleaningAgent.jobDB = JobDB()
     result = jobCleaningAgent.removeJobsByStatus({})
 
-    assert result['OK']
-    assert result['Value'] is None
+    assert result == expected
 
-  @patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobDB.selectJobs", side_effect=mockReply)
-  @patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.AgentModule", side_effect=mockAM)
-  @patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.AgentModule.__init__", new=mockAM)
-  def test_deleteJobOversizedSandbox(self, _patch1, _patch2):
+  @pytest.mark.parametrize(
+      "mockReplyInput, expected", [
+          ({
+              'OK': True, 'Value': ''}, {
+              'OK': True, 'Value': {
+                  'Failed': {}, 'Successful': {}}}), ({
+                      'OK': False, 'Value': ''}, {
+                      'OK': True, 'Value': {
+                          'Failed': {}, 'Successful': {}}})])
+  def test_deleteJobOversizedSandbox(self, mocker, mockReplyInput, expected):
     """ Testing JobCleaningAgent().deleteJobOversizedSandbox()
     """
+
+    mockReply.return_value = mockReplyInput
+
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule.__init__")
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobDB.selectJobs", side_effect=mockReply)
 
     jobCleaningAgent = JobCleaningAgent()
     jobCleaningAgent.log = gLogger
@@ -69,6 +97,4 @@ class TestJobCleaningAgent(object):
     jobCleaningAgent.jobDB = JobDB()
     result = jobCleaningAgent.deleteJobOversizedSandbox([])
 
-    assert result['OK']
-    assert result['Value']['Successful'] == {}
-    assert result['Value']['Failed'] == {}
+    assert result == expected

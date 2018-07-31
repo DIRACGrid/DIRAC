@@ -2,7 +2,7 @@
 """
 
 # imports
-from mock import MagicMock, patch
+from mock import MagicMock
 
 # DIRAC Components
 from DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent import PilotStatusAgent
@@ -11,19 +11,16 @@ from DIRAC import gLogger
 
 gLogger.setLevel('DEBUG')
 
-# Mock Objects
-mockAM = MagicMock()
-
 
 class TestPilotStatusAgent(object):
   """ Testing the single methods of PilotStatusAgent
   """
 
-  @patch("DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent.AgentModule", side_effect=mockAM)
-  @patch("DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent.AgentModule.__init__", new=mockAM)
-  def test_clearWaitingPilots(self, _patch1):
+  def test_clearWaitingPilots(self, mocker):
     """ Testing PilotStatusAgent().clearWaitingPilots()
     """
+
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule.__init__")
 
     pilotStatusAgent = PilotStatusAgent()
     pilotStatusAgent.pilotDB = PilotAgentsDB()
@@ -34,11 +31,11 @@ class TestPilotStatusAgent(object):
 
     assert result['OK']
 
-  @patch("DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent.AgentModule", side_effect=mockAM)
-  @patch("DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent.AgentModule.__init__", new=mockAM)
-  def test_handleOldPilots(self, _patch1):
+  def test_handleOldPilots(self, mocker):
     """ Testing PilotStatusAgent().handleOldPilots()
     """
+
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule.__init__")
 
     pilotStatusAgent = PilotStatusAgent()
     pilotStatusAgent.pilotDB = PilotAgentsDB()

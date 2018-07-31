@@ -1,9 +1,6 @@
 """ Test class for Stalled Job Agent
 """
 
-# imports
-from mock import MagicMock, patch
-
 # DIRAC Components
 from DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent import StalledJobAgent
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
@@ -11,19 +8,16 @@ from DIRAC import gLogger
 
 gLogger.setLevel('DEBUG')
 
-# Mock Objects
-mockAM = MagicMock()
-
 
 class TestStalledJobAgent(object):
   """ Testing the single methods of StalledJobAgent
   """
 
-  @patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule", side_effect=mockAM)
-  @patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule.__init__", new=mockAM)
-  def test__failSubmittingJobs(self, _patch1):
+  def test__failSubmittingJobs(self, mocker):
     """ Testing StalledJobAgent()._failSubmittingJobs()
     """
+
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule.__init__")
 
     stalledJobAgent = StalledJobAgent()
     stalledJobAgent.jobDB = JobDB()
@@ -34,11 +28,11 @@ class TestStalledJobAgent(object):
 
     assert result['OK']
 
-  @patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule", side_effect=mockAM)
-  @patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule.__init__", new=mockAM)
-  def test__failCompletedJobs(self, _patch1):
+  def test__failCompletedJobs(self, mocker):
     """ Testing StalledJobAgent()._failCompletedJobs()
     """
+
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule.__init__")
 
     stalledJobAgent = StalledJobAgent()
     stalledJobAgent.jobDB = JobDB()
@@ -49,11 +43,11 @@ class TestStalledJobAgent(object):
 
     assert result['OK']
 
-  @patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule", side_effect=mockAM)
-  @patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule.__init__", new=mockAM)
-  def test__kickStuckJobs(self, _patch1):
+  def test__kickStuckJobs(self, mocker):
     """ Testing StalledJobAgent()._kickStuckJobs()
     """
+
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule.__init__")
 
     stalledJobAgent = StalledJobAgent()
     stalledJobAgent.jobDB = JobDB()
@@ -64,11 +58,11 @@ class TestStalledJobAgent(object):
 
     assert result['OK']
 
-  @patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule", side_effect=mockAM)
-  @patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule.__init__", new=mockAM)
-  def test__failStalledJobs(self, _patch1):
+  def test__failStalledJobs(self, mocker):
     """ Testing StalledJobAgent()._failStalledJobs()
     """
+
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule.__init__")
 
     stalledJobAgent = StalledJobAgent()
     stalledJobAgent.jobDB = JobDB()
@@ -80,11 +74,11 @@ class TestStalledJobAgent(object):
     assert result['OK']
     assert result['Value'] == 0
 
-  @patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule", side_effect=mockAM)
-  @patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule.__init__", new=mockAM)
-  def test__markStalledJobs(self, _patch1):
+  def test__markStalledJobs(self, mocker):
     """ Testing StalledJobAgent()._markStalledJobs()
     """
+
+    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule.__init__")
 
     stalledJobAgent = StalledJobAgent()
     stalledJobAgent.jobDB = JobDB()
