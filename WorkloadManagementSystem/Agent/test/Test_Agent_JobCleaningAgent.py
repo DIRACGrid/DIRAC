@@ -16,85 +16,83 @@ gLogger.setLevel('DEBUG')
 mockReply = MagicMock()
 
 
-class TestJobCleaningAgent(object):
-  """ Testing the single methods of JobCleaningAgent
+@pytest.mark.parametrize(
+    "mockReplyInput, expected", [
+        ({
+            'OK': True, 'Value': ''}, {
+            'OK': True, 'Value': []}), ({
+                'OK': False, 'Value': ''}, {
+                'OK': False, 'Value': ''})])
+def test__getAllowedJobTypes(mocker, mockReplyInput, expected):
+  """ Testing JobCleaningAgent()._getAllowedJobTypes()
   """
 
-  @pytest.mark.parametrize(
-      "mockReplyInput, expected", [
-          ({
-              'OK': True, 'Value': ''}, {
-              'OK': True, 'Value': []}), ({
-                  'OK': False, 'Value': ''}, {
-                  'OK': False, 'Value': ''})])
-  def test__getAllowedJobTypes(self, mocker, mockReplyInput, expected):
-    """ Testing JobCleaningAgent()._getAllowedJobTypes()
-    """
+  mockReply.return_value = mockReplyInput
 
-    mockReply.return_value = mockReplyInput
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.AgentModule.__init__")
+  mocker.patch(
+      "DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobDB.getDistinctJobAttributes",
+      side_effect=mockReply)
 
-    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule.__init__")
-    mocker.patch(
-        "DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobDB.getDistinctJobAttributes",
-        side_effect=mockReply)
+  jobCleaningAgent = JobCleaningAgent()
+  jobCleaningAgent.log = gLogger
+  jobCleaningAgent.log.setLevel('DEBUG')
 
-    jobCleaningAgent = JobCleaningAgent()
-    jobCleaningAgent.log = gLogger
-    jobCleaningAgent.log.setLevel('DEBUG')
+  jobCleaningAgent.jobDB = JobDB()
+  result = jobCleaningAgent._getAllowedJobTypes()
 
-    jobCleaningAgent.jobDB = JobDB()
-    result = jobCleaningAgent._getAllowedJobTypes()
+  assert result == expected
 
-    assert result == expected
 
-  @pytest.mark.parametrize(
-      "mockReplyInput, expected", [
-          ({
-              'OK': True, 'Value': ''}, {
-              'OK': True, 'Value': None}), ({
-                  'OK': False, 'Value': ''}, {
-                  'OK': False, 'Value': ''})])
-  def test_removeJobsByStatus(self, mocker, mockReplyInput, expected):
-    """ Testing JobCleaningAgent().removeJobsByStatus()
-    """
+@pytest.mark.parametrize(
+    "mockReplyInput, expected", [
+        ({
+            'OK': True, 'Value': ''}, {
+            'OK': True, 'Value': None}), ({
+                'OK': False, 'Value': ''}, {
+                'OK': False, 'Value': ''})])
+def test_removeJobsByStatus(mocker, mockReplyInput, expected):
+  """ Testing JobCleaningAgent().removeJobsByStatus()
+  """
 
-    mockReply.return_value = mockReplyInput
+  mockReply.return_value = mockReplyInput
 
-    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule.__init__")
-    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobDB.selectJobs", side_effect=mockReply)
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.AgentModule.__init__")
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobDB.selectJobs", side_effect=mockReply)
 
-    jobCleaningAgent = JobCleaningAgent()
-    jobCleaningAgent.log = gLogger
-    jobCleaningAgent.log.setLevel('DEBUG')
+  jobCleaningAgent = JobCleaningAgent()
+  jobCleaningAgent.log = gLogger
+  jobCleaningAgent.log.setLevel('DEBUG')
 
-    jobCleaningAgent.jobDB = JobDB()
-    result = jobCleaningAgent.removeJobsByStatus({})
+  jobCleaningAgent.jobDB = JobDB()
+  result = jobCleaningAgent.removeJobsByStatus({})
 
-    assert result == expected
+  assert result == expected
 
-  @pytest.mark.parametrize(
-      "mockReplyInput, expected", [
-          ({
-              'OK': True, 'Value': ''}, {
-              'OK': True, 'Value': {
-                  'Failed': {}, 'Successful': {}}}), ({
-                      'OK': False, 'Value': ''}, {
-                      'OK': True, 'Value': {
-                          'Failed': {}, 'Successful': {}}})])
-  def test_deleteJobOversizedSandbox(self, mocker, mockReplyInput, expected):
-    """ Testing JobCleaningAgent().deleteJobOversizedSandbox()
-    """
 
-    mockReply.return_value = mockReplyInput
+@pytest.mark.parametrize(
+    "mockReplyInput, expected", [
+        ({
+            'OK': True, 'Value': ''}, {
+            'OK': True, 'Value': {
+                'Failed': {}, 'Successful': {}}}), ({
+                    'OK': False, 'Value': ''}, {
+                    'OK': True, 'Value': {
+                        'Failed': {}, 'Successful': {}}})])
+def test_deleteJobOversizedSandbox(mocker, mockReplyInput, expected):
+  """ Testing JobCleaningAgent().deleteJobOversizedSandbox()
+  """
 
-    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule.__init__")
-    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobDB.selectJobs", side_effect=mockReply)
+  mockReply.return_value = mockReplyInput
 
-    jobCleaningAgent = JobCleaningAgent()
-    jobCleaningAgent.log = gLogger
-    jobCleaningAgent.log.setLevel('DEBUG')
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.AgentModule.__init__")
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobDB.selectJobs", side_effect=mockReply)
 
-    jobCleaningAgent.jobDB = JobDB()
-    result = jobCleaningAgent.deleteJobOversizedSandbox([])
+  jobCleaningAgent = JobCleaningAgent()
+  jobCleaningAgent.log = gLogger
+  jobCleaningAgent.log.setLevel('DEBUG')
 
-    assert result == expected
+  jobCleaningAgent.jobDB = JobDB()
+  result = jobCleaningAgent.deleteJobOversizedSandbox([])
+
+  assert result == expected

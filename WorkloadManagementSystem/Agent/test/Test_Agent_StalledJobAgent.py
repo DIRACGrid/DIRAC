@@ -9,82 +9,82 @@ from DIRAC import gLogger
 gLogger.setLevel('DEBUG')
 
 
-class TestStalledJobAgent(object):
-  """ Testing the single methods of StalledJobAgent
+def test__failSubmittingJobs(mocker):
+  """ Testing StalledJobAgent()._failSubmittingJobs()
   """
 
-  def test__failSubmittingJobs(self, mocker):
-    """ Testing StalledJobAgent()._failSubmittingJobs()
-    """
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule.__init__")
 
-    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule.__init__")
+  stalledJobAgent = StalledJobAgent()
+  stalledJobAgent.jobDB = JobDB()
+  stalledJobAgent.log = gLogger
+  stalledJobAgent.log.setLevel('DEBUG')
 
-    stalledJobAgent = StalledJobAgent()
-    stalledJobAgent.jobDB = JobDB()
-    stalledJobAgent.log = gLogger
-    stalledJobAgent.log.setLevel('DEBUG')
+  result = stalledJobAgent._failSubmittingJobs()
 
-    result = stalledJobAgent._failSubmittingJobs()
+  assert result['OK']
 
-    assert result['OK']
 
-  def test__failCompletedJobs(self, mocker):
-    """ Testing StalledJobAgent()._failCompletedJobs()
-    """
+def test__failCompletedJobs(mocker):
+  """ Testing StalledJobAgent()._failCompletedJobs()
+  """
 
-    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule.__init__")
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule.__init__")
 
-    stalledJobAgent = StalledJobAgent()
-    stalledJobAgent.jobDB = JobDB()
-    stalledJobAgent.log = gLogger
-    stalledJobAgent.log.setLevel('DEBUG')
+  stalledJobAgent = StalledJobAgent()
+  stalledJobAgent.jobDB = JobDB()
+  stalledJobAgent.log = gLogger
+  stalledJobAgent.log.setLevel('DEBUG')
 
-    result = stalledJobAgent._failCompletedJobs()
+  result = stalledJobAgent._failCompletedJobs()
 
-    assert result['OK']
+  assert result['OK']
 
-  def test__kickStuckJobs(self, mocker):
-    """ Testing StalledJobAgent()._kickStuckJobs()
-    """
 
-    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule.__init__")
+def test__kickStuckJobs(mocker):
+  """ Testing StalledJobAgent()._kickStuckJobs()
+  """
 
-    stalledJobAgent = StalledJobAgent()
-    stalledJobAgent.jobDB = JobDB()
-    stalledJobAgent.log = gLogger
-    stalledJobAgent.log.setLevel('DEBUG')
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule.__init__")
 
-    result = stalledJobAgent._kickStuckJobs()
+  stalledJobAgent = StalledJobAgent()
+  stalledJobAgent.jobDB = JobDB()
+  stalledJobAgent.log = gLogger
+  stalledJobAgent.log.setLevel('DEBUG')
 
-    assert result['OK']
+  result = stalledJobAgent._kickStuckJobs()
 
-  def test__failStalledJobs(self, mocker):
-    """ Testing StalledJobAgent()._failStalledJobs()
-    """
+  assert result['OK']
 
-    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule.__init__")
 
-    stalledJobAgent = StalledJobAgent()
-    stalledJobAgent.jobDB = JobDB()
-    stalledJobAgent.log = gLogger
-    stalledJobAgent.log.setLevel('DEBUG')
+def test__failStalledJobs(mocker):
+  """ Testing StalledJobAgent()._failStalledJobs()
+  """
 
-    result = stalledJobAgent._failStalledJobs(0)
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule.__init__")
 
-    assert result['OK']
-    assert result['Value'] == 0
+  stalledJobAgent = StalledJobAgent()
+  stalledJobAgent.jobDB = JobDB()
+  stalledJobAgent.log = gLogger
+  stalledJobAgent.log.setLevel('DEBUG')
 
-  def test__markStalledJobs(self, mocker):
-    """ Testing StalledJobAgent()._markStalledJobs()
-    """
+  result = stalledJobAgent._failStalledJobs(0)
 
-    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule.__init__")
+  assert result['OK']
+  assert result['Value'] == 0
 
-    stalledJobAgent = StalledJobAgent()
-    stalledJobAgent.jobDB = JobDB()
-    stalledJobAgent.log = gLogger
-    stalledJobAgent.log.setLevel('DEBUG')
 
-    result = stalledJobAgent._markStalledJobs(0)
+def test__markStalledJobs(mocker):
+  """ Testing StalledJobAgent()._markStalledJobs()
+  """
 
-    assert result['OK']
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule.__init__")
+
+  stalledJobAgent = StalledJobAgent()
+  stalledJobAgent.jobDB = JobDB()
+  stalledJobAgent.log = gLogger
+  stalledJobAgent.log.setLevel('DEBUG')
+
+  result = stalledJobAgent._markStalledJobs(0)
+
+  assert result['OK']

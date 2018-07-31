@@ -2,6 +2,7 @@
 """
 
 # imports
+import pytest
 from mock import MagicMock
 
 # DIRAC Components
@@ -9,39 +10,62 @@ from DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent import PilotStatusAge
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC import gLogger
 
+# Mock objects
+mockReply = MagicMock()
+
 gLogger.setLevel('DEBUG')
 
 
-class TestPilotStatusAgent(object):
-  """ Testing the single methods of PilotStatusAgent
+def test_clearWaitingPilots(mocker):
+  """ Testing PilotStatusAgent().clearWaitingPilots()
   """
 
-  def test_clearWaitingPilots(self, mocker):
-    """ Testing PilotStatusAgent().clearWaitingPilots()
-    """
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent.AgentModule.__init__")
 
-    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule.__init__")
+  pilotStatusAgent = PilotStatusAgent()
+  pilotStatusAgent.pilotDB = PilotAgentsDB()
 
-    pilotStatusAgent = PilotStatusAgent()
-    pilotStatusAgent.pilotDB = PilotAgentsDB()
+  condDict = {'OwnerDN': '', 'OwnerGroup': '', 'GridType': '', 'Broker': ''}
 
-    condDict = {'OwnerDN': '', 'OwnerGroup': '', 'GridType': '', 'Broker': ''}
+  result = pilotStatusAgent.clearWaitingPilots(condDict)
 
-    result = pilotStatusAgent.clearWaitingPilots(condDict)
+  assert result['OK']
 
-    assert result['OK']
 
-  def test_handleOldPilots(self, mocker):
-    """ Testing PilotStatusAgent().handleOldPilots()
-    """
+@pytest.mark.parametrize(
+    "mockReplyInput, expected", [
+        ({
+            'OK': True, 'Value': False}, {
+            'OK': True, 'Value': None}), ({
+                'OK': True, 'Value': ['Test']}, {
+                'OK': False, 'Message': "No pilots found for PilotJobReference(s): ['Test']"}), ({
+                    'OK': False, 'Message': 'Test'}, {
+                    'OK': False, 'Message': 'Test'}), ({
+                        'OK': True, 'Value': []}, {
+                        'OK': True, 'Value': None})])
+def test_handleOldPilots(mocker, mockReplyInput, expected):
+  """ Testing PilotStatusAgent().handleOldPilots()
+  """
 
-    mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule.__init__")
+  mockReply.return_value = mockReplyInput
 
-    pilotStatusAgent = PilotStatusAgent()
-    pilotStatusAgent.pilotDB = PilotAgentsDB()
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent.AgentModule.__init__")
+  module_str = "DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent.PilotAgentsDB.selectPilots"
+  mocker.patch(module_str, side_effect=mockReply)
 
-    condDict = {'OwnerDN': '', 'OwnerGroup': '', 'GridType': '', 'Broker': ''}
+  pilotStatusAgent = PilotStatusAgent()
+  pilotStatusAgent.pilotDB = PilotAgentsDB()
+  pilotStatusAgent.pilotStalledDays = 3
+  pilotStatusAgent.log = gLogger
 
-    result = pilotStatusAgent.clearWaitingPilots(condDict)
+  connection = 'Test'
 
-    assert result['OK']
+  result = pilotStatusAgent.handleOldPilots(connection)
+
+  assert result['OK'] == expected['OK']
+
+  if result['OK']:
+    assert result['Value'] == expected['Value']
+
+  else:
+    assert result['Message'] == expected['Message']

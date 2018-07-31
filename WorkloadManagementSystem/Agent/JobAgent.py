@@ -307,7 +307,7 @@ class JobAgent(AgentModule):
       # Save the job jdl for external monitoring
       self.__saveJobJDLRequest(jobID, jobJDL)
 
-      software = self.__checkInstallSoftware(jobID, params, ceDict)
+      software = self._checkInstallSoftware(jobID, params, ceDict)
       if not software['OK']:
         self.log.error('Failed to install software for job', '%s' % (jobID))
         errorMsg = software['Message']
@@ -344,7 +344,7 @@ class JobAgent(AgentModule):
         self.timeLeftError = result['Message']
       else:
         # if the batch system is not defined, use the process time and the CPU normalization defined locally
-        self.timeLeft = self.__getCPUTimeLeft()
+        self.timeLeft = self._getCPUTimeLeft()
 
     return S_OK('Job Agent cycle complete')
 
@@ -361,7 +361,7 @@ class JobAgent(AgentModule):
     jdlFile.close()
 
   #############################################################################
-  def __getCPUTimeLeft(self):
+  def _getCPUTimeLeft(self):
     """Return the TimeLeft as estimated by DIRAC using the Normalization Factor in the Local Config.
     """
     cpuTime = sum(os.times()[:-1])
@@ -377,7 +377,7 @@ class JobAgent(AgentModule):
     Retrieve a proxy for the execution of the job
     """
     if gConfig.getValue('/DIRAC/Security/UseServerCertificate', False):
-      proxyResult = self.__requestProxyFromProxyManager(ownerDN, ownerGroup)
+      proxyResult = self._requestProxyFromProxyManager(ownerDN, ownerGroup)
       if not proxyResult['OK']:
         self.log.error('Failed to setup proxy', proxyResult['Message'])
         return S_ERROR('Failed to setup proxy: %s' % proxyResult['Message'])
@@ -397,7 +397,7 @@ class JobAgent(AgentModule):
 
       groupProps = ret['Value']['groupProperties']
       if Properties.GENERIC_PILOT in groupProps or Properties.PILOT in groupProps:
-        proxyResult = self.__requestProxyFromProxyManager(ownerDN, ownerGroup)
+        proxyResult = self._requestProxyFromProxyManager(ownerDN, ownerGroup)
         if not proxyResult['OK']:
           self.log.error('Invalid Proxy', proxyResult['Message'])
           return S_ERROR('Failed to setup proxy: %s' % proxyResult['Message'])
@@ -406,7 +406,7 @@ class JobAgent(AgentModule):
     return S_OK(proxyChain)
 
   #############################################################################
-  def __requestProxyFromProxyManager(self, ownerDN, ownerGroup):
+  def _requestProxyFromProxyManager(self, ownerDN, ownerGroup):
     """Retrieves user proxy with correct role for job and sets up environment to
        run job locally.
     """
@@ -429,7 +429,7 @@ class JobAgent(AgentModule):
     return S_OK(chain)
 
   #############################################################################
-  def __checkInstallSoftware(self, jobID, jobParams, resourceParams):
+  def _checkInstallSoftware(self, jobID, jobParams, resourceParams):
     """Checks software requirement of job and whether this is already present
        before installing software locally.
     """
