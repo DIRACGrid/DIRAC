@@ -103,7 +103,7 @@ def formatProxyInfoAsString(infoDict):
     else:
       dispField = field[1]
       field = field[0]
-    if not field in infoDict:
+    if field not in infoDict:
       continue
     if field == 'secondsLeft':
       secs = infoDict[field]
