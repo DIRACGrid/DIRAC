@@ -407,7 +407,7 @@ class X509Chain(object):
         if ext.get_sn() == "proxyCertInfo":
           contraint = [line.split(":")[1].strip() for line in ext.get_value().split("\n")
                        if line.split(":")[0] == "Path Length Constraint"]
-          if not contraint:
+          if len(contraint) == 0:
             return 0
           if contraint[0] == LIMITED_PROXY_OID:
             limited = True
@@ -437,13 +437,14 @@ class X509Chain(object):
       return S_ERROR(DErrno.EX509, "Chain does not contain a valid proxy")
     if self.isPUSP()['Value']:
       return self.getCertInChain(self.__firstProxyStep - 2)['Value'].getDIRACGroup(ignoreDefault=ignoreDefault)
-    # The code below will find the first match of the DIRAC group
-    for i in range(len(self.__certList) - 1, -1, -1):
-      retVal = self.getCertInChain(i)['Value'].getDIRACGroup(ignoreDefault=True)
-      if retVal['OK'] and 'Value' in retVal and retVal['Value']:
-        return retVal
-    # No DIRAC group found, try to get the default one
-    return self.getCertInChain(self.__firstProxyStep)['Value'].getDIRACGroup(ignoreDefault=ignoreDefault)
+    else:
+      # The code below will find the first match of the DIRAC group
+      for i in range(len(self.__certList) - 1, -1, -1):
+        retVal = self.getCertInChain(i)['Value'].getDIRACGroup(ignoreDefault=True)
+        if retVal['OK'] and 'Value' in retVal and retVal['Value']:
+          return retVal
+      # No DIRAC group found, try to get the default one
+      return self.getCertInChain(self.__firstProxyStep)['Value'].getDIRACGroup(ignoreDefault=ignoreDefault)
 
   def hasExpired(self):
     """
