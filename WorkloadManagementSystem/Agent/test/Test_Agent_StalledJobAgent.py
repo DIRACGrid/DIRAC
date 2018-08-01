@@ -1,10 +1,17 @@
 """ Test class for Stalled Job Agent
 """
 
+# imports
+from mock import MagicMock
+
 # DIRAC Components
 from DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent import StalledJobAgent
-from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC import gLogger
+
+# Mock Objects
+mockAM = MagicMock()
+mockNone = MagicMock()
+mockNone.return_value = None
 
 gLogger.setLevel('DEBUG')
 
@@ -14,15 +21,20 @@ def test__failSubmittingJobs(mocker):
   """
 
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule.__init__")
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule.am_getOption", side_effect=mockAM)
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.JobDB.__init__", side_effect=mockNone)
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.JobLoggingDB.__init__", side_effect=mockNone)
 
   stalledJobAgent = StalledJobAgent()
-  stalledJobAgent.jobDB = JobDB()
+  stalledJobAgent._AgentModule__configDefaults = mockAM
+  stalledJobAgent.initialize()
+  stalledJobAgent.jobDB.log = gLogger
   stalledJobAgent.log = gLogger
   stalledJobAgent.log.setLevel('DEBUG')
 
   result = stalledJobAgent._failSubmittingJobs()
 
-  assert result['OK']
+  assert not result['OK']
 
 
 def test__failCompletedJobs(mocker):
@@ -30,15 +42,20 @@ def test__failCompletedJobs(mocker):
   """
 
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule.__init__")
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule.am_getOption", side_effect=mockAM)
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.JobDB.__init__", side_effect=mockNone)
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.JobLoggingDB.__init__", side_effect=mockNone)
 
   stalledJobAgent = StalledJobAgent()
-  stalledJobAgent.jobDB = JobDB()
+  stalledJobAgent._AgentModule__configDefaults = mockAM
+  stalledJobAgent.initialize()
+  stalledJobAgent.jobDB.log = gLogger
   stalledJobAgent.log = gLogger
   stalledJobAgent.log.setLevel('DEBUG')
 
   result = stalledJobAgent._failCompletedJobs()
 
-  assert result['OK']
+  assert not result['OK']
 
 
 def test__kickStuckJobs(mocker):
@@ -46,15 +63,20 @@ def test__kickStuckJobs(mocker):
   """
 
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule.__init__")
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule.am_getOption", side_effect=mockAM)
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.JobDB.__init__", side_effect=mockNone)
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.JobLoggingDB.__init__", side_effect=mockNone)
 
   stalledJobAgent = StalledJobAgent()
-  stalledJobAgent.jobDB = JobDB()
+  stalledJobAgent._AgentModule__configDefaults = mockAM
+  stalledJobAgent.initialize()
+  stalledJobAgent.jobDB.log = gLogger
   stalledJobAgent.log = gLogger
   stalledJobAgent.log.setLevel('DEBUG')
 
   result = stalledJobAgent._kickStuckJobs()
 
-  assert result['OK']
+  assert not result['OK']
 
 
 def test__failStalledJobs(mocker):
@@ -62,16 +84,20 @@ def test__failStalledJobs(mocker):
   """
 
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule.__init__")
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule.am_getOption", side_effect=mockAM)
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.JobDB.__init__", side_effect=mockNone)
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.JobLoggingDB.__init__", side_effect=mockNone)
 
   stalledJobAgent = StalledJobAgent()
-  stalledJobAgent.jobDB = JobDB()
+  stalledJobAgent._AgentModule__configDefaults = mockAM
+  stalledJobAgent.initialize()
+  stalledJobAgent.jobDB.log = gLogger
   stalledJobAgent.log = gLogger
   stalledJobAgent.log.setLevel('DEBUG')
 
   result = stalledJobAgent._failStalledJobs(0)
 
-  assert result['OK']
-  assert result['Value'] == 0
+  assert not result['OK']
 
 
 def test__markStalledJobs(mocker):
@@ -79,12 +105,17 @@ def test__markStalledJobs(mocker):
   """
 
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule.__init__")
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule.am_getOption", side_effect=mockAM)
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.JobDB.__init__", side_effect=mockNone)
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.JobLoggingDB.__init__", side_effect=mockNone)
 
   stalledJobAgent = StalledJobAgent()
-  stalledJobAgent.jobDB = JobDB()
+  stalledJobAgent._AgentModule__configDefaults = mockAM
+  stalledJobAgent.initialize()
+  stalledJobAgent.jobDB.log = gLogger
   stalledJobAgent.log = gLogger
   stalledJobAgent.log.setLevel('DEBUG')
 
   result = stalledJobAgent._markStalledJobs(0)
 
-  assert result['OK']
+  assert not result['OK']

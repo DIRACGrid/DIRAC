@@ -7,11 +7,15 @@ from mock import MagicMock
 
 # DIRAC Components
 from DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent import PilotStatusAgent
-from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC import gLogger
 
 # Mock objects
 mockReply = MagicMock()
+mockAM = MagicMock()
+mockNone = MagicMock()
+mockNone.return_value = None
+mockOK = MagicMock()
+mockOK.return_value = {'OK': False}
 
 gLogger.setLevel('DEBUG')
 
@@ -21,15 +25,25 @@ def test_clearWaitingPilots(mocker):
   """
 
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent.AgentModule.__init__")
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent.AgentModule.am_getOption", side_effect=mockAM)
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent.PilotAgentsDB.__init__", side_effect=mockNone)
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent.JobDB.__init__", side_effect=mockNone)
+  module_str = "DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent.PilotAgentsDB.buildCondition"
+  mocker.patch(module_str, side_effect=mockNone)
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent.PilotAgentsDB._query", side_effect=mockOK)
 
   pilotStatusAgent = PilotStatusAgent()
-  pilotStatusAgent.pilotDB = PilotAgentsDB()
+  pilotStatusAgent._AgentModule__configDefaults = mockAM
+  pilotStatusAgent.initialize()
+  pilotStatusAgent.log = gLogger
+  pilotStatusAgent.pilotDB.log = gLogger
+  pilotStatusAgent.pilotDB.logger = gLogger
 
   condDict = {'OwnerDN': '', 'OwnerGroup': '', 'GridType': '', 'Broker': ''}
 
   result = pilotStatusAgent.clearWaitingPilots(condDict)
 
-  assert result['OK']
+  assert not result['OK']
 
 
 @pytest.mark.parametrize(
@@ -50,13 +64,19 @@ def test_handleOldPilots(mocker, mockReplyInput, expected):
   mockReply.return_value = mockReplyInput
 
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent.AgentModule.__init__")
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent.AgentModule.am_getOption", side_effect=mockAM)
   module_str = "DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent.PilotAgentsDB.selectPilots"
   mocker.patch(module_str, side_effect=mockReply)
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent.PilotAgentsDB.__init__", side_effect=mockNone)
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent.JobDB.__init__", side_effect=mockNone)
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.PilotStatusAgent.PilotAgentsDB._query", side_effect=mockOK)
 
   pilotStatusAgent = PilotStatusAgent()
-  pilotStatusAgent.pilotDB = PilotAgentsDB()
+  pilotStatusAgent._AgentModule__configDefaults = mockAM
+  pilotStatusAgent.initialize()
   pilotStatusAgent.pilotStalledDays = 3
   pilotStatusAgent.log = gLogger
+  pilotStatusAgent.pilotDB.logger = gLogger
 
   connection = 'Test'
 
@@ -68,4 +88,5 @@ def test_handleOldPilots(mocker, mockReplyInput, expected):
     assert result['Value'] == expected['Value']
 
   else:
-    assert result['Message'] == expected['Message']
+    if 'Message' in result:
+      assert result['Message'] == expected['Message']
