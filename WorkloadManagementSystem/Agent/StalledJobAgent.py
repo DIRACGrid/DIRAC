@@ -6,6 +6,8 @@ state not receiving a heart beat signal for more than stalledTime
 seconds will be assigned the "Stalled" state.
 """
 
+from __future__ import absolute_import
+import six
 __RCSID__ = "$Id$"
 
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
@@ -457,7 +459,7 @@ used to fail jobs due to the optimizer chain.
       if not startTime or startTime == 'None':
         startTime = jobDict['SubmissionTime']
 
-    if isinstance(startTime, basestring):
+    if isinstance(startTime, six.string_types):
       startTime = fromString(startTime)
       if startTime is None:
         self.log.error('Wrong timestamp in DB', items[3])

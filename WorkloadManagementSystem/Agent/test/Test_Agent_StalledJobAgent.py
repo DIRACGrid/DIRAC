@@ -2,6 +2,7 @@
 """
 
 # imports
+from __future__ import absolute_import
 from mock import MagicMock
 
 # DIRAC Components

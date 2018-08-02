@@ -5,6 +5,8 @@
   and the current resource status that is used for matching.
 """
 
+from __future__ import absolute_import
+from __future__ import print_function
 import os
 import sys
 import re
@@ -390,8 +392,8 @@ class JobAgent(AgentModule):
 
       proxyChain = ret['Value']['chain']
       if 'groupProperties' not in ret['Value']:
-        print ret['Value']
-        print proxyChain.dumpAllToString()
+        print(ret['Value'])
+        print(proxyChain.dumpAllToString())
         self.log.error('Invalid Proxy', 'Group has no properties defined')
         return S_ERROR('Proxy has no group properties defined')
 
