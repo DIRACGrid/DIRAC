@@ -56,6 +56,8 @@ class JobPolicy( object ):
       if 'UserGroup' == groupingField:
         condDict[ 'User' ] = credDict[ 'username' ]
         condDict[ 'UserGroup' ] = credDict[ 'group' ]
+      else:
+        condDict['User'] = credDict['username']
     else:
       if 'User' in condDict:
         del( condDict[ 'User' ] )
