@@ -91,7 +91,7 @@ class VOMS2CSSynchronizer(object):
 
     allDiracUsers = getAllUsers()
     nonVOUserDict = {}
-    nonVOUsers = list(set(allDiracUsers) - set(diracUserDict.keys()))
+    nonVOUsers = list(set(allDiracUsers) - set(diracUserDict))
     if nonVOUsers:
       result = self.csapi.describeUsers(nonVOUsers)
       if not result['OK']:
@@ -179,7 +179,7 @@ class VOMS2CSSynchronizer(object):
         userDict['DN'] = ','.join([dn, diracUserDict.get(diracName, newAddedUserDict.get(diracName))['DN']])
         modified = True
       existingGroups = diracUserDict.get(diracName, {}).get('Groups', [])
-      nonVOGroups = list(set(existingGroups) - set(diracVOMSMapping.keys()))
+      nonVOGroups = list(set(existingGroups) - set(diracVOMSMapping))
       groupsWithRole = []
       for role in self.vomsUserDict[dn]['Roles']:
         groupList = vomsDIRACMapping.get(role, [])
@@ -241,7 +241,7 @@ class VOMS2CSSynchronizer(object):
     oldUsers = set()
     for user in diracUserDict:
       dnSet = set(fromChar(diracUserDict[user]['DN']))
-      if not dnSet.intersection(set(self.vomsUserDict.keys())) and user not in nonVOUserDict:
+      if not dnSet.intersection(set(self.vomsUserDict)) and user not in nonVOUserDict:
         for group in diracUserDict[user]['Groups']:
           if group not in noVOMSGroups:
             oldUsers.add(user)
