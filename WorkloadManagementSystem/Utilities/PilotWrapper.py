@@ -76,6 +76,12 @@ os.environ[\"%(name)s\"]=\"%(value)s\"
 
   mString = mString + envVariablesString
 
+  # add X509_USER_PROXY to etablish pilot env in Cluster WNs
+  if 'proxy' in pilotFilesCompressedEncodedDict:
+    mString += """
+os.environ['X509_USER_PROXY'] = os.path.join(pilotWorkingDirectory, 'proxy')
+"""
+
   localPilot = """#!/bin/bash
 /usr/bin/env python << EOF
 
@@ -121,9 +127,6 @@ logger.info("Launching dirac-pilot script from %%s" %%os.getcwd())
 # unpacking lines
 logger.info("But first unpacking pilot files")
 %(mString)s
-
-# add X509_USER_PROXY to etablish pilot env in Cluster WNs
-os.environ["X509_USER_PROXY"] = os.path.join(pilotWorkingDirectory, 'proxy')
 
 # now finally launching the pilot script (which should be called dirac-pilot.py)
 cmd = "python dirac-pilot.py %(pilotOptions)s"
