@@ -448,20 +448,60 @@ def prettyPrint(mainItem, key='', offset=0):
                  .replace('(\n%s[' % blanks, '[').replace(']\n%s)' % blanks, ']')
 
 
-def printRequest(request, status=None, full=False, verbose=True, terse=False):
-  global output
+def printFTSJobs(request):
+  """ Prints the FTSJobs associated to a request
 
-  ftsClient = None
+      :param request: Request object
+  """
+
   try:
     if request.RequestID:
+
+      # We try first the new FTS3 system
+
+      from DIRAC.DataManagementSystem.Client.FTS3Client import FTS3Client
+      fts3Client = FTS3Client()
+      res = fts3Client.ping()
+
+      if res['OK']:
+        associatedFTS3Jobs = []
+        for op in request:
+          res = fts3Client.getOperationsFromRMSOpID(op.OperationID)
+          if res['OK']:
+            for fts3Op in res['Value']:
+              associatedFTS3Jobs.extend(fts3Op.ftsJobs)
+        if associatedFTS3Jobs:
+          gLogger.always(
+              '\n\nFTS3 jobs associated: \n%s' %
+              '\n'.join(
+                  '%s@%s (%s)' %
+                  (job.ftsGUID,
+                   job.ftsServer,
+                   job.status) for job in associatedFTS3Jobs))
+        return
+
+      # If we are here, the attempt with the new FTS3 system did not work, let's try the old FTS system
+      gLogger.debug("Could not instantiate FTS3Client", res)
       from DIRAC.DataManagementSystem.Client.FTSClient import FTSClient
       ftsClient = FTSClient()
       res = ftsClient.ping()
       if not res['OK']:
         gLogger.debug("Could not instantiate FtsClient", res)
-        ftsClient = None
+        return
+
+      res = ftsClient.getFTSJobsForRequest(request.RequestID)
+      if res['OK']:
+        ftsJobs = res['Value']
+        if ftsJobs:
+          gLogger.always('         FTS jobs associated: %s' % ','.join('%s (%s)' % (job.FTSGUID, job.Status)
+                                                                       for job in ftsJobs))
+
   except ImportError as err:
     gLogger.debug("Could not instantiate FtsClient because of Exception", repr(err))
+
+
+def printRequest(request, status=None, full=False, verbose=True, terse=False):
+  global output
 
   if full:
     output = ''
@@ -486,14 +526,7 @@ def printRequest(request, status=None, full=False, verbose=True, terse=False):
       if not terse or op.Status == 'Failed':
         printOperation(indexOperation, verbose, onlyFailed=terse)
 
-  if ftsClient:
-    # Check if FTS job exists
-    res = ftsClient.getFTSJobsForRequest(request.RequestID)
-    if res['OK']:
-      ftsJobs = res['Value']
-      if ftsJobs:
-        gLogger.always('         FTS jobs associated: %s' % ','.join('%s (%s)' % (job.FTSGUID, job.Status)
-                                                                     for job in ftsJobs))
+  printFTSJobs(request)
 
 
 def printOperation(indexOperation, verbose=True, onlyFailed=False):
