@@ -107,12 +107,10 @@ class CSAPI( object ):
       return self.__initialized
     if not group:
       return S_OK( self.__csMod.getSections( "%s/Users" % self.__baseSecurity ) )
-    else:
-      users = self.__csMod.getValue( "%s/Groups/%s/Users" % ( self.__baseSecurity, group ) )
-      if not users:
-        return S_OK( [] )
-      else:
-        return S_OK( List.fromChar( users ) )
+    users = self.__csMod.getValue( "%s/Groups/%s/Users" % ( self.__baseSecurity, group ) )
+    if not users:
+      return S_OK( [] )
+    return S_OK( List.fromChar( users ) )
 
   def listHosts( self ):
     if not self.__initialized[ 'OK' ]:
@@ -120,7 +118,13 @@ class CSAPI( object ):
     return S_OK( self.__csMod.getSections( "%s/Hosts" % self.__baseSecurity ) )
 
   def describeUsers( self, users = None ):
-    if users is None: users = []
+    """ describe users by nickname
+
+	:param list users: list of users' nickanames
+	:return: a S_OK(description) of the users in input
+    """
+    if users is None:
+      users = []
     if not self.__initialized[ 'OK' ]:
       return self.__initialized
     return S_OK( self.__describeEntity( users ) )
