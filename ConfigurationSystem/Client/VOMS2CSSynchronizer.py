@@ -101,6 +101,11 @@ class VOMS2CSSynchronizer(object):
 
     # Process users
     defaultVOGroup = getVOOption(self.vo, "DefaultGroup", "%s_user" % self.vo)
+    # If a user is (previously put by hand) in an alternative default VO group,
+    # then the default group will be ignored.
+    # So, this option is only considered for the case of existing users.
+    alternativeDefaultVOGroup = getVOOption(self.vo, "AlternativeDefaultGroup")
+
     newAddedUserDict = {}
     for dn in self.vomsUserDict:
       newDNForExistingUser = ''
@@ -181,7 +186,9 @@ class VOMS2CSSynchronizer(object):
         for group in groupList:
           if group not in noSyncVOMSGroups:
             groupsWithRole.append(group)
-      keepGroups = nonVOGroups + groupsWithRole + [defaultVOGroup]
+      keepGroups = nonVOGroups + groupsWithRole
+      if not alternativeDefaultVOGroup or alternativeDefaultVOGroup not in existingGroups:
+        keepGroups += [defaultVOGroup]
       for group in existingGroups:
         if group in nonVOGroups:
           continue
