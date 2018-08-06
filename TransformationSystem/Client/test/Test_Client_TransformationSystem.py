@@ -7,22 +7,10 @@ import unittest
 import json
 import mock
 
-from DIRAC import gLogger, S_OK
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.TransformationSystem.Client.TaskManager import TaskBase, WorkflowTasks, RequestTasks
 from DIRAC.TransformationSystem.Client.Transformation import Transformation
 from DIRAC.TransformationSystem.Client.Utilities import PluginUtilities
-
-#############################################################################
-
-
-def ourgetSitesForSE(ses):
-  if ses == ['pippo'] or ses == 'pippo':
-    return S_OK(['Site1'])
-  elif ses == ['pluto'] or ses == 'pluto':
-    return S_OK(['Site2'])
-  elif ses == ['pippo', 'pluto'] or ses == 'pippo,pluto':
-    return S_OK(['Site1', 'Site2'])
 
 
 class reqValFake_C(object):
@@ -45,9 +33,6 @@ reqValFake = reqValFake_C()
 class ClientsTestCase(unittest.TestCase):
   """ Base class for the clients test cases
   """
-
-  # @mock.patch( 'DIRAC.TransformationSystem.Client.TaskManagerPlugin.getSitesForSE', side_effect = ourgetSitesForSE )
-  # def setUp( self, _ ):
 
   def setUp(self):
     self.mockTransClient = mock.MagicMock()
@@ -86,12 +71,8 @@ class ClientsTestCase(unittest.TestCase):
 
     self.maxDiff = None
 
-    gLogger.setLevel('DEBUG')
-
   def tearDown(self):
     pass
-
-#############################################################################
 
 
 class TaskBaseSuccess(ClientsTestCase):
@@ -100,7 +81,6 @@ class TaskBaseSuccess(ClientsTestCase):
     res = self.taskBase.updateDBAfterTaskSubmission({})
     self.assertEqual(res['OK'], True)
 
-#############################################################################
 
 class PluginUtilitiesSuccess(ClientsTestCase):
 
@@ -125,76 +105,10 @@ class PluginUtilitiesSuccess(ClientsTestCase):
                                    '/this/is/at.134': ['SE1', 'SE3', 'SE4']},
                                   'Flush')
     self.assertTrue(res['OK'])
-    print res['Value']
     self.assertEqual(res['Value'], [
                      ('SE1,SE2', ['/this/is/at.12']),
                      ('SE1,SE2,SE3', ['/this/is/at.123']),
                      ('SE1,SE3,SE4', ['/this/is/at.134'])])
-
-#############################################################################
-
-
-class WorkflowTasksSuccess(ClientsTestCase):
-
-  def test_prepareTranformationTasks(self):
-    taskDict = {1: {'TransformationID': 1, 'a1': 'aa1', 'b1': 'bb1', 'Site': 'MySite'},
-                2: {'TransformationID': 1, 'a2': 'aa2', 'b2': 'bb2', 'InputData': ['a1', 'a2']},
-                3: {'TransformationID': 2, 'a3': 'aa3', 'b3': 'bb3'}, }
-
-    res = self.wfTasks.prepareTransformationTasks(
-        '', taskDict, 'test_user', 'test_group', 'test_DN')
-    self.assertTrue(res['OK'])
-    self.assertEqual(res, {'OK': True,
-                           'Value': {1: {'a1': 'aa1', 'TaskObject': '', 'TransformationID': 1,
-                                         'b1': 'bb1', 'Site': 'ANY', 'JobType': 'User'},
-                                     2: {'TaskObject': '', 'a2': 'aa2', 'TransformationID': 1,
-                                         'InputData': ['a1', 'a2'], 'b2': 'bb2', 'Site': 'ANY', 'JobType': 'User'},
-                                     3: {'TaskObject': '', 'a3': 'aa3', 'TransformationID': 2,
-                                         'b3': 'bb3', 'Site': 'ANY', 'JobType': 'User'}
-                                     }
-                           }
-                     )
-
-    taskDict = {1: {'TransformationID': 1, 'a1': 'aa1', 'b1': 'bb1', 'Site': 'MySite'},
-                2: {'TransformationID': 1, 'a2': 'aa2', 'b2': 'bb2', 'InputData': ['a1', 'a2']},
-                3: {'TransformationID': 2, 'a3': 'aa3', 'b3': 'bb3'}, }
-
-    res = self.wfTasks.prepareTransformationTasks('', dict(
-        taskDict), 'test_user', 'test_group', 'test_DN', bulkSubmissionFlag=True)
-    self.assertTrue(res['OK'])
-    self.assertEqual(res['Value'][1],
-                     {'a1': 'aa1', 'TransformationID': 1, 'b1': 'bb1', 'Site': 'MySite'})
-    self.assertEqual(res['Value'][2],
-                     {'a2': 'aa2', 'TransformationID': 1, 'b2': 'bb2', 'InputData': ['a1', 'a2']})
-    self.assertEqual(res['Value'][3],
-                     {'TransformationID': 2, 'a3': 'aa3', 'b3': 'bb3'})
-    self.assertTrue('BulkJobObject' in res['Value'])
-
-  @mock.patch('DIRAC.TransformationSystem.Client.TaskManagerPlugin.getSitesForSE', side_effect=ourgetSitesForSE)
-  def test__handleDestination(self, _):
-
-    res = self.wfTasks._handleDestination({'Site': '', 'TargetSE': ''})
-    self.assertEqual(res, ['ANY'])
-    res = self.wfTasks._handleDestination({'Site': 'ANY', 'TargetSE': ''})
-    self.assertEqual(res, ['ANY'])
-    res = self.wfTasks._handleDestination({'TargetSE': 'Unknown'})
-    self.assertEqual(res, ['ANY'])
-    res = self.wfTasks._handleDestination({'Site': 'Site2', 'TargetSE': ''})
-    self.assertEqual(res, ['Site2'])
-    res = self.wfTasks._handleDestination({'Site': 'Site1;Site2', 'TargetSE': 'pippo'})
-    self.assertEqual(res, ['Site1'])
-    res = self.wfTasks._handleDestination({'Site': 'Site1;Site2', 'TargetSE': 'pippo,pluto'})
-    self.assertEqual(sorted(res), sorted(['Site1', 'Site2']))
-    res = self.wfTasks._handleDestination({'Site': 'Site1;Site2;Site3', 'TargetSE': 'pippo,pluto'})
-    self.assertEqual(sorted(res), sorted(['Site1', 'Site2']))
-    res = self.wfTasks._handleDestination({'Site': 'Site2', 'TargetSE': 'pippo,pluto'})
-    self.assertEqual(sorted(res), sorted(['Site2']))
-    res = self.wfTasks._handleDestination({'Site': 'ANY', 'TargetSE': 'pippo,pluto'})
-    self.assertEqual(sorted(res), sorted(['Site1', 'Site2']))
-    res = self.wfTasks._handleDestination({'Site': 'Site1', 'TargetSE': 'pluto'})
-    self.assertEqual(res, [])
-
-#############################################################################
 
 
 class RequestTasksSuccess(ClientsTestCase):
@@ -392,7 +306,6 @@ class TransformationSuccess(ClientsTestCase):
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(ClientsTestCase)
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TaskBaseSuccess))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(WorkflowTasksSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PluginUtilitiesSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(RequestTasksSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TransformationSuccess))
