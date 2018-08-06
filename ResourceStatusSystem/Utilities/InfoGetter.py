@@ -61,32 +61,19 @@ def getPoliciesThatApply(decisionParams):
 
     # FIXME: make sure the values in the policyConfigParams dictionary are typed !!
     policyConfigParams = {}
-<<<<<<< HEAD
-    policyMatch = Utils.configMatch(decisionParams, policyMatchParams)
-    gLogger.debug("PolicyMatch for decisionParams %s: %s" % (decisionParams, str(policyMatch)))
-=======
     # policyConfigParams = policySetup.get( 'configParams', {} )
     policyMatch = Utils.configMatch(decisionParams, policyMatchParams)
     gLogger.debug("PolicyMatch for decisionParams %s: %s" % (decisionParams, str(policyMatch)))
-    policyFilter = _filterPolicies(decisionParams, policyMatchParams)
->>>>>>> 2aa90be1f58d10a453d0aac1af1caf3f890b1342
 
     # WARNING: we need an additional filtering function when the matching
     # is not straightforward (e.g. when the policy specify a 'domain', while
     # the decisionParams has only the name of the element)
-<<<<<<< HEAD
     if policyMatch and _filterPolicies(decisionParams, policyMatchParams):
       policiesThatApply.append((policyName, policyType, policyConfigParams))
 
   gLogger.debug("policies that apply (before post-processing): %s" % str(policiesThatApply))
   policiesThatApply = postProcessingPolicyList(policiesThatApply)
   gLogger.debug("policies that apply (after post-processing): %s" % str(policiesThatApply))
-=======
-    if policyMatch and policyFilter:
-      policiesThatApply.append((policyName, policyType, policyConfigParams))
-
-  gLogger.debug("policies that apply: %s" % str(policiesThatApply))
->>>>>>> 2aa90be1f58d10a453d0aac1af1caf3f890b1342
 
   policiesToBeLoaded = []
   # Gets policies parameters from code.
@@ -103,12 +90,7 @@ def getPoliciesThatApply(decisionParams):
     # and future usage.
     policyDict = {'name': policyName,
                   'type': policyType,
-<<<<<<< HEAD
                   'args': {}}
-=======
-                  'args': {}
-                  }
->>>>>>> 2aa90be1f58d10a453d0aac1af1caf3f890b1342
 
     # args is one of the parameters we are going to use on the policies. We copy
     # the defaults and then we update if with whatever comes from the CS.
@@ -183,17 +165,10 @@ def getPolicyActionsThatApply(decisionParams, singlePolicyResults, policyCombine
     # policyActionsThatApply.append( policyActionName )
     # They may not be necessarily the same
     policyActionsThatApply.append((policyActionName, policyActionType))
-<<<<<<< HEAD
 
   return S_OK(policyActionsThatApply)
 
 
-=======
-
-  return S_OK(policyActionsThatApply)
-
-
->>>>>>> 2aa90be1f58d10a453d0aac1af1caf3f890b1342
 def _sanitizedecisionParams(decisionParams):
   """ Function that filters the input parameters. If the input parameter keys
       are no present on the "params" tuple, are not taken into account.
@@ -264,7 +239,6 @@ def _filterPolicies(decisionParams, policyMatchParams):
   """
     Method that checks if the given policy doesn't meet certain conditions
   """
-<<<<<<< HEAD
   elementType = decisionParams.get('elementType')
   name = decisionParams.get('name')
 
@@ -279,27 +253,6 @@ def _filterPolicies(decisionParams, policyMatchParams):
       # to verify that the given CE is in the list of the LCG CEs
       if name not in ces:
         gLogger.info("ComputingElement %s NOT found in domains %s" % (name, domains))
-=======
-  # some policies may apply or not also depending on the VO's domain
-  # 'CEAvailabilityPolicy' can be applied only if the CE is inside LCG
-  if 'elementType' in decisionParams and 'name' in decisionParams:
-    elementType = decisionParams['elementType']
-    name = decisionParams['name']
-    if elementType and elementType.upper() == 'CE' and 'domain' in policyMatchParams:
-      # WARNING: policyMatchParams['domain'] is a list of domains
-      domains = policyMatchParams['domain']
-      result = _getComputingElementsByDomainName(targetDomain=domains)
-      if result['OK']:
-        ces = result['Value']
-        # to verify that the given CE is in the list of the LCG CEs
-        if name not in ces:
-          gLogger.info("ComputingElement %s NOT found in domains %s" % (name, domains))
-          return False
-        else:
-          gLogger.info("ComputingElement %s found in domains %s" % (name, domains))
-      else:
-        gLogger.warn("unable to verify if ComputingElement %s is in domains %s" % (name, domains))
->>>>>>> 2aa90be1f58d10a453d0aac1af1caf3f890b1342
         return False
       else:
         gLogger.info("ComputingElement %s found in domains %s" % (name, domains))
@@ -309,7 +262,6 @@ def _filterPolicies(decisionParams, policyMatchParams):
 
   return True
 
-<<<<<<< HEAD
 
 def postProcessingPolicyList(policiesThatApply):
   """ Put here any "hacky" post-processing
@@ -338,6 +290,3 @@ def postProcessingPolicyList(policiesThatApply):
       pass
 
   return policiesThatApply
-=======
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
->>>>>>> 2aa90be1f58d10a453d0aac1af1caf3f890b1342
