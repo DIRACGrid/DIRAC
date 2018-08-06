@@ -1,4 +1,3 @@
-# $HeadURL:  $
 '''
 :mod: Utils
 
@@ -6,13 +5,13 @@ Module that collects utility functions.
 
 '''
 
+__RCSID__ = '$Id$'
+
 import fnmatch
 
 from DIRAC import gConfig, S_OK
 from DIRAC.Core.Utilities import List
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-
-__RCSID__ = '$Id:  $'
 
 
 def voimport(base_mod):
