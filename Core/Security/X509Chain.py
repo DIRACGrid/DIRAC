@@ -85,14 +85,7 @@ class X509Chain(object):
     self.__checkProxyness()
     return S_OK()
 
-  def __certListFromPemString( self, certString, format=crypto.FILETYPE_PEM ):
-    """
-    Create certificates list from string. String sould contain certificates, just like plain text proxy file.
-    """
-    # To get list of X509 certificates (not X509 Certificate Chain) from string it has to be parsed like that (constructors are not able to deal with big string)
-    return [ X509Certificate( certString = cert[0] ) for cert in re.findall(r"(-----BEGIN CERTIFICATE-----((.|\n)*?)-----END CERTIFICATE-----)", certString) ]
-
-  def setChain( self, certList ):
+  def setChain(self, certList):
     """
     Set the chain
     Return : S_OK / S_ERROR
@@ -240,7 +233,7 @@ class X509Chain(object):
       proxyKey = crypto.PKey()
       proxyKey.generate_key(crypto.TYPE_RSA, strength)
 
-    proxyCert = crypto.X509()
+    proxyCert = X509Certificate()
 
     proxyCert.set_serial_number(str(int(random.random() * 10 ** 10)))
     cloneSubject = issuerCert.get_subject().clone()
