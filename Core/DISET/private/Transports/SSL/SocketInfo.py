@@ -11,13 +11,14 @@ from DIRAC.Core.Utilities.Network import checkHostsMatch
 from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Security import Locations
+import M2Crypto
 if os.getenv('DIRAC_USE_M2CRYPTO', 'NO').lower() in ('yes', 'true'):
   from DIRAC.Core.Security.m2crypto.X509Chain import X509Chain
   from DIRAC.Core.Security.m2crypto.X509Certificate import X509Certificate
   from DIRAC.Core.Security.m2crypto.X509CRL import X509CRL
-  import M2Crypto
 else:
   from DIRAC.Core.Security.X509Chain import X509Chain
+  from DIRAC.Core.Security.X509CRL import X509CRL
 
 DEFAULT_SSL_CIPHERS = "ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:!aNULL:!MD5:!DSS"
 
