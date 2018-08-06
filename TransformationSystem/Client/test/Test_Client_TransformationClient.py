@@ -11,6 +11,7 @@ from DIRAC.TransformationSystem.Client.TransformationClient import Transformatio
 
 tc = TransformationClient()
 
+
 @pytest.mark.parametrize("tsFiles, dictOfNewLFNsStatus, force, expected", [
     ({}, {}, False, {}),
     ({}, {'foo': ['status', 2, 1234]}, False, {}),
@@ -34,7 +35,7 @@ tc = TransformationClient()
      {'foo': 'Unused', 'bar': 'Unused'}, True, {'foo': 'Unused', 'bar': 'Unused'}),
     ({'foo': ['Assigned', 20, 1234], 'bar': ['Processed', 2, 5678]},
      {'foo': 'Unused', 'bar': 'Unused'}, False, {'foo': 'MaxReset'}),
-    ])
+])
 def test__applyTransformationFilesStateMachine(tsFiles, dictOfNewLFNsStatus, force, expected):
   res = tc._applyTransformationFilesStateMachine(tsFiles, dictOfNewLFNsStatus, force)
   assert res == expected

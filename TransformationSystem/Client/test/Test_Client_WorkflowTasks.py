@@ -24,7 +24,7 @@ wfTasks = WorkflowTasks(transClient=mockTransClient,
 			jobMonitoringClient=jobMonitoringClient,
 			outputDataModule="mock")
 odm_o = MagicMock()
-odm_o.execute.return_value = {'OK': True, 'Value':{}}
+odm_o.execute.return_value = {'OK': True, 'Value': {}}
 wfTasks.outputDataModule_o = odm_o
 
 taskDict = {1: {'TransformationID': 1, 'a1': 'aa1', 'b1': 'bb1', 'Site': 'MySite'},
@@ -42,19 +42,20 @@ expected = {'OK': True,
 			  'InputData': ['a1', 'a2'], 'b2': 'bb2', 'Site': 'ANY', 'JobType': 'User'},
 		      3: {'TaskObject': '', 'a3': 'aa3', 'TransformationID': 2,
 			  'b3': 'bb3', 'Site': 'ANY', 'JobType': 'User'}
-		     }
-	   }
+		      }
+	    }
 expectedBulk = {'OK': True,
 		'Value': {'BulkJobObject': '',
 			  1: {'a1': 'aa1', 'TransformationID': 1, 'b1': 'bb1', 'Site': 'MySite'},
 			  2: {'a2': 'aa2', 'TransformationID': 1, 'b2': 'bb2', 'InputData': ['a1', 'a2']},
 			  3: {'TransformationID': 2, 'a3': 'aa3', 'b3': 'bb3'}}}
 
+
 @pytest.mark.parametrize("taskDictionary, bulkSubmissionFlag, result, expectedRes", [
     (taskDict, False, True, expected),
     (taskDict, True, False, expectedBulk),
     (taskDictNoInputs, True, True, expectedBulk),
-    ])
+])
 def test_prepareTranformationTasks(taskDictionary, bulkSubmissionFlag, result, expectedRes):
   res = wfTasks.prepareTransformationTasks('', taskDictionary, 'test_user', 'test_group', 'test_DN',
 					   bulkSubmissionFlag=bulkSubmissionFlag)
@@ -71,14 +72,14 @@ def test_prepareTranformationTasks(taskDictionary, bulkSubmissionFlag, result, e
 	    assert tValue == expectedRes['Value'][key][tKey]
 
 
-
 def ourgetSitesForSE(ses):
   if ses == ['pippo'] or ses == 'pippo':
-    return {'OK':True, 'Value':['Site1']}
+    return {'OK': True, 'Value': ['Site1']}
   elif ses == ['pluto'] or ses == 'pluto':
-    return {'OK':True, 'Value':['Site2']}
+    return {'OK': True, 'Value': ['Site2']}
   elif ses == ['pippo', 'pluto'] or ses == 'pippo,pluto':
-    return {'OK':True, 'Value':['Site1', 'Site2']}
+    return {'OK': True, 'Value': ['Site1', 'Site2']}
+
 
 @pytest.mark.parametrize("paramsDict, expected", [
     ({'Site': '', 'TargetSE': ''}, ['ANY']),
@@ -91,7 +92,7 @@ def ourgetSitesForSE(ses):
     ({'Site': 'Site2', 'TargetSE': 'pippo,pluto'}, ['Site2']),
     ({'Site': 'ANY', 'TargetSE': 'pippo,pluto'}, ['Site1', 'Site2']),
     ({'Site': 'Site1', 'TargetSE': 'pluto'}, [])
-    ])
+])
 def test__handleDestination(mocker, paramsDict, expected):
   mocker.patch('DIRAC.TransformationSystem.Client.TaskManagerPlugin.getSitesForSE', side_effect=ourgetSitesForSE)
   res = wfTasks._handleDestination(paramsDict)

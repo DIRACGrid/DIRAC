@@ -8,7 +8,7 @@ import json
 import mock
 
 from DIRAC.RequestManagementSystem.Client.Request import Request
-from DIRAC.TransformationSystem.Client.TaskManager import TaskBase, WorkflowTasks, RequestTasks
+from DIRAC.TransformationSystem.Client.TaskManager import TaskBase, RequestTasks
 from DIRAC.TransformationSystem.Client.Transformation import Transformation
 from DIRAC.TransformationSystem.Client.Utilities import PluginUtilities
 
@@ -22,7 +22,7 @@ class reqValFake_C(object):
         try:
           if not f.LFN:
             return {'OK': False}
-        except:
+	except BaseException:
           return {'OK': False}
     return {'OK': True}
 
@@ -38,31 +38,10 @@ class ClientsTestCase(unittest.TestCase):
     self.mockTransClient = mock.MagicMock()
     self.mockTransClient.setTaskStatusAndWmsID.return_value = {'OK': True}
 
-    self.WMSClientMock = mock.MagicMock()
-    self.jobMonitoringClient = mock.MagicMock()
     self.mockReqClient = mock.MagicMock()
-
-    self.jobMock = mock.MagicMock()
-    self.jobMock2 = mock.MagicMock()
-    mockWF = mock.MagicMock()
-    mockPar = mock.MagicMock()
-    mockWF.findParameter.return_value = mockPar
-    mockPar.getValue.return_value = 'MySite'
-
-    self.jobMock2.workflow = mockWF
-    self.jobMock2.setDestination.return_value = {'OK': True}
-    self.jobMock.workflow.return_value = ''
-    self.jobMock.return_value = self.jobMock2
-
-    self.reqValidatorMock = mock.MagicMock()
-    self.reqValidatorMock.validate.return_value = {'OK': True}
 
     self.taskBase = TaskBase(transClient=self.mockTransClient)
     self.pu = PluginUtilities(transClient=self.mockTransClient)
-    self.wfTasks = WorkflowTasks(transClient=self.mockTransClient,
-                                 submissionClient=self.WMSClientMock,
-                                 jobMonitoringClient=self.jobMonitoringClient,
-                                 outputDataModule="mock")
 
     self.requestTasks = RequestTasks(transClient=self.mockTransClient,
                                      requestClient=self.mockReqClient,
@@ -106,9 +85,9 @@ class PluginUtilitiesSuccess(ClientsTestCase):
                                   'Flush')
     self.assertTrue(res['OK'])
     self.assertEqual(res['Value'], [
-                     ('SE1,SE2', ['/this/is/at.12']),
-                     ('SE1,SE2,SE3', ['/this/is/at.123']),
-                     ('SE1,SE3,SE4', ['/this/is/at.134'])])
+	('SE1,SE2', ['/this/is/at.12']),
+	('SE1,SE2,SE3', ['/this/is/at.123']),
+	('SE1,SE3,SE4', ['/this/is/at.134'])])
 
 
 class RequestTasksSuccess(ClientsTestCase):
@@ -153,7 +132,8 @@ class RequestTasksSuccess(ClientsTestCase):
         self.assertEqual(task['TaskObject'][0].Status, 'Waiting')
 
     # # test another (single) OperationType
-    res = self.requestTasks.prepareTransformationTasks('someType;LogUpload', taskDict, 'owner', 'ownerGroup', '/bih/boh/DN')
+    res = self.requestTasks.prepareTransformationTasks('someType;LogUpload', taskDict,
+						       'owner', 'ownerGroup', '/bih/boh/DN')
     self.assertTrue(res['OK'])
     # We should "lose" one of the task in the preparation
     self.assertEqual(len(taskDict), 2)
@@ -163,8 +143,7 @@ class RequestTasksSuccess(ClientsTestCase):
 
     # ## Multiple operations
     transBody = [("ReplicateAndRegister", {"SourceSE": "FOO-SRM", "TargetSE": "BAR-SRM"}),
-                 ("RemoveReplica", {"TargetSE": "FOO-SRM"}),
-                 ]
+		 ("RemoveReplica", {"TargetSE": "FOO-SRM"}), ]
     jsonBody = json.dumps(transBody)
 
     taskDict = {1: {'TransformationID': 1, 'TargetSE': 'SE1', 'b1': 'bb1', 'Site': 'MySite',
