@@ -90,9 +90,9 @@ class EmailAction(BaseAction):
                       Time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                      );''')
 
-        conn.execute("INSERT INTO ResourceStatusCache (SiteName, ResourceName, Status, PreviousStatus, StatusType)"
-                     " VALUES ('" + siteName + "', '" + name + "', '" + status +
-                     "', '" + previousStatus + "', '" + statusType + "' ); ")
+        insertQuery = "INSERT INTO ResourceStatusCache (SiteName, ResourceName, Status, PreviousStatus, StatusType)"
+        insertQuery += " VALUES ('%s', '%s', '%s', '%s', '%s' ); " %(siteName, name, status, previousStatus, statusType)
+        conn.execute(insertQuery)
 
         conn.commit()
 
@@ -100,6 +100,3 @@ class EmailAction(BaseAction):
         self.log.error('Email cache database is locked')
 
     return S_OK()
-
-################################################################################
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
