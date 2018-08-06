@@ -79,13 +79,13 @@ class TokenAgent(AgentModule):
 
       interestingTokens = self._getInterestingTokens(element)
       if not interestingTokens['OK']:
-	self.log.error(interestingTokens['Message'])
+        self.log.error(interestingTokens['Message'])
         continue
       interestingTokens = interestingTokens['Value']
 
       processTokens = self._processTokens(element, interestingTokens)
       if not processTokens['OK']:
-	self.log.error(processTokens['Message'])
+        self.log.error(processTokens['Message'])
         continue
 
     notificationResult = self._notifyOfTokens()
@@ -103,7 +103,7 @@ class TokenAgent(AgentModule):
     tokenExpLimit = datetime.utcnow() + timedelta(hours=self.notifyHours)
 
     tokenElements = self.rsClient.selectStatusElement(element, 'Status',
-						      meta={'older': ('TokenExpiration', tokenExpLimit)})
+                                                      meta={'older': ('TokenExpiration', tokenExpLimit)})
 
     if not tokenElements['OK']:
       return tokenElements
@@ -118,7 +118,7 @@ class TokenAgent(AgentModule):
       tokenElement = dict(zip(tokenColumns, tokenElement))
 
       if tokenElement['TokenOwner'] != self.__rssToken:
-	interestingTokens.append(tokenElement)
+        interestingTokens.append(tokenElement)
 
     return S_OK(interestingTokens)
 
@@ -133,32 +133,32 @@ class TokenAgent(AgentModule):
     for tokenElement in tokenElements:
 
       try:
-	name = tokenElement['Name']
-	statusType = tokenElement['StatusType']
-	status = tokenElement['Status']
-	tokenOwner = tokenElement['TokenOwner']
-	tokenExpiration = tokenElement['TokenExpiration']
+        name = tokenElement['Name']
+        statusType = tokenElement['StatusType']
+        status = tokenElement['Status']
+        tokenOwner = tokenElement['TokenOwner']
+        tokenExpiration = tokenElement['TokenExpiration']
       except KeyError as e:
-	return S_ERROR(e)
+        return S_ERROR(e)
 
       # If token has already expired
       if tokenExpiration < datetime.utcnow():
         _msg = '%s with statusType "%s" and owner %s EXPIRED'
-	self.log.info(_msg % (name, statusType, tokenOwner))
+        self.log.info(_msg % (name, statusType, tokenOwner))
 
-	result = self.rsClient.addOrModifyStatusElement(element, 'Status', name=name,
-							statusType=statusType,
-							tokenOwner=self.__rssToken,
-							tokenExpiration=never)
-	if not result['OK']:
+        result = self.rsClient.addOrModifyStatusElement(element, 'Status', name=name,
+                                                        statusType=statusType,
+                                                        tokenOwner=self.__rssToken,
+                                                        tokenExpiration=never)
+        if not result['OK']:
           return result
 
       else:
         _msg = '%s with statusType "%s" and owner %s -> %s'
-	self.log.info(_msg % (name, statusType, tokenOwner, tokenExpiration))
+        self.log.info(_msg % (name, statusType, tokenOwner, tokenExpiration))
 
       if tokenOwner not in self.tokenDict:
-	self.tokenDict[tokenOwner] = []
+        self.tokenDict[tokenOwner] = []
 
       self.tokenDict[tokenOwner].append([tokenOwner, element, name, statusType, status, tokenExpiration])
 
@@ -182,16 +182,16 @@ class TokenAgent(AgentModule):
 
       for tokenList in tokenLists:
 
-	if tokenList[5] < now:
-	  expired.append(tokenList)
-	  adminExpired.append(tokenList)
+        if tokenList[5] < now:
+          expired.append(tokenList)
+          adminExpired.append(tokenList)
         else:
-	  expiring.append(tokenList)
-	  adminExpiring.append(tokenList)
+          expiring.append(tokenList)
+          adminExpiring.append(tokenList)
 
       resNotify = self._notify(tokenOwner, expired, expiring)
       if not resNotify['OK']:
-	self.log.error('Failed to notify token owner', resNotify['Message'])
+        self.log.error('Failed to notify token owner', resNotify['Message'])
 
     if (adminExpired or adminExpiring) and self.adminMail:
       return self._notify(self.adminMail, adminExpired, adminExpiring)

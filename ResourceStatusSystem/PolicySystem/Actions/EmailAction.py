@@ -96,7 +96,7 @@ class EmailAction(BaseAction):
       conn.execute("INSERT INTO ResourceStatusCache (SiteName, ResourceName, Status, PreviousStatus, StatusType)"
                    " VALUES ('" + siteName + "', '" + name + "', '" + status +
                    "', '" + previousStatus + "', '" + statusType + "' ); "
-		   )
+                   )
 
       conn.commit()
 

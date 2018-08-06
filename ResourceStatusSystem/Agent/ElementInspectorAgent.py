@@ -51,11 +51,11 @@ class ElementInspectorAgent(AgentModule):
   # Error state usually means there is a glitch somewhere, so it has the highest
   # priority.
   __checkingFreqs = {'Active': 20,
-		     'Degraded': 20,
-		     'Probing': 20,
-		     'Banned': 15,
-		     'Unknown': 10,
-		     'Error': 5}
+                     'Degraded': 20,
+                     'Probing': 20,
+                     'Banned': 15,
+                     'Unknown': 10,
+                     'Error': 5}
 
   def __init__(self, *args, **kwargs):
     """ c'tor
@@ -119,7 +119,7 @@ class ElementInspectorAgent(AgentModule):
     for _x in xrange(numberOfThreads):
       jobUp = self.threadPool.generateJobAndQueueIt(self._execute)
       if not jobUp['OK']:
-	self.log.error(jobUp['Message'])
+        self.log.error(jobUp['Message'])
 
     self.log.info('blocking until all elements have been processed')
     # block until all tasks are done
@@ -161,25 +161,25 @@ class ElementInspectorAgent(AgentModule):
 
       # We skip the elements with token different than "rs_svc"
       if elemDict['TokenOwner'] != 'rs_svc':
-	self.log.verbose('Skipping %s ( %s ) with token %s' % (elemDict['Name'],
-							       elemDict['StatusType'],
-							       elemDict['TokenOwner']))
-	continue
+        self.log.verbose('Skipping %s ( %s ) with token %s' % (elemDict['Name'],
+                                                               elemDict['StatusType'],
+                                                               elemDict['TokenOwner']))
+        continue
 
       # We are not checking if the item is already on the queue or not. It may
       # be there, but in any case, it is not a big problem.
 
       lowerElementDict = {'element': self.elementType}
       for key, value in elemDict.iteritems():
-	lowerElementDict[key[0].lower() + key[1:]] = value
+        lowerElementDict[key[0].lower() + key[1:]] = value
 
       # We add lowerElementDict to the queue
       toBeChecked.put(lowerElementDict)
       self.log.verbose('%s # "%s" # "%s" # %s # %s' % (elemDict['Name'],
-						       elemDict['ElementType'],
-						       elemDict['StatusType'],
-						       elemDict['Status'],
-						       elemDict['LastCheckTime']))
+                                                       elemDict['ElementType'],
+                                                       elemDict['StatusType'],
+                                                       elemDict['Status'],
+                                                       elemDict['LastCheckTime']))
     return S_OK(toBeChecked)
 
   # Private methods ............................................................
@@ -202,12 +202,12 @@ class ElementInspectorAgent(AgentModule):
         return S_OK()
 
       self.log.verbose('%s ( %s / %s ) being processed' % (element['name'],
-							   element['status'],
-							   element['statusType']))
+                                                           element['status'],
+                                                           element['statusType']))
 
       resEnforce = pep.enforce(element)
       if not resEnforce['OK']:
-	self.log.error('Failed policy enforcement', resEnforce['Message'])
+        self.log.error('Failed policy enforcement', resEnforce['Message'])
         self.elementsToBeChecked.task_done()
         continue
 
@@ -219,11 +219,11 @@ class ElementInspectorAgent(AgentModule):
       reason = resEnforce['policyCombinedResult']['Reason']
 
       if oldStatus != newStatus:
-	self.log.info('%s (%s) is now %s ( %s ), before %s' % (element['name'],
-							       statusType,
-							       newStatus,
-							       reason,
-							       oldStatus))
+        self.log.info('%s (%s) is now %s ( %s ), before %s' % (element['name'],
+                                                               statusType,
+                                                               newStatus,
+                                                               reason,
+                                                               oldStatus))
 
       # Used together with join !
       self.elementsToBeChecked.task_done()

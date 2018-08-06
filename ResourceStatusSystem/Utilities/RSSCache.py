@@ -147,7 +147,7 @@ class RSSCache(object):
 
       resourceRow = self.__rssCache.get(resourceKey)
       if not resourceRow:
-	return S_ERROR('Cannot get %s' % resourceKey)
+        return S_ERROR('Cannot get %s' % resourceKey)
       result.update({resourceKey: resourceRow})
 
     self.__rssCacheLock.release()

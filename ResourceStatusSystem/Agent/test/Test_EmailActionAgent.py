@@ -37,22 +37,22 @@ class TestCase(unittest.TestCase):
                       'elementType': 'StorageElement', 'statusType': 'ReadAccess'}
 
     enforcementResult = {'Status': 'Banned', 'Reason': 'test ###',
-			 'PolicyAction': [('LogStatusAction', 'LogStatusAction'),
-					  ('LogPolicyResultAction', 'LogPolicyResultAction')]}
+                         'PolicyAction': [('LogStatusAction', 'LogStatusAction'),
+                                          ('LogPolicyResultAction', 'LogPolicyResultAction')]}
 
     singlePolicyResults = [{'Status': 'Banned', 'Policy': {'command': ('DowntimeCommand', 'DowntimeCommand'),
-							   'name': 'DT_END',
-							   'args': {'hours': 0, 'onlyCache': True},
-							   'type': 'DTOngoing',
-							   'module': 'DowntimePolicy',
-							   'description': 'Ongoing and scheduled down-times'},
-			    'Reason': 'test'},
-			   {'Status': 'Active', 'Policy': {'command': None,
-							   'name': 'AlwaysActiveForResource',
-							   'args': None,
-							   'type': 'AlwaysActive',
-							   'module': 'AlwaysActivePolicy',
-							   'description': 'A Policy that always returns Active'},
+                                                           'name': 'DT_END',
+                                                           'args': {'hours': 0, 'onlyCache': True},
+                                                           'type': 'DTOngoing',
+                                                           'module': 'DowntimePolicy',
+                                                           'description': 'Ongoing and scheduled down-times'},
+                            'Reason': 'test'},
+                           {'Status': 'Active', 'Policy': {'command': None,
+                                                           'name': 'AlwaysActiveForResource',
+                                                           'args': None,
+                                                           'type': 'AlwaysActive',
+                                                           'module': 'AlwaysActivePolicy',
+                                                           'description': 'A Policy that always returns Active'},
                             'Reason': 'AlwaysActive'}]
 
     self.action = EmailAction(name, decisionParams, enforcementResult, singlePolicyResults)

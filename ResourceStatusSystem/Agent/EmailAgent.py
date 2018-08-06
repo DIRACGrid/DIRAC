@@ -42,14 +42,14 @@ class EmailAgent(AgentModule):
     if os.path.isfile(self.cacheFile):
       with sqlite3.connect(self.cacheFile) as conn:
 
-	result = conn.execute("SELECT DISTINCT SiteName from ResourceStatusCache;")
-	for site in result:
-	  query = "SELECT StatusType, ResourceName, Status, Time, PreviousStatus from ResourceStatusCache "
-	  query += "WHERE SiteName='%s';" % site[0]
-	  cursor = conn.execute(query)
+        result = conn.execute("SELECT DISTINCT SiteName from ResourceStatusCache;")
+        for site in result:
+          query = "SELECT StatusType, ResourceName, Status, Time, PreviousStatus from ResourceStatusCache "
+          query += "WHERE SiteName='%s';" % site[0]
+          cursor = conn.execute(query)
 
-	  email = ""
-	  html_body = ""
+          email = ""
+          html_body = ""
           html_elements = ""
 
           if gConfig.getValue('/DIRAC/Setup'):
@@ -101,7 +101,7 @@ class EmailAgent(AgentModule):
           email = html_header + html_body
 
           subject = "RSS actions taken for " + site[0] + "\n"
-	  self._sendMail(subject, email, html=True)
+          self._sendMail(subject, email, html=True)
 
         conn.execute("DELETE FROM ResourceStatusCache;")
         conn.execute("VACUUM;")
@@ -123,7 +123,7 @@ class EmailAgent(AgentModule):
 
       resEmail = self.diracAdmin.sendMail(user, subject, body, fromAddress=fromAddress, html=html)
       if not resEmail['OK']:
-	return S_ERROR('Cannot send email to user "%s"' % user)
+        return S_ERROR('Cannot send email to user "%s"' % user)
 
     return S_OK()
 
@@ -146,9 +146,9 @@ class EmailAgent(AgentModule):
 
     for notificationGroupName in notificationGroups:
       try:
-	userEmails.extend(notifications[notificationGroupName]['users'])
+        userEmails.extend(notifications[notificationGroupName]['users'])
       except KeyError:
-	self.log.error('%s not present' % notificationGroupName)
+        self.log.error('%s not present' % notificationGroupName)
 
     return S_OK(userEmails)
 

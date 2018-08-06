@@ -47,11 +47,11 @@ class SiteInspectorAgent(AgentModule):
   # Error state usually means there is a glitch somewhere, so it has the highest
   # priority.
   __checkingFreqs = {'Active': 20,
-		     'Degraded': 20,
-		     'Probing': 20,
-		     'Banned': 15,
-		     'Unknown': 10,
-		     'Error': 5}
+                     'Degraded': 20,
+                     'Probing': 20,
+                     'Banned': 15,
+                     'Unknown': 10,
+                     'Error': 5}
 
   def __init__(self, *args, **kwargs):
 
@@ -108,7 +108,7 @@ class SiteInspectorAgent(AgentModule):
     for _x in xrange(numberOfThreads):
       jobUp = self.threadPool.generateJobAndQueueIt(self._execute)
       if not jobUp['OK']:
-	self.log.error(jobUp['Message'])
+        self.log.error(jobUp['Message'])
 
     self.log.info('blocking until all sites have been processed')
     # block until all tasks are done
@@ -141,11 +141,11 @@ class SiteInspectorAgent(AgentModule):
       status = res['Value'].get(site, 'Unknown')
 
       toBeChecked.put({'status': status,
-		       'name': site,
-		       'site': site,
-		       'element': 'Site',
-		       'statusType': 'all',
-		       'elementType': 'Site'})
+                       'name': site,
+                       'site': site,
+                       'element': 'Site',
+                       'statusType': 'all',
+                       'elementType': 'Site'})
 
     return S_OK(toBeChecked)
 
@@ -172,7 +172,7 @@ class SiteInspectorAgent(AgentModule):
 
       resEnforce = pep.enforce(site)
       if not resEnforce['OK']:
-	self.log.error('Failed policy enforcement', resEnforce['Message'])
+        self.log.error('Failed policy enforcement', resEnforce['Message'])
         self.sitesToBeChecked.task_done()
         continue
 

@@ -52,11 +52,11 @@ def getCSTree(csPath=''):
       opts = opts['Value']
 
       for optKey, optValue in opts.iteritems():
-	if optValue.find(',') > -1:
-	  optValue = List.fromChar(optValue)
+        if optValue.find(',') > -1:
+          optValue = List.fromChar(optValue)
         else:
-	  optValue = [optValue]
-	csTreeDict[optKey] = optValue
+          optValue = [optValue]
+        csTreeDict[optKey] = optValue
 
     secs = opHelper.getSections(treePath)
     if secs['OK']:
@@ -65,11 +65,11 @@ def getCSTree(csPath=''):
 
       for sec in secs:
 
-	secTree = getCSTreeAsDict('%s/%s' % (treePath, sec))
-	if not secTree['OK']:
+        secTree = getCSTreeAsDict('%s/%s' % (treePath, sec))
+        if not secTree['OK']:
           return secTree
 
-	csTreeDict[sec] = secTree['Value']
+        csTreeDict[sec] = secTree['Value']
 
     return S_OK(csTreeDict)
 
