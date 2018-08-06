@@ -119,12 +119,14 @@ class ProxyInit(object):
 
     vomsAttr = Registry.getVOMSAttributeForGroup(self.__piParams.diracGroup)
     if not vomsAttr:
-      return S_ERROR("Requested adding a VOMS extension but no VOMS attribute defined for group %s" % self.__piParams.diracGroup)
+      return S_ERROR("Requested adding a VOMS extension but no VOMS attribute defined for group %s" %
+                     self.__piParams.diracGroup)
 
     resultVomsAttributes = VOMS.VOMS().setVOMSAttributes(self.__proxyGenerated, attribute=vomsAttr,
                                                          vo=Registry.getVOMSVOForGroup(self.__piParams.diracGroup))
     if not resultVomsAttributes['OK']:
-      return S_ERROR("Could not add VOMS extensions to the proxy\nFailed adding VOMS attribute: %s" % resultVomsAttributes['Message'])
+      return S_ERROR("Could not add VOMS extensions to the proxy\nFailed adding VOMS attribute: %s" %
+                     resultVomsAttributes['Message'])
 
     gLogger.notice("Added VOMS attribute %s" % vomsAttr)
     chain = resultVomsAttributes['Value']

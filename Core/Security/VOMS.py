@@ -152,7 +152,8 @@ class VOMS(BaseSecurity):
         h = int(left / 3600)
         m = int(left / 60) - h * 60
         s = int(left) - m * 60 - h * 3600
-        lines.append("timeleft  : %s:%s:%s\nkey usage : Digital Signature, Key Encipherment, Data Encipherment" % (h, m, s))
+        lines.append("timeleft  : %s:%s:%s\nkey usage : Digital Signature, Key Encipherment, Data Encipherment" %
+                     (h, m, s))
         lines.append("== VO %s extension information ==" % data['vo'])
         lines.append("VO: %s" % data['vo'])
         lines.append("subject : %s" % data['subject'])
@@ -282,7 +283,8 @@ class VOMS(BaseSecurity):
 
     if status:
       self._unlinkFiles(newProxyLocation)
-      return S_ERROR(DErrno.EVOMS, 'Failed to set VOMS attributes. Command: %s; StdOut: %s; StdErr: %s' % (cmd, output, error))
+      return S_ERROR(DErrno.EVOMS, 'Failed to set VOMS attributes. Command: %s; StdOut: %s; StdErr: %s' %
+                     (cmd, output, error))
 
     newChain = X509Chain()
     retVal = newChain.loadProxyFromFile(newProxyLocation)

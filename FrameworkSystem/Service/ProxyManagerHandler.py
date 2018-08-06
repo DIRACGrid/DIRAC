@@ -12,7 +12,6 @@ from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
 
-
 class ProxyManagerHandler(RequestHandler):
 
   __maxExtraLifeFactor = 1.5
@@ -28,15 +27,16 @@ class ProxyManagerHandler(RequestHandler):
         return result
       dbClass = result['Value']
 
-      cls.__proxyDB = dbClass( useMyProxy = useMyProxy )
+      cls.__proxyDB = dbClass(useMyProxy=useMyProxy)
 
     except RuntimeError as excp:
-      return S_ERROR( "Can't connect to ProxyDB: %s" % excp )
-    gThreadScheduler.addPeriodicTask( 900, cls.__proxyDB.purgeExpiredTokens, elapsedTime = 900 )
-    gThreadScheduler.addPeriodicTask( 900, cls.__proxyDB.purgeExpiredRequests, elapsedTime = 900 )
-    gThreadScheduler.addPeriodicTask( 21600, cls.__proxyDB.purgeLogs )
-    gThreadScheduler.addPeriodicTask( 3600, cls.__proxyDB.purgeExpiredProxies )
-    gLogger.info( "MyProxy: %s\n MyProxy Server: %s" % ( useMyProxy, cls.__proxyDB.getMyProxyServer() ) )
+      return S_ERROR("Can't connect to ProxyDB: %s" % excp)
+    gThreadScheduler.addPeriodicTask(900, cls.__proxyDB.purgeExpiredTokens, elapsedTime=900)
+    gThreadScheduler.addPeriodicTask(900, cls.__proxyDB.purgeExpiredRequests, elapsedTime=900)
+    gThreadScheduler.addPeriodicTask(21600, cls.__proxyDB.purgeLogs)
+    gThreadScheduler.addPeriodicTask(3600, cls.__proxyDB.purgeExpiredProxies)
+    gLogger.info("MyProxy: %s\n MyProxy Server: %s" %
+                 (useMyProxy, cls.__proxyDB.getMyProxyServer()))
     return S_OK()
 
   def __generateUserProxiesInfo(self):
@@ -96,9 +96,12 @@ class ProxyManagerHandler(RequestHandler):
     requestedUploadTime = min(requestedUploadTime, clientSecs)  # FIXME: this is useless now...
     result = self.__proxyDB.generateDelegationRequest(credDict['x509Chain'], userDN)
     if result['OK']:
-      gLogger.info("Upload request by %s:%s given id %s" % (userName, userGroup, result['Value']['id']))
+      gLogger.info(
+          "Upload request by %s:%s given id %s" %
+          (userName, userGroup, result['Value']['id']))
     else:
-      gLogger.error("Upload request failed", "by %s:%s : %s" % (userName, userGroup, result['Message']))
+      gLogger.error("Upload request failed", "by %s:%s : %s" %
+                    (userName, userGroup, result['Message']))
     return result
 
   types_completeDelegationUpload = [(int, long), basestring]
@@ -110,7 +113,9 @@ class ProxyManagerHandler(RequestHandler):
     userId = "%s:%s" % (credDict['username'], credDict['group'])
     retVal = self.__proxyDB.completeDelegation(requestId, credDict['DN'], pemChain)
     if not retVal['OK']:
-      gLogger.error("Upload proxy failed", "id: %s user: %s message: %s" % (requestId, userId, retVal['Message']))
+      gLogger.error(
+          "Upload proxy failed", "id: %s user: %s message: %s" %
+          (requestId, userId, retVal['Message']))
       return self.__addKnownUserProxiesInfo(retVal)
     gLogger.info("Upload %s by %s completed" % (requestId, userId))
     return self.__addKnownUserProxiesInfo(S_OK())
@@ -140,7 +145,8 @@ class ProxyManagerHandler(RequestHandler):
     if Properties.PRIVATE_LIMITED_DELEGATION in credDict['properties']:
       if credDict['DN'] != requestedUserDN:
         return S_ERROR("You are not allowed to download any proxy")
-      if Properties.PRIVATE_LIMITED_DELEGATION in Registry.getPropertiesForGroup(requestedUserGroup):
+      if Properties.PRIVATE_LIMITED_DELEGATION in Registry.getPropertiesForGroup(
+              requestedUserGroup):
         return S_ERROR("You can't download proxies for that group")
       return S_OK(True)
     # Not authorized!
@@ -191,7 +197,13 @@ class ProxyManagerHandler(RequestHandler):
 
   types_getVOMSProxy = [basestring, basestring, basestring, (int, long)]
 
-  def export_getVOMSProxy(self, userDN, userGroup, requestPem, requiredLifetime, vomsAttribute=False):
+  def export_getVOMSProxy(
+          self,
+          userDN,
+          userGroup,
+          requestPem,
+          requiredLifetime,
+          vomsAttribute=False):
     """
     Get a proxy for a userDN/userGroup
 
@@ -211,10 +223,28 @@ class ProxyManagerHandler(RequestHandler):
       return result
     forceLimited = result['Value']
 
-    self.__proxyDB.logAction("download voms proxy", credDict['DN'], credDict['group'], userDN, userGroup)
-    return self.__getVOMSProxy(userDN, userGroup, requestPem, requiredLifetime, vomsAttribute, forceLimited)
+    self.__proxyDB.logAction(
+        "download voms proxy",
+        credDict['DN'],
+        credDict['group'],
+        userDN,
+        userGroup)
+    return self.__getVOMSProxy(
+        userDN,
+        userGroup,
+        requestPem,
+        requiredLifetime,
+        vomsAttribute,
+        forceLimited)
 
-  def __getVOMSProxy(self, userDN, userGroup, requestPem, requiredLifetime, vomsAttribute, forceLimited):
+  def __getVOMSProxy(
+          self,
+          userDN,
+          userGroup,
+          requestPem,
+          requiredLifetime,
+          vomsAttribute,
+          forceLimited):
     retVal = self.__proxyDB.getVOMSProxy(userDN,
                                          userGroup,
                                          requiredLifeTime=requiredLifetime,
@@ -308,7 +338,12 @@ class ProxyManagerHandler(RequestHandler):
     Generate tokens for proxy retrieval
     """
     credDict = self.getRemoteCredentials()
-    self.__proxyDB.logAction("generate tokens", credDict['DN'], credDict['group'], requesterDN, requesterGroup)
+    self.__proxyDB.logAction(
+        "generate tokens",
+        credDict['DN'],
+        credDict['group'],
+        requesterDN,
+        requesterGroup)
     return self.__proxyDB.generateToken(requesterDN, requesterGroup, numUses=tokenUses)
 
   types_getProxyWithToken = [basestring, basestring,
@@ -340,14 +375,26 @@ class ProxyManagerHandler(RequestHandler):
     result = self.__checkProperties(userDN, userGroup)
     if not result['OK']:
       return result
-    self.__proxyDB.logAction("download proxy with token", credDict['DN'], credDict['group'], userDN, userGroup)
+    self.__proxyDB.logAction(
+        "download proxy with token",
+        credDict['DN'],
+        credDict['group'],
+        userDN,
+        userGroup)
     return self.__getProxy(userDN, userGroup, requestPem, requiredLifetime, True)
 
   types_getVOMSProxyWithToken = [basestring, basestring,
                                  basestring, (int, long),
                                  basestring]
 
-  def export_getVOMSProxyWithToken(self, userDN, userGroup, requestPem, requiredLifetime, token, vomsAttribute=False):
+  def export_getVOMSProxyWithToken(
+          self,
+          userDN,
+          userGroup,
+          requestPem,
+          requiredLifetime,
+          token,
+          vomsAttribute=False):
     """
     Get a proxy for a userDN/userGroup
 
@@ -371,5 +418,10 @@ class ProxyManagerHandler(RequestHandler):
     result = self.__checkProperties(userDN, userGroup)
     if not result['OK']:
       return result
-    self.__proxyDB.logAction("download voms proxy with token", credDict['DN'], credDict['group'], userDN, userGroup)
+    self.__proxyDB.logAction(
+        "download voms proxy with token",
+        credDict['DN'],
+        credDict['group'],
+        userDN,
+        userGroup)
     return self.__getVOMSProxy(userDN, userGroup, requestPem, requiredLifetime, vomsAttribute, True)

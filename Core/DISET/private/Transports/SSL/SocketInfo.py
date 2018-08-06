@@ -22,7 +22,7 @@ else:
 
 DEFAULT_SSL_CIPHERS = "ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:!aNULL:!MD5:!DSS"
 
-VERIFY_DEPTH = 50 # isn't it A BIT too deep?
+VERIFY_DEPTH = 50  # isn't it A BIT too deep?
 
 
 class SocketInfo:
@@ -120,7 +120,7 @@ class SocketInfo:
       return S_ERROR(str(e))
 
   def verifyCallback(self, *args, **kwargs):
-    #gLogger.debug( "verify Callback %s" % str( args ) )
+    # gLogger.debug( "verify Callback %s" % str( args ) )
     if self.infoDict['clientMode']:
       return self._clientCallback(*args, **kwargs)
     else:
@@ -202,7 +202,7 @@ class SocketInfo:
                 if casDict[caID][0] < caNotAfter:
                   casDict[caID] = (caNotAfter, caCert)
               continue
-            except:
+            except BaseException:
               if fileName.find(".0") == len(fileName) - 2:
                 gLogger.exception("LOADING %s" % filePath)
             if 'IgnoreCRLs' not in self.infoDict or not self.infoDict['IgnoreCRLs']:
@@ -236,7 +236,7 @@ class SocketInfo:
                 if casDict[caID][0] < caNotAfter:
                   casDict[caID] = (caNotAfter, caCert)
               continue
-            except:
+            except BaseException:
               if fileName.find(".0") == len(fileName) - 2:
                 gLogger.exception("LOADING %s" % filePath)
             if 'IgnoreCRLs' not in self.infoDict or not self.infoDict['IgnoreCRLs']:
@@ -257,8 +257,8 @@ class SocketInfo:
         SocketInfo.__cachedCAsCRLs = ([casDict[k][1] for k in casDict],
                                       [crlsDict[k] for k in crlsDict])
         SocketInfo.__cachedCAsCRLsLastLoaded = time.time()
-    except:
-      gLogger.exception( "Failed to init CA store" )
+    except BaseException:
+      gLogger.exception("Failed to init CA store")
     finally:
       SocketInfo.__cachedCAsCRLsLoadLock.release()
     # Generate CA Store
@@ -293,13 +293,13 @@ class SocketInfo:
       methodName = "TLSv1_%s" % (methodSuffix)
     try:
       method = getattr(GSI.SSL, methodName)
-    except:
+    except BaseException:
       return S_ERROR("SSL method %s is not valid" % self.infoDict['sslMethod'])
     self.sslContext = GSI.SSL.Context(method)
     self.sslContext.set_cipher_list(self.infoDict.get('sslCiphers', DEFAULT_SSL_CIPHERS))
     if contextOptions:
       self.sslContext.set_options(contextOptions)
-    #self.sslContext.set_read_ahead( 1 )
+    # self.sslContext.set_read_ahead( 1 )
     # Enable GSI?
     gsiEnable = False
     if not clientContext or self.__getValue('gsiEnable', False):
@@ -337,7 +337,9 @@ class SocketInfo:
     #   gsiEnable = True
     # DO CA Checks?
     if not self.__getValue('skipCACheck', False):
-      self.sslContext.set_verify(M2Crypto.SSL.verify_peer | M2Crypto.SSL.verify_fail_if_no_peer_cert, VERIFY_DEPTH)
+      self.sslContext.set_verify(
+          M2Crypto.SSL.verify_peer | M2Crypto.SSL.verify_fail_if_no_peer_cert,
+          VERIFY_DEPTH)
       self.sslContext.load_verify_locations(Locations.getCAsLocation())
     else:
       self.sslContext.set_verify(GSI.SSL.VERIFY_NONE)  # Demand a certificate
@@ -442,7 +444,7 @@ class SocketInfo:
     if not retVal['OK']:
       return retVal
     self.sslContext.set_session_id("DISETConnection%s" % str(time.time()))
-    #self.sslContext.get_cert_store().set_flags( GSI.crypto.X509_CRL_CHECK )
+    # self.sslContext.get_cert_store().set_flags( GSI.crypto.X509_CRL_CHECK )
     if 'SSLSessionTimeout' in self.infoDict:
       timeout = int(self.infoDict['SSLSessionTimeout'])
       gLogger.debug("Setting session timeout to %s" % timeout)
@@ -483,8 +485,8 @@ class SocketInfo:
     self.sslSocket.set_accept_state()
     return self.__sslHandshake()
 
-  #@gSynchro
-  def __sslHandshake( self ):
+  # @gSynchro
+  def __sslHandshake(self):
     """
       Do the SSL Handshake
 
@@ -504,7 +506,7 @@ class SocketInfo:
         time.sleep(0.001)
       except GSI.SSL.WantWriteError:
         time.sleep(0.001)
-      except GSI.SSL.Error, v:
+      except GSI.SSL.Error as v:
         if self.__retry < 3:
           self.__retry += 1
           return self.__sslHandshake()
@@ -512,7 +514,7 @@ class SocketInfo:
           # gLogger.warn( "Error while handshaking", "\n".join( [ stError[2] for stError in v.args[0] ] ) )
           gLogger.warn("Error while handshaking", v)
           return S_ERROR("Error while handshaking")
-      except Exception, v:
+      except Exception as v:
         gLogger.warn("Error while handshaking", v)
         if self.__retry < 3:
           self.__retry += 1
@@ -546,7 +548,7 @@ class SocketInfo:
         time.sleep(0.001)
       except GSI.SSL.WantWriteError:
         time.sleep(0.001)
-      except GSI.SSL.Error, v:
+      except GSI.SSL.Error as v:
         if self.__retry < 3:
           self.__retry += 1
           return self.__sslHandshake()
@@ -554,7 +556,7 @@ class SocketInfo:
           # gLogger.warn( "Error while handshaking", "\n".join( [ stError[2] for stError in v.args[0] ] ) )
           gLogger.warn("Error while handshaking", v)
           return S_ERROR("Error while handshaking")
-      except Exception, v:
+      except Exception as v:
         gLogger.warn("Error while handshaking", v)
         if self.__retry < 3:
           self.__retry += 1
