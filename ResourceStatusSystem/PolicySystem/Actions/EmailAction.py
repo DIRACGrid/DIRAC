@@ -91,7 +91,8 @@ class EmailAction(BaseAction):
                      );''')
 
         insertQuery = "INSERT INTO ResourceStatusCache (SiteName, ResourceName, Status, PreviousStatus, StatusType)"
-        insertQuery += " VALUES ('%s', '%s', '%s', '%s', '%s' ); " %(siteName, name, status, previousStatus, statusType)
+        insertQuery += " VALUES ('%s', '%s', '%s', '%s', '%s' ); " % (siteName, name, status,
+                                                                      previousStatus, statusType)
         conn.execute(insertQuery)
 
         conn.commit()
