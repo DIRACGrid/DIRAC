@@ -32,6 +32,7 @@ def _getUserNameFromMail(mail):
 
   return mailName
 
+
 def _getUserNameFromDN(dn, vo):
   """ Utility to construct a reasonable user name from the user DN
   :param str dn: user DN
@@ -56,40 +57,41 @@ def _getUserNameFromDN(dn, vo):
     if entry:
       # Weird case of no field name !
       if '=' not in entry:
-	key, value = "CN", entry
+        key, value = "CN", entry
       else:
-	key, value = entry.split('=')
+        key, value = entry.split('=')
       if key.upper() == 'CN':
-	ind = value.find("(")
-	# Strip of possible words in parenthesis in the name
-	if ind != -1:
-	  value = value[:ind]
-	names = value.split()
-	if len(names) == 1:
-	  nname = names[0].lower()
-	  if '.' in nname:
-	    names = nname.split('.')
-	    nname = (names[0][0] + names[-1]).lower()
-	  if '-' in nname:
-	    names = nname.split('-')
-	    nname = (names[0][0] + names[-1]).lower()
-	  return nname
-	else:
-	  robot = False
-	  if names[0].lower().startswith("robot"):
-	    names.pop(0)
-	    robot = True
-	  for name in list(names):
-	    if name[0].isdigit() or "@" in name:
-	      names.pop(names.index(name))
-	  if robot:
-	    nname = "robot-%s-%s" % (names[-1].lower(), shortVO)
-	  else:
-	    nname = (names[0][0] + names[-1]).lower()
-	    if '.' in nname:
-	      names = nname.split('.')
-	      nname = (names[0][0] + names[-1]).lower()
-	  return nname
+        ind = value.find("(")
+        # Strip of possible words in parenthesis in the name
+        if ind != -1:
+          value = value[:ind]
+        names = value.split()
+        if len(names) == 1:
+          nname = names[0].lower()
+          if '.' in nname:
+            names = nname.split('.')
+            nname = (names[0][0] + names[-1]).lower()
+          if '-' in nname:
+            names = nname.split('-')
+            nname = (names[0][0] + names[-1]).lower()
+          return nname
+        else:
+          robot = False
+          if names[0].lower().startswith("robot"):
+            names.pop(0)
+            robot = True
+          for name in list(names):
+            if name[0].isdigit() or "@" in name:
+              names.pop(names.index(name))
+          if robot:
+            nname = "robot-%s-%s" % (names[-1].lower(), shortVO)
+          else:
+            nname = (names[0][0] + names[-1]).lower()
+            if '.' in nname:
+              names = nname.split('.')
+              nname = (names[0][0] + names[-1]).lower()
+          return nname
+
 
 def _getUserNameFromSurname(name, surname):
   """ Construct a reasonable userName from the user name and surname
@@ -195,7 +197,7 @@ class VOMS2CSSynchronizer(object):
 
     # Process users
     defaultVOGroup = getVOOption(self.vo, "DefaultGroup", "%s_user" % self.vo)
-    # If a user is (previously put by hand) in an alternative default VO group,
+    # If a user is (previously put by hand) in a "QuarantineGroup",
     # then the default group will be ignored.
     # So, this option is only considered for the case of existing users.
     quarantineVOGroup = getVOOption(self.vo, "QuarantineGroup")
@@ -278,13 +280,13 @@ class VOMS2CSSynchronizer(object):
       for role in self.vomsUserDict[dn]['Roles']:
         groupList = vomsDIRACMapping.get(role, [])
         for group in groupList:
-	  if group not in noSyncVOMSGroups:
-	    groupsWithRole.append(group)
+          if group not in noSyncVOMSGroups:
+            groupsWithRole.append(group)
       keepGroups = nonVOGroups + groupsWithRole
       if not quarantineVOGroup or quarantineVOGroup not in existingGroups:
-	keepGroups += [defaultVOGroup]
+        keepGroups += [defaultVOGroup]
       for group in existingGroups:
-	if group in nonVOGroups:
+        if group in nonVOGroups:
           continue
         role = diracVOMSMapping.get(group, '')
         # Among already existing groups for the user keep those without a special VOMS Role
