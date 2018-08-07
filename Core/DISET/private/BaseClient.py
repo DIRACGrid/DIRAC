@@ -301,7 +301,8 @@ class BaseClient(object):
     try:
       urls = getServiceURL(self._destinationSrv, setup=self.setup)
     except Exception as e:
-      return S_ERROR("Cannot get URL for %s in setup %s: %s" % (self._destinationSrv, self.setup, repr(e)))
+      return S_ERROR("Cannot get URL for %s in setup %s: %s" %
+                     (self._destinationSrv, self.setup, repr(e)))
     if not urls:
       return S_ERROR("URL for service %s not found" % self._destinationSrv)
 
@@ -317,7 +318,8 @@ class BaseClient(object):
     # We randomize the list, and add at the end the failover URLs (System/FailoverURLs/Component)
     urlsList = List.randomize(List.fromChar(urls, ",")) + failoverUrls
     self.__nbOfUrls = len(urlsList)
-    self.__nbOfRetry = 2 if self.__nbOfUrls > 2 else 3  # we retry 2 times all services, if we run more than 2 services
+    # we retry 2 times all services, if we run more than 2 services
+    self.__nbOfRetry = 2 if self.__nbOfUrls > 2 else 3
     if self.__nbOfUrls == len(self.__bannedUrls):
       self.__bannedUrls = []  # retry all urls
       gLogger.debug("Retrying again all URLs")
@@ -330,7 +332,7 @@ class BaseClient(object):
         urlsList.remove(i)
 
     # Take the first URL from the list
-    #randUrls = List.randomize( urlsList ) + failoverUrls
+    # randUrls = List.randomize( urlsList ) + failoverUrls
 
     sURL = urlsList[0]
 
@@ -407,7 +409,7 @@ and this is thread %s
                                                                       self.__allowedThreadID,
                                                                       cThID)
       gLogger.error("DISET client thread safety error", msgTxt)
-      #raise Exception( msgTxt )
+      # raise Exception( msgTxt )
 
   def _connect(self):
     """ Establish the connection.
@@ -450,10 +452,34 @@ and this is thread %s
         # We try at most __nbOfRetry each URLs
         if self.__retry < self.__nbOfRetry * self.__nbOfUrls - 1:
           # Recompose the URL (why not using self.serviceURL ? )
-          url = "%s://%s:%d/%s" % (self.__URLTuple[0], self.__URLTuple[1], int(self.__URLTuple[2]), self.__URLTuple[3])
+          url = "%s://%s:%d/%s" % (self.__URLTuple[0],
+                                   self.__URLTuple[1],
+                                   int(self.__URLTuple[2]),
+                                   self.__URLTuple[3])
           # Add the url to the list of banned URLs if it is not already there. (Can it happen ? I don't think so)
+          # Recompose the URL (why not using self.serviceURL ? )
+          url = "%s://%s:%d/%s" % (self.__URLTuple[0],
+                                   self.__URLTuple[1],
+                                   int(self.__URLTuple[2]),
+                                   self.__URLTuple[3])
+          # Add the url to the list of banned URLs if it is not already there. (Can it happen ? I don't think so)
+          # Recompose the URL (why not using self.serviceURL ? )
+          url = "%s://%s:%d/%s" % (self.__URLTuple[0],
+                                   self.__URLTuple[1],
+                                   int(self.__URLTuple[2]),
+                                   self.__URLTuple[3])
+          # Add the url to the list of banned URLs if it is not already there. (Can
+          # it happen ? I don't think so)
           if url not in self.__bannedUrls:
             self.__bannedUrls += [url]
+            # Why only printing in this case ?
+            if len(self.__bannedUrls) < self.__nbOfUrls:
+              gLogger.notice("Non-responding URL temporarily banned", "%s" % url)
+          # Increment the retry couunter
+            # Why only printing in this case ?
+            if len(self.__bannedUrls) < self.__nbOfUrls:
+              gLogger.notice("Non-responding URL temporarily banned", "%s" % url)
+          # Increment the retry couunter
             # Why only printing in this case ?
             if len(self.__bannedUrls) < self.__nbOfUrls:
               gLogger.notice("Non-responding URL temporarily banned", "%s" % url)
@@ -461,9 +487,11 @@ and this is thread %s
           self.__retry += 1
           # If it is our last attempt for each URL, we increase the timeout
           if self.__retryCounter == self.__nbOfRetry - 1:
-            transport.setSocketTimeout(5)  # we increase the socket timeout in case the network is not good
-          gLogger.info("Retry connection", ": %d to %s" % (self.__retry, self.serviceURL))
+            # we increase the socket timeout in case the network is not good
+            transport.setSocketTimeout(5)
+          gLogger.info("Retry connection: ", "%d" % self.__retry)
           # If we tried all the URL, we increase the global counter (__retryCounter), and sleep
+          # we increase the socket timeout in case the network is not good
           if len(self.__bannedUrls) == self.__nbOfUrls:
             self.__retryCounter += 1
             # we run only one service! In that case we increase the retry delay.
