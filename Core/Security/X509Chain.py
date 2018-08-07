@@ -21,6 +21,11 @@ random.seed()
 
 class X509Chain(object):
 
+  __pass = None
+
+  def __getPass(self):
+    return self.__pass
+
   __validExtensionValueTypes = (basestring, )
 
   def __init__(self, certList=False, keyObj=False):
@@ -59,7 +64,7 @@ class X509Chain(object):
     try:
       with open(chainLocation) as fd:
         pemData = fd.read()
-    except Exception as e:
+    except IOError as e:
       return S_ERROR(DErrno.EOF, "%s: %s" % (chainLocation, repr(e).replace(',)', ')')))
     return self.loadChainFromString(pemData)
 
@@ -235,7 +240,7 @@ class X509Chain(object):
       proxyKey = crypto.PKey()
       proxyKey.generate_key(crypto.TYPE_RSA, strength)
 
-    proxyCert = M2Crypto.X509.X509()
+    proxyCert = crypto.X509()
 
     proxyCert.set_serial_number(str(int(random.random() * 10 ** 10)))
     cloneSubject = issuerCert.get_subject().clone()
