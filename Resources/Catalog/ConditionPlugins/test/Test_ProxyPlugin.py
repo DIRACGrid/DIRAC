@@ -21,7 +21,8 @@ def mock_getProxyInfo():
                'issuer': '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=chaen/CN=123456/CN=Christophe Haen/CN=proxy',
                'path': '/tmp/x509up_u12345',
                'secondsLeft': 86026,
-               'subject': '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=chaen/CN=123456/CN=Christophe Haen/CN=proxy/CN=proxy',
+               'subject':
+               '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=chaen/CN=123456/CN=Christophe Haen/CN=proxy/CN=proxy',
                'username': 'chaen',
                'validDN': True,
                'validGroup': True})
