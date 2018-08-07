@@ -36,6 +36,7 @@ mockResourcesReply.return_value = {'OK': True, 'Value': ['x86_64-slc6', 'x86_64-
 
 gLogger.setLevel('DEBUG')
 
+
 def test__getPilotOptions(mocker):
   """ Testing SiteDirector()._getPilotOptions()
   """
@@ -62,23 +63,24 @@ def test__getPilotOptions(mocker):
                     '-e 1,2,3', '-N aCE', '-Q aQueue', '-n LCG.CERN.cern']
   assert res[1] == 1
 
+
 @pytest.mark.parametrize("mockMatcherReturnValue, expected, anyExpected, sitesExpected", [
-    ({'OK':False, 'Message':'boh'},
+    ({'OK': False, 'Message': 'boh'},
      False, True, set()),
-    ({'OK':True, 'Value':None},
+    ({'OK': True, 'Value': None},
      False, True, set()),
-    ({'OK':True, 'Value':{'1': {'Jobs': 10}, '2': {'Jobs': 20}}},
+    ({'OK': True, 'Value': {'1': {'Jobs': 10}, '2': {'Jobs': 20}}},
      True, True, set()),
-    ({'OK':True, 'Value':{'1': {'Jobs': 10, 'Sites':['Site1']},
-                          '2': {'Jobs': 20}}},
+    ({'OK': True, 'Value': {'1': {'Jobs': 10, 'Sites': ['Site1']},
+                            '2': {'Jobs': 20}}},
      True, False, set(['Site1'])),
-    ({'OK':True, 'Value':{'1': {'Jobs': 10, 'Sites':['Site1', 'Site2']},
-                          '2': {'Jobs': 20}}},
+    ({'OK': True, 'Value': {'1': {'Jobs': 10, 'Sites': ['Site1', 'Site2']},
+                            '2': {'Jobs': 20}}},
      True, False, set(['Site1', 'Site2'])),
-    ({'OK':True, 'Value':{'1': {'Jobs': 10, 'Sites':['Site1', 'Site2']},
-                          '2': {'Jobs': 20, 'Sites':['Site1']}}},
+    ({'OK': True, 'Value': {'1': {'Jobs': 10, 'Sites': ['Site1', 'Site2']},
+                            '2': {'Jobs': 20, 'Sites': ['Site1']}}},
      True, False, set(['Site1', 'Site2'])),
-    ])
+])
 def test__ifAndWhereToSubmit(mocker, mockMatcherReturnValue, expected, anyExpected, sitesExpected):
   """ Testing SiteDirector()._ifAndWhereToSubmit()
   """
@@ -98,6 +100,7 @@ def test__ifAndWhereToSubmit(mocker, mockMatcherReturnValue, expected, anyExpect
   assert res[0] == expected
   if res[0]:
     assert res == (expected, anyExpected, sitesExpected, set())
+
 
 def test__allowedToSubmit(mocker):
   """ Testing SiteDirector()._allowedToSubmit()
@@ -132,6 +135,7 @@ def test__allowedToSubmit(mocker):
   submit = sd._allowedToSubmit('aQueue', True, set(['LCG.CERN.cern']), set())
   assert submit is True
 
+
 def test__submitPilotsToQueue(mocker):
   """ Testing SiteDirector()._submitPilotsToQueue()
   """
@@ -139,7 +143,7 @@ def test__submitPilotsToQueue(mocker):
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.gConfig.getValue", side_effect=mockGCReply)
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.CSGlobals.getSetup", side_effect=mockCSGlobalReply)
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.Resources.getCompatiblePlatforms",
-         side_effect=mockResourcesReply)
+               side_effect=mockResourcesReply)
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.AgentModule", side_effect=mockAM)
   sd = SiteDirector()
   sd.log = gLogger

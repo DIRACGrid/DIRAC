@@ -562,7 +562,6 @@ class SiteDirector(AgentModule):
 
     return S_OK()
 
-
   def _ifAndWhereToSubmit(self):
     """ Return a tuple that says if and where to submit pilots:
 
@@ -609,7 +608,6 @@ class SiteDirector(AgentModule):
 
     return True, True if not jobSites else False, jobSites, testSites
 
-
   def monitorJobsQueuesPilots(self, matchingTQs):
     """ Just printout of jobs queues and pilots status in TQ
     """
@@ -627,8 +625,6 @@ class SiteDirector(AgentModule):
     else:
       self.log.info('Total %d jobs in %d task queues with %d waiting pilots'
                     % (totalWaitingJobs, len(tqIDList), result['Value']))
-
-
 
   def _getTQDictForMatching(self):
     """ Just construct a dictionary (tqDict)
@@ -662,7 +658,6 @@ class SiteDirector(AgentModule):
     tqDict.update(self.globalParameters)
 
     return tqDict
-
 
   def _allowedToSubmit(self, queue, anySite, jobSites, testSites):
     """ Check if we are allowed to submit to a certain queue
