@@ -233,7 +233,7 @@ class X509Chain(object):
       proxyKey = crypto.PKey()
       proxyKey.generate_key(crypto.TYPE_RSA, strength)
 
-    proxyCert = X509Certificate()
+    proxyCert = crypto.X509()
 
     proxyCert.set_serial_number(str(int(random.random() * 10 ** 10)))
     cloneSubject = issuerCert.get_subject().clone()
