@@ -12,8 +12,8 @@ from DIRAC.Core.Utilities.Network import checkHostsMatch
 from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Security import Locations
-import M2Crypto
 if os.getenv('DIRAC_USE_M2CRYPTO', 'NO').lower() in ('yes', 'true'):
+  import M2Crypto
   from DIRAC.Core.Security.m2crypto.X509Chain import X509Chain
   from DIRAC.Core.Security.m2crypto.X509Certificate import X509Certificate
   from DIRAC.Core.Security.m2crypto.X509CRL import X509CRL
@@ -209,6 +209,10 @@ class SocketInfo:
             if 'IgnoreCRLs' not in self.infoDict or not self.infoDict['IgnoreCRLs']:
               # Try to load CRL
               crl = X509CRL.instanceFromFile(filePath)
+              if crl["OK"]:
+                crl = crl["Value"]
+              else:
+                return crl
               if crl.hasExpired():
                 continue
               crlsDict[crl.getIssuer()] = crl
@@ -323,7 +327,8 @@ class SocketInfo:
     # Initialize context
     contextOptions = M2Crypto.SSL.op_all
     if not clientContext:
-      contextOptions |= M2Crypto.m2.SSL_OP_NO_SSLv2 | M2Crypto.m2.SSL_OP_NO_SSLv3
+      # M2Crypto.m2.SSL_OP_NO_SSLv2 and M2Crypto.m2.SSL_OP_NO_SSLv3 exist, not sure why pylint throws an error
+      contextOptions |= M2Crypto.m2.SSL_OP_NO_SSLv2 | M2Crypto.m2.SSL_OP_NO_SSLv3  # pylint: disable=E1101
     if 'sslMethod' in self.infoDict:
       methodName = self.infoDict['sslMethod'].lower()
     else:
