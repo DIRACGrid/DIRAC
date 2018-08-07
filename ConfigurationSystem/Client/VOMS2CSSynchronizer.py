@@ -2,6 +2,8 @@
     of the VOMS user data with the DIRAC Registry
 """
 
+__RCSID__ = "$Id$"
+
 from collections import defaultdict
 
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig
@@ -12,8 +14,6 @@ from DIRAC.Core.Utilities.PrettyPrint import printTable
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOOption, getVOMSRoleGroupMapping, \
     getUsersInVO, getAllUsers
-
-__RCSID__ = "$Id$"
 
 
 class VOMS2CSSynchronizer(object):
@@ -104,7 +104,7 @@ class VOMS2CSSynchronizer(object):
     # If a user is (previously put by hand) in an alternative default VO group,
     # then the default group will be ignored.
     # So, this option is only considered for the case of existing users.
-    alternativeDefaultVOGroup = getVOOption(self.vo, "AlternativeDefaultGroup")
+    quarantineVOGroup = getVOOption(self.vo, "QuarantineGroup")
 
     newAddedUserDict = {}
     for dn in self.vomsUserDict:
@@ -184,13 +184,13 @@ class VOMS2CSSynchronizer(object):
       for role in self.vomsUserDict[dn]['Roles']:
         groupList = vomsDIRACMapping.get(role, [])
         for group in groupList:
-          if group not in noSyncVOMSGroups:
-            groupsWithRole.append(group)
+	  if group not in noSyncVOMSGroups:
+	    groupsWithRole.append(group)
       keepGroups = nonVOGroups + groupsWithRole
-      if not alternativeDefaultVOGroup or alternativeDefaultVOGroup not in existingGroups:
+      if not quarantineVOGroup or quarantineVOGroup not in existingGroups:
 	keepGroups += [defaultVOGroup]
       for group in existingGroups:
-        if group in nonVOGroups:
+	if group in nonVOGroups:
           continue
         role = diracVOMSMapping.get(group, '')
         # Among already existing groups for the user keep those without a special VOMS Role
