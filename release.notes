@@ -34,6 +34,39 @@ NEW: (#3744) Added miniInstallDIRAC function for Jenkins jobs
 FIX: Better dirac.cfg example configuration for web
 NEW: (#3744) Add WMS documentation in DeveloperGuide/Systems
 
+[v6r20p8]
+
+*ResourceStatusSystem
+FIX: (#3782) try/except for OperationalError for sqlite (EmailAction)
+
+*Core
+FIX: (#3785) Adjust voms-proxy-init timeouts
+NEW: (#3773) New Core.Utilities.Proxy.UserProxy class to be used as a contextManager
+FIX: (#3773) Fix race condition in Core.Utilities.Proxy.executeWithUserProxy, the $X509_USER_PROXY environment variable from one thread could leak to another, fixes #3764
+
+
+*ConfigurationSystem
+NEW: (#3784) Bdii2CSAgent: New option **SelectedSites**, if any sites are set, only those will be updated
+NEW: (#3788) for CS/Registry section: added possibility to define a QuarantineGroup per VO
+
+*WorkloadManagementSystem
+
+FIX: (#3786) StalledJobAgent: fix "Proxy not found" error when sending kill command to stalled job, fixes #3783
+FIX: (#3773) The solution for bug #3764 fixes a problem with the JobScheduling executor, where files could end up in the checking state with the error "Couldn't get storage metadata of some files"
+FIX: (#3779) Add setting of X509_USER_PROXY in pilot wrapper script, 
+which is needed to establish pilot env in work nodes of Cluster sites.
+
+*DataManagementSystem
+FIX: (#3778) Added template for RegisterReplica
+FIX: (#3772) add a protection against race condition between RMS and FTS3
+FIX: (#3774) Fix FTS3 multi-VO support by setting VO name in SE constructor.
+
+*TransformationSystem
+FIX: (#3789) better tests for TS agents
+
+*StorageManagamentSystem
+FIX: (#3773) Fix setting of the user proxy for StorageElement.getFileMetadata calls, fixes #3764
+
 [v6r20p7]
 
 *Core

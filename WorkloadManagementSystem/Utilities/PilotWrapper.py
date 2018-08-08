@@ -76,6 +76,12 @@ os.environ[\"%(name)s\"]=\"%(value)s\"
 
   mString = mString + envVariablesString
 
+  # add X509_USER_PROXY to etablish pilot env in Cluster WNs
+  if 'proxy' in pilotFilesCompressedEncodedDict:
+    mString += """
+os.environ['X509_USER_PROXY'] = os.path.join(pilotWorkingDirectory, 'proxy')
+"""
+
   localPilot = """#!/bin/bash
 /usr/bin/env python << EOF
 

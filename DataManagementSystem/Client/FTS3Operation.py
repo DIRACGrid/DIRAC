@@ -171,7 +171,7 @@ class FTS3Operation(FTS3Serializable):
     return toSubmit
 
   @staticmethod
-  def _checkSEAccess(seName, accessType):
+  def _checkSEAccess(seName, accessType, vo=None):
     """Check the Status of a storage element
         :param seName: name of the StorageElement
         :param accessType ReadAccess, WriteAccess,CheckAccess,RemoveAccess
@@ -185,7 +185,7 @@ class FTS3Operation(FTS3Serializable):
     # if access["Value"][seName][accessType] not in ( "Active", "Degraded" ):
     #   return S_ERROR( "%s does not have %s in Active or Degraded" % ( seName, accessType ) )
 
-    status = StorageElement(seName).getStatus()
+    status = StorageElement(seName, vo=vo).getStatus()
     if not status['OK']:
       return status
 
@@ -381,7 +381,7 @@ class FTS3TransferOperation(FTS3Operation):
 
     for targetSE, ftsFiles in filesGroupedByTarget.iteritems():
 
-      res = self._checkSEAccess(targetSE, 'WriteAccess')
+      res = self._checkSEAccess(targetSE, 'WriteAccess', vo=self.vo)
 
       if not res['OK']:
         log.error(res)
@@ -511,7 +511,7 @@ class FTS3StagingOperation(FTS3Operation):
 
     for targetSE, ftsFiles in filesGroupedByTarget.iteritems():
 
-      res = self._checkSEAccess(targetSE, 'ReadAccess')
+      res = self._checkSEAccess(targetSE, 'ReadAccess', vo=self.vo)
       if not res['OK']:
         log.error(res)
         continue

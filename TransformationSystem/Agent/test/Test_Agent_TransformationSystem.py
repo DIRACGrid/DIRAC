@@ -4,7 +4,6 @@
 # pylint: disable=protected-access, missing-docstring, invalid-name, line-too-long
 
 # imports
-import importlib
 import datetime
 
 import pytest
@@ -15,25 +14,20 @@ from DIRAC import gLogger
 from DIRAC.TransformationSystem.Agent.TaskManagerAgentBase import TaskManagerAgentBase
 from DIRAC.TransformationSystem.Agent.TransformationAgent import TransformationAgent
 
-gLogger.setLevel('DEBUG')
-
-
 mockAM = MagicMock()
-tmab_m = importlib.import_module('DIRAC.TransformationSystem.Agent.TaskManagerAgentBase')
-tmab_m.AgentModule = mockAM
-tmab_m.FileReport = MagicMock()
-tmab = TaskManagerAgentBase()
-tmab.log = gLogger
-tmab.am_getOption = mockAM
-tmab.log.setLevel('DEBUG')
 
 
 @pytest.mark.parametrize("operationsOnTransformationsDict, expected", [
     ({1: {'Operations': ['op1', 'op2'], 'Body':'veryBigBody'}}, ([1], 1)),
-    ({2: {'Operations': ['op3', 'op2'], 'Body':'veryveryBigBody'}}, ([1, 2], 2)),
-    ({2: {'Operations': ['op3', 'op2'], 'Body':'veryveryBigBody'}}, ([1, 2], 2))
+    ({2: {'Operations': ['op3', 'op2'], 'Body':'veryveryBigBody'}}, ([2], 1)),
+    ({2: {'Operations': ['op3', 'op2'], 'Body':'veryveryBigBody'}}, ([2], 1))
 ])
-def test__fillTheQueue(operationsOnTransformationsDict, expected):
+def test__fillTheQueue(mocker, operationsOnTransformationsDict, expected):
+  mocker.patch('DIRAC.TransformationSystem.Agent.TaskManagerAgentBase.AgentModule', side_effect=mockAM)
+  mocker.patch('DIRAC.TransformationSystem.Agent.TaskManagerAgentBase.FileReport', side_effect=MagicMock())
+  tmab = TaskManagerAgentBase()
+  tmab.log = gLogger
+  tmab.am_getOption = mockAM
   tmab._fillTheQueue(operationsOnTransformationsDict)
   assert tmab.transInQueue == expected[0]
   assert tmab.transQueue.qsize() == expected[1]
@@ -73,7 +67,12 @@ sError = {'OK': False, 'Message': 'a mess'}
     (tasks, {'OK': True, 'Value': {}}, True),  # tasks, nothing to update
     (tasks, {'OK': True, 'Value': {'Running': [1, 2], 'Done': [3]}}, True)  # tasks, to update, no errors
 ])
-def test_updateTaskStatusSuccess(tcMockReturnValue, tmMockGetSubmittedTaskStatusReturnvalue, expected):
+def test_updateTaskStatusSuccess(mocker, tcMockReturnValue, tmMockGetSubmittedTaskStatusReturnvalue, expected):
+  mocker.patch('DIRAC.TransformationSystem.Agent.TaskManagerAgentBase.AgentModule', side_effect=mockAM)
+  mocker.patch('DIRAC.TransformationSystem.Agent.TaskManagerAgentBase.FileReport', side_effect=MagicMock())
+  mocker.patch('DIRAC.TransformationSystem.Agent.TaskManagerAgentBase.TaskManagerAgentBase.am_getOption',
+               side_effect=mockAM)
+  tmab = TaskManagerAgentBase()
   tc_mock.getTransformationTasks.return_value = tcMockReturnValue
   tm_mock.getSubmittedTaskStatus.return_value = tmMockGetSubmittedTaskStatusReturnvalue
   res = tmab.updateTaskStatus(transIDOPBody, clients)
@@ -88,9 +87,13 @@ def test_updateTaskStatusSuccess(tcMockReturnValue, tmMockGetSubmittedTaskStatus
     ({'OK': True, 'Value': [{'file1': 'boh', 'TaskID': 1}]},
      {'OK': True, 'Value': {'file1': 'OK', 'file2': 'NOK'}}, True),  # files, something to update
 ])
-def test_updateFileStatusSuccess(tcMockGetTransformationFilesReturnValue,
+def test_updateFileStatusSuccess(mocker,
+                                 tcMockGetTransformationFilesReturnValue,
                                  tmMockGetSubmittedFileStatusReturnValue,
                                  expected):
+  mocker.patch('DIRAC.TransformationSystem.Agent.TaskManagerAgentBase.AgentModule', side_effect=mockAM)
+  mocker.patch('DIRAC.TransformationSystem.Agent.TaskManagerAgentBase.FileReport', side_effect=MagicMock())
+  tmab = TaskManagerAgentBase()
   tc_mock.getTransformationFiles.return_value = tcMockGetTransformationFilesReturnValue
   tm_mock.getSubmittedFileStatus.return_value = tmMockGetSubmittedFileStatusReturnValue
   res = tmab.updateFileStatus(transIDOPBody, clients)
@@ -111,10 +114,14 @@ def test_updateFileStatusSuccess(tcMockGetTransformationFilesReturnValue,
                                    'Value': {'NoTasks': ['3_4', '5_6'],
                                              'TaskNameIDs': {'1_1': 123, '2_1': 456}}},
                            {'OK': True}, True)])  # tasks, something to update, no fail
-def test_checkReservedTasks(tcMockGetTransformationTasksReturnValue,
+def test_checkReservedTasks(mocker,
+                            tcMockGetTransformationTasksReturnValue,
                             tmMockUpdateTransformationReservedTasksReturnValue,
                             tcMockSetTaskStatusAndWmsIDReturnValue,
                             expected):
+  mocker.patch('DIRAC.TransformationSystem.Agent.TaskManagerAgentBase.AgentModule', side_effect=mockAM)
+  mocker.patch('DIRAC.TransformationSystem.Agent.TaskManagerAgentBase.FileReport', side_effect=MagicMock())
+  tmab = TaskManagerAgentBase()
   tc_mock.getTransformationTasks.return_value = tcMockGetTransformationTasksReturnValue
   tm_mock.updateTransformationReservedTasks.return_value = tmMockUpdateTransformationReservedTasksReturnValue
   tc_mock.setTaskStatusAndWmsID.return_value = tcMockSetTaskStatusAndWmsIDReturnValue
@@ -140,11 +147,15 @@ sOkJobs = {'OK': True, 'Value': {123: 'foo', 456: 'bar'}}
                           (sOkJobDict, sOkJobs, sError, None, False),  # tasks, still errors
                           (sOkJobDict, sOkJobs, sOk, sError, False),  # tasks, still errors
                           (sOkJobDict, sOkJobs, sOk, sOk, True)])  # tasks, no errors
-def test_submitTasks(tcMockGetTasksToSubmitReturnValue,
+def test_submitTasks(mocker,
+                     tcMockGetTasksToSubmitReturnValue,
                      tmMockPrepareTransformationTasksReturnValue,
                      tmMockSubmitTransformationTasksReturnValue,
                      tmMockUpdateDBAfterTaskSubmissionReturnValue,
                      expected):
+  mocker.patch('DIRAC.TransformationSystem.Agent.TaskManagerAgentBase.AgentModule', side_effect=mockAM)
+  mocker.patch('DIRAC.TransformationSystem.Agent.TaskManagerAgentBase.FileReport', side_effect=MagicMock())
+  tmab = TaskManagerAgentBase()
   tc_mock.getTasksToSubmit.return_value = tcMockGetTasksToSubmitReturnValue
   tm_mock.prepareTransformationTasks.return_value = tmMockPrepareTransformationTasksReturnValue
   tm_mock.submitTransformationTasks.return_value = tmMockSubmitTransformationTasksReturnValue
@@ -154,13 +165,6 @@ def test_submitTasks(tcMockGetTasksToSubmitReturnValue,
 
 
 # TransformationAgent
-
-
-ta_m = importlib.import_module('DIRAC.TransformationSystem.Agent.TransformationAgent')
-ta_m.AgentModule = mockAM
-ta = TransformationAgent()
-ta.log = gLogger
-ta.am_getOption = mockAM
 
 goodFiles = {'OK': True,
              'Value': [{'ErrorCount': 1,
@@ -193,7 +197,8 @@ noFiles = {'OK': True, 'Value': []}
     ({'TransformationID': 123, 'Status': 'Stopped', 'Type': 'Replication'}, goodFiles, True),
     ({'TransformationID': 123, 'Status': 'Stopped', 'Type': 'Removal'}, noFiles, True)
 ])
-def test__getTransformationFiles(transDict, getTFiles, expected):
+def test__getTransformationFiles(mocker, transDict, getTFiles, expected):
+  mocker.patch('DIRAC.TransformationSystem.Agent.TransformationAgent.AgentModule', side_effect=mockAM)
   tc_mock.getTransformationFiles.return_value = getTFiles
-  res = ta._getTransformationFiles(transDict, {'TransformationClient': tc_mock})
+  res = TransformationAgent()._getTransformationFiles(transDict, {'TransformationClient': tc_mock})
   assert res['OK'] == expected

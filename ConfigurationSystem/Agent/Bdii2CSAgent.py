@@ -14,6 +14,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Path      import cfgPath
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry  import getVOs, getVOOption
 from DIRAC.ConfigurationSystem.Client.Utilities         import getGridCEs, getSiteUpdates, getSRMUpdates, \
                                                                getCEsFromCS, getSEsFromCS, getGridSRMs
+from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE
 
 __RCSID__ = "$Id$"
 
@@ -41,6 +42,8 @@ class Bdii2CSAgent( AgentModule ):
     # What to get
     self.processCEs = True
     self.processSEs = False
+    self.selectedSites = []
+
     # Update the CS or not?
     self.dryRun = False
 
@@ -68,6 +71,7 @@ class Bdii2CSAgent( AgentModule ):
 
     self.processCEs = self.am_getOption( 'ProcessCEs', self.processCEs )
     self.processSEs = self.am_getOption( 'ProcessSEs', self.processSEs )
+    self.selectedSites = self.am_getOption('SelectedSites', [])
     self.dryRun = self.am_getOption( 'DryRun', self.dryRun )
 
     self.voName = self.am_getOption( 'VirtualOrganization', self.voName )
@@ -251,6 +255,7 @@ class Bdii2CSAgent( AgentModule ):
       if not result['OK']:
         continue
       ceBdiiDict = result['Value']
+      self.__purgeSites(ceBdiiDict)
       result = getSiteUpdates( vo, bdiiInfo = ceBdiiDict, log = self.log )
       if not result['OK']:
         continue
@@ -259,6 +264,30 @@ class Bdii2CSAgent( AgentModule ):
     # We have collected all the changes, consolidate VO settings
     result = self.__updateCS( bdiiChangeSet )
     return result
+
+  def __purgeSites(self, ceBdiiDict):
+    """Remove all sites that are not in self.selectedSites.
+
+    Modifies the ceBdiiDict!
+    """
+    if not self.selectedSites:
+      return
+    for site in list(ceBdiiDict):
+      ces = list(ceBdiiDict[site]['CEs'])
+      if not ces:
+        self.log.error("No CE information for site:", site)
+        continue
+      diracSiteName = getSiteForCE(ces[0])
+      if not diracSiteName['OK']:
+        self.log.error("Failed to get DIRAC site name for ce", "%s: %s" % (ces[0], diracSiteName['Message']))
+        continue
+      self.log.debug("Checking site %s (%s), aka %s" % (site, ces, diracSiteName['Value']))
+      if diracSiteName['Value'] in self.selectedSites:
+        continue
+      self.log.info("Dropping site %s, aka %s" % (site, diracSiteName))
+      ceBdiiDict.pop(site)
+    return
+
 
   def __updateCS( self, bdiiChangeSet ):
 
