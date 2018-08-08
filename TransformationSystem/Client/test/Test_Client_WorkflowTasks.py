@@ -20,35 +20,35 @@ WMSClientMock = MagicMock()
 jobMonitoringClient = MagicMock()
 
 wfTasks = WorkflowTasks(transClient=mockTransClient,
-			submissionClient=WMSClientMock,
-			jobMonitoringClient=jobMonitoringClient,
-			outputDataModule="mock")
+                        submissionClient=WMSClientMock,
+                        jobMonitoringClient=jobMonitoringClient,
+                        outputDataModule="mock")
 odm_o = MagicMock()
 odm_o.execute.return_value = {'OK': True, 'Value': {}}
 wfTasks.outputDataModule_o = odm_o
 
 taskDict = {1: {'TransformationID': 1, 'a1': 'aa1', 'b1': 'bb1', 'Site': 'MySite'},
-	    2: {'TransformationID': 1, 'a2': 'aa2', 'b2': 'bb2', 'InputData': ['a1', 'a2']},
-	    3: {'TransformationID': 2, 'a3': 'aa3', 'b3': 'bb3'}, }
+            2: {'TransformationID': 1, 'a2': 'aa2', 'b2': 'bb2', 'InputData': ['a1', 'a2']},
+            3: {'TransformationID': 2, 'a3': 'aa3', 'b3': 'bb3'}, }
 
 taskDictNoInputs = {1: {'TransformationID': 1, 'a1': 'aa1', 'b1': 'bb1', 'Site': 'MySite'},
-		    2: {'TransformationID': 1, 'a2': 'aa2', 'b2': 'bb2'},
-		    3: {'TransformationID': 2, 'a3': 'aa3', 'b3': 'bb3'}, }
+                    2: {'TransformationID': 1, 'a2': 'aa2', 'b2': 'bb2'},
+                    3: {'TransformationID': 2, 'a3': 'aa3', 'b3': 'bb3'}, }
 
 expected = {'OK': True,
-	    'Value': {1: {'a1': 'aa1', 'TaskObject': '', 'TransformationID': 1,
-			  'b1': 'bb1', 'Site': 'ANY', 'JobType': 'User'},
-		      2: {'TaskObject': '', 'a2': 'aa2', 'TransformationID': 1,
-			  'InputData': ['a1', 'a2'], 'b2': 'bb2', 'Site': 'ANY', 'JobType': 'User'},
-		      3: {'TaskObject': '', 'a3': 'aa3', 'TransformationID': 2,
-			  'b3': 'bb3', 'Site': 'ANY', 'JobType': 'User'}
-		      }
-	    }
+            'Value': {1: {'a1': 'aa1', 'TaskObject': '', 'TransformationID': 1,
+                          'b1': 'bb1', 'Site': 'ANY', 'JobType': 'User'},
+                      2: {'TaskObject': '', 'a2': 'aa2', 'TransformationID': 1,
+                          'InputData': ['a1', 'a2'], 'b2': 'bb2', 'Site': 'ANY', 'JobType': 'User'},
+                      3: {'TaskObject': '', 'a3': 'aa3', 'TransformationID': 2,
+                          'b3': 'bb3', 'Site': 'ANY', 'JobType': 'User'}
+                      }
+            }
 expectedBulk = {'OK': True,
-		'Value': {'BulkJobObject': '',
-			  1: {'a1': 'aa1', 'TransformationID': 1, 'b1': 'bb1', 'Site': 'MySite'},
-			  2: {'a2': 'aa2', 'TransformationID': 1, 'b2': 'bb2', 'InputData': ['a1', 'a2']},
-			  3: {'TransformationID': 2, 'a3': 'aa3', 'b3': 'bb3'}}}
+                'Value': {'BulkJobObject': '',
+                          1: {'a1': 'aa1', 'TransformationID': 1, 'b1': 'bb1', 'Site': 'MySite'},
+                          2: {'a2': 'aa2', 'TransformationID': 1, 'b2': 'bb2', 'InputData': ['a1', 'a2']},
+                          3: {'TransformationID': 2, 'a3': 'aa3', 'b3': 'bb3'}}}
 
 
 @pytest.mark.parametrize("taskDictionary, bulkSubmissionFlag, result, expectedRes", [
@@ -58,18 +58,18 @@ expectedBulk = {'OK': True,
 ])
 def test_prepareTranformationTasks(taskDictionary, bulkSubmissionFlag, result, expectedRes):
   res = wfTasks.prepareTransformationTasks('', taskDictionary, 'test_user', 'test_group', 'test_DN',
-					   bulkSubmissionFlag=bulkSubmissionFlag)
+                                           bulkSubmissionFlag=bulkSubmissionFlag)
   assert res['OK'] == result
   if res['OK']:
     for key, value in res['Value'].iteritems():
       if key != 'BulkJobObject':
-	assert key in expectedRes['Value']
-	for tKey, tValue in value.iteritems():
-	  assert tKey in expectedRes['Value'][key]
-	  if tKey == 'TaskObject':
-	    assert isinstance(tValue, Job)
-	  else:
-	    assert tValue == expectedRes['Value'][key][tKey]
+        assert key in expectedRes['Value']
+        for tKey, tValue in value.iteritems():
+          assert tKey in expectedRes['Value'][key]
+          if tKey == 'TaskObject':
+            assert isinstance(tValue, Job)
+          else:
+            assert tValue == expectedRes['Value'][key][tKey]
 
 
 def ourgetSitesForSE(ses):

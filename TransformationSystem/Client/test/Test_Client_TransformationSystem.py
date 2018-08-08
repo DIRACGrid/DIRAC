@@ -22,7 +22,7 @@ class reqValFake_C(object):
         try:
           if not f.LFN:
             return {'OK': False}
-	except BaseException:
+        except BaseException:
           return {'OK': False}
     return {'OK': True}
 
@@ -85,9 +85,9 @@ class PluginUtilitiesSuccess(ClientsTestCase):
                                   'Flush')
     self.assertTrue(res['OK'])
     self.assertEqual(res['Value'], [
-	('SE1,SE2', ['/this/is/at.12']),
-	('SE1,SE2,SE3', ['/this/is/at.123']),
-	('SE1,SE3,SE4', ['/this/is/at.134'])])
+        ('SE1,SE2', ['/this/is/at.12']),
+        ('SE1,SE2,SE3', ['/this/is/at.123']),
+        ('SE1,SE3,SE4', ['/this/is/at.134'])])
 
 
 class RequestTasksSuccess(ClientsTestCase):
@@ -133,7 +133,7 @@ class RequestTasksSuccess(ClientsTestCase):
 
     # # test another (single) OperationType
     res = self.requestTasks.prepareTransformationTasks('someType;LogUpload', taskDict,
-						       'owner', 'ownerGroup', '/bih/boh/DN')
+                                                       'owner', 'ownerGroup', '/bih/boh/DN')
     self.assertTrue(res['OK'])
     # We should "lose" one of the task in the preparation
     self.assertEqual(len(taskDict), 2)
@@ -143,7 +143,7 @@ class RequestTasksSuccess(ClientsTestCase):
 
     # ## Multiple operations
     transBody = [("ReplicateAndRegister", {"SourceSE": "FOO-SRM", "TargetSE": "BAR-SRM"}),
-		 ("RemoveReplica", {"TargetSE": "FOO-SRM"}), ]
+                 ("RemoveReplica", {"TargetSE": "FOO-SRM"}), ]
     jsonBody = json.dumps(transBody)
 
     taskDict = {1: {'TransformationID': 1, 'TargetSE': 'SE1', 'b1': 'bb1', 'Site': 'MySite',

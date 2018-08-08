@@ -71,7 +71,7 @@ def test_updateTaskStatusSuccess(mocker, tcMockReturnValue, tmMockGetSubmittedTa
   mocker.patch('DIRAC.TransformationSystem.Agent.TaskManagerAgentBase.AgentModule', side_effect=mockAM)
   mocker.patch('DIRAC.TransformationSystem.Agent.TaskManagerAgentBase.FileReport', side_effect=MagicMock())
   mocker.patch('DIRAC.TransformationSystem.Agent.TaskManagerAgentBase.TaskManagerAgentBase.am_getOption',
-	       side_effect=mockAM)
+               side_effect=mockAM)
   tmab = TaskManagerAgentBase()
   tc_mock.getTransformationTasks.return_value = tcMockReturnValue
   tm_mock.getSubmittedTaskStatus.return_value = tmMockGetSubmittedTaskStatusReturnvalue
@@ -88,7 +88,7 @@ def test_updateTaskStatusSuccess(mocker, tcMockReturnValue, tmMockGetSubmittedTa
      {'OK': True, 'Value': {'file1': 'OK', 'file2': 'NOK'}}, True),  # files, something to update
 ])
 def test_updateFileStatusSuccess(mocker,
-				 tcMockGetTransformationFilesReturnValue,
+                                 tcMockGetTransformationFilesReturnValue,
                                  tmMockGetSubmittedFileStatusReturnValue,
                                  expected):
   mocker.patch('DIRAC.TransformationSystem.Agent.TaskManagerAgentBase.AgentModule', side_effect=mockAM)
@@ -115,7 +115,7 @@ def test_updateFileStatusSuccess(mocker,
                                              'TaskNameIDs': {'1_1': 123, '2_1': 456}}},
                            {'OK': True}, True)])  # tasks, something to update, no fail
 def test_checkReservedTasks(mocker,
-			    tcMockGetTransformationTasksReturnValue,
+                            tcMockGetTransformationTasksReturnValue,
                             tmMockUpdateTransformationReservedTasksReturnValue,
                             tcMockSetTaskStatusAndWmsIDReturnValue,
                             expected):
@@ -148,7 +148,7 @@ sOkJobs = {'OK': True, 'Value': {123: 'foo', 456: 'bar'}}
                           (sOkJobDict, sOkJobs, sOk, sError, False),  # tasks, still errors
                           (sOkJobDict, sOkJobs, sOk, sOk, True)])  # tasks, no errors
 def test_submitTasks(mocker,
-		     tcMockGetTasksToSubmitReturnValue,
+                     tcMockGetTasksToSubmitReturnValue,
                      tmMockPrepareTransformationTasksReturnValue,
                      tmMockSubmitTransformationTasksReturnValue,
                      tmMockUpdateDBAfterTaskSubmissionReturnValue,
