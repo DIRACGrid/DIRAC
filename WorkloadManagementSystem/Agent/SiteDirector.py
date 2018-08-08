@@ -464,7 +464,10 @@ class SiteDirector(AgentModule):
 
     self.totalSubmittedPilots = 0
 
-    for queueName, queueDictionary in self.queueDict.iteritems():
+    queueDictItems = list(self.queueDict.items())
+    random.shuffle(queueDictItems)
+
+    for queueName, queueDictionary in queueDictItems:
       # now submitting to the single queues
       self.log.verbose("Evaluating queue %s" % queueName)
 
