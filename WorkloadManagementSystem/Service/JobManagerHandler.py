@@ -18,6 +18,7 @@ from DIRAC.Core.DISET.MessageClient import MessageClient
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.Core.Utilities.DErrno import EWMSJDL, EWMSSUBM
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
@@ -87,7 +88,7 @@ class JobManagerHandler(RequestHandler):
     self.owner = credDict['username']
     self.peerUsesLimitedProxy = credDict['isLimitedProxy']
     self.diracSetup = self.serviceInfoDict['clientSetup']
-    self.maxParametricJobs = self.srv_getCSOption('MaxParametricJobs', MAX_PARAMETRIC_JOBS)
+    self.maxParametricJobs = Operations().getValue('JobScheduling/MaxParametricJobs', MAX_PARAMETRIC_JOBS)
     self.jobPolicy = JobPolicy(self.ownerDN, self.ownerGroup, self.userProperties)
     self.jobPolicy.setJobDB(gJobDB)
     return S_OK()
