@@ -520,7 +520,6 @@ class WorkflowTasks(TaskBase):
     method = '__prepareTransformationTasksBulk'
     startTime = time.time()
 
-
     # Prepare the bulk Job object with common parameters
     oJob = self.jobClass(transBody)
     self._logVerbose('Setting job owner:group to %s:%s' % (owner, ownerGroup),

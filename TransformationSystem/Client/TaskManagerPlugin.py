@@ -153,6 +153,6 @@ class TaskManagerPlugin(PluginBase):
           destSites.add(destSite)
 
     gLogger.debug("Computed list of destination sites for %s task with TargetSE %s: %s" % (jobType,
-                                                                                             self.params['TargetSE'],
-                                                                                             ','.join(destSites)))
+                                                                                           self.params['TargetSE'],
+                                                                                           ','.join(destSites)))
     return destSites

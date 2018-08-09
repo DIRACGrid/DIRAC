@@ -196,7 +196,6 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
         self._addOperationForTransformations(operationsOnTransformationDict, 'submitTasks', transformations,
                                              owner=owner, ownerGroup=ownerGroup, ownerDN=ownerDN)
 
-
     self.maxParametricJobs = Operations().getValue("JobScheduling/MaxParametricJobs", MAX_PARAMETRIC_JOBS)
 
     self._fillTheQueue(operationsOnTransformationDict)
@@ -562,7 +561,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
                                                  clients)
       if not res['OK']:
         return res
-      self._logVerbose("Submitted %d jobs, bulkSubmissionFlag = %s" %(chunkSize, self.bulkSubmissionFlag))
+      self._logVerbose("Submitted %d jobs, bulkSubmissionFlag = %s" % (chunkSize, self.bulkSubmissionFlag))
 
     return S_OK()
 
