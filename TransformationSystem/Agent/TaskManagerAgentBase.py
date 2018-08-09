@@ -63,6 +63,9 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
     self.transInQueue = []
     self.transInThread = {}
 
+    # The default is defined in the JobManager service
+    self.maxParametricJobs = MAX_PARAMETRIC_JOBS
+
   #############################################################################
 
   def initialize(self):
@@ -196,7 +199,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
         self._addOperationForTransformations(operationsOnTransformationDict, 'submitTasks', transformations,
                                              owner=owner, ownerGroup=ownerGroup, ownerDN=ownerDN)
 
-    self.maxParametricJobs = Operations().getValue("JobScheduling/MaxParametricJobs", MAX_PARAMETRIC_JOBS)
+    self.maxParametricJobs = Operations().getValue("JobScheduling/MaxParametricJobs", self.maxParametricJobs)
 
     self._fillTheQueue(operationsOnTransformationDict)
 
@@ -521,11 +524,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
   def submitTasks(self, transIDOPBody, clients):
     """ Submit the tasks to an external system, using the taskManager provided
 
-    :param str transBody: transformation job template
-    :param dict tasks: dictionary of per task parameters
-    :param str owner: owner of the transformation
-    :param str ownerDN: DN of the owner of the transformation
-    :param str ownerGroup: group of the owner of the transformation
+    :param dict transIDOPBody: transformation body
     :param dict clients: dictionary of client objects
 
     :return: S_OK/S_ERROR
@@ -561,7 +560,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
                                                  clients)
       if not res['OK']:
         return res
-      self._logVerbose("Submitted %d jobs, bulkSubmissionFlag = %s" % (chunkSize, self.bulkSubmissionFlag))
+      self._logVerbose("Submitted %d jobs, bulkSubmissionFlag = %s" % (len(taskDictChunk), self.bulkSubmissionFlag))
 
     return S_OK()
 

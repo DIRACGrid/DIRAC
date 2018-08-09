@@ -1,4 +1,4 @@
-""" Collecting utilties for dictionaries
+""" Collecting utilities for dictionaries
 """
 
 from itertools import islice
