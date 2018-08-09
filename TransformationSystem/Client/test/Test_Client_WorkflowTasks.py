@@ -46,9 +46,12 @@ expected = {'OK': True,
             }
 expectedBulk = {'OK': True,
                 'Value': {'BulkJobObject': '',
-                          1: {'a1': 'aa1', 'TransformationID': 1, 'b1': 'bb1', 'Site': 'MySite'},
-                          2: {'a2': 'aa2', 'TransformationID': 1, 'b2': 'bb2', 'InputData': ['a1', 'a2']},
-                          3: {'TransformationID': 2, 'a3': 'aa3', 'b3': 'bb3'}}}
+                          1: {'a1': 'aa1', 'TransformationID': 1, 'b1': 'bb1',
+                              'Site': 'MySite',  'JobType': 'User'},
+                          2: {'a2': 'aa2', 'TransformationID': 1, 'b2': 'bb2',
+                              'InputData': ['a1', 'a2'], 'JobType': 'User'},
+                          3: {'TransformationID': 2, 'a3': 'aa3', 'b3': 'bb3',
+                              'JobType': 'User'}}}
 
 
 @pytest.mark.parametrize("taskDictionary, bulkSubmissionFlag, result, expectedRes", [
