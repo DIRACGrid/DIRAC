@@ -477,7 +477,7 @@ class WorkflowTasks(TaskBase):
 
     :param str transBody: transformation job template
     :param dict taskDict: dictionary of per task parameters
-    :param owner: owner of the transformation
+    :param str owner: owner of the transformation
     :param str ownerGroup: group of the owner of the transformation
     :param str ownerDN: DN of the owner of the transformation
     :param bool bulkSubmissionFlag: flag for using bulk submission or not
@@ -500,6 +500,7 @@ class WorkflowTasks(TaskBase):
 
     if bulkSubmissionFlag:
       return self.__prepareTasksBulk(transBody, taskDict, owner, ownerGroup, ownerDN)
+    # not a bulk submission
     return self.__prepareTasks(transBody, taskDict, owner, ownerGroup, ownerDN)
 
   def __prepareTasksBulk(self, transBody, taskDict, owner, ownerGroup, ownerDN):
@@ -507,7 +508,7 @@ class WorkflowTasks(TaskBase):
 
     :param str transBody: transformation job template
     :param dict taskDict: dictionary of per task parameters
-    :param owner: owner of the transformation
+    :param str owner: owner of the transformation
     :param str ownerGroup: group of the owner of the transformation
     :param str ownerDN: DN of the owner of the transformation
     """
@@ -908,7 +909,7 @@ class WorkflowTasks(TaskBase):
     return S_OK(taskDict)
 
   def submitTaskToExternal(self, job):
-    """ Submits a single job to the WMS.
+    """ Submits a single job (which can be a bulk one) to the WMS.
     """
     if isinstance(job, basestring):
       try:
