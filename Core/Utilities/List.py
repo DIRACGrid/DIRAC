@@ -46,9 +46,8 @@ def fromChar(inputString, sepChar=","):
      :param string sepChar: separator
      :return: list of strings or None if sepChar has a wrong type
   """
-  if not (isinstance(inputString, basestring) and
-          isinstance(sepChar, basestring) and
-          sepChar):  # to prevent getting an empty String as argument
+  # to prevent getting an empty String as argument
+  if not (isinstance(inputString, basestring) and isinstance(sepChar, basestring) and sepChar):
     return None
   return [fieldString.strip() for fieldString in inputString.split(sepChar) if len(fieldString.strip()) > 0]
 
