@@ -115,8 +115,6 @@ class JobManagerHandler(RequestHandler):
     """
     return S_OK(self.maxParametricJobs)
 
-
-  ###########################################################################
   types_submitJob = [basestring]
 
   def export_submitJob(self, jobDesc):
