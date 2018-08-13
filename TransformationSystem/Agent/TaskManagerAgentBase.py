@@ -28,7 +28,7 @@ from DIRAC.TransformationSystem.Client.FileReport import FileReport
 from DIRAC.TransformationSystem.Client.TaskManager import WorkflowTasks
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 from DIRAC.TransformationSystem.Agent.TransformationAgentsUtilities import TransformationAgentsUtilities
-from DIRAC.WorkloadManagementSystem.Service.JobManagerHandler import MAX_PARAMETRIC_JOBS
+from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
 
 AGENT_NAME = 'Transformation/TaskManagerAgentBase'
 
@@ -46,9 +46,11 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
     TransformationAgentsUtilities.__init__(self)
 
     self.transClient = None
+    self.jobManagerClient = None
     self.transType = []
 
     self.tasksPerLoop = 50
+    self.maxParametricJobs = 20  # will be updated in execute()
 
     # credentials
     self.shifterProxy = None
@@ -81,6 +83,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
 
     # Default clients
     self.transClient = TransformationClient()
+    self.jobManagerClient = JobManagerClient()
 
     # Bulk submission flag
     self.bulkSubmissionFlag = self.am_getOption('BulkSubmission', self.bulkSubmissionFlag)
@@ -133,6 +136,8 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
       owner, ownerGroup, ownerDN = self.credTuple
     else:
       self.log.info("Using per Transformation Credentials!")
+
+    self.maxParametricJobs = self.jobManagerClient.getMaxParametricJobs()
 
     # Determine whether the task status is to be monitored and updated
     enableTaskMonitor = self.am_getOption('MonitorTasks', '')
@@ -193,6 +198,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
       else:
         # Get the transformations which should be submitted
         self.tasksPerLoop = self.am_getOption('TasksPerLoop', self.tasksPerLoop)
+        self.maxParametricJobs = self.jobManagerClient.getMaxParametricJobs()
         self._addOperationForTransformations(operationsOnTransformationDict, 'submitTasks', transformations,
                                              owner=owner, ownerGroup=ownerGroup, ownerDN=ownerDN)
 
@@ -548,7 +554,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
                   method=method, transID=transID)
 
     # Prepare tasks and submits them, by chunks
-    chunkSize = MAX_PARAMETRIC_JOBS if self.bulkSubmissionFlag else self.tasksPerLoop
+    chunkSize = self.maxParametricJobs if self.bulkSubmissionFlag else self.tasksPerLoop
     for taskDictChunk in breakDictionaryIntoChunks(tasks, chunkSize):
       res = self._prepareAndSubmitAndUpdateTasks(transID, transBody, taskDictChunk,
                                                  owner, ownerDN, ownerGroup,

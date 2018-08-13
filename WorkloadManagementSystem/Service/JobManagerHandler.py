@@ -87,6 +87,7 @@ class JobManagerHandler(RequestHandler):
     self.owner = credDict['username']
     self.peerUsesLimitedProxy = credDict['isLimitedProxy']
     self.diracSetup = self.serviceInfoDict['clientSetup']
+    self.maxParametricJobs = self.srv_getCSOption('MaxParametricJobs', MAX_PARAMETRIC_JOBS)
     self.jobPolicy = JobPolicy(self.ownerDN, self.ownerGroup, self.userProperties)
     self.jobPolicy.setJobDB(gJobDB)
     return S_OK()
@@ -105,6 +106,15 @@ class JobManagerHandler(RequestHandler):
       self.log.error("Cannot send Optimize message: %s" % result['Message'])
       return
     self.log.info("Optimize msg sent for %s jobs" % len(jids))
+
+  ###########################################################################
+  types_getMaxParametricJobs = []
+
+  def export_getMaxParametricJobs(self):
+    """ Get the maximum number of parametric jobs
+    """
+    return S_OK(self.maxParametricJobs)
+
 
   ###########################################################################
   types_submitJob = [basestring]
@@ -146,8 +156,8 @@ class JobManagerHandler(RequestHandler):
     if nJobs > 0:
       # if we are here, then jobDesc was the description of a parametric job. So we start unpacking
       parametricJob = True
-      if nJobs > MAX_PARAMETRIC_JOBS:
-        return S_ERROR(EWMSJDL, "Number of parametric jobs exceeds the limit of %d" % MAX_PARAMETRIC_JOBS)
+      if nJobs > self.maxParametricJobs:
+        return S_ERROR(EWMSJDL, "Number of parametric jobs exceeds the limit of %d" % self.maxParametricJobs)
       result = generateParametricJobs(jobClassAd)
       if not result['OK']:
         return result
