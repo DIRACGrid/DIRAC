@@ -4,7 +4,7 @@
     So, for example, given the following /Operations section::
 
       Operations/
-          Default/
+          Defaults/
               someSection/
                   someOption = someValue
                   aSecondOption = aSecondValue
@@ -24,7 +24,7 @@
 
       Operations().getValue('someSection/aSecondOption')
         - aSecondValueInProduction if we are in 'Production' setup
-        - aSecondValue if we are in 'Certification' setup    <- looking in Default
+        - aSecondValue if we are in 'Certification' setup    <- looking in Defaults
                                                                 since there's no Certification/someSection/aSecondOption
 
 
@@ -33,7 +33,7 @@
 
       Operations/
           aVOName/
-              Default/
+              Defaults/
                   someSection/
                       someOption = someValue
                       aSecondOption = aSecondValue
@@ -45,7 +45,7 @@
                   someSection/
                       someOption = someValueInCertification
           anotherVOName/
-              Default/
+              Defaults/
                   someSectionName/
                       someOptionX = someValueX
                       aSecondOption = aSecondValue
