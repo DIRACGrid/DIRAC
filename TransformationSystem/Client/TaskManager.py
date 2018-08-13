@@ -183,6 +183,7 @@ class RequestTasks(TaskBase):
     :param dict taskDict: dictionary of tasks, modified in this function
     :param str ownerDN: certificate DN used for the requests
     :param str onwerGroup: dirac group used for the requests
+
     :returns: None
     """
     failedTasks = []
@@ -228,6 +229,7 @@ class RequestTasks(TaskBase):
     :param dict taskDict: dictionary of tasks, modified in this function
     :param str ownerDN: certificate DN used for the requests
     :param str onwerGroup: dirac group used for the requests
+
     :returns: None
     """
 
@@ -278,6 +280,7 @@ class RequestTasks(TaskBase):
     :param int taskID: Task ID
     :param str ownerDN: certificate DN used for the requests
     :param str onwerGroup: dirac group used for the requests
+
     :returns: None
     """
 
@@ -481,7 +484,8 @@ class WorkflowTasks(TaskBase):
     :param str ownerGroup: group of the owner of the transformation
     :param str ownerDN: DN of the owner of the transformation
     :param bool bulkSubmissionFlag: flag for using bulk submission or not
-    :return:  S_OK/S_ERROR with updated taskDict
+
+    :return: S_OK/S_ERROR with updated taskDict
     """
 
     if (not owner) or (not ownerGroup):
@@ -511,6 +515,8 @@ class WorkflowTasks(TaskBase):
     :param str owner: owner of the transformation
     :param str ownerGroup: group of the owner of the transformation
     :param str ownerDN: DN of the owner of the transformation
+
+    :return: S_OK/S_ERROR with updated taskDict
     """
     if taskDict:
       transID = taskDict.values()[0]['TransformationID']
@@ -636,6 +642,7 @@ class WorkflowTasks(TaskBase):
     :param owner: owner of the transformation
     :param str ownerGroup: group of the owner of the transformation
     :param str ownerDN: DN of the owner of the transformation
+
     :return:  S_OK/S_ERROR with updated taskDict
     """
     if taskDict:

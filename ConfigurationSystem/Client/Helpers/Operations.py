@@ -79,7 +79,8 @@ from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationDat
 from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 from DIRAC.Core.Utilities.Decorators import deprecated
 
-class Operations( object ):
+
+class Operations(object):
   """ Operations class
 
       The /Operations CFG section is maintained in a cache by an Operations object
@@ -89,7 +90,7 @@ class Operations( object ):
   __cacheVersion = 0
   __cacheLock = LockRing.LockRing().getLock()
 
-  def __init__( self, vo = False, group = False, setup = False ):
+  def __init__(self, vo=False, group=False, setup=False):
     """ c'tor
 
         Setting some defaults
@@ -101,31 +102,31 @@ class Operations( object ):
     self.__setup = False
     self.__discoverSettings()
 
-  def __discoverSettings( self ):
+  def __discoverSettings(self):
     """ Discovers the vo and the setup
     """
-    #Set the VO
+    # Set the VO
     globalVO = CSGlobals.getVO()
     if globalVO:
       self.__vo = globalVO
     elif self.__uVO:
       self.__vo = self.__uVO
     elif self.__uGroup:
-      self.__vo = Registry.getVOForGroup( self.__uGroup )
+      self.__vo = Registry.getVOForGroup(self.__uGroup)
       if not self.__vo:
         self.__vo = False
     else:
       result = getVOfromProxyGroup()
       if result['OK']:
         self.__vo = result['Value']
-    #Set the setup
+    # Set the setup
     self.__setup = False
     if self.__uSetup:
       self.__setup = self.__uSetup
     else:
       self.__setup = CSGlobals.getSetup()
 
-  def __getCache( self ):
+  def __getCache(self):
     Operations.__cacheLock.acquire()
     try:
       currentVersion = gConfigurationData.getVersion()
@@ -133,20 +134,20 @@ class Operations( object ):
         Operations.__cache = {}
         Operations.__cacheVersion = currentVersion
 
-      cacheKey = ( self.__vo, self.__setup )
+      cacheKey = (self.__vo, self.__setup)
       if cacheKey in Operations.__cache:
-        return Operations.__cache[ cacheKey ]
+        return Operations.__cache[cacheKey]
 
       mergedCFG = CFG.CFG()
 
       for path in self.__getSearchPaths():
-        pathCFG = gConfigurationData.mergedCFG[ path ]
+        pathCFG = gConfigurationData.mergedCFG[path]
         if pathCFG:
-          mergedCFG = mergedCFG.mergeWith( pathCFG )
+          mergedCFG = mergedCFG.mergeWith(pathCFG)
 
-      Operations.__cache[ cacheKey ] = mergedCFG
+      Operations.__cache[cacheKey] = mergedCFG
 
-      return Operations.__cache[ cacheKey ]
+      return Operations.__cache[cacheKey]
     finally:
       try:
         Operations.__cacheLock.release()
@@ -154,75 +155,75 @@ class Operations( object ):
         pass
 
   @deprecated("unused")
-  def setVO( self, vo ):
+  def setVO(self, vo):
     """ False to auto detect VO
     """
     self.__uVO = vo
     self.__discoverSettings()
 
   @deprecated("unused")
-  def setGroup( self, group ):
+  def setGroup(self, group):
     """ False to auto detect VO
     """
     self.__uGroup = group
     self.__discoverSettings()
 
   @deprecated("unused")
-  def setSetup( self, setup ):
+  def setSetup(self, setup):
     """ False to auto detect
     """
     self.__uSetup = setup
     self.__discoverSettings()
 
-  def __getSearchPaths( self ):
-    paths = [ "/Operations/Defaults", "/Operations/%s" % self.__setup ]
+  def __getSearchPaths(self):
+    paths = ["/Operations/Defaults", "/Operations/%s" % self.__setup]
     if not self.__vo:
       globalVO = CSGlobals.getVO()
       if not globalVO:
         return paths
       self.__vo = CSGlobals.getVO()
-    paths.append( "/Operations/%s/Defaults" % self.__vo )
-    paths.append( "/Operations/%s/%s" % ( self.__vo, self.__setup ) )
+    paths.append("/Operations/%s/Defaults" % self.__vo)
+    paths.append("/Operations/%s/%s" % (self.__vo, self.__setup))
     return paths
 
-  def getValue( self, optionPath, defaultValue = None ):
-    return self.__getCache().getOption( optionPath, defaultValue )
+  def getValue(self, optionPath, defaultValue=None):
+    return self.__getCache().getOption(optionPath, defaultValue)
 
-  def __getCFG( self, sectionPath ):
+  def __getCFG(self, sectionPath):
     cacheCFG = self.__getCache()
-    section = cacheCFG.getRecursive( sectionPath )
+    section = cacheCFG.getRecursive(sectionPath)
     if not section:
-      return S_ERROR( "%s in Operations does not exist" % sectionPath )
-    sectionCFG = section[ 'value' ]
-    if isinstance( sectionCFG, basestring ):
-      return S_ERROR( "%s in Operations is not a section" % sectionPath )
-    return S_OK( sectionCFG )
+      return S_ERROR("%s in Operations does not exist" % sectionPath)
+    sectionCFG = section['value']
+    if isinstance(sectionCFG, basestring):
+      return S_ERROR("%s in Operations is not a section" % sectionPath)
+    return S_OK(sectionCFG)
 
-  def getSections( self, sectionPath, listOrdered = False ):
-    result = self.__getCFG( sectionPath )
-    if not result[ 'OK' ]:
+  def getSections(self, sectionPath, listOrdered=False):
+    result = self.__getCFG(sectionPath)
+    if not result['OK']:
       return result
-    sectionCFG = result[ 'Value' ]
-    return S_OK( sectionCFG.listSections( listOrdered ) )
+    sectionCFG = result['Value']
+    return S_OK(sectionCFG.listSections(listOrdered))
 
-  def getOptions( self, sectionPath, listOrdered = False ):
-    result = self.__getCFG( sectionPath )
-    if not result[ 'OK' ]:
+  def getOptions(self, sectionPath, listOrdered=False):
+    result = self.__getCFG(sectionPath)
+    if not result['OK']:
       return result
-    sectionCFG = result[ 'Value' ]
-    return S_OK( sectionCFG.listOptions( listOrdered ) )
+    sectionCFG = result['Value']
+    return S_OK(sectionCFG.listOptions(listOrdered))
 
-  def getOptionsDict( self, sectionPath ):
-    result = self.__getCFG( sectionPath )
-    if not result[ 'OK' ]:
+  def getOptionsDict(self, sectionPath):
+    result = self.__getCFG(sectionPath)
+    if not result['OK']:
       return result
-    sectionCFG = result[ 'Value' ]
+    sectionCFG = result['Value']
     data = {}
     for opName in sectionCFG.listOptions():
-      data[ opName ] = sectionCFG[ opName ]
-    return S_OK( data )
+      data[opName] = sectionCFG[opName]
+    return S_OK(data)
 
-  def getPath( self, option, vo = False, setup = False ):
+  def getPath(self, option, vo=False, setup=False):
     """
     Generate the CS path for an option:
 
@@ -236,8 +237,8 @@ class Operations( object ):
     """
 
     for path in self.__getSearchPaths():
-      optionPath = os.path.join( path, option )
-      value = gConfig.getValue( optionPath , 'NoValue' )
+      optionPath = os.path.join(path, option)
+      value = gConfig.getValue(optionPath, 'NoValue')
       if value != "NoValue":
         return optionPath
     return ''
