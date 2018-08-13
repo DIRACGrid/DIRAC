@@ -13,7 +13,7 @@ import json
 
 # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
 
 
 from DIRAC.DataManagementSystem.DB.FTS3DB import FTS3DB
@@ -33,10 +33,11 @@ class FTS3ManagerHandler(RequestHandler):
   ftsPlacement = None
 
   @classmethod
-  def initializeHandler(cls, _serviceInfoDict):
+  def initializeHandler(cls, serviceInfoDict):
     """ initialize handler """
     try:
-      cls.fts3db = FTS3DB()
+      maxThreads = getServiceOption(serviceInfoDict, 'MaxThreads', 15)
+      cls.fts3db = FTS3DB(pool_size=maxThreads)
     except RuntimeError as error:
       gLogger.exception(error)
       return S_ERROR(error)
