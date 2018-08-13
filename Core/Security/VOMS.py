@@ -19,6 +19,13 @@ from DIRAC.Core.Utilities import List, Time, Os
 
 class VOMS(BaseSecurity):
 
+  def __init__(self, timeout=40, *args, **kwargs):
+    """ Create VOMS class, setting specific timeout for VOMS shell commands. """
+    # Per-server timeout for voms-proxy-init, should be at maximum timeout/n
+    # where n as the number of voms servers to try.
+    self._servTimeout = 12
+    super(VOMS, self).__init__(timeout, *args, **kwargs)
+
   def getVOMSAttributes(self, proxy, switch="all"):
     """
     Return VOMS proxy attributes as list elements if switch="all" (default) OR
@@ -268,6 +275,7 @@ class VOMS(BaseSecurity):
       cmdArgs.append('-vomses "%s"' % vomsesPath)
     if chain.isRFC().get('Value'):
       cmdArgs.append("-r")
+    cmdArgs.append('-timeout %u' % self._servTimeout)
 
     vpInitCmd = ''
     for vpInit in ('voms-proxy-init', 'voms-proxy-init2'):
