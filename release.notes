@@ -1,3 +1,17 @@
+[v6r20p9]
+
+*Core
+FIX: (#3794) Fix executeWithUserProxy when called with proxyUserDN, 
+     fixes exception in WMSAdministrator getPilotLoggingInfo and TransformationCleaningAgent
+
+*DataManagementSystem
+CHANGE: (#3793) reuse of the ThreadPool in the FTS3Agent in order to optimize the Context use
+
+*WorkloadManagementSystem
+FIX: (#3787) Better and simpler code and test for SiteDirector 
+FIX: (#3791) Fix exception in TaskQueueDB.getActiveTaskQueues, triggered 
+             by dirac-admin-show-task-queues
+
 [v6r20p8]
 
 *ResourceStatusSystem
@@ -6,17 +20,22 @@ FIX: (#3782) try/except for OperationalError for sqlite (EmailAction)
 *Core
 FIX: (#3785) Adjust voms-proxy-init timeouts
 NEW: (#3773) New Core.Utilities.Proxy.UserProxy class to be used as a contextManager
-FIX: (#3773) Fix race condition in Core.Utilities.Proxy.executeWithUserProxy, the $X509_USER_PROXY environment variable from one thread could leak to another, fixes #3764
+FIX: (#3773) Fix race condition in Core.Utilities.Proxy.executeWithUserProxy, 
+     the $X509_USER_PROXY environment variable from one thread could leak to another, fixes #3764
 
 
 *ConfigurationSystem
-NEW: (#3784) Bdii2CSAgent: New option **SelectedSites**, if any sites are set, only those will be updated
+NEW: (#3784) Bdii2CSAgent: New option **SelectedSites**, if any sites are set, only those will 
+     be updated
 NEW: (#3788) for CS/Registry section: added possibility to define a QuarantineGroup per VO
 
 *WorkloadManagementSystem
 
-FIX: (#3786) StalledJobAgent: fix "Proxy not found" error when sending kill command to stalled job, fixes #3783
-FIX: (#3773) The solution for bug #3764 fixes a problem with the JobScheduling executor, where files could end up in the checking state with the error "Couldn't get storage metadata of some files"
+FIX: (#3786) StalledJobAgent: fix "Proxy not found" error when sending kill command to stalled job, 
+     fixes #3783
+FIX: (#3773) The solution for bug #3764 fixes a problem with the JobScheduling executor, where 
+     files could end up in the checking state with the error "Couldn't get storage metadata 
+     of some files"
 FIX: (#3779) Add setting of X509_USER_PROXY in pilot wrapper script, 
 which is needed to establish pilot env in work nodes of Cluster sites.
 
