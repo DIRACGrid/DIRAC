@@ -60,7 +60,7 @@ class JobStateUpdateHandler(RequestHandler):
     return S_OK()
 
   ###########################################################################
-  types_updateJobFromStager = [[six.string_types, int, int], six.string_types]
+  types_updateJobFromStager = [[six.string_types, int], six.string_types]
 
   def export_updateJobFromStager(self, jobID, status):
     """ Simple call back method to be used by the stager. """
@@ -100,7 +100,7 @@ class JobStateUpdateHandler(RequestHandler):
     return result
 
   ###########################################################################
-  types_setJobStatus = [[six.string_types, int, int], six.string_types, six.string_types, six.string_types]
+  types_setJobStatus = [[six.string_types, int], six.string_types, six.string_types, six.string_types]
 
   def export_setJobStatus(self, jobID, status, minorStatus, source='Unknown', datetime=None):
     """ Set the major and minor status for job specified by its JobId.
@@ -148,7 +148,7 @@ class JobStateUpdateHandler(RequestHandler):
     return result
 
   ###########################################################################
-  types_setJobStatusBulk = [[six.string_types, int, int], dict]
+  types_setJobStatusBulk = [[six.string_types, int], dict]
 
   def export_setJobStatusBulk(self, jobID, statusDict):
     """ Set various status fields for job specified by its JobId.
@@ -248,7 +248,7 @@ class JobStateUpdateHandler(RequestHandler):
     return S_OK()
 
   ###########################################################################
-  types_setJobSite = [[six.string_types, int, int], six.string_types]
+  types_setJobSite = [[six.string_types, int], six.string_types]
 
   def export_setJobSite(self, jobID, site):
     """Allows the site attribute to be set for a job specified by its jobID.
@@ -257,7 +257,7 @@ class JobStateUpdateHandler(RequestHandler):
     return result
 
   ###########################################################################
-  types_setJobFlag = [[six.string_types, int, int], six.string_types]
+  types_setJobFlag = [[six.string_types, int], six.string_types]
 
   def export_setJobFlag(self, jobID, flag):
     """ Set job flag for job with jobID
@@ -266,7 +266,7 @@ class JobStateUpdateHandler(RequestHandler):
     return result
 
   ###########################################################################
-  types_unsetJobFlag = [[six.string_types, int, int], six.string_types]
+  types_unsetJobFlag = [[six.string_types, int], six.string_types]
 
   def export_unsetJobFlag(self, jobID, flag):
     """ Unset job flag for job with jobID
@@ -275,7 +275,7 @@ class JobStateUpdateHandler(RequestHandler):
     return result
 
   ###########################################################################
-  types_setJobApplicationStatus = [[six.string_types, int, int], six.string_types, six.string_types]
+  types_setJobApplicationStatus = [[six.string_types, int], six.string_types, six.string_types]
 
   def export_setJobApplicationStatus(self, jobID, appStatus, source='Unknown'):
     """ Set the application status for job specified by its JobId.
@@ -304,7 +304,7 @@ class JobStateUpdateHandler(RequestHandler):
     return result
 
   ###########################################################################
-  types_setJobParameter = [[six.string_types, int, int], six.string_types, six.string_types]
+  types_setJobParameter = [[six.string_types, int], six.string_types, six.string_types]
 
   def export_setJobParameter(self, jobID, name, value):
     """ Set arbitrary parameter specified by name/value pair
@@ -337,7 +337,7 @@ class JobStateUpdateHandler(RequestHandler):
     return S_OK()
 
   ###########################################################################
-  types_setJobParameters = [[six.string_types, int, int], list]
+  types_setJobParameters = [[six.string_types, int], list]
 
   def export_setJobParameters(self, jobID, parameters):
     """ Set arbitrary parameters specified by a list of name/value pairs
@@ -351,7 +351,7 @@ class JobStateUpdateHandler(RequestHandler):
     return S_OK('All parameters stored for job')
 
   ###########################################################################
-  types_sendHeartBeat = [[six.string_types, int, int], dict, dict]
+  types_sendHeartBeat = [[six.string_types, int], dict, dict]
 
   def export_sendHeartBeat(self, jobID, dynamicData, staticData):
     """ Send a heart beat sign of life for a job jobID
