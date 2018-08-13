@@ -178,9 +178,8 @@ for the agent restart
 
         # Set the jobs Failed, send them a kill signal in case they are not really dead and send accounting info
         if setFailed:
-          # Send a kill signal to the job such that it cannot continue running
-          WMSClient().killJob(job)
-          self.__updateJobStatus(job, 'Failed', setFailed)
+          self.__sendKillCommand(job)
+          self.__updateJobStatus( job, 'Failed', setFailed )
           failedCounter += 1
           result = self.__sendAccounting(job)
           if not result['OK']:
@@ -566,5 +565,21 @@ used to fail jobs due to the optimizer chain.
         continue
 
     return S_OK()
+
+  def __sendKillCommand(self, job):
+    """Send a kill signal to the job such that it cannot continue running.
+
+    :param int job: ID of job to send kill command
+    """
+    ownerDN = self.jobDB.getJobAttribute(job, 'OwnerDN')
+    ownerGroup = self.jobDB.getJobAttribute(job, 'OwnerGroup')
+    if ownerDN['OK'] and ownerGroup['OK']:
+      wmsClient = WMSClient(useCertificates=True, delegatedDN=ownerDN['Value'], delegatedGroup=ownerGroup['Value'])
+      resKill = wmsClient.killJob(job)
+      if not resKill['OK']:
+        self.log.error("Failed to send kill command to job", "%s: %s" % (job, resKill['Message']))
+    else:
+      self.log.error("Failed to get ownerDN or Group for job:", "%s: %s, %s" %
+                     (job, ownerDN.get('Message', ''), ownerGroup.get('Message', '')))
 
 # EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

@@ -60,7 +60,7 @@ class PilotCStoJSONSynchronizer(object):
     '''
     ops = Operations()
 
-    self.pilotFileServer = ops.getValue("Pilot/PilotFileServer", self.pilotFileServer)
+    self.pilotFileServer = ops.getValue("Pilot/pilotFileServer", self.pilotFileServer)
     if not self.pilotFileServer:
       gLogger.warn("Pilot file server not defined, so won't sync but only display")
 

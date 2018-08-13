@@ -244,7 +244,12 @@ class JobMonitoringHandler(RequestHandler):
   @staticmethod
   def export_getJobStatus(jobID):
 
-    return gJobDB.getJobAttribute(jobID, 'Status')
+    result = gJobDB.getJobStatus(jobID)
+
+    if not result['OK']:
+      return result
+
+    return S_OK(result['Value']['Status'])
 
 ##############################################################################
   types_getJobOwner = [int]
@@ -252,7 +257,11 @@ class JobMonitoringHandler(RequestHandler):
   @staticmethod
   def export_getJobOwner(jobID):
 
-    return gJobDB.getJobAttribute(jobID, 'Owner')
+    if gElasticJobDB:
+      return gElasticJobDB.getJobParametersAndAttributes(jobID, 'Owner')
+
+    else:
+      return gJobDB.getJobAttribute(jobID, 'Owner')
 
 ##############################################################################
   types_getJobSite = [int]
@@ -429,10 +438,8 @@ class JobMonitoringHandler(RequestHandler):
           hbTime = Time.fromString(jobDict['HeartBeatTime'])
           # There is no way to express a timedelta of 0 ;-)
           # Not only Stalled jobs but also Failed jobs because Stalled
-          if ((hbTime - lastTime) > (lastTime - lastTime) or
-              jobDict['Status'] == "Stalled" or
-              jobDict['MinorStatus'].startswith('Job stalled') or
-              jobDict['MinorStatus'].startswith('Stalling')):
+          if ((hbTime - lastTime) > 0 or jobDict['Status'] == "Stalled" or jobDict['MinorStatus'].startswith(
+                  'Job stalled') or jobDict['MinorStatus'].startswith('Stalling')):
             jobDict['LastSignOfLife'] = jobDict['HeartBeatTime']
           else:
             jobDict['LastSignOfLife'] = jobDict['LastUpdateTime']
@@ -566,7 +573,12 @@ class JobMonitoringHandler(RequestHandler):
 
   @staticmethod
   def export_getJobAttribute(jobID, attribute):
-    return gJobDB.getJobAttribute(jobID, attribute)
+
+    if gElasticJobDB:
+      return gElasticJobDB.getJobParametersAndAttributes(jobID, attribute)
+
+    else:
+      return gJobDB.getJobAttribute(jobID, attribute)
 
 ##############################################################################
   types_getSiteSummary = []

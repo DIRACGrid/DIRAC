@@ -14,6 +14,7 @@
     getAllJobParameters()
     getInputData()
     getJobJDL()
+    getJobStatus()
 
     selectJobs()
     selectJobsWithStatus()
@@ -152,17 +153,16 @@ class JobDB(DB):
       return S_ERROR('JobDB.getAttributesForJobList: Failed\n%s' % repr(x))
 
 #############################################################################
-
-  def getDistinctJobAttributes(self, attribute, condDict=None, older=None,
-                               newer=None, timeStamp='LastUpdateTime'):
+  def getDistinctJobAttributes(self, attribute, condDict=None, older=None, newer=None, timeStamp='LastUpdateTime'):
     """ Get distinct values of the job attribute under specified conditions
     """
+
     return self.getDistinctAttributeValues('Jobs', attribute, condDict=condDict,
                                            older=older, newer=newer, timeStamp=timeStamp)
 
 #############################################################################
-
   def traceJobParameter(self, site, localID, parameter, date=None, until=None):
+
     ret = self.traceJobParameters(site, localID, [parameter], None, date, until)
     if not ret['OK']:
       return ret
@@ -424,6 +424,44 @@ class JobDB(DB):
       return S_OK(value)
 
     return result
+
+#############################################################################
+  def getJobStatus(self, jobID):
+    """ Get all Job Status values for a given jobID.
+
+    :param self: self reference
+    :param int jobID: Job ID
+
+    :return : dict with all Job Status values/empty dict if matching job not found
+    """
+
+    jobStatusNames = ['Status', 'MinorStatus', 'ApplicationStatus']
+
+    self.log.debug('JobDB.getAllJobStatusValues: Getting Status values for job = %s.' % jobID)
+
+    res = self.getFields('JobsStatus', jobStatusNames, {'JobID': jobID})
+
+    if not res['OK']:
+      return res
+
+    if not res['Value']:
+
+      res = self.getFields('Jobs', jobStatusNames, {'JobID': jobID})
+
+      if not res['OK']:
+        return res
+
+      if not res['Value']:
+        return S_OK({})
+
+    values = res['Value'][0]
+
+    statusValues = {}
+
+    for status in enumerate(jobStatusNames):
+      statusValues[status[1]] = str(values[status[0]])   # status[1]: Status Name, status[0]: numeric index
+
+    return S_OK(statusValues)
 
 #############################################################################
   def getJobParameter(self, jobID, parameter):
@@ -696,31 +734,30 @@ class JobDB(DB):
     return result
 
 #############################################################################
-  def setJobStatus(self, jobID, status='', minor='', application='', appCounter=None):
+  def setJobStatus(self, jobID, status='', minor='', application=''):
     """ Set status of the job specified by its jobID
     """
 
-    # Do not update the LastUpdate time stamp if setting the Stalled status
-    update_flag = True
-    if status == "Stalled":
-      update_flag = False
+    ret = self._escapeString(status)
+    if not ret['OK']:
+      return ret
+    status = ret['Value']
 
-    attrNames = []
-    attrValues = []
-    if status:
-      attrNames.append('Status')
-      attrValues.append(status)
-    if minor:
-      attrNames.append('MinorStatus')
-      attrValues.append(minor)
-    if application:
-      attrNames.append('ApplicationStatus')
-      attrValues.append(application[:255])
-    if appCounter:
-      attrNames.append('ApplicationNumStatus')
-      attrValues.append(appCounter)
+    ret = self._escapeString(minor)
+    if not ret['OK']:
+      return ret
+    minor = ret['Value']
 
-    result = self.setJobAttributes(jobID, attrNames, attrValues, update=update_flag)
+    ret = self._escapeString(application)
+    if not ret['OK']:
+      return ret
+    application = ret['Value']
+
+    cmd = 'REPLACE JobsStatus (JobID,Status,MinorStatus,ApplicationStatus) VALUES (%d,%s,%s,%s)' % (
+        int(jobID), status, minor, application)
+
+    result = self._update(cmd)
+
     if not result['OK']:
       return result
 
@@ -1317,6 +1354,7 @@ class JobDB(DB):
                   'OptimizerParameters',
                   'JobCommands',
                   'Jobs',
+                  'JobsStatus',
                   'JobJDLs']:
 
       cmd = 'DELETE FROM %s WHERE JobID in (%s)' % (table, jobIDString)
@@ -1356,12 +1394,20 @@ class JobDB(DB):
         defined parameters in the parameter Attic
     """
     # Check Verified Flag
-    result = self.getJobAttributes(jobID, ['Status', 'MinorStatus', 'VerifiedFlag', 'RescheduleCounter',
+    result = self.getJobAttributes(jobID, ['VerifiedFlag', 'RescheduleCounter',
                                            'Owner', 'OwnerDN', 'OwnerGroup', 'DIRACSetup'])
     if result['OK']:
       resultDict = result['Value']
     else:
       return S_ERROR('JobDB.getJobAttributes: can not retrieve job attributes')
+
+    result = self.getJobStatus(jobID)
+
+    if result['OK']:
+      resultDict['Status'] = result['Value']['Status']
+      resultDict['MinorStatus'] = result['Value']['MinorStatus']
+    else:
+      return S_ERROR('JobDB.getJobStatus: can not retrieve job statuses')
 
     if 'VerifiedFlag' not in resultDict:
       return S_ERROR('Job ' + str(jobID) + ' not found in the system')
@@ -1454,18 +1500,6 @@ class JobDB(DB):
     jobAttrNames.append('Site')
     jobAttrValues.append(site)
 
-    jobAttrNames.append('Status')
-    jobAttrValues.append('Received')
-
-    jobAttrNames.append('MinorStatus')
-    jobAttrValues.append('Job Rescheduled')
-
-    jobAttrNames.append('ApplicationStatus')
-    jobAttrValues.append('Unknown')
-
-    jobAttrNames.append('ApplicationNumStatus')
-    jobAttrValues.append(0)
-
     jobAttrNames.append('LastUpdateTime')
     jobAttrValues.append(Time.toString())
 
@@ -1490,6 +1524,11 @@ class JobDB(DB):
       return result
 
     result = self.setJobAttributes(jobID, jobAttrNames, jobAttrValues)
+    if not result['OK']:
+      return result
+
+    result = self.setJobStatus(jobID, status='Received', minor='Job Rescheduled', application='Unknown')
+
     if not result['OK']:
       return result
 
