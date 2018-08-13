@@ -156,10 +156,12 @@ class FTS3DB(object):
     self.dbPass = dbParameters['Password']
     self.dbName = dbParameters['DBName']
 
-  def __init__(self):
+  def __init__(self, pool_size=15):
     """c'tor
 
     :param self: self reference
+    :param pool_size: size of the connection pool to the DB
+
     """
 
     self.log = gLogger.getSubLogger('FTS3DB')
@@ -174,7 +176,8 @@ class FTS3DB(object):
          self.dbHost,
          self.dbPort,
          self.dbName),
-        echo=runDebug)
+        echo=runDebug,
+        pool_size=pool_size)
 
     metadata.bind = self.engine
 
