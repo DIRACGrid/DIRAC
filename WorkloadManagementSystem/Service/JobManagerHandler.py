@@ -18,7 +18,6 @@ from DIRAC.Core.DISET.MessageClient import MessageClient
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.Core.Utilities.DErrno import EWMSJDL, EWMSSUBM
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
@@ -88,7 +87,6 @@ class JobManagerHandler(RequestHandler):
     self.owner = credDict['username']
     self.peerUsesLimitedProxy = credDict['isLimitedProxy']
     self.diracSetup = self.serviceInfoDict['clientSetup']
-    self.maxParametricJobs = Operations().getValue('JobScheduling/MaxParametricJobs', MAX_PARAMETRIC_JOBS)
     self.jobPolicy = JobPolicy(self.ownerDN, self.ownerGroup, self.userProperties)
     self.jobPolicy.setJobDB(gJobDB)
     return S_OK()
@@ -148,8 +146,8 @@ class JobManagerHandler(RequestHandler):
     if nJobs > 0:
       # if we are here, then jobDesc was the description of a parametric job. So we start unpacking
       parametricJob = True
-      if nJobs > self.maxParametricJobs:
-        return S_ERROR(EWMSJDL, "Number of parametric jobs exceeds the limit of %d" % self.maxParametricJobs)
+      if nJobs > MAX_PARAMETRIC_JOBS:
+        return S_ERROR(EWMSJDL, "Number of parametric jobs exceeds the limit of %d" % MAX_PARAMETRIC_JOBS)
       result = generateParametricJobs(jobClassAd)
       if not result['OK']:
         return result

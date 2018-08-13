@@ -63,9 +63,6 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
     self.transInQueue = []
     self.transInThread = {}
 
-    # The default is defined in the JobManager service
-    self.maxParametricJobs = MAX_PARAMETRIC_JOBS
-
   #############################################################################
 
   def initialize(self):
@@ -198,8 +195,6 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
         self.tasksPerLoop = self.am_getOption('TasksPerLoop', self.tasksPerLoop)
         self._addOperationForTransformations(operationsOnTransformationDict, 'submitTasks', transformations,
                                              owner=owner, ownerGroup=ownerGroup, ownerDN=ownerDN)
-
-    self.maxParametricJobs = Operations().getValue("JobScheduling/MaxParametricJobs", self.maxParametricJobs)
 
     self._fillTheQueue(operationsOnTransformationDict)
 
@@ -553,7 +548,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
                   method=method, transID=transID)
 
     # Prepare tasks and submits them, by chunks
-    chunkSize = self.maxParametricJobs if self.bulkSubmissionFlag else self.tasksPerLoop
+    chunkSize = MAX_PARAMETRIC_JOBS if self.bulkSubmissionFlag else self.tasksPerLoop
     for taskDictChunk in breakDictionaryIntoChunks(tasks, chunkSize):
       res = self._prepareAndSubmitAndUpdateTasks(transID, transBody, taskDictChunk,
                                                  owner, ownerDN, ownerGroup,
