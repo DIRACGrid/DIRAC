@@ -229,25 +229,26 @@ def _putProxy(userDN=None, userName=None, userGroup=None, vomsFlag=None, proxyFi
     if not result['OK']:
       return result
     userDNs = result['Value']  # a same user may have more than one DN
-    vomsAttr = ''
-    if vomsFlag:
-      vomsAttr = getVOMSAttributeForGroup(userGroup)
 
-    result = getProxy(userDNs, userGroup, vomsAttr, proxyFilePath)
+  vomsAttr = ''
+  if vomsFlag:
+    vomsAttr = getVOMSAttributeForGroup(userGroup)
 
-    if not result['OK']:
-      return result
+  result = getProxy(userDNs, userGroup, vomsAttr, proxyFilePath)
 
-    executionLock = LockRing().getLock('_UseUserProxy_', recursive=True) if executionLockFlag else None
-    if executionLockFlag:
-      executionLock.acquire()
+  if not result['OK']:
+    return result
 
-    os.environ['X509_USER_PROXY'], originalUserProxy = result['Value'], os.environ.get('X509_USER_PROXY')
+  executionLock = LockRing().getLock('_UseUserProxy_', recursive=True) if executionLockFlag else None
+  if executionLockFlag:
+    executionLock.acquire()
 
-    # Check if the caller is executing with the host certificate
-    useServerCertificate = gConfig.useServerCertificate()
-    if useServerCertificate:
-      gConfigurationData.setOptionInCFG('/DIRAC/Security/UseServerCertificate', 'false')
+  os.environ['X509_USER_PROXY'], originalUserProxy = result['Value'], os.environ.get('X509_USER_PROXY')
+
+  # Check if the caller is executing with the host certificate
+  useServerCertificate = gConfig.useServerCertificate()
+  if useServerCertificate:
+    gConfigurationData.setOptionInCFG('/DIRAC/Security/UseServerCertificate', 'false')
 
   return S_OK((originalUserProxy, useServerCertificate, executionLock))
 

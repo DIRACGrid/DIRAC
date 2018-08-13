@@ -1029,7 +1029,7 @@ WHERE j.JobId = %s AND t.TQId = j.TQId" %
         tqId = record[0]
         value = record[1]
         if tqId not in tqData:
-          if tqIdList is False or tqId in tqIdList:
+          if tqIdList is None or tqId in tqIdList:
             self.log.warn(
                 "Task Queue %s is defined in field %s but does not exist, triggering a cleaning" %
                 (tqId, field))
