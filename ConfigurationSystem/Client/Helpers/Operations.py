@@ -24,18 +24,60 @@
 
       Operations().getValue('someSection/aSecondOption')
         - aSecondValueInProduction if we are in 'Production' setup
-        - aSecondValue if we are in 'Certification' setup     <- looking in Default since there's no Certification/someSection/aSecondOption
+        - aSecondValue if we are in 'Certification' setup    <- looking in Default
+                                                                since there's no Certification/someSection/aSecondOption
+
+
+    At the same time, for multi-VO installations, it is also possible to specify different options per-VO,
+    like the following::
+
+      Operations/
+          aVOName/
+              Default/
+                  someSection/
+                      someOption = someValue
+                      aSecondOption = aSecondValue
+              Production/
+                  someSection/
+                      someOption = someValueInProduction
+                      aSecondOption = aSecondValueInProduction
+              Certification/
+                  someSection/
+                      someOption = someValueInCertification
+          anotherVOName/
+              Default/
+                  someSectionName/
+                      someOptionX = someValueX
+                      aSecondOption = aSecondValue
+              setupName/
+                  someSection/
+                      someOption = someValueInProduction
+                      aSecondOption = aSecondValueInProduction
+
+    For this case it becomes then important for the Operations() objects to know the VO name
+    for which we want the information, and this can be done in the following ways.
+
+    1. by specifying the VO name directly::
+
+      Operations(vo=anotherVOName).getValue('someSectionName/someOptionX')
+
+    2. by give a group name::
+
+      Operations(group=thisIsAGroupOfVO_X).getValue('someSectionName/someOptionX')
+
+    3. if no VO nor group is provided, the VO will be guessed from the proxy,
+    but this works iff the object is instantiated by a proxy (and not, e.g., using a server certificate)
 
 """
 
 import thread
-import types
 import os
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.Core.Utilities import CFG, LockRing
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry, CSGlobals
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
+from DIRAC.Core.Utilities.Decorators import deprecated
 
 class Operations( object ):
   """ Operations class
@@ -60,6 +102,8 @@ class Operations( object ):
     self.__discoverSettings()
 
   def __discoverSettings( self ):
+    """ Discovers the vo and the setup
+    """
     #Set the VO
     globalVO = CSGlobals.getVO()
     if globalVO:
@@ -73,7 +117,7 @@ class Operations( object ):
     else:
       result = getVOfromProxyGroup()
       if result['OK']:
-        self.__vo = result['Value']    
+        self.__vo = result['Value']
     #Set the setup
     self.__setup = False
     if self.__uSetup:
@@ -109,18 +153,21 @@ class Operations( object ):
       except thread.error:
         pass
 
+  @deprecated("unused")
   def setVO( self, vo ):
     """ False to auto detect VO
     """
     self.__uVO = vo
     self.__discoverSettings()
 
+  @deprecated("unused")
   def setGroup( self, group ):
     """ False to auto detect VO
     """
     self.__uGroup = group
     self.__discoverSettings()
 
+  @deprecated("unused")
   def setSetup( self, setup ):
     """ False to auto detect
     """
@@ -178,19 +225,19 @@ class Operations( object ):
   def getPath( self, option, vo = False, setup = False ):
     """
     Generate the CS path for an option:
-    
+
       - if vo is not defined, the helper's vo will be used for multi VO installations
       - if setup evaluates False (except None) -> The helpers setup will  be used
       - if setup is defined -> whatever is defined will be used as setup
       - if setup is None -> Defaults will be used
-    
-    :param option: path with respect to the Operations standard path  
+
+    :param option: path with respect to the Operations standard path
     :type option: string
     """
-    
+
     for path in self.__getSearchPaths():
       optionPath = os.path.join( path, option )
       value = gConfig.getValue( optionPath , 'NoValue' )
       if value != "NoValue":
         return optionPath
-    return ''  
+    return ''
