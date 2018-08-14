@@ -810,6 +810,28 @@ class ComponentInstaller(object):
           loadCfg.loadFromFile(cfgTemplatePath)
           compCfg = loadCfg.mergeWith(compCfg)
 
+        # Path to the root dirac.cfg
+        cfgTemplatePath = os.path.join(rootPath, 'dirac.cfg')
+        # Read it and extract the interesting part
+        if os.path.exists(cfgTemplatePath):
+          gLogger.notice('Extracting default configuration from', cfgTemplatePath)
+          with open(cfgTemplatePath, 'r') as diracCfgFile:
+            diracCfgContent = diracCfgFile.read()
+            # We take all what is between the BEGIN and END marker of this component
+            componentRegex = r'### BEGIN %s\n(.*?)### END'%componentModule
+            try:
+              # DOTALL will ensure that we match \n as well
+              # The first group corresponds to the component configuration
+              componentCfg = re.search(componentRegex, diracCfgContent, re.DOTALL).group(1)
+              loadCfg = CFG()
+              loadCfg.loadFromBuffer(componentCfg)
+              compCfg = loadCfg.mergeWith(compCfg)
+
+            # We end up here if there is no match
+            except (AttributeError, IndexError):
+              gLogger.notice("No configuration in global dirac.cfg")
+
+
       compPath = cfgPath(sectionName, componentModule)
       if not compCfg.isSection(compPath):
         error = 'Can not find %s in template' % compPath
