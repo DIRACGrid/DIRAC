@@ -439,6 +439,21 @@ class CFG( object ):
       except Exception:
         return defaultValue
 
+  def getAsCFG(self, path=""):
+    """Return subsection as CFG object.
+
+    :param str path: Path to the section
+    :return: CFG object, of path is not found the CFG is empty
+    """
+    if not path:
+      return self.clone()
+    splitPath = path.lstrip('/').split('/')
+    basePath = splitPath[0]
+    remainingPath = splitPath[1:]
+    if basePath not in self.__dataDict:
+      return CFG()
+    return self.__dataDict[basePath].getAsCFG("/".join(remainingPath))
+
   def getAsDict( self, path = "" ):
     """
     Get the contents below a given path as a dict
