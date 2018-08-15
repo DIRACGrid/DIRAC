@@ -158,7 +158,7 @@ class TaskQueueDB(DB):
     except BaseException:
       maxCPUSegments = self.__defaultCPUSegments
     # Map to a segment
-    for iP in range(len(maxCPUSegments)):
+    for iP, _ in enumerate(maxCPUSegments):
       cpuSegment = maxCPUSegments[iP]
       if cpuTime <= cpuSegment:
         return cpuSegment
@@ -454,7 +454,7 @@ class TaskQueueDB(DB):
   def __findAndDisableTaskQueue(self, tqDefDict, skipDefinitionCheck=False, retries=10, connObj=False):
     """ Disable and find TQ
     """
-    for _ in range(retries):
+    for _ in xrange(retries):
       result = self.__findSmallestTaskQueue(tqDefDict, skipDefinitionCheck=skipDefinitionCheck, connObj=connObj)
       if not result['OK']:
         return result
@@ -484,14 +484,16 @@ ORDER BY COUNT( `tq_Jobs`.JobID ) ASC" % (sqlCmd, result['Value'])
     if not result['OK']:
       return S_ERROR("Can't find task queue: %s" % result['Message'])
     data = result['Value']
-    if len(data) == 0 or data[0][0] >= self.__maxJobsInTQ:
+    if not data or data[0][0] >= self.__maxJobsInTQ:
       return S_OK({'found': False})
     return S_OK({'found': True, 'tqId': data[0][1], 'enabled': data[0][2], 'jobs': data[0][0]})
 
-  def matchAndGetJob(self, tqMatchDict, numJobsPerTry=50, numQueuesPerTry=10, negativeCond={}):
+  def matchAndGetJob(self, tqMatchDict, numJobsPerTry=50, numQueuesPerTry=10, negativeCond=None):
     """
     Match a job
     """
+    if negativeCond is None:
+      negativeCond = {}
     # Make a copy to avoid modification of original if escaping needs to be done
     tqMatchDict = dict(tqMatchDict)
     retVal = self._checkMatchDefinition(tqMatchDict)
@@ -507,7 +509,7 @@ FROM `tq_Jobs` WHERE `tq_Jobs`.TQId = %s AND `tq_Jobs`.Priority = %s"
     prioSQL = "SELECT `tq_Jobs`.Priority FROM `tq_Jobs` \
 WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
     postJobSQL = " ORDER BY `tq_Jobs`.JobId ASC LIMIT %s" % numJobsPerTry
-    for _ in range(self.__maxMatchRetry):
+    for _ in xrange(self.__maxMatchRetry):
       noJobsFound = False
       if 'JobID' in tqMatchDict:
         # A certain JobID is required by the resource, so all TQ are to be considered
@@ -525,7 +527,7 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
       if not retVal['OK']:
         return retVal
       tqList = retVal['Value']
-      if len(tqList) == 0:
+      if not tqList:
         self.log.info("No TQ matches requirements")
         return S_OK({'matchFound': False, 'tqMatch': tqMatchDict})
       for tqId, tqOwnerDN, tqOwnerGroup in tqList:
@@ -533,7 +535,7 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
         retVal = self._query(prioSQL % tqId, conn=connObj)
         if not retVal['OK']:
           return S_ERROR("Can't retrieve winning priority for matching job: %s" % retVal['Message'])
-        if len(retVal['Value']) == 0:
+        if not retVal['Value']:
           noJobsFound = True
           continue
         prio = retVal['Value'][0][0]
@@ -541,10 +543,10 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
         if not retVal['OK']:
           return S_ERROR("Can't begin transaction for matching job: %s" % retVal['Message'])
         jobTQList = [(row[0], row[1]) for row in retVal['Value']]
-        if len(jobTQList) == 0:
+        if not jobTQList:
           gLogger.info("Task queue %s seems to be empty, triggering a cleaning" % tqId)
           self.__deleteTQWithDelay.add(tqId, 300, (tqId, tqOwnerDN, tqOwnerGroup))
-        while len(jobTQList) > 0:
+        while jobTQList:
           jobId, tqId = jobTQList.pop(random.randint(0, len(jobTQList) - 1))
           self.log.info("Trying to extract job %s from TQ %s" % (jobId, tqId))
           retVal = self.deleteJob(jobId, connObj=connObj)
@@ -564,9 +566,11 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
     return S_ERROR("Could not find a match after %s match retries" % self.__maxMatchRetry)
 
   def matchAndGetTaskQueue(self, tqMatchDict, numQueuesToGet=1, skipMatchDictDef=False,
-                           negativeCond={}, connObj=False):
+                           negativeCond=None, connObj=False):
     """ Get a queue that matches the requirements
     """
+    if negativeCond is None:
+      negativeCond = {}
     # Make a copy to avoid modification of original if escaping needs to be done
     tqMatchDict = dict(tqMatchDict)
     if not skipMatchDictDef:
@@ -582,7 +586,8 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
       return retVal
     return S_OK([(row[0], row[1], row[2]) for row in retVal['Value']])
 
-  def __generateSQLSubCond(self, sqlString, value, boolOp='OR'):
+  @staticmethod
+  def __generateSQLSubCond(sqlString, value, boolOp='OR'):
     if not isinstance(value, (list, tuple)):
       return sqlString % str(value).strip()
     sqlORList = []
@@ -590,7 +595,7 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
       sqlORList.append(sqlString % str(v).strip())
     return "( %s )" % (" %s " % boolOp).join(sqlORList)
 
-  def __generateNotSQL(self, tableDict, negativeCond):
+  def __generateNotSQL(self, negativeCond):
     """ Generate negative conditions
         Can be a list of dicts or a dict:
          - list of dicts will be  OR of conditional dicts
@@ -599,13 +604,13 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
     if isinstance(negativeCond, (list, tuple)):
       sqlCond = []
       for cD in negativeCond:
-        sqlCond.append(self.__generateNotDictSQL(tableDict, cD))
+        sqlCond.append(self.__generateNotDictSQL(cD))
       return " ( %s )" % " OR  ".join(sqlCond)
     elif isinstance(negativeCond, dict):
-      return self.__generateNotDictSQL(tableDict, negativeCond)
+      return self.__generateNotDictSQL(negativeCond)
     raise RuntimeError("negativeCond has to be either a list or a dict or a tuple, and it's %s" % type(negativeCond))
 
-  def __generateNotDictSQL(self, tableDict, negativeCond):
+  def __generateNotDictSQL(self, negativeCond):
     """ Generate the negative sql condition from a standard condition dict
         not ( cond1 and cond2 ) = ( not cond1 or not cond 2 )
         For instance: { 'Site': 'S1', 'JobType': [ 'T1', 'T2' ] }
@@ -637,7 +642,8 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
           condList.append(sql)
     return "( %s )" % " OR ".join(condList)
 
-  def __generateTablesName(self, sqlTables, field):
+  @staticmethod
+  def __generateTablesName(sqlTables, field):
     fullTableName = 'tq_TQTo%ss' % field
     if fullTableName not in sqlTables:
       tableN = field.lower()
@@ -645,10 +651,12 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
       return tableN, "`%s`" % fullTableName,
     return sqlTables[fullTableName], "`%s`" % fullTableName
 
-  def __generateTQMatchSQL(self, tqMatchDict, numQueuesToGet=1, negativeCond={}):
+  def __generateTQMatchSQL(self, tqMatchDict, numQueuesToGet=1, negativeCond=None):
     """
     Generate the SQL needed to match a task queue
     """
+    if negativeCond is None:
+      negativeCond = {}
     # Only enabled TQs
     sqlCondList = []
     sqlTables = {"tq_TaskQueues": "tq"}
@@ -750,7 +758,7 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
 
     # Add extra conditions
     if negativeCond:
-      sqlCondList.append(self.__generateNotSQL(sqlTables, negativeCond))
+      sqlCondList.append(self.__generateNotSQL(negativeCond))
 
     # Generate the final query string
     tqSqlCmd = "SELECT tq.TQId, tq.OwnerDN, tq.OwnerGroup FROM `tq_TaskQueues` tq WHERE %s" % (
@@ -764,7 +772,8 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
       tqSqlCmd = "%s LIMIT %s" % (tqSqlCmd, numQueuesToGet)
     return S_OK(tqSqlCmd)
 
-  def __generateTagSQLSubCond(self, tableName, tagMatchList):
+  @staticmethod
+  def __generateTagSQLSubCond(tableName, tagMatchList):
     """ Generate SQL condition where ALL the specified multiValue requirements must be
         present in the matching resource list
     """
@@ -776,7 +785,8 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
     sql = '( ' + sql1 + ' ) = (' + sql2 + ' )'
     return sql
 
-  def __generateRequiredTagSQLSubCond(self, tableName, tagMatchList):
+  @staticmethod
+  def __generateRequiredTagSQLSubCond(tableName, tagMatchList):
     """ Generate SQL condition where the TQ corresponds to the requirements
         of the resource
     """
@@ -1015,7 +1025,7 @@ WHERE j.JobId = %s AND t.TQId = j.TQId" %
       tqId = record[0]
       tqData[tqId] = {'Priority': record[1], 'Jobs': record[2]}
       record = record[3:]
-      for iP in range(len(singleValueDefFields)):
+      for iP, _ in enumerate(singleValueDefFields):
         tqData[tqId][singleValueDefFields[iP]] = record[iP]
 
     tqNeedCleaning = False
@@ -1211,7 +1221,8 @@ FROM `tq_TaskQueues` t, `tq_Jobs` j WHERE "
       self._update(updateSQL, conn=connObj)
     return S_OK()
 
-  def getGroupShares(self):
+  @staticmethod
+  def getGroupShares():
     """
     Get all the shares as a DICT
     """
