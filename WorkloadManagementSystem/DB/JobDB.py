@@ -1238,33 +1238,30 @@ class JobDB( DB ):
     if voPolicyDict['OK']:
       voPolicy = voPolicyDict['Value']
       for param, val in voPolicy.items():
-        if not classAdJob.lookupAttribute( param ):
-          classAdJob.insertAttributeString( param, val )
+        if not classAdJob.lookupAttribute(param):
+          classAdJob.insertAttributeString(param, val)
 
-    priority = classAdJob.getAttributeInt( 'Priority' )
+    priority = classAdJob.getAttributeInt('Priority')
     if priority is None:
       priority = 0
-    platform = classAdJob.getAttributeString( 'Platform' )
-    # Legacy check to suite the LHCb logic
-    if not platform:
-      platform = classAdJob.getAttributeString( 'SystemConfig' )
-    cpuTime = classAdJob.getAttributeInt( 'CPUTime' )
+    platform = classAdJob.getAttributeString('Platform')
+    cpuTime = classAdJob.getAttributeInt('CPUTime')
     if cpuTime is None:
       # Just in case check for MaxCPUTime for backward compatibility
-      cpuTime = classAdJob.getAttributeInt( 'MaxCPUTime' )
+      cpuTime = classAdJob.getAttributeInt('MaxCPUTime')
       if cpuTime is not None:
-        classAdJob.insertAttributeInt( 'CPUTime', cpuTime )
+        classAdJob.insertAttributeInt('CPUTime', cpuTime)
       else:
-        opsHelper = Operations( group = ownerGroup,
-                                setup = diracSetup )
-        cpuTime = opsHelper.getValue( 'JobDescription/DefaultCPUTime', 86400 )
-    classAdReq.insertAttributeInt( 'UserPriority', priority )
-    classAdReq.insertAttributeInt( 'CPUTime', cpuTime )
+        opsHelper = Operations(group=ownerGroup,
+                               setup=diracSetup)
+        cpuTime = opsHelper.getValue('JobDescription/DefaultCPUTime', 86400)
+    classAdReq.insertAttributeInt('UserPriority', priority)
+    classAdReq.insertAttributeInt('CPUTime', cpuTime)
 
     if platform and platform.lower() != 'any':
-      result = getDIRACPlatform( platform )
+      result = getDIRACPlatform(platform)
       if result['OK'] and result['Value']:
-        classAdReq.insertAttributeVectorString( 'Platforms', result['Value'] )
+        classAdReq.insertAttributeVectorString('Platforms', result['Value'])
       else:
         error = "OS compatibility info not found"
 

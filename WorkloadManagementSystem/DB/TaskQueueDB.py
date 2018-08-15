@@ -169,11 +169,6 @@ class TaskQueueDB(DB):
     Check a task queue definition dict is valid
     """
 
-    # Confine the SystemConfigs legacy option here, use Platform everywhere else
-    # until the SystemConfigs is no more used in the TaskQueueDB
-    if 'SystemConfigs' in tqDefDict and "Platforms" not in tqDefDict:
-      tqDefDict['Platforms'] = tqDefDict['SystemConfigs']
-
     for field in singleValueDefFields:
       if field not in tqDefDict:
         return S_ERROR("Missing mandatory field '%s' in task queue definition" % field)
@@ -217,11 +212,6 @@ class TaskQueueDB(DB):
         if escapeValues:
           return self._escapeString(value)
         return S_OK(value)
-
-    # Confine the SystemConfig legacy option here, use Platform everywhere else
-    # until the SystemConfig is no more used in the TaskQueueDB
-    if 'SystemConfig' in tqMatchDict and "Platform" not in tqMatchDict:
-      tqMatchDict['Platform'] = tqMatchDict['SystemConfig']
 
     for field in singleValueDefFields:
       if field not in tqMatchDict:
