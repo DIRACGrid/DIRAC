@@ -98,16 +98,21 @@ class HandlerManager(object):
     serviceList = []
     if diracSystems['OK']:
       for system in diracSystems['Value']:
-        instance = PathFinder.getSystemInstance(system)
-        services = gConfig.getSections('/Systems/%s/%s/Services' % (system, instance))
-        if services['OK']:
-          for service in services['Value']:
-            newservice = ("%s/%s" % (system, service))
+        try:
+          instance = PathFinder.getSystemInstance(system)
+          services = gConfig.getSections('/Systems/%s/%s/Services' % (system, instance))
+          if services['OK']:
+            for service in services['Value']:
+              newservice = ("%s/%s" % (system, service))
 
-            # We search in the CS all handlers who used HTTPS as protocol
-            isHTTPS = gConfig.getValue('/Systems/%s/%s/Services/%s/Protocol' % (system, instance, service))
-            if isHTTPS and isHTTPS.lower() == 'https':
-              serviceList.append(newservice)
+              # We search in the CS all handlers who used HTTPS as protocol
+              isHTTPS = gConfig.getValue('/Systems/%s/%s/Services/%s/Protocol' % (system, instance, service))
+              if isHTTPS and isHTTPS.lower() == 'https':
+                serviceList.append(newservice)
+        # On systems some times you have things not related to services...
+        except RuntimeError as e:
+          pass
+        
 
     self.loadHandlersByServiceName(serviceList)
 

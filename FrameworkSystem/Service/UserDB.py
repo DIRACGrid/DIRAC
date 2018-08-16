@@ -16,7 +16,7 @@ class UserDB(DB):
 
     # Initialization of DB, last parameter represent number of request to queue
     # Documentation advice to use 10 
-    super(UserDB, self).__init__('UserDB', 'Framework/UserDB', 10)
+    super(UserDB, self).__init__('UserDB', 'Framework/UserDB')
     retVal = self.__initializeDB()
     if not retVal['OK']:
       raise Exception("Can't create tables: %s" % retVal['Message'])
