@@ -10,7 +10,7 @@ import tempfile
 import DIRAC
 from DIRAC import gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
-from DIRAC.Core.Security.X509Chain import X509Chain
+from DIRAC.Core.Security.X509Chain import X509Chain #pylint: disable=import-error
 from DIRAC.Core.Security import Locations
 
 class BaseSecurity( object ):

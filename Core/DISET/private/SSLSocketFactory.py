@@ -4,7 +4,7 @@ __RCSID__ = "$Id$"
 import types
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.Core.DISET.private.Transports.SSL.FakeSocket import FakeSocket
-from DIRAC.Core.DISET.private.Transports.SSL.SocketInfoFactory import gSocketInfoFactory
+from DIRAC.Core.DISET.private.Transports.SSL.pygsi.SocketInfoFactory import gSocketInfoFactory
 from DIRAC.Core.DISET.private.Transports.SSLTransport import checkSanity
 
 class SSLSocketFactory:

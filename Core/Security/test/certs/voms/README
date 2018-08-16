@@ -1,0 +1,10 @@
+This fake voms proxy was generated using the following command line:
+
+voms-proxy-fake --cert ../user/usercert.pem \
+                --key ../user/userkey.pem \
+                -rfc \
+                -fqan "/fakevo/Role=user/Capability=NULL" \
+                -uri fakeserver.cern.ch:15000 \
+                -voms fakevo \
+                -hostcert ../host/hostcert.pem \
+                -hostkey ../host/hostkey.pem 

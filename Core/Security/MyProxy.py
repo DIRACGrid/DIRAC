@@ -8,7 +8,7 @@ from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess import shellCall
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Security.ProxyFile import multiProxyArgument, deleteMultiProxy
-from DIRAC.Core.Security.X509Chain import X509Chain
+from DIRAC.Core.Security.X509Chain import X509Chain #pylint: disable=import-error
 from DIRAC.Core.Security.BaseSecurity import BaseSecurity
 
 class MyProxy( BaseSecurity ):

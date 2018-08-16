@@ -1,17 +1,38 @@
-# $HeadURL$
+"""
+Just a selector for X509Certificate between PyGSI and M2Crypto based on DIRAC_USE_M2CRYPTO environment variable
+"""
+
 __RCSID__ = "$Id$"
 
-import GSI
 
-requiredGSIVersion = "0.6.3"
-if GSI.version.__version__ < requiredGSIVersion:
-  raise Exception( "pyGSI is not the latest version (installed %s required %s)" % ( GSI.version.__version__, requiredGSIVersion ) )
+import os
+from pkgutil import extend_path
 
-GSI.SSL.set_thread_safe()
 
-nid = GSI.crypto.create_oid( "1.2.42.42", "diracGroup", "DIRAC group" )
-GSI.crypto.add_x509_extension_alias( nid, 78 ) #Alias to netscape comment, text based extension
-nid = GSI.crypto.create_oid( "1.3.6.1.4.1.8005.100.100.5", "vomsExtensions", "VOMS extension" )
-GSI.crypto.add_x509_extension_alias( nid, 78 ) #Alias to netscape comment, text based extension
-nid = GSI.crypto.create_oid( "1.3.6.1.4.1.8005.100.100.11", "vomsAttribute", "VOMS attribute" )
-GSI.crypto.add_x509_extension_alias( nid, 78 ) #Alias to netscape comment, text based extension
+#####
+# SUPER DISGUSTING HACK
+# We define these variables, and then remove them immediately.
+# it is to allow something like 'from DIRAC.Core.Security import X509Chain'
+# But pylint would complain just like that
+# I've spent a lot of time trying to get pylint to work, but...
+# https://github.com/PyCQA/pylint/issues/2474
+
+X509Chain = None
+X509CRL = None
+X509Certificate = None
+X509Request = None
+
+locals().pop('X509Chain')
+locals().pop('X509CRL')
+locals().pop('X509Certificate')
+locals().pop('X509Request')
+####
+
+
+# If we want to use M2Crypto, we add the m2crypto subpackage to the search path
+# This allows imports like 'from DIRAC.Core.Security.X509Chian...' to work transparently
+# Nice kind of tricks you find in libraries like xml...
+if os.getenv('DIRAC_USE_M2CRYPTO', 'NO').lower() in ('yes', 'true'):
+  __path__ = extend_path(__path__, __name__ + '.m2crypto')
+else:
+  __path__ = extend_path(__path__, __name__ + '.pygsi')

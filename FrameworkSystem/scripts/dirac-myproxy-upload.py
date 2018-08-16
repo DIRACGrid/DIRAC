@@ -7,7 +7,6 @@
 __RCSID__ = "$Id$"
 
 import sys
-import getpass
 import DIRAC
 from DIRAC.Core.Base import Script
 
@@ -41,7 +40,7 @@ Script.parseCommandLine()
 
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.Core.Security.MyProxy import MyProxy
-from DIRAC.Core.Security.X509Chain import X509Chain
+from DIRAC.Core.Security.X509Chain import X509Chain #pylint: disable=import-error
 from DIRAC.Core.Security import Locations, CS
 
 if not params.proxyLoc:
@@ -60,5 +59,3 @@ if not retVal[ 'OK' ]:
   sys.exit( 1 )
 print "Proxy uploaded"
 sys.exit( 0 )
-
-

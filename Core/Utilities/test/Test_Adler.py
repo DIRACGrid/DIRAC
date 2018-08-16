@@ -25,7 +25,8 @@ import os
 import unittest
 import string
 import tempfile
-from zlib import adler32
+# from zlib import adler32
+import zlib
 
 ## from DIRAC
 from DIRAC.Core.Utilities import Adler
@@ -41,8 +42,8 @@ class AdlerTestCase(unittest.TestCase):
   """
 
   def setUp( self ):
-    self.emptyAdler = hex(adler32( "" ))[2:]
-    self.lettersAdler = hex(adler32( string.letters ))[2:]
+    self.emptyAdler = hex(zlib.adler32( "" )& 0xffffffff)[2:]
+    self.lettersAdler = hex(zlib.adler32( string.letters )& 0xffffffff)[2:]
 
   def testStringAdler( self ):
     """ stringAdler tests """

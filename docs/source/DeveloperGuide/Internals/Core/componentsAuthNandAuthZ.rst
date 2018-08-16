@@ -50,9 +50,9 @@ When a client calls a service, he needs to be identified. If a client opens a co
 	{
 		'DN': '/C=ch/O=DIRAC/[...]',
 		'group': 'devGroup',
-		'CN': u'ciuser', 
-		'x509Chain': <X509Chain 2 certs [...][...]>, 
-		'isLimitedProxy': False, 
+		'CN': u'ciuser',
+		'x509Chain': <X509Chain 2 certs [...][...]>,
+		'isLimitedProxy': False,
 		'isProxy': True
 	}
 
@@ -72,7 +72,45 @@ AuthManager.authQuery() returns boolean so it is easy to use, you just have to p
 	# credDict came from BaseTransport.getConnectingCredentials()
 	# hardcodedMethodAuth is optional
 
-To determine if a query can be authorized or not the AuthManager extract valid properties for a given method. 
+To determine if a query can be authorized or not the AuthManager extract valid properties for a given method.
 First AuthManager try to get it from gConfig, then try to get it from hardcoded list (hardcodedMethodAuth) in your service and if nothing was found get default properties from gConfig.
 
 AuthManager also extract properties from user with credential dictionary and configuration system to check if properties matches. So you don't have to extract properties by yourself, but if needed you can use :py:class:`DIRAC.Core.Security.CS.getPropertiesForGroup()`
+
+
+.. _about_proxies:
+
+=============
+About proxies
+=============
+
+
+DIRAC uses X509 for authentication. Proxies are an extension to the traditional X509 certificate PKI infrastructure. For a detailed explanation, please see the RFC 3820.
+
+Handling the proxies and certificates within DIRAC is done with the classes in :py:mod:`DIRAC.Core.Security`. Please look inside the various classes documentation for details.
+These classes are used only for manipulating the objects and the information they contains. The use of the X509 entity for establishing connections is done directly with the underlying libraries (openssl)
+
+One important mechanism is the delegation mechanism. This allows to give credentials to a remote entity, without every having a private key going through the network. This principle is used everywhere: when uploading a proxy to the proxyDB, when retrieving it, when submitting a transfer to FTS, when getting VOMS attributes, etc. The principle goes as follow:
+
+
+1. The client tells the server that it wants to delegate.
+2. The server generates a certificate *request* containing the public key, and the corresponding private key.
+3. The server sends to the client the request (containing the public key)
+4. The client signs the request using its own private key, and sets the subject of this new certificate as its own, appending some CN field (here the clients also decides the lifetime of this certificate!)
+5. The client sends the signed certificate, appending its own certificate chain, back to the server
+6. The server stores the new certificate together with the private key it has from before. This is now a full proxy
+
+The "magic" happens when the storage (or any other endpoint needing a certificate) gets the proxy certificate. It then start following up as this
+
+1. /DC=cern/CN=user/CN=proxy/CN=proxy signed by /DC=cern/CN=user/CN=proxy, do I have the signer's certificate?
+2. Yes, it is part of the proxy chain. OK, /DC=cern/CN=user/CN=proxy is signed by /DC=cern/CN=user, do I have the signer's certificate?
+3. Yes, it is part of the proxy chain. OK, /DC=cern/CN=user is signed by /DC=cern, do I have the signer's certificate?
+4. Yes, it is a ROOT CA (/DC=cern) I know and trust, so the full chain can be trusted
+
+
+Some proxy might be `limited`. a limited proxy has an extra flag set that, by convention, is checked by job submission services that, by convention, shall refuse limited proxies for further job submissions.
+
+Such services shall accept regular proxies _and_ create limited delegations of those proxies that in turn will be used to equip the jobs.  A limited proxy cannot lose its limitation in further delegations.  All this machinery is needed to prevent that jobs can submit other jobs and thus create a job storm.  That is particularly important
+to prevent such an abuse of stolen proxies.
+
+Data management services shall simply ignore the flag.

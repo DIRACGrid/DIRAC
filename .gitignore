@@ -73,3 +73,4 @@ Local_*
 docs/source/CodeDocumentation/
 docs/source/AdministratorGuide/Configuration/ExampleConfig.rst
 docs/_build
+docs/source/_build
