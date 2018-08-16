@@ -3,9 +3,9 @@
 # Date: 2012/12/11 18:04:25
 ########################################################################
 
-""" :mod: SubprocessTests 
+""" :mod: SubprocessTests
     =======================
- 
+
     .. module: SubprocessTests
     :synopsis: unittest for Subprocess module
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
@@ -19,7 +19,7 @@ __RCSID__ = "$Id $"
 # @author Krzysztof.Ciba@NOSPAMgmail.com
 # @date 2012/12/11 18:04:37
 
-## imports 
+## imports
 import unittest
 import time
 ## SUT
@@ -29,7 +29,7 @@ from DIRAC.Core.Utilities.Subprocess import systemCall, shellCall, pythonCall
 class SubprocessTests(unittest.TestCase):
   """
   .. class:: SubprocessTests
-  
+
   """
 
   def setUp( self ):
@@ -46,7 +46,7 @@ class SubprocessTests(unittest.TestCase):
     ## systemCall
     ret = systemCall( timeout=False, cmdSeq = self.cmd )
     self.assertEqual( ret, {'OK': True, 'Value': (0, '', '') } )
-    
+
     ## shellCall
     ret  = shellCall( timeout=False, cmdSeq = " ".join( self.cmd ) )
     self.assertEqual( ret, {'OK': True, 'Value': (0, '', '') } )
@@ -61,11 +61,11 @@ class SubprocessTests(unittest.TestCase):
 
   def testTimeouts( self ):
     """ test timeouts """
-    
+
     ## systemCall
     ret = systemCall( timeout=self.timeout, cmdSeq = self.cmd )
     self.assertFalse( ret['OK'] )
-    
+
     ## shellCall
     ret  = shellCall( timeout=self.timeout, cmdSeq = " ".join( self.cmd ) )
     self.assertFalse( ret['OK'] )
@@ -81,5 +81,5 @@ class SubprocessTests(unittest.TestCase):
 ## tests execution
 if __name__ == "__main__":
   gTestLoader = unittest.TestLoader()
-  gTestSuite = gTestLoader.loadTestsFromTestCase( SubprocessTests )      
+  gTestSuite = gTestLoader.loadTestsFromTestCase( SubprocessTests )
   unittest.TextTestRunner( verbosity=3 ).run( gTestSuite )

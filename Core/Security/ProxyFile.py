@@ -9,7 +9,7 @@ import tempfile
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
-from DIRAC.Core.Security.X509Chain import g_X509ChainType, X509Chain
+from DIRAC.Core.Security.X509Chain import X509Chain #pylint: disable=import-error
 from DIRAC.Core.Security.Locations import getProxyLocation
 
 def writeToProxyFile( proxyContents, fileName = False ):
@@ -85,13 +85,13 @@ def multiProxyArgument( proxy = False ):
 
 
   :param proxy: param can be:
-  
+
       * Default -> use current proxy
       * string -> upload file specified as proxy
       * X509Chain -> use chain
 
   :returns:  S_OK/S_ERROR
-  
+
     .. code-block:: python
 
         S_OK( { 'file' : <string with file location>,
@@ -103,7 +103,7 @@ def multiProxyArgument( proxy = False ):
   """
   tempFile = False
   # Set env
-  if type( proxy ) == g_X509ChainType:
+  if isinstance( proxy, X509Chain ):
     tempFile = True
     retVal = writeChainToTemporaryFile( proxy )
     if not retVal[ 'OK' ]:

@@ -87,19 +87,19 @@ class PlainTransport( BaseTransport ):
       except Exception as e:
         return S_ERROR( "Exception while reading from peer: %s" % str( e ) )
 
-  def _write( self, buffer ):
+  def _write( self, buf ):
     sentBytes = 0
     timeout = False
     if 'timeout' in self.extraArgsDict:
       timeout = self.extraArgsDict[ 'timeout' ]
     if timeout:
       start = time.time()
-    while sentBytes < len( buffer ):
+    while sentBytes < len( buf ):
       try:
         if timeout:
           if time.time() - start > timeout:
             return S_ERROR( "Socket write timeout exceeded" )
-        sent = self.oSocket.send( buffer[ sentBytes: ] )
+        sent = self.oSocket.send( buf[ sentBytes: ] )
         if sent == 0:
           return S_ERROR( "Connection closed by peer" )
         if sent > 0:

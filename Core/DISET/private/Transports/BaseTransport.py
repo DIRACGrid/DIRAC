@@ -153,8 +153,8 @@ class BaseTransport( object ):
     except Exception as e:
       return S_ERROR( "Exception while reading from peer: %s" % str( e ) )
 
-  def _write( self, buffer ):
-    return S_OK( self.oSocket.send( buffer ) )
+  def _write( self, buf ):
+    return S_OK( self.oSocket.send( buf ) )
 
   def sendData( self, uData, prefix = False ):
     self.__updateLastActionTimestamp()
