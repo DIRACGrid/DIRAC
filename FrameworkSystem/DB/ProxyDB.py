@@ -8,12 +8,17 @@ import random
 import types
 import hashlib
 import urllib
+import os
 
 from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Base.DB import DB
-from DIRAC.Core.Security.X509Request import X509Request
-from DIRAC.Core.Security.X509Chain import X509Chain, isPUSPdn
+if os.getenv('DIRAC_USE_M2CRYPTO', 'NO').lower() in ('yes', 'true'):
+  from DIRAC.Core.Security.m2crypto.X509Request import X509Request
+  from DIRAC.Core.Security.m2crypto.X509Chain import X509Chain, isPUSPdn
+else:
+  from DIRAC.Core.Security.X509Request import X509Request
+  from DIRAC.Core.Security.X509Chain import X509Chain, isPUSPdn
 from DIRAC.Core.Security.MyProxy import MyProxy
 from DIRAC.Core.Security.VOMS import VOMS
 from DIRAC.Core.Security import Properties
