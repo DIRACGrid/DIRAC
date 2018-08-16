@@ -134,6 +134,8 @@ Finally, you will have to instruct you users on the procedure to upload the publ
 of the host where the Web Portal is running. This depends from CA to CA, but typically only means clicking on a certain
 link on the web portal of the CA.
 
+.. _using_own_CA:
+
 Using your own CA
 ~~~~~~~~~~~~~~~~~
 This is mandatory on the server running the web portal.

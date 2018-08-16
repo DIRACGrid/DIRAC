@@ -1,0 +1,15 @@
+@startuml
+Client -> TornadoServer: connect
+Client<-> TornadoServer: handshake
+Client -> TornadoServer: POST <url> + args
+note over TornadoServer: Routing by Tornado
+TornadoServer -> TornadoService: initialize()
+note over TornadoService: Decoding user certificate\nand extracting credentials
+TornadoServer -> TornadoService: prepare()
+TornadoService -> AuthManager: authQuery()
+AuthManager -> TornadoService: S_OK/S_ERROR
+TornadoServer -> TornadoService: post()
+TornadoService-> YourServiceHandler: export_method(args)
+YourServiceHandler -> TornadoService: S_OK/S_ERROR
+TornadoService -> Client: S_OK/S_ERROR
+@enduml
