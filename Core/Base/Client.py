@@ -5,7 +5,8 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.TornadoServices.Client.RPCClientSelector import RPCClientSelector
+from DIRAC.TornadoServices.Client.TornadoClient import TornadoClient
 
 class Client(object):
   """ Simple class to redirect unknown actions directly to the server. Arguments
@@ -15,6 +16,9 @@ class Client(object):
 
       - The self.serverURL member should be set by the inheriting class
   """
+
+  # Default https (RPC)Client
+  httpsClient = TornadoClient
 
   def __init__(self, **kwargs):
     """ C'tor.
@@ -99,5 +103,5 @@ class Client(object):
       if not url:
         url = self.serverURL
       self.__kwargs.setdefault('timeout', timeout)
-      rpc = RPCClient(url, **self.__kwargs)
+      rpc = RPCClientSelector(url, httpsClient=self.httpsClient, **self.__kwargs)
     return rpc
