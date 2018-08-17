@@ -373,7 +373,7 @@ class ElasticSearchDB(object):
     :param str query: the query that we want to issue the delete on
     """
     try:
-      self.__client.delete_by_query(index = indexName, body = query)
+      self.__client.delete_by_query(index=indexName, body=query)
     except Exception as inst:
       gLogger.error("ERROR: Couldn't delete data")
       return S_ERROR(inst)
@@ -404,5 +404,3 @@ def generateFullIndexName(indexName, period=None):
     index = "%s-%s" % (indexName, month)
 
   return index
-
-
