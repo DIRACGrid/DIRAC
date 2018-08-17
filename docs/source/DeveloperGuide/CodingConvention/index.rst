@@ -227,7 +227,7 @@ Comments and doc strings
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 Comments should be abundant, and must follow the rules of automatic documentation
-by Epydoc tool using ReStructedText mark-up.
+by the sphinx tool using ReStructedText mark-up.
 
 **R24**
    Each class and method definition should start with the doc strings. See
