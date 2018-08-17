@@ -498,8 +498,8 @@ class RequestHandler(object):
       A simple whoami, returns all credential dictionnary, except certificate chain object.
     """
     credDict = self.srv_getRemoteCredentials()
-    if 'x509Chain' in credDict:
-      del credDict['x509Chain']
+    # Remove the certificate chain (client already have it)
+    credDict.pop('x509Chain', None)
     return S_OK(credDict)
 
   types_echo = [basestring]
