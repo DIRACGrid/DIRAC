@@ -3,16 +3,11 @@
 Tests for Bdii2CSAgent module
 """
 
-import logging
 import unittest
-import pytest
-
 from mock import MagicMock as Mock, patch
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Agent import Bdii2CSAgent
-
-from DIRAC.tests.Utilities.assertingUtils import checkAgentOptions
 
 MODNAME= "DIRAC.ConfigurationSystem.Agent.Bdii2CSAgent"
 
@@ -23,28 +18,6 @@ ALTBDII = { 'site2': {'CEs': { 'ce2': { 'Queues': { 'queue2': "SomeOtherValues" 
                                'ce2b': { 'Queues': { 'queue2b': "SomeOtherValues" }}}},
             'site3': {'CEs': { 'ce3': { 'Queues': { 'queue3': "SomeValues" }}}}
           }
-
-
-@pytest.fixture
-def bdii2CSAgent():
-  """Return an instance of the TransformationCleaningAgent."""
-  with patch(MODNAME + ".AgentModule.__init__", new=Mock()):
-    agent = Bdii2CSAgent.Bdii2CSAgent(agentName="sys/name", loadName="sys/name")
-    # as we ignore the init from the baseclass some agent variables might not be present so we set them here
-    # in any case with this we can check that log is called with proper error messages
-    agent.log = Mock()
-  return agent
-
-
-def test_AgentOptions(caplog, bdii2CSAgent):
-  """Check that all options in ConfigTemplate are found in the initialize method, including default values."""
-  caplog.set_level(logging.DEBUG)
-  bdii2CSAgent.am_getOption = Mock()
-  with patch("DIRAC.ConfigurationSystem.Agent.Bdii2CSAgent.getVOs", new=Mock(return_value=S_ERROR())), \
-          patch("DIRAC.ConfigurationSystem.Agent.Bdii2CSAgent.CSAPI", new=Mock()):
-    bdii2CSAgent.initialize()
-  checkAgentOptions(bdii2CSAgent.am_getOption, 'ConfigurationSystem', 'Bdii2CSAgent',
-                    ignoreOptions=['BannedCEs', 'BannedSEs', 'DryRun'])
 
 
 class Bdii2CSTests( unittest.TestCase ):
