@@ -115,7 +115,6 @@ class ServiceInterfaceBase(object):
                                                 ", ".join(self.dAliveSlaveServers.keys())))
       self.__generateNewVersion()
 
-
   def updateConfiguration(self, sBuffer, commiter="", updateVersionOption=False):
     """
       Update the configuration
@@ -158,7 +157,7 @@ class ServiceInterfaceBase(object):
     gConfigurationData.unlock()
     gLogger.info("Generating new version")
     gConfigurationData.generateNewVersion()
-    #self._checkSlavesStatus( forceWriteConfiguration = True )
+    # self._checkSlavesStatus( forceWriteConfiguration = True )
     gLogger.info("Writing new version to disk!")
     retVal = gConfigurationData.writeRemoteConfigurationToDisk("%s@%s" % (commiter, gConfigurationData.getVersion()))
     gLogger.info("New version it is!")
@@ -239,9 +238,9 @@ class ServiceInterfaceBase(object):
     """
     realModifiedSections = dict([(modAc[1], modAc[3])
                                  for modAc in realModList if modAc[0].find('Sec') == len(modAc[0]) - 3])
-    #reqOptionsModificationList = dict([(modAc[1], modAc[3])
+    # reqOptionsModificationList = dict([(modAc[1], modAc[3])
     #                                   for modAc in reqModList if modAc[0].find('Opt') == len(modAc[0]) - 3])
-    #optionModRequests = 0
+    # optionModRequests = 0
     for modAc in reqModList:
       action = modAc[0]
       objectName = modAc[1]
