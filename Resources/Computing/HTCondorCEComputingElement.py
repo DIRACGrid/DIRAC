@@ -304,7 +304,7 @@ Queue %(nJobs)s
     # format adds whitespace for each field This will return a list of 1245 75 3
     # needs to cocatenate the first two with a dot
     condorHistCall = 'condor_history %s %s -af ClusterId ProcId JobStatus' % (
-        self.remoteScheddOptions, ' '.join(condorIDs.values()))
+        self.remoteScheddOptions, ' '.join(condorIDs.itervalues()))
 
     treatCondorHistory(condorHistCall, qList)
 

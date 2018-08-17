@@ -1144,7 +1144,7 @@ class Job(API):
       else:
         self.log.warn('JobConfigArgs defined with null value')
     if self.parametricWFArguments:
-      for name, value in self.parametricWFArguments.items():
+      for name, value in self.parametricWFArguments.iteritems():
         arguments.append("-p %s='%s'" % (name, value))
 
     classadJob.insertAttributeString('Executable', self.executable)
