@@ -12,7 +12,6 @@ from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
 
-
 class ProxyManagerHandler(RequestHandler):
 
   __maxExtraLifeFactor = 1.5
@@ -28,15 +27,15 @@ class ProxyManagerHandler(RequestHandler):
         return result
       dbClass = result['Value']
 
-      cls.__proxyDB = dbClass( useMyProxy = useMyProxy )
+      cls.__proxyDB = dbClass(useMyProxy=useMyProxy)
 
     except RuntimeError as excp:
-      return S_ERROR( "Can't connect to ProxyDB: %s" % excp )
-    gThreadScheduler.addPeriodicTask( 900, cls.__proxyDB.purgeExpiredTokens, elapsedTime = 900 )
-    gThreadScheduler.addPeriodicTask( 900, cls.__proxyDB.purgeExpiredRequests, elapsedTime = 900 )
-    gThreadScheduler.addPeriodicTask( 21600, cls.__proxyDB.purgeLogs )
-    gThreadScheduler.addPeriodicTask( 3600, cls.__proxyDB.purgeExpiredProxies )
-    gLogger.info( "MyProxy: %s\n MyProxy Server: %s" % ( useMyProxy, cls.__proxyDB.getMyProxyServer() ) )
+      return S_ERROR("Can't connect to ProxyDB: %s" % excp)
+    gThreadScheduler.addPeriodicTask(900, cls.__proxyDB.purgeExpiredTokens, elapsedTime=900)
+    gThreadScheduler.addPeriodicTask(900, cls.__proxyDB.purgeExpiredRequests, elapsedTime=900)
+    gThreadScheduler.addPeriodicTask(21600, cls.__proxyDB.purgeLogs)
+    gThreadScheduler.addPeriodicTask(3600, cls.__proxyDB.purgeExpiredProxies)
+    gLogger.info("MyProxy: %s\n MyProxy Server: %s" % (useMyProxy, cls.__proxyDB.getMyProxyServer()))
     return S_OK()
 
   def __generateUserProxiesInfo(self):

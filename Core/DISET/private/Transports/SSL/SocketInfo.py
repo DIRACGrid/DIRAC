@@ -23,7 +23,7 @@ else:
 
 DEFAULT_SSL_CIPHERS = "ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:!aNULL:!MD5:!DSS"
 
-VERIFY_DEPTH = 50 # isn't it A BIT too deep?
+VERIFY_DEPTH = 50  # isn't it A BIT too deep?
 
 
 class SocketInfo:
@@ -203,7 +203,7 @@ class SocketInfo:
                 if casDict[caID][0] < caNotAfter:
                   casDict[caID] = (caNotAfter, caCert)
               continue
-            except:
+            except BaseException:
               if fileName.find(".0") == len(fileName) - 2:
                 gLogger.exception("LOADING %s" % filePath)
             if 'IgnoreCRLs' not in self.infoDict or not self.infoDict['IgnoreCRLs']:
@@ -241,7 +241,7 @@ class SocketInfo:
                 if casDict[caID][0] < caNotAfter:
                   casDict[caID] = (caNotAfter, caCert)
               continue
-            except:
+            except BaseException:
               if fileName.find(".0") == len(fileName) - 2:
                 gLogger.exception("LOADING %s" % filePath)
             if 'IgnoreCRLs' not in self.infoDict or not self.infoDict['IgnoreCRLs']:
@@ -263,7 +263,7 @@ class SocketInfo:
                                       [crlsDict[k] for k in crlsDict])
         SocketInfo.__cachedCAsCRLsLastLoaded = time.time()
     except:
-      gLogger.exception( "Failed to init CA store" )
+      gLogger.exception("Failed to init CA store")
     finally:
       SocketInfo.__cachedCAsCRLsLoadLock.release()
     # Generate CA Store
@@ -490,7 +490,7 @@ class SocketInfo:
     return self.__sslHandshake()
 
   #@gSynchro
-  def __sslHandshake( self ):
+  def __sslHandshake(self):
     """
       Do the SSL Handshake
 
@@ -509,17 +509,17 @@ class SocketInfo:
       except GSI.SSL.WantReadError:
         time.sleep(0.001)
       except GSI.SSL.WantWriteError:
-        time.sleep( 0.001 )
+        time.sleep(0.001)
       except GSI.SSL.Error as v:
         if self.__retry < 3:
           self.__retry += 1
           return self.__sslHandshake()
         else:
           # gLogger.warn( "Error while handshaking", "\n".join( [ stError[2] for stError in v.args[0] ] ) )
-          gLogger.warn( "Error while handshaking", v )
-          return S_ERROR( "Error while handshaking" )
+          gLogger.warn("Error while handshaking", v)
+          return S_ERROR("Error while handshaking")
       except Exception as v:
-        gLogger.warn( "Error while handshaking", v )
+        gLogger.warn("Error while handshaking", v)
         if self.__retry < 3:
           self.__retry += 1
           return self.__sslHandshake()
@@ -552,7 +552,7 @@ class SocketInfo:
         time.sleep(0.001)
       except GSI.SSL.WantWriteError:
         time.sleep(0.001)
-      except GSI.SSL.Error, v:
+      except GSI.SSL.Error as v:
         if self.__retry < 3:
           self.__retry += 1
           return self.__sslHandshake()
@@ -560,7 +560,7 @@ class SocketInfo:
           # gLogger.warn( "Error while handshaking", "\n".join( [ stError[2] for stError in v.args[0] ] ) )
           gLogger.warn("Error while handshaking", v)
           return S_ERROR("Error while handshaking")
-      except Exception, v:
+      except Exception as v:
         gLogger.warn("Error while handshaking", v)
         if self.__retry < 3:
           self.__retry += 1
