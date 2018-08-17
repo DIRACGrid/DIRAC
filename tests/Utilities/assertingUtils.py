@@ -31,10 +31,16 @@ def _parseOption(outDict, inDict, optionPrefix=''):
       _parseOption(outDict, value, optionPrefix=optionName)
     elif isinstance(value, basestring):
       outDict[optionName] = value
-      try:
-        outDict[optionName] = int(value)
-      except ValueError:
-        pass
+      if value.isdigit():
+        try:
+          outDict[optionName] = int(value)
+        except ValueError:
+          pass
+      else:
+        try:
+          outDict[optionName] = float(value)
+        except ValueError:
+          pass
 
 
 def checkAgentOptions(getOptionMock, systemName, agentName,
