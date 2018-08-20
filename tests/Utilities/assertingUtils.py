@@ -1,10 +1,13 @@
 """Functions that assert conditions."""
 
+import inspect
+import importlib
 import logging
 import os
 from pprint import pformat
 
 from mock import call
+from mock import patch, MagicMock as Mock
 
 import DIRAC
 from DIRAC.Core.Utilities.CFG import CFG
@@ -41,6 +44,70 @@ def _parseOption(outDict, inDict, optionPrefix=''):
           outDict[optionName] = float(value)
         except ValueError:
           pass
+
+
+def AgentOptionsTest(agentPath, ignoreOptions, extension='DIRAC'):
+  """Test the consistency of options in ConfigTemplate and initialize of the agent.
+
+  :param str agentPath: Module where the agent can be found, e.g. DIRAC.Core.Agent.CoreAgent
+  :param list ignoreOptions: list of options to ignore during checks
+  :param str extension: Where to find the agent if it is not part of DIRAC, e.g.
+  """
+  agentPathSplit = agentPath.split('.')
+  systemName = agentPathSplit[1]
+  agentName = agentPathSplit[-1]
+
+  agentModule = importlib.import_module(agentPath)
+  LOG.info("Agents: %s %s", agentPath, agentModule)
+  agentClass = None
+
+  # mock everything but the agentClass
+  for name, member in inspect.getmembers(agentModule):
+    LOG.info("Mocking? %s, %s, %s, isclass(%s)", name, callable(member), type(member), inspect.isclass(member))
+    if name != 'AgentModule' and '_AgentModule__executeModuleCycle' in dir(member):
+      LOG.info("Found the agent class %s, %s", name, member)
+      agentClass = member
+      continue
+    elif name == 'AgentModule':
+      continue
+    if callable(member) or inspect.ismodule(member):
+      LOG.info("Mocking: %s, %s, %s", name, member, type(member))
+      agentModule.__dict__[name] = Mock(name=name)
+
+  agentModule.__dict__['gConfig'] = Mock()
+  agentModule.__dict__['gConfig'].getSections.return_value = dict(OK=True, Value=[])
+
+  def returnDefault(*args):
+    LOG.debug("ReturningDefault: %s, %s", args, type(args[1]))
+    return args[1]
+
+  getOptionMock = Mock(name="am_getOption", side_effect=returnDefault)
+
+  def instrument(*args, **kwargs):
+    """Mock some functions that come from the AgentModule and are not present otherwise."""
+    args[0].am_getOption = getOptionMock
+    args[0].log = Mock()
+    args[0].am_getModuleParam = Mock()
+    args[0].am_setOption = Mock()
+    args[0].am_getWorkDirectory = Mock()
+    args[0].am_getControlDirectory = Mock()
+    return None
+  initMock = Mock(side_effect=instrument)
+
+  class MockAgentModule(object):
+    def __init__(self, *args, **kwargs):
+      instrument(self)
+
+  patchBase = patch.object(agentClass, '__bases__', (MockAgentModule,))
+  with \
+          patchBase, \
+          patch(agentPath + ".AgentModule.__init__", new=initMock), \
+          patch("DIRAC.Core.Base.AgentModule.AgentModule.am_getOption", new=getOptionMock):
+    patchBase.is_local = True
+    agentInstance = agentClass(agentName="sys/name", loadName="sys/name")
+    instrument(agentInstance)
+  agentInstance.initialize()
+  checkAgentOptions(getOptionMock, systemName, agentName, ignoreOptions=ignoreOptions, extension=extension)
 
 
 def checkAgentOptions(getOptionMock, systemName, agentName,
