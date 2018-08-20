@@ -158,8 +158,7 @@ class TaskQueueDB(DB):
     except BaseException:
       maxCPUSegments = self.__defaultCPUSegments
     # Map to a segment
-    for iP, _ in enumerate(maxCPUSegments):
-      cpuSegment = maxCPUSegments[iP]
+    for cpuSegment in maxCPUSegments:
       if cpuTime <= cpuSegment:
         return cpuSegment
     return maxCPUSegments[-1]
