@@ -96,7 +96,7 @@ def formatProxyInfoAsString(infoDict):
   leftAlign = 13
   contentList = []
   for field in ('subject', 'issuer', 'identity', 'subproxyUser', ('secondsLeft', 'timeleft'),
-                ('group', 'DIRAC group'), 'path', 'username', ('groupProperties', "properties"),
+                ('group', 'DIRAC group'), 'rfc', 'path', 'username', ('groupProperties', "properties"),
                 ('hasVOMS', 'VOMS'), ('VOMS', 'VOMS fqan'), ('VOMSError', 'VOMS Error')):
     if isinstance(field, basestring):
       dispField = field
@@ -125,6 +125,7 @@ def getProxyStepsInfo(chain):
    Extended information of all Steps in the ProxyChain
    Returns a list of dictionary with Info for each Step.
   """
+  import ipdb; ipdb.set_trace()
   infoList = []
   nC = chain.getNumCertsInChain()['Value']
   for i in range(nC):

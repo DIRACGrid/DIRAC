@@ -7,6 +7,7 @@ import M2Crypto
 import asn1
 import datetime
 
+
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities import DErrno
@@ -25,6 +26,9 @@ VOMS_GENERIC_ATTRS_OID = '1.3.6.1.4.1.8005.100.100.11'
 DOMAIN_COMPONENT_OID = '0.9.2342.19200300.100.1.25'
 ORGANIZATIONAL_UNIT_NAME_OID = '2.5.4.11'
 COMMON_NAME_OID = '2.5.4.3'
+
+# See https://tools.ietf.org/html/rfc3820#appendix-A
+PROXY_OID = '1.3.6.1.5.5.7.21.1'
 LIMITED_PROXY_OID = '1.3.6.1.4.1.3536.1.1.1.9'
 
 DN_MAPPING = {
@@ -86,7 +90,7 @@ class X509Certificate(object):
     """
     try:
       self.__certObj = M2Crypto.X509.load_cert_string(str(pemData), M2Crypto.X509.FORMAT_PEM)
-    except Exception, e:
+    except Exception as e:
       return S_ERROR(DErrno.ECERTREAD, "Can't load pem data: %s" % e)
     self.__valid = True
     return S_OK()
@@ -120,7 +124,14 @@ class X509Certificate(object):
     """
     if not self.__valid:
       return S_ERROR(DErrno.ENOCERT)
-    return S_OK(self.__certObj.get_not_after())
+
+    notAfter = self.__certObj.get_not_after().get_datetime()
+
+    # M2Crypto does things correctly by setting a timezone info in the datetime
+    # However, we do not in DIRAC, and so we can't compare the dates.
+    # We have to remove the timezone info from M2Crypto
+    notAfter = notAfter.replace(tzinfo=None)
+    return S_OK(notAfter)
 
   def setNotAfter(self, notafter):
     """
@@ -139,7 +150,7 @@ class X509Certificate(object):
     """
     if not self.__valid:
       return S_ERROR(DErrno.ENOCERT)
-    return S_OK(self.__certObj.get_not_before())
+    return S_OK(self.__certObj.get_not_before().get_datetime())
 
   def setNotBefore(self, notbefore):
     """
@@ -342,7 +353,7 @@ class X509Certificate(object):
     if not self.__valid:
       return S_ERROR(DErrno.ENOCERT)
     extList = []
-    for i in self.__certObj.get_ext_count():
+    for i in xrange(self.__certObj.get_ext_count()):
       sn = self.__certObj.get_ext_at(i).get_name()
       try:
         value = self.__certObj.get_ext_at(i).get_value()
@@ -354,9 +365,11 @@ class X509Certificate(object):
   def verify(self, pkey):
     """
     Verify certificate using provided key
+
+    :returns: S_OK(bool) where the boolean shows the success of the verification
     """
     ret = self.__certObj.verify(pkey)
-    return S_OK(ret)
+    return S_OK(ret == 1)
 
   def setSubject(self, subject):
     """

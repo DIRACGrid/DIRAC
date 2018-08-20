@@ -128,7 +128,7 @@ class ProxyManagerClient(object):
                             record)
     return retVal
 
-  def uploadProxy(self, proxy=False, diracGroup=False, chainToConnect=False, restrictLifeTime=0):
+  def uploadProxy(self, proxy=False, diracGroup=False, chainToConnect=False, restrictLifeTime=0, rfcIfPossible = False):
     """
     Upload a proxy to the proxy management service using delegation
     """
@@ -176,7 +176,8 @@ class ProxyManagerClient(object):
       chainLifeTime = restrictLifeTime
     retVal = chain.generateChainFromRequestString(reqDict['request'],
                                                   lifetime=chainLifeTime,
-                                                  diracGroup=diracGroup)
+                                                  diracGroup=diracGroup,
+                                                  rfc = rfcIfPossible)
     if not retVal['OK']:
       return retVal
     # Upload!

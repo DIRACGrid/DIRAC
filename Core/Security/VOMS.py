@@ -155,6 +155,10 @@ class VOMS(BaseSecurity):
         lines.append("subject : %s" % creds['subject'])
         lines.append("issuer : %s" % creds['issuer'])
         lines.append("identity : %s" % creds['identity'])
+        if proxyDict['chain'].isRFC().get('Value'):
+          lines.append("type : RFC compliant proxy")
+        else:
+          lines.append("type : proxy")
         left = creds['secondsLeft']
         h = int(left / 3600)
         m = int(left / 60) - h * 60
@@ -272,7 +276,8 @@ class VOMS(BaseSecurity):
     if vomsesPath:
       cmdArgs.append('-vomses "%s"' % vomsesPath)
 
-    cmdArgs.append("-r")
+    if chain.isRFC().get('Value'):
+      cmdArgs.append("-r")
     cmdArgs.append('-timeout %u' % self._servTimeout)
 
     vpInitCmd = ''
@@ -280,10 +285,10 @@ class VOMS(BaseSecurity):
       if Os.which(vpInit):
         vpInitCmd = vpInit
 
-    if not Os.which('voms-proxy-init'):
+    if not vpInitCmd:
       return S_ERROR(DErrno.EVOMS, "Missing voms-proxy-init")
 
-    cmd = 'voms-proxy-init %s' % " ".join(cmdArgs)
+    cmd = '%s %s' % (vpInitCmd, " ".join(cmdArgs))
     result = shellCall(self._secCmdTimeout, cmd)
     if tmpDir:
       shutil.rmtree(tmpDir)
@@ -314,9 +319,15 @@ class VOMS(BaseSecurity):
     """
     Is voms info available?
     """
-    if not Os.which("voms-proxy-info"):
+
+    vpInfoCmd = ''
+    for vpInfo in ('voms-proxy-info', 'voms-proxy-info2'):
+      if Os.which(vpInfo):
+        vpInfoCmd = vpInfo
+
+    if not vpInfoCmd:
       return S_ERROR(DErrno.EVOMS, "Missing voms-proxy-info")
-    cmd = 'voms-proxy-info -h'
+    cmd = '%s -h' % vpInfoCmd
     result = shellCall(self._secCmdTimeout, cmd)
     if not result['OK']:
       return False

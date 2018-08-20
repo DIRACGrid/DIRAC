@@ -15,6 +15,7 @@ class X509Request(object):
   """
 
   def __init__(self, reqObj=None, pkeyObj=None):
+    # can we remove these two arguments, neveru sed
     self.__valid = False
     self.__reqObj = reqObj
     self.__pkeyObj = pkeyObj
