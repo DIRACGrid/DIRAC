@@ -153,7 +153,8 @@ def checkAgentOptions(getOptionMock, systemName, agentName,
     if not isinstance(value, bool) and not value:  # empty string, list, dict ...
       assert any(call(option, null) in getOptionMock.call_args_list for null in ({}, set(), [], '', 0))
     else:
-      assert call(option, value) in getOptionMock.call_args_list
+      assert call(option, value) in getOptionMock.call_args_list or \
+          call(option, [value]) in getOptionMock.call_args_list
 
   # check that options used in the agent are in the ConfigTemplates
   for opCall in getOptionMock.call_args_list:
@@ -170,4 +171,4 @@ def checkAgentOptions(getOptionMock, systemName, agentName,
     if not optionsDict[optionName]:
       assert not optionValue
       continue
-    assert optionsDict[optionName] == optionValue
+    assert optionsDict[optionName] == optionValue or [optionsDict[optionName]] == optionValue
