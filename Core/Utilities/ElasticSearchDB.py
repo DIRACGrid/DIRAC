@@ -386,28 +386,42 @@ class ElasticSearchDB(object):
       gLogger.error("Cannot connect to the db", repr(e))
     return S_OK(connected)
 
-  @staticmethod
-  def generateFullIndexName(indexName, period=None):
+  def deleteByQuery(self, indexName, query):
     """
-    Given an index prefix we create the actual index name. Each day an index is created.
-    :param str indexName: it is the name of the index
-    :param str period: We can specify, which kind of indexes will be created.
-                      Currently only daily and monthly indexes are supported.
+    Delete data by query
+
+    :param str indexName: the name of the index
+    :param str query: the query that we want to issue the delete on
     """
+    try:
+      self.__client.delete_by_query(index=indexName, body=query)
+    except Exception as inst:
+      gLogger.error("ERROR: Couldn't delete data")
+      return S_ERROR(inst)
+    return S_OK('Successfully deleted data from index %s' % indexName)
 
-    if period is None:
-      gLogger.warn("Daily indexes are used, because the period is not provided!")
-      period = 'day'
 
-    today = datetime.today().strftime("%Y-%m-%d")
-    index = ''
-    if period.lower() not in ['day', 'month']:  # if the period is not correct, we use daily indexes.
-      gLogger.warn("Period is not correct daily indexes are used instead:", period)
-      index = "%s-%s" % (indexName, today)
-    elif period.lower() == 'day':
-      index = "%s-%s" % (indexName, today)
-    elif period.lower() == 'month':
-      month = datetime.today().strftime("%Y-%m")
-      index = "%s-%s" % (indexName, month)
+def generateFullIndexName(indexName, period=None):
+  """
+  Given an index prefix we create the actual index name. Each day an index is created.
+  :param str indexName: it is the name of the index
+  :param str period: We can specify, which kind of indexes will be created.
+                     Currently only daily and monthly indexes are supported.
+  """
 
-    return index
+  if period is None:
+    gLogger.warn("Daily indexes are used, because the period is not provided!")
+    period = 'day'
+
+  today = datetime.today().strftime("%Y-%m-%d")
+  index = ''
+  if period.lower() not in ['day', 'month']:  # if the period is not correct, we use daily indexes.
+    gLogger.warn("Period is not correct daily indexes are used instead:", period)
+    index = "%s-%s" % (indexName, today)
+  elif period.lower() == 'day':
+    index = "%s-%s" % (indexName, today)
+  elif period.lower() == 'month':
+    month = datetime.today().strftime("%Y-%m")
+    index = "%s-%s" % (indexName, month)
+
+  return index

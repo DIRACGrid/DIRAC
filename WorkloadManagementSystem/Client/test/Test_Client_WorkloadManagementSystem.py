@@ -15,95 +15,99 @@ from DIRAC.WorkloadManagementSystem.Client.DownloadInputData import DownloadInpu
 from DIRAC.WorkloadManagementSystem.Client.Matcher import Matcher
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
 
-class ClientsTestCase( unittest.TestCase ):
+
+class ClientsTestCase(unittest.TestCase):
   """ Base class for the clients test cases
   """
-  def setUp( self ):
+
+  def setUp(self):
 
     from DIRAC import gLogger
-    gLogger.setLevel( 'DEBUG' )
+    gLogger.setLevel('DEBUG')
 
     self.mockDM = MagicMock()
     self.mockDM.return_value = dm_mock
 
     mockObjectSE = MagicMock()
-    mockObjectSE.getFileMetadata.return_value = S_OK( {'Successful':{'/a/lfn/1.txt':{'Cached':0},
-                                                                     '/a/lfn/2.txt':{'Cached':1}},
-                                                       'Failed':{}} )
-    mockObjectSE.getFile.return_value = S_OK( { 'Successful':{'/a/lfn/1.txt':{}},
-                                                'Failed':{}} )
-    mockObjectSE.getStatus.return_value = S_OK( {'Read': True, 'DiskSE': True} )
+    mockObjectSE.getFileMetadata.return_value = S_OK({'Successful': {'/a/lfn/1.txt': {'Cached': 0},
+                                                                     '/a/lfn/2.txt': {'Cached': 1}},
+                                                      'Failed': {}})
+    mockObjectSE.getFile.return_value = S_OK({'Successful': {'/a/lfn/1.txt': {}},
+                                              'Failed': {}})
+    mockObjectSE.getStatus.return_value = S_OK({'Read': True, 'DiskSE': True})
 
     self.mockSE = MagicMock()
     self.mockSE.return_value = mockObjectSE
 
-    self.dli = DownloadInputData( {'InputData': [],
-                                   'Configuration': 'boh',
-                                   'FileCatalog': S_OK( {'Successful': []} )} )
+    self.dli = DownloadInputData({'InputData': [],
+                                  'Configuration': 'boh',
+                                  'FileCatalog': S_OK({'Successful': []})})
 
     self.pilotAgentsDBMock = MagicMock()
     self.jobDBMock = MagicMock()
     self.tqDBMock = MagicMock()
     self.jlDBMock = MagicMock()
     self.opsHelperMock = MagicMock()
-    self.matcher = Matcher( pilotAgentsDB = self.pilotAgentsDBMock,
-                            jobDB = self.jobDBMock,
-                            tqDB = self.tqDBMock,
-                            jlDB = self.jlDBMock,
-                            opsHelper = self.opsHelperMock )
+    self.matcher = Matcher(pilotAgentsDB=self.pilotAgentsDBMock,
+                           jobDB=self.jobDBMock,
+                           tqDB=self.tqDBMock,
+                           jlDB=self.jlDBMock,
+                           opsHelper=self.opsHelperMock)
 
-  def tearDown( self ):
+  def tearDown(self):
     try:
-      os.remove( '1.txt' )
-      os.remove( 'InputData_*' )
+      os.remove('1.txt')
+      os.remove('InputData_*')
     except OSError:
       pass
 
 #############################################################################
 
-class DownloadInputDataSuccess( ClientsTestCase ):
 
-  def test_DLIDownloadFromSE( self ):
-    ourDLI = importlib.import_module( 'DIRAC.WorkloadManagementSystem.Client.DownloadInputData' )
+class DownloadInputDataSuccess(ClientsTestCase):
+
+  def test_DLIDownloadFromSE(self):
+    ourDLI = importlib.import_module('DIRAC.WorkloadManagementSystem.Client.DownloadInputData')
     ourDLI.StorageElement = self.mockSE
 
-    res = self.dli._downloadFromSE( '/a/lfn/1.txt', 'mySE', {'mySE': []}, 'aGuid' )
+    res = self.dli._downloadFromSE('/a/lfn/1.txt', 'mySE', {'mySE': []}, 'aGuid')
     # file won't exist at this point
-    self.assertFalse( res['OK'] )
+    self.assertFalse(res['OK'])
 
-    open( '1.txt', 'w' ).close()
-    res = self.dli._downloadFromSE( '/a/lfn/1.txt', 'mySE', {'mySE': []}, 'aGuid' )
+    open('1.txt', 'w').close()
+    res = self.dli._downloadFromSE('/a/lfn/1.txt', 'mySE', {'mySE': []}, 'aGuid')
     # file would be already local, so no real download
     self.assertTrue(res['OK'])
     try:
-      os.remove( '1.txt' )
+      os.remove('1.txt')
     except OSError:
       pass
 
     # I can't figure out how to simulate a real download here
 
-  def test_DLIDownloadFromBestSE( self ):
-    ourDLI = importlib.import_module( 'DIRAC.WorkloadManagementSystem.Client.DownloadInputData' )
+  def test_DLIDownloadFromBestSE(self):
+    ourDLI = importlib.import_module('DIRAC.WorkloadManagementSystem.Client.DownloadInputData')
     ourDLI.StorageElement = self.mockSE
 
-    res = self.dli._downloadFromBestSE( '/a/lfn/1.txt', {'mySE': []}, 'aGuid' )
+    res = self.dli._downloadFromBestSE('/a/lfn/1.txt', {'mySE': []}, 'aGuid')
     # file won't exist at this point
-    self.assertFalse( res['OK'] )
+    self.assertFalse(res['OK'])
 
-    open( '1.txt', 'w' ).close()
-    res = self.dli._downloadFromBestSE( '/a/lfn/1.txt', {'mySE': []}, 'aGuid' )
+    open('1.txt', 'w').close()
+    res = self.dli._downloadFromBestSE('/a/lfn/1.txt', {'mySE': []}, 'aGuid')
     # file would be already local, so no real download
     self.assertTrue(res['OK'])
     try:
-      os.remove( '1.txt' )
+      os.remove('1.txt')
     except OSError:
       pass
 
 #############################################################################
 
-class MatcherTestCase( ClientsTestCase ):
 
-  def test__processResourceDescription( self ):
+class MatcherTestCase(ClientsTestCase):
+
+  def test__processResourceDescription(self):
 
     resourceDescription = {'Architecture': 'x86_64-slc6',
                            'CEQueue': 'jenkins-queue_not_important',
@@ -115,7 +119,6 @@ class MatcherTestCase( ClientsTestCase ):
                            'FileCatalog': 'LcgFileCatalogCombined',
                            'GridCE': 'jenkins.cern.ch',
                            'GridMiddleware': 'DIRAC',
-                           'LHCbPlatform': 'x86_64-slc5-gcc43-opt',
                            'LocalSE': ['CERN-SWTEST'],
                            'MaxTotalJobs': 100,
                            'MaxWaitingJobs': 10,
@@ -129,7 +132,7 @@ class MatcherTestCase( ClientsTestCase ):
                            'Site': 'DIRAC.Jenkins.ch',
                            'WaitingToRunningRatio': 0.05}
 
-    res = self.matcher._processResourceDescription( resourceDescription )
+    res = self.matcher._processResourceDescription(resourceDescription)
     resExpected = {'Setup': 'LHCb-Certification',
                    'ReleaseVersion': 'v8r0p1',
                    'CPUTime': 1080000,
@@ -142,19 +145,20 @@ class MatcherTestCase( ClientsTestCase ):
                    'GridCE': 'jenkins.cern.ch',
                    'GridMiddleware': 'DIRAC'}
 
-    self.assertEqual( res, resExpected )
+    self.assertEqual(res, resExpected)
 
 #############################################################################
 
-class SandboxStoreTestCaseSuccess( ClientsTestCase ):
 
-  def test_uploadFilesAsSandbox( self ):
+class SandboxStoreTestCaseSuccess(ClientsTestCase):
 
-    ourSSC = importlib.import_module( 'DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient' )
+  def test_uploadFilesAsSandbox(self):
+
+    ourSSC = importlib.import_module('DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient')
     ourSSC.TransferClient = MagicMock()
     ssc = SandboxStoreClient()
-    fileList = [StringIO.StringIO( 'try' )]
-    res = ssc.uploadFilesAsSandbox( fileList )
+    fileList = [StringIO.StringIO('try')]
+    res = ssc.uploadFilesAsSandbox(fileList)
     print res
 
 
@@ -163,10 +167,10 @@ class SandboxStoreTestCaseSuccess( ClientsTestCase ):
 #############################################################################
 
 if __name__ == '__main__':
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase( ClientsTestCase )
-  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( MatcherTestCase ) )
-  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( DownloadInputDataSuccess ) )
-  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( SandboxStoreTestCaseSuccess ) )
-  testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
+  suite = unittest.defaultTestLoader.loadTestsFromTestCase(ClientsTestCase)
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(MatcherTestCase))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(DownloadInputDataSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SandboxStoreTestCaseSuccess))
+  testResult = unittest.TextTestRunner(verbosity=2).run(suite)
 
 # EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
