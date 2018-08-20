@@ -4,10 +4,10 @@ import inspect
 import importlib
 import logging
 import os
+
 from pprint import pformat
 
-from mock import call
-from mock import patch, MagicMock as Mock
+from mock import patch, call, MagicMock as Mock
 
 import DIRAC
 from DIRAC.Core.Utilities.CFG import CFG
@@ -46,11 +46,12 @@ def _parseOption(outDict, inDict, optionPrefix=''):
           pass
 
 
-def AgentOptionsTest(agentPath, ignoreOptions, extension='DIRAC'):
+def AgentOptionsTest(agentPath, ignoreOptions, mocker, extension='DIRAC'):
   """Test the consistency of options in ConfigTemplate and initialize of the agent.
 
   :param str agentPath: Module where the agent can be found, e.g. DIRAC.Core.Agent.CoreAgent
   :param list ignoreOptions: list of options to ignore during checks
+  :param mocker: the mocker fixture from pytest-mock
   :param str extension: Where to find the agent if it is not part of DIRAC, e.g.
   """
   agentPathSplit = agentPath.split('.')
@@ -72,10 +73,12 @@ def AgentOptionsTest(agentPath, ignoreOptions, extension='DIRAC'):
       continue
     if callable(member) or inspect.ismodule(member):
       LOG.info("Mocking: %s, %s, %s", name, member, type(member))
-      agentModule.__dict__[name] = Mock(name=name)
+      mocker.patch(agentPath + "." + name, new=Mock())
 
-  agentModule.__dict__['gConfig'] = Mock()
-  agentModule.__dict__['gConfig'].getSections.return_value = dict(OK=True, Value=[])
+  if hasattr(agentModule, 'gConfig'):
+    gConfigMock = Mock()
+    gConfigMock.getSections.return_value = dict(OK=True, Value=[])
+    mocker.patch(agentPath + "." + 'gConfig', new=gConfigMock)
 
   def returnDefault(*args):
     LOG.debug("ReturningDefault: %s, %s", args, type(args[1]))
@@ -85,12 +88,12 @@ def AgentOptionsTest(agentPath, ignoreOptions, extension='DIRAC'):
 
   def instrument(*args, **kwargs):
     """Mock some functions that come from the AgentModule and are not present otherwise."""
-    args[0].am_getOption = getOptionMock
-    args[0].log = Mock()
-    args[0].am_getModuleParam = Mock()
-    args[0].am_setOption = Mock()
-    args[0].am_getWorkDirectory = Mock()
     args[0].am_getControlDirectory = Mock()
+    args[0].am_getOption = getOptionMock
+    args[0].am_getModuleParam = Mock()
+    args[0].am_getWorkDirectory = Mock()
+    args[0].am_setOption = Mock()
+    args[0].log = Mock()
     return None
   initMock = Mock(side_effect=instrument)
 

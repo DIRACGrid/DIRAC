@@ -69,7 +69,7 @@ LOG = logging.getLogger('Test')
 
 
 @pytest.mark.parametrize('agentPath, ignoreOptions', AGENTS)
-def test_AgentOptions(caplog, agentPath, ignoreOptions):
+def test_AgentOptions(agentPath, ignoreOptions, caplog, mocker):
   """Check that all options in ConfigTemplate are found in the initialize method, including default values."""
   caplog.set_level(logging.DEBUG)
-  AgentOptionsTest(agentPath, ignoreOptions)
+  AgentOptionsTest(agentPath, ignoreOptions, mocker=mocker)
