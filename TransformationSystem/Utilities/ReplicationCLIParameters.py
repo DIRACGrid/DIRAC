@@ -14,6 +14,7 @@ class Params(object):
     self.targetSE = []
     self.sourceSE = ''
     self.groupSize = 1
+    self.groupName = None
     self.extraname = ''
     self.flavour = 'Replication'
     self.plugin = 'Broadcast'
@@ -64,6 +65,10 @@ class Params(object):
       return S_ERROR("Expected integer for groupsize")
     return S_OK()
 
+  def setGroupName(self, name):
+    self.groupName = name
+    return S_OK()
+
   def setPlugin(self, plugin):
     self.plugin = plugin
     return S_OK()
@@ -80,6 +85,7 @@ class Params(object):
     """
 
     script.registerSwitch("G:", "GroupSize=", "Number of Files per transformation task", self.setGroupSize)
+    script.registerSwitch("R:", "GroupName=", "TransformationGroup Name", self.setGroupName)
     script.registerSwitch("S:", "SourceSEs=", "SourceSE(s) to use, comma separated list", self.setSourceSE)
     script.registerSwitch("N:", "Extraname=", "String to append to transformation name", self.setExtraname)
     script.registerSwitch("P:", "Plugin=", "Plugin to use for transformation", self.setPlugin)

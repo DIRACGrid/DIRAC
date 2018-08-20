@@ -30,6 +30,7 @@ def _createTrafo():
                                          extraData=clip.extraData,
                                          extraname=clip.extraname,
                                          groupSize=clip.groupSize,
+                                         tGroup=clip.groupName,
                                          plugin=clip.plugin,
                                          enable=clip.enable,
                                          )
