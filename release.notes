@@ -1,3 +1,20 @@
+[v6r20p10]
+
+*Core
+NEW: (#3801) ElasticSearchDB - add method which allows for deletion by query
+NEW: (#3792) added breakDictionaryIntoChunks utility
+
+*WorkloadManagementSystem
+FIX: (#3796) Removed legacy "SystemConfig" and "LHCbPlatform" checks
+FIX: (#3803) bug fix: missing loop on pRef in SiteDirector
+NEW: (#3792) JobManager exposes a call to get the maxParametricJobs
+
+*TransformationSystem
+NEW: (#3804) new option for dirac-transformation-replication scrip `--GroupName/-R`
+FIX: (#3804) The TransformationGroup is now properly set for transformation created with dirac-transformation-replication, previously a transformation parameter Group was created instead.
+FIX: (#3792) Adding JobType as parameter to parametric jobs
+FIX: (#3792) WorkflowTaskAgent is submitting a chunk of tasks not exceeding the MaxParametricJobs accepted by JobManager
+
 [v6r20p9]
 
 *Core
