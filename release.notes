@@ -1,4 +1,4 @@
-[v7r0-pre2]
+[v7r0-pre3]
 
 *Accounting
 CHANGE: (Multi)AccountingDB - Grouping Type and Object loader together with the MonitoringSystem ones.
