@@ -1,9 +1,12 @@
 """ Base class for all services
 """
 
+__RCSID__ = "$Id$"
+
 import os
-import types
 import time
+import time
+import psutil
 
 import DIRAC
 
@@ -12,8 +15,6 @@ from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR, isReturnStructure
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.Core.Utilities import Time
-
-__RCSID__ = "$Id$"
 
 
 def getServiceOption(serviceInfo, optionName, defaultValue):
@@ -253,7 +254,7 @@ class RequestHandler(object):
     try:
       # Get the method we are trying to call
       oMethod = getattr(self, realMethod)
-    except:
+    except BaseException:
       return S_ERROR("Unknown method %s" % method)
     # Check if the client sends correct arguments
     dRetVal = self.__checkExpectedArgumentTypes(method, args)
@@ -290,7 +291,7 @@ class RequestHandler(object):
     sListName = "types_%s" % method
     try:
       oTypesList = getattr(self, sListName)
-    except:
+    except BaseException:
       gLogger.error("There's no types info for method", "export_%s" % method)
       return S_ERROR("Handler error for server %s while processing method %s" % (self.serviceInfoDict['serviceName'],
                                                                                  method))
@@ -326,7 +327,7 @@ class RequestHandler(object):
 #
 ####
 
-  __connectionCallbackTypes = {'new': [types.StringTypes, types.DictType],
+  __connectionCallbackTypes = {'new': [basestring, dict],
                                'connected': [],
                                'drop': []}
 
@@ -361,7 +362,7 @@ class RequestHandler(object):
     gLogger.debug("Callback to %s" % realMethod)
     try:
       oMethod = getattr(self, realMethod)
-    except:
+    except BaseException:
       # No callback defined by handler
       return S_OK()
     try:
@@ -383,7 +384,7 @@ class RequestHandler(object):
     startTime = time.time()
     try:
       oMethod = getattr(self, methodName)
-    except:
+    except BaseException:
       return S_ERROR("Handler function for message %s does not exist!" % msgName)
     self.__lockManager.lock(methodName)
     try:
@@ -462,23 +463,13 @@ class RequestHandler(object):
     dInfo['version'] = DIRAC.version
     dInfo['time'] = Time.dateTime()
     # Uptime
-    try:
-      with open("/proc/uptime") as oFD:
-        iUptime = long(float(oFD.readline().split()[0].strip()))
-      dInfo['host uptime'] = iUptime
-    except:
-      pass
+    dInfo['host uptime'] = int(time.time() - psutil.boot_time())
     startTime = self.serviceInfoDict['serviceStartTime']
     dInfo['service start time'] = self.serviceInfoDict['serviceStartTime']
     serviceUptime = Time.dateTime() - startTime
     dInfo['service uptime'] = serviceUptime.days * 3600 + serviceUptime.seconds
     # Load average
-    try:
-      with open("/proc/loadavg") as oFD:
-        sLine = oFD.readline()
-      dInfo['load'] = " ".join(sLine.split()[:3])
-    except:
-      pass
+    dInfo['load'] = " ".join([str(lx) for lx in os.getloadavg()])
     dInfo['name'] = self.serviceInfoDict['serviceName']
     stTimes = os.times()
     dInfo['cpu times'] = {'user time': stTimes[0],
