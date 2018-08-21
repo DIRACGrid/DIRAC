@@ -34,6 +34,11 @@ NEW: (#3744) Added miniInstallDIRAC function for Jenkins jobs
 FIX: Better dirac.cfg example configuration for web
 NEW: (#3744) Add WMS documentation in DeveloperGuide/Systems
 
+[v6r20p11]
+
+*Core
+FIX: (#3805) ElasticSearchDB - fix a typo (itertems -> iteritems())
+
 [v6r20p10]
 
 *Core
