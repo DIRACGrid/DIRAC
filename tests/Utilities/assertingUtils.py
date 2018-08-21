@@ -1,4 +1,8 @@
-"""Functions that assert conditions."""
+"""Functions that assert conditions for use in pytest tests.
+
+The AgentOptionsTest can be used to check consistency of options for Agents.
+
+"""
 
 import inspect
 import importlib
