@@ -46,7 +46,7 @@ def _parseOption(outDict, inDict, optionPrefix=''):
           pass
 
 
-def AgentOptionsTest(agentPath, ignoreOptions, mocker):
+def AgentOptionsTest(agentPath, options, mocker):
   """Test the consistency of options in ConfigTemplate and initialize of the agent.
 
   :param str agentPath: Module where the agent can be found, e.g. DIRAC.Core.Agent.CoreAgent
@@ -62,6 +62,10 @@ def AgentOptionsTest(agentPath, ignoreOptions, mocker):
   LOG.info("Agents: %s %s", agentPath, agentModule)
   agentClass = None
 
+  options = options if options is not None else {}
+  ignoreOptions = options.get('IgnoreOptions', [])
+  specialMocks = options.get('SpecialMocks', {})
+
   # mock everything but the agentClass
   for name, member in inspect.getmembers(agentModule):
     LOG.info("Mocking? %s, %s, %s, isclass(%s)", name, callable(member), type(member), inspect.isclass(member))
@@ -75,14 +79,16 @@ def AgentOptionsTest(agentPath, ignoreOptions, mocker):
       LOG.info("Mocking: %s, %s, %s", name, member, type(member))
       mocker.patch(agentPath + "." + name, new=Mock())
 
-  if hasattr(agentModule, 'gConfig'):
-    gConfigMock = Mock()
-    gConfigMock.getSections.return_value = dict(OK=True, Value=[])
-    mocker.patch(agentPath + "." + 'gConfig', new=gConfigMock)
+  if specialMocks is not None:
+    for name, retVal in specialMocks.iteritems():
+      mocker.patch(agentPath + "." + name, new=Mock(return_value=retVal))
 
   def returnDefault(*args):
-    LOG.debug("ReturningDefault: %s, %s", args, type(args[1]))
-    return args[1]
+    if len(args) > 1:
+      LOG.debug("ReturningDefault: %s, %s", args, type(args[1]))
+      return args[1]
+    LOG.debug("ReturningDefault: None")
+    return None
 
   getOptionMock = Mock(name="am_getOption", side_effect=returnDefault)
 
@@ -109,7 +115,10 @@ def AgentOptionsTest(agentPath, ignoreOptions, mocker):
     patchBase.is_local = True
     agentInstance = agentClass(agentName="sys/name", loadName="sys/name")
     instrument(agentInstance)
-  agentInstance.initialize()
+
+  for func in ['initialize', 'beginExecution']:
+    if hasattr(agentInstance, func):
+      getattr(agentInstance, func)()
   checkAgentOptions(getOptionMock, systemName, agentName, ignoreOptions=ignoreOptions, extension=extension)
 
 
