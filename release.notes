@@ -1,3 +1,8 @@
+[v6r20p11]
+
+*Core
+FIX: (#3805) ElasticSearchDB - fix a typo (itertems -> iteritems())
+
 [v6r20p10]
 
 *Core
