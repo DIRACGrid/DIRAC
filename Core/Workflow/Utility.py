@@ -40,7 +40,7 @@ def resolveVariables(varDict):
   ntry = 0
   while ntry < max_tries:
     substFlag = False
-    for var, value in varDict.itertems():
+    for var, value in varDict.iteritems():
       if isinstance(value, basestring):
         substitute_vars = getSubstitute(value)
         for substitute_var in substitute_vars:
