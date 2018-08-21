@@ -400,28 +400,28 @@ class ElasticSearchDB(object):
       return S_ERROR(inst)
     return S_OK('Successfully deleted data from index %s' % indexName)
 
+  @staticmethod
+  def generateFullIndexName(indexName, period=None):
+    """
+    Given an index prefix we create the actual index name. Each day an index is created.
+    :param str indexName: it is the name of the index
+    :param str period: We can specify, which kind of indexes will be created.
+                       Currently only daily and monthly indexes are supported.
+    """
 
-def generateFullIndexName(indexName, period=None):
-  """
-  Given an index prefix we create the actual index name. Each day an index is created.
-  :param str indexName: it is the name of the index
-  :param str period: We can specify, which kind of indexes will be created.
-                     Currently only daily and monthly indexes are supported.
-  """
+    if period is None:
+      gLogger.warn("Daily indexes are used, because the period is not provided!")
+      period = 'day'
 
-  if period is None:
-    gLogger.warn("Daily indexes are used, because the period is not provided!")
-    period = 'day'
+    today = datetime.today().strftime("%Y-%m-%d")
+    index = ''
+    if period.lower() not in ['day', 'month']:  # if the period is not correct, we use daily indexes.
+      gLogger.warn("Period is not correct daily indexes are used instead:", period)
+      index = "%s-%s" % (indexName, today)
+    elif period.lower() == 'day':
+      index = "%s-%s" % (indexName, today)
+    elif period.lower() == 'month':
+      month = datetime.today().strftime("%Y-%m")
+      index = "%s-%s" % (indexName, month)
 
-  today = datetime.today().strftime("%Y-%m-%d")
-  index = ''
-  if period.lower() not in ['day', 'month']:  # if the period is not correct, we use daily indexes.
-    gLogger.warn("Period is not correct daily indexes are used instead:", period)
-    index = "%s-%s" % (indexName, today)
-  elif period.lower() == 'day':
-    index = "%s-%s" % (indexName, today)
-  elif period.lower() == 'month':
-    month = datetime.today().strftime("%Y-%m")
-    index = "%s-%s" % (indexName, month)
-
-  return index
+    return index
