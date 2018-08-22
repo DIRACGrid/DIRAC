@@ -5,7 +5,7 @@ __RCSID__ = "$Id$"
 
 from DIRAC import S_OK
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.FrameworkSystem.Service.UserDB import UserDB
+from DIRAC.FrameworkSystem.DB.UserDB import UserDB
 from DIRAC import gConfig
 
 class UserDiracHandler(RequestHandler):

@@ -114,7 +114,7 @@ import time
 
 from string import printable
 
-from hypothesis import given, settings
+from hypothesis import given, settings, unlimited
 from hypothesis.strategies import text
 
 from DIRAC.TornadoServices.Client.RPCClientSelector import RPCClientSelector as RPCClient
@@ -162,7 +162,7 @@ def test_echo(data):
 
   assert service.echo(data)['Value'] == data
 
-@settings(deadline=None, max_examples=1)
+@settings(deadline=None, max_examples=1, timeout=unlimited)
 @given(value1=text(printable, max_size=64), value2=text(printable, max_size=64))
 def test_configurationAutoUpdate(value1, value2):
   """
@@ -175,6 +175,7 @@ def test_configurationAutoUpdate(value1, value2):
   ### SETTING FIRST VALUE ###
   csapi.modifyValue("/DIRAC/Configuration/TestUpdateValue", value1)
   csapi.commitChanges()
+  
   # Wait for automatic refresh (+1 to be sure that request is done)
   time.sleep(gConfigurationData.getPropagationTime()+1)
   RPCClient("Framework/User").getTestValue()

@@ -2,6 +2,11 @@
 git+https://:@gitlab.cern.ch:8443/fts/fts-rest.git#egg=fts3
 git+https://github.com/DIRACGrid/pyGSI.git#egg=GSI
 
+#Patch for tornado
+git+https://gitlab.com/chaen/m2crypto.git@tmpUntilSwigUpdated
+git+https://github.com/chaen/tornado.git@iostreamConfigurable
+git+https://github.com/chaen/tornado_m2crypto.git
+
 # From pypi
 autopep8==1.3.3
 certifi

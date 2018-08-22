@@ -1,6 +1,6 @@
 from DIRAC.TornadoServices.Server.TornadoService import TornadoService
 from DIRAC import S_OK, gLogger
-from DIRAC.FrameworkSystem.Service.UserDB import UserDB
+from DIRAC.FrameworkSystem.DB.UserDB import UserDB
 from DIRAC import gConfig
 
 class UserHandler(TornadoService):
