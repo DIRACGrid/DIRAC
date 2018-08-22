@@ -13,11 +13,12 @@
 __RCSID__ = "$Id$"
 
 import os
+import shlex
 
 import DIRAC
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.Core.Utilities.Subprocess import shellCall
+from DIRAC.Core.Utilities.Subprocess import systemCall
 
 
 class TimeLeft(object):
@@ -188,9 +189,9 @@ class TimeLeft(object):
 
 
 def runCommand(cmd, timeout=120):
-  """Wrapper around shellCall to return S_OK(stdout) or S_ERROR(message)
+  """Wrapper around systemCall to return S_OK(stdout) or S_ERROR(message)
   """
-  result = shellCall(timeout, cmd)
+  result = systemCall(timeout=timeout, cmdSeq=shlex.split(cmd))
   if not result['OK']:
     return result
   status, stdout, stderr = result['Value'][0:3]
