@@ -143,9 +143,6 @@ class TransformationDB(DB):
 
   def addTransformation( self, transName, description, longDescription, authorDN, authorGroup, transType,
                          plugin, agentType, fileMask,
-                         inputMetaQuery = '',
-                         outputMetaQuery = '',
-                         outputMetaData = '',
                          transformationGroup = 'General',
                          groupSize = 1,
                          inheritedFrom = 0,
@@ -153,7 +150,10 @@ class TransformationDB(DB):
                          maxTasks = 0,
                          eventsPerTask = 0,
                          addFiles = True,
-                         connection = False ):
+                         connection = False,
+                         inputMetaQuery = '',
+                         outputMetaQuery = '',
+                         outputMetaData = ''):
 
     """ Add new transformation definition including its input streams
     """
