@@ -239,7 +239,7 @@ class DataRecoveryAgent(AgentModule):
     self.printEveryNJobs = self.am_getOption('PrintEvery', 200)
     ##Notification
     self.notesToSend = ""
-    self.addressTo = self.am_getOption('MailTo', ["andre.philippe.sailer@cern.ch"])
+    self.addressTo = self.am_getOption('MailTo', ["ilcdirac-admin@cern.ch"])
     self.addressFrom = self.am_getOption('MailFrom', "ilcdirac-admin@cern.ch")
     self.subject = "DataRecoveryAgent"
 
@@ -257,7 +257,7 @@ class DataRecoveryAgent(AgentModule):
                                                   'MCReconstruction_Overlay',
                                                   'MCGeneration'])
     self.transformationStatus = self.am_getOption("TransformationStatus", ['Active', 'Completing'])
-    self.addressTo = self.am_getOption('MailTo', ["andre.philippe.sailer@cern.ch"])
+    self.addressTo = self.am_getOption('MailTo', self.addressTo)
     self.addressFrom = self.am_getOption('MailFrom', "ilcdirac-admin@cern.ch")
     self.printEveryNJobs = self.am_getOption('PrintEvery', 200)
 
