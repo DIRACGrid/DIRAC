@@ -283,7 +283,7 @@ class Watchdog(object):
       self.parameters['LoadAverage'] = []
     self.parameters['LoadAverage'].append(loadAvg)
 
-    memoryUsed =
+    memoryUsed = self.getMemoryUsed()
     msg += 'MemUsed: %.1f kb ' % (memoryUsed)
     heartBeatDict['MemoryUsed'] = memoryUsed
     if 'MemoryUsed' not in self.parameters:

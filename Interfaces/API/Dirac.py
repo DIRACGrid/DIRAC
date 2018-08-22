@@ -887,7 +887,7 @@ class Dirac(API):
 
     cbFunction = self.__printOutput
 
-    result = systemCall(0, command=shlex.split(command), env=executionEnv, callbackFunction=cbFunction)
+    result = systemCall(0, cmdSeq=shlex.split(command), env=executionEnv, callbackFunction=cbFunction)
     if not result['OK']:
       return result
 
