@@ -58,16 +58,16 @@ class TransformationManagerHandlerBase(RequestHandler):
     authorGroup = credDict['group']
     res = database.addTransformation(transName, description, longDescription, authorDN, authorGroup, transType, plugin,
                                      agentType, fileMask,
-                                     inputMetaQuery=inputMetaQuery,
-                                     outputMetaQuery=outputMetaQuery,
-                                     outputMetaData=outputMetaData,
                                      transformationGroup=transformationGroup,
                                      groupSize=groupSize,
                                      inheritedFrom=inheritedFrom,
                                      body=body,
                                      maxTasks=maxTasks,
                                      eventsPerTask=eventsPerTask,
-                                     addFiles=addFiles)
+                                     addFiles=addFiles,
+                                     inputMetaQuery=inputMetaQuery,
+                                     outputMetaQuery=outputMetaQuery,
+                                     outputMetaData=outputMetaData)
     if res['OK']:
       gLogger.info("Added transformation %d" % res['Value'])
     return self._parseRes(res)
