@@ -84,7 +84,7 @@ fts3OperationTable = Table('Operations', metadata,
                            Column('userGroup', String(255)),
                            # -1 because with 0 we get any request
                            Column('rmsReqID', Integer, server_default='-1'),
-                           Column('rmsOpID', Integer, server_default='0'),
+                           Column('rmsOpID', Integer, server_default='0', index=True),
                            Column('sourceSEs', String(255)),
                            Column('activity', String(255)),
                            Column('priority', SmallInteger),
@@ -156,10 +156,12 @@ class FTS3DB(object):
     self.dbPass = dbParameters['Password']
     self.dbName = dbParameters['DBName']
 
-  def __init__(self):
+  def __init__(self, pool_size=15):
     """c'tor
 
     :param self: self reference
+    :param pool_size: size of the connection pool to the DB
+
     """
 
     self.log = gLogger.getSubLogger('FTS3DB')
@@ -174,7 +176,8 @@ class FTS3DB(object):
          self.dbHost,
          self.dbPort,
          self.dbName),
-        echo=runDebug)
+        echo=runDebug,
+        pool_size=pool_size)
 
     metadata.bind = self.engine
 
@@ -604,5 +607,38 @@ class FTS3DB(object):
     except SQLAlchemyError as e:
       session.rollback()
       return S_ERROR("deleteFinalOperations: unexpected exception : %s" % e)
+    finally:
+      session.close()
+
+  def getOperationsFromRMSOpID(self, rmsOpID):
+    """ Returns the FTS3Operations matching a given RMS OperationID
+
+      This does not set the assignment flag
+
+    :param rmsOpID: ID of the RMS Operation
+
+    """
+
+    # expire_on_commit is set to False so that we can still use the object
+    # after we close the session
+    session = self.dbSession(expire_on_commit=False)
+
+    try:
+
+      operations = session.query(FTS3Operation)\
+          .filter(FTS3Operation.rmsOpID == rmsOpID)\
+          .all()
+
+      session.commit()
+
+      ###################################
+      session.expunge_all()
+      return S_OK(operations)
+
+    except NoResultFound as e:
+      # If there is no such operation, return an empty list
+      return S_OK([])
+    except SQLAlchemyError as e:
+      return S_ERROR("getOperationsFromRMSOpID: unexpected exception : %s" % e)
     finally:
       session.close()

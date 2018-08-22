@@ -33,6 +33,7 @@
 
 __RCSID__ = "$Id$"
 
+import time
 
 # from threading import current_thread
 from multiprocessing.pool import ThreadPool
@@ -109,7 +110,12 @@ class FTS3Agent(AgentModule):
     # name that will be used in DB for assignment tag
     self.assignmentTag = gethostname().split('.')[0]
 
-    return self.__readConf()
+    res = self.__readConf()
+
+    self.jobsThreadPool = ThreadPool(self.maxNumberOfThreads)
+    self.opsThreadPool = ThreadPool(self.maxNumberOfThreads)
+
+    return res
 
   def beginExecution(self):
     """ reload configurations before start of a cycle """
@@ -246,8 +252,7 @@ class FTS3Agent(AgentModule):
     """
 
     log = gLogger.getSubLogger("monitorJobs", child=True)
-
-    thPool = ThreadPool(self.maxNumberOfThreads)
+    log.debug("Size of the context cache %s" % len(self._globalContextCache))
 
     log.debug("Getting active jobs")
     # get jobs from DB
@@ -260,19 +265,25 @@ class FTS3Agent(AgentModule):
     activeJobs = res['Value']
     log.info("%s jobs to queue for monitoring" % len(activeJobs))
 
+    # We store here the AsyncResult object on which we are going to wait
+    applyAsyncResults = []
+
     # Starting the monitoring threads
     for ftsJob in activeJobs:
       log.debug("Queuing executing of ftsJob %s" % ftsJob.jobID)
       # queue the execution of self._monitorJob( ftsJob ) in the thread pool
       # The returned value is passed to _monitorJobCallback
-      thPool.apply_async(self._monitorJob, (ftsJob, ), callback=self._monitorJobCallback)
+      applyAsyncResults.append(self.jobsThreadPool.apply_async(
+          self._monitorJob, (ftsJob, ), callback=self._monitorJobCallback))
 
     log.debug("All execution queued")
 
     # Waiting for all the monitoring to finish
-    thPool.close()
-    thPool.join()
-    log.debug("thPool joined")
+    while not all([r.ready() for r in applyAsyncResults]):
+      log.debug("Not all the tasks are finished")
+      time.sleep(0.5)
+
+    log.debug("All the tasks have completed")
     return S_OK()
 
   @staticmethod
@@ -385,7 +396,7 @@ class FTS3Agent(AgentModule):
 
     log = gLogger.getSubLogger("treatOperations", child=True)
 
-    thPool = ThreadPool(self.maxNumberOfThreads)
+    log.debug("Size of the context cache %s" % len(self._globalContextCache))
 
     log.info("Getting non finished operations")
 
@@ -400,19 +411,24 @@ class FTS3Agent(AgentModule):
 
     log.info("Treating %s incomplete operations" % len(incompleteOperations))
 
+    applyAsyncResults = []
+
     for operation in incompleteOperations:
       log.debug("Queuing executing of operation %s" % operation.operationID)
       # queue the execution of self._treatOperation( operation ) in the thread pool
       # The returned value is passed to _treatOperationCallback
-      thPool.apply_async(
-          self._treatOperation, (operation, ), callback=self._treatOperationCallback)
+      applyAsyncResults.append(self.opsThreadPool.apply_async(
+          self._treatOperation, (operation, ), callback=self._treatOperationCallback))
 
     log.debug("All execution queued")
 
     # Waiting for all the treatments to finish
-    thPool.close()
-    thPool.join()
-    log.debug("thPool joined")
+    while not all([r.ready() for r in applyAsyncResults]):
+      log.debug("Not all the tasks are finished")
+      time.sleep(0.5)
+
+    log.debug("All the tasks have completed")
+
     return S_OK()
 
   def kickOperations(self):
@@ -459,6 +475,23 @@ class FTS3Agent(AgentModule):
 
   def finalize(self):
     """ finalize processing """
+    # Joining all the ThreadPools
+    log = gLogger.getSubLogger("Finalize")
+
+    log.debug("Closing jobsThreadPool")
+
+    self.jobsThreadPool.close()
+    self.jobsThreadPool.join()
+
+    log.debug("jobsThreadPool joined")
+
+    log.debug("Closing opsThreadPool")
+
+    self.opsThreadPool.close()
+    self.opsThreadPool.join()
+
+    log.debug("opsThreadPool joined")
+
     return S_OK()
 
   def execute(self):

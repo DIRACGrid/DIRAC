@@ -460,42 +460,42 @@ class SiteDirector(AgentModule):
     # From here on we assume we are going to (try to) submit some pilots
     self.log.debug("Going to try to submit some pilots")
 
-    queues = self.queueDict.keys()
-    random.shuffle(queues)
-    self.log.verbose("Queues treated: %s" % ','.join(queues))
+    self.log.verbose("Queues treated: %s" % ','.join(self.queueDict))
 
     self.totalSubmittedPilots = 0
 
-    for queue in queues:
+    queueDictItems = list(self.queueDict.items())
+    random.shuffle(queueDictItems)
+
+    for queueName, queueDictionary in queueDictItems:
       # now submitting to the single queues
-      self.log.verbose("Evaluating queue %s" % queue)
+      self.log.verbose("Evaluating queue %s" % queueName)
 
       # are we going to submit pilots to this specific queue?
-      if not self._allowedToSubmit(queue, anySite, jobSites, testSites):
+      if not self._allowedToSubmit(queueName, anySite, jobSites, testSites):
         continue
 
-      if 'CPUTime' in self.queueDict[queue]['ParametersDict']:
-        queueCPUTime = int(self.queueDict[queue]['ParametersDict']['CPUTime'])
+      if 'CPUTime' in queueDictionary['ParametersDict']:
+        queueCPUTime = int(queueDictionary['ParametersDict']['CPUTime'])
       else:
-        self.log.warn('CPU time limit is not specified for queue %s, skipping...' % queue)
+        self.log.warn('CPU time limit is not specified for queue %s, skipping...' % queueName)
         continue
       if queueCPUTime > self.maxQueueLength:
         queueCPUTime = self.maxQueueLength
 
-      ce, ceDict = self._getCE(queue)
+      ce, ceDict = self._getCE(queueName)
 
       pilotsWeMayWantToSubmit, additionalInfo = self._getPilotsWeMayWantToSubmit(
           ceDict)  # additionalInfo is normally taskQueueDict
-      self.log.verbose('%d pilotsWeMayWantToSubmit are eligible for %s queue' % (pilotsWeMayWantToSubmit, queue))
+      self.log.verbose('%d pilotsWeMayWantToSubmit are eligible for %s queue' % (pilotsWeMayWantToSubmit, queueName))
       if not pilotsWeMayWantToSubmit:
-        self.log.verbose('...so skipping %s' % queue)
+        self.log.verbose('...so skipping %s' % queueName)
         continue
 
       # Get the number of already waiting pilots for the queue
       totalWaitingPilots = 0
       manyWaitingPilotsFlag = False
       if self.pilotWaitingFlag:
-        lastUpdateTime = dateTime() - self.pilotWaitingTime * second
         tqIDList = additionalInfo.keys()
         result = pilotAgentsDB.countPilots({'TaskQueueID': tqIDList,
                                             'Status': WAITING_PILOT_STATUS},
@@ -513,12 +513,12 @@ class SiteDirector(AgentModule):
           continue
 
       self.log.verbose("%d waiting pilots for the total of %d eligible pilots for %s" %
-                       (totalWaitingPilots, pilotsWeMayWantToSubmit, queue))
+                       (totalWaitingPilots, pilotsWeMayWantToSubmit, queueName))
 
       # Get the number of available slots on the target site/queue
-      totalSlots = self.getQueueSlots(queue, manyWaitingPilotsFlag)
+      totalSlots = self.getQueueSlots(queueName, manyWaitingPilotsFlag)
       if totalSlots == 0:
-        self.log.debug('%s: No slots available' % queue)
+        self.log.debug('%s: No slots available' % queueName)
         continue
 
       if manyWaitingPilotsFlag:
@@ -527,7 +527,7 @@ class SiteDirector(AgentModule):
       else:
         pilotsToSubmit = max(0, min(totalSlots, pilotsWeMayWantToSubmit - totalWaitingPilots))
         self.log.info('%s: Slots=%d, TQ jobs(pilotsWeMayWantToSubmit)=%d, Pilots: waiting %d, to submit=%d' %
-                      (queue, totalSlots, pilotsWeMayWantToSubmit, totalWaitingPilots, pilotsToSubmit))
+                      (queueName, totalSlots, pilotsWeMayWantToSubmit, totalWaitingPilots, pilotsToSubmit))
 
       # Limit the number of pilots to submit to MAX_PILOTS_TO_SUBMIT
       pilotsToSubmit = min(self.maxPilotsToSubmit, pilotsToSubmit)
@@ -549,9 +549,9 @@ class SiteDirector(AgentModule):
       # now really submitting
       while pilotsToSubmit:  # a cycle because pilots are submitted in chunks
         res = self._submitPilotsToQueue(
-            pilotsToSubmit, ce, queue)
+            pilotsToSubmit, ce, queueName)
         if not res['OK']:
-          self.log.info("Won't try further %s because of failures" % queue)
+          self.log.info("Won't try further %s because of failures" % queueName)
           pilotsToSubmit = 0
           pilotList = []
           stampDict = {}
@@ -559,7 +559,7 @@ class SiteDirector(AgentModule):
           pilotsToSubmit, pilotList, stampDict = res['Value']
 
         # updating the pilotAgentsDB... done by default but maybe not strictly necessary
-        res = self._addPilotTQReference(queue, additionalInfo, pilotList, stampDict)
+        res = self._addPilotTQReference(queueName, additionalInfo, pilotList, stampDict)
 
     self.log.info("%d pilots submitted in total in this cycle," % self.totalSubmittedPilots)
 
@@ -575,14 +575,70 @@ class SiteDirector(AgentModule):
         VOs may want to replace this method with different strategies
     """
 
-    submit = False
-    jobSites = set()
-    anySite = False
-    testSites = set()
+    tqDict = self._getTQDictForMatching()
+    if not tqDict:
+      return True, True, set(), set()
+
+    self.log.verbose('Checking overall TQ availability with requirements')
+    self.log.verbose(tqDict)
 
     # Check that there is some work at all
-    setup = CSGlobals.getSetup()
-    tqDict = {'Setup': setup,
+    result = self.matcherClient.getMatchingTaskQueues(tqDict)
+    if not result['OK']:
+      self.log.error("Matcher error:", result['Message'])
+      return False, True, set(), set()
+    matchingTQs = result['Value']
+    if not matchingTQs:
+      self.log.notice(
+          'No Waiting jobs suitable for the director, so nothing to submit')
+      return False, True, set(), set()
+
+    # If we are here there's some work to do, now let's see for where
+    jobSites = set()
+    testSites = set()
+
+    for tqDescription in matchingTQs.itervalues():
+      for site in tqDescription.get('Sites', []):
+        if site.lower() != 'any':
+          jobSites.add(site)
+      if "JobTypes" in tqDescription:
+        if "Sites" in tqDescription:
+          for site in tqDescription['Sites']:
+            if site.lower() != 'any':
+              testSites.add(site)
+
+    self.monitorJobsQueuesPilots(matchingTQs)
+
+    return True, True if not jobSites else False, jobSites, testSites
+
+  def monitorJobsQueuesPilots(self, matchingTQs):
+    """ Just printout of jobs queues and pilots status in TQ
+    """
+    tqIDList = matchingTQs.keys()
+    result = pilotAgentsDB.countPilots({'TaskQueueID': tqIDList,
+                                        'Status': WAITING_PILOT_STATUS},
+                                       None)
+
+    totalWaitingJobs = 0
+    for tqDescription in matchingTQs.itervalues():
+      totalWaitingJobs += tqDescription['Jobs']
+
+    if not result['OK']:
+      self.log.error("Can't count pilots", result['Message'])
+    else:
+      self.log.info('Total %d jobs in %d task queues with %d waiting pilots'
+                    % (totalWaitingJobs, len(tqIDList), result['Value']))
+
+  def _getTQDictForMatching(self):
+    """ Just construct a dictionary (tqDict)
+        that will be used to check with Matcher if there's anything to submit.
+
+        If extensions want, they can replace partly or fully this method.
+        If it returns just an empty dict, the assuption is that we'll submit pilots no matters what.
+
+        :returns dict: tqDict of task queue descriptions
+    """
+    tqDict = {'Setup': CSGlobals.getSetup(),
               'CPUTime': 9999999,
               'SubmitPool': self.defaultSubmitPools}
     if self.vo:
@@ -604,45 +660,7 @@ class SiteDirector(AgentModule):
     # Add overall max values for all queues
     tqDict.update(self.globalParameters)
 
-    self.log.verbose('Checking overall TQ availability with requirements')
-    self.log.verbose(tqDict)
-
-    result = self.matcherClient.getMatchingTaskQueues(tqDict)
-    if not result['OK']:
-      return result
-    if not result['Value']:
-      self.log.notice(
-          'No Waiting jobs suitable for the director, so nothing to submit')
-      return submit, anySite, jobSites, testSites
-
-    totalWaitingJobs = 0
-    for tqID in result['Value']:
-      if "Sites" in result['Value'][tqID]:
-        for site in result['Value'][tqID]['Sites']:
-          if site.lower() != 'any':
-            jobSites.add(site)
-          else:
-            anySite = True
-      else:
-        anySite = True
-      if "JobTypes" in result['Value'][tqID]:
-        if "Sites" in result['Value'][tqID]:
-          for site in result['Value'][tqID]['Sites']:
-            if site.lower() != 'any':
-              testSites.add(site)
-      totalWaitingJobs += result['Value'][tqID]['Jobs']
-
-    tqIDList = result['Value'].keys()
-    result = pilotAgentsDB.countPilots({'TaskQueueID': tqIDList,
-                                        'Status': WAITING_PILOT_STATUS},
-                                       None)
-    totalWaitingPilots = 0
-    if result['OK']:
-      totalWaitingPilots = result['Value']
-    self.log.info('Total %d jobs in %d task queues with %d waiting pilots'
-                  % (totalWaitingJobs, len(tqIDList), totalWaitingPilots))
-
-    return True, anySite, jobSites, testSites
+    return tqDict
 
   def _allowedToSubmit(self, queue, anySite, jobSites, testSites):
     """ Check if we are allowed to submit to a certain queue
@@ -651,7 +669,7 @@ class SiteDirector(AgentModule):
         :type queue: basestring
         :param anySite: submitting anywhere?
         :type anySite: bool
-        :param jobSites: set of job site names
+        :param jobSites: set of job site names (only considered if anySite is False)
         :type jobSites: set
         :param testSites: set of test site names
         :type testSites: set
@@ -1251,7 +1269,8 @@ class SiteDirector(AgentModule):
         continue
       pilotDict = result['Value']
       if self.getOutput:
-        self._getPilotOutput(pRef, pilotDict, ce, ceName)
+        for pRef in pilotRefs:
+          self._getPilotOutput(pRef, pilotDict, ce, ceName)
 
       # Check if the accounting is to be sent
       if self.sendAccounting:
