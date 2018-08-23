@@ -172,6 +172,74 @@ class ProductionClientChain( TestClientProductionTestCase ):
     res = self.prodClient.deleteProduction( prodName)
     self.assertTrue( res['OK'] )
 
+  def test_SplitProduction(self):
+
+    ### Define the production
+
+    ### Define the first step of the production
+    prodStep1 = ProductionStep()
+    prodStep1.Type = 'MCSimulation'
+    outputquery = {'zenith':{'in': [20, 40]},'particle':'gamma', 'tel_sim_prog':'simtel', 'outputType':{'in': ['Data', 'Log']}}
+    prodStep1.Outputquery = outputquery
+
+    ## Add the step to the production
+    res = self.prodClient.addStep(prodStep1)
+    self.assertTrue( res['OK'] )
+
+    ### Define the second step of the production
+    prodStep2 = ProductionStep()
+    prodStep2.Type = 'DataProcessing'
+    prodStep2.ParentStep = prodStep1
+
+    inputquery = {'zenith': 20, 'particle':'gamma', 'tel_sim_prog':'simtel', 'outputType':'Data'}
+    outputquery = {'zenith': 20, 'particle':'gamma', 'analysis_prog': 'evndisp', 'data_level': 1, 'outputType':{'in': ['Data', 'Log']}}
+    prodStep2.Inputquery = inputquery
+    prodStep2.Outputquery = outputquery
+
+    ## Add the step to the production
+    res = self.prodClient.addStep(prodStep2)
+    self.assertTrue( res['OK'] )
+
+    ### Define the third step of the production
+    prodStep3 = ProductionStep()
+    prodStep3.Type = 'DataProcessing'
+    prodStep3.ParentStep = prodStep1
+
+    inputquery = {'zenith': 40, 'particle':'gamma', 'tel_sim_prog':'simtel', 'outputType':'Data'}
+    outputquery = {'zenith': 40, 'particle':'gamma', 'analysis_prog': 'evndisp', 'data_level': 1, 'outputType':{'in': ['Data', 'Log']}}
+
+    prodStep3.Inputquery = inputquery
+    prodStep3.Outputquery = outputquery
+
+    ## Add the steps to the production
+    res = self.prodClient.addStep(prodStep3)
+    self.assertTrue( res['OK'] )
+
+    ## Get the production description
+    prodDescription = self.prodClient.getDescription()
+
+    ## Create the production
+    prodName = 'SplitProd'
+    res = self.prodClient.addProduction( prodName, json.dumps(prodDescription) )
+    self.assertTrue( res['OK'] )
+
+    ## Start the production, i.e. instatiate the transformation steps
+    res = self.prodClient.startProduction( prodName )
+    self.assertTrue( res['OK'] )
+
+    ### Get the transformations of the production
+    res = self.prodClient.getProduction( prodName )
+    self.assertTrue( res['OK'] )
+    prodID = res['Value']['ProductionID']
+
+    res = self.prodClient.getProductionTransformations( prodID )
+    self.assertTrue( res['OK'] )
+    self.assertEqual( len( res['Value'] ) , 3 )
+
+    ### Delete the production
+    res = self.prodClient.deleteProduction( prodName)
+    self.assertTrue( res['OK'] )
+
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( TestClientProductionTestCase )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( ProductionClientChain ) )
