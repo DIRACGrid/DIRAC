@@ -10,8 +10,21 @@ transTypes = [basestring, int, long]
 
 __RCSID__ = "$Id$"
 
-TASKS_STATE_NAMES = ['TotalCreated', 'Created', 'Running', 'Submitted', 'Failed', 'Waiting', 'Done', 'Completed', 'Stalled',
-                     'Killed', 'Staging', 'Checking', 'Rescheduled', 'Scheduled']
+TASKS_STATE_NAMES = [
+    'TotalCreated',
+    'Created',
+    'Running',
+    'Submitted',
+    'Failed',
+    'Waiting',
+    'Done',
+    'Completed',
+    'Stalled',
+    'Killed',
+    'Staging',
+    'Checking',
+    'Rescheduled',
+    'Scheduled']
 FILES_STATE_NAMES = ['PercentProcessed', 'Processed', 'Unused', 'Assigned', 'Total', 'Problematic',
                      'ApplicationCrash', 'MaxReset']
 
@@ -564,7 +577,7 @@ class TransformationManagerHandlerBase(RequestHandler):
     # Create the ParameterNames entry
     resultDict['ParameterNames'] = res['ParameterNames']
     # Find which element in the tuple contains the requested status
-    if not statusColumn in resultDict['ParameterNames']:
+    if statusColumn not in resultDict['ParameterNames']:
       return S_ERROR("Provided status column not present")
     statusColumnIndex = resultDict['ParameterNames'].index(statusColumn)
 
