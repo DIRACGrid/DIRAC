@@ -381,10 +381,9 @@ class TransformationDB(DB):
 
   def __updateFilterQueries( self, connection = False ):
     """ Get filters for all defined input streams in all the transformations.
-        If transID argument is given, get filters only for this transformation.
     """
     resultList = []
-    req = "SELECT TransformationID,InputMetaQuery FROM Transformations;"
+    req = "SELECT TransformationID,InputMetaQuery FROM Transformations where Status in ('New','Active','Stopped','Flush','Completing');"
     res = self._query( req, connection )
     if not res['OK']:
       return res
@@ -1601,9 +1600,13 @@ class TransformationDB(DB):
     typeDict.update(res['Value']['DirectoryMetaFields'])
 
     for transID, query in queries:
-      mq = MetaQuery(query, typeDict)
-      gLogger.info("Apply query %s to metadata %s" % (mq.getMetaQuery(), metadatadict))
-      res = mq.applyQuery(metadatadict)
+      gLogger.info( "Check the transformation status" )
+      res = self.getTransformationParameters( transID, 'Status' )
+      if res['Value'] not in ['New','Active','Stopped','Completing','Flush']:
+        continue
+      mq = MetaQuery( query, typeDict )
+      gLogger.info( "Apply query %s to metadata %s" % ( mq.getMetaQuery(), metadatadict ) )
+      res = mq.applyQuery( metadatadict )
       if not res['OK']:
         gLogger.error("Error in applying query: %s" % res['Message'])
         return res
