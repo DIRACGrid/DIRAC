@@ -1,25 +1,25 @@
 -- -------------------------------------------------------------------------------
---  Schema definition for the ProductionDB database a generic
+-- Schema definition for the ProductionDB database a generic
 
--- When installing via dirac tools, the following is not needed (still here for reference)
+-- When installing via dirac tools, the following is not needed(still here for reference)
 --
--- DROP DATABASE IF EXISTS ProductionDB;
--- CREATE DATABASE ProductionDB;
+-- DROP DATABASE IF EXISTS ProductionDB
+-- CREATE DATABASE ProductionDB
 -- ------------------------------------------------------------------------------
 -- Database owner definition
--- USE mysql;
+-- USE mysql
 -- Must set passwords for database user by replacing "must_be_set".
--- GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER,REFERENCES ON ProductionDB.* TO Dirac@'%' IDENTIFIED BY 'must_be_set';
--- FLUSH PRIVILEGES;
+-- GRANT SELECT, INSERT, LOCK TABLES, UPDATE, DELETE, CREATE, DROP, ALTER, REFERENCES ON ProductionDB.* TO Dirac@'%' IDENTIFIED BY 'must_be_set'
+-- FLUSH PRIVILEGES
 
 -- -----------------------------------------------------------------------------
-USE ProductionDB;
+USE ProductionDB
 
-SET FOREIGN_KEY_CHECKS = 0;
+SET FOREIGN_KEY_CHECKS = 0
 
 -- -------------------------------------------------------------------------------
-DROP TABLE IF EXISTS Productions;
-CREATE TABLE Productions (
+DROP TABLE IF EXISTS Productions
+CREATE TABLE Productions(
     ProductionID INTEGER NOT NULL AUTO_INCREMENT,
     ProductionName VARCHAR(255) NOT NULL,
     Description LONGBLOB,
@@ -30,19 +30,19 @@ CREATE TABLE Productions (
     Status  CHAR(32) DEFAULT 'New',
     PRIMARY KEY(ProductionID),
     INDEX(ProductionName)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE = InnoDB DEFAULT CHARSET = utf8
 
 -- -------------------------------------------------------------------------------
-DROP TABLE IF EXISTS ProductionTransformations;
-CREATE TABLE ProductionTransformations (
+DROP TABLE IF EXISTS ProductionTransformations
+CREATE TABLE ProductionTransformations(
     ProductionID INTEGER NOT NULL,
     TransformationID INTEGER NOT NULL,
     ParentTransformationID VARCHAR(255) NOT NULL DEFAULT '0',
     LastUpdate DATETIME,
     InsertedTime DATETIME,
-    PRIMARY KEY(ProductionID,TransformationID),
-    INDEX (TransformationID),
-	FOREIGN KEY (ProductionID) REFERENCES Productions(ProductionID)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+    PRIMARY KEY(ProductionID, TransformationID),
+    INDEX(TransformationID),
+    FOREIGN KEY(ProductionID) REFERENCES Productions(ProductionID)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8
 
-SET FOREIGN_KEY_CHECKS = 1;
+SET FOREIGN_KEY_CHECKS = 1

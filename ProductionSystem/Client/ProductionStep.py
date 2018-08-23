@@ -2,17 +2,18 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC                                                import gLogger, S_OK, S_ERROR
+from DIRAC import gLogger, S_OK, S_ERROR
 
-class ProductionStep( object ):
 
+class ProductionStep(object):
 
   """ Define the ProductionStep object
   """
-  def __init__( self, **kwargs ):
+
+  def __init__(self, **kwargs):
     """ Simple constructor
     """
-    ##### Default values for transformation step parameters
+    # Default values for transformation step parameters
     self.Name = ''
     self.ParentStep = -1
     self.Description = 'description'
@@ -32,13 +33,13 @@ class ProductionStep( object ):
     prodStepDict = {}
 
     prodStepDict['name'] = self.Name
-    if isinstance(self.ParentStep,list):
+    if isinstance(self.ParentStep, list):
       prodStepDict['parentStep'] = []
       for parentStep in self.ParentStep:
         if not parentStep.Name:
           return S_ERROR('Parent Step does not exist')
         prodStepDict['parentStep'].append(parentStep.Name)
-    if isinstance(self.ParentStep,ProductionStep):
+    if isinstance(self.ParentStep, ProductionStep):
       if not self.ParentStep.Name:
         return S_ERROR('Parent Step does not exist')
       prodStepDict['parentStep'] = [self.ParentStep.Name]
@@ -55,6 +56,4 @@ class ProductionStep( object ):
     prodStepDict['groupsize'] = self.GroupSize
     prodStepDict['body'] = self.Body
 
-    return S_OK( prodStepDict )
-
-
+    return S_OK(prodStepDict)

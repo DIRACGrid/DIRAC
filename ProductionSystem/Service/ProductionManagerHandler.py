@@ -1,16 +1,17 @@
 """ DISET request handler base class for the ProductionDB.
 """
 
-from DIRAC                                               import gLogger, S_OK, S_ERROR
-from DIRAC.Core.DISET.RequestHandler                     import RequestHandler
-from DIRAC.ProductionSystem.DB.ProductionDB      import ProductionDB
+from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.ProductionSystem.DB.ProductionDB import ProductionDB
 
 prodTypes = [basestring, int, long]
 transTypes = [basestring, int, long, list]
 
 __RCSID__ = "$Id$"
 
-class ProductionManagerHandlerBase( RequestHandler ):
+
+class ProductionManagerHandlerBase(RequestHandler):
 
   def _parseRes(self, res):
     if not res['OK']:
@@ -48,23 +49,22 @@ class ProductionManagerHandlerBase( RequestHandler ):
   types_getProductions = []
 
   def export_getProductions(self, condDict=None, older=None, newer=None, timeStamp='CreationDate',
-                                orderAttribute=None, limit=None, offset=None):
+                            orderAttribute=None, limit=None, offset=None):
     if not condDict:
       condDict = {}
     res = database.getProductions(condDict=condDict,
-                                      older=older,
-                                      newer=newer,
-                                      timeStamp=timeStamp,
-                                      orderAttribute=orderAttribute,
-                                      limit=limit,
-                                      offset=offset)
+                                  older=older,
+                                  newer=newer,
+                                  timeStamp=timeStamp,
+                                  orderAttribute=orderAttribute,
+                                  limit=limit,
+                                  offset=offset)
     return self._parseRes(res)
-
 
   types_getProduction = [prodTypes]
 
-  def export_getProduction( self, prodName ):
-    res = database.getProduction( prodName )
+  def export_getProduction(self, prodName):
+    res = database.getProduction(prodName)
     return self._parseRes(res)
 
   types_getProductionParameters = [prodTypes, [basestring, list, tuple]]
@@ -73,7 +73,7 @@ class ProductionManagerHandlerBase( RequestHandler ):
     res = database.getProductionParameters(prodName, parameters)
     return self._parseRes(res)
 
-  types_setProductionStatus = [prodTypes,basestring]
+  types_setProductionStatus = [prodTypes, basestring]
 
   def export_setProductionStatus(self, prodName, status):
     res = database.setProductionStatus(prodName, status)
@@ -81,18 +81,16 @@ class ProductionManagerHandlerBase( RequestHandler ):
 
   types_startProduction = [prodTypes]
 
-  def export_startProduction( self, prodName ):
-    res = database.startProduction( prodName )
+  def export_startProduction(self, prodName):
+    res = database.startProduction(prodName)
     return self._parseRes(res)
-
-
 
   ####################################################################
   #
   # These are the methods to manipulate the ProductionTransformations table
   #
 
-  types_addTransformationsToProduction = [prodTypes,transTypes,transTypes]
+  types_addTransformationsToProduction = [prodTypes, transTypes, transTypes]
 
   def export_addTransformationsToProduction(self, prodName, transIDs, parentTransIDs):
     res = database.addTransformationsToProduction(prodName, transIDs, parentTransIDs)
@@ -100,16 +98,30 @@ class ProductionManagerHandlerBase( RequestHandler ):
 
   types_getProductionTransformations = []
 
-  def export_getProductionTransformations(self, prodName, condDict=None, older=None, newer=None, timeStamp='CreationTime',
-                                    orderAttribute=None, limit=None, offset=None):
+  def export_getProductionTransformations(
+          self,
+          prodName,
+          condDict=None,
+          older=None,
+          newer=None,
+          timeStamp='CreationTime',
+          orderAttribute=None,
+          limit=None,
+          offset=None):
 
     if not condDict:
       condDict = {}
-    res = database.getProductionTransformations( prodName, condDict=condDict, older=older, newer=newer, timeStamp=timeStamp,
-                                          orderAttribute=orderAttribute, limit=limit, offset=offset)
+    res = database.getProductionTransformations(
+        prodName,
+        condDict=condDict,
+        older=older,
+        newer=newer,
+        timeStamp=timeStamp,
+        orderAttribute=orderAttribute,
+        limit=limit,
+        offset=offset)
 
     return self._parseRes(res)
-
 
   ####################################################################
   #
@@ -120,7 +132,6 @@ class ProductionManagerHandlerBase( RequestHandler ):
   #
   # These are the methods used for web monitoring
   #
-
 
   ###########################################################################
 
@@ -139,4 +150,3 @@ class ProductionManagerHandler(ProductionManagerHandlerBase):
   def __init__(self, *args, **kargs):
     self.setDatabase(database)
     ProductionManagerHandlerBase.__init__(self, *args, **kargs)
-
