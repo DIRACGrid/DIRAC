@@ -128,6 +128,10 @@ logger.info("Launching dirac-pilot script from %%s" %%os.getcwd())
 logger.info("But first unpacking pilot files")
 %(mString)s
 
+# Checking that the proxy is in the pilot bundle
+if os.path.isfile('proxy'):
+  os.environ["X509_USER_PROXY"] = os.path.join(pilotWorkingDirectory, 'proxy')
+
 # now finally launching the pilot script (which should be called dirac-pilot.py)
 cmd = "python dirac-pilot.py %(pilotOptions)s"
 logger.info('Executing: %%s' %% cmd)
