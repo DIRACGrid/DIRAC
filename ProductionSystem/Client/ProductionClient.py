@@ -2,44 +2,45 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC                                                import gLogger, S_OK, S_ERROR
-from DIRAC.Core.Base.Client                                        import Client
+from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC.Core.Base.Client import Client
 
-class ProductionClient( Client ):
 
+class ProductionClient(Client):
 
   """ Exposes the functionality available in the DIRAC/ProductionHandler
   """
-  def __init__( self, **kwargs ):
+
+  def __init__(self, **kwargs):
     """ Simple constructor
     """
 
-    Client.__init__( self, **kwargs )
-    self.setServer( 'Production/ProductionManager' )
+    Client.__init__(self, **kwargs)
+    self.setServer('Production/ProductionManager')
 
-    self.prodDescription =  {}
+    self.prodDescription = {}
     self.stepCounter = 1
 
-  def setServer( self, url ):
+  def setServer(self, url):
     self.serverURL = url
 
-  ### Methods working on the client to prepare the production description
-  def getDescription( self ):
+  # Methods working on the client to prepare the production description
+  def getDescription(self):
     """ get the production description
     """
     return self.prodDescription
 
-  def setDescription( self, prodDescription ):
+  def setDescription(self, prodDescription):
     """ set the production description
     """
     self.prodDescription = prodDescription
 
-  def addStep( self, prodStep ):
+  def addStep(self, prodStep):
     """ add a step to the production description
     """
 
     stepName = 'Step' + str(self.stepCounter)
-    self.stepCounter+=1
+    self.stepCounter += 1
     prodStep.Name = stepName
 
     res = prodStep.getAsDict()
@@ -51,29 +52,28 @@ class ProductionClient( Client ):
     self.prodDescription[prodStep.Name] = prodStepDict
     return S_OK()
 
+  # Methods to contact the ProductionManager Service
 
-  ### Methods to contact the ProductionManager Service
-
-  def addProduction( self, prodName, prodDescription, timeout = 1800 ):
+  def addProduction(self, prodName, prodDescription, timeout=1800):
     """ create a new production starting from its description
     """
-    rpcClient = self._getRPC( timeout = timeout )
-    return rpcClient.addProduction( prodName, prodDescription )
+    rpcClient = self._getRPC(timeout=timeout)
+    return rpcClient.addProduction(prodName, prodDescription)
 
-  def startProduction( self, prodID ):
+  def startProduction(self, prodID):
     """ Instantiate the transformations of the production and start the production
     """
     rpcClient = self._getRPC()
-    return rpcClient.startProduction( prodID )
+    return rpcClient.startProduction(prodID)
 
-  def setProductionStatus( self, prodID, status ):
+  def setProductionStatus(self, prodID, status):
     """ Sets the production status
     """
     rpcClient = self._getRPC()
-    return rpcClient.setProductionStatus( prodID, status )
+    return rpcClient.setProductionStatus(prodID, status)
 
-  def getProductions( self, condDict = None, older = None, newer = None, timeStamp = None,
-                          orderAttribute = None, limit = 100 ):
+  def getProductions(self, condDict=None, older=None, newer=None, timeStamp=None,
+                     orderAttribute=None, limit=100):
     """ gets all the productions in the system, incrementally. "limit" here is just used to determine the offset.
     """
     rpcClient = self._getRPC()
@@ -86,27 +86,27 @@ class ProductionClient( Client ):
     # getting transformations - incrementally
     offsetToApply = 0
     while True:
-      res = rpcClient.getProductions( condDict, older, newer, timeStamp, orderAttribute, limit,
-                                          offsetToApply )
+      res = rpcClient.getProductions(condDict, older, newer, timeStamp, orderAttribute, limit,
+                                     offsetToApply)
       if not res['OK']:
         return res
       else:
-        gLogger.verbose( "Result for limit %d, offset %d: %d" % ( limit, offsetToApply, len( res['Value'] ) ) )
+        gLogger.verbose("Result for limit %d, offset %d: %d" % (limit, offsetToApply, len(res['Value'])))
         if res['Value']:
           productions = productions + res['Value']
           offsetToApply += limit
-        if len( res['Value'] ) < limit:
+        if len(res['Value']) < limit:
           break
-    return S_OK( productions )
+    return S_OK(productions)
 
-  def getProduction( self, prodName ):
+  def getProduction(self, prodName):
     """ gets a specific production.
     """
     rpcClient = self._getRPC()
-    return rpcClient.getProduction( prodName )
+    return rpcClient.getProduction(prodName)
 
-  def getProductionTransformations( self, prodName, condDict = None, older = None, newer = None, timeStamp = None,
-                              orderAttribute = None, limit = 10000 ):
+  def getProductionTransformations(self, prodName, condDict=None, older=None, newer=None, timeStamp=None,
+                                   orderAttribute=None, limit=10000):
     """ gets all the production transformations for a production, incrementally.
         "limit" here is just used to determine the offset.
     """
@@ -120,21 +120,15 @@ class ProductionClient( Client ):
     # getting productionTransformations - incrementally
     offsetToApply = 0
     while True:
-      res = rpcClient.getProductionTransformations( prodName, condDict, older, newer, timeStamp, orderAttribute, limit,
-                                                    offsetToApply )
+      res = rpcClient.getProductionTransformations(prodName, condDict, older, newer, timeStamp, orderAttribute, limit,
+                                                   offsetToApply)
       if not res['OK']:
         return res
       else:
-        gLogger.verbose( "Result for limit %d, offset %d: %d" % ( limit, offsetToApply, len( res['Value'] ) ) )
+        gLogger.verbose("Result for limit %d, offset %d: %d" % (limit, offsetToApply, len(res['Value'])))
         if res['Value']:
           productionTransformations = productionTransformations + res['Value']
           offsetToApply += limit
-        if len( res['Value'] ) < limit:
+        if len(res['Value']) < limit:
           break
-    return S_OK( productionTransformations )
-
-
-
-
-
-
+    return S_OK(productionTransformations)
