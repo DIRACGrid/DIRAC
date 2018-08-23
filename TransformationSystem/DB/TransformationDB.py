@@ -49,44 +49,42 @@ class TransformationDB(DB):
     self.filterQueries = []
     res = self.__updateFilterQueries()
     if not res['OK']:
-      gLogger.fatal( "Failed to create filter queries" )
+      gLogger.fatal("Failed to create filter queries")
 
+    self.allowedStatusForTasks = ('Unused', 'ProbInFC')
 
-    self.allowedStatusForTasks = ( 'Unused', 'ProbInFC' )
+    self.TRANSPARAMS = ['TransformationID',
+                        'TransformationName',
+                        'Description',
+                        'LongDescription',
+                        'CreationDate',
+                        'LastUpdate',
+                        'AuthorDN',
+                        'AuthorGroup',
+                        'Type',
+                        'Plugin',
+                        'AgentType',
+                        'Status',
+                        'FileMask',
+                        'InputMetaQuery',
+                        'OutputMetaQuery',
+                        'OutputMetaData',
+                        'TransformationGroup',
+                        'GroupSize',
+                        'InheritedFrom',
+                        'Body',
+                        'MaxNumberOfTasks',
+                        'EventsPerTask',
+                        'TransformationFamily']
 
-
-    self.TRANSPARAMS = [  'TransformationID',
-                          'TransformationName',
-                          'Description',
-                          'LongDescription',
-                          'CreationDate',
-                          'LastUpdate',
-                          'AuthorDN',
-                          'AuthorGroup',
-                          'Type',
-                          'Plugin',
-                          'AgentType',
-                          'Status',
-                          'FileMask',
-                          'InputMetaQuery',
-                          'OutputMetaQuery',
-                          'OutputMetaData',
-                          'TransformationGroup',
-                          'GroupSize',
-                          'InheritedFrom',
-                          'Body',
-                          'MaxNumberOfTasks',
-                          'EventsPerTask',
-                          'TransformationFamily']
-
-    self.mutable = [      'TransformationName',
-                          'Description',
-                          'LongDescription',
-                          'AgentType',
-                          'Status',
-                          'MaxNumberOfTasks',
-                          'TransformationFamily',
-                          'Body']  # for the moment include TransformationFamily
+    self.mutable = ['TransformationName',
+                    'Description',
+                    'LongDescription',
+                    'AgentType',
+                    'Status',
+                    'MaxNumberOfTasks',
+                    'TransformationFamily',
+                    'Body']  # for the moment include TransformationFamily
 
     self.TRANSFILEPARAMS = ['TransformationID',
                             'FileID',
@@ -136,20 +134,19 @@ class TransformationDB(DB):
   # These methods manipulate the Transformations table
   #
 
-  def addTransformation( self, transName, description, longDescription, authorDN, authorGroup, transType,
-                         plugin, agentType, fileMask,
-                         transformationGroup = 'General',
-                         groupSize = 1,
-                         inheritedFrom = 0,
-                         body = '',
-                         maxTasks = 0,
-                         eventsPerTask = 0,
-                         addFiles = True,
-                         connection = False,
-                         inputMetaQuery = '',
-                         outputMetaQuery = '',
-                         outputMetaData = ''):
-
+  def addTransformation(self, transName, description, longDescription, authorDN, authorGroup, transType,
+                        plugin, agentType, fileMask,
+                        transformationGroup='General',
+                        groupSize=1,
+                        inheritedFrom=0,
+                        body='',
+                        maxTasks=0,
+                        eventsPerTask=0,
+                        addFiles=True,
+                        connection=False,
+                        inputMetaQuery='',
+                        outputMetaQuery='',
+                        outputMetaData=''):
     """ Add new transformation definition including its input streams
     """
     connection = self.__getConnection(connection)
@@ -172,11 +169,11 @@ class TransformationDB(DB):
                                         UTC_TIMESTAMP(),UTC_TIMESTAMP(),'%s','%s','%s','%s','%s',\
                                         '%s','%s','%s','%s','New','%s',%d,\
                                         %d,%s,%d,%d);" % \
-                                      ( transName, description, longDescription,
-                                        authorDN, authorGroup, transType, plugin, agentType,
-                                        fileMask, inputMetaQuery, outputMetaQuery, outputMetaData, transformationGroup, groupSize,
-                                        inheritedFrom, body, maxTasks, eventsPerTask )
-    res = self._update( req, connection )
+        (transName, description, longDescription,
+         authorDN, authorGroup, transType, plugin, agentType,
+         fileMask, inputMetaQuery, outputMetaQuery, outputMetaData, transformationGroup, groupSize,
+         inheritedFrom, body, maxTasks, eventsPerTask)
+    res = self._update(req, connection)
     if not res['OK']:
       self.lock.release()
       return res
@@ -184,7 +181,7 @@ class TransformationDB(DB):
     self.lock.release()
     # If the transformation has an input data specification
     if inputMetaQuery:
-      self.filterQueries.append( ( transID, json.loads( inputMetaQuery ) ) )
+      self.filterQueries.append((transID, json.loads(inputMetaQuery)))
 
     if inheritedFrom:
       res = self._getTransformationID(inheritedFrom, connection=connection)
@@ -218,8 +215,8 @@ class TransformationDB(DB):
     ### Add files to the DataFiles table ##################
     catalog = FileCatalog()
     if addFiles and inputMetaQuery:
-      mqDict = json.loads( inputMetaQuery )
-      res = catalog.findFilesByMetadata( mqDict )
+      mqDict = json.loads(inputMetaQuery)
+      res = catalog.findFilesByMetadata(mqDict)
       if not res['OK']:
         gLogger.error("Failed to find files to be added to the transformation", res['Message'])
         return res
@@ -379,19 +376,19 @@ class TransformationDB(DB):
     req = "DELETE FROM Transformations WHERE TransformationID=%d;" % transID
     return self._update(req, connection)
 
-  def __updateFilterQueries( self, connection = False ):
+  def __updateFilterQueries(self, connection=False):
     """ Get filters for all defined input streams in all the transformations.
     """
     resultList = []
     req = "SELECT TransformationID,InputMetaQuery FROM Transformations where Status in ('New','Active','Stopped','Flush','Completing');"
-    res = self._query( req, connection )
+    res = self._query(req, connection)
     if not res['OK']:
       return res
     for transID, mask in res['Value']:
       if mask:
-        resultList.append( ( transID, json.loads( mask ) ) )
+        resultList.append((transID, json.loads(mask)))
     self.filterQueries = resultList
-    return S_OK( resultList )
+    return S_OK(resultList)
 
   ###########################################################################
   #
@@ -1505,7 +1502,7 @@ class TransformationDB(DB):
     if not res['OK']:
       gLogger.error("TransformationDB.addDirectory: Failed to get files. %s" % res['Message'])
       return res
-    if not path in res['Value']['Successful']:
+    if path not in res['Value']['Successful']:
       gLogger.error("TransformationDB.addDirectory: Failed to get files.")
       return res
     gLogger.info("TransformationDB.addDirectory: Obtained %s files in %s seconds." % (path, time.time() - start))
@@ -1568,7 +1565,7 @@ class TransformationDB(DB):
     for trans in transIDs:
       if trans not in transFiles:
         transFiles[trans] = []
-      transFiles[trans].extend( filesToAdd )
+      transFiles[trans].extend(filesToAdd)
 
     # Add the files to the transformations
     gLogger.info('Files to add to transformations:', filesToAdd)
@@ -1600,13 +1597,13 @@ class TransformationDB(DB):
     typeDict.update(res['Value']['DirectoryMetaFields'])
 
     for transID, query in queries:
-      gLogger.info( "Check the transformation status" )
-      res = self.getTransformationParameters( transID, 'Status' )
-      if res['Value'] not in ['New','Active','Stopped','Completing','Flush']:
+      gLogger.info("Check the transformation status")
+      res = self.getTransformationParameters(transID, 'Status')
+      if res['Value'] not in ['New', 'Active', 'Stopped', 'Completing', 'Flush']:
         continue
-      mq = MetaQuery( query, typeDict )
-      gLogger.info( "Apply query %s to metadata %s" % ( mq.getMetaQuery(), metadatadict ) )
-      res = mq.applyQuery( metadatadict )
+      mq = MetaQuery(query, typeDict)
+      gLogger.info("Apply query %s to metadata %s" % (mq.getMetaQuery(), metadatadict))
+      res = mq.applyQuery(metadatadict)
       if not res['OK']:
         gLogger.error("Error in applying query: %s" % res['Message'])
         return res

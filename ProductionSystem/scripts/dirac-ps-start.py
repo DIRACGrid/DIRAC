@@ -9,12 +9,12 @@ __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
 
-Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
-                                     'Usage:',
-                                     '  %s prodID' % Script.scriptName,
-                                     'Arguments:',
-                                     '  prodID: Production ID'
-                                     ] ) )
+Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
+                                  'Usage:',
+                                  '  %s prodID' % Script.scriptName,
+                                  'Arguments:',
+                                  '  prodID: Production ID'
+                                  ]))
 
 
 Script.parseCommandLine()
@@ -22,7 +22,7 @@ Script.parseCommandLine()
 from DIRAC.ProductionSystem.Client.ProductionClient import ProductionClient
 
 args = Script.getPositionalArgs()
-if ( len( args ) != 1 ):
+if (len(args) != 1):
   Script.showHelp()
 
 # get arguments
@@ -30,11 +30,11 @@ prodID = args[0]
 
 prodClient = ProductionClient()
 
-res = prodClient.setProductionStatus( prodID, 'Active' )
+res = prodClient.setProductionStatus(prodID, 'Active')
 if res['OK']:
-  DIRAC.gLogger.notice ( 'Production %s successully started' % prodID )
+  DIRAC.gLogger.notice('Production %s successully started' % prodID)
 else:
-  DIRAC.gLogger.error ( res['Message'] )
-  DIRAC.exit( -1 )
+  DIRAC.gLogger.error(res['Message'])
+  DIRAC.exit(-1)
 
-DIRAC.exit( 0 )
+DIRAC.exit(0)
