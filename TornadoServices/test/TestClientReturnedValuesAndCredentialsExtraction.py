@@ -62,7 +62,7 @@ def get_all_returnedValues():
   serviceNameTornado = 'Framework/tornadoCredDict'
   serviceNameDirac = 'Framework/diracCredDict'
   repTornado = TornadoClient(serviceNameTornado).whoami()
-  repDirac = RPCClient(serviceNameDirac).credDict()
+  repDirac = RPCClient(serviceNameDirac).whoami()
   return (repTornado, repDirac)
 
 

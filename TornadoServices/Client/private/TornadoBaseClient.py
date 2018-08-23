@@ -17,7 +17,6 @@
 
     *WARNING*: Lots of method are copy-paste from :py:class:`~DIRAC.Core.DISET.private.BaseClient`.
     And some methods are copy-paste AND modifications, for now it permit to fully separate DISET and HTTPS.
-    Later if HTTPS
 
 
 """
@@ -171,7 +170,6 @@ class TornadoBaseClient(object):
            * default to 'unknown'
 
         WARNING: COPY/PASTE FROM Core/Diset/private/BaseClient FOR NOW
-        Used in propose action, but not reused
     """
     if self.KW_VO in self.kwargs and self.kwargs[self.KW_VO]:
       self.vo = str(self.kwargs[self.KW_VO])
@@ -206,7 +204,7 @@ class TornadoBaseClient(object):
       else:
         self.kwargs[self.KW_SKIP_CA_CHECK] = CS.skipCACheck()
 
-    # TODO: Rewrite a little bit here: don't need the proxy string
+    # Rewrite a little bit from here: don't need the proxy string, we use the file
     if self.KW_PROXY_CHAIN in self.kwargs:
       try:
         self.kwargs[self.KW_PROXY_STRING] = self.kwargs[self.KW_PROXY_CHAIN].dumpAllToString()['Value']

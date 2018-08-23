@@ -9,7 +9,6 @@
 
 from tornado.web import url as TornadoURL, RequestHandler
 
-
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC import gLogger, S_ERROR, S_OK, gConfig
 from DIRAC.Core.Base.private.ModuleLoader import ModuleLoader
@@ -24,7 +23,7 @@ def urlFinder(module):
   sections = module.split('.')
   for section in sections:
     # This condition is a bit long
-    # We search something who look like <...>.<component>System.<...>.<service>Handler
+    # We search something which look like <...>.<component>System.<...>.<service>Handler
     # If find we return /<component>/<service>
     if(section.find("System") > 0) and (sections[-1].find('Handler') > 0):
       return "/%s/%s" % (section.replace("System", ""), sections[-1].replace("Handler", ""))
@@ -109,19 +108,17 @@ class HandlerManager(object):
               isHTTPS = gConfig.getValue('/Systems/%s/%s/Services/%s/Protocol' % (system, instance, service))
               if isHTTPS and isHTTPS.lower() == 'https':
                 serviceList.append(newservice)
-        # On systems some times you have things not related to services...
+        # On systems sometime you have things not related to services...
         except RuntimeError as e:
           pass
-        
-
-    self.loadHandlersByServiceName(serviceList)
+    return self.loadHandlersByServiceName(serviceList)
 
   def loadHandlersByServiceName(self, servicesNames):
     """
       Load a list of handler from list of service using DIRAC moduleLoader
       Use :py:class:`DIRAC.Core.Base.private.ModuleLoader`
 
-      :param servicesNames: list of service, e.g. ['Framework/Hello', 'Configuration/ConfigurationTornado']
+      :param servicesNames: list of service, e.g. ['Framework/Hello', 'Configuration/Server']
     """
 
     # Use DIRAC system to load: search in CS if path is given and if not defined

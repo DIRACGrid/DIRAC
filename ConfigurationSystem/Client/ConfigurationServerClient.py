@@ -67,4 +67,8 @@ class ConfigurationServerClient(Client):
   """
 
   # The JSON decoder for Configuration Server
+  def __init__(self, **kwargs):
+    if 'url' not in kwargs:
+      kwargs['url'] = 'Configuration/Server'
+    super(ConfigurationServerClient, self).__init__(**kwargs)
   httpsClient = ConfigurationServerJSON

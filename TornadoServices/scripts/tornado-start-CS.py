@@ -37,14 +37,14 @@ localCfg.addDefaultEntry( "LogLevel", "INFO" )
 localCfg.addDefaultEntry( "LogColor", True )
 resultDict = localCfg.loadUserData()
 if not resultDict[ 'OK' ]:
-  gLogger.initialize( serverName, "/" )
+  gLogger.initialize("Tornado-CS", "/" )
   gLogger.error( "There were errors when loading configuration", resultDict[ 'Message' ] )
   sys.exit( 1 )
 
 includeExtensionErrors()
 
 
-gLogger.initialize('Tornado', "/")
+gLogger.initialize('Tornado-CS', "/")
 
 
 serverToLaunch = TornadoServer(services='Configuration/Server')

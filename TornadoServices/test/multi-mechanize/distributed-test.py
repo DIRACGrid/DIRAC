@@ -1,12 +1,10 @@
 import xmlrpclib
 import time
-import csv
-import matplotlib.pyplot as plt
 import sys
 ### BEGIN OF CONFIGURATION ###
 
 # Add all machine who have multimechanize client
-serversList = ['137.138.150.194', 'server2'] 
+serversList = ['137.138.150.194', 'server2']
 # Each multimechanize client must listen the same ports, add the ports here
 portList = ['9000','9001']
 
@@ -18,7 +16,7 @@ print "Starting test servers...."
 # We send signal to all servers
 for port in portList:
   for server in serversList:
-    servers.append(xmlrpclib.ServerProxy("http://%s:%s"(server,port)))
+    servers.append(xmlrpclib.ServerProxy("http://%s:%s"%(server,port)))
     servers[-1].run_test()
   # If there is multiple ports opened on same machine, we wait a little to avoid confusion in multimechanize
   time.sleep(2)
@@ -32,7 +30,7 @@ while servers[-1].get_results() == 'Results Not Available':
 # There is one file/multimechanize servers
 try:
   output = sys.argv[1]
-except KeyError
+except KeyError:
   output = str(time.time())
 fileCount = 0
 for server in servers:

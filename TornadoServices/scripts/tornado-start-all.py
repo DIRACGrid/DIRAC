@@ -45,7 +45,7 @@ localCfg.addDefaultEntry("LogLevel", "INFO")
 localCfg.addDefaultEntry("LogColor", True)
 resultDict = localCfg.loadUserData()
 if not resultDict['OK']:
-  gLogger.initialize(serverName, "/")
+  gLogger.initialize("Tornado", "/")
   gLogger.error("There were errors when loading configuration", resultDict['Message'])
   sys.exit(1)
 

@@ -95,6 +95,9 @@ class TornadoServer(object):
     for item in handlerDict.iteritems():
       # handlerDict[key].initializeService(key)
       self.urls.append(url(item[0], item[1], dict(debug=self.debugSSL)))
+    # If there is no services loaded:
+    if not self.urls:
+      raise ImportError("There is no services loaded, please check your configuration")
     self.__report = None
     self.__monitorLastStatsUpdate = None
 
@@ -116,7 +119,7 @@ class TornadoServer(object):
     certs = Locations.getHostCertificateAndKeyLocation()
     if certs == False:
       gLogger.fatal("Host certificates not found ! Can't start the Server")
-      raise ImportError
+      raise ImportError("Unable to load certificates")
     ca = Locations.getCAsLocation()
     ssl_options = {
         'certfile': certs[0],
@@ -132,8 +135,6 @@ class TornadoServer(object):
     # Starting monitoring, IOLoop waiting time in ms, __monitoringLoopDelay is defined in seconds
     tornado.ioloop.PeriodicCallback(self.__reportToMonitoring, self.__monitoringLoopDelay * 1000).start()
 
-
-
     # Start server
     server = HTTPServer(router, ssl_options=ssl_options)
     try:
@@ -148,11 +149,10 @@ class TornadoServer(object):
     for service in self.urls:
       gLogger.debug("Available service: %s" % service)
 
-
     if multiprocess:
       server.start(0)
     IOLoop.current().start()
-    return True  # Never called because of IOLoop, but to make pylint happy
+    return True  # Never called because we are stuck in the IOLoop, but to make pylint happy
 
   def _initMonitoring(self):
     """

@@ -19,7 +19,7 @@ Once dirac installed you can add Tornado with the following steps:
 ***********************
 Installing requirements
 ***********************
-To install and compile some elements used by Tornado you may install some packages with ``yum``: ``python-devel``, ``m2crypto``,  ``gcc``. If you want to do some performance tests please check if ``nscd`` is running on your machine.
+To install and compile some elements used by Tornado you may install some packages with ``yum``: ``python-devel``, ``m2crypto``,  ``gcc``. If you want to do some performance tests please check if ``nscd`` is running on your machine to avoid too many DNS query (on openstack, it is not enabled with SLC6).
 
 Then you need to install Tornado and M2Crypto (for python), but not from official repo::
 
@@ -32,12 +32,12 @@ Then you need to install Tornado and M2Crypto (for python), but not from officia
 Adding Tornado to DIRAC
 ***********************
 
-Save the DIRAC folder somewhere then clone my GithHub repo, then switch to branch "stage". You can run the setup.py if ``DIRAC.TornadoServices`` is not detected by python::
+Save the DIRAC folder somewhere then clone my GithHub repo, then switch to branch "stage_toDIRAC_clean". You can run the setup.py if ``DIRAC.TornadoServices`` is not detected by python::
 
   mv DIRAC DIRAC.old
   git clone https://github.com/louisjdmartin/DIRAC.git
   cd DIRAC
-  git checkout stage
+  git checkout stage_toDIRAC_clean
   python setup.py install
 
 
@@ -50,7 +50,7 @@ To use HTTPS your certificates must be generated using TLS standard, you can use
   bash
   cd /tmp
   git clone https://github.com/chaen/DIRAC.git
-  cd DIRACswitch 
+  cd DIRAC
   git checkout rel-v6r20_FEAT_correctCA
 
   export DEVROOT=/tmp
@@ -191,13 +191,14 @@ To start the server you must define ``OPENSSL_ALLOW_PROXY_CERTS`` and run ``DIRA
   OPENSSL_ALLOW_PROXY_CERTS=1 python /opt/dirac/DIRAC/TornadoServices/scripts/tornado-start-all.py
 
 
-You can now run DIRAC services. You can check the doctstring of tests file (``DIRAC/test/Integration/TornadoServices`` and ``DIRAC/TornadoServices/test``) to know how to run tests.
+You can now run DIRAC services. You can check the docstring of tests file (``DIRAC/test/Integration/TornadoServices`` and ``DIRAC/TornadoServices/test``) to know how to run tests.
 
 
 *********************
 Run performance tests
 *********************
 For performance test unset ``PYTHONOPTIMIZE`` if it is set in your environement::
+
   unset PYTHONOPTIMIZE
 
 

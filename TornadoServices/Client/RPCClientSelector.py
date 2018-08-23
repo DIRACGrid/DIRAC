@@ -32,8 +32,7 @@ def RPCClientSelector(*args, **kwargs):  # We use same interface as RPCClient
 
   # We detect if we need to use a specific client for HTTPS
   if 'httpsClient' in kwargs:
-    TornadoRPCClient = kwargs['httpsClient']
-    del kwargs['httpsClient']
+    TornadoRPCClient = kwargs.pop('httpsClient')
   else:
     TornadoRPCClient = TornadoClient
 

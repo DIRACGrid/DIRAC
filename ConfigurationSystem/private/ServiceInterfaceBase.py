@@ -32,6 +32,9 @@ class ServiceInterfaceBase(object):
       self.__loadConfigurationData()
       self.dAliveSlaveServers = {}
 
+  def isMaster(self):
+    return gConfigurationData.isMaster()
+
   def __loadConfigurationData(self):
     """
       As the name said, it just load the configuration

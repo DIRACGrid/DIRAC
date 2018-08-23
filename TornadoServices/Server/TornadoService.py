@@ -67,7 +67,7 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
     # Init extra bits of monitoring
 
     cls._monitor = MonitoringClient()
-    cls._monitor.setComponentType(MonitoringClient.COMPONENT_WEB)  # ADD COMPONENT TYPE FOR TORNADO ?
+    cls._monitor.setComponentType(MonitoringClient.COMPONENT_WEB)
 
     cls._monitor.initialize()
 
@@ -92,7 +92,12 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
   def __initializeService(cls, relativeUrl, absoluteUrl, debug):
     """
       Initialize a service, called at first request
+
+      :param relativeUrl: the url, something like "/component/service"
+      :param absoluteUrl: the url, something like "https://dirac.cern.ch:1234/component/service"
+      :param debug: boolean which indicate if server running in debug mode
     """
+    # Url starts with a "/", we just remove it
     serviceName = relativeUrl[1:]
 
     cls.debug = debug
@@ -216,7 +221,7 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
     """
 
     # Execute the method
-    # None it's because we let Tornado manage the executor
+    # First argument is "None", it's because we let Tornado manage the executor
     retVal = yield IOLoop.current().run_in_executor(None, self.__executeMethod)
 
     # Tornado recommend to write in main thread
@@ -230,8 +235,7 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
       We have several try except to catch the different problem who can occurs
 
       - First, the method does not exist => Attribute error, return an error to client
-      - Second, no aguments are sended => MissingArgumentError, continue execution
-      - Third, anything happend during execution => General Exception, send error to client
+      - second, anything happend during execution => General Exception, send error to client
     """
 
     # getting method
@@ -350,7 +354,6 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
 ####
 
   auth_ping = ['all']
-
   def export_ping(self):
     """
       Default ping method, returns some info about server.
@@ -391,7 +394,6 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
     return S_OK(dInfo)
 
   auth_echo = ['all']
-
   @staticmethod
   def export_echo(data):
     """
@@ -399,8 +401,7 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
     """
     return S_OK(data)
 
-  auth_whoami = ['all']
-
+  auth_whoami = ['authenticated']
   def export_whoami(self):
     """
       A simple whoami, returns all credential dictionnary, except certificate chain object.
