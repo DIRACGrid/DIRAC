@@ -10,6 +10,7 @@ from DIRAC.ProductionSystem.DB.ProductionDB import ProductionDB
 prodTypes = [basestring, int, long]
 transTypes = [basestring, int, long, list]
 
+
 class ProductionManagerHandlerBase(RequestHandler):
 
   def _parseRes(self, res):
