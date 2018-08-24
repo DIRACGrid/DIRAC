@@ -315,7 +315,8 @@ class TransformationClient(Client):
 
     for status, count in badStatusFiles.iteritems():
       gLogger.warn(
-          '[None] [%d] .moveFilesToDerivedTransformation: Files found in an unexpected status in derived transformation' %
+          '[None] [%d] .moveFilesToDerivedTransformation: '
+          'Files found in an unexpected status in derived transformation' %
           prod, '%s: %d' %
           (status, count))
     # Set the status in the parent transformation first
@@ -324,7 +325,8 @@ class TransformationClient(Client):
         res = self.setFileStatusForTransformation(parentProd, status, lfnChunk)
         if not res['OK']:
           gLogger.error(
-              "[None] [%d] .moveFilesToDerivedTransformation: Error setting status %s for %d files in transformation %d " %
+              "[None] [%d] .moveFilesToDerivedTransformation: "
+              "Error setting status %s for %d files in transformation %d " %
               (prod, status, len(lfnList), parentProd), res['Message'])
 
     # Set the status in the new transformation
@@ -333,12 +335,14 @@ class TransformationClient(Client):
         res = self.setFileStatusForTransformation(prod, status, lfnChunk)
         if not res['OK']:
           gLogger.error(
-              "[None] [%d] .moveFilesToDerivedTransformation: Error setting status %s for %d files; resetting them %s in transformation %d" %
+              "[None] [%d] .moveFilesToDerivedTransformation: "
+              "Error setting status %s for %d files; resetting them %s in transformation %d" %
               (prod, status, len(lfnChunk), oldStatus, parentProd), res['Message'])
           res = self.setFileStatusForTransformation(parentProd, oldStatus, lfnChunk)
           if not res['OK']:
             gLogger.error(
-                "[None] [%d] .moveFilesToDerivedTransformation: Error setting status %s for %d files in transformation %d" %
+                "[None] [%d] .moveFilesToDerivedTransformation: "
+                "Error setting status %s for %d files in transformation %d" %
                 (prod, oldStatus, len(lfnChunk), parentProd), res['Message'])
         else:
           gLogger.info(

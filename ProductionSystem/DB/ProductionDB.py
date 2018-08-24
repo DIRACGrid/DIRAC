@@ -311,9 +311,12 @@ class ProductionDB(DB):
     return S_OK()
 
   def addTransformationsToProduction(self, prodName, transIDs, parentTransIDs, connection=False):
-    """ Add a list of transformations to the production directly. The parentTrans must be set (use -1 to set no parentTrans). """
+    """ Add a list of transformations to the production directly.
+        The parentTrans must be set (use -1 to set no parentTrans).
+    """
     gLogger.info(
-        "ProductionDB.addTransformationsToProduction: Attempting to add %s transformations with parentTransIDs %s to production: %s" %
+        "ProductionDB.addTransformationsToProduction: \
+         Attempting to add %s transformations with parentTransIDs %s to production: %s" %
         (transIDs, parentTransIDs, prodName))
     if not transIDs:
       return S_ERROR('Zero length transformation list')
@@ -359,10 +362,9 @@ class ProductionDB(DB):
 
     gLogger.notice('Production is valid')
 
-    #req = "INSERT INTO ProductionTransformations (ProductionID,TransformationID,ParentTransformationID,Status,LastUpdate,InsertedTime) VALUES"
-    req = "INSERT INTO ProductionTransformations (ProductionID,TransformationID,ParentTransformationID,LastUpdate,InsertedTime) VALUES"
+    req = "INSERT INTO ProductionTransformations \
+           (ProductionID,TransformationID,ParentTransformationID,LastUpdate,InsertedTime) VALUES"
     for transID in transIDs:
-      #req = "%s (%d,%d,'%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP())," % ( req, prodID, transID, str(parentTransIDs), 'Added' )
       req = "%s (%d,%d,'%s',UTC_TIMESTAMP(),UTC_TIMESTAMP())," % (req, prodID, transID, str(parentTransIDs))
       gLogger.notice(req)
     req = req.rstrip(',')
