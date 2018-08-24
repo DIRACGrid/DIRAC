@@ -380,7 +380,8 @@ class TransformationDB(DB):
     """ Get filters for all defined input streams in all the transformations.
     """
     resultList = []
-    req = "SELECT TransformationID,InputMetaQuery FROM Transformations where Status in ('New','Active','Stopped','Flush','Completing');"
+    req = "SELECT TransformationID,InputMetaQuery FROM Transformations where Status in ('New','Active','Stopped', " \
+          "'Flush','Completing');"
     res = self._query(req, connection)
     if not res['OK']:
       return res

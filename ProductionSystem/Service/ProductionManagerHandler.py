@@ -1,15 +1,14 @@
 """ DISET request handler base class for the ProductionDB.
 """
 
+__RCSID__ = "$Id$"
+
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.ProductionSystem.DB.ProductionDB import ProductionDB
 
 prodTypes = [basestring, int, long]
 transTypes = [basestring, int, long, list]
-
-__RCSID__ = "$Id$"
-
 
 class ProductionManagerHandlerBase(RequestHandler):
 
