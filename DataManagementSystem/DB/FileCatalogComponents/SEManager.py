@@ -177,7 +177,11 @@ class SEManagerDB( SEManagerBase ):
       self.db.seDefinitions[seID]['LastUpdate'] = 0.
 
     # We have to refresh the SE definition from the CS
-    result = gConfig.getOptionsDict( '/Resources/StorageElements/%s/AccessProtocol.1' % se )
+    result = gConfig.getSections('/Resources/StorageElements/%s' % se)
+    if not result['OK']:
+      return result
+    pluginSection = result['Value'][0]
+    result = gConfig.getOptionsDict('/Resources/StorageElements/%s/%s' % (se, pluginSection))
     if not result['OK']:
       return result
     seDict = result['Value']
