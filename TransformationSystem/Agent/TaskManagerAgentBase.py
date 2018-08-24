@@ -137,8 +137,6 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
     else:
       self.log.info("Using per Transformation Credentials!")
 
-    self.maxParametricJobs = self.jobManagerClient.getMaxParametricJobs()
-
     # Determine whether the task status is to be monitored and updated
     enableTaskMonitor = self.am_getOption('MonitorTasks', '')
     if not enableTaskMonitor:
@@ -198,7 +196,12 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
       else:
         # Get the transformations which should be submitted
         self.tasksPerLoop = self.am_getOption('TasksPerLoop', self.tasksPerLoop)
-        self.maxParametricJobs = self.jobManagerClient.getMaxParametricJobs()
+        res = self.jobManagerClient.getMaxParametricJobs()
+        if not res['OK']:
+          self.log.warn("Could not get the maxParametricJobs from JobManager", res['Message'])
+        else:
+          self.maxParametricJobs = res['Value']
+
         self._addOperationForTransformations(operationsOnTransformationDict, 'submitTasks', transformations,
                                              owner=owner, ownerGroup=ownerGroup, ownerDN=ownerDN)
 
