@@ -50,7 +50,7 @@ class ProductionStep(object):
     prodStepDict['plugin'] = self.Plugin
     prodStepDict['agentType'] = self.AgentType
     prodStepDict['fileMask'] = self.FileMask
-    ### Optional fields ###################
+    # Optional fields
     prodStepDict['inputquery'] = self.Inputquery
     prodStepDict['outputquery'] = self.Outputquery
     prodStepDict['groupsize'] = self.GroupSize
