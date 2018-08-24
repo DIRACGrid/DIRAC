@@ -8,8 +8,10 @@ from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
 import unittest
+import json
 
 from DIRAC.ProductionSystem.Client.ProductionClient import ProductionClient
+from DIRAC.ProductionSystem.Client.ProductionStep import ProductionStep
 
 
 class TestClientProductionTestCase(unittest.TestCase):
@@ -25,15 +27,23 @@ class ProductionClientChain(TestClientProductionTestCase):
 
   def test_addAndRemove(self):
     # add
-    res = self.prodClient.addProduction('MyprodName')
+    prodStep = ProductionStep()
+    res = self.prodClient.addStep(prodStep)
+    self.assertTrue(res['OK'])
+
+    # Get the production description
+    prodDescription = self.prodClient.getDescription()
+
+    # Create the production
+    res = self.prodClient.addProduction('prodName', json.dumps(prodDescription))
     self.assertTrue(res['OK'])
     prodID = res['Value']
 
     # try to add again (this should fail)
-    res = self.prodClient.addProduction('MyprodName')
+    res = self.prodClient.addProduction('prodName', json.dumps(prodDescription))
     self.assertFalse(res['OK'])
 
-    # really delete
+    # delete the production
     res = self.prodClient.deleteProduction(prodID)
     self.assertTrue(res['OK'])
 
