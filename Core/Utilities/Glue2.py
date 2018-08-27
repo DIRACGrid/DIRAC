@@ -133,6 +133,7 @@ def __getGlue2ShareInfo(host, shareEndpoints, shareInfoDict, cesDict):
                 'GlueHostOperatingSystemName': '',
                 'GlueHostOperatingSystemRelease': '',
                 'GlueHostArchitecturePlatformType': 'x86_64',
+                'GlueHostBenchmarkSI00': '2500',  # needed for the queue to be used by the sitedirector
                 'MANAGER': '',
                 }]
   try:
@@ -218,6 +219,7 @@ def __getGlue2ExecutionEnvironmentInfo(host, executionEnvironment):
               'GlueHostOperatingSystemName': osFamily,
               'GlueHostOperatingSystemRelease': osVersion,
               'GlueHostArchitecturePlatformType': architecture,
+              'GlueHostBenchmarkSI00': '2500',  # needed for the queue to be used by the sitedirector
               'MANAGER': manager,  # to create the ARC QueueName mostly
              }
 
