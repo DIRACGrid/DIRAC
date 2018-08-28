@@ -5,20 +5,22 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC                        import S_OK, S_ERROR, gConfig, gLogger
-from DIRAC.Core.Utilities.Pfn     import pfnunparse
-import threading, time, random
+from DIRAC import S_OK, S_ERROR, gConfig, gLogger
+from DIRAC.Core.Utilities.Pfn import pfnunparse
+import threading
+import time
+import random
 from types import IntType, LongType, StringTypes
+
 
 class SEManagerBase:
 
-  def _refreshSEs( self, connection = False ):
+  def _refreshSEs(self, connection=False):
     """Refresh the SE cache"""
 
-    return S_ERROR( "To be implemented on derived class" )
+    return S_ERROR("To be implemented on derived class")
 
-
-  def __init__( self, database = None ):
+  def __init__(self, database=None):
     self.db = database
     if self.db:
       self.db.seNames = {}
@@ -28,17 +30,17 @@ class SEManagerBase:
     self._refreshSEs()
     self.seUpdatePeriod = 600
 
-  def setUpdatePeriod( self, period ):
+  def setUpdatePeriod(self, period):
     self.seUpdatePeriod = period
 
-  def setSEDefinitions( self, seDefinitions ):
+  def setSEDefinitions(self, seDefinitions):
     self.db.seDefinitions = seDefinitions
     self.seNames = {}
     for seID, seDef in self.db.seDefinitions.items():
       seName = seDef['SEName']
       self.seNames[seName] = seID
 
-  def setDatabase( self, database ):
+  def setDatabase(self, database):
     self.db = database
     self.db.seNames = {}
     self.db.seids = {}
@@ -46,21 +48,21 @@ class SEManagerBase:
     self._refreshSEs()
 
 
-class SEManagerDB( SEManagerBase ):
+class SEManagerDB(SEManagerBase):
 
-  def _refreshSEs( self, connection = False ):
+  def _refreshSEs(self, connection=False):
 
     req = "SELECT SEID,SEName FROM FC_StorageElements;"
     startTime = time.time()
     self.lock.acquire()
     waitTime = time.time()
-    gLogger.debug( "SEManager RefreshSEs lock created. Waited %.3f seconds." % ( waitTime - startTime ) )
-    res = self.db._query( req )
+    gLogger.debug("SEManager RefreshSEs lock created. Waited %.3f seconds." % (waitTime - startTime))
+    res = self.db._query(req)
     if not res['OK']:
-      gLogger.debug( "SEManager RefreshSEs lock released. Used %.3f seconds." % ( time.time() - waitTime ) )
+      gLogger.debug("SEManager RefreshSEs lock released. Used %.3f seconds." % (time.time() - waitTime))
       self.lock.release()
       return res
-    seNames = [ se[1] for se in res['Value'] ]
+    seNames = [se[1] for se in res['Value']]
     for seName, seId in self.db.seNames.items():
       if seName not in seNames:
         del self.db.seNames[seName]
@@ -68,106 +70,106 @@ class SEManagerDB( SEManagerBase ):
         del self.db.seDefinitions[seId]
 
     for seid, seName in res['Value']:
-      self.getSEDefinition( seid )
+      self.getSEDefinition(seid)
       self.db.seNames[seName] = seid
       self.db.seids[seid] = seName
-    gLogger.debug( "SEManager RefreshSEs lock released. Used %.3f seconds." % ( time.time() - waitTime ) )
+    gLogger.debug("SEManager RefreshSEs lock released. Used %.3f seconds." % (time.time() - waitTime))
     self.lock.release()
     return S_OK()
 
-  def __addSE( self, seName, connection = False ):
+  def __addSE(self, seName, connection=False):
     startTime = time.time()
     self.lock.acquire()
     waitTime = time.time()
-    gLogger.debug( "SEManager AddSE lock created. Waited %.3f seconds. %s" % ( waitTime - startTime, seName ) )
+    gLogger.debug("SEManager AddSE lock created. Waited %.3f seconds. %s" % (waitTime - startTime, seName))
     if seName in self.db.seNames.keys():
       seid = self.db.seNames[seName]
-      gLogger.debug( "SEManager AddSE lock released. Used %.3f seconds. %s" % ( time.time() - waitTime, seName ) )
+      gLogger.debug("SEManager AddSE lock released. Used %.3f seconds. %s" % (time.time() - waitTime, seName))
       self.lock.release()
-      return S_OK( seid )
+      return S_OK(seid)
     connection = self.db._getConnection()
-    res = self.db._insert( 'FC_StorageElements', ['SEName'], [seName], connection )
+    res = self.db._insert('FC_StorageElements', ['SEName'], [seName], connection)
     if not res['OK']:
-      gLogger.debug( "SEManager AddSE lock released. Used %.3f seconds. %s" % ( time.time() - waitTime, seName ) )
+      gLogger.debug("SEManager AddSE lock released. Used %.3f seconds. %s" % (time.time() - waitTime, seName))
       self.lock.release()
       if "Duplicate entry" in res['Message']:
-        result = self._refreshSEs( connection )
+        result = self._refreshSEs(connection)
         if not result['OK']:
           return result
         if seName in self.db.seNames.keys():
           seid = self.db.seNames[seName]
-          return S_OK( seid )
+          return S_OK(seid)
       return res
     seid = res['lastRowId']
     self.db.seids[seid] = seName
     self.db.seNames[seName] = seid
-    self.getSEDefinition( seid )
-    gLogger.debug( "SEManager AddSE lock released. Used %.3f seconds. %s" % ( time.time() - waitTime, seName ) )
+    self.getSEDefinition(seid)
+    gLogger.debug("SEManager AddSE lock released. Used %.3f seconds. %s" % (time.time() - waitTime, seName))
     self.lock.release()
-    return S_OK( seid )
+    return S_OK(seid)
 
-  def __removeSE( self, seName, connection = False ):
+  def __removeSE(self, seName, connection=False):
     connection = self.db._getConnection()
     startTime = time.time()
     self.lock.acquire()
     waitTime = time.time()
-    gLogger.debug( "SEManager RemoveSE lock created. Waited %.3f seconds. %s" % ( waitTime - startTime, seName ) )
-    seid = self.db.seNames.get( seName, 'Missing' )
+    gLogger.debug("SEManager RemoveSE lock created. Waited %.3f seconds. %s" % (waitTime - startTime, seName))
+    seid = self.db.seNames.get(seName, 'Missing')
     req = "DELETE FROM FC_StorageElements WHERE SEName='%s'" % seName
-    res = self.db._update( req, connection )
+    res = self.db._update(req, connection)
     if not res['OK']:
-      gLogger.debug( "SEManager RemoveSE lock released. Used %.3f seconds. %s" % ( time.time() - waitTime, seName ) )
+      gLogger.debug("SEManager RemoveSE lock released. Used %.3f seconds. %s" % (time.time() - waitTime, seName))
       self.lock.release()
       return res
     if seid != 'Missing':
-      self.db.seNames.pop( seName )
-      self.db.seids.pop( seid )
-      self.db.seDefinitions.pop( seid )
-    gLogger.debug( "SEManager RemoveSE lock released. Used %.3f seconds. %s" % ( time.time() - waitTime, seName ) )
+      self.db.seNames.pop(seName)
+      self.db.seids.pop(seid)
+      self.db.seDefinitions.pop(seid)
+    gLogger.debug("SEManager RemoveSE lock released. Used %.3f seconds. %s" % (time.time() - waitTime, seName))
     self.lock.release()
     return S_OK()
 
-  def findSE( self, seName ):
-    return self.getSEID( seName )
+  def findSE(self, seName):
+    return self.getSEID(seName)
 
-  def getSEID( self, seName ):
+  def getSEID(self, seName):
     """ Get ID for a SE specified by its name """
-    if type( seName ) in [IntType, LongType]:
-      return S_OK( seName )
+    if type(seName) in [IntType, LongType]:
+      return S_OK(seName)
     if seName in self.db.seNames.keys():
-      return S_OK( self.db.seNames[seName] )
-    return self.__addSE( seName )
+      return S_OK(self.db.seNames[seName])
+    return self.__addSE(seName)
 
-  def addSE( self, seName ):
-    return self.getSEID( seName )
+  def addSE(self, seName):
+    return self.getSEID(seName)
 
-  def getSEName( self, seID ):
+  def getSEName(self, seID):
     if seID in self.db.seids.keys():
-      return S_OK( self.db.seids[seID] )
-    return S_ERROR( 'SE id %d not found' % seID )
+      return S_OK(self.db.seids[seID])
+    return S_ERROR('SE id %d not found' % seID)
 
-  def deleteSE( self, seName, force = True ):
+  def deleteSE(self, seName, force=True):
     # ToDo: Check first if there are replicas using this SE
     if not force:
       pass
-    return self.__removeSE( seName )
+    return self.__removeSE(seName)
 
-  def getSEDefinition( self, seID ):
+  def getSEDefinition(self, seID):
     """ Get the Storage Element definition
     """
-    if type( seID ) in StringTypes:
-      result = self.getSEID( seID )
+    if type(seID) in StringTypes:
+      result = self.getSEID(seID)
       if not result['OK']:
         return result
       seID = result['Value']
 
     if seID in self.db.seDefinitions:
-      if ( time.time() - self.db.seDefinitions[seID]['LastUpdate'] ) < self.seUpdatePeriod:
+      if (time.time() - self.db.seDefinitions[seID]['LastUpdate']) < self.seUpdatePeriod:
         if self.db.seDefinitions[seID]['SEDict']:
-          return S_OK( self.db.seDefinitions[seID] )
+          return S_OK(self.db.seDefinitions[seID])
       se = self.db.seDefinitions[seID]['SEName']
     else:
-      result = self.getSEName( seID )
+      result = self.getSEName(seID)
       if not result['OK']:
         return result
       se = result['Value']
@@ -186,7 +188,7 @@ class SEManagerDB( SEManagerBase ):
       return result
     seDict = result['Value']
     self.db.seDefinitions[seID]['SEDict'] = seDict
-    #Get VO paths if any
+    # Get VO paths if any
     voPathDict = None
     result = gConfig.getOptionsDict('/Resources/StorageElements/%s/%s/VOPath' % (se, pluginSection))
     if result['OK']:
@@ -197,12 +199,12 @@ class SEManagerDB( SEManagerBase ):
       if 'Port' in seDict:
         ports = seDict['Port']
         if ',' in ports:
-          portList = [ x.strip() for x in ports.split( ',' ) ]
-          random.shuffle( portList )
+          portList = [x.strip() for x in ports.split(',')]
+          random.shuffle(portList)
           seDict['Port'] = portList[0]
-      tmpDict = dict( seDict )
+      tmpDict = dict(seDict)
       tmpDict['FileName'] = ''
-      result = pfnunparse( tmpDict )
+      result = pfnunparse(tmpDict)
       if result['OK']:
         self.db.seDefinitions[seID]['SEDict']['PFNPrefix'] = result['Value']
       if voPathDict is not None:
@@ -210,13 +212,13 @@ class SEManagerDB( SEManagerBase ):
           tmpDict['Path'] = voPathDict[vo]
           result = pfnunparse(tmpDict)
           if result['OK']:
-            self.db.seDefinitions[seID]['SEDict'].setdefault("VOPrefix",{})[vo] = result['Value']
+            self.db.seDefinitions[seID]['SEDict'].setdefault("VOPrefix", {})[vo] = result['Value']
     self.db.seDefinitions[seID]['LastUpdate'] = time.time()
-    return S_OK( self.db.seDefinitions[seID] )
+    return S_OK(self.db.seDefinitions[seID])
 
-  def getSEPrefixes( self, connection = False ):
+  def getSEPrefixes(self, connection=False):
 
-    result = self._refreshSEs( connection )
+    result = self._refreshSEs(connection)
     if not result['OK']:
       return result
 
@@ -224,24 +226,25 @@ class SEManagerDB( SEManagerBase ):
 
     for seID in self.db.seDefinitions:
       resultDict[self.db.seDefinitions[seID]['SEName']] = \
-         self.db.seDefinitions[seID]['SEDict'].get( 'PFNPrefix', '' )
+          self.db.seDefinitions[seID]['SEDict'].get('PFNPrefix', '')
 
       # Check if some paths are specific for VO's and add these definitions
       if self.db.seDefinitions[seID]['SEDict'].get('VOPrefix'):
         resultDict.setdefault('VOPrefix', {})
         resultDict['VOPrefix'][self.db.seDefinitions[seID]['SEName']] = \
-          self.db.seDefinitions[seID]['SEDict'].get('VOPrefix')
+            self.db.seDefinitions[seID]['SEDict'].get('VOPrefix')
 
-    return S_OK( resultDict )
+    return S_OK(resultDict)
 
-class SEManagerCS( SEManagerBase ):
 
-  def findSE( self, se ):
-    return S_OK( se )
+class SEManagerCS(SEManagerBase):
 
-  def addSE( self, se ):
-    return S_OK( se )
+  def findSE(self, se):
+    return S_OK(se)
 
-  def getSEDefinition( self, se ):
+  def addSE(self, se):
+    return S_OK(se)
+
+  def getSEDefinition(self, se):
     # TODO Think about using a cache for this information
-    return gConfig.getOptionsDict( '/Resources/StorageElements/%s/AccessProtocol.1' % se )
+    return gConfig.getOptionsDict('/Resources/StorageElements/%s/AccessProtocol.1' % se)
