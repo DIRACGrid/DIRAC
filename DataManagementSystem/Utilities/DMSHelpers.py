@@ -309,6 +309,8 @@ class DMSHelpers(object):
     sites = [site for site in mapping if se in mapping[site]]
     if len(sites) > 1 and self.__opsHelper.getValue('DataManagement/ForceSingleSitePerSE', True):
       return S_ERROR('SE is at more than one site')
+    if len(sites) == 0:
+      return S_ERROR('SE does not belong to any site')
     return S_OK(sites)
 
   def getProtocolSitesForSE(self, se):
