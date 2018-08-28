@@ -14,14 +14,27 @@ DIRAC provides an abstraction of a SE interface that allows to access different 
       WriteAccess = Active
       AccessProtocol.1
       {
+        # The name of the DIRAC Plugin module to be used for implementation
+        # of the access protocol
         PluginName = SRM2
+        # Flag specifying the access type (local/remote)
         Access = remote
+        # Protocol name
         Protocol = srm
+        # Host endpoint
         Host = srm-lhcb.cern.ch
         Port = 8443
+        # WSUrl part of the SRM-type PFNs
         WSUrl = /srm/managerv2?SFN=
+        # Path to navigate to the VO namespace on the storage
         Path = /castor/cern.ch/grid
+        # SRM space token
         SpaceToken = LHCb_USER
+        # VO specific path definitions
+        VOPath
+        {
+          biomed = /castor/cern.ch/biomed/grid
+        }
       }
     }
 
@@ -39,6 +52,14 @@ Configuration options are:
 * `CheckAccess`: default `True`. Allowed for Check if no RSS enabled
 * `RemoveAccess`: default `True`. Allowed for Remove if no RSS enabled
 
+VO specific paths
+^^^^^^^^^^^^^^^^^
+
+Storage Elements supporting multiple VO's can have definitions slightly differing with respect
+to the `Path` used to navigate to the VO specific namespace in the physical storage. If a generic
+`Path` can not be suitable for all the allowed VO's a `VOPath` section can be added to the Plugin
+definition section as shown in the example above. In this section a specific `Path` can be defined for
+each VO which needs it.
 
 
 -------------------
