@@ -1,4 +1,4 @@
-"""Service interface is the service who provide config for client and synchronize Master/Slave servers"""
+"""Service interface is the service which provide config for client and synchronize Master/Slave servers"""
 
 import os
 import time
@@ -16,7 +16,7 @@ from DIRAC.ConfigurationSystem.Client.ConfigurationServerClient import Configura
 
 
 class ServiceInterfaceBase(object):
-  """Service interface is the service who provide config for client and synchronize Master/Slave servers"""
+  """Service interface is the service which provide config for client and synchronize Master/Slave servers"""
 
   def __init__(self, sURL):
     self.sURL = sURL

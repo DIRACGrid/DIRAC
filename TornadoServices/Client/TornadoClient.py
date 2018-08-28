@@ -6,7 +6,7 @@
   in RPC.
 
   Main changes:
-    - KeepAliveLapse is removed, requests library manage it hitself.
+    - KeepAliveLapse is removed, requests library manage it itself.
     - nbOfRetry (defined as private attribute) is removed, requests library manage it hitself.
     - Underneath it use HTTP POST protocol and JSON
 

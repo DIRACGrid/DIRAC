@@ -24,7 +24,7 @@ class ServiceInterface(ServiceInterfaceBase, threading.Thread):
 
   def __launchCheckSlaves(self):
     """
-      Start loop who check if slaves are alive
+      Start loop which check if slaves are alive
     """
     gLogger.info("Starting purge slaves thread")
     self.setDaemon(1)

@@ -430,9 +430,15 @@ class TornadoBaseClient(object):
     return url
 
   def getServiceName(self):
+    """
+      Returns the name of the service, if you had given a url at init, returns the URL.
+    """
     return self._serviceName
 
   def getDestinationService(self):
+    """
+      Returns the url the service.
+    """
     return getServiceURL(self._serviceName)
 
   def _getBaseStub(self):
@@ -454,6 +460,13 @@ class TornadoBaseClient(object):
     return (self._destinationSrv, newKwargs)
 
   def _request(self, postArguments, retry=0):
+    """
+      Sends the request to server
+
+      :param postArguments: dictionnary with arguments who needs to be sends, 
+              you should have "method" (str, name of distant method) 
+              and "args" (str in JSON, list of arguments for ce procedure)
+    """
 
     # Adding some informations to send
     if self.__extraCredentials:

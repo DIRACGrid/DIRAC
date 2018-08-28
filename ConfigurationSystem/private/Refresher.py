@@ -242,7 +242,7 @@ class Refresher(RefresherBase, threading.Thread):
 class TornadoRefresher(RefresherBase):
   """
     The refresher, modified for Tornado
-    It's the same refresher, the only thing who change is
+    It's the same refresher, the only thing which change is
     that we are using the IOLoop instead of threads for background 
     tasks, so it work with Tornado (HTTPS server).
   """
@@ -349,7 +349,7 @@ class TornadoRefresher(RefresherBase):
 
 
 
-# Here we define the refresher who should be used.
+# Here we define the refresher which should be used.
 # By default we use the original refresher.
 
 # Be careful, if you never start the IOLoop (with a TornadoServer for example)

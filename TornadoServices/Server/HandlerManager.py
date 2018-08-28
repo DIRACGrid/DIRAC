@@ -1,7 +1,7 @@
 """
 
   HandlerManager for tornado
-  This class search in the CS all services who use HTTPS and load them.
+  This class search in the CS all services which use HTTPS and load them.
 
   Must be used with the TornadoServer
 
@@ -36,21 +36,22 @@ class HandlerManager(object):
     It search and loads the handlers of services
   """
 
-  def __init__(self, autoDiscovery=True, setup=None):
+  def __init__(self, autoDiscovery=True):
     """
       Initialization function, you can set autoDiscovery=False to prevent automatic
       discovery of handler. If disabled you can use loadHandlersByServiceName() to
       load your handlers or loadHandlerInHandlerManager()
+
+      :param autoDiscovery=False: Disable the automatic discovery, can be used to choose service we want to load.
     """
     self.__handlers = {}
     self.__objectLoader = ObjectLoader()
-    self.setup = setup
     self.__autoDiscovery = autoDiscovery
     self.loader = ModuleLoader("Service", PathFinder.getServiceSection, RequestHandler, moduleSuffix="Handler")
 
   def __addHandler(self, handlerTuple, url=None):
     """
-      Function who add handler to list of known handlers
+      Function which add handler to list of known handlers
 
 
       :param handlerTuple: (path, class)
@@ -104,7 +105,7 @@ class HandlerManager(object):
             for service in services['Value']:
               newservice = ("%s/%s" % (system, service))
 
-              # We search in the CS all handlers who used HTTPS as protocol
+              # We search in the CS all handlers which used HTTPS as protocol
               isHTTPS = gConfig.getValue('/Systems/%s/%s/Services/%s/Protocol' % (system, instance, service))
               if isHTTPS and isHTTPS.lower() == 'https':
                 serviceList.append(newservice)

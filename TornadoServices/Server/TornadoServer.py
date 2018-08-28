@@ -117,7 +117,7 @@ class TornadoServer(object):
     router = Application(self.urls, debug=self.debugSSL)
 
     certs = Locations.getHostCertificateAndKeyLocation()
-    if certs == False:
+    if certs is False:
       gLogger.fatal("Host certificates not found ! Can't start the Server")
       raise ImportError("Unable to load certificates")
     ca = Locations.getCAsLocation()

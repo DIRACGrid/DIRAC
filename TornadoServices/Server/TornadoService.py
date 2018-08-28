@@ -309,7 +309,7 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
 
 
     # This line get certificates, it must be change when M2Crypto will be fully integrated in tornado
-    chainAsText = self.request.connection.stream.socket.get_peer_cert().as_pem()
+    chainAsText = self.request.get_ssl_certificate().as_pem()
     peerChain = X509Chain()
 
     # Here we read all certificate chain
