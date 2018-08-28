@@ -5,6 +5,7 @@ import os
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.TransferClient import TransferClient
+from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOMSAttributeForGroup, getDNForUsername
 from DIRAC.Resources.Catalog.Utilities import checkCatalogArguments
@@ -110,13 +111,18 @@ class FileCatalogClient(FileCatalogClientBase):
     result = rpcClient.getReplicas(lfns, allStatus)
     if not result['OK']:
       return result
+    vo = getVOfromProxyGroup().get( 'Value', None )
 
     lfnDict = result['Value']
     seDict = result['Value'].get('SEPrefixes', {})
     for lfn in lfnDict['Successful']:
       for se in lfnDict['Successful'][lfn]:
-        if not lfnDict['Successful'][lfn][se] and se in seDict:
-          lfnDict['Successful'][lfn][se] = seDict[se] + lfn
+        if not lfnDict['Successful'][lfn][se]:
+          # For some VO's the prefix can be non-standard
+          if "VOPrefix" in seDict and se in seDict['VOPrefix'] and vo in seDict['VOPrefix'][se]:
+            lfnDict['Successful'][lfn][se] = seDict['VOPrefix'][se][vo] + lfn
+          elif se in seDict:
+            lfnDict['Successful'][lfn][se] = seDict[se] + lfn
 
     return S_OK(lfnDict)
 
