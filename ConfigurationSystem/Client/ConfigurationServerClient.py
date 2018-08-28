@@ -13,7 +13,7 @@ from DIRAC.Core.Base.Client import Client
 
 
 
-class ConfigurationServerJSON(TornadoClient):
+class CSJSONClient(TornadoClient):
   """
     The specific client for configuration system.
     To avoid JSON limitation the HTTPS handler encode data in base64
@@ -66,9 +66,10 @@ class ConfigurationServerClient(Client):
     RPCCall can be made inside this class with executeRPC method.
   """
 
+  httpsClient = CSJSONClient
+  
   # The JSON decoder for Configuration Server
   def __init__(self, **kwargs):
     if 'url' not in kwargs:
       kwargs['url'] = 'Configuration/Server'
     super(ConfigurationServerClient, self).__init__(**kwargs)
-  httpsClient = ConfigurationServerJSON
