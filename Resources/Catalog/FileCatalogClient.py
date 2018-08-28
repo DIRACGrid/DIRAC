@@ -111,7 +111,7 @@ class FileCatalogClient(FileCatalogClientBase):
     result = rpcClient.getReplicas(lfns, allStatus)
     if not result['OK']:
       return result
-    vo = getVOfromProxyGroup().get( 'Value', None )
+    vo = getVOfromProxyGroup().get('Value', None)
 
     lfnDict = result['Value']
     seDict = result['Value'].get('SEPrefixes', {})
