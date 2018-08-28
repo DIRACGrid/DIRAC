@@ -13,7 +13,7 @@ from types import IntType, LongType, StringTypes
 class SEManagerBase:
 
   def _refreshSEs( self, connection = False ):
-    """Refrech the SE cache"""
+    """Refresh the SE cache"""
 
     return S_ERROR( "To be implemented on derived class" )
 
@@ -186,6 +186,11 @@ class SEManagerDB( SEManagerBase ):
       return result
     seDict = result['Value']
     self.db.seDefinitions[seID]['SEDict'] = seDict
+    #Get VO paths if any
+    voPathDict = None
+    result = gConfig.getOptionsDict('/Resources/StorageElements/%s/%s/VOPath' % (se, pluginSection))
+    if result['OK']:
+      voPathDict = result['Value']
     if seDict:
       # A.T. Ports can be multiple, this can be better done using the Storage plugin
       # to provide the replica prefix to keep implementations in one place
@@ -200,6 +205,12 @@ class SEManagerDB( SEManagerBase ):
       result = pfnunparse( tmpDict )
       if result['OK']:
         self.db.seDefinitions[seID]['SEDict']['PFNPrefix'] = result['Value']
+      if voPathDict is not None:
+        for vo in voPathDict:
+          tmpDict['Path'] = voPathDict[vo]
+          result = pfnunparse(tmpDict)
+          if result['OK']:
+            self.db.seDefinitions[seID]['SEDict'].setdefault("VOPrefix",{})[vo] = result['Value']
     self.db.seDefinitions[seID]['LastUpdate'] = time.time()
     return S_OK( self.db.seDefinitions[seID] )
 
@@ -214,6 +225,12 @@ class SEManagerDB( SEManagerBase ):
     for seID in self.db.seDefinitions:
       resultDict[self.db.seDefinitions[seID]['SEName']] = \
          self.db.seDefinitions[seID]['SEDict'].get( 'PFNPrefix', '' )
+
+      # Check if some paths are specific for VO's and add these definitions
+      if self.db.seDefinitions[seID]['SEDict'].get('VOPrefix'):
+        resultDict.setdefault('VOPrefix', {})
+        resultDict['VOPrefix'][self.db.seDefinitions[seID]['SEName']] = \
+          self.db.seDefinitions[seID]['SEDict'].get('VOPrefix')
 
     return S_OK( resultDict )
 
