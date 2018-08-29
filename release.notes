@@ -34,6 +34,20 @@ NEW: (#3744) Added miniInstallDIRAC function for Jenkins jobs
 FIX: Better dirac.cfg example configuration for web
 NEW: (#3744) Add WMS documentation in DeveloperGuide/Systems
 
+[v6r20p12]
+
+*Core
+FIX: (#3807) Glue2 will return a constant 2500 for the SI00 queue parameter, 
+     any value is needed so that the SiteDirector does not ignore the queue, fixes #3790
+
+*DataManagementSystem
+FIX: (#3814) SEManager - adapt to the new meaning of the SE plugin section name
+FIX: (#3814) SEManager - return also VO specific prefixes for the getReplicas() and similar calls
+FIX: (#3814) FileCatalogClient - take into account VO specific prefixes when constructing PFNs on the fly
+
+*TransformationSystem
+FIX: (#3812) checking return value of jobManagerClient.getMaxParametricJobs() call
+
 [v6r20p11]
 
 *Core
