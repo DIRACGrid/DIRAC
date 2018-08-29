@@ -246,7 +246,7 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
       return S_ERROR("Unknown method %s" % self.method)
 
     # Decode args
-    args_encoded = self.get_body_argument('args', default=[])
+    args_encoded = self.get_body_argument('args', default=encode([]))
 
     args = decode(args_encoded)[0]
     # Execute
@@ -254,7 +254,7 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
       self.initializeRequest()
       retVal = method(*args)
     except Exception as e:  # pylint: disable=broad-except
-      retVal = S_ERROR(e)
+      retVal = S_ERROR(repr(e))
       self._httpError = HTTPErrorCodes.HTTP_INTERNAL_SERVER_ERROR
 
     return retVal
