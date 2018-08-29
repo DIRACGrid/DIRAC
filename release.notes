@@ -40,6 +40,10 @@ NEW: (#3744) Add WMS documentation in DeveloperGuide/Systems
 FIX: (#3807) Glue2 will return a constant 2500 for the SI00 queue parameter, 
      any value is needed so that the SiteDirector does not ignore the queue, fixes #3790
 
+*ConfigurationSystem
+FIX: (#3797) VOMS2CSAgent: return error when VO is not set (instead of exception)
+FIX: (#3797) BDII2CSAgent: Fix for GLUE2URLs option in ConfigTemplate (Lower case S at the end)
+
 *DataManagementSystem
 FIX: (#3814) SEManager - adapt to the new meaning of the SE plugin section name
 FIX: (#3814) SEManager - return also VO specific prefixes for the getReplicas() and similar calls

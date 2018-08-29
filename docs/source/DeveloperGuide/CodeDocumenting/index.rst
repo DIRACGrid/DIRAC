@@ -26,8 +26,9 @@ Release documentation
 
 Releases documentation can be found in 2 places: release notes, and github wiki:
 
-  * release notes are automatically created from titles of the Pull Requests. So,
-    pay attention to what you put in there.
+  * release notes are automatically created from the first comment in the pull
+    requests, please describe the changes between BEGRINRELEASENOTES and
+    ENDRELEASENOTES as presented by the template provided
 
   * The github wiki can contain a section, for each DIRACGrid repository,
     highlighting update operations, for example the DIRAC releases notes are
@@ -47,3 +48,24 @@ This documentation is written in ``RST`` and it is compiled using
 Some parts of the documentation can use UML diagrams. They are generated from .uml files
 with `plantuml <http://plantuml.com/starting>`_. Sphinx support plantuml but ReadTheDocs
 didn't, so you have to convert .uml in .png with ``java -jar plantuml.jar file.uml``.
+
+
+.. _codedocumenting_parameters:
+
+Component Options documentation
+-------------------------------
+
+The agent, service and executor options are documented in their respective
+module docstring via literal include of their options in the
+ConfigTemplate.cfg::
+
+   .. literalinclude:: ../ConfigTemplate.cfg
+     :start-after: ##BEGIN MyComponent
+     :end-before: ##END
+     :dedent: 2
+     :caption: MyComponent options
+
+Around the section in the *ConfigTemplate.cfg* configuring the component the
+*##BEGIN MyComponent* and *##END* tags need set so that the include is
+restricted to the section belonging to the component. The options *:dedent:* and
+*:caption:* are optional, but create a nicer output.
