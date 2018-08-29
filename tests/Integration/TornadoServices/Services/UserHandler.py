@@ -1,6 +1,10 @@
+""" Dummy Service is a service for testing new dirac protocol
+  This file must be copied in FrameworkSystem/Service to run tests
+"""
+
 from DIRAC.TornadoServices.Server.TornadoService import TornadoService
 from DIRAC import S_OK, gLogger
-from DIRAC.FrameworkSystem.DB.UserDB import UserDB
+from DIRAC.FrameworkSystem.DB.UserDB import UserDB #pylint: disable=no-name-in-module, import-error
 from DIRAC import gConfig
 
 class UserHandler(TornadoService):

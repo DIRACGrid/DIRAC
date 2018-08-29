@@ -1,11 +1,12 @@
 """ Dummy Service is a service for testing new dirac protocol
+  This file must be copied in FrameworkSystem/Service to run tests
 """
 
 __RCSID__ = "$Id$"
 
 from DIRAC import S_OK
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.FrameworkSystem.DB.UserDB import UserDB
+from DIRAC.FrameworkSystem.DB.UserDB import UserDB #pylint: disable=no-name-in-module, import-error
 from DIRAC import gConfig
 
 class UserDiracHandler(RequestHandler):

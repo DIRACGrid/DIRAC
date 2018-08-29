@@ -1,6 +1,7 @@
 """
     This handler is only here to test if Tornado server starts
     It can be used for some tests (like performance test on ping)
+    This file must be copied in FrameworkSystem/Service to run tests
 """
 
 
