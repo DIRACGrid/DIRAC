@@ -267,9 +267,9 @@ class TornadoRefresher(RefresherBase):
 
       We disable pylint error because this class must be instanciated by a mixin to define the missing methods
     """
-    if not self._refreshEnabled or self._automaticUpdate or not gConfigurationData.getServers():  # pylint: disable=no-member
+    if not self._refreshEnabled or self._automaticUpdate: # pylint: disable=no-member
       return
-    if not self._lastRefreshExpired():  # pylint: disable=no-member
+    if not gConfigurationData.getServers() or not self._lastRefreshExpired():  # pylint: disable=no-member
       return
     self._lastUpdateTime = time.time()
     self.IOLoop.current().run_in_executor(None, self._refresh)  # pylint: disable=no-member

@@ -1,7 +1,7 @@
 import xmlrpclib
 import time
 import sys
-### BEGIN OF CONFIGURATION ###
+# == BEGIN OF CONFIGURATION ==
 
 # Add all machine who have multimechanize client
 serversList = ['137.138.150.194', 'server2']

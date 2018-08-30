@@ -29,7 +29,6 @@ from DIRAC.ConfigurationSystem.private.Refresher import gRefresher
 if gConfigurationData.isMaster():
   gRefresher.disable()
 
-#Script.parseCommandLine(ignoreErrors = True)
 localCfg = LocalConfiguration()
 localCfg.addMandatoryEntry("/DIRAC/Setup")
 localCfg.addDefaultEntry("/DIRAC/Security/UseServerCertificate", "yes")

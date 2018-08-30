@@ -107,10 +107,12 @@ def config(request):
 client_imp = (
     (TornadoClient, 'WorkloadManagement/ServiceHttps'),
     (TornadoClient, 'https://server1:1234/WorkloadManagement/ServiceHttps'),
-    (TornadoClient, 'https://server1:1234/WorkloadManagement/ServiceHttps,https://server2:1234/WorkloadManagement/ServiceHttps'),
+    (TornadoClient,
+     'https://server1:1234/WorkloadManagement/ServiceHttps,https://server2:1234/WorkloadManagement/ServiceHttps'),
     (RPCClient, 'WorkloadManagement/ServiceDips'),
     (RPCClient, 'dips://server1:1234/WorkloadManagement/ServiceDips'),
-    (RPCClient, 'dips://server1:1234/WorkloadManagement/ServiceDips,dips://server2:1234/WorkloadManagement/ServiceDips'),
+    (RPCClient,
+     'dips://server1:1234/WorkloadManagement/ServiceDips,dips://server2:1234/WorkloadManagement/ServiceDips'),
 )
 
 
@@ -162,8 +164,7 @@ def test_interface():
 
 client_imp = (
     (2, 'WorkloadManagement/ServiceHttps'),
-    (1, 'https://server1:1234/WorkloadManagement/ServiceHttps'),
-    #(2, 'https://server1:1234/WorkloadManagement/ServiceHttps,https://server2:1234/WorkloadManagement/ServiceHttps'), In DIRAC AND Tornado we can give only 1 url
+    (1, 'https://server1:1234/WorkloadManagement/ServiceHttps')
 )
 
 

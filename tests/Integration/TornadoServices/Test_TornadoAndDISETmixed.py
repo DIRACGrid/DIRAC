@@ -1,16 +1,21 @@
 """
-    (Case 1) This is a integration test with a Service under Tornado(tornado-start-all) AND a configuration server under DISET (dirac-service)
+    (Case 1) This is a integration test with a Service under Tornado(tornado-start-all) 
+    AND a configuration server under DISET (dirac-service)
 
-    (Case 2) We run the same test with Service under DISET and CS under Tornado, use tornado-start-CS to start the CS.
+    (Case 2) We run the same test with Service under DISET and CS under Tornado, 
+    use tornado-start-CS to start the CS.
 
     [tornado-start-all and tornado-start-CS can be found at DIRAC/TornadoServices/scripts]
 
 
     We test with
-        - for the CS: Configuration/Server (handlerPath define path to load ConfigurationHandler.py, or TornadoConfigurationHandler.py in the second case)
-        - for the service: Framework/User (for the second case handlerPath should define path to UserDiracHandler.py, see example bellow)
+        - for the CS: Configuration/Server (handlerPath define path to load ConfigurationHandler.py, 
+        or TornadoConfigurationHandler.py in the second case)
+        - for the service: Framework/User (for the second case handlerPath should define 
+        path to UserDiracHandler.py, see example bellow)
 
-        The CS, service and client (this test) must read different dirac.cfg files and are not necessary on the same computer
+        The CS, service and client (this test) must read different dirac.cfg files and are 
+        not necessary on the same computer
 
         In the config file distributed by the CS you should see something like::
         ```
@@ -46,7 +51,8 @@
         }
         Registry {...}
         ```
-        For the service you need to define the database (case 1 and 2) and Tornado (case 1), so in the config file loaded by service you should see::
+        For the service you need to define the database (case 1 and 2) and Tornado (case 1), 
+        so in the config file loaded by service you should see::
         ```
           DIRAC
           {
@@ -132,7 +138,7 @@ def test_authorization():
   service = RPCClient("Framework/User")
 
   authorisation = service.unauthorized()  # In the handler this method have no allowed properties
-  assert authorisation['OK'] == False
+  assert authorisation['OK'] is False
   assert authorisation['Message'] == S_ERROR(ENOAUTH, "Unauthorized query")['Message']
 
 
@@ -140,7 +146,7 @@ def test_unknown_method():
   service = RPCClient("Framework/User")
 
   unknownmethod = service.ThisMethodMayNotExist()
-  assert unknownmethod['OK'] == False
+  assert unknownmethod['OK'] is False
   assert unknownmethod['Message'] == "Unknown method ThisMethodMayNotExist"
 
 
@@ -168,7 +174,7 @@ def test_configurationAutoUpdate(value1, value2):
   """
   csapi = CSAPI()
 
-  ### SETTING FIRST VALUE ###
+  # SETTING FIRST VALUE
   csapi.modifyValue("/DIRAC/Configuration/TestUpdateValue", value1)
   csapi.commitChanges()
 
@@ -177,7 +183,7 @@ def test_configurationAutoUpdate(value1, value2):
   RPCClient("Framework/User").getTestValue()
   assert RPCClient("Framework/User").getTestValue()['Value'] == value1
 
-  ### SETTING SECOND VALUE ###
+  # SETTING SECOND VALUE 
   csapi.modifyValue("/DIRAC/Configuration/TestUpdateValue", value2)
   csapi.commitChanges()
   time.sleep(gConfigurationData.getPropagationTime() + 1)

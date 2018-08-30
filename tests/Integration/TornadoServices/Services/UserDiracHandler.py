@@ -7,8 +7,9 @@ __RCSID__ = "$Id$"
 from DIRAC import S_OK
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 # You need to copy ../DB/UserDB in DIRAC/FrameworkSystem/DB
-from DIRAC.FrameworkSystem.DB.UserDB import UserDB #pylint: disable=no-name-in-module, import-error
+from DIRAC.FrameworkSystem.DB.UserDB import UserDB  # pylint: disable=no-name-in-module, import-error
 from DIRAC import gConfig
+
 
 class UserDiracHandler(RequestHandler):
   """
@@ -22,12 +23,6 @@ class UserDiracHandler(RequestHandler):
     """
     cls.userDB = UserDB()
     return S_OK()
-
-  def initialize(self):
-    """ Response initialization
-    """
-
-
 
   auth_addUser = ['all']
   types_addUser = [basestring]

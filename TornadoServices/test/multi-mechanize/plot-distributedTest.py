@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import sys
 
 
-### BEGIN OF CONFIGURATION ###
+# == BEGIN OF CONFIGURATION ==
 
 # FOR DISPLAY - Enter settings relative to test
 system = 'Test ping - timeout=30 - Diset Server'
@@ -18,13 +18,13 @@ server_maxThreads = 20
 memoryOffset = 0
 
 plt.suptitle(
-    '%s with %d threads\n %d threads/client - %d clients (total %d threads) \n duration: %dsec - rampup %dsec \n latency between client starts: 2s' %
+    '%s with %d threads\n %d threads/client - %d clients (total %d threads) \n \
+     duration: %dsec - rampup %dsec \n latency between client starts: 2s' %
     (system,
      server_maxThreads,
      multimech_thread,
      multimech_clients,
-     multimech_clients *
-     multimech_thread,
+     multimech_clients * multimech_thread,
      multimech_time,
      multimech_rampup))
 

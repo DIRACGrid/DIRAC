@@ -11,7 +11,6 @@ from DIRAC import S_OK, S_ERROR
 
 class DummyTornadoHandler(TornadoService):
 
-  #LOCATION = "Framework/Dummy"
 
   auth_true = ['all']
 

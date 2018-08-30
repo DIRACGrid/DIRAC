@@ -18,17 +18,14 @@ GSI.crypto.add_x509_extension_alias(nid, 78)  # Alias to netscape comment, text 
 # USE_TORNADO_IOLOOP is defined in tornado starting script, you don't have to care about it
 # it's defined when tornado is running
 if not os.environ.get('USE_TORNADO_IOLOOP', 'false').lower() == 'true':
-  ########### WARNING ###########
+  # WARNING 
   #
   # I don't really know how PyGSI and M2Crypto works, These lines initialise some variables for
   # PyGSI so you need them, but with Tornado (and M2Crypto) it won't work. (it's why there is "if")
   # For devellopement it work like this, for production you may migrate to M2Crypto before
   # migrate to Tornado which use M2Crypto
   #
-  # Maybe it's better not to merge this code with integration branch while M2Crypto is not implemented
-  # or while Tornado (and his M2Crypto version) is not merge too.
-  #
-  ################################
+  # This fix should not stay and should be removed when PyGSI will be fully removed of DIRAC
   nid = GSI.crypto.create_oid("1.3.6.1.4.1.8005.100.100.5", "vomsExtensions", "VOMS extension")
   GSI.crypto.add_x509_extension_alias(nid, 78)  # Alias to netscape comment, text based extension
   nid = GSI.crypto.create_oid("1.3.6.1.4.1.8005.100.100.11", "vomsAttribute", "VOMS attribute")

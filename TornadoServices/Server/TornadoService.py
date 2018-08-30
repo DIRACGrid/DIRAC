@@ -425,7 +425,6 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
 #
 ####
 
-
   @classmethod
   def srv_getCSOption(cls, optionName, defaultValue=False):
     """

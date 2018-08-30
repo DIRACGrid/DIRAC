@@ -210,7 +210,7 @@ class TornadoBaseClient(object):
       except BaseException:
         return S_ERROR("Invalid proxy chain specified on instantiation")
 
-    ##### REWRITED FROM HERE #####
+    # ==== REWRITED FROM HERE ====
 
     # Getting proxy
 
@@ -374,7 +374,7 @@ class TornadoBaseClient(object):
         urlsList.remove(i)
 
     # Take the first URL from the list
-    #randUrls = List.randomize( urlsList ) + failoverUrls
+    # randUrls = List.randomize( urlsList ) + failoverUrls
 
     sURL = urlsList[0]
 
@@ -501,7 +501,7 @@ class TornadoBaseClient(object):
       return S_ERROR(str(e))
 
 
-#### TODO ####
-# Rewrite this method:
+# --- TODO ----
+# Rewrite this method if needed:
 #  /Core/DISET/private/BaseClient.py
 # __delegateCredentials

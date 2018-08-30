@@ -37,7 +37,6 @@ if gConfigurationData.isMaster() and gConfig.getValue(
   gLogger.fatal("You can't run the CS and services in the same server!")
   sys.exit(0)
 
-#Script.parseCommandLine(ignoreErrors = True)
 localCfg = LocalConfiguration()
 localCfg.addMandatoryEntry("/DIRAC/Setup")
 localCfg.addDefaultEntry("/DIRAC/Security/UseServerCertificate", "yes")
