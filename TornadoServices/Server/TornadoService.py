@@ -414,7 +414,6 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
       del credDict['x509Chain']
     return S_OK(credDict)
 
-
 ####
 #
 #  Utilities methods, some getters.
