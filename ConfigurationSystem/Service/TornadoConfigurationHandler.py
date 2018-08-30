@@ -16,8 +16,6 @@ from DIRAC.Core.Utilities import DErrno
 from DIRAC.TornadoServices.Server.TornadoService import TornadoService
 
 
-
-
 class TornadoConfigurationHandler(TornadoService):
   """ The CS handler
   """
@@ -33,13 +31,11 @@ class TornadoConfigurationHandler(TornadoService):
     cls.ServiceInterface = ServiceInterface(serviceInfo['URL'])
     return S_OK()
 
-
   def export_getVersion(self):
     """
       Returns the version of the configuration
     """
     return S_OK(self.ServiceInterface.getVersion())
-
 
   def export_getCompressedData(self):
     """
@@ -47,7 +43,6 @@ class TornadoConfigurationHandler(TornadoService):
     """
     sData = self.ServiceInterface.getCompressedConfigurationData()
     return S_OK(b64encode(sData))
-
 
   def export_getCompressedDataIfNewer(self, sClientVersion):
     """
@@ -61,7 +56,6 @@ class TornadoConfigurationHandler(TornadoService):
       retDict['data'] = b64encode(self.ServiceInterface.getCompressedConfigurationData())
     return S_OK(retDict)
 
-
   def export_publishSlaveServer(self, sURL):
     """
       Used by slave server to register as a slave server.
@@ -70,7 +64,6 @@ class TornadoConfigurationHandler(TornadoService):
     """
     self.ServiceInterface.publishSlaveServer(sURL)
     return S_OK()
-
 
   def export_commitNewData(self, sData):
     """
@@ -99,17 +92,15 @@ class TornadoConfigurationHandler(TornadoService):
 
     return res
 
-
   def export_writeEnabled(self):
     """
       Used to know if we can change the configuration on this server
     """
     return S_OK(self.ServiceInterface.isMaster())
 
-
   def export_getCommitHistory(self, limit=100):
     """
-      Get the history of modifications in the configuration 
+      Get the history of modifications in the configuration
     """
     if limit > 100:
       limit = 100
@@ -117,7 +108,6 @@ class TornadoConfigurationHandler(TornadoService):
     if limit:
       history = history[:limit]
     return S_OK(history)
-
 
   def export_getVersionContents(self, versionList):
     """
@@ -134,7 +124,6 @@ class TornadoConfigurationHandler(TornadoService):
         return S_ERROR("Can't get contents for version %s: %s" % (version, retVal['Message']))
     return S_OK(contentsList)
 
-
   def export_rollbackToVersion(self, version):
     """
       Rollback to an older version of the configuration
@@ -148,5 +137,5 @@ class TornadoConfigurationHandler(TornadoService):
     if 'DN' not in credDict or 'username' not in credDict:
       return S_ERROR("You must be authenticated!")
     return self.ServiceInterface.updateConfiguration(retVal['Value'],
-                                                 credDict['username'],
-                                                 updateVersionOption=True)
+                                                     credDict['username'],
+                                                     updateVersionOption=True)

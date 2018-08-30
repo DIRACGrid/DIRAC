@@ -33,13 +33,13 @@ class UserDB(DB):
     if 'user_mytable' not in tablesInDB:
       tablesD['user_mytable'] = {'Fields': {'Id': 'INTEGER NOT NULL AUTO_INCREMENT', 'Name': 'VARCHAR(64) NOT NULL'},
                                  'PrimaryKey': ['Id']
-                                }
+                                 }
 
     return self._createTables(tablesD)
 
   def addUser(self, userName):
-    """ 
-    Add a user 
+    """
+    Add a user
       :param str userName: The name of the user we want to add
       :return: S_OK or S_ERROR
     """
@@ -47,8 +47,8 @@ class UserDB(DB):
     return self.insertFields('user_mytable', ['Name'], [userName])
 
   def editUser(self, uid, value):
-    """ 
-      Edit a user 
+    """
+      Edit a user
       :param int uid: The Id of the user in database
       :param str value: New user name
       :return: S_OK or S_ERROR
@@ -56,8 +56,8 @@ class UserDB(DB):
     return self.updateFields('user_mytable', updateDict={'Name': value}, condDict={'Id': uid})
 
   def getUserName(self, uid):
-    """ 
-      Get a user 
+    """
+      Get a user
       :param int uid: The Id of the user in database
       :return: S_OK with S_OK['Value'] = TheUserName or S_ERROR if not found
     """

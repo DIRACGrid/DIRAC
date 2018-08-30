@@ -11,7 +11,6 @@ import random
 import os
 
 
-
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.ConfigurationSystem.Client.PathFinder import getGatewayURLs
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
@@ -268,12 +267,12 @@ class TornadoRefresher(RefresherBase):
 
       We disable pylint error because this class must be instanciated by a mixin to define the missing methods
     """
-    if not self._refreshEnabled or self._automaticUpdate or not gConfigurationData.getServers(): #pylint: disable=no-member
+    if not self._refreshEnabled or self._automaticUpdate or not gConfigurationData.getServers():  # pylint: disable=no-member
       return
-    if not self._lastRefreshExpired(): #pylint: disable=no-member
+    if not self._lastRefreshExpired():  # pylint: disable=no-member
       return
     self._lastUpdateTime = time.time()
-    self.IOLoop.current().run_in_executor(None, self._refresh) #pylint: disable=no-member
+    self.IOLoop.current().run_in_executor(None, self._refresh)  # pylint: disable=no-member
     return
 
   def autoRefreshAndPublish(self, sURL):
@@ -323,18 +322,14 @@ class TornadoRefresher(RefresherBase):
       We disable pylint error because this class must be instanciated
       by a mixin to define the methods.
     """
-    if self._refreshEnabled: #pylint: disable=no-member
-      if not self._refreshAndPublish(): #pylint: disable=no-member
+    if self._refreshEnabled:  # pylint: disable=no-member
+      if not self._refreshAndPublish():  # pylint: disable=no-member
         gLogger.error("Can't refresh configuration from any source")
-
 
   def daemonize(self):
     """ daemonize is probably not the best name because there is no daemon behind
     but we must keep it to the same interface of the DISET refresher """
     self.IOLoop.current().spawn_callback(self.__refreshLoop)
-
-
-
 
 
 # Here we define the refresher which should be used.
@@ -343,6 +338,7 @@ class TornadoRefresher(RefresherBase):
 # Be careful, if you never start the IOLoop (with a TornadoServer for example)
 # the TornadoRefresher will not work. IOLoop can be started after refresher
 # but background tasks will be delayed until IOLoop start.
+
 
 # USE_TORNADO_IOLOOP is defined by starting scripts
 if os.environ.get('USE_TORNADO_IOLOOP', 'false').lower() == 'true':

@@ -114,7 +114,7 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
                    'serviceSectionPath': PathFinder.getServiceSection(serviceName),
                    'csPaths': [PathFinder.getServiceSection(serviceName)],
                    'URL': absoluteUrl
-                  }
+                   }
     cls._serviceInfoDict = serviceInfo
 
     cls.__monitorLastStatsUpdate = time.time()
@@ -197,7 +197,7 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
 
     try:
       self.credDict = self.gatherPeerCredentials()
-    except Exception: # pylint: disable=broad-except
+    except Exception:  # pylint: disable=broad-except
       # If an error occur when reading certificates we close connection
       # It can be strange but the RFC, for HTTP, say's that when error happend
       # before authenfication we return 401 UNAUTHORIZED instead of 403 FORBIDDEN
@@ -303,10 +303,9 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
     """
       Load client certchain in DIRAC and extract informations.
 
-      The dictionnary returned is designed to work with the AuthManager, 
+      The dictionnary returned is designed to work with the AuthManager,
       already written for DISET and re-used for HTTPS.
     """
-
 
     # This line get certificates, it must be change when M2Crypto will be fully integrated in tornado
     chainAsText = self.request.get_ssl_certificate().as_pem()
@@ -354,6 +353,7 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
 ####
 
   auth_ping = ['all']
+
   def export_ping(self):
     """
       Default ping method, returns some info about server.
@@ -389,11 +389,12 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
                           'children user time': stTimes[2],
                           'children system time': stTimes[3],
                           'elapsed real time': stTimes[4]
-                         }
+                          }
 
     return S_OK(dInfo)
 
   auth_echo = ['all']
+
   @staticmethod
   def export_echo(data):
     """
@@ -402,6 +403,7 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
     return S_OK(data)
 
   auth_whoami = ['authenticated']
+
   def export_whoami(self):
     """
       A simple whoami, returns all credential dictionnary, except certificate chain object.
@@ -422,6 +424,7 @@ class TornadoService(RequestHandler):  # pylint: disable=abstract-method
 #  these lines. I rewrite them for Tornado to get them ready when a new HTTPS service need them
 #
 ####
+
 
   @classmethod
   def srv_getCSOption(cls, optionName, defaultValue=False):

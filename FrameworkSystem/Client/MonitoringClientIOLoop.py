@@ -6,6 +6,7 @@
 import tornado.ioloop
 from DIRAC import gLogger
 
+
 class MonitoringFlusherTornado(object):
   """
   This class flushes all monitoring clients registered

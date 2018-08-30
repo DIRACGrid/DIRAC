@@ -12,7 +12,6 @@ from DIRAC.TornadoServices.Client.TornadoClient import TornadoClient
 from DIRAC.Core.Base.Client import Client
 
 
-
 class CSJSONClient(TornadoClient):
   """
     The specific client for configuration system.
@@ -21,7 +20,6 @@ class CSJSONClient(TornadoClient):
 
     An exception is made with CommitNewData wich ENCODE in base64
   """
-
 
   def getCompressedData(self):
     """
@@ -56,21 +54,20 @@ class CSJSONClient(TornadoClient):
     return self.executeRPC('commitNewData', b64encode(sData))
 
 
-
 class ConfigurationServerClient(Client):
   """
     Specific client to speak with ConfigurationServer.
 
-    This class must contain at least the JSON decoder dedicated to 
+    This class must contain at least the JSON decoder dedicated to
     the Configuration Server.
 
-    You can implement more logic or function to the client here if needed, 
+    You can implement more logic or function to the client here if needed,
     RPCCall can be made inside this class with executeRPC method.
   """
 
   # The JSON decoder for Configuration Server
   httpsClient = CSJSONClient
-  
+
   def __init__(self, **kwargs):
     # By default we use Configuration/Server as url, client do the resolution
     # In some case url has to be static (when a slave register to the master server for example)

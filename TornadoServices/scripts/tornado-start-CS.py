@@ -30,16 +30,16 @@ if gConfigurationData.isMaster():
   gRefresher.disable()
 
 #Script.parseCommandLine(ignoreErrors = True)
-localCfg=LocalConfiguration()
-localCfg.addMandatoryEntry( "/DIRAC/Setup" )
-localCfg.addDefaultEntry( "/DIRAC/Security/UseServerCertificate", "yes" )
-localCfg.addDefaultEntry( "LogLevel", "INFO" )
-localCfg.addDefaultEntry( "LogColor", True )
+localCfg = LocalConfiguration()
+localCfg.addMandatoryEntry("/DIRAC/Setup")
+localCfg.addDefaultEntry("/DIRAC/Security/UseServerCertificate", "yes")
+localCfg.addDefaultEntry("LogLevel", "INFO")
+localCfg.addDefaultEntry("LogColor", True)
 resultDict = localCfg.loadUserData()
-if not resultDict[ 'OK' ]:
-  gLogger.initialize("Tornado-CS", "/" )
-  gLogger.error( "There were errors when loading configuration", resultDict[ 'Message' ] )
-  sys.exit( 1 )
+if not resultDict['OK']:
+  gLogger.initialize("Tornado-CS", "/")
+  gLogger.error("There were errors when loading configuration", resultDict['Message'])
+  sys.exit(1)
 
 includeExtensionErrors()
 

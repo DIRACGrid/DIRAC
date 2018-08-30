@@ -15,4 +15,4 @@ class Transaction(object):
     return
 
   def run(self):
-    self.client.ping()    
+    self.client.ping()

@@ -3,7 +3,7 @@
     Testing if basic operation works on a dummy example
 
     These handlers provide a method who's access is always forbidden to test authorization system
-    
+
     It's just normal services, entry in dirac.cfg are the same as usual.
     To start tornado use DIRAC/TornadoServices/scripts/tornado-start-all.py
     ```
@@ -50,16 +50,13 @@ parametrize = mark.parametrize
 rpc_imp = ((RPCClientTornado, 'Framework/User'), (RPCClientDIRAC, 'Framework/UserDirac'))
 
 
-
-
 @parametrize('rpc', rpc_imp)
 def test_authorization(rpc):
   service = rpc[0](rpc[1])
 
   authorisation = service.unauthorized()
-  assert authorisation['OK'] == False 
+  assert authorisation['OK'] == False
   assert authorisation['Message'] == S_ERROR(ENOAUTH, "Unauthorized query")['Message']
-
 
 
 @parametrize('rpc', rpc_imp)
@@ -71,12 +68,11 @@ def test_unknown_method(rpc):
   assert unknownmethod['Message'] == "Unknown method ThisMethodMayNotExist"
 
 
-
 @parametrize('rpc', rpc_imp)
 def test_ping(rpc):
   service = rpc[0](rpc[1])
 
-  assert service.ping()['OK'] == True
+  assert service.ping()['OK']
 
 
 @parametrize('rpc', rpc_imp)
@@ -87,7 +83,8 @@ def test_echo(rpc, data):
 
   assert service.echo(data)['Value'] == data
 
-def test_whoami(): #Only in tornado
+
+def test_whoami():  # Only in tornado
   credDict = RPCClientTornado('Framework/User').whoami()['Value']
   assert 'DN' in credDict
   assert 'CN' in credDict

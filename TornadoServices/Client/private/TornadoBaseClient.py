@@ -33,8 +33,6 @@ from DIRAC.Core.Security import Locations
 from DIRAC.Core.DISET.ThreadConfig import ThreadConfig
 
 
-
-
 class TornadoBaseClient(object):
   """
     This class contain initialization method and all utilities method used for RPC
@@ -100,17 +98,17 @@ class TornadoBaseClient(object):
 
     # For pylint...
     self.setup = None
-    self.vo= None
+    self.vo = None
     self.serviceURL = None
     self.__proxy_location = None
 
     for initFunc in (
-        self.__discoverTimeout,
-        self.__discoverSetup,
-        self.__discoverVO,
-        self.__discoverCredentialsToUse,
-        self.__discoverExtraCredentials,
-        self.__discoverURL):
+            self.__discoverTimeout,
+            self.__discoverSetup,
+            self.__discoverVO,
+            self.__discoverCredentialsToUse,
+            self.__discoverExtraCredentials,
+            self.__discoverURL):
 
       result = initFunc()
       if not result['OK'] and self.__initStatus['OK']:
@@ -463,8 +461,8 @@ class TornadoBaseClient(object):
     """
       Sends the request to server
 
-      :param postArguments: dictionnary with arguments who needs to be sends, 
-              you should have "method" (str, name of distant method) 
+      :param postArguments: dictionnary with arguments who needs to be sends,
+              you should have "method" (str, name of distant method)
               and "args" (str in JSON, list of arguments for ce procedure)
     """
 
@@ -501,7 +499,6 @@ class TornadoBaseClient(object):
       if retry < self.__nbOfUrls - 1:
         self._request(postArguments, retry + 1)
       return S_ERROR(str(e))
-
 
 
 #### TODO ####

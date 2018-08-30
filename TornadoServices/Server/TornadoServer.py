@@ -15,7 +15,8 @@ from socket import error as socketerror
 import M2Crypto
 
 import tornado.iostream
-tornado.iostream.SSLIOStream.configure('tornado_m2crypto.m2iostream.M2IOStream')  # pylint: disable=wrong-import-position
+tornado.iostream.SSLIOStream.configure(
+    'tornado_m2crypto.m2iostream.M2IOStream')  # pylint: disable=wrong-import-position
 
 from tornado.httpserver import HTTPServer
 from tornado.web import Application, url
@@ -187,7 +188,7 @@ class TornadoServer(object):
     """
       Get time to prepare CPU usage monitoring and send memory usage to monitor
     """
-    now = time.time() # Used to calulate a delta
+    now = time.time()  # Used to calulate a delta
     stats = os.times()
     cpuTime = stats[0] + stats[2]
     if now - self.__monitorLastStatsUpdate < 0:

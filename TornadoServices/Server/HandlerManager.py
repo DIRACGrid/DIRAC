@@ -14,6 +14,7 @@ from DIRAC import gLogger, S_ERROR, S_OK, gConfig
 from DIRAC.Core.Base.private.ModuleLoader import ModuleLoader
 from DIRAC.ConfigurationSystem.Client import PathFinder
 
+
 def urlFinder(module):
   """
     Try to guess the url with module name
@@ -28,6 +29,7 @@ def urlFinder(module):
     if(section.find("System") > 0) and (sections[-1].find('Handler') > 0):
       return "/%s/%s" % (section.replace("System", ""), sections[-1].replace("Handler", ""))
   return None
+
 
 class HandlerManager(object):
   """
@@ -140,7 +142,6 @@ class HandlerManager(object):
       self.__addHandler((module['loadName'], module['classObj']), url)
     return S_OK()
 
-
   def getHandlersURLs(self):
     """
       Get all handler for usage in Tornado, as a list of tornado.web.url
@@ -161,7 +162,7 @@ class HandlerManager(object):
     """
       Return all handler dictionnary
 
-      :returns: dictionnary with absolute url as key ("/System/Service") 
+      :returns: dictionnary with absolute url as key ("/System/Service")
                 and tornado.web.url object as value
     """
     if not self.__handlers and self.__autoDiscovery:

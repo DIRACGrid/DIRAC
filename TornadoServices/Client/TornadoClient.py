@@ -23,7 +23,6 @@ from DIRAC.Core.Utilities.JEncode import encode
 from DIRAC.TornadoServices.Client.private.TornadoBaseClient import TornadoBaseClient
 
 
-
 class TornadoClient(TornadoBaseClient):
   """
     Client for calling tornado services
@@ -58,7 +57,6 @@ class TornadoClient(TornadoBaseClient):
     retVal = self._request(rpcCall)
     retVal['rpcStub'] = (self._getBaseStub(), method, args)
     return retVal
-
 
 
 def executeRPCStub(rpcStub):

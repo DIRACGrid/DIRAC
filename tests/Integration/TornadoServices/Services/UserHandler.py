@@ -5,8 +5,9 @@
 from DIRAC.TornadoServices.Server.TornadoService import TornadoService
 from DIRAC import S_OK, gLogger
 # You need to copy ../DB/UserDB in DIRAC/FrameworkSystem/DB
-from DIRAC.FrameworkSystem.DB.UserDB import UserDB #pylint: disable=no-name-in-module, import-error
+from DIRAC.FrameworkSystem.DB.UserDB import UserDB  # pylint: disable=no-name-in-module, import-error
 from DIRAC import gConfig
+
 
 class UserHandler(TornadoService):
 
@@ -15,12 +16,12 @@ class UserHandler(TornadoService):
   """
 
   @classmethod
-  def initializeHandler(cls, serviceInfoDict): 
+  def initializeHandler(cls, serviceInfoDict):
     cls.userDB = UserDB()
     return S_OK()
 
-
   auth_addUser = ['all']
+
   def export_addUser(self, whom):
     """
     Add a user
@@ -67,9 +68,11 @@ class UserHandler(TornadoService):
     return self.userDB.listUsers()
 
   auth_unauthorized = ['nobody']
+
   def export_unauthorized(self):
     return S_OK()
 
   auth_getValue = ['all']
+
   def export_getTestValue(self):
     return S_OK(gConfig.getValue('/DIRAC/Configuration/TestUpdateValue'))

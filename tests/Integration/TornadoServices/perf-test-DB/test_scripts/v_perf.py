@@ -10,15 +10,16 @@ from random import random
 import sys
 import os
 
+
 class Transaction(object):
   def __init__(self):
     self.client = RPCClientSelector('Framework/User', timeout=30)
     return
 
   def run(self):
-    #Generate random name
-    s = str(int(random()*100))
-    s2= str(int(random()*100))
+    # Generate random name
+    s = str(int(random() * 100))
+    s2 = str(int(random() * 100))
     service = self.client
 
     # Create a user
@@ -27,7 +28,7 @@ class Transaction(object):
 
     # Check if user exist and name is correct
     User = service.getUserName(userID)
-    assert (User['OK'] == True), 'Error in getting user'
+    assert (User['OK']), 'Error in getting user'
     assert (User['Value'] == s), 'Error on insertion'
 
     # Check if update work

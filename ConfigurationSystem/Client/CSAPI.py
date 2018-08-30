@@ -83,7 +83,7 @@ class CSAPI(object):
     if not retVal['OK']:
       self.__initialized = S_ERROR("Master server is not known. Is everything initialized?")
       return self.__initialized
-    self.__rpcClient = ConfigurationServerClient(url=gConfig.getValue( "/DIRAC/Configuration/MasterServer", "" ))
+    self.__rpcClient = ConfigurationServerClient(url=gConfig.getValue("/DIRAC/Configuration/MasterServer", ""))
     self.__csMod = Modificator(self.__rpcClient, "%s - %s - %s" %
                                (self.__userGroup, self.__userDN, Time.dateTime().strftime("%Y-%m-%d %H:%M:%S")))
     retVal = self.downloadCSData()

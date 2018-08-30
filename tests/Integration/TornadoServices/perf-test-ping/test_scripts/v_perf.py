@@ -21,4 +21,4 @@ class Transaction(object):
     return
 
   def run(self):
-    assert (self.client.ping()['OK'] == True), 'error'
+    assert (self.client.ping()['OK']), 'error'

@@ -82,7 +82,7 @@ def config(request):
     f.write(cfgContent)
   gConfig = ConfigurationClient(fileToLoadList=[testCfgFileName])  # we replace the configuration by our own one.
 
-  #def tearDown():
+  # def tearDown():
   # Wait for teardown
   yield config
   """
@@ -100,9 +100,10 @@ def config(request):
   gConfigurationData.generateNewVersion()
   print "TearDown"
   # request is given by @fixture decorator, addfinalizer set the function who need to be called after the tests
-  #request.addfinalizer(tearDown)
+  # request.addfinalizer(tearDown)
 
-## Tuple with (expectedClient, serviceName)
+
+# Tuple with (expectedClient, serviceName)
 client_imp = (
     (TornadoClient, 'WorkloadManagement/ServiceHttps'),
     (TornadoClient, 'https://server1:1234/WorkloadManagement/ServiceHttps'),
@@ -124,7 +125,6 @@ def test_selection_when_using_RPCClientSelector(client, config):
   component_service = client[1]
   clientSelected = RPCClientSelector(component_service)
   assert isinstance(clientSelected, clientWanted)
-
 
 
 error_component = (
@@ -160,15 +160,16 @@ def test_interface():
       assert element in interfaceTornadoClient
 
 
-
 client_imp = (
     (2, 'WorkloadManagement/ServiceHttps'),
     (1, 'https://server1:1234/WorkloadManagement/ServiceHttps'),
     #(2, 'https://server1:1234/WorkloadManagement/ServiceHttps,https://server2:1234/WorkloadManagement/ServiceHttps'), In DIRAC AND Tornado we can give only 1 url
 )
+
+
 @parametrize('client', client_imp)
 def test_urls_used_by_TornadoClient(config, client):
-  ## We can't directly get url because they are randomized but we can check if we have right number of URL
+  # We can't directly get url because they are randomized but we can check if we have right number of URL
 
   nbOfUrl = client[0]
   component_service = client[1]

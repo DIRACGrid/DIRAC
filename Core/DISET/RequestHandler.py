@@ -253,7 +253,7 @@ class RequestHandler(object):
     try:
       # Get the method we are trying to call
       oMethod = getattr(self, realMethod)
-    except:
+    except BaseException:
       return S_ERROR("Unknown method %s" % method)
     # Check if the client sends correct arguments
     dRetVal = self.__checkExpectedArgumentTypes(method, args)
@@ -290,7 +290,7 @@ class RequestHandler(object):
     sListName = "types_%s" % method
     try:
       oTypesList = getattr(self, sListName)
-    except:
+    except BaseException:
       gLogger.error("There's no types info for method", "export_%s" % method)
       return S_ERROR("Handler error for server %s while processing method %s" % (self.serviceInfoDict['serviceName'],
                                                                                  method))
@@ -361,7 +361,7 @@ class RequestHandler(object):
     gLogger.debug("Callback to %s" % realMethod)
     try:
       oMethod = getattr(self, realMethod)
-    except:
+    except BaseException:
       # No callback defined by handler
       return S_OK()
     try:
@@ -383,7 +383,7 @@ class RequestHandler(object):
     startTime = time.time()
     try:
       oMethod = getattr(self, methodName)
-    except:
+    except BaseException:
       return S_ERROR("Handler function for message %s does not exist!" % msgName)
     self.__lockManager.lock(methodName)
     try:
@@ -466,7 +466,7 @@ class RequestHandler(object):
       with open("/proc/uptime") as oFD:
         iUptime = long(float(oFD.readline().split()[0].strip()))
       dInfo['host uptime'] = iUptime
-    except:
+    except BaseException:
       pass
     startTime = self.serviceInfoDict['serviceStartTime']
     dInfo['service start time'] = self.serviceInfoDict['serviceStartTime']
@@ -477,7 +477,7 @@ class RequestHandler(object):
       with open("/proc/loadavg") as oFD:
         sLine = oFD.readline()
       dInfo['load'] = " ".join(sLine.split()[:3])
-    except:
+    except BaseException:
       pass
     dInfo['name'] = self.serviceInfoDict['serviceName']
     stTimes = os.times()
@@ -492,6 +492,7 @@ class RequestHandler(object):
 
   types_whoami = []
   auth_whoami = ['all']
+
   def export_whoami(self):
     """
       A simple whoami, returns all credential dictionnary, except certificate chain object.

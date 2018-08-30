@@ -12,7 +12,7 @@ HTTP_OK = 200
 HTTP_UNAUTHORIZED = 401
 HTTP_FORBIDDEN = 403
 HTTP_NOT_FOUND = 404
-HTTP_IM_A_TEAPOT = 418 # see https://tools.ietf.org/html/rfc2324
+HTTP_IM_A_TEAPOT = 418  # see https://tools.ietf.org/html/rfc2324
 
 
 # Server error code
