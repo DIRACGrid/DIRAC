@@ -45,8 +45,11 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
 from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
+if os.getenv('DIRAC_USE_M2CRYPTO', 'NO').lower() in ('yes', 'true'):
+  from DIRAC.Core.Security.m2crypto.X509Chain import X509Chain
+else:
+  from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.Core.Base.AgentReactor import AgentReactor
-from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.Core.Security import Locations
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities.File import mkDir
