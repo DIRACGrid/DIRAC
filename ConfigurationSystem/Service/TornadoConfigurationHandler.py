@@ -102,7 +102,7 @@ class TornadoConfigurationHandler(TornadoService):
 
   def export_writeEnabled(self):
     """
-      Used to know if we can change the configuration of this server
+      Used to know if we can change the configuration on this server
     """
     return S_OK(self.ServiceInterface.isMaster())
 

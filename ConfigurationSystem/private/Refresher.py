@@ -1,4 +1,5 @@
 """ Refresh local CS (if needed)
+Used each time you call gConfig. It keep your configuration up-to-date with the configuration server
 """
 
 __RCSID__ = "$Id$"
@@ -259,9 +260,6 @@ class TornadoRefresher(RefresherBase):
 
   def __init__(self):
     RefresherBase.__init__(self)
-
-
-
 
   def refreshConfigurationIfNeeded(self):
     """

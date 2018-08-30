@@ -50,6 +50,8 @@ class CSJSONClient(TornadoClient):
   def commitNewData(self, sData):
     """
       Transmit request to service by encoding data in base64.
+
+      :param: Data to commit, you may call this method with CSAPI and Modificator
     """
     return self.executeRPC('commitNewData', b64encode(sData))
 
@@ -66,10 +68,13 @@ class ConfigurationServerClient(Client):
     RPCCall can be made inside this class with executeRPC method.
   """
 
+  # The JSON decoder for Configuration Server
   httpsClient = CSJSONClient
   
-  # The JSON decoder for Configuration Server
   def __init__(self, **kwargs):
+    # By default we use Configuration/Server as url, client do the resolution
+    # In some case url has to be static (when a slave register to the master server for example)
+    # It's why we can use 'url' as keyword arguments
     if 'url' not in kwargs:
       kwargs['url'] = 'Configuration/Server'
     super(ConfigurationServerClient, self).__init__(**kwargs)
