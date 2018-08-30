@@ -18,7 +18,7 @@ GSI.crypto.add_x509_extension_alias(nid, 78)  # Alias to netscape comment, text 
 # USE_TORNADO_IOLOOP is defined in tornado starting script, you don't have to care about it
 # it's defined when tornado is running
 if not os.environ.get('USE_TORNADO_IOLOOP', 'false').lower() == 'true':
-  # WARNING 
+  # WARNING
   #
   # I don't really know how PyGSI and M2Crypto works, These lines initialise some variables for
   # PyGSI so you need them, but with Tornado (and M2Crypto) it won't work. (it's why there is "if")

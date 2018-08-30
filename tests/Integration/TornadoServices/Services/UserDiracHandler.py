@@ -26,6 +26,7 @@ class UserDiracHandler(RequestHandler):
 
   auth_addUser = ['all']
   types_addUser = [basestring]
+
   def export_addUser(self, whom):
     """ Add a user and return user id
     """
@@ -36,27 +37,32 @@ class UserDiracHandler(RequestHandler):
 
   auth_editUser = ['all']
   types_editUser = [int, basestring]
+
   def export_editUser(self, uid, value):
     """ Edit a user """
     return self.userDB.editUser(uid, value)
 
   auth_getUserName = ['all']
   types_getUserName = [int]
+
   def export_getUserName(self, uid):
     """ Get a user """
     return self.userDB.getUserName(uid)
 
   auth_listUsers = ['all']
   types_listUsers = []
+
   def export_listUsers(self):
     return self.userDB.listUsers()
 
   auth_unauthorized = ['nobody']
   types_unauthorized = []
+
   def export_unauthorized(self):
     return S_OK()
 
   auth_getTestValue = ['all']
   types_getTestValue = []
+
   def export_getTestValue(self):
     return S_OK(gConfig.getValue('/DIRAC/Configuration/TestUpdateValue'))

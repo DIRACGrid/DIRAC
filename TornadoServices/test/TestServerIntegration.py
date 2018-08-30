@@ -55,7 +55,7 @@ def test_authorization(rpc):
   service = rpc[0](rpc[1])
 
   authorisation = service.unauthorized()
-  assert authorisation['OK'] == False
+  assert authorisation['OK'] is False
   assert authorisation['Message'] == S_ERROR(ENOAUTH, "Unauthorized query")['Message']
 
 
@@ -64,7 +64,7 @@ def test_unknown_method(rpc):
   service = rpc[0](rpc[1])
 
   unknownmethod = service.ThisMethodMayNotExist()
-  assert unknownmethod['OK'] == False
+  assert unknownmethod['OK'] is False
   assert unknownmethod['Message'] == "Unknown method ThisMethodMayNotExist"
 
 
