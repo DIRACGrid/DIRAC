@@ -46,10 +46,10 @@ class ProdTransManager(object):
     plugin = prodStep['plugin']
     agentType = prodStep['agentType']
     fileMask = prodStep['fileMask']
-    inputquery = json.dumps(prodStep['inputquery'])
-    outputquery = json.dumps(prodStep['outputquery'])
     groupsize = prodStep['groupsize']
     body = prodStep['body']
+    inputquery = json.dumps(prodStep['inputquery'])
+    outputquery = json.dumps(prodStep['outputquery'])
 
     name = '%08d' % prodID + '_Step_' + prodStep['name']
 
@@ -61,10 +61,10 @@ class ProdTransManager(object):
         plugin,
         agentType,
         fileMask,
-        inputMetaQuery=inputquery,
-        outputMetaQuery=outputquery,
         groupSize=groupsize,
-        body=body)
+        body=body,
+        inputMetaQuery=inputquery,
+        outputMetaQuery=outputquery)
 
     if not res['OK']:
       return S_ERROR(res['Message'])

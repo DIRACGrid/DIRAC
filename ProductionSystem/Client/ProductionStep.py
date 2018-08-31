@@ -7,7 +7,7 @@ from DIRAC import gLogger, S_OK, S_ERROR
 
 class ProductionStep(object):
 
-  """ Define the ProductionStep object
+  """ Define the Production Step object
   """
 
   def __init__(self, **kwargs):
