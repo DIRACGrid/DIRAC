@@ -5,14 +5,9 @@
 
 __RCSID__ = "$Id $"
 
-
-# # imports
-import json
-
 # # from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
-from DIRAC.DataManagementSystem.Client.MetaQuery import MetaQuery
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 
 
@@ -34,27 +29,24 @@ class ProdValidator(object):
 
   def checkTransDependency(self, transID, parentTransID):
     """ check if the transformation and the parent transformation are linked """
-    res = self.transClient.getTransformationParameters(transID, 'InputMetaQuery')
+    res = self.transClient.getTransformationMetaQuery(transID, 'Input')
     if not res['OK']:
       return res
     inputquery = res['Value']
     if not inputquery:
       return S_ERROR("No InputMetaQuery defined for transformation %s" % transID)
 
-    res = self.transClient.getTransformationParameters(parentTransID, 'OutputMetaQuery')
+    res = self.transClient.getTransformationMetaQuery(parentTransID, 'Output')
     if not res['OK']:
       return res
     parentoutputquery = res['Value']
     if not parentoutputquery:
       return S_ERROR("No OutputMetaQuery defined for parent transformation %s" % parentTransID)
 
-    mq = MetaQuery(json.loads(inputquery))
-    parentMq = MetaQuery(json.loads(parentoutputquery))
-
     # Check the matching between inputquery and parent outputmeta query
     # Currently very simplistic: just support expression with "=" and "in" operators
     gLogger.notice("Applying checkMatchQuery")
-    res = self.checkMatchQuery(mq, parentMq)
+    res = self.checkMatchQuery(inputquery, parentoutputquery)
 
     if not res['OK']:
       gLogger.error("checkMatchQuery failed")
@@ -67,10 +59,6 @@ class ProdValidator(object):
   def checkMatchQuery(self, mq, mqParent):
     """  Check the logical intersection between the two metaqueries
     """
-    # Get the query dict
-    MetaQueryDict = mq.getMetaQuery()
-    ParentMetaQueryDict = mqParent.getMetaQuery()
-
     # Get the metadata types defined in the catalog
     res = self.fc.getMetadataFields()
     if not res['OK']:
@@ -83,12 +71,12 @@ class ProdValidator(object):
     MetaTypeDict = res['Value']['FileMetaFields']
     MetaTypeDict.update(res['Value']['DirectoryMetaFields'])
 
-    res = self.checkformatQuery(MetaQueryDict)
+    res = self.checkformatQuery(mq)
     if not res['OK']:
       return res
     MetaQueryDict = res['Value']
 
-    res = self.checkformatQuery(ParentMetaQueryDict)
+    res = self.checkformatQuery(mqParent)
     if not res['OK']:
       return res
     ParentMetaQueryDict = res['Value']
@@ -111,7 +99,7 @@ class ProdValidator(object):
     return S_OK(True)
 
   def checkformatQuery(self, MetaQueryDict):
-    '''Check format query and transform all dict values in dict for uniform treatement'''
+    '''Check format query and transform all dict values in dict for uniform treatment'''
     for meta, value in MetaQueryDict.items():
       values = []
       if isinstance(value, dict):
