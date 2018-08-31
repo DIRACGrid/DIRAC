@@ -35,9 +35,6 @@ CREATE TABLE Transformations(
     AgentType CHAR(32) DEFAULT 'Manual',
     Status  CHAR(32) DEFAULT 'New',
     FileMask VARCHAR(255),
-    InputMetaQuery VARCHAR(512) DEFAULT '',
-    OutputMetaQuery VARCHAR(512) DEFAULT '',
-    OutputMetaData VARCHAR(512) DEFAULT '',
     TransformationGroup varchar(64) NOT NULL default 'General',
     TransformationFamily varchar(64) default '0',
     GroupSize INT NOT NULL DEFAULT 1,
@@ -154,6 +151,18 @@ CREATE TABLE TransformationInputDataQuery(
     ParameterValue BLOB NOT NULL,
     ParameterType VARCHAR(8) NOT NULL,
     PRIMARY KEY(TransformationID, ParameterName),
+    FOREIGN KEY(TransformationID) REFERENCES Transformations(TransformationID)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8
+
+-- -------------------------------------------------------------------------------
+DROP TABLE IF EXISTS TransformationMetaQueries
+CREATE TABLE TransformationMetaQueries(
+    TransformationID INTEGER NOT NULL,
+    MetaDataName VARCHAR(255) NOT NULL,
+    MetaDataValue BLOB NOT NULL,
+    MetaDataType VARCHAR(8) NOT NULL,
+    QueryType VARCHAR(8) NOT NULL,
+    PRIMARY KEY(TransformationID, MetaDataName, QueryType),
     FOREIGN KEY(TransformationID) REFERENCES Transformations(TransformationID)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8
 
