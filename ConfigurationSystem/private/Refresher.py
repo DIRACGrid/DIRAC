@@ -103,8 +103,8 @@ class RefresherBase():
     if sMasterServer:
       from DIRAC.ConfigurationSystem.Client.ConfigurationClient import ConfigurationClient
       oClient = ConfigurationClient(url=sMasterServer, timeout=self._timeout,
-                                          useCertificates=gConfigurationData.useServerCertificate(),
-                                          skipCACheck=gConfigurationData.skipCACheck())
+                                    useCertificates=gConfigurationData.useServerCertificate(),
+                                    skipCACheck=gConfigurationData.skipCACheck())
       dRetVal = _updateFromRemoteLocation(oClient)
       if not dRetVal['OK']:
         gLogger.error("Can't update from master server", dRetVal['Message'])
@@ -148,8 +148,8 @@ class RefresherBase():
     for sServer in randomServerList:
       from DIRAC.ConfigurationSystem.Client.ConfigurationClient import ConfigurationClient
       oClient = ConfigurationClient(url=sServer,
-                                          useCertificates=gConfigurationData.useServerCertificate(),
-                                          skipCACheck=gConfigurationData.skipCACheck())
+                                    useCertificates=gConfigurationData.useServerCertificate(),
+                                    skipCACheck=gConfigurationData.skipCACheck())
       dRetVal = _updateFromRemoteLocation(oClient)
       if dRetVal['OK']:
         return dRetVal
