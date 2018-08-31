@@ -73,9 +73,6 @@ class TransformationClient(Client):
     return rpcClient. getCounters(table, attrList, condDict, older, newer, timeStamp)
 
   def addTransformation(self, transName, description, longDescription, transType, plugin, agentType, fileMask,
-                        inputMetaQuery='',
-                        outputMetaQuery='',
-                        outputMetaData='',
                         transformationGroup='General',
                         groupSize=1,
                         inheritedFrom=0,
@@ -83,6 +80,8 @@ class TransformationClient(Client):
                         maxTasks=0,
                         eventsPerTask=0,
                         addFiles=True,
+                        inputMetaQuery='',
+                        outputMetaQuery='',
                         timeout=1800):
     """ add a new transformation
     """
@@ -95,16 +94,15 @@ class TransformationClient(Client):
         plugin,
         agentType,
         fileMask,
-        inputMetaQuery,
-        outputMetaQuery,
-        outputMetaData,
         transformationGroup,
         groupSize,
         inheritedFrom,
         body,
         maxTasks,
         eventsPerTask,
-        addFiles)
+        addFiles,
+        inputMetaQuery,
+        outputMetaQuery)
 
   def getTransformations(self, condDict=None, older=None, newer=None, timeStamp=None,
                          orderAttribute=None, limit=100, extraParams=False):
