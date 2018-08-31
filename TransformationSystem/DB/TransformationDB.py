@@ -106,7 +106,7 @@ class TransformationDB(DB):
                                  'ParameterType'
                                  ]
 
-    ## Intialize filter Queries with Input Meta Queries
+    # Intialize filter Queries with Input Meta Queries
     self.filterQueries = []
     res = self.__updateFilterQueries()
     if not res['OK']:
@@ -229,7 +229,7 @@ class TransformationDB(DB):
 
     ### Add files to the DataFiles table ##################
     catalog = FileCatalog()
-    if addFiles and len(inputMetaQuery) >0:
+    if addFiles and len(inputMetaQuery) > 0:
       res = catalog.findFilesByMetadata(inputMetaQuery)
       if not res['OK']:
         gLogger.error("Failed to find files to be added to the transformation", res['Message'])
@@ -394,7 +394,8 @@ class TransformationDB(DB):
     """ Get filters for all defined input streams in all the transformations.
     """
     resultList = []
-    res = self.getTransformations(condDict={'Status': {'in': ['New', 'Active', 'Stopped', 'Flush', 'Completing']}}, connection=connection)
+    res = self.getTransformations(condDict={'Status': {'in': ['New', 'Active', 'Stopped', 'Flush', 'Completing']}},
+                                  connection=connection)
     if not res['OK']:
       return res
 
@@ -1069,7 +1070,6 @@ class TransformationDB(DB):
       return S_ERROR("No InputDataQuery found for transformation")
     return S_OK(queryDict)
 
-
   ####################################################################
   #
   # These methods manipulate the TransformationMetaQueries table. Aimed to replace all methods used to manipulate
@@ -1111,8 +1111,8 @@ class TransformationDB(DB):
           parameterType = 'Dict'
           parameterValue = str(parameterValue)
 
-      res = self.insertFields('TransformationMetaQueries', ['TransformationID', 'MetaDataName',
-                                                               'MetaDataValue', 'MetaDataType', 'QueryType'],
+      res = self.insertFields('TransformationMetaQueries', ['TransformationID', 'MetaDataName', 'MetaDataValue',
+                                                            'MetaDataType', 'QueryType'],
                               [transID, parameterName, parameterValue, parameterType, queryType], conn=connection)
       if not res['OK']:
         message = 'Failed to add meta query'
