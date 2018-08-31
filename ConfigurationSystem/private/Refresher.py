@@ -101,8 +101,8 @@ class RefresherBase():
     gLogger.info("Refreshing from master server")
     sMasterServer = gConfigurationData.getMasterServer()
     if sMasterServer:
-      from DIRAC.ConfigurationSystem.Client.ConfigurationServerClient import ConfigurationServerClient
-      oClient = ConfigurationServerClient(url=sMasterServer, timeout=self._timeout,
+      from DIRAC.ConfigurationSystem.Client.ConfigurationClient import ConfigurationClient
+      oClient = ConfigurationClient(url=sMasterServer, timeout=self._timeout,
                                           useCertificates=gConfigurationData.useServerCertificate(),
                                           skipCACheck=gConfigurationData.skipCACheck())
       dRetVal = _updateFromRemoteLocation(oClient)
@@ -146,8 +146,8 @@ class RefresherBase():
     gLogger.debug("Randomized server list is %s" % ", ".join(randomServerList))
 
     for sServer in randomServerList:
-      from DIRAC.ConfigurationSystem.Client.ConfigurationServerClient import ConfigurationServerClient
-      oClient = ConfigurationServerClient(url=sServer,
+      from DIRAC.ConfigurationSystem.Client.ConfigurationClient import ConfigurationClient
+      oClient = ConfigurationClient(url=sServer,
                                           useCertificates=gConfigurationData.useServerCertificate(),
                                           skipCACheck=gConfigurationData.skipCACheck())
       dRetVal = _updateFromRemoteLocation(oClient)

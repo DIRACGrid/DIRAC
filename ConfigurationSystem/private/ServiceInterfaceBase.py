@@ -12,7 +12,7 @@ from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationDat
 from DIRAC.ConfigurationSystem.private.Refresher import gRefresher
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
-from DIRAC.ConfigurationSystem.Client.ConfigurationServerClient import ConfigurationServerClient
+from DIRAC.ConfigurationSystem.Client.ConfigurationClient import ConfigurationClient
 
 
 class ServiceInterfaceBase(object):

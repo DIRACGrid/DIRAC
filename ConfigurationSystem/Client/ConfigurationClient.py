@@ -54,7 +54,7 @@ class CSJSONClient(TornadoClient):
     return self.executeRPC('commitNewData', b64encode(sData))
 
 
-class ConfigurationServerClient(Client):
+class ConfigurationClient(Client):
   """
     Specific client to speak with ConfigurationServer.
 
@@ -74,4 +74,4 @@ class ConfigurationServerClient(Client):
     # It's why we can use 'url' as keyword arguments
     if 'url' not in kwargs:
       kwargs['url'] = 'Configuration/Server'
-    super(ConfigurationServerClient, self).__init__(**kwargs)
+    super(ConfigurationClient, self).__init__(**kwargs)
