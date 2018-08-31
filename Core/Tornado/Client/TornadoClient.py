@@ -13,14 +13,14 @@
 
   Example::
 
-    from DIRAC.TornadoServices.Client.TornadoClient import TornadoClient
+    from DIRAC.Core.Tornado.Client.TornadoClient import TornadoClient
     myService = TornadoClient("Framework/MyService")
     myService.doSomething() #Returns S_OK/S_ERROR
 
 """
 
 from DIRAC.Core.Utilities.JEncode import encode
-from DIRAC.TornadoServices.Client.private.TornadoBaseClient import TornadoBaseClient
+from DIRAC.Core.Tornado.Client.private.TornadoBaseClient import TornadoBaseClient
 
 
 class TornadoClient(TornadoBaseClient):

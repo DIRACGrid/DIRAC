@@ -20,8 +20,8 @@ import re
 
 from pytest import mark, fixture
 
-from DIRAC.TornadoServices.Client.RPCClientSelector import RPCClientSelector
-from DIRAC.TornadoServices.Client.TornadoClient import TornadoClient
+from DIRAC.Core.Tornado.Client.RPCClientSelector import RPCClientSelector
+from DIRAC.Core.Tornado.Client.TornadoClient import TornadoClient
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.ConfigurationSystem.private.ConfigurationClient import ConfigurationClient
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData

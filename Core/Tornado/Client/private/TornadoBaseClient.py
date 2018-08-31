@@ -1,6 +1,6 @@
 """
     TornadoBaseClient contain all low-levels functionnalities and initilization methods
-    It must be instanciated from :py:class:`~DIRAC.TornadoServices.Client.TornadoClient`
+    It must be instanciated from :py:class:`~DIRAC.Core.Tornado.Client.TornadoClient`
 
     Requests library manage himself retry when connection failed, so the __nbOfRetry attribute is removed from DIRAC
     (For each URL requests manage retries himself, if it still fail, we try next url)

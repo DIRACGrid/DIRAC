@@ -5,8 +5,8 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC.TornadoServices.Client.RPCClientSelector import RPCClientSelector
-from DIRAC.TornadoServices.Client.TornadoClient import TornadoClient
+from DIRAC.Core.Tornado.Client.RPCClientSelector import RPCClientSelector
+from DIRAC.Core.Tornado.Client.TornadoClient import TornadoClient
 
 class Client(object):
   """ Simple class to redirect unknown actions directly to the server. Arguments

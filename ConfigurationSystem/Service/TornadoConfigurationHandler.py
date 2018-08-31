@@ -13,7 +13,7 @@ from base64 import b64encode, b64decode
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.private.ServiceInterfaceTornado import ServiceInterfaceTornado as ServiceInterface
 from DIRAC.Core.Utilities import DErrno
-from DIRAC.TornadoServices.Server.TornadoService import TornadoService
+from DIRAC.Core.Tornado.Server.TornadoService import TornadoService
 
 
 class TornadoConfigurationHandler(TornadoService):

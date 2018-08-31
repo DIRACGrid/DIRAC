@@ -8,7 +8,7 @@
 
 from base64 import b64encode, b64decode
 
-from DIRAC.TornadoServices.Client.TornadoClient import TornadoClient
+from DIRAC.Core.Tornado.Client.TornadoClient import TornadoClient
 from DIRAC.Core.Base.Client import Client
 
 

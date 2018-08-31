@@ -16,7 +16,7 @@ os.environ['USE_TORNADO_IOLOOP'] = "True"
 
 
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
-from DIRAC.TornadoServices.Server.TornadoServer import TornadoServer
+from DIRAC.Core.Tornado.Server.TornadoServer import TornadoServer
 from DIRAC.Core.Base import Script
 
 from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration

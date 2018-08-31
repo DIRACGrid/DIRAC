@@ -1,4 +1,4 @@
-from DIRAC.TornadoServices.Client.TornadoClient import TornadoClient
+from DIRAC.Core.Tornado.Client.TornadoClient import TornadoClient
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from time import time
 from random import randint

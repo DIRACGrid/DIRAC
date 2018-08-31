@@ -40,7 +40,7 @@ from hypothesis import given, settings
 from hypothesis.strategies import text
 
 from DIRAC.Core.DISET.RPCClient import RPCClient as RPCClientDIRAC
-from DIRAC.TornadoServices.Client.TornadoClient import TornadoClient as RPCClientTornado
+from DIRAC.Core.Tornado.Client.TornadoClient import TornadoClient as RPCClientTornado
 from DIRAC.Core.Utilities.DErrno import ENOAUTH
 from DIRAC import S_ERROR
 

@@ -22,8 +22,8 @@ Service
    YourServiceHandler ->  TornadoService[label=inherit];
    
 
-   TornadoServer  [shape=polygon,sides=4, label = "DIRAC.TornadoServices.Server.TornadoServer"];
-   TornadoService  [shape=polygon,sides=4, label = "DIRAC.TornadoServices.Server.TornadoService"];
+   TornadoServer  [shape=polygon,sides=4, label = "DIRAC.Core.Tornado.Server.TornadoServer"];
+   TornadoService  [shape=polygon,sides=4, label = "DIRAC.Core.Tornado.Server.TornadoService"];
    YourServiceHandler  [shape=polygon,sides=4];
 
    }
@@ -37,8 +37,8 @@ Important changes between DISET server and Tornado Server
 Internal structure
 ******************
 
-- :py:class:`~DIRAC.Core.DISET.ServiceReactor` is now :py:class:`~DIRAC.TornadoServices.Server.TornadoServer`
-- :py:class:`~DIRAC.Core.DISET.private.Service` and :py:class:`~DIRAC.Core.DISET.RequestHandler` are now merge into :py:class:`~DIRAC.TornadoServices.Server.TornadoService`
+- :py:class:`~DIRAC.Core.DISET.ServiceReactor` is now :py:class:`~DIRAC.Core.Tornado.Server.TornadoServer`
+- :py:class:`~DIRAC.Core.DISET.private.Service` and :py:class:`~DIRAC.Core.DISET.RequestHandler` are now merge into :py:class:`~DIRAC.Core.Tornado.Server.TornadoService`
 - CallStack from S_ERROR are deleted when they are returned to client.
 - Common config for all services, there is no more specific config/service. But you can still give extra config files in the command line when you start a HTTPS server.
 - Server returns HTTP status codes like ``200 OK`` or ``401 Forbidden``. Not used by client for now but open possibility for usage with external services (like a REST API)
@@ -47,7 +47,7 @@ How to write service
 ********************
 Nothing better than example::
 
-  from DIRAC.TornadoServices.Server.TornadoService import TornadoService
+  from DIRAC.Core.Tornado.Server.TornadoService import TornadoService
   class yourServiceHandler(TornadoService):
 
     @classmethod
@@ -105,7 +105,7 @@ The easy way, use ``DIRAC/TornadoService/script/tornado-start-all.py`` it will s
 
 But you can also control more settings by launching tornado yourself::
 
-  from DIRAC.TornadoServices.Server.TornadoServer import TornadoServer
+  from DIRAC.Core.Tornado.Server.TornadoServer import TornadoServer
   serverToLaunch = TornadoServer(youroptions)
   serverToLaunch.startTornado()
 
@@ -127,8 +127,8 @@ Client
    TornadoClient -> TornadoBaseClient [label=inherit]
    TornadoBaseClient -> Requests [label=use]
 
-   TornadoClient  [shape=polygon,sides=4, label="DIRAC.TornadoServices.Client.TornadoClient"];
-   TornadoBaseClient  [shape=polygon,sides=4, label="DIRAC.TornadoServices.Client.private.TornadoBaseClient"];
+   TornadoClient  [shape=polygon,sides=4, label="DIRAC.Core.Tornado.Client.TornadoClient"];
+   TornadoBaseClient  [shape=polygon,sides=4, label="DIRAC.Core.Tornado.Client.private.TornadoBaseClient"];
    Requests [shape=polygon,sides=4]
    }
 
@@ -136,7 +136,7 @@ This diagram present what is behind TornadoClient, but you should use :py:class:
 
 In your client module when you inherit from :py:class:`DIRAC.Core.Base.Client` you can define `httpsClient` with another client, it can be usefull when you can't serialize some data in JSON. Here the step to create and use a JSON patch:
 
-- Create a class which inherit from :py:class:`~DIRAC.TornadoServices.Client.TornadoClient`
+- Create a class which inherit from :py:class:`~DIRAC.Core.Tornado.Client.TornadoClient`
 - For every method who need a JSON patch create a method with the same name as the service
 - Use self.executeRPC to send / receive datas
 
@@ -164,7 +164,7 @@ You can also see this example::
 
 
 
-Behind :py:class:`~DIRAC.TornadoServices.Client.TornadoClient` the `requests <http://docs.python-requests.org/>`_ library sends a HTTP POST request with:
+Behind :py:class:`~DIRAC.Core.Tornado.Client.TornadoClient` the `requests <http://docs.python-requests.org/>`_ library sends a HTTP POST request with:
 
 - procedure: str with procedure name
 - args: your arguments encoded in JSON
@@ -191,11 +191,11 @@ Important changes between TornadoClient and RPCClient
 Internal structure
 ******************
 
-- :py:class:`~DIRAC.Core.DISET.private.innerRPCClient` and :py:class:`~DIRAC.Core.DISET.RPCClient` are now a single class: :py:class:`~DIRAC.TornadoServices.Client.TornadoClient`. Interface and usage stay the same.
-- :py:class:`~DIRAC.TornadoServices.Client.private.TornadoBaseClient` is the new :py:class:`~DIRAC.Core.DISET.private.BaseClient`. Most of code is copied from :py:class:`~DIRAC.Core.DISET.private.BaseClient` but some method have been rewrited to use `Requests <http://docs.python-requests.org/>`_ instead of Transports. Code duplication is done to fully separate DISET and HTTPS but later, some parts can be merged by using a new common class between DISET and HTTPS (these parts are explicitly given in the docstrings).
+- :py:class:`~DIRAC.Core.DISET.private.innerRPCClient` and :py:class:`~DIRAC.Core.DISET.RPCClient` are now a single class: :py:class:`~DIRAC.Core.Tornado.Client.TornadoClient`. Interface and usage stay the same.
+- :py:class:`~DIRAC.Core.Tornado.Client.private.TornadoBaseClient` is the new :py:class:`~DIRAC.Core.DISET.private.BaseClient`. Most of code is copied from :py:class:`~DIRAC.Core.DISET.private.BaseClient` but some method have been rewrited to use `Requests <http://docs.python-requests.org/>`_ instead of Transports. Code duplication is done to fully separate DISET and HTTPS but later, some parts can be merged by using a new common class between DISET and HTTPS (these parts are explicitly given in the docstrings).
 - :py:class:`~DIRAC.Core.DISET.private.Transports.BaseTransport`, :py:class:`~DIRAC.Core.DISET.private.Transports.PlainTransport` and :py:class:`~DIRAC.Core.DISET.private.Transports.SSLTransport` are replaced by `Requests <http://docs.python-requests.org/>`_ 
 - keepAliveLapse is removed from rpcStub returned by Client because `Requests <http://docs.python-requests.org/>`_  manage it himself.
-- Due to JSON limitation you can write some specifics clients who inherit from :py:class:`~DIRAC.TornadoServices.Client.TornadoClient`, there is a simple example with :py:class:`~DIRAC.TornadoServices.Client.SpecificClient.ConfigurationClient` who transfer data in base64 to overcome JSON limitations
+- Due to JSON limitation you can write some specifics clients who inherit from :py:class:`~DIRAC.Core.Tornado.Client.TornadoClient`, there is a simple example with :py:class:`~DIRAC.Core.Tornado.Client.SpecificClient.ConfigurationClient` who transfer data in base64 to overcome JSON limitations
 
 
 Connections and certificates

@@ -42,7 +42,7 @@ import pytest
 from DIRAC import gConfig
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 
-from DIRAC.TornadoServices.Client.TornadoClient import TornadoClient
+from DIRAC.Core.Tornado.Client.TornadoClient import TornadoClient
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from pytest import mark, fixture
 parametrize = mark.parametrize

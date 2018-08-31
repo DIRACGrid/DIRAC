@@ -32,7 +32,7 @@ Then you need to install Tornado and M2Crypto (for python), but not from officia
 Adding Tornado to DIRAC
 ***********************
 
-Save the DIRAC folder somewhere then clone my GithHub repo, then switch to branch "stage_toDIRAC_clean". You can run the setup.py if ``DIRAC.TornadoServices`` is not detected by python::
+Save the DIRAC folder somewhere then clone my GithHub repo, then switch to branch "stage_toDIRAC_clean". You can run the setup.py if ``DIRAC.Core.Tornado`` is not detected by python::
 
   mv DIRAC DIRAC.old
   git clone https://github.com/louisjdmartin/DIRAC.git

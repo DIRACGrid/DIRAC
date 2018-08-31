@@ -5,7 +5,7 @@
 """
 
 
-from DIRAC.TornadoServices.Server.TornadoService import TornadoService
+from DIRAC.Core.Tornado.Server.TornadoService import TornadoService
 from DIRAC import S_OK, S_ERROR
 
 

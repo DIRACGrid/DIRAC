@@ -24,7 +24,7 @@ from tornado.ioloop import IOLoop
 import tornado.ioloop
 
 import DIRAC
-from DIRAC.TornadoServices.Server.HandlerManager import HandlerManager
+from DIRAC.Core.Tornado.Server.HandlerManager import HandlerManager
 from DIRAC import gLogger, S_ERROR, S_OK, gConfig
 from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
 from DIRAC.ConfigurationSystem.Client import PathFinder

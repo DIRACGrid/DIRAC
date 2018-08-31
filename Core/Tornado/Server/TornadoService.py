@@ -4,7 +4,7 @@
 
   To create you must write this "minimal" code::
 
-    from DIRAC.TornadoServices.Server.TornadoService import TornadoService
+    from DIRAC.Core.Tornado.Server.TornadoService import TornadoService
     class yourServiceHandler(TornadoService):
 
       @classmethod
@@ -42,7 +42,7 @@ from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.DErrno import ENOAUTH
 from DIRAC import gConfig
 from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
-from DIRAC.TornadoServices.Utilities import HTTPErrorCodes
+from DIRAC.Core.Tornado.Utilities import HTTPErrorCodes
 
 
 class TornadoService(RequestHandler):  # pylint: disable=abstract-method
