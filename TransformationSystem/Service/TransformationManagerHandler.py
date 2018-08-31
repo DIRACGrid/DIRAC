@@ -54,16 +54,15 @@ class TransformationManagerHandlerBase(RequestHandler):
   types_addTransformation = [basestring, basestring, basestring, basestring, basestring, basestring, basestring]
 
   def export_addTransformation(self, transName, description, longDescription, transType, plugin, agentType, fileMask,
-                               inputMetaQuery='',
-                               outputMetaQuery='',
-                               outputMetaData='',
                                transformationGroup='General',
                                groupSize=1,
                                inheritedFrom=0,
                                body='',
                                maxTasks=0,
                                eventsPerTask=0,
-                               addFiles=True):
+                               addFiles=True,
+                               inputMetaQuery='',
+                               outputMetaQuery=''):
     #    authorDN = self._clientTransport.peerCredentials['DN']
     #    authorGroup = self._clientTransport.peerCredentials['group']
     credDict = self.getRemoteCredentials()
@@ -79,8 +78,7 @@ class TransformationManagerHandlerBase(RequestHandler):
                                      eventsPerTask=eventsPerTask,
                                      addFiles=addFiles,
                                      inputMetaQuery=inputMetaQuery,
-                                     outputMetaQuery=outputMetaQuery,
-                                     outputMetaData=outputMetaData)
+                                     outputMetaQuery=outputMetaQuery)
     if res['OK']:
       gLogger.info("Added transformation %d" % res['Value'])
     return self._parseRes(res)
@@ -339,6 +337,34 @@ class TransformationManagerHandlerBase(RequestHandler):
 
   def export_getTransformationInputDataQuery(self, transName):
     res = database.getTransformationInputDataQuery(transName)
+    return self._parseRes(res)
+
+  ####################################################################
+  #
+  # These are the methods for TransformationMetaQueries table. Aimed to replace methods
+  # for TransformationInputDataQuery table
+  #
+
+  types_createTransformationMetaQuery = [transTypes, dict, basestring]
+
+  def export_createTransformationMetaQuery(self, transName, queryDict, queryType):
+    credDict = self.getRemoteCredentials()
+    authorDN = credDict['DN']
+    res = database.createTransformationMetaQuery(transName, queryDict, queryType, author=authorDN)
+    return self._parseRes(res)
+
+  types_deleteTransformationMetaQuery = [transTypes, basestring]
+
+  def export_deleteTransformationMetaQuery(self, transName, queryType):
+    credDict = self.getRemoteCredentials()
+    authorDN = credDict['DN']
+    res = database.deleteTransformationMetaQuery(transName, queryType, author=authorDN)
+    return self._parseRes(res)
+
+  types_getTransformationMetaQuery = [transTypes, basestring]
+
+  def export_getTransformationMetaQuery(self, transName,queryType):
+    res = database.getTransformationMetaQuery(transName,queryType)
     return self._parseRes(res)
 
   ####################################################################
