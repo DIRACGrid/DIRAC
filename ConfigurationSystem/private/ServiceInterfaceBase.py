@@ -80,7 +80,7 @@ class ServiceInterfaceBase(object):
 
     gLogger.info("Pinging slave %s" % sSlaveURL)
 
-    rpcClient = ConfigurationServerClient(url=sSlaveURL, timeout=10, useCertificates=True)
+    rpcClient = ConfigurationClient(url=sSlaveURL, timeout=10, useCertificates=True)
     retVal = rpcClient.ping()
     if not retVal['OK']:
       gLogger.info("Slave %s didn't reply" % sSlaveURL)
