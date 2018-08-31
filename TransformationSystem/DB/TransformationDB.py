@@ -45,10 +45,6 @@ class TransformationDB(DB):
       DB.__init__(self, dbname, dbconfig)
 
     self.lock = threading.Lock()
-    self.filterQueries = []
-    res = self.__updateFilterQueries()
-    if not res['OK']:
-      gLogger.fatal("Failed to create filter queries")
 
     self.allowedStatusForTasks = ('Unused', 'ProbInFC')
 
@@ -65,9 +61,6 @@ class TransformationDB(DB):
                         'AgentType',
                         'Status',
                         'FileMask',
-                        'InputMetaQuery',
-                        'OutputMetaQuery',
-                        'OutputMetaData',
                         'TransformationGroup',
                         'GroupSize',
                         'InheritedFrom',
@@ -113,7 +106,7 @@ class TransformationDB(DB):
                                  'ParameterType'
                                  ]
 
-    # Intialize filter Queries with Input Meta Queries
+    ## Intialize filter Queries with Input Meta Queries
     self.filterQueries = []
     res = self.__updateFilterQueries()
     if not res['OK']:
@@ -149,9 +142,8 @@ class TransformationDB(DB):
                         eventsPerTask=0,
                         addFiles=True,
                         connection=False,
-                        inputMetaQuery='',
-                        outputMetaQuery='',
-                        outputMetaData=''):
+                        inputMetaQuery=None,
+                        outputMetaQuery=None):
     """ Add new transformation definition including its input streams
     """
     connection = self.__getConnection(connection)
@@ -168,15 +160,15 @@ class TransformationDB(DB):
     body = res['Value']
     req = "INSERT INTO Transformations (TransformationName,Description,LongDescription, \
                                         CreationDate,LastUpdate,AuthorDN,AuthorGroup,Type,Plugin,AgentType,\
-                                        FileMask,InputMetaQuery,OutputMetaQuery,OutputMetaData,Status,TransformationGroup,GroupSize,\
+                                        FileMask,Status,TransformationGroup,GroupSize,\
                                         InheritedFrom,Body,MaxNumberOfTasks,EventsPerTask)\
                                 VALUES ('%s','%s','%s',\
                                         UTC_TIMESTAMP(),UTC_TIMESTAMP(),'%s','%s','%s','%s','%s',\
-                                        '%s','%s','%s','%s','New','%s',%d,\
+                                        '%s','New','%s',%d,\
                                         %d,%s,%d,%d);" % \
         (transName, description, longDescription,
          authorDN, authorGroup, transType, plugin, agentType,
-         fileMask, inputMetaQuery, outputMetaQuery, outputMetaData, transformationGroup, groupSize,
+         fileMask, transformationGroup, groupSize,
          inheritedFrom, body, maxTasks, eventsPerTask)
     res = self._update(req, connection)
     if not res['OK']:
@@ -203,8 +195,8 @@ class TransformationDB(DB):
         return self.deleteTransformation(transID, connection=connection)
 
     # If the transformation has an input data specification
-    if inputMetaQuery:
-      self.filterQueries.append((transID, json.loads(inputMetaQuery)))
+    if len(inputMetaQuery) > 0:
+      self.filterQueries.append((transID, inputMetaQuery))
 
     if inheritedFrom:
       res = self._getTransformationID(inheritedFrom, connection=connection)
@@ -237,9 +229,8 @@ class TransformationDB(DB):
 
     ### Add files to the DataFiles table ##################
     catalog = FileCatalog()
-    if addFiles and inputMetaQuery:
-      mqDict = json.loads(inputMetaQuery)
-      res = catalog.findFilesByMetadata(mqDict)
+    if addFiles and len(inputMetaQuery) >0:
+      res = catalog.findFilesByMetadata(inputMetaQuery)
       if not res['OK']:
         gLogger.error("Failed to find files to be added to the transformation", res['Message'])
         return res
@@ -403,14 +394,17 @@ class TransformationDB(DB):
     """ Get filters for all defined input streams in all the transformations.
     """
     resultList = []
-    req = "SELECT TransformationID,InputMetaQuery FROM Transformations where Status in ('New','Active','Stopped', " \
-          "'Flush','Completing');"
-    res = self._query(req, connection)
+    res = self.getTransformations(condDict={'Status': {'in': ['New', 'Active', 'Stopped', 'Flush', 'Completing']}}, connection=connection)
     if not res['OK']:
       return res
-    for transID, mask in res['Value']:
-      if mask:
-        resultList.append((transID, json.loads(mask)))
+
+    transIDs = res['Value']
+    for transID in transIDs:
+      res = self.getTransformationMetaQuery(transID, 'Input')
+      if not res['OK']:
+        return res
+      resultList.append(transID, res['Value'])
+
     self.filterQueries = resultList
     return S_OK(resultList)
 
@@ -1075,6 +1069,7 @@ class TransformationDB(DB):
       return S_ERROR("No InputDataQuery found for transformation")
     return S_OK(queryDict)
 
+
   ####################################################################
   #
   # These methods manipulate the TransformationMetaQueries table. Aimed to replace all methods used to manipulate
@@ -1116,8 +1111,8 @@ class TransformationDB(DB):
           parameterType = 'Dict'
           parameterValue = str(parameterValue)
 
-      res = self.insertFields('TransformationMetaQueries', ['TransformationID', 'MetaDataName', 'MetaDataValue',
-                                                            'MetaDataType', 'QueryType'],
+      res = self.insertFields('TransformationMetaQueries', ['TransformationID', 'MetaDataName',
+                                                               'MetaDataValue', 'MetaDataType', 'QueryType'],
                               [transID, parameterName, parameterValue, parameterType, queryType], conn=connection)
       if not res['OK']:
         message = 'Failed to add meta query'
@@ -1473,7 +1468,7 @@ class TransformationDB(DB):
     res = self.__deleteTransformation(transID, connection=connection)
     if not res['OK']:
       return res
-    res = self.__updateFilterQueries()
+    res = self.__updateFilterQueries(connection=connection)
     if not res['OK']:
       return res
     return S_OK()
