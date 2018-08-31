@@ -54,9 +54,6 @@ class TransformationManagerHandlerBase(RequestHandler):
   types_addTransformation = [basestring, basestring, basestring, basestring, basestring, basestring, basestring]
 
   def export_addTransformation(self, transName, description, longDescription, transType, plugin, agentType, fileMask,
-                               inputMetaQuery='',
-                               outputMetaQuery='',
-                               outputMetaData='',
                                transformationGroup='General',
                                groupSize=1,
                                inheritedFrom=0,
@@ -81,8 +78,7 @@ class TransformationManagerHandlerBase(RequestHandler):
                                      eventsPerTask=eventsPerTask,
                                      addFiles=addFiles,
                                      inputMetaQuery=inputMetaQuery,
-                                     outputMetaQuery=outputMetaQuery,
-                                     outputMetaData=outputMetaData)
+                                     outputMetaQuery=outputMetaQuery)
     if res['OK']:
       gLogger.info("Added transformation %d" % res['Value'])
     return self._parseRes(res)
@@ -367,8 +363,8 @@ class TransformationManagerHandlerBase(RequestHandler):
 
   types_getTransformationMetaQuery = [transTypes, basestring]
 
-  def export_getTransformationMetaQuery(self, transName, queryType):
-    res = database.getTransformationMetaQuery(transName, queryType)
+  def export_getTransformationMetaQuery(self, transName,queryType):
+    res = database.getTransformationMetaQuery(transName,queryType)
     return self._parseRes(res)
 
   ####################################################################
