@@ -363,8 +363,8 @@ class TransformationManagerHandlerBase(RequestHandler):
 
   types_getTransformationMetaQuery = [transTypes, basestring]
 
-  def export_getTransformationMetaQuery(self, transName,queryType):
-    res = database.getTransformationMetaQuery(transName,queryType)
+  def export_getTransformationMetaQuery(self, transName, queryType):
+    res = database.getTransformationMetaQuery(transName, queryType)
     return self._parseRes(res)
 
   ####################################################################
