@@ -49,7 +49,7 @@ CREATE TABLE ProductionTransformations(
 DROP TABLE IF EXISTS ProductionTransformationLinks
 CREATE TABLE ProductionTransformationLinks(
     TransformationID INTEGER NOT NULL,
-    ParentTransformationID INTEGER NOT NULL,
+    ParentTransformationID INTEGER DEFAULT -1,
     ProductionID INTEGER NOT NULL,
     PRIMARY KEY(ProductionID, TransformationID, ParentTransformationID),
     INDEX(TransformationID),
@@ -58,3 +58,5 @@ CREATE TABLE ProductionTransformationLinks(
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8
 
 SET FOREIGN_KEY_CHECKS = 1
+
+-- --    ParentTransformationID INTEGER DEFAULT NULL,
