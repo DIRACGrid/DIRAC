@@ -80,8 +80,8 @@ class TransformationClient(Client):
                         maxTasks=0,
                         eventsPerTask=0,
                         addFiles=True,
-                        inputMetaQuery='',
-                        outputMetaQuery='',
+                        inputMetaQuery=None,
+                        outputMetaQuery=None,
                         timeout=1800):
     """ add a new transformation
     """

@@ -5,9 +5,7 @@
 
 __RCSID__ = "$Id $"
 
-import json
-
-# # from DIRAC
+# from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 from DIRAC.ProductionSystem.Client.ProductionClient import ProductionClient
@@ -48,8 +46,8 @@ class ProdTransManager(object):
     fileMask = prodStep['fileMask']
     groupsize = prodStep['groupsize']
     body = prodStep['body']
-    inputquery = json.dumps(prodStep['inputquery'])
-    outputquery = json.dumps(prodStep['outputquery'])
+    inputquery = prodStep['inputquery']
+    outputquery = prodStep['outputquery']
 
     name = '%08d' % prodID + '_Step_' + prodStep['name']
 

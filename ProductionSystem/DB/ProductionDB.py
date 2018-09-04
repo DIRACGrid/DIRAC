@@ -54,11 +54,15 @@ class ProductionDB(DB):
 
     self.TRANSPARAMS = ['TransformationID',
                         'ProductionID',
-                        'ParentTransformationID',
+                        # 'ParentTransformationID',
                         # 'Status',
                         # 'ExternalStatus',
                         'LastUpdate',
                         'InsertedTime']
+
+    self.TRANSLINKSPARAMS = ['TransformationID',
+                        'ParentTransformationID',
+                        'ProductionID']
 
     self.statusActionDict = {
         'New': None,
@@ -273,6 +277,11 @@ class ProductionDB(DB):
       gLogger.error("Failed to delete production transformations from the TS", res['Message'])
 
     # Remove transformations from the PS
+    req = "DELETE FROM ProductionTransformationLinks WHERE ProductionID = %d;" % prodID
+    res = self._update(req, connection)
+    if not res['OK']:
+      gLogger.error("Failed to delete production transformation links from the PS", res['Message'])
+
     req = "DELETE FROM ProductionTransformations WHERE ProductionID = %d;" % prodID
     res = self._update(req, connection)
     if not res['OK']:
@@ -311,13 +320,14 @@ class ProductionDB(DB):
     return S_OK()
 
   def addTransformationsToProduction(self, prodName, transIDs, parentTransIDs, connection=False):
-    """ Add a list of transformations to the production directly.
+    """ Check the production validity and the add the transformations to the production
         The parentTrans must be set (use -1 to set no parentTrans).
     """
     gLogger.info(
         "ProductionDB.addTransformationsToProduction: \
-         Attempting to add %s transformations with parentTransIDs %s to production: %s" %
-        (transIDs, parentTransIDs, prodName))
+         Attempting to add %s transformations to production: %s" %
+        (transIDs, prodName))
+
     if not transIDs:
       return S_ERROR('Zero length transformation list')
     res = self._getConnectionProdID(connection, prodName)
@@ -325,17 +335,8 @@ class ProductionDB(DB):
       return res
     connection = res['Value']['Connection']
     prodID = res['Value']['ProductionID']
-    res = self.__addTransformationsToProduction(prodID, transIDs, parentTransIDs, connection=connection)
-    if not res['OK']:
-      msg = "Failed to add transformations %s to production %s: %s" % (transIDs, prodID, res['Message'])
-      return S_ERROR(msg)
 
-    return S_OK()
-
-  def __addTransformationsToProduction(self, prodID, transIDs, parentTransIDs, connection=False):
-
-    # Check if the production definition is valid
-    # Do the check only if the parent transformation is defined
+    # Check the production validity
     gLogger.notice('Checking if production is valid')
     if not isinstance(parentTransIDs, list):
       parentTransIDs = [parentTransIDs]
@@ -360,25 +361,58 @@ class ProductionDB(DB):
             gLogger.error("Production is not valid:", res['Message'])
             return res
 
-    gLogger.notice('Production is valid')
+    gLogger.notice('Production %s is valid' % prodName)
 
-    req = "INSERT INTO ProductionTransformations \
-           (ProductionID,TransformationID,ParentTransformationID,LastUpdate,InsertedTime) VALUES"
-    for transID in transIDs:
-      req = "%s (%d,%d,'%s',UTC_TIMESTAMP(),UTC_TIMESTAMP())," % (req, prodID, transID, str(parentTransIDs))
-      gLogger.notice(req)
-    req = req.rstrip(',')
-    res = self._update(req, connection)
+    res = self.__addTransformations(prodID, transIDs, connection=connection)
     if not res['OK']:
-      return res
+      msg = "Failed to add transformations %s to production %s: %s" % (transIDs, prodID, res['Message'])
+      return S_ERROR(msg)
+
+    res = self.__addTransformationLinks(prodID, transIDs, parentTransIDs, connection=connection)
+    if not res['OK']:
+      msg = "Failed to add parent transformations %s to transformations %s: %s" % (parentTransIDs, transIDs,
+                                                                                   res['Message'])
+      return S_ERROR(msg)
 
     # Update the status of the transformation to be in sync with the status of the production
     res = self.getProduction(prodID)
     prodStatus = res['Value']['Status']
 
-    res = self.ProdTransManager.executeActionOnTransformations(prodID, self.statusActionDict[prodStatus], transID)
+    # Execute action on transformations according to the production status
+    res = self.ProdTransManager.executeActionOnTransformations(prodID, self.statusActionDict[prodStatus])
     if not res['OK']:
       gLogger.error(res['Message'])
+
+    return S_OK()
+
+  def __addTransformationLinks(self, prodID, transIDs, parentTransIDs, connection=False):
+    """ Insert the transformations in the ProductionTransformationLinks table
+    """
+    req = "INSERT INTO ProductionTransformationLinks \
+           (TransformationID,ParentTransformationID,ProductionID) VALUES"
+    for transID in transIDs:
+      for parentTransID in parentTransIDs:
+        req = "%s (%d,%d,%d)," % (req, transID, parentTransID, prodID)
+        gLogger.notice(req)
+    req = req.rstrip(',')
+    res = self._update(req, connection)
+    if not res['OK']:
+      return res
+
+    return S_OK()
+
+  def __addTransformations(self, prodID, transIDs, connection=False):
+    """ Insert the transformations in the ProductionTransformations table
+    """
+    req = "INSERT INTO ProductionTransformations \
+           (ProductionID,TransformationID,LastUpdate,InsertedTime) VALUES"
+    for transID in transIDs:
+      req = "%s (%d,%d,UTC_TIMESTAMP(),UTC_TIMESTAMP())," % (req, prodID, transID)
+      gLogger.notice(req)
+    req = req.rstrip(',')
+    res = self._update(req, connection)
+    if not res['OK']:
+      return res
 
     return S_OK()
 
