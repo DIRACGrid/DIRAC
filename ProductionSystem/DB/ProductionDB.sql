@@ -37,12 +37,24 @@ DROP TABLE IF EXISTS ProductionTransformations
 CREATE TABLE ProductionTransformations(
     ProductionID INTEGER NOT NULL,
     TransformationID INTEGER NOT NULL,
-    ParentTransformationID VARCHAR(255) NOT NULL DEFAULT '0',
+--    ParentTransformationID VARCHAR(255) NOT NULL DEFAULT '0',
     LastUpdate DATETIME,
     InsertedTime DATETIME,
     PRIMARY KEY(ProductionID, TransformationID),
     INDEX(TransformationID),
     FOREIGN KEY(ProductionID) REFERENCES Productions(ProductionID)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8
+
+-- -------------------------------------------------------------------------------
+DROP TABLE IF EXISTS ProductionTransformationLinks
+CREATE TABLE ProductionTransformationLinks(
+    TransformationID INTEGER NOT NULL,
+    ParentTransformationID INTEGER NOT NULL,
+    ProductionID INTEGER NOT NULL,
+    PRIMARY KEY(ProductionID, TransformationID, ParentTransformationID),
+    INDEX(TransformationID),
+    FOREIGN KEY(ProductionID) REFERENCES Productions(ProductionID),
+    FOREIGN KEY(TransformationID) REFERENCES ProductionTransformations(TransformationID)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8
 
 SET FOREIGN_KEY_CHECKS = 1

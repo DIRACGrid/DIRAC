@@ -23,8 +23,8 @@ class ProductionStep(object):
     self.AgentType = 'Manual'
     self.FileMask = ''
     #########################################
-    self.Inputquery = {}
-    self.Outputquery = {}
+    self.Inputquery = None
+    self.Outputquery = None
     self.GroupSize = 1
     self.Body = 'body'
 

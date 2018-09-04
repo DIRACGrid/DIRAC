@@ -61,8 +61,8 @@ class TransformationManagerHandlerBase(RequestHandler):
                                maxTasks=0,
                                eventsPerTask=0,
                                addFiles=True,
-                               inputMetaQuery='',
-                               outputMetaQuery=''):
+                               inputMetaQuery=None,
+                               outputMetaQuery=None):
     #    authorDN = self._clientTransport.peerCredentials['DN']
     #    authorGroup = self._clientTransport.peerCredentials['group']
     credDict = self.getRemoteCredentials()
