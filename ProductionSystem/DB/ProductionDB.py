@@ -58,8 +58,8 @@ class ProductionDB(DB):
                         'InsertedTime']
 
     self.TRANSLINKSPARAMS = ['TransformationID',
-                        'ParentTransformationID',
-                        'ProductionID']
+                             'ParentTransformationID',
+                             'ProductionID']
 
     self.statusActionDict = {
         'New': None,
@@ -378,8 +378,7 @@ class ProductionDB(DB):
     # Add the transformation links (tranformation to parent transformation) for the given production
     res = self.__addTransformationLinks(prodID, transIDs, parentTransIDs=parentTransIDs, connection=connection)
     if not res['OK']:
-      msg = "Failed to add production transformations links to transformations %s: %s" % (transIDs,
-                                                                                   res['Message'])
+      msg = "Failed to add production transformations links to transformations %s: %s" % (transIDs, res['Message'])
       return S_ERROR(msg)
 
     # Update the status of the transformation to be in sync with the status of the production
