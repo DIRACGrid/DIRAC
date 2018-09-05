@@ -37,7 +37,6 @@ DROP TABLE IF EXISTS ProductionTransformations
 CREATE TABLE ProductionTransformations(
     ProductionID INTEGER NOT NULL,
     TransformationID INTEGER NOT NULL,
---    ParentTransformationID VARCHAR(255) NOT NULL DEFAULT '0',
     LastUpdate DATETIME,
     InsertedTime DATETIME,
     PRIMARY KEY(ProductionID, TransformationID),
@@ -58,5 +57,3 @@ CREATE TABLE ProductionTransformationLinks(
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8
 
 SET FOREIGN_KEY_CHECKS = 1
-
--- --    ParentTransformationID INTEGER DEFAULT NULL,
