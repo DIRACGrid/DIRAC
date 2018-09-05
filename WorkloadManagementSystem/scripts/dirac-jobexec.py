@@ -54,6 +54,13 @@ def jobexec( jobxml, wfParameters ):
   for pName, pValue in wfParameters.items():
     workflow.setValue( pName, pValue )
 
+  # Propagate the command line parameters to the workflow module instances of each step
+  for stepdefinition in workflow.step_definitions.itervalues():
+    for moduleInstance in stepdefinition.module_instances:
+      for pName, pValue in wfParameters.iteritems():
+        if moduleInstance.parameters.find(pName):
+          moduleInstance.parameters.setValue(pName, pValue)
+
   return workflow.execute()
 
 positionalArgs = Script.getPositionalArgs()
