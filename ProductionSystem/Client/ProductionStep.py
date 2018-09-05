@@ -15,7 +15,6 @@ class ProductionStep(object):
     """
     # Default values for transformation step parameters
     self.Name = ''
-    self.ParentStep = -1
     self.Description = 'description'
     self.LongDescription = 'longDescription'
     self.Type = 'MCSimulation'
@@ -23,6 +22,7 @@ class ProductionStep(object):
     self.AgentType = 'Manual'
     self.FileMask = ''
     #########################################
+    self.ParentStep = None
     self.Inputquery = None
     self.Outputquery = None
     self.GroupSize = 1
@@ -31,18 +31,21 @@ class ProductionStep(object):
   def getAsDict(self):
 
     prodStepDict = {}
-
     prodStepDict['name'] = self.Name
-    if isinstance(self.ParentStep, list):
-      prodStepDict['parentStep'] = []
-      for parentStep in self.ParentStep:
-        if not parentStep.Name:
+    # check the ParentStep format
+    if self.ParentStep:
+      if isinstance(self.ParentStep, list):
+        prodStepDict['parentStep'] = []
+        for parentStep in self.ParentStep:
+          if not parentStep.Name:
+            return S_ERROR('Parent Step does not exist')
+          prodStepDict['parentStep'].append(parentStep.Name)
+      elif isinstance(self.ParentStep, ProductionStep):
+        if not self.ParentStep.Name:
           return S_ERROR('Parent Step does not exist')
-        prodStepDict['parentStep'].append(parentStep.Name)
-    if isinstance(self.ParentStep, ProductionStep):
-      if not self.ParentStep.Name:
-        return S_ERROR('Parent Step does not exist')
-      prodStepDict['parentStep'] = [self.ParentStep.Name]
+        prodStepDict['parentStep'] = [self.ParentStep.Name]
+      else:
+        return S_ERROR('Invalid Parent Step')
 
     prodStepDict['description'] = self.Description
     prodStepDict['longDescription'] = self.LongDescription
