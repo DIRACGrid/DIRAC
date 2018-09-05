@@ -77,8 +77,8 @@ class ProductionDB(DB):
                                                                                         res['Value']))
     elif res['Message'] != "Production does not exist":
       return res
-    self.lock.acquire()
 
+    self.lock.acquire()
     req = "INSERT INTO Productions (ProductionName, Description, CreationDate,LastUpdate, \
                                     AuthorDN,AuthorGroup,Status)\
                                 VALUES ('%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),'%s','%s','New');" % \
@@ -229,12 +229,16 @@ class ProductionDB(DB):
       return res
     prodDescription = json.loads(res['Value'])
 
+    transIDs = []
     for step in prodDescription:
       res = self.ProdTransManager.addTransformationStep(prodDescription[step], prodID)
       if not res['OK']:
+        # Clean all transformation steps from the TS
+        self.ProdTransManager.deleteTransformations(transIDs)
         return S_ERROR(res['Message'])
       transID = res['Value']
       prodDescription[step]['transID'] = transID
+      transIDs.append(transID)
 
     for step in prodDescription:
       transID = prodDescription[step]['transID']
@@ -243,11 +247,13 @@ class ProductionDB(DB):
         for parentStep in prodDescription[step]['parentStep']:
           parentTransID = prodDescription[parentStep]['transID']
           parentTransIDs.append(parentTransID)
-      #else:
-        #parentTransIDs = [-1]
 
       res = self.addTransformationsToProduction(prodID, transID, parentTransIDs=parentTransIDs)
       if not res['OK']:
+        # Clean all the transformation steps from the TS
+        self.ProdTransManager.deleteTransformations(transIDs)
+        # Clean the production
+        self.deleteProduction(prodID)
         return S_ERROR(res['Message'])
 
     res = self.__setProductionStatus(prodID, 'Active', connection=connection)
@@ -269,7 +275,7 @@ class ProductionDB(DB):
 
     # Remove transformations from the TS
     gLogger.notice("Deleting transformations of Production %s from the TS" % prodID)
-    res = self.ProdTransManager.deleteTransformations(prodID)
+    res = self.ProdTransManager.deleteProductionTransformations(prodID)
     if not res['OK']:
       gLogger.error("Failed to delete production transformations from the TS", res['Message'])
 

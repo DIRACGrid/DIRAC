@@ -25,6 +25,7 @@ class ProductionClient(Client):
     self.serverURL = url
 
   # Methods working on the client to prepare the production description
+
   def getDescription(self):
     """ get the production description
     """
@@ -38,7 +39,6 @@ class ProductionClient(Client):
   def addStep(self, prodStep):
     """ add a step to the production description
     """
-
     stepName = 'Step' + str(self.stepCounter)
     self.stepCounter += 1
     prodStep.Name = stepName

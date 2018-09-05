@@ -17,25 +17,37 @@ class ProdTransManager(object):
     self.transClient = TransformationClient()
     self.prodClient = ProductionClient()
 
-  def deleteTransformations(self, prodID):
+  def deleteTransformations(self, transIDs):
 
-    res = self.prodClient.getProductionTransformations(prodID)
+    gLogger.notice("Deleting transformations %s from the TS" % transIDs)
 
-    if res['OK']:
-      transList = res['Value']
-
-    gLogger.notice("Deleting transformations %s from the TS" % transList)
-
-    for trans in transList:
-      transID = trans['TransformationID']
+    for transID in transIDs:
       res = self.transClient.deleteTransformation(transID)
       if not res['OK']:
         return res
 
     return S_OK()
 
-  def addTransformationStep(self, prodStep, prodID):
 
+  def deleteProductionTransformations(self, prodID):
+
+    res = self.prodClient.getProductionTransformations(prodID)
+
+    if res['OK']:
+      transList = res['Value']
+
+    gLogger.notice("Deleting production transformations %s from the TS" % transList)
+
+    for trans in transList:
+      transID = trans['TransformationID']
+      res = self.transClient.deleteTransformation(transID)
+      if not res['OK']:
+        gLogger.error(res['Message'])
+
+    return S_OK()
+
+  def addTransformationStep(self, prodStep, prodID):
+    # Here I should check that all needed parameters of prodStep are defined!!
     gLogger.notice("Add step %s to production %s" % (prodStep['name'], prodID))
 
     description = prodStep['description']
