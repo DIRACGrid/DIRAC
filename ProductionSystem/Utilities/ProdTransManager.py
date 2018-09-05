@@ -28,7 +28,6 @@ class ProdTransManager(object):
 
     return S_OK()
 
-
   def deleteProductionTransformations(self, prodID):
 
     res = self.prodClient.getProductionTransformations(prodID)
