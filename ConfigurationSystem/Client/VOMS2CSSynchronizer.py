@@ -127,6 +127,7 @@ class VOMS2CSSynchronizer(object):
     self.autoModifyUsers = autoModifyUsers
     self.autoAddUsers = autoAddUsers
     self.autoDeleteUsers = autoDeleteUsers
+    self.voChanged = False
 
   def syncCSWithVOMS(self):
     """ Performs the synchronization of the DIRAC registry with the VOMS data. The resulting
@@ -379,6 +380,7 @@ class VOMS2CSSynchronizer(object):
 
     resultDict['CSAPI'] = self.csapi
     resultDict['AdminMessages'] = self.adminMsgs
+    resultDict['VOChanged'] = self.voChanged
     return S_OK(resultDict)
 
   def getVOUserData(self, refreshFlag=False):
