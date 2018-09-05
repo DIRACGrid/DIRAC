@@ -375,7 +375,8 @@ class VOMS2CSSynchronizer(object):
           self.adminMsgs['Errors'].append('Error in deleting users from CS:\n  %s' % str(oldUsers))
           self.log.error('Error while user deletion from CS', result)
       else:
-        self.adminMsgs['Info'].append('The following users to be checked for deletion:\n  %s' % str(oldUsers))
+        self.adminMsgs['Info'].append('The following users to be checked for deletion:\n\t%s' %
+                                      "\n\t".join(sorted(oldUsers)))
         self.log.info('The following users to be checked for deletion: %s' % str(oldUsers))
 
     resultDict['CSAPI'] = self.csapi
