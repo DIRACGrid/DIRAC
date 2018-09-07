@@ -40,7 +40,7 @@ CREATE TABLE ProductionTransformations(
     LastUpdate DATETIME,
     InsertedTime DATETIME,
     PRIMARY KEY(ProductionID, TransformationID),
-    INDEX(TransformationID),
+    UNIQUE INDEX(TransformationID),
     FOREIGN KEY(ProductionID) REFERENCES Productions(ProductionID)
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8
 
