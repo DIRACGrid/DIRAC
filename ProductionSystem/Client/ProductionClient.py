@@ -17,7 +17,6 @@ class ProductionClient(Client):
 
     Client.__init__(self, **kwargs)
     self.setServer('Production/ProductionManager')
-
     self.prodDescription = {}
     self.stepCounter = 1
 
@@ -27,19 +26,24 @@ class ProductionClient(Client):
   # Methods working on the client to prepare the production description
 
   def getDescription(self):
-    """ get the production description
+    """ Get the production description
     """
     return self.prodDescription
 
   def setDescription(self, prodDescription):
-    """ set the production description
+    """ Set the production description
+
+        prodDescription is a dictionary with production description
     """
     self.prodDescription = prodDescription
 
   def addStep(self, prodStep):
-    """ add a step to the production description
+    """ Add a step to the production description, by updating the description dictionary
+
+        prodStep is a ProductionSystem.Client.ProductionStep object
     """
-    stepName = 'Step' + str(self.stepCounter)
+
+    stepName = 'Step' + str(self.stepCounter) + '_' + prodStep.Name
     self.stepCounter += 1
     prodStep.Name = stepName
 
@@ -55,7 +59,7 @@ class ProductionClient(Client):
   # Methods to contact the ProductionManager Service
 
   def addProduction(self, prodName, prodDescription, timeout=1800):
-    """ create a new production starting from its description
+    """ Create a new production starting from its description
     """
     rpcClient = self._getRPC(timeout=timeout)
     return rpcClient.addProduction(prodName, prodDescription)
@@ -74,7 +78,7 @@ class ProductionClient(Client):
 
   def getProductions(self, condDict=None, older=None, newer=None, timeStamp=None,
                      orderAttribute=None, limit=100):
-    """ gets all the productions in the system, incrementally. "limit" here is just used to determine the offset.
+    """ Gets all the productions in the system, incrementally. "limit" here is just used to determine the offset.
     """
     rpcClient = self._getRPC()
 
@@ -107,7 +111,7 @@ class ProductionClient(Client):
 
   def getProductionTransformations(self, prodName, condDict=None, older=None, newer=None, timeStamp=None,
                                    orderAttribute=None, limit=10000):
-    """ gets all the production transformations for a production, incrementally.
+    """ Gets all the production transformations for a production, incrementally.
         "limit" here is just used to determine the offset.
     """
     rpcClient = self._getRPC()

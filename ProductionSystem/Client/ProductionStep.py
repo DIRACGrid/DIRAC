@@ -1,9 +1,8 @@
-""" Class defining a production step. """
+""" Class defining a production step """
 
 __RCSID__ = "$Id$"
 
 from DIRAC import gLogger, S_OK, S_ERROR
-
 
 class ProductionStep(object):
 

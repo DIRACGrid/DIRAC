@@ -23,7 +23,7 @@ class ProdValidator(object):
       return res
     status = res['Value']
     if status != 'New':
-      return S_ERROR("checkTransStatus failed. Invalid transformation status: %s:" % status)
+      return S_ERROR("checkTransStatus failed : Invalid transformation status: %s" % status)
 
     return S_OK()
 
@@ -82,12 +82,15 @@ class ProdValidator(object):
     ParentMetaQueryDict = res['Value']
 
     for meta, value in MetaQueryDict.items():
+      if meta not in MetaTypeDict:
+        msg = 'Metadata %s is not defined in the Catalog' % meta
+        return S_ERROR(msg)
       mtype = MetaTypeDict[meta]
       if mtype not in ['VARCHAR(128)', 'int', 'float']:
         msg = 'Metatype %s is not supported' % mtype
         return S_ERROR(msg)
       if meta not in ParentMetaQueryDict:
-        msg = 'Metadata %s not in parent transformation query' % meta
+        msg = 'Metadata %s is not in parent transformation query' % meta
         return S_ERROR(msg)
       if self.compareValues(value, ParentMetaQueryDict[meta]):
         continue
