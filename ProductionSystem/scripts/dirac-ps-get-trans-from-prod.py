@@ -45,23 +45,24 @@ else:
   DIRAC.gLogger.error(res['Message'])
   DIRAC.exit(-1)
 
-fields = ['TransformationName', 'Status', 'F_Proc.(%)', 'TransformationID', 'ProductionID', 'Prod_LastUpdate', 'Prod_InsertedTime']
+fields = ['TransformationName', 'Status', 'F_Proc.(%)', 'TransformationID', 'ProductionID', 'Prod_LastUpdate',
+          'Prod_InsertedTime']
 records = []
 
-paramShowNames = ['TransformationID', 'TransformationName', 'Type', 'Status', 'Files_Total', 'Files_PercentProcessed', \
-                      'Files_Processed', 'Files_Unused', 'Jobs_TotalCreated', 'Jobs_Waiting', \
-                      'Jobs_Running', 'Jobs_Done', 'Jobs_Failed', 'Jobs_Stalled']
+paramShowNames = ['TransformationID', 'TransformationName', 'Type', 'Status', 'Files_Total', 'Files_PercentProcessed',
+                  'Files_Processed', 'Files_Unused', 'Jobs_TotalCreated', 'Jobs_Waiting',
+                  'Jobs_Running', 'Jobs_Done', 'Jobs_Failed', 'Jobs_Stalled']
 resList = []
 
 
-result = transClient.getTransformationSummaryWeb( { 'TransformationID' : transIDs }, [], 0, len(transIDs) )
+result = transClient.getTransformationSummaryWeb({'TransformationID': transIDs}, [], 0, len(transIDs))
 
 if result['Value']['TotalRecords'] > 0:
   paramNames = result['Value']['ParameterNames']
   for paramValues in result['Value']['Records']:
-    paramShowValues = map( lambda pname: paramValues[ paramNames.index( pname ) ], paramShowNames )
-    showDict = dict( zip( paramShowNames, paramShowValues ) )
-    resList.append( showDict )
+    paramShowValues = map(lambda pname: paramValues[paramNames.index(pname)], paramShowNames)
+    showDict = dict(zip(paramShowNames, paramShowValues))
+    resList.append(showDict)
 
 for res in resList:
   files_Processed = res['Files_Processed']
@@ -70,7 +71,7 @@ for res in resList:
   transName = res['TransformationName']
   transID = res['TransformationID']
   records.append([transName, status, str(files_Processed), str(transID), str(prodID),
-                    str(trans['LastUpdate']), str(trans['InsertedTime'])])
+                  str(trans['LastUpdate']), str(trans['InsertedTime'])])
 
 
 printTable(fields, records)
