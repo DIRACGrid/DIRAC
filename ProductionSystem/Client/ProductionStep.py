@@ -4,6 +4,7 @@ __RCSID__ = "$Id$"
 
 from DIRAC import gLogger, S_OK, S_ERROR
 
+
 class ProductionStep(object):
 
   """ Define the Production Step object
