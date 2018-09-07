@@ -52,6 +52,7 @@ class ProductionClientChain(TestClientProductionTestCase):
 
     # Define the first step of the production
     prodStep1 = ProductionStep()
+    prodStep1.Name = 'Sim_prog'
     prodStep1.Type = 'MCSimulation'
     outputquery = {
         'zenith': {
@@ -72,6 +73,7 @@ class ProductionClientChain(TestClientProductionTestCase):
 
     # Define the second step of the production
     prodStep2 = ProductionStep()
+    prodStep2.Name = 'Reco_prog'
     prodStep2.Type = 'DataProcessing'
     prodStep2.ParentStep = prodStep1
 
@@ -95,6 +97,7 @@ class ProductionClientChain(TestClientProductionTestCase):
 
     # Define the third step of the production
     prodStep3 = ProductionStep()
+    prodStep3.Name = 'Analyis_prog'
     prodStep3.Type = 'DataProcessing'
     prodStep3.ParentStep = prodStep2
 
@@ -147,6 +150,7 @@ class ProductionClientChain(TestClientProductionTestCase):
 
     # Define the first step of the production
     prodStep1 = ProductionStep()
+    prodStep1.Name = 'Sim_prog'
     prodStep1.Type = 'MCSimulation'
     outputquery = {'zenith': 20, 'particle': 'gamma', 'tel_sim_prog': 'simtel', 'outputType': {'in': ['Data', 'Log']}}
     prodStep1.Outputquery = outputquery
@@ -157,6 +161,7 @@ class ProductionClientChain(TestClientProductionTestCase):
 
     # Define the second step of the production
     prodStep2 = ProductionStep()
+    prodStep2.Name = 'Sim_prog'
     prodStep2.Type = 'MCSimulation'
     outputquery = {'zenith': 40, 'particle': 'gamma', 'tel_sim_prog': 'simtel', 'outputType': {'in': ['Data', 'Log']}}
     prodStep2.Outputquery = outputquery
@@ -167,6 +172,7 @@ class ProductionClientChain(TestClientProductionTestCase):
 
     # Define the third step of the production
     prodStep3 = ProductionStep()
+    prodStep3.Name = 'Reco_prog'
     prodStep3.Type = 'DataProcessing'
     prodStep3.ParentStep = [prodStep1, prodStep2]
 
@@ -222,6 +228,7 @@ class ProductionClientChain(TestClientProductionTestCase):
 
     # Define the first step of the production
     prodStep1 = ProductionStep()
+    prodStep1.Name = 'Sim_prog'
     prodStep1.Type = 'MCSimulation'
     outputquery = {
         'zenith': {
@@ -242,6 +249,7 @@ class ProductionClientChain(TestClientProductionTestCase):
 
     # Define the second step of the production
     prodStep2 = ProductionStep()
+    prodStep2.Name = 'Reco_prog'
     prodStep2.Type = 'DataProcessing'
     prodStep2.ParentStep = prodStep1
 
@@ -264,6 +272,7 @@ class ProductionClientChain(TestClientProductionTestCase):
 
     # Define the third step of the production
     prodStep3 = ProductionStep()
+    prodStep3.Name = 'Reco_prog'
     prodStep3.Type = 'DataProcessing'
     prodStep3.ParentStep = prodStep1
 
