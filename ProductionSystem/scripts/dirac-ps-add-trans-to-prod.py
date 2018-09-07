@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
 """
-  Add an existing transformation to an existing production
+  Add an existing transformation to an existing production.
+  Transformations already belonging to another production cannot be added.
 """
 
 __RCSID__ = "$Id$"
@@ -32,13 +33,12 @@ args = Script.getPositionalArgs()
 if (len(args) == 3):
   parentTransID = args[2]
 elif (len(args) == 2):
-  parentTransID = -1
+  parentTransID = ''
 else:
   Script.showHelp()
 
 prodID = args[0]
 transID = args[1]
-
 
 res = transClient.getTransformation(transID)
 if not res['OK']:
@@ -47,7 +47,7 @@ if not res['OK']:
 
 transID = res['Value']['TransformationID']
 
-if parentTransID != -1:
+if parentTransID:
   res = transClient.getTransformation(parentTransID)
   if not res['OK']:
     DIRAC.gLogger.error('Failed to get transformation %s: %s' % (parentTransID, res['Message']))
@@ -60,15 +60,19 @@ if not res['OK']:
   DIRAC.exit(-1)
 
 prodID = res['Value']['ProductionID']
-
 res = prodClient.addTransformationsToProduction(prodID, transID, parentTransID)
-
 if not res['OK']:
   DIRAC.gLogger.error(res['Message'])
   DIRAC.exit(-1)
 
-DIRAC.gLogger.notice(
-    'Transformation %s successfully added to production %s with parent transformation %s' %
-    (transID, prodID, parentTransID))
+if parentTransID:
+  msg = 'Transformation %s successfully added to production %s with parent transformation %s' % \
+        (transID, prodID, parentTransID)
+else:
+  msg = 'Transformation %s successfully added to production %s with no parent transformation' %  \
+        (transID, prodID)
+
+DIRAC.gLogger.notice(msg)
+
 
 DIRAC.exit(0)

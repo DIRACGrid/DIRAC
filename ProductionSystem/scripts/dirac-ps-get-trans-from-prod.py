@@ -22,6 +22,7 @@ Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
 Script.parseCommandLine()
 
 from DIRAC.ProductionSystem.Client.ProductionClient import ProductionClient
+from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 
 args = Script.getPositionalArgs()
 if (len(args) != 1):
@@ -31,19 +32,46 @@ if (len(args) != 1):
 prodID = args[0]
 
 prodClient = ProductionClient()
-res = prodClient.getProductionTransformations(prodID)
+transClient = TransformationClient()
 
-fields = ['ProductionID', 'TransformationID', 'ParentTransformationID', 'LastUpdate', 'InsertedTime']
-records = []
+res = prodClient.getProductionTransformations(prodID)
+transIDs = []
 
 if res['OK']:
   transList = res['Value']
   for trans in transList:
-    records.append([str(trans['ProductionID']), str(trans['TransformationID']), str(trans['ParentTransformationID']),
-                    str(trans['LastUpdate']), str(trans['InsertedTime'])])
+    transIDs.append(trans['TransformationID'])
 else:
   DIRAC.gLogger.error(res['Message'])
   DIRAC.exit(-1)
+
+fields = ['TransformationName', 'Status', 'F_Proc.(%)', 'TransformationID', 'ProductionID', 'Prod_LastUpdate', 'Prod_InsertedTime']
+records = []
+
+paramShowNames = ['TransformationID', 'TransformationName', 'Type', 'Status', 'Files_Total', 'Files_PercentProcessed', \
+                      'Files_Processed', 'Files_Unused', 'Jobs_TotalCreated', 'Jobs_Waiting', \
+                      'Jobs_Running', 'Jobs_Done', 'Jobs_Failed', 'Jobs_Stalled']
+resList = []
+
+
+result = transClient.getTransformationSummaryWeb( { 'TransformationID' : transIDs }, [], 0, len(transIDs) )
+
+if result['Value']['TotalRecords'] > 0:
+  paramNames = result['Value']['ParameterNames']
+  for paramValues in result['Value']['Records']:
+    paramShowValues = map( lambda pname: paramValues[ paramNames.index( pname ) ], paramShowNames )
+    showDict = dict( zip( paramShowNames, paramShowValues ) )
+    resList.append( showDict )
+
+for res in resList:
+  files_Processed = res['Files_Processed']
+  status = res['Status']
+  type = res['Type']
+  transName = res['TransformationName']
+  transID = res['TransformationID']
+  records.append([transName, status, str(files_Processed), str(transID), str(prodID),
+                    str(trans['LastUpdate']), str(trans['InsertedTime'])])
+
 
 printTable(fields, records)
 
