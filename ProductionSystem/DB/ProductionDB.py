@@ -227,13 +227,13 @@ class ProductionDB(DB):
     res = self.getProductionParameters(prodName, 'Description')
     if not res['OK']:
       return res
-    prodDescription = json.loads(res['Value'])
 
+    prodDescription = json.loads(res['Value'])
     transIDs = []
-    for step in prodDescription:
+    for step in sorted(prodDescription):
       res = self.ProdTransManager.addTransformationStep(prodDescription[step], prodID)
+      # If the addition of at least one step failes, clean the already added transformation steps from the TS
       if not res['OK']:
-        # Clean all transformation steps from the TS
         self.ProdTransManager.deleteTransformations(transIDs)
         return S_ERROR(res['Message'])
       transID = res['Value']
@@ -249,8 +249,8 @@ class ProductionDB(DB):
           parentTransIDs.append(parentTransID)
 
       res = self.addTransformationsToProduction(prodID, transID, parentTransIDs=parentTransIDs)
+      # If adding the transformations to production fails, clean all the transformation steps from the TS
       if not res['OK']:
-        # Clean all the transformation steps from the TS
         self.ProdTransManager.deleteTransformations(transIDs)
         # Clean the production
         self.deleteProduction(prodID)
@@ -370,7 +370,6 @@ class ProductionDB(DB):
 
     gLogger.notice('Production %s is valid' % prodName)
 
-    # Add the transformations to the given production
     res = self.__addTransformations(prodID, transIDs, connection=connection)
     if not res['OK']:
       msg = "Failed to add transformations %s to production %s: %s" % (transIDs, prodID, res['Message'])

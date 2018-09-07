@@ -18,7 +18,7 @@ class ProdTransManager(object):
     self.prodClient = ProductionClient()
 
   def deleteTransformations(self, transIDs):
-
+    # Delete given transformations from the TS
     gLogger.notice("Deleting transformations %s from the TS" % transIDs)
 
     for transID in transIDs:
@@ -29,9 +29,8 @@ class ProdTransManager(object):
     return S_OK()
 
   def deleteProductionTransformations(self, prodID):
-
+    # Delete production transformations from the TS
     res = self.prodClient.getProductionTransformations(prodID)
-
     if res['OK']:
       transList = res['Value']
 
@@ -46,7 +45,7 @@ class ProdTransManager(object):
     return S_OK()
 
   def addTransformationStep(self, prodStep, prodID):
-    # Here I should check that all needed parameters of prodStep are defined!!
+    # Add the transformation step to the TS
     gLogger.notice("Add step %s to production %s" % (prodStep['name'], prodID))
 
     description = prodStep['description']
@@ -59,8 +58,7 @@ class ProdTransManager(object):
     body = prodStep['body']
     inputquery = prodStep['inputquery']
     outputquery = prodStep['outputquery']
-
-    name = '%08d' % prodID + '_Step_' + prodStep['name']
+    name = '%08d' % prodID + '_' + prodStep['name']
 
     res = self.transClient.addTransformation(
         name,

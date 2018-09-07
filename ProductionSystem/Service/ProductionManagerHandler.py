@@ -91,9 +91,10 @@ class ProductionManagerHandlerBase(RequestHandler):
   #
 
   types_addTransformationsToProduction = [prodTypes, transTypes, transTypes]
+  #types_addTransformationsToProduction = [prodTypes, transTypes]
 
   def export_addTransformationsToProduction(self, prodName, transIDs, parentTransIDs):
-    res = database.addTransformationsToProduction(prodName, transIDs, parentTransIDs)
+    res = database.addTransformationsToProduction(prodName, transIDs, parentTransIDs=parentTransIDs)
     return self._parseRes(res)
 
   types_getProductionTransformations = []
