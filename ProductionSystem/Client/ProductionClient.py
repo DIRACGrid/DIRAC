@@ -4,6 +4,7 @@ __RCSID__ = "$Id$"
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.Client import Client
+from DIRAC.ProductionSystem.Utilities.StateMachine import ProductionsStateMachine
 
 
 class ProductionClient(Client):
@@ -23,7 +24,7 @@ class ProductionClient(Client):
   def setServer(self, url):
     self.serverURL = url
 
-  # Methods working on the client to prepare the production description
+  # Methods running on the client to prepare the production description
 
   def getDescription(self):
     """ Get the production description
@@ -56,6 +57,23 @@ class ProductionClient(Client):
     self.prodDescription[prodStep.Name] = prodStepDict
     return S_OK()
 
+  # Method applying the Production System State machine
+
+  def _applyProductionStatusStateMachine( self, prodID, status, force ):
+    """ Performs a state machine check for productions when asked to change the status
+    """
+    res = self.getProductionParameters(prodID, 'Status')
+    originalStatus = res['Value']
+    proposedStatus = status
+    if force:
+      return proposedStatus
+    else:
+      stateChange = ProductionsStateMachine( originalStatus ).setState( proposedStatus )
+      if not stateChange['OK']:
+        return originalStatus
+      else:
+        return stateChange['Value']
+
   # Methods to contact the ProductionManager Service
 
   def addProduction(self, prodName, prodDescription, timeout=1800):
@@ -74,6 +92,10 @@ class ProductionClient(Client):
     """ Sets the production status
     """
     rpcClient = self._getRPC()
+    # Apply the production state machine
+    new_status = self._applyProductionStatusStateMachine(prodID,status,force=False)
+    if new_status != status:
+      return S_ERROR('Cannot change status')
     return rpcClient.setProductionStatus(prodID, status)
 
   def getProductions(self, condDict=None, older=None, newer=None, timeStamp=None,
@@ -108,6 +130,10 @@ class ProductionClient(Client):
     """
     rpcClient = self._getRPC()
     return rpcClient.getProduction(prodName)
+
+  def getProductionParameters(self, prodName,parameters):
+    rpcClient = self._getRPC()
+    return rpcClient.getProductionParameters(prodName,parameters)
 
   def getProductionTransformations(self, prodName, condDict=None, older=None, newer=None, timeStamp=None,
                                    orderAttribute=None, limit=10000):
