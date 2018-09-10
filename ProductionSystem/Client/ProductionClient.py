@@ -59,7 +59,7 @@ class ProductionClient(Client):
 
   # Method applying the Production System State machine
 
-  def _applyProductionStatusStateMachine( self, prodID, status, force ):
+  def _applyProductionStatusStateMachine(self, prodID, status, force):
     """ Performs a state machine check for productions when asked to change the status
     """
     res = self.getProductionParameters(prodID, 'Status')
@@ -68,7 +68,7 @@ class ProductionClient(Client):
     if force:
       return proposedStatus
     else:
-      stateChange = ProductionsStateMachine( originalStatus ).setState( proposedStatus )
+      stateChange = ProductionsStateMachine(originalStatus).setState(proposedStatus)
       if not stateChange['OK']:
         return originalStatus
       else:
@@ -93,7 +93,7 @@ class ProductionClient(Client):
     """
     rpcClient = self._getRPC()
     # Apply the production state machine
-    new_status = self._applyProductionStatusStateMachine(prodID,status,force=False)
+    new_status = self._applyProductionStatusStateMachine(prodID, status, force=False)
     if new_status != status:
       return S_ERROR('Cannot change status')
     return rpcClient.setProductionStatus(prodID, status)
@@ -131,9 +131,9 @@ class ProductionClient(Client):
     rpcClient = self._getRPC()
     return rpcClient.getProduction(prodName)
 
-  def getProductionParameters(self, prodName,parameters):
+  def getProductionParameters(self, prodName, parameters):
     rpcClient = self._getRPC()
-    return rpcClient.getProductionParameters(prodName,parameters)
+    return rpcClient.getProductionParameters(prodName, parameters)
 
   def getProductionTransformations(self, prodName, condDict=None, older=None, newer=None, timeStamp=None,
                                    orderAttribute=None, limit=10000):
