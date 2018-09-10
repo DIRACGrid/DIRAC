@@ -18,7 +18,7 @@ import DIRAC
 from DIRAC.Core.Base import Script
 
 # Register workflow parameter switch
-Script.registerSwitch( 'p:', 'parameter=', 'Parameters that are passed directly to the workflow' )
+Script.registerSwitch('p:', 'parameter=', 'Parameters that are passed directly to the workflow')
 Script.parseCommandLine()
 
 # from DIRAC.Core.Workflow.Parameter import *
@@ -29,30 +29,31 @@ from DIRAC.AccountingSystem.Client.DataStoreClient import DataStoreClient
 from DIRAC.RequestManagementSystem.Client.Request import Request
 
 # Forcing the current directory to be the first in the PYTHONPATH
-sys.path.insert( 0, os.path.realpath( '.' ) )
-gLogger.showHeaders( True )
+sys.path.insert(0, os.path.realpath('.'))
+gLogger.showHeaders(True)
 
-def jobexec( jobxml, wfParameters ):
-  jobfile = os.path.abspath( jobxml )
-  if not os.path.exists( jobfile ):
-    gLogger.warn( 'Path to specified workflow %s does not exist' % ( jobfile ) )
-    sys.exit( 1 )
-  workflow = fromXMLFile( jobfile )
-  gLogger.debug( workflow )
+
+def jobexec(jobxml, wfParameters):
+  jobfile = os.path.abspath(jobxml)
+  if not os.path.exists(jobfile):
+    gLogger.warn('Path to specified workflow %s does not exist' % (jobfile))
+    sys.exit(1)
+  workflow = fromXMLFile(jobfile)
+  gLogger.debug(workflow)
   code = workflow.createCode()
-  gLogger.debug( code )
+  gLogger.debug(code)
   jobID = 0
-  if os.environ.has_key( 'JOBID' ):
+  if 'JOBID' in os.environ:
     jobID = os.environ['JOBID']
-    gLogger.info( 'DIRAC JobID %s is running at site %s' % ( jobID, DIRAC.siteName() ) )
+    gLogger.info('DIRAC JobID %s is running at site %s' % (jobID, DIRAC.siteName()))
 
-  workflow.addTool( 'JobReport', JobReport( jobID ) )
-  workflow.addTool( 'AccountingReport', DataStoreClient() )
-  workflow.addTool( 'Request', Request() )
+  workflow.addTool('JobReport', JobReport(jobID))
+  workflow.addTool('AccountingReport', DataStoreClient())
+  workflow.addTool('Request', Request())
 
   # Propagate the command line parameters to the workflow if any
   for pName, pValue in wfParameters.items():
-    workflow.setValue( pName, pValue )
+    workflow.setValue(pName, pValue)
 
   # Propagate the command line parameters to the workflow module instances of each step
   for stepdefinition in workflow.step_definitions.itervalues():
@@ -63,37 +64,38 @@ def jobexec( jobxml, wfParameters ):
 
   return workflow.execute()
 
-positionalArgs = Script.getPositionalArgs()
-if len( positionalArgs ) != 1:
-  gLogger.debug( 'Positional arguments were %s' % ( positionalArgs ) )
-  DIRAC.abort( 1, "Must specify the Job XML file description" )
 
-if os.environ.has_key( 'JOBID' ):
-  gLogger.info( 'JobID: %s' % ( os.environ['JOBID'] ) )
+positionalArgs = Script.getPositionalArgs()
+if len(positionalArgs) != 1:
+  gLogger.debug('Positional arguments were %s' % (positionalArgs))
+  DIRAC.abort(1, "Must specify the Job XML file description")
+
+if 'JOBID' in os.environ:
+  gLogger.info('JobID: %s' % (os.environ['JOBID']))
 
 jobXMLfile = positionalArgs[0]
 parList = Script.getUnprocessedSwitches()
 parDict = {}
 for switch, parameter in parList:
   if switch == "p":
-    name, value = parameter.split( '=' )
+    name, value = parameter.split('=')
     value = value.strip()
 
     # The comma separated list in curly brackets is interpreted as a list
-    if value.startswith( "{" ):
-      value = value[1:-1].replace( '"', '' ).replace( " ", '' ).split( ',' )
-      value = ';'.join( value )
+    if value.startswith("{"):
+      value = value[1:-1].replace('"', '').replace(" ", '').split(',')
+      value = ';'.join(value)
 
     parDict[name] = value
 
-gLogger.debug( 'PYTHONPATH:\n%s' % ( '\n'.join( sys.path ) ) )
-jobExec = jobexec( jobXMLfile, parDict )
+gLogger.debug('PYTHONPATH:\n%s' % ('\n'.join(sys.path)))
+jobExec = jobexec(jobXMLfile, parDict)
 if not jobExec['OK']:
-  gLogger.debug( 'Workflow execution finished with errors, exiting' )
+  gLogger.debug('Workflow execution finished with errors, exiting')
   if jobExec['Errno']:
-    sys.exit( jobExec['Errno'] )
+    sys.exit(jobExec['Errno'])
   else:
     sys.exit(1)
 else:
-  gLogger.debug( 'Workflow execution successful, exiting' )
-  sys.exit( 0 )
+  gLogger.debug('Workflow execution successful, exiting')
+  sys.exit(0)
