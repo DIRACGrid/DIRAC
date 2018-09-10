@@ -13,12 +13,12 @@
 -- FLUSH PRIVILEGES
 
 -- -----------------------------------------------------------------------------
-USE ProductionDB
+USE ProductionDB;
 
-SET FOREIGN_KEY_CHECKS = 0
+SET FOREIGN_KEY_CHECKS = 0;
 
 -- -------------------------------------------------------------------------------
-DROP TABLE IF EXISTS Productions
+DROP TABLE IF EXISTS Productions;
 CREATE TABLE Productions(
     ProductionID INTEGER NOT NULL AUTO_INCREMENT,
     ProductionName VARCHAR(255) NOT NULL,
@@ -30,10 +30,10 @@ CREATE TABLE Productions(
     Status  CHAR(32) DEFAULT 'New',
     PRIMARY KEY(ProductionID),
     INDEX(ProductionName)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8
+) ENGINE = InnoDB DEFAULT CHARSET = utf8;
 
 -- -------------------------------------------------------------------------------
-DROP TABLE IF EXISTS ProductionTransformations
+DROP TABLE IF EXISTS ProductionTransformations;
 CREATE TABLE ProductionTransformations(
     ProductionID INTEGER NOT NULL,
     TransformationID INTEGER NOT NULL,
@@ -42,10 +42,10 @@ CREATE TABLE ProductionTransformations(
     PRIMARY KEY(ProductionID, TransformationID),
     UNIQUE INDEX(TransformationID),
     FOREIGN KEY(ProductionID) REFERENCES Productions(ProductionID)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8
+) ENGINE = InnoDB DEFAULT CHARSET = utf8;
 
 -- -------------------------------------------------------------------------------
-DROP TABLE IF EXISTS ProductionTransformationLinks
+DROP TABLE IF EXISTS ProductionTransformationLinks;
 CREATE TABLE ProductionTransformationLinks(
     TransformationID INTEGER NOT NULL,
     ParentTransformationID INTEGER DEFAULT -1,
@@ -54,6 +54,6 @@ CREATE TABLE ProductionTransformationLinks(
     INDEX(TransformationID),
     FOREIGN KEY(ProductionID) REFERENCES Productions(ProductionID),
     FOREIGN KEY(TransformationID) REFERENCES ProductionTransformations(TransformationID)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8
+) ENGINE = InnoDB DEFAULT CHARSET = utf8;
 
-SET FOREIGN_KEY_CHECKS = 1
+SET FOREIGN_KEY_CHECKS = 1;
