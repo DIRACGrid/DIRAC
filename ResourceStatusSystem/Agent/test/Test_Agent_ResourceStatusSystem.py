@@ -3,9 +3,6 @@
 
 # pylint: disable=protected-access, missing-docstring, invalid-name, line-too-long
 
-# imports
-import importlib
-
 import pytest
 from mock import MagicMock
 
@@ -59,14 +56,17 @@ response5 = {
     'Columns': columns}
 
 mockAM = MagicMock()
-sla_m = importlib.import_module('DIRAC.ResourceStatusSystem.Agent.SummarizeLogsAgent')
-sla_m.AgentModule = mockAM
-sla_m.FileReport = MagicMock()
-sla = SummarizeLogsAgent()
-sla.log = gLogger
-sla.log.setLevel('DEBUG')
-sla.am_getOption = mockAM
-sla.rsClient = rsClientMock
+
+
+@pytest.fixture()
+def sla(mocker):
+  mocker.patch('DIRAC.ResourceStatusSystem.Agent.SummarizeLogsAgent.AgentModule', new=mockAM)
+  theSLA = SummarizeLogsAgent()
+  theSLA.log = gLogger
+  theSLA.log.setLevel('DEBUG')
+  theSLA.am_getOption = mockAM
+  theSLA.rsClient = rsClientMock
+  return theSLA
 
 
 @pytest.mark.parametrize("rsClientMockSelectStatusElementReturnValue, expected, expectedValue", [
@@ -83,7 +83,7 @@ sla.rsClient = rsClientMock
                                    ('RRCKI-BUFFER', 'ReadAccess'): [dict(zip(columns, el103))]})),
     (response5, True, (105, {('RRCKI-BUFFER', 'WriteAccess'): [dict(zip(columns, el101)), dict(zip(columns, el105))],
                              ('RRCKI-BUFFER', 'ReadAccess'): [dict(zip(columns, el103))]})), ])
-def test__summarizeLogs(rsClientMockSelectStatusElementReturnValue, expected, expectedValue):
+def test__summarizeLogs(rsClientMockSelectStatusElementReturnValue, expected, expectedValue, sla):
   rsClientMock.selectStatusElement.return_value = rsClientMockSelectStatusElementReturnValue
   res = sla._summarizeLogs('element')
   assert res['OK'] == expected
@@ -103,7 +103,7 @@ def test__summarizeLogs(rsClientMockSelectStatusElementReturnValue, expected, ex
      [dict(zip(columns, el101))],
      {'OK': True, 'Value': [['Banned', 'rs_svc']], 'Columns':['status', 'tokenowner']}, True),
 ])
-def test__registerLogs(key, logs, rsClientMockSelectStatusElementReturnValue, expected):
+def test__registerLogs(key, logs, rsClientMockSelectStatusElementReturnValue, expected, sla):
   rsClientMock.selectStatusElement.return_value = rsClientMockSelectStatusElementReturnValue
   res = sla._registerLogs('Resource', key, logs)
   assert res['OK'] == expected
