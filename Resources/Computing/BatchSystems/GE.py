@@ -39,7 +39,7 @@ class GE(object):
 
     outputs = []
     output = ''
-    for _i in range(int(nJobs)):
+    for _i in xrange(int(nJobs)):
       cmd = "qsub -o %(OutputDir)s -e %(ErrorDir)s -N DIRACPilot %(SubmitOptions)s %(Executable)s" % kwargs
       status, output = commands.getstatusoutput(cmd)
       if status == 0:
