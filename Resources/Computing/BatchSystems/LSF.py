@@ -59,7 +59,7 @@ class LSF(object):
       resultDict['Status'] = 0
       resultDict['Jobs'] = []
       for output in outputs:
-        match = re.search('Job <(\d*)>', output)
+        match = re.search(r'Job <(\d*)>', output)
         if match:
           resultDict['Jobs'].append(match.groups()[0])
     else:
