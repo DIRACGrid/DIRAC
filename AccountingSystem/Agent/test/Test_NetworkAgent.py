@@ -1,8 +1,9 @@
 """ Contains unit tests of NetworkAgent module
 """
+import unittest
+import sys
 
 import DIRAC.AccountingSystem.Agent.NetworkAgent as module
-import unittest
 
 from mock.mock import MagicMock
 
@@ -61,6 +62,10 @@ class NetworkAgentSuccessTestCase( unittest.TestCase ):
 
     self.agent = module.NetworkAgent()
     self.agent.initialize()
+
+  @classmethod
+  def tearDownClass(cls):
+    sys.modules.pop('DIRAC.AccountingSystem.Agent.NetworkAgent')
 
   def test_updateNameDictionary( self ):
 
