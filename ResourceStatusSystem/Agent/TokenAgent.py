@@ -4,17 +4,11 @@
 
 The following options can be set for the TokenAgent.
 
-::
-
-  TokenAgent
-  {
-    # hours to notify the owner of the token in advance to the token expiration (12 is the default)
-    notifyHours = 12
-    # admin e-mail to where to notify about expiring tokens (on top of existing notifications to tokwn owners)
-    # (normally not set)
-    adminMail = 'send@to.me'
-  }
-
+.. literalinclude:: ../ConfigTemplate.cfg
+  :start-after: ##BEGIN TokenAgent
+  :end-before: ##END
+  :dedent: 2
+  :caption: TokenAgent options
 """
 
 __RCSID__ = '$Id$'

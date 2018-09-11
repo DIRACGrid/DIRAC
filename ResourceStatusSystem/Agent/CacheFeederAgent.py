@@ -2,16 +2,11 @@
 
   This agent feeds the Cache tables with the outputs of the cache commands.
 
-The following options can be set for the CacheFeederAgent.
-
-::
-
-  CacheFeederAgent
-  {
-    # Use a dedicated proxy to submit jobs to the WMS
-    shifterProxy = DataManager
-  }
-
+.. literalinclude:: ../ConfigTemplate.cfg
+  :start-after: ##BEGIN CacheFeederAgent
+  :end-before: ##END
+  :dedent: 2
+  :caption: CacheFeederAgent options
 '''
 
 __RCSID__ = '$Id$'
@@ -157,6 +152,3 @@ class CacheFeederAgent(AgentModule):
           self.log.exception("Failed to execute command, with exception: %s" % commandModule, lException=excp)
 
     return S_OK()
-
-################################################################################
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

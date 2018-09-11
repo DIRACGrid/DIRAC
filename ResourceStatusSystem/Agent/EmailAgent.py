@@ -2,6 +2,12 @@
   This agent reads a cache file ( cache.db ) which contains the aggregated information
   of what happened to the elements of each site. After reading the cache file
   ( by default every 30 minutes ) it sends an email for every site and then clears it.
+
+.. literalinclude:: ../ConfigTemplate.cfg
+  :start-after: ##BEGIN EmailAgent
+  :end-before: ##END
+  :dedent: 2
+  :caption: EmailAgent options
 '''
 
 import os
@@ -151,6 +157,3 @@ class EmailAgent(AgentModule):
         self.log.error('%s not present' % notificationGroupName)
 
     return S_OK(userEmails)
-
-################################################################################
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

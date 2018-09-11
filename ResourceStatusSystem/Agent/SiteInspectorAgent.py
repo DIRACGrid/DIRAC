@@ -4,14 +4,11 @@
 
 The following options can be set for the SiteInspectorAgent.
 
-::
-
-  SiteInspectorAgent
-  {
-    # maximum number of threads to use in this agent (15 is the defaul)
-    maxNumberOfThreads = 15
-  }
-
+.. literalinclude:: ../ConfigTemplate.cfg
+  :start-after: ##BEGIN SiteInspectorAgent
+  :end-before: ##END
+  :dedent: 2
+  :caption: SiteInspectorAgent options
 """
 
 __RCSID__ = '$Id$'

@@ -5,15 +5,11 @@
 
 The following options can be set for the ElementInspectorAgent.
 
-::
-
-  ElementInspectorAgent
-  {
-    # maximum number of threads to use in this agent (15 is the defaul)
-    maxNumberOfThreads = 15
-    # element type to check (Resource -- which is the default, or Node)
-    elementType = Resource
-  }
+.. literalinclude:: ../ConfigTemplate.cfg
+  :start-after: ##BEGIN ElementInspectorAgent
+  :end-before: ##END
+  :dedent: 2
+  :caption: ElementInspectorAgent options
 """
 
 import datetime
