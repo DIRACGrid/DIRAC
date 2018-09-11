@@ -87,7 +87,7 @@ class ProductionDB(DB):
     if not res['OK']:
       self.lock.release()
       return res
-    prodID = res['lastRowId']
+    prodID = int(res['lastRowId'])
     self.lock.release()
 
     return S_OK(prodID)

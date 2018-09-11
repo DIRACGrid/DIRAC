@@ -9,7 +9,7 @@ from DIRAC.ProductionSystem.Utilities.StateMachine import ProductionsStateMachin
 
 class ProductionClient(Client):
 
-  """ Exposes the functionality available in the DIRAC/ProductionHandler
+  """ Exposes the functionality available in the ProductionSystem/ProductionManagerHandler
   """
 
   def __init__(self, **kwargs):
@@ -21,22 +21,7 @@ class ProductionClient(Client):
     self.prodDescription = {}
     self.stepCounter = 1
 
-  def setServer(self, url):
-    self.serverURL = url
-
   # Methods running on the client to prepare the production description
-
-  def getDescription(self):
-    """ Get the production description
-    """
-    return self.prodDescription
-
-  def setDescription(self, prodDescription):
-    """ Set the production description
-
-        prodDescription is a dictionary with production description
-    """
-    self.prodDescription = prodDescription
 
   def addStep(self, prodStep):
     """ Add a step to the production description, by updating the description dictionary
@@ -50,7 +35,7 @@ class ProductionClient(Client):
 
     res = prodStep.getAsDict()
     if not res['OK']:
-      return S_ERROR('Failed to add step to production:', res['Message'])
+      return res
     prodStepDict = res['Value']
     prodStepDict['name'] = stepName
 
@@ -74,27 +59,15 @@ class ProductionClient(Client):
       else:
         return stateChange['Value']
 
-  # Methods to contact the ProductionManager Service
-
-  def addProduction(self, prodName, prodDescription, timeout=1800):
-    """ Create a new production starting from its description
-    """
-    rpcClient = self._getRPC(timeout=timeout)
-    return rpcClient.addProduction(prodName, prodDescription)
-
-  def startProduction(self, prodID):
-    """ Instantiate the transformations of the production and start the production
-    """
-    rpcClient = self._getRPC()
-    return rpcClient.startProduction(prodID)
+  # Methods contacting the ProductionManager Service
 
   def setProductionStatus(self, prodID, status):
     """ Sets the production status
     """
     rpcClient = self._getRPC()
     # Apply the production state machine
-    new_status = self._applyProductionStatusStateMachine(prodID, status, force=False)
-    if new_status != status:
+    newStatus = self._applyProductionStatusStateMachine(prodID, status, force=False)
+    if newStatus != status:
       return S_ERROR('Cannot change status')
     return rpcClient.setProductionStatus(prodID, status)
 
@@ -124,16 +97,6 @@ class ProductionClient(Client):
         if len(res['Value']) < limit:
           break
     return S_OK(productions)
-
-  def getProduction(self, prodName):
-    """ gets a specific production.
-    """
-    rpcClient = self._getRPC()
-    return rpcClient.getProduction(prodName)
-
-  def getProductionParameters(self, prodName, parameters):
-    rpcClient = self._getRPC()
-    return rpcClient.getProductionParameters(prodName, parameters)
 
   def getProductionTransformations(self, prodName, condDict=None, older=None, newer=None, timeStamp=None,
                                    orderAttribute=None, limit=10000):

@@ -177,25 +177,20 @@ class TransformationDB(DB):
     transID = res['lastRowId']
     self.lock.release()
 
-    # Add Input and Output Meta Queries to the transformation ###############
-    if inputMetaQuery is None:
-      inputMetaQuery = {}
-    if outputMetaQuery is None:
-      outputMetaQuery = {}
-
-    if len(inputMetaQuery) > 0:
+    # Add Input and Output Meta Queries to the transformation if they are defined
+    if inputMetaQuery:
       res = self.createTransformationMetaQuery(transID, inputMetaQuery, 'Input')
       if not res['OK']:
         gLogger.error("Failed to add input meta query to the transformation", res['Message'])
         return self.deleteTransformation(transID, connection=connection)
-    if len(outputMetaQuery) > 0:
+    if outputMetaQuery:
       res = self.createTransformationMetaQuery(transID, outputMetaQuery, 'Output')
       if not res['OK']:
         gLogger.error("Failed to add output meta query to the transformation", res['Message'])
         return self.deleteTransformation(transID, connection=connection)
 
     # If the transformation has an input data specification
-    if len(inputMetaQuery) > 0:
+    if inputMetaQuery:
       self.filterQueries.append((transID, inputMetaQuery))
 
     if inheritedFrom:
@@ -227,9 +222,9 @@ class TransformationDB(DB):
           gLogger.error("Could not insert files, now deleting", res['Message'])
           return self.deleteTransformation(transID, connection=connection)
 
-    ### Add files to the DataFiles table ##################
+    # Add files to the DataFiles table
     catalog = FileCatalog()
-    if addFiles and len(inputMetaQuery) > 0:
+    if addFiles and inputMetaQuery:
       res = catalog.findFilesByMetadata(inputMetaQuery)
       if not res['OK']:
         gLogger.error("Failed to find files to be added to the transformation", res['Message'])

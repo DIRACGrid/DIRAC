@@ -7,8 +7,8 @@ from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.ProductionSystem.DB.ProductionDB import ProductionDB
 
-prodTypes = [basestring, int, long]
-transTypes = [basestring, int, long, list]
+prodTypes = [basestring, int]
+transTypes = [basestring, int, list]
 
 
 class ProductionManagerHandlerBase(RequestHandler):

@@ -49,7 +49,7 @@ class ProductionStep(object):
 
     prodStepDict['description'] = self.Description
     prodStepDict['longDescription'] = self.LongDescription
-    prodStepDict['type'] = self.Type
+    prodStepDict['stepType'] = self.Type
     prodStepDict['plugin'] = self.Plugin
     prodStepDict['agentType'] = self.AgentType
     prodStepDict['fileMask'] = self.FileMask

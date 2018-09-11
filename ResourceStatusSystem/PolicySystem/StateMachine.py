@@ -119,7 +119,18 @@ class StateMachine( object ):
   def setState(self, candidateState):
     """ Makes sure the state is either None or known to the machine, and that it is a valid state to move into.
         Final states are also checked.
-        This is a re-definition of original one that wasn't making these checks
+
+    examples:
+      >>> sm0.setState( None )[ 'OK' ]
+          True
+      >>> sm0.setState( 'Nirvana' )[ 'OK' ]
+          True
+      >>> sm0.setState( 'AnotherState' )[ 'OK' ]
+          False
+
+    :param state: state which will be set as current state of the StateMachine
+    :type state: None or str
+    :return: S_OK || S_ERROR
     """
 
     if candidateState == self.state:

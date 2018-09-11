@@ -50,7 +50,7 @@ class ProdTransManager(object):
 
     description = prodStep['description']
     longDescription = prodStep['longDescription']
-    type = prodStep['type']
+    stepType = prodStep['stepType']
     plugin = prodStep['plugin']
     agentType = prodStep['agentType']
     fileMask = prodStep['fileMask']
@@ -64,7 +64,7 @@ class ProdTransManager(object):
         name,
         description,
         longDescription,
-        type,
+        stepType,
         plugin,
         agentType,
         fileMask,

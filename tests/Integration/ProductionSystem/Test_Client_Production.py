@@ -32,7 +32,7 @@ class ProductionClientChain(TestClientProductionTestCase):
     self.assertTrue(res['OK'])
 
     # Get the production description
-    prodDescription = self.prodClient.getDescription()
+    prodDescription = self.prodClient.prodDescription
 
     # Create the production
     res = self.prodClient.addProduction('prodName', json.dumps(prodDescription))
@@ -45,6 +45,7 @@ class ProductionClientChain(TestClientProductionTestCase):
 
     # delete the production
     res = self.prodClient.deleteProduction(prodID)
+    print type(prodID)
     self.assertTrue(res['OK'])
 
     # delete non existing one (fails)

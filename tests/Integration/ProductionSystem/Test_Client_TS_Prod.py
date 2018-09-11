@@ -120,7 +120,7 @@ class ProductionClientChain(TestClientProductionTestCase):
     self.assertTrue(res['OK'])
 
     # Get the production description
-    prodDescription = self.prodClient.getDescription()
+    prodDescription = self.prodClient.prodDescription
 
     # Create the production
     prodName = 'SeqProd'
@@ -198,7 +198,7 @@ class ProductionClientChain(TestClientProductionTestCase):
     self.assertTrue(res['OK'])
 
     # Get the production description
-    prodDescription = self.prodClient.getDescription()
+    prodDescription = self.prodClient.prodDescription
 
     # Create the production
     prodName = 'MergeProd'
@@ -295,7 +295,7 @@ class ProductionClientChain(TestClientProductionTestCase):
     self.assertTrue(res['OK'])
 
     # Get the production description
-    prodDescription = self.prodClient.getDescription()
+    prodDescription = self.prodClient.prodDescription
 
     # Create the production
     prodName = 'SplitProd'
