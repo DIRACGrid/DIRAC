@@ -58,7 +58,7 @@ def createDataTransformation(flavour, targetSE, sourceSE,
   trans.setDescription(description)
   trans.setLongDescription(description)
   trans.setType('Replication')
-  trans.setGroup(transGroup)
+  trans.setTransformationGroup(transGroup)
   trans.setGroupSize(groupSize)
   trans.setPlugin(plugin)
 

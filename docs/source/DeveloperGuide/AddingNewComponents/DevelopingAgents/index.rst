@@ -5,7 +5,7 @@ Developing Agents
 What is an agent?
 -------------------
 
-Agents are active software components which run as independent processes to fulfil one or several system functions. They are the engine that make DIRAC beat. Agents are processes that perform actions periodically. Each cycle agents tipically contact a service or look into a DB to check for pending actions, execute the required ones and report back the results. All agents are built in the same framework which organizes the main execution loop and provides a uniform way for deployment, configuration, control and logging of the agent activity.
+Agents are active software components which run as independent processes to fulfil one or several system functions. They are the engine that make DIRAC beat. Agents are processes that perform actions periodically. Each cycle agents typically contact a service or look into a DB to check for pending actions, execute the required ones and report back the results. All agents are built in the same framework which organizes the main execution loop and provides a uniform way for deployment, configuration, control and logging of the agent activity.
 
 Agents run in different environments. Those belonging to a DIRAC system, for example Workload Management or Data Distribution, are usually deployed close to the corresponding services. They watch for changes in the system state and react accordingly by initiating actions like job submission or result retrieval. 
 
@@ -13,7 +13,7 @@ Agents run in different environments. Those belonging to a DIRAC system, for exa
 Simplest Agent
 -------------------
 
-An agent essentially loops over and over executing the same function every *X* seconds. It has essentially two methods, *initialize* and *execute*. When the agent is started it will execute the *initialize* method. Tipically this *initialize* method will define (amongst other stuff) how frequently the *execute* method will be run. Then the *execute* method is run. Once it finishes the agent will wait until the required seconds have passed and run the *execute* method again. This will loop over and over until the agent is killed or the specified amount of loops have passed.
+An agent essentially loops over and over executing the same function every *X* seconds. It has essentially two methods, *initialize* and *execute*. When the agent is started it will execute the *initialize* method. Typically this *initialize* method will define (amongst other stuff) how frequently the *execute* method will be run. Then the *execute* method is run. Once it finishes the agent will wait until the required seconds have passed and run the *execute* method again. This will loop over and over until the agent is killed or the specified amount of loops have passed.
 
 Creating an Agent is best illustrated by the example below which is presenting a fully 
 functional although simplest possible agent:: 
@@ -74,6 +74,7 @@ The Agent name is SimplestAgent. The *initialize* method is called once when the
 
 Now comes the definition of the *execute* method. This method is executed every time Agent runs. Place your code inside this method. Other methods can be defined in the same file and used via *execute* method. The result must always be returned as an *S_OK* or *S_ERROR* structure for the *execute* method. The previous example will execute the same example code in the Services section from within the agent.
 
+
 Default Agent Configuration parameters
 ------------------------------------------
 
@@ -85,6 +86,7 @@ will look like the following::
 
   Agents
   {
+    ##BEGIN SimplestAgent
     SimplestAgent
     {
       LogLevel = INFO
@@ -92,10 +94,13 @@ will look like the following::
       PollingTime = 60
       Message = still working...
     }
+    ##END
   }
   
-Polling time define execution time scheduling.
-The Message is this agent specific option.
+'PollingTime' defines the time between cycles, 'Message' is this agent specific
+option. ##BEGIN SimplestAgent and ##END are used to automagically include the
+agent's documentation into the docstring of the agents' module, by placing this
+snippet there, see :ref:`codedocumenting_parameters`
 
 Installing the Agent
 ------------------------
@@ -123,7 +128,8 @@ stop it, uninstall, get the Agent status, etc.
 Checking the Agent output from log messages
 ------------------------------------------------
 
-If case you are running a SystemAdministrator service, you'll be able to login to the machine using (as adminitrator) `dirac-admin-sysadmin-cli` and show the log of SimplestAgent using::
+In case you are running a SystemAdministrator service, you'll be able to log in to the machine using (as administrator)
+`dirac-admin-sysadmin-cli` and show the log of SimplestAgent using::
 
   > show log Framework SimplestAgent
       

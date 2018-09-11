@@ -183,6 +183,7 @@ class RequestTasks(TaskBase):
     :param dict taskDict: dictionary of tasks, modified in this function
     :param str ownerDN: certificate DN used for the requests
     :param str onwerGroup: dirac group used for the requests
+
     :returns: None
     """
     failedTasks = []
@@ -228,6 +229,7 @@ class RequestTasks(TaskBase):
     :param dict taskDict: dictionary of tasks, modified in this function
     :param str ownerDN: certificate DN used for the requests
     :param str onwerGroup: dirac group used for the requests
+
     :returns: None
     """
 
@@ -278,6 +280,7 @@ class RequestTasks(TaskBase):
     :param int taskID: Task ID
     :param str ownerDN: certificate DN used for the requests
     :param str onwerGroup: dirac group used for the requests
+
     :returns: None
     """
 
@@ -474,12 +477,15 @@ class WorkflowTasks(TaskBase):
     """ Prepare tasks, given a taskDict, that is created (with some manipulation) by the DB
         jobClass is by default "DIRAC.Interfaces.API.Job.Job". An extension of it also works.
 
-    :param transBody: transformation job template
-    :param taskDict: dictionary of per task parameters
-    :param owner: owner of the transformation
-    :param ownerGroup: group of the owner of the transformation
-    :param ownerDN: DN of the owner of the transformation
-    :return:  S_OK/S_ERROR with updated taskDict
+
+    :param str transBody: transformation job template
+    :param dict taskDict: dictionary of per task parameters
+    :param str owner: owner of the transformation
+    :param str ownerGroup: group of the owner of the transformation
+    :param str ownerDN: DN of the owner of the transformation
+    :param bool bulkSubmissionFlag: flag for using bulk submission or not
+
+    :return: S_OK/S_ERROR with updated taskDict
     """
 
     if (not owner) or (not ownerGroup):
@@ -498,20 +504,30 @@ class WorkflowTasks(TaskBase):
 
     if bulkSubmissionFlag:
       return self.__prepareTasksBulk(transBody, taskDict, owner, ownerGroup, ownerDN)
+    # not a bulk submission
     return self.__prepareTasks(transBody, taskDict, owner, ownerGroup, ownerDN)
 
   def __prepareTasksBulk(self, transBody, taskDict, owner, ownerGroup, ownerDN):
     """ Prepare transformation tasks with a single job object for bulk submission
+
+    :param str transBody: transformation job template
+    :param dict taskDict: dictionary of per task parameters
+    :param str owner: owner of the transformation
+    :param str ownerGroup: group of the owner of the transformation
+    :param str ownerDN: DN of the owner of the transformation
+
+    :return: S_OK/S_ERROR with updated taskDict
     """
     if taskDict:
       transID = taskDict.values()[0]['TransformationID']
     else:
       return S_OK({})
 
+    method = '__prepareTransformationTasksBulk'
+    startTime = time.time()
+
     # Prepare the bulk Job object with common parameters
     oJob = self.jobClass(transBody)
-    method = 'prepareTransformationTasksBulk'
-
     self._logVerbose('Setting job owner:group to %s:%s' % (owner, ownerGroup),
                      transID=transID, method=method)
     oJob.setOwner(owner)
@@ -547,6 +563,8 @@ class WorkflowTasks(TaskBase):
     for taskID in sorted(taskDict):
       paramsDict = taskDict[taskID]
       seqDict = {}
+
+      paramsDict['JobType'] = jobType
 
       # Handle destination site
       sites = self._handleDestination(paramsDict)
@@ -609,12 +627,29 @@ class WorkflowTasks(TaskBase):
       else:
         oJob.setParameterSequence(paramName, paramSeq)
 
+    if taskDict:
+      self._logInfo('Prepared %d tasks' % len(taskDict),
+                    transID=transID, method=method, reftime=startTime)
+
     taskDict['BulkJobObject'] = oJob
     return S_OK(taskDict)
 
   def __prepareTasks(self, transBody, taskDict, owner, ownerGroup, ownerDN):
     """ Prepare transformation tasks with a job object per task
+
+    :param str transBody: transformation job template
+    :param dict taskDict: dictionary of per task parameters
+    :param owner: owner of the transformation
+    :param str ownerGroup: group of the owner of the transformation
+    :param str ownerDN: DN of the owner of the transformation
+
+    :return:  S_OK/S_ERROR with updated taskDict
     """
+    if taskDict:
+      transID = taskDict.values()[0]['TransformationID']
+    else:
+      return S_OK({})
+
     method = '__prepareTasks'
     startTime = time.time()
     oJobTemplate = self.jobClass(transBody)
@@ -630,7 +665,6 @@ class WorkflowTasks(TaskBase):
       if not templateOK:
         templateOK = True
         # Update the template with common information
-        transID = paramsDict['TransformationID']
         self._logVerbose('Job owner:group to %s:%s' % (owner, ownerGroup),
                          transID=transID, method=method)
         transGroup = str(transID).zfill(8)
@@ -881,7 +915,7 @@ class WorkflowTasks(TaskBase):
     return S_OK(taskDict)
 
   def submitTaskToExternal(self, job):
-    """ Submits a single job to the WMS.
+    """ Submits a single job (which can be a bulk one) to the WMS.
     """
     if isinstance(job, basestring):
       try:

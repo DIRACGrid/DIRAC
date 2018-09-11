@@ -108,6 +108,13 @@ class JobManagerHandler(RequestHandler):
     self.log.info("Optimize msg sent for %s jobs" % len(jids))
 
   ###########################################################################
+  types_getMaxParametricJobs = []
+
+  def export_getMaxParametricJobs(self):
+    """ Get the maximum number of parametric jobs
+    """
+    return S_OK(self.maxParametricJobs)
+
   types_submitJob = [basestring]
 
   def export_submitJob(self, jobDesc):

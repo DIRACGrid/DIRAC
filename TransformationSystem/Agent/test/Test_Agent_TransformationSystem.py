@@ -162,6 +162,10 @@ def test_submitTasks(mocker,
   tm_mock.updateDBAfterTaskSubmission.return_value = tmMockUpdateDBAfterTaskSubmissionReturnValue
   res = tmab.submitTasks(transIDOPBody, clients)
   assert res['OK'] == expected
+  tmab.maxParametricJobs = 10
+  tmab.bulkSubmissionFlag = True
+  res = tmab.submitTasks(transIDOPBody, clients)
+  assert res['OK'] == expected
 
 
 # TransformationAgent
