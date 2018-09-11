@@ -39,10 +39,10 @@ class TokenAgent(AgentModule):
     AgentModule.__init__(self, *args, **kwargs)
 
     self.notifyHours = 12
-    self.adminMail = None
+    self.adminMail = ''
 
     self.rsClient = None
-    self.tokenDict = None
+    self.tokenDict = {}
     self.diracAdmin = None
 
   def initialize(self):
