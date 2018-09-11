@@ -4,8 +4,16 @@
 ########################################################################
 """ The Job Cleaning Agent controls removing jobs from the WMS in the end of their life cycle.
 
-    This agent will take care of removing user jobs,
-    while production jobs should be removed by the TransformationCleaningAgent.
+    This agent will take care of removing user jobs, while production jobs should be removed through the
+    :mod:`~DIRAC.TransformationSystem.Agent.TransformationCleaningAgent`.
+
+.. literalinclude:: ../ConfigTemplate.cfg
+  :start-after: ##BEGIN JobCleaningAgent
+  :end-before: ##END
+  :dedent: 2
+  :caption: JobCleaningAgent options
+
+
 """
 
 from __future__ import absolute_import

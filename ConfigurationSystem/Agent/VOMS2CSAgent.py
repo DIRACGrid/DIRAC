@@ -6,7 +6,7 @@
     -
 """
 
-from DIRAC import S_OK, gConfig
+from DIRAC import S_OK, gConfig, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.Proxy import executeWithUserProxy
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOOption, getUserOption
@@ -38,14 +38,6 @@ class VOMS2CSAgent(AgentModule):
     """ Initialize the default parameters
     """
 
-    self.voList = self.am_getOption('VO', [])
-    if self.voList[0].lower() == "any":
-      result = gConfig.getSections('/Registry/VO')
-      if not result['OK']:
-        return result
-      self.voList = result['Value']
-      self.log.notice("VOs: %s" % self.voList)
-
     self.dryRun = self.am_getOption('DryRun', self.dryRun)
 
     # General agent options, can be overridden by VO options
@@ -55,6 +47,16 @@ class VOMS2CSAgent(AgentModule):
     self.makeFCEntry = self.am_getOption('MakeHomeDirectory', self.makeFCEntry)
 
     self.detailedReport = self.am_getOption('DetailedReport', self.detailedReport)
+
+    self.voList = self.am_getOption('VO', [])
+    if not self.voList:
+      return S_ERROR("Option 'VO' not configured")
+    if self.voList[0].lower() == "any":
+      result = gConfig.getSections('/Registry/VO')
+      if not result['OK']:
+        return result
+      self.voList = result['Value']
+      self.log.notice("VOs: %s" % self.voList)
 
     return S_OK()
 

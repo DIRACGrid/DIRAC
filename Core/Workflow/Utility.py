@@ -31,6 +31,7 @@ def substitute(param, variable, value):
   return eval(tmp_string)
 
 
+
 def resolveVariables(varDict):
   """ Resolve variables defined in terms of others within the same dictionary
   """
@@ -39,7 +40,7 @@ def resolveVariables(varDict):
   ntry = 0
   while ntry < max_tries:
     substFlag = False
-    for var, value in varDict.items():
+    for var, value in varDict.iteritems():
       if isinstance(value, basestring):
         substitute_vars = getSubstitute(value)
         for substitute_var in substitute_vars:
@@ -62,8 +63,7 @@ def dataFromOption(parameter):
     fields = parameter.value.split(',')
 
     for f in fields:
-      if re.search(r'FILE\s*=', f):
-        # print f
+      if (re.search(r'FILE\s*=', f)):
         fname = re.search(r"FILE\s*=\s*'([][;\/\w.:\s@{}-]+)'", f).group(1)
         res = re.search(r"TYP\w*\s*=\s*'(\w+)'", f)
         if res:
@@ -85,7 +85,7 @@ def expandDatafileOption(option):
 
   files = dataFromOption(option)
   if len(files) == 1:
-    fname, _ftype = files[0]
+    fname, ftype = files[0]
     fnames = fname.split(';;')
     if len(fnames) > 1:
 
@@ -99,10 +99,3 @@ def expandDatafileOption(option):
       result = '={' + ','.join(opt) + '}'
 
   return result
-
-# def dataFromOptions(parameters):
-#
-#  for n,v in parameters.items():
-#    files = dataFromOption(v)
-#    if fname:
-#      gLogger.info( str( files ) )

@@ -16,18 +16,19 @@ from Queue import Queue
 
 from DIRAC import S_OK
 
+from DIRAC.Core.Base.AgentModule import AgentModule
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.Core.Utilities.ThreadPool import ThreadPool
+from DIRAC.Core.Utilities.List import breakListIntoChunks
+from DIRAC.Core.Utilities.Dictionaries import breakDictionaryIntoChunks
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername, getUsernameForDN
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
-from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 from DIRAC.TransformationSystem.Client.FileReport import FileReport
-from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-
 from DIRAC.TransformationSystem.Client.TaskManager import WorkflowTasks
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 from DIRAC.TransformationSystem.Agent.TransformationAgentsUtilities import TransformationAgentsUtilities
-from DIRAC.Core.Utilities.List import breakListIntoChunks
+from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
 
 AGENT_NAME = 'Transformation/TaskManagerAgentBase'
 
@@ -45,9 +46,11 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
     TransformationAgentsUtilities.__init__(self)
 
     self.transClient = None
+    self.jobManagerClient = None
     self.transType = []
 
     self.tasksPerLoop = 50
+    self.maxParametricJobs = 20  # will be updated in execute()
 
     # credentials
     self.shifterProxy = None
@@ -80,6 +83,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
 
     # Default clients
     self.transClient = TransformationClient()
+    self.jobManagerClient = JobManagerClient()
 
     # Bulk submission flag
     self.bulkSubmissionFlag = self.am_getOption('BulkSubmission', self.bulkSubmissionFlag)
@@ -192,6 +196,12 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
       else:
         # Get the transformations which should be submitted
         self.tasksPerLoop = self.am_getOption('TasksPerLoop', self.tasksPerLoop)
+        res = self.jobManagerClient.getMaxParametricJobs()
+        if not res['OK']:
+          self.log.warn("Could not get the maxParametricJobs from JobManager", res['Message'])
+        else:
+          self.maxParametricJobs = res['Value']
+
         self._addOperationForTransformations(operationsOnTransformationDict, 'submitTasks', transformations,
                                              owner=owner, ownerGroup=ownerGroup, ownerDN=ownerDN)
 
@@ -517,6 +527,11 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
 
   def submitTasks(self, transIDOPBody, clients):
     """ Submit the tasks to an external system, using the taskManager provided
+
+    :param dict transIDOPBody: transformation body
+    :param dict clients: dictionary of client objects
+
+    :return: S_OK/S_ERROR
     """
     transID = transIDOPBody.keys()[0]
     transBody = transIDOPBody[transID]['Body']
@@ -541,7 +556,34 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
     self._logInfo("Obtained %d tasks for submission" % len(tasks),
                   method=method, transID=transID)
 
-    # Prepare tasks
+    # Prepare tasks and submits them, by chunks
+    chunkSize = self.maxParametricJobs if self.bulkSubmissionFlag else self.tasksPerLoop
+    for taskDictChunk in breakDictionaryIntoChunks(tasks, chunkSize):
+      res = self._prepareAndSubmitAndUpdateTasks(transID, transBody, taskDictChunk,
+                                                 owner, ownerDN, ownerGroup,
+                                                 clients)
+      if not res['OK']:
+        return res
+      self._logVerbose("Submitted %d jobs, bulkSubmissionFlag = %s" % (len(taskDictChunk), self.bulkSubmissionFlag))
+
+    return S_OK()
+
+  def _prepareAndSubmitAndUpdateTasks(self, transID, transBody, tasks, owner, ownerDN, ownerGroup, clients):
+    """ prepare + submit + monitor a dictionary of tasks
+
+    :param int transID: transformation ID
+    :param str transBody: transformation job template
+    :param dict tasks: dictionary of per task parameters
+    :param str owner: owner of the transformation
+    :param str ownerDN: DN of the owner of the transformation
+    :param str ownerGroup: group of the owner of the transformation
+    :param dict clients: dictionary of client objects
+
+    :return: S_OK/S_ERROR
+    """
+
+    method = '_prepareAndSubmitAndUpdateTasks'
+    # prepare tasks
     preparedTransformationTasks = clients['TaskManager'].prepareTransformationTasks(transBody,
                                                                                     tasks,
                                                                                     owner,

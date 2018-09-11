@@ -132,7 +132,7 @@ class TaskManagerPlugin(PluginBase):
     # 4. get JobTypeMapping "Allow" section
     res = self.opsH.getOptionsDict('JobTypeMapping/%s/Allow' % jobType)
     if not res['OK']:
-      gLogger.verbose(res['Message'])
+      gLogger.debug(res['Message'])
       allowed = {}
     else:
       allowed = dict((site, set(fromChar(fromSites))) for site, fromSites in res['Value'].iteritems())
@@ -152,7 +152,7 @@ class TaskManagerPlugin(PluginBase):
         if not taskSiteDestination or fromSite in taskSiteDestination:
           destSites.add(destSite)
 
-    gLogger.verbose("Computed list of destination sites for %s task with TargetSE %s: %s" % (jobType,
-                                                                                             self.params['TargetSE'],
-                                                                                             ','.join(destSites)))
+    gLogger.debug("Computed list of destination sites for %s task with TargetSE %s: %s" % (jobType,
+                                                                                           self.params['TargetSE'],
+                                                                                           ','.join(destSites)))
     return destSites

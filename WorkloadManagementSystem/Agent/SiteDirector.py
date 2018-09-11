@@ -1269,7 +1269,8 @@ class SiteDirector(AgentModule):
         continue
       pilotDict = result['Value']
       if self.getOutput:
-        self._getPilotOutput(pRef, pilotDict, ce, ceName)
+        for pRef in pilotRefs:
+          self._getPilotOutput(pRef, pilotDict, ce, ceName)
 
       # Check if the accounting is to be sent
       if self.sendAccounting:

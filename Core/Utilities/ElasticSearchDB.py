@@ -386,13 +386,27 @@ class ElasticSearchDB(object):
       gLogger.error("Cannot connect to the db", repr(e))
     return S_OK(connected)
 
+  def deleteByQuery(self, indexName, query):
+    """
+    Delete data by query
+
+    :param str indexName: the name of the index
+    :param str query: the query that we want to issue the delete on
+    """
+    try:
+      self.__client.delete_by_query(index=indexName, body=query)
+    except Exception as inst:
+      gLogger.error("ERROR: Couldn't delete data")
+      return S_ERROR(inst)
+    return S_OK('Successfully deleted data from index %s' % indexName)
+
   @staticmethod
   def generateFullIndexName(indexName, period=None):
     """
     Given an index prefix we create the actual index name. Each day an index is created.
     :param str indexName: it is the name of the index
     :param str period: We can specify, which kind of indexes will be created.
-                      Currently only daily and monthly indexes are supported.
+                       Currently only daily and monthly indexes are supported.
     """
 
     if period is None:

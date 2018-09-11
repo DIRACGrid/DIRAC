@@ -323,7 +323,7 @@ Let's perform this exercise in the python shell.
           j.setOutputSandbox(['*.log','summary.data'])
           j.setInputData(['/vo.formation.idgrilles.fr/user/v/vhamar/test.txt','/vo.formation.idgrilles.fr/user/v/vhamar/test2.txt'])
           j.setOutputData(['/vo.formation.idgrilles.fr/user/v/vhamar/output1.data','/vo.formation.idgrilles.fr/user/v/vhamar/output2.data'],OutputPath='MyFirstAnalysis')
-          j.setSystemConfig("")
+          j.setPlatform("")
           j.setCPUTime(21600)
           j.setDestination('LCG.IN2P3.fr')
           j.setBannedSites(['LCG.ABCD.fr','LCG.EFGH.fr'])
@@ -349,7 +349,7 @@ Let's perform this exercise in the python shell.
                   };
               StdOutput = "std.out";
               Site = "LCG.IN2P3.fr";
-              SystemConfig = "";
+              Platform = "";
               OutputPath = "MyFirstAnalysis";
               InputSandbox = "jobDescription.xml";
               Arguments = "jobDescription.xml -o LogLevel=DEBUG";

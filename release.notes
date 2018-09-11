@@ -1,4 +1,4 @@
-[v7r0-pre2]
+[v7r0-pre3]
 
 *Accounting
 CHANGE: (Multi)AccountingDB - Grouping Type and Object loader together with the MonitoringSystem ones.
@@ -33,6 +33,46 @@ NEW: (#3744) Added miniInstallDIRAC function for Jenkins jobs
 *Docs
 FIX: Better dirac.cfg example configuration for web
 NEW: (#3744) Add WMS documentation in DeveloperGuide/Systems
+
+[v6r20p12]
+
+*Core
+FIX: (#3807) Glue2 will return a constant 2500 for the SI00 queue parameter, 
+     any value is needed so that the SiteDirector does not ignore the queue, fixes #3790
+
+*ConfigurationSystem
+FIX: (#3797) VOMS2CSAgent: return error when VO is not set (instead of exception)
+FIX: (#3797) BDII2CSAgent: Fix for GLUE2URLs option in ConfigTemplate (Lower case S at the end)
+
+*DataManagementSystem
+FIX: (#3814) SEManager - adapt to the new meaning of the SE plugin section name
+FIX: (#3814) SEManager - return also VO specific prefixes for the getReplicas() and similar calls
+FIX: (#3814) FileCatalogClient - take into account VO specific prefixes when constructing PFNs on the fly
+
+*TransformationSystem
+FIX: (#3812) checking return value of jobManagerClient.getMaxParametricJobs() call
+
+[v6r20p11]
+
+*Core
+FIX: (#3805) ElasticSearchDB - fix a typo (itertems -> iteritems())
+
+[v6r20p10]
+
+*Core
+NEW: (#3801) ElasticSearchDB - add method which allows for deletion by query
+NEW: (#3792) added breakDictionaryIntoChunks utility
+
+*WorkloadManagementSystem
+FIX: (#3796) Removed legacy "SystemConfig" and "LHCbPlatform" checks
+FIX: (#3803) bug fix: missing loop on pRef in SiteDirector
+NEW: (#3792) JobManager exposes a call to get the maxParametricJobs
+
+*TransformationSystem
+NEW: (#3804) new option for dirac-transformation-replication scrip `--GroupName/-R`
+FIX: (#3804) The TransformationGroup is now properly set for transformation created with dirac-transformation-replication, previously a transformation parameter Group was created instead.
+FIX: (#3792) Adding JobType as parameter to parametric jobs
+FIX: (#3792) WorkflowTaskAgent is submitting a chunk of tasks not exceeding the MaxParametricJobs accepted by JobManager
 
 [v6r20p9]
 
