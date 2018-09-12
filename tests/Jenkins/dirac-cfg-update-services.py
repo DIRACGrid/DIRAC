@@ -49,13 +49,11 @@ for sct in ['Systems/DataManagement/Production/Services',
     print res['Message']
     exit( 1 )
 
-csAPI.setOption( 'Systems/DataManagement/Production/Services/FileCatalog/DirectoryManager', 'DirectoryLevelTree' )
-csAPI.setOption( 'Systems/DataManagement/Production/Services/FileCatalog/FileManager', 'FileManager' )
-#csAPI.setOption( 'Systems/DataManagement/Production/Services/FileCatalog/OldSecurityManager', 'DirectorySecurityManagerWithDelete' )
-csAPI.setOption( 'Systems/DataManagement/Production/Services/FileCatalog/SecurityManager', 'DirectorySecurityManager' )
-#csAPI.setOption( 'Systems/DataManagement/Production/Services/FileCatalog/SecurityPolicy', 'DIRAC/DataManagementSystem/DB/FileCatalogComponents/SecurityPolicies/VOMSPolicy' )
-csAPI.setOption( 'Systems/DataManagement/Production/Services/FileCatalog/UniqueGUID', False )
-csAPI.setOption( 'Systems/DataManagement/Production/Services/FileCatalog/LFNPFNConvention', True )
-
+csAPI.setOption( 'Systems/DataManagement/Production/Services/FileCatalog/DirectoryManager', 'DirectoryClosure' )
+csAPI.setOption( 'Systems/DataManagement/Production/Services/FileCatalog/FileManager', 'FileManagerPs' )
+csAPI.setOption( 'Systems/DataManagement/Production/Services/FileCatalog/OldSecurityManager', 'DirectorySecurityManagerWithDelete' )
+csAPI.setOption( 'Systems/DataManagement/Production/Services/FileCatalog/SecurityManager', 'PolicyBasedSecurityManager' )
+csAPI.setOption( 'Systems/DataManagement/Production/Services/FileCatalog/SecurityPolicy', 'DIRAC/DataManagementSystem/DB/FileCatalogComponents/SecurityPolicies/VOMSPolicy' )
+csAPI.setOption( 'Systems/DataManagement/Production/Services/FileCatalog/UniqueGUID', True )
 
 csAPI.commit()
