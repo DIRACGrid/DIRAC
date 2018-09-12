@@ -111,9 +111,8 @@ exit 0
         jobString = json.dumps(jobInfo)
         pidFileName = "%(InfoDir)s/%(Stamp)s.info" % args
         pidFileName = os.path.expandvars(pidFileName)
-        pidFile = open(pidFileName, 'w')
-        pidFile.write(jobString)
-        pidFile.close()
+        with open(pidFileName, 'w') as pd:
+          pd.write(jobString)
         jobs.append(stamps[_i])
       else:
         break
