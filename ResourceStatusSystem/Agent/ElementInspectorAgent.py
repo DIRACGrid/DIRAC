@@ -87,6 +87,7 @@ class ElementInspectorAgent(AgentModule):
       return res
     rmClass = res['Value']
 
+    self.rsClient = rsClass()
     self.clients['ResourceStatusClient'] = rsClass()
     self.clients['ResourceManagementClient'] = rmClass()
 
@@ -149,7 +150,7 @@ class ElementInspectorAgent(AgentModule):
     toBeChecked = Queue.Queue()
 
     # We get all the elements, then we filter.
-    elements = ResourceStatusClient().selectStatusElement(self.elementType, 'Status')
+    elements = self.rsClient.selectStatusElement(self.elementType, 'Status')
     if not elements['OK']:
       return elements
 
