@@ -25,7 +25,6 @@ from DIRAC.Core.Utilities.Subprocess import systemCall
 
 class LocalComputingElement(ComputingElement):
 
-  #############################################################################
   def __init__(self, ceUniqueID):
     """ Standard constructor.
     """
@@ -81,7 +80,6 @@ class LocalComputingElement(ComputingElement):
 
     return S_OK()
 
-  #############################################################################
   def _addCEConfigDefaults(self):
     """Method to make sure all necessary Configuration Parameters are defined
     """
@@ -161,7 +159,8 @@ class LocalComputingElement(ComputingElement):
                  'ErrorDir': self.batchError,
                  'SubmitOptions': self.submitOptions,
                  'ExecutionContext': self.execution,
-                 'JobStamps': jobStamps}
+                 'JobStamps': jobStamps,
+                 'Queue': self.queue}
     resultSubmit = self.batch.submitJob(**batchDict)
     if proxy:
       os.remove(submitFile)
@@ -184,7 +183,8 @@ class LocalComputingElement(ComputingElement):
     """ Kill a bunch of jobs
     """
 
-    batchDict = {'JobIDList': jobIDList}
+    batchDict = {'JobIDList': jobIDList,
+                 'Queue': self.queue}
     resultKill = self.batch.killJob(**batchDict)
     if resultKill['Status'] == 0:
       return S_OK()
@@ -198,7 +198,8 @@ class LocalComputingElement(ComputingElement):
     result['RunningJobs'] = 0
     result['WaitingJobs'] = 0
 
-    batchDict = {'User': self.userName}
+    batchDict = {'User': self.userName,
+                 'Queue': self.queue}
     resultGet = self.batch.getCEStatus(**batchDict)
     if resultGet['Status'] == 0:
       result['RunningJobs'] = resultGet.get('Running', 0)
@@ -219,7 +220,8 @@ class LocalComputingElement(ComputingElement):
       stamp = os.path.basename(urlparse(job).path)
       stampList.append(stamp)
     batchDict = {'JobIDList': stampList,
-                 'User': self.userName}
+                 'User': self.userName,
+                 'Queue': self.queue}
     resultGet = self.batch.getJobStatus(**batchDict)
     if resultGet['Status'] == 0:
       result = S_OK(resultGet['Jobs'])
@@ -291,6 +293,3 @@ class LocalComputingElement(ComputingElement):
       error = '%s/%s.out' % (self.batchError, jobStamp)
 
     return S_OK((jobStamp, host, output, error))
-
-
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

@@ -6,7 +6,7 @@
     -
 """
 
-from DIRAC import S_OK, gConfig
+from DIRAC import S_OK, gConfig, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.Proxy import executeWithUserProxy
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOOption, getUserOption
@@ -25,7 +25,6 @@ class VOMS2CSAgent(AgentModule):
     super(VOMS2CSAgent, self).__init__(*args, **kwargs)
 
     self.voList = []
-    self.voChanged = False
     self.dryRun = False
 
     self.autoAddUsers = False
@@ -38,14 +37,6 @@ class VOMS2CSAgent(AgentModule):
     """ Initialize the default parameters
     """
 
-    self.voList = self.am_getOption('VO', [])
-    if self.voList[0].lower() == "any":
-      result = gConfig.getSections('/Registry/VO')
-      if not result['OK']:
-        return result
-      self.voList = result['Value']
-      self.log.notice("VOs: %s" % self.voList)
-
     self.dryRun = self.am_getOption('DryRun', self.dryRun)
 
     # General agent options, can be overridden by VO options
@@ -56,12 +47,21 @@ class VOMS2CSAgent(AgentModule):
 
     self.detailedReport = self.am_getOption('DetailedReport', self.detailedReport)
 
+    self.voList = self.am_getOption('VO', [])
+    if not self.voList:
+      return S_ERROR("Option 'VO' not configured")
+    if self.voList[0].lower() == "any":
+      result = gConfig.getSections('/Registry/VO')
+      if not result['OK']:
+        return result
+      self.voList = result['Value']
+      self.log.notice("VOs: %s" % self.voList)
+
     return S_OK()
 
   def execute(self):
 
     for vo in self.voList:
-      self.voChanged = False
       voAdminUser = getVOOption(vo, "VOAdmin")
       voAdminMail = None
       if voAdminUser:
@@ -92,6 +92,7 @@ class VOMS2CSAgent(AgentModule):
       susUsers = resultDict.get("SuspendedUsers", [])
       csapi = resultDict.get("CSAPI")
       adminMessages = resultDict.get("AdminMessages", {'Errors': [], 'Info': []})
+      voChanged = resultDict.get("VOChanged", False)
       self.log.info("Run user results: new %d, modified %d, deleted %d, new/suspended %d" %
                     (len(newUsers), len(modUsers), len(delUsers), len(susUsers)))
 
@@ -127,7 +128,7 @@ class VOMS2CSAgent(AgentModule):
           for user in result['Value']['Successful']:
             adminMessages['Info'].append("Created home directory for user %s" % user)
 
-      if self.voChanged or self.detailedReport:
+      if voChanged or self.detailedReport:
         mailMsg = ""
         if adminMessages['Errors']:
           mailMsg += "\nErrors list:\n  %s" % "\n  ".join(adminMessages['Errors'])

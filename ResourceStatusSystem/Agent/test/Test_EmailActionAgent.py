@@ -2,13 +2,14 @@
 """
 
 # imports
-import unittest
 import importlib
-from mock import MagicMock
+import os
+import sys
+import unittest
+from mock import MagicMock, patch
 
 from DIRAC import gLogger
 
-from DIRAC.ResourceStatusSystem.Agent.EmailAgent import EmailAgent
 from DIRAC.ResourceStatusSystem.PolicySystem.Actions.EmailAction import EmailAction
 
 gLogger.setLevel( 'DEBUG' )
@@ -22,13 +23,12 @@ class TestCase( unittest.TestCase ):
     self.agent_m = importlib.import_module( 'DIRAC.ResourceStatusSystem.Agent.EmailAgent' )
     self.agent_m.AgentModule = self.mockAM
     self.agent_m.FileReport = MagicMock()
-    self.agent = EmailAgent()
+    self.agent = self.agent_m.EmailAgent()
     self.agent.log = gLogger
     self.agent.am_getOption = self.mockAM
     self.agent.log.setLevel( 'DEBUG' )
 
     self.action_m = importlib.import_module( 'DIRAC.ResourceStatusSystem.PolicySystem.Actions.EmailAction' )
-    self.action_m.AgentModule = self.mockAM
 
     name = "LogStatusAction"
     decisionParams = {'status': 'Banned', 'reason': 'test', 'tokenOwner': None,
@@ -46,13 +46,18 @@ class TestCase( unittest.TestCase ):
                             'module': 'AlwaysActivePolicy', 'description': 'A Policy that always returns Active'},
                             'Reason': 'AlwaysActive'}]
 
-    self.action = EmailAction(name, decisionParams, enforcementResult, singlePolicyResults)
+    with patch.dict(os.environ):
+      os.environ.pop('DIRAC', None)
+      self.action = EmailAction(name, decisionParams, enforcementResult, singlePolicyResults)
     self.action.log = gLogger
-    self.action.am_getOption = self.mockAM
     self.agent.log.setLevel( 'DEBUG' )
 
     self.tc_mock = MagicMock()
     self.tm_mock = MagicMock()
+
+  @classmethod
+  def tearDownClass(cls):
+    sys.modules.pop('DIRAC.ResourceStatusSystem.Agent.EmailAgent')
 
 
 class EmailActionSuccess(TestCase):
