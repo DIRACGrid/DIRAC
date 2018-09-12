@@ -469,15 +469,15 @@ def printFTSJobs(request):
           res = fts3Client.getOperationsFromRMSOpID(op.OperationID)
           if res['OK']:
             for fts3Op in res['Value']:
-              associatedFTS3Jobs.extend(fts3Op.ftsJobs)
+              associatedFTS3Jobs.extend(fts3Op['ftsJobs'])
         if associatedFTS3Jobs:
           gLogger.always(
               '\n\nFTS3 jobs associated: \n%s' %
               '\n'.join(
                   '%s@%s (%s)' %
-                  (job.ftsGUID,
-                   job.ftsServer,
-                   job.status) for job in associatedFTS3Jobs))
+                  (job['ftsGUID'],
+                   job['ftsServer'],
+                   job['status']) for job in associatedFTS3Jobs))
         return
 
       # If we are here, the attempt with the new FTS3 system did not work, let's try the old FTS system
