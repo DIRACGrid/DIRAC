@@ -53,8 +53,9 @@ class StatesMonitoringAgent(AgentModule):
 
     self.reportPeriod = 120
     self.am_setOption("PollingTime", self.reportPeriod)
+    self.messagequeue = self.am_getOption('MessageQueue', 'dirac.wmshistory')
 
-    self.monitoringReporter = MonitoringReporter(monitoringType="WMSHistory")
+    self.monitoringReporter = MonitoringReporter(monitoringType="WMSHistory", self.messagequeue)
 
     for field in self.__summaryKeyFieldsMapping:
       if field == 'User':
