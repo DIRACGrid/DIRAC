@@ -104,13 +104,16 @@ class FTS3Agent(AgentModule):
 
   def initialize(self):
     """ agent's initialization """
-    self.fts3db = FTS3DB()
+
     self._globalContextCache = {}
 
     # name that will be used in DB for assignment tag
     self.assignmentTag = gethostname().split('.')[0]
 
     res = self.__readConf()
+
+    # We multiply by two because of the two threadPools
+    self.fts3db = FTS3DB(pool_size=2 * self.maxNumberOfThreads)
 
     self.jobsThreadPool = ThreadPool(self.maxNumberOfThreads)
     self.opsThreadPool = ThreadPool(self.maxNumberOfThreads)
