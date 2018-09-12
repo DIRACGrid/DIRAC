@@ -27,7 +27,7 @@ Utilities to execute one or more functions with a given proxy.
 
 :class:`UserProxy` context manager example::
 
-  with userProxy(proxyUserName='user', proxyUserGroup='group') as proxyResult:
+  with UserProxy(proxyUserName='user', proxyUserGroup='group') as proxyResult:
     if proxyResult['OK']:
       functionThatNeedsAProxy()
       anotherFunction()
