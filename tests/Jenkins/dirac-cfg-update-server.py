@@ -74,7 +74,15 @@ csAPI.setOption('Resources/StorageElements/ProductionSandboxSE/DIP/Path', '%s/sa
 #         Status = Active
 #         Master = True
 #       }
+#       TSCatalog
+#       {
+#         CatalogType = TSCatalog
+#         AccessType = Write
+#         Status = Active
+#        CatalogURL = Transformation/TransformationManager
+#       }
 #     }
+
 res = csAPI.createSection('Resources/FileCatalogs/')
 if not res['OK']:
   print res['Message']
@@ -87,6 +95,16 @@ if not res['OK']:
 csAPI.setOption('Resources/FileCatalogs/FileCatalog/AccessType', 'Read-Write')
 csAPI.setOption('Resources/FileCatalogs/FileCatalog/Status', 'Active')
 csAPI.setOption('Resources/FileCatalogs/FileCatalog/Master', 'True')
+
+res = csAPI.createSection('Resources/FileCatalogs/TSCatalog')
+if not res['OK']:
+  print res['Message']
+  exit(1)
+
+csAPI.setOption('Resources/FileCatalogs/TSCatalog/CatalogType', 'TSCatalog')
+csAPI.setOption('Resources/FileCatalogs/TSCatalog/AccessType', 'Write')
+csAPI.setOption('Resources/FileCatalogs/TSCatalog/Status', 'Active')
+csAPI.setOption('Resources/FileCatalogs/TSCatalog/CatalogURL', 'Transformation/TransformationManager')
 
 # Now setting up the following option:
 #     Resources
@@ -241,7 +259,7 @@ csAPI.setOption('Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSite
 #     {
 #       Catalogs
 #       {
-#         CatalogList = FileCatalog
+#         CatalogList = FileCatalog, TSCatalog
 #       }
 #     }
 
@@ -257,7 +275,7 @@ res = csAPI.createSection('Operations/Defaults/Services/Catalogs/CatalogList')
 if not res['OK']:
   print res['Message']
   exit(1)
-csAPI.setOption('Operations/Defaults/Services/Catalogs/CatalogList', 'FileCatalog')
+csAPI.setOption('Operations/Defaults/Services/Catalogs/CatalogList', 'FileCatalog, TSCatalog')
 
 
 # Now setting the Registry section
