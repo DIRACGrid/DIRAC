@@ -34,6 +34,42 @@ NEW: (#3744) Added miniInstallDIRAC function for Jenkins jobs
 FIX: Better dirac.cfg example configuration for web
 NEW: (#3744) Add WMS documentation in DeveloperGuide/Systems
 
+[v6r20p13]
+
+*FrameworkSystem
+
+FIX: (#3822) obsolete parameter maxQueueSize in UserProfileDB initialization removed
+
+*WorkloadManagementSystem
+
+FIX: (#3824) Added Parameter "Queue" to methods invoked on batch systems by LocalComputingElement
+FIX: (#3818) Testing parametric jobs locally now should also work for parametric input data
+NEW: (#3818) Parameters from Parametric jobs are also replaced for ModuleParameters, 
+             and not only for common workflow parameters
+
+*DataManagementSystem
+
+FIX: (#3825) FileCatalogCLI: print error message when removeReplica encounters weird return value
+FIX: (#3819) ReplicateAndRegister: fix a problem when transferring files to multiple storage 
+             elements, if more than one attempt was needed the transfer to all SEs was not always 
+             happening.
+CHANGE: (#3821) FTS3Agent: set pool_size of the FTS3DB
+
+*TransformationSystem
+
+FIX: (#3820) Fix exception in TransformationCleaningAgent: "'str' object not callable"
+
+*ConfigurationSystem
+
+FIX: (#3816) The VOMS2CSAgent was not sending notification emails when the DetailedReport 
+             option was set to False, it will now send emails again when things change for a VO.
+CHANGE: (#3816) VOMS2CSAgent: Users to be checked for deletion are now printed sorted and line 
+                by line
+NEW: (#3817) dirac-admin-check-config-options script to compare options and values between 
+             the current Configuration and the ConfigTemplates. Allows one to find wrong or 
+             missing option names or just see the difference between the current settings and 
+             the default values.
+
 [v6r20p12]
 
 *Core

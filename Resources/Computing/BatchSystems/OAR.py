@@ -1,5 +1,4 @@
 #########################################################################################
-# $HeadURL$
 # OAR.py
 # 10.11.2014
 # Author: Matvey Sapunov, A.T.
@@ -7,68 +6,71 @@
 
 """ OAR.py is a DIRAC independent class representing OAR batch system.
     OAR objects are used as backend batch system representation for
-    LocalComputingElement and SSHComputingElement classes 
+    LocalComputingElement and SSHComputingElement classes
 """
 
 __RCSID__ = "$Id$"
 
-import commands, os, json
+import commands
+import os
+import json
 
-class OAR( object ):
 
-  def submitJob( self, **kwargs ):
+class OAR(object):
+
+  def submitJob(self, **kwargs):
     """ Submit nJobs to the OAR batch system
     """
-    
+
     resultDict = {}
-    
-    MANDATORY_PARAMETERS = [ 'Executable', 'OutputDir', 'ErrorDir',
-                             'Queue', 'SubmitOptions' ]
+
+    MANDATORY_PARAMETERS = ['Executable', 'OutputDir', 'ErrorDir',
+                            'Queue', 'SubmitOptions']
 
     for argument in MANDATORY_PARAMETERS:
-      if not argument in kwargs:
+      if argument not in kwargs:
         resultDict['Status'] = -1
         resultDict['Message'] = 'No %s' % argument
         return resultDict
-    
-    nJobs = kwargs.get( 'NJobs' )
+
+    nJobs = kwargs.get('NJobs')
     if not nJobs:
       nJobs = 1
-      
+
     outputDir = kwargs['OutputDir']
-    errorDir = kwargs['ErrorDir']  
+    errorDir = kwargs['ErrorDir']
     queue = kwargs['Queue']
     submitOptions = kwargs['SubmitOptions']
     executable = kwargs['Executable']
-    
-    outFile = os.path.join( outputDir , "%jobid%" )
-    errFile = os.path.join( errorDir , "%jobid%" )
-    outFile = os.path.expandvars( outFile )
-    errFile = os.path.expandvars( errFile )
-    executable = os.path.expandvars( executable ) 
+
+    outFile = os.path.join(outputDir, "%jobid%")
+    errFile = os.path.join(errorDir, "%jobid%")
+    outFile = os.path.expandvars(outFile)
+    errFile = os.path.expandvars(errFile)
+    executable = os.path.expandvars(executable)
     jobIDs = []
-    for _i in range( nJobs ):
-      cmd = "oarsub -O %s.out -E %s.err -q %s -n DIRACPilot %s %s" % ( outFile,
-                                                                       errFile,
-                                                                       queue,
-                                                                       submitOptions,
-                                                                       executable )
+    for _i in xrange(nJobs):
+      cmd = "oarsub -O %s.out -E %s.err -q %s -n DIRACPilot %s %s" % (outFile,
+                                                                      errFile,
+                                                                      queue,
+                                                                      submitOptions,
+                                                                      executable)
       status, output = commands.getstatusoutput(cmd)
-  
+
       if status != 0 or not output:
         break
-  
-      lines = output.split( '\n' )
+
+      lines = output.split('\n')
       jid = ''
-      if "OAR_JOB_ID" in lines[ -1 ]:
-        _prefix , jid = lines[ -1 ].split( "=" )
-  
+      if "OAR_JOB_ID" in lines[-1]:
+        _prefix, jid = lines[-1].split("=")
+
       if not jid:
         break
-  
+
       jid = jid.strip()
-      jobIDs.append( jid )
-  
+      jobIDs.append(jid)
+
     if jobIDs:
       resultDict['Status'] = 0
       resultDict['Jobs'] = jobIDs
@@ -77,36 +79,35 @@ class OAR( object ):
       resultDict['Message'] = output
       resultDict['Jobs'] = jobIDs
     return resultDict
-  
-  
-  def killJob( self, **kwargs ):
+
+  def killJob(self, **kwargs):
     """ Delete a job from OAR batch scheduler. Input: list of jobs output: int
     """
-  
+
     resultDict = {}
-    
-    MANDATORY_PARAMETERS = [ 'JobIDList' ]
+
+    MANDATORY_PARAMETERS = ['JobIDList']
     for argument in MANDATORY_PARAMETERS:
-      if not argument in kwargs:
+      if argument not in kwargs:
         resultDict['Status'] = -1
         resultDict['Message'] = 'No %s' % argument
-        return resultDict   
-      
-    jobIDList = kwargs['JobIDList']  
+        return resultDict
+
+    jobIDList = kwargs['JobIDList']
     if not jobIDList:
       resultDict['Status'] = -1
       resultDict['Message'] = 'Empty job list'
       return resultDict
-    
+
     successful = []
     failed = []
     for job in jobIDList:
-      status, output = commands.getstatusoutput( 'oardel %s' % job )
+      status, output = commands.getstatusoutput('oardel %s' % job)
       if status != 0:
-        failed.append( job )
+        failed.append(job)
       else:
-        successful.append( job )
-  
+        successful.append(job)
+
     resultDict['Status'] = 0
     if failed:
       resultDict['Status'] = 1
@@ -114,107 +115,107 @@ class OAR( object ):
     resultDict['Successful'] = successful
     resultDict['Failed'] = failed
     return resultDict
-  
-  def getJobStatus( self, **kwargs ):
+
+  def getJobStatus(self, **kwargs):
     """ Get status of the jobs in the given list
     """
-  
+
     resultDict = {}
-    
-    MANDATORY_PARAMETERS = [ 'JobIDList' ]
+
+    MANDATORY_PARAMETERS = ['JobIDList']
     for argument in MANDATORY_PARAMETERS:
-      if not argument in kwargs:
+      if argument not in kwargs:
         resultDict['Status'] = -1
         resultDict['Message'] = 'No %s' % argument
-        return resultDict   
-      
-    jobIDList = kwargs['JobIDList']  
+        return resultDict
+
+    jobIDList = kwargs['JobIDList']
     if not jobIDList:
       resultDict['Status'] = -1
       resultDict['Message'] = 'Empty job list'
       return resultDict
-    
-    user = kwargs.get( 'User' )
+
+    user = kwargs.get('User')
     if not user:
-      user = os.environ.get( 'USER' )
+      user = os.environ.get('USER')
     if not user:
       resultDict['Status'] = -1
       resultDict['Message'] = 'No user name'
       return resultDict
-  
-    status, output = commands.getstatusoutput( "oarstat --sql \"project = '%s'\" -J" % user )
+
+    status, output = commands.getstatusoutput("oarstat --sql \"project = '%s'\" -J" % user)
     if status != 0:
       resultDict['Status'] = status
       resultDict['Message'] = output
       return resultDict
-  
+
     try:
-      output = json.loads( output )
-    except Exception , x:
+      output = json.loads(output)
+    except Exception as x:
       resultDict['Status'] = 2048
-      resultDict['Message'] = str( x )
+      resultDict['Message'] = str(x)
       return resultDict
-  
-    if not len( output ) > 0:
+
+    if not len(output) > 0:
       resultDict['Status'] = 1024
       resultDict['Message'] = output
       return resultDict
-  
+
     statusDict = {}
     for job in jobIDList:
-  
-      if not job in output:
-        statusDict[ job ] = "Unknown"
+
+      if job not in output:
+        statusDict[job] = "Unknown"
         continue
-  
-      if not "state" in output[ job ]:
-        statusDict[ job ] = "Unknown"
+
+      if "state" not in output[job]:
+        statusDict[job] = "Unknown"
         continue
-      state = output[ job ][ "state" ]
-  
-      if state in [ "Running", "Finishing" ]:
-        statusDict[ job ] = "Running"
+      state = output[job]["state"]
+
+      if state in ["Running", "Finishing"]:
+        statusDict[job] = "Running"
         continue
-  
-      if state in [ "Error", "toError" ]:
-        statusDict[ job ] = "Aborted"
+
+      if state in ["Error", "toError"]:
+        statusDict[job] = "Aborted"
         continue
-  
-      if state in [ "Waiting", "Hold", "toAckReservation", "Suspended", "toLaunch", "Launching" ]:
-        statusDict[ job ] = "Waiting"
+
+      if state in ["Waiting", "Hold", "toAckReservation", "Suspended", "toLaunch", "Launching"]:
+        statusDict[job] = "Waiting"
         continue
-  
+
       if state == "Terminated":
-        statusDict[ job ] = "Done"
+        statusDict[job] = "Done"
         continue
-  
-      statusDict[ job ] = "Unknown"
+
+      statusDict[job] = "Unknown"
       continue
-  
+
     # Final output
     status = 0
     resultDict['Status'] = 0
-    resultDict['Jobs'] = statusDict 
-    return resultDict   
-  
-  def getCEStatus( self, **kwargs ):
+    resultDict['Jobs'] = statusDict
+    return resultDict
+
+  def getCEStatus(self, **kwargs):
     """  Get the overall status of the CE
     """
-  
+
     resultDict = {}
-    
-    user = kwargs.get( 'User' )
+
+    user = kwargs.get('User')
     if not user:
-      user = os.environ.get( 'USER' )
+      user = os.environ.get('USER')
     if not user:
       resultDict['Status'] = -1
       resultDict['Message'] = 'No user name'
       return resultDict
-  
+
     waitingJobs = 0
     runningJobs = 0
-  
-    status , output = commands.getstatusoutput( 'oarstat -u %s -J' % user )
+
+    status, output = commands.getstatusoutput('oarstat -u %s -J' % user)
     if status != 0:
       if "arrayref expected" in output:
         resultDict['Status'] = 0
@@ -224,34 +225,34 @@ class OAR( object ):
       resultDict['Status'] = status
       resultDict['Message'] = output
       return resultDict
-  
+
     try:
-      output = json.loads( output )
-    except Exception , x:
+      output = json.loads(output)
+    except Exception as x:
       resultDict['Status'] = 2048
-      resultDict['Message'] = str( x )
+      resultDict['Message'] = str(x)
       return resultDict
-  
+
     if output > 0:
       resultDict['Status'] = 0
       resultDict["Waiting"] = waitingJobs
       resultDict["Running"] = runningJobs
       return resultDict
-  
+
     for value in output.values():
-  
-      if not "state" in value:
+
+      if "state" not in value:
         continue
-      state = value[ "state" ]
-  
-      if state in [ "Running", "Finishing" ]:
+      state = value["state"]
+
+      if state in ["Running", "Finishing"]:
         runningJobs += 1
         continue
-  
-      if state in [ "Waiting", "Hold", "toAckReservation", "Suspended", "toLaunch", "Launching" ]:
+
+      if state in ["Waiting", "Hold", "toAckReservation", "Suspended", "toLaunch", "Launching"]:
         waitingJobs += 1
         continue
-  
+
     # Final output
     resultDict['Status'] = 0
     resultDict["Waiting"] = waitingJobs
