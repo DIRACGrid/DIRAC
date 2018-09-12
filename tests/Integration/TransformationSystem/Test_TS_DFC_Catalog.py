@@ -11,8 +11,8 @@
         {
             Catalogs
             {
-            CatalogList = DIRACFileCatalog, TSCatalog
-            DIRACFileCatalog
+            CatalogList = FileCatalog, TSCatalog
+            FileCatalog
             {
             CatalogType = FileCatalog
             AccessType = Read-Write
@@ -50,7 +50,7 @@ class TestTSDFCCatalogTestCase(unittest.TestCase):
     self.transClient = TransformationClient()
     self.fc = FileCatalog()
     self.dm = DataManager()
-    self.metaCatalog = 'DIRACFileCatalog'
+    self.metaCatalog = 'FileCatalog'
     gLogger.setLevel('DEBUG')
 
   def tearDown(self):
