@@ -7,7 +7,6 @@ __RCSID__ = "$Id$"
 
 from DIRAC.Core.DISET.RPCClient import RPCClient
 
-
 class Client(object):
   """ Simple class to redirect unknown actions directly to the server. Arguments
       to the constructor are passed to the RPCClient constructor as they are.
@@ -23,7 +22,7 @@ class Client(object):
         :param kwargs: just stored as an attribute and passed when creating
                       the RPCClient
     """
-    self.serverURL = None
+    self.serverURL = kwargs.pop('url', None)
     self.call = None  # I suppose it is initialized here to make pylint happy
     self.__kwargs = kwargs
 
