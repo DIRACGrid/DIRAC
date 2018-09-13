@@ -15,7 +15,6 @@ class ProdValidator(object):
 
   def __init__(self):
     self.transClient = TransformationClient()
-    self.fc = FileCatalog()
 
   def checkTransStatus(self, transID):
     res = self.transClient.getTransformationParameters(transID, 'Status')
@@ -60,7 +59,8 @@ class ProdValidator(object):
     """  Check the logical intersection between the two metaqueries
     """
     # Get the metadata types defined in the catalog
-    res = self.fc.getMetadataFields()
+    catalog = FileCatalog()
+    res = catalog.getMetadataFields()
     if not res['OK']:
       gLogger.error("Error in getMetadataFields: %s" % res['Message'])
       return res
