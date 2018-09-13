@@ -55,7 +55,7 @@ class StatesMonitoringAgent(AgentModule):
     self.am_setOption("PollingTime", self.reportPeriod)
     self.messagequeue = self.am_getOption('MessageQueue', 'dirac.wmshistory')
 
-    self.monitoringReporter = MonitoringReporter(monitoringType="WMSHistory", self.messagequeue)
+    self.monitoringReporter = MonitoringReporter(monitoringType="WMSHistory", failoverQueueName="self.messagequeue")
 
     for field in self.__summaryKeyFieldsMapping:
       if field == 'User':
