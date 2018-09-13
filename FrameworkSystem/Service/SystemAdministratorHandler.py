@@ -67,12 +67,12 @@ class SystemAdministratorHandler(RequestHandler):
 
     # Check the flag for dynamic monitoring
     dynamicMonitoring = cls.srv_getCSOption('DynamicMonitoring', False)
-    messagequeue = cls.srv_getCSOption('MessageQueue', 'dirac.componentmonitoring')
+    messageQueue = cls.srv_getCSOption('MessageQueue', 'dirac.componentmonitoring')
 
     if dynamicMonitoring:
       global gMonitoringReporter
       gMonitoringReporter = MonitoringReporter(
-          monitoringType="ComponentMonitoring", failoverQueueName=messagequeue)
+          monitoringType="ComponentMonitoring", failoverQueueName=messageQueue)
       gThreadScheduler.addPeriodicTask(120, cls.__storeProfiling)
 
     keepSoftwareVersions = cls.srv_getCSOption('KeepSoftwareVersions', 0)
