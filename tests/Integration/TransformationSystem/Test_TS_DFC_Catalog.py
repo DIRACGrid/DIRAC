@@ -98,7 +98,7 @@ class TransformationClientChainID(TestTSDFCCatalogTestCase):
         'Manual',
         '',
         inputMetaQuery=MDdict1b)
-    print res
+
     self.assertTrue(res['OK'])
     transID = res['Value']
 
