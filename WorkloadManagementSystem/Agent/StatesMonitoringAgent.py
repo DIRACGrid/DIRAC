@@ -45,7 +45,6 @@ class StatesMonitoringAgent(AgentModule):
 
   jobDB = None
   monitoringReporter = None
-  reportPeriod = None
 
   def initialize(self):
     """ Standard constructor
@@ -53,8 +52,7 @@ class StatesMonitoringAgent(AgentModule):
 
     self.jobDB = JobDB()
 
-    self.reportPeriod = 120
-    self.am_setOption("PollingTime", self.reportPeriod)
+    self.am_setOption("PollingTime", 900)
     self.messageQueue = self.am_getOption('MessageQueue', 'dirac.wmshistory')
 
     self.monitoringReporter = MonitoringReporter(monitoringType="WMSHistory", failoverQueueName=self.messageQueue)
