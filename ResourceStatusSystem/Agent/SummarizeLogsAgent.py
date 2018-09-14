@@ -1,6 +1,6 @@
 """ SummarizeLogsAgent module
 
-  This agents scans all the log tables ( SiteLog, ResourceLog and NodeLog ) on the
+  This agents scans all the log tables (SiteLog, ResourceLog and NodeLog) on the
   ResourceStatusDB and summarizes them. The results are stored on the History
   tables (SiteHistory, ResourceHistory and NodeHistory) and the Log tables
   cleared.
@@ -11,6 +11,12 @@
   The agent also adds a little prevention to avoid messing the summaries if the
   agent is restarted / killed abruptly. Please, please, please, DO NOT DO IT !
 
+
+.. literalinclude:: ../ConfigTemplate.cfg
+  :start-after: ##BEGIN SummarizeLogsAgent
+  :end-before: ##END
+  :dedent: 2
+  :caption: SummarizeLogsAgent options
 """
 
 __RCSID__ = '$Id$'
@@ -88,8 +94,6 @@ class SummarizeLogsAgent(AgentModule):
           continue
 
     return S_OK()
-
-  #.............................................................................
 
   def _summarizeLogs(self, element):
     """ given an element, selects all logs in table <element>Log.

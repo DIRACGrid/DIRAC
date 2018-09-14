@@ -11,7 +11,7 @@ import DIRAC.AccountingSystem.DB.AccountingDB as moduleTested
 
 
 class TestCase(unittest.TestCase):
-  """ Base class for the EmailAction / EmailAgent test cases
+  """ Base class for the AccountingDB test cases
   """
 
   def setUp(self):
