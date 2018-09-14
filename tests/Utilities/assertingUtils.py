@@ -140,7 +140,9 @@ def checkAgentOptions(getOptionMock, systemName, agentName,
     ignoreOptions = []
 
   # add some options that can be set, see the AgentModule for all of them
-  ignoreOptions.extend(['PollingTime', 'Status', 'Enabled', 'MaxCycles', 'LogOutputs', 'ControlDirectory'])
+  ignoreOptions.extend(['PollingTime', 'Status', 'Enabled',
+                        'MaxCycles', 'LogOutputs', 'ControlDirectory',
+                        'shifterProxy'])
   ignoreOptions = list(set(ignoreOptions))
   config = CFG()
 
