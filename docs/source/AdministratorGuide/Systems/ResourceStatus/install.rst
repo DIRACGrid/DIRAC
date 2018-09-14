@@ -139,4 +139,4 @@ The policy definitions is explained in :ref:`rss_advanced_configuration` ::
     - TokenAgent
     - EmailAgent
 
-Please, install them and make sure they are up and running.
+Please, install them and make sure they are up and running. The configuration of these agents can be found :mod:`Here <ResourceStatusSystem.Agent>`.
