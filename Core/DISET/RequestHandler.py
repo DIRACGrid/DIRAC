@@ -5,16 +5,15 @@ __RCSID__ = "$Id$"
 
 import os
 import time
-import time
 import psutil
 
 import DIRAC
 
 from DIRAC.Core.DISET.private.FileHelper import FileHelper
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR, isReturnStructure
-from DIRAC.FrameworkSystem.Client.Logger import gLogger
-from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.Core.Utilities import Time
+from DIRAC.ConfigurationSystem.Client.Config import gConfig
+from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
 
 def getServiceOption(serviceInfo, optionName, defaultValue):
@@ -138,7 +137,6 @@ class RequestHandler(object):
     self.__logRemoteQueryResponse(retVal, time.time() - startTime)
     result = self.__trPool.send(self.__trid, retVal)  # this will delete the value from the S_OK(value)
     del retVal
-    retVal = None
     return result
 
 #####
@@ -194,7 +192,6 @@ class RequestHandler(object):
           gLogger.error("You haven't finished receiving/sending the file", str(fileInfo))
           return S_ERROR("Incomplete transfer")
         del fileHelper
-        fileHelper = None
         return uRetVal
       finally:
         self.__lockManager.unlock("FileTransfer/%s" % sDirection)
