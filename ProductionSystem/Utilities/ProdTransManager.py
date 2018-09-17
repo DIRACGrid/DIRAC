@@ -1,11 +1,9 @@
 """
   This module manages is a client for the TS and manages the transformations associated to the productions
-
 """
 
 __RCSID__ = "$Id $"
 
-# from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 from DIRAC.ProductionSystem.Client.ProductionClient import ProductionClient
@@ -78,23 +76,23 @@ class ProdTransManager(object):
 
     return S_OK(res['Value'])
 
-  def executeActionOnTransformations(self, prodID, action, transID=None):
+  def executeActionOnTransformations(self, prodID, action):
     """ Wrapper to start/stop/clean the transformations of a production"""
-    res = self.prodClient.getProductionTransformations(prodID)
-    if res['OK']:
-      transList = res['Value']
 
     # Check if there is any action to do
     if not action:
       return S_OK()
 
+    # Get the transformations of the production
+    res = self.prodClient.getProductionTransformations(prodID)
+    if not res['OK']:
+      return res
+
+    transList = res['Value']
     method = getattr(self.transClient, action)
-
-    if transID:
-      transList = [{'TransformationID': transID}]
-
     gLogger.notice("Executing action %s to %s" % (action, transList))
 
+    # Execute the action on each transformation
     for trans in transList:
       transID = trans['TransformationID']
       res = method(transID)
