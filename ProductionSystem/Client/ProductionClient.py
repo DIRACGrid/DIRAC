@@ -37,15 +37,12 @@ class ProductionClient(Client):
     proposedStatus = status
     if force:
       return S_OK(proposedStatus)
-      #return proposedStatus
     else:
       stateChange = ProductionsStateMachine(originalStatus).setState(proposedStatus)
       if not stateChange['OK']:
         return S_OK(originalStatus)
-        #return originalStatus
       else:
         return S_OK(stateChange['Value'])
-        #return stateChange['Value']
 
   # Methods contacting the ProductionManager Service
 
@@ -57,7 +54,6 @@ class ProductionClient(Client):
     """
     rpcClient = self._getRPC()
     # Apply the production state machine
-    #newStatus = self._applyProductionStatusStateMachine(prodID, status, force=False)
     res = self._applyProductionStatusStateMachine(prodID, status, force=False)
     if not res['OK']:
       return res
@@ -98,7 +94,7 @@ class ProductionClient(Client):
     """ Gets all the production transformations for a production, incrementally.
         "limit" here is just used to determine the offset.
 
-    :param prodName: the Production name
+    :param prodName: the Production name or ID
     """
     rpcClient = self._getRPC()
     productionTransformations = []
