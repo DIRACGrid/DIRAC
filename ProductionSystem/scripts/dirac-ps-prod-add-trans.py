@@ -12,7 +12,7 @@ from DIRAC.Core.Base import Script
 
 Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
                                   'Usage:',
-                                  '  %s prodID' % Script.scriptName,
+                                  '  %s prodID transID [parentTransID]' % Script.scriptName,
                                   'Arguments:',
                                   '  prodID: Production ID',
                                   '  transID: Transformation ID',
