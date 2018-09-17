@@ -371,7 +371,7 @@ class PublisherHandler(RequestHandler):
       if isinstance(site, basestring):
         site = [site]
 
-      for ep, siteName in endpoint2Site.items():
+      for ep, siteName in endpoint2Site.iteritems():
         if siteName in site:
           endpointSet.add(ep)
 

@@ -179,7 +179,7 @@ class TransformationCleaningAgent(AgentModule):
                                               timeStamp='LastUpdate')
     if res['OK']:
       for transDict in res['Value']:
-        if self.shifterProxy():
+        if self.shifterProxy:
           self._executeArchive(transDict)
         else:
           self.log.info("Archiving files for transformation %(TransformationID)s with %(AuthorDN)s, %(AuthorGroup)s" %

@@ -25,7 +25,6 @@ class VOMS2CSAgent(AgentModule):
     super(VOMS2CSAgent, self).__init__(*args, **kwargs)
 
     self.voList = []
-    self.voChanged = False
     self.dryRun = False
 
     self.autoAddUsers = False
@@ -63,7 +62,6 @@ class VOMS2CSAgent(AgentModule):
   def execute(self):
 
     for vo in self.voList:
-      self.voChanged = False
       voAdminUser = getVOOption(vo, "VOAdmin")
       voAdminMail = None
       if voAdminUser:
@@ -94,6 +92,7 @@ class VOMS2CSAgent(AgentModule):
       susUsers = resultDict.get("SuspendedUsers", [])
       csapi = resultDict.get("CSAPI")
       adminMessages = resultDict.get("AdminMessages", {'Errors': [], 'Info': []})
+      voChanged = resultDict.get("VOChanged", False)
       self.log.info("Run user results: new %d, modified %d, deleted %d, new/suspended %d" %
                     (len(newUsers), len(modUsers), len(delUsers), len(susUsers)))
 
@@ -129,7 +128,7 @@ class VOMS2CSAgent(AgentModule):
           for user in result['Value']['Successful']:
             adminMessages['Info'].append("Created home directory for user %s" % user)
 
-      if self.voChanged or self.detailedReport:
+      if voChanged or self.detailedReport:
         mailMsg = ""
         if adminMessages['Errors']:
           mailMsg += "\nErrors list:\n  %s" % "\n  ".join(adminMessages['Errors'])
