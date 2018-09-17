@@ -1,11 +1,9 @@
 """
   This module contains methods for the validation of production definitions
-
 """
 
 __RCSID__ = "$Id $"
 
-# # from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
@@ -117,13 +115,11 @@ class ProdValidator(object):
     return S_OK(MetaQueryDict)
 
   def compareValues(self, value, parentvalue):
-    if set(
+    '''Very simple comparison. To be improved'''
+    return set(
         value.values()[0]).issubset(
         set(
             parentvalue.values()[0])) or set(
         parentvalue.values()[0]).issubset(
         set(
-            value.values()[0])):
-      return True
-    else:
-      return False
+            value.values()[0]))
