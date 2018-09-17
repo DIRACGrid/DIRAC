@@ -9,7 +9,7 @@ from DIRAC.Core.Base.API import API
 
 class Production(API):
 
-  """ Exposes the functionality available in the ProductionSystem/ProductionManagerHandler
+  """ Contains methods to build a production on the client, before it's actually added to the Production System
   """
 
   def __init__(self, **kwargs):
