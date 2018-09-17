@@ -1,6 +1,5 @@
 """
   This module defines the state machine for the Productions
-
 """
 
 __RCSID__ = "$Id $"
