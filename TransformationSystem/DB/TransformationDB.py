@@ -1126,7 +1126,11 @@ class TransformationDB(DB):
       return res
     connection = res['Value']['Connection']
     transID = res['Value']['TransformationID']
-    req = "DELETE FROM TransformationMetaQueries WHERE TransformationID=%d AND QueryType='%s';" % (transID, queryType)
+    res = self._escapeString(queryType)
+    if not res['OK']:
+      return S_ERROR("Failed to parse the transformation query type")
+    queryType = res['Value']
+    req = "DELETE FROM TransformationMetaQueries WHERE TransformationID=%d AND QueryType=%s;" % (transID, queryType)
     res = self._update(req, connection)
     if not res['OK']:
       return res
@@ -1143,8 +1147,12 @@ class TransformationDB(DB):
       return res
     connection = res['Value']['Connection']
     transID = res['Value']['TransformationID']
+    res = self._escapeString(queryType)
+    if not res['OK']:
+      return S_ERROR("Failed to parse the transformation query type")
+    queryType = res['Value']
     req = "SELECT MetaDataName,MetaDataValue,MetaDataType FROM TransformationMetaQueries"
-    req = req + " WHERE TransformationID=%d AND QueryType='%s';" % (transID, queryType)
+    req = req + " WHERE TransformationID=%d AND QueryType=%s;" % (transID, queryType)
     res = self._query(req, connection)
     if not res['OK']:
       return res
