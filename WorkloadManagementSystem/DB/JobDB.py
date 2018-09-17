@@ -41,6 +41,8 @@
     getCounters()
 """
 
+from __future__ import absolute_import
+from six.moves import range
 __RCSID__ = "$Id$"
 
 import sys
@@ -140,7 +142,7 @@ class JobDB(DB):
         jobDict = {}
         jobDict['JobID'] = jobID
         attrValues = retValues[1:]
-        for i in xrange(len(attr_tmp_list)):
+        for i in range(len(attr_tmp_list)):
           try:
             jobDict[attr_tmp_list[i]] = attrValues[i].tostring()
           except BaseException:
@@ -403,10 +405,10 @@ class JobDB(DB):
 
     attributes = {}
     if attrList:
-      for i in xrange(len(attrList)):
+      for i in range(len(attrList)):
         attributes[attrList[i]] = str(values[i])
     else:
-      for i in xrange(len(self.jobAttributeNames)):
+      for i in range(len(self.jobAttributeNames)):
         attributes[self.jobAttributeNames[i]] = str(values[i])
 
     return S_OK(attributes)
@@ -596,7 +598,7 @@ class JobDB(DB):
     optList = optListString.split(',')
     try:
       sindex = None
-      for i in xrange(len(optList)):
+      for i in range(len(optList)):
         if optList[i] == currentOptimizer:
           sindex = i
       if sindex >= 0:
@@ -712,7 +714,7 @@ class JobDB(DB):
         return S_ERROR(EWMSSUBM, 'Request to set non-existing job attribute')
 
     attr = []
-    for i in xrange(len(attrNames)):
+    for i in range(len(attrNames)):
       ret = self._escapeString(attrValues[i])
       if not ret['OK']:
         return ret
@@ -935,7 +937,7 @@ class JobDB(DB):
     parameters = {}
     if classadJob.lookupAttribute("Parameters"):
       parameters = classadJob.getDictionaryFromSubJDL("Parameters")
-    res = self.setJobParameters(jobID, parameters.items())
+    res = self.setJobParameters(jobID, list(parameters.items()))
 
     if not res['OK']:
       return res
@@ -1956,7 +1958,7 @@ class JobDB(DB):
         values = selectDict[item]
         if not isinstance(values, list):
           values = [values]
-        indices = range(len(records))
+        indices = list(range(len(records)))
         indices.reverse()
         for ind in indices:
           if records[ind][selectItem] not in values:
@@ -2005,7 +2007,7 @@ class JobDB(DB):
     ok = True
     # FIXME: It is rather not optimal to use parameters to store the heartbeat info, must find a proper solution
     # Add static data items as job parameters
-    result = self.setJobParameters(jobID, staticDataDict.items())
+    result = self.setJobParameters(jobID, list(staticDataDict.items()))
     if not result['OK']:
       ok = False
       self.log.warn(result['Message'])

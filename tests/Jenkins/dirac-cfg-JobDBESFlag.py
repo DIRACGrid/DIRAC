@@ -2,6 +2,7 @@
 """ update local cfg
 """
 
+from __future__ import absolute_import
 from DIRAC.Core.Base import Script
 
 Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
