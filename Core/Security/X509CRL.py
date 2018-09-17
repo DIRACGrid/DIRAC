@@ -14,7 +14,7 @@ from DIRAC.Core.Utilities import DErrno
 
 class X509CRL( object ):
 
-  def __init__( self, cert = False ):
+  def __init__( self, cert = None ):
 
     self.__pemData = None
 
@@ -41,7 +41,7 @@ class X509CRL( object ):
     Return : S_OK / S_ERROR
     """
     try:
-      fd = file( crlLocation )
+      fd = open(crlLocation)
       pemData = fd.read()
       fd.close()
     except Exception as e:
@@ -72,7 +72,7 @@ class X509CRL( object ):
     Return : S_OK / S_ERROR
     """
     try:
-      fd = file( crlLocation )
+      fd = open(crlLocation)
       pemData = fd.read()
       fd.close()
     except Exception as e:
@@ -110,7 +110,7 @@ class X509CRL( object ):
         os.write( fd, pemData )
         os.close( fd )
       else:
-        fd = file( filename, "w" )
+        fd = open(filename, "w")
         fd.write( pemData )
         fd.close()
     except Exception as e:

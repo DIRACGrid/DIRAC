@@ -1,63 +1,107 @@
 """ Utilities for the MessageQueue package
 """
 
-from DIRAC import S_OK, S_ERROR, gConfig
-
 __RCSID__ = "$Id$"
 
-def getMQueue( queueName ):
-  """ Get parameter of a MQ queue from the CS
+import Queue
+from DIRAC import S_OK, S_ERROR, gConfig
+from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 
-  :param str queueName: name of the queue either just the queue name, in this case
-                       the default MQServer will be used, or in th form <MQServer>::<queueName>
-  :return: S_OK( parameterDict )/ S_ERROR
+
+def getMQParamsFromCS(mqURI):
+  """ Function gets parameters of a MQ destination (queue/topic) from the CS.
+
+  Args:
+    mqURI(str):Pseudo URI identifing the MQ service. It has the following format:
+              mqConnection::DestinationType::DestinationName
+              e.g. blabla.cern.ch::Queue::MyQueue1
+    mType(str): 'consumer' or 'producer'
+  Returns:
+    S_OK(param_dicts) or S_ERROR
   """
+  # API initialization is required to get an up-to-date configuration from the CS
+  csAPI = CSAPI()
+  csAPI.initialize()
 
-  mqService = None
-  elements = queueName.split( '::' )
-  if len( elements ) == 2:
-    mqService, queue = elements
+  try:
+    mqService, mqType, mqName = mqURI.split("::")
+  except ValueError:
+    return S_ERROR('Bad format of mqURI address:%s' % (mqURI))
+
+  result = gConfig.getConfigurationTree('/Resources/MQServices', mqService, mqType, mqName)
+  if not result['OK'] or not result['Value']:
+    return S_ERROR('Requested destination not found in the CS: %s::%s::%s' % (mqService, mqType, mqName))
+  mqDestinationPath = None
+  for path, value in result['Value'].iteritems():
+    if not value and path.endswith(mqName):
+      mqDestinationPath = path
+
+  # set-up internal parameter depending on the destination type
+  tmp = mqDestinationPath.split('Queue')[0].split('Topic')
+  servicePath = tmp[0]
+  serviceDict = {}
+  if len(tmp) > 1:
+    serviceDict['Topic'] = mqName
   else:
-    queue = queueName
+    serviceDict['Queue'] = mqName
 
-
-  result = gConfig.getSections( '/Resources/MQServices' )
+  result = gConfig.getOptionsDict(servicePath)
   if not result['OK']:
     return result
-  sections = result['Value']
-  if mqService and not mqService in sections:
-    return S_ERROR( 'Requested MQService %s not found in the CS' % mqService )
-  elif not mqService and len( sections ) == 1:
-    mqService = sections[0]
+  serviceDict.update(result['Value'])
 
-  queuePath = ''
-  servicePath = ''
-  if mqService:
-    servicePath = '/Resources/MQServices/%s' % mqService
-    result = gConfig.getSections( '/Resources/MQServices/%s/Queues' % mqService )
-    if result['OK'] and queue in result['Value']:
-      queuePath = '/Resources/MQServices/%s/Queues/%s' % ( mqService, queue )
-  else:
-    for section in sections:
-      result = gConfig.getSections( '/Resources/MQServices/%s/Queues' % section )
-      if result['OK']:
-        if queue in result['Value']:
-          if queuePath:
-            return S_ERROR( 'Ambiguous queue %s definition' % queue )
-          else:
-            servicePath = '/Resources/MQServices/%s' % section
-            queuePath = '/Resources/MQServices/%s/Queues/%s' % ( section, queue )
-
-  result = gConfig.getOptionsDict( servicePath )
+  result = gConfig.getOptionsDict(mqDestinationPath)
   if not result['OK']:
     return result
-  serviceDict = result['Value']
+  serviceDict.update(result['Value'])
+  return S_OK(serviceDict)
 
-  if queuePath:
-    result = gConfig.getOptionsDict( queuePath )
-    if not result['OK']:
-      return result
-    serviceDict.update( result['Value'] )
-  serviceDict['Queue'] = queue
 
-  return S_OK( serviceDict )
+def getMQService(mqURI):
+  return mqURI.split("::")[0]
+
+
+def getDestinationType(mqURI):
+  return mqURI.split("::")[1]
+
+
+def getDestinationName(mqURI):
+  return mqURI.split("::")[2]
+
+
+def getDestinationAddress(mqURI):
+  mqType, mqName = mqURI.split("::")[-2:]
+  return "/" + mqType.lower() + "/" + mqName
+
+
+def generateDefaultCallback():
+  """ Function generates a default callback that can
+      be used to handle the messages in the MQConsumer
+      clients. It contains the internal queue (as closure)
+      for the incoming messages. The queue can be accessed by the
+      callback.get() method. The callback.get() method returns
+      the first message or raise the exception Queue.Empty.
+      e.g. myCallback = generateDefaultCallback()
+
+          try:
+             print myCallback.get()
+          except Queue.Empty:
+            pass
+
+  Args:
+    mqURI(str):Pseudo URI identifing MQ connection. It has the following format
+              mqConnection::DestinationType::DestinationName
+              e.g. blabla.cern.ch::Queue::MyQueue1
+  Returns:
+    object: callback function
+  """
+  msgQueue = Queue.Queue()
+
+  def callback(headers, body):
+    msgQueue.put(body)
+    return S_OK()
+
+  def get():
+    return msgQueue.get(block=False)
+  callback.get = get
+  return callback

@@ -1,44 +1,61 @@
 """ Collection of user jobs for testing purposes
 """
 
+# pylint: disable=wrong-import-position, invalid-name
+
+import unittest
+import time
+
+from DIRAC.tests.Utilities.testJobDefinitions import helloWorld, mpJob, parametricJob
+from DIRAC import gLogger
+gLogger.setLevel('DEBUG')
+
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
-import unittest
-
-from DIRAC import gLogger
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
-from DIRAC.tests.Utilities.testJobDefinitions import helloWorld, mpJob
+time.sleep(3)  # in theory this should not be needed, but I don't know why, without, it fails.
+result = getProxyInfo()
+if result['Value']['group'] not in ['lhcb_user', 'dirac_user']:
+  print "GET A USER GROUP"
+  exit(1)
 
-gLogger.setLevel( 'VERBOSE' )
 
 jobsSubmittedList = []
 
-class GridSubmissionTestCase( unittest.TestCase ):
+
+class GridSubmissionTestCase(unittest.TestCase):
   """ Base class for the Regression test cases
   """
-  def setUp( self ):
-    result = getProxyInfo()
-    if result['Value']['group'] not in ['dirac_user']:
-      print "GET A USER GROUP"
-      exit( 1 )
 
-  def tearDown( self ):
+  def setUp(self):
     pass
 
-class submitSuccess( GridSubmissionTestCase ):
+  def tearDown(self):
+    pass
 
-  def test_submit( self ):
 
+class submitSuccess(GridSubmissionTestCase):
+  """ submit jobs
+  """
+
+  def test_submit(self):
+    """ submit jobs defined in DIRAC.tests.Utilities.testJobDefinitions
+    """
     res = helloWorld()
-    self.assertTrue( res['OK'] )
-    jobsSubmittedList.append( res['Value'] )
+    self.assertTrue(res['OK'])
+    jobsSubmittedList.append(res['Value'])
 
     res = mpJob()
-    self.assertTrue( res['OK'] )
-    jobsSubmittedList.append( res['Value'] )
+    self.assertTrue(res['OK'])
+    jobsSubmittedList.append(res['Value'])
 
+    res = parametricJob()
+    self.assertTrue(res['OK'])
+    jobsSubmittedList.append(res['Value'])
+
+    print "submitted %d jobs: %s" % (len(jobsSubmittedList), ','.join(str(js) for js in jobsSubmittedList))
 
 
 # FIXME: This is also in the extension...? To try!
@@ -53,12 +70,12 @@ class submitSuccess( GridSubmissionTestCase ):
 #     counter = 0
 #     while counter < 36:
 #       jobStatus = self.dirac.status( jobsSubmittedList )
-#       self.assert_( jobStatus['OK'] )
+#       self.assertTrue( jobStatus['OK'] )
 #       for jobID in jobsSubmittedList:
 #         status = jobStatus['Value'][jobID]['Status']
 #         minorStatus = jobStatus['Value'][jobID]['MinorStatus']
 #         if status == 'Done':
-#           self.assert_( minorStatus in ['Execution Complete', 'Requests Done'] )
+#           self.assertTrue( minorStatus in ['Execution Complete', 'Requests Done'] )
 #           jobsSubmittedList.remove( jobID )
 #           res = self.dirac.getJobOutputLFNs( jobID )
 #           if res['OK']:
@@ -85,7 +102,7 @@ class submitSuccess( GridSubmissionTestCase ):
 #############################################################################
 
 if __name__ == '__main__':
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase( GridSubmissionTestCase )
-  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( submitSuccess ) )
+  suite = unittest.defaultTestLoader.loadTestsFromTestCase(GridSubmissionTestCase)
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(submitSuccess))
   # suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( monitorSuccess ) )
-  testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
+  testResult = unittest.TextTestRunner(verbosity=2).run(suite)

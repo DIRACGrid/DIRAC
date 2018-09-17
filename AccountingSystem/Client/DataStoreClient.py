@@ -1,8 +1,6 @@
 """ Module that holds the DataStore Client class
 """
 
-__RCSID__ = "$Id$"
-
 import time
 import random
 import copy
@@ -15,6 +13,8 @@ from DIRAC.RequestManagementSystem.Client.Request   import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.Core.Utilities.DErrno import ERMSUKN
+
+__RCSID__ = "$Id$"
 
 random.seed()
 
@@ -109,12 +109,24 @@ class DataStoreClient(object):
         del registersList[ :self.__maxRecordsInABundle ]
     except Exception as e:  # pylint: disable=broad-except
       gLogger.exception( "Error committing", lException = e )
-      return S_ERROR( "Error committing %s" % repr( e ).replace( ',)', ')' ) )    
+      return S_ERROR( "Error committing %s" % repr( e ).replace( ',)', ')' ) )
     finally:
       # if something is left because of an error return it to the main list
       self.__registersList.extend(registersList)
 
     return S_OK( sent )
+  
+  def delayedCommit( self ):
+    """
+    If needed start a timer that will run the commit later
+    allowing to send more registers at once (reduces overheads).
+    """
+    
+    if not self.__commitTimer.isAlive():
+      self.__commitTimer = threading.Timer(5, self.commit)
+      self.__commitTimer.start()
+    
+    return S_OK()
 
   def remove( self, register ):
     """

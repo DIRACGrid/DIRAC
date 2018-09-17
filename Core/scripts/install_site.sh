@@ -1,10 +1,7 @@
 #!/bin/bash
-###############################################################
 #
 #
-#
-###############################################################
-#
+
 function usage {
   echo Usage:
   echo "    install_site.sh [Options] ... CFG_file"
@@ -13,11 +10,13 @@ function usage {
   echo "           all the instructions for the DIRAC installation. See DIRAC Administrator "
   echo "           Guide for the details"
   echo "Options:"
+  echo "    -v, --version  for a specific version"
   echo "    -d, --debug    debug mode"
   echo "    -h, --help     print this"
   exit 1
 }
 
+DIRACVERSION='integration'
 
 while [ $1 ]
 do
@@ -27,14 +26,18 @@ do
     usage
     exit
   ;;
+
   -d | --debug )
     DEBUG='-o LogLevel=DEBUG'
-# -v | --version )
-#    switch=$1
-#    shift
-#    [ $1 ] || error_exit "Switch $switch requires a argument"
-#    DIRACVERSION=$1
   ;;
+
+  -v | --version )
+    switch=$1
+    shift
+    [ $1 ] || error_exit "Switch $switch requires a argument"
+    DIRACVERSION=$1
+  ;;
+
   * )
     installCfg=$1
   ;;
@@ -48,9 +51,9 @@ if [ -z "$installCfg" ]; then
   exit 1
 fi
 
-# Get the latest version of dirac-install
+# Get the version of dirac-install requested - if none is requested, the version will come from integration
 #
-wget --no-check-certificate -O dirac-install 'https://github.com/DIRACGrid/DIRAC/raw/integration/Core/scripts/dirac-install.py' || exit
+wget --no-check-certificate -O dirac-install "https://github.com/DIRACGrid/DIRAC/raw/$DIRACVERSION/Core/scripts/dirac-install.py" || exit
 #
 # define the target Dir
 #
@@ -58,6 +61,7 @@ installDir=`grep TargetPath $installCfg | grep -v '#' | cut -d '=' -f 2 | sed -e
 #
 mkdir -p $installDir || exit
 #
+
 python dirac-install -t server $installCfg
 source $installDir/bashrc
 dirac-configure $installCfg $DEBUG

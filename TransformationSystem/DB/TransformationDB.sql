@@ -1,17 +1,17 @@
 -- -------------------------------------------------------------------------------
 --  Schema definition for the TransformationDB database a generic
---  engine to define input data streams and support dynamic data 
+--  engine to define input data streams and support dynamic data
 --  grouping per unit of execution.
 
 -- When installing via dirac tools, the following is not needed (still here for reference)
--- 
+--
 -- DROP DATABASE IF EXISTS TransformationDB;
 -- CREATE DATABASE TransformationDB;
 -- ------------------------------------------------------------------------------
 -- Database owner definition
 -- USE mysql;
 -- Must set passwords for database user by replacing "must_be_set".
--- GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON TransformationDB.* TO Dirac@'%' IDENTIFIED BY 'must_be_set';
+-- GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER,REFERENCES ON TransformationDB.* TO Dirac@'%' IDENTIFIED BY 'must_be_set';
 -- FLUSH PRIVILEGES;
 
 -- -----------------------------------------------------------------------------
@@ -50,7 +50,7 @@ CREATE TABLE Transformations (
 DROP TABLE IF EXISTS DataFiles;
 CREATE TABLE DataFiles (
    FileID INTEGER NOT NULL AUTO_INCREMENT,
-   LFN VARCHAR(255) NOT NULL DEFAULT '',
+   LFN VARCHAR(255) UNIQUE NOT NULL DEFAULT '',
    Status varchar(32) DEFAULT 'AprioriGood',
    INDEX (Status),
    INDEX (LFN),
@@ -63,7 +63,7 @@ CREATE TABLE AdditionalParameters (
     TransformationID INTEGER NOT NULL,
     ParameterName VARCHAR(32) NOT NULL,
     ParameterValue LONGBLOB NOT NULL,
-    ParameterType VARCHAR(32) DEFAULT 'StringType', 
+    ParameterType VARCHAR(32) DEFAULT 'StringType',
     PRIMARY KEY(TransformationID,ParameterName),
     FOREIGN KEY (TransformationID) REFERENCES Transformations(TransformationID)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -71,7 +71,7 @@ CREATE TABLE AdditionalParameters (
 -- -------------------------------------------------------------------------------
 DROP TABLE IF EXISTS TransformationLog;
 CREATE TABLE TransformationLog (
-	recid INTEGER NOT NULL AUTO_INCREMENT,
+    recid INTEGER NOT NULL AUTO_INCREMENT,
     TransformationID INTEGER NOT NULL,
     Message VARCHAR(255) NOT NULL,
     Author VARCHAR(255) NOT NULL DEFAULT 'Unknown',
@@ -94,7 +94,7 @@ CREATE TABLE TransformationTasks (
     LastUpdateTime DATETIME NOT NULL,
     PRIMARY KEY(TransformationID,TaskID),
     INDEX(ExternalStatus),
-	FOREIGN KEY (TransformationID) REFERENCES Transformations(TransformationID)
+  FOREIGN KEY (TransformationID) REFERENCES Transformations(TransformationID)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- This is required to mimic the AUTO_INCREMENT behavior of TaskID which was possible with MyISAM:
@@ -124,34 +124,34 @@ CREATE TABLE TransformationFiles(
 -- -------------------------------------------------------------------------------
 DROP TABLE IF EXISTS TransformationFileTasks;
 CREATE TABLE TransformationFileTasks (
-	TransformationID INTEGER NOT NULL,
-	FileID INTEGER NOT NULL,
-	TaskID INTEGER NOT NULL,
-	PRIMARY KEY(TransformationID,FileID,TaskID),
-	FOREIGN KEY (TransformationID) REFERENCES Transformations(TransformationID),
-	FOREIGN KEY (TransformationID, FileID) REFERENCES TransformationFiles(TransformationID, FileID),
-	FOREIGN KEY (TransformationID, TaskID) REFERENCES TransformationTasks(TransformationID, TaskID)
+  TransformationID INTEGER NOT NULL,
+  FileID INTEGER NOT NULL,
+  TaskID INTEGER NOT NULL,
+  PRIMARY KEY(TransformationID,FileID,TaskID),
+  FOREIGN KEY (TransformationID) REFERENCES Transformations(TransformationID),
+  FOREIGN KEY (TransformationID, FileID) REFERENCES TransformationFiles(TransformationID, FileID),
+  FOREIGN KEY (TransformationID, TaskID) REFERENCES TransformationTasks(TransformationID, TaskID)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- -------------------------------------------------------------------------------
 DROP TABLE IF EXISTS TaskInputs;
 CREATE TABLE TaskInputs (
-	TransformationID INTEGER NOT NULL,
-	TaskID INTEGER NOT NULL,
-	InputVector MEDIUMTEXT,
-	PRIMARY KEY(TransformationID,TaskID),
-	FOREIGN KEY (TransformationID, TaskID) REFERENCES TransformationTasks(TransformationID, TaskID)
+  TransformationID INTEGER NOT NULL,
+  TaskID INTEGER NOT NULL,
+  InputVector MEDIUMTEXT,
+  PRIMARY KEY(TransformationID,TaskID),
+  FOREIGN KEY (TransformationID, TaskID) REFERENCES TransformationTasks(TransformationID, TaskID)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- -------------------------------------------------------------------------------
 DROP TABLE IF EXISTS TransformationInputDataQuery;
 CREATE TABLE TransformationInputDataQuery (
-	TransformationID INTEGER NOT NULL,
-	ParameterName VARCHAR(255) NOT NULL,
-	ParameterValue BLOB NOT NULL,
-	ParameterType VARCHAR(8) NOT NULL,
-	PRIMARY KEY (TransformationID,ParameterName),
-	FOREIGN KEY (TransformationID) REFERENCES Transformations(TransformationID)
+  TransformationID INTEGER NOT NULL,
+  ParameterName VARCHAR(255) NOT NULL,
+  ParameterValue BLOB NOT NULL,
+  ParameterType VARCHAR(8) NOT NULL,
+  PRIMARY KEY (TransformationID,ParameterName),
+  FOREIGN KEY (TransformationID) REFERENCES Transformations(TransformationID)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET FOREIGN_KEY_CHECKS = 1;

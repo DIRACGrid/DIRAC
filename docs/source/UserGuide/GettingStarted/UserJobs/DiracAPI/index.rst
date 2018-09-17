@@ -22,82 +22,71 @@ Creating a DIRAC Job using API
 
   The API allows creating DIRAC jobs using the Job object, specifying job requirements.::
   
-	from DIRAC.Interfaces.API.Job import Job
-	from DIRAC.Interfaces.API.Dirac import Dirac
-	
-	dirac = Dirac()
-	j = Job() 
-	
-	j.setCPUTime(500)
-	j.setExecutable('/bin/echo hello')
-	j.setExecutable('/bin/hostname')
-	j.setExecutable('/bin/echo hello again')
-	j.setName('API')
-	
-	jobID = dirac.submit(j)
-	print 'Submission Result: ',jobID
-	
+    from DIRAC.Interfaces.API.Job import Job
+    from DIRAC.Interfaces.API.Dirac import Dirac
+    
+    dirac = Dirac()
+    j = Job() 
+    
+    j.setCPUTime(500)
+    j.setExecutable('/bin/echo hello')
+    j.setExecutable('/bin/hostname')
+    j.setExecutable('/bin/echo hello again')
+    j.setName('API')
+    
+    jobID = dirac.submit(j)
+    print 'Submission Result: ',jobID
+    
   In this example, the job has tree steps from different applications: echo, hostname and echo again.
-	
+
 Submitting jobs
 =================
   
   To submit the job is just send the job using the script::
   
-	$ python testAPI-Submission.py
-	2010-10-20 12:05:49 UTC testAPI-Submission.py/DiracAPI  INFO: <=====DIRAC v5r10-pre2=====>
+    $ python testAPI-Submission.py
+    2010-10-20 12:05:49 UTC testAPI-Submission.py/DiracAPI  INFO: <=====DIRAC v5r10-pre2=====>
     2010-10-20 12:05:49 UTC testAPI-Submission.py/DiracAPI  INFO: Will submit job to WMS
-	{'OK': True, 'Value': 196}
-	 
+    {'OK': True, 'Value': 196}
+
   The script output must return the jobID, this is useful for keeping track of your job IDs.
 
 Job Monitoring
 ================
 
   Once you have submitted your jobs to the Grid, a little script can be used to monitor the job status::
- 
-	from DIRAC.Interfaces.API.Dirac import Dirac
-	from DIRAC.Interfaces.API.Job import Job
-	import sys
-	dirac = Dirac()
-	jobid = sys.argv[1]
-	print dirac.status(jobid)
+
+    from DIRAC.Interfaces.API.Dirac import Dirac
+    from DIRAC.Interfaces.API.Job import Job
+    import sys
+    dirac = Dirac()
+    jobid = sys.argv[1]
+    print dirac.status(jobid)
 
   Run it like this:
 
     python Status-API.py <Job_ID>
 
-	$python Status-API.py 196
-	{'OK': True, 'Value': {196: {'Status': 'Done', 'MinorStatus': 'Execution Complete', 'Site': 'LCG.IRES.fr'}}}
-	
+    $python Status-API.py 196
+    {'OK': True, 'Value': {196: {'Status': 'Done', 'MinorStatus': 'Execution Complete', 'Site': 'LCG.IRES.fr'}}}
+
   The script output is going to return the status, minor status and the site where the job was executed.
-  
+
 Job Output
 ============
 
   When the status of the job is done, the outputs can be retrieved using also a simple script::
 
-	from DIRAC.Interfaces.API.Dirac import Dirac
-	from DIRAC.Interfaces.API.Job import Job
-	import sys
-	dirac = Dirac()
-	jobid     = sys.argv[1]
-	print dirac.getOutputSandbox(jobid)
-	
+    from DIRAC.Interfaces.API.Dirac import Dirac
+    from DIRAC.Interfaces.API.Job import Job
+    import sys
+    dirac = Dirac()
+    jobid     = sys.argv[1]
+    print dirac.getOutputSandbox(jobid)
+
   And, executing the script::
-	
-	python Output-API.py <Job_ID>
-	
-	$ python Output-API.py 196
-	
+
+    python Output-API.py <Job_ID>
+    $ python Output-API.py 196
+
   The job output is going to create a directory with the jobID and the output files will be stored inside this directory.
-  
- 
-
-
-
-    
-
-
-  
-  

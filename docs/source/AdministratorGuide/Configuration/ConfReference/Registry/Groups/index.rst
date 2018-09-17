@@ -22,21 +22,21 @@ This subsection is used to describe DIRAC groups registered in the server.
 +---------------------------+------------------------------------------------+-----------------------------+
 | *JobShare*                | Just for normal users                          | JobShare = 200              |
 +---------------------------+------------------------------------------------+-----------------------------+
-| *AutoUploadProxy*         | Controls automatic Proxy upload by             | AutoUploadProxy = True      | 
+| *AutoUploadProxy*         | Controls automatic Proxy upload by             | AutoUploadProxy = True      |
 |                           | dirac-proxy-init                               |                             |
 +---------------------------+------------------------------------------------+-----------------------------+
 | *AutoUploadPilotProxy*    | Controls automatic Proxy upload by             | AutoUploadPilotProxy = True |
-|                           | dirac-proxy-init for Pilot groups              |                             |           
+|                           | dirac-proxy-init for Pilot groups              |                             |
 +---------------------------+------------------------------------------------+-----------------------------+
 | *AutoAddVOMS*             | Controls automatic addition of VOMS            | AutoAddVOMS = True          |
-|                           | extension by dirac-proxy-init                  |                             |  
+|                           | extension by dirac-proxy-init                  |                             |
 +---------------------------+------------------------------------------------+-----------------------------+
 
 
 * Default properties by group:
 
   ** dirac_admin:
-  
+
    -   Properties = AlarmsManagement
    -   Properties += ServiceAdministrator
    -   Properties += CSAdministrator
@@ -44,14 +44,13 @@ This subsection is used to describe DIRAC groups registered in the server.
    -   Properties += FullDelegation
    -   Properties += ProxyManagement
    -   Properties += Operator
-  
+
   ** dirac_pilot
-  
+
    -  Properties = GenericPilot
    -  Properties += LimitedDelegation
    -  Properties += Pilot
-   
+
   ** dirac_user
-  
+
    - Properties = NormalUser
- 

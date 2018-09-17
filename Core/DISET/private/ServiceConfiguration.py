@@ -113,12 +113,12 @@ class ServiceConfiguration:
     protocol = self.getProtocol()
     serviceURL = self.__getCSURL()
     if serviceURL:
-        if serviceURL.find( protocol ) != 0:
-          urlFields = serviceURL.split( ":" )
-          urlFields[0] = protocol
-          serviceURL = ":".join( urlFields )
-          self.setURL( serviceURL )
-        return serviceURL
+      if serviceURL.find( protocol ) != 0:
+        urlFields = serviceURL.split( ":" )
+        urlFields[0] = protocol
+        serviceURL = ":".join( urlFields )
+        self.setURL( serviceURL )
+      return serviceURL
     hostName = self.getHostname()
     port = self.getPort()
     serviceURL = "%s://%s:%s/%s" % ( protocol,
@@ -136,4 +136,3 @@ class ServiceConfiguration:
       return int( optionValue )
     except:
       return 21600
-

@@ -169,12 +169,15 @@ class FileCatalog( object ):
       master catalog, we return S_ERROR without trying anything else
 
       :param fcConditions: either a dict or a string, to be propagated to the FCConditionParser
-                           If it is a string, it is given for all catalogs
-                           If it is a dict, it has to be { catalogName: condition}, and only
+
+                           * If it is a string, it is given for all catalogs
+                           * If it is a dict, it has to be { catalogName: condition}, and only
                                 the specific condition for the catalog will be given
 
-      CAUTION !!! If the method is a write no_lfn method, then the return value are completely different
-                  We only return the result of the master catalog
+      .. warning ::
+
+        If the method is a write no_lfn method, then the return value are completely different.
+        We only return the result of the master catalog
 
 
     """

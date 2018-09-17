@@ -1,3 +1,5 @@
+.. _rss_installation:
+
 ============
 Installation
 ============
@@ -23,14 +25,14 @@ The configuration for RSS sits under the following path on the CS following the 
 Please, make sure you have the following schema::
 
     /Operations/Defaults/ResourceStatus
-	/Config
-	  State        = InActive
-	  Cache        = 300
-	  CacheHistory = 24
-	  RecordLogs   = Active
-	  /StatusTypes
-	      default = all
-	      StorageElement = ReadAccess,WriteAccess,CheckAccess,RemoveAccess
+      /Config
+        State        = InActive
+        Cache        = 300
+        CacheHistory = 24
+        RecordLogs   = Active
+        /StatusTypes
+            default = all
+            StorageElement = ReadAccess,WriteAccess,CheckAccess,RemoveAccess
 
 For a more detailed explanation, take a look to the official documentation:
 :ref:`rss-configuration`.
@@ -69,6 +71,8 @@ is running.::
 In case of any errors, check that you have the information about DataBase 'Host' in the configuration file.
 
 The host(s) running the RSS services or agents need the 'SiteManager' property.
+
+.. _rss_populate:
 
 ---------------
 Populate tables
@@ -113,6 +117,8 @@ If is there any SE to be modified, you can do it as follows::
     $ dirac-rss-set-status --element Resource --name CERN-USER --statusType ReadAccess --status Active --reason "Why not?"
     # This matches all StatusTypes
     $ dirac-rss-set-status --element Resource --name CERN-USER --status Active --reason "Why not?"
+
+.. _activateRSS:
 
 ------------
 Activate RSS

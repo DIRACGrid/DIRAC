@@ -2,26 +2,34 @@
     in the DISET framework
 """
 
+__RCSID__ = "$Id$"
+
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.FrameworkSystem.DB.ProxyDB import ProxyDB
 from DIRAC.Core.Security import Properties
-from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
-__RCSID__ = "$Id$"
 
 class ProxyManagerHandler( RequestHandler ):
 
   __maxExtraLifeFactor = 1.5
-  __proxyDB = False
+  __proxyDB = None
 
   @classmethod
   def initializeHandler( cls, serviceInfoDict ):
     useMyProxy = cls.srv_getCSOption( "UseMyProxy", False )
     try:
-      cls.__proxyDB = ProxyDB( useMyProxy = useMyProxy )
-    except RuntimeError, excp:
+      result = ObjectLoader().loadObject('FrameworkSystem.DB.ProxyDB', 'ProxyDB')
+      if not result['OK']:
+        gLogger.error('Failed to load ProxyDB class: %s' % result['Message'])
+        return result
+      dbClass = result['Value']
+
+      cls.__proxyDB = dbClass( useMyProxy = useMyProxy )
+
+    except RuntimeError as excp:
       return S_ERROR( "Can't connect to ProxyDB: %s" % excp )
     gThreadScheduler.addPeriodicTask( 900, cls.__proxyDB.purgeExpiredTokens, elapsedTime = 900 )
     gThreadScheduler.addPeriodicTask( 900, cls.__proxyDB.purgeExpiredRequests, elapsedTime = 900 )
@@ -82,16 +90,7 @@ class ProxyManagerHandler( RequestHandler ):
       return S_ERROR( "%s is not a valid group for user %s" % ( userGroup, userName ) )
     clientChain = credDict[ 'x509Chain' ]
     clientSecs = clientChain.getIssuerCert()[ 'Value' ].getRemainingSecs()[ 'Value' ]
-    requestedUploadTime = min( requestedUploadTime, clientSecs )
-    retVal = self.__proxyDB.getRemainingTime( userDN, userGroup )
-    if not retVal[ 'OK' ]:
-      return retVal
-    remainingSecs = retVal[ 'Value' ]
-    # If we have a proxy longer than the one uploading it's not needed
-    # ten minute margin to compensate just in case
-    if remainingSecs >= requestedUploadTime - 600:
-      gLogger.info( "Upload request not necessary by %s:%s" % ( userName, userGroup ) )
-      return self.__addKnownUserProxiesInfo( S_OK() )
+    requestedUploadTime = min( requestedUploadTime, clientSecs ) #FIXME: this is useless now...
     result = self.__proxyDB.generateDelegationRequest( credDict[ 'x509Chain' ], userDN )
     if result[ 'OK' ]:
       gLogger.info( "Upload request by %s:%s given id %s" % ( userName, userGroup, result['Value']['id'] ) )
@@ -146,12 +145,16 @@ class ProxyManagerHandler( RequestHandler ):
   def export_getProxy( self, userDN, userGroup, requestPem, requiredLifetime ):
     """
     Get a proxy for a userDN/userGroup
-      - requestPem : PEM encoded request object for delegation
-      - requiredLifetime: Argument for length of proxy
-      * Properties :
-        FullDelegation <- permits full delegation of proxies
-        LimitedDelegation <- permits downloading only limited proxies
-        PrivateLimitedDelegation <- permits downloading only limited proxies for one self
+
+    
+    :param requestPem: PEM encoded request object for delegation
+    :param requiredLifetime: Argument for length of proxy
+
+      * Properties:
+           * FullDelegation <- permits full delegation of proxies
+           * LimitedDelegation <- permits downloading only limited proxies
+           * PrivateLimitedDelegation <- permits downloading only limited proxies for one self
+
     """
     credDict = self.getRemoteCredentials()
 
@@ -184,13 +187,15 @@ class ProxyManagerHandler( RequestHandler ):
   def export_getVOMSProxy( self, userDN, userGroup, requestPem, requiredLifetime, vomsAttribute = False ):
     """
     Get a proxy for a userDN/userGroup
-      - requestPem : PEM encoded request object for delegation
-      - requiredLifetime: Argument for length of proxy
-      - vomsAttribute : VOMS attr to add to the proxy
+
+    :param requestPem: PEM encoded request object for delegation
+    :param requiredLifetime: Argument for length of proxy
+    :param vomsAttribute: VOMS attr to add to the proxy
+
       * Properties :
-        FullDelegation <- permits full delegation of proxies
-        LimitedDelegation <- permits downloading only limited proxies
-        PrivateLimitedDelegation <- permits downloading only limited proxies for one self
+          * FullDelegation <- permits full delegation of proxies
+          * LimitedDelegation <- permits downloading only limited proxies
+          * PrivateLimitedDelegation <- permits downloading only limited proxies for one self
     """
     credDict = self.getRemoteCredentials()
 
@@ -204,9 +209,9 @@ class ProxyManagerHandler( RequestHandler ):
 
   def __getVOMSProxy( self, userDN, userGroup, requestPem, requiredLifetime, vomsAttribute, forceLimited ):
     retVal = self.__proxyDB.getVOMSProxy( userDN,
-                                    userGroup,
-                                    requiredLifeTime = requiredLifetime,
-                                    requestedVOMSAttr = vomsAttribute )
+                                          userGroup,
+                                          requiredLifeTime = requiredLifetime,
+                                          requestedVOMSAttr = vomsAttribute )
     if not retVal[ 'OK' ]:
       return retVal
     chain, secsLeft = retVal[ 'Value' ]
@@ -229,11 +234,7 @@ class ProxyManagerHandler( RequestHandler ):
     if not retVal[ 'OK' ]:
       return retVal
     credDict = self.getRemoteCredentials()
-    self.__proxyDB.logAction( "set persistency to %s" % bool( persistentFlag ),
-                                                  credDict[ 'DN' ],
-                                                  credDict[ 'group' ],
-                                                  userDN,
-                                                  userGroup )
+    self.__proxyDB.logAction( "set persistency to %s" % bool( persistentFlag ), credDict[ 'DN' ], credDict[ 'group' ], userDN, userGroup )
     return S_OK()
 
   types_deleteProxyBundle = [ ( list, tuple ) ]
@@ -267,12 +268,10 @@ class ProxyManagerHandler( RequestHandler ):
     retVal = self.__proxyDB.deleteProxy( userDN, userGroup )
     if not retVal[ 'OK' ]:
       return retVal
-    self.__proxyDB.logAction( "delete proxy", credDict[ 'DN' ], credDict[ 'group' ],
-                                        userDN, userGroup )
+    self.__proxyDB.logAction( "delete proxy", credDict[ 'DN' ], credDict[ 'group' ], userDN, userGroup )
     return S_OK()
 
-  types_getContents = [ dict, ( list, tuple ),
-                       ( int, long ), ( int, long ) ]
+  types_getContents = [ dict, ( list, tuple ), ( int, long ), ( int, long ) ]
   def export_getContents( self, selDict, sortDict, start, limit ):
     """
     Retrieve the contents of the DB
@@ -282,8 +281,7 @@ class ProxyManagerHandler( RequestHandler ):
       selDict[ 'UserName' ] = credDict[ 'username' ]
     return self.__proxyDB.getProxiesContent( selDict, sortDict, start, limit )
 
-  types_getLogContents = [ dict, ( list, tuple ),
-                       ( int, long ), ( int, long ) ]
+  types_getLogContents = [ dict, ( list, tuple ), ( int, long ), ( int, long ) ]
   def export_getLogContents( self, selDict, sortDict, start, limit ):
     """
     Retrieve the contents of the DB
@@ -306,13 +304,15 @@ class ProxyManagerHandler( RequestHandler ):
   def export_getProxyWithToken( self, userDN, userGroup, requestPem, requiredLifetime, token ):
     """
     Get a proxy for a userDN/userGroup
-      - requestPem : PEM encoded request object for delegation
-      - requiredLifetime: Argument for length of proxy
-      - token : Valid token to get a proxy
-      * Properties :
-        FullDelegation <- permits full delegation of proxies
-        LimitedDelegation <- permits downloading only limited proxies
-        PrivateLimitedDelegation <- permits downloading only limited proxies for one self
+
+    :param requestPem: PEM encoded request object for delegation
+    :param requiredLifetime: Argument for length of proxy
+    :param token: Valid token to get a proxy
+
+      * Properties:
+          * FullDelegation <- permits full delegation of proxies
+          * LimitedDelegation <- permits downloading only limited proxies
+          * PrivateLimitedDelegation <- permits downloading only limited proxies for one self
     """
     credDict = self.getRemoteCredentials()
     result = self.__proxyDB.useToken( token, credDict[ 'DN' ], credDict[ 'group' ] )
@@ -335,13 +335,15 @@ class ProxyManagerHandler( RequestHandler ):
   def export_getVOMSProxyWithToken( self, userDN, userGroup, requestPem, requiredLifetime, token, vomsAttribute = False ):
     """
     Get a proxy for a userDN/userGroup
-      - requestPem : PEM encoded request object for delegation
-      - requiredLifetime: Argument for length of proxy
-      - vomsAttribute : VOMS attr to add to the proxy
+
+    :param requestPem: PEM encoded request object for delegation
+    :param requiredLifetime: Argument for length of proxy
+    :param vomsAttribute: VOMS attr to add to the proxy
+
       * Properties :
-        FullDelegation <- permits full delegation of proxies
-        LimitedDelegation <- permits downloading only limited proxies
-        PrivateLimitedDelegation <- permits downloading only limited proxies for one self
+          * FullDelegation <- permits full delegation of proxies
+          * LimitedDelegation <- permits downloading only limited proxies
+          * PrivateLimitedDelegation <- permits downloading only limited proxies for one self
     """
     credDict = self.getRemoteCredentials()
     result = self.__proxyDB.useToken( token, credDict[ 'DN' ], credDict[ 'group' ] )

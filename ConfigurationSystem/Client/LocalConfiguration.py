@@ -184,8 +184,9 @@ class LocalConfiguration( object ):
       return S_ERROR( str( e ) )
     return S_OK()
 
-  def __initLogger( self, componentName, logSection ):
-    gLogger.initialize( componentName, logSection )
+  def __initLogger( self, componentName, logSection, forceInit = False ):
+    gLogger.initialize( componentName, logSection, forceInit = forceInit )
+
     if self.__debugMode == 1:
       gLogger.setLevel( "VERBOSE" )
     elif self.__debugMode == 2:
@@ -348,8 +349,22 @@ class LocalConfiguration( object ):
   def enableCS( self ):
     """
     Force the connection the Configuration Server
+
+    (And incidentaly reinitialize the ObjectLoader and logger)
     """
-    return gRefresher.enable()
+    res =  gRefresher.enable()
+
+    # This is quite ugly but necessary for the logging
+    # We force the reinitialization of the ObjectLoader
+    # so that it also takes into account the extensions
+    # (since the first time it is loaded by the logger BEFORE the full CS init)
+    # And then we regenerate all the backend
+    if res['OK']:
+      from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
+      objLoader = ObjectLoader()
+      objLoader.reloadRootModules()
+      self.__initLogger( self.componentName, self.loggingSection, forceInit = True )
+    return res
 
   def isCSEnabled( self ):
     """

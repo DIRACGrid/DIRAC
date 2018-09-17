@@ -51,9 +51,9 @@ def getComputingElementDefaults( ceName = '', ceType = '', cfg = None, currentSe
     if 'CEType' in cesCfg[ceName]:
       ceType = cesCfg[ceName]['CEType']
       if ceType in ceDefaults:
-        for option in ceDefaults[ceType].listOptions():
+        for option in ceDefaults[ceType].listOptions(): #pylint: disable=no-member
           if option not in cesCfg[ceName]:
-            cesCfg[ceName].setOption( option, ceDefaults[ceType][option] )
+            cesCfg[ceName].setOption( option, ceDefaults[ceType][option] ) #pylint: disable=unsubscriptable-object
 
   return cesCfg
 

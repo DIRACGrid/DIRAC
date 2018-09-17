@@ -13,27 +13,44 @@
     subscribing to them.
 """
 
-from types import IntType, LongType, StringTypes, ListType, DictType
+from DIRAC import gConfig, gLogger, S_OK, S_ERROR
+
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.Mail import Mail
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
-from DIRAC.ConfigurationSystem.Client import PathFinder
-from DIRAC import gConfig, gLogger, S_OK, S_ERROR
-from DIRAC.FrameworkSystem.DB.NotificationDB import NotificationDB
 from DIRAC.Core.Security import Properties
+from DIRAC.ConfigurationSystem.Client import PathFinder
+from DIRAC.FrameworkSystem.DB.NotificationDB import NotificationDB
 
 __RCSID__ = "$Id$"
 
 gNotDB = None
+gMailSet = set()
 
-def initializeNotificationHandler( serviceInfo ):
-
-  global gNotDB
-  gNotDB = NotificationDB()
-  gThreadScheduler.addPeriodicTask( 3600, gNotDB.purgeExpiredNotifications() )
-  return S_OK()
+def purgeDelayedEMails():
+  """ purges the emails accumulated in gMailSet
+  """
+  while gMailSet:
+    eMail = gMailSet.pop()
+    result = eMail._send()
+    if not result['OK']:
+      gLogger.warn( 'Could not send mail with the following message:\n%s' % result['Message'] )
+      gMailSet.add(eMail)
+    else:
+      gLogger.info( 'Mail sent successfully' )
+      gLogger.debug( result['Value'] )
 
 class NotificationHandler( RequestHandler ):
+
+  @classmethod
+  def initializeNotificationHandler( cls, serviceInfo ):
+    """ Handler initialization
+    """
+    global gNotDB
+    gNotDB = NotificationDB()
+    gThreadScheduler.addPeriodicTask( 3600, gNotDB.purgeExpiredNotifications )
+    gThreadScheduler.addPeriodicTask( 3600, purgeDelayedEMails )
+    return S_OK()
 
   def initialize( self ):
     credDict = self.getRemoteCredentials()
@@ -43,28 +60,44 @@ class NotificationHandler( RequestHandler ):
     self.client = credDict[ 'username' ]
 
   ###########################################################################
-  types_sendMail = [StringTypes, StringTypes, StringTypes, StringTypes]
-  def export_sendMail( self, address, subject, body, fromAddress ):
+  types_sendMail = [basestring, basestring, basestring, basestring, bool]
+  def export_sendMail( self, address, subject, body, fromAddress, avoidSpam = False ):
     """ Send an email with supplied body to the specified address using the Mail utility.
+
+        if avoidSpam is True, then emails are first added to a set so that duplicates are removed,
+        and sent every hour.
     """
     gLogger.verbose( 'Received signal to send the following mail to %s:\nSubject = %s\n%s' % ( address, subject, body ) )
-    m = Mail()
-    m._subject = subject
-    m._message = body
-    m._mailAddress = address
+    eMail = Mail()
+    notificationSection = PathFinder.getServiceSection( "Framework/Notification" )
+    csSection = notificationSection + '/SMTPServer'
+    eMail._smtpHost = gConfig.getValue( '%s/Host' % csSection )
+    eMail._smtpPort = gConfig.getValue( '%s/Port' % csSection )
+    eMail._smtpLogin = gConfig.getValue( '%s/Login' % csSection )
+    eMail._smtpPasswd = gConfig.getValue( '%s/Password' % csSection )
+    eMail._smtpPtcl = gConfig.getValue( '%s/Protocol' % csSection )
+    eMail._subject = subject
+    eMail._message = body
+    eMail._mailAddress = address
     if not fromAddress == 'None':
-      m._fromAddress = fromAddress
-    result = m._send()
-    if not result['OK']:
-      gLogger.warn( 'Could not send mail with the following message:\n%s' % result['Message'] )
+      eMail._fromAddress = fromAddress
+    if gConfig.getValue( '%s/FromAddress' % csSection ):
+      eMail._fromAddress = gConfig.getValue( '%s/FromAddress' % csSection )
+    if avoidSpam:
+      gMailSet.add(eMail)
+      return S_OK("Mail added to gMailSet")
     else:
-      gLogger.info( 'Mail sent successfully to %s with subject %s' % ( address, subject ) )
-      gLogger.debug( result['Value'] )
+      result = eMail._send()
+      if not result['OK']:
+        gLogger.warn( 'Could not send mail with the following message:\n%s' % result['Message'] )
+      else:
+        gLogger.info( 'Mail sent successfully to %s with subject %s' % ( address, subject ) )
+        gLogger.debug( result['Value'] )
 
     return result
 
   ###########################################################################
-  types_sendSMS = [StringTypes, StringTypes, StringTypes]
+  types_sendSMS = [basestring, basestring, basestring]
   def export_sendSMS( self, userName, body, fromAddress ):
     """ Send an SMS with supplied body to the specified DIRAC user using the Mail utility via an SMS switch.
     """
@@ -80,13 +113,13 @@ class NotificationHandler( RequestHandler ):
 
     address = '%s@%s' % ( mobile, smsSwitch )
     subject = 'DIRAC SMS'
-    m = Mail()
-    m._subject = subject
-    m._message = body
-    m._mailAddress = address
+    eMail = Mail()
+    eMail._subject = subject
+    eMail._message = body
+    eMail._mailAddress = address
     if not fromAddress == 'None':
-      m._fromAddress = fromAddress
-    result = m._send()
+      eMail._fromAddress = fromAddress
+    result = eMail._send()
     if not result['OK']:
       gLogger.warn( 'Could not send SMS to %s with the following message:\n%s' % ( userName, result['Message'] ) )
     else:
@@ -99,7 +132,7 @@ class NotificationHandler( RequestHandler ):
   # ALARMS
   ###########################################################################
 
-  types_newAlarm = [ DictType ]
+  types_newAlarm = [ dict ]
   def export_newAlarm( self, alarmDefinition ):
     """ Set a new alarm in the Notification database
     """
@@ -109,7 +142,7 @@ class NotificationHandler( RequestHandler ):
     alarmDefinition[ 'author' ] = credDict[ 'username' ]
     return gNotDB.newAlarm( alarmDefinition )
 
-  types_updateAlarm = [ DictType ]
+  types_updateAlarm = [ dict ]
   def export_updateAlarm( self, updateDefinition ):
     """ update an existing alarm in the Notification database
     """
@@ -119,7 +152,7 @@ class NotificationHandler( RequestHandler ):
     updateDefinition[ 'author' ] = credDict[ 'username' ]
     return gNotDB.updateAlarm( updateDefinition )
 
-  types_getAlarmInfo = [ ( IntType, LongType ) ]
+  types_getAlarmInfo = [ ( int, long ) ]
   def export_getAlarmInfo( self, alarmId ):
     """ Get the extended info of an alarm
     """
@@ -132,19 +165,19 @@ class NotificationHandler( RequestHandler ):
       return result
     return S_OK( { 'info' : alarmInfo, 'log' : result[ 'Value' ] } )
 
-  types_getAlarms = [DictType, ListType, IntType, IntType]
+  types_getAlarms = [dict, list, int, int]
   def export_getAlarms( self, selectDict, sortList, startItem, maxItems ):
     """ Select existing alarms suitable for the Web monitoring
     """
     return gNotDB.getAlarms( selectDict, sortList, startItem, maxItems )
 
-  types_deleteAlarmsByAlarmId = [ ( ListType, IntType ) ]
+  types_deleteAlarmsByAlarmId = [ ( list, int ) ]
   def export_deleteAlarmsByAlarmId( self, alarmsIdList ):
     """ Delete alarms by alarmId
     """
     return gNotDB.deleteAlarmsByAlarmId( alarmsIdList )
 
-  types_deleteAlarmsByAlarmKey = [ list( StringTypes ) + [ListType] ]
+  types_deleteAlarmsByAlarmKey = [(basestring, list)]
   def export_deleteAlarmsByAlarmKey( self, alarmsKeyList ):
     """ Delete alarms by alarmId
     """
@@ -155,19 +188,19 @@ class NotificationHandler( RequestHandler ):
   # MANANGE ASSIGNEE GROUPS
   ###########################################################################
 
-  types_setAssigneeGroup = [ StringTypes, ListType ]
+  types_setAssigneeGroup = [ basestring, list ]
   def export_setAssigneeGroup( self, groupName, userList ):
     """ Create a group of users to be used as an assignee for an alarm
     """
     return gNotDB.setAssigneeGroup( groupName, userList )
 
-  types_getUsersInAssigneeGroup = [ StringTypes ]
+  types_getUsersInAssigneeGroup = [ basestring ]
   def export_getUsersInAssigneeGroup( self, groupName ):
     """ Get users in assignee group
     """
     return gNotDB.getUserAsignees( groupName )
 
-  types_deleteAssigneeGroup = [ StringTypes ]
+  types_deleteAssigneeGroup = [ basestring ]
   def export_deleteAssigneeGroup( self, groupName ):
     """ Delete an assignee group
     """
@@ -179,7 +212,7 @@ class NotificationHandler( RequestHandler ):
     """
     return gNotDB.getAssigneeGroups()
 
-  types_getAssigneeGroupsForUser = [ StringTypes ]
+  types_getAssigneeGroupsForUser = [ basestring ]
   def export_getAssigneeGroupsForUser( self, user ):
     """ Get all assignee groups and the users that belong to them
     """
@@ -192,7 +225,7 @@ class NotificationHandler( RequestHandler ):
   # MANAGE NOTIFICATIONS
   ###########################################################################
 
-  types_addNotificationForUser = [ StringTypes, StringTypes ]
+  types_addNotificationForUser = [ basestring, basestring ]
   def export_addNotificationForUser( self, user, message, lifetime = 604800, deferToMail = True ):
     """ Create a group of users to be used as an assignee for an alarm
     """
@@ -202,7 +235,7 @@ class NotificationHandler( RequestHandler ):
       return S_ERROR( "Message lifetime has to be a non decimal number" )
     return gNotDB.addNotificationForUser( user, message, lifetime, deferToMail )
 
-  types_removeNotificationsForUser = [ StringTypes, ListType ]
+  types_removeNotificationsForUser = [ basestring, list ]
   def export_removeNotificationsForUser( self, user, notIds ):
     """ Get users in assignee group
     """
@@ -211,7 +244,7 @@ class NotificationHandler( RequestHandler ):
       user = credDict[ 'username' ]
     return gNotDB.removeNotificationsForUser( user, notIds )
 
-  types_markNotificationsAsRead = [ StringTypes, ListType ]
+  types_markNotificationsAsRead = [ basestring, list ]
   def export_markNotificationsAsRead( self, user, notIds ):
     """ Delete an assignee group
     """
@@ -220,7 +253,7 @@ class NotificationHandler( RequestHandler ):
       user = credDict[ 'username' ]
     return gNotDB.markNotificationsSeen( user, True, notIds )
 
-  types_markNotificationsAsNotRead = [ StringTypes, ListType ]
+  types_markNotificationsAsNotRead = [ basestring, list ]
   def export_markNotificationsAsNotRead( self, user, notIds ):
     """ Delete an assignee group
     """
@@ -229,7 +262,7 @@ class NotificationHandler( RequestHandler ):
       user = credDict[ 'username' ]
     return gNotDB.markNotificationsSeen( user, False, notIds )
 
-  types_getNotifications = [ DictType, ListType, IntType, IntType ]
+  types_getNotifications = [ dict, list, int, int ]
   def export_getNotifications( self, selectDict, sortList, startItem, maxItems ):
     """ Get all assignee groups and the users that belong to them
     """

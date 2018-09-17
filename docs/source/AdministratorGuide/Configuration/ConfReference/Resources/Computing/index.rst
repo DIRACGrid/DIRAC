@@ -11,13 +11,13 @@ Options for computing elements can be set at different levels, from lowest to
 highest prority
 
   /Resources/Computing/CEDefaults
-	For all computing elements
+   For all computing elements
   /Resources/Computing/<CEType>
-	 For CEs of a given type, e.g., HTCondorCE or ARC
+   For CEs of a given type, e.g., HTCondorCE or ARC
   /Resources/Sites/<grid>/<site>/CEs
-	 For all CEs at a given site
+   For all CEs at a given site
   /Resources/Sites/<grid>/<site>/CEs/<CEName>
-	 For the specific CE
+   For the specific CE
 
 Values are overwritten.
 
@@ -45,12 +45,27 @@ ARC CE Parameters
 +---------------------------------+---------------------------------------------------+-------------------------------------------------------------+
 | XRSLExtraString                 |  Default additional string for ARC submit files   |                                                             |
 +---------------------------------+---------------------------------------------------+-------------------------------------------------------------+
+| XRSLMPExtraString               | Default additional string for ARC submit files    |                                                             |
+|                                 | for multi-processor jobs.                         |                                                             |
++---------------------------------+---------------------------------------------------+-------------------------------------------------------------+
 | Host                            | The host for the ARC CE, used to overwrite the    |                                                             |
 |                                 | ce name                                           |                                                             |
 +---------------------------------+---------------------------------------------------+-------------------------------------------------------------+
 | WorkingDirectory                | Directory where the pilot log files are stored    |   /opt/dirac/pro/runit/WorkloadManagement/SiteDirectorArc   |
 |                                 | locally.                                          |                                                             |
 +---------------------------------+---------------------------------------------------+-------------------------------------------------------------+
+
+
+Singularity CE Parameters
+-------------------------
+
++------------------------+--------+-----------------------------------------------+---------------------------------------------+
+| **Name**               | **Description**                                        |  **Example**                                |
++------------------------+--------+-----------------------------------------------+---------------------------------------------+
+| ContainerRoot          | The root image location for the container to use.      |  /cvmfs/cernvm-prod.cern.ch/cvm3            |
++------------------------+--------+-----------------------------------------------+---------------------------------------------+
+| ContainerExtraOpts     | Extra options for dirac-install within the container.  |  -u 'http://other.host/instdir' -g 'v13r0'  |
++------------------------+--------+-----------------------------------------------+---------------------------------------------+
 
 
 .. _res-comp-htcondor:
@@ -71,6 +86,22 @@ Options for the HTCondorCEs
 |                     | files are kept here. This option is only read from  |                                                           |
 |                     | the global Resources/Computing/HTCondorCE location. |                                                           |
 +---------------------+-----------------------------------------------------+-----------------------------------------------------------+
+| UseLocalSchedd      | If True use a local condor schedd to submit jobs, if| Default is True                                           |
+|                     | False submit to remote condor schedd                |                                                           |
++---------------------+-----------------------------------------------------+-----------------------------------------------------------+
 | DaysToKeepLogFiles  | How many days pilot log files are kept on the disk  | 15                                                        |
 |                     | before they are removed                             |                                                           |
++---------------------+-----------------------------------------------------+-----------------------------------------------------------+
+
+
+.. _res-comp-cream:
+
+CREAM CE Parameters
+-------------------
+
++---------------------+-----------------------------------------------------+-----------------------------------------------------------+
+| **Name**            | **Description**                                     | **Example**                                               |
++---------------------+-----------------------------------------------------+-----------------------------------------------------------+
+| ExtraJDLParameters  | Additional JDL parameters to submit pilot jobs      | ExtraJDLParameters = GPUNumber=1; OneMore="value"         |
+|                     | to CREAm CE. Separate entries with ";".             |                                                           |
 +---------------------+-----------------------------------------------------+-----------------------------------------------------------+

@@ -12,20 +12,27 @@
 
 __RCSID__ = "$Id$"
 
+import re
+
+from DIRAC                                              import S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.JobWrapper.Watchdog import Watchdog
 from DIRAC.Core.Utilities.Subprocess                    import shellCall
-from DIRAC                                              import S_OK, S_ERROR
 
-import string,re
 
 class WatchdogMac( Watchdog ):
 
-  def __init__( self, pid, thread, spObject, jobCPUtime, memoryLimit = 0, systemFlag = 'mac' ):
+  def __init__( self, pid, exeThread, spObject, jobCPUTime, memoryLimit = 0, processors = 1, systemFlag = 'mac', jobArgs = {} ):
     """ Constructor, takes system flag as argument.
     """
-    Watchdog.__init__( self, pid, thread, spObject, jobCPUtime, memoryLimit, systemFlag )
-    self.systemFlag = systemFlag
-    self.pid = pid
+    Watchdog.__init__( self, 
+                       pid = pid, 
+                       exeThread = exeThread, 
+                       spObject = spObject, 
+                       jobCPUTime = jobCPUTime, 
+                       memoryLimit = memoryLimit, 
+                       processors = processors, 
+                       systemFlag = systemFlag, 
+                       jobArgs = jobArgs )
 
   #############################################################################
   def getNodeInformation( self ):
@@ -45,7 +52,7 @@ class WatchdogMac( Watchdog ):
           if re.search('=',val):
             hostname = val.split('=')[1].strip()
           else:
-            hostname = val.split(':')[1].strip()  
+            hostname = val.split(':')[1].strip()
           result['Value']['HostName']=hostname
         if re.search('^hw.model',val):
           model = val.split('=')[1].strip()
@@ -76,7 +83,7 @@ class WatchdogMac( Watchdog ):
     comm = 'sysctl vm.loadavg'
     loadAvgDict = shellCall( 5, comm )
     if loadAvgDict['OK']:
-      la = float( string.split( loadAvgDict['Value'][1] )[3] )
+      la = float( loadAvgDict['Value'][1].split()[3] )
       return S_OK( la )
     else:
       return S_ERROR( 'Could not obtain load average' )
@@ -88,7 +95,7 @@ class WatchdogMac( Watchdog ):
     comm = 'sysctl vm.swapusage'
     memDict = shellCall( 5, comm )
     if memDict['OK']:
-      mem = string.split( memDict['Value'][1] ) [6]
+      mem = memDict['Value'][1].split()[6]
       if re.search('M$',mem):
         mem = float(mem.replace('M',''))
         mem = 2**20*mem
@@ -105,7 +112,7 @@ class WatchdogMac( Watchdog ):
     comm = 'df -P -m .'
     spaceDict = shellCall( 5, comm )
     if spaceDict['OK']:
-      space = string.split( spaceDict['Value'][1] ) [10]
+      space = spaceDict['Value'][1].split()[10]
       result['Value'] = float( space )  # MB
     else:
       result = S_ERROR( 'Could not obtain disk usage' )

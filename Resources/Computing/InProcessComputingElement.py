@@ -1,10 +1,10 @@
 ########################################################################
-# $Id$
 # File :   InProcessComputingElement.py
 # Author : Stuart Paterson
 ########################################################################
 
 """ The simplest Computing Element instance that submits jobs locally.
+    This is also the standard "CE" invoked from the JobAgent
 """
 
 __RCSID__ = "$Id$"
@@ -12,11 +12,11 @@ __RCSID__ = "$Id$"
 import os
 import stat
 
+from DIRAC                                               import S_OK, S_ERROR
 from DIRAC.Resources.Computing.ComputingElement          import ComputingElement
 from DIRAC.Core.Utilities.ThreadScheduler                import gThreadScheduler
 from DIRAC.Core.Utilities.Subprocess                     import systemCall
 from DIRAC.Core.Security.ProxyInfo                       import getProxyInfo
-from DIRAC                                               import S_OK, S_ERROR
 
 
 class InProcessComputingElement( ComputingElement ):
@@ -30,15 +30,20 @@ class InProcessComputingElement( ComputingElement ):
 
   #############################################################################
   def _addCEConfigDefaults( self ):
-    """Method to make sure all necessary Configuration Parameters are defined
+    """ Method to make sure all necessary Configuration Parameters are defined
     """
     # First assure that any global parameters are loaded
     ComputingElement._addCEConfigDefaults( self )
     # Now InProcess specific ones
 
   #############################################################################
-  def submitJob( self, executableFile, proxy, dummy = None ):
-    """ Method to submit job, should be overridden in sub-class.
+  def submitJob( self, executableFile, proxy, **kwargs ):
+    """ Method to submit job (overriding base method).
+
+    :param executableFile: file to execute via systemCall. Normally the JobWrapperTemplate when invoked by the JobAgent.
+    :type executableFile: string
+    :param proxy: the proxy used for running the job (the payload). It will be dumped to a file.
+    :type proxy: string
     """
     ret = getProxyInfo()
     if not ret['OK']:
@@ -50,22 +55,24 @@ class InProcessComputingElement( ComputingElement ):
 
     payloadEnv = dict( os.environ )
     payloadProxy = ''
+    renewTask = None
     if proxy:
       self.log.verbose( 'Setting up proxy for payload' )
       result = self.writeProxyToFile( proxy )
       if not result['OK']:
         return result
 
-      payloadProxy = result['Value']
+      payloadProxy = result['Value'] # proxy file location
       # pilotProxy = os.environ['X509_USER_PROXY']
       payloadEnv[ 'X509_USER_PROXY' ] = payloadProxy
 
-    self.log.verbose( 'Starting process for monitoring payload proxy' )
+      self.log.verbose( 'Starting process for monitoring payload proxy' )
 
-    renewTask = None
-    result = gThreadScheduler.addPeriodicTask( self.proxyCheckPeriod, self.monitorProxy, taskArgs = ( pilotProxy, payloadProxy ), executions = 0, elapsedTime = 0 )
-    if result[ 'OK' ]:
-      renewTask = result[ 'Value' ]
+      result = gThreadScheduler.addPeriodicTask( self.proxyCheckPeriod, self.monitorProxy,
+                                                 taskArgs = ( pilotProxy, payloadProxy ),
+                                                 executions = 0, elapsedTime = 0 )
+      if result[ 'OK' ]:
+        renewTask = result[ 'Value' ]
 
     if not os.access( executableFile, 5 ):
       os.chmod( executableFile, stat.S_IRWXU | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH )

@@ -1,7 +1,7 @@
 """ Utilities to process parametric job definitions and generate
     bunches of parametric jobs. It exposes the following functions:
 
-    getNumberOfParameters() - to get the total size of the bunch of parametric jobs
+    getParameterVectorLength() - to get the total size of the bunch of parametric jobs
     generateParametricJobs() - to get a list of expanded descriptions of all the jobs
 """
 
@@ -28,20 +28,28 @@ def __getParameterSequence( nPar, parList = [], parStart = 1, parStep = 0, parFa
 
   return parameterList
 
-def getNumberOfParameters( jobClassAd ):
-  """ Get the number of parameters in the parametric job description
+def getParameterVectorLength( jobClassAd ):
+  """ Get the length of parameter vector in the parametric job description
 
   :param jobClassAd: ClassAd job description object
-  :return: int number of parameters, 0 if not a parametric job
+  :return: result structure with the Value: int number of parameter values, None if not a parametric job
   """
-  if jobClassAd.lookupAttribute( 'Parameters' ):
-    if jobClassAd.isAttributeList( 'Parameters' ):
-      parameterList = jobClassAd.getListFromExpression( 'Parameters' )
-      return len( parameterList )
-    else:
-      return jobClassAd.getAttributeInt( 'Parameters' )
-  else:
-    return 0
+
+  nParValues = None
+  attributes = jobClassAd.getAttributes()
+  for attribute in attributes:
+    if attribute.startswith( "Parameters" ):
+      if jobClassAd.isAttributeList( attribute ):
+        parameterList = jobClassAd.getListFromExpression( attribute )
+        nThisParValues = len( parameterList )
+      else:
+        nThisParValues = jobClassAd.getAttributeInt( attribute )
+      if nParValues is not None and nParValues != nThisParValues:
+        return S_ERROR( EWMSJDL, "Different length of parameter vectors" )
+      nParValues = nThisParValues
+  if nParValues is not None and nParValues <= 0:
+    return S_ERROR( EWMSJDL, 'Illegal number of job parameters %d' % ( nParValues ) )
+  return S_OK( nParValues )
 
 def __updateAttribute( classAd, attribute, parName, parValue ):
 
@@ -78,9 +86,12 @@ def generateParametricJobs( jobClassAd ):
   if not jobClassAd.lookupAttribute( 'Parameters' ):
     return S_OK( [ jobClassAd.asJDL() ] )
 
-  nParameters = getNumberOfParameters( jobClassAd )
-  if nParameters == 0:
-    return S_ERROR( EWMSJDL, 'Can not determine number of job parameters' )
+  result = getParameterVectorLength( jobClassAd )
+  if not result['OK']:
+    return result
+  nParValues = result['Value']
+  if nParValues is None:
+    return S_ERROR(EWMSJDL, 'Can not determine the number of job parameters')
 
   parameterDict = {}
   attributes = jobClassAd.getAttributes()
@@ -92,19 +103,22 @@ def generateParametricJobs( jobClassAd ):
         if key == 'Parameters':
           if jobClassAd.isAttributeList( attribute ):
             parList = jobClassAd.getListFromExpression( attribute )
-            if len( parList ) != nParameters:
+            if len( parList ) != nParValues:
               return S_ERROR( EWMSJDL, 'Inconsistent parametric job description' )
             parameterDict[seqID]['ParameterList'] = parList
           else:
             if attribute != "Parameters":
               return S_ERROR( EWMSJDL, 'Inconsistent parametric job description' )
             nPar = jobClassAd.getAttributeInt( attribute )
+            if nPar is None:
+              value = jobClassAd.get_expression( attribute )
+              return S_ERROR( EWMSJDL, 'Inconsistent parametric job description: %s=%s' % ( attribute, value ) )
             parameterDict[seqID]['Parameters'] = nPar
         else:
           value = jobClassAd.getAttributeInt( attribute )
-          if not value:
+          if value is None:
             value = jobClassAd.getAttributeFloat( attribute )
-            if not value:
+            if value is None:
               value = jobClassAd.get_expression( attribute )
               return S_ERROR( 'Illegal value for %s JDL field: %s' % ( attribute, value ) )
           parameterDict[seqID][key] = value
@@ -114,7 +128,7 @@ def generateParametricJobs( jobClassAd ):
 
   parameterLists = {}
   for seqID in parameterDict:
-    parList = __getParameterSequence( nParameters,
+    parList = __getParameterSequence( nParValues,
                                       parList = parameterDict[seqID].get( 'ParameterList', [] ),
                                       parStart = parameterDict[seqID].get( 'ParameterStart', 1 ),
                                       parStep = parameterDict[seqID].get( 'ParameterStep', 0 ),
@@ -128,8 +142,8 @@ def generateParametricJobs( jobClassAd ):
   jobDescList = []
   jobDesc = jobClassAd.asJDL()
   # Width of the sequential parameter number
-  zLength = len( str( nParameters - 1 ) )
-  for n in range( nParameters ):
+  zLength = len( str( nParValues - 1 ) )
+  for n in range( nParValues ):
     newJobDesc = jobDesc
     newJobDesc = newJobDesc.replace( '%n', str( n ).zfill( zLength ) )
     newClassAd = ClassAd( newJobDesc )

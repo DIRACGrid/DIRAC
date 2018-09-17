@@ -99,7 +99,7 @@ removeBanned = []
 
 resourceStatus = ResourceStatus()
 
-res = resourceStatus.getStorageElementStatus( ses )
+res = resourceStatus.getElementStatus( ses, "StorageElement" )
 if not res['OK']:
   gLogger.error( "Storage Element %s does not exist" % ses )
   DIRAC.exit( -1 )
@@ -118,7 +118,7 @@ for se, seOptions in res[ 'Value' ].items():
       gLogger.notice( 'Try specifying the command switches' )
     else:
 
-      resR = resourceStatus.setStorageElementStatus( se, 'ReadAccess', 'Banned', reason, userName )
+      resR = resourceStatus.setElementStatus( se, 'StorageElement', 'ReadAccess', 'Banned', reason, userName )
       # res = csAPI.setOption( "%s/%s/ReadAccess" % ( storageCFGBase, se ), "InActive" )
       if not resR['OK']:
         gLogger.error( 'Failed to update %s read access to Banned' % se )
@@ -134,7 +134,7 @@ for se, seOptions in res[ 'Value' ].items():
       gLogger.notice( 'Try specifying the command switches' )
     else:
 
-      resW = resourceStatus.setStorageElementStatus( se, 'WriteAccess', 'Banned', reason, userName )
+      resW = resourceStatus.setElementStatus( se, 'StorageElement', 'WriteAccess', 'Banned', reason, userName )
       # res = csAPI.setOption( "%s/%s/WriteAccess" % ( storageCFGBase, se ), "InActive" )
       if not resW['OK']:
         gLogger.error( "Failed to update %s write access to Banned" % se )
@@ -150,7 +150,7 @@ for se, seOptions in res[ 'Value' ].items():
       gLogger.notice( 'Try specifying the command switches' )
     else:
 
-      resC = resourceStatus.setStorageElementStatus( se, 'CheckAccess', 'Banned', reason, userName )
+      resC = resourceStatus.setElementStatus( se, 'StorageElement', 'CheckAccess', 'Banned', reason, userName )
       # res = csAPI.setOption( "%s/%s/CheckAccess" % ( storageCFGBase, se ), "InActive" )
       if not resC['OK']:
         gLogger.error( "Failed to update %s check access to Banned" % se )
@@ -166,7 +166,7 @@ for se, seOptions in res[ 'Value' ].items():
       gLogger.notice( 'Try specifying the command switches' )
     else:
 
-      resC = resourceStatus.setStorageElementStatus( se, 'RemoveAccess', 'Banned', reason, userName )
+      resC = resourceStatus.setElementStatus( se, 'StorageElement', 'RemoveAccess', 'Banned', reason, userName )
       # res = csAPI.setOption( "%s/%s/CheckAccess" % ( storageCFGBase, se ), "InActive" )
       if not resC['OK']:
         gLogger.error( "Failed to update %s remove access to Banned" % se )

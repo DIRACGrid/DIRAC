@@ -22,8 +22,8 @@ Options::
 
   -    --Owner=          : Owner (DIRAC nickname) 
 
-  -    --JobGroup=       : Select jobs for specified job group 
+  -    --JobGroup=       : Select jobs for specified job group(s)
 
   -    --Date=           : Date in YYYY-MM-DD format, if not specified default is today 
 
-
+  -    --Maximum=        : Maximum number of jobs shown (default or 0 means all)

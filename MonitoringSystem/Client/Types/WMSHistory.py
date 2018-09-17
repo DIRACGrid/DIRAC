@@ -4,40 +4,41 @@ This class is a helper to create the proper index and insert the proper values..
 
 from DIRAC.MonitoringSystem.Client.Types.BaseType import BaseType
 
-__RCSID__ = "$Id $"
+__RCSID__ = "$Id$"
 
 ########################################################################
 class WMSHistory( BaseType ):
 
-  
+
   """
   .. class:: WMSMonitorType
   """
   ########################################################################
   def __init__( self ):
     super( WMSHistory, self ).__init__()
-    
+
     """ c'tor
     :param self: self reference
     """
-    
-    self.setKeyFields( [ 'Status', 'Site', 'User', 'UserGroup', \
+
+    self.keyFields = [ 'Status', 'Site', 'User', 'UserGroup', \
                         'JobGroup', 'MinorStatus', 'ApplicationStatus', \
-                        'JobSplitType' ] )
-    
-    self.setMonitoringFields( [ 'Jobs', 'Reschedules' ] )
-    
-    self.setIndex( 'wmshistory_index' )  # overwrite the index name
-    
-    self.setDocType( "WMSHistory" )
-    
-    self.setMapping( {'status_type': {'_all': {'enabled': 'false'}, 'properties': {'Status': {'index': 'not_analyzed', 'type': 'string'}}},
-                      'site_type':{'_all': {'enabled': 'false'}, 'properties': {'Site': {'index': 'not_analyzed', 'type': 'string'}}},
-                      'jobsplit_type':{'_all': {'enabled': 'false'}, 'properties': {'JobSplitType': {'index': 'not_analyzed', 'type': 'string'}}},
-                      'appStatus_type':{'_all': {'enabled': 'false'}, 'properties': {'ApplicationStatus': {'index': 'not_analyzed', 'type': 'string'}}},
-                      'monorStat_type':{'_all': {'enabled': 'false'}, 'properties': {'MinorStatus': {'index': 'not_analyzed', 'type': 'string'}}},} )
-    
-    self.setDataToKeep ( 86400 * 30 )
-    
+                        'JobSplitType' ]
+
+    self.monitoringFields = [ 'Jobs', 'Reschedules' ]
+
+    self.index = 'wmshistory_index'
+    self.doc_type =  "WMSHistory"
+
+    self.addMapping( {'Status': {'type': 'keyword'},
+                      'Site': {'type': 'keyword'},
+                      'JobSplitType': { 'type': 'keyword'},
+                      'ApplicationStatus': {'type': 'keyword'},
+                      'MinorStatus': {'type': 'keyword'},
+                      'User': {'type': 'keyword'},
+                      'JobGroup': { 'type': 'keyword'},
+                      'UserGroup': {'type': 'keyword'}} )
+
+    self.dataToKeep =  86400 * 30
+
     self.checkType()
-    

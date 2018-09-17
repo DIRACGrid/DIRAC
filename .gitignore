@@ -48,10 +48,20 @@ Session.vim
 .idea/
 DIRAC.iml
 
+# MaxOSX files
+.DS_Store
+
 # test stuff
+.pytest_cache
 .cache
 __pycache__
 pytests.xml
 nosetests.xml
 coverage.xml
 Local_*
+.hypothesis
+
+# docs
+# this is auto generated
+docs/source/CodeDocumentation/
+docs/_build

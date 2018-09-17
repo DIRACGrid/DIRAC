@@ -1,4 +1,5 @@
-import unittest, importlib
+import unittest
+import importlib
 from mock import Mock
 
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getDIRACPlatform, getCompatiblePlatforms
@@ -34,23 +35,23 @@ class ResourcesSuccess( HelpersTestCase ):
     self.assertFalse( res['OK'] )
 
     res = getDIRACPlatform( 'OS1' )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( res['Value'], ['plat3', 'plat1'] )
 
     res = getDIRACPlatform( 'OS2' )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( res['Value'], ['plat1'] )
 
     res = getDIRACPlatform( 'OS3' )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( res['Value'], ['plat1'] )
 
     res = getDIRACPlatform( 'OS4' )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( res['Value'], ['plat3', 'plat2'] )
 
     res = getDIRACPlatform( 'OS5' )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( res['Value'], ['plat2'] )
 
     res = getDIRACPlatform( 'plat1' )
@@ -73,7 +74,7 @@ class ResourcesSuccess( HelpersTestCase ):
     self.assertEqual( res['Value'], ['plat'] )
 
     res = getCompatiblePlatforms( 'plat1' )
-    self.assert_( res['OK'] )
+    self.assertTrue(res['OK'])
     self.assertEqual( res['Value'], ['plat1', 'xOS1', 'xOS2', 'xOS3'] )
 
 

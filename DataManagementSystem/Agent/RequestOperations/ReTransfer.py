@@ -5,10 +5,14 @@
 # Date: 2013/04/02 14:24:21
 ########################################################################
 """ :mod: ReTransfer
+
     ================
 
+
     .. module: ReTransfer
+
     :synopsis: ReTransfer Operation handler
+
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     ReTransfer Operation handler
@@ -36,14 +40,16 @@ class ReTransfer( DMSRequestOperationsBase ):
 
 
   online ReTransfer operation handler
+
+  :param self: self reference
+  :param ~DIRAC.RequestManagementSystem.Client.Operation.Operation operation: Operation instance
+  :param str csPath: CS path for this handler
+
   """
 
   def __init__( self, operation = None, csPath = None ):
     """c'tor
 
-    :param self: self reference
-    :param Operation operation: operation to execute
-    :param str csPath: CS path for this handler
     """
     # # base class ctor
     DMSRequestOperationsBase.__init__( self, operation, csPath )

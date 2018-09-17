@@ -5,7 +5,7 @@
 import os
 import socket
 
-from smtplib import SMTP
+from smtplib import SMTP, SMTP_SSL
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -25,9 +25,13 @@ class Mail( object ):
     self._fromAddress = getuser() + '@' + socket.getfqdn()
     self._attachments = []
     self.esmtp_features = {}
+    self._smtpPtcl = None
 
-
-  def _send( self ):
+  def _create(self, addresses):
+    """ create a mail object
+    """
+    if not isinstance(addresses, list):
+      addresses = [addresses]
 
     if not self._mailAddress:
       gLogger.warn( "No mail address was provided. Mail not sent." )
@@ -44,16 +48,8 @@ class Mail( object ):
     else:
       mail = MIMEText( self._message , "plain" )
 
-
     msg = MIMEMultipart()
-
-
     msg.attach( mail )
-
-
-    addresses = self._mailAddress
-    if isinstance( self._mailAddress, basestring ):
-      addresses = self._mailAddress.split( ", " )
 
     msg[ "Subject" ] = self._subject
     msg[ "From" ] = self._fromAddress
@@ -70,13 +66,50 @@ class Mail( object ):
       except IOError as e:
         gLogger.exception( "Could not attach %s" % attachment, lException = e )
 
-    smtp = SMTP()
+    return S_OK(msg)
+
+  def _send( self, msg = None ):
+    """ send a single email message. If msg is in input, it is expected to be of email type, otherwise it will create it.
+    """
+
+    if msg is None:
+      addresses = self._mailAddress
+      if isinstance( self._mailAddress, basestring ):
+        addresses = self._mailAddress.split( ", " )
+
+      result = self._create(addresses)
+      if not result['OK']:
+        return result
+      msg = result['Value']
+
+    if self._smtpPtcl in ('SSL', 'TLS'):
+      smtp = SMTP_SSL()
+    else:
+      smtp = SMTP()
     smtp.set_debuglevel( 0 )
     try:
       smtp.connect()
+      smtp.ehlo()
+      if self._smtpPtcl in ('SSL', 'TLS'):
+        smtp.starttls()
+        smtp.ehlo()
       smtp.sendmail( self._fromAddress, addresses, msg.as_string() )
     except Exception as x:
       return S_ERROR( "Sending mail failed %s" % str( x ) )
 
     smtp.quit()
     return S_OK( "The mail was successfully sent" )
+
+  def __eq__(self, other):
+    """ Comparing an email object to another
+    """
+    if isinstance(other, Mail):
+      if self.__dict__ == other.__dict__:
+        return True
+
+    return False
+
+  def __hash__(self):
+    """ Comparing for sets
+    """
+    return hash(self._subject + self._message + self._fromAddress + self._mailAddress)

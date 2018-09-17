@@ -46,13 +46,6 @@ for switch in Script.getUnprocessedSwitches():
   if switch[0] == "S" or switch[0].lower() == "site":
     site = switch[1]
 
-if not ( read or write or check or remove ):
-  # No switch was specified, means we need all of them
-  read = True
-  write = True
-  check = True
-  remove = True
-
 # from DIRAC.ConfigurationSystem.Client.CSAPI           import CSAPI
 from DIRAC.Interfaces.API.DiracAdmin                     import DiracAdmin
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
@@ -60,6 +53,14 @@ from DIRAC                                               import gConfig, gLogger
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus    import ResourceStatus
 from DIRAC.Core.Security.ProxyInfo                       import getProxyInfo
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import resolveSEGroup
+
+if not ( read or write or check or remove ):
+  # No switch was specified, means we need all of them
+  gLogger.notice( "No option given, all accesses will be allowed if they were not" )
+  read = True
+  write = True
+  check = True
+  remove = True
 
 ses = resolveSEGroup( ses )
 diracAdmin = DiracAdmin()
@@ -106,17 +107,14 @@ statusFlagDict['RemoveAccess'] = remove
 
 resourceStatus = ResourceStatus()
 
-res = resourceStatus.getStorageElementStatus( ses )
+res = resourceStatus.getElementStatus( ses, "StorageElement" )
 if not res[ 'OK' ]:
   gLogger.error( 'Storage Element %s does not exist' % ses )
   DIRAC.exit( -1 )
 
 reason = 'Forced with dirac-admin-allow-se by %s' % userName
 
-for se, seOptions in res[ 'Value' ].items():
-
-  resW = resC = resR = { 'OK' : False }
-
+for se, seOptions in res[ 'Value' ].iteritems():
 
   # InActive is used on the CS model, Banned is the equivalent in RSS
   for statusType in STATUS_TYPES:
@@ -124,22 +122,19 @@ for se, seOptions in res[ 'Value' ].items():
       if seOptions.get( statusType ) == "Active":
         gLogger.notice( '%s status of %s is already Active' % ( statusType, se ) )
         continue
-      if seOptions.has_key( statusType ):
+      if statusType in seOptions:
         if not seOptions[ statusType ] in ALLOWED_STATUSES:
           gLogger.notice( '%s option for %s is %s, instead of %s' %
                           ( statusType, se, seOptions[ 'ReadAccess' ], ALLOWED_STATUSES ) )
           gLogger.notice( 'Try specifying the command switches' )
-          continue
-
-        resR = resourceStatus.setStorageElementStatus( se, statusType, 'Active', reason, userName )
-        if not resR['OK']:
-          gLogger.error( "Failed to update %s %s to Active" % ( se, statusType ) )
         else:
-          gLogger.notice( "Successfully updated %s %s to Active" % ( se, statusType ) )
-          statusAllowedDict[statusType].append( se )
-
-  if not( resR['OK'] or resW['OK'] or resC['OK'] ):
-    DIRAC.exit( -1 )
+          resR = resourceStatus.setElementStatus( se, "StorageElement", statusType, 'Active', reason, userName )
+          if not resR['OK']:
+            gLogger.fatal( "Failed to update %s %s to Active, exit -" % ( se, statusType ), resR['Message'] )
+            DIRAC.exit( -1 )
+          else:
+            gLogger.notice( "Successfully updated %s %s to Active" % ( se, statusType ) )
+            statusAllowedDict[statusType].append( se )
 
 totalAllowed = 0
 totalAllowedSEs = []

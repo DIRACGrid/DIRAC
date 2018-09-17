@@ -145,7 +145,7 @@ class SocketInfo:
           filePath = os.path.join( casPath, fileName )
           if not os.path.isfile( filePath ):
             continue
-          fObj = file( filePath, "rb" )
+          fObj = open(filePath, "rb")
           pemData = fObj.read()
           fObj.close()
           #Try to load CA Cert
@@ -184,7 +184,7 @@ class SocketInfo:
                                        [ crlsDict[k] for k in crlsDict ] )
         SocketInfo.__cachedCAsCRLsLastLoaded = time.time()
     except:
-      gLogger.exception( "ASD" )
+      gLogger.exception( "Failed to init CA store" )
     finally:
       SocketInfo.__cachedCAsCRLsLoadLock.release()
     #Generate CA Store
@@ -303,6 +303,12 @@ class SocketInfo:
 
   #@gSynchro
   def __sslHandshake( self ):
+    """
+      Do the SSL Handshake
+
+      :return: S_ERROR / S_OK with dictionary of user credentials
+    """
+
     start = time.time()
     timeout = self.infoDict[ 'timeout' ]
     while True:
@@ -316,7 +322,7 @@ class SocketInfo:
         time.sleep( 0.001 )
       except GSI.SSL.WantWriteError:
         time.sleep( 0.001 )
-      except GSI.SSL.Error, v:
+      except GSI.SSL.Error as v:
         if self.__retry < 3:
           self.__retry += 1
           return self.__sslHandshake()
@@ -324,7 +330,7 @@ class SocketInfo:
           # gLogger.warn( "Error while handshaking", "\n".join( [ stError[2] for stError in v.args[0] ] ) )
           gLogger.warn( "Error while handshaking", v )
           return S_ERROR( "Error while handshaking" )
-      except Exception, v:
+      except Exception as v:
         gLogger.warn( "Error while handshaking", v )
         if self.__retry < 3:
           self.__retry += 1

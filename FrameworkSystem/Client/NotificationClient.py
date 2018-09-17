@@ -4,13 +4,11 @@
 
 __RCSID__ = "$Id$"
 
-import types
-
+from DIRAC import gLogger, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.Mail import Mail
-from DIRAC import gLogger, S_ERROR
 
-class NotificationClient:
+class NotificationClient(object):
 
   #############################################################################
   def __init__( self, rpcFunctor = False ):
@@ -26,38 +24,46 @@ class NotificationClient:
     return self.__rpcFunctor( "Framework/Notification", **kwargs )
 
   #############################################################################
-  def sendMail( self, address, subject, body, fromAddress = None, localAttempt = True, html = False ):
+  def sendMail( self, addresses, subject, body, 
+                fromAddress = None, localAttempt = True, html = False, avoidSpam = False ):
     """ Send an e-mail with subject and body to the specified address. Try to send
         from local area before central service by default.
     """
-    self.log.verbose( 'Received signal to send the following mail to %s:\nSubject = %s\n%s' % ( address, subject, body ) )
+    self.log.verbose( 'Received signal to send the following mail to %s:\nSubject = %s\n%s' % ( addresses,
+                                                                                                subject,
+                                                                                                body ) )
     result = S_ERROR()
-    if localAttempt:
-      try:
-        m = Mail()
-        m._subject = subject
-        m._message = body
-        m._mailAddress = address
-        m._html = html
-        if fromAddress:
-          m._fromAddress = fromAddress
-        result = m._send()
-      except Exception as x:
-        self.log.warn( 'Sending mail failed with exception:\n%s' % ( str( x ) ) )
 
-      if result['OK']:
-        self.log.verbose( 'Mail sent successfully from local host to %s with subject %s' % ( address, subject ) )
-        self.log.debug( result['Value'] )
+    addresses = [addresses] if isinstance(addresses, basestring) else list(addresses)
+    for address in addresses:
+
+      if localAttempt:
+        try:
+          m = Mail()
+          m._subject = subject
+          m._message = body
+          m._mailAddress = address
+          m._html = html
+          if fromAddress:
+            m._fromAddress = fromAddress
+          result = m._send()
+        except Exception as x:
+          self.log.warn( 'Sending mail failed with exception:\n%s' % ( str( x ) ) )
+
+        if result['OK']:
+          self.log.verbose( 'Mail sent successfully from local host to %s with subject %s' % ( address, subject ) )
+          self.log.debug( result['Value'] )
+          return result
+
+        self.log.warn( 'Could not send mail with the following message:\n%s\n will attempt to send via NotificationService' % result['Message'] )
+
+      notify = self.__getRPCClient( timeout = 120 )
+      result = notify.sendMail( address, subject, body, str( fromAddress ), avoidSpam )
+      if not result['OK']:
+        self.log.error( 'Could not send mail via central Notification service', result['Message'] )
         return result
-
-      self.log.warn( 'Could not send mail with the following message:\n%s\n will attempt to send via NotificationService' % result['Message'] )
-
-    notify = self.__getRPCClient( timeout = 120 )
-    result = notify.sendMail( address, subject, body, str( fromAddress ) )
-    if not result['OK']:
-      self.log.error( 'Could not send mail via central Notification service', result['Message'] )
-    else:
-      self.log.verbose( result['Value'] )
+      else:
+        self.log.verbose( result['Value'] )
 
     return result
 
@@ -81,7 +87,7 @@ class NotificationClient:
 
   def newAlarm( self, subject, status, notifications, assignee, body, priority, alarmKey = "" ):
     rpcClient = self.__getRPCClient()
-    if type( notifications ) not in ( types.ListType, types.TupleType ):
+    if not isinstance( notifications, (list, tuple) ):
       return S_ERROR( "Notifications parameter has to be a list or a tuple with a combination of [ 'Web', 'Mail', 'SMS' ]" )
     alarmDef = { 'subject' : subject, 'status' : status,
                  'notifications' : notifications, 'assignee' : assignee,

@@ -5,10 +5,13 @@
 # Date: 2013/04/12 13:12:07
 ########################################################################
 """ :mod: FTSStrategy
+
     =================
 
     .. module: FTSStrategy
+
     :synopsis: replication strategy for FTS transfers
+
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     replication strategy for all FTS transfers
@@ -64,8 +67,11 @@ class FTS2Strategy( object ):
 
     :param self: self reference
     :param str csPath: CS path
-    :param list ftsSites: list of FTSSites
-    :param list ftsHistoryViews: list of FTSHistoryViews
+    :param ftsSites: list of FTSSites
+    :type ftsSites: python:list
+    :param ftsHistoryViews: list of FTSHistoryViews
+    :type ftsHistoryViews: python:list
+
     """
     # ## config path
     self.csPath = csPath
@@ -127,7 +133,8 @@ class FTS2Strategy( object ):
   def resetGraph( cls, ftsHistoryViews ):
     """ reset graph
 
-    :param list ftsHistoryViews: list of FTSHistoryViews
+    :param ftsHistoryViews: list of FTSHistoryViews
+    :type ftsHistoryViews: python:list
     """
     ftsGraph = None
     try:
@@ -173,8 +180,10 @@ class FTS2Strategy( object ):
   def simple( self, sourceSEs, targetSEs ):
     """ simple strategy - one source, many targets
 
-    :param list sourceSEs: list with only one sourceSE name
-    :param list targetSEs: list with target SE names
+    :param sourceSEs: list with only one sourceSE name
+    :type sourceSEs: python:list
+    :param targetSEs: list with target SE names
+    :type targetSEs: python:list
     :param str lfn: logical file name
     """
     # # make targetSEs list unique
@@ -202,8 +211,9 @@ class FTS2Strategy( object ):
   def swarm( self, sourceSEs, targetSEs ):
     """ swarm strategy - one target, many sources, pick up the fastest
 
-    :param list sourceSEs: list of source SE
-    :param str targetSEs: on element list with name of target SE
+    :param sourceSEs: list of source SE
+    :type sourceSEs: python:list
+    :param str targetSEs: one element list with name of target SE
     :param str lfn: logical file name
     """
     tree = {}
@@ -248,8 +258,10 @@ class FTS2Strategy( object ):
   def minimiseTotalWait( self, sourceSEs, targetSEs ):
     """ find dag minimizing start time
 
-    :param list sourceSEs: list of avialable source SEs
-    :param list targetSEs: list of target SEs
+    :param sourceSEs: list of available source SEs
+    :type sourceSEs: python:list
+    :param targetSEs: list of target SEs
+    :type targetSEs: python:list
     :param str lfn: logical file name
     """
 
@@ -324,8 +336,10 @@ class FTS2Strategy( object ):
   def dynamicThroughput( self, sourceSEs, targetSEs ):
     """ dynamic throughput - many sources, many targets - find dag minimizing overall throughput
 
-    :param list sourceSEs: list of available source SE names
-    :param list targetSE: list of target SE names
+    :param sourceSEs: list of available source SE names
+    :type sourceSEs: python:list
+    :param targetSE: list of target SE names
+    :type targetSEs: python:list
     :param str lfn: logical file name
     """
     tree = {}
@@ -423,8 +437,10 @@ class FTS2Strategy( object ):
     """ get replication tree
 
     :param str lfn: LFN
-    :param list sourceSEs: list of sources SE names to use
-    :param list targetSEs: list of target SE names to use
+    :param sourceSEs: list of sources SE names to use
+    :type sourceSEs: python:list
+    :param targetSEs: list of target SE names to use
+    :type targetSEs: python:list
     :param long size: file size
     :param str strategy: strategy name
     """

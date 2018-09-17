@@ -7,17 +7,13 @@
 
 from DIRAC import S_OK, S_ERROR
 
-__RCSID__  = '$Id:  $'
+__RCSID__  = '$Id$'
 
 class State( object ):
   """
     State class that represents a single step on a StateMachine, with all the
     possible transitions, the default transition and an ordering level.
-  """
 
-  def __init__( self, level, stateMap = list(), defState = None ):
-    """
-    Constructor.
 
     examples:
       >>> s0 = State( 100 )
@@ -28,16 +24,19 @@ class State( object ):
       # is no default defined, so it will end up going to StateNext anyway. You
       # must be careful while defining states and their stateMaps and defaults.
 
-    :Parameters:
-      **level** - `int`
-        each state is mapped to an integer, which is used to sort the states
-        according to that integer.
-      **stateMap** - `list`
-        it is a list ( of strings ) with the reachable states from this particular
-        status. If not defined, we assume there are no restrictions.
-      **defState** - [ None, `str` ]
-        default state used in case the next state it is not stateMap ( not defined
+  :param int level: each state is mapped to an integer, which is used to sort the states according to that integer.
+  :param stateMap: it is a list ( of strings ) with the reachable states from this particular
+                   status. If not defined, we assume there are no restrictions.
+  :type stateMap: python:list
+  :param defState: default state used in case the next state it is not stateMap ( not defined
         or simply not there ).
+  :type defState: None or str
+
+  """
+
+  def __init__( self, level, stateMap = list(), defState = None ):
+    """
+    Constructor.
     """
 
     self.level    = level
@@ -46,7 +45,7 @@ class State( object ):
 
   def transitionRule( self, nextState ):
     """
-      Method that selects next state, knowing the default and the transitions
+    Method that selects next state, knowing the default and the transitions
     map, and the proposed next state. If <nextState> is in stateMap, goes there.
     If not, then goes to <self.default> if any. Otherwise, goes to <nextState>
     anyway.
@@ -61,11 +60,9 @@ class State( object ):
       >>> s2.transitionRule( 'StateNameNotInMap' )
           'StateNameNotInMap'
 
-    :Parameters:
-      **nextState** - `string`
-        name of the state in the stateMap
-
-    :return: `str` ( state name )
+    :param str nextState: name of the state in the stateMap
+    :return: state name
+    :rtype: str
     """
 
     #If next state is on the list of next states, go ahead.
@@ -81,21 +78,21 @@ class State( object ):
 class StateMachine( object ):
   """
     StateMachine class that represents the whole state machine with all transitions.
-  """
-
-  def __init__( self, state = None ):
-    """
-    Constructor.
 
     examples:
       >>> sm0 = StateMachine()
       >>> sm1 = StateMachine( state = 'Active' )
 
-    :Parameters:
-      **state** - [ None, `str`]
-        current state of the StateMachine, could be None if we do not use the
+    :param state: current state of the StateMachine, could be None if we do not use the
         StateMachine to calculate transitions. Beware, it is not checked if the
         state is on the states map !
+    :type state: None or str
+
+  """
+
+  def __init__( self, state = None ):
+    """
+    Constructor.
     """
 
     self.state  = state
@@ -111,11 +108,8 @@ class StateMachine( object ):
     >>> sm0.levelOfState( 'AnotherState' )
         -1
 
-    :Parameters:
-      **state** - `str`
-        name of the state, it should be on <self.states> key set
-
-    :return: `int` || -1 ( if not on <self.states> )
+    :param str state: name of the state, it should be on <self.states> key set
+    :return: `int` || -1 ( if not in <self.states> )
     """
 
     if not state in self.states:
@@ -134,10 +128,8 @@ class StateMachine( object ):
       >>> sm0.setState( 'AnotherState' )[ 'OK' ]
           False
 
-    :Parameters:
-      **state** - [ None, `str` ]
-        state which will be set as current state of the StateMachine
-
+    :param state: state which will be set as current state of the StateMachine
+    :type state: None or str
     :return: S_OK || S_ERROR
     """
 
@@ -178,10 +170,7 @@ class StateMachine( object ):
       >>> sm0.getNextState( 'NextState' )
           S_OK( 'NextState' )
 
-    :Parameters:
-      **candidateState** - `str`
-        name of the next state
-
+    :param str candidateState: name of the next state
     :return: S_OK( nextState ) || S_ERROR
     """
 
@@ -205,19 +194,20 @@ class RSSMachine( StateMachine ):
   The StateMachine allows any transition except if the current state is Banned,
   which will force any transition to any state different of Error, Banned and
   Probing to Probing.
+
+    examples:
+      >>> rsm0 = RSSMachine( None )
+      >>> rsm1 = RSSMachine( 'Unknown' )
+
+  :param state: name of the current state of the StateMachine
+  :type state: None or str
+
   """
 
   def __init__( self, state ):
     """
     Constructor.
 
-    examples:
-      >>> rsm0 = RSSMachine( None )
-      >>> rsm1 = RSSMachine( 'Unknown' )
-
-    :Parameters:
-      **state** - [ None, `str` ]
-        name of the current state of the StateMachine
     """
 
     super( RSSMachine, self ).__init__( state )
@@ -249,10 +239,9 @@ class RSSMachine( StateMachine ):
           [ { 'Status' : 'Rubbish', 'R' : 'R' }, { 'Status' : 'Active', 'A' : 'A' } ]
 
 
-    :Parameters:
-      **policyResults** - list
-        list of dictionaries to be ordered. The dictionary can have any key as
+    :param policyResults: list of dictionaries to be ordered. The dictionary can have any key as
         far as the key `Status` is present.
+    :type policyResults: python:list
 
     :result: list( dict ), which is ordered
     """
@@ -262,7 +251,7 @@ class RSSMachine( StateMachine ):
 
   def levelOfPolicyState( self, policyResult ):
     """
-      Returns the level of the state associated with the policy, -1 if something
+    Returns the level of the state associated with the policy, -1 if something
     goes wrong. It is mostly used while sorting policies with method `orderPolicyResults`.
 
     examples:
@@ -271,10 +260,7 @@ class RSSMachine( StateMachine ):
       >>> rsm0.levelOfPolicyState( { 'Status' : 'Rubbish', 'R' : 'R' } )
           -1
 
-    :Parameters:
-      **policyResult** - dict
-        dictionary that must have the `Status` key.
-
+    :param dict policyResult: dictionary that must have the `Status` key.
     :return: int || -1 ( if policyResult[ 'Status' ] is not known by the StateMachine )
     """
 

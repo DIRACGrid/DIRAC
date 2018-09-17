@@ -25,8 +25,6 @@ FTS client
 # # imports
 from DIRAC import gLogger, S_OK, S_ERROR
 
-from DIRAC.Core.DISET.RPCClient           import RPCClient
-from DIRAC.ConfigurationSystem.Client     import PathFinder
 from DIRAC.Core.Base.Client               import Client
 # # from DMS
 from DIRAC.DataManagementSystem.Client.FTSJob             import FTSJob
@@ -46,31 +44,26 @@ class FTSClient( Client ):
 
   """
 
-  def __init__( self, useCertificates = False ):
+  def __init__( self, url = None, useCertificates = False, **kwargs ):
     """c'tor
 
     :param self: self reference
     :param bool useCertificates: flag to enable/disable certificates
     """
-    Client.__init__( self )
+    super( FTSClient, self ).__init__( **kwargs )
     self.log = gLogger.getSubLogger( "DataManagement/FTSClient" )
-    self.setServer( "DataManagement/FTSManager" )
+    self.serverURL = 'DataManagement/FTSManager' if not url else url
 
     # getting other clients
     self.ftsValidator = FTSValidator()
     self.dataManager = DataManager()
     self.storageFactory = StorageFactory()
 
-    url = PathFinder.getServiceURL( "DataManagement/FTSManager" )
-    if not url:
-      raise RuntimeError( "CS option DataManagement/FTSManager URL is not set!" )
-    self.ftsManager = RPCClient( url )
-
   def getFTSFileList( self, statusList = None, limit = None ):
     """ get list of FTSFiles with status in statusList """
     statusList = statusList if statusList else [ "Waiting" ]
     limit = limit if limit else 1000
-    getFTSFileList = self.ftsManager.getFTSFileList( statusList, limit )
+    getFTSFileList = self._getRPC().getFTSFileList( statusList, limit )
     if not getFTSFileList['OK']:
       self.log.error( "Failed getFTSFileList", "%s" % getFTSFileList['Message'] )
       return getFTSFileList
@@ -81,7 +74,7 @@ class FTSClient( Client ):
     """ get FTSJobs wit statues in :statusList: """
     statusList = statusList if statusList else list( FTSJob.INITSTATES + FTSJob.TRANSSTATES )
     limit = limit if limit else 500
-    getFTSJobList = self.ftsManager.getFTSJobList( statusList, limit )
+    getFTSJobList = self._getRPC().getFTSJobList( statusList, limit )
     if not getFTSJobList['OK']:
       self.log.error( "Failed getFTSJobList", "%s" % getFTSJobList['Message'] )
       return getFTSJobList
@@ -92,9 +85,10 @@ class FTSClient( Client ):
     """ read FTSFiles for a given :requestID:
 
     :param int requestID: ReqDB.Request.RequestID
-    :param list statusList: List of statuses (default: Waiting)
+    :param statusList: List of statuses (default: Waiting)
+    :type statusList: python:list
     """
-    ftsFiles = self.ftsManager.getFTSFilesForRequest( requestID, statusList )
+    ftsFiles = self._getRPC().getFTSFilesForRequest( requestID, statusList )
     if not ftsFiles['OK']:
       self.log.error( "Failed getFTSFilesForRequest", "%s" % ftsFiles['Message'] )
       return ftsFiles
@@ -105,7 +99,7 @@ class FTSClient( Client ):
 
     :param int requestID: ReqDB.Request.RequestID
     """
-    ftsFiles = self.ftsManager.getAllFTSFilesForRequest( requestID )
+    ftsFiles = self._getRPC().getAllFTSFilesForRequest( requestID )
     if not ftsFiles['OK']:
       self.log.error( "Failed getFTSFilesForRequest", "%s" % ftsFiles['Message'] )
       return ftsFiles
@@ -115,12 +109,13 @@ class FTSClient( Client ):
     """ get list of FTSJobs with statues in :statusList: given requestID
 
     :param int requestID: ReqDB.Request.RequestID
-    :param list statusList: list with FTSJob statuses
+    :param statusList: list with FTSJob statuses
+    :type statusList: python:list
 
     :return: [ FTSJob, FTSJob, ... ]
     """
     statusList = statusList if statusList else list( FTSJob.INITSTATES + FTSJob.TRANSSTATES )
-    getJobs = self.ftsManager.getFTSJobsForRequest( requestID, statusList )
+    getJobs = self._getRPC().getFTSJobsForRequest( requestID, statusList )
     if not getJobs['OK']:
       self.log.error( "Failed getFTSJobsForRequest", "%s" % getJobs['Message'] )
       return getJobs
@@ -131,7 +126,7 @@ class FTSClient( Client ):
 
     :param int ftsFileID: FTSFileID
     """
-    getFile = self.ftsManager.getFTSFile( ftsFileID )
+    getFile = self._getRPC().getFTSFile( ftsFileID )
     if not getFile['OK']:
       self.log.error( 'Failed to get FTS file', getFile['Message'] )
     # # de-serialize
@@ -152,18 +147,18 @@ class FTSClient( Client ):
     if not isValid['OK']:
       self.log.error( "Failed to validate FTS job", "%s %s" % ( isValid['Message'], str( ftsJobJSON['Value'] ) ) )
       return isValid
-    return self.ftsManager.putFTSJob( ftsJobJSON['Value'] )
+    return self._getRPC().putFTSJob( ftsJobJSON['Value'] )
 
   def getFTSJob( self, ftsJobID ):
     """ get FTS job, change its status to 'Assigned'
 
     :param int ftsJobID: FTSJobID
     """
-    getJob = self.ftsManager.getFTSJob( ftsJobID )
+    getJob = self._getRPC().getFTSJob( ftsJobID )
     if not getJob['OK']:
       self.log.error( 'Failed to get FTS job', getJob['Message'] )
       return getJob
-    setStatus = self.ftsManager.setFTSJobStatus( ftsJobID, 'Assigned' )
+    setStatus = self._getRPC().setFTSJobStatus( ftsJobID, 'Assigned' )
     if not setStatus['OK']:
       self.log.error( 'Failed to set status of FTS job', setStatus['Message'] )
     # # de-serialize
@@ -176,7 +171,7 @@ class FTSClient( Client ):
 
     :param int ftsJobID: FTSJobID
     """
-    getJob = self.ftsManager.getFTSJob( ftsJobID )
+    getJob = self._getRPC().getFTSJob( ftsJobID )
     if not getJob['OK']:
       self.log.error( 'Failed to get FTS job', getJob['Message'] )
       return getJob
@@ -187,7 +182,7 @@ class FTSClient( Client ):
 
     :param int ftsJob: FTSJobID
     """
-    deleteJob = self.ftsManager.deleteFTSJob( ftsJobID )
+    deleteJob = self._getRPC().deleteFTSJob( ftsJobID )
     if not deleteJob['OK']:
       self.log.error( 'Failed to delete FTS job', deleteJob['Message'] )
     return deleteJob
@@ -195,7 +190,7 @@ class FTSClient( Client ):
   def getFTSJobIDs( self, statusList = None ):
     """ get list of FTSJobIDs for a given status list """
     statusList = statusList if statusList else [ "Submitted", "Ready", "Active" ]
-    ftsJobIDs = self.ftsManager.getFTSJobIDs( statusList )
+    ftsJobIDs = self._getRPC().getFTSJobIDs( statusList )
     if not ftsJobIDs['OK']:
       self.log.error( 'Failed to get FTS job IDs', ftsJobIDs['Message'] )
     return ftsJobIDs
@@ -203,14 +198,14 @@ class FTSClient( Client ):
   def getFTSFileIDs( self, statusList = None ):
     """ get list of FTSFileIDs for a given status list """
     statusList = statusList if statusList else [ "Waiting" ]
-    ftsFileIDs = self.ftsManager.getFTSFileIDs( statusList )
+    ftsFileIDs = self._getRPC().getFTSFileIDs( statusList )
     if not ftsFileIDs['OK']:
       self.log.error( 'Failed to get FTS file IDs', ftsFileIDs['Message'] )
     return ftsFileIDs
 
   def getFTSHistory( self ):
     """ get FTS history snapshot """
-    getFTSHistory = self.ftsManager.getFTSHistory()
+    getFTSHistory = self._getRPC().getFTSHistory()
     if not getFTSHistory['OK']:
       self.log.error( 'Failed to get FTS history', getFTSHistory['Message'] )
       return getFTSHistory
@@ -219,7 +214,7 @@ class FTSClient( Client ):
 
   def getDBSummary( self ):
     """ get FTDB summary """
-    dbSummary = self.ftsManager.getDBSummary()
+    dbSummary = self._getRPC().getDBSummary()
     if not dbSummary['OK']:
       self.log.error( "Failed getDBSummary", "%s" % dbSummary['Message'] )
     return dbSummary
@@ -231,22 +226,24 @@ class FTSClient( Client ):
     :param str sourceSE: source SE name
     :param opFileIDList: [ ReqDB.File.FileID, ... ]
     """
-    return self.ftsManager.setFTSFilesWaiting( operationID, sourceSE, opFileIDList )
+    return self._getRPC().setFTSFilesWaiting( operationID, sourceSE, opFileIDList )
 
   def deleteFTSFiles( self, operationID, opFileIDList = None ):
     """ delete FTSFiles for rescheduling
 
     :param int operationID: ReqDB.Operation.OperationID
-    :param list opFileIDList: [ ReqDB.File.FileID, ... ]
+    :param opFileIDList: [ ReqDB.File.FileID, ... ]
+    :type opFileIDList: python:list
     """
-    return self.ftsManager.deleteFTSFiles( operationID, opFileIDList )
+    return self._getRPC().deleteFTSFiles( operationID, opFileIDList )
 
   def ftsSchedule( self, requestID, operationID, opFileList ):
     """ schedule lfn for FTS job
 
     :param int requestID: RequestDB.Request.RequestID
     :param int operationID: RequestDB.Operation.OperationID
-    :param list opFileList: list of tuples ( File.toJSON()['Value'], sourcesList, targetList )
+    :param opFileList: list of tuples ( File.toJSON()['Value'], sourcesList, targetList )
+    :type opFileList: python:list
     """
 
     # Check whether there are duplicates
@@ -258,7 +255,7 @@ class FTSClient( Client ):
       else:
         self.log.warn( 'File list for FTS scheduling has duplicates, fix it:\n', fTuple )
     fileIDs = [int( fileJSON.get( 'FileID', 0 ) ) for fileJSON, _sourceSEs, _targetSEs in fList ]
-    res = self.ftsManager.cleanUpFTSFiles( requestID, fileIDs )
+    res = self._getRPC().cleanUpFTSFiles( requestID, fileIDs )
     if not res['OK']:
       self.log.error( "Failed ftsSchedule", "%s" % res['Message'] )
       return S_ERROR( "ftsSchedule: %s" % res['Message'] )
@@ -297,7 +294,7 @@ class FTSClient( Client ):
         result["Failed"][fileID] = "no active replicas found in sources"
         continue
 
-      tree = self.ftsManager.getReplicationTree( sourceSEs, targetSEs, size )
+      tree = self._getRPC().getReplicationTree( sourceSEs, targetSEs, size )
       if not tree['OK']:
         self.log.error( "Failed ftsSchedule", "%s cannot be scheduled: %s" % ( lfn, tree['Message'] ) )
         result["Failed"][fileID] = tree['Message']
@@ -351,7 +348,7 @@ class FTSClient( Client ):
       return S_OK( result )
 
     ftsFilesJSONList = [ftsFile.toJSON()['Value'] for ftsFile in ftsFiles]
-    res = self.ftsManager.putFTSFileList( ftsFilesJSONList )
+    res = self._getRPC().putFTSFileList( ftsFilesJSONList )
     if not res['OK']:
       self.log.error( "Failed ftsSchedule", "%s" % res['Message'] )
       return S_ERROR( "ftsSchedule: %s" % res['Message'] )
@@ -374,7 +371,7 @@ class FTSClient( Client ):
     res = StorageFactory().getStorages( targetSE, pluginList = ["SRM2", "GFAL2_SRM2"] )
     if not res['OK']:
       errStr = "_getSurlForLFN: Failed to create SRM2 storage for %s: %s" % ( targetSE, res['Message'] )
-      self.log.error( "_getSurlForLFN: Failed to create SRM2 storage", 
+      self.log.error( "_getSurlForLFN: Failed to create SRM2 storage",
                       "%s: %s" % ( targetSE, res['Message'] ) )
       return S_ERROR( errStr )
     storageObjects = res['Value']["StorageObjects"]

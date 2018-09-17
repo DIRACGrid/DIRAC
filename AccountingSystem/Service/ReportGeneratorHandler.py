@@ -14,8 +14,8 @@ from DIRAC.Core.Utilities.Plotting import gDataCache
 from DIRAC.AccountingSystem.private.MainReporter import MainReporter
 from DIRAC.AccountingSystem.private.DBUtils import DBUtils
 from DIRAC.AccountingSystem.private.Policies import gPoliciesList
-from DIRAC.Core.Utilities.Plotting.Plots            import generateErrorMessagePlot
-from DIRAC.Core.Utilities.Plotting.FileCoding       import extractRequestFromFileId
+from DIRAC.Core.Utilities.Plotting.Plots import generateErrorMessagePlot
+from DIRAC.Core.Utilities.Plotting.FileCoding import extractRequestFromFileId
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 

@@ -12,52 +12,55 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC.WorkloadManagementSystem.JobWrapper.Watchdog  import Watchdog
-from DIRAC.Core.Utilities.Subprocess                     import shellCall
-from DIRAC                                               import S_OK, S_ERROR
+import os
+import socket
+import resource
+import getpass
+
+from DIRAC.WorkloadManagementSystem.JobWrapper.Watchdog import Watchdog
+from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.Os import getDiskSpace
 
-import string
-import socket
 
-class WatchdogLinux( Watchdog ):
+class WatchdogLinux(Watchdog):
 
-  def __init__( self, pid, thread, spObject, jobCPUtime, memoryLimit = 0, systemFlag = 'linux' ):
+  def __init__(self, pid, exeThread, spObject, jobCPUTime,
+               memoryLimit=0, processors=1, systemFlag='linux', jobArgs={}):
     """ Constructor, takes system flag as argument.
     """
-    Watchdog.__init__( self, pid, thread, spObject, jobCPUtime, memoryLimit, systemFlag )
-    self.systemFlag = systemFlag
-    self.pid = pid
+    Watchdog.__init__(self,
+                      pid=pid,
+                      exeThread=exeThread,
+                      spObject=spObject,
+                      jobCPUTime=jobCPUTime,
+                      memoryLimit=memoryLimit,
+                      processors=processors,
+                      systemFlag=systemFlag,
+                      jobArgs=jobArgs)
 
   ############################################################################
-  def getNodeInformation( self ):
+  def getNodeInformation(self):
     """Try to obtain system HostName, CPU, Model, cache and memory.  This information
        is not essential to the running of the jobs but will be reported if
        available.
     """
     result = S_OK()
     try:
-      cpuInfo = open ( "/proc/cpuinfo", "r" )
-      info = cpuInfo.readlines()
-      cpuInfo.close()
       result["HostName"] = socket.gethostname()
-      result["CPU(MHz)"] = string.replace( string.replace( string.split( info[6], ":" )[1], " ", "" ), "\n", "" )
-      result["ModelName"] = string.replace( string.replace( string.split( info[4], ":" )[1], " ", "" ), "\n", "" )
-      result["CacheSize(kB)"] = string.replace( string.replace( string.split( info[7], ":" )[1], " ", "" ), "\n", "" )
-      memInfo = open ( "/proc/meminfo", "r" )
-      info = memInfo.readlines()
-      memInfo.close()
-      result["Memory(kB)"] = string.replace( string.replace( string.split( info[3], ":" )[1], " ", "" ), "\n", "" )
-      account = 'Unknown'
-      localID = shellCall(10,'whoami')
-      if localID['OK']:
-        account = localID['Value'][1].strip()
-      result["LocalAccount"] = account
+      with open("/proc/cpuinfo", "r") as cpuInfo:
+        info = cpuInfo.readlines()
+        result["CPU(MHz)"] = info[7].split(':')[1].replace(' ', '').replace('\n', '')
+        result["ModelName"] = info[4].split(':')[1].replace(' ', '').replace('\n', '')
+        result["CacheSize(kB)"] = info[8].split(':')[1].replace(' ', '').replace('\n', '')
+      with open("/proc/meminfo", "r") as memInfo:
+        info = memInfo.readlines()
+        result["Memory(kB)"] = info[3].split(':')[1].replace(' ', '').replace('\n', '')
+      result["LocalAccount"] = getpass.getuser()
     except Exception as x:
       self.log.fatal('Watchdog failed to obtain node information with Exception:')
       self.log.fatal(str(x))
       result = S_ERROR()
-      result['Message']='Failed to obtain system information for '+self.systemFlag
+      result['Message'] = 'Failed to obtain system information for ' + self.systemFlag
       return result
 
     return result
@@ -66,26 +69,15 @@ class WatchdogLinux( Watchdog ):
   def getLoadAverage(self):
     """Obtains the load average.
     """
-    comm = '/bin/cat /proc/loadavg'
-    loadAvgDict = shellCall( 5, comm )
-    if loadAvgDict['OK']:
-      return S_OK( float( string.split( loadAvgDict['Value'][1] )[0] ) )
-    else:
-      self.log.warn( 'Could not obtain load average' )
-      return S_ERROR( 'Could not obtain load average' )
+    return S_OK(float(os.getloadavg()[0]))
 
   #############################################################################
   def getMemoryUsed(self):
     """Obtains the memory used.
     """
-    comm = '/usr/bin/free'
-    memDict = shellCall( 5, comm )
-    if memDict['OK']:
-      mem = string.split(memDict['Value'][1]) [8]
-      return S_OK( float( mem ) )
-    else:
-      self.log.warn( 'Could not obtain memory used' )
-      return S_ERROR( 'Could not obtain memory used' )
+    mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss + \
+        resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss
+    return S_OK(float(mem))
 
   #############################################################################
   def getDiskSpace(self):
@@ -95,11 +87,11 @@ class WatchdogLinux( Watchdog ):
     diskSpace = getDiskSpace()
 
     if diskSpace == -1:
-      result = S_ERROR( 'Could not obtain disk usage' )
-      self.log.warn( ' Could not obtain disk usage' )
+      result = S_ERROR('Could not obtain disk usage')
+      self.log.warn(' Could not obtain disk usage')
       result['Value'] = -1
 
-    result['Value'] = float( diskSpace )
+    result['Value'] = float(diskSpace)
     return result
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

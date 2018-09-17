@@ -22,9 +22,10 @@ class FCConditionParser(object):
     the form "pluginName=whateverThatWillBePassedToThePlugin".
     The basic blocs will be evaluated by the respective plugins, and the result can
     be combined using the standard boolean operators:
+
       * ! for not
       * & for and
-      * | for or
+      * \| for or
       * [ ] for prioritizing the operations
 
     All these characters, as well as the '=' symbol cannot be used in any expression to be
@@ -36,8 +37,8 @@ class FCConditionParser(object):
 
     Example of rules are:
 
-      Filename=startswith('/lhcb') & Proxy=voms.has(/lhcb/Role->production)
-      [Filename=startswith('/lhcb') & !Filename=find('/user/')] | Proxy=group.in(lhcb_mc, lhcb_data)
+      * Filename=startswith('/lhcb') & Proxy=voms.has(/lhcb/Role->production)
+      * [Filename=startswith('/lhcb') & !Filename=find('/user/')] | Proxy=group.in(lhcb_mc, lhcb_data)
 
   """
   
@@ -58,6 +59,13 @@ class FCConditionParser(object):
   class _BoolBinOp( object ):
     """ Abstract object to represent a binary operator
 
+           :param token: the token matching a binary operator
+                         it is a list with only one element which itself is a list
+                         [ [ Arg1, Operator, Arg2] ]
+                         The arguments themselves can be of any type, but they need to
+                         provide an "eval" method that takes \*\*kwargs as input,
+                         and return a boolean
+
     """
 
     reprsymbol = None  # Sign to represent the boolean operation
@@ -68,12 +76,6 @@ class FCConditionParser(object):
 
     def __init__( self, token ):
       """
-           :param token : the token matching a binary operator
-                         it is a list with only one element which itself is a list
-                         [ [ Arg1, Operator, Arg2] ]
-                         The arguments themselves can be of any type, but they need to
-                         provide an "eval" method that takes **kwargs as input,
-                         and return a boolean
       """
 
       # Keep the two arguments
@@ -91,7 +93,7 @@ class FCConditionParser(object):
       """ Perform the evaluation of the boolean logic
           by applying the operator between the two arguments
 
-          :param **kwargs: whatever information is given to plugin (typically lfn)
+          :param \*\*kwargs: whatever information is given to plugin (typically lfn)
       """
 
       return self.evalop( arg.eval( **kwargs ) for arg in self.args )
@@ -111,16 +113,19 @@ class FCConditionParser(object):
     evalop = any
 
   class _BoolNot( object ):
-    """ Represents the "not" unitary operator """
+    """ Represents the "not" unitary operator
+
+    :param t: the token matching a unitary operator
+              it is a list with only one element which itself is a list
+              [ [ !, Arg1] ]
+              The argument itself can be of any type, but it needs to
+              provide an "eval" method that takes \*\*kwargs as input,
+              and return a boolean
+
+    """
 
     def __init__( self, t ):
       """
-         :param token : the token matching a unitary operator
-                       it is a list with only one element which itself is a list
-                       [ [ !, Arg1] ]
-                       The argument itself can be of any type, but it needs to
-                       provide an "eval" method that takes **kwargs as input,
-                       and return a boolean
 
       """
 
@@ -132,7 +137,7 @@ class FCConditionParser(object):
       """ Perform the evaluation of the boolean logic
           by returning the negation of the evaluation of the argument
 
-          :param **kwargs: whatever information is given to plugin (typically lfn)
+          :param \*\*kwargs: whatever information is given to plugin (typically lfn)
       """
       return not self.arg.eval( **kwargs )
 
@@ -187,9 +192,9 @@ class FCConditionParser(object):
 
     def eval( self, **kwargs ):
       """Forward the evaluation call to the plugin
-        :param kwargs contains all the information given to the plugin
-                namely the lfns
-        :return True or False
+
+        :param \*\*kwargs: contains all the information given to the plugin namely the lfns
+        :return: True or False
       """
 
       return self._pluginInst.eval( **kwargs )
@@ -203,7 +208,7 @@ class FCConditionParser(object):
 
   def __init__( self, vo = None, ro_methods = None ):
     """
-        :param vo : name of the VO
+        :param vo: name of the VO
     """
 
     # Whenever we parse text matching the __pluginOperand grammar, create a PluginOperand object
@@ -244,11 +249,11 @@ class FCConditionParser(object):
         If this does not exist either, we check the global ALL condition.
         If none is defined, we return None
 
-        :param catalogName : the catalog we want to work on
-        :param operationName : the operation we want to perform
-                              The operationName must be in the read or write method from FileCatalog
+        :param str catalogName: the catalog we want to work on
+        :param str operationName: the operation we want to perform
+                                  The operationName must be in the read or write method from FileCatalog
 
-        :returns a condition string or None
+        :returns: a condition string or None
 
 
     """
@@ -267,32 +272,38 @@ class FCConditionParser(object):
 
   def __call__( self, catalogName, operationName, lfns, condition = None, **kwargs ):
     """
-        Makes a boolean evaluation of a condition, for a given catalog,
-        a given operation, and a list of lfns. Extra parameters might be given,
-        and will be forwarded to each plugin.
-        If the 'condition' attribute is not specified (general case), it is fetched from the CS
-        (see __getConditionFromCS)
+    Makes a boolean evaluation of a condition, for a given catalog,
+    a given operation, and a list of lfns. Extra parameters might be given,
+    and will be forwarded to each plugin.
+    If the 'condition' attribute is not specified (general case), it is fetched from the CS
+    (see __getConditionFromCS)
 
-        If there are no condition at all, return True for everything.
-        A programming error in the plugins will lead to the evaluation being False
+    If there are no condition at all, return True for everything.
+    A programming error in the plugins will lead to the evaluation being False
 
-        Note: if the CS can't be contacted, the conditions will be evaluated to None
-              (courtesy of the Operation helper), so everything will be evaluated to True.
-              Ultimately, it does not really matter, since you will not be able to find
-              any catalog beforehand if you can't contact the CS...
+    .. Note::
 
-        :param catalogName: name of the catalog we want to work on
-        :param operationName: name of the operation we want to perform
-                              The operationName must be in the read or write method from FileCatalog
-                              if it should be retrieve from the CS
-        :param lfns: list/dict of lfns
-                     CAUTION: lfns is expected to have been through the normalizing process, so it
-                              should not be a string
-        :param condition: condition string. If not specified, will be fetched from the CS
-        :param kwargs: extra params forwarded to the plugins
+      if the CS can't be contacted, the conditions will be evaluated to None
+      (courtesy of the Operation helper), so everything will be evaluated to True.
+      Ultimately, it does not really matter, since you will not be able to find
+      any catalog beforehand if you can't contact the CS...
 
-        :return S_OK with a 'Successful' dict {lfn:True/False} where the value is the evaluation of the
-                condition against the given lfn key. Failed dict is always empty
+    :param str catalogName: name of the catalog we want to work on
+    :param str operationName: name of the operation we want to perform
+                          The operationName must be in the read or write method from FileCatalog
+                          if it should be retrieve from the CS
+    :param lfns: list/dict of lfns
+
+      .. warning::
+
+         LFNs are expected to have been through the normalizing process, so it
+         should not be a string
+    
+    :param condition: condition string. If not specified, will be fetched from the CS
+    :param kwargs: extra params forwarded to the plugins
+
+    :return: S_OK with a 'Successful' dict {lfn:True/False} where the value is the evaluation of the
+            condition against the given lfn key. Failed dict is always empty
 
 
     """

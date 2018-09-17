@@ -12,7 +12,7 @@ from mock import MagicMock, patch
 from DIRAC import gLogger, S_OK
 
 # sut
-from DIRAC.Core.Utilities.TimeLeft.TimeLeft import TimeLeft
+from DIRAC.Core.Utilities.TimeLeft.TimeLeft import TimeLeft, enoughTimeLeft
 
 SGE_ReturnValue = """==============================================================
 job_number:                 12345
@@ -65,6 +65,25 @@ class TimeLeftTestCase( unittest.TestCase ):
 
 
 class TimeLeftSuccess( TimeLeftTestCase ):
+
+  def test_enoughTimeLeft(self):
+    res = enoughTimeLeft(cpu=100., cpuLimit=1000., wallClock=50., wallClockLimit=80., cpuMargin=3, wallClockMargin=10)
+    self.assertTrue(res)
+    print '\n'
+    res = enoughTimeLeft(cpu=900., cpuLimit=1000., wallClock=0., wallClockLimit=80., cpuMargin=3, wallClockMargin=10)
+    self.assertTrue(res)
+    print '\n'
+    res = enoughTimeLeft(cpu=990., cpuLimit=1000., wallClock=0., wallClockLimit=80., cpuMargin=3, wallClockMargin=10)
+    self.assertFalse(res)
+    print '\n'
+    res = enoughTimeLeft(cpu=100., cpuLimit=1000., wallClock=90., wallClockLimit=80., cpuMargin=3, wallClockMargin=10)
+    self.assertFalse(res)
+    print '\n'
+    res = enoughTimeLeft(cpu=100., cpuLimit=1000., wallClock=50., wallClockLimit=80., cpuMargin=0, wallClockMargin=10)
+    self.assertTrue(res)
+    print '\n'
+    res = enoughTimeLeft(cpu=100., cpuLimit=1000., wallClock=50., wallClockLimit=80., cpuMargin=0, wallClockMargin=10)
+    self.assertTrue(res)
 
   def test_getScaledCPU( self ):
     tl = TimeLeft()
@@ -126,6 +145,8 @@ class TimeLeftSuccess( TimeLeftTestCase ):
       rcMock.return_value = S_OK( retValue )
       self.tl.runCommand = rcMock
 
+      timeMock = MagicMock()
+
       tl = TimeLeft()
 #      res = tl.getTimeLeft()
 #      self.assertEqual( res['OK'], True )
@@ -144,8 +165,9 @@ class TimeLeftSuccess( TimeLeftTestCase ):
       tl.batchPlugin.wallClockLimit = 1000
 
       with patch( "DIRAC.Core.Utilities.TimeLeft.LSFTimeLeft.runCommand", new=rcMock ):
-        res = tl.getTimeLeft()
-        self.assertEqual( res['OK'], True, res.get('Message', '') )
+        with patch( "DIRAC.Core.Utilities.TimeLeft.LSFTimeLeft.time", new=timeMock ):
+          res = tl.getTimeLeft()
+          self.assertEqual( res['OK'], True, res.get('Message', '') )
 
     for batch, retValue in [( 'SGE', SGE_ReturnValue )]:
       self.tl = importlib.import_module( "DIRAC.Core.Utilities.TimeLeft.TimeLeft" )
@@ -171,7 +193,7 @@ class TimeLeftSuccess( TimeLeftTestCase ):
       tl.batchPlugin.wallClockLimit = 1000
 
       res = tl.getTimeLeft()
-      self.assert_( res['OK'] )
+      self.assertTrue(res['OK'])
       self.assertEqual( res['Value'], 9400.0 )
 
 

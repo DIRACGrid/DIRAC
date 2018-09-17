@@ -6,7 +6,7 @@ Configure a Local CE to be used in a DIRAC Site
 
 Usage::
 
-dirac-config-ce [option]... [cfgfile]
+  dirac-config-ce [option]... [cfgfile]
 
 Arguments::
 

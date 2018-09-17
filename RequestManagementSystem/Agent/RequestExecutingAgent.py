@@ -5,10 +5,13 @@
 ########################################################################
 
 """ :mod: RequestExecutingAgent
+
     ===========================
 
     .. module: RequestExecutingAgent
+
     :synopsis: request executing agent
+
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     request processing agent
@@ -21,8 +24,12 @@ __RCSID__ = '$Id$'
 # @author Krzysztof.Ciba@NOSPAMgmail.com
 # @date 2013/03/12 15:36:56
 # @brief Definition of RequestExecutingAgent class.
+
 # # imports
+import sys
 import time
+import errno
+
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
@@ -33,7 +40,6 @@ from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.RequestManagementSystem.private.RequestTask import RequestTask
 
 from DIRAC.Core.Utilities.DErrno import cmpError
-import errno
 # # agent name
 AGENT_NAME = "RequestManagement/RequestExecutingAgent"
 
@@ -100,8 +106,6 @@ class RequestExecutingAgent( AgentModule ):
     self.log.info( "ProcessPool timeout = %d seconds" % self.__poolTimeout )
     self.__poolSleep = int( self.am_getOption( "ProcessPoolSleep", self.__poolSleep ) )
     self.log.info( "ProcessPool sleep time = %d seconds" % self.__poolSleep )
-    self.__taskTimeout = int( self.am_getOption( "ProcessTaskTimeout", self.__taskTimeout ) )
-    self.log.info( "ProcessTask timeout = %d seconds" % self.__taskTimeout )
     self.__bulkRequest = self.am_getOption( "BulkRequest", 0 )
     self.log.info( "Bulk request size = %d" % self.__bulkRequest )
 
@@ -142,9 +146,9 @@ class RequestExecutingAgent( AgentModule ):
     self.log.info( "Operation handlers:" )
     for item in enumerate ( self.handlersDict.items() ):
       opHandler = item[1][0]
-      self.log.info( "[%s] %s: %s (timeout: %d s + %d s per file)" % ( item[0], item[1][0], item[1][1],
-                                                                   self.timeOuts[opHandler]['PerOperation'],
-                                                                   self.timeOuts[opHandler]['PerFile'] ) )
+      self.log.info("[%s] %s: %s (timeout: %d s + %d s per file)" % (item[0], item[1][0], item[1][1],
+                                                                     self.timeOuts[opHandler]['PerOperation'],
+                                                                     self.timeOuts[opHandler]['PerFile']))
 
     # # common monitor activity
     gMonitor.registerActivity( "Iteration", "Agent Loops",
@@ -156,6 +160,7 @@ class RequestExecutingAgent( AgentModule ):
     # # create request dict
     self.__requestCache = dict()
 
+    # ?? Probably should be removed
     self.FTSMode = self.am_getOption( "FTSMode", False )
 
 
@@ -186,16 +191,19 @@ class RequestExecutingAgent( AgentModule ):
   def cacheRequest( self, request ):
     """ put request into requestCache
 
-    :param Request request: Request instance
+    :param ~Request.Request request: Request instance
     """
-    count = 5
-    # Wait a bit as there may be a race condition between RequestTask putting back the request and the callback clearing the cache
-    while request.RequestID in self.__requestCache:
-      count -= 1
-      if not count:
-        self.requestClient().putRequest( request, useFailoverProxy = False, retryMainService = 2 )
-        return S_ERROR( "Duplicate request, ignore: %s" % request.RequestID )
-      time.sleep( 1 )
+    maxProcess = max( self.__minProcess, self.__maxProcess )
+    if len( self.__requestCache ) > maxProcess + 50:
+      # For the time being we just print a warning... If the ProcessPool is working well, this is not needed
+      # We don't know how much is acceptable as it depends on many factors
+      self.log.warn( "Too many requests in cache", ': %d' % len( self.__requestCache ) )
+#      return S_ERROR( "Too many requests in cache" )
+    if request.RequestID in self.__requestCache:
+      # We don't call  putRequest as we have got back the request that is still being executed. Better keep it
+      # The main reason for this is that it lasted longer than the kick time of CleanReqAgent
+      self.log.warn( "Duplicate request, keep it but don't execute", ': %d/%s' % ( request.RequestID, request.RequestName ) )
+      return S_ERROR( errno.EALREADY, 'Request already in cache' )
     self.__requestCache[ request.RequestID ] = request
     return S_OK()
 
@@ -209,6 +217,9 @@ class RequestExecutingAgent( AgentModule ):
       if taskResult:
         if taskResult['OK']:
           request = taskResult['Value']
+          # The RequestTask is putting back the Done tasks, no need to redo it
+          if request.Status == 'Done':
+            return S_OK()
         # In case of timeout, we need to increment ourselves all the attempts
         elif cmpError( taskResult, errno.ETIME ):
           waitingOp = request.getWaiting()
@@ -281,13 +292,6 @@ class RequestExecutingAgent( AgentModule ):
       for request in requestsToExecute:
         # # set task id
         taskID = request.RequestID
-        # # save current request in cache
-        self.cacheRequest( request )
-        # # serialize to JSON
-        result = request.toJSON()
-        if not result['OK']:
-          continue
-        requestJSON = result['Value']
 
         self.log.info( "processPool tasks idle = %s working = %s" % ( self.processPool().getNumIdleProcesses(),
                                                                       self.processPool().getNumWorkingProcesses() ) )
@@ -303,6 +307,21 @@ class RequestExecutingAgent( AgentModule ):
             if looping:
               self.log.info( "Free slot found after %d seconds" % looping * self.__poolSleep )
             looping = 0
+            # # save current request in cache
+            res = self.cacheRequest( request )
+            if not res['OK']:
+              if cmpError( res, errno.EALREADY ):
+                # The request is already in the cache, skip it. break out of the while loop to get next request
+                break
+              # There are too many requests in the cache, commit suicide
+              self.log.error( res['Message'], '(%d requests): put back all requests and exit cycle' % len( self.__requestCache ) )
+              self.putAllRequests()
+              return res
+            # # serialize to JSON
+            result = request.toJSON()
+            if not result['OK']:
+              continue
+            requestJSON = result['Value']
             self.log.info( "spawning task for request '%s/%s'" % ( request.RequestID, request.RequestName ) )
             timeOut = self.getTimeout( request )
             enqueue = self.processPool().createAndQueueTask( RequestTask,
@@ -326,6 +345,15 @@ class RequestExecutingAgent( AgentModule ):
               time.sleep( 0.1 )
               break
 
+    self.log.info( 'Flushing callbacks (%d requests still in cache)' % len( self.__requestCache ) )
+    processed = self.processPool().processResults()
+    # This happens when the result queue is screwed up.
+    # Returning S_ERROR proved not to be sufficient,
+    # and when in this situation, there is nothing we can do.
+    # So we just exit. runit will restart from scratch.
+    if processed < 0:
+      self.log.fatal("Results queue is screwed up")
+      sys.exit(1)
     # # clean return
     return S_OK()
 
@@ -359,11 +387,11 @@ class RequestExecutingAgent( AgentModule ):
     """
     # # clean cache
     res = self.putRequest( taskID, taskResult )
-    self.log.info( "callback: %s result is %s(%s), put %s(%s)" % ( taskID,
-                                                      "S_OK" if taskResult["OK"] else "S_ERROR",
-                                                      taskResult["Value"].Status if taskResult["OK"] else taskResult["Message"],
-                                                      "S_OK" if res['OK'] else 'S_ERROR',
-                                                      '' if res['OK'] else res['Message'] ) )
+    self.log.info("callback: %s result is %s(%s), put %s(%s)" % (taskID,
+                                                                 "S_OK" if taskResult["OK"] else "S_ERROR",
+                                                                 taskResult["Value"].Status if taskResult["OK"] else taskResult["Message"],
+                                                                 "S_OK" if res['OK'] else 'S_ERROR',
+                                                                 '' if res['OK'] else res['Message']))
 
 
   def exceptionCallback( self, taskID, taskException ):

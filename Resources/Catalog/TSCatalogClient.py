@@ -16,15 +16,14 @@ class TSCatalogClient( FileCatalogClientBase ):
   """
 
   # List of common File Catalog methods implemented by this client
-  WRITE_METHODS = FileCatalogClientBase.WRITE_METHODS + [ "addFile", "removeFile" ]
+  WRITE_METHODS = FileCatalogClientBase.WRITE_METHODS + [ "addFile", "removeFile", "setMetadata" ]
+
+  NO_LFN_METHODS = [ "setMetadata" ]
 
   def __init__( self, url = None, **kwargs ):
 
-    self.__kwargs = kwargs
-    self.valid = True
-    self.serverURL = "Transformation/TransformationManager"
-    if url is not None:
-      self.serverURL = url
+    self.serverURL = 'Transformation/TransformationManager' if not url else url
+    super( TSCatalogClient, self ).__init__( self.serverURL, **kwargs )
 
   @checkCatalogArguments
   def addFile( self, lfns, force = False ):
@@ -46,3 +45,9 @@ class TSCatalogClient( FileCatalogClientBase ):
     resDict = {'Successful': successful, 'Failed':failed}
     return S_OK( resDict )
 
+  def setMetadata( self, path, metadatadict ):
+    """ Set metadata parameter for the given path
+        :return Successful/Failed dict.
+    """
+    rpcClient = self._getRPC()
+    return rpcClient.setMetadata( path, metadatadict )

@@ -5,10 +5,13 @@
 # Date: 2013/04/02 11:56:10
 ########################################################################
 """ :mod: PhysicalRemoval
+
     =====================
 
     .. module: PhysicalRemoval
+
     :synopsis: PhysicalRemoval operation handler
+
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     PhysicalRemoval operation handler
@@ -41,7 +44,7 @@ class PhysicalRemoval( DMSRequestOperationsBase ):
     """c'tor
 
     :param self: self reference
-    :param Operation operation: Operation instance
+    :param ~DIRAC.RequestManagementSystem.Client.Operation.Operation operation: Operation instance
     :param str csPath: cs config path
     """
     DMSRequestOperationsBase.__init__( self, operation, csPath )

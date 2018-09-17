@@ -19,7 +19,7 @@ Elements statuses was stored. The first one, the :doc:`../Configuration/index` (
 *Storage Element* ( SE ) status information mixed with static information like the SE
 description among other things. The second one, the :doc:`../WorkloadManagement/index` ( WMS ) 
 stored the *Site* status information ( more specifically, on a dedicated table on 
-JobDB called *SiteMask* ).
+ResourceStatusDB called *SiteStatus* ).
 
 The case of the SEs was particularly inconvenient due to the changing nature of a SE
 status stored on a almost dynamic container as it is the CS. In spite of being a working
@@ -27,7 +27,7 @@ solution, it was pointing out the bounds of the system. The CS had not been desi
 such purpose. 
 
 With that problem in hand, it was very easy to abstract it and include the site status
-information stored on the SiteMask. And that was just the beginning... Nowadays the DIRAC
+information stored on the SiteStatus. And that was just the beginning... Nowadays the DIRAC
 interware offers a formal description to describe grid elements and their status information 
 using two complementary systems: 
 
@@ -144,7 +144,7 @@ the CS to have as many as needed. Please, take a look to :doc:`configuration` fo
 Ownership
 ---------
 
-RSS includes and extends the concept of ownership, already in place for the mentioned *SiteMask*.
+RSS includes and extends the concept of ownership, already in place for the mentioned *SiteStatus*.
 It makes use of **tokens**, which are simply a tuple composed with the *username* and a *timestamp*.
 
 They have two main functions:
@@ -156,7 +156,7 @@ By default, RSS is the owner of all Elements with an ALWAYS timestamp and userna
 However, if there is a manual - "human" - intervention, the Element will get a 1-day-valid token 
 for that user, and it will be recorded like that.
 
-The second function is new in what respects the *SiteMask* implementation, but its purpose is not part
+The second function is new in what respects the *SiteStatus* implementation, but its purpose is not part
 of the basic usage of RSS. Please continue reading here: `Ownership II`_.
 
 ----------
@@ -270,3 +270,4 @@ The first four methods are the abstraction of the MySQL statements *INSERT*, *SE
 
 .. _RFC5: https://github.com/DIRACGrid/DIRAC/wiki/RFC-%235:-Resources-CS-section-structure
 .. _Ownership II : monitoring.html#ownership-ii
+

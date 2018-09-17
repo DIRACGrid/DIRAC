@@ -148,7 +148,7 @@ class Message( object ):
     for k in dataDict:
       try:
         setattr( self, k , dataDict[ k ] )
-      except AttributeError, e:
+      except AttributeError as e:
         return S_ERROR( str( e ) )
     return S_OK()
 
@@ -173,7 +173,7 @@ class Message( object ):
       k = self.__order[ iP ]
       try:
         setattr( self, k , v )
-      except AttributeError, e:
+      except AttributeError as e:
         return S_ERROR( str( e ) )
     return S_OK()
 

@@ -35,7 +35,7 @@ for switch in Script.getUnprocessedSwitches():
   if switch[0] == "Y" or switch[0].lower() == "years":
     years = int( switch[1] )
   if switch[0].lower() == "w" or switch[0].lower() == "wildcard":
-    wildcard = switch[1]
+    wildcard = '*'+switch[1]
   if switch[0].lower() == "b" or switch[0].lower() == "basedir":
     baseDir = switch[1]
   if switch[0].lower() == "e" or switch[0].lower() == "emptydirs":
@@ -88,11 +88,12 @@ if not baseDir:
 
 baseDir = baseDir.rstrip( '/' )
 
-gLogger.info( 'Will search for files in %s' % baseDir )
+gLogger.notice( 'Will search for files in %s%s' % ( baseDir, ( ' matching %s' % wildcard ) if wildcard else '' ) )
 activeDirs = [baseDir]
 
 allFiles = []
 emptyDirs = []
+
 while len( activeDirs ) > 0:
   currentDir = activeDirs.pop()
   res = fc.listDirectory( currentDir, withMetadata, timeout = 360 )
@@ -120,7 +121,8 @@ while len( activeDirs ) > 0:
           files.pop( filename )
       allFiles += sorted( files )
 
-      gLogger.notice( "%s: %d files%s, %d sub-directories" % ( currentDir, len( files ), ' matching' if withMetadata or wildcard else '', len( subdirs ) ) )
+      if len( files ) or len( subdirs ):
+        gLogger.notice( "%s: %d files%s, %d sub-directories" % ( currentDir, len( files ), ' matching' if withMetadata or wildcard else '', len( subdirs ) ) )
 
 outputFileName = '%s.lfns' % baseDir.replace( '/%s' % vo, '%s' % vo ).replace( '/', '-' )
 outputFile = open( outputFileName, 'w' )

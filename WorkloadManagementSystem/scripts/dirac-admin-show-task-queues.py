@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL$
 # File :    dirac-admin-show-task-queues
 # Author :  Ricardo Graciani
 ########################################################################
@@ -8,22 +7,18 @@
    Show details of currently active Task Queues
 """
 __RCSID__ = "$Id$"
-import sys
-import DIRAC
 
 import sys
-import time
-import random
-import types
 
-from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Base.Script import parseCommandLine
+from DIRAC import S_OK
+from DIRAC.Core.Base import Script
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.PrettyPrint import printTable
+
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN
-from DIRAC.Core.Base import Script
 
 verbose = False
+
 def setVerbose( optVal ):
   global verbose
   verbose = True
@@ -39,10 +34,10 @@ Script.registerSwitch( "v", "verbose", "give max details about task queues", set
 Script.registerSwitch( "t:", "taskQueue=", "show this task queue only", setTaskQueueID )
 
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
-                                    'Usage:',
-                                    '  %s [option|cfgfile] ' % Script.scriptName ] ) )
+                                     'Usage:',
+                                     '  %s [option|cfgfile] ' % Script.scriptName ] ) )
 
-parseCommandLine( initializeMonitor = False )
+Script.parseCommandLine( initializeMonitor = False )
 rpcClient = RPCClient( "WorkloadManagement/Matcher" )
 
 result = rpcClient.getActiveTaskQueues()
@@ -56,9 +51,9 @@ if not verbose:
   fields = ['TaskQueue','Jobs','CPUTime','Owner','OwnerGroup','Sites',
             'Platforms','SubmitPools','Setup','Priority']
   records = []
-  
+
   print
-  for tqId in sorted( tqDict ):    
+  for tqId in sorted( tqDict ):
     if taskQueueID and tqId != taskQueueID:
       continue
     record = [str(tqId)]
@@ -71,19 +66,19 @@ if not verbose:
           if not result['OK']:
             value = 'Unknown'
           else:
-            value = result['Value']  
-      else:  
+            value = result['Value']
+      else:
         value = tqData.get( key, '-' )
-      if type( value ) == types.ListType:
+      if isinstance(value, list):
         if len( value ) > 1:
           record.append( str( value[0] ) + '...' )
         else:
-          record.append( str( value[0] ) )   
+          record.append( str( value[0] ) )
       else:
         record.append( str( value ) )
-    records.append( record )    
-    
-  printTable( fields, records )  
+    records.append( record )
+
+  printTable( fields, records )
 else:
   fields = ['Key','Value']
   for tqId in sorted( tqDict ):
@@ -94,10 +89,10 @@ else:
     tqData = tqDict[ tqId ]
     for key in sorted( tqData ):
       value = tqData[ key ]
-      if type( value ) == types.ListType:
-        value = ",".join( value )
+      if isinstance( value, list ):
+        records.append( [key, { "Value": value, 'Just': 'L'} ] )
       else:
         value = str( value )
-      records.append( [key, value] )
-    printTable( fields, records )    
-    
+        records.append( [key, { "Value": value, 'Just': 'L' } ] )
+
+    printTable( fields, records, numbering = False )

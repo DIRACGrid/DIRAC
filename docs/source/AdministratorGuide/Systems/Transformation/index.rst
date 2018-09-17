@@ -10,7 +10,7 @@ Transformation System
 
 
 The Transformation System (TS) is used to automatise common tasks related to production activities.
-Just to make some baic examples, the TS can handle the generation of Simulation jobs,
+Just to make some basic examples, the TS can handle the generation of Simulation jobs,
 or Data Re-processing jobs as soon as a 'pre-defined' data-set is available,
 or Data Replication to 'pre-defined' SE destinations as soon as the first replica is registered in the Catalog.
 
@@ -35,12 +35,83 @@ Within the TS a user can (for example):
 
 Disadvantages:
 
-- For very large installations, the submission may be percieved as slow, since there is no use (not yet) of Parametric jobs.
+- For very large installations, the submission may be perceived as slow, since there is no use (not yet) of Parametric jobs.
+
+  .. versionadded:: v6r20p3
+     Bulk submission of jobs is working for the transformations, so job submission can be sped up considerably.
 
 Several improvements have been made in the TS to handle scalability, and extensibility issues.
 While the system structure remains intact, "tricks" like threading and caching have been extensively applied.
 
 It's not possible to use ISB (Input Sandbox) to ship local files as for 'normal' Jobs (this should not be considered, anyway, a disadvantage).
+
+------------
+Architecture
+------------
+
+The TS is a standard DIRAC system, and therefore it is composed by components in the following categories: Services, DBs, Agents. A technical drawing explaining the interactions between the various components follow.
+
+.. image:: ../../../_static/Systems/TS/TS-technical.png
+   :alt: Transformation System schema.
+   :align: center
+
+* **Services**
+
+  * TransformationManagerHandler:
+    DISET request handler base class for the TransformationDB
+
+* **DB**
+
+  * TransformationDB:
+    it's used to collect and serve the necessary information in order to automate the task of job preparation for high level transformations. This class is typically used as a base class for more specific data processing databases. Here below the DB tables:
+
+  ::
+
+      mysql> use TransformationDB;
+      Database changed
+      mysql> show tables;
+      +------------------------------+
+      | Tables_in_TransformationDB   |
+      +------------------------------+
+      | AdditionalParameters         |
+      | DataFiles                    |
+      | TaskInputs                   |
+      | TransformationFileTasks      |
+      | TransformationFiles          |
+      | TransformationInputDataQuery |
+      | TransformationLog            |
+      | TransformationTasks          |
+      | Transformations              |
+      +------------------------------+
+
+
+  **Note** that since version v6r10, there are important changes in the TransformationDB, as explained in the `release notes <https://github.com/DIRACGrid/DIRAC/wiki/DIRAC-v6r10#transformationdb>`_ (for example the Replicas table can be removed). Also, it is highly suggested to move to InnoDB. For new installations, all these improvements will be installed automatically.
+
+* **Agents**
+
+  * TransformationAgent: it processes transformations found in the TransformationDB and creates the associated tasks, by connecting input files with tasks given a plugin. It's not useful for MCSimulation type
+
+  * WorkflowTaskAgent: it takes workflow tasks created in the TransformationDB and it submits to the WMS. Since version `v6r13 <https://github.com/DIRACGrid/DIRAC/wiki/DIRAC-v6r13#changes-for-transformation-system>`_  there are some new capabilities in the form of TaskManager plugins.
+
+  * RequestTaskAgent: it takes request tasks created in the TransformationDB and submits to the RMS. Both RequestTaskAgent and WorkflowTaskAgent inherits from the same agent, "TaskManagerAgentBase", whose code contains large part of the logic that will be executed. But, TaskManagerAgentBase should not be run standalone.
+
+  * MCExtensionAgent: it extends the number of tasks given the Transformation definition. To work it needs to know how many events each production will need, and how many events each job will produce. It is only used for 'MCSimulation' type
+
+  * TransformationCleaningAgent: it cleans up the finalised Transformations
+
+  * InputDataAgent: it updates the transformation files of active Transformations given an InputDataQuery fetched from the Transformation Service
+
+  * ValidateOutputDataAgent: it runs few integrity checks prior to finalise a Production.
+
+The complete list can be found in the `DIRAC project GitHub repository <https://github.com/DIRACGrid/DIRAC/tree/integration/TransformationSystem/Agent>`_.
+
+* **Clients**
+
+  * TaskManager: it contains WorkflowTasks and RequestTasks modules, for managing jobs and requests tasks, i.e. it contains classes wrapping the logic of how to 'transform' a Task in a job/request. WorkflowTaskAgent uses WorkflowTasks, RequestTaskAgent uses RequestTasks.
+
+  * TransformationClient: class that contains client access to the transformation DB handler (main client to the service/DB). It exposes the functionalities available in the DIRAC/TransformationHandler. This inherits the DIRAC base Client for direct execution of server functionality
+
+  * Transformation: it wraps some functionalities mostly to use the 'TransformationClient' client
 
 -------------
 Configuration
@@ -48,7 +119,7 @@ Configuration
 
 * **Operations**
 
-  * In the Operations/[VO]/Transformations section, *Transformation Types* must be added
+  * In the Operations/[VO]/[SETUP]/Transformations or Operations/Defaults/Transformations section, *Transformation Types* must be added
   * By default, the WorkflowTaskAgent will treat all the *DataProcessing* transformations and the RequestTaskAgent all the *DataManipulation* ones
   * An example of working configuration is give below::
 
@@ -65,10 +136,10 @@ Configuration
 
 * **Agents**
 
-  * Agents must be configured in the Systems/Transformation/[VO]/Agents section
+  * Agents must be configured in the Systems/Transformation/[SETUP]/Agents section
   * The *Transformation Types* to be treated by the agent must be configured if and only if they are different from those set in the 'Operations' section. This is useful, for example, in case one wants several agents treating different transformation types, *e.g.*: one WorkflowTaskAgent for DataReprocessing transformations, a second for Merge and MCStripping, etc. Advantage is speedup.
   * For the WorkflowTaskAgent and RequestTaskAgent some options must be added manually
-  * An example of working configuration is give below, where 2 specific WorkflowTaskAgents, each treating a different subset of transformation types have been added. Also notice the shifterProxy set by each one.
+  * An example of working configuration is give below, where 2 specific WorkflowTaskAgents, each treating a different subset of transformation types have been added. Also notice the different shifterProxy set by each one.
 
   ::
 
@@ -90,7 +161,7 @@ Configuration
           TaskUpdateStatus += Completed
           TaskUpdateStatus += Failed
           shifterProxy = ProductionManager
-          #Flag to eanble task submission
+          #Flag to enable task submission
           SubmitTasks = yes
           #Flag for checking reserved tasks that failed submission
           CheckReserved = yes
@@ -142,7 +213,7 @@ Plugins
 There are two different types of plugins, i.e. TransformationAgent plugins and TaskManager plugins. The first are used to 'group' the input files of the tasks according to different criteria, while the latter are used to specify the tasks destinations.
 
 TransformationAgent plugins
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+---------------------------
 
 * Standard: group files by replicas (tasks create based on the file location)
 * BySize: group files until they reach a certain size (Input size in Gb)
@@ -150,10 +221,13 @@ TransformationAgent plugins
 * Broadcast: take files at the source SE and broadcast to a given number of locations (used for replication)
 
 TaskManager plugins
-^^^^^^^^^^^^^^^^^^^^
+-------------------
 
-By default the standard plugin (BySE) sets job's destination depending on the location of its input data. Starting from v6r13 a new **ByJobType**
-TaskManager plugin has been introduced, so that different rules for site destinations can be specified for each JobType.
+By default the standard plugin (BySE) sets job's destination depending on the location of its input data. 
+
+Starting from v6r13 a new **ByJobType**
+TaskManager plugin has been introduced, so that different rules for site destinations can be specified for each JobType. This plugin allows so-called "mesh processing",
+i.e. depending on the job type, some sites may become eligible for "helping" other sites to run jobs that normally would only be running at the site where data is located.
 In order to use the ByJobType plugin, one has to:
 
 * Set CS section Operations/Transformations/DestinationPlugin = ByJobType
@@ -178,7 +252,7 @@ In order to use the ByJobType plugin, one has to:
 
         JobTypeMapping
         {
-          AutoAddedSites = LCG.CERN.ch
+          AutoAddedSites = LCG.CERN.cern
           AutoAddedSites += LCG.IN2P3.fr
           AutoAddedSites += LCG.CNAF.it
           AutoAddedSites += LCG.PIC.es
@@ -186,6 +260,20 @@ In order to use the ByJobType plugin, one has to:
           AutoAddedSites += LCG.RAL.uk
           AutoAddedSites += LCG.SARA.nl
           AutoAddedSites += LCG.RRCKI.ru
+          DataReconstruction
+          {
+            Exclude = ALL
+            AutoAddedSites = LCG.IN2P3.fr
+            AutoAddedSites += LCG.CNAF.it
+            AutoAddedSites += LCG.PIC.es
+            AutoAddedSites += LCG.GRIDKA.de
+            AutoAddedSites += LCG.RAL.uk
+            AutoAddedSites += LCG.RRCKI.ru
+            Allow
+            {
+              CLOUD.CERN.cern = LCG.CERN.cern, LCG.SARA.nl
+            }
+          }
           DataReprocessing
           {
             Exclude = ALL
@@ -195,10 +283,10 @@ In order to use the ByJobType plugin, one has to:
               LCG.UKI-LT2-QMUL.uk = LCG.RAL.uk
               LCG.CPPM.fr = LCG.SARA.nl
               LCG.USC.es = LCG.PIC.es
-              LCG.LAL.fr = LCG.CERN.ch
+              LCG.LAL.fr = LCG.CERN.cern
               LCG.LAL.fr += LCG.IN2P3.fr
               LCG.BariRECAS.it = LCG.CNAF.it
-              LCG.CBPF.br = LCG.CERN.ch
+              LCG.CBPF.br = LCG.CERN.cern
               VAC.Manchester.uk = LCG.RAL.uk
             }
           }
@@ -214,23 +302,32 @@ In order to use the ByJobType plugin, one has to:
 
 
   * By default, all sites are allowed to do every job
-  * "AutoAddedSites" contains the list of sites allowed to run jobs with files in their local SEs
+  * "AutoAddedSites" contains the list of sites allowed to run jobs with files in their local SEs.
+
+  If it contains 'WithStorage', all sites with an associated local storage will be added automatically.
+
   * Sections under "JobTypeMapping" correspond to the different JobTypes one may want to define, *e.g.*: DataReprocessing, Merge, etc.
   * For each JobType one has to define:
 
-    * "Exclude": the list of sites that will be removed as destination sites ("ALL" for all sites)
-    * "Allow": the list of 'helpers', specifying sites helping another site
+    * "Exclude": the list of sites that will be removed as destination sites ("ALL" for all sites). 
+    * Optionally one may redefine the "AutoAddedSites" (including setting it empty)
+    * "Allow": the list of 'helpers', specifying sites helping another site.
+
+    For each "helper" one specifies a list of sites that it helps, i.e. if the input data is at one of these sites, the job is eligible to the helper site.
 
   * In the example above all sites in "AutoAddedSites" are allowed to run jobs with input files in their local SEs.
-  These sites won't be excluded, even if set in the Exclude list.
-  For DataReprocessing jobs, jobs having input files at LCG.NIKHEF.nl local SEs can run both at LCG.NIKHEF.nl and at LCG.SARA.nl, etc.
+
+  For DataReprocessing jobs, jobs having input files at LCG.SARA.nl local SEs can run both at LCG.SARA.nl and at LCG.NIKHEF.nl, etc.
+  For DataReconstruction jobs, jobs will run at the Tier1 where the input data is, except when the data is at CERN or SARA, where they will run exclusively at CLOUD.CERN.cern.
 
 ---------
 Use-cases
 ---------
 
+Transformations can have Input Files (*e.g.* Data-processing transformations), or not (*e.g.* MC Simulation transformations).
+
 MC Simulation
-^^^^^^^^^^^^^^
+-------------
 Generation of many identical jobs which don't need Input Files and having as varying parameter a variable built from @{JOB_ID}.
 
 * **Agents**
@@ -250,28 +347,40 @@ The WorkflowTaskAgent uses the TaskManager client to transform a 'Task' into a '
     j = myJob()
     ...
     t = Transformation( )
-    t.setTransformationName("MCProd") # This must be unique
+    t.setTransformationName("MCProd") # this must be unique
     t.setTransformationGroup("Group1")
     t.setType("MCSimulation")
     t.setDescription("MC prod example")
-    t.setLongDescription( "This is the long description of my production" ) #mandatory
+    t.setLongDescription( "This is the long description of my production" ) # mandatory
     t.setBody ( j.workflow.toXML() )
-    t.addTransformation() #transformation is created here
+    t.addTransformation() # transformation is created here
     t.setStatus("Active")
     t.setAgentType("Automatic")
 
-Re-processing
-^^^^^^^^^^^^^^
-
-Generation of identical jobs with Input Files.
+Data-processing
+---------------
+Generation of identical jobs with varying Input Files.
 
 * **Agents**
 
   ::
 
-    TransformationAgent, WorkflowTaskAgent, InputDataAgent (used for DFC query)
+    TransformationAgent, WorkflowTaskAgent, InputDataAgent
 
-* Example with Input Files list
+Input Files can be attached to a transformation in two ways:
+
+* Through a static list of files:
+
+    * when the transformation is created, all the tasks necessary to treat the list of files are also created
+
+* Through a catalog query:
+
+    * when the transformation is created, all the tasks the tasks necessary to treat the files matching the catalog query are created. As soon as new files matching the catalog query are registered, new tasks are created to treat the new files
+
+Using a static list of files
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+* Example:
 
   ::
 
@@ -282,24 +391,101 @@ Generation of identical jobs with Input Files.
     ...
     t = Transformation( )
     tc = TransformationClient( )
-    t.setTransformationName("Reprocessing_1") # This must be unique
+    t.setTransformationName("Reprocessing_1") # this must be unique
     t.setType("DataReprocessing")
     t.setDescription("repro example")
-    t.setLongDescription( "This is the long description of my reprocessing" ) #mandatory
+    t.setLongDescription( "This is the long description of my reprocessing" ) # mandatory
     t.setBody ( j.workflow.toXML() )
-    t.addTransformation() #transformation is created here
+    t.addTransformation() # transformation is created here
     t.setStatus("Active")
     t.setAgentType("Automatic")
     transID = t.getTransformationID()
-    tc.addFilesToTransformation(transID['Value'],infileList) # Files are added here
+    tc.addFilesToTransformation(transID['Value'],infileList) # files are added here
 
 
-* Example with Input Files as a result of a DFC query.
-  Just replace the above example with a DFC query (example taken from CTA):
+Using a catalog query
+^^^^^^^^^^^^^^^^^^^^^^
+
+There are two methods to add Input Files to a transformation through a catalog query:
+
+* Using the InputDataQuery Agent
+* Using the TSCatalog interface (starting from v6r17)
+
+From the user point of view the two methods are equivalent, but the internal behaviour of the TS is different. In the first case, the InputDataQuery agent continuously queries the catalog
+to look for new files matching the defined query (called 'InputDataQuery'). In the second case, the files matching the defined query (called 'FileMask'), are directly added to the transformation through the TSCatalog interface (see `RFC 21 <https://github.com/DIRACGrid/DIRAC/wiki/Transformation-System-evolution>`_ for more details).
+Here below we give an example to create a data-processing transformation for each of these two methods.
+
+* Example using the InputDataQuery Agent
 
   ::
 
-    tc.createTransformationInputDataQuery(transID['Value'], {'particle': 'proton','prodName':'ConfigtestCorsika','outputType':'corsikaData'})
+    from DIRAC.TransformationSystem.Client.Transformation import Transformation
+    from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
+    from DIRAC.Interfaces.API.Job import Job
+    j = myJob()
+    ...
+    t = Transformation( )
+    tc = TransformationClient( )
+    t.setTransformationName("Reprocessing_1") # this must be unique
+    t.setType("DataReprocessing")
+    t.setDescription("repro example")
+    t.setLongDescription( "This is the long description of my reprocessing" ) # mandatory
+    t.setBody ( j.workflow.toXML() )
+    t.addTransformation() # transformation is created here
+    t.setStatus("Active")
+    t.setAgentType("Automatic")
+    tc.createTransformationInputDataQuery(transID['Value'], {'particle': 'proton','prodName':'ConfigtestCorsika','outputType':'corsikaData'}) # files are added here
+
+
+
+* Example using the TSCatalog interface
+
+  Both the TSCatalog and FileCatalog plugins must be configured in the Resources and Operations sections, *e.g.*:
+
+  ::
+
+    Operations
+    {
+        Services
+        {
+            Catalogs
+            {
+            CatalogList = DIRACFileCatalog, TSCatalog
+            DIRACFileCatalog
+            {
+            CatalogType = FileCatalog
+            AccessType = Read-Write
+            Status = Active
+            CatalogURL = DataManagement/FileCatalog
+            }
+            TSCatalog
+            {
+            CatalogType = TSCatalog
+            AccessType = Write
+            Status = Active
+            CatalogURL = Transformation/TransformationManager
+            }
+
+
+  ::
+
+    import json
+    from DIRAC.TransformationSystem.Client.Transformation import Transformation
+    from DIRAC.Interfaces.API.Job import Job
+    j = myJob()
+    ...
+    t = Transformation( )
+    t.setTransformationName("Reprocessing_1") # this must be unique
+    t.setType("DataReprocessing")
+    t.setDescription("repro example")
+    t.setLongDescription( "This is the long description of my reprocessing" ) # mandatory
+    t.setBody ( j.workflow.toXML() )
+    mqJson = json.dumps( {'particle':'gamma_diffuse', 'zenith':{"<=": 20}} )
+    t.setFileMask(mqJson) # catalog query is defined here
+    t.addTransformation() # transformation is created here
+    t.setStatus("Active")
+    t.setAgentType("Automatic")
+
 
 **Note:**
 
@@ -307,9 +493,9 @@ Generation of identical jobs with Input Files.
   * If the 'MonitorFiles' option is enabled in the agent configuration, failed jobs are automatically rescheduled
 
 Data management transformations
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-------------------------------
 
-Generation of bulk data removal/replication requests from a fixed file list or as a result of a DFC query
+Generation of bulk data removal/replication requests from a fixed file list or as a result of a DFC query.
 
 * **Agents**
 
@@ -339,19 +525,19 @@ Generation of bulk data removal/replication requests from a fixed file list or a
 
     t = Transformation( )
     tc = TransformationClient( )
-    t.setTransformationName("DM_Removal") # Must be unique
+    t.setTransformationName("DM_Removal") # this must be unique
     #t.setTransformationGroup("Group1")
     t.setType("Removal")
-    t.setPlugin("Standard") # Not needed. The default is 'Standard'
+    t.setPlugin("Standard") # not needed. The default is 'Standard'
     t.setDescription("dataset1 Removal")
     t.setLongDescription( "Long description of dataset1 Removal" ) # Mandatory
     t.setGroupSize(2) # Here you specify how many files should be grouped within the same request, e.g. 100
-    t.setBody ( "Removal;RemoveFile" ) # Mandatory (the default is a ReplicateAndRegister operation)
-    t.addTransformation() # Transformation is created here
+    t.setBody ( "Removal;RemoveFile" ) # mandatory (the default is a ReplicateAndRegister operation)
+    t.addTransformation() # transformation is created here
     t.setStatus("Active")
     t.setAgentType("Automatic")
     transID = t.getTransformationID()
-    tc.addFilesToTransformation(transID['Value'],infileList) # Files are added here
+    tc.addFilesToTransformation(transID['Value'],infileList) # files are added here
 
 **Note:**
 
@@ -396,7 +582,7 @@ Generation of bulk data removal/replication requests from a fixed file list or a
 
 
 
-Data replication based on Catalog Query
+Data replication based on catalog query
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 * Example of data replication (file list as a result of a DFC query, example taken from CTA)
@@ -407,16 +593,16 @@ Data replication based on Catalog Query
     from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
     t = Transformation( )
     tc = TransformationClient( )
-    t.setTransformationName("DM_ReplicationByQuery1") # This must vary
+    t.setTransformationName("DM_ReplicationByQuery1") # this must vary
     #t.setTransformationGroup("Group1")
     t.setType("Replication")
-    t.setSourceSE(['CYF-STORM-Disk','DESY-ZN-Disk']) # A list of SE where at least 1 SE is the valid one
+    t.setSourceSE(['CYF-STORM-Disk','DESY-ZN-Disk']) # a list of SE where at least 1 SE is the valid one
     t.setTargetSE(['CEA-Disk'])
     t.setDescription("data Replication")
-    t.setLongDescription( "data Replication" ) #mandatory
+    t.setLongDescription( "data Replication" ) # mandatory
     t.setGroupSize(1)
     t.setPlugin("Broadcast")
-    t.addTransformation() #transformation is created here
+    t.addTransformation() # transformation is created here
     t.setStatus("Active")
     t.setAgentType("Automatic")
     transID = t.getTransformationID()
@@ -428,6 +614,52 @@ Actions on transformations
 
 * **Start**
 * **Stop**
-* **Flush:** It has a meaning only depending on the plugin used, for example the 'BySize' plugin, used *e.g.* for merging productions, creates a task if there are enough files in input to have at least a certain size: 'flush' will make the 'BySize' plugin to ignore such requirement
+* **Flush:** It has a meaning only depending on the plugin used, for example the 'BySize' plugin, used *e.g.* for merging productions, creates a task if there are enough files in input to have at least a certain size: 'flush' will make the 'BySize' plugin to ignore such requirement. When a transformation is flushed also its replica cache will be re-created (instead of after 24 hours).
 * **Complete:** The transformation can be archived by the TransformationCleaningAgent. Archived means that the data produced stay, but not the entries in the TransformationDB
 * **Clean:** The transformation is cleaned by the TransformationCleaningAgent: jobs are killed and removed from WMS. Produced and stored files are removed from the Storage Elements, when "OutputDirectories" parameter is set for the transformation.
+
+.. _trans-multi-vo:
+
+----------------------
+Multi VO Configuration
+----------------------
+
+
+
+.. versionadded:: v6r20p5
+
+There are two possibilities to configure the agents of the transformation system for the use in a multi VO installation.
+
+ - Use the same WorkflowTaskAgent and RequestTaskAgents for multiple VOs, no
+   *shifterProxy* or *ShifterCredential* must be set for these agents. If
+   neither of those options are set the credentials of the owner of the
+   transformations are used to submit Jobs or Requests.
+
+ - Use a set of WorkflowTaskAgent and RequestTaskAgent for each VO. This
+   requires that each VO uses a distinct set of Transformation Types,
+   e.g. MCSimulation_BigVO. This allows one to set VO specific
+   shifterProxies. This setup is recommended to create a dedicated
+   WorkflowTaskAgent or RequestTaskAgent for a VO that will create a large
+   number of jobs or requests.
+
+ It is possible to mix the two configurations and have one WorkflowTaskAgent
+ treat transformations of many smaller VOs, while installing a dedicated
+ instance for the larger ones::
+
+        WorkflowTaskAgent
+        {
+          ...
+          TransType = MCSimulation
+          TransType += MCReconstruction
+          ...
+          #No shifterProxy / ShifterCredentials
+        }
+        WorkflowTaskAgent-BigVO
+        {
+          ...
+          TransType = MCSimulation_BigVO
+          TransType += MCReconstruction_BigVO
+          Module = WorkflowTaskAgent
+          ...
+          #shifterProxy / ShifterCredentials are optional
+        }

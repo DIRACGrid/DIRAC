@@ -3,6 +3,8 @@
 
 __RCSID__ = "$Id$"
 
+import urlparse
+
 from DIRAC.Core.Utilities import List
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 
@@ -32,39 +34,97 @@ def getSystemSection( serviceName, serviceTuple = False, instance = False, setup
     instance = getSystemInstance( serviceTuple[0], setup = setup )
   return "/Systems/%s/%s" % ( serviceTuple[0], instance )
 
+def getComponentSection (componentName, componentTuple = False, setup = False, componentCategory ="Services"):
+  """Function returns the path to the component.
+
+
+  :param str componentName: Component name prefixed by the system in which it is placed.
+                            e.g. 'WorkloadManagement/SandboxStoreHandler'
+  :param tuple componentTuple: Path of the componenent already divided
+                               e.g. ('WorkloadManagement', 'SandboxStoreHandler')
+  :param str setup: Name of the setup.
+  :param str componentCategory: Category of the component, it can be: 'Agents', 'Services', 'Executors'
+                                or 'Databases'.
+
+  :return str: Complete path to the component
+
+  :raise RuntimeException: If in the componentName - the system part does not correspond to any known system in DIRAC.
+
+  Example:
+    getComponentSection('WorkloadManagement/SandboxStoreHandler', False,False,'Services')
+  """
+  if not componentTuple:
+    componentTuple = divideFullName( componentName )
+  systemSection = getSystemSection( componentName, componentTuple, setup = setup )
+  return "%s/%s/%s" % ( systemSection,componentCategory,  componentTuple[1] )
+
 def getServiceSection( serviceName, serviceTuple = False, setup = False ):
-  if not serviceTuple:
-    serviceTuple = divideFullName( serviceName )
-  systemSection = getSystemSection( serviceName, serviceTuple, setup = setup )
-  return "%s/Services/%s" % ( systemSection, serviceTuple[1] )
+  return getComponentSection(serviceName, serviceTuple, setup , "Services")
 
 def getAgentSection( agentName, agentTuple = False, setup = False ):
-  if not agentTuple:
-    agentTuple = divideFullName( agentName )
-  systemSection = getSystemSection( agentName, agentTuple, setup = setup )
-  return "%s/Agents/%s" % ( systemSection, agentTuple[1] )
+  return getComponentSection(agentName, agentTuple, setup , "Agents")
 
-def getExecutorSection( agentName, agentTuple = False, setup = False ):
-  if not agentTuple:
-    agentTuple = divideFullName( agentName )
-  systemSection = getSystemSection( agentName, agentTuple, setup = setup )
-  return "%s/Executors/%s" % ( systemSection, agentTuple[1] )
+def getExecutorSection( executorName, executorTuple = False, setup = False ):
+  return getComponentSection(executorName, executorTuple, setup , "Executors")
 
 def getDatabaseSection( dbName, dbTuple = False, setup = False ):
-  if not dbTuple:
-    dbTuple = divideFullName( dbName )
-  systemSection = getSystemSection( dbName, dbTuple, setup = setup )
-  return "%s/Databases/%s" % ( systemSection, dbTuple[1] )
+  return getComponentSection(dbName, dbTuple, setup , "Databases")
 
 def getSystemURLSection( serviceName, serviceTuple = False, setup = False ):
   systemSection = getSystemSection( serviceName, serviceTuple, setup = setup )
   return "%s/URLs" % systemSection
 
 def getServiceURL( serviceName, serviceTuple = False, setup = False ):
+  """
+    Generate url.
+
+    :param serviceName: Name of service, like 'Framework/Service'.
+    :param serviceTuple: (optional) also name of service but look like ('Framework', 'Service').
+    :param str setup: DIRAC setup name, can be defined in dirac.cfg
+
+    :return: complete url. e.g. dips://some-domain:3424/Framework/Service
+  """
   if not serviceTuple:
     serviceTuple = divideFullName( serviceName )
   systemSection = getSystemSection( serviceName, serviceTuple, setup = setup )
   url = gConfigurationData.extractOptionFromCFG( "%s/URLs/%s" % ( systemSection, serviceTuple[1] ) )
+  if not url:
+    return ""
+
+
+  # Trying if we are refering to the list of main servers
+  # which would be like dips://$MAINSERVERS$:1234/System/Component
+  # This can only happen if there is only one server defined
+  if ',' not in url:
+
+    urlParse = urlparse.urlparse(url)
+    server, port = urlParse.netloc.split(':')
+    mainUrlsList = []
+
+    if server == '$MAINSERVERS$':
+
+      # Operations cannot be imported at the beginning because of a bootstrap problem
+      from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+      mainServers = Operations().getValue('MainServers',[])
+      if not mainServers:
+        raise Exception("No Main servers defined")
+
+
+      for srv in mainServers:
+        mainUrlsList.append(urlparse.ParseResult( scheme = urlParse.scheme, netloc = ':'.join([srv, port]),
+                              path = urlParse.path, params = '', query = '', fragment = '').geturl())
+      return ','.join(mainUrlsList)
+
+
+  if len( url.split( "/" ) ) < 5:
+    url = "%s/%s" % ( url, serviceName )
+  return url
+
+def getServiceFailoverURL( serviceName, serviceTuple = False, setup = False ):
+  if not serviceTuple:
+    serviceTuple = divideFullName( serviceName )
+  systemSection = getSystemSection( serviceName, serviceTuple, setup = setup )
+  url = gConfigurationData.extractOptionFromCFG( "%s/FailoverURLs/%s" % ( systemSection, serviceTuple[1] ) )
   if not url:
     return ""
   if len( url.split( "/" ) ) < 5:

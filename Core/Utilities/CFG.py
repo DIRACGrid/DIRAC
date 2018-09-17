@@ -5,13 +5,9 @@ import types
 import copy
 import os
 import re
-try:
-  import zipfile
-  gZipEnabled = True
-except ImportError:
-  gZipEnabled = False
+import zipfile
 
-  __RCSID__ = "$Id$"
+__RCSID__ = "$Id$"
 
 try:
   from DIRAC.Core.Utilities              import List, ThreadSafe
@@ -443,13 +439,29 @@ class CFG( object ):
       except Exception:
         return defaultValue
 
+  def getAsCFG(self, path=""):
+    """Return subsection as CFG object.
+
+    :param str path: Path to the section
+    :return: CFG object, of path is not found the CFG is empty
+    """
+    if not path:
+      return self.clone()
+    splitPath = path.lstrip('/').split('/')
+    basePath = splitPath[0]
+    remainingPath = splitPath[1:]
+    if basePath not in self.__dataDict:
+      return CFG()
+    return self.__dataDict[basePath].getAsCFG("/".join(remainingPath))
+
   def getAsDict( self, path = "" ):
     """
     Get the contents below a given path as a dict
 
     :type path: string
     :param path: Path to retrieve as dict
-    :return : Dictionary containing the data
+    :return: Dictionary containing the data
+
     """
     resVal = {}
     if path:
@@ -727,14 +739,17 @@ class CFG( object ):
                                     cfgToMergeWith[ section ] )
     return mergedCFG
 
-  def getModifications( self, newerCfg, ignoreMask = None, parentPath = "" ):
+  def getModifications(self, newerCfg, ignoreMask=None, parentPath="",
+                       ignoreOrder=False, ignoreComments=False):
     """
     Compare two cfgs
 
-    :type newerCfg: CFG
+    :type newerCfg: ~DIRAC.Core.Utilities.CFG.CFG
     :param newerCfg: Cfg to compare with
-    :type prefix: string
-    :param prefix: Internal use only
+    :param list ignoreMask: List of paths to ignore
+    :param str parentPath: Start from this path
+    :param ignoreOrder: Do not return changes only in ordering
+    :param ignoreComments: Do not return changes for changed commens
     :return: A list of modifications
     """
     modList = []
@@ -752,11 +767,11 @@ class CFG( object ):
                           newerCfg.getComment( newOption ) ) )
       else:
         modified = False
-        if iPos != self.__orderedList.index( newOption ):
+        if iPos != self.__orderedList.index(newOption) and not ignoreOrder:
           modified = True
         elif newerCfg[ newOption ] != self[ newOption ]:
           modified = True
-        elif newerCfg.getComment( newOption ) != self.getComment( newOption ):
+        elif newerCfg.getComment(newOption) != self.getComment(newOption) and not ignoreComments:
           modified = True
         if modified:
           modList.append( ( 'modOpt', newOption, iPos,
@@ -786,8 +801,9 @@ class CFG( object ):
           modified = True
         elif newerCfg.getComment( newSection ) != self.getComment( newSection ):
           modified = True
-        subMod = self[ newSection ].getModifications( newerCfg[ newSection ],
-                                                      ignoreMask, newSecPath )
+        subMod = self[newSection].getModifications(newerCfg[newSection],
+                                                   ignoreMask, newSecPath,
+                                                   ignoreOrder, ignoreComments)
         if subMod:
           modified = True
         if modified:
@@ -878,7 +894,7 @@ class CFG( object ):
     :param fileName: File name to load the contents from
     :return: This CFG
     """
-    if gZipEnabled and fileName.find( ".zip" ) == len( fileName ) - 4:
+    if zipfile.is_zipfile( fileName ):
       #Zipped file
       zipHandler = zipfile.ZipFile( fileName )
       nameList = zipHandler.namelist()
@@ -886,9 +902,8 @@ class CFG( object ):
       fileData = zipHandler.read( fileToRead )
       zipHandler.close()
     else:
-      fd = file( fileName )
-      fileData = fd.read()
-      fd.close()
+      with open( fileName ) as fd:
+        fileData = fd.read()
     return self.loadFromBuffer( fileData )
 
   @gCFGSynchro
@@ -963,7 +978,7 @@ class CFG( object ):
       directory = os.path.dirname( fileName )
       if directory and ( not os.path.exists( directory ) ):
         os.makedirs( directory )
-      fd = file( fileName, "w" )
+      fd = open(fileName, "w")
       fd.write( str( self ) )
       fd.close()
       return True

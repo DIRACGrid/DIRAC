@@ -1,5 +1,6 @@
+""" Module invoked for finding and loading DIRAC (and extensions) modules
+"""
 
-import types
 import os
 import imp
 from DIRAC.Core.Utilities import List
@@ -198,7 +199,7 @@ class ModuleLoader( object ):
 
     return S_OK()
 
-  def __recurseImport( self, modName, parentModule = False, hideExceptions = False ):
+  def __recurseImport( self, modName, parentModule = None, hideExceptions = False ):
     if isinstance( modName, basestring):
       modName = List.fromChar( modName, "." )
     try:
@@ -209,7 +210,7 @@ class ModuleLoader( object ):
       impModule = imp.load_module( modName[0], *impData )
       if impData[0]:
         impData[0].close()
-    except ImportError, excp:
+    except ImportError as excp:
       strExcp = str( excp )
       if strExcp.find( "No module named" ) == 0 and strExcp.find( modName[0] ) == len( strExcp ) - len( modName[0] ):
         return S_OK()

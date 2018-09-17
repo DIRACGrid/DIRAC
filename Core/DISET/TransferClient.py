@@ -1,11 +1,14 @@
-# $HeadURL$
+""" This is for transfers what RPCClient is for RPC calls
+"""
+
 __RCSID__ = "$Id$"
 
 import os
+
+from DIRAC import S_OK, S_ERROR
+from DIRAC.Core.Utilities import File
 from DIRAC.Core.DISET.private.BaseClient import BaseClient
 from DIRAC.Core.DISET.private.FileHelper import FileHelper
-from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
-from DIRAC.Core.Utilities import File
 
 class TransferClient( BaseClient ):
 
@@ -147,7 +150,8 @@ class TransferClient( BaseClient ):
       retVal = fileHelper.bulkToNetwork( fileList, compress, onthefly )
       if not retVal[ 'OK' ]:
         return retVal
-      retVal = transport.receiveData()      return retVal
+      retVal = transport.receiveData()
+      return retVal
     finally:
       self._disconnect( trid )
 

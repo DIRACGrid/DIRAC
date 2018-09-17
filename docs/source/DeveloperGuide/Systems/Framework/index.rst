@@ -17,13 +17,13 @@ Static Component Monitoring
 The Component Monitoring system takes care of logging information about the components that have been installed and uninstalled in different hosts, like the date or author of the change.
 The following figure illustrates how different components from this system communicate with each other:
 
-.. image:: ../../_static/Systems/FS/InteractionsDiagram.png
+.. image:: /_static/Systems/FS/InteractionsDiagram.png
    :alt: Interaction between components.
    :align: center
 
 All of the static information is stored in a MySQL database, InstalledComponentsDB. This database contains 3 tables, as illustrated below:
 
-.. image:: ../../_static/Systems/FS/InstalledComponentsDB.png
+.. image:: /_static/Systems/FS/InstalledComponentsDB.png
    :alt: InstalledComponentsDB schema.
    :align: center
 

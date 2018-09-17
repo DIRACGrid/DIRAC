@@ -34,39 +34,39 @@ __RCSID__ = "$Id$"
 
 
 # Some useful constants for time operations
-microsecond = datetime.timedelta( microseconds = 1 )
-second = datetime.timedelta( seconds = 1 )
-minute = datetime.timedelta( minutes = 1 )
-hour = datetime.timedelta( hours = 1 )
-day = datetime.timedelta( days = 1 )
-week = datetime.timedelta( days = 7 )
+microsecond = datetime.timedelta(microseconds=1)
+second = datetime.timedelta(seconds=1)
+minute = datetime.timedelta(minutes=1)
+hour = datetime.timedelta(hours=1)
+day = datetime.timedelta(days=1)
+week = datetime.timedelta(days=7)
 
-dt = datetime.datetime( 2000, 1, 1 )
+dt = datetime.datetime(2000, 1, 1)
 
-def timeThis( method ):
+
+def timeThis(method):
   """ Function to be used as a decorator for timing other functions/methods
   """
 
-  def timed( *args, **kw ):
+  def timed(*args, **kw):
     """ What actually times
     """
-
     ts = nativetime.time()
-    result = method( *args, **kw )
+    result = method(*args, **kw)
     if sys.stdout.isatty():
       return result
     te = nativetime.time()
 
-    pre = dt.utcnow().strftime( "%Y-%m-%d %H:%M:%S UTC " )
+    pre = dt.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC ")
 
     try:
-      pre += args[0].log._systemName + '/' + args[0].log._subName + '   TIME: ' + args[0].transString
+      pre += args[0].log.getName() + '/' + args[0].log.getSubName() + '   TIME: ' + args[0].transString
     except AttributeError:
       try:
-        pre += args[0].log._systemName + '    TIME: ' + args[0].transString
+        pre += args[0].log.getName() + '    TIME: ' + args[0].transString
       except AttributeError:
         try:
-          pre += args[0].log._systemName + '/' + args[0].log._subName + '   TIME: '
+          pre += args[0].log.getName() + '/' + args[0].log.getSubName() + '   TIME: '
         except AttributeError:
           pre += 'TIME: '
     except IndexError:
@@ -75,17 +75,17 @@ def timeThis( method ):
     argsLen = ''
     if args:
       try:
-        if isinstance( args[1], ( list, dict ) ):
-          argsLen = "arguments len: %d" % len( args[1] )
+        if isinstance(args[1], (list, dict)):
+          argsLen = "arguments len: %d" % len(args[1])
       except IndexError:
         if kw:
           try:
-            if isinstance( kw.items()[0][1], ( list, dict ) ):
-              argsLen = "arguments len: %d" % len( kw.items()[0][1] )
+            if isinstance(kw.items()[0][1], (list, dict)):
+              argsLen = "arguments len: %d" % len(kw.items()[0][1])
           except IndexError:
             argsLen = ''
 
-    print "%s Exec time ===> function %r %s -> %2.2f sec" % ( pre, method.__name__, argsLen, te - ts )
+    print "%s Exec time ===> function %r %s -> %2.2f sec" % (pre, method.__name__, argsLen, te - ts)
     return result
 
   return timed
@@ -97,39 +97,44 @@ def dateTime():
   """
   return dt.utcnow()
 
-def date( myDateTime = None ):
+
+def date(myDateTime=None):
   """
   Return current UTC date, as datetime.date object
   if a _dateTimeType is pass as argument its associated date is returned
   """
-  if type( myDateTime ) == _dateTimeType:
+  if type(myDateTime) == _dateTimeType:
     return myDateTime.date()
   return dateTime().date()
 
-def time( myDateTime = None ):
+
+def time(myDateTime=None):
   """
   Return current UTC time, as datetime.time object
   if a _dateTimeType is pass as argument its associated time is returned
   """
-  if not type( myDateTime ) == _dateTimeType:
+  if not type(myDateTime) == _dateTimeType:
     myDateTime = dateTime()
-  return myDateTime - datetime.datetime( myDateTime.year, myDateTime.month, myDateTime.day )
+  return myDateTime - datetime.datetime(myDateTime.year, myDateTime.month, myDateTime.day)
 
-def toEpoch( dateTimeObject = None ):
+
+def toEpoch(dateTimeObject=None):
   """
   Get seconds since epoch
   """
   if not dateTimeObject:
     dateTimeObject = dateTime()
-  return nativetime.mktime( dateTimeObject.timetuple() )
+  return nativetime.mktime(dateTimeObject.timetuple())
 
-def fromEpoch( epoch ):
+
+def fromEpoch(epoch):
   """
   Get datetime object from epoch
   """
-  return dt.fromtimestamp( epoch )
+  return dt.fromtimestamp(epoch)
 
-def to2K( dateTimeObject = None ):
+
+def to2K(dateTimeObject=None):
   """
   Get seconds, with microsecond precission, since 2K
   """
@@ -138,15 +143,17 @@ def to2K( dateTimeObject = None ):
   delta = dateTimeObject - dt
   return delta.days * 86400 + delta.seconds + delta.microseconds / 1000000.
 
-def from2K( seconds2K = None ):
+
+def from2K(seconds2K=None):
   """
   Get date from seconds since 2K
   """
   if not seconds2K:
-    seconds2K = to2K( dt )
-  return dt + int( seconds2K ) * second + int( seconds2K % 1 * 1000000 ) * microsecond
+    seconds2K = to2K(dt)
+  return dt + int(seconds2K) * second + int(seconds2K % 1 * 1000000) * microsecond
 
-def toString( myDate = None ):
+
+def toString(myDate=None):
   """
   Convert to String
   if argument type is neither _dateTimeType, _dateType, nor _timeType
@@ -161,21 +168,22 @@ def toString( myDate = None ):
     where min, sec, microsec are alwys positive intergers and hour carries the
     sign.
   """
-  if type( myDate ) == _dateTimeType :
-    return str( myDate )
+  if type(myDate) == _dateTimeType:
+    return str(myDate)
 
-  elif type( myDate ) == _dateType :
-    return str( myDate )
+  elif type(myDate) == _dateType:
+    return str(myDate)
 
-  elif type( myDate ) == _timeType :
-    return '%02d:%02d:%02d.%06d' % ( myDate.days * 24 + myDate.seconds / 3600,
-                                     myDate.seconds % 3600 / 60,
-                                     myDate.seconds % 60,
-                                     myDate.microseconds )
+  elif type(myDate) == _timeType:
+    return '%02d:%02d:%02d.%06d' % (myDate.days * 24 + myDate.seconds / 3600,
+                                    myDate.seconds % 3600 / 60,
+                                    myDate.seconds % 60,
+                                    myDate.microseconds)
   else:
-    return toString( dateTime() )
+    return toString(dateTime())
 
-def fromString( myDate = None ):
+
+def fromString(myDate=None):
   """
   Convert date/time/datetime String back to appropriated objects
 
@@ -183,56 +191,64 @@ def fromString( myDate = None ):
   See notice on toString method
   On Error, return None
   """
-  if StringTypes.__contains__( type( myDate ) ):
-    if myDate.find( ' ' ) > 0:
-      dateTimeTuple = myDate.split( ' ' )
-      dateTuple = dateTimeTuple[0].split( '-' )
+  if StringTypes.__contains__(type(myDate)):
+    if myDate.find(' ') > 0:
+      dateTimeTuple = myDate.split(' ')
+      dateTuple = dateTimeTuple[0].split('-')
       try:
-        return ( datetime.datetime( year = dateTuple[0],
-                                    month = dateTuple[1],
-                                    day = dateTuple[2] ) +
-                 fromString( dateTimeTuple[1] ) )
+        return (datetime.datetime(year=dateTuple[0],
+                                  month=dateTuple[1],
+                                  day=dateTuple[2]) +
+                fromString(dateTimeTuple[1]))
         # return dt.combine( fromString( dateTimeTuple[0] ),
         #                                   fromString( dateTimeTuple[1] ) )
       except:
-        return ( datetime.datetime( year = int( dateTuple[0] ),
-                                    month = int( dateTuple[1] ),
-                                    day = int( dateTuple[2] ) ) +
-                 fromString( dateTimeTuple[1] ) )
+        try:
+          return (datetime.datetime(year=int(dateTuple[0]),
+                                    month=int(dateTuple[1]),
+                                    day=int(dateTuple[2])) +
+                  fromString(dateTimeTuple[1]))
+        except ValueError:
+          return None
         # return dt.combine( fromString( dateTimeTuple[0] ),
         #                                   fromString( dateTimeTuple[1] ) )
-    elif myDate.find( ':' ) > 0:
-      timeTuple = myDate.replace( '.', ':' ).split( ':' )
+    elif myDate.find(':') > 0:
+      timeTuple = myDate.replace('.', ':').split(':')
       try:
-        if len( timeTuple ) == 4:
-          return datetime.timedelta( hours = int( timeTuple[0] ),
-                                     minutes = int( timeTuple[1] ),
-                                     seconds = int( timeTuple[2] ),
-                                     microseconds = int( timeTuple[3] ) )
-        elif len( timeTuple ) == 3:
-          return datetime.timedelta( hours = int( timeTuple[0] ),
-                                     minutes = int( timeTuple[1] ),
-                                     seconds = int( timeTuple[2] ),
-                                     microseconds = 0 )
+        if len(timeTuple) == 4:
+          return datetime.timedelta(hours=int(timeTuple[0]),
+                                    minutes=int(timeTuple[1]),
+                                    seconds=int(timeTuple[2]),
+                                    microseconds=int(timeTuple[3]))
+        elif len(timeTuple) == 3:
+          try:
+            return datetime.timedelta(hours=int(timeTuple[0]),
+                                      minutes=int(timeTuple[1]),
+                                      seconds=int(timeTuple[2]),
+                                      microseconds=0)
+          except ValueError:
+            return None
         else:
           return None
       except:
         return None
-    elif myDate.find( '-' ) > 0:
-      dateTuple = myDate.split( '-' )
+    elif myDate.find('-') > 0:
+      dateTuple = myDate.split('-')
       try:
-        return datetime.date( int( dateTuple[0] ), int( dateTuple[1] ), int( dateTuple[2] ) )
+        return datetime.date(int(dateTuple[0]), int(dateTuple[1]), int(dateTuple[2]))
       except:
         return None
 
   return None
+
 
 class timeInterval:
   """
      Simple class to define a timeInterval object able to check if a given
      dateTime is inside
   """
-  def __init__( self, initialDateTime, intervalTimeDelta ):
+
+  def __init__(self, initialDateTime, intervalTimeDelta):
     """
        Initialization method, it requires the initial dateTime and the
        timedelta that define the limits.
@@ -240,8 +256,8 @@ class timeInterval:
        If not properly initialized an error flag is set, and subsequent calls
        to any method will return None
     """
-    if ( type( initialDateTime ) != _dateTimeType or
-       type( intervalTimeDelta ) != _timeType ):
+    if (type(initialDateTime) != _dateTimeType or
+            type(intervalTimeDelta) != _timeType):
       self.__error = True
       return None
     self.__error = False
@@ -252,18 +268,19 @@ class timeInterval:
       self.__startDateTime = initialDateTime
       self.__endDateTime = initialDateTime + intervalTimeDelta
 
-  def includes( self, myDateTime ):
+  def includes(self, myDateTime):
     """
     """
-    if self.__error :
+    if self.__error:
       return None
-    if type( myDateTime ) != _dateTimeType :
+    if type(myDateTime) != _dateTimeType:
       return None
-    if myDateTime < self.__startDateTime :
+    if myDateTime < self.__startDateTime:
       return False
-    if myDateTime >= self.__endDateTime :
+    if myDateTime >= self.__endDateTime:
       return False
     return True
+
 
 def queryTime(f):
   """ Decorator to measure the function call time
@@ -271,15 +288,16 @@ def queryTime(f):
   def measureQueryTime(*args, **kwargs):
     start = nativetime.time()
     result = f(*args, **kwargs)
-    if result['OK'] and not 'QueryTime' in result:
+    if result['OK'] and 'QueryTime' not in result:
       result['QueryTime'] = nativetime.time() - start
     return result
   return measureQueryTime
 
-_dateTimeType = type( dateTime() )
-_dateType = type( date() )
-_timeType = type( time() )
 
-_allTimeTypes = ( _dateTimeType, _timeType )
-_allDateTypes = ( _dateTimeType, _dateType )
-_allTypes = ( _dateTimeType, _dateType, _timeType )
+_dateTimeType = type(dateTime())
+_dateType = type(date())
+_timeType = type(time())
+
+_allTimeTypes = (_dateTimeType, _timeType)
+_allDateTypes = (_dateTimeType, _dateType)
+_allTypes = (_dateTimeType, _dateType, _timeType)

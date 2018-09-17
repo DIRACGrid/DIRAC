@@ -14,6 +14,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Path      import cfgPath
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry  import getVOs, getVOOption
 from DIRAC.ConfigurationSystem.Client.Utilities         import getGridCEs, getSiteUpdates, getSRMUpdates, \
                                                                getCEsFromCS, getSEsFromCS, getGridSRMs
+from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE
 
 __RCSID__ = "$Id$"
 
@@ -32,12 +33,17 @@ class Bdii2CSAgent( AgentModule ):
     self.alternativeBDIIs = []
     self.voBdiiCEDict = {}
     self.voBdiiSEDict = {}
+    self.host = 'lcg-bdii.cern.ch:2170'
+    self.glue2URLs = []
+    self.glue2Only = False
 
     self.csAPI = None
 
     # What to get
     self.processCEs = True
     self.processSEs = False
+    self.selectedSites = []
+
     # Update the CS or not?
     self.dryRun = False
 
@@ -49,6 +55,10 @@ class Bdii2CSAgent( AgentModule ):
     self.addressFrom = self.am_getOption( 'MailFrom', self.addressFrom )
     # Create a list of alternative bdii urls
     self.alternativeBDIIs = self.am_getOption( 'AlternativeBDIIs', self.alternativeBDIIs )
+    self.host = self.am_getOption('Host', self.host)
+    self.glue2URLs = self.am_getOption('GLUE2URLs', self.glue2URLs)
+    self.glue2Only = self.am_getOption('GLUE2Only', self.glue2Only)
+
     # Check if the bdii url is appended by a port number, if not append the default 2170
     for index, url in enumerate( self.alternativeBDIIs ):
       if not url.split( ':' )[-1].isdigit():
@@ -61,6 +71,7 @@ class Bdii2CSAgent( AgentModule ):
 
     self.processCEs = self.am_getOption( 'ProcessCEs', self.processCEs )
     self.processSEs = self.am_getOption( 'ProcessSEs', self.processSEs )
+    self.selectedSites = self.am_getOption('SelectedSites', [])
     self.dryRun = self.am_getOption( 'DryRun', self.dryRun )
 
     self.voName = self.am_getOption( 'VirtualOrganization', self.voName )
@@ -130,7 +141,7 @@ class Bdii2CSAgent( AgentModule ):
       siteDict = result['Value']
       body = ''
       for site in siteDict:
-        newCEs = set( siteDict[site].keys() )
+        newCEs = set(siteDict[site].keys())  # pylint: disable=no-member
         if not newCEs:
           continue
 
@@ -177,18 +188,29 @@ class Bdii2CSAgent( AgentModule ):
     totalResult = S_OK( {} )
     message = ''
 
-    mainResult = getBdiiCEInfo( vo )
+    mainResult = getBdiiCEInfo(vo, host=self.host, glue2=self.glue2Only)
     if not mainResult['OK']:
       self.log.error( "Failed getting information from default bdii", mainResult['Message'] )
       message = mainResult['Message']
 
     for bdii in reversed( self.alternativeBDIIs ):
-      resultAlt = getBdiiCEInfo( vo, host = bdii )
+      resultAlt = getBdiiCEInfo(vo, host=bdii, glue2=self.glue2Only)
       if resultAlt['OK']:
         totalResult['Value'].update( resultAlt['Value'] )
       else:
         self.log.error( "Failed getting information from %s " % bdii, resultAlt['Message'] )
         message = ( message + "\n" + resultAlt['Message'] ).strip()
+
+    for glue2URL in self.glue2URLs:
+      if self.glue2Only:
+        break
+      resultGlue2 = getBdiiCEInfo(vo, host=glue2URL, glue2=True)
+      if resultGlue2['OK']:
+        totalResult['Value'].update(resultGlue2['Value'])
+      else:
+        self.log.error("Failed getting GLUE2 information for", "%s, %s: %s" %
+                       (glue2URL, vo, resultGlue2['Message']))
+        message = (message + "\n" + resultGlue2['Message']).strip()
 
     if mainResult['OK']:
       totalResult['Value'].update( mainResult['Value'] )
@@ -233,6 +255,7 @@ class Bdii2CSAgent( AgentModule ):
       if not result['OK']:
         continue
       ceBdiiDict = result['Value']
+      self.__purgeSites(ceBdiiDict)
       result = getSiteUpdates( vo, bdiiInfo = ceBdiiDict, log = self.log )
       if not result['OK']:
         continue
@@ -241,6 +264,30 @@ class Bdii2CSAgent( AgentModule ):
     # We have collected all the changes, consolidate VO settings
     result = self.__updateCS( bdiiChangeSet )
     return result
+
+  def __purgeSites(self, ceBdiiDict):
+    """Remove all sites that are not in self.selectedSites.
+
+    Modifies the ceBdiiDict!
+    """
+    if not self.selectedSites:
+      return
+    for site in list(ceBdiiDict):
+      ces = list(ceBdiiDict[site]['CEs'])
+      if not ces:
+        self.log.error("No CE information for site:", site)
+        continue
+      diracSiteName = getSiteForCE(ces[0])
+      if not diracSiteName['OK']:
+        self.log.error("Failed to get DIRAC site name for ce", "%s: %s" % (ces[0], diracSiteName['Message']))
+        continue
+      self.log.debug("Checking site %s (%s), aka %s" % (site, ces, diracSiteName['Value']))
+      if diracSiteName['Value'] in self.selectedSites:
+        continue
+      self.log.info("Dropping site %s, aka %s" % (site, diracSiteName))
+      ceBdiiDict.pop(site)
+    return
+
 
   def __updateCS( self, bdiiChangeSet ):
 
@@ -310,7 +357,7 @@ class Bdii2CSAgent( AgentModule ):
       siteDict = result['Value']
       body = ''
       for site in siteDict:
-        newSEs = set( siteDict[site].keys() )
+        newSEs = set(siteDict[site].keys())  # pylint: disable=no-member
         if not newSEs:
           continue
         for se in newSEs:

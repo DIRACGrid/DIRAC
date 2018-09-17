@@ -75,7 +75,7 @@ class VOBOXAvailabilityCommand_Success( VOBOXAvailabilityCommand_TestCase ):
 
     command = self.testClass( args = { 'serviceURL' : 'protocol://site:port/path1/path2' } )
     res = command.doCommand()
-    self.assertEqual( True, res[ 'OK' ] )
+    self.assertTrue(res['OK'])
     self.assertEqual( 0, res[ 'Value' ][ 'serviceUpTime' ] )
     self.assertEqual( 0, res[ 'Value' ][ 'machineUpTime' ] )
     self.assertEqual( 'site', res[ 'Value' ][ 'site' ] )
@@ -90,7 +90,7 @@ class VOBOXAvailabilityCommand_Success( VOBOXAvailabilityCommand_TestCase ):
     self.moduleTested.RPCClient.return_value = mock_RPC
     command = self.testClass( args = { 'serviceURL' : 'protocol://site:port/path1/path2' } )
     res = command.doCommand()
-    self.assertEqual( True, res[ 'OK' ] )
+    self.assertTrue(res['OK'])
     self.assertEqual( 1, res[ 'Value' ][ 'serviceUpTime' ] )
     self.assertEqual( 2, res[ 'Value' ][ 'machineUpTime' ] )
     self.assertEqual( 'site', res[ 'Value' ][ 'site' ] )

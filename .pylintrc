@@ -23,7 +23,6 @@ load-plugins=
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option
 # multiple time.
-#enable=
 
 # Disable the message, report, category or checker with the given id(s). You
 # can either give multiple identifier separated by comma (,) or put this option
@@ -32,7 +31,8 @@ load-plugins=
 
 #R0903 = Too few public methods (%s/%s)
 #C0326 = bad-whitespace
-disable=R0903,C0326
+#I0011 = locally-disabling
+disable=R0903,C0326,I0011,redefined-variable-type,c-extension-no-member
 
 
 [REPORTS]
@@ -105,7 +105,7 @@ no-docstring-rgx=__.*__
 [FORMAT]
 
 # Maximum number of characters on a single line.
-max-line-length=140
+max-line-length=120
 
 # Maximum number of lines in a module
 max-module-lines=1200
@@ -145,7 +145,7 @@ ignored-classes=SQLObject
 generated-members=REQUEST,acl_users,aq_parent
 
 # List of ignored modules
-ignored-modules = MySQLdb
+ignored-modules = MySQLdb,numpy
 
 [VARIABLES]
 
@@ -199,7 +199,8 @@ min-public-methods=1
 # Maximum number of public methods for a class (see R0904).
 max-public-methods=20
 
-
+# Maximum number of nested blocks
+max-nested-blocks=10
 [IMPORTS]
 
 # Deprecated modules which should not be used, separated by a comma

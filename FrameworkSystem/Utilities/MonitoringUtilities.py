@@ -18,9 +18,12 @@ def monitorInstallation( componentType, system, component, module = None, cpu = 
     module = component
 
   # Retrieve user installing the component
+  user = None
   result = getProxyInfo()
   if result[ 'OK' ]:
-    user = result[ 'Value' ][ 'username' ]
+    proxyInfo = result[ 'Value' ]
+    if 'username' in proxyInfo:
+      user = proxyInfo[ 'username' ]
   else:
     return result
   if not user:
@@ -70,9 +73,12 @@ def monitorUninstallation( system, component, cpu = None, hostname = None ):
   monitoringClient = ComponentMonitoringClient()
 
   # Retrieve user uninstalling the component
+  user = None
   result = getProxyInfo()
   if result[ 'OK' ]:
-    user = result[ 'Value' ][ 'username' ]
+    proxyInfo = result[ 'Value' ]
+    if 'username' in proxyInfo:
+      user = proxyInfo[ 'username' ]
   else:
     return result
   if not user:

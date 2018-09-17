@@ -13,29 +13,30 @@ from DIRAC.Resources.Storage.StorageElement import StorageElementItem
 
 
 
-def mock_StorageFactory_getConfigStorageName( storageName, referenceType ):
+def mock_StorageFactory_getConfigStorageName( storageName, referenceType, seConfigPath = None ):
   resolvedName = storageName
   return S_OK( resolvedName )
 
-def mock_StorageFactory_getConfigStorageOptions( storageName, derivedStorageName ):
+def mock_StorageFactory_getConfigStorageOptions( storageName, derivedStorageName = None, seConfigPath = None ):
   """ Get the options associated to the StorageElement as defined in the CS
   """
   optionsDict = {'BackendType': 'local',
                  'ReadAccess': 'Active',
-                 'WriteAccess': 'Active'}
-
+                 'WriteAccess': 'Active',
+                 'AccessProtocols' : ['file'],
+                 'WriteProtocols' : ['file'], }
   return S_OK( optionsDict )
 
-def mock_StorageFactory_getConfigStorageProtocols( storageName, derivedStorageName ):
+def mock_StorageFactory_getConfigStorageProtocols( storageName, derivedStorageName = None, seConfigPath = None ):
   """ Protocol specific information is present as sections in the Storage configuration
   """
-  protocolDetails = [{'Host': '',
-                      'Path': '/tmp/se',
-                      'PluginName': 'File',
-                      'Port': '',
-                      'Protocol': 'file',
-                      'SpaceToken': '',
-                      'WSUrl': ''}]
+  protocolDetails = {'Section': {'Host': '',
+                                 'Path': '/tmp/se',
+                                 'PluginName': 'File',
+                                 'Port': '',
+                                 'Protocol': 'file',
+                                 'SpaceToken': '',
+                                 'WSUrl': ''}}
 
   return S_OK( protocolDetails )
 
@@ -96,7 +97,7 @@ class TestBase( unittest.TestCase ):
     assert self.subFileSize
 
 
-  def tearDown(self):
+  def tearDown( self ):
     shutil.rmtree( self.basePath )
     shutil.rmtree( self.srcPath )
     shutil.rmtree( self.destPath )
@@ -108,7 +109,7 @@ class TestBase( unittest.TestCase ):
     for dirname in [self.basePath, self.destPath]:
       self.walkPath( dirname )
 
-  def walkPath(self, path):
+  def walkPath( self, path ):
     for root, dirs, files in os.walk( path ):
       print root
       print "  dirs"
@@ -127,9 +128,9 @@ class TestBase( unittest.TestCase ):
     """Testing getURL"""
     # Testing the getURL
     res = self.se.getURL( self.ALL )
-    self.assert_( res['OK'], res )
-    self.assert_( not res['Value']['Failed'], res['Value']['Failed'] )
-    self.assert_( len( res['Value']['Successful'] ) == len( self.ALL ) )
+    self.assertTrue( res['OK'], res )
+    self.assertTrue( not res['Value']['Failed'], res['Value']['Failed'] )
+    self.assertTrue( len( res['Value']['Successful'] ) == len( self.ALL ) )
     for lfn, url in res['Value']['Successful'].items():
       self.assertEqual( url, self.basePath.rstrip( '/' ) + lfn )
 
@@ -152,86 +153,86 @@ class TestBase( unittest.TestCase ):
 
     # wrong size
     res = localPutFile( self.existingFile, size = -1 )
-    self.assert_( res['OK'], res )
-    self.assert_( self.existingFile in res['Value']['Failed'] )
-    self.assert_( 'not match' in res['Value']['Failed'][self.existingFile], res )
-    self.assert_( not os.path.exists( self.basePath + self.existingFile ) )
+    self.assertTrue( res['OK'], res )
+    self.assertTrue( self.existingFile in res['Value']['Failed'], res )
+    self.assertTrue( 'not match' in res['Value']['Failed'][self.existingFile], res )
+    self.assertTrue( not os.path.exists( self.basePath + self.existingFile ) )
 
     # Correct size
     res = localPutFile( self.existingFile, size = self.existingFileSize )
-    self.assert_( res['OK'], res )
-    self.assert_( self.existingFile in res['Value']['Successful'], res )
-    self.assert_( os.path.exists( self.basePath + self.existingFile ) )
+    self.assertTrue( res['OK'], res )
+    self.assertTrue( self.existingFile in res['Value']['Successful'], res )
+    self.assertTrue( os.path.exists( self.basePath + self.existingFile ) )
 
     # No size
     res = localPutFile( self.existingFile )
-    self.assert_( res['OK'], res )
-    self.assert_( self.existingFile in res['Value']['Successful'], res )
-    self.assert_( os.path.exists( self.basePath + self.existingFile ) )
+    self.assertTrue( res['OK'], res )
+    self.assertTrue( self.existingFile in res['Value']['Successful'], res )
+    self.assertTrue( os.path.exists( self.basePath + self.existingFile ) )
 
     # No existing source file
     res = localPutFile( self.nonExistingFile )
-    self.assert_( res['OK'], res )
-    self.assert_( self.nonExistingFile in res['Value']['Failed'], res )
-    self.assert_( os.strerror( errno.ENOENT ) in res['Value']['Failed'][self.nonExistingFile], res )
+    self.assertTrue( res['OK'], res )
+    self.assertTrue( self.nonExistingFile in res['Value']['Failed'], res )
+    self.assertTrue( os.strerror( errno.ENOENT ) in res['Value']['Failed'][self.nonExistingFile], res )
 
     # sub file
     res = localPutFile( self.subFile )
-    self.assert_( res['OK'], res )
-    self.assert_( self.subFile in res['Value']['Successful'], res )
-    self.assert_( os.path.exists( self.basePath + self.subFile ) )
+    self.assertTrue( res['OK'], res )
+    self.assertTrue( self.subFile in res['Value']['Successful'], res )
+    self.assertTrue( os.path.exists( self.basePath + self.subFile ) )
 
     # Directory
     res = localPutFile( self.subDir )
-    self.assert_( res['OK'], res )
-    self.assert_( self.subDir in res['Value']['Failed'] )
-    self.assert_( os.strerror( errno.EISDIR ) in res['Value']['Failed'][self.subDir], res )
+    self.assertTrue( res['OK'], res )
+    self.assertTrue( self.subDir in res['Value']['Failed'] )
+    self.assertTrue( os.strerror( errno.EISDIR ) in res['Value']['Failed'][self.subDir], res )
 
 
     res = self.se.exists( self.FILES )
-    self.assert_( res['OK'], res )
-    self.assert_( not res['Value']['Failed'], res )
-    self.assert_( res['Value']['Successful'][self.existingFile], res )
-    self.assert_( not res['Value']['Successful'][self.nonExistingFile], res )
+    self.assertTrue( res['OK'], res )
+    self.assertTrue( not res['Value']['Failed'], res )
+    self.assertTrue( res['Value']['Successful'][self.existingFile], res )
+    self.assertTrue( not res['Value']['Successful'][self.nonExistingFile], res )
 
     res = self.se.getFileSize( self.ALL )
-    self.assert_( res['OK'], res )
+    self.assertTrue( res['OK'], res )
     self.assertEqual( res['Value']['Successful'][self.existingFile], self.existingFileSize )
-    self.assert_( os.strerror( errno.ENOENT ) in res['Value']['Failed'][self.nonExistingFile], res )
-    self.assert_( os.strerror( errno.EISDIR ) in res['Value']['Failed'][self.subDir], res )
+    self.assertTrue( os.strerror( errno.ENOENT ) in res['Value']['Failed'][self.nonExistingFile], res )
+    self.assertTrue( os.strerror( errno.EISDIR ) in res['Value']['Failed'][self.subDir], res )
 
 
     res = self.se.getFileMetadata( self.ALL )
-    self.assert_( res['OK'], res )
-    self.assert_( self.existingFile in res['Value']['Successful'] )
-    self.assert_( os.strerror( errno.ENOENT ) in res['Value']['Failed'][self.nonExistingFile], res )
-    self.assert_( os.strerror( errno.EISDIR ) in res['Value']['Failed'][self.subDir], res )
+    self.assertTrue( res['OK'], res )
+    self.assertTrue( self.existingFile in res['Value']['Successful'] )
+    self.assertTrue( os.strerror( errno.ENOENT ) in res['Value']['Failed'][self.nonExistingFile], res )
+    self.assertTrue( os.strerror( errno.EISDIR ) in res['Value']['Failed'][self.subDir], res )
 
 
     res = self.se.isFile( self.ALL )
-    self.assert_( res['OK'], res )
-    self.assert_( res['Value']['Successful'][self.existingFile], res )
-    self.assert_( not res['Value']['Successful'][self.subDir], res )
-    self.assert_( os.strerror( errno.ENOENT ) in res['Value']['Failed'][self.nonExistingFile], res )
+    self.assertTrue( res['OK'], res )
+    self.assertTrue( res['Value']['Successful'][self.existingFile], res )
+    self.assertTrue( not res['Value']['Successful'][self.subDir], res )
+    self.assertTrue( os.strerror( errno.ENOENT ) in res['Value']['Failed'][self.nonExistingFile], res )
 
     res = self.se.getFile( self.ALL, localPath = self.destPath )
-    self.assert_( res['OK'], res )
+    self.assertTrue( res['OK'], res )
     self.assertEqual( res['Value']['Successful'][self.existingFile], self.existingFileSize )
-    self.assert_( os.path.exists( os.path.join( self.destPath, os.path.basename( self.existingFile ) ) ) )
+    self.assertTrue( os.path.exists( os.path.join( self.destPath, os.path.basename( self.existingFile ) ) ) )
     self.assertEqual( res['Value']['Successful'][self.subFile], self.subFileSize )
-    self.assert_( os.path.exists( os.path.join( self.destPath, os.path.basename( self.subFile ) ) ) )
-    self.assert_( os.strerror( errno.ENOENT ) in res['Value']['Failed'][self.nonExistingFile], res )
-    self.assert_( os.strerror( errno.EISDIR ) in res['Value']['Failed'][self.subDir], res )
+    self.assertTrue( os.path.exists( os.path.join( self.destPath, os.path.basename( self.subFile ) ) ) )
+    self.assertTrue( os.strerror( errno.ENOENT ) in res['Value']['Failed'][self.nonExistingFile], res )
+    self.assertTrue( os.strerror( errno.EISDIR ) in res['Value']['Failed'][self.subDir], res )
 
 
     res = self.se.removeFile( self.ALL )
-    self.assert_( res['OK'], res )
-    self.assert_( res['Value']['Successful'][self.existingFile] )
-    self.assert_( not os.path.exists( self.basePath + self.existingFile ) )
-    self.assert_( res['Value']['Successful'][self.subFile] )
-    self.assert_( not os.path.exists( self.basePath + self.subFile ) )
-    self.assert_( res['Value']['Successful'][self.nonExistingFile] )
-    self.assert_( os.strerror( errno.EISDIR ) in res['Value']['Failed'][self.subDir] )
+    self.assertTrue( res['OK'], res )
+    self.assertTrue( res['Value']['Successful'][self.existingFile] )
+    self.assertTrue( not os.path.exists( self.basePath + self.existingFile ) )
+    self.assertTrue( res['Value']['Successful'][self.subFile] )
+    self.assertTrue( not os.path.exists( self.basePath + self.subFile ) )
+    self.assertTrue( res['Value']['Successful'][self.nonExistingFile] )
+    self.assertTrue( os.strerror( errno.EISDIR ) in res['Value']['Failed'][self.subDir] )
 
 
 
@@ -244,9 +245,9 @@ class TestBase( unittest.TestCase ):
 
 
     res = self.se.createDirectory( self.subDir )
-    self.assert_( res['OK'], res )
-    self.assert_( self.subDir in res['Value']['Successful'] )
-    self.assert_( os.path.exists( self.basePath + self.subDir ) )
+    self.assertTrue( res['OK'], res )
+    self.assertTrue( self.subDir in res['Value']['Successful'] )
+    self.assertTrue( os.path.exists( self.basePath + self.subDir ) )
 
 
   @mock.patch( 'DIRAC.Resources.Storage.StorageElement.StorageElementItem._StorageElementItem__isLocalSE',
@@ -261,115 +262,115 @@ class TestBase( unittest.TestCase ):
 
     # Correct size
     res = self.se.putDirectory( { '/test' : self.srcPath} )
-    self.assert_( res['OK'], res )
-    self.assert_( '/test' in res['Value']['Successful'], res )
+    self.assertTrue( res['OK'], res )
+    self.assertTrue( '/test' in res['Value']['Successful'], res )
     self.assertEqual( res['Value']['Successful']['/test'], {'Files': 2, 'Size': self.existingFileSize + self.subFileSize} )
-    self.assert_( os.path.exists( self.basePath + '/test' ) )
-    self.assert_( os.path.exists( self.basePath + self.existingFile ) )
-    self.assert_( os.path.exists( self.basePath + self.subFile ) )
+    self.assertTrue( os.path.exists( self.basePath + '/test' ) )
+    self.assertTrue( os.path.exists( self.basePath + self.existingFile ) )
+    self.assertTrue( os.path.exists( self.basePath + self.subFile ) )
 
 
     # No existing source directory
     res = self.se.putDirectory( { '/test' : nonExistingDir} )
-    self.assert_( res['OK'], res )
-    self.assert_( '/test' in res['Value']['Failed'], res )
+    self.assertTrue( res['OK'], res )
+    self.assertTrue( '/test' in res['Value']['Failed'], res )
     self.assertEqual( res['Value']['Failed']['/test'], {'Files': 0, 'Size': 0} )
 
     # sub file
     res = self.se.putDirectory( { '/test' : self.existingFile} )
-    self.assert_( res['OK'], res )
-    self.assert_( '/test' in res['Value']['Failed'], res )
+    self.assertTrue( res['OK'], res )
+    self.assertTrue( '/test' in res['Value']['Failed'], res )
     self.assertEqual( res['Value']['Failed']['/test'], {'Files': 0, 'Size': 0} )
 
 
     res = self.se.exists( self.DIRECTORIES + localdirs )
-    self.assert_( res['OK'], res )
-    self.assert_( not res['Value']['Failed'], res )
-    self.assert_( res['Value']['Successful'][self.subDir], res )
-    self.assert_( not res['Value']['Successful'][nonExistingDir], res )
+    self.assertTrue( res['OK'], res )
+    self.assertTrue( not res['Value']['Failed'], res )
+    self.assertTrue( res['Value']['Successful'][self.subDir], res )
+    self.assertTrue( not res['Value']['Successful'][nonExistingDir], res )
 
     res = self.se.getDirectorySize( self.ALL + localdirs )
-    self.assert_( res['OK'], res )
+    self.assertTrue( res['OK'], res )
     self.assertEqual( res['Value']['Successful'][self.subDir], { 'Files' : 1, 'Size' : self.subFileSize, 'SubDirs' : 0 } )
     self.assertEqual( res['Value']['Successful']['/test'], { 'Files' : 1, 'Size' : self.existingFileSize, 'SubDirs' : 1 } )
-    self.assert_( os.strerror( errno.ENOENT ) in res['Value']['Failed'][self.nonExistingFile], res )
-    self.assert_( os.strerror( errno.ENOTDIR ) in res['Value']['Failed'][self.existingFile], res )
-    self.assert_( os.strerror( errno.ENOENT ) in res['Value']['Failed'][nonExistingDir], res )
+    self.assertTrue( os.strerror( errno.ENOENT ) in res['Value']['Failed'][self.nonExistingFile], res )
+    self.assertTrue( os.strerror( errno.ENOTDIR ) in res['Value']['Failed'][self.existingFile], res )
+    self.assertTrue( os.strerror( errno.ENOENT ) in res['Value']['Failed'][nonExistingDir], res )
 
 
     res = self.se.getDirectoryMetadata( self.ALL + localdirs )
-    self.assert_( res['OK'], res )
-    self.assert_( self.subDir in res['Value']['Successful'] )
-    self.assert_( os.strerror( errno.ENOENT ) in res['Value']['Failed'][self.nonExistingFile], res )
-    self.assert_( os.strerror( errno.ENOENT ) in res['Value']['Failed'][nonExistingDir], res )
-    self.assert_( os.strerror( errno.ENOTDIR ) in res['Value']['Failed'][self.existingFile], res )
+    self.assertTrue( res['OK'], res )
+    self.assertTrue( self.subDir in res['Value']['Successful'] )
+    self.assertTrue( os.strerror( errno.ENOENT ) in res['Value']['Failed'][self.nonExistingFile], res )
+    self.assertTrue( os.strerror( errno.ENOENT ) in res['Value']['Failed'][nonExistingDir], res )
+    self.assertTrue( os.strerror( errno.ENOTDIR ) in res['Value']['Failed'][self.existingFile], res )
 
 
     res = self.se.isDirectory( self.ALL + localdirs )
-    self.assert_( res['OK'], res )
-    self.assert_( not res['Value']['Successful'][self.existingFile] )
-    self.assert_( res['Value']['Successful'][self.subDir], res )
-    self.assert_( os.strerror( errno.ENOENT ) in res['Value']['Failed'][self.nonExistingFile], res )
-    self.assert_( os.strerror( errno.ENOENT ) in res['Value']['Failed'][nonExistingDir], res )
+    self.assertTrue( res['OK'], res )
+    self.assertTrue( not res['Value']['Successful'][self.existingFile] )
+    self.assertTrue( res['Value']['Successful'][self.subDir], res )
+    self.assertTrue( os.strerror( errno.ENOENT ) in res['Value']['Failed'][self.nonExistingFile], res )
+    self.assertTrue( os.strerror( errno.ENOENT ) in res['Value']['Failed'][nonExistingDir], res )
 
     res = self.se.listDirectory( self.ALL + localdirs )
-    self.assert_( res['OK'], res )
+    self.assertTrue( res['OK'], res )
     self.assertEqual( res['Value']['Successful'][self.subDir], {'Files': [self.subFile], 'SubDirs': []} )
     self.assertEqual( res['Value']['Successful']['/test'], {'Files': [self.existingFile], 'SubDirs': [self.subDir]} )
-    self.assert_( os.strerror( errno.ENOENT ) in res['Value']['Failed'][self.nonExistingFile], res )
-    self.assert_( os.strerror( errno.ENOTDIR ) in res['Value']['Failed'][self.existingFile], res )
-    self.assert_( os.strerror( errno.ENOENT ) in res['Value']['Failed'][nonExistingDir], res )
+    self.assertTrue( os.strerror( errno.ENOENT ) in res['Value']['Failed'][self.nonExistingFile], res )
+    self.assertTrue( os.strerror( errno.ENOTDIR ) in res['Value']['Failed'][self.existingFile], res )
+    self.assertTrue( os.strerror( errno.ENOENT ) in res['Value']['Failed'][nonExistingDir], res )
 
 
     res = self.se.getDirectory( self.ALL + localdirs, localPath = self.destPath )
-    self.assert_( res['OK'], res )
+    self.assertTrue( res['OK'], res )
     self.assertEqual( res['Value']['Successful']['/test'], {'Files' : 2, 'Size' : self.existingFileSize + self.subFileSize} )
-    self.assert_( os.path.exists( self.destPath + self.existingFile ) )
-    self.assert_( os.path.exists( self.destPath + self.subFile ) )
+    self.assertTrue( os.path.exists( self.destPath + self.existingFile ) )
+    self.assertTrue( os.path.exists( self.destPath + self.subFile ) )
     self.assertEqual( res['Value']['Successful'][self.subDir], {'Files' : 1, 'Size' : self.subFileSize} )
-    self.assert_( os.path.exists( self.destPath + self.subFile.replace( '/test', '' ) ) )
+    self.assertTrue( os.path.exists( self.destPath + self.subFile.replace( '/test', '' ) ) )
     self.assertEqual( res['Value']['Failed'][self.nonExistingFile], {'Files': 0, 'Size': 0} )
     self.assertEqual( res['Value']['Failed'][self.existingFile], {'Files': 0, 'Size': 0} )
     self.assertEqual( res['Value']['Failed'][nonExistingDir], {'Files': 0, 'Size': 0} )
 
 
     res = self.se.removeDirectory( nonExistingDir, recursive = False )
-    self.assert_( res['OK'], res )
+    self.assertTrue( res['OK'], res )
     self.assertEqual( res['Value']['Successful'][nonExistingDir], True )
 
     res = self.se.removeDirectory( nonExistingDir, recursive = True )
-    self.assert_( res['OK'], res )
+    self.assertTrue( res['OK'], res )
     self.assertEqual( res['Value']['Failed'][nonExistingDir], {'FilesRemoved':0, 'SizeRemoved':0} )
 
 
     res = self.se.removeDirectory( self.nonExistingFile, recursive = False )
-    self.assert_( res['OK'], res )
+    self.assertTrue( res['OK'], res )
     self.assertEqual( res['Value']['Successful'][self.nonExistingFile], True )
 
     res = self.se.removeDirectory( self.nonExistingFile, recursive = True )
-    self.assert_( res['OK'], res )
+    self.assertTrue( res['OK'], res )
     self.assertEqual( res['Value']['Failed'][self.nonExistingFile], {'FilesRemoved':0, 'SizeRemoved':0} )
 
 
     res = self.se.removeDirectory( self.existingFile, recursive = False )
-    self.assert_( res['OK'], res )
-    self.assert_( os.strerror( errno.ENOTDIR ) in res['Value']['Failed'][self.existingFile], res )
+    self.assertTrue( res['OK'], res )
+    self.assertTrue( os.strerror( errno.ENOTDIR ) in res['Value']['Failed'][self.existingFile], res )
 
     res = self.se.removeDirectory( self.existingFile, recursive = True )
-    self.assert_( res['OK'], res )
+    self.assertTrue( res['OK'], res )
     self.assertEqual( res['Value']['Failed'][self.existingFile], {'FilesRemoved':0, 'SizeRemoved':0} )
 
 
     res = self.se.removeDirectory( '/test', recursive = False )
-    self.assert_( res['OK'], res )
+    self.assertTrue( res['OK'], res )
     self.assertEqual( res['Value']['Successful']['/test'], True )
-    self.assert_( not os.path.exists( self.basePath + self.existingFile ) )
-    self.assert_( os.path.exists( self.basePath + self.subFile ) )
+    self.assertTrue( not os.path.exists( self.basePath + self.existingFile ) )
+    self.assertTrue( os.path.exists( self.basePath + self.subFile ) )
 
     res = self.se.removeDirectory( '/test', recursive = True )
-    self.assert_( res['OK'], res )
+    self.assertTrue( res['OK'], res )
     self.assertEqual( res['Value']['Successful']['/test'], {'FilesRemoved':1, 'SizeRemoved':self.subFileSize} )
-    self.assert_( not os.path.exists( self.basePath + '/test' ) )
+    self.assertTrue( not os.path.exists( self.basePath + '/test' ) )
 
 
 

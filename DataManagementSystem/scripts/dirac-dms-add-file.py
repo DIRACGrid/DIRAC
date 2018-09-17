@@ -10,26 +10,33 @@
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base import Script
+from DIRAC import S_OK
 import os
 Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
-                                     'Usage:',
+                                     '\nUsage:',
                                      '  %s [option|cfgfile] ... LFN Path SE [GUID]' % Script.scriptName,
-                                     'Arguments:',
+                                     '\nArguments:',
                                      '  LFN:      Logical File Name',
                                      '  Path:     Local path to the file',
                                      '  SE:       DIRAC Storage Element',
                                      '  GUID:     GUID to use in the registration (optional)' ,
                                      '',
-                                     ' ++ OR ++',
+                                     '**OR**',
                                      '',
                                      'Usage:',
                                      '  %s [option|cfgfile] ... LocalFile' % Script.scriptName,
-                                     'Arguments:',
+                                     '\nArguments:',
                                      '  LocalFile: Path to local file containing all the above, i.e.:',
                                      '  lfn1 localfile1 SE [GUID1]',
                                      '  lfn2 localfile2 SE [GUID2]'] )
                         )
+overwrite = False
+def setOverwrite( arg ):
+  global overwrite
+  overwrite = True
+  return S_OK()
 
+Script.registerSwitch( "f", "force", "Force overwrite of existing file", setOverwrite )
 Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
 if len( args ) < 1 or len( args ) > 4:
@@ -80,7 +87,7 @@ for lfn in lfns:
     continue
 
   gLogger.notice( "\nUploading %s" % lfn['lfn'] )
-  res = dm.putAndRegister( lfn['lfn'], lfn['localfile'], lfn['SE'], lfn['guid'] )
+  res = dm.putAndRegister( lfn['lfn'], lfn['localfile'], lfn['SE'], lfn['guid'], overwrite = overwrite )
   if not res['OK']:
     exitCode = 3
     gLogger.error( 'Error: failed to upload %s to %s' % ( lfn['lfn'], lfn['SE'] ) )

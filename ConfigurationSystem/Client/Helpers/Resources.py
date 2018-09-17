@@ -1,13 +1,13 @@
 """ Helper for the CS Resources section
 """
 
-
 import re
-from distutils.version import LooseVersion
+from distutils.version import LooseVersion #pylint: disable=no-name-in-module,import-error
 
-from DIRAC                                              import S_OK, S_ERROR, gConfig
-from DIRAC.ConfigurationSystem.Client.Helpers.Path      import cfgPath
-from DIRAC.Core.Utilities.List                          import uniqueElements, fromChar
+from DIRAC import S_OK, S_ERROR, gConfig
+from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
+from DIRAC.Core.Utilities.List import uniqueElements, fromChar
+from DIRAC.Core.Utilities.Decorators import deprecated
 
 __RCSID__ = "$Id$"
 
@@ -31,6 +31,8 @@ def getSites():
 
   return S_OK( sites )
 
+
+@deprecated("Only for FTS2")
 def getStorageElementSiteMapping( siteList = None ):
   """ Get Storage Element belonging to the given sites
   """
@@ -48,10 +50,14 @@ def getStorageElementSiteMapping( siteList = None ):
 
   return S_OK( siteDict )
 
+
+@deprecated("Only for FTS2")
 def getFTS2ServersForSites( siteList = None ):
   """ get FTSServers for sites
 
-  :param list siteList: list of sites
+  :param siteList: list of sites
+  :type siteList: python:list
+
   """
   siteList = siteList if siteList else None
   if not siteList:
@@ -83,6 +89,11 @@ def getFTS3Servers():
   return S_OK( ftsServers )
 
 
+def getFTS3ServerDict():
+  """:returns: dict of key = server name and value = server url
+  """
+  return gConfig.getOptionsDict(cfgPath(gBaseResourcesSection, "FTSEndpoints/FTS3"))
+
 def getSiteTier( site ):
   """
     Return Tier level of the given Site
@@ -112,6 +123,8 @@ def getSiteGrid( site ):
     return S_ERROR( 'Wrong Site Name format' )
   return S_OK( sitetuple[0] )
 
+
+@deprecated("Unused and dangerous, use StorageElement('seName').options ")
 def getStorageElementOptions( seName ):
   """ Get the CS StorageElementOptions
   """
@@ -145,25 +158,31 @@ def getStorageElementOptions( seName ):
 def getQueue( site, ce, queue ):
   """ Get parameters of the specified queue
   """
-  Tags = []
   grid = site.split( '.' )[0]
   result = gConfig.getOptionsDict( '/Resources/Sites/%s/%s/CEs/%s' % ( grid, site, ce ) )
   if not result['OK']:
     return result
   resultDict = result['Value']
-  ceTags = resultDict.get( 'Tag' )
-  if ceTags:
-    Tags = fromChar( ceTags )
+
+  # Get queue defaults
   result = gConfig.getOptionsDict( '/Resources/Sites/%s/%s/CEs/%s/Queues/%s' % ( grid, site, ce, queue ) )
   if not result['OK']:
     return result
   resultDict.update( result['Value'] )
-  queueTags = resultDict.get( 'Tag' )
-  if queueTags:
-    queueTags = fromChar( queueTags )
-    Tags = list( set( Tags + queueTags ) )
-  if Tags:
-    resultDict['Tag'] = Tags
+
+  # Handle tag lists for the queue
+  for tagFieldName in ( 'Tag', 'RequiredTag' ): 
+    tags = []
+    ceTags = resultDict.get( tagFieldName )
+    if ceTags:
+      tags = fromChar(ceTags)
+    queueTags = resultDict.get( tagFieldName )
+    if queueTags:
+      queueTags = fromChar( queueTags )
+      tags = list(set(tags + queueTags))
+    if tags:
+      resultDict[tagFieldName] = tags
+
   resultDict['Queue'] = queue
   return S_OK( resultDict )
 
@@ -315,10 +334,9 @@ def getCatalogPath( catalogName ):
   """
   return '/Resources/FileCatalogs/%s' % catalogName
 
-def getRegistrationProtocols():
-  """ Returns the Favorite registration protocol defined in the CS, or 'srm' as default """
-  return gConfig.getValue( '/Resources/FileCatalogs/RegistrationProtocols', ['srm', 'dips'] )
+def getBackendConfig(backendID):
+  """ Return a backend configuration for a given backend identifier
 
-def getThirdPartyProtocols():
-  """ Returns the Favorite third party protocol defined in the CS, or 'srm' as default """
-  return gConfig.getValue( '/Resources/FileCatalogs/ThirdPartyProtocols', ['srm'] )
+  :params backendID: string representing a backend identifier. Ex: stdout, file, f02
+  """
+  return gConfig.getOptionsDict('Resources/LogBackends/%s' % backendID)

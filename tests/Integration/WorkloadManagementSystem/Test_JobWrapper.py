@@ -44,27 +44,27 @@ class JobWrapperSubmissionCase( JobWrapperTestCase ):
     optimizerParams = {}
 
 #     res = createJobWrapper( 1, jobParams, resourceParams, optimizerParams, logLevel = 'DEBUG' )
-#     self.assert_( res['OK'] )
+#     self.assertTrue( res['OK'] )
 #     wrapperFile = res['Value']
 
     ceFactory = ComputingElementFactory()
     ceInstance = ceFactory.getCE( 'InProcess' )
-    self.assert_( ceInstance['OK'] )
+    self.assertTrue( ceInstance['OK'] )
     computingElement = ceInstance['Value']
 
 #     res = computingElement.submitJob( wrapperFile, self.payloadProxy )
-#     self.assert_( res['OK'] )
+#     self.assertTrue( res['OK'] )
 
     if 'pilot.cfg' in os.listdir( '.' ):
       jobParams.setdefault( 'ExtraOptions', 'pilot.cfg' )
       res = createJobWrapper( 2, jobParams, resourceParams, optimizerParams, extraOptions = 'pilot.cfg', logLevel = 'DEBUG' )
     else:
       res = createJobWrapper( 2, jobParams, resourceParams, optimizerParams, logLevel = 'DEBUG' )
-    self.assert_( res['OK'] )
+    self.assertTrue( res['OK'] )
     wrapperFile = res['Value']
 
     res = computingElement.submitJob( wrapperFile, self.payloadProxy )
-    self.assert_( res['OK'] )
+    self.assertTrue( res['OK'] )
 
 
 if __name__ == '__main__':

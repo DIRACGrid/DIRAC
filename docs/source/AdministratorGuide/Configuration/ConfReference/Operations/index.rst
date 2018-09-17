@@ -17,8 +17,9 @@ In the short term, most of this schema will be moved into [vo]/[setup] dependent
 
 .. toctree::
    :maxdepth: 2
-   
+
    Email/index
+   DataManagement/index
    InputDataPolicy/index
    JobDescription/index
    JobScheduling/index
@@ -26,3 +27,9 @@ In the short term, most of this schema will be moved into [vo]/[setup] dependent
    Shifter/index
    VOs/index
    Transformations/index
+
+
+List of options
+===============
+
+* `MainServers`: List of server names (no protocol, no port) to be used as MainServer

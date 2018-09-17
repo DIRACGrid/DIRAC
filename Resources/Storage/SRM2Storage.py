@@ -1,7 +1,9 @@
 """ :mod: SRM2Storage
+
     =================
 
     .. module: python
+
     :synopsis: SRM v2 interface to StorageElement
 """
 # # imports
@@ -21,16 +23,20 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 from DIRAC.Core.Utilities.Subprocess import pythonCall
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Utilities.File import getSize
-
+from DIRAC.Core.Utilities.Decorators import deprecated
 
 # # RCSID
 __RCSID__ = "$Id$"
 
+@deprecated('Replaced by gfal2 based plugins', onlyOnce = True)
 class SRM2Storage( StorageBase ):
   """ .. class:: SRM2Storage
 
   SRM v2 interface to StorageElement using lcg_util and gfal
   """
+
+  _INPUT_PROTOCOLS = ['file', 'srm']
+  _OUTPUT_PROTOCOLS = ['file', 'root', 'dcap', 'gsidcap', 'rfio', 'srm', 'gsiftp']
 
   def __init__( self, storageName, parameters ):
     """ c'tor
@@ -326,7 +332,7 @@ class SRM2Storage( StorageBase ):
           failed[url] = 'getTransportURL: Failed to obtain turls.'
       return S_OK( {'Successful' : successful, 'Failed' : failed} )
 
-    if not self.se.getStatus().get( 'Value', {} ).get( 'Read' ):
+    if not self.se.status()['Read']:
       return S_ERROR( "SRM2Storage.getTransportURL: Read access not currently permitted." )
 
     # Here we must go out to the SRM service
@@ -769,7 +775,7 @@ class SRM2Storage( StorageBase ):
         self.log.debug( "__putFile: Unable to remove remote file remnant %s." % dest_url )
       return res
     res = res['Value']
-    if not res['OK']: #pylint: disable=invalid-sequence-index
+    if not res['OK']:  # pylint: disable=invalid-sequence-index
       # Remove the failed replica, just in case
       result = self.__executeOperation( dest_url, 'removeFile' )
       if result['OK']:
@@ -777,7 +783,7 @@ class SRM2Storage( StorageBase ):
       else:
         self.log.debug( "__putFile: Unable to remove remote file remnant %s." % dest_url )
       return res
-    errCode, errStr = res['Value']
+    errCode, errStr = res['Value']  # pylint: disable=invalid-sequence-index
     if errCode == 0:
       self.log.info( '__putFile: Successfully put file to storage.' )
       # # checksum check? return!
@@ -912,9 +918,9 @@ class SRM2Storage( StorageBase ):
     if not res['OK']:
       return res
     res = res['Value']
-    if not res['OK']: #pylint:disable=invalid-sequence-index
+    if not res['OK']:  # pylint:disable=invalid-sequence-index
       return res
-    errCode, errStr = res['Value']
+    errCode, errStr = res['Value']  # pylint: disable=invalid-sequence-index
     if errCode == 0:
       self.log.debug( '__getFile: Got a file from storage.' )
       localSize = getSize( dest_file )
@@ -1086,10 +1092,11 @@ class SRM2Storage( StorageBase ):
 
   def listDirectory( self, path, internalCall = False ):
     """ List the contents of the directory on the storage
-        :param interalCall : if this method is called from within
-                             that class, we should return index on SURL, not LFNs
-                             Do not set it to True for a normal call, unless you really
-                             know what you are doing !!
+
+        :param interalCall: if this method is called from within
+                               that class, we should return index on SURL, not LFNs
+                               Do not set it to True for a normal call, unless you really
+                               know what you are doing !!
 
     """
     res = checkArgumentFormat( path )
@@ -1885,8 +1892,8 @@ class SRM2Storage( StorageBase ):
     if not res['OK']:
       return res
     res = res['Value']
-    if res['OK']: #pylint: disable=invalid-sequence-index
-      for urlDict in res['Value']: #pylint: disable=invalid-sequence-index
+    if res['OK']:  # pylint: disable=invalid-sequence-index
+      for urlDict in res['Value']:  # pylint: disable=invalid-sequence-index
         if 'surl' in urlDict:
           urlDict['surl'] = self.__convertRandomSRMOutputIntoAFullURL( urlDict['surl'] )['Value']
 

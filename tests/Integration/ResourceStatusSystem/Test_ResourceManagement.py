@@ -2,8 +2,13 @@
     ResourceManagementClient -> ResourceManagementHandler -> ResourceManagementDB
     It supposes that the DB is present, and that the service is running
 
-    this is pytest!
+    The DB is supposed to be empty when the test starts
 '''
+
+# pylint: disable=invalid-name,wrong-import-position
+
+import datetime
+import unittest
 
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
@@ -13,276 +18,301 @@ from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceM
 
 gLogger.setLevel('DEBUG')
 
-rsClient = ResourceManagementClient()
+dateEffective = datetime.datetime.now()
+lastCheckTime = datetime.datetime.now()
 
-def test_addAndRemove():
 
-  # TEST addOrModifyAccountingCache
-  # ...............................................................................
+class TestClientResourceManagementTestCase(unittest.TestCase):
 
-  res = rsClient.addOrModifyAccountingCache('TestName1234')
-  assert res['OK'] == True
+  def setUp(self):
+    self.rmClient = ResourceManagementClient()
 
-  res = rsClient.selectAccountingCache('TestName1234')
-  assert res['OK'] == True
-  #check if the name that we got is equal to the previously added 'TestName1234'
-  assert res['Value'][0][0] == 'TestName1234'
+  def tearDown(self):
+    pass
 
 
-  # TEST deleteAccountingCache
-  # ...............................................................................
-  res = rsClient.deleteAccountingCache('TestName1234')
-  assert res['OK'] == True
+class ResourceManagementClientChain(TestClientResourceManagementTestCase):
 
-  res = rsClient.selectAccountingCache('TestName1234')
-  assert res['OK'] == True
-  assert not res['Value']
+  def test_AccountingCache(self):
+    """
+    DowntimeCache table
+    """
 
+    res = self.rmClient.deleteAccountingCache('TestName12345')  # just making sure it's not there (yet)
+    self.assertTrue(res['OK'])
 
+    # TEST addOrModifyAccountingCache
+    res = self.rmClient.addOrModifyAccountingCache('TestName12345', 'plotType', 'plotName', 'result',
+                                                   datetime.datetime.now(), datetime.datetime.now())
+    self.assertTrue(res['OK'])
 
-  # TEST addOrModifyGGUSTicketsCache
-  # ...............................................................................
+    res = self.rmClient.selectAccountingCache('TestName12345')
+    self.assertTrue(res['OK'])
+    # check if the name that we got is equal to the previously added 'TestName12345'
+    self.assertEqual(res['Value'][0][0], 'TestName12345')
 
-  res = rsClient.addOrModifyGGUSTicketsCache('TestName1234')
-  assert res['OK'] == True
+    res = self.rmClient.addOrModifyAccountingCache('TestName12345', 'plotType', 'plotName', 'changedresult',
+                                                   dateEffective, lastCheckTime)
+    self.assertTrue(res['OK'])
 
-  res = rsClient.selectGGUSTicketsCache('TestName1234')
-  assert res['OK'] == True
-  assert res['Value'][0][2] == 'TestName1234'
+    res = self.rmClient.selectAccountingCache('TestName12345')
+    # check if the result has changed
+    self.assertEqual(res['Value'][0][4], 'changedresult')
 
+    # TEST deleteAccountingCache
+    # ...............................................................................
+    res = self.rmClient.deleteAccountingCache('TestName12345')
+    self.assertTrue(res['OK'])
 
-  # TEST deleteGGUSTicketsCache
-  # ...............................................................................
+    res = self.rmClient.selectAccountingCache('TestName12345')
+    self.assertTrue(res['OK'])
+    self.assertFalse(res['Value'])
 
-  res = rsClient.deleteGGUSTicketsCache('TestName1234')
-  assert res['OK'] == True
+  def test_DowntimeCache(self):
+    """
+    DowntimeCache table
+    """
 
-  res = rsClient.selectGGUSTicketsCache('TestName1234')
-  assert res['OK'] == True
-  assert not res['Value']
+    res = self.rmClient.deleteDowntimeCache('TestName12345')  # just making sure it's not there (yet)
+    self.assertTrue(res['OK'])
+
+    # TEST addOrModifyDowntimeCache
+    res = self.rmClient.addOrModifyDowntimeCache('TestName12345', 'element', 'name',
+                                                 datetime.datetime.now(), datetime.datetime.now(),
+                                                 'severity', 'description', 'link',
+                                                 datetime.datetime.now(), datetime.datetime.now(),
+                                                 'gOCDBServiceType')
+    self.assertTrue(res['OK'])
 
+    res = self.rmClient.selectDowntimeCache('TestName12345')
+    self.assertTrue(res['OK'])
+    # check if the name that we got is equal to the previously added 'TestName12345'
+    self.assertEqual(res['Value'][0][0], 'TestName12345')
 
-  # TEST addOrModifyDowntimeCache
-  # ...............................................................................
+    res = self.rmClient.addOrModifyDowntimeCache('TestName12345', 'element', 'name', severity='changedSeverity')
+    self.assertTrue(res['OK'])
 
-  res = rsClient.addOrModifyDowntimeCache('TestName1234')
-  assert res['OK'] == True
+    res = self.rmClient.selectDowntimeCache('TestName12345')
+    # check if the result has changed
+    self.assertEqual(res['Value'][0][4], 'changedSeverity')
 
-  res = rsClient.selectDowntimeCache('TestName1234')
-  assert res['OK'] == True
-  assert res['Value'][0][3] == 'TestName1234'
+    # TEST deleteDowntimeCache
+    # ...............................................................................
+    res = self.rmClient.deleteDowntimeCache('TestName12345')
+    self.assertTrue(res['OK'])
 
+    res = self.rmClient.selectDowntimeCache('TestName12345')
+    self.assertTrue(res['OK'])
+    self.assertFalse(res['Value'])
 
-  # TEST deleteDowntimeCache
-  # ...............................................................................
+  def test_GGUSTicketsCache(self):
+    """
+    GGUSTicketsCache table
+    """
 
-  res = rsClient.deleteDowntimeCache('TestName1234')
-  assert res['OK'] == True
-
-  res = rsClient.selectDowntimeCache('TestName1234')
-  assert res['OK'] == True
-  assert not res['Value']
-
-
-  # TEST addOrModifyJobCache
-  # ...............................................................................
-
-  res = rsClient.addOrModifyJobCache('TestName1234')
-  assert res['OK'] == True
-
-  res = rsClient.selectJobCache('TestName1234')
-  assert res['OK'] == True
-  assert res['Value'][0][3] == 'TestName1234'
-
-
-  # TEST deleteJobCache
-  # ...............................................................................
-
-  res = rsClient.deleteJobCache('TestName1234')
-  assert res['OK'] == True
-
-  res = rsClient.selectJobCache('TestName1234')
-  assert res['OK'] == True
-  assert not res['Value']
-
-
-  # TEST addOrModifyTransferCache
-  # ...............................................................................
-
-  res = rsClient.addOrModifyTransferCache('TestName1234')
-  assert res['OK'] == True
-
-  res = rsClient.selectTransferCache('TestName1234')
-  assert res['OK'] == True
-  assert res['Value'][0][0] == 'TestName1234'
-
-
-  # TEST deleteTransferCache
-  # ...............................................................................
-
-  res = rsClient.deleteTransferCache('TestName1234')
-  assert res['OK'] == True
-
-  res = rsClient.selectTransferCache('TestName1234')
-  assert res['OK'] == True
-  assert not res['Value']
-
-
-  # TEST addOrModifyPilotCache
-  # ...............................................................................
-
-  res = rsClient.addOrModifyPilotCache('TestName1234')
-  assert res['OK'] == True
-
-  res = rsClient.selectPilotCache('TestName1234')
-  assert res['OK'] == True
-  assert res['Value'][0][2] == 'TestName1234'
-
-
-  # TEST deletePilotCache
-  # ...............................................................................
-
-  res = rsClient.deletePilotCache('TestName1234')
-  assert res['OK'] == True
-
-  res = rsClient.selectPilotCache('TestName1234')
-  assert res['OK'] == True
-  assert not res['Value']
-
-
-  # TEST addOrModifyPolicyResult
-  # ...............................................................................
-
-  res = rsClient.addOrModifyPolicyResult('TestName1234')
-  assert res['OK'] == True
-
-  res = rsClient.selectPolicyResult('TestName1234')
-  assert res['OK'] == True
-  assert res['Value'][0][7] == 'TestName1234'
-
-
-  # TEST deletePolicyResult
-  # ...............................................................................
-
-  res = rsClient.deletePolicyResult('TestName1234')
-  assert res['OK'] == True
-
-  res = rsClient.selectPolicyResult('TestName1234')
-  assert res['OK'] == True
-  assert not res['Value']
-
-
-  # TEST addOrModifyPolicyResultLog
-  # ...............................................................................
-
-  res = rsClient.addOrModifyPolicyResultLog('TestName1234')
-  assert res['OK'] == True
-
-  res = rsClient.selectPolicyResultLog('TestName1234')
-  assert res['OK'] == True
-  assert res['Value'][0][8] == 'TestName1234'
-
-
-  # TEST deletePolicyResultLog
-  # ...............................................................................
-
-  res = rsClient.deletePolicyResultLog('TestName1234')
-  assert res['OK'] == True
-
-  res = rsClient.selectPolicyResultLog('TestName1234')
-  assert res['OK'] == True
-  assert not res['Value']
-
-
-  # TEST addOrModifySpaceTokenOccupancyCache
-  # ...............................................................................
-
-  res = rsClient.addOrModifySpaceTokenOccupancyCache('TestName1234')
-  assert res['OK'] == True
-
-  res = rsClient.selectSpaceTokenOccupancyCache('TestName1234')
-  assert res['OK'] == True
-  assert res['Value'][0][0] == 'TestName1234'
-
-
-  # TEST deleteSpaceTokenOccupancyCache
-  # ...............................................................................
-
-  res = rsClient.deleteSpaceTokenOccupancyCache('TestName1234')
-  assert res['OK'] == True
-
-  res = rsClient.selectSpaceTokenOccupancyCache('TestName1234')
-  assert res['OK'] == True
-  assert not res['Value']
-
-
-  # TEST addOrModifyUserRegistryCache
-  # ...............................................................................
-
-  res = rsClient.addOrModifyUserRegistryCache('TestName1234')
-  assert res['OK'] == True
-
-  res = rsClient.selectUserRegistryCache('TestName1234')
-  assert res['OK'] == True
-  assert res['Value'][0][0] == 'TestName1234'
-
-
-  # TEST deleteUserRegistryCache
-  # ...............................................................................
-
-  res = rsClient.deleteUserRegistryCache('TestName1234')
-  assert res['OK'] == True
-
-  res = rsClient.selectUserRegistryCache('TestName1234')
-  assert res['OK'] == True
-  assert not res['Value']
-
-
-  # TEST addOrModifyVOBOXCache
-  # ...............................................................................
-
-  res = rsClient.addOrModifyVOBOXCache('TestName1234')
-  assert res['OK'] == True
-
-  res = rsClient.selectVOBOXCache('TestName1234')
-  assert res['OK'] == True
-  assert res['Value'][0][2] == 'TestName1234'
-
-
-  # TEST deleteVOBOXCache
-  # ...............................................................................
-
-  res = rsClient.deleteVOBOXCache('TestName1234')
-  assert res['OK'] == True
-
-  res = rsClient.selectVOBOXCache('TestName1234')
-  assert res['OK'] == True
-  assert not res['Value']
-
-
-  # TEST insertErrorReportBuffer
-  # ...............................................................................
-
-  res = rsClient.insertErrorReportBuffer('TestName1234')
-  assert res['OK'] == True
-
-  res = rsClient.selectErrorReportBuffer('TestName1234')
-  assert res['OK'] == True
-  assert res['Value'][0][1] == 'TestName1234'
-
-
-  # TEST deleteErrorReportBuffer
-  # ...............................................................................
-
-  res = rsClient.deleteErrorReportBuffer('TestName1234')
-  assert res['OK'] == True
-
-  res = rsClient.selectErrorReportBuffer('TestName1234')
-  assert res['OK'] == True
-  assert not res['Value']
-
-
+    res = self.rmClient.deleteGGUSTicketsCache('TestName12345')  # just making sure it's not there (yet)
+    self.assertTrue(res['OK'])
+
+    # TEST addOrModifyGGUSTicketsCache
+    res = self.rmClient.addOrModifyGGUSTicketsCache('TestName12345', 'link', 0, 'tickets', datetime.datetime.now())
+    self.assertTrue(res['OK'])
+
+    res = self.rmClient.selectGGUSTicketsCache('TestName12345')
+    self.assertTrue(res['OK'])
+    # check if the name that we got is equal to the previously added 'TestName12345'
+    self.assertEqual(res['Value'][0][0], 'TestName12345')
+
+    res = self.rmClient.addOrModifyGGUSTicketsCache('TestName12345', 'newLink')
+    self.assertTrue(res['OK'])
+
+    res = self.rmClient.selectGGUSTicketsCache('TestName12345')
+    # check if the result has changed
+    self.assertEqual(res['Value'][0][3], 'newLink')
+
+    # TEST deleteGGUSTicketsCache
+    # ...............................................................................
+    res = self.rmClient.deleteGGUSTicketsCache('TestName12345')
+    self.assertTrue(res['OK'])
+
+    res = self.rmClient.selectGGUSTicketsCache('TestName12345')
+    self.assertTrue(res['OK'])
+    self.assertFalse(res['Value'])
+
+  def test_JobCache(self):
+    """
+    JobCache table
+    """
+
+    res = self.rmClient.deleteJobCache('TestName12345')  # just making sure it's not there (yet)
+    self.assertTrue(res['OK'])
+
+    # TEST addOrModifyJobCache
+    res = self.rmClient.addOrModifyJobCache('TestName12345', 'maskstatus', 50.89, 'status', datetime.datetime.now())
+    self.assertTrue(res['OK'])
+
+    res = self.rmClient.selectJobCache('TestName12345')
+    self.assertTrue(res['OK'])
+    # check if the name that we got is equal to the previously added 'TestName12345'
+    self.assertEqual(res['Value'][0][0], 'TestName12345')
+
+    res = self.rmClient.addOrModifyJobCache('TestName12345', status='newStatus')
+    self.assertTrue(res['OK'])
+
+    res = self.rmClient.selectJobCache('TestName12345')
+    # check if the result has changed
+    self.assertEqual(res['Value'][0][1], 'newStatus')
+
+    # TEST deleteJobCache
+    # ...............................................................................
+    res = self.rmClient.deleteJobCache('TestName12345')
+    self.assertTrue(res['OK'])
+
+    res = self.rmClient.selectJobCache('TestName12345')
+    self.assertTrue(res['OK'])
+    self.assertFalse(res['Value'])
+
+  def test_PilotCache(self):
+    """
+    PilotCache table
+    """
+
+    res = self.rmClient.deletePilotCache('TestName12345')  # just making sure it's not there (yet)
+    self.assertTrue(res['OK'])
+
+    # TEST addOrModifyPilotCache
+    res = self.rmClient.addOrModifyPilotCache('TestName12345', 'CE', 0.0, 25.5, 'status', datetime.datetime.now())
+    self.assertTrue(res['OK'])
+
+    res = self.rmClient.selectPilotCache('TestName12345')
+    self.assertTrue(res['OK'])
+    # check if the name that we got is equal to the previously added 'TestName12345'
+    self.assertEqual(res['Value'][0][0], 'TestName12345')
+
+    res = self.rmClient.addOrModifyPilotCache('TestName12345', status='newStatus')
+    self.assertTrue(res['OK'])
+
+    res = self.rmClient.selectPilotCache('TestName12345')
+    # check if the result has changed
+    self.assertEqual(res['Value'][0][2], 'newStatus')
+
+    # TEST deletePilotCache
+    # ...............................................................................
+    res = self.rmClient.deletePilotCache('TestName12345')
+    self.assertTrue(res['OK'])
+
+    res = self.rmClient.selectPilotCache('TestName12345')
+    self.assertTrue(res['OK'])
+    self.assertFalse(res['Value'])
+
+  def test_PolicyResult(self):
+    """
+    PolicyResult table
+    """
+
+    res = self.rmClient.deletePolicyResult('element', 'TestName12345',
+                                           'policyName', 'statusType')  # just making sure it's not there (yet)
+    self.assertTrue(res['OK'])
+
+    # TEST addOrModifyPolicyResult
+    res = self.rmClient.addOrModifyPolicyResult('element', 'TestName12345', 'policyName',
+                                                'statusType', 'status', 'reason',
+                                                datetime.datetime.now(), datetime.datetime.now())
+    self.assertTrue(res['OK'])
+
+    res = self.rmClient.selectPolicyResult('element', 'TestName12345', 'policyName', 'statusType')
+    self.assertTrue(res['OK'])
+    # check if the name that we got is equal to the previously added 'TestName12345'
+    self.assertEqual(res['Value'][0][1], 'statusType')
+
+    res = self.rmClient.addOrModifyPolicyResult('element', 'TestName12345', 'policyName', 'statusType',
+                                                status='newStatus')
+    self.assertTrue(res['OK'])
+
+    res = self.rmClient.selectPolicyResult('element', 'TestName12345', 'policyName', 'statusType')
+    # check if the result has changed
+    self.assertEqual(res['Value'][0][4], 'newStatus')
+
+    # TEST deletePolicyResult
+    # ...............................................................................
+    res = self.rmClient.deletePolicyResult('element', 'TestName12345', 'policyName', 'statusType')
+    self.assertTrue(res['OK'])
+
+    res = self.rmClient.selectPolicyResult('element', 'TestName12345', 'policyName', 'statusType')
+    self.assertTrue(res['OK'])
+    self.assertFalse(res['Value'])
+
+  def test_SpaceTokenOccupancy(self):
+    """
+    SpaceTokenOccupancy table
+    """
+
+    res = self.rmClient.deleteSpaceTokenOccupancyCache('endpoint', 'token')  # just making sure it's not there (yet)
+    self.assertTrue(res['OK'])
+
+    # TEST addOrModifySpaceTokenOccupancy
+    res = self.rmClient.addOrModifySpaceTokenOccupancyCache('endpoint', 'token', 500.0, 1000.0, 200.0,
+                                                            datetime.datetime.now())
+    self.assertTrue(res['OK'])
+
+    res = self.rmClient.selectSpaceTokenOccupancyCache('endpoint', 'token')
+    self.assertTrue(res['OK'])
+    # check if the name that we got is equal to the previously added 'token'
+    self.assertEqual(res['Value'][0][1], 'token')
+
+    res = self.rmClient.addOrModifySpaceTokenOccupancyCache('endpoint', 'token', free=100.0)
+    self.assertTrue(res['OK'])
+
+    res = self.rmClient.selectSpaceTokenOccupancyCache('endpoint', 'token')
+    # check if the result has changed
+    self.assertEqual(res['Value'][0][3], 100.0)
+
+    # TEST deleteSpaceTokenOccupancy
+    # ...............................................................................
+    res = self.rmClient.deleteSpaceTokenOccupancyCache('endpoint', 'token')
+    self.assertTrue(res['OK'])
+
+    res = self.rmClient.selectSpaceTokenOccupancyCache('endpoint', 'token')
+    self.assertTrue(res['OK'])
+    self.assertFalse(res['Value'])
+
+  def test_Transfer(self):
+    """
+    TransferOccupancy table
+    """
+
+    res = self.rmClient.deleteTransferCache('sourcename', 'destinationname')  # just making sure it's not there (yet)
+    self.assertTrue(res['OK'])
+
+    # TEST addOrModifyTransferOccupancy
+    res = self.rmClient.addOrModifyTransferCache('sourcename', 'destinationname', 'metric', 1000.0,
+                                                 datetime.datetime.now())
+    self.assertTrue(res['OK'])
+
+    res = self.rmClient.selectTransferCache('sourcename', 'destinationname')
+    self.assertTrue(res['OK'])
+    # check if the name that we got is equal to the previously added 'destinationname'
+    self.assertEqual(res['Value'][0][2], 'metric')
+
+    res = self.rmClient.addOrModifyTransferCache('sourcename', 'destinationname', value=200.0)
+    self.assertTrue(res['OK'])
+
+    res = self.rmClient.selectTransferCache('sourcename', 'destinationname')
+    # check if the result has changed
+    self.assertEqual(res['Value'][0][3], 200.0)
+
+    # TEST deleteTransferOccupancy
+    # ...............................................................................
+    res = self.rmClient.deleteTransferCache('sourcename', 'destinationname')
+    self.assertTrue(res['OK'])
+
+    res = self.rmClient.selectTransferCache('sourcename', 'destinationname')
+    self.assertTrue(res['OK'])
+    self.assertFalse(res['Value'])
+
+
+if __name__ == '__main__':
+  suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestClientResourceManagementTestCase)
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ResourceManagementClientChain))
+  testResult = unittest.TextTestRunner(verbosity=2).run(suite)
 
 # EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
-
-

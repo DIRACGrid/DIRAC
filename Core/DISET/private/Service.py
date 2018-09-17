@@ -1,9 +1,20 @@
+"""
+  Service class implements the server side part of the DISET protocol
+  There are 2 main parts in this class:
+
+  - All useful functions for initialization
+  - All useful functions to handle the requests
+"""
+#pylint: skip-file
+## __searchInitFunctions gives RuntimeError: maximum recursion depth exceeded
 
 import os
 import time
-import DIRAC
 import threading
+
+import DIRAC
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC.Core.Utilities.DErrno import ENOAUTH
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.Core.Utilities import Time, MemStat
 from DIRAC.Core.DISET.private.LockManager import LockManager
@@ -18,6 +29,8 @@ from DIRAC.Core.DISET.AuthManager import AuthManager
 from DIRAC.FrameworkSystem.Client.SecurityLogClient import SecurityLogClient
 from DIRAC.ConfigurationSystem.Client import PathFinder
 
+__RCSID__ = "$Id$"
+
 class Service( object ):
 
   SVC_VALID_ACTIONS = { 'RPC' : 'export',
@@ -27,6 +40,19 @@ class Service( object ):
   SVC_SECLOG_CLIENT = SecurityLogClient()
 
   def __init__( self, serviceData ):
+    """
+      Init the variables for the service
+
+      :param serviceData: dict with modName, standalone, loadName, moduleObj, classObj. e.g.:
+        {'modName': 'Framework/serviceName',
+        'standalone': True,
+        'loadName': 'Framework/serviceName',
+        'moduleObj': <module 'serviceNameHandler' from '/home/DIRAC/FrameworkSystem/Service/serviceNameHandler.pyo'>,
+        'classObj': <class 'serviceNameHandler.serviceHandler'>}
+
+        Standalone is true if there is only one service started
+        If it's false, every service is linked to a different MonitoringClient
+    """
     self._svcData = serviceData
     self._name = serviceData[ 'modName' ]
     self._startTime = Time.dateTime()
@@ -253,13 +279,44 @@ class Service( object ):
   #End of initialization functions
 
   def handleConnection( self, clientTransport ):
+    """
+      This method may be called by ServiceReactor.
+      The method stacks openened connection in a queue, another thread
+      read this queue and handle connection.
+
+      :param clientTransport: Object wich describe opened connection (PlainTransport or SSLTransport)
+    """
     self._stats[ 'connections' ] += 1
     self._monitor.setComponentExtraParam( 'queries', self._stats[ 'connections' ] )
     self._threadPool.generateJobAndQueueIt( self._processInThread,
-                                             args = ( clientTransport, ) )
+                                            args = ( clientTransport, ) )
 
   #Threaded process function
   def _processInThread( self, clientTransport ):
+    """
+    This method handles a RPC, FileTransfer or Connection.
+    Connection may be opened via ServiceReactor.__acceptIncomingConnection
+
+
+    - Do the SSL/TLS Handshake (if dips is used) and extract credentials
+    - Get the action called by the client
+    - Check if the client is authorized to perform ation
+      - If not, connection is closed
+    - Instanciate the RequestHandler (RequestHandler contain all methods callable)
+
+    (Following is not directly in this method but it describe what happen at
+    #Execute the action)
+    - Notify the client we're ready to execute the action (via _processProposal)
+      and call RequestHandler._rh_executeAction()
+    - Receive arguments/file/something else (depending on action) in the RequestHandler
+    - Executing the action asked by the client
+
+    :param clientTransport: Object who describe the opened connection (SSLTransport or PlainTransport)
+
+    :return: S_OK with "closeTransport" a boolean to indicate if th connection have to be closed
+            e.g. after RPC, closeTransport=True
+
+    """
     self.__maxFD = max( self.__maxFD, clientTransport.oSocket.fileno() )
     self._lockManager.lockGlobal()
     try:
@@ -385,7 +442,7 @@ class Service( object ):
       gLogger.warn( "Unauthorized query", "to %s:%s by %s from %s" % ( self._name,
                                                                "/".join( actionTuple ),
                                                                identity, fromHost ) )
-      result = S_ERROR( "Unauthorized query" )
+      result = S_ERROR( ENOAUTH, "Unauthorized query" )
     else:
       result = S_OK()
 
@@ -448,9 +505,9 @@ class Service( object ):
 
       #This is a stable connection
       self._msgBroker.addTransportId( trid, self._name,
-                                       receiveMessageCallback = self._mbReceivedMsg,
-                                       disconnectCallback = self._mbDisconnect,
-                                       listenToConnection = False )
+                                      receiveMessageCallback = self._mbReceivedMsg,
+                                      disconnectCallback = self._mbDisconnect,
+                                      listenToConnection = False )
 
     result = self._executeAction( trid, proposalTuple, handlerObj )
     if result[ 'OK' ] and messageConnection:

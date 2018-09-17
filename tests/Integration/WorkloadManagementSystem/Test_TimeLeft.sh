@@ -1,15 +1,18 @@
 #!/bin/sh
 #-------------------------------------------------------------------------------
 
-# Tests that require a $DIRACROOT pointing to DIRAC code
-# It also assumes that pilot.cfg (in this directory contains all the necessary for running)
+# Tests that require a $DIRACSCRIPTS pointing to DIRAC deployed scripts location,
+# and a $DIRAC variable pointing to an installed DIRAC
+# It also assumes that pilot.cfg contains all the necessary for running
+
+echo "\n======> Test_TimeLeft <======\n"
 
 if [ ! -z "$DEBUG" ]
 then
-	echo '==> Running in DEBUG mode'
-	DEBUG='-ddd'
+  echo '==> Running in DEBUG mode'
+  DEBUG='-ddd'
 else
-	echo '==> Running in non-DEBUG mode'
+  echo '==> Running in non-DEBUG mode'
 fi
 
 
@@ -17,7 +20,7 @@ fi
 ###############################################################################
 # Can't find anywhere a batch plugin, not even MJF
 
-python $DIRACROOT/WorkloadManagementSystem/scripts/dirac-wms-get-queue-cpu-time.py $DIRACROOT/tests/Integration/WorkloadManagementSystem/pilot.cfg $DEBUG
+$DIRACSCRIPTS/dirac-wms-get-queue-cpu-time $DIRAC/DIRAC/tests/Integration/WorkloadManagementSystem/pilot.cfg $DEBUG
 
 if [ $? -eq 0 ]
 then
@@ -31,10 +34,10 @@ fi
 ###############################################################################
 # Found MJF, not reading it (not a directory)
 
-export MACHINEFEATURES=$DIRACROOT/tests/Integration/WorkloadManagementSystem/sb.cfg
-export JOBFEATURES=$DIRACROOT/tests/Integration/WorkloadManagementSystem/sb.cfg
+export MACHINEFEATURES=$DIRAC/DIRAC/tests/Integration/WorkloadManagementSystem/sb.cfg
+export JOBFEATURES=$DIRAC/DIRAC/tests/Integration/WorkloadManagementSystem/sb.cfg
 
-python $DIRACROOT/WorkloadManagementSystem/scripts/dirac-wms-get-queue-cpu-time.py $DIRACROOT/tests/Integration/WorkloadManagementSystem/pilot.cfg $DEBUG
+$DIRACSCRIPTS/dirac-wms-get-queue-cpu-time $DIRAC/DIRAC/tests/Integration/WorkloadManagementSystem/pilot.cfg $DEBUG
 
 if [ $? -eq 0 ]
 then
@@ -48,10 +51,10 @@ fi
 ###############################################################################
 # Found MJF, gave proper values
 
-export MACHINEFEATURES=$DIRACROOT/tests/Integration/WorkloadManagementSystem/MJF/
-export JOBFEATURES=$DIRACROOT/tests/Integration/WorkloadManagementSystem/MJF/
+export MACHINEFEATURES=$DIRAC/DIRAC/tests/Integration/WorkloadManagementSystem/MJF/
+export JOBFEATURES=$DIRAC/DIRAC/tests/Integration/WorkloadManagementSystem/MJF/
 
-python $DIRACROOT/WorkloadManagementSystem/scripts/dirac-wms-get-queue-cpu-time.py $DIRACROOT/tests/Integration/WorkloadManagementSystem/pilot.cfg $DEBUG
+$DIRACSCRIPTS/dirac-wms-get-queue-cpu-time $DIRAC/DIRAC/tests/Integration/WorkloadManagementSystem/pilot.cfg $DEBUG
 
 if [ $? -eq 0 ]
 then

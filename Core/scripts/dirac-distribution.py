@@ -7,19 +7,25 @@
 """
   Create tarballs for a given DIRAC release
 """
+
 __RCSID__ = "$Id$"
+
+#pylint: disable=missing-docstring
+
+import sys
+import os
+import re
+import urllib2
+import tempfile
+import imp
+import hashlib
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.Base      import Script
 from DIRAC.Core.Utilities import List, Distribution, Platform
 
-import sys, os, re, urllib2, tempfile, imp
 
-try:
-  import hashlib as md5
-except ImportError:
-  import md5
 
 ###
 # Load release manager from dirac-install
@@ -37,22 +43,22 @@ except Exception as excp:
 ##END OF LOAD
 
 
-class Params:
+class Params(object):
 
   def __init__( self ):
     self.releasesToBuild = []
     self.projectName = 'DIRAC'
-    self.debug = False
     self.externalsBuildType = [ 'client' ]
     self.ignoreExternals = False
     self.forceExternals = False
     self.ignorePackages = False
     self.relcfg = False
-    self.externalsPython = '26'
+    self.externalsPython = '27'
     self.destination = ""
     self.externalsLocation = ""
     self.makeJobs = 1
     self.globalDefaults = ""
+    self.extjspath = None
 
   def setReleases( self, optionValue ):
     self.releasesToBuild = List.fromChar( optionValue )
@@ -62,19 +68,15 @@ class Params:
     self.projectName = optionValue
     return S_OK()
 
-  def setDebug( self, optionValue ):
-    self.debug = True
-    return S_OK()
-
   def setExternalsBuildType( self, optionValue ):
     self.externalsBuildType = List.fromChar( optionValue )
     return S_OK()
 
-  def setForceExternals( self, optionValue ):
+  def setForceExternals( self, _optionValue ):
     self.forceExternals = True
     return S_OK()
 
-  def setIgnoreExternals( self, optionValue ):
+  def setIgnoreExternals( self, _optionValue ):
     self.ignoreExternals = True
     return S_OK()
 
@@ -86,7 +88,7 @@ class Params:
     self.externalsPython = optionValue
     return S_OK()
 
-  def setIgnorePackages( self, optionValue ):
+  def setIgnorePackages( self, _optionValue ):
     self.ignorePackages = True
     return S_OK()
 
@@ -105,24 +107,34 @@ class Params:
   def setGlobalDefaults( self, value ):
     self.globalDefaults = value
     return S_OK()
+  
+  def setExtJsPath( self, opVal ):
+    self.extjspath = opVal
+    return S_OK()
 
   def registerSwitches( self ):
     Script.registerSwitch( "r:", "releases=", "releases to build (mandatory, comma separated)", cliParams.setReleases )
-    Script.registerSwitch( "l:", "project=", "Project to build the release for (DIRAC by default)", cliParams.setProject )
-    Script.registerSwitch( "D:", "destination", "Destination where to build the tar files", cliParams.setDestination )
-    Script.registerSwitch( "i:", "pythonVersion", "Python version to use (25/26)", cliParams.setPythonVersion )
+    Script.registerSwitch( "l:", "project=", "Project to build the release for (DIRAC by default)",
+                           cliParams.setProject )
+    Script.registerSwitch( "D:", "destination=", "Destination where to build the tar files", cliParams.setDestination )
+    Script.registerSwitch( "i:", "pythonVersion=", "Python version to use (27)", cliParams.setPythonVersion )
     Script.registerSwitch( "P", "ignorePackages", "Do not make tars of python packages", cliParams.setIgnorePackages )
     Script.registerSwitch( "C:", "relcfg=", "Use <file> as the releases.cfg", cliParams.setReleasesCFG )
-    Script.registerSwitch( "b", "buildExternals", "Force externals compilation even if already compiled", cliParams.setForceExternals )
+    Script.registerSwitch( "b", "buildExternals", "Force externals compilation even if already compiled",
+                           cliParams.setForceExternals )
     Script.registerSwitch( "B", "ignoreExternals", "Skip externals compilation", cliParams.setIgnoreExternals )
-    Script.registerSwitch( "t:", "buildType=", "External type to build (client/server)", cliParams.setExternalsBuildType )
-    Script.registerSwitch( "x:", "externalsLocation=", "Use externals location instead of downloading them", cliParams.setExternalsLocation )
+    Script.registerSwitch( "t:", "buildType=", "External type to build (client/server)",
+                           cliParams.setExternalsBuildType )
+    Script.registerSwitch( "x:", "externalsLocation=", "Use externals location instead of downloading them",
+                           cliParams.setExternalsLocation )
     Script.registerSwitch( "j:", "makeJobs=", "Make jobs (default is 1)", cliParams.setMakeJobs )
-    Script.registerSwitch( 'M:', 'defaultsURL=', 'Where to retrieve the global defaults from', cliParams.setGlobalDefaults )
+    Script.registerSwitch( 'M:', 'defaultsURL=', 'Where to retrieve the global defaults from',
+                           cliParams.setGlobalDefaults )
+    Script.registerSwitch( "E:", "extjspath=", "directory of the extjs library", cliParams.setExtJsPath )
 
     Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
-                                        '\nUsage:',
-                                        '  %s [option|cfgfile] ...\n' % Script.scriptName ] ) )
+                                         '\nUsage:',
+                                         '  %s [option|cfgfile] ...\n' % Script.scriptName ] ) )
 
 
 class DistributionMaker:
@@ -149,7 +161,9 @@ class DistributionMaker:
 
   def loadReleases( self ):
     gLogger.notice( "Loading releases.cfg" )
-    return self.relConf.loadProjectRelease( self.cliParams.releasesToBuild, releaseMode = True, relLocation = self.cliParams.relcfg )
+    return self.relConf.loadProjectRelease( self.cliParams.releasesToBuild,
+                                            releaseMode = True,
+                                            relLocation = self.cliParams.relcfg )
 
   def createModuleTarballs( self ):
     for version in self.cliParams.releasesToBuild:
@@ -170,6 +184,18 @@ class DistributionMaker:
       dctArgs.append( "-n '%s'" % modName )
       dctArgs.append( "-v '%s'" % modVersion )
       gLogger.notice( "Creating tar for %s version %s" % ( modName, modVersion ) )
+      if 'Web' in modName: #we have to compile WebApp and also its extension.
+        if modName != 'WebAppDIRAC' and modName != "Web": #it means we have an extension!
+          #Note: the old portal called Web
+          modules = self.relConf.getDiracModules()
+          webData = modules.get( "WebAppDIRAC", None )
+          if webData:
+            dctArgs.append( "-e '%s'" % webData.get("Version") )
+            dctArgs.append( "-E '%s'" % webData.get("sourceUrl") )
+          
+        if self.cliParams.extjspath:
+          dctArgs.append( "-P '%s'" % self.cliParams.extjspath )
+            
       #Source
       result = self.relConf.getModSource( releaseVersion, modName )
       if not result[ 'OK' ]:
@@ -184,8 +210,6 @@ class DistributionMaker:
       gLogger.info( "Sources will be retrieved from %s (%s)" % ( modSrcTuple[1], logMsgVCS ) )
       #Tar destination
       dctArgs.append( "-D '%s'" % self.cliParams.destination )
-      if cliParams.debug:
-        dctArgs.append( "-dd" )
       #Script location discovery
       scriptName = os.path.join( os.path.dirname( __file__ ), "dirac-create-distribution-tarball" )
       if not os.path.isfile( scriptName ):
@@ -298,21 +322,23 @@ class DistributionMaker:
       projectCFG = self.relConf.getReleaseCFG( self.cliParams.projectName, relVersion )
       projectCFGData = projectCFG.toString() + "\n"
       try:
-        relFile = file( os.path.join( self.cliParams.destination, "release-%s-%s.cfg" % ( self.cliParams.projectName, relVersion ) ), "w" )
+        relFile = open(os.path.join(self.cliParams.destination,
+                                      "release-%s-%s.cfg" % ( self.cliParams.projectName, relVersion ) ), "w" )
         relFile.write( projectCFGData )
         relFile.close()
-      except Exception, exc:
+      except Exception as exc:
         gLogger.fatal( "Could not write the release info: %s" % str( exc ) )
         return False
       try:
-        relFile = file( os.path.join( self.cliParams.destination, "release-%s-%s.md5" % ( self.cliParams.projectName, relVersion ) ), "w" )
-        relFile.write( md5.md5( projectCFGData ).hexdigest() )
+        relFile = open(os.path.join(self.cliParams.destination,
+                                      "release-%s-%s.md5" % ( self.cliParams.projectName, relVersion ) ), "w" )
+        relFile.write( hashlib.md5( projectCFGData ).hexdigest() )
         relFile.close()
-      except Exception, exc:
+      except Exception as exc:
         gLogger.fatal( "Could not write the release info: %s" % str( exc ) )
         return False
       #Check deps
-      if 'DIRAC' != self.cliParams.projectName:
+      if self.cliParams.projectName != 'DIRAC':
         deps = self.relConf.getReleaseDependencies( self.cliParams.projectName, relVersion )
         if 'DIRAC' not in deps:
           gLogger.notice( "Release %s doesn't depend on DIRAC. Check it's what you really want" % relVersion )

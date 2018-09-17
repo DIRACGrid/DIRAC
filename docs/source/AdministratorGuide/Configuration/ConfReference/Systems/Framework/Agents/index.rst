@@ -33,13 +33,12 @@ Common options for all the agents:
 +---------------------+---------------------------------------+------------------------------+
 
 
-Agents associated with Configuration System:
+Agents associated with Framework System:
 
 .. toctree::
    :maxdepth: 2
-   
+
    CAUpdateAgent/index
    MyProxyRenewalAgent/index
    SystemLoggingDBCleaner/index
    TopErrorMessagesReporter/index
-   MyProxyRenewalAgent/index

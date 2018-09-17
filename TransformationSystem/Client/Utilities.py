@@ -14,24 +14,24 @@ from DIRAC import S_OK, S_ERROR, gLogger
 
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
-from DIRAC.Core.Utilities.Time import timeThis
+# from DIRAC.Core.Utilities.Time import timeThis
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
-from DIRAC.Resources.Catalog.FileCatalog  import FileCatalog
+from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 
 __RCSID__ = "$Id$"
 
 
-class PluginUtilities( object ):
+class PluginUtilities(object):
   """
   Utility class used by plugins
   """
 
-  def __init__( self, plugin = 'Standard', transClient = None, dataManager = None, fc = None,
-                debug = False, transInThread = None, transID = None ):
+  def __init__(self, plugin='Standard', transClient=None, dataManager=None, fc=None,
+               debug=False, transInThread=None, transID=None):
     """
     c'tor
 
@@ -67,39 +67,43 @@ class PluginUtilities( object ):
     else:
       self.transInThread = transInThread
 
-    self.log = gLogger.getSubLogger( "%s/PluginUtilities" % plugin )
+    self.log = gLogger.getSubLogger(plugin)
 
-  def logVerbose( self, message, param = '' ):
+  def logVerbose(self, message, param=''):
+    """ logger helper """
     if self.debug:
-      self.log.info( '(V)' + self.transString + message, param )
+      self.log.info('(V)' + self.transString + message, param)
     else:
-      self.log.verbose( self.transString + message, param )
+      self.log.verbose(self.transString + message, param)
 
-  def logDebug( self, message, param = '' ):
-    self.log.debug( self.transString + message, param )
+  def logDebug(self, message, param=''):
+    """ logger helper """
+    self.log.debug(self.transString + message, param)
 
-  def logInfo( self, message, param = '' ):
-    self.log.info( self.transString + message, param )
+  def logInfo(self, message, param=''):
+    """ logger helper """
+    self.log.info(self.transString + message, param)
 
-  def logWarn( self, message, param = '' ):
-    self.log.warn( self.transString + message, param )
+  def logWarn(self, message, param=''):
+    """ logger helper """
+    self.log.warn(self.transString + message, param)
 
-  def logError( self, message, param = '' ):
-    self.log.error( self.transString + message, param )
+  def logError(self, message, param=''):
+    """ logger helper """
+    self.log.error(self.transString + message, param)
 
-  def logException( self, message, param = '', lException = False ):
-    self.log.exception( self.transString + message, param, lException )
+  def logException(self, message, param='', lException=False):
+    """ logger helper """
+    self.log.exception(self.transString + message, param, lException)
 
-  def setParameters( self, params ):
+  def setParameters(self, params):
+    """ Set the transformation parameters and extract transID """
     self.params = params
     self.transID = params['TransformationID']
-    self.transString = self.transInThread.get( self.transID, ' [NoThread] [%d] ' % self.transID ) + '%s: ' % self.plugin
+    self.transString = self.transInThread.get(self.transID, ' [NoThread] [%d] ' % self.transID)
 
-
-
-
-  @timeThis
-  def groupByReplicas( self, files, status ):
+  # @timeThis
+  def groupByReplicas(self, files, status):
     """
     Generates tasks based on the location of the input data
 
@@ -115,143 +119,153 @@ class PluginUtilities( object ):
     tasks = []
     nTasks = 0
 
-    if not len( files ):
-      return S_OK( tasks )
+    if not files:
+      return S_OK(tasks)
 
-    files = dict( files )
+    files = dict(files)
 
     # Parameters
     if not self.groupSize:
-      self.groupSize = self.getPluginParam( 'GroupSize', 10 )
-    flush = ( status == 'Flush' )
-    self.logVerbose( "groupByReplicas: %d files, groupSize %d, flush %s" % ( len( files ), self.groupSize, flush ) )
+      self.groupSize = self.getPluginParam('GroupSize', 10)
+    flush = (status == 'Flush')
+    self.logVerbose(
+        "groupByReplicas: %d files, groupSize %d, flush %s" %
+        (len(files), self.groupSize, flush))
 
     # Consider files by groups of SEs, a file is only in one group
     # Then consider files site by site, but a file can now be at more than one site
-    for groupSE in ( True, False ):
+    for groupSE in (True, False):
       if not files:
         break
-      seFiles = getFileGroups( files, groupSE = groupSE )
-      self.logDebug( "fileGroups set: ", seFiles )
+      seFiles = getFileGroups(files, groupSE=groupSE)
+      self.logDebug("fileGroups set: ", seFiles)
 
-      for replicaSE in sortSEs( seFiles ):
+      for replicaSE in sortSEs(seFiles):
         lfns = seFiles[replicaSE]
         if lfns:
-          tasksLfns = breakListIntoChunks( lfns, self.groupSize )
+          tasksLfns = breakListIntoChunks(lfns, self.groupSize)
           lfnsInTasks = []
           for taskLfns in tasksLfns:
-            if ( flush and not groupSE ) or ( len( taskLfns ) >= self.groupSize ):
-              tasks.append( ( replicaSE, taskLfns ) )
+            if flush or (len(taskLfns) >= self.groupSize):
+              tasks.append((replicaSE, taskLfns))
               lfnsInTasks += taskLfns
           # In case the file was at more than one site, remove it from the other sites' list
           # Remove files from global list
           for lfn in lfnsInTasks:
-            files.pop( lfn )
+            files.pop(lfn)
           if not groupSE:
             # Remove files from other SEs
             for se in [se for se in seFiles if se != replicaSE]:
               seFiles[se] = [lfn for lfn in seFiles[se] if lfn not in lfnsInTasks]
-      self.logVerbose( "groupByReplicas: %d tasks created (groupSE %s), %d files not included in tasks" % ( len( tasks ) - nTasks,
-                                                                                                            str( groupSE ),
-                                                                                                            len( files ) ) )
-      nTasks = len( tasks )
+      self.logVerbose(
+          "groupByReplicas: %d tasks created (groupSE %s)" %
+          (len(tasks) - nTasks, str(groupSE)), "%d files not included in tasks" %
+          len(files))
+      nTasks = len(tasks)
 
-    return S_OK( tasks )
+    return S_OK(tasks)
 
-  def createTasksBySize( self, lfns, replicaSE, fileSizes = None, flush = False ):
+  def createTasksBySize(self, lfns, replicaSE, fileSizes=None, flush=False):
     """
     Split files in groups according to the size and create tasks for a given SE
     """
     tasks = []
     if fileSizes is None:
-      fileSizes = self._getFileSize( lfns ).get( 'Value' )
+      fileSizes = self._getFileSize(lfns).get('Value')
     if fileSizes is None:
-      self.logWarn( 'Error getting file sizes, no tasks created' )
+      self.logWarn('Error getting file sizes, no tasks created')
       return tasks
     taskLfns = []
     taskSize = 0
     if not self.groupSize:
-      self.groupSize = float( self.getPluginParam( 'GroupSize', 1. ) ) * 1000 * 1000 * 1000  # input size in GB converted to bytes
+      # input size in GB converted to bytes
+      self.groupSize = float(self.getPluginParam('GroupSize', 1.)) * 1000 * 1000 * 1000
     if not self.maxFiles:
-      self.maxFiles = self.getPluginParam( 'MaxFiles', 100 )
-    lfns = sorted( lfns, key = fileSizes.get )
+      # FIXME: prepare for chaging the name of the ambiguoug  CS option
+      self.maxFiles = self.getPluginParam('MaxFilesPerTask', self.getPluginParam('MaxFiles', 100))
+    lfns = sorted(lfns, key=fileSizes.get)
     for lfn in lfns:
-      size = fileSizes.get( lfn, 0 )
+      size = fileSizes.get(lfn, 0)
       if size:
         if size > self.groupSize:
-          tasks.append( ( replicaSE, [lfn] ) )
+          tasks.append((replicaSE, [lfn]))
         else:
           taskSize += size
-          taskLfns.append( lfn )
-          if ( taskSize > self.groupSize ) or ( len( taskLfns ) >= self.maxFiles ):
-            tasks.append( ( replicaSE, taskLfns ) )
+          taskLfns.append(lfn)
+          if (taskSize > self.groupSize) or (len(taskLfns) >= self.maxFiles):
+            tasks.append((replicaSE, taskLfns))
             taskLfns = []
             taskSize = 0
     if flush and taskLfns:
-      tasks.append( ( replicaSE, taskLfns ) )
+      tasks.append((replicaSE, taskLfns))
     if not tasks and not flush and taskLfns:
-      self.logVerbose( 'Not enough data to create a task, and flush not set (%d bytes for groupSize %d)' % ( taskSize, self.groupSize ) )
+      self.logVerbose(
+          'Not enough data to create a task, and flush not set (%d bytes for groupSize %d)' %
+          (taskSize, self.groupSize))
     return tasks
 
-
-  @timeThis
-  def groupBySize( self, files, status ):
+  # @timeThis
+  def groupBySize(self, files, status):
     """
     Generate a task for a given amount of data
     """
     tasks = []
     nTasks = 0
 
-    if not len( files ):
-      return S_OK( tasks )
+    if not len(files):
+      return S_OK(tasks)
 
-    files = dict( files )
+    files = dict(files)
     # Parameters
     if not self.groupSize:
-      self.groupSize = float( self.getPluginParam( 'GroupSize', 1 ) ) * 1000 * 1000 * 1000  # input size in GB converted to bytes
-    flush = ( status == 'Flush' )
-    self.logVerbose( "groupBySize: %d files, groupSize: %d, flush: %s" % ( len( files ), self.groupSize, flush ) )
+      # input size in GB converted to bytes
+      self.groupSize = float(self.getPluginParam('GroupSize', 1)) * 1000 * 1000 * 1000
+    flush = (status == 'Flush')
+    self.logVerbose(
+        "groupBySize: %d files, groupSize: %d, flush: %s" %
+        (len(files), self.groupSize, flush))
 
     # Get the file sizes
-    res = self._getFileSize( files.keys() )
+    res = self._getFileSize(files.keys())
     if not res['OK']:
       return res
     fileSizes = res['Value']
 
-    for groupSE in ( True, False ):
+    for groupSE in (True, False):
       if not files:
         break
-      seFiles = getFileGroups( files, groupSE = groupSE )
+      seFiles = getFileGroups(files, groupSE=groupSE)
 
-      for replicaSE in sorted( seFiles ) if groupSE else sortSEs( seFiles ):
+      for replicaSE in sorted(seFiles) if groupSE else sortSEs(seFiles):
         lfns = seFiles[replicaSE]
-        newTasks = self.createTasksBySize( lfns, replicaSE, fileSizes = fileSizes, flush = flush )
+        newTasks = self.createTasksBySize(lfns, replicaSE, fileSizes=fileSizes, flush=flush)
         lfnsInTasks = []
-        for task  in newTasks:
+        for task in newTasks:
           lfnsInTasks += task[1]
         tasks += newTasks
 
         # Remove the selected files from the size cache
-        self.clearCachedFileSize( lfnsInTasks )
+        self.clearCachedFileSize(lfnsInTasks)
         if not groupSE:
           # Remove files from other SEs
           for se in [se for se in seFiles if se != replicaSE]:
             seFiles[se] = [lfn for lfn in seFiles[se] if lfn not in lfnsInTasks]
         # Remove files from global list
         for lfn in lfnsInTasks:
-          files.pop( lfn )
+          files.pop(lfn)
 
-      self.logVerbose( "groupBySize: %d tasks created with groupSE %s" % ( len( tasks ) - nTasks, str( groupSE ) ) )
-      self.logVerbose( "groupBySize: %d files have not been included in tasks" % len( files ) )
-      nTasks = len( tasks )
+      self.logVerbose(
+          "groupBySize: %d tasks created with groupSE %s" %
+          (len(tasks) - nTasks, str(groupSE)))
+      self.logVerbose("groupBySize: %d files have not been included in tasks" % len(files))
+      nTasks = len(tasks)
 
-    self.logVerbose( "Grouped %d files by size" % len( files ) )
-    return S_OK( tasks )
+    self.logVerbose("Grouped %d files by size" % len(files))
+    return S_OK(tasks)
 
-
-  def getExistingCounters( self, normalise = False, requestedSites = [] ):
-    res = self.transClient.getCounters( 'TransformationFiles', ['UsedSE'],
-                                        {'TransformationID':self.params['TransformationID']} )
+  def getExistingCounters(self, normalise=False, requestedSites=[]):
+    res = self.transClient.getCounters('TransformationFiles', ['UsedSE'],
+                                       {'TransformationID': self.params['TransformationID']})
     if not res['OK']:
       return res
     usageDict = {}
@@ -262,7 +276,7 @@ class PluginUtilities( object ):
     if requestedSites:
       siteDict = {}
       for se, count in usageDict.items():
-        res = getSitesForSE( se )
+        res = getSitesForSE(se)
         if not res['OK']:
           return res
         for site in res['Value']:
@@ -270,159 +284,175 @@ class PluginUtilities( object ):
             siteDict[site] = count
       usageDict = siteDict.copy()
     if normalise:
-      usageDict = self._normaliseShares( usageDict )
-    return S_OK( usageDict )
+      usageDict = self._normaliseShares(usageDict)
+    return S_OK(usageDict)
 
-  @timeThis
-  def _getFileSize( self, lfns ):
+  # @timeThis
+  def _getFileSize(self, lfns):
     """ Get file size from a cache, if not from the catalog
     #FIXME: have to fill the cachedLFNSize!
     """
-    lfns = list( lfns )
-    cachedLFNSize = dict( self.cachedLFNSize )
+    lfns = list(lfns)
+    cachedLFNSize = dict(self.cachedLFNSize)
 
     fileSizes = {}
     for lfn in [lfn for lfn in lfns if lfn in cachedLFNSize]:
       fileSizes[lfn] = cachedLFNSize[lfn]
-    self.logDebug( "Found cache hit for File size for %d files out of %d" % ( len( fileSizes ), len( lfns ) ) )
+    self.logDebug(
+        "Found cache hit for File size for %d files out of %d" %
+        (len(fileSizes), len(lfns)))
     lfns = [lfn for lfn in lfns if lfn not in cachedLFNSize]
     if lfns:
-      fileSizes = self._getFileSizeFromCatalog( lfns, fileSizes )
+      fileSizes = self._getFileSizeFromCatalog(lfns, fileSizes)
       if not fileSizes['OK']:
-        self.logError( fileSizes['Message'] )
+        self.logError(fileSizes['Message'])
         return fileSizes
       fileSizes = fileSizes['Value']
-    return S_OK( fileSizes )
+    return S_OK(fileSizes)
 
-  @timeThis
-  def _getFileSizeFromCatalog( self, lfns, fileSizes ):
+  # @timeThis
+  def _getFileSizeFromCatalog(self, lfns, fileSizes):
     """
     Get file size from the catalog
     """
-    lfns = list( lfns )
-    fileSizes = dict( fileSizes )
+    lfns = list(lfns)
+    fileSizes = dict(fileSizes)
 
-    res = self.fc.getFileSize( lfns )
+    res = self.fc.getFileSize(lfns)
     if not res['OK']:
-      return S_ERROR( "Failed to get sizes for all files: %s" % res['Message'] )
+      return S_ERROR("Failed to get sizes for all files: %s" % res['Message'])
     if res['Value']['Failed']:
-      errorReason = sorted( set( res['Value']['Failed'].values() ) )
-      self.logWarn( "Failed to get sizes for %d files:" % len( res['Value']['Failed'] ), errorReason )
-    fileSizes.update( res['Value']['Successful'] )
-    self.cachedLFNSize.update( ( res['Value']['Successful'] ) )
-    self.logVerbose( "Got size of %d files from catalog" % len( lfns ) )
-    return S_OK( fileSizes )
+      errorReason = sorted(set(res['Value']['Failed'].values()))
+      self.logWarn("Failed to get sizes for %d files:" % len(res['Value']['Failed']), errorReason)
+    fileSizes.update(res['Value']['Successful'])
+    self.cachedLFNSize.update((res['Value']['Successful']))
+    self.logVerbose("Got size of %d files from catalog" % len(lfns))
+    return S_OK(fileSizes)
 
-  def clearCachedFileSize( self, lfns ):
+  def clearCachedFileSize(self, lfns):
     """ Utility function
     """
     for lfn in [lfn for lfn in lfns if lfn in self.cachedLFNSize]:
-      self.cachedLFNSize.pop( lfn )
+      self.cachedLFNSize.pop(lfn)
 
-
-  def getPluginParam( self, name, default = None ):
+  def getPluginParam(self, name, default=None):
     """ Get plugin parameters using specific settings or settings defined in the CS
         Caution: the type returned is that of the default value
     """
     # get the value of a parameter looking 1st in the CS
-    if default != None:
-      valueType = type( default )
+    if default is not None:
+      valueType = type(default)
     else:
       valueType = None
     # First look at a generic value...
-    optionPath = "TransformationPlugins/%s" % ( name )
-    value = Operations().getValue( optionPath, None )
-    self.logVerbose( "Default plugin param %s: '%s'" % ( optionPath, value ) )
+    optionPath = "TransformationPlugins/%s" % (name)
+    value = Operations().getValue(optionPath, None)
+    self.logVerbose("Default plugin param %s: '%s'" % (optionPath, value))
     # Then look at a plugin-specific value
-    optionPath = "TransformationPlugins/%s/%s" % ( self.plugin, name )
-    value = Operations().getValue( optionPath, value )
-    self.logVerbose( "Specific plugin param %s: '%s'" % ( optionPath, value ) )
-    if value != None:
+    optionPath = "TransformationPlugins/%s/%s" % (self.plugin, name)
+    value = Operations().getValue(optionPath, value)
+    self.logVerbose("Specific plugin param %s: '%s'" % (optionPath, value))
+    if value is not None:
       default = value
     # Finally look at a transformation-specific parameter
-    value = self.params.get( name, default )
-    self.logVerbose( "Transformation plugin param %s: '%s'. Convert to %s" % ( name, value, str( valueType ) ) )
-    if valueType and type( value ) is not valueType:
+    value = self.params.get(name, default)
+    self.logVerbose(
+        "Transformation plugin param %s: '%s'. Convert to %s" %
+        (name, value, str(valueType)))
+    if valueType and not isinstance(value, valueType):
       if valueType is list:
         try:
-          value = ast.literal_eval( value ) if value and value != 'None' else []
-        except Exception:
-          value = [val for val in value.replace( ' ', '' ).split( ',' ) if val]
+          value = ast.literal_eval(value) if value and value != 'None' else []
+        # literal_eval('SE-DST') -> ValueError
+        # literal_eval('SE_MC-DST') -> SyntaxError
+        # Don't ask...
+        except (ValueError, SyntaxError):
+          value = [val for val in value.replace(' ', '').split(',') if val]
+
       elif valueType is int:
-        value = int( value )
+        value = int(value)
       elif valueType is float:
-        value = float( value )
+        value = float(value)
       elif valueType is bool:
-        if value in ( 'False', 'No', 'None', None, 0 ):
+        if value in ('False', 'No', 'None', None, 0):
           value = False
         else:
-          value = bool( value )
+          value = bool(value)
       elif valueType is not str:
-        self.logWarn( "Unknown parameter type (%s) for %s, passed as string" % ( str( valueType ), name ) )
-    self.logVerbose( "Final plugin param %s: '%s'" % ( name, value ) )
+        self.logWarn(
+            "Unknown parameter type (%s) for %s, passed as string" %
+            (str(valueType), name))
+    self.logVerbose("Final plugin param %s: '%s'" % (name, value))
     return value
 
   @staticmethod
-  def _normaliseShares( originalShares ):
-    total = sum( float( share ) for share in originalShares.values() )
-    return dict( [ ( site, 100.*float( share ) / total if total else 0. ) for site, share in originalShares.items()] )
+  def _normaliseShares(originalShares):
+    """ Normalize shares to 1 """
+    total = sum(float(share) for share in originalShares.values())
+    return dict([(site, 100. * float(share) / total if total else 0.)
+                 for site, share in originalShares.items()])
 
-  def uniqueSEs( self, ses ):
+  def uniqueSEs(self, ses):
+    """ return a list of SEs that are not physically the same """
     newSEs = []
     for se in ses:
-      if not self.isSameSEInList( se, newSEs ):
-        newSEs.append( se )
+      if not self.isSameSEInList(se, newSEs):
+        newSEs.append(se)
     return newSEs
 
-  def isSameSE( self, se1, se2 ):
+  def isSameSE(self, se1, se2):
+    """ Check if 2 SEs are indeed the same """
     if se1 == se2:
       return True
-    for se in ( se1, se2 ):
+    for se in (se1, se2):
       if se not in self.seConfig:
         self.seConfig[se] = {}
-        res = StorageElement( se ).getStorageParameters( protocol = 'srm' )
+        res = StorageElement(se).getStorageParameters(protocol='srm')
         if res['OK']:
           params = res['Value']
-          for item in ( 'Host', 'Path' ):
-            self.seConfig[se][item] = params[item].replace( 't1d1', 't0d1' )
+          for item in ('Host', 'Path'):
+            self.seConfig[se][item] = params[item].replace('t1d1', 't0d1')
         else:
-          self.logError( "Error getting StorageElement parameters for %s" % se, res['Message'] )
+          self.logError("Error getting StorageElement parameters for %s" % se, res['Message'])
 
     return self.seConfig[se1] == self.seConfig[se2]
 
-  def isSameSEInList( self, se1, seList ):
+  def isSameSEInList(self, se1, seList):
+    """ Check if an SE is the same as any in a list """
     if se1 in seList:
       return True
     for se in seList:
-      if self.isSameSE( se1, se ):
+      if self.isSameSE(se1, se):
         return True
     return False
 
-  def closerSEs( self, existingSEs, targetSEs, local = False ):
+  def closerSEs(self, existingSEs, targetSEs, local=False):
     """ Order the targetSEs such that the first ones are closer to existingSEs. Keep all elements in targetSEs
     """
-    setTarget = set( targetSEs )
-    sameSEs = set( [se1 for se1 in setTarget for se2 in existingSEs if self.isSameSE( se1, se2 )] )
-    targetSEs = setTarget - set( sameSEs )
+    setTarget = set(targetSEs)
+    sameSEs = set([se1 for se1 in setTarget for se2 in existingSEs if self.isSameSE(se1, se2)])
+    targetSEs = setTarget - set(sameSEs)
     if targetSEs:
       # Some SEs are left, look for sites
-      existingSites = [self.dmsHelper.getLocalSiteForSE( se ).get( 'Value' ) for se in existingSEs if not self.dmsHelper.isSEArchive( se ) ]
-      existingSites = set( [site for site in existingSites if site] )
-      closeSEs = set( [se for se in targetSEs if self.dmsHelper.getLocalSiteForSE( se ).get( 'Value' ) in existingSites] )
+      existingSites = [self.dmsHelper.getLocalSiteForSE(se).get('Value')
+                       for se in existingSEs if not self.dmsHelper.isSEArchive(se)]
+      existingSites = set([site for site in existingSites if site])
+      closeSEs = set([se for se in targetSEs
+                      if self.dmsHelper.getLocalSiteForSE(se).get('Value') in existingSites])
       # print existingSEs, existingSites, targetSEs, closeSEs
       otherSEs = targetSEs - closeSEs
-      targetSEs = list( closeSEs )
-      random.shuffle( targetSEs )
+      targetSEs = list(closeSEs)
+      random.shuffle(targetSEs)
       if not local and otherSEs:
-        otherSEs = list( otherSEs )
-        random.shuffle( otherSEs )
+        otherSEs = list(otherSEs)
+        random.shuffle(otherSEs)
         targetSEs += otherSEs
     else:
       targetSEs = []
-    return ( targetSEs + list( sameSEs ) ) if not local else targetSEs
+    return (targetSEs + list(sameSEs)) if not local else targetSEs
 
 
-def getFileGroups( fileReplicas, groupSE = True ):
+def getFileGroups(fileReplicas, groupSE=True):
   """
   Group files by set of SEs
 
@@ -440,28 +470,30 @@ def getFileGroups( fileReplicas, groupSE = True ):
   for lfn, replicas in fileReplicas.items():
     if not replicas:
       continue
-    replicas = sorted( list( set( replicas ) ) )
-    if not groupSE or len( replicas ) == 1:
+    replicas = sorted(list(set(replicas)))
+    if not groupSE or len(replicas) == 1:
       for rep in replicas:
-        fileGroups.setdefault( rep, [] ).append( lfn )
+        fileGroups.setdefault(rep, []).append(lfn)
     else:
-      replicaSEs = ','.join( replicas )
-      fileGroups.setdefault( replicaSEs, [] ).append( lfn )
+      replicaSEs = ','.join(replicas)
+      fileGroups.setdefault(replicaSEs, []).append(lfn)
   return fileGroups
 
 
-def sortSEs( ses ):
+def sortSEs(ses):
+  """ Returnes an ordered list of SEs, disk first """
   seSvcClass = {}
   for se in ses:
-    if len( se.split( ',' ) ) != 1:
-      return sorted( ses )
+    if len(se.split(',')) != 1:
+      return sorted(ses)
     if se not in seSvcClass:
-      seSvcClass[se] = StorageElement( se ).getStatus()['Value']['DiskSE']
+      seSvcClass[se] = StorageElement(se).status()['DiskSE']
   diskSEs = [se for se in ses if seSvcClass[se]]
   tapeSEs = [se for se in ses if se not in diskSEs]
-  return sorted( diskSEs ) + sorted( tapeSEs )
+  return sorted(diskSEs) + sorted(tapeSEs)
 
-def sortExistingSEs( lfnSEs, lfns = None ):
+
+def sortExistingSEs(lfnSEs, lfns=None):
   """ Sort SEs according to the number of files in each (most first)
   """
   seFrequency = {}
@@ -472,22 +504,27 @@ def sortExistingSEs( lfnSEs, lfns = None ):
     lfns = [lfn for lfn in lfns if lfn in lfnSEs]
   for lfn in lfns:
     existingSEs = lfnSEs[lfn]
-    archiveSEs += [s for s in existingSEs if isArchive( s ) and s not in archiveSEs]
-    for se in [s for s in existingSEs if not isFailover( s ) and s not in archiveSEs]:
-      seFrequency[se] = seFrequency.setdefault( se, 0 ) + 1
+    archiveSEs += [s for s in existingSEs if isArchive(s) and s not in archiveSEs]
+    for se in [s for s in existingSEs if not isFailover(s) and s not in archiveSEs]:
+      seFrequency[se] = seFrequency.setdefault(se, 0) + 1
   sortedSEs = seFrequency.keys()
   # sort SEs in reverse order of frequency
-  sortedSEs.sort( key = seFrequency.get, reverse = True )
+  sortedSEs.sort(key=seFrequency.get, reverse=True)
   # add the archive SEs at the end
   return sortedSEs + archiveSEs
 
-def isArchive( se ):
-  return DMSHelpers().isSEArchive( se )
 
-def isFailover( se ):
-  return DMSHelpers().isSEFailover( se )
+def isArchive(se):
+  """ Is the SE an archive """
+  return DMSHelpers().isSEArchive(se)
 
-def getActiveSEs( seList, access = 'Write' ):
+
+def isFailover(se):
+  """ Is the SE a failover SE """
+  return DMSHelpers().isSEFailover(se)
+
+
+def getActiveSEs(seList, access='Write'):
   """ Utility function - uses the StorageElement cached status
   """
-  return [ se for se in seList if StorageElement( se ).getStatus().get( 'Value', {} ).get( access, False )]
+  return [se for se in seList if StorageElement(se).status().get(access, False)]

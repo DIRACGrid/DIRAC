@@ -101,9 +101,9 @@ class PDP( object ):
     the actions to be triggered and returns.
 
     examples:
-      >>> pdp.takeDecision()[ 'Value' ].keys()
-          [ 'singlePolicyResults', 'policyCombinedResult', 'decisionParams' ]
-      >>> pdp.takeDecision()[ 'Value' ][ 'singlePolicyResults' ]
+      >>> pdp.takeDecision()['Value'].keys()
+          ['singlePolicyResults', 'policyCombinedResult', 'decisionParams']
+      >>> pdp.takeDecision()['Value']['singlePolicyResults']
           [ { 'Status' : 'Active',
               'Reason' : 'blah',
               'Policy' : { 'name'        : 'AlwaysActiveForResource',
@@ -114,7 +114,7 @@ class PDP( object ):
                            'args'        : {}
                          }
             }, ... ]
-      >>> pdp.takeDecision()[ 'Value' ][ 'policyCombinedResult' ]
+      >>> pdp.takeDecision()['Value']['policyCombinedResult']
           { 'Status'       : 'Active',
             'Reason'       : 'blah ###',
             'PolicyAction' : [ ( 'policyActionName1', 'policyActionType1' ), ... ]
@@ -136,23 +136,23 @@ class PDP( object ):
 
     # Get policies that match self.decisionParams
     policiesThatApply = getPoliciesThatApply( self.decisionParams )
-    if not policiesThatApply[ 'OK' ]:
+    if not policiesThatApply['OK']:
       return policiesThatApply
-    policiesThatApply = policiesThatApply[ 'Value' ]
+    policiesThatApply = policiesThatApply['Value']
     self.log.verbose( "Policies that apply: %s" % ', '.join( [po['name'] for po in policiesThatApply] ) )
 
     # Evaluate policies
     singlePolicyResults = self._runPolicies( policiesThatApply )
-    if not singlePolicyResults[ 'OK' ]:
+    if not singlePolicyResults['OK']:
       return singlePolicyResults
-    singlePolicyResults = singlePolicyResults[ 'Value' ]
+    singlePolicyResults = singlePolicyResults['Value']
     self.log.verbose( "Single policy results: %s" % singlePolicyResults )
 
     # Combine policies and get most penalizing status ( see RSSMachine )
     policyCombinedResults = self._combineSinglePolicyResults( singlePolicyResults )
-    if not policyCombinedResults[ 'OK' ]:
+    if not policyCombinedResults['OK']:
       return policyCombinedResults
-    policyCombinedResults = policyCombinedResults[ 'Value' ]
+    policyCombinedResults = policyCombinedResults['Value']
     self.log.verbose( "Combined policy result: %s" % policyCombinedResults )
 
 
@@ -161,12 +161,12 @@ class PDP( object ):
     policyActionsThatApply = getPolicyActionsThatApply( self.decisionParams,
                                                         singlePolicyResults,
                                                         policyCombinedResults )
-    if not policyActionsThatApply[ 'OK' ]:
+    if not policyActionsThatApply['OK']:
       return policyActionsThatApply
-    policyActionsThatApply = policyActionsThatApply[ 'Value' ]
+    policyActionsThatApply = policyActionsThatApply['Value']
     self.log.verbose( "Policy actions that apply: %s" % ','.join( pata[0] for pata in policyActionsThatApply ) )
 
-    policyCombinedResults[ 'PolicyAction' ] = policyActionsThatApply
+    policyCombinedResults['PolicyAction'] = policyActionsThatApply
 
     return S_OK( {'singlePolicyResults'  : singlePolicyResults,
                   'policyCombinedResult' : policyCombinedResults,
@@ -178,7 +178,7 @@ class PDP( object ):
     and evaluates them. This method requires to have run setup previously.
 
     examples:
-      >>> pdp._runPolicies([])[ 'Value' ]
+      >>> pdp._runPolicies([])['Value']
           []
       >>> policyDict = { 'name'        : 'AlwaysActiveResource',
                          'type'        : 'AlwaysActive',
@@ -186,7 +186,7 @@ class PDP( object ):
                          'description' : 'This is the AlwaysActive policy',
                          'module'      : 'AlwaysActivePolicy',
                          'command'     : None }
-      >>> pdp._runPolicies([ policyDict, ... ] )[ 'Value' ]
+      >>> pdp._runPolicies([ policyDict, ... ] )['Value']
           [ { 'Status' : 'Active', 'Reason' : 'blah', 'Policy' : policyDict }, ... ]
 
     :Parameters:
@@ -210,14 +210,14 @@ class PDP( object ):
       # in <self.decisionParams>
       policyInvocationResult = self.pCaller.policyInvocation( self.decisionParams,
                                                               policyDict )
-      if not policyInvocationResult[ 'OK' ]:
+      if not policyInvocationResult['OK']:
         # We should never enter this line ! Just in case there are policies
         # missconfigured !
         _msg = 'runPolicies no OK: %s' % policyInvocationResult
         self.log.error( _msg )
         return S_ERROR( _msg )
 
-      policyInvocationResult = policyInvocationResult[ 'Value' ]
+      policyInvocationResult = policyInvocationResult['Value']
 
       # Sanity Checks ( they should never happen ! )
       if not 'Status' in policyInvocationResult:
@@ -225,8 +225,8 @@ class PDP( object ):
         self.log.error( _msg )
         return S_ERROR( _msg )
 
-      if not policyInvocationResult[ 'Status' ] in validStatus:
-        _msg = 'runPolicies ( not valid status ) %s' % policyInvocationResult[ 'Status' ]
+      if not policyInvocationResult['Status'] in validStatus:
+        _msg = 'runPolicies ( not valid status ) %s' % policyInvocationResult['Status']
         self.log.error( _msg )
         return S_ERROR( _msg )
 
@@ -248,7 +248,7 @@ class PDP( object ):
     combining policies, the ones containing the option `doNotCombine` are ignored.
 
     examples:
-      >>> pdp._combineSingePolicyResults( [] )[ 'Value' ]
+      >>> pdp._combineSingePolicyResults( [] )['Value']
           { 'Status' : 'Unknown', 'Reason' : 'No policy ..' }
       >>> pdp._combineSingePolicyResults( [ { 'Status' : 'Active', 'Reason' : 'blah', 'Policy' : policyDict } ] )
           { 'Status' : 'Active', 'Reason' : 'blah' }
@@ -268,23 +268,22 @@ class PDP( object ):
     """
 
     # Dictionary to be returned
-    policyCombined = { 'Status' : 'Unknown',
+    policyCombined = { 'Status' : 'Unknown', # default, it should be overridden by the policies, if they exist
                        'Reason' : '' }
 
     # If there are no policyResults, we return Unknown
     if not singlePolicyRes:
-      policyCombined[ 'Status' ] = 'Unknown'
-      policyCombined[ 'Reason' ] = 'No policy applies to %(element)s, %(name)s, %(elementType)s' % self.decisionParams
-
+      policyCombined['Reason'] = 'No policy applies to %(element)s, %(name)s, %(elementType)s' % self.decisionParams
+      self.log.warn(policyCombined['Reason'])
       return S_OK( policyCombined )
 
     # We set the rssMachine on the current state ( ensures it is a valid one )
-    # FIXME: probably this check can be done at takeDecission
-    machineStatus = self.rssMachine.setState( self.decisionParams[ 'status' ] )
-    if not machineStatus[ 'OK' ]:
+    # FIXME: probably this check can be done at takeDecision
+    machineStatus = self.rssMachine.setState( self.decisionParams['status'] )
+    if not machineStatus['OK']:
       return machineStatus
 
-    # Discard all single policy results which belogs to policies that have set
+    # Discard all single policy results which belongs to policies that have set
     # the option `doNotCombine` in the CS
     policiesToCombine = self._findPoliciesToCombine( singlePolicyRes )
 
@@ -294,27 +293,27 @@ class PDP( object ):
     # As they have been sorted by most restrictive status, the first one is going
     # to be our candidate new state. Let's ask the RSSMachine if it allows us to
     # make such transition.
-    candidateState = policiesToCombine[ 0 ][ 'Status' ]
+    candidateState = policiesToCombine[ 0 ]['Status']
     nextState = self.rssMachine.getNextState( candidateState )
 
-    if not nextState[ 'OK' ]:
+    if not nextState['OK']:
       return nextState
-    nextState = nextState[ 'Value' ]
+    nextState = nextState['Value']
 
     # If the RssMachine does not accept the candidate, return forcing message
     if candidateState != nextState:
 
-      policyCombined[ 'Status' ] = nextState
-      policyCombined[ 'Reason' ] = 'RssMachine forced status %s to %s' % ( candidateState, nextState )
+      policyCombined['Status'] = nextState
+      policyCombined['Reason'] = 'RssMachine forced status %s to %s' % ( candidateState, nextState )
       return S_OK( policyCombined )
 
     # If the RssMachine accepts the candidate, just concatenate the reasons
     for policyRes in policiesToCombine:
 
-      if policyRes[ 'Status' ] == nextState:
-        policyCombined[ 'Reason' ] += '%s ###' % policyRes[ 'Reason' ]
+      if policyRes['Status'] == nextState:
+        policyCombined['Reason'] += '%s ###' % policyRes['Reason']
 
-    policyCombined[ 'Status' ] = nextState
+    policyCombined['Status'] = nextState
 
     return S_OK( policyCombined )
 
@@ -335,19 +334,19 @@ class PDP( object ):
     # Get policies configuration from the CS. We want to exclude the policies that
     # have set the option `doNotCombine` from this process.
     policiesConfiguration = RssConfiguration.getPolicies()
-    if not policiesConfiguration[ 'OK' ]:
+    if not policiesConfiguration['OK']:
       return policiesConfiguration
-    policiesConfiguration = policiesConfiguration[ 'Value' ]
+    policiesConfiguration = policiesConfiguration['Value']
 
     # Function that let's us know if we should combine the result of a single policy
     # or not.
     def combinePolicy( policyResult ):
       # Extract policy name from the dictionary returned by PolicyCaller
-      policyName = policyResult[ 'Policy' ][ 'name' ]
+      policyName = policyResult['Policy']['name']
       try:
         # If doNotCombineResult is defined, the policy is not taken into account
         # to create the combined result. However, the single policy result remains
-        _ = policiesConfiguration[ policyName ][ 'doNotCombineResult' ]
+        _ = policiesConfiguration[ policyName ]['doNotCombineResult']
         return False
       except KeyError:
         return True

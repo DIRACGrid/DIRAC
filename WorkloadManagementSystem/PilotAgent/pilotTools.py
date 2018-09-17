@@ -1,9 +1,7 @@
-########################################################################
-# $Id$
-########################################################################
-
 """ A set of common tools to be used in pilot commands
 """
+
+__RCSID__ = '$Id$'
 
 import sys
 import time
@@ -11,11 +9,9 @@ import os
 import pickle
 import getopt
 import imp
-import types
 import urllib2
 import signal
 
-__RCSID__ = '$Id$'
 
 def printVersion( log ):
 
@@ -23,7 +19,7 @@ def printVersion( log ):
   try:
     with open( "%s.run" % sys.argv[0], "w" ) as fd:
       pickle.dump( sys.argv[1:], fd )
-  except:
+  except OSError:
     pass
   log.info( "Version %s" % __RCSID__ )
 
@@ -34,7 +30,8 @@ def pythonPathCheck():
     pythonpath = os.getenv( 'PYTHONPATH', '' ).split( ':' )
     print 'Directories in PYTHONPATH:', pythonpath
     for p in pythonpath:
-      if p == '': continue
+      if p == '':
+        continue
       try:
         if os.path.normpath( p ) in sys.path:
           # In case a given directory is twice in PYTHONPATH it has to removed only once
@@ -69,13 +66,12 @@ def retrieveUrlTimeout( url, fileName, log, timeout = 0 ):
     # Sometimes repositories do not return Content-Length parameter
     try:
       expectedBytes = long( remoteFD.info()[ 'Content-Length' ] )
-    except Exception, x:
+    except Exception as x:
       expectedBytes = 0
     data = remoteFD.read()
     if fileName:
-      localFD = open( fileName + '-local', "wb" )
-      localFD.write( data )
-      localFD.close()
+      with open( fileName + '-local', "wb" ) as localFD:
+        localFD.write( data )
     else:
       urlData += data
     remoteFD.close()
@@ -145,7 +141,7 @@ class ObjectLoader( object ):
   def __recurseImport( self, modName, parentModule = None, hideExceptions = False ):
     """ Internal function to load modules
     """
-    if type( modName ) in types.StringTypes:
+    if isinstance(modName, basestring):
       modName = modName.split( '.' )
     try:
       if parentModule:
@@ -348,6 +344,7 @@ class PilotParams( object ):
     self.workingDir = os.getcwd()
 
     self.optList = {}
+    self.keepPythonPath = False
     self.debugFlag = False
     self.local = False
     self.commandExtensions = []
@@ -356,6 +353,7 @@ class PilotParams( object ):
                      'LaunchAgent']
     self.extensions = []
     self.tags = []
+    self.reqtags = []
     self.site = ""
     self.setup = ""
     self.configServer = ""
@@ -364,20 +362,22 @@ class PilotParams( object ):
     self.ceType = ''
     self.queueName = ""
     self.platform = ""
+    # in case users want to specify the max number of processors requested, per pilot
+    self.maxNumberOfProcessors = 0
     self.minDiskSpace = 2560 #MB
-    self.jobCPUReq = 900
     self.pythonVersion = '27'
     self.userGroup = ""
     self.userDN = ""
     self.maxCycles = self.MAX_CYCLES
     self.flavour = 'DIRAC'
-    self.gridVersion = '2014-04-09'
+    self.gridVersion = ''
     self.pilotReference = ''
     self.releaseVersion = ''
     self.releaseProject = ''
     self.gateway = ""
     self.useServerCertificate = False
     self.pilotScriptName = ''
+    self.genericOption = ''
     # DIRAC client installation environment
     self.diracInstalled = False
     self.diracExtensions = []
@@ -392,6 +392,11 @@ class PilotParams( object ):
     self.pilotCFGFile = 'pilot.json'
     self.pilotCFGFileLocation = 'http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/defaults/'
 
+    # Parameters that can be determined at runtime only
+    self.queueParameters = {}  # from CE description
+    self.jobCPUReq = 900  # HS06s, here just a random value
+
+
     # Pilot command options
     self.cmdOpts = ( ( 'b', 'build', 'Force local compilation' ),
                      ( 'd', 'debug', 'Set debug flag' ),
@@ -401,8 +406,11 @@ class PilotParams( object ):
                      ( 'g:', 'grid=', 'lcg tools package version' ),
                      ( 'h', 'help', 'Show this help' ),
                      ( 'i:', 'python=', 'Use python<26|27> interpreter' ),
+                     ( 'k', 'keepPP', 'Do not clear PYTHONPATH on start' ),
                      ( 'l:', 'project=', 'Project to install' ),
                      ( 'p:', 'platform=', 'Use <platform> instead of local one' ),
+                     ( 'm:', 'maxNumberOfProcessors=',
+                      'specify a max number of processors to use'),
                      ( 'u:', 'url=', 'Use <url> to download tarballs' ),
                      ( 'r:', 'release=', 'DIRAC release to install' ),
                      ( 'n:', 'name=', 'Set <Site> as Site Name' ),
@@ -413,7 +421,6 @@ class PilotParams( object ):
                      ( 'y:', 'CEType=', 'CE Type (normally InProcess)' ),
                      ( 'S:', 'setup=', 'DIRAC Setup to use' ),
                      ( 'C:', 'configurationServer=', 'Configuration servers to use' ),
-                     ( 'T:', 'CPUTime', 'Requested CPU Time' ),
                      ( 'G:', 'Group=', 'DIRAC Group to use' ),
                      ( 'O:', 'OwnerDN', 'Pilot OwnerDN (for private pilots)' ),
                      ( 'U', 'Upload', 'Upload compiled distribution (if built)' ),
@@ -427,6 +434,8 @@ class PilotParams( object ):
                      ( 'F:', 'pilotCFGFile=', 'Specify pilot CFG file' ),
                      ( 'R:', 'reference=', 'Use this pilot reference' ),
                      ( 'x:', 'execute=', 'Execute instead of JobAgent' ),
+                     ( 't:', 'tag=', 'extra tags for resource description' ),
+                     ( '', 'requiredTag=', 'extra required tags for resource description')
                    )
 
     self.__initOptions()
@@ -455,6 +464,8 @@ class PilotParams( object ):
         self.queueName = v
       elif o == '-R' or o == '--reference':
         self.pilotReference = v
+      elif o == '-k' or o == '--keepPP':
+        self.keepPythonPath = True
       elif o == '-d' or o == '--debug':
         self.debugFlag = True
       elif o in ( '-S', '--setup' ):
@@ -471,10 +482,12 @@ class PilotParams( object ):
         self.installation = v
       elif o == '-p' or o == '--platform':
         self.platform = v
+      elif o == '-m' or o == '--maxNumberOfProcessors':
+        self.maxNumberOfProcessors = v
       elif o == '-D' or o == '--disk':
         try:
           self.minDiskSpace = int( v )
-        except:
+        except ValueError:
           pass
       elif o == '-r' or o == '--release':
         self.releaseVersion = v.split(',',1)[0]
@@ -493,7 +506,11 @@ class PilotParams( object ):
       elif o == '-M' or o == '--MaxCycles':
         try:
           self.maxCycles = min( self.MAX_CYCLES, int( v ) )
-        except:
+        except ValueError:
           pass
-      elif o in ( '-T', '--CPUTime' ):
-        self.jobCPUReq = v
+      elif o in ( '-o', '--option' ):
+        self.genericOption = v
+      elif o in ( '-t', '--tag' ):
+        self.tags.append(v)
+      elif o == '--requiredTag':
+        self.reqtags.append(v)

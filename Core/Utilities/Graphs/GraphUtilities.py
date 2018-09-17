@@ -5,21 +5,22 @@
     CMS/Phedex Project by ... <to be added>
 """
 
-import types
+__RCSID__ = "$Id$"
+
+
+import os
 import time
 import datetime
 import calendar
 import math
 import pytz
 import numpy
-import os
 
 from matplotlib.ticker import ScalarFormatter
 from matplotlib.dates import AutoDateLocator, AutoDateFormatter, DateFormatter, RRuleLocator, \
                              rrulewrapper, HOURLY, MINUTELY, SECONDLY, YEARLY, MONTHLY, DAILY
 from dateutil.relativedelta import relativedelta
 
-__RCSID__ = "$Id$"
 
 
 def evalPrefs( *args, **kw ):
@@ -29,7 +30,7 @@ def evalPrefs( *args, **kw ):
 
   prefs = {}
   for pDict in list( args ) + [kw]:
-    if type( pDict ) == types.DictType:
+    if isinstance(pDict, dict):
       for key in pDict:
         if key == "metadata":
           for mkey in pDict[key]:
@@ -48,16 +49,16 @@ def pixelToPoint( size, dpi ):
 
 datestrings = ['%x %X', '%x', '%Y-%m-%d %H:%M:%S']
 
-def convert_to_datetime( string ):
-  orig_string = str( string )
+def convert_to_datetime( dstring ):
+  orig_string = str( dstring )
   try:
-    if type( string ) == datetime.datetime:
-      results = string
+    if isinstance( dstring, datetime.datetime ):
+      results = dstring
     else:
-      results = eval( str( string ), {'__builtins__':None, 'time':time, 'math':math}, {} )
-    if type( results ) == types.FloatType or type( results ) == types.IntType:
+      results = eval( str( dstring ), {'__builtins__':None, 'time':time, 'math':math}, {} )
+    if isinstance(results, (int, float)):
       results = datetime.datetime.fromtimestamp( int( results ) )
-    elif type( results ) == datetime.datetime:
+    elif isinstance( results, datetime.datetime ):
       pass
     else:
       raise ValueError( "Unknown datetime type!" )
@@ -65,20 +66,19 @@ def convert_to_datetime( string ):
     t = None
     for dateformat in datestrings:
       try:
-        t = time.strptime( string, dateformat )
+        t = time.strptime(dstring, dateformat)
         timestamp = calendar.timegm( t ) #-time.timezone
         results = datetime.datetime.fromtimestamp( timestamp )
         break
       except:
         pass
-    if t == None:
+    if t is None:
       try:
-        string = string.split( '.', 1 )[0]
-        t = time.strptime( string, dateformat )
+        dstring = dstring.split('.', 1)[0]
+        t = time.strptime(dstring, dateformat)
         timestamp = time.mktime( t ) #-time.timezone
         results = datetime.datetime.fromtimestamp( timestamp )
       except:
-        raise
         raise ValueError( "Unable to create time from string!\nExpecting " \
             "format of: '12/06/06 12:54:67'\nRecieved:%s" % orig_string )
   return results
@@ -111,13 +111,14 @@ week_switch = 7
 
 def add_time_to_title( begin, end, metadata = {} ):
   """ Given a title and two times, adds the time info to the title.
-      Example results:
-         "Number of Attempted Transfers\n(24 Hours from 4:45 12-14-2006 to
-          5:56 12-15-2006)"
+      Example results::
+
+         "Number of Attempted Transfers
+         (24 Hours from 4:45 12-14-2006 to 5:56 12-15-2006)"
 
       There are two important pieces to the subtitle we add - the duration
       (i.e., '48 Hours') and the time interval (i.e., 11:00 07-02-2007 to
-       11:00 07-04-2007).
+      11:00 07-04-2007).
 
       We attempt to make the duration match the size of the span (for a bar
       graph, this would be the width of the individual bar) in order for it
@@ -288,54 +289,54 @@ class PrettyDateLocator( AutoDateLocator ):
         interval = 4      # show every 4 months
       else:   # 45 <= numMonths <= 59
         interval = 6      # show every 6 months
-    elif ( numDays >= numticks ):
+    elif numDays >= numticks:
       self._freq = DAILY
       bymonth = None
       bymonthday = range( 1, 32 )
-      if ( ( 0 <= numDays ) and ( numDays <= 9 ) ):
+      if ( 0 <= numDays ) and ( numDays <= 9 ):
         interval = 1      # show every day
-      elif ( ( 10 <= numDays ) and ( numDays <= 19 ) ):
+      elif ( 10 <= numDays ) and ( numDays <= 19 ):
         interval = 2      # show every 2 days
-      elif ( ( 20 <= numDays ) and ( numDays <= 35 ) ):
+      elif ( 20 <= numDays ) and ( numDays <= 35 ):
         interval = 3      # show every 3 days
-      elif ( ( 36 <= numDays ) and ( numDays <= 80 ) ):
+      elif ( 36 <= numDays ) and ( numDays <= 80 ):
         interval = 7      # show every 1 week
       else:   # 100 <= numDays <= ~150
         interval = 14     # show every 2 weeks
-    elif ( numHours >= numticks ):
+    elif numHours >= numticks:
       self._freq = HOURLY
       bymonth = None
       bymonthday = None
       byhour = range( 0, 24 )      # show every hour
-      if ( ( 0 <= numHours ) and ( numHours <= 14 ) ):
+      if ( 0 <= numHours ) and ( numHours <= 14 ):
         interval = 1      # show every hour
-      elif ( ( 15 <= numHours ) and ( numHours <= 30 ) ):
+      elif ( 15 <= numHours ) and ( numHours <= 30 ):
         interval = 2      # show every 2 hours
-      elif ( ( 30 <= numHours ) and ( numHours <= 45 ) ):
+      elif ( 30 <= numHours ) and ( numHours <= 45 ):
         interval = 3      # show every 3 hours
-      elif ( ( 45 <= numHours ) and ( numHours <= 68 ) ):
+      elif ( 45 <= numHours ) and ( numHours <= 68 ):
         interval = 4      # show every 4 hours
-      elif ( ( 68 <= numHours ) and ( numHours <= 90 ) ):
+      elif ( 68 <= numHours ) and ( numHours <= 90 ):
         interval = 6      # show every 6 hours
       else:   # 90 <= numHours <= 120
         interval = 12     # show every 12 hours
-    elif ( numMinutes >= numticks ):
+    elif numMinutes >= numticks:
       self._freq = MINUTELY
       bymonth = None
       bymonthday = None
       byhour = None
       byminute = range( 0, 60 )
-      if ( numMinutes > ( 10.0 * numticks ) ):
+      if numMinutes > ( 10.0 * numticks ):
         interval = 10
       # end if
-    elif ( numSeconds >= numticks ):
+    elif numSeconds >= numticks:
       self._freq = SECONDLY
       bymonth = None
       bymonthday = None
       byhour = None
       byminute = None
       bysecond = range( 0, 60 )
-      if ( numSeconds > ( 10.0 * numticks ) ):
+      if numSeconds > ( 10.0 * numticks ):
         interval = 10
       # end if
     else:
@@ -367,7 +368,7 @@ def pretty_float( num ):
   except:
     floats = 2
   format = "%." + str( floats ) + "f"
-  if type( num ) == types.TupleType:
+  if isinstance(num, tuple):
     return format % float( num[0] )
   else:
     try:

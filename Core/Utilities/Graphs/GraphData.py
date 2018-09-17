@@ -1,7 +1,3 @@
-########################################################################
-# $HeadURL$
-########################################################################
-
 """ GraphData encapsulates input data for the DIRAC Graphs plots
     
     The DIRAC Graphs package is derived from the GraphTool plotting package of the
@@ -10,9 +6,13 @@
 
 __RCSID__ = "$Id$"
 
-import types, datetime, numpy, time
-from DIRAC.Core.Utilities.Graphs.GraphUtilities import to_timestamp, pretty_float
+import time
+import datetime
+import numpy
+
 from matplotlib.dates import date2num
+
+from DIRAC.Core.Utilities.Graphs.GraphUtilities import to_timestamp, pretty_float
 
 DEBUG = 0
 
@@ -39,7 +39,7 @@ def get_key_type( keys ):
         num_data = float( key )
       except:
         num_type = False
-    if type( key ) not in types.StringTypes:
+    if not isinstance(key, basestring):
       string_type = False
 
   # Take the most restrictive type
@@ -86,7 +86,7 @@ class GraphData:
       print "GraphData Error: empty data"
     start = time.time()
 
-    if type( self.data[keys[0]] ) == types.DictType:
+    if isinstance( self.data[keys[0]], dict ):
       for key in self.data:
         self.subplots[key] = PlotData( self.data[key], key_type = key_type )
     else:
@@ -129,6 +129,7 @@ class GraphData:
           max_value - by max value of the subplot
           sum - by the sum of values of the subplot
           last_value - by the last value in the subplot
+          avg_nozeros - by an average that excludes all zero values
     """
     if self.plotdata:
       if self.key_type == "string":
@@ -151,7 +152,7 @@ class GraphData:
         reverse = not reverse_order
         pairs.sort( key = lambda x: x[1].last_value, reverse = reverse )
         self.labels = [ x[0] for x in pairs ]
-        self.label_values = [ x[1].last_value for x in pairs ]        
+        self.label_values = [ x[1].last_value for x in pairs ]
       elif sort_type == 'sum':
         pairs = []
         for key in self.subplots:
@@ -166,6 +167,12 @@ class GraphData:
         if reverse_order:
           self.labels.reverse()  
         self.label_values = [ self.subplots[x].sum_value for x in self.labels ]
+      elif sort_type == 'avg_nozeros':
+        pairs = zip( self.subplots.keys(), self.subplots.values() )
+        reverse = not reverse_order
+        pairs.sort( key = lambda x: x[1].avg_nozeros, reverse = reverse )
+        self.labels = [ x[0] for x in pairs ]
+        self.label_values = [ x[1].avg_nozeros for x in pairs ] 
       else:
         self.labels = self.subplots.keys()
         if reverse_order:
@@ -264,7 +271,7 @@ class GraphData:
 
     if self.plotdata:
       if zipFlag:
-        return zip( self.plotdata.getNumKeys(), self.plotdata.getValues(), self.plotdata.getErrors() )
+        return zip( self.plotdata.getNumKeys(), self.plotdata.getValues(), self.plotdata.getPlotErrors() )
       else:
         return self.plotdata.getValues()
     elif label is not None:
@@ -306,7 +313,7 @@ class GraphData:
     for label in self.labels:
       if label not in new_labels:
         for key in self.all_keys:
-          if self.subplots[label].parsed_data.has_key( key ):
+          if key in self.subplots[label].parsed_data:
             other_data[key] += self.subplots[label].parsed_data[key]
     self.otherPlot = PlotData( other_data )
 
@@ -315,7 +322,7 @@ class GraphData:
     """
 
     numData = self.getPlotNumData( zipFlag = False )
-    if not len( numData ):
+    if not numData:
       return 0, 0, 0, 0
 
     numData = numpy.array( numData )
@@ -425,7 +432,6 @@ class PlotData:
     elif self.key_type == "numeric":
       self.num_keys = [ float( key ) for key in self.keys ]
 
-
     self.min_value = float( min( self.real_values ) )
     self.max_value = float( max( self.real_values ) )
     self.min_key = self.keys[0]
@@ -433,12 +439,18 @@ class PlotData:
     self.sum_value = float( sum( self.real_values ) )
     self.last_value = float( self.real_values[-1] )
 
+    count = len( filter(lambda a: a != 0, self.real_values) )
+    if count != 0:
+      self.avg_nozeros = self.sum_value / float( count )
+    else:
+      self.avg_nozeros = 0
+
   def expandKeys( self, all_keys ):
-    """ Fill zero values into the missing keys 
+    """ Fill zero values into the missing keys
     """
 
     for k in all_keys:
-      if not self.parsed_data.has_key( k ):
+      if k not in self.parsed_data:
         self.parsed_data[k] = 0.
 
     self.sorted_keys = []
@@ -474,11 +486,11 @@ class PlotData:
     Otherwise, attempt to take the absolute value of that item.  If that
     fails, just return -1.
     """
-    if type( item ) == types.TupleType:
+    if isinstance(item, tuple):
       return abs( item[0] )
     try:
       return abs( item )
-    except TypeError, te:
+    except TypeError as te:
       return - 1
 
   def parseKey( self, key ):
@@ -496,9 +508,9 @@ class PlotData:
     Parse the specific data value; this is the identity.
     """
     
-    if type( data ) in types.StringTypes and "::" in data:
+    if isinstance(data, basestring) and "::" in data:
       datum,error = data.split("::")
-    elif type( data ) == types.TupleType:
+    elif isinstance(data, tuple):
       datum,error = data
     else:  
       error = 0.  
@@ -561,7 +573,7 @@ class PlotData:
   def getPlotData( self ):
 
     return self.parsed_data
-  
+
   def getPlotErrors( self ):
 
     return self.parsed_errors
@@ -574,7 +586,7 @@ class PlotData:
 
     result_pairs = []
     for key in keys:
-      if self.parsed_data.has_key( key ):
+      if key in self.parsed_data:
         result_pairs.append( key, self.parsed_data[key], self.parsed_errors[key] )
       else:
         result_pairs.append( key, None, 0. )
@@ -618,9 +630,3 @@ class PlotData:
   def getMinValue( self ):
 
     return min( self.values )
-
-
-
-
-
-

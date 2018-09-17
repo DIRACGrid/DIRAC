@@ -18,7 +18,8 @@ __RCSID__ = "$Id $"
 
 # # imports
 import os
-import datetime, time
+import datetime
+import time
 import re
 import tempfile
 # # from DIRAC
@@ -35,11 +36,13 @@ from DIRAC.Resources.Catalog.FileCatalog     import FileCatalog
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 
 import fts3.rest.client.easy as fts3
-# Because of a bug in fts-rest, we can't use Request
-# This ftsSSLWrapper has the fix. we need to wait for 
-# the next fts release to get rid of it
-#from fts3.rest.client.request import Request
-from DIRAC.DataManagementSystem.Client.ftsSSLWrapper import Request as ftsSSLRequest
+
+# We can't use the default pycurl because of known bugs
+# memory leak: https://bugzilla.mozilla.org/show_bug.cgi?id=1202413
+# SIGALRM handling: https://curl.haxx.se/mail/lib-2008-09/0197.html
+# So we need to use the Request module. The correct version is available
+# from fts-rest v3.5.2 or in the lcg-bundle 2017-01-27
+from fts3.rest.client.request import Request as ftsSSLRequest
 
 ########################################################################
 class FTSJob( object ):
@@ -58,12 +61,12 @@ class FTSJob( object ):
 
   # # missing source regexp patterns
   missingSourceErrors = [
-    re.compile( r".*INVALID_PATH\] Failed" ),
-    re.compile( r".*INVALID_PATH\] No such file or directory" ),
-    re.compile( r".*INVALID_PATH\] The requested file either does not exist" ),
-    re.compile( r".*INVALID_PATH\] the server sent an error response: 500 500"\
-               " Command failed. : open error: No such file or directory" ),
-    re.compile( r"SOURCE error during TRANSFER_PREPARATION phase: \[USER_ERROR\] source file doesnt exist" ) ]
+      re.compile( r".*INVALID_PATH\] Failed" ),
+      re.compile( r".*INVALID_PATH\] No such file or directory" ),
+      re.compile( r".*INVALID_PATH\] The requested file either does not exist" ),
+      re.compile( r".*INVALID_PATH\] the server sent an error response: 500 500"\
+                 " Command failed. : open error: No such file or directory" ),
+      re.compile( r"SOURCE error during TRANSFER_PREPARATION phase: \[USER_ERROR\] source file doesnt exist" ) ]
 
   def __init__( self, fromDict = None ):
     """c'tor
@@ -119,7 +122,7 @@ class FTSJob( object ):
                "Files": "INTEGER NOT NULL",
                "Completeness": "INTEGER NOT NULL DEFAULT 0",
                "FailedFiles": "INTEGER DEFAULT 0",
-               "FailedSize": "INTEGER DEFAULT 0",
+               "FailedSize": "BIGINT DEFAULT 0",
                "Status" : "ENUM( 'Submitted', 'Ready', 'Staging', 'Canceled', 'Active', 'Hold', "\
                 "'Failed', 'Finished', 'FinishedDirty', 'Assigned' ) DEFAULT 'Submitted'",
                "Error" : "VARCHAR(255)",
@@ -240,7 +243,7 @@ class FTSJob( object ):
   def FailedFiles( self ):
     """ nb failed files getter """
     self.__data__["FailedFiles"] = len( [ ftsFile for ftsFile in self
-                                         if ftsFile.Status in FTSFile.FAILED_STATES ] )
+                                          if ftsFile.Status in FTSFile.FAILED_STATES ] )
     return self.__data__["FailedFiles"]
 
   @FailedFiles.setter
@@ -442,11 +445,11 @@ class FTSJob( object ):
     surlFile.close()
     submitCommand = command.split() + \
                      [ "-s",
-                     self.FTSServer,
-                     "-f",
-                     fileName,
-                     "-o",
-                     "-K" ]
+                       self.FTSServer,
+                       "-f",
+                       fileName,
+                       "-o",
+                       "-K" ]
     if self.TargetToken:
       submitCommand += [ "-t", self.TargetToken]
     if self.SourceToken:
@@ -481,9 +484,9 @@ class FTSJob( object ):
 
     monitorCommand = command.split() + \
                        ["--verbose",
-                       "-s",
-                       self.FTSServer,
-                       self.FTSGUID ]
+                        "-s",
+                        self.FTSServer,
+                        self.FTSGUID ]
 
     if full:
       monitorCommand.append( "-l" )
@@ -525,7 +528,7 @@ class FTSJob( object ):
     # In order: new fts-, old fts-, glite-
     realJob = len( self ) != 0
     iExptr = None
-    for iExptr, exptr in enumerate( ( 
+    for iExptr, exptr in enumerate( (
                    '[ ]+Source:[ ]+(\\S+)\n[ ]+Destination:[ ]+(\\S+)\n[ ]+State:[ ]+(\\S+)\n[ ]+Reason:[ ]+([\\S ]+).+?[ ]+Duration:[ ]+(\\d+)\n[ ]+Staging:[ ]+(\\d+)\n[ ]+Retries:[ ]+(\\d+)',
                    '[ ]+Source:[ ]+(\\S+)\n[ ]+Destination:[ ]+(\\S+)\n[ ]+State:[ ]+(\\S+)\n[ ]+Reason:[ ]+([\\S ]+).+?[ ]+Duration:[ ]+(\\d+)\n[ ]+Retries:[ ]+(\\d+)',
                    '[ ]+Source:[ ]+(\\S+)\n[ ]+Destination:[ ]+(\\S+)\n[ ]+State:[ ]+(\\S+)\n[ ]+Retries:[ ]+(\\d+)\n[ ]+Reason:[ ]+([\\S ]+).+?[ ]+Duration:[ ]+(\\d+)'
@@ -594,19 +597,19 @@ class FTSJob( object ):
 
     for ftsFile in self:
       trans = fts3.new_transfer( ftsFile.SourceSURL,
-                                ftsFile.TargetSURL,
-                                checksum = 'ADLER32:%s'%ftsFile.Checksum,
-                                filesize = ftsFile.Size )
+                                 ftsFile.TargetSURL,
+                                 checksum = 'ADLER32:%s'%ftsFile.Checksum,
+                                 filesize = ftsFile.Size )
       transfers.append( trans )
 
     source_spacetoken = self.SourceToken if self.SourceToken else None
     dest_spacetoken = self.TargetToken if self.TargetToken else None
     copy_pin_lifetime = pinTime if pinTime else None
-    bring_online = 86400 if pinTime else None
+    bring_online = 259200 if pinTime else None
 
     job = fts3.new_job( transfers = transfers, overwrite = True,
-            source_spacetoken = source_spacetoken, spacetoken = dest_spacetoken,
-            bring_online = bring_online, copy_pin_lifetime = copy_pin_lifetime, retry = 3 )
+                        source_spacetoken = source_spacetoken, spacetoken = dest_spacetoken,
+                        bring_online = bring_online, copy_pin_lifetime = copy_pin_lifetime, retry = 3 )
 
     try:
       if not self._fts3context:
@@ -768,7 +771,7 @@ class FTSJob( object ):
     """
     colVals = []
     for column, value in self.__data__.items():
-      if value and column not in ( "FTSJobID", "LastUpdate" ):
+      if value is not None and column not in ( "FTSJobID", "LastUpdate" ):
         colStr = "`%s`" % column
         if isinstance( value, datetime.datetime ) or isinstance( value, basestring ):
           valStr = "'%s'" % value
@@ -793,7 +796,7 @@ class FTSJob( object ):
   def toJSON( self ):
     """ dump to JSON format """
     digest = dict( zip( self.__data__.keys(),
-                        [ str( val ) if val else "" for val in self.__data__.values() ] ) )
+                        [ str( val ) if val is not None else "" for val in self.__data__.values() ] ) )
     digest["FTSFiles"] = []
     for ftsFile in self:
       fileJSON = ftsFile.toJSON()
@@ -806,12 +809,12 @@ def overlap( s1, s2 ):
   """ Method returning the common end of 2 strings """
   s = ''
   while s1 and s2:
-      c1 = s1[-1]
-      c2 = s2[-1]
-      if c1 == c2:
-          s = c1 + s
-      else:
-          break
-      s1 = s1[:-1]
-      s2 = s2[:-1]
+    c1 = s1[-1]
+    c2 = s2[-1]
+    if c1 == c2:
+      s = c1 + s
+    else:
+      break
+    s1 = s1[:-1]
+    s2 = s2[:-1]
   return s

@@ -1,8 +1,9 @@
-# $HeadURL: $
 """ JobDoneRatioPolicy
 
-  Policy that calculates the efficiency following the formula:
+  Policy that calculates the efficiency following the formula::
+
     done / ( completed + done )
+
   if the denominator is smaller than 10, it does not take any decision.
 
 """
@@ -68,9 +69,9 @@ class JobDoneRatioPolicy( PolicyBase ):
 
     efficiency = done / total
 
-    if efficiency < 0.5:
+    if efficiency <= 0.5:
       result[ 'Status' ] = 'Banned'
-    elif efficiency < 0.9:
+    elif efficiency <= 0.9:
       result[ 'Status' ] = 'Degraded'
     else:
       result[ 'Status' ] = 'Active'

@@ -2,53 +2,27 @@
 Framework System
 ================
 
-.. contents:: Table of contents
-   :depth: 3
+The DIRAC FrameworkSystem contains those components that are used for administering DIRAC installations.
+Most of them are an essential part of a server installation of DIRAC.
 
-Static Component Monitoring
-===========================
-As of v6r13, DIRAC includes a Component Monitoring system that logs information about what components are being installed and uninstalled on which machines, when and by whom.
-This information is accessible from both the system administration CLI and the Component History page in the Web Portal.
+The functionalities that are exposed by the framework system include, but are not limited to,
+the Instantiation of DIRAC components, but also the DIRAC commands (scripts),
+the management and monitoring of components. 
 
-Using the CLI, it is possible to check the information about installations by using the 'show installations' command.
-This command accepts the following parameters:
+The management of DIRAC components include their installation and un-installation (the system will keep a history of them)
+and a monitoring system that accounts for CPU and memory usage, queries served, used threads, and other parameters. 
 
-- list: Changes the display mode of the results
-- current: Show only the components that are still installed
-- -n <name>: Show only installations of the component with the given name
-- -h <host>: Show only installations in the given host
-- -s <system>: Show only installations of components from the given system
-- -m <module>: Show only installations of the given module
-- -t <type>: Show only installations of the given type
-- -itb <date>: Show installations made before the given date ('dd-mm-yyyy')
-- -ita <date>: Show installations made after the given date ('dd-mm-yyyy')
-- -utb <date>: Show installations of components uninstalled before the given date ('dd-mm-yyyy')
-- -uta <date>: Show installations of components uninstalled after the given date ('dd-mm-yyyy')
+Another very important functionality provided by the framework system is proxies management,
+via the ProxyManager service and database.
 
-It is also possible to retrieve the installations history information by using the 'Component History' app provided by the Web Portal.
-The app allows to set a number of filters for the query. It is possible to filter by:
+ComponentMonitoring, SecurityLogging, and ProxyManager services are only part of the services that constitute the
+Framework of DIRAC.
 
-- Name: Actual name which the component/s whose information should be retrieved was installed with
-- Host: Machine/s in which to look for installations
-- System: System/s to which the components should belong. e.g: Framework, Bookkeeping ...
-- Module: Module/s of the components. e.g: SystemAdministrator, BookkeepingManager, ...
-- Type: Service, agent, executor, ...
-- Date and time: It is possible to select a timespan during which the components should have been installed ( it is possible to fill just one of the two available fields )
+The following sections add some details for some of the Framework systems.
 
-By pressing the 'Submit' button, a list with all the matching results will be shown ( or all the possible results if no filters were specified ).
+.. toctree::
+   :maxdepth: 1
 
-Dynamic Component Monitoring
-============================
-
-It shows information about running DIRAC components such as CPU, Memory, Running threads etc. The information can be accessed from the 'dirac-admin-sysadmin-cli' using 
-'show profile'. The following parameters can be used::
-
- - <system>: The name of the system for example: DataManagementSystem 
- - <component>: The component name for example: FileCatalog 
- - -s <size>: number of elements to be shown 
- - h <host>: name of the host where a specific component is running 
- - id <initial date DD/MM/YYYY> the date where from we are interested for the log of a specific component
- - it <initial time hh:mm> the time where from we are interested for the log of a specific component
- - ed <end date DD/MM/YYYY>: the date before we are interested for   the log of a specific component
- - et <end time hh:mm>: the time before we are interested for   the log of a specific component 
- - show <size>: log lines of profiling information for a component in the machine <host>
+   ComponentMonitoring/index
+   Monitoring/index
+   Notification/index

@@ -5,11 +5,14 @@
 # Date: 2013/04/08 14:28:29
 ########################################################################
 """ :mod: FTSValidator
+
     ==================
 
     .. module: FTSValidator
+
     :synopsis: making sure that all required bits and pieces are in place for FTSLfn, FTSJob
                and FTSJobFile
+
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     A general and simple fts validator checking for required attributes and logic.

@@ -1,3 +1,23 @@
+""" Hosts BaseTransport class, which is a base for PlainTransport and SSLTransport
+
+BaseTransport is used by the client and the service, it describes an opened connection.
+Here a diagram of basic Client/Service exchange
+
+Client -> ServiceReactor : Connect
+
+Client<-->Service        : Handshake (only in SSLTransport)
+
+Client -> Service        : Propose action
+
+Client <- Service        : S_OK
+
+Client -> RequestHandler : Arguments
+
+Client <- RequestHandler : Response
+
+Client <- Service        : Close
+"""
+
 __RCSID__ = "$Id$"
 
 import time
@@ -10,6 +30,8 @@ from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities import DEncode
 
 class BaseTransport( object ):
+  """ Invokes DEncode for marshaling/unmarshaling of data calls in transit
+  """
 
   bAllowReuseAddress = True
   iListenQueueSize = 5
@@ -50,6 +72,8 @@ class BaseTransport( object ):
     return self.__keepAliveLapse
 
   def handshake( self ):
+    """ This method is overwritten by SSLTransport if we use a secured transport.
+    """
     return S_OK()
 
   def close( self ):
@@ -69,6 +93,22 @@ class BaseTransport( object ):
     return self.__lastServerRenewTimestamp
 
   def getConnectingCredentials( self ):
+    """
+
+    :return: dictionnary with credentials
+
+      Return empty dictionnary for plainTransport.
+
+      In SSLTransport it contains (after the handshake):
+       - 'DN' : All identity name, e.g. ```/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch```
+       - 'CN' : Only the user name e.g. ciuser
+       - 'x509Chain' : List of all certificates in the chain
+       - 'isProxy' : True if the client use proxy certificate
+       - 'isLimitedProxy' : True if the client use limited proxy certificate
+       - 'group' (optional): Dirac group attached to the client
+       - 'extraCredentials' (optional): Extra credentials if exists
+      Before the handshake, dictionnary is empty
+    """
     return self.peerCredentials
 
   def setExtraCredentials( self, group ):
@@ -271,14 +311,14 @@ class BaseTransport( object ):
   def getFormattedCredentials( self ):
     peerCreds = self.getConnectingCredentials()
     address = self.getRemoteAddress()
-    if peerCreds.has_key( 'username' ):
+    if 'username' in peerCreds:
       peerId = "[%s:%s]" % ( peerCreds[ 'group' ], peerCreds[ 'username' ] )
     else:
       peerId = ""
     if address[0].find( ":" ) > -1:
       return "([%s]:%s)%s" % ( address[0], address[1], peerId )
     return "(%s:%s)%s" % ( address[0], address[1], peerId )
-  
+
   def setSocketTimeout(self, timeout):
     """
     This method has to be overwritten, if we want to increase the socket timeout.

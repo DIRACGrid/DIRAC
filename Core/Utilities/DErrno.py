@@ -1,7 +1,9 @@
 """ :mod: DErrno
+
     ==========================
 
     .. module: DErrno
+
     :synopsis: Error list and utilities for handling errors in DIRAC
 
 
@@ -16,10 +18,11 @@
 
     In order to add extension specific error, you need to create in your extension the file
     Core/Utilities/DErrno.py, which will contain the following dictionary:
+
       * extra_dErrName: keys are the error name, values the number of it
       * extra_dErrorCode: same as dErrorCode. keys are the error code, values the name
                           (we don't simply revert the previous dict in case we do not
-                           have a one to one mapping)
+                          have a one to one mapping)
       * extra_dStrError: same as dStrError, Keys are the error code, values the error description
       * extra_compatErrorString: same as compatErrorString. The compatible error strings are
                                  added to the existing one, and not replacing them.
@@ -27,17 +30,18 @@
 
     Example of extension file :
 
-      extra_dErrName = { 'ELHCBSPE' : 3001 }
-      extra_dErrorCode = { 3001 : 'ELHCBSPE'}
-      extra_dStrError = { 3001 : "This is a description text of the specific LHCb error" }
-      extra_compatErrorString = { 3001 : ["living easy, living free"],
+       * extra_dErrName = { 'ELHCBSPE' : 3001 }
+       * extra_dErrorCode = { 3001 : 'ELHCBSPE'}
+       * extra_dStrError = { 3001 : "This is a description text of the specific LHCb error" }
+       * extra_compatErrorString = { 3001 : ["living easy, living free"],
                              DErrno.ERRX : ['An error message for ERRX that is specific to LHCb']}
 
 """
-
 import os
 import imp
 import sys
+
+# pylint: disable=bad-continuation
 
 # To avoid conflict, the error numbers should be greater than 1000
 # We decided to group the by range of 100 per system
@@ -52,7 +56,7 @@ import sys
 # 1700: RMS
 # 1800: Accounting
 # 1900: TS
-# 2000: RSS
+# 2000: Resources and RSS
 
 # ## Generic (10XX)
 # Python related: 0X
@@ -79,14 +83,17 @@ ECERTREAD = 1104
 ENOCERT = 1105
 ENOCHAIN = 1106
 ENOPKEY = 1107
+ENOGROUP = 1108
 # DISET: 1X
 EDISET = 1110
+ENOAUTH = 1111
 # 3rd party security: 2X
 E3RDPARTY = 1120
 EVOMS = 1121
 # Databases : 3X
 EDB = 1130
 EMYSQL = 1131
+ESQLA = 1132
 # Message Queues: 4X
 EMQUKN = 1140
 EMQNOM = 1141
@@ -104,6 +111,8 @@ EENOPID = 1148
 # ## WMS/Workflow
 EWMSUKN = 1500
 EWMSJDL = 1501
+EWMSRESC = 1502
+EWMSSUBM = 1503
 
 # ## DMS/StorageManagement (16XX)
 EFILESIZE = 1601
@@ -117,6 +126,11 @@ ERMSUKN = 1700
 # ## TS (19XX)
 ETSUKN = 1900
 ETSDATA = 1901
+
+# ## Resources and RSS (20XX)
+ERESGEN = 2000
+ERESUNA = 2001
+ERESUNK = 2002
 
 # This translates the integer number into the name of the variable
 dErrorCode = {
@@ -145,14 +159,18 @@ dErrorCode = {
                1105 : 'ENOCERT',
                1106 : 'ENOCHAIN',
                1107 : 'ENOPKEY',
+               1108 : 'ENOGROUP',
                # 111X: DISET
                1110 : 'EDISET',
+               1111 : 'ENOAUTH',
                # 112X: 3rd party security
                1120 : 'E3RDPARTY',
                1121 : 'EVOMS',
                # 113X: Databases
                1130 : 'EDB',
                1131 : 'EMYSQL',
+               1132 : 'ESQLA',
+
                # 114X: Message Queues
                1140 : 'EMQUKN',
                1141 : 'EMQNOM',
@@ -167,6 +185,8 @@ dErrorCode = {
                # WMS/Workflow
                1500 : 'EWMSUKN',
                1501 : 'EWMSJDL',
+               1502 : 'EWMSRESC',
+               1503: 'EWMSSUBM',
                # DMS/StorageManagement
                1601 : 'EFILESIZE',
                1602 : 'EGFAL',
@@ -174,7 +194,12 @@ dErrorCode = {
                1604 : "EFCERR",
 
                # RMS
-               1700 : "ERMSUKN",
+               1700 : 'ERMSUKN',
+
+               # Resources and RSS
+               2000 : 'ERESGEN',
+               2001 : 'ERESUNA',
+               2002 : 'ERESUNK',
 
                # TS
                1900 : "ETSUKN",
@@ -188,7 +213,7 @@ dStrError = {
               EIMPERR : "Failed to import library",
               ENOMETH : "No such method or function",
               ECONF : "Configuration error",
-              EVALUE: "Wrong value passed", 
+              EVALUE: "Wrong value passed",
               EEEXCEPTION: "runtime general exception",
               # 101X: Files manipulation
               ECTMPF : "Failed to create temporary file",
@@ -207,14 +232,18 @@ dStrError = {
               ENOCERT : "No certificate loaded",
               ENOCHAIN : "No chain loaded",
               ENOPKEY : "No private key loaded",
+              ENOGROUP: "No DIRAC group",
               # 111X: DISET
               EDISET : "DISET Error",
+              ENOAUTH : "Unauthorized query",
               # 112X: 3rd party security
               E3RDPARTY: "3rd party security service error",
               EVOMS : "VOMS Error",
               # 113X: Databases
               EDB : "Database Error",
               EMYSQL : "MySQL Error",
+              ESQLA : "SQLAlchemy Error",
+
               # 114X: Message Queues
               EMQUKN : "Unknown MQ Error",
               EMQNOM : "No messages",
@@ -228,7 +257,9 @@ dStrError = {
               EENOPID: "No PID of process",
               # WMS/Workflow
               EWMSUKN : "Unknown WMS error",
-              EWMSJDL : "Invalid JDL",
+              EWMSJDL : "Invalid job description",
+              EWMSRESC: "Job to reschedule",
+              EWMSSUBM: "Job submission error",
               # DMS/StorageManagement
               EFILESIZE : "Bad file size",
               EGFAL : "Error with the gfal call",
@@ -236,6 +267,13 @@ dStrError = {
               EFCERR : "FileCatalog error",
               # RMS
               ERMSUKN : "Unknown RMS error",
+
+
+              # Resources and RSS
+              ERESGEN: "Unknown Resource Failure",
+              ERESUNA: "Resource not available",
+              ERESUNK: "Unknown Resource",
+
               # TS
               ETSUKN : "Unknown Transformation System Error",
               ETSDATA : "Invalid Input Data definition"}
@@ -267,32 +305,32 @@ def cmpError( inErr, candidate ):
   """ This function compares an error (in its old form (a string or dictionary) or in its int form
       with a candidate error code.
 
-      :param inErr : a string, an integer, a S_ERROR dictionary
-      :param int candidate : error code to compare with
+      :param inErr: a string, an integer, a S_ERROR dictionary
+      :type inErr: str or int or S_ERROR
+      :param int candidate: error code to compare with
 
-      :return True or False
+      :return: True or False
 
       If an S_ERROR instance is passed, we compare the code with S_ERROR['Errno']
       If it is a Integer, we do a direct comparison
       If it is a String, we use strerror to check the error string
   """
 
-  if isinstance( inErr, basestring ) :  # old style
+  if isinstance(inErr, basestring):  # old style
     # Compare error message strings
-    errMsg = strerror( candidate )
+    errMsg = strerror(candidate)
     return errMsg in inErr
-  elif isinstance( inErr, dict ):  # if the S_ERROR structure is given
+  elif isinstance(inErr, dict):  # if the S_ERROR structure is given
     # Check if Errno defined in the dict
-    errorNumber = inErr.get( 'Errno' )
+    errorNumber = inErr.get('Errno')
     if errorNumber:
       return errorNumber == candidate
-    else:
-      errMsg = strerror( candidate )
-      return errMsg in inErr.get( 'Message', '' )
-  elif isinstance( inErr, int ):
+    errMsg = strerror(candidate)
+    return errMsg in inErr.get('Message', '')
+  elif isinstance(inErr, int):
     return inErr == candidate
   else:
-    raise TypeError( "Unknown input error type %s" % type( inErr ) )
+    raise TypeError("Unknown input error type %s" % type(inErr))
 
 
 def includeExtensionErrors():

@@ -5,65 +5,78 @@
 
 '''
 
+__RCSID__ = '$Id$'
+
 import os
 import sqlite3
-from DIRAC                                                      import gConfig, S_ERROR, S_OK
+from DIRAC import S_ERROR, S_OK
 from DIRAC.ResourceStatusSystem.PolicySystem.Actions.BaseAction import BaseAction
-from DIRAC.Core.Utilities.SiteSEMapping                         import getSitesForSE
+from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
+from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE
 
-__RCSID__ = '$Id:  $'
 
-class EmailAction( BaseAction ):
+class EmailAction(BaseAction):
 
-  def __init__( self, name, decisionParams, enforcementResult, singlePolicyResults,
-                clients = None ):
+  def __init__(self, name, decisionParams, enforcementResult, singlePolicyResults,
+               clients=None):
 
-    super( EmailAction, self ).__init__( name, decisionParams, enforcementResult,
-                                         singlePolicyResults, clients )
+    super(EmailAction, self).__init__(name, decisionParams, enforcementResult,
+                                      singlePolicyResults, clients)
 
     if 'DIRAC' in os.environ:
-      self.cacheFile = os.path.join( os.getenv('DIRAC'), 'work/ResourceStatus/cache.db' )
+      self.cacheFile = os.path.join(
+          os.getenv('DIRAC'), 'work/ResourceStatus/cache.db')
     else:
       self.cacheFile = os.path.realpath('cache.db')
 
-  def run( self ):
+  def run(self):
     ''' Checks it has the parameters it needs and writes the date to a cache file.
     '''
     # Minor security checks
 
-    element = self.decisionParams[ 'element' ]
+    element = self.decisionParams['element']
     if element is None:
-      return S_ERROR( 'element should not be None' )
+      return S_ERROR('element should not be None')
 
-    name = self.decisionParams[ 'name' ]
+    name = self.decisionParams['name']
     if name is None:
-      return S_ERROR( 'name should not be None' )
+      return S_ERROR('name should not be None')
 
-    statusType = self.decisionParams[ 'statusType' ]
+    statusType = self.decisionParams['statusType']
     if statusType is None:
-      return S_ERROR( 'statusType should not be None' )
+      return S_ERROR('statusType should not be None')
 
-    previousStatus = self.decisionParams[ 'status' ]
+    previousStatus = self.decisionParams['status']
     if previousStatus is None:
-      return S_ERROR( 'status should not be None' )
+      return S_ERROR('status should not be None')
 
-    status = self.enforcementResult[ 'Status' ]
+    status = self.enforcementResult['Status']
     if status is None:
-      return S_ERROR( 'status should not be None' )
+      return S_ERROR('status should not be None')
 
-    reason = self.enforcementResult[ 'Reason' ]
+    reason = self.enforcementResult['Reason']
     if reason is None:
-      return S_ERROR( 'reason should not be None' )
+      return S_ERROR('reason should not be None')
 
-    siteName = getSitesForSE(name)
-
-    if not siteName['OK']:
-      self.log.error('Resource %s does not exist at any site: %s' % (name, siteName['Message']))
-      siteName = "Unassigned Resources"
-    elif not siteName['Value']:
-      siteName = "Unassigned Resources"
+    if self.decisionParams['element'] == 'Site':
+      siteName = self.decisionParams['name']
     else:
-      siteName = siteName['Value'][0]
+      elementType = self.decisionParams['elementType']
+
+      if elementType == 'StorageElement':
+        siteName = getSitesForSE(name)
+      elif elementType == 'ComputingElement':
+        siteName = getSiteForCE(name)
+      else:
+        siteName = {'OK': True, 'Value': 'Unassigned'}
+
+      if not siteName['OK']:
+        self.log.error('Resource %s does not exist at any site: %s' % (name, siteName['Message']))
+        siteName = "Unassigned Resources"
+      elif not siteName['Value']:
+        siteName = "Unassigned Resources"
+      else:
+        siteName = siteName['Value'][0]
 
     with sqlite3.connect(self.cacheFile) as conn:
 
@@ -76,17 +89,15 @@ class EmailAction( BaseAction ):
                       StatusType VARCHAR(128) NOT NULL DEFAULT "all",
                       Time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                      );''')
-                     
+
+        insertQuery = "INSERT INTO ResourceStatusCache (SiteName, ResourceName, Status, PreviousStatus, StatusType)"
+        insertQuery += " VALUES ('%s', '%s', '%s', '%s', '%s' ); " % (siteName, name, status,
+                                                                      previousStatus, statusType)
+        conn.execute(insertQuery)
+
+        conn.commit()
+
       except sqlite3.OperationalError:
         self.log.error('Email cache database is locked')
 
-      conn.execute("INSERT INTO ResourceStatusCache (SiteName, ResourceName, Status, PreviousStatus, StatusType)"
-                   " VALUES ('" + siteName + "', '" + name + "', '" + status + "', '" + previousStatus + "', '" + statusType + "' ); "
-                  )
-
-      conn.commit()
-
     return S_OK()
-
-################################################################################
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

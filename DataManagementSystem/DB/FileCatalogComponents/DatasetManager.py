@@ -1,13 +1,9 @@
-########################################################################
-# $HeadURL$
-########################################################################
-
 """ DIRAC FileCatalog plug-in class to manage dynamic datasets defined by a metadata query
 """
 
 __RCSID__ = "$Id$"
 
-import hashlib as md5
+import hashlib
 import os
 
 from DIRAC import S_OK, S_ERROR, gLogger
@@ -95,8 +91,9 @@ class DatasetManager( object ):
 
     failed = dict()
     successful = dict()
+
     for datasetName, metaQuery in datasets.items():
-      result = self.__addDataset( datasetName, metaQuery, uid, gid )
+      result = self.__addDataset( datasetName, metaQuery, credDict, uid, gid )
       if result['OK']:
         successful[datasetName] = True
       else:
@@ -104,7 +101,14 @@ class DatasetManager( object ):
 
     return S_OK( { "Successful": successful, "Failed": failed } )
 
-  def __addDataset( self, datasetName, metaQuery, uid, gid ):
+  def __addDataset( self, datasetName, metaQuery, credDict, uid, gid ):
+
+    result = self.__getMetaQueryParameters( metaQuery, credDict )
+    if not result['OK']:
+      return result
+    totalSize = result['Value']['TotalSize']
+    datasetHash = result['Value']['DatasetHash']
+    numberOfFiles = result['Value']['NumberOfFiles']
 
     result = self.db.fileManager._getStatusInt( 'Dynamic' )
     if not result['OK']:
@@ -131,13 +135,13 @@ class DatasetManager( object ):
                'DatasetName': dsName,
                'MetaQuery': str(metaQuery),
                'DirID': dirID,
-               'TotalSize': 0,
-               'NumberOfFiles': 0,
+               'TotalSize': totalSize,
+               'NumberOfFiles': numberOfFiles,
                'UID': uid,
                'GID': gid,
                'CreationDate': 'UTC_TIMESTAMP()',
                'ModificationDate': 'UTC_TIMESTAMP()',
-               'DatasetHash': '',
+               'DatasetHash': datasetHash,
                'Status': intStatus
              }
     result = self.db.insertFields( 'FC_MetaDatasets', inDict = inDict )
@@ -331,7 +335,7 @@ class DatasetManager( object ):
     if not lfnIDList:
       lfnIDList = lfnIDDict.keys()
     lfnList.sort()
-    myMd5 = md5.md5()
+    myMd5 = hashlib.md5()
     myMd5.update( str( lfnList ) )
     datasetHash = myMd5.hexdigest().upper()
     numberOfFiles = len( lfnList )
@@ -394,7 +398,7 @@ class DatasetManager( object ):
     """
     failed = dict()
     successful = dict()
-    for datasetName in datasets:
+    for datasetName in datasets.keys():
       result = self.__checkDataset( datasetName, credDict )
       if result['OK']:
         successful[datasetName] = result['Value']
@@ -444,10 +448,12 @@ class DatasetManager( object ):
     :param credDict:  dictionary of the caller credentials
     :return: S_OK/S_ERROR bulk return structure
     """
+
     failed = dict()
     successful = dict()
-    for datasetName, changeDict in datasets:
-      result = self.__updateDataset( datasetName, changeDict, credDict )
+
+    for datasetName in datasets.keys():
+      result = self.__updateDataset( datasetName, credDict )
       if result['OK']:
         successful[datasetName] = result['Value']
       else:
@@ -455,20 +461,19 @@ class DatasetManager( object ):
 
     return S_OK( { "Successful": successful, "Failed": failed } )
 
-
-  def __updateDataset( self, datasetName, changeDict, credDict ):
+  def __updateDataset( self, datasetName, credDict ):
     """ Update the dataset parameters
     """
 
-    if changeDict is None:
-      result = self.checkDataset( datasetName, credDict )
-      if not result['OK']:
-        return result
-      if not result['Value']:
-        # The dataset is not changed
-        return S_OK()
-      else:
-        changeDict = result['Value']
+    changeDict = {}
+    result = self.__checkDataset( datasetName, credDict )
+    if not result['OK']:
+      return result
+    if not result['Value']:
+      # The dataset is not changed
+      return S_OK()
+    else:
+      changeDict = result['Value']
 
     req = "UPDATE FC_MetaDatasets SET "
     for field in changeDict:

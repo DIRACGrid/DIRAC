@@ -1,7 +1,6 @@
 __RCSID__ = "$Id$"
 
 import os
-import types
 import time
 import GSI
 from DIRAC.Core.Utilities.LockRing import LockRing
@@ -47,7 +46,7 @@ class SSLTransport( BaseTransport ):
     This method is used to chenge the default timeout of the socket
     """
     gSocketInfoFactory.setSocketTimeout( timeout )
-    
+
   def initAsClient( self ):
     retVal = gSocketInfoFactory.getSocket( self.stServerAddress, **self.extraArgsDict )
     if not retVal[ 'OK' ]:
@@ -63,9 +62,9 @@ class SSLTransport( BaseTransport ):
     if not self.serverMode():
       raise RuntimeError( "Must be initialized as server mode" )
     retVal = gSocketInfoFactory.getListeningSocket( self.stServerAddress,
-                                                      self.iListenQueueSize,
-                                                      self.bAllowReuseAddress,
-                                                      **self.extraArgsDict )
+                                                    self.iListenQueueSize,
+                                                    self.bAllowReuseAddress,
+                                                    **self.extraArgsDict )
     if not retVal[ 'OK' ]:
       return retVal
     self.oSocketInfo = retVal[ 'Value' ]
@@ -92,6 +91,11 @@ class SSLTransport( BaseTransport ):
     return S_OK()
 
   def handshake( self ):
+    """
+      Initiate the client-server handshake and extract credentials
+
+      :return: S_OK (with credentialDict if new session)
+    """
     retVal = self.oSocketInfo.doServerHandshake()
     if not retVal[ 'OK' ]:
       return retVal

@@ -6,8 +6,6 @@ import mock
 
 from datetime import datetime, timedelta
 from DIRAC.Core.LCG.GOCDBClient import GOCDBClient
-# from DIRAC.Core.LCG.SLSClient import getAvailabilityStatus, getServiceInfo
-# from DIRAC.Core.LCG.SAMResultsClient import *
 # #from DIRAC.ResourceStatusSystem.Utilities.Exceptions import *
 # #from DIRAC.ResourceStatusSystem.Utilities.Utils import *
 #
@@ -24,7 +22,6 @@ class ClientsTestCase( unittest.TestCase ):
     self.mockRSS = mock.MagicMock()
 
     self.GOCCli = GOCDBClient()
-#     self.SAMCli = SAMResultsClient()
 
 # #############################################################################
 
@@ -71,12 +68,12 @@ class GOCDBClientSuccess( ClientsTestCase ):
     self.assertEqual( res, {} )
 
     res = self.GOCCli._downTimeXMLParsing( XML_nodesite_ongoing, 'Site' )
-    self.assertEquals( len( res ), 1 )
+    self.assertEqual( len( res ), 1 )
     self.assertEqual( res.keys()[0], '28490G0 GRISU-ENEA-GRID' )
     self.assertEqual( res['28490G0 GRISU-ENEA-GRID']['SITENAME'], 'GRISU-ENEA-GRID' )
 
     res = self.GOCCli._downTimeXMLParsing( XML_nodesite_ongoing, 'Resource' )
-    self.assertEquals( len( res ), 1 )
+    self.assertEqual( len( res ), 1 )
     self.assertEqual( res.keys()[0], '28490G0 egse-cresco.portici.enea.it' )
     self.assertEqual( res['28490G0 egse-cresco.portici.enea.it']['HOSTNAME'], 'egse-cresco.portici.enea.it' )
 
@@ -103,8 +100,8 @@ class GOCDBClientSuccess( ClientsTestCase ):
     self.assertEqual( res['28490G1 GRISU-ENEA-GRID']['SITENAME'], 'GRISU-ENEA-GRID' )
     res = self.GOCCli._downTimeXMLParsing( XML_site_ongoing_and_other_site_starting_in_24_hours,
                                           'Site', ['GRISU-ENEA-GRID', 'CERN-PROD'] )
-    self.assert_( '28490G1 GRISU-ENEA-GRID' in res.keys() )
-    self.assert_( '28490G0 CERN-PROD' in res.keys() )
+    self.assertTrue( '28490G1 GRISU-ENEA-GRID' in res.keys() )
+    self.assertTrue( '28490G0 CERN-PROD' in res.keys() )
     self.assertEqual( res['28490G1 GRISU-ENEA-GRID']['SITENAME'], 'GRISU-ENEA-GRID' )
     self.assertEqual( res['28490G0 CERN-PROD']['SITENAME'], 'CERN-PROD' )
     res = self.GOCCli._downTimeXMLParsing( XML_site_ongoing_and_other_site_starting_in_24_hours, 'Site', 'CERN-PROD' )
@@ -128,8 +125,8 @@ class GOCDBClientSuccess( ClientsTestCase ):
     self.assertEqual( res['28490G1 egse-cresco.portici.enea.it']['HOSTNAME'], 'egse-cresco.portici.enea.it' )
     res = self.GOCCli._downTimeXMLParsing( XML_node_ongoing_and_other_node_starting_in_24_hours,
                                            'Resource', ['egse-cresco.portici.enea.it', 'ce112.cern.ch'] )
-    self.assert_( '28490G1 egse-cresco.portici.enea.it' in res.keys() )
-    self.assert_( '28490G0 ce112.cern.ch' in res.keys() )
+    self.assertTrue( '28490G1 egse-cresco.portici.enea.it' in res.keys() )
+    self.assertTrue( '28490G0 ce112.cern.ch' in res.keys() )
     self.assertEqual( res['28490G1 egse-cresco.portici.enea.it']['HOSTNAME'], 'egse-cresco.portici.enea.it' )
     self.assertEqual( res['28490G0 ce112.cern.ch']['HOSTNAME'], 'ce112.cern.ch' )
     res = self.GOCCli._downTimeXMLParsing( XML_node_ongoing_and_other_node_starting_in_24_hours, 'Resource', 'ce112.cern.ch' )
@@ -139,7 +136,7 @@ class GOCDBClientSuccess( ClientsTestCase ):
     self.assertEqual( res, {} )
 
     res = self.GOCCli._downTimeXMLParsing( XML_node_ongoing_and_other_node_starting_in_24_hours, 'Resource', ['egse-cresco.portici.enea.it', 'ce112.cern.ch'], now )
-    self.assert_( '28490G1 egse-cresco.portici.enea.it' in res.keys() )
+    self.assertTrue( '28490G1 egse-cresco.portici.enea.it' in res.keys() )
     self.assertEqual( res['28490G1 egse-cresco.portici.enea.it']['HOSTNAME'], 'egse-cresco.portici.enea.it' )
     res = self.GOCCli._downTimeXMLParsing( XML_node_ongoing_and_other_node_starting_in_24_hours,
                                            'Resource', ['egse-cresco.portici.enea.it', 'ce112.cern.ch'], inAWeek )

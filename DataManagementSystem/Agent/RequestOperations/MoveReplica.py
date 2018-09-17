@@ -25,7 +25,7 @@ class MoveReplica( DMSRequestOperationsBase ):
     """c'tor
 
     :param self: self reference
-    :param Operation operation: Operation instance
+    :param ~Operation.Operation operation: Operation instance
     :param str csPath: CS path for this handler
     """
     super( MoveReplica, self ).__init__( operation, csPath )
@@ -365,7 +365,7 @@ class MoveReplica( DMSRequestOperationsBase ):
   def singleRemoval( self, opFile, targetSE ):
     """ remove opFile replica from targetSE
 
-    :param File opFile: File instance
+    :param ~DIRAC.RequestManagementSystem.Client.File.File opFile: File instance
     :param str targetSE: target SE name
     """
     proxyFile = None

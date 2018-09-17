@@ -1,13 +1,15 @@
 #!/usr/bin/env python
-########################################################################
-# $HeadURL$
-# File :    dirac-admin-site-mask-logging
-# Author :  Stuart Paterson
-########################################################################
 """
   Retrieves site mask logging information.
 """
+
+########################################################################
+# File :    dirac-admin-site-mask-logging
+# Author :  Stuart Paterson
+########################################################################
+
 __RCSID__ = "$Id$"
+
 import DIRAC
 from DIRAC.Core.Base import Script
 
@@ -23,7 +25,7 @@ args = Script.getPositionalArgs()
 if len( args ) < 1:
   Script.showHelp()
 
-from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
+from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 diracAdmin = DiracAdmin()
 exitCode = 0
 errorList = []

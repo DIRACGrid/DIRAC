@@ -6,6 +6,8 @@
     this is pytest!
 """
 
+# pylint: disable=invalid-name,wrong-import-position
+
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
@@ -17,6 +19,7 @@ from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 gLogger.setLevel('DEBUG')
 
 dsc = DataStoreClient()
+
 
 def createAccountingRecord():
   accountingDict = {}
@@ -34,20 +37,21 @@ def createAccountingRecord():
   accountingDict['FinalStatus'] = 'Successful'
   accountingDict['Source'] = 'testSite'
   oDataOperation = DataOperation()
-  oDataOperation.setValuesFromDict( accountingDict )
+  oDataOperation.setValuesFromDict(accountingDict)
   return oDataOperation
+
 
 def test_addAndRemove():
 
-  #just inserting one record
+  # just inserting one record
   record = createAccountingRecord()
   record.setStartTime()
   record.setEndTime()
-  res = dsc.addRegister( record )
-  assert res['OK'] == True
+  res = dsc.addRegister(record)
+  assert res['OK']
   res = dsc.commit()
-  assert res['OK'] == True
+  assert res['OK']
 
-  #now removing that record
+  # now removing that record
   res = dsc.remove(record)
-  assert res['OK'] == True
+  assert res['OK']

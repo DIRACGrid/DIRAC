@@ -8,7 +8,7 @@
 A parametric job allows to submit a set of jobs in one submission command by specifying parameters for each job.
 
 
-To define this parameter the attribute �Parameters� must be defined in the JDL, the values that it can take are:
+To define this parameter the attribute "Parameters" must be defined in the JDL, the values that it can take are:
   - A list (strings or numbers).
   - Or, an integer, in this case the attributes ParameterStart and ParameterStep must be defined as integers 
     to create the list of job parameters. 
@@ -323,7 +323,7 @@ Let's perform this exercise in the python shell.
           j.setOutputSandbox(['*.log','summary.data'])
           j.setInputData(['/vo.formation.idgrilles.fr/user/v/vhamar/test.txt','/vo.formation.idgrilles.fr/user/v/vhamar/test2.txt'])
           j.setOutputData(['/vo.formation.idgrilles.fr/user/v/vhamar/output1.data','/vo.formation.idgrilles.fr/user/v/vhamar/output2.data'],OutputPath='MyFirstAnalysis')
-          j.setSystemConfig("")
+          j.setPlatform("")
           j.setCPUTime(21600)
           j.setDestination('LCG.IN2P3.fr')
           j.setBannedSites(['LCG.ABCD.fr','LCG.EFGH.fr'])
@@ -349,7 +349,7 @@ Let's perform this exercise in the python shell.
                   };
               StdOutput = "std.out";
               Site = "LCG.IN2P3.fr";
-              SystemConfig = "";
+              Platform = "";
               OutputPath = "MyFirstAnalysis";
               InputSandbox = "jobDescription.xml";
               Arguments = "jobDescription.xml -o LogLevel=DEBUG";

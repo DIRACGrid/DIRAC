@@ -407,7 +407,7 @@ class ParameterCollection( list ):
         else:
           par.unlink()
     elif isinstance( opt, Parameter ):
-      self.unlink()
+      opt.unlink()
     elif isinstance( opt, list ) and isinstance( opt[0], str ):
       for s in opt:
         par = self.find( s )
@@ -661,17 +661,13 @@ class AttributeCollection( dict ):
     self['name'] = name
 
   def getName( self ):
-    if self.has_key( 'name' ):
-      return self['name']
-    return ''
+    return self.get('name', '')
 
   def setType( self, att_type ):
     self['type'] = att_type
 
   def getType( self ):
-    if self.has_key( 'type' ):
-      return self['type']
-    return ''
+    return self.get('type', '')
 
   def setRequired( self, required ):
     self['required'] = required

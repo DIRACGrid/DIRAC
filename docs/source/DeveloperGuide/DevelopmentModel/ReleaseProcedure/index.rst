@@ -5,45 +5,114 @@ Making DIRAC releases
 =============================
 
 This section is describing the procedure to follow by release managers
-when preparing new DIRAC releases. The procedure consists of several
-steps:
+when preparing new DIRAC releases (including patches).
 
-- Merge *Pull Requests* 
+Prerequisites
+=============
+
+The release manager needs to:
+
+- be aware of the DIRAC repository structure and branching.
+- have push access to the "release" repository, so the one on GitHub (being part of the project "owners")
+
+The release manager of LHCbDIRAC has the triple role of:
+
+1. WebAppDIRAC release
+2. creating the release
+3. making basic verifications
+4. deploying DIRAC tarballs
+
+1. WebAppDIRAC release
+========================
+
+Before you start releasing DIRAC, you have to install sencha cmd and you have to download extjs sdk.
+
+Sencha Cmd
+````````````
+
+You can download from https://www.sencha.com/products/extjs/cmd-download/
+Note: you have to add sencha to the system path. Please make sure, if you type sencha in the terminal it will work. 
+
+ExtJs SDK
+`````````
+
+If you are using DIRAC v6r20 series or later, You can download from the following link: 
+
+curl -O http://cdn.sencha.com/ext/gpl/ext-4.2.1-gpl.zip
+
+otherwise:
+
+https://www.sencha.com/legal/GPL/ 
+
+Note: You have to provide a valid email address and you will receive a link where the sdk can be downloaded. 
+
+2. Creating the release(s)
+==========================
+
+The procedure consists of several steps:
+
+- Merge *Pull Requests*
 - Propagate patches to downstream release
 - Make release notes
 - Tag *release* branches with release version tags
 - Update the state of *release* and *integration* branches in
   the central repository
-- Update DIRAC software project description   
+- Update DIRAC software project description
 - Build and upload release tar files
 
-The release steps are described in this chapter.
-
-Starting
----------
-
-For simplicity and reproducibility, it's probably a good idea to start from a fresh copy in a clean directory.
-This means that, you may want to start by moving to a temporary directory and issue the following:
-  
-  > mkdir $(date +"20%y%m%d") && cd $(date +"20%y%m%d")
-  
-which will create a clean directory with today's date. We then clone the DIRAC repository and rename the created "origin" remote in "release":
-  
-  > git clone git@github.com:DIRACGrid/DIRAC.git
-  > git remote rename origin release
-  
-
-
-Merging *Pull Requests*
---------------------------
+The release steps are described in this chapter. First, just a note on *Pull Requests* on GitHub:
 
 The new code and patch contribution are made in the form of *Github* *Pull Request*.
-The *PR* are provided by the developers and are publicly available on the Web. 
+The *PR* are provided by the developers and are publicly available on the Web.
 The *PR*'s should be first reviewed by the release managers as well as by other
 developers to possibly spot evident problems ( relevance of the new features,
-conventions, typos, etc ). After the review the *PR* can be merged using the
-*Github* tools. After that the remote release branch is in the state ready to
-be tagged with the new version. 
+conventions, typos, etc ). The PRs are also reviewed by autimated tools, like Travis (not limited to).
+After the review the *PR* can be merged using the *Github* tools.
+After that the remote release branch is in the state ready to be tagged with the new version.
+
+
+Release notes
+``````````````
+
+Release notes are contained in the *release.notes* file. Each release version has a dedicated
+section in this file, for example::
+
+  [v6r19p7]
+
+  *Core
+  BUGFIX: typo in the dirac-install script
+
+  *WMS
+  CHANGE: JobAgent - handle multi-core worker nodes
+
+The section title as taken into the square brackets. Change notes are collected per subsystem
+denoted by a name starting with \*. Each change record starts with one of the follow header
+words: FIX:, BUGFIX:, CHANGE:, NEW: for fixes, bug fixes, small changes and new features
+correspondingly.
+
+Release notes for the given branch should be made in this branch.
+
+The release notes for a given branch can be obtained with the
+*docs/Tools/GetReleaseNotes.py* script::
+
+  python docs/Tools/GetReleaseNotes.py --branches <branch> [<branch2>...] --date <dateTheLastTagWasMade> [--openPRs]
+
+
+Working with code and tags
+---------------------------
+
+For simplicity and reproducibility, it's probably a good idea to start from a fresh copy in a clean directory.
+This means that, you may want to start by moving to a temporary directory and issue the following::
+
+  > mkdir $(date +"20%y%m%d") && cd $(date +"20%y%m%d")
+
+which will create a clean directory with today's date. We then clone the DIRAC repository and rename the created "origin" remote in "release"::
+
+  > git clone git@github.com:DIRACGrid/DIRAC.git
+  > cd DIRAC
+  > git remote rename origin release
+
+
 
 Propagating patches
 ---------------------
@@ -51,115 +120,133 @@ Propagating patches
 In the DIRAC Development Model several release branches can coexist in production.
 This means that patches applied to older branches must be propagated to the newer
 release branches. This is done in the local Git repository of the release manager.
-Let's take an example of a patch created against *release* branch *rel-v6r10* while
-the new release branch *rel-v6r11* is already in production. This can be accomplished
-by the following sequence of commands::
-  
-  > git fetch release
- 
-This will bring all the changes from the central repository including all the 
-*release* branches.::
-  
-  > git checkout -b rel-v6r10 release/rel-v6r10
-  > vim release.notes
-  
-We create local branch from the the remote one containing the patch. Release notes
+Let's take an example of a patch created against *release* branch *rel-v6r19* while
+the new release branch *rel-v6r20* is already in production. This can be accomplished
+by the following sequence of commands, which will bring all the changes from
+the central repository including all the *release* branches.
+We now create local branch from the the remote one containing the patch. Release notes
 must be updated to create a new section for the new patch release describing the
 new changes. Now we can make a local branch corresponding to a downstream branch
 and merge the commits from the patches::
-  
-  > git checkout -b rel-v6r11 release/rel-v6r11
-  > git merge --no-ff rel-v6r10
 
-Note that if the release branches already exist in the repository, they can be rebased
-on the remote counterparts instead of recreating them:::
+  > git checkout -b rel-v6r19 release/rel-v6r19
+  > vim release.notes
 
-  > git fetch release
-  > git checkout rel-v6r10
-  > git rebase --no-ff release/rel-v6r10 
+We can now start merging PRs, directly from GitHub. At the same time we edit
+the release notes to reflect what has been merged (please see the note below about how to edit this file).
+Once finished, save the file. Then, modify the __init__.py file of the root directory and define the version also there.
+Then we commit the changes (those done to release.notes and __init__.py) and update the current repository::
 
-This will bring the patches into the local release branch, you can now update the release 
-notes and proceed with tagging and uploading. All the patches must be also propagated
-to the *integration* branch::
+  > git commit -a #this will commit the changes we made to the release notes in rel-v6r19 local branch
+  > git fetch release #this will bring in the updated release/rel-v6r19 branch from the github repository
+  > git rebase --no-ff release/rel-v6r19 #this will rebase the current rel-v6r19 branch to the content of release/rel-v6r19
 
-  > git checkout -b integration release/integration
-  > git merge --no-ff rel-v6r11  
+You can now proceed with tagging, pushing, and uploading::
 
+  > git tag v6r19p7 #this will create a tag, from the current branch, in the local repository
+  > git push --tags release rel-v6r19 #we push to the *release* repository (so to GitHub-hosted one) the tag just created, and the rel-v6r19 branch.
 
-Release notes
---------------
+From the previous command, note that due to the fact that we are pushing a branch named *rel-v6r19*
+to the *release* repository, where it already exists a branch named *rel-v6r19*,
+the local branch will override the remote one.
 
-Release notes are contained in the *release.notes* file. Each release version has a dedicated
-section in this file, for example::
-
-  [v6r10p1]
-  
-  *Core
-  BUGFIX: typo in the dirac-install script
-  
-  *WMS
-  CHANGE: JobAgent - handle multi-core worker nodes 
-
-The section title as taken into the square brackets. Change notes are collected per subsystem
-denoted by a name starting with \*. Each change record starts with one of the follow header
-words: FIX:, BUGFIX:, CHANGE:, NEW: for fixes, bug fixes, small changes and new features
-correspondingly.   
-
-Release notes for the given branch should be made in this branch.
-
-Tagging and uploading release branches
-----------------------------------------
-
-Once the local release and integration branches have got all the necessary
-changes they can be tagged with the new version tags::
-
-  > git checkout rel-v6r10
-  > git tag v6r10p11
-  > git checkout rel-v6r11
-  > git tag v6r11p1
-  
-Note that if even the patch was made to an upstream release branch, the subsequent
+All the patches must now be also propagated to the *upper* branches.
+In this example we are going through, we are supposing that it exists rel-v6r20 branch,
+from which we already derived production tags. We then have to propagate the changes done to
+rel-v6r19 to rel-v6r20. Note that if even the patch was made to an upstream release branch, the subsequent
 release branch must also receive a new patch release tag. Multiple patches can be
 add in one release operation. If the downstream release branch has got its own patches,
-those should be described in its release notes under the v6r11p1 section. 
+those should be described in its release notes under the v6r19p7 section. ::
 
-Once the tags are done, the updated branches and new tags must be pushed to the
-central repository::
+  > git checkout -b rel-v6r20 release/rel-v6r20 # We start by checking out the rel-v6r20 branch
+  > git merge rel-v6r19 # Merge to rel-v6r20 what we have advanced in rel-v6r19
 
-  > git push --tags release rel-v6r10
-  > git push --tags release rel-v6r11
+The last command may result in merge conflicts, which should be resolved "by hand".
+One typical conflict is about the content of the release.notes file.
 
-Note that we have not yet pushed the *integration* branch. We have to update
-first the *releases.cfg* file with the description of dependencies on the
-new versions of the DIRAC modules ( see :ref:`dirac_projects` ).
+From now on, the process will look very similar to what we have already done for
+creating tag v6r19p7. We should then repeat the process for v6r20::
+
+  > vim release.notes 
+  > vim __init__.py
+
+Merge PRs (if any), then save the files above. Then::
+
+  > git commit -a #this will commit the changes we made to the release notes in rel-v6r20 local branch
+  > git fetch release #this will bring in the updated release/rel-v6r20 branch from the github repository
+  > git rebase --no-ff release/rel-v6r20 #this will rebase the current rel-v6r20 branch to the content of release/rel-v6r20
+  > git tag v6r20p2 #this will create a tag, from the current branch, in the local repository
+  > git push --tags release rel-v6r20 #we push to the *release* repository (so to GitHub-hosted one) the tag just created, and the rel-v6r20 branch.
+
+The *master* branch of DIRAC always contains the latest stable release.
+If this corresponds to rel-v6r20, we should make sure that this is updated:
+
+  > git push release rel-v6r20:master
+
+Repeat the process for every "upper" release branch.
 
 The *integration* branch is also receiving new features to go into the next release.
-Therefore, it is used to tag *prerelease* versions that can be then installed
-with standard tools on test DIRAC servers, for example::
+The *integration* branch also contains the *releases.cfg* file, which holds all the versions of DIRAC
+together with the dependencies among the different packages. 
 
-  > git checkout integration
-  > git tag v7r0-pre12
-  
-After the *releases.cfg* file is updated in the *integration* branch and prerelease
-tags are made, the branch can be pushed in the usual way ::
- 
-  > git push --tags release integration     
+From the *integration* branch we also do all the tags of *pre-release* versions, that can be then installed
+with standard tools on test DIRAC servers. 
 
-How to make a distribution
------------------------------
+The procedure for creating pre-releases is very similar to creating releases::
 
-Once the release branches are tagged and pushed, the new release versions are
+  > git checkout -b integration release/integration
+  > git merge rel-v6r20 #replace with the "last" branch
+  > vim release.notes 
+  > vim __init__.py
+  > vim releases.cfg #add the created tags (all of them, releases and pre-releases)
+
+Merge all the PRs targeting integration that have been approved (if any), then save the files above. Then::
+
+  > git commit -a
+  > git fetch release #this will bring in the updated release/integration branch from the github repository
+  > git rebase --no-ff release/integration #this will rebase the current integration branch to the content of release/integration
+  > git tag v6r21-pre3 #this will create a tag, from the current branch, in the local repository
+  > git push release integration
+
+
+3. Making basic verifications
+=============================
+
+There are a set of basic tests that can be done on releases.
+The first test can be done even before creating a release tarball.
+
+A first test is done automatically by Travis: https://travis-ci.org/DIRACGrid/DIRAC/branches
+
+Travis also runs on all the Pull Requests, so if for all the PRs merged travis didn't show any problem,
+there's a good chance (but NOT the certainty) that the created tags are also sane.
+
+A second test is represented by pylint, for which you may find some more info in section :ref:`code_quality`.
+Within Travis, we run also a "pylint --errors-only" test, which should be strictly equal to 0.
+
+
+4. Deploying DIRAC tarballs
+=============================
+
+Once the release and integration branches are tagged and pushed, the new release and pre-release versions are
 properly described in the *release.cfg* file in the *integration* branch and
 also pushed to the central repository, the tar archives containing the new
-codes can be created. Just execute *dirac-distribution* command with the appropriate 
+codes can be created. To do this, just execute *dirac-distribution* command with the appropriate
 flags. For instance::
 
- dirac-distribution -r v6r10p11 -l DIRAC 
- 
-You can also pass the releases.cfg to use via command line using the *-C* switch. *dirac-distribution* 
-will generate a set of tarballs, release and md5 files. Please copy those to your installation source 
-so *dirac-install* can find them. 
+  > dirac-distribution -r v6r19p7 -l DIRAC --extjspath=<extjs library path> for example: /home/diracCertif/extjs/ext-4.2.1.883/
+  > dirac-distribution -r v6r20p2 -l DIRAC --extjspath=<extjs library path> for example: /home/diracCertif/extjs/ext-4.2.1.883/
+  > dirac-distribution -r v6r21-pre3 -l DIRAC --extjspath=<extjs library path> for example: /home/diracCertif/extjs/ext-4.2.1.883/
+
+
+Note: if the sencha or extjs library is missing, the web will be not compiled.
+
+You can also pass the releases.cfg to use via command line using the *-C* switch. *dirac-distribution*
+will generate a set of tarballs, release and md5 files. Please copy those to your installation source
+so *dirac-install* can find them.
 
 The command will compile tar files as well as release notes in *html* and *pdf* formats.
-In the end of its execution, the *dirac-distribution* will print out a command that can be 
+In the end of its execution, the *dirac-distribution* will print out a command that can be
 used to upload generated release files to a predefined repository ( see :ref:`dirac_projects` ).
+
+It's now time to advertise that new releases have been created. Use the DIRAC google forum.
+

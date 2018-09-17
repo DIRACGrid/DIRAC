@@ -1,10 +1,13 @@
 """ :mod: GFAL2_XROOTStorage
+
     =================
 
     .. module: python
+
     :synopsis: XROOT module based on the GFAL2_StorageBase class.
 """
 
+import os
 
 # from DIRAC
 from DIRAC import gLogger
@@ -12,11 +15,15 @@ from DIRAC.Resources.Storage.GFAL2_StorageBase import GFAL2_StorageBase
 from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
 
 class GFAL2_XROOTStorage( GFAL2_StorageBase ):
-
   """ .. class:: GFAL2_XROOTStorage
 
   Xroot interface to StorageElement using gfal2
   """
+
+
+  _INPUT_PROTOCOLS = ['file', 'root']
+  _OUTPUT_PROTOCOLS = ['root']
+
 
 
   PROTOCOL_PARAMETERS = GFAL2_StorageBase.PROTOCOL_PARAMETERS + ['SvcClass']
@@ -34,7 +41,6 @@ class GFAL2_XROOTStorage( GFAL2_StorageBase ):
     :param str spaceToken: space token
     :param str wspath: location of SRM on :host:
     """
-
     # # init base class
     super( GFAL2_XROOTStorage, self ).__init__( storageName, parameters )
     self.srmSpecificParse = False
@@ -47,11 +53,14 @@ class GFAL2_XROOTStorage( GFAL2_StorageBase ):
     self.protocolParameters['WSUrl'] = 0
     self.protocolParameters['SpaceToken'] = 0
 
-
-
     # We don't need extended attributes for metadata
     self._defaultExtendedAttributes = None
 
+    # Because some storages are configured to use krb5 auth first
+    # we end up in trouble for interactive sessions. This
+    # environment variable enforces the use of certificates
+    if 'XrdSecPROTOCOL' not in os.environ:
+      os.environ['XrdSecPROTOCOL'] = 'gsi,unix'
 
   def __addDoubleSlash( self, res ):
     """ Utilities to add the double slash between the host(:port) and the path
@@ -80,5 +89,3 @@ class GFAL2_XROOTStorage( GFAL2_StorageBase ):
   def getCurrentURL( self, fileName ):
     """ Overwrite to add the double slash """
     return self.__addDoubleSlash( super( GFAL2_XROOTStorage, self ).getCurrentURL( fileName ) )
-
-

@@ -133,124 +133,108 @@ class Logger( object ):
     return False
 
   def getLevel( self ):
+    """
+    Return the level name of the logger
+    """
     return self._logLevels.getLevel( self._minLevel )
+
+  def getAllPossibleLevels( self ):
+    """
+    Return a list of all the levels available
+    """
+    return self._logLevels.getLevels()
 
   def shown( self, levelName ):
     levelName = levelName.upper()
     if levelName in self._logLevels.getLevels():
-      return self._logLevels.getLevelValue( levelName ) <= levelName
+      return self._minLevel <= abs(self._logLevels.getLevelValue( levelName ))
     return False
 
   def getName( self ):
+    """
+    Return the system/component name
+    """
     return self._systemName
 
   def always( self, sMsg, sVarMsg = '' ):
-    messageObject = Message( self._systemName,
-                             self._logLevels.always,
-                             Time.dateTime(),
-                             sMsg,
-                             sVarMsg,
-                             self.__discoverCallingFrame() )
-    return self.processMessage( messageObject )
+    return self._sendMessage( self._logLevels.always,
+                              sMsg,
+                              sVarMsg )
 
   def notice( self, sMsg, sVarMsg = '' ):
-    messageObject = Message( self._systemName,
-                             self._logLevels.notice,
-                             Time.dateTime(),
-                             sMsg,
-                             sVarMsg,
-                             self.__discoverCallingFrame() )
-    return self.processMessage( messageObject )
+    return self._sendMessage( self._logLevels.notice,
+                              sMsg,
+                              sVarMsg )
 
   def info( self, sMsg, sVarMsg = '' ):
-    messageObject = Message( self._systemName,
-                             self._logLevels.info,
-                             Time.dateTime(),
-                             sMsg,
-                             sVarMsg,
-                             self.__discoverCallingFrame() )
-    return self.processMessage( messageObject )
+    return self._sendMessage( self._logLevels.info,
+                              sMsg,
+                              sVarMsg )
 
   def verbose( self, sMsg, sVarMsg = '' ):
-    messageObject = Message( self._systemName,
-                             self._logLevels.verbose,
-                             Time.dateTime(),
-                             sMsg,
-                             sVarMsg,
-                             self.__discoverCallingFrame() )
-    return self.processMessage( messageObject )
+    return self._sendMessage( self._logLevels.verbose,
+                              sMsg,
+                              sVarMsg )
 
   def debug( self, sMsg, sVarMsg = '' ):
     # In case of S_ERROR structure make full string representation
-    if isReturnStructure( sMsg ):
-      sMsg = reprReturnErrorStructure( sMsg, full = True )
-    if isReturnStructure( sVarMsg ):
-      sVarMsg = reprReturnErrorStructure( sVarMsg, full = True )
-    messageObject = Message( self._systemName,
-                             self._logLevels.debug,
-                             Time.dateTime(),
-                             sMsg,
-                             sVarMsg,
-                             self.__discoverCallingFrame() )
-    return self.processMessage( messageObject )
+    if self.__testLevel( self._logLevels.debug ):
+      if isReturnStructure( sMsg ):
+        sMsg = reprReturnErrorStructure( sMsg, full = True )
+      if isReturnStructure( sVarMsg ):
+        sVarMsg = reprReturnErrorStructure( sVarMsg, full = True )
+      return self._sendMessage( self._logLevels.debug,
+                                sMsg,
+                                sVarMsg )
+    return False
 
   def warn( self, sMsg, sVarMsg = '' ):
-    messageObject = Message( self._systemName,
-                             self._logLevels.warn,
-                             Time.dateTime(),
-                             sMsg,
-                             sVarMsg,
-                             self.__discoverCallingFrame() )
-    return self.processMessage( messageObject )
+    return self._sendMessage( self._logLevels.warn,
+                              sMsg,
+                              sVarMsg )
 
   def error( self, sMsg, sVarMsg = '' ):
-    messageObject = Message( self._systemName,
-                             self._logLevels.error,
-                             Time.dateTime(),
-                             sMsg,
-                             sVarMsg,
-                             self.__discoverCallingFrame() )
-    return self.processMessage( messageObject )
+    return self._sendMessage( self._logLevels.error,
+                              sMsg,
+                              sVarMsg )
 
   def exception( self, sMsg = "", sVarMsg = '', lException = False, lExcInfo = False ):
-    if sVarMsg:
-      sVarMsg += "\n%s" % self.__getExceptionString( lException, lExcInfo )
-    else:
-      sVarMsg = "\n%s" % self.__getExceptionString( lException, lExcInfo )
-
-    messageObject = Message( self._systemName,
-                             self._logLevels.exception,
-                             Time.dateTime(),
-                             sMsg,
-                             sVarMsg,
-                             self.__discoverCallingFrame() )
-    return self.processMessage( messageObject )
+    if self.__testLevel( self._logLevels.exception ):
+      if sVarMsg:
+        sVarMsg += "\n%s" % self.__getExceptionString( lException, lExcInfo )
+      else:
+        sVarMsg = "\n%s" % self.__getExceptionString( lException, lExcInfo )
+      return self._sendMessage( self._logLevels.exception,
+                                sMsg,
+                                sVarMsg )
+    return False
 
   def fatal( self, sMsg, sVarMsg = '' ):
-    messageObject = Message( self._systemName,
-                             self._logLevels.fatal,
-                             Time.dateTime(),
-                             sMsg,
-                             sVarMsg,
-                             self.__discoverCallingFrame() )
-    return self.processMessage( messageObject )
+    return self._sendMessage( self._logLevels.fatal,
+                              sMsg,
+                              sVarMsg )
 
   def showStack( self ):
-    messageObject = Message( self._systemName,
-                             self._logLevels.debug,
-                             Time.dateTime(),
-                             "",
-                             self.__getStackString(),
-                             self.__discoverCallingFrame() )
-    self.processMessage( messageObject )
+    return self._sendMessage( self._logLevels.debug, '', '' )
+
+  def _sendMessage( self, level, msgText, variableText ):
+    if self.__testLevel( level ):
+      messageObject = Message( self._systemName,
+                               level,
+                               Time.dateTime(),
+                               msgText,
+                               variableText,
+                               self.__discoverCallingFrame() )
+      return self.processMessage( messageObject )
+    return False
 
   def processMessage( self, messageObject ):
     if self.__testLevel( messageObject.getLevel() ):
       if not messageObject.getName():
         messageObject.setName( self._systemName )
       self._processMessage( messageObject )
-    return True
-  # S_OK()
+      return True
+    return False
 
   def __testLevel( self, sLevel ):
     return abs( self._logLevels.getLevelValue( sLevel ) ) >= self._minLevel
@@ -267,8 +251,11 @@ class Logger( object ):
     Else: no traceback
     """
     if lExcInfo:
-      lException = False
-    if lException:
+      if isinstance( lExcInfo, bool ):
+        lExcInfo = sys.exc_info()
+      # Get full traceback
+      stack = "".join( traceback.format_tb( lExcInfo[2] ) )
+    elif lException:
       # This is useless but makes pylint happy
       if not lException:
         lException = Exception()
@@ -282,16 +269,10 @@ class Logger( object ):
       # Only print out last part of the traceback
       stack = traceback.format_tb( lExcInfo[2] )[-1]
     else:
-      if lExcInfo:
-        if isinstance(lExcInfo, bool):
-          lExcInfo = sys.exc_info()
-        # Get full traceback
-        stack = "".join( traceback.format_tb( lExcInfo[2] ) )
-      else:
-        lExcInfo = sys.exc_info()
-        stack = ""
-      exceptType = lExcInfo[0].__name__
-      value = lExcInfo[1]
+      lExcInfo = sys.exc_info()
+      stack = ""
+    exceptType = lExcInfo[0].__name__
+    value = lExcInfo[1]
 
     return "== EXCEPTION == %s\n%s\n%s: %s\n===============" % ( exceptType, stack, exceptType, value )
 

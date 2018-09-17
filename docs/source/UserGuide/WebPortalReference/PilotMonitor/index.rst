@@ -26,14 +26,14 @@ The following Selectors are available:
 
 **Status Comment**
 
-Submitted 	Pilot Job is submitted to the grid WMS, its grid status is not yet obtained
-Ready 	Pilot Job is accepted by the grid WMS
-Scheduled 	Pilot Job is assigned to a grid site
-Running 	Pilot Job has started running at a grid site
-Stalled 	Pilot Job is stuck in the grid WMS without further advancement, this is typically an indication of the WMS error
-Done 	Pilot Job is finished by the grid WMS
-Aborted 	Pilot Job is aborted by the grid WMS
-Deleted 	Pilot Job is marked for deletion
+Submitted     Pilot Job is submitted to the grid WMS, its grid status is not yet obtained
+Ready     Pilot Job is accepted by the grid WMS
+Scheduled     Pilot Job is assigned to a grid site
+Running     Pilot Job has started running at a grid site
+Stalled     Pilot Job is stuck in the grid WMS without further advancement, this is typically an indication of the WMS error
+Done     Pilot Job is finished by the grid WMS
+Aborted     Pilot Job is aborted by the grid WMS
+Deleted     Pilot Job is marked for deletion
 
 **Site**
     The Pilot Job destination site in DIRAC nomenclature.

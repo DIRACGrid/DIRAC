@@ -1,5 +1,5 @@
 """ Collection of DIRAC useful adler32 related tools.
-    By default on Error they return None. 
+    By default on Error they return None.
 
    .. warning::
 
@@ -12,56 +12,57 @@
 
 __RCSID__ = "$Id$"
 
-import types
 from zlib import adler32
 
-def intAdlerToHex(intAdler):
+def intAdlerToHex( intAdler ):
   """Change adler32 checksum base from decimal to hex.
- 
+
   :param integer intAdler: adler32 checksum
-  :return: 8 digit hex string  
+  :return: 8 digit hex string
   """
   try:
     # Will always be 8 hex digits made from a positive integer
-    return hex(intAdler & 0xffffffff).lower().replace('l','').replace('x','0')[-8:]
+    return hex( intAdler & 0xffffffff ).lower().replace( 'l', '' ).replace( 'x', '0000' )[-8:]
   except Exception as error:
     print repr( error ).replace( ',)', ')' )
     return False
 
-def hexAdlerToInt(hexAdler, pos=True):
+def hexAdlerToInt( hexAdler, pos = True ):
   """Change hex base to decimal for adler32 checksum.
 
   :param mixed hexAdler: hex based adler32 checksum integer or a string
   :param boolean pos: flag to determine sign (default True = positive)
   """
-  if type(hexAdler) in [ types.LongType, types.IntType ]:
+  if isinstance( hexAdler, (int, long) ):
     return hexAdler & 0xffffffff
   # First make sure we can parse the hex properly
-  hexAdler = hexAdler.lower().replace('l','')
+  if hexAdler == 'False' or hexAdler == '-False':
+    return False
+  hexAdler = hexAdler.lower().replace( 'l', '' )
   hexAdler = hexAdler[-8:]
-  hexAdler = hexAdler.replace('x','0')
+  hexAdler = hexAdler.replace( 'x', '0' )
   if not pos:
     hexAdler = "-%s" % hexAdler
   try:
     # Will always try to return the positive integer value of the provided hex
-    return int(hexAdler, 16) & 0xffffffff    
+    return int( hexAdler, 16 ) & 0xffffffff
   except Exception as error:
     print repr( error ).replace( ',)', ')' )
     return False
 
 def compareAdler( adler1, adler2 ):
   """Check equality between two adler32 checksums.
- 
+
   :param adler1: 1st checksum
   :param adler2: 2nd checksum
   :return: True (False) if cheksums are (not) equal
   """
   adler1s = [ hexAdlerToInt( adler1 ), hexAdlerToInt( adler1, False ) ]
-  if False in adler1s: 
-    adler1s.remove(False)
+  if False in adler1s:
+    adler1s.remove( False )
   adler2s = [ hexAdlerToInt( adler2 ), hexAdlerToInt( adler2, False ) ]
-  if False in adler2s: 
-    adler2s.remove(False)
+  if False in adler2s:
+    adler2s.remove( False )
   for adler1 in adler1s:
     if adler1 in adler2s:
       return True
@@ -71,9 +72,9 @@ def compareAdler( adler1, adler2 ):
 def fileAdler( fileName ):
   """Calculate alder32 checksum of the supplied file.
 
-  :param str fileName: path to file 
+  :param str fileName: path to file
   """
-  def readChunk( fd, size=1048576 ):
+  def readChunk( fd, size = 1048576 ):
     """Return data from file descriptor in chunk of size size.
 
     :param fd: file descriptor
@@ -81,15 +82,15 @@ def fileAdler( fileName ):
     """
     while True:
       data = fd.read( size )
-      if not data: 
+      if not data:
         break
       yield data
+
   try:
-    with open(fileName) as inputFile:
+    with open( fileName ) as inputFile:
       myAdler = 1
       for data in readChunk( inputFile ):
         myAdler = adler32( data, myAdler )
-      inputFile.close()
       return intAdlerToHex( myAdler )
   except Exception as error:
     print repr( error ).replace( ',)', ')' )
@@ -102,8 +103,8 @@ def stringAdler( string ):
   :param str string: data
   """
   try:
-    intAdler = adler32(string)
-    return intAdlerToHex(intAdler)
+    intAdler = adler32( string )
+    return intAdlerToHex( intAdler )
   except Exception as error:
     print repr( error ).replace( ',)', ')' )
     return False

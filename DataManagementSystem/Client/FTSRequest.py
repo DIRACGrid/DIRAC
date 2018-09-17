@@ -162,18 +162,14 @@ class FTSRequest( object ):
       return S_ERROR( "SourceSE does not support FTS transfers" )
 
     if self.__cksmTest:
-      res = self.oSourceSE.getChecksumType()
-      if not res["OK"]:
-        self.log.error( "Unable to get checksum type for SourceSE", 
-                        "%s: %s" % ( self.sourceSE, res["Message"] ) )
-        cksmType = res["Value"]
-        if cksmType in ( "NONE", "NULL" ):
-          self.log.warn( "Checksum type set to %s at SourceSE %s, disabling checksum test" % ( cksmType,
-                                                                                              self.sourceSE ) )
-          self.__cksmTest = False
-        elif cksmType != self.__cksmType:
-          self.log.warn( "Checksum type mismatch, disabling checksum test" )
-          self.__cksmTest = False
+      cksmType = self.oSourceSE.checksumType()
+      if cksmType in ( "NONE", "NULL" ):
+        self.log.warn( "Checksum type set to %s at SourceSE %s, disabling checksum test" % ( cksmType,
+                                                                                            self.sourceSE ) )
+        self.__cksmTest = False
+      elif cksmType != self.__cksmType:
+        self.log.warn( "Checksum type mismatch, disabling checksum test" )
+        self.__cksmTest = False
 
     self.sourceToken = res['Value']
     self.sourceValid = True
@@ -217,18 +213,14 @@ class FTSRequest( object ):
 
     # # check checksum types
     if self.__cksmTest:
-      res = self.oTargetSE.getChecksumType()
-      if not res["OK"]:
-        self.log.error( "Unable to get checksum type for TargetSE", 
-                        "%s: %s" % ( self.targetSE, res["Message"] ) )
-        cksmType = res["Value"]
-        if cksmType in ( "NONE", "NULL" ):
-          self.log.warn( "Checksum type set to %s at TargetSE %s, disabling checksum test" % ( cksmType,
-                                                                                              self.targetSE ) )
-          self.__cksmTest = False
-        elif cksmType != self.__cksmType:
-          self.log.warn( "Checksum type mismatch, disabling checksum test" )
-          self.__cksmTest = False
+      cksmType = self.oTargetSE.checksumType()
+      if cksmType in ( "NONE", "NULL" ):
+        self.log.warn( "Checksum type set to %s at TargetSE %s, disabling checksum test" % ( cksmType,
+                                                                                            self.targetSE ) )
+        self.__cksmTest = False
+      elif cksmType != self.__cksmType:
+        self.log.warn( "Checksum type mismatch, disabling checksum test" )
+        self.__cksmTest = False
 
     self.targetToken = res['Value']
     self.targetValid = True
@@ -582,15 +574,15 @@ class FTSRequest( object ):
     nbStagedFiles = 0
     for lfn, metadata in res['Value']['Successful'].items():
       lfnStatus = self.fileDict.get( lfn, {} ).get( 'Status' )
-      if metadata['Unavailable']:
+      if metadata.get( 'Unavailable', False ):
         gLogger.warn( "resolveSource: skipping %s - source file unavailable" % lfn )
         self.__setFileParameter( lfn, 'Reason', "Source file Unavailable" )
         self.__setFileParameter( lfn, 'Status', 'Failed' )
-      elif metadata['Lost']:
+      elif metadata.get( 'Lost', False ):
         gLogger.warn( "resolveSource: skipping %s - source file lost" % lfn )
         self.__setFileParameter( lfn, 'Reason', "Source file Lost" )
         self.__setFileParameter( lfn, 'Status', 'Failed' )
-      elif not metadata['Cached']:
+      elif not metadata.get( 'Cached', metadata['Accessible'] ):
         if lfnStatus != 'Staging':
           toStage.append( lfn )
       elif metadata['Size'] != self.catalogMetadata[lfn]['Size']:
@@ -967,7 +959,8 @@ class FTSRequest( object ):
       sourceURL = self.__getFileParameter( lfn, 'Source' )
       if not sourceURL['OK']:
         self.__setFileParameter( lfn, 'Source', ftsFile.SourceSURL )
-      self.transferTime += int( ftsFile._duration )
+      if ftsFile._duration:
+        self.transferTime += int( ftsFile._duration )
     return S_OK()
 
   ####################################################################

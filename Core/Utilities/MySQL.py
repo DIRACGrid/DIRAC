@@ -152,10 +152,10 @@ import time
 import threading
 import MySQLdb
 
-from DIRAC                      import gLogger
-from DIRAC                      import S_OK, S_ERROR
-from DIRAC.Core.Utilities.Time  import fromString
-from DIRAC.Core.Utilities       import DErrno
+from DIRAC import gLogger
+from DIRAC import S_OK, S_ERROR
+from DIRAC.Core.Utilities.Time import fromString
+from DIRAC.Core.Utilities import DErrno
 
 # This is for proper initialization of embedded server, it should only be called once
 try:
@@ -261,7 +261,7 @@ class MySQL( object ):
         time.sleep( sleepTime )
       try:
         conn, lastName, thid = self.__innerGet()
-      except MySQLdb.MySQLError, excp:
+      except MySQLdb.MySQLError as excp:
         if retriesLeft >= 0:
           return self.__getWithRetry( dbName, totalRetries, retriesLeft - 1 )
         return S_ERROR( DErrno.EMYSQL, "Could not connect: %s" % excp )
@@ -278,7 +278,7 @@ class MySQL( object ):
       if lastName != dbName:
         try:
           conn.select_db( dbName )
-        except MySQLdb.MySQLError, excp:
+        except MySQLdb.MySQLError as excp:
           if retriesLeft >= 0:
             return self.__getWithRetry( dbName, totalRetries, retriesLeft - 1 )
           return S_ERROR( DErrno.EMYSQL, "Could not select db %s: %s" % ( dbName, excp ) )
@@ -295,7 +295,7 @@ class MySQL( object ):
       try:
         conn.ping( True )
         return True
-      except:
+      except BaseException:
         return False
 
     def __innerGet( self ):
@@ -322,7 +322,12 @@ class MySQL( object ):
         if len( self.__spares ) < self.__maxSpares:
           self.__spares.append( ( data[0], data[1] ) )
         else:
-          data[ 0 ].close()
+          try:
+            data[0].close()
+          except MySQLdb.ProgrammingError as exc:
+            gLogger.warn("ProgrammingError exception while closing MySQL connection: %s" % exc)
+          except BaseException as exc:
+            gLogger.warn("Exception while closing MySQL connection: %s" % exc)
       except KeyError:
         pass
 
@@ -347,7 +352,7 @@ class MySQL( object ):
       conn = result[ 'Value' ]
       try:
         return S_OK( self.__execute( conn, "START TRANSACTION WITH CONSISTENT SNAPSHOT" ) )
-      except MySQLdb.MySQLError, excp:
+      except MySQLdb.MySQLError as excp:
         return S_ERROR( DErrno.EMYSQL, "Could not begin transaction: %s" % excp )
 
     def transactionCommit( self, dbName ):
@@ -358,7 +363,7 @@ class MySQL( object ):
       try:
         result = self.__execute( conn, "COMMIT" )
         return S_OK( result )
-      except MySQLdb.MySQLError, excp:
+      except MySQLdb.MySQLError as excp:
         return S_ERROR( DErrno.EMYSQL, "Could not commit transaction: %s" % excp )
 
     def transactionRollback( self, dbName ):
@@ -369,7 +374,7 @@ class MySQL( object ):
       try:
         result = self.__execute( conn, "ROLLBACK" )
         return S_OK( result )
-      except MySQLdb.MySQLError, excp:
+      except MySQLdb.MySQLError as excp:
         return S_ERROR( DErrno.EMYSQL, "Could not rollback transaction: %s" % excp )
 
   __connectionPools = {}
@@ -428,13 +433,13 @@ class MySQL( object ):
 
     try:
       raise x
-    except MySQLdb.Error, e:
+    except MySQLdb.Error as e:
       self.log.debug( '%s: %s' % ( methodName, err ),
                       '%d: %s' % ( e.args[0], e.args[1] ) )
       return S_ERROR( DErrno.EMYSQL, '%s: ( %d: %s )' % ( err, e.args[0], e.args[1] ) )
-    except Exception as e:
-      self.log.debug( '%s: %s' % ( methodName, err ), str( e ) )
-      return S_ERROR( DErrno.EMYSQL, '%s: (%s)' % ( err, str( e ) ) )
+    except BaseException as e:
+      self.log.debug('%s: %s' % (methodName, err), repr(e))
+      return S_ERROR(DErrno.EMYSQL, '%s: (%s)' % (err, repr(e)))
 
   def __isDateTime( self, dateString ):
 
@@ -445,9 +450,8 @@ class MySQL( object ):
       dtime = fromString( dtime )
       if dtime is None:
         return False
-      else:
-        return True
-    except:
+      return True
+    except BaseException:
       return False
 
 
@@ -489,7 +493,7 @@ class MySQL( object ):
       escape_string = connection.escape_string( str( myString ) )
       self.log.debug( '__escape_string: returns', '"%s"' % escape_string )
       return S_OK( '"%s"' % escape_string )
-    except Exception as x:
+    except BaseException as x:
       self.log.debug( '__escape_string: Could not escape string', '"%s"' % myString )
       return self._except( '__escape_string', x, 'Could not escape string' )
 
@@ -602,7 +606,7 @@ class MySQL( object ):
     if debug:
       self.logger.debug( '_query: %s' % self._safeCmd( cmd ) )
     else:
-      if self.logger._minLevel == self.logger._logLevels.getLevelValue( 'DEBUG' ):
+      if self.logger.getLevel() == 'DEBUG':
         self.logger.verbose( '_query: %s' % self._safeCmd( cmd ) )
       else:
         self.logger.verbose( '_query: %s' % self._safeCmd( cmd )[:min( len( cmd ) , 512 )] )
@@ -637,13 +641,13 @@ class MySQL( object ):
           self.logger.verbose( '_query: %s ...' % str( res[:10] ) )
 
       retDict = S_OK( res )
-    except Exception as x:
+    except BaseException as x:
       self.log.warn( '_query: %s' % self._safeCmd( cmd ) )
       retDict = self._except( '_query', x, 'Execution failed.' )
 
     try:
       cursor.close()
-    except Exception:
+    except BaseException:
       pass
 
     if gDebugFile:
@@ -661,7 +665,7 @@ class MySQL( object ):
     if debug:
       self.logger.debug( '_update: %s' % self._safeCmd( cmd ) )
     else:
-      if self.logger._minLevel == self.logger._logLevels.getLevelValue( 'DEBUG' ):
+      if self.logger.getLevel() == 'DEBUG':
         self.logger.verbose( '_update: %s' % self._safeCmd( cmd ) )
       else:
         self.logger.verbose( '_update: %s' % self._safeCmd( cmd )[:min( len( cmd ) , 512 )] )
@@ -887,19 +891,19 @@ class MySQL( object ):
         for field in thisTable['Fields'].keys():
           cmdList.append( '`%s` %s' % ( field, thisTable['Fields'][field] ) )
 
-        if thisTable.has_key( 'PrimaryKey' ):
+        if 'PrimaryKey' in thisTable:
           if isinstance( thisTable['PrimaryKey'], basestring ):
             cmdList.append( 'PRIMARY KEY ( `%s` )' % thisTable['PrimaryKey'] )
           else:
             cmdList.append( 'PRIMARY KEY ( %s )' % ", ".join( [ "`%s`" % str( f ) for f in thisTable['PrimaryKey'] ] ) )
 
-        if thisTable.has_key( 'Indexes' ):
+        if 'Indexes' in thisTable:
           indexDict = thisTable['Indexes']
           for index in indexDict:
             indexedFields = '`, `'.join( indexDict[index] )
             cmdList.append( 'INDEX `%s` ( `%s` )' % ( index, indexedFields ) )
 
-        if thisTable.has_key( 'UniqueIndexes' ):
+        if 'UniqueIndexes' in thisTable:
           indexDict = thisTable['UniqueIndexes']
           for index in indexDict:
             indexedFields = '`, `'.join( indexDict[index] )
@@ -917,15 +921,8 @@ class MySQL( object ):
             cmdList.append( 'FOREIGN KEY ( `%s` ) REFERENCES `%s` ( `%s` )'
                             ' ON DELETE RESTRICT' % ( key, forTable, forKey ) )
 
-        if thisTable.has_key( 'Engine' ):
-          engine = thisTable['Engine']
-        else:
-          engine = 'InnoDB'
-
-        if thisTable.has_key( 'Charset' ):
-          charset = thisTable['Charset']
-        else:
-          charset = 'latin1'
+        engine = thisTable.get('Engine', 'InnoDB')
+        charset = thisTable.get('Charset', 'latin1')
 
         cmd = 'CREATE TABLE `%s` (\n%s\n) ENGINE=%s DEFAULT CHARSET=%s' % ( table, ',\n'.join( cmdList ), engine, charset )
         retDict = self._update( cmd, debug = True )

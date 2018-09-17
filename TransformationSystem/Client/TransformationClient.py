@@ -148,8 +148,13 @@ class TransformationClient( Client ):
         return res
       else:
         retries = 5
-        gLogger.verbose( "For conditions %s: result for limit %d, offset %d: %d files" %
-                         ( str( condDict ), limit, offsetToApply, len( res['Value'] ) ) )
+        condDictStr = str( condDict )
+        log = gLogger.debug if len( condDictStr ) > 100 else gLogger.verbose
+        if not log( "For conditions %s: result for limit %d, offset %d: %d files" %
+                    ( condDictStr, limit, offsetToApply, len( res['Value'] ) ) ):
+          gLogger.verbose( "For condition keys %s (trans %s): result for limit %d, offset %d: %d files" %
+                           ( str( condDict.keys() ), condDict.get( 'TransformationID', 'None' ),
+                             limit, offsetToApply, len( res['Value'] ) ) )
         if res['Value']:
           transformationFiles += res['Value']
           offsetToApply += limit
@@ -223,7 +228,7 @@ class TransformationClient( Client ):
       gLogger.error( "[None] [%d] .moveFilesToDerivedTransformation: Error getting files from derived transformation" % prod, res['Message'] )
       return res
     derivedFiles = res['Value']
-    derivedStatusDict = dict( [( derivedDict['LFN'], derivedDict['Status'] ) for derivedDict in derivedFiles] )
+    derivedStatusDict = dict( ( derivedDict['LFN'], derivedDict['Status'] ) for derivedDict in derivedFiles )
     newStatusFiles = {}
     parentStatusFiles = {}
     badStatusFiles = {}
@@ -254,10 +259,10 @@ class TransformationClient( Client ):
         else:
           parentStatusFiles.setdefault( 'Moved', [] ).append( lfn )
 
-    for status, count in badStatusFiles.items():
+    for status, count in badStatusFiles.iteritems():
       gLogger.warn( '[None] [%d] .moveFilesToDerivedTransformation: Files found in an unexpected status in derived transformation' % prod, '%s: %d' % ( status, count ) )
     # Set the status in the parent transformation first
-    for status, lfnList in parentStatusFiles.items():
+    for status, lfnList in parentStatusFiles.iteritems():
       for lfnChunk in breakListIntoChunks( lfnList, 5000 ):
         res = self.setFileStatusForTransformation( parentProd, status, lfnChunk )
         if not res['OK']:
@@ -266,7 +271,7 @@ class TransformationClient( Client ):
                          res['Message'] )
 
     # Set the status in the new transformation
-    for ( status, oldStatus ), lfnList in newStatusFiles.items():
+    for ( status, oldStatus ), lfnList in newStatusFiles.iteritems():
       for lfnChunk in breakListIntoChunks( lfnList, 5000 ):
         res = self.setFileStatusForTransformation( prod, status, lfnChunk )
         if not res['OK']:
@@ -311,19 +316,18 @@ class TransformationClient( Client ):
           - newLFNStatus is a string, that applies to all the LFNs in lfns
 
     """
-    rpcClient = self._getRPC()
-    if newLFNsStatus is None:
-      newLFNsStatus = {}
-    if lfns is None:
-      lfns = []
-
     # create dictionary in case newLFNsStatus is a string
-    if isinstance( lfns, basestring ):
-      lfns = [lfns]
     if isinstance( newLFNsStatus, basestring ):
-      newLFNsStatus = dict( [( lfn, newLFNsStatus ) for lfn in lfns ] )
+      if not lfns:
+        return S_OK( {} )
+      if isinstance( lfns, basestring ):
+        lfns = [lfns]
+      newLFNsStatus = dict.fromkeys( lfns, newLFNsStatus )
+    if not newLFNsStatus:
+      return S_OK( {} )
 
-    # gets status as of today
+    rpcClient = self._getRPC()
+    # gets current status, errorCount and fileID
     tsFiles = self.getTransformationFiles( {'TransformationID':transName, 'LFN': newLFNsStatus.keys()} )
     if not tsFiles['OK']:
       return tsFiles
@@ -331,21 +335,26 @@ class TransformationClient( Client ):
     newStatuses = {}
     if tsFiles:
       # for convenience, makes a small dictionary out of the tsFiles, with the lfn as key
-      tsFilesAsDict = {}
-      for tsFile in tsFiles:
-        tsFilesAsDict[tsFile['LFN']] = [tsFile['Status'], tsFile['ErrorCount'], tsFile['FileID']]
+      tsFilesAsDict = dict( ( tsFile['LFN'], ( tsFile['Status'], tsFile['ErrorCount'], tsFile['FileID'] ) ) for tsFile in tsFiles )
 
       # applying the state machine to the proposed status
       newStatuses = self._applyTransformationFilesStateMachine( tsFilesAsDict, newLFNsStatus, force )
 
       if newStatuses:  # if there's something to update
-        # must do it for the file IDs...
-        newStatusForFileIDs = dict( [( tsFilesAsDict[lfn][2], newStatuses[lfn] ) for lfn in newStatuses] )
+        # Key to the service is fileIDs
+        # The value is a tuple with the new status and a flag that says if ErrorCount should be incremented
+        newStatusForFileIDs = dict( ( tsFilesAsDict[lfn][2],
+                                      ( newStatuses[lfn], self._wasFileInError( newStatuses[lfn], tsFilesAsDict[lfn][0] ) ) ) \
+                                      for lfn in newStatuses )
         res = rpcClient.setFileStatusForTransformation( transName, newStatusForFileIDs )
         if not res['OK']:
           return res
 
     return S_OK( newStatuses )
+
+  def _wasFileInError( self, newStatus, currentStatus ):
+    """ Tells whether the file was Assigned and failed, i.e. was not Processed """
+    return currentStatus.lower() == 'assigned' and newStatus.lower() != 'processed'
 
   def _applyTransformationFilesStateMachine( self, tsFilesAsDict, dictOfProposedLFNsStatus, force ):
     """ For easier extension, here we apply the state machine of the production files.
@@ -359,26 +368,26 @@ class TransformationClient( Client ):
     """
     newStatuses = {}
 
-    for lfn in dictOfProposedLFNsStatus.keys():
-      if lfn not in tsFilesAsDict.keys():
-        continue
-      else:
-        newStatus = dictOfProposedLFNsStatus[lfn]
+    for lfn, newStatus in dictOfProposedLFNsStatus.iteritems():
+      if lfn in tsFilesAsDict:
+        currentStatus = tsFilesAsDict[lfn][0].lower()
         # Apply optional corrections
-        if tsFilesAsDict[lfn][0].lower() == 'processed' and dictOfProposedLFNsStatus[lfn].lower() != 'processed':
+        if currentStatus == 'processed' and newStatus.lower() != 'processed':
+          # Processed files should be in a final status unless forced
           if not force:
             newStatus = 'Processed'
-        elif tsFilesAsDict[lfn][0].lower() == 'maxreset':
-          if not force:
+        elif currentStatus == 'maxreset':
+          # MaxReset files can go to any status except Unused (unless forced)
+          if newStatus.lower() == 'unused' and not force:
             newStatus = 'MaxReset'
-        elif dictOfProposedLFNsStatus[lfn].lower() == 'unused':
+        elif newStatus.lower() == 'unused':
           errorCount = tsFilesAsDict[lfn][1]
-          # every 10 retries (by default)
-          if errorCount and ( ( errorCount % self.maxResetCounter ) == 0 ):
-            if not force:
-              newStatus = 'MaxReset'
+          # every 10 retries (by default) the file cannot be reset Unused any longer
+          if errorCount and ( ( errorCount % self.maxResetCounter ) == 0 ) and not force:
+            newStatus = 'MaxReset'
 
-        if tsFilesAsDict[lfn][0].lower() != newStatus:
+        # Only worth changing status if it is different (case insensitive ;-)
+        if newStatus.lower() != currentStatus:
           newStatuses[lfn] = newStatus
 
     return newStatuses

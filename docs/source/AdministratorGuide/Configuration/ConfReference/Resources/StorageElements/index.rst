@@ -1,7 +1,7 @@
-Resources / StorageElements - Subsections
-===========================================
+Resources / StorageElements and StorageElementBases- Subsections
+==================================================================
 
-All the storages elements available for the users are described in this subsection. This information will be moved bellow the Sites section.
+All the storages elements available for the users are described in these subsections. Base Storage Elements, corresponding to abstract Storage Element, must be defined in the Resources/StorageElementBases section while other Storage Elements, like inherited and simple Storage Elements, must be configured in the Resources/StorageElement section. This information will be moved bellow the Sites section.
 
 +---------------------------------------------+--------------------------------------------------+-----------------------------+
 | **Name**                                    | **Description**                                  | **Example**                 |
@@ -40,7 +40,7 @@ All the storages elements available for the users are described in this subsecti
 +---------------------------------------------+--------------------------------------------------+-----------------------------+
 | *SITE-disk/AccessProtocol.<#>/Protocol*     | Protocol to be used to interact with the SE      | Protocol = srm              |
 +---------------------------------------------+--------------------------------------------------+-----------------------------+
-| *SITE-disk/AccessProtocol.<#>/ProtocolName* | Protocol name to be used to interact with the SE | ProtocolName = SRM2         |
+| *SITE-disk/AccessProtocol.<#>/PluginName*   | Protocol name to be used to interact with the SE | PluginName = GFAL2_SRM2     |
 +---------------------------------------------+--------------------------------------------------+-----------------------------+
 | *SITE-disk/AccessProtocol.<#>/WSUrl*        | URL from WebServices                             | WSUrl = /srm/managerv2?SFN= |
 +---------------------------------------------+--------------------------------------------------+-----------------------------+

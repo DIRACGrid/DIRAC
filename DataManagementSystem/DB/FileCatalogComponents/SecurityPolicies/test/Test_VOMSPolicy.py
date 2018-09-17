@@ -1,18 +1,22 @@
+""" VOMSPolicy unit tests
+"""
 
-import mock
+#pylint: disable=protected-access,missing-docstring,invalid-name,too-many-lines
+
+from types import ListType
 import unittest
 import stat
 
-from types import ListType
+import mock
 from DIRAC import S_OK, S_ERROR
 import DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityPolicies.VOMSPolicy
 
 # This just defines a few groups with their VOMSRole
 diracGrps = {'grp_admin' : None,
-              'grp_data' : 'vomsProd',
-              'grp_mc' : 'vomsProd',
-              'grp_user' : 'vomsUser',
-              'grp_nothing' : None}
+             'grp_data' : 'vomsProd',
+             'grp_mc' : 'vomsProd',
+             'grp_user' : 'vomsUser',
+             'grp_nothing' : None}
 
 
 
@@ -99,10 +103,10 @@ class mock_DirectoryManager(object):
 
   def __init__(self):
     pass
-  
+
   def exists( self, lfns ):
     return S_OK( {'Successful' : dict( ( lfn, lfn in directoryTree ) for lfn in lfns ), 'Failed' : {}} )
-  
+
   def getDirectoryParameters(self, path):
     return S_OK( directoryTree[path] ) if path in directoryTree else S_ERROR( 'Directory not found' )
 
@@ -118,7 +122,7 @@ class mock_DirectoryManager(object):
     resultDict['Read'] = ( owner and mode & stat.S_IRUSR > 0 )\
                          or ( group and mode & stat.S_IRGRP > 0 )\
                          or mode & stat.S_IROTH > 0
-                           
+
     resultDict['Write'] = ( owner and mode & stat.S_IWUSR > 0 )\
                           or ( group and mode & stat.S_IWGRP > 0 )\
                           or mode & stat.S_IWOTH > 0
@@ -166,7 +170,7 @@ class mock_FileManager( object ):
       successful[filename] = val
 
     return S_OK( {'Successful': successful, 'Failed':failed} )
-        
+
   def getPathPermissions( self, lfns, credDict ):
     if not isinstance( lfns, ListType ):
       lfns = [lfns]
@@ -242,14 +246,16 @@ def mock_getGroupOption( grpName, grpOption ):
 
 
 
-class BaseCase( object ):
+class BaseCaseMixin( object ):
   """ Base test class. Defines all the method to test
   """
 
 
-  @mock.patch( 'DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityPolicies.VOMSPolicy.getGroupOption', side_effect = mock_getGroupOption )
-  @mock.patch( 'DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityPolicies.VOMSPolicy.getAllGroups', side_effect = mock_getAllGroups )
-  def setUp( self, mk_getAllGroups, mk_getGroupOption ):
+  @mock.patch( 'DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityPolicies.VOMSPolicy.getGroupOption',
+               side_effect = mock_getGroupOption )
+  @mock.patch( 'DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityPolicies.VOMSPolicy.getAllGroups',
+               side_effect = mock_getAllGroups )
+  def setUp( self, _a, _b ):
 
     global directoryTree
     global fileTree
@@ -292,26 +298,26 @@ class BaseCase( object ):
 
   def compareResult( self ):
     """ Compares the result between the test output and the expected values """
-    
+
     for testSet, real, expected in [( 'Existing', self.existingRet, self.expectedExistingRet ), ( 'NonExisting', self.nonExistingRet, self.expectedNonExistingRet )]:
 
-      self.assert_( real, 'The method was not run' )
-      self.assert_( expected, 'No expected results given' )
+      self.assertTrue( real, 'The method was not run' )
+      self.assertTrue( expected, 'No expected results given' )
 
-      self.assert_( real['OK'] == expected['OK'], real )
+      self.assertTrue( real['OK'] == expected['OK'], real )
 
       for dic in ['Successful', 'Failed']:
         dicReal = real['Value'][dic]
         dicExpected = expected['Value'][dic]
 
         notExpected = set( dicReal ) - set( dicExpected )
-        self.assert_( notExpected == set(), '(%s) Returned more keys in %s than expected %s' % ( testSet, dic, notExpected ) )
+        self.assertTrue( notExpected == set(), '(%s) Returned more keys in %s than expected %s' % ( testSet, dic, notExpected ) )
 
         notReturned = set( dicExpected ) - set( dicReal )
-        self.assert_( notReturned == set(), 'Some keys in %s are missing %s' % ( dic, notReturned ) )
+        self.assertTrue( notReturned == set(), 'Some keys in %s are missing %s' % ( dic, notReturned ) )
 
         for k in dicReal:
-          self.assert_( dicReal[k] == dicExpected[k], "(%s) Incompatible result for %s:\n\treal : %s\n\texpected %s" % ( testSet, k, dicReal[k], dicExpected[k] ) )
+          self.assertTrue( dicReal[k] == dicExpected[k], "(%s) Incompatible result for %s:\n\treal : %s\n\texpected %s" % ( testSet, k, dicReal[k], dicExpected[k] ) )
 
 
   def test_removeDirectory( self ):
@@ -320,7 +326,7 @@ class BaseCase( object ):
 
     self.callForDirectories( 'removeDirectory' )
     self.compareResult()
-    
+
   def test_createDirectory( self ):
     """ This is to test the default write policy for directories
     """
@@ -390,7 +396,7 @@ class BaseCase( object ):
 
 
 
-class TestNonExistingUser( BaseCase, unittest.TestCase ):
+class TestNonExistingUser( BaseCaseMixin, unittest.TestCase ):
   """ As anonymous user and no group
   """
 
@@ -410,7 +416,7 @@ class TestNonExistingUser( BaseCase, unittest.TestCase ):
                                       'Failed': {}} )
 
     self.expectedNonExistingRet = S_OK( {'Successful': dict.fromkeys( nonExistingDirectories, True ),
-                                      'Failed': {}} )
+                                         'Failed': {}} )
 
     super( TestNonExistingUser, self ).test_removeDirectory()
 
@@ -425,7 +431,7 @@ class TestNonExistingUser( BaseCase, unittest.TestCase ):
                                       'Failed': {}} )
 
     self.expectedNonExistingRet = S_OK( {'Successful':  dict.fromkeys( nonExistingDirectories, False ),
-                                      'Failed': {}} )
+                                         'Failed': {}} )
 
     super( TestNonExistingUser, self ).test_createDirectory()
 
@@ -450,7 +456,7 @@ class TestNonExistingUser( BaseCase, unittest.TestCase ):
                     '/mc' : True,
                     '/mc/prod1' : True,
                     '/mc/prod2' : True
-                    }
+                  }
 
 
     self.expectedExistingRet = S_OK( {'Successful':  existingDic,
@@ -458,13 +464,13 @@ class TestNonExistingUser( BaseCase, unittest.TestCase ):
 
 
     nonExistingDic = { '/realData/futurRun' : True ,
-                   '/fakeBaseDir' : False,
-                   '/users/usr1/subUsr1' : True,
-                   '/users/usr2/subUsr2' : True,
-                 }
+                       '/fakeBaseDir' : False,
+                       '/users/usr1/subUsr1' : True,
+                       '/users/usr2/subUsr2' : True,
+                     }
 
     self.expectedNonExistingRet = S_OK( {'Successful': nonExistingDic,
-                                      'Failed': {}} )
+                                         'Failed': {}} )
 
     super( TestNonExistingUser, self ).test_listDirectory()
 
@@ -488,7 +494,7 @@ class TestNonExistingUser( BaseCase, unittest.TestCase ):
                     '/mc' : False,
                     '/mc/prod1' : True,
                     '/mc/prod2' : True
-                    }
+                  }
 
 
     self.expectedExistingRet = S_OK( {'Successful':  existingDic,
@@ -496,13 +502,13 @@ class TestNonExistingUser( BaseCase, unittest.TestCase ):
 
 
     nonExistingDic = { '/realData/futurRun' : True ,
-                   '/fakeBaseDir' : False,
-                   '/users/usr1/subUsr1' : True,
-                   '/users/usr2/subUsr2' : True,
-                 }
+                       '/fakeBaseDir' : False,
+                       '/users/usr1/subUsr1' : True,
+                       '/users/usr2/subUsr2' : True,
+                     }
 
     self.expectedNonExistingRet = S_OK( {'Successful': nonExistingDic,
-                                      'Failed': {}} )
+                                         'Failed': {}} )
 
     super( TestNonExistingUser, self ).test_getDirectorySize()
 
@@ -546,7 +552,7 @@ class TestNonExistingUser( BaseCase, unittest.TestCase ):
                     '/users/usr1/usr1_file.txt' : True,
                     '/users/usr1/sub1/usr1_secret.txt' : False,  # sub1 is 700
                     '/users/usr2/usr2_file.txt' : True,
-                    }
+                  }
 
     self.expectedExistingRet = S_OK( {'Successful':  existingDic,
                                       'Failed': {}} )
@@ -554,23 +560,23 @@ class TestNonExistingUser( BaseCase, unittest.TestCase ):
     nonExistingDic = {'/realData/futurRun/futur_data.txt' : True,  # Read permission on /realdata
                       '/fakeBaseDir/fake_file.txt' : False,  # No read permission on /
                       '/fake_base.txt' : False,  # No read permission on /
-    }
+                     }
 
     self.expectedNonExistingRet = S_OK( {'Successful': nonExistingDic,
-                                      'Failed': {}} )
+                                         'Failed': {}} )
 
     super( TestNonExistingUser, self ).test_getFileSize()
 
   def test_changePathOwner( self ):
     """ Setting fiel owner with (anon, grp_nothing)
-     """
+    """
 
 
     self.expectedExistingRet = S_OK( {'Successful':  dict.fromkeys( fileTree, False ),
                                       'Failed': {}} )
 
     self.expectedNonExistingRet = S_OK( {'Successful': dict.fromkeys( nonExistingFiles, False ),
-                                      'Failed': {}} )
+                                         'Failed': {}} )
 
     super( TestNonExistingUser, self ).test_changePathOwner()
 
@@ -584,7 +590,7 @@ class TestNonExistingUser( BaseCase, unittest.TestCase ):
                     '/users/usr1/usr1_file.txt' : True,
                     '/users/usr1/sub1/usr1_secret.txt' : False,  # usr1_secret.txt is 700
                     '/users/usr2/usr2_file.txt' : False,  # usr2_file.txt is 700
-                    }
+                  }
 
     self.expectedExistingRet = S_OK( {'Successful':  existingDic,
                                       'Failed': {}} )
@@ -595,7 +601,7 @@ class TestNonExistingUser( BaseCase, unittest.TestCase ):
                      }
 
     self.expectedNonExistingRet = S_OK( {'Successful': nonExistingDic,
-                                      'Failed': {}} )
+                                         'Failed': {}} )
 
     super( TestNonExistingUser, self ).test_getReplicas()
 
@@ -610,7 +616,7 @@ class TestNonExistingUser( BaseCase, unittest.TestCase ):
                     '/users/usr1/usr1_file.txt' : False,
                     '/users/usr1/sub1/usr1_secret.txt' : False,  # usr1_secret.txt is 700
                     '/users/usr2/usr2_file.txt' : False,  # usr2_file.txt is 700
-                    }
+                  }
 
     self.expectedExistingRet = S_OK( {'Successful':  existingDic,
                                       'Failed': {}} )
@@ -621,7 +627,7 @@ class TestNonExistingUser( BaseCase, unittest.TestCase ):
                      }
 
     self.expectedNonExistingRet = S_OK( {'Successful': nonExistingDic,
-                                      'Failed': {}} )
+                                         'Failed': {}} )
 
     super( TestNonExistingUser, self ).test_addReplica()
 
@@ -630,7 +636,7 @@ class TestNonExistingUser( BaseCase, unittest.TestCase ):
 
 
 
-class TestAdminGrpAnonUser( BaseCase, unittest.TestCase ):
+class TestAdminGrpAnonUser( BaseCaseMixin, unittest.TestCase ):
   """ The grp_admin has adminAccess so should be able to do everything
   """
 
@@ -738,7 +744,7 @@ class TestAdminGrpAnonUser( BaseCase, unittest.TestCase ):
                                       'Failed': {}} )
 
     self.expectedNonExistingRet = S_OK( {'Successful': dict.fromkeys( nonExistingFiles, True ),
-                                      'Failed': {}} )
+                                         'Failed': {}} )
 
     super( TestAdminGrpAnonUser, self ).test_getFileSize()
 
@@ -751,7 +757,7 @@ class TestAdminGrpAnonUser( BaseCase, unittest.TestCase ):
                                       'Failed': {}} )
 
     self.expectedNonExistingRet = S_OK( {'Successful': dict.fromkeys( nonExistingFiles, True ),
-                                      'Failed': {}} )
+                                         'Failed': {}} )
 
     super( TestAdminGrpAnonUser, self ).test_changePathOwner()
 
@@ -763,7 +769,7 @@ class TestAdminGrpAnonUser( BaseCase, unittest.TestCase ):
                                       'Failed': {}} )
 
     self.expectedNonExistingRet = S_OK( {'Successful': dict.fromkeys( nonExistingFiles, True ),
-                                      'Failed': {}} )
+                                         'Failed': {}} )
 
     super( TestAdminGrpAnonUser, self ).test_getReplicas()
 
@@ -785,7 +791,7 @@ class TestAdminGrpAnonUser( BaseCase, unittest.TestCase ):
 
 
 
-class TestAdminGrpAdminUser( BaseCase, unittest.TestCase ):
+class TestAdminGrpAdminUser( BaseCaseMixin, unittest.TestCase ):
   """ The grp_admin has adminAccess so should be able to do everything
   """
 
@@ -821,11 +827,11 @@ class TestAdminGrpAdminUser( BaseCase, unittest.TestCase ):
     existingDic = dict.fromkeys( directoryTree, True )
 
     self.expectedExistingRet = S_OK( {'Successful': existingDic,
-                                       'Failed': {}} )
+                                      'Failed': {}} )
 
 
     self.expectedNonExistingRet = S_OK( {'Successful':  dict.fromkeys( nonExistingDirectories, True ),
-                                      'Failed': {}} )
+                                         'Failed': {}} )
 
 
     super( TestAdminGrpAdminUser, self ).test_createDirectory()
@@ -841,7 +847,7 @@ class TestAdminGrpAdminUser( BaseCase, unittest.TestCase ):
                                       'Failed': {}} )
 
     self.expectedNonExistingRet = S_OK( {'Successful': dict.fromkeys( nonExistingDirectories, True ),
-                                      'Failed': {}} )
+                                         'Failed': {}} )
 
     super( TestAdminGrpAdminUser, self ).test_listDirectory()
 
@@ -854,7 +860,7 @@ class TestAdminGrpAdminUser( BaseCase, unittest.TestCase ):
                                       'Failed': {}} )
 
     self.expectedNonExistingRet = S_OK( {'Successful': dict.fromkeys( nonExistingDirectories, True ),
-                                      'Failed': {}} )
+                                         'Failed': {}} )
 
     super( TestAdminGrpAdminUser, self ).test_getDirectorySize()
 
@@ -869,7 +875,7 @@ class TestAdminGrpAdminUser( BaseCase, unittest.TestCase ):
                                       'Failed': {}} )
 
     self.expectedNonExistingRet = S_OK( {'Successful': dict.fromkeys( nonExistingFiles, True ),
-                                      'Failed': {}} )
+                                         'Failed': {}} )
 
     super( TestAdminGrpAdminUser, self ).test_addFile()
 
@@ -884,7 +890,7 @@ class TestAdminGrpAdminUser( BaseCase, unittest.TestCase ):
                                       'Failed': {}} )
 
     self.expectedNonExistingRet = S_OK( {'Successful': dict.fromkeys( nonExistingFiles, True ),
-                                      'Failed': {}} )
+                                         'Failed': {}} )
 
     super( TestAdminGrpAdminUser, self ).test_removeFile()
 
@@ -941,7 +947,7 @@ class TestAdminGrpAdminUser( BaseCase, unittest.TestCase ):
 
 
 
-class TestDataGrpDmUser( BaseCase, unittest.TestCase ):
+class TestDataGrpDmUser( BaseCaseMixin, unittest.TestCase ):
   """ Should have the permission of the 'dm' user and the group
       permission of all the vomsRole 'prod' (grp_data, grp_mc)
   """
@@ -971,7 +977,7 @@ class TestDataGrpDmUser( BaseCase, unittest.TestCase ):
                     # Owner group of /mc has vomsProd as well
                     '/mc/prod1' : True,
                     '/mc/prod2' : True
-                    }
+                  }
 
 
 
@@ -1005,10 +1011,10 @@ class TestDataGrpDmUser( BaseCase, unittest.TestCase ):
                     # Owner group of /mc has vomsProd as well
                     '/mc/prod1' : True,
                     '/mc/prod2' : True
-                    }
+                  }
 
     self.expectedExistingRet = S_OK( {'Successful': existingDic,
-                                       'Failed': {}} )
+                                      'Failed': {}} )
 
 
 
@@ -1020,7 +1026,7 @@ class TestDataGrpDmUser( BaseCase, unittest.TestCase ):
                      }
 
     self.expectedNonExistingRet = S_OK( {'Successful':  nonExistingDic,
-                                      'Failed': {}} )
+                                         'Failed': {}} )
 
 
     super( TestDataGrpDmUser, self ).test_createDirectory()
@@ -1121,7 +1127,7 @@ class TestDataGrpDmUser( BaseCase, unittest.TestCase ):
                       '/fakeBaseDir/fake_file.txt' : False,
                       '/fake_base.txt' : False,
     }
-    
+
     self.expectedNonExistingRet = S_OK( {'Successful': nonExistingDic,
                                       'Failed': {}} )
 
@@ -1239,7 +1245,7 @@ class TestDataGrpDmUser( BaseCase, unittest.TestCase ):
 
 
 
-class TestDataGrpUsr1User( BaseCase, unittest.TestCase ):
+class TestDataGrpUsr1User( BaseCaseMixin, unittest.TestCase ):
   """ Should have the permission of the 'usr1' user and the group
       permission of all the vomsRole 'prod' (grp_data, grp_mc)
   """
@@ -1439,7 +1445,7 @@ class TestDataGrpUsr1User( BaseCase, unittest.TestCase ):
 
 
     self.expectedNonExistingRet = S_OK( {'Successful': dict.fromkeys( nonExistingFiles, True ),
-                                      'Failed': {}} )
+                                         'Failed': {}} )
 
     super( TestDataGrpUsr1User, self ).test_removeFile()
 
@@ -1453,7 +1459,7 @@ class TestDataGrpUsr1User( BaseCase, unittest.TestCase ):
                     '/users/usr1/usr1_file.txt' : True,
                     '/users/usr1/sub1/usr1_secret.txt' : True,
                     '/users/usr2/usr2_file.txt' : True,
-                    }
+                  }
 
     self.expectedExistingRet = S_OK( {'Successful':  existingDic,
                                       'Failed': {}} )
@@ -1461,10 +1467,10 @@ class TestDataGrpUsr1User( BaseCase, unittest.TestCase ):
     nonExistingDic = {'/realData/futurRun/futur_data.txt' : True,
                       '/fakeBaseDir/fake_file.txt' : False,
                       '/fake_base.txt' : False,
-    }
+                     }
 
     self.expectedNonExistingRet = S_OK( {'Successful':nonExistingDic,
-                                      'Failed': {}} )
+                                         'Failed': {}} )
 
     super( TestDataGrpUsr1User, self ).test_getFileSize()
 
@@ -1498,7 +1504,7 @@ class TestDataGrpUsr1User( BaseCase, unittest.TestCase ):
     nonExistingDic = {'/realData/futurRun/futur_data.txt' : True,
                       '/fakeBaseDir/fake_file.txt' : True,
                       '/fake_base.txt' : True,
-    }
+                     }
 
     self.expectedNonExistingRet = S_OK( {'Successful': nonExistingDic,
                                       'Failed': {}} )
@@ -1533,7 +1539,7 @@ class TestDataGrpUsr1User( BaseCase, unittest.TestCase ):
 
 
 
-class TestUserGrpUsr1User( BaseCase, unittest.TestCase ):
+class TestUserGrpUsr1User( BaseCaseMixin, unittest.TestCase ):
   """ Just a normal user, should be able to write only in its own directory
   """
 
@@ -1560,13 +1566,13 @@ class TestUserGrpUsr1User( BaseCase, unittest.TestCase ):
                     '/mc' : False,
                     '/mc/prod1' : False,
                     '/mc/prod2' : False
-                    }
+                  }
 
     self.expectedExistingRet = S_OK( {'Successful': existingDic,
-                                       'Failed': {}} )
+                                      'Failed': {}} )
 
     self.expectedNonExistingRet = S_OK( {'Successful': dict.fromkeys( nonExistingDirectories, True ),
-                                      'Failed': {}} )
+                                         'Failed': {}} )
 
 
     super( TestUserGrpUsr1User, self ).test_removeDirectory()
@@ -1679,7 +1685,7 @@ class TestUserGrpUsr1User( BaseCase, unittest.TestCase ):
                      }
 
     self.expectedNonExistingRet = S_OK( {'Successful':  nonExistingDic,
-                                      'Failed': {}} )
+                                         'Failed': {}} )
 
 
     super( TestUserGrpUsr1User, self ).test_getDirectorySize()
@@ -1694,7 +1700,7 @@ class TestUserGrpUsr1User( BaseCase, unittest.TestCase ):
                     '/users/usr1/usr1_file.txt' : True,
                     '/users/usr1/sub1/usr1_secret.txt' : True,
                     '/users/usr2/usr2_file.txt' : False,
-                    }
+                  }
 
     self.expectedExistingRet = S_OK( {'Successful':  existingDic,
                                       'Failed': {}} )
@@ -1702,10 +1708,10 @@ class TestUserGrpUsr1User( BaseCase, unittest.TestCase ):
     nonExistingDic = {'/realData/futurRun/futur_data.txt' : False,
                       '/fakeBaseDir/fake_file.txt' : False,
                       '/fake_base.txt' : False,
-    }
+                     }
 
     self.expectedNonExistingRet = S_OK( {'Successful': nonExistingDic,
-                                      'Failed': {}} )
+                                         'Failed': {}} )
 
     super( TestUserGrpUsr1User, self ).test_addFile()
 
@@ -1778,7 +1784,7 @@ class TestUserGrpUsr1User( BaseCase, unittest.TestCase ):
                     '/users/usr1/usr1_file.txt' : True,
                     '/users/usr1/sub1/usr1_secret.txt' : True,  # usr1_secret.txt is 700
                     '/users/usr2/usr2_file.txt' : False,  # usr2_file.txt is 700
-                    }
+                  }
 
     self.expectedExistingRet = S_OK( {'Successful':  existingDic,
                                       'Failed': {}} )
@@ -1786,10 +1792,10 @@ class TestUserGrpUsr1User( BaseCase, unittest.TestCase ):
     nonExistingDic = {'/realData/futurRun/futur_data.txt' : True,
                       '/fakeBaseDir/fake_file.txt' : True,
                       '/fake_base.txt' : True,
-    }
+                     }
 
     self.expectedNonExistingRet = S_OK( {'Successful': nonExistingDic,
-                                      'Failed': {}} )
+                                         'Failed': {}} )
 
     super( TestUserGrpUsr1User, self ).test_getReplicas()
 
@@ -1803,7 +1809,7 @@ class TestUserGrpUsr1User( BaseCase, unittest.TestCase ):
                     '/users/usr1/usr1_file.txt' : True,
                     '/users/usr1/sub1/usr1_secret.txt' : True,
                     '/users/usr2/usr2_file.txt' : False,
-                    }
+                  }
 
     self.expectedExistingRet = S_OK( {'Successful':  existingDic,
                                       'Failed': {}} )
@@ -1832,4 +1838,3 @@ if __name__ == '__main__':
 
 
   unittest.TextTestRunner( verbosity = 2 ).run( suite )
-

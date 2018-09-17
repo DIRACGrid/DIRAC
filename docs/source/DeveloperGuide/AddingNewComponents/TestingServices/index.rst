@@ -22,24 +22,24 @@ Write an integration test for HelloHandler. This test should use python unittest
    from DIRAC.Core.DISET.RPCClient import RPCClient
 
    class TestHelloHandler( unittest.TestCase ):
-   
+
      def setUp( self ):
        self.helloService = RPCClient('Framework/Hello')
-   
+
      def tearDown( self ):
        pass
-   
+
    class TestHelloHandlerSuccess( TestHelloHandler ):
-   
+
      def test_success( self ):
-       
-   
+
+
    class TestHelloHandlerFailure( TestHelloHandler ):
-   
+
      def test_failure( self ):
-       
-   
-   
+
+
+
    if __name__ == '__main__':
      suite = unittest.defaultTestLoader.loadTestsFromTestCase( TestHelloHandler )
      suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TestHelloHandlerSuccess ) )
@@ -47,5 +47,4 @@ Write an integration test for HelloHandler. This test should use python unittest
      testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
 
 
-As said, examples can be found in the TestDIRAC repository in GitHub.
-
+As said, examples can be found in the DIRAC/tests package.

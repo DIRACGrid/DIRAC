@@ -112,13 +112,13 @@ class Transformation( API ):
     self.item_called = "Body"
     if isinstance( body, basestring ):
       return self.__setParam( body )
-    if not isinstance( body, (list, tuple) ):
+    if not isinstance( body, ( list, tuple ) ):
       raise TypeError( "Expected list or string, but %r is %s" % ( body, type( body ) ) )
 
     for tup in body:
-      if not isinstance( tup, (tuple, list) ):
+      if not isinstance( tup, ( tuple, list ) ):
         raise TypeError( "Expected tuple or list, but %r is %s" % ( tup, type( tup ) ) )
-      if len(tup) != 2:
+      if len( tup ) != 2:
         raise TypeError( "Expected 2-tuple, but %r is length %d" % ( tup, len( tup ) ) )
       if not isinstance( tup[0], basestring ):
         raise TypeError( "Expected string, but first entry in tuple %r is %s" % ( tup, type( tup[0] ) ) )
@@ -363,13 +363,13 @@ class Transformation( API ):
     """ gets the AuthorDN and username of the transformation from the uploaded proxy
     """
     username = ""
-    author   = ""
+    author = ""
     res = getProxyInfo()
     if res['OK']:
-      author   = res['Value']['identity']
+      author = res['Value']['identity']
       username = res['Value']['username']
     else:
-      gLogger.error( "Unable to get uploaded proxy Info %s " %res['Message'] )
+      gLogger.error( "Unable to get uploaded proxy Info %s " % res['Message'] )
       return S_ERROR( res['Message'] )
 
     res = {'username' : username, 'authorDN' : author }
@@ -389,17 +389,17 @@ class Transformation( API ):
         return S_ERROR( res['Message'] )
       else:
         foundUserName = res['Value']['username']
-        foundAuthor   = res['Value']['authorDN']
+        foundAuthor = res['Value']['authorDN']
         # If the username whom created the uploaded proxy is different than the provided username report error and exit
         if not ( userName == ""  or userName == foundUserName ):
-          gLogger.error("Couldn't resolve the authorDN for user '%s' from the uploaded proxy (proxy created by '%s')" %(userName, foundUserName))
-          return S_ERROR("Couldn't resolve the authorDN for user '%s' from the uploaded proxy (proxy created by '%s')" %(userName, foundUserName))
+          gLogger.error( "Couldn't resolve the authorDN for user '%s' from the uploaded proxy (proxy created by '%s')" % ( userName, foundUserName ) )
+          return S_ERROR( "Couldn't resolve the authorDN for user '%s' from the uploaded proxy (proxy created by '%s')" % ( userName, foundUserName ) )
 
         userName = foundUserName
         authorDN = foundAuthor
-        gLogger.info("Will list transformations created by user '%s' with status '%s'" %(userName, ', '.join( transStatus )))
+        gLogger.info( "Will list transformations created by user '%s' with status '%s'" % ( userName, ', '.join( transStatus ) ) )
     else:
-      gLogger.info("Will list transformations created by '%s' with status '%s'" %(authorDN, ', '.join( transStatus )))
+      gLogger.info( "Will list transformations created by '%s' with status '%s'" % ( authorDN, ', '.join( transStatus ) ) )
 
     condDict['AuthorDN'] = authorDN
     if transID:
@@ -422,7 +422,7 @@ class Transformation( API ):
     return res
 
   #############################################################################
-  def getSummaryTransformations( self , transID = []):
+  def getSummaryTransformations( self , transID = [] ):
     """Show the summary for a list of Transformations
 
        Fields starting with 'F' ('J')  refers to files (jobs).
@@ -431,13 +431,13 @@ class Transformation( API ):
     condDict = { 'TransformationID' : transID }
     orderby = []
     start = 0
-    maxitems = len(transID)
-    paramShowNames = ['TransformationID','Type','Status','Files_Total','Files_PercentProcessed',\
-                      'Files_Processed','Files_Unused','Jobs_TotalCreated','Jobs_Waiting',\
-                      'Jobs_Running','Jobs_Done','Jobs_Failed','Jobs_Stalled']
+    maxitems = len( transID )
+    paramShowNames = ['TransformationID', 'Type', 'Status', 'Files_Total', 'Files_PercentProcessed', \
+                      'Files_Processed', 'Files_Unused', 'Jobs_TotalCreated', 'Jobs_Waiting', \
+                      'Jobs_Running', 'Jobs_Done', 'Jobs_Failed', 'Jobs_Stalled']
     # Below, the header used for each field in the printing: short to fit in one line
-    paramShowNamesShort = ['TransID','Type','Status','F_Total','F_Proc.(%)','F_Proc.',\
-                           'F_Unused','J_Created','J_Wait','J_Run','J_Done','J_Fail','J_Stalled']
+    paramShowNamesShort = ['TransID', 'Type', 'Status', 'F_Total', 'F_Proc.(%)', 'F_Proc.', \
+                           'F_Unused', 'J_Created', 'J_Wait', 'J_Run', 'J_Done', 'J_Fail', 'J_Stalled']
     dictList = []
 
     result = self.transClient.getTransformationSummaryWeb( condDict, orderby, start, maxitems )
@@ -449,16 +449,16 @@ class Transformation( API ):
       try:
         paramNames = result['Value']['ParameterNames']
         for paramValues in result['Value']['Records']:
-          paramShowValues = map(lambda pname: paramValues[ paramNames.index(pname) ], paramShowNames)
-          showDict = dict(zip( paramShowNamesShort, paramShowValues ))
+          paramShowValues = map( lambda pname: paramValues[ paramNames.index( pname ) ], paramShowNames )
+          showDict = dict( zip( paramShowNamesShort, paramShowValues ) )
           dictList.append( showDict )
 
       except Exception as x:
-        print 'Exception %s ' %str(x)
+        print 'Exception %s ' % str( x )
 
-    if not len(dictList) > 0:
-      gLogger.error( 'No found transformations satisfying input condition')
-      return S_ERROR( 'No found transformations satisfying input condition')
+    if not len( dictList ) > 0:
+      gLogger.error( 'No found transformations satisfying input condition' )
+      return S_ERROR( 'No found transformations satisfying input condition' )
     else:
       print self._printFormattedDictList( dictList, paramShowNamesShort, paramShowNamesShort[0], paramShowNamesShort[0] )
 
@@ -496,7 +496,7 @@ class Transformation( API ):
     self.setTransformationID( transID )
     gLogger.notice( "Created transformation %d" % transID )
     for paramName, paramValue in self.paramValues.items():
-      if not self.paramTypes.has_key( paramName ):
+      if paramName not in self.paramTypes:
         res = self.transClient.setTransformationParameter( transID, paramName, paramValue )
         if not res['OK']:
           gLogger.error( "Failed to add parameter", "%s %s" % ( paramName, res['Message'] ) )
@@ -553,7 +553,7 @@ class Transformation( API ):
                                                                                                       'TargetSE'] ) ) )
     requiredParams = ['SourceSE', 'TargetSE']
     for requiredParam in requiredParams:
-      if ( not self.paramValues.has_key( requiredParam ) ) or ( not self.paramValues[requiredParam] ):
+      if not self.paramValues.get( requiredParam ):
         paramValue = raw_input( "Please enter " + requiredParam + " " )
         setter = None
         setterName = "set%s" % requiredParam

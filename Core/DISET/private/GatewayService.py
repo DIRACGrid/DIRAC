@@ -1,21 +1,35 @@
+""" The gateway service is used for forwarding service calls to the appropriate services.
 
-import os
+    For this to be used, the following CS option is required:
+
+    DIRAC
+    {
+      Gateways
+      {
+        my.site.org = dips://thisIsAn.url.org:9159/Framework/Gateway
+      }
+    }
+
+    At the same time, this same gateway service should be run with option /LocalInstallation/Site
+    which is different from "my.site.org" or whatever is set in the option above, to avoid initialization loops.
+
+"""
+
+__RCSID__ = "$id:"
+
+import sys
 import cStringIO
+
 import DIRAC
-from DIRAC import gConfig, gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities import List, Time
+from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.Core.Utilities.DictCache import DictCache
-from DIRAC.Core.DISET.private.ServiceConfiguration import ServiceConfiguration
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
-from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
-from DIRAC.Core.DISET.private.TransportPool import getGlobalTransportPool
 from DIRAC.Core.DISET.private.FileHelper import FileHelper
 from DIRAC.Core.DISET.private.MessageBroker import MessageBroker, getGlobalMessageBroker
 from DIRAC.Core.DISET.MessageClient import MessageClient
 from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool
-from DIRAC.Core.DISET.AuthManager import AuthManager
 from DIRAC.Core.DISET.private.Service import Service
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.DISET.TransferClient import TransferClient
@@ -23,25 +37,47 @@ from DIRAC.Core.DISET.private.BaseClient import BaseClient
 
 
 class GatewayService( Service ):
+  """ Inherits from Service so it can (and should) be run as a DIRAC service,
+      but replaces several of the internal methods
+  """
 
   GATEWAY_NAME = "Framework/Gateway"
 
   def __init__( self ):
-    Service.__init__( self, GatewayService.GATEWAY_NAME )
+    """ Initialize like a real service
+    """
+    super(GatewayService, self).__init__(
+        {'modName':GatewayService.GATEWAY_NAME,
+         'loadName':GatewayService.GATEWAY_NAME,
+         'standalone': True,
+         'moduleObj': sys.modules[DIRAC.Core.DISET.private.GatewayService.GatewayService.__module__],
+         'classObj': self.__class__} )
     self.__delegatedCredentials = DictCache()
     self.__transferBytesLimit = 1024 * 1024 * 100
+    # to be resolved
+    self._url = None
+    self._handler = None
+    self._threadPool = None
+    self._msgBroker = None
+    self._msgForwarder = None
 
   def initialize( self ):
+    """ This replaces the standard initialize from Service
+    """
     #Build the URLs
     self._url = self._cfg.getURL()
     if not self._url:
       return S_ERROR( "Could not build service URL for %s" % GatewayService.GATEWAY_NAME )
     gLogger.verbose( "Service URL is %s" % self._url )
+    #Load handler
+    result = self._loadHandlerInit()
+    if not result[ 'OK' ]:
+      return result
+    self._handler = result[ 'Value' ]
     #Discover Handler
-    self._initMonitoring()
     self._threadPool = ThreadPool( 1,
-                                    max( 0, self._cfg.getMaxThreads() ),
-                                    self._cfg.getMaxWaitingPetitions() )
+                                   max( 0, self._cfg.getMaxThreads() ),
+                                   self._cfg.getMaxWaitingPetitions() )
     self._threadPool.daemonize()
     self._msgBroker = MessageBroker( "%sMSB" % GatewayService.GATEWAY_NAME, threadPool = self._threadPool )
     self._msgBroker.useMessageObjects( False )
@@ -49,8 +85,9 @@ class GatewayService( Service ):
     self._msgForwarder = MessageForwarder( self._msgBroker )
     return S_OK()
 
-  #Threaded process function
   def _processInThread( self, clientTransport ):
+    """ Threaded process function
+    """
     #Handshake
     try:
       clientTransport.handshake()
@@ -119,13 +156,12 @@ class GatewayService( Service ):
     delChain = result[ 'Value' ]
     delegatedChain = delChain.dumpAllToString()[ 'Value' ]
     secsLeft = delChain.getRemainingSecs()[ 'Value' ] - 1
-    clientInitArgs = {
-                        BaseClient.KW_SETUP : proposalTuple[0][1],
-                        BaseClient.KW_TIMEOUT : 600,
-                        BaseClient.KW_IGNORE_GATEWAYS : True,
-                        BaseClient.KW_USE_CERTIFICATES : False,
-                        BaseClient.KW_PROXY_STRING : delegatedChain
-                        }
+    clientInitArgs = { BaseClient.KW_SETUP : proposalTuple[0][1],
+                       BaseClient.KW_TIMEOUT : 600,
+                       BaseClient.KW_IGNORE_GATEWAYS : True,
+                       BaseClient.KW_USE_CERTIFICATES : False,
+                       BaseClient.KW_PROXY_STRING : delegatedChain
+                     }
     if BaseClient.KW_EXTRA_CREDENTIALS in credDict:
       clientInitArgs[ BaseClient.KW_EXTRA_CREDENTIALS ] = credDict[ BaseClient.KW_EXTRA_CREDENTIALS ]
     gLogger.warn( "Got delegated proxy for %s: %s secs left" % ( idString, secsLeft ) )
@@ -156,7 +192,7 @@ class GatewayService( Service ):
 
   #Msg
 
-  def _mbConnect( self, trid, clientInitArgs ):
+  def _mbConnect( self, trid, handlerObj = None ):
     return S_OK()
 
   def _mbReceivedMsg( self, cliTrid, msgObj ):
@@ -184,7 +220,7 @@ class GatewayService( Service ):
       gLogger.warn( "Received a file transfer action from %s" % idString )
       clientTransport.sendData( S_OK( "Accepted" ) )
       retVal = self.__forwardFileTransferCall( targetService, clientInitArgs,
-                                                actionMethod, retVal[ 'Value' ], clientTransport )
+                                               actionMethod, retVal[ 'Value' ], clientTransport )
     elif actionType == "RPC":
       gLogger.info( "Forwarding %s/%s action to %s for %s" % ( actionType, actionMethod, targetService, idString ) )
       retVal = self.__forwardRPCCall( targetService, clientInitArgs, actionMethod, retVal[ 'Value' ] )
@@ -286,7 +322,7 @@ class TransferRelay( TransferClient ):
       self.errMsg( "Could not send header", result[ 'Message' ] )
       return result
     self.infoMsg( "Starting to send data to service" )
-    srvTransport = result[ 'Value' ]
+    trid, srvTransport = result[ 'Value' ]
     srvFileHelper = FileHelper( srvTransport )
     srvFileHelper.setDirection( "send" )
     result = srvFileHelper.BufferToNetwork( data )
@@ -378,13 +414,13 @@ class TransferRelay( TransferClient ):
     if not result[ 'OK' ]:
       self.errMsg( "Could not send header", result[ 'Message' ] )
       return result
-    srvTransport = result[ 'Value' ]
+    trid, srvTransport = result[ 'Value' ]
     response = srvTransport.receiveData( 1048576 )
     srvTransport.close()
     self.infoMsg( "Sending data back to client" )
     return response
 
-class MessageForwarder:
+class MessageForwarder(object):
 
   def __init__( self, msgBroker ):
     self.__inOutLock = LockRing().getLock()
@@ -455,5 +491,3 @@ class MessageForwarder:
       return S_ERROR( "MsgFromSrv -> Mismatched srv2cli trid" )
     gLogger.info( "Message %s from %s service" % ( msgObj.getName(), self.__byClient[ cliTrid ][ 'srvName' ] ) )
     return self.__msgBroker.sendMessage( cliTrid, msgObj )
-
-

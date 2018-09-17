@@ -24,10 +24,10 @@ DIRACRoot = False
 
 def downloadExternals( destPath, version = False ):
   destPath = os.path.join( destPath, "Externals" )
-  if 0 != os.system( "git clone %s %s" % ( gitRepo, destPath ) ):
+  if os.system("git clone %s %s" % (gitRepo, destPath)) != 0:
     print "Cannot clone git repo"
     return False
-  if version and 0 != os.system( "cd '%s'; git checkout -b 'comp-%s' '%s'" % ( destPath, version, version ) ):
+  if version and os.system("cd %s; git checkout %s; git checkout -b comp-%s " % (destPath, version, version)) != 0:
     print "Cannot find version %s" % version
     return False
   return True
@@ -43,7 +43,7 @@ def copyFromDIRAC( filePath, destPath, isExecutable = False, filterLines = None 
   try:
     with open( os.path.join( DIRACRoot, filePath ), "r" ) as fd:
       data = fd.readlines()
-  except IOError, e:
+  except IOError as e:
     print "Could not open %s: %s" % ( filePath, e )
     sys.exit( 1 )
   destFilePath = os.path.join( destPath, os.path.basename( filePath ) )

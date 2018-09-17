@@ -1,23 +1,18 @@
-# $HeadURL$
 __RCSID__ = "$Id$"
 
 import os
-try:
-  import hashlib
-  md5 = hashlib
-except:
-  import md5
-import types
+import hashlib
 import threading
 import cStringIO
 import tarfile
 import tempfile
+
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
 gLogger = gLogger.getSubLogger( "FileTransmissionHelper" )
 
-class FileHelper:
+class FileHelper(object):
 
   __validDirections = ( "toClient", "fromClient", 'receive', 'send' )
   __directionsMapping = { 'toClient' : 'send', 'fromClient' : 'receive' }
@@ -25,7 +20,7 @@ class FileHelper:
   def __init__( self, oTransport = None, checkSum = True ):
     self.oTransport = oTransport
     self.__checkMD5 = checkSum
-    self.__oMD5 = md5.md5()
+    self.__oMD5 = hashlib.md5()
     self.bFinishedTransmission = False
     self.bReceivedEOF = False
     self.direction = False
@@ -151,7 +146,7 @@ class FileHelper:
   def networkToDataSink( self, dataSink, maxFileSize = 0 ):
     if "write" not in dir( dataSink ):
       return S_ERROR( "%s data sink object does not have a write method" % str( dataSink ) )
-    self.__oMD5 = md5.md5()
+    self.__oMD5 = hashlib.md5()
     self.bReceivedEOF = False
     self.bErrorInMD5 = False
     receivedBytes = 0
@@ -211,7 +206,7 @@ class FileHelper:
     return S_OK()
 
   def FDToNetwork( self, iFD ):
-    self.__oMD5 = md5.md5()
+    self.__oMD5 = hashlib.md5()
     iPacketSize = self.packetSize
     self.__fileBytes = 0
     sentBytes = 0
@@ -243,7 +238,7 @@ class FileHelper:
   def DataSourceToNetwork( self, dataSource ):
     if "read" not in dir( dataSource ):
       return S_ERROR( "%s data source object does not have a read method" % str( dataSource ) )
-    self.__oMD5 = md5.md5()
+    self.__oMD5 = hashlib.md5()
     iPacketSize = self.packetSize
     self.__fileBytes = 0
     sentBytes = 0
@@ -269,7 +264,7 @@ class FileHelper:
     closeAfter = True
     if isinstance( uFile, basestring ):
       try:
-        self.oFile = file( uFile, sFileMode )
+        self.oFile = open(uFile, sFileMode)
       except IOError:
         return S_ERROR( "%s can't be opened" % uFile )
       iFD = self.oFile.fileno()
@@ -288,7 +283,7 @@ class FileHelper:
     closeAfter = True
     if isinstance( uFile, basestring ):
       try:
-        oFile = file( uFile, "wb" )
+        oFile = open(uFile, "wb")
       except IOError:
         return S_ERROR( "%s can't be opened" % uFile )
     elif isinstance( uFile, file ):
@@ -315,10 +310,9 @@ class FileHelper:
     if compress:
       tarMode = "w|bz2"
 
-    tar = tarfile.open( name = "Pipe", mode = tarMode, fileobj = filePipe )
-    for entry in fileList:
-      tar.add( os.path.realpath( entry ), os.path.basename( entry ), recursive = True )
-    tar.close()
+    with tarfile.open( name = "Pipe", mode = tarMode, fileobj = filePipe ) as tar:
+      for entry in fileList:
+        tar.add( os.path.realpath( entry ), os.path.basename( entry ), recursive = True )
     if autoClose:
       try:
         filePipe.close()
@@ -333,7 +327,7 @@ class FileHelper:
         return S_ERROR( "Can't create temporary file to pregenerate the bulk: %s" % str( e ) )
       self.__createTar( fileList, filePipe, compress )
       try:
-        fo = file( filePath, 'rb' )
+        fo = open(filePath, 'rb')
       except Exception as e:
         return S_ERROR( "Can't read pregenerated bulk: %s" % str( e ) )
       result = self.DataSourceToNetwork( fo )
@@ -359,10 +353,9 @@ class FileHelper:
     tarMode = "r|*"
     if compress:
       tarMode = "r|bz2"
-    tar = tarfile.open( mode = tarMode, fileobj = filePipe )
-    for tarInfo in tar:
-      tar.extract( tarInfo, destDir )
-    tar.close()
+    with tarfile.open( mode = tarMode, fileobj = filePipe ) as tar:
+      for tarInfo in tar:
+        tar.extract( tarInfo, destDir )
     try:
       filePipe.close()
     except:
@@ -394,15 +387,14 @@ class FileHelper:
       if compress:
         tarMode = "r|bz2"
       entries = []
-      tar = tarfile.open( mode = tarMode, fileobj = filePipe )
-      for tarInfo in tar:
-        entries.append( tarInfo.name )
-      tar.close()
+      with tarfile.open( mode = tarMode, fileobj = filePipe ) as tar:
+        for tarInfo in tar:
+          entries.append( tarInfo.name )
       filePipe.close()
       return S_OK( entries )
-    except tarfile.ReadError, v:
+    except tarfile.ReadError as v:
       return S_ERROR( "Error reading bulk: %s" % str( v ) )
-    except tarfile.CompressionError, v:
+    except tarfile.CompressionError as v:
       return S_ERROR( "Error in bulk compression setting: %s" % str( v ) )
-    except Exception, v:
+    except Exception as v:
       return S_ERROR( "Error in listing bulk: %s" % str( v ) )

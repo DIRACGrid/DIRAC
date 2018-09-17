@@ -27,7 +27,7 @@ class JobAPISuccess( JobAPITestCase ):
     self.job.setJobGroup( 'jobGroup' )
     self.job.setExecutable( 'someExe' )
     self.job.setType( 'jobType' )
-    self.job.setDestination( 'DIRAC.someSite.ch' )
+    self.job.setDestination( 'ANY' )
 
     xml = self.job._toXML()
 
@@ -42,7 +42,7 @@ class JobAPISuccess( JobAPITestCase ):
 <Parameter name="Priority" type="JDL" linked_module="" linked_parameter="" in="True" out="False" description="User Job Priority"><value><![CDATA[1]]></value></Parameter>
 <Parameter name="JobGroup" type="JDL" linked_module="" linked_parameter="" in="True" out="False" description="User specified job group"><value><![CDATA[jobGroup]]></value></Parameter>
 <Parameter name="JobName" type="JDL" linked_module="" linked_parameter="" in="True" out="False" description="User specified name"><value><![CDATA[jobName]]></value></Parameter>
-<Parameter name="Site" type="JDL" linked_module="" linked_parameter="" in="True" out="False" description="User specified destination site"><value><![CDATA[DIRAC.someSite.ch]]></value></Parameter>
+<Parameter name="Site" type="JDL" linked_module="" linked_parameter="" in="True" out="False" description="User specified destination site"><value><![CDATA[ANY]]></value></Parameter>
 <Parameter name="Origin" type="JDL" linked_module="" linked_parameter="" in="True" out="False" description="Origin of client"><value><![CDATA[DIRAC]]></value></Parameter>
 <Parameter name="StdOutput" type="JDL" linked_module="" linked_parameter="" in="True" out="False" description="Standard output file"><value><![CDATA[std.out]]></value></Parameter>
 <Parameter name="StdError" type="JDL" linked_module="" linked_parameter="" in="True" out="False" description="Standard error file"><value><![CDATA[std.err]]></value></Parameter>
@@ -103,7 +103,7 @@ from DIRAC.Workflow.Modules.Script import Script
 <Parameter name="Priority" type="JDL" linked_module="" linked_parameter="" in="True" out="False" description="User Job Priority"><value><![CDATA[1]]></value></Parameter>
 <Parameter name="JobGroup" type="JDL" linked_module="" linked_parameter="" in="True" out="False" description="User specified job group"><value><![CDATA[jobGroup]]></value></Parameter>
 <Parameter name="JobName" type="JDL" linked_module="" linked_parameter="" in="True" out="False" description="User specified name"><value><![CDATA[jobName]]></value></Parameter>
-<Parameter name="Site" type="JDL" linked_module="" linked_parameter="" in="True" out="False" description="User specified destination site"><value><![CDATA[DIRAC.someSite.ch]]></value></Parameter>
+<Parameter name="Site" type="JDL" linked_module="" linked_parameter="" in="True" out="False" description="User specified destination site"><value><![CDATA[ANY]]></value></Parameter>
 <Parameter name="Origin" type="JDL" linked_module="" linked_parameter="" in="True" out="False" description="Origin of client"><value><![CDATA[DIRAC]]></value></Parameter>
 <Parameter name="StdOutput" type="JDL" linked_module="" linked_parameter="" in="True" out="False" description="Standard output file"><value><![CDATA[std.out]]></value></Parameter>
 <Parameter name="StdError" type="JDL" linked_module="" linked_parameter="" in="True" out="False" description="Standard error file"><value><![CDATA[std.err]]></value></Parameter>
@@ -162,8 +162,8 @@ from DIRAC.Workflow.Modules.Script import Script
     job = Job()
     job.setExecutable( 'myExec' )
     job.setLogLevel( 'DEBUG' )
-    parList = [1,2,3]
-    job.setParameterSequence( 'JOB_ID', parList, addToWorkflow=True )
+    parList = [1, 2, 3]
+    job.setParameterSequence( 'JOB_ID', parList, addToWorkflow = True )
     inputDataList = [
       [
         '/lhcb/data/data1',
@@ -178,7 +178,7 @@ from DIRAC.Workflow.Modules.Script import Script
         '/lhcb/data/data6'
       ]
     ]
-    job.setParameterSequence( 'InputData', inputDataList, addToWorkflow=True )
+    job.setParameterSequence( 'InputData', inputDataList, addToWorkflow = True )
 
     jdl = job._toJDL()
 
@@ -201,7 +201,7 @@ from DIRAC.Workflow.Modules.Script import Script
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( JobAPISuccess )
-  #suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( xxxx ) )
+  # suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( xxxx ) )
 
   testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
 

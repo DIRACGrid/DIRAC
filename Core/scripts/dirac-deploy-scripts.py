@@ -13,17 +13,23 @@ import os
 import shutil
 import stat
 import re
-import time
 import sys
+import platform
 
 DEBUG = False
 
 moduleSuffix = "DIRAC"
 gDefaultPerms = stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH
 excludeMask = [ '__init__.py' ]
-simpleCopyMask = [ os.path.basename( __file__ ), 'dirac-compile-externals.py', 'dirac-install.py', 'dirac-platform.py' ]
+simpleCopyMask = [ os.path.basename( __file__ ),
+                   'dirac-compile-externals.py',
+                   'dirac-install.py',
+                   'dirac-platform.py',
+                   'dirac_compile_externals.py',
+                   'dirac_install.py',
+                   'dirac_platform.py']
 
-wrapperTemplate = """#!/usr/bin/env python
+wrapperTemplate = """#!$PYTHONLOCATION$
 #
 import os,sys,imp
 #
@@ -77,9 +83,24 @@ if sys.argv[1:]:
   args = ' "%s"' % '" "'.join( sys.argv[1:] )
 else:
   args = ''
-sys.exit( os.system('python "%s"%s' % ( DiracScript, args )  ) / 256 )
 """
 
+# Python interpreter location can be specified as an argument
+pythonLocation = "/usr/bin/env python"
+if len( sys.argv ) == 2:
+  pythonLocation = os.path.join( sys.argv[1], 'bin', 'python' )
+wrapperTemplate = wrapperTemplate.replace( '$PYTHONLOCATION$', pythonLocation )
+
+# On the newest MacOS the DYLD_LIBRARY_PATH variable is not passed to the shell of
+# the os.system() due to System Integrity Protection feature
+if platform.system() == "Darwin":
+  wrapperTemplate += """
+sys.exit( os.system( 'DYLD_LIBRARY_PATH=%s python "%s"%s' % ( DiracLibraryPath, DiracScript, args )  ) / 256 )
+"""
+else:
+  wrapperTemplate += """
+sys.exit( os.system('python "%s"%s' % ( DiracScript, args )  ) / 256 )
+"""
 
 def lookForScriptsInPath( basePath, rootModule ):
   isScriptsDir = os.path.split( rootModule )[1] == "scripts"
@@ -108,7 +129,7 @@ if not rootPath:
   sys.exit( 1 )
 
 targetScriptsPath = os.path.join( rootPath, "scripts" )
-pythonScriptRE = re.compile( "(.*/)*([a-z]+-[a-zA-Z0-9-]+|d[a-zA-Z0-9-]+).py" )
+pythonScriptRE = re.compile( "(.*/)*([a-z]+-[a-zA-Z0-9-]+|[a-z]+_[a-zA-Z0-9_]+|d[a-zA-Z0-9-]+).py" )
 print "Scripts will be deployed at %s" % targetScriptsPath
 
 if not os.path.isdir( targetScriptsPath ):
@@ -138,9 +159,10 @@ for rootModule in listDir:
       continue
     scriptLen = len( scriptName )
     if scriptName not in simpleCopyMask and pythonScriptRE.match( scriptName ):
+      newScriptName = scriptName[:-3].replace( '_', '-' )
       if DEBUG:
-        print " Wrapping %s" % scriptName[:-3]
-      fakeScriptPath = os.path.join( targetScriptsPath, scriptName[:-3] )
+        print " Wrapping %s as %s" % ( scriptName, newScriptName )
+      fakeScriptPath = os.path.join( targetScriptsPath, newScriptName )
       with open( fakeScriptPath, "w" ) as fd:
         fd.write( wrapperTemplate.replace( '$SCRIPTLOCATION$', scriptPath ) )
       os.chmod( fakeScriptPath, gDefaultPerms )
@@ -149,9 +171,18 @@ for rootModule in listDir:
         print " Copying %s" % scriptName
       shutil.copy( os.path.join( rootPath, scriptPath ), targetScriptsPath )
       copyPath = os.path.join( targetScriptsPath, scriptName )
+      if platform.system() == 'Darwin':
+        with open( copyPath, 'r+' ) as script:
+          scriptStr = script.read()
+          script.seek( 0 )
+          script.write( scriptStr.replace( '/usr/bin/env python', pythonLocation ) )
       os.chmod( copyPath, gDefaultPerms )
       cLen = len( copyPath )
       reFound = pythonScriptRE.match( copyPath )
       if reFound:
-        destPath = "".join( list( reFound.groups() ) )
+        pathList = list( reFound.groups() )
+        pathList[-1] = pathList[-1].replace( '_', '-' )
+        destPath = "".join( pathList )
+        if DEBUG:
+          print " Renaming %s as %s" % ( copyPath, destPath )
         os.rename( copyPath, destPath )

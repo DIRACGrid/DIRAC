@@ -8,7 +8,7 @@
 -- ------------------------------------------------------------------------------
 
 -- When installing via dirac tools, the following is not needed (still here for reference)
--- 
+--
 -- DROP DATABASE IF EXISTS JobDB;
 -- CREATE DATABASE JobDB;
 -- ------------------------------------------------------------------------------
@@ -18,8 +18,8 @@
 --
 -- Must set passwords for database user by replacing "must_be_set".
 --
--- GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON JobDB.* TO Dirac@localhost IDENTIFIED BY 'must_be_set';
--- GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON JobDB.* TO Dirac@'%' IDENTIFIED BY 'must_be_set';
+-- GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER,REFERENCES ON JobDB.* TO Dirac@localhost IDENTIFIED BY 'must_be_set';
+-- GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER,REFERENCES ON JobDB.* TO Dirac@'%' IDENTIFIED BY 'must_be_set';
 -- FLUSH PRIVILEGES;
 
 -- -----------------------------------------------------------------------------
@@ -46,7 +46,7 @@ CREATE TABLE `Jobs` (
   `MasterJobID` INT(11) UNSIGNED NOT NULL DEFAULT 0,
   `Site` VARCHAR(100) NOT NULL DEFAULT 'ANY',
   `JobName` VARCHAR(128) NOT NULL DEFAULT 'Unknown',
-  `Owner` VARCHAR(32) NOT NULL DEFAULT 'Unknown',
+  `Owner` VARCHAR(64) NOT NULL DEFAULT 'Unknown',
   `OwnerDN` VARCHAR(255) NOT NULL DEFAULT 'Unknown',
   `OwnerGroup` VARCHAR(128) NOT NULL DEFAULT 'Unknown',
   `SubmissionTime` DATETIME DEFAULT NULL,
@@ -59,7 +59,6 @@ CREATE TABLE `Jobs` (
   `MinorStatus` VARCHAR(128) NOT NULL DEFAULT 'Unknown',
   `ApplicationStatus` VARCHAR(255) DEFAULT 'Unknown',
   `ApplicationNumStatus` INT(11) NOT NULL DEFAULT 0,
-  `CPUTime` FLOAT NOT NULL DEFAULT 0.0,
   `UserPriority` INT(11) NOT NULL DEFAULT 0,
   `SystemPriority` INT(11) NOT NULL DEFAULT 0,
   `RescheduleCounter` INT(11) NOT NULL DEFAULT 0,
@@ -106,6 +105,17 @@ CREATE TABLE `JobParameters` (
   `Value` BLOB NOT NULL,
   PRIMARY KEY (`JobID`,`Name`),
   FOREIGN KEY (`JobID`) REFERENCES `Jobs`(`JobID`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- ------------------------------------------------------------------------------
+DROP TABLE IF EXISTS `JobsStatus`;
+CREATE TABLE `JobsStatus` (
+  `JobID` INT(11) UNSIGNED NOT NULL,
+  `Status` VARCHAR(32) NOT NULL DEFAULT 'Received',
+  `MinorStatus` VARCHAR(128) NOT NULL DEFAULT 'Unknown',
+  `ApplicationStatus` VARCHAR(255) DEFAULT 'Unknown',
+  PRIMARY KEY (`JobID`),
+  FOREIGN KEY (`JobID`) REFERENCES `JobJDLs`(`JobID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- ------------------------------------------------------------------------------
@@ -173,4 +183,3 @@ CREATE TABLE `JobCommands` (
   PRIMARY KEY (`JobID`,`Arguments`,`ReceptionTime`),
   FOREIGN KEY (`JobID`) REFERENCES `Jobs`(`JobID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-

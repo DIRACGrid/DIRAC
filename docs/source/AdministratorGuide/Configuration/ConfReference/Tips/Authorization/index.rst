@@ -1,3 +1,5 @@
+.. _systemAuthorization:
+
 System Authorization
 ====================
 

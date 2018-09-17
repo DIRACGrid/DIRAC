@@ -42,7 +42,7 @@ class PieGraph( PlotBase ):
         explode = [0.] * nLabels
         if nLabels > 0:
           explode[0] = 0.1
-      except Exception,x:
+      except Exception as x:
         print "PieGraph Error: can not interpret data for the plot"  
     
     #labels.reverse()

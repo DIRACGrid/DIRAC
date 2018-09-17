@@ -1,17 +1,19 @@
 """
 The Grid module contains several utilities for grid operations
 """
-__RCSID__ = "$Id$"
 
 import os
-import types
 import re
+
 from DIRAC.Core.Utilities.Os                          import sourceEnv
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient  import gProxyManager
 from DIRAC.Core.Security.ProxyInfo                    import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers         import Local
 from DIRAC.Core.Utilities.ReturnValues                import S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess                  import systemCall, shellCall
+import DIRAC.Core.Utilities.Glue2 as Glue2
+
+__RCSID__ = "$Id$"
 
 def executeGridCommand( proxy, cmd, gridEnvScript = None ):
   """
@@ -32,9 +34,9 @@ def executeGridCommand( proxy, cmd, gridEnvScript = None ):
     #
     # Preserve some current settings if they are there
     #
-    if currentEnv.has_key( 'X509_VOMS_DIR' ):
+    if 'X509_VOMS_DIR' in currentEnv:
       gridEnv['X509_VOMS_DIR'] = currentEnv['X509_VOMS_DIR']
-    if currentEnv.has_key( 'X509_CERT_DIR' ):
+    if 'X509_CERT_DIR' in currentEnv:
       gridEnv['X509_CERT_DIR'] = currentEnv['X509_CERT_DIR']
   else:
     gridEnv = currentEnv
@@ -44,7 +46,7 @@ def executeGridCommand( proxy, cmd, gridEnvScript = None ):
     if not res['OK']:
       return res
     gridEnv['X509_USER_PROXY' ] = res['Value']['path']
-  elif type( proxy ) in types.StringTypes:
+  elif isinstance( proxy, basestring ):
     if os.path.exists( proxy ):
       gridEnv[ 'X509_USER_PROXY' ] = proxy
     else:
@@ -58,7 +60,7 @@ def executeGridCommand( proxy, cmd, gridEnvScript = None ):
   result = systemCall( 120, cmd, env = gridEnv )
   return result
 
-def ldapsearchBDII( filt = None, attr = None, host = None, base = None ):
+def ldapsearchBDII(filt=None, attr=None, host=None, base=None, selectionString="Glue"):
   """ Python wrapper for ldapserch at bdii.
 
       :param  filt:    Filter used to search ldap, default = '', means select all
@@ -74,16 +76,16 @@ def ldapsearchBDII( filt = None, attr = None, host = None, base = None ):
         'attr':               Dictionary of attributes
   """
 
-  if filt == None:
+  if filt is None:
     filt = ''
-  if attr == None:
+  if attr is None:
     attr = ''
-  if host == None:
+  if host is None:
     host = 'lcg-bdii.cern.ch:2170'
-  if base == None:
+  if base is None:
     base = 'Mds-Vo-name=local,o=grid'
 
-  if type( attr ) == types.ListType:
+  if isinstance( attr, list ):
     attr = ' '.join( attr )
 
   cmd = 'ldapsearch -x -LLL -o ldif-wrap=no -h %s -b %s "%s" %s' % ( host, base, filt, attr )
@@ -98,7 +100,7 @@ def ldapsearchBDII( filt = None, attr = None, host = None, base = None ):
   stdout = result['Value'][1]
   stderr = result['Value'][2]
 
-  if not status == 0:
+  if status != 0:
     return S_ERROR( stderr )
 
   lines = []
@@ -120,13 +122,13 @@ def ldapsearchBDII( filt = None, attr = None, host = None, base = None ):
       if line.find( 'objectClass:' ) == 0:
         record['objectClass'].append( line.replace( 'objectClass:', '' ).strip() )
         continue
-      if line.find( 'Glue' ) == 0:
+      if line.find(selectionString) == 0:
         index = line.find( ':' )
         if index > 0:
           attr = line[:index]
           value = line[index + 1:].strip()
-          if record['attr'].has_key( attr ):
-            if type( record['attr'][attr] ) == type( [] ):
+          if attr in record['attr']:
+            if isinstance( record['attr'][attr], list ):
               record['attr'][attr].append( value )
             else:
               record['attr'][attr] = [record['attr'][attr], value]
@@ -191,7 +193,7 @@ It contains by the way host information for ce.
 Each cluster is dictionary which contains attributes of ce.
 For example result['Value'][0]['GlueHostBenchmarkSI00']
   """
-  filt = '(GlueSubClusterUniqueID=%s)' % ce
+  filt = '(GlueChunkKey=GlueClusterUniqueID=%s)' % ce
 
   result = ldapsearchBDII( filt, attr, host )
 
@@ -258,7 +260,7 @@ For example result['Value'][0]['GlueCEStateRunningJobs']
     dn = ce['dn']
     result = ldapsearchBDII( filt, attr, host, base = dn )
     if result['OK']:
-      views.append( result['Value'][0]['attr'] )
+      views.append( result['Value'][0]['attr'] ) #pylint: disable=unsubscriptable-object
 
   return S_OK( views )
 
@@ -371,13 +373,18 @@ def ldapSEVOInfo( vo, seID, attr = ["GlueVOInfoPath","GlueVOInfoAccessControlBas
 
   return S_OK( voInfo )
 
-def getBdiiCEInfo( vo, host = None ):
+def getBdiiCEInfo(vo, host=None, glue2=False):
   """ Get information for all the CEs/queues for a given VO
 
-:param vo: BDII VO name
-:return result structure: result['Value'][siteID]['CEs'][ceID]['Queues'][queueName]. For
+  :param str vo: BDII VO name
+  :param str host: url to query for information
+  :param bool glue2: if True query the GLUE2 information schema
+  :return: result structure: result['Value'][siteID]['CEs'][ceID]['Queues'][queueName]. For
                each siteID, ceID, queueName all the BDII/Glue parameters are retrieved
   """
+  if glue2:
+    return Glue2.getGlue2CEInfo(vo, host=host)
+
   result = ldapCEState( '', vo, host = host )
   if not result['OK']:
     return result
@@ -402,7 +409,7 @@ def getBdiiCEInfo( vo, host = None ):
       ce = result['Value'][0]
       ceDict[ceID] = ce
 
-      fKey = ce['GlueForeignKey']
+      fKey = ce['GlueForeignKey'] #pylint: disable=unsubscriptable-object
       siteID = ''
       for key in fKey:
         if key.startswith('GlueSiteUniqueID'):
@@ -415,7 +422,7 @@ def getBdiiCEInfo( vo, host = None ):
         ce = result['Value'][0]
       ceDict[ceID].update( ce )
 
-      if not siteID in siteDict:
+      if siteID not in siteDict:
         site = {}
         result = ldapSite( siteID, host = host )
         if result['OK'] and result['Value']:
@@ -432,7 +439,7 @@ def getBdiiCEInfo( vo, host = None ):
     ceID = queueDict[queueID]['CE']
     siteID = ceDict[ceID]['Site']
     siteDict[siteID]['CEs'][ceID].setdefault('Queues',{})
-    queueName = re.split( ':\d+/', queueDict[queueID]['GlueCEUniqueID'] )[1]
+    queueName = re.split( r':\d+/', queueDict[queueID]['GlueCEUniqueID'] )[1]
     siteDict[siteID]['CEs'][ceID]['Queues'][queueName] = queueDict[queueID]
 
   return S_OK( siteDict )
@@ -489,3 +496,5 @@ def getBdiiSEInfo( vo, host = None ):
       siteDict[siteName]["SEs"][seID]['VOPath'] = pathDict[seID]
 
   return S_OK( siteDict )
+
+

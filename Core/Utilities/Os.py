@@ -5,7 +5,7 @@
 
 import os
 import multiprocessing
-import distutils.spawn
+import distutils.spawn #pylint: disable=no-name-in-module,import-error
 
 import DIRAC
 from DIRAC.Core.Utilities.Subprocess import shellCall, systemCall
@@ -58,7 +58,7 @@ def getDiskSpace( path = '.' ):
       fields = output.split()
       try:
         value = int( fields[3] )
-      except Exception, error:
+      except Exception as error:
         print "Exception during disk space evaluation:", str( error )
         value = -1
       return value
@@ -144,61 +144,6 @@ def sourceEnv( timeout, cmdTuple, inputEnv = None ):
 
   return result
 
-#FIXME: this is not used !
-def unifyLdLibraryPath( path, newpath ):
-  """ for Linux and MacOS link all the files in the path in a single directory
-      newpath. For that we go along the path in a reverse order and link all files
-      from the path, the latest appearance of a file will take precedence
-  """
-  if not DIRAC.getPlatformTuple()[0] == 'Windows':
-    if os.path.exists( newpath ):
-      if not os.path.isdir( newpath ):
-        try:
-          os.remove( newpath )
-        except Exception:
-          return path
-    else:
-      try:
-        os.makedirs( newpath )
-      except Exception:
-        return path
-    pathList = path.split( ':' )
-    for dummy in pathList[:]:
-      ldDir = pathList.pop()
-      if not os.path.isdir( ldDir ):
-        continue
-      ldLibs = os.listdir( ldDir )
-      for lib in ldLibs:
-        newF = os.path.join( newpath, lib )
-        ldF = os.path.join( ldDir, lib )
-        # 1. Check if the file exist (broken links will return False)
-        if os.path.isfile( ldF ):
-          ldF = os.path.realpath( ldF )
-          # 2. Check if the link is present already
-          if os.path.exists( newF ):
-            # 3. Check is the point to the same file
-            if os.path.samefile( newF, ldF ):
-              continue
-            else:
-              os.remove( newF )
-          # 4. Create the link
-          os.symlink( ldF, newF )
-    return newpath
-  else:
-    # Windows does nothing for the moment
-    return path
-
-def getNumberOfCores():
-  """ Get the number of processor cores
-  """
-  cores = 0
-  try:
-    cores = multiprocessing.cpu_count()
-  except:
-    return 0
-
-  return cores
-
 def which( executable ):
 
-  return distutils.spawn.find_executable( executable )
+  return distutils.spawn.find_executable( executable ) #pylint: disable=no-member

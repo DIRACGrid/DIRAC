@@ -4,10 +4,13 @@
 # Date: 2013/03/13 13:48:52
 ########################################################################
 """ :mod: OperationHandlerBase
+
     ==========================
 
     .. module: OperationHandlerBase
+
     :synopsis: request operation handler base class
+
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     RMS Operation handler base class.
@@ -100,7 +103,7 @@ class OperationHandlerBase( object ):
         value = eval( value )
       except NameError:
         pass
-      self.makeProperty( option, value, True )
+      self.makeProperty( option, value, True ) #pylint: disable=no-member
 
     # # pre setup logger
     self.log = gLogger.getSubLogger( name, True )
@@ -122,8 +125,9 @@ class OperationHandlerBase( object ):
   def setOperation( self, operation ):
     """ operation and request setter
 
-      :param Operation operation: operation instance
-      :raises: TypeError is :operation: in not an instance of Operation
+      :param ~DIRAC.RequestManagementSystem.Client.Operation.Operation operation: operation instance
+      :raises TypeError: if `operation` in not an instance of :class:`~DIRAC.RequestManagementSystem.Client.Operation.Operation`
+
     """
     if not isinstance( operation, Operation ):
       raise TypeError( "expecting Operation instance" )
@@ -211,7 +215,7 @@ class OperationHandlerBase( object ):
     """
     # Allow a transient failure
     for _i in range( retries ):
-      rssStatus = self.rssClient().getStorageElementStatus( se, status )
+      rssStatus = self.rssClient().getElementStatus( se, "StorageElement", status )
       # gLogger.always( rssStatus )
       if rssStatus["OK"]:
         return S_OK( rssStatus["Value"][se][status] != "Banned" )

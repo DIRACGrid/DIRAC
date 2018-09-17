@@ -11,21 +11,21 @@ __RCSID__ = "$Id $"
 
 def mock_getProxyInfo():
   return S_OK( {'VOMS': ['/lhcb/Role=user'],
-            'chain': '[/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=chaen/CN=123456/CN=Christophe Haen]',
-            'group': 'lhcb_user',
-            'groupProperties': ['NormalUser', 'SuperProperty'],
-            'hasVOMS': True,
-            'identity': '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=chaen/CN=123456/CN=Christophe Haen',
-            'isLimitedProxy': False,
-            'isProxy': True,
-            'issuer': '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=chaen/CN=123456/CN=Christophe Haen/CN=proxy',
-            'path': '/tmp/x509up_u12345',
-            'rfc': False,
-            'secondsLeft': 86026,
-            'subject': '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=chaen/CN=123456/CN=Christophe Haen/CN=proxy/CN=proxy',
-            'username': 'chaen',
-            'validDN': True,
-            'validGroup': True} )
+                'chain': '[/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=chaen/CN=123456/CN=Christophe Haen]',
+                'group': 'lhcb_user',
+                'groupProperties': ['NormalUser', 'SuperProperty'],
+                'hasVOMS': True,
+                'identity': '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=chaen/CN=123456/CN=Christophe Haen',
+                'isLimitedProxy': False,
+                'isProxy': True,
+                'issuer': '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=chaen/CN=123456/CN=Christophe Haen/CN=proxy',
+                'path': '/tmp/x509up_u12345',
+                'rfc': False,
+                'secondsLeft': 86026,
+                'subject': '/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=chaen/CN=123456/CN=Christophe Haen/CN=proxy/CN=proxy',
+                'username': 'chaen',
+                'validDN': True,
+                'validGroup': True} )
 
 def mock_getNoProxyInfo():
   return S_ERROR( "No proxy" )
@@ -39,17 +39,17 @@ class TestProxyPlugin( unittest.TestCase ):
     """ Testing username attribute"""
 
     # the username is chaen
-    self.assert_( not ProxyPlugin( 'username.in(toto)' ).eval() )
-    self.assert_( ProxyPlugin( 'username.not_in(toto)' ).eval() )
-    self.assert_( ProxyPlugin( 'username.in(toto, chaen)' ).eval() )
-    self.assert_( not ProxyPlugin( 'username.not_in(toto, chaen)' ).eval() )
+    self.assertTrue( not ProxyPlugin( 'username.in(toto)' ).eval() )
+    self.assertTrue( ProxyPlugin( 'username.not_in(toto)' ).eval() )
+    self.assertTrue( ProxyPlugin( 'username.in(toto, chaen)' ).eval() )
+    self.assertTrue( not ProxyPlugin( 'username.not_in(toto, chaen)' ).eval() )
 
     # Testing some more formating with spaces and quotes
 
-    self.assert_( not ProxyPlugin( 'username.in( toto )' ).eval() )
-    self.assert_( ProxyPlugin( 'username.not_in("toto")' ).eval() )
-    self.assert_( ProxyPlugin( 'username.in(toto,"chaen")' ).eval() )
-    self.assert_( not ProxyPlugin( "username.not_in('toto' ,chaen)" ).eval() )
+    self.assertTrue( not ProxyPlugin( 'username.in( toto )' ).eval() )
+    self.assertTrue( ProxyPlugin( 'username.not_in("toto")' ).eval() )
+    self.assertTrue( ProxyPlugin( 'username.in(toto,"chaen")' ).eval() )
+    self.assertTrue( not ProxyPlugin( "username.not_in('toto' ,chaen)" ).eval() )
 
 
   @mock.patch( 'DIRAC.Resources.Catalog.ConditionPlugins.ProxyPlugin.getProxyInfo', side_effect = mock_getProxyInfo )
@@ -57,17 +57,17 @@ class TestProxyPlugin( unittest.TestCase ):
     """ Testing group attribute"""
 
     # the group is lhcb_user
-    self.assert_( not ProxyPlugin( 'group.in(toto)' ).eval() )
-    self.assert_( ProxyPlugin( 'group.not_in(toto)' ).eval() )
-    self.assert_( ProxyPlugin( 'group.in(toto, lhcb_user)' ).eval() )
-    self.assert_( not ProxyPlugin( 'group.not_in(toto, lhcb_user)' ).eval() )
+    self.assertTrue( not ProxyPlugin( 'group.in(toto)' ).eval() )
+    self.assertTrue( ProxyPlugin( 'group.not_in(toto)' ).eval() )
+    self.assertTrue( ProxyPlugin( 'group.in(toto, lhcb_user)' ).eval() )
+    self.assertTrue( not ProxyPlugin( 'group.not_in(toto, lhcb_user)' ).eval() )
 
     # Testing some more formating with spaces and quotes
 
-    self.assert_( not ProxyPlugin( 'group.in( toto )' ).eval() )
-    self.assert_( ProxyPlugin( 'group.not_in("toto")' ).eval() )
-    self.assert_( ProxyPlugin( 'group.in(toto,"lhcb_user")' ).eval() )
-    self.assert_( not ProxyPlugin( "group.not_in('toto' ,lhcb_user)" ).eval() )
+    self.assertTrue( not ProxyPlugin( 'group.in( toto )' ).eval() )
+    self.assertTrue( ProxyPlugin( 'group.not_in("toto")' ).eval() )
+    self.assertTrue( ProxyPlugin( 'group.in(toto,"lhcb_user")' ).eval() )
+    self.assertTrue( not ProxyPlugin( "group.not_in('toto' ,lhcb_user)" ).eval() )
 
 
   @mock.patch( 'DIRAC.Resources.Catalog.ConditionPlugins.ProxyPlugin.getProxyInfo', side_effect = mock_getProxyInfo )
@@ -75,20 +75,20 @@ class TestProxyPlugin( unittest.TestCase ):
     """ Testing property attribute"""
 
     # the properties are 'NormalUser', 'SuperProperty'
-    self.assert_( not ProxyPlugin( 'property.has(toto)' ).eval() )
-    self.assert_( ProxyPlugin( 'property.has_not(toto)' ).eval() )
-    self.assert_( ProxyPlugin( 'property.has(SuperProperty)' ).eval() )
-    self.assert_( not ProxyPlugin( 'property.has_not(SuperProperty)' ).eval() )
+    self.assertTrue( not ProxyPlugin( 'property.has(toto)' ).eval() )
+    self.assertTrue( ProxyPlugin( 'property.has_not(toto)' ).eval() )
+    self.assertTrue( ProxyPlugin( 'property.has(SuperProperty)' ).eval() )
+    self.assertTrue( not ProxyPlugin( 'property.has_not(SuperProperty)' ).eval() )
 
   @mock.patch( 'DIRAC.Resources.Catalog.ConditionPlugins.ProxyPlugin.getProxyInfo', side_effect = mock_getProxyInfo )
   def test_04_voms( self, _mockProxyInfo ):
     """ Testing voms attribute"""
 
     # the voms role is /lhcb/Role=user
-    self.assert_( not ProxyPlugin( 'voms.has(toto)' ).eval() )
-    self.assert_( ProxyPlugin( 'voms.has_not(toto)' ).eval() )
-    self.assert_( ProxyPlugin( 'voms.has(/lhcb/Role->user)' ).eval() )
-    self.assert_( not ProxyPlugin( 'voms.has_not(/lhcb/Role->user)' ).eval() )
+    self.assertTrue( not ProxyPlugin( 'voms.has(toto)' ).eval() )
+    self.assertTrue( ProxyPlugin( 'voms.has_not(toto)' ).eval() )
+    self.assertTrue( ProxyPlugin( 'voms.has(/lhcb/Role->user)' ).eval() )
+    self.assertTrue( not ProxyPlugin( 'voms.has_not(/lhcb/Role->user)' ).eval() )
 
 
   @mock.patch( 'DIRAC.Resources.Catalog.ConditionPlugins.ProxyPlugin.getProxyInfo', side_effect = mock_getProxyInfo )

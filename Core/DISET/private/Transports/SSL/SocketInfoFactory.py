@@ -1,36 +1,32 @@
-# $HeadURL$
+""" The guy that takes case of managing sockets
+"""
+
 __RCSID__ = "$Id$"
 
 import socket
 import select
 import os
-try:
-  import hashlib as md5
-except:
-  import md5
+import hashlib
+
 import GSI
+
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
-from DIRAC.Core.Utilities import List, Network
+from DIRAC.Core.Utilities import Network
 from DIRAC.Core.DISET.private.Transports.SSL.SocketInfo import SocketInfo
 from DIRAC.Core.DISET.private.Transports.SSL.SessionManager import gSessionManager
-from DIRAC.Core.DISET.private.Transports.SSL.FakeSocket import FakeSocket
-from DIRAC.Core.DISET.private.Transports.SSL.ThreadSafeSSLObject import ThreadSafeSSLObject
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
-if GSI.__version__ < "0.5.0":
-  raise Exception( "Required GSI version >= 0.5.0" )
-
-class SocketInfoFactory:
+class SocketInfoFactory(object):
 
   def __init__(self):
     self.__timeout = 1
-  
+
   def setSocketTimeout(self, timeout):
     self.__timeout = timeout
-    
+
   def getSocketTimeout(self):
     return self.__timeout
-  
+
   def generateClientInfo( self, destinationHostname, kwargs ):
     infoDict = { 'clientMode' : True,
                  'hostname' : destinationHostname,
@@ -67,16 +63,16 @@ class SocketInfoFactory:
     try:
       osSocket = socket.socket( sockType, socket.SOCK_STREAM )
     except socket.error as e:
-      gLogger.warn( "Exception while creating a socket:", str( e ) ) 
+      gLogger.warn( "Exception while creating a socket:", str( e ) )
       return S_ERROR( "Exception while creating a socket:%s" % str( e ) )
     # osSocket.setblocking( 0 )
     if timeout:
       tsocket = self.getSocketTimeout()
-      gLogger.verbose( "Connection timeout set to: ", tsocket )
+      gLogger.debug( "Connection timeout set to: ", tsocket )
       osSocket.settimeout( tsocket )  # we try to connect 3 times with 1 second timeout
     try:
       osSocket.connect( hostAddress )
-    except socket.error , e:
+    except socket.error as e:
       if e.args[0] == "timed out":
         osSocket.close()
         if retries:
@@ -104,7 +100,7 @@ class SocketInfoFactory:
     #SSL MAGIC
     sslSocket = GSI.SSL.Connection( socketInfo.getSSLContext(), osSocket )
     #Generate sessionId
-    sessionHash = md5.md5()
+    sessionHash = hashlib.md5()
     sessionHash.update( str( hostAddress ) )
     sessionHash.update( "|%s" % str( socketInfo.getLocalCredentialsLocation() ) )
     for key in ( 'proxyLocation', 'proxyString' ):
@@ -132,9 +128,9 @@ class SocketInfoFactory:
     retVal = Network.getIPsForHostName( hostName )
     if not retVal[ 'OK' ]:
       return S_ERROR( "Could not resolve %s: %s" % ( hostName, retVal[ 'Message' ] ) )
-    ipList = retVal[ 'Value' ] #In that case the first ip always  the correct one.  
-    
-    for _ in xrange( 1 ): #TODO: this retry can be reduced. 
+    ipList = retVal[ 'Value' ] #In that case the first ip always  the correct one.
+
+    for _ in xrange( 1 ): #TODO: this retry can be reduced.
       connected = False
       errorsList = []
       for ip in ipList :

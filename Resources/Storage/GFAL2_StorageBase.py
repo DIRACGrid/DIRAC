@@ -1,16 +1,23 @@
 """ :mod: GFAL2_StorageBase
+
     =================
 
     .. module: python
+
     :synopsis: GFAL2 class from StorageElement using gfal2. Other modules can inherit from this use the gfal2 methods.
 """
+
+# pylint: disable=arguments-differ
+
 # # imports
 import os
 import datetime
 import errno
-import gfal2
 from stat import S_ISREG, S_ISDIR, S_IXUSR, S_IRUSR, S_IWUSR, \
   S_IRWXG, S_IRWXU, S_IRWXO
+
+import gfal2# pylint: disable=import-error
+
 # # from DIRAC
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
@@ -57,6 +64,7 @@ class GFAL2_StorageBase( StorageBase ):
 
     dlevel = self.log.getLevel()
     if dlevel == 'DEBUG':
+      gLogger.enableLogsFromExternalLibs()
       gfal2.set_verbose( gfal2.verbose_level.trace )
 
     self.isok = True
@@ -69,6 +77,9 @@ class GFAL2_StorageBase( StorageBase ):
 
     # FIXME: Avoid caching because of a bug in globus (https://its.cern.ch/jira/browse/DMC-853)
     self.ctx.set_opt_boolean( "GRIDFTP PLUGIN", "SESSION_REUSE", False )
+
+    # Enable IPV6 for gsiftp
+    self.ctx.set_opt_boolean( "GRIDFTP PLUGIN", "IPV6", True )
 
     # spaceToken used for copying from and to the storage element
     self.spaceToken = parameters.get( 'SpaceToken', '' )
@@ -237,13 +248,14 @@ class GFAL2_StorageBase( StorageBase ):
   def putFile( self, path, sourceSize = 0 ):
     """ Put a copy of a local file or a file on another srm storage to a directory on the
         physical storage.
+
         :param path: dictionary { lfn (srm://...) : localFile }
         :param sourceSize: size of the file in byte. Mandatory for third party copy (WHY ???)
-                           Also, this parameter makes it essentially a non bulk operation for
-                          third party copy, unless all files have the same size...
-        :returns Successful dict: { path : size }
-                 Failed dict: { path : error message }
-                 S_ERROR in case of argument problems
+                             Also, this parameter makes it essentially a non bulk operation for
+                             third party copy, unless all files have the same size...
+        :returns: Successful dict: { path : size }
+                  Failed dict: { path : error message }
+                  S_ERROR in case of argument problems
     """
     res = checkArgumentFormat( path )
     if not res['OK']:
@@ -257,7 +269,7 @@ class GFAL2_StorageBase( StorageBase ):
       if not src_file:
         errStr = "GFAL2_StorageBase.putFile: Source file not set. Argument must be a dictionary \
                                              (or a list of a dictionary) {url : local path}"
-        self.log.error( errStr )
+        self.log.debug( errStr )
         return S_ERROR( errStr )
       res = self.__putSingleFile( src_file, dest_url, sourceSize )
 
@@ -292,34 +304,29 @@ class GFAL2_StorageBase( StorageBase ):
       return S_ERROR( errStr )
 
     # check whether the source is local or on another storage
-
-    # TODO: as soon as self.protocolParameters contains all known protocols to the SE
-    # we wont need this hard coded list below anymore but can implement a function in StorageBase
-    # similar to isNativeURL which returns true if the src_file contains a known protocol.
-    protocols = ['srm', 'root']
-    if any( src_file.startswith( protocol + ':' ) for protocol in protocols ):
+    if any( src_file.startswith( protocol + ':' ) for protocol in self.protocolParameters['InputProtocols'] ):
       src_url = src_file
       if not sourceSize:
         errStr = "For file replication the source file size in bytes must be provided."
-        log.error( errStr, src_file )
+        log.debug( errStr, src_file )
         return S_ERROR( errno.EINVAL, errStr )
 
     # file is local so we can set the protocol and determine source size accordingly
     else:
       if not os.path.isfile( src_file ):
         errStr = "The local source file does not exist or is a directory"
-        log.error( errStr, src_file )
+        log.debug( errStr, src_file )
         return S_ERROR( errno.ENOENT, errStr )
       if not src_file.startswith( 'file://' ):
         src_url = 'file://%s' % os.path.abspath( src_file )
       sourceSize = getSize( src_file )
       if sourceSize == -1:
         errStr = "Failed to get file size"
-        log.error( errStr, src_file )
+        log.debug( errStr, src_file )
         return S_ERROR( DErrno.EFILESIZE, errStr )
       if sourceSize == 0:
         errStr = "Source file size is zero."
-        log.error( errStr, src_file )
+        log.debug( errStr, src_file )
         return S_ERROR( DErrno.EFILESIZE, errStr )
 
 
@@ -327,7 +334,7 @@ class GFAL2_StorageBase( StorageBase ):
     dest_path = os.path.dirname( dest_url )
     res = self.__createSingleDirectory( dest_path )
     if not res['OK']:
-      log.error( "Failed to create destination folder %s" % dest_path, res['Message'] )
+      log.debug( "Failed to create destination folder %s" % dest_path, res['Message'] )
       return res
 
     # folder is created and file exists, setting known copy parameters
@@ -338,8 +345,12 @@ class GFAL2_StorageBase( StorageBase ):
     else:
       params.nbstreams = 1
     params.overwrite = True  # old gfal removed old file first, gfal2 can just overwrite it with this flag set to True
-    params.dst_spacetoken = self.spaceToken
+    if self.spaceToken:
+      params.dst_spacetoken = self.spaceToken
 
+    params.checksum_check = bool( self.checksumType )
+    if self.checksumType:
+      params.set_user_defined_checksum(self.checksumType, '')
 
     # Params set, copying file now
     try:
@@ -365,10 +376,10 @@ class GFAL2_StorageBase( StorageBase ):
                                                                         Trying to remove destination file" )
           res = self.__removeSingleFile( dest_url )
           if not res['OK']:
-            log.error( "Failed to remove destination file", res['Message'] )
+            log.debug( "Failed to remove destination file", res['Message'] )
             return res
           errStr = "Source and destination file size don't match. Removed destination file"
-          log.error( errStr, {sourceSize : destSize} )
+          log.debug( errStr, {sourceSize : destSize} )
           return S_ERROR( "%s srcSize: %s destSize: %s" % ( errStr, sourceSize, destSize ) )
     except gfal2.GError as e:
       # ##
@@ -376,7 +387,7 @@ class GFAL2_StorageBase( StorageBase ):
       # from another srm to our srm-SE '''
       errStr = "Exception while copying"
       detailMsg = "Failed to copy file %s to destination url %s: [%d] %s" % ( src_file, dest_url, e.code, e.message )
-      log.error( errStr, detailMsg )
+      log.debug( errStr, detailMsg )
       return S_ERROR( e.code, detailMsg )
 
 
@@ -449,7 +460,7 @@ class GFAL2_StorageBase( StorageBase ):
 
     res = self.__getSingleFileSize( src_url )
     if not res['OK']:
-      log.error( "Error while determining file size", res['Message'] )
+      log.debug( "Error while determining file size", res['Message'] )
       return res
 
     remoteSize = res['Value']
@@ -463,9 +474,12 @@ class GFAL2_StorageBase( StorageBase ):
     else:
       params.nbstreams = 1
     params.overwrite = True  # old gfal removed old file first, gfal2 can just overwrite it with this flag set to True
-    params.src_spacetoken = self.spaceToken
+    if self.spaceToken:
+      params.src_spacetoken = self.spaceToken
 
     params.checksum_check = bool( self.checksumType and not disableChecksum )
+    if self.checksumType:
+      params.set_user_defined_checksum(self.checksumType, '')
 
     # Params set, copying file now
     try:
@@ -483,13 +497,13 @@ class GFAL2_StorageBase( StorageBase ):
           return S_OK( destSize )
         else:
           errStr = "File sizes don't match. Something went wrong. Removing local file %s" % dest_file
-          log.error( errStr, {remoteSize : destSize} )
+          log.debug( errStr, {remoteSize : destSize} )
           if os.path.exists( dest_file ):
             os.remove( dest_file )
           return S_ERROR( errStr )
     except gfal2.GError as e:
       errStr = 'Could not copy %s to %s, [%d] %s' % ( src_url, dest, e.code, e.message )
-      log.error( errStr )
+      log.debug( errStr )
       return S_ERROR( e.code, errStr )
 
 
@@ -499,9 +513,9 @@ class GFAL2_StorageBase( StorageBase ):
     A non existing file will be considered as successfully removed
 
     :param str path: path (or list of paths) on storage (srm://...)
-    :returns Successful dict {path : True}
-             Failed dict {path : error message}
-             S_ERROR in case of argument problems
+    :returns: Successful dict {path : True}
+               Failed dict {path : error message}
+               S_ERROR in case of argument problems
     """
     res = checkArgumentFormat( path )
     if not res['OK']:
@@ -564,7 +578,7 @@ class GFAL2_StorageBase( StorageBase ):
 
       :param self: self reference
       :param path: path (or list of path) on storage (pfn : srm://...)
-      :returns Successful dict {path : size}
+      :returns: Successful dict {path : size}
              Failed dict {path : error message }
              S_ERROR in case of argument problems
     """
@@ -616,7 +630,7 @@ class GFAL2_StorageBase( StorageBase ):
       return S_OK( long ( statInfo.st_size ) )
     except gfal2.GError as e:
       errStr = "Failed to determine file size."
-      self.log.error( errStr, repr( e ) )
+      self.log.debug( errStr, repr( e ) )
       return S_ERROR( e.code, "%s: %s" % ( errStr, repr( e ) ) )
 
 
@@ -626,7 +640,7 @@ class GFAL2_StorageBase( StorageBase ):
 
     :param self: self reference
     :param str path: path (or list of paths) on the storage (srm://...)
-    :returns successful dict { path : metadata }
+    :returns: successful dict { path : metadata }
              failed dict { path : error message }
              S_ERROR in case of argument problems
     """
@@ -671,7 +685,7 @@ class GFAL2_StorageBase( StorageBase ):
 
     if not metaDict['File']:
       errStr = "GFAL2_StorageBase._getSingleFileMetadata: supplied path is not a file"
-      self.log.error( errStr, path )
+      self.log.debug( errStr, path )
       return S_ERROR( errno.EISDIR, errStr )
 
     return S_OK( metaDict )
@@ -705,10 +719,9 @@ class GFAL2_StorageBase( StorageBase ):
 
     try:
       statInfo = self.ctx.stat( path )
-
     except gfal2.GError as e:
       errStr = "Failed to retrieve metadata"
-      self.log.error( errStr, repr( e ) )
+      self.log.debug( errStr, repr( e ) )
       return S_ERROR( e.code, "%s %s" % ( errStr, repr( e ) ) )
 
     metadataDict = self.__parseStatInfoFromApiOutput( statInfo )
@@ -740,7 +753,7 @@ class GFAL2_StorageBase( StorageBase ):
     :param str path: path or list of paths to be prestaged
     :param int lifetime: prestage lifetime in seconds (default 24h)
 
-    :return succesful dict { url : token }
+    :return: succesful dict { url : token }
             failed dict { url : message }
             S_ERROR in case of argument problems
     """
@@ -787,7 +800,7 @@ class GFAL2_StorageBase( StorageBase ):
         return S_ERROR( 'An error occured while issuing prestaging.' )
     except gfal2.GError as e:
       errStr = "Error occured while prestaging file"
-      log.error( errStr, "%s %s" % ( path, repr( e ) ) )
+      log.debug( errStr, "%s %s" % ( path, repr( e ) ) )
       return S_ERROR( e.code, "%s %s" % ( errStr, repr( e ) ) )
 
 
@@ -797,7 +810,7 @@ class GFAL2_StorageBase( StorageBase ):
 
     :param self: self reference
     :param dict path: dict { url : token }
-    :return succesful dict { url : bool }
+    :return: succesful dict { url : bool }
             failed dict { url : message }
             S_ERROR in case of argument problems
     """
@@ -862,7 +875,7 @@ class GFAL2_StorageBase( StorageBase ):
         return S_ERROR( e.code, "%s %s" % ( errStr, repr( e ) ) )
       else:
         errStr = "Error occured while polling for prestaging file"
-        log.error( errStr, "%s %s" % ( path, repr( e ) ) )
+        log.debug( errStr, "%s %s" % ( path, repr( e ) ) )
         return S_ERROR( e.code, "%s %s" % ( errStr, repr( e ) ) )
     finally:
       self.ctx.set_opt_boolean( "BDII", "ENABLE", False )
@@ -923,7 +936,7 @@ class GFAL2_StorageBase( StorageBase ):
         return S_ERROR( 'An error occured while issuing pinning.' )
     except gfal2.GError as e:
       errStr = "GFAL2_StorageBase.__pinSingleFile: Error occured while pinning file"
-      log.error( errStr, "%s %s" % ( path, repr( e ) ) )
+      log.debug( errStr, "%s %s" % ( path, repr( e ) ) )
       return S_ERROR( e.code, "%s %s" % ( errStr, repr( e ) ) )
     finally:
       self.ctx.set_opt_boolean( "BDII", "ENABLE", False )
@@ -983,11 +996,11 @@ class GFAL2_StorageBase( StorageBase ):
         return S_OK( token )
       else:
         errStr = "Error occured: Return status < 0"
-        log.error( errStr, "path %s token %s" % ( path, token ) )
+        log.debug( errStr, "path %s token %s" % ( path, token ) )
         return S_ERROR( errStr )
     except gfal2.GError as e:
       errStr = "Error occured while releasing file"
-      self.log.error( errStr, "%s %s" % ( path, repr( e ) ) )
+      self.log.debug( errStr, "%s %s" % ( path, repr( e ) ) )
       return S_ERROR( e.code, "%s %s" % ( errStr, repr( e ) ) )
     finally:
       self.ctx.set_opt_boolean( "BDII", "ENABLE", False )
@@ -1007,7 +1020,7 @@ class GFAL2_StorageBase( StorageBase ):
 
     if not checksumType:
       errStr = "No checksum type set by the storage element. Can't retrieve checksum"
-      log.error( errStr, path )
+      log.debug( errStr, path )
       return S_ERROR( errStr )
 
 
@@ -1023,7 +1036,7 @@ class GFAL2_StorageBase( StorageBase ):
 
     except gfal2.GError as e:
       errStr = 'Failed to calculate checksum.'
-      log.error( errStr, repr( e ) )
+      log.debug( errStr, repr( e ) )
       return S_ERROR( e.code, "%s %s" % ( errStr, repr( e ) ) )
 
 
@@ -1089,7 +1102,7 @@ class GFAL2_StorageBase( StorageBase ):
 
     :param self: self reference
     :param str path: path to be created on the storage (pfn : srm://...)
-    :returns Successful dict {path : True }
+    :returns: Successful dict {path : True }
              Failed dict     {path : error message }
              S_ERROR in case of argument problems
     """
@@ -1132,7 +1145,7 @@ class GFAL2_StorageBase( StorageBase ):
         return S_OK()
       else:
         errStr = 'Failled to create directory. Status return > 0.'
-        log.error( errStr, status )
+        log.debug( errStr, status )
         return S_ERROR( errStr )
     except gfal2.GError as e:
       # error: directory already exists
@@ -1142,7 +1155,7 @@ class GFAL2_StorageBase( StorageBase ):
       # any other error: failed to create directory
       else:
         errStr = "Failed to create directory."
-        log.error( errStr, repr( e ) )
+        log.debug( errStr, repr( e ) )
         return S_ERROR( e.code, repr( e ) )
 
 
@@ -1152,7 +1165,7 @@ class GFAL2_StorageBase( StorageBase ):
 
     :param self: self reference
     :param str: path or list of paths to be checked ( 'srm://...')
-    :returns dict 'Failed' : failed, 'Successful' : succesful
+    :returns: dict 'Failed' : failed, 'Successful' : succesful
              S_ERROR in case of argument problems
 
     """
@@ -1201,7 +1214,7 @@ class GFAL2_StorageBase( StorageBase ):
         return S_OK( False )
     except gfal2.GError as e:
       errStr = "Failed to determine if path %s is a directory." % path
-      log.error( errStr, repr( e ) )
+      log.debug( errStr, repr( e ) )
       return S_ERROR( e.code, repr( e ) )
 
 
@@ -1210,7 +1223,7 @@ class GFAL2_StorageBase( StorageBase ):
     """ List the content of the path provided
 
     :param str path: single or list of paths (srm://...)
-    :return failed  dict {path : message }
+    :return: failed  dict {path : message }
             successful dict { path :  {'SubDirs' : subDirs, 'Files' : files} }.
             They keys are the paths, the values are the dictionary 'SubDirs' and 'Files'.
             Each are dictionaries with path as key and metadata as values
@@ -1273,7 +1286,7 @@ class GFAL2_StorageBase( StorageBase ):
 
     except gfal2.GError as e:
       errStr = 'Could not list directory content.'
-      log.error( errStr, e.message )
+      log.debug( errStr, e.message )
       return S_ERROR( e.code, "%s %s" % ( errStr, repr( e ) ) )
 
     files = {}
@@ -1290,7 +1303,7 @@ class GFAL2_StorageBase( StorageBase ):
       nextEntry['FileName'] = os.path.join( pathDict['FileName'], entry )
       res = pfnunparse( nextEntry, srmSpecific = self.srmSpecificParse )
       if not res['OK']:
-        log.error( "Cannot generate url for next entry", res )
+        log.debug( "Cannot generate url for next entry", res )
         continue
 
       nextUrl = res['Value']
@@ -1318,7 +1331,7 @@ class GFAL2_StorageBase( StorageBase ):
         else:
           log.debug( "Found item which is neither file nor directory", nextUrl )
       else:
-        log.error( "Could not stat content", "%s %s" % ( nextUrl, res['Message'] ) )
+        log.debug( "Could not stat content", "%s %s" % ( nextUrl, res['Message'] ) )
 
     return S_OK( {'SubDirs' : subDirs, 'Files' : files} )
 
@@ -1329,7 +1342,7 @@ class GFAL2_StorageBase( StorageBase ):
 
     :param str path: path (or list of paths) on the storage (srm://...)
     :param str localPath: local path where the content of the remote directory will be saved,
-                          if not defined it takes current working directory.
+                            if not defined it takes current working directory.
     :return: successful and failed dictionaries. The keys are the paths,
              the values are dictionary {'Files': amount of files downloaded, 'Size' : amount of data downloaded}
              S_ERROR in case of argument problems
@@ -1348,7 +1361,7 @@ class GFAL2_StorageBase( StorageBase ):
     for src_dir in urls:
       res = pfnparse( src_dir, srmSpecific = self.srmSpecificParse )
       if not res['OK']:
-        log.error( "cannot parse src_url", res )
+        log.debug( "cannot parse src_url", res )
         continue
       srcUrlDict = res['Value']
       dirName = srcUrlDict['FileName']
@@ -1362,10 +1375,10 @@ class GFAL2_StorageBase( StorageBase ):
           log.debug( "Successfully got local copy of %s" % src_dir )
           successful[src_dir] = {'Files':res['Value']['Files'], 'Size':res['Value']['Size']}
         else:
-          log.error( "Failed to get entire directory.", src_dir )
+          log.debug( "Failed to get entire directory.", src_dir )
           failed[src_dir] = {'Files':res['Value']['Files'], 'Size':res['Value']['Size']}
       else:
-        log.error( "Completely failed to get local copy of directory.", src_dir )
+        log.debug( "Completely failed to get local copy of directory.", src_dir )
         failed[src_dir] = {'Files':0, 'Size':0}
 
     return S_OK( {'Failed' : failed, 'Successful' : successful } )
@@ -1398,7 +1411,7 @@ class GFAL2_StorageBase( StorageBase ):
     # res['Value'] is False if it's not a directory
     if not res['Value']:
       errStr = 'The path provided is not a directory'
-      log.error( errStr, src_dir )
+      log.debug( errStr, src_dir )
       return S_ERROR( errno.ENOTDIR, errStr )
 
     if not os.path.exists( dest_dir ):
@@ -1424,7 +1437,7 @@ class GFAL2_StorageBase( StorageBase ):
       # Getting the last filename
       res = pfnparse( sFile, srmSpecific = self.srmSpecificParse )
       if not res['OK']:
-        log.error( "Cannot unparse target file. Skipping", res )
+        log.debug( "Cannot unparse target file. Skipping", res )
         receivedAllFiles = False
         continue
       filename = res['Value']['FileName']
@@ -1443,7 +1456,7 @@ class GFAL2_StorageBase( StorageBase ):
       # Getting the last filename
       res = pfnparse( subDir, srmSpecific = self.srmSpecificParse )
       if not res['OK']:
-        log.error( "Cannot unparse target dir. Skipping", res )
+        log.debug( "Cannot unparse target dir. Skipping", res )
         receivedAllDirs = False
         continue
       subDirName = res['Value']['FileName']
@@ -1497,10 +1510,10 @@ class GFAL2_StorageBase( StorageBase ):
           log.debug( "Successfully put directory to remote storage: %s" % destDir )
           successful[destDir] = { 'Files' : res['Value']['Files'], 'Size' : res['Value']['Size']}
         else:
-          log.error( "Failed to put entire directory to remote storage.", destDir )
+          log.debug( "Failed to put entire directory to remote storage.", destDir )
           failed[destDir] = { 'Files' : res['Value']['Files'], 'Size' : res['Value']['Size']}
       else:
-        log.error( "Completely failed to put directory to remote storage.", destDir )
+        log.debug( "Completely failed to put directory to remote storage.", destDir )
         failed[destDir] = { "Files" : 0, "Size" : 0 }
     return S_OK( { "Failed" : failed, "Successful" : successful } )
 
@@ -1524,7 +1537,7 @@ class GFAL2_StorageBase( StorageBase ):
 
     if not os.path.isdir( src_directory ):
       errStr = 'The supplied source directory does not exist or is not a directory.'
-      log.error( errStr, src_directory )
+      log.debug( errStr, src_directory )
       return S_ERROR( errno.ENOENT, errStr )
 
     contents = os.listdir( src_directory )
@@ -1542,7 +1555,7 @@ class GFAL2_StorageBase( StorageBase ):
       nextUrlDict['FileName'] = os.path.join( destDirParse['FileName'], fileName )
       res = pfnunparse( nextUrlDict, srmSpecific = self.srmSpecificParse )
       if not res['OK']:
-        log.error( "Cannot unparse next url dict. Skipping", res )
+        log.debug( "Cannot unparse next url dict. Skipping", res )
         allSuccessful = False
         continue
 
@@ -1555,7 +1568,7 @@ class GFAL2_StorageBase( StorageBase ):
       else:
         res = self.__putSingleDirectory( localPath, remoteUrl )
         if not res['OK']:
-          log.error( 'Failed to put directory to storage. Skipping', res['Message'] )
+          log.debug( 'Failed to put directory to storage. Skipping', res['Message'] )
           allSuccessful = False
         else:
           if not res['Value']['AllPut']:
@@ -1566,7 +1579,7 @@ class GFAL2_StorageBase( StorageBase ):
     if directoryFiles:
       res = self.putFile( directoryFiles )
       if not res['OK']:
-        log.error( 'Failed to put files to storage.', res['Message'] )
+        log.debug( 'Failed to put files to storage.', res['Message'] )
         allSuccessful = False
       else:
         for fileSize in res['Value']['Successful'].itervalues():
@@ -1581,11 +1594,12 @@ class GFAL2_StorageBase( StorageBase ):
   def removeDirectory( self, path, recursive = False ):
     """Remove a directory on the physical storage together with all its files and
        subdirectories.
-       :param path : single or list of path (srm://..)
-       :param recursive : if True, we recursively delete the subdir
+
+       :param path: single or list of path (srm://..)
+       :param recursive: if True, we recursively delete the subdir
        :return: successful and failed dictionaries. The keys are the pathes,
-             the values are dictionary {'Files': amount of files deleted, 'Size': amount of data deleted}
-                S_ERROR in case of argument problems
+                 the values are dictionary {'Files': amount of files deleted, 'Size': amount of data deleted}
+                 S_ERROR in case of argument problems
     """
     res = checkArgumentFormat( path )
     if not res['OK']:
@@ -1606,10 +1620,10 @@ class GFAL2_StorageBase( StorageBase ):
           log.debug( "Successfully removed %s" % url )
           successful[url] = {'FilesRemoved':res['Value']['FilesRemoved'], 'SizeRemoved':res['Value']['SizeRemoved']}
         else:
-          log.error( "Failed to remove entire directory.", path )
+          log.debug( "Failed to remove entire directory.", path )
           failed[url] = {'FilesRemoved':res['Value']['FilesRemoved'], 'SizeRemoved':res['Value']['SizeRemoved']}
       else:
-        log.error( "Completely failed to remove directory.", url )
+        log.debug( "Completely failed to remove directory.", url )
         failed[url] = res['Message']  # {'FilesRemoved':0, 'SizeRemoved':0}
 
     return S_OK( {'Failed' : failed, 'Successful' : successful } )
@@ -1642,7 +1656,7 @@ class GFAL2_StorageBase( StorageBase ):
     # res['Value'] is True if it is a directory
     if not res['Value']:
       errStr = "The supplied path is not a directory."
-      log.error( errStr, path )
+      log.debug( errStr, path )
       return S_ERROR( errno.ENOTDIR, errStr )
 
     # Get the remote directory contents
@@ -1663,7 +1677,7 @@ class GFAL2_StorageBase( StorageBase ):
       for subDirUrl in subDirsDict:
         res = self.__removeSingleDirectory( subDirUrl, recursive )
         if not res['OK']:
-          log.error( "Recursive removal failed", res )
+          log.debug( "Recursive removal failed", res )
           removedAllDirs = False
         else:
           if not res['Value']['AllRemoved']:
@@ -1716,16 +1730,21 @@ class GFAL2_StorageBase( StorageBase ):
 
   def getDirectorySize( self, path ):
     """ Get the size of the directory on the storage
-      CAUTION: it is not recursive
+
+      .. warning:: it is not recursive
 
       :param self: self reference
       :param str path: path or list of paths on storage (srm://...)
       :returns: list of successful and failed dictionaries, both indexed by the path
-                In the failed, the value is the error message
-                In the successful the values are dictionaries: Files : amount of files in the dir
-                                                               Size : summed up size of all files
-                                                               subDirs : amount of sub dirs
-                S_ERROR in case of argument problems
+
+                  * In the failed, the value is the error message
+                  * In the successful the values are dictionaries:
+
+                      * Files : amount of files in the dir
+                      * Size : summed up size of all files
+                      * subDirs : amount of sub dirs
+
+                  * S_ERROR in case of argument problems
     """
     res = checkArgumentFormat( path )
     if not res['OK']:
@@ -1784,9 +1803,9 @@ class GFAL2_StorageBase( StorageBase ):
 
     :param self: self reference
     :param str path: path (or list of paths) on storage (srm://...)
-    :returns Successful dict {path : metadata}
-             Failed dict {path : errStr}
-             S_ERROR in case of argument problems
+    :returns: Successful dict {path : metadata}
+               Failed dict {path : errStr}
+               S_ERROR in case of argument problems
     """
     res = checkArgumentFormat( path )
     if not res['OK']:
@@ -1829,7 +1848,7 @@ class GFAL2_StorageBase( StorageBase ):
 
     if not metadataDict['Directory']:
       errStr = "GFAL2_StorageBase.__getSingleDirectoryMetadata: Provided path is not a directory."
-      self.log.error( errStr, path )
+      self.log.debug( errStr, path )
       return S_ERROR( errno.ENOTDIR, errStr )
 
     return S_OK( metadataDict )
@@ -1896,11 +1915,9 @@ class GFAL2_StorageBase( StorageBase ):
       for attribute in attributes:
         log.debug( "Fetching %s" % attribute )
         attributeDict[attribute] = self.ctx.getxattr( path, attribute )
-
       return S_OK( attributeDict )
     # simple error messages, the method that is calling them adds the source of error.
     except gfal2.GError as e:
       errStr = 'Something went wrong while checking for extended attributes.'
-      log.error( errStr, e.message )
+      log.debug( errStr, e.message )
       return S_ERROR( e.code, "%s %s" % ( errStr, repr( e ) ) )
-

@@ -1,16 +1,48 @@
-# $HeadURL $
 ''' ResourceStatusHandler
 
   Module that allows users to access the ResourceStatusDB remotely.
 
 '''
 
+#pylint: disable=too-many-arguments
+
+__RCSID__ = '$Id: $'
+
 from DIRAC                                             import gLogger, S_OK
 from DIRAC.Core.DISET.RequestHandler                   import RequestHandler
 from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB    import ResourceStatusDB
 
-__RCSID__ = '$Id: $'
-db        = None
+
+db = None
+
+def convert(table, params):
+  """ Conversion utility for backward compatibility
+  """
+  gLogger.debug("Calls from old client")
+  # In this case, "params" contain the "meta", so we at least need to swap!
+  tableFromOldCall = params['table']
+  columnsFromOldCall = params.get('columns')
+  olderFromOldCall = params.get('older')
+  newerFromOldCall = params.get('newer')
+  orderFromOldCall = params.get('order')
+  limitFromOldCall = params.get('limit')
+  params = table
+  if columnsFromOldCall or olderFromOldCall or newerFromOldCall or orderFromOldCall or limitFromOldCall:
+    params['Meta'] = {}
+    if columnsFromOldCall:
+      params['Meta']['columns'] = columnsFromOldCall
+    if olderFromOldCall:
+      params['Meta']['older'] = olderFromOldCall
+    if newerFromOldCall:
+      params['Meta']['newer'] = newerFromOldCall
+    if orderFromOldCall:
+      params['Meta']['order'] = orderFromOldCall
+    if limitFromOldCall:
+      params['Meta']['limit'] = limitFromOldCall
+  table = tableFromOldCall
+
+  return params, table
+
 
 def initializeResourceStatusHandler( _serviceInfo ):
   '''
@@ -20,8 +52,6 @@ def initializeResourceStatusHandler( _serviceInfo ):
 
   global db
   db = ResourceStatusDB()
-  # Regenerates DB tables if needed
-  db._checkTable()
 
   return S_OK()
 
@@ -52,6 +82,8 @@ class ResourceStatusHandler( RequestHandler ):
   '''
 
   def __init__( self, *args, **kwargs ):
+
+
     super( ResourceStatusHandler, self ).__init__( *args, **kwargs )
 
   @staticmethod
@@ -78,180 +110,155 @@ class ResourceStatusHandler( RequestHandler ):
     global db
     db = database
 
-  types_insert = [ dict, dict ]
-  def export_insert( self, params, meta ):
+
+  types_insert = [ [basestring, dict], dict ]
+  def export_insert( self, table, params ):
     '''
-    This method is a bridge to access :class:`ResourceStatusDB` remotely. It does
-    not add neither processing nor validation. If you need to know more about
-    this method, you must keep reading on the database documentation.
+    This method is a bridge to access :class:`ResourceStatusDB` remotely. It
+    does not add neither processing nor validation. If you need to know more
+    about this method, you must keep reading on the database documentation.
 
     :Parameters:
-      **args** - `tuple`
-        arguments for the mysql query ( must match table columns ! ).
+      **table** - `string` or `dict`
+        should contain the table from which querying
+        if it's a `dict` the query comes from a client prior to v6r18
 
-      **kwargs** - `dict`
-        metadata for the mysql query. It must contain, at least, `table` key
-        with the proper table name.
+      **params** - `dict`
+        arguments for the mysql query. Currently it is being used only for column selection.
+        For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
 
     :return: S_OK() || S_ERROR()
     '''
 
-    gLogger.info( 'insert: %s %s' % ( params, meta ) )
+    if isinstance(table, dict): #for backward compatibility: conversion is needed
+      params, table = convert(table, params)
 
-    res = db.insert( params, meta )
+    gLogger.info( 'insert: %s %s' % ( table, params ) )
+    res = db.insert( table, params )
     self.__logResult( 'insert', res )
 
     return res
 
-  types_update = [ dict, dict ]
-  def export_update( self, params, meta ):
+
+
+  types_select = [ [basestring, dict], dict ]
+  def export_select( self, table, params ):
     '''
-    This method is a bridge to access :class:`ResourceStatusDB` remotely. It does
-    not add neither processing nor validation. If you need to know more about
-    this method, you must keep reading on the database documentation.
+    This method is a bridge to access :class:`ResourceStatusDB` remotely. It
+    does not add neither processing nor validation. If you need to know more
+    about this method, you must keep reading on the database documentation.
 
     :Parameters:
-      **args** - `tuple`
-        arguments for the mysql query ( must match table columns ! ).
+      **table** - `string` or `dict`
+        should contain the table from which querying
+        if it's a `dict` the query comes from a client prior to v6r18
 
-      **kwargs** - `dict`
-        metadata for the mysql query. It must contain, at least, `table` key
-        with the proper table name.
+      **params** - `dict`
+        arguments for the mysql query. Currently it is being used only for column selection.
+        For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
 
     :return: S_OK() || S_ERROR()
     '''
 
-    gLogger.info( 'update: %s %s' % ( params, meta ) )
+    if isinstance(table, dict): #for backward compatibility: conversion is needed
+      params, table = convert(table, params)
 
-    res = db.update( params, meta )
-    self.__logResult( 'update', res )
-
-    return res
-
-  types_select = [ dict, dict ]
-  def export_select( self, params, meta ):
-    '''
-    This method is a bridge to access :class:`ResourceStatusDB` remotely. It \
-    does not add neither processing nor validation. If you need to know more about
-    this method, you must keep reading on the database documentation.
-
-    :Parameters:
-      **args** - `tuple`
-        arguments for the mysql query ( must match table columns ! ).
-
-      **kwargs** - `dict`
-        metadata for the mysql query. It must contain, at least, `table` key
-        with the proper table name.
-
-    :return: S_OK() || S_ERROR()
-    '''
-
-    gLogger.info( 'select: %s %s' % ( params, meta ) )
-
-    res = db.select( params, meta )
+    gLogger.info( 'select: %s %s' % ( table, params ) )
+    res = db.select( table, params )
     self.__logResult( 'select', res )
 
     return res
 
-  types_delete = [ dict, dict ]
-  def export_delete( self, params, meta ):
+
+  types_delete = [ [basestring, dict], dict ]
+  def export_delete( self, table, params ):
     '''
-    This method is a bridge to access :class:`ResourceStatusDB` remotely. It does
-    not add neither processing nor validation. If you need to know more about
-    this method, you must keep reading on the database documentation.
+    This method is a bridge to access :class:`ResourceStatusDB` remotely.\
+    It does not add neither processing nor validation. If you need to know more \
+    about this method, you must keep reading on the database documentation.
 
     :Parameters:
-      **args** - `tuple`
-        arguments for the mysql query ( must match table columns ! ).
+      **table** - `string` or `dict`
+        should contain the table from which querying
+        if it's a `dict` the query comes from a client prior to v6r18
 
-      **kwargs** - `dict`
-        metadata for the mysql query. It must contain, at least, `table` key
-        with the proper table name.
+      **params** - `dict`
+        arguments for the mysql query. Currently it is being used only for column selection.
+        For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
+
 
     :return: S_OK() || S_ERROR()
     '''
 
-    gLogger.info( 'delete: %s %s' % ( params, meta ) )
+    if isinstance(table, dict): #for backward compatibility: conversion is needed
+      params, table = convert(table, params)
 
-    res = db.delete( params, meta )
+    gLogger.info( 'delete: %s %s' % ( table, params ) )
+    res = db.delete( table, params )
     self.__logResult( 'delete', res )
 
     return res
 
-  types_addOrModify = [ dict, dict ]
-  def export_addOrModify( self, params, meta ):
+
+  types_addOrModify = [ [basestring, dict], dict ]
+  def export_addOrModify( self, table, params ):
     '''
-    This method is a bridge to access :class:`ResourceStatusDB` remotely. It does
-    not add neither processing nor validation. If you need to know more about
-    this method, you must keep reading on the database documentation.
+    This method is a bridge to access :class:`ResourceStatusDB` remotely.\
+    It does not add neither processing nor validation. If you need to know more \
+    about this method, you must keep reading on the database documentation.
 
     :Parameters:
-      **args** - `tuple`
-        arguments for the mysql query ( must match table columns ! ).
+      **table** - `string` or `dict`
+        should contain the table from which querying
+        if it's a `dict` the query comes from a client prior to v6r18
 
-      **kwargs** - `dict`
-        metadata for the mysql query. It must contain, at least, `table` key
-        with the proper table name.
+      **params** - `dict`
+        arguments for the mysql query. Currently it is being used only for column selection.
+        For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
+
 
     :return: S_OK() || S_ERROR()
     '''
 
-    gLogger.info( 'addOrModify: %s %s' % ( params, meta ) )
+    if isinstance(table, dict): #for backward compatibility: conversion is needed
+      params, table = convert(table, params)
 
-    res = db.addOrModify( params, meta )
+    gLogger.info( 'addOrModify: %s %s' % ( table, params ) )
+    res = db.addOrModify( table, params )
     self.__logResult( 'addOrModify', res )
 
     return res
 
-  types_modify = [ dict, dict ]
-  def export_modify( self, params, meta ):
+
+  types_addIfNotThere = [ [basestring, dict], dict ]
+  def export_addIfNotThere( self, table, params ):
     '''
-    This method is a bridge to access :class:`ResourceStatusDB` remotely. It does
-    not add neither processing nor validation. If you need to know more about
-    this method, you must keep reading on the database documentation.
+    This method is a bridge to access :class:`ResourceStatusDB` remotely.\
+    It does not add neither processing nor validation. If you need to know more \
+    about this method, you must keep reading on the database documentation.
 
     :Parameters:
-      **args** - `tuple`
-        arguments for the mysql query ( must match table columns ! ).
+      **table** - `string` or `dict`
+        should contain the table from which querying
+        if it's a `dict` the query comes from a client prior to v6r18
 
-      **kwargs** - `dict`
-        metadata for the mysql query. It must contain, at least, `table` key
-        with the proper table name.
+      **params** - `dict`
+        arguments for the mysql query. Currently it is being used only for column selection.
+        For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
+
 
     :return: S_OK() || S_ERROR()
     '''
 
-    gLogger.info( 'modify: %s %s' % ( params, meta ) )
+    if isinstance(table, dict): #for backward compatibility: conversion is needed
+      params, table = convert(table, params)
 
-    res = db.modify( params, meta )
-    self.__logResult( 'modify', res )
-
-    return res
-
-  types_addIfNotThere = [ dict, dict ]
-  def export_addIfNotThere( self, params, meta ):
-    '''
-    This method is a bridge to access :class:`ResourceStatusDB` remotely. It does
-    not add neither processing nor validation. If you need to know more about
-    this method, you must keep reading on the database documentation.
-
-    :Parameters:
-      **args** - `tuple`
-        arguments for the mysql query ( must match table columns ! ).
-
-      **kwargs** - `dict`
-        metadata for the mysql query. It must contain, at least, `table` key
-        with the proper table name.
-
-    :return: S_OK() || S_ERROR()
-    '''
-
-    gLogger.info( 'addIfNotThere: %s %s' % ( params, meta ) )
-
-    res = db.addIfNotThere( params, meta )
+    gLogger.info( 'addIfNotThere: %s %s' % ( table, params ) )
+    res = db.addIfNotThere( table, params )
     self.__logResult( 'addIfNotThere', res )
 
     return res
+
 
 ################################################################################
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

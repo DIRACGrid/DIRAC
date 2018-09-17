@@ -1,94 +1,91 @@
 #!/usr/bin/env python
 ########################################################################
-# File :   dirac-externals-refresh
-# Author : Adri
+# File :   dirac-externals-requirements
+# Author : Adri/Federico/Andrei
 ########################################################################
+""" If RequiredExternals section is found in releases.cfg of any extension,
+    then some python packages to install with pip may be found. This script
+    will install the requested modules.
+
+    The command is called from the dirac-install general installation command.
 """
-"""
-__RCSID__ = "$Id$"
-#
+
+import os
+import sys
+import commands
+
 from DIRAC.Core.Base import Script
 Script.disableCS()
+
 from DIRAC import gLogger, rootPath, S_OK
 from DIRAC.Core.Utilities.CFG import CFG
-import os, sys
-try:
-  import pip
-except ImportError:
-  gLogger.fatal( "pip is missing! Houston, we've got a problem..." )
 
+__RCSID__ = "$Id$"
+
+# Default installation type
 instType = "server"
 
-def setInstallType( val ):
+
+def setInstallType(val):
   global instType
   instType = val
   return S_OK()
 
-Script.registerSwitch( "t:", "type=", "Installation type. 'server' by default.", setInstallType )
-Script.parseCommandLine( ignoreErrors = True )
 
+Script.registerSwitch("t:", "type=", "Installation type. 'server' by default.", setInstallType)
+Script.parseCommandLine(ignoreErrors=True)
+
+
+def pipInstall(package, switches=""):
+  # The right pip should be in the PATH, which is the case after sourcing the DIRAC bashrc
+  cmd = "pip install --trusted-host pypi.python.org %s %s" % (switches, package)
+  gLogger.notice("Executing %s" % cmd)
+  return commands.getstatusoutput(cmd)
+
+
+# Collect all the requested python modules to install
 reqDict = {}
 
-if instType.find( "client" ) == 0:
-  gLogger.error( "Client installations do not support externals requirements" )
-  sys.exit( 0 )
 
-for entry in os.listdir( rootPath ):
-  if len( entry ) < 5 or entry.find( "DIRAC" ) != len( entry ) - 5 :
+for entry in os.listdir(rootPath):
+  if len(entry) < 5 or entry.find("DIRAC") != len(entry) - 5:
     continue
-  reqFile = os.path.join( rootPath, entry, "releases.cfg" )
+  reqFile = os.path.join(rootPath, entry, "releases.cfg")
   try:
-    with open( reqFile, "r" ) as extfd:
-      reqCFG = CFG().loadFromBuffer( extfd.read() )
-  except:
-    gLogger.warn( "%s not found" % reqFile )
+    with open(reqFile, "r") as extfd:
+      reqCFG = CFG().loadFromBuffer(extfd.read())
+  except BaseException:
+    gLogger.verbose("%s not found" % reqFile)
     continue
-  reqs = reqCFG.getOption( "/RequiredExternals/%s" % instType.capitalize(), [] )
-  if not reqs:
-    gLogger.warn( "%s does not have requirements for %s installation" % ( entry, instType ) )
+  reqList = reqCFG.getOption("/RequiredExternals/%s" % instType.capitalize(), [])
+  if not reqList:
+    gLogger.verbose("%s does not have requirements for %s installation" % (entry, instType))
     continue
-  for req in reqs:
+  for req in reqList:
     reqName = False
     reqCond = ""
-    for cond in ( "==", ">=" ):
-      iP = cond.find( req )
+    for cond in ("==", ">="):
+      iP = cond.find(req)
       if iP > 0:
-        reqName = req[ :iP ]
-        reqCond = req[ iP: ]
+        reqName = req[:iP]
+        reqCond = req[iP:]
         break
     if not reqName:
       reqName = req
     if reqName not in reqDict:
-      reqDict[ reqName ] = ( reqCond, entry )
+      reqDict[reqName] = (reqCond, entry)
     else:
-      gLogger.notice( "Skipping %s, it's already requested by %s" % ( reqName, reqDict[ reqName ][1] ) )
+      gLogger.notice("Skipping %s, it's already requested by %s" % (reqName, reqDict[reqName][1]))
 
 if not reqDict:
-  gLogger.notice( "Nothing to be installed" )
-  sys.exit( 0 )
-
-gLogger.notice( "Requesting installation of %s" % ", ".join( [ "%s%s" % ( reqName, reqDict[ reqName ][0] ) for reqName in reqDict ] ) )
-
-from pip.index import PackageFinder
-from pip.req import InstallRequirement, RequirementSet
-from pip.locations import build_prefix, src_prefix
-
-requirement_set = RequirementSet(
-    build_dir = build_prefix,
-    src_dir = src_prefix,
-    download_dir = None
-    )
+  gLogger.notice("No extra python module requested to be installed")
+  sys.exit(0)
 
 for reqName in reqDict:
-  requirement_set.add_requirement( InstallRequirement.from_line( "%s%s" % ( reqName, reqDict[ reqName ][0] ), None ) )
-
-install_options = []
-global_options = []
-finder = PackageFinder( find_links = [], index_urls = ["http://pypi.python.org/simple/"] )
-
-requirement_set.prepare_files( finder, force_root_egg_info = False, bundle = False )
-requirement_set.locate_files()
-requirement_set.install( install_options, global_options )
-
-
-gLogger.notice( "Installed %s" % "".join( [ str( package.name ) for package in requirement_set.successfully_installed ] ) )
+  package = "%s%s" % (reqName, reqDict[reqName][0])
+  gLogger.notice("Requesting installation of %s" % package)
+  status, output = pipInstall(package)
+  if status != 0:
+    gLogger.error(output)
+  else:
+    gLogger.notice("Successfully installed %s" % package)

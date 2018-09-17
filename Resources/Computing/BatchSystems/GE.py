@@ -1,5 +1,4 @@
 ############################################################################
-#  $HeadURL$
 #  GE class representing SGE batch system
 #  10.11.2014
 #  Author: A.T.
@@ -7,85 +6,88 @@
 
 """ Torque.py is a DIRAC independent class representing Torque batch system.
     Torque objects are used as backend batch system representation for
-    LocalComputingElement and SSHComputingElement classes 
-    
+    LocalComputingElement and SSHComputingElement classes
+
     The GE relies on the SubmitOptions parameter to choose the right queue.
     This should be specified in the Queue description in the CS. e.g.
-    
+
     SubmitOption = -l ct=6000
 """
 
 __RCSID__ = "$Id$"
 
-import re, commands, os
+import re
+import commands
+import os
 
-class GE( object ):
 
-  def submitJob( self, **kwargs ):
+class GE(object):
+
+  def submitJob(self, **kwargs):
     """ Submit nJobs to the condor batch system
     """
     resultDict = {}
-    
-    MANDATORY_PARAMETERS = [ 'Executable', 'OutputDir', 'ErrorDir', 'SubmitOptions' ]
+
+    MANDATORY_PARAMETERS = ['Executable', 'OutputDir', 'ErrorDir', 'SubmitOptions']
     for argument in MANDATORY_PARAMETERS:
-      if not argument in kwargs:
+      if argument not in kwargs:
         resultDict['Status'] = -1
         resultDict['Message'] = 'No %s' % argument
-        return resultDict   
-      
-    nJobs = kwargs.get( 'NJobs', 1 )  
-    
+        return resultDict
+
+    nJobs = kwargs.get('NJobs', 1)
+
     outputs = []
     output = ''
-    for _i in range( int(nJobs) ):
+    for _i in xrange(int(nJobs)):
       cmd = "qsub -o %(OutputDir)s -e %(ErrorDir)s -N DIRACPilot %(SubmitOptions)s %(Executable)s" % kwargs
-      status,output = commands.getstatusoutput(cmd)
+      status, output = commands.getstatusoutput(cmd)
       if status == 0:
         outputs.append(output)
       else:
-        break                                                         
-  
+        break
+
     if outputs:
       resultDict['Status'] = 0
       resultDict['Jobs'] = []
       for output in outputs:
-        match = re.match('Your job (\d*) ',output)
+        match = re.match('Your job (\d*) ', output)
         if match:
-          resultDict['Jobs'].append( match.groups()[0] )
+          resultDict['Jobs'].append(match.groups()[0])
     else:
       resultDict['Status'] = status
       resultDict['Message'] = output
-      
+
     return resultDict
-  
-  def killJob( self, **kwargs ):
+
+  def killJob(self, **kwargs):
     """ Kill jobs in the given list
     """
-    
+
     resultDict = {}
-    
-    MANDATORY_PARAMETERS = [ 'JobIDList' ]
+
+    MANDATORY_PARAMETERS = ['JobIDList']
     for argument in MANDATORY_PARAMETERS:
-      if not argument in kwargs:
+      if argument not in kwargs:
         resultDict['Status'] = -1
         resultDict['Message'] = 'No %s' % argument
-        return resultDict   
-    
-    jobIDList = kwargs.get( 'JobIDList' )
+        return resultDict
+
+    jobIDList = kwargs.get('JobIDList')
     if not jobIDList:
       resultDict['Status'] = -1
       resultDict['Message'] = 'Empty job list'
       return resultDict
-    
+
     successful = []
     failed = []
     for job in jobIDList:
-      status, output = commands.getstatusoutput( 'qdel %s' % job )
+      status, output = commands.getstatusoutput('qdel %s' % job)
       if status != 0:
-        failed.append( job )
+        failed.append(job)
       else:
-        successful.append( job )  
-    
+        successful.append(job)
+
     resultDict['Status'] = 0
     if failed:
       resultDict['Status'] = 1
@@ -93,46 +95,46 @@ class GE( object ):
     resultDict['Successful'] = successful
     resultDict['Failed'] = failed
     return resultDict
-    
-  def getJobStatus( self, **kwargs ):
+
+  def getJobStatus(self, **kwargs):
     """ Get status of the jobs in the given list
     """
     resultDict = {}
-    
-    MANDATORY_PARAMETERS = [ 'JobIDList' ]
+
+    MANDATORY_PARAMETERS = ['JobIDList']
     for argument in MANDATORY_PARAMETERS:
-      if not argument in kwargs:
+      if argument not in kwargs:
         resultDict['Status'] = -1
         resultDict['Message'] = 'No %s' % argument
-        return resultDict   
-    
-    user = kwargs.get( 'User' )
+        return resultDict
+
+    user = kwargs.get('User')
     if not user:
-      user = os.environ.get( 'USER' )
+      user = os.environ.get('USER')
     if not user:
       resultDict['Status'] = -1
       resultDict['Message'] = 'No user name'
       return resultDict
-    jobIDList = kwargs.get( 'JobIDList' )
+    jobIDList = kwargs.get('JobIDList')
     if not jobIDList:
       resultDict['Status'] = -1
       resultDict['Message'] = 'Empty job list'
       return resultDict
-    
-    status,output = commands.getstatusoutput( 'qstat -u %s' % user )
-    
+
+    status, output = commands.getstatusoutput('qstat -u %s' % user)
+
     if status != 0:
       resultDict['Status'] = status
       resultDict['Message'] = output
       return resultDict
-      
+
     jobDict = {}
-    if len( output ):
-      lines = output.split( '\n' )
+    if output:
+      lines = output.split('\n')
       for line in lines:
         l = line.strip()
         for job in jobIDList:
-          if l.startswith( job ):
+          if l.startswith(job):
             jobStatus = l.split()[4]
             if jobStatus in ['Tt', 'Tr']:
               jobDict[job] = 'Done'
@@ -140,44 +142,44 @@ class GE( object ):
               jobDict[job] = 'Running'
             elif jobStatus in ['qw', 'h']:
               jobDict[job] = 'Waiting'
-  
-    status,output = commands.getstatusoutput( 'qstat -u %s -s z' % user )
-    
-    if status == 0:    
-      if len( output ):
-        lines = output.split( '\n' )
+
+    status, output = commands.getstatusoutput('qstat -u %s -s z' % user)
+
+    if status == 0:
+      if output:
+        lines = output.split('\n')
         for line in lines:
           l = line.strip()
           for job in jobIDList:
-            if l.startswith( job ):
+            if l.startswith(job):
               jobDict[job] = 'Done'
-  
-    if len( resultDict ) != len( jobIDList ):
+
+    if len(resultDict) != len(jobIDList):
       for job in jobIDList:
-        if not job in jobDict:
+        if job not in jobDict:
           jobDict[job] = 'Unknown'
-          
+
     # Final output
     status = 0
     resultDict['Status'] = 0
-    resultDict['Jobs'] = jobDict 
-    return resultDict    
-    
-  def getCEStatus( self, **kwargs ):
+    resultDict['Jobs'] = jobDict
+    return resultDict
+
+  def getCEStatus(self, **kwargs):
     """ Get the overall CE status
     """
     resultDict = {}
-    
-    user = kwargs.get( 'User' )
+
+    user = kwargs.get('User')
     if not user:
-      user = os.environ.get( 'USER' )
+      user = os.environ.get('USER')
     if not user:
       resultDict['Status'] = -1
       resultDict['Message'] = 'No user name'
       return resultDict
 
     cmd = 'qstat -u %s' % user
-    status,output = commands.getstatusoutput( cmd )
+    status, output = commands.getstatusoutput(cmd)
 
     if status != 0:
       resultDict['Status'] = status
@@ -188,8 +190,8 @@ class GE( object ):
     runningJobs = 0
     doneJobs = 0
 
-    if len( output ):
-      lines = output.split( '\n' )
+    if output:
+      lines = output.split('\n')
       for line in lines:
         if not line.strip():
           continue
@@ -209,27 +211,27 @@ class GE( object ):
     resultDict["Done"] = doneJobs
     return resultDict
 
-  def getJobOutputFiles( self, **kwargs ):
-    """ Get output file names and templates for the specific CE 
+  def getJobOutputFiles(self, **kwargs):
+    """ Get output file names and templates for the specific CE
     """
     resultDict = {}
-    MANDATORY_PARAMETERS = [ 'JobIDList', 'OutputDir', 'ErrorDir' ]
+    MANDATORY_PARAMETERS = ['JobIDList', 'OutputDir', 'ErrorDir']
     for argument in MANDATORY_PARAMETERS:
-      if not argument in kwargs:
+      if argument not in kwargs:
         resultDict['Status'] = -1
         resultDict['Message'] = 'No %s' % argument
-        return resultDict   
-      
+        return resultDict
+
     outputDir = kwargs['OutputDir']
-    errorDir = kwargs['ErrorDir']  
-      
-    outputTemplate = '%s/DIRACPilot.o%%s' % outputDir  
-    errorTemplate = '%s/DIRACPilot.e%%s' % errorDir  
-    outputTemplate = os.path.expandvars( outputTemplate )
-    errorTemplate = os.path.expandvars( errorTemplate )
-    
+    errorDir = kwargs['ErrorDir']
+
+    outputTemplate = '%s/DIRACPilot.o%%s' % outputDir
+    errorTemplate = '%s/DIRACPilot.e%%s' % errorDir
+    outputTemplate = os.path.expandvars(outputTemplate)
+    errorTemplate = os.path.expandvars(errorTemplate)
+
     jobIDList = kwargs['JobIDList']
-    
+
     jobDict = {}
     for job in jobIDList:
       jobDict[job] = {}

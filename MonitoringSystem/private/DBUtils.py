@@ -7,35 +7,54 @@ from DIRAC import S_OK, S_ERROR
 
 __RCSID__ = "$Id$"
 
+def _convertToSeconds( interval ):
+  """
+  Converts number of minutes, hours, days, weeks, months, years into seconds
+  """
+  # unit symbols
+  units = ['s', 'm', 'h', 'd', 'w', 'M', 'y']
+  # this is the number of previous units in a unit
+  numbers = [1, 60, 60, 24, 7, 30. / 7., 366. / 30. ]
+  seconds = 1.
+  for unit, num in zip( units, numbers ):
+    seconds *= num
+    if interval.endswith( unit ):
+      return int( float( interval[:-1] ) * seconds )
+  raise ValueError, "Invalid time interval '%s'" % interval
+
 class DBUtils ( object ):
-  
-  """ 
+
+  """
   .. class:: DBUtils
-  
+
   It implements few methods used to create the plots.
-  
+
   param: list __units it is elasticsearch specific unites
   param: list __unitvalues the units in second
-  param: list __esunits used to determine the buckets size  
-   
+  param: list __esunits used to determine the buckets size
+
   """
-  #TODO: Maybe it is better to use the same structure we have in BasePlotter
-  
-  # 86400 seconds -> 1d
-  # 604800 seconds -> 1w
-  # 2592000 seconds -> 1m
-  # 525600 minutes -> year
-  
-  __esbucket = {86400:( '30m', 60 * 30 ),
-               604800:( '3h', 3 * 3600 ),
-               30 * 86400:( '12h', 12 * 3600 ),
-               45 * 86400:( '1d', 24 * 3600 ),
-               60 * 86400:( '2d', 2 * 24 * 3600 ),
-               90 * 86400:( '3d', 3 * 24 * 3600 ),
-               120 * 86400:( '4d', 4 * 24 * 3600 ),
-               86400 * 367:( '1w', 86400 * 7 ) }
-  
-  def __init__( self, db, setup ):  
+  # TODO: Maybe it is better to use the same structure we have in BasePlotter
+
+  __esbucket = {
+                '1h': '2m',
+                '6h': '5m',
+                '12h':'10m',
+                '1d': '15m',
+                '2d': '30m',
+                '3.5d': '1h',
+                '1w':'2h',
+                '2w':'4h',
+                '1M': '8h',
+                '2M':'12h',
+                '3M':'1d',
+                '6M':'2d',
+                '9M':'3d',
+                '1y':'4d',
+                '100y':'1w'
+                }
+
+  def __init__( self, db, setup ):
     """ c'tor
     :param self: self reference
     :param object the database module
@@ -43,14 +62,14 @@ class DBUtils ( object ):
     """
     self.__db = db
     self.__setup = setup
-    
+
   def getKeyValues( self, typeName, condDict ):
     """
     Get all valid key values in a type
     """
     return self.__db.getKeyValues( self.__setup, typeName, condDict )
-  
-  def _retrieveBucketedData( self, typeName, startTime, endTime, interval, selectFields, condDict = None, grouping = '', metadataDict = None):
+
+  def _retrieveBucketedData( self, typeName, startTime, endTime, interval, selectFields, condDict = None, grouping = '', metadataDict = None ):
     """
     It is a wrapper class...
     """
@@ -62,7 +81,7 @@ class DBUtils ( object ):
                                            condDict = condDict,
                                            grouping = grouping,
                                            metainfo = metadataDict )
-  
+
   def _retrieveAggregatedData( self, typeName, startTime, endTime, interval, selectFields, condDict = None, grouping = '', metadataDict = None ):
     """
     Retrieve data from EL
@@ -75,23 +94,28 @@ class DBUtils ( object ):
                                            condDict = condDict,
                                            grouping = grouping,
                                            metainfo = metadataDict )
-  
+
   def _determineBucketSize( self, start, end ):
     """
     It is used to determine the bucket size using _esUnits
     """
     diff = end - start
-    
+
     unit = ''
-    for interval in sorted(self.__esbucket.keys()):
-      if diff <= interval:
-        unit = self.__esbucket[interval]
-        break   
-    if not unit:
-      return S_ERROR( "Can not determine the bucket size..." )
-    else:
-      return S_OK( unit )
-    
+    error = "Can not determine the bucket size..."
+    bucketSeconds = {}
+    try:
+      # Convert intervals into seconds
+      for interval, bin in self.__esbucket.iteritems():
+        bucketSeconds[ _convertToSeconds( interval )] = ( bin, _convertToSeconds( bin ) )
+      # Determine bin size according to time span
+      for interval in sorted( bucketSeconds ):
+        if diff <= interval:
+          return S_OK( bucketSeconds[interval] )
+    except ValueError as e:
+      error += ': ' + repr( e )
+    return S_ERROR( error )
+
   def _divideByFactor( self, dataDict, factor ):
     """
     Divide by factor the values and get the maximum value
@@ -104,7 +128,7 @@ class DBUtils ( object ):
         currentDict[ timeEpoch ] /= float( factor )
         maxValue = max( maxValue, currentDict[ timeEpoch ] )
     return dataDict, maxValue
-  
+
   def _getAccumulationMaxValue( self, dataDict ):
     """
     Divide by factor the values and get the maximum value

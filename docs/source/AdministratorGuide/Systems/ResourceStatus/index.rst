@@ -1,10 +1,12 @@
+.. _resource_status_system:
+
 ======================
 Resource Status System
 ======================
-   
+
 .. toctree::
    :maxdepth: 2
-   
+
    introduction
    install
    configuration
@@ -12,5 +14,3 @@ Resource Status System
    monitoring
    advanced_configuration
    advanced_usage
-..   baptism
-..   design

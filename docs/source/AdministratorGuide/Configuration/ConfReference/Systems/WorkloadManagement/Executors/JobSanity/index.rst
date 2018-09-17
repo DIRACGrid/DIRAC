@@ -20,9 +20,6 @@ The JobSanity executor screens jobs for the following problems
 | *InputSandboxCheck* | Check for input sandbox files         | InputSandboxCheck = True                   |
 |                     |                                       |                                            |
 +---------------------+---------------------------------------+--------------------------------------------+
-| *PlatformCheck*     | Check if platform is supported        | PlatformCheck = False                      |
-|                     | Not Implemented                       |                                            |
-+---------------------+---------------------------------------+--------------------------------------------+
 | *OutputDataCheck*   | Check if output data exists           | OutputDataCheck = True                     |
 |                     | Not Implemented                       |                                            |
 +---------------------+---------------------------------------+--------------------------------------------+

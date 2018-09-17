@@ -277,7 +277,6 @@ class VOMSPolicy( SecurityManagerBase ):
 
         :returns: Successful dictionary with True of False, and Failed.
     """
-
     parentDirs = {}
     for path in paths:
       parentDirs.setdefault( os.path.dirname( path ), [] ).append( path )
@@ -555,6 +554,7 @@ class VOMSPolicy( SecurityManagerBase ):
         :returns: Successful dict with True or False, and Failed dict. In fact, it is not neccesarily
                 a boolean, rather an int (binary operation results)
     """
+
     # Check if admin access is granted first
     result = self.hasAdminAccess( credDict )
     if not result['OK']:

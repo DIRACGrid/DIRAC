@@ -17,7 +17,7 @@
 #from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
 #from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB     import ResourceStatusDB
 #from DIRAC.ResourceStatusSystem.Utilities               import Utils
-#from DIRAC.ResourceStatusSystem.Utilities.CS            import getStorageElementStatus
+#from DIRAC.ResourceStatusSystem.Utilities.CS            import getElementStatus
 #from DIRAC.ResourceStatusSystem.Utilities.InfoGetter    import InfoGetter
 #
 __RCSID__ = '$Id: $'
@@ -225,16 +225,11 @@ __RCSID__ = '$Id: $'
 #    if panel in ('Site_Panel', 'SE_Panel'):
 #
 #      if panel == 'Site_Panel':
-#        DIRACStatus = self.WMSAdmin.getSiteMaskLogging(name)
-#        if DIRACStatus['OK']:
-#          DIRACStatus = DIRACStatus['Value'][name].pop()[0]
-#        else:
-#          gLogger.error( DIRACStatus[ 'Message' ] )
-#          return None
+#      # something from RSS
 #
 #      elif panel == 'SE_Panel':
-#        ra = getStorageElementStatus(name, 'ReadAccess')['Value']
-#        wa = getStorageElementStatus(name, 'WriteAccess')['Value']
+#        ra = getElementStatus(name, 'StorageElement', 'ReadAccess')['Value']
+#        wa = getElementStatus(name, 'StorageElement', 'WriteAccess')['Value']
 #        DIRACStatus = {'ReadAccess': ra, 'WriteAccess': wa}
 #
 #      status = { name : { 'RSSStatus': RSSStatus, 'DIRACStatus': DIRACStatus } }

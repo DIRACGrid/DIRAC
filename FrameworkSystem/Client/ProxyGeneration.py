@@ -1,9 +1,7 @@
 ########################################################################
-# $HeadURL$
-# File :   dirac-proxy-init.py
+# File :   ProxyGeneration.py
 # Author : Adrian Casajus
 ########################################################################
-__RCSID__ = "$Id$"
 
 import sys
 import getpass
@@ -11,8 +9,10 @@ from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.NTP import getClockDeviation
 
+__RCSID__ = "$Id$"
 
-class CLIParams:
+
+class CLIParams(object):
 
   proxyLifeTime = 86400
   diracGroup = False
@@ -28,7 +28,7 @@ class CLIParams:
   userPasswd = ""
   checkClock = True
   embedDefaultGroup = True
-  rfc = False
+  rfc = True
 
   def setProxyLifeTime( self, arg ):
     try:
@@ -39,9 +39,13 @@ class CLIParams:
       return S_ERROR( "Can't parse time argument" )
     return S_OK()
 
-  def setRFC( self, arg ):
-      self.rfc = True
-      return S_OK()
+  def setRFC( self, _arg ):
+    self.rfc = True
+    return S_OK()
+
+  def setNoRFC( self, _arg ):
+    self.rfc = False
+    return S_OK()
 
   def setProxyRemainingSecs( self, arg ):
     self.proxyLifeTime = int( arg )
@@ -70,11 +74,11 @@ class CLIParams:
       return S_ERROR( "Can't parse strength argument" )
     return S_OK()
 
-  def setProxyLimited( self, arg ):
+  def setProxyLimited( self, _arg ):
     self.limitedProxy = True
     return S_OK()
 
-  def setSummary( self, arg ):
+  def setSummary( self, _arg ):
     gLogger.info( "Enabling summary output" )
     self.summary = True
     return S_OK()
@@ -91,24 +95,24 @@ class CLIParams:
     self.proxyLoc = arg
     return S_OK()
 
-  def setDisableCSCheck( self, arg ):
+  def setDisableCSCheck( self, _arg ):
     self.checkWithCS = False
     return S_OK()
 
-  def setStdinPasswd( self, arg ):
+  def setStdinPasswd( self, _arg ):
     self.stdinPasswd = True
     return S_OK()
 
-  def setStrict( self, arg ):
+  def setStrict( self, _arg ):
     self.strict = True
     return S_OK()
 
-  def showVersion( self, arg ):
+  def showVersion( self, _arg ):
     gLogger.always( "Version: %s" % __RCSID__ )
     sys.exit( 0 )
     return S_OK()
 
-  def disableClockCheck( self, arg ):
+  def disableClockCheck( self, _arg ):
     self.checkClock = False
     return S_OK()
 
@@ -126,7 +130,8 @@ class CLIParams:
     Script.registerSwitch( "p", "pwstdin", "Get passwd from stdin", self.setStdinPasswd )
     Script.registerSwitch( "i", "version", "Print version", self.showVersion )
     Script.registerSwitch( "j", "noclockcheck", "Disable checking if time is ok", self.disableClockCheck )
-    Script.registerSwitch( "r", "rfc", "Create an RFC proxy", self.setRFC )
+    Script.registerSwitch( "r", "rfc", "Create an RFC proxy, true by default, deprecated flag", self.setRFC )
+    Script.registerSwitch( "L", "legacy", "Create a legacy non-RFC proxy", self.setNoRFC )
 
 from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
@@ -263,4 +268,3 @@ def generateProxy( params ):
     gLogger.warn( retVal[ 'Message' ] )
     return S_ERROR( "Couldn't generate proxy: %s" % retVal[ 'Message' ] )
   return S_OK( proxyLoc )
-

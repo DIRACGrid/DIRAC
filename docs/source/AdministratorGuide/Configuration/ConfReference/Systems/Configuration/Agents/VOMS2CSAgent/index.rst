@@ -1,12 +1,25 @@
 Systems / Configuration / <INSTANCE> / Agents /VOMS2CSAgent - Sub-subsection
 ================================================================================
 
-Queries VOMRS servers and updates the users and groups as defined in the Registry/VOMS/Mapping section.
+VOMS2CSAgent queries VOMS servers and updates the users and groups as defined in the Configuration Registry
+for the given VO and groups in this VO. It performs the following operations:
 
-The attributes of this agent are showed in the table below:
+* Extracts user info from the VOMS server using its REST interface
+* Finds user DN's not yet registered in the DIRAC Registry
+* For each new DN it constructs a DIRAC login name by a best guess or using the nickname VOMS attribute
+* Registers new users to the DIRAC Registry including group membership
+* Updates information for already registered users
+* Sends report for performed operation to the VO administrator
+
+The agent is performing its operations with credentials of the VO administrator as defined
+in the /Registry/VO/<VO_name> configuration section.
+
+The configuration options of this agent are shown in the table below:
 
 +-----------------------+--------------------------------------+----------------------------------------------+
 | **Name**              | **Description**                      | **Example**                                  |
++-----------------------+--------------------------------------+----------------------------------------------+
+| *VO*                  | List of VO names                     | VO = biomed, eiscat.se, compchem             |
 +-----------------------+--------------------------------------+----------------------------------------------+
 | *MailTo*              | E-mail of the person in charge of    | MailTo = hamar@cppm.in2p3.fr                 |
 |                       | update the Sites configuration       |                                              |
@@ -28,3 +41,6 @@ The attributes of this agent are showed in the table below:
 | *MakeHomeDirectory*   | Automatically create user home       |                                              |
 |                       | directory in the File Catalog        | MakeHomeDirectory = False                    |
 +-----------------------+--------------------------------------+----------------------------------------------+
+
+Remark: options *AutoAddUsers*, *AutoModifyUsers*, *AutoDeleteUsers* can be overridden by the corresponding
+options defined in the /Registry/VO/<VO_name> configuration section.

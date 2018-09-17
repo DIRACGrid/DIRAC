@@ -1,4 +1,3 @@
-# $HeadURL:  $
 ''' GGUSTicketsCommand
 
   The GGUSTickets_Command class is a command class to know about
@@ -6,51 +5,52 @@
 
 '''
 
+__RCSID__ = '$Id$'
+
 import urllib2
 
-from DIRAC                                                      import S_ERROR, S_OK
-from DIRAC.Core.LCG.GGUSTicketsClient                           import GGUSTicketsClient
-from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping                import getGOCSiteName
+from DIRAC import S_ERROR, S_OK
+from DIRAC.Core.LCG.GGUSTicketsClient import GGUSTicketsClient
+from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
-from DIRAC.ResourceStatusSystem.Command.Command                 import Command
-from DIRAC.ResourceStatusSystem.Utilities                       import CSHelpers
+from DIRAC.ResourceStatusSystem.Command.Command import Command
+from DIRAC.ResourceStatusSystem.Utilities import CSHelpers
 
-__RCSID__ = '$Id:  $'
 
-class GGUSTicketsCommand( Command ):
+class GGUSTicketsCommand(Command):
   '''
     GGUSTickets "master" Command
   '''
 
-  def __init__( self, args = None, clients = None ):
+  def __init__(self, args=None, clients=None):
 
-    super( GGUSTicketsCommand, self ).__init__( args, clients )
+    super(GGUSTicketsCommand, self).__init__(args, clients)
 
     if 'GGUSTicketsClient' in self.apis:
-      self.gClient = self.apis[ 'GGUSTicketsClient' ]
+      self.gClient = self.apis['GGUSTicketsClient']
     else:
       self.gClient = GGUSTicketsClient()
 
     if 'ResourceManagementClient' in self.apis:
-      self.rmClient = self.apis[ 'ResourceManagementClient' ]
+      self.rmClient = self.apis['ResourceManagementClient']
     else:
       self.rmClient = ResourceManagementClient()
 
-  def _storeCommand( self, result ):
+  def _storeCommand(self, result):
     '''
       Stores the results of doNew method on the database.
     '''
 
     for ggus in result:
-      resQuery = self.rmClient.addOrModifyGGUSTicketsCache( ggus[ 'GocSite' ],
-                                                            ggus[ 'Link' ],
-                                                            ggus[ 'OpenTickets' ],
-                                                            ggus[ 'Tickets' ] )
-      if not resQuery[ 'OK' ]:
+      resQuery = self.rmClient.addOrModifyGGUSTicketsCache(ggus['GocSite'],
+                                                           ggus['Link'],
+                                                           ggus['OpenTickets'],
+                                                           ggus['Tickets'])
+      if not resQuery['OK']:
         return resQuery
     return S_OK()
 
-  def _prepareCommand( self ):
+  def _prepareCommand(self):
     '''
       GGUSTicketsCommand requires one arguments:
       - elementName : <str>
@@ -60,12 +60,12 @@ class GGUSTicketsCommand( Command ):
     '''
 
     if 'name' not in self.args:
-      return S_ERROR( '"name" not found in self.args' )
-    name = self.args[ 'name' ]
+      return S_ERROR('"name" not found in self.args')
+    name = self.args['name']
 
-    return getGOCSiteName( name )
+    return getGOCSiteName(name)
 
-  def doNew( self, masterParams = None ):
+  def doNew(self, masterParams=None):
     '''
       Gets the parameters to run, either from the master method or from its
       own arguments.
@@ -77,71 +77,71 @@ class GGUSTicketsCommand( Command ):
     '''
 
     if masterParams is not None:
-      gocName  = masterParams
-      gocNames = [ gocName ]
+      gocName = masterParams
+      gocNames = [gocName]
 
     else:
       gocName = self._prepareCommand()
-      if not gocName[ 'OK' ]:
+      if not gocName['OK']:
         return gocName
-      gocName = gocName[ 'Value' ]
-      gocNames = [ gocName ]
+      gocName = gocName['Value']
+      gocNames = [gocName]
 
     try:
-      results = self.gClient.getTicketsList( gocName )
-    except urllib2.URLError, e:
-      return S_ERROR( '%s %s' % ( gocName, e ) )
+      results = self.gClient.getTicketsList(gocName)
+    except urllib2.URLError as e:
+      return S_ERROR('%s %s' % (gocName, e))
 
-    if not results[ 'OK' ]:
+    if not results['OK']:
       return results
-    results = results[ 'Value' ]
+    results = results['Value']
 
     uniformResult = []
 
     for gocSite, ggusResult in results.items():
 
-      if not gocSite in gocNames:
+      if gocSite not in gocNames:
         continue
 
       ggusDict = {}
-      ggusDict[ 'GocSite' ] = gocSite
-      ggusDict[ 'Link' ]    = ggusResult[ 'URL' ]
+      ggusDict['GocSite'] = gocSite
+      ggusDict['Link'] = ggusResult['URL']
 
-      del ggusResult[ 'URL' ]
+      del ggusResult['URL']
 
       openTickets = 0
       for priorityDict in ggusResult.values():
-        openTickets += len( priorityDict )
+        openTickets += len(priorityDict)
 
-      ggusDict[ 'Tickets' ]     = ggusResult
-      ggusDict[ 'OpenTickets' ] = openTickets
+      ggusDict['Tickets'] = ggusResult
+      ggusDict['OpenTickets'] = openTickets
 
-      uniformResult.append( ggusDict )
+      uniformResult.append(ggusDict)
 
-    storeRes = self._storeCommand( uniformResult )
-    if not storeRes[ 'OK' ]:
+    storeRes = self._storeCommand(uniformResult)
+    if not storeRes['OK']:
       return storeRes
 
-    return S_OK( uniformResult )
+    return S_OK(uniformResult)
 
-  def doCache( self ):
+  def doCache(self):
     '''
       Method that reads the cache table and tries to read from it. It will
       return a list of dictionaries if there are results.
     '''
 
     gocName = self._prepareCommand()
-    if not gocName[ 'OK' ]:
+    if not gocName['OK']:
       return gocName
-    gocName = gocName[ 'Value' ]
+    gocName = gocName['Value']
 
-    result = self.rmClient.selectGGUSTicketsCache( gocSite = gocName )
-    if result[ 'OK' ]:
-      result = S_OK( [ dict( zip( result[ 'Columns' ], res ) ) for res in result[ 'Value' ] ] )
+    result = self.rmClient.selectGGUSTicketsCache(gocSite=gocName)
+    if result['OK']:
+      result = S_OK([dict(zip(result['Columns'], res)) for res in result['Value']])
 
     return result
 
-  def doMaster( self ):
+  def doMaster(self):
     '''
       Master method, which looks little bit spaguetti code, sorry !
       - It gets all gocSites.
@@ -151,9 +151,9 @@ class GGUSTicketsCommand( Command ):
     '''
 
     gocSites = CSHelpers.getGOCSites()
-    if not gocSites[ 'OK' ]:
+    if not gocSites['OK']:
       return gocSites
-    gocSites = gocSites[ 'Value' ]
+    gocSites = gocSites['Value']
 
 #    resQuery = self.rmClient.selectGGUSTicketsCache( meta = { 'columns' : [ 'GocSite' ] } )
 #    if not resQuery[ 'OK' ]:
@@ -162,20 +162,20 @@ class GGUSTicketsCommand( Command ):
 #
 #    gocNamesToQuery = set( gocSites ).difference( set( resQuery ) )
 
-    self.log.info( 'Processing %s' % ', '.join( gocSites ) )
+    self.log.info('Processing %s' % ', '.join(gocSites))
 
     for gocNameToQuery in gocSites:
 
-#    if gocNameToQuery is None:
-#      self.metrics[ 'failed' ].append( 'None result' )
-#      continue
+      #    if gocNameToQuery is None:
+      #      self.metrics[ 'failed' ].append( 'None result' )
+      #      continue
 
-      result = self.doNew( gocNameToQuery )
+      result = self.doNew(gocNameToQuery)
 
-      if not result[ 'OK' ]:
-        self.metrics[ 'failed' ].append( result )
+      if not result['OK']:
+        self.metrics['failed'].append(result)
 
-    return S_OK( self.metrics )
+    return S_OK(self.metrics)
 
 ################################################################################
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
+# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

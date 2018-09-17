@@ -18,7 +18,6 @@
         -o LogLevel=LEVEL     NOTICE by default, levels available: INFO, DEBUG, VERBOSE..
 """
 
-from datetime import datetime, timedelta
 from DIRAC import version, gLogger, exit as DIRACExit, S_OK
 from DIRAC.Core.Base  import Script
 
@@ -27,23 +26,15 @@ __RCSID__  = '$Id$'
 subLogger  = None
 switchDict = {}
 
-DEFAULT_STATUS = 'Banned'
-#Add 24 hours to the datetime (it is going to be inserted in the "TokenExpiration" Column of "SiteStatus")
-Datetime       = datetime.utcnow() + timedelta(hours=24)
-
 def registerSwitches():
   '''
     Registers all switches that can be used while calling the script from the
     command line interface.
   '''
 
-  switches = (
-    ( 'init',     'Initialize the element to the status in the CS ( applicable for StorageElements )' ),
-    ( 'element=', 'Element family to be Synchronized ( Site, Resource or Node ) or `all`' ),
-             )
-
-  for switch in switches:
-    Script.registerSwitch( '', switch[ 0 ], switch[ 1 ] )
+  Script.registerSwitch( '', 'init', 'Initialize the element to the status in the CS ( applicable for StorageElements )' )
+  Script.registerSwitch( '', 'element=', 'Element family to be Synchronized ( Site, Resource or Node ) or `all`' )
+  Script.registerSwitch( '', 'defaultStatus=', 'Default element status if not given in the CS' )
 
 def registerUsageMessage():
   '''
@@ -76,6 +67,7 @@ def parseSwitches():
 
   # Default values
   switches.setdefault( 'element', None )
+  switches.setdefault( 'defaultStatus', None )
   if not switches[ 'element' ] in ( 'all', 'Site', 'Resource', 'Node', None ):
     subLogger.error( "Found %s as element switch" % switches[ 'element' ] )
     subLogger.error( "Please, check documentation below" )
@@ -92,6 +84,7 @@ subLogger  = gLogger.getSubLogger( __file__ )
 registerSwitches()
 registerUsageMessage()
 switchDict = parseSwitches()
+DEFAULT_STATUS = switchDict.get( 'defaultStatus', 'Banned' )
 
 #############################################################################
 # We can define the script body now
@@ -101,14 +94,22 @@ from DIRAC                                             import gConfig
 from DIRAC.ResourceStatusSystem.Utilities              import Synchronizer, CSHelpers, RssConfiguration
 from DIRAC.ResourceStatusSystem.Client                 import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.PolicySystem           import StateMachine
+from DIRAC.Core.Security.ProxyInfo                     import getProxyInfo
+
+result = getProxyInfo()
+if result['OK']:
+  tokenOwner = result['Value']['username']
+else:
+  gLogger.error( 'No proxy found' )
+  DIRACExit( 1 )
 
 def synchronize():
   '''
     Given the element switch, adds rows to the <element>Status tables with Status
     `Unknown` and Reason `Synchronized`.
   '''
-
-  synchronizer = Synchronizer.Synchronizer()
+  global DEFAULT_STATUS
+  synchronizer = Synchronizer.Synchronizer( defaultStatus = DEFAULT_STATUS )
 
   if switchDict[ 'element' ] in ( 'Site', 'all' ):
     subLogger.info( 'Synchronizing Sites' )
@@ -144,20 +145,9 @@ def initSites():
     DIRACExit( 1 )
 
   for site, elements in sites['Value'].iteritems():
-    table  = { 'table': 'SiteStatus' }
-    parameters = { 'status': elements[0],
-                   'reason': 'Synchronized',
-                   'name': site,
-                   'dateEffective': elements[1],
-                   'tokenExpiration': Datetime,
-                   'elementType': 'Site',
-                   'statusType': 'all',
-                   'lastCheckTime': None,
-                   'tokenOwner': elements[2],
-                   'meta': table }
-
-    result = rssClient.addIfNotThereStatusElement( "Site", "Status", **parameters )
-
+    result = rssClient.addOrModifyStatusElement( "Site", "Status",
+                                                 name = site, statusType = 'all', status = elements[0],
+                                                 elementType = site.split( '.' )[0], reason = 'dirac-rss-sync' )
     if not result[ 'OK' ]:
       subLogger.error( result[ 'Message' ] )
       DIRACExit( 1 )
@@ -213,7 +203,7 @@ def initSEs():
       if status in ( 'NotAllowed', 'InActive' ):
         status = 'Banned'
 
-      if not status in statuses:
+      if status not in statuses:
         subLogger.error( '%s not a valid status for %s - %s' % ( status, se, statusType ) )
         continue
 
@@ -237,6 +227,7 @@ def initSEs():
       result = rssClient.addOrModifyStatusElement( 'Resource', 'Status', name = se,
                                                    statusType = statusType, status = DEFAULT_STATUS,
                                                    elementType = 'StorageElement',
+
                                                    reason = reason )
       if not result[ 'OK' ]:
         subLogger.error( 'Error in backtracking for %s,%s,%s' % ( se, statusType, status ) )
@@ -258,15 +249,17 @@ def run():
 
   if 'init' in switchDict:
 
-    result = initSites()
-    if not result[ 'OK' ]:
-      subLogger.error( result[ 'Message' ] )
-      DIRACExit( 1 )
+    if switchDict.get( 'element' ) == "Site":
+      result = initSites()
+      if not result[ 'OK' ]:
+        subLogger.error( result[ 'Message' ] )
+        DIRACExit( 1 )
 
-    result = initSEs()
-    if not result[ 'OK' ]:
-      subLogger.error( result[ 'Message' ] )
-      DIRACExit( 1 )
+    if switchDict.get( 'element' ) == "Resource":
+      result = initSEs()
+      if not result[ 'OK' ]:
+        subLogger.error( result[ 'Message' ] )
+        DIRACExit( 1 )
 
 #...............................................................................
 

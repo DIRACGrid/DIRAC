@@ -6,9 +6,8 @@
     defined in the production workflow.
 """
 
-from DIRAC                              import gLogger
-
-from DIRAC.Workflow.Modules.ModuleBase  import ModuleBase, GracefulTermination
+from DIRAC import gLogger
+from DIRAC.Workflow.Modules.ModuleBase import ModuleBase, GracefulTermination
 
 class UploadOutputs( ModuleBase ):
 
@@ -21,8 +20,11 @@ class UploadOutputs( ModuleBase ):
     super( UploadOutputs, self ).__init__( self.log )
 
     self.outputDataStep = ''
-    self.outputData = []
+    self.outputData = None
     self.outputList = []
+    self.defaultOutputSE = []
+    self.outputSE = []
+    self.outputPath = ''
 
   #############################################################################
 
@@ -32,33 +34,33 @@ class UploadOutputs( ModuleBase ):
     super( UploadOutputs, self )._resolveInputVariables()
 
     # this comes from Job().setOutputData(). Typical for user jobs
-    if self.workflow_commons.has_key( 'OutputData' ):
+    if 'OutputData' in self.workflow_commons:
       self.outputData = self.workflow_commons['OutputData']
-      if not isinstance( self.outputData, list ):  # type( userOutputData ) == type( [] ):
+      if isinstance(self.outputData, basestring):
         self.outputData = [ i.strip() for i in self.outputData.split( ';' ) ]
     # if not present, we use the outputList, which is instead incrementally created based on the single step outputs
     # This is more typical for production jobs, that can have many steps linked one after the other
-    elif self.workflow_commons.has_key( 'outputList' ):
+    elif 'outputList' in self.workflow_commons:
       self.outputList = self.workflow_commons['outputList']
     else:
       raise GracefulTermination( 'Nothing to upload' )
 
     # in case you want to put a mask on the steps
     # TODO: add it to the DIRAC API
-    if self.workflow_commons.has_key( 'outputDataStep' ):
+    if 'outputDataStep' in self.workflow_commons:
       self.outputDataStep = self.workflow_commons['outputDataStep']
 
     # this comes from Job().setOutputData(). Typical for user jobs
-    if self.workflow_commons.has_key( 'OutputSE' ):
+    if 'OutputSE' in self.workflow_commons:
       specifiedSE = self.workflow_commons['OutputSE']
-      if not type( specifiedSE ) == type( [] ):
-        self.utputSE = [i.strip() for i in specifiedSE.split( ';' )]
+      if not isinstance(specifiedSE, list):
+        self.outputSE = [i.strip() for i in specifiedSE.split(';')]
     else:
-      self.log.verbose( 'No OutputSE specified, using default value: %s' % ( ', '.join( self.defaultOutputSE ) ) )
-      self.outputSE = []
+      self.log.verbose('No OutputSE specified, using default value: %s' % (
+          ', '.join(self.defaultOutputSE)))
 
     # this comes from Job().setOutputData(). Typical for user jobs
-    if self.workflow_commons.has_key( 'OutputPath' ):
+    if 'OutputPath' in self.workflow_commons:
       self.outputPath = self.workflow_commons['OutputPath']
 
 

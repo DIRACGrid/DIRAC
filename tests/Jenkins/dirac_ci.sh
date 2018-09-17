@@ -69,8 +69,8 @@ source $TESTCODE/DIRAC/tests/Jenkins/utilities.sh
 #
 # installSite:
 #
-#   This function will install DIRAC using the install_site.sh script
-#     following (more or less) instructions at diracgrid.org
+#   This function will install DIRAC using the dirac-install.py script
+#     following (more or less) instructions at dirac.rtfd.org
 #
 #...............................................................................
 
@@ -82,17 +82,27 @@ function installSite(){
   killRunsv
   findRelease
 
+  generateCA
   generateCertificates
 
   getCFGFile
 
   echo '==> Fixing install.cfg file'
-  if [ "$LcgVer" ]
+  # If DIRACOS is to be used, we remove the Lcg version from install.cfg
+  if [ -z $DIRACOSVER ];
   then
-    echo '==> Fixing LcgVer to ' $LcgVer
-    sed -i s/VAR_LcgVer/$LcgVer/g $SERVERINSTALLDIR/install.cfg
+     echo "==> Not using DIRACOS, setting LcgVer"
+     # DIRACOS is not used
+     if [ "$LcgVer" ]
+     then
+       echo '==> Fixing LcgVer to ' $LcgVer
+       sed -i s/VAR_LcgVer/$LcgVer/g $SERVERINSTALLDIR/install.cfg
+     else
+       sed -i s/VAR_LcgVer/$externalsVersion/g $SERVERINSTALLDIR/install.cfg
+     fi
   else
-    sed -i s/VAR_LcgVer/$externalsVersion/g $SERVERINSTALLDIR/install.cfg
+     echo "==> Using DIRACOS, removing LcgVer"
+     sed -i '/VAR_LcgVer/d' $SERVERINSTALLDIR/install.cfg
   fi
   sed -i s,VAR_TargetPath,$SERVERINSTALLDIR,g $SERVERINSTALLDIR/install.cfg
   fqdn=`hostname --fqdn`
@@ -104,12 +114,49 @@ function installSite(){
   sed -i s/VAR_DB_RootPwd/$DB_ROOTPWD/g $SERVERINSTALLDIR/install.cfg
   sed -i s/VAR_DB_Host/$DB_HOST/g $SERVERINSTALLDIR/install.cfg
   sed -i s/VAR_DB_Port/$DB_PORT/g $SERVERINSTALLDIR/install.cfg
+  sed -i s/VAR_NoSQLDB_Host/$NoSQLDB_HOST/g $SERVERINSTALLDIR/install.cfg
+  sed -i s/VAR_NoSQLDB_Port/$NoSQLDB_PORT/g $SERVERINSTALLDIR/install.cfg
 
   echo '==> Started installing'
-  $SERVERINSTALLDIR/install_site.sh $SERVERINSTALLDIR/install.cfg
+  # If DIRACOSVER is not defined, use LcgBundle
+  if [ -z $DIRACOSVER ];
+  then
+    echo "Installing with LcgBundle";
+    $SERVERINSTALLDIR/dirac-install.py -t fullserver $DEBUG $SERVERINSTALLDIR/install.cfg;
+  else
+    echo "Installing with DIRACOS $DIRACOSVER";
+    $SERVERINSTALLDIR/dirac-install.py -t fullserver $DEBUG --dirac-os --dirac-os-version=$DIRACOSVER $SERVERINSTALLDIR/install.cfg;
+  fi
+
+
+
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: dirac-install.py -t fullserver failed'
+    return
+  fi
+
+  echo '==> Done installing, now configuring'
+  source $SERVERINSTALLDIR/bashrc
+  dirac-configure $SERVERINSTALLDIR/install.cfg $DEBUG
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: dirac-configure failed'
+    return
+  fi
+
+  #replace the sources with custom ones if defined
+  diracReplace
+
+  dirac-setup-site $DEBUG
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: dirac-setup-site failed'
+    return
+  fi
+
   echo '==> Completed installation'
 
-  source $SERVERINSTALLDIR/bashrc
 }
 
 
@@ -126,29 +173,66 @@ function fullInstallDIRAC(){
 
   finalCleanup
 
+  # install ElasticSearch locally
+  installES
+
   #basic install, with only the CS (and ComponentMonitoring) running, together with DB InstalledComponentsDB, which is needed)
   installSite
-
-  #replace the sources with custom ones if defined
-  diracReplace
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: installSite failed'
+    return
+  fi
 
   #Dealing with security stuff
   # generateCertificates
   generateUserCredentials
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: generateUserCredentials failed'
+    return
+  fi
+
   diracCredentials
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: diracCredentials failed'
+    return
+  fi
 
   #just add a site
   diracAddSite
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: diracAddSite failed'
+    return
+  fi
 
   #Install the Framework
   findDatabases 'FrameworkSystem'
   dropDBs
   diracDBs
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: diracDBs failed'
+    return
+  fi
+
   findServices 'FrameworkSystem'
   diracServices
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: diracServices failed'
+    return
+  fi
 
   #create groups
   diracUserAndGroup
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: diracUserAndGroup failed'
+    return
+  fi
 
   echo '==> Restarting Framework ProxyManager'
   dirac-restart-component Framework ProxyManager $DEBUG
@@ -159,13 +243,22 @@ function fullInstallDIRAC(){
   #Now all the rest
 
   #DBs (not looking for FrameworkSystem ones, already installed)
-  #findDatabases 'exclude' 'FrameworkSystem'
   findDatabases 'exclude' 'FrameworkSystem'
   dropDBs
   diracDBs
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: diracDBs failed'
+    return
+  fi
 
   #upload proxies
   diracProxies
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: diracProxies failed'
+    return
+  fi
 
   #fix the DBs (for the FileCatalog)
   diracDFCDB
@@ -174,12 +267,17 @@ function fullInstallDIRAC(){
   #services (not looking for FrameworkSystem already installed)
   findServices 'exclude' 'FrameworkSystem'
   diracServices
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: diracServices failed'
+    return
+  fi
 
   #fix the services
   python $TESTCODE/DIRAC/tests/Jenkins/dirac-cfg-update-services.py $DEBUG
 
   #fix the SandboxStore and other stuff
-  python $TESTCODE/DIRAC/tests/Jenkins/dirac-cfg-update-server.py JenkinsSetup $DEBUG
+  python $TESTCODE/DIRAC/tests/Jenkins/dirac-cfg-update-server.py dirac-JenkinsSetup $DEBUG
 
   echo '==> Restarting WorkloadManagement SandboxStore'
   dirac-restart-component WorkloadManagement SandboxStore $DEBUG
@@ -202,9 +300,63 @@ function fullInstallDIRAC(){
   #agents
   findAgents
   diracAgents
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: diracAgents failed'
+    return
+  fi
 
 
 }
+
+
+#...............................................................................
+#
+# miniInstallDIRAC:
+#
+#   This function install the bare minimum of DIRAC
+#
+#...............................................................................
+
+function miniInstallDIRAC(){
+  echo '==> [miniInstallDIRAC]'
+
+  finalCleanup
+
+  #basic install, with only the CS (and ComponentMonitoring) running, together with DB InstalledComponentsDB, which is needed)
+  installSite
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: installSite failed'
+    return
+  fi
+
+  # Dealing with security stuff
+  # generateCertificates
+  generateUserCredentials
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: generateUserCredentials failed'
+    return
+  fi
+
+  diracCredentials
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: diracCredentials failed'
+    return
+  fi
+
+  #just add a site
+  diracAddSite
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: diracAddSite failed'
+    return
+  fi
+
+}
+
 
 
 function clean(){
@@ -220,6 +372,8 @@ function clean(){
   dropDBs
   mysql -u$DB_ROOTUSER -p$DB_ROOTPWD -h$DB_HOST -P$DB_PORT -e "DROP DATABASE IF EXISTS FileCatalogDB;"
   mysql -u$DB_ROOTUSER -p$DB_ROOTPWD -h$DB_HOST -P$DB_PORT -e "DROP DATABASE IF EXISTS InstalledComponentsDB;"
+
+  killES
 
   #clean all
   finalCleanup
@@ -255,7 +409,33 @@ function DIRACPilotInstall(){
     return
   fi
 
-  python dirac-pilot.py -S $DIRACSETUP -r $projectVersion -C $CSURL -N $JENKINS_CE -Q $JENKINS_QUEUE -n $JENKINS_SITE -M 1 --cert --certLocation=/home/dirac/certs/ -X GetPilotVersion,CheckWorkerNode,InstallDIRAC,ConfigureBasics,CheckCECapabilities,CheckWNCapabilities,ConfigureSite,ConfigureArchitecture,ConfigureCPURequirements $DEBUG
+  if [ $GATEWAY ]
+  then
+    GATEWAY="-W "$GATEWAY
+  fi
+
+  if [ $lcgVersion ]
+  then
+    lcgVersion="-g "$lcgVersion
+  fi
+
+  commandList="GetPilotVersion,CheckWorkerNode,InstallDIRAC,ConfigureBasics,CheckCECapabilities,CheckWNCapabilities,ConfigureSite,ConfigureArchitecture,ConfigureCPURequirements"
+  options="-S $DIRACSETUP -r $projectVersion $lcgVersion -C $CSURL -N $JENKINS_CE -Q $JENKINS_QUEUE -n $JENKINS_SITE -M 1 --cert --certLocation=/home/dirac/certs/ $GATEWAY"
+
+  if [ "$customCommands" ]
+  then
+    echo 'Using custom command list'
+    commandList=$customCommands
+  fi
+
+  if [ "$customOptions" ]
+  then
+    echo 'Using custom options'
+    options="$options -o $customOptions"
+  fi
+
+  echo $( eval echo Executing python dirac-pilot.py $options -X $commandList $DEBUG)
+  python dirac-pilot.py $options -X $commandList $DEBUG
   if [ $? -ne 0 ]
   then
     echo 'ERROR: pilot script failed'
@@ -275,6 +455,11 @@ function fullPilot(){
 
   #first simply install via the pilot
   DIRACPilotInstall
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: pilot installation failed'
+    return
+  fi
 
   #this should have been created, we source it so that we can continue
   source $PILOTINSTALLDIR/bashrc
@@ -308,5 +493,59 @@ function fullPilot(){
   then
     echo 'ERROR: cannot run dirac-configure'
     return
+  fi
+}
+
+
+####################################################################################
+# submitAndMatch
+#
+# This installs a DIRAC client, then use it to submit jobs to DIRAC.Jenkins.ch,
+# then we run a pilot that should hopefully match those jobs
+
+function submitAndMatch(){
+
+  # Here we submit the jobs (to DIRAC.Jenkins.ch)
+  installDIRAC # This installs the DIRAC client
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: failure installing the DIRAC client'
+    return
+  fi
+
+  submitJob # This submits the jobs
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: failure submitting the jobs'
+    return
+  fi
+
+  # Then we run the full pilot, including the JobAgent, which should match the jobs we just submitted
+  cd $PILOTINSTALLDIR
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: cannot change to ' $PILOTINSTALLDIR
+    return
+  fi
+  prepareForPilot
+  default
+
+  if [ ! -z "$PILOT_VERSION" ]
+  then
+    echo -e "==> Running python dirac-pilot.py -S $DIRACSETUP -r $PILOT_VERSION -g $lcgVersion -C $CSURL -N $JENKINS_CE -Q $JENKINS_QUEUE -n $JENKINS_SITE --cert --certLocation=/home/dirac/certs/ -M 3 $DEBUG"
+    python dirac-pilot.py -S $DIRACSETUP -r $PILOT_VERSION -g $lcgVersion -C $CSURL -N $JENKINS_CE -Q $JENKINS_QUEUE -n $JENKINS_SITE --cert --certLocation=/home/dirac/certs/ -M 3 $DEBUG
+    if [ $? -ne 0 ]
+    then
+      echo 'ERROR: dirac-pilot failure'
+      return
+    fi
+  else
+    echo -e "==> Running python dirac-pilot.py -S $DIRACSETUP -g $lcgVersion -C $CSURL -N $JENKINS_CE -Q $JENKINS_QUEUE -n $JENKINS_SITE --cert --certLocation=/home/dirac/certs/ -M 3 $DEBUG"
+    python dirac-pilot.py -S $DIRACSETUP -g $lcgVersion -C $CSURL -N $JENKINS_CE -Q $JENKINS_QUEUE -n $JENKINS_SITE --cert --certLocation=/home/dirac/certs/ -M 3 $DEBUG
+    if [ $? -ne 0 ]
+    then
+      echo 'ERROR: dirac-pilot failure'
+      return
+    fi
   fi
 }

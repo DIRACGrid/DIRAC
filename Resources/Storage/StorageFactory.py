@@ -14,16 +14,21 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC                                            import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
-from DIRAC.ConfigurationSystem.Client.Helpers.Path    import cfgPath
-from DIRAC.Core.Utilities.ObjectLoader                import ObjectLoader
-from DIRAC.Core.Security.ProxyInfo                    import getVOfromProxyGroup
+from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
+from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 
-class StorageFactory( object ):
+# Path to find Base SE
+SE_BASE_CONFIG_PATH = '/Resources/StorageElementBases'
+# Path to find concrete SE
+SE_CONFIG_PATH = '/Resources/StorageElements'
 
-  def __init__( self, useProxy = False, vo = None ):
-    self.rootConfigPath = '/Resources/StorageElements'
+
+class StorageFactory(object):
+
+  def __init__(self, useProxy=False, vo=None):
     self.proxy = False
     self.proxy = useProxy
     self.resourceStatus = ResourceStatus()
@@ -33,12 +38,12 @@ class StorageFactory( object ):
       if result['OK']:
         self.vo = result['Value']
       else:
-        RuntimeError( "Can not get the current VO context" )
+        RuntimeError("Can not get the current VO context")
     self.remotePlugins = []
     self.localPlugins = []
     self.name = ''
     self.options = {}
-    self.protocolDetails = []
+    self.protocols = {}
     self.storages = []
 
   ###########################################################################################
@@ -46,105 +51,116 @@ class StorageFactory( object ):
   # Below are public methods for obtaining storage objects
   #
 
-  def getStorageName( self, initialName ):
-    return self._getConfigStorageName( initialName, 'Alias' )
+  def getStorageName(self, initialName):
+    return self._getConfigStorageName(initialName, 'Alias')
 
-  def getStorage( self, parameterDict, hideExceptions = False ):
+  def getStorage(self, parameterDict, hideExceptions=False):
     """ This instantiates a single storage for the details provided and doesn't check the CS.
     """
     # The storage name must be supplied.
-    if parameterDict.has_key( 'StorageName' ):
+    if 'StorageName' in parameterDict:
       storageName = parameterDict['StorageName']
     else:
       errStr = "StorageFactory.getStorage: StorageName must be supplied"
-      gLogger.error( errStr )
-      return S_ERROR( errStr )
+      gLogger.error(errStr)
+      return S_ERROR(errStr)
 
     # PluginName must be supplied otherwise nothing with work.
-    if parameterDict.has_key( 'PluginName' ):
-      pluginName = parameterDict['PluginName']
-    # Temporary fix for backward compatibility
-    elif parameterDict.has_key( 'ProtocolName' ):
-      pluginName = parameterDict['ProtocolName']
-    else:
+    pluginName = parameterDict.get('PluginName')
+    if not pluginName:
       errStr = "StorageFactory.getStorage: PluginName must be supplied"
-      gLogger.error( errStr )
-      return S_ERROR( errStr )
+      gLogger.error(errStr)
+      return S_ERROR(errStr)
 
-    return self.__generateStorageObject( storageName, pluginName, parameterDict, hideExceptions = hideExceptions )
+    return self.__generateStorageObject(storageName, pluginName, parameterDict, hideExceptions=hideExceptions)
 
-  def getStorages( self, storageName, pluginList = None, hideExceptions = False ):
+  def getStorages(self, storageName, pluginList=None, hideExceptions=False):
     """ Get an instance of a Storage based on the DIRAC SE name based on the CS entries CS
 
-        'storageName' is the DIRAC SE name i.e. 'CERN-RAW'
-        'pluginList' is an optional list of protocols if a sub-set is desired i.e ['SRM2','SRM1']
+        :param storageName: is the DIRAC SE name i.e. 'CERN-RAW'
+        :param pluginList: is an optional list of protocols if a sub-set is desired i.e ['SRM2','SRM1']
+
+        :return: dictionary containing storage elements and information about them
     """
     self.remotePlugins = []
     self.localPlugins = []
     self.name = ''
     self.options = {}
-    self.protocolDetails = []
+    self.protocols = {}
     self.storages = []
     if pluginList is None:
       pluginList = []
-    elif isinstance( pluginList, basestring ):
+    elif isinstance(pluginList, basestring):
       pluginList = [pluginList]
     if not self.vo:
-      gLogger.warn( 'No VO information available' )
+      gLogger.warn('No VO information available')
 
     # Get the name of the storage provided
-    res = self._getConfigStorageName( storageName, 'Alias' )
+    res = self._getConfigStorageName(storageName, 'Alias')
     if not res['OK']:
       return res
     storageName = res['Value']
     self.name = storageName
 
     # In case the storage is made from a base SE, get this information
-    res = self._getConfigStorageName( storageName, 'BaseSE' )
+    res = self._getConfigStorageName(storageName, 'BaseSE')
     if not res['OK']:
       return res
     # If the storage is derived frmo another one, keep the information
+    # We initialize the seConfigPath to SE_BASE_CONFIG_PATH if there is a derivedSE, SE_CONFIG_PATH if not
     if res['Value'] != storageName:
       derivedStorageName = storageName
       storageName = res['Value']
+      seConfigPath = SE_BASE_CONFIG_PATH
     else:
       derivedStorageName = None
+      seConfigPath = SE_CONFIG_PATH
 
     # Get the options defined in the CS for this storage
-    res = self._getConfigStorageOptions( storageName, derivedStorageName = derivedStorageName )
+    res = self._getConfigStorageOptions(storageName, derivedStorageName=derivedStorageName,
+                                        seConfigPath=seConfigPath)
     if not res['OK']:
-      return res
+      # This is for the backward compatibility and to invite developer to move their BaseSE in the correct section
+      gLogger.warn("Deprecated configuration, you can ignore the error message above."
+                   " Please move the baseSE in the correct section: ", SE_BASE_CONFIG_PATH)
+      # We change the value of seConfigPath to avoid other errors due to the bad SE_BASE_CONFIG_PATH
+      seConfigPath = SE_CONFIG_PATH
+      res = self._getConfigStorageOptions(storageName, derivedStorageName=derivedStorageName,
+                                          seConfigPath=seConfigPath)
+      if not res['OK']:
+        return res
     self.options = res['Value']
 
     # Get the protocol specific details
-    res = self._getConfigStorageProtocols( storageName, derivedStorageName = derivedStorageName )
+    res = self._getConfigStorageProtocols(storageName, derivedStorageName=derivedStorageName,
+                                          seConfigPath=seConfigPath)
     if not res['OK']:
       return res
-    self.protocolDetails = res['Value']
+    self.protocols = res['Value']
 
     requestedLocalPlugins = []
     requestedRemotePlugins = []
     requestedProtocolDetails = []
     turlProtocols = []
     # Generate the protocol specific plug-ins
-    for protocolDict in self.protocolDetails:
-      pluginName = protocolDict.get( 'PluginName' )
+    for protocolSection, protocolDetails in self.protocols.iteritems():
+      pluginName = protocolDetails.get('PluginName', protocolSection)
       if pluginList and pluginName not in pluginList:
         continue
-      protocol = protocolDict['Protocol']
-      result = self.__generateStorageObject( storageName, pluginName, protocolDict, hideExceptions = hideExceptions )
+      protocol = protocolDetails['Protocol']
+      result = self.__generateStorageObject(storageName, pluginName, protocolDetails, hideExceptions=hideExceptions)
       if result['OK']:
-        self.storages.append( result['Value'] )
+        self.storages.append(result['Value'])
         if pluginName in self.localPlugins:
-          turlProtocols.append( protocol )
-          requestedLocalPlugins.append( pluginName )
+          turlProtocols.append(protocol)
+          requestedLocalPlugins.append(pluginName)
         if pluginName in self.remotePlugins:
-          requestedRemotePlugins.append( pluginName )
-        requestedProtocolDetails.append( protocolDict )
+          requestedRemotePlugins.append(pluginName)
+        requestedProtocolDetails.append(protocolDetails)
       else:
-        gLogger.info( result['Message'] )
+        gLogger.info(result['Message'])
 
-    if len( self.storages ) > 0:
+    if self.storages:
       resDict = {}
       resDict['StorageName'] = self.name
       resDict['StorageOptions'] = self.options
@@ -153,197 +169,254 @@ class StorageFactory( object ):
       resDict['RemotePlugins'] = requestedRemotePlugins
       resDict['ProtocolOptions'] = requestedProtocolDetails
       resDict['TurlProtocols'] = turlProtocols
-      return S_OK( resDict )
+      return S_OK(resDict)
     else:
       errStr = "StorageFactory.getStorages: Failed to instantiate any storage protocols."
-      gLogger.error( errStr, self.name )
-      return S_ERROR( errStr )
+      gLogger.error(errStr, self.name)
+      return S_ERROR(errStr)
   ###########################################################################################
   #
   # Below are internal methods for obtaining section/option/value configuration
   #
 
-  def _getConfigStorageName( self, storageName, referenceType ):
+  def _getConfigStorageName(self, storageName, referenceType, seConfigPath=SE_CONFIG_PATH):
     """
       This gets the name of the storage the configuration service.
       If the storage is a reference to another SE the resolution is performed.
 
-      'storageName' is the storage section to check in the CS
+      :param storageName: is the storage section to check in the CS
+      :param referenceType: corresponds to an option inside the storage section
+      :param seConfigPath: the path of the storage section.
+                              It can be /Resources/StorageElements or StorageElementBases
+
+      :return: the name of the storage
     """
-    configPath = '%s/%s' % ( self.rootConfigPath, storageName )
-    res = gConfig.getOptions( configPath )
+    configPath = '%s/%s' % (seConfigPath, storageName)
+    res = gConfig.getOptions(configPath)
     if not res['OK']:
       errStr = "StorageFactory._getConfigStorageName: Failed to get storage options"
-      gLogger.error( errStr, res['Message'] )
-      return S_ERROR( errStr )
+      gLogger.error(errStr, res['Message'])
+      return S_ERROR(errStr)
     if not res['Value']:
       errStr = "StorageFactory._getConfigStorageName: Supplied storage doesn't exist."
-      gLogger.error( errStr, configPath )
-      return S_ERROR( errStr )
+      gLogger.error(errStr, configPath)
+      return S_ERROR(errStr)
     if referenceType in res['Value']:
-      configPath = cfgPath( self.rootConfigPath, storageName, referenceType )
-      referenceName = gConfig.getValue( configPath )
-      result = self._getConfigStorageName( referenceName, 'Alias' )
+      configPath = cfgPath(seConfigPath, storageName, referenceType)
+      referenceName = gConfig.getValue(configPath)
+      result = self._getConfigStorageName(referenceName, 'Alias', seConfigPath=SE_BASE_CONFIG_PATH)
       if not result['OK']:
-        return result
+        # This is for the backward compatibility and to invite developer to move their BaseSE in the correct section
+        gLogger.warn("Deprecated configuration, you can ignore the error message above."
+                     " Please move the baseSE in the correct section: ", SE_BASE_CONFIG_PATH)
+        result = self._getConfigStorageName(referenceName, 'Alias', seConfigPath=SE_CONFIG_PATH)
+        if not result['OK']:
+          return result
       resolvedName = result['Value']
     else:
       resolvedName = storageName
-    return S_OK( resolvedName )
+    return S_OK(resolvedName)
 
-  def _getConfigStorageOptions( self, storageName, derivedStorageName = None ):
-    """ Get the options associated to the StorageElement as defined in the CS
+  def _getConfigStorageOptions(self, storageName, derivedStorageName=None, seConfigPath=SE_CONFIG_PATH):
+    """
+      Get the options associated to the StorageElement as defined in the CS
+
+      :param storageName: is the storage section to check in the CS
+      :param seConfigPath: the path of the storage section.
+                              It can be /Resources/StorageElements or StorageElementBases
+      :param derivedStorageName: is the storage section of a derived storage if it inherits from a base
+
+      :return: options associated to the StorageElement as defined in the CS
     """
     optionsDict = {}
+
     # We first get the options of the baseSE, and then overwrite with the derivedSE
-    for seName in ( storageName, derivedStorageName ) if derivedStorageName else ( storageName, ):
-      storageConfigPath = cfgPath( self.rootConfigPath, seName )
-      res = gConfig.getOptions( storageConfigPath )
+    for seName in (storageName, derivedStorageName) if derivedStorageName else (storageName, ):
+      storageConfigPath = cfgPath(seConfigPath, seName)
+      res = gConfig.getOptions(storageConfigPath)
       if not res['OK']:
         errStr = "StorageFactory._getStorageOptions: Failed to get storage options."
-        gLogger.error( errStr, "%s: %s" % ( seName, res['Message'] ) )
-        return S_ERROR( errStr )
-      for option in set( res['Value'] ) - set( ( 'ReadAccess', 'WriteAccess', 'CheckAccess', 'RemoveAccess' ) ):
-        optionConfigPath = cfgPath( storageConfigPath, option )
-        default = [] if option in [ 'VO' ] else ''
-        optionsDict[option] = gConfig.getValue( optionConfigPath, default )
+        gLogger.error(errStr, "%s: %s" % (seName, res['Message']))
+        return S_ERROR(errStr)
+      for option in set(res['Value']) - set(('ReadAccess', 'WriteAccess', 'CheckAccess', 'RemoveAccess')):
+        optionConfigPath = cfgPath(storageConfigPath, option)
+        default = [] if option in ['VO', 'AccessProtocols', 'WriteProtocols'] else ''
+        optionsDict[option] = gConfig.getValue(optionConfigPath, default)
+      # We update the seConfigPath in order to find option in derivedSE now
+      seConfigPath = SE_CONFIG_PATH
 
     # The status is that of the derived SE only
     seName = derivedStorageName if derivedStorageName else storageName
-    res = self.resourceStatus.getStorageElementStatus( seName )
-    if not res[ 'OK' ]:
+    res = self.resourceStatus.getElementStatus(seName, "StorageElement")
+    if not res['OK']:
       errStr = "StorageFactory._getStorageOptions: Failed to get storage status"
-      gLogger.error( errStr, "%s: %s" % ( seName, res['Message'] ) )
-      return S_ERROR( errStr )
+      gLogger.error(errStr, "%s: %s" % (seName, res['Message']))
+      return S_ERROR(errStr)
 
     # For safety, we did not add the ${statusType}Access keys
     # this requires modifications in the StorageElement class
 
     # We add the dictionary with the statusTypes and values
     # { 'statusType1' : 'status1', 'statusType2' : 'status2' ... }
-    optionsDict.update( res[ 'Value' ][ seName ] )
+    optionsDict.update(res['Value'][seName])
 
-    return S_OK( optionsDict )
+    return S_OK(optionsDict)
 
-  def __getProtocolsSections( self, storageName ):
-    storageConfigPath = cfgPath( self.rootConfigPath, storageName )
-    res = gConfig.getSections( storageConfigPath )
+  def __getProtocolsSections(self, storageName, seConfigPath=SE_CONFIG_PATH):
+    """
+      Get the protocols of a specific storage section
+
+      :param storageName: is the storage section to check in the CS
+      :param seConfigPath: the path of the storage section.
+                              It can be /Resources/StorageElements or StorageElementBases
+
+      :return: list of protocol section names
+    """
+    storageConfigPath = cfgPath(seConfigPath, storageName)
+    res = gConfig.getSections(storageConfigPath)
     if not res['OK']:
       errStr = "StorageFactory._getConfigStorageProtocols: Failed to get storage sections"
-      gLogger.error( errStr, "%s: %s" % ( storageName, res['Message'] ) )
-      return S_ERROR( errStr )
+      gLogger.error(errStr, "%s: %s" % (storageName, res['Message']))
+      return S_ERROR(errStr)
     protocolSections = res['Value']
-    return S_OK( protocolSections )
+    return S_OK(protocolSections)
 
-  def _getConfigStorageProtocols( self, storageName, derivedStorageName = None ):
-    """ Protocol specific information is present as sections in the Storage configuration
+  def _getConfigStorageProtocols(self, storageName, derivedStorageName=None, seConfigPath=SE_CONFIG_PATH):
     """
-    res = self.__getProtocolsSections( storageName )
+      Make a dictionary of protocols with the information associated. Merge with a base SE if it exists
+
+      :param storageName: is the storage section to check in the CS
+      :param seConfigPath: the path of the storage section.
+                              It can be /Resources/StorageElements or StorageElementBases
+      :param derivedStorageName: is the storage section of a derived storage if it inherits from a base
+
+      :return: dictionary of protocols like {protocolSection: {protocolOptions}}
+    """
+    # Get the sections
+    res = self.__getProtocolsSections(storageName, seConfigPath=seConfigPath)
     if not res['OK']:
       return res
     protocolSections = res['Value']
-    sortedProtocolSections = sorted( protocolSections )
-    protocolDetails = []
+    sortedProtocolSections = sorted(protocolSections)
+
+    # Get the details for each section in a dictionary
     for protocolSection in sortedProtocolSections:
-      res = self._getConfigStorageProtocolDetails( storageName, protocolSection )
+      res = self._getConfigStorageProtocolDetails(storageName, protocolSection, seConfigPath=seConfigPath)
       if not res['OK']:
         return res
-      protocolDetails.append( res['Value'] )
+      self.protocols[protocolSection] = res['Value']
     if derivedStorageName:
       # We may have parameters overwriting the baseSE protocols
-      res = self.__getProtocolsSections( derivedStorageName )
+      res = self.__getProtocolsSections(derivedStorageName, seConfigPath=SE_CONFIG_PATH)
       if not res['OK']:
         return res
       for protocolSection in res['Value']:
-        res = self._getConfigStorageProtocolDetails( derivedStorageName, protocolSection, checkAccess = False )
+        res = self._getConfigStorageProtocolDetails(
+            derivedStorageName,
+            protocolSection,
+            seConfigPath=SE_CONFIG_PATH,
+            checkAccess=False)
         if not res['OK']:
           return res
         detail = res['Value']
-        pluginName = detail.get( 'PluginName' )
-        if pluginName:
-          for protocolDetail in protocolDetails:
-            if protocolDetail.get( 'PluginName' ) == pluginName:
-              for key, val in detail.iteritems():
-                if val:
-                  protocolDetail[key] = val
+        # If we found the plugin section from which we inherit
+        inheritanceMatched = False
+        for baseStorageProtocolSection in protocolSections:
+          if protocolSection == baseStorageProtocolSection:
+            inheritanceMatched = True
+            for key, val in detail.iteritems():
+              if val:
+                self.protocols[protocolSection][key] = val
             break
-    return S_OK( protocolDetails )
+        # If not matched, consider it a new protocol
+        if not inheritanceMatched:
+          self.protocols[protocolSection] = detail
+    return S_OK(self.protocols)
 
-  def _getConfigStorageProtocolDetails( self, storageName, protocolSection, checkAccess = True ):
+  def _getConfigStorageProtocolDetails(self, storageName, protocolSection,
+                                       seConfigPath=SE_CONFIG_PATH, checkAccess=True):
     """
       Parse the contents of the protocol block
+
+    :param storageName: is the storage section to check in the CS
+    :param protocolSection: name of the protocol section to find information
+    :param seConfigPath: the path of the storage section.
+                              It can be /Resources/StorageElements or StorageElementBases
+    :param checkAccess: if not set, don't complain if "Access" is not in the section
+
+    :return: dictionary of the protocol options
     """
     # First obtain the options that are available
-    protocolConfigPath = cfgPath( self.rootConfigPath, storageName, protocolSection )
-    res = gConfig.getOptions( protocolConfigPath )
+    protocolConfigPath = cfgPath(seConfigPath, storageName, protocolSection)
+    res = gConfig.getOptions(protocolConfigPath)
     if not res['OK']:
       errStr = "StorageFactory.__getProtocolDetails: Failed to get protocol options."
-      gLogger.error( errStr, "%s: %s" % ( storageName, protocolSection ) )
-      return S_ERROR( errStr )
+      gLogger.error(errStr, "%s: %s" % (storageName, protocolSection))
+      return S_ERROR(errStr)
     options = res['Value']
 
     # We must have certain values internally even if not supplied in CS
-    protocolDict = {'Access':'', 'Host':'', 'Path':'', 'Port':'', 'Protocol':'', 'SpaceToken':'', 'WSUrl':''}
+    protocolDict = {'Access': '', 'Host': '', 'Path': '', 'Port': '', 'Protocol': '', 'SpaceToken': '', 'WSUrl': ''}
     for option in options:
-      configPath = cfgPath( protocolConfigPath, option )
-      optionValue = gConfig.getValue( configPath, '' )
+      configPath = cfgPath(protocolConfigPath, option)
+      optionValue = gConfig.getValue(configPath, '')
       protocolDict[option] = optionValue
-
-    # This is a temporary for backward compatibility: move ProtocolName to PluginName
-    protocolDict.setdefault( 'PluginName', protocolDict.pop( 'ProtocolName', None ) )
 
     # Evaluate the base path taking into account possible VO specific setting
     if self.vo:
-      result = gConfig.getOptionsDict( cfgPath( protocolConfigPath, 'VOPath' ) )
+      result = gConfig.getOptionsDict(cfgPath(protocolConfigPath, 'VOPath'))
       voPath = ''
       if result['OK']:
-        voPath = result['Value'].get( self.vo, '' )
+        voPath = result['Value'].get(self.vo, '')
       if voPath:
         protocolDict['Path'] = voPath
 
     # Now update the local and remote protocol lists.
-    # A warning will be given if the Access option is not set.
-    if checkAccess:
-      if protocolDict['Access'].lower() == 'remote':
-        self.remotePlugins.append( protocolDict['PluginName'] )
-      elif protocolDict['Access'].lower() == 'local':
-        self.localPlugins.append( protocolDict['PluginName'] )
-      else:
-        errStr = "StorageFactory.__getProtocolDetails: The 'Access' option for %s:%s is neither 'local' or 'remote'." % ( storageName, protocolSection )
-        gLogger.warn( errStr )
+    # A warning will be given if the Access option is not set and the plugin is not already in remote or local.
+    plugin = protocolDict.get('PluginName', protocolSection)
+    if protocolDict['Access'].lower() == 'remote':
+      self.remotePlugins.append(plugin)
+    elif protocolDict['Access'].lower() == 'local':
+      self.localPlugins.append(plugin)
+    # If it is a derived SE, this is normal, no warning
+    elif checkAccess and protocolSection not in self.protocols:
+      errStr = "StorageFactory.__getProtocolDetails: The 'Access' option \
+      for %s:%s is neither 'local' or 'remote'." % (storageName, protocolSection)
+      gLogger.warn(errStr)
 
-    # The PluginName option must be defined
-    if not protocolDict['PluginName']:
-      errStr = "StorageFactory.__getProtocolDetails: 'PluginName' option is not defined."
-      gLogger.error( errStr, "%s: %s" % ( storageName, protocolSection ) )
-      return S_ERROR( errStr )
-
-    return S_OK( protocolDict )
+    return S_OK(protocolDict)
 
   ###########################################################################################
   #
   # Below is the method for obtaining the object instantiated for a provided storage configuration
   #
 
-  def __generateStorageObject( self, storageName, pluginName, parameters, hideExceptions = False ):
+  def __generateStorageObject(self, storageName, pluginName, parameters, hideExceptions=False):
+    """
+      Generate a Storage Element from parameters collected
+
+      :param storageName: is the storage section to check in the CS
+      :param pluginName: name of the plugin used. Example: GFAL2_XROOT, GFAL2_SRM2...
+      :param parameters: dictionary of protocol details.
+    """
 
     storageType = pluginName
     if self.proxy:
       storageType = 'Proxy'
 
     objectLoader = ObjectLoader()
-    result = objectLoader.loadObject( 'Resources.Storage.%sStorage' % storageType, storageType + 'Storage',
-                                      hideExceptions = hideExceptions )
+    result = objectLoader.loadObject('Resources.Storage.%sStorage' % storageType, storageType + 'Storage',
+                                     hideExceptions=hideExceptions)
     if not result['OK']:
-      gLogger.error( 'Failed to load storage object: %s' % result['Message'] )
+      gLogger.error('Failed to load storage object: %s' % result['Message'])
       return result
 
     storageClass = result['Value']
     try:
-      storage = storageClass( storageName, parameters )
+      storage = storageClass(storageName, parameters)
     except Exception as x:
-      errStr = "StorageFactory._generateStorageObject: Failed to instantiate %s: %s" % ( storageName, x )
-      gLogger.exception( errStr )
-      return S_ERROR( errStr )
+      errStr = "StorageFactory._generateStorageObject: Failed to instantiate %s: %s" % (storageName, x)
+      gLogger.exception(errStr)
+      return S_ERROR(errStr)
 
-    return S_OK( storage )
+    return S_OK(storage)

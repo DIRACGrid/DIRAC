@@ -1,4 +1,5 @@
 """ :mod: DMSRequestOperationsBase
+
     ====================
 
     Just a collector of common functions
@@ -9,19 +10,19 @@ __RCSID__ = "$Id $"
 from DIRAC import S_OK, S_ERROR
 
 from DIRAC.RequestManagementSystem.Client.Operation             import Operation
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources         import getRegistrationProtocols 
 from DIRAC.RequestManagementSystem.Client.File                  import File
 from DIRAC.Resources.Storage.StorageElement                     import StorageElement
 from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
+from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 
 class DMSRequestOperationsBase( OperationHandlerBase ):
 
   def __init__( self, operation = None, csPath = None ):
     OperationHandlerBase.__init__( self, operation, csPath )
-    self.registrationProtocols = getRegistrationProtocols()
+    self.registrationProtocols = DMSHelpers().getRegistrationProtocols()
 
 
-  def checkSEsRSS( self, checkSEs = None, access = 'WriteAccess' ):
+  def checkSEsRSS( self, checkSEs = None, access = 'WriteAccess', failIfBanned = True ):
     """ check SEs.
         By default, we check the SEs for WriteAccess, but it is configurable
     """
@@ -66,11 +67,12 @@ class DMSRequestOperationsBase( OperationHandlerBase ):
 
       # If Some SE are always banned, we fail the request
       if alwaysBannedSEs:
-        self.log.info( "Some storages are always banned, failing the request", alwaysBannedSEs )
-        for opFile in self.operation:
-          opFile.Error = "%s always banned" % alwaysBannedSEs
-          opFile.Status = "Failed"
         self.operation.Error = "%s always banned" % alwaysBannedSEs
+        if failIfBanned:
+          self.log.info( "Some storages are always banned, failing the request", alwaysBannedSEs )
+          for opFile in self.operation:
+            opFile.Error = "%s always banned" % alwaysBannedSEs
+            opFile.Status = "Failed"
 
       # If it is temporary, we wait an hour
       else:
@@ -85,7 +87,7 @@ class DMSRequestOperationsBase( OperationHandlerBase ):
   def getRegisterOperation( self, opFile, targetSE, type = 'RegisterFile', catalog = None ):
     """ add RegisterReplica operation for file
 
-    :param File opFile: operation file
+    :param ~DIRAC.RequestManagementSystem.Client.File.File opFile: operation file
     :param str targetSE: target SE
     """
     # # add RegisterReplica operation

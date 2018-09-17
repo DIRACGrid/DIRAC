@@ -65,6 +65,35 @@ class API( object ):
 
   #############################################################################
 
+  def __getstate__(self):
+    """ Return a copied dictionary containing all the attributes of the API.
+        Called when pickling the object. Also used in copy.deepcopy.
+
+    :return: dictionary of attributes
+    """
+    from DIRAC.FrameworkSystem.private.standardLogging.Logging import Logging
+    from DIRAC.FrameworkSystem.private.logging.SubSystemLogger import SubSystemLogger
+    state = dict(self.__dict__)
+    # Replace the Logging instance by its name because it is not copyable
+    # because of the thread locks
+    if isinstance(state['log'], (Logging, SubSystemLogger)):
+      state['log'] = state['log'].getSubName()
+    return state
+
+  def __setstate__(self, state):
+    """ Parameter the Job with an attributes dictionary.
+        Called when un-pickling the object.
+
+    :params state: attributes dictionary
+    """
+    self.__dict__.update(state)
+    # Build the Logging instance again because it can not be in the dictionary 
+    # due to the thread locks
+    if isinstance(state['log'], basestring):
+      self.log = gLogger.getSubLogger(state['log'])
+
+  #############################################################################
+
   def _errorReport( self, error, message = None ):
     """Internal function to return errors and exit with an S_ERROR() """
     if not message:

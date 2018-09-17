@@ -6,10 +6,13 @@
 ########################################################################
 
 """ :mod: RemoveReplica
+
     ===================
 
     .. module: RemoveReplica
+
     :synopsis: removeReplica operation handler
+
     .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
     RemoveReplica operation handler
@@ -49,8 +52,8 @@ class RemoveReplica( DMSRequestOperationsBase ):
     # # gMonitor stuff
     gMonitor.registerActivity( "RemoveReplicaAtt", "Replica removals attempted",
                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "RemoveReplicaeOK", "Successful replica removals",
-                               "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
+    gMonitor.registerActivity("RemoveReplicaOK", "Successful replica removals",
+                              "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
     gMonitor.registerActivity( "RemoveReplicaFail", "Failed replica removals",
                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
 
@@ -112,11 +115,12 @@ class RemoveReplica( DMSRequestOperationsBase ):
         errors = list( set( error for error in removalStatus[opFile.LFN].itervalues() if error ) )
         if errors:
           opFile.Error = "\n".join( errors )
-          # This seems to be the only offending error
+          # This seems to be the only unrecoverable error
           if "Write access not permitted for this credential" in opFile.Error:
             failed += 1
-            continue
-        opFile.Status = "Done"
+            opFile.Status = "Failed"
+        else:
+          opFile.Status = "Done"
 
     if failed:
       self.operation.Error = "failed to remove %s replicas" % failed
@@ -129,6 +133,9 @@ class RemoveReplica( DMSRequestOperationsBase ):
     :param dict toRemoveDict: { lfn: opFile, ... }
     :param str targetSE: target SE name
     """
+    # Clear the error
+    for opFile in toRemoveDict.itervalues():
+      opFile.Error = ''
     removeReplicas = self.dm.removeReplica( targetSE, toRemoveDict.keys() )
     if not removeReplicas["OK"]:
       for opFile in toRemoveDict.itervalues():
@@ -138,7 +145,14 @@ class RemoveReplica( DMSRequestOperationsBase ):
     # # filter out failed
     for lfn, opFile in toRemoveDict.iteritems():
       if lfn in removeReplicas["Failed"]:
-        opFile.Error = str( removeReplicas["Failed"][lfn] )
+        errorReason = str(removeReplicas['Failed'][lfn])
+        # If the reason is that the file does not exist,
+        # we consider the removal successful
+        # TODO: use cmpError once the FC returns the proper error msg corresponding to ENOENT
+        if 'No such file' not in errorReason:
+          opFile.Error = errorReason
+          self.log.error("Failed removing lfn", "%s:%s"%(lfn, opFile.Error))
+
     return S_OK()
 
   def _removeWithOwnerProxy( self, opFile, targetSE ):

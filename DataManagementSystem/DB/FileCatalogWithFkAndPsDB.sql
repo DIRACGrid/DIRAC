@@ -9,11 +9,11 @@ use mysql;
 -- transaction-isolation = READ-COMMITTED
 
 
-GRANT SELECT,INSERT,LOCK TABLES,CREATE TEMPORARY TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON FileCatalogDB.* TO Dirac@'%';
+GRANT SELECT,INSERT,LOCK TABLES,CREATE TEMPORARY TABLES,UPDATE,DELETE,CREATE,DROP,ALTER,REFERENCES ON FileCatalogDB.* TO Dirac@'%';
 GRANT ALTER ROUTINE, CREATE ROUTINE, EXECUTE ON FileCatalogDB.* TO  Dirac@'%';
 GRANT TRIGGER ON FileCatalogDB.* TO  Dirac@'%';
 
-GRANT SELECT,INSERT,LOCK TABLES,CREATE TEMPORARY TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON FileCatalogDB.* TO Dirac@'localhost';
+GRANT SELECT,INSERT,LOCK TABLES,CREATE TEMPORARY TABLES,UPDATE,DELETE,CREATE,DROP,ALTER,REFERENCES ON FileCatalogDB.* TO Dirac@'localhost';
 GRANT ALTER ROUTINE, CREATE ROUTINE, EXECUTE ON FileCatalogDB.* TO  Dirac@'localhost';
 GRANT TRIGGER ON FileCatalogDB.* TO  Dirac@'localhost';
 
@@ -81,20 +81,20 @@ INSERT INTO FC_Users (UID, UserName) values (1, 'root');
 
 
 
--- 
+--
 -- create table FC_DirectoryList (
 --   DirID INT NOT NULL AUTO_INCREMENT,
 --   Name varchar(255)CHARACTER SET latin1 COLLATE latin1_bin NOT NULL,
--- 
+--
 --   PRIMARY KEY (DirID),
---   
+--
 --   UNIQUE (Name)
 -- ) ENGINE=INNODB;
--- 
--- 
--- 
--- 
--- 
+--
+--
+--
+--
+--
 -- CREATE TABLE FC_DirectoryInfo (
 --     DirID INTEGER NOT NULL,
 --     UID INTEGER NOT NULL DEFAULT 0,
@@ -103,7 +103,7 @@ INSERT INTO FC_Users (UID, UserName) values (1, 'root');
 --     ModificationDate DATETIME,
 --     Mode SMALLINT UNSIGNED NOT NULL DEFAULT 775,
 --     Status INTEGER NOT NULL DEFAULT 0,
---     
+--
 --     PRIMARY KEY (DirID),
 --     FOREIGN KEY (DirID) REFERENCES FC_DirectoryList(DirID) ON DELETE CASCADE,
 --     FOREIGN KEY (UID) REFERENCES FC_Users(UID),
@@ -172,7 +172,7 @@ CREATE TABLE FC_Files(
     FOREIGN KEY (GID) REFERENCES FC_Groups(GID),
 
     UNIQUE (DirID, FileName),
-    UNIQUE(GUID), 
+    UNIQUE(GUID),
 
     INDEX (UID,GID),
     INDEX (Status),
@@ -192,11 +192,11 @@ CREATE TABLE FC_Replicas (
     RepType ENUM ('Master','Replica') NOT NULL DEFAULT 'Master',
     CreationDate DATETIME,
     ModificationDate DATETIME,
-    PFN VARCHAR(1024),  
+    PFN VARCHAR(1024),
 
     PRIMARY KEY (RepID),
     FOREIGN KEY (FileID) REFERENCES FC_Files(FileID),
-    FOREIGN KEY (SEID) REFERENCES FC_StorageElements(SEID), 
+    FOREIGN KEY (SEID) REFERENCES FC_StorageElements(SEID),
     FOREIGN KEY (Status) REFERENCES FC_Statuses(StatusID),
 
     UNIQUE (FileID,SEID)
@@ -289,7 +289,7 @@ CREATE TABLE FC_MetaDatasets (
   MetaQuery VARCHAR(512),
   DirID INT NOT NULL DEFAULT 0,
   TotalSize BIGINT UNSIGNED NOT NULL,
-  NumberOfFiles INT NOT NULL, 
+  NumberOfFiles INT NOT NULL,
   UID SMALLINT UNSIGNED NOT NULL,
   GID TINYINT UNSIGNED NOT NULL,
   Status SMALLINT UNSIGNED NOT NULL,
@@ -368,7 +368,7 @@ END //
 DELIMITER ;
 
 
--- ps_remove_dir : removes a directory from its id. 
+-- ps_remove_dir : removes a directory from its id.
 --                Because of the cascade, it will also
 --                delete the DirectoryInfo and DirectoryUsage entries
 -- dir_id : directory id
@@ -409,7 +409,7 @@ BEGIN
   START TRANSACTION;
 
     INSERT INTO FC_DirectoryList (UID, GID, CreationDate, ModificationDate, Mode, Status, Name) values ( UID, GID, UTC_TIMESTAMP(), UTC_TIMESTAMP(), Mode, Status, child_name);
-    SELECT LAST_INSERT_ID() INTO dir_id; 
+    SELECT LAST_INSERT_ID() INTO dir_id;
 
     INSERT INTO FC_DirectoryClosure (ParentID, ChildID, Depth ) VALUES (dir_id, dir_id, 0);
 
@@ -496,14 +496,14 @@ BEGIN
 
     IF includeParent THEN
       SELECT SQL_NO_CACHE c1.ChildID, max(c1.Depth) AS lvl
-      FROM FC_DirectoryClosure c1 
+      FROM FC_DirectoryClosure c1
       JOIN FC_DirectoryClosure c2 ON c1.ChildID = c2.ChildID
       WHERE c2.ParentID = dir_id
-      GROUP BY c1.ChildID 
+      GROUP BY c1.ChildID
       ORDER BY NULL;
     ELSE
       SELECT SQL_NO_CACHE c1.ChildID, max(c1.Depth) AS lvl
-      FROM FC_DirectoryClosure c1 
+      FROM FC_DirectoryClosure c1
       JOIN FC_DirectoryClosure c2 ON c1.ChildID = c2.ChildID
       WHERE c2.ParentID = dir_id AND c2.Depth != 0
       GROUP BY c1.ChildID
@@ -570,12 +570,12 @@ DELIMITER ;
 
 
 DELIMITER //
-CREATE PROCEDURE update_directory_usage 
+CREATE PROCEDURE update_directory_usage
 (IN dir_id INT, IN se_id INT, IN size_diff BIGINT, IN file_diff INT)
 -- dir_id : the id of the dir in which we insert/remove
 -- se_id : the id of the SE in which the replica was inserted
 -- size_diff : the modification to bring to the size (positif if adding a replica, negatif otherwise)
--- file_diff : + or - 1 depending whether we add or remove a replica 
+-- file_diff : + or - 1 depending whether we add or remove a replica
 BEGIN
 
 
@@ -604,7 +604,7 @@ BEGIN
 
 --     -- Decrease the usage of old storage ...
 --     call update_directory_usage (old.FileID, old.SEID, -file_size, -1);
--- 
+--
 --     -- ... and increase it on the new one
 --     call update_directory_usage (old.FileID, new.SEID, file_size, 1);
     -- Decrease the usage of old storage ...
@@ -814,7 +814,7 @@ BEGIN
 
   PREPARE stmt FROM @sql;
   EXECUTE stmt;
-  DEALLOCATE PREPARE stmt; 
+  DEALLOCATE PREPARE stmt;
 
 END //
 DELIMITER ;
@@ -861,6 +861,8 @@ DELIMITER ;
 -- ps_delete_replicas_from_file_ids : delete all the replicas for given file ids and update the DirectoryUsage table
 -- file_ids : list of file ids
 -- output : 0, 'OK'
+
+DROP PROCEDURE IF EXISTS ps_delete_replicas_from_file_ids;
 DELIMITER //
 CREATE PROCEDURE ps_delete_replicas_from_file_ids
 (IN  file_ids TEXT)
@@ -868,48 +870,57 @@ BEGIN
 
   START TRANSACTION;
 
+ -- Store the name of the tmp table once for all
 
-  SET @sql = CONCAT('UPDATE FC_DirectoryUsage d,
-                      (SELECT d1.DirID, d1.SEID, SUM(f.Size) as t_size, count(*) as t_file
-                        FROM FC_DirectoryUsage d1, FC_Files f, FC_Replicas r
-                        WHERE r.FileID = f.FileID
-                        AND f.DirID = d1.DirID
-                        AND r.SEID = d1.SEID 
-                        AND f.FileID IN (', file_ids, ')
-                        GROUP BY d1.DirID, d1.SEID ) t
-                     SET d.SESize = d.SESize - t.t_size,
-                         d.SEFiles = d.SEFiles - t.t_file
-                     WHERE d.DirID = t.DirID
-                     AND d.SEID = t.SEID');
+  SET @tmpTableName = CONCAT('tmpDirUsageDelRep_',CONNECTION_ID());
 
--- This is buggy in case we remove two files that have a replica on the same SE
--- 
---   SET @sql = CONCAT('UPDATE FC_DirectoryUsage d, FC_Files f, FC_Replicas r
---                     SET d.SESize = d.SESize - f.Size, d.SEFiles = d.SEFiles - 1
---                     WHERE r.FileID = f.FileID 
---                     AND f.DirID = d.DirID 
---                     AND r.SEID = d.SEID
---                     AND f.FileID IN (', file_ids, ')');
+  -- We create the table if it does not exist
+  SET @sql = CONCAT('CREATE TEMPORARY TABLE IF NOT EXISTS ',@tmpTableName ,' (DirID INT, SEID INT, t_size BIGINT UNSIGNED, t_file INT, INDEX(DirID))');
+
+  PREPARE stmt FROM @sql;
+  EXECUTE stmt;
+  DEALLOCATE PREPARE stmt;
+
+  -- Insert into it the values we will have to substract later on
+  SET @sql = CONCAT('INSERT INTO ', @tmpTableName, '(DirID, SEID, t_size, t_file) SELECT d1.DirID, d1.SEID, SUM(f.Size) as t_size, count(*) as t_file
+  FROM FC_DirectoryUsage d1, FC_Files f, FC_Replicas r
+  WHERE r.FileID = f.FileID AND f.DirID = d1.DirID AND r.SEID = d1.SEID AND f.FileID IN (', file_ids, ') GROUP BY d1.DirID, d1.SEID');
+
+  PREPARE stmt FROM @sql;
+  EXECUTE stmt;
+  DEALLOCATE PREPARE stmt;
+
+  -- perform the update
+  SET @sql = CONCAT('UPDATE FC_DirectoryUsage d, ',@tmpTableName,' t set d.`SESize` = d.`SESize` - t.t_size, d.`SEFiles` = d.`SEFiles` - t.t_file where d.DirID = t.DirID and d.`SEID`= t.SEID');
+
   PREPARE stmt FROM @sql;
   EXECUTE stmt;
   DEALLOCATE PREPARE stmt;
 
 
 
-  SET @sql = CONCAT('DELETE FROM FC_Replicas  WHERE FileID IN (', file_ids, ')');
+  -- delete the entries from the temporary table
+  SET @sql = CONCAT('DELETE t FROM ',@tmpTableName, ' t JOIN FC_Files f ON t.DirID = f.DirID where f.FileID IN (', file_ids, ')');
+
+  PREPARE stmt FROM @sql;
+  EXECUTE stmt;
+  DEALLOCATE PREPARE stmt;
+
+
+  -- delete the entry from the FC_Replicas table
+  SET @sql = CONCAT('DELETE FROM FC_Replicas WHERE FileID IN (', file_ids, ')');
   PREPARE stmt FROM @sql;
   EXECUTE stmt;
   DEALLOCATE PREPARE stmt;
 
   COMMIT;
-
   SELECT 0, 'OK';
 
 END //
 DELIMITER ;
 
 
--- ps_delete_files : delete files from file ids and update the DirectoryUsage table. 
+-- ps_delete_files : delete files from file ids and update the DirectoryUsage table.
 --                   CAREFUL : the cascade delete also removes the replicas but will not update DirectoryUsage
 -- file_ids list of file ids
 -- output 0, 'OK'
@@ -919,35 +930,54 @@ DELIMITER //
 CREATE PROCEDURE ps_delete_files
 (IN  file_ids MEDIUMTEXT)
 BEGIN
-  START TRANSACTION;
-  
-  
-                      
-                        
-  SET @sql = CONCAT('UPDATE FC_DirectoryUsage d,
-                                  (SELECT d1.DirID, SUM(f.Size) as t_size, count(*) as t_file
-                                  FROM FC_DirectoryList d1, FC_Files f
-                                  where f.DirID = d1.DirID
-                                  AND f.FileID IN (', file_ids, ')
-                                  GROUP BY d1.DirID ) t
-                     SET d.SESize = d.SESize - t.t_size,
-                         d.SEFiles = d.SEFiles - t.t_file
-                     WHERE d.DirID = t.DirID
-                     AND d.SEID = 1' );
-                     
-  PREPARE stmt FROM @sql;
-  EXECUTE stmt;
-  DEALLOCATE PREPARE stmt;
+   START TRANSACTION;
 
-  SET @sql = CONCAT('DELETE FROM FC_Files  WHERE FileID IN (', file_ids, ')');
-  PREPARE stmt FROM @sql;
-  EXECUTE stmt;
-  DEALLOCATE PREPARE stmt;
+   -- Store the name of the tmp table once for all
 
-  COMMIT;
+   SET @tmpTableName = CONCAT('tmpDirUsageDelFile_',CONNECTION_ID());
 
-  SELECT 0, 'OK';
+   -- We create the table if it does not exist
+   SET @sql = CONCAT('CREATE TEMPORARY TABLE IF NOT EXISTS ',@tmpTableName ,' (DirID INT, t_size BIGINT UNSIGNED, t_file INT, INDEX(DirID))');
 
+   PREPARE stmt FROM @sql;
+   EXECUTE stmt;
+   DEALLOCATE PREPARE stmt;
+
+
+   -- Insert into it the values we will have to substract later on
+   SET @sql = CONCAT('INSERT INTO ', @tmpTableName, '(DirID,t_size, t_file) SELECT d1.DirID, SUM(f.Size) as t_size, count(*) as t_file
+   FROM FC_DirectoryList d1, FC_Files f
+   WHERE f.DirID = d1.DirID AND f.FileID IN (', file_ids, ') GROUP BY d1.DirID');
+
+   PREPARE stmt FROM @sql;
+   EXECUTE stmt;
+   DEALLOCATE PREPARE stmt;
+
+   -- perform the update
+   SET @sql = CONCAT('UPDATE FC_DirectoryUsage d, ',@tmpTableName,' t set d.`SESize` = d.`SESize` - t.t_size, d.`SEFiles` = d.`SEFiles` - t.t_file where d.DirID = t.DirID and d.`SEID`= 1');
+
+   PREPARE stmt FROM @sql;
+   EXECUTE stmt;
+   DEALLOCATE PREPARE stmt;
+
+
+
+   -- delete the entries from the temporary table
+   SET @sql = CONCAT('DELETE t FROM ',@tmpTableName, ' t JOIN FC_Files f ON t.DirID = f.DirID where f.FileID IN (', file_ids, ')');
+
+   PREPARE stmt FROM @sql;
+   EXECUTE stmt;
+   DEALLOCATE PREPARE stmt;
+
+
+   -- delete the entry from the File table
+   SET @sql = CONCAT('DELETE FROM FC_Files WHERE FileID IN (', file_ids, ')');
+   PREPARE stmt FROM @sql;
+   EXECUTE stmt;
+   DEALLOCATE PREPARE stmt;
+
+   COMMIT;
+   SELECT 0, 'OK';
 END //
 DELIMITER ;
 
@@ -1022,7 +1052,7 @@ BEGIN
 
   PREPARE stmt FROM @sql;
   EXECUTE stmt;
-  DEALLOCATE PREPARE stmt; 
+  DEALLOCATE PREPARE stmt;
 
 END //
 DELIMITER ;
@@ -1035,7 +1065,7 @@ DELIMITER ;
 
 DELIMITER //
 CREATE PROCEDURE ps_get_replica_id
-(IN  file_id INT, IN se_id INT, OUT rep_id INT) 
+(IN  file_id INT, IN se_id INT, OUT rep_id INT)
 BEGIN
 
   SELECT SQL_NO_CACHE RepID INTO rep_id FROM FC_Replicas WHERE FileID = file_id AND SEID = se_id;
@@ -1059,7 +1089,7 @@ DELIMITER ;
 DROP PROCEDURE IF EXISTS ps_delete_replica_from_file_and_se_ids;
 DELIMITER //
 CREATE PROCEDURE ps_delete_replica_from_file_and_se_ids
-(IN  file_id INT, IN se_id INT) 
+(IN  file_id INT, IN se_id INT)
 BEGIN
   DECLARE file_size BIGINT DEFAULT 0;
   DECLARE dir_id INT DEFAULT 0;
@@ -1067,7 +1097,7 @@ BEGIN
   -- We need to join on the replicas to make sure that there is a replica at the given se
   -- otherwise the DirectoryUsage will be updated for no good reason
   SELECT Size, DirID INTO file_size, dir_id from FC_Files f JOIN FC_Replicas r on f.FileID = r.FileID where f.FileID = file_id and r.SEID = se_id;
-  
+
   START TRANSACTION;
     UPDATE FC_DirectoryUsage SET SESize = SESize - file_size, SEFiles = SEFiles - 1 WHERE DirID = dir_id and SEID = se_id;
     DELETE FROM FC_Replicas WHERE FileID = file_id AND SEID = se_id;
@@ -1088,7 +1118,7 @@ DELIMITER ;
 
 DELIMITER //
 CREATE PROCEDURE ps_set_replica_status
-(IN  file_id INT, IN se_id INT, IN status_id INT) 
+(IN  file_id INT, IN se_id INT, IN status_id INT)
 BEGIN
 
   UPDATE FC_Replicas SET Status = status_id WHERE FileID = file_id AND SEID = se_id;
@@ -1141,7 +1171,7 @@ DELIMITER ;
 
 DELIMITER //
 CREATE PROCEDURE ps_set_file_uid
-(IN  file_id INT, IN in_uid INT) 
+(IN  file_id INT, IN in_uid INT)
 BEGIN
 
   UPDATE FC_Files SET UID = in_uid, ModificationDate = UTC_TIMESTAMP() where FileID = file_id;
@@ -1161,7 +1191,7 @@ DELIMITER ;
 
 DELIMITER //
 CREATE PROCEDURE ps_set_file_gid
-(IN  file_id INT, IN in_gid INT) 
+(IN  file_id INT, IN in_gid INT)
 BEGIN
 
 
@@ -1182,7 +1212,7 @@ DELIMITER ;
 
 DELIMITER //
 CREATE PROCEDURE ps_set_file_status
-(IN  file_id INT, IN status_id INT) 
+(IN  file_id INT, IN status_id INT)
 BEGIN
 
 
@@ -1316,7 +1346,7 @@ BEGIN
 END //
 DELIMITER ;
 
--- ps_set_dir_gid_recursive : change group of a directory recursively 
+-- ps_set_dir_gid_recursive : change group of a directory recursively
 --
 -- dir_name : name of the directory
 -- gid : new gid
@@ -1378,7 +1408,7 @@ END //
 DELIMITER ;
 
 
--- ps_set_dir_uid_recursive : change owner of a directory recursively 
+-- ps_set_dir_uid_recursive : change owner of a directory recursively
 --
 -- dir_name : name of the directory
 -- uid : new uid
@@ -1461,7 +1491,7 @@ END //
 DELIMITER ;
 
 
--- ps_set_dir_mode_recursive : change Mode of a directory recursively 
+-- ps_set_dir_mode_recursive : change Mode of a directory recursively
 --
 -- dir_name : name of the directory
 -- mode : new mode
@@ -1504,7 +1534,7 @@ END //
 DELIMITER ;
 
 -- ps_get_files_in_dir : list of files in a directory
--- 
+--
 -- dir_id : id of the directory
 --
 -- output : FileID, DirID, FileName
@@ -1536,7 +1566,7 @@ BEGIN
 
   SELECT SQL_NO_CACHE COALESCE(SUM(SESize), 0), COALESCE(SUM(SEFiles),0) FROM FC_DirectoryUsage u
   JOIN FC_DirectoryClosure c on c.ChildID = u.DirID
-  JOIN FC_StorageElements s ON s.SEID = u.SEID 
+  JOIN FC_StorageElements s ON s.SEID = u.SEID
   WHERE s.SEName = 'FakeSE'
   AND c.ParentID = dir_id;
 
@@ -1595,7 +1625,7 @@ BEGIN
   WHERE c.ParentID = dir_id
   AND SEName != 'FakeSE'
   AND (SESize != 0 OR SEFiles != 0)
-  GROUP BY u.SEID
+  GROUP BY se.SEName
   ORDER BY NULL;
 
 
@@ -1623,8 +1653,8 @@ BEGIN
   JOIN FC_StorageElements se ON se.SEID = r.SEID
   JOIN FC_DirectoryClosure dc ON dc.ChildID = f.DirID
   WHERE dc.ParentID = dir_id
-  GROUP BY se.SEID
-  ORDER BY NULL; 
+  GROUP BY se.SEName
+  ORDER BY NULL;
 
 END //
 DELIMITER ;
@@ -1672,7 +1702,7 @@ BEGIN
 
   INSERT INTO FC_DirectoryUsage (DirID, SEID, SESize, SEFiles)
     SELECT SQL_NO_CACHE DirID, 1 as SEID, sum(Size) as SESize, count(*) as SEFiles
-    FROM FC_Files 
+    FROM FC_Files
     WHERE DirID = dir_id
     GROUP BY DirID
     ORDER BY NULL;
@@ -1711,6 +1741,28 @@ BEGIN
 
 END //
 DELIMITER ;
+
+
+
+-- ps_get_se_dump : dump all the lfns in an SE, with checksum and size
+-- se_id : storageElement's ID
+-- output : LFN, Checksum, Size
+
+DELIMITER //
+CREATE PROCEDURE ps_get_se_dump
+(IN se_id INT)
+BEGIN
+
+  SELECT SQL_NO_CACHE CONCAT(d.Name, '/', f.FileName), f.Checksum, f.Size
+         FROM FC_Files f
+         JOIN FC_Replicas r on f.FileID = r.FileID
+         JOIN FC_DirectoryList d on d.DirID = f.DirID
+         WHERE SEID = se_id;
+
+END //
+DELIMITER ;
+
+
 
 -- Consistency checks
 
@@ -1762,7 +1814,7 @@ DELIMITER ;
 --                      DROP INDEX UID,
 --                      DROP INDEX Status,
 --                      DROP INDEX FileName;
--- 
+--
 -- ALTER TABLE FC_DirectoryList DROP FOREIGN KEY FC_DirectoryList_ibfk_1,
 --                              DROP FOREIGN KEY FC_DirectoryList_ibfk_2,
 --                              DROP FOREIGN KEY FC_DirectoryList_ibfk_3,
@@ -1770,7 +1822,7 @@ DELIMITER ;
 --                              DROP INDEX UID,
 --                              DROP INDEX GID,
 --                              DROP INDEX Status;
--- 
+--
 -- ALTER TABLE FC_Replicas DROP FOREIGN KEY FC_Replicas_ibfk_1,
 --                         DROP FOREIGN KEY FC_Replicas_ibfk_2,
 --                         DROP FOREIGN KEY FC_Replicas_ibfk_3,
@@ -1779,26 +1831,26 @@ DELIMITER ;
 --                         DROP INDEX Status;
 
 
--- recreate indexes  AFTER MIGRATION                
+-- recreate indexes  AFTER MIGRATION
 
 -- alter table FC_Files ADD FOREIGN KEY (DirID) REFERENCES FC_DirectoryList(DirID) ON DELETE CASCADE,
 --             ADD FOREIGN KEY (Status) REFERENCES FC_Statuses(StatusID),
 --             ADD FOREIGN KEY (UID) REFERENCES FC_Users(UID),
 --             ADD FOREIGN KEY (GID) REFERENCES FC_Groups(GID),
 --             ADD UNIQUE (DirID, FileName),
---             ADD UNIQUE(GUID), 
+--             ADD UNIQUE(GUID),
 --             ADD INDEX (UID,GID),
 --             ADD INDEX (Status),
 --             ADD INDEX (FileName);
--- 
---             
+--
+--
 -- ALTER TABLE FC_DirectoryList ADD FOREIGN KEY (UID) REFERENCES FC_Users(UID),
 --                              ADD FOREIGN KEY (GID) REFERENCES FC_Groups(GID),
 --                              ADD FOREIGN KEY (Status) REFERENCES FC_Statuses(StatusID),
---                              ADD UNIQUE (Name);         
---                              
+--                              ADD UNIQUE (Name);
+--
 -- ALTER TABLE FC_Replicas ADD FOREIGN KEY (FileID) REFERENCES FC_Files(FileID),
---                         ADD FOREIGN KEY (SEID) REFERENCES FC_StorageElements(SEID), 
+--                         ADD FOREIGN KEY (SEID) REFERENCES FC_StorageElements(SEID),
 --                         ADD FOREIGN KEY (Status) REFERENCES FC_Statuses(StatusID),
 --                         ADD UNIQUE (FileID,SEID);
 

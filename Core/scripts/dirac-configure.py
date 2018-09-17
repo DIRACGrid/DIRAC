@@ -312,15 +312,10 @@ if not vo:
     setVO( newVO )
 
 if not extensions:
-  newExtensions = DIRAC.gConfig.getValue( cfgInstallPath( 'ExtraModules' ) )
-  if newExtensions:
-    DIRAC.gLogger.warn( "ExtraModules option is deprecated, use Extensions option instead!" )
-  else:
-    newExtensions = DIRAC.gConfig.getValue( cfgInstallPath( 'Extensions' ), '' )
-  
+  newExtensions = DIRAC.gConfig.getValue( cfgInstallPath( 'Extensions' ), '' )
   if newExtensions:
     setExtensions( newExtensions )
-    
+
 DIRAC.gLogger.notice( 'Executing: %s ' % ( ' '.join( sys.argv ) ) )
 DIRAC.gLogger.notice( 'Checking DIRAC installation at "%s"' % DIRAC.rootPath )
 

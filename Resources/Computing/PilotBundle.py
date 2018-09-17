@@ -6,16 +6,27 @@
   Collection of Utilities to handle pilot jobs
 
 """
-__RCSID__ = "$Id: DIRACPilotDirector.py 28536 2010-09-23 06:08:40Z rgracian $"
+__RCSID__ = "$Id:$"
 
-import os, base64, bz2, tempfile
+import os
+import base64
+import bz2
+import tempfile
 
-def bundleProxy( executableFile, proxy ):
+
+def bundleProxy(executableFile, proxy):
   """ Create a self extracting archive bundling together an executable script and a proxy
   """
-  
-  compressedAndEncodedProxy = base64.encodestring( bz2.compress( proxy.dumpAllToString()['Value'] ) ).replace( '\n', '' )
-  compressedAndEncodedExecutable = base64.encodestring( bz2.compress( open( executableFile, "rb" ).read(), 9 ) ).replace( '\n', '' )
+
+  compressedAndEncodedProxy = base64.encodestring(bz2.compress(proxy.dumpAllToString()['Value'])).replace('\n', '')
+  compressedAndEncodedExecutable = base64.encodestring(
+      bz2.compress(
+          open(
+              executableFile,
+              "rb").read(),
+          9)).replace(
+      '\n',
+      '')
 
   bundle = """#!/usr/bin/env python
 # Wrapper script for executable and proxy
@@ -38,19 +49,19 @@ os.system( cmd )
 
 shutil.rmtree( workingDirectory )
 
-""" % { 'compressedAndEncodedProxy': compressedAndEncodedProxy, \
-        'compressedAndEncodedExecutable': compressedAndEncodedExecutable, \
-        'executable': os.path.basename( executableFile ) }
+""" % {'compressedAndEncodedProxy': compressedAndEncodedProxy,
+       'compressedAndEncodedExecutable': compressedAndEncodedExecutable,
+       'executable': os.path.basename(executableFile)}
 
   return bundle
 
-def writeScript( script, writeDir=None ):
+
+def writeScript(script, writeDir=None):
   """
     Write script into a temporary unique file under provided writeDir
   """
-  fd, name = tempfile.mkstemp( suffix = '_pilotWrapper.py', prefix = 'DIRAC_', dir=writeDir )
+  fd, name = tempfile.mkstemp(suffix='_pilotWrapper.py', prefix='DIRAC_', dir=writeDir)
   pilotWrapper = os.fdopen(fd, 'w')
-  pilotWrapper.write( script )
+  pilotWrapper.write(script)
   pilotWrapper.close()
   return name
-  

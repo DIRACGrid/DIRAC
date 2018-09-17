@@ -17,7 +17,8 @@ from math import sqrt     # Mathematical functions.
 def getMean( numbers ):
   """Returns the arithmetic mean of a numeric list.
   
-  :param list numbers: data sample
+  :param numbers: data sample
+  :type numbers: python:list
   """
   if len(numbers):
     numbers = sorted([float(x) for x in numbers])
@@ -26,7 +27,8 @@ def getMean( numbers ):
 def getMedian( numbers ):
   """ Return the median of the list of numbers.
 
-  :param list numbers: data sample
+  :param numbers: data sample
+  :type numbers: python:list
   """
   # Sort the list and take the middle element.
   nbNum = len(numbers)
@@ -43,7 +45,8 @@ def getVariance( numbers, posMean='Empty' ):
   Sample variance is determined by default; population variance can be
   determined by setting population attribute to True.
 
-  :param list numbers: data sample
+  :param numbers: data sample
+  :type numbers: python:list
   :param mixed posMean: mean of a sample or 'Empty' str   
   """
   if not len(numbers):
@@ -62,7 +65,8 @@ def getStandardDeviation(numbers, variance='Empty', mean='Empty'):
   """Determine the measure of the dispersion of the data set based on the
   variance.
 
-  :param list numbesr: data sample
+  :param numbers: data sample
+  :type numbers: python:list
   :param mixed variance: variance or str 'Empty'
   :param mixed mean: mean or str 'Empty'
   """

@@ -1,18 +1,18 @@
-# $HeadURL$
+""" a scheduler of threads, of course!
+"""
+
 __RCSID__ = "$Id$"
 
-from DIRAC import S_ERROR, S_OK, gLogger
-from DIRAC.Core.Utilities.ThreadSafe import Synchronizer
-try:
-  import hashlib as md5
-except ImportError:
-  import md5
+import hashlib
 import threading
 import time
 
+from DIRAC import S_ERROR, S_OK, gLogger
+from DIRAC.Core.Utilities.ThreadSafe import Synchronizer
+
 gSchedulerLock = Synchronizer()
 
-class ThreadScheduler:
+class ThreadScheduler(object):
 
   def __init__( self, enableReactorThread = True, minPeriod = 60 ):
     self.__thId = False
@@ -35,7 +35,7 @@ class ThreadScheduler:
       return S_ERROR( "%s is not callable" % str( taskFunc ) )
     period = max( period, self.__minPeriod )
     elapsedTime = min( elapsedTime, period - 1 )
-    md = md5.md5()
+    md = hashlib.md5()
     task = { 'period' : period,
              'func' : taskFunc,
              'args' : taskArgs,

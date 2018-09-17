@@ -57,12 +57,12 @@ seList = sorted( res[ 'Value' ] )
 
 resourceStatus = ResourceStatus()
 
-res = resourceStatus.getStorageElementStatus( seList )
+res = resourceStatus.getElementStatus( seList, "StorageElement" )
 if not res[ 'OK' ]:
   gLogger.error( "Failed to get StorageElement status for %s" % str( seList ) )
   DIRAC.exit( 1 )
-  
-fields = ['SE','ReadAccess','WriteAccess','RemoveAccess','CheckAccess']  
+
+fields = ['SE','ReadAccess','WriteAccess','RemoveAccess','CheckAccess']
 records = []
 
 if vo is None and not allVOsFlag:
@@ -83,14 +83,14 @@ for se, statusDict in res[ 'Value' ].items():
       continue
     if voList and not vo in voList:
       continue
-  
+
   record = [se]
   for status in fields[1:]:
     value = statusDict.get( status, 'Unknown' )
     record.append( value )
-  records.append( record )    
-    
-printTable( fields, records, numbering=False, sortField = 'SE' ) 
+  records.append( record )
+
+printTable( fields, records, numbering=False, sortField = 'SE' )
 
 DIRAC.exit( 0 )
 

@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL$
 # File :    InputDataByProtocol.py
 # Author :  Stuart Paterson
 ########################################################################
@@ -52,6 +51,9 @@ class InputDataByProtocol( object ):
     if dataToResolve:
       self.log.verbose( 'Data to resolve passed directly to InputDataByProtocol module' )
       self.inputData = dataToResolve  # e.g. list supplied by another module
+
+    if isinstance(self.inputData, basestring):
+      self.inputData = self.inputData.replace(' ', '').split(',')
 
     self.inputData = [x.replace( 'LFN:', '' ) for x in self.inputData]
     self.log.verbose( 'InputData requirement to be resolved by protocol is:\n%s' % '\n'.join( self.inputData ) )
@@ -106,7 +108,7 @@ class InputDataByProtocol( object ):
       return S_OK( {'Successful': {}, 'Failed': []} )
 
     for localSE in seList:
-      seStatus = StorageElement( localSE ).getStatus()['Value']
+      seStatus = StorageElement( localSE ).status()
       if seStatus['Read'] and seStatus['DiskSE']:
         diskSEs.add( localSE )
       elif seStatus['Read'] and seStatus['TapeSE']:
@@ -152,7 +154,10 @@ class InputDataByProtocol( object ):
     for _len, seName in sortedSEs:
       for lfn in seFilesDict[seName]:
         if 'Size' in replicas[lfn] and 'GUID' in replicas[lfn]:
-          trackLFNs.setdefault( lfn, [] ).append( { 'pfn': replicas.get( lfn, {} ).get( seName, lfn ), 'se': seName, 'size': replicas[lfn]['Size'], 'guid': replicas[lfn]['GUID'] } )
+          trackLFNs.setdefault( lfn, [] ).append( { 'pfn': replicas.get( lfn, {} ).get( seName, lfn ),
+                                                    'se': seName,
+                                                    'size': replicas[lfn]['Size'],
+                                                    'guid': replicas[lfn]['GUID'] } )
 
     self.log.debug( 'Files grouped by SEs are:\n%s' % str( seFilesDict ) )
     for seName, lfns in seFilesDict.iteritems():
@@ -178,16 +183,18 @@ class InputDataByProtocol( object ):
         # declared them failed and go on
         for lfn in failed:
           lfns.remove( lfn )
-          if type( failed ) == type( {} ):
+          if isinstance( failed, dict ):
             self.log.error( failed[ lfn ], lfn )
           failedReps.add( lfn )
       for lfn, metadata in result['Value']['Successful'].iteritems():
-        if metadata['Lost']:
+        if metadata.get( 'Lost', False ):
           error = "File has been Lost by the StorageElement %s" % seName
-        elif metadata['Unavailable']:
+        elif metadata.get( 'Unavailable', False ):
           error = "File is declared Unavailable by the StorageElement %s" % seName
-        elif seName in tapeSEs and not metadata['Cached']:
-          error = "File is no longer in StorageElement %s Cache" % seName
+        elif seName in tapeSEs and not metadata.get( 'Cached', metadata['Accessible'] ):
+          error = "File is not online in StorageElement %s Cache" % seName
+        elif not metadata.get( 'Accessible', True ):
+          error = "File is not accessible"
         else:
           error = ''
         if error:
@@ -261,6 +268,8 @@ class InputDataByProtocol( object ):
       return S_ERROR( 'JobID not defined' )
 
     self.log.verbose( 'setJobParameter(%s, %s, %s)' % ( self.jobID, name, value ) )
-    return RPCClient( 'WorkloadManagement/JobStateUpdate', timeout = 120 ).setJobParameter( int( self.jobID ), str( name ), str( value ) )
+    return RPCClient( 'WorkloadManagement/JobStateUpdate', timeout = 120 ).setJobParameter( int( self.jobID ),
+                                                                                            str( name ),
+                                                                                            str( value ) )
 
 # EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

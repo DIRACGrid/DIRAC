@@ -1,8 +1,10 @@
 # $HeadURL: $
 """ JobEfficiencyPolicy
 
-  Policy that calculates the efficiency following the formula:
+  Policy that calculates the efficiency following the formula::
+
     ( completed + done ) / ( completed + done + failed )
+
   if the denominator is smaller than 10, it does not take any decision.
 
 """

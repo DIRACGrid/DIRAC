@@ -1,16 +1,13 @@
-########################################################################
-# $HeadURL$
-########################################################################
 """ UserProfileDB class is a front-end to the User Profile Database
 """
 
 __RCSID__ = "$Id$"
 
-import types, os, sys
-try:
-  import hashlib as md5
-except ImportError:
-  import md5
+import types
+import os
+import sys
+import hashlib
+
 from DIRAC  import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.Core.Utilities import Time
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
@@ -78,7 +75,7 @@ class UserProfileDB( DB ):
     """
     self.__permValues = [ 'USER', 'GROUP', 'VO', 'ALL' ]
     self.__permAttrs = [ 'ReadAccess', 'PublishAccess' ]
-    DB.__init__( self, 'UserProfileDB', 'Framework/UserProfileDB', 10 )
+    DB.__init__(self, 'UserProfileDB', 'Framework/UserProfileDB')
     retVal = self.__initializeDB()
     if not retVal[ 'OK' ]:
       raise Exception( "Can't create tables: %s" % retVal[ 'Message' ] )
@@ -544,7 +541,7 @@ class UserProfileDB( DB ):
     Set a data entry for a profile
     """
     if not hashTag:
-      hashTag = md5.md5()
+      hashTag = hashlib.md5()
       hashTag.update( "%s;%s;%s" % ( Time.dateTime(), userIds, tagName ) )
       hashTag = hashTag.hexdigest()
 

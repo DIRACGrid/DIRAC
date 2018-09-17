@@ -55,13 +55,31 @@ class QualityMapGraph( PlotBase ):
       self.gdata = GraphData( data )
     elif isinstance( data, type ) and data.__class__ == GraphData:
       self.gdata = data
-    if self.prefs.has_key( 'span' ):
+    if 'span' in self.prefs:
       self.width = self.prefs['span']
     else:
       self.width = 1.0
       if self.gdata.key_type == "time":
         nKeys = self.gdata.getNumberOfKeys()
         self.width = ( max( self.gdata.all_keys ) - min( self.gdata.all_keys ) ) / nKeys
+
+    # redefine the look of the scale if requested
+    if isinstance(self.prefs['scale_data'], dict):
+      self.cbBoundaries = list()
+      self.cbValues = list()
+
+      # ColorbarBase needs sorted data
+      for boundary in sorted(self.prefs['scale_data'].keys()):
+        self.cbBoundaries.append(boundary)
+        self.cbValues.append(self.prefs['scale_data'][boundary])
+    else:
+      self.cbBoundaries = None # set default values
+      self.cbValues = None
+
+    if isinstance(self.prefs['scale_ticks'], list):
+      self.cbTicks = self.prefs['scale_ticks']
+    else:
+      self.cbTicks = None # set default value
 
     # Setup the colormapper to get the right colors
     self.cmap = None
@@ -153,7 +171,10 @@ class QualityMapGraph( PlotBase ):
     setp( self.ax.get_yticklines(), markersize = 0. )
 
     cax, kw = make_axes( self.ax, orientation = 'vertical', fraction = 0.07 )
-    cb = ColorbarBase( cax, cmap = self.cmap, norm = self.norms ) #pylint: disable=no-member
+    cb = ColorbarBase( cax, cmap = self.cmap, norm = self.norms,
+                       boundaries = self.cbBoundaries,
+                       values = self.cbValues,
+                       ticks = self.cbTicks )
     cb.draw_all()
     #cb = self.ax.colorbar( self.mapper, format="%d%%",
     #  orientation='horizontal', fraction=0.04, pad=0.1, aspect=40  )
