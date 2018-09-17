@@ -17,17 +17,17 @@ Within an agent, in the "initialize" method, we can specify::
 
 when used, the requested shifter's proxy will be added in the environment of the agent with simply::
 
-   os.environ[ 'X509_USER_PROXY' ] = proxyDict[ 'proxyFile' ]
+   os.environ['X509_USER_PROXY'] = proxyDict['proxyFile']
 
 and nothing else.
 
 Which means that, still, each and every agent or service or executors by default will use the server certificate because,
 e.g. in dirac-agent.py script we have::
 
-   localCfg.addDefaultEntry( "/DIRAC/Security/UseServerCertificate", "yes" )
+   localCfg.addDefaultEntry("/DIRAC/Security/UseServerCertificate", "yes")
 
 Which means that, if no further options are specified,
-all the calls to services OUTSIDE of DIRAC will use the proxy in os.environ[ 'X509_USER_PROXY' ],
+all the calls to services OUTSIDE of DIRAC will use the proxy in os.environ['X509_USER_PROXY'],
 while for all internal communications the server certificate will be used.
 
 If you want to use proxy certificate inside an agent for ALL service calls (inside AND outside of DIRAC) add::
