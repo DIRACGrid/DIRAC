@@ -225,7 +225,7 @@ def tabularPrint(table):
   records = []
   for row in table:
     record = []
-    for k, v in row.items():
+    for k, v in row.iteritems():
       if isinstance(v, datetime.datetime):
         record.append(Time.toString(v))
       elif v is None:
