@@ -18,29 +18,6 @@ class ProductionClient(Client):
 
     Client.__init__(self, **kwargs)
     self.setServer('Production/ProductionManager')
-    self.prodDescription = {}
-    self.stepCounter = 1
-
-  # Methods running on the client to prepare the production description
-
-  def addStep(self, prodStep):
-    """ Add a step to the production description, by updating the description dictionary
-
-        prodStep is a ProductionSystem.Client.ProductionStep object
-    """
-
-    stepName = 'Step' + str(self.stepCounter) + '_' + prodStep.Name
-    self.stepCounter += 1
-    prodStep.Name = stepName
-
-    res = prodStep.getAsDict()
-    if not res['OK']:
-      return res
-    prodStepDict = res['Value']
-    prodStepDict['name'] = stepName
-
-    self.prodDescription[prodStep.Name] = prodStepDict
-    return S_OK()
 
   # Method applying the Production System State machine
 
