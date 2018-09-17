@@ -1,0 +1,40 @@
+""" A generic client for creating productions
+"""
+
+__RCSID__ = "$Id$"
+
+from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC.Core.Base.API import API
+
+
+class Production(API):
+
+  """ Exposes the functionality available in the ProductionSystem/ProductionManagerHandler
+  """
+
+  def __init__(self, **kwargs):
+    """ Simple constructor
+    """
+    self.prodDescription = {}
+    self.stepCounter = 1
+
+  # Methods running on the client to prepare the production description
+
+  def addStep(self, prodStep):
+    """ Add a step to the production description, by updating the description dictionary
+
+        prodStep is a ProductionSystem.Client.ProductionStep object
+    """
+
+    stepName = 'Step' + str(self.stepCounter) + '_' + prodStep.Name
+    self.stepCounter += 1
+    prodStep.Name = stepName
+
+    res = prodStep.getAsDict()
+    if not res['OK']:
+      return res
+    prodStepDict = res['Value']
+    prodStepDict['name'] = stepName
+
+    self.prodDescription[prodStep.Name] = prodStepDict
+    return S_OK()
