@@ -16,7 +16,10 @@ class ProdTransManager(object):
     self.prodClient = ProductionClient()
 
   def deleteTransformations(self, transIDs):
-    # Delete given transformations from the TS
+    """ Delete given transformations from the TS
+
+    :param transIDs: a list of Transformation IDs
+    """
     gLogger.notice("Deleting transformations %s from the TS" % transIDs)
 
     for transID in transIDs:
@@ -27,7 +30,10 @@ class ProdTransManager(object):
     return S_OK()
 
   def deleteProductionTransformations(self, prodID):
-    # Delete production transformations from the TS
+    """ Delete the production transformations from the TS
+
+    :param prodID: the ProductionID
+    """
     res = self.prodClient.getProductionTransformations(prodID)
     if res['OK']:
       transList = res['Value']
@@ -43,7 +49,11 @@ class ProdTransManager(object):
     return S_OK()
 
   def addTransformationStep(self, prodStep, prodID):
-    # Add the transformation step to the TS
+    """ Add the transformation step to the TS
+
+    :param object prodStep: an object of type ~:mod:`~DIRAC.ProductionSystem.Client.ProductionStep`
+    :param prodID: the ProductionID
+    """
     gLogger.notice("Add step %s to production %s" % (prodStep['name'], prodID))
 
     description = prodStep['description']
@@ -77,7 +87,11 @@ class ProdTransManager(object):
     return S_OK(res['Value'])
 
   def executeActionOnTransformations(self, prodID, action):
-    """ Wrapper to start/stop/clean the transformations of a production"""
+    """ Wrapper to start/stop/clean the transformations of a production
+
+    :param prodID: the ProductionID
+    :param action: it can be start/stop/clean
+    """
 
     # Check if there is any action to do
     if not action:

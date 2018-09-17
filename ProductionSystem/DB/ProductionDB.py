@@ -69,6 +69,11 @@ class ProductionDB(DB):
 
   def addProduction(self, prodName, prodDescription, authorDN, authorGroup, connection=False):
     """ Create new production starting from its description
+
+    :param prodName: a string with the Production name
+    :param prodDescription: a json object with the Production description
+    :param uthorDN: string with the author DN
+    :param authorGroup: string with author group
     """
     connection = self.__getConnection(connection)
     res = self._getProductionID(prodName, connection=connection)
@@ -122,7 +127,9 @@ class ProductionDB(DB):
     return result
 
   def getProduction(self, prodName, connection=False):
-    """Get Production definition of Production identified by ProductionID
+    """ Get the Production definition
+
+    :param prodName: the Production name or ID
     """
     res = self._getConnectionProdID(connection, prodName)
     if not res['OK']:
@@ -138,7 +145,11 @@ class ProductionDB(DB):
     return S_OK(res['Value'][0])
 
   def getProductionParameters(self, prodName, parameters, connection=False):
-    """ Get the requested parameters for a supplied production """
+    """ Get the requested parameters for a supplied production
+
+    :param prodName: the Production name or ID
+    :param parameters: any valid production parameter in self.PRODPARAMS
+    """
     if isinstance(parameters, basestring):
       parameters = [parameters]
     res = self.getProduction(prodName, connection=connection)
@@ -162,6 +173,11 @@ class ProductionDB(DB):
   def getProductionTransformations(self, prodName, condDict=None, older=None, newer=None, timeStamp='CreationTime',
                                    orderAttribute=None, limit=None,
                                    offset=None, connection=False):
+    """ Gets the transformations of a given Production
+
+    :param prodName: the Production name or ID
+    :return : the list of transformations belonging to the production as dictionaries
+    """
 
     res = self._getConnectionProdID(connection, prodName)
     if not res['OK']:
@@ -191,12 +207,21 @@ class ProductionDB(DB):
     return result
 
   def __setProductionStatus(self, prodID, status, connection=False):
+    """ Set the Status to the Production
+
+    :param prodID: the ProductionID
+    :param status: the Production status
+    """
     req = "UPDATE Productions SET Status='%s', LastUpdate=UTC_TIMESTAMP() WHERE ProductionID=%d" % (status, prodID)
     return self._update(req, connection)
 
 # This is to be replaced by startProduction, stopProduction etc.
   def setProductionStatus(self, prodName, status, connection=False):
-    """ Set the status to the production specified by name or id and to all the associated transformations"""
+    """ Set the status to the production and to all the associated transformations
+
+    :param prodName: the Production name or ID
+    :param status: the Production status
+    """
     res = self._getConnectionProdID(connection, prodName)
     gLogger.error(res)
     if not res['OK']:
@@ -215,7 +240,11 @@ class ProductionDB(DB):
     return S_OK()
 
   def startProduction(self, prodName, connection=False):
-    """ Instantiate and start the transformations"""
+    """ Instantiate and start the transformations belonging to the production
+
+    :param prodName: the Production name or ID
+    """
+
     res = self._getConnectionProdID(connection, prodName)
     gLogger.error(res)
     if not res['OK']:
@@ -267,11 +296,18 @@ class ProductionDB(DB):
     return S_OK()
 
   def __deleteProduction(self, prodID, connection=False):
+    """ Delete a given production from the Productions table
+
+    :param prodID: ProductionID
+    """
     req = "DELETE FROM Productions WHERE ProductionID=%d;" % prodID
     return self._update(req, connection)
 
   def __deleteProductionTransformations(self, prodID, connection=False):
-    ''' Remove all transformations of the production from the TS and from the PS '''
+    """ Remove all the transformations of the specified production from the TS and from the PS
+
+    :param prodID: the ProductionID
+    """
 
     # Remove transformations from the TS
     gLogger.notice("Deleting transformations of Production %s from the TS" % prodID)
@@ -293,7 +329,10 @@ class ProductionDB(DB):
     return res
 
   def cleanProduction(self, prodName, author='', connection=False):
-    """ Clean the production specified by name or id """
+    """ Clean the production specified by name or id
+
+    :param prodName: the Production name or ID
+    """
     res = self._getConnectionProdID(connection, prodName)
     if not res['OK']:
       return res
@@ -306,7 +345,10 @@ class ProductionDB(DB):
     return S_OK(prodID)
 
   def deleteProduction(self, prodName, author='', connection=False):
-    """ Remove the production specified by name or id """
+    """ Remove the production specified by name or id
+
+    :param prodName: the Production name or ID
+    """
     res = self._getConnectionProdID(connection, prodName)
     gLogger.error(res)
     if not res['OK']:
@@ -324,6 +366,9 @@ class ProductionDB(DB):
 
   def addTransformationsToProduction(self, prodName, transIDs, parentTransIDs=None, connection=False):
     """ Check the production validity and the add the transformations to the production
+
+    :param prodName: the Production name or ID
+    :param transIDs: the list of transformations to be added to the production
     """
     gLogger.info(
         "ProductionDB.addTransformationsToProduction: \
@@ -393,6 +438,9 @@ class ProductionDB(DB):
 
   def __addTransformationLinks(self, prodID, transIDs, parentTransIDs=None, connection=False):
     """ Insert the transformations in the ProductionTransformationLinks table
+
+    :param prodName: the Production name or ID
+    :param transIDs: the list of transformations to be associated ProductionTransformationLinks table
     """
     req = "INSERT INTO ProductionTransformationLinks \
            (TransformationID,ParentTransformationID,ProductionID) VALUES"
@@ -419,6 +467,9 @@ class ProductionDB(DB):
 
   def __addTransformations(self, prodID, transIDs, connection=False):
     """ Insert the transformations in the ProductionTransformations table
+
+    :param prodName: the Production name or ID
+    :param transIDs: the list of transformations to be added to the production
     """
     req = "INSERT INTO ProductionTransformations \
            (ProductionID,TransformationID,LastUpdate,InsertedTime) VALUES"
@@ -433,7 +484,10 @@ class ProductionDB(DB):
     return S_OK()
 
   def _getProductionID(self, prodName, connection=False):
-    """ Method returns ID of production with the name=<name> """
+    """ Method returns ID of production specified by the prodName
+
+    :param prodName: the Production name
+    """
     try:
       prodName = long(prodName)
       cmd = "SELECT ProductionID from Productions WHERE ProductionID=%d;" % prodName
@@ -451,6 +505,10 @@ class ProductionDB(DB):
     return S_OK(res['Value'][0][0])
 
   def __getConnection(self, connection):
+    """ Get the MySQL connection
+
+    :param connection: bool
+    """
     if connection:
       return connection
     res = self._getConnection()
@@ -460,6 +518,11 @@ class ProductionDB(DB):
     return connection
 
   def _getConnectionProdID(self, connection, prodName):
+    """ Get the Production ID for a given production
+
+    :param connection: bool
+    :param prodName: the Production name
+    """
     connection = self.__getConnection(connection)
     res = self._getProductionID(prodName, connection=connection)
     if not res['OK']:

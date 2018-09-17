@@ -2,7 +2,7 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR
 
 
 class ProductionStep(object):
@@ -29,7 +29,10 @@ class ProductionStep(object):
     self.Body = 'body'
 
   def getAsDict(self):
+    """ It returns the Step description as a dictionary
 
+    :return : a dictionary with the Step description
+    """
     prodStepDict = {}
     prodStepDict['name'] = self.Name
     # check the ParentStep format

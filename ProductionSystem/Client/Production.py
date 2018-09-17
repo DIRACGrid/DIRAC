@@ -15,6 +15,8 @@ class Production(API):
   def __init__(self, **kwargs):
     """ Simple constructor
     """
+    super(Production, self).__init__()
+
     self.prodDescription = {}
     self.stepCounter = 1
 
@@ -23,7 +25,7 @@ class Production(API):
   def addStep(self, prodStep):
     """ Add a step to the production description, by updating the description dictionary
 
-        prodStep is a ProductionSystem.Client.ProductionStep object
+    :param object prodStep: an object of type ~:mod:`~DIRAC.ProductionSystem.Client.ProductionStep`
     """
 
     stepName = 'Step' + str(self.stepCounter) + '_' + prodStep.Name

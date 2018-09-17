@@ -15,6 +15,11 @@ class ProdValidator(object):
     self.transClient = TransformationClient()
 
   def checkTransStatus(self, transID):
+    """ Check if the status of the transformation is valid for the transformation to be added to a production.
+        New is the only valid status
+
+    :param transID: the TransformationID
+    """
     res = self.transClient.getTransformationParameters(transID, 'Status')
     if not res['OK']:
       return res
@@ -25,7 +30,11 @@ class ProdValidator(object):
     return S_OK()
 
   def checkTransDependency(self, transID, parentTransID):
-    """ check if the transformation and the parent transformation are linked """
+    """ Check if the transformation and the parent transformation are linked
+
+    :param transID: the TransformationID
+    :param parentTransID: the parent TransformationID
+    """
     res = self.transClient.getTransformationMetaQuery(transID, 'Input')
     if not res['OK']:
       return res
@@ -54,7 +63,10 @@ class ProdValidator(object):
     return S_OK()
 
   def checkMatchQuery(self, mq, mqParent):
-    """  Check the logical intersection between the two metaqueries
+    """ Check the logical intersection between the two metaqueries
+
+    :param mq: a dictionary of the MetaQuery to be checked against the mqParent
+    :param mqParent: a dictionary of the parent MetaQuery to be checked against the mq
     """
     # Get the metadata types defined in the catalog
     catalog = FileCatalog()
@@ -100,7 +112,10 @@ class ProdValidator(object):
     return S_OK(True)
 
   def checkformatQuery(self, MetaQueryDict):
-    '''Check format query and transform all dict values in dict for uniform treatment'''
+    """ Check the format query and transform all dict values in dict for uniform treatment
+
+    :param MetaQueryDict: a dictionary of the MetaQuery
+    """
     for meta, value in MetaQueryDict.items():
       values = []
       if isinstance(value, dict):
@@ -114,12 +129,16 @@ class ProdValidator(object):
 
     return S_OK(MetaQueryDict)
 
-  def compareValues(self, value, parentvalue):
-    '''Very simple comparison. To be improved'''
+  def compareValues(self, value, parentValue):
+    """ Very simple comparison. To be improved
+
+    :param value: a meta data value to be compared with the parentValue
+    :param parentValue: a meta data value to be compared with value
+    """
     return set(
         value.values()[0]).issubset(
         set(
-            parentvalue.values()[0])) or set(
-        parentvalue.values()[0]).issubset(
+            parentValue.values()[0])) or set(
+        parentValue.values()[0]).issubset(
         set(
             value.values()[0]))
