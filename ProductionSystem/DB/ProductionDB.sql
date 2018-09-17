@@ -3,14 +3,14 @@
 
 -- When installing via dirac tools, the following is not needed(still here for reference)
 --
--- DROP DATABASE IF EXISTS ProductionDB
--- CREATE DATABASE ProductionDB
+-- DROP DATABASE IF EXISTS ProductionDB;
+-- CREATE DATABASE ProductionDB;
 -- ------------------------------------------------------------------------------
 -- Database owner definition
--- USE mysql
+-- USE mysql;
 -- Must set passwords for database user by replacing "must_be_set".
--- GRANT SELECT, INSERT, LOCK TABLES, UPDATE, DELETE, CREATE, DROP, ALTER, REFERENCES ON ProductionDB.* TO Dirac@'%' IDENTIFIED BY 'must_be_set'
--- FLUSH PRIVILEGES
+-- GRANT SELECT, INSERT, LOCK TABLES, UPDATE, DELETE, CREATE, DROP, ALTER, REFERENCES ON ProductionDB.* TO Dirac@'%' IDENTIFIED BY 'must_be_set';
+-- FLUSH PRIVILEGES;
 
 -- -----------------------------------------------------------------------------
 USE ProductionDB;
