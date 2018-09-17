@@ -11,16 +11,16 @@ Installations
 {
   DIRAC
   {
-    DefaultsLocation = http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/defaultsDIRAC.cfg
-    LocalInstallation
-    {
+     DefaultsLocation = http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/defaultsDIRAC.cfg
+     LocalInstallation
+     {
       PythonVersion = 27
-    }
-  # in case you have a DIRAC extension
-  LHCb
-  {
+     }
+     # in case you have a DIRAC extension
+     LHCb
+    {
     DefaultsLocation = http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/defaults/lhcb.cfg
-  }
+    }
   }
 }
 Projects
@@ -44,39 +44,36 @@ In case you want to overwrite the global configuration file, you have to use --d
 
 After providing the default configuration files, DIRAC or your extension can be installed from:
 
-1.local file system
-2.dedicated web server:
-3.code repository
-
 1. in a directory you have to be present globalDefaults.cfg, dirac.cfg and all binaries. For example:
 zmathe@dzmathe zmathe]$ ls tars/
 dirac.cfg  diracos-0.1.md5  diracos-0.1.tar.gz  DIRAC-v6r20-pre16.md5  DIRAC-v6r20-pre16.tar.gz  globalDefaults.cfg \
 release-DIRAC-v6r20-pre16.cfg  release-DIRAC-v6r20-pre16.md5
 zmathe@dzmathe zmathe]$
 
-for example: dirac-install -r v6r20-pre16 -g v14r0  -O 0.1 -u /home/zmathe/tars
+for example: dirac-install -r v6r20-pre16 --dirac-os --dirac-os-version=0.0.1 -u /home/zmathe/tars
 
-this command will use  /home/zmathe/tars for the code repository.
-It will install DIRAC v6r20-pre16, LCG v14r0 and DIRAC OS 0.1 version
+this command will use  /home/zmathe/tars directory for the source code.
+It will install DIRAC v6r20-pre16, DIRAC OS 0.1 version
 
 2. You can use your dedicated web server or the official DIRAC web server
 
-for example: dirac-install -r v6r20-pre16 -g v14r0
-It will install DIRAC v6r20-pre16, LCG v14r0
+for example: dirac-install -r v6r20-pre16 --dirac-os --dirac-os-version=0.0.1
+It will install DIRAC v6r20-pre16
 
-3. You have possibility to install a non release DIRAC,
+3. You have possibility to install a not-yet-released DIRAC,
 module or extension using -m or --tag options. The non release version can be specified:
 
 for example:
 
 dirac-install -l DIRAC -r v6r20-pre16 -g v14r0 -t client -m DIRAC --tag=integration
-it will install DIRAC v6r20-pre16 but using DIRAC integration.
-The external version and other packages will be the same what is specified in v6r20-pre16
+It will install DIRAC v6r20-pre16, where the DIRAC package based on integration, other other 
+packages will be the same what is specified in release.cfg file in v6r20-pre16 tarball.
 
 dirac-install -l DIRAC -r v6r20-pre16 -g v14r0 -t client  -m DIRAC --tag=v6r20-pre22
-It install a specific tag
+It installs a specific tag
 
-Note: If the source is not provided, DIRAC repository is used.
+Note: If the source is not provided, DIRAC repository is used, which is defined in the global 
+configuration file.
 We can provide the repository url:code repository*Project*branch. for example:
 
 dirac-install -l DIRAC -r v6r20-pre16 -g v14r0 -t client  -m \
@@ -184,16 +181,16 @@ class ReleaseConfig(object):
       :param self: self reference
       :param str cfgData: the content of the configuration file
       """
-      self.__data = {}
-      self.__children = {}
+      self.data = {}
+      self.children = {}
       if cfgData:
         self.parse(cfgData)
 
     def parse(self, cfgData):
       """
-      It parse the configuration file and propagate the __data and __children
+      It parses the configuration file and propagate the data and children
       with the content of the cfg file
-      :param str cfgData: configuration data
+      :param str cfgData: configuration data, which is the content of the configuration file
       """
       try:
         self.__parse(cfgData)
@@ -216,17 +213,17 @@ class ReleaseConfig(object):
       else:
         pathList = [sec.strip() for sec in path.split("/") if sec.strip()]
       for childName in pathList:
-        if childName not in child.__children:
+        if childName not in child.children:
           return False
-        child = child.__children[childName]
+        child = child.children[childName]
       return child
 
     def __parse(self, cfgData, cIndex=0):
       """
-      It parse a given DIRAC cfg file and store the result in self.__data variable.
+      It parse a given DIRAC cfg file and store the result in self.data variable.
 
-      :param str cfgData:
-      :param int cIndex:
+      :param str cfgData: the content of the configuration file
+      :param int cIndex: it is the new line counter
       """
 
       childName = ""
@@ -248,15 +245,15 @@ class ReleaseConfig(object):
         if line.find("+=") > -1:
           fields = line.split("+=")
           opName = fields[0].strip()
-          if opName in self.__data:
-            self.__data[opName] += ', %s' % '+='.join(fields[1:]).strip()
+          if opName in self.data:
+            self.data[opName] += ', %s' % '+='.join(fields[1:]).strip()
           else:
-            self.__data[opName] = '+='.join(fields[1:]).strip()
+            self.data[opName] = '+='.join(fields[1:]).strip()
           continue
 
         if line.find("=") > -1:
           fields = line.split("=")
-          self.__data[fields[0].strip()] = "=".join(fields[1:]).strip()
+          self.data[fields[0].strip()] = "=".join(fields[1:]).strip()
           continue
 
         opFound = line.find("{")
@@ -265,8 +262,8 @@ class ReleaseConfig(object):
           if not childName:
             raise Exception("No section name defined for opening in line %s" % numLine)
           childName = childName.strip()
-          self.__children[childName] = ReleaseConfig.CFG()
-          eoc = self.__children[childName].__parse(cfgData, cIndex)
+          self.children[childName] = ReleaseConfig.CFG()
+          eoc = self.children[childName].__parse(cfgData, cIndex)
           cIndex = eoc
           childName = ""
           continue
@@ -290,15 +287,15 @@ class ReleaseConfig(object):
         pathList = [sec.strip() for sec in name.split("/") if sec.strip()]
       parent = self
       for lev in pathList[:-1]:
-        if lev not in parent.__children:
-          parent.__children[lev] = ReleaseConfig.CFG()
-        parent = parent.__children[lev]
+        if lev not in parent.children:
+          parent.children[lev] = ReleaseConfig.CFG()
+        parent = parent.children[lev]
       secName = pathList[-1]
-      if secName not in parent.__children:
+      if secName not in parent.children:
         if not cfg:
           cfg = ReleaseConfig.CFG()
-        parent.__children[secName] = cfg
-      return parent.__children[secName]
+        parent.children[secName] = cfg
+      return parent.children[secName]
 
     def isSection(self, obList):
       """
@@ -311,7 +308,7 @@ class ReleaseConfig(object):
       """
       Returns all sections
       """
-      return [k for k in self.__children]
+      return [k for k in self.children]
 
     def isOption(self, obList):
       return self.__exists([ob.strip() for ob in obList.split("/") if ob.strip()]) == 1
@@ -320,7 +317,7 @@ class ReleaseConfig(object):
       """
       Returns the options
       """
-      return [k for k in self.__data]
+      return [k for k in self.data]
 
     def __exists(self, obList):
       """
@@ -330,14 +327,14 @@ class ReleaseConfig(object):
       for example: [Releases,v6r20-pre16]
       """
       if len(obList) == 1:
-        if obList[0] in self.__children:
+        if obList[0] in self.children:
           return 2
-        elif obList[0] in self.__data:
+        elif obList[0] in self.data:
           return 1
         else:
           return 0
-      if obList[0] in self.__children:
-        return self.__children[obList[0]].__exists(obList[1:])
+      if obList[0] in self.children:
+        return self.children[obList[0]].__exists(obList[1:])
       return 0
 
     def get(self, opName, defaultValue=None):
@@ -370,11 +367,11 @@ class ReleaseConfig(object):
       :param list obList: the list of cfg element names.
       """
       if len(obList) == 1:
-        if obList[0] in self.__data:
-          return self.__data[obList[0]]
+        if obList[0] in self.data:
+          return self.data[obList[0]]
         raise KeyError("Missing option %s" % obList[0])
-      if obList[0] in self.__children:
-        return self.__children[obList[0]].__get(obList[1:])
+      if obList[0] in self.children:
+        return self.children[obList[0]].__get(obList[1:])
       raise KeyError("Missing section %s" % obList[0])
 
     def toString(self, tabs=0):
@@ -383,11 +380,11 @@ class ReleaseConfig(object):
       :param int tabs: the number of tabs used to format the CS string
       """
 
-      lines = ["%s%s = %s" % ("  " * tabs, opName, self.__data[opName]) for opName in self.__data]
-      for secName in self.__children:
+      lines = ["%s%s = %s" % ("  " * tabs, opName, self.data[opName]) for opName in self.data]
+      for secName in self.children:
         lines.append("%s%s" % ("  " * tabs, secName))
         lines.append("%s{" % ("  " * tabs))
-        lines.append(self.__children[secName].toString(tabs + 1))
+        lines.append(self.children[secName].toString(tabs + 1))
         lines.append("%s}" % ("  " * tabs))
       return "\n".join(lines)
 
@@ -404,7 +401,7 @@ class ReleaseConfig(object):
         parent = self
       if not parent:
         return []
-      return tuple(parent.__data)
+      return tuple(parent.data)
 
     def delPath(self, path):
       """
@@ -422,11 +419,11 @@ class ReleaseConfig(object):
       else:
         parent = self
       if parent:
-        parent.__data.pop(keyName)
+        parent.data.pop(keyName)
 
     def update(self, path, cfg):
       """
-      Used to change CS
+      Used to update the CS
 
       :param str path: path to the CS element
       :param object cfg: the CS object
@@ -444,12 +441,12 @@ class ReleaseConfig(object):
       :param object cfg: the CS object
       """
       for k in cfg.sections():
-        if k in self.__children:
-          self.__children[k].__apply(cfg.getChild(k))
+        if k in self.children:
+          self.children[k].__apply(cfg.getChild(k))
         else:
-          self.__children[k] = cfg.getChild(k)
+          self.children[k] = cfg.getChild(k)
       for k in cfg.options():
-        self.__data[k] = cfg.get(k)
+        self.data[k] = cfg.get(k)
 ############################################################################
 # END OF CFG CLASS
 ############################################################################
@@ -461,73 +458,34 @@ class ReleaseConfig(object):
     :param str globalDefaultsURL: the default url
     """
     if globalDefaultsURL:
-      self.__globalDefaultsURL = globalDefaultsURL
+      self.globalDefaultsURL = globalDefaultsURL
     else:
-      self.__globalDefaultsURL = "http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/globalDefaults.cfg"
-    self.__globalDefaults = ReleaseConfig.CFG()
-    self.__loadedCfgs = []
-    self.__prjDepends = {}
-    self.__diracBaseModules = {}
-    self.__prjRelCFG = {}
-    self.__projectsLoadedBy = {}
-    self.__cfgCache = {}
+      self.globalDefaultsURL = "http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/globalDefaults.cfg"
+    self.globalDefaults = ReleaseConfig.CFG()
+    self.loadedCfgs = []
+    self.prjDepends = {}
+    self.diracBaseModules = {}
+    self.prjRelCFG = {}
+    self.projectsLoadedBy = {}
+    self.cfgCache = {}
 
-    self.__debugCB = False
-    self.__instName = instName
-    self.__projectName = projectName
-
-  def getInstallation(self):
-    """
-    Returns the installation, for example: DIRAC
-    """
-    return self.__instName
-
-  def getProject(self):
-    """
-    Returns the name of the project
-    """
-    return self.__projectName
-
-  def setInstallation(self, instName):
-    """
-    Change the installation name
-    :param str instName: the name of the installation
-    """
-    self.__instName = instName
-
-  def setProject(self, projectName):
-    """
-    change the project name
-
-    :param str projectName: the name of the project
-    """
-    self.__projectName = projectName
-
-  def setDebugCB(self, debFunc):
-    """
-    Change the debug function
-    :param object debFunc: the debug function
-    """
-    self.__debugCB = debFunc
+    self.debugCB = False
+    self.instName = instName
+    self.projectName = projectName
 
   def __dbgMsg(self, msg):
     """
     :param str msg: the debug message
     """
-    if self.__debugCB:
-      self.__debugCB(msg)
-
-  def getDiracModules(self):
-    """
-    It return all DIRAC modules
-    """
-    return self.__diracBaseModules
+    if self.debugCB:
+      self.debugCB(msg)
 
   def __loadCFGFromURL(self, urlcfg, checkHash=False):
     """
     It is used to load the configuration file
 
-    :param str urlcfg: the location of the binary.
+    :param str urlcfg: the location of the source repository and
+    where the default configuration file is exists.
     :param bool checkHash: check if the file is corrupted.
     """
     # This can be a local file
@@ -535,8 +493,8 @@ class ReleaseConfig(object):
       with open(urlcfg, 'r') as relFile:
         cfgData = relFile.read()
     else:
-      if urlcfg in self.__cfgCache:
-        return S_OK(self.__cfgCache[urlcfg])
+      if urlcfg in self.cfgCache:
+        return S_OK(self.cfgCache[urlcfg])
       try:
         cfgData = urlretrieveTimeout(urlcfg, timeout=cliParams.timeout)
         if not cfgData:
@@ -550,7 +508,7 @@ class ReleaseConfig(object):
       return S_ERROR("Could not parse %s: %s" % (urlcfg, excp))
     # cfgFile.close()
     if not checkHash:
-      self.__cfgCache[urlcfg] = cfg
+      self.cfgCache[urlcfg] = cfg
       return S_OK(cfg)
     try:
       md5path = urlcfg[:-4] + ".md5"
@@ -566,7 +524,7 @@ class ReleaseConfig(object):
         return S_ERROR("Hash check failed on %s" % urlcfg)
     except Exception as excp:
       return S_ERROR("Hash check failed on %s: %s" % (urlcfg, excp))
-    self.__cfgCache[urlcfg] = cfg
+    self.cfgCache[urlcfg] = cfg
     return S_OK(cfg)
 
   def loadInstallationDefaults(self):
@@ -576,7 +534,7 @@ class ReleaseConfig(object):
     result = self.__loadGlobalDefaults()
     if not result['OK']:
       return result
-    return self.__loadObjectDefaults("Installations", self.__instName)
+    return self.__loadObjectDefaults("Installations", self.instName)
 
   def loadProjectDefaults(self):
     """
@@ -585,21 +543,21 @@ class ReleaseConfig(object):
     result = self.__loadGlobalDefaults()
     if not result['OK']:
       return result
-    return self.__loadObjectDefaults("Projects", self.__projectName)
+    return self.__loadObjectDefaults("Projects", self.projectName)
 
   def __loadGlobalDefaults(self):
     """
     It loads the default configuration files
     """
 
-    self.__dbgMsg("Loading global defaults from: %s" % self.__globalDefaultsURL)
-    result = self.__loadCFGFromURL(self.__globalDefaultsURL)
+    self.__dbgMsg("Loading global defaults from: %s" % self.globalDefaultsURL)
+    result = self.__loadCFGFromURL(self.globalDefaultsURL)
     if not result['OK']:
       return result
-    self.__globalDefaults = result['Value']
+    self.globalDefaults = result['Value']
     for k in ("Installations", "Projects"):
-      if not self.__globalDefaults.isSection(k):
-        self.__globalDefaults.createSection(k)
+      if not self.globalDefaults.isSection(k):
+        self.globalDefaults.createSection(k)
     self.__dbgMsg("Loaded global defaults")
     return S_OK()
 
@@ -611,12 +569,12 @@ class ReleaseConfig(object):
     """
 
     basePath = "%s/%s" % (rootPath, objectName)
-    if basePath in self.__loadedCfgs:
+    if basePath in self.loadedCfgs:
       return S_OK()
 
     # Check if it's a direct alias
     try:
-      aliasTo = self.__globalDefaults.get(basePath)
+      aliasTo = self.globalDefaults.get(basePath)
     except KeyError:
       aliasTo = False
 
@@ -626,14 +584,14 @@ class ReleaseConfig(object):
       if not result['OK']:
         return result
       cfg = result['Value']
-      self.__globalDefaults.update(basePath, cfg)
+      self.globalDefaults.update(basePath, cfg)
       return S_OK()
 
     # Load the defaults
-    if self.__globalDefaults.get("%s/SkipDefaults" % basePath, False):
+    if self.globalDefaults.get("%s/SkipDefaults" % basePath, False):
       defaultsLocation = ""
     else:
-      defaultsLocation = self.__globalDefaults.get("%s/DefaultsLocation" % basePath, "")
+      defaultsLocation = self.globalDefaults.get("%s/DefaultsLocation" % basePath, "")
 
     if not defaultsLocation:
       self.__dbgMsg("No defaults file defined for %s %s" % (rootPath.lower()[:-1], objectName))
@@ -643,11 +601,11 @@ class ReleaseConfig(object):
       if not result['OK']:
         return result
       cfg = result['Value']
-      self.__globalDefaults.update(basePath, cfg)
+      self.globalDefaults.update(basePath, cfg)
 
     # Check if the defaults have a sub alias
     try:
-      aliasTo = self.__globalDefaults.get("%s/Alias" % basePath)
+      aliasTo = self.globalDefaults.get("%s/Alias" % basePath)
     except KeyError:
       aliasTo = False
 
@@ -657,10 +615,10 @@ class ReleaseConfig(object):
       if not result['OK']:
         return result
       cfg = result['Value']
-      self.__globalDefaults.update(basePath, cfg)
+      self.globalDefaults.update(basePath, cfg)
 
-    self.__loadedCfgs.append(basePath)
-    return S_OK(self.__globalDefaults.getChild(basePath))
+    self.loadedCfgs.append(basePath)
+    return S_OK(self.globalDefaults.getChild(basePath))
 
   def loadInstallationLocalDefaults(self, fileName):
     """
@@ -675,11 +633,11 @@ class ReleaseConfig(object):
       fd.close()
     except Exception as excp:
       return S_ERROR("Could not load %s: %s" % (fileName, excp))
-    self.__globalDefaults.update("Installations/%s" % self.getInstallation(), cfg)
-    self.__globalDefaults.update("Projects/%s" % self.getInstallation(), cfg)
-    if self.__projectName:
+    self.globalDefaults.update("Installations/%s" % self.instName, cfg)
+    self.globalDefaults.update("Projects/%s" % self.isntName(), cfg)
+    if self.projectName:
       # we have an extension and have a local cfg file
-      self.__globalDefaults.update("Projects/%s" % self.__projectName, cfg)
+      self.globalDefaults.update("Projects/%s" % self.projectName, cfg)
 
     return S_OK()
 
@@ -689,7 +647,7 @@ class ReleaseConfig(object):
     :param str moduleName:
     :return str: the version of a certain module
     """
-    return self.__globalDefaults.get("Installations/%s/LocalInstallation/%s" % (self.getInstallation(), moduleName), "")
+    return self.globalDefaults.get("Installations/%s/LocalInstallation/%s" % (self.isntName(), moduleName), "")
 
   def getInstallationCFG(self, instName=None):
     """
@@ -698,8 +656,8 @@ class ReleaseConfig(object):
     :param str instName: the installation name
     """
     if not instName:
-      instName = self.__instName
-    return self.__globalDefaults.getChild("Installations/%s" % instName)
+      instName = self.instName
+    return self.globalDefaults.getChild("Installations/%s" % instName)
 
   def getInstallationConfig(self, opName, instName=None):
     """
@@ -710,8 +668,8 @@ class ReleaseConfig(object):
     :param str instName:
     """
     if not instName:
-      instName = self.__instName
-    return self.__globalDefaults.get("Installations/%s/%s" % (instName, opName))
+      instName = self.instName
+    return self.globalDefaults.get("Installations/%s/%s" % (instName, opName))
 
   def isProjectLoaded(self, project):
     """
@@ -719,7 +677,7 @@ class ReleaseConfig(object):
 
     :param str project: the name of the project
     """
-    return project in self.__prjRelCFG
+    return project in self.prjRelCFG
 
   def getTarsLocation(self, project, module=None):
     """
@@ -727,10 +685,10 @@ class ReleaseConfig(object):
 
       :param str project: the name of the project
       """
-    sourceUrl = self.__globalDefaults.get("Projects/%s/BaseURL" % project, "")
+    sourceUrl = self.globalDefaults.get("Projects/%s/BaseURL" % project, "")
     if module:
       # in case we define a different URL in the CS
-      differntSourceUrl = self.__globalDefaults.get("Projects/%s/%s" % (project, module), "")
+      differntSourceUrl = self.globalDefaults.get("Projects/%s/%s" % (project, module), "")
       if differntSourceUrl:
         sourceUrl = differntSourceUrl
     if sourceUrl:
@@ -746,13 +704,13 @@ class ReleaseConfig(object):
     if project is None:
       project = 'DIRAC'
 
-    diracOsLoc = "Projects/%s/DIRACOS" % self.__projectName
-    if self.__globalDefaults.isOption(diracOsLoc):
+    diracOsLoc = "Projects/%s/DIRACOS" % self.projectName
+    if self.globalDefaults.isOption(diracOsLoc):
       # use from the VO specific configuration file
-      location = self.__globalDefaults.get(diracOsLoc, "")
+      location = self.globalDefaults.get(diracOsLoc, "")
     else:
       # use the default OS, provided by DIRAC
-      location = self.__globalDefaults.get("Projects/%s/DIRACOS" % project, "")
+      location = self.globalDefaults.get("Projects/%s/DIRACOS" % project, "")
     return S_OK(location)
 
   def getUploadCommand(self, project=None):
@@ -762,8 +720,8 @@ class ReleaseConfig(object):
     :param str project: the name of the project
     """
     if not project:
-      project = self.__projectName
-    defLoc = self.__globalDefaults.get("Projects/%s/UploadCommand" % project, "")
+      project = self.projectName
+    defLoc = self.globalDefaults.get("Projects/%s/UploadCommand" % project, "")
     if defLoc:
       return S_OK(defLoc)
     return S_ERROR("No UploadCommand for %s" % project)
@@ -778,9 +736,9 @@ class ReleaseConfig(object):
     :param str sourceURL: the source of the binary
     :param str relLocation: the release configuration file
     """
-    if project not in self.__prjRelCFG:
-      self.__prjRelCFG[project] = {}
-    if release in self.__prjRelCFG[project]:
+    if project not in self.prjRelCFG:
+      self.prjRelCFG[project] = {}
+    if release in self.prjRelCFG[project]:
       self.__dbgMsg("Release config for %s:%s has already been loaded" % (project, release))
       return S_OK()
 
@@ -789,7 +747,7 @@ class ReleaseConfig(object):
     else:
       if releaseMode:
         try:
-          relcfgLoc = self.__globalDefaults.get("Projects/%s/Releases" % project)
+          relcfgLoc = self.globalDefaults.get("Projects/%s/Releases" % project)
         except KeyError:
           return S_ERROR("Missing Releases file for project %s" % project)
       else:
@@ -805,10 +763,10 @@ class ReleaseConfig(object):
     result = self.__loadCFGFromURL(relcfgLoc, checkHash=not releaseMode)
     if not result['OK']:
       return result
-    self.__prjRelCFG[project][release] = result['Value']
+    self.prjRelCFG[project][release] = result['Value']
     self.__dbgMsg("Loaded releases file %s" % relcfgLoc)
 
-    return S_OK(self.__prjRelCFG[project][release])
+    return S_OK(self.prjRelCFG[project][release])
 
   def getReleaseCFG(self, project, release):
     """
@@ -817,15 +775,15 @@ class ReleaseConfig(object):
     :param str project: the name of the project
     :param str release: the release version
     """
-    return self.__prjRelCFG[project][release]
+    return self.prjRelCFG[project][release]
 
   def dumpReleasesToPath(self):
     """
     It dumps the content of the loaded configuration (memory content) to
     a given file
     """
-    for project in self.__prjRelCFG:
-      prjRels = self.__prjRelCFG[project]
+    for project in self.prjRelCFG:
+      prjRels = self.prjRelCFG[project]
       for release in prjRels:
         self.__dbgMsg("Dumping releases file for %s:%s" % (project, release))
         fd = open(
@@ -840,15 +798,16 @@ class ReleaseConfig(object):
     Check the dependencies
 
     :param str key: the name of the project and the release version
-    :param list routePath
+    :param list routePath: it stores the software packages, used to check the 
+    dependency
     """
 
     if not routePath:
       routePath = []
-    if key not in self.__projectsLoadedBy:
+    if key not in self.projectsLoadedBy:
       return S_OK()
     routePath.insert(0, key)
-    for lKey in self.__projectsLoadedBy[key]:
+    for lKey in self.projectsLoadedBy[key]:
       if lKey in routePath:
         routePath.insert(0, lKey)
         route = "->".join(["%s:%s" % sKey for sKey in routePath])
@@ -877,7 +836,7 @@ class ReleaseConfig(object):
     """
 
     if not project:
-      project = self.__projectName
+      project = self.projectName
 
     if not isinstance(releases, (list, tuple)):
       releases = [releases]
@@ -888,8 +847,8 @@ class ReleaseConfig(object):
       self.__dbgMsg("Could not load defaults for project %s" % project)
       return result
 
-    if project not in self.__prjDepends:
-      self.__prjDepends[project] = {}
+    if project not in self.prjDepends:
+      self.prjDepends[project] = {}
 
     for release in releases:
       self.__dbgMsg("Processing dependencies for %s:%s" % (project, release))
@@ -898,8 +857,8 @@ class ReleaseConfig(object):
         return result
       relCFG = result['Value']
       # Calculate dependencies and avoid circular deps
-      self.__prjDepends[project][release] = [(project, release)]
-      relDeps = self.__prjDepends[project][release]
+      self.prjDepends[project][release] = [(project, release)]
+      relDeps = self.prjDepends[project][release]
 
       if not relCFG.getChild("Releases/%s" % (release)):  # pylint: disable=no-member
         return S_ERROR(
@@ -916,21 +875,21 @@ class ReleaseConfig(object):
         depVersion = initialDeps[depProject]
         # Check if already processed
         dKey = (depProject, depVersion)
-        if dKey not in self.__projectsLoadedBy:
-          self.__projectsLoadedBy[dKey] = []
-        self.__projectsLoadedBy[dKey].append((project, release))
+        if dKey not in self.projectsLoadedBy:
+          self.projectsLoadedBy[dKey] = []
+        self.projectsLoadedBy[dKey].append((project, release))
         result = self.__checkCircularDependencies(dKey)
         if not result['OK']:
           return result
         # if it has already been processed just return OK
-        if len(self.__projectsLoadedBy[dKey]) > 1:
+        if len(self.projectsLoadedBy[dKey]) > 1:
           return S_OK()
 
         # Load dependencies and calculate incompatibilities
         result = self.loadProjectRelease(depVersion, project=depProject)
         if not result['OK']:
           return result
-        subDep = self.__prjDepends[depProject][depVersion]
+        subDep = self.prjDepends[depProject][depVersion]
         # Merge dependencies
         for sKey in subDep:
           if sKey not in relDeps:
@@ -953,20 +912,20 @@ class ReleaseConfig(object):
 
       # we have now all dependencies, let's retrieve the resources (code repository)
       for project, version in relDeps:
-        if project in self.__diracBaseModules:
+        if project in self.diracBaseModules:
           continue
         modules = self.getModulesForRelease(version, project)
         if modules['OK']:
           for dependency in modules['Value']:
-            self.__diracBaseModules.setdefault(dependency, {})
-            self.__diracBaseModules[dependency]['Version'] = modules['Value'][dependency]
+            self.diracBaseModules.setdefault(dependency, {})
+            self.diracBaseModules[dependency]['Version'] = modules['Value'][dependency]
             res = self.getModSource(version, dependency, project)
             if not res['OK']:
               self.__dbgMsg(
                   "Unable to found the source URL for %s : %s" %
                   (dependency, res['Message']))
             else:
-              self.__diracBaseModules[dependency]['sourceUrl'] = res['Value'][1]
+              self.diracBaseModules[dependency]['sourceUrl'] = res['Value'][1]
 
     return S_OK()
 
@@ -979,14 +938,14 @@ class ReleaseConfig(object):
       :param str option: the option name
       """
     try:
-      return self.__prjRelCFG[project][release].get(option)
+      return self.prjRelCFG[project][release].get(option)
     except KeyError:
       self.__dbgMsg("Missing option %s for %s:%s" % (option, project, release))
       # try to found the option in a different release
-      for project in self.__prjRelCFG:
-        for release in self.__prjRelCFG[project]:
-          if self.__prjRelCFG[project][release].isOption(option):
-            return self.__prjRelCFG[project][release].get(option)
+      for project in self.prjRelCFG:
+        for release in self.prjRelCFG[project]:
+          if self.prjRelCFG[project][release].isOption(option):
+            return self.prjRelCFG[project][release].get(option)
       return False
 
   def getReleaseDependencies(self, project, release):
@@ -997,7 +956,7 @@ class ReleaseConfig(object):
     :param str release: the release version
     """
     try:
-      data = self.__prjRelCFG[project][release].get("Releases/%s/Depends" % release)
+      data = self.prjRelCFG[project][release].get("Releases/%s/Depends" % release)
     except KeyError:
       return {}
     data = [field for field in data.split(",") if field.strip()]
@@ -1022,12 +981,12 @@ class ReleaseConfig(object):
     :param str project: the project name
     """
     if not project:
-      project = self.__projectName
-    if project not in self.__prjRelCFG:
+      project = self.projectName
+    if project not in self.prjRelCFG:
       return S_ERROR("Project %s has not been loaded. I'm a MEGA BUG! Please report me!" % project)
-    if release not in self.__prjRelCFG[project]:
+    if release not in self.prjRelCFG[project]:
       return S_ERROR("Version %s has not been loaded for project %s" % (release, project))
-    config = self.__prjRelCFG[project][release]
+    config = self.prjRelCFG[project][release]
     if not config.isSection("Releases/%s" % release):
       return S_ERROR("Release %s is not defined for project %s" % (release, project))
     # Defined Modules explicitly in the release
@@ -1078,13 +1037,13 @@ class ReleaseConfig(object):
     :param str project: the name of the project for example: DIRAC
     """
 
-    if self.__projectName not in self.__prjRelCFG:
+    if self.projectName not in self.prjRelCFG:
       return S_ERROR(
           "Project %s has not been loaded. I'm a MEGA BUG! Please report me!" %
-          self.__projectName)
+          self.projectName)
 
     if not project:
-      project = self.__projectName
+      project = self.projectName
     modLocation = self.getReleaseOption(project, release, "Sources/%s" % modName)
     if not modLocation:
       return S_ERROR("Source origin for module %s is not defined" % modName)
@@ -1102,13 +1061,13 @@ class ReleaseConfig(object):
     :param str release: the release version
     """
 
-    if 'DIRAC' not in self.__prjRelCFG:
+    if 'DIRAC' not in self.prjRelCFG:
       return False
     if not release:
-      release = list(self.__prjRelCFG['DIRAC'])
+      release = list(self.prjRelCFG['DIRAC'])
       release = max(release)
     try:
-      return self.__prjRelCFG['DIRAC'][release].get('Releases/%s/Externals' % release)
+      return self.prjRelCFG['DIRAC'][release].get('Releases/%s/Externals' % release)
     except KeyError:
       return False
 
@@ -1121,7 +1080,7 @@ class ReleaseConfig(object):
     if diracOSVersion:
       return diracOSVersion
     try:
-      return self.__prjRelCFG[self.__projectName][cliParams.release].get(
+      return self.prjRelCFG[self.projectName][cliParams.release].get(
           "Releases/%s/DiracOS" % cliParams.release, diracOSVersion)
     except KeyError:
       pass
@@ -1135,7 +1094,7 @@ class ReleaseConfig(object):
     if lcgVersion:
       return lcgVersion
     try:
-      return self.__prjRelCFG[self.__projectName][cliParams.release].get(
+      return self.prjRelCFG[self.projectName][cliParams.release].get(
           "Releases/%s/LcgVer" % cliParams.release, lcgVersion)
     except KeyError:
       pass
@@ -1152,17 +1111,17 @@ class ReleaseConfig(object):
     extraFound = []
     modsToInstall = {}
     modsOrder = []
-    if self.__projectName not in self.__prjDepends:
-      return S_ERROR("Project %s has not been loaded" % self.__projectName)
-    if release not in self.__prjDepends[self.__projectName]:
+    if self.projectName not in self.prjDepends:
+      return S_ERROR("Project %s has not been loaded" % self.projectName)
+    if release not in self.prjDepends[self.projectName]:
       return S_ERROR(
           "Version %s has not been loaded for project %s" %
-          (release, self.__projectName))
+          (release, self.projectName))
     # Get a list of projects with their releases
-    projects = list(self.__prjDepends[self.__projectName][release])
+    projects = list(self.prjDepends[self.projectName][release])
     for project, relVersion in projects:
       try:
-        requiredModules = self.__prjRelCFG[project][relVersion].get("RequiredExtraModules")
+        requiredModules = self.prjRelCFG[project][relVersion].get("RequiredExtraModules")
         requiredModules = [modName.strip()
                            for modName in requiredModules.split("/") if modName.strip()]
       except KeyError:
@@ -1176,7 +1135,7 @@ class ReleaseConfig(object):
         return result
       modVersions = result['Value']
       try:
-        defaultMods = self.__prjRelCFG[project][relVersion].get("DefaultModules")
+        defaultMods = self.prjRelCFG[project][relVersion].get("DefaultModules")
         modNames = [mod.strip() for mod in defaultMods.split(",") if mod.strip()]
       except KeyError:
         modNames = []
@@ -1374,11 +1333,11 @@ def downloadAndExtractTarball(tarsURL, pkgName, pkgVer, checkHash=True, cache=Fa
   It downloads and extracts a given tarball from a given destination: file system,
   web server or code repository.
 
-  :param str tarsURL:
-  :param str pkgName:
-  :param str pkgVer:
-  :param bool checkHash:
-  :param bool cache:
+  :param str tarsURL: the location of the source repository
+  :param str pkgName: the name of the package to be installed
+  :param str pkgVer: the version of the package
+  :param bool checkHash: check the sanity of the file
+  :param bool cache: use local cache for the tarballs
 
   """
   tarName = "%s-%s.tar.gz" % (pkgName, pkgVer)
@@ -1691,7 +1650,7 @@ def loadConfiguration():
       instName=cliParams.installation,
       globalDefaultsURL=cliParams.globalDefaults)
   if cliParams.debug:
-    releaseConfig.setDebugCB(logDEBUG)
+    releaseConfig.debugCB = logDEBUG
 
   result = releaseConfig.loadInstallationDefaults()
   if not result['OK']:
@@ -1786,7 +1745,7 @@ def loadConfiguration():
       pass
 
   logNOTICE("Destination path for installation is %s" % cliParams.targetPath)
-  releaseConfig.setProject(cliParams.project)
+  releaseConfig.projectName = cliParams.project
 
   result = releaseConfig.loadProjectRelease(cliParams.release,
                                             project=cliParams.project,
@@ -1895,6 +1854,7 @@ def installLCGutils(releaseConfig):
   """
   DIRAC uses various tools from LCG area. This method install a given
   lcg version.
+  :param object releaseConfig: the configuration file object (class ReleaseConfig)
   """
   if not cliParams.platform:
     cliParams.platform = getPlatform()
@@ -2456,8 +2416,8 @@ def checkoutFromGit(moduleName, sourceURL, tagVersion):
   Note: we can checkout any project form a git repository.
 
   :param str moduleName: The name of the Module: for example: LHCbWebDIRAC
-  :param str sourceURL: The code repository: ssh://git@gitlab.cern.ch:7999/lhcb-dirac/LHCbWebDIRAC.git
-  :param str tagVersion: the tag for example: v4r3p6
+  :param str sourceURL: The code repository: https://github.com/DIRACGrid/WebAppDIRAC.git
+  :param str tagVersion: the tag for example: v3r1p10
 
   """
 
@@ -2497,7 +2457,7 @@ if __name__ == "__main__":
   modsToInstall = {}
   modsOrder = []
   if not result['OK']:
-    # the configuration files was not exists, which means the module is not released.
+    # the configuration files does not exists, which means the module is not released.
     if cliParams.modules:
       logNOTICE(str(cliParams.modules))
       for i in cliParams.modules:
