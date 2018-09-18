@@ -144,17 +144,6 @@ CREATE TABLE TaskInputs(
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8;
 
 -- -------------------------------------------------------------------------------
-DROP TABLE IF EXISTS TransformationInputDataQuery;
-CREATE TABLE TransformationInputDataQuery(
-    TransformationID INTEGER NOT NULL,
-    ParameterName VARCHAR(255) NOT NULL,
-    ParameterValue BLOB NOT NULL,
-    ParameterType VARCHAR(8) NOT NULL,
-    PRIMARY KEY(TransformationID, ParameterName),
-    FOREIGN KEY(TransformationID) REFERENCES Transformations(TransformationID)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8;
-
--- -------------------------------------------------------------------------------
 DROP TABLE IF EXISTS TransformationMetaQueries;
 CREATE TABLE TransformationMetaQueries(
     TransformationID INTEGER NOT NULL,

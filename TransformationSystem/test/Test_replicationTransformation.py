@@ -37,7 +37,8 @@ class TestMoving(unittest.TestCase):
 
   def setUp(self):
     self.tClientMock = Mock()
-    self.tClientMock.createTransformationInputDataQuery.return_value = S_OK()
+    #self.tClientMock.createTransformationInputDataQuery.return_value = S_OK()
+    self.tClientMock.createTransformationMetaQuery.return_value = S_OK()
     self.tMock = Mock(return_value=self.tClientMock)
 
   def tearDown(self):
@@ -135,7 +136,8 @@ class TestMoving(unittest.TestCase):
     tSE = "Target-SRM"
     sSE = "Source-SRM"
     prodID = 12345
-    self.tClientMock.createTransformationInputDataQuery.return_value = S_ERROR("Failed to create IDQ")
+    #self.tClientMock.createTransformationInputDataQuery.return_value = S_ERROR("Failed to create IDQ")
+    self.tClientMock.createTransformationMetaQuery.return_value = S_ERROR("Failed to create IDQ")
 
     module_name = "DIRAC.TransformationSystem.Utilities.ReplicationTransformation"
     trmodule = "DIRAC.TransformationSystem.Client.Transformation.Transformation"

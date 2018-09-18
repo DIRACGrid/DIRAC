@@ -312,37 +312,8 @@ class TransformationManagerHandlerBase(RequestHandler):
 
   ####################################################################
   #
-  # These are the methods for TransformationInputDataQuery table
-  #
-
-  types_createTransformationInputDataQuery = [transTypes, dict]
-
-  def export_createTransformationInputDataQuery(self, transName, queryDict):
-    credDict = self.getRemoteCredentials()
-    authorDN = credDict['DN']
-    # authorDN = self._clientTransport.peerCredentials['DN']
-    res = database.createTransformationInputDataQuery(transName, queryDict, author=authorDN)
-    return self._parseRes(res)
-
-  types_deleteTransformationInputDataQuery = [transTypes]
-
-  def export_deleteTransformationInputDataQuery(self, transName):
-    credDict = self.getRemoteCredentials()
-    authorDN = credDict['DN']
-    # authorDN = self._clientTransport.peerCredentials['DN']
-    res = database.deleteTransformationInputDataQuery(transName, author=authorDN)
-    return self._parseRes(res)
-
-  types_getTransformationInputDataQuery = [transTypes]
-
-  def export_getTransformationInputDataQuery(self, transName):
-    res = database.getTransformationInputDataQuery(transName)
-    return self._parseRes(res)
-
-  ####################################################################
-  #
-  # These are the methods for TransformationMetaQueries table. Aimed to replace methods
-  # for TransformationInputDataQuery table
+  # These are the methods for TransformationMetaQueries table. It replaces methods
+  # for the old TransformationInputDataQuery table
   #
 
   types_createTransformationMetaQuery = [transTypes, dict, basestring]

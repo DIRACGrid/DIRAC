@@ -89,7 +89,8 @@ def createDataTransformation(flavour, targetSE, sourceSE,
   trans.setAgentType('Automatic')
   currtrans = trans.getTransformationID()['Value']
   client = TransformationClient()
-  res = client.createTransformationInputDataQuery(currtrans, metadata)
+  #res = client.createTransformationInputDataQuery(currtrans, metadata)
+  res = client.createTransformationInputDataQuery(currtrans, metadata, 'Input')
   if not res['OK']:
     return res
 
