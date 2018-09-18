@@ -90,7 +90,7 @@ def createDataTransformation(flavour, targetSE, sourceSE,
   currtrans = trans.getTransformationID()['Value']
   client = TransformationClient()
   # res = client.createTransformationInputDataQuery(currtrans, metadata)
-  res = client.createTransformationInputDataQuery(currtrans, metadata, 'Input')
+  res = client.createTransformationMetaQuery(currtrans, metadata, 'Input')
   if not res['OK']:
     return res
 
