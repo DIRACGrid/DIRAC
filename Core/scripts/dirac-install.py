@@ -66,13 +66,13 @@ module or extension using -m or --tag options. The non release version can be sp
 for example:
 
 dirac-install -l DIRAC -r v6r20-pre16 -g v14r0 -t client -m DIRAC --tag=integration
-It will install DIRAC v6r20-pre16, where the DIRAC package based on integration, other other 
+It will install DIRAC v6r20-pre16, where the DIRAC package based on integration, other other
 packages will be the same what is specified in release.cfg file in v6r20-pre16 tarball.
 
 dirac-install -l DIRAC -r v6r20-pre16 -g v14r0 -t client  -m DIRAC --tag=v6r20-pre22
 It installs a specific tag
 
-Note: If the source is not provided, DIRAC repository is used, which is defined in the global 
+Note: If the source is not provided, DIRAC repository is used, which is defined in the global
 configuration file.
 We can provide the repository url:code repository*Project*branch. for example:
 
@@ -634,7 +634,7 @@ class ReleaseConfig(object):
     except Exception as excp:
       return S_ERROR("Could not load %s: %s" % (fileName, excp))
     self.globalDefaults.update("Installations/%s" % self.instName, cfg)
-    self.globalDefaults.update("Projects/%s" % self.isntName, cfg)
+    self.globalDefaults.update("Projects/%s" % self.instName, cfg)
     if self.projectName:
       # we have an extension and have a local cfg file
       self.globalDefaults.update("Projects/%s" % self.projectName, cfg)
@@ -647,7 +647,7 @@ class ReleaseConfig(object):
     :param str moduleName:
     :return str: the version of a certain module
     """
-    return self.globalDefaults.get("Installations/%s/LocalInstallation/%s" % (self.isntName, moduleName), "")
+    return self.globalDefaults.get("Installations/%s/LocalInstallation/%s" % (self.instName, moduleName), "")
 
   def getInstallationCFG(self, instName=None):
     """
@@ -798,7 +798,7 @@ class ReleaseConfig(object):
     Check the dependencies
 
     :param str key: the name of the project and the release version
-    :param list routePath: it stores the software packages, used to check the 
+    :param list routePath: it stores the software packages, used to check the
     dependency
     """
 
