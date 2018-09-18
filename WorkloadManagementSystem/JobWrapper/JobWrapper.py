@@ -35,6 +35,9 @@ from DIRAC.Core.Utilities.File import getGlobbedTotalSize, getGlobbedFiles
 from DIRAC.Core.Utilities.Version import getCurrentVersion
 from DIRAC.Core.Utilities.Adler import fileAdler
 from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
+from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
+from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
 
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
@@ -501,7 +504,7 @@ class JobWrapper(object):
     heartBeatDict = {}
     staticParamDict = {'StandardOutput': appStdOut}
     if self.jobID:
-      jobReport = RPCClient('WorkloadManagement/JobStateUpdate', timeout=120)
+      jobReport = JobStateUpdateClient()
       result = jobReport.sendHeartBeat(self.jobID, heartBeatDict, staticParamDict)
       if not result['OK']:
         self.log.error('Problem sending final heartbeat from JobWrapper', result['Message'])
@@ -831,10 +834,10 @@ class JobWrapper(object):
             missing.append(check)
 
     for i in outputSandbox:
-      if not i in okFiles:
+      if i not in okFiles:
         if not '%s.tar' % i in okFiles:
           if not re.search('\*', i):
-            if not i in missing:
+            if i not in missing:
               missing.append(i)
 
     result = {'Missing': missing, 'Files': okFiles}
@@ -949,7 +952,7 @@ class JobWrapper(object):
       report = ', '.join(uploaded)
       # In case the VO payload has also uploaded data using the same parameter
       # name this should be checked prior to setting.
-      monitoring = RPCClient('WorkloadManagement/JobMonitoring', timeout=120)
+      monitoring = JobMonitoringClient()
       result = monitoring.getJobParameter(int(self.jobID), 'UploadedOutputData')
       if result['OK']:
         if 'UploadedOutputData' in result['Value']:
@@ -1442,7 +1445,7 @@ def rescheduleFailedJob(jobID, message, jobReport=None):
 
     gLogger.info('Job will be rescheduled after exception during execution of the JobWrapper')
 
-    jobManager = RPCClient('WorkloadManagement/JobManager')
+    jobManager = JobManagerClient()
     result = jobManager.rescheduleJob(int(jobID))
     if not result['OK']:
       gLogger.warn(result['Message'])

@@ -311,7 +311,7 @@ class BaseTransport( object ):
   def getFormattedCredentials( self ):
     peerCreds = self.getConnectingCredentials()
     address = self.getRemoteAddress()
-    if peerCreds.has_key( 'username' ):
+    if 'username' in peerCreds:
       peerId = "[%s:%s]" % ( peerCreds[ 'group' ], peerCreds[ 'username' ] )
     else:
       peerId = ""

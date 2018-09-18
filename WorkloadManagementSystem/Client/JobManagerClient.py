@@ -1,5 +1,6 @@
 """ Class that contains client access to the JobManager handler. """
 
+from __future__ import absolute_import
 from DIRAC.Core.Base.Client import Client
 
 
@@ -10,6 +11,7 @@ class JobManagerClient(Client):
   def __init__(self, url=None, **kwargs):
     """
     Sets URL for JobManager handler
+
     :param self: self reference
     :param url: url of the JobManagerHandler
     :param kwargs: forwarded to the Base Client class
