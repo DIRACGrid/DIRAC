@@ -435,8 +435,8 @@ that the username provided to the function.
       print "no transformation supplied"
       return
     transName = argss[0]
-    #res = self.transClient.getTransformationInputDataQuery( transName )
-    res = self.transClient.getTransformationMetaQuery( transName, 'Input' )
+    # res = self.transClient.getTransformationInputDataQuery( transName )
+    res = self.transClient.getTransformationMetaQuery(transName, 'Input')
     if not res['OK']:
       print "Failed to get transformation input data query: %s" % res['Message']
     else:
