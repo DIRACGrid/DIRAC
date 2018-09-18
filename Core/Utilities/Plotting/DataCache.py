@@ -73,7 +73,7 @@ class DataCache( object ):
   def getPlotData( self, plotFileName ):
     filename = "%s/%s" % ( self.graphsLocation, plotFileName )
     try:
-      fd = file( filename, "rb" )
+      fd = open(filename, "rb")
       data = fd.read()
       fd.close()
     except Exception as e:

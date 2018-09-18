@@ -28,8 +28,8 @@ def substitute(param, variable, value):
   tmp_string = str(param).replace('@{' + variable + '}', value)
   if isinstance(param, basestring):
     return tmp_string
-  else:
-    return eval(tmp_string)
+  return eval(tmp_string)
+
 
 
 def resolveVariables(varDict):

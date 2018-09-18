@@ -32,7 +32,7 @@ class X509Certificate( object ):
     Return : S_OK / S_ERROR
     """
     try:
-      fd = file( certLocation )
+      fd = open(certLocation)
       pemData = fd.read()
       fd.close()
     except IOError:
@@ -46,7 +46,7 @@ class X509Certificate( object ):
     """
     try:
       self.__certObj = GSI.crypto.load_certificate( GSI.crypto.FILETYPE_PEM, pemData )
-    except Exception, e:
+    except Exception as e:
       return S_ERROR( DErrno.ECERTREAD, "Can't load pem data: %s" % e )
     self.__valid = True
     return S_OK()

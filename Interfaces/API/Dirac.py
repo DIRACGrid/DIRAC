@@ -1635,7 +1635,7 @@ class Dirac(API):
     return result
 
   #############################################################################
-  def getOutputSandbox(self, jobID, outputDir=None, oversized=True, noJobDir=False):
+  def getOutputSandbox(self, jobID, outputDir=None, oversized=True, noJobDir=False, unpack=True):
     """Retrieve output sandbox for existing JobID.
 
        This method allows the retrieval of an existing job output sandbox.
@@ -1673,7 +1673,8 @@ class Dirac(API):
     mkDir(dirPath)
 
     # New download
-    result = SandboxStoreClient(useCertificates=self.useCertificates).downloadSandboxForJob(jobID, 'Output', dirPath)
+    result = SandboxStoreClient(useCertificates=self.useCertificates).downloadSandboxForJob(jobID, 'Output', dirPath,
+                                                                                            unpack)
     if result['OK']:
       self.log.info('Files retrieved and extracted in %s' % (dirPath))
       if self.jobRepo:

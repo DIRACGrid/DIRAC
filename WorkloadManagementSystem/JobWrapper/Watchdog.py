@@ -26,7 +26,7 @@ import time
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities import MJF
-from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemInstance
 from DIRAC.Core.Utilities.ProcessMonitor import ProcessMonitor
@@ -913,7 +913,7 @@ class Watchdog(object):
     """ Sends sign of life 'heartbeat' signal and triggers control signal
         interpretation.
     """
-    jobReport = RPCClient('WorkloadManagement/JobStateUpdate', timeout=120)
+    jobReport = JobStateUpdateClient()
     result = jobReport.sendHeartBeat(jobID, heartBeatDict, staticParamDict)
     if not result['OK']:
       self.log.warn('Problem sending sign of life')
@@ -933,7 +933,7 @@ class Watchdog(object):
       self.log.info('Running without JOBID so parameters will not be reported')
       return S_OK()
     jobID = os.environ['JOBID']
-    jobReport = RPCClient('WorkloadManagement/JobStateUpdate', timeout=120)
+    jobReport = JobStateUpdateClient()
     jobParam = jobReport.setJobParameters(int(jobID), value)
     self.log.verbose('setJobParameters(%s,%s)' % (jobID, value))
     if not jobParam['OK']:

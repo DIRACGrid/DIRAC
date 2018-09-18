@@ -46,7 +46,7 @@ CREATE TABLE `Jobs` (
   `MasterJobID` INT(11) UNSIGNED NOT NULL DEFAULT 0,
   `Site` VARCHAR(100) NOT NULL DEFAULT 'ANY',
   `JobName` VARCHAR(128) NOT NULL DEFAULT 'Unknown',
-  `Owner` VARCHAR(32) NOT NULL DEFAULT 'Unknown',
+  `Owner` VARCHAR(64) NOT NULL DEFAULT 'Unknown',
   `OwnerDN` VARCHAR(255) NOT NULL DEFAULT 'Unknown',
   `OwnerGroup` VARCHAR(128) NOT NULL DEFAULT 'Unknown',
   `SubmissionTime` DATETIME DEFAULT NULL,
@@ -105,6 +105,17 @@ CREATE TABLE `JobParameters` (
   `Value` BLOB NOT NULL,
   PRIMARY KEY (`JobID`,`Name`),
   FOREIGN KEY (`JobID`) REFERENCES `Jobs`(`JobID`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+-- ------------------------------------------------------------------------------
+DROP TABLE IF EXISTS `JobsStatus`;
+CREATE TABLE `JobsStatus` (
+  `JobID` INT(11) UNSIGNED NOT NULL,
+  `Status` VARCHAR(32) NOT NULL DEFAULT 'Received',
+  `MinorStatus` VARCHAR(128) NOT NULL DEFAULT 'Unknown',
+  `ApplicationStatus` VARCHAR(255) DEFAULT 'Unknown',
+  PRIMARY KEY (`JobID`),
+  FOREIGN KEY (`JobID`) REFERENCES `JobJDLs`(`JobID`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- ------------------------------------------------------------------------------

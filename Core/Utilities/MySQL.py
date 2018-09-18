@@ -261,7 +261,7 @@ class MySQL( object ):
         time.sleep( sleepTime )
       try:
         conn, lastName, thid = self.__innerGet()
-      except MySQLdb.MySQLError, excp:
+      except MySQLdb.MySQLError as excp:
         if retriesLeft >= 0:
           return self.__getWithRetry( dbName, totalRetries, retriesLeft - 1 )
         return S_ERROR( DErrno.EMYSQL, "Could not connect: %s" % excp )
@@ -278,7 +278,7 @@ class MySQL( object ):
       if lastName != dbName:
         try:
           conn.select_db( dbName )
-        except MySQLdb.MySQLError, excp:
+        except MySQLdb.MySQLError as excp:
           if retriesLeft >= 0:
             return self.__getWithRetry( dbName, totalRetries, retriesLeft - 1 )
           return S_ERROR( DErrno.EMYSQL, "Could not select db %s: %s" % ( dbName, excp ) )
@@ -352,7 +352,7 @@ class MySQL( object ):
       conn = result[ 'Value' ]
       try:
         return S_OK( self.__execute( conn, "START TRANSACTION WITH CONSISTENT SNAPSHOT" ) )
-      except MySQLdb.MySQLError, excp:
+      except MySQLdb.MySQLError as excp:
         return S_ERROR( DErrno.EMYSQL, "Could not begin transaction: %s" % excp )
 
     def transactionCommit( self, dbName ):
@@ -363,7 +363,7 @@ class MySQL( object ):
       try:
         result = self.__execute( conn, "COMMIT" )
         return S_OK( result )
-      except MySQLdb.MySQLError, excp:
+      except MySQLdb.MySQLError as excp:
         return S_ERROR( DErrno.EMYSQL, "Could not commit transaction: %s" % excp )
 
     def transactionRollback( self, dbName ):
@@ -374,7 +374,7 @@ class MySQL( object ):
       try:
         result = self.__execute( conn, "ROLLBACK" )
         return S_OK( result )
-      except MySQLdb.MySQLError, excp:
+      except MySQLdb.MySQLError as excp:
         return S_ERROR( DErrno.EMYSQL, "Could not rollback transaction: %s" % excp )
 
   __connectionPools = {}
@@ -433,7 +433,7 @@ class MySQL( object ):
 
     try:
       raise x
-    except MySQLdb.Error, e:
+    except MySQLdb.Error as e:
       self.log.debug( '%s: %s' % ( methodName, err ),
                       '%d: %s' % ( e.args[0], e.args[1] ) )
       return S_ERROR( DErrno.EMYSQL, '%s: ( %d: %s )' % ( err, e.args[0], e.args[1] ) )
@@ -891,19 +891,19 @@ class MySQL( object ):
         for field in thisTable['Fields'].keys():
           cmdList.append( '`%s` %s' % ( field, thisTable['Fields'][field] ) )
 
-        if thisTable.has_key( 'PrimaryKey' ):
+        if 'PrimaryKey' in thisTable:
           if isinstance( thisTable['PrimaryKey'], basestring ):
             cmdList.append( 'PRIMARY KEY ( `%s` )' % thisTable['PrimaryKey'] )
           else:
             cmdList.append( 'PRIMARY KEY ( %s )' % ", ".join( [ "`%s`" % str( f ) for f in thisTable['PrimaryKey'] ] ) )
 
-        if thisTable.has_key( 'Indexes' ):
+        if 'Indexes' in thisTable:
           indexDict = thisTable['Indexes']
           for index in indexDict:
             indexedFields = '`, `'.join( indexDict[index] )
             cmdList.append( 'INDEX `%s` ( `%s` )' % ( index, indexedFields ) )
 
-        if thisTable.has_key( 'UniqueIndexes' ):
+        if 'UniqueIndexes' in thisTable:
           indexDict = thisTable['UniqueIndexes']
           for index in indexDict:
             indexedFields = '`, `'.join( indexDict[index] )
@@ -921,15 +921,8 @@ class MySQL( object ):
             cmdList.append( 'FOREIGN KEY ( `%s` ) REFERENCES `%s` ( `%s` )'
                             ' ON DELETE RESTRICT' % ( key, forTable, forKey ) )
 
-        if thisTable.has_key( 'Engine' ):
-          engine = thisTable['Engine']
-        else:
-          engine = 'InnoDB'
-
-        if thisTable.has_key( 'Charset' ):
-          charset = thisTable['Charset']
-        else:
-          charset = 'latin1'
+        engine = thisTable.get('Engine', 'InnoDB')
+        charset = thisTable.get('Charset', 'latin1')
 
         cmd = 'CREATE TABLE `%s` (\n%s\n) ENGINE=%s DEFAULT CHARSET=%s' % ( table, ',\n'.join( cmdList ), engine, charset )
         retDict = self._update( cmd, debug = True )

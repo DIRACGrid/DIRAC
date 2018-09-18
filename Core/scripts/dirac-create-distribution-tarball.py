@@ -375,15 +375,15 @@ class TarModuleCreator( object ):
       return S_OK( "" )
     try:
       with open( relNotes, "r" ) as fd:
-        relaseContents = fd.readlines()
-    except Exception, excp:
+        releaseContents = fd.readlines()
+    except Exception as excp:
       return S_ERROR( "Could not open %s: %s" % ( relNotes, excp ) )
     gLogger.info( "Loaded %s" % relNotes )
     relData = []
     version = False
     feature = False
     lastKey = False
-    for rawLine in relaseContents:
+    for rawLine in releaseContents:
       line = rawLine.strip()
       if not line:
         continue
@@ -463,7 +463,7 @@ class TarModuleCreator( object ):
       rstFilePath = os.path.join( self.params.destination, self.params.name, rstFileName )
       with open( rstFilePath, "w" ) as fd:
         fd.write( "\n".join( rstData ) )
-    except Exception, excp:
+    except Exception as excp:
       return S_ERROR( "Could not write %s: %s" % ( rstFileName, excp ) )
     return S_OK()
 
@@ -522,11 +522,11 @@ class TarModuleCreator( object ):
     try:
       with open( relNotesRST ) as fd:
         rstData = fd.read()
-    except Exception, excp:
+    except Exception as excp:
       return S_ERROR( "Could not read %s: %s" % ( relNotesRST, excp ) )
     try:
       parts = docutils.core.publish_parts( rstData, writer_name = 'html' )
-    except Exception, excp:
+    except Exception as excp:
       return S_ERROR( "Cannot generate the html %s: %s" % ( baseNotesPath, str( excp ) ) )
     baseList = [ baseNotesPath ]
     if self.params.outRelNotes:

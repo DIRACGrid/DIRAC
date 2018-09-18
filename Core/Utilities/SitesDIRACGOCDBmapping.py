@@ -115,7 +115,7 @@ def getDIRACGOCDictionary():
 
   for path, gocdbSiteName in siteNamesTree.iteritems():
     elements = path.split( '/' )
-    if len( elements ) <> PATHELEMENTS:
+    if len(elements) != PATHELEMENTS:
       continue
 
     diracSiteName = elements[PATHELEMENTS - 2]

@@ -4,6 +4,8 @@ Elasticsearch database.
 
 """
 
+from __future__ import absolute_import
+import six
 __RCSID__ = "$Id$"
 
 from datetime import datetime
@@ -99,6 +101,27 @@ class ElasticSearchDB(object):
     """
     try:
       esDSLQueryResult = self.__client.search(index=index, body=query)
+      return S_OK(esDSLQueryResult)
+    except RequestError as re:
+      return S_ERROR(re)
+
+  def update(self, index, doctype, query, updateByQuery=True, id=None):
+    """ Executes a query and returns its result (uses ES DSL language).
+
+    :param self: self reference
+    :param basestring index: index name
+    :param basestring doctype: type of document
+    :param dict query: It is the query in ElasticSearch DSL language
+    :param bool updateByQuery: A bool to determine updation by update by query or index values using index function.
+    :param int id: ID for the document to be created.
+
+    """
+
+    try:
+      if updateByQuery:
+        esDSLQueryResult = self.__client.update_by_query(index=index, doc_type=doctype, body=query)
+      else:
+        esDSLQueryResult = self.__client.index(index=index, doc_type=doctype, body=query, id=id)
       return S_OK(esDSLQueryResult)
     except RequestError as re:
       return S_ERROR(re)
@@ -199,7 +222,7 @@ class ElasticSearchDB(object):
                        Currently only daily and monthly indexes are supported.
 
     """
-    fullIndex = generateFullIndexName(indexPrefix, period)  # we have to create an index each day...
+    fullIndex = self.generateFullIndexName(indexPrefix, period)  # we have to create an index each day...
     if self.exists(fullIndex):
       return S_OK(fullIndex)
 
@@ -261,7 +284,7 @@ class ElasticSearchDB(object):
     if mapping is None:
       mapping = {}
 
-    indexName = generateFullIndexName(indexprefix, period)
+    indexName = self.generateFullIndexName(indexprefix, period)
     gLogger.debug("inserting datat to %s index" % indexName)
     if not self.exists(indexName):
       retVal = self.createIndex(indexprefix, mapping, period)
@@ -284,7 +307,7 @@ class ElasticSearchDB(object):
       try:
         if isinstance(timestamp, datetime):
           body['_source']['timestamp'] = int(timestamp.strftime('%s')) * 1000
-        elif isinstance(timestamp, basestring):
+        elif isinstance(timestamp, six.string_types):
           timeobj = datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S.%f')
           body['_source']['timestamp'] = int(timeobj.strftime('%s')) * 1000
         else:  # we assume  the timestamp is an unix epoch time (integer).
@@ -379,28 +402,28 @@ class ElasticSearchDB(object):
       return S_ERROR(inst)
     return S_OK('Successfully deleted data from index %s' % indexName)
 
+  @staticmethod
+  def generateFullIndexName(indexName, period=None):
+    """
+    Given an index prefix we create the actual index name. Each day an index is created.
+    :param str indexName: it is the name of the index
+    :param str period: We can specify, which kind of indexes will be created.
+                       Currently only daily and monthly indexes are supported.
+    """
 
-def generateFullIndexName(indexName, period=None):
-  """
-  Given an index prefix we create the actual index name. Each day an index is created.
-  :param str indexName: it is the name of the index
-  :param str period: We can specify, which kind of indexes will be created.
-                     Currently only daily and monthly indexes are supported.
-  """
+    if period is None:
+      gLogger.warn("Daily indexes are used, because the period is not provided!")
+      period = 'day'
 
-  if period is None:
-    gLogger.warn("Daily indexes are used, because the period is not provided!")
-    period = 'day'
+    today = datetime.today().strftime("%Y-%m-%d")
+    index = ''
+    if period.lower() not in ['day', 'month']:  # if the period is not correct, we use daily indexes.
+      gLogger.warn("Period is not correct daily indexes are used instead:", period)
+      index = "%s-%s" % (indexName, today)
+    elif period.lower() == 'day':
+      index = "%s-%s" % (indexName, today)
+    elif period.lower() == 'month':
+      month = datetime.today().strftime("%Y-%m")
+      index = "%s-%s" % (indexName, month)
 
-  today = datetime.today().strftime("%Y-%m-%d")
-  index = ''
-  if period.lower() not in ['day', 'month']:  # if the period is not correct, we use daily indexes.
-    gLogger.warn("Period is not correct daily indexes are used instead:", period)
-    index = "%s-%s" % (indexName, today)
-  elif period.lower() == 'day':
-    index = "%s-%s" % (indexName, today)
-  elif period.lower() == 'month':
-    month = datetime.today().strftime("%Y-%m")
-    index = "%s-%s" % (indexName, month)
-
-  return index
+    return index

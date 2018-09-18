@@ -2,24 +2,30 @@
 
   This agent inspect Sites, and evaluates policies that apply.
 
+The following options can be set for the SiteInspectorAgent.
+
+.. literalinclude:: ../ConfigTemplate.cfg
+  :start-after: ##BEGIN SiteInspectorAgent
+  :end-before: ##END
+  :dedent: 2
+  :caption: SiteInspectorAgent options
 """
 
-__RCSID__  = '$Id$'
+__RCSID__ = '$Id$'
 
 import math
 import Queue
 
-from DIRAC                                                      import S_OK
-from DIRAC.Core.Base.AgentModule                                import AgentModule
-from DIRAC.Core.Utilities.ThreadPool                            import ThreadPool
-from DIRAC.ResourceStatusSystem.Client.SiteStatus               import SiteStatus
-from DIRAC.ResourceStatusSystem.PolicySystem.PEP                import PEP
-from DIRAC.ResourceStatusSystem.Utilities                       import Utils
-ResourceManagementClient = getattr(Utils.voimport( 'DIRAC.ResourceStatusSystem.Client.ResourceManagementClient' ), 'ResourceManagementClient')
+from DIRAC import S_OK
+from DIRAC.Core.Base.AgentModule import AgentModule
+from DIRAC.Core.Utilities.ThreadPool import ThreadPool
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
+from DIRAC.ResourceStatusSystem.PolicySystem.PEP import PEP
 
 AGENT_NAME = 'ResourceStatus/SiteInspectorAgent'
 
-class SiteInspectorAgent( AgentModule ):
+
+class SiteInspectorAgent(AgentModule):
   """ SiteInspectorAgent
 
   The SiteInspectorAgent agent is an agent that is used to get the all the site names
@@ -33,40 +39,51 @@ class SiteInspectorAgent( AgentModule ):
   # Inspection freqs, defaults, the lower, the higher priority to be checked.
   # Error state usually means there is a glitch somewhere, so it has the highest
   # priority.
-  __checkingFreqs = {'Active'   : 20,
-                     'Degraded' : 20,
-                     'Probing'  : 20,
-                     'Banned'   : 15,
-                     'Unknown'  : 10,
-                     'Error'    : 5}
+  __checkingFreqs = {'Active': 20,
+                     'Degraded': 20,
+                     'Probing': 20,
+                     'Banned': 15,
+                     'Unknown': 10,
+                     'Error': 5}
 
+  def __init__(self, *args, **kwargs):
 
-  def __init__( self, *args, **kwargs ):
-
-    AgentModule.__init__( self, *args, **kwargs )
+    AgentModule.__init__(self, *args, **kwargs)
 
     # ElementType, to be defined among Site, Resource or Node
-    self.sitesToBeChecked    = None
-    self.threadPool          = None
-    self.siteClient          = None
-    self.clients             = {}
+    self.sitesToBeChecked = None
+    self.threadPool = None
+    self.siteClient = None
+    self.clients = {}
 
-
-  def initialize( self ):
+  def initialize(self):
     """ Standard initialize.
     """
 
-    maxNumberOfThreads = self.am_getOption( 'maxNumberOfThreads', self.__maxNumberOfThreads )
-    self.threadPool    = ThreadPool( maxNumberOfThreads, maxNumberOfThreads )
+    maxNumberOfThreads = self.am_getOption('maxNumberOfThreads', self.__maxNumberOfThreads)
+    self.threadPool = ThreadPool(maxNumberOfThreads, maxNumberOfThreads)
 
-    self.siteClient  = SiteStatus()
+    res = ObjectLoader().loadObject('DIRAC.ResourceStatusSystem.Client.SiteStatus',
+                                    'SiteStatus')
+    if not res['OK']:
+      self.log.error('Failed to load SiteStatus class: %s' % res['Message'])
+      return res
+    siteStatusClass = res['Value']
 
-    self.clients['SiteStatus']               = self.siteClient
-    self.clients['ResourceManagementClient'] = ResourceManagementClient()
+    res = ObjectLoader().loadObject('DIRAC.ResourceStatusSystem.Client.ResourceManagementClient',
+                                    'ResourceManagementClient')
+    if not res['OK']:
+      self.log.error('Failed to load ResourceManagementClient class: %s' % res['Message'])
+      return res
+    rmClass = res['Value']
+
+    self.siteClient = siteStatusClass()
+    self.clients['SiteStatus'] = siteStatusClass()
+    self.clients['ResourceManagementClient'] = rmClass()
 
     return S_OK()
 
-  def execute( self ):
+  def execute(self):
     """ execute
 
     This is the main method of the agent. It gets the sites from the Database, calculates how many threads should be
@@ -79,7 +96,7 @@ class SiteInspectorAgent( AgentModule ):
     # Gets sites to be checked ( returns a Queue )
     sitesToBeChecked = self.getSitesToBeChecked()
     if not sitesToBeChecked['OK']:
-      self.log.error( sitesToBeChecked['Message'] )
+      self.log.error(sitesToBeChecked['Message'])
       return sitesToBeChecked
     self.sitesToBeChecked = sitesToBeChecked['Value']
 
@@ -90,24 +107,23 @@ class SiteInspectorAgent( AgentModule ):
     # without having to spawn too many threads. We assume 10 seconds per element
     # to be processed ( actually, it takes something like 1 sec per element ):
     # numberOfThreads = elements * 10(s/element) / pollingTime
-    numberOfThreads = int( math.ceil( queueSize * 10. / pollingTime ) )
+    numberOfThreads = int(math.ceil(queueSize * 10. / pollingTime))
 
-    self.log.info( 'Needed %d threads to process %d elements' % ( numberOfThreads, queueSize ) )
+    self.log.info('Needed %d threads to process %d elements' % (numberOfThreads, queueSize))
 
-    for _x in xrange( numberOfThreads ):
-      jobUp = self.threadPool.generateJobAndQueueIt( self._execute )
+    for _x in xrange(numberOfThreads):
+      jobUp = self.threadPool.generateJobAndQueueIt(self._execute)
       if not jobUp['OK']:
-        self.log.error( jobUp['Message'] )
+        self.log.error(jobUp['Message'])
 
-    self.log.info( 'blocking until all sites have been processed' )
+    self.log.info('blocking until all sites have been processed')
     # block until all tasks are done
     self.sitesToBeChecked.join()
-    self.log.info( 'done')
+    self.log.info('done')
 
     return S_OK()
 
-
-  def getSitesToBeChecked( self ):
+  def getSitesToBeChecked(self):
     """ getElementsToBeChecked
 
     This method gets all the site names from the SiteStatus table, after that it get the details of each
@@ -122,7 +138,7 @@ class SiteInspectorAgent( AgentModule ):
       return res
 
     # get the current status
-    res = self.siteClient.getSiteStatuses( res['Value'] )
+    res = self.siteClient.getSiteStatuses(res['Value'])
     if not res['OK']:
       return res
 
@@ -130,19 +146,18 @@ class SiteInspectorAgent( AgentModule ):
     for site in res['Value']:
       status = res['Value'].get(site, 'Unknown')
 
-      toBeChecked.put( { 'status': status,
-                         'name': site,
-                         'site' : site,
-                         'element' : 'Site',
-                         'statusType': 'all',
-                         'elementType': 'Site' } )
+      toBeChecked.put({'status': status,
+                       'name': site,
+                       'site': site,
+                       'element': 'Site',
+                       'statusType': 'all',
+                       'elementType': 'Site'})
 
-    return S_OK( toBeChecked )
-
+    return S_OK(toBeChecked)
 
   # Private methods ............................................................
 
-  def _execute( self ):
+  def _execute(self):
     """
       Method run by each of the thread that is in the ThreadPool.
       It enters a loop until there are no sites on the queue.
@@ -152,7 +167,7 @@ class SiteInspectorAgent( AgentModule ):
       queue, the loop is finished.
     """
 
-    pep = PEP( clients = self.clients )
+    pep = PEP(clients=self.clients)
 
     while True:
 
@@ -161,14 +176,11 @@ class SiteInspectorAgent( AgentModule ):
       except Queue.Empty:
         return S_OK()
 
-      resEnforce = pep.enforce( site )
+      resEnforce = pep.enforce(site)
       if not resEnforce['OK']:
-        self.log.error( 'Failed policy enforcement', resEnforce['Message'] )
+        self.log.error('Failed policy enforcement', resEnforce['Message'])
         self.sitesToBeChecked.task_done()
         continue
 
       # Used together with join !
       self.sitesToBeChecked.task_done()
-
-#...............................................................................
-#EOF

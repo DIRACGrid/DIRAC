@@ -41,6 +41,7 @@ from DIRAC.Interfaces.API.Job import Job
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
+from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
 from DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent import JobCleaningAgent
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
@@ -104,7 +105,7 @@ class WMSChain(TestWMSTestCase):
     """
     wmsClient = WMSClient()
     jobMonitor = JobMonitoringClient()
-    jobStateUpdate = RPCClient('WorkloadManagement/JobStateUpdate')
+    jobStateUpdate = JobStateUpdateClient()
 
     # create the job
     job = helloWorldJob()
@@ -163,7 +164,7 @@ class WMSChain(TestWMSTestCase):
     """ This test will submit a parametric job which should generate 3 actual jobs
     """
     wmsClient = WMSClient()
-    jobStateUpdate = RPCClient('WorkloadManagement/JobStateUpdate')
+    jobStateUpdate = JobStateUpdateClient()
     jobMonitor = JobMonitoringClient()
 
     # create the job
@@ -201,7 +202,7 @@ class JobMonitoring(TestWMSTestCase):
     """
     wmsClient = WMSClient()
     jobMonitor = JobMonitoringClient()
-    jobStateUpdate = RPCClient('WorkloadManagement/JobStateUpdate')
+    jobStateUpdate = JobStateUpdateClient()
 
     # create a job and check stuff
     job = helloWorldJob()
@@ -251,11 +252,13 @@ class JobMonitoring(TestWMSTestCase):
     res = jobMonitor.getJobAttribute(jobID, 'Site')
     self.assertTrue(res['OK'])
     self.assertEqual(res['Value'], 'Site')
-    res = jobMonitor.getJobAttributes(jobID)
+    res = jobMonitor.getJobStatus(jobID)
     self.assertTrue(res['OK'])
     self.assertEqual(res['Value']['ApplicationStatus'], 'app status')
+    res = jobMonitor.getJobAttributes(jobID)
+    self.assertTrue(res['OK'])
     self.assertEqual(res['Value']['JobName'], 'helloWorld')
-    res = jobMonitor.getJobSummary(jobID)
+    res = jobMonitor.getJobStatus(jobID)
     self.assertTrue(res['OK'])
     self.assertEqual(res['Value']['ApplicationStatus'], 'app status')
     self.assertEqual(res['Value']['Status'], 'Running')
@@ -271,7 +274,7 @@ class JobMonitoring(TestWMSTestCase):
     self.assertTrue(res['OK'])
     res = jobStateUpdate.setJobsStatus([jobID], 'Done', 'MinorStatus', 'Unknown')
     self.assertTrue(res['OK'])
-    res = jobMonitor.getJobSummary(jobID)
+    res = jobMonitor.getJobStatus(jobID)
     self.assertTrue(res['OK'])
     self.assertEqual(res['Value']['Status'], 'Done')
     self.assertEqual(res['Value']['MinorStatus'], 'MinorStatus')
@@ -306,7 +309,7 @@ class JobMonitoringMore(TestWMSTestCase):
     """
     wmsClient = WMSClient()
     jobMonitor = JobMonitoringClient()
-    jobStateUpdate = RPCClient('WorkloadManagement/JobStateUpdate')
+    jobStateUpdate = JobStateUpdateClient()
 
     jobIDs = []
     dests = ['DIRAC.site1.org', 'DIRAC.site2.org']
@@ -359,11 +362,7 @@ class JobMonitoringMore(TestWMSTestCase):
     self.assertTrue(res['OK'])
     try:
       self.assertTrue(
-          res['Value'].get('Received') +
-          res['Value'].get('Waiting') >= long(
-              len(dests) *
-              len(lfnss) *
-              len(types)))
+          res['Value'].get('Received') + res['Value'].get('Waiting') >= long(len(dests) * len(lfnss) * len(types)))
     except TypeError:
       pass
     res = jobMonitor.getJobsSummary(jobIDs)
@@ -547,7 +546,7 @@ class Matcher (TestWMSTestCase):
         'Site': 'DIRAC.Jenkins.ch',
         'CPUTime': 86400}
     matcher = RPCClient('WorkloadManagement/Matcher')
-    JobStateUpdate = RPCClient('WorkloadManagement/JobStateUpdate')
+    JobStateUpdate = JobStateUpdateClient()
     wmsClient = WMSClient()
 
     job = helloWorldJob()

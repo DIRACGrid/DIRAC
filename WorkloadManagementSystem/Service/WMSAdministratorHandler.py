@@ -24,6 +24,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueue
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
+from DIRAC.WorkloadManagementSystem.DB.ElasticJobDB import ElasticJobDB
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 from DIRAC.WorkloadManagementSystem.DB.PilotsLoggingDB import PilotsLoggingDB
@@ -32,6 +33,7 @@ from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import getPilotLoggingI
 
 # This is a global instance of the database classes
 jobDB = None
+elasticJobDB = None
 pilotDB = None
 taskQueueDB = None
 pilotsLoggingDB = None
@@ -67,6 +69,25 @@ def initializeWMSAdministratorHandler(serviceInfo):
 
 
 class WMSAdministratorHandler(RequestHandler):
+
+  def initialize(self):
+    """
+    Flags gESFlag and gMySQLFlag have bool values (True/False)
+    derived from dirac.cfg configuration file
+
+    Determines the switching of ElasticSearch and MySQL backends
+    """
+    global elasticJobDB, jobDB
+
+    gESFlag = self.srv_getCSOption('useES', False)
+    if gESFlag:
+      elasticJobDB = ElasticJobDB()
+
+    gMySQLFlag = self.srv_getCSOption('useMySQL', True)
+    if not gMySQLFlag:
+      jobDB = False
+
+    return S_OK()
 
   ###########################################################################
   types_setSiteMask = [list]
@@ -303,7 +324,11 @@ class WMSAdministratorHandler(RequestHandler):
 
     pilotReference = ''
     # Get the pilot grid reference first from the job parameters
-    result = jobDB.getJobParameter(int(jobID), 'Pilot_Reference')
+    if elasticJobDB:
+      result = elasticJobDB.getJobParameters(int(jobID), 'Pilot_Reference')
+    else:
+      result = jobDB.getJobParameter(int(jobID), 'Pilot_Reference')
+
     if result['OK']:
       pilotReference = result['Value']
 
