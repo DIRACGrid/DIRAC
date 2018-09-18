@@ -1600,7 +1600,7 @@ cmdOpts = (('r:', 'release=', 'Release version to install'),
            ('m:', 'module=',
             'Module to be installed. for example: -m DIRAC or -m git://github.com/DIRACGrid/DIRAC.git:DIRAC'),
            ('s:', 'source=', 'location of the modules to be installed'),
-           ('x:', 'external', 'external version'),
+           ('x:', 'external=', 'external version'),
            )
 
 
