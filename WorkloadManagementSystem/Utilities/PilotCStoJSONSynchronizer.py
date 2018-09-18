@@ -23,20 +23,20 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 
 class PilotCStoJSONSynchronizer(object):
-  '''
+  """
   2 functions are executed:
   - It updates a JSON file with the values on the CS which can be used by Pilot3 pilots
   - It updates the pilot 3 files
 
   This synchronizer can be triggered at any time via PilotCStoJSONSynchronizer().sync().
   As it is today, this is triggered every time there is a successful write on the CS.
-  '''
+  """
 
   def __init__(self):
-    ''' c'tor
+    """ c'tor
 
         Just setting defaults
-    '''
+    """
     self.jsonFile = 'pilot.json'  # default filename of the pilot json file
 
     # domain name of the web server used to upload the pilot json file and the pilot scripts
@@ -56,21 +56,23 @@ class PilotCStoJSONSynchronizer(object):
     self.pilotVOVersion = ''
 
   def sync(self):
-    ''' Main synchronizer method.
-    '''
+    """ Main synchronizer method.
+    """
     ops = Operations()
 
     self.pilotFileServer = ops.getValue("Pilot/pilotFileServer", self.pilotFileServer)
     if not self.pilotFileServer:
-      gLogger.warn("Pilot file server not defined, so won't sync but only display")
+      gLogger.warn("The /Operations/<Setup>/Pilot/pilotFileServer option is not defined")
+      gLogger.warn("Pilot 3 files won't be updated, and you won't be able to use Pilot 3")
+      gLogger.warn("The Synchronization steps are anyway displayed")
 
     gLogger.notice('-- Synchronizing the content of the JSON file %s with the content of the CS --' % self.jsonFile)
 
-    self.pilotRepo = ops.getValue("pilotRepo", self.pilotRepo)
-    self.pilotVORepo = ops.getValue("pilotVORepo", self.pilotVORepo)
-    self.projectDir = ops.getValue("projectDir", self.projectDir)
-    self.pilotScriptPath = ops.getValue("pilotScriptsPath", self.pilotScriptPath)
-    self.pilotVOScriptPath = ops.getValue("pilotVOScriptsPath", self.pilotVOScriptPath)
+    self.pilotRepo = ops.getValue("Pilot/pilotRepo", self.pilotRepo)
+    self.pilotVORepo = ops.getValue("Pilot/pilotVORepo", self.pilotVORepo)
+    self.projectDir = ops.getValue("Pilot/projectDir", self.projectDir)
+    self.pilotScriptPath = ops.getValue("Pilot/pilotScriptsPath", self.pilotScriptPath)
+    self.pilotVOScriptPath = ops.getValue("Pilot/pilotVOScriptsPath", self.pilotVOScriptPath)
 
     result = self._syncJSONFile()
     if not result['OK']:
@@ -84,8 +86,8 @@ class PilotCStoJSONSynchronizer(object):
     return S_OK()
 
   def _syncJSONFile(self):
-    ''' Creates the pilot dictionary from the CS, ready for encoding as JSON
-    '''
+    """ Creates the pilot dictionary from the CS, ready for encoding as JSON
+    """
     pilotDict = self._getCSDict()
 
     result = self._upload(pilotDict=pilotDict)
@@ -259,10 +261,11 @@ class PilotCStoJSONSynchronizer(object):
       scriptDir = (os.path.join('pilotVOLocalRepo', self.projectDir, self.pilotVOScriptPath, "*.py"))
       for fileVO in glob.glob(scriptDir):
         result = self._upload(filename=os.path.basename(fileVO), pilotScript=fileVO)
+        if not result['OK']:
+          gLogger.error("Error uploading the VO pilot script: %s" % result['Message'])
         tarFiles.append(fileVO)
-      if not result['OK']:
-        gLogger.error("Error uploading the VO pilot script: %s" % result['Message'])
-        return result
+    else:
+      self.log.warn("The /Operations/<Setup>/Pilot/pilotVORepo option is not defined")
 
     # DIRAC repo
     if os.path.isdir('pilotLocalRepo'):
@@ -290,12 +293,16 @@ class PilotCStoJSONSynchronizer(object):
       for filename in glob.glob(scriptDir):
         result = self._upload(filename=os.path.basename(filename),
                               pilotScript=filename)
+        if not result['OK']:
+          gLogger.error("Error uploading the pilot script: %s" % result['Message'])
         tarFiles.append(filename)
       if not os.path.isfile(os.path.join('pilotLocalRepo',
                                          self.pilotScriptPath,
                                          "dirac-install.py")):
         result = self._upload(filename='dirac-install.py',
                               pilotScript=os.path.join('pilotLocalRepo', "Core/scripts/dirac-install.py"))
+        if not result['OK']:
+          gLogger.error("Error uploading dirac-install.py: %s" % result['Message'])
         tarFiles.append('dirac-install.py')
 
       with tarfile.TarFile(name='pilot.tar', mode='w') as tf:
@@ -306,6 +313,9 @@ class PilotCStoJSONSynchronizer(object):
 
       result = self._upload(filename='pilot.tar',
                             pilotScript='pilot.tar')
+      if not result['OK']:
+        gLogger.error("Error uploading pilot.tar: %s" % result['Message'])
+        return result
 
     except ValueError:
       gLogger.error("Error uploading the pilot scripts: %s" % result['Message'])
@@ -318,13 +328,14 @@ class PilotCStoJSONSynchronizer(object):
 
     if pilotDict:  # this is for the pilot.json file
       if not self.pilotFileServer:
+        gLogger.warn("NOT uploading the pilot JSON file, just printing it out")
         print json.dumps(pilotDict, indent=4, sort_keys=True)  # just print here as formatting is important
         return S_OK()
       params = urllib.urlencode({'filename': self.jsonFile, 'data': json.dumps(pilotDict)})
 
     else:  # we assume the method is asked to upload the pilots scripts
       if not self.pilotFileServer:
-        gLogger.info("NOT uploading %s" % filename)
+        gLogger.warn("NOT uploading %s" % filename)
         return S_OK()
       with open(pilotScript, "rb") as psf:
         script = psf.read()
