@@ -81,8 +81,6 @@ class Synchronizer(object):
 
     return S_OK()
 
-  ## Protected methods #########################################################
-
   def _syncSites(self):
     '''
       Sync sites: compares CS with DB and does the necessary modifications.
@@ -185,8 +183,6 @@ class Synchronizer(object):
 
     return S_OK()
 
-  ## Private methods ###########################################################
-
   def __removeNonExistingResourcesFromRM(self):
     '''
       Remove resources from DowntimeCache table that no longer exist in the CS.
@@ -264,7 +260,7 @@ class Synchronizer(object):
       if not deleteQuery['OK']:
         return deleteQuery
 
-    #statusTypes = RssConfiguration.getValidStatusTypes()[ 'Resource' ]
+    # statusTypes = RssConfiguration.getValidStatusTypes()[ 'Resource' ]
     statusTypes = self.rssConfig.getConfigStatusType('ComputingElement')
 
     result = self.rStatus.selectStatusElement('Resource', 'Status',
@@ -334,7 +330,7 @@ class Synchronizer(object):
       if not deleteQuery['OK']:
         return deleteQuery
 
-    #statusTypes = RssConfiguration.getValidStatusTypes()[ 'Resource' ]
+    # statusTypes = RssConfiguration.getValidStatusTypes()[ 'Resource' ]
     statusTypes = self.rssConfig.getConfigStatusType('Catalog')
 
     result = self.rStatus.selectStatusElement('Resource', 'Status',
@@ -405,7 +401,7 @@ class Synchronizer(object):
         return deleteQuery
 
     statusTypes = self.rssConfig.getConfigStatusType('FTS')
-    #statusTypes = RssConfiguration.getValidStatusTypes()[ 'Resource' ]
+    # statusTypes = RssConfiguration.getValidStatusTypes()[ 'Resource' ]
 
     result = self.rStatus.selectStatusElement('Resource', 'Status',
                                               elementType='FTS',
@@ -472,7 +468,7 @@ class Synchronizer(object):
         return deleteQuery
 
     statusTypes = self.rssConfig.getConfigStatusType('StorageElement')
-    #statusTypes = RssConfiguration.getValidStatusTypes()[ 'Resource' ]
+    # statusTypes = RssConfiguration.getValidStatusTypes()[ 'Resource' ]
 
     result = self.rStatus.selectStatusElement('Resource', 'Status',
                                               elementType='StorageElement',
@@ -542,7 +538,7 @@ class Synchronizer(object):
         return deleteQuery
 
     statusTypes = self.rssConfig.getConfigStatusType('Queue')
-    #statusTypes = RssConfiguration.getValidStatusTypes()[ 'Node' ]
+    # statusTypes = RssConfiguration.getValidStatusTypes()[ 'Node' ]
 
     result = self.rStatus.selectStatusElement('Node', 'Status',
                                               elementType='Queue',
@@ -576,6 +572,3 @@ class Synchronizer(object):
         return query
 
     return S_OK()
-
-################################################################################
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
