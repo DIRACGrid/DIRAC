@@ -8,9 +8,10 @@
 
 '''
 
-__RCSID__ = '$Id:  $'
+__RCSID__ = '$Id$'
 
 from DIRAC import gLogger, S_OK
+from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Utilities import CSHelpers
 from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration import RssConfiguration
@@ -24,560 +25,557 @@ ResourceManagementClient = getattr(Utils.voimport(
 
 
 class Synchronizer(object):
+  '''
+  Every time there is a successful write on the CS, Synchronizer().sync() is
+  executed. It updates the database with the values on the CS.
+
+  '''
+
+  def __init__(self, rStatus=None, rManagement=None, defaultStatus="Unknown"):
+
+    # Warm up local CS
+    CSHelpers.warmUp()
+
+    if rStatus is None:
+      self.rStatus = ResourceStatusClient()
+    if rManagement is None:
+      self.rManagement = ResourceManagementClient()
+    self.defaultStatus = defaultStatus
+
+    self.rssConfig = RssConfiguration()
+    self.tokenOwner = "rs_svc"
+    result = getProxyInfo()
+    if result['OK']:
+      self.tokenOwner = result['Value']['username']
+
+  def sync(self, _eventName, _params):
     '''
-    Every time there is a successful write on the CS, Synchronizer().sync() is
-    executed. It updates the database with the values on the CS.
+    Main synchronizer method. It synchronizes the three types of elements: Sites,
+    Resources and Nodes. Each _syncX method returns a dictionary with the additions
+    and deletions.
 
+    examples:
+      >>> s.sync( None, None )
+          S_OK()
+
+    :Parameters:
+      **_eventName** - any
+        this parameter is ignored, but needed by caller function.
+      **_params** - any
+        this parameter is ignored, but needed by caller function.
+
+    :return: S_OK
     '''
 
-    def __init__(self, rStatus=None, rManagement=None, defaultStatus="Unknown"):
+    syncSites = self._syncSites()
+    if not syncSites['OK']:
+      gLogger.error(syncSites['Message'])
 
-        # Warm up local CS
-        CSHelpers.warmUp()
+    syncResources = self._syncResources()
+    if not syncResources['OK']:
+      gLogger.error(syncResources['Message'])
 
-        if rStatus is None:
-            self.rStatus = ResourceStatusClient()
-        if rManagement is None:
-            self.rManagement = ResourceManagementClient()
-        self.defaultStatus = defaultStatus
+    syncNodes = self._syncNodes()
+    if not syncNodes['OK']:
+      gLogger.error(syncNodes['Message'])
 
-        self.rssConfig = RssConfiguration()
-        self.tokenOwner = "rs_svc"
-        result = getProxyInfo()
-        if result['OK']:
-            self.tokenOwner = result['Value']['username']
+    return S_OK()
 
-    def sync(self, _eventName, _params):
-        '''
-        Main synchronizer method. It synchronizes the three types of elements: Sites,
-        Resources and Nodes. Each _syncX method returns a dictionary with the additions
-        and deletions.
+  ## Protected methods #########################################################
 
-        examples:
-          >>> s.sync( None, None )
-              S_OK()
+  def _syncSites(self):
+    '''
+      Sync sites: compares CS with DB and does the necessary modifications.
+    '''
 
-        :Parameters:
-          **_eventName** - any
-            this parameter is ignored, but needed by caller function.
-          **_params** - any
-            this parameter is ignored, but needed by caller function.
+    gLogger.info('-- Synchronizing sites --')
 
-        :return: S_OK
-        '''
+    # sites in CS
+    res = CSHelpers.getSites()
+    if not res['OK']:
+      return res
+    sitesCS = res['Value']
 
-        syncSites = self._syncSites()
-        if not syncSites['OK']:
-            gLogger.error(syncSites['Message'])
+    gLogger.verbose('%s sites found in CS' % len(sitesCS))
 
-        syncResources = self._syncResources()
-        if not syncResources['OK']:
-            gLogger.error(syncResources['Message'])
+    # sites in RSS
+    result = self.rStatus.selectStatusElement('Site', 'Status',
+                                              meta={'columns': ['Name']})
+    if not result['OK']:
+      return result
+    sitesDB = [siteDB[0] for siteDB in result['Value']]
 
-        syncNodes = self._syncNodes()
-        if not syncNodes['OK']:
-            gLogger.error(syncNodes['Message'])
+    # Sites that are in DB but not (anymore) in CS
+    toBeDeleted = list(set(sitesDB).difference(set(sitesCS)))
+    gLogger.verbose('%s sites to be deleted' % len(toBeDeleted))
 
-        return S_OK()
+    # Delete sites
+    for siteName in toBeDeleted:
+      deleteQuery = self.rStatus._extermineStatusElement(
+          'Site', siteName)
+      gLogger.verbose('Deleting site %s' % siteName)
+      if not deleteQuery['OK']:
+        return deleteQuery
 
-    ## Protected methods #########################################################
+    # Sites that are in CS but not (anymore) in DB
+    toBeAdded = list(set(sitesCS).difference(set(sitesDB)))
+    gLogger.verbose('%s site entries to be added' % len(toBeAdded))
 
-    def _syncSites(self):
-        '''
-          Sync sites: compares CS with DB and does the necessary modifications.
-        '''
+    for site in toBeAdded:
+      query = self.rStatus.addIfNotThereStatusElement('Site', 'Status',
+                                                      name=site,
+                                                      statusType='all',
+                                                      status=self.defaultStatus,
+                                                      elementType='Site',
+                                                      tokenOwner=self.tokenOwner,
+                                                      reason='Synchronized')
+      if not query['OK']:
+        return query
 
-        gLogger.info('-- Synchronizing sites --')
+    return S_OK()
 
-        # sites in CS
-        res = CSHelpers.getSites()
-        if not res['OK']:
-            return res
-        sitesCS = res['Value']
+  def _syncResources(self):
+    '''
+      Sync resources: compares CS with DB and does the necessary modifications.
+      ( StorageElements, FTS, FileCatalogs and ComputingElements )
+    '''
 
-        gLogger.verbose('%s sites found in CS' % len(sitesCS))
+    gLogger.info('-- Synchronizing Resources --')
 
-        # sites in RSS
-        result = self.rStatus.selectStatusElement('Site', 'Status',
-                                                  meta={'columns': ['Name']})
+    gLogger.verbose('-> StorageElements')
+    ses = self.__syncStorageElements()
+    if not ses['OK']:
+      gLogger.error(ses['Message'])
+
+    gLogger.verbose('-> FTS')
+    fts = self.__syncFTS()
+    if not fts['OK']:
+      gLogger.error(fts['Message'])
+
+    gLogger.verbose('-> FileCatalogs')
+    fileCatalogs = self.__syncFileCatalogs()
+    if not fileCatalogs['OK']:
+      gLogger.error(fileCatalogs['Message'])
+
+    gLogger.verbose('-> ComputingElements')
+    computingElements = self.__syncComputingElements()
+    if not computingElements['OK']:
+      gLogger.error(computingElements['Message'])
+
+    gLogger.verbose('-> removing resources that no longer exist in the CS')
+    removingResources = self.__removeNonExistingResourcesFromRM()
+    if not removingResources['OK']:
+      gLogger.error(removingResources['Message'])
+
+    # FIXME: VOMS
+
+    return S_OK()
+
+  def _syncNodes(self):
+    '''
+      Sync resources: compares CS with DB and does the necessary modifications.
+      ( Queues )
+    '''
+    gLogger.info('-- Synchronizing Nodes --')
+
+    gLogger.verbose('-> Queues')
+    queues = self.__syncQueues()
+    if not queues['OK']:
+      gLogger.error(queues['Message'])
+
+    return S_OK()
+
+  ## Private methods ###########################################################
+
+  def __removeNonExistingResourcesFromRM(self):
+    '''
+      Remove resources from DowntimeCache table that no longer exist in the CS.
+    '''
+
+    if not getServiceURL("ResourceStatus/ResourceManagement"):
+      gLogger.verbose(
+          'ResourceManagement is not installed, skipping removal of non existing resources...')
+      return S_OK()
+
+    sesHosts = CSHelpers.getStorageElementsHosts()
+    if not sesHosts['OK']:
+      return sesHosts
+    sesHosts = sesHosts['Value']
+
+    resources = sesHosts
+
+    ftsServer = getFTS3Servers()
+    if ftsServer['OK']:
+      resources.extend(ftsServer['Value'])
+
+    ce = CSHelpers.getComputingElements()
+    if ce['OK']:
+      resources.extend(ce['Value'])
+
+    downtimes = self.rManagement.selectDowntimeCache()
+
+    if not downtimes['OK']:
+      return downtimes
+
+    # Remove hosts that no longer exist in the CS
+    for host in downtimes['Value']:
+      gLogger.verbose('Checking if %s is still in the CS' % host[0])
+      if host[0] not in resources:
+        gLogger.verbose(
+            '%s is no longer in CS, removing entry...' % host[0])
+        result = self.rManagement.deleteDowntimeCache(name=host[0])
+
         if not result['OK']:
-            return result
-        sitesDB = [siteDB[0] for siteDB in result['Value']]
+          return result
 
-        # Sites that are in DB but not (anymore) in CS
-        toBeDeleted = list(set(sitesDB).difference(set(sitesCS)))
-        gLogger.verbose('%s sites to be deleted' % len(toBeDeleted))
+    return S_OK()
 
-        # Delete sites
-        for siteName in toBeDeleted:
-            deleteQuery = self.rStatus._extermineStatusElement(
-                'Site', siteName)
-            gLogger.verbose('Deleting site %s' % siteName)
-            if not deleteQuery['OK']:
-                return deleteQuery
+  def __syncComputingElements(self):
+    '''
+      Sync ComputingElements: compares CS with DB and does the necessary modifications.
+    '''
 
-        # Sites that are in CS but not (anymore) in DB
-        toBeAdded = list(set(sitesCS).difference(set(sitesDB)))
-        gLogger.verbose('%s site entries to be added' % len(toBeAdded))
+    cesCS = CSHelpers.getComputingElements()
+    if not cesCS['OK']:
+      return cesCS
+    cesCS = cesCS['Value']
 
-        for site in toBeAdded:
-            query = self.rStatus.addIfNotThereStatusElement('Site', 'Status',
-                                                            name=site,
-                                                            statusType='all',
-                                                            status=self.defaultStatus,
-                                                            elementType='Site',
-                                                            tokenOwner=self.tokenOwner,
-                                                            reason='Synchronized')
-            if not query['OK']:
-                return query
+    gLogger.verbose('%s Computing elements found in CS' % len(cesCS))
 
-        return S_OK()
+    cesDB = self.rStatus.selectStatusElement('Resource', 'Status',
+                                             elementType='ComputingElement',
+                                             meta={'columns': ['Name']})
+    if not cesDB['OK']:
+      return cesDB
+    cesDB = [ceDB[0] for ceDB in cesDB['Value']]
 
-    def _syncResources(self):
-        '''
-          Sync resources: compares CS with DB and does the necessary modifications.
-          ( StorageElements, FTS, FileCatalogs and ComputingElements )
-        '''
+    # ComputingElements that are in DB but not in CS
+    toBeDeleted = list(set(cesDB).difference(set(cesCS)))
+    gLogger.verbose('%s Computing elements to be deleted' %
+                    len(toBeDeleted))
 
-        gLogger.info('-- Synchronizing Resources --')
+    # Delete storage elements
+    for ceName in toBeDeleted:
 
-        gLogger.verbose('-> StorageElements')
-        ses = self.__syncStorageElements()
-        if not ses['OK']:
-            gLogger.error(ses['Message'])
+      deleteQuery = self.rStatus._extermineStatusElement(
+          'Resource', ceName)
 
-        gLogger.verbose('-> FTS')
-        fts = self.__syncFTS()
-        if not fts['OK']:
-            gLogger.error(fts['Message'])
+      gLogger.verbose('... %s' % ceName)
+      if not deleteQuery['OK']:
+        return deleteQuery
 
-        gLogger.verbose('-> FileCatalogs')
-        fileCatalogs = self.__syncFileCatalogs()
-        if not fileCatalogs['OK']:
-            gLogger.error(fileCatalogs['Message'])
+    #statusTypes = RssConfiguration.getValidStatusTypes()[ 'Resource' ]
+    statusTypes = self.rssConfig.getConfigStatusType('ComputingElement')
 
-        gLogger.verbose('-> ComputingElements')
-        computingElements = self.__syncComputingElements()
-        if not computingElements['OK']:
-            gLogger.error(computingElements['Message'])
+    result = self.rStatus.selectStatusElement('Resource', 'Status',
+                                              elementType='ComputingElement',
+                                              meta={'columns': ['Name', 'StatusType']})
+    if not result['OK']:
+      return result
+    cesTuple = [(x[0], x[1]) for x in result['Value']]
 
-        gLogger.verbose('-> removing resources that no longer exist in the CS')
-        removingResources = self.__removeNonExistingResourcesFromRM()
-        if not removingResources['OK']:
-            gLogger.error(removingResources['Message'])
+    # For each ( se, statusType ) tuple not present in the DB, add it.
+    cesStatusTuples = [(se, statusType)
+                       for se in cesCS for statusType in statusTypes]
+    toBeAdded = list(set(cesStatusTuples).difference(set(cesTuple)))
 
-        # FIXME: VOMS
+    gLogger.debug('%s Computing elements entries to be added' %
+                  len(toBeAdded))
 
-        return S_OK()
+    for ceTuple in toBeAdded:
 
-    def _syncNodes(self):
-        '''
-          Sync resources: compares CS with DB and does the necessary modifications.
-          ( Queues )
-        '''
-        gLogger.info('-- Synchronizing Nodes --')
+      _name = ceTuple[0]
+      _statusType = ceTuple[1]
+      _status = self.defaultStatus
+      _reason = 'Synchronized'
+      _elementType = 'ComputingElement'
 
-        gLogger.verbose('-> Queues')
-        queues = self.__syncQueues()
-        if not queues['OK']:
-            gLogger.error(queues['Message'])
+      query = self.rStatus.addIfNotThereStatusElement('Resource', 'Status', name=_name,
+                                                      statusType=_statusType,
+                                                      status=_status,
+                                                      elementType=_elementType,
+                                                      tokenOwner=self.tokenOwner,
+                                                      reason=_reason)
+      if not query['OK']:
+        return query
 
-        return S_OK()
+    return S_OK()
 
-    ## Private methods ###########################################################
+  def __syncFileCatalogs(self):
+    '''
+      Sync FileCatalogs: compares CS with DB and does the necessary modifications.
+    '''
 
-    def __removeNonExistingResourcesFromRM(self):
-        '''
-          Remove resources from DowntimeCache table that no longer exist in the CS.
-        '''
+    catalogsCS = CSHelpers.getFileCatalogs()
+    if not catalogsCS['OK']:
+      return catalogsCS
+    catalogsCS = catalogsCS['Value']
 
-        if not getServiceURL("ResourceStatus/ResourceManagement"):
-            gLogger.verbose(
-                'ResourceManagement is not installed, skipping removal of non existing resources...')
-            return S_OK()
+    gLogger.verbose('%s File catalogs found in CS' % len(catalogsCS))
 
-        sesHosts = CSHelpers.getStorageElementsHosts()
-        if not sesHosts['OK']:
-            return sesHosts
-        sesHosts = sesHosts['Value']
-
-        resources = sesHosts
-
-        ftsServer = getFTS3Servers()
-        if ftsServer['OK']:
-            resources.extend(ftsServer['Value'])
-
-        ce = CSHelpers.getComputingElements()
-        if ce['OK']:
-            resources.extend(ce['Value'])
-
-        downtimes = self.rManagement.selectDowntimeCache()
-
-        if not downtimes['OK']:
-            return downtimes
-
-        # Remove hosts that no longer exist in the CS
-        for host in downtimes['Value']:
-            gLogger.verbose('Checking if %s is still in the CS' % host[0])
-            if host[0] not in resources:
-                gLogger.verbose(
-                    '%s is no longer in CS, removing entry...' % host[0])
-                result = self.rManagement.deleteDowntimeCache(name=host[0])
-
-                if not result['OK']:
-                    return result
-
-        return S_OK()
-
-    def __syncComputingElements(self):
-        '''
-          Sync ComputingElements: compares CS with DB and does the necessary modifications.
-        '''
-
-        cesCS = CSHelpers.getComputingElements()
-        if not cesCS['OK']:
-            return cesCS
-        cesCS = cesCS['Value']
-
-        gLogger.verbose('%s Computing elements found in CS' % len(cesCS))
-
-        cesDB = self.rStatus.selectStatusElement('Resource', 'Status',
-                                                 elementType='ComputingElement',
-                                                 meta={'columns': ['Name']})
-        if not cesDB['OK']:
-            return cesDB
-        cesDB = [ceDB[0] for ceDB in cesDB['Value']]
-
-        # ComputingElements that are in DB but not in CS
-        toBeDeleted = list(set(cesDB).difference(set(cesCS)))
-        gLogger.verbose('%s Computing elements to be deleted' %
-                        len(toBeDeleted))
-
-        # Delete storage elements
-        for ceName in toBeDeleted:
-
-            deleteQuery = self.rStatus._extermineStatusElement(
-                'Resource', ceName)
-
-            gLogger.verbose('... %s' % ceName)
-            if not deleteQuery['OK']:
-                return deleteQuery
-
-        #statusTypes = RssConfiguration.getValidStatusTypes()[ 'Resource' ]
-        statusTypes = self.rssConfig.getConfigStatusType('ComputingElement')
-
-        result = self.rStatus.selectStatusElement('Resource', 'Status',
-                                                  elementType='ComputingElement',
-                                                  meta={'columns': ['Name', 'StatusType']})
-        if not result['OK']:
-            return result
-        cesTuple = [(x[0], x[1]) for x in result['Value']]
-
-        # For each ( se, statusType ) tuple not present in the DB, add it.
-        cesStatusTuples = [(se, statusType)
-                           for se in cesCS for statusType in statusTypes]
-        toBeAdded = list(set(cesStatusTuples).difference(set(cesTuple)))
-
-        gLogger.debug('%s Computing elements entries to be added' %
-                      len(toBeAdded))
-
-        for ceTuple in toBeAdded:
-
-            _name = ceTuple[0]
-            _statusType = ceTuple[1]
-            _status = self.defaultStatus
-            _reason = 'Synchronized'
-            _elementType = 'ComputingElement'
-
-            query = self.rStatus.addIfNotThereStatusElement('Resource', 'Status', name=_name,
-                                                            statusType=_statusType,
-                                                            status=_status,
-                                                            elementType=_elementType,
-                                                            tokenOwner=self.tokenOwner,
-                                                            reason=_reason)
-            if not query['OK']:
-                return query
-
-        return S_OK()
-
-    def __syncFileCatalogs(self):
-        '''
-          Sync FileCatalogs: compares CS with DB and does the necessary modifications.
-        '''
-
-        catalogsCS = CSHelpers.getFileCatalogs()
-        if not catalogsCS['OK']:
-            return catalogsCS
-        catalogsCS = catalogsCS['Value']
-
-        gLogger.verbose('%s File catalogs found in CS' % len(catalogsCS))
-
-        catalogsDB = self.rStatus.selectStatusElement('Resource', 'Status',
-                                                      elementType='Catalog',
-                                                      meta={'columns': ['Name']})
-        if not catalogsDB['OK']:
-            return catalogsDB
-        catalogsDB = [catalogDB[0] for catalogDB in catalogsDB['Value']]
-
-        # StorageElements that are in DB but not in CS
-        toBeDeleted = list(set(catalogsDB).difference(set(catalogsCS)))
-        gLogger.verbose('%s File catalogs to be deleted' % len(toBeDeleted))
-
-        # Delete storage elements
-        for catalogName in toBeDeleted:
-
-            deleteQuery = self.rStatus._extermineStatusElement(
-                'Resource', catalogName)
-
-            gLogger.verbose('... %s' % catalogName)
-            if not deleteQuery['OK']:
-                return deleteQuery
-
-        #statusTypes = RssConfiguration.getValidStatusTypes()[ 'Resource' ]
-        statusTypes = self.rssConfig.getConfigStatusType('Catalog')
-
-        result = self.rStatus.selectStatusElement('Resource', 'Status',
+    catalogsDB = self.rStatus.selectStatusElement('Resource', 'Status',
                                                   elementType='Catalog',
-                                                  meta={'columns': ['Name', 'StatusType']})
-        if not result['OK']:
-            return result
-        sesTuple = [(x[0], x[1]) for x in result['Value']]
+                                                  meta={'columns': ['Name']})
+    if not catalogsDB['OK']:
+      return catalogsDB
+    catalogsDB = [catalogDB[0] for catalogDB in catalogsDB['Value']]
 
-        # For each ( se, statusType ) tuple not present in the DB, add it.
-        catalogsStatusTuples = [(se, statusType)
-                                for se in catalogsCS for statusType in statusTypes]
-        toBeAdded = list(set(catalogsStatusTuples).difference(set(sesTuple)))
+    # StorageElements that are in DB but not in CS
+    toBeDeleted = list(set(catalogsDB).difference(set(catalogsCS)))
+    gLogger.verbose('%s File catalogs to be deleted' % len(toBeDeleted))
 
-        gLogger.verbose('%s File catalogs entries to be added' %
-                        len(toBeAdded))
+    # Delete storage elements
+    for catalogName in toBeDeleted:
 
-        for catalogTuple in toBeAdded:
+      deleteQuery = self.rStatus._extermineStatusElement(
+          'Resource', catalogName)
 
-            _name = catalogTuple[0]
-            _statusType = catalogTuple[1]
-            _status = self.defaultStatus
-            _reason = 'Synchronized'
-            _elementType = 'Catalog'
+      gLogger.verbose('... %s' % catalogName)
+      if not deleteQuery['OK']:
+        return deleteQuery
 
-            query = self.rStatus.addIfNotThereStatusElement('Resource', 'Status', name=_name,
-                                                            statusType=_statusType,
-                                                            status=_status,
-                                                            elementType=_elementType,
-                                                            tokenOwner=self.tokenOwner,
-                                                            reason=_reason)
-            if not query['OK']:
-                return query
+    #statusTypes = RssConfiguration.getValidStatusTypes()[ 'Resource' ]
+    statusTypes = self.rssConfig.getConfigStatusType('Catalog')
 
-        return S_OK()
+    result = self.rStatus.selectStatusElement('Resource', 'Status',
+                                              elementType='Catalog',
+                                              meta={'columns': ['Name', 'StatusType']})
+    if not result['OK']:
+      return result
+    sesTuple = [(x[0], x[1]) for x in result['Value']]
 
-    def __syncFTS(self):
-        '''
-          Sync FTS: compares CS with DB and does the necessary modifications.
-        '''
+    # For each ( se, statusType ) tuple not present in the DB, add it.
+    catalogsStatusTuples = [(se, statusType)
+                            for se in catalogsCS for statusType in statusTypes]
+    toBeAdded = list(set(catalogsStatusTuples).difference(set(sesTuple)))
 
-        ftsCS = CSHelpers.getFTS()
-        if not ftsCS['OK']:
-            return ftsCS
-        ftsCS = ftsCS['Value']
+    gLogger.verbose('%s File catalogs entries to be added' %
+                    len(toBeAdded))
 
-        gLogger.verbose('%s FTS endpoints found in CS' % len(ftsCS))
+    for catalogTuple in toBeAdded:
 
-        ftsDB = self.rStatus.selectStatusElement('Resource', 'Status',
-                                                 elementType='FTS',
-                                                 meta={'columns': ['Name']})
-        if not ftsDB['OK']:
-            return ftsDB
-        ftsDB = [fts[0] for fts in ftsDB['Value']]
+      _name = catalogTuple[0]
+      _statusType = catalogTuple[1]
+      _status = self.defaultStatus
+      _reason = 'Synchronized'
+      _elementType = 'Catalog'
 
-        # StorageElements that are in DB but not in CS
-        toBeDeleted = list(set(ftsDB).difference(set(ftsCS)))
-        gLogger.verbose('%s FTS endpoints to be deleted' % len(toBeDeleted))
+      query = self.rStatus.addIfNotThereStatusElement('Resource', 'Status', name=_name,
+                                                      statusType=_statusType,
+                                                      status=_status,
+                                                      elementType=_elementType,
+                                                      tokenOwner=self.tokenOwner,
+                                                      reason=_reason)
+      if not query['OK']:
+        return query
 
-        # Delete storage elements
-        for ftsName in toBeDeleted:
+    return S_OK()
 
-            deleteQuery = self.rStatus._extermineStatusElement(
-                'Resource', ftsName)
+  def __syncFTS(self):
+    '''
+      Sync FTS: compares CS with DB and does the necessary modifications.
+    '''
 
-            gLogger.verbose('... %s' % ftsName)
-            if not deleteQuery['OK']:
-                return deleteQuery
+    ftsCS = CSHelpers.getFTS()
+    if not ftsCS['OK']:
+      return ftsCS
+    ftsCS = ftsCS['Value']
 
-        statusTypes = self.rssConfig.getConfigStatusType('FTS')
-        #statusTypes = RssConfiguration.getValidStatusTypes()[ 'Resource' ]
+    gLogger.verbose('%s FTS endpoints found in CS' % len(ftsCS))
 
-        result = self.rStatus.selectStatusElement('Resource', 'Status',
-                                                  elementType='FTS',
-                                                  meta={'columns': ['Name', 'StatusType']})
-        if not result['OK']:
-            return result
-        sesTuple = [(x[0], x[1]) for x in result['Value']]
+    ftsDB = self.rStatus.selectStatusElement('Resource', 'Status',
+                                             elementType='FTS',
+                                             meta={'columns': ['Name']})
+    if not ftsDB['OK']:
+      return ftsDB
+    ftsDB = [fts[0] for fts in ftsDB['Value']]
 
-        # For each ( se, statusType ) tuple not present in the DB, add it.
-        ftsStatusTuples = [(se, statusType)
-                           for se in ftsCS for statusType in statusTypes]
-        toBeAdded = list(set(ftsStatusTuples).difference(set(sesTuple)))
+    # StorageElements that are in DB but not in CS
+    toBeDeleted = list(set(ftsDB).difference(set(ftsCS)))
+    gLogger.verbose('%s FTS endpoints to be deleted' % len(toBeDeleted))
 
-        gLogger.verbose('%s FTS endpoints entries to be added' %
-                        len(toBeAdded))
+    # Delete storage elements
+    for ftsName in toBeDeleted:
 
-        for ftsTuple in toBeAdded:
+      deleteQuery = self.rStatus._extermineStatusElement(
+          'Resource', ftsName)
 
-            _name = ftsTuple[0]
-            _statusType = ftsTuple[1]
-            _status = self.defaultStatus
-            _reason = 'Synchronized'
-            _elementType = 'FTS'
+      gLogger.verbose('... %s' % ftsName)
+      if not deleteQuery['OK']:
+        return deleteQuery
 
-            query = self.rStatus.addIfNotThereStatusElement('Resource', 'Status', name=_name,
-                                                            statusType=_statusType,
-                                                            status=_status,
-                                                            elementType=_elementType,
-                                                            tokenOwner=self.tokenOwner,
-                                                            reason=_reason)
-            if not query['OK']:
-                return query
+    statusTypes = self.rssConfig.getConfigStatusType('FTS')
+    #statusTypes = RssConfiguration.getValidStatusTypes()[ 'Resource' ]
 
-        return S_OK()
+    result = self.rStatus.selectStatusElement('Resource', 'Status',
+                                              elementType='FTS',
+                                              meta={'columns': ['Name', 'StatusType']})
+    if not result['OK']:
+      return result
+    sesTuple = [(x[0], x[1]) for x in result['Value']]
 
-    def __syncStorageElements(self):
-        '''
-          Sync StorageElements: compares CS with DB and does the necessary modifications.
-        '''
+    # For each ( se, statusType ) tuple not present in the DB, add it.
+    ftsStatusTuples = [(se, statusType)
+                       for se in ftsCS for statusType in statusTypes]
+    toBeAdded = list(set(ftsStatusTuples).difference(set(sesTuple)))
 
-        sesCS = CSHelpers.getStorageElements()
-        if not sesCS['OK']:
-            return sesCS
-        sesCS = sesCS['Value']
+    gLogger.verbose('%s FTS endpoints entries to be added' %
+                    len(toBeAdded))
 
-        gLogger.verbose('%s storage elements found in CS' % len(sesCS))
+    for ftsTuple in toBeAdded:
 
-        sesDB = self.rStatus.selectStatusElement('Resource', 'Status',
-                                                 elementType='StorageElement',
-                                                 meta={'columns': ['Name']})
-        if not sesDB['OK']:
-            return sesDB
-        sesDB = [seDB[0] for seDB in sesDB['Value']]
+      _name = ftsTuple[0]
+      _statusType = ftsTuple[1]
+      _status = self.defaultStatus
+      _reason = 'Synchronized'
+      _elementType = 'FTS'
 
-        # StorageElements that are in DB but not in CS
-        toBeDeleted = list(set(sesDB).difference(set(sesCS)))
-        gLogger.verbose('%s storage elements to be deleted' % len(toBeDeleted))
+      query = self.rStatus.addIfNotThereStatusElement('Resource', 'Status', name=_name,
+                                                      statusType=_statusType,
+                                                      status=_status,
+                                                      elementType=_elementType,
+                                                      tokenOwner=self.tokenOwner,
+                                                      reason=_reason)
+      if not query['OK']:
+        return query
 
-        # Delete storage elements
-        for sesName in toBeDeleted:
+    return S_OK()
 
-            deleteQuery = self.rStatus._extermineStatusElement(
-                'Resource', sesName)
+  def __syncStorageElements(self):
+    '''
+      Sync StorageElements: compares CS with DB and does the necessary modifications.
+    '''
 
-            gLogger.verbose('... %s' % sesName)
-            if not deleteQuery['OK']:
-                return deleteQuery
+    sesCS = DMSHelpers().getStorageElements()
 
-        statusTypes = self.rssConfig.getConfigStatusType('StorageElement')
-        #statusTypes = RssConfiguration.getValidStatusTypes()[ 'Resource' ]
+    gLogger.verbose('%s storage elements found in CS' % len(sesCS))
 
-        result = self.rStatus.selectStatusElement('Resource', 'Status',
-                                                  elementType='StorageElement',
-                                                  meta={'columns': ['Name', 'StatusType']})
-        if not result['OK']:
-            return result
-        sesTuple = [(x[0], x[1]) for x in result['Value']]
+    sesDB = self.rStatus.selectStatusElement('Resource', 'Status',
+                                             elementType='StorageElement',
+                                             meta={'columns': ['Name']})
+    if not sesDB['OK']:
+      return sesDB
+    sesDB = [seDB[0] for seDB in sesDB['Value']]
 
-        # For each ( se, statusType ) tuple not present in the DB, add it.
-        sesStatusTuples = [(se, statusType)
-                           for se in sesCS for statusType in statusTypes]
-        toBeAdded = list(set(sesStatusTuples).difference(set(sesTuple)))
+    # StorageElements that are in DB but not in CS
+    toBeDeleted = list(set(sesDB).difference(set(sesCS)))
+    gLogger.verbose('%s storage elements to be deleted' % len(toBeDeleted))
 
-        gLogger.verbose('%s storage element entries to be added' %
-                        len(toBeAdded))
+    # Delete storage elements
+    for sesName in toBeDeleted:
 
-        for seTuple in toBeAdded:
+      deleteQuery = self.rStatus._extermineStatusElement(
+          'Resource', sesName)
 
-            _name = seTuple[0]
-            _statusType = seTuple[1]
-            _status = self.defaultStatus
-            _reason = 'Synchronized'
-            _elementType = 'StorageElement'
+      gLogger.verbose('... %s' % sesName)
+      if not deleteQuery['OK']:
+        return deleteQuery
 
-            query = self.rStatus.addIfNotThereStatusElement('Resource', 'Status', name=_name,
-                                                            statusType=_statusType,
-                                                            status=_status,
-                                                            elementType=_elementType,
-                                                            tokenOwner=self.tokenOwner,
-                                                            reason=_reason)
-            if not query['OK']:
-                return query
+    statusTypes = self.rssConfig.getConfigStatusType('StorageElement')
+    #statusTypes = RssConfiguration.getValidStatusTypes()[ 'Resource' ]
 
-        return S_OK()
+    result = self.rStatus.selectStatusElement('Resource', 'Status',
+                                              elementType='StorageElement',
+                                              meta={'columns': ['Name', 'StatusType']})
+    if not result['OK']:
+      return result
+    sesTuple = [(x[0], x[1]) for x in result['Value']]
 
-    def __syncQueues(self):
-        '''
-          Sync Queues: compares CS with DB and does the necessary modifications.
-        '''
+    # For each ( se, statusType ) tuple not present in the DB, add it.
+    sesStatusTuples = [(se, statusType)
+                       for se in sesCS for statusType in statusTypes]
+    toBeAdded = list(set(sesStatusTuples).difference(set(sesTuple)))
 
-        queuesCS = CSHelpers.getQueues()
-        if not queuesCS['OK']:
-            return queuesCS
-        queuesCS = queuesCS['Value']
+    gLogger.verbose('%s storage element entries to be added' %
+                    len(toBeAdded))
 
-        gLogger.verbose('%s Queues found in CS' % len(queuesCS))
+    for seTuple in toBeAdded:
 
-        queuesDB = self.rStatus.selectStatusElement('Node', 'Status',
-                                                    elementType='Queue',
-                                                    meta={'columns': ['Name']})
-        if not queuesDB['OK']:
-            return queuesDB
-        queuesDB = [queueDB[0] for queueDB in queuesDB['Value']]
+      _name = seTuple[0]
+      _statusType = seTuple[1]
+      _status = self.defaultStatus
+      _reason = 'Synchronized'
+      _elementType = 'StorageElement'
 
-        # ComputingElements that are in DB but not in CS
-        toBeDeleted = list(set(queuesDB).difference(set(queuesCS)))
-        gLogger.verbose('%s Queues to be deleted' % len(toBeDeleted))
+      query = self.rStatus.addIfNotThereStatusElement('Resource', 'Status', name=_name,
+                                                      statusType=_statusType,
+                                                      status=_status,
+                                                      elementType=_elementType,
+                                                      tokenOwner=self.tokenOwner,
+                                                      reason=_reason)
+      if not query['OK']:
+        return query
 
-        # Delete storage elements
-        for queueName in toBeDeleted:
+    return S_OK()
 
-            deleteQuery = self.rStatus._extermineStatusElement(
-                'Node', queueName)
+  def __syncQueues(self):
+    '''
+      Sync Queues: compares CS with DB and does the necessary modifications.
+    '''
 
-            gLogger.verbose('... %s' % queueName)
-            if not deleteQuery['OK']:
-                return deleteQuery
+    queuesCS = CSHelpers.getQueues()
+    if not queuesCS['OK']:
+      return queuesCS
+    queuesCS = queuesCS['Value']
 
-        statusTypes = self.rssConfig.getConfigStatusType('Queue')
-        #statusTypes = RssConfiguration.getValidStatusTypes()[ 'Node' ]
+    gLogger.verbose('%s Queues found in CS' % len(queuesCS))
 
-        result = self.rStatus.selectStatusElement('Node', 'Status',
-                                                  elementType='Queue',
-                                                  meta={'columns': ['Name', 'StatusType']})
-        if not result['OK']:
-            return result
-        queueTuple = [(x[0], x[1]) for x in result['Value']]
+    queuesDB = self.rStatus.selectStatusElement('Node', 'Status',
+                                                elementType='Queue',
+                                                meta={'columns': ['Name']})
+    if not queuesDB['OK']:
+      return queuesDB
+    queuesDB = [queueDB[0] for queueDB in queuesDB['Value']]
 
-        # For each ( se, statusType ) tuple not present in the DB, add it.
-        queueStatusTuples = [(se, statusType)
-                             for se in queuesCS for statusType in statusTypes]
-        toBeAdded = list(set(queueStatusTuples).difference(set(queueTuple)))
+    # ComputingElements that are in DB but not in CS
+    toBeDeleted = list(set(queuesDB).difference(set(queuesCS)))
+    gLogger.verbose('%s Queues to be deleted' % len(toBeDeleted))
 
-        gLogger.verbose('%s Queue entries to be added' % len(toBeAdded))
+    # Delete storage elements
+    for queueName in toBeDeleted:
 
-        for queueTuple in toBeAdded:
+      deleteQuery = self.rStatus._extermineStatusElement(
+          'Node', queueName)
 
-            _name = queueTuple[0]
-            _statusType = queueTuple[1]
-            _status = self.defaultStatus
-            _reason = 'Synchronized'
-            _elementType = 'Queue'
+      gLogger.verbose('... %s' % queueName)
+      if not deleteQuery['OK']:
+        return deleteQuery
 
-            query = self.rStatus.addIfNotThereStatusElement('Node', 'Status', name=_name,
-                                                            statusType=_statusType,
-                                                            status=_status,
-                                                            elementType=_elementType,
-                                                            tokenOwner=self.tokenOwner,
-                                                            reason=_reason)
-            if not query['OK']:
-                return query
+    statusTypes = self.rssConfig.getConfigStatusType('Queue')
+    #statusTypes = RssConfiguration.getValidStatusTypes()[ 'Node' ]
 
-        return S_OK()
+    result = self.rStatus.selectStatusElement('Node', 'Status',
+                                              elementType='Queue',
+                                              meta={'columns': ['Name', 'StatusType']})
+    if not result['OK']:
+      return result
+    queueTuple = [(x[0], x[1]) for x in result['Value']]
+
+    # For each ( se, statusType ) tuple not present in the DB, add it.
+    queueStatusTuples = [(se, statusType)
+                         for se in queuesCS for statusType in statusTypes]
+    toBeAdded = list(set(queueStatusTuples).difference(set(queueTuple)))
+
+    gLogger.verbose('%s Queue entries to be added' % len(toBeAdded))
+
+    for queueTuple in toBeAdded:
+
+      _name = queueTuple[0]
+      _statusType = queueTuple[1]
+      _status = self.defaultStatus
+      _reason = 'Synchronized'
+      _elementType = 'Queue'
+
+      query = self.rStatus.addIfNotThereStatusElement('Node', 'Status', name=_name,
+                                                      statusType=_statusType,
+                                                      status=_status,
+                                                      elementType=_elementType,
+                                                      tokenOwner=self.tokenOwner,
+                                                      reason=_reason)
+      if not query['OK']:
+        return query
+
+    return S_OK()
 
 ################################################################################
 # EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

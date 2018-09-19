@@ -4,14 +4,15 @@
   modules.
 """
 
+__RCSID__ = '$Id$'
+
 import errno
 
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName
+from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.ResourceStatusSystem.Utilities import Utils
 from DIRAC.Resources.Storage.StorageElement import StorageElement
-
-__RCSID__ = '$Id$'
 
 
 def warmUp():
@@ -20,8 +21,6 @@ def warmUp():
   """
   from DIRAC.ConfigurationSystem.private.Refresher import gRefresher
   gRefresher.refreshConfigurationIfNeeded()
-
-## Main functions ##############################################################
 
 
 def getSites():
@@ -102,11 +101,7 @@ def getResources():
     Gets all resources
   """
 
-  resources = []
-
-  ses = getStorageElements()
-  if ses['OK']:
-    resources = resources + ses['Value']
+  resources = DMSHelpers().getStorageElements()
 
   fts = getFTS()
   if fts['OK']:
@@ -136,19 +131,6 @@ def getNodes():
 
   return S_OK(nodes)
 
-################################################################################
-
-
-def getStorageElements():
-  """
-    Gets all storage elements from /Resources/StorageElements
-  """
-
-  _basePath = 'Resources/StorageElements'
-
-  seNames = gConfig.getSections(_basePath)
-  return seNames
-
 
 def getStorageElementsHosts(seNames=None):
   """ Get the hosts of the Storage Elements
@@ -157,10 +139,7 @@ def getStorageElementsHosts(seNames=None):
   seHosts = []
 
   if seNames is None:
-    seNames = getStorageElements()
-    if not seNames['OK']:
-      return seNames
-    seNames = seNames['Value']
+    seNames = DMSHelpers().getStorageElements()
 
   for seName in seNames:
 
@@ -251,10 +230,7 @@ def getStorageElementEndpoints(storageElements=None):
   """
 
   if storageElements is None:
-    storageElements = getStorageElements()
-    if not storageElements['OK']:
-      return storageElements
-    storageElements = storageElements['Value']
+    storageElements = DMSHelpers().getStorageElements()
 
   storageElementEndpoints = []
 

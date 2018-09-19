@@ -17,6 +17,7 @@ from datetime import datetime
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.File import convertSizeUnits
+from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.ResourceStatusSystem.Command.Command import Command
 from DIRAC.ResourceStatusSystem.Utilities import CSHelpers
 from DIRAC.Resources.Storage.StorageElement import StorageElement
@@ -139,9 +140,7 @@ class FreeDiskSpaceCommand(Command):
     that exists in the CS.
     """
 
-    elements = CSHelpers.getStorageElements()
-
-    for name in elements['Value']:
+    for name in DMSHelpers().getStorageElements():
       # keeping TB as default
       diskSpace = self.doNew((name, 'MB'))
       if not diskSpace['OK']:

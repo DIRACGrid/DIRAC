@@ -15,6 +15,7 @@ from types import NoneType
 # DIRAC
 from DIRAC import gLogger, S_OK, gConfig, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Utilities import CSHelpers, Utils
 ResourceManagementClient = getattr(
@@ -202,7 +203,6 @@ class PublisherHandler(RequestHandler):
 
     return S_OK(tree)
 
-  #-----------------------------------------------------------------------------
   types_setToken = [basestring] * 7
 
   def export_setToken(self, element, name, statusType, token, elementType, username, lastCheckTime):
@@ -352,12 +352,7 @@ class PublisherHandler(RequestHandler):
 
     endpoint2Site = {}
 
-    ses = CSHelpers.getStorageElements()
-    if not ses['OK']:
-      gLogger.error(ses['Message'])
-      return ses
-
-    for seName in ses['Value']:
+    for seName in DMSHelpers().getStorageElements():
       res = CSHelpers.getStorageElementEndpoint(seName)
       if not res['OK']:
         continue
@@ -394,6 +389,3 @@ class PublisherHandler(RequestHandler):
         spd['Site'] = 'Unknown'
 
     return S_OK(spList)
-
-
-# #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
