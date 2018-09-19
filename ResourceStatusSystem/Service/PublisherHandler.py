@@ -96,7 +96,10 @@ class PublisherHandler(RequestHandler):
       res = {}
       res['ces'] = CSHelpers.getSiteComputingElements(siteName)
       # Convert StorageElements to host names
-      ses = CSHelpers.getSiteStorageElements(siteName)
+      res = DMSHelpers().getSiteSEMapping()
+      if not res['OK']:
+        return res
+      ses = res['Value'][1][siteName]
       sesHosts = CSHelpers.getStorageElementsHosts(ses)
       if not sesHosts['OK']:
         return sesHosts
@@ -180,7 +183,11 @@ class PublisherHandler(RequestHandler):
     if not cesStatus['OK']:
       return cesStatus
 
-    ses = CSHelpers.getSiteStorageElements(site)
+    res = DMSHelpers().getSiteSEMapping()
+    if not res['OK']:
+      return res
+    ses = res['Value'][1][site]
+
     sesStatus = rsClient.selectStatusElement('Resource', 'Status', name=ses,
                                              meta={'columns': ['Name', 'StatusType', 'Status']})
     if not sesStatus['OK']:
