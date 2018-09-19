@@ -265,7 +265,7 @@ class PilotCStoJSONSynchronizer(object):
           gLogger.error("Error uploading the VO pilot script: %s" % result['Message'])
         tarFiles.append(fileVO)
     else:
-      self.log.warn("The /Operations/<Setup>/Pilot/pilotVORepo option is not defined")
+      gLogger.warn("The /Operations/<Setup>/Pilot/pilotVORepo option is not defined")
 
     # DIRAC repo
     if os.path.isdir('pilotLocalRepo'):
