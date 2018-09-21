@@ -40,7 +40,6 @@ class ResourceStatus(object):
     if rssFlag is None:
       self.rssFlag = self.__getMode()
 
-    # We can set CacheLifetime and CacheHistory from CS, so that we can tune them.
     cacheLifeTime = int(self.rssConfig.getConfigCache())
 
     # RSSCache only affects the calls directed to RSS, if using the CS it is not used.
