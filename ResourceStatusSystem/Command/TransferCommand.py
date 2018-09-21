@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
+from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.Command.Command import Command
@@ -215,12 +216,7 @@ class TransferCommand(Command):
       return sites
     sites = sites['Value']
 
-    ses = CSHelpers.getStorageElements()
-    if not ses['OK']:
-      return ses
-    ses = ses['Value']
-
-    elementNames = sites + ses
+    elementNames = sites + DMSHelpers().getStorageElements()
 
 #    sourceQuery = self.rmClient.selectTransferCache( meta = { 'columns' : [ 'SourceName' ] } )
 #    if not sourceQuery[ 'OK' ]:
@@ -238,6 +234,3 @@ class TransferCommand(Command):
           self.metrics['failed'].append(result)
 
     return S_OK(self.metrics)
-
-################################################################################
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

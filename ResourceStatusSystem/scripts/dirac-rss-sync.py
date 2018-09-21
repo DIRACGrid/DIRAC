@@ -19,12 +19,13 @@
 """
 
 from DIRAC import version, gLogger, exit as DIRACExit, S_OK
-from DIRAC.Core.Base  import Script
+from DIRAC.Core.Base import Script
 
-__RCSID__  = '$Id$'
+__RCSID__ = '$Id$'
 
-subLogger  = None
+subLogger = None
 switchDict = {}
+
 
 def registerSwitches():
   '''
@@ -32,76 +33,81 @@ def registerSwitches():
     command line interface.
   '''
 
-  Script.registerSwitch( '', 'init', 'Initialize the element to the status in the CS ( applicable for StorageElements )' )
-  Script.registerSwitch( '', 'element=', 'Element family to be Synchronized ( Site, Resource or Node ) or `all`' )
-  Script.registerSwitch( '', 'defaultStatus=', 'Default element status if not given in the CS' )
+  Script.registerSwitch('', 'init', 'Initialize the element to the status in the CS ( applicable for StorageElements )')
+  Script.registerSwitch('', 'element=', 'Element family to be Synchronized ( Site, Resource or Node ) or `all`')
+  Script.registerSwitch('', 'defaultStatus=', 'Default element status if not given in the CS')
+
 
 def registerUsageMessage():
   '''
     Takes the script __doc__ and adds the DIRAC version to it
   '''
 
-  hLine = '  ' + '='*78 + '\n'
+  hLine = '  ' + '=' * 78 + '\n'
 
   usageMessage = hLine
   usageMessage += '  DIRAC %s\n' % version
   usageMessage += __doc__
   usageMessage += '\n' + hLine
 
-  Script.setUsageMessage( usageMessage )
+  Script.setUsageMessage(usageMessage)
+
 
 def parseSwitches():
   '''
     Parses the arguments passed by the user
   '''
 
-  Script.parseCommandLine( ignoreErrors = True )
+  Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
   if args:
-    subLogger.error( "Found the following positional args '%s', but we only accept switches" % args )
-    subLogger.error( "Please, check documentation below" )
+    subLogger.error("Found the following positional args '%s', but we only accept switches" % args)
+    subLogger.error("Please, check documentation below")
     Script.showHelp()
-    DIRACExit( 1 )
+    DIRACExit(1)
 
-  switches = dict( Script.getUnprocessedSwitches() )
+  switches = dict(Script.getUnprocessedSwitches())
 
   # Default values
-  switches.setdefault( 'element', None )
-  switches.setdefault( 'defaultStatus', None )
-  if not switches[ 'element' ] in ( 'all', 'Site', 'Resource', 'Node', None ):
-    subLogger.error( "Found %s as element switch" % switches[ 'element' ] )
-    subLogger.error( "Please, check documentation below" )
+  switches.setdefault('element', None)
+  switches.setdefault('defaultStatus', None)
+  if not switches['element'] in ('all', 'Site', 'Resource', 'Node', None):
+    subLogger.error("Found %s as element switch" % switches['element'])
+    subLogger.error("Please, check documentation below")
     Script.showHelp()
-    DIRACExit( 1 )
+    DIRACExit(1)
 
-  subLogger.debug( "The switches used are:" )
-  map( subLogger.debug, switches.iteritems() )
+  subLogger.debug("The switches used are:")
+  map(subLogger.debug, switches.iteritems())
 
   return switches
 
-#Script initialization
-subLogger  = gLogger.getSubLogger( __file__ )
+
+# Script initialization
+subLogger = gLogger.getSubLogger(__file__)
 registerSwitches()
 registerUsageMessage()
 switchDict = parseSwitches()
-DEFAULT_STATUS = switchDict.get( 'defaultStatus', 'Banned' )
+DEFAULT_STATUS = switchDict.get('defaultStatus', 'Banned')
 
 #############################################################################
 # We can define the script body now
 
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils import jobDB
-from DIRAC                                             import gConfig
-from DIRAC.ResourceStatusSystem.Utilities              import Synchronizer, CSHelpers, RssConfiguration
-from DIRAC.ResourceStatusSystem.Client                 import ResourceStatusClient
-from DIRAC.ResourceStatusSystem.PolicySystem           import StateMachine
-from DIRAC.Core.Security.ProxyInfo                     import getProxyInfo
+from DIRAC import gConfig
+from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
+from DIRAC.ResourceStatusSystem.Utilities import Synchronizer, CSHelpers, RssConfiguration
+from DIRAC.ResourceStatusSystem.Client import ResourceStatusClient
+from DIRAC.ResourceStatusSystem.PolicySystem import StateMachine
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
 result = getProxyInfo()
 if result['OK']:
   tokenOwner = result['Value']['username']
 else:
-  gLogger.error( 'No proxy found' )
-  DIRACExit( 1 )
+  gLogger.error('No proxy found')
+  DIRACExit(1)
+
 
 def synchronize():
   '''
@@ -109,27 +115,28 @@ def synchronize():
     `Unknown` and Reason `Synchronized`.
   '''
   global DEFAULT_STATUS
-  synchronizer = Synchronizer.Synchronizer( defaultStatus = DEFAULT_STATUS )
+  synchronizer = Synchronizer.Synchronizer(defaultStatus=DEFAULT_STATUS)
 
-  if switchDict[ 'element' ] in ( 'Site', 'all' ):
-    subLogger.info( 'Synchronizing Sites' )
+  if switchDict['element'] in ('Site', 'all'):
+    subLogger.info('Synchronizing Sites')
     res = synchronizer._syncSites()
-    if not res[ 'OK' ]:
+    if not res['OK']:
       return res
 
-  if switchDict[ 'element' ] in ( 'Resource', 'all' ):
-    subLogger.info( 'Synchronizing Resource' )
+  if switchDict['element'] in ('Resource', 'all'):
+    subLogger.info('Synchronizing Resource')
     res = synchronizer._syncResources()
-    if not res[ 'OK' ]:
+    if not res['OK']:
       return res
 
-  if switchDict[ 'element' ] in ( 'Node', 'all' ):
-    subLogger.info( 'Synchronizing Nodes' )
+  if switchDict['element'] in ('Node', 'all'):
+    subLogger.info('Synchronizing Nodes')
     res = synchronizer._syncNodes()
-    if not res[ 'OK' ]:
+    if not res['OK']:
       return res
 
   return S_OK()
+
 
 def initSites():
   '''
@@ -140,102 +147,99 @@ def initSites():
 
   sites = jobDB.getAllSiteMaskStatus()
 
-  if not sites[ 'OK' ]:
-    subLogger.error( sites[ 'Message' ] )
-    DIRACExit( 1 )
+  if not sites['OK']:
+    subLogger.error(sites['Message'])
+    DIRACExit(1)
 
   for site, elements in sites['Value'].iteritems():
-    result = rssClient.addOrModifyStatusElement( "Site", "Status",
-                                                 name = site, statusType = 'all', status = elements[0],
-                                                 elementType = site.split( '.' )[0], reason = 'dirac-rss-sync' )
-    if not result[ 'OK' ]:
-      subLogger.error( result[ 'Message' ] )
-      DIRACExit( 1 )
+    result = rssClient.addOrModifyStatusElement("Site", "Status",
+                                                name=site, statusType='all', status=elements[0],
+                                                elementType=site.split('.')[0], reason='dirac-rss-sync')
+    if not result['OK']:
+      subLogger.error(result['Message'])
+      DIRACExit(1)
 
   return S_OK()
+
 
 def initSEs():
   '''
     Initializes SEs statuses taking their values from the CS.
   '''
 
-  #WarmUp local copy
+  # WarmUp local copy
   CSHelpers.warmUp()
 
-  subLogger.info( 'Initializing SEs' )
+  subLogger.info('Initializing SEs')
 
   rssClient = ResourceStatusClient.ResourceStatusClient()
 
-  ses = CSHelpers.getStorageElements()
-  if not ses[ 'OK' ]:
-    return ses
-  ses = ses[ 'Value' ]
+  statuses = StateMachine.RSSMachine(None).getStates()
+  statusTypes = RssConfiguration.RssConfiguration().getConfigStatusType('StorageElement')
+  reason = 'dirac-rss-sync'
 
-  statuses    = StateMachine.RSSMachine( None ).getStates()
-  statusTypes = RssConfiguration.RssConfiguration().getConfigStatusType( 'StorageElement' )
-  reason      = 'dirac-rss-sync'
+  subLogger.debug(statuses)
+  subLogger.debug(statusTypes)
 
-  subLogger.debug( statuses )
-  subLogger.debug( statusTypes )
+  for se in DMSHelpers().getStorageElements():
 
-  for se in ses:
+    subLogger.debug(se)
 
-    subLogger.debug( se )
-
-    opts = gConfig.getOptionsDict( '/Resources/StorageElements/%s' % se )
-    if not opts[ 'OK' ]:
-      subLogger.warn( opts[ 'Message' ] )
+    opts = gConfig.getOptionsDict('/Resources/StorageElements/%s' % se)
+    if not opts['OK']:
+      subLogger.warn(opts['Message'])
       continue
-    opts = opts[ 'Value' ]
+    opts = opts['Value']
 
-    subLogger.debug( opts )
+    subLogger.debug(opts)
 
     # We copy the list into a new object to remove items INSIDE the loop !
     statusTypesList = statusTypes[:]
 
     for statusType, status in opts.iteritems():
 
-      #Sanity check...
-      if not statusType in statusTypesList:
+      # Sanity check...
+      if statusType not in statusTypesList:
         continue
 
-      #Transforms statuses to RSS terms
-      if status in ( 'NotAllowed', 'InActive' ):
+      # Transforms statuses to RSS terms
+      if status in ('NotAllowed', 'InActive'):
         status = 'Banned'
 
       if status not in statuses:
-        subLogger.error( '%s not a valid status for %s - %s' % ( status, se, statusType ) )
+        subLogger.error('%s not a valid status for %s - %s' % (status, se, statusType))
         continue
 
       # We remove from the backtracking
-      statusTypesList.remove( statusType )
+      statusTypesList.remove(statusType)
 
-      subLogger.debug( [ se,statusType,status,reason ] )
-      result = rssClient.addOrModifyStatusElement( 'Resource', 'Status', name = se,
-                                                   statusType = statusType, status = status,
-                                                   elementType = 'StorageElement',
-                                                   reason = reason )
+      subLogger.debug([se, statusType, status, reason])
+      result = rssClient.addOrModifyStatusElement('Resource', 'Status', name=se,
+                                                  statusType=statusType, status=status,
+                                                  elementType='StorageElement',
+                                                  reason=reason)
 
-      if not result[ 'OK' ]:
-        subLogger.error( 'Failed to modify' )
-        subLogger.error( result[ 'Message' ] )
+      if not result['OK']:
+        subLogger.error('Failed to modify')
+        subLogger.error(result['Message'])
         continue
 
-    #Backtracking: statusTypes not present on CS
+    # Backtracking: statusTypes not present on CS
     for statusType in statusTypesList:
 
-      result = rssClient.addOrModifyStatusElement( 'Resource', 'Status', name = se,
-                                                   statusType = statusType, status = DEFAULT_STATUS,
-                                                   elementType = 'StorageElement',
+      result = rssClient.addOrModifyStatusElement('Resource', 'Status', name=se,
+                                                  statusType=statusType, status=DEFAULT_STATUS,
+                                                  elementType='StorageElement',
 
-                                                   reason = reason )
-      if not result[ 'OK' ]:
-        subLogger.error( 'Error in backtracking for %s,%s,%s' % ( se, statusType, status ) )
-        subLogger.error( result[ 'Message' ] )
+                                                  reason=reason)
+      if not result['OK']:
+        subLogger.error('Error in backtracking for %s,%s,%s' % (se, statusType, status))
+        subLogger.error(result['Message'])
 
   return S_OK()
 
 #...............................................................................
+
 
 def run():
   '''
@@ -243,33 +247,34 @@ def run():
   '''
 
   result = synchronize()
-  if not result[ 'OK' ]:
-    subLogger.error( result[ 'Message' ] )
-    DIRACExit( 1 )
+  if not result['OK']:
+    subLogger.error(result['Message'])
+    DIRACExit(1)
 
   if 'init' in switchDict:
 
-    if switchDict.get( 'element' ) == "Site":
+    if switchDict.get('element') == "Site":
       result = initSites()
-      if not result[ 'OK' ]:
-        subLogger.error( result[ 'Message' ] )
-        DIRACExit( 1 )
+      if not result['OK']:
+        subLogger.error(result['Message'])
+        DIRACExit(1)
 
-    if switchDict.get( 'element' ) == "Resource":
+    if switchDict.get('element') == "Resource":
       result = initSEs()
-      if not result[ 'OK' ]:
-        subLogger.error( result[ 'Message' ] )
-        DIRACExit( 1 )
+      if not result['OK']:
+        subLogger.error(result['Message'])
+        DIRACExit(1)
 
 #...............................................................................
 
+
 if __name__ == "__main__":
 
-  #Run script
+  # Run script
   run()
 
-  #Bye
-  DIRACExit( 0 )
+  # Bye
+  DIRACExit(0)
 
 ################################################################################
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
+# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
