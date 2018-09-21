@@ -48,7 +48,6 @@ class SiteStatus(object):
     self.rssFlag = ResourceStatus().rssFlag
     self.rsClient = ResourceStatusClient()
 
-    # We can set CacheLifetime and CacheHistory from CS, so that we can tune them.
     cacheLifeTime = int(self.rssConfig.getConfigCache())
 
     # RSSCache only affects the calls directed to RSS, if using the CS it is not used.

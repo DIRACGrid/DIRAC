@@ -4,14 +4,16 @@
   modules.
 """
 
+__RCSID__ = '$Id$'
+
 import errno
 
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName
+from DIRAC.Core.Utilities.Decorators import deprecated
+from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.ResourceStatusSystem.Utilities import Utils
 from DIRAC.Resources.Storage.StorageElement import StorageElement
-
-__RCSID__ = '$Id$'
 
 
 def warmUp():
@@ -20,8 +22,6 @@ def warmUp():
   """
   from DIRAC.ConfigurationSystem.private.Refresher import gRefresher
   gRefresher.refreshConfigurationIfNeeded()
-
-## Main functions ##############################################################
 
 
 def getSites():
@@ -71,6 +71,7 @@ def getGOCSites(diracSites=None):
   return S_OK(list(set(gocSites)))
 
 
+@deprecated("unused")
 def getDomainSites():
   """
     Gets all sites from /Resources/Sites
@@ -102,11 +103,7 @@ def getResources():
     Gets all resources
   """
 
-  resources = []
-
-  ses = getStorageElements()
-  if ses['OK']:
-    resources = resources + ses['Value']
+  resources = DMSHelpers().getStorageElements()
 
   fts = getFTS()
   if fts['OK']:
@@ -123,6 +120,7 @@ def getResources():
   return S_OK(resources)
 
 
+@deprecated("unused")
 def getNodes():
   """
     Gets all nodes
@@ -136,9 +134,8 @@ def getNodes():
 
   return S_OK(nodes)
 
-################################################################################
 
-
+@deprecated("unused")
 def getStorageElements():
   """
     Gets all storage elements from /Resources/StorageElements
@@ -157,10 +154,7 @@ def getStorageElementsHosts(seNames=None):
   seHosts = []
 
   if seNames is None:
-    seNames = getStorageElements()
-    if not seNames['OK']:
-      return seNames
-    seNames = seNames['Value']
+    seNames = DMSHelpers().getStorageElements()
 
   for seName in seNames:
 
@@ -246,15 +240,13 @@ def getStorageElementEndpoint(seName):
   return S_ERROR((host, port, wsurl))
 
 
+@deprecated("unused")
 def getStorageElementEndpoints(storageElements=None):
   """ get the endpoints of the Storage ELements
   """
 
   if storageElements is None:
-    storageElements = getStorageElements()
-    if not storageElements['OK']:
-      return storageElements
-    storageElements = storageElements['Value']
+    storageElements = DMSHelpers().getStorageElements()
 
   storageElementEndpoints = []
 
@@ -366,6 +358,7 @@ def getSiteComputingElements(siteName):
   return []
 
 
+@deprecated("unused")
 def getSiteStorageElements(siteName):
   """
     Gets all computing elements from /Resources/Sites/<>/<siteName>/SE
@@ -391,10 +384,10 @@ def getSiteElements(siteName):
     Gets all the computing and storage elements for a given site
   """
 
-  resources = []
-
-  ses = getSiteStorageElements(siteName)
-  resources = resources + ses
+  res = DMSHelpers().getSiteSEMapping()
+  if not res['OK']:
+    return res
+  resources = res['Value'][1][siteName]
 
   ce = getSiteComputingElements(siteName)
   resources = resources + ce
@@ -444,9 +437,8 @@ def getQueues():
 
   return S_OK(queues)
 
-## /Registry ###################################################################
 
-
+@deprecated("unused")
 def getRegistryUsers():
   """
     Gets all users from /Registry/Users
@@ -471,6 +463,3 @@ def getRegistryUsers():
     registryUsers[userName] = userDetails['Value']
 
   return S_OK(registryUsers)
-
-################################################################################
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

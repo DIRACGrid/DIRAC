@@ -35,6 +35,35 @@ NEW: (#3744) Added miniInstallDIRAC function for Jenkins jobs
 FIX: Better dirac.cfg example configuration for web
 NEW: (#3744) Add WMS documentation in DeveloperGuide/Systems
 
+[v6r20p14]
+
+CHANGE: (#3826) emacs backup file pattern added to .gitignore
+
+*MonitoringSystem
+CHANGE: (#3827) The default name of the Message Queue can be changed
+
+*Core
+FIX: (#3832) VOMSService.py: better logging and error prevention
+
+*ConfigurationSystem
+FIX: (#3837) Corrected configuration location for Pilot 3 files synchronization
+
+*FrameworkSystem
+FIX: (#3830) InstalledComponentDB.__filterFields: fix error in "Component History Web App" when filter values are unicode
+
+*Interface
+CHANGE: (#3836) Dirac.py API - make the unpacking of downloaded sandboxes optional
+
+*Accounting
+CHANGE: (#3831) ReportGenerator: Authenticated users without JOB_SHARING will now only get plots showing their own jobs, solves #3776
+
+*ResourceStatusSystem
+FIX: (#3833) Documentation update
+CHANGE: (#3838) For some info, use DMSHelper instead of CSHelper for better precision
+
+*RequestManagementSystem
+FIX: (#3829) catch more exception in the ReqClient when trying to display the associated FTS jobs
+
 [v6r20p13]
 
 *FrameworkSystem

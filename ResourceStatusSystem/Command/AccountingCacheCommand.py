@@ -91,12 +91,7 @@ from DIRAC.ResourceStatusSystem.Utilities import CSHelpers
 # if not ses[ 'OK' ]:
 # return ses
 ##      ses = [ se[0] for se in ses[ 'Value' ] ]
-#      ses = CSHelpers.getStorageElements()
-#      if not ses['OK']:
-#        return ses
-#
-#      ses = ses[ 'Value' ]
-#      #ses = [ se[ 0 ] for se in ses[ 'Value' ] ]
+#      ses = DMSHelpers().getStorageElements()
 # if sources is None:
 ##      meta = { 'columns' : 'SiteName' }
 ##      sources = self.rsClient.getSite( meta = meta )
@@ -202,11 +197,7 @@ from DIRAC.ResourceStatusSystem.Utilities import CSHelpers
 # if not ses[ 'OK' ]:
 # return ses
 ##      ses = [ se[0] for se in ses[ 'Value' ] ]
-#      ses = CSHelpers.getStorageElements()
-#      if not ses['OK']:
-#        return ses
-#
-#      ses = ses[ 'Value' ]
+#      ses = DMSHelpers().getStorageElements()
 #
 #    if not sites + ses:
 #      return S_ERROR( 'Sites + SEs is empty' )
@@ -439,11 +430,7 @@ from DIRAC.ResourceStatusSystem.Utilities import CSHelpers
 # if not ses[ 'OK' ]:
 # return ses
 ##      ses = [ se[0] for se in ses[ 'Value' ] ]
-#      ses = CSHelpers.getStorageElements()
-#      if not ses['OK']:
-#        return ses
-#
-#      ses = ses[ 'Value' ]
+#      ses = DMSHelpers().getStorageElements()
 #
 #    if not sites + ses:
 #      return S_ERROR( 'Sites + SEs is empty' )

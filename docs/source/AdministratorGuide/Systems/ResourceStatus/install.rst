@@ -4,10 +4,6 @@
 Installation
 ============
 
----------------------
-Setup for BASIC USAGE
----------------------
-
 This page describes the basic steps to install, configure, activate and start using the ResourceStatus system of DIRAC.
 
 *WARNING*: If you have doubts about the success of any step, DO NOT ACTIVATE RSS.
@@ -20,16 +16,14 @@ CS Configuration
 
 The configuration for RSS sits under the following path on the CS following the usual /Operations section convention::
 
-    /Operations/Defaults/ResourceStatus
+    /Operations/[Defaults|SetupName]/ResourceStatus
 
 Please, make sure you have the following schema::
 
-    /Operations/Defaults/ResourceStatus
+    /Operations/[Defaults|SetupName]/ResourceStatus
       /Config
         State        = InActive
         Cache        = 300
-        CacheHistory = 24
-        RecordLogs   = Active
         /StatusTypes
             default = all
             StorageElement = ReadAccess,WriteAccess,CheckAccess,RemoveAccess
@@ -126,15 +120,23 @@ Activate RSS
 
 If you did not see any problem, activate RSS by setting the CS option::
 
-    /Operations/Defaults/ResourceStatus/Config/State = Active
+    /Operations/[Defaults|SetupName]/ResourceStatus/Config/State = Active
 
 ------
 Agents
 ------
 
-There are few agents that are required:
+The agents that are required:
 
+    - CacheFeederAgent
     - SummarizeLogsAgent
 
-Please, install them and make sure they are up and running. Old agents, like the
-*InspectorAgent(s)* can be safely removed.
+The following agents are also necessary, but they won't do nothing until some policies are defined in the CS.
+The policy definitions is explained in :ref:`rss_advanced_configuration` ::
+
+    - ElementInspectorAgent
+    - SiteInspectorAgent
+    - TokenAgent
+    - EmailAgent
+
+Please, install them and make sure they are up and running. The configuration of these agents can be found :mod:`Here <ResourceStatusSystem.Agent>`.

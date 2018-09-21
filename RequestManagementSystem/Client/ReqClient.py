@@ -496,7 +496,11 @@ def printFTSJobs(request):
           gLogger.always('         FTS jobs associated: %s' % ','.join('%s (%s)' % (job.FTSGUID, job.Status)
                                                                        for job in ftsJobs))
 
-  except ImportError as err:
+  # ImportError can be thrown for the old client
+  # AttributeError can be thrown because the deserialization will not have
+  # happened correctly on the new fts3 (CC7 typically), and the error is not
+  # properly propagated
+  except (ImportError, AttributeError) as err:
     gLogger.debug("Could not instantiate FtsClient because of Exception", repr(err))
 
 

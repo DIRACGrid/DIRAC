@@ -172,7 +172,6 @@ Configuration
         }
         WorkflowTaskAgent-RealData
         {
-          #@@-phicharp@lhcb_admin - 2015-06-05 16:44:11
           TransType = DataReconstruction
           TransType += DataStripping
           shifterProxy = DataProcessing
@@ -181,7 +180,6 @@ Configuration
         }
         WorkflowTaskAgent-Simulation
         {
-          #@@-phicharp@lhcb_admin - 2015-06-05 16:44:11
           TransType = Simulation
           TransType += MCSimulation
           shifterProxy = SimulationProcessing

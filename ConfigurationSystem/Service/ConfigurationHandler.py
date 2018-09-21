@@ -11,6 +11,7 @@ from DIRAC.Core.Utilities import DErrno
 gServiceInterface = None
 gPilotSynchronizer = None
 
+
 def initializeConfigurationHandler(serviceInfo):
   global gServiceInterface
   gServiceInterface = ServiceInterface(serviceInfo['URL'])
@@ -59,7 +60,8 @@ class ConfigurationHandler(RequestHandler):
       return res
 
     # Check the flag for updating the pilot 3 JSON file
-    if self.srv_getCSOption('UpdatePilotCStoJSONFile', False) and gServiceInterface.isMaster():
+    updatePilotCStoJSONFileFlag = self.srv_getCSOption('UpdatePilotCStoJSONFile', False)
+    if updatePilotCStoJSONFileFlag and gServiceInterface.isMaster():
       if gPilotSynchronizer is None:
         try:
           # This import is only needed for the Master CS service, making it conditional avoids
