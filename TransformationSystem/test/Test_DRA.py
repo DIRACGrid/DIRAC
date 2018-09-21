@@ -75,16 +75,16 @@ class TestDRA(unittest.TestCase):
 
   def test_getEligibleTransformations_success(self):
     """test for DataRecoveryAgent getEligibleTransformations success................................"""
-    self.dra.tClient.getTransformations = Mock(
-        return_value=S_OK([dict(TransformationID=1234, TransformationName="TestProd12", Type="TestProd")]))
-
+    transInfoDict = dict(TransformationID=1234, TransformationName="TestProd12", Type="TestProd",
+                         AuthorDN='/some/cert/owner', AuthorGroup='Test_Prod')
+    self.dra.tClient.getTransformations = Mock(return_value=S_OK([transInfoDict]))
     res = self.dra.getEligibleTransformations(status="Active", typeList=['TestProds'])
     self.assertTrue(res['OK'])
     self.assertIsInstance(res['Value'], dict)
     vals = res['Value']
     self.assertIn("1234", vals)
-    self.assertIsInstance(vals['1234'], tuple)
-    self.assertEqual(("TestProd", "TestProd12"), vals["1234"])
+    self.assertIsInstance(vals['1234'], dict)
+    self.assertEqual(transInfoDict, vals["1234"])
 
   def test_getEligibleTransformations_failed(self):
     """test for DataRecoveryAgent getEligibleTransformations failure................................"""
@@ -118,7 +118,7 @@ class TestDRA(unittest.TestCase):
     transInfoDict = dict(TransformationID=1234, TransformationName="TestProd12", Type="MCSimulation",
                          AuthorDN='/some/cert/owner', AuthorGroup='Test_Prod')
     with patch("%s.TransformationInfo" % MODULE_NAME, new=tinfoMock):
-      self.dra.treatProduction(prodID=1234, transName="TestProd12", transType="MCReconstruction")  # returns None
+      self.dra.treatProduction(1234, transInfoDict)  # returns None
     self.dra.log.notice.assert_any_call(MatchStringWith("Getting tasks..."))
 
   def test_treatProduction3(self):
@@ -811,10 +811,7 @@ class TestDRA(unittest.TestCase):
 
     # Eligible succeeds
     self.dra.log.reset_mock()
-    self.dra.getEligibleTransformations = Mock(return_value=S_OK({123: ("MCGeneration", "Trafo123"),
-                                                                  124: ("MCGeneration", "Trafo124"),
-                                                                  125: ("MCGeneration", "Trafo125")}
-                                                                 ))
+    self.dra.getEligibleTransformations = Mock(return_value=S_OK({123: d123, 124: d124, 125: d125}))
     res = self.dra.execute()
     self.assertTrue(res["OK"])
     self.dra.log.notice.assert_any_call(MatchStringWith("Will ignore the following productions: [123, 456, 789]"))
@@ -824,10 +821,7 @@ class TestDRA(unittest.TestCase):
 
     # Notes To Send
     self.dra.log.reset_mock()
-    self.dra.getEligibleTransformations = Mock(return_value=S_OK({123: ("MCGeneration", "Trafo123"),
-                                                                  124: ("MCGeneration", "Trafo124"),
-                                                                  125: ("MCGeneration", "Trafo125")}
-                                                                 ))
+    self.dra.getEligibleTransformations = Mock(return_value=S_OK({123: d123, 124: d124, 125: d125}))
     self.dra.notesToSend = "Da hast du deine Karte"
     sendmailMock = Mock()
     sendmailMock.sendMail.return_value = S_OK("Nice Card")
