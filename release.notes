@@ -1,4 +1,4 @@
-[v7r0-pre3]
+[v7r0-pre4]
 
 *Accounting
 CHANGE: (Multi)AccountingDB - Grouping Type and Object loader together with the MonitoringSystem ones.
@@ -16,6 +16,7 @@ NEW: Added ES backend to WMSAdministratorHandler to get JobParameters.
 NEW: Added separate MySQL table for JobsStatus in JobDB, and modified code accordingly.
 CHANGE: ElasticJobDB.py: Modify setJobParameter method to register JobAttributes like Owner, Proxy, JobGroup etc.
 CHANGE: ElasticJobDB.py: added getJobParametersAndAttributes method to retrieve both parameters and attributes for a given JobID.
+CHANGE: Pilot Watchdog - using python UNIX services for some watchdog calls
 
 *Core
 NEW: (#3744) Add update method to the ElasticSearchDB.py to update or if not available create the values 
