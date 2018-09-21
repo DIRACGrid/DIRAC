@@ -10,6 +10,7 @@ import errno
 
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName
+from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.ResourceStatusSystem.Utilities import Utils
 from DIRAC.Resources.Storage.StorageElement import StorageElement
@@ -70,6 +71,7 @@ def getGOCSites(diracSites=None):
   return S_OK(list(set(gocSites)))
 
 
+@deprecated("unused")
 def getDomainSites():
   """
     Gets all sites from /Resources/Sites
@@ -118,6 +120,7 @@ def getResources():
   return S_OK(resources)
 
 
+@deprecated("unused")
 def getNodes():
   """
     Gets all nodes
@@ -130,6 +133,18 @@ def getNodes():
     nodes = nodes + queues['Value']
 
   return S_OK(nodes)
+
+
+@deprecated("unused")
+def getStorageElements():
+  """
+    Gets all storage elements from /Resources/StorageElements
+  """
+
+  _basePath = 'Resources/StorageElements'
+
+  seNames = gConfig.getSections(_basePath)
+  return seNames
 
 
 def getStorageElementsHosts(seNames=None):
@@ -225,6 +240,7 @@ def getStorageElementEndpoint(seName):
   return S_ERROR((host, port, wsurl))
 
 
+@deprecated("unused")
 def getStorageElementEndpoints(storageElements=None):
   """ get the endpoints of the Storage ELements
   """
@@ -342,6 +358,27 @@ def getSiteComputingElements(siteName):
   return []
 
 
+@deprecated("unused")
+def getSiteStorageElements(siteName):
+  """
+    Gets all computing elements from /Resources/Sites/<>/<siteName>/SE
+  """
+
+  _basePath = 'Resources/Sites'
+
+  domainNames = gConfig.getSections(_basePath)
+  if not domainNames['OK']:
+    return domainNames
+  domainNames = domainNames['Value']
+
+  for domainName in domainNames:
+    ses = gConfig.getValue('%s/%s/%s/SE' % (_basePath, domainName, siteName), '')
+    if ses:
+      return ses.split(', ')
+
+  return []
+
+
 def getSiteElements(siteName):
   """
     Gets all the computing and storage elements for a given site
@@ -400,9 +437,8 @@ def getQueues():
 
   return S_OK(queues)
 
-## /Registry ###################################################################
 
-
+@deprecated("unused")
 def getRegistryUsers():
   """
     Gets all users from /Registry/Users
@@ -427,6 +463,3 @@ def getRegistryUsers():
     registryUsers[userName] = userDetails['Value']
 
   return S_OK(registryUsers)
-
-################################################################################
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
