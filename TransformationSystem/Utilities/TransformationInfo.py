@@ -1,10 +1,10 @@
 """TransformationInfo class to be used by ILCTransformation System"""
 
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from itertools import izip_longest
 
 from DIRAC import gLogger, S_OK
-from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
+from DIRAC.Core.Utilities.Proxy import UserProxy
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 
@@ -12,19 +12,23 @@ from DIRAC.TransformationSystem.Utilities.JobInfo import JobInfo
 
 __RCSID__ = "$Id$"
 
-class TransformationInfo(object):
-  """ hold information about transformations """
 
-  def __init__(self, transformationID, transName, transType, enabled,
+class TransformationInfo(object):
+  """Hold information about a transformation."""
+
+  def __init__(self, transformationID, transInfoDict, enabled,
                tClient, fcClient, jobMon):
-    self.log = gLogger.getSubLogger("TInfo")
+    """Store clients etc."""
+    self.log = gLogger.getSubLogger(__name__ + "[%s]" % transformationID)
     self.enabled = enabled
     self.tID = transformationID
-    self.transName = transName
+    self.transName = transInfoDict['TransformationName']
     self.tClient = tClient
     self.jobMon = jobMon
     self.fcClient = fcClient
-    self.transType = transType
+    self.transType = transInfoDict['Type']
+    self.authorDN = transInfoDict['AuthorDN']
+    self.authorGroup = transInfoDict['AuthorGroup']
 
   def checkTasksStatus(self):
     """Check the status for the task of given transformation and taskID"""
@@ -159,24 +163,22 @@ class TransformationInfo(object):
       return
     self.log.notice("Remove these files: \n +++ %s " % "\n +++ ".join(filesToDelete))
 
-    errorReasons = {}
+    errorReasons = defaultdict(list)
     successfullyRemoved = 0
 
-    for lfnList in breakListIntoChunks(filesToDelete, 200):
-      ## this is needed to remove the file with the Shifter credentials and not with the server credentials
-      gConfigurationData.setOptionInCFG('/DIRAC/Security/UseServerCertificate', 'false')
-      result = DataManager().removeFile(lfnList)
-      gConfigurationData.setOptionInCFG('/DIRAC/Security/UseServerCertificate', 'true')
-      if not result['OK']:
-        self.log.error("Failed to remove LFNs", result['Message'])
-        raise RuntimeError("Failed to remove LFNs: %s" % result['Message'])
-      for lfn, err in result['Value']['Failed'].items():
-        reason = str(err)
-        if reason not in errorReasons.keys():
-          errorReasons[reason] = []
-        errorReasons[reason].append(lfn)
-      successfullyRemoved += len(result['Value']['Successful'].keys())
+    with UserProxy(proxyUserDN=self.authorDN, proxyUserGroup=self.authorGroup) as proxyResult:
+      if not proxyResult['OK']:
+        raise RuntimeError("Failed to get a proxy:%s" % proxyResult['Message'])
 
+      for lfnList in breakListIntoChunks(filesToDelete, 200):
+        result = DataManager().removeFile(lfnList)
+        if not result['OK']:
+          self.log.error("Failed to remove LFNs", result['Message'])
+          raise RuntimeError("Failed to remove LFNs: %s" % result['Message'])
+        for lfn, err in result['Value']['Failed'].items():
+          reason = str(err)
+          errorReasons[reason].append(lfn)
+        successfullyRemoved += len(result['Value']['Successful'].keys())
     for reason, lfns in errorReasons.items():
       self.log.error("Failed to remove %d files with error: %s" % (len(lfns), reason))
     self.log.notice("Successfully removed %d files" % successfullyRemoved)

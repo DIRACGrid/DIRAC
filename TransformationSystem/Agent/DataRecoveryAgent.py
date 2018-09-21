@@ -60,7 +60,6 @@ class DataRecoveryAgent(AgentModule):
                                                   'MCReconstruction_Overlay',
                                                   'MCGeneration'])
     self.transformationStatus = self.am_getOption("TransformationStatus", ['Active', 'Completing'])
-    self.shifterProxy = self.am_setOption('shifterProxy', 'DataManager')
 
     self.jobStatus = ['Failed', 'Done']  # This needs to be both otherwise we cannot account for all cases
 
@@ -273,18 +272,17 @@ class DataRecoveryAgent(AgentModule):
     if not transformations['OK']:
       self.log.error("Failure to get transformations", transformations['Message'])
       return S_ERROR("Failure to get transformations")
-    for prodID, values in transformations['Value'].iteritems():
+    for prodID, transInfoDict in transformations['Value'].iteritems():
       if prodID in self.productionsToIgnore:
         self.log.notice("Ignoring Production: %s " % prodID)
         continue
       self.__resetCounters()
       self.inputFilesProcessed = set()
-      transType, transName = values
       self.log.notice("Running over Production: %s " % prodID)
-      self.treatProduction(int(prodID), transName, transType)
+      self.treatProduction(int(prodID), transInfoDict)
 
-      if self.notesToSend and self.__notOnlyKeepers(transType):
-        ##remove from the jobCache because something happened
+      if self.notesToSend and self.__notOnlyKeepers(transInfoDict['Type']):
+        # remove from the jobCache because something happened
         self.jobCache.pop(int(prodID), None)
         notification = NotificationClient()
         for address in self.addressTo:
@@ -305,15 +303,13 @@ class DataRecoveryAgent(AgentModule):
     transformations = {}
     for prod in res['Value']:
       prodID = prod['TransformationID']
-      prodName = prod['TransformationName']
-      transformations[str(prodID)] = (prod['Type'], prodName)
+      transformations[str(prodID)] = prod
     return S_OK(transformations)
 
-  def treatProduction( self, prodID, transName, transType ):
-    """run this thing for given production"""
-
-    tInfo = TransformationInfo( prodID, transName, transType, self.enabled,
-                                self.tClient, self.fcClient, self.jobMon)
+  def treatProduction(self, prodID, transInfoDict):
+    """Run this thing for given production."""
+    tInfo = TransformationInfo(prodID, transInfoDict, self.enabled,
+                               self.tClient, self.fcClient, self.jobMon)
     jobs, nDone, nFailed = tInfo.getJobs(statusList=self.jobStatus)
 
     if self.jobCache[prodID][0] == nDone and self.jobCache[prodID][1] == nFailed:
@@ -325,7 +321,7 @@ class DataRecoveryAgent(AgentModule):
     tasksDict = None
     lfnTaskDict = None
 
-    if not transType.startswith("MCGeneration"):
+    if not transInfoDict['Type'].startswith("MCGeneration"):
       self.log.notice("Getting tasks...")
       tasksDict = tInfo.checkTasksStatus()
       lfnTaskDict = dict([(tasksDict[taskID]['LFN'], taskID) for taskID in tasksDict])
