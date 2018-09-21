@@ -23,6 +23,7 @@ import tempfile
 import glob
 import tarfile
 import urllib
+import shlex
 import StringIO
 
 import DIRAC
@@ -31,7 +32,7 @@ from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.API import API
 from DIRAC.Interfaces.API.JobRepository import JobRepository
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
-from DIRAC.Core.Utilities.Subprocess import shellCall
+from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.Core.Utilities.ModuleFactory import ModuleFactory
 from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
@@ -886,7 +887,7 @@ class Dirac(API):
 
     cbFunction = self.__printOutput
 
-    result = shellCall(0, command, env=executionEnv, callbackFunction=cbFunction)
+    result = systemCall(0, cmdSeq=shlex.split(command), env=executionEnv, callbackFunction=cbFunction)
     if not result['OK']:
       return result
 
