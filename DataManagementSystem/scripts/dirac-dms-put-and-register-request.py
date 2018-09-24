@@ -87,7 +87,7 @@ if __name__ == "__main__":
     DIRAC.exit( -1 )
 
   gLogger.always( "Request '%s' has been put to ReqDB for execution." % requestName )
-  gLogger.always( "You can monitor its status using command: 'dirac-rms-show-request %s'" % requestName )
+  gLogger.always( "You can monitor its status using command: 'dirac-rms-request %s'" % requestName )
   DIRAC.exit( 0 )
 
 
