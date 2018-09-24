@@ -1,5 +1,6 @@
 """Job Information"""
 
+from pprint import pformat
 from itertools import izip_longest
 from DIRAC import gLogger
 
@@ -82,18 +83,16 @@ class JobInfo(object):
       raise TaskInfoException("InputFile is None: %s" % str(self))
 
     if self.taskID not in tasksDict:
-      #print "taskID %d not in tasksDict" % self.taskID
       try:
         taskDict = tasksDict[lfnTaskDict[self.inputFile]]
       except KeyError as ke:
         gLogger.error("ERROR for key:", str(ke))
-        gLogger.error("Failed to get taskDict", "%s, %s" % (self.taskID, self.inputFile))
+        gLogger.error("Failed to get taskDict", "%s, %s: %s" % (self.taskID, self.inputFile, pformat(lfnTaskDict)))
         raise
       self.otherTasks = lfnTaskDict[self.inputFile]
     else:
       taskDict = tasksDict[self.taskID]
 
-    #dict( FileID=fileID, LFN=lfn, Status=status )
     if self.inputFile != taskDict['LFN']:
       raise TaskInfoException(
           "InputFiles do not agree: %s vs . %s : \n %s" %

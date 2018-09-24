@@ -415,6 +415,22 @@ class TestJI(unittest.TestCase):
     with self.assertRaisesRegexp(TaskInfoException, "InputFiles do not agree"):
       self.jbi.getTaskInfo(tasksDict, lfnTaskDict)
 
+    # raise keyError
+    self.jbi.taskID = 1235
+    self.jbi.inputFile = ""
+    tasksDict = {1234: dict(FileID=123456, LFN="lfn", Status="Processed")}
+    lfnTaskDict = {}
+    with self.assertRaisesRegexp(KeyError, ""):
+      self.jbi.getTaskInfo(tasksDict, lfnTaskDict)
+
+    # raise inputFile
+    self.jbi.taskID = 1235
+    self.jbi.inputFile = None
+    tasksDict = {1234: dict(FileID=123456, LFN="lfn", Status="Processed")}
+    lfnTaskDict = {}
+    with self.assertRaisesRegexp(TaskInfoException, "InputFile is None"):
+      self.jbi.getTaskInfo(tasksDict, lfnTaskDict)
+
   def test_getJobInformation(self):
     """ILCTransformation.Utilities.JobInfo.getJobInformation........................................"""
     self.diracILC.getJobJDL.return_value = S_OK(self.jdl1)
