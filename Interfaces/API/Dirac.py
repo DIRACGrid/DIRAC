@@ -1674,7 +1674,7 @@ class Dirac(API):
 
     # New download
     result = SandboxStoreClient(useCertificates=self.useCertificates).downloadSandboxForJob(jobID, 'Output', dirPath,
-                                                                                            unpack)
+                                                                                            False, unpack)
     if result['OK']:
       self.log.info('Files retrieved and extracted in %s' % (dirPath))
       if self.jobRepo:
