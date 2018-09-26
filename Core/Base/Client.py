@@ -51,7 +51,7 @@ class Client(object):
   def setTimeout(self, timeout):
     """ Specify the timeout of the call. Forwarded to RPCClient
 
-        :param timeout: guess...
+        :param int timeout: timeout for the RPC calls
     """
     self.__kwargs['timeout'] = timeout
 
@@ -72,26 +72,15 @@ class Client(object):
     """
     toExecute = self.call
     # Check whether 'rpc' keyword is specified
-    rpc = False
-    if 'rpc' in kws:
-      rpc = kws['rpc']
-      del kws['rpc']
+    rpc = kws.pop('rpc', False)
     # Check whether the 'timeout' keyword is specified
-    timeout = 120
-    if 'timeout' in kws:
-      timeout = kws['timeout']
-      del kws['timeout']
+    timeout = kws.pop('timeout', 120)
     # Check whether the 'url' keyword is specified
-    url = ''
-    if 'url' in kws:
-      url = kws['url']
-      del kws['url']
+    url = kws.pop('url', '')
     # Create the RPCClient
     rpcClient = self._getRPC(rpc, url, timeout)
     # Execute the method
     return getattr(rpcClient, toExecute)(*parms)
-    # evalString = "rpcClient.%s(*parms,**kws)" % toExecute
-    # return eval( evalString )
 
   def _getRPC(self, rpc=None, url='', timeout=600):
     """ Return an RPCClient object constructed following the attributes.
