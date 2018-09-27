@@ -43,6 +43,8 @@ BAD_FILES = ("lfc_dfc_copy",
 
 FORCE_ADD_PRIVATE = ["FCConditionParser"]
 
+# inherited functions give warnings in docstrings
+NO_INHERITED = ["HTTPDISETConnection", 'SOAPFactory']
 
 def mkRest(filename, modulename, fullmodulename, subpackages=None, modules=None):
   """make a rst file for filename"""
@@ -127,7 +129,8 @@ def mkModuleRest(classname, fullclassname, buildtype="full"):
   lines.append(".. automodule:: %s" % fullclassname)
   if buildtype == "full":
     lines.append("   :members:")
-    lines.append("   :inherited-members:")
+    if classname not in NO_INHERITED:
+      lines.append("   :inherited-members:")
     lines.append("   :undoc-members:")
     lines.append("   :show-inheritance:")
     if classname in FORCE_ADD_PRIVATE:
