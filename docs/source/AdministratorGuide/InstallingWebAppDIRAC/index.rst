@@ -77,7 +77,7 @@ Create the configuration file::
    - ./install_site.sh install.cfg # use -v for specifying a version
    - source /opt/dirac/bashrc
 
- Note: If you do not have the /home/dirac/DIRAC directory, please have a look the instructions given in the :ref:`server_requirements` section.
+Note: If you do not have the /home/dirac/DIRAC directory, please have a look the instructions given in the :ref:`server_requirements` section.
 
 
 Checks to be done after the installation
