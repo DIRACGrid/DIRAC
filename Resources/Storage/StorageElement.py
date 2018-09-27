@@ -377,6 +377,7 @@ class StorageElementItem(object):
       * TapeSE: True if TXDY with X > 0 (defaults to False)
       * TotalCapacityTB: float (-1 if not defined)
       * DiskCacheTB: float (-1 if not defined)
+
     It returns directly the dictionary
     """
 
