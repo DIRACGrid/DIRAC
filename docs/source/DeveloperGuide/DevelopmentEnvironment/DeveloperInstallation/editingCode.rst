@@ -74,15 +74,15 @@ Checking out the source
 
 From now on we will call that directory *$DEVROOT*, just for our own convenience
 
-1.
+1. ::
 
-   export DEVROOT=$PWD && export WORKSPACE=$PWD
+     export DEVROOT=$PWD && export WORKSPACE=$PWD
 
 (persist this in the way you prefer)
 
 2. Check out DIRAC source code. DIRAC source is hosted on *github.com*. Fork it (online!), then::
 
-   git clone https://github.com/YOUR_GITHUB_USERNAME/DIRAC.git
+     git clone https://github.com/YOUR_GITHUB_USERNAME/DIRAC.git
 
 Obviously, you must replace 'YOUR_GITHUB_USERNAME' with the username that we have registered on github.
 This will create a *$DEVROOT/DIRAC* for you and the git repository will be cloned in.
