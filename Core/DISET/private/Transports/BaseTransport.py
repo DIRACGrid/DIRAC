@@ -100,6 +100,7 @@ class BaseTransport( object ):
       Return empty dictionnary for plainTransport.
 
       In SSLTransport it contains (after the handshake):
+
        - 'DN' : All identity name, e.g. ```/C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch```
        - 'CN' : Only the user name e.g. ciuser
        - 'x509Chain' : List of all certificates in the chain
@@ -107,6 +108,7 @@ class BaseTransport( object ):
        - 'isLimitedProxy' : True if the client use limited proxy certificate
        - 'group' (optional): Dirac group attached to the client
        - 'extraCredentials' (optional): Extra credentials if exists
+
       Before the handshake, dictionnary is empty
     """
     return self.peerCredentials

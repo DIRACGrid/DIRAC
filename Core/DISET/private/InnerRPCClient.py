@@ -10,6 +10,7 @@ from DIRAC.Core.Utilities.DErrno import cmpError, ENOAUTH
 class InnerRPCClient( BaseClient ):
   """ This class instruments the BaseClient to perform RPC calls.
       At every RPC call, this class:
+
         * connects
         * proposes the action
         * sends the method parameters
