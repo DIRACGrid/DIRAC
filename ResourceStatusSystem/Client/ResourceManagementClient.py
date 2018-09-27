@@ -32,8 +32,9 @@ class ResourceManagementClient(object):
   basic database functions that are interesting enough to be exposed.
 
   The client will ALWAYS try to connect to the DB, and in case of failure, to the
-  XML-RPC server ( namely :class:`ResourceManagementDB` and
-  :class:`ResourceManagementHancler` ).
+  XML-RPC server ( namely :mod:`~DIRAC.ResourceStatusSystem.DB.ResourceManagementDB` and
+  :mod:`~DIRAC.ResourceStatusSystem.Service.ResourceManagementHandler` ).
+
 
   You can use this client on this way
 
@@ -65,23 +66,20 @@ class ResourceManagementClient(object):
     '''
     Gets from PolicyResult all rows that match the parameters given.
 
-    :Parameters:
-      **name** - `[, string, list]`
-        name of an individual of the grid topology
-      **plotType** - `[, string, list]`
-        the plotType name (e.g. 'Pilot')
-      **plotName** - `[, string, list]`
-        the plot name
-      **result** - `[, string, list]`
-        command result
-      **dateEffective** - `[, datetime, list]`
-        time-stamp from which the result is effective
-      **lastCheckTime** - `[, datetime, list]`
-        time-stamp setting last time the result was checked
-      **meta** - `dict`
-        metadata for the mysql query. Currently it is being used only for column selection.
-        For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
-
+    :param name: name of an individual of the grid topology
+    :type name: string, list
+    :param plotType: the plotType name (e.g. 'Pilot')
+    :type plotType: string, list
+    :param plotName: the plot name
+    :type plotName: string, list
+    :param result: command result
+    :type result: string, list
+    :param dateEffective: time-stamp from which the result is effective
+    :type dateEffective:  datetime, list
+    :param lastCheckTime: time-stamp setting last time the result was checked
+    :type lastCheckTime: datetime, list
+    :param dict meta: metadata for the mysql query. Currently it is being used only for column selection.
+         For example: meta={'columns': ['Name']} will return only the 'Name' column.
     :return: S_OK() || S_ERROR()
     '''
 
@@ -94,20 +92,12 @@ class ResourceManagementClient(object):
     and `plotName` to query the database, decides whether to insert or update the
     table.
 
-    :Parameters:
-      **name** - `string`
-        name of an individual of the grid topology
-      **plotType** - `string`
-        the plotType name (e.g. 'Pilot')
-      **plotName** - `string`
-        the plot name
-      **result** - `string`
-        command result
-      **dateEffective** - `datetime`
-        time-stamp from which the result is effective
-      **lastCheckTime** - `datetime`
-        time-stamp setting last time the result was checked
-
+    :param str name: name of an individual of the grid topology
+    :param str plotType: name (e.g. 'Pilot')
+    :param str plotName: the plot name
+    :param str result: command result
+    :param datetime dateEffective: timestamp from which the result is effective
+    :param datetime lastCheckTime: timestamp setting last time the result was checked
     :return: S_OK() || S_ERROR()
     '''
 
@@ -118,20 +108,12 @@ class ResourceManagementClient(object):
     '''
     Deletes from AccountingCache all rows that match the parameters given.
 
-    :Parameters:
-      **name** - `string`
-        name of an individual of the grid topology
-      **plotType** - `string`
-        the plotType name (e.g. 'Pilot')
-      **plotName** - `string`
-        the plot name
-      **result** - `string`
-        command result
-      **dateEffective** - `datetime`
-        time-stamp from which the result is effective
-      **lastCheckTime** - `datetime`
-        time-stamp setting last time the result was checked
-
+    :param str name: name of an individual of the grid topology
+    :param str plotType: the plotType name (e.g. 'Pilot')
+    :param str plotName: the plot name
+    :param str result: command result
+    :param datetime dateEffective: timestamp from which the result is effective
+    :param datetime lastCheckTime: timestamp setting last time the result was checked
     :return: S_OK() || S_ERROR()
     '''
 
@@ -144,18 +126,13 @@ class ResourceManagementClient(object):
     '''
     Gets from GGUSTicketsCache all rows that match the parameters given.
 
-    :Parameters:
-      **gocSite** - `string`
-      **link** - `string`
-        url to the details
-      **openTickets** - `integer`
-      **tickets** - `string`
-      **lastCheckTime** - `datetime`
-         time-stamp setting last time the result was checked
-      **meta** - `dict`
-        metadata for the mysql query. Currently it is being used only for column selection.
-        For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
-
+    :param str gocSite:
+    :param str link: url to the details
+    :param int openTickets:
+    :param str tickets:
+    :param datetime lastCheckTime: timestamp setting last time the result was checked
+    :param dict meta: metadata for the mysql query. Currently it is being used only for column selection.
+       For example: meta={'columns': ['Name']} will return only the 'Name' column.
     :return: S_OK() || S_ERROR()
     '''
 
@@ -166,15 +143,11 @@ class ResourceManagementClient(object):
     '''
     Deletes from GGUSTicketsCache all rows that match the parameters given.
 
-    :Parameters:
-      **gocSite** - `string`
-      **link** - `string`
-        url to the details
-      **openTickets** - `integer`
-      **tickets** - `string`
-      **lastCheckTime** - `datetime`
-         time-stamp setting last time the result was checked
-
+    :param str gocSite:
+    :param str link: url to the details
+    :param int openTickets:
+    :param str tickets:
+    :param datetime lastCheckTime: timestamp setting last time the result was checked
     :return: S_OK() || S_ERROR()
     '''
 
@@ -185,15 +158,11 @@ class ResourceManagementClient(object):
     '''
     Adds or updates-if-duplicated to GGUSTicketsCache all rows that match the parameters given.
 
-    :Parameters:
-      **gocSite** - `string`
-      **link** - `string`
-        url to the details
-      **openTickets** - `integer`
-      **tickets** - `string`
-      **lastCheckTime** - `datetime`
-         time-stamp setting last time the result was checked
-
+    :param str gocSite:
+    :param str link: url to the details
+    :param int openTickets:
+    :param str tickets:
+    :param datetime lastCheckTime: timestamp setting last time the result was checked
     :return: S_OK() || S_ERROR()
     '''
 
@@ -208,32 +177,29 @@ class ResourceManagementClient(object):
     '''
     Gets from DowntimeCache all rows that match the parameters given.
 
-    :Parameters:
-      **downtimeID** - [, `string`, `list`]
-        unique id for the downtime
-      **element** - [, `string`, `list`]
-        valid element in the topology ( Site, Resource, Node )
-      **name** - [, `string`, `list`]
-        name of the element where the downtime applies
-      **startDate** - [, `datetime`, `list`]
-        starting time for the downtime
-      **endDate** - [, `datetime`, `list`]
-        ending time for the downtime
-      **severity** - [, `string`, `list`]
-        severity assigned by the gocdb
-      **description** - [, `string`, `list`]
-        brief description of the downtime
-      **link** - [, `string`, `list`]
-        url to the details
-      **dateEffective** - [, `datetime`, `list`]
-        time when the entry was created in this database
-      **lastCheckTime** - [, `datetime`, `list`]
-        time-stamp setting last time the result was checked
-      **gOCDBServiceType** - `string`
-        service type assigned by gocdb
-      **meta** - `dict`
-        metadata for the mysql query. Currently it is being used only for column selection.
-        For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
+    :param downtimeID: unique id for the downtime
+    :type downtimeID: string, list
+    :param element: valid element in the topology (Site, Resource, Node)
+    :type element: string, list
+    :param name: name of the element where the downtime applies
+    :type name: string, list
+    :param startDate: starting time for the downtime
+    :type startDate: datetime, list
+    :param endDate: ending time for the downtime
+    :type endDate: datetime, list
+    :param severity: severity assigned by the gocdb
+    :type severity: string, list
+    :param description: brief description of the downtime
+    :type description: string, list
+    :param link: url to the details
+    :type link: string, list
+    :param dateEffective: time when the entry was created in this database
+    :type dateEffective: datetime, list
+    :param lastCheckTime: timestamp setting last time the result was checked
+    :type lastCheckTime: datetime, list
+    :param str gOCDBServiceType: service type assigned by gocdb
+    :param dict meta: metadata for the mysql query. Currently it is being used only for column selection.
+        For example: meta={'columns': ['Name']} will return only the 'Name' column.
 
     :return: S_OK() || S_ERROR()
     '''
@@ -247,30 +213,27 @@ class ResourceManagementClient(object):
     '''
     Deletes from DowntimeCache all rows that match the parameters given.
 
-    :Parameters:
-      **downtimeID** - [, `string`, `list`]
-        unique id for the downtime
-      **element** - [, `string`, `list`]
-        valid element in the topology ( Site, Resource, Node )
-      **name** - [, `string`, `list`]
-        name of the element where the downtime applies
-      **startDate** - [, `datetime`, `list`]
-        starting time for the downtime
-      **endDate** - [, `datetime`, `list`]
-        ending time for the downtime
-      **severity** - [, `string`, `list`]
-        severity assigned by the gocdb
-      **description** - [, `string`, `list`]
-        brief description of the downtime
-      **link** - [, `string`, `list`]
-        url to the details
-      **dateEffective** - [, `datetime`, `list`]
-        time when the entry was created in this database
-      **lastCheckTime** - [, `datetime`, `list`]
-        time-stamp setting last time the result was checked
-      **gOCDBServiceType** - `string`
-        service type assigned by gocdb
-
+    :param downtimeID: unique id for the downtime
+    :type downtimeID: string, list
+    :param element: valid element in the topology ( Site, Resource, Node )
+    :type element: string, list
+    :param name: name of the element where the downtime applies
+    :type name: string, list
+    :param startDate: starting time for the downtime
+    :type startDate: datetime, list
+    :param endDate: ending time for the downtime
+    :type endDate: datetime, list
+    :param severity: severity assigned by the gocdb
+    :type severity: string, list
+    :param description: brief description of the downtime
+    :type description: string, list
+    :param link: url to the details
+    :type link: string, list
+    :param dateEffective: time when the entry was created in this database
+    :type dateEffective: datetime, list
+    :param lastCheckTime: time-stamp setting last time the result was checked
+    :type lastCheckTime: datetime, list
+    :param str gOCDBServiceType: service type assigned by gocdb
     :return: S_OK() || S_ERROR()
     '''
 
@@ -284,30 +247,17 @@ class ResourceManagementClient(object):
     Adds or updates-if-duplicated to DowntimeCache. Using `downtimeID` to query
     the database, decides whether to insert or update the table.
 
-    :Parameters:
-      **downtimeID** - `string`
-        unique id for the downtime
-      **element** - `string`
-        valid element in the topology ( Site, Resource, Node )
-      **name** - `string`
-        name of the element where the downtime applies
-      **startDate** - `datetime`
-        starting time for the downtime
-      **endDate** - `datetime`
-        ending time for the downtime
-      **severity** - `string`
-        severity assigned by the gocdb
-      **description** - `string`
-        brief description of the downtime
-      **link** - `string`
-        url to the details
-      **dateEffective** - `datetime`
-        time when the entry was created in this database
-      **lastCheckTime** - `datetime`
-        time-stamp setting last time the result was checked
-      **gOCDBServiceType** - `string`
-        service type assigned by gocdb
-
+    :param str downtimeID: unique id for the downtime
+    :param str element: valid element in the topology ( Site, Resource, Node )
+    :param str name: name of the element where the downtime applies
+    :param datetime startDate: starting time for the downtime
+    :param datetime endDate: ending time for the downtime
+    :param str severity: severity assigned by the gocdb
+    :param str description: brief description of the downtime
+    :param str link: url to the details
+    :param datetime dateEffective: time when the entry was created in this database
+    :param datetime lastCheckTime: timestamp setting last time the result was checked
+    :param str gOCDBServiceType: service type assigned by gocdb
     :return: S_OK() || S_ERROR()
     '''
 
@@ -320,21 +270,18 @@ class ResourceManagementClient(object):
     '''
     Gets from JobCache all rows that match the parameters given.
 
-    :Parameters:
-      **site** - `[, string, list ]`
-        name of the site element
-      **maskStatus** - `[, string, list ]`
-        maskStatus for the site
-      **efficiency** - `[, float, list ]`
-        job efficiency ( successful / total )
-      **status** - `[, string, list ]`
-        status for the site computed
-      **lastCheckTime** - `[, datetime, list ]`
-        time-stamp setting last time the result was checked
-      **meta** - `dict`
-        metadata for the mysql query. Currently it is being used only for column selection.
-        For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
-
+    :param site: name of the site element
+    :type site: string, list
+    :param maskStatus: maskStatus for the site
+    :type maskStatus: string, list
+    :param efficiency: job efficiency ( successful / total )
+    :type efficiency: float, list
+    :param status: status for the site computed
+    :type status: string, list
+    :param lastCheckTime: timestamp setting last time the result was checked
+    :type lastCheckTime: datetime, list
+    :param dict meta: metadata for the mysql query. Currently it is being used only for column selection.
+       For example: meta={'columns': ['Name']} will return only the 'Name' column.
     :return: S_OK() || S_ERROR()
     '''
 
@@ -345,18 +292,16 @@ class ResourceManagementClient(object):
     '''
     Deletes from JobCache all rows that match the parameters given.
 
-    :Parameters:
-      **site** - `[, string, list ]`
-        name of the site element
-      **maskStatus** - `[, string, list ]`
-        maskStatus for the site
-      **efficiency** - `[, float, list ]`
-        job efficiency ( successful / total )
-      **status** - `[, string, list ]`
-        status for the site computed
-      **lastCheckTime** - `[, datetime, list ]`
-        time-stamp setting last time the result was checked
-
+    :param site: name of the site element
+    :type site: string, list
+    :param maskStatus: maskStatus for the site
+    :type maskStatus: string, list
+    :param efficiency: job efficiency ( successful / total )
+    :type efficiency: float, list
+    :param status: status for the site computed
+    :type status: string, list
+    :param lastCheckTime: timestamp setting last time the result was checked
+    :type lastCheckTime: datetime, list
     :return: S_OK() || S_ERROR()
     '''
 
@@ -368,18 +313,16 @@ class ResourceManagementClient(object):
     Adds or updates-if-duplicated to JobCache. Using `site` to query
     the database, decides whether to insert or update the table.
 
-    :Parameters:
-      **site** - `[, string, list ]`
-        name of the site element
-      **maskStatus** - `[, string, list ]`
-        maskStatus for the site
-      **efficiency** - `[, float, list ]`
-        job efficiency ( successful / total )
-      **status** - `[, string, list ]`
-        status for the site computed
-      **lastCheckTime** - `[, datetime, list ]`
-        time-stamp setting last time the result was checked
-
+    :param site: name of the site element
+    :type site: string, list
+    :param maskStatus: maskStatus for the site
+    :type maskStatus: string, list
+    :param efficiency: job efficiency ( successful / total )
+    :type efficiency: float, list
+    :param status: status for the site computed
+    :type status: string, list
+    :param lastCheckTime: time-stamp setting last time the result was checked
+    :type lastCheckTime: datetime, list
     :return: S_OK() || S_ERROR()
     '''
 
@@ -390,24 +333,21 @@ class ResourceManagementClient(object):
   def selectTransferCache(self, sourceName=None, destinationName=None, metric=None,
                           value=None, lastCheckTime=None, meta=None):
     '''
-     Gets from TransferCache all rows that match the parameters given.
+    Gets from TransferCache all rows that match the parameters given.
 
-     :Parameters:
-       **elementName** - `[, string, list ]`
-         name of the element
-       **direction** - `[, string, list ]`
-         the element taken as Source or Destination of the transfer
-       **metric** - `[, string, list ]`
-         measured quality of failed transfers
-       **value** - `[, float, list ]`
-         percentage
-       **lastCheckTime** - `[, float, list ]`
-         time-stamp setting last time the result was checked
-      **meta** - `dict`
-        metadata for the mysql query. Currently it is being used only for column selection.
-        For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
-
-     :return: S_OK() || S_ERROR()
+    :param elementName: name of the element
+    :type elementName: string, list
+    :param direction: the element taken as Source or Destination of the transfer
+    :type direction: string, list
+    :param metric: measured quality of failed transfers
+    :type metric: string, list
+    :param value: percentage
+    :type value: float, list
+    :param lastCheckTime: time-stamp setting last time the result was checked
+    :type lastCheckTime: float, list
+    :param dict meta: metadata for the mysql query. Currently it is being used only for column selection.
+      For example: meta={'columns': ['Name']} will return only the 'Name' column.
+    :return: S_OK() || S_ERROR()
     '''
 
     return RPCClient("ResourceStatus/ResourceManagement").select('TransferCache', self._prepare(locals()))
@@ -417,19 +357,17 @@ class ResourceManagementClient(object):
     '''
      Deletes from TransferCache all rows that match the parameters given.
 
-     :Parameters:
-       **elementName** - `[, string, list ]`
-         name of the element
-       **direction** - `[, string, list ]`
-         the element taken as Source or Destination of the transfer
-       **metric** - `[, string, list ]`
-         measured quality of failed transfers
-       **value** - `[, float, list ]`
-         percentage
-       **lastCheckTime** - `[, float, list ]`
-         time-stamp setting last time the result was checked
-
-     :return: S_OK() || S_ERROR()
+    :param elementName: name of the element
+    :type elementName: string, list
+    :param direction: the element taken as Source or Destination of the transfer
+    :type direction: string, list
+    :param metric: measured quality of failed transfers
+    :type metric: string, list
+    :param value: percentage
+    :type value: float, list
+    :param lastCheckTime: time-stamp setting last time the result was checked
+    :type lastCheckTime: float, list
+    :return: S_OK() || S_ERROR()
     '''
 
     return RPCClient("ResourceStatus/ResourceManagement").delete('TransferCache', self._prepare(locals()))
@@ -440,19 +378,12 @@ class ResourceManagementClient(object):
      Adds or updates-if-duplicated to TransferCache. Using `elementName`, `direction`
      and `metric` to query the database, decides whether to insert or update the table.
 
-     :Parameters:
-       **elementName** - `string`
-         name of the element
-       **direction** - `string`
-         the element taken as Source or Destination of the transfer
-       **metric** - `string`
-         measured quality of failed transfers
-       **value** - `float`
-         percentage
-       **lastCheckTime** - `datetime`
-         time-stamp setting last time the result was checked
-
-     :return: S_OK() || S_ERROR()
+    :param str elementName: name of the element
+    :param str direction: the element taken as Source or Destination of the transfer
+    :param str metric: measured quality of failed transfers
+    :param float value: percentage
+    :param datetime lastCheckTime: time-stamp setting last time the result was checked
+    :return: S_OK() || S_ERROR()
     '''
 
     return RPCClient("ResourceStatus/ResourceManagement").addOrModify('TransferCache', self._prepare(locals()))
@@ -464,23 +395,20 @@ class ResourceManagementClient(object):
     '''
     Gets from TransferCache all rows that match the parameters given.
 
-    :Parameters:
-      **site** - `[, string, list ]`
-        name of the site
-      **cE** - `[, string, list ]`
-        name of the CE of 'Multiple' if all site CEs are considered
-      **pilotsPerJob** - `[, float, list ]`
-        measure calculated
-      **pilotJobEff** - `[, float, list ]`
-        percentage
-      **status** - `[, float, list ]`
-        status of the CE / Site
-      **lastCheckTime** - `[, datetime, list ]`
-        measure calculated
-      **meta** - `dict`
-        metadata for the mysql query. Currently it is being used only for column selection.
-        For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
-
+    :param site: name of the site
+    :type site: string, list
+    :param cE: name of the CE of 'Multiple' if all site CEs are considered
+    :type cE: string, list
+    :param pilotsPerJob: measure calculated
+    :type pilotsPerJob: float, list
+    :param pilotJobEff: percentage
+    :type pilotJobEff: float, list
+    :param status: status of the CE / Site
+    :type status: float, list
+    :param lastCheckTime: measure calculated
+    :type lastCheckTime: datetime, list
+    :param dict meta: metadata for the mysql query. Currently it is being used only for column selection.
+       For example: meta={'columns': ['Name']} will return only the 'Name' column.
     :return: S_OK() || S_ERROR()
     '''
 
@@ -491,21 +419,20 @@ class ResourceManagementClient(object):
     '''
     Deletes from TransferCache all rows that match the parameters given.
 
-    :Parameters:
-      **site** - `[, string, list ]`
-        name of the site
-      **cE** - `[, string, list ]`
-        name of the CE of 'Multiple' if all site CEs are considered
-      **pilotsPerJob** - `[, float, list ]`
-        measure calculated
-      **pilotJobEff** - `[, float, list ]`
-        percentage
-      **status** - `[, float, list ]`
-        status of the CE / Site
-      **lastCheckTime** - `[, datetime, list ]`
-        measure calculated
-
-    :return: S_OK() || S_ERROR()    '''
+    :param site: name of the site
+    :type site: string, list
+    :param cE: name of the CE of 'Multiple' if all site CEs are considered
+    :type cE: string, list
+    :param pilotsPerJob: measure calculated
+    :type pilotsPerJob: float, list
+    :param pilotJobEff: percentage
+    :type pilotJobEff: float, list
+    :param status: status of the CE / Site
+    :type status: float, list
+    :param lastCheckTime: measure calculated
+    :type lastCheckTime: datetime, list
+    :return: S_OK() || S_ERROR()
+    '''
 
     return RPCClient("ResourceStatus/ResourceManagement").delete('PilotCache', self._prepare(locals()))
 
@@ -515,20 +442,12 @@ class ResourceManagementClient(object):
     Adds or updates-if-duplicated to PilotCache. Using `site` and `cE`
     to query the database, decides whether to insert or update the table.
 
-    :Parameters:
-      **site** - `string`
-        name of the site
-      **cE** - `string`
-        name of the CE of 'Multiple' if all site CEs are considered
-      **pilotsPerJob** - `float`
-        measure calculated
-      **pilotJobEff** - `float`
-        percentage
-      **status** - `string`
-        status of the CE / Site
-      **lastCheckTime** - `datetime`
-        measure calculated
-
+    :param str site: name of the site
+    :param str cE: name of the CE of 'Multiple' if all site CEs are considered
+    :param float pilotsPerJob: measure calculated
+    :param flaot pilotJobEff: percentage
+    :param str status: status of the CE / Site
+    :param datetime lastCheckTime: measure calculated
     :return: S_OK() || S_ERROR()
     '''
 
@@ -542,27 +461,24 @@ class ResourceManagementClient(object):
     '''
     Gets from PolicyResult all rows that match the parameters given.
 
-    :Parameters:
-      **granularity** - `[, string, list]`
-        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
-        | `Service` | `Resource` | `StorageElement`
-      **name** - `[, string, list]`
-        name of the element
-      **policyName** - `[, string, list]`
-        name of the policy
-      **statusType** - `[, string, list]`
-        it has to be a valid status type for the given granularity
-      **status** - `[, string, list]`
-        it has to be a valid status, any of the defaults: `Active` | `Degraded` | \
-        `Probing` | `Banned`
-      **reason** - `[, string, list]`
-        decision that triggered the assigned status
-      **lastCheckTime** - `[, datetime, list]`
-        time-stamp setting last time the policy result was checked
-      **meta** - `dict`
-        metadata for the mysql query. Currently it is being used only for column selection.
-        For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
-
+    :param granularity: it has to be a valid element ( ValidElement ), any of the defaults:
+       'Site' | 'Service' | 'Resource' | 'StorageElement'
+    :type granularity: string, list
+    :param name: name of the element
+    :type name: string, list
+    :param policyName: name of the policy
+    :type policyName: string, list
+    :param statusType: it has to be a valid status type for the given granularity
+    :type statusType: string, list
+    :param status: it has to be a valid status, any of the defaults:
+        'Active' | 'Degraded' | 'Probing' | 'Banned'
+    :type status: string, list
+    :param reason: decision that triggered the assigned status
+    :type reason: string, list
+    :param lastCheckTime: time-stamp setting last time the policy result was checked
+    :type lastCheckTime: datetime, list
+    :param dict meta: metadata for the mysql query. Currently it is being used only for column selection.
+        For example: meta={'columns': ['Name']} will return only the 'Name' column.
     :return: S_OK() || S_ERROR()
     '''
 
@@ -574,26 +490,22 @@ class ResourceManagementClient(object):
     '''
     Deletes from PolicyResult all rows that match the parameters given.
 
-    :Parameters:
-      **granularity** - `[, string, list]`
-        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
-        | `Service` | `Resource` | `StorageElement`
-      **name** - `[, string, list]`
-        name of the element
-      **policyName** - `[, string, list]`
-        name of the policy
-      **statusType** - `[, string, list]`
-        it has to be a valid status type for the given granularity
-      **status** - `[, string, list]`
-        it has to be a valid status, any of the defaults: `Active` | `Degraded` | \
-        `Probing` | `Banned`
-      **reason** - `[, string, list]`
-        decision that triggered the assigned status
-      **dateEffective** - `datetime`
-        time-stamp from which the policy result is effective
-      **lastCheckTime** - `[, datetime, list]`
-        time-stamp setting last time the policy result was checked
-
+    :param granularity: it has to be a valid element ( ValidElement ), any of the defaults:
+       'Site' | 'Service' | 'Resource' | 'StorageElement'
+    :type granularity: string, list
+    :param name: name of the element
+    :type name: string, list
+    :param policyName: name of the policy
+    :type policyName: string, list
+    :param statusType: it has to be a valid status type for the given granularity
+    :type statusType: string, list
+    :param status: it has to be a valid status, any of the defaults: 'Active' | 'Degraded' | 'Probing' | 'Banned'
+    :type status: string, list
+    :param reason: decision that triggered the assigned status
+    :type reason: string, list
+    :param datetime dateEffective: time-stamp from which the policy result is effective
+    :param lastCheckTime: time-stamp setting last time the policy result was checked
+    :type lastCheckTime: datetime, list
     :return: S_OK() || S_ERROR()
     '''
 
@@ -606,26 +518,16 @@ class ResourceManagementClient(object):
     Adds or updates-if-duplicated to PolicyResult. Using `name`, `policyName` and
     `statusType` to query the database, decides whether to insert or update the table.
 
-    :Parameters:
-      **element** - `string`
-        it has to be a valid element ( ValidElement ), any of the defaults: `Site` \
-        | `Service` | `Resource` | `StorageElement`
-      **name** - `string`
-        name of the element
-      **policyName** - `string`
-        name of the policy
-      **statusType** - `string`
-        it has to be a valid status type for the given element
-      **status** - `string`
-        it has to be a valid status, any of the defaults: `Active` | `Degraded` | \
-        `Probing` | `Banned`
-      **reason** - `string`
-        decision that triggered the assigned status
-      **dateEffective** - `datetime`
-        time-stamp from which the policy result is effective
-      **lastCheckTime** - `datetime`
-        time-stamp setting last time the policy result was checked
-
+    :param str element: it has to be a valid element ( ValidElement ), any of the defaults:
+       'Site' | 'Service' | 'Resource' | 'StorageElement'
+    :param str name: name of the element
+    :param str policyName: name of the policy
+    :param str statusType: it has to be a valid status type for the given element
+    :param str status: it has to be a valid status, any of the defaults:
+      'Active' | 'Degraded' | 'Probing' | 'Banned'
+    :param str reason: decision that triggered the assigned status
+    :param datetime dateEffective: time-stamp from which the policy result is effective
+    :param datetime lastCheckTime: time-stamp setting last time the policy result was checked
     :return: S_OK() || S_ERROR()
     '''
 
@@ -639,23 +541,20 @@ class ResourceManagementClient(object):
     '''
     Gets from SpaceTokenOccupancyCache all rows that match the parameters given.
 
-    :Parameters:
-      **endpoint** - `[, string, list]`
-        srm endpoint
-      **token** - `[, string, list]`
-        name of the token
-      **total** - `[, integer, list]`
-        total terabytes
-      **guaranteed** - `[, integer, list]`
-        guaranteed terabytes
-      **free** - `[, integer, list]`
-        free terabytes
-      **lastCheckTime** - `[, datetime, list]`
-        time-stamp from which the result is effective
-      **meta** - `dict`
-        metadata for the mysql query. Currently it is being used only for column selection.
-        For example: meta = { 'columns' : [ 'Name' ] } will return only the 'Name' column.
-
+    :param endpoint: srm endpoint
+    :type endpoint: string, list
+    :param token: name of the token
+    :type token: string, list
+    :param total: total terabytes
+    :type total: integer, list
+    :param guaranteed: guaranteed terabytes
+    :type guaranteed: integer, list
+    :param free: free terabytes
+    :type free: integer, list
+    :param lastCheckTime: time-stamp from which the result is effective
+    :type lastCheckTime: datetime, list
+    :param dict meta: metadata for the mysql query. Currently it is being used only for column selection.
+        For example: meta={'columns': ['Name']} will return only the 'Name' column.
     :return: S_OK() || S_ERROR()
     '''
 
@@ -667,20 +566,18 @@ class ResourceManagementClient(object):
     '''
     Deletes from SpaceTokenOccupancyCache all rows that match the parameters given.
 
-    :Parameters:
-      **endpoint** - `[, string, list]`
-        srm endpoint
-      **token** - `[, string, list]`
-        name of the token
-      **total** - `[, integer, list]`
-        total terabytes
-      **guaranteed** - `[, integer, list]`
-        guaranteed terabytes
-      **free** - `[, integer, list]`
-        free terabytes
-      **lastCheckTime** - `[, datetime, list]`
-        time-stamp from which the result is effective
-
+    :param endpoint: srm endpoint
+    :type endpoint: string, list
+    :param token: name of the token
+    :type token: string, list
+    :param total: total terabytes
+    :type total: integer, list
+    :param guaranteed: guaranteed terabytes
+    :type guaranteed: integer, list
+    :param free: free terabytes
+    :type free: integer, list
+    :param lastCheckTime: time-stamp from which the result is effective
+    :type lastCheckTime: datetime, list
     :return: S_OK() || S_ERROR()
     '''
 
@@ -693,20 +590,13 @@ class ResourceManagementClient(object):
     Adds or updates-if-duplicated to SpaceTokenOccupancyCache. Using `site` and `token`
     to query the database, decides whether to insert or update the table.
 
-    :Parameters:
-      **endpoint** - `[, string, list]`
-        srm endpoint
-      **token** - `string`
-        name of the token
-      **total** - `integer`
-        total terabytes
-      **guaranteed** - `integer`
-        guaranteed terabytes
-      **free** - `integer`
-        free terabytes
-      **lastCheckTime** - `datetime`
-        time-stamp from which the result is effective
-
+    :param endpoint: srm endpoint
+    :type endpoint: string, list
+    :param str token: name of the token
+    :param int total: total terabytes
+    :param int guaranteed: guaranteed terabytes
+    :param int free: free terabytes
+    :param datetime lastCheckTime: time-stamp from which the result is effective
     :return: S_OK() || S_ERROR()
     '''
 
