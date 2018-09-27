@@ -79,13 +79,15 @@ class SiteStatus(object):
     A single string site name may also be provides as "siteNames"
     If the input is None, it is interpreted as * ( all ).
 
-    If match is positive, the output looks like:
-    {
-     'test1.test1.org': 'Active',
-     'test2.test2.org': 'Banned',
-    }
+    If match is positive, the output looks like::
 
-    examples
+      {
+       'test1.test1.org': 'Active',
+       'test2.test2.org': 'Banned',
+      }
+
+    Examples::
+
       >>> siteStatus.getSiteStatuses( ['test1.test1.uk', 'test2.test2.net', 'test3.test3.org'] )
           S_OK( { 'test1.test1.org': 'Active', 'test2.test2.net': 'Banned', 'test3.test3.org': 'Active' }  )
       >>> siteStatus.getSiteStatuses( 'NotExists')
@@ -97,10 +99,8 @@ class SiteStatus(object):
                 }
               )
 
-    :Parameters:
-      **siteNames** - `list` or `str`
-        name(s) of the sites to be matched
-
+    :param siteNames: name(s) of the sites to be matched
+    :type siteNames: list, str
     :return: S_OK() || S_ERROR()
     """
 
