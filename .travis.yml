@@ -22,7 +22,7 @@ script:
   - if [[ "${CHECK}" == "py.test"  ]];
     then py.test;
     elif [[ "${CHECK}" == "docs"  ]];
-    then cd docs; SPHINXOPTS=-wsphinxWarnings READTHEDOCS=True make html;
+    then sudo apt-get install graphviz; cd docs; SPHINXOPTS=-wsphinxWarnings READTHEDOCS=True make html;
     if [ -s sphinxWarnings ]; then cat sphinxWarnings; echo "Warnings When Creating Doc"; exit 1; fi
     elif [[ "${CHECK}" == "pylint"  ]];
     then travis_wait 30 .travis.d/runPylint.sh;
