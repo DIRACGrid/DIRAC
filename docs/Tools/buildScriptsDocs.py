@@ -205,6 +205,7 @@ def createScriptDocFiles(script, sectionPath, scriptName):
   rstLines.append('=' * len(scriptName))
   rstLines.append('%s' % scriptName)
   rstLines.append('=' * len(scriptName))
+  rstLines.append('')
   lineIndented = False
   genOptions = False
   for line in helpMessage.splitlines():
@@ -231,11 +232,38 @@ def createScriptDocFiles(script, sectionPath, scriptName):
     lineIndented = newLine.startswith(' ')
 
   scriptRSTPath = os.path.join(sectionPath, scriptName + '.rst')
-  with open(scriptRSTPath, 'w') as rstFile:
-    fileContent = '\n'.join(rstLines).strip() + '\n'
+  example = getExampleFromScriptDoc(scriptRSTPath)
+
+  fileContent = '\n'.join(rstLines).strip() + '\n'
+  if example and 'example' not in fileContent.lower():
+    fileContent += '\n' + example.strip() + '\n'
+    LOG.debug('\n' + '*' * 88 + '\n' + fileContent + '\n' + '*' * 88)
+  while '\n\n\n' in fileContent:
     fileContent = fileContent.replace('\n\n\n', '\n\n')
+  with open(scriptRSTPath, 'w') as rstFile:
     rstFile.write(fileContent)
   return True
+
+
+def getExampleFromScriptDoc(scriptRSTPath):
+  """Get an example, if any, from the existing file."""
+  example = []
+  inExample = False
+  with open(scriptRSTPath) as rstFile:
+    for line in rstFile.readlines():
+      if inExample and not line.rstrip():
+        example.append(line)
+        continue
+      line = line.rstrip()
+      if line and inExample and line.startswith(' '):
+        example.append(line)
+      elif line and inExample and not line.startswith(' '):
+        inExample = False
+      elif line.lower().startswith('example'):
+        inExample = True
+        example.append(line)
+
+  return '\n'.join(example)
 
 
 def run():
