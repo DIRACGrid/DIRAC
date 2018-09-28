@@ -5,29 +5,35 @@
   very uniform
 
 '''
-
+import logging
 import glob
 import os
 import sys
 import subprocess
+import shlex
 
 from DIRAC import rootPath
 
+logging.basicConfig(level=logging.INFO, format='%(name)s: %(levelname)8s: %(message)s')
+LOG = logging.getLogger('ScriptDoc')
+
 # Scripts that either do not have -h, are obsolete or cause havoc when called
 BAD_SCRIPTS = ['dirac-deploy-scripts', 'dirac-install', 'dirac-compile-externals',
+               'dirac-install-client',
                'dirac-framework-self-ping', 'dirac-dms-add-files',
                ]
 
-MARKERS_SECTIONS_SCRIPTS = [(['dms'], 'Data Management', [], []),
+MARKERS_SECTIONS_SCRIPTS = [(['dms'],
+                             'Data Management', [], ['dirac-dms-replicate-and-register-request']),
                             (['wms'], 'Workload Management', [], []),
-                            (['dirac-proxy', 'dirac-info', 'dirac-version', 'myproxy'],
+                            (['dirac-proxy', 'dirac-info', 'dirac-version', 'myproxy', 'dirac-platform'],
                              'Others', [], ['dirac-cert-convert.sh']),
                             # (['rss'],'Resource Status Management', [], []),
                             #  (['rms'],'Request Management', [], []),
                             # (['stager'],'Storage Management', [], []),
                             # (['transformation'], 'Transformation Management', [], []),
-                            # (['admin', 'accounting', 'FrameworkSystem',
-                            # 'ConfigurationSystem', 'Core',], 'Admin', [], []),
+                            (['admin', 'accounting', 'FrameworkSystem',
+                              'ConfigurationSystem', 'Core'], 'Admin', [], []),
                             # ([''], 'CatchAll', [], []),
                             ]
 
@@ -42,16 +48,18 @@ def mkdir(path):
 
 def runCommand(command):
   """ execute shell command, return output, catch exceptions """
-  command = command.strip().split(" ")
   try:
-    return subprocess.check_output(command, stderr=subprocess.STDOUT)
+    result = subprocess.check_output(shlex.split(command), stderr=subprocess.STDOUT)
+    if 'NOTICE' in result:
+      return ''
+    return result
   except (OSError, subprocess.CalledProcessError) as e:
-    print "Error when runnning", command, "\n", repr(e)
+    LOG.error("Error when runnning command %s: %r", command, e)
     return ''
 
 
 def getScripts():
-  """ get all scripts in the Dirac System, split by type admin/wms/rms/other """
+  """Get all scripts in the Dirac System, split by type admin/wms/rms/other."""
 
   diracPath = os.path.join(rootPath, 'DIRAC')
   if not os.path.exists(diracPath):
@@ -60,18 +68,14 @@ def getScripts():
   # Get all scripts
   scriptsPath = os.path.join(diracPath, '*', 'scripts', '*.py')
 
-  # Get all scripts on scriptsPath and sorts them, this will make our life easier
-  # afterwards
+  # Get all scripts on scriptsPath and sorts them, this will make our life easier afterwards
   scripts = glob.glob(scriptsPath)
   scripts.sort()
   for scriptPath in scripts:
     # Few modules still have __init__.py on the scripts directory
     if '__init__' in scriptPath or 'build' in scriptPath:
-      print "ignoring", scriptPath
+      LOG.debug("Ignoring %s", scriptPath)
       continue
-    # if os.path.basename(scriptPath) in BAD_SCRIPTS:
-    #   print "ignoring", scriptPath
-    #   continue
 
     for mT in MARKERS_SECTIONS_SCRIPTS:
       if any(pattern in scriptPath for pattern in mT[0]):
@@ -81,7 +85,7 @@ def getScripts():
   return
 
 
-def createFoldersAndIndices():
+def createUserGuideFoldersAndIndices():
   """ creates the index files and folders where the RST files will go
 
   e.g.:
@@ -103,10 +107,12 @@ Commands Reference (|release|)
 
   for mT in MARKERS_SECTIONS_SCRIPTS:
     system = mT[1]
+    if system == 'Admin':
+      continue
     systemString = system.replace(" ", "")
     userIndexRST += "   %s/index\n" % systemString
 
-    print userIndexRST
+    LOG.debug("Index file:\n%s", userIndexRST)
     sectionPath = os.path.join(rootPath, 'DIRAC/docs/source/UserGuide/CommandReference/', systemString)
     mkdir(sectionPath)
     createSectionIndex(mT, sectionPath)
@@ -114,6 +120,37 @@ Commands Reference (|release|)
   userIndexPath = os.path.join(rootPath, 'DIRAC/docs/source/UserGuide/CommandReference/index.rst')
   with open(userIndexPath, 'w') as userIndexFile:
     userIndexFile.write(userIndexRST)
+
+
+def createAdminGuideCommandReference():
+  """Create the command reference for the AdministratorGuide.
+
+  source/AdministratorGuide/CommandReference
+  """
+
+  sectionPath = os.path.join(rootPath, 'DIRAC/docs/source/AdministratorGuide/CommandReference/')
+
+  # read the script index
+  with open(os.path.join(sectionPath, 'index.rst')) as adminIndexFile:
+    adminCommandList = adminIndexFile.read().replace('\n', '')
+
+  # find the list of admin scripts
+  mT = ([], '', [])
+  for mT in MARKERS_SECTIONS_SCRIPTS:
+    if mT[1] == 'Admin':
+      break
+
+  missingCommands = []
+  for script in mT[2]:
+    scriptName = os.path.basename(script)
+    if scriptName.endswith('.py'):
+      scriptName = scriptName[:-3]
+    if createScriptDocFiles(script, sectionPath, scriptName) and scriptName not in adminCommandList:
+      missingCommands.append(scriptName)
+
+  if missingCommands:
+    LOG.warn("The following admin commands are not in the command index: \n\t\t\t\t%s",
+             "\n\t\t\t\t".join(missingCommands))
 
 
 def createSectionIndex(mT, sectionPath):
@@ -130,17 +167,19 @@ In this subsection the %s commands are collected
 
 """ % systemName
 
+  listOfScripts = []
   # these scripts use pre-existing rst files, cannot re-create them automatically
-  for script in mT[3]:
-    scriptName = os.path.basename(script)
-    sectionIndexRST += "   %s\n" % scriptName
+  listOfScripts.extend(mT[3])
 
   for script in mT[2]:
     scriptName = os.path.basename(script)
     if scriptName.endswith('.py'):
       scriptName = scriptName[:-3]
     if createScriptDocFiles(script, sectionPath, scriptName):
-      sectionIndexRST += "   %s\n" % scriptName
+      listOfScripts.append(scriptName)
+
+  for scriptName in sorted(listOfScripts):
+    sectionIndexRST += "   %s\n" % scriptName
 
   sectionIndexPath = os.path.join(sectionPath, 'index.rst')
   with open(sectionIndexPath, 'w') as sectionIndexFile:
@@ -148,30 +187,54 @@ In this subsection the %s commands are collected
 
 
 def createScriptDocFiles(script, sectionPath, scriptName):
-  """ create the RST files for all the scripts
+  """Create the RST files for all the scripts.
 
-  folders and indices already exist, just call the scripts and get the help messages...
+  Folders and indices already exist, just call the scripts and get the help messages. Format the help message.
+
   """
   if scriptName in BAD_SCRIPTS:
     return False
 
-  print "Creating Doc for", scriptName
-  helpMessage = runCommand("%s -h" % script)
+  LOG.info("Creating Doc for %s", scriptName)
+  helpMessage = runCommand("%s -h" % scriptName)
   if not helpMessage:
-    print "NO DOC For", scriptName
+    LOG.warning("NO DOC for %s", scriptName)
     return False
+
+  rstLines = []
+  rstLines.append('=' * len(scriptName))
+  rstLines.append('%s' % scriptName)
+  rstLines.append('=' * len(scriptName))
+  lineIndented = False
+  genOptions = False
+  for line in helpMessage.splitlines():
+    line = line.rstrip()
+    if not line:
+      pass
+    # strip general options from documentation
+    elif line.lower().strip() == 'general options:':
+      LOG.debug("Found general options in line %r", line)
+      genOptions = True
+      continue
+    elif genOptions and line.startswith(' '):
+      LOG.debug("Skipping General options line %r", line)
+      continue
+    elif genOptions and not line.startswith(' '):
+      LOG.debug("General options done")
+      genOptions = False
+
+    newLine = '\n' + line + ':\n' if line.endswith(':') else line
+    # ensure dedented lines are separated by newline from previous block
+    if lineIndented and not newLine.startswith(' '):
+      newLine = '\n' + newLine
+    rstLines.append(newLine)
+    lineIndented = newLine.startswith(' ')
 
   scriptRSTPath = os.path.join(sectionPath, scriptName + '.rst')
   with open(scriptRSTPath, 'w') as rstFile:
-    rstFile.write('=' * len(scriptName))
-    rstFile.write('\n%s\n' % scriptName)
-    rstFile.write('=' * len(scriptName))
-    rstFile.write('\n')
-    for line in helpMessage.splitlines():
-      line = line.rstrip()
-      newLine = line + ":\n\n" if line.endswith(":") else line + "\n"
-      rstFile.write(newLine)
-
+    fileContent = '\n'.join(rstLines).strip() + '\n'
+    fileContent = fileContent.replace('\n\n\n', '\n\n')
+    rstFile.write(fileContent)
   return True
 
 
@@ -180,9 +243,10 @@ def run():
   '''
 
   getScripts()
-  createFoldersAndIndices()
+  createUserGuideFoldersAndIndices()
+  createAdminGuideCommandReference()
 
-  print 'Done'
+  LOG.info('Done')
 
 
 if __name__ == "__main__":
