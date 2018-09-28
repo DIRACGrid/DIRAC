@@ -8,8 +8,6 @@ Usage::
 
   dirac-distribution [option|cfgfile] ...
 
-
-
 Options::
 
   -r  --releases <value>       : releases to build (mandatory, comma separated)

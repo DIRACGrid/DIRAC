@@ -8,8 +8,6 @@ Usage::
 
   dirac-wms-select-jobs [option|cfgfile] ... JobID ...
 
-
-
 Options::
 
   -   --Status=                : Primary status

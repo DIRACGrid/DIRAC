@@ -1,8 +1,8 @@
-================================
+=========================
 dirac-admin-service-ports
-================================
+=========================
 
-  Print the service ports for the specified setup
+Print the service ports for the specified setup
 
 Usage::
 
@@ -10,7 +10,7 @@ Usage::
 
 Arguments::
 
-  Setup:    Name of the setup 
+  Setup:    Name of the setup
 
 Example::
 
@@ -38,5 +38,3 @@ Example::
    'WorkloadManagement/Matcher': 9170,
    'WorkloadManagement/SandboxStore': 9196,
    'WorkloadManagement/WMSAdministrator': 9145}
-
-

@@ -8,8 +8,6 @@ Usage::
 
   dirac-configure [option|cfgfile] ...
 
-
-
 Options::
 
   -S  --Setup <value>          : Set <setup> as DIRAC setup

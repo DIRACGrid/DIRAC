@@ -14,8 +14,6 @@ Usage::
 
      dirac-create-distribution-tarball -n DIRAC -v v1r0 -z svn -u http://svnweb.cern.ch/guest/dirac/DIRAC/tags/DIRAC/v1r0
 
-
-
 Options::
 
   -v  --version <value>        : version to tar

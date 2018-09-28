@@ -8,8 +8,6 @@ Usage::
 
   dirac-admin-check-config-options [option|cfgfile] -[MAUO] [-S <system]
 
-
-
 Options::
 
   -S  --system <value>         : Systems to check, by default all of them are checked

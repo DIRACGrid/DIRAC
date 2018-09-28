@@ -12,8 +12,6 @@ Arguments::
 
   JobID:    DIRAC Job ID
 
-
-
 Options::
 
   -D  --Dir <value>            : Store the output in this directory

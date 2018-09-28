@@ -14,8 +14,6 @@ Arguments::
   CE:       Name of the CE (i.e. cccreamceli05.in2p3.fr)
   info:     Accepted values (ce|ce-state|ce-cluster|ce-vo|site|site-se)
 
-
-
 Options::
 
   -H  --host <value>           : BDII host

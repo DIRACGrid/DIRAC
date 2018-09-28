@@ -6,8 +6,6 @@ Usage::
 
   dirac-myproxy-upload.py (<options>|<cfgFile>)*
 
-
-
 Options::
 
   -f  --file <value>           : File to use as proxy

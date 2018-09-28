@@ -8,8 +8,6 @@ Usage::
 
   dirac-admin-add-resources [option|cfgfile]
 
-
-
 Options::
 
   -V  --vo <value>             : Virtual Organization

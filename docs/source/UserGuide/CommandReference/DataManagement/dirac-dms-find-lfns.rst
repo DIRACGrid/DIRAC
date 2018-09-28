@@ -12,12 +12,9 @@ Arguments::
 
  metaspec:    metadata index specification (of the form: "meta=value" or "meta<value", "meta!=value", etc.)
 
-
 Examples::
 
   $ dirac-dms-find-lfns Path=/lhcb/user "Size>1000" "CreationDate<2015-05-15"
-
-
 
 Options::
 

@@ -12,8 +12,6 @@ Arguments::
 
   String:   string to search for
 
-
-
 Options::
 
   -   --Status=                : Primary status

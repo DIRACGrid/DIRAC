@@ -6,8 +6,6 @@ Usage::
 
   dirac-admin-proxy-upload.py (<options>|<cfgFile>)*
 
-
-
 Options::
 
   -v  --valid <value>          : Valid HH:MM for the proxy. By default is one month

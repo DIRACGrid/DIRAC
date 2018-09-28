@@ -1,8 +1,8 @@
-====================================
+=============================
 dirac-admin-site-mask-logging
-====================================
+=============================
 
-  Retrieves site mask logging information.
+Retrieves site mask logging information.
 
 Usage::
 
@@ -10,7 +10,7 @@ Usage::
 
 Arguments::
 
-  Site:     Name of the Site 
+  Site:     Name of the Site
 
 Example::
 
@@ -19,5 +19,3 @@ Example::
   Site Mask Logging Info for LCG.IN2P3.fr
 
   Active  2010-12-08 21:28:16 ( atsareg )  ""
-
-

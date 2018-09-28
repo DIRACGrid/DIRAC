@@ -13,8 +13,6 @@ Arguments::
   System:  Name of the DIRAC system (ie: WorkloadManagement)
   Component: Name of the DIRAC component (ie: Matcher)
 
-
-
 Options::
 
   -f  --force                  : Forces the removal of the logs

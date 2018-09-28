@@ -19,8 +19,6 @@ Arguments::
   Path:          Local path to the file (Path to directory)
   SE:            DIRAC Storage Element
 
-
-
 Options::
 
   -D  --sync                   : Make target directory identical to source

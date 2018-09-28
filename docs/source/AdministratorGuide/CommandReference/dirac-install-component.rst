@@ -13,8 +13,6 @@ Arguments::
   System:  Name of the DIRAC system (ie: WorkloadManagement)
   Service: Name of the DIRAC component (ie: Matcher)
 
-
-
 Options::
 
   -w  --overwrite              : Overwrite the configuration in the global CS

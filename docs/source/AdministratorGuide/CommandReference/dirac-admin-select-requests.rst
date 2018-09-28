@@ -1,36 +1,25 @@
-==================================
+===========================
 dirac-admin-select-requests
-==================================
+===========================
 
-  Select requests from the request management system
+Select requests from the request management system
 
 Usage::
 
-  dirac-admin-select-requests [option|cfgfile] ... 
-
- 
+  dirac-admin-select-requests [option|cfgfile] ...
 
 Options::
 
-  -    --JobID=          : WMS JobID for the request (if applicable) 
-
-  -    --RequestID=      : ID assigned during submission of the request 
-
-  -    --RequestName=    : XML request file name 
-
-  -    --RequestType=    : Type of the request e.g. 'transfer' 
-
-  -    --Status=         : Request status 
-
-  -    --Operation=      : Request operation e.g. 'replicateAndRegister' 
-
-  -    --RequestStart=   : First request to consider (start from 0 by default) 
-
-  -    --Limit=          : Selection limit (default 100) 
-
-  -    --OwnerDN=        : DN of owner (in double quotes) 
-
-  -    --OwnerGroup=     : Owner group 
+  -   --JobID=                 : WMS JobID for the request (if applicable)
+  -   --RequestID=             : ID assigned during submission of the request
+  -   --RequestName=           : XML request file name
+  -   --RequestType=           : Type of the request e.g. 'transfer'
+  -   --Status=                : Request status
+  -   --Operation=             : Request operation e.g. 'replicateAndRegister'
+  -   --RequestStart=          : First request to consider (start from 0 by default)
+  -   --Limit=                 : Selection limit (default 100)
+  -   --OwnerDN=               : DN of owner (in double quotes)
+  -   --OwnerGroup=            : Owner group
 
 Example::
 
@@ -46,5 +35,3 @@ Example::
   ['5', 'Accounting.DataStore.1293840021.45.0.74714473302', 'None', 'Unknown', 'Unknown', 'diset', 'Waiting', 'commitRegisters', 'None', '2011-01-01 00:00:21', '2011-01-01 00:05:39']
   ['6', '1057.xml', '1057', '/O=GRID-FR/C=FR/O=CNRS/OU=CPPM/CN=Vanessa Hamar', 'dirac_user', 'register', 'Waiting', 'registerFile', 'None', '2011-01-31 13:31:46', '2011-01-31 13:31:53']
   ['7', '1060.xml', '1060', '/O=GRID-FR/C=FR/O=CNRS/OU=CPPM/CN=Vanessa Hamar', 'dirac_user', 'register', 'Waiting', 'registerFile', 'None', '2011-01-31 13:42:33', '2011-01-31 13:42:36']
-
-

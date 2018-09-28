@@ -12,8 +12,6 @@ Arguments::
 
   cfgfile: DIRAC Cfg with description of the configuration (optional)
 
-
-
 Options::
 
   -e  --exitOnError            : flag to exit on error of any component installation

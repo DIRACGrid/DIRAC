@@ -12,12 +12,9 @@ Utility to send an e-mail using DIRAC notification service.
     Other keys will be ommited.
     Message body is an arbitrary string.
 
-
-
   Options::
 
     There are no options.
-
 
   Examples::
 

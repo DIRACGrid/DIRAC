@@ -9,11 +9,10 @@ In this subsection the Others commands are collected
 
    dirac-cert-convert.sh
    dirac-info
-   dirac-version
-   dirac-platform
    dirac-myproxy-upload
+   dirac-platform
    dirac-proxy-destroy
    dirac-proxy-get-uploaded-info
    dirac-proxy-info
    dirac-proxy-init
-   dirac-proxy-destroy
+   dirac-version

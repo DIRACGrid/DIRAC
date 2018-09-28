@@ -12,8 +12,6 @@ Arguments::
 
  cfgfile: DIRAC Cfg with description of the configuration (optional)
 
-
-
 Options::
 
   -N  --Name <value>           : Computing Element Name (Mandatory)

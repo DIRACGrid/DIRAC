@@ -10,7 +10,6 @@ Usage::
 
 Only one option (either uuid or jobid) should be used.
 
-
 Options::
 
   -u  --uuid <value>           : get PilotsLogging for given Pilot UUID

@@ -8,8 +8,6 @@ Usage::
 
   dirac-wms-get-queue-cpu-time [option|cfgfile]
 
-
-
 Options::
 
   -C  --CPUNormalizationFactor <value>  : CPUNormalizationFactor, in case it is known

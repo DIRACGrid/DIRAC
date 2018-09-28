@@ -8,8 +8,6 @@ Usage::
 
   dirac-admin-voms-sync [option|cfgfile] ...
 
-
-
 Options::
 
   -V  --vo <value>             : VO name
