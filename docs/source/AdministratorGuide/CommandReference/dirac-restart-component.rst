@@ -1,8 +1,8 @@
-==============================
+=======================
 dirac-restart-component
-==============================
+=======================
 
-  Restart DIRAC component using runsvctrl utility
+Restart DIRAC component using runsvctrl utility
 
 Usage::
 
@@ -11,7 +11,4 @@ Usage::
 Arguments::
 
   System:        Name of the system for the component (default *: all)
-
-  Service|Agent: Name of the particular component (default *: all) 
-
-
+  Service|Agent: Name of the particular component (default *: all)
