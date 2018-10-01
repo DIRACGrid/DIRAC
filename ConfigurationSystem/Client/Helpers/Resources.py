@@ -31,6 +31,48 @@ def getSites():
   return S_OK(sites)
 
 
+@deprecated("Only for FTS2")
+def getStorageElementSiteMapping( siteList = None ):
+  """ Get Storage Element belonging to the given sites
+  """
+  if not siteList:
+    result = getSites()
+    if not result['OK']:
+      return result
+    siteList = result['Value']
+  siteDict = {}
+  for site in siteList:
+    grid = site.split( '.' )[0]
+    ses = gConfig.getValue( cfgPath( gBaseResourcesSection, 'Sites', grid, site, 'SE' ), [] )
+    if ses:
+      siteDict[site] = ses
+
+  return S_OK( siteDict )
+
+
+@deprecated("Only for FTS2")
+def getFTS2ServersForSites( siteList = None ):
+  """ get FTSServers for sites
+
+  :param siteList: list of sites
+  :type siteList: python:list
+
+  """
+  siteList = siteList if siteList else None
+  if not siteList:
+    siteList = getSites()
+    if not siteList["OK"]:
+      return siteList
+    siteList = siteList["Value"]
+  ftsServers = dict()
+  defaultServ = gConfig.getValue( cfgPath( gBaseResourcesSection, 'FTSEndpoints/Default', 'FTSEndpoint' ), '' )
+  for site in siteList:
+    serv = gConfig.getValue( cfgPath( gBaseResourcesSection, "FTSEndpoints/FTS2", site ), defaultServ )
+    if serv:
+      ftsServers[site] = serv
+  return S_OK( ftsServers )
+
+
 def getFTS3Servers():
   """ get FTSServers for sites
   """
