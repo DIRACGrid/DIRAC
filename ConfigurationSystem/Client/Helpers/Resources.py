@@ -1,14 +1,14 @@
 """ Helper for the CS Resources section
 """
 
-import re
+__RCSID__ = "$Id$"
+
 from distutils.version import LooseVersion  # pylint: disable=no-name-in-module,import-error
 
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
 from DIRAC.Core.Utilities.List import uniqueElements, fromChar
-
-__RCSID__ = "$Id$"
+from DIRAC.Core.Utilities.Decorators import deprecated
 
 
 gBaseResourcesSection = "/Resources"
@@ -32,7 +32,7 @@ def getSites():
 
 
 @deprecated("Only for FTS2")
-def getStorageElementSiteMapping( siteList = None ):
+def getStorageElementSiteMapping(siteList=None):
   """ Get Storage Element belonging to the given sites
   """
   if not siteList:
@@ -42,16 +42,16 @@ def getStorageElementSiteMapping( siteList = None ):
     siteList = result['Value']
   siteDict = {}
   for site in siteList:
-    grid = site.split( '.' )[0]
-    ses = gConfig.getValue( cfgPath( gBaseResourcesSection, 'Sites', grid, site, 'SE' ), [] )
+    grid = site.split('.')[0]
+    ses = gConfig.getValue(cfgPath(gBaseResourcesSection, 'Sites', grid, site, 'SE'), [])
     if ses:
       siteDict[site] = ses
 
-  return S_OK( siteDict )
+  return S_OK(siteDict)
 
 
 @deprecated("Only for FTS2")
-def getFTS2ServersForSites( siteList = None ):
+def getFTS2ServersForSites(siteList=None):
   """ get FTSServers for sites
 
   :param siteList: list of sites
@@ -65,12 +65,12 @@ def getFTS2ServersForSites( siteList = None ):
       return siteList
     siteList = siteList["Value"]
   ftsServers = dict()
-  defaultServ = gConfig.getValue( cfgPath( gBaseResourcesSection, 'FTSEndpoints/Default', 'FTSEndpoint' ), '' )
+  defaultServ = gConfig.getValue(cfgPath(gBaseResourcesSection, 'FTSEndpoints/Default', 'FTSEndpoint'), '')
   for site in siteList:
-    serv = gConfig.getValue( cfgPath( gBaseResourcesSection, "FTSEndpoints/FTS2", site ), defaultServ )
+    serv = gConfig.getValue(cfgPath(gBaseResourcesSection, "FTSEndpoints/FTS2", site), defaultServ)
     if serv:
       ftsServers[site] = serv
-  return S_OK( ftsServers )
+  return S_OK(ftsServers)
 
 
 def getFTS3Servers():
