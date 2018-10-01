@@ -31,7 +31,15 @@ def test_basicJob():
 
   assert xml == expected
 
-  job._toJDL(jobDescriptionObject=StringIO.StringIO(job._toXML()))
+  try:
+    with open('./DIRAC/Interfaces/API/test/testWFSIO.jdl') as fd:
+      expected = fd.read()
+  except IOError:
+    with open('./Interfaces/API/test/testWFSIO.jdl') as fd:
+      expected = fd.read()
+
+  jdlSIO = job._toJDL(jobDescriptionObject=StringIO.StringIO(job._toXML()))
+  assert jdlSIO == expected
 
 
 def test_SimpleParametricJob():
@@ -73,8 +81,6 @@ def test_SimpleParametricJob():
   arguments = clad.getAttributeString('Arguments')
   job_id = clad.getAttributeString('JOB_ID')
   inputData = clad.getAttributeString('InputData')
-
-  print "arguments", arguments
 
   assert job_id == '%(JOB_ID)s'
   assert inputData == '%(InputData)s'
