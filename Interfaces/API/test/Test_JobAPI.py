@@ -59,7 +59,16 @@ def test_SimpleParametricJob():
 
   jdl = job._toJDL()
 
-  print jdl
+  print "AAA"+jdl
+
+  try:
+    with open('./DIRAC/Interfaces/API/test/testWF.jdl') as fd:
+      expected = fd.read()
+  except IOError:
+    with open('./Interfaces/API/test/testWF.jdl') as fd:
+      expected = fd.read()
+
+  assert jdl == expected
 
   clad = ClassAd('[' + jdl + ']')
 

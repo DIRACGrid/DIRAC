@@ -1,0 +1,35 @@
+    Origin = DIRAC;
+    Parameters.InputData = 
+        {
+            {/lhcb/data/data1,
+            /lhcb/data/data2},
+            {/lhcb/data/data3,
+            /lhcb/data/data4},
+            {/lhcb/data/data5,
+            /lhcb/data/data6}
+        };
+    JOB_ID = %(JOB_ID)s;
+    Parameters = 3;
+    StdError = std.err;
+    LogLevel = DEBUG;
+    Executable = "$DIRACROOT/scripts/dirac-jobexec";
+    Site = ANY;
+    Priority = 1;
+    InputSandbox = jobDescription.xml;
+    Arguments = "jobDescription.xml -o LogLevel=DEBUG  -p JOB_ID=%(JOB_ID)s  -p InputData=%(InputData)s";
+    StdOutput = std.out;
+    OutputSandbox = 
+        {
+            Script1_CodeOutput.log,
+            std.err,
+            std.out
+        };
+    JobName = Name;
+    Parameters.JOB_ID = 
+        {
+            1,
+            2,
+            3
+        };
+    InputData = %(InputData)s;
+    JobType = User;
