@@ -57,6 +57,62 @@ These are standard DIRAC jobs. The jobs outputs can be retrieved as usual specif
    $ dirac-wms-job-get-output 1047 1048 1049 1050 1051
 
 
+
+7.1.1 Creating and submitting parametric Jobs using DIRAC APIs
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+
+DIRAC APIs are an easy and convenient way to create and submit parametric jobs::
+
+   from DIRAC.Interfaces.API.Job import Job
+   from DIRAC.Interfaces.API.Dirac import Dirac
+   # or extensions, e.g. from LHCbDIRAC.Interfaces.API.LHCbJob import LHCbJob for LHCb
+
+   J = Job()
+   J.setCPUTime(17800)
+   J.setInputSandbox('exe-script.py') # whatever
+   J.setParameterSequence("args", ['one', 'two', 'three'])
+   J.setParameterSequence("iargs", [1, 2, 3])
+   J.setExecutable("exe-script.py", arguments=": testing %(args)s %(iargs)s", logFile='helloWorld_%n.log')
+   print Dirac().submit(J)
+
+
+InputData (in the form of LFNs -- Logical File Names) can become also parameters in parametric jobs::
+
+   inputDataList = [ # a list of lists
+    [
+        '/lhcb/data/data1',
+        '/lhcb/data/data2'
+    ],
+    [
+        '/lhcb/data/data3',
+        '/lhcb/data/data4'
+    ],
+    [
+        '/lhcb/data/data5',
+        '/lhcb/data/data6'
+    ]
+
+   J.setParameterSequence('InputData', inputDataList, addToWorkflow=True)
+
+and similarly for InputSandbox::
+
+   inputSBList = [ # a list of lists
+    [
+        '/localFile.txt',
+        '/another/localFile.py',
+        '/some/lfn/some/where'
+    ]
+
+   J.setParameterSequence('InputSandbox', inputSBList, addToWorkflow=True)
+
+
+The list of parameters, whatever they are have to have ALL the same lenghth,
+e.g. there should not be a parameter of length 2 and another of length 3.
+
+
+
+
 7.2 MPI Jobs
 ------------
 
@@ -192,7 +248,7 @@ or applications to manage user jobs and data.
       print 'Submission Result: ',result
 
 
-- Send the Job using the script::
+- Run the script::
 
         python Test-API.py
 
