@@ -1,22 +1,19 @@
 """ Class that contains client access to the job monitoring handler. """
-########################################################################
-# $Id$
-# $HeadURL$
-########################################################################
+
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Base.Client                         import Client
+from DIRAC.Core.Base.Client import Client
 
-class JobMonitoringClient( Client ):
 
-  def __init__( self, **kwargs ):
+class JobMonitoringClient(Client):
 
-    Client.__init__( self, **kwargs )
-    self.setServer( 'WorkloadManagement/JobMonitoring' )
-    self.monitoringHandler = self._getRPC()
+  def __init__(self, **kwargs):
 
-  def traceJobParameters( self, site, localID, parameterList = None, attributeList = None, date = None, until = None ):
-    return self.monitoringHandler.traceJobParameters( site, localID, parameterList, attributeList, date, until )
+    Client.__init__(self, **kwargs)
+    self.setServer('WorkloadManagement/JobMonitoring')
 
-  def traceJobParameter( self, site, localID, parameter, date = None, until = None ):
-    return self.monitoringHandler.traceJobParameter( site, localID, parameter, date, until )
+  def traceJobParameters(self, site, localID, parameterList=None, attributeList=None, date=None, until=None):
+    return self._getRPC().traceJobParameters(site, localID, parameterList, attributeList, date, until)
+
+  def traceJobParameter(self, site, localID, parameter, date=None, until=None):
+    return self._getRPC().traceJobParameter(site, localID, parameter, date, until)

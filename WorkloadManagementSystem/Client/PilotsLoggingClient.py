@@ -4,17 +4,17 @@ __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base.Client import Client
 
-class PilotsLoggingClient( Client ):
+
+class PilotsLoggingClient(Client):
   """Implementation of interface of Pilots Logging service. Client class should be used to communicate
   with PilotsLogging Service
   """
 
-  def __init__( self, **kwargs ):
-    Client.__init__( self, **kwargs )
-    self.setServer( 'WorkloadManagement/PilotsLogging' )
-    self.pilotsLoggingHandler = self._getRPC()
+  def __init__(self, **kwargs):
+    Client.__init__(self, **kwargs)
+    self.setServer('WorkloadManagement/PilotsLogging')
 
-  def addPilotsLogging( self, pilotUUID, timestamp, source, phase, status, messageContent ):
+  def addPilotsLogging(self, pilotUUID, timestamp, source, phase, status, messageContent):
     """
     Add new Pilots Logging entry
 
@@ -25,22 +25,22 @@ class PilotsLoggingClient( Client ):
     :param source: Source of status information
     """
 
-    return self.pilotsLoggingHandler.addPilotsLogging(pilotUUID, timestamp, source, phase, status, messageContent)
+    return self._getRPC().addPilotsLogging(pilotUUID, timestamp, source, phase, status, messageContent)
 
-  def deletePilotsLogging( self, pilotUUID ):
+  def deletePilotsLogging(self, pilotUUID):
     """
     Delete all Logging entries for Pilot
 
     :param pilotUUID: Pilot reference
     """
 
-    return self.pilotsLoggingHandler.deletePilotsLogging( pilotUUID )
+    return self._getRPC().deletePilotsLogging(pilotUUID)
 
-  def getPilotsLogging( self, pilotUUID ):
+  def getPilotsLogging(self, pilotUUID):
     """
     Get all Logging entries for Pilot
 
     :param pilotUUID: Pilot reference
     """
 
-    return self.pilotsLoggingHandler.getPilotsLogging( pilotUUID )
+    return self._getRPC().getPilotsLogging(pilotUUID)
