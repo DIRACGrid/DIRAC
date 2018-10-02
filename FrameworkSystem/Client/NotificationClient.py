@@ -15,6 +15,7 @@ class NotificationClient(Client):
     """ Notification Client constructor
     """
     self.log = gLogger.getSubLogger('NotificationClient')
+    self.setServer('Framework/Notification')
 
   def sendMail(self, addresses, subject, body,
                fromAddress=None, localAttempt=True, html=False, avoidSpam=False):
