@@ -41,6 +41,7 @@ from DIRAC.Interfaces.API.Job import Job
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
+from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
 from DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent import JobCleaningAgent
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
@@ -546,7 +547,6 @@ class Matcher (TestWMSTestCase):
         'PilotBenchmark': 'anotherPilot',
         'Site': 'DIRAC.Jenkins.ch',
         'CPUTime': 86400}
-    matcher = RPCClient('WorkloadManagement/Matcher')
     JobStateUpdate = RPCClient('WorkloadManagement/JobStateUpdate')
     wmsClient = WMSClient()
 
@@ -569,7 +569,7 @@ class Matcher (TestWMSTestCase):
     res = tqDB.insertJob(jobID, tqDefDict, 10)
     self.assertTrue(res['OK'])
 
-    res = matcher.requestJob(resourceDescription)
+    res = MatcherClient().requestJob(resourceDescription)
     print res
     self.assertTrue(res['OK'])
     wmsClient.deleteJob(jobID)
