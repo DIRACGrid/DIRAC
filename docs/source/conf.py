@@ -275,6 +275,14 @@ latex_documents = [
 # If false, no module index is generated.
 #latex_use_modindex = True
 
+# packages that cannot be installed in RTD
+autodoc_mock_imports = ['lcg_util', 'cx_Oracle', 'fts3', 'XRootD', 'gfal2', 'arc', '_arc',
+                        'matplotlib',
+                        'git',
+                        'numpy', 'irods', 'pylab', 'stomp',
+                        'pythonjsonlogger', 'cmreslogging',
+                        ]
+
 
 ## link with the python standard library docs
 intersphinx_mapping = {

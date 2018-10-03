@@ -1,13 +1,12 @@
-======================================
+=====================================
 Workload Management Command Reference
-======================================
+=====================================
 
-In this subsection all the Dirac workload management commands available are explained.
+In this subsection the Workload Management commands are collected
 
 .. toctree::
    :maxdepth: 2
-    
-   dirac-wms-cpu-normalization
+
    dirac-wms-get-normalized-queue-length
    dirac-wms-get-queue-normalization
    dirac-wms-job-attributes
@@ -25,3 +24,6 @@ In this subsection all the Dirac workload management commands available are expl
    dirac-wms-job-submit
    dirac-wms-jobs-select-output-search
    dirac-wms-select-jobs
+   dirac-wms-cpu-normalization
+   dirac-wms-get-queue-cpu-time
+   dirac-wms-get-wn-parameters

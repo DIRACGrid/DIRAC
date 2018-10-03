@@ -1,18 +1,16 @@
-=====================================
+==============================
 dirac-admin-get-site-protocols
-=====================================
+==============================
 
-  Check the defined protocols for all SEs of a given site
+Check the defined protocols for all SEs of a given site
 
 Usage::
 
-  dirac-admin-get-site-protocols [option|cfgfile] ... PilotID ... 
-
- 
+  dirac-admin-get-site-protocols [option|cfgfile]
 
 Options::
 
-  -    --Site=           : Site for which protocols are to be checked (mandatory) 
+  -S  --Site <value>           : Site for which protocols are to be checked (mandatory)
 
 Example::
 
@@ -23,5 +21,3 @@ Example::
   StorageElement               ProtocolsList
 
   IN2P3-disk                    file, root, rfio, gsiftp
-
-

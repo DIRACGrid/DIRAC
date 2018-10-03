@@ -77,7 +77,7 @@ Create the configuration file::
    - ./install_site.sh install.cfg # use -v for specifying a version
    - source /opt/dirac/bashrc
 
- Note: If you do not have the /home/dirac/DIRAC directory, please have a look the instructions given in the :ref:`server_requirements` section.
+Note: If you do not have the /home/dirac/DIRAC directory, please have a look the instructions given in the :ref:`server_requirements` section.
 
 
 Checks to be done after the installation
@@ -214,33 +214,34 @@ Running multiple web instances
 ------------------------------
 
 If you want to run more than one instance, you have to use NGIX. The configuration of the NGINX is described in the next section.
-You can define the number of processes in the configuration file:  /opt/dirac/pro/WebAppDIRAC/WebApp/web.cfg
+You can define the number of processes in the configuration file:  /opt/dirac/pro/WebAppDIRAC/WebApp/web.cfg ::
 
-NumProcesses = x (by default the NumProcesses is 1), where x the number of instances, you want to run
-Balancer = nginx
+  NumProcesses = x (by default the NumProcesses is 1), where x the number of instances, you want to run
+  Balancer = nginx
 
-for example: NumProcesses = 4, the processes will listen on 8000, 8001, ... 800n
-You can check the number of instances in the log file (runit/Web/WebApp/log/current)
-2018-05-09 13:48:28 UTC WebApp/Web NOTICE: Configuring HTTP on port 8000
-2018-05-09 13:48:28 UTC WebApp/Web NOTICE: Configuring HTTP on port 8001
-2018-05-09 13:48:28 UTC WebApp/Web NOTICE: Configuring HTTP on port 8002
-2018-05-09 13:48:28 UTC WebApp/Web NOTICE: Configuring HTTP on port 8003
-2018-05-09 13:48:28 UTC WebApp/Web ALWAYS: Listening on http://0.0.0.0:8002/DIRAC/
-2018-05-09 13:48:28 UTC WebApp/Web ALWAYS: Listening on http://0.0.0.0:8000/DIRAC/
-2018-05-09 13:48:28 UTC WebApp/Web ALWAYS: Listening on http://0.0.0.0:8001/DIRAC/
-2018-05-09 13:48:28 UTC WebApp/Web ALWAYS: Listening on http://0.0.0.0:8003/DIRAC/
+for example: NumProcesses = 4, the processes will listen on 8000, 8001, ... 800n.
+You can check the number of instances in the log file (runit/Web/WebApp/log/current)::
 
-You have to configure NGINX to forward the requests to that ports:
+  2018-05-09 13:48:28 UTC WebApp/Web NOTICE: Configuring HTTP on port 8000
+  2018-05-09 13:48:28 UTC WebApp/Web NOTICE: Configuring HTTP on port 8001
+  2018-05-09 13:48:28 UTC WebApp/Web NOTICE: Configuring HTTP on port 8002
+  2018-05-09 13:48:28 UTC WebApp/Web NOTICE: Configuring HTTP on port 8003
+  2018-05-09 13:48:28 UTC WebApp/Web ALWAYS: Listening on http://0.0.0.0:8002/DIRAC/
+  2018-05-09 13:48:28 UTC WebApp/Web ALWAYS: Listening on http://0.0.0.0:8000/DIRAC/
+  2018-05-09 13:48:28 UTC WebApp/Web ALWAYS: Listening on http://0.0.0.0:8001/DIRAC/
+  2018-05-09 13:48:28 UTC WebApp/Web ALWAYS: Listening on http://0.0.0.0:8003/DIRAC/
 
-upstream tornadoserver {
-     #One for every tornado instance you're running that you want to balance
-     server 127.0.0.1:8000;
-     server 127.0.0.1:8001;
-     server 127.0.0.1:8002;
-     server 127.0.0.1:8003;
-}
+You have to configure NGINX to forward the requests to that ports::
 
-Note: you can run NGIN in a separate machine.
+  upstream tornadoserver {
+       #One for every tornado instance you're running that you want to balance
+       server 127.0.0.1:8000;
+       server 127.0.0.1:8001;
+       server 127.0.0.1:8002;
+       server 127.0.0.1:8003;
+  }
+
+Note: you can run NGINX in a separate machine.
 
 
 Install and configure NGINX

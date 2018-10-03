@@ -1,8 +1,8 @@
-=================================
+==========================
 dirac-admin-get-job-pilots
-=================================
+==========================
 
-  Retrieve info about pilots that have matched a given Job
+Retrieve info about pilots that have matched a given Job
 
 Usage::
 
@@ -10,7 +10,7 @@ Usage::
 
 Arguments::
 
-  JobID:    DIRAC ID of the Job 
+  JobID:    DIRAC ID of the Job
 
 Example::
 
@@ -33,5 +33,3 @@ Example::
                                                           'Status': 'Done',
                                                           'SubmissionTime': datetime.datetime(2011, 2, 21, 12, 27, 52),
                                                           'TaskQueueID': 399L}}
-
-

@@ -1,8 +1,8 @@
-=========================
+==================
 dirac-wms-job-kill
-=========================
+==================
 
-  Issue a kill signal to a running DIRAC job
+Issue a kill signal to a running DIRAC job
 
 Usage::
 
@@ -10,11 +10,11 @@ Usage::
 
 Arguments::
 
-  JobID:    DIRAC Job ID 
+  JobID:    DIRAC Job ID
 
 Example::
 
-  $ dirac-wms-job-kill 1918 
+  $ dirac-wms-job-kill 1918
   Killed job 1918
 
 

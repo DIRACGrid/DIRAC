@@ -4,7 +4,9 @@ import os
 import shutil
 import socket
 import sys
-
+import logging
+logging.basicConfig(level=logging.INFO, format='%(name)s: %(levelname)8s: %(message)s')
+LOG = logging.getLogger('MakeDoc')
 
 def mkdir(folder):
   """create a folder, ignore if it exists"""
@@ -12,7 +14,7 @@ def mkdir(folder):
     folder = os.path.join(os.getcwd(), folder)
     os.mkdir(folder)
   except OSError as e:
-    print "MakeDoc: Exception %s when creating folder" % repr(e), folder
+    LOG.error("Exception when creating folder %s: %r", folder, e)
 
 
 BASEPATH = "docs/source/CodeDocumentation"
@@ -41,6 +43,8 @@ BAD_FILES = ("lfc_dfc_copy",
 
 FORCE_ADD_PRIVATE = ["FCConditionParser"]
 
+# inherited functions give warnings in docstrings
+NO_INHERITED = ["HTTPDISETConnection", 'SOAPFactory']
 
 def mkRest(filename, modulename, fullmodulename, subpackages=None, modules=None):
   """make a rst file for filename"""
@@ -63,7 +67,7 @@ def mkRest(filename, modulename, fullmodulename, subpackages=None, modules=None)
 
   subpackages = [s for s in subpackages if not s.endswith(("scripts", ))]
   if subpackages:
-    print "MakeDoc: ", modulename, " subpackages ", subpackages
+    LOG.info("Module %s with subpackages: %s", fullmodulename, ", ".join(subpackages))
     lines.append("SubPackages")
     lines.append("...........")
     lines.append("")
@@ -125,7 +129,8 @@ def mkModuleRest(classname, fullclassname, buildtype="full"):
   lines.append(".. automodule:: %s" % fullclassname)
   if buildtype == "full":
     lines.append("   :members:")
-    lines.append("   :inherited-members:")
+    if classname not in NO_INHERITED:
+      lines.append("   :inherited-members:")
     lines.append("   :undoc-members:")
     lines.append("   :show-inheritance:")
     if classname in FORCE_ADD_PRIVATE:
@@ -145,21 +150,23 @@ def getsubpackages(abspath, direc):
   packages = []
   for dire in direc:
     if dire.lower() == "test" or dire.lower() == "tests" or "/test" in dire.lower():
-      print "MakeDoc: skipping this directory", dire
+      LOG.debug("Skipping test directory: %s/%s", abspath, dire)
       continue
     if os.path.exists(os.path.join(DIRACPATH, abspath, dire, "__init__.py")):
-      #packages.append( os.path.join( "DOC", abspath, dire) )
       packages.append(os.path.join(dire))
   return packages
 
 
-def getmodules(_abspath, _direc, files):
+def getmodules(abspath, direc, files):
   """return list of subpackages with full path"""
   packages = []
   for filename in files:
-    if "test" in filename.lower():
-      print "MakeDoc: Skipping this file", filename
+    if filename.lower().startswith('test') or filename.lower().endswith('test'):
+      LOG.debug("Skipping test file: %s/%s", abspath, filename)
       continue
+    if 'test' in filename.lower():
+      LOG.warn("File contains 'test', but is kept: %s/%s", abspath, filename)
+
     if filename != "__init__.py":
       packages.append(filename.split(".py")[0])
 
@@ -168,16 +175,16 @@ def getmodules(_abspath, _direc, files):
 
 def createDoc(buildtype="full"):
   """create the rst files for all the things we want them for"""
-  print "MakeDoc: DIRACPATH", DIRACPATH
-  print "MakeDoc: BASEPATH", BASEPATH
-  print "Host", socket.gethostname()
+  LOG.info("DIRACPATH: %s", DIRACPATH)
+  LOG.info("BASEPATH: %s", BASEPATH)
+  LOG.info("Host: %s", socket.gethostname())
 
   # we need to replace existing rst files so we can decide how much code-doc to create
   if os.path.exists(BASEPATH):
     shutil.rmtree(BASEPATH)
   mkdir(BASEPATH)
   os.chdir(BASEPATH)
-  print "MakeDoc: Now creating rst files"
+  LOG.info("Now creating rst files")
   for root, direc, files in os.walk(DIRACPATH):
     configTemplate = [os.path.join(root, _) for _ in files if _ == 'ConfigTemplate.cfg']
     files = [_ for _ in files if _.endswith(".py")]
@@ -189,7 +196,7 @@ def createDoc(buildtype="full"):
       continue
     elif any(f.lower() in root.lower() for f in ("/test", "scripts",
                                                  )):
-      print "MakeDoc: Skipping this folder:", root
+      LOG.debug("Skipping test or script folder: %s", root)
       continue
 
     modulename = root.split("/")[-1]
@@ -310,9 +317,9 @@ def checkBuildTypeAndRun():
   buildtypes = ("full", "limited")
   buildtype = "full" if len(sys.argv) <= 1 else sys.argv[1]
   if buildtype not in buildtypes:
-    print "MakeDoc: Unknown build type: %s use %s " % (buildtype, " ".join(buildtypes))
+    LOG.error("Unknown build type: %s use %s ", buildtype, " ".join(buildtypes))
     return 1
-  print "MakeDoc: buildtype:", buildtype
+  LOG.info("buildtype: %s", buildtype)
   exit(createDoc(buildtype))
 
 

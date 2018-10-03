@@ -1,2 +1,10 @@
-Sphinx>=1.5.2
+Sphinx>=1.8.0
 mock
+elasticsearch_dsl
+matplotlib
+mysql-python
+sqlalchemy
+suds
+pytz
+psutil
+pyparsing

@@ -1,6 +1,6 @@
-=====================================
+==============================
 dirac-accounting-decode-fileid
-=====================================
+==============================
 
 Decode Accounting plot URLs
 
@@ -10,6 +10,4 @@ Usage::
 
 Arguments::
 
-  URL: encoded URL of a DIRAC Accounting plot 
-
-
+  URL: encoded URL of a DIRAC Accounting plot
