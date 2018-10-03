@@ -1,4 +1,4 @@
-[v7r0-pre4]
+[v7r0-pre5]
 
 *Accounting
 CHANGE: (Multi)AccountingDB - Grouping Type and Object loader together with the MonitoringSystem ones.
@@ -23,6 +23,7 @@ NEW: (#3744) Add update method to the ElasticSearchDB.py to update or if not ava
      sent from the setJobParameter function. Uses update_by_query and index ES APIs.
 CHANGE: (#3744) generateFullIndexName() method made static under the ElasticSearchDB class.
 CHANGE: (#3744) removed unused/outdated stuff from Distribution module
+FIX: check for empty /etc/grid-security/certificates dir
 
 *tests
 
