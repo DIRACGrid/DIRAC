@@ -38,7 +38,7 @@ $installCfg::
      #
      #  DIRAC release version (this is an example, you should find out the current
      #  production release)
-     Release = v6r19
+     Release = v6r20p14
      #  Python version of the installation
      PythonVersion = 27
      #  To install the Server version of DIRAC (the default is client)
@@ -59,7 +59,7 @@ $installCfg::
      Services = Framework/SystemAdministrator
      UseServerCertificate = yes
      SkipCADownload = yes
-     Setup = your setup #for example: LHCb-Certification
+     Setup = your setup # for example: LHCb-Certification
      ConfigurationMaster = no
      ConfigurationServer = your configuration service
    }

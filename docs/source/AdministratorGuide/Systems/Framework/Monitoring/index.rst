@@ -14,5 +14,5 @@ These plots are very useful for understanding of your services behavior, for exa
 The bookkeeping of the rrd files is kept in an sqlite database usually kept in /opt/dirac/data/monitoring/monitoring.db file.
 There is no cleaning procedure foreseen for the rrd files.
 
-Recently (as of DIRAC v6r16) a new Monitoring System was introduced with ElasticSearch database as its backend,
+A Monitoring System based on ElasticSearch database as backend is possible,
 please read about it in :ref:`Monitoring <monitoring_system>`. 

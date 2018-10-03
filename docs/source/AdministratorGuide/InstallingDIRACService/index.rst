@@ -176,14 +176,14 @@ be taken:
         #
         #  DIRAC release version (this is an example, you should find out the current
         #  production release)
-        Release = v6r17p1
+        Release = v6r20p14
         #  Python version of the installation
         PythonVersion = 27
         #  To install the Server version of DIRAC (the default is client)
         InstallType = server
         #  LCG python bindings for SEs and LFC. Specify this option only if your installation
         #  uses those services
-        # LcgVer = 2017-05-23
+        # LcgVer = v14r2
         #  If this flag is set to yes, each DIRAC update will be installed
         #  in a separate directory, not overriding the previous ones
         UseVersionsDir = yes
@@ -298,9 +298,10 @@ be taken:
       }
 
   - Run install_site.sh giving the edited configuration file as the argument. The configuration file must have
-    .cfg extension (CFG file). While not strictly necessary, it's advised that a version is added with the '-v' switch::
+    .cfg extension (CFG file). While not strictly necessary, it's advised that a version is added with the '-v' switch 
+    (pick the most recent one, see release notes in https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/release.notes)::
 
-      ./install_site.sh -v v6r17p1 install.cfg
+      ./install_site.sh -v v6r20p14 install.cfg
 
   - If the installation is successful, in the end of the script execution you will see the report
     of the status of running DIRAC services, e.g.::
@@ -364,12 +365,12 @@ operation is the registration of the new host in the already functional Configur
         #
         #  DIRAC release version (this is an example, you should find out the current
         #  production release)
-        Release = v6r17p1
+        Release = v6r20p14
         #  To install the Server version of DIRAC (the default is client)
         InstallType = server
         #  LCG python bindings for SEs and LFC. Specify this option only if your installation
         #  uses those services
-        # LcgVer = 2017-05-23
+        # LcgVer = v14r2
         #  If this flag is set to yes, each DIRAC update will be installed
         #  in a separate directory, not overriding the previous ones
         UseVersionsDir = yes
@@ -420,7 +421,7 @@ operation is the registration of the new host in the already functional Configur
 
   - Now run install_site.sh giving the edited CFG file as the argument:::
 
-        ./install_site.sh -v v6r17p1 install.cfg
+        ./install_site.sh -v v6r20p14 install.cfg
 
 If the installation is successful, the SystemAdministrator service will be up and running on the
 server. You can now set up the required components as described in :ref:`setting_with_CLI`
