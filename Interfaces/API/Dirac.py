@@ -14,6 +14,8 @@
 
 """
 
+__RCSID__ = "$Id$"
+
 import re
 import os
 import sys
@@ -35,6 +37,7 @@ from DIRAC.Core.Utilities.Subprocess import shellCall
 from DIRAC.Core.Utilities.ModuleFactory import ModuleFactory
 from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
+from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
@@ -51,8 +54,6 @@ from DIRAC.Core.Security import Locations
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.Utilities.PrettyPrint import printTable, printDict
-
-__RCSID__ = "$Id$"
 
 COMPONENT_NAME = 'DiracAPI'
 
@@ -1845,7 +1846,7 @@ class Dirac(API):
       return ret
     jobID = ret['Value']
 
-    monitoring = RPCClient('WorkloadManagement/JobMonitoring')
+    monitoring = JobMonitoringClient()
     statusDict = monitoring.getJobsStatus(jobID)
     minorStatusDict = monitoring.getJobsMinorStatus(jobID)
     siteDict = monitoring.getJobsSites(jobID)
@@ -1898,7 +1899,7 @@ class Dirac(API):
     jobID = ret['Value']
 
     summary = {}
-    monitoring = RPCClient('WorkloadManagement/JobMonitoring')
+    monitoring = JobMonitoringClient()
     for job in jobID:
       result = monitoring.getInputData(job)
       if result['OK']:
@@ -2067,7 +2068,7 @@ class Dirac(API):
 
     self.log.verbose('Will select jobs with last update %s and following conditions' % date)
     self.log.verbose(self.pPrint.pformat(conditions))
-    monitoring = RPCClient('WorkloadManagement/JobMonitoring')
+    monitoring = JobMonitoringClient()
     result = monitoring.getJobs(conditions, date)
     if not result['OK']:
       if printErrors:
@@ -2112,7 +2113,7 @@ class Dirac(API):
     headers = ['Status', 'MinorStatus', 'ApplicationStatus', 'Site', 'JobGroup', 'LastUpdateTime',
                'HeartBeatTime', 'SubmissionTime', 'Owner']
 
-    monitoring = RPCClient('WorkloadManagement/JobMonitoring')
+    monitoring = JobMonitoringClient()
     result = monitoring.getJobsSummary(jobID)
     if not result['OK']:
       self.log.warn(result['Message'])
@@ -2303,7 +2304,7 @@ class Dirac(API):
 
     summary = {}
     for job in jobID:
-      monitoring = RPCClient('WorkloadManagement/JobMonitoring')
+      monitoring = JobMonitoringClient()
       result = monitoring.getJobHeartBeatData(job)
       summary[job] = {}
       if not result['OK']:
@@ -2350,7 +2351,7 @@ class Dirac(API):
       return ret
     jobID = ret['Value']
 
-    monitoring = RPCClient('WorkloadManagement/JobMonitoring')
+    monitoring = JobMonitoringClient()
     result = monitoring.getJobAttributes(jobID)
     if not result['OK']:
       return result
@@ -2388,7 +2389,7 @@ class Dirac(API):
       return ret
     jobID = ret['Value']
 
-    monitoring = RPCClient('WorkloadManagement/JobMonitoring')
+    monitoring = JobMonitoringClient()
     result = monitoring.getJobParameters(jobID)
     if not result['OK']:
       return result
@@ -2426,7 +2427,7 @@ class Dirac(API):
       return ret
     jobID = ret['Value']
 
-    monitoring = RPCClient('WorkloadManagement/JobMonitoring')
+    monitoring = JobMonitoringClient()
     result = monitoring.getJobLoggingInfo(jobID)
     if not result['OK']:
       self.log.warn('Could not retrieve logging information for job %s' % jobID)
@@ -2468,7 +2469,7 @@ class Dirac(API):
       return ret
     jobID = ret['Value']
 
-    monitoring = RPCClient('WorkloadManagement/JobMonitoring')
+    monitoring = JobMonitoringClient()
     result = monitoring.getJobParameter(jobID, 'StandardOutput')
     if not result['OK']:
       return self._errorReport(result, 'Could not retrieve job attributes')
@@ -2557,7 +2558,7 @@ class Dirac(API):
       return ret
     jobID = ret['Value']
 
-    monitoring = RPCClient('WorkloadManagement/JobMonitoring')
+    monitoring = JobMonitoringClient()
     result = monitoring.getJobJDL(jobID, original)
     if not result['OK']:
       return result
