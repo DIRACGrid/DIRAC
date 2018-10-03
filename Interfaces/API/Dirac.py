@@ -858,12 +858,6 @@ class Dirac(API):
 
     self.log.info('Attempting to submit job to local site: %s' % DIRAC.siteName())
 
-    if 'Executable' in parameters:
-      executable = os.path.expandvars(parameters['Executable'])
-    else:
-      return self._errorReport('Missing job "Executable"')
-
-    command = '%s %s' % (executable, arguments)
     # If not set differently in the CS use the root from the current DIRAC installation
     siteRoot = gConfig.getValue('/LocalSite/Root', DIRAC.rootPath)
 
@@ -871,6 +865,13 @@ class Dirac(API):
     self.log.verbose('DIRACROOT = %s' % (siteRoot))
     os.environ['DIRACPYTHON'] = sys.executable
     self.log.verbose('DIRACPYTHON = %s' % (sys.executable))
+
+    if 'Executable' in parameters:
+      executable = os.path.expandvars(parameters['Executable'])
+    else:
+      return self._errorReport('Missing job "Executable"')
+
+    command = '%s %s' % (executable, arguments)
 
     self.log.info('Executing: %s' % command)
     executionEnv = dict(os.environ)
