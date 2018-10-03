@@ -15,12 +15,8 @@ This section assumes that the DIRAC client is already installed and configured.
 
   - Firefox:
 
-      Preferences -> Advanced -> View Certificates -> Select your certificate -> Backup
+      Preferences -> Provacy & Security -> View Certificates -> Select your certificate -> Backup
 
-
-  - Explorer:
-
-      Tools -> Internet Options ->Content -> Certificates -> Certificates ->Import/Export
 
   As a result you will get the certificate as a file with .p12 extension.
 
