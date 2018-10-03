@@ -12,10 +12,10 @@ import sys
 
 from DIRAC import S_OK
 from DIRAC.Core.Base import Script
-from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.PrettyPrint import printTable
 
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN
+from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
 
 verbose = False
 
@@ -43,9 +43,8 @@ Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
                                   '  %s [option|cfgfile] ' % Script.scriptName]))
 
 Script.parseCommandLine(initializeMonitor=False)
-rpcClient = RPCClient("WorkloadManagement/Matcher")
 
-result = rpcClient.getActiveTaskQueues()
+result = MatcherClient().getActiveTaskQueues()
 if not result['OK']:
   print 'ERROR: %s' % result['Message']
   sys.exit(1)

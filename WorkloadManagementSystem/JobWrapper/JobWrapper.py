@@ -48,6 +48,7 @@ from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
+from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 from DIRAC.WorkloadManagementSystem.JobWrapper.WatchdogFactory import WatchdogFactory
 from DIRAC.AccountingSystem.Client.Types.Job import Job as AccountingJob
 from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemSection
@@ -56,8 +57,6 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import resolveSEGroup
 
-
-__RCSID__ = "$Id$"
 
 EXECUTION_RESULT = {}
 
@@ -952,8 +951,7 @@ class JobWrapper(object):
       report = ', '.join(uploaded)
       # In case the VO payload has also uploaded data using the same parameter
       # name this should be checked prior to setting.
-      monitoring = JobMonitoringClient()
-      result = monitoring.getJobParameter(int(self.jobID), 'UploadedOutputData')
+      result = JobMonitoringClient().getJobParameter(int(self.jobID), 'UploadedOutputData')
       if result['OK']:
         if 'UploadedOutputData' in result['Value']:
           report += ', %s' % result['Value']['UploadedOutputData']

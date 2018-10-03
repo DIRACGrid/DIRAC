@@ -36,6 +36,23 @@ NEW: (#3744) Added miniInstallDIRAC function for Jenkins jobs
 FIX: Better dirac.cfg example configuration for web
 NEW: (#3744) Add WMS documentation in DeveloperGuide/Systems
 
+[v6r20p15]
+
+*Interface
+FIX: (#3843) Fix the sandbox download, returning the inMemory default.
+
+*WorkloadManagementSystem
+FIX: (#3845) late creation on RPC in JobMonitoringClient and PilotsLoggingClient
+
+*DataManagementSystem
+FIX: (#3839) Update obsolete dirac-rms-show-request command in user message displayed when running dirac-dms-replicate-and-register-request
+
+*FrameworkSystem
+FIX: (#3845) added setServer for NotificationClient
+
+*Docs
+NEW: (#3847) Added some info on parametric jobs
+
 [v6r20p14]
 
 CHANGE: (#3826) emacs backup file pattern added to .gitignore
