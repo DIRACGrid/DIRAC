@@ -1,9 +1,4 @@
-""" :mod: GFAL2_GSIFTPStorage
-    =================
-
-    .. module: python
-    :synopsis: GSIFTP module based on the GFAL2_StorageBase class.
-"""
+"""GSIFTP module based on the GFAL2_StorageBase class."""
 
 # from DIRAC
 from DIRAC.Resources.Storage.GFAL2_StorageBase import GFAL2_StorageBase

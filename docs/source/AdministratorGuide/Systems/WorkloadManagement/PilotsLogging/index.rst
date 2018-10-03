@@ -15,9 +15,10 @@ Each logging entry includes:
 - timestamp of logging the status - if there is no timestamp of actual event provided, time of adding entry to database will be used,
 - source of the logging message to distinguish updates from Pilot itself and other services.
 
-.. image:: ../../_static/Systems/WMS/PilotsLoggingDiagram.png
+.. image:: PilotsLoggingDiagram.png
    :alt: PilotsLogging system
    :align: center
+
 
 Server side
 ================================
@@ -59,7 +60,7 @@ Database
 Database class handles operation on the database. Object-relational mapping is done using SQLAlchemy. Single table stores
 record for every status reported by Pilot:
 
-.. image:: ../../_static/Systems/WMS/PilotsLoggingDB.png
+.. image:: PilotsLoggingDB.png
    :alt: PilotsLogging database schema
    :align: center
 

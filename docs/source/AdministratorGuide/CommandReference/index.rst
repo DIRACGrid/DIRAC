@@ -30,6 +30,7 @@ Managing Registry:
     dirac-admin-add-group
     dirac-admin-add-host
     dirac-admin-add-user
+    dirac-admin-add-shifter
     dirac-admin-delete-user        
     dirac-admin-list-hosts
     dirac-admin-list-users
@@ -37,14 +38,15 @@ Managing Registry:
     dirac-admin-sync-users-from-file
     dirac-admin-user-quota
     dirac-admin-users-with-proxy
-    
+    dirac-admin-voms-sync
+
 Managing Resources:
 
 .. toctree::
     :maxdepth: 2   
     
     dirac-admin-add-site
-
+    dirac-admin-add-resources
     dirac-admin-allow-catalog
     dirac-admin-allow-se
     dirac-admin-allow-site
@@ -57,6 +59,7 @@ Managing Resources:
     dirac-admin-bdii-cluster
     dirac-admin-bdii-sa
     dirac-admin-bdii-site
+    dirac-admin-bdii-info
     dirac-admin-ce-info
     dirac-admin-get-banned-sites
     dirac-admin-get-site-mask
@@ -78,6 +81,7 @@ Workload management commands:
     dirac-admin-get-pilot-output
     dirac-admin-kill-pilot
     dirac-admin-pilot-summary
+    dirac-admin-pilot-logging-info
     dirac-admin-reoptimize-jobs
     dirac-admin-reset-job
     dirac-admin-show-task-queues
@@ -104,10 +108,12 @@ Managing DIRAC installation:
 
     dirac-framework-ping-service
     dirac-install-agent
+    dirac-install-component
     dirac-install-db
     dirac-install-service
     dirac-install-web-portal
     dirac-install
+    dirac-uninstall-component
     dirac-restart-component
     dirac-restart-mysql
     dirac-start-component
@@ -122,7 +128,9 @@ Managing DIRAC installation:
     dirac-admin-get-CAs
     dirac-info
     dirac-version
-        
+    dirac-admin-check-config-options
+    dirac-populate-component-db
+
 Managing DIRAC software:
 
 .. toctree::
@@ -197,3 +205,4 @@ Other commands:
     dirac-compile-externals
     dirac-fix-mysql-script
 
+    dirac-sys-sendmail

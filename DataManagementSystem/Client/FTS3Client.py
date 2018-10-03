@@ -80,8 +80,9 @@ class FTS3Client(Client):
   def getNonFinishedOperations(self, limit=20, operationAssignmentTag="Assigned", **kwargs):
     """ Get all the FTS3Operations that have files in New or Failed state
         (reminder: Failed is NOT terminal for files. Failed is when fts failed, but we
-         can retry)
-         :param limit: max number of jobs to retrieve
+        can retry)
+
+        :param limit: max number of jobs to retrieve
         :return: json list of FTS3Operation
     """
 

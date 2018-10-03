@@ -17,6 +17,7 @@ class ProxyPlugin( FCConditionBasePlugin ):
   def __init__( self, conditions ):
     """ This plugin allows to perform tests on the proxy.
         Supported conditions are:
+
           * username.in(<comma separated list of names>): the user should be in the defined list
           * username.not_in(<comma separated list of names>): the user should *not* be in the defined list
           * group.in(<comma separated list of names>): the group should be in the defined list
@@ -28,7 +29,8 @@ class ProxyPlugin( FCConditionBasePlugin ):
 
         Because it is not possible to use the '=' sign, the VOMS role has to be declared using the
         symbol '->'.
-        For example:
+        For example::
+
           "voms.has(/lhcb/Role->production)" will look for "/lhcb/Role=production" in the VOMS list contained
           in the proxy info.
 

@@ -1059,7 +1059,7 @@ class JobDB(DB):
         :param str diracSetup: setup in which context the job is submitted
         :param str initialStatus: optional initial job status (Received by default)
         :param str initialMinorStatus: optional initial minor job status
-        :return : new job ID
+        :return: new job ID
     """
     jobManifest = JobManifest()
     result = jobManifest.load(jdl)
@@ -1585,9 +1585,9 @@ class JobDB(DB):
 #############################################################################
   def getSiteMaskStatus(self, sites=None):
     """ Get the current site mask status
-        :param:sites - A string for a single site to check, or a list
-                       to check multiple sites.
-        :returns:If input was a list, a dictionary of sites, keys are site
+
+        :param sites: A string for a single site to check, or a list to check multiple sites.
+        :returns: If input was a list, a dictionary of sites, keys are site
                  names and values are the site statuses. Unknown sites are
                  not included in the output dictionary.
                  If input was a string, then a single value with that site's

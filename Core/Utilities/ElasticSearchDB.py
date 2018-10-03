@@ -276,7 +276,7 @@ class ElasticSearchDB(object):
     :param str indexPrefix: index name.
     :param str doc_type: the type of the document
     :param list data: contains a list of dictionary
-    :paran dict mapping: the mapping used by elasticsearch
+    :param dict mapping: the mapping used by elasticsearch
     :param str period: We can specify which kind of indices will be created.
                        Currently only daily and monthly indexes are supported.
     """
@@ -406,9 +406,10 @@ class ElasticSearchDB(object):
   def generateFullIndexName(indexName, period=None):
     """
     Given an index prefix we create the actual index name. Each day an index is created.
+
     :param str indexName: it is the name of the index
     :param str period: We can specify, which kind of indexes will be created.
-                       Currently only daily and monthly indexes are supported.
+        Currently only daily and monthly indexes are supported.
     """
 
     if period is None:

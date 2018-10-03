@@ -36,19 +36,6 @@ sys.modules['MySQLdb'] = mockMySQLdb
 sys.modules['MySQLdb.cursors'] = mock.Mock()
 
 # FIXME: do we need all them ?? We do not install these on readTheDocs, so yes
-
-sys.modules['sqlalchemy'] = mock.Mock()
-sys.modules['sqlalchemy.exc'] = mock.Mock()
-sys.modules['sqlalchemy.orm'] = mock.Mock()
-sys.modules['sqlalchemy.orm.exc'] = mock.Mock()
-sys.modules['sqlalchemy.orm.query'] = mock.Mock()
-sys.modules['sqlalchemy.engine'] = mock.Mock()
-sys.modules['sqlalchemy.engine.reflection'] = mock.Mock()
-sys.modules['sqlalchemy.ext'] = mock.Mock()
-sys.modules['sqlalchemy.ext.declarative'] = mock.Mock()
-sys.modules['sqlalchemy.schema'] = mock.Mock()
-sys.modules['sqlalchemy.sql'] = mock.Mock()
-sys.modules['sqlalchemy.sql.expression'] = mock.Mock()
 sys.modules['lcg_util'] = mock.Mock()
 sys.modules['suds'] = mock.Mock()
 sys.modules['suds.client'] = mock.Mock()
