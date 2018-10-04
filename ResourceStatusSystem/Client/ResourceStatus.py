@@ -62,6 +62,7 @@ class ResourceStatus(object):
     :rtype: dict
 
     :Example:
+
     >>> getElementStatus('CE42', 'ComputingElement')
         S_OK( { 'CE42': { 'all': 'Active' } } } )
     >>> getElementStatus('SE1', 'StorageElement', 'ReadAccess')
@@ -122,6 +123,7 @@ class ResourceStatus(object):
     :rtype: dict
 
     :Example:
+
     >>> setElementStatus('CE42', 'ComputingElement', 'all', 'Active')
         S_OK(  xyz.. )
     >>> setElementStatus('SE1', 'StorageElement', 'ReadAccess', 'Banned')

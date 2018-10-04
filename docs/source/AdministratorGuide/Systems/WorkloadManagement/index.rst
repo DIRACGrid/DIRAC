@@ -6,7 +6,7 @@ The DIRAC Workload Management System (WMS) realizes the task scheduling paradigm
 This task scheduling method solves many problems of using unstable distributed computing resources which are
 available in computing grids. In particular, it helps the management of the user activities in large Virtual
 Organizations such as LHC experiments. In more details the DIRAC WMS with Pilot Jobs is described
-`here <http://iopscience.iop.org/article/10.1088/1742-6596/898/9/092024>`_.
+`here <http://iopscience.iop.org/article/10.1088/1742-6596/898/9/092024>`__.
 
 The WMS provides high user jobs efficiency, hiding the heterogeneity of the the underlying computing resources.
 
@@ -30,7 +30,7 @@ In any case, the following definitions apply:
 - computing slot: a resource allocated by a resource provider for a community usage on a WN (a batch job slot, a VM slot...)
 
 DIRAC alone can send pilots to several types of computing element, and recognizes several types of batch systems.
-You can find a presentation highlighting these concepts `here <https://indico.cern.ch/event/658060/contributions/2943568/attachments/1623665/2584839/DIRAC.pdf>`_.
+You can find a presentation highlighting these concepts `here <https://indico.cern.ch/event/658060/contributions/2943568/attachments/1623665/2584839/DIRAC.pdf>`__.
 
 
 In case more than one one type of resource is available, specifically VM-based resources,

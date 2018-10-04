@@ -1,33 +1,15 @@
 """
- .. versionadded:: v6r20
 
-  FTS3Agent implementation.
-  It is in charge of submitting and monitoring all the transfers. It can be duplicated.
+.. versionadded:: v6r20
 
+FTS3Agent implementation.
+It is in charge of submitting and monitoring all the transfers. It can be duplicated.
 
-::
-
-  FTS3Agent
-  {
-    PollingTime = 120
-    MaxThreads = 10
-    # How many Operation we will treat in one loop
-    OperationBulkSize = 20
-    # How many Job we will monitor in one loop
-    JobBulkSize = 20
-    # Max number of files to go in a single job
-    MaxFilesPerJob = 100
-    # Max number of attempt per file
-    MaxAttemptsPerFile = 256
-    # days before removing jobs
-    DeleteGraceDays = 180
-    # Max number of deletes per cycle
-    DeleteLimitPerCycle = 100
-    # hours before kicking jobs with old assignment tag
-    KickAssignedHours  = 1
-    # Max number of kicks per cycle
-    KickLimitPerCycle = 100
-  }
+.. literalinclude:: ../ConfigTemplate.cfg
+  :start-after: ##BEGIN FTS3Agent
+  :end-before: ##END
+  :dedent: 2
+  :caption: FTS3Agent options
 
 """
 

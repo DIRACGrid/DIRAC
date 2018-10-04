@@ -1,11 +1,9 @@
-==========================
+===================
 dirac-restart-mysql
-==========================
+===================
 
-  Restart DIRAC MySQL server
+Restart DIRAC MySQL server
 
 Usage::
 
-  dirac-restart-mysql [option|cfgfile] ... 
-
-
+  dirac-restart-mysql [option|cfgfile] ...

@@ -1,11 +1,9 @@
-=============================
+======================
 dirac-admin-kill-pilot
-=============================
+======================
 
-  Kill the specified pilot
+Kill the specified pilot
 
 Usage::
 
-  dirac-admin-kill-pilot <pilot reference> 
-
-
+  dirac-admin-kill-pilot <pilot reference>

@@ -1,9 +1,7 @@
-================================
+=========================
 dirac-configuration-shell
-================================
+=========================
 
 Usage::
 
-  dirac-configuration-shell.py (<options>|<cfgFile>)* 
-
-
+  dirac-configuration-shell.py (<options>|<cfgFile>)*

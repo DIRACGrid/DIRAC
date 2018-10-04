@@ -11,8 +11,8 @@ Before going through the exercise, you should verify in which GIT branch you are
 
 this will show all your local branches. Now,
 remember that you have to base your development on a *remote* branch.
- This is clearly explained in :ref:`contributing_code`,
- so be careful on what you choose: checkout a new branch from a remote one before proceeding.
+This is clearly explained in :ref:`contributing_code`,
+so be careful on what you choose: checkout a new branch from a remote one before proceeding.
 
 
 Exercise 1:

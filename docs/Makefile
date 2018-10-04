@@ -10,7 +10,7 @@
 #LC_ALL := en_GB.UTF-8
 
 # You can set these variables from the command line.
-SPHINXOPTS    =
+#SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
 PAPER         =
 BUILDDIR      = build

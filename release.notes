@@ -1,4 +1,4 @@
-[v7r0-pre4]
+[v7r0-pre5]
 
 *Accounting
 CHANGE: (Multi)AccountingDB - Grouping Type and Object loader together with the MonitoringSystem ones.
@@ -23,6 +23,7 @@ NEW: (#3744) Add update method to the ElasticSearchDB.py to update or if not ava
      sent from the setJobParameter function. Uses update_by_query and index ES APIs.
 CHANGE: (#3744) generateFullIndexName() method made static under the ElasticSearchDB class.
 CHANGE: (#3744) removed unused/outdated stuff from Distribution module
+FIX: check for empty /etc/grid-security/certificates dir
 
 *tests
 
@@ -34,6 +35,23 @@ NEW: (#3744) Added miniInstallDIRAC function for Jenkins jobs
 *Docs
 FIX: Better dirac.cfg example configuration for web
 NEW: (#3744) Add WMS documentation in DeveloperGuide/Systems
+
+[v6r20p15]
+
+*Interface
+FIX: (#3843) Fix the sandbox download, returning the inMemory default.
+
+*WorkloadManagementSystem
+FIX: (#3845) late creation on RPC in JobMonitoringClient and PilotsLoggingClient
+
+*DataManagementSystem
+FIX: (#3839) Update obsolete dirac-rms-show-request command in user message displayed when running dirac-dms-replicate-and-register-request
+
+*FrameworkSystem
+FIX: (#3845) added setServer for NotificationClient
+
+*Docs
+NEW: (#3847) Added some info on parametric jobs
 
 [v6r20p14]
 
