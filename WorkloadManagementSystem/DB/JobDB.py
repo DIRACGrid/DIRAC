@@ -45,18 +45,18 @@ __RCSID__ = "$Id$"
 import sys
 import operator
 
-from DIRAC.Core.Utilities                                    import DErrno
-from DIRAC.Core.Utilities.ClassAd.ClassAdLight               import ClassAd
-from DIRAC.Core.Utilities.ReturnValues                       import S_OK, S_ERROR
-from DIRAC.Core.Utilities                                    import Time
+from DIRAC.Core.Utilities import DErrno
+from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
+from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
+from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities.DErrno import EWMSSUBM
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
-from DIRAC.ConfigurationSystem.Client.Config                 import gConfig
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry       import getVOForGroup, getVOOption, getGroupOption
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations     import Operations
-from DIRAC.Core.Base.DB                                      import DB
-from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest   import JobManifest
-from DIRAC.ResourceStatusSystem.Client.SiteStatus                 import SiteStatus
+from DIRAC.ConfigurationSystem.Client.Config import gConfig
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup, getVOOption, getGroupOption
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.Core.Base.DB import DB
+from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
+from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 
 #############################################################################
 
@@ -70,12 +70,12 @@ class JobDB( DB ):
     """ Standard Constructor
     """
 
-    DB.__init__( self, 'JobDB', 'WorkloadManagement/JobDB' )
+    DB.__init__(self, 'JobDB', 'WorkloadManagement/JobDB')
 
-    self.maxRescheduling = self.getCSOption( 'MaxRescheduling', 3 )
+    self.maxRescheduling = self.getCSOption('MaxRescheduling', 3)
 
     # loading the function that will be used to determine the platform (it can be VO specific)
-    res = ObjectLoader().loadObject("DIRAC.ConfigurationSystem.Client.Helpers.Resources", 'getDIRACPlatform')
+    res = ObjectLoader().loadObject("ConfigurationSystem.Client.Helpers.Resources", 'getDIRACPlatform')
     if not res['OK']:
       sys.exit(res['Message'])
     self.getDIRACPlatform = res['Value']

@@ -79,7 +79,7 @@ class SiteDirector(AgentModule):
 
     # on-the fly imports
     ol = ObjectLoader()
-    res = ol.loadModule("DIRAC.ConfigurationSystem.Client.Helpers.Resources")
+    res = ol.loadModule("ConfigurationSystem.Client.Helpers.Resources")
     if not res['OK']:
       sys.exit(res['Message'])
     self.resourcesModule = res['Value']
