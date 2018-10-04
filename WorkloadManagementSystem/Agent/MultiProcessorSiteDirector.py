@@ -9,12 +9,12 @@ import random
 import re
 
 from DIRAC import S_OK
-from DIRAC.WorkloadManagementSystem.Agent.SiteDirector import SiteDirector, WAITING_PILOT_STATUS
+from DIRAC.Core.Utilities.Time import dateTime, second
 from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
-from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils import pilotAgentsDB
-from DIRAC.Core.Utilities.Time import dateTime, second
+from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
+from DIRAC.WorkloadManagementSystem.Agent.SiteDirector import SiteDirector, WAITING_PILOT_STATUS
 
 
 class MultiProcessorSiteDirector(SiteDirector):
@@ -89,8 +89,8 @@ class MultiProcessorSiteDirector(SiteDirector):
     self.log.verbose('Checking overall TQ availability with requirements')
     self.log.verbose(tqDict)
 
-    rpcMatcher = RPCClient("WorkloadManagement/Matcher")
-    result = rpcMatcher.getMatchingTaskQueues(tqDict)
+    matcherClient = MatcherClient()
+    result = matcherClient.getMatchingTaskQueues(tqDict)
     if not result['OK']:
       return result
     if not result['Value']:
@@ -231,7 +231,7 @@ class MultiProcessorSiteDirector(SiteDirector):
 
       ceDict['Tag'] = queueTags
       # Get the number of eligible jobs for the target site/queue
-      result = rpcMatcher.getMatchingTaskQueues(ceDict)
+      result = matcherClient.getMatchingTaskQueues(ceDict)
       if not result['OK']:
         self.log.error('Could not retrieve TaskQueues from TaskQueueDB', result['Message'])
         return result
