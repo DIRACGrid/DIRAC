@@ -16,9 +16,12 @@ from DIRAC.Core.Security import Properties, CS
 DEFAULT_GROUP_SHARE = 1000
 TQ_MIN_SHARE = 0.001
 
+# For checks at insertion time, and not only
 singleValueDefFields = ('OwnerDN', 'OwnerGroup', 'Setup', 'CPUTime')
 multiValueDefFields = ('Sites', 'GridCEs', 'GridMiddlewares', 'BannedSites',
                        'Platforms', 'PilotTypes', 'SubmitPools', 'JobTypes', 'Tags')
+
+# Used for matching
 multiValueMatchFields = ('GridCE', 'Site', 'GridMiddleware', 'Platform',
                          'PilotType', 'SubmitPool', 'JobType', 'Tag')
 tagMatchFields = ('Tag', )
@@ -336,9 +339,9 @@ class TaskQueueDB(DB):
     return jobPriority
 
   def insertJob(self, jobId, tqDefDict, jobPriority, skipTQDefCheck=False):
-    """
-    Insert a job in a task queue
-      Returns S_OK( tqId ) / S_ERROR
+    """ Insert a job in a task queue (creating one if it doesn't exit)
+
+        :returns: S_OK() / S_ERROR
     """
     try:
       long(jobId)
@@ -682,7 +685,9 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
     for field in multiValueMatchFields:
       # It has to be %ss , with an 's' at the end because the columns names
       # are plural and match options are singular
-      if field in tqMatchDict and tqMatchDict[field]:
+      if tqMatchDict.get(field):
+        if tqMatchDict[field].lower() == '"any"':
+          continue
         _, fullTableN = self.__generateTablesName(sqlTables, field)
         sqlMultiCondList = []
         # if field != 'GridCE' or 'Site' in tqMatchDict:
@@ -695,7 +700,7 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
                                                                                                     fullTableN))
         rsql = None
         if field in tagMatchFields:
-          if tqMatchDict[field] != '"Any"':
+          if tqMatchDict[field].lower() != '"any"':
             csql = self.__generateTagSQLSubCond(fullTableN, tqMatchDict[field])
           # Add required tag condition
           for field in tagMatchFields:
@@ -1113,7 +1118,7 @@ WHERE j.JobId = %s AND t.TQId = j.TQId" %
     # Keep updating
     owners = dict(data)
     # IF the user is already known and has more than 1 tq, the rest of the users don't need to be modified
-    #(The number of owners didn't change)
+    # (The number of owners didn't change)
     if userDN in owners and owners[userDN] > 1:
       return self.__setPrioritiesForEntity(userDN, userGroup, entitiesShares[userDN], connObj=connObj)
     # Oops the number of owners may have changed so we recalculate the prio for all owners in the group
