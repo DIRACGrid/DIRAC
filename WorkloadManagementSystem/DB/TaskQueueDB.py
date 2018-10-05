@@ -4,14 +4,15 @@
 __RCSID__ = "$Id"
 
 import random
+
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
-from DIRAC.WorkloadManagementSystem.private.SharesCorrector import SharesCorrector
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Utilities.PrettyPrint import printDict
 from DIRAC.Core.Utilities.DictCache import DictCache
-from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Security import Properties, CS
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.WorkloadManagementSystem.private.SharesCorrector import SharesCorrector
 
 DEFAULT_GROUP_SHARE = 1000
 TQ_MIN_SHARE = 0.001
@@ -341,6 +342,10 @@ class TaskQueueDB(DB):
   def insertJob(self, jobId, tqDefDict, jobPriority, skipTQDefCheck=False):
     """ Insert a job in a task queue (creating one if it doesn't exit)
 
+        :param int jobId: job ID
+        :param dict tqDefDict: dict for TQ definition
+        :param int jobPriority: integer that defines the job priority
+
         :returns: S_OK() / S_ERROR
     """
     try:
@@ -387,8 +392,13 @@ class TaskQueueDB(DB):
     return S_OK()
 
   def __insertJobInTaskQueue(self, jobId, tqId, jobPriority, checkTQExists=True, connObj=False):
-    """
-    Insert a job in a given task queue
+    """ Insert a job in a given task queue
+
+        :param int jobId: job ID
+        :param dict tqDefDict: dict for TQ definition
+        :param int jobPriority: integer that defines the job priority
+
+        :returns: S_OK() / S_ERROR
     """
     self.log.info("Inserting job %s in TQ %s with priority %s" % (jobId, tqId, jobPriority))
     if not connObj:
@@ -412,7 +422,10 @@ class TaskQueueDB(DB):
 
   def __generateTQFindSQL(self, tqDefDict, skipDefinitionCheck=False):
     """
-      Find a task queue that has exactly the same requirements
+        Generate the SQL to find a task queue that has exactly the given requirements
+
+        :param dict tqDefDict: dict for TQ definition
+        :returns: S_OK() / S_ERROR
     """
     if not skipDefinitionCheck:
       tqDefDict = dict(tqDefDict)
@@ -445,6 +458,9 @@ class TaskQueueDB(DB):
 
   def __findAndDisableTaskQueue(self, tqDefDict, skipDefinitionCheck=False, retries=10, connObj=False):
     """ Disable and find TQ
+
+        :param dict tqDefDict: dict for TQ definition
+        :returns: S_OK() / S_ERROR
     """
     for _ in xrange(retries):
       result = self.__findSmallestTaskQueue(tqDefDict, skipDefinitionCheck=skipDefinitionCheck, connObj=connObj)
@@ -462,7 +478,10 @@ class TaskQueueDB(DB):
 
   def __findSmallestTaskQueue(self, tqDefDict, skipDefinitionCheck=False, connObj=False):
     """
-      Find a task queue that has exactly the same requirements
+        Find a task queue that has at least the given requirements
+
+        :param dict tqDefDict: dict for TQ definition
+        :returns: S_OK() / S_ERROR
     """
     result = self.__generateTQFindSQL(tqDefDict, skipDefinitionCheck=skipDefinitionCheck)
     if not result['OK']:
@@ -481,8 +500,10 @@ ORDER BY COUNT( `tq_Jobs`.JobID ) ASC" % (sqlCmd, result['Value'])
     return S_OK({'found': True, 'tqId': data[0][1], 'enabled': data[0][2], 'jobs': data[0][0]})
 
   def matchAndGetJob(self, tqMatchDict, numJobsPerTry=50, numQueuesPerTry=10, negativeCond=None):
-    """
-    Match a job
+    """ Match a job based on requirements
+
+        :param dict tqDefDict: dict for TQ definition
+        :returns: S_OK() / S_ERROR
     """
     if negativeCond is None:
       negativeCond = {}
