@@ -1,5 +1,3 @@
--- $Header $
-
 -- ------------------------------------------------------------------------------
 --
 --  Schema definition for the JobLoggingDB database - containing the job status
@@ -14,11 +12,9 @@
 -- ------------------------------------------------------------------------------
 -- Database owner definition
 -- USE mysql;
--- DELETE FROM user WHERE user='Dirac';
 --
 -- Must set passwords for database user by replacing "must_be_set".
 --
--- GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON JobLoggingDB.* TO Dirac@localhost IDENTIFIED BY 'must_be_set';
 -- GRANT SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER ON JobLoggingDB.* TO Dirac@'%' IDENTIFIED BY 'must_be_set';
 -- FLUSH PRIVILEGES;
 

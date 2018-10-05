@@ -4,21 +4,25 @@
 __RCSID__ = "$Id"
 
 import random
+
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
-from DIRAC.WorkloadManagementSystem.private.SharesCorrector import SharesCorrector
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Utilities.PrettyPrint import printDict
 from DIRAC.Core.Utilities.DictCache import DictCache
-from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Security import Properties, CS
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.WorkloadManagementSystem.private.SharesCorrector import SharesCorrector
 
 DEFAULT_GROUP_SHARE = 1000
 TQ_MIN_SHARE = 0.001
 
+# For checks at insertion time, and not only
 singleValueDefFields = ('OwnerDN', 'OwnerGroup', 'Setup', 'CPUTime')
 multiValueDefFields = ('Sites', 'GridCEs', 'GridMiddlewares', 'BannedSites',
                        'Platforms', 'PilotTypes', 'SubmitPools', 'JobTypes', 'Tags')
+
+# Used for matching
 multiValueMatchFields = ('GridCE', 'Site', 'GridMiddleware', 'Platform',
                          'PilotType', 'SubmitPool', 'JobType', 'Tag')
 tagMatchFields = ('Tag', )
@@ -336,9 +340,13 @@ class TaskQueueDB(DB):
     return jobPriority
 
   def insertJob(self, jobId, tqDefDict, jobPriority, skipTQDefCheck=False):
-    """
-    Insert a job in a task queue
-      Returns S_OK( tqId ) / S_ERROR
+    """ Insert a job in a task queue (creating one if it doesn't exit)
+
+        :param int jobId: job ID
+        :param dict tqDefDict: dict for TQ definition
+        :param int jobPriority: integer that defines the job priority
+
+        :returns: S_OK() / S_ERROR
     """
     try:
       long(jobId)
@@ -384,8 +392,13 @@ class TaskQueueDB(DB):
     return S_OK()
 
   def __insertJobInTaskQueue(self, jobId, tqId, jobPriority, checkTQExists=True, connObj=False):
-    """
-    Insert a job in a given task queue
+    """ Insert a job in a given task queue
+
+        :param int jobId: job ID
+        :param dict tqDefDict: dict for TQ definition
+        :param int jobPriority: integer that defines the job priority
+
+        :returns: S_OK() / S_ERROR
     """
     self.log.info("Inserting job %s in TQ %s with priority %s" % (jobId, tqId, jobPriority))
     if not connObj:
@@ -409,7 +422,10 @@ class TaskQueueDB(DB):
 
   def __generateTQFindSQL(self, tqDefDict, skipDefinitionCheck=False):
     """
-      Find a task queue that has exactly the same requirements
+        Generate the SQL to find a task queue that has exactly the given requirements
+
+        :param dict tqDefDict: dict for TQ definition
+        :returns: S_OK() / S_ERROR
     """
     if not skipDefinitionCheck:
       tqDefDict = dict(tqDefDict)
@@ -442,6 +458,9 @@ class TaskQueueDB(DB):
 
   def __findAndDisableTaskQueue(self, tqDefDict, skipDefinitionCheck=False, retries=10, connObj=False):
     """ Disable and find TQ
+
+        :param dict tqDefDict: dict for TQ definition
+        :returns: S_OK() / S_ERROR
     """
     for _ in xrange(retries):
       result = self.__findSmallestTaskQueue(tqDefDict, skipDefinitionCheck=skipDefinitionCheck, connObj=connObj)
@@ -459,7 +478,10 @@ class TaskQueueDB(DB):
 
   def __findSmallestTaskQueue(self, tqDefDict, skipDefinitionCheck=False, connObj=False):
     """
-      Find a task queue that has exactly the same requirements
+        Find a task queue that has at least the given requirements
+
+        :param dict tqDefDict: dict for TQ definition
+        :returns: S_OK() / S_ERROR
     """
     result = self.__generateTQFindSQL(tqDefDict, skipDefinitionCheck=skipDefinitionCheck)
     if not result['OK']:
@@ -478,8 +500,10 @@ ORDER BY COUNT( `tq_Jobs`.JobID ) ASC" % (sqlCmd, result['Value'])
     return S_OK({'found': True, 'tqId': data[0][1], 'enabled': data[0][2], 'jobs': data[0][0]})
 
   def matchAndGetJob(self, tqMatchDict, numJobsPerTry=50, numQueuesPerTry=10, negativeCond=None):
-    """
-    Match a job
+    """ Match a job based on requirements
+
+        :param dict tqDefDict: dict for TQ definition
+        :returns: S_OK() / S_ERROR
     """
     if negativeCond is None:
       negativeCond = {}
@@ -682,7 +706,9 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
     for field in multiValueMatchFields:
       # It has to be %ss , with an 's' at the end because the columns names
       # are plural and match options are singular
-      if field in tqMatchDict and tqMatchDict[field]:
+      if tqMatchDict.get(field):
+        if tqMatchDict[field].lower() == '"any"':
+          continue
         _, fullTableN = self.__generateTablesName(sqlTables, field)
         sqlMultiCondList = []
         # if field != 'GridCE' or 'Site' in tqMatchDict:
@@ -695,7 +721,7 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
                                                                                                     fullTableN))
         rsql = None
         if field in tagMatchFields:
-          if tqMatchDict[field] != '"Any"':
+          if tqMatchDict[field].lower() != '"any"':
             csql = self.__generateTagSQLSubCond(fullTableN, tqMatchDict[field])
           # Add required tag condition
           for field in tagMatchFields:
@@ -1113,7 +1139,7 @@ WHERE j.JobId = %s AND t.TQId = j.TQId" %
     # Keep updating
     owners = dict(data)
     # IF the user is already known and has more than 1 tq, the rest of the users don't need to be modified
-    #(The number of owners didn't change)
+    # (The number of owners didn't change)
     if userDN in owners and owners[userDN] > 1:
       return self.__setPrioritiesForEntity(userDN, userGroup, entitiesShares[userDN], connObj=connObj)
     # Oops the number of owners may have changed so we recalculate the prio for all owners in the group
