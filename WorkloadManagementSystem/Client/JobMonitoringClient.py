@@ -4,13 +4,15 @@ from __future__ import absolute_import
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Base.Client import Client
+from DIRAC.Core.Base.Client import Client, ClientCreator
 
 
 class JobMonitoringClient(Client):
+  __metaclass__ = ClientCreator
+  handlerModuleName = 'DIRAC.WorkloadManagementSystem.Service.JobMonitoringHandler'
+  handlerClassName = 'JobMonitoringHandler'
 
   def __init__(self, **kwargs):
-
     Client.__init__(self, **kwargs)
     self.setServer('WorkloadManagement/JobMonitoring')
 
