@@ -7,6 +7,7 @@ __RCSID__ = "$Id$"
 
 import inspect
 import importlib
+from itertools import izip_longest
 
 from DIRAC.Core.DISET.RPCClient import RPCClient
 
@@ -117,7 +118,7 @@ class ClientCreator(type):
     handlerModule = importlib.import_module(handlerModuleName)
     handlerClass = getattr(handlerModule, handlerClassName)
 
-    def genFunc(funcName, arguments, doc):
+    def genFunc(funcName, arguments, argTypes, doc):
       """Create a function with *funcName* taking *arguments*."""
       doc = '' if doc is None else doc
       if arguments and arguments[0] == 'self':
@@ -132,20 +133,27 @@ class ClientCreator(type):
           return self.executeRPC(**kwargs)
       func.__doc__ = doc + "\n\nAutomatically created for the service function :func:`~%s.%s.export_%s`" % \
           (handlerModuleName, handlerClassName, funcName)
+      parameterDoc = ''
       if arguments:
-        parameters = "\n".join(":param %s:" % (par) for par in arguments)
-        func.__doc__ += "\n\n" + parameters
+        parameterDoc = "\n".join(":param %(par)s: %(par)s" % dict(par=par)
+                                 for par in arguments)
+      if argTypes:
+        parameterDoc += "\n" + "\n".join(":type %(par)s: %(type)s" % dict(par=par, type=argType)
+                                         for par, argType in izip_longest(arguments, argTypes))
+      if parameterDoc:
+        func.__doc__ += "\n\n" + parameterDoc
       return func
 
     members = vars(handlerClass)
     for function in members:
       if function.startswith('export_'):
         funcName = function[len('export_'):]
+        argTypes = members.get('types_%s' % funcName, [])
         if funcName in attrDict:
           continue
         func = getattr(handlerClass, function)
         arguments = inspect.getargspec(func).args
-        attrDict[funcName] = genFunc(funcName, arguments, inspect.getdoc(func))
+        attrDict[funcName] = genFunc(funcName, arguments, argTypes, inspect.getdoc(func))
 
     del attrDict['handlerClassName']
     del attrDict['handlerModuleName']
