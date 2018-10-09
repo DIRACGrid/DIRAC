@@ -2,14 +2,17 @@
 
 __RCSID__ = "$Id$"
 
+from six import add_metaclass
+
 from DIRAC                                                         import S_OK, gLogger
-from DIRAC.Core.Base.Client                                        import Client
+from DIRAC.Core.Base.Client import Client, ClientCreator
 from DIRAC.Core.Utilities.List                                     import breakListIntoChunks
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations           import Operations
 
-class TransformationClient( Client ):
 
-  """ Exposes the functionality available in the DIRAC/TransformationHandler
+@add_metaclass(ClientCreator)
+class TransformationClient(Client):
+  """ Exposes the functionality available in the DIRAC/TransformationManagerHandler
 
       This inherits the DIRAC base Client for direct execution of server functionality.
       The following methods are available (although not visible here).
@@ -53,6 +56,8 @@ class TransformationClient( Client ):
           getTransformationSummary()
           getTransformationSummaryWeb(selectDict, sortList, startItem, maxItems)
   """
+  handlerModuleName = 'DIRAC.TransformationSystem.Service.TransformationManagerHandler'
+  handlerClassName = 'TransformationManagerHandler'
 
   def __init__( self, **kwargs ):
     """ Simple constructor

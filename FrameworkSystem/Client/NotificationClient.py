@@ -4,12 +4,17 @@
 
 __RCSID__ = "$Id$"
 
+from six import add_metaclass
+
 from DIRAC import gLogger, S_ERROR
-from DIRAC.Core.Base.Client import Client
+from DIRAC.Core.Base.Client import Client, ClientCreator
 from DIRAC.Core.Utilities.Mail import Mail
 
 
+@add_metaclass(ClientCreator)
 class NotificationClient(Client):
+  handlerModuleName = 'DIRAC.FrameworkSystem.Service.NotificationHandler'
+  handlerClassName = 'NotificationHandler'
 
   def __init__(self):
     """ Notification Client constructor

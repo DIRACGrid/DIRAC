@@ -4,52 +4,23 @@ problematic file and replicas to the IntegrityDB and their status
 correctly updated in the FileCatalog.
 """
 
+from six import add_metaclass
+
 from DIRAC                                                import S_OK, S_ERROR, gLogger
 from DIRAC.DataManagementSystem.Client.DataManager        import DataManager
 from DIRAC.Resources.Storage.StorageElement               import StorageElement
 from DIRAC.Resources.Catalog.FileCatalog                  import FileCatalog
 from DIRAC.Core.Utilities.ReturnValues                    import returnSingleResult
-from DIRAC.Core.Base.Client                               import Client
+from DIRAC.Core.Base.Client import Client, ClientCreator
 
 __RCSID__ = "$Id$"
 
 
-class DataIntegrityClient( Client ):
-
-  """
-  The following methods are supported in the service but are not mentioned explicitly here:
-
-          getProblematic()
-             Obtains a problematic file from the IntegrityDB based on the LastUpdate time
-
-          getPrognosisProblematics(prognosis)
-            Obtains all the problematics of a particular prognosis from the integrityDB
-
-          getProblematicsSummary()
-            Obtains a count of the number of problematics for each prognosis found
-
-          getDistinctPrognosis()
-            Obtains the distinct prognosis found in the integrityDB
-
-          getTransformationProblematics(prodID)
-            Obtains the problematics for a given production
-
-          incrementProblematicRetry(fileID)
-            Increments the retry count for the supplied file ID
-
-          changeProblematicPrognosis(fileID,newPrognosis)
-            Changes the prognosis of the supplied file to the new prognosis
-
-          setProblematicStatus(fileID,status)
-            Updates the status of a problematic in the integrityDB
-
-          removeProblematic(self,fileID)
-            This removes the specified file ID from the integrity DB
-
-          insertProblematic(sourceComponent,fileMetadata)
-            Inserts file with supplied metadata into the integrity DB
-
-  """
+@add_metaclass(ClientCreator)
+class DataIntegrityClient(Client):
+  """Client exposing the DataIntegrity Service."""
+  handlerModuleName = 'DIRAC.DataManagementSystem.Service.DataIntegrityHandler'
+  handlerClassName = 'DataIntegrityHandler'
 
   def __init__( self, **kwargs ):
 

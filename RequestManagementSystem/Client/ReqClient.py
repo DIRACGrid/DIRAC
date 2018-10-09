@@ -11,17 +11,19 @@ import time
 import random
 import json
 import datetime
+from six import add_metaclass
 
 # # from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.List import randomize, fromChar
 from DIRAC.ConfigurationSystem.Client import PathFinder
-from DIRAC.Core.Base.Client import Client
+from DIRAC.Core.Base.Client import Client, ClientCreator
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
 
 
+@add_metaclass(ClientCreator)
 class ReqClient(Client):
   """ReqClient is a class manipulating and operation on Requests.
 
@@ -29,7 +31,8 @@ class ReqClient(Client):
   :param dict requestProxiesDict: RPC client to ReqestProxy
   :param ~DIRAC.RequestManagementSystem.private.RequestValidator.RequestValidator requestValidator: RequestValidator instance
   """
-
+  handlerModuleName = 'DIRAC.RequestManagementSystem.Service.ReqManagerHandler'
+  handlerClassName = 'ReqManagerHandler'
   __requestProxiesDict = {}
   __requestValidator = None
 
