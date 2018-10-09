@@ -5,6 +5,9 @@
 
 __RCSID__ = "$Id$"
 
+import inspect
+import importlib
+
 from DIRAC.Core.DISET.RPCClient import RPCClient
 
 
@@ -102,3 +105,48 @@ class Client(object):
       self.__kwargs.setdefault('timeout', timeout)
       rpc = RPCClient(url, **self.__kwargs)
     return rpc
+
+
+class ClientCreator(type):
+  """Create a client with all the functions from the Service exposed."""
+
+  def __new__(mcs, name, bases, attrDict):  # pylint: disable=redefined-builtin
+
+    handlerModuleName = attrDict['handlerModuleName']
+    handlerClassName = attrDict['handlerClassName']
+    handlerModule = importlib.import_module(handlerModuleName)
+    handlerClass = getattr(handlerModule, handlerClassName)
+
+    def genFunc(funcName, arguments, doc):
+      """Create a function with *funcName* taking *arguments*."""
+      doc = '' if doc is None else doc
+      if arguments and arguments[0] == 'self':
+        arguments = arguments[1:]
+      if arguments:
+        def func(self, *args, **kwargs):  # pylint: disable=missing-docstring
+          self.call = funcName
+          return self.executeRPC(*args, **kwargs)
+      else:
+        def func(self, **kwargs):  # pylint: disable=missing-docstring
+          self.call = funcName
+          return self.executeRPC(**kwargs)
+      func.__doc__ = doc + "\n\nAutomatically created for the service function :func:`~%s.%s.export_%s`" % \
+          (handlerModuleName, handlerClassName, funcName)
+      if arguments:
+        parameters = "\n".join(":param %s:" % (par) for par in arguments)
+        func.__doc__ += "\n\n" + parameters
+      return func
+
+    members = vars(handlerClass)
+    for function in members:
+      if function.startswith('export_'):
+        funcName = function[len('export_'):]
+        if funcName in attrDict:
+          continue
+        func = getattr(handlerClass, function)
+        arguments = inspect.getargspec(func).args
+        attrDict[funcName] = genFunc(funcName, arguments, inspect.getdoc(func))
+
+    del attrDict['handlerClassName']
+    del attrDict['handlerModuleName']
+    return type.__new__(mcs, name, bases, attrDict)
