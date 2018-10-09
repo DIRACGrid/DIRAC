@@ -1,14 +1,15 @@
 """ Class that contains client access to the job monitoring handler. """
 
 from __future__ import absolute_import
+from six import add_metaclass
 
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base.Client import Client, ClientCreator
 
 
+@add_metaclass(ClientCreator)
 class JobMonitoringClient(Client):
-  __metaclass__ = ClientCreator
   handlerModuleName = 'DIRAC.WorkloadManagementSystem.Service.JobMonitoringHandler'
   handlerClassName = 'JobMonitoringHandler'
 
