@@ -15,7 +15,7 @@ This section assumes that the DIRAC client is already installed and configured.
 
   - Firefox:
 
-      Preferences -> Provacy & Security -> View Certificates -> Select your certificate -> Backup
+      Preferences -> Privacy & Security -> View Certificates -> Select your certificate -> Backup
 
 
   As a result you will get the certificate as a file with .p12 extension.
@@ -72,17 +72,24 @@ valid proxy using DIRAC commands are shown below.
 
 - First, in the machine where the DIRAC client is installed setup the DIRAC environment running the following commands::
 
-        cd $DIRAC_PATH
+        cd $DIRAC_PATH (if you set it)
         source bashrc
 
 - After the environment is set up, you are able to create your proxy with the following command::
 
-        dirac-proxy-init --group dirac_user -U --rfc
+        dirac-proxy-init
+
+  the above will create a proxy from the certificate in ~/.globus, with a default role.
+  The switches below will create a proxy of group "dirac_user" (if defined) and will securely upload such 
+  proxy to the DIRAC proxy store (ProxyManager), from where it could later be downloaded::
+
+        dirac-proxy-init --group dirac_user --upload
 
 
-  For example, with the additional debug option the output must be like the following::
+  The additional "--debug" switch (alias of "-ddd") can be used for debugging purposes,
+  and its output would end up being similar to the following::
 
-        $ dirac-proxy-init --debug --group dirac_user -u
+        $ dirac-proxy-init --group dirac_user --upload --debug
         Generating proxy...
         Enter Certificate password:
         Contacting CS...
@@ -114,13 +121,15 @@ valid proxy using DIRAC commands are shown below.
 
   As a result of this command, several operations are accomplished:
 
-  - a long user proxy ( with the length of the validity of the certificate ) is uploaded to the
+  - a long user proxy (with the length of the validity of the certificate) is uploaded to the
     DIRAC ProxyManager service, equivalent of the gLite MyProxy service
   - a short user proxy is created with the DIRAC extension carrying the DIRAC group name and with the
-    VOMS extension corresponding to the DIRAC group if the gLite UI environment is available.
+    VOMS extension corresponding to the DIRAC group if the gLite UI environment is available. 
+    This proxy is stored in the local "/tmp/" directory, as shown.
 
   If the gLite UI environment is not available, the VOMS extensions will not be loaded into the proxy.
   This is not a serious problem, still most of the operations will be possible.
+
 
 2.2.2 Getting the proxy information
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -143,7 +152,7 @@ valid proxy using DIRAC commands are shown below.
         VOMS fqan    : ['/vo.formation.idgrilles.fr']
 
 
-- At this moment, your proxy must be uploaded to the ProxyManager service. To check that::
+- At this moment, your proxy can be uploaded to the ProxyManager service. To check that::
 
         dirac-proxy-get-uploaded-info
 
@@ -160,6 +169,6 @@ valid proxy using DIRAC commands are shown below.
 
 - The same can be checked in the Web Portal at the following location::
 
-        Systems -> Framework -> Manage Proxy
+        Applications -> Proxy Manager
 
   Using the portal you have the option to delete your proxies.
