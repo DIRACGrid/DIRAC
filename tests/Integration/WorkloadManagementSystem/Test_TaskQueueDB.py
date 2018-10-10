@@ -4,8 +4,11 @@
 
 
     Run this test with::
-
         "python -m pytest tests/Integration/WorkloadManagementSystem/Test_TaskQueueDB.py"
+
+
+    Suggestion: for local testing, run this with::
+        python -m pytest -c ../pytest.ini  -vv tests/Integration/WorkloadManagementSystem/Test_TaskQueueDB.py
 """
 
 from DIRAC import gLogger
@@ -322,8 +325,248 @@ def test_chainWithPlatforms():
     assert result['OK'] is True
 
 
+def test_chainWithTags():
+  """ put - remove with parameters including one or more Tag(s) and/or RequiredTag(s)
+  """
+
+  # We'll try the following case
+  #
+  # Tags: MultiProcessor, SingleProcessor, GPU
+  #
+  # We'll insert 5 jobs:
+  #   1 : MultiProcessor
+  #   2 : SingleProcessor
+  #   3 : SingleProcessor, MultiProcessor
+  #   4 : MultiProcessor, GPU
+  #   5 : -- no tags
+
+  tqDefDict = {'OwnerDN': '/my/DN', 'OwnerGroup': 'myGroup', 'Setup': 'aSetup', 'CPUTime': 5000,
+               'Tags': ['MultiProcessor']}
+  result = tqDB.insertJob(1, tqDefDict, 10)
+  assert result['OK'] is True
+  result = tqDB.getTaskQueueForJobs([1])
+  tq_job1 = result['Value'][1]
+  assert tq_job1 > 0
+
+  tqDefDict = {'OwnerDN': '/my/DN', 'OwnerGroup': 'myGroup', 'Setup': 'aSetup', 'CPUTime': 5000,
+               'Tags': ['SingleProcessor']}
+  result = tqDB.insertJob(2, tqDefDict, 10)
+  assert result['OK'] is True
+  result = tqDB.getTaskQueueForJobs([2])
+  tq_job2 = result['Value'][2]
+  assert tq_job2 > tq_job1
+
+  tqDefDict = {'OwnerDN': '/my/DN', 'OwnerGroup': 'myGroup', 'Setup': 'aSetup', 'CPUTime': 5000,
+               'Tags': ['SingleProcessor', 'MultiProcessor']}
+  result = tqDB.insertJob(3, tqDefDict, 10)
+  assert result['OK'] is True
+  result = tqDB.getTaskQueueForJobs([3])
+  tq_job3 = result['Value'][3]
+  assert tq_job3 > tq_job2
+
+  tqDefDict = {'OwnerDN': '/my/DN', 'OwnerGroup': 'myGroup', 'Setup': 'aSetup', 'CPUTime': 5000,
+               'Tags': ['MultiProcessor', 'GPU']}
+  result = tqDB.insertJob(4, tqDefDict, 10)
+  assert result['OK'] is True
+  result = tqDB.getTaskQueueForJobs([4])
+  tq_job4 = result['Value'][4]
+  assert tq_job4 > tq_job3
+
+  tqDefDict = {'OwnerDN': '/my/DN', 'OwnerGroup': 'myGroup', 'Setup': 'aSetup', 'CPUTime': 5000}
+  result = tqDB.insertJob(5, tqDefDict, 10)
+  assert result['OK'] is True
+  result = tqDB.getTaskQueueForJobs([5])
+  tq_job5 = result['Value'][5]
+  assert tq_job5 > tq_job4
+
+  # We should be in this situation (TQIds are obviously invented):
+  #
+  # mysql Dirac@localhost:TaskQueueDB> select `TQId`,`JobId` FROM `tq_Jobs`
+  # +--------+---------+
+  # |   TQId |   JobId |
+  # |--------+---------|
+  # |    101 |       1 |
+  # |    102 |       2 |
+  # |    103 |       3 |
+  # |    104 |       4 |
+  # |    105 |       5 |
+  # +--------+---------+
+  #
+  # mysql Dirac@localhost:TaskQueueDB> select * FROM `tq_TQToTags`
+  # +--------+-----------------+
+  # |   TQId | Value           |
+  # |--------+-----------------|
+  # |    101 | MultiProcessor  |
+  # |    102 | SingleProcessor |
+  # |    103 | MultiProcessor  |
+  # |    103 | SingleProcessor |
+  # |    104 | GPU             |
+  # |    104 | MultiProcessor  |
+  # +--------+-----------------+
+
+  # Matching
+
+  # Matching Everything
+
+  # Tag = "ANY"
+  result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 50000,
+                                      'Tag': 'ANY'},
+                                     numQueuesToGet=5)
+  assert result['OK'] is True
+  # this should match whatever
+  assert int(result['Value'][0][0]) in [tq_job1, tq_job2, tq_job3,
+                                        tq_job4, tq_job5]
+  assert len(result['Value']) == 5
+
+  # No Tag specified
+  result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 50000},
+                                     numQueuesToGet=5)
+  assert result['OK'] is True
+  # this should match whatever
+  assert int(result['Value'][0][0]) in [tq_job1, tq_job2, tq_job3,
+                                        tq_job4, tq_job5]
+  assert len(result['Value']) == 5
+
+  # Matching MultiProcessor
+
+  # By doing this, we are basically saying that this CE is for MultiProcessor payloads ONLY
+  result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 50000,
+                                      'Tag': 'MultiProcessor'},
+                                     numQueuesToGet=4)
+  assert result['OK'] is True
+  # this matches the tq_job1, as it is the only one that requires only MultiProcessor
+  assert len(result['Value']) == 1
+  assert int(result['Value'][0][0]) == tq_job1
+
+  # TODO: RequiredTags
+
+  # Adding numberOfProcessor?
+  #
+  # something like:
+  #
+  # {'NumberOfProcessors': 1,
+  # 'MaxRAM': 128000,
+  # 'Setup': 'LHCb-Production',
+  # 'Site': ['LCG.CSCS-HPC.ch', 'LCG.CSCS.ch'],
+  # 'Community': 'lhcb',
+  # 'OwnerGroup': ['lhcb_admin', 'lhcb_prod', 'lhcb_prmgr',
+  #                'lhcb_data', 'lhcb_mc', 'lhcb_mcproc',
+  #                'lhcb_shifter', 'lhcb_user', 'lhcb_tape',
+  #                'lhcb_calib', 'lhcb_calibration',
+  #                'lhcb_priouser', 'lhcb_lowpriouser', 'test'],
+  # 'Platform': ['x86_64_CentOS_Carbon_6.7', 'x86_64_ScientificSL_Carbon_6.7'],
+  # 'Tag': [],
+  # 'CPUTime': 9999999,
+  # 'SubmitPool': ''}
+
+  for jobId in xrange(1, 8):
+    result = tqDB.deleteJob(jobId)
+    assert result['OK'] is True
+
+  for tqId in [tq_job1, tq_job2, tq_job3, tq_job4, tq_job5]:
+    result = tqDB.deleteTaskQueueIfEmpty(tqId)
+    assert result['OK'] is True
+
+
 """ Various other tests
 """
+
+
+def test_chainWithTagsAndPlatforms():
+  """ put - remove with parameters including one or more Tag(s) and platforms
+  """
+
+  # platform only
+  tqDefDict = {'OwnerDN': '/my/DN', 'OwnerGroup': 'myGroup', 'Setup': 'aSetup', 'CPUTime': 5000,
+               'Platforms': ['centos7']}
+  result = tqDB.insertJob(1, tqDefDict, 10)
+  assert result['OK'] is True
+  result = tqDB.getTaskQueueForJobs([1])
+  tq_job1 = result['Value'][1]
+  assert tq_job1 > 0
+
+  # Tag only
+  tqDefDict = {'OwnerDN': '/my/DN', 'OwnerGroup': 'myGroup', 'Setup': 'aSetup', 'CPUTime': 5000,
+               'Tags': ['MultiProcessor']}
+  result = tqDB.insertJob(2, tqDefDict, 10)
+  assert result['OK'] is True
+  result = tqDB.getTaskQueueForJobs([2])
+  tq_job2 = result['Value'][2]
+  assert tq_job2 > tq_job1
+
+  # Platforms and Tag
+  tqDefDict = {'OwnerDN': '/my/DN', 'OwnerGroup': 'myGroup', 'Setup': 'aSetup', 'CPUTime': 5000,
+               'Platforms': ['centos7'],
+               'Tags': ['MultiProcessor']}
+  result = tqDB.insertJob(3, tqDefDict, 10)
+  assert result['OK'] is True
+  result = tqDB.getTaskQueueForJobs([3])
+  tq_job3 = result['Value'][3]
+  assert tq_job3 > tq_job2
+
+  # Tag and another platform
+  tqDefDict = {'OwnerDN': '/my/DN', 'OwnerGroup': 'myGroup', 'Setup': 'aSetup', 'CPUTime': 5000,
+               'Platforms': ['slc6'],
+               'Tags': ['MultiProcessor']}
+  result = tqDB.insertJob(4, tqDefDict, 10)
+  assert result['OK'] is True
+  result = tqDB.getTaskQueueForJobs([4])
+  tq_job4 = result['Value'][4]
+  assert tq_job4 > tq_job3
+
+  # Matching
+
+  # Matching Everything
+
+  # No Tag, Platform = "ANY"
+  result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 50000,
+                                      'Platform': 'ANY'},
+                                     numQueuesToGet=4)
+  assert result['OK'] is True
+  # this should match whatever
+  assert int(result['Value'][0][0]) in [tq_job1, tq_job2, tq_job3, tq_job4]
+  assert len(result['Value']) == 4
+
+  # Tag = "ANY", Platform = "ANY"
+  result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 50000,
+                                      'Platform': 'ANY',
+                                      'Tag': 'ANY'},
+                                     numQueuesToGet=4)
+  assert result['OK'] is True
+  # this should match whatever
+  assert int(result['Value'][0][0]) in [tq_job1, tq_job2, tq_job3, tq_job4]
+  assert len(result['Value']) == 4
+
+  # Tag = "ANY", Platform = "centos7"
+  result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 50000,
+                                      'Platform': 'centos7',
+                                      'Tag': 'ANY'},
+                                     numQueuesToGet=4)
+  assert result['OK'] is True
+  # this should match whatever has platform == centos7, or no platform
+  assert int(result['Value'][0][0]) in [tq_job1, tq_job2, tq_job3]
+  assert len(result['Value']) == 3
+
+  # Platform = "ANY", Tag = "MultiProcessor"
+  result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 50000,
+                                      'Platform': 'ANY',
+                                      'Tag': 'MultiProcessor'},
+                                     numQueuesToGet=4)
+  assert result['OK'] is True
+
+  #### FIXME
+  # This fails: it selects ALL the TQs, even those that don't have a tag at all
+
+  assert int(result['Value'][0][0]) in [tq_job2, tq_job3, tq_job4]
+  assert len(result['Value']) == 3
+
+  for jobId in xrange(1, 8):
+    result = tqDB.deleteJob(jobId)
+    assert result['OK'] is True
+
+  for tqId in [tq_job1, tq_job2, tq_job3]:
+    result = tqDB.deleteTaskQueueIfEmpty(tqId)
+    assert result['OK'] is True
 
 
 def test_TQ():
