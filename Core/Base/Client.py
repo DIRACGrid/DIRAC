@@ -110,7 +110,7 @@ class ClientCreator(type):
     def genFunc(funcName, arguments, argTypes, doc):
       """Create a function with *funcName* taking *arguments*."""
       doc = '' if doc is None else doc
-      if arguments and arguments[0] == 'self':
+      if arguments and arguments[0] in ('self', 'cls'):
         arguments = arguments[1:]
       if arguments:
         def func(self, *args, **kwargs):  # pylint: disable=missing-docstring
@@ -123,13 +123,13 @@ class ClientCreator(type):
       func.__doc__ = doc + "\n\nAutomatically created for the service function :func:`~%s.%s.export_%s`" % \
           (handlerModuleName, handlerClassName, funcName)
       parameterDoc = ''
-      if arguments:
+      if arguments and ":param " not in doc:
         parameterDoc = "\n".join(":param %(par)s: %(par)s" % dict(par=par)
                                  for par in arguments)
-      if argTypes:
+      if argTypes and ":param " not in doc:
         parameterDoc += "\n" + "\n".join(":type %(par)s: %(type)s" % dict(par=par, type=argType)
                                          for par, argType in izip_longest(arguments, argTypes))
-      if parameterDoc:
+      if parameterDoc and ":param " not in doc:
         func.__doc__ += "\n\n" + parameterDoc
       return func
 
