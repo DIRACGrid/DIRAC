@@ -722,7 +722,10 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
         # Now evaluating Tags
         if field in tagMatchFields:  # basically, if field == Tag
 
-          if tqMatchDict[field].lower() == '"any"':
+          if isinstance(tqMatchDict[field], str) and tqMatchDict[field].lower() in ['"any"', 'any'] \
+             or \
+             isinstance(tqMatchDict[field], list) \
+             and ('"any"' or 'any') in [fv.lower() for fv in tqMatchDict[field]]:
             continue
 
           if tqMatchDict.get(field) and tqMatchDict[field].lower() != '"any"':
@@ -735,7 +738,10 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
               rsql = self.__generateRequiredTagSQLSubCond(fullTableN, requiredTags)
 
         else:  # everything that is not tags
-          if tqMatchDict[field].lower() == '"any"':
+          if isinstance(tqMatchDict[field], str) and tqMatchDict[field].lower() in ['"any"', 'any'] \
+             or \
+             isinstance(tqMatchDict[field], list) \
+             and ('"any"' or 'any') in [fv.lower() for fv in tqMatchDict[field]]:
             continue
 
           # if field != 'GridCE' or 'Site' in tqMatchDict:

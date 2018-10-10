@@ -438,26 +438,9 @@ def test_chainWithTags():
   assert len(result['Value']) == 1
   assert int(result['Value'][0][0]) == tq_job1
 
-  # TODO: RequiredTags
+  # FIXME: try with RequiredTags
 
   # Adding numberOfProcessor?
-  #
-  # something like:
-  #
-  # {'NumberOfProcessors': 1,
-  # 'MaxRAM': 128000,
-  # 'Setup': 'LHCb-Production',
-  # 'Site': ['LCG.CSCS-HPC.ch', 'LCG.CSCS.ch'],
-  # 'Community': 'lhcb',
-  # 'OwnerGroup': ['lhcb_admin', 'lhcb_prod', 'lhcb_prmgr',
-  #                'lhcb_data', 'lhcb_mc', 'lhcb_mcproc',
-  #                'lhcb_shifter', 'lhcb_user', 'lhcb_tape',
-  #                'lhcb_calib', 'lhcb_calibration',
-  #                'lhcb_priouser', 'lhcb_lowpriouser', 'test'],
-  # 'Platform': ['x86_64_CentOS_Carbon_6.7', 'x86_64_ScientificSL_Carbon_6.7'],
-  # 'Tag': [],
-  # 'CPUTime': 9999999,
-  # 'SubmitPool': ''}
 
   for jobId in xrange(1, 8):
     result = tqDB.deleteJob(jobId)
@@ -466,10 +449,6 @@ def test_chainWithTags():
   for tqId in [tq_job1, tq_job2, tq_job3, tq_job4, tq_job5]:
     result = tqDB.deleteTaskQueueIfEmpty(tqId)
     assert result['OK'] is True
-
-
-""" Various other tests
-"""
 
 
 def test_chainWithTagsAndPlatforms():
@@ -569,10 +548,195 @@ def test_chainWithTagsAndPlatforms():
     assert result['OK'] is True
 
 
+def test_ComplexMatching():
+  """ test of a complex (realistic) matching. Something like:
+
+  {'NumberOfProcessors': 1,
+  'MaxRAM': 128000,
+  'Setup': 'aSetup',
+  'Site': ['Site_1', 'Site_2'],
+  'Community': 'vo',
+  'OwnerGroup': ['admin', 'prod', 'user'],
+  'Platform': ['slc6', 'centos7'],
+  'Tag': [],
+  'CPUTime': 9999999,
+  'SubmitPool': ''}
+  """
+
+  # Let's first insert few jobs (no tags, for now, and always a platform)
+
+  tqDefDict = {'OwnerDN': '/my/DN',
+               'OwnerGroup': 'admin',
+               'Setup': 'aSetup',
+               'CPUTime': 5000,
+               'Sites': ['Site_1', 'Site_2'],
+               'Platforms': ['centos7']}
+  result = tqDB.insertJob(1, tqDefDict, 10)
+  assert result['OK'] is True
+  result = tqDB.getTaskQueueForJobs([1])
+  tq_job1 = result['Value'][1]
+
+  tqDefDict = {'OwnerDN': '/my/DN',
+               'OwnerGroup': 'prod',
+               'Setup': 'aSetup',
+               'CPUTime': 5000,
+               'Sites': ['Site_1'],
+               'Platforms': ['slc6', 'centos7']}
+  result = tqDB.insertJob(2, tqDefDict, 10)
+  assert result['OK'] is True
+  result = tqDB.getTaskQueueForJobs([2])
+  tq_job2 = result['Value'][2]
+
+  tqDefDict = {'OwnerDN': '/my/DN',
+               'OwnerGroup': 'user',
+               'Setup': 'aSetup',
+               'CPUTime': 5000,
+               'Sites': ['Site_2'],
+               'Platforms': ['slc6', 'centos7']}
+  result = tqDB.insertJob(3, tqDefDict, 10)
+  assert result['OK'] is True
+  result = tqDB.getTaskQueueForJobs([3])
+  tq_job3 = result['Value'][3]
+
+  tqDefDict = {'OwnerDN': '/my/DN',
+               'OwnerGroup': 'user',
+               'Setup': 'aSetup',
+               'CPUTime': 5000,
+               'Sites': ['Site_1', 'Site_2'],
+               'Platforms': ['ubuntu']}
+  result = tqDB.insertJob(4, tqDefDict, 10)
+  assert result['OK'] is True
+  result = tqDB.getTaskQueueForJobs([4])
+  tq_job4 = result['Value'][4]
+
+  # now let's try some matching
+
+  result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 9999999,
+                                      'Platform': ['slc6', 'centos7'],
+                                      'Tag': [],
+                                      'OwnerGroup': ['admin', 'prod', 'user'],
+                                      'Site': 'ANY'},
+                                     numQueuesToGet=4)
+  assert result['OK'] is True
+  assert int(result['Value'][0][0]) in [tq_job1, tq_job2, tq_job3]
+  assert len(result['Value']) == 3
+
+  result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 9999999,
+                                      'Platform': ['ubuntu'],
+                                      'Tag': [],
+                                      'OwnerGroup': ['admin', 'prod', 'user'],
+                                      'Site': 'ANY'},
+                                     numQueuesToGet=4)
+  assert result['OK'] is True
+  assert int(result['Value'][0][0]) == tq_job4
+  assert len(result['Value']) == 1
+
+  result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 9999999,
+                                      'Platform': ['slc6', 'centos7', 'ubuntu'],
+                                      'Tag': [],
+                                      'OwnerGroup': ['prod', 'user'],
+                                      'Site': 'ANY'},
+                                     numQueuesToGet=4)
+  assert result['OK'] is True
+  assert int(result['Value'][0][0]) in [tq_job2, tq_job3, tq_job4]
+  assert len(result['Value']) == 3
+
+  result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 9999999,
+                                      'Platform': ['slc6', 'centos7'],
+                                      'Tag': [],
+                                      'OwnerGroup': ['prod', 'user'],
+                                      'Site': 'ANY'},
+                                     numQueuesToGet=4)
+  assert result['OK'] is True
+  assert int(result['Value'][0][0]) in [tq_job2, tq_job3]
+  assert len(result['Value']) == 2
+
+  result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 9999999,
+                                      'Platform': ['slc6', 'centos7'],
+                                      'OwnerGroup': ['prod', 'user']},
+                                     numQueuesToGet=4)
+  assert result['OK'] is True
+  assert int(result['Value'][0][0]) in [tq_job2, tq_job3]
+  assert len(result['Value']) == 2
+
+  result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 9999999,
+                                      'Platform': ['slc6', 'centos7'],
+                                      'OwnerGroup': ['prod', 'user'],
+                                      'Site': ['Site_1', 'Site_2']},
+                                     numQueuesToGet=4)
+  assert result['OK'] is True
+  assert int(result['Value'][0][0]) in [tq_job2, tq_job3]
+  assert len(result['Value']) == 2
+
+  result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 9999999,
+                                      'Platform': ['slc6', 'centos7'],
+                                      'OwnerGroup': ['prod', 'user'],
+                                      'Site': ['Site_1']},
+                                     numQueuesToGet=4)
+  assert result['OK'] is True
+  assert int(result['Value'][0][0]) == tq_job2
+  assert len(result['Value']) == 1
+
+  result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 10,
+                                      'Platform': ['slc6', 'centos7'],
+                                      'OwnerGroup': ['prod', 'user'],
+                                      'Site': ['Site_1', 'Site_2']},
+                                     numQueuesToGet=4)
+  assert result['OK'] is True
+  assert len(result['Value']) == 0
+
+  result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 9999999,
+                                      'Platform': '',
+                                      'OwnerGroup': ['admin', 'prod', 'user'],
+                                      'Site': ['ANY']},
+                                     numQueuesToGet=4)
+  assert result['OK'] is True
+  assert len(result['Value']) == 0
+
+  # now inserting one without platform, and try again
+
+  tqDefDict = {'OwnerDN': '/my/DN',
+               'OwnerGroup': 'user',
+               'Setup': 'aSetup',
+               'CPUTime': 5000,
+               'Sites': ['Site_1', 'Site_2']}
+  result = tqDB.insertJob(5, tqDefDict, 10)
+  assert result['OK'] is True
+  result = tqDB.getTaskQueueForJobs([5])
+  tq_job5 = result['Value'][5]
+
+  result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 9999999,
+                                      'Platform': ['slc6', 'centos7'],
+                                      'OwnerGroup': ['admin', 'prod', 'user'],
+                                      'Site': 'ANY'},
+                                     numQueuesToGet=5)
+  assert result['OK'] is True
+  assert int(result['Value'][0][0]) in [tq_job1, tq_job2, tq_job3, tq_job5]
+  assert len(result['Value']) == 4
+
+  result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 9999999,
+                                      'Platform': ['ubuntu'],
+                                      'OwnerGroup': ['admin', 'prod', 'user'],
+                                      'Site': 'ANY'},
+                                     numQueuesToGet=5)
+  assert result['OK'] is True
+  assert int(result['Value'][0][0]) in [tq_job4, tq_job5]
+  assert len(result['Value']) == 2
+
+  for jobId in xrange(1, 8):
+    result = tqDB.deleteJob(jobId)
+    assert result['OK'] is True
+
+  for tqId in [tq_job1, tq_job2, tq_job3, tq_job4, tq_job5]:
+    result = tqDB.deleteTaskQueueIfEmpty(tqId)
+    assert result['OK'] is True
+
+
 def test_TQ():
   """ test of various functions
   """
-  tqDefDict = {'OwnerDN': '/my/DN', 'OwnerGroup': 'myGroup', 'Setup': 'aSetup', 'CPUTime': 50000}
+  tqDefDict = {'OwnerDN': '/my/DN', 'OwnerGroup': 'myGroup',
+               'Setup': 'aSetup', 'CPUTime': 50000}
   tqDB.insertJob(123, tqDefDict, 10)
 
   result = tqDB.getNumTaskQueues()
