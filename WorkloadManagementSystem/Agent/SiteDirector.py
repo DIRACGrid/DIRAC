@@ -645,10 +645,9 @@ class SiteDirector(AgentModule):
       tqDict['Community'] = self.vo
     if self.voGroups:
       tqDict['OwnerGroup'] = self.voGroups
-    result = Resources.getCompatiblePlatforms(self.platforms)
-    if not result['OK']:
-      return result
-    tqDict['Platform'] = result['Value']
+
+    tqDict['Platform'] = self._getPlatforms()
+
     tqDict['Site'] = self.sites
 
     # Get a union of all tags
@@ -661,6 +660,19 @@ class SiteDirector(AgentModule):
     tqDict.update(self.globalParameters)
 
     return tqDict
+
+  def _getPlatforms(self):
+    """ Get the platforms used for TQ match
+        Here for extension purpose.
+
+        :return: list of platforms
+    """
+    result = Resources.getCompatiblePlatforms(self.platforms)
+    if not result['OK']:
+      self.log.error("Issue getting platforms compatible with %s, returning 'ANY'" % self.platforms,
+                     result['Message'])
+      return 'ANY'
+    return result['Value']
 
   def _allowedToSubmit(self, queue, anySite, jobSites, testSites):
     """ Check if we are allowed to submit to a certain queue
