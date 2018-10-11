@@ -133,8 +133,8 @@ class MatcherHandler(RequestHandler):
 ##############################################################################
   types_matchAndGetTaskQueue = [dict]
 
-  @deprecated("Unused")
   @staticmethod
+  @deprecated("Unused")
   def export_matchAndGetTaskQueue(resourceDict):
     """ Return matching task queues
     """
