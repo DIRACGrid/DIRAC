@@ -716,7 +716,6 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
         _, fullTableN = self.__generateTablesName(sqlTables, field)
 
         sqlMultiCondList = []
-        rsql = None
         csql = None
 
         # Now evaluating Tags
@@ -728,14 +727,7 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
              and ('"any"' or 'any') in [fv.lower() for fv in tqMatchDict[field]]:
             continue
 
-          if tqMatchDict.get(field) and tqMatchDict[field].lower() != '"any"':
-            csql = self.__generateTagSQLSubCond(fullTableN, tqMatchDict[field])
-          # Add required tag condition
-          for field in tagMatchFields:
-            fieldName = "Required%s" % field
-            requiredTags = tqMatchDict.get(fieldName, '')
-            if requiredTags:
-              rsql = self.__generateRequiredTagSQLSubCond(fullTableN, requiredTags)
+          sqlMultiCondList.append(self.__generateTagSQLSubCond(fullTableN, tqMatchDict[field]))
 
         else:  # everything that is not tags
           if isinstance(tqMatchDict[field], str) and tqMatchDict[field].lower() in ['"any"', 'any'] \
@@ -752,16 +744,13 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
           sqlMultiCondList.append("( SELECT COUNT(%s.Value) FROM %s WHERE %s.TQId = tq.TQId ) = 0" % (fullTableN,
                                                                                                       fullTableN,
                                                                                                       fullTableN))
-          csql = self.__generateSQLSubCond("%%s IN ( SELECT %s.Value \
-                                                      FROM %s \
-                                                      WHERE %s.TQId = tq.TQId )" % (fullTableN,
-                                                                                    fullTableN,
-                                                                                    fullTableN),
-                                           tqMatchDict[field])
-        if csql is not None:
-          sqlMultiCondList.append(csql)
-        if rsql is not None:
-          sqlCondList.append(rsql)
+          sqlMultiCondList.append(self.__generateSQLSubCond("%%s IN ( SELECT %s.Value \
+                                                            FROM %s \
+                                                            WHERE %s.TQId = tq.TQId )" % (fullTableN,
+                                                                                          fullTableN,
+                                                                                          fullTableN),
+                                                            tqMatchDict[field]))
+
         sqlCondList.append("( %s )" % " OR ".join(sqlMultiCondList))
         # In case of Site, check it's not in job banned sites
         if field in bannedJobMatchFields:
@@ -773,17 +762,38 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
                                                                                         fullTableN),
                                            tqMatchDict[field], boolOp='OR')
           sqlCondList.append(csql)
-      # Resource banning
+
+    # Add possibly RequiredTag conditions
+    for field in tagMatchFields:
+      fieldName = "Required%s" % field
+      if tqMatchDict.get(fieldName):
+        if isinstance(tqMatchDict[fieldName], str) and tqMatchDict[fieldName].lower() in ['"any"', 'any'] \
+           or \
+           isinstance(tqMatchDict[fieldName], list) \
+           and ('"any"' or 'any') in [fv.lower() for fv in tqMatchDict[fieldName]]:
+          continue
+
+        sqlCondList.append(self.__generateRequiredTagSQLSubCond('`tq_TQToTags`',
+                                                                tqMatchDict.get(fieldName)))
+
+    # Add possibly Resource banning conditions
+    for field in multiValueMatchFields:
       bannedField = "Banned%s" % field
-      if bannedField in tqMatchDict and tqMatchDict[bannedField]:
+      if tqMatchDict.get(bannedField):
+        if isinstance(tqMatchDict[bannedField], str) and tqMatchDict[bannedField].lower() in ['"any"', 'any'] \
+           or \
+           isinstance(tqMatchDict[bannedField], list) \
+           and ('"any"' or 'any') in [fv.lower() for fv in tqMatchDict[bannedField]]:
+          continue
+
         fullTableN = '`tq_TQTo%ss`' % field
-        csql = self.__generateSQLSubCond("%%s not in ( SELECT %s.Value \
+
+        sqlCondList.append(self.__generateSQLSubCond("%%s not in ( SELECT %s.Value \
                                                         FROM %s \
                                                         WHERE %s.TQId = tq.TQId )" % (fullTableN,
                                                                                       fullTableN,
                                                                                       fullTableN),
-                                         tqMatchDict[bannedField], boolOp='OR')
-        sqlCondList.append(csql)
+                                                     tqMatchDict[bannedField], boolOp='OR'))
 
     # For certain fields, the requirement is strict.
     # If it is not in the tqMatchDict, the job cannot require it

@@ -455,17 +455,28 @@ def test_chainWithTags():
 
   # Matching MultiProcessor
 
-  # By doing this, we are basically saying that this CE is for MultiProcessor payloads ONLY
+  # Tag: 'MultiProcessor'
+  # By doing this, we are basically saying that this CE is accepting MultiProcessor payloads
   result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 50000,
                                       'Tag': 'MultiProcessor'},
                                      numQueuesToGet=4)
   assert result['OK'] is True
-  # FIXME:
   # this matches the tq_job1, as it is the only one that requires only MultiProcessor,
-  # AND the tq_job5, for which we have inserted no tags -- is it correct?
-  # assert int(result['Value'][0][0]) in [tq_job1, tq_job5]
-  # assert len(result['Value']) == 2
-  # FIXME: try with RequiredTags
+  # AND the tq_job5, for which we have inserted no tags
+  # FIXME:-- is it correct?
+  assert int(result['Value'][0][0]) in [tq_job1, tq_job5]
+  assert len(result['Value']) == 2
+
+  # RequiredTag: 'MultiProcessor'
+  # By doing this, we are basically saying that this CE is accepting ONLY MultiProcessor payloads
+  result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 50000,
+                                      'RequiredTag': 'MultiProcessor'},
+                                     numQueuesToGet=4)
+  assert result['OK'] is True
+  # this matches the tq_job1, tq_job3, tq_job4 as these are those that expose the MultiProcessor tag (among others)
+  # FIXME:-- is it correct?
+  assert int(result['Value'][0][0]) in [tq_job1, tq_job3, tq_job4]
+  assert len(result['Value']) == 3
 
   # FIXME: Try adding numberOfProcessor
 
