@@ -395,6 +395,8 @@ class Job(API):
       else:
         self.wfArguments[name] = name
 
+    return S_OK()
+
   #############################################################################
   def setInputDataPolicy(self, policy, dataScheduling=True):
     """Helper function.
