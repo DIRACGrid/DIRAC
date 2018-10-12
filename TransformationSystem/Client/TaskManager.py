@@ -803,10 +803,7 @@ class WorkflowTasks(TaskBase):
         if paramValue:
           self._logDebug('Setting %s to %s' % (paramName, paramValue),
                          transID=transID, method='handleRest')
-          res = oJob._addJDLParameter(paramName, paramValue)
-          if not res['OK']:
-            self._logError("Could not set parameter %s" % paramName, res['Message'],
-                           transID=transID, method='_handleRest')
+          oJob._addJDLParameter(paramName, paramValue)
 
   def _handleHospital(self, oJob):
     """ Optional handle of hospital jobs

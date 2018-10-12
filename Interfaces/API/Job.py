@@ -386,7 +386,8 @@ class Job(API):
     if self.numberOfParameters == 0:
       self.numberOfParameters = len(parameterList)
     elif self.numberOfParameters != len(parameterList):
-      return S_ERROR(EWMSJDL, 'Parameter sequences of different length')
+      return self._reportError('Parameter sequences of different length',
+                               name='setParameterSequence')
 
     self.parameterSeqs[name] = parameterList
     if addToWorkflow:
