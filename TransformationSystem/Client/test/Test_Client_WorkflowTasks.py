@@ -6,12 +6,13 @@
 from mock import MagicMock
 import pytest
 
-
+from DIRAC import gLogger
 from DIRAC.Interfaces.API.Job import Job
 
 # sut
 from DIRAC.TransformationSystem.Client.TaskManager import WorkflowTasks
 
+gLogger.setLevel('DEBUG')
 
 mockTransClient = MagicMock()
 mockTransClient.setTaskStatusAndWmsID.return_value = {'OK': True}
@@ -31,9 +32,19 @@ taskDict = {1: {'TransformationID': 1, 'a1': 'aa1', 'b1': 'bb1', 'Site': 'MySite
             2: {'TransformationID': 1, 'a2': 'aa2', 'b2': 'bb2', 'InputData': ['a1', 'a2']},
             3: {'TransformationID': 2, 'a3': 'aa3', 'b3': 'bb3'}, }
 
+taskDictSimple = {1: {'TransformationID': 1, 'Site': 'MySite'},
+                  2: {'TransformationID': 1},
+                  3: {'TransformationID': 2}}
+
+taskDictSimpleInputs = {1: {'TransformationID': 1, 'InputData': ['a1', 'a2', 'a3']}}
+
 taskDictNoInputs = {1: {'TransformationID': 1, 'a1': 'aa1', 'b1': 'bb1', 'Site': 'MySite'},
                     2: {'TransformationID': 1, 'a2': 'aa2', 'b2': 'bb2'},
                     3: {'TransformationID': 2, 'a3': 'aa3', 'b3': 'bb3'}, }
+
+taskDictNoInputsNoSite = {1: {'TransformationID': 1},
+                          2: {'TransformationID': 1},
+                          3: {'TransformationID': 2}}
 
 expected = {'OK': True,
             'Value': {1: {'a1': 'aa1', 'TaskObject': '', 'TransformationID': 1,
@@ -44,6 +55,12 @@ expected = {'OK': True,
                           'b3': 'bb3', 'Site': 'ANY', 'JobType': 'User'}
                       }
             }
+
+expectedBulkSimple = {'OK': True,
+                      'Value': {'BulkJobObject': '',
+                                1: {'TransformationID': 1,
+                                    'InputData': ['a1', 'a2', 'a3'], 'JobType': 'User'}}}
+
 expectedBulk = {'OK': True,
                 'Value': {'BulkJobObject': '',
                           1: {'a1': 'aa1', 'TransformationID': 1, 'b1': 'bb1',
@@ -57,7 +74,10 @@ expectedBulk = {'OK': True,
 @pytest.mark.parametrize("taskDictionary, bulkSubmissionFlag, result, expectedRes", [
     (taskDict, False, True, expected),
     (taskDict, True, False, expectedBulk),
-    (taskDictNoInputs, True, True, expectedBulk),
+    (taskDictSimple, True, True, expectedBulk),
+    (taskDictSimpleInputs, True, True, expectedBulkSimple),
+    (taskDictNoInputs, True, False, expectedBulk),
+    (taskDictNoInputsNoSite, True, True, expectedBulk),
 ])
 def test_prepareTranformationTasks(taskDictionary, bulkSubmissionFlag, result, expectedRes):
   res = wfTasks.prepareTransformationTasks('', taskDictionary, 'test_user', 'test_group', 'test_DN',
