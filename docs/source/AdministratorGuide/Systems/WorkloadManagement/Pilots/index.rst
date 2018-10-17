@@ -76,18 +76,18 @@ They can also be accessed by other services/agents, e.g. for syncing purposes.
 
 Inside this section, you should define the following options, and give them a meaningful value (here, an example is give)::
 
-   #Needed by the SiteDirector:
-   Version = v6r17p16 #Version to install. Add the version of your extension if you have one.
+   # Needed by the SiteDirector:
+   Version = v6r20p14 #Version to install. Add the version of your extension if you have one.
    Project = myVO #Your project name: this will end up in the /LocalSite/ReleaseProject option of the pilot cfg, and will be used at matching time
    Extensions = myVO #The DIRAC extension (if any)
    Installation = mycfg.cfg #For an optional configuration file, used by the installation script.
-   #For the Matcher
+   # For the Matcher
    CheckVersion = False #True by default, if false any version would be accepted at matching level (this is a check done by the WorkloadManagementSystem/Matcher service).
 
 When the *CheckVersion* option is "True", the version checking done at the Matcher level will be strict,
 which means that pilots running different versions from those listed in the *Versions* option will refuse to match any job.
 There is anyway the possibility to list more than one version in *Versions*; in this case, all of them will be accepted by the Matcher,
-and in this case the pilot will install the first in this list (e.g. if Version=v6r17p16,v6r17p15 then pilots will install version v6r17p16)
+and in this case the pilot will install the first in this list (e.g. if Version=v6r20p14,v6r20p13 then pilots will install version v6r20p14)
 
 
 
@@ -127,7 +127,7 @@ Pilot options
 =============
 
 The pilot can be configured to run in several ways.
-Please, refer to https://github.com/DIRACGrid/DIRAC/blob/rel-v6r15/WorkloadManagementSystem/PilotAgent/pilotTools.py#L395
+Please, refer to https://github.com/DIRACGrid/DIRAC/blob/master/WorkloadManagementSystem/PilotAgent/pilotTools.py#L400
 for the full list.
 
 
@@ -154,9 +154,9 @@ and possibly extend, in case you want to send/start pilots that don't know befor
 In this case, you have to provide a json file freely accessible that contains the pilot version.
 This is tipically the case for VMs in IAAS and IAAC.
 
-The files to consider are in https://github.com/DIRACGrid/DIRAC/blob/rel-v6r15/WorkloadManagementSystem/PilotAgent
+The files to consider are in https://github.com/DIRACGrid/DIRAC/blob/master/WorkloadManagementSystem/PilotAgent
 The main file in which you should look is
-https://github.com/DIRACGrid/DIRAC/blob/rel-v6r15/WorkloadManagementSystem/PilotAgent/dirac-pilot.py
+https://github.com/DIRACGrid/DIRAC/blob/master/WorkloadManagementSystem/PilotAgent/dirac-pilot.py
 that also contains a good explanation on how the system works.
 
 You have to provide in this case a pilot wrapper script (which can be written in bash, for example) that will start your pilot script
