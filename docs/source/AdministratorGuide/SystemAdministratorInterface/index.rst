@@ -146,7 +146,7 @@ Is also possible to check logs for services and agents using SAC::
     2011-03-16 14:29:15 UTC WorkloadManagement/JobMonitoring  INFO: Sending records to security log service...
     2011-03-16 14:29:15 UTC WorkloadManagement/JobMonitoring  INFO: Data sent to security log service
 
-As of v6r13 it is now possible to check the history of installed components in DIRAC with show installations::
+It is possible to check the history of installed components in DIRAC with show installations::
 
     [sergiovm.cern.ch]> show installations
     

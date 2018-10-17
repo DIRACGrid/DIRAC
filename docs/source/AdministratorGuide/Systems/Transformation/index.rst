@@ -223,9 +223,11 @@ TaskManager plugins
 
 By default the standard plugin (BySE) sets job's destination depending on the location of its input data. 
 
-Starting from v6r13 a new **ByJobType**
-TaskManager plugin has been introduced, so that different rules for site destinations can be specified for each JobType. This plugin allows so-called "mesh processing",
-i.e. depending on the job type, some sites may become eligible for "helping" other sites to run jobs that normally would only be running at the site where data is located.
+One possibility is represented by the **ByJobType** TaskManager plugin,
+that allows to specify different rules for site destinations for each JobType.
+This plugin allows so-called "mesh processing",
+i.e. depending on the job type, some sites may become eligible for "helping" other sites
+to run jobs that normally would only be running at the site where data is located.
 In order to use the ByJobType plugin, one has to:
 
 * Set CS section Operations/Transformations/DestinationPlugin = ByJobType
