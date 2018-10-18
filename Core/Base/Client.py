@@ -5,8 +5,8 @@
 
 __RCSID__ = "$Id$"
 
-import inspect
-import importlib
+import ast
+import os
 from itertools import izip_longest
 
 from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -97,15 +97,20 @@ class Client(object):
     return rpc
 
 
-class ClientCreator(type):
-  """Create a client with all the functions from the Service exposed."""
+def createClient(name, handlerModulePath, handlerClassName):
+  """Decorator to expose the service functions automatically in the Client.
 
-  def __new__(mcs, name, bases, attrDict):  # pylint: disable=redefined-builtin
-
-    handlerModuleName = attrDict['handlerModuleName']
-    handlerClassName = attrDict['handlerClassName']
-    handlerModule = importlib.import_module(handlerModuleName)
-    handlerClass = getattr(handlerModule, handlerClassName)
+  :param str name: name of the client class
+  :param str handlerModulePath: path to the service handler moduler relatative to the $DIRAC variable
+  :param str handlerClassName: name of the service handler class
+  """
+  def addFunctions(clientCls):
+    """Add the functions to the decorated class."""
+    attrDict = dict(clientCls.__dict__)
+    bases = (Client,)
+    fullPath = os.path.join(os.environ.get('DIRAC'), handlerModulePath)
+    if not os.path.exists(fullPath):
+      return type(name, bases, attrDict)
 
     def genFunc(funcName, arguments, argTypes, doc):
       """Create a function with *funcName* taking *arguments*."""
@@ -121,7 +126,7 @@ class ClientCreator(type):
           self.call = funcName
           return self.executeRPC(**kwargs)
       func.__doc__ = doc + "\n\nAutomatically created for the service function :func:`~%s.%s.export_%s`" % \
-          (handlerModuleName, handlerClassName, funcName)
+          (handlerModulePath, handlerClassName, funcName)
       parameterDoc = ''
       if arguments and ":param " not in doc:
         parameterDoc = "\n".join(":param %(par)s: %(par)s" % dict(par=par)
@@ -133,17 +138,25 @@ class ClientCreator(type):
         func.__doc__ += "\n\n" + parameterDoc
       return func
 
-    members = vars(handlerClass)
-    for function in members:
-      if function.startswith('export_'):
+    with open(fullPath) as moduleFile:
+      handlerAst = ast.parse(moduleFile.read(), fullPath)
+
+    for node in ast.iter_child_nodes(handlerAst):
+      if not (isinstance(node, ast.ClassDef) and node.name == handlerClassName):
+        continue
+      for member in ast.iter_child_nodes(node):
+        if not isinstance(member, ast.FunctionDef):
+          continue
+        arguments = [a.id for a in member.args.args]
+        function = member.name
+        if not function.startswith('export_'):
+          continue
         funcName = function[len('export_'):]
-        argTypes = members.get('types_%s' % funcName, [])
+        argTypes = None  # give up on those for now
         if funcName in attrDict:
           continue
-        func = getattr(handlerClass, function)
-        arguments = inspect.getargspec(func).args
-        attrDict[funcName] = genFunc(funcName, arguments, argTypes, inspect.getdoc(func))
+        attrDict[funcName] = genFunc(funcName, arguments, argTypes, ast.get_docstring(member))
 
-    del attrDict['handlerClassName']
-    del attrDict['handlerModuleName']
-    return type.__new__(mcs, name, bases, attrDict)
+    return type(name, bases, attrDict)
+
+  return addFunctions
