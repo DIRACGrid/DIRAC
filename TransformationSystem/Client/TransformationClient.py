@@ -2,15 +2,14 @@
 
 __RCSID__ = "$Id$"
 
-from six import add_metaclass
-
 from DIRAC                                                         import S_OK, gLogger
-from DIRAC.Core.Base.Client import Client, ClientCreator
+from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.Core.Utilities.List                                     import breakListIntoChunks
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations           import Operations
 
 
-@add_metaclass(ClientCreator)
+@createClient('TransformationClient', 'DIRAC/TransformationSystem/Service/TransformationManagerHandler.py',
+              'TransformationManagerHandler')
 class TransformationClient(Client):
   """ Exposes the functionality available in the DIRAC/TransformationManagerHandler
 
@@ -56,8 +55,6 @@ class TransformationClient(Client):
           getTransformationSummary()
           getTransformationSummaryWeb(selectDict, sortList, startItem, maxItems)
   """
-  handlerModuleName = 'DIRAC.TransformationSystem.Service.TransformationManagerHandler'
-  handlerClassName = 'TransformationManagerHandler'
 
   def __init__( self, **kwargs ):
     """ Simple constructor

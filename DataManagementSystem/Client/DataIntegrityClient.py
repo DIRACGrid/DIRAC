@@ -4,23 +4,20 @@ problematic file and replicas to the IntegrityDB and their status
 correctly updated in the FileCatalog.
 """
 
-from six import add_metaclass
-
 from DIRAC                                                import S_OK, S_ERROR, gLogger
 from DIRAC.DataManagementSystem.Client.DataManager        import DataManager
 from DIRAC.Resources.Storage.StorageElement               import StorageElement
 from DIRAC.Resources.Catalog.FileCatalog                  import FileCatalog
 from DIRAC.Core.Utilities.ReturnValues                    import returnSingleResult
-from DIRAC.Core.Base.Client import Client, ClientCreator
+from DIRAC.Core.Base.Client import Client, createClient
 
 __RCSID__ = "$Id$"
 
 
-@add_metaclass(ClientCreator)
+@createClient('DataIntegrityClient', 'DIRAC/DataManagementSystem/Service/DataIntegrityHandler.py',
+              'DataIntegrityHandler')
 class DataIntegrityClient(Client):
   """Client exposing the DataIntegrity Service."""
-  handlerModuleName = 'DIRAC.DataManagementSystem.Service.DataIntegrityHandler'
-  handlerClassName = 'DataIntegrityHandler'
 
   def __init__( self, **kwargs ):
 

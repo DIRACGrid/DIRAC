@@ -1,17 +1,15 @@
 import json
-from six import add_metaclass
 
-from DIRAC.Core.Base.Client import Client, ClientCreator
+from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC import S_OK, S_ERROR
 from DIRAC.DataManagementSystem.private.FTS3Utilities import FTS3JSONDecoder
 
 
-@add_metaclass(ClientCreator)
+@createClient('FTS3Client', 'DIRAC/DataManagementSystem/Service/FTS3ManagerHandler.py',
+              'FTS3ManagerHandler')
 class FTS3Client(Client):
   """ Client code to the FTS3 service
   """
-  handlerModuleName = 'DIRAC.DataManagementSystem.Service.FTS3ManagerHandler'
-  handlerClassName = 'FTS3ManagerHandler'
 
   def __init__(self, url=None, **kwargs):
     """ Constructor function.

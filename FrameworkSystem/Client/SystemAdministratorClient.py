@@ -5,17 +5,14 @@
 
 __RCSID__ = "$Id$"
 
-from six import add_metaclass
-
-from DIRAC.Core.Base.Client import Client, ClientCreator
+from DIRAC.Core.Base.Client import Client, createClient
 
 SYSADMIN_PORT = 9162
 
 
-@add_metaclass(ClientCreator)
+@createClient('SystemAdministratorClient', 'DIRAC/FrameworkSystem/Service/SystemAdministratorHandler.py',
+              'SystemAdministratorHandler')
 class SystemAdministratorClient(Client):
-  handlerModuleName = 'DIRAC.FrameworkSystem.Service.SystemAdministratorHandler'
-  handlerClassName = 'SystemAdministratorHandler'
 
   def __init__(self, host, port=None, **kwargs):
     """ Constructor function. Takes a mandatory host parameter

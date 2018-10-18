@@ -1,17 +1,15 @@
 """ Class that contains client access to the JobManager handler. """
 
 from __future__ import absolute_import
-from six import add_metaclass
 
-from DIRAC.Core.Base.Client import Client, ClientCreator
+from DIRAC.Core.Base.Client import Client, createClient
 
 
-@add_metaclass(ClientCreator)
+@createClient('JobManagerClient', 'DIRAC/WorkloadManagementSystem/Service/JobManagerHandler.py',
+              'JobManagerHandler')
 class JobManagerClient(Client):
   """JobManagerClient sets url for the JobManagerHandler.
   """
-  handlerModuleName = 'DIRAC.WorkloadManagementSystem.Service.JobManagerHandler'
-  handlerClassName = 'JobManagerHandler'
 
   def __init__(self, url=None, **kwargs):
     """
