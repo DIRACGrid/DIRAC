@@ -108,7 +108,7 @@ def createClient(name, handlerModulePath, handlerClassName):
     """Add the functions to the decorated class."""
     attrDict = dict(clientCls.__dict__)
     bases = (Client,)
-    fullPath = os.path.join(os.environ.get('DIRAC'), handlerModulePath)
+    fullPath = os.path.join(os.environ.get('DIRAC', './'), handlerModulePath)
     if not os.path.exists(fullPath):
       return type(name, bases, attrDict)
 
