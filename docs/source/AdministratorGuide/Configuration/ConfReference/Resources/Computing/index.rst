@@ -11,7 +11,7 @@ Options for computing elements can be set at different levels, from lowest to
 highest prority
 
   /Resources/Computing/OSCompatibility
-  This section is used to define a compatibility matrix between dirac platforms and OS versions
+   This section is used to define a compatibility matrix between dirac platforms and OS versions
   /Resources/Computing/CEDefaults
    For all computing elements
   /Resources/Computing/<CEType>
