@@ -8,8 +8,7 @@ from DIRAC.Core.Utilities.List                                     import breakL
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations           import Operations
 
 
-@createClient('TransformationClient', 'DIRAC/TransformationSystem/Service/TransformationManagerHandler.py',
-              'TransformationManagerHandler')
+@createClient('DIRAC/TransformationSystem/Service/TransformationManagerHandler.py')
 class TransformationClient(Client):
   """ Exposes the functionality available in the DIRAC/TransformationManagerHandler
 

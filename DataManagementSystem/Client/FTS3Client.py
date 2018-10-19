@@ -5,8 +5,7 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.DataManagementSystem.private.FTS3Utilities import FTS3JSONDecoder
 
 
-@createClient('FTS3Client', 'DIRAC/DataManagementSystem/Service/FTS3ManagerHandler.py',
-              'FTS3ManagerHandler')
+@createClient('DIRAC/DataManagementSystem/Service/FTS3ManagerHandler.py')
 class FTS3Client(Client):
   """ Client code to the FTS3 service
   """

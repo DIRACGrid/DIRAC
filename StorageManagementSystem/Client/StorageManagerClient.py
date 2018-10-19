@@ -213,8 +213,7 @@ def _checkFilesToStage( seToLFNs, onlineLFNs, offlineLFNs, absentLFNs,
   return S_OK()
 
 
-@createClient('StorageManagerClient', 'DIRAC/StorageManagementSystem/Service/StorageManagerHandler.py',
-              'StorageManagerHandler')
+@createClient('DIRAC/StorageManagementSystem/Service/StorageManagerHandler.py')
 class StorageManagerClient(Client):
   """ This is the client to the StorageManager service, so even if it is not seen, it exposes all its RPC calls
   """

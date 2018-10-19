@@ -7,8 +7,7 @@ __RCSID__ = "$Id$"
 from DIRAC.Core.Base.Client import Client, createClient
 
 
-@createClient('JobMonitoringClient', 'DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py',
-              'JobMonitoringHandler')
+@createClient('DIRAC/WorkloadManagementSystem/Service/JobMonitoringHandler.py')
 class JobMonitoringClient(Client):
 
   def __init__(self, **kwargs):

@@ -97,22 +97,25 @@ class Client(object):
     return rpc
 
 
-def createClient(name, handlerModulePath, handlerClassName):
+def createClient(handlerModulePath, handlerClassName=None):
   """Decorator to expose the service functions automatically in the Client.
 
-  :param str name: name of the client class
-  :param str handlerModulePath: path to the service handler moduler relatative to the $DIRAC variable
-  :param str handlerClassName: name of the service handler class
+  :param str handlerModulePath: path to the service handler module relative to the $DIRAC environment variable
+  :param str handlerClassName: name of the service handler class, if **None** the same as the ModuleFileName
   """
+  if handlerClassName is None:
+    handlerClassName = handlerModulePath.rsplit('.')[-2]
+
   def addFunctions(clientCls):
     """Add the functions to the decorated class."""
     attrDict = dict(clientCls.__dict__)
-    bases = (Client,)
+    name = clientCls.__name__
+    bases = clientCls.__bases__
     fullPath = os.path.join(os.environ.get('DIRAC', './'), handlerModulePath)
     if not os.path.exists(fullPath):
       return type(name, bases, attrDict)
 
-    def genFunc(funcName, arguments, argTypes, doc):
+    def genFunc(funcName, arguments, doc):
       """Create a function with *funcName* taking *arguments*."""
       doc = '' if doc is None else doc
       if arguments and arguments[0] in ('self', 'cls'):
@@ -131,9 +134,6 @@ def createClient(name, handlerModulePath, handlerClassName):
       if arguments and ":param " not in doc:
         parameterDoc = "\n".join(":param %(par)s: %(par)s" % dict(par=par)
                                  for par in arguments)
-      if argTypes and ":param " not in doc:
-        parameterDoc += "\n" + "\n".join(":type %(par)s: %(type)s" % dict(par=par, type=argType)
-                                         for par, argType in izip_longest(arguments, argTypes))
       if parameterDoc and ":param " not in doc:
         func.__doc__ += "\n\n" + parameterDoc
       return func
@@ -152,10 +152,9 @@ def createClient(name, handlerModulePath, handlerClassName):
         if not function.startswith('export_'):
           continue
         funcName = function[len('export_'):]
-        argTypes = None  # give up on those for now
         if funcName in attrDict:
           continue
-        attrDict[funcName] = genFunc(funcName, arguments, argTypes, ast.get_docstring(member))
+        attrDict[funcName] = genFunc(funcName, arguments, ast.get_docstring(member))
 
     return type(name, bases, attrDict)
 

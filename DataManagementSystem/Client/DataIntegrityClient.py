@@ -14,8 +14,7 @@ from DIRAC.Core.Base.Client import Client, createClient
 __RCSID__ = "$Id$"
 
 
-@createClient('DataIntegrityClient', 'DIRAC/DataManagementSystem/Service/DataIntegrityHandler.py',
-              'DataIntegrityHandler')
+@createClient('DIRAC/DataManagementSystem/Service/DataIntegrityHandler.py')
 class DataIntegrityClient(Client):
   """Client exposing the DataIntegrity Service."""
 

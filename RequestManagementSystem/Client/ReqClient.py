@@ -22,7 +22,7 @@ from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
 
 
-@createClient('ReqClient', 'DIRAC/RequestManagementSystem/Service/ReqManagerHandler.py', 'ReqManagerHandler')
+@createClient('DIRAC/RequestManagementSystem/Service/ReqManagerHandler.py')
 class ReqClient(Client):
   """ReqClient is a class manipulating and operation on Requests.
 

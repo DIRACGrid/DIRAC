@@ -5,8 +5,7 @@ __RCSID__ = "$Id$"
 from DIRAC.Core.Base.Client import Client, createClient
 
 
-@createClient('PilotsLoggingClient', 'DIRAC/WorkloadManagementSystem/Service/PilotsLoggingHandler.py',
-              'PilotsLoggingHandler')
+@createClient('DIRAC/WorkloadManagementSystem/Service/PilotsLoggingHandler.py')
 class PilotsLoggingClient(Client):
   """Implementation of interface of Pilots Logging service. Client class should be used to communicate
   with PilotsLogging Service

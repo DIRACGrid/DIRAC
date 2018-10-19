@@ -9,8 +9,7 @@ from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.Core.Utilities.Mail import Mail
 
 
-@createClient('NotificationClient', 'DIRAC/FrameworkSystem/Service/NotificationHandler.py',
-              'NotificationHandler')
+@createClient('DIRAC/FrameworkSystem/Service/NotificationHandler.py')
 class NotificationClient(Client):
 
   def __init__(self):
