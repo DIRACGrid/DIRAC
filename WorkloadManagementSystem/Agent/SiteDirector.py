@@ -9,6 +9,7 @@
 __RCSID__ = "$Id$"
 
 import os
+import sys
 import random
 import socket
 import hashlib
@@ -22,7 +23,8 @@ from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE
 from DIRAC.Core.Utilities.Time import dateTime, second
 from DIRAC.Core.Utilities.List import fromChar
 from DIRAC.Core.Utilities.File import mkDir
-from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals, Registry, Resources
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
+from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals, Registry
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.AccountingSystem.Client.Types.Pilot import Pilot as PilotAccounting
@@ -74,6 +76,14 @@ class SiteDirector(AgentModule):
     """ c'tor
     """
     super(SiteDirector, self).__init__(*args, **kwargs)
+
+    # on-the fly imports
+    ol = ObjectLoader()
+    res = ol.loadModule("ConfigurationSystem.Client.Helpers.Resources")
+    if not res['OK']:
+      sys.exit(res['Message'])
+    self.resourcesModule = res['Value']
+
     self.queueDict = {}
     self.queueSlots = {}
     self.failedQueues = defaultdict(int)
@@ -220,11 +230,11 @@ class SiteDirector(AgentModule):
     self.log.always('PilotDN:', self.pilotDN)
     self.log.always('PilotGroup:', self.pilotGroup)
 
-    result = Resources.getQueues(community=self.vo,
-                                 siteList=siteNames,
-                                 ceList=ces,
-                                 ceTypeList=ceTypes,
-                                 mode='Direct')
+    result = self.resourcesModule.getQueues(community=self.vo,
+                                            siteList=siteNames,
+                                            ceList=ces,
+                                            ceTypeList=ceTypes,
+                                            mode='Direct')
     if not result['OK']:
       return result
     result = self.getQueues(result['Value'])
@@ -350,7 +360,7 @@ class SiteDirector(AgentModule):
             self.platforms.append(platform)
 
           if "Platform" not in self.queueDict[queueName]['ParametersDict'] and platform:
-            result = Resources.getDIRACPlatform(platform)
+            result = self.resourcesModule.getDIRACPlatform(platform)
             if result['OK']:
               self.queueDict[queueName]['ParametersDict']['Platform'] = result['Value'][0]
 
@@ -667,7 +677,7 @@ class SiteDirector(AgentModule):
 
         :return: list of platforms
     """
-    result = Resources.getCompatiblePlatforms(self.platforms)
+    result = self.resourcesModule.getCompatiblePlatforms(self.platforms)
     if not result['OK']:
       self.log.error("Issue getting platforms compatible with %s, returning 'ANY'" % self.platforms,
                      result['Message'])
@@ -744,8 +754,12 @@ class SiteDirector(AgentModule):
     # This is a hack to get rid of !
     ceDict['SubmitPool'] = self.defaultSubmitPools
 
-    # yes, this can trigger an exception. It should "never" happen anyway, so it's a "good" exception
-    ceDict['Platform'] = Resources.getCompatiblePlatforms(self.queueDict[queue]['Platform'])['Value']
+    result = self.resourcesModule.getCompatiblePlatforms(self.queueDict[queue]['Platform'])
+    if not result['OK']:
+      self.log.error("Issue getting platforms compatible with %s, returning 'ANY'" % self.platforms,
+                     result['Message'])
+      ceDict['Platform'] = 'ANY'
+    ceDict['Platform'] = result['Value']
 
     return ce, ceDict
 

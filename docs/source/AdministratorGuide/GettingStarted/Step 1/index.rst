@@ -50,7 +50,7 @@ The way to achieve this minimal installation is the following:
       InstallType = server
       #  LCG python bindings for SEs and LFC. Specify this option only if your installation
       #  uses those services
-      # LcgVer = 2017-05-23
+      # LcgVer = v14r2
       #  If this flag is set to yes, each DIRAC update will be installed
       #  in a separate directory, not overriding the previous ones
       UseVersionsDir = yes

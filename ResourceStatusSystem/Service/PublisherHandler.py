@@ -99,7 +99,7 @@ class PublisherHandler(RequestHandler):
       res = DMSHelpers().getSiteSEMapping()
       if not res['OK']:
         return res
-      ses = res['Value'][1][siteName]
+      ses = res['Value'][1].get(siteName, [])
       sesHosts = CSHelpers.getStorageElementsHosts(ses)
       if not sesHosts['OK']:
         return sesHosts
@@ -186,7 +186,7 @@ class PublisherHandler(RequestHandler):
     res = DMSHelpers().getSiteSEMapping()
     if not res['OK']:
       return res
-    ses = res['Value'][1][site]
+    ses = res['Value'][1].get(site, [])
 
     sesStatus = rsClient.selectStatusElement('Resource', 'Status', name=ses,
                                              meta={'columns': ['Name', 'StatusType', 'Status']})

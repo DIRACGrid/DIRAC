@@ -264,10 +264,8 @@ Reference of an installation's defaults file
    ModulesToInstall = MyExt
    #Type of externals to install (client, client-full, server)
    ExternalsType = client
-   #Python version to install (25/26)
-   PythonVersion = 26
    #Version of lcg bundle to install
-   LcgVer = 2010-11-20
+   LcgVer = v14r2
    #Install following DIRAC's pro/versions schema
    UseVersionDir = False
    #Force building externals

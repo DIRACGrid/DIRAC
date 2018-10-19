@@ -10,7 +10,7 @@ For more information about various options of installing DIRAC Client see the `G
 
 Download the *dirac-install* script from `here <https://github.com/DIRACGrid/DIRAC/raw/master/Core/scripts/dirac-install.py>`_::
 
-  wget -np http://lhcbproject.web.cern.ch/lhcbproject/dist/Dirac_project/dirac-install --no-check-certificate
+  curl https://github.com/DIRACGrid/DIRAC/raw/master/Core/scripts/dirac-install.py --output=dirac-install
   chmod +x dirac-install
 
 
@@ -47,4 +47,4 @@ After creating a proxy with *proxy-init* command, just repeat the *dirac-configu
 The client software update when a new version is available is simply done by running again the *dirac-install*
 command as in p.1.2. You can run the *dirac-install* giving the exact version of the DIRAC software, for example::
 
-  dirac-install -r v6r0-pre11
+  dirac-install -r v6r20p14
