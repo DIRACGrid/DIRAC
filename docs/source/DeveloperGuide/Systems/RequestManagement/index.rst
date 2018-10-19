@@ -112,6 +112,11 @@ Once the request is ready, you can insert it to the `ReqDB`::
   >>> rc = ReqClient() # # create client
   >>> rc.putRequest( request ) # # put request to ReqDB
 
+.. DANGER::
+
+  Even though it is tempting, you cannot reuse a File object in multiple Operations, even if they are the same LFN. After all, they are different entries in the DB...
+
+
 Read
 ^^^^
 
