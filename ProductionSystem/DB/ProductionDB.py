@@ -176,7 +176,7 @@ class ProductionDB(DB):
     """ Gets the transformations of a given Production
 
     :param prodName: the Production name or ID
-    :return : the list of transformations belonging to the production as dictionaries
+    :return: the list of transformations belonging to the production as dictionaries
     """
     res = self._getConnectionProdID(connection, prodName)
     if not res['OK']:
