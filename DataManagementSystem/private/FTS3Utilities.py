@@ -65,11 +65,11 @@ def generatePossibleTransfersBySources(ftsFiles, allowedSources=None):
   """
       For a list of FTS3files object, group the transfer possible sources
       CAUTION ! a given LFN can be in multiple source
-                You still have to choose your source !
+      You still have to choose your source !
 
       :param allowedSources : list of allowed sources
       :param ftsFiles : list of FTS3File object
-      :return  S_OK({ sourceSE: [ FTS3Files] })
+      :return:  S_OK({ sourceSE: [ FTS3Files] })
 
   """
 

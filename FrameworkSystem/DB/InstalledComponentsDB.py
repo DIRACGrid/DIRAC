@@ -437,7 +437,7 @@ class InstalledComponentsDB(object):
             toAppend = element
             if isinstance(toAppend, datetime.datetime):
               toAppend = toAppend.strftime("%Y-%m-%d %H:%M:%S")
-            if isinstance(toAppend, (datetime.datetime, str)):
+            if isinstance(toAppend, basestring):
               toAppend = '\'%s\'' % (toAppend)
             if i == 0:
               sql = '%s%s' % (sql, toAppend)

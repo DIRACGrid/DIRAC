@@ -9,12 +9,12 @@ import random
 import re
 
 from DIRAC import S_OK
-from DIRAC.WorkloadManagementSystem.Agent.SiteDirector import SiteDirector, WAITING_PILOT_STATUS
-from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals, Resources
-from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.Core.Utilities.Time import dateTime, second
+from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils import pilotAgentsDB
-from DIRAC.Core.Utilities.Time import dateTime, second
+from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
+from DIRAC.WorkloadManagementSystem.Agent.SiteDirector import SiteDirector, WAITING_PILOT_STATUS
 
 
 class MultiProcessorSiteDirector(SiteDirector):
@@ -76,7 +76,7 @@ class MultiProcessorSiteDirector(SiteDirector):
     if self.voGroups:
       tqDict['OwnerGroup'] = self.voGroups
 
-    result = Resources.getCompatiblePlatforms(self.platforms)
+    result = self.resourcesModule.getCompatiblePlatforms(self.platforms)
     if not result['OK']:
       return result
     tqDict['Platform'] = result['Value']
@@ -89,8 +89,8 @@ class MultiProcessorSiteDirector(SiteDirector):
     self.log.verbose('Checking overall TQ availability with requirements')
     self.log.verbose(tqDict)
 
-    rpcMatcher = RPCClient("WorkloadManagement/Matcher")
-    result = rpcMatcher.getMatchingTaskQueues(tqDict)
+    matcherClient = MatcherClient()
+    result = matcherClient.getMatchingTaskQueues(tqDict)
     if not result['OK']:
       return result
     if not result['Value']:
@@ -224,14 +224,14 @@ class MultiProcessorSiteDirector(SiteDirector):
       # This is a hack to get rid of !
       ceDict['SubmitPool'] = self.defaultSubmitPools
 
-      result = Resources.getCompatiblePlatforms(platform)
+      result = self.resourcesModule.getCompatiblePlatforms(platform)
       if not result['OK']:
         continue
       ceDict['Platform'] = result['Value']
 
       ceDict['Tag'] = queueTags
       # Get the number of eligible jobs for the target site/queue
-      result = rpcMatcher.getMatchingTaskQueues(ceDict)
+      result = matcherClient.getMatchingTaskQueues(ceDict)
       if not result['OK']:
         self.log.error('Could not retrieve TaskQueues from TaskQueueDB', result['Message'])
         return result

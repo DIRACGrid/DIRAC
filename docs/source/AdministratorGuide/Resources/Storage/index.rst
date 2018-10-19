@@ -1,6 +1,5 @@
 .. _resourcesStorageElement:
 
---------------
 StorageElement
 --------------
 
@@ -62,7 +61,6 @@ definition section as shown in the example above. In this section a specific `Pa
 each VO which needs it.
 
 
--------------------
 StorageElementBases
 -------------------
 
@@ -191,7 +189,6 @@ Note that base SE must be separated from the inherited SE in two different secti
 
 
 
-
 Available protocol plugins
 --------------------------
 
@@ -257,7 +254,6 @@ External services like FTS requires pair of URLs to perform third party copy.
 This is implemented using the same logic as described above. There is however an extra step: once the common protocols between 2 SEs have been filtered, an extra loop filter is done to make sure that the selected protocol can be used as read from the source and as write to the destination. Finally, the URLs which are returned are not necessarily the url of the common protocol, but are the native urls of the plugin that can accept/generate the common protocol. For example, if the common protocol is gsiftp but one of the SE has only an SRM plugin, then you will get an srm URL (which is compatible with gsiftp).
 
 
---------------------
 StorageElementGroups
 --------------------
 

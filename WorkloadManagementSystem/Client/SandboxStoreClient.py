@@ -254,7 +254,7 @@ class SandboxStoreClient(object):
       entitiesList.append("Job:%s" % jobId)
     return self.__unassignEntities(entitiesList)
 
-  def downloadSandboxForJob(self, jobId, sbType, destinationPath="", inMemory=False):
+  def downloadSandboxForJob(self, jobId, sbType, destinationPath="", inMemory=False, unpack=True):
     """ Download SB for a job """
     result = self.__getSandboxesForEntity("Job:%s" % jobId)
     if not result['OK']:
@@ -266,11 +266,11 @@ class SandboxStoreClient(object):
     # If inMemory, ensure we return the newest sandbox only
     if inMemory:
       sbLocation = sbDict[sbType][-1]
-      result = self.downloadSandbox(sbLocation, destinationPath, inMemory)
+      result = self.downloadSandbox(sbLocation, destinationPath, inMemory, unpack)
       return result
 
     for sbLocation in sbDict[sbType]:
-      result = self.downloadSandbox(sbLocation, destinationPath, inMemory)
+      result = self.downloadSandbox(sbLocation, destinationPath, inMemory, unpack)
       if not result['OK']:
         return result
     return S_OK()

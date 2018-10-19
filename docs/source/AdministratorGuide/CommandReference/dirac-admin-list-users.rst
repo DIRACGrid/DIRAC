@@ -1,8 +1,8 @@
-=============================
+======================
 dirac-admin-list-users
-=============================
+======================
 
-  Lists the users in the Configuration. If no group is specified return all users.
+Lists the users in the Configuration. If no group is specified return all users.
 
 Usage::
 
@@ -10,13 +10,11 @@ Usage::
 
 Arguments::
 
-  Group:    Only users from this group (default: all) 
-
- 
+  Group:    Only users from this group (default: all)
 
 Options::
 
-  -e   --extended        : Show extended info 
+  -e  --extended               : Show extended info
 
 Example::
 
@@ -25,5 +23,3 @@ Example::
   vhamar
   msapunov
   atsareg
-
-

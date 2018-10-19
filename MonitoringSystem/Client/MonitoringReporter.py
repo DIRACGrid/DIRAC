@@ -35,16 +35,16 @@ class MonitoringReporter(object):
   :param __documents: contains the recods which will be inserted to the db\
   :type __documents: python:list
   :param str __monitoringType: type of the records which will be inserted to the db. For example: WMSHistory.
+  :param str __failoverQueueName: the name of the messaging queue. For example: /queue/dirac.certification
   """
 
-  def __init__(self, monitoringType=''):
+  def __init__(self, monitoringType='', failoverQueueName='dirac.monitoring'):
 
     self.__maxRecordsInABundle = 5000
     self.__documentLock = threading.RLock()
     self.__documents = []
-    self.__monitoringType = None
-
     self.__monitoringType = monitoringType
+    self.__failoverQueueName = failoverQueueName
 
   def processRecords(self):
     """
@@ -58,7 +58,7 @@ class MonitoringReporter(object):
     else:
       return retVal
 
-    result = createConsumer("Monitoring::Queue::%s" % self.__monitoringType)
+    result = createConsumer("Monitoring::Queue::%s" % self.__failoverQueueName)
     if not result['OK']:
       gLogger.error("Fail to create Consumer: %s" % result['Message'])
       return S_ERROR("Fail to create Consumer: %s" % result['Message'])
@@ -157,7 +157,7 @@ class MonitoringReporter(object):
     This method is used to create a producer
     """
     mqProducer = None
-    result = createProducer("Monitoring::Queue::%s" % self.__monitoringType)
+    result = createProducer("Monitoring::Queue::%s" % self.__failoverQueueName)
     if not result['OK']:
       gLogger.warn("Fail to create Producer:", result['Message'])
     else:

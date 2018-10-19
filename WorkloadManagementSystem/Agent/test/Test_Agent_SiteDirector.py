@@ -87,8 +87,6 @@ def test__ifAndWhereToSubmit(mocker, mockMatcherReturnValue, expected, anyExpect
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.AgentModule.__init__")
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.gConfig.getValue", side_effect=mockGCReply)
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.CSGlobals.getSetup", side_effect=mockCSGlobalReply)
-  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.Resources.getCompatiblePlatforms",
-               side_effect=mockResourcesReply)
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.AgentModule", side_effect=mockAM)
   sd = SiteDirector()
   sd.log = gLogger
@@ -142,8 +140,6 @@ def test__submitPilotsToQueue(mocker):
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.AgentModule.__init__")
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.gConfig.getValue", side_effect=mockGCReply)
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.CSGlobals.getSetup", side_effect=mockCSGlobalReply)
-  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.Resources.getCompatiblePlatforms",
-               side_effect=mockResourcesReply)
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.AgentModule", side_effect=mockAM)
   sd = SiteDirector()
   sd.log = gLogger

@@ -6,8 +6,9 @@ __RCSID__ = "$Id$"
 import requests
 import os
 
-from DIRAC import gConfig, S_OK, S_ERROR
+from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
+from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.Security.Locations import getProxyLocation
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOOption
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getVO
@@ -16,6 +17,10 @@ from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getVO
 class VOMSService(object):
 
   def __init__(self, vo=None):
+    """ c'tor
+
+    :param str vo: name of the virtual organization (community)
+    """
 
     if vo is None:
       vo = getVO()
@@ -30,12 +35,15 @@ class VOMSService(object):
     self.urls = []
     result = gConfig.getSections('/Registry/VO/%s/VOMSServers' % self.vo)
     if result['OK']:
-      vomsServers = result['Value']
-      for server in vomsServers:
+      for server in result['Value']:
+        gLogger.verbose("Adding 'https://%s:8443/voms/%s/apiv2/users'" % (server, self.vomsVO))
         self.urls.append('https://%s:8443/voms/%s/apiv2/users' % (server, self.vomsVO))
+    else:
+      gLogger.error("Section '/Registry/VO/%s/VOMSServers' not found" % self.vo)
 
     self.userDict = None
 
+  @deprecated("Unused")
   def admGetVOName(self):
     """ Get VOMS VO name, kept for backward compatibility
 
@@ -68,6 +76,9 @@ class VOMSService(object):
 
     :return: user dictionary keyed by the user DN
     """
+
+    if not self.urls:
+      return S_ERROR(DErrno.ENOAUTH, "No VOMS server defined")
 
     userProxy = getProxyLocation()
     caPath = os.environ['X509_CERT_DIR']

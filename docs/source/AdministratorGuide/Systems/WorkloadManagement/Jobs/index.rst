@@ -17,5 +17,5 @@ Some definitions for DIRAC jobs:
 
 Applications properties are reflected in payload properties.
 
-The DIRAC `APIs <http://diracs.readthedocs.io/en/rel-v6r15/CodeDocumentation/Interfaces/API/API_Module.html>`_ can be used to create and submit jobs. 
-Specifically, objects of type `Job <http://dirac.readthedocs.io/en/rel-v6r15/CodeDocumentation/Interfaces/API/Job.html>`_ represents a job. The API class `Dirac <http://diracs.readthedocs.io/en/rel-v6r15/CodeDocumentation/Interfaces/API/Dirac.html>`_ and more specifically the call to `submitJob <http://dirac.readthedocs.io/en/rel-v6r15/CodeDocumentation/Interfaces/API/Dirac.html#DIRAC.Interfaces.API.Dirac.Dirac.submitJob>`_ submits jobs to the DIRAC WMS.
+The DIRAC `APIs <http://dirac.readthedocs.io/en/latest/CodeDocumentation/Interfaces/API/API_Module.html>`_ can be used to create and submit jobs. 
+Specifically, objects of type `Job <http://dirac.readthedocs.io/en/latest/CodeDocumentation/Interfaces/API/Job.html>`_ represents a job. The API class `Dirac <http://dirac.readthedocs.io/en/latest/CodeDocumentation/Interfaces/API/Dirac.html>`_ and more specifically the call to `submitJob <http://dirac.readthedocs.io/en/latest/CodeDocumentation/Interfaces/API/Dirac.html#DIRAC.Interfaces.API.Dirac.Dirac.submitJob>`_ submits jobs to the DIRAC WMS.

@@ -6,12 +6,15 @@ __RCSID__ = "$Id$"
 import socket
 import os
 import re
+import time
 import commands
 import getpass
 import importlib
 import shutil
 from datetime import datetime, timedelta
 from distutils.version import LooseVersion  # pylint: disable=no-name-in-module,import-error
+
+import psutil
 
 from DIRAC import S_OK, S_ERROR, gConfig, rootPath, gLogger
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -67,10 +70,12 @@ class SystemAdministratorHandler(RequestHandler):
 
     # Check the flag for dynamic monitoring
     dynamicMonitoring = cls.srv_getCSOption('DynamicMonitoring', False)
+    messageQueue = cls.srv_getCSOption('MessageQueue', 'dirac.componentmonitoring')
 
     if dynamicMonitoring:
       global gMonitoringReporter
-      gMonitoringReporter = MonitoringReporter(monitoringType="ComponentMonitoring")
+      gMonitoringReporter = MonitoringReporter(
+          monitoringType="ComponentMonitoring", failoverQueueName=messageQueue)
       gThreadScheduler.addPeriodicTask(120, cls.__storeProfiling)
 
     keepSoftwareVersions = cls.srv_getCSOption('KeepSoftwareVersions', 0)
@@ -553,9 +558,7 @@ class SystemAdministratorHandler(RequestHandler):
       result[name] = '%.1f%%/%.1fMB' % (percentage, memory / 1024.)
 
     # Loads
-    with open('/proc/loadavg') as fd:
-      line = fd.read()
-      l1, l5, l15, _d1, _d2 = line.split()
+    l1, l5, l15 = (str(lx) for lx in os.getloadavg())
     result['Load1'] = l1
     result['Load5'] = l5
     result['Load15'] = l15
@@ -639,12 +642,7 @@ class SystemAdministratorHandler(RequestHandler):
       result['CertificateIssuer'] = resultCert['Value']['issuer']
 
     # Host uptime
-    try:
-      with open('/proc/uptime', 'r') as upFile:
-        uptime_seconds = float(upFile.readline().split()[0])
-      result['Uptime'] = str(timedelta(seconds=uptime_seconds))
-    except BaseException:
-      pass
+    result['Uptime'] = str(timedelta(seconds=(time.time() - psutil.boot_time())))
 
     return S_OK(result)
 

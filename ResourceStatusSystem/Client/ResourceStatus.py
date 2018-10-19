@@ -40,7 +40,6 @@ class ResourceStatus(object):
     if rssFlag is None:
       self.rssFlag = self.__getMode()
 
-    # We can set CacheLifetime and CacheHistory from CS, so that we can tune them.
     cacheLifeTime = int(self.rssConfig.getConfigCache())
 
     # RSSCache only affects the calls directed to RSS, if using the CS it is not used.
@@ -63,6 +62,7 @@ class ResourceStatus(object):
     :rtype: dict
 
     :Example:
+
     >>> getElementStatus('CE42', 'ComputingElement')
         S_OK( { 'CE42': { 'all': 'Active' } } } )
     >>> getElementStatus('SE1', 'StorageElement', 'ReadAccess')
@@ -123,6 +123,7 @@ class ResourceStatus(object):
     :rtype: dict
 
     :Example:
+
     >>> setElementStatus('CE42', 'ComputingElement', 'all', 'Active')
         S_OK(  xyz.. )
     >>> setElementStatus('SE1', 'StorageElement', 'ReadAccess', 'Banned')

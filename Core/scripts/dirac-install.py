@@ -1531,7 +1531,8 @@ def createBashrc():
       if 'X509_CERT_DIR' in os.environ:
         certDir = os.environ['X509_CERT_DIR']
       else:
-        if os.path.isdir('/etc/grid-security/certificates'):
+        if os.path.isdir('/etc/grid-security/certificates') and \
+           os.listdir('/etc/grid-security/certificates'):
           # Assuming that, if present, it is not empty, and has correct CAs
           certDir = '/etc/grid-security/certificates'
         else:

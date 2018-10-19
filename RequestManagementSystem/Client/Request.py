@@ -62,7 +62,7 @@ class Request( object ):
     """c'tor
 
     :param self: self reference
-    :param fromDict : if false, new request. Can be json string that represents the object, or the dictionary directly
+    :param fromDict: if false, new request. Can be json string that represents the object, or the dictionary directly
     """
     self.__waiting = None
 

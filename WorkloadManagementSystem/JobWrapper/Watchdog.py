@@ -22,16 +22,17 @@ __RCSID__ = "$Id$"
 import os
 import re
 import time
+import resource
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities import MJF
-from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
-from DIRAC.ConfigurationSystem.Client.Config import gConfig
-from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemInstance
 from DIRAC.Core.Utilities.ProcessMonitor import ProcessMonitor
 from DIRAC.Core.Utilities.TimeLeft.TimeLeft import TimeLeft
 from DIRAC.Core.Utilities.Subprocess import getChildrenPIDs
+from DIRAC.ConfigurationSystem.Client.Config import gConfig
+from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemInstance
+from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
 
 
 class Watchdog(object):
@@ -275,27 +276,19 @@ class Watchdog(object):
 
     msg = ''
 
-    loadAvg = self.getLoadAverage()
-    if not loadAvg['OK']:
-      msg += 'LoadAvg: ERROR'
-    else:
-      loadAvg = loadAvg['Value']
-      msg += 'LoadAvg: %d ' % loadAvg
-      heartBeatDict['LoadAverage'] = loadAvg
-      if 'LoadAverage' not in self.parameters:
-        self.parameters['LoadAverage'] = []
-      self.parameters['LoadAverage'].append(loadAvg)
+    loadAvg = float(os.getloadavg()[0])
+    msg += 'LoadAvg: %d ' % loadAvg
+    heartBeatDict['LoadAverage'] = loadAvg
+    if 'LoadAverage' not in self.parameters:
+      self.parameters['LoadAverage'] = []
+    self.parameters['LoadAverage'].append(loadAvg)
 
     memoryUsed = self.getMemoryUsed()
-    if not memoryUsed['OK']:
-      msg += 'MemUsed: ERROR '
-    else:
-      memoryUsed = memoryUsed['Value']
-      msg += 'MemUsed: %.1f kb ' % (memoryUsed)
-      heartBeatDict['MemoryUsed'] = memoryUsed
-      if 'MemoryUsed' not in self.parameters:
-        self.parameters['MemoryUsed'] = []
-      self.parameters['MemoryUsed'].append(memoryUsed)
+    msg += 'MemUsed: %.1f kb ' % (memoryUsed)
+    heartBeatDict['MemoryUsed'] = memoryUsed
+    if 'MemoryUsed' not in self.parameters:
+      self.parameters['MemoryUsed'] = []
+    self.parameters['MemoryUsed'].append(memoryUsed)
 
     result = self.processMonitor.getMemoryConsumed(self.wrapperPID)
     if result['OK']:
@@ -719,22 +712,10 @@ class Watchdog(object):
     self.initialValues['CPUConsumed'] = cpuConsumed
     self.parameters['CPUConsumed'] = []
 
-    loadAvg = self.getLoadAverage()
-    if not loadAvg['OK']:
-      self.log.warn("Could not establish LoadAverage, setting to 0")
-      loadAvg = 0
-    else:
-      loadAvg = loadAvg['Value']
-
-    self.initialValues['LoadAverage'] = loadAvg
+    self.initialValues['LoadAverage'] = float(os.getloadavg()[0])
     self.parameters['LoadAverage'] = []
 
     memUsed = self.getMemoryUsed()
-    if not memUsed['OK']:
-      self.log.warn("Could not establish MemoryUsed, setting to 0")
-      memUsed = 0
-    else:
-      memUsed = memUsed['Value']
 
     self.initialValues['MemoryUsed'] = memUsed
     self.parameters['MemoryUsed'] = []
@@ -949,18 +930,12 @@ class Watchdog(object):
     return S_ERROR('Watchdog: ' + methodName + ' method should be implemented in a subclass')
 
   #############################################################################
-  def getLoadAverage(self):
-    """ Attempts to get the load average, should be overridden in a subclass"""
-    methodName = 'getLoadAverage'
-    self.log.warn('Watchdog: ' + methodName + ' method should be implemented in a subclass')
-    return S_ERROR('Watchdog: ' + methodName + ' method should be implemented in a subclass')
-
-  #############################################################################
   def getMemoryUsed(self):
-    """ Attempts to get the memory used, should be overridden in a subclass"""
-    methodName = 'getMemoryUsed'
-    self.log.warn('Watchdog: ' + methodName + ' method should be implemented in a subclass')
-    return S_ERROR('Watchdog: ' + methodName + ' method should be implemented in a subclass')
+    """Obtains the memory used.
+    """
+    mem = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss + \
+        resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss
+    return float(mem)
 
   #############################################################################
   def getDiskSpace(self):

@@ -1,10 +1,14 @@
-########################################################################
-# File :    StatesMonitoringAgent.py
-# Author :  Zoltan Mathe
-########################################################################
-"""  StatesMonitoringAgent sends periodically numbers of jobs in various states for various
+''' StatesMonitoringAgent
+  sends periodically numbers of jobs in various states for various
      sites to the Monitoring system to create historical plots.
-"""
+
+.. literalinclude:: ../ConfigTemplate.cfg
+  :start-after: ##BEGIN StatesMonitoringAgent
+  :end-before: ##END
+  :dedent: 2
+  :caption: StatesMonitoringAgent options
+
+'''
 
 __RCSID__ = "$Id$"
 
@@ -43,7 +47,6 @@ class StatesMonitoringAgent(AgentModule):
 
   jobDB = None
   monitoringReporter = None
-  reportPeriod = None
 
   def initialize(self):
     """ Standard constructor
@@ -51,10 +54,10 @@ class StatesMonitoringAgent(AgentModule):
 
     self.jobDB = JobDB()
 
-    self.reportPeriod = 120
-    self.am_setOption("PollingTime", self.reportPeriod)
+    self.am_setOption("PollingTime", 900)
+    self.messageQueue = self.am_getOption('MessageQueue', 'dirac.wmshistory')
 
-    self.monitoringReporter = MonitoringReporter(monitoringType="WMSHistory")
+    self.monitoringReporter = MonitoringReporter(monitoringType="WMSHistory", failoverQueueName=self.messageQueue)
 
     for field in self.__summaryKeyFieldsMapping:
       if field == 'User':

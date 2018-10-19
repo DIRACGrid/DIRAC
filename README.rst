@@ -1,5 +1,14 @@
 .. -*- mode: rst -*-
 
+Cite us:
+
+.. image:: https://zenodo.org/badge/DOI/10.5281/zenodo.1451647.svg
+   :target: https://doi.org/10.5281/zenodo.1451647
+
+
+
+Status master branch (stable):
+
 .. image:: https://travis-ci.org/DIRACGrid/DIRAC.svg?branch=master
    :target: https://travis-ci.org/DIRACGrid/DIRAC
    :alt: Build Status
@@ -9,7 +18,7 @@
    :alt: Documentation Status
 
 
-Integration branch:
+Status integration branch (devel):
 
 .. image:: https://travis-ci.org/DIRACGrid/DIRAC.svg?branch=integration
   :target: https://travis-ci.org/DIRACGrid/DIRAC

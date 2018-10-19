@@ -1,7 +1,7 @@
-.. _static_component_monitoring:
-
 .. contents:: Table of contents
    :depth: 3
+
+.. _static_component_monitoring:
 
 Static Component Monitoring
 ===========================

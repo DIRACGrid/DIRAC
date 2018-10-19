@@ -1,4 +1,4 @@
-[v7r0-pre3]
+[v7r0-pre5]
 
 *Accounting
 CHANGE: (Multi)AccountingDB - Grouping Type and Object loader together with the MonitoringSystem ones.
@@ -16,12 +16,14 @@ NEW: Added ES backend to WMSAdministratorHandler to get JobParameters.
 NEW: Added separate MySQL table for JobsStatus in JobDB, and modified code accordingly.
 CHANGE: ElasticJobDB.py: Modify setJobParameter method to register JobAttributes like Owner, Proxy, JobGroup etc.
 CHANGE: ElasticJobDB.py: added getJobParametersAndAttributes method to retrieve both parameters and attributes for a given JobID.
+CHANGE: Pilot Watchdog - using python UNIX services for some watchdog calls
 
 *Core
 NEW: (#3744) Add update method to the ElasticSearchDB.py to update or if not available create the values 
      sent from the setJobParameter function. Uses update_by_query and index ES APIs.
 CHANGE: (#3744) generateFullIndexName() method made static under the ElasticSearchDB class.
 CHANGE: (#3744) removed unused/outdated stuff from Distribution module
+FIX: check for empty /etc/grid-security/certificates dir
 
 *tests
 
@@ -33,6 +35,66 @@ NEW: (#3744) Added miniInstallDIRAC function for Jenkins jobs
 *Docs
 FIX: Better dirac.cfg example configuration for web
 NEW: (#3744) Add WMS documentation in DeveloperGuide/Systems
+
+[v6r20p16]
+
+*WorkloadManagementSystem
+CHANGE: (#3850) the platform discovery can be VO-specific.
+
+*Interfaces
+CHANGE: (#3856) setParameterSequence always return S_OK/S_ERROR
+
+*TransformationSystem
+FIX: (#3856) check for return value on Job interface and handle it
+
+*ResourceStatusSystem
+FIX: (#3852) site may not have any SE
+
+[v6r20p15]
+
+*Interface
+FIX: (#3843) Fix the sandbox download, returning the inMemory default.
+
+*WorkloadManagementSystem
+FIX: (#3845) late creation on RPC in JobMonitoringClient and PilotsLoggingClient
+
+*DataManagementSystem
+FIX: (#3839) Update obsolete dirac-rms-show-request command in user message displayed when running dirac-dms-replicate-and-register-request
+
+*FrameworkSystem
+FIX: (#3845) added setServer for NotificationClient
+
+*Docs
+NEW: (#3847) Added some info on parametric jobs
+
+[v6r20p14]
+
+CHANGE: (#3826) emacs backup file pattern added to .gitignore
+
+*MonitoringSystem
+CHANGE: (#3827) The default name of the Message Queue can be changed
+
+*Core
+FIX: (#3832) VOMSService.py: better logging and error prevention
+
+*ConfigurationSystem
+FIX: (#3837) Corrected configuration location for Pilot 3 files synchronization
+
+*FrameworkSystem
+FIX: (#3830) InstalledComponentDB.__filterFields: fix error in "Component History Web App" when filter values are unicode
+
+*Interface
+CHANGE: (#3836) Dirac.py API - make the unpacking of downloaded sandboxes optional
+
+*Accounting
+CHANGE: (#3831) ReportGenerator: Authenticated users without JOB_SHARING will now only get plots showing their own jobs, solves #3776
+
+*ResourceStatusSystem
+FIX: (#3833) Documentation update
+CHANGE: (#3838) For some info, use DMSHelper instead of CSHelper for better precision
+
+*RequestManagementSystem
+FIX: (#3829) catch more exception in the ReqClient when trying to display the associated FTS jobs
 
 [v6r20p13]
 

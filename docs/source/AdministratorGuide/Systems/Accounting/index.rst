@@ -12,6 +12,7 @@ The data stored with properties, which are used to classify the records: user, s
 
 The data can be accessible through the DIRAC web framework using the Accounting application. The records are stored in the AccountingDB, 
 in "two" different formats:
+
   - raw records
   - time buckets: this is displayed to the users
 
@@ -19,9 +20,9 @@ The system consists of the following accounting types:
 	- Job:  for creating reports of the activity on the computing resources such as Grid, Cloud, etc. 
 	- Pilot: for creating reports for pilot jobs running on different computing elements such as ARC CE, CREAM, VAC, etc.
 	- Data operation: for creating reports about data activities: transfers, replication, removal, etc.
-	- WMS History: This it used for monitoring the DIRAC Workload Management system. This type is replaced by the WMS monitoring which
-	is part of the Monitoring system. It is replaced, because the WMS History type is for real time monitoring and MySQL is not for storing time series with
-	high resolution.
+	- WMS History: This it used for monitoring the DIRAC Workload Management system. This type is replaced by the
+	  WMS monitoring which is part of the Monitoring system. It is replaced, because the WMS History type is for real
+	  time monitoring and MySQL is not for storing time series with high resolution.
  
 
 AccountingDB
@@ -35,7 +36,7 @@ The system can allow to store the accounting types in different database instanc
  
 Multi-DB accounting
 ======================
-Since v6r12 each accounting type can be stored in a different DB. By default all accounting types data will be stored in the database 
+Accounting types can be stored in a different DB. By default all accounting types data will be stored in the database 
 defined under **/Systems/Accounting/_Instance_/Databases/AccountingDB**. 
 To store a type data in a different database (say WMSHistory) define the data base location under the databases directory. 
 Then define **/Systems/Accounting/_Instance_/Databases/MultiDB** and set an option with the type name and value pointing to the database to use. 

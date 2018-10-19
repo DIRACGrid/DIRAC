@@ -1,3 +1,5 @@
+.. _rss_advanced_configuration:
+
 ======================
 Advanced Configuration
 ======================
@@ -23,7 +25,7 @@ This section describes the policies and the conditions to match elements.
 
 ::
 
-  /Operations/Defaults/ResourceStatus
+  /Operations/[Defaults|SetupName]/ResourceStatus
                           /Policies
                               /PolicyName
                                   policyType = policyType
@@ -68,7 +70,7 @@ It applies the same idea as in `Policies`_, but the number of options is larger.
 
 ::
 
-  /Operations/Defaults/ResourceStatus
+  /Operations/[Defaults|SetupName]/ResourceStatus
                           /PolicyActions
                               /PolicyActionName
                                   actionType = actionType
@@ -97,6 +99,9 @@ It applies the same idea as in `Policies`_, but the number of options is larger.
 * combinedResult : this is the computed final result after merging the single policy results.
 * policyResults : allows to trigger an action based on a single policy result, where policyName follows `Policies`_.
 
+Now that you have configured the policies, restart the ElementInspectorAgent and the SiteInspectorAgent,
+and see if the run the policies defined.
+
 ------------
 Notification
 ------------
@@ -105,11 +110,12 @@ This section defines the notification groups ( right now, only for EmailAction )
 
 ::
 
-  /Operations/Defaults/ResourceStatus
+  /Operations/[Defaults|SetupName]/ResourceStatus
                           /Notification
                               /NotificationGroupName
                                   users = email@address, email@address
                                   
 * NotificationGroupName : human readable of what the group represents
-* users : CSV with email addresses                                  
-                                    
+* users : CSV with email addresses
+
+The EmailAgent will take care of sending the appropriate Emails of notification.

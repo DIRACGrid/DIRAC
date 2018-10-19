@@ -1,6 +1,6 @@
-===================================
+============================
 dirac-dms-set-replica-status
-===================================
+============================
 
 Set the status of the replicas of given files at the provided SE
 
@@ -11,11 +11,6 @@ Usage::
 Arguments::
 
   LFN:      LFN
-
   File:     File name containing a list of affected LFNs
-
   SE:       Name of Storage Element
-
-  Status:   New Status for the replica 
-
-
+  Status:   New Status for the replica

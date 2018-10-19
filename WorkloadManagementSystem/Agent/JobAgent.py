@@ -26,6 +26,7 @@ from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateU
 from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
 from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
 from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
+from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
 from DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper import rescheduleFailedJob
 from DIRAC.WorkloadManagementSystem.Utilities.Utils import createJobWrapper
 
@@ -197,7 +198,7 @@ class JobAgent(AgentModule):
 
     self.log.verbose(ceDict)
     start = time.time()
-    jobRequest = self.__requestJob(ceDict)
+    jobRequest = MatcherClient().requestJob(ceDict)
     matchTime = time.time() - start
     self.log.info('MatcherTime = %.2f (s)' % (matchTime))
 
@@ -512,13 +513,6 @@ class JobAgent(AgentModule):
       return S_ERROR('%s CE Error: %s' % (self.ceName, submission['Message']))
 
     return ret
-
-  #############################################################################
-  def __requestJob(self, ceDict):
-    """Request a single job from the matcher service.
-    """
-    matcher = RPCClient('WorkloadManagement/Matcher', timeout=600)
-    return matcher.requestJob(ceDict)
 
   #############################################################################
   def _getJDLParameters(self, jdl):
