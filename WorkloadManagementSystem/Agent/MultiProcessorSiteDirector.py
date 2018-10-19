@@ -10,7 +10,7 @@ import re
 
 from DIRAC import S_OK
 from DIRAC.Core.Utilities.Time import dateTime, second
-from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals, Resources
+from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils import pilotAgentsDB
 from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
@@ -76,7 +76,7 @@ class MultiProcessorSiteDirector(SiteDirector):
     if self.voGroups:
       tqDict['OwnerGroup'] = self.voGroups
 
-    result = Resources.getCompatiblePlatforms(self.platforms)
+    result = self.resourcesModule.getCompatiblePlatforms(self.platforms)
     if not result['OK']:
       return result
     tqDict['Platform'] = result['Value']
@@ -224,7 +224,7 @@ class MultiProcessorSiteDirector(SiteDirector):
       # This is a hack to get rid of !
       ceDict['SubmitPool'] = self.defaultSubmitPools
 
-      result = Resources.getCompatiblePlatforms(platform)
+      result = self.resourcesModule.getCompatiblePlatforms(platform)
       if not result['OK']:
         continue
       ceDict['Platform'] = result['Value']

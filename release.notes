@@ -36,6 +36,20 @@ NEW: (#3744) Added miniInstallDIRAC function for Jenkins jobs
 FIX: Better dirac.cfg example configuration for web
 NEW: (#3744) Add WMS documentation in DeveloperGuide/Systems
 
+[v6r20p16]
+
+*WorkloadManagementSystem
+CHANGE: (#3850) the platform discovery can be VO-specific.
+
+*Interfaces
+CHANGE: (#3856) setParameterSequence always return S_OK/S_ERROR
+
+*TransformationSystem
+FIX: (#3856) check for return value on Job interface and handle it
+
+*ResourceStatusSystem
+FIX: (#3852) site may not have any SE
+
 [v6r20p15]
 
 *Interface

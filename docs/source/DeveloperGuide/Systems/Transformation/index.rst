@@ -59,8 +59,9 @@ A technical drawing explaining the interactions between the various components f
     by connecting input files with tasks given a plugin. It's not useful for MCSimulation type
 
   * WorkflowTaskAgent: it takes workflow tasks created in the TransformationDB and it submits to the WMS.
-    Since version `v6r13 <https://github.com/DIRACGrid/DIRAC/wiki/DIRAC-v6r13#changes-for-transformation-system>`_
-    there are some new capabilities in the form of TaskManager plugins. These plugins determine how the destination site is chosen.
+    There are some capabilities in the form of TaskManager plugins,
+    please refer to <https://github.com/DIRACGrid/DIRAC/wiki/DIRAC-v6r13#changes-for-transformation-system>`_. 
+    These plugins determine how the destination site is chosen.
 
   * RequestTaskAgent: it takes request tasks created in the TransformationDB and submits to the RMS.
     Both RequestTaskAgent and WorkflowTaskAgent inherits from the same agent, "TaskManagerAgentBase", whose code contains large part of the logic that will be executed. But, TaskManagerAgentBase should not be run standalone.

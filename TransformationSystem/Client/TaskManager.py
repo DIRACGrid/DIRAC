@@ -623,9 +623,11 @@ class WorkflowTasks(TaskBase):
 
     for paramName, paramSeq in paramSeqDict.iteritems():
       if paramName in ['JOB_ID', 'PRODUCTION_ID', 'InputData'] + outputParameterList:
-        oJob.setParameterSequence(paramName, paramSeq, addToWorkflow=paramName)
+        res = oJob.setParameterSequence(paramName, paramSeq, addToWorkflow=paramName)
       else:
-        oJob.setParameterSequence(paramName, paramSeq)
+        res = oJob.setParameterSequence(paramName, paramSeq)
+      if not res['OK']:
+        return res
 
     if taskDict:
       self._logInfo('Prepared %d tasks' % len(taskDict),
@@ -787,7 +789,10 @@ class WorkflowTasks(TaskBase):
     if inputData:
       self._logVerbose('Setting input data to %s' % inputData,
                        transID=transID, method='handleInputs')
-      oJob.setInputData(inputData)
+      res = oJob.setInputData(inputData)
+      if not res['OK']:
+        self._logError("Could not set the inputs: %s" % res['Message'],
+                       transID=transID, method='_handleInputs')
 
   def _handleRest(self, oJob, paramsDict):
     """ add as JDL parameters all the other parameters that are not for inputs or destination

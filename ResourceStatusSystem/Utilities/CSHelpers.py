@@ -291,7 +291,7 @@ def getSiteElements(siteName):
   res = DMSHelpers().getSiteSEMapping()
   if not res['OK']:
     return res
-  resources = res['Value'][1][siteName]
+  resources = res['Value'][1].get(siteName, [])
 
   ce = getSiteComputingElements(siteName)
   resources = resources + ce
