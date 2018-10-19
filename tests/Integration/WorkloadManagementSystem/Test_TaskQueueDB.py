@@ -478,7 +478,51 @@ def test_chainWithTags():
   assert int(result['Value'][0][0]) in [tq_job1, tq_job3, tq_job4]
   assert len(result['Value']) == 3
 
-  # FIXME: Try adding numberOfProcessor
+  # BannedTag: 'SingleProcessor'
+  # By doing this, we are basically saying that this CE is accepting those TQs that don't have SingleProcessor
+  result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 50000,
+                                      'BannedTag': 'SingleProcessor'},
+                                     numQueuesToGet=4)
+  assert result['OK'] is True
+  # this does not match the tq_job2 and tq_job3
+  # FIXME:-- is it correct?
+  assert int(result['Value'][0][0]) in [tq_job1, tq_job4, tq_job5]
+  assert len(result['Value']) == 3
+
+  # By doing this, we are basically saying that this CE is accepting pure MultiProcessor payloads
+  result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 50000,
+                                      'Tag': 'MultiProcessor',
+                                      'BannedTag': 'SingleProcessor'},
+                                     numQueuesToGet=4)
+  assert result['OK'] is True
+  # this matches the tq_job1, as it is the only one that requires only MultiProcessor,
+  # AND the tq_job5, for which we have inserted no tags
+  # FIXME:-- is it correct?
+  assert int(result['Value'][0][0]) in [tq_job1, tq_job5]
+  assert len(result['Value']) == 2
+
+  # By doing this, we are basically saying that this CE is accepting pure MultiProcessor payloads
+  result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 50000,
+                                      'RequiredTag': 'MultiProcessor',
+                                      'BannedTag': 'SingleProcessor'},
+                                     numQueuesToGet=4)
+  assert result['OK'] is True
+  # this matches the tq_job1, as it is the only one that requires only MultiProcessor,
+  # AND the tq_job4, for which there's the MultiProcessor but not the SingleProcessor tag
+  # FIXME:-- is it correct?
+  assert int(result['Value'][0][0]) in [tq_job1, tq_job4]
+  assert len(result['Value']) == 2
+
+  # NumberOfProcessors and MaxRAM
+  # This is translated to "#Processors" by the SiteDirector
+  result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 50000,
+                                      'Tag': '4Processors'},
+                                     numQueuesToGet=4)
+  assert result['OK'] is True
+  # FIXME: this is not interpreted in any different way --- is it correct?
+  # I believe it should be instead interpreted in a way similar to CPUTime
+  # FIXME: the MaxRam parameter has a similar fate, and becomes "#GB",
+  # and then there's no specific matching about it.
 
   for jobId in xrange(1, 8):
     result = tqDB.deleteJob(jobId)
