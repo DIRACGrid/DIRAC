@@ -150,7 +150,6 @@ CREATE TABLE TransformationMetaQueries(
     MetaDataName VARCHAR(255) NOT NULL,
     MetaDataValue BLOB NOT NULL,
     MetaDataType VARCHAR(8) NOT NULL,
-    #QueryType VARCHAR(8) NOT NULL,
     QueryType ENUM('Input', 'Output') DEFAULT 'Input',
     PRIMARY KEY(TransformationID, MetaDataName, QueryType),
     FOREIGN KEY(TransformationID) REFERENCES Transformations(TransformationID)
