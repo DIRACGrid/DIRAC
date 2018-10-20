@@ -28,7 +28,7 @@ class ProductionClient(Client):
     :param status: the proposed status which is checked to be valid
     :param force: a boolean. When force=True the proposed status is forced to pass the state machine check
 
-    :return the new status
+    :return: S_OK with the new status or S_ERROR
     """
     res = self.getProductionParameters(prodID, 'Status')
     if not res['OK']:

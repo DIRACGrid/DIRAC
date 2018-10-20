@@ -72,7 +72,7 @@ class ProductionDB(DB):
 
     :param prodName: a string with the Production name
     :param prodDescription: a json object with the Production description
-    :param uthorDN: string with the author DN
+    :param authorDN: string with the author DN
     :param authorGroup: string with author group
     """
     connection = self.__getConnection(connection)
