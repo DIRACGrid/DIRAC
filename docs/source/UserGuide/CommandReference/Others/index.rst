@@ -9,8 +9,6 @@ In this subsection the Data Management commands are collected.
 
    dirac-cert-convert.sh.rst
    dirac-info.rst
-   dirac-myproxy-upload.rst
-   dirac-platform.rst
    dirac-proxy-get-uploaded-info.rst
    dirac-proxy-info.rst
    dirac-proxy-init.rst
