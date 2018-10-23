@@ -148,6 +148,7 @@ class JobManagerHandler(RequestHandler):
     jobClassAd = ClassAd(jobDesc)
     result = getParameterVectorLength(jobClassAd)
     if not result['OK']:
+      gLogger.error("Issue with getParameterVectorLength", ": %s" % result['Message'])
       return result
     nJobs = result['Value']
     parametricJob = False
@@ -155,6 +156,7 @@ class JobManagerHandler(RequestHandler):
       # if we are here, then jobDesc was the description of a parametric job. So we start unpacking
       parametricJob = True
       if nJobs > self.maxParametricJobs:
+        gLogger.error("Number of parametric limit exceeded", " (limit: %d)" % self.maxParametricJobs)
         return S_ERROR(EWMSJDL, "Number of parametric jobs exceeds the limit of %d" % self.maxParametricJobs)
       result = generateParametricJobs(jobClassAd)
       if not result['OK']:
@@ -221,6 +223,7 @@ class JobManagerHandler(RequestHandler):
     """
     jobList = self.__getJobList(jobIDs)
     if not jobList:
+      gLogger.error("Issue with __getJobList", ": invalid job specification %s" % str(jobIDs))
       return S_ERROR(EWMSSUBM, 'Invalid job specification: ' + str(jobIDs))
 
     validJobList, _invalidJobList, _nonauthJobList, _ownerJobList = self.jobPolicy.evaluateJobRights(jobList,
