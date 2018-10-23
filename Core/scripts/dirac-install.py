@@ -2,116 +2,16 @@
 """
 The main DIRAC installer script. It can be used to install the main DIRAC software, its
 modules, web, rest etc. and DIRAC extensions.
-
-In order to deploy DIRAC you have to provide: globalDefaultsURL, which is by default:
-"http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/globalDefaults.cfg", but it can be
-in the local file system in a separate directory. The content of this file is the following:
-
-Installations
-{
-  DIRAC
-  {
-     DefaultsLocation = http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/defaultsDIRAC.cfg
-     LocalInstallation
-     {
-      PythonVersion = 27
-     }
-     # in case you have a DIRAC extension
-     LHCb
-    {
-    DefaultsLocation = http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/defaults/lhcb.cfg
-    }
-  }
-}
-Projects
-{
-  DIRAC
-  {
-    DefaultsLocation = http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/defaults/dirac.cfg
-  }
-  # in case you have a DIRAC extension
-  LHCb
-  {
-    DefaultsLocation = http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/defaults/lhcb.cfg
-  }
-}
-
-the DefaultsLocation for example:
-DefaultsLocation = http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/defaults/dirac.cfg
-must contain a minimal configuration. The following options must be in this
-file:Releases=,UploadCommand=,BaseURL=
-In case you want to overwrite the global configuration file, you have to use --defaultsURL
-
-After providing the default configuration files, DIRAC or your extension can be installed from:
-
-1. in a directory you have to be present globalDefaults.cfg, dirac.cfg and all binaries. For example:
-zmathe@dzmathe zmathe]$ ls tars/
-dirac.cfg  diracos-0.1.md5  diracos-0.1.tar.gz  DIRAC-v6r20-pre16.md5  DIRAC-v6r20-pre16.tar.gz  globalDefaults.cfg \
-release-DIRAC-v6r20-pre16.cfg  release-DIRAC-v6r20-pre16.md5
-zmathe@dzmathe zmathe]$
-
-for example: dirac-install -r v6r20-pre16 --dirac-os --dirac-os-version=0.0.1 -u /home/zmathe/tars
-
-this command will use  /home/zmathe/tars directory for the source code.
-It will install DIRAC v6r20-pre16, DIRAC OS 0.1 version
-
-2. You can use your dedicated web server or the official DIRAC web server
-
-for example: dirac-install -r v6r20-pre16 --dirac-os --dirac-os-version=0.0.1
-It will install DIRAC v6r20-pre16
-
-3. You have possibility to install a not-yet-released DIRAC,
-module or extension using -m or --tag options. The non release version can be specified:
-
-for example:
-
-dirac-install -l DIRAC -r v6r20-pre16 -g v14r0 -t client -m DIRAC --tag=integration
-It will install DIRAC v6r20-pre16, where the DIRAC package based on integration, other other
-packages will be the same what is specified in release.cfg file in v6r20-pre16 tarball.
-
-dirac-install -l DIRAC -r v6r20-pre16 -g v14r0 -t client  -m DIRAC --tag=v6r20-pre22
-It installs a specific tag
-
-Note: If the source is not provided, DIRAC repository is used, which is defined in the global
-configuration file.
-We can provide the repository url:code repository*Project*branch. for example:
-
-dirac-install -l DIRAC -r v6r20-pre16 -g v14r0 -t client  -m \
-https://github.com/zmathe/DIRAC.git*DIRAC*dev_main_branch, \
-https://github.com/zmathe/WebAppDIRAC.git*WebAppDIRAC*extjs6 -e WebAppDIRAC
-it will install DIRAC based on dev_main_branch and WebAppDIRAC based on extjs6
-
-dirac-install -l DIRAC -r v6r20-pre16 -g v14r0 -t client -m WebAppDIRAC --tag=integration -e WebAppDIRAC
-it will install DIRAC v6r20-pre16 and WebAppDIRAC integration branch
-
-You can use install.cfg configuration file:
-
-DIRACOS = http://lhcb-rpm.web.cern.ch/lhcb-rpm/dirac/DIRACOS/
-WebAppDIRAC = https://github.com/zmathe/WebAppDIRAC.git
-DIRAC=https://github.com/DIRACGrid/DIRAC.git
-LocalInstallation
-{
-  # Project = LHCbDIRAC
-  # The project LHCbDIRAC is not defined in the globalsDefaults.cfg
-  Project = LHCb
-  Release = v9r1p20
-  Extensions = LHCb
-  ConfigurationServer = dips://lhcb-conf-dirac.cern.ch:9135/Configuration/Server
-  Setup = LHCb-Production
-  SkipCAChecks = True
-  SkipCADownload = True
-  WebAppDIRAC=extjs6
-  DIRAC=rel-v6r20
-}
-
-dirac-install -l LHCb -r v9r2-pre8 -t server --dirac-os --dirac-os-version=0.0.6 install.cfg
-
+More information in the DIRAC administration 
+document https://dirac.readthedocs.io/en/latest/AdministratorGuide/index.html
 """
+
+from __future__ import absolute_import, division, print_function, unicode_literals
+from six import string_types
 
 import sys
 import os
 import getopt
-import urllib2
 import imp
 import signal
 import time
@@ -119,7 +19,18 @@ import stat
 import shutil
 import ssl
 import hashlib
+import tarfile
 
+from contextlib import closing
+from distutils.version import LooseVersion
+
+try:
+  # For Python 3.0 and later
+  from urllib.request import urlopen, HTTPError, URLError
+except ImportError:
+  # Fall back to Python 2's urllib2
+  from urllib2 import urlopen, HTTPError, URLError
+    
 __RCSID__ = "$Id$"
 
 executablePerms = stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH
@@ -520,7 +431,7 @@ class ReleaseConfig(object):
         md5Data = urlretrieveTimeout(md5path, timeout=60)
       md5Hex = md5Data.strip()
       # md5File.close()
-      if md5Hex != hashlib.md5(cfgData).hexdigest():
+      if md5Hex != hashlib.md5(cfgData.encode('utf-8')).hexdigest():
         return S_ERROR("Hash check failed on %s" % urlcfg)
     except Exception as excp:
       return S_ERROR("Hash check failed on %s: %s" % (urlcfg, excp))
@@ -1065,7 +976,7 @@ class ReleaseConfig(object):
       return False
     if not release:
       release = list(self.prjRelCFG['DIRAC'])
-      release = max(release)
+      release = sorted(release, key=LooseVersion)[-1]
     try:
       return self.prjRelCFG['DIRAC'][release].get('Releases/%s/Externals' % release)
     except KeyError:
@@ -1073,7 +984,7 @@ class ReleaseConfig(object):
 
   def getDiracOSVersion(self, diracOSVersion=None):
     """
-    It returns the DIRAC os version
+    It returns the DIRACOS version
     :param str diracOSVersion: the OS version
     """
 
@@ -1105,6 +1016,7 @@ class ReleaseConfig(object):
     It returns the modules to be installed.
     :param str release: the release version to be deployed
     :param str extensions: DIRAC extension
+    :return: the order of the nodules and modules to be installed.
     """
     if not extensions:
       extensions = []
@@ -1193,7 +1105,7 @@ def logDEBUG(msg):
   """
   if cliParams.debug:
     for line in msg.split("\n"):
-      print "%s UTC dirac-install [DEBUG] %s" % (time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime()), line)
+      print ("%s UTC dirac-install [DEBUG] %s" % (time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime()), line))
     sys.stdout.flush()
 
 
@@ -1202,7 +1114,7 @@ def logERROR(msg):
   :param str msg: error message
   """
   for line in msg.split("\n"):
-    print "%s UTC dirac-install [ERROR] %s" % (time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime()), line)
+    print ("%s UTC dirac-install [ERROR] %s" % (time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime()), line))
   sys.stdout.flush()
 
 
@@ -1211,7 +1123,7 @@ def logWARN(msg):
   :param str msg: warning message
   """
   for line in msg.split("\n"):
-    print "%s UTC dirac-install [WARN] %s" % (time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime()), line)
+    print ("%s UTC dirac-install [WARN] %s" % (time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime()), line))
   sys.stdout.flush()
 
 
@@ -1220,7 +1132,7 @@ def logNOTICE(msg):
   :param str msg: notice message
   """
   for line in msg.split("\n"):
-    print "%s UTC dirac-install [NOTICE]  %s" % (time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime()), line)
+    print ("%s UTC dirac-install [NOTICE]  %s" % (time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime()), line))
   sys.stdout.flush()
 
 
@@ -1238,7 +1150,6 @@ def urlretrieveTimeout(url, fileName='', timeout=0):
    :param str fileName: file name
    :param int timeout: time out in second used for downloading the files.
   """
-
   if fileName:
     # This can be a local file
     if os.path.exists(url):  # we do not download from web, use locally
@@ -1267,14 +1178,14 @@ def urlretrieveTimeout(url, fileName='', timeout=0):
     # Try to use insecure context explicitly, needed for python >= 2.7.9
     try:
       context = ssl._create_unverified_context()
-      remoteFD = urllib2.urlopen(url, context=context)  # pylint: disable=unexpected-keyword-arg
+      remoteFD = urlopen(url, context=context)  # pylint: disable=unexpected-keyword-arg
       # the keyword 'context' is present from 2.7.9+
     except AttributeError:
-      remoteFD = urllib2.urlopen(url)
+      remoteFD = urlopen(url)
     expectedBytes = 0
     # Sometimes repositories do not return Content-Length parameter
     try:
-      expectedBytes = long(remoteFD.info()['Content-Length'])
+      expectedBytes = long(remoteFD.info()['Content-Length'])      
     except Exception as x:
       logWARN('Content-Length parameter not returned, skipping expectedBytes check')
 
@@ -1287,46 +1198,45 @@ def urlretrieveTimeout(url, fileName='', timeout=0):
       if fileName:
         localFD.write(data)
       else:
-        urlData += data
+        urlData += data.decode('utf8', 'ignore')
       data = remoteFD.read(16384)
       if count % 20 == 0 and sys.stdout.isatty():
-        print '\033[1D' + ".",
+        print (u'\033[1D' + ".", end=" ")
         sys.stdout.flush()
         progressBar = True
       count += 1
     if progressBar and sys.stdout.isatty():
       # return cursor to the beginning of the line
-      print '\033[1K',
-      print '\033[1A'
+      print ('\033[1K',end=" ")
+      print ('\033[1A')
     if fileName:
       localFD.close()
     remoteFD.close()
     if receivedBytes != expectedBytes and expectedBytes > 0:
       logERROR("File should be %s bytes but received %s" % (expectedBytes, receivedBytes))
       return False
-  except urllib2.HTTPError as x:
+  except HTTPError as x:
     if x.code == 404:
       logERROR("%s does not exist" % url)
       if timeout:
         signal.alarm(0)
       return False
-  except urllib2.URLError:
+  except URLError:
     logERROR('Timeout after %s seconds on transfer request for "%s"' % (str(timeout), url))
   except Exception as x:
+    print ('x',x)
     if x == 'Timeout':
       logERROR('Timeout after %s seconds on transfer request for "%s"' % (str(timeout), url))
     if timeout:
       signal.alarm(0)
     raise x
-
   if timeout:
     signal.alarm(0)
-
+  
   if fileName:
     return True
   else:
     return urlData
-
 
 def downloadAndExtractTarball(tarsURL, pkgName, pkgVer, checkHash=True, cache=False):
   """
@@ -1394,12 +1304,12 @@ def downloadAndExtractTarball(tarsURL, pkgName, pkgVer, checkHash=True, cache=Fa
     fd.close()
     # Calculate md5
     md5Calculated = hashlib.md5()
-    fd = open(os.path.join(cliParams.targetPath, tarName), "r")
-    buf = fd.read(4096)
-    while buf:
-      md5Calculated.update(buf)
+    with open(os.path.join(cliParams.targetPath, tarName), "rb") as fd:
       buf = fd.read(4096)
-    fd.close()
+      while buf:
+        md5Calculated.update(buf)
+        buf = fd.read(4096)
+
     # Check
     if md5Expected != md5Calculated.hexdigest():
       logERROR("Oops... md5 for package %s failed!" % pkgVer)
@@ -1419,8 +1329,10 @@ def downloadAndExtractTarball(tarsURL, pkgName, pkgVer, checkHash=True, cache=Fa
   #  tf.extract( member )
   # os.chdir(cwd)
   if not isSource:
-    tarCmd = "tar xzf '%s' -C '%s'" % (tarPath, cliParams.targetPath)
-    os.system(tarCmd)
+    with closing(tarfile.open(tarPath, mode="r|*")) as tar:
+      for tarinfo in tar:
+        tar.extract(tarinfo, cliParams.targetPath)
+
     # Delete tar
     if cache:
       if not os.path.isdir(cacheDir):
@@ -1605,12 +1517,12 @@ cmdOpts = (('r:', 'release=', 'Release version to install'),
 
 
 def usage():
-  print "\nUsage:\n\n  %s <opts> <cfgFile>" % os.path.basename(sys.argv[0])
-  print "\nOptions:"
+  print ("\nUsage:\n\n  %s <opts> <cfgFile>" % os.path.basename(sys.argv[0]))
+  print ("\nOptions:")
   for cmdOpt in cmdOpts:
-    print "\n  %s %s : %s" % (cmdOpt[0].ljust(3), cmdOpt[1].ljust(20), cmdOpt[2])
+    print ("\n  %s %s : %s" % (cmdOpt[0].ljust(3), cmdOpt[1].ljust(20), cmdOpt[2]))
   print
-  print "Known options and default values from /defaults section of releases file"
+  print ("Known options and default values from /defaults section of releases file")
   for options in [('Release', cliParams.release),
                   ('Project', cliParams.project),
                   ('ModulesToInstall', []),
@@ -1622,7 +1534,7 @@ def usage():
                   ('NoAutoBuild', cliParams.noAutoBuild),
                   ('Debug', cliParams.debug),
                   ('Timeout', cliParams.timeout)]:
-    print " %s = %s" % options
+    print (" %s = %s" % options)
 
   sys.exit(1)
 
@@ -1668,7 +1580,7 @@ def loadConfiguration():
 
     if opName == 'installType':
       opName = 'externalsType'
-    if isinstance(getattr(cliParams, opName), basestring):
+    if isinstance(getattr(cliParams, opName), string_types):
       setattr(cliParams, opName, opVal)
     elif isinstance(getattr(cliParams, opName), bool):
       setattr(cliParams, opName, opVal.lower() in ("y", "yes", "true", "1"))
