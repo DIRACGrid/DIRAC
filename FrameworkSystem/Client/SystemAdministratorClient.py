@@ -10,7 +10,7 @@ from DIRAC.Core.Base.Client import Client, createClient
 SYSADMIN_PORT = 9162
 
 
-@createClient('DIRAC/FrameworkSystem/Service/SystemAdministratorHandler.py')
+@createClient('Framework/SystemAdministrator')
 class SystemAdministratorClient(Client):
 
   def __init__(self, host, port=None, **kwargs):

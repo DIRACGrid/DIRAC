@@ -5,7 +5,7 @@ from __future__ import absolute_import
 from DIRAC.Core.Base.Client import Client, createClient
 
 
-@createClient('DIRAC/WorkloadManagementSystem/Service/JobManagerHandler.py')
+@createClient('WorkloadManagement/JobManager')
 class JobManagerClient(Client):
   """JobManagerClient sets url for the JobManagerHandler.
   """

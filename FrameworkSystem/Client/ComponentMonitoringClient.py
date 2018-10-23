@@ -4,7 +4,7 @@ __RCSID__ = "$Id$"
 from DIRAC.Core.Base.Client import Client, createClient
 
 
-@createClient('DIRAC/FrameworkSystem/Service/ComponentMonitoringHandler.py')
+@createClient('Framework/ComponentMonitoring')
 class ComponentMonitoringClient(Client):
 
   def __init__(self, **kwargs):
