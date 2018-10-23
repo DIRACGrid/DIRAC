@@ -1,9 +1,4 @@
-"""The Workflow Task Agent takes workflow tasks created in the transformation
-database and submits to the workload management system.
-
-
-The WorkflowTaskAgent takes workflow tasks created in the TransformationDB and submits them to the
-WMS. Since version v6r13 there are some new capabilities in the form of TaskManager plugins.
+""" The WorkflowTaskAgent takes workflow tasks created in the TransformationDB and submits them to the WMS.
 
 The following options can be set for the WorkflowTaskAgent.
 
