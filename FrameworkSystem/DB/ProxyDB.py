@@ -370,7 +370,8 @@ class ProxyDB(DB):
     except KeyError:
       return S_ERROR("Cannot escape DN")
     # Check what we have already got in the repository
-    cmd = "SELECT TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ), Pem FROM `ProxyDB_Proxies` WHERE UserDN=%s AND UserGroup=%s" % (
+    cmd = "SELECT TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ), Pem "
+    cmd += "FROM `ProxyDB_Proxies` WHERE UserDN=%s AND UserGroup=%s" % (
         sUserDN, sUserGroup)
     result = self._query(cmd)
     if not result['OK']:
@@ -529,7 +530,8 @@ class ProxyDB(DB):
     mpChainSecsLeft = retVal['Value']
     if mpChainSecsLeft < originChainLifeTime:
       self.log.info("Chain downloaded from myproxy has less lifetime than the one stored in the db",
-                    "\n Downloaded from myproxy: %s secs\n Stored in DB: %s secs" % (mpChainSecsLeft, originChainLifeTime))
+                    "\n Downloaded from myproxy: %s secs\n Stored in DB: %s secs" % (mpChainSecsLeft,
+                                                                                     originChainLifeTime))
       return S_OK(chain)
     retVal = mpChain.getDIRACGroup()
     if not retVal['OK']:
@@ -830,7 +832,8 @@ class ProxyDB(DB):
 
   def getCredentialsAboutToExpire(self, requiredSecondsLeft, onlyPersistent=True):
     cmd = "SELECT UserDN, UserGroup, ExpirationTime, PersistentFlag FROM `ProxyDB_Proxies`"
-    cmd += " WHERE TIMESTAMPDIFF( SECOND, ExpirationTime, UTC_TIMESTAMP() ) < %d and TIMESTAMPDIFF( SECOND, ExpirationTime, UTC_TIMESTAMP() ) > 0" % requiredSecondsLeft
+    cmd += " WHERE TIMESTAMPDIFF( SECOND, ExpirationTime, UTC_TIMESTAMP() ) < %d and " % requiredSecondsLeft
+    cmd += "TIMESTAMPDIFF( SECOND, ExpirationTime, UTC_TIMESTAMP() ) > 0"
     if onlyPersistent:
       cmd += " AND PersistentFlag = 'True'"
     return self._query(cmd)
