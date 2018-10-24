@@ -31,7 +31,7 @@ import urllib
 import shlex
 import StringIO
 
-from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC import S_OK, gLogger
 from DIRAC.Core.Base.API import API
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Workflow.Parameter import Parameter
@@ -622,7 +622,7 @@ class Job(API):
         return S_OK()
     elif site in self._siteSet:
       return S_OK()
-    return S_ERROR('Specified site %s is not in list of defined sites' % str(site))
+    return self._reportError('Specified site %s is not in list of defined sites' % str(site))
 
   #############################################################################
   def setDestinationCE(self, ceName, diracSite=None):

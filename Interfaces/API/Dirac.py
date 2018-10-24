@@ -183,7 +183,8 @@ class Dirac(API):
 
        :param requestedStates: List of jobs states to be considered
        :type requestedStates: list of strings
-       :param destinationDirectory: The target directory to place sandboxes (each jobID will have a directory created beneath this)
+       :param destinationDirectory: The target directory
+                                    to place sandboxes (each jobID will have a directory created beneath this)
        :type destinationDirectory: string
        :returns: S_OK,S_ERROR
     """
@@ -198,7 +199,9 @@ class Dirac(API):
       if jobDict.get('State') in requestedStates:
         # # Value of 'Retrieved' is a string, e.g. '0' when read from file
         if not int(jobDict.get('Retrieved')):
-          self.getOutputSandbox(jobID, destinationDirectory)
+          res = self.getOutputSandbox(jobID, destinationDirectory)
+          if not res['OK']:
+            return res
     return S_OK()
 
   def retrieveRepositoryData(self, requestedStates=None, destinationDirectory=''):
@@ -1712,7 +1715,7 @@ class Dirac(API):
       return getFile
 
     fileName = os.path.basename(oversizedSandbox)
-    result = S_OK()
+    result = S_OK(oversizedSandbox)
     if tarfile.is_tarfile(fileName):
       try:
         with tarfile.open(fileName, 'r') as tf:

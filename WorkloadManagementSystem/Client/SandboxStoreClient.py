@@ -266,14 +266,10 @@ class SandboxStoreClient(object):
     # If inMemory, ensure we return the newest sandbox only
     if inMemory:
       sbLocation = sbDict[sbType][-1]
-      result = self.downloadSandbox(sbLocation, destinationPath, inMemory, unpack)
-      return result
+      return self.downloadSandbox(sbLocation, destinationPath, inMemory, unpack)
 
     for sbLocation in sbDict[sbType]:
-      result = self.downloadSandbox(sbLocation, destinationPath, inMemory, unpack)
-      if not result['OK']:
-        return result
-    return S_OK()
+      return self.downloadSandbox(sbLocation, destinationPath, inMemory, unpack)
 
   ##############
   # Pilots
