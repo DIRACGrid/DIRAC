@@ -253,7 +253,7 @@ class AgentModule(object):
 
   def am_getOption(self, optionName, defaultValue=None):
     """ Gets an option from the agent's configuration section.
-        The section will be a subsection on the /Systems section in the CS.
+        The section will be a subsection of the /Systems section in the CS.
     """
     if defaultValue is None:
       if optionName in self.__configDefaults:
