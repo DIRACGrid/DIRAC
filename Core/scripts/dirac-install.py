@@ -22,7 +22,7 @@ import hashlib
 import tarfile
 
 from contextlib import closing
-from distutils.version import LooseVersion   # pylint: disable=no-name-in-module,import-error 
+from distutils.version import LooseVersion   # pylint: disable=no-name-in-module,import-error
 
 try:
   # For Python 3.0 and later
