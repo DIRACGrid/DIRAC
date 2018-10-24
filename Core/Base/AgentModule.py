@@ -441,7 +441,7 @@ class AgentModule(object):
     return self.am_secureCall(self.endExecution, name="endExecution")
 
   def initialize(self, *args, **kwargs):
-    """ Agents should ovverride this method for specific initialization.
+    """ Agents should override this method for specific initialization.
         Executed at every agent (re)start.
     """
     return S_OK()
