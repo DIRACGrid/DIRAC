@@ -1,7 +1,9 @@
 #!/bin/env python
-"""script to update the complete dirac.cfg file's Systems sections with the content of the ConfigTemplate.cfg."""
+"""script to concatenate the dirac.cfg file's Systems sections with the content of the ConfigTemplate.cfg files."""
 
 import os
+import textwrap
+import re
 
 from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC import gLogger, S_OK, S_ERROR
@@ -10,7 +12,7 @@ from DIRAC import gLogger, S_OK, S_ERROR
 def updateCompleteDiracCFG():
   """Read the dirac.cfg and update the Systems sections from the ConfigTemplate.cfg files."""
   compCfg = CFG()
-  rootpath = os.environ['DIRAC']
+  rootpath = os.environ.get('DIRAC', './')
   mainDiracCfgPath = os.path.join(rootpath, 'DIRAC', 'dirac.cfg')
 
   if not os.path.exists(mainDiracCfgPath):
@@ -23,7 +25,26 @@ def updateCompleteDiracCFG():
 
   cfg = getSystemsCFG()
   compCfg = compCfg.mergeWith(cfg)
-  compCfg.writeToFile(mainDiracCfgPath)
+  diracCfgOutput = os.path.join(rootpath, 'DIRAC/docs/source/AdministratorGuide/Configuration/ExampleConfig.rst')
+
+  with open(diracCfgOutput, 'w') as rst:
+    rst.write(textwrap.dedent("""
+                              ==========================
+                              Full Configuration Example
+                              ==========================
+
+                              .. This file is created by docs/Tools/UpdateDiracCFG.py
+
+                              Below is a complete example configuration with anotations for some sections::
+
+                              """))
+    # indent the cfg text
+    cfgString = ''.join('  ' + line for line in str(compCfg).splitlines(True))
+    # fix the links, add back the # for targets
+    # match .html with following character using positive look ahead
+    htmlMatch = re.compile(r"\.html(?=[a-zA-Z0-9])")
+    cfgString = re.sub(htmlMatch, '.html#', cfgString)
+    rst.write(cfgString)
 
 
 def getSystemsCFG():

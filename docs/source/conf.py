@@ -91,6 +91,15 @@ if os.environ.get('READTHEDOCS') == 'True':
   print "code",stdout
   print "code",err
 
+# always update dirac.cfg
+buildCommand = os.path.join(os.getcwd(), "../Tools/UpdateDiracCFG.py")
+code = subprocess.Popen(["python", buildCommand], env=os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+stdout, err = code.communicate()
+if stdout:
+  print "Config Output", stdout
+if err:
+  print "Config error", err
+
 # -- General configuration -----------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
