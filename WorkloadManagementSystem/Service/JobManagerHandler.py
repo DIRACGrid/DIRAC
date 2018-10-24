@@ -156,7 +156,8 @@ class JobManagerHandler(RequestHandler):
       # if we are here, then jobDesc was the description of a parametric job. So we start unpacking
       parametricJob = True
       if nJobs > self.maxParametricJobs:
-        gLogger.error("Maximum of parametric jobs exceeded:", "limit %d smaller than number of jobs %d" % (self.maxParametricJobs, nJobs))
+        gLogger.error("Maximum of parametric jobs exceeded:",
+                      "limit %d smaller than number of jobs %d" % (self.maxParametricJobs, nJobs))
         return S_ERROR(EWMSJDL, "Number of parametric jobs exceeds the limit of %d" % self.maxParametricJobs)
       result = generateParametricJobs(jobClassAd)
       if not result['OK']:
