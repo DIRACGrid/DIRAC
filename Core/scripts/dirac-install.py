@@ -2,7 +2,7 @@
 """
 The main DIRAC installer script. It can be used to install the main DIRAC software, its
 modules, web, rest etc. and DIRAC extensions.
-More information in the DIRAC administration 
+More information in the DIRAC administration
 document https://dirac.readthedocs.io/en/latest/AdministratorGuide/index.html
 """
 
@@ -30,7 +30,7 @@ try:
 except ImportError:
   # Fall back to Python 2's urllib2
   from urllib2 import urlopen, HTTPError, URLError
-    
+
 __RCSID__ = "$Id$"
 
 executablePerms = stat.S_IWUSR | stat.S_IRUSR | stat.S_IXUSR | stat.S_IRGRP | stat.S_IXGRP | stat.S_IROTH | stat.S_IXOTH
@@ -1185,7 +1185,7 @@ def urlretrieveTimeout(url, fileName='', timeout=0):
     expectedBytes = 0
     # Sometimes repositories do not return Content-Length parameter
     try:
-      expectedBytes = long(remoteFD.info()['Content-Length'])      
+      expectedBytes = long(remoteFD.info()['Content-Length'])
     except Exception as x:
       logWARN('Content-Length parameter not returned, skipping expectedBytes check')
 
@@ -1207,7 +1207,7 @@ def urlretrieveTimeout(url, fileName='', timeout=0):
       count += 1
     if progressBar and sys.stdout.isatty():
       # return cursor to the beginning of the line
-      print ('\033[1K',end=" ")
+      print ('\033[1K', end=" ")
       print ('\033[1A')
     if fileName:
       localFD.close()
@@ -1224,7 +1224,6 @@ def urlretrieveTimeout(url, fileName='', timeout=0):
   except URLError:
     logERROR('Timeout after %s seconds on transfer request for "%s"' % (str(timeout), url))
   except Exception as x:
-    print ('x',x)
     if x == 'Timeout':
       logERROR('Timeout after %s seconds on transfer request for "%s"' % (str(timeout), url))
     if timeout:
@@ -1232,11 +1231,12 @@ def urlretrieveTimeout(url, fileName='', timeout=0):
     raise x
   if timeout:
     signal.alarm(0)
-  
+
   if fileName:
     return True
   else:
     return urlData
+
 
 def downloadAndExtractTarball(tarsURL, pkgName, pkgVer, checkHash=True, cache=False):
   """
@@ -1331,7 +1331,7 @@ def downloadAndExtractTarball(tarsURL, pkgName, pkgVer, checkHash=True, cache=Fa
   if not isSource:
     with closing(tarfile.open(tarPath, mode="r|*")) as tar:
       for tarinfo in tar:
-        tar.extract(tarinfo, cliParams.targetPath)
+        tar.extract(tarinfo, cliParams.targetPath)  # pylint: disable=no-member
 
     # Delete tar
     if cache:
