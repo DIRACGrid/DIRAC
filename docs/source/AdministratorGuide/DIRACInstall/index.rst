@@ -91,13 +91,13 @@ After providing the default configuration files, DIRAC or your extension can be 
 	Note: If the source is not provided, DIRAC repository is used, which is defined in the global
 	configuration file.
 
-	We can provide the repository url:code repository*Project*branch. for example::
+We can provide the repository url:code repository*Project*branch. for example::
 
-	dirac-install -l DIRAC -r v6r20-pre16 -g v14r0 -t client  -m https://github.com/zmathe/DIRAC.git*DIRAC*dev_main_branch, https://github.com/zmathe/WebAppDIRAC.git*WebAppDIRAC*extjs6 -e WebAppDIRAC
+	dirac-install -l DIRAC -r v6r20-pre16 -g v14r0 -t client  -m https://github.com/zmathe/DIRAC.git*DIRAC*dev_main_branch, \
+	https://github.com/zmathe/WebAppDIRAC.git*WebAppDIRAC*extjs6 -e WebAppDIRAC
 
 	it will install DIRAC based on dev_main_branch and WebAppDIRAC based on extjs6
 
-::
 
 	dirac-install -l DIRAC -r v6r20-pre16 -g v14r0 -t client -m WebAppDIRAC --tag=integration -e WebAppDIRAC
 
@@ -122,7 +122,5 @@ After providing the default configuration files, DIRAC or your extension can be 
 	  WebAppDIRAC=extjs6
 	  DIRAC=rel-v6r20
 	}
-
-::
 
 	dirac-install -l LHCb -r v9r2-pre8 -t server --dirac-os --dirac-os-version=0.0.6 install.cfg

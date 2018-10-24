@@ -161,7 +161,7 @@ for rootModule in listDir:
     if scriptName not in simpleCopyMask and pythonScriptRE.match( scriptName ):
       newScriptName = scriptName[:-3].replace( '_', '-' )
       if DEBUG:
-        print (" Wrapping %s as %s" % ( scriptName, newScriptName ))
+        print (" Wrapping %s as %s" % (scriptName, newScriptName))
       fakeScriptPath = os.path.join( targetScriptsPath, newScriptName )
       with open( fakeScriptPath, "w" ) as fd:
         fd.write( wrapperTemplate.replace( '$SCRIPTLOCATION$', scriptPath ) )
@@ -181,8 +181,8 @@ for rootModule in listDir:
       reFound = pythonScriptRE.match( copyPath )
       if reFound:
         pathList = list( reFound.groups() )
-        pathList[-1] = pathList[-1].replace( '_', '-' )
+        pathList[-1] = pathList[-1].replace('_', '-')
         destPath = "".join( pathList )
         if DEBUG:
-          print (" Renaming %s as %s" % ( copyPath, destPath ))
+          print (" Renaming %s as %s" % (copyPath, destPath))
         os.rename( copyPath, destPath )
