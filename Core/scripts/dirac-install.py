@@ -22,7 +22,7 @@ import hashlib
 import tarfile
 
 from contextlib import closing
-from distutils.version import LooseVersion  # pylint: disable=import-error
+from distutils.version import LooseVersion   # pylint: disable=no-name-in-module,import-error 
 
 try:
   # For Python 3.0 and later
@@ -1330,7 +1330,7 @@ def downloadAndExtractTarball(tarsURL, pkgName, pkgVer, checkHash=True, cache=Fa
   # os.chdir(cwd)
   if not isSource:
     with closing(tarfile.open(tarPath, mode="r|*")) as tar:
-      for tarinfo in tar:  # pylint: disable
+      for tarinfo in tar:  # pylint: disable=not-an-iterable
         tar.extract(tarinfo, cliParams.targetPath)  # pylint: disable=no-member
 
     # Delete tar
