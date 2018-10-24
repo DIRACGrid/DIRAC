@@ -586,6 +586,8 @@ class WorkflowTasks(TaskBase):
       # Handle Input Data
       inputData = paramsDict.get('InputData')
       if inputData:
+        if isinstance(inputData, basestring):
+          inputData = inputData.replace(' ', '').split(';')
         self._logVerbose('Setting input data to %s' % inputData,
                          transID=transID, method=method)
         seqDict['InputData'] = inputData
@@ -878,6 +880,8 @@ class WorkflowTasks(TaskBase):
 
     result = self.submitTaskToExternal(oJob)
     if not result['OK']:
+      self._logError('Failed to submit tasks to external',
+                     transID=transID, method=method)
       return result
 
     jobIDList = result['Value']
