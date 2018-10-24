@@ -148,7 +148,7 @@ class JobManagerHandler(RequestHandler):
     jobClassAd = ClassAd(jobDesc)
     result = getParameterVectorLength(jobClassAd)
     if not result['OK']:
-      gLogger.error("Issue with getParameterVectorLength", ": %s" % result['Message'])
+      gLogger.error("Issue with getParameterVectorLength:", result['Message'])
       return result
     nJobs = result['Value']
     parametricJob = False
