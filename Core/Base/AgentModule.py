@@ -171,7 +171,7 @@ class AgentModule(object):
   def am_initialize(self, *initArgs):
     """ Common initialization for all the agents.
 
-        This is executed every time an agent (re)start.
+        This is executed every time an agent (re)starts.
         This is called by the AgentReactor, should not be overridden.
     """
     agentName = self.am_getModuleParam('fullName')
