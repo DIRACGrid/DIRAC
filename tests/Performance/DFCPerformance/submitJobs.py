@@ -42,7 +42,7 @@ for i in xrange(nbJobs):
   j.addToOutputSandbox.append('clock.txt')
   j.addToOutputSandbox.append('time.txt')
   dirac = Dirac()
-  jobID = dirac.submit(j)
+  jobID = dirac.submitJob(j)
   realId = jobID.get('JobID')
   f.write("%s\n"%realId)
 
