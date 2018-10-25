@@ -37,7 +37,7 @@ in the local file system in a separate directory. The content of this file is th
   }
 
 the DefaultsLocation for example::
-  
+
   DefaultsLocation = http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/defaults/dirac.cfg
 
 must contain a minimal configuration. The following options must be in this
@@ -49,15 +49,16 @@ In case you want to overwrite the global configuration file, you have to use --d
 
 After providing the default configuration files, DIRAC or your extension can be installed from::
 
-  1. in a directory you have to be present globalDefaults.cfg, dirac.cfg and all binaries. 
+  1. in a directory you have to be present globalDefaults.cfg, dirac.cfg and all binaries.
     For example::
-    
+
     zmathe@dzmathe zmathe]$ ls tars/
-    dirac.cfg  diracos-0.1.md5  diracos-0.1.tar.gz  DIRAC-v6r20-pre16.md5  DIRAC-v6r20-pre16.tar.gz  globalDefaults.cfg release-DIRAC-v6r20-pre16.cfg  release-DIRAC-v6r20-pre16.md5
+    dirac.cfg  diracos-0.1.md5  diracos-0.1.tar.gz  DIRAC-v6r20-pre16.md5  DIRAC-v6r20-pre16.tar.gz \
+     globalDefaults.cfg release-DIRAC-v6r20-pre16.cfg  release-DIRAC-v6r20-pre16.md5
     zmathe@dzmathe zmathe]$
 
     For example::
-  
+
     dirac-install -r v6r20-pre16 --dirac-os --dirac-os-version=0.0.1 -u /home/zmathe/tars
 
     this command will use  /home/zmathe/tars directory for the source code.
@@ -66,18 +67,20 @@ After providing the default configuration files, DIRAC or your extension can be 
   2. You can use your dedicated web server or the official DIRAC web server
 
     for example::
-  
+
     dirac-install -r v6r20-pre16 --dirac-os --dirac-os-version=0.0.1
-  
+
     It will install DIRAC v6r20-pre16
 
-  3. You have possibility to install a not-yet-released DIRAC, module or extension using -m or --tag options. The non release version can be specified.
+  3. You have possibility to install a not-yet-released DIRAC, module or extension using -m or --tag options.
+  The non release version can be specified.
 
     for example::
 
     dirac-install -l DIRAC -r v6r20-pre16 -g v14r0 -t client -m DIRAC --tag=integration
 
-    It will install DIRAC v6r20-pre16, where the DIRAC package based on integration, other other packages will be the same what is specified in release.cfg file in v6r20-pre16 tarball.
+    It will install DIRAC v6r20-pre16, where the DIRAC package based on integration, other other packages will be
+    the same what is specified in release.cfg file in v6r20-pre16 tarball.
 
 ::
   dirac-install -l DIRAC -r v6r20-pre16 -g v14r0 -t client  -m DIRAC --tag=v6r20-pre22
@@ -89,7 +92,8 @@ After providing the default configuration files, DIRAC or your extension can be 
 
 We can provide the repository url:code repository*Project*branch. for example::
 
-  dirac-install -l DIRAC -r v6r20-pre16 -g v14r0 -t client  -m https://github.com/zmathe/DIRAC.git*DIRAC*dev_main_branch, \
+  dirac-install -l DIRAC -r v6r20-pre16 -g v14r0 -t client  \
+  -m https://github.com/zmathe/DIRAC.git*DIRAC*dev_main_branch, \
   https://github.com/zmathe/WebAppDIRAC.git*WebAppDIRAC*extjs6 -e WebAppDIRAC
 
   it will install DIRAC based on dev_main_branch and WebAppDIRAC based on extjs6
@@ -120,7 +124,7 @@ We can provide the repository url:code repository*Project*branch. for example::
   }
 
   dirac-install -l LHCb -r v9r2-pre8 -t server --dirac-os --dirac-os-version=0.0.6 install.cfg
-  
+
 """
 
 from __future__ import absolute_import, division, print_function, unicode_literals
