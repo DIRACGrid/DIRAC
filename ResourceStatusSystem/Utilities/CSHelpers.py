@@ -25,7 +25,7 @@ def warmUp():
   gRefresher.refreshConfigurationIfNeeded()
 
 
-@deprecated("Use DIRAC.ConfigurationSystem.Client.Helpers.Resourcs.getSites() instead")
+@deprecated("Use DIRAC.ConfigurationSystem.Client.Helpers.Resources.getSites() instead")
 def getSites():
   """
     Gets all sites from /Resources/Sites
