@@ -509,7 +509,7 @@ class Synchronizer(object):
       Sync Queues: compares CS with DB and does the necessary modifications.
     '''
 
-    queuesCS = CSHelpers.getQueues()
+    queuesCS = CSHelpers.getQueuesRSS()
     if not queuesCS['OK']:
       return queuesCS
     queuesCS = queuesCS['Value']

@@ -11,6 +11,7 @@ import errno
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName
 from DIRAC.Core.Utilities.Decorators import deprecated
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueues
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.ResourceStatusSystem.Utilities import Utils
 from DIRAC.Resources.Storage.StorageElement import StorageElement
@@ -387,13 +388,15 @@ def getSiteElements(siteName):
     return res
   resources = res['Value'][1].get(siteName, [])
 
-  ce = getSiteComputingElements(siteName)
-  resources = resources + ce
+  res = getQueues(siteName)
+  if not res['OK']:
+    return res
+  resources = list(resources) + list(res['Value'][siteName])
 
   return S_OK(resources)
 
 
-def getQueues():
+def getQueuesRSS():
   """
     Gets all computing elements from /Resources/Sites/<>/<>/CE/Queues
   """
