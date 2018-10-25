@@ -24,6 +24,7 @@ def warmUp():
   gRefresher.refreshConfigurationIfNeeded()
 
 
+@deprecated("Use DIRAC.ConfigurationSystem.Client.Helpers.Resourcs.getSites() instead")
 def getSites():
   """
     Gets all sites from /Resources/Sites
@@ -333,9 +334,6 @@ def getComputingElements():
   ces = list(set(ces))
 
   return S_OK(ces)
-
-# #
-# Quick functions implemented for Andrew
 
 
 def getSiteComputingElements(siteName):

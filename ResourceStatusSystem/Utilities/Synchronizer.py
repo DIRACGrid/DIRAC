@@ -11,14 +11,14 @@
 __RCSID__ = '$Id$'
 
 from DIRAC import gLogger, S_OK
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites, getFTS3Servers
+from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceURL
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Utilities import CSHelpers
 from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration import RssConfiguration
 from DIRAC.ResourceStatusSystem.Utilities import Utils
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFTS3Servers
-from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceURL
-from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
 ResourceManagementClient = getattr(Utils.voimport(
     'DIRAC.ResourceStatusSystem.Client.ResourceManagementClient'), 'ResourceManagementClient')
@@ -89,7 +89,7 @@ class Synchronizer(object):
     gLogger.info('-- Synchronizing sites --')
 
     # sites in CS
-    res = CSHelpers.getSites()
+    res = getSites()
     if not res['OK']:
       return res
     sitesCS = res['Value']
