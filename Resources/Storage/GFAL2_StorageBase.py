@@ -317,7 +317,7 @@ class GFAL2_StorageBase(StorageBase):
 
     # source is OK, creating the destination folder
     dest_path = os.path.dirname(dest_url)
-    res = self.__createSingleDirectory(dest_path)
+    res = self._createSingleDirectory(dest_path)
     if not res['OK']:
       log.debug("Failed to create destination folder %s" % dest_path, res['Message'])
       return res
@@ -1054,14 +1054,14 @@ class GFAL2_StorageBase(StorageBase):
     failed = {}
     self.log.debug("createDirectory: Attempting to create %s directories." % len(urls))
     for url in urls:
-      res = self.__createSingleDirectory(url)
+      res = self._createSingleDirectory(url)
       if res['OK']:
         successful[url] = True
       else:
         failed[url] = res['Message']
     return S_OK({'Failed': failed, 'Successful': successful})
 
-  def __createSingleDirectory(self, path):
+  def _createSingleDirectory(self, path):
     """ Create directory :path: on the storage
     if no exception is caught the creation was successful. Also if the
     directory already exists we return S_OK().
@@ -1073,7 +1073,7 @@ class GFAL2_StorageBase(StorageBase):
              S_ERROR() in case of an error during creation
     """
 
-    log = self.log.getSubLogger("GFAL2_StorageBase.__createSingleDirectory")
+    log = self.log.getSubLogger("GFAL2_StorageBase._createSingleDirectory")
     try:
       log.debug("Creating %s" % path)
       status = self.ctx.mkdir_rec(path, 755)
