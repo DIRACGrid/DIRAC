@@ -176,7 +176,7 @@ class Profiler(object):
       gLogger.error('No PID of process to profile')
       return S_ERROR(EENOPID, 'No PID of process to profile')
 
-  def cpuUsage(self, withChildren=False):
+  def cpuPercentage(self, withChildren=False):
     """
     Returns the percentage of cpu used by the process
     """
@@ -187,6 +187,62 @@ class Profiler(object):
           for child in self.process.children(recursive=True):
             cpuPercentage += child.cpu_percent()
         return S_OK(cpuPercentage)
+      except psutil.ZombieProcess as e:
+        gLogger.error('Zombie process: %s' % e)
+        return S_ERROR(EEZOMBIE, 'Zombie process: %s' % e)
+      except psutil.NoSuchProcess as e:
+        gLogger.error('No such process: %s' % e)
+        return S_ERROR(errno.ESRCH, 'No such process: %s' % e)
+      except psutil.AccessDenied as e:
+        gLogger.error('Access denied: %s' % e)
+        return S_ERROR(errno.EPERM, 'Access denied: %s' % e)
+      except Exception as e:  # pylint: disable=broad-except
+        gLogger.error(e)
+        return S_ERROR(EEEXCEPTION, e)
+
+    else:
+      gLogger.error('No PID of process to profile')
+      return S_ERROR(EENOPID, 'No PID of process to profile')
+
+  def cpuUsageUser(self, withChildren=False):
+    """
+    Returns the percentage of cpu used by the process
+    """
+    if self.process:
+      try:
+        cpuUsageUser = self.process.cpu_times().user
+        if withChildren:
+          for child in self.process.children(recursive=True):
+            cpuUsageUser += child.cpu_times().user
+        return S_OK(cpuUsageUser)
+      except psutil.ZombieProcess as e:
+        gLogger.error('Zombie process: %s' % e)
+        return S_ERROR(EEZOMBIE, 'Zombie process: %s' % e)
+      except psutil.NoSuchProcess as e:
+        gLogger.error('No such process: %s' % e)
+        return S_ERROR(errno.ESRCH, 'No such process: %s' % e)
+      except psutil.AccessDenied as e:
+        gLogger.error('Access denied: %s' % e)
+        return S_ERROR(errno.EPERM, 'Access denied: %s' % e)
+      except Exception as e:  # pylint: disable=broad-except
+        gLogger.error(e)
+        return S_ERROR(EEEXCEPTION, e)
+
+    else:
+      gLogger.error('No PID of process to profile')
+      return S_ERROR(EENOPID, 'No PID of process to profile')
+
+  def cpuUsageSystem(self, withChildren=False):
+    """
+    Returns the percentage of cpu used by the process
+    """
+    if self.process:
+      try:
+        cpuUsageSystem = self.process.cpu_times().system
+        if withChildren:
+          for child in self.process.children(recursive=True):
+            cpuUsageSystem += child.cpu_times().system
+        return S_OK(cpuUsageSystem)
       except psutil.ZombieProcess as e:
         gLogger.error('Zombie process: %s' % e)
         return S_ERROR(EEZOMBIE, 'Zombie process: %s' % e)
@@ -237,8 +293,16 @@ class Profiler(object):
     if result['OK']:
       data['stats']['threads'] = result['Value']
 
-    result = self.cpuUsage(withChildren)
+    result = self.cpuPercentage(withChildren)
     if result['OK']:
-      data['stats']['cpuUsage'] = result['Value']
+      data['stats']['cpuPercentage'] = result['Value']
+
+    result = self.cpuUsageUser(withChildren)
+    if result['OK']:
+      data['stats']['cpuUsageUser'] = result['Value']
+
+    result = self.cpuUsageSystem(withChildren)
+    if result['OK']:
+      data['stats']['cpuUsageSystem'] = result['Value']
 
     return S_OK(data)
