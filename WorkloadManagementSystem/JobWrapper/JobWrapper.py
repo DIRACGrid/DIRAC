@@ -7,7 +7,7 @@
     and a Watchdog Agent that can monitor its progress.
 """
 
-__RCSID__ = "$Id: $"
+__RCSID__ = "$Id$"
 
 import os
 import stat
@@ -34,28 +34,25 @@ from DIRAC.Core.Utilities.Subprocess import Subprocess
 from DIRAC.Core.Utilities.File import getGlobbedTotalSize, getGlobbedFiles
 from DIRAC.Core.Utilities.Version import getCurrentVersion
 from DIRAC.Core.Utilities.Adler import fileAdler
-from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
-from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
-from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
-
-from DIRAC.DataManagementSystem.Client.DataManager import DataManager
-from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
-from DIRAC.DataManagementSystem.Client.FailoverTransfer import FailoverTransfer
-from DIRAC.Resources.Catalog.PoolXMLFile import getGUID
-from DIRAC.RequestManagementSystem.Client.Request import Request
-from DIRAC.RequestManagementSystem.Client.Operation import Operation
-from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
-from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
-from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
-from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
-from DIRAC.WorkloadManagementSystem.JobWrapper.WatchdogFactory import WatchdogFactory
 from DIRAC.AccountingSystem.Client.Types.Job import Job as AccountingJob
 from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemSection
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
+from DIRAC.DataManagementSystem.Client.DataManager import DataManager
+from DIRAC.DataManagementSystem.Client.FailoverTransfer import FailoverTransfer
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import resolveSEGroup
+from DIRAC.Resources.Catalog.PoolXMLFile import getGUID
+from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
+from DIRAC.RequestManagementSystem.Client.Request import Request
+from DIRAC.RequestManagementSystem.Client.Operation import Operation
+from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
+from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
+from DIRAC.WorkloadManagementSystem.JobWrapper.WatchdogFactory import WatchdogFactory
+from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
+from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
+from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
+from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
+from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
 
 
 EXECUTION_RESULT = {}
