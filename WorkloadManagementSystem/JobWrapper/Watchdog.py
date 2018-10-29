@@ -292,8 +292,8 @@ class Watchdog(object):
 
     result = self.profiler.getAllProcessData(withChildren=True)
     if result['OK']:
-      vsize = result['Value']['vSizeUsage'] * 1024.
-      rss = result['Value']['memoryUsage'] * 1024.
+      vsize = result['Value']['stats']['vSizeUsage'] * 1024.
+      rss = result['Value']['stats']['memoryUsage'] * 1024.
       heartBeatDict['Vsize'] = vsize
       heartBeatDict['RSS'] = rss
       self.parameters.setdefault('Vsize', [])
@@ -401,9 +401,9 @@ class Watchdog(object):
         return result
       cpuTime = result['Value']
       if cpuTime:
-        cpuTimeTotal = cpuTime['cpuUsageSystem'] + cpuTime['cpuUsageUser']
+        cpuTimeTotal = cpuTime['stats']['cpuUsageSystem'] + cpuTime['stats']['cpuUsageUser']
         self.log.verbose("Raw CPU time consumed (s) = %s" % (cpuTimeTotal))
-        return self.__getCPUHMS(cpuTime)
+        return self.__getCPUHMS(cpuTimeTotal)
       else:
         self.log.error("CPU time consumed found to be 0")
         return S_ERROR()
@@ -726,8 +726,8 @@ class Watchdog(object):
     if not result['OK']:
       self.log.warn('Could not get job memory usage')
 
-    self.initialValues['Vsize'] = result['Value']['VSizeUsage'] * 1024.
-    self.initialValues['RSS'] = result['Value']['memoryUsage'] * 1024.
+    self.initialValues['Vsize'] = result['Value']['stats']['vSizeUsage'] * 1024.
+    self.initialValues['RSS'] = result['Value']['stats']['memoryUsage'] * 1024.
     self.parameters['Vsize'] = []
     self.parameters['RSS'] = []
 
