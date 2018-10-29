@@ -8,6 +8,8 @@
     file systems but could feasibly be extended in the future.
 """
 
+__RCSID__ = "$Id$"
+
 import os
 import re
 import platform
@@ -15,92 +17,90 @@ import platform
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess import shellCall
 
-__RCSID__ = "$Id$"
 
-class ProcessMonitor( object ):
+class ProcessMonitor(object):
 
   #############################################################################
-  def __init__( self ):
+  def __init__(self):
     """ Standard constructor
     """
-    self.log = gLogger.getSubLogger( 'ProcessMonitor' )
+    self.log = gLogger.getSubLogger('ProcessMonitor')
     self.osType = platform.uname()
 
   #############################################################################
-  def getCPUConsumed( self, pid ):
+  def getCPUConsumed(self, pid):
     """Returns the CPU consumed for supported platforms when supplied a PID.
     """
     currentOS = self.__checkCurrentOS()
     if currentOS.lower() == 'linux':
-      return self.getCPUConsumedLinux( pid )
+      return self.getCPUConsumedLinux(pid)
     self.log.warn('Platform %s is not supported' % (currentOS))
     return S_ERROR('Unsupported platform')
 
-  def getMemoryConsumed( self, pid ):
+  def getMemoryConsumed(self, pid):
     """Returns the CPU consumed for supported platforms when supplied a PID.
     """
     currentOS = self.__checkCurrentOS()
     if currentOS.lower() == 'linux':
-      return self.getMemoryConsumedLinux( pid )
+      return self.getMemoryConsumedLinux(pid)
     self.log.warn('Platform %s is not supported' % (currentOS))
     return S_ERROR('Unsupported platform')
 
-  def getResourceConsumedLinux( self, pid ):
+  def getResourceConsumedLinux(self, pid):
     """Returns the CPU consumed given a PID assuming a proc file system exists.
     """
-    pid = str( pid )
-    masterProcPath = '/proc/%s/stat' % ( pid )
-    if not os.path.exists( masterProcPath ):
-      return S_ERROR( 'Process %s does not exist' % ( pid ) )
+    pid = str(pid)
+    masterProcPath = '/proc/%s/stat' % (pid)
+    if not os.path.exists(masterProcPath):
+      return S_ERROR('Process %s does not exist' % (pid))
 
-    #Get the current process list
+    # Get the current process list
     pidListResult = self.__getProcListLinux()
     if not pidListResult['OK']:
       return pidListResult
 
     pidList = pidListResult['Value']
-    return self.__getChildResourceConsumedLinux( pid, pidList )
+    return self.__getChildResourceConsumedLinux(pid, pidList)
 
   #############################################################################
-  def getCPUConsumedLinux( self, pid ):
+  def getCPUConsumedLinux(self, pid):
     """Returns the CPU consumed given a PID assuming a proc file system exists.
     """
-    result = self.getResourceConsumedLinux( pid )
+    result = self.getResourceConsumedLinux(pid)
     if not result['OK']:
       return result
     currentCPU = result['Value']['CPU']
 
-    self.log.verbose( 'Final CPU estimate is %s' % currentCPU )
-    return S_OK( currentCPU )
+    self.log.verbose('Final CPU estimate is %s' % currentCPU)
+    return S_OK(currentCPU)
 
-  def getMemoryConsumedLinux( self, pid ):
+  def getMemoryConsumedLinux(self, pid):
     """ Get the current memory consumption
     """
-    result = self.getResourceConsumedLinux( pid )
+    result = self.getResourceConsumedLinux(pid)
     if not result['OK']:
       return result
     vsize = result['Value']['Vsize']
     rss = result['Value']['RSS']
 
-    self.log.verbose( 'Current memory estimate is Vsize: %s, RSS: %s' % ( vsize, rss ) )
-    return S_OK( {'Vsize': vsize, 'RSS': rss } )
-
+    self.log.verbose('Current memory estimate is Vsize: %s, RSS: %s' % (vsize, rss))
+    return S_OK({'Vsize': vsize, 'RSS': rss})
 
   #############################################################################
-  def __getProcListLinux( self ):
+  def __getProcListLinux(self):
     """Gets list of process IDs from /proc/*.
     """
-    result = shellCall( 10, 'ls -d /proc/[0-9]*' )
+    result = shellCall(10, 'ls -d /proc/[0-9]*')
 
     if not result['OK']:
-      if not 'Value' in result:
+      if 'Value' not in result:
         return result
-    procList = result['Value'][1].replace( '/proc/', '' ).split( '\n' )
+    procList = result['Value'][1].replace('/proc/', '').split('\n')
 
-    return S_OK( procList )
+    return S_OK(procList)
 
   #############################################################################
-  def __getChildResourceConsumedLinux( self, pid, pidList, infoDict = None ):
+  def __getChildResourceConsumedLinux(self, pid, pidList, infoDict=None):
     """Adds contributions to CPU total from child processes recursively.
     """
     childCPU = 0
@@ -110,11 +110,11 @@ class ProcessMonitor( object ):
     if not infoDict:
       infoDict = {}
       for pidCheck in pidList:
-        info = self.__getProcInfoLinux( pidCheck )
+        info = self.__getProcInfoLinux(pidCheck)
         if info['OK']:
           infoDict[pidCheck] = info['Value']
 
-    procGroup = self.__getProcGroupLinux( pid )
+    procGroup = self.__getProcGroupLinux(pid)
     if not procGroup['OK']:
       return procGroup
 
@@ -124,58 +124,56 @@ class ProcessMonitor( object ):
       if pidCheck in infoDict and info[3] == pid:
         contribution = float(info[13]) / 100 + float(info[14]) / 100 + float(info[15]) / 100 + float(info[16]) / 100
         childCPU += contribution
-        vsize += float( info[22] )
-        rss += float( info[23] ) * pageSize
+        vsize += float(info[22])
+        rss += float(info[23]) * pageSize
         self.log.debug(
             'Added %s to CPU total (now %s) from child PID %s %s' %
             (contribution, childCPU, info[0], info[1]))
         del infoDict[pidCheck]
-        result = self.__getChildResourceConsumedLinux( pidCheck, pidList, infoDict )
+        result = self.__getChildResourceConsumedLinux(pidCheck, pidList, infoDict)
         if result['OK']:
           childCPU += result['Value']['CPU']  # pylint: disable=invalid-sequence-index
           vsize += result['Value']['Vsize']  # pylint: disable=invalid-sequence-index
           rss += result['Value']['RSS']  # pylint: disable=invalid-sequence-index
 
-
-    #Next add any contributions from orphan processes in same process group
+    # Next add any contributions from orphan processes in same process group
     for pidCheck, info in infoDict.items():
       if pidCheck in infoDict and info[3] == 1 and info[4] == procGroup:
         contribution = float(info[13]) / 100 + float(info[14]) / 100 + float(info[15]) / 100 + float(info[16]) / 100
         childCPU += contribution
-        vsize += float( info[22] )
-        rss += float( info[23] ) * pageSize
+        vsize += float(info[22])
+        rss += float(info[23]) * pageSize
         self.log.debug(
             'Added %s to CPU total (now %s) from orphan PID %s %s' %
             (contribution, childCPU, info[0], info[1]))
         del infoDict[pidCheck]
 
-    #Finally add the parent itself
+    # Finally add the parent itself
     if pid in infoDict:
       info = infoDict[pid]
       contribution = float(info[13]) / 100 + float(info[14]) / 100 + float(info[15]) / 100 + float(info[16]) / 100
       childCPU += contribution
-      vsize += float( info[22] )
-      rss += float( info[23] ) * pageSize
-      self.log.debug( 'Added %s to CPU total (now %s) from PID %s %s' % ( contribution, childCPU, info[0], info[1] ) )
+      vsize += float(info[22])
+      rss += float(info[23]) * pageSize
+      self.log.debug('Added %s to CPU total (now %s) from PID %s %s' % (contribution, childCPU, info[0], info[1]))
       del infoDict[pid]
 
       # Some debug printout if 0 CPU is determined
       if childCPU == 0:
-        self.log.error( 'Consumed CPU is found to be 0' )
-        self.log.info( 'Contributing processes:' )
+        self.log.error('Consumed CPU is found to be 0')
+        self.log.info('Contributing processes:')
         for pidCheck in pidList:
           if pidCheck not in infoDict:
-            info = self.__getProcInfoLinux( pidCheck )
+            info = self.__getProcInfoLinux(pidCheck)
             if info['OK']:
-              self.log.info( '  PID:', info['Value'] )
+              self.log.info('  PID:', info['Value'])
 
-    return S_OK( { "CPU": childCPU,
-                   "Vsize": vsize,
-                   "RSS": rss } )
-
+    return S_OK({"CPU": childCPU,
+                 "Vsize": vsize,
+                 "RSS": rss})
 
   #############################################################################
-  def __getProcInfoLinux( self, pid ):
+  def __getProcInfoLinux(self, pid):
     """Attempts to read /proc/PID/stat and returns list of items if ok.
        /proc/[pid]/stat
               Status information about the process.  This is used by ps(1).
@@ -387,39 +385,37 @@ class ProcessMonitor( object ):
                           measured in clock ticks (divide by
                           sysconf(_SC_CLK_TCK)).
     """
-    procPath = '/proc/%s/stat' % ( pid )
+    procPath = '/proc/%s/stat' % (pid)
     try:
-      with open( procPath, 'r' ) as fopen:
+      with open(procPath, 'r') as fopen:
         procStat = fopen.readline()
     except BaseException:
-      return S_ERROR( 'Not able to check %s' % pid )
-    return S_OK( procStat.split( ' ' ) )
+      return S_ERROR('Not able to check %s' % pid)
+    return S_OK(procStat.split(' '))
 
   #############################################################################
-  def __getProcGroupLinux( self, pid ):
+  def __getProcGroupLinux(self, pid):
     """Returns UID for given PID.
     """
-    result = shellCall( 10, 'ps --no-headers -o pgrp -p %s' % ( pid ) )
+    result = shellCall(10, 'ps --no-headers -o pgrp -p %s' % (pid))
     if not result['OK']:
-      if  not 'Value' in result:
+      if 'Value' not in result:
         return result
 
-    return S_OK( result['Value'][1] )
+    return S_OK(result['Value'][1])
 
   #############################################################################
-  def __checkCurrentOS( self ):
+  def __checkCurrentOS(self):
     """Checks it is possible to determine CPU consumed with this utility
        for the current OS.
     """
     localOS = None
     self.osType = platform.uname()
-    if re.search( 'Darwin', self.osType[0] ):
+    if re.search('Darwin', self.osType[0]):
       localOS = 'Mac'
-    elif re.search( 'Windows', self.osType[0] ):
+    elif re.search('Windows', self.osType[0]):
       localOS = 'Windows'
     else:
       localOS = 'Linux'
-      self.log.debug( 'Will determine CPU consumed for %s flavour OS' % ( localOS ) )
+      self.log.debug('Will determine CPU consumed for %s flavour OS' % (localOS))
     return localOS
-
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
