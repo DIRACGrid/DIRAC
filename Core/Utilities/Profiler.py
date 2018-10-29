@@ -15,9 +15,9 @@ from DIRAC.Core.Utilities.DErrno import EEZOMBIE, EENOPID, EEEXCEPTION
 def checkInvocation(func):
   """ Decorator for invoking psutil methods
   """
-  def wrapper(x):
+  def wrapper(*args, **kwargs):
     try:
-      return func(x)
+      return func(*args, **kwargs)
     except psutil.ZombieProcess as e:
       gLogger.error('Zombie process: %s' % e)
       return S_ERROR(EEZOMBIE, 'Zombie process: %s' % e)
@@ -78,6 +78,7 @@ class Profiler(object):
     result = (datetime.datetime.now() - start).total_seconds()
     return S_OK(result)
 
+  @checkInvocation
   def memoryUsage(self, withChildren=False):
     """
     Returns the memory usage of the process in MB
@@ -90,6 +91,7 @@ class Profiler(object):
     # converted to MB
     return S_OK(rss / float(2 ** 20))
 
+  @checkInvocation
   def vSizeUsage(self, withChildren=False):
     """
     Returns the memory usage of the process in MB
@@ -102,6 +104,7 @@ class Profiler(object):
     # converted to MB
     return S_OK(vms / float(2 ** 20))
 
+  @checkInvocation
   def numThreads(self, withChildren=False):
     """
     Returns the number of threads the process is using
@@ -112,6 +115,7 @@ class Profiler(object):
         nThreads += child.num_threads()
     return S_OK(nThreads)
 
+  @checkInvocation
   def cpuPercentage(self, withChildren=False):
     """
     Returns the percentage of cpu used by the process
@@ -122,6 +126,7 @@ class Profiler(object):
         cpuPercentage += child.cpu_percent()
     return S_OK(cpuPercentage)
 
+  @checkInvocation
   def cpuUsageUser(self, withChildren=False):
     """
     Returns the percentage of cpu used by the process
@@ -132,6 +137,7 @@ class Profiler(object):
         cpuUsageUser += child.cpu_times().user
     return S_OK(cpuUsageUser)
 
+  @checkInvocation
   def cpuUsageSystem(self, withChildren=False):
     """
     Returns the percentage of cpu used by the process
