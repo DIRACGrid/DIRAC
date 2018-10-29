@@ -454,7 +454,7 @@ class StorageBase(object):
 
     try:
 
-      # download the file localy
+      # download the file locally
       tmpDirName = tempfile.mkdtemp()
       res = returnSingleResult(self.getFile(occupancyURL, localPath=tmpDirName))
       if not res['OK']:

@@ -1,9 +1,4 @@
-""" :mod: EchoStorage
-    =================
-
-    .. module: python
-    :synopsis: Echo module based on the GFAL2_StorageBase class.
-"""
+"""Echo module based on the GFAL2_StorageBase class."""
 
 
 import os
@@ -20,8 +15,9 @@ class EchoStorage(GFAL2_StorageBase):
 
     This plugin will work with both gsiftp and root protocol.
     According to the RAL admins, Echo best use is done:
-      * using gsiftp for all WAN transfers, and LAN write.
-      * using root from LAN read.
+
+    * using gsiftp for all WAN transfers, and LAN write.
+    * using root from LAN read.
 
     Note that there are still a few issues to be sorted out with xroot
 
@@ -75,7 +71,7 @@ class EchoStorage(GFAL2_StorageBase):
 
     self.pluginName = 'Echo'
 
-    # Because Echo considers '<host>/lhcb:prod' differently from '<host>//lhcb:prod' as it normaly should be
+    # Because Echo considers '<host>/lhcb:prod' differently from '<host>//lhcb:prod' as it normally should be
     # we need to disable the automatic normalization done by gfal2
     self.ctx.set_opt_boolean("XROOTD PLUGIN", "NORMALIZE_PATH", False)
 
@@ -90,24 +86,52 @@ class EchoStorage(GFAL2_StorageBase):
     self._defaultExtendedAttributes = None
 
   def putDirectory(self, path):
+    """Not available on Echo
+
+      :returns: S_ERROR
+    """
     return S_ERROR("Putting directory does not exist in Echo")
 
   def listDirectory(self, path):
+    """Not available on Echo
+
+      :returns: S_ERROR
+    """
     return S_ERROR("Listing directory does not exist in Echo")
 
   def isDirectory(self, path):
+    """Not available on Echo
+
+      :returns: S_ERROR
+    """
     return S_ERROR("Stating directory does not exist in Echo")
 
   def getDirectory(self, path, localPath=False):
+    """Not available on Echo
+
+      :returns: S_ERROR
+    """
     return S_ERROR("Getting directory does not exist in Echo")
 
   def removeDirectory(self, path, recursive=False):
+    """Not available on Echo
+
+      :returns: S_ERROR
+    """
     return S_ERROR("Removing directory does not exist in Echo")
 
   def getDirectorySize(self, path):
+    """Not available on Echo
+
+      :returns: S_ERROR
+    """
     return S_ERROR("Getting directory size does not exist in Echo")
 
   def getDirectoryMetadata(self, path):
+    """Not available on Echo
+
+      :returns: S_ERROR
+    """
     return S_ERROR("Getting directory metadata does not exist in Echo")
 
   def _createSingleDirectory(self, path):
