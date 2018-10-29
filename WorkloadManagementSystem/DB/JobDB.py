@@ -1250,7 +1250,7 @@ class JobDB( DB ):
     priority = classAdJob.getAttributeInt('Priority')
     if priority is None:
       priority = 0
-    platform = classAdJob.getAttributeString('Platform')
+    platformList = classAdJob.getListFromExpression('Platform')
     cpuTime = classAdJob.getAttributeInt('CPUTime')
     if cpuTime is None:
       # Just in case check for MaxCPUTime for backward compatibility
@@ -1264,8 +1264,8 @@ class JobDB( DB ):
     classAdReq.insertAttributeInt('UserPriority', priority)
     classAdReq.insertAttributeInt('CPUTime', cpuTime)
 
-    if platform and platform.lower() != 'any':
-      result = self.getDIRACPlatform(platform)
+    if platformList:
+      result = self.getDIRACPlatform(platformList)
       if result['OK'] and result['Value']:
         classAdReq.insertAttributeVectorString('Platforms', result['Value'])
       else:
