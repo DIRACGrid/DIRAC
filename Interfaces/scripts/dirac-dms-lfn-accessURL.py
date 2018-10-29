@@ -11,14 +11,14 @@ __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
 
-Script.setUsageMessage('\n'.join([ __doc__.split('\n')[1],
-                                   'Usage:',
-                                   '  %s [option|cfgfile] ... LFN SE [PROTO]' % Script.scriptName,
-                                   'Arguments:',
-                                   '  LFN:      Logical File Name or file containing LFNs',
-                                   '  SE:       Valid DIRAC SE',
-                                   '  PROTO:    Optional protocol for accessURL']))
-Script.parseCommandLine(ignoreErrors = True)
+Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
+                                  'Usage:',
+                                  '  %s [option|cfgfile] ... LFN SE [PROTO]' % Script.scriptName,
+                                  'Arguments:',
+                                  '  LFN:      Logical File Name or file containing LFNs',
+                                  '  SE:       Valid DIRAC SE',
+                                  '  PROTO:    Optional protocol for accessURL']))
+Script.parseCommandLine(ignoreErrors=True)
 args = Script.getPositionalArgs()
 
 # pylint: disable=wrong-import-position
