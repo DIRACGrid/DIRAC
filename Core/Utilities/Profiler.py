@@ -12,6 +12,28 @@ from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.DErrno import EEZOMBIE, EENOPID, EEEXCEPTION
 
 
+def checkInvocation(func):
+  """ Decorator for invoking psutil methods
+  """
+  def wrapper(x):
+    try:
+      return func(x)
+    except psutil.ZombieProcess as e:
+      gLogger.error('Zombie process: %s' % e)
+      return S_ERROR(EEZOMBIE, 'Zombie process: %s' % e)
+    except psutil.NoSuchProcess as e:
+      gLogger.error('No such process: %s' % e)
+      return S_ERROR(errno.ESRCH, 'No such process: %s' % e)
+    except psutil.AccessDenied as e:
+      gLogger.error('Access denied: %s' % e)
+      return S_ERROR(errno.EPERM, 'Access denied: %s' % e)
+    except Exception as e:  # pylint: disable=broad-except
+      gLogger.error(e)
+      return S_ERROR(EEEXCEPTION, e)
+
+  return wrapper
+
+
 class Profiler(object):
   """
   Class for profiling both general stats about a machine and individual processes.
@@ -40,225 +62,85 @@ class Profiler(object):
       gLogger.error('No PID of process to profile')
       return S_ERROR(EENOPID, 'No PID of process to profile')
 
+  @checkInvocation
   def status(self):
+    """ Returns the process status
     """
-    Returns the process status
-    """
-    if self.process:
-      try:
-        result = self.process.status()
-      except psutil.ZombieProcess as e:
-        gLogger.error('Zombie process: %s' % e)
-        return S_ERROR(EEZOMBIE, 'Zombie process: %s' % e)
-      except psutil.NoSuchProcess as e:
-        gLogger.error('No such process: %s' % e)
-        return S_ERROR(errno.ESRCH, 'No such process: %s' % e)
-      except psutil.AccessDenied as e:
-        gLogger.error('Access denied: %s' % e)
-        return S_ERROR(errno.EPERM, 'Access denied: %s' % e)
-      except Exception as e:  # pylint: disable=broad-except
-        gLogger.error(e)
-        return S_ERROR(EEEXCEPTION, e)
+    result = self.process.status()
+    return S_OK(result)
 
-      return S_OK(result)
-    else:
-      gLogger.error('No PID of process to profile')
-      return S_ERROR(EENOPID, 'No PID of process to profile')
-
+  @checkInvocation
   def runningTime(self):
     """
     Returns the uptime of the process
     """
-    if self.process:
-      try:
-        start = datetime.datetime.fromtimestamp(self.process.create_time())
-        result = (datetime.datetime.now() - start).total_seconds()
-      except psutil.ZombieProcess as e:
-        gLogger.error('Zombie process: %s' % e)
-        return S_ERROR(EEZOMBIE, 'Zombie process: %s' % e)
-      except psutil.NoSuchProcess as e:
-        gLogger.error('No such process: %s' % e)
-        return S_ERROR(errno.ESRCH, 'No such process: %s' % e)
-      except psutil.AccessDenied as e:
-        gLogger.error('Access denied: %s' % e)
-        return S_ERROR(errno.EPERM, 'Access denied: %s' % e)
-      except Exception as e:  # pylint: disable=broad-except
-        gLogger.error(e)
-        return S_ERROR(EEEXCEPTION, e)
-
-      return S_OK(result)
-    else:
-      gLogger.error('No PID of process to profile')
-      return S_ERROR(EENOPID, 'No PID of process to profile')
+    start = datetime.datetime.fromtimestamp(self.process.create_time())
+    result = (datetime.datetime.now() - start).total_seconds()
+    return S_OK(result)
 
   def memoryUsage(self, withChildren=False):
     """
     Returns the memory usage of the process in MB
     """
-    if self.process:
-      try:
-        # Information is returned in bytes
-        rss = self.process.memory_info().rss
-        if withChildren:
-          for child in self.process.children(recursive=True):
-            rss += child.memory_info().rss
-        # converted to MB
-        return S_OK(rss / float(2 ** 20))
-      except psutil.ZombieProcess as e:
-        gLogger.error('Zombie process: %s' % e)
-        return S_ERROR(EEZOMBIE, 'Zombie process: %s' % e)
-      except psutil.NoSuchProcess as e:
-        gLogger.error('No such process: %s' % e)
-        return S_ERROR(errno.ESRCH, 'No such process: %s' % e)
-      except psutil.AccessDenied as e:
-        gLogger.error('Access denied: %s' % e)
-        return S_ERROR(errno.EPERM, 'Access denied: %s' % e)
-      except Exception as e:  # pylint: disable=broad-except
-        gLogger.error(e)
-        return S_ERROR(EEEXCEPTION, e)
-    else:
-      gLogger.error('No PID of process to profile')
-      return S_ERROR(EENOPID, 'No PID of process to profile')
+    # Information is returned in bytes
+    rss = self.process.memory_info().rss
+    if withChildren:
+      for child in self.process.children(recursive=True):
+        rss += child.memory_info().rss
+    # converted to MB
+    return S_OK(rss / float(2 ** 20))
 
   def vSizeUsage(self, withChildren=False):
     """
     Returns the memory usage of the process in MB
     """
-    if self.process:
-      try:
-        # Information is returned in bytes
-        rss = self.process.memory_info().vms
-        if withChildren:
-          for child in self.process.children(recursive=True):
-            rss += child.memory_info().vms
-        # converted to MB
-        return S_OK(rss / float(2 ** 20))
-      except psutil.ZombieProcess as e:
-        gLogger.error('Zombie process: %s' % e)
-        return S_ERROR(EEZOMBIE, 'Zombie process: %s' % e)
-      except psutil.NoSuchProcess as e:
-        gLogger.error('No such process: %s' % e)
-        return S_ERROR(errno.ESRCH, 'No such process: %s' % e)
-      except psutil.AccessDenied as e:
-        gLogger.error('Access denied: %s' % e)
-        return S_ERROR(errno.EPERM, 'Access denied: %s' % e)
-      except Exception as e:  # pylint: disable=broad-except
-        gLogger.error(e)
-        return S_ERROR(EEEXCEPTION, e)
-    else:
-      gLogger.error('No PID of process to profile')
-      return S_ERROR(EENOPID, 'No PID of process to profile')
+    # Information is returned in bytes
+    vms = self.process.memory_info().vms
+    if withChildren:
+      for child in self.process.children(recursive=True):
+        vms += child.memory_info().vms
+    # converted to MB
+    return S_OK(vms / float(2 ** 20))
 
   def numThreads(self, withChildren=False):
     """
     Returns the number of threads the process is using
     """
-    if self.process:
-      try:
-        nThreads = self.process.num_threads()
-        if withChildren:
-          for child in self.process.children(recursive=True):
-            nThreads += child.num_threads()
-        return S_OK(nThreads)
-      except psutil.ZombieProcess as e:
-        gLogger.error('Zombie process: %s' % e)
-        return S_ERROR(EEZOMBIE, 'Zombie process: %s' % e)
-      except psutil.NoSuchProcess as e:
-        gLogger.error('No such process: %s' % e)
-        return S_ERROR(errno.ESRCH, 'No such process: %s' % e)
-      except psutil.AccessDenied as e:
-        gLogger.error('Access denied: %s' % e)
-        return S_ERROR(errno.EPERM, 'Access denied: %s' % e)
-      except Exception as e:  # pylint: disable=broad-except
-        gLogger.error(e)
-        return S_ERROR(EEEXCEPTION, e)
-    else:
-      gLogger.error('No PID of process to profile')
-      return S_ERROR(EENOPID, 'No PID of process to profile')
+    nThreads = self.process.num_threads()
+    if withChildren:
+      for child in self.process.children(recursive=True):
+        nThreads += child.num_threads()
+    return S_OK(nThreads)
 
   def cpuPercentage(self, withChildren=False):
     """
     Returns the percentage of cpu used by the process
     """
-    if self.process:
-      try:
-        cpuPercentage = self.process.cpu_percent()
-        if withChildren:
-          for child in self.process.children(recursive=True):
-            cpuPercentage += child.cpu_percent()
-        return S_OK(cpuPercentage)
-      except psutil.ZombieProcess as e:
-        gLogger.error('Zombie process: %s' % e)
-        return S_ERROR(EEZOMBIE, 'Zombie process: %s' % e)
-      except psutil.NoSuchProcess as e:
-        gLogger.error('No such process: %s' % e)
-        return S_ERROR(errno.ESRCH, 'No such process: %s' % e)
-      except psutil.AccessDenied as e:
-        gLogger.error('Access denied: %s' % e)
-        return S_ERROR(errno.EPERM, 'Access denied: %s' % e)
-      except Exception as e:  # pylint: disable=broad-except
-        gLogger.error(e)
-        return S_ERROR(EEEXCEPTION, e)
-
-    else:
-      gLogger.error('No PID of process to profile')
-      return S_ERROR(EENOPID, 'No PID of process to profile')
+    cpuPercentage = self.process.cpu_percent()
+    if withChildren:
+      for child in self.process.children(recursive=True):
+        cpuPercentage += child.cpu_percent()
+    return S_OK(cpuPercentage)
 
   def cpuUsageUser(self, withChildren=False):
     """
     Returns the percentage of cpu used by the process
     """
-    if self.process:
-      try:
-        cpuUsageUser = self.process.cpu_times().user
-        if withChildren:
-          for child in self.process.children(recursive=True):
-            cpuUsageUser += child.cpu_times().user
-        return S_OK(cpuUsageUser)
-      except psutil.ZombieProcess as e:
-        gLogger.error('Zombie process: %s' % e)
-        return S_ERROR(EEZOMBIE, 'Zombie process: %s' % e)
-      except psutil.NoSuchProcess as e:
-        gLogger.error('No such process: %s' % e)
-        return S_ERROR(errno.ESRCH, 'No such process: %s' % e)
-      except psutil.AccessDenied as e:
-        gLogger.error('Access denied: %s' % e)
-        return S_ERROR(errno.EPERM, 'Access denied: %s' % e)
-      except Exception as e:  # pylint: disable=broad-except
-        gLogger.error(e)
-        return S_ERROR(EEEXCEPTION, e)
-
-    else:
-      gLogger.error('No PID of process to profile')
-      return S_ERROR(EENOPID, 'No PID of process to profile')
+    cpuUsageUser = self.process.cpu_times().user
+    if withChildren:
+      for child in self.process.children(recursive=True):
+        cpuUsageUser += child.cpu_times().user
+    return S_OK(cpuUsageUser)
 
   def cpuUsageSystem(self, withChildren=False):
     """
     Returns the percentage of cpu used by the process
     """
-    if self.process:
-      try:
-        cpuUsageSystem = self.process.cpu_times().system
-        if withChildren:
-          for child in self.process.children(recursive=True):
-            cpuUsageSystem += child.cpu_times().system
-        return S_OK(cpuUsageSystem)
-      except psutil.ZombieProcess as e:
-        gLogger.error('Zombie process: %s' % e)
-        return S_ERROR(EEZOMBIE, 'Zombie process: %s' % e)
-      except psutil.NoSuchProcess as e:
-        gLogger.error('No such process: %s' % e)
-        return S_ERROR(errno.ESRCH, 'No such process: %s' % e)
-      except psutil.AccessDenied as e:
-        gLogger.error('Access denied: %s' % e)
-        return S_ERROR(errno.EPERM, 'Access denied: %s' % e)
-      except Exception as e:  # pylint: disable=broad-except
-        gLogger.error(e)
-        return S_ERROR(EEEXCEPTION, e)
-
-    else:
-      gLogger.error('No PID of process to profile')
-      return S_ERROR(EENOPID, 'No PID of process to profile')
+    cpuUsageSystem = self.process.cpu_times().system
+    if withChildren:
+      for child in self.process.children(recursive=True):
+        cpuUsageSystem += child.cpu_times().system
+    return S_OK(cpuUsageSystem)
 
   def getAllProcessData(self, withChildren=False):
     """
