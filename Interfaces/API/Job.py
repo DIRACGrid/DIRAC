@@ -41,7 +41,6 @@ from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.Core.Utilities.List import uniqueElements
 from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE, getSites
-from DIRAC.Core.Utilities.DErrno import EWMSJDL
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers import Resources
@@ -747,6 +746,7 @@ class Job(API):
     return S_OK()
 
   #############################################################################
+  @deprecated('Unused')
   def _setSoftwareTags(self, tags):
     """Developer function.
 
