@@ -410,12 +410,12 @@ class CFG( object ):
 
     #Return value if existing, defaultValue if not
     if optionValue == defaultValue:
-      if defaultValue == None or type( defaultValue ) == types.TypeType:
+      if defaultValue is None or type( defaultValue ) == types.TypeType:
         return defaultValue
       return optionValue
 
     #Value has been returned from the configuration
-    if defaultValue == None:
+    if defaultValue is None:
       return optionValue
 
     #Casting to defaultValue's type

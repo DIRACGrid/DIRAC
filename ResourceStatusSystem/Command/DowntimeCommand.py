@@ -143,8 +143,8 @@ class DowntimeCommand(Command):
       if 'SEType' in seOptions:
         # Type should follow the convention TXDY
         seType = seOptions['SEType']
-        diskSE = re.search('D[1-9]', seType) != None
-        tapeSE = re.search('T[1-9]', seType) != None
+        diskSE = re.search('D[1-9]', seType) is not None
+        tapeSE = re.search('T[1-9]', seType) is not None
         if tapeSE:
           gOCDBServiceType = "srm.nearline"
         elif diskSE:

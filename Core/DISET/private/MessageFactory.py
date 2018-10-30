@@ -20,7 +20,7 @@ class MessageFactory:
     if msgName not in self.__definitions[ serviceName ]:
       return S_ERROR( "Could not find message definition %s for service %s" % ( msgName, serviceName ) )
     msgObj = Message( msgName, self.__definitions[ serviceName ][ msgName ] )
-    if attrs != None:
+    if attrs is not None:
       result = msgObj.loadAttrs( attrs )
       if not result[ 'OK' ]:
         return result
@@ -105,7 +105,7 @@ class Message( object ):
     self.__waitForAck = Message.DEFAULTWAITFORACK
     for fName in msgDefDict:
       fType = msgDefDict[ fName ]
-      if fType != None and type( fType ) not in ( types.ListType, types.TupleType ):
+      if fType is not None and type( fType ) not in ( types.ListType, types.TupleType ):
         self.__fDef[ fName ] = ( fType, )
       else:
         self.__fDef[ fName ] = fType
@@ -126,7 +126,7 @@ class Message( object ):
     for k in self.__order:
       if k not in self.__values:
         return False
-      if self.__fDef[k] != None and not isinstance( self.__values[k], self.__fDef[k] ):
+      if self.__fDef[k] is not None and not isinstance( self.__values[k], self.__fDef[k] ):
         return False
     return True
 
@@ -207,7 +207,7 @@ class Message( object ):
       return
     if k not in self.__order:
       raise AttributeError( "%s is not valid for message %s" % ( k, self.__name ) )
-    if self.__fDef[ k ] != None and type( v ) not in self.__fDef[ k ]:
+    if self.__fDef[ k ] is not None and type( v ) not in self.__fDef[ k ]:
       raise AttributeError( "%s is to be of type %s for attr %s, and is of type %s" % ( v,
                                                                                         self.__fDef[k],
                                                                                         k,

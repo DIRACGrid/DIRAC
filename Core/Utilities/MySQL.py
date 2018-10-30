@@ -947,7 +947,7 @@ class MySQL( object ):
       return retDict
 
     condDict = {}
-    if inFields != None:
+    if inFields is not None:
       try:
         condDict.update( [ ( inFields[k], inValues[k] ) for k in range( len( inFields ) )] )
       except Exception as x:
@@ -1124,7 +1124,7 @@ class MySQL( object ):
     condition = ''
     conjunction = "WHERE"
 
-    if condDict != None:
+    if condDict is not None:
       for aName, attrValue in condDict.iteritems():
         if isinstance( aName, basestring ):
           attrName = _quotedList( [aName] )

@@ -379,7 +379,7 @@ def pretty_float( num ):
 
 def statistics( results, span = None, is_timestamp = False ):
   results = dict( results )
-  if span != None:
+  if span is not None:
     parsed_data = {}
     min_key = min( results.keys() )
     max_key = max( results.keys() )

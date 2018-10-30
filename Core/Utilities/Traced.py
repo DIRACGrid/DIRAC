@@ -49,7 +49,7 @@ class Traced( type ):
       """
       if not self.__update__ or reset:
         self.__update__ = list()
-      if element != None and element not in self.__update__:
+      if element is not None and element not in self.__update__:
         self.__update__.append( element )
       return self.__update__
 

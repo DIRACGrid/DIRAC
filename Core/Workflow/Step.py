@@ -43,7 +43,7 @@ class StepDefinition( AttributeCollection ):
       # copy instances and definitions
       self.parameters = ParameterCollection( obj.parameters )
       self.module_instances = InstancesPool( self, obj.module_instances )
-      if obj.module_definitions != None:
+      if obj.module_definitions is not None:
         self.module_definitions = DefinitionsPool( obj.module_definitions )
     else:
       raise TypeError( 'Can not create object type ' + str( type( self ) ) + ' from the ' + str( type( obj ) ) )
@@ -52,7 +52,7 @@ class StepDefinition( AttributeCollection ):
 
   def __str__( self ):
     ret = str( type( self ) ) + ':\n' + AttributeCollection.__str__( self ) + self.parameters.__str__()
-    if self.module_definitions != None:
+    if self.module_definitions is not None:
       ret = ret + str( self.module_definitions )
     else:
       ret = ret + 'Module definitions shared in Workflow\n'
@@ -63,7 +63,7 @@ class StepDefinition( AttributeCollection ):
     ret = '<StepDefinition>\n'
     ret = ret + AttributeCollection.toXML( self )
     ret = ret + self.parameters.toXML()
-    if self.module_definitions != None:
+    if self.module_definitions is not None:
       ret = ret + self.module_definitions.toXML()
     ret = ret + self.module_instances.toXML()
     ret = ret + '</StepDefinition>\n'
@@ -150,7 +150,7 @@ class StepInstance( AttributeCollection ):
       self.setType( "" )
       self.setDescrShort( "" )
       self.parameters = ParameterCollection( obj )
-    elif obj != None:
+    elif obj is not None:
       raise TypeError( 'Can not create object type ' + str( type( self ) ) + ' from the ' + str( type( obj ) ) )
 
     self.step_commons = {}

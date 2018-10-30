@@ -41,7 +41,7 @@ Script.registerSwitch( 'P:', 'Property:', 'Property to be added to the Host (All
 
 Script.parseCommandLine( ignoreErrors = True )
 
-if hostName == None or hostDN == None:
+if hostName is None or hostDN is None:
   Script.showHelp()
   DIRAC.exit( -1 )
 

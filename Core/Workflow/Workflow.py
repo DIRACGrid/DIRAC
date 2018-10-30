@@ -20,7 +20,7 @@ class Workflow( AttributeCollection ):
         also obj can be a Workflow or ParameterCollections
     """
     AttributeCollection.__init__( self )
-    if ( obj == None ) or isinstance( obj, ParameterCollection ):
+    if ( obj is None ) or isinstance( obj, ParameterCollection ):
       self.setName( 'notgiven' )
       self.setType( '' )
       self.setDescrShort( '' )
@@ -44,7 +44,7 @@ class Workflow( AttributeCollection ):
         fromXMLString( obj, self )
       else:
         fromXMLFile( obj, self )
-    elif obj != None:
+    elif obj is not None:
       raise TypeError( 'Can not create object type ' + str( type( self ) ) + ' from the ' + str( type( obj ) ) )
 
     if name :

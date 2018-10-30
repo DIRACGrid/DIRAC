@@ -543,7 +543,7 @@ class PlotData:
     for key, data in self.data.items():
       new_key = self.parseKey( key )
       data,error = self.parseDatum( data )
-      #if data != None:
+      #if data is not None:
       new_parsed_data[ new_key ] = data
       new_passed_errors[ new_key ] = error
     self.parsed_data = new_parsed_data

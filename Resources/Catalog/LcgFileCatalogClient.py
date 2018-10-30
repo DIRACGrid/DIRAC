@@ -139,7 +139,7 @@ def getDNUserID( dn ):
     if userMap.username == dn:
       userid = userMap.userid
       break
-  return returnCode( userid == None, userid, errMsg = "DN does not exist" if not error else '' )
+  return returnCode( userid is None, userid, errMsg = "DN does not exist" if not error else '' )
 
 def addUserDN( userID, dn ):
   error = lfc.lfc_enterusrmap( userID, dn )
@@ -183,7 +183,7 @@ class LcgFileCatalogClient( FileCatalogClientBase ):
   def __init__( self, **options ):
     global lfc, importedLFC
 
-    if importedLFC == None:
+    if importedLFC is None:
       try:
         import lfcthr as lfc
         # This is necessary to make the LFC client thread safe.
@@ -1421,7 +1421,7 @@ class LcgFileCatalogClient( FileCatalogClientBase ):
       if se == replica.host:
         status = replica.status
         break
-    return returnCode( status == None, status, errMsg = "No replica at supplied site" if not error else '' )
+    return returnCode( status is None, status, errMsg = "No replica at supplied site" if not error else '' )
 
   def __checkAddFile( self, lfn, pfn, size, se, guid, checksum ):
     res = self.__getPathStat( lfn )

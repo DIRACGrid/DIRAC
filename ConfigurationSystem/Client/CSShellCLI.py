@@ -42,7 +42,7 @@ class CSShellCLI( CLI ):
     else:
       self.serverURL  = self.serverName = line
 
-    if self.serverURL == None:
+    if self.serverURL is None:
       print "Unable to connect to the default server. Maybe you don't have a proxy ?"
       return self.do_disconnect("")
 

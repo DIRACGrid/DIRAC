@@ -133,10 +133,10 @@ class CFG:
     try:
       value = self.__get( [ op.strip() for op in opName.split( "/" ) if op.strip() ] )
     except KeyError:
-      if defaultValue != None:
+      if defaultValue is not None:
         return defaultValue
       raise
-    if defaultValue == None:
+    if defaultValue is None:
       return value
     defType = type( defaultValue )
     if defType == bool:

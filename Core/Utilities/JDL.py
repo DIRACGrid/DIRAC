@@ -53,7 +53,7 @@ def loadJDLAsCFG( jdl ):
         if not result[ 'OK' ]:
           return S_ERROR( "Var %s : %s" % ( key, result[ 'Message' ] ) )
         valList[i] = result[ 'Value' ]
-        if valList[ i ] == None:
+        if valList[ i ] is None:
           return S_ERROR( "List value '%s' seems invalid for item %s" % ( value, i ) )
       value = ", ".join( valList )
     else:
@@ -61,7 +61,7 @@ def loadJDLAsCFG( jdl ):
       if not result[ 'OK' ]:
         return S_ERROR( "Var %s : %s" % ( key, result[ 'Message' ] ) )
       nV = result[ 'Value' ]
-      if nV == None:
+      if nV is None:
         return S_ERROR( "Value '%s seems invalid" % ( value ) )
       value = nV
     cfg.setOption( key, value )

@@ -54,7 +54,7 @@ for jdl in args:
   result = dirac.submitJob( jdl )
   if result['OK']:
     print 'JobID = %s' % ( result['Value'] )
-    if jFile != None:
+    if jFile is not None:
       # parametric jobs
       if isinstance( result['Value'], list ):
         jFile.write( '\n'.join(str(p) for p in result['Value']) )
@@ -65,7 +65,7 @@ for jdl in args:
     errorList.append( ( jdl, result['Message'] ) )
     exitCode = 2
 
-if jFile != None:
+if jFile is not None:
   jFile.close()
 
 for error in errorList:

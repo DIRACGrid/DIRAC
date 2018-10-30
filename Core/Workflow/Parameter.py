@@ -38,21 +38,21 @@ class Parameter( object ):
       self.typein = False
       self.typeout = False
 
-    if name != None:
+    if name is not None:
       self.name = name
-    if type != None:
+    if type is not None:
       self.type = type
-    if value != None:
+    if value is not None:
       self.setValue( value )
-    if description != None:
+    if description is not None:
       self.description = description
-    if linked_module != None:
+    if linked_module is not None:
       self.linked_module = linked_module
-    if linked_parameter != None:
+    if linked_parameter is not None:
       self.linked_parameter = linked_parameter
-    if typein != None:
+    if typein is not None:
       self.setInput( typein )
-    if typeout != None:
+    if typeout is not None:
       self.setOutput( typeout )
 
   def getName( self ):
@@ -73,7 +73,7 @@ class Parameter( object ):
 
 
   def setValue( self, value, type_ = None ):
-    if type_ != None:
+    if type_ is not None:
       self.setType( type_ )
     self.setValueByType( value )
 
@@ -132,21 +132,21 @@ class Parameter( object ):
     # two fields can be filled independently
     # it is possible to fill one field with the valid information
     # spaces shall be ignored ( using strip() function)
-    if ( self.linked_module == None ) or ( self.linked_module.strip() == '' ):
-      if ( self.linked_parameter == None ) or ( self.linked_parameter.strip() == '' ):
+    if ( self.linked_module is None ) or ( self.linked_module.strip() == '' ):
+      if ( self.linked_parameter is None ) or ( self.linked_parameter.strip() == '' ):
         # both empty
         return ""
       else:
         # parameter filled
         return self.linked_parameter
     else:
-      if ( self.linked_parameter == None ) or ( self.linked_parameter.strip() == '' ):
+      if ( self.linked_parameter is None ) or ( self.linked_parameter.strip() == '' ):
         return self.linked_module
     return self.linked_module + '.' + self.linked_parameter
 
   def isLinked( self ):
-    if ( self.linked_module == None ) or ( self.linked_module.strip() == '' ):
-      if ( self.linked_parameter == None ) or ( self.linked_parameter.strip() == '' ):
+    if ( self.linked_module is None ) or ( self.linked_module.strip() == '' ):
+      if ( self.linked_parameter is None ) or ( self.linked_parameter.strip() == '' ):
         return False
     return True
 
@@ -231,7 +231,7 @@ class Parameter( object ):
 
   def createParameterCode( self, ind = 0, instance_name = None ):
 
-    if ( instance_name == None ) or ( instance_name == '' ):
+    if ( instance_name is None ) or ( instance_name == '' ):
       ret = indent( ind ) + self.getName() + ' = ' + self.getValueTypeCorrected()
     else:
       if self.isLinked():
@@ -251,7 +251,7 @@ class ParameterCollection( list ):
       # makes a deep copy of the parameters
       for v in coll:
         self.append( Parameter( parameter = v ) )
-    elif coll != None:
+    elif coll is not None:
       raise TypeError( 'Can not create object type ' + str( type( self ) ) + ' from the ' + str( type( coll ) ) )
 
   def appendOrOverwrite( self, opt ):
@@ -297,7 +297,7 @@ class ParameterCollection( list ):
     Returns True if sucsessfull
     """
     par = self.find( name )
-    if par == None:
+    if par is None:
       print "ERROR ParameterCollection.setValue() can not find parameter with the name=%s to set Value=%s" % ( name, value )
       return False
     else:
@@ -347,7 +347,7 @@ class ParameterCollection( list ):
     Returns True if sucsessfull
     """
     par = self.find( name )
-    if par == None:
+    if par is None:
       print "ERROR ParameterCollection.setLink() can not find parameter with the name=%s to link it with %s.%s" % ( name, module_name, parameter_name )
       return False
     else:
@@ -368,7 +368,7 @@ class ParameterCollection( list ):
       # we are going to ignore this
       for p in opt:
         par = self.find( p.getName() )
-        if par == None:
+        if par is None:
           print "WARNING ParameterCollection.linkUp can not find parameter with the name=", p.getName(), " IGNORING"
         else:
           par.link( objname, prefix + p.getName() + postfix )
@@ -377,13 +377,13 @@ class ParameterCollection( list ):
     elif isinstance( opt, list ) and isinstance( opt[0], str ):
       for s in opt:
         par = self.find( s )
-        if par == None:
+        if par is None:
           print "ERROR ParameterCollection.linkUp() can not find parameter with the name=%s" % ( s )
         else:
           par.link( objname, prefix + p.getName() + postfix )
     elif isinstance( opt, str ):
       par = self.find( opt )
-      if par == None:
+      if par is None:
         print "ERROR ParameterCollection.linkUp() can not find parameter with the name=%s" % ( par )
       else:
         par.link( objname, prefix + par.getName() + postfix )
@@ -402,7 +402,7 @@ class ParameterCollection( list ):
       # we are going to ignore this
       for p in opt:
         par = self.find( p.getName() )
-        if par == None:
+        if par is None:
           print "WARNING ParameterCollection.linkUp can not find parameter with the name=", p.getName(), " IGNORING"
         else:
           par.unlink()
@@ -411,13 +411,13 @@ class ParameterCollection( list ):
     elif isinstance( opt, list ) and isinstance( opt[0], str ):
       for s in opt:
         par = self.find( s )
-        if par == None:
+        if par is None:
           print "ERROR ParameterCollection.unlink() can not find parameter with the name=%s" % ( s )
         else:
           par.unlink()
     elif isinstance( opt, str ):
       par = self.find( opt )
-      if par == None:
+      if par is None:
         print "ERROR ParameterCollection.unlink() can not find parameter with the name=%s" % ( s )
       else:
         par.unlink()
@@ -435,7 +435,7 @@ class ParameterCollection( list ):
     if isinstance( name_or_ind, list ) and isinstance( name_or_ind[0], str ):
       for s in name_or_ind:
         par = self.find( s )
-        if par == None:
+        if par is None:
           print "ERROR ParameterCollection.remove() can not find parameter with the name=%s" % ( s )
         else:
           index = self.findIndex( s )
@@ -470,7 +470,7 @@ class ParameterCollection( list ):
     if linked_status is False it returns only NOTlinked Var from the list
     Return: Parameter """
     v = self.find( name_or_ind )
-    if ( v != None ) and ( v.isLinked() != linked_status ):
+    if ( v is not None ) and ( v.isLinked() != linked_status ):
       return None
     return v
 
@@ -542,17 +542,17 @@ class ParameterCollection( list ):
           v_other = self.find( substitute_var )
 
           # looking in the scope of step instance
-          if v_other == None and step_parameters != None :
+          if v_other is None and step_parameters is not None :
               v_other = step_parameters.findLinked( substitute_var, False )
 
           # looking in the scope of workflow
-          if v_other == None and wf_parameters != None :
+          if v_other is None and wf_parameters is not None :
             v_other = wf_parameters.findLinked( substitute_var, False )
 
           # finaly the action itself
-          if v_other != None and not v_other.isLinked():
+          if v_other is not None and not v_other.isLinked():
             v.value = substitute( v.value, substitute_var, v_other.value )
-          elif v_other != None:
+          elif v_other is not None:
             print "Leaving %s variable for dynamic resolution" % substitute_var
             skip_list.append( substitute_var )
           else: # if nothing helped tough!
@@ -562,13 +562,13 @@ class ParameterCollection( list ):
         if recurrency > recurrency_max:
           # must be an exception
           print "ERROR! reached maximum recurrency level", recurrency, "within the parameter ", str( v )
-          if step_parameters == None:
-            if wf_parameters == None:
+          if step_parameters is None:
+            if wf_parameters is None:
               print "on the level of Workflow"
             else:
               print "on the level of Step"
           else:
-            if wf_parameters != None:
+            if wf_parameters is not None:
               print "on the level of Module"
           break
         else:

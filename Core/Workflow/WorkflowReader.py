@@ -37,13 +37,13 @@ class WorkflowXMLHandler(ContentHandler):
     self.clearCharacters() # clear to remove empty or nonprintable characters
 
     if name == "Workflow":
-      if self.root == None: #if root not defined by constractor
+      if self.root is None: #if root not defined by constractor
         self.root = Workflow()
       self.stack.append(self.root)
 
     elif name == "StepDefinition":
       obj = StepDefinition("TemporaryXMLObject_StepDefinition")
-      if self.root == None: # in case we are saving Step only
+      if self.root is None: # in case we are saving Step only
         self.root = obj
       self.stack.append(obj)
 
@@ -53,7 +53,7 @@ class WorkflowXMLHandler(ContentHandler):
 
     elif name == "ModuleDefinition":
       obj = ModuleDefinition("TemporaryXMLObject_ModuleDefinition")
-      if self.root == None: # in case we are saving Module only
+      if self.root is None: # in case we are saving Module only
         self.root = obj
       self.stack.append(obj)
 

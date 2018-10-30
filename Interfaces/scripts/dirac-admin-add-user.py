@@ -56,7 +56,7 @@ Script.registerSwitch( 'G:', 'UserGroup:', 'Name of the Group for the User (Allo
 
 Script.parseCommandLine( ignoreErrors = True )
 
-if userName == None or userDN == None or userMail == None:
+if userName is None or userDN is None or userMail is None:
   Script.showHelp()
   DIRAC.exit( -1 )
 

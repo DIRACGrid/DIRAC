@@ -144,24 +144,24 @@ class Request( object ):
 
       # Scheduled -> Scheduled
       if opStatus == "Scheduled":
-        if self.__waiting == None:
+        if self.__waiting is None:
           self.__waiting = op
           rStatus = "Scheduled"
       # # First operation Queued becomes Waiting if no Waiting/Scheduled before
       elif opStatus == "Queued":
-        if self.__waiting == None:
+        if self.__waiting is None:
           self.__waiting = op
           op._setWaiting( self )
           rStatus = "Waiting"
       # # First operation Waiting is next to execute, others are queued
       elif opStatus == "Waiting":
         rStatus = "Waiting"
-        if self.__waiting == None:
+        if self.__waiting is None:
           self.__waiting = op
         else:
           op._setQueued( self )
       # # All operations Done -> Done
-      elif opStatus == "Done" and self.__waiting == None:
+      elif opStatus == "Done" and self.__waiting is None:
         rStatus = "Done"
         self.Error = ''
     self.Status = rStatus

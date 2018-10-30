@@ -115,7 +115,7 @@ class ThreadScheduler(object):
   def __executorThread( self ):
     while self.__hood:
       timeToNext = self.executeNextTask()
-      if timeToNext == None:
+      if timeToNext is None:
         break
       if timeToNext and timeToNext > 0.1:
         self.__sleeper( self.__min( timeToNext, 1 ) )

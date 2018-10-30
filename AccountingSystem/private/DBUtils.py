@@ -88,14 +88,14 @@ class DBUtils(object):
       if bucketDate in normData:
         for iP in range( len( data ) ):
           val = data[ iP ]
-          if val == None:
+          if val is None:
             val = 0
           normData[ bucketDate ][iP] += float( val ) * proportion
         normData[ bucketDate ][ -1 ] += proportion
       else:
         normData[ bucketDate ] = []
         for fD in data:
-          if fD == None:
+          if fD is None:
             fD = 0
           normData[ bucketDate ].append( float( fD ) * proportion )
         normData[ bucketDate ].append( proportion )
@@ -158,7 +158,7 @@ class DBUtils(object):
     for iPos in range( len( bucketsData ) ):
       data = bucketsData[iPos]
       for iVal in range( 2, len( data ) ):
-        if data[ iVal ] == None:
+        if data[ iVal ] is None:
           data[ iVal ] = 0
     return bucketsData
 

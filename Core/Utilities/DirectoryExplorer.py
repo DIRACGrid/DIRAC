@@ -34,7 +34,7 @@ class DirectoryExplorer:
     return nextDir
 
   def addDir( self, dirName, weight = None ):
-    if weight == None and self.__sort:
+    if weight is None and self.__sort:
       weight = dirName.count( "/" )
     if dirName not in self.__explored:
       self.__toExplore.append( ( weight, dirName ) )
