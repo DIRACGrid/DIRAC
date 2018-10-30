@@ -334,7 +334,7 @@ def getDIRACPlatform(OSList):
       platforms += os2PlatformDict[os]
 
   if not platforms:
-    return S_ERROR('No compatible DIRAC platform found for %s' % OS)
+    return S_ERROR('No compatible DIRAC platform found for %s' % ','.join(OSList))
 
   platforms.sort(key=LooseVersion, reverse=True)
 
