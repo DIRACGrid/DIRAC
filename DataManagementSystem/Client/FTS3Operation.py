@@ -165,7 +165,7 @@ class FTS3Operation(FTS3Serializable):
       # The file was never submitted or
       # The file failed from the point of view of FTS
       # but no more than the maxAttemptsPerFile
-      elif ftsFile.status in ('New', 'Failed'):
+      elif ftsFile.status in [FTS3File.INIT_STATE] + FTS3File.FTS_FAILED_STATES:
         toSubmit.append(ftsFile)
 
     return toSubmit
