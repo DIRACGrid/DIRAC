@@ -36,6 +36,8 @@ from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 
 __RCSID__ = "$Id$"
 
+DEFAULT_OCCUPANCY_FILE = 'occupancy.json'
+
 
 class StorageElementCache(object):
 
@@ -330,23 +332,44 @@ class StorageElementItem(object):
 
   def getOccupancy(self, unit='MB', **kwargs):
     """ Retrieves the space information about the storage.
-        It returns the Total, Guaranteed and Free space .
+        It returns the Total and Free space.
 
         It loops over the different Storage Plugins to query it.
 
-        :returns: S_OK with dict (keys: Total, Guaranteed, Free)
+        :params occupancyLFN: (named param) LFN where to find the space reporting json file on the storage
+                              The json file should contain the Free and Total space in MB.
+                              If not specified, the default path will be </vo/occupancy.json>
+
+        :returns: S_OK with dict (keys: Total, Free)
     """
     log = self.log.getSubLogger('getOccupancy', True)
+
+    # Mandatory parameters
+    mandatoryParams = set(['Total', 'Free'])
+
+    if 'occupancyLFN' not in kwargs:
+      occupancyLFN = self.options.get('OccupancyLFN')
+      if not occupancyLFN:
+        occupancyLFN = os.path.join('/', self.vo, DEFAULT_OCCUPANCY_FILE)
+
+      kwargs['occupancyLFN'] = occupancyLFN
 
     filteredPlugins = self.__filterPlugins('getOccupancy')
     if not filteredPlugins:
       return S_ERROR(errno.EPROTONOSUPPORT, "No storage plugins to query the occupancy")
     # Try all of the storages one by one
     for storage in filteredPlugins:
+
       # The result of the plugin is always in MB
       res = storage.getOccupancy(**kwargs)
       if res['OK']:
         occupancyDict = res['Value']
+
+        # Make sure all the mandatory parameters are present
+        if set(occupancyDict) & mandatoryParams != mandatoryParams:
+          log.verbose("Missing mandatory parameters", mandatoryParams - set(occupancyDict))
+          continue
+
         if unit != 'MB':
           for space in ['Total', 'Free']:
             convertedSpace = convertSizeUnits(occupancyDict[space], 'MB', unit)
