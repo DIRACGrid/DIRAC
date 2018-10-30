@@ -155,7 +155,6 @@ class JobDB(DB):
     except BaseException as x:
       return S_ERROR('JobDB.getAttributesForJobList: Failed\n%s' % repr(x))
 
-
 #############################################################################
   def getDistinctJobAttributes(self, attribute, condDict=None, older=None,
                                newer=None, timeStamp='LastUpdateTime'):
@@ -163,7 +162,6 @@ class JobDB(DB):
     """
     return self.getDistinctAttributeValues('Jobs', attribute, condDict=condDict,
                                            older=older, newer=newer, timeStamp=timeStamp)
-
 
 #############################################################################
   def traceJobParameter(self, site, localID, parameter, date=None, until=None):
@@ -979,7 +977,6 @@ class JobDB(DB):
 
     return S_OK(jobID)
 
-
 #############################################################################
   def getJobJDL(self, jobID, original=False, status=''):
     """ Get JDL for job specified by its jobID. By default the current job JDL
@@ -1289,7 +1286,6 @@ class JobDB(DB):
       return retVal
 
     return S_OK()
-
 
 #############################################################################
   def removeJobFromDB(self, jobIDs):
