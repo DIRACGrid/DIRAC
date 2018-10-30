@@ -1,6 +1,6 @@
-=============================================
-Step 1: Minimal Framework Installation
-=============================================
+==============================
+Minimal Framework Installation
+==============================
 
 Before doing any DIRAC server installation you should have a look at :ref:`server_installation`, in particular
 the sections :ref:`server_requirements` and :ref:`server_preparation`. After you have created the necessary
