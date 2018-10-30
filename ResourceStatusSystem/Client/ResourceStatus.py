@@ -292,8 +292,8 @@ class ResourceStatus(object):
 
   def __getMode(self):
     """
-      Get's flag defined ( or not ) on the RSSConfiguration. If defined as 1,
-      we use RSS, if not, we use CS.
+      Gets flag defined (or not) on the RSSConfiguration.
+      If defined as 'Active', we use RSS, if not, we use the CS when possible (and WMS for Sites).
     """
 
     res = self.rssConfig.getConfigState()

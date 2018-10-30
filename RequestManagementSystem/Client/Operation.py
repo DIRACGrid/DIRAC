@@ -158,7 +158,12 @@ class Operation( object ):
     return self
 
   def addFile( self, opFile ):
-    """ add :opFile: to operation """
+    """ add :opFile: to operation
+
+        .. warning::
+
+          You cannot add a File object that has already been added to another operation. They must be different objects
+    """
     if len( self ) >= Operation.MAX_FILES:
       raise RuntimeError( "too many Files in a single Operation" )
     if opFile not in self:
@@ -351,4 +356,3 @@ class Operation( object ):
     jsonData['Files'] = self.__files__
 
     return jsonData
-

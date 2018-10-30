@@ -159,6 +159,21 @@ csAPI.setOption('Resources/FTSEndpoints/FTS3/JENKINS-FTS3', 'https://jenkins-fts
 #
 #     ResourceStatus
 #     {
+#       Config
+#       {
+#         Cache = 600
+#         State = Active
+#         FromAddress = fstagni@cern.ch
+#         notificationGroups = ShiftersGroup
+#         StatusTypes
+#         {
+#           default = all
+#           StorageElement = ReadAccess
+#           StorageElement += WriteAccess
+#           StorageElement += CheckAccess
+#           StorageElement += RemoveAccess
+#         }
+#       }
 #       Policies
 #       {
 #         AlwaysActiveForResource
@@ -199,11 +214,27 @@ res = csAPI.createSection('Operations/Defaults/ResourceStatus')
 if not res['OK']:
   print res['Message']
   exit(1)
+
+res = csAPI.createSection('Operations/Defaults/ResourceStatus/Config')
+if not res['OK']:
+  print res['Message']
+  exit(1)
+csAPI.setOption('Operations/Defaults/ResourceStatus/Config/Cache', '600')
+csAPI.setOption('Operations/Defaults/ResourceStatus/Config/State', 'Active')
+csAPI.setOption('Operations/Defaults/ResourceStatus/Config/FromAddress', 'fstagni@cern.ch')
+csAPI.setOption('Operations/Defaults/ResourceStatus/Config/notificationGroups', 'ShiftersGroup')
+res = csAPI.createSection('Operations/Defaults/ResourceStatus/Config/StatusTypes')
+if not res['OK']:
+  print res['Message']
+  exit(1)
+csAPI.setOption('Operations/Defaults/ResourceStatus/Config/StatusTypes/default', 'all')
+csAPI.setOption('Operations/Defaults/ResourceStatus/Config/StatusTypes/StorageElement',
+                'ReadAccess,WriteAccess,CheckAccess,RemoveAccess')
+
 res = csAPI.createSection('Operations/Defaults/ResourceStatus/Policies')
 if not res['OK']:
   print res['Message']
   exit(1)
-
 res = csAPI.createSection('Operations/Defaults/ResourceStatus/Policies/AlwaysActiveForResource')
 if not res['OK']:
   print res['Message']
