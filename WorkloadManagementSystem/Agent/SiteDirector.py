@@ -4,6 +4,13 @@
 ########################################################################
 
 """  The Site Director is an agent performing pilot job submission to particular sites/Computing Elements.
+
+.. literalinclude:: ../ConfigTemplate.cfg
+  :start-after: ##BEGIN SiteDirector
+  :end-before: ##END
+  :dedent: 2
+  :caption: SiteDirector options
+
 """
 
 __RCSID__ = "$Id$"
@@ -122,7 +129,6 @@ class SiteDirector(AgentModule):
     self.maxQueueLength = 86400 * 3
 
     self.pilotWaitingFlag = True
-    self.pilotWaitingTime = 3600
     self.pilotLogLevel = 'INFO'
     self.matcherClient = None
     self.siteMaskList = []
@@ -134,7 +140,9 @@ class SiteDirector(AgentModule):
     """ Initial settings
     """
 
-    self.gridEnv = self.am_getOption("GridEnv", getGridEnv())
+    self.gridEnv = self.am_getOption("GridEnv", '')
+    if not self.gridEnv:
+      self.gridEnv = getGridEnv()
 
     # The SiteDirector is for a particular user community
     self.vo = self.am_getOption("VO", '')
@@ -196,30 +204,31 @@ class SiteDirector(AgentModule):
     self.maxJobsInFillMode = self.am_getOption('MaxJobsInFillMode', self.maxJobsInFillMode)
     self.maxPilotsToSubmit = self.am_getOption('MaxPilotsToSubmit', self.maxPilotsToSubmit)
     self.pilotWaitingFlag = self.am_getOption('PilotWaitingFlag', self.pilotWaitingFlag)
-    self.pilotWaitingTime = self.am_getOption('MaxPilotWaitingTime', self.pilotWaitingTime)
     self.failedQueueCycleFactor = self.am_getOption('FailedQueueCycleFactor', self.failedQueueCycleFactor)
     self.pilotStatusUpdateCycleFactor = self.am_getOption('PilotStatusUpdateCycleFactor', 10)
-    self.addPilotsToEmptySites = self.am_getOption('AddPilotsToEmptySites', False)
 
     # Flags
+    self.addPilotsToEmptySites = self.am_getOption('AddPilotsToEmptySites', False)
+    self.checkPlatform = self.am_getOption('CheckPlatform', False)
     self.updateStatus = self.am_getOption('UpdatePilotStatus', self.updateStatus)
     self.getOutput = self.am_getOption('GetPilotOutput', self.getOutput)
     self.sendAccounting = self.am_getOption('SendPilotAccounting', self.sendAccounting)
 
     # Get the site description dictionary
     siteNames = None
-    if self.am_getOption('Site', 'Any').lower() != "any":
-      siteNames = self.am_getOption('Site', [])
-      if not siteNames:
-        siteNames = None
+    siteNamesOption = self.am_getOption('Site', ['any'])
+    if siteNamesOption and 'any' not in [sn.lower() for sn in siteNamesOption]:
+      siteNames = siteNamesOption
+
     ceTypes = None
-    if self.am_getOption('CETypes', 'Any').lower() != "any":
-      ceTypes = self.am_getOption('CETypes', [])
+    ceTypesOption = self.am_getOption('CETypes', ['any'])
+    if ceTypesOption and 'any' not in [ct.lower() for ct in ceTypesOption]:
+      ceTypes = ceTypesOption
+
     ces = None
-    if self.am_getOption('CEs', 'Any').lower() != "any":
-      ces = self.am_getOption('CEs', [])
-      if not ces:
-        ces = None
+    cesOption = self.am_getOption('CEs', ['any'])
+    if cesOption and 'any' not in [ce.lower() for ce in cesOption]:
+      ces = cesOption
 
     self.log.always('VO:', self.vo)
     if self.voGroups:
