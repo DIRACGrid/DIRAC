@@ -159,16 +159,15 @@ class JobDB(DB):
       return S_ERROR('JobDB.getAttributesForJobList: Failed\n%s' % repr(x))
 
 #############################################################################
-  def getDistinctJobAttributes(self, attribute, condDict=None, older=None, newer=None, timeStamp='LastUpdateTime'):
+  def getDistinctJobAttributes(self, attribute, condDict=None, older=None,
+                               newer=None, timeStamp='LastUpdateTime'):
     """ Get distinct values of the job attribute under specified conditions
     """
-
     return self.getDistinctAttributeValues('Jobs', attribute, condDict=condDict,
                                            older=older, newer=newer, timeStamp=timeStamp)
 
 #############################################################################
   def traceJobParameter(self, site, localID, parameter, date=None, until=None):
-
     ret = self.traceJobParameters(site, localID, [parameter], None, date, until)
     if not ret['OK']:
       return ret
@@ -411,10 +410,10 @@ class JobDB(DB):
 
     attributes = {}
     if attrList:
-      for i in range(len(attrList)):
+      for i in xrange(len(attrList)):
         attributes[attrList[i]] = str(values[i])
     else:
-      for i in range(len(self.jobAttributeNames)):
+      for i in xrange(len(self.jobAttributeNames)):
         attributes[self.jobAttributeNames[i]] = str(values[i])
 
     return S_OK(attributes)
@@ -604,7 +603,7 @@ class JobDB(DB):
     optList = optListString.split(',')
     try:
       sindex = None
-      for i in range(len(optList)):
+      for i in xrange(len(optList)):
         if optList[i] == currentOptimizer:
           sindex = i
       if sindex >= 0:
@@ -720,7 +719,7 @@ class JobDB(DB):
         return S_ERROR(EWMSSUBM, 'Request to set non-existing job attribute')
 
     attr = []
-    for i in range(len(attrNames)):
+    for i in xrange(len(attrNames)):
       ret = self._escapeString(attrValues[i])
       if not ret['OK']:
         return ret
@@ -1019,7 +1018,6 @@ class JobDB(DB):
     return S_OK(jobID)
 
 #############################################################################
-
   def getJobJDL(self, jobID, original=False, status=''):
     """ Get JDL for job specified by its jobID. By default the current job JDL
         is returned. If 'original' argument is True, original JDL is returned
@@ -1288,7 +1286,7 @@ class JobDB(DB):
     priority = classAdJob.getAttributeInt('Priority')
     if priority is None:
       priority = 0
-    platform = classAdJob.getAttributeString('Platform')
+    platformList = classAdJob.getListFromExpression('Platform')
     cpuTime = classAdJob.getAttributeInt('CPUTime')
     if cpuTime is None:
       # Just in case check for MaxCPUTime for backward compatibility
@@ -1302,8 +1300,8 @@ class JobDB(DB):
     classAdReq.insertAttributeInt('UserPriority', priority)
     classAdReq.insertAttributeInt('CPUTime', cpuTime)
 
-    if platform and platform.lower() != 'any':
-      result = self.getDIRACPlatform(platform)
+    if platformList:
+      result = self.getDIRACPlatform(platformList)
       if result['OK'] and result['Value']:
         classAdReq.insertAttributeVectorString('Platforms', result['Value'])
       else:
@@ -1330,7 +1328,6 @@ class JobDB(DB):
     return S_OK()
 
 #############################################################################
-
   def removeJobFromDB(self, jobIDs):
     """Remove job from DB
 
@@ -1397,20 +1394,12 @@ class JobDB(DB):
         defined parameters in the parameter Attic
     """
     # Check Verified Flag
-    result = self.getJobAttributes(jobID, ['VerifiedFlag', 'RescheduleCounter',
+    result = self.getJobAttributes(jobID, ['Status', 'MinorStatus', 'VerifiedFlag', 'RescheduleCounter',
                                            'Owner', 'OwnerDN', 'OwnerGroup', 'DIRACSetup'])
     if result['OK']:
       resultDict = result['Value']
     else:
       return S_ERROR('JobDB.getJobAttributes: can not retrieve job attributes')
-
-    result = self.getJobStatus(jobID)
-
-    if result['OK']:
-      resultDict['Status'] = result['Value']['Status']
-      resultDict['MinorStatus'] = result['Value']['MinorStatus']
-    else:
-      return S_ERROR('JobDB.getJobStatus: can not retrieve job statuses')
 
     if 'VerifiedFlag' not in resultDict:
       return S_ERROR('Job ' + str(jobID) + ' not found in the system')

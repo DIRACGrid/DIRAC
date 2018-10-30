@@ -4,6 +4,8 @@
 
 """
 
+__RCSID__ = '$Id$'
+
 import errno
 import math
 from time import sleep
@@ -19,8 +21,6 @@ from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatu
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.ResourceStatusSystem.Utilities.RSSCacheNoThread import RSSCache
 from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration import RssConfiguration
-
-__RCSID__ = '$Id: $'
 
 
 class SiteStatus(object):

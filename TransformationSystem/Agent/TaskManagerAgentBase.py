@@ -183,7 +183,7 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
                                              owner=owner, ownerGroup=ownerGroup, ownerDN=ownerDN)
 
     # Determine whether the submission of tasks is to be performed
-    enableSubmission = self.am_getOption('SubmitTasks', '')
+    enableSubmission = self.am_getOption('SubmitTasks', 'yes')
     if not enableSubmission:
       self.log.verbose("Submission of tasks is disabled. To enable it, create the 'SubmitTasks' option")
     else:
