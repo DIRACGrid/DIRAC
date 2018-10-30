@@ -1,6 +1,6 @@
-=======================================
+==========================
 Jobs with DIRAC Python API
-=======================================
+==========================
 
   The DIRAC API is encapsulated in several Python classes designed to be used easily by users to access a large fraction of the DIRAC functionality. Using the API classes it is easy to write small scripts or applications to manage user jobs and data.
 
@@ -18,7 +18,7 @@ Jobs with DIRAC Python API
     - Between others advantages.
     
 Creating a DIRAC Job using API
-================================
+==============================
 
   The API allows creating DIRAC jobs using the Job object, specifying job requirements.::
   
@@ -40,7 +40,7 @@ Creating a DIRAC Job using API
   In this example, the job has tree steps from different applications: echo, hostname and echo again.
 
 Submitting jobs
-=================
+===============
   
   To submit the job is just send the job using the script::
   
@@ -52,7 +52,7 @@ Submitting jobs
   The script output must return the jobID, this is useful for keeping track of your job IDs.
 
 Job Monitoring
-================
+==============
 
   Once you have submitted your jobs to the Grid, a little script can be used to monitor the job status::
 
@@ -73,7 +73,7 @@ Job Monitoring
   The script output is going to return the status, minor status and the site where the job was executed.
 
 Job Output
-============
+==========
 
   When the status of the job is done, the outputs can be retrieved using also a simple script::
 
@@ -81,7 +81,7 @@ Job Output
     from DIRAC.Interfaces.API.Job import Job
     import sys
     dirac = Dirac()
-    jobid     = sys.argv[1]
+    jobid = sys.argv[1]
     print dirac.getOutputSandbox(jobid)
 
   And, executing the script::
