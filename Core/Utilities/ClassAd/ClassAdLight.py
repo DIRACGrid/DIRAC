@@ -309,6 +309,7 @@ class ClassAd:
 
   def getAttributes( self ):
     """ Get the list of all the attribute names
+
     :return: list of names as strings
     """
     return self.contents.keys()

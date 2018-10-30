@@ -381,11 +381,12 @@ class ProxyManagerClient( object ):
   def renewProxy( self, proxyToBeRenewed = False, minLifeTime = 3600, newProxyLifeTime = 43200, proxyToConnect = False ):
     """
     Renew a proxy using the ProxyManager
+
     Arguments:
-      proxyToBeRenewed : proxy to renew
-      minLifeTime : if proxy life time is less than this, renew. Skip otherwise
-      newProxyLifeTime : life time of new proxy
-      proxyToConnect : proxy to use for connecting to the service
+      proxyToBeRenewed: proxy to renew
+      minLifeTime: if proxy life time is less than this, renew. Skip otherwise
+      newProxyLifeTime: life time of new proxy
+      proxyToConnect: proxy to use for connecting to the service
     """
     retVal = multiProxyArgument( proxyToBeRenewed )
     if not retVal[ 'Value' ]:
