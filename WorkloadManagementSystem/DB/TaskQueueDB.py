@@ -721,19 +721,13 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
         if field in tagMatchFields:  # basically, if field == Tag
 
           if not tqMatchDict[field] \
-             or isinstance(tqMatchDict[field], str) and tqMatchDict[field].lower() in ['""', ''] \
-             or \
-             isinstance(tqMatchDict[field], list) \
-             and ('""' or '') in [fv.lower() for fv in tqMatchDict[field]]:
+             or isinstance(tqMatchDict[field], str) and tqMatchDict[field].lower() in ['""', '']:
             continue
           sqlMultiCondList.append(self.__generateTagSQLSubCond(fullTableN, tqMatchDict[field]))
 
         else:  # everything that is not tags
           if not tqMatchDict[field] \
-             or isinstance(tqMatchDict[field], str) and tqMatchDict[field].lower() in ['""', ''] \
-             or \
-             isinstance(tqMatchDict[field], list) \
-             and ('""' or '') in [fv.lower() for fv in tqMatchDict[field]]:
+             or isinstance(tqMatchDict[field], str) and tqMatchDict[field].lower() in ['""', '']:
             continue
           # if field != 'GridCE' or 'Site' in tqMatchDict:
           # Jobs for masked sites can be matched if they specified a GridCE
@@ -767,10 +761,7 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
       fieldName = "Required%s" % field
       if tqMatchDict.get(fieldName):
         if not tqMatchDict[fieldName] \
-           or isinstance(tqMatchDict[fieldName], str) and tqMatchDict[fieldName].lower() in ['""', ''] \
-           or \
-           isinstance(tqMatchDict[fieldName], list) \
-           and ('""' or '') in [fv.lower() for fv in tqMatchDict[fieldName]]:
+           or isinstance(tqMatchDict[fieldName], str) and tqMatchDict[fieldName].lower() in ['""', '']:
           continue
 
         sqlCondList.append(self.__generateRequiredTagSQLSubCond('`tq_TQToTags`',
@@ -780,10 +771,7 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
     for field in multiValueMatchFields:
       bannedField = "Banned%s" % field
       if tqMatchDict.get(bannedField):
-        if isinstance(tqMatchDict[bannedField], str) and tqMatchDict[bannedField].lower() in ['""', ''] \
-           or \
-           isinstance(tqMatchDict[bannedField], list) \
-           and ('""' or '') in [fv.lower() for fv in tqMatchDict[bannedField]]:
+        if isinstance(tqMatchDict[bannedField], str) and tqMatchDict[bannedField].lower() in ['""', '']:
           continue
 
         fullTableN = '`tq_TQTo%ss`' % field
