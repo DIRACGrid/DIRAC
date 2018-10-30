@@ -219,9 +219,9 @@ def test_chainWithPlatforms():
 
   # compatibility matching
 
-  # ANY
+  # empty platform
   result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 50000,
-                                      'Platform': 'ANY'},
+                                      'Platform': ''},
                                      numQueuesToGet=4)
   assert result['OK'] is True
   # this should match whatever
@@ -240,9 +240,28 @@ def test_chainWithPlatforms():
 
   # matching for this one
 
-  # ANY
+  # empty platform
   result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 50000,
-                                      'Platform': 'ANY'},
+                                      'Platform': ''},
+                                     numQueuesToGet=5)
+  assert result['OK'] is True
+  # this should match whatever
+  assert int(result['Value'][0][0]) in [tq_job1, tq_job2, tq_job3,
+                                        tq_job4, tq_job5, tq_job6]
+  assert len(result['Value']) == 5
+
+  # empty platform, with an empty list
+  result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 50000,
+                                      'Platform': []},
+                                     numQueuesToGet=5)
+  assert result['OK'] is True
+  # this should match whatever
+  assert int(result['Value'][0][0]) in [tq_job1, tq_job2, tq_job3,
+                                        tq_job4, tq_job5, tq_job6]
+  assert len(result['Value']) == 5
+
+  # no platform at all
+  result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 50000},
                                      numQueuesToGet=5)
   assert result['OK'] is True
   # this should match whatever
@@ -282,10 +301,10 @@ def test_chainWithPlatforms():
   assert int(result['Value'][0][0]) in [tq_job3, tq_job4, tq_job5, tq_job6]
   assert len(result['Value']) == 4
 
-  # Now we insert a TQ with platform "ANY" (same as no platform)
+  # Now we insert a TQ with platform "" (same as no platform)
 
   tqDefDict = {'OwnerDN': '/my/DN', 'OwnerGroup': 'myGroup', 'Setup': 'aSetup', 'CPUTime': 5000,
-               'Platform': 'ANY'}
+               'Platform': ''}
   result = tqDB.insertJob(7, tqDefDict, 10)
   assert result['OK'] is True
   result = tqDB.getTaskQueueForJobs([7])
@@ -294,9 +313,18 @@ def test_chainWithPlatforms():
 
   # matching for this one
 
-  # ANY
+  # empty platform
   result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 50000,
-                                      'Platform': 'ANY'},
+                                      'Platform': ''},
+                                     numQueuesToGet=6)
+  assert result['OK'] is True
+  # this should match whatever
+  assert int(result['Value'][0][0]) in [tq_job1, tq_job2, tq_job3,
+                                        tq_job4, tq_job5, tq_job6, tq_job7]
+  assert len(result['Value']) == 5
+
+  # NO platform
+  result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 50000},
                                      numQueuesToGet=6)
   assert result['OK'] is True
   # this should match whatever
@@ -319,16 +347,6 @@ def test_chainWithPlatforms():
   assert result['OK'] is True
   assert int(result['Value'][0][0]) in [tq_job4, tq_job6, tq_job7]
   assert len(result['Value']) == 2
-
-  # "ANY" together with others
-  result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 50000,
-                                      'Platform': ['slc6', 'ANY', 'centos7']},
-                                     numQueuesToGet=6)
-  assert result['OK'] is True
-  # this should match whatever
-  assert int(result['Value'][0][0]) in [tq_job1, tq_job2, tq_job3,
-                                        tq_job4, tq_job5, tq_job6, tq_job7]
-  assert len(result['Value']) == 5
 
   # new platform appears
   # centos8 (> centos7)
@@ -434,9 +452,9 @@ def test_chainWithTags():
 
   # Matching Everything
 
-  # Tag = "ANY"
+  # Tag = ""
   result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 50000,
-                                      'Tag': 'ANY'},
+                                      'Tag': ''},
                                      numQueuesToGet=5)
   assert result['OK'] is True
   # this should match whatever
@@ -579,41 +597,34 @@ def test_chainWithTagsAndPlatforms():
 
   # Matching Everything
 
-  # No Tag, Platform = "ANY"
+  # No Tag, Platform = ""
   result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 50000,
-                                      'Platform': 'ANY'},
+                                      'Platform': ''},
                                      numQueuesToGet=4)
   assert result['OK'] is True
   # this should match whatever
   assert int(result['Value'][0][0]) in [tq_job1, tq_job2, tq_job3, tq_job4]
   assert len(result['Value']) == 4
 
-  # Tag = "ANY", Platform = "ANY"
+  # Tag = "", Platform = ""
   result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 50000,
-                                      'Platform': 'ANY',
-                                      'Tag': 'ANY'},
+                                      'Platform': '',
+                                      'Tag': ''},
                                      numQueuesToGet=4)
   assert result['OK'] is True
   # this should match whatever
   assert int(result['Value'][0][0]) in [tq_job1, tq_job2, tq_job3, tq_job4]
   assert len(result['Value']) == 4
 
-  # Tag = "ANY", Platform = "centos7"
+  # Tag = "", Platform = "centos7"
   result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 50000,
                                       'Platform': 'centos7',
-                                      'Tag': 'ANY'},
+                                      'Tag': ''},
                                      numQueuesToGet=4)
   assert result['OK'] is True
   # this should match whatever has platform == centos7, or no platform
   assert int(result['Value'][0][0]) in [tq_job1, tq_job2, tq_job3]
   assert len(result['Value']) == 3
-
-  # Platform = "ANY", Tag = "MultiProcessor"
-  result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 50000,
-                                      'Platform': 'ANY',
-                                      'Tag': 'MultiProcessor'},
-                                     numQueuesToGet=4)
-  assert result['OK'] is True
 
   # FIXME:
   # This fails: it selects ALL the TQs, even those that don't have a tag at all
@@ -695,7 +706,7 @@ def test_ComplexMatching():
                                       'Platform': ['slc6', 'centos7'],
                                       'Tag': [],
                                       'OwnerGroup': ['admin', 'prod', 'user'],
-                                      'Site': 'ANY'},
+                                      'Site': ''},
                                      numQueuesToGet=4)
   assert result['OK'] is True
   assert int(result['Value'][0][0]) in [tq_job1, tq_job2, tq_job3]
@@ -705,7 +716,7 @@ def test_ComplexMatching():
                                       'Platform': ['ubuntu'],
                                       'Tag': [],
                                       'OwnerGroup': ['admin', 'prod', 'user'],
-                                      'Site': 'ANY'},
+                                      'Site': ''},
                                      numQueuesToGet=4)
   assert result['OK'] is True
   assert int(result['Value'][0][0]) == tq_job4
@@ -715,7 +726,7 @@ def test_ComplexMatching():
                                       'Platform': ['slc6', 'centos7', 'ubuntu'],
                                       'Tag': [],
                                       'OwnerGroup': ['prod', 'user'],
-                                      'Site': 'ANY'},
+                                      'Site': ''},
                                      numQueuesToGet=4)
   assert result['OK'] is True
   assert int(result['Value'][0][0]) in [tq_job2, tq_job3, tq_job4]
@@ -725,7 +736,7 @@ def test_ComplexMatching():
                                       'Platform': ['slc6', 'centos7'],
                                       'Tag': [],
                                       'OwnerGroup': ['prod', 'user'],
-                                      'Site': 'ANY'},
+                                      'Site': ''},
                                      numQueuesToGet=4)
   assert result['OK'] is True
   assert int(result['Value'][0][0]) in [tq_job2, tq_job3]
@@ -768,10 +779,10 @@ def test_ComplexMatching():
   result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 9999999,
                                       'Platform': '',
                                       'OwnerGroup': ['admin', 'prod', 'user'],
-                                      'Site': ['ANY']},
+                                      'Site': []},
                                      numQueuesToGet=4)
   assert result['OK'] is True
-  assert len(result['Value']) == 0
+  assert len(result['Value']) == 4
 
   # now inserting one without platform, and try again
 
@@ -788,7 +799,7 @@ def test_ComplexMatching():
   result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 9999999,
                                       'Platform': ['slc6', 'centos7'],
                                       'OwnerGroup': ['admin', 'prod', 'user'],
-                                      'Site': 'ANY'},
+                                      'Site': ''},
                                      numQueuesToGet=5)
   assert result['OK'] is True
   assert int(result['Value'][0][0]) in [tq_job1, tq_job2, tq_job3, tq_job5]
@@ -797,7 +808,7 @@ def test_ComplexMatching():
   result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 9999999,
                                       'Platform': ['ubuntu'],
                                       'OwnerGroup': ['admin', 'prod', 'user'],
-                                      'Site': 'ANY'},
+                                      'Site': ''},
                                      numQueuesToGet=5)
   assert result['OK'] is True
   assert int(result['Value'][0][0]) in [tq_job4, tq_job5]

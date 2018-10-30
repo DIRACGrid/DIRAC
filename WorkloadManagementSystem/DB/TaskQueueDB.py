@@ -27,7 +27,6 @@ multiValueMatchFields = ('GridCE', 'Site', 'GridMiddleware', 'Platform',
                          'PilotType', 'SubmitPool', 'JobType', 'Tag')
 tagMatchFields = ('Tag', )
 bannedJobMatchFields = ('Site', )
-strictRequireMatchFields = ('Platform', )
 mandatoryMatchFields = ('Setup', 'CPUTime')
 priorityIgnoredFields = ('Sites', 'BannedSites')
 
@@ -721,21 +720,21 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
         # Now evaluating Tags
         if field in tagMatchFields:  # basically, if field == Tag
 
-          if isinstance(tqMatchDict[field], str) and tqMatchDict[field].lower() in ['"any"', 'any'] \
+          if not tqMatchDict[field] \
+             or isinstance(tqMatchDict[field], str) and tqMatchDict[field].lower() in ['""', ''] \
              or \
              isinstance(tqMatchDict[field], list) \
-             and ('"any"' or 'any') in [fv.lower() for fv in tqMatchDict[field]]:
+             and ('""' or '') in [fv.lower() for fv in tqMatchDict[field]]:
             continue
-
           sqlMultiCondList.append(self.__generateTagSQLSubCond(fullTableN, tqMatchDict[field]))
 
         else:  # everything that is not tags
-          if isinstance(tqMatchDict[field], str) and tqMatchDict[field].lower() in ['"any"', 'any'] \
+          if not tqMatchDict[field] \
+             or isinstance(tqMatchDict[field], str) and tqMatchDict[field].lower() in ['""', ''] \
              or \
              isinstance(tqMatchDict[field], list) \
-             and ('"any"' or 'any') in [fv.lower() for fv in tqMatchDict[field]]:
+             and ('""' or '') in [fv.lower() for fv in tqMatchDict[field]]:
             continue
-
           # if field != 'GridCE' or 'Site' in tqMatchDict:
           # Jobs for masked sites can be matched if they specified a GridCE
           # Site is removed from tqMatchDict if the Site is mask. In this case we want
@@ -767,10 +766,11 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
     for field in tagMatchFields:
       fieldName = "Required%s" % field
       if tqMatchDict.get(fieldName):
-        if isinstance(tqMatchDict[fieldName], str) and tqMatchDict[fieldName].lower() in ['"any"', 'any'] \
+        if not tqMatchDict[fieldName] \
+           or isinstance(tqMatchDict[fieldName], str) and tqMatchDict[fieldName].lower() in ['""', ''] \
            or \
            isinstance(tqMatchDict[fieldName], list) \
-           and ('"any"' or 'any') in [fv.lower() for fv in tqMatchDict[fieldName]]:
+           and ('""' or '') in [fv.lower() for fv in tqMatchDict[fieldName]]:
           continue
 
         sqlCondList.append(self.__generateRequiredTagSQLSubCond('`tq_TQToTags`',
@@ -780,10 +780,10 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
     for field in multiValueMatchFields:
       bannedField = "Banned%s" % field
       if tqMatchDict.get(bannedField):
-        if isinstance(tqMatchDict[bannedField], str) and tqMatchDict[bannedField].lower() in ['"any"', 'any'] \
+        if isinstance(tqMatchDict[bannedField], str) and tqMatchDict[bannedField].lower() in ['""', ''] \
            or \
            isinstance(tqMatchDict[bannedField], list) \
-           and ('"any"' or 'any') in [fv.lower() for fv in tqMatchDict[bannedField]]:
+           and ('""' or '') in [fv.lower() for fv in tqMatchDict[bannedField]]:
           continue
 
         fullTableN = '`tq_TQTo%ss`' % field
@@ -794,16 +794,6 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
                                                                                       fullTableN,
                                                                                       fullTableN),
                                                      tqMatchDict[bannedField], boolOp='OR'))
-
-    # For certain fields, the requirement is strict.
-    # If it is not in the tqMatchDict, the job cannot require it
-    for field in strictRequireMatchFields:
-      if tqMatchDict.get(field):
-        continue
-      fullTableN = '`tq_TQTo%ss`' % field
-      sqlCondList.append(
-          "( SELECT COUNT(%s.Value) FROM %s WHERE %s.TQId = tq.TQId ) = 0" %
-          (fullTableN, fullTableN, fullTableN))
 
     # Add extra conditions
     if negativeCond:
