@@ -74,7 +74,7 @@ DIRAC APIs are an easy and convenient way to create and submit parametric jobs::
    J.setParameterSequence("args", ['one', 'two', 'three'])
    J.setParameterSequence("iargs", [1, 2, 3])
    J.setExecutable("exe-script.py", arguments=": testing %(args)s %(iargs)s", logFile='helloWorld_%n.log')
-   print Dirac().submit(J)
+   print Dirac().submitJob(J)
 
 
 InputData (in the form of LFNs -- Logical File Names) can become also parameters in parametric jobs::
@@ -315,7 +315,7 @@ Let's perform this exercise in the python shell.
         >>> j = Job()
         >>> j.setExecutable('echo', arguments='hello')
         {'OK': True, 'Value': ''}
-        >>> Dirac().submit(j,mode='local')
+        >>> Dirac().submitJob(j,mode='local')
         2010-10-22 14:41:51 UTC /DiracAPI  INFO: <=====DIRAC v5r10-pre2=====>
         2010-10-22 14:41:51 UTC /DiracAPI  INFO: Executing workflow locally without WMS submission
         2010-10-22 14:41:51 UTC /DiracAPI  INFO: Executing at /afs/in2p3.fr/home/h/hamar/Tests/APIs/Local/Local_zbDHRe_JobDir
@@ -357,7 +357,7 @@ Let's perform this exercise in the python shell.
         for i in range(5):
           j.setName('API_%d' % i)
           dirac = Dirac()
-          jobID = dirac.submit(j)
+          jobID = dirac.submitJob(j)
           print 'Submission Result: ',jobID
 
 - Execute the script::

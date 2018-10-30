@@ -31,29 +31,30 @@ import DIRAC
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 
 from DIRAC.Core.Base.API import API
-from DIRAC.Interfaces.API.JobRepository import JobRepository
+from DIRAC.Core.Base.AgentReactor import AgentReactor
+from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.Core.Utilities import Time
+from DIRAC.Core.Utilities.File import mkDir
+from DIRAC.Core.Utilities.Decorators import deprecated
+from DIRAC.Core.Utilities.List import breakListIntoChunks
+from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
+from DIRAC.Core.Utilities.PrettyPrint import printTable, printDict
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Utilities.Subprocess import shellCall
 from DIRAC.Core.Utilities.ModuleFactory import ModuleFactory
-from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
-from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
-from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
+from DIRAC.Core.Security import Locations
+from DIRAC.Core.Security.X509Chain import X509Chain
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemSection, getServiceURL
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
+from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
+from DIRAC.Interfaces.API.JobRepository import JobRepository
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
-from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemSection, getServiceURL
-from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
-from DIRAC.Core.Utilities.List import breakListIntoChunks
-from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
-from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
-from DIRAC.Core.Base.AgentReactor import AgentReactor
-from DIRAC.Core.Security.X509Chain import X509Chain
-from DIRAC.Core.Security import Locations
-from DIRAC.Core.Utilities import Time
-from DIRAC.Core.Utilities.File import mkDir
-from DIRAC.Core.Utilities.PrettyPrint import printTable, printDict
+from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
+from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
+from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 
 COMPONENT_NAME = 'DiracAPI'
 
@@ -183,7 +184,8 @@ class Dirac(API):
 
        :param requestedStates: List of jobs states to be considered
        :type requestedStates: list of strings
-       :param destinationDirectory: The target directory to place sandboxes (each jobID will have a directory created beneath this)
+       :param destinationDirectory: The target directory
+                                    to place sandboxes (each jobID will have a directory created beneath this)
        :type destinationDirectory: string
        :returns: S_OK,S_ERROR
     """
@@ -198,7 +200,9 @@ class Dirac(API):
       if jobDict.get('State') in requestedStates:
         # # Value of 'Retrieved' is a string, e.g. '0' when read from file
         if not int(jobDict.get('Retrieved')):
-          self.getOutputSandbox(jobID, destinationDirectory)
+          res = self.getOutputSandbox(jobID, destinationDirectory)
+          if not res['OK']:
+            return res
     return S_OK()
 
   def retrieveRepositoryData(self, requestedStates=None, destinationDirectory=''):
@@ -254,7 +258,7 @@ class Dirac(API):
         for fileName in eval(jobDict['OutputFiles']):
           if os.path.exists(fileName):
             os.remove(fileName)
-    self.delete(sorted(jobs))
+    self.deleteJob(sorted(jobs))
     os.remove(self.jobRepo.getLocation()['Value'])
     self.jobRepo = False
     return S_OK()
@@ -280,6 +284,7 @@ class Dirac(API):
     return S_OK()
 
   #############################################################################
+  @deprecated("Use function submitJob instead")
   def submit(self, job, mode='wms'):
     return self.submitJob(job, mode=mode)
 
@@ -658,7 +663,7 @@ class Dirac(API):
       return replicaDict
     catalogFailed = replicaDict['Value'].get('Failed', {})
 
-    guidDict = self.getMetadata(lfns)
+    guidDict = self.getLfnMetadata(lfns)
     if not guidDict['OK']:
       return guidDict
     for lfn, reps in replicaDict['Value']['Successful'].iteritems():
@@ -767,7 +772,7 @@ class Dirac(API):
       replicaDict = self.getReplicasForJobs(inputData)
       if not replicaDict['OK']:
         return replicaDict
-      guidDict = self.getMetadata(inputData)
+      guidDict = self.getLfnMetadata(inputData)
       if not guidDict['OK']:
         return guidDict
       for lfn, reps in replicaDict['Value']['Successful'].iteritems():
@@ -1216,6 +1221,7 @@ class Dirac(API):
     return S_OK(lfnGroups)
 
   #############################################################################
+  @deprecated("Use function getLfnMetadata instead")
   def getMetadata(self, lfns, printOutput=False):
     return self.getLfnMetadata(lfns, printOutput=printOutput)
 
@@ -1224,7 +1230,7 @@ class Dirac(API):
 
        Example usage:
 
-       >>> print dirac.getMetadata('/lhcb/data/CCRC08/RDST/00000106/0000/00000106_00006321_1.rdst')
+       >>> print dirac.getLfnMetadata('/lhcb/data/CCRC08/RDST/00000106/0000/00000106_00006321_1.rdst')
        {'OK': True, 'Value': {'Successful': {'/lhcb/data/CCRC08/RDST/00000106/0000/00000106_00006321_1.rdst':
        {'Status': '-', 'Size': 619475828L, 'GUID': 'E871FBA6-71EA-DC11-8F0C-000E0C4DEB4B', 'ChecksumType': 'AD',
        'CheckSumValue': ''}}, 'Failed': {}}}
@@ -1675,7 +1681,8 @@ class Dirac(API):
 
     # New download
     result = SandboxStoreClient(useCertificates=self.useCertificates).downloadSandboxForJob(jobID, 'Output', dirPath,
-                                                                                            inMemory=False, unpack=unpack)
+                                                                                            inMemory=False,
+                                                                                            unpack=unpack)
     if result['OK']:
       self.log.info('Files retrieved and extracted in %s' % (dirPath))
       if self.jobRepo:
@@ -1688,7 +1695,7 @@ class Dirac(API):
         self.jobRepo.updateJob(jobID, {'Retrieved': 1, 'Sandbox': os.path.realpath(dirPath)})
       return result
 
-    params = self.parameters(int(jobID))
+    params = self.getJobParameters(int(jobID))
     if not params['OK']:
       self.log.verbose('Could not retrieve job parameters to check for oversized sandbox')
       return params
@@ -1712,7 +1719,7 @@ class Dirac(API):
       return getFile
 
     fileName = os.path.basename(oversizedSandbox)
-    result = S_OK()
+    result = S_OK(oversizedSandbox)
     if tarfile.is_tarfile(fileName):
       try:
         with tarfile.open(fileName, 'r') as tf:
@@ -1732,6 +1739,7 @@ class Dirac(API):
     return result
 
   #############################################################################
+  @deprecated("Use function deleteJob instead")
   def delete(self, jobID):
     return self.deleteJob(jobID)
 
@@ -1741,7 +1749,7 @@ class Dirac(API):
 
        Example Usage:
 
-       >>> print dirac.delete(12345)
+       >>> print dirac.deleteJob(12345)
        {'OK': True, 'Value': [12345]}
 
        :param jobID: JobID
@@ -1762,6 +1770,7 @@ class Dirac(API):
     return result
 
   #############################################################################
+  @deprecated("Use function rescheduleJob instead")
   def reschedule(self, jobID):
     return self.rescheduleJob(jobID)
 
@@ -1773,7 +1782,7 @@ class Dirac(API):
 
        Example Usage:
 
-       >>> print dirac.reschedule(12345)
+       >>> print dirac.rescheduleJob(12345)
        {'OK': True, 'Value': [12345]}
 
        :param jobID: JobID
@@ -1795,6 +1804,7 @@ class Dirac(API):
         self.jobRepo.updateJobs(repoDict)
     return result
 
+  @deprecated("Use function killJob instead")
   def kill(self, jobID):
     return self.killJob(jobID)
 
@@ -1805,7 +1815,7 @@ class Dirac(API):
 
        Example Usage:
 
-        >>> print dirac.kill(12345)
+        >>> print dirac.killJob(12345)
         {'OK': True, 'Value': [12345]}
 
        :param jobID: JobID
@@ -1826,6 +1836,7 @@ class Dirac(API):
     return result
 
   #############################################################################
+  @deprecated("Use function getJobStatus instead")
   def status(self, jobID):
     return self.getJobStatus(jobID)
 
@@ -1834,7 +1845,7 @@ class Dirac(API):
 
        Example Usage:
 
-       >>> print dirac.status(79241)
+       >>> print dirac.getJobStatus(79241)
        {79241: {'status': 'Done', 'site': 'LCG.CERN.ch'}}
 
        :param jobID: JobID
@@ -1931,7 +1942,7 @@ class Dirac(API):
     except Exception as x:
       return self._errorReport(str(x), 'Expected integer or string for existing jobID')
 
-    result = self.parameters(jobID)
+    result = self.getJobParameters(jobID)
     if not result['OK']:
       return result
     if not result['Value'].get('UploadedOutputData'):
@@ -1970,7 +1981,7 @@ class Dirac(API):
     except Exception as x:
       return self._errorReport(str(x), 'Expected integer or string for existing jobID')
 
-    result = self.parameters(jobID)
+    result = self.getJobParameters(jobID)
     if not result['OK']:
       return result
     if not result['Value'].get('UploadedOutputData'):
@@ -2216,7 +2227,7 @@ class Dirac(API):
       msg.append('Input Sandbox: Not Available')
 
     try:
-      result = self.parameters(jobID)
+      result = self.getJobParameters(jobID)
       if not result['OK']:
         msg.append('Job Parameters: Retrieval Failed')
       else:
@@ -2226,7 +2237,7 @@ class Dirac(API):
       msg.append('Job Parameters: Not Available')
 
     try:
-      result = self.peek(jobID)
+      result = self.peekJob(jobID)
       if not result['OK']:
         msg.append('Last Heartbeat StdOut: Retrieval Failed')
       else:
@@ -2236,7 +2247,7 @@ class Dirac(API):
       msg.append('Last Heartbeat StdOut: Not Available')
 
     try:
-      result = self.loggingInfo(jobID)
+      result = self.getJobLoggingInfo(jobID)
       if not result['OK']:
         msg.append('Logging Info: Retrieval Failed')
       else:
@@ -2323,6 +2334,7 @@ class Dirac(API):
     return S_OK(summary)
 
   #############################################################################
+  @deprecated("Use function getJobAttributes instead")
   def attributes(self, jobID, printOutput=False):
     return self.getJobAttributes(jobID, printOutput=printOutput)
 
@@ -2335,7 +2347,7 @@ class Dirac(API):
 
        Example Usage:
 
-       >>> print dirac.attributes(79241)
+       >>> print dirac.getJobAttributes(79241)
        {'AccountedFlag': 'False','ApplicationNumStatus': '0',
        'ApplicationStatus': 'Job Finished Successfully',
        'CPUTime': '0.0','DIRACSetup': 'LHCb-Production'}
@@ -2363,6 +2375,7 @@ class Dirac(API):
     return result
 
   #############################################################################
+  @deprecated("Use function getJobParameters instead")
   def parameters(self, jobID, printOutput=False):
     return self.getJobParameters(jobID, printOutput=printOutput)
 
@@ -2374,7 +2387,7 @@ class Dirac(API):
 
        Example Usage:
 
-       >>> print dirac.parameters(79241)
+       >>> print dirac.getJobParameters(79241)
        {'OK': True, 'Value': {'JobPath': 'JobPath,JobSanity,JobPolicy,InputData,JobScheduling,TaskQueue',
        'JobSanityCheck': 'Job: 768 JDL: OK, InputData: 2 LFNs OK, ','LocalBatchID': 'dc768'}
 
@@ -2402,6 +2415,7 @@ class Dirac(API):
     return result
 
   #############################################################################
+  @deprecated("Use getJobLoggingInfo instead")
   def loggingInfo(self, jobID, printOutput=False):
     return self.getJobLoggingInfo(jobID, printOutput=printOutput)
 
@@ -2412,7 +2426,7 @@ class Dirac(API):
 
        Example Usage:
 
-       >>> print dirac.loggingInfo(79241)
+       >>> print dirac.getJobLoggingInfo(79241)
        {'OK': True, 'Value': [('Received', 'JobPath', 'Unknown', '2008-01-29 15:37:09', 'JobPathAgent'),
        ('Checking', 'JobSanity', 'Unknown', '2008-01-29 15:37:14', 'JobSanityAgent')]}
 
@@ -2446,6 +2460,7 @@ class Dirac(API):
     return result
 
   #############################################################################
+  @deprecated("Use function peekJob instead")
   def peek(self, jobID, printout=False, printOutput=False):
     return self.peekJob(jobID, printOutput=printout or printOutput)
 
@@ -2457,7 +2472,7 @@ class Dirac(API):
 
        Example Usage:
 
-       >>> print dirac.peek(1484)
+       >>> print dirac.peekJob(1484)
        {'OK': True, 'Value': 'Job peek result'}
 
        :param jobID: JobID
@@ -2487,6 +2502,7 @@ class Dirac(API):
     return S_OK(stdout)
 
   #############################################################################
+  @deprecated("Use function pingService instead")
   def ping(self, system, service, printOutput=False, url=None):
     return self.pingService(system, service, printOutput=printOutput, url=url)
 
@@ -2497,7 +2513,7 @@ class Dirac(API):
 
        Example Usage:
 
-       >>> print dirac.ping('WorkloadManagement','JobManager')
+       >>> print dirac.pingService('WorkloadManagement','JobManager')
        {'OK': True, 'Value': 'Job ping result'}
 
        :param system: system

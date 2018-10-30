@@ -19,7 +19,9 @@ The three strings are concatenated with "." to produce the name of the sites.
 | *<DIRAC_SITE_NAME>/Name*        | Site name gave by the site administrator      | Name = in2p3                      |
 |                                 | e.g.: the name of the site in GOCDB (optional)|                                   |
 +---------------------------------+-----------------------------------------------+-----------------------------------+
-| *<DIRAC_SITE_NAME>/CE*          | List of CEs using CE FQN                      | CE = ce01.in2p3.fr, ce02.in2p3.fr |
+| *<DIRAC_SITE_NAME>/CE*          | List of CEs using CE FQN                      | CE = ce01.in2p3.fr                |
+|                                 | These CEs are updated by the BDII2CSAgent     | CE += ce02.in2p3.fr               |
+|                                 | in the CEs section                            |                                   |
 +---------------------------------+-----------------------------------------------+-----------------------------------+
 | *<DIRAC_SITE_NAME>/MoUTierLevel | Tier Level (optional)                         | MoUTierLevel = 1                  |
 +---------------------------------+-----------------------------------------------+-----------------------------------+

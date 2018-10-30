@@ -1,3 +1,46 @@
+[v6r20p17]
+
+*Core
+CHANGE: (#3874) dirac-create-distribution-tarball - add tests directory to the tar file and fix pylint warnings.
+FIX: (#3876) Add function "discoverInterfaces" again which is still needed for VMDIRAC
+
+*ConfigurationSystem
+CHANGE: (#3875) Resources - allow to pass a list of platforms to getDIRACPlatform()
+
+*WorkloadManagement
+CHANGE: (#3867) SandboxStoreClient - Returning file location in output of getOutputSandbox
+CHANGE: (#3875) JobDB - allow to define a list of Platforms in a job description JDL
+
+*ResourceStatusSystem
+CHANGE: (#3863) deprecated CSHelpers.getSites() function
+
+*Interfaces
+NEW: (#3872) Add protocol option to dirac-dms-lfn-accessURL
+CHANGE: (#3864) marked deprecated some API functions (perfect replace exists already, as specified)
+
+*Resources
+FIX: (#3868) GFAL2_SRM2Storage: only set SPACETOKENDESC when SpaceToken is not an empty string
+
+*Test
+CHANGE: (#3863) Enable RSS in Jenkins
+
+*DataManagementSystem
+FIX: (#3859) FTS3: resubmit files in status Canceled on the FTS server
+NEW: (#3871) FTS submissions can use any third party protocol
+NEW: (#3871) Storage plugin for Echo (gsiftp+root)
+FIX: (#3871) replace deprecated calls to the gfal2 API
+NEW: (#3871) Generic implementation for retrieving space occupancy on storage
+
+*TransformationSystem
+FIX: (#3865) fixed submission of parametric jobs with InputData from WorkflowTask
+FIX: (#3865) better logging for parametric jobs submission
+
+*StorageManagamentSystem
+FIX: (#3868) Fix StageRequestAgent failures for SEs without a SpaceToken
+
+*RequestManagementSystem
+FIX: (#3861) tests do not re-use File objects
+
 [v6r20p16]
 
 *WorkloadManagementSystem
