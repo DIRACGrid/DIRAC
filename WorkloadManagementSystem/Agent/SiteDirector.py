@@ -296,7 +296,7 @@ class SiteDirector(AgentModule):
       for ce in resourceDict[site]:
         ceDict = resourceDict[site][ce]
         pilotRunDirectory = ceDict.get('PilotRunDirectory', '')
-        ceMaxRAM = ceDict.get('MaxRAM', None)
+        # ceMaxRAM = ceDict.get('MaxRAM', None)
         qDict = ceDict.pop('Queues')
         for queue in qDict:
           queueName = '%s_%s' % (ce, queue)
@@ -656,7 +656,10 @@ class SiteDirector(AgentModule):
     if self.voGroups:
       tqDict['OwnerGroup'] = self.voGroups
 
-    tqDict['Platform'] = self._getPlatforms()
+    if self.checkPlatform:
+      platforms = self._getPlatforms()
+      if platforms:
+        tqDict['Platform'] = platforms
 
     tqDict['Site'] = self.sites
 
@@ -679,9 +682,8 @@ class SiteDirector(AgentModule):
     """
     result = self.resourcesModule.getCompatiblePlatforms(self.platforms)
     if not result['OK']:
-      self.log.error("Issue getting platforms compatible with %s, returning 'ANY'" % self.platforms,
+      self.log.error("Issue getting platforms compatible with %s, will skip check of platforms" % self.platforms,
                      result['Message'])
-      return 'ANY'
     return result['Value']
 
   def _allowedToSubmit(self, queue, anySite, jobSites, testSites):
