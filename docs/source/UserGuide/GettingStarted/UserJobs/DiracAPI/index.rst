@@ -34,7 +34,7 @@ Creating a DIRAC Job using API
     j.setExecutable('/bin/echo hello again')
     j.setName('API')
     
-    jobID = dirac.submit(j)
+    jobID = dirac.submitJob(j)
     print 'Submission Result: ',jobID
     
   In this example, the job has tree steps from different applications: echo, hostname and echo again.
