@@ -295,12 +295,21 @@ def getCompatiblePlatforms(originalPlatforms):
   return S_OK(uniqueElements(resultList))
 
 
-def getDIRACPlatform(OS):
+def getDIRACPlatform(OSList):
   """ Get standard DIRAC platform(s) compatible with the argument.
 
       NB: The returned value is a list! ordered, in reverse, using distutils.version.LooseVersion
       In practice the "highest" version (which should be the most "desirable" one is returned first)
+
+      :param list OSList: list of platforms defined by resource providers
+      :return : a list of DIRAC platforms that can be specified in job descriptions
   """
+
+  # For backward compatibility allow a single string argument
+  osList = OSList
+  if isinstance(OSList, basestring):
+    osList = [OSList]
+
   result = gConfig.getOptionsDict('/Resources/Computing/OSCompatibility')
   if not (result['OK'] and result['Value']):
     return S_ERROR("OS compatibility info not found")
@@ -319,10 +328,14 @@ def getDIRACPlatform(OS):
       else:
         os2PlatformDict[osItem] = [platform]
 
-  if OS not in os2PlatformDict:
-    return S_ERROR('No compatible DIRAC platform found for %s' % OS)
+  platforms = []
+  for os in osList:
+    if os in os2PlatformDict:
+      platforms += os2PlatformDict[os]
 
-  platforms = os2PlatformDict[OS]
+  if not platforms:
+    return S_ERROR('No compatible DIRAC platform found for %s' % ','.join(OSList))
+
   platforms.sort(key=LooseVersion, reverse=True)
 
   return S_OK(platforms)
