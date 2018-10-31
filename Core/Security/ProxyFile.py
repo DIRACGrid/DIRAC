@@ -14,6 +14,7 @@ from DIRAC.Core.Security.Locations import getProxyLocation
 
 def writeToProxyFile( proxyContents, fileName = False ):
   """ Write a proxy string to file
+
       arguments:
         - proxyContents : string object to dump to file
         - fileName : filename to dump to
@@ -39,6 +40,7 @@ def writeToProxyFile( proxyContents, fileName = False ):
 def writeChainToProxyFile( proxyChain, fileName ):
   """
   Write an X509Chain to file
+
   arguments:
     - proxyChain : X509Chain object to dump to file
     - fileName : filename to dump to

@@ -47,7 +47,8 @@ class TSCatalogClient( FileCatalogClientBase ):
 
   def setMetadata( self, path, metadatadict ):
     """ Set metadata parameter for the given path
-        :return Successful/Failed dict.
+
+        :return: Successful/Failed dict.
     """
     rpcClient = self._getRPC()
     return rpcClient.setMetadata( path, metadatadict )

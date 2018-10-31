@@ -46,13 +46,13 @@ class TransferClient( BaseClient ):
     """
     Send a file to server
 
-    :type filename : string / file descriptor / file object
-    :param filename : File to send to server
-    :type fileId : any
-    :param fileId : Identification of the file being sent
-    :type token : string
-    :param token : Optional token for the file
-    :return : S_OK/S_ERROR
+    :type filename: string / file descriptor / file object
+    :param filename: File to send to server
+    :type fileId: any
+    :param fileId: Identification of the file being sent
+    :type token: string
+    :param token: Optional token for the file
+    :return: S_OK/S_ERROR
     """
     fileHelper = FileHelper()
     if "NoCheckSum" in token:
@@ -79,13 +79,13 @@ class TransferClient( BaseClient ):
     """
     Receive a file from the server
 
-    :type filename : string / file descriptor / file object
-    :param filename : File to receive from server
-    :type fileId : any
-    :param fileId : Identification of the file being received
-    :type token : string
-    :param token : Optional token for the file
-    :return : S_OK/S_ERROR
+    :type filename: string / file descriptor / file object
+    :param filename: File to receive from server
+    :type fileId: any
+    :param fileId: Identification of the file being received
+    :type token: string
+    :param token: Optional token for the file
+    :return: S_OK/S_ERROR
     """
     fileHelper = FileHelper()
     if "NoCheckSum" in token:
@@ -122,17 +122,17 @@ class TransferClient( BaseClient ):
     """
     Send a bulk of files to server
 
-    :type fileList : list of ( string / file descriptor / file object )
-    :param fileList : Files to send to server
-    :type bulkId : any
-    :param bulkId : Identification of the files being sent
-    :type token : string
-    :param token : Token for the bulk
-    :type compress : boolean
-    :param compress : Enable compression for the bulk. By default its True
-    :type bulkSize : integer
-    :param bulkSize : Optional size of the bulk
-    :return : S_OK/S_ERROR
+    :type fileList: list of ( string / file descriptor / file object )
+    :param fileList: Files to send to server
+    :type bulkId: any
+    :param bulkId: Identification of the files being sent
+    :type token: string
+    :param token: Token for the bulk
+    :type compress: boolean
+    :param compress: Enable compression for the bulk. By default its True
+    :type bulkSize: integer
+    :param bulkSize: Optional size of the bulk
+    :return: S_OK/S_ERROR
     """
     bogusEntries = self.__checkFileList( fileList )
     if bogusEntries:
@@ -159,15 +159,15 @@ class TransferClient( BaseClient ):
     """
     Receive a bulk of files from server
 
-    :type destDir : list of ( string / file descriptor / file object )
-    :param destDir : Files to receive from server
-    :type bulkId : any
-    :param bulkId : Identification of the files being received
-    :type token : string
-    :param token : Token for the bulk
-    :type compress : boolean
-    :param compress : Enable compression for the bulk. By default its True
-    :return : S_OK/S_ERROR
+    :type destDir: list of ( string / file descriptor / file object )
+    :param destDir: Files to receive from server
+    :type bulkId: any
+    :param bulkId: Identification of the files being received
+    :type token: string
+    :param token: Token for the bulk
+    :type compress: boolean
+    :param compress: Enable compression for the bulk. By default its True
+    :return: S_OK/S_ERROR
     """
     if not os.path.isdir( destDir ):
       return S_ERROR( "%s is not a directory for bulk receival" % destDir )
@@ -193,13 +193,13 @@ class TransferClient( BaseClient ):
     """
     List the contents of a bulk
 
-    :type bulkId : any
-    :param bulkId : Identification of the bulk to list
-    :type token : string
-    :param token : Token for the bulk
-    :type compress : boolean
-    :param compress : Enable compression for the bulk. By default its True
-    :return : S_OK/S_ERROR
+    :type bulkId: any
+    :param bulkId: Identification of the bulk to list
+    :type token: string
+    :param token: Token for the bulk
+    :type compress: boolean
+    :param compress: Enable compression for the bulk. By default its True
+    :return: S_OK/S_ERROR
     """
     if compress:
       bulkId = "%s.tar.bz2" % bulkId

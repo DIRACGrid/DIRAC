@@ -34,7 +34,7 @@ class DirectoryClosure( DirectoryTreeBase ):
   def findDir( self, path, connection = False ):
     """  Find directory ID for the given path
 
-      :param path : path of the directory
+      :param path: path of the directory
 
       :returns: S_OK(id) and res['Level'] as the depth
     """
@@ -77,7 +77,7 @@ class DirectoryClosure( DirectoryTreeBase ):
 
         Removing a non existing directory is successful. In that case, DirID is 0
 
-        :param path : path of the dir
+        :param path: path of the dir
 
         :returns: S_OK() and res['DirID'] the id of the directory removed
     """
@@ -106,9 +106,9 @@ class DirectoryClosure( DirectoryTreeBase ):
   def existsDir( self, path ):
     """ Check the existence of a directory at the specified path
 
-      :param path : directory path
+      :param path: directory path
 
-      :returns  S_OK( { 'Exists' : False } ) if the directory does not exist
+      :returns: S_OK( { 'Exists' : False } ) if the directory does not exist
                 S_OK( { 'Exists' : True, 'DirID' : directory id  } ) if the directory exists
     """
 
@@ -124,7 +124,7 @@ class DirectoryClosure( DirectoryTreeBase ):
   def getDirectoryPath( self, dirID ):
     """ Get directory name by directory ID
 
-        :param dirID : directory ID
+        :param dirID: directory ID
 
         :returns: S_OK(dir name), or S_ERROR if it does not exist
 
@@ -143,8 +143,9 @@ class DirectoryClosure( DirectoryTreeBase ):
 
   def getDirectoryPaths( self, dirIDList ):
     """ Get directory names by directory ID list
-        :param dirIDList : list of dirIds
-        :returns S_OK( { dirID : dirName} )
+
+        :param dirIDList: list of dirIds
+        :returns: S_OK( { dirID : dirName} )
     """
 
     dirs = dirIDList
@@ -171,7 +172,7 @@ class DirectoryClosure( DirectoryTreeBase ):
     """ Get IDs of all the directories in the parent hierarchy for a directory
         specified by its path, including itself
 
-        :param path : path of the directory
+        :param path: path of the directory
 
         :returns: S_OK( list of ids ), S_ERROR if not found
     """
@@ -192,7 +193,7 @@ class DirectoryClosure( DirectoryTreeBase ):
     """ Get IDs of all the directories in the parent hierarchy for a directory
         specified by its ID, including itself
 
-        :param dirID : id of the dictionary
+        :param dirID: id of the dictionary
 
         :returns: S_OK( list of ids )
 
@@ -231,9 +232,9 @@ class DirectoryClosure( DirectoryTreeBase ):
   def getSubdirectoriesByID( self, dirID, requestString = False, includeParent = False ):
     """ Get all the subdirectories of the given directory at a given level
 
-        :param dirID : id of the directory
-        :param requestString : if true, returns an sql query to get the information
-        :param includeParent : if true, the parent (dirID) will be included
+        :param dirID: id of the directory
+        :param requestString: if true, returns an sql query to get the information
+        :param includeParent: if true, the parent (dirID) will be included
 
         :returns: S_OK ( { dirID, depth } ) if requestString is False
                  S_OK(request) if requestString is True
@@ -258,7 +259,7 @@ class DirectoryClosure( DirectoryTreeBase ):
   def getAllSubdirectoriesByID( self, dirIdList ):
     """ Get IDs of all the subdirectories of directories in a given list
 
-        :param dirList : list of dir Ids
+        :param dirList: list of dir Ids
         :returns: S_OK([ unordered dir ids ])
     """
 
@@ -280,7 +281,7 @@ class DirectoryClosure( DirectoryTreeBase ):
   def getSubdirectories( self, path ):
     """ Get subdirectories of the given directory
 
-        :param path : path of the directory
+        :param path: path of the directory
 
         :returns: S_OK ( { dirID, depth } )
     """
@@ -299,8 +300,8 @@ class DirectoryClosure( DirectoryTreeBase ):
   def countSubdirectories(self, dirId, includeParent = True):
     """ Count the number of subdirectories
 
-        :param dirID : id of the directory
-        :param includeParent : count itself
+        :param dirID: id of the directory
+        :param includeParent: count itself
 
         :returns: S_OK(value)
     """
@@ -336,8 +337,8 @@ class DirectoryClosure( DirectoryTreeBase ):
   def makeDirectory( self, path, credDict, status = 1 ):
     """ Create a directory
 
-        :param path : has to be an absolute path. The parent dir has to exist
-        :param credDict : credential dict of the owner of the directory
+        :param path: has to be an absolute path. The parent dir has to exist
+        :param credDict: credential dict of the owner of the directory
         :param: status ????
 
         :returns: S_OK (dirID) with a flag res['NewDirectory'] to True or False
@@ -406,7 +407,7 @@ class DirectoryClosure( DirectoryTreeBase ):
       Rem: the speed could be enhanced if we were joining the FC_Files and FC_Directory* in the query.
           For the time being, it can stay like this
 
-      :param path : path of the directory
+      :param path: path of the directory
 
       :returns: S_OK(true) if there are no file nor directorie, S_OK(False) otherwise
     """
@@ -445,9 +446,9 @@ class DirectoryClosure( DirectoryTreeBase ):
   def getDirectoryParameters( self, pathOrDirId ):
     """ Get parameters of the given directory
 
-      :param pathOrDirID : the path or the id of the directory
+      :param pathOrDirID: the path or the id of the directory
 
-      :returns S_OK(dict), where dict has the following keys:
+      :returns: S_OK(dict), where dict has the following keys:
                       "DirID", "UID", "Owner", "GID", "OwnerGroup", "Status", "Mode", "CreationDate", "ModificationDate"
     """
     # Which procedure to use
@@ -487,9 +488,9 @@ class DirectoryClosure( DirectoryTreeBase ):
       Rem: the parent class has a more generic method, which is called
            in case we are given an unknown parameter
 
-      :param path : path of the directory
-      :param pname : name of the parameter to set
-      :param pvalue : value of the parameter (an id or a value)
+      :param path: path of the directory
+      :param pname: name of the parameter to set
+      :param pvalue: value of the parameter (an id or a value)
 
       :returns: S_OK(nb of row changed). It should always be 1 !
               S_ERROR if the directory does not exist
@@ -673,7 +674,7 @@ class DirectoryClosure( DirectoryTreeBase ):
                                  recursive = False ):
     """ Bulk setting of the directory parameter with recursion for all the subdirectories and files
 
-        :param dictionary paths : dictionary < lfn : value >, where value is the value of parameter to be set
+        :param dict paths: dictionary < lfn : value >, where value is the value of parameter to be set
         :param function directoryFunction: function to change directory(ies) parameter
         :param function fileFunction: function to change file(s) parameter
         :param bool recursive: flag to apply the operation recursively
