@@ -370,7 +370,7 @@ class TarModuleCreator(object):
       return S_OK("")
     try:
       with open(relNotes, "r") as fd:
-        relaseContents = fd.readlines()
+        releaseContents = fd.readlines()
     except Exception as excp:
       return S_ERROR("Could not open %s: %s" % (relNotes, excp))
     gLogger.info("Loaded %s" % relNotes)
@@ -455,19 +455,11 @@ class TarModuleCreator(object):
           rstData.append("")
     # Write releasenotes.rst
     try:
-<<<<<<< HEAD
-      rstFilePath = os.path.join( self.params.destination, self.params.name, rstFileName )
-      with open( rstFilePath, "w" ) as fd:
-        fd.write( "\n".join( rstData ) )
-    except Exception as excp:
-      return S_ERROR( "Could not write %s: %s" % ( rstFileName, excp ) )
-=======
       rstFilePath = os.path.join(self.params.destination, self.params.name, rstFileName)
       with open(rstFilePath, "w") as fd:
         fd.write("\n".join(rstData))
-    except Exception, excp:
+    except Exception as excp:
       return S_ERROR("Could not write %s: %s" % (rstFileName, excp))
->>>>>>> rel-v6r20
     return S_OK()
 
   def __generateReleaseNotes(self):
@@ -521,23 +513,13 @@ class TarModuleCreator(object):
     try:
       with open(relNotesRST) as fd:
         rstData = fd.read()
-<<<<<<< HEAD
     except Exception as excp:
-      return S_ERROR( "Could not read %s: %s" % ( relNotesRST, excp ) )
-    try:
-      parts = docutils.core.publish_parts( rstData, writer_name = 'html' )
-    except Exception as excp:
-      return S_ERROR( "Cannot generate the html %s: %s" % ( baseNotesPath, str( excp ) ) )
-    baseList = [ baseNotesPath ]
-=======
-    except Exception, excp:
       return S_ERROR("Could not read %s: %s" % (relNotesRST, excp))
     try:
       parts = docutils.core.publish_parts(rstData, writer_name='html')
-    except Exception, excp:
+    except Exception as excp:
       return S_ERROR("Cannot generate the html %s: %s" % (baseNotesPath, str(excp)))
     baseList = [baseNotesPath]
->>>>>>> rel-v6r20
     if self.params.outRelNotes:
       gLogger.notice("Leaving a copy of the release notes outside the tarballs")
       baseList.append("%s/%s.%s.%s" % (self.params.destination, baseRSTFile, self.params.name, self.params.version))
