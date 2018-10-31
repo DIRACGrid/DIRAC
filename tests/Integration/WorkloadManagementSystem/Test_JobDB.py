@@ -41,7 +41,14 @@ jdl = """
 
 
 gLogger.setLevel('DEBUG')
+
+
+def fakegetDIRACPlatform(OSList):
+  return {'OK': True, 'Value': 'pippo'}
+
+
 jobDB = JobDB()
+jobDB.getDIRACPlatform = fakegetDIRACPlatform
 
 
 def test_insertAndRemoveJobIntoDB():
