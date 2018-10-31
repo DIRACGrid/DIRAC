@@ -370,7 +370,7 @@ class TarModuleCreator(object):
       return S_OK("")
     try:
       with open(relNotes, "r") as fd:
-        relaseContents = fd.readlines()
+        releaseContents = fd.readlines()
     except Exception as excp:
       return S_ERROR("Could not open %s: %s" % (relNotes, excp))
     gLogger.info("Loaded %s" % relNotes)
