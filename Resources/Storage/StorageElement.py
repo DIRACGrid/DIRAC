@@ -553,7 +553,7 @@ class StorageElementItem(object):
   def getStorageParameters(self, plugin=None, protocol=None):
     """ Get plugin specific options
 
-      :param plugin : plugin we are interested in
+      :param plugin: plugin we are interested in
       :param protocol: protocol we are interested in
 
       Either plugin or protocol can be defined, not both, but at least one of them
@@ -612,7 +612,7 @@ class StorageElementItem(object):
         :param sourceSE: storageElement instance of the sourceSE
         :param protocols: ordered protocol restriction list
 
-        :return:dictionnary Successful/Failed with pair (src, dest) urls
+        :return: dictionnary Successful/Failed with pair (src, dest) urls
     """
     log = self.log.getSubLogger('generateTransferURLsBetweenSEs')
 
@@ -711,7 +711,7 @@ class StorageElementItem(object):
         between the sourceSE and ourselves. If protocols is given,
         the chosen protocol has to be among those
 
-        :param sourceSE : storageElement instance of the sourceSE
+        :param sourceSE: storageElement instance of the sourceSE
         :param protocols: ordered protocol restriction list
 
         :return: a list protocols that fits the needs, or None
@@ -798,7 +798,7 @@ class StorageElementItem(object):
   def getLFNFromURL(self, urls):
     """ Get the LFN from the PFNS .
 
-        :param lfn : input lfn or lfns (list/dict)
+        :param lfn: input lfn or lfns (list/dict)
 
     """
     result = checkArgumentFormat(urls)
@@ -871,9 +871,9 @@ class StorageElementItem(object):
     """ Generates a dictionary (url : lfn ), where the url are constructed
         from the lfn using the constructURLFromLFN method of the storage plugins.
 
-        :param: lfns : dictionary {lfn:whatever}
+        :param lfns: dictionary {lfn:whatever}
 
-        :returns dictionary {constructed url : lfn}
+        :returns: dictionary {constructed url : lfn}
     """
     log = self.log.getSubLogger("__generateURLDict")
     log.verbose("generating url dict for %s lfn in %s." % (len(lfns), self.name))
@@ -1043,11 +1043,11 @@ class StorageElementItem(object):
     """ Forward the call to each storage in turn until one works.
         The method to be executed is stored in self.methodName
 
-        :param lfn : string, list or dictionary
-        :param *args : variable amount of non-keyword arguments. SHOULD BE EMPTY
-        :param **kwargs : keyword arguments
+        :param lfn: string, list or dictionary
+        :param *args: variable amount of non-keyword arguments. SHOULD BE EMPTY
+        :param **kwargs: keyword arguments
 
-        :returns S_OK( { 'Failed': {lfn : reason} , 'Successful': {lfn : value} } )
+        :returns: S_OK( { 'Failed': {lfn : reason} , 'Successful': {lfn : value} } )
                 The Failed dict contains the lfn only if the operation failed on all the storages
                 The Successful dict contains the value returned by the successful storages.
 
@@ -1202,11 +1202,11 @@ class StorageElementItem(object):
     """
         Generates a DataOperation accounting if needs to be, and adds it to the DataStore client cache
 
-        :param lfns : list of lfns on which we attempted the operation
-        :param startDate : datetime, start of the operation
-        :param elapsedTime : time (seconds) the operation took
-        :param storageParameters : the parameters of the plugins used to perform the operation
-        :param callRes : the return of the method call, S_OK or S_ERROR
+        :param lfns: list of lfns on which we attempted the operation
+        :param startDate: datetime, start of the operation
+        :param elapsedTime: time (seconds) the operation took
+        :param storageParameters: the parameters of the plugins used to perform the operation
+        :param callRes: the return of the method call, S_OK or S_ERROR
 
         The operation is generated with the OperationType "se.methodName"
         The TransferSize and TransferTotal for directory methods actually take into

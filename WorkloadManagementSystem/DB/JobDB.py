@@ -437,7 +437,7 @@ class JobDB(DB):
     :param self: self reference
     :param int jobID: Job ID
 
-    :return : dict with all Job Status values/empty dict if matching job not found
+    :return: dict with all Job Status values/empty dict if matching job not found
     """
 
     jobStatusNames = ['Status', 'MinorStatus', 'ApplicationStatus']
@@ -656,7 +656,7 @@ class JobDB(DB):
         :param bool update: optional flag to update the job LastUpdateTime stamp
         :param str myDate: optional time stamp for the LastUpdateTime attribute
 
-        :return : S_OK/S_ERROR
+        :return: S_OK/S_ERROR
     """
 
     if attrName not in self.jobAttributeNames:
@@ -697,7 +697,7 @@ class JobDB(DB):
         :param bool update: optional flag to update the job LastUpdateTime stamp
         :param str myDate: optional time stamp for the LastUpdateTime attribute
 
-        :return : S_OK/S_ERROR
+        :return: S_OK/S_ERROR
     """
 
     jobIDList = jobID
