@@ -441,7 +441,7 @@ class FTS3Job(FTS3Serializable):
         :param ucert: path to the user certificate/proxy. Might be inferred by the fts cli (see its doc)
         :param protocols: list of protocols from which we should choose the protocol to use
 
-        :returns S_OK([FTSFiles ids of files submitted])
+        :returns: S_OK([FTSFiles ids of files submitted])
     """
 
     log = gLogger.getSubLogger("submit/%s/%s_%s" %

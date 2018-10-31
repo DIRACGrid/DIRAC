@@ -20,12 +20,12 @@ class FTS2Placement(FTSAbstractPlacement):
     """ For multiple source to multiple destination, find the optimal replication
         strategy.
 
-       :param sourceSEs : list of source SE
-       :param targetSEs : list of destination SE
-       :param size : size of the File
-       :param strategy : which strategy to use
+       :param sourceSEs: list of source SE
+       :param targetSEs: list of destination SE
+       :param size: size of the File
+       :param strategy: which strategy to use
 
-       :returns S_OK(dict) < route name :  { dict with key Ancestor, SourceSE, TargetSEtargetSE, Strategy } >
+       :returns: S_OK(dict) < route name :  { dict with key Ancestor, SourceSE, TargetSEtargetSE, Strategy } >
     """
 
     return self.fts2Strategy.replicationTree( sourceSEs = sourceSEs,
@@ -47,8 +47,8 @@ class FTS2Placement(FTSAbstractPlacement):
   def findRoute( self, sourceSE, targetSE ):
     """ Find the appropriate route from point A to B
 
-      :param sourceSE : source SE
-      :param targetSE : destination SE
+      :param sourceSE: source SE
+      :param targetSE: destination SE
 
       :returns: S_OK(FTSRoute)
 
@@ -71,7 +71,7 @@ class FTS2Placement(FTSAbstractPlacement):
        Check if the source is readable, the target writable,
        and we don't have to many active jobs on that route
 
-       :param route : FTSRoute
+       :param route: FTSRoute
 
        :returns: S_OK or S_ERROR(reason)
     """
@@ -100,7 +100,7 @@ class FTS2Placement(FTSAbstractPlacement):
     """Declare that one starts a transfer on a given route.
        Accounting purpose only
 
-       :param route : FTSRoute that is used
+       :param route: FTSRoute that is used
 
     """
     edge = self.fts2Strategy.ftsGraph.findRoute( route.sourceSE, route.targetSE )
@@ -114,7 +114,7 @@ class FTS2Placement(FTSAbstractPlacement):
     """Declare that one finishes a transfer on a given route.
        Accounting purpose only
 
-       :param route : FTSRoute that is used
+       :param route: FTSRoute that is used
 
     """
     edge = self.fts2Strategy.ftsGraph.findRoute( route.sourceSE, route.targetSE )

@@ -825,7 +825,7 @@ class FileManagerPs(FileManagerBase):
   def countFilesInDir(self, dirId):
     """ Count how many files there is in a given Directory
 
-        :param dirID : directory id
+        :param dirID: directory id
 
         :returns: S_OK(value) or S_ERROR
     """

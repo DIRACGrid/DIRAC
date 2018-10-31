@@ -328,7 +328,8 @@ class Request( object ):
   def delayNextExecution( self, deltaTime ):
     """This helper sets the NotBefore attribute in deltaTime minutes
        in the future
-       :param deltaTime : time in minutes before next execution
+
+       :param deltaTime: time in minutes before next execution
     """
     now = datetime.datetime.utcnow().replace( microsecond = 0 )
     extraDelay = datetime.timedelta( minutes = deltaTime )

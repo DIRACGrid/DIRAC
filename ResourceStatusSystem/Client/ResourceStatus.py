@@ -311,8 +311,8 @@ class ResourceStatus(object):
   def isStorageElementAlwaysBanned(self, seName, statusType):
     """ Checks if the AlwaysBanned policy is applied to the SE given as parameter
 
-    :param seName : string, name of the SE
-    :param statusType : ReadAcces, WriteAccess, RemoveAccess, CheckAccess
+    :param seName: string, name of the SE
+    :param statusType: ReadAcces, WriteAccess, RemoveAccess, CheckAccess
 
     :returns: S_OK(True/False)
     """

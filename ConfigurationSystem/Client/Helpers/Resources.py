@@ -302,7 +302,7 @@ def getDIRACPlatform(OSList):
       In practice the "highest" version (which should be the most "desirable" one is returned first)
 
       :param list OSList: list of platforms defined by resource providers
-      :return : a list of DIRAC platforms that can be specified in job descriptions
+      :return: a list of DIRAC platforms that can be specified in job descriptions
   """
 
   # For backward compatibility allow a single string argument

@@ -44,6 +44,7 @@ class BasePlotter( DBUtils ):
   def __init__( self, db, setup, extraArgs = None ):
     super( BasePlotter, self ).__init__( db, setup )
     """ c'tor
+
     :param self: self reference
     """
 
@@ -69,7 +70,8 @@ class BasePlotter( DBUtils ):
   def generate( self, reportRequest ):
     """
     It retrives the data from the database and create the plot
-    :param dict reportRequest contains the plot attributes
+
+    :param dict reportRequest: contains the plot attributes
     """
     reportHash = reportRequest[ 'hash' ]
     reportName = reportRequest[ 'reportName' ]
@@ -110,11 +112,10 @@ class BasePlotter( DBUtils ):
   def __retrieveReportData( self, reportRequest, reportHash ):
     """
     It uses the appropriate Plotter to retrieve the data from the database.
-    :param dict reportRequest the dictionary which contains the conditions used to create
-    the plot
-    :param str reportHash it is the unique identifier used to cache a plot
-    :return dict S_OK/S_ERROR if the data found in the cache it returns from it
-    otherwise it uses the cache.
+
+    :param dict reportRequest: the dictionary which contains the conditions used to create the plot
+    :param str reportHash: it is the unique identifier used to cache a plot
+    :return: dict S_OK/S_ERROR if the data found in the cache it returns from it otherwise it uses the cache.
     """
     funcName = "_report%s" % reportRequest[ 'reportName' ]
     if not hasattr( self, funcName ):
@@ -127,11 +128,11 @@ class BasePlotter( DBUtils ):
                                      dataFunc = funcObj )
 
   def __generatePlotForReport( self, reportRequest, reportHash, reportData ):
-    """
-    It creates the plot
-    :param dict reportRequest contains the plot attributes
-    :param str reportHash unique string which identify the plot
-    :param dict repotData contains the data used to generate the plot.
+    """It creates the plot
+
+    :param dict reportRequest: contains the plot attributes
+    :param str reportHash: unique string which identify the plot
+    :param dict repotData: contains the data used to generate the plot.
     """
 
     funcName = "_plot%s" % reportRequest[ 'reportName' ]
@@ -148,11 +149,12 @@ class BasePlotter( DBUtils ):
   def _getTimedData( self, startTime, endTime, selectFields, preCondDict, metadataDict = None ):
     """
     It retrieves the time series data from the database.
-    :param int startTime epoch time
-    :param int endTime epoch time
-    :param list selectFields the value what we want to plot
-    :param dict preCondDict plot attributes
-    :param dict metadataDict extra arguments used to create the plot.
+
+    :param int startTime: epoch time
+    :param int endTime: epoch time
+    :param list selectFields: the value what we want to plot
+    :param dict preCondDict: plot attributes
+    :param dict metadataDict: extra arguments used to create the plot.
 
     """
 
@@ -202,11 +204,12 @@ class BasePlotter( DBUtils ):
   def _getSummaryData( self, startTime, endTime, selectFields, preCondDict, metadataDict = None ):
     """
     It returns the adat used to create the pie chart plot.
-    :param int startTime epoch time
-    :param int endTime epoch time
-    :param list selectFields the value what we want to plot
-    :param dict preCondDict plot attributes
-    :param dict metadataDict extra arguments used to create the plot.
+
+    :param int startTime: epoch time
+    :param int endTime: epoch time
+    :param list selectFields: the value what we want to plot
+    :param dict preCondDict: plot attributes
+    :param dict metadataDict: extra arguments used to create the plot.
     """
     grouping = preCondDict['grouping'][0]
     condDict = {}
@@ -271,9 +274,9 @@ class BasePlotter( DBUtils ):
     return reportDataDict, graphDataDict, maxValue, unitData[0]
 
   def __checkPlotMetadata( self, metadata ):
-    """
-    It check the plot metadata arguments
-    :param dict metadata contains the plot metadata
+    """It check the plot metadata arguments
+
+    :param dict metadata: contains the plot metadata
     """
     if self._extraArgs.get( self._EA_WIDTH ):
       try:
@@ -289,9 +292,9 @@ class BasePlotter( DBUtils ):
       metadata[ 'title' ] = self._extraArgs[ self._EA_TITLE ]
 
   def __checkThumbnailMetadata( self, metadata ):
-    """
-     checks the plot thumbnail data
-     :param dict metadata contains the thumbnail data
+    """checks the plot thumbnail data
+
+     :param dict metadata: contains the thumbnail data
      """
     if self._EA_THUMBNAIL in self._extraArgs and self._extraArgs[ self._EA_THUMBNAIL ]:
       thbMD = dict( metadata )
@@ -312,12 +315,12 @@ class BasePlotter( DBUtils ):
     return False
 
   def __plotData( self, filename, dataDict, metadata, funcToPlot ):
-    """
-    It create the plot.
-    :param str filename the name of the file which contains the plot
-    :param dict dataDict data used to crate the plot
-    :param dict metadata plot metadata
-    :param object funcToPlot the method which create the plot using the appropriate method.
+    """It create the plot.
+
+    :param str filename: the name of the file which contains the plot
+    :param dict dataDict: data used to crate the plot
+    :param dict metadata: plot metadata
+    :param object funcToPlot: the method which create the plot using the appropriate method.
     """
     self.__checkPlotMetadata( metadata )
     if not dataDict:

@@ -154,7 +154,7 @@ class FTS3Operation(FTS3Serializable):
 
         :param maxAttemptsPerFile: the maximum number of attempts to be tried for a file
 
-        :return List of FTS3File to submit
+        :return: List of FTS3File to submit
     """
 
     toSubmit = []
@@ -173,10 +173,11 @@ class FTS3Operation(FTS3Serializable):
   @staticmethod
   def _checkSEAccess(seName, accessType, vo=None):
     """Check the Status of a storage element
+
         :param seName: name of the StorageElement
         :param accessType ReadAccess, WriteAccess,CheckAccess,RemoveAccess
 
-        :return S_ERROR if not allowed or error, S_OK() otherwise
+        :return: S_ERROR if not allowed or error, S_OK() otherwise
     """
     # Check that the target is writable
     # access = self.rssClient.getStorageElementStatus( seName, accessType )
@@ -199,12 +200,13 @@ class FTS3Operation(FTS3Serializable):
 
   def _createNewJob(self, jobType, ftsFiles, targetSE, sourceSE=None):
     """ Create a new FTS3Job object
+
         :param jobType: type of job to create (Transfer, Staging, Removal)
         :param ftsFiles: list of FTS3File objects the job has to work on
         :param targetSE: SE on which to operate
         :param sourceSE: source SE, only useful for Transfer jobs
 
-        :return FTS3Job object
+        :return: FTS3Job object
      """
 
     newJob = FTS3Job()
@@ -245,7 +247,7 @@ class FTS3Operation(FTS3Serializable):
         :param maxFilesPerJob: maximum number of files assigned to a job
         :param maxAttemptsPerFile: maximum number of retry after an fts failure
 
-        :return list of jobs
+        :return: list of jobs
     """
     raise NotImplementedError("You should not be using the base class")
 
@@ -333,6 +335,7 @@ class FTS3Operation(FTS3Serializable):
     """ Construct an FTS3Operation object from the RMS Request and Operation corresponding.
         The attributes taken are the OwnerGroup, Request and Operation IDS, sourceSE,
         and activity and priority if they are defined in the Argument field of the operation
+
         :param rmsReq: RMS Request object
         :param rmsOp: RMS Operation object
         :param username: username to which associate the FTS3Operation (normally comes from the Req OwnerDN)
