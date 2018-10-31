@@ -297,6 +297,12 @@ function fullInstallDIRAC(){
   echo '==> Restarting ResourceStatus Publisher'
   dirac-restart-component ResourceStatus Publisher $DEBUG
 
+  # populate RSS
+  dirac-rss-sync --element Site -o LogLevel=VERBOSE
+  dirac-rss-sync --element Resource -o LogLevel=VERBOSE
+  # init RSS
+  dirac-rss-sync --init -o LogLevel=VERBOSE
+
   #agents
   findAgents
   diracAgents
