@@ -4,7 +4,10 @@
         python -m pytest -c ../pytest.ini  -vv tests/Integration/WorkloadManagementSystem/Test_JobDB.py
 """
 
-# pylint: disable=invalid-name,wrong-import-position
+# pylint: disable=wrong-import-position
+
+from DIRAC.Core.Base.Script import parseCommandLine
+parseCommandLine()
 
 from DIRAC import gLogger
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
