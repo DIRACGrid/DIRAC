@@ -135,6 +135,7 @@ class SingularityComputingElement(ComputingElement):
       cfgOpts.append("-S '%s'" % setup)
     csServers = gConfig.getValue("/DIRAC/Configuration/Servers", [])
     cfgOpts.append("-C '%s'" % ','.join(csServers))
+    cfgOpts.append("-n '%s'" % DIRAC.siteName())
     return ' '.join(cfgOpts)
 
   def __createWorkArea(self, proxy, jobDesc, log, logLevel):
