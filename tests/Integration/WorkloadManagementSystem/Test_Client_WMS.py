@@ -362,14 +362,10 @@ class JobMonitoringMore(TestWMSTestCase):
     self.assertTrue(res['OK'])
     try:
       self.assertTrue(
-<<<<<<< HEAD
-          res['Value'].get('Received') + res['Value'].get('Waiting') >= long(len(dests) * len(lfnss) * len(types)))
-=======
           res['Value'].get('Received') +
           res['Value'].get('Waiting') >= long(
               len(lfnss) *
               len(types)))
->>>>>>> rel-v6r20
     except TypeError:
       pass
     res = jobMonitor.getJobsSummary(jobIDs)
