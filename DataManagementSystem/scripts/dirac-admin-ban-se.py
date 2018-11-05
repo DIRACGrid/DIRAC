@@ -35,27 +35,27 @@ Script.parseCommandLine(ignoreErrors=True)
 
 ses = Script.getPositionalArgs()
 for switch in Script.getUnprocessedSwitches():
-  if switch[0].lower() == "r" or switch[0].lower() == "banread":
+  if switch[0].lower() in ("r", "banread"):
     write = False
     check = False
     remove = False
-  if switch[0].lower() == "w" or switch[0].lower() == "banwrite":
+  if switch[0].lower() in ("w", "banwrite"):
     read = False
     check = False
     remove = False
-  if switch[0].lower() == "k" or switch[0].lower() == "bancheck":
+  if switch[0].lower() in ("k", "bancheck"):
     read = False
     write = False
     remove = False
-  if switch[0].lower() == "v" or switch[0].lower() == "banremove":
+  if switch[0].lower() in ("v", "banremove"):
     read = False
     write = False
     check = False
-  if switch[0].lower() == "a" or switch[0].lower() == "all":
+  if switch[0].lower() in ("a", "all"):
     pass
-  if switch[0].lower() == "m" or switch[0].lower() == "mute":
+  if switch[0].lower() in ("m", "mute"):
     mute = True
-  if switch[0] == "S" or switch[0].lower() == "site":
+  if switch[0].lower() in ("s", "site"):
     site = switch[1]
 
 # from DIRAC.ConfigurationSystem.Client.CSAPI           import CSAPI
