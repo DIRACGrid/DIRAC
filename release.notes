@@ -36,6 +36,20 @@ NEW: (#3744) Added miniInstallDIRAC function for Jenkins jobs
 FIX: Better dirac.cfg example configuration for web
 NEW: (#3744) Add WMS documentation in DeveloperGuide/Systems
 
+[v6r20p18]
+
+*DataManagementSystem
+CHANGE: (#3882) script for allow/ban SEs now accepting -a/--All switch, for allo status types
+
+*Core
+FIX: (#3882) ClassAdLight - fix to avoid returning a list with empty string
+
+*Resources
+FIX: (#3882) Add site name configuration for the dirac installation inside singularity CE
+
+*test
+FIX: (#3882) fully activating RSS in Jenkins tests
+
 [v6r20p17]
 
 *Core
