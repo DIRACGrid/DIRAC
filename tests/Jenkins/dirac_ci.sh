@@ -282,6 +282,9 @@ function fullInstallDIRAC(){
   echo '==> Restarting WorkloadManagement SandboxStore'
   dirac-restart-component WorkloadManagement SandboxStore $DEBUG
 
+  echo '==> Restarting WorkloadManagement Matcher'
+  dirac-restart-component WorkloadManagement Matcher $DEBUG
+
   echo '==> Restarting DataManagement FileCatalog'
   dirac-restart-component DataManagement FileCatalog $DEBUG
 
@@ -296,6 +299,20 @@ function fullInstallDIRAC(){
 
   echo '==> Restarting ResourceStatus Publisher'
   dirac-restart-component ResourceStatus Publisher $DEBUG
+
+  # populate RSS
+  echo '==> Populating RSS DB'
+  dirac-rss-sync --element Site -o LogLevel=VERBOSE
+  dirac-rss-sync --element Resource -o LogLevel=VERBOSE
+  # init RSS
+  echo '==> Initializing status of sites and resources in RSS'
+  dirac-rss-sync --init -o LogLevel=VERBOSE
+  # Setting by hand
+  dirac-rss-set-status --element Resource --name ProductionSandboxSE --status Active --reason "Why not?"
+  dirac-rss-set-status --element Resource --name jenkins.cern.ch --status Active --reason "Why not?"
+  dirac-rss-set-status --element Resource --name JENKINS-FTS3 --status Active --reason "Why not?"
+  dirac-rss-set-status --element Resource --name FileCatalog --status Active --reason "Why not?"
+  dirac-rss-set-status --element Site --name DIRAC.Jenkins.ch --status Active --reason "Why not?"
 
   #agents
   findAgents

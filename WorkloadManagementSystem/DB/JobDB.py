@@ -1243,10 +1243,13 @@ class JobDB(DB):
         if not classAdJob.lookupAttribute(param):
           classAdJob.insertAttributeString(param, val)
 
+    # priority
     priority = classAdJob.getAttributeInt('Priority')
     if priority is None:
       priority = 0
-    platformList = classAdJob.getListFromExpression('Platform')
+    classAdReq.insertAttributeInt('UserPriority', priority)
+
+    # CPU time
     cpuTime = classAdJob.getAttributeInt('CPUTime')
     if cpuTime is None:
       # Just in case check for MaxCPUTime for backward compatibility
@@ -1257,9 +1260,10 @@ class JobDB(DB):
         opsHelper = Operations(group=ownerGroup,
                                setup=diracSetup)
         cpuTime = opsHelper.getValue('JobDescription/DefaultCPUTime', 86400)
-    classAdReq.insertAttributeInt('UserPriority', priority)
     classAdReq.insertAttributeInt('CPUTime', cpuTime)
 
+    # platform(s)
+    platformList = classAdJob.getListFromExpression('Platform')
     if platformList:
       result = self.getDIRACPlatform(platformList)
       if result['OK'] and result['Value']:
@@ -1268,7 +1272,6 @@ class JobDB(DB):
         error = "OS compatibility info not found"
 
     if error:
-
       retVal = S_ERROR(EWMSSUBM, error)
       retVal['JobId'] = jobID
       retVal['Status'] = 'Failed'
