@@ -5,7 +5,7 @@
 __RCSID__ = "$Id$"
 
 
-class ClassAd:
+class ClassAd(object):
 
   def __init__(self, jdl):
     """ClassAd constructor from a JDL string
@@ -120,7 +120,7 @@ class ClassAd:
     """Insert a named string list attribute
     """
 
-    tmp = map(lambda x: '"' + x + '"', attributelist)
+    tmp = ['"' + x + '"' for x in attributelist]
     tmpstr = ','.join(tmp)
     self.contents[name] = '{' + tmpstr + '}'
 
@@ -128,7 +128,7 @@ class ClassAd:
     """Insert a named string list attribute
     """
 
-    tmp = map(lambda x: str(x), attributelist)
+    tmp = [str(x) for x in attributelist]
     tmpstr = ','.join(tmp)
     self.contents[name] = '{' + tmpstr + '}'
 
@@ -181,15 +181,15 @@ class ClassAd:
       tempString = tempString[1:-1]
       listMode = True
 
-    resultList = []
     tempString = tempString.replace(" ", "").replace('\n', '')
     if tempString.find('{') < 0:
       if not listMode:
         tempString = tempString.replace("\"", "")
-        if tempString:
-          return tempString.split(',')
-        return resultList
+        if not tempString:
+          return []
+        return tempString.split(',')
 
+    resultList = []
     while tempString:
       if tempString.find('{') == 0:
         end = tempString.find('}')
