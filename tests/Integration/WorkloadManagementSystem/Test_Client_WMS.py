@@ -327,7 +327,7 @@ class JobMonitoringMore(TestWMSTestCase):
 
     res = jobMonitor.getSites()
     self.assertTrue(res['OK'])
-    self.assertTrue(set(res['Value']) <= set(dests + ['ANY', 'DIRAC.Jenkins.ch']))
+    self.assertTrue(set(res['Value']) <= {'ANY', 'DIRAC.Jenkins.ch'})
     res = jobMonitor.getJobTypes()
     self.assertTrue(res['OK'])
     self.assertEqual(sorted(res['Value']), sorted(types))
@@ -361,7 +361,6 @@ class JobMonitoringMore(TestWMSTestCase):
       self.assertTrue(
           res['Value'].get('Received') +
           res['Value'].get('Waiting') >= long(
-              len(dests) *
               len(lfnss) *
               len(types)))
     except TypeError:
