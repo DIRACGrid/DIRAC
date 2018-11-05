@@ -176,19 +176,20 @@ class ClassAd:
     """
 
     tempString = self.get_expression(name).strip()
-    print "AAAAAAAAAA", name, "tempString", tempString
     listMode = False
     if tempString.startswith('{'):
       tempString = tempString[1:-1]
       listMode = True
 
+    resultList = []
     tempString = tempString.replace(" ", "").replace('\n', '')
     if tempString.find('{') < 0:
       if not listMode:
         tempString = tempString.replace("\"", "")
-        return tempString.split(',')
+        if tempString:
+          return tempString.split(',')
+        return resultList
 
-    resultList = []
     while tempString:
       if tempString.find('{') == 0:
         end = tempString.find('}')
@@ -211,7 +212,6 @@ class ClassAd:
           resultList.append(tempString[:end].replace("\"", "").replace(" ", ""))
           tempString = tempString[end + 1:]
 
-    print "AAAAAAAAAA", name, "resultList", resultList
     return resultList
 
   def getDictionaryFromSubJDL(self, name):
