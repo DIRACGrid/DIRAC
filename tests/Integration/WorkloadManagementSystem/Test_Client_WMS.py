@@ -113,10 +113,11 @@ class WMSChain(TestWMSTestCase):
 
     # submit the job
     res = wmsClient.submitJob(job._toJDL(xmlFile=jobDescription))
+    print res
     self.assertTrue(res['OK'])
-  # self.assertEqual( type( res['Value'] ), int )
-  # self.assertEqual( res['Value'], res['JobID'] )
-  # jobID = res['JobID']
+    self.assertTrue(isinstance(res['Value'], int))
+    self.assertEqual(res['Value'], res['JobID'])
+    jobID = res['JobID']
     jobID = res['Value']
 
     # updating the status
@@ -310,21 +311,19 @@ class JobMonitoringMore(TestWMSTestCase):
     jobStateUpdate = RPCClient('WorkloadManagement/JobStateUpdate')
 
     jobIDs = []
-    dests = ['DIRAC.site1.org', 'DIRAC.site2.org']
     lfnss = [['/a/1.txt', '/a/2.txt'], ['/a/1.txt', '/a/3.txt', '/a/4.txt'], []]
     types = ['User', 'Test']
-    for dest in dests:
-      for lfns in lfnss:
-        for jobType in types:
-          job = helloWorldJob()
-          job.setDestination(dest)
-          job.setInputData(lfns)
-          job.setType(jobType)
-          jobDescription = createFile(job)
-          res = wmsClient.submitJob(job._toJDL(xmlFile=jobDescription))
-          self.assertTrue(res['OK'])
-          jobID = res['Value']
-          jobIDs.append(jobID)
+    for lfns in lfnss:
+      for jobType in types:
+        job = helloWorldJob()
+        job.setDestination('DIRAC.Jenkins.ch')
+        job.setInputData(lfns)
+        job.setType(jobType)
+        jobDescription = createFile(job)
+        res = wmsClient.submitJob(job._toJDL(xmlFile=jobDescription))
+        self.assertTrue(res['OK'])
+        jobID = res['Value']
+      jobIDs.append(jobID)
 
     res = jobMonitor.getSites()
     self.assertTrue(res['OK'])
