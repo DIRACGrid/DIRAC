@@ -282,6 +282,9 @@ function fullInstallDIRAC(){
   echo '==> Restarting WorkloadManagement SandboxStore'
   dirac-restart-component WorkloadManagement SandboxStore $DEBUG
 
+  echo '==> Restarting WorkloadManagement Matcher'
+  dirac-restart-component WorkloadManagement Matcher $DEBUG
+
   echo '==> Restarting DataManagement FileCatalog'
   dirac-restart-component DataManagement FileCatalog $DEBUG
 
