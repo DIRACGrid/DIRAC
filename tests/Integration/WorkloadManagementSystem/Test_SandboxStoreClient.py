@@ -24,9 +24,10 @@
 
     A user proxy is also needed to submit,
     and the Framework/ProxyManager need to be running with a such user proxy already uploaded.
-"""
 
-import unittest
+    Suggestion: for local testing, run this with::
+        python -m pytest -c ../pytest.ini  -vv tests/Integration/WorkloadManagementSystem/Test_SandboxStoreClient.py
+"""
 
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
@@ -39,50 +40,31 @@ from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStor
 from DIRAC.WorkloadManagementSystem.DB.SandboxMetadataDB import SandboxMetadataDB
 
 
-class TestSSCTestCase(unittest.TestCase):
-
-  def setUp(self):
-    self.maxDiff = None
-
-    gLogger.setLevel('VERBOSE')
-
-  def tearDown(self):
-    """
-    """
-    pass
+gLogger.setLevel('DEBUG')
 
 
-class SSC(TestSSCTestCase):
+def test_SSCChain(self):
+  """ full test of functionalities
+  """
+  ssc = SandboxStoreClient()
+  smDB = SandboxMetadataDB()
 
-  def test_SSCChain(self):
-    """ full test of functionalities
-    """
-    ssc = SandboxStoreClient()
-    smDB = SandboxMetadataDB()
-
-    exeScriptLocation = find_all('exe-script.py', '..', '/DIRAC/tests/Integration')[0]
-    fileList = [exeScriptLocation]
-    res = ssc.uploadFilesAsSandbox(fileList)
-    self.assertTrue(res['OK'])
+  exeScriptLocation = find_all('exe-script.py', '..', '/DIRAC/tests/Integration')[0]
+  fileList = [exeScriptLocation]
+  res = ssc.uploadFilesAsSandbox(fileList)
+  assert res['OK'] is True
 #     SEPFN = res['Value'].split( '|' )[1]
-    res = ssc.uploadFilesAsSandboxForJob(fileList, 1, 'Input')
-    self.assertTrue(res['OK'])
-    res = ssc.downloadSandboxForJob(1, 'Input')  # to run this we need the RSS on
-    print res  # for debug...
-    self.assertTrue(res['OK'])
+  res = ssc.uploadFilesAsSandboxForJob(fileList, 1, 'Input')
+  assert res['OK'] is True
+  res = ssc.downloadSandboxForJob(1, 'Input')  # to run this we need the RSS on
+  print res  # for debug...
+  assert res['OK'] is True
 
-    # only ones needing the DB
-    res = smDB.getUnusedSandboxes()
-    self.assertTrue(res['OK'])
-#     print res
-#     ssc.get
-#     smDB.getSandboxId( SEName, SEPFN, requesterName, requesterGroup )
-    # cleaning
-#     res = smDB.deleteSandboxes( SBIdList )
-#     self.assertTrue(res['OK'])
-
-
-if __name__ == '__main__':
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestSSCTestCase)
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SSC))
-  testResult = unittest.TextTestRunner(verbosity=2).run(suite)
+  # only ones needing the DB
+  res = smDB.getUnusedSandboxes()
+  print res
+  assert res['OK'] is True
+  # smDB.getSandboxId(SEName, SEPFN, requesterName, requesterGroup)
+  # # cleaning
+  # res = smDB.deleteSandboxes(SBIdList)
+  # assert res['OK'] is True
