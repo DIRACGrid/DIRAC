@@ -345,9 +345,8 @@ class JobMonitoringMore(TestWMSTestCase):
     self.assertTrue(res['OK'])
     self.assertTrue(sorted(res['Value']) in [['Received'], sorted(['Received', 'Waiting'])])
     res = jobMonitor.getMinorStates()
-    print res  # for debug...
     self.assertTrue(res['OK'])
-    self.assertTrue(sorted(res['Value']) in [['Job accepted'], sorted(['Job accepted', 'matching'])])
+    self.assertTrue(sorted(res['Value']) in [['Job accepted'], sorted(['Job accepted', 'Job Rescheduled'])])
     self.assertTrue(res['OK'])
     res = jobMonitor.getJobs()
     self.assertTrue(res['OK'])
