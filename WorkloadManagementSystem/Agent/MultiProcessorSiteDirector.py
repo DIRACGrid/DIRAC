@@ -281,10 +281,9 @@ class MultiProcessorSiteDirector(SiteDirector):
         # Get the number of already waiting pilots for these task queues
         tagWaitingPilots = 0
         if self.pilotWaitingFlag:
-          lastUpdateTime = dateTime() - self.pilotWaitingTime * second
           result = pilotAgentsDB.countPilots({'TaskQueueID': tagTqIDList,
                                               'Status': WAITING_PILOT_STATUS},
-                                             None, lastUpdateTime)
+                                             None)
           if not result['OK']:
             self.log.error('Failed to get Number of Waiting pilots', result['Message'])
             tagWaitingPilots = 0

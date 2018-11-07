@@ -112,6 +112,8 @@ class SiteDirector(AgentModule):
 
     self.proxy = None
 
+    self.addPilotsToEmptySites = False
+    self.checkPlatform = False
     self.updateStatus = True
     self.getOutput = False
     self.sendAccounting = True
@@ -208,8 +210,8 @@ class SiteDirector(AgentModule):
     self.pilotStatusUpdateCycleFactor = self.am_getOption('PilotStatusUpdateCycleFactor', 10)
 
     # Flags
-    self.addPilotsToEmptySites = self.am_getOption('AddPilotsToEmptySites', False)
-    self.checkPlatform = self.am_getOption('CheckPlatform', False)
+    self.addPilotsToEmptySites = self.am_getOption('AddPilotsToEmptySites', self.addPilotsToEmptySites)
+    self.checkPlatform = self.am_getOption('CheckPlatform', self.checkPlatform)
     self.updateStatus = self.am_getOption('UpdatePilotStatus', self.updateStatus)
     self.getOutput = self.am_getOption('GetPilotOutput', self.getOutput)
     self.sendAccounting = self.am_getOption('SendPilotAccounting', self.sendAccounting)
