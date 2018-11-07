@@ -68,6 +68,7 @@ class SSC(TestSSCTestCase):
     res = ssc.uploadFilesAsSandboxForJob(fileList, 1, 'Input')
     self.assertTrue(res['OK'])
     res = ssc.downloadSandboxForJob(1, 'Input')  # to run this we need the RSS on
+    print res  # for debug...
     self.assertTrue(res['OK'])
 
     # only ones needing the DB
