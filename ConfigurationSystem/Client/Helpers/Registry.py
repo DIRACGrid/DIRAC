@@ -340,19 +340,19 @@ def getVOMSRoleGroupMapping( vo = '' ):
                  "NoVOMS": noVOMSGroupList,
                  "NoSyncVOMS": noVOMSSyncGroupList } )
 
-def getUsernameForID( ID, usersList = False ):
+def getUsernameForID(ID,usersList=False):
   if not usersList:
-    retVal = gConfig.getSections( "%s/Users" % gBaseRegistrySection )
-    if not retVal[ 'OK' ]:
+    retVal = gConfig.getSections("%s/Users" % gBaseRegistrySection)
+    if not retVal['OK']:
       return retVal
-    usersList = retVal[ 'Value' ]
+    usersList = retVal['Value']
   for username in usersList:
-    if ID in gConfig.getValue( "%s/Users/%s/ID" % ( gBaseRegistrySection, username ), [] ):
-      return S_OK( username )
-  return S_ERROR( "No username found for ID %s" % ID )
+    if ID in gConfig.getValue("%s/Users/%s/ID" % (gBaseRegistrySection,username),[]):
+      return S_OK(username)
+  return S_ERROR("No username found for ID %s" % ID)
 
-def getCAForUsername( username ):
-  dnList = gConfig.getValue( "%s/Users/%s/CA" % ( gBaseRegistrySection, username ), [] )
+def getCAForUsername(username):
+  dnList = gConfig.getValue("%s/Users/%s/CA" % (gBaseRegistrySection,username),[])
   if dnList:
-    return S_OK( dnList )
-  return S_ERROR( "No CA found for user %s" % username )
+    return S_OK(dnList)
+  return S_ERROR("No CA found for user %s" % username)
