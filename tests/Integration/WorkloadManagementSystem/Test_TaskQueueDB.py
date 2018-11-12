@@ -12,6 +12,10 @@
 """
 
 from DIRAC import gLogger
+
+# from DIRAC.Core.Base.Script import parseCommandLine
+# parseCommandLine()
+
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 
 
@@ -219,9 +223,9 @@ def test_chainWithPlatforms():
 
   # compatibility matching
 
-  # empty platform
+  # ANY platform
   result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 50000,
-                                      'Platform': ''},
+                                      'Platform': 'ANY'},
                                      numQueuesToGet=4)
   assert result['OK'] is True
   # this should match whatever
@@ -240,9 +244,9 @@ def test_chainWithPlatforms():
 
   # matching for this one
 
-  # empty platform
+  # ANY platform
   result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 50000,
-                                      'Platform': ''},
+                                      'Platform': 'ANY'},
                                      numQueuesToGet=5)
   assert result['OK'] is True
   # this should match whatever
@@ -250,9 +254,9 @@ def test_chainWithPlatforms():
                                         tq_job4, tq_job5, tq_job6]
   assert len(result['Value']) == 5
 
-  # empty platform, with an empty list
+  # ANY platform within a list
   result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 50000,
-                                      'Platform': []},
+                                      'Platform': ['ANY']},
                                      numQueuesToGet=5)
   assert result['OK'] is True
   # this should match whatever
@@ -301,10 +305,10 @@ def test_chainWithPlatforms():
   assert int(result['Value'][0][0]) in [tq_job3, tq_job4, tq_job5, tq_job6]
   assert len(result['Value']) == 4
 
-  # Now we insert a TQ with platform "" (same as no platform)
+  # Now we insert a TQ with platform "ANY" (same as no platform)
 
   tqDefDict = {'OwnerDN': '/my/DN', 'OwnerGroup': 'myGroup', 'Setup': 'aSetup', 'CPUTime': 5000,
-               'Platform': ''}
+               'Platform': 'ANY'}
   result = tqDB.insertJob(7, tqDefDict, 10)
   assert result['OK'] is True
   result = tqDB.getTaskQueueForJobs([7])
@@ -313,9 +317,9 @@ def test_chainWithPlatforms():
 
   # matching for this one
 
-  # empty platform
+  # ANY platform
   result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 50000,
-                                      'Platform': ''},
+                                      'Platform': 'ANY'},
                                      numQueuesToGet=6)
   assert result['OK'] is True
   # this should match whatever
@@ -452,9 +456,9 @@ def test_chainWithTags():
 
   # Matching Everything
 
-  # Tag = ""
+  # Tag = "ANY"
   result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 50000,
-                                      'Tag': ''},
+                                      'Tag': 'ANY'},
                                      numQueuesToGet=5)
   assert result['OK'] is True
   # this should match whatever
@@ -597,29 +601,29 @@ def test_chainWithTagsAndPlatforms():
 
   # Matching Everything
 
-  # No Tag, Platform = ""
+  # No Tag, Platform = "ANY"
   result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 50000,
-                                      'Platform': ''},
+                                      'Platform': 'ANY'},
                                      numQueuesToGet=4)
   assert result['OK'] is True
   # this should match whatever
   assert int(result['Value'][0][0]) in [tq_job1, tq_job2, tq_job3, tq_job4]
   assert len(result['Value']) == 4
 
-  # Tag = "", Platform = ""
+  # Tag = "ANY", Platform = "ANY"
   result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 50000,
-                                      'Platform': '',
-                                      'Tag': ''},
+                                      'Platform': 'ANY',
+                                      'Tag': 'ANY'},
                                      numQueuesToGet=4)
   assert result['OK'] is True
   # this should match whatever
   assert int(result['Value'][0][0]) in [tq_job1, tq_job2, tq_job3, tq_job4]
   assert len(result['Value']) == 4
 
-  # Tag = "", Platform = "centos7"
+  # Tag = "ANY", Platform = "centos7"
   result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 50000,
                                       'Platform': 'centos7',
-                                      'Tag': ''},
+                                      'Tag': 'ANY'},
                                      numQueuesToGet=4)
   assert result['OK'] is True
   # this should match whatever has platform == centos7, or no platform
@@ -726,7 +730,7 @@ def test_ComplexMatching():
                                       'Platform': ['slc6', 'centos7', 'ubuntu'],
                                       'Tag': [],
                                       'OwnerGroup': ['prod', 'user'],
-                                      'Site': ''},
+                                      'Site': 'ANY'},
                                      numQueuesToGet=4)
   assert result['OK'] is True
   assert int(result['Value'][0][0]) in [tq_job2, tq_job3, tq_job4]
@@ -779,7 +783,7 @@ def test_ComplexMatching():
   result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 9999999,
                                       'Platform': '',
                                       'OwnerGroup': ['admin', 'prod', 'user'],
-                                      'Site': []},
+                                      'Site': ['ANY']},
                                      numQueuesToGet=4)
   assert result['OK'] is True
   assert len(result['Value']) == 4
@@ -808,7 +812,7 @@ def test_ComplexMatching():
   result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 9999999,
                                       'Platform': ['ubuntu'],
                                       'OwnerGroup': ['admin', 'prod', 'user'],
-                                      'Site': ''},
+                                      'Site': 'ANY'},
                                      numQueuesToGet=5)
   assert result['OK'] is True
   assert int(result['Value'][0][0]) in [tq_job4, tq_job5]

@@ -721,13 +721,13 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
         if field in tagMatchFields:  # basically, if field == Tag
 
           if not tqMatchDict[field] \
-             or isinstance(tqMatchDict[field], str) and tqMatchDict[field].lower() in ['""', '']:
+             or isinstance(tqMatchDict[field], str) and tqMatchDict[field].lower() in ['"any"', 'any']:
             continue
           sqlMultiCondList.append(self.__generateTagSQLSubCond(fullTableN, tqMatchDict[field]))
 
         else:  # everything that is not tags
           if not tqMatchDict[field] \
-             or isinstance(tqMatchDict[field], str) and tqMatchDict[field].lower() in ['""', '']:
+             or isinstance(tqMatchDict[field], str) and tqMatchDict[field].lower() in ['"any"', 'any']:
             continue
           # if field != 'GridCE' or 'Site' in tqMatchDict:
           # Jobs for masked sites can be matched if they specified a GridCE
@@ -761,7 +761,7 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
       fieldName = "Required%s" % field
       if tqMatchDict.get(fieldName):
         if not tqMatchDict[fieldName] \
-           or isinstance(tqMatchDict[fieldName], str) and tqMatchDict[fieldName].lower() in ['""', '']:
+           or isinstance(tqMatchDict[fieldName], str) and tqMatchDict[fieldName].lower() in ['"any"', 'any']:
           continue
 
         sqlCondList.append(self.__generateRequiredTagSQLSubCond('`tq_TQToTags`',
@@ -771,7 +771,7 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
     for field in multiValueMatchFields:
       bannedField = "Banned%s" % field
       if tqMatchDict.get(bannedField):
-        if isinstance(tqMatchDict[bannedField], str) and tqMatchDict[bannedField].lower() in ['""', '']:
+        if isinstance(tqMatchDict[bannedField], str) and tqMatchDict[bannedField].lower() in ['"any"', 'any']:
           continue
 
         fullTableN = '`tq_TQTo%ss`' % field
@@ -782,6 +782,15 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
                                                                                       fullTableN,
                                                                                       fullTableN),
                                                      tqMatchDict[bannedField], boolOp='OR'))
+
+    # # For certain fields, the requirement is strict. If it is not in the tqMatchDict, the job cannot require it
+    # for field in multiValueDefFields:
+    #   if field in tqMatchDict and tqMatchDict[field]:
+    #     continue
+    #   fullTableN = '`tq_TQTo%s`' % field
+    #   sqlCondList.append(
+    #       "( SELECT COUNT(%s.Value) FROM %s WHERE %s.TQId = tq.TQId ) = 0" %
+    #       (fullTableN, fullTableN, fullTableN))
 
     # Add extra conditions
     if negativeCond:
