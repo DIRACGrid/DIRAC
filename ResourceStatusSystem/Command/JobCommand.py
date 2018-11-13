@@ -4,61 +4,63 @@
 
 """
 
-from DIRAC                                                      import S_OK, S_ERROR
-from DIRAC.Core.DISET.RPCClient                                 import RPCClient
-from DIRAC.ResourceStatusSystem.Command.Command                 import Command
+__RCSID__ = '$Id$'
+
+from DIRAC import S_OK, S_ERROR
+from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
+from DIRAC.ResourceStatusSystem.Command.Command import Command
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
-from DIRAC.ResourceStatusSystem.Utilities                       import CSHelpers
+from DIRAC.ResourceStatusSystem.Utilities import CSHelpers
 
-__RCSID__ = '$Id:  $'
 
-class JobCommand( Command ):
+class JobCommand(Command):
   """
     Job "master" Command.
   """
 
-  def __init__( self, args = None, clients = None ):
+  def __init__(self, args=None, clients=None):
 
-    super( JobCommand, self ).__init__( args, clients )
+    super(JobCommand, self).__init__(args, clients)
 
     if 'WMSAdministrator' in self.apis:
-      self.wmsAdmin = self.apis[ 'WMSAdministrator' ]
+      self.wmsAdmin = self.apis['WMSAdministrator']
     else:
-      self.wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
+      self.wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
 
     if 'ResourceManagementClient' in self.apis:
-      self.rmClient = self.apis[ 'ResourceManagementClient' ]
+      self.rmClient = self.apis['ResourceManagementClient']
     else:
       self.rmClient = ResourceManagementClient()
 
-  def _storeCommand( self, result ):
+  def _storeCommand(self, result):
     """
       Stores the results of doNew method on the database.
     """
 
     for jobDict in result:
 
-      resQuery = self.rmClient.addOrModifyJobCache( jobDict[ 'Site' ],
-                                                    jobDict[ 'MaskStatus' ],
-                                                    jobDict[ 'Efficiency' ],
-                                                    jobDict[ 'Status' ])
-      if not resQuery[ 'OK' ]:
+      resQuery = self.rmClient.addOrModifyJobCache(jobDict['Site'],
+                                                   jobDict['MaskStatus'],
+                                                   jobDict['Efficiency'],
+                                                   jobDict['Status'])
+      if not resQuery['OK']:
         return resQuery
     return S_OK()
 
-  def _prepareCommand( self ):
+  def _prepareCommand(self):
     """
       JobCommand requires one arguments:
       - name : <str>
     """
 
     if 'name' not in self.args:
-      return S_ERROR( '"name" not found in self.args' )
-    name = self.args[ 'name' ]
+      return S_ERROR('"name" not found in self.args')
+    name = self.args['name']
 
-    return S_OK( name )
+    return S_OK(name)
 
-  def doNew( self, masterParams = None ):
+  def doNew(self, masterParams=None):
     """
       Gets the parameters to run, either from the master method or from its
       own arguments.
@@ -73,24 +75,24 @@ class JobCommand( Command ):
       name = masterParams
     else:
       params = self._prepareCommand()
-      if not params[ 'OK' ]:
+      if not params['OK']:
         return params
-      name = params[ 'Value' ]
+      name = params['Value']
 
     # selectDict, sortList, startItem, maxItems
     # Returns statistics of Last day !
-    results = self.wmsAdmin.getSiteSummaryWeb( { 'Site' : name }, [], 0, 0 )
-    if not results[ 'OK' ]:
+    results = self.wmsAdmin.getSiteSummaryWeb({'Site': name}, [], 0, 0)
+    if not results['OK']:
       return results
-    results = results[ 'Value' ]
+    results = results['Value']
 
-    if not 'ParameterNames' in results:
-      return S_ERROR( 'Wrong result dictionary, missing "ParameterNames"' )
-    params = results[ 'ParameterNames' ]
+    if 'ParameterNames' not in results:
+      return S_ERROR('Wrong result dictionary, missing "ParameterNames"')
+    params = results['ParameterNames']
 
-    if not 'Records' in results:
-      return S_ERROR( 'Wrong formed result dictionary, missing "Records"' )
-    records = results[ 'Records' ]
+    if 'Records' not in results:
+      return S_ERROR('Wrong formed result dictionary, missing "Records"')
+    records = results['Records']
 
     uniformResult = []
 
@@ -100,53 +102,53 @@ class JobCommand( Command ):
       # 'Site', 'GridType', 'Country', 'Tier', 'MaskStatus', 'Received',
       # 'Checking', 'Staging', 'Waiting', 'Matched', 'Running', 'Stalled',
       # 'Done', 'Completed', 'Failed', 'Efficiency', 'Status'
-      jobDict = dict( zip( params , record ))
+      jobDict = dict(zip(params, record))
 
       # We cast efficiency to a float
-      jobDict[ 'Efficiency' ] = float( jobDict[ 'Efficiency' ] )
+      jobDict['Efficiency'] = float(jobDict['Efficiency'])
 
-      uniformResult.append( jobDict )
+      uniformResult.append(jobDict)
 
-    storeRes = self._storeCommand( uniformResult )
-    if not storeRes[ 'OK' ]:
+    storeRes = self._storeCommand(uniformResult)
+    if not storeRes['OK']:
       return storeRes
 
-    return S_OK( uniformResult )
+    return S_OK(uniformResult)
 
-  def doCache( self ):
+  def doCache(self):
     """
       Method that reads the cache table and tries to read from it. It will
       return a list of dictionaries if there are results.
     """
 
     params = self._prepareCommand()
-    if not params[ 'OK' ]:
+    if not params['OK']:
       return params
-    name = params[ 'Value' ]
+    name = params['Value']
 
-    result = self.rmClient.selectJobCache( name )
-    if result[ 'OK' ]:
-      result = S_OK( [ dict( zip( result[ 'Columns' ], res ) ) for res in result[ 'Value' ] ] )
+    result = self.rmClient.selectJobCache(name)
+    if result['OK']:
+      result = S_OK([dict(zip(result['Columns'], res)) for res in result['Value']])
 
     return result
 
-  def doMaster( self ):
+  def doMaster(self):
     """
       Master method.
 
       Gets all sites and calls doNew method.
     """
 
-    siteNames = CSHelpers.getSites()
-    if not siteNames[ 'OK' ]:
+    siteNames = getSites()
+    if not siteNames['OK']:
       return siteNames
-    siteNames = siteNames[ 'Value' ]
+    siteNames = siteNames['Value']
 
-    jobsResults = self.doNew( siteNames )
-    if not jobsResults[ 'OK' ]:
-      self.metrics[ 'failed' ].append( jobsResults[ 'Message' ] )
+    jobsResults = self.doNew(siteNames)
+    if not jobsResults['OK']:
+      self.metrics['failed'].append(jobsResults['Message'])
 
-    return S_OK( self.metrics )
+    return S_OK(self.metrics)
 
 ################################################################################
 ################################################################################
@@ -157,7 +159,7 @@ class JobCommand( Command ):
 ################################################################################
 ################################################################################
 
-#class JobsStatsCommand( Command ):
+# class JobsStatsCommand( Command ):
 #
 #  def __init__( self, args = None, clients = None ):
 #
@@ -188,7 +190,7 @@ class JobCommand( Command ):
 ################################################################################
 ################################################################################
 
-#class JobsEffCommand( Command ):
+# class JobsEffCommand( Command ):
 #
 #  def __init__( self, args = None, clients = None ):
 #
@@ -221,7 +223,7 @@ class JobCommand( Command ):
 ################################################################################
 ################################################################################
 
-#class SystemChargeCommand( Command ):
+# class SystemChargeCommand( Command ):
 #
 #  def __init__( self, args = None, clients = None ):
 #
@@ -250,18 +252,19 @@ class JobCommand( Command ):
 ################################################################################
 ################################################################################
 
-class JobsWMSCommand( Command ):
 
-  def __init__( self, args = None, clients = None ):
+class JobsWMSCommand(Command):
 
-    super( JobsWMSCommand, self ).__init__( args, clients )
+  def __init__(self, args=None, clients=None):
+
+    super(JobsWMSCommand, self).__init__(args, clients)
 
     if 'WMSAdministrator' in self.apis:
-      self.wmsAdmin = self.apis[ 'WMSAdministrator' ]
+      self.wmsAdmin = self.apis['WMSAdministrator']
     else:
-      self.wmsAdmin = RPCClient( 'WorkloadManagement/WMSAdministrator' )
+      self.wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
 
-  def doCommand( self ):
+  def doCommand(self):
     """
     Returns simple jobs efficiency
 
@@ -274,45 +277,45 @@ class JobsWMSCommand( Command ):
     """
 
     if 'siteName' not in self.args:
-      return self.returnERROR( S_ERROR( 'siteName is missing' ) )
-    siteName = self.args[ 'siteName' ]
+      return self.returnERROR(S_ERROR('siteName is missing'))
+    siteName = self.args['siteName']
 
     # If siteName is None, we take all sites
     if siteName is None:
-      siteName = CSHelpers.getSites()
-      if not siteName[ 'OK' ]:
-        return self.returnERROR( siteName )
-      siteName = siteName[ 'Value' ]
+      siteName = getSites()
+      if not siteName['OK']:
+        return self.returnERROR(siteName)
+      siteName = siteName['Value']
 
-    results = self.wmsAdmin.getSiteSummaryWeb( { 'Site' : siteName }, [], 0, 500 )
+    results = self.wmsAdmin.getSiteSummaryWeb({'Site': siteName}, [], 0, 500)
 
-    if not results[ 'OK' ]:
-      return self.returnERROR( results )
-    results = results[ 'Value' ]
+    if not results['OK']:
+      return self.returnERROR(results)
+    results = results['Value']
 
-    if not 'ParameterNames' in results:
-      return self.returnERROR( S_ERROR( 'Malformed result dictionary' ) )
-    params = results[ 'ParameterNames' ]
+    if 'ParameterNames' not in results:
+      return self.returnERROR(S_ERROR('Malformed result dictionary'))
+    params = results['ParameterNames']
 
-    if not 'Records' in results:
-      return self.returnERROR( S_ERROR( 'Malformed result dictionary' ) )
-    records = results[ 'Records' ]
+    if 'Records' not in results:
+      return self.returnERROR(S_ERROR('Malformed result dictionary'))
+    records = results['Records']
 
     jobResults = []
 
     for record in records:
 
-      jobDict = dict( zip( params , record ))
+      jobDict = dict(zip(params, record))
       try:
-        jobDict[ 'Efficiency' ] = float( jobDict[ 'Efficiency' ] )
-      except KeyError, e:
-        return self.returnERROR( S_ERROR( e ) )
-      except ValueError, e:
-        return self.returnERROR( S_ERROR( e ) )
+        jobDict['Efficiency'] = float(jobDict['Efficiency'])
+      except KeyError as e:
+        return self.returnERROR(S_ERROR(e))
+      except ValueError as e:
+        return self.returnERROR(S_ERROR(e))
 
-      jobResults.append( jobDict )
+      jobResults.append(jobDict)
 
-    return S_OK( jobResults )
+    return S_OK(jobResults)
 
 ################################################################################
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
+# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

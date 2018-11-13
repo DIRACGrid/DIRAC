@@ -15,6 +15,7 @@ from datetime import datetime, timedelta
 from DIRAC import S_OK, S_ERROR
 from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
 from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 from DIRAC.ResourceStatusSystem.Command.Command import Command
 #from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Utilities import CSHelpers
@@ -74,7 +75,7 @@ from DIRAC.ResourceStatusSystem.Utilities import CSHelpers
 # if not sources[ 'OK' ]:
 # return sources
 ##      sources = [ s[0] for s in sources[ 'Value' ] ]
-#      sites = CSHelpers.getSites()
+#      sites = getSites()
 #      if not sites['OK']:
 #        return sites
 #
@@ -182,7 +183,7 @@ from DIRAC.ResourceStatusSystem.Utilities import CSHelpers
 # if not sources[ 'OK' ]:
 # return sources
 ##      sources = [ si[0] for si in sources[ 'Value' ] ]
-#      sites = CSHelpers.getSites()
+#      sites = getSites()
 #      if not sites['OK']:
 #        return sites
 #      sites = sites[ 'Value' ]
@@ -415,7 +416,7 @@ from DIRAC.ResourceStatusSystem.Utilities import CSHelpers
 # if not sources[ 'OK' ]:
 # return sources
 ##      sources = [ si[0] for si in sources[ 'Value' ] ]
-#      sites = CSHelpers.getSites()
+#      sites = getSites()
 #      if not sites['OK']:
 #        return sites
 #      sites = sites[ 'Value' ]
@@ -510,7 +511,7 @@ class SuccessfullJobsBySiteSplittedCommand(Command):
       #      if not sources[ 'OK' ]:
       #        return sources
       #      sources = [ si[0] for si in sources[ 'Value' ] ]
-      sites = CSHelpers.getSites()
+      sites = getSites()
       if not sites['OK']:
         return sites
       sites = sites['Value']
@@ -591,7 +592,7 @@ class FailedJobsBySiteSplittedCommand(Command):
       #      if not sources[ 'OK' ]:
       #        return sources
       #      sources = [ si[0] for si in sources[ 'Value' ] ]
-      sites = CSHelpers.getSites()
+      sites = getSites()
       if not sites['OK']:
         return sites
       sites = sites['Value']
@@ -673,7 +674,7 @@ class SuccessfullPilotsBySiteSplittedCommand(Command):
       #      if not sources[ 'OK' ]:
       #        return sources
       #      sources = [ si[0] for si in sources[ 'Value' ] ]
-      sites = CSHelpers.getSites()
+      sites = getSites()
       if not sites['OK']:
         return sites
       sites = sites['Value']
@@ -755,7 +756,7 @@ class FailedPilotsBySiteSplittedCommand(Command):
       #      if not sources[ 'OK' ]:
       #        return sources
       #      sources = [ si[0] for si in sources[ 'Value' ] ]
-      sites = CSHelpers.getSites()
+      sites = getSites()
       if not sites['OK']:
         return sites
       sites = sites['Value']
@@ -1005,7 +1006,7 @@ class RunningJobsBySiteSplittedCommand(Command):
       #      if not sources[ 'OK' ]:
       #        return sources
       #      sources = [ si[0] for si in sources[ 'Value' ] ]
-      sites = CSHelpers.getSites()
+      sites = getSites()
       if not sites['OK']:
         return sites
       sites = sites['Value']

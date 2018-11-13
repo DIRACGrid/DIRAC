@@ -69,6 +69,7 @@ class FileCatalogClientBase( Client ):
   @classmethod
   def hasCatalogMethod( cls, methodName ):
     """ Check of a method with the given name is implemented
+
     :param str methodName: the name of the method to check
     :return: boolean Flag True if the method is implemented
     """

@@ -7,12 +7,12 @@ __RCSID__ = '$Id$'
 from datetime import datetime, timedelta
 
 from DIRAC import S_OK, S_ERROR
+from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
-from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.Command.Command import Command
-from DIRAC.ResourceStatusSystem.Utilities import CSHelpers
 
 
 class TransferCommand(Command):
@@ -211,7 +211,7 @@ class TransferCommand(Command):
       It queries a portion of them.
     '''
 
-    sites = CSHelpers.getSites()
+    sites = getSites()
     if not sites['OK']:
       return sites
     sites = sites['Value']

@@ -15,6 +15,7 @@ from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 
 def _checkSourceReplicas(ftsFiles):
   """ Check the active replicas
+
       :params ftsFiles: list of FT3Files
 
       :returns: Successful/Failed {lfn : { SE1 : PFN1, SE2 : PFN2 } , ... }
@@ -33,10 +34,10 @@ def selectUniqueSourceforTransfers(multipleSourceTransfers):
       In this particular case, we always choose the one that has the biggest
       amount of replicas,
 
-      :param multipleSourceTransfers : { sourceSE : [FTSFiles] }
+      :param multipleSourceTransfers: { sourceSE : [FTSFiles] }
 
 
-      :return { source SE : [ FTSFiles] } where each LFN appears only once
+      :return: { source SE : [ FTSFiles] } where each LFN appears only once
   """
   # the more an SE has files, the more likely it is that it is a big good old T1 site.
   # So we start packing with these SEs
@@ -67,8 +68,8 @@ def generatePossibleTransfersBySources(ftsFiles, allowedSources=None):
       CAUTION ! a given LFN can be in multiple source
       You still have to choose your source !
 
-      :param allowedSources : list of allowed sources
-      :param ftsFiles : list of FTS3File object
+      :param allowedSources: list of allowed sources
+      :param ftsFiles: list of FTS3File object
       :return:  S_OK({ sourceSE: [ FTS3Files] })
 
   """
@@ -108,8 +109,8 @@ def selectUniqueRandomSource(ftsFiles, allowedSources=None):
   """
       For a list of FTS3files object, select a random source, and group the files by source.
 
-      :param allowedSources : list of allowed sources
-      :param ftsFiles : list of FTS3File object
+      :param allowedSources: list of allowed sources
+      :param ftsFiles: list of FTS3File object
 
       :return:  S_OK({ sourceSE: [ FTS3Files] })
 
@@ -149,7 +150,7 @@ def groupFilesByTarget(ftsFiles):
   """
         For a list of FTS3files object, group the Files by target
 
-        :param ftsFiles : list of FTS3File object
+        :param ftsFiles: list of FTS3File object
         :return: {targetSE : [ ftsFiles] } }
 
     """
@@ -201,7 +202,7 @@ class FTS3Serializable(object):
                the 'magic' arguments used for rebuilding the
                object
 
-        :return dictionary to be transformed into json
+        :return: dictionary to be transformed into json
     """
     jsonData = {}
     datetimeAttributes = []

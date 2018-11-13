@@ -39,7 +39,7 @@ class ElasticJobDB(DB):
     :param int jobID: Job ID
     :param list paramList: list of parameters to be returned
 
-    :return : dict with all Job Parameter values
+    :return: dict with all Job Parameter values
     """
 
     self.log.debug('JobDB.getParameters: Getting Parameters for job %s' % jobID)
@@ -93,7 +93,7 @@ class ElasticJobDB(DB):
     :param string attribute: Attribute
     :param list paramList: list of parameters to be returned
 
-    :return : dict with all Job Parameter and Attribute values
+    :return: dict with all Job Parameter and Attribute values
     """
 
     self.log.debug('JobDB.getParameters: Getting Parameters for job %s' % jobID)
@@ -152,7 +152,7 @@ class ElasticJobDB(DB):
     :param basestring key: Name
     :param keyword value: value
 
-    :return : S_OK/S_ERROR
+    :return: S_OK/S_ERROR
     """
 
     attributesDict = {"jobGroup": "00000000", "owner": 'Unknown', "proxy": None, "subTime": None, "runTime": None}

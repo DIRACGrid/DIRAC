@@ -16,7 +16,8 @@ The three strings are concatenated with "." to produce the name of the sites.
 | *<DIRAC_SITE_NAME>/Name*        | Site name gave by the site administrator      | NAME = in2p3                      |
 +---------------------------------+-----------------------------------------------+-----------------------------------+
 | *<DIRAC_SITE_NAME>/CE*          | List of CEs using CE FQN                      | CE = ce01.in2p3.fr                |
-|                                 |                                               | CE += ce02.in2p3.fr               |
+|                                 | These CEs are updated by the BDII2CSAgent     | CE += ce02.in2p3.fr               |
+|                                 | in the CEs section                            |                                   |
 +---------------------------------+-----------------------------------------------+-----------------------------------+
 | *<DIRAC_SITE_NAME>/CEs*         | Subsection used to describe each CE available | CEs                               |
 +---------------------------------+-----------------------------------------------+-----------------------------------+

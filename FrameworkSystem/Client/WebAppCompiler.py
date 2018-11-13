@@ -90,9 +90,10 @@ class WebAppCompiler(object):
     """
     It creates a temporary file using different templates. For example: /tmp/zmathe/tmp4sibR5.compilejs.app.tpl
     This is required to compile the web framework.
+
     :params str tplName: it is the name of the template
     :params dict extra: it contains the application location, which will be added to the temporary file
-    :return the location of the file
+    :return: the location of the file
     """
     inTpl = os.path.join(self.__compileTemplate, tplName)
     try:
@@ -309,6 +310,7 @@ class WebAppCompiler(object):
   def getAppDependencies(self):
     """
     Generate the dependency dictionary
+
     :return: Dict
     """
     if self.__params.name != 'WebAppDIRAC':
