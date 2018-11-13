@@ -69,7 +69,7 @@ for gridID in args:
       diracAdmin.log.notice('')
       for jobID in res['Jobs']:
         tab = '  '
-        result = dirac.attributes(int(jobID))
+        result = dirac.getJobAttributes(int(jobID))
         if not result['OK']:
           errorList.append((gridID, result['Message']))
           exitCode = 2

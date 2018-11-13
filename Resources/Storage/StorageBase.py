@@ -35,8 +35,14 @@ These are the methods for getting information about the Storage:
 """
 __RCSID__ = "$Id$"
 
+import json
+import os
+import shutil
+import tempfile
+
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
+from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.Resources.Storage.Utilities import checkArgumentFormat
 
 
@@ -429,9 +435,40 @@ class StorageBase(object):
   # These are the methods for getting information about the Storage element:
   #
 
-  def getOccupancy(self, *parms, **kws):
+  def getOccupancy(self, **kwargs):
     """ Get the StorageElement occupancy info in MB.
-        :returns: S_OK/S_ERROR dictionary
+
+        This generic implementation download a json file supposed to contain the necessary info.
+
+        :param occupancyLFN: (mandatory named argument) LFN of the json file.
+
+        :returns: S_OK/S_ERROR dictionary. The S_OK value should contain a dictionary with Total and Free space in MB
     """
-    # FIXME: put an implementation that just gets a file and check its content
-    return S_ERROR("Storage.occupancy: implement me!")
+
+    # Build the URL for the occupancyLFN:
+    occupancyLFN = kwargs['occupancyLFN']
+    res = self.constructURLFromLFN(occupancyLFN)
+    if not res['OK']:
+      return res
+    occupancyURL = res['Value']
+
+    try:
+
+      # download the file locally
+      tmpDirName = tempfile.mkdtemp()
+      res = returnSingleResult(self.getFile(occupancyURL, localPath=tmpDirName))
+      if not res['OK']:
+        return res
+
+      filePath = os.path.join(tmpDirName, os.path.basename(occupancyLFN))
+
+      # Read its json content
+      with open(filePath, 'r') as occupancyFile:
+        return S_OK(json.load(occupancyFile))
+
+    except Exception as e:
+      return S_ERROR(repr(e))
+
+    finally:
+      # Clean the temporary dir
+      shutil.rmtree(tmpDirName)

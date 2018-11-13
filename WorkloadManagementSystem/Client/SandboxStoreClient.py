@@ -218,6 +218,8 @@ class SandboxStoreClient(object):
         for tarinfo in tf:
           tf.extract(tarinfo, path=destinationDir)
           sandboxSize += tarinfo.size
+      # FIXME: here we return the size, but otherwise we always return the location: inconsistent
+      # FIXME: looks like this size is used by the JobWrapper
       result['Value'] = sandboxSize
     except IOError as e:
       result = S_ERROR("Could not open bundle: %s" % repr(e))
@@ -266,14 +268,15 @@ class SandboxStoreClient(object):
     # If inMemory, ensure we return the newest sandbox only
     if inMemory:
       sbLocation = sbDict[sbType][-1]
-      result = self.downloadSandbox(sbLocation, destinationPath, inMemory, unpack)
-      return result
+      return self.downloadSandbox(sbLocation, destinationPath, inMemory, unpack)
 
+    downloadedSandboxesLoc = []
     for sbLocation in sbDict[sbType]:
       result = self.downloadSandbox(sbLocation, destinationPath, inMemory, unpack)
       if not result['OK']:
         return result
-    return S_OK()
+      downloadedSandboxesLoc.append(result['Value'])
+    return S_OK(downloadedSandboxesLoc)
 
   ##############
   # Pilots
@@ -307,11 +310,14 @@ class SandboxStoreClient(object):
     sbDict = result['Value']
     if sbType not in sbDict:
       return S_ERROR("No %s sandbox registered for pilot %s" % (sbType, jobId))
+
+    downloadedSandboxesLoc = []
     for sbLocation in sbDict[sbType]:
       result = self.downloadSandbox(sbLocation, destinationPath)
       if not result['OK']:
         return result
-    return S_OK()
+      downloadedSandboxesLoc.append(result['Value'])
+    return S_OK(downloadedSandboxesLoc)
 
   ##############
   # Entities

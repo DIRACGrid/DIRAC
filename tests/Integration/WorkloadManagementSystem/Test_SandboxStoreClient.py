@@ -39,35 +39,37 @@ from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStor
 from DIRAC.WorkloadManagementSystem.DB.SandboxMetadataDB import SandboxMetadataDB
 
 
-class TestSSCTestCase( unittest.TestCase ):
+class TestSSCTestCase(unittest.TestCase):
 
-  def setUp( self ):
+  def setUp(self):
     self.maxDiff = None
 
-    gLogger.setLevel( 'VERBOSE' )
+    gLogger.setLevel('VERBOSE')
 
-  def tearDown( self ):
+  def tearDown(self):
     """
     """
     pass
 
-class SSC( TestSSCTestCase ):
 
-  def test_SSCChain( self ):
+class SSC(TestSSCTestCase):
+
+  def test_SSCChain(self):
     """ full test of functionalities
     """
     ssc = SandboxStoreClient()
     smDB = SandboxMetadataDB()
 
-    exeScriptLocation = find_all( 'exe-script.py', '..', '/DIRAC/tests/Integration' )[0]
+    exeScriptLocation = find_all('exe-script.py', '..', '/DIRAC/tests/Integration')[0]
     fileList = [exeScriptLocation]
-    res = ssc.uploadFilesAsSandbox( fileList )
+    res = ssc.uploadFilesAsSandbox(fileList)
     self.assertTrue(res['OK'])
 #     SEPFN = res['Value'].split( '|' )[1]
-    res = ssc.uploadFilesAsSandboxForJob( fileList, 1, 'Input' )
+    res = ssc.uploadFilesAsSandboxForJob(fileList, 1, 'Input')
     self.assertTrue(res['OK'])
-#     res = ssc.downloadSandboxForJob( 1, 'Input' ) #to run this would need the RSS on
-#     self.assertTrue(res['OK'])
+    res = ssc.downloadSandboxForJob(1, 'Input')  # to run this we need the RSS on
+    print res  # for debug...
+    self.assertTrue(res['OK'])
 
     # only ones needing the DB
     res = smDB.getUnusedSandboxes()
@@ -80,8 +82,7 @@ class SSC( TestSSCTestCase ):
 #     self.assertTrue(res['OK'])
 
 
-
 if __name__ == '__main__':
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase( TestSSCTestCase )
-  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( SSC ) )
-  testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
+  suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestSSCTestCase)
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(SSC))
+  testResult = unittest.TextTestRunner(verbosity=2).run(suite)

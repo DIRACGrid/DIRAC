@@ -115,7 +115,7 @@ the steps below. This procedure must be followed for the primary server and for 
 
       mkdir /home/dirac/DIRAC
       cd /home/dirac/DIRAC
-      wget -np https://github.com/DIRACGrid/DIRAC/raw/integration/Core/scripts/install_site.sh --no-check-certificate
+      curl https://github.com/DIRACGrid/DIRAC/raw/integration/Core/scripts/install_site.sh -O
 
 Server Certificates
 -------------------
@@ -176,14 +176,14 @@ be taken:
         #
         #  DIRAC release version (this is an example, you should find out the current
         #  production release)
-        Release = v6r17p1
+        Release = v6r20p16
         #  Python version of the installation
         PythonVersion = 27
         #  To install the Server version of DIRAC (the default is client)
         InstallType = server
         #  LCG python bindings for SEs and LFC. Specify this option only if your installation
         #  uses those services
-        # LcgVer = 2017-05-23
+        # LcgVer = v14r2
         #  If this flag is set to yes, each DIRAC update will be installed
         #  in a separate directory, not overriding the previous ones
         UseVersionsDir = yes
@@ -218,7 +218,6 @@ be taken:
         #  ConfigurationServer = dips://myprimaryserver.name:9135/Configuration/Server
         #  Configuration Name
         ConfigurationName = MyConfiguration
-
         #
         #   These options define the DIRAC components to be installed on "this" DIRAC server.
         #
@@ -249,6 +248,7 @@ be taken:
         Systems += DataManagement
         Systems += Framework
         Systems += Monitoring
+        Systems += Production
         Systems += RequestManagement
         Systems += ResourceStatus
         Systems += StorageManagement
@@ -288,7 +288,8 @@ be taken:
           #  Password for root DB user. Must be set for SystemAdministrator Service to work
           RootPwd = YYYY
           #  location of DB server. Must be set for SystemAdministrator Service to work
-          Host = localhost # default
+          Host = localhost # default, otherwise a FQDN
+          Port = 3306 # default, otherwise the port
           #  There are 2 flags for small and large installations Set either of them to True/yes when appropriated
           # MySQLSmallMem:        Configure a MySQL with small memory requirements for testing purposes
           #                       innodb_buffer_pool_size=200MB
@@ -298,9 +299,10 @@ be taken:
       }
 
   - Run install_site.sh giving the edited configuration file as the argument. The configuration file must have
-    .cfg extension (CFG file). While not strictly necessary, it's advised that a version is added with the '-v' switch::
+    .cfg extension (CFG file). While not strictly necessary, it's advised that a version is added with the '-v' switch 
+    (pick the most recent one, see release notes in https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/release.notes)::
 
-      ./install_site.sh -v v6r17p1 install.cfg
+      ./install_site.sh -v v6r20p14 install.cfg
 
   - If the installation is successful, in the end of the script execution you will see the report
     of the status of running DIRAC services, e.g.::
@@ -364,12 +366,12 @@ operation is the registration of the new host in the already functional Configur
         #
         #  DIRAC release version (this is an example, you should find out the current
         #  production release)
-        Release = v6r17p1
+        Release = v6r20p16
         #  To install the Server version of DIRAC (the default is client)
         InstallType = server
         #  LCG python bindings for SEs and LFC. Specify this option only if your installation
         #  uses those services
-        # LcgVer = 2017-05-23
+        # LcgVer = v14r2
         #  If this flag is set to yes, each DIRAC update will be installed
         #  in a separate directory, not overriding the previous ones
         UseVersionsDir = yes
@@ -379,7 +381,7 @@ operation is the registration of the new host in the already functional Configur
         #  this server).
         #  For each User Community their extra package might be necessary here:
         #   i.e. LHCb, LHCbWeb for LHCb
-        Externals =
+        # Externals =
 
         #
         #   These are options for the configuration of the previously installed DIRAC software
@@ -414,13 +416,13 @@ operation is the registration of the new host in the already functional Configur
         #  Used to build the URLs the services will publish
         # Host = dirac.cern.ch
         Host =
-        #  List of Services to be installed
-        # Services  = Configuration/Server
+        #  List of Services to be installed --- every host MUST have a Framework/SystemAdministrator service installed
         Services = Framework/SystemAdministrator
+        # Service += 
 
   - Now run install_site.sh giving the edited CFG file as the argument:::
 
-        ./install_site.sh -v v6r17p1 install.cfg
+        ./install_site.sh -v v6r20p16 install.cfg
 
 If the installation is successful, the SystemAdministrator service will be up and running on the
 server. You can now set up the required components as described in :ref:`setting_with_CLI`

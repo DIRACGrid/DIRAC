@@ -41,7 +41,7 @@ def baseToAllJobs(jName, jobClass=None):
 
 
 def endOfAllJobs(J):
-  result = getDIRAC().submit(J)
+  result = getDIRAC().submitJob(J)
   print "Job submission result:", result
   if result['OK']:
     print "Submitted with job ID:", result['Value']

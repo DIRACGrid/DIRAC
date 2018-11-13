@@ -1219,7 +1219,8 @@ class FileManagerBase(object):
 
   def changeFileGroup(self, lfns):
     """ Get set the group for the supplied files
-        :param lfns : dictionary < lfn : group >
+
+        :param lfns: dictionary < lfn : group >
         :param int/str newGroup: optional new group/groupID the same for all the supplied lfns
      """
     res = self._findFiles(lfns, ['FileID', 'GID'])
@@ -1248,7 +1249,8 @@ class FileManagerBase(object):
 
   def changeFileOwner(self, lfns):
     """ Set the owner for the supplied files
-        :param lfns : dictionary < lfn : owner >
+
+        :param lfns: dictionary < lfn : owner >
         :param int/str newOwner: optional new user/userID the same for all the supplied lfns
     """
     res = self._findFiles(lfns, ['FileID', 'UID'])
@@ -1277,7 +1279,8 @@ class FileManagerBase(object):
 
   def changeFileMode(self, lfns):
     """" Set the mode for the supplied files
-        :param lfns : dictionary < lfn : mode >
+
+        :param lfns: dictionary < lfn : mode >
         :param int newMode: optional new mode the same for all the supplied lfns
     """
     res = self._findFiles(lfns, ['FileID', 'Mode'])

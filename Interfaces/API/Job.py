@@ -31,7 +31,7 @@ import urllib
 import shlex
 import StringIO
 
-from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC import S_OK, gLogger
 from DIRAC.Core.Base.API import API
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Workflow.Parameter import Parameter
@@ -40,7 +40,6 @@ from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.Core.Utilities.List import uniqueElements
 from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE, getSites
-from DIRAC.Core.Utilities.DErrno import EWMSJDL
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers import Resources
@@ -324,7 +323,8 @@ class Job(API):
     if self.numberOfParameters == 0:
       self.numberOfParameters = len(parameterList)
     elif self.numberOfParameters != len(parameterList):
-      return S_ERROR(EWMSJDL, 'Parameter sequences of different length')
+      return self._reportError('Parameter sequences of different length',
+                               name='setParameterSequence')
 
     self.parameterSeqs[name] = parameterList
     if addToWorkflow:
@@ -332,6 +332,8 @@ class Job(API):
         self.wfArguments[name] = addToWorkflow
       else:
         self.wfArguments[name] = name
+
+    return S_OK()
 
   #############################################################################
   def setInputDataPolicy(self, policy, dataScheduling=True):
@@ -557,7 +559,7 @@ class Job(API):
         return S_OK()
     elif site in self._siteSet:
       return S_OK()
-    return S_ERROR('Specified site %s is not in list of defined sites' % str(site))
+    return self._reportError('Specified site %s is not in list of defined sites' % str(site))
 
   #############################################################################
   def setDestinationCE(self, ceName, diracSite=None):
@@ -682,6 +684,7 @@ class Job(API):
     return S_OK()
 
   #############################################################################
+  @deprecated('Unused')
   def _setSoftwareTags(self, tags):
     """Developer function.
 

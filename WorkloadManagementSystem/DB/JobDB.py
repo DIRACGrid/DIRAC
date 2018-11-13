@@ -53,11 +53,11 @@ from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities.DErrno import EWMSSUBM
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup, getVOOption, getGroupOption
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Base.DB import DB
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getDIRACPlatform
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 
@@ -77,6 +77,12 @@ class JobDB(DB):
     DB.__init__(self, 'JobDB', 'WorkloadManagement/JobDB')
 
     self.maxRescheduling = self.getCSOption('MaxRescheduling', 3)
+
+    # loading the function that will be used to determine the platform (it can be VO specific)
+    res = ObjectLoader().loadObject("ConfigurationSystem.Client.Helpers.Resources", 'getDIRACPlatform')
+    if not res['OK']:
+      sys.exit(res['Message'])
+    self.getDIRACPlatform = res['Value']
 
     self.jobAttributeNames = []
 
@@ -153,16 +159,15 @@ class JobDB(DB):
       return S_ERROR('JobDB.getAttributesForJobList: Failed\n%s' % repr(x))
 
 #############################################################################
-  def getDistinctJobAttributes(self, attribute, condDict=None, older=None, newer=None, timeStamp='LastUpdateTime'):
+  def getDistinctJobAttributes(self, attribute, condDict=None, older=None,
+                               newer=None, timeStamp='LastUpdateTime'):
     """ Get distinct values of the job attribute under specified conditions
     """
-
     return self.getDistinctAttributeValues('Jobs', attribute, condDict=condDict,
                                            older=older, newer=newer, timeStamp=timeStamp)
 
 #############################################################################
   def traceJobParameter(self, site, localID, parameter, date=None, until=None):
-
     ret = self.traceJobParameters(site, localID, [parameter], None, date, until)
     if not ret['OK']:
       return ret
@@ -405,10 +410,10 @@ class JobDB(DB):
 
     attributes = {}
     if attrList:
-      for i in range(len(attrList)):
+      for i in xrange(len(attrList)):
         attributes[attrList[i]] = str(values[i])
     else:
-      for i in range(len(self.jobAttributeNames)):
+      for i in xrange(len(self.jobAttributeNames)):
         attributes[self.jobAttributeNames[i]] = str(values[i])
 
     return S_OK(attributes)
@@ -432,7 +437,7 @@ class JobDB(DB):
     :param self: self reference
     :param int jobID: Job ID
 
-    :return : dict with all Job Status values/empty dict if matching job not found
+    :return: dict with all Job Status values/empty dict if matching job not found
     """
 
     jobStatusNames = ['Status', 'MinorStatus', 'ApplicationStatus']
@@ -598,7 +603,7 @@ class JobDB(DB):
     optList = optListString.split(',')
     try:
       sindex = None
-      for i in range(len(optList)):
+      for i in xrange(len(optList)):
         if optList[i] == currentOptimizer:
           sindex = i
       if sindex >= 0:
@@ -651,7 +656,7 @@ class JobDB(DB):
         :param bool update: optional flag to update the job LastUpdateTime stamp
         :param str myDate: optional time stamp for the LastUpdateTime attribute
 
-        :return : S_OK/S_ERROR
+        :return: S_OK/S_ERROR
     """
 
     if attrName not in self.jobAttributeNames:
@@ -692,7 +697,7 @@ class JobDB(DB):
         :param bool update: optional flag to update the job LastUpdateTime stamp
         :param str myDate: optional time stamp for the LastUpdateTime attribute
 
-        :return : S_OK/S_ERROR
+        :return: S_OK/S_ERROR
     """
 
     jobIDList = jobID
@@ -714,7 +719,7 @@ class JobDB(DB):
         return S_ERROR(EWMSSUBM, 'Request to set non-existing job attribute')
 
     attr = []
-    for i in range(len(attrNames)):
+    for i in xrange(len(attrNames)):
       ret = self._escapeString(attrValues[i])
       if not ret['OK']:
         return ret
@@ -1013,7 +1018,6 @@ class JobDB(DB):
     return S_OK(jobID)
 
 #############################################################################
-
   def getJobJDL(self, jobID, original=False, status=''):
     """ Get JDL for job specified by its jobID. By default the current job JDL
         is returned. If 'original' argument is True, original JDL is returned
@@ -1279,10 +1283,13 @@ class JobDB(DB):
         if not classAdJob.lookupAttribute(param):
           classAdJob.insertAttributeString(param, val)
 
+    # priority
     priority = classAdJob.getAttributeInt('Priority')
     if priority is None:
       priority = 0
-    platform = classAdJob.getAttributeString('Platform')
+    classAdReq.insertAttributeInt('UserPriority', priority)
+
+    # CPU time
     cpuTime = classAdJob.getAttributeInt('CPUTime')
     if cpuTime is None:
       # Just in case check for MaxCPUTime for backward compatibility
@@ -1293,18 +1300,18 @@ class JobDB(DB):
         opsHelper = Operations(group=ownerGroup,
                                setup=diracSetup)
         cpuTime = opsHelper.getValue('JobDescription/DefaultCPUTime', 86400)
-    classAdReq.insertAttributeInt('UserPriority', priority)
     classAdReq.insertAttributeInt('CPUTime', cpuTime)
 
-    if platform and platform.lower() != 'any':
-      result = getDIRACPlatform(platform)
+    # platform(s)
+    platformList = classAdJob.getListFromExpression('Platform')
+    if platformList:
+      result = self.getDIRACPlatform(platformList)
       if result['OK'] and result['Value']:
         classAdReq.insertAttributeVectorString('Platforms', result['Value'])
       else:
         error = "OS compatibility info not found"
 
     if error:
-
       retVal = S_ERROR(EWMSSUBM, error)
       retVal['JobId'] = jobID
       retVal['Status'] = 'Failed'
@@ -1324,7 +1331,6 @@ class JobDB(DB):
     return S_OK()
 
 #############################################################################
-
   def removeJobFromDB(self, jobIDs):
     """Remove job from DB
 
@@ -1391,20 +1397,12 @@ class JobDB(DB):
         defined parameters in the parameter Attic
     """
     # Check Verified Flag
-    result = self.getJobAttributes(jobID, ['VerifiedFlag', 'RescheduleCounter',
+    result = self.getJobAttributes(jobID, ['Status', 'MinorStatus', 'VerifiedFlag', 'RescheduleCounter',
                                            'Owner', 'OwnerDN', 'OwnerGroup', 'DIRACSetup'])
     if result['OK']:
       resultDict = result['Value']
     else:
       return S_ERROR('JobDB.getJobAttributes: can not retrieve job attributes')
-
-    result = self.getJobStatus(jobID)
-
-    if result['OK']:
-      resultDict['Status'] = result['Value']['Status']
-      resultDict['MinorStatus'] = result['Value']['MinorStatus']
-    else:
-      return S_ERROR('JobDB.getJobStatus: can not retrieve job statuses')
 
     if 'VerifiedFlag' not in resultDict:
       return S_ERROR('Job ' + str(jobID) + ' not found in the system')

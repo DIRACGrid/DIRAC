@@ -259,6 +259,7 @@ class AuthManager(object):
   def matchProperties(self, credDict, validProps, caseSensitive=False):
     """
     Return True if one or more properties are in the valid list of properties
+
     :type  props: list
     :param props: List of properties to match
     :type  validProps: list

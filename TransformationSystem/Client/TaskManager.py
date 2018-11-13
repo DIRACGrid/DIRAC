@@ -523,7 +523,7 @@ class WorkflowTasks(TaskBase):
     else:
       return S_OK({})
 
-    method = '__prepareTransformationTasksBulk'
+    method = '__prepareTasksBulk'
     startTime = time.time()
 
     # Prepare the bulk Job object with common parameters
@@ -569,10 +569,12 @@ class WorkflowTasks(TaskBase):
       # Handle destination site
       sites = self._handleDestination(paramsDict)
       if not sites:
-        self._logError('Could not get a list a sites', transID=transID)
+        self._logError('Could not get a list a sites',
+                       transID=transID, method=method)
         return S_ERROR(ETSUKN, "Can not evaluate destination site")
       else:
-        self._logVerbose('Setting Site: ', str(sites), transID=transID)
+        self._logVerbose('Setting Site: ', str(sites),
+                         transID=transID, method=method)
         seqDict['Site'] = sites
 
       seqDict['JobName'] = self._transTaskName(transID, taskID)
@@ -584,6 +586,8 @@ class WorkflowTasks(TaskBase):
       # Handle Input Data
       inputData = paramsDict.get('InputData')
       if inputData:
+        if isinstance(inputData, basestring):
+          inputData = inputData.replace(' ', '').split(';')
         self._logVerbose('Setting input data to %s' % inputData,
                          transID=transID, method=method)
         seqDict['InputData'] = inputData
@@ -623,9 +627,11 @@ class WorkflowTasks(TaskBase):
 
     for paramName, paramSeq in paramSeqDict.iteritems():
       if paramName in ['JOB_ID', 'PRODUCTION_ID', 'InputData'] + outputParameterList:
-        oJob.setParameterSequence(paramName, paramSeq, addToWorkflow=paramName)
+        res = oJob.setParameterSequence(paramName, paramSeq, addToWorkflow=paramName)
       else:
-        oJob.setParameterSequence(paramName, paramSeq)
+        res = oJob.setParameterSequence(paramName, paramSeq)
+      if not res['OK']:
+        return res
 
     if taskDict:
       self._logInfo('Prepared %d tasks' % len(taskDict),
@@ -786,8 +792,11 @@ class WorkflowTasks(TaskBase):
     transID = paramsDict['TransformationID']
     if inputData:
       self._logVerbose('Setting input data to %s' % inputData,
-                       transID=transID, method='handleInputs')
-      oJob.setInputData(inputData)
+                       transID=transID, method='_handleInputs')
+      res = oJob.setInputData(inputData)
+      if not res['OK']:
+        self._logError("Could not set the inputs: %s" % res['Message'],
+                       transID=transID, method='_handleInputs')
 
   def _handleRest(self, oJob, paramsDict):
     """ add as JDL parameters all the other parameters that are not for inputs or destination
@@ -797,7 +806,7 @@ class WorkflowTasks(TaskBase):
       if paramName not in ('InputData', 'Site', 'TargetSE'):
         if paramValue:
           self._logDebug('Setting %s to %s' % (paramName, paramValue),
-                         transID=transID, method='handleRest')
+                         transID=transID, method='_handleRest')
           oJob._addJDLParameter(paramName, paramValue)
 
   def _handleHospital(self, oJob):
@@ -814,16 +823,19 @@ class WorkflowTasks(TaskBase):
   def __generatePluginObject(self, plugin):
     """ This simply instantiates the TaskManagerPlugin class with the relevant plugin name
     """
+    method = '__generatePluginObject'
     try:
       plugModule = __import__(self.pluginLocation, globals(), locals(), ['TaskManagerPlugin'])
     except ImportError as e:
-      self._logException("Failed to import 'TaskManagerPlugin' %s: %s" % (plugin, e))
+      self._logException("Failed to import 'TaskManagerPlugin' %s: %s" % (plugin, e),
+                         method=method)
       return S_ERROR()
     try:
       plugin_o = getattr(plugModule, 'TaskManagerPlugin')('%s' % plugin, operationsHelper=self.opsH)
       return S_OK(plugin_o)
     except AttributeError as e:
-      self._logException("Failed to create %s(): %s." % (plugin, e))
+      self._logException("Failed to create %s(): %s." % (plugin, e),
+                         method=method)
       return S_ERROR()
 
   #############################################################################
@@ -857,15 +869,19 @@ class WorkflowTasks(TaskBase):
       return S_OK(taskDict)
     startTime = time.time()
 
+    method = '__submitTransformationTasksBulk'
+
     oJob = taskDict.pop('BulkJobObject')
     # we can only do this, once the job has been popped, or we _might_ crash
     transID = taskDict.values()[0]['TransformationID']
     if oJob is None:
-      self._logError('no bulk Job object found', transID=transID, method='submitTransformationTasksBulk')
+      self._logError('no bulk Job object found', transID=transID, method=method)
       return S_ERROR(ETSUKN, 'No bulk job object provided for submission')
 
     result = self.submitTaskToExternal(oJob)
     if not result['OK']:
+      self._logError('Failed to submit tasks to external',
+                     transID=transID, method=method)
       return result
 
     jobIDList = result['Value']
@@ -880,13 +896,13 @@ class WorkflowTasks(TaskBase):
 
     submitted = len(jobIDList)
     self._logInfo('Submitted %d tasks to WMS in %.1f seconds' % (submitted, time.time() - startTime),
-                  transID=transID, method='submitTransformationTasksBulk')
+                  transID=transID, method=method)
     return S_OK(taskDict)
 
   def __submitTransformationTasks(self, taskDict):
     """ Submit jobs one by one
     """
-    method = 'submitTransformationTasks'
+    method = '__submitTransformationTasks'
     submitted = 0
     failed = 0
     startTime = time.time()
@@ -957,6 +973,8 @@ class WorkflowTasks(TaskBase):
     """
     Check the status of a list of tasks and return lists of taskIDs for each new status
     """
+    method = 'getSubmittedTaskStatus'
+
     if taskDicts:
       wmsIDs = [int(taskDict['ExternalID']) for taskDict in taskDicts if int(taskDict['ExternalID'])]
       transID = taskDicts[0]['TransformationID']
@@ -965,7 +983,7 @@ class WorkflowTasks(TaskBase):
     res = self.jobMonitoringClient.getJobsStatus(wmsIDs)
     if not res['OK']:
       self._logWarn("Failed to get job status from the WMS system",
-                    transID=transID)
+                    transID=transID, method=method)
       return res
     statusDict = res['Value']
     updateDict = {}
@@ -979,10 +997,11 @@ class WorkflowTasks(TaskBase):
       if oldStatus != newStatus:
         if newStatus == "Removed":
           self._logVerbose('Production/Job %d/%d removed from WMS while it is in %s status' %
-                           (transID, taskID, oldStatus), transID=transID)
+                           (transID, taskID, oldStatus),
+                           transID=transID, method=method)
           newStatus = "Failed"
         self._logVerbose('Setting job status for Production/Job %d/%d to %s' % (transID, taskID, newStatus),
-                         transID=transID)
+                         transID=transID, method=method)
         updateDict.setdefault(newStatus, []).append(taskID)
     return S_OK(updateDict)
 
@@ -992,6 +1011,9 @@ class WorkflowTasks(TaskBase):
     """
     if not fileDicts:
       return S_OK({})
+
+    method = 'getSubmittedFileStatus'
+
     # All files are from the same transformation
     transID = fileDicts[0]['TransformationID']
     taskFiles = {}
@@ -1002,7 +1024,7 @@ class WorkflowTasks(TaskBase):
     res = self.updateTransformationReservedTasks(fileDicts)
     if not res['OK']:
       self._logWarn("Failed to obtain taskIDs for files",
-                    transID=transID)
+                    transID=transID, method=method)
       return res
     noTasks = res['Value']['NoTasks']
     taskNameIDs = res['Value']['TaskNameIDs']
@@ -1016,7 +1038,7 @@ class WorkflowTasks(TaskBase):
     res = self.jobMonitoringClient.getJobsStatus(taskNameIDs.values())
     if not res['OK']:
       self._logWarn("Failed to get job status from the WMS system",
-                    transID=transID)
+                    transID=transID, method=method)
       return res
     statusDict = res['Value']
     for jobName, wmsID in taskNameIDs.iteritems():
