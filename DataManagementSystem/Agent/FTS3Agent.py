@@ -37,6 +37,7 @@ from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.DataManagementSystem.private import FTS3Utilities
 from DIRAC.DataManagementSystem.DB.FTS3DB import FTS3DB
 from DIRAC.DataManagementSystem.Client.FTS3Job import FTS3Job
+from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 
 
 # pylint: disable=attribute-defined-outside-init
@@ -68,6 +69,9 @@ class FTS3Agent(AgentModule):
     srvDict = res['Value']
     serverPolicyType = opHelper().getValue('DataManagement/FTSPlacement/FTS3/ServerPolicy', 'Random')
     self._serverPolicy = FTS3Utilities.FTS3ServerPolicy(srvDict, serverPolicy=serverPolicyType)
+
+    # List of third party protocols for transfers
+    self.thirdPartyProtocols = DMSHelpers().getThirdPartyProtocols()
 
     self.maxNumberOfThreads = self.am_getOption("MaxThreads", 10)
 
@@ -349,7 +353,7 @@ class FTS3Agent(AgentModule):
             continue
 
           context = res['Value']
-          res = ftsJob.submit(context=context)
+          res = ftsJob.submit(context=context, protocols=self.thirdPartyProtocols)
 
           if not res['OK']:
             log.error("Could not submit FTS3Job", "FTS3Operation %s : %s" %

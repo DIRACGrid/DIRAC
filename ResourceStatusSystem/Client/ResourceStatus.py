@@ -294,8 +294,8 @@ class ResourceStatus(object):
 
   def __getMode(self):
     """
-      Get's flag defined ( or not ) on the RSSConfiguration. If defined as 1,
-      we use RSS, if not, we use CS.
+      Gets flag defined (or not) on the RSSConfiguration.
+      If defined as 'Active', we use RSS, if not, we use the CS when possible (and WMS for Sites).
     """
 
     res = self.rssConfig.getConfigState()
@@ -311,8 +311,8 @@ class ResourceStatus(object):
   def isStorageElementAlwaysBanned(self, seName, statusType):
     """ Checks if the AlwaysBanned policy is applied to the SE given as parameter
 
-    :param seName : string, name of the SE
-    :param statusType : ReadAcces, WriteAccess, RemoveAccess, CheckAccess
+    :param seName: string, name of the SE
+    :param statusType: ReadAcces, WriteAccess, RemoveAccess, CheckAccess
 
     :returns: S_OK(True/False)
     """

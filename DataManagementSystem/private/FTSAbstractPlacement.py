@@ -9,9 +9,9 @@ class FTSRoute(object):
   
   def __init__( self, sourceSE, targetSE, ftsServer ):
     """
-      :param sourceSE : source se
-      :param targetSE : destination SE
-      :param ftsServer : fts server to use
+      :param sourceSE: source se
+      :param targetSE: destination SE
+      :param ftsServer: fts server to use
     """
 
     self.sourceSE = sourceSE
@@ -28,8 +28,9 @@ class FTSAbstractPlacement( object ):
   def __init__( self, csPath = None, ftsHistoryViews = None ):
     """
        Nothing special done here
-       :param csPath : path of the CS
-       :param ftsHistoryViews : history view of the db (useful for FTS2)
+
+       :param csPath: path of the CS
+       :param ftsHistoryViews: history view of the db (useful for FTS2)
     """
     self.csPath = csPath
     self.ftsHistoryViews = ftsHistoryViews
@@ -43,12 +44,12 @@ class FTSAbstractPlacement( object ):
     """ For multiple source to multiple destination, find the optimal replication
         strategy.
 
-       :param sourceSEs : list of source SE
-       :param targetSEs : list of destination SE
-       :param size : size of the File
-       :param strategy : which strategy to use
+       :param sourceSEs: list of source SE
+       :param targetSEs: list of destination SE
+       :param size: size of the File
+       :param strategy: which strategy to use
 
-       :returns S_OK(dict) < route name :  { dict with key Ancestor, SourceSE, TargetSEtargetSE, Strategy } >
+       :returns: S_OK(dict) < route name :  { dict with key Ancestor, SourceSE, TargetSEtargetSE, Strategy } >
     """
 
     return S_ERROR( 'IMPLEMENT ME' )
@@ -63,8 +64,9 @@ class FTSAbstractPlacement( object ):
   
   def findRoute( self, sourceSE, targetSE ):
     """ Find the appropriate route from point A to B
-      :param sourceSE : source SE
-      :param targetSE : destination SE
+
+      :param sourceSE: source SE
+      :param targetSE: destination SE
 
       :returns: S_OK(FTSRoute)
 
@@ -75,7 +77,7 @@ class FTSAbstractPlacement( object ):
     """ Check whether a given route is valid
        (whatever that means here)
 
-       :param route : FTSRoute
+       :param route: FTSRoute
 
        :returns: S_OK or S_ERROR(reason)
     """
@@ -86,7 +88,7 @@ class FTSAbstractPlacement( object ):
     """Declare that one starts a transfer on a given route.
        Accounting purpose only
 
-       :param route : FTSRoute that is used
+       :param route: FTSRoute that is used
 
     """
     return S_OK()
@@ -95,7 +97,7 @@ class FTSAbstractPlacement( object ):
     """Declare that one finishes a transfer on a given route.
        Accounting purpose only
 
-       :param route : FTSRoute that is used
+       :param route: FTSRoute that is used
 
     """
     return S_OK()

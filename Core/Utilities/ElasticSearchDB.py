@@ -42,6 +42,7 @@ class ElasticSearchDB(object):
   ########################################################################
   def __init__(self, host, port, user=None, password=None, indexPrefix='', useSSL=True):
     """ c'tor
+
     :param self: self reference
     :param str host: name of the database for example: MonitoringDB
     :param str port: The full name of the database for example: 'Monitoring/MonitoringDB'
@@ -179,8 +180,8 @@ class ElasticSearchDB(object):
   ########################################################################
   def getDocTypes(self, indexName):
     """
-    :param str indexName is the name of the index...
-    :return S_OK or S_ERROR
+    :param str indexName: is the name of the index...
+    :return: S_OK or S_ERROR
     """
     result = []
     try:
@@ -208,6 +209,7 @@ class ElasticSearchDB(object):
   def exists(self, indexName):
     """
     it checks the existance of an index
+
     :param str indexName: the name of the index
     """
     return self.__client.indices.exists(indexName)
@@ -236,7 +238,7 @@ class ElasticSearchDB(object):
 
   def deleteIndex(self, indexName):
     """
-    :param str indexName the name of the index to be deleted...
+    :param str indexName: the name of the index to be deleted...
     """
     try:
       retVal = self.__client.indices.delete(indexName)
@@ -331,9 +333,9 @@ class ElasticSearchDB(object):
 
   def getUniqueValue(self, indexName, key, orderBy=False):
     """
-    :param str indexName the name of the index which will be used for the query
-    :param dict orderBy it is a dictionary in case we want to order the result {key:'desc'} or {key:'asc'}
-    It returns a list of unique value for a certain key from the dictionary.
+    :param str indexName: the name of the index which will be used for the query
+    :param dict orderBy: it is a dictionary in case we want to order the result {key:'desc'} or {key:'asc'}
+    :returns: a list of unique value for a certain key from the dictionary.
     """
 
     query = self._Search(indexName)
@@ -379,6 +381,7 @@ class ElasticSearchDB(object):
   def pingDB(self):
     """
     Try to connect to the database
+
     :return: S_OK(TRUE/FALSE)
     """
     connected = False

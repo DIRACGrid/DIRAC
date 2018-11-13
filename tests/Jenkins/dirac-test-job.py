@@ -2,7 +2,7 @@
 """ Submission of test jobs for use by Jenkins
 """
 
-#pylint: disable=wrong-import-position,unused-wildcard-import,wildcard-import
+# pylint: disable=wrong-import-position,unused-wildcard-import,wildcard-import
 
 import os.path
 
@@ -17,37 +17,37 @@ from DIRAC.Interfaces.API.Job import Job
 from DIRAC.Interfaces.API.Dirac import Dirac
 #from tests.Workflow.Integration.Test_UserJobs import createJob
 
-gLogger.setLevel( 'DEBUG' )
+gLogger.setLevel('DEBUG')
 
-cwd = os.path.realpath( '.' )
+cwd = os.path.realpath('.')
 
 dirac = Dirac()
 
 # Simple Hello Word job to DIRAC.Jenkins.ch
-gLogger.info( "\n Submitting hello world job targeting DIRAC.Jenkins.ch" )
+gLogger.info("\n Submitting hello world job targeting DIRAC.Jenkins.ch")
 helloJ = Job()
-helloJ.setName( "helloWorld-TEST-TO-Jenkins" )
-helloJ.setInputSandbox( [find_all( 'exe-script.py', '..', '/DIRAC/tests/Workflow/' )[0]] )
-helloJ.setExecutable( "exe-script.py", "", "helloWorld.log" )
-helloJ.setCPUTime( 17800 )
-helloJ.setDestination( 'DIRAC.Jenkins.ch' )
-result = dirac.submit( helloJ )
-gLogger.info( "Hello world job: ", result )
+helloJ.setName("helloWorld-TEST-TO-Jenkins")
+helloJ.setInputSandbox([find_all('exe-script.py', '..', '/DIRAC/tests/Workflow/')[0]])
+helloJ.setExecutable("exe-script.py", "", "helloWorld.log")
+helloJ.setCPUTime(17800)
+helloJ.setDestination('DIRAC.Jenkins.ch')
+result = dirac.submitJob(helloJ)
+gLogger.info("Hello world job: ", result)
 if not result['OK']:
-  gLogger.error( "Problem submitting job", result['Message'] )
-  exit( 1 )
+  gLogger.error("Problem submitting job", result['Message'])
+  exit(1)
 
 # Simple Hello Word job to DIRAC.Jenkins.ch, that needs to be matched by a MP WN
-gLogger.info( "\n Submitting hello world job targeting DIRAC.Jenkins.ch and a MP WN" )
+gLogger.info("\n Submitting hello world job targeting DIRAC.Jenkins.ch and a MP WN")
 helloJMP = Job()
-helloJMP.setName( "helloWorld-TEST-TO-Jenkins-MP" )
-helloJMP.setInputSandbox( [find_all( 'exe-script.py', '..', '/DIRAC/tests/Workflow/' )[0]] )
-helloJMP.setExecutable( "exe-script.py", "", "helloWorld.log" )
-helloJMP.setCPUTime( 17800 )
-helloJMP.setDestination( 'DIRAC.Jenkins.ch' )
+helloJMP.setName("helloWorld-TEST-TO-Jenkins-MP")
+helloJMP.setInputSandbox([find_all('exe-script.py', '..', '/DIRAC/tests/Workflow/')[0]])
+helloJMP.setExecutable("exe-script.py", "", "helloWorld.log")
+helloJMP.setCPUTime(17800)
+helloJMP.setDestination('DIRAC.Jenkins.ch')
 helloJMP.setTag('MultiProcessor')
-result = dirac.submit( helloJMP ) # this should make the difference!
-gLogger.info( "Hello world job MP: ", result )
+result = dirac.submitJob(helloJMP)  # this should make the difference!
+gLogger.info("Hello world job MP: ", result)
 if not result['OK']:
-  gLogger.error( "Problem submitting job", result['Message'] )
-  exit( 1 )
+  gLogger.error("Problem submitting job", result['Message'])
+  exit(1)

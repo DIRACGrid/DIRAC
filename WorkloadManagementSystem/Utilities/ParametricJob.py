@@ -47,7 +47,9 @@ def getParameterVectorLength(jobClassAd):
       else:
         nThisParValues = jobClassAd.getAttributeInt(attribute)
       if nParValues is not None and nParValues != nThisParValues:
-        return S_ERROR(EWMSJDL, "Different length of parameter vectors")
+        return S_ERROR(EWMSJDL, "Different length of parameter vectors: for %s, %d != %d" % (attribute,
+                                                                                             nParValues,
+                                                                                             nThisParValues))
       nParValues = nThisParValues
   if nParValues is not None and nParValues <= 0:
     return S_ERROR(EWMSJDL, 'Illegal number of job parameters %d' % (nParValues))

@@ -57,12 +57,14 @@ class SystemAdministratorIntegrator( object ):
 
   def getSilentHosts( self ):
     """ Get a list of non-responding hosts
+
     :return: list of hosts
     """
     return self.silentHosts
 
   def getRespondingHosts( self ):
     """ Get a list of responding hosts
+
     :return: list of hosts
     """
     return self.__hosts
