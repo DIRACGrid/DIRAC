@@ -1,16 +1,17 @@
-""" What's this...?
+""" This object is a wrapper for setting and getting jobs states
 """
 
 __RCSID__ = "$Id"
 
 import datetime
+
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
-from DIRAC.WorkloadManagementSystem.Service.JobPolicy import RIGHT_GET_INFO, RIGHT_RESCHEDULE
-from DIRAC.WorkloadManagementSystem.Service.JobPolicy import RIGHT_RESET, RIGHT_CHANGE_STATUS
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB, singleValueDefFields, multiValueDefFields
+from DIRAC.WorkloadManagementSystem.Service.JobPolicy import RIGHT_GET_INFO, RIGHT_RESCHEDULE
+from DIRAC.WorkloadManagementSystem.Service.JobPolicy import RIGHT_RESET, RIGHT_CHANGE_STATUS
 
 
 class JobState(object):
@@ -280,8 +281,6 @@ class JobState(object):
       return S_ERROR(str(excp))
     return self.jobDB.getJobAttributes(self.__jid, nameList)
 
-# JobParameters --- REMOVED
-
 # OptimizerParameters
 
   right_setOptParameter = RIGHT_GET_INFO
@@ -402,7 +401,7 @@ class JobState(object):
     return self.jobDB.getInputData(self.__jid)
 
   @classmethod
-  def checkInputDataStructure(self, pDict):
+  def checkInputDataStructure(cls, pDict):
     if not isinstance(pDict, dict):
       return S_ERROR("Input data has to be a dictionary")
     for lfn in pDict:
@@ -421,7 +420,7 @@ class JobState(object):
     result = self.checkInputDataStructure(lfnData)
     if not result['OK']:
       return result
-    return self.__db.job.setInputData(self.__jid, lfnData)
+    return self.jobDB.setInputData(self.__jid, lfnData)
 
   right_insertIntoTQ = RIGHT_CHANGE_STATUS
 
