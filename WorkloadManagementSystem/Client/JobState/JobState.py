@@ -346,25 +346,6 @@ class JobState(object):
 
 # Other
 
-  def cleanTaskQueues(self, source=''):
-    result = self.tqDB.enableAllTaskQueues()
-    if not result['OK']:
-      return result
-    result = self.tqDB.findOrphanJobs()
-    if not result['OK']:
-      return result
-    for jid in result['Value']:
-      result = self.tqDB.deleteJob(jid)
-      if not result['OK']:
-        gLogger.error("Cannot delete from TQ job %s: %s" % (jid, result['Message']))
-        continue
-      result = self.jobDB.rescheduleJob(jid)
-      if not result['OK']:
-        gLogger.error("Cannot reschedule in JobDB job %s: %s" % (jid, result['Message']))
-        continue
-      self.logDB.addLoggingRecord(jid, "Received", "", "", source="JobState")
-    return S_OK()
-
   right_resetJob = RIGHT_RESCHEDULE
 
   @RemoteMethod
