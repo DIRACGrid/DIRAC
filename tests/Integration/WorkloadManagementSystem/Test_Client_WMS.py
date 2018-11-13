@@ -114,10 +114,11 @@ class WMSChain(TestWMSTestCase):
 
     # submit the job
     res = wmsClient.submitJob(job._toJDL(xmlFile=jobDescription))
+    print res
     self.assertTrue(res['OK'])
-  # self.assertEqual( type( res['Value'] ), int )
-  # self.assertEqual( res['Value'], res['JobID'] )
-  # jobID = res['JobID']
+    self.assertTrue(isinstance(res['Value'], int))
+    self.assertEqual(res['Value'], res['JobID'])
+    jobID = res['JobID']
     jobID = res['Value']
 
     # updating the status
@@ -313,25 +314,23 @@ class JobMonitoringMore(TestWMSTestCase):
     jobStateUpdate = JobStateUpdateClient()
 
     jobIDs = []
-    dests = ['DIRAC.site1.org', 'DIRAC.site2.org']
     lfnss = [['/a/1.txt', '/a/2.txt'], ['/a/1.txt', '/a/3.txt', '/a/4.txt'], []]
     types = ['User', 'Test']
-    for dest in dests:
-      for lfns in lfnss:
-        for jobType in types:
-          job = helloWorldJob()
-          job.setDestination(dest)
-          job.setInputData(lfns)
-          job.setType(jobType)
-          jobDescription = createFile(job)
-          res = wmsClient.submitJob(job._toJDL(xmlFile=jobDescription))
-          self.assertTrue(res['OK'])
-          jobID = res['Value']
-          jobIDs.append(jobID)
+    for lfns in lfnss:
+      for jobType in types:
+        job = helloWorldJob()
+        job.setDestination('DIRAC.Jenkins.ch')
+        job.setInputData(lfns)
+        job.setType(jobType)
+        jobDescription = createFile(job)
+        res = wmsClient.submitJob(job._toJDL(xmlFile=jobDescription))
+        self.assertTrue(res['OK'])
+        jobID = res['Value']
+      jobIDs.append(jobID)
 
     res = jobMonitor.getSites()
     self.assertTrue(res['OK'])
-    self.assertTrue(set(res['Value']) <= set(dests + ['ANY', 'DIRAC.Jenkins.ch']))
+    self.assertTrue(set(res['Value']) <= {'ANY', 'DIRAC.Jenkins.ch'})
     res = jobMonitor.getJobTypes()
     self.assertTrue(res['OK'])
     self.assertEqual(sorted(res['Value']), sorted(types))
@@ -363,7 +362,10 @@ class JobMonitoringMore(TestWMSTestCase):
     self.assertTrue(res['OK'])
     try:
       self.assertTrue(
-          res['Value'].get('Received') + res['Value'].get('Waiting') >= long(len(dests) * len(lfnss) * len(types)))
+          res['Value'].get('Received') +
+          res['Value'].get('Waiting') >= long(
+              len(lfnss) *
+              len(types)))
     except TypeError:
       pass
     res = jobMonitor.getJobsSummary(jobIDs)
