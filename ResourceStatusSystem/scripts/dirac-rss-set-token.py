@@ -2,12 +2,14 @@
 """
   dirac-rss-set-token
 
-    Script that helps setting the token of the elements in RSS. It can acquire or
-    release the token. If the releaseToken switch is used, no matter what was the
-    previous token, it will be set to rs_svc ( RSS owns it ). If not set, the token
-    will be set to whatever username is defined on the proxy loaded while issuing
+    Script that helps setting the token of the elements in RSS.
+    It can acquire or release the token.
+
+    If the releaseToken switch is used, no matter what was the previous token, it will be set to rs_svc (RSS owns it).
+    If not set, the token will be set to whatever username is defined on the proxy loaded while issuing
     this command. In the second case, the token lasts one day.
 
+  Usage: dirac-rss-token --element=[Site|Resource] --name=[name] --reason=[some reason]
 """
 
 __RCSID__ = '$Id$'
@@ -24,8 +26,6 @@ from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatu
 subLogger = None
 switchDict = {}
 
-#...............................................................................
-
 
 def registerSwitches():
   """
@@ -38,7 +38,8 @@ def registerSwitches():
       ('name=', 'Name, name of the element where the change applies'),
       ('statusType=', 'StatusType, if none applies to all possible statusTypes'),
       ('reason=', 'Reason to set the Status'),
-      ('releaseToken', 'Release the token and let the RSS go')
+      ('days=', 'Number of days the token is acquired'),
+      ('releaseToken', 'Release the token and let the RSS take control'),
   )
 
   for switch in switches:
@@ -76,18 +77,19 @@ def parseSwitches():
   switches = dict(Script.getUnprocessedSwitches())
   switches.setdefault('statusType', None)
   switches.setdefault('releaseToken', False)
+  switches.setdefault('days', 1)
 
   for key in ('element', 'name', 'reason'):
 
     if key not in switches:
       subLogger.error("%s Switch missing" % key)
-      subLogger.error("Please, check documentation below")
+      subLogger.error("Please, check documentation above")
       Script.showHelp()
       DIRACExit(1)
 
   if not switches['element'] in ('Site', 'Resource', 'Node'):
     subLogger.error("Found %s as element switch" % switches['element'])
-    subLogger.error("Please, check documentation below")
+    subLogger.error("Please, check documentation above")
     Script.showHelp()
     DIRACExit(1)
 
@@ -95,8 +97,6 @@ def parseSwitches():
   map(subLogger.debug, switches.iteritems())
 
   return switches
-
-#...............................................................................
 
 
 def proxyUser():
@@ -145,10 +145,10 @@ def setToken(user):
     tokenExpiration = datetime.max
     newTokenOwner = 'rs_svc'
   else:
-    tokenExpiration = datetime.utcnow().replace(microsecond=0) + timedelta(days=1)
+    tokenExpiration = datetime.utcnow().replace(microsecond=0) + timedelta(days=int(switchDict['days']))
     newTokenOwner = user
 
-  subLogger.info('New token : %s until %s' % (newTokenOwner, tokenExpiration))
+  subLogger.always('New token: %s --- until %s' % (newTokenOwner, tokenExpiration))
 
   for statusType, tokenOwner in elements:
 
@@ -194,8 +194,6 @@ def main():
     subLogger.error(res['Message'])
     DIRACExit(1)
 
-#...............................................................................
-
 
 if __name__ == '__main__':
 
@@ -210,6 +208,3 @@ if __name__ == '__main__':
   main()
 
   DIRACExit(0)
-
-################################################################################
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

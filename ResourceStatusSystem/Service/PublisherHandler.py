@@ -15,6 +15,7 @@ from types import NoneType
 # DIRAC
 from DIRAC import gLogger, S_OK, gConfig, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Utilities import CSHelpers, Utils
@@ -66,7 +67,7 @@ class PublisherHandler(RequestHandler):
     """
 
     gLogger.info('getSites')
-    return CSHelpers.getSites()
+    return getSites()
 
   types_getSitesResources = [(basestring, list, NoneType)]
 
@@ -81,7 +82,7 @@ class PublisherHandler(RequestHandler):
     gLogger.info('getSitesResources')
 
     if siteNames is None:
-      siteNames = CSHelpers.getSites()
+      siteNames = getSites()
       if not siteNames['OK']:
         return siteNames
       siteNames = siteNames['Value']

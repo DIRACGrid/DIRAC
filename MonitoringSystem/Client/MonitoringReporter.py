@@ -87,6 +87,7 @@ class MonitoringReporter(object):
   def addRecord(self, rec):
     """
     It inserts the record to the list
+
     :param dict rec: it kontains a key/value pair.
     """
     self.__documents.append(rec)
@@ -94,6 +95,7 @@ class MonitoringReporter(object):
   def publishRecords(self, records, mqProducer=None):
     """
     send data to the MQ. If the mqProducer instance is provided, it will be used for publishing the data to MQ.
+
     :param list records: contains a list of key/value pairs (dictionaries)
     :param object mqProducer: We can provide the instance of a producer, which will be used to publish the data
     """

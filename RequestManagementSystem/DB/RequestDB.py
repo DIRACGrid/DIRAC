@@ -894,7 +894,7 @@ class RequestDB( object ):
     """ read request id for given name
         if the name is not unique, an error is returned
 
-    :param requestName : name of the request
+    :param requestName: name of the request
     """
     session = self.DBSession()
 
