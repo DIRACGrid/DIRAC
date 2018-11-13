@@ -58,12 +58,6 @@ class JobPolicy( object ):
     self.__permissions = {}
     self.__getUserJobPolicy()
 
-  def setJobDB( self, jobDB ):
-    """ Supply a JobDB client object
-    """
-
-    self.jobDB = jobDB
-
 ###########################################################################
   def getUserRightsForJob( self, jobID, owner=None, group=None ):
     """ Get access rights to job with jobID for the user specified by
