@@ -684,34 +684,6 @@ class Job(API):
     return S_OK()
 
   #############################################################################
-  @deprecated('Unused')
-  def _setSoftwareTags(self, tags):
-    """Developer function.
-
-       Choose any software tags if desired.  These are not compulsory but will ensure jobs only
-       arrive at an LCG site where the software is preinstalled.  Without the tags, missing software is
-       installed automatically by the Job Agent.
-
-       Example usage:
-
-       >>> job=Job()
-       >>> job.setSoftwareTags(['VO-lhcb-Brunel-v30r17','VO-lhcb-Boole-v12r10','VO-lhcb-Gauss-v25r12'])
-
-       :param tags: software tags
-       :type tags: string or list
-    """
-    if isinstance(tags, basestring):
-      self._addParameter(self.workflow, 'SoftwareTag', 'JDL', tags, 'VO software tag')
-    elif isinstance(tags, list):
-      swTags = ';'.join(tags)
-      self._addParameter(self.workflow, 'SoftwareTag', 'JDL', swTags, 'List of VO software tags')
-    else:
-      kwargs = {'tags': tags}
-      return self._reportError('Expected String or List of software tags', **kwargs)
-
-    return S_OK()
-
-  #############################################################################
   def setJobGroup(self, jobGroup):
     """Helper function.
 
