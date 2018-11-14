@@ -66,7 +66,7 @@ class JobMonitoringHandler(RequestHandler):
     operations = Operations(group=self.ownerGroup)
     self.globalJobsInfo = operations.getValue('/Services/JobMonitoring/GlobalJobsInfo', True)
     self.jobPolicy = JobPolicy(self.ownerDN, self.ownerGroup, self.globalJobsInfo)
-    self.jobPolicy.setJobDB(gJobDB)
+    self.jobPolicy.jobDB = gJobDB
 
     return S_OK()
 
