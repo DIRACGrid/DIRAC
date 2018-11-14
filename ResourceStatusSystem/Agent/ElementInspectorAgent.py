@@ -1,8 +1,18 @@
 """ ElementInspectorAgent
 
-  This agent inspect Resources, and evaluates policies that apply.
+  This agent inspect Resources (or maybe Nodes), and evaluates policies that apply.
 
+
+The following options can be set for the ElementInspectorAgent.
+
+.. literalinclude:: ../ConfigTemplate.cfg
+  :start-after: ##BEGIN ElementInspectorAgent
+  :end-before: ##END
+  :dedent: 2
+  :caption: ElementInspectorAgent options
 """
+
+__RCSID__ = '$Id$'
 
 import datetime
 import math
@@ -17,7 +27,6 @@ from DIRAC.ResourceStatusSystem.Utilities import Utils
 ResourceManagementClient = getattr(Utils.voimport('DIRAC.ResourceStatusSystem.Client.ResourceManagementClient'),
                                    'ResourceManagementClient')
 
-__RCSID__  = '$Id$'
 AGENT_NAME = 'ResourceStatus/ElementInspectorAgent'
 
 
@@ -25,7 +34,7 @@ class ElementInspectorAgent( AgentModule ):
   """ ElementInspectorAgent
 
   The ElementInspector agent is a generic agent used to check the elements
-  of one of the elementTypes ( e.g. Site, Resource, Node ).
+  of type "Resource" -- which includes ComputingElement, StorageElement, and other types
 
   This Agent takes care of the Elements. In order to do so, it gathers
   the eligible ones and then evaluates their statuses with the PEP.
@@ -52,8 +61,8 @@ class ElementInspectorAgent( AgentModule ):
 
     AgentModule.__init__( self, *args, **kwargs )
 
-    # ElementType, to be defined among Site, Resource or Node
-    self.elementType         = ''
+    # ElementType, to be defined among Resource or Node
+    self.elementType = 'Resource'
     self.elementsToBeChecked = None
     self.threadPool          = None
     self.rsClient            = None
@@ -144,10 +153,10 @@ class ElementInspectorAgent( AgentModule ):
 
       # Maybe an overkill, but this way I have NEVER again to worry about order
       # of elements returned by mySQL on tuples
-      elemDict = dict( zip( elements[ 'Columns' ], element ) )
+      elemDict = dict(zip(elements['Columns'], element))
 
-      # This if-clause skips all the elements that are should not be checked yet
-      timeToNextCheck = self.__checkingFreqs[ elemDict[ 'Status' ] ]
+      # This if-clause skips all the elements that should not be checked yet
+      timeToNextCheck = self.__checkingFreqs[elemDict['Status']]
       if utcnow <= elemDict[ 'LastCheckTime' ] + datetime.timedelta( minutes = timeToNextCheck ):
         continue
 
@@ -163,7 +172,7 @@ class ElementInspectorAgent( AgentModule ):
       # be there, but in any case, it is not a big problem.
 
       lowerElementDict = { 'element' : self.elementType }
-      for key, value in elemDict.items():
+      for key, value in elemDict.iteritems():
         lowerElementDict[ key[0].lower() + key[1:] ] = value
 
       # We add lowerElementDict to the queue
@@ -221,6 +230,3 @@ class ElementInspectorAgent( AgentModule ):
 
       # Used together with join !
       self.elementsToBeChecked.task_done()
-
-#...............................................................................
-#EOF
