@@ -27,6 +27,7 @@ if caller != '__main__':
       break
     i += 1
 
+i = 0 if i == len(sys.argv) else i
 scriptName = os.path.basename(sys.argv[i]).replace('.py', '')
 localCfg.firstOptionIndex = i + 1
 
