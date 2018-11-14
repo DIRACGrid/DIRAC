@@ -98,11 +98,17 @@ class MonitoringReporter(object):
     :param object mqProducer: We can provide the instance of a producer, which will be used to publish the data
     """
 
-    if not mqProducer:
+    # If no mqProducer provided, we create one just to send those records and close it.
+    if mqProducer is None:
       mqProducer = self.__createProducer()
+      if mqProducer is None:
+        gLogger.error("Fail to create Producer")
+        return S_ERROR("Fail to create Producer")
       result = mqProducer.put(json.dumps(records))
       mqProducer.close()
+      mqProducer = None
       return result
+
     return mqProducer.put(json.dumps(records))
 
   def commit(self):
@@ -113,7 +119,7 @@ class MonitoringReporter(object):
     # before we try to insert the data to the db, we process all the data
     # which are already in the queue
     mqProducer = self.__createProducer()  # we are sure that we can connect to MQ
-    if mqProducer:
+    if mqProducer is not None:
       result = self.processRecords()
       if not result['OK']:
         gLogger.error("Unable to insert data to the db:", result['Message'])
@@ -132,7 +138,7 @@ class MonitoringReporter(object):
           del documents[:self.__maxRecordsInABundle]
           gLogger.info("%d records inserted to the db" % (recordSent))
         else:
-          if mqProducer:
+          if mqProducer is not None:
             res = self.publishRecords(recordsToSend, mqProducer)
             # if we managed to publish the records we can delete from the list
             if res['OK']:
@@ -146,15 +152,17 @@ class MonitoringReporter(object):
       gLogger.exception("Error committing", lException=e)
       return S_ERROR("Error committing %s" % repr(e).replace(',)', ')'))
     finally:
-      if mqProducer:
+      if mqProducer is not None:
         mqProducer.close()
+        mqProducer = None
       self.__documents.extend(documents)
-
     return S_OK(recordSent)
 
   def __createProducer(self):
     """
-    This method is used to create a producer
+    This method is used to create an MQ producer.
+    Returns:
+      MQProducer or None:
     """
     mqProducer = None
     result = createProducer("Monitoring::Queue::%s" % self.__failoverQueueName)
@@ -162,5 +170,4 @@ class MonitoringReporter(object):
       gLogger.warn("Fail to create Producer:", result['Message'])
     else:
       mqProducer = result['Value']
-
     return mqProducer
