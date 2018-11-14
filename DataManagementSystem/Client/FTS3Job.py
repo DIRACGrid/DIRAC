@@ -4,6 +4,7 @@ __RCSID__ = "$Id $"
 
 
 import datetime
+import errno
 
 # Requires at least version 3.3.3
 import fts3.rest.client.easy as fts3
@@ -15,6 +16,7 @@ from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
+from DIRAC.Core.Utilities.DErrno import cmpError
 
 from DIRAC.DataManagementSystem.private.FTS3Utilities import FTS3Serializable
 from DIRAC.DataManagementSystem.Client.FTS3File import FTS3File
@@ -145,7 +147,7 @@ class FTS3Job(FTS3Serializable):
 
         :param seName name of the storageElement
 
-        :returns space token
+        :returns space token. If there is no SpaceToken defined, returns None
     """
     seToken = None
     if seName:
@@ -153,6 +155,11 @@ class FTS3Job(FTS3Serializable):
 
       res = seObj.getStorageParameters(protocol='srm')
       if not res['OK']:
+        # If there is no SRM protocol, we do not specify
+        # the space token
+        if cmpError(res, errno.ENOPROTOOPT):
+          return S_OK(None)
+
         return res
 
       seToken = res["Value"].get("SpaceToken")
