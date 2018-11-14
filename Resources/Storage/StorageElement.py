@@ -582,7 +582,7 @@ class StorageElementItem(object):
 
     errStr = "Requested plugin or protocol not available."
     log.debug(errStr, "%s for %s" % (reqStr, self.name))
-    return S_ERROR(errStr)
+    return S_ERROR(errno.ENOPROTOOPT, errStr)
 
   def __getAllProtocols(self, protoType):
     """ Returns the list of all protocols for Input or Output

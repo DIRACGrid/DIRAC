@@ -255,7 +255,7 @@ be taken:
         Systems += Transformation
         Systems += WorkloadManagement
         #
-        # List of DataBases to be installed
+        # List of DataBases to be installed (what's here is a list for a basic installation)
         Databases = InstalledComponentsDB
         Databases += ResourceStatusDB
         #
@@ -265,8 +265,7 @@ be taken:
         #  Used to build the URLs the services will publish
         #  For a test installation you can use 127.0.0.1
         # Host = dirac.cern.ch
-        Host =
-        #  List of Services to be installed
+        #  List of Services to be installed (what's here is a list for a basic installation)
         Services  = Configuration/Server
         Services += Framework/ComponentMonitoring
         Services += Framework/SystemAdministrator
@@ -543,7 +542,7 @@ To change the components configuration parameters
 
   - Use the comand line interface to the Configuration Service::
 
-    $ *dirac-configuration-cli*
+    $ dirac-configuration-cli
 
   - In the server all the logs of the services and agents are stored and rotated in
     files that can be checked using the following command::

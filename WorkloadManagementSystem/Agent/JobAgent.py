@@ -495,8 +495,6 @@ class JobAgent(AgentModule):
     if submission['OK']:
       batchID = submission['Value']
       self.log.info('Job %s submitted as %s' % (jobID, batchID))
-      self.log.verbose('Set JobParameter: Local batch ID %s' % (batchID))
-      self.__setJobParam(jobID, 'LocalBatchID', str(batchID))
       if 'PayloadFailed' in submission:
         ret['PayloadFailed'] = submission['PayloadFailed']
         return ret
@@ -506,7 +504,7 @@ class JobAgent(AgentModule):
       self.__setJobParam(jobID, 'ErrorMessage', '%s CE Submission Error' % (self.ceName))
       if 'ReschedulePayload' in submission:
         rescheduleFailedJob(jobID, submission['Message'])
-        return S_OK()  # Without this job is marked as failed at line 265 above
+        return S_OK()  # Without this, the job is marked as failed
       else:
         if 'Value' in submission:
           self.log.error('Error in DIRAC JobWrapper:', 'exit code = %s' % (str(submission['Value'])))
