@@ -1,7 +1,10 @@
+.. _cs-site:
+
 Resources / Sites - Subsections
 ===============================
 
 In this section each DIRAC site available for the users is described. The convention to name the sites consist of 3 strings:
+
 - Grid site name, expressed in uppercase, for example: LCG, EELA
 - Institution acronym in uppercase, for example: CPPM
 - Country: country where the site is located, expressed in lowercase, for example fr
@@ -13,19 +16,22 @@ The three strings are concatenated with "." to produce the name of the sites.
 +---------------------------------+-----------------------------------------------+-----------------------------------+
 | *<DIRAC_SITE_NAME>*             | Subsection named with the site name           | LCG.CPPM.fr                       |
 +---------------------------------+-----------------------------------------------+-----------------------------------+
-| *<DIRAC_SITE_NAME>/Name*        | Site name gave by the site administrator      | NAME = in2p3                      |
+| *<DIRAC_SITE_NAME>/Name*        | Site name gave by the site administrator      | Name = in2p3                      |
+|                                 | e.g.: the name of the site in GOCDB (optional)|                                   |
 +---------------------------------+-----------------------------------------------+-----------------------------------+
 | *<DIRAC_SITE_NAME>/CE*          | List of CEs using CE FQN                      | CE = ce01.in2p3.fr                |
 |                                 | These CEs are updated by the BDII2CSAgent     | CE += ce02.in2p3.fr               |
 |                                 | in the CEs section                            |                                   |
 +---------------------------------+-----------------------------------------------+-----------------------------------+
-| *<DIRAC_SITE_NAME>/CEs*         | Subsection used to describe each CE available | CEs                               |
+| *<DIRAC_SITE_NAME>/MoUTierLevel | Tier Level (optional)                         | MoUTierLevel = 1                  |
 +---------------------------------+-----------------------------------------------+-----------------------------------+
-| *<DIRAC_SITE_NAME>/Coordinates* | Site geographical coordinates                 | Coordinates = -8.637979:41.152461 |
+| *<DIRAC_SITE_NAME>/CEs/*        | Subsection used to describe each CE available | CEs                               |
 +---------------------------------+-----------------------------------------------+-----------------------------------+
-| *<DIRAC_SITE_NAME>/Mail*        | Mail address site responsable                 | Mail = atsareg@in2p3.fr           |
+| *<DIRAC_SITE_NAME>/Coordinates* | Site geographical coordinates (optional)      | Coordinates = -8.637979:41.152461 |
 +---------------------------------+-----------------------------------------------+-----------------------------------+
-| *<DIRAC_SITE_NAME>/SE*          | Closest SE respect to the CE                  | SE = se01.in2p3.fr                |
+| *<DIRAC_SITE_NAME>/Mail*        | Mail address site responsable (optional)      | Mail = atsareg@in2p3.fr           |
++---------------------------------+-----------------------------------------------+-----------------------------------+
+| *<DIRAC_SITE_NAME>/SE*          | Closest SE respect to the CE (optional)       | SE = se01.in2p3.fr                |
 +---------------------------------+-----------------------------------------------+-----------------------------------+
 
 
@@ -86,3 +92,155 @@ This sub-subsection specify the attributes of each particular CE of the site. Mu
 +------------------------------------------------+-------------------------------------------------------------+--------------------------------+
 | *<CE_NAME>/Queues/<QUEUE_NAME>/RequiredTag*    | List of required tags that a job to be eligible must have   | RequiredTag = GPU,96RAM        |
 +------------------------------------------------+-------------------------------------------------------------+--------------------------------+
+
+
+An example for this session follows::
+
+  Sites
+  {
+    LCG
+    {
+      LCG.CERN.cern
+      {
+        SE = CERN-RAW
+        SE += CERN-RDST
+        SE += CERN-USER
+        CE = ce503.cern.ch
+        CE += ce504.cern.ch
+        Name = CERN-PROD
+        Coordinates = 06.0458:46.2325
+        Mail = grid-cern-prod-admins@cern.ch
+        MoUTierLevel = 0
+        Description = CERN European Organization for Nuclear Research
+        CEs
+        {
+          ce503.cern.ch
+          {
+            wnTmpDir = .
+            architecture = x86_64
+            OS = ScientificCERNSLC_Carbon_6.4
+            SI00 = 0
+            Pilot = False
+            CEType = HTCondorCE
+            SubmissionMode = Direct
+            Queues
+            {
+              ce503.cern.ch-condor
+              {
+                VO = lhcb
+                VO += LHCb
+                SI00 = 3100
+                MaxTotalJobs = 5000
+                MaxWaitingJobs = 200
+                maxCPUTime = 7776
+              }
+            }
+            VO = lhcb
+            MaxRAM = 0
+            UseLocalSchedd = False
+            DaysToKeepLogs = 1
+          }
+          ce504.cern.ch
+          {
+            wnTmpDir = .
+            architecture = x86_64
+            OS = ScientificCERNSLC_Carbon_6.4
+            SI00 = 0
+            Pilot = False
+            CEType = HTCondorCE
+            SubmissionMode = Direct
+            Queues
+            {
+              ce504.cern.ch-condor
+              {
+                VO = lhcb
+                VO += LHCb
+                SI00 = 3100
+                MaxTotalJobs = 5000
+                MaxWaitingJobs = 200
+                maxCPUTime = 7776
+              }
+            }
+          }
+        }
+      }
+    }
+    DIRAC
+    {
+      DIRAC.HLTFarm.lhcb
+      {
+        Name = LHCb-HLTFARM
+        CE = OnlineCE.lhcb
+        CEs
+        {
+          OnlineCE.lhcb
+          {
+            CEType = CREAM
+            Queues
+            {
+              OnlineQueue
+              {
+                maxCPUTime = 2880
+              }
+            }
+          }
+        }
+        AssociatedSEs
+        {
+          Tier1-RDST = CERN-RDST
+          Tier1_MC-DST = CERN_MC-DST-EOS
+          Tier1-Buffer = CERN-BUFFER
+          Tier1-Failover = CERN-EOS-FAILOVER
+          Tier1-BUFFER = CERN-BUFFER
+          Tier1-USER = CERN-USER
+          SE-USER = CERN-USER
+        }
+      }
+    }
+    VAC
+    {
+      VAC.Manchester.uk
+      {
+        Name = UKI-NORTHGRID-MAN-HEP
+        CE = vac01.blackett.manchester.ac.uk
+        CE += vac02.blackett.manchester.ac.uk
+        Coordinates = -2.2302:53.4669
+        Mail = ops@NOSPAMtier2.hep.manchester.ac.uk
+        CEs
+        {
+          vac01.blackett.manchester.ac.uk
+          {
+            CEType = Vac
+            architecture = x86_64
+            OS = ScientificSL_Carbon_6.4
+            wnTmpDir = /scratch
+            SI00 = 2200
+            MaxCPUTime = 1000
+            Queues
+            {
+              default
+              {
+                maxCPUTime = 1000
+              }
+            }
+          }
+          vac02.blackett.manchester.ac.uk
+          {
+            CEType = Vac
+            architecture = x86_64
+            OS = ScientificSL_Carbon_6.4
+            wnTmpDir = /scratch
+            SI00 = 2200
+            MaxCPUTime = 1000
+            Queues
+            {
+              default
+              {
+                maxCPUTime = 1000
+              }
+            }
+          }
+        }
+      }
+    }
+  }

@@ -4,6 +4,13 @@
 ########################################################################
 
 """  The Site Director is an agent performing pilot job submission to particular sites/Computing Elements.
+
+.. literalinclude:: ../ConfigTemplate.cfg
+  :start-after: ##BEGIN SiteDirector
+  :end-before: ##END
+  :dedent: 2
+  :caption: SiteDirector options
+
 """
 
 __RCSID__ = "$Id$"
@@ -105,6 +112,8 @@ class SiteDirector(AgentModule):
 
     self.proxy = None
 
+    self.addPilotsToEmptySites = False
+    self.checkPlatform = False
     self.updateStatus = True
     self.getOutput = False
     self.sendAccounting = True
@@ -122,7 +131,6 @@ class SiteDirector(AgentModule):
     self.maxQueueLength = 86400 * 3
 
     self.pilotWaitingFlag = True
-    self.pilotWaitingTime = 3600
     self.pilotLogLevel = 'INFO'
     self.matcherClient = None
     self.siteMaskList = []
@@ -134,7 +142,9 @@ class SiteDirector(AgentModule):
     """ Initial settings
     """
 
-    self.gridEnv = self.am_getOption("GridEnv", getGridEnv())
+    self.gridEnv = self.am_getOption("GridEnv", '')
+    if not self.gridEnv:
+      self.gridEnv = getGridEnv()
 
     # The SiteDirector is for a particular user community
     self.vo = self.am_getOption("VO", '')
@@ -196,30 +206,31 @@ class SiteDirector(AgentModule):
     self.maxJobsInFillMode = self.am_getOption('MaxJobsInFillMode', self.maxJobsInFillMode)
     self.maxPilotsToSubmit = self.am_getOption('MaxPilotsToSubmit', self.maxPilotsToSubmit)
     self.pilotWaitingFlag = self.am_getOption('PilotWaitingFlag', self.pilotWaitingFlag)
-    self.pilotWaitingTime = self.am_getOption('MaxPilotWaitingTime', self.pilotWaitingTime)
     self.failedQueueCycleFactor = self.am_getOption('FailedQueueCycleFactor', self.failedQueueCycleFactor)
     self.pilotStatusUpdateCycleFactor = self.am_getOption('PilotStatusUpdateCycleFactor', 10)
-    self.addPilotsToEmptySites = self.am_getOption('AddPilotsToEmptySites', False)
 
     # Flags
+    self.addPilotsToEmptySites = self.am_getOption('AddPilotsToEmptySites', self.addPilotsToEmptySites)
+    self.checkPlatform = self.am_getOption('CheckPlatform', self.checkPlatform)
     self.updateStatus = self.am_getOption('UpdatePilotStatus', self.updateStatus)
     self.getOutput = self.am_getOption('GetPilotOutput', self.getOutput)
     self.sendAccounting = self.am_getOption('SendPilotAccounting', self.sendAccounting)
 
     # Get the site description dictionary
     siteNames = None
-    if self.am_getOption('Site', 'Any').lower() != "any":
-      siteNames = self.am_getOption('Site', [])
-      if not siteNames:
-        siteNames = None
+    siteNamesOption = self.am_getOption('Site', ['any'])
+    if siteNamesOption and 'any' not in [sn.lower() for sn in siteNamesOption]:
+      siteNames = siteNamesOption
+
     ceTypes = None
-    if self.am_getOption('CETypes', 'Any').lower() != "any":
-      ceTypes = self.am_getOption('CETypes', [])
+    ceTypesOption = self.am_getOption('CETypes', ['any'])
+    if ceTypesOption and 'any' not in [ct.lower() for ct in ceTypesOption]:
+      ceTypes = ceTypesOption
+
     ces = None
-    if self.am_getOption('CEs', 'Any').lower() != "any":
-      ces = self.am_getOption('CEs', [])
-      if not ces:
-        ces = None
+    cesOption = self.am_getOption('CEs', ['any'])
+    if cesOption and 'any' not in [ce.lower() for ce in cesOption]:
+      ces = cesOption
 
     self.log.always('VO:', self.vo)
     if self.voGroups:
@@ -296,7 +307,7 @@ class SiteDirector(AgentModule):
       for ce in resourceDict[site]:
         ceDict = resourceDict[site][ce]
         pilotRunDirectory = ceDict.get('PilotRunDirectory', '')
-        ceMaxRAM = ceDict.get('MaxRAM', None)
+        # ceMaxRAM = ceDict.get('MaxRAM', None)
         qDict = ceDict.pop('Queues')
         for queue in qDict:
           queueName = '%s_%s' % (ce, queue)
@@ -655,10 +666,12 @@ class SiteDirector(AgentModule):
       tqDict['Community'] = self.vo
     if self.voGroups:
       tqDict['OwnerGroup'] = self.voGroups
-    result = self.resourcesModule.getCompatiblePlatforms(self.platforms)
-    if not result['OK']:
-      return result
-    tqDict['Platform'] = result['Value']
+
+    if self.checkPlatform:
+      platforms = self._getPlatforms()
+      if platforms:
+        tqDict['Platform'] = platforms
+
     tqDict['Site'] = self.sites
 
     # Get a union of all tags
@@ -671,6 +684,18 @@ class SiteDirector(AgentModule):
     tqDict.update(self.globalParameters)
 
     return tqDict
+
+  def _getPlatforms(self):
+    """ Get the platforms used for TQ match
+        Here for extension purpose.
+
+        :return: list of platforms
+    """
+    result = self.resourcesModule.getCompatiblePlatforms(self.platforms)
+    if not result['OK']:
+      self.log.error("Issue getting platforms compatible with %s, will skip check of platforms" % self.platforms,
+                     result['Message'])
+    return result['Value']
 
   def _allowedToSubmit(self, queue, anySite, jobSites, testSites):
     """ Check if we are allowed to submit to a certain queue
@@ -742,8 +767,12 @@ class SiteDirector(AgentModule):
     # This is a hack to get rid of !
     ceDict['SubmitPool'] = self.defaultSubmitPools
 
-    # yes, this can trigger an exception. It should "never" happen anyway, so it's a "good" exception
-    ceDict['Platform'] = self.resourcesModule.getCompatiblePlatforms(self.queueDict[queue]['Platform'])['Value']
+    result = self.resourcesModule.getCompatiblePlatforms(self.queueDict[queue]['Platform'])
+    if not result['OK']:
+      self.log.error("Issue getting platforms compatible with %s, returning 'ANY'" % self.platforms,
+                     result['Message'])
+      ceDict['Platform'] = 'ANY'
+    ceDict['Platform'] = result['Value']
 
     return ce, ceDict
 
