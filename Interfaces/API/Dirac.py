@@ -2389,7 +2389,7 @@ class Dirac(API):
 
        >>> print dirac.getJobParameters(79241)
        {'OK': True, 'Value': {'JobPath': 'JobPath,JobSanity,JobPolicy,InputData,JobScheduling,TaskQueue',
-       'JobSanityCheck': 'Job: 768 JDL: OK, InputData: 2 LFNs OK, ','LocalBatchID': 'dc768'}
+       'JobSanityCheck': 'Job: 768 JDL: OK, InputData: 2 LFNs OK, '}
 
        :param jobID: JobID
        :type jobID: int or string
