@@ -91,10 +91,7 @@ AGENTS = [('DIRAC.AccountingSystem.Agent.NetworkAgent', {'IgnoreOptions': ['MaxC
           ('DIRAC.WorkloadManagementSystem.Agent.StatesAccountingAgent', {}),
           ('DIRAC.WorkloadManagementSystem.Agent.StatesMonitoringAgent', {}),
           ('DIRAC.WorkloadManagementSystem.Agent.SiteDirector',
-           {'IgnoreOptions': ['PilotGroup', 'CETypes', 'ExtraPilotOptions', 'GridEnv', 'VO', 'Community', 'Group',
-                              'Pilot3', 'PilotDN', 'MaxQueueLength', 'MaxPilotsToSubmit', 'PilotWaitingFlag',
-                              'MaxPilotWaitingTime', 'CEs'],
-            'SpecialMocks': {'findGenericPilotCredentials': S_OK(('a', 'b'))}}),
+           {'SpecialMocks': {'findGenericPilotCredentials': S_OK(('a', 'b'))}}),
           # ('DIRAC.WorkloadManagementSystem.Agent.MultiProcessorSiteDirector', {}),  # not inheriting from AgentModule
           ]
 

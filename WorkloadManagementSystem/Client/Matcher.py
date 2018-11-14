@@ -207,6 +207,7 @@ class Matcher(object):
         if paramTags:
           resourceDict.setdefault("Tag", []).extend(paramTags)
 
+    # Add 'WholeNode' to the list of tags
     if "WholeNode" in resourceDescription:
       resourceDict.setdefault("Tag", []).append("WholeNode")
 

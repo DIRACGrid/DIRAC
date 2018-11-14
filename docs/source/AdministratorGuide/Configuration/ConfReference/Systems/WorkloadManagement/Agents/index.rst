@@ -39,6 +39,5 @@ Agents associated with Configuration System:
    :maxdepth: 2
    
    PilotStatusAgent/index
-   SiteDirector/index
    StalledJobAgent/index
    StatesAccountingAgent/index

@@ -9,6 +9,7 @@ __RCSID__ = "$Id$"
 from DIRAC import gLogger, S_OK, S_ERROR
 
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
+from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
@@ -115,7 +116,7 @@ class MatcherHandler(RequestHandler):
   types_getMatchingTaskQueues = [dict]
 
   def export_getMatchingTaskQueues(self, resourceDict):
-    """ Return all task queues
+    """ Return all task queues that match the resourceDict
     """
     if 'Site' in resourceDict and isinstance(resourceDict['Site'], basestring):
       negativeCond = self.limiter.getNegativeCondForSite(resourceDict['Site'])
@@ -126,12 +127,14 @@ class MatcherHandler(RequestHandler):
                       tqDB=gTaskQueueDB,
                       jlDB=jlDB)
     resourceDescriptionDict = matcher._processResourceDescription(resourceDict)
-    return gTaskQueueDB.retrieveTaskQueuesThatMatch(resourceDescriptionDict, negativeCond=negativeCond)
+    return gTaskQueueDB.getMatchingTaskQueues(resourceDescriptionDict,
+                                              negativeCond=negativeCond)
 
 ##############################################################################
   types_matchAndGetTaskQueue = [dict]
 
   @staticmethod
+  @deprecated("Unused")
   def export_matchAndGetTaskQueue(resourceDict):
     """ Return matching task queues
     """

@@ -11,7 +11,63 @@ Options for computing elements can be set at different levels, from lowest to
 highest prority
 
   /Resources/Computing/OSCompatibility
-  This section is used to define a compatibility matrix between dirac platforms and OS versions
+
+This section is used to define a compatibility matrix between dirac platforms (:ref:`dirac-platform`) and OS versions.
+
+An example of this session is the following::
+
+    OSCompatibility
+    {
+      Linux_x86_64_glibc-2.5 = x86_64_CentOS_Carbon_6.6
+      Linux_x86_64_glibc-2.5 += x86_64_CentOS_Carbon_6.7
+      Linux_x86_64_glibc-2.5 += x86_64_CentOS_Core_7.4
+      Linux_x86_64_glibc-2.5 += x86_64_CentOS_Core_7.5
+      Linux_x86_64_glibc-2.5 += x86_64_CentOS_Final_6.4
+      Linux_x86_64_glibc-2.5 += x86_64_CentOS_Final_6.7
+      Linux_x86_64_glibc-2.5 += x86_64_CentOS_Final_6.9
+      Linux_x86_64_glibc-2.5 += x86_64_CentOS_Final_7.4
+      Linux_x86_64_glibc-2.5 += x86_64_CentOS_Final_7.5
+      Linux_x86_64_glibc-2.5 += x86_64_RedHatEnterpriseLinuxServer_6.7_Santiago
+      Linux_x86_64_glibc-2.5 += x86_64_RedHatEnterpriseLinuxServer_7.2_Maipo
+      Linux_x86_64_glibc-2.5 += x86_64_Scientific_6_6.9
+      Linux_x86_64_glibc-2.5 += x86_64_Scientific_Carbon_6.8
+      Linux_x86_64_glibc-2.5 += x86_64_Scientific_Carbon_6.9
+      Linux_x86_64_glibc-2.5 += x86_64_ScientificCERNSLC_Boron_6.5
+      Linux_x86_64_glibc-2.5 += x86_64_ScientificCERNSLC_Carbon_6.3
+      Linux_x86_64_glibc-2.5 += x86_64_ScientificCERNSLC_Carbon_6.4
+      Linux_x86_64_glibc-2.5 += x86_64_ScientificCERNSLC_Carbon_6.5
+      Linux_x86_64_glibc-2.5 += x86_64_ScientificCERNSLC_Carbon_6.6
+      Linux_x86_64_glibc-2.5 += x86_64_ScientificCERNSLC_Carbon_6.7
+      Linux_x86_64_glibc-2.5 += x86_64_ScientificCERNSLC_Carbon_6.9
+      Linux_x86_64_glibc-2.5 += x86_64_ScientificLinux-6.9_0_0
+      Linux_x86_64_glibc-2.5 += x86_64_ScientificSL_Boron_6.4
+      Linux_x86_64_glibc-2.5 += x86_64_ScientificSL_Carbon_6.10
+      Linux_x86_64_glibc-2.5 += x86_64_ScientificSL_Carbon_6.3
+      Linux_x86_64_glibc-2.5 += x86_64_ScientificSL_Carbon_6.4
+      Linux_x86_64_glibc-2.5 += x86_64_ScientificSL_Carbon_6.5
+      Linux_x86_64_glibc-2.5 += x86_64_ScientificSL_Carbon_6.6
+      Linux_x86_64_glibc-2.5 += x86_64_ScientificSL_Carbon_6.7
+      Linux_x86_64_glibc-2.5 += x86_64_ScientificSL_Carbon_6.8
+      Linux_x86_64_glibc-2.5 += x86_64_ScientificSL_Carbon_6.9
+      Linux_x86_64_glibc-2.5 += x86_64_ScientificSL_Carbon_6x
+      Linux_x86_64_glibc-2.5 += x86_64_ScientificSL_Carbon_6.x
+      Linux_x86_64_glibc-2.5 += x86_64_ScientificSL_Nitrogen_7.4
+      Linux_x86_64_glibc-2.5 += x86_64_ScientificSL_SL_6.4
+      Linux_x86_64_glibc-2.5 += x86_64_ScientificSL_SL_6.5
+      Linux_x86_64_glibc-2.5 += x86_64_SL_Nitrogen_7.2
+    }
+
+What's on the left is an example of a dirac platform as determined the dirac-platform script (:ref:`dirac-platform`). 
+This platform is declared to be compatible with a list of "OS" strings.
+These strings are identifying the architectures of computing elements.
+This list of strings can be constructed from the "Architecture" + "OS" fields
+that can be found in the CEs description in the CS (:ref:`cs-sites`).
+
+This compatibility is, by default, used by the SiteDirector when deciding if to send a pilot or not to a certain CE:
+the SiteDirector matches "TaskQueues" to Computing Element capabilities.
+
+Other subsections are instead used to describe specific types of computing elements:
+
   /Resources/Computing/CEDefaults
    For all computing elements
   /Resources/Computing/<CEType>

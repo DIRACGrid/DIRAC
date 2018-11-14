@@ -30,7 +30,7 @@ Managing Registry:
     dirac-admin-add-group
     dirac-admin-add-host
     dirac-admin-add-user
-    dirac-admin-delete-user        
+    dirac-admin-delete-user
     dirac-admin-list-hosts
     dirac-admin-list-users
     dirac-admin-modify-user
@@ -64,7 +64,6 @@ Managing Resources:
     dirac-admin-set-site-protocols
     dirac-admin-site-info
     dirac-admin-site-mask-logging
-    dirac-config-ce
     
 Workload management commands:
 
@@ -122,15 +121,12 @@ Managing DIRAC installation:
     dirac-admin-get-CAs
     dirac-info
     dirac-version
-        
+
 Managing DIRAC software:
 
 .. toctree::
     :maxdepth: 2
     
-    dirac-create-distribution-tarball
-    dirac-create-svn-branch
-    dirac-create-svn-tag
     dirac-deploy-scripts
     dirac-distribution
     dirac-externals-requirements
@@ -150,7 +146,6 @@ User convenience:
     dirac-utils-file-adler
     dirac-utils-file-md5
 
-    
 Other commands:
 
 .. toctree::
