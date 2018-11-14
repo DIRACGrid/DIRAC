@@ -16,17 +16,6 @@ from DIRAC.WorkloadManagementSystem.Service.JobPolicy import RIGHT_RESET, RIGHT_
 
 class JobState(object):
 
-  class RemoteMethod(object):
-
-    def __init__(self, functor):
-      self.__functor = functor
-
-    def __get__(self, obj, oType=None):
-      return self.__class__(self.__functor.__get__(obj, oType))
-
-    def __call__(self, *args, **kwargs):
-      return self.__functor(*args, **kwargs)
-
   def __init__(self, jid, source="Unknown"):
     self.__jid = jid
     self.__source = str(source)
@@ -85,7 +74,6 @@ class JobState(object):
 
   right_commitCache = RIGHT_GET_INFO
 
-  @RemoteMethod
   def commitCache(self, initialState, cache, jobLog):
     try:
       self.__checkType(initialState, dict)
@@ -161,7 +149,6 @@ class JobState(object):
 
   right_setStatus = RIGHT_GET_INFO
 
-  @RemoteMethod
   def setStatus(self, majorStatus, minorStatus=None, appStatus=None, source=None, updateTime=None):
     try:
       self.__checkType(majorStatus, basestring)
@@ -184,7 +171,6 @@ class JobState(object):
 
   right_getMinorStatus = RIGHT_GET_INFO
 
-  @RemoteMethod
   def setMinorStatus(self, minorStatus, source=None, updateTime=None):
     try:
       self.__checkType(minorStatus, basestring)
@@ -199,7 +185,6 @@ class JobState(object):
     return self.logDB.addLoggingRecord(self.__jid, minor=minorStatus,
                                        date=updateTime, source=source)
 
-  @RemoteMethod
   def getStatus(self):
     result = self.jobDB.getJobAttributes(self.__jid, ['Status', 'MinorStatus'])
     if not result['OK']:
@@ -212,7 +197,6 @@ class JobState(object):
 
   right_setAppStatus = RIGHT_GET_INFO
 
-  @RemoteMethod
   def setAppStatus(self, appStatus, source=None, updateTime=None):
     try:
       self.__checkType(appStatus, basestring)
@@ -229,7 +213,6 @@ class JobState(object):
 
   right_getAppStatus = RIGHT_GET_INFO
 
-  @RemoteMethod
   def getAppStatus(self):
     result = self.jobDB.getJobAttributes(self.__jid, ['ApplicationStatus'])
     if result['OK']:
@@ -240,7 +223,6 @@ class JobState(object):
 
   right_setAttribute = RIGHT_GET_INFO
 
-  @RemoteMethod
   def setAttribute(self, name, value):
     try:
       self.__checkType(name, basestring)
@@ -251,7 +233,6 @@ class JobState(object):
 
   right_setAttributes = RIGHT_GET_INFO
 
-  @RemoteMethod
   def setAttributes(self, attDict):
     try:
       self.__checkType(attDict, dict)
@@ -263,7 +244,6 @@ class JobState(object):
 
   right_getAttribute = RIGHT_GET_INFO
 
-  @RemoteMethod
   def getAttribute(self, name):
     try:
       self.__checkType(name, basestring)
@@ -273,7 +253,6 @@ class JobState(object):
 
   right_getAttributes = RIGHT_GET_INFO
 
-  @RemoteMethod
   def getAttributes(self, nameList=None):
     try:
       self.__checkType(nameList, (list, tuple), canBeNone=True)
@@ -285,7 +264,6 @@ class JobState(object):
 
   right_setOptParameter = RIGHT_GET_INFO
 
-  @RemoteMethod
   def setOptParameter(self, name, value):
     try:
       self.__checkType(name, basestring)
@@ -296,7 +274,6 @@ class JobState(object):
 
   right_setOptParameters = RIGHT_GET_INFO
 
-  @RemoteMethod
   def setOptParameters(self, pDict):
     try:
       self.__checkType(pDict, dict)
@@ -310,7 +287,6 @@ class JobState(object):
 
   right_removeOptParameters = RIGHT_GET_INFO
 
-  @RemoteMethod
   def removeOptParameters(self, nameList):
     if isinstance(nameList, basestring):
       nameList = [nameList]
@@ -326,7 +302,6 @@ class JobState(object):
 
   right_getOptParameter = RIGHT_GET_INFO
 
-  @RemoteMethod
   def getOptParameter(self, name):
     try:
       self.__checkType(name, basestring)
@@ -336,7 +311,6 @@ class JobState(object):
 
   right_getOptParameters = RIGHT_GET_INFO
 
-  @RemoteMethod
   def getOptParameters(self, nameList=None):
     try:
       self.__checkType(nameList, (list, tuple), canBeNone=True)
@@ -348,7 +322,6 @@ class JobState(object):
 
   right_resetJob = RIGHT_RESCHEDULE
 
-  @RemoteMethod
   def rescheduleJob(self, source=""):
     result = self.tqDB.deleteJob(self.__jid)
     if not result['OK']:
@@ -361,7 +334,6 @@ class JobState(object):
 
   right_resetJob = RIGHT_RESET
 
-  @RemoteMethod
   def resetJob(self, source=""):
     result = self.jobDB.setJobAttribute(self.__jid, "RescheduleCounter", -1)
     if not result['OK']:
@@ -377,11 +349,9 @@ class JobState(object):
 
   right_getInputData = RIGHT_GET_INFO
 
-  @RemoteMethod
   def getInputData(self):
     return self.jobDB.getInputData(self.__jid)
 
-  @classmethod
   def checkInputDataStructure(cls, pDict):
     if not isinstance(pDict, dict):
       return S_ERROR("Input data has to be a dictionary")
@@ -396,7 +366,6 @@ class JobState(object):
 
   right_setInputData = RIGHT_GET_INFO
 
-  @RemoteMethod
   def set_InputData(self, lfnData):
     result = self.checkInputDataStructure(lfnData)
     if not result['OK']:
@@ -405,7 +374,6 @@ class JobState(object):
 
   right_insertIntoTQ = RIGHT_CHANGE_STATUS
 
-  @RemoteMethod
   def insertIntoTQ(self, manifest=None):
     if not manifest:
       result = self.getManifest()
