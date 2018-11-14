@@ -3,6 +3,9 @@
 *Core
 CHANGE: (#3885) Script.parseCommandLine: the called script is not necessarily the first in sys.argv
 
+*ConfigurationSystem
+CHANGE: (#3887) /Client/Helpers/Registry.py: Added search dirac user for ID and CA
+
 *MonitoringSystem
 FIX: (#3888) mqProducer field in MonitoringReporter can be set to None, and the comparison was broken. 
      It is fixed. Also some additional checks are added.
