@@ -73,33 +73,6 @@ def getGOCSites(diracSites=None):
   return S_OK(list(set(gocSites)))
 
 
-@deprecated("unused")
-def getDomainSites():
-  """
-    Gets all sites from /Resources/Sites
-  """
-
-  _basePath = 'Resources/Sites'
-
-  sites = {}
-
-  domainNames = gConfig.getSections(_basePath)
-  if not domainNames['OK']:
-    return domainNames
-  domainNames = domainNames['Value']
-
-  for domainName in domainNames:
-    domainSites = gConfig.getSections('%s/%s' % (_basePath, domainName))
-    if not domainSites['OK']:
-      return domainSites
-
-    domainSites = domainSites['Value']
-
-    sites[domainName] = domainSites
-
-  return S_OK(sites)
-
-
 def getResources():
   """
     Gets all resources
@@ -120,33 +93,6 @@ def getResources():
     resources = resources + ce['Value']
 
   return S_OK(resources)
-
-
-@deprecated("unused")
-def getNodes():
-  """
-    Gets all nodes
-  """
-
-  nodes = []
-
-  queues = getQueues()
-  if queues['OK']:
-    nodes = nodes + queues['Value']
-
-  return S_OK(nodes)
-
-
-@deprecated("unused")
-def getStorageElements():
-  """
-    Gets all storage elements from /Resources/StorageElements
-  """
-
-  _basePath = 'Resources/StorageElements'
-
-  seNames = gConfig.getSections(_basePath)
-  return seNames
 
 
 def getStorageElementsHosts(seNames=None):
@@ -240,26 +186,6 @@ def getStorageElementEndpoint(seName):
     return S_OK(seParameters['Value']['URLBase'])
 
   return S_ERROR((host, port, wsurl))
-
-
-@deprecated("unused")
-def getStorageElementEndpoints(storageElements=None):
-  """ get the endpoints of the Storage ELements
-  """
-
-  if storageElements is None:
-    storageElements = DMSHelpers().getStorageElements()
-
-  storageElementEndpoints = []
-
-  for se in storageElements:
-
-    seEndpoint = getStorageElementEndpoint(se)
-    if not seEndpoint['OK']:
-      continue
-    storageElementEndpoints.append(seEndpoint['Value'])
-
-  return S_OK(list(set(storageElementEndpoints)))
 
 
 def getFTS():
@@ -357,27 +283,6 @@ def getSiteComputingElements(siteName):
   return []
 
 
-@deprecated("unused")
-def getSiteStorageElements(siteName):
-  """
-    Gets all computing elements from /Resources/Sites/<>/<siteName>/SE
-  """
-
-  _basePath = 'Resources/Sites'
-
-  domainNames = gConfig.getSections(_basePath)
-  if not domainNames['OK']:
-    return domainNames
-  domainNames = domainNames['Value']
-
-  for domainName in domainNames:
-    ses = gConfig.getValue('%s/%s/%s/SE' % (_basePath, domainName, siteName), '')
-    if ses:
-      return ses.split(', ')
-
-  return []
-
-
 def getSiteElements(siteName):
   """
     Gets all the computing and storage elements for a given site
@@ -437,30 +342,3 @@ def getQueuesRSS():
   queues = list(set(queues))
 
   return S_OK(queues)
-
-
-@deprecated("unused")
-def getRegistryUsers():
-  """
-    Gets all users from /Registry/Users
-  """
-
-  _basePath = 'Registry/Users'
-
-  registryUsers = {}
-
-  userNames = gConfig.getSections(_basePath)
-  if not userNames['OK']:
-    return userNames
-  userNames = userNames['Value']
-
-  for userName in userNames:
-
-    # returns { 'Email' : x, 'DN': y, 'CA' : z }
-    userDetails = gConfig.getOptionsDict('%s/%s' % (_basePath, userName))
-    if not userDetails['OK']:
-      return userDetails
-
-    registryUsers[userName] = userDetails['Value']
-
-  return S_OK(registryUsers)
