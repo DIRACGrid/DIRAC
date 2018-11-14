@@ -90,7 +90,6 @@ class TestWMSTestCase(unittest.TestCase):
                            'WorkloadManagement/JobCleaningAgent')
     jca.initialize()
     res = jca.removeJobsByStatus({'Status': ['Killed', 'Deleted']})
-    print res
     self.assertTrue(res['OK'])
 
 
@@ -114,7 +113,6 @@ class WMSChain(TestWMSTestCase):
 
     # submit the job
     res = wmsClient.submitJob(job._toJDL(xmlFile=jobDescription))
-    print res
     self.assertTrue(res['OK'])
     self.assertTrue(isinstance(res['Value'], int))
     self.assertEqual(res['Value'], res['JobID'])
@@ -351,7 +349,7 @@ class JobMonitoringMore(TestWMSTestCase):
     self.assertTrue(sorted(res['Value']) in [['Received'], sorted(['Received', 'Waiting'])])
     res = jobMonitor.getMinorStates()
     self.assertTrue(res['OK'])
-    self.assertTrue(sorted(res['Value']) in [['Job accepted'], sorted(['Job accepted', 'matching'])])
+    self.assertTrue(sorted(res['Value']) in [['Job accepted'], sorted(['Job accepted', 'Job Rescheduled'])])
     self.assertTrue(res['OK'])
     res = jobMonitor.getJobs()
     self.assertTrue(res['OK'])
@@ -534,7 +532,8 @@ class WMSAdministratorPilots(TestWMSTestCase):
 
 
 class Matcher (TestWMSTestCase):
-  "Testing Matcher"
+  """Testing Matcher
+  """
 
   def test_matcher(self):
     # insert a proper DN to run the test
