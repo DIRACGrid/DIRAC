@@ -352,6 +352,7 @@ class JobState(object):
   def getInputData(self):
     return self.jobDB.getInputData(self.__jid)
 
+  @classmethod
   def checkInputDataStructure(cls, pDict):
     if not isinstance(pDict, dict):
       return S_ERROR("Input data has to be a dictionary")
