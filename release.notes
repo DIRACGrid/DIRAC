@@ -1,3 +1,30 @@
+[v6r20p19]
+
+*Core
+CHANGE: (#3885) Script.parseCommandLine: the called script is not necessarily the first in sys.argv
+
+*MonitoringSystem
+FIX: (#3888) mqProducer field in MonitoringReporter can be set to None, and the comparison was broken. 
+     It is fixed. Also some additional checks are added.
+
+*WorkloadManagementSystem
+CHANGE: (#3889) removed confusing Job parameter LocalBatchID
+CHANGE: (#3854) TQ matching (TaskQueueDB.py): when "ANY" is specified, don't exclude task queues 
+        (fix with "Platforms" matching in mind)
+CHANGE: (#3854) SiteDirector: split method getPlatforms, for extension purposes
+
+*DataManagementSystem
+FIX: (#3884) restore correct default value for the SEPrefix in the FileCatalogClient
+FIX: (#3886) FTS3: remove the hardcoded srm protocol for registration
+FIX: (#3886) FTS3: return an empty spacetoken if SRM is not available
+
+*TransformationSystem
+CHANGE: (#3891) ReplicationTransformation.createDataTransformation: returns S_OK with the 
+        transformation object when it was successfully added, instead of S_OK(None)
+
+*Resources
+NEW: (#3886) SE - return a standard error in case the requested protocol is not available
+
 [v6r20p18]
 
 *DataManagementSystem
