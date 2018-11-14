@@ -4,6 +4,7 @@ from sqlalchemy import orm
 
 from DIRAC.DataManagementSystem.Client.FTS3Job import FTS3Job
 from DIRAC.DataManagementSystem.private import FTS3Utilities
+from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
@@ -460,6 +461,8 @@ class FTS3TransferOperation(FTS3Operation):
     request = res['Value']['request']
     operation = res['Value']['operation']
 
+    registrationProtocols = DMSHelpers(vo=self._vo).getRegistrationProtocols()
+
     log.info("will create %s 'RegisterReplica' operations" % len(ftsFilesByTarget))
 
     for target, ftsFileList in ftsFilesByTarget.iteritems():
@@ -482,7 +485,7 @@ class FTS3TransferOperation(FTS3Operation):
         # TODO: are we really ever going to change type... ?
         opFile.ChecksumType = 'ADLER32'
         opFile.Size = ftsFile.size
-        res = returnSingleResult(targetSE.getURL(ftsFile.lfn, protocol='srm'))
+        res = returnSingleResult(targetSE.getURL(ftsFile.lfn, protocol=registrationProtocols))
 
         # This should never happen !
         if not res["OK"]:

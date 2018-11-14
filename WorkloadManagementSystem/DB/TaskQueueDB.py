@@ -4,26 +4,29 @@
 __RCSID__ = "$Id"
 
 import random
+
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
-from DIRAC.WorkloadManagementSystem.private.SharesCorrector import SharesCorrector
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Utilities.PrettyPrint import printDict
 from DIRAC.Core.Utilities.DictCache import DictCache
-from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Security import Properties, CS
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.WorkloadManagementSystem.private.SharesCorrector import SharesCorrector
 
 DEFAULT_GROUP_SHARE = 1000
 TQ_MIN_SHARE = 0.001
 
+# For checks at insertion time, and not only
 singleValueDefFields = ('OwnerDN', 'OwnerGroup', 'Setup', 'CPUTime')
 multiValueDefFields = ('Sites', 'GridCEs', 'GridMiddlewares', 'BannedSites',
                        'Platforms', 'PilotTypes', 'SubmitPools', 'JobTypes', 'Tags')
+
+# Used for matching
 multiValueMatchFields = ('GridCE', 'Site', 'GridMiddleware', 'Platform',
                          'PilotType', 'SubmitPool', 'JobType', 'Tag')
 tagMatchFields = ('Tag', )
 bannedJobMatchFields = ('Site', )
-strictRequireMatchFields = ('SubmitPool', 'Platform', 'PilotType', 'Tag')
 mandatoryMatchFields = ('Setup', 'CPUTime')
 priorityIgnoredFields = ('Sites', 'BannedSites')
 
@@ -240,7 +243,7 @@ class TaskQueueDB(DB):
   def __createTaskQueue(self, tqDefDict, priority=1, connObj=False):
     """
     Create a task queue
-      Returns S_OK( tqId ) / S_ERROR
+      :returns: S_OK( tqId ) / S_ERROR
     """
     if not connObj:
       result = self._getConnection()
@@ -336,9 +339,13 @@ class TaskQueueDB(DB):
     return jobPriority
 
   def insertJob(self, jobId, tqDefDict, jobPriority, skipTQDefCheck=False):
-    """
-    Insert a job in a task queue
-      Returns S_OK( tqId ) / S_ERROR
+    """ Insert a job in a task queue (creating one if it doesn't exit)
+
+        :param int jobId: job ID
+        :param dict tqDefDict: dict for TQ definition
+        :param int jobPriority: integer that defines the job priority
+
+        :returns: S_OK() / S_ERROR
     """
     try:
       long(jobId)
@@ -384,8 +391,13 @@ class TaskQueueDB(DB):
     return S_OK()
 
   def __insertJobInTaskQueue(self, jobId, tqId, jobPriority, checkTQExists=True, connObj=False):
-    """
-    Insert a job in a given task queue
+    """ Insert a job in a given task queue
+
+        :param int jobId: job ID
+        :param dict tqDefDict: dict for TQ definition
+        :param int jobPriority: integer that defines the job priority
+
+        :returns: S_OK() / S_ERROR
     """
     self.log.info("Inserting job %s in TQ %s with priority %s" % (jobId, tqId, jobPriority))
     if not connObj:
@@ -409,7 +421,10 @@ class TaskQueueDB(DB):
 
   def __generateTQFindSQL(self, tqDefDict, skipDefinitionCheck=False):
     """
-      Find a task queue that has exactly the same requirements
+        Generate the SQL to find a task queue that has exactly the given requirements
+
+        :param dict tqDefDict: dict for TQ definition
+        :returns: S_OK() / S_ERROR
     """
     if not skipDefinitionCheck:
       tqDefDict = dict(tqDefDict)
@@ -442,6 +457,9 @@ class TaskQueueDB(DB):
 
   def __findAndDisableTaskQueue(self, tqDefDict, skipDefinitionCheck=False, retries=10, connObj=False):
     """ Disable and find TQ
+
+        :param dict tqDefDict: dict for TQ definition
+        :returns: S_OK() / S_ERROR
     """
     for _ in xrange(retries):
       result = self.__findSmallestTaskQueue(tqDefDict, skipDefinitionCheck=skipDefinitionCheck, connObj=connObj)
@@ -459,7 +477,10 @@ class TaskQueueDB(DB):
 
   def __findSmallestTaskQueue(self, tqDefDict, skipDefinitionCheck=False, connObj=False):
     """
-      Find a task queue that has exactly the same requirements
+        Find a task queue that has at least the given requirements
+
+        :param dict tqDefDict: dict for TQ definition
+        :returns: S_OK() / S_ERROR
     """
     result = self.__generateTQFindSQL(tqDefDict, skipDefinitionCheck=skipDefinitionCheck)
     if not result['OK']:
@@ -478,8 +499,10 @@ ORDER BY COUNT( `tq_Jobs`.JobID ) ASC" % (sqlCmd, result['Value'])
     return S_OK({'found': True, 'tqId': data[0][1], 'enabled': data[0][2], 'jobs': data[0][0]})
 
   def matchAndGetJob(self, tqMatchDict, numJobsPerTry=50, numQueuesPerTry=10, negativeCond=None):
-    """
-    Match a job
+    """ Match a job based on requirements
+
+        :param dict tqDefDict: dict for TQ definition
+        :returns: S_OK() / S_ERROR
     """
     if negativeCond is None:
       negativeCond = {}
@@ -644,6 +667,9 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
     """
     Generate the SQL needed to match a task queue
     """
+    self.log.debug(tqMatchDict)
+    starValues = ['""', '', '"any"', 'any']
+
     if negativeCond is None:
       negativeCond = {}
     # Only enabled TQs
@@ -678,44 +704,66 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
           sqlCondList.append(self.__generateSQLSubCond("tq.%s <= %%s" % field, tqMatchDict[field]))
         else:
           sqlCondList.append(self.__generateSQLSubCond("tq.%s = %%s" % field, tqMatchDict[field]))
+
     # Match multi value fields
     for field in multiValueMatchFields:
+      self.log.debug("Evaluating field %s" % field)
       # It has to be %ss , with an 's' at the end because the columns names
       # are plural and match options are singular
-      if field in tqMatchDict and tqMatchDict[field]:
+      if tqMatchDict.get(field):
+        self.log.debug("Evaluating %s with value %s" % (field, tqMatchDict[field]))
+
         _, fullTableN = self.__generateTablesName(sqlTables, field)
+
         sqlMultiCondList = []
-        # if field != 'GridCE' or 'Site' in tqMatchDict:
-        # Jobs for masked sites can be matched if they specified a GridCE
-        # Site is removed from tqMatchDict if the Site is mask. In this case we want
-        # that the GridCE matches explicitly so the COUNT can not be 0. In this case we skip this
-        # condition
-        sqlMultiCondList.append("( SELECT COUNT(%s.Value) FROM %s WHERE %s.TQId = tq.TQId ) = 0" % (fullTableN,
-                                                                                                    fullTableN,
-                                                                                                    fullTableN))
-        rsql = None
-        if field in tagMatchFields:
-          if tqMatchDict[field] != '"Any"':
-            csql = self.__generateTagSQLSubCond(fullTableN, tqMatchDict[field])
-          # Add required tag condition
-          for field in tagMatchFields:
-            fieldName = "Required%s" % field
-            requiredTags = tqMatchDict.get(fieldName, '')
-            if requiredTags:
-              rsql = self.__generateRequiredTagSQLSubCond(fullTableN, requiredTags)
-        else:
-          csql = self.__generateSQLSubCond("%%s IN ( SELECT %s.Value \
-                                                      FROM %s \
-                                                      WHERE %s.TQId = tq.TQId )" % (fullTableN,
-                                                                                    fullTableN,
-                                                                                    fullTableN),
-                                           tqMatchDict[field])
-        sqlMultiCondList.append(csql)
-        if rsql is not None:
-          sqlCondList.append(rsql)
+        csql = None
+
+        # Now evaluating Tags
+        if field in tagMatchFields:  # basically, if field == Tag
+          self.log.debug("Evaluating tag %s of type %s" % (field, type(tqMatchDict.get(field))))
+
+          # Is there something to consider?
+          if not tqMatchDict.get(field) \
+             or \
+             isinstance(tqMatchDict.get(field), str) \
+             and tqMatchDict.get(field).lower() in starValues \
+             or \
+             isinstance(tqMatchDict.get(field), list) \
+             and any(x in [fv.lower() for fv in tqMatchDict.get(field)] for x in starValues):
+            continue
+          sqlMultiCondList.append(self.__generateTagSQLSubCond(fullTableN, tqMatchDict.get(field)))
+
+        else:  # everything that is not tags
+          self.log.debug("Evaluating field %s of type %s" % (field, type(tqMatchDict.get(field))))
+
+          # Is there something to consider?
+          if not tqMatchDict.get(field) \
+             or \
+             isinstance(tqMatchDict.get(field), str) \
+             and tqMatchDict.get(field).lower() in starValues \
+             or \
+             isinstance(tqMatchDict.get(field), list) \
+             and any(x in [fv.lower() for fv in tqMatchDict.get(field)] for x in starValues):
+            continue
+          # if field != 'GridCE' or 'Site' in tqMatchDict:
+          # Jobs for masked sites can be matched if they specified a GridCE
+          # Site is removed from tqMatchDict if the Site is mask. In this case we want
+          # that the GridCE matches explicitly so the COUNT can not be 0. In this case we skip this
+          # condition
+          sqlMultiCondList.append("( SELECT COUNT(%s.Value) FROM %s WHERE %s.TQId = tq.TQId ) = 0" % (fullTableN,
+                                                                                                      fullTableN,
+                                                                                                      fullTableN))
+          sqlMultiCondList.append(self.__generateSQLSubCond("%%s IN ( SELECT %s.Value \
+                                                            FROM %s \
+                                                            WHERE %s.TQId = tq.TQId )" % (fullTableN,
+                                                                                          fullTableN,
+                                                                                          fullTableN),
+                                                            tqMatchDict.get(field)))
+
         sqlCondList.append("( %s )" % " OR ".join(sqlMultiCondList))
+
         # In case of Site, check it's not in job banned sites
-        if field in bannedJobMatchFields:
+        if field in bannedJobMatchFields and tqMatchDict.get('Banned%s' % field):
           fullTableN = '`tq_TQToBanned%ss`' % field
           csql = self.__generateSQLSubCond("%%s not in ( SELECT %s.Value \
                                                           FROM %s \
@@ -724,26 +772,46 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
                                                                                         fullTableN),
                                            tqMatchDict[field], boolOp='OR')
           sqlCondList.append(csql)
-      # Resource banning
-      bannedField = "Banned%s" % field
-      if bannedField in tqMatchDict and tqMatchDict[bannedField]:
-        fullTableN = '`tq_TQTo%ss`' % field
-        csql = self.__generateSQLSubCond("%%s not in ( SELECT %s.Value \
-                                                        FROM %s \
-                                                        WHERE %s.TQId = tq.TQId )" % (fullTableN,
-                                                                                      fullTableN,
-                                                                                      fullTableN),
-                                         tqMatchDict[bannedField], boolOp='OR')
-        sqlCondList.append(csql)
 
-    # For certain fields, the requirement is strict. If it is not in the tqMatchDict, the job cannot require it
-    for field in strictRequireMatchFields:
-      if field in tqMatchDict and tqMatchDict[field]:
+    # Add possibly RequiredTag conditions
+    for field in tagMatchFields:
+      fieldName = "Required%s" % field
+
+      # Is there something to consider?
+      if not tqMatchDict.get(fieldName) \
+         or \
+         isinstance(tqMatchDict.get(fieldName), str) \
+         and tqMatchDict.get(fieldName).lower() in starValues \
+         or \
+         isinstance(tqMatchDict.get(fieldName), list) \
+         and any(x in [fv.lower() for fv in tqMatchDict.get(fieldName)] for x in starValues):
         continue
+
+      sqlCondList.append(self.__generateRequiredTagSQLSubCond('`tq_TQToTags`',
+                                                              tqMatchDict.get(fieldName)))
+
+    # Add possibly Resource banning conditions
+    for field in multiValueMatchFields:
+      bannedField = "Banned%s" % field
+
+      # Is there something to consider?
+      if not tqMatchDict.get(bannedField) \
+         or \
+         isinstance(tqMatchDict.get(bannedField), str) \
+         and tqMatchDict.get(bannedField).lower() in starValues \
+         or \
+         isinstance(tqMatchDict.get(bannedField), list) \
+         and any(x in [fv.lower() for fv in tqMatchDict.get(bannedField)] for x in starValues):
+        continue
+
       fullTableN = '`tq_TQTo%ss`' % field
-      sqlCondList.append(
-          "( SELECT COUNT(%s.Value) FROM %s WHERE %s.TQId = tq.TQId ) = 0" %
-          (fullTableN, fullTableN, fullTableN))
+
+      sqlCondList.append(self.__generateSQLSubCond("%%s not in ( SELECT %s.Value \
+                                                      FROM %s \
+                                                      WHERE %s.TQId = tq.TQId )" % (fullTableN,
+                                                                                    fullTableN,
+                                                                                    fullTableN),
+                                                   tqMatchDict[bannedField], boolOp='OR'))
 
     # Add extra conditions
     if negativeCond:
@@ -962,10 +1030,12 @@ WHERE j.JobId = %s AND t.TQId = j.TQId" %
     return S_OK(False)
 
   def getMatchingTaskQueues(self, tqMatchDict, negativeCond=False):
+    """ Get the info of the task queues that match a resource
     """
-     rename to have the same method as exposed in the Matcher
-    """
-    return self.retrieveTaskQueuesThatMatch(tqMatchDict, negativeCond=negativeCond)
+    result = self.matchAndGetTaskQueue(tqMatchDict, numQueuesToGet=0, negativeCond=negativeCond)
+    if not result['OK']:
+      return result
+    return self.retrieveTaskQueues([tqTuple[0] for tqTuple in result['Value']])
 
   def getNumTaskQueues(self):
     """
@@ -976,15 +1046,6 @@ WHERE j.JobId = %s AND t.TQId = j.TQId" %
     if not retVal['OK']:
       return retVal
     return S_OK(retVal['Value'][0][0])
-
-  def retrieveTaskQueuesThatMatch(self, tqMatchDict, negativeCond=False):
-    """
-    Get the info of the task queues that match a resource
-    """
-    result = self.matchAndGetTaskQueue(tqMatchDict, numQueuesToGet=0, negativeCond=negativeCond)
-    if not result['OK']:
-      return result
-    return self.retrieveTaskQueues([tqTuple[0] for tqTuple in result['Value']])
 
   def retrieveTaskQueues(self, tqIdList=None):
     """
@@ -1113,7 +1174,7 @@ WHERE j.JobId = %s AND t.TQId = j.TQId" %
     # Keep updating
     owners = dict(data)
     # IF the user is already known and has more than 1 tq, the rest of the users don't need to be modified
-    #(The number of owners didn't change)
+    # (The number of owners didn't change)
     if userDN in owners and owners[userDN] > 1:
       return self.__setPrioritiesForEntity(userDN, userGroup, entitiesShares[userDN], connObj=connObj)
     # Oops the number of owners may have changed so we recalculate the prio for all owners in the group

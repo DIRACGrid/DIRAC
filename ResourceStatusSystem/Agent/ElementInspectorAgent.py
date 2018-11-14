@@ -163,7 +163,7 @@ class ElementInspectorAgent(AgentModule):
       # of elements returned by mySQL on tuples
       elemDict = dict(zip(elements['Columns'], element))
 
-      # This if-clause skips all the elements that are should not be checked yet
+      # This if-clause skips all the elements that should not be checked yet
       timeToNextCheck = self.__checkingFreqs[elemDict['Status']]
       if utcnow <= elemDict['LastCheckTime'] + datetime.timedelta(minutes=timeToNextCheck):
         continue

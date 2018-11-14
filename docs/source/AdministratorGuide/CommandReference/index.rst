@@ -67,7 +67,6 @@ Managing Resources:
     dirac-admin-set-site-protocols
     dirac-admin-site-info
     dirac-admin-site-mask-logging
-    dirac-config-ce
     
 Workload management commands:
 
@@ -136,9 +135,6 @@ Managing DIRAC software:
 .. toctree::
     :maxdepth: 2
     
-    dirac-create-distribution-tarball
-    dirac-create-svn-branch
-    dirac-create-svn-tag
     dirac-deploy-scripts
     dirac-distribution
     dirac-externals-requirements
@@ -158,7 +154,6 @@ User convenience:
     dirac-utils-file-adler
     dirac-utils-file-md5
 
-    
 Other commands:
 
 .. toctree::
