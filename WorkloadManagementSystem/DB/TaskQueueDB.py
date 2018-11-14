@@ -745,7 +745,6 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
              isinstance(tqMatchDict.get(field), list) \
              and any(x in [fv.lower() for fv in tqMatchDict.get(field)] for x in starValues):
             continue
-          print [fv.lower() for fv in tqMatchDict.get(field)]
           # if field != 'GridCE' or 'Site' in tqMatchDict:
           # Jobs for masked sites can be matched if they specified a GridCE
           # Site is removed from tqMatchDict if the Site is mask. In this case we want
