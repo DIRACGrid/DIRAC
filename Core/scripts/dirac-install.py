@@ -90,11 +90,11 @@ After providing the default configuration files, DIRAC or your extension can be 
   Note: If the source is not provided, DIRAC repository is used, which is defined in the global
   configuration file.
 
-We can provide the repository url:code repository*Project*branch. for example::
+We can provide the repository url:code repository:::Project:::branch. for example::
 
   dirac-install -l DIRAC -r v6r20-pre16 -g v14r0 -t client  \
-  -m https://github.com/zmathe/DIRAC.git*DIRAC*dev_main_branch, \
-  https://github.com/zmathe/WebAppDIRAC.git*WebAppDIRAC*extjs6 -e WebAppDIRAC
+  -m https://github.com/zmathe/DIRAC.git:::DIRAC:::dev_main_branch, \
+  https://github.com/zmathe/WebAppDIRAC.git:::WebAppDIRAC:::extjs6 -e WebAppDIRAC
 
   it will install DIRAC based on dev_main_branch and WebAppDIRAC based on extjs6
 
@@ -1458,7 +1458,10 @@ def downloadAndExtractTarball(tarsURL, pkgName, pkgVer, checkHash=True, cache=Fa
           os.remove(tarinfo.name)
           tar.extract(tarinfo, cliParams.targetPath)  # pylint: disable=no-member
         finally:
-          os.chmod(tarinfo.name, tarinfo.mode)
+          try:
+            os.chmod(tarinfo.name, tarinfo.mode)
+          except OSError:  # the file can be a link
+            pass
     # Delete tar
     if cache:
       if not os.path.isdir(cacheDir):
@@ -1591,7 +1594,7 @@ def discoverModules(modules):
   for example: {"DIRAC:{"sourceUrl":"https://github.com/zmathe/DIRAC.git","Vesrion:v6r20p11"}}
 
   :param: str modules: it contains meta information for the module,
-  which will be installed: https://github.com/zmathe/DIRAC.git*DIRAC*dev_main_branch
+  which will be installed: https://github.com/zmathe/DIRAC.git:::DIRAC:::dev_main_branch
   """
 
   projects = {}
@@ -1599,9 +1602,9 @@ def discoverModules(modules):
   for module in modules.split(","):
     s = m = v = None
     try:
-      s, m, v = module.split("*")
+      s, m, v = module.split(":::")
     except ValueError:
-      m = module.split("*")[0]  # the source and version is not provided
+      m = module.split(":::")[0]  # the source and version is not provided
 
     projects[m] = {}
     if s and v:
@@ -2448,7 +2451,7 @@ def createCshrcForDiracOS():
   return True
 
 
-def checkoutFromGit(moduleName, sourceURL, tagVersion):
+def checkoutFromGit(moduleName, sourceURL, tagVersion, destinationDir=None):
   """
   This method checkout a given tag from a git repository.
   Note: we can checkout any project form a git repository.
@@ -2459,7 +2462,9 @@ def checkoutFromGit(moduleName, sourceURL, tagVersion):
 
   """
 
-  fDirName = os.path.join(cliParams.targetPath, moduleName)
+  codeRepo = moduleName + 'Repo'
+
+  fDirName = os.path.join(cliParams.targetPath, codeRepo)
   cmd = "git clone '%s' '%s'" % (sourceURL, fDirName)
 
   logNOTICE("Executing: %s" % cmd)
@@ -2480,10 +2485,18 @@ def checkoutFromGit(moduleName, sourceURL, tagVersion):
   logNOTICE("Executing: %s" % cmd)
   exportRes = os.system(cmd)
 
-  shutil.rmtree("%s/.git" % fDirName, ignore_errors=True)
-
   if exportRes:
     return S_ERROR("Error while exporting from git")
+  if os.path.exists(fDirName + '/' + moduleName):
+    cmd = "ln -s %s/%s" % (codeRepo, moduleName)
+  else:
+    cmd = "mv %s %s" % (codeRepo, moduleName)
+
+  logNOTICE("Executing: %s" % cmd)
+  retVal = os.system(cmd)
+
+  if retVal:
+    return S_ERROR("Error while creating module: %s" % (moduleName))
 
   return S_OK()
 
