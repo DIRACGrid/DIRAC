@@ -252,11 +252,9 @@ class JobMonitoring(TestWMSTestCase):
     res = jobMonitor.getJobAttribute(jobID, 'Site')
     self.assertTrue(res['OK'])
     self.assertEqual(res['Value'], 'Site')
-    res = jobMonitor.getJobStatus(jobID)
-    self.assertTrue(res['OK'])
-    self.assertEqual(res['Value']['ApplicationStatus'], 'app status')
     res = jobMonitor.getJobAttributes(jobID)
     self.assertTrue(res['OK'])
+    self.assertEqual(res['Value']['ApplicationStatus'], 'app status')
     self.assertEqual(res['Value']['JobName'], 'helloWorld')
     res = jobMonitor.getJobSummary(jobID)
     self.assertTrue(res['OK'])
@@ -327,6 +325,7 @@ class JobMonitoringMore(TestWMSTestCase):
       jobIDs.append(jobID)
 
     res = jobMonitor.getSites()
+    print "AAAAAAa", res
     self.assertTrue(res['OK'])
     self.assertTrue(set(res['Value']) <= {'ANY', 'DIRAC.Jenkins.ch'})
     res = jobMonitor.getJobTypes()
@@ -431,6 +430,7 @@ class WMSAdministrator(TestWMSTestCase):
 
     res = wmsAdministrator.getSiteSummaryWeb({}, [], 0, 100)
     self.assertTrue(res['OK'])
+    print "AAAAAAAAA", res
     self.assertTrue(res['Value']['TotalRecords'] in [0, 1, 2, 34])
     res = wmsAdministrator.getSiteSummarySelectors()
     self.assertTrue(res['OK'])
