@@ -20,6 +20,8 @@ from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Security import Properties
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
+from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
+from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
 from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
 from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
 from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
@@ -542,7 +544,7 @@ class JobAgent(AgentModule):
   def __report(self, jobID, status, minorStatus):
     """Wraps around setJobStatus of state update client
     """
-    jobReport = RPCClient('WorkloadManagement/JobStateUpdate')
+    jobReport = JobStateUpdateClient()
     jobStatus = jobReport.setJobStatus(int(jobID), status, minorStatus, 'JobAgent@%s' % self.siteName)
     self.log.verbose('setJobStatus(%s,%s,%s,%s)' % (jobID, status, minorStatus, 'JobAgent@%s' % self.siteName))
     if not jobStatus['OK']:
@@ -554,7 +556,7 @@ class JobAgent(AgentModule):
   def __setJobParam(self, jobID, name, value):
     """Wraps around setJobParameter of state update client
     """
-    jobReport = RPCClient('WorkloadManagement/JobStateUpdate')
+    jobReport = JobStateUpdateClient()
     jobParam = jobReport.setJobParameter(int(jobID), str(name), str(value))
     self.log.verbose('setJobParameter(%s,%s,%s)' % (jobID, name, value))
     if not jobParam['OK']:
@@ -581,7 +583,7 @@ class JobAgent(AgentModule):
 
     self.log.warn('Failure during %s' % (message))
 
-    jobManager = RPCClient('WorkloadManagement/JobManager')
+    jobManager = JobManagerClient()
     jobReport = JobReport(int(jobID), 'JobAgent@%s' % self.siteName)
 
     # Setting a job parameter does not help since the job will be rescheduled,

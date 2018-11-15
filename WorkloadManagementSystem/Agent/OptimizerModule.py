@@ -81,7 +81,7 @@ class OptimizerModule( AgentModule ):
       self.log.warn( 'Failed to get a job list from the JobDB' )
       return S_ERROR( 'Failed to get a job list from the JobDB' )
 
-    if not len( result['Value'] ):
+    if not result['Value']:
       self.log.verbose( 'No pending jobs to process' )
       return S_OK( 'No work to do' )
 
@@ -109,7 +109,7 @@ class OptimizerModule( AgentModule ):
   def getJobDefinition( self, job, jobDef = False ):
     """ Retrieve JDL of the Job and return jobDef dictionary
     """
-    if jobDef == False:
+    if not jobDef:
       jobDef = {}
     #If not jdl in jobinfo load it
     if 'jdl' not in jobDef:
@@ -126,10 +126,10 @@ class OptimizerModule( AgentModule ):
           return S_ERROR( "No JDL for job" )
         jobDef[ 'jdl' ] = result[ 'Value' ]
     #Load the classad if needed
-    if 'jdl' in jobDef and not 'classad' in jobDef:
+    if 'jdl' in jobDef and 'classad' not in jobDef:
       try:
         classad = ClassAd( jobDef[ 'jdl' ] )
-      except:
+      except BaseException:
         self.log.debug( "Cannot load JDL" )
         return S_ERROR( 'Illegal Job JDL' )
       if not classad.isOK():
