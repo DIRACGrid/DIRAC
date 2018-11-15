@@ -34,7 +34,6 @@ from DIRAC.Core.Utilities.Subprocess import Subprocess
 from DIRAC.Core.Utilities.File import getGlobbedTotalSize, getGlobbedFiles
 from DIRAC.Core.Utilities.Version import getCurrentVersion
 from DIRAC.Core.Utilities.Adler import fileAdler
-from DIRAC.Core.DISET.RPCClient import RPCClient
 
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
@@ -45,7 +44,9 @@ from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
+from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
+from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
 from DIRAC.WorkloadManagementSystem.JobWrapper.WatchdogFactory import WatchdogFactory
 from DIRAC.AccountingSystem.Client.Types.Job import Job as AccountingJob
 from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemSection
@@ -500,7 +501,7 @@ class JobWrapper(object):
     heartBeatDict = {}
     staticParamDict = {'StandardOutput': appStdOut}
     if self.jobID:
-      jobReport = RPCClient('WorkloadManagement/JobStateUpdate', timeout=120)
+      jobReport = JobStateUpdateClient()
       result = jobReport.sendHeartBeat(self.jobID, heartBeatDict, staticParamDict)
       if not result['OK']:
         self.log.error('Problem sending final heartbeat from JobWrapper', result['Message'])
@@ -1440,7 +1441,7 @@ def rescheduleFailedJob(jobID, message, jobReport=None):
 
     gLogger.info('Job will be rescheduled after exception during execution of the JobWrapper')
 
-    jobManager = RPCClient('WorkloadManagement/JobManager')
+    jobManager = JobManagerClient()
     result = jobManager.rescheduleJob(int(jobID))
     if not result['OK']:
       gLogger.warn(result['Message'])
