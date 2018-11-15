@@ -13,4 +13,5 @@ In this subsection the Others commands are collected
    dirac-proxy-get-uploaded-info.rst
    dirac-proxy-info.rst
    dirac-proxy-init.rst
+   dirac-proxy-destroy.rst
    dirac-version.rst

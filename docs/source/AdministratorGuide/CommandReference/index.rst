@@ -135,6 +135,7 @@ Managing DIRAC software:
 .. toctree::
     :maxdepth: 2
     
+    dirac-create-distribution-tarball
     dirac-deploy-scripts
     dirac-distribution
     dirac-externals-requirements
