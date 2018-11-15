@@ -839,8 +839,9 @@ class DirectoryCase(DFCTestCase):
                 parentDir,
                 {}).get('Owner'),
             proxyUser,
-            "parentDir should not have changed %s" %
-            result2)
+            "parentDir should not have changed Owner from %s ==> %s)" %
+            (proxyUser,
+             result2))
         self.assertEqual(
             result2['Value'].get(
                 'Successful',
@@ -848,8 +849,9 @@ class DirectoryCase(DFCTestCase):
                 testDir,
                 {}).get('Owner'),
             proxyUser,
-            "testDir should not have changed %s" %
-            result2)
+            "testDir should not have changed Owner from %s ==> %s" %
+            (proxyUser,
+             result2))
 
         self.assertTrue(
             parentDir in resultG["Value"]["Failed"],
@@ -863,8 +865,9 @@ class DirectoryCase(DFCTestCase):
                 parentDir,
                 {}).get('OwnerGroup'),
             proxyGroup,
-            "parentDir should not have changed %s" %
-            result2)
+            "parentDir should not have changed OwnerGroup from %s ==> %s" %
+            (proxyGroup,
+             result2))
         self.assertEqual(
             result2['Value'].get(
                 'Successful',
@@ -872,8 +875,9 @@ class DirectoryCase(DFCTestCase):
                 testDir,
                 {}).get('OwnerGroup'),
             proxyGroup,
-            "testDir should not have changed %s" %
-            result2)
+            "testDir should not have changed Owner from %s ==> %s" %
+            (proxyGroup,
+             result2))
 
     # Do it recursively now
 
