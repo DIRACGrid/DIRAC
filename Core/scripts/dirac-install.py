@@ -1450,10 +1450,15 @@ def downloadAndExtractTarball(tarsURL, pkgName, pkgVer, checkHash=True, cache=Fa
   #  tf.extract( member )
   # os.chdir(cwd)
   if not isSource:
-    with closing(tarfile.open(tarPath, mode="r|*")) as tar:
+    with closing(tarfile.open(tarPath, mode="r:*")) as tar:
       for tarinfo in tar:  # pylint: disable=not-an-iterable
-        tar.extract(tarinfo, cliParams.targetPath)  # pylint: disable=no-member
-
+        try:
+          tar.extract(tarinfo, cliParams.targetPath)  # pylint: disable=no-member
+        except IOError:
+          os.remove(tarinfo.name)
+          tar.extract(tarinfo, cliParams.targetPath)  # pylint: disable=no-member
+        finally:
+          os.chmod(tarinfo.name, tarinfo.mode)
     # Delete tar
     if cache:
       if not os.path.isdir(cacheDir):
