@@ -31,7 +31,7 @@ import urllib
 import shlex
 import StringIO
 
-from DIRAC import S_OK, gLogger, exit as Dexit
+from DIRAC import S_OK, gLogger
 from DIRAC.Core.Base.API import API
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Workflow.Parameter import Parameter

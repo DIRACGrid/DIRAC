@@ -233,49 +233,48 @@ dStrError = {  # Generic (10XX)
     ENOPKEY: "No private key loaded",
     ENOGROUP: "No DIRAC group",
     # 111X: DISET
-              EDISET: "DISET Error",
-              ENOAUTH: "Unauthorized query",
-              # 112X: 3rd party security
-              E3RDPARTY: "3rd party security service error",
-              EVOMS: "VOMS Error",
-              # 113X: Databases
-              EDB: "Database Error",
-              EMYSQL: "MySQL Error",
-              ESQLA: "SQLAlchemy Error",
+    EDISET: "DISET Error",
+    ENOAUTH: "Unauthorized query",
+    # 112X: 3rd party security
+    E3RDPARTY: "3rd party security service error",
+    EVOMS: "VOMS Error",
+    # 113X: Databases
+    EDB: "Database Error",
+    EMYSQL: "MySQL Error",
+    ESQLA: "SQLAlchemy Error",
 
-              # 114X: Message Queues
-              EMQUKN: "Unknown MQ Error",
-              EMQNOM: "No messages",
-              EMQCONN: "MQ connection failure",
-              # 114X Elasticsearch
-              EELNOFOUND: "Index not found",
+    # 114X: Message Queues
+    EMQUKN: "Unknown MQ Error",
+    EMQNOM: "No messages",
+    EMQCONN: "MQ connection failure",
+    # 114X Elasticsearch
+    EELNOFOUND: "Index not found",
     # Config
-              ESECTION: "Section is not found",
-              # processes
-              EEZOMBIE: "Zombie process",
-              EENOPID: "No PID of process",
-              # WMS/Workflow
-              EWMSUKN: "Unknown WMS error",
-              EWMSJDL: "Invalid job description",
-              EWMSRESC: "Job to reschedule",
-              EWMSSUBM: "Job submission error",
-              # DMS/StorageManagement
-              EFILESIZE: "Bad file size",
-              EGFAL: "Error with the gfal call",
-              EBADCKS: "Bad checksum",
-              EFCERR: "FileCatalog error",
-              # RMS
-              ERMSUKN: "Unknown RMS error",
+    ESECTION: "Section is not found",
+    # processes
+    EEZOMBIE: "Zombie process",
+    EENOPID: "No PID of process",
+    # WMS/Workflow
+    EWMSUKN: "Unknown WMS error",
+    EWMSJDL: "Invalid job description",
+    EWMSRESC: "Job to reschedule",
+    EWMSSUBM: "Job submission error",
+    # DMS/StorageManagement
+    EFILESIZE: "Bad file size",
+    EGFAL: "Error with the gfal call",
+    EBADCKS: "Bad checksum",
+    EFCERR: "FileCatalog error",
+    # RMS
+    ERMSUKN: "Unknown RMS error",
 
+    # Resources and RSS
+    ERESGEN: "Unknown Resource Failure",
+    ERESUNA: "Resource not available",
+    ERESUNK: "Unknown Resource",
 
-              # Resources and RSS
-              ERESGEN: "Unknown Resource Failure",
-              ERESUNA: "Resource not available",
-              ERESUNK: "Unknown Resource",
-
-              # TS
-              ETSUKN: "Unknown Transformation System Error",
-              ETSDATA: "Invalid Input Data definition"}
+    # TS
+    ETSUKN: "Unknown Transformation System Error",
+    ETSDATA: "Invalid Input Data definition"}
 
 
 def strerror(code):
