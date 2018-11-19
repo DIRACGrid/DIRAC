@@ -98,13 +98,13 @@ ESQLA = 1132
 EMQUKN = 1140
 EMQNOM = 1141
 EMQCONN = 1142
-#Elasticsearch
+# Elasticsearch
 EELNOFOUND = 1146
 
-#config
+# config
 ESECTION = 1400
 
-#processes
+# processes
 EEZOMBIE = 1147
 EENOPID = 1148
 
@@ -134,139 +134,138 @@ ERESUNK = 2002
 
 # This translates the integer number into the name of the variable
 dErrorCode = {
-               # ## Generic (10XX)
-               # 100X: Python related
-               1000 : 'ETYPE',
-               1001 : 'EIMPERR',
-               1002 : 'ENOMETH',
-               1003 : 'ECONF',
-               1004 : 'EVALUE',
-               1005 : 'EEEXCEPTION',
-               # 101X: Files manipulation
-               1010 : 'ECTMPF',
-               1011 : 'EOF',
-               1012 : 'ERF',
-               1013 : 'EWF',
-               1014 : 'ESPF',
+    # ## Generic (10XX)
+    # 100X: Python related
+    1000: 'ETYPE',
+    1001: 'EIMPERR',
+    1002: 'ENOMETH',
+    1003: 'ECONF',
+    1004: 'EVALUE',
+    1005: 'EEEXCEPTION',
+    # 101X: Files manipulation
+    1010: 'ECTMPF',
+    1011: 'EOF',
+    1012: 'ERF',
+    1013: 'EWF',
+    1014: 'ESPF',
 
-               # ## Core
-               # 110X: Certificates and Proxy
-               1100 : 'EX509',
-               1101 : 'EPROXYFIND',
-               1102 : 'EPROXYREAD',
-               1103 : 'ECERTFIND',
-               1104 : 'ECERTREAD',
-               1105 : 'ENOCERT',
-               1106 : 'ENOCHAIN',
-               1107 : 'ENOPKEY',
-               1108 : 'ENOGROUP',
-               # 111X: DISET
-               1110 : 'EDISET',
-               1111 : 'ENOAUTH',
-               # 112X: 3rd party security
-               1120 : 'E3RDPARTY',
-               1121 : 'EVOMS',
-               # 113X: Databases
-               1130 : 'EDB',
-               1131 : 'EMYSQL',
-               1132 : 'ESQLA',
+    # ## Core
+    # 110X: Certificates and Proxy
+    1100: 'EX509',
+    1101: 'EPROXYFIND',
+    1102: 'EPROXYREAD',
+    1103: 'ECERTFIND',
+    1104: 'ECERTREAD',
+    1105: 'ENOCERT',
+    1106: 'ENOCHAIN',
+    1107: 'ENOPKEY',
+    1108: 'ENOGROUP',
+    # 111X: DISET
+    1110: 'EDISET',
+    1111: 'ENOAUTH',
+    # 112X: 3rd party security
+    1120: 'E3RDPARTY',
+    1121: 'EVOMS',
+    # 113X: Databases
+    1130: 'EDB',
+    1131: 'EMYSQL',
+    1132: 'ESQLA',
 
-               # 114X: Message Queues
-               1140 : 'EMQUKN',
-               1141 : 'EMQNOM',
-               1142 : 'EMQCONN',
-               # Elasticsearch
-               1146 : 'EELNOFOUND',
-               # Config
-               1400 : "ESECTION",
-               #Processes
-               1147 : 'EEZOMBIE',
-               1148 : 'EENOPID',
-               # WMS/Workflow
-               1500 : 'EWMSUKN',
-               1501 : 'EWMSJDL',
-               1502 : 'EWMSRESC',
-               1503: 'EWMSSUBM',
-               # DMS/StorageManagement
-               1601 : 'EFILESIZE',
-               1602 : 'EGFAL',
-               1603 : 'EBADCKS',
-               1604 : "EFCERR",
+    # 114X: Message Queues
+    1140: 'EMQUKN',
+    1141: 'EMQNOM',
+    1142: 'EMQCONN',
+    # Elasticsearch
+    1146: 'EELNOFOUND',
+    # Config
+    1400: "ESECTION",
+    # Processes
+    1147: 'EEZOMBIE',
+    1148: 'EENOPID',
+    # WMS/Workflow
+    1500: 'EWMSUKN',
+    1501: 'EWMSJDL',
+    1502: 'EWMSRESC',
+    1503: 'EWMSSUBM',
+    # DMS/StorageManagement
+    1601: 'EFILESIZE',
+    1602: 'EGFAL',
+    1603: 'EBADCKS',
+    1604: "EFCERR",
 
-               # RMS
-               1700 : 'ERMSUKN',
+    # RMS
+    1700: 'ERMSUKN',
 
-               # Resources and RSS
-               2000 : 'ERESGEN',
-               2001 : 'ERESUNA',
-               2002 : 'ERESUNK',
+    # Resources and RSS
+    2000: 'ERESGEN',
+    2001: 'ERESUNA',
+    2002: 'ERESUNK',
 
-               # TS
-               1900 : "ETSUKN",
-               1901 : "ETSDATA"}
+    # TS
+    1900: "ETSUKN",
+    1901: "ETSDATA"}
 
 
-dStrError = {
-              # ## Generic (10XX)
-              # 100X: Python related
-              ETYPE : "Object Type Error",
-              EIMPERR : "Failed to import library",
-              ENOMETH : "No such method or function",
-              ECONF : "Configuration error",
-              EVALUE: "Wrong value passed",
-              EEEXCEPTION: "runtime general exception",
-              # 101X: Files manipulation
-              ECTMPF : "Failed to create temporary file",
-              EOF : "Cannot open file",
-              ERF : "Cannot read from file",
-              EWF : "Cannot write to file",
-              ESPF : "Cannot set permissions to file",
+dStrError = {  # Generic (10XX)
+    # 100X: Python related
+    ETYPE: "Object Type Error",
+    EIMPERR: "Failed to import library",
+    ENOMETH: "No such method or function",
+    ECONF: "Configuration error",
+    EVALUE: "Wrong value passed",
+    EEEXCEPTION: "runtime general exception",
+    # 101X: Files manipulation
+    ECTMPF: "Failed to create temporary file",
+    EOF: "Cannot open file",
+    ERF: "Cannot read from file",
+    EWF: "Cannot write to file",
+    ESPF: "Cannot set permissions to file",
 
-              # ## Core
-              # 110X: Certificates and Proxy
-              EX509 : "Generic Error with X509",
-              EPROXYFIND : "Can't find proxy",
-              EPROXYREAD : "Can't read proxy",
-              ECERTFIND : "Can't find certificate",
-              ECERTREAD : "Can't read certificate",
-              ENOCERT : "No certificate loaded",
-              ENOCHAIN : "No chain loaded",
-              ENOPKEY : "No private key loaded",
-              ENOGROUP: "No DIRAC group",
-              # 111X: DISET
-              EDISET : "DISET Error",
-              ENOAUTH : "Unauthorized query",
+    # ## Core
+    # 110X: Certificates and Proxy
+    EX509: "Generic Error with X509",
+    EPROXYFIND: "Can't find proxy",
+    EPROXYREAD: "Can't read proxy",
+    ECERTFIND: "Can't find certificate",
+    ECERTREAD: "Can't read certificate",
+    ENOCERT: "No certificate loaded",
+    ENOCHAIN: "No chain loaded",
+    ENOPKEY: "No private key loaded",
+    ENOGROUP: "No DIRAC group",
+    # 111X: DISET
+              EDISET: "DISET Error",
+              ENOAUTH: "Unauthorized query",
               # 112X: 3rd party security
               E3RDPARTY: "3rd party security service error",
-              EVOMS : "VOMS Error",
+              EVOMS: "VOMS Error",
               # 113X: Databases
-              EDB : "Database Error",
-              EMYSQL : "MySQL Error",
-              ESQLA : "SQLAlchemy Error",
+              EDB: "Database Error",
+              EMYSQL: "MySQL Error",
+              ESQLA: "SQLAlchemy Error",
 
               # 114X: Message Queues
-              EMQUKN : "Unknown MQ Error",
-              EMQNOM : "No messages",
-              EMQCONN : "MQ connection failure",
+              EMQUKN: "Unknown MQ Error",
+              EMQNOM: "No messages",
+              EMQCONN: "MQ connection failure",
               # 114X Elasticsearch
               EELNOFOUND: "Index not found",
-               # Config
-              ESECTION : "Section is not found",
-              #processes
+    # Config
+              ESECTION: "Section is not found",
+              # processes
               EEZOMBIE: "Zombie process",
               EENOPID: "No PID of process",
               # WMS/Workflow
-              EWMSUKN : "Unknown WMS error",
-              EWMSJDL : "Invalid job description",
+              EWMSUKN: "Unknown WMS error",
+              EWMSJDL: "Invalid job description",
               EWMSRESC: "Job to reschedule",
               EWMSSUBM: "Job submission error",
               # DMS/StorageManagement
-              EFILESIZE : "Bad file size",
-              EGFAL : "Error with the gfal call",
-              EBADCKS : "Bad checksum",
-              EFCERR : "FileCatalog error",
+              EFILESIZE: "Bad file size",
+              EGFAL: "Error with the gfal call",
+              EBADCKS: "Bad checksum",
+              EFCERR: "FileCatalog error",
               # RMS
-              ERMSUKN : "Unknown RMS error",
+              ERMSUKN: "Unknown RMS error",
 
 
               # Resources and RSS
@@ -275,15 +274,16 @@ dStrError = {
               ERESUNK: "Unknown Resource",
 
               # TS
-              ETSUKN : "Unknown Transformation System Error",
-              ETSDATA : "Invalid Input Data definition"}
+              ETSUKN: "Unknown Transformation System Error",
+              ETSDATA: "Invalid Input Data definition"}
+
 
 def strerror(code):
   """ This method wraps up os.strerror, and behave the same way.
       It completes it with the DIRAC specific errors.
   """
 
-  if code == 0 :
+  if code == 0:
     return "Undefined error"
 
   errMsg = "Unknown error %s" % code
@@ -293,7 +293,7 @@ def strerror(code):
   except KeyError:
     # It is not a DIRAC specific error, try the os one
     try:
-      errMsg = os.strerror( code )
+      errMsg = os.strerror(code)
       # On some system, os.strerror raises an exception with unknown code,
       # on others, it returns a message...
     except ValueError:
@@ -301,7 +301,8 @@ def strerror(code):
 
   return errMsg
 
-def cmpError( inErr, candidate ):
+
+def cmpError(inErr, candidate):
   """ This function compares an error (in its old form (a string or dictionary) or in its int form
       with a candidate error code.
 
@@ -339,27 +340,26 @@ def includeExtensionErrors():
       dirac-agent.py, dirac-service.py, dirac-executor.py
   """
 
-  def __recurseImport( modName, parentModule = None, fullName = False ):
+  def __recurseImport(modName, parentModule=None, fullName=False):
     """ Internal function to load modules
     """
-    if isinstance( modName, basestring ):
-      modName = modName.split( "." )
+    if isinstance(modName, basestring):
+      modName = modName.split(".")
     if not fullName:
-      fullName = ".".join( modName )
+      fullName = ".".join(modName)
     try:
       if parentModule:
-        impData = imp.find_module( modName[0], parentModule.__path__ )
+        impData = imp.find_module(modName[0], parentModule.__path__)
       else:
-        impData = imp.find_module( modName[0] )
-      impModule = imp.load_module( modName[0], *impData )
+        impData = imp.find_module(modName[0])
+      impModule = imp.load_module(modName[0], *impData)
       if impData[0]:
         impData[0].close()
     except ImportError:
-      return  None
-    if len( modName ) == 1:
-      return  impModule
-    return __recurseImport( modName[1:], impModule, fullName = fullName )
-
+      return None
+    if len(modName) == 1:
+      return impModule
+    return __recurseImport(modName[1:], impModule, fullName=fullName)
 
   from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
   allExtensions = CSGlobals.getCSExtensions()
@@ -368,21 +368,21 @@ def includeExtensionErrors():
     ext_derrno = None
     try:
 
-      ext_derrno = __recurseImport( '%sDIRAC.Core.Utilities.DErrno' % extension )
+      ext_derrno = __recurseImport('%sDIRAC.Core.Utilities.DErrno' % extension)
 
       if ext_derrno:
         # The next 3 dictionary MUST be present for consistency
 
         # Global name of errors
-        sys.modules[__name__].__dict__.update( ext_derrno.extra_dErrName )
+        sys.modules[__name__].__dict__.update(ext_derrno.extra_dErrName)
         # Dictionary with the error codes
-        sys.modules[__name__].dErrorCode.update( ext_derrno.extra_dErrorCode )
+        sys.modules[__name__].dErrorCode.update(ext_derrno.extra_dErrorCode)
         # Error description string
-        sys.modules[__name__].dStrError.update( ext_derrno.extra_dStrError )
+        sys.modules[__name__].dStrError.update(ext_derrno.extra_dStrError)
 
         # extra_compatErrorString is optional
-        for err in getattr( ext_derrno, 'extra_compatErrorString', [] ) :
-          sys.modules[__name__].compatErrorString.setdefault( err, [] ).extend( ext_derrno.extra_compatErrorString[err] )
+        for err in getattr(ext_derrno, 'extra_compatErrorString', []):
+          sys.modules[__name__].compatErrorString.setdefault(err, []).extend(ext_derrno.extra_compatErrorString[err])
 
-    except:
+    except BaseException:
       pass
