@@ -42,10 +42,8 @@
 
 __RCSID__ = "$Id$"
 
-import sys
 import operator
 
-from DIRAC import exit as DExit
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
@@ -67,6 +65,8 @@ JOB_FINAL_STATES = ['Done', 'Completed', 'Failed']
 
 
 class JobDB(DB):
+  """ Interface to MySQL-based JobDB
+  """
 
   def __init__(self):
     """ Standard Constructor
@@ -80,7 +80,6 @@ class JobDB(DB):
     res = ObjectLoader().loadObject("ConfigurationSystem.Client.Helpers.Resources", 'getDIRACPlatform')
     if not res['OK']:
       self.log.fatal(res['Message'])
-      DExit(res['Errno'])
     self.getDIRACPlatform = res['Value']
 
     self.jobAttributeNames = []
@@ -90,9 +89,7 @@ class JobDB(DB):
     result = self.__getAttributeNames()
 
     if not result['OK']:
-      error = 'Can not retrieve job Attributes'
-      self.log.fatal('JobDB: %s' % error)
-      sys.exit(error)
+      self.log.fatal('JobDB: Can not retrieve job Attributes')
       return
 
     self.jdl2DBParameters = ['JobName', 'JobType', 'JobGroup']
