@@ -8,6 +8,7 @@ import imp
 import pkgutil
 import collections
 from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities import List, DIRACSingleton
 from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
 
@@ -99,7 +100,7 @@ class ObjectLoader( object ):
       errMsg = "Can't load %s in %s" % ( ".".join( modName ), parentModule.__path__[0] )
       if not hideExceptions:
         gLogger.exception( errMsg )
-      return S_ERROR( errMsg )
+      return S_ERROR(DErrno.EIMPERR, errMsg )
     if len( modName ) == 1:
       self.__objs[ fullName ] = impModule
       return S_OK( impModule )
@@ -126,10 +127,10 @@ class ObjectLoader( object ):
     if not result[ 'OK' ]:
       return result
     if not result[ 'Value' ]:
-      return S_ERROR( "No module %s found" % importString )
+      return S_ERROR(DErrno.EIMPERR, "No module %s found" % importString )
     return S_OK( result[ 'Value' ][1] )
 
-  def loadObject( self, importString, objName = False, hideExceptions = False ):
+  def loadObject(self, importString, objName = False, hideExceptions = False ):
     """ Load an object from inside a module
     """
     result = self.loadModule( importString, hideExceptions = hideExceptions )
@@ -146,7 +147,7 @@ class ObjectLoader( object ):
       result['ModuleFile'] = modFile
       return result
     except AttributeError:
-      return S_ERROR( "%s does not contain a %s object" % ( importString, objName ) )
+      return S_ERROR(DErrno.EIMPERR, "%s does not contain a %s object" % ( importString, objName ) )
 
   def getObjects( self, modulePath, reFilter = None, parentClass = None, recurse = False ):
     """ Search for modules under a certain path

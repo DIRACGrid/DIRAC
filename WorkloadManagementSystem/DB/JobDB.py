@@ -45,6 +45,7 @@ __RCSID__ = "$Id$"
 import sys
 import operator
 
+from DIRAC import exit as DExit
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
@@ -78,7 +79,8 @@ class JobDB(DB):
     # loading the function that will be used to determine the platform (it can be VO specific)
     res = ObjectLoader().loadObject("ConfigurationSystem.Client.Helpers.Resources", 'getDIRACPlatform')
     if not res['OK']:
-      sys.exit(res['Message'])
+      self.log.fatal(res['Message'])
+      DExit(res['Errno'])
     self.getDIRACPlatform = res['Value']
 
     self.jobAttributeNames = []
