@@ -8,33 +8,38 @@ import urlparse
 from DIRAC.Core.Utilities import List
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 
+
 def getDIRACSetup():
-  return gConfigurationData.extractOptionFromCFG( "/DIRAC/Setup" )
+  return gConfigurationData.extractOptionFromCFG("/DIRAC/Setup")
 
-def divideFullName( entityName ):
-  fields = [ field.strip() for field in entityName.split( "/" ) ]
-  if len( fields ) < 2:
-    raise RuntimeError( "Service (%s) name must be with the form system/service" % entityName )
-  return tuple( fields )
 
-def getSystemInstance( systemName, setup = False ):
+def divideFullName(entityName):
+  fields = [field.strip() for field in entityName.split("/")]
+  if len(fields) < 2:
+    raise RuntimeError("Service (%s) name must be with the form system/service" % entityName)
+  return tuple(fields)
+
+
+def getSystemInstance(systemName, setup=False):
   if not setup:
-    setup = gConfigurationData.extractOptionFromCFG( "/DIRAC/Setup" )
-  optionPath = "/DIRAC/Setups/%s/%s" % ( setup, systemName )
-  instance = gConfigurationData.extractOptionFromCFG( optionPath )
+    setup = gConfigurationData.extractOptionFromCFG("/DIRAC/Setup")
+  optionPath = "/DIRAC/Setups/%s/%s" % (setup, systemName)
+  instance = gConfigurationData.extractOptionFromCFG(optionPath)
   if instance:
     return instance
   else:
-    raise RuntimeError( "Option %s is not defined" % optionPath )
+    raise RuntimeError("Option %s is not defined" % optionPath)
 
-def getSystemSection( serviceName, serviceTuple = False, instance = False, setup = False ):
+
+def getSystemSection(serviceName, serviceTuple=False, instance=False, setup=False):
   if not serviceTuple:
-    serviceTuple = divideFullName( serviceName )
+    serviceTuple = divideFullName(serviceName)
   if not instance:
-    instance = getSystemInstance( serviceTuple[0], setup = setup )
-  return "/Systems/%s/%s" % ( serviceTuple[0], instance )
+    instance = getSystemInstance(serviceTuple[0], setup=setup)
+  return "/Systems/%s/%s" % (serviceTuple[0], instance)
 
-def getComponentSection (componentName, componentTuple = False, setup = False, componentCategory ="Services"):
+
+def getComponentSection(componentName, componentTuple=False, setup=False, componentCategory="Services"):
   """Function returns the path to the component.
 
 
@@ -54,27 +59,33 @@ def getComponentSection (componentName, componentTuple = False, setup = False, c
     getComponentSection('WorkloadManagement/SandboxStoreHandler', False,False,'Services')
   """
   if not componentTuple:
-    componentTuple = divideFullName( componentName )
-  systemSection = getSystemSection( componentName, componentTuple, setup = setup )
-  return "%s/%s/%s" % ( systemSection,componentCategory,  componentTuple[1] )
+    componentTuple = divideFullName(componentName)
+  systemSection = getSystemSection(componentName, componentTuple, setup=setup)
+  return "%s/%s/%s" % (systemSection, componentCategory, componentTuple[1])
 
-def getServiceSection( serviceName, serviceTuple = False, setup = False ):
-  return getComponentSection(serviceName, serviceTuple, setup , "Services")
 
-def getAgentSection( agentName, agentTuple = False, setup = False ):
-  return getComponentSection(agentName, agentTuple, setup , "Agents")
+def getServiceSection(serviceName, serviceTuple=False, setup=False):
+  return getComponentSection(serviceName, serviceTuple, setup, "Services")
 
-def getExecutorSection( executorName, executorTuple = False, setup = False ):
-  return getComponentSection(executorName, executorTuple, setup , "Executors")
 
-def getDatabaseSection( dbName, dbTuple = False, setup = False ):
-  return getComponentSection(dbName, dbTuple, setup , "Databases")
+def getAgentSection(agentName, agentTuple=False, setup=False):
+  return getComponentSection(agentName, agentTuple, setup, "Agents")
 
-def getSystemURLSection( serviceName, serviceTuple = False, setup = False ):
-  systemSection = getSystemSection( serviceName, serviceTuple, setup = setup )
+
+def getExecutorSection(executorName, executorTuple=False, setup=False):
+  return getComponentSection(executorName, executorTuple, setup, "Executors")
+
+
+def getDatabaseSection(dbName, dbTuple=False, setup=False):
+  return getComponentSection(dbName, dbTuple, setup, "Databases")
+
+
+def getSystemURLSection(serviceName, serviceTuple=False, setup=False):
+  systemSection = getSystemSection(serviceName, serviceTuple, setup=setup)
   return "%s/URLs" % systemSection
 
-def getServiceURL( serviceName, serviceTuple = False, setup = False ):
+
+def getServiceURL(serviceName, serviceTuple=False, setup=False):
   """
     Generate url.
 
@@ -85,12 +96,11 @@ def getServiceURL( serviceName, serviceTuple = False, setup = False ):
     :return: complete url. e.g. dips://some-domain:3424/Framework/Service
   """
   if not serviceTuple:
-    serviceTuple = divideFullName( serviceName )
-  systemSection = getSystemSection( serviceName, serviceTuple, setup = setup )
-  url = gConfigurationData.extractOptionFromCFG( "%s/URLs/%s" % ( systemSection, serviceTuple[1] ) )
+    serviceTuple = divideFullName(serviceName)
+  systemSection = getSystemSection(serviceName, serviceTuple, setup=setup)
+  url = gConfigurationData.extractOptionFromCFG("%s/URLs/%s" % (systemSection, serviceTuple[1]))
   if not url:
     return ""
-
 
   # Trying if we are refering to the list of main servers
   # which would be like dips://$MAINSERVERS$:1234/System/Component
@@ -105,39 +115,39 @@ def getServiceURL( serviceName, serviceTuple = False, setup = False ):
 
       # Operations cannot be imported at the beginning because of a bootstrap problem
       from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-      mainServers = Operations().getValue('MainServers',[])
+      mainServers = Operations().getValue('MainServers', [])
       if not mainServers:
         raise Exception("No Main servers defined")
 
-
       for srv in mainServers:
-        mainUrlsList.append(urlparse.ParseResult( scheme = urlParse.scheme, netloc = ':'.join([srv, port]),
-                              path = urlParse.path, params = '', query = '', fragment = '').geturl())
+        mainUrlsList.append(urlparse.ParseResult(scheme=urlParse.scheme, netloc=':'.join([srv, port]),
+                                                 path=urlParse.path, params='', query='', fragment='').geturl())
       return ','.join(mainUrlsList)
 
-
-  if len( url.split( "/" ) ) < 5:
-    url = "%s/%s" % ( url, serviceName )
+  if len(url.split("/")) < 5:
+    url = "%s/%s" % (url, serviceName)
   return url
 
-def getServiceFailoverURL( serviceName, serviceTuple = False, setup = False ):
+
+def getServiceFailoverURL(serviceName, serviceTuple=False, setup=False):
   if not serviceTuple:
-    serviceTuple = divideFullName( serviceName )
-  systemSection = getSystemSection( serviceName, serviceTuple, setup = setup )
-  url = gConfigurationData.extractOptionFromCFG( "%s/FailoverURLs/%s" % ( systemSection, serviceTuple[1] ) )
+    serviceTuple = divideFullName(serviceName)
+  systemSection = getSystemSection(serviceName, serviceTuple, setup=setup)
+  url = gConfigurationData.extractOptionFromCFG("%s/FailoverURLs/%s" % (systemSection, serviceTuple[1]))
   if not url:
     return ""
-  if len( url.split( "/" ) ) < 5:
-    url = "%s/%s" % ( url, serviceName )
+  if len(url.split("/")) < 5:
+    url = "%s/%s" % (url, serviceName)
   return url
 
-def getGatewayURLs( serviceName = "" ):
-  siteName = gConfigurationData.extractOptionFromCFG( "/LocalSite/Site" )
+
+def getGatewayURLs(serviceName=""):
+  siteName = gConfigurationData.extractOptionFromCFG("/LocalSite/Site")
   if not siteName:
     return False
-  gatewayList = gConfigurationData.extractOptionFromCFG( "/DIRAC/Gateways/%s" % siteName )
+  gatewayList = gConfigurationData.extractOptionFromCFG("/DIRAC/Gateways/%s" % siteName)
   if not gatewayList:
     return False
   if serviceName:
-    gatewayList = [ "%s/%s" % ( "/".join( gw.split( "/" )[:3] ), serviceName ) for gw in List.fromChar( gatewayList, "," ) ]
-  return List.randomize( gatewayList )
+    gatewayList = ["%s/%s" % ("/".join(gw.split("/")[:3]), serviceName) for gw in List.fromChar(gatewayList, ",")]
+  return List.randomize(gatewayList)
