@@ -53,6 +53,7 @@ class VOMSService(object):
 
   def attGetUserNickname(self, dn, _ca=None):
     """ Get user nickname for a given DN if any
+
     :param str dn: user DN
     :param str _ca: CA, kept for backward compatibility
     :return:  S_OK with Value: nickname

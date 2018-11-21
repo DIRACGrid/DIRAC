@@ -8,7 +8,7 @@ After that, the cache is empty.
 
 """
 
-__RCSID__ = '$Id:$'
+__RCSID__ = '$Id$'
 
 import itertools
 import random
@@ -56,7 +56,6 @@ class Cache(object):
     self.__cacheLock = LockRing()
     self.__cacheLock.getLock(self.__class__.__name__)
 
-  #.............................................................................
   # internal cache object getter
 
   def cacheKeys(self):
@@ -68,7 +67,6 @@ class Cache(object):
 
     return self.__cache.getKeys(validSeconds=self.__validSeconds)
 
-  #.............................................................................
   # acquire / release Locks
 
   def acquireLock(self):
@@ -85,7 +83,6 @@ class Cache(object):
 
     self.__cacheLock.release(self.__class__.__name__)
 
-  #.............................................................................
   # Cache getters
 
   def get(self, cacheKeys):
@@ -112,7 +109,6 @@ class Cache(object):
 
     return S_OK(result)
 
-  #.............................................................................
   # Cache refreshers
 
   def refreshCache(self):
@@ -137,7 +133,6 @@ class Cache(object):
 
     return newCache
 
-  #.............................................................................
   # Private methods
 
   def __updateCache(self, newCache):
@@ -224,7 +219,6 @@ class RSSCache(Cache):
       # Release lock, no matter what !
       self.releaseLock()
 
-  #.............................................................................
   # Private methods: NOT THREAD SAFE !!
 
   def _match(self, elementNames, elementType, statusTypes):
@@ -250,7 +244,10 @@ class RSSCache(Cache):
     validCache = validCache['Value']
 
     # Gets matched keys
-    matchKeys = self.__match(validCache, elementNames, elementType, statusTypes)
+    try:
+      matchKeys = self.__match(validCache, elementNames, elementType, statusTypes)
+    except IndexError:
+      return S_ERROR("RSS cache empty?")
 
     if not matchKeys['OK']:
       return matchKeys
@@ -390,6 +387,3 @@ class RSSCache(Cache):
       result.setdefault(elementName, {})[statusType] = cacheValue
 
     return result
-
-#...............................................................................
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

@@ -1,7 +1,10 @@
+""" FTS3Job module containing only the FTS3Job class """
+
 __RCSID__ = "$Id $"
 
 
 import datetime
+import errno
 
 # Requires at least version 3.3.3
 import fts3.rest.client.easy as fts3
@@ -13,6 +16,7 @@ from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
+from DIRAC.Core.Utilities.DErrno import cmpError
 
 from DIRAC.DataManagementSystem.private.FTS3Utilities import FTS3Serializable
 from DIRAC.DataManagementSystem.Client.FTS3File import FTS3File
@@ -32,7 +36,7 @@ class FTS3Job(FTS3Serializable):
                 'Failed',  # All files Failed
                 'Finisheddirty',  # Some files Failed
                 'Staging',  # One of the files within a job went to Staging state
-               ]
+                ]
 
   FINAL_STATES = ['Canceled', 'Failed', 'Finished', 'Finisheddirty']
   INIT_STATE = 'Submitted'
@@ -61,7 +65,7 @@ class FTS3Job(FTS3Serializable):
 
     # temporary used only for submission
     # Set by FTS Operation when preparing
-    self.type = None  # Transfer, Staging, Removal
+    self.type = None  # Transfer, Staging
 
     self.sourceSE = None
     self.targetSE = None
@@ -143,7 +147,7 @@ class FTS3Job(FTS3Serializable):
 
         :param seName name of the storageElement
 
-        :returns space token
+        :returns space token. If there is no SpaceToken defined, returns None
     """
     seToken = None
     if seName:
@@ -151,6 +155,11 @@ class FTS3Job(FTS3Serializable):
 
       res = seObj.getStorageParameters(protocol='srm')
       if not res['OK']:
+        # If there is no SRM protocol, we do not specify
+        # the space token
+        if cmpError(res, errno.ENOPROTOOPT):
+          return S_OK(None)
+
         return res
 
       seToken = res["Value"].get("SpaceToken")
@@ -175,7 +184,7 @@ class FTS3Job(FTS3Serializable):
 
     return isTape
 
-  def _constructTransferJob(self, context, pinTime, allTargetSURLs, failedLFNs, target_spacetoken):
+  def _constructTransferJob(self, pinTime, allLFNs, target_spacetoken, protocols=None):
     """ Build a job for transfer
 
         Some attributes of the job are expected to be set
@@ -187,11 +196,11 @@ class FTS3Job(FTS3Serializable):
           * operationID (optional, used as metadata for the job)
 
 
-        :param context: fts3 context
         :param pinTime: pining time in case staging is needed
-        :param allTargetSURLs: dict {lfn:surl} for the target
+        :param allLFNs: list of LFNs to transfer
         :param failedLFNs: set of LFNs in filesToSubmit for which there was a problem
         :param target_spacetoken: the space token of the target
+        :param protocols: list of protocols to restrict the protocol choice for the transfer
 
         :return: S_OK( (job object, list of ftsFileIDs in the job))
     """
@@ -205,8 +214,13 @@ class FTS3Job(FTS3Serializable):
       return res
     source_spacetoken = res['Value']
 
-    # getting all the source surls
-    res = StorageElement(self.sourceSE, vo=self.vo).getURL(allTargetSURLs, protocol='srm')
+    failedLFNs = set()
+    dstSE = StorageElement(self.targetSE, vo=self.vo)
+    srcSE = StorageElement(self.sourceSE, vo=self.vo)
+
+    # getting all the (source, dest) surls
+    res = dstSE.generateTransferURLsBetweenSEs(allLFNs, srcSE, protocols=protocols)
+
     if not res['OK']:
       return res
 
@@ -214,7 +228,7 @@ class FTS3Job(FTS3Serializable):
       failedLFNs.add(lfn)
       log.error("Could not get source SURL", "%s %s" % (lfn, reason))
 
-    allSourceSURLs = res['Value']['Successful']
+    allSrcDstSURLs = res['Value']['Successful']
 
     transfers = []
 
@@ -226,8 +240,7 @@ class FTS3Job(FTS3Serializable):
         log.debug("Not preparing transfer for file %s" % ftsFile.lfn)
         continue
 
-      sourceSURL = allSourceSURLs[ftsFile.lfn]
-      targetSURL = allTargetSURLs[ftsFile.lfn]
+      sourceSURL, targetSURL = allSrcDstSURLs[ftsFile.lfn]
 
       if sourceSURL == targetSURL:
         log.error("sourceSURL equals to targetSURL", "%s" % ftsFile.lfn)
@@ -276,58 +289,58 @@ class FTS3Job(FTS3Serializable):
 
     return S_OK((job, fileIDsInTheJob))
 
-  def _constructRemovalJob(self, context, allTargetSURLs, failedLFNs, target_spacetoken):
-    """ Build a job for removal
+  # def _constructRemovalJob(self, context, allLFNs, failedLFNs, target_spacetoken):
+  #   """ Build a job for removal
+  #
+  #       Some attributes of the job are expected to be set
+  #         * targetSE
+  #         * activity (optional)
+  #         * priority (optional)
+  #         * filesToSubmit
+  #         * operationID (optional, used as metadata for the job)
+  #
+  #
+  #       :param context: fts3 context
+  #       :param allLFNs: List of LFNs to remove
+  #       :param failedLFNs: set of LFNs in filesToSubmit for which there was a problem
+  #       :param target_spacetoken: the space token of the target
+  #
+  #       :return: S_OK( (job object, list of ftsFileIDs in the job))
+  #   """
+  #
+  #   log = gLogger.getSubLogger(
+  #       "constructRemovalJob/%s/%s" %
+  #       (self.operationID, self.targetSE), True)
+  #
+  #   transfers = []
+  #   fileIDsInTheJob = []
+  #   for ftsFile in self.filesToSubmit:
+  #
+  #     if ftsFile.lfn in failedLFNs:
+  #       log.debug("Not preparing transfer for file %s" % ftsFile.lfn)
+  #       continue
+  #
+  #     transfers.append({'surl': allTargetSURLs[ftsFile.lfn],
+  #                       'metadata': getattr(ftsFile, 'fileID')})
+  #     fileIDsInTheJob.append(getattr(ftsFile, 'fileID'))
+  #
+  #   # We add a few metadata to the fts job so that we can reuse them later on without
+  #   # querying our DB.
+  #   # source and target SE are just used for accounting purpose
+  #   job_metadata = {
+  #       'operationID': self.operationID,
+  #       'sourceSE': self.sourceSE,
+  #       'targetSE': self.targetSE}
+  #
+  #   job = fts3.new_delete_job(transfers,
+  #                             spacetoken=target_spacetoken,
+  #                             metadata=job_metadata)
+  #   job['params']['retry'] = 3
+  #   job['params']['priority'] = self.priority
+  #
+  #   return S_OK((job, fileIDsInTheJob))
 
-        Some attributes of the job are expected to be set
-          * targetSE
-          * activity (optional)
-          * priority (optional)
-          * filesToSubmit
-          * operationID (optional, used as metadata for the job)
-
-
-        :param context: fts3 context
-        :param allTargetSURLs: dict {lfn:surl} for the target
-        :param failedLFNs: set of LFNs in filesToSubmit for which there was a problem
-        :param target_spacetoken: the space token of the target
-
-        :return: S_OK( (job object, list of ftsFileIDs in the job))
-    """
-
-    log = gLogger.getSubLogger(
-        "constructRemovalJob/%s/%s" %
-        (self.operationID, self.targetSE), True)
-
-    transfers = []
-    fileIDsInTheJob = []
-    for ftsFile in self.filesToSubmit:
-
-      if ftsFile.lfn in failedLFNs:
-        log.debug("Not preparing transfer for file %s" % ftsFile.lfn)
-        continue
-
-      transfers.append({'surl': allTargetSURLs[ftsFile.lfn],
-                        'metadata': getattr(ftsFile, 'fileID')})
-      fileIDsInTheJob.append(getattr(ftsFile, 'fileID'))
-
-    # We add a few metadata to the fts job so that we can reuse them later on without
-    # querying our DB.
-    # source and target SE are just used for accounting purpose
-    job_metadata = {
-        'operationID': self.operationID,
-        'sourceSE': self.sourceSE,
-        'targetSE': self.targetSE}
-
-    job = fts3.new_delete_job(transfers,
-                              spacetoken=target_spacetoken,
-                              metadata=job_metadata)
-    job['params']['retry'] = 3
-    job['params']['priority'] = self.priority
-
-    return S_OK((job, fileIDsInTheJob))
-
-  def _constructStagingJob(self, context, pinTime, allTargetSURLs, failedLFNs, target_spacetoken):
+  def _constructStagingJob(self, pinTime, allLFNs, target_spacetoken):
     """ Build a job for staging
 
         Some attributes of the job are expected to be set
@@ -337,9 +350,8 @@ class FTS3Job(FTS3Serializable):
           * filesToSubmit
           * operationID (optional, used as metadata for the job)
 
-        :param context: fts3 context
         :param pinTime: pining time in case staging is needed
-        :param allTargetSURLs: dict {lfn:surl} for the target
+        :param allLFNs: List of LFNs to stage
         :param failedLFNs: set of LFNs in filesToSubmit for which there was a problem
         :param target_spacetoken: the space token of the target
 
@@ -352,6 +364,20 @@ class FTS3Job(FTS3Serializable):
 
     transfers = []
     fileIDsInTheJob = []
+
+    # Set of LFNs for which we did not get an SRM URL
+    failedLFNs = set()
+
+    # getting all the target surls
+    res = StorageElement(self.targetSE, vo=self.vo).getURL(allLFNs, protocol='srm')
+    if not res['OK']:
+      return res
+
+    for lfn, reason in res['Value']['Failed'].iteritems():
+      failedLFNs.add(lfn)
+      log.error("Could not get target SURL", "%s %s" % (lfn, reason))
+
+    allTargetSURLs = res['Value']['Successful']
 
     for ftsFile in self.filesToSubmit:
 
@@ -397,7 +423,7 @@ class FTS3Job(FTS3Serializable):
 
     return S_OK((job, fileIDsInTheJob))
 
-  def submit(self, context=None, ftsServer=None, ucert=None, pinTime=36000, ):
+  def submit(self, context=None, ftsServer=None, ucert=None, pinTime=36000, protocols=None):
     """ submit the job to the FTS server
 
         Some attributes are expected to be defined for the submission to work:
@@ -420,8 +446,9 @@ class FTS3Job(FTS3Serializable):
                           not given. if not given either, use the ftsServer object attribute
 
         :param ucert: path to the user certificate/proxy. Might be inferred by the fts cli (see its doc)
+        :param protocols: list of protocols from which we should choose the protocol to use
 
-        :returns S_OK([FTSFiles ids of files submitted])
+        :returns: S_OK([FTSFiles ids of files submitted])
     """
 
     log = gLogger.getSubLogger("submit/%s/%s_%s" %
@@ -444,35 +471,19 @@ class FTS3Job(FTS3Serializable):
 
     allLFNs = [ftsFile.lfn for ftsFile in self.filesToSubmit]
 
-    failedLFNs = set()
-
-    # getting all the target surls
-    res = StorageElement(self.targetSE, vo=self.vo).getURL(allLFNs, protocol='srm')
-    if not res['OK']:
-      return res
-
-    for lfn, reason in res['Value']['Failed'].iteritems():
-      failedLFNs.add(lfn)
-      log.error("Could not get target SURL", "%s %s" % (lfn, reason))
-
-    allTargetSURLs = res['Value']['Successful']
-
     if self.type == 'Transfer':
       res = self._constructTransferJob(
-          context,
           pinTime,
-          allTargetSURLs,
-          failedLFNs,
-          target_spacetoken)
+          allLFNs,
+          target_spacetoken,
+          protocols=protocols)
     elif self.type == 'Staging':
       res = self._constructStagingJob(
-          context,
           pinTime,
-          allTargetSURLs,
-          failedLFNs,
+          allLFNs,
           target_spacetoken)
-    elif self.type == 'Removal':
-      res = self._constructRemovalJob(context, allTargetSURLs, failedLFNs, target_spacetoken)
+    # elif self.type == 'Removal':
+    #   res = self._constructRemovalJob(context, allLFNs, failedLFNs, target_spacetoken)
 
     if not res['OK']:
       return res

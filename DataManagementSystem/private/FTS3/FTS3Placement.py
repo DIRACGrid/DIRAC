@@ -41,12 +41,12 @@ class FTS3Placement( FTSAbstractPlacement ):
     """ For multiple source to multiple destination, find the optimal replication
         strategy.
 
-       :param sourceSEs : list of source SE
-       :param targetSEs : list of destination SE
-       :param size : size of the File
-       :param strategy : which strategy to use
+       :param sourceSEs: list of source SE
+       :param targetSEs: list of destination SE
+       :param size: size of the File
+       :param strategy: which strategy to use
 
-       :returns S_OK(dict) < route name :  { dict with key Ancestor, SourceSE, TargetSEtargetSE, Strategy } >
+       :returns: S_OK(dict) < route name :  { dict with key Ancestor, SourceSE, TargetSEtargetSE, Strategy } >
 
        For the time being, we are waiting for FTS3 to provide advisory mechanisms. So we just use
        simple techniques
@@ -137,8 +137,8 @@ class FTS3Placement( FTSAbstractPlacement ):
   def findRoute( self, sourceSE, targetSE ):
     """ Find the appropriate route from point A to B
 
-      :param sourceSE : source SE
-      :param targetSE : destination SE
+      :param sourceSE: source SE
+      :param targetSE: destination SE
 
       :returns: S_OK(FTSRoute)
 
@@ -162,7 +162,7 @@ class FTS3Placement( FTSAbstractPlacement ):
         If a route was not valid for some reason, then FTS would know it
         thanks to the blacklist sent by RSS, and would deal with it itself.
 
-       :param route : FTSRoute
+       :param route: FTSRoute
 
        :returns: S_OK or S_ERROR(reason)
     """

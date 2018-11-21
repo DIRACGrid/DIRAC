@@ -31,7 +31,7 @@ def createDataTransformation(flavour, targetSE, sourceSE,
   :param str tGroup: transformation group to set
   :param tBody: transformation body to set
   :param bool enable: if true submit the transformation, otherwise dry run
-  :returns: S_OK, S_ERROR
+  :returns: S_OK (with the transformation object, if successfully added), S_ERROR
   """
   metadata = {metaKey: metaValue}
   if isinstance(extraData, dict):
@@ -95,4 +95,4 @@ def createDataTransformation(flavour, targetSE, sourceSE,
     return res
 
   gLogger.always("Successfully created replication transformation")
-  return S_OK()
+  return S_OK(trans)

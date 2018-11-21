@@ -37,6 +37,7 @@ class GGUSTicketsClient:
 
   def getTicketsList( self, siteName = None, startDate = None, endDate = None ):
     """ Return tickets of entity in name
+
        :param name: should be the name of the site
        :param startDate: starting date (optional)
        :param endDate: end date (optional)

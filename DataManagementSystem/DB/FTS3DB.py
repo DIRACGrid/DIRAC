@@ -323,7 +323,7 @@ class FTS3DB(object):
 
         TODO: maybe it should query first the status and filter the rows I want to update !
 
-       :param fileStatusDict : { fileID : { status , error } }
+       :param fileStatusDict: { fileID : { status , error } }
 
     """
 
@@ -371,7 +371,7 @@ class FTS3DB(object):
         The update is only done if the job is not in a final state
         The assignment flag is released
 
-       :param jobStatusDict : { jobID : { status , error, completeness } }
+       :param jobStatusDict: { jobID : { status , error, completeness } }
     """
     session = self.dbSession()
     try:

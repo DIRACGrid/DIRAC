@@ -40,6 +40,12 @@ class File(object):
   (except when constructed from JSON of course...)
   In principle, the _parent attribute could be totally managed by SQLAlchemy. However, it is
   set only when inserted into the DB, this is why I manually set it in the Operation
+
+  .. warning::
+
+    You cannot add a File object to multiple Operations. They are different entry in the DB, so they must be different
+    objects
+
   """
 
   _datetimeFormat = '%Y-%m-%d %H:%M:%S'

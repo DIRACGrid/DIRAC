@@ -121,10 +121,10 @@ class FileCatalogClient(FileCatalogClientBase):
           # The PFN was not returned, construct it on the fly
           # For some VO's the prefix can be non-standard
           voPrefix = seDict.get("VOPrefix", {}).get(se, {}).get(vo)
-          sePrefix = seDict.get(se)
+          sePrefix = seDict.get(se, '')
           prefix = voPrefix if voPrefix else sePrefix
-          if prefix:
-            lfnDict['Successful'][lfn][se] = prefix + lfn
+
+          lfnDict['Successful'][lfn][se] = prefix + lfn
 
     return S_OK(lfnDict)
 

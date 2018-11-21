@@ -5,13 +5,14 @@
 
 """
 
+__RCSID__ = '$Id$'
+
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 from DIRAC.ResourceStatusSystem.Command.Command import Command
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.Utilities import CSHelpers
-
-__RCSID__ = '$Id:  $'
 
 
 class PilotCommand(Command):
@@ -148,7 +149,7 @@ class PilotCommand(Command):
 
   def doMaster(self):
 
-    siteNames = CSHelpers.getSites()
+    siteNames = getSites()
     if not siteNames['OK']:
       return siteNames
     siteNames = siteNames['Value']
@@ -211,7 +212,7 @@ class PilotCommand(Command):
 
 #     # If siteName is None, we take all sites
 #     if siteName is None:
-#       siteName = CSHelpers.getSites()
+#       siteName = getSites()
 #       if not siteName[ 'OK' ]:
 #         return self.returnERROR( siteName )
 #       siteName = siteName[ 'Value' ]
@@ -287,7 +288,7 @@ class PilotCommand(Command):
 #    if sites is None:
 #      #FIXME: we do not get them from RSS DB anymore, from CS now.
 #      #sites = self.rsClient.selectSite( meta = { 'columns' : 'SiteName' } )
-#      sites = CSHelpers.getSites()
+#      sites = getSites()
 #      if not sites[ 'OK' ]:
 #        return sites
 #      sites = sites[ 'Value' ]

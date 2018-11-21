@@ -31,6 +31,7 @@ class FTS3Client(Client):
 
   def getOperation(self, operationID, **kwargs):
     """ Get the FTS3Operation from the database
+
         :param operationID: id of the operation
         :return: FTS3Operation object
     """
@@ -48,6 +49,7 @@ class FTS3Client(Client):
 
   def getActiveJobs(self, limit=20, lastMonitor=None, jobAssignmentTag='Assigned', ** kwargs):
     """ Get all the FTSJobs that are not in a final state
+
         :param limit: max number of jobs to retrieve
         :return: list of FTS3Jobs
     """
@@ -65,14 +67,16 @@ class FTS3Client(Client):
 
   def updateFileStatus(self, fileStatusDict, **kwargs):
     """ Update the file ftsStatus and error
-       :param fileStatusDict : { fileID : { status , error } }
+
+       :param fileStatusDict: { fileID : { status , error } }
     """
 
     return self._getRPC(**kwargs).updateFileStatus(fileStatusDict)
 
   def updateJobStatus(self, jobStatusDict, **kwargs):
     """ Update the job Status and error
-       :param jobStatusDict : { jobID : { status , error } }
+
+       :param jobStatusDict: { jobID : { status , error } }
     """
 
     return self._getRPC(**kwargs).updateJobStatus(jobStatusDict)
