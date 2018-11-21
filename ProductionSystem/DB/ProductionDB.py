@@ -84,7 +84,7 @@ class ProductionDB(DB):
       return res
 
     self.lock.acquire()
-    req = "INSERT INTO Productions (ProductionName, Description, CreationDate,LastUpdate, \
+    req = "INSERT INTO Productions (ProductionName,Description,CreationDate,LastUpdate, \
                                     AuthorDN,AuthorGroup,Status)\
                                 VALUES ('%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),'%s','%s','New');" % \
         (prodName, prodDescription, authorDN, authorGroup)
