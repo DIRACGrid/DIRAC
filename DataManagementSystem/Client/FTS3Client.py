@@ -1,9 +1,11 @@
 import json
-from DIRAC.Core.Base.Client import Client
+
+from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC import S_OK, S_ERROR
 from DIRAC.DataManagementSystem.private.FTS3Utilities import FTS3JSONDecoder
 
 
+@createClient('DataManagement/FTS3Manager')
 class FTS3Client(Client):
   """ Client code to the FTS3 service
   """

@@ -2,58 +2,14 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC import S_OK, gLogger
-from DIRAC.Core.Base.Client import Client
-from DIRAC.Core.Utilities.List import breakListIntoChunks
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC                                                         import S_OK, gLogger
+from DIRAC.Core.Base.Client import Client, createClient
+from DIRAC.Core.Utilities.List                                     import breakListIntoChunks
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations           import Operations
 
-
+@createClient('Transformation/TransformationManager')
 class TransformationClient(Client):
-
-  """ Exposes the functionality available in the DIRAC/TransformationHandler
-
-      This inherits the DIRAC base Client for direct execution of server functionality.
-      The following methods are available (although not visible here).
-
-      Transformation (table) manipulation
-
-          deleteTransformation(transName)
-          getTransformationParameters(transName,paramNames)
-          getTransformationWithStatus(status)
-          setTransformationParameter(transName,paramName,paramValue)
-          deleteTransformationParameter(transName,paramName)
-
-      TransformationFiles table manipulation
-
-          addFilesToTransformation(transName,lfns)
-          addTaskForTransformation(transName,lfns=[],se='Unknown')
-          getTransformationStats(transName)
-
-      TransformationTasks table manipulation
-
-          setTaskStatus(transName, taskID, status)
-          setTaskStatusAndWmsID(transName, taskID, status, taskWmsID)
-          getTransformationTaskStats(transName)
-          deleteTasks(transName, taskMin, taskMax)
-          extendTransformation( transName, nTasks)
-          getTasksToSubmit(transName,numTasks,site='')
-
-      TransformationLogging table manipulation
-
-          getTransformationLogging(transName)
-
-      File/directory manipulation methods (the remainder of the interface can be found below)
-
-          getFileSummary(lfns)
-          exists(lfns)
-
-      Web monitoring tools
-
-          getDistinctAttributeValues(attribute, selectDict)
-          getTransformationStatusCounters()
-          getTransformationSummary()
-          getTransformationSummaryWeb(selectDict, sortList, startItem, maxItems)
-  """
+  """Exposes the functionality available in the DIRAC/TransformationManagerHandler."""
 
   def __init__(self, **kwargs):
     """ Simple constructor

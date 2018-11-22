@@ -27,7 +27,7 @@ import resource
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities import MJF
-from DIRAC.Core.Utilities.ProcessMonitor import ProcessMonitor
+from DIRAC.Core.Utilities.Profiler import Profiler
 from DIRAC.Core.Utilities.TimeLeft.TimeLeft import TimeLeft
 from DIRAC.Core.Utilities.Subprocess import getChildrenPIDs
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
@@ -60,7 +60,7 @@ class Watchdog(object):
     self.parameters = {}
     self.peekFailCount = 0
     self.peekRetry = 5
-    self.processMonitor = ProcessMonitor()
+    self.profiler = Profiler(pid)
     self.checkError = ''
     self.currentStats = {}
     self.initialized = False
@@ -290,10 +290,10 @@ class Watchdog(object):
       self.parameters['MemoryUsed'] = []
     self.parameters['MemoryUsed'].append(memoryUsed)
 
-    result = self.processMonitor.getMemoryConsumed(self.wrapperPID)
+    result = self.profiler.getAllProcessData(withChildren=True)
     if result['OK']:
-      vsize = result['Value']['Vsize'] / 1024.
-      rss = result['Value']['RSS'] / 1024.
+      vsize = result['Value']['stats']['vSizeUsage'] * 1024.
+      rss = result['Value']['stats']['memoryUsage'] * 1024.
       heartBeatDict['Vsize'] = vsize
       heartBeatDict['RSS'] = rss
       self.parameters.setdefault('Vsize', [])
@@ -395,14 +395,15 @@ class Watchdog(object):
     """Uses os.times() to get CPU time and returns HH:MM:SS after conversion.
     """
     try:
-      cpuTime = self.processMonitor.getCPUConsumed(self.wrapperPID)
-      if not cpuTime['OK']:
+      result = self.profiler.getAllProcessData()
+      if not result['OK']:
         self.log.warn('Problem while checking consumed CPU')
-        return cpuTime
-      cpuTime = cpuTime['Value']
+        return result
+      cpuTime = result['Value']
       if cpuTime:
-        self.log.verbose("Raw CPU time consumed (s) = %s" % (cpuTime))
-        return self.__getCPUHMS(cpuTime)
+        cpuTimeTotal = cpuTime['stats']['cpuUsageSystem'] + cpuTime['stats']['cpuUsageUser']
+        self.log.verbose("Raw CPU time consumed (s) = %s" % (cpuTimeTotal))
+        return self.__getCPUHMS(cpuTimeTotal)
       else:
         self.log.error("CPU time consumed found to be 0")
         return S_ERROR()
@@ -720,13 +721,13 @@ class Watchdog(object):
     self.initialValues['MemoryUsed'] = memUsed
     self.parameters['MemoryUsed'] = []
 
-    result = self.processMonitor.getMemoryConsumed(self.wrapperPID)
+    result = self.profiler.getAllProcessData()
     self.log.verbose('Job Memory: %s' % (result['Value']))
     if not result['OK']:
       self.log.warn('Could not get job memory usage')
 
-    self.initialValues['Vsize'] = result['Value']['Vsize'] / 1024.
-    self.initialValues['RSS'] = result['Value']['RSS'] / 1024.
+    self.initialValues['Vsize'] = result['Value']['stats']['vSizeUsage'] * 1024.
+    self.initialValues['RSS'] = result['Value']['stats']['memoryUsage'] * 1024.
     self.parameters['Vsize'] = []
     self.parameters['RSS'] = []
 

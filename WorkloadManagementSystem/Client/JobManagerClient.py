@@ -1,9 +1,11 @@
 """ Class that contains client access to the JobManager handler. """
 
 from __future__ import absolute_import
-from DIRAC.Core.Base.Client import Client
+
+from DIRAC.Core.Base.Client import Client, createClient
 
 
+@createClient('WorkloadManagement/JobManager')
 class JobManagerClient(Client):
   """JobManagerClient sets url for the JobManagerHandler.
   """

@@ -89,7 +89,7 @@ class JobManagerHandler(RequestHandler):
     self.diracSetup = self.serviceInfoDict['clientSetup']
     self.maxParametricJobs = self.srv_getCSOption('MaxParametricJobs', MAX_PARAMETRIC_JOBS)
     self.jobPolicy = JobPolicy(self.ownerDN, self.ownerGroup, self.userProperties)
-    self.jobPolicy.setJobDB(gJobDB)
+    self.jobPolicy.jobDB = gJobDB
     return S_OK()
 
   def __sendJobsToOptimizationMind(self, jids):

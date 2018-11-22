@@ -5,6 +5,10 @@
 
 __RCSID__ = "$Id$"
 
+import ast
+import os
+from itertools import izip_longest
+
 from DIRAC.Core.DISET.RPCClient import RPCClient
 
 
@@ -47,7 +51,7 @@ class Client(object):
   def setTimeout(self, timeout):
     """ Specify the timeout of the call. Forwarded to RPCClient
 
-        :param timeout: guess...
+        :param int timeout: timeout for the RPC calls
     """
     self.__kwargs['timeout'] = timeout
 
@@ -68,26 +72,15 @@ class Client(object):
     """
     toExecute = self.call
     # Check whether 'rpc' keyword is specified
-    rpc = False
-    if 'rpc' in kws:
-      rpc = kws['rpc']
-      del kws['rpc']
+    rpc = kws.pop('rpc', False)
     # Check whether the 'timeout' keyword is specified
-    timeout = 120
-    if 'timeout' in kws:
-      timeout = kws['timeout']
-      del kws['timeout']
+    timeout = kws.pop('timeout', 120)
     # Check whether the 'url' keyword is specified
-    url = ''
-    if 'url' in kws:
-      url = kws['url']
-      del kws['url']
+    url = kws.pop('url', '')
     # Create the RPCClient
     rpcClient = self._getRPC(rpc, url, timeout)
     # Execute the method
     return getattr(rpcClient, toExecute)(*parms)
-    # evalString = "rpcClient.%s(*parms,**kws)" % toExecute
-    # return eval( evalString )
 
   def _getRPC(self, rpc=None, url='', timeout=600):
     """ Return an RPCClient object constructed following the attributes.
@@ -102,3 +95,87 @@ class Client(object):
       self.__kwargs.setdefault('timeout', timeout)
       rpc = RPCClient(url, **self.__kwargs)
     return rpc
+
+
+def createClient(serviceName):
+  """Decorator to expose the service functions automatically in the Client.
+
+  :param str serviceName: system/service. e.g. WorkloadManagement/JobMonitoring
+  """
+  parts = serviceName.split('/')
+  systemName, handlerName = parts[0], parts[1]
+  handlerModuleName = handlerName + 'Handler'
+  # by convention they are the same
+  handlerClassName = handlerModuleName
+  handlerClassPath = '%sSystem.Service.%s.%s' % (systemName, handlerModuleName, handlerClassName)
+  handlerFilePath = '%sSystem/Service/%s.py' % (systemName, handlerModuleName)
+
+  # Find possible locations in extensions which end in DIRAC
+  basepath = os.environ.get('DIRAC', './')
+  locations = [folder for folder in os.listdir(basepath) if
+               folder != 'DIRAC' and folder.endswith('DIRAC') and os.path.isdir(os.path.join(basepath, folder))]
+  # DIRAC Should be last, so functions defined in extensions take precedence
+  locations.append('DIRAC')
+
+  def genFunc(funcName, arguments, handlerClassPath, doc):
+    """Create a function with *funcName* taking *arguments*."""
+    doc = '' if doc is None else doc
+    # do not describe self or cls in the parameter description
+    if arguments and arguments[0] in ('self', 'cls'):
+      arguments = arguments[1:]
+
+    # Create the actual functions, with or without arguments, **kwargs can be: rpc, timeout, url
+    if arguments:
+      def func(self, *args, **kwargs):  # pylint: disable=missing-docstring
+        self.call = funcName
+        return self.executeRPC(*args, **kwargs)
+    else:
+      def func(self, **kwargs):  # pylint: disable=missing-docstring
+        self.call = funcName
+        return self.executeRPC(**kwargs)
+    func.__doc__ = doc + "\n\nAutomatically created for the service function :func:`~%s.export_%s`" % \
+        (handlerClassPath, funcName)
+    parameterDoc = ''
+    # add description for parameters, if that is not already done for the docstring of function in the service
+    if arguments and ":param " not in doc:
+      parameterDoc = "\n".join(":param %(par)s: %(par)s" % dict(par=par)
+                               for par in arguments)
+      func.__doc__ += "\n\n" + parameterDoc
+    return func
+
+  def addFunctions(clientCls):
+    """Add the functions to the decorated class."""
+    attrDict = dict(clientCls.__dict__)
+    for location in locations:
+      fullPath = os.path.join(basepath, location, handlerFilePath)
+      fullHandlerClassPath = '%s.%s' % (location, handlerClassPath)
+      if not os.path.exists(fullPath):
+        continue
+      with open(fullPath) as moduleFile:
+        # parse the handler module into abstract syntax tree
+        handlerAst = ast.parse(moduleFile.read(), fullPath)
+
+      # loop over all the nodes (classes, functions, imports) in the handlerModule
+      for node in ast.iter_child_nodes(handlerAst):
+        # find only a class with the name of the handlerClass
+        if not (isinstance(node, ast.ClassDef) and node.name == handlerClassName):
+          continue
+        for member in ast.iter_child_nodes(node):
+          # only look at functions
+          if not isinstance(member, ast.FunctionDef):
+            continue
+          if not member.name.startswith('export_'):
+            continue
+          funcName = member.name[len('export_'):]
+          if funcName in attrDict:
+            continue
+          # FIXME: this is not python3 compatible. I think this needs to be a.arg instead of a.id in python3
+          # see https://greentreesnakes.readthedocs.io/en/latest/nodes.html?highlight=arguments#arg
+          # and https://stackoverflow.com/questions/51271587/how-do-i-list-a-functions-parameters-using-ast
+          arguments = [a.id for a in member.args.args]
+          # add the implementation of the function to the class attributes
+          attrDict[funcName] = genFunc(funcName, arguments, fullHandlerClassPath, ast.get_docstring(member))
+
+    return type(clientCls.__name__, clientCls.__bases__, attrDict)
+
+  return addFunctions

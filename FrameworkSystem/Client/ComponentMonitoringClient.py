@@ -1,17 +1,16 @@
-"""
-Class for making requests to a ComponentMonitoring Service
-"""
-
+"""Class for making requests to a ComponentMonitoring Service."""
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Base.Client import Client
+from DIRAC.Core.Base.Client import Client, createClient
 
-class ComponentMonitoringClient( Client ):
 
-  def __init__( self, **kwargs ):
+@createClient('Framework/ComponentMonitoring')
+class ComponentMonitoringClient(Client):
+
+  def __init__(self, **kwargs):
     """
     Constructor function
     """
 
-    Client.__init__( self, **kwargs )
-    self.setServer( 'Framework/ComponentMonitoring' )
+    Client.__init__(self, **kwargs)
+    self.setServer('Framework/ComponentMonitoring')

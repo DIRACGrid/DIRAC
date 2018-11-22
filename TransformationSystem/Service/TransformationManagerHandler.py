@@ -28,8 +28,14 @@ TASKS_STATE_NAMES = [
 FILES_STATE_NAMES = ['PercentProcessed', 'Processed', 'Unused', 'Assigned', 'Total', 'Problematic',
                      'ApplicationCrash', 'MaxReset']
 
+database = False
 
-class TransformationManagerHandlerBase(RequestHandler):
+
+class TransformationManagerHandler(RequestHandler):
+
+  def __init__(self, *args, **kargs):
+    self.setDatabase(database)
+    super(TransformationManagerHandler, self).__init__(*args, **kargs)
 
   def _parseRes(self, res):
     if not res['OK']:
@@ -717,17 +723,7 @@ class TransformationManagerHandlerBase(RequestHandler):
   ###########################################################################
 
 
-database = False
-
-
 def initializeTransformationManagerHandler(serviceInfo):
   global database
   database = TransformationDB('TransformationDB', 'Transformation/TransformationDB')
   return S_OK()
-
-
-class TransformationManagerHandler(TransformationManagerHandlerBase):
-
-  def __init__(self, *args, **kargs):
-    self.setDatabase(database)
-    TransformationManagerHandlerBase.__init__(self, *args, **kargs)
