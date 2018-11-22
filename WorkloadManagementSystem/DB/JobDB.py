@@ -1265,7 +1265,9 @@ class JobDB(DB):
     platformList = classAdJob.getListFromExpression('Platform')
     if platformList:
       result = self.getDIRACPlatform(platformList)
-      if result['OK'] and result['Value']:
+      if not result['OK']:
+        return result
+      if result['Value']:
         classAdReq.insertAttributeVectorString('Platforms', result['Value'])
       else:
         error = "OS compatibility info not found"
