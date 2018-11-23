@@ -8,10 +8,12 @@ import imp
 import pkgutil
 import collections
 from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities import List, DIRACSingleton
 from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
 
-class ObjectLoader( object ):
+
+class ObjectLoader(object):
   """ Class for loading objects. Example:
 
       from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
@@ -20,7 +22,7 @@ class ObjectLoader( object ):
   """
   __metaclass__ = DIRACSingleton.DIRACSingleton
 
-  def __init__( self, baseModules = False ):
+  def __init__(self, baseModules=False):
     """ init
     """
     # We save the original arguments in case
@@ -37,10 +39,10 @@ class ObjectLoader( object ):
     """ Actually performs the initialization """
 
     if not baseModules:
-      baseModules = [ 'DIRAC' ]
+      baseModules = ['DIRAC']
     self.__rootModules = baseModules
     self.__objs = {}
-    self.__generateRootModules( baseModules )
+    self.__generateRootModules(baseModules)
 
   def reloadRootModules(self):
     """ Retrigger the initialization of the rootModules.
@@ -56,99 +58,97 @@ class ObjectLoader( object ):
     # and replay the init sequence
     self._init(baseModules)
 
-  def __rootImport( self, modName, hideExceptions = False ):
+  def __rootImport(self, modName, hideExceptions=False):
     """ Auto search which root module has to be used
     """
     for rootModule in self.__rootModules:
       impName = modName
       if rootModule:
-        impName = "%s.%s" % ( rootModule, impName )
-      gLogger.debug( "Trying to load %s" % impName )
-      result = self.__recurseImport( impName, hideExceptions = hideExceptions )
-      #Error. Something cannot be imported. Return error
-      if not result[ 'OK' ]:
+        impName = "%s.%s" % (rootModule, impName)
+      gLogger.debug("Trying to load %s" % impName)
+      result = self.__recurseImport(impName, hideExceptions=hideExceptions)
+      # Error. Something cannot be imported. Return error
+      if not result['OK']:
         return result
-      #Huge success!
-      if result[ 'Value' ]:
-        return S_OK( ( impName, result[ 'Value' ] ) )
-      #Nothing found, continue
-    #Return nothing found
+      # Huge success!
+      if result['Value']:
+        return S_OK((impName, result['Value']))
+      # Nothing found, continue
+    # Return nothing found
     return S_OK()
 
-
-  def __recurseImport( self, modName, parentModule = None, hideExceptions = False, fullName = False ):
+  def __recurseImport(self, modName, parentModule=None, hideExceptions=False, fullName=False):
     """ Internal function to load modules
     """
     if isinstance(modName, basestring):
-      modName = List.fromChar( modName, "." )
+      modName = List.fromChar(modName, ".")
     if not fullName:
-      fullName = ".".join( modName )
+      fullName = ".".join(modName)
     if fullName in self.__objs:
-      return S_OK( self.__objs[ fullName ] )
+      return S_OK(self.__objs[fullName])
     try:
       if parentModule:
-        impData = imp.find_module( modName[0], parentModule.__path__ )
+        impData = imp.find_module(modName[0], parentModule.__path__)
       else:
-        impData = imp.find_module( modName[0] )
-      impModule = imp.load_module( modName[0], *impData )
+        impData = imp.find_module(modName[0])
+      impModule = imp.load_module(modName[0], *impData)
       if impData[0]:
         impData[0].close()
-    except ImportError, excp:
-      if str( excp ).find( "No module named %s" % modName[0] ) == 0:
-        return S_OK( None )
-      errMsg = "Can't load %s in %s" % ( ".".join( modName ), parentModule.__path__[0] )
+    except ImportError as excp:
+      if str(excp).find("No module named %s" % modName[0]) == 0:
+        return S_OK(None)
+      errMsg = "Can't load %s in %s" % (".".join(modName), parentModule.__path__[0])
       if not hideExceptions:
-        gLogger.exception( errMsg )
-      return S_ERROR( errMsg )
-    if len( modName ) == 1:
-      self.__objs[ fullName ] = impModule
-      return S_OK( impModule )
-    return self.__recurseImport( modName[1:], impModule,
-                                 hideExceptions = hideExceptions, fullName = fullName )
+        gLogger.exception(errMsg)
+      return S_ERROR(DErrno.EIMPERR, errMsg)
+    if len(modName) == 1:
+      self.__objs[fullName] = impModule
+      return S_OK(impModule)
+    return self.__recurseImport(modName[1:], impModule,
+                                hideExceptions=hideExceptions, fullName=fullName)
 
-  def __generateRootModules( self, baseModules ):
+  def __generateRootModules(self, baseModules):
     """ Iterate over all the possible root modules
     """
     self.__rootModules = baseModules
-    for rootModule in reversed( CSGlobals.getCSExtensions() ):
+    for rootModule in reversed(CSGlobals.getCSExtensions()):
       if rootModule[-5:] != "DIRAC" and rootModule not in self.__rootModules:
-        self.__rootModules.append( "%sDIRAC" % rootModule )
-    self.__rootModules.append( "" )
+        self.__rootModules.append("%sDIRAC" % rootModule)
+    self.__rootModules.append("")
 
     # Reversing the order because we want first to look in the extension(s)
     self.__rootModules.reverse()
 
-
-  def loadModule( self, importString, hideExceptions = False ):
+  def loadModule(self, importString, hideExceptions=False):
     """ Load a module from an import string
     """
-    result = self.__rootImport( importString, hideExceptions = hideExceptions )
-    if not result[ 'OK' ]:
+    result = self.__rootImport(importString, hideExceptions=hideExceptions)
+    if not result['OK']:
       return result
-    if not result[ 'Value' ]:
-      return S_ERROR( "No module %s found" % importString )
-    return S_OK( result[ 'Value' ][1] )
+    if not result['Value']:
+      return S_ERROR(DErrno.EIMPERR, "No module %s found" % importString)
+    return S_OK(result['Value'][1])
 
-  def loadObject( self, importString, objName = False, hideExceptions = False ):
+  def loadObject(self, importString, objName=False, hideExceptions=False):
     """ Load an object from inside a module
     """
-    result = self.loadModule( importString, hideExceptions = hideExceptions )
-    if not result[ 'OK' ]:
+    result = self.loadModule(importString, hideExceptions=hideExceptions)
+    if not result['OK']:
       return result
-    modObj = result[ 'Value' ]
+    modObj = result['Value']
     modFile = modObj.__file__
 
     if not objName:
-      objName = List.fromChar( importString, "." )[-1]
+      objName = List.fromChar(importString, ".")[-1]
 
     try:
-      result = S_OK( getattr( modObj, objName ) )
+      result = S_OK(getattr(modObj, objName))
       result['ModuleFile'] = modFile
       return result
     except AttributeError:
-      return S_ERROR( "%s does not contain a %s object" % ( importString, objName ) )
+      return S_ERROR(DErrno.EIMPERR, "%s does not contain a %s object" % (importString, objName))
 
-  def getObjects( self, modulePath, reFilter = None, parentClass = None, recurse = False ):
+  def getObjects(self, modulePath, reFilter=None, parentClass=None, recurse=False):
     """ Search for modules under a certain path
 
         modulePath is the import string needed to access the parent module.
@@ -158,64 +158,63 @@ class ObjectLoader( object ):
         parentClass is a class object from which the loaded modules have to import from. For instance RequestHandler
     """
 
-    if 'OrderedDict' in dir( collections ):
+    if 'OrderedDict' in dir(collections):
       modules = collections.OrderedDict()
     else:
       modules = {}
 
     if isinstance(reFilter, basestring):
-      reFilter = re.compile( reFilter )
-
+      reFilter = re.compile(reFilter)
 
     for rootModule in self.__rootModules:
       if rootModule:
-        impPath = "%s.%s" % ( rootModule, modulePath )
+        impPath = "%s.%s" % (rootModule, modulePath)
       else:
         impPath = modulePath
-      gLogger.debug( "Trying to load %s" % impPath )
+      gLogger.debug("Trying to load %s" % impPath)
 
-      result = self.__recurseImport( impPath )
-      if not result[ 'OK' ]:
+      result = self.__recurseImport(impPath)
+      if not result['OK']:
         return result
-      if not result[ 'Value' ]:
+      if not result['Value']:
         continue
 
-      parentModule = result[ 'Value' ]
+      parentModule = result['Value']
       fsPath = parentModule.__path__[0]
-      gLogger.verbose( "Loaded module %s at %s" % ( impPath, fsPath ) )
+      gLogger.verbose("Loaded module %s at %s" % (impPath, fsPath))
 
-      for _modLoader, modName, isPkg in pkgutil.walk_packages( parentModule.__path__ ):
-        if reFilter and not reFilter.match( modName ):
+      for _modLoader, modName, isPkg in pkgutil.walk_packages(parentModule.__path__):
+        if reFilter and not reFilter.match(modName):
           continue
         if isPkg:
           if recurse:
-            result = self.getObjects( "%s.%s" % ( modulePath, modName ), reFilter = reFilter,
-                                      parentClass = parentClass, recurse = recurse )
-            if not result[ 'OK' ]:
+            result = self.getObjects("%s.%s" % (modulePath, modName), reFilter=reFilter,
+                                     parentClass=parentClass, recurse=recurse)
+            if not result['OK']:
               return result
-            modules.update( result[ 'Value' ] )
+            modules.update(result['Value'])
           continue
-        modKeyName = "%s.%s" % ( modulePath, modName )
+        modKeyName = "%s.%s" % (modulePath, modName)
         if modKeyName in modules:
           continue
-        fullName = "%s.%s" % ( impPath, modName )
-        result = self.__recurseImport( modName, parentModule = parentModule, fullName = fullName )
-        if not result[ 'OK' ]:
+        fullName = "%s.%s" % (impPath, modName)
+        result = self.__recurseImport(modName, parentModule=parentModule, fullName=fullName)
+        if not result['OK']:
           return result
-        if not result[ 'Value' ]:
+        if not result['Value']:
           continue
-        modObj = result[ 'Value' ]
+        modObj = result['Value']
 
         try:
-          modClass = getattr( modObj, modName )
+          modClass = getattr(modObj, modName)
         except AttributeError:
-          gLogger.warn( "%s does not contain a %s object" % ( fullName, modName ) )
+          gLogger.warn("%s does not contain a %s object" % (fullName, modName))
           continue
 
-        if parentClass and not issubclass( modClass, parentClass ):
+        if parentClass and not issubclass(modClass, parentClass):
           continue
 
-        #Huge success!
-        modules[ modKeyName ] = modClass
+        # Huge success!
+        modules[modKeyName] = modClass
 
-    return S_OK( modules )
+    return S_OK(modules)
