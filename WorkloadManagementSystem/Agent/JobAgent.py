@@ -5,6 +5,8 @@
   and the current resource status that is used for matching.
 """
 
+__RCSID__ = "$Id$"
+
 import os
 import sys
 import re
@@ -27,8 +29,6 @@ from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
 from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
 from DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper import rescheduleFailedJob
 from DIRAC.WorkloadManagementSystem.Utilities.Utils import createJobWrapper
-
-__RCSID__ = "$Id$"
 
 
 class JobAgent(AgentModule):
@@ -544,8 +544,7 @@ class JobAgent(AgentModule):
   def __report(self, jobID, status, minorStatus):
     """Wraps around setJobStatus of state update client
     """
-    jobReport = JobStateUpdateClient()
-    jobStatus = jobReport.setJobStatus(int(jobID), status, minorStatus, 'JobAgent@%s' % self.siteName)
+    jobStatus = JobStateUpdateClient().setJobStatus(int(jobID), status, minorStatus, 'JobAgent@%s' % self.siteName)
     self.log.verbose('setJobStatus(%s,%s,%s,%s)' % (jobID, status, minorStatus, 'JobAgent@%s' % self.siteName))
     if not jobStatus['OK']:
       self.log.warn(jobStatus['Message'])
@@ -556,8 +555,7 @@ class JobAgent(AgentModule):
   def __setJobParam(self, jobID, name, value):
     """Wraps around setJobParameter of state update client
     """
-    jobReport = JobStateUpdateClient()
-    jobParam = jobReport.setJobParameter(int(jobID), str(name), str(value))
+    jobParam = JobStateUpdateClient().setJobParameter(int(jobID), str(name), str(value))
     self.log.verbose('setJobParameter(%s,%s,%s)' % (jobID, name, value))
     if not jobParam['OK']:
       self.log.warn(jobParam['Message'])
@@ -583,7 +581,6 @@ class JobAgent(AgentModule):
 
     self.log.warn('Failure during %s' % (message))
 
-    jobManager = JobManagerClient()
     jobReport = JobReport(int(jobID), 'JobAgent@%s' % self.siteName)
 
     # Setting a job parameter does not help since the job will be rescheduled,
@@ -595,7 +592,7 @@ class JobAgent(AgentModule):
                            sendFlag=True)
 
     self.log.info('Job will be rescheduled')
-    result = jobManager.rescheduleJob(jobID)
+    result = JobManagerClient().rescheduleJob(jobID)
     if not result['OK']:
       self.log.error('Failed to reschedule job', result['Message'])
       return self.__finish('Problem Rescheduling Job', stop)

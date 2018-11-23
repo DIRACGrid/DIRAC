@@ -442,7 +442,7 @@ and this is thread %s
     if self.__enableThreadCheck:
       self.__checkThreadID()
 
-    gLogger.debug("Connecting to: %s" % self.serviceURL)
+    gLogger.debug("Trying to connect to: %s" % self.serviceURL)
     try:
       # Calls the transport method of the apropriate protocol.
       # self.__URLTuple[1:3] = [server name, port, System/Component]
@@ -484,6 +484,7 @@ and this is thread %s
       gLogger.exception(lException=True, lExcInfo=True)
       return S_ERROR("Can't connect to %s: %s" % (self.serviceURL, repr(e)))
     # We add the connection to the transport pool
+    gLogger.debug("Connected to: %s" % self.serviceURL)
     trid = getGlobalTransportPool().add(transport)
 
     return S_OK((trid, transport))
