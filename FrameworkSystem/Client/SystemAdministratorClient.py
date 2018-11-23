@@ -5,16 +5,18 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Base.Client import Client
+from DIRAC.Core.Base.Client import Client, createClient
 
 SYSADMIN_PORT = 9162
 
-class SystemAdministratorClient( Client ):
 
-  def __init__( self, host, port = None, **kwargs ):
+@createClient('Framework/SystemAdministrator')
+class SystemAdministratorClient(Client):
+
+  def __init__(self, host, port=None, **kwargs):
     """ Constructor function. Takes a mandatory host parameter
     """
-    Client.__init__( self, **kwargs )
+    Client.__init__(self, **kwargs)
     if not port:
       port = SYSADMIN_PORT
-    self.setServer( 'dips://%s:%s/Framework/SystemAdministrator' % ( host, port ) )
+    self.setServer('dips://%s:%s/Framework/SystemAdministrator' % (host, port))

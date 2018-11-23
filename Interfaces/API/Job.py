@@ -37,7 +37,6 @@ from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Workflow.Parameter import Parameter
 from DIRAC.Core.Workflow.Workflow import Workflow
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
-from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.Core.Utilities.List import uniqueElements
 from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE, getSites
@@ -254,37 +253,6 @@ class Job(API):
 
   #############################################################################
 
-  @deprecated("Use function setParameterSequence")
-  def setParametricInputSandbox(self, files):
-    """Helper function.
-
-       .. deprecated:: v6r15
-            Use :func:`setParameterSequence` instead.
-
-       Specify input sandbox files to be used as parameters in the Parametric jobs.
-       The possibilities are identical to the setInputSandbox.
-
-
-       Example usage:
-
-       >>> job = Job()
-       >>> job.setParametricInputSandbox(['LFN:/Some_file','LFN:/Some_other_file'])
-
-       :param files: Logical File Names
-       :type files: Single LFN string or list of LFNs
-    """
-    kwargs = {'files': files}
-    if isinstance(files, list) and files:
-      for fileName in files:
-        if not fileName.lower().startswith("lfn:"):
-          return self._reportError('All files should be LFNs', **kwargs)
-      self.setParameterSequence('InputSandbox', files, addToWorkflow='ParametricInputSandbox')
-    else:
-      return self._reportError('Expected file string or list of files for input sandbox contents', **kwargs)
-
-    return S_OK()
-
-  #############################################################################
   def setOutputSandbox(self, files):
     """Helper function.
 
@@ -315,6 +283,7 @@ class Job(API):
     return S_OK()
 
   #############################################################################
+
   def setInputData(self, lfns):
     """Helper function.
 
@@ -345,37 +314,6 @@ class Job(API):
     return S_OK()
 
   #############################################################################
-
-  @deprecated("Use function setParameterSequence")
-  def setParametricInputData(self, lfns):
-    """Helper function.
-
-       .. deprecated:: v6r15
-            Use :func:`setParameterSequence` instead.
-
-       Specify input data by Logical File Name (LFN) to be used as a parameter in a parametric job
-
-       Example usage:
-
-       >>> job = Job()
-       >>> job.setParametricInputData(['/lhcb/production/DC04/v2/DST/00000742_00003493_10.dst'])
-
-       :param lfns: Logical File Names
-       :type lfns: list of LFNs or list of lists of LFNs
-    """
-    if isinstance(lfns, list) and lfns:
-      for i in xrange(len(lfns)):
-        if isinstance(lfns[i], list) and lfns[i]:
-          for k in xrange(len(lfns[i])):
-            lfns[i][k] = 'LFN:' + lfns[i][k].replace('LFN:', '')
-        else:
-          lfns[i] = 'LFN:' + lfns[i].replace('LFN:', '')
-      self.setParameterSequence('InputData', lfns, addToWorkflow='ParametricInputData')
-    else:
-      kwargs = {'lfns': lfns}
-      return self._reportError('Expected lfn list or list of lists of lfns for parametric input data', **kwargs)
-
-    return S_OK()
 
   def setParameterSequence(self, name, parameterList, addToWorkflow=False):
     """ Function to define a sequence of values for parametric jobs.
@@ -749,34 +687,6 @@ class Job(API):
       return self._reportError('Expected string or list for job tags', tags=tags)
 
     self._addParameter(self.workflow, 'Tags', 'JDL', tagValue, 'User specified job tags')
-    return S_OK()
-
-  #############################################################################
-  @deprecated('Unused')
-  def _setSoftwareTags(self, tags):
-    """Developer function.
-
-       Choose any software tags if desired.  These are not compulsory but will ensure jobs only
-       arrive at an LCG site where the software is preinstalled.  Without the tags, missing software is
-       installed automatically by the Job Agent.
-
-       Example usage:
-
-       >>> job=Job()
-       >>> job.setSoftwareTags(['VO-lhcb-Brunel-v30r17','VO-lhcb-Boole-v12r10','VO-lhcb-Gauss-v25r12'])
-
-       :param tags: software tags
-       :type tags: string or list
-    """
-    if isinstance(tags, basestring):
-      self._addParameter(self.workflow, 'SoftwareTag', 'JDL', tags, 'VO software tag')
-    elif isinstance(tags, list):
-      swTags = ';'.join(tags)
-      self._addParameter(self.workflow, 'SoftwareTag', 'JDL', swTags, 'List of VO software tags')
-    else:
-      kwargs = {'tags': tags}
-      return self._reportError('Expected String or List of software tags', **kwargs)
-
     return S_OK()
 
   #############################################################################

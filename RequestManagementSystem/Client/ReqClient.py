@@ -17,11 +17,12 @@ from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.List import randomize, fromChar
 from DIRAC.ConfigurationSystem.Client import PathFinder
-from DIRAC.Core.Base.Client import Client
+from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
 
 
+@createClient('RequestManagement/ReqManager')
 class ReqClient(Client):
   """ReqClient is a class manipulating and operation on Requests.
 
@@ -29,7 +30,6 @@ class ReqClient(Client):
   :param dict requestProxiesDict: RPC client to ReqestProxy
   :param ~DIRAC.RequestManagementSystem.private.RequestValidator.RequestValidator requestValidator: RequestValidator instance
   """
-
   __requestProxiesDict = {}
   __requestValidator = None
 

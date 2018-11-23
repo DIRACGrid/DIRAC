@@ -1,9 +1,10 @@
 """ Class that contains client access to the JobStateUpdate handler. """
 
 from __future__ import absolute_import
-from DIRAC.Core.Base.Client import Client
+from DIRAC.Core.Base.Client import Client, createClient
 
 
+@createClient('WorkloadManagement/JobStateUpdate')
 class JobStateUpdateClient(Client):
   """JobStateUpdateClient sets url for the JobStateUpdateHandler.
   """
