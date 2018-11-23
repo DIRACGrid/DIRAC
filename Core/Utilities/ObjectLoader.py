@@ -101,11 +101,7 @@ class ObjectLoader(object):
       errMsg = "Can't load %s in %s" % (".".join(modName), parentModule.__path__[0])
       if not hideExceptions:
         gLogger.exception(errMsg)
-<<<<<<< HEAD
-      return S_ERROR(errMsg)
-=======
       return S_ERROR(DErrno.EIMPERR, errMsg)
->>>>>>> rel-v6r20
     if len(modName) == 1:
       self.__objs[fullName] = impModule
       return S_OK(impModule)
@@ -131,11 +127,7 @@ class ObjectLoader(object):
     if not result['OK']:
       return result
     if not result['Value']:
-<<<<<<< HEAD
-      return S_ERROR("No module %s found" % importString)
-=======
       return S_ERROR(DErrno.EIMPERR, "No module %s found" % importString)
->>>>>>> rel-v6r20
     return S_OK(result['Value'][1])
 
   def loadObject(self, importString, objName=False, hideExceptions=False):
@@ -155,11 +147,7 @@ class ObjectLoader(object):
       result['ModuleFile'] = modFile
       return result
     except AttributeError:
-<<<<<<< HEAD
-      return S_ERROR("%s does not contain a %s object" % (importString, objName))
-=======
       return S_ERROR(DErrno.EIMPERR, "%s does not contain a %s object" % (importString, objName))
->>>>>>> rel-v6r20
 
   def getObjects(self, modulePath, reFilter=None, parentClass=None, recurse=False):
     """ Search for modules under a certain path
