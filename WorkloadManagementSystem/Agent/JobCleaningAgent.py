@@ -28,6 +28,7 @@ from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
+from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.File import File
@@ -238,7 +239,7 @@ class JobCleaningAgent( AgentModule ):
 
     lfnDict = {}
     for jobID in jobIDList:
-      result = self.jobDB.getJobParameter( jobID, 'OutputSandboxLFN' )
+      result = JobMonitoringClient().getJobParameter(jobID, 'OutputSandboxLFN')
       if result['OK']:
         lfn = result['Value']
         if lfn:

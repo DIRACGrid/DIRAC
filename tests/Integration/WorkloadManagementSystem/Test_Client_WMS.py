@@ -41,6 +41,7 @@ from DIRAC.Interfaces.API.Job import Job
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
+from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
 from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
 from DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent import JobCleaningAgent
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
@@ -104,7 +105,7 @@ class WMSChain(TestWMSTestCase):
     """
     wmsClient = WMSClient()
     jobMonitor = JobMonitoringClient()
-    jobStateUpdate = RPCClient('WorkloadManagement/JobStateUpdate')
+    jobStateUpdate = JobStateUpdateClient()
 
     # create the job
     job = helloWorldJob()
@@ -163,7 +164,7 @@ class WMSChain(TestWMSTestCase):
     """ This test will submit a parametric job which should generate 3 actual jobs
     """
     wmsClient = WMSClient()
-    jobStateUpdate = RPCClient('WorkloadManagement/JobStateUpdate')
+    jobStateUpdate = JobStateUpdateClient()
     jobMonitor = JobMonitoringClient()
 
     # create the job
@@ -201,7 +202,7 @@ class JobMonitoring(TestWMSTestCase):
     """
     wmsClient = WMSClient()
     jobMonitor = JobMonitoringClient()
-    jobStateUpdate = RPCClient('WorkloadManagement/JobStateUpdate')
+    jobStateUpdate = JobStateUpdateClient()
 
     # create a job and check stuff
     job = helloWorldJob()
@@ -306,7 +307,7 @@ class JobMonitoringMore(TestWMSTestCase):
     """
     wmsClient = WMSClient()
     jobMonitor = JobMonitoringClient()
-    jobStateUpdate = RPCClient('WorkloadManagement/JobStateUpdate')
+    jobStateUpdate = JobStateUpdateClient()
 
     jobIDs = []
     lfnss = [['/a/1.txt', '/a/2.txt'], ['/a/1.txt', '/a/3.txt', '/a/4.txt'], []]
@@ -544,7 +545,6 @@ class Matcher (TestWMSTestCase):
         'PilotBenchmark': 'anotherPilot',
         'Site': 'DIRAC.Jenkins.ch',
         'CPUTime': 86400}
-    JobStateUpdate = RPCClient('WorkloadManagement/JobStateUpdate')
     wmsClient = WMSClient()
 
     job = helloWorldJob()
@@ -557,7 +557,7 @@ class Matcher (TestWMSTestCase):
 
     jobID = res['Value']
 
-    res = JobStateUpdate.setJobStatus(jobID, 'Waiting', 'matching', 'source')
+    res = JobStateUpdateClient().setJobStatus(jobID, 'Waiting', 'matching', 'source')
     self.assertTrue(res['OK'])
 
     tqDB = TaskQueueDB()

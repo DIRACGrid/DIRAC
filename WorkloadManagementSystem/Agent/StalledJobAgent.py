@@ -18,7 +18,9 @@ from DIRAC.AccountingSystem.Client.Types.Job import Job
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath
 from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemInstance
-from DIRAC.WorkloadManagementSystem.Client.WMSClient     import WMSClient
+from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
+from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
+
 
 class StalledJobAgent( AgentModule ):
   """
@@ -212,7 +214,7 @@ for the agent restart
   def __getJobPilotStatus( self, jobID ):
     """ Get the job pilot status
 """
-    result = self.jobDB.getJobParameter( jobID, 'Pilot_Reference' )
+    result = JobMonitoringClient().getJobParameter(jobID, 'Pilot_Reference')
     if not result['OK']:
       return result
     if not result['Value']:
@@ -347,7 +349,7 @@ used to fail jobs due to the optimizer chain.
       if lastHeartBeatTime is not None and lastHeartBeatTime > endTime:
         endTime = lastHeartBeatTime
 
-      cpuNormalization = self.jobDB.getJobParameter( jobID, 'CPUNormalizationFactor' )
+      cpuNormalization = JobMonitoringClient().getJobParameter(jobID, 'CPUNormalizationFactor')
       if not cpuNormalization['OK'] or not cpuNormalization['Value']:
         cpuNormalization = 0.0
       else:
