@@ -76,10 +76,11 @@ class MultiProcessorSiteDirector(SiteDirector):
     if self.voGroups:
       tqDict['OwnerGroup'] = self.voGroups
 
-    result = self.resourcesModule.getCompatiblePlatforms(self.platforms)
-    if not result['OK']:
-      return result
-    tqDict['Platform'] = result['Value']
+    if self.checkPlatform:
+      result = self.resourcesModule.getCompatiblePlatforms(self.platforms)
+      if not result['OK']:
+        return result
+      tqDict['Platform'] = result['Value']
     tqDict['Site'] = self.sites
     tags = []
     for queue in queues:
@@ -224,10 +225,11 @@ class MultiProcessorSiteDirector(SiteDirector):
       # This is a hack to get rid of !
       ceDict['SubmitPool'] = self.defaultSubmitPools
 
-      result = self.resourcesModule.getCompatiblePlatforms(platform)
-      if not result['OK']:
-        continue
-      ceDict['Platform'] = result['Value']
+      if self.checkPlatform:
+        result = self.resourcesModule.getCompatiblePlatforms(platform)
+        if not result['OK']:
+          continue
+        ceDict['Platform'] = result['Value']
 
       ceDict['Tag'] = queueTags
       # Get the number of eligible jobs for the target site/queue

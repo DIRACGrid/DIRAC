@@ -505,13 +505,13 @@ class CheckWNCapabilities(CommandBase):
                                                                      " ".join(self.cfg))
     retCode, result = self.executeAndGetOutput(checkCmd, self.pp.installEnv)
     if retCode:
-      self.log.error( "Could not get resource parameters [ERROR %d]" % retCode )
-      self.exitWithError( retCode )
+      self.log.error("Could not get resource parameters [ERROR %d]" % retCode)
+      self.exitWithError(retCode)
     numberOfProcessors = 1
     try:
-      result = result.split( ' ' )
-      numberOfProcessorsOnWN = int( result[0] )
-      maxRAM = int( result[1] )
+      result = result.split(' ')
+      numberOfProcessorsOnWN = int(result[0])
+      maxRAM = int(result[1])
     except ValueError:
       self.log.error("Wrong Command output %s" % result)
       sys.exit(1)
@@ -593,7 +593,7 @@ class ConfigureSite(CommandBase):
 
     for o, v in self.pp.optList:
       if o == '-o' or o == '--option':
-        self.cfg.append( '-o "%s"' % v )
+        self.cfg.append('-o "%s"' % v)
 
     if self.pp.pilotReference != 'Unknown':
       self.cfg.append('-o /LocalSite/PilotReference=%s' % self.pp.pilotReference)
@@ -791,7 +791,7 @@ class ConfigureArchitecture(CommandBase):
     if retCode:
       self.log.error("There was an error updating the platform [ERROR %d]" % retCode)
       self.exitWithError(retCode)
-    self.log.debug("Architecture determined: %s" % localArchitecture)
+    self.log.info("Architecture determined: %s" % localArchitecture)
 
     # standard options
     cfg = ['-FDMH']  # force update, skip CA checks, skip CA download, skip VOMS

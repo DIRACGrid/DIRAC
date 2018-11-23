@@ -1,14 +1,14 @@
 """ Callback when a staging operation is finished """
 
-__RCSID__ = "$Id $"
+__RCSID__ = "$Id$"
 
 
 from DIRAC import S_OK
 from DIRAC.RequestManagementSystem.private.OperationHandlerBase import OperationHandlerBase
-from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
 
-########################################################################
-class StagingCallback( OperationHandlerBase ):
+
+class StagingCallback(OperationHandlerBase):
   """
   .. class:: StagingCallback
 
@@ -19,28 +19,27 @@ class StagingCallback( OperationHandlerBase ):
      So we store the job ID in the Argument field of operation
   """
 
-  def __init__( self, operation = None, csPath = None ):
+  def __init__(self, operation=None, csPath=None):
     """ c'tor
 
     :param Operation operation: an Operation instance
     :param str csPath: CS path for this handler
     """
 
-    super( StagingCallback, self ).__init__( operation, csPath )
+    super(StagingCallback, self).__init__(operation, csPath)
 
-  def __call__( self ):
+  def __call__(self):
     """ update the job status """
     # # decode arguments
     jobID = self.operation.Arguments
-    self.log.info( "Performing callback to job %s"%jobID )
+    self.log.info("Performing callback to job %s" % jobID)
 
-    jobStateUpdate = RPCClient( 'WorkloadManagement/JobStateUpdate', timeout = 60 )
-    res = jobStateUpdate.updateJobFromStager( jobID , 'Done' )
+    res = JobStateUpdateClient().updateJobFromStager(jobID, 'Done')
 
     if not res['OK']:
-      self.log.error( "Error performing the callback to the job", res )
+      self.log.error("Error performing the callback to the job", res)
       return res
 
     self.operation.Status = "Done"
-    self.log.info( "Callback from staging done" )
+    self.log.info("Callback from staging done")
     return S_OK()

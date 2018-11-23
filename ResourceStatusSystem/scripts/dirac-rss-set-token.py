@@ -76,8 +76,11 @@ def parseSwitches():
 
   switches = dict(Script.getUnprocessedSwitches())
   switches.setdefault('statusType', None)
-  switches.setdefault('releaseToken', False)
   switches.setdefault('days', 1)
+  if 'releaseToken' in switches:
+    switches['releaseToken'] = True
+  else:
+    switches['releaseToken'] = False
 
   for key in ('element', 'name', 'reason'):
 
