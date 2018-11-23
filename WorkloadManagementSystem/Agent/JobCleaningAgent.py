@@ -241,13 +241,14 @@ class JobCleaningAgent( AgentModule ):
     for jobID in jobIDList:
       result = JobMonitoringClient().getJobParameter(jobID, 'OutputSandboxLFN')
       if result['OK']:
-        lfn = result['Value']
+        lfn = result['Value'].get('OutputSandboxLFN')
         if lfn:
           lfnDict[lfn] = jobID
         else:
           successful[jobID] = 'No oversized sandbox found'
       else:
-        gLogger.warn( 'Error interrogating JobDB: %s' % result['Message'] )
+        gLogger.error('Error interrogating JobDB: %s' % result['Message'])
+
     if not lfnDict:
       return S_OK({'Successful': successful, 'Failed': failed})
 
