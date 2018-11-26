@@ -8,6 +8,8 @@
     defined in the CS for the VO.
 """
 
+__RCSID__ = "$Id$"
+
 import os
 import tempfile
 import random
@@ -17,8 +19,6 @@ from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateU
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Core.Utilities.Os import getDiskSpace
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
-
-__RCSID__ = "$Id$"
 
 COMPONENT_NAME = 'DownloadInputData'
 
@@ -345,8 +345,7 @@ class DownloadInputData:
     if not self.jobID:
       return S_ERROR('JobID not defined')
 
-    jobReport = JobStateUpdateClient()
-    jobParam = jobReport.setJobParameter(int(self.jobID), str(name), str(value))
+    jobParam = JobStateUpdateClient().setJobParameter(int(self.jobID), str(name), str(value))
     self.log.verbose('setJobParameter(%s,%s,%s)' % (self.jobID, name, value))
     if not jobParam['OK']:
       self.log.warn(jobParam['Message'])
