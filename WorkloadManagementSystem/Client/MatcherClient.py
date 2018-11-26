@@ -19,6 +19,5 @@ class MatcherClient(Client):
     """ Simple constructor
     """
 
-    Client.__init__(self, **kwargs)
-
+    super(MatcherClient, self).__init__(**kwargs)
     self.setServer('WorkloadManagement/Matcher')

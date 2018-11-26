@@ -14,7 +14,7 @@ class NotificationClient(Client):
   def __init__(self, **kwargs):
     """ Notification Client constructor
     """
-    Client.__init__(self, **kwargs)
+    super(NotificationClient, self).__init__(**kwargs)
 
     self.log = gLogger.getSubLogger('NotificationClient')
     self.setServer('Framework/Notification')
