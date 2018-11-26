@@ -32,7 +32,8 @@ Starting Pilots3 via SiteDirectors
 
 
 Since DIRAC v6r20, SiteDirectors can send "pilots2" or "pilots3". Pilots2 are the default, 
-but the "Pilots3" flag can be used for sending Pilots3 files instead, see :ref:`conf-SiteDirector`
+but the "Pilots3" flag can be used for sending Pilots3 files instead, see the documentation
+for the :mod:`~DIRAC.WorkloadManagementSystem.Agent.SiteDirector`.
 
 
 Pilot logging

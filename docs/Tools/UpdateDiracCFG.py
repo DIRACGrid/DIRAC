@@ -1,6 +1,7 @@
 #!/bin/env python
 """script to concatenate the dirac.cfg file's Systems sections with the content of the ConfigTemplate.cfg files."""
 
+from collections import OrderedDict
 import os
 import textwrap
 import re
@@ -61,14 +62,15 @@ def getSystemsCFG():
 
 def findConfigTemplates():
   """Traverse folders in DIRAC and find ConfigTemplate.cfg files."""
-  configTemplates = set()
+  configTemplates = dict()
   diracPath = os.environ.get("DIRAC") + "/DIRAC"
   for baseDirectory, _subdirectories, files in os.walk(diracPath):
-    if 'docs' in baseDirectory:
-      continue
+    gLogger.debug('Looking in %r' % baseDirectory)
     if 'ConfigTemplate.cfg' in files:
-      configTemplates.add(baseDirectory)
-  return sorted(configTemplates)
+      system = baseDirectory.rsplit('/', 1)[1]
+      gLogger.notice('Found Template for %s in %s' % (system, baseDirectory))
+      configTemplates[system] = baseDirectory
+  return OrderedDict(sorted(configTemplates.items(), key=lambda t: t[0])).values()
 
 
 def parseConfigTemplate(templatePath, cfg):
