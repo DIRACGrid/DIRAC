@@ -45,7 +45,6 @@ from __future__ import absolute_import
 from six.moves import range
 __RCSID__ = "$Id$"
 
-import sys
 import operator
 
 from DIRAC.Core.Utilities import DErrno
@@ -69,6 +68,8 @@ JOB_FINAL_STATES = ['Done', 'Completed', 'Failed']
 
 
 class JobDB(DB):
+  """ Interface to MySQL-based JobDB
+  """
 
   def __init__(self):
     """ Standard Constructor
@@ -81,7 +82,7 @@ class JobDB(DB):
     # loading the function that will be used to determine the platform (it can be VO specific)
     res = ObjectLoader().loadObject("ConfigurationSystem.Client.Helpers.Resources", 'getDIRACPlatform')
     if not res['OK']:
-      sys.exit(res['Message'])
+      self.log.fatal(res['Message'])
     self.getDIRACPlatform = res['Value']
 
     self.jobAttributeNames = []
@@ -91,9 +92,7 @@ class JobDB(DB):
     result = self.__getAttributeNames()
 
     if not result['OK']:
-      error = 'Can not retrieve job Attributes'
-      self.log.fatal('JobDB: %s' % error)
-      sys.exit(error)
+      self.log.fatal('JobDB: Can not retrieve job Attributes')
       return
 
     self.jdl2DBParameters = ['JobName', 'JobType', 'JobGroup']
@@ -1306,7 +1305,9 @@ class JobDB(DB):
     platformList = classAdJob.getListFromExpression('Platform')
     if platformList:
       result = self.getDIRACPlatform(platformList)
-      if result['OK'] and result['Value']:
+      if not result['OK']:
+        return result
+      if result['Value']:
         classAdReq.insertAttributeVectorString('Platforms', result['Value'])
       else:
         error = "OS compatibility info not found"
