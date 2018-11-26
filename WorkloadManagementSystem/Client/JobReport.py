@@ -137,7 +137,7 @@ class JobReport(object):
       parameters.append((pname, pvalue))
 
     if parameters:
-      result = JobStateUpdateClient.setJobParameters(self.jobID, parameters)
+      result = JobStateUpdateClient().setJobParameters(self.jobID, parameters)
       if not result['OK']:
         return result
 
