@@ -10,6 +10,7 @@ __RCSID__ = "$Id$"
 
 def deprecated( reason, onlyOnce=False ):
   """ A decorator to mark a class or function as deprecated.
+
       This will cause a warnings to be generated in the usual log if the item
       is used (instantiated or called).
 
@@ -17,23 +18,23 @@ def deprecated( reason, onlyOnce=False ):
       raised when the function or class is used.
 
       The decorator can be used before as class or function, giving a reason,
-      for example:
-      @deprecated( "Use functionTwo instead" )
-      def functionOne( ... ):
+      for example::
 
-      If onlyOnce is set to true then the warning will only be generated on the
+        @deprecated("Use functionTwo instead")
+        def functionOne(...):
+
+      If `onlyOnce` is set to true then the warning will only be generated on the
       first call or creation of the item. This is useful for things that are
       likely to get called repeatedly (to prevent generating massive log files);
-      for example:
+      for example::
 
-      @deprecated( "Use otherClass instead", onlyOnce=True )
-      class MyOldClass:
-
+        @deprecated("Use otherClass instead", onlyOnce=True)
+        class MyOldClass:
 
       Parameters
       ----------
       reason : str
-        Message to display to the user when the deperated item is used. This should specify
+        Message to display to the user when the deprecated item is used. This should specify
         what should be used instead.
       onlyOnce : bool
         If set, the deprecation warning will only be displayed on the first use.
@@ -44,7 +45,6 @@ def deprecated( reason, onlyOnce=False ):
         A double-function wrapper around the decorated object as required by the python
         interpreter.
   """
-
   def decFunc( func, clsName=None ):
     """ Inner function generator.
         Returns a function which wraps the given "func" function,
