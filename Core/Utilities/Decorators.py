@@ -1,6 +1,7 @@
 """ Decorators for DIRAC.
 """
 
+import os
 import inspect
 import functools
 import traceback
@@ -11,6 +12,9 @@ def deprecated( reason, onlyOnce=False ):
   """ A decorator to mark a class or function as deprecated.
       This will cause a warnings to be generated in the usual log if the item
       is used (instantiated or called).
+
+      If the environment variable ``DIRAC_DEPRECATED_FAIL`` is set to a non-empty value, an exception will be
+      raised when the function or class is used.
 
       The decorator can be used before as class or function, giving a reason,
       for example:
@@ -24,6 +28,7 @@ def deprecated( reason, onlyOnce=False ):
 
       @deprecated( "Use otherClass instead", onlyOnce=True )
       class MyOldClass:
+
 
       Parameters
       ----------
@@ -70,6 +75,9 @@ def deprecated( reason, onlyOnce=False ):
           the constructor/function/method.
           All arguments are passed through to the target function.
       """
+      # fail calling the function if environment variable is set
+      if os.environ.get("DIRAC_DEPRECATED_FAIL", None):
+        raise NotImplementedError("ERROR: using deprecated function or class: %s" % reason)
       # Get the details of the deprecated object
       if clsName:
         objName = clsName
