@@ -179,12 +179,17 @@ class BaseClient(object):
 
   def __discoverCredentialsToUse(self):
     """ Discovers which credentials to use for connection.
+
         * Server certificate:
           -> If KW_USE_CERTIFICATES in kwargs, sets it in self.__useCertificates
-          ->If not, check gConfig.useServerCertificate(), and sets it in self.__useCertificates and kwargs[KW_USE_CERTIFICATES]
+          -> If not, check gConfig.useServerCertificate(),
+             and sets it in self.__useCertificates and kwargs[KW_USE_CERTIFICATES]
+
         * Certification Authorities check:
-           -> if KW_SKIP_CA_CHECK is not in kwargs and we are using the certificates, set KW_SKIP_CA_CHECK to false in kwargs
+           -> if KW_SKIP_CA_CHECK is not in kwargs and we are using the certificates,
+              set KW_SKIP_CA_CHECK to false in kwargs
            -> if KW_SKIP_CA_CHECK is not in kwargs and we are not using the certificate, check the CS.skipCACheck
+
         * Proxy Chain
            -> if KW_PROXY_CHAIN in kwargs, we remove it and dump its string form into kwargs[KW_PROXY_STRING]
 
@@ -330,7 +335,7 @@ class BaseClient(object):
         urlsList.remove(i)
 
     # Take the first URL from the list
-    #randUrls = List.randomize( urlsList ) + failoverUrls
+    # randUrls = List.randomize( urlsList ) + failoverUrls
 
     sURL = urlsList[0]
 
@@ -377,7 +382,7 @@ class BaseClient(object):
     for i in urls:
       retVal = Network.splitURL(i)
       if retVal['OK']:
-        if retVal['Value'][1] != notselect[1]:  # the hots are different
+        if retVal['Value'][1] != notselect[1]:  # the hosts are different
           url = i
           break
         else:
@@ -407,7 +412,7 @@ and this is thread %s
                                                                       self.__allowedThreadID,
                                                                       cThID)
       gLogger.error("DISET client thread safety error", msgTxt)
-      #raise Exception( msgTxt )
+      # raise Exception( msgTxt )
 
   def _connect(self):
     """ Establish the connection.
@@ -437,7 +442,7 @@ and this is thread %s
     if self.__enableThreadCheck:
       self.__checkThreadID()
 
-    gLogger.debug("Connecting to: %s" % self.serviceURL)
+    gLogger.debug("Trying to connect to: %s" % self.serviceURL)
     try:
       # Calls the transport method of the apropriate protocol.
       # self.__URLTuple[1:3] = [server name, port, System/Component]
@@ -447,17 +452,16 @@ and this is thread %s
       retVal = transport.initAsClient()
       # If we have an issue connecting
       if not retVal['OK']:
+        gLogger.warn("Issue getting socket:", "%s : %s : %s" % (transport, self.__URLTuple, retVal['Message']))
         # We try at most __nbOfRetry each URLs
         if self.__retry < self.__nbOfRetry * self.__nbOfUrls - 1:
           # Recompose the URL (why not using self.serviceURL ? )
           url = "%s://%s:%d/%s" % (self.__URLTuple[0], self.__URLTuple[1], int(self.__URLTuple[2]), self.__URLTuple[3])
           # Add the url to the list of banned URLs if it is not already there. (Can it happen ? I don't think so)
           if url not in self.__bannedUrls:
+            gLogger.warn("Non-responding URL temporarily banned", "%s" % url)
             self.__bannedUrls += [url]
-            # Why only printing in this case ?
-            if len(self.__bannedUrls) < self.__nbOfUrls:
-              gLogger.notice("Non-responding URL temporarily banned", "%s" % url)
-          # Increment the retry couunter
+          # Increment the retry counter
           self.__retry += 1
           # If it is our last attempt for each URL, we increase the timeout
           if self.__retryCounter == self.__nbOfRetry - 1:
@@ -480,6 +484,7 @@ and this is thread %s
       gLogger.exception(lException=True, lExcInfo=True)
       return S_ERROR("Can't connect to %s: %s" % (self.serviceURL, repr(e)))
     # We add the connection to the transport pool
+    gLogger.debug("Connected to: %s" % self.serviceURL)
     trid = getGlobalTransportPool().add(transport)
 
     return S_OK((trid, transport))

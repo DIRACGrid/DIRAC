@@ -547,8 +547,6 @@ class Matcher (TestWMSTestCase):
         'PilotBenchmark': 'anotherPilot',
         'Site': 'DIRAC.Jenkins.ch',
         'CPUTime': 86400}
-
-    JobStateUpdate = RPCClient('WorkloadManagement/JobStateUpdate')
     wmsClient = WMSClient()
 
     job = helloWorldJob()
@@ -561,7 +559,7 @@ class Matcher (TestWMSTestCase):
 
     jobID = res['Value']
 
-    res = JobStateUpdate.setJobStatus(jobID, 'Waiting', 'matching', 'source')
+    res = JobStateUpdateClient().setJobStatus(jobID, 'Waiting', 'matching', 'source')
     self.assertTrue(res['OK'])
 
     tqDB = TaskQueueDB()

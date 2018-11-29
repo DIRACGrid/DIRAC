@@ -3,12 +3,12 @@
 
 """
 
+__RCSID__ = "$Id$"
+
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities import Time, DEncode
-from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
-
-__RCSID__ = "$Id$"
+from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
 
 
 class JobReport(object):
@@ -117,8 +117,7 @@ class JobReport(object):
                            'Source': self.source}
 
     if statusDict:
-      jobMonitor = JobStateUpdateClient()
-      result = jobMonitor.setJobStatusBulk(self.jobID, statusDict)
+      result = JobStateUpdateClient().setJobStatusBulk(self.jobID, statusDict)
       if result['OK']:
         # Empty the internal status containers
         self.jobStatusInfo = []
@@ -138,8 +137,7 @@ class JobReport(object):
       parameters.append((pname, pvalue))
 
     if parameters:
-      jobMonitor = JobStateUpdateClient()
-      result = jobMonitor.setJobParameters(self.jobID, parameters)
+      result = JobStateUpdateClient().setJobParameters(self.jobID, parameters)
       if not result['OK']:
         return result
 

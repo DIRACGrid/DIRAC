@@ -1,4 +1,4 @@
-[v7r0-pre6]
+[v7r0-pre7]
 
 *Accounting
 CHANGE: (Multi)AccountingDB - Grouping Type and Object loader together with the MonitoringSystem ones.
@@ -17,6 +17,9 @@ NEW: Added separate MySQL table for JobsStatus in JobDB, and modified code accor
 CHANGE: ElasticJobDB.py: Modify setJobParameter method to register JobAttributes like Owner, Proxy, JobGroup etc.
 CHANGE: ElasticJobDB.py: added getJobParametersAndAttributes method to retrieve both parameters and attributes for a given JobID.
 CHANGE: Pilot Watchdog - using python UNIX services for some watchdog calls
+CHANGE: (#3890) JobState always connects to DBs directly
+CHANGE: (#3890) remove JobStateSync service
+CHANGE: (#3873) Watchdog: use Profiler instead of ProcessMonitor
 
 *Core
 NEW: (#3744) Add update method to the ElasticSearchDB.py to update or if not available create the values 
@@ -24,6 +27,7 @@ NEW: (#3744) Add update method to the ElasticSearchDB.py to update or if not ava
 CHANGE: (#3744) generateFullIndexName() method made static under the ElasticSearchDB class.
 CHANGE: (#3744) removed unused/outdated stuff from Distribution module
 FIX: check for empty /etc/grid-security/certificates dir
+NEW: (#3842) Add createClient decorator to add wrapper for all export_ functions automatically
 
 *tests
 
@@ -35,6 +39,22 @@ NEW: (#3744) Added miniInstallDIRAC function for Jenkins jobs
 *Docs
 FIX: Better dirac.cfg example configuration for web
 NEW: (#3744) Add WMS documentation in DeveloperGuide/Systems
+NEW: Added script (docs/Tools/UpdateDiracCFG.py) to collate the ConfigTemplate.cfg 
+     files into the main dirac.cfg file
+
+[v6r20p21]
+
+*Core
+FIX: (#3897) ObjectLoader returns DErrno code
+FIX: (#3895) more debug messages in BaseClient
+
+*ResourceStatusSystem
+FIX: (#3895) fixed bug in dirac-rss-set-token script
+
+*WorkloadManagementSystem
+FIX: (#3897) SiteDirector: using checkPlatform flag everwhere needed
+CHANGE: (#3894) Using JobStateUpdateClient instead of RPCClient to it
+CHANGE: (#3894) Using JobManagerClient instead of RPCClient to it
 
 [v6r20p20]
 

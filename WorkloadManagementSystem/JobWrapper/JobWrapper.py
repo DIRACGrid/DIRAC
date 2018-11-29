@@ -500,8 +500,7 @@ class JobWrapper(object):
     heartBeatDict = {}
     staticParamDict = {'StandardOutput': appStdOut}
     if self.jobID:
-      jobReport = JobStateUpdateClient()
-      result = jobReport.sendHeartBeat(self.jobID, heartBeatDict, staticParamDict)
+      result = JobStateUpdateClient().sendHeartBeat(self.jobID, heartBeatDict, staticParamDict)
       if not result['OK']:
         self.log.error('Problem sending final heartbeat from JobWrapper', result['Message'])
 
@@ -1451,6 +1450,3 @@ def rescheduleFailedJob(jobID, message, jobReport=None):
   except Exception:
     gLogger.exception('JobWrapperTemplate failed to reschedule Job')
     return 'Failed'
-
-
-# EOF
