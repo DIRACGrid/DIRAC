@@ -42,6 +42,21 @@ NEW: (#3744) Add WMS documentation in DeveloperGuide/Systems
 NEW: Added script (docs/Tools/UpdateDiracCFG.py) to collate the ConfigTemplate.cfg 
      files into the main dirac.cfg file
 
+[v6r20p23]
+
+*TransformationSystem
+NEW: (#3903)  do not remove archive SEs when looking at closerSE
+
+*CORE
+NEW: (#3902) When the environment variable DIRAC_DEPRECATED_FAIL is set to a non-empty value, 
+     the use of deprecated functions will raise a NotImplementError exception
+
+*ConfigurationSystem
+FIX: (#3903) ServiceInterface - fix exception when removing dead slave
+
+*FrameworkSystem
+FIX: (#3901) NotificationClient - bug fix
+
 [v6r20p22]
 
 *Core

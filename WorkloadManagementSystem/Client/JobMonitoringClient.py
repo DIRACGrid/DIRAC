@@ -11,7 +11,8 @@ from DIRAC.Core.Base.Client import Client, createClient
 class JobMonitoringClient(Client):
 
   def __init__(self, **kwargs):
-    Client.__init__(self, **kwargs)
+
+    super(JobMonitoringClient, self).__init__(**kwargs)
     self.setServer('WorkloadManagement/JobMonitoring')
 
   def traceJobParameters(self, site, localID, parameterList=None, attributeList=None, date=None, until=None):

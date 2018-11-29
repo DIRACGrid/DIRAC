@@ -99,7 +99,7 @@ class ServiceInterface(threading.Thread):
     gLogger.info("Checking status of slave servers")
     iGraceTime = gConfigurationData.getSlavesGraceTime()
     bModifiedSlaveServers = False
-    for sSlaveURL in self.dAliveSlaveServers:
+    for sSlaveURL in self.dAliveSlaveServers.keys():
       if time.time() - self.dAliveSlaveServers[sSlaveURL] > iGraceTime:
         gLogger.info("Found dead slave", sSlaveURL)
         del self.dAliveSlaveServers[sSlaveURL]
