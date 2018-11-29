@@ -1,10 +1,9 @@
-[v7r0-pre7]
+[v7r0-pre8]
 
 *Accounting
 CHANGE: (Multi)AccountingDB - Grouping Type and Object loader together with the MonitoringSystem ones.
 
 *WorkloadManagementSystem
-
 NEW: Add JobElasticDB.py with getJobParameters and setJobParameter methods to work with ElasticSearch (ES) backend.
 NEW: Add gJobElasticDB variable and indicates the activation of ES backend.
 CHANGE: Modify export_getJobParameter(s) to report values from ES if available.
@@ -28,9 +27,10 @@ CHANGE: (#3744) generateFullIndexName() method made static under the ElasticSear
 CHANGE: (#3744) removed unused/outdated stuff from Distribution module
 FIX: check for empty /etc/grid-security/certificates dir
 NEW: (#3842) Add createClient decorator to add wrapper for all export_ functions automatically
+NEW: (#3678) dirac-install can install a non released code directly from the git repository
+
 
 *tests
-
 NEW: Add ChangeESFlag.py script to modify useES flag in dirac.cfg. To be integrated with Jenkins code.
 CHANGE: (#3760) Use the above Client classes instead of invoking RPCClient()
 NEW: (#3744) Added performance tests for ES and MySQL for WMS DB backends
