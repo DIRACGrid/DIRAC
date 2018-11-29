@@ -78,8 +78,6 @@ class ElasticSearchDB(object):
     else:
       self.__client = Elasticsearch(self.__url, timeout=self.__timeout)
 
-    gLogger.verbose("ElasticSearchDB URL: %s" % self.__url)
-
     self.__tryToConnect()
 
   def getIndexPrefix(self):
