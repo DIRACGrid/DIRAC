@@ -435,7 +435,7 @@ class PluginUtilities(object):
     if targetSEs:
       # Some SEs are left, look for sites
       existingSites = [self.dmsHelper.getLocalSiteForSE(se).get('Value')
-                       for se in existingSEs if not self.dmsHelper.isSEArchive(se)]
+                       for se in existingSEs]
       existingSites = set([site for site in existingSites if site])
       closeSEs = set([se for se in targetSEs
                       if self.dmsHelper.getLocalSiteForSE(se).get('Value') in existingSites])
