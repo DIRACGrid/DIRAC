@@ -5,7 +5,7 @@ __RCSID__ = "$Id"
 
 import random
 
-from DIRAC import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC import gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Utilities.PrettyPrint import printDict
@@ -469,7 +469,7 @@ class TaskQueueDB(DB):
       if not data['found']:
         return result
       if data['enabled'] < 1:
-        gLogger.notice("TaskQueue {tqId} seems to be already disabled ({enabled})".format(**data))
+        self.log.notice("TaskQueue {tqId} seems to be already disabled ({enabled})".format(**data))
       result = self.__setTaskQueueEnabled(data['tqId'], False)
       if result['OK']:
         return S_OK(data)
@@ -492,7 +492,8 @@ FROM `tq_TaskQueues`, `tq_Jobs`"
 ORDER BY COUNT( `tq_Jobs`.JobID ) ASC" % (sqlCmd, result['Value'])
     result = self._query(sqlCmd, conn=connObj)
     if not result['OK']:
-      return S_ERROR("Can't find task queue: %s" % result['Message'])
+      self.log.error("Can't find task queue: %s" % result['Message'])
+      return result
     data = result['Value']
     if not data or data[0][0] >= self.__maxJobsInTQ:
       return S_OK({'found': False})
@@ -556,7 +557,7 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
           return S_ERROR("Can't begin transaction for matching job: %s" % retVal['Message'])
         jobTQList = [(row[0], row[1]) for row in retVal['Value']]
         if not jobTQList:
-          gLogger.info("Task queue %s seems to be empty, triggering a cleaning" % tqId)
+          self.log.info("Task queue %s seems to be empty, triggering a cleaning" % tqId)
           self.__deleteTQWithDelay.add(tqId, 300, (tqId, tqOwnerDN, tqOwnerGroup))
         while jobTQList:
           jobId, tqId = jobTQList.pop(random.randint(0, len(jobTQList) - 1))
@@ -952,7 +953,7 @@ WHERE j.JobId = %s AND t.TQId = j.TQId" %
       result = self.deleteTaskQueueIfEmpty(tqId, tqOwnerDN, tqOwnerGroup)
       if result['OK']:
         return
-    gLogger.error("Could not delete TQ %s: %s" % (tqId, result['Message']))
+    self.log.error("Could not delete TQ %s: %s" % (tqId, result['Message']))
 
   def deleteTaskQueueIfEmpty(self, tqId, tqOwnerDN=False, tqOwnerGroup=False, connObj=False):
     """
@@ -961,7 +962,8 @@ WHERE j.JobId = %s AND t.TQId = j.TQId" %
     if not connObj:
       retVal = self._getConnection()
       if not retVal['OK']:
-        return S_ERROR("Can't insert job: %s" % retVal['Message'])
+        self.log.error("Can't insert job: %s" % retVal['Message'])
+        return retVal
       connObj = retVal['Value']
     if not tqOwnerDN or not tqOwnerGroup:
       retVal = self.__getOwnerForTaskQueue(tqId, connObj=connObj)
@@ -976,8 +978,8 @@ WHERE j.JobId = %s AND t.TQId = j.TQId" %
     sqlCmd += "AND `tq_TaskQueues`.TQId not in ( SELECT DISTINCT TQId from `tq_Jobs` )"
     retVal = self._query(sqlCmd, conn=connObj)
     if not retVal['OK']:
-      gLogger.error("Could not select task queue %s" % tqId, retVal['Message'])
-      return S_ERROR("Could not select task queue")
+      self.log.error("Could not select task queue %s" % tqId, retVal['Message'])
+      return retVal
     tqToDel = retVal['Value']
 
     if tqToDel:
