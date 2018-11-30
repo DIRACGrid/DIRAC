@@ -293,7 +293,7 @@ class TransformationDB(DB):
     paramDict = {}
     for reqParam in parameters:
       if reqParam not in transParams:
-        return S_ERROR("Parameter %s not defined for transformation" % reqParam)
+        return S_ERROR("Parameter %s not defined for transformation %s" % (reqParam, transName))
       paramDict[reqParam] = transParams[reqParam]
     if len(paramDict) == 1:
       return S_OK(paramDict[reqParam])
