@@ -128,7 +128,6 @@ We can provide the repository url:code repository:::Project:::branch. for exampl
 """
 
 from __future__ import absolute_import, division, print_function, unicode_literals
-from six import string_types
 
 import sys
 import os
@@ -196,6 +195,7 @@ class Params(object):
     self.tag = ""
     self.modules = {}
     self.externalVersion = ""
+
 
 cliParams = Params()
 
@@ -1709,7 +1709,11 @@ def loadConfiguration():
 
     if opName == 'installType':
       opName = 'externalsType'
-    if isinstance(getattr(cliParams, opName), string_types):
+    if sys.version_info[0] < 3:
+      str_type = basestring
+    else:
+      str_type = str
+    if isinstance(getattr(cliParams, opName), str_type):
       setattr(cliParams, opName, opVal)
     elif isinstance(getattr(cliParams, opName), bool):
       setattr(cliParams, opName, opVal.lower() in ("y", "yes", "true", "1"))
