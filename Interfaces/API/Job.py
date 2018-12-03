@@ -73,7 +73,7 @@ class Job(API):
     if ret['OK'] and 'group' in ret['Value']:
       vo = getVOForGroup(ret['Value']['group'])
     self.group = vo
-    self.site = 'ANY'  # ANY
+    self.site = None
     # self.setup = 'Development'
     self.origin = 'DIRAC'
     self.stdout = stdout
@@ -928,7 +928,7 @@ class Job(API):
     self._addParameter(self.workflow, 'JobGroup', 'JDL', self.group, 'Name of the JobGroup')
     self._addParameter(self.workflow, 'JobName', 'JDL', self.name, 'Name of Job')
     # self._addParameter(self.workflow,'DIRACSetup','JDL',self.setup,'DIRAC Setup')
-    self._addParameter(self.workflow, 'Site', 'JDL', self.site, 'Site Requirement')
+    # self._addParameter(self.workflow, 'Site', 'JDL', self.site, 'Site Requirement')
     self._addParameter(self.workflow, 'Origin', 'JDL', self.origin, 'Origin of client')
     self._addParameter(self.workflow, 'StdOutput', 'JDL', self.stdout, 'Standard output file')
     self._addParameter(self.workflow, 'StdError', 'JDL', self.stderr, 'Standard error file')
