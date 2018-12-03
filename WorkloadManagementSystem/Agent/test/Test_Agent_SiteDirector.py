@@ -80,6 +80,18 @@ def test__getPilotOptions(mocker):
     ({'OK': True, 'Value': {'1': {'Jobs': 10, 'Sites': ['Site1', 'Site2']},
                             '2': {'Jobs': 20, 'Sites': ['Site1']}}},
      True, False, set(['Site1', 'Site2'])),
+    ({'OK': True, 'Value': {'1': {'Jobs': 10, 'Sites': ['Site1', 'Site2']},
+                            '2': {'Jobs': 20, 'Sites': ['ANY']}}},
+     True, True, set()),
+    ({'OK': True, 'Value': {'1': {'Jobs': 10, 'Sites': ['Site1', 'Site2']},
+                            '2': {'Jobs': 20, 'Sites': ['ANY', 'Site3']}}},
+     True, True, set()),
+    ({'OK': True, 'Value': {'1': {'Jobs': 10, 'Sites': ['Site1', 'Site2']},
+                            '2': {'Jobs': 20, 'Sites': ['Any', 'Site3']}}},
+     True, True, set()),
+    ({'OK': True, 'Value': {'1': {'Jobs': 10, 'Sites': ['Site1', 'Site2']},
+                            '2': {'Jobs': 20, 'Sites': ['NotAny', 'Site2']}}},
+     True, False, {'Site1', 'Site2', 'NotAny'}),
 ])
 def test__ifAndWhereToSubmit(mocker, mockMatcherReturnValue, expected, anyExpected, sitesExpected):
   """ Testing SiteDirector()._ifAndWhereToSubmit()

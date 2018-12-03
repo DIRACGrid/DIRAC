@@ -628,6 +628,7 @@ class SiteDirector(AgentModule):
       else:
         anySite = True
 
+
       if "JobTypes" in tqDescription:
         if "Sites" in tqDescription:
           for site in tqDescription['Sites']:
@@ -637,6 +638,7 @@ class SiteDirector(AgentModule):
     self.monitorJobsQueuesPilots(matchingTQs)
 
     return True, anySite, jobSites, testSites
+
 
   def monitorJobsQueuesPilots(self, matchingTQs):
     """ Just printout of jobs queues and pilots status in TQ
