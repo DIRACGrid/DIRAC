@@ -619,10 +619,16 @@ class SiteDirector(AgentModule):
     # If we are here there's some work to do, now let's see for where
     jobSites = set()
     testSites = set()
+    anySite = False
 
     for tqDescription in matchingTQs.itervalues():
-      for site in tqDescription.get('Sites', []):
-        jobSites.add(site)
+      siteList = tqDescription.get('Sites', [])
+      if siteList:
+        jobSites |= set(siteList)
+      else:
+        anySite = True
+
+
       if "JobTypes" in tqDescription:
         if "Sites" in tqDescription:
           for site in tqDescription['Sites']:
@@ -631,11 +637,8 @@ class SiteDirector(AgentModule):
 
     self.monitorJobsQueuesPilots(matchingTQs)
 
-    anySite = True
-    if jobSites and 'any' not in {js.lower() for js in jobSites}:
-      anySite = False
+    return True, anySite, jobSites, testSites
 
-    return True, anySite, jobSites if not anySite else set(), testSites
 
   def monitorJobsQueuesPilots(self, matchingTQs):
     """ Just printout of jobs queues and pilots status in TQ
