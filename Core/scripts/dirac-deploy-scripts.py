@@ -125,12 +125,12 @@ def findDIRACRoot( path ):
 
 rootPath = findDIRACRoot( os.path.dirname( os.path.realpath( __file__ ) ) )
 if not rootPath:
-  print "Error: Cannot find DIRAC root!"
+  print ("Error: Cannot find DIRAC root!")
   sys.exit( 1 )
 
 targetScriptsPath = os.path.join( rootPath, "scripts" )
 pythonScriptRE = re.compile( "(.*/)*([a-z]+-[a-zA-Z0-9-]+|[a-z]+_[a-zA-Z0-9_]+|d[a-zA-Z0-9-]+).py" )
-print "Scripts will be deployed at %s" % targetScriptsPath
+print ("Scripts will be deployed at %s" % targetScriptsPath)
 
 if not os.path.isdir( targetScriptsPath ):
   os.mkdir( targetScriptsPath )
@@ -150,7 +150,7 @@ for rootModule in listDir:
   extSuffixPos = rootModule.find( moduleSuffix )
   if extSuffixPos == -1 or extSuffixPos != len( rootModule ) - len( moduleSuffix ):
     continue
-  print "Inspecting %s module" % rootModule
+  print ("Inspecting %s module" % rootModule)
   scripts = lookForScriptsInPath( modulePath, rootModule )
   for script in scripts:
     scriptPath = script[0]
@@ -161,14 +161,14 @@ for rootModule in listDir:
     if scriptName not in simpleCopyMask and pythonScriptRE.match( scriptName ):
       newScriptName = scriptName[:-3].replace( '_', '-' )
       if DEBUG:
-        print " Wrapping %s as %s" % ( scriptName, newScriptName )
+        print (" Wrapping %s as %s" % (scriptName, newScriptName))
       fakeScriptPath = os.path.join( targetScriptsPath, newScriptName )
       with open( fakeScriptPath, "w" ) as fd:
         fd.write( wrapperTemplate.replace( '$SCRIPTLOCATION$', scriptPath ) )
       os.chmod( fakeScriptPath, gDefaultPerms )
     else:
       if DEBUG:
-        print " Copying %s" % scriptName
+        print (" Copying %s" % scriptName)
       shutil.copy( os.path.join( rootPath, scriptPath ), targetScriptsPath )
       copyPath = os.path.join( targetScriptsPath, scriptName )
       if platform.system() == 'Darwin':
@@ -181,8 +181,8 @@ for rootModule in listDir:
       reFound = pythonScriptRE.match( copyPath )
       if reFound:
         pathList = list( reFound.groups() )
-        pathList[-1] = pathList[-1].replace( '_', '-' )
+        pathList[-1] = pathList[-1].replace('_', '-')
         destPath = "".join( pathList )
         if DEBUG:
-          print " Renaming %s as %s" % ( copyPath, destPath )
+          print (" Renaming %s as %s" % (copyPath, destPath))
         os.rename( copyPath, destPath )

@@ -40,9 +40,9 @@ from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.Core.Utilities.List import uniqueElements
 from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE, getSites
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.ConfigurationSystem.Client.Helpers import Resources
 from DIRAC.Interfaces.API.Dirac import Dirac
 from DIRAC.Workflow.Utilities.Utils import getStepDefinition, addStepToWorkflow
 
@@ -72,7 +72,7 @@ class Job(API):
     if ret['OK'] and 'group' in ret['Value']:
       vo = getVOForGroup(ret['Value']['group'])
     self.group = vo
-    self.site = 'ANY'  # ANY
+    self.site = None
     # self.setup = 'Development'
     self.origin = 'DIRAC'
     self.stdout = stdout
@@ -88,6 +88,12 @@ class Job(API):
     self.parameterSeqs = {}
     self.wfArguments = {}
     self.parametricWFArguments = {}
+
+    # loading the function that will be used to determine the platform (it can be VO specific)
+    res = ObjectLoader().loadObject("ConfigurationSystem.Client.Helpers.Resources", 'getDIRACPlatforms')
+    if not res['OK']:
+      self.log.fatal(res['Message'])
+    self.getDIRACPlatforms = res['Value']
 
     self.script = script
     if not script:
@@ -460,7 +466,7 @@ class Job(API):
       return self._reportError("Expected string for platform", **kwargs)
 
     if not platform.lower() == 'any':
-      availablePlatforms = Resources.getDIRACPlatforms()
+      availablePlatforms = self.getDIRACPlatforms()
       if not availablePlatforms['OK']:
         return self._reportError("Can't check for platform", **kwargs)
       if platform in availablePlatforms['Value']:
@@ -832,7 +838,7 @@ class Job(API):
     self._addParameter(self.workflow, 'JobGroup', 'JDL', self.group, 'Name of the JobGroup')
     self._addParameter(self.workflow, 'JobName', 'JDL', self.name, 'Name of Job')
     # self._addParameter(self.workflow,'DIRACSetup','JDL',self.setup,'DIRAC Setup')
-    self._addParameter(self.workflow, 'Site', 'JDL', self.site, 'Site Requirement')
+    # self._addParameter(self.workflow, 'Site', 'JDL', self.site, 'Site Requirement')
     self._addParameter(self.workflow, 'Origin', 'JDL', self.origin, 'Origin of client')
     self._addParameter(self.workflow, 'StdOutput', 'JDL', self.stdout, 'Standard output file')
     self._addParameter(self.workflow, 'StdError', 'JDL', self.stderr, 'Standard error file')

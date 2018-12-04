@@ -225,11 +225,11 @@ for the agent restart
     result = JobMonitoringClient().getJobParameter(jobID, 'Pilot_Reference')
     if not result['OK']:
       return result
-    if not result['Value']:
+    pilotReference = result['Value'].get('Pilot_Reference')
+    if not pilotReference:
       # There is no pilot reference, hence its status is unknown
       return S_OK('NoPilot')
 
-    pilotReference = result['Value']
     wmsAdminClient = RPCClient('WorkloadManagement/WMSAdministrator')
     result = wmsAdminClient.getPilotInfo(pilotReference)
     if not result['OK']:
@@ -325,7 +325,7 @@ used to fail jobs due to the optimizer chain.
 
   def __getProcessingType(self, jobID):
     """ Get the Processing Type from the JDL, until it is promoted to a real Attribute
-"""
+    """
     processingType = 'unknown'
     result = self.jobDB.getJobJDL(jobID, original=True)
     if not result['OK']:
@@ -338,7 +338,7 @@ used to fail jobs due to the optimizer chain.
   #############################################################################
   def __sendAccounting(self, jobID):
     """ Send WMS accounting data for the given job
-"""
+    """
     try:
       accountingReport = Job()
       endTime = 'Unknown'
@@ -355,11 +355,13 @@ used to fail jobs due to the optimizer chain.
       if lastHeartBeatTime is not None and lastHeartBeatTime > endTime:
         endTime = lastHeartBeatTime
 
-      cpuNormalization = JobMonitoringClient().getJobParameter(jobID, 'CPUNormalizationFactor')
-      if not cpuNormalization['OK'] or not cpuNormalization['Value']:
+      result = JobMonitoringClient().getJobParameter(jobID, 'CPUNormalizationFactor')
+      if not result['OK']:
+        self.log.error('Error getting Job Parameter CPUNormalizationFactor, setting 0', result['Message'])
         cpuNormalization = 0.0
       else:
-        cpuNormalization = float(cpuNormalization['Value'])
+        cpuNormalization = float(result['Value'].get('CPUNormalizationFactor'))
+
     except Exception:
       self.log.exception("Exception in __sendAccounting for job %s: endTime=%s, lastHBTime %s" %
                          (str(jobID), str(endTime), str(lastHeartBeatTime)), '', False)

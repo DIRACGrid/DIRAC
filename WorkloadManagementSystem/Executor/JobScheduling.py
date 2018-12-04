@@ -75,7 +75,7 @@ class JobScheduling(OptimizerExecutor):
     jobManifest = result['Value']
 
     # Get site requirements
-    result = self.__getSitesRequired(jobManifest)
+    result = self.__getSitesRequired(jobState, jobManifest)
     if not result['OK']:
       return result
     userSites, userBannedSites = result['Value']
@@ -247,7 +247,7 @@ class JobScheduling(OptimizerExecutor):
       return S_ERROR("Site candidates do not have all the input data")
 
     # Check if staging is required
-    stageRequired, siteCandidates = self.__resolveStaging(inputData, idSites)
+    stageRequired, siteCandidates = self.__resolveStaging(jobState, inputData, idSites)
     if not siteCandidates:
       return S_ERROR("No destination sites available")
 
@@ -280,7 +280,7 @@ class JobScheduling(OptimizerExecutor):
     # Set the site info back to the original dict to save afterwards
     opData['SiteCandidates'][stageSite] = stageData
 
-    stageRequest = self.__preRequestStaging(jobManifest, stageSite, opData)
+    stageRequest = self.__preRequestStaging(jobState, jobManifest, stageSite, opData)
     if not stageRequest['OK']:
       return stageRequest
     stageLFNs = stageRequest['Value']
@@ -288,7 +288,7 @@ class JobScheduling(OptimizerExecutor):
     if not result['OK']:
       return result
     stageLFNs = result['Value']
-    self.__updateSharedSESites(jobManifest, stageSite, stageLFNs, opData)
+    self.__updateSharedSESites(jobState, jobManifest, stageSite, stageLFNs, opData)
     # Save the optimizer data again
     self.jobLog.verbose('Updating %s Optimizer Info:' % (idAgent), opData)
     result = self.storeOptimizerParam(idAgent, opData)
@@ -316,7 +316,7 @@ class JobScheduling(OptimizerExecutor):
     self.jobLog.info("On hold -> %s" % holdMsg)
     return jobState.setAppStatus(holdMsg, source=self.ex_optimizerName())
 
-  def __getSitesRequired(self, jobManifest):
+  def __getSitesRequired(self, jobState, jobManifest):
     """Returns any candidate sites specified by the job or sites that have been
        banned and could affect the scheduling decision.
     """
@@ -430,7 +430,7 @@ class JobScheduling(OptimizerExecutor):
     self.jobLog.info("Done")
     return self.setNextOptimizer(jobState)
 
-  def __resolveStaging(self, inputData, idSites):
+  def __resolveStaging(self, jobState, inputData, idSites):
     diskSites = []
     maxOnDisk = 0
     bestSites = []
@@ -460,7 +460,8 @@ class JobScheduling(OptimizerExecutor):
       random.shuffle(bestSites)
     return (True, bestSites)
 
-  def __preRequestStaging(self, jobManifest, stageSite, opData):
+  def __preRequestStaging(self, jobState, jobManifest, stageSite, opData):
+    from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 
     tapeSEs = []
     diskSEs = []
@@ -537,6 +538,7 @@ class JobScheduling(OptimizerExecutor):
 
     return S_OK(stageLFNs)
 
+
   def __requestStaging(self, jobState, stageLFNs):
     """ Actual request for staging LFNs through the StorageManagerClient
     """
@@ -560,7 +562,7 @@ class JobScheduling(OptimizerExecutor):
 
     rid = str(result['Value'])
     self.jobLog.info("Stage request %s sent" % rid)
-    self.storeOptimizerParam('StageRequest', rid)
+    jobState.setParameter("StageRequest", rid)
 
     result = jobState.setStatus(self.ex_getOption('StagingStatus', 'Staging'),
                                 self.ex_getOption('StagingMinorStatus', 'Request Sent'),
@@ -571,7 +573,7 @@ class JobScheduling(OptimizerExecutor):
 
     return S_OK(stageLFNs)
 
-  def __updateSharedSESites(self, jobManifest, stageSite, stagedLFNs, opData):
+  def __updateSharedSESites(self, jobState, jobManifest, stageSite, stagedLFNs, opData):
     siteCandidates = opData['SiteCandidates']
 
     seStatus = {}

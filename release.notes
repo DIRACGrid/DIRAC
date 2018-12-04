@@ -1,10 +1,9 @@
-[v7r0-pre6]
+[v7r0-pre8]
 
 *Accounting
 CHANGE: (Multi)AccountingDB - Grouping Type and Object loader together with the MonitoringSystem ones.
 
 *WorkloadManagementSystem
-
 NEW: Add JobElasticDB.py with getJobParameters and setJobParameter methods to work with ElasticSearch (ES) backend.
 NEW: Add gJobElasticDB variable and indicates the activation of ES backend.
 CHANGE: Modify export_getJobParameter(s) to report values from ES if available.
@@ -17,6 +16,9 @@ NEW: Added separate MySQL table for JobsStatus in JobDB, and modified code accor
 CHANGE: ElasticJobDB.py: Modify setJobParameter method to register JobAttributes like Owner, Proxy, JobGroup etc.
 CHANGE: ElasticJobDB.py: added getJobParametersAndAttributes method to retrieve both parameters and attributes for a given JobID.
 CHANGE: Pilot Watchdog - using python UNIX services for some watchdog calls
+CHANGE: (#3890) JobState always connects to DBs directly
+CHANGE: (#3890) remove JobStateSync service
+CHANGE: (#3873) Watchdog: use Profiler instead of ProcessMonitor
 
 *Core
 NEW: (#3744) Add update method to the ElasticSearchDB.py to update or if not available create the values 
@@ -24,9 +26,11 @@ NEW: (#3744) Add update method to the ElasticSearchDB.py to update or if not ava
 CHANGE: (#3744) generateFullIndexName() method made static under the ElasticSearchDB class.
 CHANGE: (#3744) removed unused/outdated stuff from Distribution module
 FIX: check for empty /etc/grid-security/certificates dir
+NEW: (#3842) Add createClient decorator to add wrapper for all export_ functions automatically
+NEW: (#3678) dirac-install can install a non released code directly from the git repository
+
 
 *tests
-
 NEW: Add ChangeESFlag.py script to modify useES flag in dirac.cfg. To be integrated with Jenkins code.
 CHANGE: (#3760) Use the above Client classes instead of invoking RPCClient()
 NEW: (#3744) Added performance tests for ES and MySQL for WMS DB backends
@@ -35,6 +39,42 @@ NEW: (#3744) Added miniInstallDIRAC function for Jenkins jobs
 *Docs
 FIX: Better dirac.cfg example configuration for web
 NEW: (#3744) Add WMS documentation in DeveloperGuide/Systems
+NEW: Added script (docs/Tools/UpdateDiracCFG.py) to collate the ConfigTemplate.cfg 
+     files into the main dirac.cfg file
+
+[v6r20p24]
+
+*WorkloadManagementSystem
+FIX: (#3904) SiteDirector fixed case with TQs for 'ANY' site>>>>>>> rel-v6r20
+
+[v6r20p23]
+
+*TransformationSystem
+NEW: (#3903)  do not remove archive SEs when looking at closerSE
+
+*CORE
+NEW: (#3902) When the environment variable DIRAC_DEPRECATED_FAIL is set to a non-empty value, 
+     the use of deprecated functions will raise a NotImplementError exception
+
+*ConfigurationSystem
+FIX: (#3903) ServiceInterface - fix exception when removing dead slave
+
+*FrameworkSystem
+FIX: (#3901) NotificationClient - bug fix
+
+[v6r20p22]
+
+*Core
+FIX: (#3897) ObjectLoader returns DErrno code
+FIX: (#3895) more debug messages in BaseClient
+
+*ResourceStatusSystem
+FIX: (#3895) fixed bug in dirac-rss-set-token script
+
+*WorkloadManagementSystem
+FIX: (#3897) SiteDirector: using checkPlatform flag everwhere needed
+CHANGE: (#3894) Using JobStateUpdateClient instead of RPCClient to it
+CHANGE: (#3894) Using JobManagerClient instead of RPCClient to it
 
 [v6r20p20]
 

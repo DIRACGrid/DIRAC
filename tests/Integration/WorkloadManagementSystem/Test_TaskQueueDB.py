@@ -13,8 +13,8 @@
 
 from DIRAC import gLogger
 
-# from DIRAC.Core.Base.Script import parseCommandLine
-# parseCommandLine()
+from DIRAC.Core.Base.Script import parseCommandLine
+parseCommandLine()
 
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 

@@ -359,22 +359,6 @@ class SiteDirector(AgentModule):
           qwDir = os.path.join(self.workingDirectory, queue)
           mkDir(qwDir)
           self.queueDict[queueName]['ParametersDict']['WorkingDirectory'] = qwDir
-          platform = ''
-          if "Platform" in self.queueDict[queueName]['ParametersDict']:
-            platform = self.queueDict[queueName]['ParametersDict']['Platform']
-          elif "Platform" in ceDict:
-            platform = ceDict['Platform']
-          elif "OS" in ceDict:
-            architecture = ceDict.get('architecture', 'x86_64')
-            platform = '_'.join([architecture, ceDict['OS']])
-          if platform and platform not in self.platforms:
-            self.platforms.append(platform)
-
-          if "Platform" not in self.queueDict[queueName]['ParametersDict'] and platform:
-            result = self.resourcesModule.getDIRACPlatform(platform)
-            if result['OK']:
-              self.queueDict[queueName]['ParametersDict']['Platform'] = result['Value'][0]
-
           ceQueueDict = dict(ceDict)
           ceQueueDict.update(self.queueDict[queueName]['ParametersDict'])
 
@@ -399,8 +383,25 @@ class SiteDirector(AgentModule):
           self.queueDict[queueName]['CEType'] = ceDict['CEType']
           self.queueDict[queueName]['Site'] = site
           self.queueDict[queueName]['QueueName'] = queue
-          self.queueDict[queueName]['Platform'] = platform
           self.queueDict[queueName]['QueryCEFlag'] = ceDict.get('QueryCEFlag', "false")
+
+          if self.checkPlatform:
+            platform = ''
+            if "Platform" in self.queueDict[queueName]['ParametersDict']:
+              platform = self.queueDict[queueName]['ParametersDict']['Platform']
+            elif "Platform" in ceDict:
+              platform = ceDict['Platform']
+            elif "OS" in ceDict:
+              architecture = ceDict.get('architecture', 'x86_64')
+              platform = '_'.join([architecture, ceDict['OS']])
+            if platform and platform not in self.platforms:
+              self.platforms.append(platform)
+
+            if "Platform" not in self.queueDict[queueName]['ParametersDict'] and platform:
+              result = self.resourcesModule.getDIRACPlatform(platform)
+              if result['OK']:
+                self.queueDict[queueName]['ParametersDict']['Platform'] = result['Value'][0]
+            self.queueDict[queueName]['Platform'] = platform
 
           result = self.queueDict[queueName]['CE'].isValid()
           if not result['OK']:
@@ -600,6 +601,7 @@ class SiteDirector(AgentModule):
     if not tqDict:
       return True, True, set(), set()
 
+    # the tqDict used here is a very generic one, not specific to one CE/queue only
     self.log.verbose('Checking overall TQ availability with requirements')
     self.log.verbose(tqDict)
 
@@ -617,11 +619,16 @@ class SiteDirector(AgentModule):
     # If we are here there's some work to do, now let's see for where
     jobSites = set()
     testSites = set()
+    anySite = False
 
     for tqDescription in matchingTQs.itervalues():
-      for site in tqDescription.get('Sites', []):
-        if site.lower() != 'any':
-          jobSites.add(site)
+      siteList = tqDescription.get('Sites', [])
+      if siteList:
+        jobSites |= set(siteList)
+      else:
+        anySite = True
+
+
       if "JobTypes" in tqDescription:
         if "Sites" in tqDescription:
           for site in tqDescription['Sites']:
@@ -630,7 +637,8 @@ class SiteDirector(AgentModule):
 
     self.monitorJobsQueuesPilots(matchingTQs)
 
-    return True, True if not jobSites else False, jobSites, testSites
+    return True, anySite, jobSites, testSites
+
 
   def monitorJobsQueuesPilots(self, matchingTQs):
     """ Just printout of jobs queues and pilots status in TQ
@@ -767,12 +775,13 @@ class SiteDirector(AgentModule):
     # This is a hack to get rid of !
     ceDict['SubmitPool'] = self.defaultSubmitPools
 
-    result = self.resourcesModule.getCompatiblePlatforms(self.queueDict[queue]['Platform'])
-    if not result['OK']:
-      self.log.error("Issue getting platforms compatible with %s, returning 'ANY'" % self.platforms,
-                     result['Message'])
-      ceDict['Platform'] = 'ANY'
-    ceDict['Platform'] = result['Value']
+    if self.checkPlatform:
+      result = self.resourcesModule.getCompatiblePlatforms(self.queueDict[queue]['Platform'])
+      if not result['OK']:
+        self.log.error("Issue getting platforms compatible with %s, returning 'ANY'" % self.platforms,
+                       result['Message'])
+        ceDict['Platform'] = 'ANY'
+      ceDict['Platform'] = result['Value']
 
     return ce, ceDict
 

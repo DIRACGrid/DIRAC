@@ -895,8 +895,7 @@ class Watchdog(object):
     """ Sends sign of life 'heartbeat' signal and triggers control signal
         interpretation.
     """
-    jobReport = JobStateUpdateClient()
-    result = jobReport.sendHeartBeat(jobID, heartBeatDict, staticParamDict)
+    result = JobStateUpdateClient().sendHeartBeat(jobID, heartBeatDict, staticParamDict)
     if not result['OK']:
       self.log.warn('Problem sending sign of life')
       self.log.warn(result)
@@ -915,8 +914,7 @@ class Watchdog(object):
       self.log.info('Running without JOBID so parameters will not be reported')
       return S_OK()
     jobID = os.environ['JOBID']
-    jobReport = JobStateUpdateClient()
-    jobParam = jobReport.setJobParameters(int(jobID), value)
+    jobParam = JobStateUpdateClient().setJobParameters(int(jobID), value)
     self.log.verbose('setJobParameters(%s,%s)' % (jobID, value))
     if not jobParam['OK']:
       self.log.warn(jobParam['Message'])

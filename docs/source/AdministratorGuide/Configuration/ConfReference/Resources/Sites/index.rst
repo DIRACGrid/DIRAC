@@ -11,28 +11,28 @@ In this section each DIRAC site available for the users is described. The conven
 
 The three strings are concatenated with "." to produce the name of the sites.
 
-+---------------------------------+-----------------------------------------------+-----------------------------------+
-| **Name**                        | **Description**                               | **Example**                       |
-+---------------------------------+-----------------------------------------------+-----------------------------------+
-| *<DIRAC_SITE_NAME>*             | Subsection named with the site name           | LCG.CPPM.fr                       |
-+---------------------------------+-----------------------------------------------+-----------------------------------+
-| *<DIRAC_SITE_NAME>/Name*        | Site name gave by the site administrator      | Name = in2p3                      |
-|                                 | e.g.: the name of the site in GOCDB (optional)|                                   |
-+---------------------------------+-----------------------------------------------+-----------------------------------+
-| *<DIRAC_SITE_NAME>/CE*          | List of CEs using CE FQN                      | CE = ce01.in2p3.fr                |
-|                                 | These CEs are updated by the BDII2CSAgent     | CE += ce02.in2p3.fr               |
-|                                 | in the CEs section                            |                                   |
-+---------------------------------+-----------------------------------------------+-----------------------------------+
-| *<DIRAC_SITE_NAME>/MoUTierLevel | Tier Level (optional)                         | MoUTierLevel = 1                  |
-+---------------------------------+-----------------------------------------------+-----------------------------------+
-| *<DIRAC_SITE_NAME>/CEs/*        | Subsection used to describe each CE available | CEs                               |
-+---------------------------------+-----------------------------------------------+-----------------------------------+
-| *<DIRAC_SITE_NAME>/Coordinates* | Site geographical coordinates (optional)      | Coordinates = -8.637979:41.152461 |
-+---------------------------------+-----------------------------------------------+-----------------------------------+
-| *<DIRAC_SITE_NAME>/Mail*        | Mail address site responsable (optional)      | Mail = atsareg@in2p3.fr           |
-+---------------------------------+-----------------------------------------------+-----------------------------------+
-| *<DIRAC_SITE_NAME>/SE*          | Closest SE respect to the CE (optional)       | SE = se01.in2p3.fr                |
-+---------------------------------+-----------------------------------------------+-----------------------------------+
++------------------------------------+-----------------------------------------------+-----------------------------------+
+| **Name**                           | **Description**                               | **Example**                       |
++------------------------------------+-----------------------------------------------+-----------------------------------+
+| *<DIRAC_SITE_NAME>*                | Subsection named with the site name           | LCG.CPPM.fr                       |
++------------------------------------+-----------------------------------------------+-----------------------------------+
+| *<DIRAC_SITE_NAME>/Name*           | Site name gave by the site administrator      | Name = in2p3                      |
+|                                    | e.g.: the name of the site in GOCDB (optional)|                                   |
++------------------------------------+-----------------------------------------------+-----------------------------------+
+| *<DIRAC_SITE_NAME>/CE*             | List of CEs using CE FQN                      | CE = ce01.in2p3.fr                |
+|                                    | These CEs are updated by the BDII2CSAgent     | CE += ce02.in2p3.fr               |
+|                                    | in the CEs section                            |                                   |
++------------------------------------+-----------------------------------------------+-----------------------------------+
+| *<DIRAC_SITE_NAME>/MoUTierLevel*   | Tier Level (optional)                         | MoUTierLevel = 1                  |
++------------------------------------+-----------------------------------------------+-----------------------------------+
+| *<DIRAC_SITE_NAME>/CEs/*           | Subsection used to describe each CE available | CEs                               |
++------------------------------------+-----------------------------------------------+-----------------------------------+
+| *<DIRAC_SITE_NAME>/Coordinates*    | Site geographical coordinates (optional)      | Coordinates = -8.637979:41.152461 |
++------------------------------------+-----------------------------------------------+-----------------------------------+
+| *<DIRAC_SITE_NAME>/Mail*           | Mail address site responsable (optional)      | Mail = atsareg@in2p3.fr           |
++------------------------------------+-----------------------------------------------+-----------------------------------+
+| *<DIRAC_SITE_NAME>/SE*             | Closest SE respect to the CE (optional)       | SE = se01.in2p3.fr                |
++------------------------------------+-----------------------------------------------+-----------------------------------+
 
 
 CEs  sub-subsection

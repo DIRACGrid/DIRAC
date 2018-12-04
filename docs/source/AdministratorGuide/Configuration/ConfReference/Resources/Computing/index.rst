@@ -61,7 +61,7 @@ What's on the left is an example of a dirac platform as determined the dirac-pla
 This platform is declared to be compatible with a list of "OS" strings.
 These strings are identifying the architectures of computing elements.
 This list of strings can be constructed from the "Architecture" + "OS" fields
-that can be found in the CEs description in the CS (:ref:`cs-sites`).
+that can be found in the CEs description in the CS (:ref:`cs-site`).
 
 This compatibility is, by default, used by the SiteDirector when deciding if to send a pilot or not to a certain CE:
 the SiteDirector matches "TaskQueues" to Computing Element capabilities.
