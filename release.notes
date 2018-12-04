@@ -1,3 +1,8 @@
+[v6r20p24]
+
+*WorkloadManagementSystem
+FIX: (#3904) SiteDirector fixed case with TQs for 'ANY' site
+
 [v6r20p23]
 
 *TransformationSystem
