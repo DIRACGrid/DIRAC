@@ -14,7 +14,7 @@
     StdError = std.err;
     LogLevel = DEBUG;
     Executable = "$DIRACROOT/scripts/dirac-jobexec";
-    Site = ANY;
+    JobName = Name;
     Priority = 1;
     InputSandbox = jobDescription.xml;
     Arguments = "jobDescription.xml -o LogLevel=DEBUG  -p JOB_ID=%(JOB_ID)s  -p InputData=%(InputData)s";
@@ -25,7 +25,6 @@
             std.err,
             std.out
         };
-    JobName = Name;
     Parameters.JOB_ID = 
         {
             1,

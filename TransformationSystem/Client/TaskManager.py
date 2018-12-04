@@ -662,7 +662,10 @@ class WorkflowTasks(TaskBase):
     oJobTemplate.setOwner(owner)
     oJobTemplate.setOwnerGroup(ownerGroup)
     oJobTemplate.setOwnerDN(ownerDN)
-    site = oJobTemplate.workflow.findParameter('Site').getValue()
+    try:
+      site = oJobTemplate.workflow.findParameter('Site').getValue()
+    except AttributeError:
+      site = None
     jobType = oJobTemplate.workflow.findParameter('JobType').getValue()
     templateOK = False
     getOutputDataTiming = 0.
@@ -692,7 +695,8 @@ class WorkflowTasks(TaskBase):
                                      '00000000',
                                      "Initial JOB_ID")
 
-      paramsDict['Site'] = site
+      if site is not None:
+        paramsDict['Site'] = site
       paramsDict['JobType'] = jobType
       # Now create the job from the template
       oJob = copy.deepcopy(oJobTemplate)
@@ -720,6 +724,7 @@ class WorkflowTasks(TaskBase):
         if not res['OK']:
           self._logError('Could not set the site: %s' % res['Message'],
                          transID=transID, method=method)
+          paramsDict['TaskObject'] = ''
           continue
 
       self._handleInputs(oJob, paramsDict)
