@@ -133,6 +133,7 @@ class WebAppCompiler(object):
         env[k] = os.environ[k]
         os.environ.pop(k)
     gLogger.verbose("Command is: %s" % " ".join(cmd))
+    print "Command is: %s" % " ".join(cmd)
     try:
       result = subprocess.call(cmd)
     except OSError as e:
@@ -255,7 +256,8 @@ class WebAppCompiler(object):
 
     try:
       os.unlink(inFile)
-    except IOError:
+    except IOError as e:
+      print e
       pass
     for staticPath in self.__staticPaths:
       gLogger.notice("Looing into %s" % staticPath)
