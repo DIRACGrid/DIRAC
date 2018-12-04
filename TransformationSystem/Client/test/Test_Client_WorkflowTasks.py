@@ -48,11 +48,11 @@ taskDictNoInputsNoSite = {1: {'TransformationID': 1},
 
 expected = {'OK': True,
             'Value': {1: {'a1': 'aa1', 'TaskObject': '', 'TransformationID': 1,
-                          'b1': 'bb1', 'Site': 'ANY', 'JobType': 'User'},
+                          'b1': 'bb1', 'Site': 'MySite', 'JobType': 'User'},
                       2: {'TaskObject': '', 'a2': 'aa2', 'TransformationID': 1,
-                          'InputData': ['a1', 'a2'], 'b2': 'bb2', 'Site': 'ANY', 'JobType': 'User'},
+                          'InputData': ['a1', 'a2'], 'b2': 'bb2', 'Site': 'MySite', 'JobType': 'User'},
                       3: {'TaskObject': '', 'a3': 'aa3', 'TransformationID': 2,
-                          'b3': 'bb3', 'Site': 'ANY', 'JobType': 'User'}
+                          'b3': 'bb3', 'Site': 'MySite', 'JobType': 'User'}
                       }
             }
 
@@ -89,7 +89,7 @@ def test_prepareTranformationTasks(taskDictionary, bulkSubmissionFlag, result, e
         assert key in expectedRes['Value']
         for tKey, tValue in value.iteritems():
           assert tKey in expectedRes['Value'][key]
-          if tKey == 'TaskObject':
+          if tKey == 'TaskObject' and tValue:
             assert isinstance(tValue, Job)
           else:
             assert tValue == expectedRes['Value'][key][tKey]
