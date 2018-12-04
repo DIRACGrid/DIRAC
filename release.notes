@@ -42,6 +42,11 @@ NEW: (#3744) Add WMS documentation in DeveloperGuide/Systems
 NEW: Added script (docs/Tools/UpdateDiracCFG.py) to collate the ConfigTemplate.cfg 
      files into the main dirac.cfg file
 
+[v6r20p24]
+
+*WorkloadManagementSystem
+FIX: (#3904) SiteDirector fixed case with TQs for 'ANY' site>>>>>>> rel-v6r20
+
 [v6r20p23]
 
 *TransformationSystem
