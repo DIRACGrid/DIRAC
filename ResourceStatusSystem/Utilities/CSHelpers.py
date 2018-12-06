@@ -283,6 +283,27 @@ def getSiteComputingElements(siteName):
   return []
 
 
+# NOTE: this method is used by Web
+def getSiteStorageElements(siteName):
+  """
+    Gets all computing elements from /Resources/Sites/<>/<siteName>/SE
+  """
+
+  _basePath = 'Resources/Sites'
+
+  domainNames = gConfig.getSections(_basePath)
+  if not domainNames['OK']:
+    return domainNames
+  domainNames = domainNames['Value']
+
+  for domainName in domainNames:
+    ses = gConfig.getValue('%s/%s/%s/SE' % (_basePath, domainName, siteName), '')
+    if ses:
+      return ses.split(', ')
+
+  return []
+
+
 def getSiteElements(siteName):
   """
     Gets all the computing and storage elements for a given site
