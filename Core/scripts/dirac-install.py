@@ -505,6 +505,12 @@ class ReleaseConfig(object):
     self.instName = instName
     self.projectName = projectName
 
+  def setDebugCB(self, debFunc):
+    """
+    It is used by the dirac-distribution. It sets the debug function
+    """
+    self.debugCB = debFunc
+
   def __dbgMsg(self, msg):
     """
     :param str msg: the debug message
