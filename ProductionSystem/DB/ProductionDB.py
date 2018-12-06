@@ -94,7 +94,7 @@ class ProductionDB(DB):
     if not res['OK']:
       return res
     prodDescription = res['Value']
-    
+
     req = "INSERT INTO Productions (ProductionName,Description,CreationDate,LastUpdate, \
                                     AuthorDN,AuthorGroup,Status)\
                                 VALUES ('%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),'%s','%s','New');" % \
