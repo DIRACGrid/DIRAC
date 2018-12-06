@@ -155,7 +155,7 @@ class SocketInfoFactory(object):
       gSessionManager.set( sessionId, sslSocket.get_session() )
     return S_OK( socketInfo )
 
-  def getListeningSocket( self, hostAddress, listeningQueueSize = 5, reuseAddress = True, **kwargs ):
+  def getListeningSocket( self, hostAddress, listeningQueueSize = 128, reuseAddress = True, **kwargs ):
     try:
       osSocket = socket.socket( socket.AF_INET6, socket.SOCK_STREAM )
     except socket.error:

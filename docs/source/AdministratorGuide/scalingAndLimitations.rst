@@ -40,6 +40,20 @@ Scaling
 =======
 
 
+Servers
+=======
+
+When you servers are heavily loaded, you may want to tune some kernel parameters. Internet is full or resources to explain you what you should do, but a few parameters of interests certainly are the number of file descriptors allowed, as well as a few kernel tcp parameters that should be increased (https://www.kernel.org/doc/Documentation/networking/ip-sysctl.txt)::
+
+   net.nf_conntrack_max
+   net.ipv4.tcp_max_syn_backlog
+   net.core.somaxconn
+   net.core.netdev_max_backlog
+
+
+Finally, the parameter `SocketBacklog` for a service can be increased (`man listen` is your friend).
+
+
 Duplications
 ============
 
