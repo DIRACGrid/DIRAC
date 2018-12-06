@@ -299,7 +299,7 @@ def getSiteStorageElements(siteName):
   for domainName in domainNames:
     ses = gConfig.getValue('%s/%s/%s/SE' % (_basePath, domainName, siteName), '')
     if ses:
-      return ses.split(', ')
+      return ses.split(',')
 
   return []
 
