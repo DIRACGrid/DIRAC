@@ -61,7 +61,6 @@ class PluginUtilities(object):
     self.cachedLFNSize = {}
     self.transString = ''
     self.debug = debug
-    self.seConfig = {}
     if transInThread is None:
       self.transInThread = {}
     else:
@@ -401,21 +400,17 @@ class PluginUtilities(object):
     return newSEs
 
   def isSameSE(self, se1, se2):
-    """ Check if 2 SEs are indeed the same """
+    """ Check if 2 SEs are indeed the same.
+
+        :param se1: name of the first StorageElement
+        :param se2: name of the second StorageElement
+
+        :returns: True/False if they are considered the same. See :py:mod:`~DIRAC.Resources.Storage.StorageElement.StorageElementItem.isSameSE`
+    """
     if se1 == se2:
       return True
-    for se in (se1, se2):
-      if se not in self.seConfig:
-        self.seConfig[se] = {}
-        res = StorageElement(se).getStorageParameters(protocol='srm')
-        if res['OK']:
-          params = res['Value']
-          for item in ('Host', 'Path'):
-            self.seConfig[se][item] = params[item].replace('t1d1', 't0d1')
-        else:
-          self.logError("Error getting StorageElement parameters for %s" % se, res['Message'])
 
-    return self.seConfig[se1] == self.seConfig[se2]
+    return StorageElement(se1).isSameSE(StorageElement(se2))
 
   def isSameSEInList(self, se1, seList):
     """ Check if an SE is the same as any in a list """
