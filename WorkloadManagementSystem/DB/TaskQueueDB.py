@@ -669,7 +669,7 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
     Generate the SQL needed to match a task queue
     """
     self.log.debug(tqMatchDict)
-    starValues = ['""', '', '"any"', 'any']
+    starValues = ['"any"', 'any']
 
     if negativeCond is None:
       negativeCond = {}
@@ -717,7 +717,7 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
          and field not in tqMatchDict \
          and 'Required' + field not in tqMatchDict \
          and 'Banned' + field not in tqMatchDict:
-        tqMatchDict[field] = "''"
+        tqMatchDict[field] = None
 
       if field in tqMatchDict:
         self.log.debug("Evaluating %s with value %s" % (field, tqMatchDict[field]))
@@ -734,7 +734,7 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
 
           # Is there something to consider?
           if isinstance(fv, str) and fv.lower() in starValues \
-             or isinstance(fv, list) and (any(x in [fvx.lower() for fvx in fv] for x in starValues) or not fv):
+             or isinstance(fv, list) and (any(x in [fvx.lower() for fvx in fv] for x in starValues)):
             continue
           sqlMultiCondList.append(self.__generateTagSQLSubCond(fullTableN, tqMatchDict.get(field)))
 
@@ -838,10 +838,13 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
         present in the matching resource list
     """
     sql1 = "SELECT COUNT(%s.Value) FROM %s WHERE %s.TQId=tq.TQId" % (tableName, tableName, tableName)
-    if isinstance(tagMatchList, (list, tuple)):
-      sql2 = sql1 + " AND %s.Value in ( %s )" % (tableName, ','.join(["%s" % v for v in tagMatchList]))
+    if not tagMatchList:
+      sql2 = sql1 + " AND %s.Value=''" % tableName
     else:
-      sql2 = sql1 + " AND %s.Value=%s" % (tableName, tagMatchList)
+      if isinstance(tagMatchList, (list, tuple)):
+        sql2 = sql1 + " AND %s.Value in ( %s )" % (tableName, ','.join(["%s" % v for v in tagMatchList]))
+      else:
+        sql2 = sql1 + " AND %s.Value=%s" % (tableName, tagMatchList)
     sql = '( ' + sql1 + ' ) = (' + sql2 + ' )'
     return sql
 
