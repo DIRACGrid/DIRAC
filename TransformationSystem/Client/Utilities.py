@@ -405,7 +405,8 @@ class PluginUtilities(object):
         :param se1: name of the first StorageElement
         :param se2: name of the second StorageElement
 
-        :returns: True/False if they are considered the same. See :py:mod:`~DIRAC.Resources.Storage.StorageElement.StorageElementItem.isSameSE`
+        :returns: True/False if they are considered the same.
+                  See :py:mod:`~DIRAC.Resources.Storage.StorageElement.StorageElementItem.isSameSE`
     """
     if se1 == se2:
       return True
