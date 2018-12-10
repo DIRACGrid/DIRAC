@@ -64,25 +64,30 @@ Let's take an example::
               MPTagQueue
               {
                 Tag = MultiProcessor
-                # the following fields are not important
-                SI00 = 2400
-                maxCPUTime = 200
-                MaxTotalJobs = 5
-                MaxWaitingJobs = 10
-                BundleProxy = True
-                RemoveOutput = True
+                ...
+              }
+              # This queue has Tag = [MultiProcessor, 8Processors]. So it will accept:
+              # - jobs that require Tag = MultiProcessor (and no others)
+              # - jobs that require Tag = 8Processors (and no others)
+              # - jobs that require both the tags above (and no others)
+              # - jobs that require no Tags
+              MultipleMPTagQueue
+              {
+                Tag = MultiProcessor
+                Tag += 8Processors
+                ...
               }
               # This queue has RequiredTag = MultiProcessor. So it will accept ONLY jobs that require Tag = MultiProcessor
-              MPTagQueue
+              RequiredMPTagQueue
               {
                 RequiredTag = MultiProcessor
-                # the following fields are not important
-                SI00 = 2400
-                maxCPUTime = 200
-                MaxTotalJobs = 5
-                MaxWaitingJobs = 10
-                BundleProxy = True
-                RemoveOutput = True
+                ...
+              }
+              # This queue has BannedTag = MultiProcessor. So it will accept ONLY jobs that DON'T require Tag = MultiProcessor
+              RequiredMPTagQueue
+              {
+                BannedTag = MultiProcessor
+                ...
               }
             }
           }
@@ -91,17 +96,11 @@ Let's take an example::
           MP-CE.cern.ch
           {
             Tag = MultiProcessor
-            CEType = Test
             Queues
             {
               some_queue
               {
-                SI00 = 2400
-                maxCPUTime = 200
-                MaxTotalJobs = 5
-                MaxWaitingJobs = 10
-                BundleProxy = True
-                RemoveOutput = True
+                 ...
               }
             }
           }
