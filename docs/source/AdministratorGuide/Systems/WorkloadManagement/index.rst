@@ -1,18 +1,31 @@
+.. _WMS:
+
 ================================
 Workload Management System (WMS)
 ================================
 
-The DIRAC Workload Management System (WMS) realizes the task scheduling paradigm with Generic Pilot Jobs ( or Agents ).
+The DIRAC Workload Management System (WMS) realizes the task scheduling paradigm with Generic :ref:`Pilot <pilots>` Jobs.
 This task scheduling method solves many problems of using unstable distributed computing resources which are
 available in computing grids. In particular, it helps the management of the user activities in large Virtual
-Organizations such as LHC experiments. In more details the DIRAC WMS with Pilot Jobs is described
-`here <http://iopscience.iop.org/article/10.1088/1742-6596/898/9/092024>`_.
+Organizations such as LHC experiments. 
 
 The WMS provides high user jobs efficiency, hiding the heterogeneity of the the underlying computing resources.
 
+Within :ref:`DIRAC jobs <jobs>` users specify at least an executable, and maybe some argument, that DIRAC will start on the Worker Node.
 Jobs are not sent directly to the Computing Elements, or to any Computing resource.
-Instead, their description and requirements are stored in the DIRAC WMS (in a JDL, Job Description Language).
-JDLs are then matched by pilots running on the Worker Nodes.
+Instead, their description and requirements are stored in the DIRAC WMS DB (using JDL, Job Description Language) and added to a Task Queue
+of jobs with same or similar requirements. Jobs will start running when their JDL is picked up by a pilot job.
+
+Pilot jobs are submitted to computing resources by specialized Pilot Directors.
+After the start, Pilots check the execution environment and form the resource description (OS, capacity, disk space, software, etc)
+The resources description is presented to the Matcher service, which chooses the most appropriate user job from the Task Queue.
+The user job description is delivered to the pilot, which prepares its execution environment and executes the user application
+
+One evident advantage is that the users’ payloads are starting in an already verified environment.
+The environment checks can be tailored for specific needs of a particular community by customizing the pilot operations.
+
+For the users all the internal WMS/pilots machinery is completely hidden.
+They see all the DIRAC operated computing resources as single large batch system.
 
 The following picture shows a simplified view of how the system works
 
@@ -20,7 +33,8 @@ The following picture shows a simplified view of how the system works
    :alt: WMS-Pilots.
    :align: center
 
-The computing resources that DIRAC can administer can be of different types.
+
+The :ref:`computing resources <resourcesComputing>` that DIRAC can administer can be of different types.
 
 In any case, the following definitions apply:
 
@@ -33,7 +47,7 @@ DIRAC alone can send pilots to several types of computing element, and recognize
 You can find a presentation highlighting these concepts `here <https://indico.cern.ch/event/658060/contributions/2943568/attachments/1623665/2584839/DIRAC.pdf>`_.
 
 
-In case more than one one type of resource is available, specifically VM-based resources,
+In case more than one type of resource is available, specifically VM-based resources,
 the pilots scheduling should happen with other means then SiteDirectors, as exemplified in the following picture:
 
 .. image:: WMS-Pilots2.png
@@ -42,6 +56,9 @@ the pilots scheduling should happen with other means then SiteDirectors, as exem
 
 DIRAC alone does not administer directly clouds or any VM-based systems.
 A different mechanism should be used for starting pilots and jobs on worker nodes that can't be reached via Computing Elements.
+One machanism for starting pilots on Clouds is in the :ref:`VMDIRAC` extension of DIRAC.
+
+For more info on how the WMS work, please refer to this `presentation <https://indico.cern.ch/event/676817/contributions/2770712/attachments/1653260/2645342/WMS_Resources.pdf>`_.
 
 The following sections add some detail for the WMS systems.
 
@@ -53,3 +70,4 @@ The following sections add some detail for the WMS systems.
    PilotsLogging/index
    Jobs/index
    JobPriorities/index
+   multiProcessorJobs
