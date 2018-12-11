@@ -111,7 +111,10 @@ fts3Operation_mapper = mapper(FTS3Operation, fts3OperationTable,
                               ),
                                   'ftsJobs': relationship(
                                   FTS3Job,
-                                  lazy='joined',  # Immediately load the entirety of the object
+                                  lazy='subquery',  # Immediately load the entirety of the object,
+                                                    # but use a subquery to do it
+                                                    # This is to avoid the cartesian product between the three tables.
+                                                    # https://docs.sqlalchemy.org/en/latest/orm/loading_relationships.html#subquery-eager-loading
                                   cascade='all, delete-orphan',  # if a File is removed from the list,
                                   # remove it from the DB
                                   passive_deletes=True,  # used together with cascade='all, delete-orphan'
