@@ -553,34 +553,6 @@ def test_chainWithTags():
   res = set([int(x[0]) for x in result['Value']])
   assert res == {tq_job1, tq_job4}
 
-  # BannedTag: 'SingleProcessor'
-  # By doing this, we are basically saying that this CE is accepting those TQs that don't have SingleProcessor
-  result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 50000,
-                                      'BannedTag': 'SingleProcessor'},
-                                     numQueuesToGet=4)
-  assert result['OK'] is True
-  # this does not match the tq_job2 and tq_job3
-  res = set([int(x[0]) for x in result['Value']])
-  assert res == {tq_job1, tq_job4, tq_job5}
-
-  # By doing this, we are basically saying that this CE is accepting pure MultiProcessor payloads
-  result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 50000,
-                                      'Tag': 'MultiProcessor',
-                                      'BannedTag': 'SingleProcessor'},
-                                     numQueuesToGet=4)
-  assert result['OK'] is True
-  # this matches the tq_job1, as it is the only one that requires only MultiProcessor,
-  # AND the tq_job5, for which we have inserted no tags
-  res = set([int(x[0]) for x in result['Value']])
-  assert res == {tq_job1, tq_job5}
-
-  # The following combination is not possible
-  result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 50000,
-                                      'RequiredTag': 'MultiProcessor',
-                                      'BannedTag': 'SingleProcessor'},
-                                     numQueuesToGet=4)
-  assert result['OK'] is False
-
   # NumberOfProcessors and MaxRAM
   # This is translated to "#Processors" by the SiteDirector
   result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 50000,

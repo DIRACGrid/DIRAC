@@ -713,10 +713,8 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
       # It has to be %ss , with an 's' at the end because the columns names
       # are plural and match options are singular
 
-      # Just treating the (not so) special case of no Tag, No RequiredTag, No BannedTag
-      if 'Tag' not in tqMatchDict \
-              and 'RequiredTag' not in tqMatchDict \
-              and 'BannedTag' not in tqMatchDict:
+      # Just treating the (not so) special case of no Tag, No RequiredTag
+      if 'Tag' not in tqMatchDict and 'RequiredTag' not in tqMatchDict:
         tqMatchDict['Tag'] = []
 
       if field in tqMatchDict:
