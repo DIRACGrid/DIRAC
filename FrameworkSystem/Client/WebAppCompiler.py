@@ -33,14 +33,26 @@ class WebAppCompiler(object):
 
     self.__classPaths = [os.path.join(self.__webAppPath, *p) for p in (("static", "core", "js", "utils"),
                                                                        ("static", "core", "js", "core"))]
-
-    self.__classPaths.append(os.path.join(os.path.dirname(self.__sdkDir), "examples", "ux"))
-    self.__classPaths.append(os.path.join(os.path.dirname(self.__sdkDir), "examples", "ux", "form"))
-
-    self.__sdkPath = os.path.join(self.__sdkDir, "src")
-
-    self.__extjsDirsToCopy = [os.path.join(os.path.dirname(self.__sdkDir), "resources")]
-    self.__extjsFilesToCopy = [os.path.join(os.path.dirname(self.__sdkDir), "ext-all-dev.js")]
+    self.__extjsDirsToCopy = []
+    self.__extjsFilesToCopy = []
+    if self.__extVersion in self.__sdkDir:
+      self.__classPaths.append(os.path.join(os.path.dirname(self.__sdkDir), "examples", "ux"))
+      self.__classPaths.append(os.path.join(os.path.dirname(self.__sdkDir), "examples", "ux", "form"))
+      self.__sdkPath = os.path.join(self.__sdkDir, "src")
+      self.__extjsDirsToCopy.append(os.path.join(os.path.dirname(self.__sdkDir), "resources"))
+      self.__extjsFilesToCopy.append(os.path.join(os.path.dirname(self.__sdkDir), "ext-all-dev.js"))
+    else:
+      self.__classPaths.append(os.path.join(os.path.dirname(self.__sdkDir), "build/ext-all-debug.js"))
+      self.__classPaths.append(os.path.join(os.path.dirname(self.__sdkDir), "build/packages/ux/classic/ux-debug.js"))
+      self.__classPaths.append(
+          os.path.join(os.path.dirname(self.__sdkDir), "build/packages/charts/classic/charts-debug.js"))
+      self.__sdkPath = self.__sdkDir
+      self.__extjsDirsToCopy.append(os.path.join(os.path.dirname(self.__sdkDir), "build/packages"))
+      self.__extjsDirsToCopy.append(os.path.join(os.path.dirname(self.__sdkDir), "build/classic"))
+      self.__extjsFilesToCopy.append(os.path.join(os.path.dirname(self.__sdkDir), "build/ext-all.js"))
+      self.__extjsFilesToCopy.append(os.path.join(os.path.dirname(self.__sdkDir), "build/ext-all-debug.js"))
+      self.__extjsFilesToCopy.append(
+          os.path.join(os.path.dirname(self.__sdkDir), "build/packages/ux/classic/ux-debug.js"))
 
     self.__debugFlag = str(gLogger.getLevel() in ('DEBUG', 'VERBOSE', 'INFO')).lower()
     self.__compileTemplate = os.path.join(self.__params.destination, 'WebAppDIRAC', "Lib", "CompileTemplates")
@@ -79,10 +91,9 @@ class WebAppCompiler(object):
     for filePath in self.__extjsFilesToCopy:
       try:
         shutil.copy(filePath, extjsDirPath)
-      except OSError as e:
+      except (IOError, OSError) as e:
         errorMsg = "Can not copy %s file to %s: %s" % (filePath, extjsDirPath, repr(e))
-        gLogger.error(errorMsg)
-        return S_ERROR(errorMsg)
+        gLogger.warn(errorMsg)
 
     return S_OK()
 
@@ -90,9 +101,10 @@ class WebAppCompiler(object):
     """
     It creates a temporary file using different templates. For example: /tmp/zmathe/tmp4sibR5.compilejs.app.tpl
     This is required to compile the web framework.
+
     :params str tplName: it is the name of the template
     :params dict extra: it contains the application location, which will be added to the temporary file
-    :return the location of the file
+    :return: the location of the file
     """
     inTpl = os.path.join(self.__compileTemplate, tplName)
     try:
@@ -168,7 +180,7 @@ class WebAppCompiler(object):
     classPath.append(os.path.join(extPath, appName, "classes"))
 
     cmd = ['sencha', '-sdk', self.__sdkPath, 'compile', '-classpath=%s' % ",".join(classPath),
-           '-debug=%s' % self.__debugFlag, 'page', '-name=page', '-input-file', inFile, '-out', outFile, 'and',
+           'page', '-name=page', '-input-file', inFile, '-out', outFile, 'and',
            'restore', 'page', 'and', 'exclude', '-not', '-namespace', 'Ext.dirac.*%s' % excludePackage, 'and',
            'concat', '-yui', compressedJsFile]
 
@@ -235,7 +247,7 @@ class WebAppCompiler(object):
     gLogger.verbose(" IN file written to %s" % inFile)
 
     cmd = ['sencha', '-sdk', self.__sdkPath, 'compile', '-classpath=%s' % ",".join(self.__classPaths),
-           '-debug=%s' % self.__debugFlag, 'page', '-yui', '-input-file', inFile, '-out', outFile]
+           'page', '-yui', '-input-file', inFile, '-out', outFile]
 
     if self.__cmd(cmd):
       gLogger.error("Error compiling JS")
@@ -245,14 +257,16 @@ class WebAppCompiler(object):
       os.unlink(inFile)
     except IOError:
       pass
-
     for staticPath in self.__staticPaths:
       gLogger.notice("Looing into %s" % staticPath)
       extDirectoryContent = os.listdir(staticPath)
       if len(extDirectoryContent) == 0:
         return S_ERROR("The extension directory is empty:" + str(staticPath))
       else:
-        extName = extDirectoryContent[-1]
+        extNames = [ext for ext in extDirectoryContent if 'DIRAC' in ext]
+        if len(extNames) > 1:
+          extNames.remove('DIRAC')
+        extName = extNames[-1]
         gLogger.notice("Detected extension:%s" % extName)
 
       extPath = os.path.join(staticPath, extName)
@@ -309,6 +323,7 @@ class WebAppCompiler(object):
   def getAppDependencies(self):
     """
     Generate the dependency dictionary
+
     :return: Dict
     """
     if self.__params.name != 'WebAppDIRAC':
