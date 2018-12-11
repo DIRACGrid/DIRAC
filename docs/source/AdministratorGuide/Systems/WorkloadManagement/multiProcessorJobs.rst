@@ -77,9 +77,11 @@ Let's take an example::
                 Tag += 8Processors
                 ...
               }
-              # This queue has RequiredTag = MultiProcessor. So it will accept ONLY jobs that require Tag = MultiProcessor
+              # This queue has Tag = MultiProcessor and RequiredTag = MultiProcessor.
+              # So it will accept ONLY jobs that require Tag = MultiProcessor
               RequiredMPTagQueue
               {
+                Tag = MultiProcessor
                 RequiredTag = MultiProcessor
                 ...
               }

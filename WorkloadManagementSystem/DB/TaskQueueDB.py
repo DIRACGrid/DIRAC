@@ -25,7 +25,6 @@ multiValueDefFields = ('Sites', 'GridCEs', 'GridMiddlewares', 'BannedSites',
 # Used for matching
 multiValueMatchFields = ('GridCE', 'Site', 'GridMiddleware', 'Platform',
                          'PilotType', 'SubmitPool', 'JobType', 'Tag')
-tagMatchFields = ('Tag', )
 bannedJobMatchFields = ('Site', )
 mandatoryMatchFields = ('Setup', 'CPUTime')
 priorityIgnoredFields = ('Sites', 'BannedSites')
@@ -706,6 +705,8 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
         else:
           sqlCondList.append(self.__generateSQLSubCond("tq.%s = %%s" % field, tqMatchDict[field]))
 
+    tag_fv = []
+
     # Match multi value fields
     for field in multiValueMatchFields:
       self.log.debug("Evaluating field %s" % field)
@@ -713,11 +714,10 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
       # are plural and match options are singular
 
       # Just treating the (not so) special case of no Tag, No RequiredTag, No BannedTag
-      if field in tagMatchFields \
-         and field not in tqMatchDict \
-         and 'Required' + field not in tqMatchDict \
-         and 'Banned' + field not in tqMatchDict:
-        tqMatchDict[field] = None
+      if 'Tag' not in tqMatchDict \
+              and 'RequiredTag' not in tqMatchDict \
+              and 'BannedTag' not in tqMatchDict:
+        tqMatchDict['Tag'] = []
 
       if field in tqMatchDict:
         self.log.debug("Evaluating %s with value %s" % (field, tqMatchDict[field]))
@@ -728,15 +728,17 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
         csql = None
 
         # Now evaluating Tags
-        if field in tagMatchFields:  # basically, if field == Tag
-          fv = tqMatchDict.get(field)
-          self.log.debug("Evaluating tag %s of type %s" % (tqMatchDict[field], type(fv)))
+        if field == 'Tag':
+          tag_fv = tqMatchDict.get('Tag')
+          self.log.debug("Evaluating tag %s of type %s" % (tag_fv, type(tag_fv)))
+          if isinstance(tag_fv, str):
+            tag_fv = [tag_fv]
 
           # Is there something to consider?
-          if isinstance(fv, str) and fv.lower() in starValues \
-             or isinstance(fv, list) and (any(x in [fvx.lower() for fvx in fv] for x in starValues)):
+          if any(x in [fvx.lower() for fvx in tag_fv] for x in starValues):
             continue
-          sqlMultiCondList.append(self.__generateTagSQLSubCond(fullTableN, tqMatchDict.get(field)))
+          else:
+            sqlMultiCondList.append(self.__generateTagSQLSubCond(fullTableN, tag_fv))
 
         # Now evaluating everything that is not tags
         else:
@@ -745,8 +747,8 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
 
           # Is there something to consider?
           if not fv \
-             or isinstance(fv, str) and fv.lower() in starValues \
-             or isinstance(fv, list) and any(x in [fvx.lower() for fvx in fv] for x in starValues):
+                  or isinstance(fv, str) and fv.lower() in starValues \
+                  or isinstance(fv, list) and any(x in [fvx.lower() for fvx in fv] for x in starValues):
             continue
           # if field != 'GridCE' or 'Site' in tqMatchDict:
           # Jobs for masked sites can be matched if they specified a GridCE
@@ -777,34 +779,28 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
           sqlCondList.append(csql)
 
     # Add possibly RequiredTag conditions
-    for field in tagMatchFields:
-      fieldName = "Required%s" % field
+    rtag_fv = tqMatchDict.get('RequiredTag', [])
+    if isinstance(rtag_fv, str):
+      rtag_fv = [rtag_fv]
 
-      # Is there something to consider?
-      if not tqMatchDict.get(fieldName) \
-         or \
-         isinstance(tqMatchDict.get(fieldName), str) \
-         and tqMatchDict.get(fieldName).lower() in starValues \
-         or \
-         isinstance(tqMatchDict.get(fieldName), list) \
-         and any(x in [fv.lower() for fv in tqMatchDict.get(fieldName)] for x in starValues):
-        continue
-
-      sqlCondList.append(self.__generateRequiredTagSQLSubCond('`tq_TQToTags`',
-                                                              tqMatchDict.get(fieldName)))
+    # Is there something to consider?
+    if not rtag_fv or any(x in [fv.lower() for fv in rtag_fv] for x in starValues):
+      pass
+    elif not set(rtag_fv).issubset(set(tag_fv)):
+      return S_ERROR('Wrong conditions')
+    else:
+      self.log.debug("Evaluating RequiredTag %s" % rtag_fv)
+      sqlCondList.append(self.__generateRequiredTagSQLSubCond('`tq_TQToTags`', rtag_fv))
 
     # Add possibly Resource banning conditions
     for field in multiValueMatchFields:
       bannedField = "Banned%s" % field
 
       # Is there something to consider?
-      if not tqMatchDict.get(bannedField) \
-         or \
-         isinstance(tqMatchDict.get(bannedField), str) \
-         and tqMatchDict.get(bannedField).lower() in starValues \
-         or \
-         isinstance(tqMatchDict.get(bannedField), list) \
-         and any(x in [fv.lower() for fv in tqMatchDict.get(bannedField)] for x in starValues):
+      b_fv = tqMatchDict.get(bannedField)
+      if not b_fv \
+              or isinstance(b_fv, str) and b_fv.lower() in starValues \
+              or isinstance(b_fv, list) and any(x in [fvx.lower() for fvx in b_fv] for x in starValues):
         continue
 
       fullTableN = '`tq_TQTo%ss`' % field
@@ -814,7 +810,8 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
                                                       WHERE %s.TQId = tq.TQId )" % (fullTableN,
                                                                                     fullTableN,
                                                                                     fullTableN),
-                                                   tqMatchDict[bannedField], boolOp='OR'))
+                                                   b_fv,
+                         boolOp='OR'))
 
     # Add extra negative conditions
     if negativeCond:

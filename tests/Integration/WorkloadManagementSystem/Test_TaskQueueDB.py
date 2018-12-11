@@ -358,10 +358,10 @@ def test_chainWithPlatforms():
                                       'Platform': 'centos8'},
                                      numQueuesToGet=5)
   assert result['OK'] is True
-  # FIXME: here, I would like to see 3 TQs matched: those for slc6 + centos7 + ANY
-  # assert len(result['Value']) == 2
+  # here, I would like to see 3 TQs matched: those for slc6 + centos7 + ANY
+  assert len(result['Value']) == 1
   # but here it returns only 1 (those for ANY), by construction
-  # so, this is to be improved
+  # so, this should be in theory improved
 
   for jobId in xrange(1, 8):
     result = tqDB.deleteJob(jobId)
@@ -536,30 +536,37 @@ def test_chainWithTags():
   assert int(result['Value'][0][0]) in [tq_job1, tq_job4, tq_job5]
   assert len(result['Value']) == 3
 
-  # RequiredTag: 'MultiProcessor'
-  # By doing this, we are basically saying that this CE is accepting ONLY MultiProcessor payloads
+  # RequiredTag: 'MultiProcessor' (but no Tag)
+  # By doing this, we would be saying that this CE is accepting ONLY MultiProcessor payloads,
+  # BUT since there are no Tags, we can't know what's POSSIBLE to run, so nothing should be matched
   result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 50000,
+                                      'RequiredTag': 'MultiProcessor'},
+                                     numQueuesToGet=4)
+  assert result['OK'] is False
+
+  # Tag: 'MultiProcessor' + RequiredTag: 'MultiProcessor'
+  # By doing this, we are basically saying that this CE is accepting ONLY MultiProcessor payloads
+  # which have ONLY the 'MultiProcessor' tag
+  result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 50000,
+                                      'Tag': 'MultiProcessor',
+                                      'RequiredTag': 'MultiProcessor'},
+                                     numQueuesToGet=4)
+  assert result['OK'] is True
+  # this matches the tq_job1 as it is the only one that exposes the MultiProcessor tag ONLY
+  assert int(result['Value'][0][0]) == tq_job1
+  assert len(result['Value']) == 1
+
+  # Tag: ['MultiProcessor', 'GPU'] + RequiredTag: 'MultiProcessor'
+  # By doing this, we are basically saying that this CE is accepting MultiProcessor and GPU payloads
+  # but requires to have the MultiProcessor tag
+  result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 50000,
+                                      'Tag': ['MultiProcessor', 'GPU'],
                                       'RequiredTag': 'MultiProcessor'},
                                      numQueuesToGet=4)
   assert result['OK'] is True
   # this matches the tq_job1 as it is the only one that expose the MultiProcessor tag ONLY
-  # plus the tq_job3 and tq_job4 as they require ALSO the MultiProcessor tag
-  # FIXME:-- is it correct?
-  assert int(result['Value'][0][0]) in [tq_job1, tq_job3, tq_job4]
-  assert len(result['Value']) == 3
-
-  # RequiredTag: 'MultiProcessor' + Tag: 'MultiProcessor'
-  # By doing this, we are basically saying that this CE is accepting ONLY MultiProcessor payloads
-  # which have ONLY the 'MultiProcessor' tag
-  result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 50000,
-                                      'RequiredTag': 'MultiProcessor',
-                                      'Tag': 'MultiProcessor'},
-                                     numQueuesToGet=4)
-  assert result['OK'] is True
-  # this matches the tq_job1 as it is the only one that expose the MultiProcessor tag ONLY
-  # FIXME:-- is it correct?
-  assert int(result['Value'][0][0]) == tq_job1
-  assert len(result['Value']) == 1
+  assert int(result['Value'][0][0]) in [tq_job1, tq_job4]
+  assert len(result['Value']) == 2
 
   # BannedTag: 'SingleProcessor'
   # By doing this, we are basically saying that this CE is accepting those TQs that don't have SingleProcessor
@@ -568,7 +575,6 @@ def test_chainWithTags():
                                      numQueuesToGet=4)
   assert result['OK'] is True
   # this does not match the tq_job2 and tq_job3
-  # FIXME:-- is it correct?
   assert int(result['Value'][0][0]) in [tq_job1, tq_job4, tq_job5]
   assert len(result['Value']) == 3
 
@@ -580,21 +586,15 @@ def test_chainWithTags():
   assert result['OK'] is True
   # this matches the tq_job1, as it is the only one that requires only MultiProcessor,
   # AND the tq_job5, for which we have inserted no tags
-  # FIXME:-- is it correct?
   assert int(result['Value'][0][0]) in [tq_job1, tq_job5]
   assert len(result['Value']) == 2
 
-  # By doing this, we are basically saying that this CE is accepting pure MultiProcessor payloads
+  # The following combination is not possible
   result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 50000,
                                       'RequiredTag': 'MultiProcessor',
                                       'BannedTag': 'SingleProcessor'},
                                      numQueuesToGet=4)
-  assert result['OK'] is True
-  # this matches the tq_job1, as it is the only one that requires only MultiProcessor,
-  # AND the tq_job4, for which there's the MultiProcessor but not the SingleProcessor tag
-  # FIXME:-- is it correct?
-  assert int(result['Value'][0][0]) in [tq_job1, tq_job4]
-  assert len(result['Value']) == 2
+  assert result['OK'] is False
 
   # NumberOfProcessors and MaxRAM
   # This is translated to "#Processors" by the SiteDirector
