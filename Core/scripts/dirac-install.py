@@ -505,6 +505,12 @@ class ReleaseConfig(object):
     self.instName = instName
     self.projectName = projectName
 
+  def setDebugCB(self, debFunc):
+    """
+    It is used by the dirac-distribution. It sets the debug function
+    """
+    self.debugCB = debFunc
+
   def __dbgMsg(self, msg):
     """
     :param str msg: the debug message
@@ -1697,6 +1703,15 @@ def loadConfiguration():
   if not result['OK']:
     logERROR("Could not load defaults: %s" % result['Message'])
 
+  # at the end we load the local configuration and merge with the global cfg
+  for arg in args:
+    if len(arg) > 4 and arg.find(".cfg") == len(arg) - 4:
+      result = releaseConfig.loadInstallationLocalDefaults(arg)
+      if not result['OK']:
+        logERROR(result['Message'])
+      else:
+        logNOTICE("Loaded %s" % arg)
+
   for opName in ('release', 'externalsType', 'installType', 'pythonVersion',
                  'buildExternals', 'noAutoBuild', 'debug', 'globalDefaults',
                  'lcgVer', 'useVersionsDir', 'targetPath',
@@ -1801,14 +1816,6 @@ def loadConfiguration():
   if not releaseConfig.isProjectLoaded("DIRAC"):
     return S_ERROR("DIRAC is not depended by this installation. Aborting")
 
-  # at the end we load the local configuration and merge with the global cfg
-  for arg in args:
-    if len(arg) > 4 and arg.find(".cfg") == len(arg) - 4:
-      result = releaseConfig.loadInstallationLocalDefaults(arg)
-      if not result['OK']:
-        logERROR(result['Message'])
-      else:
-        logNOTICE("Loaded %s" % arg)
   return S_OK(releaseConfig)
 
 
