@@ -5,7 +5,7 @@
 
 """
 
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR, gLogger
 
 __RCSID__  = '$Id$'
 
@@ -116,9 +116,9 @@ class StateMachine( object ):
       return -1
     return self.states[ state ].level
 
-  def setState( self, state ):
-    """
-      Makes sure the state is either None or known to the machine
+  def setState(self, candidateState):
+    """ Makes sure the state is either None or known to the machine, and that it is a valid state to move into.
+        Final states are also checked.
 
     examples:
       >>> sm0.setState( None )[ 'OK' ]
@@ -133,15 +133,27 @@ class StateMachine( object ):
     :return: S_OK || S_ERROR
     """
 
-    #FIXME: do we really have to accept None as state ??
-    if state is None:
-      self.state = state
-    elif state in self.states.keys():
-      self.state = state
-    else:
-      return S_ERROR( '%s is not a valid state' % state )
+    if candidateState == self.state:
+      return S_OK(candidateState)
 
-    return S_OK()
+    if candidateState is None:
+      self.state = candidateState
+    elif candidateState in self.states.keys():
+      if not self.states[self.state].stateMap:
+        gLogger.warn("Final state, won't move")
+        return S_OK(self.state)
+      if candidateState not in self.states[self.state].stateMap:
+        gLogger.warn("Can't move from %s to %s, choosing a good one" % (self.state, candidateState))
+      nextState = self.getNextState(candidateState)
+      if not nextState['OK']:
+        return nextState
+      nextState = nextState['Value']
+      # If the StateMachine does not accept the candidate, return error message
+      self.state = nextState
+    else:
+      return S_ERROR("%s is not a valid state" % candidateState)
+
+    return S_OK(nextState)
 
   def getStates( self ):
     """

@@ -10,8 +10,21 @@ transTypes = [basestring, int, long]
 
 __RCSID__ = "$Id$"
 
-TASKS_STATE_NAMES = ['TotalCreated', 'Created', 'Running', 'Submitted', 'Failed', 'Waiting', 'Done', 'Completed', 'Stalled',
-                     'Killed', 'Staging', 'Checking', 'Rescheduled', 'Scheduled']
+TASKS_STATE_NAMES = [
+    'TotalCreated',
+    'Created',
+    'Running',
+    'Submitted',
+    'Failed',
+    'Waiting',
+    'Done',
+    'Completed',
+    'Stalled',
+    'Killed',
+    'Staging',
+    'Checking',
+    'Rescheduled',
+    'Scheduled']
 FILES_STATE_NAMES = ['PercentProcessed', 'Processed', 'Unused', 'Assigned', 'Total', 'Problematic',
                      'ApplicationCrash', 'MaxReset']
 
@@ -53,7 +66,9 @@ class TransformationManagerHandler(RequestHandler):
                                body='',
                                maxTasks=0,
                                eventsPerTask=0,
-                               addFiles=True):
+                               addFiles=True,
+                               inputMetaQuery=None,
+                               outputMetaQuery=None):
     #    authorDN = self._clientTransport.peerCredentials['DN']
     #    authorGroup = self._clientTransport.peerCredentials['group']
     credDict = self.getRemoteCredentials()
@@ -67,7 +82,9 @@ class TransformationManagerHandler(RequestHandler):
                                      body=body,
                                      maxTasks=maxTasks,
                                      eventsPerTask=eventsPerTask,
-                                     addFiles=addFiles)
+                                     addFiles=addFiles,
+                                     inputMetaQuery=inputMetaQuery,
+                                     outputMetaQuery=outputMetaQuery)
     if res['OK']:
       gLogger.info("Added transformation %d" % res['Value'])
     return self._parseRes(res)
@@ -301,31 +318,30 @@ class TransformationManagerHandler(RequestHandler):
 
   ####################################################################
   #
-  # These are the methods for TransformationInputDataQuery table
+  # These are the methods for TransformationMetaQueries table. It replaces methods
+  # for the old TransformationInputDataQuery table
   #
 
-  types_createTransformationInputDataQuery = [transTypes, dict]
+  types_createTransformationMetaQuery = [transTypes, dict, basestring]
 
-  def export_createTransformationInputDataQuery(self, transName, queryDict):
+  def export_createTransformationMetaQuery(self, transName, queryDict, queryType):
     credDict = self.getRemoteCredentials()
     authorDN = credDict['DN']
-    # authorDN = self._clientTransport.peerCredentials['DN']
-    res = database.createTransformationInputDataQuery(transName, queryDict, author=authorDN)
+    res = database.createTransformationMetaQuery(transName, queryDict, queryType, author=authorDN)
     return self._parseRes(res)
 
-  types_deleteTransformationInputDataQuery = [transTypes]
+  types_deleteTransformationMetaQuery = [transTypes, basestring]
 
-  def export_deleteTransformationInputDataQuery(self, transName):
+  def export_deleteTransformationMetaQuery(self, transName, queryType):
     credDict = self.getRemoteCredentials()
     authorDN = credDict['DN']
-    # authorDN = self._clientTransport.peerCredentials['DN']
-    res = database.deleteTransformationInputDataQuery(transName, author=authorDN)
+    res = database.deleteTransformationMetaQuery(transName, queryType, author=authorDN)
     return self._parseRes(res)
 
-  types_getTransformationInputDataQuery = [transTypes]
+  types_getTransformationMetaQuery = [transTypes, basestring]
 
-  def export_getTransformationInputDataQuery(self, transName):
-    res = database.getTransformationInputDataQuery(transName)
+  def export_getTransformationMetaQuery(self, transName, queryType):
+    res = database.getTransformationMetaQuery(transName, queryType)
     return self._parseRes(res)
 
   ####################################################################
@@ -564,7 +580,7 @@ class TransformationManagerHandler(RequestHandler):
     # Create the ParameterNames entry
     resultDict['ParameterNames'] = res['ParameterNames']
     # Find which element in the tuple contains the requested status
-    if not statusColumn in resultDict['ParameterNames']:
+    if statusColumn not in resultDict['ParameterNames']:
       return S_ERROR("Provided status column not present")
     statusColumnIndex = resultDict['ParameterNames'].index(statusColumn)
 
