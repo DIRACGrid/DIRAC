@@ -119,7 +119,7 @@ class TransportPool( object ):
         return result
     except KeyError:
       return S_ERROR( "No transport with id %s defined" % trid )
-    else:
+    finally:
       self.close( trid )
 
   def sendAndClose( self, trid, msg ):
@@ -129,7 +129,7 @@ class TransportPool( object ):
         return result
     except KeyError:
       return S_ERROR( "No transport with id %s defined" % trid )
-    else:
+    finally:
       self.close( trid )
 
   def sendKeepAlive( self, trid, responseId = None ):
