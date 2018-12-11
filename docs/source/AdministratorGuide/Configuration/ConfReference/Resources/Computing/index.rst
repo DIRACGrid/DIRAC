@@ -1,3 +1,5 @@
+.. _resourcesComputing:
+
 Resources / Computing
 =====================
 

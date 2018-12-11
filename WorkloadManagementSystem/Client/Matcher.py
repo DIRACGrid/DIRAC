@@ -3,6 +3,8 @@
     Utilities and classes here are used by MatcherHandler
 """
 
+__RCSID__ = "$Id"
+
 import time
 
 from DIRAC import gLogger
@@ -14,16 +16,11 @@ from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.WorkloadManagementSystem.Client.Limiter import Limiter
 
-from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB, \
-    singleValueDefFields, \
-    multiValueMatchFields, \
-    tagMatchFields
+from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB, singleValueDefFields, multiValueMatchFields
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
-
-__RCSID__ = "$Id"
 
 
 class Matcher(object):
@@ -177,12 +174,10 @@ class Matcher(object):
       if name in resourceDescription:
         resourceDict[name] = resourceDescription[name]
 
-    for name in tagMatchFields:
-      if name in resourceDescription and resourceDescription[name]:
-        resourceDict[name] = resourceDescription[name]
-      rname = 'Required%s' % name
-      if rname in resourceDescription:
-        resourceDict[rname] = resourceDescription[rname]
+    if resourceDescription.get('Tag'):
+      resourceDict['Tag'] = resourceDescription['Tag']
+      if 'RequiredTag' in resourceDescription:
+        resourceDict['RequiredTag'] = resourceDescription['RequiredTag']
 
     if 'JobID' in resourceDescription:
       resourceDict['JobID'] = resourceDescription['JobID']

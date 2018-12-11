@@ -4,6 +4,7 @@
 __RCSID__ = "$Id"
 
 import random
+import string
 
 from DIRAC import gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -25,7 +26,6 @@ multiValueDefFields = ('Sites', 'GridCEs', 'GridMiddlewares', 'BannedSites',
 # Used for matching
 multiValueMatchFields = ('GridCE', 'Site', 'GridMiddleware', 'Platform',
                          'PilotType', 'SubmitPool', 'JobType', 'Tag')
-tagMatchFields = ('Tag', )
 bannedJobMatchFields = ('Site', )
 mandatoryMatchFields = ('Setup', 'CPUTime')
 priorityIgnoredFields = ('Sites', 'BannedSites')
@@ -669,7 +669,6 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
     Generate the SQL needed to match a task queue
     """
     self.log.debug(tqMatchDict)
-    starValues = ['""', '', '"any"', 'any']
 
     if negativeCond is None:
       negativeCond = {}
@@ -706,12 +705,19 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
         else:
           sqlCondList.append(self.__generateSQLSubCond("tq.%s = %%s" % field, tqMatchDict[field]))
 
+    tag_fv = []
+
     # Match multi value fields
     for field in multiValueMatchFields:
       self.log.debug("Evaluating field %s" % field)
       # It has to be %ss , with an 's' at the end because the columns names
       # are plural and match options are singular
-      if tqMatchDict.get(field):
+
+      # Just treating the (not so) special case of no Tag, No RequiredTag
+      if 'Tag' not in tqMatchDict and 'RequiredTag' not in tqMatchDict:
+        tqMatchDict['Tag'] = []
+
+      if field in tqMatchDict:
         self.log.debug("Evaluating %s with value %s" % (field, tqMatchDict[field]))
 
         _, fullTableN = self.__generateTablesName(sqlTables, field)
@@ -720,31 +726,28 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
         csql = None
 
         # Now evaluating Tags
-        if field in tagMatchFields:  # basically, if field == Tag
-          self.log.debug("Evaluating tag %s of type %s" % (field, type(tqMatchDict.get(field))))
+        if field == 'Tag':
+          tag_fv = tqMatchDict.get('Tag')
+          self.log.debug("Evaluating tag %s of type %s" % (tag_fv, type(tag_fv)))
+          if isinstance(tag_fv, str):
+            tag_fv = [tag_fv]
 
           # Is there something to consider?
-          if not tqMatchDict.get(field) \
-             or \
-             isinstance(tqMatchDict.get(field), str) \
-             and tqMatchDict.get(field).lower() in starValues \
-             or \
-             isinstance(tqMatchDict.get(field), list) \
-             and any(x in [fv.lower() for fv in tqMatchDict.get(field)] for x in starValues):
+          if any(fvx.lower().translate(None, string.punctuation) == 'any' for fvx in tag_fv):
             continue
-          sqlMultiCondList.append(self.__generateTagSQLSubCond(fullTableN, tqMatchDict.get(field)))
+          else:
+            sqlMultiCondList.append(self.__generateTagSQLSubCond(fullTableN, tag_fv))
 
-        else:  # everything that is not tags
-          self.log.debug("Evaluating field %s of type %s" % (field, type(tqMatchDict.get(field))))
+        # Now evaluating everything that is not tags
+        else:
+          fv = tqMatchDict.get(field)
+          self.log.debug("Evaluating field %s of type %s" % (field, type(fv)))
 
           # Is there something to consider?
-          if not tqMatchDict.get(field) \
-             or \
-             isinstance(tqMatchDict.get(field), str) \
-             and tqMatchDict.get(field).lower() in starValues \
-             or \
-             isinstance(tqMatchDict.get(field), list) \
-             and any(x in [fv.lower() for fv in tqMatchDict.get(field)] for x in starValues):
+          if not fv \
+                  or isinstance(fv, str) and fv.lower().translate(None, string.punctuation) == 'any' \
+                  or isinstance(fv, list) \
+                  and any(fvx.lower().translate(None, string.punctuation) == 'any' for fvx in fv):
             continue
           # if field != 'GridCE' or 'Site' in tqMatchDict:
           # Jobs for masked sites can be matched if they specified a GridCE
@@ -775,34 +778,29 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
           sqlCondList.append(csql)
 
     # Add possibly RequiredTag conditions
-    for field in tagMatchFields:
-      fieldName = "Required%s" % field
+    rtag_fv = tqMatchDict.get('RequiredTag', [])
+    if isinstance(rtag_fv, str):
+      rtag_fv = [rtag_fv]
 
-      # Is there something to consider?
-      if not tqMatchDict.get(fieldName) \
-         or \
-         isinstance(tqMatchDict.get(fieldName), str) \
-         and tqMatchDict.get(fieldName).lower() in starValues \
-         or \
-         isinstance(tqMatchDict.get(fieldName), list) \
-         and any(x in [fv.lower() for fv in tqMatchDict.get(fieldName)] for x in starValues):
-        continue
-
-      sqlCondList.append(self.__generateRequiredTagSQLSubCond('`tq_TQToTags`',
-                                                              tqMatchDict.get(fieldName)))
+    # Is there something to consider?
+    if not rtag_fv or any(fv.lower().translate(None, string.punctuation) == 'any' for fv in rtag_fv):
+      pass
+    elif not set(rtag_fv).issubset(set(tag_fv)):
+      return S_ERROR('Wrong conditions')
+    else:
+      self.log.debug("Evaluating RequiredTag %s" % rtag_fv)
+      sqlCondList.append(self.__generateRequiredTagSQLSubCond('`tq_TQToTags`', rtag_fv))
 
     # Add possibly Resource banning conditions
     for field in multiValueMatchFields:
       bannedField = "Banned%s" % field
 
       # Is there something to consider?
-      if not tqMatchDict.get(bannedField) \
-         or \
-         isinstance(tqMatchDict.get(bannedField), str) \
-         and tqMatchDict.get(bannedField).lower() in starValues \
-         or \
-         isinstance(tqMatchDict.get(bannedField), list) \
-         and any(x in [fv.lower() for fv in tqMatchDict.get(bannedField)] for x in starValues):
+      b_fv = tqMatchDict.get(bannedField)
+      if not b_fv \
+              or isinstance(b_fv, str) and b_fv.lower().translate(None, string.punctuation) == 'any' \
+              or isinstance(b_fv, list) \
+              and any(fvx.lower().translate(None, string.punctuation) == 'any' for fvx in b_fv):
         continue
 
       fullTableN = '`tq_TQTo%ss`' % field
@@ -812,9 +810,10 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
                                                       WHERE %s.TQId = tq.TQId )" % (fullTableN,
                                                                                     fullTableN,
                                                                                     fullTableN),
-                                                   tqMatchDict[bannedField], boolOp='OR'))
+                                                   b_fv,
+                         boolOp='OR'))
 
-    # Add extra conditions
+    # Add extra negative conditions
     if negativeCond:
       sqlCondList.append(self.__generateNotSQL(negativeCond))
 
@@ -836,10 +835,13 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
         present in the matching resource list
     """
     sql1 = "SELECT COUNT(%s.Value) FROM %s WHERE %s.TQId=tq.TQId" % (tableName, tableName, tableName)
-    if isinstance(tagMatchList, (list, tuple)):
-      sql2 = sql1 + " AND %s.Value in ( %s )" % (tableName, ','.join(["%s" % v for v in tagMatchList]))
+    if not tagMatchList:
+      sql2 = sql1 + " AND %s.Value=''" % tableName
     else:
-      sql2 = sql1 + " AND %s.Value=%s" % (tableName, tagMatchList)
+      if isinstance(tagMatchList, (list, tuple)):
+        sql2 = sql1 + " AND %s.Value in ( %s )" % (tableName, ','.join(["%s" % v for v in tagMatchList]))
+      else:
+        sql2 = sql1 + " AND %s.Value=%s" % (tableName, tagMatchList)
     sql = '( ' + sql1 + ' ) = (' + sql2 + ' )'
     return sql
 
