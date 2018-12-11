@@ -4,6 +4,7 @@
 __RCSID__ = "$Id"
 
 import random
+import string
 
 from DIRAC import gConfig, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -668,7 +669,6 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
     Generate the SQL needed to match a task queue
     """
     self.log.debug(tqMatchDict)
-    starValues = ['"any"', 'any']
 
     if negativeCond is None:
       negativeCond = {}
@@ -733,7 +733,7 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
             tag_fv = [tag_fv]
 
           # Is there something to consider?
-          if any(x in [fvx.lower() for fvx in tag_fv] for x in starValues):
+          if any(fvx.lower().translate(None, string.punctuation) == 'any' for fvx in tag_fv):
             continue
           else:
             sqlMultiCondList.append(self.__generateTagSQLSubCond(fullTableN, tag_fv))
@@ -745,8 +745,9 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
 
           # Is there something to consider?
           if not fv \
-                  or isinstance(fv, str) and fv.lower() in starValues \
-                  or isinstance(fv, list) and any(x in [fvx.lower() for fvx in fv] for x in starValues):
+                  or isinstance(fv, str) and fv.lower().translate(None, string.punctuation) == 'any' \
+                  or isinstance(fv, list) \
+                  and any(fvx.lower().translate(None, string.punctuation) == 'any' for fvx in fv):
             continue
           # if field != 'GridCE' or 'Site' in tqMatchDict:
           # Jobs for masked sites can be matched if they specified a GridCE
@@ -782,7 +783,7 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
       rtag_fv = [rtag_fv]
 
     # Is there something to consider?
-    if not rtag_fv or any(x in [fv.lower() for fv in rtag_fv] for x in starValues):
+    if not rtag_fv or any(fv.lower().translate(None, string.punctuation) == 'any' for fv in rtag_fv):
       pass
     elif not set(rtag_fv).issubset(set(tag_fv)):
       return S_ERROR('Wrong conditions')
@@ -797,8 +798,9 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
       # Is there something to consider?
       b_fv = tqMatchDict.get(bannedField)
       if not b_fv \
-              or isinstance(b_fv, str) and b_fv.lower() in starValues \
-              or isinstance(b_fv, list) and any(x in [fvx.lower() for fvx in b_fv] for x in starValues):
+              or isinstance(b_fv, str) and b_fv.lower().translate(None, string.punctuation) == 'any' \
+              or isinstance(b_fv, list) \
+              and any(fvx.lower().translate(None, string.punctuation) == 'any' for fvx in b_fv):
         continue
 
       fullTableN = '`tq_TQTo%ss`' % field
