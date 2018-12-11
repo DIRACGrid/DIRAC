@@ -33,7 +33,11 @@ starting from the fact that single processor jobs are, normally, the default.
 
 DIRAC provides a generic mechanism for matching computing capabilities with resource providers, and this is done using generic "Tags".
 Tags can be used by the users to "mark (tag)" their jobs with requirements, and should be used by DIRAC admins to identify CEs or Queues.
-So, as always it's a matter of what's written in the CS.
+
+So, as always it's a matter of what's written in the CS:
+* Meaning that a CE or a Queue has **Tag=X** means that it's *capable() of running jobs that *require* **Tag=X**.
+* Meaning that a CE or a Queue has **RequiredTag=X** means that it will *accept only* jobs that *require* **Tag=X**.
+
 
 Let's take an example::
 
@@ -67,9 +71,9 @@ Let's take an example::
                 ...
               }
               # This queue has Tag = [MultiProcessor, 8Processors]. So it will accept:
+              # - jobs that require both the tags above (and no others)
               # - jobs that require Tag = MultiProcessor (and no others)
               # - jobs that require Tag = 8Processors (and no others)
-              # - jobs that require both the tags above (and no others)
               # - jobs that require no Tags
               MultipleMPTagQueue
               {
@@ -77,18 +81,22 @@ Let's take an example::
                 Tag += 8Processors
                 ...
               }
-              # This queue has Tag = MultiProcessor and RequiredTag = MultiProcessor.
-              # So it will accept ONLY jobs that require Tag = MultiProcessor
+              # This queue has Tag = MultiProcessor and RequiredTag = MultiProcessor. So it will accept:
+              # - jobs that require Tag = MultiProcessors (and no others)
               RequiredMPTagQueue
               {
                 Tag = MultiProcessor
                 RequiredTag = MultiProcessor
                 ...
               }
-              # This queue has BannedTag = MultiProcessor. So it will accept ONLY jobs that DON'T require Tag = MultiProcessor
-              RequiredMPTagQueue
+              # This queue has Tag = [MultiProcessor, 8Processors] and RequiredTag = MultiProcessor. So it will accept:
+              # - jobs that require both the tags above (and no others)
+              # - jobs that require Tag = MultiProcessor (and no others)
+              MultipleMPTagQueue
               {
-                BannedTag = MultiProcessor
+                Tag = MultiProcessor
+                Tag += 8Processors
+                RequiredTag = MultiProcessor
                 ...
               }
             }
