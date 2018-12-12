@@ -77,7 +77,8 @@ class InputDataAgent( AgentModule ):
     # Process each transformation
     for transDict in result['Value']:
       transID = long( transDict['TransformationID'] )
-      res = self.transClient.getTransformationInputDataQuery( transID )
+      # res = self.transClient.getTransformationInputDataQuery( transID )
+      res = self.transClient.getTransformationMetaQuery(transID, 'Input')
       if not res['OK']:
         if res['Message'] == 'No InputDataQuery found for transformation':
           gLogger.info( "InputDataAgent.execute: No input data query found for transformation %d" % transID )
