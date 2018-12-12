@@ -1,3 +1,27 @@
+[v6r20p25]
+
+*Core
+FIX: (#3909) DISET - always close the socket even in case of exception
+
+*FrameworkSystem
+FIX: (#3913) NotificationHandler - bugfixed: changed SMTPServer to SMTP
+FIX: (#3914) add extjs6 support to the web compiler
+
+*docs
+NEW: (#3910) Added documentation on MultiProcessor jobs
+
+*WorkloadManagementSystem
+FIX: (#3910) TaskQueueDB - fixed strict matching with tags, plus extended the integration test
+
+*DataManagementSystem
+CHANGE: (#3917) FTS3: speedup by using subqueries for the Jobs table
+
+*TransformationSystem
+CHANGE: (#3916) use SE.isSameSE() method
+
+*Resources
+NEW: (#3916) Add isSameSE method to StorageElement which works for all protocols
+
 [v6r20p24]
 
 *WorkloadManagementSystem
