@@ -1,4 +1,4 @@
-[v7r0-pre8]
+[v7r0-pre9]
 
 *Accounting
 CHANGE: (Multi)AccountingDB - Grouping Type and Object loader together with the MonitoringSystem ones.
@@ -29,6 +29,8 @@ FIX: check for empty /etc/grid-security/certificates dir
 NEW: (#3842) Add createClient decorator to add wrapper for all export_ functions automatically
 NEW: (#3678) dirac-install can install a non released code directly from the git repository
 
+*ProductionManagement
+NEW: (#3703) ProductionManagement system is introduced
 
 *tests
 NEW: Add ChangeESFlag.py script to modify useES flag in dirac.cfg. To be integrated with Jenkins code.
