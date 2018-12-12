@@ -330,6 +330,39 @@ class StorageElementItem(object):
       return valid
     return S_OK(self.status())
 
+  def isSameSE(self, otherSE):
+    """ Compares two SE together and tries to guess if the two SEs are pointing at the same
+        location from the namespace point of view.
+        This is primarily aimed at avoiding to overwrite a file with itself, in particular
+        where the difference is only the SRM spacetoken.
+
+        Two SEs are considered to be the same if they have a couple (Host, Path) in common
+        among their various protocols
+
+        :param otherSE: the storage element to which we compare
+        :returns: boolean. True if the two SEs are the same.
+    """
+
+    # If the two objects are the same, it is obviously the same SE
+    if self == otherSE:
+      return True
+
+    # Otherwise, we build the list of (Host, Path) couples
+
+    selfEndpoints = set()
+    otherSEEndpoints = set()
+
+    for storage in self.storages:
+      storageParam = storage.getParameters()
+      selfEndpoints.add((storageParam['Host'], storageParam['Path']))
+
+    for storage in otherSE.storages:
+      storageParam = storage.getParameters()
+      otherSEEndpoints.add((storageParam['Host'], storageParam['Path']))
+
+    # The two SEs are the same if they have at least one couple in common
+    return bool(selfEndpoints & otherSEEndpoints)
+
   def getOccupancy(self, unit='MB', **kwargs):
     """ Retrieves the space information about the storage.
         It returns the Total and Free space.

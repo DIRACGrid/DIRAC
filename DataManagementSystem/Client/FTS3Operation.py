@@ -1,4 +1,5 @@
 import datetime
+import errno
 import json
 from sqlalchemy import orm
 
@@ -11,6 +12,7 @@ from DIRAC.FrameworkSystem.Client.Logger import gLogger
 
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
+from DIRAC.Core.Utilities.DErrno import cmpError
 
 
 from DIRAC import S_OK, S_ERROR
@@ -195,7 +197,7 @@ class FTS3Operation(FTS3Serializable):
 
     accessType = accessType.replace('Access', '')
     if not status[accessType]:
-      return S_ERROR("%s does not have %s in Active or Degraded" % (seName, accessType))
+      return S_ERROR(errno.EACCES, "%s does not have %s in Active or Degraded" % (seName, accessType))
 
     return S_OK()
 
@@ -388,9 +390,13 @@ class FTS3TransferOperation(FTS3Operation):
       res = self._checkSEAccess(targetSE, 'WriteAccess', vo=self.vo)
 
       if not res['OK']:
-        log.error(res)
-        for ftsFile in ftsFiles:
-          ftsFile.attempt += 1
+        # If the SE is currently banned, we just skip it
+        if cmpError(res, errno.EACCES):
+          log.info("Write access currently not permitted to %s, skipping." % targetSE)
+        else:
+          log.error(res)
+          for ftsFile in ftsFiles:
+            ftsFile.attempt += 1
         continue
 
       sourceSEs = self.sourceSEs.split(',') if self.sourceSEs is not None else []

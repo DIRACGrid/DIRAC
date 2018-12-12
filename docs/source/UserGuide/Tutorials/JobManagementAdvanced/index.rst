@@ -1,3 +1,5 @@
+.. _advanceJobManagement:
+
 ==========================
 7. Advanced Job Management
 ==========================
@@ -432,3 +434,28 @@ Let's perform this exercise in the python shell.
 
 As you can see the parameters added to the job object are represented in the JDL job description.
 It can now be used together with the **dirac-wms-job-submit** command line tool.
+
+
+7.3.7 Submitting MultiProcessor (MP) jobs
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+Jobs that can (or should) run using more than 1 processor should be described as such, using the "Tag" mechanism::
+
+      j = Job()
+      j.setCPUTime(500)
+      j.setExecutable('echo',arguments='hello')
+      j.setExecutable('ls',arguments='-l')
+      j.setExecutable('echo', arguments='hello again')
+      j.setName('MP test')
+      j.setTag('MultiProcessor')
+
+
+
+<to expand, e.g. put about NumberOfProcessor = X that becomes XNumberOfProcessors>
+
+
+
+7.3.8 Submitting jobs with specifc requirements (e.g. GPU)
+@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+<to expand, ~same as for MP jobs>

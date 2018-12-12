@@ -34,7 +34,10 @@ class BaseTransport( object ):
   """
 
   bAllowReuseAddress = True
-  iListenQueueSize = 5
+
+  # This option corresponds to the `backlog` param of the `listen` syscall.
+  # you may want to read the man page before tuning it...
+  iListenQueueSize = 128
   iReadTimeout = 600
   keepAliveMagic = "dka"
 
@@ -59,6 +62,7 @@ class BaseTransport( object ):
         self.__keepAliveLapse = max( 150, int( kwargs[ 'keepAliveLapse' ] ) )
       except:
         pass
+    self.iListenQueueSize = max(self.iListenQueueSize, int(kwargs.get('SocketBacklog', 0)))
     self.__lastActionTimestamp = time.time()
     self.__lastServerRenewTimestamp = self.__lastActionTimestamp
 

@@ -70,7 +70,7 @@ class NotificationHandler( RequestHandler ):
     gLogger.verbose( 'Received signal to send the following mail to %s:\nSubject = %s\n%s' % ( address, subject, body ) )
     eMail = Mail()
     notificationSection = PathFinder.getServiceSection( "Framework/Notification" )
-    csSection = notificationSection + '/SMTPServer'
+    csSection = notificationSection + '/SMTP'
     eMail._smtpHost = gConfig.getValue( '%s/Host' % csSection )
     eMail._smtpPort = gConfig.getValue( '%s/Port' % csSection )
     eMail._smtpLogin = gConfig.getValue( '%s/Login' % csSection )
