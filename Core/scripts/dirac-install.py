@@ -2052,7 +2052,7 @@ def createBashrc():
               os.path.join(
                   "$DIRAC",
                   cliParams.platform,
-                  'lib/python%s/site-packages' % cliParams.pythonVersion),
+                  'lib/python%s/site-packages' % ('2.7' if cliParams.pythonVersion == 27 else '2.6')),
               'export DIRACSCRIPTS=%s' %
               os.path.join(
                   "$DIRAC",
@@ -2162,7 +2162,7 @@ def createCshrc():
                     '( test $?DIRAC -eq 1 ) || setenv DIRAC %s' % proPath,
                     'setenv DIRACBIN %s' % os.path.join("$DIRAC", cliParams.platform, 'bin'),
                     'setenv DIRACPYTHON %s' % os.path.join(
-                        "$DIRAC", cliParams.platform, 'lib/python%s/site-packages' % cliParams.pythonVersion),
+                        "$DIRAC", cliParams.platform, 'lib/python%s/site-packages' % ('2.7' if cliParams.pythonVersion == 27 else '2.6')),
                     'setenv DIRACSCRIPTS %s' % os.path.join("$DIRAC", 'scripts'),
                     'setenv DIRACLIB %s' % os.path.join("$DIRAC", cliParams.platform, 'lib'),
                     'setenv TERMINFO %s' % __getTerminfoLocations(os.path.join("$DIRAC",
