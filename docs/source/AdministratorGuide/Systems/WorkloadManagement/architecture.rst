@@ -4,63 +4,84 @@
 Workload Management System architecture
 =======================================
 
-The WMS is a standard DIRAC system, and therefore it is composed by components in the following categories: Services, DBs, Agents, but also Executors. A technical drawing explaining the interactions between the various components follow.
-Transformation System schema.
+The WMS is a standard DIRAC system, and therefore it is composed by components in the following categories: Services, DBs, Agents, but also Executors.
 
-* **Services**
-
-  * JobManagerHandler:
-    DISET request handler base class for submitting/rescheduling/killing/deleting jobs
 
 * **DB**
 
-  * TransformationDB:
-    it's used to collect and serve the necessary information in order to automate the task of job preparation for high level transformations. This class is typically used as a base class for more specific data processing databases. Here below the DB tables:
+  * JobDB:
+  Main WMS database containing job definitions and status information. It is used in most of the WMS components.
 
-  ::
+  * JobLoggingDB:
+  Simple Job Logging Database.
 
-      mysql> use TransformationDB;
-      Database changed
-      mysql> show tables;
-      +------------------------------+
-      | Tables_in_TransformationDB   |
-      +------------------------------+
-      | AdditionalParameters         |
-      | DataFiles                    |
-      | TaskInputs                   |
-      | TransformationFileTasks      |
-      | TransformationFiles          |
-      | TransformationInputDataQuery |
-      | TransformationLog            |
-      | TransformationTasks          |
-      | Transformations              |
-      +------------------------------+
+  * PilotAgentsDB: 
+  Keeps track of all the submitted grid pilot jobs. It also registers the mapping of the DIRAC jobs to the pilots.
+
+  * SandboxMetadataDB:
+  Keeps the metadata of the sandboxes
+
+  * TaskQueueDB:
+  The TaskQueueDB is used to organize jobs requirements into task queues, for easier matching.
+
+All the DB above should be installed using the :ref:`system administrator console <system-admin-console>`.
 
 
-  **Note** that since version v6r10, there are important changes in the TransformationDB, as explained in the `release notes <https://github.com/DIRACGrid/DIRAC/wiki/DIRAC-v6r10#transformationdb>`_ (for example the Replicas table can be removed). Also, it is highly suggested to move to InnoDB. For new installations, all these improvements will be installed automatically.
+* **Services**
+
+  * JobManager:
+    For submitting/rescheduling/killing/deleting jobs
+
+  * JobMonitoring:
+    For monitoring jobs
+
+  * Matcher:
+    For matching capabilities (of WNs) to requirements (of task queues --> so, of jobs)
+
+  * JobStateUpdate:
+    For storing updates on Jobs' status
+
+  * OptimizationMind:
+    For Jobs scheduling optimization
+
+  * SandboxStore:
+    Frontend for storing and retrieving sandboxes
+
+  * WMSAdministrator:
+    For administering jobs and pilots
+
+All these services are necessary for the WMS. Each of them should be installed using the :ref:`system administrator console <system-admin-console>`.
+You can have several instances of each of them running, with the exclusion of the Matcher and the OptimizationMind [TBC].
 
 * **Agents**
 
-  * TransformationAgent: it processes transformations found in the TransformationDB and creates the associated tasks, by connecting input files with tasks given a plugin. It's not useful for MCSimulation type
+  * SiteDirector:
+  send pilot jobs to Sites/CEs/Queues
 
-  * WorkflowTaskAgent: it takes workflow tasks created in the TransformationDB and it submits to the WMS. Since version `v6r13 <https://github.com/DIRACGrid/DIRAC/wiki/DIRAC-v6r13#changes-for-transformation-system>`_  there are some new capabilities in the form of TaskManager plugins.
+  * JobCleaning:
+  cleans old jobs from the system
 
-  * RequestTaskAgent: it takes request tasks created in the TransformationDB and submits to the RMS. Both RequestTaskAgent and WorkflowTaskAgent inherits from the same agent, "TaskManagerAgentBase", whose code contains large part of the logic that will be executed. But, TaskManagerAgentBase should not be run standalone.
+  * PilotStatus
+  updates the status of the pilot jobs on the PilotAgentsDB
 
-  * MCExtensionAgent: it extends the number of tasks given the Transformation definition. To work it needs to know how many events each production will need, and how many events each job will produce. It is only used for 'MCSimulation' type
+  * StalleJobAgent
+  hunts for stalled jobs in the Job database. Jobs in "running" state not receiving a heart beat signal for more than stalledTime seconds will be assigned the "Stalled" state.
 
-  * TransformationCleaningAgent: it cleans up the finalised Transformations
+All these agents are necessary for the WMS, with the exclusion of the . Each of them should be installed using the :ref:`system administrator console <system-admin-console>`.
+You can duplicate some of these agents as long as you provide the correct configuration.
+A typical example is the SiteDirector, for which you may want to deploy even 1 for each of the sites managed.
 
-  * InputDataAgent: it updates the transformation files of active Transformations given an InputDataQuery fetched from the Transformation Service
+Optional agents are:
 
-  * ValidateOutputDataAgent: it runs few integrity checks prior to finalise a Production.
+  * StatesAccounting or StatesMonitoring
+  produce monitoring plots then found in Accounting. Use one or the other.
 
-The complete list can be found in the `DIRAC project GitHub repository <https://github.com/DIRACGrid/DIRAC/tree/integration/TransformationSystem/Agent>`_.
+A very different type of agent is the *JobAgent*, which is run by the pilot jobs and should NOT be run in a server installation.
 
-* **Clients**
 
-  * TaskManager: it contains WorkflowTasks and RequestTasks modules, for managing jobs and requests tasks, i.e. it contains classes wrapping the logic of how to 'transform' a Task in a job/request. WorkflowTaskAgent uses WorkflowTasks, RequestTaskAgent uses RequestTasks.
+* **Executors**
 
-  * TransformationClient: class that contains client access to the transformation DB handler (main client to the service/DB). It exposes the functionalities available in the DIRAC/TransformationHandler. This inherits the DIRAC base Client for direct execution of server functionality
+  * Optimizer
+  optimizer for jobs submission and scheduling.
 
-  * Transformation: it wraps some functionalities mostly to use the 'TransformationClient' client
+All these services are necessary for the WMS. Each of them should be installed using the :ref:`system administrator console <system-admin-console>`.
