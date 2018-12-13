@@ -1,7 +1,7 @@
 .. _jobs:
 
 ========================
-DIRAC jobs
+DIRAC jobs: definitions
 ========================
 
 Some definitions for DIRAC jobs:

@@ -65,10 +65,12 @@ The following sections add some detail for the WMS systems.
 .. toctree::
    :maxdepth: 1
 
+   architecture
    Pilots/index
    Pilots/Pilots3
    PilotsLogging/index
    Jobs/index
    JobPriorities/index
+
    tagsAndJobs
    multiProcessorJobs
