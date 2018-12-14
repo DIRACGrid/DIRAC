@@ -70,7 +70,7 @@ PilotStatusAgent
 StalledJobAgent
   hunt for stalled jobs in the Job database. Jobs in "running" state not receiving a heart beat signal for more than stalledTime seconds will be assigned the "Stalled" state.
 
-All these agents are necessary for the WMS, with the exclusion of the ????. Each of them should be installed using the :ref:`system administrator console <system-admin-console>`.
+All these agents are necessary for the WMS, and each of them should be installed using the :ref:`system administrator console <system-admin-console>`.
 You can duplicate some of these agents as long as you provide the correct configuration.
 A typical example is the SiteDirector, for which you may want to deploy even 1 for each of the sites managed.
 
@@ -86,6 +86,6 @@ Executors
 ---------
 
 Optimizer
-  optimizers for jobs submission and scheduling.
+  optimizers for jobs submission and scheduling. The 4 executors that are run are: InputData, JobPath, JobSanity, JobScheduling.
 
-All these services are necessary for the WMS. Each of them should be installed using the :ref:`system administrator console <system-admin-console>`.
+The optimizer executors are necessary for the WMS. They should be installed using the :ref:`system administrator console <system-admin-console>` and they can also be duplicated.

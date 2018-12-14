@@ -9,7 +9,9 @@ DIRAC provides a generic mechanism for matching computing capabilities with reso
 Tags can be used by the users to "mark (tag)" their jobs with requirements, and should be used by DIRAC admins to identify CEs or Queues.
 
 So, as always it's a matter of what's written in the CS:
+
 * Meaning that a CE or a Queue has **Tag=X** means that it's *capable() of running jobs that *require* **Tag=X**.
+
 * Meaning that a CE or a Queue has **RequiredTag=X** means that it will *accept only* jobs that *require* **Tag=X**.
 
 

@@ -58,8 +58,8 @@ DIRAC alone does not administer directly clouds or any VM-based systems.
 A different mechanism should be used for starting pilots and jobs on worker nodes that can't be reached via Computing Elements.
 One mechanism for starting pilots on Clouds is in the :ref:`VMDIRAC` extension of DIRAC.
 
-** (Over-)simplified workflow **
-
+(Over-)simplified workflow
+==========================
 DIRAC WMS basically works as follows:
 
 1. Users define and submit jobs. Jobs have requirements. Job descriptions are stored in DIRAC's Job DB.
@@ -68,7 +68,8 @@ DIRAC WMS basically works as follows:
 4. Jobs are started on WNs. DIRAC monitors its progress.
 
 
-** References **
+References
+==========
 
 For more info on how the WMS work, please refer to this `presentation <https://indico.cern.ch/event/676817/contributions/2770712/attachments/1653260/2645342/WMS_Resources.pdf>`_.
 
