@@ -62,10 +62,14 @@ class Cache(object):
     """
     Cache keys getter
 
-    :returns: list with valid keys on the cache
+    :returns: list with keys in the cache valid for at least twice the validity period of the element
     """
 
-    return self.__cache.getKeys(validSeconds=self.__validSeconds)
+    # Here we need to have more than the validity period because of the logic of the matching:
+    # * get all the keys with validity T
+    # * for each key K, get the element K with validity T
+    # This logic fails for elements just at the limit of the required time
+    return self.__cache.getKeys(validSeconds=self.__validSeconds * 2)
 
   # acquire / release Locks
 
@@ -73,14 +77,12 @@ class Cache(object):
     """
     Acquires Cache lock
     """
-
     self.__cacheLock.acquire(self.__class__.__name__)
 
   def releaseLock(self):
     """
     Releases Cache lock
     """
-
     self.__cacheLock.release(self.__class__.__name__)
 
   # Cache getters
