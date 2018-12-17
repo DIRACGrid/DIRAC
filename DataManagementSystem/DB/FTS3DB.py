@@ -43,6 +43,7 @@ fts3FileTable = Table('Files', metadata,
                       Column('size', BigInteger),
                       Column('targetSE', String(255), nullable=False),
                       Column('error', String(2048)),
+                      Column('ftsGUID', String(255)),
                       Column('status', Enum(*FTS3File.ALL_STATES),
                              server_default=FTS3File.INIT_STATE,
                              index=True),
@@ -320,13 +321,19 @@ class FTS3DB(object):
     finally:
       session.close()
 
-  def updateFileStatus(self, fileStatusDict):
+  def updateFileStatus(self, fileStatusDict, ftsGUID=None):
     """Update the file ftsStatus and error
         The update is only done if the file is not in a final state
+        (To avoid bringing back to life a file by consuming MQ a posteriori)
+
+
 
         TODO: maybe it should query first the status and filter the rows I want to update !
 
-       :param fileStatusDict : { fileID : { status , error } }
+       :param fileStatusDict : { fileID : { status , error, ftsGUID } }
+       :param ftsGUID: If specified, only update the rows where the ftsGUID matches this value.
+                       This avoids two jobs handling teh same file one after another to step on each other foot.
+                       Note that for the moment it is a optional parameters, but it may turn mandatory soon.
 
     """
 
@@ -350,13 +357,31 @@ class FTS3DB(object):
             newError = None
           updateDict[FTS3File.error] = newError
 
-        session.execute(update(FTS3File)
-                        .where(and_(FTS3File.fileID == fileID,
-                                    ~ FTS3File.status.in_(FTS3File.FINAL_STATES)
-                                    )
-                               )
-                        .values(updateDict)
-                        )
+        # We only update ftsGUID if it is specified
+        if 'ftsGUID' in valueDict:
+          newFtsGUID = valueDict['ftsGUID']
+          # Replace empty string with None
+          if not newFtsGUID:
+            newFtsGUID = None
+          updateDict[FTS3File.ftsGUID] = newFtsGUID
+
+        # We only update the lines matching:
+        # * the good fileID
+        # * the status is not Final
+
+        whereConditions = [FTS3File.fileID == fileID,
+                           ~ FTS3File.status.in_(FTS3File.FINAL_STATES)]
+
+        # If an ftsGUID is specified, add it to the `where` condition
+        if ftsGUID:
+          whereConditions.append(FTS3File.ftsGUID == ftsGUID)
+
+        updateQuery = update(FTS3File)\
+            .where(and_(*whereConditions)
+                   )\
+            .values(updateDict)
+
+        session.execute(updateQuery)
 
         session.commit()
 

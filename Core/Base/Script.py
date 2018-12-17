@@ -34,7 +34,8 @@ if caller != '__main__':
   gLogger.debug("Called from module", caller)
   # Loop over until one of the argument is the caller, that is the DIRAC script
   for arg in sys.argv:
-    # if the form is "pytest test-dirac-do-something.py::class::method", we need to isolate the test-dirac-do-something.py
+    # if the form is "pytest test-dirac-do-something.py::class::method", we
+    # need to isolate the test-dirac-do-something.py
     arg = arg.split('::')[0]
     if os.path.basename(arg).replace('.py', '') == caller.split('.')[-1]:
       break

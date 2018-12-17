@@ -37,7 +37,7 @@ class FTS3File(FTS3Serializable):
   INIT_STATE = 'New'
 
   _attrToSerialize = ['fileID', 'operationID', 'status', 'attempt', 'creationTime',
-                      'lastUpdate', 'rmsFileID', 'checksum', 'size', 'lfn', 'error', 'targetSE']
+                      'lastUpdate', 'rmsFileID', 'checksum', 'size', 'lfn', 'error', 'targetSE', 'ftsGUID']
 
   def __init__(self):
 
@@ -57,6 +57,9 @@ class FTS3File(FTS3Serializable):
     self.error = None
 
     self.targetSE = None
+
+    # Place holder for the latest job taking care of this file
+    self.ftsGUID = None
 
   @staticmethod
   def fromRMSFile(rmsFile, targetSE):
