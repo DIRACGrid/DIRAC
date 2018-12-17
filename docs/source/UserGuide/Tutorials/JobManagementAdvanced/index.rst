@@ -1,4 +1,4 @@
-.. _advanceJobManagement:
+.. _advancedJobManagement:
 
 ==========================
 7. Advanced Job Management
@@ -447,9 +447,8 @@ Jobs that can (or should) run using more than 1 processor should be described as
       j.setExecutable('ls',arguments='-l')
       j.setExecutable('echo', arguments='hello again')
       j.setName('MP test')
-      j.setTag('MultiProcessor')
 
-
+<this is today possible by using setTag() but the specific Tag to use is not yet carved in stone>
 
 <to expand, e.g. put about NumberOfProcessor = X that becomes XNumberOfProcessors>
 
@@ -458,4 +457,4 @@ Jobs that can (or should) run using more than 1 processor should be described as
 7.3.8 Submitting jobs with specifc requirements (e.g. GPU)
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-<to expand, ~same as for MP jobs>
+<to expand, ~same as for MP jobs, i.e. use Tags>
