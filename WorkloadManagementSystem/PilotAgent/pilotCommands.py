@@ -200,6 +200,9 @@ class InstallDIRAC(CommandBase):
     # The release version to install is a requirement
     self.installOpts.append('-r "%s"' % self.pp.releaseVersion)
 
+    # We clean the PYTHONPATH from the created bashrc
+    self.installOpts.append('--cleanPYTHONPATH')
+
     self.log.debug('INSTALL OPTIONS [%s]' % ', '.join(map(str, self.installOpts)))
 
   def _locateInstallationScript(self):
