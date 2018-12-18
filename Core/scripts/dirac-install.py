@@ -1197,7 +1197,7 @@ cmdOpts = (('r:', 'release=', 'Release version to install'),
            ('h', 'help', 'Show this help'),
            ('T:', 'Timeout=', 'Timeout for downloads (default = %s)'),
            ('  ', 'dirac-os-version=', 'the version of the DIRAC OS'),
-           ('  ', 'dirac-os', 'Enable installation of DIRAC OS')
+           ('  ', 'dirac-os', 'Enable installation of DIRAC OS'),
            ('  ', 'cleanPYTHONPATH', 'Only use the DIRAC PYTHONPATH (for pilots installation)')
            )
 
