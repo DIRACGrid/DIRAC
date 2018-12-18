@@ -61,96 +61,104 @@ function default(){
 function findRelease(){
   echo '==> [findRelease]'
 
-  # store the current branch
-  currentBranch=`git --git-dir=$TESTCODE/DIRAC/.git rev-parse --abbrev-ref HEAD`
 
-  if [ $currentBranch == 'integration' ]
+  if [ ! -z "$DIRAC_RELEASE" ]
   then
-    echo 'we were already on integration, no need to change'
-    # get the releases.cfg file
-    cp $TESTCODE/DIRAC/releases.cfg $TESTCODE/releases.cfg
+    echo '==> Specified release'
+    echo $DIRAC_RELEASE
+    projectVersion=$DIRAC_RELEASE
+    echo DIRAC:$projectVersion && echo $projectVersion > $SERVERINSTALLDIR/dirac.version
   else
-    cwd=$PWD
-    cd $TESTCODE/DIRAC/
-    if [ $? -ne 0 ]
+
+    # store the current branch
+    currentBranch=`git --git-dir=$TESTCODE/DIRAC/.git rev-parse --abbrev-ref HEAD`
+
+    if [ $currentBranch == 'integration' ]
     then
-      echo 'ERROR: cannot change to ' $TESTCODE/DIRAC
-      return
+      echo 'we were already on integration, no need to change'
+      # get the releases.cfg file
+      cp $TESTCODE/DIRAC/releases.cfg $TESTCODE/releases.cfg
+    else
+      cwd=$PWD
+      cd $TESTCODE/DIRAC/
+      if [ $? -ne 0 ]
+      then
+        echo 'ERROR: cannot change to ' $TESTCODE/DIRAC
+        return
+      fi
+      git checkout integration
+      # get the releases.cfg file
+      cp $TESTCODE/DIRAC/releases.cfg $TESTCODE/releases.cfg
+      # reset the branch
+      git checkout $currentBranch
+      cd $cwd
+      if [ $? -ne 0 ]
+      then
+        echo 'ERROR: cannot change to ' $cwd
+        return
+      fi
     fi
-    git checkout integration
-    # get the releases.cfg file
-    cp $TESTCODE/DIRAC/releases.cfg $TESTCODE/releases.cfg
-    # reset the branch
-    git checkout $currentBranch
-    cd $cwd
-    if [ $? -ne 0 ]
-    then
-      echo 'ERROR: cannot change to ' $cwd
-      return
-    fi
-  fi
 
-  PRE='p[[:digit:]]*'
+    PRE='p[[:digit:]]*'
 
-  if [ ! -z "$DIRACBRANCH" ]
-  then
-    echo '==> Looking for DIRAC branch ' $DIRACBRANCH
-  else
-    echo '==> Running on last one'
-  fi
-
-  # Match project ( DIRAC ) version from releases.cfg
-
-  # If I don't specify a DIRACBRANCH, it will get the latest "production" release
-  # First, try to find if we are on a production tag
-  if [ ! "$projectVersion" ]
-  then
     if [ ! -z "$DIRACBRANCH" ]
     then
-      projectVersion=`cat $TESTCODE/releases.cfg | grep '[^:]v[[:digit:]]*r[[:digit:]]*p[[:digit:]]*' | grep $DIRACBRANCH | head -1 | sed 's/ //g'`
+      echo '==> Looking for DIRAC branch ' $DIRACBRANCH
     else
-      projectVersion=`cat $TESTCODE/releases.cfg | grep '[^:]v[[:digit:]]*r[[:digit:]]*p[[:digit:]]*' | head -1 | sed 's/ //g'`
+      echo '==> Running on last one'
     fi
-    # projectVersion=`cat releases.cfg | grep [^:]v[[:digit:]]r[[:digit:]]*$PRE | head -1 | sed 's/ //g'`
-  fi
 
-  # The special case is when there's no 'p'... (e.g. version v6r15)
-  if [ ! "$projectVersion" ]
-  then
-    if [ ! -z "$DIRACBRANCH" ]
+    # Match project ( DIRAC ) version from releases.cfg
+
+    # If I don't specify a DIRACBRANCH, it will get the latest "production" release
+    # First, try to find if we are on a production tag
+    if [ ! "$projectVersion" ]
     then
-      projectVersion=`cat $TESTCODE/releases.cfg | grep '[^:]v[[:digit:]]*r[[:digit:]]' | grep $DIRACBRANCH | head -1 | sed 's/ //g'`
-    else
-      projectVersion=`cat $TESTCODE/releases.cfg | grep '[^:]v[[:digit:]]*r[[:digit:]]' | head -1 | sed 's/ //g'`
+      if [ ! -z "$DIRACBRANCH" ]
+      then
+        projectVersion=`cat $TESTCODE/releases.cfg | grep '[^:]v[[:digit:]]*r[[:digit:]]*p[[:digit:]]*' | grep $DIRACBRANCH | head -1 | sed 's/ //g'`
+      else
+        projectVersion=`cat $TESTCODE/releases.cfg | grep '[^:]v[[:digit:]]*r[[:digit:]]*p[[:digit:]]*' | head -1 | sed 's/ //g'`
+      fi
+      # projectVersion=`cat releases.cfg | grep [^:]v[[:digit:]]r[[:digit:]]*$PRE | head -1 | sed 's/ //g'`
     fi
-  fi
 
-
-  # In case there are no production tags for the branch, look for pre-releases in that branch
-  if [ ! "$projectVersion" ]
-  then
-    if [ ! -z "$DIRACBRANCH" ]
+    # The special case is when there's no 'p'... (e.g. version v6r15)
+    if [ ! "$projectVersion" ]
     then
-      projectVersion=`cat $TESTCODE/releases.cfg | grep '[^:]v[[:digit:]]*r[[:digit:]]*'-pre'' | grep $DIRACBRANCH | head -1 | sed 's/ //g'`
-    else
-      projectVersion=`cat $TESTCODE/releases.cfg | grep '[^:]v[[:digit:]]*r[[:digit:]]*'-pre'' | head -1 | sed 's/ //g'`
+      if [ ! -z "$DIRACBRANCH" ]
+      then
+        projectVersion=`cat $TESTCODE/releases.cfg | grep '[^:]v[[:digit:]]*r[[:digit:]]' | grep $DIRACBRANCH | head -1 | sed 's/ //g'`
+      else
+        projectVersion=`cat $TESTCODE/releases.cfg | grep '[^:]v[[:digit:]]*r[[:digit:]]' | head -1 | sed 's/ //g'`
+      fi
     fi
-  fi
 
-  projectVersionLine=`cat $TESTCODE/releases.cfg | grep -n $projectVersion | cut -d ':' -f 1 | head -1`
-  # start := line number after "{"
-  start=$(($projectVersionLine+2))
-  # end   := line number after "}"
-  end=$(($start+2))
-  # versions :=
-  versions=`sed -n "$start,$end p" $TESTCODE/releases.cfg`
+    # In case there are no production tags for the branch, look for pre-releases in that branch
+    if [ ! "$projectVersion" ]
+    then
+      if [ ! -z "$DIRACBRANCH" ]
+      then
+        projectVersion=`cat $TESTCODE/releases.cfg | grep '[^:]v[[:digit:]]*r[[:digit:]]*'-pre'' | grep $DIRACBRANCH | head -1 | sed 's/ //g'`
+      else
+        projectVersion=`cat $TESTCODE/releases.cfg | grep '[^:]v[[:digit:]]*r[[:digit:]]*'-pre'' | head -1 | sed 's/ //g'`
+      fi
+    fi
 
-  # Extract Externals version
-  externalsVersion=`echo $versions | sed s/' = '/'='/g | tr ' ' '\n' | grep Externals | cut -d '=' -f2`
+    projectVersionLine=`cat $TESTCODE/releases.cfg | grep -n $projectVersion | cut -d ':' -f 1 | head -1`
+    # start := line number after "{"
+    start=$(($projectVersionLine+2))
+    # end   := line number after "}"
+    end=$(($start+2))
+    # versions :=
+    versions=`sed -n "$start,$end p" $TESTCODE/releases.cfg`
 
-  # PrintOuts
-  echo DIRAC:$projectVersion && echo $projectVersion > $SERVERINSTALLDIR/dirac.version
-  echo EXTERNALS:$externalsVersion && echo $externalsVersion > $SERVERINSTALLDIR/externals.version
+    # Extract Externals version
+    externalsVersion=`echo $versions | sed s/' = '/'='/g | tr ' ' '\n' | grep Externals | cut -d '=' -f2`
+
+    # PrintOuts
+    echo DIRAC:$projectVersion && echo $projectVersion > $SERVERINSTALLDIR/dirac.version
+    echo EXTERNALS:$externalsVersion && echo $externalsVersion > $SERVERINSTALLDIR/externals.version
 
 }
 
