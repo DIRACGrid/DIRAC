@@ -159,6 +159,7 @@ function findRelease(){
     # PrintOuts
     echo DIRAC:$projectVersion && echo $projectVersion > $SERVERINSTALLDIR/dirac.version
     echo EXTERNALS:$externalsVersion && echo $externalsVersion > $SERVERINSTALLDIR/externals.version
+  fi
 
 }
 
