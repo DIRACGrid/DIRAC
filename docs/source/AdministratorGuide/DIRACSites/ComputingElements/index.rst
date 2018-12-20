@@ -1,9 +1,12 @@
-=================================
+==================
 Computing Elements
-=================================
+==================
 
 Direct access to the site computing clusters is done by sending pilot jobs in a similar way as 
 it is done for the grid sites. The pilot jobs are sent by a specialized agent called *SiteDirector*.
+
+The *SiteDirector* is part of the agents of the Workload Management System, and can't work alone.
+Please refer to :ref:`documentation of the WMS <WMSArchitecture>` for info about the other WMS components.
 
 The *SiteDirector* is usually serving one or several sites and can run as part of the central service
 installation or as an on-site component. At the initialization phase it gets description of the site's 
@@ -22,48 +25,18 @@ for the given user community. The *generic* pilots are called so as they are cap
 jobs on behalf of community users.
 
 SiteDirector Configuration
-----------------------------
+--------------------------
 
 The *SiteDirector* configuration is defined in the standard way as for any DIRAC agent. It belongs
 to the WorkloadManagement System and its configuration section is:
 
    /Systems/WorkloadManagement/<instance>/Agents/SiteDirector
    
-The following parameters are defined in the *SiteDirector* configuration with some example values::
+For detailed information on the CS configuration of the SiteDirector,
+please refer to the WMS :ref:`Code Documentation<code_documentation>`.
 
-  SiteDirector
-  {
-    # agent cycle length in seconds
-    PollingTime = 60
-    
-    # one or more site names served by the agent
-    Site = LCG.CNAF.it, LCG.NIKHEF.it
-    
-    # one or more CE names served by the agent. All CEs defined for the sites by default
-    CEs = torqsrv.ihep.ac.cn
-    
-    # Types of the CEs served by the agent
-    CETypes = SSHTorque
-    
-    # The DN of the user with whose credentials the pilots are submitted
-    GenericPilotDN = /O=GRID-FR/C=FR/O=CNRS/OU=CPPM/CN=Andrei Tsaregorodtsev
-    
-    # The group of the user with whose credentials the pilots are submitted
-    GenericPilotGroup = lhcb_pilot
-    
-    # The agent working directory
-    WorkDirectory = /opt/dirac/work/SiteDirector/SSHTorque 
-    
-    # Flag to perform pilot status updates
-    UpdatePilotStatus = True
-    
-    # Flag to perform pilot output retrieval
-    GetPilotOutput = True 
-    
-    # Flag to send pilot info to the Accounting service
-    SendPilotAccounting = True
-  }      
-  
+
+
 Computing Elements
 -------------------
 
@@ -121,9 +94,13 @@ of the *ComputingElement* is located in the inside the corresponding site sectio
   }
 
 
-This is the general structure in which specific CE descriptions are inserted. The CE configuration
-is part of the general DIRAC configuration. It can be placed in the general Configuration Service
-or in the local configuration of the DIRAC installation. Some CE parameters are confidential, e.g.
+This is the general structure in which specific CE descriptions are inserted.
+The CE configuration is part of the general DIRAC configuration
+It can be placed in the general Configuration Service or in the local configuration of the DIRAC installation.
+
+Additional info can be found :ref:`here <resourcesComputing>`.
+
+Some CE parameters are confidential, e.g.
 password of the account used for the SSH tunnel access to a site. The confidential parameters
 should be stored in the local configuration in protected files. 
 

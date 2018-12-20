@@ -89,3 +89,8 @@ Optimizer
   optimizers for jobs submission and scheduling. The 4 executors that are run are: InputData, JobPath, JobSanity, JobScheduling.
 
 The optimizer executors are necessary for the WMS. They should be installed using the :ref:`system administrator console <system-admin-console>` and they can also be duplicated.
+
+
+
+
+For detailed information on each of these components, please do refer to the WMS :ref:`Code Documentation<code_documentation>`.
