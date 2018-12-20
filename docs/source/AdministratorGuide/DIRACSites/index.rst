@@ -25,7 +25,7 @@ The full DIRAC Site Name becomes of the form: [Domain].[Site].[co].
 The full site names are used everywhere when the site resources are assigned to the context of a particular Domain:
 in the accounting, monitoring, configuration of the Operations parameters, etc.
 
-Examples of valid site names are::
+Examples of valid site names are:
 
    * LCG.CERN.ch
    * CLOUD.IN2P3.fr
