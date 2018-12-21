@@ -1,3 +1,6 @@
+.. _dms-concepts:
+
+
 --------
 Concepts
 --------
@@ -30,7 +33,7 @@ DIRAC provides an abstraction to the storage endpoints called `StorageElement`. 
 
 
 .. _dmsCatalog:
-    
+
 Catalogs
 ---------
 
