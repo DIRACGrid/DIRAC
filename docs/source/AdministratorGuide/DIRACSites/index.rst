@@ -41,7 +41,7 @@ In any case, DIRAC will always be a default Domain if nothing else is specified 
 The Domain, Site and the country must be unique alphanumeric strings, irrespective of case, with a possible use of the following characters: "_".
 
 Sites are providing access to the resources, therefore the /Resources/Sites section is the main place where the resources description is stored.
-Resource types may include::
+Resource types may include:
 
    * Computing (via Computing Elements, "CE")
    * Storage (via Storage Elements, "SE")
