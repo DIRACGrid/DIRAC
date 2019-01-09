@@ -48,6 +48,8 @@ Resource types may include:
    * Message Queues
 
 
+The following sections will focus on other types of resources: Computing Elements (CEs), Storage Elements (SEs), Message Queues (MQs).
+
 .. toctree::
    :maxdepth: 1
    
