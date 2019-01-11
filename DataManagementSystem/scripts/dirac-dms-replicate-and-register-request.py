@@ -1,8 +1,10 @@
 #!/bin/env python
-""" create and put 'ReplicateAndRegister' request """
-__RCSID__ = "$Id: $"
+"""Create and put 'ReplicateAndRegister' request."""
+__RCSID__ = "$Id$"
 import os
 from DIRAC.Core.Base import Script
+from DIRAC import gLogger
+import DIRAC
 Script.setUsageMessage( '\n'.join( [ __doc__,
                                      'Usage:',
                                      ' %s [option|cfgfile] requestName LFNs targetSE1 [targetSE2 ...]' % Script.scriptName,
@@ -12,7 +14,8 @@ Script.setUsageMessage( '\n'.join( [ __doc__,
                                      '    targetSE: target SE' ] ) )
 
 catalog = None
-Script.registerSwitch( "C:", "Catalog=", "   Catalog to use" )
+Script.registerSwitch("C:", "Catalog=", "Catalog to use")
+Script.parseCommandLine()
 for switch in Script.getUnprocessedSwitches():
   if switch[0] == "C" or switch[0].lower() == "catalog":
     catalog = switch[1]
@@ -28,12 +31,6 @@ def getLFNList( arg ):
 
 # # execution
 if __name__ == "__main__":
-
-  from DIRAC.Core.Base.Script import parseCommandLine
-  parseCommandLine()
-
-  import DIRAC
-  from DIRAC import gLogger
 
   args = Script.getPositionalArgs()
 
@@ -125,10 +122,3 @@ if __name__ == "__main__":
     gLogger.always( "RequestID(s): %s" % " ".join( requestIDs ) )
   gLogger.always("You can monitor requests' status using command: 'dirac-rms-request <requestName/ID>'")
   DIRAC.exit( error )
-
-
-
-
-
-
-

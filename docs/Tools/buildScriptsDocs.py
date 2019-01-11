@@ -24,7 +24,7 @@ BAD_SCRIPTS = ['dirac-deploy-scripts', 'dirac-install', 'dirac-compile-externals
                ]
 
 MARKERS_SECTIONS_SCRIPTS = [(['dms'],
-                             'Data Management', [], ['dirac-dms-replicate-and-register-request']),
+                             'Data Management', [], []),
                             (['wms'], 'Workload Management', [], []),
                             (['dirac-proxy', 'dirac-info', 'dirac-version', 'myproxy', 'dirac-platform'],
                              'Others', [], ['dirac-cert-convert.sh']),
