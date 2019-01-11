@@ -11,7 +11,6 @@ import os
 import sys
 import subprocess
 import shlex
-import sys
 
 from DIRAC import rootPath
 
@@ -34,8 +33,9 @@ MARKERS_SECTIONS_SCRIPTS = [(['dms'],
                             # (['stager'],'Storage Management', [], []),
                             # (['transformation'], 'Transformation Management', [], []),
                             (['admin', 'accounting', 'FrameworkSystem', 'framework', 'install', 'utils',
+                              'dirac-repo-monitor', 'dirac-jobexec',
                               'ConfigurationSystem', 'Core', 'rss', 'transformation', 'stager'], 'Admin',
-                             ['dirac-repo-monitor', 'dirac-jobexec'], ['dirac-cert-convert.sh']),
+                             [], ['dirac-cert-convert.sh']),
                             # ([''], 'CatchAll', [], []),
                             ]
 
@@ -227,7 +227,7 @@ def createScriptDocFiles(script, sectionPath, scriptName):
     return False
 
   LOG.info("Creating Doc for %s", scriptName)
-  helpMessage = runCommand("%s -h" % scriptName)
+  helpMessage = runCommand("python %s -h" % script)
   if not helpMessage:
     LOG.warning("NO DOC for %s", scriptName)
     return False
