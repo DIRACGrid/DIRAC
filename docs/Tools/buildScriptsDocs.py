@@ -11,10 +11,11 @@ import os
 import sys
 import subprocess
 import shlex
+import sys
 
 from DIRAC import rootPath
 
-logging.basicConfig(level=logging.INFO, format='%(name)s: %(levelname)8s: %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(name)s: %(levelname)8s: %(message)s', stream=sys.stdout)
 LOG = logging.getLogger('ScriptDoc')
 
 # Scripts that either do not have -h, are obsolete or cause havoc when called
@@ -32,11 +33,13 @@ MARKERS_SECTIONS_SCRIPTS = [(['dms'],
                             #  (['rms'],'Request Management', [], []),
                             # (['stager'],'Storage Management', [], []),
                             # (['transformation'], 'Transformation Management', [], []),
-                            (['admin', 'accounting', 'FrameworkSystem',
-                              'ConfigurationSystem', 'Core'], 'Admin', [], []),
+                            (['admin', 'accounting', 'FrameworkSystem', 'framework', 'install', 'utils',
+                              'ConfigurationSystem', 'Core', 'rss', 'transformation', 'stager'], 'Admin',
+                             ['dirac-repo-monitor', 'dirac-jobexec'], ['dirac-cert-convert.sh']),
                             # ([''], 'CatchAll', [], []),
                             ]
 
+EXITCODE = 0
 
 def mkdir(path):
   """ save mkdir, ignores exceptions """
@@ -50,7 +53,8 @@ def runCommand(command):
   """ execute shell command, return output, catch exceptions """
   try:
     result = subprocess.check_output(shlex.split(command), stderr=subprocess.STDOUT)
-    if 'NOTICE' in result:
+    if 'NOTICE:' in result:
+      LOG.warn('NOTICE in output for: %s', command)
       return ''
     return result
   except (OSError, subprocess.CalledProcessError) as e:
@@ -150,9 +154,31 @@ def createAdminGuideCommandReference():
       missingCommands.append(scriptName)
 
   if missingCommands:
-    LOG.warn("The following admin commands are not in the command index: \n\t\t\t\t%s",
-             "\n\t\t\t\t".join(missingCommands))
+    LOG.error("The following admin commands are not in the command index: \n\t\t\t\t%s",
+              "\n\t\t\t\t".join(missingCommands))
+    global EXITCODE
+    EXITCODE = 1
 
+
+def cleanAdminGuideReference():
+  """Make sure no superfluous commands are documented in the AdministratorGuide"""
+  existingCommands = {os.path.basename(com).replace('.py', '') for mT in MARKERS_SECTIONS_SCRIPTS for com in mT[2] + mT[3]}
+  sectionPath = os.path.join(rootPath, 'DIRAC/docs/source/AdministratorGuide/CommandReference/')
+  # read the script index
+  documentedCommands = set()
+  with open(os.path.join(sectionPath, 'index.rst')) as adminIndexFile:
+    adminCommandList = adminIndexFile.readlines()
+  for command in adminCommandList:
+    if command.strip().startswith('dirac'):
+      documentedCommands.add(command.strip())
+  LOG.debug('Admin commands: %s', documentedCommands)
+  LOG.debug('Existing commands: %s', existingCommands)
+  superfluousCommands = documentedCommands - existingCommands
+  if superfluousCommands:
+    LOG.error('Superfluous commands: \n\t\t\t\t%s',
+              '\n\t\t\t\t'.join(sorted(superfluousCommands)))
+    global EXITCODE
+    EXITCODE = 1
 
 def createSectionIndex(mT, sectionPath):
   """ create the index """
@@ -275,13 +301,14 @@ def getContentFromScriptDoc(scriptRSTPath, marker):
 def run():
   ''' creates the rst files right in the source tree of the docs
   '''
-
   getScripts()
   createUserGuideFoldersAndIndices()
   createAdminGuideCommandReference()
+  cleanAdminGuideReference()
 
   LOG.info('Done')
 
 
 if __name__ == "__main__":
   run()
+  exit(EXITCODE)
