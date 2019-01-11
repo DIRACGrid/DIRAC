@@ -58,7 +58,7 @@ def runCommand(command):
       return ''
     return result
   except (OSError, subprocess.CalledProcessError) as e:
-    LOG.error("Error when runnning command %s: %r", command, e)
+    LOG.error("Error when runnning command %s: %r", command, e.output)
     return ''
 
 
