@@ -1,15 +1,14 @@
 #!/usr/bin/env python
 """
-  dirac-rss-set-token
+Script that helps setting the token of the elements in RSS.
+It can acquire or release the token.
 
-    Script that helps setting the token of the elements in RSS.
-    It can acquire or release the token.
+If the releaseToken switch is used, no matter what was the previous token, it will be set to rs_svc (RSS owns it).
+If not set, the token will be set to whatever username is defined on the proxy loaded while issuing
+this command. In the second case, the token lasts one day.
 
-    If the releaseToken switch is used, no matter what was the previous token, it will be set to rs_svc (RSS owns it).
-    If not set, the token will be set to whatever username is defined on the proxy loaded while issuing
-    this command. In the second case, the token lasts one day.
-
-  Usage: dirac-rss-token --element=[Site|Resource] --name=[name] --reason=[some reason]
+Usage:
+  dirac-rss-token --element=[Site|Resource] --name=[name] --reason=[some reason]
 """
 
 __RCSID__ = '$Id$'
@@ -51,12 +50,8 @@ def registerUsageMessage():
   Takes the script __doc__ and adds the DIRAC version to it
   """
 
-  hLine = '  ' + '=' * 78 + '\n'
-
-  usageMessage = hLine
-  usageMessage += '  DIRAC %s\n' % version
+  usageMessage = '  DIRAC %s\n' % version
   usageMessage += __doc__
-  usageMessage += '\n' + hLine
 
   Script.setUsageMessage(usageMessage)
 
