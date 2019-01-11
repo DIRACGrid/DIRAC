@@ -124,6 +124,7 @@ This page is the work in progress. See more material here soon !
 
   userIndexPath = os.path.join(rootPath, 'DIRAC/docs/source/UserGuide/CommandReference/index.rst')
   with open(userIndexPath, 'w') as userIndexFile:
+    LOG.info('Writting to: %s', userIndexPath)
     userIndexFile.write(userIndexRST)
 
 
@@ -212,6 +213,7 @@ In this subsection the %s commands are collected
 
   sectionIndexPath = os.path.join(sectionPath, 'index.rst')
   with open(sectionIndexPath, 'w') as sectionIndexFile:
+    LOG.info('Writting to: %s', sectionIndexPath)
     sectionIndexFile.write(sectionIndexRST)
 
 
@@ -273,6 +275,7 @@ def createScriptDocFiles(script, sectionPath, scriptName):
   # remove the standalone '-' when no short option exists
   fileContent = fileContent.replace('-   --', '--')
   with open(scriptRSTPath, 'w') as rstFile:
+    LOG.info('Writting to: %s', scriptRSTPath)
     rstFile.write(fileContent)
   return True
 
