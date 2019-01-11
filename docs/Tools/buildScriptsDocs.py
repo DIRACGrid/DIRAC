@@ -77,7 +77,7 @@ def getScripts():
   scripts.sort()
   for scriptPath in scripts:
     # Few modules still have __init__.py on the scripts directory
-    if '__init__' in scriptPath or 'build' in scriptPath:
+    if '__init__' in scriptPath:
       LOG.debug("Ignoring %s", scriptPath)
       continue
 
