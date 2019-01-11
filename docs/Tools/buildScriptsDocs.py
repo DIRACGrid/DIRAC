@@ -12,7 +12,7 @@ import sys
 import subprocess
 import shlex
 
-from DIRAC import rootPath
+ROOT_PATH = os.environ.get("DIRAC", "")
 
 logging.basicConfig(level=logging.INFO, format='%(name)s: %(levelname)8s: %(message)s', stream=sys.stdout)
 LOG = logging.getLogger('ScriptDoc')
@@ -65,7 +65,7 @@ def runCommand(command):
 def getScripts():
   """Get all scripts in the Dirac System, split by type admin/wms/rms/other."""
 
-  diracPath = os.path.join(rootPath, 'DIRAC')
+  diracPath = os.path.join(ROOT_PATH, 'DIRAC')
   if not os.path.exists(diracPath):
     sys.exit('%s does not exist' % diracPath)
 
@@ -118,11 +118,11 @@ This page is the work in progress. See more material here soon !
     userIndexRST += "   %s/index\n" % systemString
 
     LOG.debug("Index file:\n%s", userIndexRST)
-    sectionPath = os.path.join(rootPath, 'DIRAC/docs/source/UserGuide/CommandReference/', systemString)
+    sectionPath = os.path.join(ROOT_PATH, 'DIRAC/docs/source/UserGuide/CommandReference/', systemString)
     mkdir(sectionPath)
     createSectionIndex(mT, sectionPath)
 
-  userIndexPath = os.path.join(rootPath, 'DIRAC/docs/source/UserGuide/CommandReference/index.rst')
+  userIndexPath = os.path.join(ROOT_PATH, 'DIRAC/docs/source/UserGuide/CommandReference/index.rst')
   with open(userIndexPath, 'w') as userIndexFile:
     LOG.info('Writting to: %s', userIndexPath)
     userIndexFile.write(userIndexRST)
@@ -134,7 +134,7 @@ def createAdminGuideCommandReference():
   source/AdministratorGuide/CommandReference
   """
 
-  sectionPath = os.path.join(rootPath, 'DIRAC/docs/source/AdministratorGuide/CommandReference/')
+  sectionPath = os.path.join(ROOT_PATH, 'DIRAC/docs/source/AdministratorGuide/CommandReference/')
 
   # read the script index
   with open(os.path.join(sectionPath, 'index.rst')) as adminIndexFile:
@@ -164,7 +164,7 @@ def createAdminGuideCommandReference():
 def cleanAdminGuideReference():
   """Make sure no superfluous commands are documented in the AdministratorGuide"""
   existingCommands = {os.path.basename(com).replace('.py', '') for mT in MARKERS_SECTIONS_SCRIPTS for com in mT[2] + mT[3]}
-  sectionPath = os.path.join(rootPath, 'DIRAC/docs/source/AdministratorGuide/CommandReference/')
+  sectionPath = os.path.join(ROOT_PATH, 'DIRAC/docs/source/AdministratorGuide/CommandReference/')
   # read the script index
   documentedCommands = set()
   with open(os.path.join(sectionPath, 'index.rst')) as adminIndexFile:
