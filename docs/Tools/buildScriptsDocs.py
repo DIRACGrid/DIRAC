@@ -232,11 +232,11 @@ def createScriptDocFiles(script, sectionPath, scriptName):
     lineIndented = newLine.startswith(' ')
 
   scriptRSTPath = os.path.join(sectionPath, scriptName + '.rst')
-  example = getExampleFromScriptDoc(scriptRSTPath)
-
   fileContent = '\n'.join(rstLines).strip() + '\n'
-  if example and 'example' not in fileContent.lower():
-    fileContent += '\n' + example.strip() + '\n'
+  for marker in ('example', '.. note::'):
+    content = getContentFromScriptDoc(scriptRSTPath, marker)
+    if content and marker not in fileContent.lower():
+      fileContent += '\n' + content.strip() + '\n'
     LOG.debug('\n' + '*' * 88 + '\n' + fileContent + '\n' + '*' * 88)
   while '\n\n\n' in fileContent:
     fileContent = fileContent.replace('\n\n\n', '\n\n')
@@ -245,25 +245,28 @@ def createScriptDocFiles(script, sectionPath, scriptName):
   return True
 
 
-def getExampleFromScriptDoc(scriptRSTPath):
-  """Get an example, if any, from the existing file."""
-  example = []
-  inExample = False
+def getContentFromScriptDoc(scriptRSTPath, marker):
+  """Get an some existing information, if any, from an existing file."""
+  content = []
+  inContent = False
+  if not os.path.exists(scriptRSTPath):
+    LOG.warn('Script file %r does not exist yet!', scriptRSTPath)
+    return ''
   with open(scriptRSTPath) as rstFile:
     for line in rstFile.readlines():
-      if inExample and not line.rstrip():
-        example.append(line)
+      if inContent and not line.rstrip():
+        content.append(line)
         continue
       line = line.rstrip()
-      if line and inExample and line.startswith(' '):
-        example.append(line)
-      elif line and inExample and not line.startswith(' '):
-        inExample = False
-      elif line.lower().startswith('example'):
-        inExample = True
-        example.append(line)
+      if line and inContent and line.startswith(' '):
+        content.append(line)
+      elif line and inContent and not line.startswith(' '):
+        inContent = False
+      elif line.lower().startswith(marker.lower()):
+        inContent = True
+        content.append(line)
 
-  return '\n'.join(example)
+  return '\n'.join(content)
 
 
 def run():
