@@ -25,6 +25,6 @@ Options::
   -p  --path <value>           : VCS path (if needed)
   -K  --releasenotes <value>   : Path to the release notes
   -A  --notesoutside           : Leave a copy of the compiled release notes outside the tarball
-  -e  --extensionVersion <value>  : if we have an extension,                                we can provide the base module version (if it is needed): for example: v3r0
-  -E  --extensionSource <value>  : if we have an extension,                                we must provide code repository url
+  -e  --extensionVersion <value>  : if we have an extension, we can provide the base module version (if it is needed): for example: v3r0
+  -E  --extensionSource <value>  : if we have an extension we must provide code repository url
   -P  --extjspath <value>      : directory of the extjs library
