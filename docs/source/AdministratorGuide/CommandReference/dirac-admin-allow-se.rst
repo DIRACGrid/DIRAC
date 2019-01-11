@@ -14,6 +14,7 @@ Options::
   -w  --AllowWrite             :      Allow only writing to the storage element
   -k  --AllowCheck             :      Allow only check access to the storage element
   -v  --AllowRemove            :     Allow only remove access to the storage element
+  -a  --All                    :     Allow all access to the storage element
   -m  --Mute                   :      Do not send email
   -S  --Site <value>           :      Allow all SEs associated to site
 

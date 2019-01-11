@@ -14,6 +14,7 @@ Options::
   -w  --BanWrite               :      Ban writing to the storage element
   -k  --BanCheck               :      Ban check access to the storage element
   -v  --BanRemove              :     Ban remove access to the storage element
+  -a  --All                    :     Ban all access to the storage element
   -m  --Mute                   :      Do not send email
   -S  --Site <value>           :      Ban all SEs associate to site (note that if writing is allowed, check is always allowed)
 
