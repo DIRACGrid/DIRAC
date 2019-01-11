@@ -91,19 +91,20 @@ def createUserGuideFoldersAndIndices():
   e.g.:
   source/UserGuide/CommandReference
   """
-
   # create the main UserGuide Index file
   userIndexRST = """
-========================================
-Commands Reference (|release|)
-========================================
+==================
+Commands Reference
+==================
 
-  This page is the work in progress. See more material here soon !
+.. this page is created in docs/Tools/buildScriptsDocs.py
+
+This page is the work in progress. See more material here soon !
 
 .. toctree::
    :maxdepth: 1
 
-"""
+""".lstrip()
 
   for mT in MARKERS_SECTIONS_SCRIPTS:
     system = mT[1]
@@ -161,6 +162,8 @@ def createSectionIndex(mT, sectionPath):
   systemHeader = "%s\n%s\n%s\n" % ("=" * len(systemHeader), systemHeader, "=" * len(systemHeader))
   sectionIndexRST = systemHeader + """
 In this subsection the %s commands are collected
+
+.. this page is created in docs/Tools/buildScriptsDocs.py
 
 .. toctree::
    :maxdepth: 2
