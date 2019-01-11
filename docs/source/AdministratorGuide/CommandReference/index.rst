@@ -155,6 +155,7 @@ Other commands:
     dirac-proxy-get-uploaded-info
     dirac-proxy-info
     dirac-proxy-init
+    dirac-proxy-destroy
 
     dirac-admin-request-summary
     dirac-admin-select-requests

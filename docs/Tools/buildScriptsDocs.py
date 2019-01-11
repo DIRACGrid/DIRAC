@@ -26,16 +26,16 @@ BAD_SCRIPTS = ['dirac-deploy-scripts', 'dirac-install', 'dirac-compile-externals
 MARKERS_SECTIONS_SCRIPTS = [(['dms'],
                              'Data Management', [], []),
                             (['wms'], 'Workload Management', [], []),
-                            (['dirac-proxy', 'dirac-info', 'dirac-version', 'myproxy', 'dirac-platform'],
-                             'Others', [], ['dirac-cert-convert.sh']),
+                            (['dirac-proxy', 'dirac-info', 'myproxy'],
+                             'Others', [], ['dirac-cert-convert.sh', 'dirac-platform', 'dirac-version']),
                             # (['rss'],'Resource Status Management', [], []),
                             #  (['rms'],'Request Management', [], []),
                             # (['stager'],'Storage Management', [], []),
                             # (['transformation'], 'Transformation Management', [], []),
                             (['admin', 'accounting', 'FrameworkSystem', 'framework', 'install', 'utils',
-                              'dirac-repo-monitor', 'dirac-jobexec',
+                              'dirac-repo-monitor', 'dirac-jobexec', 'dirac-info',
                               'ConfigurationSystem', 'Core', 'rss', 'transformation', 'stager'], 'Admin',
-                             [], ['dirac-cert-convert.sh']),
+                             [], ['dirac-cert-convert.sh', 'dirac-platform', 'dirac-version']),
                             # ([''], 'CatchAll', [], []),
                             ]
 
@@ -82,9 +82,9 @@ def getScripts():
       continue
 
     for mT in MARKERS_SECTIONS_SCRIPTS:
-      if any(pattern in scriptPath for pattern in mT[0]):
+      if any(pattern in scriptPath for pattern in mT[0]) and \
+         not any(pattern in scriptPath for pattern in mT[3]):
         mT[2].append(scriptPath)
-        break
 
   return
 
@@ -124,7 +124,7 @@ This page is the work in progress. See more material here soon !
 
   userIndexPath = os.path.join(ROOT_PATH, 'DIRAC/docs/source/UserGuide/CommandReference/index.rst')
   with open(userIndexPath, 'w') as userIndexFile:
-    LOG.info('Writting to: %s', userIndexPath)
+    LOG.debug('Writting to: %s', userIndexPath)
     userIndexFile.write(userIndexRST)
 
 
@@ -163,7 +163,8 @@ def createAdminGuideCommandReference():
 
 def cleanAdminGuideReference():
   """Make sure no superfluous commands are documented in the AdministratorGuide"""
-  existingCommands = {os.path.basename(com).replace('.py', '') for mT in MARKERS_SECTIONS_SCRIPTS for com in mT[2] + mT[3]}
+  existingCommands = {os.path.basename(com).replace('.py', '') for mT in MARKERS_SECTIONS_SCRIPTS
+                      for com in mT[2] + mT[3] if mT[1] == 'Admin'}
   sectionPath = os.path.join(ROOT_PATH, 'DIRAC/docs/source/AdministratorGuide/CommandReference/')
   # read the script index
   documentedCommands = set()
@@ -172,11 +173,11 @@ def cleanAdminGuideReference():
   for command in adminCommandList:
     if command.strip().startswith('dirac'):
       documentedCommands.add(command.strip())
-  LOG.debug('Admin commands: %s', documentedCommands)
+  LOG.debug('Documented commands: %s', documentedCommands)
   LOG.debug('Existing commands: %s', existingCommands)
   superfluousCommands = documentedCommands - existingCommands
   if superfluousCommands:
-    LOG.error('Superfluous commands: \n\t\t\t\t%s',
+    LOG.error('Commands that are documented, but do not exist and should be removed from the index page: \n\t\t\t\t%s',
               '\n\t\t\t\t'.join(sorted(superfluousCommands)))
     global EXITCODE
     EXITCODE = 1
@@ -213,7 +214,7 @@ In this subsection the %s commands are collected
 
   sectionIndexPath = os.path.join(sectionPath, 'index.rst')
   with open(sectionIndexPath, 'w') as sectionIndexFile:
-    LOG.info('Writting to: %s', sectionIndexPath)
+    LOG.debug('Writting to: %s', sectionIndexPath)
     sectionIndexFile.write(sectionIndexRST)
 
 
@@ -275,7 +276,7 @@ def createScriptDocFiles(script, sectionPath, scriptName):
   # remove the standalone '-' when no short option exists
   fileContent = fileContent.replace('-   --', '--')
   with open(scriptRSTPath, 'w') as rstFile:
-    LOG.info('Writting to: %s', scriptRSTPath)
+    LOG.debug('Writting to: %s', scriptRSTPath)
     rstFile.write(fileContent)
   return True
 
