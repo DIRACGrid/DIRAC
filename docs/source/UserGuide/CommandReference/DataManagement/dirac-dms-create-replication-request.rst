@@ -2,8 +2,7 @@
 dirac-dms-create-replication-request
 ====================================
 
-Create a DIRAC transfer/replicateAndRegister request to be executed
-by the DMS Transfer Agent
+Create a DIRAC transfer/replicateAndRegister request to be executed by the RequestExecutingAgent.
 
 Usage::
 

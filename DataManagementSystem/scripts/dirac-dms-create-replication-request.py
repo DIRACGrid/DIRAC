@@ -1,7 +1,5 @@
 #!/usr/bin/env python
-""" Create a DIRAC transfer/replicateAndRegister request to be executed
-    by the DMS Transfer Agent
-"""
+"""Create a DIRAC transfer/replicateAndRegister request to be executed by the RequestExecutingAgent."""
 __RCSID__ = "$Id$"
 
 import os
@@ -10,13 +8,12 @@ import time
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 
-Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[0],
-                                     __doc__.split( '\n' )[1],
-                                     'Usage:',
-                                     '  %s [option|cfgfile] ... DestSE LFN ...' % Script.scriptName,
-                                     'Arguments:',
-                                     '  DestSE:   Destination StorageElement',
-                                     '  LFN:      LFN or file containing a List of LFNs' ] ) )
+Script.setUsageMessage('\n'.join([__doc__,
+                                  'Usage:',
+                                  '  %s [option|cfgfile] ... DestSE LFN ...' % Script.scriptName,
+                                  'Arguments:',
+                                  '  DestSE:   Destination StorageElement',
+                                  '  LFN:      LFN or file containing a List of LFNs']))
 
 Script.parseCommandLine( ignoreErrors = False )
 
