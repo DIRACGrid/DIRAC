@@ -269,6 +269,9 @@ def createScriptDocFiles(script, sectionPath, scriptName):
     LOG.debug('\n' + '*' * 88 + '\n' + fileContent + '\n' + '*' * 88)
   while '\n\n\n' in fileContent:
     fileContent = fileContent.replace('\n\n\n', '\n\n')
+
+  # remove the standalone '-' when no short option exists
+  fileContent = fileContent.replace('-   --', '--')
   with open(scriptRSTPath, 'w') as rstFile:
     rstFile.write(fileContent)
   return True
