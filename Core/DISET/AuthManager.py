@@ -62,15 +62,7 @@ class AuthManager(object):
     allowAll = "any" in lowerCaseProperties or "all" in lowerCaseProperties
     # Set no properties by default
     credDict[self.KW_PROPERTIES] = []
-    # Check non secure backends
-    if self.KW_DN not in credDict or not credDict[self.KW_DN]:
-      if allowAll and not validGroups:
-        self.__authLogger.verbose("Accepted request from unsecure transport")
-        return True
-      else:
-        self.__authLogger.verbose(
-            "Explicit property required and query seems to be coming through an unsecure transport")
-        return False
+    
     # Check if query comes though a gateway/web server
     if self.forwardedCredentials(credDict):
       self.__authLogger.verbose("Query comes from a gateway")
@@ -97,8 +89,10 @@ class AuthManager(object):
       if self.KW_GROUP not in credDict:
         result = CS.findDefaultGroupForDN(credDict[self.KW_DN])
         if not result['OK']:
-          return False
-        credDict[self.KW_GROUP] = result['Value']
+          credDict[self.KW_USERNAME] = "anonymous"
+          credDict[self.KW_GROUP] = "visitor"
+        else:
+          credDict[self.KW_GROUP] = result['Value']
       if credDict[self.KW_GROUP] == self.KW_HOSTS_GROUP:
         # For host
         if not self.getHostNickName(credDict):
@@ -117,6 +111,12 @@ class AuthManager(object):
           # If all, then set anon credentials
           credDict[self.KW_USERNAME] = "anonymous"
           credDict[self.KW_GROUP] = "visitor"
+    else:
+      if not allowAll:
+        return False
+      credDict[self.KW_USERNAME] = "anonymous"
+      credDict[self.KW_GROUP] = "visitor"
+
     # If any or all in the props, allow
     allowGroup = not validGroups or credDict[self.KW_GROUP] in validGroups
     if allowAll and allowGroup:

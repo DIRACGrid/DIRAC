@@ -88,7 +88,11 @@ class AuthManagerTest( unittest.TestCase ):
     cfg.loadFromBuffer( testRegistryCFG )
     gConfig.loadCFG( cfg )
 
+    self.emptyCredDict = { }
+
     self.noAuthCredDict = { 'group': 'group_test' }
+
+    self.unregistredCredDict = { 'DN': '/User/test/DN/CN=userC' }
 
     self.userCredDict = { 'DN': '/User/test/DN/CN=userA',
                           'group': 'group_test' }
@@ -106,6 +110,10 @@ class AuthManagerTest( unittest.TestCase ):
   def test_userProperties( self ):
 
     # MethodAll accepts everybody
+    result = self.authMgr.authQuery( 'MethodAll', self.emptyCredDict )
+    self.assertTrue( result )
+    result = self.authMgr.authQuery( 'MethodAll', self.unregistredCredDict )
+    self.assertTrue( result )
     result = self.authMgr.authQuery( 'MethodAll', self.userCredDict )
     self.assertTrue( result )
     result = self.authMgr.authQuery( 'MethodAll', self.noAuthCredDict )
@@ -114,6 +122,10 @@ class AuthManagerTest( unittest.TestCase ):
     self.assertTrue( result )
 
     # MethodAuth requires DN to be identified
+    result = self.authMgr.authQuery( 'MethodAuth', self.emptyCredDict )
+    self.assertFalse( result )
+    result = self.authMgr.authQuery( 'MethodAuth', self.unregistredCredDict )
+    self.assertFalse( result )
     result = self.authMgr.authQuery( 'MethodAuth', self.userCredDict )
     self.assertTrue( result )
     result = self.authMgr.authQuery( 'MethodAuth', self.noAuthCredDict )
@@ -122,6 +134,10 @@ class AuthManagerTest( unittest.TestCase ):
     self.assertTrue( result )
 
     # Method requires NormalUser property
+    result = self.authMgr.authQuery( 'Method', self.emptyCredDict )
+    self.assertFalse( result )
+    result = self.authMgr.authQuery( 'Method', self.unregistredCredDict )
+    self.assertFalse( result )
     result = self.authMgr.authQuery( 'Method', self.userCredDict )
     self.assertTrue( result )
     result = self.authMgr.authQuery( 'Method', self.badUserCredDict )
@@ -132,6 +148,10 @@ class AuthManagerTest( unittest.TestCase ):
   def test_userGroup( self ):
 
     # MethodAllGroup accepts everybody from the right group
+    result = self.authMgr.authQuery( 'MethodAllGroup', self.emptyCredDict )
+    self.assertFalse( result )
+    result = self.authMgr.authQuery( 'MethodAllGroup', self.unregistredCredDict )
+    self.assertFalse( result )
     result = self.authMgr.authQuery( 'MethodAllGroup', self.userCredDict )
     self.assertTrue( result )
     result = self.authMgr.authQuery( 'MethodAllGroup', self.noAuthCredDict )
@@ -140,6 +160,10 @@ class AuthManagerTest( unittest.TestCase ):
     self.assertFalse( result )
 
     # MethodAuthGroup requires DN to be identified from the right group
+    result = self.authMgr.authQuery( 'MethodAuthGroup', self.emptyCredDict )
+    self.assertFalse( result )
+    result = self.authMgr.authQuery( 'MethodAuthGroup', self.unregistredCredDict )
+    self.assertFalse( result )
     result = self.authMgr.authQuery( 'MethodAuthGroup', self.userCredDict )
     self.assertTrue( result )
     result = self.authMgr.authQuery( 'MethodAuthGroup', self.noAuthCredDict )
@@ -148,6 +172,10 @@ class AuthManagerTest( unittest.TestCase ):
     self.assertFalse( result )
 
     # Method requires NormalUser property and the right group
+    result = self.authMgr.authQuery( 'MethodGroup', self.emptyCredDict )
+    self.assertFalse( result )
+    result = self.authMgr.authQuery( 'MethodGroup', self.unregistredCredDict )
+    self.assertFalse( result )
     result = self.authMgr.authQuery( 'MethodGroup', self.userCredDict )
     self.assertTrue( result )
     result = self.authMgr.authQuery( 'MethodGroup', self.badUserCredDict )
@@ -158,6 +186,10 @@ class AuthManagerTest( unittest.TestCase ):
   def test_userVO( self ):
 
     # MethodAllGroup accepts everybody from the right group
+    result = self.authMgr.authQuery( 'MethodAllVO', self.emptyCredDict )
+    self.assertFalse( result )
+    result = self.authMgr.authQuery( 'MethodAllVO', self.unregistredCredDict )
+    self.assertFalse( result )
     result = self.authMgr.authQuery( 'MethodAllVO', self.userCredDict )
     self.assertTrue( result )
     result = self.authMgr.authQuery( 'MethodAllVO', self.noAuthCredDict )
@@ -166,6 +198,10 @@ class AuthManagerTest( unittest.TestCase ):
     self.assertFalse( result )
 
     # MethodAuthGroup requires DN to be identified from the right group
+    result = self.authMgr.authQuery( 'MethodAuthVO', self.emptyCredDict )
+    self.assertFalse( result )
+    result = self.authMgr.authQuery( 'MethodAuthVO', self.unregistredCredDict )
+    self.assertFalse( result )
     result = self.authMgr.authQuery( 'MethodAuthVO', self.userCredDict )
     self.assertTrue( result )
     result = self.authMgr.authQuery( 'MethodAuthVO', self.noAuthCredDict )
@@ -174,6 +210,10 @@ class AuthManagerTest( unittest.TestCase ):
     self.assertFalse( result )
 
     # Method requires NormalUser property and the right group
+    result = self.authMgr.authQuery( 'MethodVO', self.emptyCredDict )
+    self.assertFalse( result )
+    result = self.authMgr.authQuery( 'MethodVO', self.unregistredCredDict )
+    self.assertFalse( result )
     result = self.authMgr.authQuery( 'MethodVO', self.userCredDict )
     self.assertTrue( result )
     result = self.authMgr.authQuery( 'MethodVO', self.badUserCredDict )
