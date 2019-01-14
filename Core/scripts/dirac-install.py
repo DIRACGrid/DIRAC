@@ -2048,11 +2048,6 @@ def createBashrc():
                   "$DIRAC",
                   cliParams.platform,
                   'bin'),
-              'export DIRACPYTHON=%s' %
-              os.path.join(
-                  "$DIRAC",
-                  cliParams.platform,
-                  'lib/python%s/site-packages' % ('2.7' if cliParams.pythonVersion == 27 else '2.6')),
               'export DIRACSCRIPTS=%s' %
               os.path.join(
                   "$DIRAC",
@@ -2090,7 +2085,7 @@ def createBashrc():
                     export DYLD_LIBRARY_PATH=$DIRACLIB:$DYLD_LIBRARY_PATH',
                     '( echo $DYLD_LIBRARY_PATH | grep -q $DIRACLIB/mysql ) || \
                     export DYLD_LIBRARY_PATH=$DIRACLIB/mysql:$DYLD_LIBRARY_PATH',
-                    '( echo $PYTHONPATH | grep -q $DIRAC ) || export PYTHONPATH=$DIRAC:$DIRACPYTHON:$PYTHONPATH'])
+                    '( echo $PYTHONPATH | grep -q $DIRAC ) || export PYTHONPATH=$DIRAC:$PYTHONPATH'])
       lines.extend(['# new OpenSSL version require OPENSSL_CONF to point to some accessible location',
                     'export OPENSSL_CONF=/tmp'])
 
@@ -2161,9 +2156,6 @@ def createCshrc():
       lines.extend(['# Some DIRAC locations',
                     '( test $?DIRAC -eq 1 ) || setenv DIRAC %s' % proPath,
                     'setenv DIRACBIN %s' % os.path.join("$DIRAC", cliParams.platform, 'bin'),
-                    'setenv DIRACPYTHON %s' % os.path.join(
-                        "$DIRAC", cliParams.platform,
-                        'lib/python%s/site-packages' % ('2.7' if cliParams.pythonVersion == 27 else '2.6')),
                     'setenv DIRACSCRIPTS %s' % os.path.join("$DIRAC", 'scripts'),
                     'setenv DIRACLIB %s' % os.path.join("$DIRAC", cliParams.platform, 'lib'),
                     'setenv TERMINFO %s' % __getTerminfoLocations(os.path.join("$DIRAC",
@@ -2187,7 +2179,7 @@ def createCshrc():
                     setenv DYLD_LIBRARY_PATH ${DIRACLIB}:$DYLD_LIBRARY_PATH',
                     '( echo $DYLD_LIBRARY_PATH | grep -q $DIRACLIB/mysql ) || \
                     setenv DYLD_LIBRARY_PATH ${DIRACLIB}/mysql:$DYLD_LIBRARY_PATH',
-                    '( echo $PYTHONPATH | grep -q $DIRAC ) || setenv PYTHONPATH ${DIRAC}:${DIRACPYTHON}:$PYTHONPATH'])
+                    '( echo $PYTHONPATH | grep -q $DIRAC ) || setenv PYTHONPATH ${DIRAC}:$PYTHONPATH'])
       lines.extend(['# new OpenSSL version require OPENSSL_CONF to point to some accessible location',
                     'setenv OPENSSL_CONF /tmp'])
       lines.extend(['# IPv6 support',
