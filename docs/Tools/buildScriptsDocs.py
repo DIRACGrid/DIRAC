@@ -5,6 +5,7 @@
   very uniform
 
 '''
+import ast
 import logging
 import glob
 import os
@@ -18,10 +19,22 @@ logging.basicConfig(level=logging.INFO, format='%(name)s: %(levelname)8s: %(mess
 LOG = logging.getLogger('ScriptDoc')
 
 # Scripts that either do not have -h, are obsolete or cause havoc when called
-BAD_SCRIPTS = ['dirac-deploy-scripts', 'dirac-install', 'dirac-compile-externals',
-               'dirac-install-client',
-               'dirac-framework-self-ping', 'dirac-dms-add-files',
+BAD_SCRIPTS = ['dirac-deploy-scripts',  # does not have --help, deploys scripts
+               'dirac-compile-externals',  # does not have --help, starts compiling externals
+               'dirac-install-client',  # does not have --help
+               'dirac-framework-self-ping',  # does not have --help
+               'dirac-dms-add-files',  # obsolete
+               'dirac-version',  # just prints version, no help
+               'dirac-platform',  # just prints platform, no help
+               'dirac-agent',  # no doc, purely internal use
+               'dirac-executor',  # no doc, purely internal use
+               'dirac-service',  # no doc, purely internal use
                ]
+
+
+GET_MOD_STRING = ['dirac-install',
+                  ]
+
 
 MARKERS_SECTIONS_SCRIPTS = [(['dms'],
                              'Data Management', [], []),
@@ -265,10 +278,16 @@ def createScriptDocFiles(script, sectionPath, scriptName):
 
   scriptRSTPath = os.path.join(sectionPath, scriptName + '.rst')
   fileContent = '\n'.join(rstLines).strip() + '\n'
-  for marker in ('example', '.. note::'):
-    content = getContentFromScriptDoc(scriptRSTPath, marker)
-    if content and marker not in fileContent.lower():
-      fileContent += '\n' + content.strip() + '\n'
+
+  for index, marker in enumerate(['example', '.. note::']):
+    if scriptName in GET_MOD_STRING:
+      if index == 0:
+        content = getContentFromModuleDocstring(script)
+        fileContent += '\n' + content.strip() + '\n'
+    else:
+      content = getContentFromScriptDoc(scriptRSTPath, marker)
+      if content and marker not in fileContent.lower():
+        fileContent += '\n' + content.strip() + '\n'
     LOG.debug('\n' + '*' * 88 + '\n' + fileContent + '\n' + '*' * 88)
   while '\n\n\n' in fileContent:
     fileContent = fileContent.replace('\n\n\n', '\n\n')
@@ -279,6 +298,20 @@ def createScriptDocFiles(script, sectionPath, scriptName):
     LOG.debug('Writting to: %s', scriptRSTPath)
     rstFile.write(fileContent)
   return True
+
+
+def getContentFromModuleDocstring(script):
+  """Parse the given python file and return its module docstring."""
+  LOG.info('Checking AST for modulestring: %s', script)
+  try:
+    with open(script) as scriptContent:
+      parse = ast.parse(scriptContent.read(), script)
+      return ast.get_docstring(parse)
+  except IOError as e:
+    global EXITCODE
+    EXITCODE = 1
+    LOG.error('Cannot open %r: %r', script, e)
+  return ''
 
 
 def getContentFromScriptDoc(scriptRSTPath, marker):

@@ -47,63 +47,62 @@ file::
 
 In case you want to overwrite the global configuration file, you have to use --defaultsURL
 
-After providing the default configuration files, DIRAC or your extension can be installed from::
+After providing the default configuration files, DIRAC or your extension can be installed from:
 
-  1. in a directory you have to be present globalDefaults.cfg, dirac.cfg and all binaries.
-    For example::
+1. in a directory you have to be present globalDefaults.cfg, dirac.cfg and all binaries.
+   For example::
 
     zmathe@dzmathe zmathe]$ ls tars/
-    dirac.cfg  diracos-0.1.md5  diracos-0.1.tar.gz  DIRAC-v6r20-pre16.md5  DIRAC-v6r20-pre16.tar.gz \
-     globalDefaults.cfg release-DIRAC-v6r20-pre16.cfg  release-DIRAC-v6r20-pre16.md5
+    dirac.cfg  diracos-0.1.md5  diracos-0.1.tar.gz  DIRAC-v6r20-pre16.md5  DIRAC-v6r20-pre16.tar.gz
+    globalDefaults.cfg release-DIRAC-v6r20-pre16.cfg  release-DIRAC-v6r20-pre16.md5
     zmathe@dzmathe zmathe]$
 
-    For example::
+   For example::
 
     dirac-install -r v6r20-pre16 --dirac-os --dirac-os-version=0.0.1 -u /home/zmathe/tars
 
-    this command will use  /home/zmathe/tars directory for the source code.
-    It will install DIRAC v6r20-pre16, DIRAC OS 0.1 version
+   this command will use  /home/zmathe/tars directory for the source code.
+   It will install DIRAC v6r20-pre16, DIRAC OS 0.1 version
 
-  2. You can use your dedicated web server or the official DIRAC web server
+2. You can use your dedicated web server or the official DIRAC web server
 
-    for example::
+   for example::
 
     dirac-install -r v6r20-pre16 --dirac-os --dirac-os-version=0.0.1
 
-    It will install DIRAC v6r20-pre16
+   It will install DIRAC v6r20-pre16
 
-  3. You have possibility to install a not-yet-released DIRAC, module or extension using -m or --tag options.
-  The non release version can be specified.
+3. You have possibility to install a not-yet-released DIRAC, module or extension using -m or --tag options.
+   The non release version can be specified.
 
-    for example::
+   for example::
 
     dirac-install -l DIRAC -r v6r20-pre16 -g v14r0 -t client -m DIRAC --tag=integration
 
-    It will install DIRAC v6r20-pre16, where the DIRAC package based on integration, other other packages will be
-    the same what is specified in release.cfg file in v6r20-pre16 tarball.
+   It will install DIRAC v6r20-pre16, where the DIRAC package based on integration, other other packages will be
+   the same what is specified in release.cfg file in v6r20-pre16 tarball.
 
-::
-  dirac-install -l DIRAC -r v6r20-pre16 -g v14r0 -t client  -m DIRAC --tag=v6r20-pre22
+    dirac-install -l DIRAC -r v6r20-pre16 -g v14r0 -t client  -m DIRAC --tag=v6r20-pre22
 
-  It installs a specific tag
+   It installs a specific tag
 
-  Note: If the source is not provided, DIRAC repository is used, which is defined in the global
-  configuration file.
+   Note: If the source is not provided, DIRAC repository is used, which is defined in the global
+   configuration file.
 
-We can provide the repository url:code repository:::Project:::branch. for example::
+   We can provide the repository url:code repository:::Project:::branch. for example::
 
-  dirac-install -l DIRAC -r v6r20-pre16 -g v14r0 -t client  \
-  -m https://github.com/zmathe/DIRAC.git:::DIRAC:::dev_main_branch, \
-  https://github.com/zmathe/WebAppDIRAC.git:::WebAppDIRAC:::extjs6 -e WebAppDIRAC
+     dirac-install -l DIRAC -r v6r20-pre16 -g v14r0 -t client \\
+     -m https://github.com/zmathe/DIRAC.git:::DIRAC:::dev_main_branch, \\
+     https://github.com/zmathe/WebAppDIRAC.git:::WebAppDIRAC:::extjs6 -e WebAppDIRAC
 
-  it will install DIRAC based on dev_main_branch and WebAppDIRAC based on extjs6
+   it will install DIRAC based on dev_main_branch and WebAppDIRAC based on extjs6::
 
+     dirac-install -l DIRAC -r v6r20-pre16 -g v14r0 -t client \\
+     -m WebAppDIRAC --tag=integration -e WebAppDIRAC
 
-  dirac-install -l DIRAC -r v6r20-pre16 -g v14r0 -t client -m WebAppDIRAC --tag=integration -e WebAppDIRAC
+   it will install DIRAC v6r20-pre16 and WebAppDIRAC integration branch
 
-  it will install DIRAC v6r20-pre16 and WebAppDIRAC integration branch
-
-  You can use install.cfg configuration file::
+You can use install.cfg configuration file::
 
   DIRACOS = http://lhcb-rpm.web.cern.ch/lhcb-rpm/dirac/DIRACOS/
   WebAppDIRAC = https://github.com/zmathe/WebAppDIRAC.git
@@ -1671,7 +1670,7 @@ def usage():
                   ('Timeout', cliParams.timeout)]:
     print (" %s = %s" % options)
 
-  sys.exit(1)
+  sys.exit(0)
 
 
 def loadConfiguration():
