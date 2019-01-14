@@ -16,7 +16,7 @@ class Job(BaseAccountingType):
                                 ('ProcessingType', 'VARCHAR(256)'),
                                 ('Site', 'VARCHAR(32)'),
                                 ('FinalMajorStatus', 'VARCHAR(32)'),
-                                ('FinalMinorStatus', 'VARCHAR(64)')
+                                ('FinalMinorStatus', 'VARCHAR(256)')
                                 ]
     self.definitionAccountingFields = [('CPUTime', "INT UNSIGNED"),
                                        ('NormCPUTime', "INT UNSIGNED"),
