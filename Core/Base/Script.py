@@ -43,7 +43,7 @@ if caller != '__main__':
 
 # If we reached the end, assume the caller is the first argument
 i = 0 if i == len(sys.argv) else i
-# Same thing here, get ride of the pytest specific class:meth options
+# Same thing here, get rid of the pytest specific class:meth options
 scriptName = os.path.basename(sys.argv[i].split('::')[0]).replace('.py', '')
 # The first argument DIRAC should parse is the next one
 localCfg.firstOptionIndex = i + 1

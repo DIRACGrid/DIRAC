@@ -191,7 +191,7 @@ class TestClientFTS3(unittest.TestCase):
         File1 fails, File2 is still ongoing.
         We submit Job2 for File1.
         Job1 is monitored again, and we update again File1 to failed (because it is so in Job1)
-        A Job3 would be created for File1, dispite Job2 still runing on it.
+        A Job3 would be created for File1, despite Job2 still running on it.
     """
     op = self.generateOperation('Transfer', 2, ['Target1'])
 
