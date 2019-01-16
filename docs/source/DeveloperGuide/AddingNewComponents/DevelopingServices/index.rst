@@ -161,15 +161,19 @@ illustrated by the following code snippet:
 
 .. code-block:: python
 
-   from DIRAC.Core.DISET.RPCClient import RPCClient
+   # Needed for stand alone tests
+   from DIRAC.Core.Base.Script import parseCommandLine
+   parseCommandLine(ignoreErrors=False)
 
-   simpleMessageService = RPCClient('Framework/Hello')
-   result = simpleMessageService.sayHello( 'you' )
+   from DIRAC.Core.Base.Client import Client
+
+   simpleMessageService = Client()
+   simpleMessageService.serverURL = 'Framework/Hello'
+   result = simpleMessageService.sayHello('you')
    if not result['OK']:
      print "Error while calling the service:", result['Message'] #Here, in DIRAC, you better use the gLogger
    else:
      print result[ 'Value' ] #Here, in DIRAC, you better use the gLogger
-
 
 Note that the service is always returning the result in the form of S_OK/S_ERROR structure.
 

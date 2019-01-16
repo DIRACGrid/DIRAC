@@ -57,7 +57,20 @@ the pilots scheduling should happen with other means then SiteDirectors, as exem
 
 DIRAC alone does not administer directly clouds or any VM-based systems.
 A different mechanism should be used for starting pilots and jobs on worker nodes that can't be reached via Computing Elements.
-One machanism for starting pilots on Clouds is in the :ref:`VMDIRAC` extension of DIRAC.
+One mechanism for starting pilots on Clouds is in the :ref:`VMDIRAC` extension of DIRAC.
+
+(Over-)simplified workflow
+==========================
+DIRAC WMS basically works as follows:
+
+1. Users define and submit jobs. Jobs have requirements. Job descriptions are stored in DIRAC's Job DB.
+2. DIRAC agents submit pilot jobs to sites. Alternatively, pilots are started on worker nodes in a different way.
+3. Pilots will try to match the worker nodes' capabilities to Jobs requirements.
+4. Jobs are started on WNs. DIRAC monitors its progress.
+
+
+References
+==========
 
 For more info on how the WMS work, please refer to this `presentation <https://indico.cern.ch/event/676817/contributions/2770712/attachments/1653260/2645342/WMS_Resources.pdf>`_.
 
@@ -66,9 +79,12 @@ The following sections add some detail for the WMS systems.
 .. toctree::
    :maxdepth: 1
 
+   architecture
    Pilots/index
    Pilots/Pilots3
    PilotsLogging/index
    Jobs/index
    JobPriorities/index
+   JobsMatching
+   tagsAndJobs
    multiProcessorJobs
