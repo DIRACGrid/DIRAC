@@ -4,7 +4,7 @@ python:
 
 env:
   matrix:
-    - CHECK=py.test
+    - CHECK=pytest
     - CHECK=docs
     - CHECK=pylint
     - CHECK=format
@@ -19,8 +19,8 @@ install:
 script:
   - export PYTHONPATH=${PWD%/*}
   - ls $PYTHONPATH
-  - if [[ "${CHECK}" == "py.test"  ]];
-    then py.test;
+  - if [[ "${CHECK}" == "pytest"  ]];
+    then pytest;
     elif [[ "${CHECK}" == "docs"  ]];
     then cd docs; READTHEDOCS=True make html;
     elif [[ "${CHECK}" == "pylint"  ]];
@@ -31,6 +31,6 @@ script:
 
 ## ignore errors for sourcefiles "-i"
 after_success:
-  - if [[ "${CHECK}" == "py.test"  ]];
+  - if [[ "${CHECK}" == "pytest"  ]];
     then coveralls -i;
     fi

@@ -21,7 +21,7 @@ psutil>=4.2.0
 Pygments>=1.5
 pylint>=1.6.5
 pyparsing>=2.0.6
-pytest>=2.8.5
+pytest>=3.6
 pytest-cov>=2.2.0
 pytest-mock
 python-coveralls
