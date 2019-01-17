@@ -14,7 +14,6 @@ In this subsection the Data Management commands are collected
    dirac-dms-change-replica-status
    dirac-dms-clean-directory
    dirac-dms-create-removal-request
-   dirac-dms-create-replication-request
    dirac-dms-data-size
    dirac-dms-directory-sync
    dirac-dms-filecatalog-cli
