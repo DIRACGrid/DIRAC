@@ -9,6 +9,7 @@ import ast
 import logging
 import glob
 import os
+import shutil
 import sys
 import subprocess
 import shlex
@@ -192,6 +193,8 @@ def cleanAdminGuideReference():
   if superfluousCommands:
     LOG.error('Commands that are documented, but do not exist and should be removed from the index page: \n\t\t\t\t%s',
               '\n\t\t\t\t'.join(sorted(superfluousCommands)))
+    for com in superfluousCommands:
+      shutil.move(os.path.join(sectionPath, com + '.rst'), os.path.join(sectionPath, 'obs_' + com + '.rst'))
     global EXITCODE
     EXITCODE = 1
 
