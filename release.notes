@@ -1,7 +1,8 @@
-[v6r21]
+[v6r21-pre1]
 
 *Core
 NEW: (#3921) DictCache - allow threadLocal cache
+FIX: (#3922) allow Script.py to accommodate specific test calls with pytest
 
 *ResourceStatusSystem
 FIX: (#3921) fix logic of the RSSCache leading in expired keys
@@ -11,6 +12,9 @@ CHANGE: (#3933) Change the columns size of the FinalMinorStatus
 
 *WorkloadManagementSystem
 CHANGE: (#3923) Clean PYTHONPATH from *rc when installing DIRAC from the pilot
+
+*DataManagementSystem
+FIX: (#3922) Fixes FTS3 duplicate transfers
 
 *Resources
 CHANGE: (#3933) When crating a consumer or producer then the error message must be 
