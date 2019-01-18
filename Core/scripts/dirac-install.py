@@ -56,6 +56,7 @@ class Params(object):
     self.timeout = 300
     self.diracOSVersion = ''
     self.diracOS = False
+    self.cleanPYTHONPATH = False
 
 
 cliParams = Params()
@@ -1196,7 +1197,8 @@ cmdOpts = (('r:', 'release=', 'Release version to install'),
            ('h', 'help', 'Show this help'),
            ('T:', 'Timeout=', 'Timeout for downloads (default = %s)'),
            ('  ', 'dirac-os-version=', 'the version of the DIRAC OS'),
-           ('  ', 'dirac-os', 'Enable installation of DIRAC OS')
+           ('  ', 'dirac-os', 'Enable installation of DIRAC OS'),
+           ('  ', 'cleanPYTHONPATH', 'Only use the DIRAC PYTHONPATH (for pilots installation)')
            )
 
 
@@ -1325,6 +1327,8 @@ def loadConfiguration():
       cliParams.diracOSVersion = v
     elif o == '--dirac-os':
       cliParams.diracOS = True
+    elif o == '--cleanPYTHONPATH':
+      cliParams.cleanPYTHONPATH = True
 
   if not cliParams.release:
     logERROR("Missing release to install")
@@ -1585,7 +1589,6 @@ def createBashrc():
                   'DejaVuSansMono-Roman.ttf')])
 
       lines.extend(['# Prepend the PYTHONPATH, the LD_LIBRARY_PATH, and the DYLD_LIBRARY_PATH'])
-
       lines.extend(['( echo $PATH | grep -q $DIRACBIN ) || export PATH=$DIRACBIN:$PATH',
                     '( echo $PATH | grep -q $DIRACSCRIPTS ) || export PATH=$DIRACSCRIPTS:$PATH',
                     '( echo $LD_LIBRARY_PATH | grep -q $DIRACLIB ) || \
@@ -1595,8 +1598,13 @@ def createBashrc():
                     '( echo $DYLD_LIBRARY_PATH | grep -q $DIRACLIB ) || \
                     export DYLD_LIBRARY_PATH=$DIRACLIB:$DYLD_LIBRARY_PATH',
                     '( echo $DYLD_LIBRARY_PATH | grep -q $DIRACLIB/mysql ) || \
-                    export DYLD_LIBRARY_PATH=$DIRACLIB/mysql:$DYLD_LIBRARY_PATH',
-                    '( echo $PYTHONPATH | grep -q $DIRAC ) || export PYTHONPATH=$DIRAC:$PYTHONPATH'])
+                    export DYLD_LIBRARY_PATH=$DIRACLIB/mysql:$DYLD_LIBRARY_PATH'])
+
+      if cliParams.cleanPYTHONPATH:
+        lines.extend(['export PYTHONPATH=$DIRAC'])
+      else:
+        lines.extend(['( echo $PYTHONPATH | grep -q $DIRAC ) || export PYTHONPATH=$DIRAC:$PYTHONPATH'])
+
       lines.extend(['# new OpenSSL version require OPENSSL_CONF to point to some accessible location',
                     'export OPENSSL_CONF=/tmp'])
 
@@ -1689,8 +1697,13 @@ def createCshrc():
                     '( echo $DYLD_LIBRARY_PATH | grep -q $DIRACLIB ) || \
                     setenv DYLD_LIBRARY_PATH ${DIRACLIB}:$DYLD_LIBRARY_PATH',
                     '( echo $DYLD_LIBRARY_PATH | grep -q $DIRACLIB/mysql ) || \
-                    setenv DYLD_LIBRARY_PATH ${DIRACLIB}/mysql:$DYLD_LIBRARY_PATH',
-                    '( echo $PYTHONPATH | grep -q $DIRAC ) || setenv PYTHONPATH ${DIRAC}:$PYTHONPATH'])
+                    setenv DYLD_LIBRARY_PATH ${DIRACLIB}/mysql:$DYLD_LIBRARY_PATH'])
+
+      if cliParams.cleanPYTHONPATH:
+        lines.extend(['setenv PYTHONPATH ${DIRAC}'])
+      else:
+        lines.extend(['( echo $PYTHONPATH | grep -q $DIRAC ) || setenv PYTHONPATH ${DIRAC}:$PYTHONPATH'])
+
       lines.extend(['# new OpenSSL version require OPENSSL_CONF to point to some accessible location',
                     'setenv OPENSSL_CONF /tmp'])
       lines.extend(['# IPv6 support',
@@ -1843,8 +1856,13 @@ def createBashrcForDiracOS():
       lines.extend(['# Prepend the PYTHONPATH, the LD_LIBRARY_PATH, and the DYLD_LIBRARY_PATH'])
 
       lines.extend(['( echo $PATH | grep -q $DIRACBIN ) || export PATH=$DIRACBIN:$PATH',
-                    '( echo $PATH | grep -q $DIRACSCRIPTS ) || export PATH=$DIRACSCRIPTS:$PATH',
-                    '( echo $PYTHONPATH | grep -q $DIRAC ) || export PYTHONPATH=$DIRAC:$PYTHONPATH'])
+                    '( echo $PATH | grep -q $DIRACSCRIPTS ) || export PATH=$DIRACSCRIPTS:$PATH'])
+
+      if cliParams.cleanPYTHONPATH:
+        lines.extend(['export PYTHONPATH=$DIRAC'])
+      else:
+        lines.extend(['( echo $PYTHONPATH | grep -q $DIRAC ) || export PYTHONPATH=$DIRAC:$PYTHONPATH'])
+
       lines.extend(
           ['export LD_LIBRARY_PATH=$(find -L $DIRACOS -name \'*.so\' -printf "%h\\n" |\
            sort -u | paste -sd \':\'):$LD_LIBRARY_PATH'])
@@ -1929,8 +1947,13 @@ def createCshrcForDiracOS():
                     '( test $?DY_LD_LIBRARY_PATH -eq 1 ) || setenv DYLD_LIBRARY_PATH ""',
                     '( test $?PYTHONPATH -eq 1 ) || setenv PYTHONPATH ""',
                     '( echo $PATH | grep -q $DIRACBIN ) || setenv PATH ${DIRACBIN}:$PATH',
-                    '( echo $PATH | grep -q $DIRACSCRIPTS ) || setenv PATH ${DIRACSCRIPTS}:$PATH',
-                    '( echo $PYTHONPATH | grep -q $DIRAC ) || setenv PYTHONPATH ${DIRAC}:$PYTHONPATH'])
+                    '( echo $PATH | grep -q $DIRACSCRIPTS ) || setenv PATH ${DIRACSCRIPTS}:$PATH'])
+
+      if cliParams.cleanPYTHONPATH:
+        lines.extend(['setenv PYTHONPATH ${DIRAC}'])
+      else:
+        lines.extend(['( echo $PYTHONPATH | grep -q $DIRAC ) || setenv PYTHONPATH ${DIRAC}:$PYTHONPATH'])
+
       lines.extend(
           ['setenv LD_LIBRARY_PATH $(find -L $DIRACOS -name \'*.so\' -printf "%h\\n" | \
           sort -u | paste -sd \':\'):$LD_LIBRARY_PATH'])
