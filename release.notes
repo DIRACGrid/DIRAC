@@ -1,3 +1,13 @@
+[v6r20p26]
+
+*WorkloadManagementSystem
+FIX: (#3932) MutiProcessorSiteDirector: get platform is checkPLatform flag is true
+
+*DataManagementSystem
+FIX: (#3928) `FileCatalogClient` now properly forwards function docstrings through 
+     `checkCatalogArguments` decorator, fixes #3927
+CHANGE: (#3928) `Resources.Catalog.Utilities`: use functool_wraps in `checkCatalogArguments`
+
 [v6r20p25]
 
 *Core
