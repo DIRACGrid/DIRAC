@@ -105,13 +105,14 @@ class FTS3ManagerHandler(RequestHandler):
   types_updateFileStatus = [dict]
 
   @classmethod
-  def export_updateFileStatus(cls, fileStatusDict):
+  def export_updateFileStatus(cls, fileStatusDict, ftsGUID):
     """ Update the file ftsStatus and error
 
-       :param fileStatusDict: { fileID : { status , error } }
+       :param fileStatusDict : { fileID : { status , error } }
+       :param ftsGUID: (not mandatory) If specified, only update the rows where the ftsGUID matches this value.
     """
 
-    return cls.fts3db.updateFileStatus(fileStatusDict)
+    return cls.fts3db.updateFileStatus(fileStatusDict, ftsGUID)
 
   types_updateJobStatus = [dict]
 
