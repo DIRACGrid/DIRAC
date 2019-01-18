@@ -213,7 +213,9 @@ class FTS3Agent(AgentModule):
       # { fileID : { Status, Error } }
       filesStatus = res['Value']
 
-      res = self.fts3db.updateFileStatus(filesStatus)
+      # Specify the job ftsGUID to make sure we do not overwrite
+      # status of files already taken by newer jobs
+      res = self.fts3db.updateFileStatus(filesStatus, ftsGUID=ftsJob.ftsGUID)
 
       if not res['OK']:
         log.error("Error updating file fts status", "%s, %s" % (ftsJob.ftsGUID, res))

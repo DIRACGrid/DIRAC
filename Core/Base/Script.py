@@ -18,19 +18,35 @@ localCfg = LocalConfiguration()
 
 caller = inspect.currentframe().f_back.f_globals['__name__']
 
+
+# There are several ways to call DIRAC scripts:
+# * dirac-do-something
+# * dirac-do-something.py
+# * python dirac-do-something.py
+# * pytest test-dirac-do-something.py
+# * pytest --option test-dirac-do-something.py
+# * pytest test-dirac-do-something.py::class::method
+# The following lines attempt to keep only what is necessary to DIRAC, leaving the rest to pytest or whatever is before
+
 i = 0
 if caller != '__main__':
   # This is for the case when, for example, you run a DIRAC script from within pytest
   gLogger.debug("Called from module", caller)
+  # Loop over until one of the argument is the caller, that is the DIRAC script
   for arg in sys.argv:
+    # if the form is "pytest test-dirac-do-something.py::class::method", we
+    # need to isolate the test-dirac-do-something.py
+    arg = arg.split('::')[0]
     if os.path.basename(arg).replace('.py', '') == caller.split('.')[-1]:
       break
     i += 1
 
+# If we reached the end, assume the caller is the first argument
 i = 0 if i == len(sys.argv) else i
-scriptName = os.path.basename(sys.argv[i]).replace('.py', '')
+# Same thing here, get rid of the pytest specific class:meth options
+scriptName = os.path.basename(sys.argv[i].split('::')[0]).replace('.py', '')
+# The first argument DIRAC should parse is the next one
 localCfg.firstOptionIndex = i + 1
-
 gIsAlreadyInitialized = False
 
 
