@@ -26,6 +26,9 @@ FIX: (#3928) `FileCatalogClient` now properly forwards function docstrings throu
      `checkCatalogArguments` decorator, fixes #3927
 CHANGE: (#3928) `Resources.Catalog.Utilities`: use functool_wraps in `checkCatalogArguments`
 
+*TransformationSystem
+CHANGE: (#3934) make the recursive removal of the log directory explicit in the TransformationCleaningAgent
+
 [v6r20p25]
 
 *Core
