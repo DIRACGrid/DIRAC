@@ -9,4 +9,4 @@ For instance a different base path or a different SRM Space Token for different 
 
 In general the SE name is a logical name and not a hostname.
 
-Detailed information about SEs can be found :ref:`here <resourcesStorageElement>`__.
+Detailed information about SEs can be found :ref:`here <resourcesStorageElement>`.

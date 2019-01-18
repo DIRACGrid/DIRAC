@@ -44,6 +44,34 @@ NEW: (#3744) Add WMS documentation in DeveloperGuide/Systems
 NEW: Added script (docs/Tools/UpdateDiracCFG.py) to collate the ConfigTemplate.cfg 
      files into the main dirac.cfg file
 
+[v6r21]
+
+*Core
+NEW: (#3921) DictCache - allow threadLocal cache
+
+*ResourceStatusSystem
+FIX: (#3921) fix logic of the RSSCache leading in expired keys
+
+*Accounting
+CHANGE: (#3933) Change the columns size of the FinalMinorStatus
+
+*WorkloadManagementSystem
+CHANGE: (#3923) Clean PYTHONPATH from *rc when installing DIRAC from the pilot
+
+*Resources
+CHANGE: (#3933) When crating a consumer or producer then the error message must be 
+        handled by the caller.
+
+[v6r20p26]
+
+*WorkloadManagementSystem
+FIX: (#3932) MutiProcessorSiteDirector: get platform is checkPLatform flag is true
+
+*DataManagementSystem
+FIX: (#3928) `FileCatalogClient` now properly forwards function docstrings through 
+     `checkCatalogArguments` decorator, fixes #3927
+CHANGE: (#3928) `Resources.Catalog.Utilities`: use functool_wraps in `checkCatalogArguments`
+
 [v6r20p25]
 
 *Core

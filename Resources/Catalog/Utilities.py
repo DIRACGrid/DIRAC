@@ -9,6 +9,7 @@ __RCSID__ = "$Id$"
 
 import os
 import errno
+import functools
 
 from DIRAC import S_OK, S_ERROR
 
@@ -67,6 +68,7 @@ def checkArgumentFormat( path, generateMap = False ):
 def checkCatalogArguments( f ):
   """ Decorator to check arguments of FileCatalog calls in the clients
   """
+  @functools.wraps(f)
   def processWithCheckingArguments(*args, **kwargs):
 
     checkFlag = kwargs.pop( 'LFNChecking', True )
