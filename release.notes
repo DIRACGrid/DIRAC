@@ -1,3 +1,21 @@
+[v6r21]
+
+*Core
+NEW: (#3921) DictCache - allow threadLocal cache
+
+*ResourceStatusSystem
+FIX: (#3921) fix logic of the RSSCache leading in expired keys
+
+*Accounting
+CHANGE: (#3933) Change the columns size of the FinalMinorStatus
+
+*WorkloadManagementSystem
+CHANGE: (#3923) Clean PYTHONPATH from *rc when installing DIRAC from the pilot
+
+*Resources
+CHANGE: (#3933) When crating a consumer or producer then the error message must be 
+        handled by the caller.
+
 [v6r20p26]
 
 *WorkloadManagementSystem
