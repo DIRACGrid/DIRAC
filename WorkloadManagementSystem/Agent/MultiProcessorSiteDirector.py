@@ -9,7 +9,6 @@ import random
 import re
 
 from DIRAC import S_OK
-from DIRAC.Core.Utilities.Time import dateTime, second
 from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils import pilotAgentsDB
@@ -156,7 +155,6 @@ class MultiProcessorSiteDirector(SiteDirector):
       ceType = self.queueDict[queue]['CEType']
       queueName = self.queueDict[queue]['QueueName']
       siteName = self.queueDict[queue]['Site']
-      platform = self.queueDict[queue]['Platform']
       queueTags = self.queueDict[queue]['ParametersDict']['Tag']
       siteMask = siteName in siteMaskList
       processorTags = []
@@ -226,6 +224,7 @@ class MultiProcessorSiteDirector(SiteDirector):
       ceDict['SubmitPool'] = self.defaultSubmitPools
 
       if self.checkPlatform:
+        platform = self.queueDict[queue]['Platform']
         result = self.resourcesModule.getCompatiblePlatforms(platform)
         if not result['OK']:
           continue
