@@ -62,7 +62,7 @@ class AuthManager(object):
     allowAll = "any" in lowerCaseProperties or "all" in lowerCaseProperties
     # Set no properties by default
     credDict[self.KW_PROPERTIES] = []
-    
+
     # Check if query comes though a gateway/web server
     if self.forwardedCredentials(credDict):
       self.__authLogger.verbose("Query comes from a gateway")
