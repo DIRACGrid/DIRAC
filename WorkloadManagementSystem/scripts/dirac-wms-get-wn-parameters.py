@@ -13,7 +13,7 @@ from DIRAC.WorkloadManagementSystem.Utilities import JobParameters
 
 Script.setUsageMessage('\n'.join(['Get the parameters (Memory and Number of processors) of a worker node',
                                   'Usage:',
-                                  '%s [option]... [cfgfile]' % Script.scriptName,
+                                  ' %s [option]... [cfgfile]' % Script.scriptName,
                                   'Arguments:',
                                   ' cfgfile: DIRAC Cfg with description of the configuration (optional)']))
 

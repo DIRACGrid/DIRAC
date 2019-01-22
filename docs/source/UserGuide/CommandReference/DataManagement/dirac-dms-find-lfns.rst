@@ -18,5 +18,5 @@ Examples::
 
 Options::
 
-  -   --Path=                  :     Path to search for
-  -   --SE=                    :     (comma-separated list of) SEs/SE-groups to be searched
+  --Path=                  :     Path to search for
+  --SE=                    :     (comma-separated list of) SEs/SE-groups to be searched

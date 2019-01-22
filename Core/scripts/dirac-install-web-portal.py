@@ -17,8 +17,7 @@ from DIRAC.Core.Base import Script
 Script.disableCS()
 Script.setUsageMessage('\n'.join( [ __doc__.split( '\n' )[1],
                                     'Usage:',
-                                    '  %s [option|cfgfile] ...' % Script.scriptName,
-                                    'Arguments:',] ) )
+                                    '  %s [option|cfgfile] ...' % Script.scriptName]))
 
 old = False
 def setOld( opVal ):

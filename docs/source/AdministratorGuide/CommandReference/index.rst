@@ -47,18 +47,10 @@ Managing Resources:
     
     dirac-admin-add-site
     dirac-admin-add-resources
-    dirac-admin-allow-catalog
     dirac-admin-allow-se
     dirac-admin-allow-site
-    dirac-admin-ban-catalog
     dirac-admin-ban-se
     dirac-admin-ban-site
-    dirac-admin-bdii-ce-state
-    dirac-admin-bdii-ce-voview
-    dirac-admin-bdii-ce
-    dirac-admin-bdii-cluster
-    dirac-admin-bdii-sa
-    dirac-admin-bdii-site
     dirac-admin-bdii-info
     dirac-admin-ce-info
     dirac-admin-get-banned-sites
@@ -81,10 +73,8 @@ Workload management commands:
     dirac-admin-kill-pilot
     dirac-admin-pilot-summary
     dirac-admin-pilot-logging-info
-    dirac-admin-reoptimize-jobs
     dirac-admin-reset-job
     dirac-admin-show-task-queues
-    dirac-admin-submit-pilot-for-job
     dirac-jobexec
 
 Transformation management commands:
@@ -92,24 +82,23 @@ Transformation management commands:
 .. toctree::
     :maxdepth: 2
 
+    dirac-transformation-add-files
     dirac-transformation-archive
     dirac-transformation-clean
     dirac-transformation-cli
+    dirac-transformation-get-files
     dirac-transformation-remove-output
-    dirac-transformation-resolve-problematics
-    dirac-transformation-verify-outputdata
     dirac-transformation-replication
-    
+    dirac-transformation-verify-outputdata
+
 Managing DIRAC installation:
 
 .. toctree::
     :maxdepth: 2
 
     dirac-framework-ping-service
-    dirac-install-agent
     dirac-install-component
     dirac-install-db
-    dirac-install-service
     dirac-install-web-portal
     dirac-install
     dirac-uninstall-component
@@ -140,7 +129,6 @@ Managing DIRAC software:
     dirac-distribution
     dirac-externals-requirements
     dirac-fix-ld-library-path
-    dirac-install-executor
     dirac-install-mysql
 
 User convenience:
@@ -164,10 +152,10 @@ Other commands:
     
     dirac-admin-get-proxy
     dirac-admin-proxy-upload
-    dirac-admin-upload-proxy
     dirac-proxy-get-uploaded-info
     dirac-proxy-info
     dirac-proxy-init
+    dirac-proxy-destroy
 
     dirac-admin-request-summary
     dirac-admin-select-requests
@@ -183,15 +171,19 @@ Other commands:
 
     dirac-repo-monitor
 
-    dirac-rss-reassign-token
-    dirac-rss-renew-token
     dirac-rss-list-status
+    dirac-rss-policy-manager
+    dirac-rss-query-db
+    dirac-rss-query-dtcache
     dirac-rss-set-status
-    dirac-rss-sync
-    dirac-rss-setup
     dirac-rss-set-token
+    dirac-rss-sync
 
+    dirac-stager-monitor-file
+    dirac-stager-monitor-jobs
     dirac-stager-monitor-request
+    dirac-stager-monitor-requests
+    dirac-stager-show-stats
     dirac-stager-stage-files
 
     install_site.sh

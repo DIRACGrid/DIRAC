@@ -402,7 +402,7 @@ class TransformationCleaningAgent(AgentModule):
     :param str directory: folder name
     """
     self.log.verbose("Removing log files found in the directory %s" % directory)
-    res = returnSingleResult(StorageElement(self.logSE).removeDirectory(directory))
+    res = returnSingleResult(StorageElement(self.logSE).removeDirectory(directory, recursive=True))
     if not res['OK']:
       self.log.error("Failed to remove log files", res['Message'])
       return res

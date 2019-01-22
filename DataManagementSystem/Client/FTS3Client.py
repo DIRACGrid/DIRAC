@@ -67,13 +67,14 @@ class FTS3Client(Client):
     except Exception as e:
       return S_ERROR("Exception when decoding the active jobs json %s" % e)
 
-  def updateFileStatus(self, fileStatusDict, **kwargs):
+  def updateFileStatus(self, fileStatusDict, ftsGUID=None, **kwargs):
     """ Update the file ftsStatus and error
 
-       :param fileStatusDict: { fileID : { status , error } }
+       :param fileStatusDict : { fileID : { status , error, ftsGUID } }
+       :param ftsGUID: if specified, only update the files having a matchign ftsGUID
     """
 
-    return self._getRPC(**kwargs).updateFileStatus(fileStatusDict)
+    return self._getRPC(**kwargs).updateFileStatus(fileStatusDict, ftsGUID)
 
   def updateJobStatus(self, jobStatusDict, **kwargs):
     """ Update the job Status and error

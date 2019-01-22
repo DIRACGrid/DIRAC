@@ -1,28 +1,15 @@
 #!/usr/bin/env python
 """
-  dirac-rss-query-dtcache
+Select/Add/Delete a new DownTime entry for a given Site or Service.
 
-    Select/Add/Delete a new DownTime entry for a given Site or Service.
+Usage:
+    dirac-rss-query-dtcache [option] <query>
 
-    Usage:
-        dirac-rss-query-dtcache [option] <query>
+Queries:
+    [select|add|delete]
 
-    Queries:
-        [select|add|delete]
-
-    Options:
-        --downtimeID=         The ID of the downtime
-        --element=            Element (Site, Service) affected by the downtime
-        --name=               Name of the element
-        --startDate=          Starting date of the downtime
-        --endDate=            Ending date of the downtime
-        --severity=           Severity of the downtime (Warning, Outage)
-        --description=        Description of the downtime
-        --link=               URL of the downtime announcement
-        --ongoing             To force "select" to return the ongoing downtimes
-
-    Verbosity:
-        -o LogLevel=LEVEL     NOTICE by default, levels available: INFO, DEBUG, VERBOSE..
+Verbosity:
+    -o LogLevel=LEVEL     NOTICE by default, levels available: INFO, DEBUG, VERBOSE..
 """
 
 __RCSID__ = '$Id$'

@@ -133,6 +133,12 @@ class FTS3Job(FTS3Serializable):
       file_error = fileDict['reason']
       filesStatus[file_id] = {'status': file_state, 'error': file_error}
 
+      # If the state of the file is final for FTS, set ftsGUID of the file to None,
+      # such that it is "released" from this job and not updated anymore in future
+      # monitoring calls
+      if file_state in FTS3File.FTS_FINAL_STATES:
+        filesStatus[file_id]['ftsGUID'] = None
+
       statusSummary[file_state] = statusSummary.get(file_state, 0) + 1
 
     total = len(filesInfoList)
@@ -499,6 +505,19 @@ class FTS3Job(FTS3Serializable):
       # if we succeeded in submitting -> no ! Why did I do that ??
       for ftsFile in self.filesToSubmit:
         ftsFile.attempt += 1
+
+        # This should never happen because a file should be "released"
+        # first by the previous job.
+        # But we just print a warning
+        if ftsFile.ftsGUID is not None:
+          log.warn(
+              "FTSFile has a non NULL ftsGUID at job submission time",
+              "FileID: %s existing ftsGUID: %s" %
+              (ftsFile.fileID,
+               ftsFile.ftsGUID))
+
+        # `assign` the file to this job
+        ftsFile.ftsGUID = self.ftsGUID
         if ftsFile.fileID in setFileIdsInTheJob:
           ftsFile.status = 'Submitted'
 

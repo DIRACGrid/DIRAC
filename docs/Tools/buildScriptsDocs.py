@@ -5,38 +5,55 @@
   very uniform
 
 '''
+import ast
 import logging
 import glob
 import os
+import shutil
 import sys
 import subprocess
 import shlex
 
-from DIRAC import rootPath
+ROOT_PATH = os.environ.get("DIRAC", "")
 
-logging.basicConfig(level=logging.INFO, format='%(name)s: %(levelname)8s: %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(name)s: %(levelname)8s: %(message)s', stream=sys.stdout)
 LOG = logging.getLogger('ScriptDoc')
 
 # Scripts that either do not have -h, are obsolete or cause havoc when called
-BAD_SCRIPTS = ['dirac-deploy-scripts', 'dirac-install', 'dirac-compile-externals',
-               'dirac-install-client',
-               'dirac-framework-self-ping', 'dirac-dms-add-files',
+BAD_SCRIPTS = ['dirac-deploy-scripts',  # does not have --help, deploys scripts
+               'dirac-compile-externals',  # does not have --help, starts compiling externals
+               'dirac-install-client',  # does not have --help
+               'dirac-framework-self-ping',  # does not have --help
+               'dirac-dms-add-files',  # obsolete
+               'dirac-version',  # just prints version, no help
+               'dirac-platform',  # just prints platform, no help
+               'dirac-agent',  # no doc, purely internal use
+               'dirac-executor',  # no doc, purely internal use
+               'dirac-service',  # no doc, purely internal use
                ]
 
+
+GET_MOD_STRING = ['dirac-install',
+                  ]
+
+
 MARKERS_SECTIONS_SCRIPTS = [(['dms'],
-                             'Data Management', [], ['dirac-dms-replicate-and-register-request']),
+                             'Data Management', [], []),
                             (['wms'], 'Workload Management', [], []),
-                            (['dirac-proxy', 'dirac-info', 'dirac-version', 'myproxy', 'dirac-platform'],
-                             'Others', [], ['dirac-cert-convert.sh']),
+                            (['dirac-proxy', 'dirac-info', 'myproxy'],
+                             'Others', [], ['dirac-cert-convert.sh', 'dirac-platform', 'dirac-version']),
                             # (['rss'],'Resource Status Management', [], []),
                             #  (['rms'],'Request Management', [], []),
                             # (['stager'],'Storage Management', [], []),
                             # (['transformation'], 'Transformation Management', [], []),
-                            (['admin', 'accounting', 'FrameworkSystem',
-                              'ConfigurationSystem', 'Core'], 'Admin', [], []),
+                            (['admin', 'accounting', 'FrameworkSystem', 'framework', 'install', 'utils',
+                              'dirac-repo-monitor', 'dirac-jobexec', 'dirac-info',
+                              'ConfigurationSystem', 'Core', 'rss', 'transformation', 'stager'], 'Admin',
+                             [], ['dirac-cert-convert.sh', 'dirac-platform', 'dirac-version']),
                             # ([''], 'CatchAll', [], []),
                             ]
 
+EXITCODE = 0
 
 def mkdir(path):
   """ save mkdir, ignores exceptions """
@@ -50,18 +67,19 @@ def runCommand(command):
   """ execute shell command, return output, catch exceptions """
   try:
     result = subprocess.check_output(shlex.split(command), stderr=subprocess.STDOUT)
-    if 'NOTICE' in result:
+    if 'NOTICE:' in result:
+      LOG.warn('NOTICE in output for: %s', command)
       return ''
     return result
   except (OSError, subprocess.CalledProcessError) as e:
-    LOG.error("Error when runnning command %s: %r", command, e)
+    LOG.error("Error when runnning command %s: %r", command, e.output)
     return ''
 
 
 def getScripts():
   """Get all scripts in the Dirac System, split by type admin/wms/rms/other."""
 
-  diracPath = os.path.join(rootPath, 'DIRAC')
+  diracPath = os.path.join(ROOT_PATH, 'DIRAC')
   if not os.path.exists(diracPath):
     sys.exit('%s does not exist' % diracPath)
 
@@ -73,14 +91,14 @@ def getScripts():
   scripts.sort()
   for scriptPath in scripts:
     # Few modules still have __init__.py on the scripts directory
-    if '__init__' in scriptPath or 'build' in scriptPath:
+    if '__init__' in scriptPath:
       LOG.debug("Ignoring %s", scriptPath)
       continue
 
     for mT in MARKERS_SECTIONS_SCRIPTS:
-      if any(pattern in scriptPath for pattern in mT[0]):
+      if any(pattern in scriptPath for pattern in mT[0]) and \
+         not any(pattern in scriptPath for pattern in mT[3]):
         mT[2].append(scriptPath)
-        break
 
   return
 
@@ -91,19 +109,20 @@ def createUserGuideFoldersAndIndices():
   e.g.:
   source/UserGuide/CommandReference
   """
-
   # create the main UserGuide Index file
   userIndexRST = """
-========================================
-Commands Reference (|release|)
-========================================
+==================
+Commands Reference
+==================
 
-  This page is the work in progress. See more material here soon !
+.. this page is created in docs/Tools/buildScriptsDocs.py
+
+This page is the work in progress. See more material here soon !
 
 .. toctree::
    :maxdepth: 1
 
-"""
+""".lstrip()
 
   for mT in MARKERS_SECTIONS_SCRIPTS:
     system = mT[1]
@@ -113,12 +132,13 @@ Commands Reference (|release|)
     userIndexRST += "   %s/index\n" % systemString
 
     LOG.debug("Index file:\n%s", userIndexRST)
-    sectionPath = os.path.join(rootPath, 'DIRAC/docs/source/UserGuide/CommandReference/', systemString)
+    sectionPath = os.path.join(ROOT_PATH, 'DIRAC/docs/source/UserGuide/CommandReference/', systemString)
     mkdir(sectionPath)
     createSectionIndex(mT, sectionPath)
 
-  userIndexPath = os.path.join(rootPath, 'DIRAC/docs/source/UserGuide/CommandReference/index.rst')
+  userIndexPath = os.path.join(ROOT_PATH, 'DIRAC/docs/source/UserGuide/CommandReference/index.rst')
   with open(userIndexPath, 'w') as userIndexFile:
+    LOG.debug('Writting to: %s', userIndexPath)
     userIndexFile.write(userIndexRST)
 
 
@@ -128,7 +148,7 @@ def createAdminGuideCommandReference():
   source/AdministratorGuide/CommandReference
   """
 
-  sectionPath = os.path.join(rootPath, 'DIRAC/docs/source/AdministratorGuide/CommandReference/')
+  sectionPath = os.path.join(ROOT_PATH, 'DIRAC/docs/source/AdministratorGuide/CommandReference/')
 
   # read the script index
   with open(os.path.join(sectionPath, 'index.rst')) as adminIndexFile:
@@ -149,9 +169,34 @@ def createAdminGuideCommandReference():
       missingCommands.append(scriptName)
 
   if missingCommands:
-    LOG.warn("The following admin commands are not in the command index: \n\t\t\t\t%s",
-             "\n\t\t\t\t".join(missingCommands))
+    LOG.error("The following admin commands are not in the command index: \n\t\t\t\t%s",
+              "\n\t\t\t\t".join(missingCommands))
+    global EXITCODE
+    EXITCODE = 1
 
+
+def cleanAdminGuideReference():
+  """Make sure no superfluous commands are documented in the AdministratorGuide"""
+  existingCommands = {os.path.basename(com).replace('.py', '') for mT in MARKERS_SECTIONS_SCRIPTS
+                      for com in mT[2] + mT[3] if mT[1] == 'Admin'}
+  sectionPath = os.path.join(ROOT_PATH, 'DIRAC/docs/source/AdministratorGuide/CommandReference/')
+  # read the script index
+  documentedCommands = set()
+  with open(os.path.join(sectionPath, 'index.rst')) as adminIndexFile:
+    adminCommandList = adminIndexFile.readlines()
+  for command in adminCommandList:
+    if command.strip().startswith('dirac'):
+      documentedCommands.add(command.strip())
+  LOG.debug('Documented commands: %s', documentedCommands)
+  LOG.debug('Existing commands: %s', existingCommands)
+  superfluousCommands = documentedCommands - existingCommands
+  if superfluousCommands:
+    LOG.error('Commands that are documented, but do not exist and should be removed from the index page: \n\t\t\t\t%s',
+              '\n\t\t\t\t'.join(sorted(superfluousCommands)))
+    for com in superfluousCommands:
+      shutil.move(os.path.join(sectionPath, com + '.rst'), os.path.join(sectionPath, 'obs_' + com + '.rst'))
+    global EXITCODE
+    EXITCODE = 1
 
 def createSectionIndex(mT, sectionPath):
   """ create the index """
@@ -161,6 +206,8 @@ def createSectionIndex(mT, sectionPath):
   systemHeader = "%s\n%s\n%s\n" % ("=" * len(systemHeader), systemHeader, "=" * len(systemHeader))
   sectionIndexRST = systemHeader + """
 In this subsection the %s commands are collected
+
+.. this page is created in docs/Tools/buildScriptsDocs.py
 
 .. toctree::
    :maxdepth: 2
@@ -183,6 +230,7 @@ In this subsection the %s commands are collected
 
   sectionIndexPath = os.path.join(sectionPath, 'index.rst')
   with open(sectionIndexPath, 'w') as sectionIndexFile:
+    LOG.debug('Writting to: %s', sectionIndexPath)
     sectionIndexFile.write(sectionIndexRST)
 
 
@@ -196,7 +244,7 @@ def createScriptDocFiles(script, sectionPath, scriptName):
     return False
 
   LOG.info("Creating Doc for %s", scriptName)
-  helpMessage = runCommand("%s -h" % scriptName)
+  helpMessage = runCommand("python %s -h" % script)
   if not helpMessage:
     LOG.warning("NO DOC for %s", scriptName)
     return False
@@ -232,50 +280,78 @@ def createScriptDocFiles(script, sectionPath, scriptName):
     lineIndented = newLine.startswith(' ')
 
   scriptRSTPath = os.path.join(sectionPath, scriptName + '.rst')
-  example = getExampleFromScriptDoc(scriptRSTPath)
-
   fileContent = '\n'.join(rstLines).strip() + '\n'
-  if example and 'example' not in fileContent.lower():
-    fileContent += '\n' + example.strip() + '\n'
+
+  for index, marker in enumerate(['example', '.. note::']):
+    if scriptName in GET_MOD_STRING:
+      if index == 0:
+        content = getContentFromModuleDocstring(script)
+        fileContent += '\n' + content.strip() + '\n'
+    else:
+      content = getContentFromScriptDoc(scriptRSTPath, marker)
+      if content and marker not in fileContent.lower():
+        fileContent += '\n' + content.strip() + '\n'
     LOG.debug('\n' + '*' * 88 + '\n' + fileContent + '\n' + '*' * 88)
   while '\n\n\n' in fileContent:
     fileContent = fileContent.replace('\n\n\n', '\n\n')
+
+  # remove the standalone '-' when no short option exists
+  fileContent = fileContent.replace('-   --', '--')
   with open(scriptRSTPath, 'w') as rstFile:
+    LOG.debug('Writting to: %s', scriptRSTPath)
     rstFile.write(fileContent)
   return True
 
 
-def getExampleFromScriptDoc(scriptRSTPath):
-  """Get an example, if any, from the existing file."""
-  example = []
-  inExample = False
+def getContentFromModuleDocstring(script):
+  """Parse the given python file and return its module docstring."""
+  LOG.info('Checking AST for modulestring: %s', script)
+  try:
+    with open(script) as scriptContent:
+      parse = ast.parse(scriptContent.read(), script)
+      return ast.get_docstring(parse)
+  except IOError as e:
+    global EXITCODE
+    EXITCODE = 1
+    LOG.error('Cannot open %r: %r', script, e)
+  return ''
+
+
+def getContentFromScriptDoc(scriptRSTPath, marker):
+  """Get an some existing information, if any, from an existing file."""
+  content = []
+  inContent = False
+  if not os.path.exists(scriptRSTPath):
+    LOG.warn('Script file %r does not exist yet!', scriptRSTPath)
+    return ''
   with open(scriptRSTPath) as rstFile:
     for line in rstFile.readlines():
-      if inExample and not line.rstrip():
-        example.append(line)
+      if inContent and not line.rstrip():
+        content.append(line)
         continue
       line = line.rstrip()
-      if line and inExample and line.startswith(' '):
-        example.append(line)
-      elif line and inExample and not line.startswith(' '):
-        inExample = False
-      elif line.lower().startswith('example'):
-        inExample = True
-        example.append(line)
+      if line and inContent and line.startswith(' '):
+        content.append(line)
+      elif line and inContent and not line.startswith(' '):
+        inContent = False
+      elif line.lower().startswith(marker.lower()):
+        inContent = True
+        content.append(line)
 
-  return '\n'.join(example)
+  return '\n'.join(content)
 
 
 def run():
   ''' creates the rst files right in the source tree of the docs
   '''
-
   getScripts()
   createUserGuideFoldersAndIndices()
   createAdminGuideCommandReference()
+  cleanAdminGuideReference()
 
   LOG.info('Done')
 
 
 if __name__ == "__main__":
   run()
+  exit(EXITCODE)
