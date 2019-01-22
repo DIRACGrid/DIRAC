@@ -5,6 +5,7 @@ Message Queue wrapper
 __RCSID__ = "$Id$"
 
 from DIRAC.FrameworkSystem.private.standardLogging.Handler.MessageQueueHandler import MessageQueueHandler
+from DIRAC.FrameworkSystem.private.standardLogging.LogLevels import LogLevels
 from DIRAC.Resources.LogBackends.AbstractBackend import AbstractBackend
 from DIRAC.FrameworkSystem.private.standardLogging.Formatter.JsonFormatter import JsonFormatter
 
@@ -35,6 +36,7 @@ class MessageQueueBackend(AbstractBackend):
     if parameters is not None:
       self.__queue = parameters.get("MsgQueue", self.__queue)
     self._handler = MessageQueueHandler(self.__queue)
+    self._handler.setLevel(LogLevels.VERBOSE)
 
   def setLevel(self, level):
     """
