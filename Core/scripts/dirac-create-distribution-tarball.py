@@ -630,11 +630,11 @@ if __name__ == "__main__":
   Script.registerSwitch(
       "A", "notesoutside", "Leave a copy of the compiled release notes outside the tarball",
       cliParams.setOutReleaseNotes)
-  Script.registerSwitch("e:", "extensionVersion=", "if we have an extension,\
-                                  we can provide the base module version \
-                                  (if it is needed): for example: v3r0", cliParams.setExtensionVersion)
-  Script.registerSwitch("E:", "extensionSource=", "if we have an extension,\
-                                we must provide code repository url", cliParams.setExtensionSource)
+  Script.registerSwitch("e:", "extensionVersion=", "if we have an extension, "
+                        "we can provide the base module version "
+                        "(if it is needed): for example: v3r0", cliParams.setExtensionVersion)
+  Script.registerSwitch("E:", "extensionSource=", "if we have an extension "
+                              "we must provide code repository url", cliParams.setExtensionSource)
   Script.registerSwitch("P:", "extjspath=", "directory of the extjs library", cliParams.setExtJsPath)
 
   Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
@@ -642,9 +642,9 @@ if __name__ == "__main__":
                                     '  %s <option> ...\n' % Script.scriptName,
                                     '  A source, name and version are required to build the tarball',
                                     '  For instance:',
-                                    '     %s -n DIRAC -v v1r0 -z \
-                                    svn -u http://svnweb.cern.ch/guest/\
-                                    dirac/DIRAC/tags/DIRAC/v1r0' % Script.scriptName]))
+                                    '     %s -n DIRAC -v v1r0 -z '
+                                    'svn -u http://svnweb.cern.ch/guest/'
+                                    'dirac/DIRAC/tags/DIRAC/v1r0' % Script.scriptName]))
 
   Script.parseCommandLine(ignoreErrors=False)
 

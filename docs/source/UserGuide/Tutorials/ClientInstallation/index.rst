@@ -3,7 +3,7 @@
 ======================
 
 The DIRAC client installation procedure consists of several steps. This example is destinated for tutorials.
-For more information about various options of installing DIRAC Client see the `Getting Started guide in :ref:`dirac_install`.
+For more information about various options of installing DIRAC Client see the :ref:`Getting Started guide <dirac_install>`.
 
 1.1 Install script
 ------------------

@@ -82,6 +82,15 @@ if os.environ.get('READTHEDOCS') == 'True':
 
   os.environ["DIRAC"] = diracPath
   print "DIRAC ENVIRON", os.environ["DIRAC"]
+
+  # re-create the RST files for the command references
+  buildCommand = os.path.join(os.getcwd(), "../Tools/buildScriptsDocs.py")
+  code = subprocess.Popen(["python", buildCommand], env=os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+  stdout, err = code.communicate()
+  print "scriptDocs:", stdout
+  print "scriptErrs:", err
+
+
   ##singlehtml build needs too much memory, so we need to create less code documentation
   buildtype = "limited" if any("singlehtml" in arg for arg in sys.argv ) else "full"
   print "Chosing build type:", buildtype
