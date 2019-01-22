@@ -1,9 +1,7 @@
-=================================
+==========================
 dirac-transformation-clean
-=================================
+==========================
 
 Usage::
 
-  dirac-transformation-clean.py (<options>|<cfgFile>)* 
-
-
+  dirac-transformation-clean.py (<options>|<cfgFile>)*

@@ -1,8 +1,10 @@
-==================================
+==================
 Commands Reference
-==================================
+==================
 
-  This page is the work in progress. See more material here soon !
+.. this page is created in docs/Tools/buildScriptsDocs.py
+
+This page is the work in progress. See more material here soon !
 
 .. toctree::
    :maxdepth: 1

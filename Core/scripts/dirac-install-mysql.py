@@ -5,13 +5,16 @@
 # Author :  Ricardo Graciani
 ########################################################################
 """
+Install MySQL. The clever way to do this is to use the
+dirac-admin-sysadmin-cli.
+
 Do the initial installation and configuration of the DIRAC MySQL server
 """
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base import Script
 
-Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1] ] ) )
+Script.setUsageMessage(__doc__)
 
 Script.parseCommandLine()
 

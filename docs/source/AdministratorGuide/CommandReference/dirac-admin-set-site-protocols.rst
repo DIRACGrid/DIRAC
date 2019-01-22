@@ -14,7 +14,7 @@ Arguments::
 
 Options::
 
-  -   --Site=                  : Site for which protocols are to be set (mandatory)
+  --Site=                  : Site for which protocols are to be set (mandatory)
 
 Example::
 

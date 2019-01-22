@@ -8,3 +8,4 @@ suds
 pytz
 psutil
 pyparsing
+GSI

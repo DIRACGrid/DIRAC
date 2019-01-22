@@ -1,17 +1,14 @@
-===============================
+========================
 dirac-stager-stage-files
-===============================
+========================
 
-  Submit Stage Request for Files at given SE
+- submit staging requests for a particular Storage Element! Default DIRAC JobID will be =0.
 
 Usage::
 
-  dirac-stager-stage-files [option|cfgfile] ... SE FileName [...]
+  dirac-stager-stage-files <LFN> <SE>
 
 Arguments::
 
-  SE:       Name of Storage Element
-
-  FileName: LFN to Stage (or local file with list of LFNs) 
-
-
+  <LFN>: LFN to Stage (or local file with list of LFNs)
+  <SE>:  Name of Storage Element

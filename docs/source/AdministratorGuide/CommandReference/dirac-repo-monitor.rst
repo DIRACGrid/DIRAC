@@ -1,8 +1,8 @@
-=========================
+==================
 dirac-repo-monitor
-=========================
+==================
 
-  Monitor the jobs present in the repository
+Monitor the jobs present in the repository
 
 Usage::
 
@@ -10,6 +10,4 @@ Usage::
 
 Arguments::
 
-  RepoDir:  Location of Job Repository 
-
-
+  RepoDir:  Location of Job Repository

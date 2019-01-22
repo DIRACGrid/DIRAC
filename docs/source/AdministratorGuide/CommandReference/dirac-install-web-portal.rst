@@ -8,7 +8,6 @@ Usage::
 
   dirac-install-web-portal [option|cfgfile] ...
 
-
 Options::
 
   -O  ----old                  : install old Pylons based portal
