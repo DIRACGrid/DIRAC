@@ -2300,7 +2300,8 @@ def createBashrcForDiracOS():
     if not os.path.exists(bashrcFile):
       lines = ['# DIRAC bashrc file, used by service and agent run scripts to set environment',
                'export PYTHONUNBUFFERED=yes',
-               'export PYTHONOPTIMIZE=x']
+               'export PYTHONOPTIMIZE=x',
+               '. %s/diracos/diracosrc' % proPath]
       if 'HOME' in os.environ:
         lines.append('[ -z "$HOME" ] && export HOME=%s' % os.environ['HOME'])
 
@@ -2331,42 +2332,36 @@ def createBashrcForDiracOS():
               '# Some DIRAC locations',
               '[ -z "$DIRAC" ] && export DIRAC=%s' %
               proPath,
-              'export DIRACOS=%s/diracos' %
-              cliParams.basePath,
-              'export DIRACBIN=%s/sbin:$DIRACOS/bin:$DIRACOS/sbin:$DIRACOS/usr/bin:$DIRACOS/usr/sbin' %
-              cliParams.basePath,
+              '[ -z "$DIRACOS" ] && export DIRACOS=%s/diracos' %
+              proPath,
               'export DIRACSCRIPTS=%s' %
               os.path.join(
                   "$DIRAC",
                   'scripts'),
-              'export DIRACLIB=$DIRACOS/lib',
               'export TERMINFO=%s' %
               __getTerminfoLocations(
                   os.path.join(
                       "$DIRACOS",
+                      'usr',
                       'share',
                       'terminfo')),
               'export RRD_DEFAULT_FONT=%s' %
               os.path.join(
                   "$DIRACOS",
+                  'usr',
                   'share',
-                  'rrdtool',
                   'fonts',
                   'DejaVuSansMono-Roman.ttf')])
 
       lines.extend(['# Prepend the PYTHONPATH, the LD_LIBRARY_PATH, and the DYLD_LIBRARY_PATH'])
 
-      lines.extend(['( echo $PATH | grep -q $DIRACBIN ) || export PATH=$DIRACBIN:$PATH',
-                    '( echo $PATH | grep -q $DIRACSCRIPTS ) || export PATH=$DIRACSCRIPTS:$PATH'])
+      lines.extend(['( echo $PATH | grep -q $DIRACSCRIPTS ) || export PATH=$DIRACSCRIPTS:$PATH'])
 
       if cliParams.cleanPYTHONPATH:
         lines.extend(['export PYTHONPATH=$DIRAC'])
       else:
         lines.extend(['( echo $PYTHONPATH | grep -q $DIRAC ) || export PYTHONPATH=$DIRAC:$PYTHONPATH'])
 
-      lines.extend(
-          ['export LD_LIBRARY_PATH=$(find -L $DIRACOS -name \'*.so\' -printf "%h\\n" |\
-           sort -u | paste -sd \':\'):$LD_LIBRARY_PATH'])
       lines.extend(['# new OpenSSL version require OPENSSL_CONF to point to some accessible location',
                     'export OPENSSL_CONF=/tmp'])
 
@@ -2395,93 +2390,54 @@ def createBashrcForDiracOS():
   return True
 
 
-def createCshrcForDiracOS():
-  """ Create DIRAC environment setting script for the (t)csh shell
+def checkoutFromGit(moduleName, sourceURL, tagVersion, destinationDir=None):
+  """
+  This method checkout a given tag from a git repository.
+  Note: we can checkout any project form a git repository.
+
+  :param str moduleName: The name of the Module: for example: LHCbWebDIRAC
+  :param str sourceURL: The code repository: https://github.com/DIRACGrid/WebAppDIRAC.git
+  :param str tagVersion: the tag for example: v3r1p10
+
   """
 
-  proPath = cliParams.targetPath
-  # Now create cshrc at basePath
-  try:
-    cshrcFile = os.path.join(cliParams.targetPath, 'cshrc')
-    if cliParams.useVersionsDir:
-      cshrcFile = os.path.join(cliParams.basePath, 'cshrc')
-      proPath = os.path.join(cliParams.basePath, 'pro')
-    logNOTICE('Creating %s' % cshrcFile)
-    if not os.path.exists(cshrcFile):
-      lines = ['# DIRAC cshrc file, used by clients to set up the environment',
-               'setenv PYTHONUNBUFFERED yes',
-               'setenv PYTHONOPTIMIZE x']
+  codeRepo = moduleName + 'Repo'
 
-      # Determining where the CAs are...
-      if 'X509_CERT_DIR' in os.environ:
-        certDir = os.environ['X509_CERT_DIR']
-      else:
-        if os.path.isdir('/etc/grid-security/certificates'):
-          # Assuming that, if present, it is not empty, and has correct CAs
-          certDir = '/etc/grid-security/certificates'
-        else:
-          # But this will have to be created at some point (dirac-configure)
-          certDir = '%s/etc/grid-security/certificates' % proPath
-      lines.extend(['# CAs path for SSL verification',
-                    'setenv X509_CERT_DIR %s' % certDir,
-                    'setenv SSL_CERT_DIR %s' % certDir,
-                    'setenv REQUESTS_CA_BUNDLE %s' % certDir])
+  fDirName = os.path.join(cliParams.targetPath, codeRepo)
+  cmd = "git clone '%s' '%s'" % (sourceURL, fDirName)
 
-      lines.append(
-          'setenv X509_VOMS_DIR %s' %
-          os.path.join(
-              proPath,
-              'etc',
-              'grid-security',
-              'vomsdir'))
-      lines.extend(['# Some DIRAC locations', '( test $?DIRAC -eq 1 ) || setenv DIRAC %s' %
-                    proPath, 'setenv DIRACOS %s/diracos' %
-                    cliParams.basePath, 'setenv DIRACBIN %s/sbin:$DIRACOS/bin:$DIRACOS/usr/bin' %
-                    cliParams.basePath, 'setenv DIRACSCRIPTS %s' %
-                    os.path.join("$DIRAC", 'scripts'), 'setenv DIRACLIB $DIRACOS/lib', 'setenv TERMINFO %s' %
-                    __getTerminfoLocations(os.path.join("$DIRACOS", 'share', 'terminfo'))])
+  logNOTICE("Executing: %s" % cmd)
+  if os.system(cmd):
+    return S_ERROR("Error while retrieving sources from git")
 
-      lines.extend(['# Prepend the PYTHONPATH, the LD_LIBRARY_PATH, and the DYLD_LIBRARY_PATH'])
+  branchName = "%s-%s" % (tagVersion, os.getpid())
 
-      lines.extend(['( test $?PATH -eq 1 ) || setenv PATH ""',
-                    '( test $?LD_LIBRARY_PATH -eq 1 ) || setenv LD_LIBRARY_PATH ""',
-                    '( test $?DY_LD_LIBRARY_PATH -eq 1 ) || setenv DYLD_LIBRARY_PATH ""',
-                    '( test $?PYTHONPATH -eq 1 ) || setenv PYTHONPATH ""',
-                    '( echo $PATH | grep -q $DIRACBIN ) || setenv PATH ${DIRACBIN}:$PATH',
-                    '( echo $PATH | grep -q $DIRACSCRIPTS ) || setenv PATH ${DIRACSCRIPTS}:$PATH'])
+  isTagCmd = "( cd '%s'; git tag -l | grep '%s' )" % (fDirName, tagVersion)
+  if os.system(isTagCmd):
+    # No tag found, assume branch
+    branchSource = 'origin/%s' % tagVersion
+  else:
+    branchSource = tagVersion
 
-      if cliParams.cleanPYTHONPATH:
-        lines.extend(['setenv PYTHONPATH ${DIRAC}'])
-      else:
-        lines.extend(['( echo $PYTHONPATH | grep -q $DIRAC ) || setenv PYTHONPATH ${DIRAC}:$PYTHONPATH'])
+  cmd = "( cd '%s'; git checkout -b '%s' '%s' )" % (fDirName, branchName, branchSource)
 
-      lines.extend(
-          ['setenv LD_LIBRARY_PATH $(find -L $DIRACOS -name \'*.so\' -printf "%h\\n" | \
-          sort -u | paste -sd \':\'):$LD_LIBRARY_PATH'])
-      lines.extend(['# new OpenSSL version require OPENSSL_CONF to point to some accessible location',
-                    'setenv OPENSSL_CONF /tmp'])
-      lines.extend(['# IPv6 support',
-                    'setenv GLOBUS_IO_IPV6 TRUE',
-                    'setenv GLOBUS_FTP_CLIENT_IPV6 TRUE'])
-      # gfal2 requires some environment variables to be set
-      lines.extend(['# Gfal2 configuration and plugins',
-                    'setenv GFAL_CONFIG_DIR $DIRACOS/etc/gfal2.d',
-                    'setenv  GFAL_PLUGIN_DIR $DIRACOS/usr/lib64/gfal2-plugins/'])
-      # add DIRACPLAT environment variable for client installations
-      if cliParams.externalsType == 'client':
-        lines.extend(['# DIRAC platform',
-                      'test $?DIRACPLAT -eq 1 || setenv DIRACPLAT `$DIRAC/scripts/dirac-platform`'])
-      # Add the lines required for ARC CE support
-      lines.extend(['# ARC Computing Element',
-                    'setenv ARC_PLUGIN_PATH $DIRACLIB/arc'])
-      lines.append('')
-      with open(cshrcFile, 'w') as f:
-        f.write('\n'.join(lines))
-  except Exception as x:
-    logERROR(str(x))
-    return False
+  logNOTICE("Executing: %s" % cmd)
+  exportRes = os.system(cmd)
 
-  return True
+  if exportRes:
+    return S_ERROR("Error while exporting from git")
+  if os.path.exists(fDirName + '/' + moduleName):
+    cmd = "ln -s %s/%s" % (codeRepo, moduleName)
+  else:
+    cmd = "mv %s %s" % (codeRepo, moduleName)
+
+  logNOTICE("Executing: %s" % cmd)
+  retVal = os.system(cmd)
+
+  if retVal:
+    return S_ERROR("Error while creating module: %s" % (moduleName))
+
+  return S_OK()
 
 
 def checkoutFromGit(moduleName, sourceURL, tagVersion, destinationDir=None):
@@ -2619,8 +2575,6 @@ if __name__ == "__main__":
     if not installDiracOS(releaseConfig):
       sys.exit(1)
     if not createBashrcForDiracOS():
-      sys.exit(1)
-    if not createCshrcForDiracOS():
       sys.exit(1)
   else:
     logNOTICE("Installing %s externals..." % cliParams.externalsType)

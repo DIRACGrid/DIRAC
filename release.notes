@@ -44,7 +44,7 @@ NEW: (#3744) Add WMS documentation in DeveloperGuide/Systems
 NEW: Added script (docs/Tools/UpdateDiracCFG.py) to collate the ConfigTemplate.cfg 
      files into the main dirac.cfg file
 
-[v6r21-pre2]
+[v6r21-pre3]
 
 *Core
 NEW: (#3921) DictCache - allow threadLocal cache
