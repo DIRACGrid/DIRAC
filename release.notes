@@ -4,6 +4,7 @@
 NEW: (#3921) DictCache - allow threadLocal cache
 FIX: (#3936) DictCache - Fix exception upon delete
 FIX: (#3922) allow Script.py to accommodate specific test calls with pytest
+CHANGE: (#3940) dirac-install - instrument to support DiracOS
 
 *ResourceStatusSystem
 FIX: (#3921) fix logic of the RSSCache leading in expired keys
