@@ -1791,7 +1791,7 @@ def loadConfiguration():
     elif o in ('-x', '--external'):
       cliParams.externalVersion = v
     elif o == '--cleanPYTHONPATH':
-      cliParams.cleanPYTHONPATH = True  
+      cliParams.cleanPYTHONPATH = True
 
   if not cliParams.release and not cliParams.modules:
     logERROR("Missing release to install")
@@ -2388,6 +2388,7 @@ def createBashrcForDiracOS():
     return False
 
   return True
+
 
 def checkoutFromGit(moduleName, sourceURL, tagVersion, destinationDir=None):
   """
