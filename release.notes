@@ -44,11 +44,13 @@ NEW: (#3744) Add WMS documentation in DeveloperGuide/Systems
 NEW: Added script (docs/Tools/UpdateDiracCFG.py) to collate the ConfigTemplate.cfg 
      files into the main dirac.cfg file
 
-[v6r21-pre1]
+[v6r21-pre2]
 
 *Core
 NEW: (#3921) DictCache - allow threadLocal cache
+FIX: (#3936) DictCache - Fix exception upon delete
 FIX: (#3922) allow Script.py to accommodate specific test calls with pytest
+CHANGE: (#3940) dirac-install - instrument to support DiracOS
 
 *ResourceStatusSystem
 FIX: (#3921) fix logic of the RSSCache leading in expired keys
@@ -65,6 +67,7 @@ FIX: (#3922) Fixes FTS3 duplicate transfers
 *Resources
 CHANGE: (#3933) When crating a consumer or producer then the error message must be 
         handled by the caller.
+CHANGE: (#3937) MessageQueue log backends is now set to VERBOSE instead of DEBUG        
 
 [v6r20p26]
 

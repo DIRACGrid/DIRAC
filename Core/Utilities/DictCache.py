@@ -247,4 +247,7 @@ class DictCache(object):
     """
     self.purgeAll(useLock=False)
     del self.__lock
-    del self.__cache
+    if self.__threadLocal:
+      del self.__threadLocalCache
+    else:
+      del self.__sharedCache
