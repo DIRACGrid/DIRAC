@@ -21,7 +21,8 @@ mockNone.return_value = None
 @pytest.mark.parametrize(
     "mockReplyInput, expected", [
         ({'OK': True, 'Value': ''}, {'OK': True, 'Value': []}),
-        ({'OK': False, 'Message': ''}, {'OK': False, 'Message': ''})])
+        ({'OK': False, 'Message': ''}, {'OK': False, 'Message': ''})
+    ])
 def test__getAllowedJobTypes(mocker, mockReplyInput, expected):
   """ Testing JobCleaningAgent()._getAllowedJobTypes()
   """
@@ -49,10 +50,14 @@ def test__getAllowedJobTypes(mocker, mockReplyInput, expected):
 
 
 @pytest.mark.parametrize(
-    "mockReplyInput, expected", [
-        ({'OK': True, 'Value': ''}, {'OK': True, 'Value': None}),
-        ({'OK': False, 'Message': ''}, {'OK': False, 'Message': ''})])
-def test_removeJobsByStatus(mocker, mockReplyInput, expected):
+    "conditions, mockReplyInput, expected", [
+        ({'JobType': '', 'Status': 'Deleted'}, {'OK': True, 'Value': ''}, {'OK': True, 'Value': None}),
+        ({'JobType': '', 'Status': 'Deleted'}, {'OK': False, 'Message': ''}, {'OK': False, 'Message': ''}),
+        ({'JobType': [], 'Status': 'Deleted'}, {'OK': True, 'Value': ''}, {'OK': True, 'Value': None}),
+        ({'JobType': ['some', 'status'],
+          'Status': ['Deleted', 'Cancelled']}, {'OK': True, 'Value': ''}, {'OK': True, 'Value': None})
+    ])
+def test_removeJobsByStatus(mocker, conditions, mockReplyInput, expected):
   """ Testing JobCleaningAgent().removeJobsByStatus()
   """
 
@@ -71,16 +76,18 @@ def test_removeJobsByStatus(mocker, mockReplyInput, expected):
   jobCleaningAgent._AgentModule__configDefaults = mockAM
   jobCleaningAgent.initialize()
 
-  result = jobCleaningAgent.removeJobsByStatus({})
+  result = jobCleaningAgent.removeJobsByStatus(conditions)
 
   assert result == expected
 
 
 @pytest.mark.parametrize(
-    "mockReplyInput, expected", [
-        ({'OK': True, 'Value': ''}, {'OK': True, 'Value': {'Failed': {}, 'Successful': {}}}),
-        ({'OK': False, 'Message': ''}, {'OK': True, 'Value': {'Failed': {}, 'Successful': {}}})])
-def test_deleteJobOversizedSandbox(mocker, mockReplyInput, expected):
+    "inputs, mockReplyInput, expected", [
+        ([], {'OK': True, 'Value': ''}, {'OK': True, 'Value': {'Failed': {}, 'Successful': {}}}),
+        ([], {'OK': False, 'Message': ''}, {'OK': True, 'Value': {'Failed': {}, 'Successful': {}}}),
+        (['a', 'b'], {'OK': True, 'Value': ''}, {'OK': True, 'Value': {'Failed': {}, 'Successful': {}}}),
+    ])
+def test_deleteJobOversizedSandbox(mocker, inputs, mockReplyInput, expected):
   """ Testing JobCleaningAgent().deleteJobOversizedSandbox()
   """
 
@@ -99,6 +106,6 @@ def test_deleteJobOversizedSandbox(mocker, mockReplyInput, expected):
   jobCleaningAgent._AgentModule__configDefaults = mockAM
   jobCleaningAgent.initialize()
 
-  result = jobCleaningAgent.deleteJobOversizedSandbox([])
+  result = jobCleaningAgent.deleteJobOversizedSandbox(inputs)
 
   assert result == expected
