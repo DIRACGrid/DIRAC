@@ -16,6 +16,7 @@ mockReply = MagicMock()
 mockAM = MagicMock()
 mockNone = MagicMock()
 mockNone.return_value = None
+mockJMC = MagicMock()
 
 
 @pytest.mark.parametrize(
@@ -82,29 +83,38 @@ def test_removeJobsByStatus(mocker, conditions, mockReplyInput, expected):
 
 
 @pytest.mark.parametrize(
-    "inputs, mockReplyInput, expected", [
-        ([], {'OK': True, 'Value': ''}, {'OK': True, 'Value': {'Failed': {}, 'Successful': {}}}),
-        ([], {'OK': False, 'Message': ''}, {'OK': True, 'Value': {'Failed': {}, 'Successful': {}}}),
-        (['a', 'b'], {'OK': True, 'Value': ''}, {'OK': True, 'Value': {'Failed': {}, 'Successful': {}}}),
+    "inputs, params, expected", [
+        ([], {'OK': True, 'Value': {}}, {'OK': True, 'Value': {'Failed': {}, 'Successful': {}}}),
+        (['a', 'b'], {'OK': True, 'Value': {}}, {'OK': True, 'Value': {'Failed': {}, 'Successful': {}}}),
+        ([], {'OK': True, 'Value': {1L: {'OutputSandboxLFN': '/some/lfn/1.txt'}}},
+            {'OK': True, 'Value': {'Failed': {}, 'Successful': {1L: '/some/lfn/1.txt'}}}),
+        ([], {'OK': True, 'Value': {1L: {'OutputSandboxLFN': '/some/lfn/1.txt'},
+                                    2L: {'OutputSandboxLFN': '/some/other/lfn/2.txt'}}},
+            {'OK': True, 'Value': {'Failed': {}, 'Successful': {1L: '/some/lfn/1.txt',
+                                                                2L: '/some/other/lfn/2.txt'}}}),
+        (['a', 'b'], {'OK': True, 'Value': {1L: {'OutputSandboxLFN': '/some/lfn/1.txt'}}},
+            {'OK': True, 'Value': {'Failed': {}, 'Successful': {1L: '/some/lfn/1.txt'}}}),
+        (['a', 'b'], {'OK': False}, {'OK': False}),
     ])
-def test_deleteJobOversizedSandbox(mocker, inputs, mockReplyInput, expected):
+def test_deleteJobOversizedSandbox(mocker, inputs, params, expected):
   """ Testing JobCleaningAgent().deleteJobOversizedSandbox()
   """
 
-  mockReply.return_value = mockReplyInput
-
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.AgentModule.__init__")
-  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.AgentModule.am_getOption", side_effect=mockAM)
-  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobDB.selectJobs", side_effect=mockReply)
-  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.TaskQueueDB.__init__", side_effect=mockNone)
-  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobDB.__init__", side_effect=mockNone)
-  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobLoggingDB.__init__", side_effect=mockNone)
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.AgentModule.am_getOption", return_value=mockAM)
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.TaskQueueDB", return_value=mockNone)
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobDB", return_value=mockNone)
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobLoggingDB", return_value=mockNone)
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.ReqClient", return_value=mockNone)
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent.JobMonitoringClient", return_value=mockJMC)
 
   jobCleaningAgent = JobCleaningAgent()
   jobCleaningAgent.log = gLogger
   jobCleaningAgent.log.setLevel('DEBUG')
   jobCleaningAgent._AgentModule__configDefaults = mockAM
   jobCleaningAgent.initialize()
+
+  mockJMC.getJobParameters.return_value = params
 
   result = jobCleaningAgent.deleteJobOversizedSandbox(inputs)
 

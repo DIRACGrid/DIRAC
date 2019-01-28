@@ -273,12 +273,12 @@ class JobDB(DB):
         If parameterList is empty - all the parameters are returned.
     """
 
-    if isinstance(jobID, str):
+    if isinstance(jobID, (basestring, int, long)):
       jobID = [jobID]
 
     jobIDList = []
     for jID in jobID:
-      ret = self._escapeString(jID)
+      ret = self._escapeString(str(jID))
       if not ret['OK']:
         return ret
       jobIDList.append(ret['Value'])
@@ -441,7 +441,7 @@ class JobDB(DB):
     result = self.getJobParameters(jobID, [parameter])
     if not result['OK']:
       return result
-    return S_OK(result.get('Value', {}).get(parameter))
+    return S_OK(result.get('Value', {})[jobID].get(parameter))
 
 #############################################################################
   def getJobOptParameter(self, jobID, parameter):
@@ -1401,7 +1401,7 @@ class JobDB(DB):
     result = self.getJobParameters(jobID)
     if result['OK']:
       parDict = result['Value']
-      for key, value in parDict.items():
+      for key, value in parDict[jobID].iteritems():
         result = self.setAtticJobParameter(jobID, key, value, rescheduleCounter - 1)
         if not result['OK']:
           break
