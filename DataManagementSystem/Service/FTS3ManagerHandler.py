@@ -108,7 +108,7 @@ class FTS3ManagerHandler(RequestHandler):
   def export_updateFileStatus(cls, fileStatusDict, ftsGUID):
     """ Update the file ftsStatus and error
 
-       :param fileStatusDict : { fileID : { status , error } }
+       :param fileStatusDict: { fileID : { status , error } }
        :param ftsGUID: (not mandatory) If specified, only update the rows where the ftsGUID matches this value.
     """
 
