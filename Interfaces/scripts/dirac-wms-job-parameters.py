@@ -6,9 +6,12 @@
 """
   Retrieve parameters associated to the given DIRAC job
 """
+
 __RCSID__ = "$Id$"
 
 import DIRAC
+
+from DIRAC import gLogger
 from DIRAC.Core.Base import Script
 
 Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
