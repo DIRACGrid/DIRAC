@@ -72,7 +72,6 @@ def _setupConnection(mqURI, mType):
   """
   result = getMQParamsFromCS(mqURI=mqURI)
   if not result['OK']:
-    gLogger.error('Failed to setupConnection:', '%s' % (result['Message']))
     return result
   params = result['Value']
   return connectionManager.startConnection(mqURI, params, mType)
