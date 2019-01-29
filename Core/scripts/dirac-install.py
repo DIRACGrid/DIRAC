@@ -2389,57 +2389,6 @@ def createBashrcForDiracOS():
 
   return True
 
-
-def checkoutFromGit(moduleName, sourceURL, tagVersion, destinationDir=None):
-  """
-  This method checkout a given tag from a git repository.
-  Note: we can checkout any project form a git repository.
-
-  :param str moduleName: The name of the Module: for example: LHCbWebDIRAC
-  :param str sourceURL: The code repository: https://github.com/DIRACGrid/WebAppDIRAC.git
-  :param str tagVersion: the tag for example: v3r1p10
-
-  """
-
-  codeRepo = moduleName + 'Repo'
-
-  fDirName = os.path.join(cliParams.targetPath, codeRepo)
-  cmd = "git clone '%s' '%s'" % (sourceURL, fDirName)
-
-  logNOTICE("Executing: %s" % cmd)
-  if os.system(cmd):
-    return S_ERROR("Error while retrieving sources from git")
-
-  branchName = "%s-%s" % (tagVersion, os.getpid())
-
-  isTagCmd = "( cd '%s'; git tag -l | grep '%s' )" % (fDirName, tagVersion)
-  if os.system(isTagCmd):
-    # No tag found, assume branch
-    branchSource = 'origin/%s' % tagVersion
-  else:
-    branchSource = tagVersion
-
-  cmd = "( cd '%s'; git checkout -b '%s' '%s' )" % (fDirName, branchName, branchSource)
-
-  logNOTICE("Executing: %s" % cmd)
-  exportRes = os.system(cmd)
-
-  if exportRes:
-    return S_ERROR("Error while exporting from git")
-  if os.path.exists(fDirName + '/' + moduleName):
-    cmd = "ln -s %s/%s" % (codeRepo, moduleName)
-  else:
-    cmd = "mv %s %s" % (codeRepo, moduleName)
-
-  logNOTICE("Executing: %s" % cmd)
-  retVal = os.system(cmd)
-
-  if retVal:
-    return S_ERROR("Error while creating module: %s" % (moduleName))
-
-  return S_OK()
-
-
 def checkoutFromGit(moduleName, sourceURL, tagVersion, destinationDir=None):
   """
   This method checkout a given tag from a git repository.
