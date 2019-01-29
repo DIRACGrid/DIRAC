@@ -70,7 +70,7 @@ class FTS3Client(Client):
   def updateFileStatus(self, fileStatusDict, ftsGUID=None, **kwargs):
     """ Update the file ftsStatus and error
 
-       :param fileStatusDict : { fileID : { status , error, ftsGUID } }
+       :param fileStatusDict: { fileID : { status , error, ftsGUID } }
        :param ftsGUID: if specified, only update the files having a matchign ftsGUID
     """
 

@@ -330,7 +330,7 @@ class FTS3DB(object):
 
         TODO: maybe it should query first the status and filter the rows I want to update !
 
-       :param fileStatusDict : { fileID : { status , error, ftsGUID } }
+       :param fileStatusDict: { fileID : { status , error, ftsGUID } }
        :param ftsGUID: If specified, only update the rows where the ftsGUID matches this value.
                        This avoids two jobs handling the same file one after another to step on each other foot.
                        Note that for the moment it is an optional parameter, but it may turn mandatory soon.
