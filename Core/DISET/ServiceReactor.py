@@ -15,12 +15,9 @@
 
 """
 
-__RCSID__ = "$Id$"
-
 import select
 import time
 import socket
-import sys
 import signal
 import os
 import multiprocessing
@@ -35,7 +32,10 @@ from DIRAC.Core.DISET.private.Protocols import gProtocolDict
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.ConfigurationSystem.Client import PathFinder
 
-import os
+
+__RCSID__ = "$Id$"
+
+
 class ServiceReactor(object):
 
   __transportExtraKeywords = {'SSLSessionTimeout': False,
