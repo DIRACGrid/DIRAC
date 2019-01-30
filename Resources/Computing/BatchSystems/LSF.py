@@ -33,6 +33,7 @@ class LSF(object):
         return resultDict
 
     nJobs = kwargs.get('NJobs', 1)
+    preamble = kwargs.get('Preamble')
 
     outputs = []
     outputDir = kwargs['OutputDir']
@@ -44,7 +45,8 @@ class LSF(object):
     errorDir = os.path.expandvars(errorDir)
     executable = os.path.expandvars(executable)
     for _i in xrange(int(nJobs)):
-      cmd = "bsub -o %s -e %s -q %s -J DIRACPilot %s %s" % (outputDir,
+      cmd = '%s; ' % preamble if preamble else ''
+      cmd += "bsub -o %s -e %s -q %s -J DIRACPilot %s %s" % (outputDir,
                                                             errorDir,
                                                             queue,
                                                             submitOptions,
