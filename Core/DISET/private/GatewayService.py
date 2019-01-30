@@ -15,7 +15,6 @@
 
 """
 
-__RCSID__ = "$Id$"
 
 import sys
 import cStringIO
@@ -35,6 +34,8 @@ from DIRAC.Core.DISET.private.Service import Service
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.DISET.TransferClient import TransferClient
 from DIRAC.Core.DISET.private.BaseClient import BaseClient
+
+__RCSID__ = "$Id$"
 
 
 class GatewayService(Service):
