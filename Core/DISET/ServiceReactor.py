@@ -129,12 +129,7 @@ class ServiceReactor(object):
     :param int _sig: the signal sent to the process
     :param object frame: execution frame which contains the child processes
     """
-    print 'AAAAAAAA!!!!', frame.f_locals
-    sock = frame.f_locals.get('sockets')[0]
-    if sock:
-      print dir(sock)
-      # sock.shutdown()
-      # sock.sock_shutdown()
+
     handler = frame.f_locals.get('self')
     if handler and isinstance(handler, ServiceReactor):
       handler.stopAllProcess()
@@ -173,8 +168,10 @@ class ServiceReactor(object):
       self.__acceptIncomingConnection()
 
   def stopAllProcess(self):
+    """
+    It stops all the running processes.
+    """
     for process in self.__processes:
-      print dir(process)
       gLogger.info("Stopping: PID=%d, name=%s, parentPid=%d" % (process.pid, process.name, process._parent_pid))
       if process.is_alive():
         process.terminate()
