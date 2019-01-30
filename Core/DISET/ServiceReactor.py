@@ -20,6 +20,7 @@ import time
 import socket
 import signal
 import os
+import sys
 import multiprocessing
 
 from DIRAC import gLogger, S_OK, S_ERROR
@@ -55,8 +56,6 @@ class ServiceReactor(object):
     self.__listeningConnections = {}
     self.__stats = ReactorStats()
     self.__processes = []
-
-    #self.__pool = multiprocessing.Pool( 10 )
 
   def initialize(self, servicesList):
     try:
@@ -134,8 +133,8 @@ class ServiceReactor(object):
     sock = frame.f_locals.get('sockets')[0]
     if sock:
       print dir(sock)
-      #sock.shutdown()
-      #sock.sock_shutdown()
+      # sock.shutdown()
+      # sock.sock_shutdown()
     handler = frame.f_locals.get('self')
     if handler and isinstance(handler, ServiceReactor):
       handler.stopAllProcess()
@@ -144,7 +143,7 @@ class ServiceReactor(object):
       gLogger.info("Stopping child processes: %d" % child)
       os.kill(child, signal.SIGTERM)
 
-    #sys.exit( 0 )
+    sys.exit(0)
 
   def serve(self):
     result = self.__createListeners()
@@ -159,46 +158,34 @@ class ServiceReactor(object):
       if self.__services[svcName].getConfig().getCloneProcesses() > 0:
         isMultiProcessingAllowed = True
         break
-    import threading
-    print'serve', threading.current_thread(), os.getpid()
     if isMultiProcessingAllowed:
       signal.signal(signal.SIGTERM, self.stopChildProcesses)
       signal.signal(signal.SIGINT, self.stopChildProcesses)
       for svcName in self.__listeningConnections:
         clones = self.__services[svcName].getConfig().getCloneProcesses()
-        for i in range( 1, clones ):
-          p = multiprocessing.Process( target = self.__startCloneProcess, args = ( svcName, i ) )
-          print '!!!!Start', p._name, os.getpid()
+        for i in range(1, clones):
+          p = multiprocessing.Process(target=self.__startCloneProcess, args=(svcName, i))
           self.__processes.append(p)
           p.start()
-          gLogger.always( "Started clone process %s for %s" % ( i, svcName ) )
+          gLogger.always("Started clone process %s for %s" % (i, svcName))
 
-        #self.__pool.close()
-        #self.__pool.join()
     while self.__alive:
       self.__acceptIncomingConnection()
 
   def stopAllProcess(self):
-    gLogger.info("Stopping: PID=%d, name=%s, parentPid=%d" %
-                 (self.__processes.pid, self.__processes.name, self.__processes._parent_pid))
-    self.__processes.terminate()
-  #     for process in self.__processes:
-  #       print dir( process )
-  #       gLogger.info( "Stopping: PID=%d, name=%s, parentPid=%d" % ( process.pid, process.name, process._parent_pid ) )
-  #       if process.is_alive():
-  #         process.terminate()
-  #         self.__processes.remove( process )
     for process in self.__processes:
-      gLogger.info("Stopping: PID=%d, name=%s" % (process.pid, process.name))
+      print dir(process)
+      gLogger.info("Stopping: PID=%d, name=%s, parentPid=%d" % (process.pid, process.name, process._parent_pid))
       if process.is_alive():
         process.terminate()
+        self.__processes.remove(process)
 
   # This function runs in a different process
   def __startCloneProcess(self, svcName, i):
     self.__services[svcName].setCloneProcessId(i)
     self.__alive = i
     while self.__alive:
-      self.__acceptIncomingConnection(svcName, i)
+      self.__acceptIncomingConnection(svcName)
 
   def __getListeningSocketsList(self, svcName=False):
     if svcName:
@@ -209,7 +196,7 @@ class ServiceReactor(object):
         sockets.append(self.__listeningConnections[svcName]['socket'])
     return sockets
 
-  def __acceptIncomingConnection(self, svcName=False, worker=None):
+  def __acceptIncomingConnection(self, svcName=False):
     """
       This method just gets the incoming connection, checks IP address
       and generates job. SSL/TLS handshake and execution of the remote call
@@ -221,7 +208,6 @@ class ServiceReactor(object):
     """
     sockets = self.__getListeningSocketsList(svcName)
     while self.__alive:
-      print 'while', worker, os.getpid()
       try:
         inList, _outList, _exList = select.select(sockets, [], [], 10)
         if len(inList) == 0:
