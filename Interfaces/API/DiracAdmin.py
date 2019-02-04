@@ -781,46 +781,6 @@ class DiracAdmin(API):
     return result
 
   #############################################################################
-  def getExternalPackageVersions(self):
-    """
-    Simple function that attempts to obtain the external versions for
-    the local DIRAC installation (frequently needed for debugging purposes).
-    """
-    gLogger.info('DIRAC version v%dr%d build %d' % (DIRAC.majorVersion, DIRAC.minorVersion, DIRAC.patchLevel))
-    try:
-      import lcg_util  # pylint: disable=import-error
-      infoStr = 'Using lcg_util from: \n%s' % lcg_util.__file__
-      gLogger.info(infoStr)
-      infoStr = "The version of lcg_utils is %s" % lcg_util.lcg_util_version()
-      gLogger.info(infoStr)
-    except Exception as x:
-      errStr = "SRM2Storage.__init__: Failed to import lcg_util: %s" % (x)
-      gLogger.exception(errStr)
-
-    try:
-      import gfalthr as gfal  # pylint: disable=import-error
-      infoStr = "Using gfalthr from: \n%s" % gfal.__file__
-      gLogger.info(infoStr)
-      infoStr = "The version of gfalthr is %s" % gfal.gfal_version()
-      gLogger.info(infoStr)
-    except Exception as x:
-      errStr = "SRM2Storage.__init__: Failed to import gfalthr: %s." % (x)
-      gLogger.warn(errStr)
-      try:
-        import gfal  # pylint: disable=import-error
-        infoStr = "Using gfal from: %s" % gfal.__file__
-        gLogger.info(infoStr)
-        infoStr = "The version of gfal is %s" % gfal.gfal_version()
-        gLogger.info(infoStr)
-      except Exception as x:
-        errStr = "SRM2Storage.__init__: Failed to import gfal: %s" % (x)
-        gLogger.exception(errStr)
-
-    defaultProtocols = gConfig.getValue('/Resources/StorageElements/DefaultProtocols', [])
-    gLogger.info('Default list of protocols are: %s' % (', '.join(defaultProtocols)))
-    return S_OK()
-
-  #############################################################################
   def getSiteProtocols(self, site, printOutput=False):
     """
     Allows to check the defined protocols for each site SE.

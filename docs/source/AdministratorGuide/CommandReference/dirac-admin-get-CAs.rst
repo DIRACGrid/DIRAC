@@ -14,6 +14,6 @@ Usage::
 
 Example::
 
-  $ dirac-admin-externals-versions
+  $ dirac-admin-get-CAs
 
 
