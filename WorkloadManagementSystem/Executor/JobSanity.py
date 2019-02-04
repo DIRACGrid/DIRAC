@@ -126,9 +126,9 @@ class JobSanity( OptimizerExecutor ):
 
   #############################################################################
   def  checkOutputDataExists( self, jobState ):
-    """If the job output data is already in the LFC, this
+    """If the job output data is already in the FC, this
        method will fail the job for the attention of the
-       data manager. To be tidied for DIRAC3...
+       data manager.
     """
     # FIXME: To implement checkOutputDataExists
     return S_OK()

@@ -48,7 +48,6 @@ class ConsistencyInspector(object):
     self._fileType = []
     self._fileTypesExcluded = []
     self._lfns = []
-    self.noLFC = False
     self.directories = []
 
     # Accessory elements
@@ -403,7 +402,7 @@ class ConsistencyInspector(object):
     # Reverse the LFN->SE dictionary
     nReps = 0
     for lfn in replicas:
-      csDict.setdefault(lfn, {})['LFCChecksum'] = metadata.get(
+      csDict.setdefault(lfn, {})['FCChecksum'] = metadata.get(
           lfn, {}).get('Checksum')
       for se in replicas[lfn]:
         seFiles.setdefault(se, []).append(lfn)
@@ -449,7 +448,7 @@ class ConsistencyInspector(object):
       replicaDict = replicas[lfn]
       oneGoodReplica = False
       allGoodReplicas = True
-      lfcChecksum = csDict[lfn].pop('LFCChecksum')
+      fcChecksum = csDict[lfn].pop('FCChecksum')
       for se in replicaDict:
         # If replica doesn't exist skip check
         if se in lfnNotExisting.get(lfn, []):
@@ -461,11 +460,11 @@ class ConsistencyInspector(object):
           continue
         # get the surls metadata and compare the checksum
         surlChecksum = checkSum.get(lfn, {}).get(se, '')
-        if not surlChecksum or not compareAdler(lfcChecksum, surlChecksum):
-          # if lfcChecksum does not match surlChecksum
+        if not surlChecksum or not compareAdler(fcChecksum, surlChecksum):
+          # if fcChecksum does not match surlChecksum
           csDict[lfn][se] = {'PFNChecksum': surlChecksum}
-          gLogger.info("ERROR!! checksum mismatch at %s for LFN %s:  LFC checksum: %s , PFN checksum : %s "
-                       % (se, lfn, lfcChecksum, surlChecksum))
+          gLogger.info("ERROR!! checksum mismatch at %s for LFN %s:  FC checksum: %s , PFN checksum : %s "
+                       % (se, lfn, fcChecksum, surlChecksum))
           allGoodReplicas = False
         else:
           oneGoodReplica = True
