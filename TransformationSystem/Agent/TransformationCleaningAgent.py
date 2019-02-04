@@ -50,6 +50,8 @@ class TransformationCleaningAgent(AgentModule):
     """
     AgentModule.__init__(self, *args, **kwargs)
 
+    self.shifterProxy = None
+
     # # transformation client
     self.transClient = None
     # # wms client
@@ -67,8 +69,6 @@ class TransformationCleaningAgent(AgentModule):
     self.transfidmeta = 'TransformationID'
     # # archive periof in days
     self.archiveAfter = 7
-    # # active SEs
-    self.activeStorages = []
     # # transformation log SEs
     self.logSE = 'LogSE'
     # # enable/disable execution
@@ -88,7 +88,7 @@ class TransformationCleaningAgent(AgentModule):
     # See cleanCatalogContents method: this proxy will be used ALSO when the file catalog used
     # is the DIRAC File Catalog (DFC).
     # This is possible because of unset of the "UseServerCertificate" option
-    self.shifterProxy = self.am_getOption('shifterProxy', None)
+    self.shifterProxy = self.am_getOption('shifterProxy', self.shifterProxy)
 
     # # transformations types
     self.dataProcTTypes = Operations().getValue('Transformations/DataProcessing', self.dataProcTTypes)
@@ -108,10 +108,6 @@ class TransformationCleaningAgent(AgentModule):
     # # archive periof in days
     self.archiveAfter = self.am_getOption('ArchiveAfter', self.archiveAfter)  # days
     self.log.info("Will archive Completed transformations after %d days" % self.archiveAfter)
-    # # active SEs
-    self.activeStorages = sorted(self.am_getOption('ActiveSEs', self.activeStorages))
-    if self.activeStorages:
-      self.log.info("Will check the following storage elements: %s" % str(self.activeStorages))
     # # transformation log SEs
     self.logSE = Operations().getValue('/LogStorage/LogSE', self.logSE)
     self.log.info("Will remove logs found on storage element: %s" % self.logSE)
@@ -246,7 +242,7 @@ class TransformationCleaningAgent(AgentModule):
         if not isinstance(res['Value'], list):
           try:
             transDirectories = ast.literal_eval(res['Value'])
-          except Exception as _:
+          except BaseException:
             # It can happen if the res['Value'] is '/a/b/c' instead of '["/a/b/c"]'
             transDirectories.append(res['Value'])
         else:
@@ -286,50 +282,6 @@ class TransformationCleaningAgent(AgentModule):
   #
   # These are the methods for performing the cleaning of catalogs and storage
   #
-
-  def cleanStorageContents(self, directory):
-    """ delete lfn dir from all active SE
-
-    :param self: self reference
-    :param sre directory: folder name
-    """
-    if not self.activeStorages:
-      return S_OK()
-
-    self.log.verbose("Cleaning Storage Contents")
-    for storageElement in self.activeStorages:
-      res = self.__removeStorageDirectory(directory, storageElement)
-      if not res['OK']:
-        return res
-    return S_OK()
-
-  def __removeStorageDirectory(self, directory, storageElement):
-    """ wipe out all contents from :directory: at :storageElement:
-
-    :param self: self reference
-    :param str directory: path
-    :param str storageElement: SE name
-    """
-    self.log.info('Removing the contents of %s at %s' % (directory, storageElement))
-
-    se = StorageElement(storageElement)
-
-    res = returnSingleResult(se.exists(directory))
-    if not res['OK']:
-      self.log.error("Failed to obtain existance of directory", res['Message'])
-      return res
-    exists = res['Value']
-    if not exists:
-      self.log.info("The directory %s does not exist at %s " % (directory, storageElement))
-      return S_OK()
-    res = returnSingleResult(se.removeDirectory(directory, recursive=True))
-    if not res['OK']:
-      self.log.error("Failed to remove storage directory", res['Message'])
-      return res
-    self.log.info("Successfully removed %d files from %s at %s" % (res['Value']['FilesRemoved'],
-                                                                   directory,
-                                                                   storageElement))
-    return S_OK()
 
   def cleanCatalogContents(self, directory):
     """ wipe out everything from catalog under folder :directory:
@@ -427,10 +379,8 @@ class TransformationCleaningAgent(AgentModule):
         res = self.cleanCatalogContents(directory)
         if not res['OK']:
           return res
-        res = self.cleanStorageContents(directory)
-        if not res['OK']:
-          return res
-    self.log.info("Removed directories in the catalog and storage for transformation")
+
+    self.log.info("Removed directories in the catalog for transformation")
     # Clean ALL the possible remnants found in the metadata catalog
     res = self.cleanMetadataCatalogFiles(transID)
     if not res['OK']:
@@ -491,10 +441,8 @@ class TransformationCleaningAgent(AgentModule):
       res = self.cleanCatalogContents(directory)
       if not res['OK']:
         return res
-      res = self.cleanStorageContents(directory)
-      if not res['OK']:
-        return res
-    # Clean ALL the possible remnants found in the BK
+
+    # Clean ALL the possible remnants found
     res = self.cleanMetadataCatalogFiles(transID)
     if not res['OK']:
       return res

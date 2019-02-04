@@ -74,7 +74,6 @@ AGENTS = [('DIRAC.AccountingSystem.Agent.NetworkAgent', {'IgnoreOptions': ['MaxC
                                                                                               'shifterProxy']}),
           ('DIRAC.TransformationSystem.Agent.ValidateOutputDataAgent', {'IgnoreOptions': ['TransformationTypes',
                                                                                           'DirectoryLocations',
-                                                                                          'ActiveSEs',
                                                                                           'TransfIDMeta']}),
           # ('DIRAC.TransformationSystem.Agent.RequestTaskAgent', {}),  # not inheriting from AgentModule
           # ('DIRAC.TransformationSystem.Agent.WorkflowTaskAgent', {}),  # not inheriting from AgentModule
