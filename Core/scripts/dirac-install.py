@@ -1650,7 +1650,8 @@ cmdOpts = (('r:', 'release=', 'Release version to install'),
            ('s:', 'source=', 'location of the modules to be installed'),
            ('x:', 'external=', 'external version'),
            ('  ', 'cleanPYTHONPATH', 'Only use the DIRAC PYTHONPATH (for pilots installation)'),
-           ('  ', 'createLink', 'create version symbolic link from the versions directory')
+           ('  ', 'createLink', 'create version symbolic link from the versions directory. This is equivalent to the \
+           following command: ln -s /opt/dirac/versions/vArBpC vArBpC')
            )
 
 
