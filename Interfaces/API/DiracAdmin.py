@@ -5,9 +5,11 @@ site banning and unbanning, WMS proxy uploading etc.
 
 """
 
+__RCSID__ = "$Id$"
+
 import os
 
-import DIRAC
+from DIRAC import gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.PromptUser import promptUser
 from DIRAC.Core.Base.API import API
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
@@ -20,11 +22,8 @@ from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
-from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Grid import ldapSite, ldapCluster, ldapCE, ldapService
 from DIRAC.Core.Utilities.Grid import ldapCEState, ldapCEVOView, ldapSE
-
-__RCSID__ = "$Id$"
 
 voName = ''
 ret = getProxyInfo(disableVOMS=True)
@@ -314,22 +313,6 @@ class DiracAdmin(API):
       return S_ERROR('Specified site %s is not in list of defined sites' % site)
 
     return S_OK('%s is valid' % site)
-
-  #############################################################################
-  def clearMask(self):
-    """Removes all sites from the site mask.  Should be used with care.
-
-       Example usage:
-
-         >>> print diracAdmin.clearMask()
-         {'OK': True, 'Value':''}
-
-       :return: S_OK,S_ERROR
-
-    """
-    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
-    result = wmsAdmin.clearMask()
-    return result
 
   #############################################################################
   def getServicePorts(self, setup='', printOutput=False):
