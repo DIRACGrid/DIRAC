@@ -5,6 +5,7 @@
 
 import unittest
 import datetime
+import sys
 
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
@@ -60,3 +61,4 @@ class JobLoggingCase(JobLoggingDBTestCase):
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(JobLoggingCase)
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
+  sys.exit(not testResult.wasSuccessful())

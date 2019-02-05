@@ -52,6 +52,7 @@ Resources
 # pylint: disable=invalid-name,wrong-import-position
 
 import unittest
+import sys
 from datetime import datetime
 
 from DIRAC.Core.Base import Script
@@ -275,4 +276,5 @@ if __name__ == '__main__':
   testSuite = unittest.defaultTestLoader.loadTestsFromTestCase(MonitoringTestCase)
   testSuite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(MonitoringReporterAdd))
   testSuite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(MonitoringDeleteChain))
-  unittest.TextTestRunner(verbosity=2).run(testSuite)
+  testResult = unittest.TextTestRunner(verbosity=2).run(testSuite)
+  sys.exit(not testResult.wasSuccessful())

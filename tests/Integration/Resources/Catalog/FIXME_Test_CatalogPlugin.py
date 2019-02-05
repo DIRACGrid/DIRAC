@@ -397,3 +397,4 @@ if __name__ == '__main__':
   #suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(FileTestCase))
   #suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(DirectoryTestCase))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
+  sys.exit(not testResult.wasSuccessful())
