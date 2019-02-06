@@ -4,6 +4,7 @@ If you modify the test data, you have to update the test cases...
 """
 
 import unittest
+import sys
 import datetime
 import time
 
@@ -563,4 +564,5 @@ if __name__ == '__main__':
   testSuite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ElasticBulkCreateChain))
   testSuite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ElasticTestChain))
   testSuite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ElasticDeleteChain))
-  unittest.TextTestRunner(verbosity=2).run(testSuite)
+  testResult = unittest.TextTestRunner(verbosity=2).run(testSuite)
+  sys.exit(not testResult.wasSuccessful())

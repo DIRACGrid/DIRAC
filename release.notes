@@ -1,10 +1,11 @@
-[v6r21-pre3]
+[v6r21-pre4]
 
 *Core
 NEW: (#3921) DictCache - allow threadLocal cache
 FIX: (#3936) DictCache - Fix exception upon delete
 FIX: (#3922) allow Script.py to accommodate specific test calls with pytest
 CHANGE: (#3940) dirac-install - instrument to support DiracOS
+FIX: (#3945) set DIRACOS environment variable before souring diracosrc
 
 *ResourceStatusSystem
 FIX: (#3921) fix logic of the RSSCache leading in expired keys
@@ -14,6 +15,12 @@ CHANGE: (#3933) Change the columns size of the FinalMinorStatus
 
 *WorkloadManagementSystem
 CHANGE: (#3923) Clean PYTHONPATH from *rc when installing DIRAC from the pilot
+NEW: (#3941) JobDB: getJobParameters work also with list on job IDs
+CHANGE: (#3941) JobCleaningAgent queries for job parameters in bulk
+CHANGE: (#3941) Optimizers only set optimizers parameters (backported from v7r0)
+
+*Interfaces
+CHANGE: (#3947) removed old methods going through old RMS
 
 *DataManagementSystem
 FIX: (#3922) Fixes FTS3 duplicate transfers
@@ -22,6 +29,11 @@ FIX: (#3922) Fixes FTS3 duplicate transfers
 CHANGE: (#3933) When crating a consumer or producer then the error message must be 
         handled by the caller.
 CHANGE: (#3937) MessageQueue log backends is now set to VERBOSE instead of DEBUG        
+NEW: (#3943) SSHComputingElement - added Preamble option to define a command to be 
+     executed right before the batch system job submission command
+
+*test
+CHANGE: (#3948) integration tests run with unittest now exit with exit code != 0 if failed
 
 [v6r20p26]
 

@@ -49,12 +49,14 @@ class OAR(object):
     errFile = os.path.expandvars(errFile)
     executable = os.path.expandvars(executable)
     jobIDs = []
+    preamble = kwargs.get("Preamble")
     for _i in xrange(nJobs):
-      cmd = "oarsub -O %s.out -E %s.err -q %s -n DIRACPilot %s %s" % (outFile,
-                                                                      errFile,
-                                                                      queue,
-                                                                      submitOptions,
-                                                                      executable)
+      cmd = '%s; ' % preamble if preamble else ''
+      cmd += "oarsub -O %s.out -E %s.err -q %s -n DIRACPilot %s %s" % (outFile,
+                                                                       errFile,
+                                                                       queue,
+                                                                       submitOptions,
+                                                                       executable)
       status, output = commands.getstatusoutput(cmd)
 
       if status != 0 or not output:

@@ -27,6 +27,7 @@
 # pylint: disable=protected-access,wrong-import-position,invalid-name
 
 import unittest
+import sys
 import datetime
 import tempfile
 # from mock import Mock
@@ -248,7 +249,7 @@ class JobMonitoring(TestWMSTestCase):
     self.assertEqual(res['Value'], {'par1': 'par1Value'})
     res = jobMonitor.getJobParameters(jobID)
     self.assertTrue(res['OK'])
-    self.assertEqual(res['Value'], {'par1': 'par1Value', 'par2': 'par2Value'})
+    self.assertEqual(res['Value'], {jobID: {'par1': 'par1Value', 'par2': 'par2Value'}})
     res = jobMonitor.getJobAttribute(jobID, 'Site')
     self.assertTrue(res['OK'])
     self.assertEqual(res['Value'], 'Site')
@@ -581,3 +582,4 @@ if __name__ == '__main__':
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(WMSAdministratorPilots))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(Matcher))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
+  sys.exit(not testResult.wasSuccessful())

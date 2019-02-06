@@ -195,6 +195,7 @@ class Params(object):
     self.modules = {}
     self.externalVersion = ""
     self.cleanPYTHONPATH = False
+    self.createLink = False
 
 
 cliParams = Params()
@@ -1648,7 +1649,9 @@ cmdOpts = (('r:', 'release=', 'Release version to install'),
             'Module to be installed. for example: -m DIRAC or -m git://github.com/DIRACGrid/DIRAC.git:DIRAC'),
            ('s:', 'source=', 'location of the modules to be installed'),
            ('x:', 'external=', 'external version'),
-           ('  ', 'cleanPYTHONPATH', 'Only use the DIRAC PYTHONPATH (for pilots installation)')
+           ('  ', 'cleanPYTHONPATH', 'Only use the DIRAC PYTHONPATH (for pilots installation)'),
+           ('  ', 'createLink', 'create version symbolic link from the versions directory. This is equivalent to the \
+           following command: ln -s /opt/dirac/versions/vArBpC vArBpC')
            )
 
 
@@ -1792,6 +1795,8 @@ def loadConfiguration():
       cliParams.externalVersion = v
     elif o == '--cleanPYTHONPATH':
       cliParams.cleanPYTHONPATH = True
+    elif o == '--createLink':
+      cliParams.createLink = True
 
   if not cliParams.release and not cliParams.modules:
     logERROR("Missing release to install")
@@ -2301,6 +2306,7 @@ def createBashrcForDiracOS():
       lines = ['# DIRAC bashrc file, used by service and agent run scripts to set environment',
                'export PYTHONUNBUFFERED=yes',
                'export PYTHONOPTIMIZE=x',
+               '[ -z "$DIRACOS" ] && export DIRACOS=%s/diracos' % proPath,
                '. %s/diracos/diracosrc' % proPath]
       if 'HOME' in os.environ:
         lines.append('[ -z "$HOME" ] && export HOME=%s' % os.environ['HOME'])
@@ -2331,8 +2337,6 @@ def createBashrcForDiracOS():
           [
               '# Some DIRAC locations',
               '[ -z "$DIRAC" ] && export DIRAC=%s' %
-              proPath,
-              '[ -z "$DIRACOS" ] && export DIRACOS=%s/diracos' %
               proPath,
               'export DIRACSCRIPTS=%s' %
               os.path.join(
@@ -2439,6 +2443,20 @@ def checkoutFromGit(moduleName, sourceURL, tagVersion, destinationDir=None):
 
   return S_OK()
 
+
+def createSymbolicLink():
+  """
+  It creates a symbolic link to the actual directory from versions
+  directory.
+  """
+
+  cmd = "ln -s %s %s" % (cliParams.targetPath, cliParams.release)
+  logNOTICE("Executing: %s" % cmd)
+  retVal = os.system(cmd)
+  if retVal:
+    return S_ERROR("Error while creating symbolic link!")
+
+  return S_OK()
 
 if __name__ == "__main__":
   logNOTICE("Processing installation requirements")
@@ -2547,5 +2565,7 @@ if __name__ == "__main__":
   if cliParams.externalsType == "server":
     fixMySQLScript()
   installExternalRequirements(cliParams.externalsType)
+  if cliParams.createLink:
+    createSymbolicLink()
   logNOTICE("%s properly installed" % cliParams.installation)
   sys.exit(0)

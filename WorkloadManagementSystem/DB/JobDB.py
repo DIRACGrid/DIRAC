@@ -259,7 +259,7 @@ class JobDB(DB):
             ret = self.getJobParameters(jobID, paramList=paramList)
             if not ret['OK']:
               return ret
-            attributes.update(ret['Value'])
+            attributes.update(ret['Value'][jobID])
             resultDict['Successful'].setdefault(int(localID), {})[int(jobID)] = attributes
     for localID in localIDs:
       if localID not in resultDict['Successful']:
@@ -273,12 +273,17 @@ class JobDB(DB):
         If parameterList is empty - all the parameters are returned.
     """
 
-    ret = self._escapeString(jobID)
-    if not ret['OK']:
-      return ret
-    e_jobID = ret['Value']
+    if isinstance(jobID, (basestring, int, long)):
+      jobID = [jobID]
 
-    self.log.debug('JobDB.getParameters: Getting Parameters for job %s' % jobID)
+    jobIDList = []
+    for jID in jobID:
+      ret = self._escapeString(str(jID))
+      if not ret['OK']:
+        return ret
+      jobIDList.append(ret['Value'])
+
+    self.log.debug('JobDB.getParameters: Getting Parameters for jobs %s' % ','.join(jobIDList))
 
     resultDict = {}
     if paramList:
@@ -288,31 +293,33 @@ class JobDB(DB):
         if not ret['OK']:
           return ret
         paramNameList.append(ret['Value'])
-      cmd = "SELECT Name, Value from JobParameters WHERE JobID=%s and Name in (%s)" % \
-            (e_jobID, ','.join(paramNameList))
+      cmd = "SELECT JobID, Name, Value FROM JobParameters WHERE JobID IN (%s) AND Name IN (%s)" % \
+            (','.join(jobIDList), ','.join(paramNameList))
       result = self._query(cmd)
       if result['OK']:
         if result['Value']:
-          for name, value in result['Value']:
+          for jobID, name, value in result['Value']:
+            resultDict.setdefault(jobID, {})
             try:
-              resultDict[name] = value.tostring()
+              resultDict[jobID][name] = value.tostring()
             except BaseException:
-              resultDict[name] = value
+              resultDict[jobID][name] = value
 
         return S_OK(resultDict)
       else:
         return S_ERROR('JobDB.getJobParameters: failed to retrieve parameters')
 
     else:
-      result = self.getFields('JobParameters', ['Name', 'Value'], {'JobID': jobID})
+      result = self.getFields('JobParameters', ['JobID', 'Name', 'Value'], {'JobID': jobID})
       if not result['OK']:
         return result
 
-      for name, value in result['Value']:
+      for jobID, name, value in result['Value']:
+        resultDict.setdefault(jobID, {})
         try:
-          resultDict[name] = value.tostring()
+          resultDict[jobID][name] = value.tostring()
         except BaseException:
-          resultDict[name] = value
+          resultDict[jobID][name] = value
 
       return S_OK(resultDict)
 
@@ -434,7 +441,7 @@ class JobDB(DB):
     result = self.getJobParameters(jobID, [parameter])
     if not result['OK']:
       return result
-    return S_OK(result.get('Value', {}).get(parameter))
+    return S_OK(result.get('Value', {})[jobID].get(parameter))
 
 #############################################################################
   def getJobOptParameter(self, jobID, parameter):
@@ -1394,7 +1401,7 @@ class JobDB(DB):
     result = self.getJobParameters(jobID)
     if result['OK']:
       parDict = result['Value']
-      for key, value in parDict.items():
+      for key, value in parDict[jobID].iteritems():
         result = self.setAtticJobParameter(jobID, key, value, rescheduleCounter - 1)
         if not result['OK']:
           break
