@@ -34,7 +34,7 @@ The example above assumes that you need version v6r20p14, and that with it you a
 An "lcgBundle" is simply a tarball containing a number of statically-compiled libraries that are used
 for interacting with grid environments (e.g. GFAL2, or ARC, or Condor).
 The libraries in a "lcgBundle" are not maintained within DIRAC, but DIRAC may use them.
-The produced lcgBundles can be found in `this server <http://lhcbproject.web.cern.ch/lhcbproject/dist/Dirac_project/lcgBundles/>`_.
+The produced lcgBundles can be found in `this server <http://diracproject.web.cern.ch/diracproject/lcgBundles/>`_.
 
 
 This installs the software and you should get the following directories and files created::

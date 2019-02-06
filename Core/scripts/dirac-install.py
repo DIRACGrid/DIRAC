@@ -2458,6 +2458,7 @@ def createSymbolicLink():
 
   return S_OK()
 
+
 if __name__ == "__main__":
   logNOTICE("Processing installation requirements")
   result = loadConfiguration()

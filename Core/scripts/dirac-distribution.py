@@ -113,7 +113,7 @@ class Params(object):
     return S_OK()
 
   def registerSwitches( self ):
-    Script.registerSwitch( "r:", "releases=", "releases to build (mandatory, comma separated)", cliParams.setReleases )
+    Script.registerSwitch("r:", "releases=", "releases to build (mandatory, comma separated)", cliParams.setReleases )
     Script.registerSwitch( "l:", "project=", "Project to build the release for (DIRAC by default)",
                            cliParams.setProject )
     Script.registerSwitch( "D:", "destination=", "Destination where to build the tar files", cliParams.setDestination )

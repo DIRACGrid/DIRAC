@@ -370,15 +370,15 @@ class TarModuleCreator(object):
       return S_OK("")
     try:
       with open(relNotes, "r") as fd:
-        relaseContents = fd.readlines()
-    except Exception, excp:
+        releaseContents = fd.readlines()
+    except Exception as excp:
       return S_ERROR("Could not open %s: %s" % (relNotes, excp))
     gLogger.info("Loaded %s" % relNotes)
     relData = []
     version = False
     feature = False
     lastKey = False
-    for rawLine in relaseContents:
+    for rawLine in releaseContents:
       line = rawLine.strip()
       if not line:
         continue
@@ -458,7 +458,7 @@ class TarModuleCreator(object):
       rstFilePath = os.path.join(self.params.destination, self.params.name, rstFileName)
       with open(rstFilePath, "w") as fd:
         fd.write("\n".join(rstData))
-    except Exception, excp:
+    except Exception as excp:
       return S_ERROR("Could not write %s: %s" % (rstFileName, excp))
     return S_OK()
 
@@ -513,11 +513,11 @@ class TarModuleCreator(object):
     try:
       with open(relNotesRST) as fd:
         rstData = fd.read()
-    except Exception, excp:
+    except Exception as excp:
       return S_ERROR("Could not read %s: %s" % (relNotesRST, excp))
     try:
       parts = docutils.core.publish_parts(rstData, writer_name='html')
-    except Exception, excp:
+    except Exception as excp:
       return S_ERROR("Cannot generate the html %s: %s" % (baseNotesPath, str(excp)))
     baseList = [baseNotesPath]
     if self.params.outRelNotes:
@@ -630,11 +630,11 @@ if __name__ == "__main__":
   Script.registerSwitch(
       "A", "notesoutside", "Leave a copy of the compiled release notes outside the tarball",
       cliParams.setOutReleaseNotes)
-  Script.registerSwitch("e:", "extensionVersion=", "if we have an extension,\
-                                  we can provide the base module version \
-                                  (if it is needed): for example: v3r0", cliParams.setExtensionVersion)
-  Script.registerSwitch("E:", "extensionSource=", "if we have an extension,\
-                                we must provide code repository url", cliParams.setExtensionSource)
+  Script.registerSwitch("e:", "extensionVersion=", "if we have an extension, "
+                        "we can provide the base module version "
+                        "(if it is needed): for example: v3r0", cliParams.setExtensionVersion)
+  Script.registerSwitch("E:", "extensionSource=", "if we have an extension "
+                              "we must provide code repository url", cliParams.setExtensionSource)
   Script.registerSwitch("P:", "extjspath=", "directory of the extjs library", cliParams.setExtJsPath)
 
   Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
@@ -642,9 +642,9 @@ if __name__ == "__main__":
                                     '  %s <option> ...\n' % Script.scriptName,
                                     '  A source, name and version are required to build the tarball',
                                     '  For instance:',
-                                    '     %s -n DIRAC -v v1r0 -z \
-                                    svn -u http://svnweb.cern.ch/guest/\
-                                    dirac/DIRAC/tags/DIRAC/v1r0' % Script.scriptName]))
+                                    '     %s -n DIRAC -v v1r0 -z '
+                                    'svn -u http://svnweb.cern.ch/guest/'
+                                    'dirac/DIRAC/tags/DIRAC/v1r0' % Script.scriptName]))
 
   Script.parseCommandLine(ignoreErrors=False)
 
