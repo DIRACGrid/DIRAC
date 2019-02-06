@@ -1,6 +1,9 @@
 """ Base class for all the executor modules for Jobs Optimization
 """
 
+
+__RCSID__ = "$Id$"
+
 import threading
 #Because eval(valenc) might require it
 import datetime
@@ -38,7 +41,6 @@ class OptimizerExecutor( ExecutorModule ):
     def __getattr__( self, name ):
       return self.LogWrap( self.__log, self.__jid, name )
 
-
   @classmethod
   def initialize( cls ):
     opName = cls.ex_getProperty( 'fullName' )
@@ -56,7 +58,7 @@ class OptimizerExecutor( ExecutorModule ):
       result = cls.initializeOptimizer()
       if not result[ 'OK' ]:
         return result
-    except Exception, excp:
+    except Exception as excp:
       cls.log.exception( "Error while initializing optimizer" )
       return S_ERROR( "Error initializing: %s" % str( excp ) )
     cls.ex_setMind( "WorkloadManagement/OptimizationMind" )
@@ -149,7 +151,6 @@ class OptimizerExecutor( ExecutorModule ):
     except Exception:
       self.jobLog.warn( "Opt param %s doesn't seem to be dencoded %s" % ( name, valenc ) )
     return S_OK( eval( valenc ) )
-
 
   @property
   def jobLog( self ):

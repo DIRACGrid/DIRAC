@@ -248,7 +248,7 @@ class JobMonitoring(TestWMSTestCase):
     self.assertEqual(res['Value'], {'par1': 'par1Value'})
     res = jobMonitor.getJobParameters(jobID)
     self.assertTrue(res['OK'])
-    self.assertEqual(res['Value'], {'par1': 'par1Value', 'par2': 'par2Value'})
+    self.assertEqual(res['Value'], {jobID: {'par1': 'par1Value', 'par2': 'par2Value'}})
     res = jobMonitor.getJobAttribute(jobID, 'Site')
     self.assertTrue(res['OK'])
     self.assertEqual(res['Value'], 'Site')

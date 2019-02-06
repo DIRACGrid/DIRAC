@@ -22,10 +22,11 @@ from DIRAC.Core.Security import Properties
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient, getFilesToStage
+from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.Resources.Storage.StorageElement import StorageElement
-from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor import OptimizerExecutor
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
+from DIRAC.StorageManagementSystem.Client.StorageManagerClient import StorageManagerClient, getFilesToStage
+from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor import OptimizerExecutor
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 
 
@@ -74,7 +75,7 @@ class JobScheduling(OptimizerExecutor):
     jobManifest = result['Value']
 
     # Get site requirements
-    result = self.__getSitesRequired(jobState, jobManifest)
+    result = self.__getSitesRequired(jobManifest)
     if not result['OK']:
       return result
     userSites, userBannedSites = result['Value']
@@ -246,7 +247,7 @@ class JobScheduling(OptimizerExecutor):
       return S_ERROR("Site candidates do not have all the input data")
 
     # Check if staging is required
-    stageRequired, siteCandidates = self.__resolveStaging(jobState, inputData, idSites)
+    stageRequired, siteCandidates = self.__resolveStaging(inputData, idSites)
     if not siteCandidates:
       return S_ERROR("No destination sites available")
 
@@ -279,7 +280,7 @@ class JobScheduling(OptimizerExecutor):
     # Set the site info back to the original dict to save afterwards
     opData['SiteCandidates'][stageSite] = stageData
 
-    stageRequest = self.__preRequestStaging(jobState, jobManifest, stageSite, opData)
+    stageRequest = self.__preRequestStaging(jobManifest, stageSite, opData)
     if not stageRequest['OK']:
       return stageRequest
     stageLFNs = stageRequest['Value']
@@ -287,7 +288,7 @@ class JobScheduling(OptimizerExecutor):
     if not result['OK']:
       return result
     stageLFNs = result['Value']
-    self.__updateSharedSESites(jobState, jobManifest, stageSite, stageLFNs, opData)
+    self.__updateSharedSESites(jobManifest, stageSite, stageLFNs, opData)
     # Save the optimizer data again
     self.jobLog.verbose('Updating %s Optimizer Info:' % (idAgent), opData)
     result = self.storeOptimizerParam(idAgent, opData)
@@ -315,7 +316,7 @@ class JobScheduling(OptimizerExecutor):
     self.jobLog.info("On hold -> %s" % holdMsg)
     return jobState.setAppStatus(holdMsg, source=self.ex_optimizerName())
 
-  def __getSitesRequired(self, jobState, jobManifest):
+  def __getSitesRequired(self, jobManifest):
     """Returns any candidate sites specified by the job or sites that have been
        banned and could affect the scheduling decision.
     """
@@ -429,7 +430,7 @@ class JobScheduling(OptimizerExecutor):
     self.jobLog.info("Done")
     return self.setNextOptimizer(jobState)
 
-  def __resolveStaging(self, jobState, inputData, idSites):
+  def __resolveStaging(self, inputData, idSites):
     diskSites = []
     maxOnDisk = 0
     bestSites = []
@@ -459,8 +460,7 @@ class JobScheduling(OptimizerExecutor):
       random.shuffle(bestSites)
     return (True, bestSites)
 
-  def __preRequestStaging(self, jobState, jobManifest, stageSite, opData):
-    from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
+  def __preRequestStaging(self, jobManifest, stageSite, opData):
 
     tapeSEs = []
     diskSEs = []
@@ -520,7 +520,7 @@ class JobScheduling(OptimizerExecutor):
     # Check if any LFN is in more than one SE
     # If that's the case, try to stage from the SE that has more LFNs to stage to group the request
     # 1.- Get the SEs ordered by ascending replicas
-    sortedSEs = reversed(sorted([(len(stageLFNs[seName]), seName) for seName in stageLFNs.keys()]))
+    sortedSEs = reversed(sorted([(len(stageLFNs[seName]), seName) for seName in stageLFNs]))
     for lfn in lfnToStage:
       found = False
       # 2.- Traverse the SEs
@@ -560,7 +560,7 @@ class JobScheduling(OptimizerExecutor):
 
     rid = str(result['Value'])
     self.jobLog.info("Stage request %s sent" % rid)
-    jobState.setParameter("StageRequest", rid)
+    self.storeOptimizerParam('StageRequest', rid)
 
     result = jobState.setStatus(self.ex_getOption('StagingStatus', 'Staging'),
                                 self.ex_getOption('StagingMinorStatus', 'Request Sent'),
@@ -571,7 +571,7 @@ class JobScheduling(OptimizerExecutor):
 
     return S_OK(stageLFNs)
 
-  def __updateSharedSESites(self, jobState, jobManifest, stageSite, stagedLFNs, opData):
+  def __updateSharedSESites(self, jobManifest, stageSite, stagedLFNs, opData):
     siteCandidates = opData['SiteCandidates']
 
     seStatus = {}
@@ -636,7 +636,7 @@ class JobScheduling(OptimizerExecutor):
     if len(onlineSites) == 1:
       siteName = "Group.%s" % ".".join(list(onlineSites)[0].split(".")[1:])
       self.jobLog.info("Group %s is candidate" % siteName)
-    elif len(onlineSites):
+    elif onlineSites:
       # More than one site with input
       siteName = "MultipleInput"
       self.jobLog.info("Several input sites are candidate: %s" % ','.join(onlineSites))
