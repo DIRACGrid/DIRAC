@@ -85,7 +85,7 @@ class TransformationCleaningAgent(AgentModule):
     :param self: self reference
     """
     # # shifter proxy
-    # See cleanCatalogContents method: this proxy will be used ALSO when the file catalog used
+    # See cleanContent method: this proxy will be used ALSO when the file catalog used
     # is the DIRAC File Catalog (DFC).
     # This is possible because of unset of the "UseServerCertificate" option
     self.shifterProxy = self.am_getOption('shifterProxy', self.shifterProxy)
@@ -283,7 +283,7 @@ class TransformationCleaningAgent(AgentModule):
   # These are the methods for performing the cleaning of catalogs and storage
   #
 
-  def cleanCatalogContents(self, directory):
+  def cleanContent(self, directory):
     """ wipe out everything from catalog under folder :directory:
 
     :param self: self reference
@@ -376,11 +376,12 @@ class TransformationCleaningAgent(AgentModule):
     directories = res['Value']
     for directory in directories:
       if not re.search('/LOG/', directory):
-        res = self.cleanCatalogContents(directory)
+        res = self.cleanContent(directory)
         if not res['OK']:
           return res
 
-    self.log.info("Removed directories in the catalog for transformation")
+    self.log.info("Removed %d directories from the catalog \
+      and its files from the storage for transformation %s" % (len(directories), transID))
     # Clean ALL the possible remnants found in the metadata catalog
     res = self.cleanMetadataCatalogFiles(transID)
     if not res['OK']:
@@ -438,7 +439,7 @@ class TransformationCleaningAgent(AgentModule):
         res = self.cleanTransformationLogFiles(directory)
         if not res['OK']:
           return res
-      res = self.cleanCatalogContents(directory)
+      res = self.cleanContent(directory)
       if not res['OK']:
         return res
 
