@@ -313,6 +313,7 @@ class SSHComputingElement(ComputingElement):
     if 'RemoveOutput' in self.ceParameters:
       if self.ceParameters['RemoveOutput'].lower() in ['no', 'false', '0']:
         self.removeOutput = False
+    self.preamble = self.ceParameters.get('Preamble', '')
 
     return S_OK()
 
@@ -481,7 +482,8 @@ class SSHComputingElement(ComputingElement):
                       'SubmitOptions': self.submitOptions,
                       'JobStamps': jobStamps,
                       'WholeNode': wholeNode,
-                      'NumberOfProcessors': numberOfProcessors}
+                      'NumberOfProcessors': numberOfProcessors,
+                      'Preamble': self.preamble}
 
     resultCommand = self.__executeHostCommand('submitJob', commandOptions, ssh=ssh, host=host)
     if not resultCommand['OK']:

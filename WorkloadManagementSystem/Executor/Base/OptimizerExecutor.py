@@ -63,6 +63,7 @@ class OptimizerExecutor(ExecutorModule):
       cls.log.exception("Error while initializing optimizer")
       return S_ERROR("Error initializing: %s" % str(excp))
     cls.ex_setMind("WorkloadManagement/OptimizationMind")
+
     return S_OK()
 
   @classmethod

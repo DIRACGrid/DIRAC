@@ -6,6 +6,7 @@
 
 import unittest
 import time
+import sys
 
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
@@ -385,3 +386,4 @@ if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestClientFTS3)
 
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
+  sys.exit(not testResult.wasSuccessful())

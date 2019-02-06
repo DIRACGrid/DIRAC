@@ -85,6 +85,7 @@ class Condor(object):
     outputDir = kwargs['OutputDir']
     executable = kwargs['Executable']
     submitOptions = kwargs['SubmitOptions']
+    preamble = kwargs.get('Preamble')
 
     if wholeNode:
       requirements = '+RequiresWholeMachine=True\n Requirements = ( CAN_RUN_WHOLE_MACHINE ) && ( OpSys == "LINUX" )'
@@ -112,7 +113,9 @@ class Condor(object):
 
     jdlFile.flush()
 
-    status, output = commands.getstatusoutput('condor_submit %s %s' % (submitOptions, jdlFile.name))
+    cmd = '%s; ' % preamble if preamble else ''
+    cmd += 'condor_submit %s %s' % (submitOptions, jdlFile.name)
+    status, output = commands.getstatusoutput(cmd)
 
     jdlFile.close()
 

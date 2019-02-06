@@ -9,6 +9,7 @@ It is used to test client->db-> service.
 import unittest
 import tempfile
 import time
+import sys
 from datetime import datetime
 
 from DIRAC.Core.Base import Script
@@ -391,4 +392,5 @@ if __name__ == '__main__':
   testSuite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(MonitoringInsertData))
   testSuite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(MonitoringTestChain))
   testSuite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(MonitoringDeleteChain))
-  unittest.TextTestRunner(verbosity=2).run(testSuite)
+  testResult = unittest.TextTestRunner(verbosity=2).run(testSuite)
+  sys.exit(not testResult.wasSuccessful())

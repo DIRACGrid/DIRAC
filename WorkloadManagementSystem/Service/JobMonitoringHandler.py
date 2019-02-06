@@ -518,7 +518,7 @@ class JobMonitoringHandler(RequestHandler):
     return gJobDB.getJobParameters(jobID, [parName])
 
 ##############################################################################
-  types_getJobParameters = [[int, long]]
+  types_getJobParameters = [[int, long, list]]
 
   @staticmethod
   def export_getJobParameters(jobID):
@@ -526,6 +526,7 @@ class JobMonitoringHandler(RequestHandler):
     if gElasticJobDB:
       return gElasticJobDB.getJobParameters(jobID)
     return gJobDB.getJobParameters(jobID)
+
 
 ##############################################################################
   types_getJobOptParameters = [int]

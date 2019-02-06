@@ -375,4 +375,5 @@ if __name__ == '__main__':
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GFAL2_HTTPS_Test))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GFAL2_GSIFTP_Test))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(XROOT_Test))
-  unittest.TextTestRunner(verbosity=2).run(suite)
+  testResult = unittest.TextTestRunner(verbosity=2).run(suite)
+  sys.exit(not testResult.wasSuccessful())

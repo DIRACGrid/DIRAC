@@ -9,6 +9,7 @@ This test assumes that the FTSDB database is not installed and doesn't exist in 
 
 # pylint: disable=invalid-name,wrong-import-position
 
+import sys
 import unittest
 
 from DIRAC.Core.Base.Script import parseCommandLine
@@ -199,3 +200,4 @@ if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestComponentInstallation)
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ComponentInstallationChain))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
+  sys.exit(not testResult.wasSuccessful())

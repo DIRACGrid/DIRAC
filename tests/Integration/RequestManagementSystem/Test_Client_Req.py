@@ -10,6 +10,7 @@ from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
 import unittest
+import sys
 
 from DIRAC import gLogger
 
@@ -355,8 +356,10 @@ class ReqClientMix(ReqClientTestCase):
     else:
       self.assertFalse(res['OK'], res)
 
+
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(ReqClientTestCase)
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ReqDB))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ReqClientMix))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
+  sys.exit(not testResult.wasSuccessful())

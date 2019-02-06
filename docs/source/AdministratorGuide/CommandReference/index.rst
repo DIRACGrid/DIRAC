@@ -18,7 +18,6 @@ General information:
 .. toctree::
     :maxdepth: 2
 
-    dirac-admin-externals-versions
     dirac-admin-service-ports
     dirac-platform
 

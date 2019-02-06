@@ -6,6 +6,7 @@
 # pylint: disable=invalid-name,wrong-import-position
 
 import unittest
+import sys
 
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
@@ -53,3 +54,4 @@ if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestPublisherTestCase)
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PublisherGet))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
+  sys.exit(not testResult.wasSuccessful())

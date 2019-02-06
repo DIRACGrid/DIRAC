@@ -5,6 +5,7 @@
 
 # pylint: disable=invalid-name,wrong-import-position
 
+import sys
 import time
 import datetime
 import unittest
@@ -385,3 +386,4 @@ if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestClientResourceStatusTestCase)
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ResourceStatusClientChain))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
+  sys.exit(not testResult.wasSuccessful())
