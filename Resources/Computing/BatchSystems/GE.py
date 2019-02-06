@@ -36,11 +36,13 @@ class GE(object):
         return resultDict
 
     nJobs = kwargs.get('NJobs', 1)
+    preamble = kwargs.get('Preamble')
 
     outputs = []
     output = ''
     for _i in xrange(int(nJobs)):
-      cmd = "qsub -o %(OutputDir)s -e %(ErrorDir)s -N DIRACPilot %(SubmitOptions)s %(Executable)s" % kwargs
+      cmd = '%s; ' % preamble if preamble else ''
+      cmd += "qsub -o %(OutputDir)s -e %(ErrorDir)s -N DIRACPilot %(SubmitOptions)s %(Executable)s" % kwargs
       status, output = commands.getstatusoutput(cmd)
       if status == 0:
         outputs.append(output)
