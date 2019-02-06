@@ -1,4 +1,4 @@
-[v6r21-pre4]
+[v6r21-pre5]
 
 *Core
 NEW: (#3921) DictCache - allow threadLocal cache
@@ -18,6 +18,10 @@ CHANGE: (#3923) Clean PYTHONPATH from *rc when installing DIRAC from the pilot
 NEW: (#3941) JobDB: getJobParameters work also with list on job IDs
 CHANGE: (#3941) JobCleaningAgent queries for job parameters in bulk
 CHANGE: (#3941) Optimizers only set optimizers parameters (backported from v7r0)
+
+*TransformationSystem
+CHANGE: (#3946) Remove directory listing from ValidateOutputDataAgent
+CHANGE: (#3946) Remove directory listing from TransformationCleaningAgent
 
 *Interfaces
 CHANGE: (#3947) removed old methods going through old RMS
