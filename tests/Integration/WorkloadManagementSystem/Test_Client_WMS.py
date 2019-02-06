@@ -27,6 +27,7 @@
 # pylint: disable=protected-access,wrong-import-position,invalid-name
 
 import unittest
+import sys
 import datetime
 import tempfile
 # from mock import Mock
@@ -581,3 +582,4 @@ if __name__ == '__main__':
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(WMSAdministratorPilots))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(Matcher))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
+  sys.exit(not testResult.wasSuccessful())

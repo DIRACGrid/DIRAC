@@ -8,6 +8,7 @@
 import unittest
 import itertools
 import os
+import sys
 
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
@@ -1455,3 +1456,4 @@ if __name__ == '__main__':
     print "Running test with admin privileges"
 
     testResult = unittest.TextTestRunner(verbosity=2).run(suite)
+    sys.exit(not testResult.wasSuccessful())

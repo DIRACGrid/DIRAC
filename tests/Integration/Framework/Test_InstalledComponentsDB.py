@@ -7,6 +7,7 @@ This program assumes that the service Framework/ComponentMonitoring is running
 # pylint: disable=invalid-name,wrong-import-position
 
 import unittest
+import sys
 import datetime
 
 from DIRAC.Core.Base.Script import parseCommandLine
@@ -428,3 +429,4 @@ if __name__ == '__main__':
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase
                 (ComponentMonitoringClientChain))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
+  sys.exit(not testResult.wasSuccessful())

@@ -1,13 +1,17 @@
 # FIXME: to bring back to life
 
-import unittest, os, threading, time
+import unittest
+import os
+import sys
+import threading
+import time
 
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.Subprocess import Subprocess
-from DIRAC.WorkloadManagementSystem.JobWrapper.WatchdogFactory  import WatchdogFactory
+from DIRAC.WorkloadManagementSystem.JobWrapper.WatchdogFactory import WatchdogFactory
 
 script = 'myPythonScript.py'
 
@@ -129,4 +133,4 @@ if __name__ == '__main__':
  # suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GetSystemInfoTestCase))
 #  testResult = unittest.TextTestRunner(verbosity=2).run(suite)
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
-
+  sys.exit(not testResult.wasSuccessful())
