@@ -10,13 +10,32 @@ transTypes = [basestring, int, long]
 
 __RCSID__ = "$Id$"
 
-TASKS_STATE_NAMES = ['TotalCreated', 'Created', 'Running', 'Submitted', 'Failed', 'Waiting', 'Done', 'Completed', 'Stalled',
-                     'Killed', 'Staging', 'Checking', 'Rescheduled', 'Scheduled']
+TASKS_STATE_NAMES = [
+    'TotalCreated',
+    'Created',
+    'Running',
+    'Submitted',
+    'Failed',
+    'Waiting',
+    'Done',
+    'Completed',
+    'Stalled',
+    'Killed',
+    'Staging',
+    'Checking',
+    'Rescheduled',
+    'Scheduled']
 FILES_STATE_NAMES = ['PercentProcessed', 'Processed', 'Unused', 'Assigned', 'Total', 'Problematic',
                      'ApplicationCrash', 'MaxReset']
 
+database = False
 
-class TransformationManagerHandlerBase(RequestHandler):
+
+class TransformationManagerHandler(RequestHandler):
+
+  def __init__(self, *args, **kargs):
+    self.setDatabase(database)
+    super(TransformationManagerHandler, self).__init__(*args, **kargs)
 
   def _parseRes(self, res):
     if not res['OK']:
@@ -558,7 +577,7 @@ class TransformationManagerHandlerBase(RequestHandler):
     # Create the ParameterNames entry
     resultDict['ParameterNames'] = res['ParameterNames']
     # Find which element in the tuple contains the requested status
-    if not statusColumn in resultDict['ParameterNames']:
+    if statusColumn not in resultDict['ParameterNames']:
       return S_ERROR("Provided status column not present")
     statusColumnIndex = resultDict['ParameterNames'].index(statusColumn)
 
@@ -701,17 +720,7 @@ class TransformationManagerHandlerBase(RequestHandler):
   ###########################################################################
 
 
-database = False
-
-
 def initializeTransformationManagerHandler(serviceInfo):
   global database
   database = TransformationDB('TransformationDB', 'Transformation/TransformationDB')
   return S_OK()
-
-
-class TransformationManagerHandler(TransformationManagerHandlerBase):
-
-  def __init__(self, *args, **kargs):
-    self.setDatabase(database)
-    TransformationManagerHandlerBase.__init__(self, *args, **kargs)

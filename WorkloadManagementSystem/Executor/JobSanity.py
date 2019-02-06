@@ -35,7 +35,6 @@ class JobSanity(OptimizerExecutor):
     cls.sandboxClient = SandboxStoreClient(useCertificates=True)
     return S_OK()
 
-  #############################################################################
   def optimizeJob(self, jid, jobState):
     """ This method controls the order and presence of
         each sanity check for submitted jobs. This should
@@ -72,7 +71,6 @@ class JobSanity(OptimizerExecutor):
 
     return self.setNextOptimizer(jobState)
 
-  #############################################################################
   def checkInputData(self, jobState, jobType, voName):
     """This method checks both the amount of input
        datasets for the job and whether the LFN conventions
@@ -107,9 +105,6 @@ class JobSanity(OptimizerExecutor):
       if len(data) > maxLFNs:
         return S_ERROR("Exceeded Maximum Dataset Limit (%s)" % maxLFNs)
 
-    return S_OK(len(data))
-
-  #############################################################################
   def checkInputSandbox(self, jobState, manifest):
     """The number of input sandbox files, as specified in the job
        JDL are checked in the JobDB.

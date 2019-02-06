@@ -1,5 +1,5 @@
 """ Palette is a tool to generate colors for various Graphs plots and legends
-    
+
     The DIRAC Graphs package is derived from the GraphTool plotting package of the
     CMS/Phedex Project by ... <to be added>
 """
@@ -27,7 +27,6 @@ job_minor_status_palette = {
     "AncestorDepth Not Found"                          : '#BAA312',
     'Application Finished With Errors'                 : '#BC2133',
     'BK Input Data Not Available'                      : '#E6D600',
-    'BK-LFC Integrity Check Failed'                    : '#BC1143',
     'Can not get Active and Banned Sites from JobDB'   : '#84CBFF',
     'Chosen site is not eligible'                      : '#B4A243',
     'Error Sending Staging Request'                    : '#B4A243',

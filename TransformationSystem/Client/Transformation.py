@@ -14,7 +14,7 @@ from DIRAC.RequestManagementSystem.Client.Operation import Operation
 
 COMPONENT_NAME = 'Transformation'
 
-__RCSID__ = '$Id:  $'
+__RCSID__ = '$Id$'
 
 class Transformation( API ):
 
@@ -137,7 +137,7 @@ class Transformation( API ):
     if isinstance( seList, basestring ):
       try:
         seList = eval( seList )
-      except:
+      except BaseException:
         seList = seList.split( ',' )
     elif isinstance( seList, ( list, dict, tuple ) ):
       seList = list( seList )
