@@ -279,8 +279,8 @@ class JobDB(DB):
     jobIDList = []
     for jID in jobID:
       ret = self._escapeString(str(jID))
-      if not ret['OK']:
-        return ret
+    if not ret['OK']:
+      return ret
       jobIDList.append(ret['Value'])
 
     self.log.debug('JobDB.getParameters: Getting Parameters for jobs %s' % ','.join(jobIDList))
@@ -306,7 +306,7 @@ class JobDB(DB):
               value = value.tostring()
             except BaseException:
               pass
-            resultDict[name] = value
+            resultDict[jobID][name] = value
 
         return S_OK(resultDict)  # there's a slim chance that this is an empty dictionary
       else:
@@ -323,7 +323,7 @@ class JobDB(DB):
           value = value.tostring()
         except BaseException:
           pass
-        resultDict[name] = value
+          resultDict[jobID][name] = value
 
       return S_OK(resultDict)  # there's a slim chance that this is an empty dictionary
 
@@ -1388,7 +1388,11 @@ class JobDB(DB):
     result = self.getJobParameters(jobID)
     if result['OK']:
       parDict = result['Value']
+<<<<<<< Upstream, based on upstream/rel-v6r21
       for key, value in parDict.get(jobID, {}).iteritems():
+=======
+      for key, value in parDict[jobID].iteritems():
+>>>>>>> 8cb58c6 fix conflicts
         result = self.setAtticJobParameter(jobID, key, value, rescheduleCounter - 1)
         if not result['OK']:
           break
