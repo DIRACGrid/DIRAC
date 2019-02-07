@@ -32,6 +32,18 @@ class OptimizerModule(AgentModule):
   """
 
   #############################################################################
+  def __init__(self, *args, **kwargs):
+    """ c'tor
+    """
+    AgentModule.__init__(self, *args, **kwargs)
+    self.jobDB = None
+    self.logDB = None
+    self.startingMinorStatus = None
+    self.startingMajorStatus = "Checking"
+    self.failedStatus = None
+    self.requiredJobInfo = 'jdl'
+    self._initResult = None
+
   def initialize(self, jobDB=None, logDB=None):
     """ Initialization of the Optimizer Agent.
     """
@@ -47,9 +59,7 @@ class OptimizerModule(AgentModule):
     self.am_setModuleParam('optimizerName', optimizerName)
 
     self.startingMinorStatus = self.am_getModuleParam('optimizerName')
-    self.startingMajorStatus = "Checking"
     self.failedStatus = self.am_getOption("FailedJobStatus", 'Failed')
-    self.requiredJobInfo = 'jdl'
     self.am_setOption("PollingTime", 30)
 
     return self.initializeOptimizer()
@@ -150,7 +160,7 @@ class OptimizerModule(AgentModule):
       else:
         try:
           return S_OK(eval(value))
-        except Exception as x:
+        except BaseException as x:
           return S_ERROR('Could not evaluate optimizer parameters')
 
     return result
