@@ -1156,11 +1156,12 @@ class Dirac(API):
 
   def checkSEAccess(self, se, access='Write'):
     """ returns the value of a certain SE status flag (access or other)
+
       :param se: Storage Element name
       :type se: string
       :param access: type of access
       :type access: string in ('Read', 'Write', 'Remove', 'Check')
-      : returns: True or False
+      :returns: True or False
     """
     return StorageElement(se, vo=self.vo).status().get(access, False)
 

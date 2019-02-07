@@ -689,7 +689,7 @@ class JobWrapper(object):
       self.__setJobParam('MissingLFNs', param)
       return S_ERROR('Input Data Not Available')
 
-    # Must retrieve GUIDs from LFC for files
+    # Must retrieve GUIDs from FC for files
     start = time.time()
     guidDict = self.fc.getFileMetadata(lfns)
     timing = time.time() - start

@@ -48,7 +48,6 @@ class ConsistencyInspector(object):
     self._fileType = []
     self._fileTypesExcluded = []
     self._lfns = []
-    self.noLFC = False
     self.directories = []
 
     # Accessory elements
@@ -403,7 +402,7 @@ class ConsistencyInspector(object):
     # Reverse the LFN->SE dictionary
     nReps = 0
     for lfn in replicas:
-      csDict.setdefault(lfn, {})['LFCChecksum'] = metadata.get(
+      csDict.setdefault(lfn, {})['FCChecksum'] = metadata.get(
           lfn, {}).get('Checksum')
       for se in replicas[lfn]:
         seFiles.setdefault(se, []).append(lfn)
@@ -449,7 +448,7 @@ class ConsistencyInspector(object):
       replicaDict = replicas[lfn]
       oneGoodReplica = False
       allGoodReplicas = True
-      lfcChecksum = csDict[lfn].pop('LFCChecksum')
+      fcChecksum = csDict[lfn].pop('FCChecksum')
       for se in replicaDict:
         # If replica doesn't exist skip check
         if se in lfnNotExisting.get(lfn, []):
@@ -461,11 +460,11 @@ class ConsistencyInspector(object):
           continue
         # get the surls metadata and compare the checksum
         surlChecksum = checkSum.get(lfn, {}).get(se, '')
-        if not surlChecksum or not compareAdler(lfcChecksum, surlChecksum):
-          # if lfcChecksum does not match surlChecksum
+        if not surlChecksum or not compareAdler(fcChecksum, surlChecksum):
+          # if fcChecksum does not match surlChecksum
           csDict[lfn][se] = {'PFNChecksum': surlChecksum}
-          gLogger.info("ERROR!! checksum mismatch at %s for LFN %s:  LFC checksum: %s , PFN checksum : %s "
-                       % (se, lfn, lfcChecksum, surlChecksum))
+          gLogger.info("ERROR!! checksum mismatch at %s for LFN %s:  FC checksum: %s , PFN checksum : %s "
+                       % (se, lfn, fcChecksum, surlChecksum))
           allGoodReplicas = False
         else:
           oneGoodReplica = True
@@ -599,7 +598,7 @@ class ConsistencyInspector(object):
     # or maybe directly checkFC2SE
 
     gLogger.info("-" * 40)
-    gLogger.info("Performing the LFC->SE check")
+    gLogger.info("Performing the FC->SE check")
     gLogger.info("-" * 40)
     seLfns = {}
     for lfn, replicaDict in replicas.iteritems():
@@ -676,145 +675,6 @@ class ConsistencyInspector(object):
   #
   # This section contains the specific methods for SE->File Catalog checks
   #
-
-  def storageDirectoryToCatalog(self, lfnDir, storageElement):
-    """ This obtains the file found on the storage element in the supplied directories
-        and determines whether they exist in the catalog and checks their metadata elements
-    """
-    gLogger.info("-" * 40)
-    gLogger.info("Performing the SE->FC check at %s" % storageElement)
-    gLogger.info("-" * 40)
-    if isinstance(lfnDir, basestring):
-      lfnDir = [lfnDir]
-    res = self.getStorageDirectoryContents(lfnDir, storageElement)
-    if not res['OK']:
-      return res
-    storageFileMetadata = res['Value']
-    if storageFileMetadata:
-      return self.__checkCatalogForSEFiles(storageFileMetadata, storageElement)
-    return S_OK({'CatalogMetadata': {}, 'StorageMetadata': {}})
-
-  def __checkCatalogForSEFiles(self, storageMetadata, storageElement):
-    gLogger.info('Checking %s storage files exist in the catalog' %
-                 len(storageMetadata))
-
-    res = self.fileCatalog.getReplicas(storageMetadata)
-    if not res['OK']:
-      gLogger.error("Failed to get replicas for LFN", res['Message'])
-      return res
-    failedLfns = res['Value']['Failed']
-    successfulLfns = res['Value']['Successful']
-    notRegisteredLfns = []
-
-    for lfn in storageMetadata:
-      if lfn in failedLfns:
-        if 'No such file or directory' in failedLfns[lfn]:
-          notRegisteredLfns.append(
-              (lfn, 'deprecatedUrl', storageElement, 'LFNNotRegistered'))
-          failedLfns.pop(lfn)
-      elif storageElement not in successfulLfns[lfn]:
-        notRegisteredLfns.append(
-            (lfn, 'deprecatedUrl', storageElement, 'LFNNotRegistered'))
-
-    if notRegisteredLfns:
-      self.dic.reportProblematicReplicas(
-          notRegisteredLfns, storageElement, 'LFNNotRegistered')
-    if failedLfns:
-      return S_ERROR(errno.ENOENT, 'Failed to obtain replicas')
-
-    # For the LFNs found to be registered obtain the file metadata from the
-    # catalog and verify against the storage metadata
-    res = self._getCatalogMetadata(storageMetadata)
-    if not res['OK']:
-      return res
-    catalogMetadata, _missingCatalogFiles, _zeroSizeFiles = res['Value']
-    sizeMismatch = []
-    for lfn, lfnCatalogMetadata in catalogMetadata.iteritems():
-      lfnStorageMetadata = storageMetadata[lfn]
-      if (lfnStorageMetadata['Size'] != lfnCatalogMetadata['Size']) and (lfnStorageMetadata['Size'] != 0):
-        sizeMismatch.append(
-            (lfn, 'deprecatedUrl', storageElement, 'CatalogPFNSizeMismatch'))
-    if sizeMismatch:
-      self.dic.reportProblematicReplicas(
-          sizeMismatch, storageElement, 'CatalogPFNSizeMismatch')
-    gLogger.info('Checking storage files exist in the catalog complete')
-    resDict = {'CatalogMetadata': catalogMetadata,
-               'StorageMetadata': storageMetadata}
-    return S_OK(resDict)
-
-  def getStorageDirectoryContents(self, lfnDir, storageElement):
-    """ This takes the supplied lfn directories and recursively obtains the files in the supplied storage element
-    """
-    gLogger.info('Obtaining the contents for %s directories at %s' %
-                 (len(lfnDir), storageElement))
-
-    se = StorageElement(storageElement)
-
-    res = se.exists(lfnDir)
-    if not res['OK']:
-      gLogger.error(
-          "Failed to obtain existance of directories", res['Message'])
-      return res
-    for directory, error in res['Value']['Failed'].iteritems():
-      gLogger.error('Failed to determine existance of directory',
-                    '%s %s' % (directory, error))
-    if res['Value']['Failed']:
-      return S_ERROR(errno.ENOENT, 'Failed to determine existance of directory')
-    directoryExists = res['Value']['Successful']
-    activeDirs = []
-    for directory in sorted(directoryExists):
-      exists = directoryExists[directory]
-      if exists:
-        activeDirs.append(directory)
-    allFiles = {}
-    while len(activeDirs) > 0:
-      currentDir = activeDirs[0]
-      res = se.listDirectory(currentDir)
-      activeDirs.remove(currentDir)
-      if not res['OK']:
-        gLogger.error('Failed to get directory contents', res['Message'])
-        return res
-      elif currentDir in res['Value']['Failed']:
-        gLogger.error('Failed to get directory contents', '%s %s' %
-                      (currentDir, res['Value']['Failed'][currentDir]))
-        return S_ERROR(errno.ENOENT, res['Value']['Failed'][currentDir])
-      else:
-        dirContents = res['Value']['Successful'][currentDir]
-        activeDirs.extend(se.getLFNFromURL(dirContents['SubDirs']).get(
-            'Value', {}).get('Successful', []))
-        fileURLMetadata = dirContents['Files']
-        fileMetadata = {}
-        res = se.getLFNFromURL(fileURLMetadata)
-        if not res['OK']:
-          gLogger.error('Failed to get directory content LFNs', res['Message'])
-          return res
-
-        for url, error in res['Value']['Failed'].iteritems():
-          gLogger.error("Failed to get LFN for URL", "%s %s" % (url, error))
-        if res['Value']['Failed']:
-          return S_ERROR(errno.ENOENT, "Failed to get LFNs for PFNs")
-        urlLfns = res['Value']['Successful']
-        for urlLfn, lfn in urlLfns.iteritems():
-          fileMetadata[lfn] = fileURLMetadata[urlLfn]
-        allFiles.update(fileMetadata)
-
-    zeroSizeFiles = []
-
-    for lfn in sorted(allFiles):
-      if os.path.basename(lfn) == 'dirac_directory':
-        allFiles.pop(lfn)
-      else:
-        metadata = allFiles[lfn]
-        if not metadata['Size']:
-          zeroSizeFiles.append(
-              (lfn, 'deprecatedUrl', storageElement, 'PFNZeroSize'))
-    if zeroSizeFiles:
-      self.dic.reportProblematicReplicas(
-          zeroSizeFiles, storageElement, 'PFNZeroSize')
-
-    gLogger.info('Obtained at total of %s files for directories at %s' %
-                 (len(allFiles), storageElement))
-    return S_OK(allFiles)
 
   def _getCatalogDirectoryContents(self, lfnDirs):
     """ Obtain the contents of the supplied directory, recursively
