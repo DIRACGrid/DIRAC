@@ -7,9 +7,7 @@ import datetime
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
-from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
-from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
-from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB, singleValueDefFields, multiValueDefFields
+from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import RIGHT_GET_INFO, RIGHT_RESCHEDULE
 from DIRAC.WorkloadManagementSystem.Service.JobPolicy import RIGHT_RESET, RIGHT_CHANGE_STATUS
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import singleValueDefFields, multiValueDefFields
@@ -404,10 +402,11 @@ class JobState(object):
       self.__checkType(name, basestring)
     except TypeError as excp:
       return S_ERROR(str(excp))
-    return self.jobDB.getJobOptParameter(self.__jid, name)
+    return JobState.__db.job.getJobOptParameter(self.__jid, name)
 
   right_getOptParameters = RIGHT_GET_INFO
 
+  @RemoteMethod
   def getOptParameters(self, nameList=None):
     try:
       self.__checkType(nameList, (list, tuple), canBeNone=True)
