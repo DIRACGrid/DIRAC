@@ -5,6 +5,8 @@
 """
 
 import unittest
+import sys
+
 from DIRAC.WorkloadManagementSystem.Client.PilotsLoggingClient import PilotsLoggingClient
 
 from DIRAC.Core.Base.Script import parseCommandLine
@@ -98,3 +100,4 @@ if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( TestPilotsLogging )
   suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( PilotsLogging ) )
   testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
+  sys.exit(not testResult.wasSuccessful())

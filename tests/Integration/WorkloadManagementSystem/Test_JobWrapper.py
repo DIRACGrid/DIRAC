@@ -3,6 +3,7 @@
 
 import unittest
 import os
+import sys
 
 from DIRAC import gLogger
 
@@ -69,6 +70,7 @@ class JobWrapperSubmissionCase(JobWrapperTestCase):
 
 
 if __name__ == '__main__':
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase(JobWrapperTestCase)
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobWrapperSubmissionCase))
-  testResult = unittest.TextTestRunner(verbosity=2).run(suite)
+  suite = unittest.defaultTestLoader.loadTestsFromTestCase( JobWrapperTestCase )
+  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( JobWrapperSubmissionCase ) )
+  testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
+  sys.exit(not testResult.wasSuccessful())

@@ -56,6 +56,7 @@
 # pylint: disable=invalid-name,wrong-import-position
 
 import unittest
+import sys
 
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
@@ -151,5 +152,6 @@ if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(PDPTestCase)
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PDPDecision_Success))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
+  sys.exit(not testResult.wasSuccessful())
 
 # EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

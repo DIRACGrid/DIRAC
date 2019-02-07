@@ -7,6 +7,7 @@
 
 # pylint: disable=invalid-name,wrong-import-position
 
+import sys
 import datetime
 import unittest
 
@@ -314,5 +315,6 @@ if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestClientResourceManagementTestCase)
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ResourceManagementClientChain))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
+  sys.exit(not testResult.wasSuccessful())
 
 # EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

@@ -18,7 +18,6 @@ General information:
 .. toctree::
     :maxdepth: 2
 
-    dirac-admin-externals-versions
     dirac-admin-service-ports
     dirac-platform
 
@@ -156,9 +155,6 @@ Other commands:
     dirac-proxy-info
     dirac-proxy-init
     dirac-proxy-destroy
-
-    dirac-admin-request-summary
-    dirac-admin-select-requests
 
     dirac-admin-sysadmin-cli
 

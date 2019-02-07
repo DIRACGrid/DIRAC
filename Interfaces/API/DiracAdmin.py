@@ -5,9 +5,11 @@ site banning and unbanning, WMS proxy uploading etc.
 
 """
 
+__RCSID__ = "$Id$"
+
 import os
 
-import DIRAC
+from DIRAC import gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.PromptUser import promptUser
 from DIRAC.Core.Base.API import API
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
@@ -20,11 +22,8 @@ from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
-from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Grid import ldapSite, ldapCluster, ldapCE, ldapService
 from DIRAC.Core.Utilities.Grid import ldapCEState, ldapCEVOView, ldapSE
-
-__RCSID__ = "$Id$"
 
 voName = ''
 ret = getProxyInfo(disableVOMS=True)
@@ -314,22 +313,6 @@ class DiracAdmin(API):
       return S_ERROR('Specified site %s is not in list of defined sites' % site)
 
     return S_OK('%s is valid' % site)
-
-  #############################################################################
-  def clearMask(self):
-    """Removes all sites from the site mask.  Should be used with care.
-
-       Example usage:
-
-         >>> print diracAdmin.clearMask()
-         {'OK': True, 'Value':''}
-
-       :return: S_OK,S_ERROR
-
-    """
-    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
-    result = wmsAdmin.clearMask()
-    return result
 
   #############################################################################
   def getServicePorts(self, setup='', printOutput=False):
@@ -695,130 +678,6 @@ class DiracAdmin(API):
       print line
 
     return result
-
-  #############################################################################
-  def selectRequests(self, jobID=None, requestID=None, requestName=None,
-                     requestType=None, status=None, operation=None, ownerDN=None,
-                     ownerGroup=None, requestStart=0, limit=100, printOutput=False):
-    """Select requests from the request management system. A few notes on the selection criteria:
-
-         - jobID is the WMS JobID for the request (if applicable)
-         - requestID is assigned during submission of the request
-         - requestName is the corresponding XML file name
-         - requestType e.g. 'transfer'
-         - status e.g. Done
-         - operation e.g. replicateAndRegister
-         - requestStart e.g. the first request to consider (start from 0 by default)
-         - limit e.g. selection limit (default 100)
-
-       >>> dirac.selectRequests(jobID='4894')
-       {'OK': True, 'Value': [[<Requests>]]}
-
-    """
-    options = {'RequestID': requestID, 'RequestName': requestName, 'JobID': jobID, 'OwnerDN': ownerDN,
-               'OwnerGroup': ownerGroup, 'RequestType': requestType, 'Status': status, 'Operation': operation}
-
-    conditions = {}
-    for key, value in options.iteritems():
-      if value:
-        try:
-          conditions[key] = str(value)
-        except Exception as x:
-          return self._errorReport(str(x), 'Expected string for %s field' % key)
-
-    try:
-      requestStart = int(requestStart)
-      limit = int(limit)
-    except Exception as x:
-      return self._errorReport(str(x), 'Expected integer for %s field' % limit)
-
-    self.log.verbose('Will select requests with the following conditions')
-    self.log.verbose(self.pPrint.pformat(conditions))
-    requestClient = RPCClient("RequestManagement/centralURL")
-    result = requestClient.getRequestSummaryWeb(conditions, [], requestStart, limit)
-    if not result['OK']:
-      self.log.warn(result['Message'])
-      return result
-
-    requestIDs = result['Value']
-    conds = []
-    for key, value in conditions.iteritems():
-      if value:
-        conds.append('%s = %s' % (key, value))
-    self.log.verbose('%s request(s) selected with conditions %s and limit %s' % (len(requestIDs['Records']),
-                                                                                 ', '.join(conds), limit))
-    if printOutput:
-      requests = []
-      if len(requestIDs['Records']) > limit:
-        requestList = requestIDs['Records']
-        requests = requestList[:limit]
-      else:
-        requests = requestIDs['Records']
-      print '%s request(s) selected with conditions %s and limit %s' % (len(requestIDs['Records']),
-                                                                        ', '.join(conds), limit)
-      print requestIDs['ParameterNames']
-      for request in requests:
-        print request
-    if not requestIDs:
-      return S_ERROR('No requests selected for conditions: %s' % conditions)
-    else:
-      return result
-
-  #############################################################################
-  def getRequestSummary(self, printOutput=False):
-    """
-    Get a summary of the requests in the request DB.
-    """
-    requestClient = RPCClient("RequestManagement/centralURL", timeout=120)
-    result = requestClient.getDBSummary()
-    if not result['OK']:
-      self.log.warn(result['Message'])
-      return result
-
-    if printOutput:
-      print self.pPrint.pformat(result['Value'])
-
-    return result
-
-  #############################################################################
-  def getExternalPackageVersions(self):
-    """
-    Simple function that attempts to obtain the external versions for
-    the local DIRAC installation (frequently needed for debugging purposes).
-    """
-    gLogger.info('DIRAC version v%dr%d build %d' % (DIRAC.majorVersion, DIRAC.minorVersion, DIRAC.patchLevel))
-    try:
-      import lcg_util  # pylint: disable=import-error
-      infoStr = 'Using lcg_util from: \n%s' % lcg_util.__file__
-      gLogger.info(infoStr)
-      infoStr = "The version of lcg_utils is %s" % lcg_util.lcg_util_version()
-      gLogger.info(infoStr)
-    except Exception as x:
-      errStr = "SRM2Storage.__init__: Failed to import lcg_util: %s" % (x)
-      gLogger.exception(errStr)
-
-    try:
-      import gfalthr as gfal  # pylint: disable=import-error
-      infoStr = "Using gfalthr from: \n%s" % gfal.__file__
-      gLogger.info(infoStr)
-      infoStr = "The version of gfalthr is %s" % gfal.gfal_version()
-      gLogger.info(infoStr)
-    except Exception as x:
-      errStr = "SRM2Storage.__init__: Failed to import gfalthr: %s." % (x)
-      gLogger.warn(errStr)
-      try:
-        import gfal  # pylint: disable=import-error
-        infoStr = "Using gfal from: %s" % gfal.__file__
-        gLogger.info(infoStr)
-        infoStr = "The version of gfal is %s" % gfal.gfal_version()
-        gLogger.info(infoStr)
-      except Exception as x:
-        errStr = "SRM2Storage.__init__: Failed to import gfal: %s" % (x)
-        gLogger.exception(errStr)
-
-    defaultProtocols = gConfig.getValue('/Resources/StorageElements/DefaultProtocols', [])
-    gLogger.info('Default list of protocols are: %s' % (', '.join(defaultProtocols)))
-    return S_OK()
 
   #############################################################################
   def getSiteProtocols(self, site, printOutput=False):

@@ -6,6 +6,7 @@
 # pylint: disable=protected-access, wrong-import-position, invalid-name, missing-docstring
 
 import os
+import sys
 import unittest
 import multiprocessing
 
@@ -149,5 +150,6 @@ if __name__ == '__main__':
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(HelloWorldSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(HelloWorldPlusSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(LSSuccess))
-  #suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( MPSuccess ) )
+  # suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( MPSuccess ) )
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
+  sys.exit(not testResult.wasSuccessful())

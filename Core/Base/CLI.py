@@ -138,7 +138,7 @@ class CLI( cmd.Cmd ):
       command = args.split()[0].strip()
       try:
         obj = getattr( self, "do_%s" % command )
-      except:
+      except BaseException:
         print "There's no such %s command" % command
         return
       self.printPair(command, obj.__doc__[1:])

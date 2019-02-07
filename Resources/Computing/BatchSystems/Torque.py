@@ -38,8 +38,15 @@ class Torque(object):
 
     jobIDs = []
     status = -1
+
+    preamble = kwargs.get("Preamble")
     for _i in xrange(int(nJobs)):
-      cmd = "qsub -o %(OutputDir)s -e %(ErrorDir)s -q %(Queue)s -N DIRACPilot %(SubmitOptions)s %(Executable)s 2>/dev/null" % kwargs
+      cmd = '%s; ' % preamble if preamble else ''
+      cmd += "qsub -o %(OutputDir)s " \
+             "-e %(ErrorDir)s " \
+             "-q %(Queue)s " \
+             "-N DIRACPilot " \
+             "%(SubmitOptions)s %(Executable)s 2>/dev/null" % kwargs
       status, output = commands.getstatusoutput(cmd)
       if status == 0:
         jobIDs.append(output.split('.')[0])

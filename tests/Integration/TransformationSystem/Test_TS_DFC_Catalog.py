@@ -37,6 +37,8 @@ parseCommandLine()
 
 import unittest
 import os
+import json
+import sys
 
 from DIRAC import gLogger
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
@@ -221,3 +223,4 @@ if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestTSDFCCatalogTestCase)
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TransformationClientChainID))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
+  sys.exit(not testResult.wasSuccessful())

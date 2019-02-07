@@ -5,6 +5,7 @@
 
 import unittest
 import os
+import sys
 import shutil
 
 #!/usr/bin/env python
@@ -87,3 +88,4 @@ if __name__ == '__main__':
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(HelloWorldSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(HelloWorldPlusSuccess))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
+  sys.exit(not testResult.wasSuccessful())

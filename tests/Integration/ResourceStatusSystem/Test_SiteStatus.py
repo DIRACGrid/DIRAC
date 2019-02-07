@@ -7,6 +7,7 @@
 
 from datetime import datetime
 import unittest
+import sys
 
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
@@ -140,3 +141,4 @@ if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestClientSiteStatusTestCase)
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(ClientChain))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
+  sys.exit(not testResult.wasSuccessful())
