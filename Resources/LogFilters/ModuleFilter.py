@@ -1,8 +1,8 @@
-"""Configurable backend with module level filter."""
+"""Module level filter."""
+__RCSID__ = '$Id$'
 
 from DIRAC.FrameworkSystem.private.standardLogging.LogLevels import LogLevels
 
-__RCSID__ = '$Id$'
 DOT = '.'
 LEVEL = '__level__'
 
@@ -25,10 +25,10 @@ class ModuleFilter(object):
       {
          MyModuleFilter
          {
-            Type = ModuleFilter
-            dirac=ERROR
-            dirac.Subprocess=DEBUG
-            dirac.ILCDIRAC.Interfaces.API.NewInterfaces = INFO
+            Plugin = ModuleFilter
+            dirac = ERROR
+            dirac.Subprocess = DEBUG
+            dirac.ILCDIRAC.Interfaces.API.NewInterface = INFO
          }
       }
     }
@@ -40,8 +40,8 @@ class ModuleFilter(object):
   """
   def __init__(self, optionDict):
     """Contruct the object, set the base LogLevel to DEBUG, and parse the options."""
-    self._configDict = {'dirac': {}, LEVEL: LogLevels.DEBUG}
-    optionDict.pop('Type', None)
+    self._configDict = {'dirac': {LEVEL: LogLevels.DEBUG}}
+    optionDict.pop('Plugin', None)
     for module, level in optionDict.items():
       self.__fillConfig(self._configDict, module.split(DOT), LogLevels.getLevelValue(level))
 
@@ -71,7 +71,7 @@ class ModuleFilter(object):
   def __filter(self, baseDict, hierarchy, levelno):
     """Check if sublevels are defined, or return highest set level.
 
-    Recursivly go through the configured levels, returns comparison with deepest match
+    Recursively go through the configured levels, returns comparison with deepest match
 
     :param dict baseDict: dictionary with information starting at current level
     :param list hierarchy: list of module hierarchy

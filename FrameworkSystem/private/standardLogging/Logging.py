@@ -454,7 +454,7 @@ class Logging(object):
     """Create a filter and add it to the handler of the backend."""
     for filterName in self.__getFilterList(backendOptions):
       options = self.__getFilterOptionsFromCFG(filterName)
-      _class = self.__loadLogClass('Resources.LogFilters.%s' % options.get('Type'))
+      _class = self.__loadLogClass('Resources.LogFilters.%s' % options.get('Plugin'))
       if _class['OK']:
         # add the backend instance to the Logging
         backend.getHandler().addFilter(_class['Value'](options))
