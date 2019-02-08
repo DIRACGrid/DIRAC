@@ -79,7 +79,7 @@ DIRAC design principles
      short periods without risk of client misbehaviour. 
    - The dynamic information is in most cases looked for at its source. This is why, for example, the DIRAC Workload 
      Management System is following the "pull" paradigm where the computing resources availability is examined by a 
-     network of agents running in close connection to the sites.     
+     network of agents running in close connection to the sites.
 - Requirements to sites 
    - The main responsibility of the sites is to provide resources for the common use in a grid. The resources are 
      controlled by the site managers and made available through middleware services (Computing and Storage Elements). 
@@ -93,10 +93,6 @@ DIRAC Architecture
 -------------------
 
 DIRAC follows the paradigm of a Services Oriented Architecture (SOA).
-
-.. image: DIRACArchitectureOverview.jpg
-
-**Figure 1. DIRAC Architecture Overview**
 
 The DIRAC components can be grouped in the following 4 categories: 
    - Resources
@@ -141,7 +137,7 @@ Services
    service/client authentication.
  - The services accept incoming connections from various clients. These can be user interfaces, agents or running 
    jobs. But since services are passive components, they have to be complemented by special applications to 
-   animate the system.        
+   animate the system.
 
 Agents
 @@@@@@@
@@ -171,17 +167,13 @@ DIRAC Framework
 
 The Dirac framework for building secure SOA based systems provides generic components not specific to LHCb 
 which can be applied in the contexts of other VOs as well. The framework is written in the Python language 
-and includes the following components (Figure 2): 
+and includes the following components: 
 
- - DISET (DIRAC Secure Transport) secure communication protocol 
- - Web Portal framework 
- - Configuration System  
- - Logging System 
- - Monitoring System     
-
-.. image: DIRACFrameworkComponents.jpg
-
-**Figure 2. DIRAC Framework Components**
+ - DISET (DIRAC Secure Transport) secure communication protocol
+ - Web Portal framework
+ - Configuration System
+ - Logging System
+ - Monitoring System
 
     
 Web portal framework
