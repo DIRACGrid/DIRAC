@@ -1,8 +1,8 @@
 .. _stuff_that_run:
 
-===========================
-Developing "stuff that run"
-===========================
+============================
+Developing *stuff that runs*
+============================
 
 Which means developing for databases, services, agents, and executors. But also for the configuration service.
 
