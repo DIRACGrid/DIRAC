@@ -7,6 +7,7 @@ __RCSID__ = "$Id$"
 import logging
 import os
 
+from DIRAC import S_ERROR
 from DIRAC.FrameworkSystem.private.standardLogging.LogLevels import LogLevels
 from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.Resources.LogBackends.AbstractBackend import AbstractBackend
@@ -170,23 +171,10 @@ class Logging(object):
     :params backendOptions: dictionary of different backend options.
                             example: FileName='/tmp/log.txt'
     """
-    # import ObjectLoader here to avoid a dependancy loop
-    from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
-    objLoader = ObjectLoader()
-
     # Remove white space and capitalize the first letter
     desiredBackend = desiredBackend.strip()
     desiredBackend = desiredBackend[0].upper() + desiredBackend[1:]
-
-    # lock to avoid problem in ObjectLoader which is a singleton not
-    # thread-safe
-    self._lockObjectLoader.acquire()
-    try:
-      # load the Backend class
-      _class = objLoader.loadObject('Resources.LogBackends.%sBackend' % desiredBackend)
-    finally:
-      self._lockObjectLoader.release()
-
+    _class = self.__loadLogClass('Resources.LogBackends.%sBackend' % desiredBackend)
     if _class['OK']:
       # add the backend instance to the Logging
       self._addBackend(_class['Value'](), backendOptions)
@@ -323,6 +311,21 @@ class Logging(object):
     finally:
       self._lockOptions.release()
 
+  def __loadLogClass(self, modulePath):
+    """Load class thread-safe."""
+    # import ObjectLoader here to avoid a dependancy loop
+    from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
+    objLoader = ObjectLoader()
+    # lock to avoid problem in ObjectLoader which is a singleton not
+    # thread-safe
+    self._lockObjectLoader.acquire()
+    try:
+      # load the Backend class
+      return objLoader.loadObject(modulePath)
+    finally:
+      self._lockObjectLoader.release()
+    return S_ERROR()
+
   @staticmethod
   def getAllPossibleLevels():
     """
@@ -448,51 +451,21 @@ class Logging(object):
       self._lockOptions.release()
 
   def _addFilter(self, backend, backendOptions):
-    """Create a filter and add it to the handler of the backend.
+    """Create a filter and add it to the handler of the backend."""
+    for filterName in self.__getFilterList(backendOptions):
+      options = self.__getFilterOptionsFromCFG(filterName)
+      _class = self.__loadLogClass('Resources.LogFilters.%s' % options.get('Type'))
+      if _class['OK']:
+        # add the backend instance to the Logging
+        backend.getHandler().addFilter(_class['Value'](options))
+      else:
+        self.warn("%r is not a valid Filter name." % filterName)
 
-    Resources
-    {
-      LogBackends
-      {
-        <backend>
-        {
-          Filter = MyLogFilter
-        }
-      }
-      LogFilter
-      {
-        MyLogFilter
-        {
-          Type = LevelFilter
-          Subprocess = ERROR
-          ILCDIRAC.Interfaces.API.NewInterfaces=ERROR
-          ILCDIRAC.Interfaces.API.NewInterfaces.Applications=ERROR
-          ...
-      }
-    }
-    """
+  def __getFilterList(self, backendOptions):
+    """Return list of defined filters."""
     if not (isinstance(backendOptions, dict) and 'Filter' in backendOptions):
-      return
-    filterName = backendOptions['Filter']
-    options = self.__getFilterOptionsFromCFG(filterName)
-    # thread-safe
-    # create the filter instance
-    # lock to avoid problem in ObjectLoader which is a singleton not
-    # import ObjectLoader here to avoid a dependancy loop
-    from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
-    objLoader = ObjectLoader()
-    self._lockObjectLoader.acquire()
-    try:
-      # load the Filter class
-      _class = objLoader.loadObject('Resources.LogFilters.%s' % options.get('Type'))
-    finally:
-      self._lockObjectLoader.release()
-    if _class['OK']:
-      # add the backend instance to the Logging
-      backend.getHandler().addFilter(_class['Value'](options))
-    else:
-      self.warn("%r is not a valid Filter name." % filterName)
-
+      return []
+    return [fil.strip() for fil in backendOptions['Filter'].split(',') if fil.strip()]
 
   def __getFilterOptionsFromCFG(self, logFilter):
     """Get filter options from the configuration..
