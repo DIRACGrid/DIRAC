@@ -214,6 +214,7 @@ class Logging(object):
       # update the level of the new backend to respect the Logging level
       backend.setLevel(self._level)
       self._logger.addHandler(backend.getHandler())
+      self._addFilter(backend, backendOptions)
       self._backendsList.append(backend)
     finally:
       self._lockLevel.release()
@@ -445,6 +446,68 @@ class Logging(object):
         backend.setFormat(fmt, datefmt, self._options)
     finally:
       self._lockOptions.release()
+
+  def _addFilter(self, backend, backendOptions):
+    """Create a filter and add it to the handler of the backend.
+
+    Resources
+    {
+      LogBackends
+      {
+        <backend>
+        {
+          Filter = MyLogFilter
+        }
+      }
+      LogFilter
+      {
+        MyLogFilter
+        {
+          Type = LevelFilter
+          Subprocess = ERROR
+          ILCDIRAC.Interfaces.API.NewInterfaces=ERROR
+          ILCDIRAC.Interfaces.API.NewInterfaces.Applications=ERROR
+          ...
+      }
+    }
+    """
+    if not (isinstance(backendOptions, dict) and 'Filter' in backendOptions):
+      return
+    filterName = backendOptions['Filter']
+    options = self.__getFilterOptionsFromCFG(filterName)
+    # thread-safe
+    # create the filter instance
+    # lock to avoid problem in ObjectLoader which is a singleton not
+    # import ObjectLoader here to avoid a dependancy loop
+    from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
+    objLoader = ObjectLoader()
+    self._lockObjectLoader.acquire()
+    try:
+      # load the Filter class
+      _class = objLoader.loadObject('Resources.LogFilters.%s' % options.get('Type'))
+    finally:
+      self._lockObjectLoader.release()
+    if _class['OK']:
+      # add the backend instance to the Logging
+      backend.getHandler().addFilter(_class['Value'](options))
+    else:
+      self.warn("%r is not a valid Filter name." % filterName)
+
+
+  def __getFilterOptionsFromCFG(self, logFilter):
+    """Get filter options from the configuration..
+
+    :params logFilter: string representing a filter identifier: stdout, file, f04
+    """
+    # We have to put the import lines here to avoid a dependancy loop
+    from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFilterConfig
+
+    # Search filters config in the resources section
+    retDictRessources = getFilterConfig(logFilter)
+    if retDictRessources['OK']:
+      return retDictRessources['Value']
+    return {}
+
 
   def getSubLogger(self, subName, child=True):
     """
