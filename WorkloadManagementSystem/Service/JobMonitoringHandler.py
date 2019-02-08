@@ -489,16 +489,16 @@ class JobMonitoringHandler(RequestHandler):
     res = gJobDB.getJobParameters(jobID, [parName])
     if not res['OK']:
       return res
-    return S_OK(res.get(jobID, {}))
+    return S_OK(res['Value'].get(jobID, {}))
 
 ##############################################################################
   types_getJobParameters = [[int, long, list]]
 
   @staticmethod
-  def export_getJobParameters(jobIDs):
+  def export_getJobParameters(jobIDs, parName=None):
     """ jobIDs is one single job ID or a list of them
     """
-    return gJobDB.getJobParameters(jobIDs)
+    return gJobDB.getJobParameters(jobIDs, parName)
 
 ##############################################################################
   types_traceJobParameter = [basestring, [basestring, int, long, list],

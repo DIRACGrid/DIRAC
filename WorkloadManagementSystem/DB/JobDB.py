@@ -287,9 +287,11 @@ class JobDB(DB):
 
     resultDict = {}
     if paramList:
+      if isinstance(paramList, basestring):
+        paramList = paramList.split(',')
       paramNameList = []
-      for x in paramList:
-        ret = self._escapeString(x)
+      for pn in paramList:
+        ret = self._escapeString(pn)
         if not ret['OK']:
           return ret
         paramNameList.append(ret['Value'])
