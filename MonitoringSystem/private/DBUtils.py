@@ -39,7 +39,7 @@ class DBUtils (object):
   # TODO: Maybe it is better to use the same structure we have in BasePlotter
 
   __esbucket = {
-      '1h': '2m',
+      '1h': '1m',
       '6h': '5m',
       '12h': '10m',
       '1d': '15m',
