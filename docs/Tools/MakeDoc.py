@@ -46,7 +46,6 @@ def mkRest(filename, modulename, fullmodulename, subpackages=None, modules=None)
   """make a rst file for filename"""
   if modulename == "scripts":
     return
-    #modulefinal = fullmodulename.split(".")[-2]+" Scripts"
   else:
     modulefinal = modulename
 
@@ -194,7 +193,7 @@ def createDoc(buildtype="full"):
 
     modulename = root.split("/")[-1]
     abspath = root.split(DIRACPATH)[1].strip("/")
-    fullmodulename = ".".join(abspath.split("/"))
+    fullmodulename = 'DIRAC.' + '.'.join(abspath.split('/'))
     packages = getsubpackages(abspath, direc)
     if abspath:
       mkdir(abspath)
