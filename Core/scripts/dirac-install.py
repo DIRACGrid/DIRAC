@@ -1120,7 +1120,7 @@ class ReleaseConfig(object):
       return diracOSVersion
     try:
       return self.prjRelCFG[self.projectName][cliParams.release].get(
-          "Releases/%s/DiracOS" % cliParams.release, diracOSVersion)
+          "Releases/%s/DIRACOS" % cliParams.release, diracOSVersion)
     except KeyError:
       pass
     return diracOSVersion
