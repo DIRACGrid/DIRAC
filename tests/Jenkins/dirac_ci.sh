@@ -79,7 +79,6 @@ function installSite(){
 
   prepareForServer
 
-  killRunsv
   findRelease
 
   generateCA
@@ -172,6 +171,8 @@ function fullInstallDIRAC(){
   echo '==> [fullInstallDIRAC]'
 
   finalCleanup
+
+  killRunsv
 
   # install ElasticSearch locally
   installES

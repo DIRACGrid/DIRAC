@@ -259,7 +259,7 @@ class JobDB(DB):
             ret = self.getJobParameters(jobID, paramList=paramList)
             if not ret['OK']:
               return ret
-            attributes.update(ret['Value'][jobID])
+            attributes.update(ret['Value'].get(jobID, {}))
             resultDict['Successful'].setdefault(int(localID), {})[int(jobID)] = attributes
     for localID in localIDs:
       if localID not in resultDict['Successful']:
@@ -287,9 +287,11 @@ class JobDB(DB):
 
     resultDict = {}
     if paramList:
+      if isinstance(paramList, basestring):
+        paramList = paramList.split(',')
       paramNameList = []
-      for x in paramList:
-        ret = self._escapeString(x)
+      for pn in paramList:
+        ret = self._escapeString(pn)
         if not ret['OK']:
           return ret
         paramNameList.append(ret['Value'])
@@ -305,7 +307,7 @@ class JobDB(DB):
             except BaseException:
               resultDict[jobID][name] = value
 
-        return S_OK(resultDict)
+        return S_OK(resultDict)  # there's a slim chance that this is an empty dictionary
       else:
         return S_ERROR('JobDB.getJobParameters: failed to retrieve parameters')
 
@@ -321,7 +323,7 @@ class JobDB(DB):
         except BaseException:
           resultDict[jobID][name] = value
 
-      return S_OK(resultDict)
+      return S_OK(resultDict)  # there's a slim chance that this is an empty dictionary
 
 #############################################################################
   def getAtticJobParameters(self, jobID, paramList=None, rescheduleCounter=-1):
@@ -441,7 +443,7 @@ class JobDB(DB):
     result = self.getJobParameters(jobID, [parameter])
     if not result['OK']:
       return result
-    return S_OK(result.get('Value', {})[jobID].get(parameter))
+    return S_OK(result.get('Value', {}).get(jobID, {}).get(parameter))
 
 #############################################################################
   def getJobOptParameter(self, jobID, parameter):
@@ -1401,7 +1403,7 @@ class JobDB(DB):
     result = self.getJobParameters(jobID)
     if result['OK']:
       parDict = result['Value']
-      for key, value in parDict[jobID].iteritems():
+      for key, value in parDict.get(jobID, {}).iteritems():
         result = self.setAtticJobParameter(jobID, key, value, rescheduleCounter - 1)
         if not result['OK']:
           break
