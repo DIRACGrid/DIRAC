@@ -1,4 +1,4 @@
-[v6r21-pre5]
+[v6r21-pre6]
 
 *Core
 NEW: (#3921) DictCache - allow threadLocal cache
@@ -6,6 +6,9 @@ FIX: (#3936) DictCache - Fix exception upon delete
 FIX: (#3922) allow Script.py to accommodate specific test calls with pytest
 CHANGE: (#3940) dirac-install - instrument to support DiracOS
 FIX: (#3945) set DIRACOS environment variable before souring diracosrc
+CHANGE: (#3949) Removed unattended dirac-install-client.py
+CHANGE: (#3950) File.py - do not follow links when getting files list or size 
+        in directory via getGlobbedFiles and getGlobbedTotalSize
 
 *ResourceStatusSystem
 FIX: (#3921) fix logic of the RSSCache leading in expired keys
@@ -29,12 +32,21 @@ CHANGE: (#3947) removed old methods going through old RMS
 *DataManagementSystem
 FIX: (#3922) Fixes FTS3 duplicate transfers
 
+*MonitoringSystem
+CHANGE: (#3956) Change the bucket size from week to day.
+
 *Resources
 CHANGE: (#3933) When crating a consumer or producer then the error message must be 
         handled by the caller.
 CHANGE: (#3937) MessageQueue log backends is now set to VERBOSE instead of DEBUG        
 NEW: (#3943) SSHComputingElement - added Preamble option to define a command to be 
      executed right before the batch system job submission command
+NEW: (#3953) Added the possibility to add filters to log backends to refine the 
+     output shown/stored
+NEW: (#3953) Resources.LogFilters.ModuleFilter: Filter that allows one to set the 
+     LogLevel for individual modules
+NEW: (#3953) Resources.LogFilter.PatternFilter: Filter to select or reject log 
+     output based on words
 
 *test
 CHANGE: (#3948) integration tests run with unittest now exit with exit code != 0 if failed
