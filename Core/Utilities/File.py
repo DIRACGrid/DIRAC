@@ -4,8 +4,7 @@
    By default on Error they return None.
 """
 
-# pylint: skip-file
-# getGlobbedFiles gives "RuntimeError: maximum recursion depth exceeded" in pylint
+__RCSID__ = "$Id$"
 
 import os
 import hashlib
@@ -14,8 +13,6 @@ import glob
 import sys
 import re
 import errno
-
-__RCSID__ = "$Id$"
 
 # Translation table of a given unit to Bytes
 # I know, it should be kB...
@@ -178,7 +175,7 @@ def getGlobbedTotalSize(files):
       totalSize += size
   else:
     for path in glob.glob(files):
-      if os.path.isdir(path):
+      if os.path.isdir(path) and not os.path.islink(path):
         for content in os.listdir(path):
           totalSize += getGlobbedTotalSize(os.path.join(path, content))
       if os.path.isfile(path):
@@ -201,7 +198,7 @@ def getGlobbedFiles(files):
       globbedFiles += getGlobbedFiles(entry)
   else:
     for path in glob.glob(files):
-      if os.path.isdir(path):
+      if os.path.isdir(path) and not os.path.islink(path):
         for content in os.listdir(path):
           globbedFiles += getGlobbedFiles(os.path.join(path, content))
       if os.path.isfile(path):
