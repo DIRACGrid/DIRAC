@@ -28,6 +28,7 @@ CHANGE: (#3744) removed unused/outdated stuff from Distribution module
 FIX: check for empty /etc/grid-security/certificates dir
 NEW: (#3842) Add createClient decorator to add wrapper for all export_ functions automatically
 NEW: (#3678) dirac-install can install a non released code directly from the git repository
+FIX: (#3931) AuthManager - modified to work with the case of unregistered DN in credDict
 
 *ProductionManagement
 NEW: (#3703) ProductionManagement system is introduced
