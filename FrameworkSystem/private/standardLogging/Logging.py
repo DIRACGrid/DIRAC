@@ -7,6 +7,7 @@ __RCSID__ = "$Id$"
 import logging
 import os
 
+from DIRAC import S_ERROR
 from DIRAC.FrameworkSystem.private.standardLogging.LogLevels import LogLevels
 from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.Resources.LogBackends.AbstractBackend import AbstractBackend
@@ -170,23 +171,10 @@ class Logging(object):
     :params backendOptions: dictionary of different backend options.
                             example: FileName='/tmp/log.txt'
     """
-    # import ObjectLoader here to avoid a dependancy loop
-    from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
-    objLoader = ObjectLoader()
-
     # Remove white space and capitalize the first letter
     desiredBackend = desiredBackend.strip()
     desiredBackend = desiredBackend[0].upper() + desiredBackend[1:]
-
-    # lock to avoid problem in ObjectLoader which is a singleton not
-    # thread-safe
-    self._lockObjectLoader.acquire()
-    try:
-      # load the Backend class
-      _class = objLoader.loadObject('Resources.LogBackends.%sBackend' % desiredBackend)
-    finally:
-      self._lockObjectLoader.release()
-
+    _class = self.__loadLogClass('Resources.LogBackends.%sBackend' % desiredBackend)
     if _class['OK']:
       # add the backend instance to the Logging
       self._addBackend(_class['Value'](), backendOptions)
@@ -214,6 +202,7 @@ class Logging(object):
       # update the level of the new backend to respect the Logging level
       backend.setLevel(self._level)
       self._logger.addHandler(backend.getHandler())
+      self._addFilter(backend, backendOptions)
       self._backendsList.append(backend)
     finally:
       self._lockLevel.release()
@@ -321,6 +310,21 @@ class Logging(object):
       return options
     finally:
       self._lockOptions.release()
+
+  def __loadLogClass(self, modulePath):
+    """Load class thread-safe."""
+    # import ObjectLoader here to avoid a dependancy loop
+    from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
+    objLoader = ObjectLoader()
+    # lock to avoid problem in ObjectLoader which is a singleton not
+    # thread-safe
+    self._lockObjectLoader.acquire()
+    try:
+      # load the Backend class
+      return objLoader.loadObject(modulePath)
+    finally:
+      self._lockObjectLoader.release()
+    return S_ERROR()
 
   @staticmethod
   def getAllPossibleLevels():
@@ -445,6 +449,38 @@ class Logging(object):
         backend.setFormat(fmt, datefmt, self._options)
     finally:
       self._lockOptions.release()
+
+  def _addFilter(self, backend, backendOptions):
+    """Create a filter and add it to the handler of the backend."""
+    for filterName in self.__getFilterList(backendOptions):
+      options = self.__getFilterOptionsFromCFG(filterName)
+      _class = self.__loadLogClass('Resources.LogFilters.%s' % options.get('Plugin'))
+      if _class['OK']:
+        # add the backend instance to the Logging
+        backend.getHandler().addFilter(_class['Value'](options))
+      else:
+        self.warn("%r is not a valid Filter name." % filterName)
+
+  def __getFilterList(self, backendOptions):
+    """Return list of defined filters."""
+    if not (isinstance(backendOptions, dict) and 'Filter' in backendOptions):
+      return []
+    return [fil.strip() for fil in backendOptions['Filter'].split(',') if fil.strip()]
+
+  def __getFilterOptionsFromCFG(self, logFilter):
+    """Get filter options from the configuration..
+
+    :params logFilter: string representing a filter identifier: stdout, file, f04
+    """
+    # We have to put the import lines here to avoid a dependancy loop
+    from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFilterConfig
+
+    # Search filters config in the resources section
+    retDictRessources = getFilterConfig(logFilter)
+    if retDictRessources['OK']:
+      return retDictRessources['Value']
+    return {}
+
 
   def getSubLogger(self, subName, child=True):
     """

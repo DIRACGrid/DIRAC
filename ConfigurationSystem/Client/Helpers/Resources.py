@@ -329,3 +329,11 @@ def getBackendConfig(backendID):
   :params backendID: string representing a backend identifier. Ex: stdout, file, f02
   """
   return gConfig.getOptionsDict('Resources/LogBackends/%s' % backendID)
+
+
+def getFilterConfig(filterID):
+  """Return a filter configuration for a given filter identifier.
+
+  :params filterID: string representing a filter identifier.
+  """
+  return gConfig.getOptionsDict('Resources/LogFilters/%s' % filterID)

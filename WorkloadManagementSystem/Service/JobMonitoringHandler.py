@@ -9,6 +9,7 @@ __RCSID__ = "$Id$"
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 import DIRAC.Core.Utilities.Time as Time
+from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
@@ -291,6 +292,7 @@ class JobMonitoringHandler(RequestHandler):
   types_getJobsParameters = [list, list]
 
   @staticmethod
+  @deprecated("Unused")
   def export_getJobsParameters(jobIDs, parameters):
     if not (jobIDs and parameters):
       return S_OK({})
@@ -512,15 +514,27 @@ class JobMonitoringHandler(RequestHandler):
 
   @staticmethod
   def export_getJobParameter(jobID, parName):
+<<<<<<< HEAD
 
     if gElasticJobDB:
       return gElasticJobDB.getJobParameters(jobID, [parName])
     return gJobDB.getJobParameters(jobID, [parName])
+=======
+    """
+    :param str/int/long jobID: one single Job ID
+    :param str parName: one single parameter name
+    """
+    res = gJobDB.getJobParameters(jobID, [parName])
+    if not res['OK']:
+      return res
+    return S_OK(res['Value'].get(jobID, {}))
+>>>>>>> rel-v6r21
 
 ##############################################################################
-  types_getJobParameters = [[int, long, list]]
+  types_getJobParameters = [[basestring, int, long, list]]
 
   @staticmethod
+<<<<<<< HEAD
   def export_getJobParameters(jobID):
 
     if gElasticJobDB:
@@ -534,6 +548,14 @@ class JobMonitoringHandler(RequestHandler):
   @staticmethod
   def export_getJobOptParameters(jobID):
     return gJobDB.getJobOptParameters(jobID)
+=======
+  def export_getJobParameters(jobIDs, parName=None):
+    """
+    :param str/int/long/list jobIDs: one single job ID or a list of them
+    :param str parName: one single parameter name, or None (meaning all of them)
+    """
+    return gJobDB.getJobParameters(jobIDs, parName)
+>>>>>>> rel-v6r21
 
 ##############################################################################
   types_traceJobParameter = [basestring, [basestring, int, long, list],

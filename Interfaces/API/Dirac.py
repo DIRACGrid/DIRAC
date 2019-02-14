@@ -2410,7 +2410,7 @@ class Dirac(API):
     if not result['OK']:
       return result
 
-    result['Value'][jobID].pop('StandardOutput', None)
+    result['Value'].get(jobID, {}).pop('StandardOutput', None)
 
     if printOutput:
       print self.pPrint.pformat(result['Value'])

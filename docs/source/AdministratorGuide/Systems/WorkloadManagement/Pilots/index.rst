@@ -129,7 +129,7 @@ Pilot options
 =============
 
 The pilot can be configured to run in several ways.
-Please, refer to https://github.com/DIRACGrid/DIRAC/blob/master/WorkloadManagementSystem/PilotAgent/pilotTools.py#L400
+Please, refer to https://github.com/DIRACGrid/Pilot/blob/master/Pilot/pilotTools.py
 for the full list.
 
 
@@ -157,8 +157,9 @@ In this case, you have to provide a json file freely accessible that contains th
 This is tipically the case for VMs in IAAS and IAAC.
 
 The files to consider are in https://github.com/DIRACGrid/DIRAC/blob/master/WorkloadManagementSystem/PilotAgent
-The main file in which you should look is
-https://github.com/DIRACGrid/DIRAC/blob/master/WorkloadManagementSystem/PilotAgent/dirac-pilot.py
+for Pilot2, while the so-called "Pilot3" files are in the dedicated repository at https://github.com/DIRACGrid/Pilot/.
+
+The main file in which you should look is dirac-pilot.py
 that also contains a good explanation on how the system works.
 
 You have to provide in this case a pilot wrapper script (which can be written in bash, for example) that will start your pilot script
@@ -221,18 +222,12 @@ A simpler example is the following::
   # Clear it to avoid problems ( be careful if there is more than one agent ! )
   rm -rf /tmp/area/*
 
-  # URLs where to get scripts
-  DIRAC_INSTALL='https://raw.githubusercontent.com/DIRACGrid/DIRAC/raw/integration/Core/scripts/dirac-install.py'
-  DIRAC_PILOT='https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/WorkloadManagementSystem/PilotAgent/dirac-pilot.py'
-  DIRAC_PILOT_TOOLS='https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/WorkloadManagementSystem/PilotAgent/pilotTools.py'
-  DIRAC_PILOT_COMMANDS='https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/WorkloadManagementSystem/PilotAgent/pilotCommands.py'
-  LHCbDIRAC_PILOT_COMMANDS='http://svn.cern.ch/guest/dirac/LHCbDIRAC/trunk/LHCbDIRAC/WorkloadManagementSystem/PilotAgent/LHCbPilotCommands.py'
-
-  echo "Getting DIRAC Pilot 2.0 code from lhcbproject for now..."
-  DIRAC_INSTALL='https://lhcbproject.web.cern.ch/lhcbproject/Operations/VM/pilot2/dirac-install.py'
-  DIRAC_PILOT='https://lhcbproject.web.cern.ch/lhcbproject/Operations/VM/pilot2/dirac-pilot.py'
-  DIRAC_PILOT_TOOLS='https://lhcbproject.web.cern.ch/lhcbproject/Operations/VM/pilot2/pilotTools.py'
-  DIRAC_PILOT_COMMANDS='https://lhcbproject.web.cern.ch/lhcbproject/Operations/VM/pilot2/pilotCommands.py'
+  # URLs where to get scripts, that for Pilot3 are copied over to your WebPortal, e.g. like:
+  DIRAC_INSTALL='https://lhcb-portal-dirac.cern.ch/pilot/dirac-install.py'
+  DIRAC_PILOT='https://lhcb-portal-dirac.cern.ch/pilot/dirac-pilot.py'
+  DIRAC_PILOT_TOOLS='https://lhcb-portal-dirac.cern.ch/pilot/pilotTools.py'
+  DIRAC_PILOT_COMMANDS='https://lhcb-portal-dirac.cern.ch/pilot/pilotCommands.py'
+  LHCbDIRAC_PILOT_COMMANDS='https://lhcb-portal-dirac.cern.ch/pilot/LHCbPilotCommands.py'
 
   #
   ##get the necessary scripts
@@ -244,15 +239,9 @@ A simpler example is the following::
 
   #run the dirac-pilot script
   python dirac-pilot.py \
-   --debug \
    --setup $LHCBDIRAC_SETUP \
    --project LHCb \
-   -o '/LocalSite/SubmitPool=Test' \
-   --configurationServer dips://lhcb-conf-dirac.cern.ch:9135/Configuration/Server \
    --Name "$CE_NAME" \
-   --MaxCycles 1 \
    --name "$1" \
    --cert \
    --certLocation=/scratch/dirac/etc/grid-security \
-   --commandExtensions LHCbPilot \
-   --commands LHCbGetPilotVersion,CheckWorkerNode,LHCbInstallDIRAC,LHCbConfigureBasics,LHCbConfigureSite,LHCbConfigureArchitecture,LHCbConfigureCPURequirements,LaunchAgent

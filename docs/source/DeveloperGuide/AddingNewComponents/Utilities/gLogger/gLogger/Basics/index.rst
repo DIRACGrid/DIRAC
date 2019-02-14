@@ -770,6 +770,58 @@ The first method initializes a specific logger for external libraries like this:
 
 We can call these methods each time that we use an external library and we want to see the logs inside or not.
 
+Filter
+------
+
+The output given by the different logger can be further controlled through the use of *filters*. Any
+configured backend can be given the paramter *Filter*, which takes a comma separated list of filterIDs.
+
+::
+
+    Resources
+    {
+        LogBackends
+        {
+            <backendID1>
+            {
+                Plugin = <backendClass1>
+                Filter = MyFilter[,MyOtherFilter]*
+                <param1> = <value4>
+                <param3> = <value3>
+            }
+        }
+    }
+
+Each filter can be configured with a given plugin type and the parameters used for the given
+plugin. See the documentation for the :mod:`~DIRAC.Resources.LogFilters` for the available plugins
+and their parameters.
+
+Each filter is queried, and only the the log record passes *all* filters is passed onwards.
+
+::
+
+    Resources
+    {
+        LogFilters
+        {
+            MyFilter
+            {
+                Plugin = FilterPlugin
+                Parameter = Value, Value2
+            }
+        }
+    }
+
+Filter implementation
+~~~~~~~~~~~~~~~~~~~~~
+
+The filter implementations need to be located in the *Resources/LogFilters* folder
+and can be any class that implements a ``filter`` function that takes a log record as an argument.
+See the existing implementations in :mod:`~DIRAC.Resources.LogFilters` as examples.
+
+
+
+
 Advanced part
 ------------------------------------
 
