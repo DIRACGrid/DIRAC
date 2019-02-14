@@ -250,6 +250,9 @@ class JobMonitoring(TestWMSTestCase):
     res = jobMonitor.getJobParameters(jobID)
     self.assertTrue(res['OK'])
     self.assertEqual(res['Value'], {jobID: {'par1': 'par1Value', 'par2': 'par2Value'}})
+    res = jobMonitor.getJobParameters(jobID, 'par1')
+    self.assertTrue(res['OK'])
+    self.assertEqual(res['Value'], {jobID: {'par1': 'par1Value'}})
     res = jobMonitor.getJobAttribute(jobID, 'Site')
     self.assertTrue(res['OK'])
     self.assertEqual(res['Value'], 'Site')
@@ -326,6 +329,7 @@ class JobMonitoringMore(TestWMSTestCase):
       jobIDs.append(jobID)
 
     res = jobMonitor.getSites()
+    print res
     self.assertTrue(res['OK'])
     self.assertTrue(set(res['Value']) <= {'ANY', 'DIRAC.Jenkins.ch'})
     res = jobMonitor.getJobTypes()

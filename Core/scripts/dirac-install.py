@@ -1120,7 +1120,7 @@ class ReleaseConfig(object):
       return diracOSVersion
     try:
       return self.prjRelCFG[self.projectName][cliParams.release].get(
-          "Releases/%s/DiracOS" % cliParams.release, diracOSVersion)
+          "Releases/%s/DIRACOS" % cliParams.release, diracOSVersion)
     except KeyError:
       pass
     return diracOSVersion
@@ -2457,6 +2457,7 @@ def createSymbolicLink():
     return S_ERROR("Error while creating symbolic link!")
 
   return S_OK()
+
 
 if __name__ == "__main__":
   logNOTICE("Processing installation requirements")
