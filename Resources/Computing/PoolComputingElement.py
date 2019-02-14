@@ -10,7 +10,6 @@
 __RCSID__ = "$Id$"
 
 import os
-import multiprocessing
 
 from DIRAC.Resources.Computing.InProcessComputingElement import InProcessComputingElement
 from DIRAC.Resources.Computing.SudoComputingElement import SudoComputingElement
@@ -151,6 +150,12 @@ class PoolComputingElement(ComputingElement):
   def getCEStatus(self, jobIDList=None):
     """ Method to return information on running and pending jobs.
     """
+
+    if self.pPool is None:
+      self.pPool = ProcessPool(minSize=self.processors,
+                               maxSize=self.processors,
+                               poolCallback=self.finalizeJob)
+
     self.pPool.processResults()
     result = S_OK()
     result['SubmittedJobs'] = 0
