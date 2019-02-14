@@ -514,33 +514,17 @@ class JobMonitoringHandler(RequestHandler):
 
   @staticmethod
   def export_getJobParameter(jobID, parName):
-<<<<<<< HEAD
-
-    if gElasticJobDB:
-      return gElasticJobDB.getJobParameters(jobID, [parName])
-    return gJobDB.getJobParameters(jobID, [parName])
-=======
     """
     :param str/int/long jobID: one single Job ID
     :param str parName: one single parameter name
     """
+    if gElasticJobDB:
+      return gElasticJobDB.getJobParameters(jobID, [parName])
+
     res = gJobDB.getJobParameters(jobID, [parName])
     if not res['OK']:
       return res
     return S_OK(res['Value'].get(jobID, {}))
->>>>>>> rel-v6r21
-
-##############################################################################
-  types_getJobParameters = [[basestring, int, long, list]]
-
-  @staticmethod
-<<<<<<< HEAD
-  def export_getJobParameters(jobID):
-
-    if gElasticJobDB:
-      return gElasticJobDB.getJobParameters(jobID)
-    return gJobDB.getJobParameters(jobID)
-
 
 ##############################################################################
   types_getJobOptParameters = [int]
@@ -548,14 +532,19 @@ class JobMonitoringHandler(RequestHandler):
   @staticmethod
   def export_getJobOptParameters(jobID):
     return gJobDB.getJobOptParameters(jobID)
-=======
+
+##############################################################################
+  types_getJobParameters = [[basestring, int, long, list]]
+
+  @staticmethod  
   def export_getJobParameters(jobIDs, parName=None):
     """
     :param str/int/long/list jobIDs: one single job ID or a list of them
     :param str parName: one single parameter name, or None (meaning all of them)
     """
+    if gElasticJobDB:
+      return gElasticJobDB.getJobParameters(jobIDs)
     return gJobDB.getJobParameters(jobIDs, parName)
->>>>>>> rel-v6r21
 
 ##############################################################################
   types_traceJobParameter = [basestring, [basestring, int, long, list],
