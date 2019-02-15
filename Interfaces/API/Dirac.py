@@ -1227,7 +1227,8 @@ class Dirac(API):
     return self.getLfnMetadata(lfns, printOutput=printOutput)
 
   def getLfnMetadata(self, lfns, printOutput=False):
-    """Obtain replica metadata from file catalogue client. Input LFN(s) can be string or list.
+    """Obtain replica metadata from file catalogue client.
+       Input LFN(s) can be string or list. LFN(s) can be either files or directories
 
        Example usage:
 
@@ -1249,19 +1250,32 @@ class Dirac(API):
 
     fc = FileCatalog()
     start = time.time()
-    repsResult = fc.getFileMetadata(lfns)
+    fileResult = fc.getFileMetadata(lfns)
     timing = time.time() - start
     self.log.info('Metadata Lookup Time: %.2f seconds ' % (timing))
-    self.log.verbose(repsResult)
-    if not repsResult['OK']:
+    self.log.verbose(fileResult)
+    if not fileResult['OK']:
       self.log.warn('Failed to retrieve file metadata from the catalogue')
-      self.log.warn(repsResult['Message'])
-      return repsResult
+      self.log.warn(fileResult['Message'])
+      return fileResult
+
+    repsResult = fileResult['Value']
+    if repsResult['Failed']:
+      # Some entries can be directories
+      dirs = repsResult['Failed'].keys()
+      dirResult = fc.getDirectoryMetadata(dirs)
+      if not dirResult['OK']:
+        self.log.warn('Failed to retrieve directory metadata from the catalogue')
+        self.log.warn(dirResult['Message'])
+        return dirResult
+      for dir in dirResult['Value']['Successful']:
+        repsResult['Successful'][dir] = dirResult['Value']['Successful'][dir]
+        repsResult['Failed'].pop(dir)
 
     if printOutput:
-      print self.pPrint.pformat(repsResult['Value'])
+      print self.pPrint.pformat(repsResult)
 
-    return repsResult
+    return S_OK(repsResult)
 
   #############################################################################
   def addFile(self, lfn, fullPath, diracSE, fileGuid=None, printOutput=False):
