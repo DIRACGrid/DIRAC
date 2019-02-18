@@ -7,7 +7,7 @@
     and a Watchdog Agent that can monitor its progress.
 """
 
-__RCSID__ = "$Id: $"
+__RCSID__ = "$Id$"
 
 import os
 import stat

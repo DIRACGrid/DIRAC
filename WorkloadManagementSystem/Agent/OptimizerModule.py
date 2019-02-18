@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL$
 # File :   Optimizer.py
 # Author : Stuart Paterson
 ########################################################################
@@ -11,12 +10,14 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC.WorkloadManagementSystem.DB.JobDB         import JobDB
-from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB  import JobLoggingDB
-from DIRAC.AccountingSystem.Client.Types.Job         import Job as AccountingJob
-from DIRAC.Core.Utilities.ClassAd.ClassAdLight       import ClassAd
-from DIRAC.Core.Base.AgentModule                     import AgentModule
-from DIRAC                                           import S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR
+
+from DIRAC.Core.Base.AgentModule import AgentModule
+from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
+from DIRAC.AccountingSystem.Client.Types.Job import Job as AccountingJob
+from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
+from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
+
 
 class OptimizerModule( AgentModule ):
   """
@@ -43,17 +44,15 @@ class OptimizerModule( AgentModule ):
     else:
       self.logDB = logDB
 
-    trailing = "Agent"
     optimizerName = self.am_getModuleParam( 'agentName' )
-    if optimizerName[ -len( trailing ):].find( trailing ) == 0:
-      optimizerName = optimizerName[ :-len( trailing ) ]
+    if optimizerName.endswith('Agent'):
+      optimizerName = optimizerName[:-len('Agent')]
     self.am_setModuleParam( 'optimizerName', optimizerName )
 
     self.startingMinorStatus = self.am_getModuleParam( 'optimizerName' )
     self.startingMajorStatus = "Checking"
     self.failedStatus = self.am_getOption( "FailedJobStatus" , 'Failed' )
     self.requiredJobInfo = 'jdl'
-    self.am_setOption( "PollingTime", 30 )
 
     return self.initializeOptimizer()
 
@@ -193,7 +192,6 @@ class OptimizerModule( AgentModule ):
 
     self.log.verbose( "self.jobDB.setNextOptimizer(%s,'%s')" % ( job, self.am_getModuleParam( "optimizerName" ) ) )
     return self.jobDB.setNextOptimizer( job, self.am_getModuleParam( "optimizerName" ) )
-
 
   #############################################################################
   def updateJobStatus( self, job, status, minorStatus = None, appStatus = None ):

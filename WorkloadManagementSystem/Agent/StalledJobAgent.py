@@ -32,12 +32,18 @@ The specific agents must provide the following methods:
 - finalize() - the graceful exit of the method, this one is usually used
 for the agent restart
 """
-  jobDB = None
-  logDB = None
-  matchedTime = 7200
-  rescheduledTime = 600
-  completedTime = 86400
-  submittingTime = 300
+
+  def __init__(self, *args, **kwargs):
+    """ c'tor
+    """
+    AgentModule.__init__(self, *args, **kwargs)
+
+    self.jobDB = None
+    self.logDB = None
+    self.matchedTime = 7200
+    self.rescheduledTime = 600
+    self.completedTime = 86400
+    self.submittingTime = 300
 
   #############################################################################
   def initialize( self ):
@@ -234,7 +240,6 @@ for the agent restart
     pilotStatus = result['Value'][pilotReference]['Status']
 
     return S_OK( pilotStatus )
-
 
   #############################################################################
   def __getStalledJob( self, job, stalledTime ):
@@ -458,7 +463,6 @@ used to fail jobs due to the optimizer chain.
       if startTime is None:
         self.log.error( 'Wrong timestamp in DB', items[3] )
         startTime = dateTime()
-
 
     endTime = dateTime()
     # status, minor, app, stime, source

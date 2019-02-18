@@ -2,7 +2,7 @@
 
     This is a DIRAC-free module, so it could possibly be used also outside of DIRAC installations.
 
-    The main client of this module is the SiteDirector, that invokes the functions here more or less like this:
+    The main client of this module is the SiteDirector, that invokes the functions here more or less like this::
 
         pilotFiles = getPilotFiles()
         pilotFilesCompressedEncodedDict = getPilotFilesCompressedEncodedDict(pilotFiles)

@@ -82,7 +82,7 @@ class OptimizationMindHandler( ExecutorMindHandler ):
     try:
       from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
       cls.__jobDB = JobDB()
-    except Exception, excp:
+    except Exception as excp:
       return S_ERROR( "Could not connect to JobDB: %s" % str( excp ) )
     cls.setFailedOnTooFrozen( False )
     cls.setFreezeOnFailedDispatch( False )
