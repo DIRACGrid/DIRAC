@@ -1,11 +1,13 @@
 ''' StatesMonitoringAgent
   sends periodically numbers of jobs in various states for various
      sites to the Monitoring system to create historical plots.
+
 .. literalinclude:: ../ConfigTemplate.cfg
   :start-after: ##BEGIN StatesMonitoringAgent
   :end-before: ##END
   :dedent: 2
   :caption: StatesMonitoringAgent options
+
 '''
 
 __RCSID__ = "$Id$"
