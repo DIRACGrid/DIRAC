@@ -26,7 +26,8 @@ MAX_NUMBER_OF_SUDO_UNIX_USERS = 32
 
 def executeJob(executableFile, proxy, taskID, **kwargs):
   """ wrapper around ce.submitJob: decides which CE to use (Sudo or InProcess)
-:param str executableFile: location of the executable file
+  
+  :param str executableFile: location of the executable file
   :param str proxy: proxy file location to be used for job submission
   :param int taskID: local task ID of the PoolCE
 
