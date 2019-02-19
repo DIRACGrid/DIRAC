@@ -2,6 +2,13 @@
 
   This agent inspect Sites, and evaluates policies that apply.
 
+The following options can be set for the SiteInspectorAgent.
+
+.. literalinclude:: ../ConfigTemplate.cfg
+  :start-after: ##BEGIN SiteInspectorAgent
+  :end-before: ##END
+  :dedent: 2
+  :caption: SiteInspectorAgent options
 """
 
 __RCSID__  = '$Id$'
@@ -18,6 +25,7 @@ from DIRAC.ResourceStatusSystem.Utilities                       import Utils
 ResourceManagementClient = getattr(Utils.voimport( 'DIRAC.ResourceStatusSystem.Client.ResourceManagementClient' ), 'ResourceManagementClient')
 
 AGENT_NAME = 'ResourceStatus/SiteInspectorAgent'
+
 
 class SiteInspectorAgent( AgentModule ):
   """ SiteInspectorAgent
@@ -40,7 +48,6 @@ class SiteInspectorAgent( AgentModule ):
                      'Unknown'  : 10,
                      'Error'    : 5}
 
-
   def __init__( self, *args, **kwargs ):
 
     AgentModule.__init__( self, *args, **kwargs )
@@ -50,7 +57,6 @@ class SiteInspectorAgent( AgentModule ):
     self.threadPool          = None
     self.siteClient          = None
     self.clients             = {}
-
 
   def initialize( self ):
     """ Standard initialize.
@@ -106,7 +112,6 @@ class SiteInspectorAgent( AgentModule ):
 
     return S_OK()
 
-
   def getSitesToBeChecked( self ):
     """ getElementsToBeChecked
 
@@ -139,7 +144,6 @@ class SiteInspectorAgent( AgentModule ):
 
     return S_OK( toBeChecked )
 
-
   # Private methods ............................................................
 
   def _execute( self ):
@@ -169,6 +173,3 @@ class SiteInspectorAgent( AgentModule ):
 
       # Used together with join !
       self.sitesToBeChecked.task_done()
-
-#...............................................................................
-#EOF

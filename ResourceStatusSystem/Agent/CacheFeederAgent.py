@@ -2,6 +2,11 @@
 
   This agent feeds the Cache tables with the outputs of the cache commands.
 
+.. literalinclude:: ../ConfigTemplate.cfg
+  :start-after: ##BEGIN CacheFeederAgent
+  :end-before: ##END
+  :dedent: 2
+  :caption: CacheFeederAgent options
 '''
 
 __RCSID__ = '$Id$'
@@ -150,6 +155,3 @@ class CacheFeederAgent(AgentModule):
           self.log.exception("Failed to execute command, with exception: %s" % commandModule, lException=excp)
 
     return S_OK()
-
-################################################################################
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

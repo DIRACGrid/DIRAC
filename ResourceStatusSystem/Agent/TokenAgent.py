@@ -1,8 +1,17 @@
-''' TokenAgent
+""" TokenAgent
 
   This agent inspect all elements, and resets their tokens if necessary.
 
-'''
+The following options can be set for the TokenAgent.
+
+.. literalinclude:: ../ConfigTemplate.cfg
+  :start-after: ##BEGIN TokenAgent
+  :end-before: ##END
+  :dedent: 2
+  :caption: TokenAgent options
+"""
+
+__RCSID__ = '$Id$'
 
 from datetime import datetime, timedelta
 
@@ -11,9 +20,8 @@ from DIRAC.Core.Base.AgentModule                                import AgentModu
 from DIRAC.Interfaces.API.DiracAdmin                            import DiracAdmin
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient
 
-__RCSID__ = '$Id: $'
-
 AGENT_NAME = 'ResourceStatus/TokenAgent'
+
 
 class TokenAgent( AgentModule ):
   '''
@@ -85,8 +93,6 @@ class TokenAgent( AgentModule ):
       self.log.error( notificationResult[ 'Message' ] )
 
     return S_OK()
-
-  ## Protected methods #########################################################
 
   def _getInterestingTokens( self, element ):
     '''
@@ -223,6 +229,3 @@ class TokenAgent( AgentModule ):
       return S_ERROR( 'Cannot send email to user "%s"' % tokenOwner )
 
     return resEmail
-
-################################################################################
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

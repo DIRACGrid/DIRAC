@@ -1,4 +1,3 @@
-# $HeadURL:  $
 ''' BaseAction
 
   Base class for Actions.
@@ -7,7 +6,8 @@
 
 from DIRAC import gLogger
 
-__RCSID__  = '$Id:  $'
+__RCSID__ = '$Id$'
+
 
 class BaseAction( object ):
   '''
