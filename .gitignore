@@ -57,6 +57,7 @@ DIRAC.iml
 # test stuff
 .pytest_cache
 .cache
+cache.db
 __pycache__
 pytests.xml
 nosetests.xml

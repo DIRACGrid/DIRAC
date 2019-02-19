@@ -1,8 +1,17 @@
-''' TokenAgent
+""" TokenAgent
 
   This agent inspect all elements, and resets their tokens if necessary.
 
-'''
+The following options can be set for the TokenAgent.
+
+.. literalinclude:: ../ConfigTemplate.cfg
+  :start-after: ##BEGIN TokenAgent
+  :end-before: ##END
+  :dedent: 2
+  :caption: TokenAgent options
+"""
+
+__RCSID__ = '$Id$'
 
 from datetime import datetime, timedelta
 
@@ -11,9 +20,8 @@ from DIRAC.Core.Base.AgentModule                                import AgentModu
 from DIRAC.Interfaces.API.DiracAdmin                            import DiracAdmin
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient     import ResourceStatusClient
 
-__RCSID__ = '$Id: $'
-
 AGENT_NAME = 'ResourceStatus/TokenAgent'
+
 
 class TokenAgent( AgentModule ):
   '''
@@ -21,14 +29,8 @@ class TokenAgent( AgentModule ):
     Notifications are sent to those users owning expiring tokens.
   '''
 
-  # Hours to notify a user
-  __notifyHours = 12
-
   # Rss token
   __rssToken = 'rs_svc'
-
-  # Admin mail
-  __adminMail = None
 
   def __init__( self, *args, **kwargs ):
     ''' c'tor
@@ -36,11 +38,11 @@ class TokenAgent( AgentModule ):
 
     AgentModule.__init__( self, *args, **kwargs )
 
-    self.notifyHours = self.__notifyHours
-    self.adminMail = self.__adminMail
+    self.notifyHours = 12
+    self.adminMail = ''
 
     self.rsClient = None
-    self.tokenDict = None
+    self.tokenDict = {}
     self.diracAdmin = None
 
   def initialize( self ):
@@ -85,8 +87,6 @@ class TokenAgent( AgentModule ):
       self.log.error( notificationResult[ 'Message' ] )
 
     return S_OK()
-
-  ## Protected methods #########################################################
 
   def _getInterestingTokens( self, element ):
     '''
@@ -151,7 +151,7 @@ class TokenAgent( AgentModule ):
         _msg = '%s with statusType "%s" and owner %s -> %s'
         self.log.info( _msg % ( name, statusType, tokenOwner, tokenExpiration ) )
 
-      if not tokenOwner in self.tokenDict:
+      if tokenOwner not in self.tokenDict:
         self.tokenDict[ tokenOwner ] = []
 
       self.tokenDict[ tokenOwner ].append( [ tokenOwner, element, name, statusType, status, tokenExpiration ] )
@@ -187,8 +187,8 @@ class TokenAgent( AgentModule ):
       if not resNotify[ 'OK' ]:
         self.log.error( 'Failed to notify token owner', resNotify[ 'Message' ] )
 
-    if ( adminExpired or adminExpiring ) and self.__adminMail:
-      return self._notify( self.__adminMail, adminExpired, adminExpiring )
+    if (adminExpired or adminExpiring) and self.adminMail:
+      return self._notify(self.adminMail, adminExpired, adminExpiring)
 
     return S_OK()
 
@@ -223,6 +223,3 @@ class TokenAgent( AgentModule ):
       return S_ERROR( 'Cannot send email to user "%s"' % tokenOwner )
 
     return resEmail
-
-################################################################################
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
