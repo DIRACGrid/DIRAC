@@ -17,4 +17,3 @@ even if you think that the cases presented at the beginning do not apply to you.
    DeveloperInstallation/editingCode
    DeveloperInstallation/stuffThatRun
    DeveloperInstallation/interactingWithProductionSetups
-   Eclipse/index
