@@ -1255,8 +1255,7 @@ class Dirac(API):
     self.log.info('Metadata Lookup Time: %.2f seconds ' % (timing))
     self.log.verbose(fileResult)
     if not fileResult['OK']:
-      self.log.warn('Failed to retrieve file metadata from the catalogue')
-      self.log.warn(fileResult['Message'])
+      self.log.warn('Failed to retrieve file metadata from the catalogue', fileResult['Message'])
       return fileResult
 
     repsResult = fileResult['Value']
@@ -1268,9 +1267,9 @@ class Dirac(API):
         self.log.warn('Failed to retrieve directory metadata from the catalogue')
         self.log.warn(dirResult['Message'])
         return dirResult
-      for dir in dirResult['Value']['Successful']:
-        repsResult['Successful'][dir] = dirResult['Value']['Successful'][dir]
-        repsResult['Failed'].pop(dir)
+      for directory in dirResult['Value']['Successful']:
+        repsResult['Successful'][directory] = dirResult['Value']['Successful'][directory]
+        repsResult['Failed'].pop(directory)
 
     if printOutput:
       print self.pPrint.pformat(repsResult)
