@@ -33,9 +33,6 @@ class CacheFeederAgent(AgentModule):
   tables.
   '''
 
-  # Too many public methods
-  # pylint: disable=R0904
-
   def __init__(self, *args, **kwargs):
 
     AgentModule.__init__(self, *args, **kwargs)
