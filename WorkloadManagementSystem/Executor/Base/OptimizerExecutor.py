@@ -12,6 +12,7 @@ from DIRAC.Core.Utilities import DEncode, List
 from DIRAC.Core.Base.ExecutorModule import ExecutorModule
 from DIRAC.WorkloadManagementSystem.Client.JobState.CachedJobState import CachedJobState
 
+
 class OptimizerExecutor( ExecutorModule ):
 
   class JobLog:

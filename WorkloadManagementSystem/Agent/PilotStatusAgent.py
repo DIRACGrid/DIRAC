@@ -38,6 +38,15 @@ class PilotStatusAgent(AgentModule):
   queryStateList = ['Ready', 'Submitted', 'Running', 'Waiting', 'Scheduled']
   finalStateList = ['Done', 'Aborted', 'Cleared', 'Deleted', 'Failed']
 
+  def __init__(self, *args, **kwargs):
+    """ c'tor
+    """
+    AgentModule.__init__(self, *args, **kwargs)
+
+    self.jobDB = None
+    self.pilotDB = None
+    self.diracadmin = None
+
   #############################################################################
   def initialize(self):
     """Sets defaults

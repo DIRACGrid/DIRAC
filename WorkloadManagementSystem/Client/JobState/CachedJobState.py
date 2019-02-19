@@ -130,8 +130,7 @@ class CachedJobState(object):
     if not isinstance(dataTuple[2], list):
       return S_ERROR("Invalid stub 2")
     # manifest
-    tdt3 = type(dataTuple[3])
-    if tdt3 is not None and (tdt3 is not tuple and len(dataTuple[3]) != 2):
+    if dataTuple[3] is not None and (not isinstance(dataTuple[3], tuple) and len(dataTuple[3]) != 2):
       return S_ERROR("Invalid stub 3")
     # initstate
     if not isinstance(dataTuple[4], dict):
@@ -174,9 +173,8 @@ class CachedJobState(object):
     return True
 
   def __cacheResult(self, cKey, functor, fArgs=None):
-    keyType = type(cKey)
     # If it's a string
-    if isinstance(keyType, basestring):
+    if isinstance(cKey, basestring):
       if cKey not in self.__cache:
         if self.dOnlyCache:
           return S_ERROR("%s is not cached")
@@ -189,7 +187,7 @@ class CachedJobState(object):
         self.__cache[cKey] = data
       return S_OK(self.__cache[cKey])
     # Tuple/List
-    elif isinstance(keyType, (list, tuple)):
+    elif isinstance(cKey, (list, tuple)):
       if not self.__cacheExists(cKey):
         if self.dOnlyCache:
           return S_ERROR("%s is not cached")
