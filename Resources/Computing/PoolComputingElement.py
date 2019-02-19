@@ -198,7 +198,7 @@ class PoolComputingElement(ComputingElement):
     """ Monitor the payload proxy and renew as necessary.
 
     :param str pilotProxy: location of the pilotProxy
-    :param str payloadProxy: ocation of the payloadProxy
+    :param str payloadProxy: location of the payloadProxy
     """
     return self._monitorProxy(pilotProxy, payloadProxy)
 
