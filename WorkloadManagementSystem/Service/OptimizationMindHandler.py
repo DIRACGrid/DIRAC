@@ -120,7 +120,8 @@ class OptimizationMindHandler(ExecutorMindHandler):
     cls.setFreezeOnFailedDispatch(False)
     cls.setFreezeOnUnknownExecutor(False)
     cls.setAllowedClients("JobManager")
-    cleanTaskQueues()
+    JobState.checkDBAccess()
+    JobState.cleanTaskQueues()    
     period = cls.srv_getCSOption("LoadJobPeriod", 60)
     result = ThreadScheduler.gThreadScheduler.addPeriodicTask(period, cls.__loadJobs)
     if not result['OK']:

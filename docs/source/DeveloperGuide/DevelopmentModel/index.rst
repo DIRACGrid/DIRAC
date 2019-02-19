@@ -12,14 +12,15 @@ The DIRACGrid project includes several repositories, all hosted in `Github <http
 
   - `DIRAC <https://github.com/DIRACGrid/DIRAC>`_ is the main repository: contains the client and server code
   - `WebAppDIRAC <https://github.com/DIRACGrid/WebAppDIRAC>`_ is the repository for the web portal
-  - `Externals <https://github.com/DIRACGrid/Externals>`_ is the repository for the DIRAC dependencies
-  - `COMDIRAC <https://github.com/DIRACGrid/COMDIRAC>`_ is a DIRAC extension of its CLI
-  - `VMDIRAC <https://github.com/DIRACGrid/VMDIRAC>`_ is a DIRAC extension for using cloud sites
-  - `RESTDIRAC <https://github.com/DIRACGrid/RESTDIRAC>`_ is a DIRAC extension that creates a REST layer for DIRAC services
   - `Pilot <https://github.com/DIRACGrid/Pilot>`_ is *not* a DIRAC extension, but a new version of the DIRAC pilots (dubbed Pilots 3.0)
+  - `DIRACOS <https://github.com/DIRACGrid/DIRACOS>`_ is the repository for the DIRAC dependencies
+  - `Externals <https://github.com/DIRACGrid/Externals>`_ is the OLD repository for the DIRAC dependencies, going to be superseded by DIRACOS
+  - `VMDIRAC <https://github.com/DIRACGrid/VMDIRAC>`_ is a DIRAC extension for using cloud sites
+  - `COMDIRAC <https://github.com/DIRACGrid/COMDIRAC>`_ is a DIRAC extension of its CLI
+  - `RESTDIRAC <https://github.com/DIRACGrid/RESTDIRAC>`_ is a DIRAC extension that creates a REST layer for DIRAC services
   - `DB12 <https://github.com/DIRACGrid/DB12>`_ is *not* a DIRAC extension, but a self-contained quick benchmark
 
-The content of the other repositories at ''https://github.com/DIRACGrid'' have either been included in those above, or became obsolete.
+The content of the other repositories at `https://github.com/DIRACGrid` have either been included in those above, or became obsolete.
 
 This work must be supported by a suitable development model which
 is described in this chapter.
@@ -49,5 +50,3 @@ are explained in :ref:`release_procedure` subsection.
    GitCodeManagement/index
    BranchingModel/index
    ContributingCode/index
-   DIRACProjects/index
-   ReleaseProcedure/index

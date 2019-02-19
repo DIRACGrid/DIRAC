@@ -107,7 +107,7 @@ class ElementInspectorAgent(AgentModule):
 
     """
 
-    # Gets elements to be checked ( returns a Queue )
+    # Gets elements to be checked (returns a Queue)
     elementsToBeChecked = self.getElementsToBeChecked()
     if not elementsToBeChecked['OK']:
       self.log.error(elementsToBeChecked['Message'])
@@ -190,8 +190,6 @@ class ElementInspectorAgent(AgentModule):
                                                        elemDict['Status'],
                                                        elemDict['LastCheckTime']))
     return S_OK(toBeChecked)
-
-  # Private methods ............................................................
 
   def _execute(self):
     """

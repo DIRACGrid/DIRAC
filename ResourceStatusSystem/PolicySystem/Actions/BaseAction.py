@@ -7,6 +7,10 @@
 from DIRAC import gLogger
 
 __RCSID__ = '$Id$'
+<<<<<<< HEAD
+=======
+
+>>>>>>> rel-v6r21
 
 
 class BaseAction(object):

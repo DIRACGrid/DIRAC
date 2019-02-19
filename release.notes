@@ -45,7 +45,7 @@ NEW: (#3744) Add WMS documentation in DeveloperGuide/Systems
 NEW: Added script (docs/Tools/UpdateDiracCFG.py) to collate the ConfigTemplate.cfg 
      files into the main dirac.cfg file
 
-[v6r21-pre6]
+[v6r21-pre7]
 
 *Core
 NEW: (#3921) DictCache - allow threadLocal cache
@@ -75,6 +75,7 @@ CHANGE: (#3946) Remove directory listing from TransformationCleaningAgent
 
 *Interfaces
 CHANGE: (#3947) removed old methods going through old RMS
+CHANGE: (#3960) Dirac.py - getLFNMetadata returns result for both file and directory LFNs
 
 *DataManagementSystem
 FIX: (#3922) Fixes FTS3 duplicate transfers
@@ -94,6 +95,8 @@ NEW: (#3953) Resources.LogFilters.ModuleFilter: Filter that allows one to set th
      LogLevel for individual modules
 NEW: (#3953) Resources.LogFilter.PatternFilter: Filter to select or reject log 
      output based on words
+FIX: (#3959) PoolComputingElement - bug fix: initialize process pool if not yet 
+     done in getCEStatus()     
 
 *test
 CHANGE: (#3948) integration tests run with unittest now exit with exit code != 0 if failed

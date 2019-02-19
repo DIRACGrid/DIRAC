@@ -1,5 +1,8 @@
-''' DowntimeCommand module
-'''
+""" DowntimeCommand module will look into GOC DB to find announced downtimes for RSS-managed sites and resources.S_ERROR
+    If found, downtimes are added to the internal RSS cache using ResourceManagementClient.S_ERROR
+
+    GOCDB downtimes that are modified or deleted are also synced.
+"""
 
 __RCSID__ = '$Id$'
 
@@ -20,9 +23,9 @@ from DIRAC.ResourceStatusSystem.Utilities import CSHelpers
 
 
 class DowntimeCommand(Command):
-  '''
+  """
     Downtime "master" Command or removed DTs.
-  '''
+  """
 
   def __init__(self, args=None, clients=None):
 
@@ -39,9 +42,9 @@ class DowntimeCommand(Command):
       self.rmClient = ResourceManagementClient()
 
   def _storeCommand(self, result):
-    '''
+    """
       Stores the results of doNew method on the database.
-    '''
+    """
 
     for dt in result:
       resQuery = self.rmClient.addOrModifyDowntimeCache(downtimeID=dt['DowntimeID'],
@@ -56,9 +59,9 @@ class DowntimeCommand(Command):
     return resQuery
 
   def _cleanCommand(self, element, elementNames):
-    '''
+    """
       Clear Cache from expired DT.
-    '''
+    """
 
     resQuery = []
 
@@ -91,7 +94,7 @@ class DowntimeCommand(Command):
     return S_OK(resQuery)
 
   def _prepareCommand(self):
-    '''
+    """
       DowntimeCommand requires four arguments:
       - name : <str>
       - element : Site / Resource
@@ -99,7 +102,7 @@ class DowntimeCommand(Command):
 
       If the elements are Site(s), we need to get their GOCDB names. They may
       not have, so we ignore them if they do not have.
-    '''
+    """
 
     if 'name' not in self.args:
       return S_ERROR('"name" not found in self.args')
@@ -143,8 +146,8 @@ class DowntimeCommand(Command):
       if 'SEType' in seOptions:
         # Type should follow the convention TXDY
         seType = seOptions['SEType']
-        diskSE = re.search('D[1-9]', seType) != None
-        tapeSE = re.search('T[1-9]', seType) != None
+        diskSE = re.search('D[1-9]', seType) is not None
+        tapeSE = re.search('T[1-9]', seType) is not None
         if tapeSE:
           gOCDBServiceType = "srm.nearline"
         elif diskSE:
@@ -171,7 +174,7 @@ class DowntimeCommand(Command):
     return S_OK((element, elementName, hours, gOCDBServiceType))
 
   def doNew(self, masterParams=None):
-    '''
+    """
       Gets the parameters to run, either from the master method or from its
       own arguments.
 
@@ -180,7 +183,7 @@ class DowntimeCommand(Command):
       a second time.
 
       If there are downtimes, are recorded and then returned.
-    '''
+    """
 
     if masterParams is not None:
       element, elementNames = masterParams
@@ -253,10 +256,10 @@ class DowntimeCommand(Command):
     return S_OK()
 
   def doCache(self):
-    '''
+    """
       Method that reads the cache table and tries to read from it. It will
       return a list with one dictionary describing the DT if there are results.
-    '''
+    """
 
     params = self._prepareCommand()
     if not params['OK']:
@@ -271,7 +274,7 @@ class DowntimeCommand(Command):
 
     uniformResult = [dict(zip(result['Columns'], res)) for res in result['Value']]
 
-    #'targetDate' can be either now or some 'hours' later in the future
+    # 'targetDate' can be either now or some 'hours' later in the future
     targetDate = datetime.utcnow()
 
     # dtOverlapping is a buffer to assure only one dt is returned
@@ -325,11 +328,11 @@ class DowntimeCommand(Command):
     return S_OK(result)
 
   def doMaster(self):
-    ''' Master method, which looks little bit spaghetti code, sorry !
+    """ Master method, which looks little bit spaghetti code, sorry !
         - It gets all sites and transforms them into gocSites.
         - It gets all the storage elements and transforms them into their hosts
         - It gets the the CEs (FTS and file catalogs will come).
-    '''
+    """
 
     gocSites = CSHelpers.getGOCSites()
     if not gocSites['OK']:
@@ -349,7 +352,7 @@ class DowntimeCommand(Command):
 
     # TODO: file catalogs need also to use their hosts
 
-    #fc = CSHelpers.getFileCatalogs()
+    # fc = CSHelpers.getFileCatalogs()
     # if fc[ 'OK' ]:
     #  resources = resources + fc[ 'Value' ]
 
@@ -370,6 +373,3 @@ class DowntimeCommand(Command):
       self.metrics['failed'].append(resourceRes['Message'])
 
     return S_OK(self.metrics)
-
-################################################################################
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

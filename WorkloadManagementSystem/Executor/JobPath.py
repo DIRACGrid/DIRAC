@@ -30,9 +30,7 @@ class JobPath(OptimizerExecutor):
   def __setOptimizerChain(self, jobState, opChain):
     if not isinstance(opChain, basestring):
       opChain = ",".join(opChain)
-    result = jobState.setOptParameter("OptimizerChain", opChain)
-    if not result['OK']:
-      return result
+    return jobState.setOptParameter("OptimizerChain", opChain)
 
   def __executeVOPlugin(self, voPlugin, jobState):
     if voPlugin not in self.__voPlugins:
