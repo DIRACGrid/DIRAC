@@ -1389,11 +1389,7 @@ class JobDB(DB):
     result = self.getJobParameters(jobID)
     if result['OK']:
       parDict = result['Value']
-<<<<<<< Upstream, based on upstream/rel-v6r21
       for key, value in parDict.get(jobID, {}).iteritems():
-=======
-      for key, value in parDict[jobID].iteritems():
->>>>>>> 8cb58c6 fix conflicts
         result = self.setAtticJobParameter(jobID, key, value, rescheduleCounter - 1)
         if not result['OK']:
           break
