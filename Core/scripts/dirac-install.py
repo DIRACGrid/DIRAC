@@ -493,7 +493,7 @@ class ReleaseConfig(object):
     if globalDefaultsURL:
       self.globalDefaultsURL = globalDefaultsURL
     else:
-      self.globalDefaultsURL = "http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/globalDefaults.cfg"
+      self.globalDefaultsURL = "http://diracproject.web.cern.ch/diracproject/configs/globalDefaults.cfg"
     self.globalDefaults = ReleaseConfig.CFG()
     self.loadedCfgs = []
     self.prjDepends = {}
