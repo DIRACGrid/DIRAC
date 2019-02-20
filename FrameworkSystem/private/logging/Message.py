@@ -1,4 +1,3 @@
-# $HeadURL$
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Utilities import Time

@@ -1,6 +1,7 @@
-# $HeadURL$
 import threading
+
 __RCSID__ = "$Id$"
+
 """  This constitues the base class for the backends of the logger
 """
 

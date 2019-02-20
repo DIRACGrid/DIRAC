@@ -4,19 +4,15 @@ Test Logger Wrapper
 
 __RCSID__ = "$Id$"
 
-#pylint: disable=invalid-name
-
 import unittest
 import logging
 import sys
 from StringIO import StringIO
 
-from DIRAC.FrameworkSystem.private.logging.Logger import Logger
 from DIRAC.FrameworkSystem.private.standardLogging.LoggingRoot import LoggingRoot
 from DIRAC.FrameworkSystem.private.standardLogging.Logging import Logging
 
 
-oldgLogger = Logger()
 gLogger = LoggingRoot()
 
 
@@ -46,16 +42,11 @@ class Test_Logging(unittest.TestCase):
     self.log = gLogger.getSubLogger('log')
     self.buffer = StringIO()
 
-    oldgLogger.setLevel('debug')
-    self.oldlog = oldgLogger.getSubLogger('log')
     self.oldbuffer = StringIO()
     sys.stdout = self.oldbuffer
 
     gLogger.showHeaders(True)
     gLogger.showThreadIDs(False)
-
-    oldgLogger.showHeaders(True)
-    oldgLogger.showThreadIDs(False)
 
     # modify the output to capture the log into a buffer
     if logging.getLogger('dirac').handlers:

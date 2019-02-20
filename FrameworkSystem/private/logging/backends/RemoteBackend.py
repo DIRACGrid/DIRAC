@@ -1,11 +1,13 @@
-# $HeadURL$
 __RCSID__ = "$Id$"
+
 """This Backend sends the Log Messages to a Log Server
 It will only report to the server ERROR, EXCEPTION, FATAL
 and ALWAYS messages.
 """
+
 import threading
 import Queue
+
 from DIRAC.Core.Utilities import Time, Network
 from DIRAC.FrameworkSystem.private.logging.backends.BaseBackend import BaseBackend
 from DIRAC.FrameworkSystem.private.logging.LogLevels import LogLevels

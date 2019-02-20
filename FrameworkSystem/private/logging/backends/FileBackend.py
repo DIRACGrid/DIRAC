@@ -1,7 +1,8 @@
-# $HeadURL$
 __RCSID__ = "$Id$"
+
 """  This backend writes the log messages to a file
 """
+
 from DIRAC.FrameworkSystem.private.logging.backends.BaseBackend import BaseBackend
 
 class FileBackend( BaseBackend ):

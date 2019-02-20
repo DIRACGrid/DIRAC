@@ -1,4 +1,3 @@
-# $HeadURL$
 __RCSID__ = "$Id$"
 
 from DIRAC.FrameworkSystem.Client.Logger import Logger
@@ -27,4 +26,4 @@ class SubSystemLogger( Logger ):
       messageObject.setSubSystemName( self._subName )
     else:
       messageObject.setSystemName( self._subName )
-    self.__masterLogger.processMessage( messageObject )
+self.__masterLogger.processMessage( messageObject )
