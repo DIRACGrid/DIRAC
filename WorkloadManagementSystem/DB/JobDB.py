@@ -101,6 +101,7 @@ class JobDB(DB):
     self.__initialized = True
 
   def isValid(self):
+    """ Check if correctly initialised """
     return self.__initialized
 
   def __getAttributeNames(self):
