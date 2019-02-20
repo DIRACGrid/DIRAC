@@ -13,7 +13,8 @@ __RCSID__ = "$Id$"
 # # imports
 import re
 import ast
-import os.path
+import os
+import errno
 from datetime import datetime, timedelta
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR
@@ -356,6 +357,9 @@ class TransformationCleaningAgent(AgentModule):
     self.log.verbose("Removing log files found in the directory %s" % directory)
     res = returnSingleResult(StorageElement(self.logSE).removeDirectory(directory, recursive=True))
     if not res['OK']:
+      if os.strerror(errno.ENOENT) in res['Message']:
+        self.log.warn("Transformation log directory does not exist", directory)
+        return S_OK()
       self.log.error("Failed to remove log files", res['Message'])
       return res
     self.log.info("Successfully removed transformation log directory")
