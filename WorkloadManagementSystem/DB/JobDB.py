@@ -152,8 +152,8 @@ class JobDB(DB):
           jobDict[name] = value
         retDict[int(jobID)] = jobDict
       return S_OK(retDict)
-    except BaseException as x:
-      return S_ERROR('JobDB.getAttributesForJobList: Failed\n%s' % repr(x))
+    except BaseException as e:
+      return S_ERROR('JobDB.getAttributesForJobList: Failed\n%s' % repr(e))
 
 #############################################################################
   def getDistinctJobAttributes(self, attribute, condDict=None, older=None,
@@ -280,8 +280,8 @@ class JobDB(DB):
     jobIDList = []
     for jID in jobID:
       ret = self._escapeString(str(jID))
-    if not ret['OK']:
-      return ret
+      if not ret['OK']:
+        return ret
       jobIDList.append(ret['Value'])
 
     self.log.debug('JobDB.getParameters: Getting Parameters for jobs %s' % ','.join(jobIDList))
