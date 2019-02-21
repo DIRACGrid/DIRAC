@@ -324,7 +324,7 @@ class JobDB(DB):
           value = value.tostring()
         except BaseException:
           pass
-          resultDict[jobID][name] = value
+        resultDict[jobID][name] = value
 
       return S_OK(resultDict)  # there's a slim chance that this is an empty dictionary
 
