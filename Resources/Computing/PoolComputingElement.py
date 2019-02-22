@@ -4,13 +4,13 @@
 # Author : A.T.
 ########################################################################
 
-""" The Computing Element to run several jobs simultaneously
+""" The Computing Element to run several jobs simultaneously in separate processes
+    managed by a ProcessPool
 """
 
 __RCSID__ = "$Id$"
 
 import os
-import multiprocessing
 
 from DIRAC.Resources.Computing.InProcessComputingElement import InProcessComputingElement
 from DIRAC.Resources.Computing.SudoComputingElement import SudoComputingElement
@@ -26,6 +26,12 @@ MAX_NUMBER_OF_SUDO_UNIX_USERS = 32
 
 def executeJob(executableFile, proxy, taskID, **kwargs):
   """ wrapper around ce.submitJob: decides which CE to use (Sudo or InProcess)
+  
+  :param str executableFile: location of the executable file
+  :param str proxy: proxy file location to be used for job submission
+  :param int taskID: local task ID of the PoolCE
+
+  :return:
   """
 
   useSudo = kwargs.pop('UseSudo', False)
@@ -67,13 +73,19 @@ class PoolComputingElement(ComputingElement):
     ComputingElement._addCEConfigDefaults(self)
 
   def _reset(self):
+    """ Update internal variables after some extra parameters are added
+
+    :return: None
+    """
 
     self.processors = int(self.ceParameters.get('NumberOfProcessors', self.processors))
     self.ceParameters['MaxTotalJobs'] = self.processors
     self.useSudo = self.ceParameters.get('SudoExecution', False)
 
   def getProcessorsInUse(self):
-    """
+    """ Get the number of currently allocated processor cores
+
+    :return: number of processor cores
     """
     processorsInUse = 0
     for task in self.processorsPerTask:
@@ -83,6 +95,11 @@ class PoolComputingElement(ComputingElement):
   #############################################################################
   def submitJob(self, executableFile, proxy, **kwargs):
     """ Method to submit job.
+
+    :param str executableFile: location of the executable file
+    :param str proxy: payload proxy
+
+    :return: S_OK/S_ERROR of the result of the job submission
     """
 
     if self.pPool is None:
@@ -139,7 +156,11 @@ class PoolComputingElement(ComputingElement):
     return result
 
   def finalizeJob(self, taskID, result):
-    """ Finalize the job
+    """ Finalize the job by updating the process utilisation counters
+
+    :param int taskID: local PoolCE task ID
+    :param dict result: result of the job execution
+
     """
     nProc = self.processorsPerTask.pop(taskID)
     if result['OK']:
@@ -150,7 +171,15 @@ class PoolComputingElement(ComputingElement):
   #############################################################################
   def getCEStatus(self, jobIDList=None):
     """ Method to return information on running and pending jobs.
+
+    :return: dictionary of numbers of jobs per status
     """
+
+    if self.pPool is None:
+      self.pPool = ProcessPool(minSize=self.processors,
+                               maxSize=self.processors,
+                               poolCallback=self.finalizeJob)
+
     self.pPool.processResults()
     result = S_OK()
     result['SubmittedJobs'] = 0
@@ -168,6 +197,9 @@ class PoolComputingElement(ComputingElement):
   #############################################################################
   def monitorProxy(self, pilotProxy, payloadProxy):
     """ Monitor the payload proxy and renew as necessary.
+
+    :param str pilotProxy: location of the pilotProxy
+    :param str payloadProxy: location of the payloadProxy
     """
     return self._monitorProxy(pilotProxy, payloadProxy)
 

@@ -1,4 +1,3 @@
-# $HeadURL:  $
 '''
 :mod: Utils
 
@@ -6,13 +5,14 @@ Module that collects utility functions.
 
 '''
 
+__RCSID__ = '$Id$'
+
 import fnmatch
 
 from DIRAC                                               import gConfig, S_OK
 from DIRAC.Core.Utilities                                import List
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
-__RCSID__ = '$Id:  $'
 
 def voimport( base_mod ):
   '''
@@ -85,7 +85,7 @@ def configMatch( candidateParams, configParams ):
 
   for key in candidateParams:
 
-    if not key in configParams:
+    if key not in configParams:
       # The candidateParams is missing one of the parameters required
       # return False
       continue

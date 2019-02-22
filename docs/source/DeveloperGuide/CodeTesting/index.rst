@@ -77,7 +77,7 @@ This module provides a rich set of tools for constructing and running tests, sup
 - *runners*: classes for executing tests, checking all the spotted asserts and providing output results to the user.
 
 The developers are encouraged to make themselves familiar with unittest_ module documentation, which could be found
-`here <http://docs.python.org/library/unittest.html>`_. It is suggested to read at least documentation for TestCase_, TestSuite_
+`here <http://docs.python.org/library/unittest.html>`__. It is suggested to read at least documentation for TestCase_, TestSuite_
 and TestLoader_ classes and follow the examples over there.
 
 One of the requirements for writing a suitable test is an isolation from depended-on code and the same time from production environment.
@@ -666,7 +666,7 @@ A certification process is a series of steps that include unit, integration, val
 We use detailed trello boards and slack channel. Please DO ASK to be included in such process.
 
 The template for DIRAC certification process can be found at the trello `board <https://trello.com/b/cp8ULOhQ/dirac-certification-template>`_ 
-and the slack channel is `here <https://lhcbdirac.slack.com/messages/C3AGWCA8J/>`_
+and the slack channel is `here <https://lhcbdirac.slack.com/messages/C3AGWCA8J/>`__
 
 
 

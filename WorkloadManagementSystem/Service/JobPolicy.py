@@ -42,6 +42,7 @@ PROPERTY_RIGHTS[ Properties.NORMAL_USER ] = [ RIGHT_SUBMIT ]
 PROPERTY_RIGHTS[ Properties.GENERIC_PILOT ] = [ RIGHT_RESCHEDULE ]
 PROPERTY_RIGHTS[ Properties.JOB_MONITOR ] = [ RIGHT_GET_INFO ]
 
+
 class JobPolicy( object ):
 
   def __init__( self, userDN, userGroup, allInfo=True ):
@@ -58,13 +59,6 @@ class JobPolicy( object ):
     self.__permissions = {}
     self.__getUserJobPolicy()
 
-  def setJobDB( self, jobDB ):
-    """ Supply a JobDB client object
-    """
-
-    self.jobDB = jobDB
-
-###########################################################################
   def getUserRightsForJob( self, jobID, owner=None, group=None ):
     """ Get access rights to job with jobID for the user specified by
         userDN/userGroup
@@ -82,7 +76,6 @@ class JobPolicy( object ):
     result = self.getJobPolicy( owner, group )
     return result
 
-###########################################################################
   def __getUserJobPolicy( self ):
     """ Get the job rights for the primary user for which the JobPolicy object
         is created 
@@ -115,8 +108,6 @@ class JobPolicy( object ):
       for right in PROPERTY_RIGHTS[ Properties.GENERIC_PILOT ]:
         self.__permissions[right] = True
 
-
-###########################################################################
   def getJobPolicy( self, jobOwner = '', jobOwnerGroup = '' ):
     """ Get the job operations rights for a job owned by jobOwnerDN/jobOwnerGroup
         for a user with userDN/userGroup.
@@ -151,7 +142,7 @@ class JobPolicy( object ):
     jobDict = result['Value']
     for jID in jobList:
       jobID = int( jID )
-      if not jobID in jobDict:
+      if jobID not in jobDict:
         invalidJobList.append( jobID )
         continue 
       owner = jobDict[jobID]['Owner']

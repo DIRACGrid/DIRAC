@@ -55,7 +55,8 @@ If you are using a OSX machine, then you may end up in more problems than using 
 
 *editor*: get your favorite one.
 Examples include IDE like Eclipse or PyCharm, or whatever you prefer
-(vim, sublime, atom...) - anyway you'll need some plug-ins! I think atom and sublime are excellent choices.
+(vim, sublime, atom...) - anyway you'll need some plug-ins!
+I think atom and especially sublime (with the *anaconda* plugin) are excellent choices.
 
 
 
@@ -110,7 +111,7 @@ will tell you a lot about the DIRAC code structure. Note that:
 
 * there is a tests/ directory
 * there is a docs/ directory
-* there are several \*System/ directories
+* there are several \*System/ directories, one called Core, one Worfklow... maybe something else depending on the version you are looking at
 * there is an \__init__.py file
 * there are some base files (README, LICENCE, etc.) and some dotfiles, which will become useful reading further.
 
@@ -132,7 +133,7 @@ The only important thing is what you are going to put in the $PYTHONPATH.
 Installing the dependencies
 ===========================
 
-First first, be sure `setuptools` and `pip` are at the latest version::
+First, make sure that `setuptools` and `pip` are at the latest versions::
 
    [sudo] pip install --upgrade setuptools
    [sudo] pip install --upgrade pip
@@ -163,6 +164,11 @@ Some useful commands::
    "pip install -r requirements.txt --upgrade" will upgrade the packages
    "deactivate" will exit from a virtualenv
    "workon DIRAC" will get you back in DIRAC virtualenv
+
+
+**NOTE**: A (maybe better) *alternative* to virtualenv is conda,
+and specifically `miniconda <https://conda.io/en/latest/miniconda.html>`_.
+Use it if you like, if you understand virtualenv you can understand conda environments.
 
 
 Adding to the PYTHONPATH

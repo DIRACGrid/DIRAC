@@ -62,6 +62,7 @@ class ResourceStatus(object):
     :rtype: dict
 
     :Example:
+
     >>> getElementStatus('CE42', 'ComputingElement')
         S_OK( { 'CE42': { 'all': 'Active' } } } )
     >>> getElementStatus('SE1', 'StorageElement', 'ReadAccess')
@@ -122,6 +123,7 @@ class ResourceStatus(object):
     :rtype: dict
 
     :Example:
+
     >>> setElementStatus('CE42', 'ComputingElement', 'all', 'Active')
         S_OK(  xyz.. )
     >>> setElementStatus('SE1', 'StorageElement', 'ReadAccess', 'Banned')
@@ -309,8 +311,8 @@ class ResourceStatus(object):
   def isStorageElementAlwaysBanned(self, seName, statusType):
     """ Checks if the AlwaysBanned policy is applied to the SE given as parameter
 
-    :param seName : string, name of the SE
-    :param statusType : ReadAcces, WriteAccess, RemoveAccess, CheckAccess
+    :param seName: string, name of the SE
+    :param statusType: ReadAcces, WriteAccess, RemoveAccess, CheckAccess
 
     :returns: S_OK(True/False)
     """
