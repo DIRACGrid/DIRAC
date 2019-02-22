@@ -1,3 +1,5 @@
+.. _dirac-dms-resolve-guid:
+
 ======================
 dirac-dms-resolve-guid
 ======================

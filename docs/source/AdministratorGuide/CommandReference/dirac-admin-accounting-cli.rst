@@ -1,3 +1,5 @@
+.. _admin_dirac-admin-accounting-cli:
+
 ==========================
 dirac-admin-accounting-cli
 ==========================

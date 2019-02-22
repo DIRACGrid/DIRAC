@@ -1,3 +1,5 @@
+.. _admin_dirac-rss-query-db:
+
 ==================
 dirac-rss-query-db
 ==================

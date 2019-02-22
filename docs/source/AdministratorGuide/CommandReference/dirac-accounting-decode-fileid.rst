@@ -1,3 +1,5 @@
+.. _admin_dirac-accounting-decode-fileid:
+
 ==============================
 dirac-accounting-decode-fileid
 ==============================

@@ -1,3 +1,5 @@
+.. _dirac-wms-job-delete:
+
 ====================
 dirac-wms-job-delete
 ====================

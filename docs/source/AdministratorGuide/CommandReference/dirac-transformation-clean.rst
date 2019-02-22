@@ -1,3 +1,5 @@
+.. _admin_dirac-transformation-clean:
+
 ==========================
 dirac-transformation-clean
 ==========================

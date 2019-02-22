@@ -1,3 +1,5 @@
+.. _dirac-wms-get-queue-cpu-time:
+
 ============================
 dirac-wms-get-queue-cpu-time
 ============================

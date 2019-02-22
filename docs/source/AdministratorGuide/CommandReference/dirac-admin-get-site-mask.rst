@@ -1,3 +1,5 @@
+.. _admin_dirac-admin-get-site-mask:
+
 =========================
 dirac-admin-get-site-mask
 =========================

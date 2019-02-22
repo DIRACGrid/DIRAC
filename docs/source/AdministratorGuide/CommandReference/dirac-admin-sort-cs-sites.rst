@@ -1,3 +1,5 @@
+.. _admin_dirac-admin-sort-cs-sites:
+
 =========================
 dirac-admin-sort-cs-sites
 =========================

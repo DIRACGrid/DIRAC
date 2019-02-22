@@ -1,3 +1,5 @@
+.. _admin_dirac-install-db:
+
 ================
 dirac-install-db
 ================

@@ -1,3 +1,5 @@
+.. _admin_dirac-setup-site:
+
 ================
 dirac-setup-site
 ================

@@ -1,3 +1,5 @@
+.. _admin_dirac-fix-mysql-script:
+
 ======================
 dirac-fix-mysql-script
 ======================

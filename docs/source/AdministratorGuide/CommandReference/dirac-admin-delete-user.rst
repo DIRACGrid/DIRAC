@@ -1,3 +1,5 @@
+.. _admin_dirac-admin-delete-user:
+
 =======================
 dirac-admin-delete-user
 =======================

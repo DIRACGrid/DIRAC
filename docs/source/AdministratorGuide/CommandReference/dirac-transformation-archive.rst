@@ -1,3 +1,5 @@
+.. _admin_dirac-transformation-archive:
+
 ============================
 dirac-transformation-archive
 ============================

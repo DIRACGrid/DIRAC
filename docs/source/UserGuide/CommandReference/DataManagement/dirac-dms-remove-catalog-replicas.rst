@@ -1,3 +1,5 @@
+.. _dirac-dms-remove-catalog-replicas:
+
 =================================
 dirac-dms-remove-catalog-replicas
 =================================

@@ -1,3 +1,5 @@
+.. _admin_dirac-admin-ban-site:
+
 ====================
 dirac-admin-ban-site
 ====================

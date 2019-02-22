@@ -1,3 +1,5 @@
+.. _admin_dirac-transformation-get-files:
+
 ==============================
 dirac-transformation-get-files
 ==============================

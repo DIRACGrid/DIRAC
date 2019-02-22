@@ -1,3 +1,5 @@
+.. _admin_dirac-stager-stage-files:
+
 ========================
 dirac-stager-stage-files
 ========================

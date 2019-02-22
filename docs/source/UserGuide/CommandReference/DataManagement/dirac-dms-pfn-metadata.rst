@@ -1,3 +1,5 @@
+.. _dirac-dms-pfn-metadata:
+
 ======================
 dirac-dms-pfn-metadata
 ======================

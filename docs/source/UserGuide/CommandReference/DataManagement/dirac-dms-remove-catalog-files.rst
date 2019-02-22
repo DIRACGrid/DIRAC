@@ -1,3 +1,5 @@
+.. _dirac-dms-remove-catalog-files:
+
 ==============================
 dirac-dms-remove-catalog-files
 ==============================

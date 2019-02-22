@@ -1,3 +1,5 @@
+.. _dirac-dms-replicate-and-register-request:
+
 ========================================
 dirac-dms-replicate-and-register-request
 ========================================

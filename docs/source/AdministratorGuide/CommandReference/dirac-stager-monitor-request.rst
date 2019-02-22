@@ -1,3 +1,5 @@
+.. _admin_dirac-stager-monitor-request:
+
 ============================
 dirac-stager-monitor-request
 ============================

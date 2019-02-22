@@ -1,3 +1,5 @@
+.. _admin_dirac-jobexec:
+
 =============
 dirac-jobexec
 =============

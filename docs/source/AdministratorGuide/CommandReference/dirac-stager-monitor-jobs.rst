@@ -1,3 +1,5 @@
+.. _admin_dirac-stager-monitor-jobs:
+
 =========================
 dirac-stager-monitor-jobs
 =========================

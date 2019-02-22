@@ -1,3 +1,5 @@
+.. _admin_dirac-admin-add-resources:
+
 =========================
 dirac-admin-add-resources
 =========================

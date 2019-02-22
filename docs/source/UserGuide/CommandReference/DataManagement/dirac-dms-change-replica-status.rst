@@ -1,3 +1,5 @@
+.. _dirac-dms-change-replica-status:
+
 ===============================
 dirac-dms-change-replica-status
 ===============================

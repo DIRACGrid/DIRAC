@@ -1,3 +1,5 @@
+.. _admin_dirac-install-component:
+
 =======================
 dirac-install-component
 =======================

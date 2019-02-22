@@ -1,3 +1,5 @@
+.. _admin_dirac-admin-get-job-pilots:
+
 ==========================
 dirac-admin-get-job-pilots
 ==========================

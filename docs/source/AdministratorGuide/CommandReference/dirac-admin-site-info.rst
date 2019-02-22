@@ -1,3 +1,5 @@
+.. _admin_dirac-admin-site-info:
+
 =====================
 dirac-admin-site-info
 =====================

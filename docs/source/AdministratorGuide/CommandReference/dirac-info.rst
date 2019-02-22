@@ -1,3 +1,5 @@
+.. _admin_dirac-info:
+
 ==========
 dirac-info
 ==========

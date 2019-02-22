@@ -1,3 +1,5 @@
+.. _admin_dirac-admin-add-site:
+
 ====================
 dirac-admin-add-site
 ====================

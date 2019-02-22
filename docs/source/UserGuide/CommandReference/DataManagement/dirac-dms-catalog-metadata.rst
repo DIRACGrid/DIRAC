@@ -1,3 +1,5 @@
+.. _dirac-dms-catalog-metadata:
+
 ==========================
 dirac-dms-catalog-metadata
 ==========================

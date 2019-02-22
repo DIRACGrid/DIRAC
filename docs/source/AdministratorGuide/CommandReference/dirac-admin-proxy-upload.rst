@@ -1,3 +1,5 @@
+.. _admin_dirac-admin-proxy-upload:
+
 ========================
 dirac-admin-proxy-upload
 ========================

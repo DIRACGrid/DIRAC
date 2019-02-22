@@ -1,8 +1,10 @@
+.. _admin_dirac-install:
+
 =============
 dirac-install
 =============
 
-2019-01-14 14:02:38 UTC dirac-install [NOTICE]  Processing installation requirements
+2019-02-22 16:07:36 UTC dirac-install [NOTICE]  Processing installation requirements
 
 Usage::
 
@@ -59,6 +61,10 @@ Options::
   s:  source=              : location of the modules to be installed
 
   x:  external=            : external version
+
+      cleanPYTHONPATH      : Only use the DIRAC PYTHONPATH (for pilots installation)
+
+      createLink           : create version symbolic link from the versions directory. This is equivalent to the            following command: ln -s /opt/dirac/versions/vArBpC vArBpC
 
 Known options and default values from /defaults section of releases file
  Release =
@@ -163,16 +169,16 @@ After providing the default configuration files, DIRAC or your extension can be 
    configuration file.
 
    We can provide the repository url:code repository:::Project:::branch. for example::
-   
+
      dirac-install -l DIRAC -r v6r20-pre16 -g v14r0 -t client \
      -m https://github.com/zmathe/DIRAC.git:::DIRAC:::dev_main_branch, \
      https://github.com/zmathe/WebAppDIRAC.git:::WebAppDIRAC:::extjs6 -e WebAppDIRAC
-   
+
    it will install DIRAC based on dev_main_branch and WebAppDIRAC based on extjs6::
-   
+
      dirac-install -l DIRAC -r v6r20-pre16 -g v14r0 -t client \
      -m WebAppDIRAC --tag=integration -e WebAppDIRAC
-   
+
    it will install DIRAC v6r20-pre16 and WebAppDIRAC integration branch
 
 You can use install.cfg configuration file::

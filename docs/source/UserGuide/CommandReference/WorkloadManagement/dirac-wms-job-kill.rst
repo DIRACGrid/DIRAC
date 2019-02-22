@@ -1,3 +1,5 @@
+.. _dirac-wms-job-kill:
+
 ==================
 dirac-wms-job-kill
 ==================

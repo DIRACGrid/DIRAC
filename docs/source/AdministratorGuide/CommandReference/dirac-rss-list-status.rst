@@ -1,3 +1,5 @@
+.. _admin_dirac-rss-list-status:
+
 =====================
 dirac-rss-list-status
 =====================

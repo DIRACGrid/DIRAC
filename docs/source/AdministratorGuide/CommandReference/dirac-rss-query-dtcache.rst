@@ -1,3 +1,5 @@
+.. _admin_dirac-rss-query-dtcache:
+
 =======================
 dirac-rss-query-dtcache
 =======================

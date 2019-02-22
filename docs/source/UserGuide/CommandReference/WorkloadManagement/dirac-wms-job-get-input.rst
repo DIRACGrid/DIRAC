@@ -1,3 +1,5 @@
+.. _dirac-wms-job-get-input:
+
 =======================
 dirac-wms-job-get-input
 =======================

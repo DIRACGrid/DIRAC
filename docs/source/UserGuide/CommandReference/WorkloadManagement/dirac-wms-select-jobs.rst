@@ -1,3 +1,5 @@
+.. _dirac-wms-select-jobs:
+
 =====================
 dirac-wms-select-jobs
 =====================

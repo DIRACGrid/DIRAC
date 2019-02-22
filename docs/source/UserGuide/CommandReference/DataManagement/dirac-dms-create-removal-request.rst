@@ -1,3 +1,5 @@
+.. _dirac-dms-create-removal-request:
+
 ================================
 dirac-dms-create-removal-request
 ================================

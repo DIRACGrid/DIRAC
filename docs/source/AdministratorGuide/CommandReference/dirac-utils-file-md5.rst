@@ -1,3 +1,5 @@
+.. _admin_dirac-utils-file-md5:
+
 ====================
 dirac-utils-file-md5
 ====================

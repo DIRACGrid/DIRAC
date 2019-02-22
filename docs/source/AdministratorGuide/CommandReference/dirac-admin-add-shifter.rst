@@ -1,3 +1,5 @@
+.. _admin_dirac-admin-add-shifter:
+
 =======================
 dirac-admin-add-shifter
 =======================

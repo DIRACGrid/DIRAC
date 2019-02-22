@@ -1,3 +1,5 @@
+.. _dirac-myproxy-upload:
+
 ====================
 dirac-myproxy-upload
 ====================

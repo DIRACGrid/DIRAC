@@ -1,3 +1,5 @@
+.. _admin_dirac-configure:
+
 ===============
 dirac-configure
 ===============

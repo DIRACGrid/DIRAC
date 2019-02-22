@@ -1,3 +1,5 @@
+.. _admin_dirac-configuration-shell:
+
 =========================
 dirac-configuration-shell
 =========================

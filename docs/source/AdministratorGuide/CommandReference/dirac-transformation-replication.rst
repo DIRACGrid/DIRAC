@@ -1,3 +1,5 @@
+.. _admin_dirac-transformation-replication:
+
 ================================
 dirac-transformation-replication
 ================================

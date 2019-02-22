@@ -1,3 +1,5 @@
+.. _admin_dirac-stager-monitor-file:
+
 =========================
 dirac-stager-monitor-file
 =========================

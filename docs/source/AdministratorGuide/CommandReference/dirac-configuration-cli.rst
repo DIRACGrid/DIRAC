@@ -1,3 +1,5 @@
+.. _admin_dirac-configuration-cli:
+
 =======================
 dirac-configuration-cli
 =======================

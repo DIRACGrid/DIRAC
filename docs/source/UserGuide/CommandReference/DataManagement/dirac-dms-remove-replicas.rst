@@ -1,3 +1,5 @@
+.. _dirac-dms-remove-replicas:
+
 =========================
 dirac-dms-remove-replicas
 =========================

@@ -1,3 +1,5 @@
+.. _admin_dirac-admin-get-pilot-output:
+
 ============================
 dirac-admin-get-pilot-output
 ============================

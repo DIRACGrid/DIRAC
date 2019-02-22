@@ -1,3 +1,5 @@
+.. _admin_dirac-rss-policy-manager:
+
 ========================
 dirac-rss-policy-manager
 ========================

@@ -1,3 +1,5 @@
+.. _admin_dirac-admin-sysadmin-cli:
+
 ========================
 dirac-admin-sysadmin-cli
 ========================

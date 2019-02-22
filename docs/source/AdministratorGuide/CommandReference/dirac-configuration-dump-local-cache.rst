@@ -1,3 +1,5 @@
+.. _admin_dirac-configuration-dump-local-cache:
+
 ====================================
 dirac-configuration-dump-local-cache
 ====================================

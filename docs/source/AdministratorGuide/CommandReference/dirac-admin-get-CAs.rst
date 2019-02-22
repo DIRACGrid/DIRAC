@@ -1,3 +1,5 @@
+.. _admin_dirac-admin-get-CAs:
+
 ===================
 dirac-admin-get-CAs
 ===================
@@ -14,4 +16,3 @@ Usage::
 Example::
 
   $ dirac-admin-get-CAs
-

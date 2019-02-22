@@ -1,3 +1,5 @@
+.. _admin_dirac-populate-component-db:
+
 ===========================
 dirac-populate-component-db
 ===========================

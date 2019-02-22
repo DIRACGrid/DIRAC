@@ -1,3 +1,5 @@
+.. _admin_dirac-rss-set-token:
+
 ===================
 dirac-rss-set-token
 ===================

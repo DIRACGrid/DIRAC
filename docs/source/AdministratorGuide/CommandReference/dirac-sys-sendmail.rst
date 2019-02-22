@@ -1,3 +1,5 @@
+.. _admin_dirac-sys-sendmail:
+
 ==================
 dirac-sys-sendmail
 ==================

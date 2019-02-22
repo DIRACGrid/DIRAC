@@ -1,3 +1,5 @@
+.. _admin_dirac-admin-add-group:
+
 =====================
 dirac-admin-add-group
 =====================

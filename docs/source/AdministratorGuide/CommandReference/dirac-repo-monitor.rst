@@ -1,3 +1,5 @@
+.. _admin_dirac-repo-monitor:
+
 ==================
 dirac-repo-monitor
 ==================

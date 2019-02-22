@@ -1,3 +1,5 @@
+.. _admin_dirac-admin-kill-pilot:
+
 ======================
 dirac-admin-kill-pilot
 ======================

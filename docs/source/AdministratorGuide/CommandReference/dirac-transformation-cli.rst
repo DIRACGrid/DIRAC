@@ -1,3 +1,5 @@
+.. _admin_dirac-transformation-cli:
+
 ========================
 dirac-transformation-cli
 ========================

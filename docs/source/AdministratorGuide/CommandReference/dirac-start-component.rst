@@ -1,3 +1,5 @@
+.. _admin_dirac-start-component:
+
 =====================
 dirac-start-component
 =====================

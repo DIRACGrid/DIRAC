@@ -1,3 +1,5 @@
+.. _admin_dirac-admin-add-user:
+
 ====================
 dirac-admin-add-user
 ====================

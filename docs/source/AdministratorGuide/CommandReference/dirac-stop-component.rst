@@ -1,3 +1,5 @@
+.. _admin_dirac-stop-component:
+
 ====================
 dirac-stop-component
 ====================

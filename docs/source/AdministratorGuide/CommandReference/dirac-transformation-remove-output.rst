@@ -1,3 +1,5 @@
+.. _admin_dirac-transformation-remove-output:
+
 ==================================
 dirac-transformation-remove-output
 ==================================

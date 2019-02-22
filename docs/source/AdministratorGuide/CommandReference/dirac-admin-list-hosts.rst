@@ -1,3 +1,5 @@
+.. _admin_dirac-admin-list-hosts:
+
 ======================
 dirac-admin-list-hosts
 ======================

@@ -1,3 +1,5 @@
+.. _dirac-dms-directory-sync:
+
 ========================
 dirac-dms-directory-sync
 ========================

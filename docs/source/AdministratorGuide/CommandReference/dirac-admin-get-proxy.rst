@@ -1,3 +1,5 @@
+.. _admin_dirac-admin-get-proxy:
+
 =====================
 dirac-admin-get-proxy
 =====================

@@ -1,3 +1,5 @@
+.. _admin_dirac-stop-mysql:
+
 ================
 dirac-stop-mysql
 ================

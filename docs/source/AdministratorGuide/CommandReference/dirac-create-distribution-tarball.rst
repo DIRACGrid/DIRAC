@@ -1,3 +1,5 @@
+.. _admin_dirac-create-distribution-tarball:
+
 =================================
 dirac-create-distribution-tarball
 =================================

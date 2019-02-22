@@ -1,3 +1,5 @@
+.. _dirac-wms-get-wn-parameters:
+
 ===========================
 dirac-wms-get-wn-parameters
 ===========================

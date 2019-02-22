@@ -1,3 +1,5 @@
+.. _admin_dirac-uninstall-component:
+
 =========================
 dirac-uninstall-component
 =========================

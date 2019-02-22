@@ -1,3 +1,5 @@
+.. _admin_dirac-monitoring-get-components-status:
+
 ======================================
 dirac-monitoring-get-components-status
 ======================================

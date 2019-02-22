@@ -1,3 +1,5 @@
+.. _admin_dirac-fix-ld-library-path:
+
 =========================
 dirac-fix-ld-library-path
 =========================

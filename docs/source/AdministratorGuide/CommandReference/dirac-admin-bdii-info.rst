@@ -1,3 +1,5 @@
+.. _admin_dirac-admin-bdii-info:
+
 =====================
 dirac-admin-bdii-info
 =====================

@@ -1,3 +1,5 @@
+.. _admin_dirac-admin-voms-sync:
+
 =====================
 dirac-admin-voms-sync
 =====================

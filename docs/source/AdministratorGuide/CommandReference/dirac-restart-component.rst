@@ -1,3 +1,5 @@
+.. _admin_dirac-restart-component:
+
 =======================
 dirac-restart-component
 =======================

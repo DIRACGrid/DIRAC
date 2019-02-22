@@ -1,3 +1,5 @@
+.. _dirac-dms-filecatalog-cli:
+
 =========================
 dirac-dms-filecatalog-cli
 =========================

@@ -1,3 +1,5 @@
+.. _admin_dirac-externals-requirements:
+
 ============================
 dirac-externals-requirements
 ============================

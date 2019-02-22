@@ -1,3 +1,5 @@
+.. _admin_dirac-admin-ce-info:
+
 ===================
 dirac-admin-ce-info
 ===================

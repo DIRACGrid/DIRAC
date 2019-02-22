@@ -1,3 +1,5 @@
+.. _dirac-wms-job-peek:
+
 ==================
 dirac-wms-job-peek
 ==================

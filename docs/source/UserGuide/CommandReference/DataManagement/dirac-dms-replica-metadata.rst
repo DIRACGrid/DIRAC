@@ -1,3 +1,5 @@
+.. _dirac-dms-replica-metadata:
+
 ==========================
 dirac-dms-replica-metadata
 ==========================

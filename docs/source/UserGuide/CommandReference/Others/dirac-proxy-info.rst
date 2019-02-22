@@ -1,3 +1,5 @@
+.. _dirac-proxy-info:
+
 ================
 dirac-proxy-info
 ================

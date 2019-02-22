@@ -1,3 +1,5 @@
+.. _dirac-proxy-destroy:
+
 ===================
 dirac-proxy-destroy
 ===================

@@ -1,3 +1,5 @@
+.. _dirac-wms-job-status:
+
 ====================
 dirac-wms-job-status
 ====================

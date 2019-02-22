@@ -1,3 +1,5 @@
+.. _dirac-wms-get-queue-normalization:
+
 =================================
 dirac-wms-get-queue-normalization
 =================================

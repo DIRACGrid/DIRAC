@@ -1,3 +1,5 @@
+.. _admin_dirac-admin-get-job-pilot-output:
+
 ================================
 dirac-admin-get-job-pilot-output
 ================================

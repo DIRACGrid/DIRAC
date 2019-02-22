@@ -1,3 +1,5 @@
+.. _dirac-dms-lfn-accessURL:
+
 =======================
 dirac-dms-lfn-accessURL
 =======================

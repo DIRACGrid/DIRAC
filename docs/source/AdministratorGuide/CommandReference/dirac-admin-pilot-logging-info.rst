@@ -1,3 +1,5 @@
+.. _admin_dirac-admin-pilot-logging-info:
+
 ==============================
 dirac-admin-pilot-logging-info
 ==============================

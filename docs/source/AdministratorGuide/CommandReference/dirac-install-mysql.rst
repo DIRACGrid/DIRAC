@@ -1,3 +1,5 @@
+.. _admin_dirac-install-mysql:
+
 ===================
 dirac-install-mysql
 ===================

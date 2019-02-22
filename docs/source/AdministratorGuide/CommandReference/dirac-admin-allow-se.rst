@@ -1,3 +1,5 @@
+.. _admin_dirac-admin-allow-se:
+
 ====================
 dirac-admin-allow-se
 ====================

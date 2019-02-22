@@ -1,3 +1,5 @@
+.. _dirac-dms-move-replica-request:
+
 ==============================
 dirac-dms-move-replica-request
 ==============================

@@ -1,3 +1,5 @@
+.. _admin_dirac-transformation-add-files:
+
 ==============================
 dirac-transformation-add-files
 ==============================

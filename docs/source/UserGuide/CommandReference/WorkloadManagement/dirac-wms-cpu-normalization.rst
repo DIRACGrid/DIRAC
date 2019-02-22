@@ -1,3 +1,5 @@
+.. _dirac-wms-cpu-normalization:
+
 ===========================
 dirac-wms-cpu-normalization
 ===========================

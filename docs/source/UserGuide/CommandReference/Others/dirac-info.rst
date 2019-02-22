@@ -1,3 +1,5 @@
+.. _dirac-info:
+
 ==========
 dirac-info
 ==========

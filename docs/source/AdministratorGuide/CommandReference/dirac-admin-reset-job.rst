@@ -1,3 +1,5 @@
+.. _admin_dirac-admin-reset-job:
+
 =====================
 dirac-admin-reset-job
 =====================

@@ -1,3 +1,5 @@
+.. _admin_dirac-admin-check-config-options:
+
 ================================
 dirac-admin-check-config-options
 ================================

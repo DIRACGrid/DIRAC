@@ -1,3 +1,5 @@
+.. _dirac-wms-jobs-select-output-search:
+
 ===================================
 dirac-wms-jobs-select-output-search
 ===================================

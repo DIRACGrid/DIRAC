@@ -1,3 +1,5 @@
+.. _dirac-dms-put-and-register-request:
+
 ==================================
 dirac-dms-put-and-register-request
 ==================================

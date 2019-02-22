@@ -1,3 +1,5 @@
+.. _admin_dirac-admin-users-with-proxy:
+
 ============================
 dirac-admin-users-with-proxy
 ============================

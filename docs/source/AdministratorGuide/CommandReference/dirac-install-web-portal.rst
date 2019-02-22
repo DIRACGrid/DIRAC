@@ -1,3 +1,5 @@
+.. _admin_dirac-install-web-portal:
+
 ========================
 dirac-install-web-portal
 ========================

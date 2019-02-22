@@ -1,3 +1,5 @@
+.. _dirac-dms-pfn-accessURL:
+
 =======================
 dirac-dms-pfn-accessURL
 =======================

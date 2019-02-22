@@ -1,3 +1,5 @@
+.. _admin_dirac-rss-sync:
+
 ==============
 dirac-rss-sync
 ==============
