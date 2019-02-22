@@ -12,7 +12,7 @@ __RCSID__ = "$Id$"
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.FrameworkSystem.private.logging.Message import tupleToMessage
+from DIRAC.FrameworkSystem.private.standardLogging.Message import tupleToMessage
 from DIRAC.FrameworkSystem.DB.SystemLoggingDB import SystemLoggingDB
 
 
