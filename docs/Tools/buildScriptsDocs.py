@@ -165,7 +165,8 @@ def createAdminGuideCommandReference():
     scriptName = os.path.basename(script)
     if scriptName.endswith('.py'):
       scriptName = scriptName[:-3]
-    if createScriptDocFiles(script, sectionPath, scriptName) and scriptName not in adminCommandList:
+    if createScriptDocFiles(script, sectionPath, scriptName, referencePrefix='admin_') and \
+       scriptName not in adminCommandList:
       missingCommands.append(scriptName)
 
   if missingCommands:
@@ -234,7 +235,7 @@ In this subsection the %s commands are collected
     sectionIndexFile.write(sectionIndexRST)
 
 
-def createScriptDocFiles(script, sectionPath, scriptName):
+def createScriptDocFiles(script, sectionPath, scriptName, referencePrefix=''):
   """Create the RST files for all the scripts.
 
   Folders and indices already exist, just call the scripts and get the help messages. Format the help message.
@@ -250,6 +251,8 @@ def createScriptDocFiles(script, sectionPath, scriptName):
     return False
 
   rstLines = []
+  rstLines.append(' .. _%s%s:' % (referencePrefix, scriptName))
+  rstLines.append('')
   rstLines.append('=' * len(scriptName))
   rstLines.append('%s' % scriptName)
   rstLines.append('=' * len(scriptName))
