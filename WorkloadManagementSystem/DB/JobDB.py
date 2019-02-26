@@ -74,6 +74,8 @@ class JobDB(DB):
 
     DB.__init__(self, 'JobDB', 'WorkloadManagement/JobDB')
 
+    # data member to check if __init__ went through without error
+    self.__initialized = False
     self.maxRescheduling = self.getCSOption('MaxRescheduling', 3)
 
     # loading the function that will be used to determine the platform (it can be VO specific)
@@ -96,6 +98,11 @@ class JobDB(DB):
 
     self.log.info("MaxReschedule:  %s" % self.maxRescheduling)
     self.log.info("==================================================")
+    self.__initialized = True
+
+  def isValid(self):
+    """ Check if correctly initialised """
+    return self.__initialized
 
   def __getAttributeNames(self):
     """ get Name of Job Attributes defined in DB
@@ -107,11 +114,7 @@ class JobDB(DB):
     res = self._query('DESCRIBE Jobs')
     if not res['OK']:
       return res
-
-    self.jobAttributeNames = []
-    for row in res['Value']:
-      field = row[0]
-      self.jobAttributeNames.append(field)
+    self.jobAttributeNames = [row[0] for row in res['Value']]
 
     return S_OK()
 
@@ -124,14 +127,12 @@ class JobDB(DB):
     if not jobIDList:
       return S_OK({})
     if attrList:
-      attrNames = ','.join([str(x) for x in attrList])
+      attrNames = ','.join(str(x) for x in attrList if x in self.jobAttributeNames)
       attr_tmp_list = attrList
     else:
-      attrNames = ','.join([str(x) for x in self.jobAttributeNames])
+      attrNames = ','.join(self.jobAttributeNames)
       attr_tmp_list = self.jobAttributeNames
     jobList = ','.join([str(x) for x in jobIDList])
-
-    # FIXME: need to check if the attributes are in the list of job Attributes
 
     cmd = 'SELECT JobID,%s FROM Jobs WHERE JobID in ( %s )' % (attrNames, jobList)
     res = self._query(cmd)
@@ -143,16 +144,16 @@ class JobDB(DB):
         jobID = retValues[0]
         jobDict = {}
         jobDict['JobID'] = jobID
-        attrValues = retValues[1:]
-        for i in xrange(len(attr_tmp_list)):
+        for name, value in zip(attr_tmp_list, retValues[1:]):
           try:
-            jobDict[attr_tmp_list[i]] = attrValues[i].tostring()
+            value = value.tostring()
           except BaseException:
-            jobDict[attr_tmp_list[i]] = str(attrValues[i])
+            value = str(value)
+          jobDict[name] = value
         retDict[int(jobID)] = jobDict
       return S_OK(retDict)
-    except BaseException as x:
-      return S_ERROR('JobDB.getAttributesForJobList: Failed\n%s' % repr(x))
+    except BaseException as e:
+      return S_ERROR('JobDB.getAttributesForJobList: Failed\n%s' % repr(e))
 
 #############################################################################
   def getDistinctJobAttributes(self, attribute, condDict=None, older=None,
@@ -301,11 +302,11 @@ class JobDB(DB):
       if result['OK']:
         if result['Value']:
           for jobID, name, value in result['Value']:
-            resultDict.setdefault(jobID, {})
             try:
-              resultDict[jobID][name] = value.tostring()
+              value = value.tostring()
             except BaseException:
-              resultDict[jobID][name] = value
+              pass
+            resultDict.setdefault(jobID, {})[name] = value
 
         return S_OK(resultDict)  # there's a slim chance that this is an empty dictionary
       else:
@@ -317,11 +318,11 @@ class JobDB(DB):
         return result
 
       for jobID, name, value in result['Value']:
-        resultDict.setdefault(jobID, {})
         try:
-          resultDict[jobID][name] = value.tostring()
+          value = value.tostring()
         except BaseException:
-          resultDict[jobID][name] = value
+          pass
+        resultDict.setdefault(jobID, {})[name] = value
 
       return S_OK(resultDict)  # there's a slim chance that this is an empty dictionary
 
@@ -360,12 +361,11 @@ class JobDB(DB):
     if result['OK']:
       if result['Value']:
         for name, value, counter in result['Value']:
-          if counter not in resultDict:
-            resultDict[counter] = {}
           try:
-            resultDict[counter][name] = value.tostring()
+            value = value.tostring()
           except BaseException:
-            resultDict[counter][name] = value
+            pass
+          resultDict.setdefault(counter, {})[name] = value
 
       return S_OK(resultDict)
     else:
@@ -383,24 +383,14 @@ class JobDB(DB):
       return ret
     jobID = ret['Value']
 
-    if attrList:
-      attrNameList = []
-      for x in attrList:
-        ret = self._escapeString(x)
-        if not ret['OK']:
-          return ret
-        x = "`" + ret['Value'][1:-1] + "`"
-        attrNameList.append(x)
-      attrNames = ','.join(attrNameList)
-    else:
-      attrNameList = []
-      for x in self.jobAttributeNames:
-        ret = self._escapeString(x)
-        if not ret['OK']:
-          return ret
-        x = "`" + ret['Value'][1:-1] + "`"
-        attrNameList.append(x)
-      attrNames = ','.join(attrNameList)
+    attrNameList = []
+    for x in attrList if attrList else self.jobAttributeNames:
+      ret = self._escapeString(x)
+      if not ret['OK']:
+        return ret
+      x = "`" + ret['Value'][1:-1] + "`"
+      attrNameList.append(x)
+    attrNames = ','.join(attrNameList)
     self.log.debug('JobDB.getAllJobAttributes: Getting Attributes for job = %s.' % jobID)
 
     cmd = 'SELECT %s FROM Jobs WHERE JobID=%s' % (attrNames, jobID)
@@ -414,12 +404,8 @@ class JobDB(DB):
     values = res['Value'][0]
 
     attributes = {}
-    if attrList:
-      for i in xrange(len(attrList)):
-        attributes[attrList[i]] = str(values[i])
-    else:
-      for i in xrange(len(self.jobAttributeNames)):
-        attributes[self.jobAttributeNames[i]] = str(values[i])
+    for name, value in zip(attrList if attrList else self.jobAttributeNames, values):
+      attributes[name] = str(value)
 
     return S_OK(attributes)
 
@@ -488,9 +474,10 @@ class JobDB(DB):
       if result['Value']:
         for name, value in result['Value']:
           try:
-            resultDict[name] = value.tostring()
+            value = value.tostring()
           except BaseException:
-            resultDict[name] = value
+            pass
+          resultDict[name] = value
 
       return S_OK(resultDict)
     else:
@@ -566,20 +553,18 @@ class JobDB(DB):
     if not result['OK']:
       return result
 
-    optListString = result['Value']
-    optList = optListString.split(',')
+    optList = result['Value'].split(',')
+    if currentOptimizer not in optList:
+      return S_ERROR('Could not find ' + currentOptimizer + ' in chain')
     try:
-      sindex = None
-      for i in xrange(len(optList)):
-        if optList[i] == currentOptimizer:
-          sindex = i
-      if sindex >= 0:
-        if sindex < len(optList) - 1:
-          nextOptimizer = optList[sindex + 1]
-        else:
-          return S_ERROR('Unexpected end of the Optimizer Chain')
-      else:
-        return S_ERROR('Could not find ' + currentOptimizer + ' in chain')
+      # Append None to get a list of (opt,nextOpt)
+      optList.append(None)
+      nextOptimizer = None
+      for opt, nextOptimizer in zip(optList[:-1], optList[1:]):
+        if opt == currentOptimizer:
+          break
+      if nextOptimizer is None:
+        return S_ERROR('Unexpected end of the Optimizer Chain')
     except ValueError:
       return S_ERROR('The ' + currentOptimizer + ' not found in the chain')
 
@@ -686,12 +671,11 @@ class JobDB(DB):
         return S_ERROR(EWMSSUBM, 'Request to set non-existing job attribute')
 
     attr = []
-    for i in xrange(len(attrNames)):
-      ret = self._escapeString(attrValues[i])
+    for name, value in zip(attrNames, attrValues):
+      ret = self._escapeString(value)
       if not ret['OK']:
         return ret
-      value = ret['Value']
-      attr.append("%s=%s" % (attrNames[i], value))
+      attr.append("%s=%s" % (name, ret['Value']))
     if update:
       attr.append("LastUpdateTime=UTC_TIMESTAMP()")
     if not attr:
