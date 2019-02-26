@@ -1,4 +1,4 @@
-[v6r21-pre7]
+[v6r21-pre8]
 
 *Core
 NEW: (#3921) DictCache - allow threadLocal cache
@@ -9,6 +9,10 @@ FIX: (#3945) set DIRACOS environment variable before souring diracosrc
 CHANGE: (#3949) Removed unattended dirac-install-client.py
 CHANGE: (#3950) File.py - do not follow links when getting files list or size 
         in directory via getGlobbedFiles and getGlobbedTotalSize
+CHANGE: (#3969) Use EOS for installing DIRAC software        
+
+*FrameworkSystem
+FIX: (#3968) removed the old logging
 
 *ResourceStatusSystem
 FIX: (#3921) fix logic of the RSSCache leading in expired keys
@@ -21,14 +25,22 @@ CHANGE: (#3923) Clean PYTHONPATH from *rc when installing DIRAC from the pilot
 NEW: (#3941) JobDB: getJobParameters work also with list on job IDs
 CHANGE: (#3941) JobCleaningAgent queries for job parameters in bulk
 CHANGE: (#3941) Optimizers only set optimizers parameters (backported from v7r0)
+CHANGE: (#3970) streamlining code in OptimizerModule. Also pep8 formatting (ignore white spaces for reviewing)
+FIX: (#3976) fixed Banned Sites matching in TaskQueueDB
+FIX: (#3970) when an optimizer agent was instantiating JobDB (via the base class) and the machine 
+     was overloaded, the connection to the DB failed but this was not noticed and the agent was 
+     not working until restarted after max cycles. Now testing JobDB  is valid in OptimizerModule 
+     base class and exit if not valid.
 
 *TransformationSystem
 CHANGE: (#3946) Remove directory listing from ValidateOutputDataAgent
 CHANGE: (#3946) Remove directory listing from TransformationCleaningAgent
+FIX: (#3967) TransformationCleaningAgent: don't return error if log directory does not exist
 
 *Interfaces
 CHANGE: (#3947) removed old methods going through old RMS
 CHANGE: (#3960) Dirac.py - getLFNMetadata returns result for both file and directory LFNs
+FIX: (#3966) Dirac: replace the use of deprecated function status by getJobStatus
 
 *DataManagementSystem
 FIX: (#3922) Fixes FTS3 duplicate transfers
