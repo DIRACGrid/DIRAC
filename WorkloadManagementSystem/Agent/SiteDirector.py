@@ -628,7 +628,6 @@ class SiteDirector(AgentModule):
       else:
         anySite = True
 
-
       if "JobTypes" in tqDescription:
         if "Sites" in tqDescription:
           for site in tqDescription['Sites']:
@@ -638,7 +637,6 @@ class SiteDirector(AgentModule):
     self.monitorJobsQueuesPilots(matchingTQs)
 
     return True, anySite, jobSites, testSites
-
 
   def monitorJobsQueuesPilots(self, matchingTQs):
     """ Just printout of jobs queues and pilots status in TQ
@@ -1196,7 +1194,6 @@ class SiteDirector(AgentModule):
       queueName = self.queueDict[queue]['QueueName']
       ceType = self.queueDict[queue]['CEType']
       siteName = self.queueDict[queue]['Site']
-      abortedPilots = 0
 
       result = pilotAgentsDB.selectPilots({'DestinationSite': ceName,
                                            'Queue': queueName,
@@ -1243,41 +1240,9 @@ class SiteDirector(AgentModule):
         continue
       pilotCEDict = result['Value']
 
-      for pRef in pilotRefs:
-        newStatus = ''
-        oldStatus = pilotDict[pRef]['Status']
-        if pRef in pilotCEDict:
-          ceStatus = pilotCEDict[pRef]
-        else:
-          ceStatus = oldStatus
-        lastUpdateTime = pilotDict[pRef]['LastUpdateTime']
-        sinceLastUpdate = dateTime() - lastUpdateTime
-
-        if oldStatus == ceStatus and ceStatus != "Unknown":
-          # Normal status did not change, continue
-          continue
-        elif ceStatus == "Unknown" and oldStatus == "Unknown":
-          if sinceLastUpdate < 3600 * second:
-            # Allow 1 hour of Unknown status assuming temporary problems on the CE
-            continue
-          else:
-            newStatus = 'Aborted'
-        elif ceStatus == "Unknown" and oldStatus not in FINAL_PILOT_STATUS:
-          # Possible problems on the CE, let's keep the Unknown status for a while
-          newStatus = 'Unknown'
-        elif ceStatus != 'Unknown':
-          # Update the pilot status to the new value
-          newStatus = ceStatus
-
-        if newStatus:
-          self.log.info('Updating status to %s for pilot %s' % (newStatus, pRef))
-          result = pilotAgentsDB.setPilotStatus(pRef, newStatus, '', 'Updated by SiteDirector')
-          if newStatus == "Aborted":
-            abortedPilots += 1
-        # Retrieve the pilot output now
-        if newStatus in FINAL_PILOT_STATUS:
-          if pilotDict[pRef]['OutputReady'].lower() == 'false' and self.getOutput:
-            self._getPilotOutput(pRef, pilotDict, ce, ceName)
+      abortedPilots, getPilotOutputFlag = self._updatePilotStatus(pilotRefs, pilotDict, pilotCEDict)
+      if getPilotOutputFlag:
+        self._getPilotOutput()
 
       # If something wrong in the queue, make a pause for the job submission
       if abortedPilots:
@@ -1345,6 +1310,53 @@ class SiteDirector(AgentModule):
           self.log.error('Failed to send pilot agent accounting')
 
     return S_OK()
+
+  def _updatePilotStatus(self, pilotRefs, pilotDict, pilotCEDict):
+    """ Really updates the pilots status
+
+        :return: number of aborted pilots, flag for getting the pilot output
+    """
+
+    abortedPilots = 0
+    getPilotOutputFlag = False
+
+    for pRef in pilotRefs:
+      newStatus = ''
+      oldStatus = pilotDict[pRef]['Status']
+      lastUpdateTime = pilotDict[pRef]['LastUpdateTime']
+      sinceLastUpdate = dateTime() - lastUpdateTime
+
+      ceStatus = pilotCEDict.get(pRef, oldStatus)
+
+      if oldStatus == ceStatus and ceStatus != "Unknown":
+        # Normal status did not change, continue
+        continue
+      elif ceStatus == oldStatus == "Unknown":
+        if sinceLastUpdate < 3600 * second:
+          # Allow 1 hour of Unknown status assuming temporary problems on the CE
+          continue
+        else:
+          newStatus = 'Aborted'
+      elif ceStatus == "Unknown" and oldStatus not in FINAL_PILOT_STATUS:
+        # Possible problems on the CE, let's keep the Unknown status for a while
+        newStatus = 'Unknown'
+      elif ceStatus != 'Unknown':
+        # Update the pilot status to the new value
+        newStatus = ceStatus
+
+      if newStatus:
+        self.log.info('Updating status to %s for pilot %s' % (newStatus, pRef))
+        result = pilotAgentsDB.setPilotStatus(pRef, newStatus, statusReason='Updated by SiteDirector')
+        if not result['OK']:
+          self.log.error(result['Message'])
+        if newStatus == "Aborted":
+          abortedPilots += 1
+      # Set the flag to retrieve the pilot output now or not
+      if newStatus in FINAL_PILOT_STATUS:
+        if pilotDict[pRef]['OutputReady'].lower() == 'false' and self.getOutput:
+          getPilotOutputFlag = True
+
+    return abortedPilots, getPilotOutputFlag
 
   def _getPilotOutput(self, pRef, pilotDict, ce, ceName):
     """ Retrieves the pilot output for a pilot and stores it in the pilotAgentsDB

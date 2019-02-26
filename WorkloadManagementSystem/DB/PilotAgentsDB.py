@@ -76,7 +76,8 @@ class PilotAgentsDB(DB):
                      statusReason=None, gridSite=None, queue=None,
                      benchmark=None, currentJob=None,
                      updateTime=None, conn=False):
-    """ Set pilot job LCG status """
+    """ Set pilot job status
+    """
 
     setList = []
     setList.append("Status='%s'" % status)
