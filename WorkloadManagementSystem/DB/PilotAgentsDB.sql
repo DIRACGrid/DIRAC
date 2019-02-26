@@ -2,9 +2,9 @@
 
 -- ------------------------------------------------------------------------------
 --
---  Schema definition for the PilotAgentsDB database - containing the job status
+--  Schema definition for the PilotAgentsDB database - containing the Pilots status
 --  history ( logging ) information
--- -
+--
 -- ------------------------------------------------------------------------------
 
 -- When installing via dirac tools, the following is not needed (still here for reference)
@@ -14,7 +14,6 @@
 -- ------------------------------------------------------------------------------
 -- Database owner definition
 -- USE mysql;
--- DELETE FROM user WHERE user='Dirac';
 --
 -- Must set passwords for database user by replacing "must_be_set".
 --
