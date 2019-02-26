@@ -14,7 +14,7 @@ parseCommandLine()
 from DIRAC import gLogger
 from DIRAC.Core.Utilities.Time import toString
 from DIRAC.FrameworkSystem.DB.SystemLoggingDB import SystemLoggingDB
-from DIRAC.FrameworkSystem.private.logging.Message import tupleToMessage
+from DIRAC.FrameworkSystem.private.standardLogging.Message import tupleToMessage
 
 
 class TestSystemLoggingDBTestCase(unittest.TestCase):
