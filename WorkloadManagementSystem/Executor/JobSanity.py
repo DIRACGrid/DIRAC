@@ -104,6 +104,7 @@ class JobSanity(OptimizerExecutor):
       maxLFNs = self.ex_getOption('MaxInputDataPerJob', 100)
       if len(data) > maxLFNs:
         return S_ERROR("Exceeded Maximum Dataset Limit (%s)" % maxLFNs)
+    return S_OK(len(data))
 
   def checkInputSandbox(self, jobState, manifest):
     """The number of input sandbox files, as specified in the job

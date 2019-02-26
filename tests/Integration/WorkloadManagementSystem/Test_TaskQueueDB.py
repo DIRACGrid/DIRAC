@@ -86,22 +86,77 @@ def test_chainWithParameter():
   assert result['Value'] == {}
 
 
-def test_chainWithParametersComplex():
-  """ put - remove with parameters
+def test_chainWithSites():
+  """ put - remove with parameters including Banned sites
   """
-  tqDefDict = {'OwnerDN': '/my/DN', 'OwnerGroup': 'myGroup', 'Setup': 'aSetup', 'CPUTime': 50000,
+  tqDefDict = {'OwnerDN': '/my/DN', 'OwnerGroup': 'myGroup', 'Setup': 'aSetup', 'CPUTime': 5000,
                'BannedSites': ['LCG.CERN.ch', 'CLOUD.IN2P3.fr']}
   result = tqDB.insertJob(127, tqDefDict, 10)
   assert result['OK'] is True
   result = tqDB.getTaskQueueForJobs([127])
-  tq = result['Value'][127]
-  result = tqDB.deleteTaskQueueIfEmpty(tq)  # this won't delete anything, as 127 is in
+  tq_job1 = result['Value'][127]
+
+  tqDefDict = {'OwnerDN': '/my/DN', 'OwnerGroup': 'myGroup', 'Setup': 'aSetup', 'CPUTime': 5000,
+               'BannedSites': ['CLOUD.IN2P3.fr', 'DIRAC.Test.org']}
+  result = tqDB.insertJob(128, tqDefDict, 10)
+  assert result['OK'] is True
+  result = tqDB.getTaskQueueForJobs([128])
+  tq_job2 = result['Value'][128]
+
+  # matching
+  # this should match everything
+  result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 50000},
+                                     numQueuesToGet=4)
+  assert result['OK'] is True
+  res = set([int(x[0]) for x in result['Value']])
+  assert res == {tq_job1, tq_job2}
+
+  # this should match also everything
+  result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 50000,
+                                      'Platform': 'centos7'},
+                                     numQueuesToGet=4)
+  assert result['OK'] is True
+  res = set([int(x[0]) for x in result['Value']])
+  assert res == {tq_job1, tq_job2}
+
+  # this should match the first
+  result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 50000,
+                                      'Site': 'DIRAC.Test.org'},
+                                     numQueuesToGet=4)
+  assert result['OK'] is True
+  res = set([int(x[0]) for x in result['Value']])
+  assert res == {tq_job1}
+
+  # this should match the second
+  result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 50000,
+                                      'Site': 'LCG.CERN.ch'},
+                                     numQueuesToGet=4)
+  assert result['OK'] is True
+  res = set([int(x[0]) for x in result['Value']])
+  assert res == {tq_job2}
+
+  # this should not match anything because of the banned site CLOUD.IN2P3.fr
+  result = tqDB.matchAndGetTaskQueue({'Setup': 'aSetup', 'CPUTime': 50000,
+                                      'Site': 'CLOUD.IN2P3.fr'},
+                                     numQueuesToGet=4)
+  assert result['OK'] is True
+  assert result['Value'] == []
+
+  result = tqDB.deleteTaskQueueIfEmpty(tq_job1)  # this won't delete anything, as 127 is in
   assert result['OK'] is True  # but still it won't fail
   assert result['Value'] is False
   result = tqDB.deleteJob(127)
   assert result['OK'] is True
-  result = tqDB.deleteTaskQueueIfEmpty(tq)  # this should now delete tq
+  result = tqDB.deleteTaskQueueIfEmpty(tq_job1)  # this should now delete tq
   assert result['OK'] is True
+
+  result = tqDB.deleteJob(128)
+  assert result['OK'] is True
+
+  for tqId in [tq_job1, tq_job2]:
+    result = tqDB.deleteTaskQueueIfEmpty(tqId)
+    assert result['OK'] is True
+
   result = tqDB.retrieveTaskQueues()
   assert result['OK'] is True
   assert result['Value'] == {}

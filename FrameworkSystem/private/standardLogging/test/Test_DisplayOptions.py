@@ -7,8 +7,7 @@ __RCSID__ = "$Id$"
 import unittest
 import thread
 
-from DIRAC.FrameworkSystem.test.testLogging.Test_Logging import Test_Logging, cleaningLog
-from DIRAC.FrameworkSystem.test.testLogging.Test_Logging import gLogger, oldgLogger
+from DIRAC.FrameworkSystem.private.standardLogging.test.TestLoggingBase import Test_Logging, gLogger, cleaningLog
 
 
 class Test_DisplayOptions(Test_Logging):
@@ -29,62 +28,36 @@ class Test_DisplayOptions(Test_Logging):
     gLogger.showHeaders(False)
     gLogger.notice('message', 'varmessage')
 
-    oldgLogger.showHeaders(False)
-    oldgLogger.notice('message', 'varmessage')
-
     self.assertEqual("message varmessage\n", self.buffer.getvalue())
-    self.assertEqual(self.buffer.getvalue(), self.oldbuffer.getvalue())
     self.buffer.truncate(0)
-    self.oldbuffer.truncate(0)
 
     gLogger.showHeaders(True)
     gLogger.notice('message')
 
-    oldgLogger.showHeaders(True)
-    oldgLogger.notice('message')
-
     logstring1 = cleaningLog(self.buffer.getvalue())
-    logstring2 = cleaningLog(self.oldbuffer.getvalue())
 
     self.assertEqual("UTCFrameworkNOTICE:message\n", logstring1)
-    self.assertEqual(logstring1, logstring2)
     self.buffer.truncate(0)
-    self.oldbuffer.truncate(0)
 
   def test_01setShowThreadIDs(self):
     """
     Set the thread ID
-    Differences between the two systems :
-    - gLogger: threadID [1254868214]
-    - old gLogger: threadID [GEko]
     """
     gLogger.showThreadIDs(False)
     gLogger.notice('message')
 
-    oldgLogger.showThreadIDs(False)
-    oldgLogger.notice('message')
-
     logstring1 = cleaningLog(self.buffer.getvalue())
-    logstring2 = cleaningLog(self.oldbuffer.getvalue())
 
     self.assertEqual("UTCFrameworkNOTICE:message\n", logstring1)
-    self.assertEqual(logstring1, logstring2)
     self.buffer.truncate(0)
-    self.oldbuffer.truncate(0)
 
     gLogger.showThreadIDs(True)
     gLogger.notice('message')
 
-    oldgLogger.showThreadIDs(True)
-    oldgLogger.notice('message')
-
     logstring1 = cleaningLog(self.buffer.getvalue())
-    logstring2 = cleaningLog(self.oldbuffer.getvalue())
 
     self.assertIn(str(thread.get_ident()), logstring1)
-    self.assertNotEqual(logstring1, logstring2)
     self.buffer.truncate(0)
-    self.oldbuffer.truncate(0)
 
   def test_02setShowThreadIDsHeaders(self):
     """
@@ -94,59 +67,33 @@ class Test_DisplayOptions(Test_Logging):
     gLogger.showThreadIDs(False)
     gLogger.notice('message')
 
-    oldgLogger.showHeaders(False)
-    oldgLogger.showThreadIDs(False)
-    oldgLogger.notice('message')
-
     self.assertEqual("message\n", self.buffer.getvalue())
-    self.assertEqual(self.buffer.getvalue(), self.oldbuffer.getvalue())
     self.buffer.truncate(0)
-    self.oldbuffer.truncate(0)
 
     gLogger.showHeaders(False)
     gLogger.showThreadIDs(True)
     gLogger.notice('message')
 
-    oldgLogger.showHeaders(False)
-    oldgLogger.showThreadIDs(True)
-    oldgLogger.notice('message')
-
     self.assertEqual("message\n", self.buffer.getvalue())
-    self.assertEqual(self.buffer.getvalue(), self.oldbuffer.getvalue())
     self.buffer.truncate(0)
-    self.oldbuffer.truncate(0)
 
     gLogger.showHeaders(True)
     gLogger.showThreadIDs(False)
     gLogger.notice('message')
 
-    oldgLogger.showHeaders(True)
-    oldgLogger.showThreadIDs(False)
-    oldgLogger.notice('message')
-
     logstring1 = cleaningLog(self.buffer.getvalue())
-    logstring2 = cleaningLog(self.oldbuffer.getvalue())
 
     self.assertEqual("UTCFrameworkNOTICE:message\n", logstring1)
-    self.assertEqual(logstring1, logstring2)
     self.buffer.truncate(0)
-    self.oldbuffer.truncate(0)
 
     gLogger.showHeaders(True)
     gLogger.showThreadIDs(True)
     gLogger.notice('message')
 
-    oldgLogger.showHeaders(True)
-    oldgLogger.showThreadIDs(True)
-    oldgLogger.notice('message')
-
     logstring1 = cleaningLog(self.buffer.getvalue())
-    logstring2 = cleaningLog(self.oldbuffer.getvalue())
 
     self.assertIn(str(thread.get_ident()), logstring1)
-    self.assertNotEqual(logstring1, logstring2)
     self.buffer.truncate(0)
-    self.oldbuffer.truncate(0)
 
   def test_03setSubLogShowHeaders(self):
     """
@@ -187,7 +134,7 @@ class Test_DisplayOptions(Test_Logging):
 
   def test_05setSubLoggLoggerShowHeaders(self):
     """
-    Create a sublogger, set its Header option and the Header option of the gLogger. 
+    Create a sublogger, set its Header option and the Header option of the gLogger.
     Show that its Header option do not follow the change of its parent Header option.
     """
     sublog = gLogger.getSubLogger('sublog3')
@@ -208,7 +155,7 @@ class Test_DisplayOptions(Test_Logging):
 
   def test_06setSubLoggLoggerShowHeadersInverse(self):
     """
-    Create a sublogger, set the Header option of the gLogger and its Header option. 
+    Create a sublogger, set the Header option of the gLogger and its Header option.
     Show that the gLogger Header option do not follow the change of its child Header option.
     """
     sublog = gLogger.getSubLogger('sublog4')
@@ -274,7 +221,7 @@ class Test_DisplayOptions(Test_Logging):
 
   def test_09subLogShowHeadersChangeSetSubLogger(self):
     """
-    Create a subsublogger and set its Header option and show that 
+    Create a subsublogger and set its Header option and show that
     its Header option do not follow the change of its parent Header option.
     """
     sublog = gLogger.getSubLogger('sublog7')
@@ -308,7 +255,7 @@ class Test_DisplayOptions(Test_Logging):
     self.buffer.truncate(0)
     gLogger.showHeaders(False)
     sublog.notice("message")
-    
+
     with open(self.filename) as file:
       message = file.read()
 
@@ -316,7 +263,7 @@ class Test_DisplayOptions(Test_Logging):
 
     gLogger.showHeaders(True)
     sublog.notice("message")
-    
+
     with open(self.filename) as file:
       message = file.read()
     self.assertIn("UTC Framework/sublog8 NOTICE: message\n", message)

@@ -73,11 +73,10 @@ class API(object):
     :return: dictionary of attributes
     """
     from DIRAC.FrameworkSystem.private.standardLogging.Logging import Logging
-    from DIRAC.FrameworkSystem.private.logging.SubSystemLogger import SubSystemLogger
     state = dict(self.__dict__)
     # Replace the Logging instance by its name because it is not copyable
     # because of the thread locks
-    if isinstance(state['log'], (Logging, SubSystemLogger)):
+    if isinstance(state['log'], Logging):
       state['log'] = state['log'].getSubName()
     return state
 

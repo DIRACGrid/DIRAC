@@ -10,7 +10,7 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR, exit as dExit
 
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
@@ -32,17 +32,26 @@ class OptimizerModule(AgentModule):
   """
 
   #############################################################################
-  def initialize(self, jobDB=False, logDB=False):
+  def __init__(self, *args, **kwargs):
+    """ c'tor
+    """
+    AgentModule.__init__(self, *args, **kwargs)
+    self.jobDB = None
+    self.logDB = None
+    self.startingMinorStatus = None
+    self.startingMajorStatus = "Checking"
+    self.failedStatus = None
+    self.requiredJobInfo = 'jdl'
+    self._initResult = None
+
+  def initialize(self, jobDB=None, logDB=None):
     """ Initialization of the Optimizer Agent.
     """
-    if not jobDB:
-      self.jobDB = JobDB()
-    else:
-      self.jobDB = jobDB
-    if not logDB:
-      self.logDB = JobLoggingDB()
-    else:
-      self.logDB = logDB
+    self.jobDB = JobDB() if jobDB is None else jobDB
+    if not self.jobDB.isValid():
+      dExit(1)
+
+    self.logDB = JobLoggingDB() if logDB is None else logDB
 
     optimizerName = self.am_getModuleParam('agentName')
     if optimizerName.endswith('Agent'):
@@ -50,9 +59,8 @@ class OptimizerModule(AgentModule):
     self.am_setModuleParam('optimizerName', optimizerName)
 
     self.startingMinorStatus = self.am_getModuleParam('optimizerName')
-    self.startingMajorStatus = "Checking"
     self.failedStatus = self.am_getOption("FailedJobStatus", 'Failed')
-    self.requiredJobInfo = 'jdl'
+    self.am_setOption("PollingTime", 30)
 
     return self.initializeOptimizer()
 
@@ -112,13 +120,13 @@ class OptimizerModule(AgentModule):
       jobDef = {}
     # If not jdl in jobinfo load it
     if 'jdl' not in jobDef:
-      if 'jdlOriginal' == self.requiredJobInfo:
+      if self.requiredJobInfo == 'jdlOriginal':
         result = self.jobDB.getJobJDL(job, original=True)
         if not result['OK']:
           self.log.error("No JDL for job", "%s" % job)
           return S_ERROR("No JDL for job")
         jobDef['jdl'] = result['Value']
-      if 'jdl' == self.requiredJobInfo:
+      if self.requiredJobInfo == 'jdl':
         result = self.jobDB.getJobJDL(job)
         if not result['OK']:
           self.log.error("No JDL for job", "%s" % job)
@@ -152,7 +160,7 @@ class OptimizerModule(AgentModule):
       else:
         try:
           return S_OK(eval(value))
-        except Exception as x:
+        except BaseException as x:
           return S_ERROR('Could not evaluate optimizer parameters')
 
     return result
