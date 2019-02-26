@@ -16,5 +16,4 @@ To achieve this functionality the DMS and SMS require a proper description of th
 
    concepts
    dfc
-   fts
    fts3

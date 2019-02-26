@@ -29,8 +29,6 @@ class FTS3ManagerHandler(RequestHandler):
   """
 
   fts3db = None
-  ftsValidator = None
-  ftsPlacement = None
 
   @classmethod
   def initializeHandler(cls, serviceInfoDict):

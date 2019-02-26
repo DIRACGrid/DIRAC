@@ -189,7 +189,6 @@ Extra configuration options:
 
 * `FTSMode`: If True, will use FTS to transfer files
 * `FTSBannedGroups` : list of groups for which not to use FTS
-* `UseNewFTS3`: (default False) If true, will use the new FTS3 system introduced in v6r20
 
 ------
 Others
