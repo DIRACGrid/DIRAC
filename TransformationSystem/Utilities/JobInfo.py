@@ -1,5 +1,6 @@
 """Job Information"""
 
+from __future__ import print_function
 from pprint import pformat
 from itertools import izip_longest
 from DIRAC import gLogger
