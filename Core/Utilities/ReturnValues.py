@@ -98,6 +98,7 @@ def returnSingleResult(dictRes):
       :returns: S_ERROR or S_OK(value)
 
       The following rules are applied:
+
       - if dictRes is an S_ERROR: returns it as is
       - we start by looking at the Failed directory
       - if there are several items in a dictionary, we return the first one
@@ -105,16 +106,16 @@ def returnSingleResult(dictRes):
       - For an item in Failed, we return S_ERROR
       - Far an item in Successful we return S_OK
 
-      Behavior examples (would be perfect unit test :-) ):
+      Behavior examples (would be perfect unit test :-) )::
 
-      {'Message': 'Kaput', 'OK': False} -> {'Message': 'Kaput', 'OK': False}
-      {'OK': True, 'Value': {'Successful': {}, 'Failed': {'a': 1}}} -> {'Message': '1', 'OK': False}
-      {'OK': True, 'Value': {'Successful': {'b': 2}, 'Failed': {}}} -> {'OK': True, 'Value': 2}
-      {'OK': True, 'Value': {'Successful': {'b': 2}, 'Failed': {'a': 1}}} -> {'Message': '1', 'OK': False}
-      {'OK': True, 'Value': {'Successful': {'b': 2}, 'Failed': {'a': 1, 'c': 3}}} -> {'Message': '1', 'OK': False}
-      {'OK': True, 'Value': {'Successful': {'b': 2, 'd': 4}, 'Failed': {}}} -> {'OK': True, 'Value': 2}
-      {'OK': True, 'Value': {'Successful': {}, 'Failed': {}}} ->
-          {'Message': 'returnSingleResult: Failed and Successful dictionaries are empty', 'OK': False}
+        {'Message': 'Kaput', 'OK': False} -> {'Message': 'Kaput', 'OK': False}
+        {'OK': True, 'Value': {'Successful': {}, 'Failed': {'a': 1}}} -> {'Message': '1', 'OK': False}
+        {'OK': True, 'Value': {'Successful': {'b': 2}, 'Failed': {}}} -> {'OK': True, 'Value': 2}
+        {'OK': True, 'Value': {'Successful': {'b': 2}, 'Failed': {'a': 1}}} -> {'Message': '1', 'OK': False}
+        {'OK': True, 'Value': {'Successful': {'b': 2}, 'Failed': {'a': 1, 'c': 3}}} -> {'Message': '1', 'OK': False}
+        {'OK': True, 'Value': {'Successful': {'b': 2, 'd': 4}, 'Failed': {}}} -> {'OK': True, 'Value': 2}
+        {'OK': True, 'Value': {'Successful': {}, 'Failed': {}}} ->
+            {'Message': 'returnSingleResult: Failed and Successful dictionaries are empty', 'OK': False}
    """
 
   # if S_ERROR was returned, we return it as well
