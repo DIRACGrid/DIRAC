@@ -14,6 +14,7 @@ import sys
 import subprocess
 import shlex
 
+# if true (-ddd on the command line) print also the content for all files
 SUPER_DEBUG = False
 
 ROOT_PATH = os.environ.get("DIRAC", "")
@@ -35,10 +36,14 @@ BAD_SCRIPTS = ['dirac-deploy-scripts',  # does not have --help, deploys scripts
                ]
 
 
+# list of commands: get the module docstring from the file to add to the docstring
 GET_MOD_STRING = ['dirac-install',
                   ]
 
-
+# tuples: list of patterns to match in script names,
+#         Title of the index file
+#         list of script names
+#         list of patterns to reject scripts
 MARKERS_SECTIONS_SCRIPTS = [(['dms'],
                              'Data Management', [], []),
                             (['wms'], 'Workload Management', [], []),
@@ -56,6 +61,7 @@ MARKERS_SECTIONS_SCRIPTS = [(['dms'],
                             ]
 
 EXITCODE = 0
+
 
 def mkdir(path):
   """ save mkdir, ignores exceptions """
@@ -97,7 +103,6 @@ def writeLinesToFile(filename, lines):
       rst.write(newContent)
   else:
     LOG.debug('Not updating file content for %s', filename)
-
 
 
 def getScripts():
