@@ -78,6 +78,28 @@ def runCommand(command):
     return ''
 
 
+def writeLinesToFile(filename, lines):
+  """Write a list of lines into a file.
+
+  Checks that there are actual changes to be done.
+  """
+  if isinstance(lines, list):
+    newContent = '\n'.join(lines)
+  else:
+    newContent = lines
+  oldContent = None
+  if os.path.exists(filename):
+    with open(filename, 'r') as oldFile:
+      oldContent = ''.join(oldFile.readlines())
+  if oldContent is None or oldContent != newContent:
+    with open(filename, 'w') as rst:
+      LOG.info('Writing new content for %s', filename)
+      rst.write(newContent)
+  else:
+    LOG.debug('Not updating file content for %s', filename)
+
+
+
 def getScripts():
   """Get all scripts in the Dirac System, split by type admin/wms/rms/other."""
 
@@ -139,9 +161,7 @@ This page is the work in progress. See more material here soon !
     createSectionIndex(mT, sectionPath)
 
   userIndexPath = os.path.join(ROOT_PATH, 'DIRAC/docs/source/UserGuide/CommandReference/index.rst')
-  with open(userIndexPath, 'w') as userIndexFile:
-    LOG.debug('Writting to: %s', userIndexPath)
-    userIndexFile.write(userIndexRST)
+  writeLinesToFile(userIndexPath, userIndexRST)
 
 
 def createAdminGuideCommandReference():
@@ -232,9 +252,7 @@ In this subsection the %s commands are collected
     sectionIndexRST += "   %s\n" % scriptName
 
   sectionIndexPath = os.path.join(sectionPath, 'index.rst')
-  with open(sectionIndexPath, 'w') as sectionIndexFile:
-    LOG.debug('Writting to: %s', sectionIndexPath)
-    sectionIndexFile.write(sectionIndexRST)
+  writeLinesToFile(sectionIndexPath, sectionIndexRST)
 
 
 def createScriptDocFiles(script, sectionPath, scriptName, referencePrefix=''):
@@ -294,6 +312,8 @@ def createScriptDocFiles(script, sectionPath, scriptName, referencePrefix=''):
         fileContent += '\n' + content.strip() + '\n'
     else:
       content = getContentFromScriptDoc(scriptRSTPath, marker)
+      if not content:
+        break  # nothing in content, files probably does not exist
       if content and marker not in fileContent.lower():
         fileContent += '\n' + content.strip() + '\n'
     LOG.debug('\n' + '*' * 88 + '\n' + fileContent + '\n' + '*' * 88) if SUPER_DEBUG else None
@@ -302,9 +322,7 @@ def createScriptDocFiles(script, sectionPath, scriptName, referencePrefix=''):
 
   # remove the standalone '-' when no short option exists
   fileContent = fileContent.replace('-   --', '--')
-  with open(scriptRSTPath, 'w') as rstFile:
-    LOG.debug('Writting to: %s', scriptRSTPath)
-    rstFile.write(fileContent)
+  writeLinesToFile(scriptRSTPath, fileContent)
   return True
 
 
