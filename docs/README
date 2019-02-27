@@ -10,3 +10,12 @@ How to build DIRAC documentation
 3. Run the documentation building script
    READTHEDOCS=True make html
 
+3.1 to run incremental builds after files have changed, only run
+
+   make html
+
+3.2 The automatic creation of the CodeDocumentation and CommandDocumentation can be run from the docs/Tools
+    folders with either
+
+    ./MakeDoc.py [-dd[d]]
+    ./buildScriptsDocs.py [-dd[d]]
