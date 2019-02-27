@@ -85,7 +85,7 @@ class TestJI(unittest.TestCase):
         'IS_PROD': "True",
         'CPUTime': 300000,
         'OwnerDN': "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=sailer/CN=683529/CN=Andre Sailer",
-        'JobGroup': 00006326,
+        'JobGroup': 0o0006326,
         'OutputSandbox': [
             "std.err",
             "std.out",
@@ -160,7 +160,7 @@ class TestJI(unittest.TestCase):
         'IS_PROD': "True",
         'CPUTime': 300000,
         'OwnerDN': "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=sailer/CN=683529/CN=Andre Sailer",
-        'JobGroup': 00006326,
+        'JobGroup': 0o0006326,
         'OutputSandbox': [
             "std.err",
             "std.out",
