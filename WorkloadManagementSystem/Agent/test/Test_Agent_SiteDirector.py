@@ -180,19 +180,19 @@ def test__submitPilotsToQueue(mocker):
 
 
 @pytest.mark.parametrize("pilotRefs, pilotDict, pilotCEDict, expected", [
-    ([], {}, {}, (0, False)),
+    ([], {}, {}, (0, [])),
     (['aPilotRef'],
         {'aPilotRef': {'Status': 'Running', 'LastUpdateTime': datetime.datetime(2000, 1, 1).utcnow()}},
         {},
-        (0, False)),
+        (0, [])),
     (['aPilotRef'],
         {'aPilotRef': {'Status': 'Running', 'LastUpdateTime': datetime.datetime(2000, 1, 1).utcnow()}},
         {'aPilotRef': 'Running'},
-        (0, False)),
+        (0, [])),
     (['aPilotRef'],
         {'aPilotRef': {'Status': 'Running', 'LastUpdateTime': datetime.datetime(2000, 1, 1).utcnow()}},
         {'aPilotRef': 'Unknown'},
-        (0, False))
+        (0, []))
 ])
 def test__updatePilotStatus(mocker, pilotRefs, pilotDict, pilotCEDict, expected):
   """ Testing SiteDirector()._updatePilotStatus()

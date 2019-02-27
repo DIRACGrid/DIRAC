@@ -1240,9 +1240,9 @@ class SiteDirector(AgentModule):
         continue
       pilotCEDict = result['Value']
 
-      abortedPilots, getPilotOutputFlag = self._updatePilotStatus(pilotRefs, pilotDict, pilotCEDict)
-      if getPilotOutputFlag:
-        self._getPilotOutput()
+      abortedPilots, getPilotOutput = self._updatePilotStatus(pilotRefs, pilotDict, pilotCEDict)
+      for pRef in getPilotOutput:
+        self._getPilotOutput(pRef, pilotDict, ce, ceName)
 
       # If something wrong in the queue, make a pause for the job submission
       if abortedPilots:
@@ -1318,7 +1318,7 @@ class SiteDirector(AgentModule):
     """
 
     abortedPilots = 0
-    getPilotOutputFlag = False
+    getPilotOutput = []
 
     for pRef in pilotRefs:
       newStatus = ''
@@ -1354,9 +1354,9 @@ class SiteDirector(AgentModule):
       # Set the flag to retrieve the pilot output now or not
       if newStatus in FINAL_PILOT_STATUS:
         if pilotDict[pRef]['OutputReady'].lower() == 'false' and self.getOutput:
-          getPilotOutputFlag = True
+          getPilotOutput.append(pRef)
 
-    return abortedPilots, getPilotOutputFlag
+    return abortedPilots, getPilotOutput
 
   def _getPilotOutput(self, pRef, pilotDict, ce, ceName):
     """ Retrieves the pilot output for a pilot and stores it in the pilotAgentsDB
