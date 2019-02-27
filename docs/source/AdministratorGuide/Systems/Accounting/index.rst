@@ -74,7 +74,7 @@ With the previous configuration all accounting data will be stored and retrieved
 
 DataStore Helpers
 ======================
-From DIRAC v6r17p14 there is the possibility to to run multiple 'DataStore' services, where one
+From DIRAC v6r17p14 there is the possibility to run multiple 'DataStore' services, where one
 needs to be called 'DataStoreMaster', while all the others may be called anything else. The master
 will create the proper buckets and the helpers only insert the records to the 'in' table.  For
 example::
