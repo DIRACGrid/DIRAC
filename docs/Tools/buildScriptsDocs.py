@@ -14,6 +14,8 @@ import sys
 import subprocess
 import shlex
 
+SUPER_DEBUG = False
+
 ROOT_PATH = os.environ.get("DIRAC", "")
 
 logging.basicConfig(level=logging.INFO, format='%(name)s: %(levelname)8s: %(message)s', stream=sys.stdout)
@@ -92,7 +94,7 @@ def getScripts():
   for scriptPath in scripts:
     # Few modules still have __init__.py on the scripts directory
     if '__init__' in scriptPath:
-      LOG.debug("Ignoring %s", scriptPath)
+      LOG.debug("Ignoring init file %s", scriptPath)
       continue
 
     for mT in MARKERS_SECTIONS_SCRIPTS:
@@ -131,7 +133,7 @@ This page is the work in progress. See more material here soon !
     systemString = system.replace(" ", "")
     userIndexRST += "   %s/index\n" % systemString
 
-    LOG.debug("Index file:\n%s", userIndexRST)
+    LOG.debug("Index file:\n%s", userIndexRST) if SUPER_DEBUG else None
     sectionPath = os.path.join(ROOT_PATH, 'DIRAC/docs/source/UserGuide/CommandReference/', systemString)
     mkdir(sectionPath)
     createSectionIndex(mT, sectionPath)
@@ -265,14 +267,14 @@ def createScriptDocFiles(script, sectionPath, scriptName, referencePrefix=''):
       pass
     # strip general options from documentation
     elif line.lower().strip() == 'general options:':
-      LOG.debug("Found general options in line %r", line)
+      LOG.debug("Found general options in line %r", line) if SUPER_DEBUG else None
       genOptions = True
       continue
     elif genOptions and line.startswith(' '):
-      LOG.debug("Skipping General options line %r", line)
+      LOG.debug("Skipping General options line %r", line) if SUPER_DEBUG else None
       continue
     elif genOptions and not line.startswith(' '):
-      LOG.debug("General options done")
+      LOG.debug("General options done") if SUPER_DEBUG else None
       genOptions = False
 
     newLine = '\n' + line + ':\n' if line.endswith(':') else line
@@ -294,7 +296,7 @@ def createScriptDocFiles(script, sectionPath, scriptName, referencePrefix=''):
       content = getContentFromScriptDoc(scriptRSTPath, marker)
       if content and marker not in fileContent.lower():
         fileContent += '\n' + content.strip() + '\n'
-    LOG.debug('\n' + '*' * 88 + '\n' + fileContent + '\n' + '*' * 88)
+    LOG.debug('\n' + '*' * 88 + '\n' + fileContent + '\n' + '*' * 88) if SUPER_DEBUG else None
   while '\n\n\n' in fileContent:
     fileContent = fileContent.replace('\n\n\n', '\n\n')
 
@@ -325,7 +327,7 @@ def getContentFromScriptDoc(scriptRSTPath, marker):
   content = []
   inContent = False
   if not os.path.exists(scriptRSTPath):
-    LOG.warn('Script file %r does not exist yet!', scriptRSTPath)
+    LOG.info('Script file %r does not exist yet!', scriptRSTPath)
     return ''
   with open(scriptRSTPath) as rstFile:
     for line in rstFile.readlines():
@@ -356,5 +358,11 @@ def run():
 
 
 if __name__ == "__main__":
+  if '-ddd' in ''.join(sys.argv):
+    LOG.setLevel(logging.DEBUG)
+    SUPER_DEBUG = True
+  if '-dd' in ''.join(sys.argv):
+    LOG.setLevel(logging.DEBUG)
+    SUPER_DEBUG = False
   run()
   exit(EXITCODE)
