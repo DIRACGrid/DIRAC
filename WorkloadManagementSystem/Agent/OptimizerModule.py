@@ -161,7 +161,7 @@ class OptimizerModule(AgentModule):
         try:
           return S_OK(eval(value))
         except BaseException as x:
-          return S_ERROR('Could not evaluate optimizer parameters')
+          return S_ERROR('Could not evaluate optimizer parameters: %s' % repr(x))
 
     return result
 
