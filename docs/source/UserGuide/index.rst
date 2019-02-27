@@ -17,3 +17,4 @@ User Guide
    WebAppUserGuide/index
    CommandReference/index
    Tutorials/index
+   HowTo/index

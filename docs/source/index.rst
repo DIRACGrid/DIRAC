@@ -49,13 +49,7 @@ or in this `presentation <https://indico.cern.ch/event/505613/contributions/2227
    AdministratorGuide/index
    DeveloperGuide/index
    CodeDocumentation/index
-   HowTo/index
 
-
-FAQ & HowTo
-===========
-
-A series of FAQ and HowTo is compiled for various use cases here :doc:`HowTo/index`
 
 Documentation sources
 =====================
