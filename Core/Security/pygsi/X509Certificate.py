@@ -224,7 +224,7 @@ class X509Certificate(object):
               data['vo'] = attr[2]
             except Exception as _ex:
               data['attribute'] = "Cannot decode VOMS attribute"
-        if not 'vo' in data and 'fqan' in data:
+        if 'vo' not in data and 'fqan' in data:
           data['vo'] = data['fqan'][0].split('/')[1]
         return S_OK(data)
     return S_ERROR(DErrno.EVOMS, "No VOMS data available")
@@ -243,7 +243,7 @@ class X509Certificate(object):
       if lastEntry[0] == 'CN' and lastEntry[1] == "limited proxy":
         limited = True
 
-    from DIRAC.Core.Security.pygsi.X509Request import X509Request #pylint: disable=import-error
+    from DIRAC.Core.Security.pygsi.X509Request import X509Request  # pylint: disable=import-error
 
     req = X509Request()
     req.generateProxyRequest(bitStrength=bitStrength, limited=limited)

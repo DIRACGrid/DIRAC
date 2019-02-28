@@ -82,7 +82,6 @@ def decodeDIRACGroup(m2cert):
   """
 
   diracGroupOctetString = retrieveExtension(m2cert, DIRAC_GROUP_OID)
-  #diracGroupUTF8Str, _rest = der_decode(diracGroupOctetString, asn1Spec = asn1char.UTF8String())
   diracGroupUTF8Str, _rest = der_decode(diracGroupOctetString, asn1Spec=asn1char.IA5String())
 
   return diracGroupUTF8Str.asOctets()
@@ -137,8 +136,7 @@ def decodeVOMSExtension(m2cert):
   notAfter = certAttrInfo['attrCertValidityPeriod']['notAfterTime'].asDateTime
   vomsExtensionDict['notAfter'] = notAfter.replace(tzinfo=None)
 
-  ########## Retrieving the issuer ##########
-
+  # ######### Retrieving the issuer ##########
   # Get the issuer. A bit tricky, because we have to reconstruct the full DN ourselves
   # The GFD 182 and RFC 3281 give enough restriction such that we can afford some direct
   # [0] access
@@ -160,9 +158,9 @@ def decodeVOMSExtension(m2cert):
 
   vomsExtensionDict['issuer'] = issuer
 
-  #### Issuer retrieved #####
+  # ### Issuer retrieved #####
 
-  ### Retrieving the Subject ####
+  # ## Retrieving the Subject ####
   # We have to do the same for the subject than for the issuer
 
   subject = ''
@@ -187,7 +185,7 @@ def decodeVOMSExtension(m2cert):
 
   vomsExtensionDict['subject'] = subject
 
-  #### Retrieving the FQAN ####
+  # ### Retrieving the FQAN ####
 
   # According to GFD182, there may be more attributes that just the FQAN, even though it
   # does not seem to be the case in practice. So we make sure to have the good one
@@ -214,7 +212,7 @@ def decodeVOMSExtension(m2cert):
 
   vomsExtensionDict['fqan'] = fqanList
 
-  ############# End of the FQAN ################
+  # ############ End of the FQAN ################
 
   # Now the Tags, called attributes in the dict...
 
@@ -233,7 +231,7 @@ def decodeVOMSExtension(m2cert):
 
     # TODO in principle, we should check that this value
     # and the one of the policyAuthority of the fqan are the same
-    #_tagPolicyAuthority = tagContainersObj[0][0]['policyAuthority'][0]['uniformResourceIdentifier'].asOctets()
+    # _tagPolicyAuthority = tagContainersObj[0][0]['policyAuthority'][0]['uniformResourceIdentifier'].asOctets()
     ######
 
     for tagContainer in tagContainersObj:
@@ -249,7 +247,7 @@ def decodeVOMSExtension(m2cert):
 
     vomsExtensionDict['attribute'] = ','.join(tagDescriptions)
 
-  ##### Tags are done ################
+  # #### Tags are done ################
 
   return vomsExtensionDict
 

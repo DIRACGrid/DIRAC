@@ -39,7 +39,6 @@ from .x509TestUtilities import CERTS, CERTKEYS, CERTCONTENTS, deimportDIRAC, ENC
     X509CHAINTYPES, get_X509Request, get_X509Chain_from_X509Request
 
 
-
 ONE_YEAR_IN_SECS = 3600 * 24 * 365
 TWENTY_YEARS_IN_SEC = 20 * ONE_YEAR_IN_SECS
 
@@ -95,6 +94,7 @@ def get_proxy(request):
   # Clean after
   deimportDIRAC()
 
+
 @parametrize('cert_file', CERTS)
 def test_loadChainFromFile(cert_file, get_X509Chain_class):
   """" Just load a certificate chain"""
@@ -114,8 +114,9 @@ def test_loadChainFromFile_non_existing_file(get_X509Chain_class):
   assert res['Errno'] == EOF
 
 
+# pylint: disable=unused-argument
 @parametrize('cert_content_type', CERTCONTENTS)
-def test_loadChainFromString(cert_content_type, get_X509Chain_class, indirect=('hostcertcontent', 'usercertcontent')):  # pylint: disable=unused-argument
+def test_loadChainFromString(cert_content_type, get_X509Chain_class, indirect=('hostcertcontent', 'usercertcontent')):
   """" Just loadChain a certificate from PEM string
       :param cert_content_type: either HOSTCERTCONTENT or USERCERTCONTENT
 
@@ -562,7 +563,6 @@ def test_delegation(get_X509Request, get_proxy, diracGroup, lifetime):
 
   # This is sent back to the server
   delegatedProxyString = res['Value']
-
 
   ######################################################
   # Equivalent to ProxyManager.completeDelegationUpload

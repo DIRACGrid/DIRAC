@@ -30,21 +30,20 @@ class CLIParams(object):
   embedDefaultGroup = True
   rfc = True
 
-
   def setProxyLifeTime(self, arg):
     try:
       fields = [f.strip() for f in arg.split(":")]
       self.proxyLifeTime = int(fields[0]) * 3600 + int(fields[1]) * 60
-    except:
+    except BaseException:
       gLogger.error("Can't parse time! Is it a HH:MM?", arg)
       return S_ERROR("Can't parse time argument")
     return S_OK()
 
-  def setRFC( self, _arg ):
+  def setRFC(self, _arg):
     self.rfc = True
     return S_OK()
 
-  def setNoRFC( self, _arg ):
+  def setNoRFC(self, _arg):
     self.rfc = False
     return S_OK()
 
@@ -70,7 +69,7 @@ class CLIParams(object):
   def setProxyStrength(self, arg):
     try:
       self.proxyStrength = int(arg)
-    except:
+    except BaseException:
       gLogger.error("Can't parse bits! Is it a number?", '%s' % arg)
       return S_ERROR("Can't parse strength argument")
     return S_OK()
@@ -131,12 +130,11 @@ class CLIParams(object):
     Script.registerSwitch("p", "pwstdin", "Get passwd from stdin", self.setStdinPasswd)
     Script.registerSwitch("i", "version", "Print version", self.showVersion)
     Script.registerSwitch("j", "noclockcheck", "Disable checking if time is ok", self.disableClockCheck)
-    Script.registerSwitch( "r", "rfc", "Create an RFC proxy, true by default, deprecated flag", self.setRFC )
-    Script.registerSwitch( "L", "legacy", "Create a legacy non-RFC proxy", self.setNoRFC )
+    Script.registerSwitch("r", "rfc", "Create an RFC proxy, true by default, deprecated flag", self.setRFC)
+    Script.registerSwitch("L", "legacy", "Create a legacy non-RFC proxy", self.setNoRFC)
 
 
-
-from DIRAC.Core.Security.X509Chain import X509Chain #pylint: disable=import-error
+from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Security import Locations
 
@@ -180,7 +178,7 @@ def generateProxy(params):
   if timeLeft < 30:
     gLogger.notice("\nYour certificate will expire in %d days. Please renew it!\n" % timeLeft)
 
-  # First try reading the key from the file   
+  # First try reading the key from the file
   retVal = testChain.loadKeyFromFile(params.keyLoc, password=params.userPasswd)  # XXX why so commented?
   if not retVal['OK']:
     passwdPrompt = "Enter Certificate password:"
@@ -213,7 +211,7 @@ def generateProxy(params):
                                        params.proxyLifeTime,
                                        strength=params.proxyStrength,
                                        limited=params.limitedProxy,
-                                       rfc = params.rfc)
+                                       rfc=params.rfc)
 
     gLogger.info("Contacting CS...")
     retVal = Script.enableCS()
@@ -267,7 +265,7 @@ def generateProxy(params):
                                      params.diracGroup,
                                      strength=params.proxyStrength,
                                      limited=params.limitedProxy,
-                                     rfc = params.rfc)
+                                     rfc=params.rfc)
   if not retVal['OK']:
     gLogger.warn(retVal['Message'])
     return S_ERROR("Couldn't generate proxy: %s" % retVal['Message'])

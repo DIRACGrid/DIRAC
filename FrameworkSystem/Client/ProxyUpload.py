@@ -101,7 +101,7 @@ class CLIParams(object):
 
 
 from DIRAC import S_ERROR
-from DIRAC.Core.Security.X509Chain import X509Chain #pylint: disable=import-error
+from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Core.Security import Locations
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 
@@ -179,4 +179,8 @@ def uploadProxy(params):
     restrictLifeTime = 0
 
   DIRAC.gLogger.info(" Uploading...")
-  return gProxyManager.uploadProxy(chain, diracGroup, restrictLifeTime=restrictLifeTime, rfcIfPossible = params.rfcIfPossible)
+  return gProxyManager.uploadProxy(
+      chain,
+      diracGroup,
+      restrictLifeTime=restrictLifeTime,
+      rfcIfPossible=params.rfcIfPossible)

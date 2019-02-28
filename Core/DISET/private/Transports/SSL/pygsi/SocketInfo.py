@@ -14,8 +14,8 @@ from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Security import Locations
 from DIRAC.Core.Security.pygsi.X509Chain import X509Chain
 
-
-DEFAULT_SSL_CIPHERS = "ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:!aNULL:!MD5:!DSS"
+# pylint: disable=line-too-long
+DEFAULT_SSL_CIPHERS = "ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:!aNULL:!MD5:!DSS"  # noqa
 
 VERIFY_DEPTH = 50  # isn't it A BIT too deep?
 
@@ -102,7 +102,7 @@ class SocketInfo:
       return S_ERROR(str(e))
 
   def verifyCallback(self, *args, **kwargs):
-    #gLogger.debug( "verify Callback %s" % str( args ) )
+    # gLogger.debug( "verify Callback %s" % str( args ) )
     if self.infoDict['clientMode']:
       return self._clientCallback(*args, **kwargs)
     else:
@@ -196,7 +196,7 @@ class SocketInfo:
         SocketInfo.__cachedCAsCRLs = ([casDict[k][1] for k in casDict],
                                       [crlsDict[k] for k in crlsDict])
         SocketInfo.__cachedCAsCRLsLastLoaded = time.time()
-    except:
+    except BaseException:
       gLogger.exception("Failed to init CA store")
     finally:
       SocketInfo.__cachedCAsCRLsLoadLock.release()
@@ -225,14 +225,14 @@ class SocketInfo:
       methodName = "TLSv1_%s" % (methodSuffix)
     try:
       method = getattr(GSI.SSL, methodName)
-    except:
+    except BaseException:
       return S_ERROR("SSL method %s is not valid" % self.infoDict['sslMethod'])
     self.sslContext = GSI.SSL.Context(method)
     self.sslContext.set_cipher_list(
         self.infoDict.get('sslCiphers', DEFAULT_SSL_CIPHERS))
     if contextOptions:
       self.sslContext.set_options(contextOptions)
-    #self.sslContext.set_read_ahead( 1 )
+    # self.sslContext.set_read_ahead( 1 )
     # Enable GSI?
     gsiEnable = False
     if not clientContext or self.__getValue('gsiEnable', False):
@@ -300,7 +300,7 @@ class SocketInfo:
     if not retVal['OK']:
       return retVal
     self.sslContext.set_session_id("DISETConnection%s" % str(time.time()))
-    #self.sslContext.get_cert_store().set_flags( GSI.crypto.X509_CRL_CHECK )
+    # self.sslContext.get_cert_store().set_flags( GSI.crypto.X509_CRL_CHECK )
     if 'SSLSessionTimeout' in self.infoDict:
       timeout = int(self.infoDict['SSLSessionTimeout'])
       gLogger.debug("Setting session timeout to %s" % timeout)
@@ -315,7 +315,7 @@ class SocketInfo:
     self.sslSocket.set_accept_state()
     return self.__sslHandshake()
 
-  #@gSynchro
+  # @gSynchro
   def __sslHandshake(self):
     """
       Do the SSL Handshake

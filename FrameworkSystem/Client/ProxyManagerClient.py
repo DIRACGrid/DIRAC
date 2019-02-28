@@ -8,8 +8,8 @@ from DIRAC.Core.Utilities import ThreadSafe, DIRACSingleton
 from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Core.Security import Locations, CS
 from DIRAC.Core.Security.ProxyFile import multiProxyArgument, deleteMultiProxy
-from DIRAC.Core.Security.X509Chain import X509Chain #pylint: disable=import-error
-from DIRAC.Core.Security.X509Request import X509Request #pylint: disable=import-error
+from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
+from DIRAC.Core.Security.X509Request import X509Request  # pylint: disable=import-error
 from DIRAC.Core.Security.VOMS import VOMS
 from DIRAC.Core.DISET.RPCClient import RPCClient
 
@@ -33,7 +33,7 @@ class ProxyManagerClient(object):
   def __deleteTemporalFile(self, filename):
     try:
       os.unlink(filename)
-    except:
+    except BaseException:
       pass
 
   def clearCaches(self):
@@ -124,7 +124,7 @@ class ProxyManagerClient(object):
                             record)
     return retVal
 
-  def uploadProxy(self, proxy=False, diracGroup=False, chainToConnect=False, restrictLifeTime=0, rfcIfPossible = False):
+  def uploadProxy(self, proxy=False, diracGroup=False, chainToConnect=False, restrictLifeTime=0, rfcIfPossible=False):
     """
     Upload a proxy to the proxy management service using delegation
     """
@@ -174,7 +174,7 @@ class ProxyManagerClient(object):
     retVal = chain.generateChainFromRequestString(reqDict['request'],
                                                   lifetime=chainLifeTime,
                                                   diracGroup=diracGroup,
-                                                  rfc = rfcIfPossible)
+                                                  rfc=rfcIfPossible)
     if not retVal['OK']:
       return retVal
     # Upload!

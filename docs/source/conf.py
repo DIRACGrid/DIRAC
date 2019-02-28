@@ -27,16 +27,16 @@ try:
 except ImportError:
   pass
 
-diracRelease = os.environ.get( 'DIRACVERSION', 'integration' )
+diracRelease = os.environ.get('DIRACVERSION', 'integration')
 if os.environ.get('READTHEDOCS') == 'True':
-  diracRelease = os.path.basename( os.path.abspath( "../../" ) )
+  diracRelease = os.path.basename(os.path.abspath("../../"))
   if diracRelease.startswith("rel-"):
     diracRelease = diracRelease[4:]
 print 'conf.py: %s as DIRACVERSION' % diracRelease
 
 # Set this environment variable such tha the documentation
 # generated for the various X509* classes is the one with M2Crypto
-if not 'DIRAC_USE_M2CRYPTO' in os.environ:
+if 'DIRAC_USE_M2CRYPTO' not in os.environ:
   os.environ['DIRAC_USE_M2CRYPTO'] = "Yes"
 
 #...............................................................................
@@ -48,29 +48,30 @@ if not 'DIRAC_USE_M2CRYPTO' in os.environ:
 
 if os.environ.get('READTHEDOCS') == 'True':
   sys.path.append(os.path.abspath('.'))
-  diracPath = os.path.abspath( os.path.join( os.getcwd(), "../..") )
-  print "DiracPath",diracPath
+  diracPath = os.path.abspath(os.path.join(os.getcwd(), "../.."))
+  print "DiracPath", diracPath
 
-  buildfolder ="_build"
+  buildfolder = "_build"
   try:
-    os.mkdir( os.path.abspath( "../"+buildfolder) )
-  except:
+    os.mkdir(os.path.abspath("../" + buildfolder))
+  except BaseException:
     pass
 
-  ##We need to have the DIRAC module somewhere, or we cannot import it, as readtheDocs clones the repo into something based on the branchname
-  if not os.path.exists( "../../DIRAC" ):
-    diracLink =  os.path.abspath( os.path.join( os.getcwd()  , "../" , buildfolder, "DIRAC" ) )
-    print "DiracLink",diracLink
-    if not os.path.exists( diracLink ):
-      RES = subprocess.check_output( ["ln","-s", diracPath, diracLink ] )
-    diracPath = os.path.abspath( os.path.join( diracLink, ".." ) )
+  # We need to have the DIRAC module somewhere, or we cannot import it, as
+  # readtheDocs clones the repo into something based on the branchname
+  if not os.path.exists("../../DIRAC"):
+    diracLink = os.path.abspath(os.path.join(os.getcwd(), "../", buildfolder, "DIRAC"))
+    print "DiracLink", diracLink
+    if not os.path.exists(diracLink):
+      RES = subprocess.check_output(["ln", "-s", diracPath, diracLink])
+    diracPath = os.path.abspath(os.path.join(diracLink, ".."))
 
   sys.path.insert(0, diracPath)
 
   for path in sys.path:
-    os.environ['PYTHONPATH'] = os.environ.get('PYTHONPATH', '')+":"+path
+    os.environ['PYTHONPATH'] = os.environ.get('PYTHONPATH', '') + ":" + path
 
-  ##  this is not working at the moment because the DIRAC folder is not found by the buildScriptsDOC script
+  # this is not working at the moment because the DIRAC folder is not found by the buildScriptsDOC script
   # print "Pythonpath",os.environ['PYTHONPATH']
   # buildCommand = os.path.join( os.getcwd() , "../Tools/buildScriptsDOC.py" )
   # scriptdir = os.path.abspath(os.path.join( os.getcwd() , "../", buildfolder, "scripts" ))
@@ -94,15 +95,15 @@ if os.environ.get('READTHEDOCS') == 'True':
   print "scriptDocs:", stdout
   print "scriptErrs:", err
 
-
-  ##singlehtml build needs too much memory, so we need to create less code documentation
-  buildtype = "limited" if any("singlehtml" in arg for arg in sys.argv ) else "full"
+  # singlehtml build needs too much memory, so we need to create less code documentation
+  buildtype = "limited" if any("singlehtml" in arg for arg in sys.argv) else "full"
   print "Chosing build type:", buildtype
-  buildCommand =os.path.join( os.getcwd() , "../Tools/MakeDoc.py" )
-  code = subprocess.Popen( ["python",buildCommand, buildtype], env = os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-  stdout , err = code.communicate()
-  print "code",stdout
-  print "code",err
+  buildCommand = os.path.join(os.getcwd(), "../Tools/MakeDoc.py")
+  code = subprocess.Popen(["python", buildCommand, buildtype], env=os.environ,
+                          stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+  stdout, err = code.communicate()
+  print "code", stdout
+  print "code", err
 
 # always update dirac.cfg
 buildCommand = os.path.join(os.getcwd(), "../Tools/UpdateDiracCFG.py")
@@ -121,7 +122,7 @@ extensions = ['sphinx.ext.autodoc', 'sphinx.ext.autosummary',
               'sphinx.ext.intersphinx',
               'sphinx.ext.napoleon',
               'sphinx.ext.graphviz',
-             ]
+              ]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -163,8 +164,8 @@ today_fmt = '%H:%M %d/%m/%Y %Z'
 
 # List of directories, relative to source directory, that shouldn't be searched
 # for source files.
-#ADRI: Ignore old stuff that is not included in the compilation
-exclude_trees = [ 'AdministratorGuide/Configuration/ConfigurationReference' ]
+# ADRI: Ignore old stuff that is not included in the compilation
+exclude_trees = ['AdministratorGuide/Configuration/ConfigurationReference']
 
 # The reST default role (used for this markup: `text`) to use for all documents.
 #default_role = None
@@ -198,7 +199,7 @@ html_style = 'dirac.css'
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
 # documentation.
-#html_theme_options = {
+# html_theme_options = {
 #  'sidebarbgcolor':'#D5E2F2'
 #}
 
@@ -276,8 +277,8 @@ htmlhelp_basename = 'DiracDocsdoc'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'DiracDocs.tex', u'DIRAC Documentation',
-   u'DIRAC Project.', 'manual'),
+    ('index', 'DiracDocs.tex', u'DIRAC Documentation',
+     u'DIRAC Project.', 'manual'),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -306,12 +307,12 @@ autodoc_mock_imports = ['lcg_util', 'cx_Oracle', 'fts3', 'XRootD', 'gfal2', 'arc
                         ]
 
 
-## link with the python standard library docs
+# link with the python standard library docs
 intersphinx_mapping = {
-                        'python': ('https://docs.python.org/2.7', None),
-                      }
+    'python': ('https://docs.python.org/2.7', None),
+}
 
 
 #...............................................................................
 
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
+# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
