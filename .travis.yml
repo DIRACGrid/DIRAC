@@ -18,7 +18,7 @@ env:
     - CHECK=pytest_M2Crypto
     # Runs pytest against Core/Security/
     - CHECK=pytest_security
-    # Runs pytest against Core/Security/, with M2Crypto. 
+    # Runs pytest against Core/Security/, with M2Crypto.
     # It should not be any different from pytest_security
     # since we hardode tests for both pyGSI and M2Crypto
     - CHECK=pytest_M2Crypto_security
@@ -49,7 +49,7 @@ script:
     elif [[ "${CHECK}" == "pylint"  ]];
     then travis_wait 30 .travis.d/runPylint.sh;
     elif [[ "${CHECK}" == "format" ]] && [[ "${TRAVIS_PULL_REQUEST}" != "false" ]];
-    then git remote add GH https://github.com/DIRACGrid/DIRAC.git; git fetch --no-tags GH ${TRAVIS_BRANCH}; git branch -vv; git diff -U0 GH/${TRAVIS_BRANCH} | pycodestyle --diff;
+    then git remote add GH https://github.com/DIRACGrid/DIRAC.git; git fetch --no-tags GH ${TRAVIS_BRANCH}; git branch -vv; git diff -U0 GH/${TRAVIS_BRANCH} ':(exclude)tests/formatting/pep8_bad.py' | pycodestyle --diff;
     fi
 
 ## ignore errors for sourcefiles "-i"
