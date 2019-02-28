@@ -136,7 +136,17 @@ class JobInfo(object):
   def __getInputFile(self, jdlParameters):
     """get the Inputdata for the given job"""
     lfn = jdlParameters.get('InputData', None)
-    self.inputFile = lfn
+    if isinstance(lfn, basestring) or lfn is None:
+      self.inputFile = lfn
+      return
+    if isinstance(lfn, list):
+      gLogger.warn('InputFile is a list: %s' % self)
+      gLogger.warn('InputFile is a list: %r' % lfn)
+      if len(lfn) == 1:
+        self.inputFile = lfn[0]
+        return
+    raise TaskInfoException('InputFile is terrible: %s' % str(self))
+
 
   def __getTaskID(self, jdlParameters):
     """get the taskID """

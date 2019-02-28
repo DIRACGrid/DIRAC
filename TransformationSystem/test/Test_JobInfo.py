@@ -487,11 +487,22 @@ class TestJI(unittest.TestCase):
     self.assertIn("ERROR", out.getvalue())
 
   def test_getInputFile(self):
-    ## singleLFN
-    self.diracILC.getJobJDL.return_value = S_OK(self.jdl1)
-    jdlList = self.jbi._JobInfo__getJDL(self.diracILC)
-    self.jbi._JobInfo__getInputFile(jdlList)
-    self.assertEqual(self.jbi.inputFile, "/ilc/prod/clic/3tev/e1e1_o/gen/00006300/004/e1e1_o_gen_6300_4077.stdhep")
+    """Test the extraction of the inputFile from the JDL parameters."""
+    # singleLFN
+    self.jbi._JobInfo__getInputFile({'InputData': '/single/lfn2'})
+    self.assertEqual(self.jbi.inputFile, '/single/lfn2')
+
+    # list with singleLFN
+    self.jbi._JobInfo__getInputFile({'InputData': ['/single/lfn1']})
+    self.assertEqual(self.jbi.inputFile, '/single/lfn1')
+
+    # list with two LFN
+    with self.assertRaisesRegexp(TaskInfoException, 'InputFile is terrible'):
+      self.jbi._JobInfo__getInputFile({'InputData': ['/lfn1', '/lfn2']})
+
+    # list with two LFN
+    with self.assertRaisesRegexp(TaskInfoException, 'InputFile is terrible'):
+      self.jbi._JobInfo__getInputFile({'InputData': 124})
 
   def test_checkFileExistence(self):
     """ILCTransformation.Utilities.JobInfo.checkFileExistance......................................."""
