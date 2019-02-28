@@ -1,10 +1,10 @@
 """Job Information"""
 
-from __future__ import print_function
 from pprint import pformat
 from itertools import izip_longest
 from DIRAC import gLogger
 
+LOG = gLogger.getSubLogger(__name__)
 __RCSID__ = "$Id$"
 
 
@@ -87,8 +87,8 @@ class JobInfo(object):
       try:
         taskDict = tasksDict[lfnTaskDict[self.inputFile]]
       except KeyError as ke:
-        gLogger.error("ERROR for key:", str(ke))
-        gLogger.error("Failed to get taskDict", "%s, %s: %s" % (self.taskID, self.inputFile, pformat(lfnTaskDict)))
+        LOG.error('ERROR for key:', str(ke))
+        LOG.error('Failed to get taskDict', '%s, %s: %s' % (self.taskID, self.inputFile, pformat(lfnTaskDict)))
         raise
       self.otherTasks = lfnTaskDict[self.inputFile]
     else:
@@ -140,58 +140,25 @@ class JobInfo(object):
       self.inputFile = lfn
       return
     if isinstance(lfn, list):
-      gLogger.warn('InputFile is a list: %s' % self)
-      gLogger.warn('InputFile is a list: %r' % lfn)
+      LOG.warn('InputFile is a list: %s' % self)
+      LOG.warn('InputFile is a list: %r' % lfn)
       if len(lfn) == 1:
         self.inputFile = lfn[0]
         return
     raise TaskInfoException('InputFile is terrible: %s' % str(self))
 
-
   def __getTaskID(self, jdlParameters):
-    """get the taskID """
-    for val in jdlList:
-      if 'TaskID' in val:
-        try:
-          self.taskID = int(val.strip(";").split("=")[1].strip(' "'))
-        except ValueError:
-          print "*" * 80
-          print "ERROR"
-          print val
-          print self
-          print "*" * 80
-          raise
-        break
-
-  @staticmethod
-  def __getSingleLFN(jdlList):
-    """get the only productionOutputData LFN from the jdlString"""
-    for val in jdlList:
-      if 'ProductionOutputData' in val:
-        lfn = re.search('".*"', val)
-        lfn = lfn.group(0).strip('"')
-        return [lfn]
-
-  @staticmethod
-  def __getMultiLFN(jdlList):
-    """ get multiple outputfiles """
-    lfns = []
-    counter = 0
-    getEm = False
-    for val in jdlList:
-      if 'ProductionOutputData' in val:
-        counter += 1
-        continue
-      if counter == 1 and '{' in val:
-        getEm = True
-        continue
-      if '}' in val and getEm:
-        break
-      if getEm:
-        lfn = re.search('".*"', val)
-        lfn = lfn.group(0).strip('"')
-        lfns.append(lfn)
-    return lfns
+    """Get the taskID."""
+    if 'TaskID' not in jdlParameters:
+      return
+    try:
+      self.taskID = int(jdlParameters.get('TaskID', None))
+    except ValueError:
+      LOG.warn('*' * 80)
+      LOG.warn('TaskID broken?: %r' % jdlParameters.get('TaskID', None))
+      LOG.warn(self)
+      LOG.warn('*' * 80)
+      raise
 
   def setJobDone(self, tInfo):
     """mark job as done in wms and transformationsystem"""

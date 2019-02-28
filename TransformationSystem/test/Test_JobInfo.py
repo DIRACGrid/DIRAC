@@ -483,8 +483,6 @@ class TestJI(unittest.TestCase):
     jdlList = self.jbi._JobInfo__getJDL(self.diracILC)
     with self.assertRaises(ValueError):
       self.jbi._JobInfo__getTaskID(jdlList)
-    self.assertIn("*" * 80, out.getvalue())
-    self.assertIn("ERROR", out.getvalue())
 
   def test_getInputFile(self):
     """Test the extraction of the inputFile from the JDL parameters."""
