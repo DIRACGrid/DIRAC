@@ -1,12 +1,4 @@
 language: python
-# addons:
-#   apt:
-#     packages:
-#     - swig
-#     - libssl-dev
-#     - libssl1.0.0
-#     - python-setuptools
-#     - python-twisted
 python:
   - "2.7"
 
