@@ -44,7 +44,7 @@ from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.Core.Utilities.ModuleFactory import ModuleFactory
 from DIRAC.Core.Security import Locations
-from DIRAC.Core.Security.X509Chain import X509Chain #pylint: disable=import-error
+from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemSection, getServiceURL
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup

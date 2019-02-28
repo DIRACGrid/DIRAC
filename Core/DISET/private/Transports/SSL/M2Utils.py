@@ -12,7 +12,7 @@ from DIRAC.Core.Security.m2crypto.X509Chain import X509Chain
 # Default ciphers to use if unspecified
 # Cipher line should be as readable as possible, sorry pylint
 # pylint: disable=line-too-long
-DEFAULT_SSL_CIPHERS = "AES256-GCM-SHA384:AES256-SHA256:AES256-SHA:CAMELLIA256-SHA:AES128-GCM-SHA256:AES128-SHA256:AES128-SHA:HIGH:MEDIUM:RSA:!3DES:!RC4:!aNULL:!MD5:!SEED:!IDEA"
+DEFAULT_SSL_CIPHERS = "AES256-GCM-SHA384:AES256-SHA256:AES256-SHA:CAMELLIA256-SHA:AES128-GCM-SHA256:AES128-SHA256:AES128-SHA:HIGH:MEDIUM:RSA:!3DES:!RC4:!aNULL:!MD5:!SEED:!IDEA"  # noqa
 # Verify depth of peer certs
 VERIFY_DEPTH = 50
 
@@ -128,8 +128,8 @@ def getM2SSLContext(ctx=None, **kwargs):
   ctx.set_cipher_list(ciphers)
 
   # log the debug messages
-  #ctx.set_info_callback()
-  
+  # ctx.set_info_callback()
+
   return ctx
 
 
@@ -151,7 +151,7 @@ def getM2PeerInfo(conn):
   if not creds['OK']:
     raise RuntimeError("Failed to get SSL peer info (%s)." % creds['Message'])
   peer = creds['Value']
-  
+
   peer['x509Chain'] = chain
   isProxy = chain.isProxy()
   if not isProxy['OK']:

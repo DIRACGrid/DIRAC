@@ -284,8 +284,8 @@ class ProxyDB(DB):
     # This test does not seem to make any sense whatsoever, since
     # we just created the Chain using the request pkey....
     # of course it will match !
-    retVal = request.checkChain( chain )
-    if not retVal[ 'OK' ]:
+    retVal = request.checkChain(chain)
+    if not retVal['OK']:
       return retVal
     if not retVal['Value']:
       return S_ERROR("Received chain does not match request: %s" % retVal['Message'])

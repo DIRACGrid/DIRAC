@@ -105,7 +105,8 @@ def test_loadFromFile_non_existing_file(get_X509Certificate_class):
 def test_loadFromString(cert_content_type, get_X509Certificate_class, indirect=('hostcertcontent', 'usercertcontent')):
   """" Just load a certificate from PEM string
       :param cert_content_type: either HOSTCERTCONTENT or USERCERTCONTENT
-      :param indirect: pytest trick, see https://docs.pytest.org/en/latest/example/parametrize.html#apply-indirect-on-particular-arguments
+      :param indirect: pytest trick,
+            see https://docs.pytest.org/en/latest/example/parametrize.html#apply-indirect-on-particular-arguments
   """
   x509Cert = get_X509Certificate_class()
   res = x509Cert.loadFromString(CERTCONTENTS[cert_content_type])

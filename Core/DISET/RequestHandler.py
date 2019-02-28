@@ -260,13 +260,13 @@ class RequestHandler(object):
     # Lock the method with Semaphore to avoid too many calls at the same time
     self.__lockManager.lock("RPC/%s" % method)
     # 18.02.19 WARNING CHRIS
-    # The line bellow adds the current transportID to the message broker 
-    # First of all, I do not see why it is doing so. 
-    # Second, this affects only one every other socket, since the 
+    # The line bellow adds the current transportID to the message broker
+    # First of all, I do not see why it is doing so.
+    # Second, this affects only one every other socket, since the
     # message broker selects on that one, and in the meantime, many sockets
     # are added and removed, without even being seen by the message broker.
     # Finally, there seem to be a double read on the socket: from the message broker
-    # and from the ServiceReactor, resulting in conflict. 
+    # and from the ServiceReactor, resulting in conflict.
     # This is warned in the man page of "select".
     # it has been exhibited when testing M2Crypto.
     # I will comment it out, and try to put it in a separate commit when merging

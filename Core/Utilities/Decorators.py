@@ -154,6 +154,7 @@ def executeOnlyIf(attrName, returnedError, attrVal=None):
 
   """
   def specificOnlyIf(meth):
+    """ onlyIf method aplied to a specigic case """
 
     # This utilities allow to preserve the original help
     # Of the method being decorated
@@ -165,8 +166,7 @@ def executeOnlyIf(attrName, returnedError, attrVal=None):
       # First condition is if we have been given a specific attrVal
       # second condition is if we have not been given it
       if ((attrVal is not None and getattr(self, attrName, None) != attrVal) or
-          (attrVal is None and not getattr(self, attrName, None))
-          ):
+              (attrVal is None and not getattr(self, attrName, None))):
         return returnedError
 
       return meth(*args, **kwargs)

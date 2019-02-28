@@ -6,7 +6,7 @@ import base64
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
-from DIRAC.Core.Security.X509Chain import X509Chain  #pylint: disable=import-error
+from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Core.Security.VOMS import VOMS
 from DIRAC.Core.Security import Locations
 
@@ -99,7 +99,7 @@ def formatProxyInfoAsString(infoDict):
     else:
       dispField = field[1]
       field = field[0]
-    if not field in infoDict:
+    if field not in infoDict:
       continue
     if field == 'secondsLeft':
       secs = infoDict[field]

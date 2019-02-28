@@ -28,7 +28,8 @@ from pytest import mark, fixture, skip, raises, approx
 parametrize = mark.parametrize
 
 from .x509TestUtilities import CERTS, CERTKEYS, CERTCONTENTS, deimportDIRAC, ENCRYPTEDKEYPASS,\
-    ENCRYPTEDKEY, getCertOption, HOSTCERT, KEYCONTENTS_PKCS8, USERCERT, X509REQUESTTYPES,get_X509Request
+    ENCRYPTEDKEY, getCertOption, HOSTCERT, KEYCONTENTS_PKCS8, USERCERT, X509REQUESTTYPES, get_X509Request
+
 
 def test_dumpRequest_notInitialized(get_X509Request):
   """ Calls dumpRequest a non initlaized Request"""
@@ -51,6 +52,7 @@ def test_dumpRequest(get_X509Request):
   assert res['OK']
   assert 'CERTIFICATE REQUEST' in res['Value']
 
+
 def test_loadAllFromString_fromDumpRequest(get_X509Request):
   """ Generate a proxy Request and try loading it from incomplete dump"""
   x509Req = get_X509Request()
@@ -59,12 +61,13 @@ def test_loadAllFromString_fromDumpRequest(get_X509Request):
   proxyRequest = x509Req.dumpRequest()['Value']
 
   # This should fail because the proxyRequest does not contain the private key
-  x509ReqLoad =  get_X509Request()
+  x509ReqLoad = get_X509Request()
   res = x509ReqLoad.loadAllFromString(proxyRequest)
 
   assert res['OK'] is False
   from DIRAC.Core.Utilities.DErrno import ENOPKEY
   assert res['Errno'] == ENOPKEY
+
 
 @parametrize('isLimited', (False, True))
 def test_getSubjectDN(get_X509Request, isLimited):
@@ -73,7 +76,7 @@ def test_getSubjectDN(get_X509Request, isLimited):
   """
 
   x509Req = get_X509Request()
-  x509Req.generateProxyRequest(limited = isLimited)
+  x509Req.generateProxyRequest(limited=isLimited)
 
   res = x509Req.getSubjectDN()
   assert res['OK']
@@ -83,17 +86,18 @@ def test_getSubjectDN(get_X509Request, isLimited):
   else:
     assert res['Value'] == '/CN=proxy'
 
+
 @parametrize('isLimited', (False, True))
 def test_loadAllFromString(get_X509Request, isLimited):
   """ Generate a proxy Request, load it, and check that the subject DN are the same
       :param isLimited: request a limited proxy
 """
   x509Req = get_X509Request()
-  x509Req.generateProxyRequest(limited = isLimited)
+  x509Req.generateProxyRequest(limited=isLimited)
 
   proxyRequest = x509Req.dumpAll()['Value']
 
-  x509ReqLoad =  get_X509Request()
+  x509ReqLoad = get_X509Request()
   res = x509ReqLoad.loadAllFromString(proxyRequest)
 
   assert res['OK']

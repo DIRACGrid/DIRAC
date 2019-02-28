@@ -25,7 +25,7 @@ from DIRAC.Core.Utilities.Subprocess import shellCall, systemCall
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.Core.Utilities import Profiler
 from DIRAC.Core.Security.Locations import getHostCertificateAndKeyLocation
-from DIRAC.Core.Security.X509Chain import X509Chain #pylint: disable=import-error
+from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getCSExtensions
 from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
