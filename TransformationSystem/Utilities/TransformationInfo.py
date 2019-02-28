@@ -141,11 +141,10 @@ class TransformationInfo(object):
     errorReasons = defaultdict(list)
     successfullyRemoved = 0
 
-    with UserProxy(proxyUserDN=self.authorDN, proxyUserGroup=self.authorGroup) as proxyResult:
-      if not proxyResult['OK']:
-        raise RuntimeError("Failed to get a proxy:%s" % proxyResult['Message'])
-
-      for lfnList in breakListIntoChunks(filesToDelete, 200):
+    for lfnList in breakListIntoChunks(filesToDelete, 200):
+      with UserProxy(proxyUserDN=self.authorDN, proxyUserGroup=self.authorGroup) as proxyResult:
+        if not proxyResult['OK']:
+          raise RuntimeError('Failed to get a proxy: %s' % proxyResult['Message'])
         result = DataManager().removeFile(lfnList)
         if not result['OK']:
           self.log.error("Failed to remove LFNs", result['Message'])
