@@ -52,7 +52,7 @@ def tiFixture():
   tMock.setFileStatusForTransformation = Mock(name="setFileStat")
   fcMock = Mock(name="fcMock", spec=DIRAC.Resources.Catalog.FileCatalogClient.FileCatalogClient)
   jmMock = Mock(name="jobMonMock", spec=DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient.JobMonitoringClient)
-
+  jsucMock = Mock(name='jsuc', spec=DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient.JobStateUpdateClient)
   transInfoDict = dict(TransformationID=1234, TransformationName="TestProd12", Type="TestProd",
                        AuthorDN='/some/cert/owner', AuthorGroup='Test_Prod')
 
@@ -60,6 +60,7 @@ def tiFixture():
                            enabled=False,
                            tClient=tMock, fcClient=fcMock, jobMon=jmMock)
   tri.log = Mock(name="LogMock")
+  tri.jobStateClient = jsucMock
   return tri
 
 
@@ -206,83 +207,28 @@ def test_setTaskStatus(tiFixture):
 
 def test_updateJobStatus(tiFixture):
   """DIRAC.TransformationSystem.Utilities.TransformationInfo updateJobStatus................"""
-  dbMock = Mock()
-  dbMock.setJobAttribute.return_value = S_OK()
-  dbMock.getJobAttributes.return_value = S_OK(dict(MinorStatus="Statussed"))
 
-  logMock = Mock()
-  logMock.addLoggingRecord.return_value = S_OK("added record")
-
-  jobDBMock = Mock()
-  jobDBMock.return_value = dbMock
-  logDBMock = Mock()
-  logDBMock.return_value = logMock
-  with patch("DIRAC.WorkloadManagementSystem.DB.JobDB.JobDB", new=jobDBMock):
-    with patch("DIRAC.WorkloadManagementSystem.DB.JobLoggingDB.JobLoggingDB", new=logDBMock):
-      tiFixture.enabled = False
-      res = tiFixture._TransformationInfo__updateJobStatus(1234, "Failed", minorstatus=None)
+  tiFixture.jobStateClient.setJobStatus = Mock()
+  tiFixture.jobStateClient.setJobStatus.return_value = S_OK()
+  tiFixture.enabled = False
+  res = tiFixture._TransformationInfo__updateJobStatus(1234, 'Failed', minorstatus=None)
   assert res['OK']
-  assert res['Value'] == "DisabledMode"
+  assert res['Value'] == 'DisabledMode'
+  tiFixture.jobStateClient.setJobStatus.assert_not_called()
 
-  with patch("DIRAC.WorkloadManagementSystem.DB.JobDB.JobDB", new=jobDBMock):
-    with patch("DIRAC.WorkloadManagementSystem.DB.JobLoggingDB.JobLoggingDB", new=logDBMock):
-      tiFixture.enabled = True
-      res = tiFixture._TransformationInfo__updateJobStatus(1234, "Failed", minorstatus=None)
+  tiFixture.jobStateClient.setJobStatus.reset()
+  tiFixture.jobStateClient.setJobStatus.return_value = S_OK('added record')
+  tiFixture.enabled = True
+  res = tiFixture._TransformationInfo__updateJobStatus(1234, 'Failed', minorstatus=None)
   assert res['OK']
-  assert res['Value'] == "added record"
+  assert res['Value'] == 'added record'
+  tiFixture.jobStateClient.setJobStatus.assert_called_once_with(1234, 'Failed', None, 'DataRecoveryAgent')
 
-  dbMock.setJobAttribute.return_value = S_ERROR("Error setting job status")
-  dbMock.getJobAttributes.return_value = S_OK(dict(MinorStatus="Statussed"))
-  jobDBMock.return_value = dbMock
-  logDBMock.return_value = logMock
-  with patch("DIRAC.WorkloadManagementSystem.DB.JobDB.JobDB", new=jobDBMock):
-    with patch("DIRAC.WorkloadManagementSystem.DB.JobLoggingDB.JobLoggingDB", new=logDBMock):
-      tiFixture.enabled = True
-      with pytest.raises(RuntimeError) as re:
-        tiFixture._TransformationInfo__updateJobStatus(1234, "Failed", minorstatus=None)
-      assert "Failed to update job status" in str(re)
-
-  dbMock.setJobAttribute.return_value = S_OK("SetTheStatus")
-  dbMock.getJobAttributes.return_value = S_ERROR("Failed to get status")
-  jobDBMock.return_value = dbMock
-  logDBMock.return_value = logMock
-  with patch("DIRAC.WorkloadManagementSystem.DB.JobDB.JobDB", new=jobDBMock):
-    with patch("DIRAC.WorkloadManagementSystem.DB.JobLoggingDB.JobLoggingDB", new=logDBMock):
-      tiFixture.enabled = True
-      with pytest.raises(RuntimeError) as re:
-        tiFixture._TransformationInfo__updateJobStatus(1234, "Failed", minorstatus=None)
-      assert "Failed to get Minorstatus" in str(re)
-
-  dbMock.setJobAttribute.return_value = S_OK("SetTheStatus")
-  dbMock.getJobAttributes.return_value = S_OK(dict(MinorStatus="Statussed"))
-  logMock.addLoggingRecord.reset_mock()
-  logMock.addLoggingRecord.return_value = S_ERROR("Did not add record")
-  jobDBMock.return_value = dbMock
-  logDBMock.return_value = logMock
-  with patch("DIRAC.WorkloadManagementSystem.DB.JobDB.JobDB", new=jobDBMock):
-    with patch("DIRAC.WorkloadManagementSystem.DB.JobLoggingDB.JobLoggingDB", new=logDBMock):
-      tiFixture.enabled = True
-      res = tiFixture._TransformationInfo__updateJobStatus(1234, "Failed", minorstatus=None)
-      assert not res['OK']
-      assert res['Message'] == "Did not add record"
-      logMock.addLoggingRecord.assert_called_once_with(
-          1234, status="Failed", minor="Statussed", source='DataRecoveryAgent')
-
-  dbMock.setJobAttribute.return_value = S_OK("SetTheStatus")
-  dbMock.getJobAttributes.return_value = S_OK(dict(MinorStatus="Statussed"))
-  logMock.addLoggingRecord.reset_mock()
-  logMock.addLoggingRecord.return_value = S_OK("added record")
-  jobDBMock.return_value = dbMock
-  logDBMock.return_value = logMock
-  with patch("DIRAC.WorkloadManagementSystem.DB.JobDB.JobDB", new=jobDBMock):
-    with patch("DIRAC.WorkloadManagementSystem.DB.JobLoggingDB.JobLoggingDB", new=logDBMock):
-      tiFixture.enabled = True
-      res = tiFixture._TransformationInfo__updateJobStatus(1234, "Failed", minorstatus="minorstatus")
-  assert res['OK']
-  assert res['Value'] == "added record"
-  logMock.addLoggingRecord.assert_called_once_with(
-      1234, status="Failed", minor="minorstatus", source='DataRecoveryAgent')
-
+  tiFixture.jobStateClient.setJobStatus.return_value = S_ERROR('Error setting job status')
+  tiFixture.enabled = True
+  with pytest.raises(RuntimeError) as re:
+    tiFixture._TransformationInfo__updateJobStatus(1234, 'Failed', minorstatus=None)
+  assert 'Failed to update job status' in str(re)
 
 
 def test_findAllDescendants(tiFixture):

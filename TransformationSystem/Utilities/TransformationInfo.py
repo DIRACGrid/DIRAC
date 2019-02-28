@@ -7,9 +7,9 @@ from DIRAC import gLogger, S_OK
 from DIRAC.Core.Utilities.Proxy import UserProxy
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.Core.Utilities.List import breakListIntoChunks
+from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
 
 from DIRAC.TransformationSystem.Utilities.JobInfo import JobInfo
-
 __RCSID__ = "$Id$"
 
 
@@ -29,6 +29,7 @@ class TransformationInfo(object):
     self.transType = transInfoDict['Type']
     self.authorDN = transInfoDict['AuthorDN']
     self.authorGroup = transInfoDict['AuthorGroup']
+    self.jobStateClient = JobStateUpdateClient()
 
   def checkTasksStatus(self):
     """Check the status for the task of given transformation and taskID"""
@@ -95,42 +96,16 @@ class TransformationInfo(object):
     if not res['OK']:
       raise RuntimeError("Failed updating task status: %s" % res['Message'])
 
-  def __updateJobStatus(self, jobID, status, minorstatus=None):
-    """ This method updates the job status in the JobDB
-
-    FIXME: Use the JobStateUpdate service instead of the JobDB
-    """
-    self.log.verbose("self.jobDB.setJobAttribute(%s,'Status','%s',update=True)" % (jobID, status))
-    from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
-    jobDB = JobDB()
+  def __updateJobStatus(self, jobID, status, minorstatus=''):
+    """Update the job status."""
     if self.enabled:
-      result = jobDB.setJobAttribute(jobID, 'Status', status, update=True)
+      source = 'DataRecoveryAgent'
+      result = self.jobStateClient.setJobStatus(jobID, status, minorstatus, source)
     else:
       return S_OK('DisabledMode')
-
     if not result['OK']:
-      self.log.error("Failed to update job status", result['Message'])
-      raise RuntimeError("Failed to update job status")
-
-    if minorstatus is None:  # Retain last minor status for stalled jobs
-      result = jobDB.getJobAttributes(jobID, ['MinorStatus'])
-      if result['OK']:
-        minorstatus = result['Value']['MinorStatus']
-      else:
-        self.log.error("Failed to get Minor Status", result['Message'])
-        raise RuntimeError("Failed to get Minorstatus")
-    else:
-      self.log.verbose("self.jobDB.setJobAttribute(%s,'MinorStatus','%s',update=True)" % (jobID, minorstatus))
-      result = jobDB.setJobAttribute(jobID, 'MinorStatus', minorstatus, update=True)
-
-    logStatus = status
-    from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
-
-    result = JobLoggingDB().addLoggingRecord(jobID, status=logStatus, minor=minorstatus, source='DataRecoveryAgent')
-    if not result['OK']:
-      ## just the logging entry, no big loss so no exception
-      self.log.warn(result)
-
+      self.log.error('Failed to update job status', result['Message'])
+      raise RuntimeError('Failed to update job status')
     return result
 
   def __findAllDescendants(self, lfnList):
