@@ -102,17 +102,12 @@ class JobInfo(object):
     self.taskFileID = taskDict['FileID']
     self.errorCount = taskDict['ErrorCount']
 
-  def checkFileExistance(self, fcClient):
+  def checkFileExistence(self, success):
     """check if input and outputfile still exist"""
     lfns = []
     if self.inputFile:
       lfns = [self.inputFile]
     lfns = lfns + self.outputFiles
-    reps = fcClient.exists(lfns)
-    if not reps['OK']:
-      raise RuntimeError("Failed to check existance: %s" % reps['Message'])
-    statuses = reps['Value']
-    success = statuses['Successful']
     if self.inputFile:
       self.inputFileExists = True if (self.inputFile in success and success[self.inputFile]) else False
     for lfn in self.outputFiles:
@@ -122,17 +117,6 @@ class JobInfo(object):
         self.outputFileStatus.append("Missing")
       else:
         self.outputFileStatus.append("Unknown")
-
-  def checkRequests(self, reqClient):
-    """check if there are pending Requests"""
-    result = reqClient.readRequestsForJobs([self.jobID])
-    if not result['OK']:
-      raise RuntimeError("Failed to check Requests: %s " % result['Message'])
-    if self.jobID in result['Value']['Successful']:
-      request = result['Value']['Successful'][self.jobID]
-      requestID = request.RequestID
-      dbStatus = reqClient.getRequestStatus(requestID).get('Value', 'Unknown')
-      self.pendingRequest = dbStatus not in ("Done", "Canceled")
 
   def __getJDL(self, dILC):
     """return jdlParameterDictionary for this job"""

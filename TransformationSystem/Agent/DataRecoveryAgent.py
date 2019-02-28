@@ -36,7 +36,8 @@ import itertools
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
-
+from DIRAC.Core.Utilities.Time import timeThis
+from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
@@ -331,13 +332,12 @@ class DataRecoveryAgent(AgentModule):
     lfnTaskDict = None
 
     if not transInfoDict['Type'].startswith("MCGeneration"):
-      self.log.notice("Getting tasks...")
+      self.log.notice('Getting tasks...')
       tasksDict = tInfo.checkTasksStatus()
       lfnTaskDict = dict([(tasksDict[taskID]['LFN'], taskID) for taskID in tasksDict])
 
-    self.checkAllJobs( jobs, tInfo, tasksDict, lfnTaskDict )
+    self.checkAllJobs(jobs, tInfo, tasksDict, lfnTaskDict)
     self.printSummary()
-
 
   def checkJob(self, job, tInfo):
     """ deal with the job """
@@ -352,25 +352,80 @@ class DataRecoveryAgent(AgentModule):
         do['Actions'](job, tInfo)
         return
 
+  @timeThis
+  def getLFNStatus(self, jobs):
+    """Get all the LFNs for the jobs and get their status."""
+    self.log.notice('Collecting LFNs...')
+    lfnExistence = {}
+    lfnCache = []
+    for job in jobs.values():
+      while True:
+        try:
+          job.getJobInformation(self.diracILC)
+          if job.inputFile:
+            lfnCache.append(job.inputFile)
+          if job.outputFiles:
+            lfnCache.extend(job.outputFiles)
+          break
+        except RuntimeError as e:  # try again
+          self.log.error('+++++ Failure for job:', job.jobID)
+          self.log.error('+++++ Exception: ', str(e))
+
+    for lfnChunk in breakListIntoChunks(list(lfnCache), 200):
+      while True:
+        try:
+          reps = self.fcClient.exists(lfnChunk)
+          if not reps['OK']:
+            self.log.error('Failed to check file existence, try again...', reps['Message'])
+            raise RuntimeError('Try again')
+          statuses = reps['Value']
+          lfnExistence.update(statuses['Successful'])
+          break
+        except RuntimeError:  # try again
+          pass
+
+    return lfnExistence
+
+  @timeThis
+  def setPendingRequests(self, jobs):
+    """Loop over all the jobs and get requests, if any."""
+    for jobChunk in breakListIntoChunks(jobs.values(), 1000):
+      jobIDs = [job.jobID for job in jobChunk]
+      while True:
+        result = self.reqClient.readRequestsForJobs(jobIDs)
+        if result['OK']:
+          break
+        self.log.error('Failed to read requests', result['Message'])
+        # repeat
+      for jobID in result['Value']['Successful']:
+        request = result['Value']['Successful'][jobID]
+        requestID = request.RequestID
+        dbStatus = self.reqClient.getRequestStatus(requestID).get('Value', 'Unknown')
+        for job in jobChunk:
+          if job.jobID == jobID:
+            job.pendingRequest = dbStatus not in ('Done', 'Canceled')
+            self.log.notice('Found %s request for job %d' % ('pending' if job.pendingRequest else 'finished', jobID))
+            break
+
   def checkAllJobs(self, jobs, tInfo, tasksDict=None, lfnTaskDict=None):
     """run over all jobs and do checks"""
     fileJobDict = defaultdict(list)
     counter = 0
     startTime = time.time()
     nJobs = len(jobs)
-    self.log.notice("Running over all the jobs")
+    self.setPendingRequests(jobs)
+    lfnExistence = self.getLFNStatus(jobs)
+    self.log.notice('Running over all the jobs')
     for job in jobs.values():
       counter += 1
       if counter % self.printEveryNJobs == 0:
         self.log.notice("%d/%d: %3.1fs " % (counter, nJobs, float(time.time() - startTime)))
       while True:
         try:
-          job.checkRequests(self.reqClient)
           if job.pendingRequest:
-            self.log.warn("Job has Pending requests:\n%s" % job)
+            self.log.warn('Job has Pending requests:\n%s' % job)
             break
-          job.getJobInformation(self.diracILC)
-          job.checkFileExistance(self.fcClient)
+          job.checkFileExistence(lfnExistence)
           if tasksDict and lfnTaskDict:
             try:
               job.getTaskInfo(tasksDict, lfnTaskDict)
