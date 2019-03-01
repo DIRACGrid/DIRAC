@@ -89,7 +89,7 @@ def getM2SSLContext(ctx=None, **kwargs):
       # We don't support this any more, there is no easy way
       # to convert a proxy string to something usable by M2Crypto SSL
       # Try writing it to a temp file and use proxyLocation instead?
-      raise RuntimeError("Proxy string no longer suppored.")
+      raise RuntimeError("Proxy string no longer supported.")
     else:
       # Use normal proxy
       __loadM2SSLCTXProxy(ctx, proxyPath=kwargs.get('proxyLocation', None))

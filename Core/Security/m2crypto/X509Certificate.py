@@ -396,7 +396,7 @@ class X509Certificate(object):
     if not limited:
       # We check whether "limited proxy" is in the subject
       subj = self.__certObj.get_subject()
-      # M2Crypto does not understand the [:-1] syntax...
+      # M2Crypto does not understand the [-1] syntax...
       lastEntry = subj[len(subj) - 1]
       if lastEntry.get_data() == "limited proxy":
         limited = True
