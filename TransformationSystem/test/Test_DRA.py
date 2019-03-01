@@ -757,22 +757,13 @@ class TestDRA(unittest.TestCase):
     tInfoMock = Mock(name="tInfoMock", spec=TransformationInfo)
     mockJobs = dict([(i, self.getTestMock()) for i in xrange(11)])
     mockJobs[2].pendingRequest = True
-    mockJobs[3].getJobInformation = Mock(side_effect=(RuntimeError("ARGJob1"), None))
-    mockJobs[4].getTaskInfo = Mock(side_effect=(TaskInfoException("ARG1"), None))
+    mockJobs[3].getJobInformation = Mock(side_effect=(RuntimeError('ARGJob1'), None))
+    mockJobs[4].getTaskInfo = Mock(side_effect=(TaskInfoException('ARG1'), None))
     taskDict = True
     lfnTaskDict = True
     self.dra.checkAllJobs(mockJobs, tInfoMock, taskDict, lfnTaskDict)
     self.dra.log.error.assert_any_call(MatchStringWith('+++++ Exception'), 'ARGJob1')
     self.dra.log.error.assert_any_call(MatchStringWith("Skip Task, due to TaskInfoException: ARG1"))
-    self.dra.log.reset_mock()
-
-    ### test without additional task dicts
-    mockJobs = dict([(i, self.getTestMock()) for i in xrange(5)])
-    mockJobs[2].pendingRequest = True
-    mockJobs[3].getJobInformation = Mock(side_effect=(RuntimeError("ARGJob2"), None))
-    tInfoMock.reset_mock()
-    self.dra.checkAllJobs(mockJobs, tInfoMock)
-    self.dra.log.error.assert_any_call(MatchStringWith('+++++ Exception'), 'ARGJob2')
     self.dra.log.reset_mock()
 
     ### test inputFile None
@@ -783,6 +774,21 @@ class TestDRA(unittest.TestCase):
     tInfoMock.reset_mock()
     self.dra.checkAllJobs(mockJobs, tInfoMock, taskDict, lfnTaskDict=True)
     self.dra.log.notice.assert_any_call(MatchStringWith("Failing job hard"))
+
+  def test_checkAllJob_2(self):
+    """Test where failJobHard fails (via cleanOutputs)."""
+    from DIRAC.TransformationSystem.Utilities.TransformationInfo import TransformationInfo
+    tInfoMock = Mock(name='tInfoMock', spec=TransformationInfo)
+    mockJobs = dict([(i, self.getTestMock()) for i in xrange(5)])
+    mockJobs[2].pendingRequest = True
+    mockJobs[3].getTaskInfo = Mock(side_effect=(TaskInfoException('ARGJob3'), None))
+    mockJobs[3].inputFile = None
+    self.dra._DataRecoveryAgent__failJobHard = Mock(side_effect=(RuntimeError('ARGJob4'), None), name='FJH')
+    self.dra.checkAllJobs(mockJobs, tInfoMock, tasksDict=True, lfnTaskDict=True)
+    mockJobs[3].getTaskInfo.assert_called()
+    self.dra._DataRecoveryAgent__failJobHard.assert_called()
+    self.dra.log.error.assert_any_call(MatchStringWith('+++++ Exception'), 'ARGJob4')
+    self.dra.log.reset_mock()
 
   def test_execute(self):
     """test for DataRecoveryAgent execute .........................................................."""
