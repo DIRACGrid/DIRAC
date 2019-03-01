@@ -374,7 +374,11 @@ class DataRecoveryAgent(AgentModule):
           self.log.error('+++++ Failure for job:', job.jobID)
           self.log.error('+++++ Exception: ', str(e))
 
+    counter = 0
     for lfnChunk in breakListIntoChunks(list(lfnCache), 200):
+      counter += 200
+      if counter % 1000 == 0:
+        self.log.notice('Getting FileInfo: %d/%d: %3.1fs' % (counter, len(jobs), float(time.time() - self.startTime)))
       while True:
         try:
           reps = self.fcClient.exists(lfnChunk)
