@@ -41,10 +41,11 @@ class X509Chain(object):
     This is what you will want to use for user certificate (because they will turn into proxy....), and for
     proxy.
 
-    A priori, once we get ride of pyGSI, we could even meld the X509Certificate into this one, and use the X509Chain
+    A priori, once we get rid of pyGSI, we could even meld the X509Certificate into this one, and use the X509Chain
     for host certificates. After all, a certificate is nothing but a chain of length 1...
 
     There are normally 4 ways you would instanciate an X509Chain object:
+
     * You are loading a proxy from a file
     * Loading the chain from a file
     * You are getting information about your peer during an SSL connection
@@ -206,7 +207,7 @@ class X509Chain(object):
     """
       Load a x509 chain from a pem file
 
-      :param chainLocation: path the the file
+      :param chainLocation: path to the file
 
       :returns: S_OK/S_ERROR
     """
@@ -264,7 +265,7 @@ class X509Chain(object):
         Load a PKey from a pem file
 
         :param chainLocation: path to the file
-        :param password: password to decode they file.
+        :param password: password to decode the file.
 
         :returns: S_OK / S_ERROR
     """
@@ -280,7 +281,7 @@ class X509Chain(object):
       Load a PKey from a string containing the pem data
 
       :param pemData: pem data of the key, potentially encoded with the password
-      :param password: password to decode they file.
+      :param password: password to decode the file.
 
       :returns: S_OK / S_ERROR
     """
