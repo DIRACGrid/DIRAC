@@ -36,7 +36,6 @@ import itertools
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.Core.Utilities.Time import timeThis
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
@@ -353,7 +352,6 @@ class DataRecoveryAgent(AgentModule):
         do['Actions'](job, tInfo)
         return
 
-  @timeThis
   def getLFNStatus(self, jobs):
     """Get all the LFNs for the jobs and get their status."""
     self.log.notice('Collecting LFNs...')
@@ -393,7 +391,6 @@ class DataRecoveryAgent(AgentModule):
 
     return lfnExistence
 
-  @timeThis
   def setPendingRequests(self, jobs):
     """Loop over all the jobs and get requests, if any."""
     for jobChunk in breakListIntoChunks(jobs.values(), 1000):
