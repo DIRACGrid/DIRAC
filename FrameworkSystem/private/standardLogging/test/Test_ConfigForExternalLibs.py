@@ -9,7 +9,7 @@ import unittest
 import logging
 from StringIO import StringIO
 
-from DIRAC.FrameworkSystem.test.testLogging.Test_Logging import Test_Logging, gLogger, cleaningLog
+from DIRAC.FrameworkSystem.private.standardLogging.test.TestLoggingBase import Test_Logging, gLogger, cleaningLog
 
 
 class Test_ConfigForExternalLibs(Test_Logging):
@@ -73,7 +73,7 @@ class Test_ConfigForExternalLibs(Test_Logging):
 
   def test_02propagation(self):
     """
-    Test the no propagation of the logs from the Logging objects to the root logger of 'logging' 
+    Test the no propagation of the logs from the Logging objects to the root logger of 'logging'
     """
     gLogger.enableLogsFromExternalLibs()
     # modify the output to capture logs of the root logger

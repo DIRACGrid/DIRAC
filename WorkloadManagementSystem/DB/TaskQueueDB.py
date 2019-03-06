@@ -767,7 +767,7 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
         sqlCondList.append("( %s )" % " OR ".join(sqlMultiCondList))
 
         # In case of Site, check it's not in job banned sites
-        if field in bannedJobMatchFields and tqMatchDict.get('Banned%s' % field):
+        if field in bannedJobMatchFields:
           fullTableN = '`tq_TQToBanned%ss`' % field
           csql = self.__generateSQLSubCond("%%s not in ( SELECT %s.Value \
                                                           FROM %s \

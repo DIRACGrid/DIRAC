@@ -390,7 +390,7 @@ class PilotParams( object ):
     self.architectureScript = 'dirac-platform'
     self.certsLocation = '%s/etc/grid-security' % self.workingDir
     self.pilotCFGFile = 'pilot.json'
-    self.pilotCFGFileLocation = 'http://lhcbproject.web.cern.ch/lhcbproject/dist/DIRAC3/defaults/'
+    self.pilotCFGFileLocation = 'http://diracproject.web.cern.ch/diracproject/configs/'
 
     # Parameters that can be determined at runtime only
     self.queueParameters = {}  # from CE description

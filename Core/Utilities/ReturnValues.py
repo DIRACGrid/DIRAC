@@ -1,4 +1,3 @@
-# $HeadURL$
 """
    DIRAC return dictionary
 
@@ -11,14 +10,8 @@ import types
 import traceback
 from DIRAC.Core.Utilities.DErrno import strerror
 
-def S_ERROR_OLD( messageString = '' ):
-  """ return value on error condition
 
-  :param string messageString: error description
-  """
-  return { 'OK' : False, 'Message' : str( messageString )  }
-
-def S_ERROR( *args ):
+def S_ERROR(*args):
   """ return value on error condition
 
   Arguments are either Errno and ErrorMessage or just ErrorMessage fro backward compatibility
@@ -26,50 +19,52 @@ def S_ERROR( *args ):
   :param int errno: Error number
   :param string message: Error message
   """
-  result = { "OK" : False, "Errno": 0, "Message": "" }
+  result = {"OK": False, "Errno": 0, "Message": ""}
 
   message = ''
   if args:
-    if isinstance( args[0], ( int, long ) ):
+    if isinstance(args[0], (int, long)):
       result['Errno'] = args[0]
-      if len( args ) > 1:
+      if len(args) > 1:
         message = args[1]
     else:
       message = args[0]
 
   if result['Errno']:
-    message = "%s ( %s : %s)" % ( strerror( result['Errno'] ), result['Errno'], message )
+    message = "%s ( %s : %s)" % (strerror(result['Errno']), result['Errno'], message)
   result["Message"] = message
 
   try:
     callStack = traceback.format_stack()
     callStack.pop()
-  except:
+  except BaseException:
     callStack = []
 
   result["CallStack"] = callStack
 
-  #print "AT >>> S_ERROR", result['OK'], result['Errno'], result['Message']
-  #for item in result['CallStack']:
+  # print "AT >>> S_ERROR", result['OK'], result['Errno'], result['Message']
+  # for item in result['CallStack']:
   #  print item
 
   return result
 
-def S_OK( value = None ):
+
+def S_OK(value=None):
   """ return value on success
 
   :param value: value of the 'Value'
   :return: dictionary { 'OK' : True, 'Value' : value }
   """
-  return { 'OK' : True, 'Value' : value }
+  return {'OK': True, 'Value': value}
 
-def isReturnStructure( unk ):
 
-  if type( unk ) != types.DictType:
+def isReturnStructure(unk):
+
+  if not isinstance(unk, types.DictType):
     return False
   if 'OK' not in unk:
     return False
-  if unk[ 'OK' ]:
+  if unk['OK']:
     if 'Value' not in unk:
       return False
   else:
@@ -77,25 +72,27 @@ def isReturnStructure( unk ):
       return False
   return True
 
-def reprReturnErrorStructure( struct, full = False ):
-  errorNumber = struct.get( "Errno", 0 )
-  message = struct.get( "Message", '' )
+
+def reprReturnErrorStructure(struct, full=False):
+  errorNumber = struct.get("Errno", 0)
+  message = struct.get("Message", '')
   if errorNumber:
-    reprStr = "%s ( %s : %s)" % ( strerror( errorNumber ), errorNumber, message )
+    reprStr = "%s ( %s : %s)" % (strerror(errorNumber), errorNumber, message)
   else:
     reprStr = message
 
   if full:
-    callStack = struct.get( "CallStack" )
+    callStack = struct.get("CallStack")
     if callStack:
-      reprStr += "\n" + "".join( callStack )
-      
-  return reprStr    
+      reprStr += "\n" + "".join(callStack)
 
-def returnSingleResult( dictRes ):
+  return reprStr
+
+
+def returnSingleResult(dictRes):
   """ Transform the S_OK{Successful/Failed} dictionary convention into
       an S_OK/S_ERROR return. To be used when a single returned entity
-      is expected from a generally bulk call. 
+      is expected from a generally bulk call.
 
       :param dictRes: S_ERROR or S_OK( "Failed" : {}, "Successful" : {})
       :returns: S_ERROR or S_OK(value)
@@ -116,25 +113,24 @@ def returnSingleResult( dictRes ):
       {'OK': True, 'Value': {'Successful': {'b': 2}, 'Failed': {'a': 1}}} -> {'Message': '1', 'OK': False}
       {'OK': True, 'Value': {'Successful': {'b': 2}, 'Failed': {'a': 1, 'c': 3}}} -> {'Message': '1', 'OK': False}
       {'OK': True, 'Value': {'Successful': {'b': 2, 'd': 4}, 'Failed': {}}} -> {'OK': True, 'Value': 2}
-      {'OK': True, 'Value': {'Successful': {}, 'Failed': {}}} -> {'Message': 'returnSingleResult: Failed and Successful dictionaries are empty', 'OK': False}
+      {'OK': True, 'Value': {'Successful': {}, 'Failed': {}}} ->
+          {'Message': 'returnSingleResult: Failed and Successful dictionaries are empty', 'OK': False}
    """
 
   # if S_ERROR was returned, we return it as well
   if not dictRes['OK']:
     return dictRes
   # if there is a Failed, we return the first one in an S_ERROR
-  if "Failed" in dictRes['Value'] and len( dictRes['Value']['Failed'] ):
+  if "Failed" in dictRes['Value'] and len(dictRes['Value']['Failed']):
     errorMessage = dictRes['Value']['Failed'].values()[0]
-    if isinstance( errorMessage, dict ):
-      if isReturnStructure( errorMessage ):
+    if isinstance(errorMessage, dict):
+      if isReturnStructure(errorMessage):
         return errorMessage
       else:
-        return S_ERROR( str( errorMessage ) )
-    return S_ERROR( errorMessage )
+        return S_ERROR(str(errorMessage))
+    return S_ERROR(errorMessage)
   # if there is a Successful, we return the first one in an S_OK
-  elif "Successful" in dictRes['Value'] and len( dictRes['Value']['Successful'] ):
-    return S_OK( dictRes['Value']['Successful'].values()[0] )
+  elif "Successful" in dictRes['Value'] and len(dictRes['Value']['Successful']):
+    return S_OK(dictRes['Value']['Successful'].values()[0])
   else:
-    return S_ERROR ( "returnSingleResult: Failed and Successful dictionaries are empty" )
-                 
-
+    return S_ERROR("returnSingleResult: Failed and Successful dictionaries are empty")

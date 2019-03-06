@@ -162,7 +162,7 @@ class Dirac(API):
       return S_OK()
     jobs = self.jobRepo.readRepository()['Value']
     jobIDs = jobs.keys()
-    res = self.status(jobIDs)
+    res = self.getJobStatus(jobIDs)
     if not res['OK']:
       return self._errorReport(res['Message'], 'Failed to get status of jobs from WMS')
 
@@ -572,7 +572,7 @@ class Dirac(API):
     start = time.time()
     finalState = False
     while not finalState:
-      jobStatus = self.status(jobID)
+      jobStatus = self.getJobStatus(jobID)
       self.log.verbose(jobStatus)
       if not jobStatus['OK']:
         self.log.error('Could not monitor job status, will retry in %s seconds' % pollingTime, jobStatus['Message'])
@@ -2208,7 +2208,7 @@ class Dirac(API):
     except Exception as x:
       return self._errorReport(str(x), 'Expected integer or string for existing jobID')
 
-    result = self.status(jobID)
+    result = self.getJobStatus(jobID)
     if not result['OK']:
       self.log.info('Could not obtain status information for jobID %s, please check this is valid.' % jobID)
       return S_ERROR('JobID %s not found in WMS' % jobID)
