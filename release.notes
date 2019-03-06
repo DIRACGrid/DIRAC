@@ -1,4 +1,4 @@
-[v6r21-pre8]
+[v6r21]
 
 *Core
 NEW: (#3921) DictCache - allow threadLocal cache
@@ -44,6 +44,7 @@ FIX: (#3966) Dirac: replace the use of deprecated function status by getJobStatu
 
 *DataManagementSystem
 FIX: (#3922) Fixes FTS3 duplicate transfers
+FIX: (#3982) respect the source limitation when picking source for an FTS transfer
 
 *MonitoringSystem
 CHANGE: (#3956) Change the bucket size from week to day.
@@ -65,6 +66,9 @@ FIX: (#3959) PoolComputingElement - bug fix: initialize process pool if not yet
 
 *test
 CHANGE: (#3948) integration tests run with unittest now exit with exit code != 0 if failed
+
+*docs
+NEW: (#3974) Added HowTo section to the User Guide
 
 [v6r20p26]
 
