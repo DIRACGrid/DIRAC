@@ -76,7 +76,8 @@ class PilotAgentsDB(DB):
                      statusReason=None, gridSite=None, queue=None,
                      benchmark=None, currentJob=None,
                      updateTime=None, conn=False):
-    """ Set pilot job LCG status """
+    """ Set pilot job status
+    """
 
     setList = []
     setList.append("Status='%s'" % status)
@@ -110,6 +111,25 @@ class PilotAgentsDB(DB):
       return result
 
     return S_OK()
+
+# ###########################################################################################
+# FIXME: this can't work ATM because of how the DB table is made. Maybe it would be useful later.
+#   def setPilotStatusBulk(self, pilotRefsStatusDict=None, statusReason=None,
+#                          conn=False):
+#     """ Set pilot job status in a bulk
+#     """
+#     if not pilotRefsStatusDict:
+#       return S_OK()
+
+#     # Building the request with "ON DUPLICATE KEY UPDATE"
+#     reqBase = "INSERT INTO PilotAgents (PilotJobReference, Status, StatusReason) VALUES "
+
+#     for pilotJobReference, status in pilotRefsStatusDict.iteritems():
+#       req = reqBase + ','.join("('%s', '%s', '%s')" % (pilotJobReference, status, statusReason))
+#       req += " ON DUPLICATE KEY UPDATE Status=VALUES(Status),StatusReason=VALUES(StatusReason)"
+
+#     return self._update(req, conn)
+
 
 ##########################################################################################
   def selectPilots(self, condDict, older=None, newer=None, timeStamp='SubmissionTime',

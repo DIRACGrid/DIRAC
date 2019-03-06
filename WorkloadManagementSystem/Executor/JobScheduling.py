@@ -537,6 +537,7 @@ class JobScheduling(OptimizerExecutor):
 
     return S_OK(stageLFNs)
 
+
   def __requestStaging(self, jobState, stageLFNs):
     """ Actual request for staging LFNs through the StorageManagerClient
     """

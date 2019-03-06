@@ -1,14 +1,7 @@
 #!/bin/bash
 
-#
-# This is a script that tests:
-# dirac-rss-query-db,
-# dirac-rss-list-status,,
-# dirac-rss-set-token,
-# dirac-rss-query-dtcache
-#
+# This is a script that tests various RSS scripts
 # It is based on script outputs and exit codes
-#
 
 echo " "
 echo " "
