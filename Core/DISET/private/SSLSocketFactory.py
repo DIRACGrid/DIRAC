@@ -1,3 +1,8 @@
+"""
+This module seemd to be used only by HTTPDISETConnection, which was removed in v7r0.
+It will be removed in v7r1
+
+"""
 # $HeadURL$
 __RCSID__ = "$Id$"
 

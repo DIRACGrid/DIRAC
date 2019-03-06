@@ -65,7 +65,7 @@ BAD_FILES = ("lfc_dfc_copy",
 FORCE_ADD_PRIVATE = ["FCConditionParser"]
 
 # inherited functions give warnings in docstrings
-NO_INHERITED = ["HTTPDISETConnection", 'SOAPFactory']
+NO_INHERITED = []
 
 # global used inside the CustomizedDocs modules
 CUSTOMIZED_DOCSTRINGS = {}
