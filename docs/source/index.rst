@@ -50,8 +50,12 @@ or in this `presentation <https://indico.cern.ch/event/505613/contributions/2227
    DeveloperGuide/index
    CodeDocumentation/index
 
+
 Documentation sources
 =====================
+
+
+
 
 +-----------------------------------------+-----------------------------------------------------------+
 |                                         |                                                           |
@@ -68,6 +72,7 @@ Documentation sources
 | (server installations)                  | Code reference                                            |
 |                                         |                                                           |
 +-----------------------------------------+-----------------------------------------------------------+
+
 
 
 Indices and tables
