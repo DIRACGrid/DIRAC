@@ -4,6 +4,7 @@
 # pylint: disable=protected-access
 
 # imports
+import datetime
 import pytest
 from mock import MagicMock
 
@@ -33,6 +34,8 @@ mockCSGlobalReply.return_value = 'TestSetup'
 mockResourcesReply = MagicMock()
 mockResourcesReply.return_value = {'OK': True, 'Value': ['x86_64-slc6', 'x86_64-slc5']}
 
+mockPilotAgentsDB = MagicMock()
+mockPilotAgentsDB.setPilotStatus.return_value = {'OK': True}
 
 gLogger.setLevel('DEBUG')
 
@@ -174,3 +177,36 @@ def test__submitPilotsToQueue(mocker):
   res = sd._submitPilotsToQueue(1, MagicMock(), 'aQueue')
   assert res['OK'] is True
   assert res['Value'][0] == 0
+
+
+@pytest.mark.parametrize("pilotRefs, pilotDict, pilotCEDict, expected", [
+    ([], {}, {}, (0, [])),
+    (['aPilotRef'],
+        {'aPilotRef': {'Status': 'Running', 'LastUpdateTime': datetime.datetime(2000, 1, 1).utcnow()}},
+        {},
+        (0, [])),
+    (['aPilotRef'],
+        {'aPilotRef': {'Status': 'Running', 'LastUpdateTime': datetime.datetime(2000, 1, 1).utcnow()}},
+        {'aPilotRef': 'Running'},
+        (0, [])),
+    (['aPilotRef'],
+        {'aPilotRef': {'Status': 'Running', 'LastUpdateTime': datetime.datetime(2000, 1, 1).utcnow()}},
+        {'aPilotRef': 'Unknown'},
+        (0, []))
+])
+def test__updatePilotStatus(mocker, pilotRefs, pilotDict, pilotCEDict, expected):
+  """ Testing SiteDirector()._updatePilotStatus()
+  """
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.AgentModule.__init__")
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.gConfig.getValue", side_effect=mockGCReply)
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.CSGlobals.getSetup", side_effect=mockCSGlobalReply)
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.AgentModule", side_effect=mockAM)
+  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.SiteDirector.pilotAgentsDB", side_effect=mockPilotAgentsDB)
+  sd = SiteDirector()
+  sd.log = gLogger
+  sd.am_getOption = mockAM
+  sd.log.setLevel('DEBUG')
+  sd.rpcMatcher = MagicMock()
+  sd.rssClient = MagicMock()
+  res = sd._updatePilotStatus(pilotRefs, pilotDict, pilotCEDict)
+  assert res == expected

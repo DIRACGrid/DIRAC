@@ -8,7 +8,7 @@ import DIRAC
 from DIRAC import S_OK
 from DIRAC.Core.Base import Script
 from DIRAC.WorkloadManagementSystem.Client.PilotsLoggingClient import PilotsLoggingClient
-from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
+from DIRAC.WorkloadManagementSystem.Client.ServerUtils import pilotAgentsDB
 from DIRAC.Core.Utilities.PrettyPrint import printTable
 
 uuid = None
@@ -64,7 +64,7 @@ if uuid:
   printPilotsLogging(result['Value'])
   DIRAC.exit(0)
 else:
-  pilotDB = PilotAgentsDB()
+  pilotDB = pilotAgentsDB()
   pilotsLogging = PilotsLoggingClient()
   pilots = pilotDB.getPilotsForJobID(jobid)
   if not pilots['OK ']:

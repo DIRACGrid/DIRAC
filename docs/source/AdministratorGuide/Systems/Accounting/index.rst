@@ -6,7 +6,7 @@ Accounting System
    :depth: 3
    
 
-The Accounting system responsible to collect and store data regarding to the activities: data transfers, pilot jobs. It is designed for store 
+The Accounting system is responsible to collect and store data regarding to the activities: data transfers, pilot jobs. It is designed for store
 historical data by creating time buckets. 
 The data stored with properties, which are used to classify the records: user, site and also properties which can be measured: memory, CPU.
 
@@ -75,9 +75,13 @@ With the previous configuration all accounting data will be stored and retrieved
 
 DataStore Helpers
 ======================
-From DIRAC v6r17p14 there is the possibility to to run multiple 'DataStore' services, where one need to be called 'master', while all the others may be called slaves. The master will creates the proper buckets and the helpers only insert the records to the 'in' table.
-For example:
-install service Accounting DataStoreHelper -m DataStore -p RunBucketing=True -p Port=1966
+From DIRAC v6r17p14 there is the possibility to run multiple 'DataStore' services, where one
+needs to be called 'DataStoreMaster', while all the others may be called anything else. The master
+will create the proper buckets and the helpers only insert the records to the 'in' table.  For
+example::
+
+  install service Accounting DataStoreHelper -m DataStore -p RunBucketing=False -p Port=9166
+
 In the CS you have to define DataStoreMaster. For example::
 
       URLs
@@ -100,13 +104,13 @@ running a service in a hardware which are having very good disk.
 
 Installation
 ==============
-In order to use the system, it requires to install the following components: AccountingDB, DataStore, ReportGenerato, for the WMSMonitoring the StatesAccountingAgent.
-The simplest is by using the SystemAdministrator CLI:
+In order to use the system, it requires to install the following components: AccountingDB, DataStore, ReportGenerator, for the WMSMonitoring the StatesAccountingAgent.
+The simplest is by using the SystemAdministrator CLI::
 
-install db AccountingDB
-install service Accounting DataStore
-install service Accounting ReportGenerator
-install agent WorkloadManagement StatesAccountingAgent
+  install db AccountingDB
+  install service Accounting DataStore
+  install service Accounting ReportGenerator
+  install agent WorkloadManagement StatesAccountingAgent
 
 Accounting user interface
 =========================
