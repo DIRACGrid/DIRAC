@@ -108,14 +108,16 @@ def selectUniqueRandomSource(ftsFiles, allowedSources=None):
   """
       For a list of FTS3files object, select a random source, and group the files by source.
 
-      :param allowedSources : list of allowed sources
-      :param ftsFiles : list of FTS3File object
+      :param allowedSources: list of allowed sources
+      :param ftsFiles: list of FTS3File object
 
       :return:  S_OK({ sourceSE: [ FTS3Files] })
 
   """
 
   _log = gLogger.getSubLogger("selectUniqueRandomSource")
+
+  allowedSourcesSet = set(allowedSources) if allowedSources else set()
 
   # destGroup will contain for each target SE a dict { source : [list of FTS3Files] }
   groupBySource = {}
@@ -136,14 +138,18 @@ def selectUniqueRandomSource(ftsFiles, allowedSources=None):
 
     replicaDict = filteredReplicas['Successful'][ftsFile.lfn]
 
+    # Only consider the allowed sources
+
+    # If we have a restriction, apply it, otherwise take all the replicas
+    allowedReplicaSource = (set(replicaDict) & allowedSourcesSet) if allowedSourcesSet else replicaDict
+
     # pick a random source
 
-    randSource = random.choice(list(replicaDict))  # one has to convert to list
+    randSource = random.choice(list(allowedReplicaSource))  # one has to convert to list
 
     groupBySource.setdefault(randSource, []).append(ftsFile)
 
   return S_OK(groupBySource)
-
 
 def groupFilesByTarget(ftsFiles):
   """
