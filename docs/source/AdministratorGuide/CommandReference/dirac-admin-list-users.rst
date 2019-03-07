@@ -1,3 +1,5 @@
+.. _admin_dirac-admin-list-users:
+
 ======================
 dirac-admin-list-users
 ======================

@@ -1,3 +1,5 @@
+.. _dirac-wms-job-get-output:
+
 ========================
 dirac-wms-job-get-output
 ========================

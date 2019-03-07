@@ -1,3 +1,5 @@
+.. _dirac-dms-get-file:
+
 ==================
 dirac-dms-get-file
 ==================

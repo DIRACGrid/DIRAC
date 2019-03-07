@@ -1,3 +1,5 @@
+.. _dirac-dms-replicate-lfn:
+
 =======================
 dirac-dms-replicate-lfn
 =======================

@@ -1,3 +1,5 @@
+.. _admin_dirac-framework-ping-service:
+
 ============================
 dirac-framework-ping-service
 ============================

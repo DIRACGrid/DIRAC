@@ -1,3 +1,5 @@
+.. _dirac-wms-job-parameters:
+
 ========================
 dirac-wms-job-parameters
 ========================

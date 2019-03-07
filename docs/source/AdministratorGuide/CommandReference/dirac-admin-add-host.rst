@@ -1,3 +1,5 @@
+.. _admin_dirac-admin-add-host:
+
 ====================
 dirac-admin-add-host
 ====================

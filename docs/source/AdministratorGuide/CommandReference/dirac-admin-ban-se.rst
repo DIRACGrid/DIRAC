@@ -1,3 +1,5 @@
+.. _admin_dirac-admin-ban-se:
+
 ==================
 dirac-admin-ban-se
 ==================

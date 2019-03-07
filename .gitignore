@@ -73,3 +73,6 @@ Local_*
 docs/source/CodeDocumentation/
 docs/source/AdministratorGuide/Configuration/ExampleConfig.rst
 docs/_build
+# automatically created command documentation files
+docs/source/AdministratorGuide/CommandReference
+docs/source/UserGuide/CommandReference

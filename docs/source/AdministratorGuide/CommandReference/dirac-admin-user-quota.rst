@@ -1,3 +1,5 @@
+.. _admin_dirac-admin-user-quota:
+
 ======================
 dirac-admin-user-quota
 ======================

@@ -1,3 +1,5 @@
+.. _dirac-dms-lfn-metadata:
+
 ======================
 dirac-dms-lfn-metadata
 ======================

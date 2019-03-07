@@ -14,4 +14,3 @@ Tutorials
    JDLsAndJobManagementBasic/index
    FileCatalogBasic/index
    JobManagementAdvanced/index
-   

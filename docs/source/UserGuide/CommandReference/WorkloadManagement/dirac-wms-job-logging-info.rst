@@ -1,3 +1,5 @@
+.. _dirac-wms-job-logging-info:
+
 ==========================
 dirac-wms-job-logging-info
 ==========================

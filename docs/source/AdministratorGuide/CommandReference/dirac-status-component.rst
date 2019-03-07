@@ -1,3 +1,5 @@
+.. _admin_dirac-status-component:
+
 ======================
 dirac-status-component
 ======================

@@ -1,3 +1,5 @@
+.. _admin_dirac-admin-service-ports:
+
 =========================
 dirac-admin-service-ports
 =========================

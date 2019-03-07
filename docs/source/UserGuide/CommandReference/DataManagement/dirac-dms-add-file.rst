@@ -1,3 +1,5 @@
+.. _dirac-dms-add-file:
+
 ==================
 dirac-dms-add-file
 ==================

@@ -14,6 +14,9 @@ import sys
 import subprocess
 import shlex
 
+# if true (-ddd on the command line) print also the content for all files
+SUPER_DEBUG = False
+
 ROOT_PATH = os.environ.get("DIRAC", "")
 
 logging.basicConfig(level=logging.INFO, format='%(name)s: %(levelname)8s: %(message)s', stream=sys.stdout)
@@ -33,10 +36,14 @@ BAD_SCRIPTS = ['dirac-deploy-scripts',  # does not have --help, deploys scripts
                ]
 
 
+# list of commands: get the module docstring from the file to add to the docstring
 GET_MOD_STRING = ['dirac-install',
                   ]
 
-
+# tuples: list of patterns to match in script names,
+#         Title of the index file
+#         list of script names
+#         list of patterns to reject scripts
 MARKERS_SECTIONS_SCRIPTS = [(['dms'],
                              'Data Management', [], []),
                             (['wms'], 'Workload Management', [], []),
@@ -54,6 +61,7 @@ MARKERS_SECTIONS_SCRIPTS = [(['dms'],
                             ]
 
 EXITCODE = 0
+
 
 def mkdir(path):
   """ save mkdir, ignores exceptions """
@@ -76,6 +84,27 @@ def runCommand(command):
     return ''
 
 
+def writeLinesToFile(filename, lines):
+  """Write a list of lines into a file.
+
+  Checks that there are actual changes to be done.
+  """
+  if isinstance(lines, list):
+    newContent = '\n'.join(lines)
+  else:
+    newContent = lines
+  oldContent = None
+  if os.path.exists(filename):
+    with open(filename, 'r') as oldFile:
+      oldContent = ''.join(oldFile.readlines())
+  if oldContent is None or oldContent != newContent:
+    with open(filename, 'w') as rst:
+      LOG.info('Writing new content for %s', filename)
+      rst.write(newContent)
+  else:
+    LOG.debug('Not updating file content for %s', filename)
+
+
 def getScripts():
   """Get all scripts in the Dirac System, split by type admin/wms/rms/other."""
 
@@ -92,7 +121,7 @@ def getScripts():
   for scriptPath in scripts:
     # Few modules still have __init__.py on the scripts directory
     if '__init__' in scriptPath:
-      LOG.debug("Ignoring %s", scriptPath)
+      LOG.debug("Ignoring init file %s", scriptPath)
       continue
 
     for mT in MARKERS_SECTIONS_SCRIPTS:
@@ -131,15 +160,13 @@ This page is the work in progress. See more material here soon !
     systemString = system.replace(" ", "")
     userIndexRST += "   %s/index\n" % systemString
 
-    LOG.debug("Index file:\n%s", userIndexRST)
+    LOG.debug("Index file:\n%s", userIndexRST) if SUPER_DEBUG else None
     sectionPath = os.path.join(ROOT_PATH, 'DIRAC/docs/source/UserGuide/CommandReference/', systemString)
     mkdir(sectionPath)
     createSectionIndex(mT, sectionPath)
 
   userIndexPath = os.path.join(ROOT_PATH, 'DIRAC/docs/source/UserGuide/CommandReference/index.rst')
-  with open(userIndexPath, 'w') as userIndexFile:
-    LOG.debug('Writting to: %s', userIndexPath)
-    userIndexFile.write(userIndexRST)
+  writeLinesToFile(userIndexPath, userIndexRST)
 
 
 def createAdminGuideCommandReference():
@@ -165,7 +192,8 @@ def createAdminGuideCommandReference():
     scriptName = os.path.basename(script)
     if scriptName.endswith('.py'):
       scriptName = scriptName[:-3]
-    if createScriptDocFiles(script, sectionPath, scriptName) and scriptName not in adminCommandList:
+    if createScriptDocFiles(script, sectionPath, scriptName, referencePrefix='admin_') and \
+       scriptName not in adminCommandList:
       missingCommands.append(scriptName)
 
   if missingCommands:
@@ -229,12 +257,10 @@ In this subsection the %s commands are collected
     sectionIndexRST += "   %s\n" % scriptName
 
   sectionIndexPath = os.path.join(sectionPath, 'index.rst')
-  with open(sectionIndexPath, 'w') as sectionIndexFile:
-    LOG.debug('Writting to: %s', sectionIndexPath)
-    sectionIndexFile.write(sectionIndexRST)
+  writeLinesToFile(sectionIndexPath, sectionIndexRST)
 
 
-def createScriptDocFiles(script, sectionPath, scriptName):
+def createScriptDocFiles(script, sectionPath, scriptName, referencePrefix=''):
   """Create the RST files for all the scripts.
 
   Folders and indices already exist, just call the scripts and get the help messages. Format the help message.
@@ -250,6 +276,8 @@ def createScriptDocFiles(script, sectionPath, scriptName):
     return False
 
   rstLines = []
+  rstLines.append(' .. _%s%s:' % (referencePrefix, scriptName))
+  rstLines.append('')
   rstLines.append('=' * len(scriptName))
   rstLines.append('%s' % scriptName)
   rstLines.append('=' * len(scriptName))
@@ -262,14 +290,14 @@ def createScriptDocFiles(script, sectionPath, scriptName):
       pass
     # strip general options from documentation
     elif line.lower().strip() == 'general options:':
-      LOG.debug("Found general options in line %r", line)
+      LOG.debug("Found general options in line %r", line) if SUPER_DEBUG else None
       genOptions = True
       continue
     elif genOptions and line.startswith(' '):
-      LOG.debug("Skipping General options line %r", line)
+      LOG.debug("Skipping General options line %r", line) if SUPER_DEBUG else None
       continue
     elif genOptions and not line.startswith(' '):
-      LOG.debug("General options done")
+      LOG.debug("General options done") if SUPER_DEBUG else None
       genOptions = False
 
     newLine = '\n' + line + ':\n' if line.endswith(':') else line
@@ -289,17 +317,17 @@ def createScriptDocFiles(script, sectionPath, scriptName):
         fileContent += '\n' + content.strip() + '\n'
     else:
       content = getContentFromScriptDoc(scriptRSTPath, marker)
+      if not content:
+        break  # nothing in content, files probably does not exist
       if content and marker not in fileContent.lower():
         fileContent += '\n' + content.strip() + '\n'
-    LOG.debug('\n' + '*' * 88 + '\n' + fileContent + '\n' + '*' * 88)
+    LOG.debug('\n' + '*' * 88 + '\n' + fileContent + '\n' + '*' * 88) if SUPER_DEBUG else None
   while '\n\n\n' in fileContent:
     fileContent = fileContent.replace('\n\n\n', '\n\n')
 
   # remove the standalone '-' when no short option exists
   fileContent = fileContent.replace('-   --', '--')
-  with open(scriptRSTPath, 'w') as rstFile:
-    LOG.debug('Writting to: %s', scriptRSTPath)
-    rstFile.write(fileContent)
+  writeLinesToFile(scriptRSTPath, fileContent)
   return True
 
 
@@ -322,7 +350,7 @@ def getContentFromScriptDoc(scriptRSTPath, marker):
   content = []
   inContent = False
   if not os.path.exists(scriptRSTPath):
-    LOG.warn('Script file %r does not exist yet!', scriptRSTPath)
+    LOG.info('Script file %r does not exist yet!', scriptRSTPath)
     return ''
   with open(scriptRSTPath) as rstFile:
     for line in rstFile.readlines():
@@ -353,5 +381,11 @@ def run():
 
 
 if __name__ == "__main__":
+  if '-ddd' in ''.join(sys.argv):
+    LOG.setLevel(logging.DEBUG)
+    SUPER_DEBUG = True
+  if '-dd' in ''.join(sys.argv):
+    LOG.setLevel(logging.DEBUG)
+    SUPER_DEBUG = False
   run()
   exit(EXITCODE)

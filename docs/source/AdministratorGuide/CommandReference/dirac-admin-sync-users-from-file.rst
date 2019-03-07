@@ -1,3 +1,5 @@
+.. _admin_dirac-admin-sync-users-from-file:
+
 ================================
 dirac-admin-sync-users-from-file
 ================================

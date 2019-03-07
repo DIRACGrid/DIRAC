@@ -1,3 +1,5 @@
+.. _admin_dirac-admin-get-banned-sites:
+
 ============================
 dirac-admin-get-banned-sites
 ============================

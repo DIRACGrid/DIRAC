@@ -1,3 +1,5 @@
+.. _dirac-wms-get-normalized-queue-length:
+
 =====================================
 dirac-wms-get-normalized-queue-length
 =====================================

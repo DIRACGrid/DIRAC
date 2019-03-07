@@ -1,3 +1,5 @@
+.. _dirac-wms-job-get-jdl:
+
 =====================
 dirac-wms-job-get-jdl
 =====================

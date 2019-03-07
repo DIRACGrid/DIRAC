@@ -1,3 +1,5 @@
+.. _dirac-wms-job-submit:
+
 ====================
 dirac-wms-job-submit
 ====================

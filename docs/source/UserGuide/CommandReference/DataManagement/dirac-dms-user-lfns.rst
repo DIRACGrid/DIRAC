@@ -1,3 +1,5 @@
+.. _dirac-dms-user-lfns:
+
 ===================
 dirac-dms-user-lfns
 ===================

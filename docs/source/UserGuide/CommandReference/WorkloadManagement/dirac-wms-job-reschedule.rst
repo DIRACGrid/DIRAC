@@ -1,3 +1,5 @@
+.. _dirac-wms-job-reschedule:
+
 ========================
 dirac-wms-job-reschedule
 ========================

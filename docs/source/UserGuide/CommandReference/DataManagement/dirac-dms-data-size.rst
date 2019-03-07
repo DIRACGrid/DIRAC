@@ -1,3 +1,5 @@
+.. _dirac-dms-data-size:
+
 ===================
 dirac-dms-data-size
 ===================

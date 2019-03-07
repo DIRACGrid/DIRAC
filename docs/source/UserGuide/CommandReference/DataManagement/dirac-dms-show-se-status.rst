@@ -1,3 +1,5 @@
+.. _dirac-dms-show-se-status:
+
 ========================
 dirac-dms-show-se-status
 ========================

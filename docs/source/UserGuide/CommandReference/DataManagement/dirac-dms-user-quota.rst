@@ -1,3 +1,5 @@
+.. _dirac-dms-user-quota:
+
 ====================
 dirac-dms-user-quota
 ====================

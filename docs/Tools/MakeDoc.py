@@ -5,8 +5,11 @@ import shutil
 import socket
 import sys
 import logging
+import glob
+
 logging.basicConfig(level=logging.INFO, format='%(name)s: %(levelname)8s: %(message)s')
 LOG = logging.getLogger('MakeDoc')
+
 
 def mkdir(folder):
   """create a folder, ignore if it exists"""
@@ -14,7 +17,25 @@ def mkdir(folder):
     folder = os.path.join(os.getcwd(), folder)
     os.mkdir(folder)
   except OSError as e:
-    LOG.error("Exception when creating folder %s: %r", folder, e)
+    LOG.debug("Exception when creating folder %s: %r", folder, e)
+
+
+def writeLinesToFile(filename, lines):
+  """Write a list of lines into a file.
+
+  Checks that there are actual changes to be done.
+  """
+  newContent = '\n'.join(lines)
+  oldContent = None
+  if os.path.exists(filename):
+    with open(filename, 'r') as oldFile:
+      oldContent = ''.join(oldFile.readlines())
+  if oldContent is None or oldContent != newContent:
+    with open(filename, 'w') as rst:
+      LOG.info('Writing new content for %s', filename)
+      rst.write(newContent)
+  else:
+    LOG.debug('Not updating file content for %s', filename)
 
 
 BASEPATH = "docs/source/CodeDocumentation"
@@ -45,6 +66,22 @@ FORCE_ADD_PRIVATE = ["FCConditionParser"]
 
 # inherited functions give warnings in docstrings
 NO_INHERITED = ["HTTPDISETConnection", 'SOAPFactory']
+
+# global used inside the CustomizedDocs modules
+CUSTOMIZED_DOCSTRINGS = {}
+
+
+def getCustomDocs():
+  """Import the dynamically created docstrings from the files in CustomizedDocs.
+
+  Use 'exec' to avoid a lot of relative import, pylint errors, etc.
+  """
+  customizedPath = os.path.join(BASEPATH, '../../Tools/CustomizedDocs/*.py')
+  LOG.info('Looking for custom strings in %s', customizedPath)
+  for filename in glob.glob(customizedPath):
+    LOG.info('Found customization: %s', filename)
+    exec(open(filename).read(), globals())  # pylint: disable=exec-used
+
 
 def mkRest(filename, modulename, fullmodulename, subpackages=None, modules=None):
   """make a rst file for filename"""
@@ -92,9 +129,7 @@ def mkRest(filename, modulename, fullmodulename, subpackages=None, modules=None)
       #lines.append("   %s " % (package, ) )
     lines.append("")
 
-  with open(filename, 'w') as rst:
-    rst.write("\n".join(lines))
-
+  writeLinesToFile(filename, lines)
 
 def mkDummyRest(classname, fullclassname):
   """ create a dummy rst file for files that behave badly """
@@ -106,8 +141,7 @@ def mkDummyRest(classname, fullclassname):
   lines.append("")
   lines.append(" This is an empty file, because we cannot parse this file correctly or it causes problems")
   lines.append(" , please look at the source code directly")
-  with open(filename, 'w') as rst:
-    rst.write("\n".join(lines))
+  writeLinesToFile(filename, lines)
 
 
 def mkModuleRest(classname, fullclassname, buildtype="full"):
@@ -140,8 +174,14 @@ def mkModuleRest(classname, fullclassname, buildtype="full"):
     if classname.startswith("_"):
       lines.append("   :private-members:")
 
-  with open(filename, 'w') as rst:
-    rst.write("\n".join(lines))
+  if fullclassname in CUSTOMIZED_DOCSTRINGS:
+    ds = CUSTOMIZED_DOCSTRINGS[fullclassname]
+    if ds.replace:
+      lines = ds.doc_string
+    else:
+      lines.append(ds.doc_string)
+
+  writeLinesToFile(filename, lines)
 
 
 def getsubpackages(abspath, direc):
@@ -150,6 +190,9 @@ def getsubpackages(abspath, direc):
   for dire in direc:
     if dire.lower() == "test" or dire.lower() == "tests" or "/test" in dire.lower():
       LOG.debug("Skipping test directory: %s/%s", abspath, dire)
+      continue
+    if dire.lower() == 'docs' or '/docs' in dire.lower():
+      LOG.debug('Skipping docs directory: %s/%s', abspath, dire)
       continue
     if os.path.exists(os.path.join(DIRACPATH, abspath, dire, "__init__.py")):
       packages.append(os.path.join(dire))
@@ -179,10 +222,13 @@ def createDoc(buildtype="full"):
   LOG.info("Host: %s", socket.gethostname())
 
   # we need to replace existing rst files so we can decide how much code-doc to create
-  if os.path.exists(BASEPATH):
+  if os.path.exists(BASEPATH) and os.environ.get('READTHEDOCS', 'False') == 'True':
     shutil.rmtree(BASEPATH)
   mkdir(BASEPATH)
   os.chdir(BASEPATH)
+
+  getCustomDocs()
+
   LOG.info("Now creating rst files")
   for root, direc, files in os.walk(DIRACPATH):
     configTemplate = [os.path.join(root, _) for _ in files if _ == 'ConfigTemplate.cfg']
@@ -191,17 +237,17 @@ def createDoc(buildtype="full"):
     if "__init__.py" not in files:
       continue
 
-    if any(root.lower().endswith(f.lower()) for f in ("/docs", )):
-      continue
     elif any(f.lower() in root.lower() for f in ("/test", "scripts",
+                                                 'docs/Tools',
                                                  )):
-      LOG.debug("Skipping test or script folder: %s", root)
+      LOG.debug('Skipping test, docs, or script folder: %s', root)
       continue
 
     modulename = root.split("/")[-1]
     abspath = root.split(DIRACPATH)[1].strip("/")
     fullmodulename = 'DIRAC.' + '.'.join(abspath.split('/'))
     packages = getsubpackages(abspath, direc)
+    LOG.debug("Trying to create folder: %s", abspath)
     if abspath:
       mkdir(abspath)
       os.chdir(abspath)
@@ -307,9 +353,7 @@ def createCodeDocIndex(subpackages, modules, buildtype="full"):
         lines.append("   %s.rst" % (module.split("/")[-1],))
         #lines.append("   %s " % (package, ) )
 
-  with open(filename, 'w') as rst:
-    rst.write("\n".join(lines))
-
+  writeLinesToFile(filename, lines)
 
 def checkBuildTypeAndRun():
   """ check for input argument and then create the doc rst files """
@@ -324,4 +368,10 @@ def checkBuildTypeAndRun():
 
 if __name__ == "__main__":
   # get the options
+  if '-ddd' in ''.join(sys.argv):
+    LOG.setLevel(logging.DEBUG)
+    SUPER_DEBUG = True
+  if '-dd' in ''.join(sys.argv):
+    LOG.setLevel(logging.DEBUG)
+    SUPER_DEBUG = False
   exit(checkBuildTypeAndRun())

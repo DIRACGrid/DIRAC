@@ -1,3 +1,5 @@
+.. _admin_dirac-admin-show-task-queues:
+
 ============================
 dirac-admin-show-task-queues
 ============================

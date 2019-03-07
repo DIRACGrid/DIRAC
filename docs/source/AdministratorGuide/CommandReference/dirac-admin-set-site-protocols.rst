@@ -1,3 +1,5 @@
+.. _admin_dirac-admin-set-site-protocols:
+
 ==============================
 dirac-admin-set-site-protocols
 ==============================

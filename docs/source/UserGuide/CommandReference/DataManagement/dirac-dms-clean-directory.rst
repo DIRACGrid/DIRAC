@@ -1,3 +1,5 @@
+.. _dirac-dms-clean-directory:
+
 =========================
 dirac-dms-clean-directory
 =========================

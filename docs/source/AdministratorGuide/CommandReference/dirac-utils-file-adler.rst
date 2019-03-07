@@ -1,3 +1,5 @@
+.. _admin_dirac-utils-file-adler:
+
 ======================
 dirac-utils-file-adler
 ======================

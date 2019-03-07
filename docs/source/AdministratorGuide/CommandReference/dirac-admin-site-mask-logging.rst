@@ -1,3 +1,5 @@
+.. _admin_dirac-admin-site-mask-logging:
+
 =============================
 dirac-admin-site-mask-logging
 =============================

@@ -1,3 +1,5 @@
+.. _dirac-dms-remove-files:
+
 ======================
 dirac-dms-remove-files
 ======================

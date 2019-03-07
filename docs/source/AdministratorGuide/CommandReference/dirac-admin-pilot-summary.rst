@@ -1,3 +1,5 @@
+.. _admin_dirac-admin-pilot-summary:
+
 =========================
 dirac-admin-pilot-summary
 =========================

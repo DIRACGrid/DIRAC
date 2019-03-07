@@ -1,3 +1,5 @@
+.. _dirac-proxy-init:
+
 ================
 dirac-proxy-init
 ================

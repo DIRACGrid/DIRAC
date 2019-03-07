@@ -1,3 +1,5 @@
+.. _dirac-dms-find-lfns:
+
 ===================
 dirac-dms-find-lfns
 ===================
