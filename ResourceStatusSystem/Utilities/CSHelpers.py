@@ -193,23 +193,10 @@ def getFTS():
     Gets all FTS endpoints
   """
 
-  # FIXME: FTS2 will be deprecated (first 2 lines that follow)
-  ftsEndpoints = gConfig.getValue('Resources/FTSEndpoints/Default/FTSEndpoint', [])
-  ftsEndpoints += _getFTSEndpoints('Resources/FTSEndpoints/FTS2')
-  ftsEndpoints += _getFTSEndpoints()
-
-  return S_OK(ftsEndpoints)
-
-
-def _getFTSEndpoints(basePath='Resources/FTSEndpoints/FTS3'):
-  """
-    Gets all FTS endpoints that are in CS
-  """
-
-  result = gConfig.getOptions(basePath)
+  result = gConfig.getOptions('Resources/FTSEndpoints/FTS3')
   if result['OK']:
-    return result['Value']
-  return []
+    return result
+  return S_OK([])
 
 
 def getSpaceTokenEndpoints():

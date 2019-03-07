@@ -33,9 +33,6 @@ Databse in the Configuration System.
   > install service DataManagement FTS3Manager
   > install agent DataManagement FTS3Agent
 
-Then enable the *UseNewFTS3* flag for the ReplicateAndRegister operation as
-described in `FTS3TransferOperation`_.
-
 
 
 ===============================
@@ -46,7 +43,6 @@ In order for the transfers to be submitted to the FTS system:
 
    * `Systems/RequestManagementSystem/Agents/RequestExecutingAgent/OperationHandlers/ReplicateAndRegister/FTSMode` must be True
    * `Systems/RequestManagementSystem/Agents/RequestExecutingAgent/OperationHandlers/ReplicateAndRegister/FTSBannedGroups` should contain the list of groups for which you'd rather do direct transfers.
-   * `Systems/RequestManagementSystem/Agents/RequestExecutingAgent/OperationHandlers/ReplicateAndRegister/UseNewFTS3` should be True in order to use this new FTS system (soon to be deprecated)
 
 ========================
 Operations configuration
@@ -92,7 +88,7 @@ Note that by default, the FTS3Agent is meant to run without shifter proxy. It wi
 FTS3TransferOperation
 =====================
 
-When enabled by the flag *UseNewFTS3* in the ReplicateAndRegister operation definition, the RMS will create one FTS3TransferOperation per RMS Operation, and one FTS3File per RMS File. This means that there can be several destination SEs, and potentially source SEs specified.
+The RMS will create one FTS3TransferOperation per RMS Operation, and one FTS3File per RMS File. This means that there can be several destination SEs, and potentially source SEs specified.
 
 The grouping into jobs is done following this logic:
     * Group by target SE

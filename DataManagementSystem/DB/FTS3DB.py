@@ -83,7 +83,8 @@ fts3OperationTable = Table('Operations', metadata,
                            Column('operationID', Integer, primary_key=True),
                            Column('username', String(255)),
                            Column('userGroup', String(255)),
-                           # -1 because with 0 we get any request
+                           # -1 because with 0 we would get any random request
+                           # when performing reqClient.getRequest
                            Column('rmsReqID', Integer, server_default='-1'),
                            Column('rmsOpID', Integer, server_default='0', index=True),
                            Column('sourceSEs', String(255)),

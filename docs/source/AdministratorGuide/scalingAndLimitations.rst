@@ -16,7 +16,7 @@ Because they are stored in a database, the LFNs are limited in size. The standar
 * TransformationTB
 * StorageManagementDB
 * DataIntegrityDB
-* FTSDB
+* FTS3DB
 * RequestDB
 
 Shall you want to have longer LFN, then you would need to update your database manually.
@@ -82,7 +82,7 @@ Services
 +                    +-----------------------+-----------+---------------------------------------------------------------------------------------------------------------------+
 |                    | FileCatalogProxy      |           |                                                                                                                     |
 +                    +-----------------------+-----------+---------------------------------------------------------------------------------------------------------------------+
-|                    | FTSManager            | YES       |                                                                                                                     |
+|                    | FTS3Manager           | YES       |                                                                                                                     |
 +                    +-----------------------+-----------+---------------------------------------------------------------------------------------------------------------------+
 |                    | IRODSStorageElement   |           |                                                                                                                     |
 +                    +-----------------------+-----------+---------------------------------------------------------------------------------------------------------------------+
@@ -170,9 +170,7 @@ Agents
 +                    +-----------------------------+-----------+------------+
 |                    | VOMS2CSAgent                |           |            |
 +--------------------+-----------------------------+-----------+------------+
-| DataManagement     | CleanFTSDBAgent             | NO        |            |
-+                    +-----------------------------+-----------+------------+
-|                    | FTSAgent                    | PARTIAL   | See bellow |
+| DataManagement     | FTS3Agent                   | YES       |            |
 +--------------------+-----------------------------+-----------+------------+
 | Framework          | CAUpdateAgent               |           |            |
 +                    +-----------------------------+-----------+------------+
@@ -232,10 +230,3 @@ Agents
 +                    +-----------------------------+-----------+------------+
 |                    | StatesMonitoringAgent       |           |            |
 +--------------------+-----------------------------+-----------+------------+
-
---------
-FTSAgent
---------
-
-This agent can be split in two: one agent for the failover transfers, and one for the others (coming from transformations and so on).
-For this you need to define two agents using both the FTSAgent module, and use the `ProcessJobRequests` flag: once to True, once to False.
