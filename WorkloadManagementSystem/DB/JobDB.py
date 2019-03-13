@@ -1211,12 +1211,6 @@ class JobDB(DB):
     classAdJob.insertAttributeString('OwnerDN', ownerDN)
     classAdJob.insertAttributeString('OwnerGroup', ownerGroup)
 
-    submitPools = getGroupOption(ownerGroup, "SubmitPools")
-    if not submitPools and vo:
-      submitPools = getVOOption(vo, 'SubmitPools')
-    if submitPools and not classAdJob.lookupAttribute('SubmitPools'):
-      classAdJob.insertAttributeString('SubmitPools', submitPools)
-
     if vo:
       classAdJob.insertAttributeString('VirtualOrganization', vo)
 
