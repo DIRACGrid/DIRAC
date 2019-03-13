@@ -45,11 +45,11 @@ class StompMQConnector(MQConnector):
       gLogger.enableLogsFromExternalLibs()
 
   def setupConnection(self, parameters=None):
-    #"""
-    # Establishes a new connection to a Stomp server, e.g. RabbitMQ
-    #:param dict parameters: dictionary with additional MQ parameters if any
-    #:return: S_OK/S_ERROR
-    #"""
+    """
+     Establishes a new connection to a Stomp server, e.g. RabbitMQ
+    :param dict parameters: dictionary with additional MQ parameters if any
+    :return: S_OK/S_ERROR
+    """
 
     if parameters is not None:
       self.parameters.update(parameters)
@@ -91,10 +91,10 @@ class StompMQConnector(MQConnector):
           hostcert = paths[0]
           hostkey = paths[1]
         connectionArgs.update({
-          'use_ssl': True,
-          'ssl_version': sslVersion,
-          'ssl_key_file': hostkey,
-          'ssl_cert_file': hostcert})
+                              'use_ssl': True,
+                              'ssl_version': sslVersion,
+                              'ssl_key_file': hostkey,
+                              'ssl_cert_file': hostcert})
       else:
         return S_ERROR(EMQCONN, 'Invalid SSL version provided: %s' % sslVersion)
 
