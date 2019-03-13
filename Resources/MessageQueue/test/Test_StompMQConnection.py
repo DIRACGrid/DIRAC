@@ -103,8 +103,9 @@ class StompMQConnectorSuccessTestCase(unittest.TestCase):
                       'keepalive':True, 
                       'reconnect_sleep_initial' :1,
                       'reconnect_sleep_increase': 0.5,
+                      'reconnect_sleep_max': 120, 
                       'reconnect_sleep_jitter' :0.1, 
-                      'reconnect_attempts_max' :1e6,  
+                      'reconnect_attempts_max' :1e4,  
                       'host_and_ports':[(IP1, int(PORT))]
                     }
     module.stomp.Connection.assert_any_call(**connectionArgs)
@@ -128,8 +129,9 @@ class StompMQConnectorSuccessTestCase(unittest.TestCase):
                       'keepalive':True, 
                       'reconnect_sleep_initial' :1,
                       'reconnect_sleep_increase': 0.5,
+                      'reconnect_sleep_max': 120, 
                       'reconnect_sleep_jitter' :0.1, 
-                      'reconnect_attempts_max' :1e6,  
+                      'reconnect_attempts_max' :1e4,  
                       'use_ssl':True,
                       'ssl_version':module.ssl.PROTOCOL_TLSv1,
                       'ssl_key_file':HOSTKEY,

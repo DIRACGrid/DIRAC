@@ -5,9 +5,9 @@ Class for management of Stomp MQ connections, e.g. RabbitMQ
 import json
 import os
 import socket
-import stomp
 import ssl
 import time
+import stomp
 
 from DIRAC.Resources.MessageQueue.MQConnector import MQConnector
 from DIRAC.Core.Security import Locations
@@ -20,13 +20,25 @@ class StompMQConnector(MQConnector):
   Class for management of message queue connections
   Allows to both send and receive messages from a queue
   """
+  # Setting for the reconnection handling by stomp interface.
+  # See e.g. the description of Transport class in
+  # https://github.com/jasonrbriggs/stomp.py/blob/master/stomp/transport.py
+  RECONNECT_SLEEP_INITIAL = 1 # [s]  Initial delay before reattempting to establish a connection.
+  RECONNECT_SLEEP_INCREASE = 0.5 # Factor by which sleep delay is increased 0.5 means increase by 50%.
+  RECONNECT_SLEEP_MAX = 120 # [s] The maximum delay that can be reached independent of increasing procedure.
+  RECONNECT_SLEEP_JITTER =  0.1 # Random factor to add. 0.1 means a random number from 0 to 10% of the current time.
+  RECONNECT_ATTEMPTS_MAX = 1e4 # Maximum attempts to reconnect.
 
-  def __init__(self, parameters={}):
+  PORT = 61613
+
+  def __init__(self, parameters=None):
     """ Standard constructor
     """
     super(StompMQConnector, self).__init__()
-    self.log = gLogger.getSubLogger(self.__class__.__name__)
+    if not parameters:
+      parameters={}
     self.parameters = parameters.copy()
+    self.log = gLogger.getSubLogger(self.__class__.__name__)
     self.connections = {}
 
     if 'DIRAC_DEBUG_STOMP' in os.environ:
@@ -46,56 +58,56 @@ class StompMQConnector(MQConnector):
     if not all(p in parameters for p in ('Host', 'VHost')):
       return S_ERROR('Input parameters are missing!')
 
-    reconnectSleepInitial = self.parameters.get('ReconnectSleepInitial', 1)
-    reconnectSleepIncrease = self.parameters.get('ReconnectSleepIncrease', 0.5)
-    reconnectSleepJitter = self.parameters.get('ReconnectSleepJitter', 0.1)
-    reconnectAttemptsMax = self.parameters.get('ReconnectAttemptsMax', 1e6)
+    reconnectSleepInitial = self.parameters.get('ReconnectSleepInitial', StompMQConnector.RECONNECT_SLEEP_INITIAL)
+    reconnectSleepIncrease = self.parameters.get('ReconnectSleepIncrease', StompMQConnector.RECONNECT_SLEEP_INCREASE)
+    reconnectSleepMax = self.parameters.get('ReconnectSleepMax', StompMQConnector.RECONNECT_SLEEP_MAX)
+    reconnectSleepJitter = self.parameters.get('ReconnectSleepJitter', StompMQConnector.RECONNECT_SLEEP_JITTER)
+    reconnectAttemptsMax = self.parameters.get('ReconnectAttemptsMax', StompMQConnector.RECONNECT_ATTEMPTS_MAX)
 
     host = self.parameters.get('Host')
-    port = self.parameters.get('Port', 61613)
+    port = self.parameters.get('Port', StompMQConnector.PORT)
     vhost = self.parameters.get('VHost')
 
     sslVersion = self.parameters.get('SSLVersion')
     hostcert = self.parameters.get('HostCertificate')
     hostkey = self.parameters.get('HostKey')
 
-    # get local key and certificate if not available via configuration
-    if sslVersion and not (hostcert or hostkey):
-      paths = Locations.getHostCertificateAndKeyLocation()
-      if not paths:
-        return S_ERROR('Could not find a certificate!')
-      else:
-        hostcert = paths[0]
-        hostkey = paths[1]
+    connectionArgs = { 'vhost':vhost,
+                      'keepalive':True, 
+                      'reconnect_sleep_initial' :reconnectSleepInitial,
+                      'reconnect_sleep_increase' : reconnectSleepIncrease ,
+                      'reconnect_sleep_max' :reconnectSleepMax, 
+                      'reconnect_sleep_jitter' :reconnectSleepJitter, 
+                      'reconnect_attempts_max' : reconnectAttemptsMax }
 
-    try:
 
-      # get IP addresses of brokers
-      brokers = socket.gethostbyname_ex(host)
-      self.log.info('Broker name resolves to %s IP(s)' % len(brokers[2]))
-
-      if sslVersion is None:
-        pass
-      elif sslVersion == 'TLSv1':
+    if sslVersion is not None:
+      if sslVersion == 'TLSv1':
         sslVersion = ssl.PROTOCOL_TLSv1
-      else:
-        return S_ERROR(EMQCONN, 'Invalid SSL version provided: %s' % sslVersion)
-
-      connectionArgs = { 'vhost':vhost, 
-                        'keepalive':True, 
-                        'reconnect_sleep_initial' :reconnectSleepInitial,
-                        'reconnect_sleep_increase' : reconnectSleepIncrease ,
-                        'reconnect_sleep_jitter' :reconnectSleepJitter, 
-                        'reconnect_attempts_max' : reconnectAttemptsMax }
-      if sslVersion:
+        # get local key and certificate if not available via configuration
+        if not (hostcert or hostkey):
+          paths = Locations.getHostCertificateAndKeyLocation()
+          if not paths:
+            return S_ERROR('Could not find a certificate!')
+          hostcert = paths[0]
+          hostkey = paths[1]
         connectionArgs.update({ 
               'use_ssl':True,
               'ssl_version':sslVersion,
               'ssl_key_file':hostkey,
               'ssl_cert_file':hostcert})
+      else:
+        return S_ERROR(EMQCONN, 'Invalid SSL version provided: %s' % sslVersion)
 
-      for ip in brokers[2]:
+    try:
+      # Get IP addresses of brokers and ignore two first return arguments which are hostname and aliaslist.
+      _,_,ip_addresses = socket.gethostbyname_ex(host)
+      self.log.info('Broker name resolves to %s IP(s)' % len(ip_addresses))
+
+      for ip in ip_addresses:
         connectionArgs.update({'host_and_ports':[(ip, int(port))]})
+        print "checking connectionArgs"
+        print connectionArgs
         self.connections[ip] = stomp.Connection(**connectionArgs)
 
     except Exception as e:
