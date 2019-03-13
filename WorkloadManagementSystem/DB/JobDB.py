@@ -142,7 +142,7 @@ class JobDB(DB):
       retDict = {}
       for retValues in res['Value']:
         jobID = retValues[0]
-        jobDict = {'JobID':jobID}
+        jobDict = {'JobID': jobID}
         # Make a dict from the list of attributes names and values
         for name, value in zip(attr_tmp_list, retValues[1:]):
           try:
