@@ -23,11 +23,11 @@ class StompMQConnector(MQConnector):
   # Setting for the reconnection handling by stomp interface.
   # See e.g. the description of Transport class in
   # https://github.com/jasonrbriggs/stomp.py/blob/master/stomp/transport.py
-  RECONNECT_SLEEP_INITIAL = 1 # [s]  Initial delay before reattempting to establish a connection.
-  RECONNECT_SLEEP_INCREASE = 0.5 # Factor by which sleep delay is increased 0.5 means increase by 50%.
-  RECONNECT_SLEEP_MAX = 120 # [s] The maximum delay that can be reached independent of increasing procedure.
-  RECONNECT_SLEEP_JITTER =  0.1 # Random factor to add. 0.1 means a random number from 0 to 10% of the current time.
-  RECONNECT_ATTEMPTS_MAX = 1e4 # Maximum attempts to reconnect.
+  RECONNECT_SLEEP_INITIAL = 1  # [s]  Initial delay before reattempting to establish a connection.
+  RECONNECT_SLEEP_INCREASE = 0.5  # Factor by which sleep delay is increased 0.5 means increase by 50%.
+  RECONNECT_SLEEP_MAX = 120  # [s] The maximum delay that can be reached independent of increasing procedure.
+  RECONNECT_SLEEP_JITTER = 0.1  # Random factor to add. 0.1 means a random number from 0 to 10% of the current time.
+  RECONNECT_ATTEMPTS_MAX = 1e4  # Maximum attempts to reconnect.
 
   PORT = 61613
 
@@ -36,7 +36,7 @@ class StompMQConnector(MQConnector):
     """
     super(StompMQConnector, self).__init__()
     if not parameters:
-      parameters={}
+      parameters = {}
     self.parameters = parameters.copy()
     self.log = gLogger.getSubLogger(self.__class__.__name__)
     self.connections = {}
@@ -72,14 +72,13 @@ class StompMQConnector(MQConnector):
     hostcert = self.parameters.get('HostCertificate')
     hostkey = self.parameters.get('HostKey')
 
-    connectionArgs = { 'vhost':vhost,
-                      'keepalive':True, 
-                      'reconnect_sleep_initial' :reconnectSleepInitial,
-                      'reconnect_sleep_increase' : reconnectSleepIncrease ,
-                      'reconnect_sleep_max' :reconnectSleepMax, 
-                      'reconnect_sleep_jitter' :reconnectSleepJitter, 
-                      'reconnect_attempts_max' : reconnectAttemptsMax }
-
+    connectionArgs = {'vhost': vhost,
+                      'keepalive': True,
+                      'reconnect_sleep_initial': reconnectSleepInitial,
+                      'reconnect_sleep_increase': reconnectSleepIncrease,
+                      'reconnect_sleep_max': reconnectSleepMax,
+                      'reconnect_sleep_jitter': reconnectSleepJitter,
+                      'reconnect_attempts_max': reconnectAttemptsMax}
 
     if sslVersion is not None:
       if sslVersion == 'TLSv1':
@@ -91,21 +90,21 @@ class StompMQConnector(MQConnector):
             return S_ERROR('Could not find a certificate!')
           hostcert = paths[0]
           hostkey = paths[1]
-        connectionArgs.update({ 
-              'use_ssl':True,
-              'ssl_version':sslVersion,
-              'ssl_key_file':hostkey,
-              'ssl_cert_file':hostcert})
+        connectionArgs.update({
+          'use_ssl': True,
+          'ssl_version': sslVersion,
+          'ssl_key_file': hostkey,
+          'ssl_cert_file': hostcert})
       else:
         return S_ERROR(EMQCONN, 'Invalid SSL version provided: %s' % sslVersion)
 
     try:
       # Get IP addresses of brokers and ignore two first return arguments which are hostname and aliaslist.
-      _,_,ip_addresses = socket.gethostbyname_ex(host)
+      _, _, ip_addresses = socket.gethostbyname_ex(host)
       self.log.info('Broker name resolves to %s IP(s)' % len(ip_addresses))
 
       for ip in ip_addresses:
-        connectionArgs.update({'host_and_ports':[(ip, int(port))]})
+        connectionArgs.update({'host_and_ports': [(ip, int(port))]})
         print "checking connectionArgs"
         print connectionArgs
         self.connections[ip] = stomp.Connection(**connectionArgs)
@@ -160,10 +159,9 @@ class StompMQConnector(MQConnector):
       except Exception as e:
         self.log.error('Failed to connect: %s' % e)
 
-    if connected:
-      return S_OK("Connected to %s" % host)
-    else:
+    if not connected:
       return S_ERROR(EMQCONN, "Failed to connect to  %s" % host)
+    return S_OK("Connected to %s" % host)
 
   def disconnect(self, parameters=None):
     """
@@ -179,8 +177,7 @@ class StompMQConnector(MQConnector):
 
     if fail:
       return S_ERROR(EMQUKN, 'Failed to disconnect from at least one broker')
-    else:
-      return S_OK('Successfully disconnected from all brokers')
+    return S_OK('Successfully disconnected from all brokers')
 
   def subscribe(self, parameters=None):
     mId = parameters.get('messengerId', '')
@@ -219,8 +216,7 @@ class StompMQConnector(MQConnector):
 
     if fail:
       return S_ERROR(EMQUKN, 'Failed to unsubscribe from at least one destination')
-    else:
-      return S_OK('Successfully unsubscribed from all destinations')
+    return S_OK('Successfully unsubscribed from all destinations')
 
 
 class StompListener (stomp.ConnectionListener):
@@ -234,7 +230,7 @@ class StompListener (stomp.ConnectionListener):
 
     :param func callback: a defaultCallback compatible function
     :param bool ack: if set to true an acknowledgement will be send back to the sender
-    :param str messengerId: messenger identifier sent with acknowledgement messages. 
+    :param str messengerId: messenger identifier sent with acknowledgement messages.
 
     """
 
