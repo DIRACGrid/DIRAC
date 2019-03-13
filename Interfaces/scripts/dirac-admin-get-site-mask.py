@@ -25,7 +25,7 @@ diracAdmin = DiracAdmin()
 
 gLogger.setLevel('ALWAYS')
 
-result = diracAdmin.getSiteMask(printOutput=True)
+result = diracAdmin.getSiteMask(printOutput=True, status="Active")
 if result['OK']:
   DIRACExit( 0 )
 else:
