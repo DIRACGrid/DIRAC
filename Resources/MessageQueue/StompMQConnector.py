@@ -46,7 +46,11 @@ class StompMQConnector(MQConnector):
     if not all(p in parameters for p in ('Host', 'VHost')):
       return S_ERROR('Input parameters are missing!')
 
-    # Make the actual connection
+    reconnectSleepInitial = self.parameters.get('ReconnectSleepInitial', 1)
+    reconnectSleepIncrease = self.parameters.get('ReconnectSleepIncrease', 0.5)
+    reconnectSleepJitter = self.parameters.get('ReconnectSleepJitter', 0.1)
+    reconnectAttemptsMax = self.parameters.get('ReconnectAttemptsMax', 1e6)
+
     host = self.parameters.get('Host')
     port = self.parameters.get('Port', 61613)
     vhost = self.parameters.get('VHost')
@@ -54,6 +58,7 @@ class StompMQConnector(MQConnector):
     sslVersion = self.parameters.get('SSLVersion')
     hostcert = self.parameters.get('HostCertificate')
     hostkey = self.parameters.get('HostKey')
+
     # get local key and certificate if not available via configuration
     if sslVersion and not (hostcert or hostkey):
       paths = Locations.getHostCertificateAndKeyLocation()
@@ -76,23 +81,22 @@ class StompMQConnector(MQConnector):
       else:
         return S_ERROR(EMQCONN, 'Invalid SSL version provided: %s' % sslVersion)
 
+      connectionArgs = { 'vhost':vhost, 
+                        'keepalive':True, 
+                        'reconnect_sleep_initial' :reconnectSleepInitial,
+                        'reconnect_sleep_increase' : reconnectSleepIncrease ,
+                        'reconnect_sleep_jitter' :reconnectSleepJitter, 
+                        'reconnect_attempts_max' : reconnectAttemptsMax }
+      if sslVersion:
+        connectionArgs.update({ 
+              'use_ssl':True,
+              'ssl_version':sslVersion,
+              'ssl_key_file':hostkey,
+              'ssl_cert_file':hostcert})
+
       for ip in brokers[2]:
-        if sslVersion:
-          self.connections[ip] = stomp.Connection(
-              [(ip, int(port))],
-              use_ssl=True,
-              ssl_version=sslVersion,
-              ssl_key_file=hostkey,
-              ssl_cert_file=hostcert,
-              vhost=vhost,
-              keepalive=True
-          )
-        else:
-          self.connections[ip] = stomp.Connection(
-              [(ip, int(port))],
-              vhost=vhost,
-              keepalive=True
-          )
+        connectionArgs.update({'host_and_ports':[(ip, int(port))]})
+        self.connections[ip] = stomp.Connection(**connectionArgs)
 
     except Exception as e:
       return S_ERROR(EMQCONN, 'Failed to setup connection: %s' % e)
@@ -218,7 +222,8 @@ class StompListener (stomp.ConnectionListener):
 
     :param func callback: a defaultCallback compatible function
     :param bool ack: if set to true an acknowledgement will be send back to the sender
-    :param connection: a stomp.Connection object used to send the acknowledgement
+    :param str messengerId: messenger identifier sent with acknowledgement messages. 
+
     """
 
     self.log = gLogger.getSubLogger('StompListener')

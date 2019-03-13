@@ -99,15 +99,17 @@ class StompMQConnectorSuccessTestCase(unittest.TestCase):
     self.assertEqual(sorted(self.mqConnector.parameters), sorted(PARAMETERS))
 
     # check calls
-    module.stomp.Connection.assert_any_call([(IP1, int(PORT))],
-                                            vhost=VHOST,
-                                            keepalive=True
-                                            )
-
-    module.stomp.Connection.assert_any_call([(IP2, int(PORT))],
-                                            vhost=VHOST,
-                                            keepalive=True
-                                            )
+    connectionArgs = { 'vhost':VHOST, 
+                      'keepalive':True, 
+                      'reconnect_sleep_initial' :1,
+                      'reconnect_sleep_increase': 0.5,
+                      'reconnect_sleep_jitter' :0.1, 
+                      'reconnect_attempts_max' :1e6,  
+                      'host_and_ports':[(IP1, int(PORT))]
+                    }
+    module.stomp.Connection.assert_any_call(**connectionArgs)
+    connectionArgs.update({'host_and_ports':[(IP2, int(PORT))]})
+    module.stomp.Connection.assert_any_call(**connectionArgs)
 
     result = self.mqConnector.connect()
     self.assertTrue(result['OK'])
@@ -122,23 +124,23 @@ class StompMQConnectorSuccessTestCase(unittest.TestCase):
       self.assertIsNotNone(self.mqConnector.connections[ip])
 
     # check calls
-    module.stomp.Connection.assert_any_call([(IP1, int(PORT))],
-                                            use_ssl=True,
-                                            ssl_version=module.ssl.PROTOCOL_TLSv1,
-                                            ssl_key_file=HOSTKEY,
-                                            ssl_cert_file=HOSTCERT,
-                                            vhost=VHOST,
-                                            keepalive=True
-                                            )
+    connectionArgs = { 'vhost':VHOST, 
+                      'keepalive':True, 
+                      'reconnect_sleep_initial' :1,
+                      'reconnect_sleep_increase': 0.5,
+                      'reconnect_sleep_jitter' :0.1, 
+                      'reconnect_attempts_max' :1e6,  
+                      'use_ssl':True,
+                      'ssl_version':module.ssl.PROTOCOL_TLSv1,
+                      'ssl_key_file':HOSTKEY,
+                      'ssl_cert_file':HOSTCERT, 
+                      'host_and_ports':[(IP1, int(PORT))]
+                    }
 
-    module.stomp.Connection.assert_any_call([(IP2, int(PORT))],
-                                            use_ssl=True,
-                                            ssl_version=module.ssl.PROTOCOL_TLSv1,
-                                            ssl_key_file=HOSTKEY,
-                                            ssl_cert_file=HOSTCERT,
-                                            vhost=VHOST,
-                                            keepalive=True
-                                            )
+
+    module.stomp.Connection.assert_any_call(**connectionArgs)
+    connectionArgs.update({'host_and_ports':[(IP2, int(PORT))]})
+    module.stomp.Connection.assert_any_call(**connectionArgs)
 
     result = self.mqConnector.connect()
     self.assertTrue(result['OK'])
