@@ -110,7 +110,7 @@ def filterReplicas(opFile, logger=None, dataManager=None):
     error = repSEMetadata.get('Message', repSEMetadata.get('Value', {}).get('Failed', {}).get(opFile.LFN))
     if error:
       log.warn('unable to get metadata at %s for %s' % (repSEName, opFile.LFN), error.replace('\n', ''))
-      if 'File does not exist' in error:
+      if 'File does not exist' in error or 'No such file' in error:
         result['NoReplicas'].append(repSEName)
       else:
         result["NoMetadata"].append(repSEName)
