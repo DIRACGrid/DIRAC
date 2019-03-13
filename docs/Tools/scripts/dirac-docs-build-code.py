@@ -131,6 +131,7 @@ def mkRest(filename, modulename, fullmodulename, subpackages=None, modules=None)
 
   writeLinesToFile(filename, lines)
 
+
 def mkDummyRest(classname, fullclassname):
   """ create a dummy rst file for files that behave badly """
   filename = classname + ".rst"
@@ -354,6 +355,7 @@ def createCodeDocIndex(subpackages, modules, buildtype="full"):
         #lines.append("   %s " % (package, ) )
 
   writeLinesToFile(filename, lines)
+
 
 def checkBuildTypeAndRun():
   """ check for input argument and then create the doc rst files """

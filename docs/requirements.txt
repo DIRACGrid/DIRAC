@@ -9,3 +9,5 @@ pytz
 psutil
 pyparsing
 GSI
+git+https://github.com/chaen/DIRAC/@integration_feat_factorizeDoc#subdirectory=docs
+
