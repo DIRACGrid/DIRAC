@@ -293,7 +293,7 @@ class FTS3DB(object):
       if jobAssignmentTag:
         ftsJobsQuery = ftsJobsQuery.with_for_update()
 
-      ftsJobsQuery = ftsJobsQuery.order_by(FTS3Job.lastMonitor.desc())
+      ftsJobsQuery = ftsJobsQuery.order_by(FTS3Job.lastMonitor.asc())
       ftsJobsQuery = ftsJobsQuery.limit(limit)
 
       ftsJobs = ftsJobsQuery.all()
