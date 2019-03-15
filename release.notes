@@ -1,3 +1,13 @@
+[v6r21p1]
+
+*WorkloadManagementSystem
+CHANGE: (#3989) JobDB.py - do not add default SubmitPool parameter to a job description
+FIX: (#3989) dirac-admin-get-site-mask - show only sites in Active state
+
+*DataManagementSystem
+CHANGE: (#3985) FTS3DB: getActiveJobs, those jobs are now selected that have been monitored the longest time ago. Ensure better cycling through FTS Jobs
+FIX: (#3987) check missing file with another string
+
 [v6r21]
 
 *Core
