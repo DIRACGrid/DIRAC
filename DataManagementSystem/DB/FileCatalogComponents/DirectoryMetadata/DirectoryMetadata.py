@@ -9,12 +9,14 @@ import six
 import os
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.Time import queryTime
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.MetaNameMixIn import MetaNameMixIn
 
 
-class DirectoryMetadata:
+class DirectoryMetadata(MetaNameMixIn):
 
   def __init__(self, database=None):
 
+    super(DirectoryMetadata, self).__init__()
     self.db = database
 
   def setDatabase(self, database):
@@ -26,24 +28,33 @@ class DirectoryMetadata:
 #
 
   def addMetadataField(self, pname, ptype, credDict):
-    """ Add a new metadata parameter to the Metadata Database.
-        pname - parameter name, ptype - parameter type in the MySQL notation
+    """
+    Add a new metadata parameter to the Metadata Database.
+    Modified to use fully qualified metadata names.
+
+    :param str pname: parameter name
+    :param str ptype: parameter type in the MySQL notation
+    :param dict credDict: client credential dictionary
+    :return: standard Dirac result object
     """
 
+    # existing pnames are fully qualified, so
+    fqPname = self.getMetaName(pname, credDict)
     result = self.db.fmeta.getFileMetadataFields(credDict)
     if not result['OK']:
       return result
-    if pname in result['Value'].keys():
+    if fqPname in result['Value']:
       return S_ERROR('The metadata %s is already defined for Files' % pname)
 
     result = self.getMetadataFields(credDict)
     if not result['OK']:
       return result
-    if pname in result['Value'].keys():
-      if ptype.lower() == result['Value'][pname].lower():
+
+    if fqPname in result['Value']:
+      if ptype.lower() == result['Value'][fqPname].lower():
         return S_OK('Already exists')
       return S_ERROR('Attempt to add an existing metadata with different type: %s/%s' %
-                     (ptype, result['Value'][pname]))
+                     (ptype, result['Value'][fqPname]))
 
     valueType = ptype
     if ptype.lower()[:3] == 'int':
@@ -58,26 +69,27 @@ class DirectoryMetadata:
       valueType = "VARCHAR(64)"
 
     req = "CREATE TABLE FC_Meta_%s ( DirID INTEGER NOT NULL, Value %s, PRIMARY KEY (DirID), INDEX (Value) )" \
-        % (pname, valueType)
+        % (fqPname, valueType)
     result = self.db._query(req)
     if not result['OK']:
       return result
 
-    result = self.db.insertFields('FC_MetaFields', ['MetaName', 'MetaType'], [pname, ptype])
+    result = self.db.insertFields('FC_MetaFields', ['MetaName', 'MetaType'], [fqPname, ptype])
     if not result['OK']:
       return result
 
     metadataID = result['lastRowId']
-    result = self.__transformMetaParameterToData(pname)
+    result = self.__transformMetaParameterToData(fqPname)
     if not result['OK']:
       return result
 
     return S_OK("Added new metadata: %d" % metadataID)
 
-  def deleteMetadataField(self, pname, credDict):
-    """ Remove metadata field
+  def deleteMetadataField(self, rawPname, credDict):
+    """ Remove metadata field.
+        Table name is now fully qualified
     """
-
+    pname = self.getMetaName(rawPname, credDict)
     req = "DROP TABLE FC_Meta_%s" % pname
     result = self.db._update(req)
     error = ''
@@ -90,7 +102,7 @@ class DirectoryMetadata:
         result["Message"] = error + "; " + result["Message"]
     return result
 
-  def getMetadataFields(self, credDict):
+  def getMetadataFields(self, credDict, stripVO=False):
     """ Get all the defined metadata fields
     """
 
@@ -102,6 +114,9 @@ class DirectoryMetadata:
     metaDict = {}
     for row in result['Value']:
       metaDict[row[0]] = row[1]
+    # strip the VO suffix, if required
+    if stripVO:
+      metaDict = self.stripSuffix(metaDict, credDict)
 
     return S_OK(metaDict)
 
@@ -189,19 +204,20 @@ class DirectoryMetadata:
     if not dirmeta['OK']:
       return dirmeta
 
-    for metaName, metaValue in metadict.iteritems():
-      if metaName not in metaFields:
+    for metaName, metaValue in metadict.items():
+      fqMetaName = self.getMetaName(metaName, credDict)
+      if fqMetaName not in metaFields:
         result = self.setMetaParameter(dpath, metaName, metaValue, credDict)
         if not result['OK']:
           return result
         continue
       # Check that the metadata is not defined for the parent directories
-      if metaName in dirmeta['Value']:
+      if fqMetaName in dirmeta['Value']:
         return S_ERROR('Metadata conflict detected for %s for directory %s' % (metaName, dpath))
-      result = self.db.insertFields('FC_Meta_%s' % metaName, ['DirID', 'Value'], [dirID, metaValue])
+      result = self.db.insertFields('FC_Meta_%s' % fqMetaName, ['DirID', 'Value'], [dirID, metaValue])
       if not result['OK']:
         if result['Message'].find('Duplicate') != -1:
-          req = "UPDATE FC_Meta_%s SET Value='%s' WHERE DirID=%d" % (metaName, metaValue, dirID)
+          req = "UPDATE FC_Meta_%s SET Value='%s' WHERE DirID=%d" % (fqMetaName, metaValue, dirID)
           result = self.db._update(req)
           if not result['OK']:
             return result
@@ -211,8 +227,15 @@ class DirectoryMetadata:
     return S_OK()
 
   def removeMetadata(self, dpath, metadata, credDict):
-    """ Remove the specified metadata for the given directory
     """
+    Remove the specified metadata for the given directory for users own VO.
+
+    :param str dpath: directory path
+    :param dict metadata: metadata dictionary
+    :param dict credDict: client credential dictionary
+    :return: standard Dirac result object
+    """
+
     result = self.getMetadataFields(credDict)
     if not result['OK']:
       return result
@@ -227,6 +250,8 @@ class DirectoryMetadata:
 
     failedMeta = {}
     for meta in metadata:
+      # get fully qualified metadata name
+      meta = self.getMetaName(meta, credDict)
       if meta in metaFields:
         # Indexed meta case
         req = "DELETE FROM FC_Meta_%s WHERE DirID=%d" % (meta, dirID)
@@ -248,9 +273,17 @@ class DirectoryMetadata:
       return S_OK()
 
   def setMetaParameter(self, dpath, metaName, metaValue, credDict):
-    """ Set an meta parameter - metadata which is not used in the the data
-        search operations
     """
+    Set an meta parameter - metadata which is not used in the the data
+    search operations.
+
+    :param str dpath: directory path
+    :param str metaName: metadata name
+    :param str metaValue: metadata value
+    :param dict credDict: client credential dictionary
+    :return: standard Dirac result object
+    """
+
     result = self.db.dtree.findDir(dpath)
     if not result['OK']:
       return result
@@ -260,7 +293,7 @@ class DirectoryMetadata:
 
     result = self.db.insertFields('FC_DirMeta',
                                   ['DirID', 'MetaKey', 'MetaValue'],
-                                  [dirID, metaName, str(metaValue)])
+                                  [dirID, self.getMetaName(metaName, credDict), str(metaValue)])
     return result
 
   def getDirectoryMetaParameters(self, dpath, credDict, inherited=True, owndata=True):
@@ -303,10 +336,19 @@ class DirectoryMetadata:
 
     return S_OK(metaDict)
 
-  def getDirectoryMetadata(self, path, credDict, inherited=True, owndata=True):
-    """ Get metadata for the given directory aggregating metadata for the directory itself
-        and for all the parent directories if inherited flag is True. Get also the non-indexed
-        metadata parameters.
+  def getDirectoryMetadata(self, path, credDict, inherited=True, owndata=True, stripVO=False):
+    """
+    Get metadata for the given directory aggregating metadata for the directory itself
+    and for all the parent directories if inherited flag is True. Get also the non-indexed
+    metadata parameters. If the method is used in a call chain which supplies data back to
+    the client stripVO should  be set to True, otherwise the default should be used.
+
+    :param str path: directory path
+    :param dict credDict: client credential dictionary
+    :param bool inherited: iclude parent directories if True
+    :param bool owndata:
+    :param bool stripVO: if set to True, the VO suffix is stripped.
+    :return: standard Dirac result object
     """
 
     result = self.db.dtree.getPathIDs(path)
@@ -350,6 +392,11 @@ class DirectoryMetadata:
       metaDict.update(result['Value'])
       for meta in result['Value']:
         metaOwnerDict[meta] = 'OwnParameter'
+
+    if stripVO:
+      metaDict = self.stripSuffix(metaDict, credDict)
+      metaOwnerDict = self.stripSuffix(metaOwnerDict, credDict)
+      metaTypeDict = self.stripSuffix(metaTypeDict, credDict)
 
     result = S_OK(metaDict)
     result['MetadataOwner'] = metaOwnerDict
@@ -513,6 +560,8 @@ class DirectoryMetadata:
     if not result['OK']:
       return result
     metaTypeDict = result['Value']
+    metaTypeDict = self.stripSuffix(metaTypeDict, credDict)
+
     resultDict = {}
     extraDict = {}
     for key, value in metaDict.iteritems():
@@ -586,14 +635,14 @@ class DirectoryMetadata:
     # Now check the meta data for the requested directory and its parents
     finalMetaDict = dict(metaDict)
     for meta in metaDict.keys():
-      result = self.__checkDirsForMetadata(meta, metaDict[meta], pathString)
+      fqmeta = self.getMetaName(meta, credDict)
+      result = self.__checkDirsForMetadata(fqmeta, metaDict[meta], pathString)
       if not result['OK']:
         return result
       elif result['Value'] is not None:
         # Some directory in the parent hierarchy is already conforming with the
         # given metadata, no need to check it further
         del finalMetaDict[meta]
-
     if finalMetaDict:
       pathSelection = ''
       if pathDirID:
@@ -603,11 +652,12 @@ class DirectoryMetadata:
         pathSelection = result['Value']
       dirList = []
       first = True
-      for meta, value in finalMetaDict.iteritems():
+      for meta, value in finalMetaDict.items():
+        fqmeta = self.getMetaName(meta, credDict)
         if value == "Missing":
-          result = self.__findSubdirMissingMeta(meta, pathSelection)
+          result = self.__findSubdirMissingMeta(fqmeta, pathSelection)
         else:
-          result = self.__findSubdirByMeta(meta, value, pathSelection)
+          result = self.__findSubdirByMeta(fqmeta, value, pathSelection)
         if not result['OK']:
           return result
         mList = result['Value']

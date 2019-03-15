@@ -11,25 +11,31 @@ from DIRAC.Core.Utilities.List import intListToString
 from DIRAC.DataManagementSystem.Client.MetaQuery import FILE_STANDARD_METAKEYS, \
     FILES_TABLE_METAKEYS, \
     FILEINFO_TABLE_METAKEYS
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.MetaNameMixIn import MetaNameMixIn
 
 
-class FileMetadata:
-
+class FileMetadata(MetaNameMixIn):
   def __init__(self, database=None):
 
+    super(FileMetadata, self).__init__()
     self.db = database
 
   def setDatabase(self, database):
     self.db = database
 
-##############################################################################
-#
-#  Manage Metadata fields
-#
-##############################################################################
+  ##############################################################################
+  #
+  #  Manage Metadata fields
+  #
+  ##############################################################################
   def addMetadataField(self, pname, ptype, credDict):
-    """ Add a new metadata parameter to the Metadata Database.
-        pname - parameter name, ptype - parameter type in the MySQL notation
+    """
+    Add a new metadata parameter to the Metadata Database.
+
+    :param str pname: parameter name
+    :param str ptype: parameter type in the MySQL notation
+    :param dict credDict: client credential dictionary
+    :return: standard Dirac result object
     """
 
     if pname in FILE_STANDARD_METAKEYS:
@@ -38,57 +44,70 @@ class FileMetadata:
     result = self.db.dmeta.getMetadataFields(credDict)
     if not result['OK']:
       return result
-    if pname in result['Value'].keys():
-      return S_ERROR('The metadata %s is already defined for Directories' % pname)
+    # existing pnames are fully qualified, so
+    fqPname = self.getMetaName(pname, credDict)
+    if fqPname in result['Value']:
+      return S_ERROR('The metadata %s is already defined for Directories' % fqPname)
 
     result = self.getFileMetadataFields(credDict)
     if not result['OK']:
       return result
-    if pname in result['Value'].keys():
-      if ptype.lower() == result['Value'][pname].lower():
+    if fqPname in result['Value']:
+      if ptype.lower() == result['Value'][fqPname].lower():
         return S_OK('Already exists')
       else:
         return S_ERROR('Attempt to add an existing metadata with different type: %s/%s' %
-                       (ptype, result['Value'][pname]))
-
+                       (ptype, result['Value'][fqPname]))
     valueType = ptype
     if ptype == "MetaSet":
       valueType = "VARCHAR(64)"
     req = "CREATE TABLE FC_FileMeta_%s ( FileID INTEGER NOT NULL, Value %s, PRIMARY KEY (FileID), INDEX (Value) )" \
-        % (pname, valueType)
+          % (fqPname, valueType)
     result = self.db._query(req)
     if not result['OK']:
       return result
 
-    result = self.db.insertFields('FC_FileMetaFields', ['MetaName', 'MetaType'], [pname, ptype])
+    result = self.db.insertFields('FC_FileMetaFields', ['MetaName', 'MetaType'], [fqPname, ptype])
     if not result['OK']:
       return result
 
     metadataID = result['lastRowId']
-    result = self.__transformMetaParameterToData(pname)
+    result = self.__transformMetaParameterToData(fqPname)
     if not result['OK']:
       return result
 
     return S_OK("Added new metadata: %d" % metadataID)
 
   def deleteMetadataField(self, pname, credDict):
-    """ Remove metadata field
+    """
+    Remove metadata field (only from user's own VO)
+
+    :param str pname: parameter name
+    :param dict credDict: client credential dictionary
+    :return: standard Dirac result object
     """
 
-    req = "DROP TABLE FC_FileMeta_%s" % pname
+    fqPname = self.getMetaName(pname, credDict)
+    req = "DROP TABLE FC_FileMeta_%s" % fqPname
     result = self.db._update(req)
     error = ''
     if not result['OK']:
       error = result["Message"]
-    req = "DELETE FROM FC_FileMetaFields WHERE MetaName='%s'" % pname
+    req = "DELETE FROM FC_FileMetaFields WHERE MetaName='%s'" % fqPname
     result = self.db._update(req)
     if not result['OK']:
       if error:
         result["Message"] = error + "; " + result["Message"]
     return result
 
-  def getFileMetadataFields(self, credDict):
-    """ Get all the defined metadata fields
+  def getFileMetadataFields(self, credDict, stripVO=False):
+    """
+    Get all the defined metadata fields.
+
+    :param dict credDict: client credential dictionary
+    :param bool stripVO: flag whether to return metadata name with
+     or without a VO suffix
+    :return: standard Dirac result object
     """
 
     req = "SELECT MetaName,MetaType FROM FC_FileMetaFields"
@@ -100,17 +119,28 @@ class FileMetadata:
     for row in result['Value']:
       metaDict[row[0]] = row[1]
 
+    # strip the suffix, if required (for clients)
+    if stripVO:
+      metaDict = self.stripSuffix(metaDict, credDict)
     return S_OK(metaDict)
 
-###########################################################
-#
-# Set and get metadata for files
-#
-###########################################################
+  ###########################################################
+  #
+  # Set and get metadata for files
+  #
+  ###########################################################
 
   def setMetadata(self, path, metadict, credDict):
-    """ Set the value of a given metadata field for the the given directory path
     """
+    Set the value of a given metadata field for the the given directory path.
+    Modified to use fully qualified metadata name.
+
+    :param str path: directory path
+    :param dict metadict: metadata dictionary {name:value}
+    :param dict credDict: client credential dictionary
+    :return: standard Dirac result object
+    """
+
     result = self.getFileMetadataFields(credDict)
     if not result['OK']:
       return result
@@ -124,16 +154,15 @@ class FileMetadata:
     else:
       return S_ERROR('File %s not found' % path)
 
-    for metaName, metaValue in metadict.iteritems():
-      if metaName not in metaFields:
+    for metaName, metaValue in metadict.items():
+      fqMetaName = self.getMetaName(metaName, credDict)
+      if fqMetaName not in metaFields:
         result = self.__setFileMetaParameter(fileID, metaName, metaValue, credDict)
       else:
-        result = self.db.insertFields('FC_FileMeta_%s' % metaName,
-                                      ['FileID', 'Value'],
-                                      [fileID, metaValue])
+        result = self.db.insertFields('FC_FileMeta_%s' % fqMetaName, ['FileID', 'Value'], [fileID, metaValue])
         if not result['OK']:
           if result['Message'].find('Duplicate') != -1:
-            req = "UPDATE FC_FileMeta_%s SET Value='%s' WHERE FileID=%d" % (metaName, metaValue, fileID)
+            req = "UPDATE FC_FileMeta_%s SET Value='%s' WHERE FileID=%d" % (fqMetaName, metaValue, fileID)
             result = self.db._update(req)
             if not result['OK']:
               return result
@@ -143,8 +172,16 @@ class FileMetadata:
     return S_OK()
 
   def removeMetadata(self, path, metadata, credDict):
-    """ Remove the specified metadata for the given file
     """
+    Remove the specified metadata for the given file (for user's own VO only)
+
+    :param str path: file path
+    :param dict metadata: metadata dictionary
+    :param dict credDict: client credential dictionary
+    :return: standard Dirac result object
+    """
+
+    # this would be fully qualified already
     result = self.getFileMetadataFields(credDict)
     if not result['OK']:
       return result
@@ -160,6 +197,8 @@ class FileMetadata:
 
     failedMeta = {}
     for meta in metadata:
+      # get fully qualified metadata name
+      meta = self.getMetaName(meta, credDict)
       if meta in metaFields:
         # Indexed meta case
         req = "DELETE FROM FC_FileMeta_%s WHERE FileID=%d" % (meta, fileID)
@@ -192,12 +231,20 @@ class FileMetadata:
     return S_OK(fileID)
 
   def __setFileMetaParameter(self, fileID, metaName, metaValue, credDict):
-    """ Set an meta parameter - metadata which is not used in the the data
-        search operations
     """
+    Set an meta parameter - metadata which is not used in the the data
+    search operations. metaName is VO aware.
+
+    :param int fileID: file ID
+    :param str metaName: metadata name
+    :param metaValue: metadata value
+    :param dict credDict: client credential dictionary
+    :return: standard Dirac result object
+    """
+
     result = self.db.insertFields('FC_FileMeta',
                                   ['FileID', 'MetaKey', 'MetaValue'],
-                                  [fileID, metaName, str(metaValue)])
+                                  [fileID, self.getMetaName(metaName, credDict), str(metaValue)])
     return result
 
   def setFileMetaParameter(self, path, metaName, metaValue, credDict):
@@ -238,9 +285,16 @@ class FileMetadata:
 
     return S_OK(metaDict)
 
-  def getFileUserMetadata(self, path, credDict):
-    """ Get metadata for the given file
+  def getFileUserMetadata(self, path, credDict, stripVO=False):
     """
+    Get metadata for the given file.
+
+    :param str path:  file path
+    :param dict credDict: client credential dictionary
+    :param bool stripVO: If True, the VO suffix is stripped from metadata name
+    :return: standard Dirac result object
+    """
+
     # First file metadata
     result = self.getFileMetadataFields(credDict)
     if not result['OK']:
@@ -268,6 +322,9 @@ class FileMetadata:
       metaDict.update(result['Value'])
       for meta in result['Value']:
         metaTypeDict[meta] = 'NonSearchable'
+
+    if stripVO:
+      metaDict = self.stripSuffix(metaDict, credDict)
 
     result = S_OK(metaDict)
     result['MetadataType'] = metaTypeDict
@@ -329,11 +386,11 @@ class FileMetadata:
     result = self.db._update(req)
     return result
 
-#########################################################################
-#
-#  Finding files by metadata
-#
-#########################################################################
+  #########################################################################
+  #
+  #  Finding files by metadata
+  #
+  #########################################################################
 
   def __createMetaSelection(self, value):
     ''' Create selection string to be used in the SQL query
@@ -512,7 +569,7 @@ class FileMetadata:
       elif meta in FILE_STANDARD_METAKEYS:
         standardMetaDict[meta] = value
       else:
-        userMetaDict[meta] = value
+        userMetaDict[self.getMetaName(meta, credDict)] = value
 
     tablesAndConditions = []
     leftJoinTables = []
@@ -571,7 +628,7 @@ class FileMetadata:
     if not result['Value']:
       return S_OK([])
 
-#     fileList = [ row[0] for row in result['Value' ] ]
+    #     fileList = [ row[0] for row in result['Value' ] ]
     fileList = []
     for row in result['Value']:
       fileID = row[0]
@@ -600,13 +657,13 @@ class FileMetadata:
     dirFlag = result['Selection']
 
     # 2.- Get known file metadata fields
-#     fileMetaDict = {}
-    result = self.getFileMetadataFields(credDict)
+    #     fileMetaDict = {}
+    result = self.getFileMetadataFields(credDict)  # this returns fully qualified meta name
     if not result['OK']:
       return result
     fileMetaKeys = result['Value'].keys() + FILE_STANDARD_METAKEYS.keys()
-    fileMetaDict = dict(item for item in metaDict.iteritems() if item[0] in fileMetaKeys)
-
+    fileMetaDict = dict(item for item in metaDict.items()
+                        if self.getMetaName(item[0], credDict) in fileMetaKeys)
     fileList = []
     idLfnDict = {}
 
