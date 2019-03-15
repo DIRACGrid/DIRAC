@@ -135,6 +135,10 @@ function installSite(){
     return
   fi
 
+  
+  #replace the sources with custom ones if defined
+  diracReplace
+
   echo '==> Done installing, now configuring'
   source $SERVERINSTALLDIR/bashrc
   dirac-configure $SERVERINSTALLDIR/install.cfg $DEBUG
@@ -144,8 +148,6 @@ function installSite(){
     return
   fi
 
-  #replace the sources with custom ones if defined
-  diracReplace
 
   dirac-setup-site $DEBUG
   if [ $? -ne 0 ]

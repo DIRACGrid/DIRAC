@@ -6,7 +6,7 @@ __RCSID__ = "$Id$"
 import GSI
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
-from DIRAC.Core.Security.X509Chain import X509Chain
+from DIRAC.Core.Security.pygsi.X509Chain import X509Chain
 
 class X509Request( object ):
 
@@ -143,5 +143,3 @@ class X509Request( object ):
       retVal[ 'Message' ] = "Public keys do not match"
       return retVal
     return S_OK( True )
-
-

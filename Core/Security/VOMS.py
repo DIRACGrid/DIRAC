@@ -12,7 +12,7 @@ from DIRAC import S_OK, S_ERROR, gConfig, rootPath
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Security.ProxyFile import multiProxyArgument, deleteMultiProxy
 from DIRAC.Core.Security.BaseSecurity import BaseSecurity
-from DIRAC.Core.Security.X509Chain import X509Chain
+from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Core.Utilities.Subprocess import shellCall
 from DIRAC.Core.Utilities import List, Time, Os
 
@@ -145,8 +145,7 @@ class VOMS(BaseSecurity):
       if option == "identity":
         return S_OK("%s\n" % data['subject'])
       if option == "fqan":
-        return S_OK("\n".join(
-            [f.replace("/Role=NULL", "").replace("/Capability=NULL", "") for f in data['fqan']]))
+        return S_OK("\n".join([f.replace("/Role=NULL", "").replace("/Capability=NULL", "") for f in data['fqan']]))
       if option == "all":
         lines = []
         creds = proxyDict['chain'].getCredentials()['Value']
@@ -273,6 +272,7 @@ class VOMS(BaseSecurity):
     vomsesPath = self.getVOMSESLocation()
     if vomsesPath:
       cmdArgs.append('-vomses "%s"' % vomsesPath)
+
     if chain.isRFC().get('Value'):
       cmdArgs.append("-r")
     cmdArgs.append('-timeout %u' % self._servTimeout)
@@ -324,7 +324,6 @@ class VOMS(BaseSecurity):
 
     if not vpInfoCmd:
       return S_ERROR(DErrno.EVOMS, "Missing voms-proxy-info")
-
     cmd = '%s -h' % vpInfoCmd
     result = shellCall(self._secCmdTimeout, cmd)
     if not result['OK']:

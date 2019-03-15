@@ -30,136 +30,138 @@ class CLIParams(object):
   embedDefaultGroup = True
   rfc = True
 
-  def setProxyLifeTime( self, arg ):
+  def setProxyLifeTime(self, arg):
     try:
-      fields = [ f.strip() for f in arg.split( ":" ) ]
-      self.proxyLifeTime = int( fields[0] ) * 3600 + int( fields[1] ) * 60
-    except:
-      gLogger.error( "Can't parse time! Is it a HH:MM?", arg )
-      return S_ERROR( "Can't parse time argument" )
+      fields = [f.strip() for f in arg.split(":")]
+      self.proxyLifeTime = int(fields[0]) * 3600 + int(fields[1]) * 60
+    except BaseException:
+      gLogger.error("Can't parse time! Is it a HH:MM?", arg)
+      return S_ERROR("Can't parse time argument")
     return S_OK()
 
-  def setRFC( self, _arg ):
+  def setRFC(self, _arg):
     self.rfc = True
     return S_OK()
 
-  def setNoRFC( self, _arg ):
+  def setNoRFC(self, _arg):
     self.rfc = False
     return S_OK()
 
-  def setProxyRemainingSecs( self, arg ):
-    self.proxyLifeTime = int( arg )
+  def setProxyRemainingSecs(self, arg):
+    self.proxyLifeTime = int(arg)
     return S_OK()
 
-  def getProxyLifeTime( self ):
+  def getProxyLifeTime(self):
     hours = self.proxyLifeTime / 3600
     mins = self.proxyLifeTime / 60 - hours * 60
-    return "%s:%s" % ( hours, mins )
+    return "%s:%s" % (hours, mins)
 
-  def getProxyRemainingSecs( self ):
+  def getProxyRemainingSecs(self):
     return self.proxyLifeTime
 
-  def setDIRACGroup( self, arg ):
+  def setDIRACGroup(self, arg):
     self.diracGroup = arg
     return S_OK()
 
-  def getDIRACGroup( self ):
+  def getDIRACGroup(self):
     return self.diracGroup
 
-  def setProxyStrength( self, arg ):
+  def setProxyStrength(self, arg):
     try:
-      self.proxyStrength = int( arg )
-    except:
-      gLogger.error( "Can't parse bits! Is it a number?", '%s' % arg )
-      return S_ERROR( "Can't parse strength argument" )
+      self.proxyStrength = int(arg)
+    except BaseException:
+      gLogger.error("Can't parse bits! Is it a number?", '%s' % arg)
+      return S_ERROR("Can't parse strength argument")
     return S_OK()
 
-  def setProxyLimited( self, _arg ):
+  def setProxyLimited(self, _arg):
     self.limitedProxy = True
     return S_OK()
 
-  def setSummary( self, _arg ):
-    gLogger.info( "Enabling summary output" )
+  def setSummary(self, _arg):
+    gLogger.info("Enabling summary output")
     self.summary = True
     return S_OK()
 
-  def setCertLocation( self, arg ):
+  def setCertLocation(self, arg):
     self.certLoc = arg
     return S_OK()
 
-  def setKeyLocation( self, arg ):
+  def setKeyLocation(self, arg):
     self.keyLoc = arg
     return S_OK()
 
-  def setProxyLocation( self, arg ):
+  def setProxyLocation(self, arg):
     self.proxyLoc = arg
     return S_OK()
 
-  def setDisableCSCheck( self, _arg ):
+  def setDisableCSCheck(self, _arg):
     self.checkWithCS = False
     return S_OK()
 
-  def setStdinPasswd( self, _arg ):
+  def setStdinPasswd(self, _arg):
     self.stdinPasswd = True
     return S_OK()
 
-  def setStrict( self, _arg ):
+  def setStrict(self, _arg):
     self.strict = True
     return S_OK()
 
-  def showVersion( self, _arg ):
-    gLogger.always( "Version: %s" % __RCSID__ )
-    sys.exit( 0 )
+  def showVersion(self, _arg):
+    gLogger.always("Version: %s" % __RCSID__)
+    sys.exit(0)
     return S_OK()
 
-  def disableClockCheck( self, _arg ):
+  def disableClockCheck(self, _arg):
     self.checkClock = False
     return S_OK()
 
-  def registerCLISwitches( self ):
-    Script.registerSwitch( "v:", "valid=", "Valid HH:MM for the proxy. By default is 24 hours", self.setProxyLifeTime )
-    Script.registerSwitch( "g:", "group=", "DIRAC Group to embed in the proxy", self.setDIRACGroup )
-    Script.registerSwitch( "b:", "strength=", "Set the proxy strength in bytes", self.setProxyStrength )
-    Script.registerSwitch( "l", "limited", "Generate a limited proxy", self.setProxyLimited )
-    Script.registerSwitch( "t", "strict", "Fail on each error. Treat warnings as errors.", self.setStrict )
-    Script.registerSwitch( "S", "summary", "Enable summary output when generating proxy", self.setSummary )
-    Script.registerSwitch( "C:", "Cert=", "File to use as user certificate", self.setCertLocation )
-    Script.registerSwitch( "K:", "Key=", "File to use as user key", self.setKeyLocation )
-    Script.registerSwitch( "u:", "out=", "File to write as proxy", self.setProxyLocation )
-    Script.registerSwitch( "x", "nocs", "Disable CS check", self.setDisableCSCheck )
-    Script.registerSwitch( "p", "pwstdin", "Get passwd from stdin", self.setStdinPasswd )
-    Script.registerSwitch( "i", "version", "Print version", self.showVersion )
-    Script.registerSwitch( "j", "noclockcheck", "Disable checking if time is ok", self.disableClockCheck )
-    Script.registerSwitch( "r", "rfc", "Create an RFC proxy, true by default, deprecated flag", self.setRFC )
-    Script.registerSwitch( "L", "legacy", "Create a legacy non-RFC proxy", self.setNoRFC )
+  def registerCLISwitches(self):
+    Script.registerSwitch("v:", "valid=", "Valid HH:MM for the proxy. By default is 24 hours", self.setProxyLifeTime)
+    Script.registerSwitch("g:", "group=", "DIRAC Group to embed in the proxy", self.setDIRACGroup)
+    Script.registerSwitch("b:", "strength=", "Set the proxy strength in bytes", self.setProxyStrength)
+    Script.registerSwitch("l", "limited", "Generate a limited proxy", self.setProxyLimited)
+    Script.registerSwitch("t", "strict", "Fail on each error. Treat warnings as errors.", self.setStrict)
+    Script.registerSwitch("S", "summary", "Enable summary output when generating proxy", self.setSummary)
+    Script.registerSwitch("C:", "Cert=", "File to use as user certificate", self.setCertLocation)
+    Script.registerSwitch("K:", "Key=", "File to use as user key", self.setKeyLocation)
+    Script.registerSwitch("u:", "out=", "File to write as proxy", self.setProxyLocation)
+    Script.registerSwitch("x", "nocs", "Disable CS check", self.setDisableCSCheck)
+    Script.registerSwitch("p", "pwstdin", "Get passwd from stdin", self.setStdinPasswd)
+    Script.registerSwitch("i", "version", "Print version", self.showVersion)
+    Script.registerSwitch("j", "noclockcheck", "Disable checking if time is ok", self.disableClockCheck)
+    Script.registerSwitch("r", "rfc", "Create an RFC proxy, true by default, deprecated flag", self.setRFC)
+    Script.registerSwitch("L", "legacy", "Create a legacy non-RFC proxy", self.setNoRFC)
 
-from DIRAC.Core.Security.X509Chain import X509Chain
+
+from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Security import Locations
 
-def generateProxy( params ):
+
+def generateProxy(params):
 
   if params.checkClock:
     result = getClockDeviation()
-    if result[ 'OK' ]:
-      deviation = result[ 'Value' ]
+    if result['OK']:
+      deviation = result['Value']
       if deviation > 600:
-        gLogger.error( "Your host clock seems to be off by more than TEN MINUTES! Thats really bad." )
-        gLogger.error( "We're cowardly refusing to generate a proxy. Please fix your system time" )
-        sys.exit( 1 )
+        gLogger.error("Your host clock seems to be off by more than TEN MINUTES! Thats really bad.")
+        gLogger.error("We're cowardly refusing to generate a proxy. Please fix your system time")
+        sys.exit(1)
       elif deviation > 180:
-        gLogger.error( "Your host clock seems to be off by more than THREE minutes! Thats bad." )
-        gLogger.notice( "We'll generate the proxy but please fix your system time" )
+        gLogger.error("Your host clock seems to be off by more than THREE minutes! Thats bad.")
+        gLogger.notice("We'll generate the proxy but please fix your system time")
       elif deviation > 60:
-        gLogger.error( "Your host clock seems to be off by more than a minute! Thats not good." )
-        gLogger.notice( "We'll generate the proxy but please fix your system time" )
+        gLogger.error("Your host clock seems to be off by more than a minute! Thats not good.")
+        gLogger.notice("We'll generate the proxy but please fix your system time")
 
   certLoc = params.certLoc
   keyLoc = params.keyLoc
   if not certLoc or not keyLoc:
     cakLoc = Locations.getCertificateAndKeyLocation()
     if not cakLoc:
-      return S_ERROR( "Can't find user certificate and key" )
+      return S_ERROR("Can't find user certificate and key")
     if not certLoc:
       certLoc = cakLoc[0]
     if not keyLoc:
@@ -167,104 +169,104 @@ def generateProxy( params ):
   params.certLoc = certLoc
   params.keyLoc = keyLoc
 
-  #Load password
+  # Load password
   testChain = X509Chain()
-  retVal = testChain.loadChainFromFile( params.certLoc )
-  if not retVal[ 'OK' ]:
-    return S_ERROR( "Cannot load certificate %s: %s" % ( params.certLoc, retVal[ 'Message' ] ) )
-  timeLeft = testChain.getRemainingSecs()[ 'Value' ] / 86400
+  retVal = testChain.loadChainFromFile(params.certLoc)
+  if not retVal['OK']:
+    return S_ERROR("Cannot load certificate %s: %s" % (params.certLoc, retVal['Message']))
+  timeLeft = testChain.getRemainingSecs()['Value'] / 86400
   if timeLeft < 30:
-    gLogger.notice( "\nYour certificate will expire in %d days. Please renew it!\n" % timeLeft )
-  retVal = testChain.loadKeyFromFile( params.keyLoc, password = params.userPasswd )
-  if not retVal[ 'OK' ]:
+    gLogger.notice("\nYour certificate will expire in %d days. Please renew it!\n" % timeLeft)
+
+  # First try reading the key from the file
+  retVal = testChain.loadKeyFromFile(params.keyLoc, password=params.userPasswd)  # XXX why so commented?
+  if not retVal['OK']:
     passwdPrompt = "Enter Certificate password:"
     if params.stdinPasswd:
-      userPasswd = sys.stdin.readline().strip( "\n" )
+      userPasswd = sys.stdin.readline().strip("\n")
     else:
-      userPasswd = getpass.getpass( passwdPrompt )
+      userPasswd = getpass.getpass(passwdPrompt)
     params.userPasswd = userPasswd
 
-  #Find location
+  # Find location
   proxyLoc = params.proxyLoc
   if not proxyLoc:
     proxyLoc = Locations.getDefaultProxyLocation()
 
   chain = X509Chain()
-  #Load user cert and key
-  retVal = chain.loadChainFromFile( certLoc )
-  if not retVal[ 'OK' ]:
-    gLogger.warn( retVal[ 'Message' ] )
-    return S_ERROR( "Can't load %s" % certLoc )
-  retVal = chain.loadKeyFromFile( keyLoc, password = params.userPasswd )
-  if not retVal[ 'OK' ]:
-    gLogger.warn( retVal[ 'Message' ] )
-    if 'bad decrypt' in retVal[ 'Message' ]:
-      return S_ERROR( "Bad passphrase" )
-    return S_ERROR( "Can't load %s" % keyLoc )
+  # Load user cert and key
+  retVal = chain.loadChainFromFile(certLoc)
+  if not retVal['OK']:
+    gLogger.warn(retVal['Message'])
+    return S_ERROR("Can't load %s" % certLoc)
+  retVal = chain.loadKeyFromFile(keyLoc, password=params.userPasswd)
+  if not retVal['OK']:
+    gLogger.warn(retVal['Message'])
+    if 'bad decrypt' in retVal['Message']:
+      return S_ERROR("Bad passphrase")
+    return S_ERROR("Can't load %s" % keyLoc)
 
   if params.checkWithCS:
-    retVal = chain.generateProxyToFile( proxyLoc,
-                                        params.proxyLifeTime,
-                                        strength = params.proxyStrength,
-                                        limited = params.limitedProxy,
-                                        rfc = params.rfc )
+    retVal = chain.generateProxyToFile(proxyLoc,
+                                       params.proxyLifeTime,
+                                       strength=params.proxyStrength,
+                                       limited=params.limitedProxy,
+                                       rfc=params.rfc)
 
-    gLogger.info( "Contacting CS..." )
+    gLogger.info("Contacting CS...")
     retVal = Script.enableCS()
-    if not retVal[ 'OK' ]:
-      gLogger.warn( retVal[ 'Message' ] )
-      if 'Unauthorized query' in retVal[ 'Message' ]:
+    if not retVal['OK']:
+      gLogger.warn(retVal['Message'])
+      if 'Unauthorized query' in retVal['Message']:
         # add hint for users
-        return S_ERROR( "Can't contact DIRAC CS: %s (User possibly not registered with dirac server) "
-                        % retVal[ 'Message' ] )
-      return S_ERROR( "Can't contact DIRAC CS: %s" % retVal[ 'Message' ] )
-    userDN = chain.getCertInChain( -1 )['Value'].getSubjectDN()['Value']
+        return S_ERROR("Can't contact DIRAC CS: %s (User possibly not registered with dirac server) "
+                       % retVal['Message'])
+      return S_ERROR("Can't contact DIRAC CS: %s" % retVal['Message'])
+    userDN = chain.getCertInChain(-1)['Value'].getSubjectDN()['Value']
+
     if not params.diracGroup:
-      result = Registry.findDefaultGroupForDN( userDN )
-      if not result[ 'OK' ]:
-        gLogger.warn( "Could not get a default group for DN %s: %s" % ( userDN, result[ 'Message' ] ) )
+      result = Registry.findDefaultGroupForDN(userDN)
+      if not result['OK']:
+        gLogger.warn("Could not get a default group for DN %s: %s" % (userDN, result['Message']))
       else:
-        params.diracGroup = result[ 'Value' ]
-        gLogger.info( "Default discovered group is %s" % params.diracGroup )
-    gLogger.info( "Checking DN %s" % userDN )
-    retVal = Registry.getUsernameForDN( userDN )
-    if not retVal[ 'OK' ]:
-      gLogger.warn( retVal[ 'Message' ] )
-      return S_ERROR( "DN %s is not registered" % userDN )
-    username = retVal[ 'Value' ]
-    gLogger.info( "Username is %s" % username )
-    retVal = Registry.getGroupsForUser( username )
-    if not retVal[ 'OK' ]:
-      gLogger.warn( retVal[ 'Message' ] )
-      return S_ERROR( "User %s has no groups defined" % username )
-    groups = retVal[ 'Value' ]
+        params.diracGroup = result['Value']
+        gLogger.info("Default discovered group is %s" % params.diracGroup)
+    gLogger.info("Checking DN %s" % userDN)
+    retVal = Registry.getUsernameForDN(userDN)
+    if not retVal['OK']:
+      gLogger.warn(retVal['Message'])
+      return S_ERROR("DN %s is not registered" % userDN)
+    username = retVal['Value']
+    gLogger.info("Username is %s" % username)
+    retVal = Registry.getGroupsForUser(username)
+    if not retVal['OK']:
+      gLogger.warn(retVal['Message'])
+      return S_ERROR("User %s has no groups defined" % username)
+    groups = retVal['Value']
     if params.diracGroup not in groups:
-      return S_ERROR( "Requested group %s is not valid for DN %s" % ( params.diracGroup, userDN ) )
-    gLogger.info( "Creating proxy for %s@%s (%s)" % ( username, params.diracGroup, userDN ) )
-
+      return S_ERROR("Requested group %s is not valid for DN %s" % (params.diracGroup, userDN))
+    gLogger.info("Creating proxy for %s@%s (%s)" % (username, params.diracGroup, userDN))
   if params.summary:
-    h = int( params.proxyLifeTime / 3600 )
-    m = int( params.proxyLifeTime / 60 ) - h * 60
-    gLogger.notice( "Proxy lifetime will be %02d:%02d" % ( h, m ) )
-    gLogger.notice( "User cert is %s" % certLoc )
-    gLogger.notice( "User key  is %s" % keyLoc )
-    gLogger.notice( "Proxy will be written to %s" % proxyLoc )
+    h = int(params.proxyLifeTime / 3600)
+    m = int(params.proxyLifeTime / 60) - h * 60
+    gLogger.notice("Proxy lifetime will be %02d:%02d" % (h, m))
+    gLogger.notice("User cert is %s" % certLoc)
+    gLogger.notice("User key  is %s" % keyLoc)
+    gLogger.notice("Proxy will be written to %s" % proxyLoc)
     if params.diracGroup:
-      gLogger.notice( "DIRAC Group will be set to %s" % params.diracGroup )
+      gLogger.notice("DIRAC Group will be set to %s" % params.diracGroup)
     else:
-      gLogger.notice( "No DIRAC Group will be set" )
-    gLogger.notice( "Proxy strength will be %s" % params.proxyStrength )
+      gLogger.notice("No DIRAC Group will be set")
+    gLogger.notice("Proxy strength will be %s" % params.proxyStrength)
     if params.limitedProxy:
-      gLogger.notice( "Proxy will be limited" )
-
-  retVal = chain.generateProxyToFile( proxyLoc,
-                                      params.proxyLifeTime,
-                                      params.diracGroup,
-                                      strength = params.proxyStrength,
-                                      limited = params.limitedProxy,
-                                      rfc = params.rfc )
-
-  if not retVal[ 'OK' ]:
-    gLogger.warn( retVal[ 'Message' ] )
-    return S_ERROR( "Couldn't generate proxy: %s" % retVal[ 'Message' ] )
-  return S_OK( proxyLoc )
+      gLogger.notice("Proxy will be limited")
+  retVal = chain.generateProxyToFile(proxyLoc,
+                                     params.proxyLifeTime,
+                                     params.diracGroup,
+                                     strength=params.proxyStrength,
+                                     limited=params.limitedProxy,
+                                     rfc=params.rfc)
+  if not retVal['OK']:
+    gLogger.warn(retVal['Message'])
+    return S_ERROR("Couldn't generate proxy: %s" % retVal['Message'])
+  return S_OK(proxyLoc)

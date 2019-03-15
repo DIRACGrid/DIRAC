@@ -5,6 +5,8 @@ Manage authentification and authorizations
 Authentication
 **************
 
+For technical details see :ref:`about_proxies`.
+
 DIRAC uses X509 certificates to identify clients and hosts, by conception X509 certificates are a very strong way to identify hosts and client thanks to asymetric cryptography. DIRAC is based on the openSSL library.
 
 To identify users DIRAC use RBAC model (Role Based Access Control)

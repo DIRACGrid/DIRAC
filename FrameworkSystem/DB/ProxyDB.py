@@ -12,8 +12,9 @@ import urllib
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Base.DB import DB
-from DIRAC.Core.Security.X509Request import X509Request
-from DIRAC.Core.Security.X509Chain import X509Chain, isPUSPdn
+
+from DIRAC.Core.Security.X509Request import X509Request  # pylint: disable=import-error
+from DIRAC.Core.Security.X509Chain import X509Chain, isPUSPdn  # pylint: disable=import-error
 from DIRAC.Core.Security.MyProxy import MyProxy
 from DIRAC.Core.Security.VOMS import VOMS
 from DIRAC.Core.Security import Properties
@@ -280,6 +281,9 @@ class ProxyDB(DB):
     if result['OK'] and result['Value']:
       return S_ERROR("Proxies with VOMS extensions are not allowed to be uploaded")
 
+    # This test does not seem to make any sense whatsoever, since
+    # we just created the Chain using the request pkey....
+    # of course it will match !
     retVal = request.checkChain(chain)
     if not retVal['OK']:
       return retVal

@@ -32,7 +32,8 @@ Note: If you wan to make sure that the CA is up to date, better to use the Bundl
 import os
 import tempfile
 
-from DIRAC.Core.Security import Locations, X509Chain, X509CRL
+from DIRAC.Core.Security import X509Chain, X509CRL
+from DIRAC.Core.Security import Locations
 from DIRAC import gLogger, S_OK, S_ERROR
 
 
@@ -57,10 +58,11 @@ def generateCAFile(location=None):
       with open(fn, "w") as fd:
         for caFile in os.listdir(caDir):
           caFile = os.path.join(caDir, caFile)
-          result = X509Chain.X509Chain.instanceFromFile(caFile)
+          chain = X509Chain.X509Chain()
+          result = chain.loadChainFromFile(caFile)
           if not result['OK']:
             continue
-          chain = result['Value']
+
           expired = chain.hasExpired()
           if not expired['OK'] or expired['Value']:
             continue

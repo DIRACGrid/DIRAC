@@ -1,10 +1,15 @@
+"""
+This module seemd to be used only by HTTPDISETConnection, which was removed in v7r0.
+It will be removed in v7r1
+
+"""
 # $HeadURL$
 __RCSID__ = "$Id$"
 
 import types
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.Core.DISET.private.Transports.SSL.FakeSocket import FakeSocket
-from DIRAC.Core.DISET.private.Transports.SSL.SocketInfoFactory import gSocketInfoFactory
+from DIRAC.Core.DISET.private.Transports.SSL.pygsi.SocketInfoFactory import gSocketInfoFactory
 from DIRAC.Core.DISET.private.Transports.SSLTransport import checkSanity
 
 class SSLSocketFactory:
