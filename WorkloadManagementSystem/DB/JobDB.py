@@ -145,8 +145,8 @@ class JobDB(DB):
       retDict = {}
       for retValues in res['Value']:
         jobID = retValues[0]
-        jobDict = {}
-        jobDict['JobID'] = jobID
+        jobDict = {'JobID': jobID}
+        # Make a dict from the list of attributes names and values
         for name, value in zip(attr_tmp_list, retValues[1:]):
           try:
             value = value.tostring()
@@ -1250,12 +1250,6 @@ class JobDB(DB):
     classAdJob.insertAttributeString('Owner', owner)
     classAdJob.insertAttributeString('OwnerDN', ownerDN)
     classAdJob.insertAttributeString('OwnerGroup', ownerGroup)
-
-    submitPools = getGroupOption(ownerGroup, "SubmitPools")
-    if not submitPools and vo:
-      submitPools = getVOOption(vo, 'SubmitPools')
-    if submitPools and not classAdJob.lookupAttribute('SubmitPools'):
-      classAdJob.insertAttributeString('SubmitPools', submitPools)
 
     if vo:
       classAdJob.insertAttributeString('VirtualOrganization', vo)
