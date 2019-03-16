@@ -69,6 +69,10 @@ class StompMQConnector(MQConnector):
     hostcert = self.parameters.get('HostCertificate')
     hostkey = self.parameters.get('HostKey')
 
+    user = self.parameters.get('User')
+    password = self.parameters.get('Password')
+
+
     connectionArgs = {'vhost': vhost,
                       'keepalive': True,
                       'reconnect_sleep_initial': reconnectSleepInitial,
@@ -77,7 +81,12 @@ class StompMQConnector(MQConnector):
                       'reconnect_sleep_jitter': reconnectSleepJitter,
                       'reconnect_attempts_max': reconnectAttemptsMax}
 
-    if sslVersion is not None:
+    if sslVersion is None:
+      connectionArgs.update({
+                            'username': user,
+                            'passcode': password})
+
+    else:
       if sslVersion == 'TLSv1':
         sslVersion = ssl.PROTOCOL_TLSv1
         # get local key and certificate if not available via configuration
@@ -140,14 +149,12 @@ class StompMQConnector(MQConnector):
   def connect(self, parameters=None):
     host = self.parameters.get('Host')
     port = self.parameters.get('Port')
-    user = self.parameters.get('User')
-    password = self.parameters.get('Password')
 
     connected = False
     for ip, connection in self.connections.iteritems():
       try:
         connection.start()
-        connection.connect(username=user, passcode=password)
+        connection.connect()
         time.sleep(1)
         if connection.is_connected():
           self.log.info("Connected to %s:%s" % (ip, port))

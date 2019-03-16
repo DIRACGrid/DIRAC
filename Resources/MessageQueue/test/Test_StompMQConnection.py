@@ -99,6 +99,8 @@ class StompMQConnectorSuccessTestCase(unittest.TestCase):
     # check calls
     connectionArgs = {
         'vhost': VHOST,
+        'username':USER,
+        'passcode':PASSWORD,
         'keepalive': True,
         'reconnect_sleep_initial': 1,
         'reconnect_sleep_increase': 0.5,
