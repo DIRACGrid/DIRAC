@@ -118,6 +118,34 @@ class StompMQConnector(MQConnector):
       return S_ERROR(EMQCONN, 'Failed to setup connection: %s' % e)
     return S_OK('Setup successful')
 
+  # def put(self, message, parameters=None):
+    # """
+    # Sends a message to the queue
+    # message contains the body of the message
+
+    # :param str message: string or any json encodable structure
+    # """
+    # destination = parameters.get('destination', '')
+    # error = False
+    # for connection in self.connections.itervalues():
+      # try:
+        # if isinstance(message, (list, set, tuple)):
+          # for msg in message:
+            # connection.send(body=json.dumps(msg), destination=destination)
+            # error = False
+            # break
+        # else:
+          # connection.send(body=json.dumps(message), destination=destination)
+          # error = False
+          # break
+      # except Exception as e:
+        # error = e
+
+    # if error is not False:
+      # return S_ERROR(EMQUKN, 'Failed to send message: %s' % error)
+
+    # return S_OK('Message sent successfully')
+
   def put(self, message, parameters=None):
     """
     Sends a message to the queue
@@ -126,63 +154,112 @@ class StompMQConnector(MQConnector):
     :param str message: string or any json encodable structure
     """
     destination = parameters.get('destination', '')
-    error = False
-    for connection in self.connections.itervalues():
-      try:
-        if isinstance(message, (list, set, tuple)):
-          for msg in message:
-            connection.send(body=json.dumps(msg), destination=destination)
-            error = False
-            break
-        else:
-          connection.send(body=json.dumps(message), destination=destination)
-          error = False
-          break
-      except Exception as e:
-        error = e
-
-    if error is not False:
-      return S_ERROR(EMQUKN, 'Failed to send message: %s' % error)
-
+    res = self.callFunctionForAllBrokers(self._put, message=message, destination = destination)
+    if not res:
+      # return S_ERROR(EMQUKN, 'Failed to send message: %s' % error)
+      return S_ERROR(EMQUKN, 'Failed to send message: %s' % message)
     return S_OK('Message sent successfully')
+
+
+  def _put(self,connection, message, destination):
+    try:
+      if isinstance(message, (list, set, tuple)):
+        for msg in message:
+          connection.send(body=json.dumps(msg), destination=destination)
+
+      else:
+        connection.send(body=json.dumps(message), destination=destination)
+    except Exception as e:
+      return False
+    return True
 
   def connect(self, parameters=None):
     host = self.parameters.get('Host')
     port = self.parameters.get('Port')
 
-    connected = False
-    for ip, connection in self.connections.iteritems():
-      try:
-        connection.start()
-        connection.connect()
-        time.sleep(1)
-        if connection.is_connected():
-          self.log.info("Connected to %s:%s" % (ip, port))
-          connected = True
-      except Exception as e:
-        self.log.error('Failed to connect: %s' % e)
-
-    if not connected:
+    res = self.callFunctionForAnyBroker(self._connect, port=port)
+    if not res:
       return S_ERROR(EMQCONN, "Failed to connect to  %s" % host)
     return S_OK("Connected to %s" % host)
+
+  def _connect(self, connection, ip, port):
+    try:
+      connection.start()
+      connection.connect()
+      time.sleep(1)
+      if connection.is_connected():
+        self.log.info("Connected to %s:%s" % (ip, port))
+    except Exception as e:
+      self.log.error('Failed to connect: %s' % e)
+      return False
+    return True
+        
+
+  # def disconnect(self, parameters=None):
+    # """
+    # Disconnects from the message queue server
+    # """
+    # fail = False
+    # for connection in self.connections.itervalues():
+      # try:
+        # connection.disconnect()
+      # except Exception as e:
+        # self.log.error('Failed to disconnect: %s' % e)
+        # fail = True
+
+    # if fail:
+      # return S_ERROR(EMQUKN, 'Failed to disconnect from at least one broker')
+    # return S_OK('Successfully disconnected from all brokers')
 
   def disconnect(self, parameters=None):
     """
     Disconnects from the message queue server
     """
-    fail = False
-    for connection in self.connections.itervalues():
-      try:
-        connection.disconnect()
-      except Exception as e:
-        self.log.error('Failed to disconnect: %s' % e)
-        fail = True
-
-    if fail:
+    res = self.callFunctionForAllBrokers(self._disconnect)
+    if not res:
       return S_ERROR(EMQUKN, 'Failed to disconnect from at least one broker')
     return S_OK('Successfully disconnected from all brokers')
 
-  def subscribe(self, parameters=None):
+  def _disconnect(self, connection):
+    try:
+      connection.disconnect()
+    except Exception as e:
+      self.log.error('Failed to disconnect: %s' % e)
+      return False
+    return True
+
+  # def subscribe(self, parameters=None):
+    # mId = parameters.get('messengerId', '')
+    # callback = parameters.get('callback', None)
+    # dest = parameters.get('destination', '')
+    # headers = {}
+    # if self.parameters.get('Persistent', '').lower() in ['true', 'yes', '1']:
+      # headers = {'persistent': 'true'}
+    # ack = 'auto'
+    # acknowledgement = False
+    # if self.parameters.get('Acknowledgement', '').lower() in ['true', 'yes', '1']:
+      # acknowledgement = True
+      # ack = 'client-individual'
+    # if not callback:
+      # self.log.error("No callback specified!")
+
+    # fail = False
+    # for connection in self.connections.itervalues():
+      # try:
+        # listener = StompListener(callback, acknowledgement, connection, mId)
+        # connection.set_listener('', listener)
+        # connection.subscribe(destination=dest,
+                             # id=mId,
+                             # ack=ack,
+                             # headers=headers)
+      # except Exception as e:
+        # self.log.error('Failed to subscribe: %s' % e)
+        # fail = True
+    # if fail:
+      # return S_ERROR(EMQUKN, 'Failed to subscribe to at least one broker')
+    # return S_OK('Subscription successful')
+
+  def subscribe(self, parameters):
     mId = parameters.get('messengerId', '')
     callback = parameters.get('callback', None)
     dest = parameters.get('destination', '')
@@ -196,37 +273,54 @@ class StompMQConnector(MQConnector):
       ack = 'client-individual'
     if not callback:
       self.log.error("No callback specified!")
-
-    fail = False
-    for connection in self.connections.itervalues():
-      try:
-        listener = StompListener(callback, acknowledgement, connection, mId)
-        connection.set_listener('', listener)
-        connection.subscribe(destination=dest,
-                             id=mId,
-                             ack=ack,
-                             headers=headers)
-      except Exception as e:
-        self.log.error('Failed to subscribe: %s' % e)
-        fail = True
-    if fail:
+    res = self.callFunctionForAllBrokers(self._subscribe, callback = callback, acknowledgement=acknowledgement,ack=ack, mId=mId, dest=dest, headers=headers  )
+    if not res:
       return S_ERROR(EMQUKN, 'Failed to subscribe to at least one broker')
     return S_OK('Subscription successful')
+
+  def _subscribe(self, connection, callback,acknowledgement, ack, mId, dest, headers):
+    try:
+      listener = StompListener(callback, acknowledgement, connection, mId)
+      connection.set_listener('', listener)
+      connection.subscribe(destination=dest,
+                           id=mId,
+                           ack=ack,
+                           headers=headers)
+    except Exception as e:
+      self.log.error('Failed to subscribe: %s' % e)
+      return False
+    return True
+
 
   def unsubscribe(self, parameters):
     dest = parameters.get('destination', '')
     mId = parameters.get('messengerId', '')
-    fail = False
-    for connection in self.connections.itervalues():
-      try:
-        connection.unsubscribe(destination=dest, id=mId)
-      except Exception as e:
-        self.log.error('Failed to unsubscribe: %s' % e)
-        fail = True
-
-    if fail:
+    res = self.callFunctionForAllBrokers(self._unsubscribe, destination=dest, id=mId)
+    if not res:
       return S_ERROR(EMQUKN, 'Failed to unsubscribe from at least one destination')
     return S_OK('Successfully unsubscribed from all destinations')
+
+
+  def callFunctionForAllBrokers(self, func, *args,**kwargs):
+    fail = False
+    for connection in self.connections.itervalues():
+      fail =  fail or func( connection = connection,**kwargs)
+    return not fail
+
+  def callFunctionForAnyBroker(self, func, *args,**kwargs):
+    ok = False
+    for ip, connection in self.connections.iteritems():
+      if func(connection = connection,ip=ip, **kwargs):
+        ok = True
+    return ok
+
+  def _unsubscribe(self, connection, dest, mId):
+    try:
+      connection.unsubscribe(destination=dest, id=mId)
+    except Exception as e:
+      self.log.error('Failed to unsubscribe: %s' % e)
+      return False
+    return True
 
 
 class StompListener (stomp.ConnectionListener):
