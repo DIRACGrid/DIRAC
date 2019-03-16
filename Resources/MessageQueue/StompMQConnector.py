@@ -35,9 +35,6 @@ class StompMQConnector(MQConnector):
     """ Standard constructor
     """
     super(StompMQConnector, self).__init__()
-    if not parameters:
-      parameters = {}
-    self.parameters = parameters.copy()
     self.log = gLogger.getSubLogger(self.__class__.__name__)
     self.connections = {}
 

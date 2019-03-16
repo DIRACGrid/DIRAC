@@ -64,6 +64,9 @@ class MQConnector( object ):
   def __init__( self, parameters = None ):
     """ Standard constructor
     """
+    if not parameters:
+      parameters = {}
+    self.parameters = parameters.copy()
 
   def setupConnection( self, parameters = None ):
     """
