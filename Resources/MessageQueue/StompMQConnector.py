@@ -190,13 +190,20 @@ class StompMQConnector(MQConnector):
     if not callback:
       self.log.error("No callback specified!")
 
+    fail = False
     for connection in self.connections.itervalues():
-      listener = StompListener(callback, acknowledgement, connection, mId)
-      connection.set_listener('', listener)
-      connection.subscribe(destination=dest,
-                           id=mId,
-                           ack=ack,
-                           headers=headers)
+      try:
+        listener = StompListener(callback, acknowledgement, connection, mId)
+        connection.set_listener('', listener)
+        connection.subscribe(destination=dest,
+                             id=mId,
+                             ack=ack,
+                             headers=headers)
+      except Exception as e:
+        self.log.error('Failed to subscribe: %s' % e)
+        fail = True
+    if fail:
+      return S_ERROR(EMQUKN, 'Failed to subscribe to at least one broker')
     return S_OK('Subscription successful')
 
   def unsubscribe(self, parameters):
