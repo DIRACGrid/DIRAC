@@ -98,7 +98,7 @@ class StompMQConnector(MQConnector):
     try:
       # Get IP addresses of brokers and ignoring two first returned arguments which are hostname and aliaslist.
       _, _, ip_addresses = socket.gethostbyname_ex(host)
-      self.log.info('Broker name resolved,  to %s IP(s)' % len(ip_addresses))
+      self.log.info('Broker name resolved', 'to %s IP(s)' % len(ip_addresses))
 
       for ip in ip_addresses:
         connectionArgs.update({'host_and_ports': [(ip, int(port))]})
