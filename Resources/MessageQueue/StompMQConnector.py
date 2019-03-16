@@ -72,6 +72,7 @@ class StompMQConnector(MQConnector):
     user = self.parameters.get('User')
     password = self.parameters.get('Password')
 
+    callback = parameters.get('callback')
 
     connectionArgs = {'vhost': vhost,
                       'keepalive': True,
@@ -113,10 +114,27 @@ class StompMQConnector(MQConnector):
         connectionArgs.update({'host_and_ports': [(ip, int(port))]})
         self.log.debug("Connection args: %s" % str(connectionArgs))
         self.connections[ip] = stomp.Connection(**connectionArgs)
+        #WK to change!!! listener = StompListener(callback, acknowledgement, self.connections[ip], mId)
+        listener = StompListener(callback, True, self.connections[ip], 1)
+        self.connections[ip].set_listener('', listener)
 
     except Exception as e:
       return S_ERROR(EMQCONN, 'Failed to setup connection: %s' % e)
     return S_OK('Setup successful')
+
+
+  def callFunctionForAllBrokers(self, func, *args,**kwargs):
+    fail = False
+    for connection in self.connections.itervalues():
+      fail =  fail or func( connection = connection,**kwargs)
+    return not fail
+
+  def callFunctionForAnyBroker(self, func, *args,**kwargs):
+    ok = False
+    for ip, connection in self.connections.iteritems():
+      if func(connection = connection,ip=ip, **kwargs):
+        ok = True
+    return ok
 
   # def put(self, message, parameters=None):
     # """
@@ -280,8 +298,8 @@ class StompMQConnector(MQConnector):
 
   def _subscribe(self, connection, callback,acknowledgement, ack, mId, dest, headers):
     try:
-      listener = StompListener(callback, acknowledgement, connection, mId)
-      connection.set_listener('', listener)
+      # listener = StompListener(callback, acknowledgement, connection, mId)
+      # connection.set_listener('', listener)
       connection.subscribe(destination=dest,
                            id=mId,
                            ack=ack,
@@ -300,19 +318,6 @@ class StompMQConnector(MQConnector):
       return S_ERROR(EMQUKN, 'Failed to unsubscribe from at least one destination')
     return S_OK('Successfully unsubscribed from all destinations')
 
-
-  def callFunctionForAllBrokers(self, func, *args,**kwargs):
-    fail = False
-    for connection in self.connections.itervalues():
-      fail =  fail or func( connection = connection,**kwargs)
-    return not fail
-
-  def callFunctionForAnyBroker(self, func, *args,**kwargs):
-    ok = False
-    for ip, connection in self.connections.iteritems():
-      if func(connection = connection,ip=ip, **kwargs):
-        ok = True
-    return ok
 
   def _unsubscribe(self, connection, dest, mId):
     try:
