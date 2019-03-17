@@ -48,11 +48,6 @@ IP2 = '172.16.18.40'
 GETHOSTBYNAME = (HOST, [], [IP1, IP2])
 
 
-# stubs
-def testCallback():
-  pass
-
-
 class StompMQConnectorSuccessTestCase(unittest.TestCase):
   """ Test class to check success scenarios.
   """
@@ -82,9 +77,8 @@ class StompMQConnectorSuccessTestCase(unittest.TestCase):
 
   def test_createStompListener(self):
     connection = module.stomp.Connection()
-    listener = module.StompListener(testCallback, ACKNOWLEDGEMENT, connection, MESSENGERID)
+    listener = module.StompListener(ACKNOWLEDGEMENT, connection, MESSENGERID)
 
-    self.assertEqual(listener.callback, testCallback)
     self.assertEqual(listener.ack, ACKNOWLEDGEMENT)
     self.assertEqual(listener.connection, connection)
     self.assertEqual(listener.mId, MESSENGERID)
@@ -99,8 +93,6 @@ class StompMQConnectorSuccessTestCase(unittest.TestCase):
     # check calls
     connectionArgs = {
         'vhost': VHOST,
-        'username':USER,
-        'passcode':PASSWORD,
         'keepalive': True,
         'reconnect_sleep_initial': 1,
         'reconnect_sleep_increase': 0.5,

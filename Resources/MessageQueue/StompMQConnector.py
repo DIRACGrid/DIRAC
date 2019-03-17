@@ -110,6 +110,7 @@ class StompMQConnector(MQConnector):
       #add returned error to propagate
       return S_ERROR('Error generating connection Args')
     connectionArgs = result['Value']
+    self.log.debug("Connection args: %s" % str(connectionArgs))
 
     try:
       # Get IP addresses of brokers and ignoring two first returned arguments which are hostname and aliaslist.
@@ -117,10 +118,10 @@ class StompMQConnector(MQConnector):
       self.log.info('Broker name resolved', 'to %s IP(s)' % len(ip_addresses))
 
       for ip in ip_addresses:
-        connectionArgs.update({'host_and_ports': [(ip, int(port))]})
-        self.log.debug("Connection args: %s" % str(connectionArgs))
+        # connectionArgs.update({'host_and_ports': [(ip, int(port))]})
         print("before stomp.Connection")
-        self.connections[ip] = stomp.Connection(**connectionArgs)
+        self.connections[ip] = stomp.Connection(host_and_ports =[(ip, int(port))], **connectionArgs)
+        self.log.debug("Host and port: %s" % str([(ip, int(port))]))
         print("after stomp.Connection")
         #WK to change!!! listener = StompListener(callback, acknowledgement, self.connections[ip], mId)
         #WK acknowledgment must be consumer-specific?
