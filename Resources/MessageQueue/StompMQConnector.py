@@ -41,19 +41,7 @@ class StompMQConnector(MQConnector):
     if 'DIRAC_DEBUG_STOMP' in os.environ:
       gLogger.enableLogsFromExternalLibs()
 
-  def setupConnection(self, parameters=None):
-    """
-     Establishes a new connection to a Stomp server, e.g. RabbitMQ
-    :param dict parameters: dictionary with additional MQ parameters if any
-    :return: S_OK/S_ERROR
-    """
-
-    if parameters is not None:
-      self.parameters.update(parameters)
-
-    # Check that the minimum set of parameters is present
-    if not all(p in parameters for p in ('Host', 'VHost')):
-      return S_ERROR('Input parameters are missing!')
+  def generateConnectionArgs(self):
 
     reconnectSleepInitial = self.parameters.get('ReconnectSleepInitial', StompMQConnector.RECONNECT_SLEEP_INITIAL)
     reconnectSleepIncrease = self.parameters.get('ReconnectSleepIncrease', StompMQConnector.RECONNECT_SLEEP_INCREASE)
@@ -61,8 +49,6 @@ class StompMQConnector(MQConnector):
     reconnectSleepJitter = self.parameters.get('ReconnectSleepJitter', StompMQConnector.RECONNECT_SLEEP_JITTER)
     reconnectAttemptsMax = self.parameters.get('ReconnectAttemptsMax', StompMQConnector.RECONNECT_ATTEMPTS_MAX)
 
-    host = self.parameters.get('Host')
-    port = self.parameters.get('Port', StompMQConnector.PORT)
     vhost = self.parameters.get('VHost')
 
     sslVersion = self.parameters.get('SSLVersion')
@@ -70,7 +56,7 @@ class StompMQConnector(MQConnector):
     hostkey = self.parameters.get('HostKey')
 
 
-    callback = parameters.get('callback')
+    callback = self.parameters.get('callback')
     if callback is None:
       self.log.warn("Callback is not set. The default one will be used")
       callback = lambda *args: S_OK('Default callback') #Do nothing lambda
@@ -100,6 +86,30 @@ class StompMQConnector(MQConnector):
                               'ssl_cert_file': hostcert})
       else:
         return S_ERROR(EMQCONN, 'Invalid SSL version provided: %s' % sslVersion)
+    return S_OK(connectionArgs)
+
+  def setupConnection(self, parameters=None):
+    """
+     Establishes a new connection to a Stomp server, e.g. RabbitMQ
+    :param dict parameters: dictionary with additional MQ parameters if any
+    :return: S_OK/S_ERROR
+    """
+
+    if parameters is not None:
+      self.parameters.update(parameters)
+
+    # Check that the minimum set of parameters is present
+    if not all(p in parameters for p in ('Host', 'VHost')):
+      return S_ERROR('Input parameters are missing!')
+
+    host = self.parameters.get('Host')
+    port = self.parameters.get('Port', StompMQConnector.PORT)
+
+    result = self.generateConnectionArgs() 
+    if not result['OK']:
+      #add returned error to propagate
+      return S_ERROR('Error generating connection Args')
+    connectionArgs = result['Value']
 
     try:
       # Get IP addresses of brokers and ignoring two first returned arguments which are hostname and aliaslist.
@@ -114,7 +124,7 @@ class StompMQConnector(MQConnector):
         print("after stomp.Connection")
         #WK to change!!! listener = StompListener(callback, acknowledgement, self.connections[ip], mId)
         #WK acknowledgment must be consumer-specific?
-        listener = StompListener(callback, False, self.connections[ip], 1, self.reconnect)
+        listener = StompListener( False, self.connections[ip], 1, self.reconnect)
         self.connections[ip].set_listener('StompListener', listener)
 
     except Exception as e:
@@ -122,6 +132,7 @@ class StompMQConnector(MQConnector):
     return S_OK('Setup successful')
 
   def reconnect(self):
+    #Think how to deal with the disconnecting on purpose
     print("trying to reconnect")
     #error handling
     self.connect()
@@ -248,7 +259,7 @@ class StompMQConnector(MQConnector):
                            ack=ack,
                            headers=headers)
       #crazy hack for this moment
-      connection.get_listener('StompListener').callback=callback
+      connection.get_listener('StompListener').setCallback(callback=callback)
     except Exception as e:
       print ("subscribe exception")
       self.log.error('Failed to subscribe: %s' % e)
@@ -279,7 +290,7 @@ class StompListener (stomp.ConnectionListener):
   Internal listener class responsible for handling new messages and errors.
   """
 
-  def __init__(self, callback, ack, connection, messengerId, callbackOnDisconnected=None):
+  def __init__(self,ack, connection, messengerId, callbackOnDisconnected=None):
     """
     Initializes the internal listener object
 
@@ -290,13 +301,14 @@ class StompListener (stomp.ConnectionListener):
     """
 
     self.log = gLogger.getSubLogger('StompListener')
-    if not callback:
-      self.log.error('Error initializing StompMQConnector!callback is None')
-    self.callback = callback
+    self.callback = None 
     self.ack = ack
     self.mId = messengerId
     self.connection = connection
     self.callbackOnDisconnected = callbackOnDisconnected
+
+  def setCallback(self, callback):
+    self.callback  = callback
 
   def on_message(self, headers, body):
     """
@@ -304,7 +316,8 @@ class StompListener (stomp.ConnectionListener):
     :param dict headers: message headers
     :param json body: message body
     """
-    result = self.callback(headers, json.loads(body))
+    if self.callback is not None:
+      result = self.callback(headers, json.loads(body))
     print ("in on message StompListener")
     print ("header %s"% headers)
     print ("self.mId %s"% self.mId)
