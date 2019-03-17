@@ -69,10 +69,11 @@ class StompMQConnector(MQConnector):
     hostcert = self.parameters.get('HostCertificate')
     hostkey = self.parameters.get('HostKey')
 
-    user = self.parameters.get('User')
-    password = self.parameters.get('Password')
 
     callback = parameters.get('callback')
+    if callback is None:
+      self.log.warn("Callback is not set. The default one will be used")
+      callback = lambda *args: S_OK('Default callback') #Do nothing lambda
 
     connectionArgs = {'vhost': vhost,
                       'keepalive': True,
@@ -82,12 +83,7 @@ class StompMQConnector(MQConnector):
                       'reconnect_sleep_jitter': reconnectSleepJitter,
                       'reconnect_attempts_max': reconnectAttemptsMax}
 
-    if sslVersion is None:
-      connectionArgs.update({
-                            'username': user,
-                            'passcode': password})
-
-    else:
+    if sslVersion is not None:
       if sslVersion == 'TLSv1':
         sslVersion = ssl.PROTOCOL_TLSv1
         # get local key and certificate if not available via configuration
@@ -113,8 +109,11 @@ class StompMQConnector(MQConnector):
       for ip in ip_addresses:
         connectionArgs.update({'host_and_ports': [(ip, int(port))]})
         self.log.debug("Connection args: %s" % str(connectionArgs))
+        print("before stomp.Connection")
         self.connections[ip] = stomp.Connection(**connectionArgs)
+        print("after stomp.Connection")
         #WK to change!!! listener = StompListener(callback, acknowledgement, self.connections[ip], mId)
+        #WK acknowledgment must be consumer-specific?
         listener = StompListener(callback, True, self.connections[ip], 1)
         self.connections[ip].set_listener('', listener)
 
@@ -123,10 +122,18 @@ class StompMQConnector(MQConnector):
     return S_OK('Setup successful')
 
 
-  def callFunctionForAllBrokers(self, func, *args,**kwargs):
+
+  #todo think about those conditions, maybe add unit test
+  def callFunctionForBrokers(self, func,allBrokers = True,  *args,**kwargs):
     fail = False
     for connection in self.connections.itervalues():
-      fail =  fail or func( connection = connection,**kwargs)
+      res = func(connection = connection,**kwargs)
+      if allBrokers:
+        fail =  fail or res 
+      else:
+        # we accept first positive result
+        if res:
+          return True
     return not fail
 
   def callFunctionForAnyBroker(self, func, *args,**kwargs):
@@ -136,33 +143,6 @@ class StompMQConnector(MQConnector):
         ok = True
     return ok
 
-  # def put(self, message, parameters=None):
-    # """
-    # Sends a message to the queue
-    # message contains the body of the message
-
-    # :param str message: string or any json encodable structure
-    # """
-    # destination = parameters.get('destination', '')
-    # error = False
-    # for connection in self.connections.itervalues():
-      # try:
-        # if isinstance(message, (list, set, tuple)):
-          # for msg in message:
-            # connection.send(body=json.dumps(msg), destination=destination)
-            # error = False
-            # break
-        # else:
-          # connection.send(body=json.dumps(message), destination=destination)
-          # error = False
-          # break
-      # except Exception as e:
-        # error = e
-
-    # if error is not False:
-      # return S_ERROR(EMQUKN, 'Failed to send message: %s' % error)
-
-    # return S_OK('Message sent successfully')
 
   def put(self, message, parameters=None):
     """
@@ -171,9 +151,12 @@ class StompMQConnector(MQConnector):
 
     :param str message: string or any json encodable structure
     """
+    print("in put")
     destination = parameters.get('destination', '')
-    res = self.callFunctionForAllBrokers(self._put, message=message, destination = destination)
+    print ("destination:%s"%str(destination)) 
+    res = self.callFunctionForBrokers(self._put,allBrokers=False, message=message, destination = destination)
     if not res:
+      print ("res not ok")
       # return S_ERROR(EMQUKN, 'Failed to send message: %s' % error)
       return S_ERROR(EMQUKN, 'Failed to send message: %s' % message)
     return S_OK('Message sent successfully')
@@ -184,26 +167,28 @@ class StompMQConnector(MQConnector):
       if isinstance(message, (list, set, tuple)):
         for msg in message:
           connection.send(body=json.dumps(msg), destination=destination)
-
       else:
         connection.send(body=json.dumps(message), destination=destination)
     except Exception as e:
+      print "exception: %s"% e
       return False
     return True
 
   def connect(self, parameters=None):
     host = self.parameters.get('Host')
     port = self.parameters.get('Port')
+    user = self.parameters.get('User')
+    password = self.parameters.get('Password')
 
-    res = self.callFunctionForAnyBroker(self._connect, port=port)
+    res = self.callFunctionForAnyBroker(self._connect, port=port, user=user, password=password)
     if not res:
       return S_ERROR(EMQCONN, "Failed to connect to  %s" % host)
     return S_OK("Connected to %s" % host)
 
-  def _connect(self, connection, ip, port):
+  def _connect(self, connection, ip, port, user, password):
     try:
       connection.start()
-      connection.connect()
+      connection.connect(username=user, passcode = password, wait = True)
       time.sleep(1)
       if connection.is_connected():
         self.log.info("Connected to %s:%s" % (ip, port))
@@ -212,28 +197,12 @@ class StompMQConnector(MQConnector):
       return False
     return True
         
-
-  # def disconnect(self, parameters=None):
-    # """
-    # Disconnects from the message queue server
-    # """
-    # fail = False
-    # for connection in self.connections.itervalues():
-      # try:
-        # connection.disconnect()
-      # except Exception as e:
-        # self.log.error('Failed to disconnect: %s' % e)
-        # fail = True
-
-    # if fail:
-      # return S_ERROR(EMQUKN, 'Failed to disconnect from at least one broker')
-    # return S_OK('Successfully disconnected from all brokers')
-
   def disconnect(self, parameters=None):
     """
     Disconnects from the message queue server
     """
-    res = self.callFunctionForAllBrokers(self._disconnect)
+    print "disconnect iin StompMQConnector"
+    res = self.callFunctionForBrokers(self._disconnect, allBrokers = False)
     if not res:
       return S_ERROR(EMQUKN, 'Failed to disconnect from at least one broker')
     return S_OK('Successfully disconnected from all brokers')
@@ -246,42 +215,11 @@ class StompMQConnector(MQConnector):
       return False
     return True
 
-  # def subscribe(self, parameters=None):
-    # mId = parameters.get('messengerId', '')
-    # callback = parameters.get('callback', None)
-    # dest = parameters.get('destination', '')
-    # headers = {}
-    # if self.parameters.get('Persistent', '').lower() in ['true', 'yes', '1']:
-      # headers = {'persistent': 'true'}
-    # ack = 'auto'
-    # acknowledgement = False
-    # if self.parameters.get('Acknowledgement', '').lower() in ['true', 'yes', '1']:
-      # acknowledgement = True
-      # ack = 'client-individual'
-    # if not callback:
-      # self.log.error("No callback specified!")
-
-    # fail = False
-    # for connection in self.connections.itervalues():
-      # try:
-        # listener = StompListener(callback, acknowledgement, connection, mId)
-        # connection.set_listener('', listener)
-        # connection.subscribe(destination=dest,
-                             # id=mId,
-                             # ack=ack,
-                             # headers=headers)
-      # except Exception as e:
-        # self.log.error('Failed to subscribe: %s' % e)
-        # fail = True
-    # if fail:
-      # return S_ERROR(EMQUKN, 'Failed to subscribe to at least one broker')
-    # return S_OK('Subscription successful')
-
   def subscribe(self, parameters):
     mId = parameters.get('messengerId', '')
-    callback = parameters.get('callback', None)
     dest = parameters.get('destination', '')
     headers = {}
+    print("subscribe")
     if self.parameters.get('Persistent', '').lower() in ['true', 'yes', '1']:
       headers = {'persistent': 'true'}
     ack = 'auto'
@@ -289,22 +227,21 @@ class StompMQConnector(MQConnector):
     if self.parameters.get('Acknowledgement', '').lower() in ['true', 'yes', '1']:
       acknowledgement = True
       ack = 'client-individual'
-    if not callback:
-      self.log.error("No callback specified!")
-    res = self.callFunctionForAllBrokers(self._subscribe, callback = callback, acknowledgement=acknowledgement,ack=ack, mId=mId, dest=dest, headers=headers  )
+    res = self.callFunctionForBrokers(self._subscribe, ack=ack, mId=mId, dest=dest, headers=headers  )
     if not res:
       return S_ERROR(EMQUKN, 'Failed to subscribe to at least one broker')
     return S_OK('Subscription successful')
 
-  def _subscribe(self, connection, callback,acknowledgement, ack, mId, dest, headers):
+  def _subscribe(self, connection,  ack, mId, dest, headers):
+    print("_subscribe")
+    print " ack:%s, mId:%s, dest:%s, headers:%s" %(ack, mId,dest,headers)
     try:
-      # listener = StompListener(callback, acknowledgement, connection, mId)
-      # connection.set_listener('', listener)
       connection.subscribe(destination=dest,
                            id=mId,
                            ack=ack,
                            headers=headers)
     except Exception as e:
+      print ("subscribe exception")
       self.log.error('Failed to subscribe: %s' % e)
       return False
     return True
@@ -313,7 +250,7 @@ class StompMQConnector(MQConnector):
   def unsubscribe(self, parameters):
     dest = parameters.get('destination', '')
     mId = parameters.get('messengerId', '')
-    res = self.callFunctionForAllBrokers(self._unsubscribe, destination=dest, id=mId)
+    res = self.callFunctionForBrokers(self._unsubscribe, destination=dest, id=mId)
     if not res:
       return S_ERROR(EMQUKN, 'Failed to unsubscribe from at least one destination')
     return S_OK('Successfully unsubscribed from all destinations')
@@ -358,6 +295,9 @@ class StompListener (stomp.ConnectionListener):
     :param json body: message body
     """
     result = self.callback(headers, json.loads(body))
+    print ("in on message StompListener")
+    print ("header %s"% headers)
+    print ("self.mId %s"% self.mId)
     if self.ack:
       if result['OK']:
         self.connection.ack(headers['message-id'], self.mId)
