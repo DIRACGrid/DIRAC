@@ -97,12 +97,6 @@ class StompMQConnector(MQConnector):
     hostcert = self.parameters.get('HostCertificate')
     hostkey = self.parameters.get('HostKey')
 
-
-    callback = self.parameters.get('callback')
-    if callback is None:
-      self.log.warn("Callback is not set. The default one will be used")
-      callback = lambda *args: S_OK('Default callback') #Do nothing lambda
-
     connectionArgs = {'vhost': vhost,
                       'keepalive': True,
                       'reconnect_sleep_initial': reconnectSleepInitial,
