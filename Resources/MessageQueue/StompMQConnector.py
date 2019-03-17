@@ -114,13 +114,17 @@ class StompMQConnector(MQConnector):
         print("after stomp.Connection")
         #WK to change!!! listener = StompListener(callback, acknowledgement, self.connections[ip], mId)
         #WK acknowledgment must be consumer-specific?
-        listener = StompListener(callback, False, self.connections[ip], 1)
+        listener = StompListener(callback, False, self.connections[ip], 1, self.reconnect)
         self.connections[ip].set_listener('StompListener', listener)
 
     except Exception as e:
       return S_ERROR(EMQCONN, 'Failed to setup connection: %s' % e)
     return S_OK('Setup successful')
 
+  def reconnect(self):
+    print("trying to reconnect")
+    #error handling
+    self.connect()
 
 
   #todo think about those conditions, maybe add unit test
@@ -275,7 +279,7 @@ class StompListener (stomp.ConnectionListener):
   Internal listener class responsible for handling new messages and errors.
   """
 
-  def __init__(self, callback, ack, connection, messengerId):
+  def __init__(self, callback, ack, connection, messengerId, callbackOnDisconnected=None):
     """
     Initializes the internal listener object
 
@@ -292,6 +296,7 @@ class StompListener (stomp.ConnectionListener):
     self.ack = ack
     self.mId = messengerId
     self.connection = connection
+    self.callbackOnDisconnected = callbackOnDisconnected
 
   def on_message(self, headers, body):
     """
@@ -318,3 +323,5 @@ class StompListener (stomp.ConnectionListener):
     """ Callback function called after disconnecting from broker.
     """
     self.log.warn('Disconnected from broker')
+    if self.callbackOnDisconnected:
+      self.callbackOnDisconnected()
