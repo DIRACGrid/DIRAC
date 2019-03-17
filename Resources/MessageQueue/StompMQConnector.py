@@ -114,8 +114,8 @@ class StompMQConnector(MQConnector):
         print("after stomp.Connection")
         #WK to change!!! listener = StompListener(callback, acknowledgement, self.connections[ip], mId)
         #WK acknowledgment must be consumer-specific?
-        listener = StompListener(callback, True, self.connections[ip], 1)
-        self.connections[ip].set_listener('', listener)
+        listener = StompListener(callback, False, self.connections[ip], 1)
+        self.connections[ip].set_listener('StompListener', listener)
 
     except Exception as e:
       return S_ERROR(EMQCONN, 'Failed to setup connection: %s' % e)
@@ -227,12 +227,15 @@ class StompMQConnector(MQConnector):
     if self.parameters.get('Acknowledgement', '').lower() in ['true', 'yes', '1']:
       acknowledgement = True
       ack = 'client-individual'
-    res = self.callFunctionForBrokers(self._subscribe, ack=ack, mId=mId, dest=dest, headers=headers  )
+
+    callback = parameters.get('callback')
+    res = self.callFunctionForBrokers(self._subscribe, allBrokers = False,  ack=ack, mId=mId, dest=dest, headers=headers, callback=callback  )
     if not res:
+      print 'Failed to subscribe to at least one broker'
       return S_ERROR(EMQUKN, 'Failed to subscribe to at least one broker')
     return S_OK('Subscription successful')
 
-  def _subscribe(self, connection,  ack, mId, dest, headers):
+  def _subscribe(self, connection,  ack, mId, dest, headers, callback= None):
     print("_subscribe")
     print " ack:%s, mId:%s, dest:%s, headers:%s" %(ack, mId,dest,headers)
     try:
@@ -240,6 +243,8 @@ class StompMQConnector(MQConnector):
                            id=mId,
                            ack=ack,
                            headers=headers)
+      #crazy hack for this moment
+      connection.get_listener('StompListener').callback=callback
     except Exception as e:
       print ("subscribe exception")
       self.log.error('Failed to subscribe: %s' % e)
@@ -250,15 +255,15 @@ class StompMQConnector(MQConnector):
   def unsubscribe(self, parameters):
     dest = parameters.get('destination', '')
     mId = parameters.get('messengerId', '')
-    res = self.callFunctionForBrokers(self._unsubscribe, destination=dest, id=mId)
+    res = self.callFunctionForBrokers(self._unsubscribe,allBrokers =False,  destination=dest, mId=mId)
     if not res:
       return S_ERROR(EMQUKN, 'Failed to unsubscribe from at least one destination')
     return S_OK('Successfully unsubscribed from all destinations')
 
 
-  def _unsubscribe(self, connection, dest, mId):
+  def _unsubscribe(self, connection, destination, mId):
     try:
-      connection.unsubscribe(destination=dest, id=mId)
+      connection.unsubscribe(destination=destination, id=mId)
     except Exception as e:
       self.log.error('Failed to unsubscribe: %s' % e)
       return False
