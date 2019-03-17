@@ -161,7 +161,6 @@ class StompMQConnector(MQConnector):
     destination = parameters.get('destination', '')
     res = self.callFunctionForBrokers(self._put,allBrokers=False, message=message, destination = destination)
     if not res:
-      # return S_ERROR(EMQUKN, 'Failed to send message: %s' % error)
       return S_ERROR(EMQUKN, 'Failed to send message: %s' % message)
     return S_OK('Message sent successfully')
 
