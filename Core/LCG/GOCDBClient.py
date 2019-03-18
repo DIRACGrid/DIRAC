@@ -15,7 +15,7 @@ from xml.dom import minidom
 import requests
 
 from DIRAC import S_OK, S_ERROR, gLogger
-
+from DIRAC.Core.Security.Locations import getCAsLocation
 
 def _parseSingleElement(element, attributes=None):
   """
@@ -222,9 +222,11 @@ class GOCDBClient(object):
     if ongoing:
       params += '&ongoing_only=yes'
 
+    caPath = getCAsLocation()
+
     try:
       response = requests.get(
-          'https://goc.egi.eu/gocdbpi/public/?method=get_downtime&topentity=' + params)
+          'https://goc.egi.eu/gocdbpi/public/?method=get_downtime&topentity=' + params, verify=caPath)
       response.raise_for_status()
     except requests.exceptions.RequestException as e:
       return S_ERROR("Error %s" % e)
@@ -279,7 +281,8 @@ class GOCDBClient(object):
         gocdb_ep = gocdb_ep + "&topentity=" + entity
     gocdb_ep = gocdb_ep + when + gocdbpi_startDate + "&scope="
 
-    dtPage = requests.get(gocdb_ep)
+    caPath = getCAsLocation()
+    dtPage = requests.get(gocdb_ep, verify=caPath)
 
     dt = dtPage.text
 
@@ -304,7 +307,8 @@ class GOCDBClient(object):
     gocdb_ep = "https://goc.egi.eu/gocdbpi/public/?method=get_service_endpoint&" \
         + granularity + '=' + entity
 
-    service_endpoint_page = requests.get(gocdb_ep)
+    caPath = getCAsLocation()
+    service_endpoint_page = requests.get(gocdb_ep, verify=caPath)
 
     return service_endpoint_page.text
 
