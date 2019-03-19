@@ -71,7 +71,6 @@ class StompMQConnector(MQConnector):
       self.log.info('Broker name resolved', 'to %s IP(s)' % len(ip_addresses))
 
       for ip in ip_addresses:
-        # connectionArgs.update({'host_and_ports': [(ip, int(port))]})
         self.connections[ip] = stomp.Connection(host_and_ports =[(ip, int(port))], **connectionArgs)
         self.log.debug("Host and port: %s" % str([(ip, int(port))]))
         #WK to change!!! listener = StompListener(callback, acknowledgement, self.connections[ip], mId)
@@ -131,17 +130,12 @@ class StompMQConnector(MQConnector):
 
 
   #todo think about those conditions, maybe add unit test
-  def callFunctionForBrokers(self, func,allBrokers = True,  *args,**kwargs):
-    fail = False
-    for connection in self.connections.itervalues():
+  def callFunctionForBrokers(self, func, connections,  *args,**kwargs):
+    for connection in connections:
       res = func(connection = connection,**kwargs)
-      if allBrokers:
-        fail =  fail or res 
-      else:
-        # we accept first positive result
-        if res:
-          return True
-    return not fail
+      if res:
+        return True
+    return False 
 
   def callFunctionForAnyBroker(self, func, *args,**kwargs):
     ok = False
@@ -159,7 +153,7 @@ class StompMQConnector(MQConnector):
     :param str message: string or any json encodable structure
     """
     destination = parameters.get('destination', '')
-    res = self.callFunctionForBrokers(self._put,allBrokers=False, message=message, destination = destination)
+    res = self.callFunctionForBrokers(self._put, connections = self.connections.itervalues(), message=message, destination = destination)
     if not res:
       return S_ERROR(EMQUKN, 'Failed to send message: %s' % message)
     return S_OK('Message sent successfully')
@@ -203,7 +197,7 @@ class StompMQConnector(MQConnector):
     """
     Disconnects from the message queue server
     """
-    res = self.callFunctionForBrokers(self._disconnect, allBrokers = False)
+    res = self.callFunctionForBrokers(self._disconnect,  connections = self.connections.itervalues())
     if not res:
       return S_ERROR(EMQUKN, 'Failed to disconnect from at least one broker')
     return S_OK('Successfully disconnected from all brokers')
@@ -229,7 +223,7 @@ class StompMQConnector(MQConnector):
       ack = 'client-individual'
 
     callback = parameters.get('callback')
-    res = self.callFunctionForBrokers(self._subscribe, allBrokers = False,  ack=ack, mId=mId, dest=dest, headers=headers, callback=callback  )
+    res = self.callFunctionForBrokers(self._subscribe,  connections = self.connections.itervalues(),  ack=ack, mId=mId, dest=dest, headers=headers, callback=callback  )
     if not res:
       return S_ERROR(EMQUKN, 'Failed to subscribe to at least one broker')
     return S_OK('Subscription successful')
@@ -251,7 +245,7 @@ class StompMQConnector(MQConnector):
   def unsubscribe(self, parameters):
     dest = parameters.get('destination', '')
     mId = parameters.get('messengerId', '')
-    res = self.callFunctionForBrokers(self._unsubscribe,allBrokers =False,  destination=dest, mId=mId)
+    res = self.callFunctionForBrokers(self._unsubscribe, connections = self.connections.itervalues(),  destination=dest, mId=mId)
     if not res:
       return S_ERROR(EMQUKN, 'Failed to unsubscribe from at least one destination')
     return S_OK('Successfully unsubscribed from all destinations')

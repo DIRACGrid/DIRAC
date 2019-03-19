@@ -75,6 +75,21 @@ class StompMQConnectorSuccessTestCase(unittest.TestCase):
     # prepare test object
     self.mqConnector = module.StompMQConnector()
 
+  def test_callFunctionForBrokers(self):
+    testFuncTrue = lambda **kwargs: True
+    result = self.mqConnector.callFunctionForBrokers( testFuncTrue, connections=[1,2])
+    self.assertTrue(result)
+    testFuncFalse = lambda **kwargs: False
+    result = self.mqConnector.callFunctionForBrokers(testFuncFalse, connections=[1,2])
+    self.assertFalse(result)
+    testFuncTrue2 = lambda connection: True if connection == 0 else False  
+    result = self.mqConnector.callFunctionForBrokers(testFuncTrue2, connections=[0,1])
+    self.assertTrue(result)
+    result = self.mqConnector.callFunctionForBrokers(testFuncTrue2, connections=[1,0])
+    self.assertTrue(result)
+    result = self.mqConnector.callFunctionForBrokers(testFuncTrue2, connections=[1,2])
+    self.assertFalse(result)
+
   def test_createStompListener(self):
     connection = module.stomp.Connection()
     listener = module.StompListener(ACKNOWLEDGEMENT, connection, MESSENGERID)
@@ -172,6 +187,8 @@ class StompMQConnectorFailureTestCase(unittest.TestCase):
 
     result = self.mqConnector.setupConnection(parameters)
     self.assertFalse(result['OK'])
+
+  
 
 
 if __name__ == '__main__':
