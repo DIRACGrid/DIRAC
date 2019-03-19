@@ -6,6 +6,7 @@ import unittest
 from mock import MagicMock
 
 import DIRAC.Resources.MessageQueue.StompMQConnector as module
+from DIRAC.Resources.MessageQueue.StompMQConnector import callFunctionForBrokers
 
 
 __RCSID__ = "$Id$"
@@ -77,17 +78,17 @@ class StompMQConnectorSuccessTestCase(unittest.TestCase):
 
   def test_callFunctionForBrokers(self):
     testFuncTrue = lambda **kwargs: True
-    result = self.mqConnector.callFunctionForBrokers( testFuncTrue, connections=[1,2])
+    result = callFunctionForBrokers( testFuncTrue, connections=[1,2])
     self.assertTrue(result)
     testFuncFalse = lambda **kwargs: False
-    result = self.mqConnector.callFunctionForBrokers(testFuncFalse, connections=[1,2])
+    result = callFunctionForBrokers(testFuncFalse, connections=[1,2])
     self.assertFalse(result)
-    testFuncTrue2 = lambda connection: True if connection == 0 else False  
-    result = self.mqConnector.callFunctionForBrokers(testFuncTrue2, connections=[0,1])
+    testFuncTrue2 = lambda connection: True if connection == 0 else False
+    result = callFunctionForBrokers(testFuncTrue2, connections=[0,1])
     self.assertTrue(result)
-    result = self.mqConnector.callFunctionForBrokers(testFuncTrue2, connections=[1,0])
+    result = callFunctionForBrokers(testFuncTrue2, connections=[1,0])
     self.assertTrue(result)
-    result = self.mqConnector.callFunctionForBrokers(testFuncTrue2, connections=[1,2])
+    result = callFunctionForBrokers(testFuncTrue2, connections=[1,2])
     self.assertFalse(result)
 
   def test_createStompListener(self):
