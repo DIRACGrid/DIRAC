@@ -55,7 +55,7 @@ class CSShellCLI( CLI ):
 
     if rv['OK'] == False or rv2['OK'] == False:
       print("failed: ", end=' ')
-      if rv['OK'] == False:
+      if rv['OK'] is False:
         print(rv['Message'])
       else:
         print(rv2['Message'])

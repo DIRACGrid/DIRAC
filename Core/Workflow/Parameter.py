@@ -299,7 +299,8 @@ class ParameterCollection( list ):
     """
     par = self.find( name )
     if par == None:
-      print("ERROR ParameterCollection.setValue() can not find parameter with the name=%s to set Value=%s" % (name, value))
+      print("ERROR ParameterCollection.setValue() can not find parameter with "
+            "the name=%s to set Value=%s" % (name, value))
       return False
     else:
       par.setValue( value, vtype )

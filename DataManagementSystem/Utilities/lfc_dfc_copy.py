@@ -229,9 +229,8 @@ def finalizeDirectory(task,result):
 
   if result['OK']:
     writerQueue = result['writerQueue']
-    print(
-        "Finished directory %(Path)s, dirs: %(NumberOfDirectories)s, files: %(NumberOfFiles)s, replicas: %(NumberOfReplicas)s" %
-        result['Value'])
+    print("Finished directory %(Path)s, dirs: %(NumberOfDirectories)s, files: "
+          "%(NumberOfFiles)s, replicas: %(NumberOfReplicas)s" % result['Value'])
     print("%d active tasks remaining" % pPool.getNumWorkingProcesses())
 
 

@@ -66,7 +66,8 @@ class StoragePlugInTestCase( unittest.TestCase ):
     # self.storage.changeDirectory( 'lhcb/test/unit-test/Storage/RFIOStorage' )
 
   def test_createUnitTestDir( self ):
-    print('\n\n#########################################################################\n\n\t\t\tCreate Directory test\n')
+    print('\n\n#########################################################'
+          '################\n\n\t\t\tCreate Directory test\n')
     # destDir = self.storage.getCurrentURL( '' )['Value']
     destDir = '/bla/'
     res = self.storage.createDirectory( destDir )
@@ -78,7 +79,8 @@ class StoragePlugInTestCase( unittest.TestCase ):
 class DirectoryTestCase( StoragePlugInTestCase ):
 
   def test_isDirectory( self ):
-    print('\n\n#########################################################################\n\n\t\t\tIs Directory test\n')
+    print('\n\n#########################################################'
+          '################\n\n\t\t\tIs Directory test\n')
     # Test that we can determine what is a directory
     destDir = self.storage.getCurrentURL( '' )['Value']
     isDirRes = self.storage.isDirectory( destDir )
@@ -96,7 +98,8 @@ class DirectoryTestCase( StoragePlugInTestCase ):
     self.assertFalse( nonExistantDirRes['Value']['Successful'][destDir] )
 
   def test_putRemoveDirectory( self ):
-    print('\n\n#########################################################################\n\n\t\t\tPut Directory test\n')
+    print('\n\n#########################################################'
+          '################\n\n\t\t\tPut Directory test\n')
     # First clean the remote directory incase something was left there
     remoteDir = self.storage.getCurrentURL( 'putDirTest' )['Value']
     ignore = self.storage.removeDirectory( remoteDir )
@@ -140,7 +143,8 @@ class DirectoryTestCase( StoragePlugInTestCase ):
 
 
   def test_putGetDirectoryMetadata( self ):
-    print('\n\n#########################################################################\n\n\t\t\tGet Directory Metadata test\n')
+    print('\n\n#########################################################'
+          '################\n\n\t\t\tGet Directory Metadata test\n')
     # First clean the remote directory incase something was left there
     remoteDir = self.storage.getCurrentURL( 'putDirTest' )['Value']
     ignore = self.storage.removeDirectory( remoteDir )
@@ -192,7 +196,8 @@ class DirectoryTestCase( StoragePlugInTestCase ):
 
 
   def test_putGetDirectorySize( self ):
-    print('\n\n#########################################################################\n\n\t\t\tGet Directory Size test\n')
+    print('\n\n#########################################################'
+          '################\n\n\t\t\tGet Directory Size test\n')
     # First clean the remote directory incase something was left there
     remoteDir = self.storage.getCurrentURL( 'putDirTest' )['Value']
     ignore = self.storage.removeDirectory( remoteDir )
@@ -244,7 +249,8 @@ class DirectoryTestCase( StoragePlugInTestCase ):
 
 
   def test_putListDirectory( self ):
-    print('\n\n#########################################################################\n\n\t\t\tList Directory test\n')
+    print('\n\n#########################################################'
+          '################\n\n\t\t\tList Directory test\n')
     # First clean the remote directory incase something was left there
     remoteDir = self.storage.getCurrentURL( 'putDirTest' )['Value']
     ignore = self.storage.removeDirectory( remoteDir )
@@ -296,7 +302,8 @@ class DirectoryTestCase( StoragePlugInTestCase ):
     self.assertEqual( resDict['Size'], numberOfFiles * sizeOfLocalFile )
 
   def test_putGetDirectory( self ):
-    print('\n\n#########################################################################\n\n\t\t\tGet Directory test\n')
+    print('\n\n#########################################################'
+          '################\n\n\t\t\tGet Directory test\n')
     # First clean the remote directory incase something was left there
     remoteDir = self.storage.getCurrentURL( 'putDirTest' )['Value']
     ignore = self.storage.removeDirectory( remoteDir )
@@ -357,7 +364,8 @@ class DirectoryTestCase( StoragePlugInTestCase ):
 class FileTestCase( StoragePlugInTestCase ):
 
   def test_putRemoveFile( self ):
-    print('\n\n#########################################################################\n\n\t\t\tPut and Remove test\n')
+    print('\n\n#########################################################'
+          '################\n\n\t\t\tPut and Remove test\n')
     # First test that we are able to determine whether the file sizes of the transfer don't match
     srcFile = '/etc/group'
     fileSize = 10 #This is a made up value
@@ -425,7 +433,8 @@ class FileTestCase( StoragePlugInTestCase ):
 
   """
   def test_putExistsFile( self ):
-    print('\n\n#########################################################################\n\n\t\t\tExists test\n')
+    print('\n\n#########################################################'
+          '################\n\n\t\t\tExists test\n')
     # First upload a file to the storage
     srcFile = '/etc/group'
     fileSize = getSize( srcFile )
@@ -456,7 +465,8 @@ class FileTestCase( StoragePlugInTestCase ):
     self.assertFalse( failedExistRes['Value']['Successful'][destFile] )
 
   def test_putIsFile( self ):
-    print('\n\n#########################################################################\n\n\t\t\tIs file test\n')
+    print('\n\n#########################################################'
+          '################\n\n\t\t\tIs file test\n')
     # First upload a file to the storage
     srcFile = '/etc/group'
     fileSize = getSize( srcFile )
@@ -488,7 +498,8 @@ class FileTestCase( StoragePlugInTestCase ):
     self.assertFalse( failedIsFileRes['Value']['Successful'][destDir] )
 
   def test_putGetFileMetaData( self ):
-    print('\n\n#########################################################################\n\n\t\t\tGet file metadata test\n')
+    print('\n\n#########################################################'
+          '################\n\n\t\t\tGet file metadata test\n')
     # First upload a file to the storage
     srcFile = '/etc/group'
     fileSize = getSize( srcFile )
@@ -531,7 +542,8 @@ class FileTestCase( StoragePlugInTestCase ):
     self.assertEqual( directoryMetadataRes['Value']['Failed'][destDir], expectedError )
 
   def test_putGetFileSize( self ):
-    print('\n\n#########################################################################\n\n\t\t\tGet file size test\n')
+    print('\n\n#########################################################'
+          '################\n\n\t\t\tGet file size test\n')
     # First upload a file to the storage
     srcFile = '/etc/group'
     fileSize = getSize( srcFile )
@@ -572,7 +584,8 @@ class FileTestCase( StoragePlugInTestCase ):
 
 
   def test_putPrestageFile( self ):
-    print('\n\n#########################################################################\n\n\t\t\tFile prestage test\n')
+    print('\n\n#########################################################'
+          '################\n\n\t\t\tFile prestage test\n')
     # First upload a file to the storage
     srcFile = '/etc/group'
     fileSize = getSize( srcFile )
@@ -609,7 +622,8 @@ class FileTestCase( StoragePlugInTestCase ):
     #self.assertTrue(nonExistantPrestageRes['Value']['Failed'].has_key(destFile))
 
   def test_putFilegetTransportURL( self ):
-    print('\n\n#########################################################################\n\n\t\t\tGet tURL test\n')
+    print('\n\n#########################################################'
+          '################\n\n\t\t\tGet tURL test\n')
     # First upload a file to the storage
     srcFile = '/etc/group'
     fileSize = getSize( srcFile )

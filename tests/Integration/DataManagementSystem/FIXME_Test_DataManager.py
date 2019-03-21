@@ -16,7 +16,8 @@ class ReplicaManagerTestCase(unittest.TestCase):
     file.close()
 
   def test_putAndRegister(self):
-    print('\n\n#########################################################################\n\n\t\t\tPut and register test\n')
+    print('\n\n#########################################################'
+          '################\n\n\t\t\tPut and register test\n')
     lfn = '/lhcb/test/unit-test/ReplicaManager/putAndRegister/testFile.%s' % time.time()
     diracSE = 'GRIDKA-RAW'
     putRes = self.dataManager.putAndRegister(lfn, self.fileName, diracSE)
@@ -34,7 +35,8 @@ class ReplicaManagerTestCase(unittest.TestCase):
     self.assertTrue(removeRes['Value']['Successful'][lfn])
 
   def test_putAndRegisterReplicate(self):
-    print('\n\n#########################################################################\n\n\t\t\tReplication test\n')
+    print('\n\n#########################################################'
+          '################\n\n\t\t\tReplication test\n')
     lfn = '/lhcb/test/unit-test/ReplicaManager/putAndRegisterReplicate/testFile.%s' % time.time()
     diracSE = 'GRIDKA-RAW'
     putRes = self.dataManager.putAndRegister(lfn, self.fileName, diracSE)
@@ -58,7 +60,8 @@ class ReplicaManagerTestCase(unittest.TestCase):
     self.assertTrue(removeRes['Value']['Successful'][lfn])
 
   def test_putAndRegisterGetReplicaMetadata(self):
-    print('\n\n#########################################################################\n\n\t\t\tGet metadata test\n')
+    print('\n\n#########################################################'
+          '################\n\n\t\t\tGet metadata test\n')
     lfn = '/lhcb/test/unit-test/ReplicaManager/putAndRegisterGetReplicaMetadata/testFile.%s' % time.time()
     diracSE = 'GRIDKA-RAW'
     putRes = self.dataManager.putAndRegister(lfn, self.fileName, diracSE)
@@ -87,7 +90,8 @@ class ReplicaManagerTestCase(unittest.TestCase):
 
 
   def test_putAndRegsiterGetAccessUrl(self):
-    print('\n\n#########################################################################\n\n\t\t\tGet Access Url test\n')
+    print('\n\n#########################################################'
+          '################\n\n\t\t\tGet Access Url test\n')
     lfn = '/lhcb/test/unit-test/ReplicaManager/putAndRegisterGetAccessUrl/testFile.%s' % time.time()
     diracSE = 'GRIDKA-RAW'
     putRes = self.dataManager.putAndRegister(lfn, self.fileName, diracSE)
@@ -112,7 +116,8 @@ class ReplicaManagerTestCase(unittest.TestCase):
     self.assertTrue(removeRes['Value']['Successful'][lfn])
 
   def test_putAndRegisterRemoveReplica(self):
-    print('\n\n#########################################################################\n\n\t\t\tRemove replica test\n')
+    print('\n\n#########################################################'
+          '################\n\n\t\t\tRemove replica test\n')
     lfn = '/lhcb/test/unit-test/ReplicaManager/putAndRegisterRemoveReplica/testFile.%s' % time.time()
     diracSE = 'GRIDKA-RAW'
     putRes = self.dataManager.putAndRegister(lfn, self.fileName, diracSE)
@@ -163,7 +168,8 @@ class ReplicaManagerTestCase(unittest.TestCase):
     self.assertTrue(removeFileRes['Value']['Successful'][lfn])
 
   def test_registerReplica(self):
-    print('\n\n#########################################################################\n\n\t\t\tRegister replica test\n')
+    print('\n\n#########################################################'
+          '################\n\n\t\t\tRegister replica test\n')
     lfn = '/lhcb/test/unit-test/ReplicaManager/registerReplica/testFile.%s' % time.time()
     physicalFile = 'srm://host:port/srm/managerv2?SFN=/sa/path%s' % lfn
     fileSize = 10000
@@ -205,7 +211,8 @@ class ReplicaManagerTestCase(unittest.TestCase):
     self.assertTrue(removeFileRes['Value']['Successful'][lfn])
 
   def test_putAndRegisterGet(self):
-    print('\n\n#########################################################################\n\n\t\t\tGet file test\n')
+    print('\n\n#########################################################'
+          '################\n\n\t\t\tGet file test\n')
     lfn = '/lhcb/test/unit-test/ReplicaManager/putAndRegisterGet/testFile.%s' % time.time()
     diracSE = 'GRIDKA-RAW'
     putRes = self.dataManager.putAndRegister(lfn, self.fileName, diracSE)
