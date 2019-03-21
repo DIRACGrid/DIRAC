@@ -149,6 +149,7 @@ def S_IMODE( mode ):
 def S_IFMT( mode ):
   return mode & 0o170000
 
+
 S_IFDIR = 0o040000
 def isDir( mode ):
   """ True if mode indicates a directory"""
@@ -420,14 +421,13 @@ def getDirAndFileData( fileQueue, dirQueue, dirClosureQueryQueue ):
 #               fileAndDirInsert.write( "%s\n" % sqlDirClosureSub )
               dirClosureQueryQueue.put( "%s\n" % sqlDirClosureSub )
 
-        print("getDirAndFileData put in queues file %s" % (len(fileTuple) ))
+        print("getDirAndFileData put in queues file %s" % (len(fileTuple)))
 
         # Add the list of tuples to be inserted to the queues
         if fileTuple:
           fileQueue.put( fileTuple )
         if dirTuple:
           dirQueue.put( dirTuple )
-
 
   print("getDirAndFileData done. elapsed time %s dir %s files %s" % (time.time() - startTime, dirCounter, fileCounter))
   fromdbR_.close()
@@ -534,7 +534,7 @@ def getReplicaData( replicaQueue, name_id_se ):
                                                               dfc_cdate, dfc_mdate, cns_rep_sfn ) )
           cns_rep_id += 1
 
-        print("getReplicaData add replicaQueue %s" % (len(repTuple) ))
+        print("getReplicaData add replicaQueue %s" % (len(repTuple)))
 
         # Add the values to be inserted
         if repTuple:
@@ -935,7 +935,6 @@ if __name__ == '__main__':
   replicaQueryQueue = multiprocessing.JoinableQueue()
   queueTab.append( replicaQueryQueue )
 
-
   print("Starting the Worker processes")
 
   # process to execute the query for Users, Groups and SEs
@@ -1024,7 +1023,6 @@ if __name__ == '__main__':
     emptyTab = [ q.empty() for q in queueTab]
     allEmpty = reduce( lambda x, y: x and y, emptyTab, True )
     print("Queues not empty %s " % ([q.qsize() for q in queueTab]))
-
 
   print("queues should be empty  %s" % ([q.empty() for q in queueTab]))
 

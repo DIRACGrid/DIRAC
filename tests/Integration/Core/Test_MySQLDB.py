@@ -76,7 +76,7 @@ try:
 
   RESULT = TESTDB.getCounters( NAME, FIELDS, COND0 )
   assert RESULT['OK']
-  assert RESULT['Value'] == [( {'Surname': 'Surn1', 'Name': 'Name1'}, 100 )]
+  assert RESULT['Value'] == [({'Surname': 'Surn1', 'Name': 'Name1'}, 100)]
 
   RESULT = TESTDB.getDistinctAttributeValues( NAME, FIELDS[0], COND0 )
   assert RESULT['OK']
@@ -104,7 +104,7 @@ try:
 
   RESULT = TESTDB.getCounters( NAME, FIELDS, COND10 )
   assert RESULT['OK']
-  assert RESULT['Value'] == [( {'Surname': 'Surn1', 'Name': 'Name1'}, 10 )]
+  assert RESULT['Value'] == [({'Surname': 'Surn1', 'Name': 'Name1'}, 10)]
 
   RESULT = TESTDB._getFields( NAME, FIELDS, COND10.keys(), COND10.values() )
   assert RESULT['OK']
