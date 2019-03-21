@@ -141,15 +141,15 @@ uid_name = {}
 
 # Converts the mode to a posix mode permission
 def S_IMODE( mode ):
-  return mode & 07777
+  return mode & 0o7777
 
 
 # Utilities to make the distinction between files and dir from the LFC
 
 def S_IFMT( mode ):
-  return mode & 0170000
+  return mode & 0o170000
 
-S_IFDIR = 0040000
+S_IFDIR = 0o040000
 def isDir( mode ):
   """ True if mode indicates a directory"""
   return S_IFMT( mode ) == S_IFDIR
