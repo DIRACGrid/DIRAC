@@ -21,16 +21,16 @@ from DIRAC.TransformationSystem.Agent.TransformationPlugin import Transformation
 paramsBase = {'AgentType': 'Automatic',
               'DerivedProduction': '0',
               'FileMask': '',
-              'GroupSize': 1L,
-              'InheritedFrom': 0L,
+              'GroupSize': 1,
+              'InheritedFrom': 0,
               'JobType': 'MCSimulation',
-              'MaxNumberOfTasks': 0L,
+              'MaxNumberOfTasks': 0,
               'OutputDirectories': "['/lhcb/MC/20', '/lhcb/debug/20']",
               'OutputLFNs': "{'LogTargetPath': ['/lhcb/9.tar'], 'LogFilePath': ['/lhcb/9']}",
               'Priority': '0',
               'SizeGroup': '1',
               'Status': 'Active',
-              'TransformationID': 1080L,
+              'TransformationID': 1080,
               'Type': 'MCSimulation',
               'outputDataFileMask': 'GAUSSHIST;ALLSTREAMS.DST'}
 
@@ -75,7 +75,7 @@ class PluginsBaseSuccess(PluginsTestCase):
   def test__Standard_G10(self):
     #   # no input data, active
     params = dict(paramsBase)
-    params['GroupSize'] = 10L
+    params['GroupSize'] = 10
     pluginStandard = TransformationPlugin('Standard')
     pluginStandard.setParameters(params)
     res = pluginStandard.run()
@@ -85,7 +85,7 @@ class PluginsBaseSuccess(PluginsTestCase):
   def test__Standard_Data_G10(self):
     # input data, active
     params = dict(paramsBase)
-    params['GroupSize'] = 10L
+    params['GroupSize'] = 10
     pluginStandard = TransformationPlugin('Standard')
     pluginStandard.setParameters(params)
     pluginStandard.setInputData(data)
@@ -97,7 +97,7 @@ class PluginsBaseSuccess(PluginsTestCase):
     # input data, flush
     pluginStandard = TransformationPlugin('Standard')
     params = dict(paramsBase)
-    params['GroupSize'] = 10L
+    params['GroupSize'] = 10
     params['Status'] = 'Flush'
     pluginStandard.setParameters(params)
     pluginStandard.setInputData(data)
