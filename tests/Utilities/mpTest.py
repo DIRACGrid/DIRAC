@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+from __future__ import print_function
 from multiprocessing import Process, Queue
 
 def do_sum( q, l ):
@@ -16,7 +17,7 @@ def main():
   p2.start()
   r1 = q.get()
   r2 = q.get()
-  print r1 + r2
+  print(r1 + r2)
 
 if __name__ == '__main__':
   main()

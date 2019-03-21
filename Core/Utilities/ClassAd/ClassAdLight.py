@@ -2,6 +2,7 @@
     Condor ClassAd library.
 """
 
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 
@@ -28,7 +29,7 @@ class ClassAd(object):
     result = {}
 
     if temp[0] != '[' or temp[-1] != ']':
-      print "Invalid JDL: it should start with [ and end with ]"
+      print("Invalid JDL: it should start with [ and end with ]")
       return result
 
     # Parse the jdl string now

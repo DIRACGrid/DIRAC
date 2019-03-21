@@ -4,6 +4,7 @@
     It supposes that the DB is present, and that the service is running
 """
 
+from __future__ import print_function
 import unittest
 import time
 import sys
@@ -378,8 +379,8 @@ class TestClientFTS3(unittest.TestCase):
 
     getEnd = time.time()
 
-    print "Generation of 1000 operation and 10500 files %s s, retrival %s s" % (
-        persistEnd - persistStart, getEnd - persistEnd)
+    print("Generation of 1000 operation and 10500 files %s s, retrival %s s" % (
+        persistEnd - persistStart, getEnd - persistEnd))
 
 
 if __name__ == '__main__':

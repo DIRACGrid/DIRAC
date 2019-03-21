@@ -5,6 +5,7 @@ site banning and unbanning, WMS proxy uploading etc.
 
 """
 
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import os
@@ -130,7 +131,7 @@ class DiracAdmin(API):
       if printOutput:
         sites.sort()
         for site in sites:
-          print site
+          print(site)
 
     return result
 
@@ -158,7 +159,7 @@ class DiracAdmin(API):
     mergedList = sorted(bannedSites['Value'] + probingSites['Value'])
 
     if printOutput:
-      print '\n'.join(mergedList)
+      print('\n'.join(mergedList))
 
     return S_OK(mergedList)
 
@@ -179,7 +180,7 @@ class DiracAdmin(API):
 
     result = gConfig.getOptionsDict('/Resources/Sites/%s/%s' % (gridType, site))
     if printOutput and result['OK']:
-      print self.pPrint.pformat(result['Value'])
+      print(self.pPrint.pformat(result['Value']))
     return result
 
   #############################################################################
@@ -204,7 +205,7 @@ class DiracAdmin(API):
     siteMask = result['Value']
     if site in siteMask:
       if printOutput:
-        print 'Site %s is already Active' % site
+        print('Site %s is already Active' % site)
       return S_OK('Site %s is already Active' % site)
 
     if self.rssFlag:
@@ -216,7 +217,7 @@ class DiracAdmin(API):
       return result
 
     if printOutput:
-      print 'Site %s status is set to Active' % site
+      print('Site %s status is set to Active' % site)
 
     return result
 
@@ -245,19 +246,19 @@ class DiracAdmin(API):
 
     if printOutput:
       if site:
-        print '\nSite Mask Logging Info for %s\n' % site
+        print('\nSite Mask Logging Info for %s\n' % site)
       else:
-        print '\nAll Site Mask Logging Info\n'
+        print('\nAll Site Mask Logging Info\n')
 
       sitesLogging = result['Value']
       if isinstance(sitesLogging, dict):
         for siteName, tupleList in sitesLogging.iteritems():
           if not siteName:
-            print '\n===> %s\n' % siteName
+            print('\n===> %s\n' % siteName)
           for tup in tupleList:
-            print str(tup[0]).ljust(8) + str(tup[1]).ljust(20) + \
-                '( ' + str(tup[2]).ljust(len(str(tup[2]))) + ' )  "' + str(tup[3]) + '"'
-          print ' '
+            print(str(tup[0]).ljust(8) + str(tup[1]).ljust(20) +
+                  '( ' + str(tup[2]).ljust(len(str(tup[2]))) + ' )  "' + str(tup[3]) + '"')
+          print(' ')
       elif isinstance(sitesLogging, list):
         result = [(sl[1], sl[3], sl[4]) for sl in sitesLogging]
 
@@ -285,7 +286,7 @@ class DiracAdmin(API):
     siteMask = mask['Value']
     if site in siteMask:
       if printOutput:
-        print 'Site %s is already Banned' % site
+        print('Site %s is already Banned' % site)
       return S_OK('Site %s is already Banned' % site)
 
     if self.rssFlag:
@@ -297,7 +298,7 @@ class DiracAdmin(API):
       return result
 
     if printOutput:
-      print 'Site %s status is set to Banned' % site
+      print('Site %s status is set to Banned' % site)
 
     return result
 
@@ -369,7 +370,7 @@ class DiracAdmin(API):
         self.log.warn('%s is not defined in /DIRAC/Setups/%s' % (system, setup))
 
     if printOutput:
-      print self.pPrint.pformat(result)
+      print(self.pPrint.pformat(result))
 
     return S_OK(result)
 
@@ -637,7 +638,7 @@ class DiracAdmin(API):
     wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
     result = wmsAdmin.getPilots(jobID)
     if result['OK']:
-      print self.pPrint.pformat(result['Value'])
+      print(self.pPrint.pformat(result['Value']))
     return result
 
   #############################################################################
@@ -667,7 +668,7 @@ class DiracAdmin(API):
 
     for i in xrange(i):
       headers += 'Status'.ljust(12) + 'Count'.ljust(12)
-    print headers
+    print(headers)
 
     for ce, summary in ceDict.iteritems():
       line = ce.ljust(28)
@@ -675,7 +676,7 @@ class DiracAdmin(API):
       for state in states:
         count = str(summary[state])
         line += state.ljust(12) + count.ljust(12)
-      print line
+      print(line)
 
     return result
 
@@ -710,10 +711,10 @@ class DiracAdmin(API):
           seInfo[se] = seProtocols
 
     if printOutput:
-      print '\nSummary of protocols for StorageElements at site %s' % site
-      print '\nStorageElement'.ljust(30) + 'ProtocolsList'.ljust(30) + '\n'
+      print('\nSummary of protocols for StorageElements at site %s' % site)
+      print('\nStorageElement'.ljust(30) + 'ProtocolsList'.ljust(30) + '\n')
       for se, protocols in seInfo.iteritems():
-        print se.ljust(30) + ', '.join(protocols).ljust(30)
+        print(se.ljust(30) + ', '.join(protocols).ljust(30))
 
     return S_OK(seInfo)
 
@@ -767,10 +768,10 @@ class DiracAdmin(API):
         return S_ERROR('CS Commit failed with message = %s' % (result['Message']))
       else:
         if printOutput:
-          print 'Successfully committed changes to CS'
+          print('Successfully committed changes to CS')
     else:
       if printOutput:
-        print 'No modifications to CS required'
+        print('No modifications to CS required')
 
     return S_OK()
 

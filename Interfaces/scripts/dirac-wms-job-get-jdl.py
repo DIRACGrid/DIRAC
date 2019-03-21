@@ -7,6 +7,7 @@
 """
   Retrieve the current JDL of a DIRAC job
 """
+from __future__ import print_function
 __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
@@ -45,6 +46,6 @@ for job in parseArguments( args ):
     exitCode = 2
 
 for error in errorList:
-  print "ERROR %s: %s" % error
+  print("ERROR %s: %s" % error)
 
 DIRAC.exit( exitCode )

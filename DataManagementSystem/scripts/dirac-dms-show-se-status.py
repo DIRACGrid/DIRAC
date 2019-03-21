@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
 from DIRAC import S_OK
 from DIRAC.Core.Base import Script
 
@@ -72,7 +73,7 @@ if vo is None and not allVOsFlag:
     DIRAC.exit( -1 )
   vo = result['Value']
 
-print allVOsFlag, noVOFlag, vo
+print(allVOsFlag, noVOFlag, vo)
 
 for se, statusDict in res[ 'Value' ].items():
 

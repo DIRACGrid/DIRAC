@@ -8,6 +8,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import numpy, math, time
@@ -43,7 +44,7 @@ class PieGraph( PlotBase ):
         if nLabels > 0:
           explode[0] = 0.1
       except Exception as x:
-        print "PieGraph Error: can not interpret data for the plot"  
+        print("PieGraph Error: can not interpret data for the plot")
     
     #labels.reverse()
     values = [l[1] for l in labels]

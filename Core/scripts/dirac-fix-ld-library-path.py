@@ -3,6 +3,7 @@
 # File :   dirac-fix-ld-lib
 # Author : Joel Closier
 ########################################################################
+from __future__ import print_function
 __RCSID__ = "$Id$"
 """  This is a script to fix oversized LD_LIBRARY_PATH variables.
 """
@@ -31,41 +32,41 @@ def fixLDPath( root, ldpath, directory ):
   uniqueLD = uniquePath( ldpath )
 
   if DEBUG:
-    print 'Unique LD LIBRARY PATH is:'
-    print uniqueLD
+    print('Unique LD LIBRARY PATH is:')
+    print(uniqueLD)
     sys.stdout.flush()
 
   ldlist = uniqueLD.split( ':' )
   if DEBUG:
-    print ''
-    print 'LD List is:'
-    print ldlist
-    print ''
+    print('')
+    print('LD List is:')
+    print(ldlist)
+    print('')
     sys.stdout.flush()
 
   for path in ldlist:
     if os.path.exists( path ):
 
       if DEBUG:
-        print 'Searching for shared libraries in:'
-        print path
-        print '-----------------------------------------------'
+        print('Searching for shared libraries in:')
+        print(path)
+        print('-----------------------------------------------')
         res = shellCall( 0, 'ls ' + path + '/*.so*' )
         if res['OK']:
-          print res['Value']
+          print(res['Value'])
         else:
-          print res
-        print '-----------------------------------------------'
+          print(res)
+        print('-----------------------------------------------')
 
       output = shellCall( 0, 'ls ' + path + '/*.so*' )
       #must be tidied for Windows (same below)
 
       if DEBUG:
         if not output['OK']:
-          print '**************************'
-          print 'Warning, problem with ls:'
-          print output
-          print '**************************'
+          print('**************************')
+          print('Warning, problem with ls:')
+          print(output)
+          print('**************************')
 
       if not output['Value'][0]:
         ldlibs = output['Value'][1].split( '\n' )
@@ -76,32 +77,32 @@ def fixLDPath( root, ldpath, directory ):
             #N.B. for Windows this should be a copy...
             if DEBUG:
               if not output['OK']:
-                print '********************************'
-                print 'Warning, problem creating link:'
-                print 'File: ', filename
-                print 'Path: ', lib
-                print output
-                print '********************************'
+                print('********************************')
+                print('Warning, problem creating link:')
+                print('File: ', filename)
+                print('Path: ', lib)
+                print(output)
+                print('********************************')
 
       if DEBUG:
-        print 'Searching for rootmap file in:'
-        print path
-        print '-----------------------------------------------'
+        print('Searching for rootmap file in:')
+        print(path)
+        print('-----------------------------------------------')
         res = shellCall( 0, 'ls ' + path + '/*rootmap*' )
         if res['OK']:
-          print res['Value']
+          print(res['Value'])
         else:
-          print res
-        print '-----------------------------------------------'
+          print(res)
+        print('-----------------------------------------------')
 
       output = shellCall( 0, 'ls ' + path + '/*rootmap*' )
 
       if DEBUG:
         if not output['OK']:
-          print '**************************'
-          print 'Warning, problem with rootmap:'
-          print output
-          print '**************************'
+          print('**************************')
+          print('Warning, problem with rootmap:')
+          print(output)
+          print('**************************')
 
       if not output['Value'][0]:
         ldlibs = output['Value'][1].split( '\n' )
@@ -112,12 +113,12 @@ def fixLDPath( root, ldpath, directory ):
               output = shellCall( 0, 'ln -s ' + str( lib ) + ' ' + str( filename ) )
               if DEBUG:
                 if not output['OK']:
-                  print '********************************'
-                  print 'Warning, problem creating link:'
-                  print 'File: ', filename
-                  print 'Path: ', lib
-                  print output
-                  print '********************************'
+                  print('********************************')
+                  print('Warning, problem creating link:')
+                  print('File: ', filename)
+                  print('Path: ', lib)
+                  print(output)
+                  print('********************************')
 
   os.chdir( start )
   sys.stdout.flush()

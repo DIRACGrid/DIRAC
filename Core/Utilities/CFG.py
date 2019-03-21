@@ -1,6 +1,7 @@
 """ This is the main module that interprets DIRAC cfg format
 """
 
+from __future__ import print_function
 import types
 import copy
 import os
@@ -51,12 +52,12 @@ except Exception:
       def lockedFunc( *args, **kwargs ):
         try:
           if self.lockName:
-            print "LOCKING", self.lockName
+            print("LOCKING", self.lockName)
           self.lock.acquire()
           return funcToCall( *args, **kwargs )
         finally:
           if self.lockName:
-            print "UNLOCKING", self.lockName
+            print("UNLOCKING", self.lockName)
           self.lock.release()
       return lockedFunc
 

@@ -7,6 +7,7 @@
 """
   Reschedule the given DIRAC job
 """
+from __future__ import print_function
 __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
@@ -29,13 +30,13 @@ errorList = []
 
 result = dirac.rescheduleJob( parseArguments( args ) )
 if result['OK']:
-  print 'Rescheduled job %s' % ','.join( [str( j ) for j in result['Value']] )
+  print('Rescheduled job %s' % ','.join([str(j) for j in result['Value']]))
 else:
   errorList.append( ( j, result['Message'] ) )
-  print result['Message']
+  print(result['Message'])
   exitCode = 2
 
 for error in errorList:
-  print "ERROR %s: %s" % error
+  print("ERROR %s: %s" % error)
 
 DIRAC.exit( exitCode )

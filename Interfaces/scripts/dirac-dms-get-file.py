@@ -7,6 +7,7 @@
 """
   Retrieve a single file or list of files from Grid storage to the current directory.
 """
+from __future__ import print_function
 __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
@@ -36,7 +37,7 @@ if len( lfns ) == 1:
 
 result = dirac.getFile( lfns, printOutput = True )
 if not result['OK']:
-  print 'ERROR %s' % ( result['Message'] )
+  print('ERROR %s' % (result['Message']))
   exitCode = 2
 
 DIRAC.exit( exitCode )

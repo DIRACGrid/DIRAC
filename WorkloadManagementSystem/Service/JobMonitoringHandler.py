@@ -4,6 +4,7 @@
     The following methods are available in the Service interface
 """
 
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 from DIRAC import S_OK, S_ERROR
@@ -168,7 +169,7 @@ class JobMonitoringHandler(RequestHandler):
     #    if attrDict.has_key(attribute):
     #      queryDict[attribute] = attrDict[attribute]
 
-    print attrDict
+    print(attrDict)
 
     return gJobDB.selectJobs(attrDict, newer=cutDate)
 

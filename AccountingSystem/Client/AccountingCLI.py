@@ -3,6 +3,7 @@ AccountingCLI class implementing command line administrative interface to
 DIRAC Accounting DataStore Service
 """
 
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import sys
@@ -48,15 +49,15 @@ class AccountingCLI( CLI ):
   def printComment( self, comment ):
     commentList = comment.split( "\n" )
     for commentLine in commentList[ :-1 ]:
-      print "# %s" % commentLine.strip()
+      print("# %s" % commentLine.strip())
 
   def showTraceback( self ):
     import traceback
     type, value = sys.exc_info()[:2]
-    print "________________________\n"
-    print "Exception", type, ":", value
+    print("________________________\n")
+    print("Exception", type, ":", value)
     traceback.print_tb( sys.exc_info()[2] )
-    print "________________________\n"
+    print("________________________\n")
 
 
   def do_registerType( self, args ):
@@ -170,15 +171,15 @@ class AccountingCLI( CLI ):
       acClient = RPCClient( "Accounting/DataStore" )
       retVal = acClient.getRegisteredTypes()
 
-      print retVal
+      print(retVal)
 
       if not retVal[ 'OK' ]:
         gLogger.error( "Error: %s" % retVal[ 'Message' ] )
         return
       for typeList in retVal[ 'Value' ]:
-        print typeList[0]
-        print " Key fields:\n  %s" %  "\n  ".join( typeList[1] )
-        print " Value fields:\n  %s" %  "\n  ".join( typeList[2] )
+        print(typeList[0])
+        print(" Key fields:\n  %s" % "\n  ".join(typeList[1]))
+        print(" Value fields:\n  %s" % "\n  ".join(typeList[2]))
     except:
       self.showTraceback()
 
@@ -202,14 +203,14 @@ class AccountingCLI( CLI ):
         if choice in ( "yes", "y" ):
           break
         else:
-          print "Delete aborted"
+          print("Delete aborted")
           return
       acClient = RPCClient( "Accounting/DataStore" )
       retVal = acClient.deleteType( typeName )
       if not retVal[ 'OK' ]:
         gLogger.error( "Error: %s" % retVal[ 'Message' ] )
         return
-      print "Hope you meant it, because it's done"
+      print("Hope you meant it, because it's done")
     except:
       self.showTraceback()
 

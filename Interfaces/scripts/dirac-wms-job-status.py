@@ -7,6 +7,7 @@
 """
   Retrieve status of the given DIRAC job
 """
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import os
@@ -43,7 +44,7 @@ for key, value in Script.getUnprocessedSwitches():
     # Choose jobs no more than 30 days old
     result = dirac.selectJobs( jobGroup = value, date = jobDate )
     if not result['OK']:
-      print "Error:", result['Message']
+      print("Error:", result['Message'])
       DIRACExit( -1 )
     jobs += result['Value']
 
@@ -56,12 +57,12 @@ if len( args ) > 0:
 result = dirac.getJobStatus( jobs )
 if result['OK']:
   for job in result['Value']:
-    print 'JobID=' + str( job ),
+    print('JobID=' + str(job), end=' ')
     for status in result['Value'][job].items():
-      print '%s=%s;' % status,
-    print
+      print('%s=%s;' % status, end=' ')
+    print()
 else:
   exitCode = 2
-  print "ERROR: %s" % result['Message']
+  print("ERROR: %s" % result['Message'])
 
 DIRAC.exit( exitCode )

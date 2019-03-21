@@ -15,6 +15,7 @@
 # redefined-outer-name is needed because we keep passing get_X509Certificate_class as param
 # pylint: disable=redefined-outer-name
 
+from __future__ import print_function
 from .x509TestUtilities import deimportDIRAC, CERTS, CERTCONTENTS, getCertOption, HOSTCERT, VOMSPROXY, VOMS_PROXY_ATTR
 
 from pytest import mark, fixture, skip
@@ -241,7 +242,7 @@ def test_getPublicKey(cert_file, get_X509Certificate_class):
   assert res['OK']
 
   if 'm2crypto' in get_X509Certificate_class.__module__:
-    print x509Cert.verify(res['Value'])
+    print(x509Cert.verify(res['Value']))
 
 
 @parametrize('cert_file', CERTS)

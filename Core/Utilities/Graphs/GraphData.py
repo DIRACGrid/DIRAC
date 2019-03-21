@@ -4,6 +4,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import time
@@ -83,7 +84,7 @@ class GraphData:
 
     keys = self.data.keys()
     if not keys:
-      print "GraphData Error: empty data"
+      print("GraphData Error: empty data")
     start = time.time()
 
     if isinstance( self.data[keys[0]], dict ):
@@ -93,7 +94,7 @@ class GraphData:
       self.plotdata = PlotData( self.data, key_type = key_type )
 
     if DEBUG:
-      print "Time: plot data", time.time() - start, len( self.subplots )
+      print("Time: plot data", time.time() - start, len(self.subplots))
 
     if self.plotdata:
       self.all_keys = self.plotdata.getKeys()
@@ -378,7 +379,7 @@ class PlotData:
     self.key_type = "unknown"
     keys = data.keys()
     if not keys:
-      print "PlotData Error: empty data"
+      print("PlotData Error: empty data")
       return
 
     # Original data
@@ -473,7 +474,7 @@ class PlotData:
       self.sorted_keys = self.keys
       self.sorted_keys.sort()
     else:
-      print "Unknown sorting type:", sort_type
+      print("Unknown sorting type:", sort_type)
 
     return self.sorted_keys
 

@@ -2,6 +2,7 @@
 
 #pylint: disable=protected-access, missing-docstring
 
+from __future__ import print_function
 import unittest
 from mock import MagicMock, patch
 
@@ -31,6 +32,6 @@ class JobDBTest( unittest.TestCase ):
   def test_getInputData( self ):
     self.jobDB._query.return_value = S_OK( (( '/vo/user/lfn1',), ('LFN:/vo/user/lfn2',)) )
     result = self.jobDB.getInputData( 1234 )
-    print result
+    print(result)
     self.assertTrue( result['OK'] )
     self.assertEqual( result['Value'], [ '/vo/user/lfn1', '/vo/user/lfn2' ] )

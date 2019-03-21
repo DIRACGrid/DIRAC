@@ -7,6 +7,7 @@
 
 """
 
+from __future__ import print_function
 __RCSID__ = '$Id$'
 
 import json
@@ -343,7 +344,7 @@ class PilotCStoJSONSynchronizer(object):
     if pilotDict:  # this is for the pilot.json file
       if not self.pilotFileServer:
         gLogger.warn("NOT uploading the pilot JSON file, just printing it out")
-        print json.dumps(pilotDict, indent=4, sort_keys=True)  # just print here as formatting is important
+        print(json.dumps(pilotDict, indent=4, sort_keys=True))  # just print here as formatting is important
         return S_OK()
 
       data = {'filename': self.jsonFile, 'data': json.dumps(pilotDict)}

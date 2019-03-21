@@ -6,6 +6,7 @@
 """
    Show details of currently active Task Queues
 """
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import sys
@@ -46,7 +47,7 @@ Script.parseCommandLine(initializeMonitor=False)
 
 result = MatcherClient().getActiveTaskQueues()
 if not result['OK']:
-  print 'ERROR: %s' % result['Message']
+  print('ERROR: %s' % result['Message'])
   sys.exit(1)
 
 tqDict = result['Value']
@@ -56,7 +57,7 @@ if not verbose:
             'Platforms', 'SubmitPools', 'Setup', 'Priority']
   records = []
 
-  print
+  print()
   for tqId in sorted(tqDict):
     if taskQueueID and tqId != taskQueueID:
       continue
@@ -88,7 +89,7 @@ else:
   for tqId in sorted(tqDict):
     if taskQueueID and tqId != taskQueueID:
       continue
-    print "\n==> TQ %s" % tqId
+    print("\n==> TQ %s" % tqId)
     records = []
     tqData = tqDict[tqId]
     for key in sorted(tqData):

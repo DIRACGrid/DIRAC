@@ -2,6 +2,7 @@
 """ script to obtain release notes from DIRAC PRs
 """
 
+from __future__ import print_function
 from collections import defaultdict
 from datetime import datetime, timedelta
 import argparse
@@ -274,7 +275,7 @@ class GithubInterface(object):
       prs = self.getGithubPRs(state='closed', mergedOnly=True)
     prs = self.getNotesFromPRs(prs)
     releaseNotes = collateReleaseNotes(prs)
-    print releaseNotes
+    print(releaseNotes)
     checkRate()
 
 

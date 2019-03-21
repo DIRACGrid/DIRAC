@@ -4,6 +4,7 @@
 # pylint: disable=protected-access, invalid-name
 
 # imports
+from __future__ import print_function
 import unittest
 import importlib
 import os
@@ -83,7 +84,7 @@ class JobWrapperTestCaseSuccess(JobWrapperTestCase):
     jw = JobWrapper()
     jw.jobArgs = {'Executable': '/bin/ls'}
     res = jw.execute('')
-    print 'jw.execute() returns', str(res)
+    print('jw.execute() returns', str(res))
     self.assertTrue(res['OK'])
 
     shutil.copy('WorkloadManagementSystem/JobWrapper/test/script-OK.sh', 'script-OK.sh')
@@ -106,7 +107,7 @@ class JobWrapperTestCaseSuccess(JobWrapperTestCase):
     jw.jobArgs = {'Executable': 'script-RESC.sh'}
     res = jw.execute('')
     if res['OK']:  # FIXME: This may happen depending on the shell - not the best test admittedly!
-      print "We should not be here, unless the 'Execution thread status' is equal to 1"
+      print("We should not be here, unless the 'Execution thread status' is equal to 1")
       self.assertTrue(res['OK'])
     else:
       self.assertFalse(res['OK'])  # In this case the application finished with an error code

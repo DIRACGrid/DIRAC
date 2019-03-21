@@ -2,6 +2,7 @@
 
 """
 
+from __future__ import print_function
 __RCSID__ = "$Id"
 
 from stat import *
@@ -387,7 +388,7 @@ class LcgFileCatalogClient( FileCatalogClientBase ):
               lfcPerm['DN'] = val['DN']
               lfcPerm['Role'] = val['Role']
             except KeyError:
-              print 'key not found: __getACLInformation returned incomplete dictionary', KeyError
+              print('key not found: __getACLInformation returned incomplete dictionary', KeyError)
               failed[path] = lfcPerm
               continue
           # ACLs are just an additional information, therefore here it is successful

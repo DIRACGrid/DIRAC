@@ -2,6 +2,7 @@
 ########################################################################
 """ System Administrator Client Command Line Interface """
 
+from __future__ import print_function
 import sys
 import pprint
 import os
@@ -1298,7 +1299,7 @@ class SystemAdministratorClientCLI( CLI ):
                 records.append(record)
       printTable( fields, records, sortOption )
       if silentHosts:
-        print "\n %d out of %d hosts did not respond" % ( len( silentHosts ), len( respondingHosts ) )
+        print("\n %d out of %d hosts did not respond" % (len(silentHosts), len(respondingHosts)))
 
   def default( self, args ):
 

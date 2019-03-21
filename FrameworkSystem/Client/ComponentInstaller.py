@@ -60,6 +60,7 @@ If a Master Configuration Server is being installed the following Options can be
 
 """
 
+from __future__ import print_function
 import os
 import re
 import glob
@@ -952,7 +953,7 @@ class ComponentInstaller(object):
                         str(rDict[comp]['PID'])])
       printTable(fields, records)
     except Exception as x:
-      print "Exception while gathering data for printing: %s" % str(x)
+      print("Exception while gathering data for printing: %s" % str(x))
     return S_OK()
 
   def printOverallStatus(self, rDict):
@@ -980,7 +981,7 @@ class ComponentInstaller(object):
             records.append(record)
       printTable(fields, records)
     except Exception as x:
-      print "Exception while gathering data for printing: %s" % str(x)
+      print("Exception while gathering data for printing: %s" % str(x))
 
     return S_OK()
 

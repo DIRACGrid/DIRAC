@@ -24,6 +24,7 @@
     echo "From: source@email.com\\nSubject: Test\\n\\nMessage body" | dirac-sys-sendmail destination@email.com
 """
 
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import socket , sys , os
@@ -78,7 +79,7 @@ if "Subject" in headers:
   subject = headers[ "Subject" ]
 
 ntc = NotificationClient()
-print "sendMail(%s,%s,%s,%s,%s)" % ( to , subject , body , origin , False )
+print("sendMail(%s,%s,%s,%s,%s)" % (to, subject, body, origin, False))
 result = ntc.sendMail( to , subject , body , origin , localAttempt = False )
 if not result[ "OK" ]:
   gLogger.error( result[ "Message" ] )

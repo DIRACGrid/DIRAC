@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
 import matplotlib.pyplot as plt
 import numpy as np
 import os
@@ -29,7 +30,7 @@ def analyze_data(input_data, binSize = 10):
       queryTimes.append(query)
       intStartTimes.append(int(start))
     except Exception as e:
-      print e
+      print(e)
 
   
   curBinStart = intStartTimes[0]

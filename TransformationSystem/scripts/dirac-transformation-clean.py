@@ -2,6 +2,7 @@
 """ Clean a tranformation
 """
 
+from __future__ import print_function
 import sys
 
 from DIRAC.Core.Base.Script import parseCommandLine
@@ -11,7 +12,7 @@ from DIRAC.TransformationSystem.Agent.TransformationCleaningAgent     import Tra
 from DIRAC.TransformationSystem.Client.TransformationClient         import TransformationClient
 
 if len( sys.argv ) < 2:
-  print 'Usage: dirac-transformation-clean transID [transID] [transID]'
+  print('Usage: dirac-transformation-clean transID [transID] [transID]')
   sys.exit()
 else:
   transIDs = [int( arg ) for arg in sys.argv[1:]]

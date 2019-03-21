@@ -29,6 +29,7 @@
         python -m pytest -c ../pytest.ini  -vv tests/Integration/WorkloadManagementSystem/Test_SandboxStoreClient.py
 """
 
+from __future__ import print_function
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
@@ -57,12 +58,12 @@ def test_SSCChain(self):
   res = ssc.uploadFilesAsSandboxForJob(fileList, 1, 'Input')
   assert res['OK'] is True
   res = ssc.downloadSandboxForJob(1, 'Input')  # to run this we need the RSS on
-  print res  # for debug...
+  print(res)  # for debug...
   assert res['OK'] is True
 
   # only ones needing the DB
   res = smDB.getUnusedSandboxes()
-  print res
+  print(res)
   assert res['OK'] is True
   # smDB.getSandboxId(SEName, SEPFN, requesterName, requesterGroup)
   # # cleaning

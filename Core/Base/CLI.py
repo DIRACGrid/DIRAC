@@ -7,6 +7,7 @@
     several utilities and signal handlers of general purpose.
 """
 
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import cmd
@@ -45,7 +46,7 @@ class CLI( cmd.Cmd ):
 
   def _handleSignal( self, sig, frame ):
 
-    print "\nReceived signal", sig, ", exiting ..."
+    print("\nReceived signal", sig, ", exiting ...")
     self.do_quit( self )
 
   def _initSignals( self ):
@@ -101,7 +102,7 @@ class CLI( cmd.Cmd ):
     argss = args.split()
     fname = argss[0]
     if not os.path.exists(fname):
-      print "Error: File not found %s" % fname
+      print("Error: File not found %s" % fname)
       return
     with open(fname, "r") as input_cmd:
       contents = input_cmd.readlines()
@@ -116,9 +117,9 @@ class CLI( cmd.Cmd ):
 
   def printPair( self, key, value, separator=":" ):
     valueList = value.split( "\n" )
-    print "%s%s%s %s" % ( key, " " * ( self.indentSpace - len( key ) ), separator, valueList[0].strip() )
+    print("%s%s%s %s" % (key, " " * (self.indentSpace - len(key)), separator, valueList[0].strip()))
     for valueLine in valueList[ 1:-1 ]:
-      print "%s  %s" % ( " " * self.indentSpace, valueLine.strip() )
+      print("%s  %s" % (" " * self.indentSpace, valueLine.strip()))
 
   def do_help( self, args ):
     """
@@ -127,18 +128,18 @@ class CLI( cmd.Cmd ):
         If no command is specified all commands are shown
     """
     if len( args ) == 0:
-      print "\nAvailable commands:\n"
+      print("\nAvailable commands:\n")
       attrList = dir( self )
       attrList.sort()
       for attribute in attrList:
         if attribute.startswith("do_"):
           self.printPair( attribute[ 3: ], getattr( self, attribute ).__doc__[ 1: ] )
-          print ""
+          print("")
     else:
       command = args.split()[0].strip()
       try:
         obj = getattr( self, "do_%s" % command )
       except BaseException:
-        print "There's no such %s command" % command
+        print("There's no such %s command" % command)
         return
       self.printPair(command, obj.__doc__[1:])

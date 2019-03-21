@@ -2,6 +2,7 @@
 # -*- coding:utf-8 -*-
 # author: lintao
 
+from __future__ import print_function
 import readline
 readline.set_completer_delims(' \t\n`~!@#$%^&*()=+[{]}\\|;:\'",<>/?')
 
@@ -83,6 +84,6 @@ if __name__ == "__main__":
   ulfs = UnixLikeFileSystem()
   dc = DirectoryCompletion(ulfs)
 
-  print dc.parse_text_line("ls", "/bin/", "/home/ihep")
-  print dc.parse_text_line(".vim", "", "/home/ihep")
-  print dc.parse_text_line("", "", "/home/ihep")
+  print(dc.parse_text_line("ls", "/bin/", "/home/ihep"))
+  print(dc.parse_text_line(".vim", "", "/home/ihep"))
+  print(dc.parse_text_line("", "", "/home/ihep"))

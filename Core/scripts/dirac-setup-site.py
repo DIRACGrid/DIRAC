@@ -6,6 +6,7 @@
 """
 Initial installation and configuration of a new DIRAC server (DBs, Services, Agents, Web Portal,...)
 """
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 from DIRAC import S_OK
@@ -49,16 +50,16 @@ gComponentInstaller.exitOnError = cliParams.exitOnError
 #
 result = gComponentInstaller.setupSite( Script.localCfg, cfg )
 if not result['OK']:
-  print "ERROR:", result['Message']
+  print("ERROR:", result['Message'])
   exit( -1 )
 #
 result = gComponentInstaller.getStartupComponentStatus( [] )
 if not result['OK']:
-  print 'ERROR:', result['Message']
+  print('ERROR:', result['Message'])
   exit( -1 )
 
-print "\nStatus of installed components:\n"
+print("\nStatus of installed components:\n")
 result = gComponentInstaller.printStartupStatus( result['Value'] )
 if not result['OK']:
-  print 'ERROR:', result['Message']
+  print('ERROR:', result['Message'])
   exit( -1 )

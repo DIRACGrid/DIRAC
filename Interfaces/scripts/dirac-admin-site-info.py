@@ -6,6 +6,7 @@
 """
   Print Configuration information for a given Site
 """
+from __future__ import print_function
 __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
@@ -34,6 +35,6 @@ for site in args:
     exitCode = 2
 
 for error in errorList:
-  print "ERROR %s: %s" % error
+  print("ERROR %s: %s" % error)
 
 DIRAC.exit(exitCode)

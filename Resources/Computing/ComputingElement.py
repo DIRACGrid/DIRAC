@@ -26,6 +26,7 @@
      ComputingElementFactory.
 """
 
+from __future__ import print_function
 import os
 import multiprocessing
 
@@ -333,7 +334,7 @@ class ComputingElement(object):
       return result
     else:
       self.log.info('Payload proxy information:')
-      print result['Value']
+      print(result['Value'])
 
     return S_OK(proxyLocation)
 
@@ -458,7 +459,7 @@ class ComputingElement(object):
   def sendOutput(self, stdid, line):  # pylint: disable=unused-argument, no-self-use
     """ Callback function such that the results from the CE may be returned.
     """
-    print line
+    print(line)
 
   #############################################################################
   def submitJob(self, executableFile, proxy, dummy=None, processors=1):  # pylint: disable=unused-argument

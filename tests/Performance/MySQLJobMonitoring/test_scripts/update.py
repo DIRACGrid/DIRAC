@@ -3,6 +3,7 @@ Performance test created using multi-mechnize to analyze time
 for update processing with MySQL.
 """
 
+from __future__ import print_function
 import random
 import string
 import time
@@ -40,4 +41,4 @@ if __name__ == '__main__':
 
   trans = Transaction()
   trans.run()
-  print trans.custom_timers
+  print(trans.custom_timers)

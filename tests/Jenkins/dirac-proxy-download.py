@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 """ Get a proxy from the proxy manager
 """
+from __future__ import print_function
 import os
 
 from DIRAC.Core.Base import Script
@@ -22,7 +23,7 @@ dn = ' '.join( args )
 uid = os.getuid()
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient        import gProxyManager
 
-print "Getting proxy for User DN: %s, User role %s" % (dn, role)
+print("Getting proxy for User DN: %s, User role %s" % (dn, role))
 
 res = gProxyManager.downloadProxyToFile( dn, role,
                                          limited = False, requiredTimeLeft = 1200,
@@ -30,5 +31,5 @@ res = gProxyManager.downloadProxyToFile( dn, role,
                                          token = False )
 
 if not res['OK']:
-  print "Error downloading proxy", res['Message']
+  print("Error downloading proxy", res['Message'])
   exit( 1 )

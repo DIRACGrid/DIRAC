@@ -22,6 +22,7 @@ Verbosity:
 
 # FIXME: this, I believe, is not complete
 
+from __future__ import print_function
 import datetime
 import json
 import shutil
@@ -178,7 +179,7 @@ def listCSPolicies(setup="Defaults"):
 
   policies = getPolicySection(setup)
   for p in policies:
-    print " " * 3, p, " || matchParams: ", policies[p]['matchParams'], " || policyType: ", policies[p]['policyType']
+    print(" " * 3, p, " || matchParams: ", policies[p]['matchParams'], " || policyType: ", policies[p]['policyType'])
 
 
 def listAvailablePolicies():
@@ -188,7 +189,7 @@ def listAvailablePolicies():
 
   policiesMeta = Configurations.POLICIESMETA
   for pm in policiesMeta:
-    print " " * 3, pm, " || args: ", policiesMeta[pm]['args'], " || description: ", policiesMeta[pm]['description']
+    print(" " * 3, pm, " || args: ", policiesMeta[pm]['args'], " || description: ", policiesMeta[pm]['description'])
 
 
 def getPolicySection(cfg, setup="Defaults"):
@@ -232,17 +233,17 @@ def updatePolicy(policySection):
 
     params = ['element', 'name', 'elementType']
     while True:
-      print ""
-      print "\t WARNING:"
-      print "\t if you enter 'element' as param then you should enter 'Site' or 'Resource' as a value"
-      print "\t if you enter 'name' as param then you should enter either a name or a comma-separated list of names\n"
+      print("")
+      print("\t WARNING:")
+      print("\t if you enter 'element' as param then you should enter 'Site' or 'Resource' as a value")
+      print("\t if you enter 'name' as param then you should enter either a name or a comma-separated list of names\n")
 
       # setting match params
       param = raw_input("STEP2 - Enter a match param (among %s), or leave empty otherwise: " % str(params)).strip()
       if param == "":
         break
       if param not in params:
-        print "\t WARNING: you should enter a match param (among %s), or leave it empty otherwise" % str(params)
+        print("\t WARNING: you should enter a match param (among %s), or leave it empty otherwise" % str(params))
         continue
       value = raw_input("STEP2 - Enter a value for match param '" + param + "', leave it empty otherwise:").strip()
       if value == "":
@@ -256,7 +257,7 @@ def updatePolicy(policySection):
 
     # setting policy type
     headLine("LIST OF AVAILABLE POLICIES")
-    print listAvailablePolicies()
+    print(listAvailablePolicies())
     policy = raw_input(
         "STEP3 - Enter a policyType (see one of the the policies listed above, leave empty otherwise): ").strip()
     if policy == "":
@@ -279,7 +280,7 @@ def removePolicy(policySection, policies):
     if policy in policySection:
       del policySection[policy]
     else:
-      print "\n\t WARNING: No policy named %s was found in the Policy section!" % policy
+      print("\n\t WARNING: No policy named %s was found in the Policy section!" % policy)
 
   return policySection
 
@@ -297,9 +298,9 @@ def dumpPolicy(cfgDict, fileName):
     shutil.copyfile(fileName, fileName + ".bkp")  # creates a backup copy of the dirac config file
     dumpedSucccessfully = fileCFG.writeToFile(fileName)
     if dumpedSucccessfully:
-      print "Your update has been dumped successfully!"
+      print("Your update has been dumped successfully!")
     else:
-      print "It was not possible to dump your update. Something went wrong!"
+      print("It was not possible to dump your update. Something went wrong!")
 
 
 def viewPolicyDict(policyDict):
@@ -307,7 +308,7 @@ def viewPolicyDict(policyDict):
     to "prettyprint" a python dictionary
   '''
 
-  print json.dumps(policyDict, indent=2, sort_keys=True)
+  print(json.dumps(policyDict, indent=2, sort_keys=True))
 
 
 def restoreCfgFile(fileName):
@@ -316,7 +317,7 @@ def restoreCfgFile(fileName):
   '''
 
   shutil.copyfile(fileName + ".bkp", fileName)
-  print "\n\tWARNING: dirac config file was restored!"
+  print("\n\tWARNING: dirac config file was restored!")
 
 
 def headLine(text):
@@ -324,7 +325,7 @@ def headLine(text):
     to create a pretty printout headline
   '''
 
-  print "\n\t*** %s ***\n" % text
+  print("\n\t*** %s ***\n" % text)
 
 
 def run(cmd, params):

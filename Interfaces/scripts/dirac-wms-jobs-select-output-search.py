@@ -7,6 +7,7 @@
 """
   Retrieve output sandbox for DIRAC Jobs for the given selection and search for a string in their std.out
 """
+from __future__ import print_function
 __RCSID__ = "$Id$"
 import os
 from shutil import rmtree
@@ -79,7 +80,7 @@ result = dirac.selectJobs( status = status, minorStatus = minorStatus, applicati
 if result['OK']:
   jobs = result['Value']
 else:
-  print "Error in selectJob", result['Message']
+  print("Error in selectJob", result['Message'])
   DIRAC.exit( 2 )
 
 for job in jobs:
@@ -102,7 +103,7 @@ for job in jobs:
     exitCode = 2
 
 for result in resultDict.iteritems():
-  print result
+  print(result)
 
 
 DIRAC.exit( exitCode )

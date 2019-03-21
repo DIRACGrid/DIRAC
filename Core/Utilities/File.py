@@ -4,6 +4,7 @@
    By default on Error they return None.
 """
 
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import os
@@ -291,4 +292,4 @@ def convertSizeUnits(size, srcUnit, dstUnit):
 
 if __name__ == "__main__":
   for p in sys.argv[1:]:
-    print "%s : %s bytes" % (p, getGlobbedTotalSize(p))
+    print("%s : %s bytes" % (p, getGlobbedTotalSize(p)))

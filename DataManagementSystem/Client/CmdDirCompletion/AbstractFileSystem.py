@@ -2,6 +2,7 @@
 # -*- coding:utf-8 -*-
 # author: lintao
 
+from __future__ import print_function
 class HelperReadOnly(object):
   def __init__(self, val):
     self.val = val
@@ -52,12 +53,12 @@ class DFCFileSystem(AbsFileSystem):
       path = path.replace('//', '/')
       path = os.path.normpath(path)
     if not self.is_dir(path):
-      print "It is not Directory"
+      print("It is not Directory")
       raise StopIteration
 
     result = self.fc.listDirectory(path, False)
     if not result['OK']:
-      print "some errors."
+      print("some errors.")
       raise StopIteration
 
     content = result['Value']['Successful'].get(path, False)
@@ -92,10 +93,10 @@ class DFCFileSystem(AbsFileSystem):
 
 if __name__ == "__main__":
   ulfs = UnixLikeFileSystem()
-  print "FS", ulfs.fs_name
-  print "SEQ", ulfs.seq
+  print("FS", ulfs.fs_name)
+  print("SEQ", ulfs.seq)
 
-  print list(ulfs.list_dir("/"))
-  print list(ulfs.list_dir("/bad"))
+  print(list(ulfs.list_dir("/")))
+  print(list(ulfs.list_dir("/bad")))
 
   

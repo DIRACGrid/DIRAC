@@ -1,5 +1,6 @@
 # FIXME: to bring back to life
 
+from __future__ import print_function
 import unittest
 import os
 import sys
@@ -34,7 +35,7 @@ class JobWrapper:
       thread = ExecutionThread(spObject,command, maxPeekLines)
       thread.start()
     else:
-      print 'Path to executable not found'
+      print('Path to executable not found')
 
     pid = os.getpid()
     jobCPUTime = 60
@@ -48,19 +49,19 @@ class JobWrapper:
 
     watchdog.calibrate()
     if thread.isAlive():
-      print 'Thread alive and started in Job Wrapper'
+      print('Thread alive and started in Job Wrapper')
       systemFlag = 'mac'
       if systemFlag == 'mac':
         watchdog.run()
     else:
-      print 'Thread stopped very quickly...'
+      print('Thread stopped very quickly...')
 
-    print 'Execution Result is : '
-    print EXECUTION_RESULT
+    print('Execution Result is : ')
+    print(EXECUTION_RESULT)
 
   def main(self, executable):
     currentPID = os.getpid()
-    print 'Job Wrapper started under PID ',currentPID
+    print('Job Wrapper started under PID ', currentPID)
     result = self.execute( executable )
 
 #############################################################################
@@ -127,9 +128,9 @@ class WatchdogMacTestCase(unittest.TestCase):
     j.main(script)
 
 if __name__ == '__main__':
-  print 'Starting Unit Test for Watchdog'
+  print('Starting Unit Test for Watchdog')
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(WatchdogMacTestCase)
-  print 'Unit test finished, Job Wrapper harness completed execution'
+  print('Unit test finished, Job Wrapper harness completed execution')
  # suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(GetSystemInfoTestCase))
 #  testResult = unittest.TextTestRunner(verbosity=2).run(suite)
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)

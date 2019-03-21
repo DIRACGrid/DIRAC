@@ -1,6 +1,7 @@
 """ A generic client for creating transformations
 """
 
+from __future__ import print_function
 import types
 import json
 
@@ -458,13 +459,13 @@ class Transformation(API):
           dictList.append(showDict)
 
       except Exception as x:
-        print 'Exception %s ' % str(x)
+        print('Exception %s ' % str(x))
 
     if not len(dictList) > 0:
       gLogger.error('No found transformations satisfying input condition')
       return S_ERROR('No found transformations satisfying input condition')
     else:
-      print self._printFormattedDictList(dictList, paramShowNamesShort, paramShowNamesShort[0], paramShowNamesShort[0])
+      print(self._printFormattedDictList(dictList, paramShowNamesShort, paramShowNamesShort[0], paramShowNamesShort[0]))
 
     return S_OK(dictList)
 

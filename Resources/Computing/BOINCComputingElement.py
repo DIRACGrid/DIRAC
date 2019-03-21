@@ -6,6 +6,7 @@
 """ BOINC Computing Element 
 """
 
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import os
@@ -325,36 +326,36 @@ if __name__ == "__main__":
     result = test_boinc.submitJob( fname )
  
     if not result['OK']:
-      print result['Message']
+      print(result['Message'])
     else:
       jobID = result['Value'][0]
-      print "Successfully submit a job %s" % jobID
+      print("Successfully submit a job %s" % jobID)
 
   if test_parameter & test_getStatus:
     jobTestList = ["Uu0ghO_0@mardirac3.in2p3.fr", "1aDmIf_0@mardirac3.in2p3.fr",jobID] 
     jobStatus = test_boinc.getJobStatus( jobTestList )
     if not jobStatus['OK']:
-      print jobStatus['Message']
+      print(jobStatus['Message'])
     else:
       for _ in jobTestList:
-        print 'The status of the job %s is %s' % (id, jobStatus['Value'][id])
+        print('The status of the job %s is %s' % (id, jobStatus['Value'][id]))
 
   if test_parameter & test_getDynamic:
     serverState = test_boinc.getCEStatus()
 
     if not serverState['OK']:
-      print serverState['Message']
+      print(serverState['Message'])
     else:
-      print 'The number of jobs waiting is %s' % serverState['WaitingJobs']
-      print 'The number of jobs running is %s' % serverState['RunningJobs']
+      print('The number of jobs waiting is %s' % serverState['WaitingJobs'])
+      print('The number of jobs running is %s' % serverState['RunningJobs'])
   
   if test_parameter & test_getOutput:
     outstate = test_boinc.getJobOutput( jobID, "/tmp/" )
 
     if not outstate['OK']:
-      print outstate['Message']
+      print(outstate['Message'])
     else:
-      print "Please check the directory /tmp for the output and error files of job %s" %jobID 
+      print("Please check the directory /tmp for the output and error files of job %s" % jobID)
 
 
 #EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

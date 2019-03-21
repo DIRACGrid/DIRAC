@@ -1,6 +1,7 @@
 """ Decorators for DIRAC.
 """
 
+from __future__ import print_function
 import os
 import inspect
 import functools
@@ -93,8 +94,8 @@ def deprecated(reason, onlyOnce=False):
         # which will be the place which called the deprecated item
         # callDetails is a tuple of (file, lineNum, function, text)
         callDetails = traceback.extract_stack()[-2]
-        print "NOTE: %s %s is deprecated (%s)." % (objName, objType, reason)
-        print "NOTE:   Used at %s:%u" % (callDetails[0], callDetails[1])
+        print("NOTE: %s %s is deprecated (%s)." % (objName, objType, reason))
+        print("NOTE:   Used at %s:%u" % (callDetails[0], callDetails[1]))
       if onlyOnce:
         decFunc.warningEn = False
       return func(*args, **kwargs)
