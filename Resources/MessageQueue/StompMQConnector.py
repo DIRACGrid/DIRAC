@@ -130,16 +130,11 @@ class StompMQConnector(MQConnector):
     return S_OK(connectionArgs)
 
   def reconnect(self, subscribedConsumers, tryReconnect):
-    print 'in reconnect'
     if tryReconnect:
       res = self.connect()
       if not res:
         return S_ERROR(EMQCONN, "Failed to reconnect")
-      # currentConsumers = dict(subscribedConsumers)
-      print 'currentConsumers:' 
-      print subscribedConsumers
-
-      for consumerId,v in currentConsumers:
+      for consumerId,v in subscribedConsumers:
         res = callFunctionForBrokers(self._subscribe,  connections = [v['connection']],  ack=v['ack'], mId= consumerId, dest=v['dest'], headers=v['headers'], callback=v['callback'])
         if not res:
           return S_ERROR(EMQUKN, 'Failed to subscribe to at least one broker')
@@ -249,13 +244,9 @@ class StompMQConnector(MQConnector):
       return False
     return True
 
-
   def unsubscribe(self, parameters):
     dest = parameters.get('destination', '')
     mId = parameters.get('messengerId', '')
-    print 'in unsubscribe'
-    print 'dest %s'% str(dest)
-    print 'mId %s'% str(mId)
     res = callFunctionForBrokers(self._unsubscribe, connections = self.connections.itervalues(),  destination=dest, mId=mId)
     if not res:
       return S_ERROR(EMQUKN, 'Failed to unsubscribe from at least one destination')
@@ -267,8 +258,6 @@ class StompMQConnector(MQConnector):
       connection.unsubscribe(destination=destination, id=mId)
       connection.get_listener('StompListener').removeConsumerInfo(consumerId = mId)
     except Exception as e:
-      print "what exception?"
-      print e
       self.log.error('Failed to unsubscribe: %s' % e)
       return False
     return True

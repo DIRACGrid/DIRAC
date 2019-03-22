@@ -19,7 +19,7 @@ USER = 'guest'
 PASSWORD = 'guest'
 QUEUE = 'TestQueue'
 TOPIC = 'TestTopic'
-ACKNOWLEDGEMENT = 'True'
+ACKNOWLEDGEMENT = 'False'
 MESSENGERID = 'Producer1'
 
 PARAMETERS = \
@@ -48,6 +48,47 @@ IP1 = '192.168.10.23'
 IP2 = '172.16.18.40'
 GETHOSTBYNAME = (HOST, [], [IP1, IP2])
 
+
+def pseudoReconnect(**kwargs):
+  pass
+class StompListenerTestCase(unittest.TestCase):
+  """ Test of Listener .
+  """
+  def setUp(self):
+
+    # external dependencies
+    module.socket.gethostbyname_ex = MagicMock(return_value=GETHOSTBYNAME)
+
+    module.time = MagicMock()
+    module.ssl = MagicMock()
+    module.json = MagicMock()
+
+    connectionMock = MagicMock()
+    connectionMock.is_connected.return_value = True
+
+    module.stomp = MagicMock()
+    module.stomp.Connection = MagicMock()
+    module.stomp.Connection.return_value = connectionMock
+
+    # internal dependencies
+    module.MQConnector = MagicMock()
+    module.gLogger = MagicMock()
+
+    # prepare test object
+    self.mqConnector = module.StompMQConnector()
+  def test_createStompListener(self):
+    connection = module.stomp.Connection()
+    listener = module.StompListener(connection,pseudoReconnect )
+    self.assertEqual(listener.connection, connection)
+    self.assertEqual(listener.callbackOnDisconnected, pseudoReconnect)
+
+  def test_methodsOfStompListener(self):
+    connection = module.stomp.Connection()
+    listener = module.StompListener(connection,pseudoReconnect )
+    try:
+      listener.removeConsumerInfo(1)
+    except Exception as e:
+      self.fail("removeConsumerInfo() raised exception!")
 
 class StompMQConnectorSuccessTestCase(unittest.TestCase):
   """ Test class to check success scenarios.
@@ -93,11 +134,8 @@ class StompMQConnectorSuccessTestCase(unittest.TestCase):
 
   def test_createStompListener(self):
     connection = module.stomp.Connection()
-    listener = module.StompListener(ACKNOWLEDGEMENT, connection, MESSENGERID)
-
-    self.assertEqual(listener.ack, ACKNOWLEDGEMENT)
+    listener = module.StompListener(connection,None )
     self.assertEqual(listener.connection, connection)
-    self.assertEqual(listener.mId, MESSENGERID)
 
   def test_makeConnection(self):
     result = self.mqConnector.setupConnection(parameters=PARAMETERS)
@@ -195,4 +233,5 @@ class StompMQConnectorFailureTestCase(unittest.TestCase):
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(StompMQConnectorSuccessTestCase)
   suite.addTests(unittest.defaultTestLoader.loadTestsFromTestCase(StompMQConnectorFailureTestCase))
+  suite.addTests(unittest.defaultTestLoader.loadTestsFromTestCase(StompListenerTestCase))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
