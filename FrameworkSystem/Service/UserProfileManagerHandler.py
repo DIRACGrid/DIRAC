@@ -139,7 +139,6 @@ class UserProfileManagerHandler( RequestHandler ):
     credDict = self.getRemoteCredentials()
     userName = credDict[ 'username' ]
     userGroup = credDict[ 'group' ]
-    print("ASDASDASD")
     return gUPDB.retrieveAllHashTags( userName, userGroup )
 
   types_deleteProfiles = [ types.ListType ]
