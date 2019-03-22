@@ -290,24 +290,31 @@ class StompListener (stomp.ConnectionListener):
     Initializes the internal listener object
 
     :param func callback: a defaultCallback compatible function
-    :param bool ack: if set to true an acknowledgement will be send back to the sender
-    :param str messengerId: messenger identifier sent with acknowledgement messages.
 
     """
 
     self.log = gLogger.getSubLogger('StompListener')
-    # self.ack = ack
-    # self.mId = messengerId
     self.connection = connection
     self.callbackOnDisconnected = callbackOnDisconnected
     self.consumersInfo = {}
 
   def addConsumerInfo(self, mId, connection, ack, dest, headers, callback):
+    """
+    Add consumer information to the internal dict 
+
+    :param func callback: a defaultCallback compatible function
+    :param bool ack: if set to true an acknowledgement will be send back to the sender
+    :param str messengerId: messenger identifier sent with acknowledgement messages.
+
+    """
     if mId not in self.consumersInfo:
       self.consumersInfo[mId]={"connection":connection,"ack":ack, "dest":dest, "headers": headers, "callback":callback}
 
   def removeConsumerInfo(self,consumerId):
-    del self.consumersInfo[consumerId]
+    try:
+      del self.consumersInfo[consumerId]
+    except KeyError:
+      self.log.debug("Trying to remove consumer that is not registered: %s" % str(consumerId))
 
   def removeAllConsumersInfo(self):
     self.consumersInfo.clear()
