@@ -129,20 +129,20 @@ class StompMQConnector(MQConnector):
         return S_ERROR(EMQCONN, 'Invalid SSL version provided: %s' % sslVersion)
     return S_OK(connectionArgs)
 
-  def reconnect(self, subscribedConsumers, tryReconnect = False):
+  def reconnect(self, subscribedConsumers, tryReconnect):
     print 'in reconnect'
     if tryReconnect:
-      #Think how to deal with the disconnecting on purpose
-      #error handling
-      self.connect()
+      res = self.connect()
+      if not res:
+        return S_ERROR(EMQCONN, "Failed to reconnect")
       # currentConsumers = dict(subscribedConsumers)
       print 'currentConsumers:' 
       print subscribedConsumers
 
-      # for cId,v in currentConsumers:
-        # res = callFunctionForBrokers(self._subscribe,  connections = [v['connection']],  ack=v['ack'], mId= cId, dest=v['dest'], headers=v['headers'], callback=v['callback'] )
-        # if not res:
-          # return S_ERROR(EMQUKN, 'Failed to subscribe to at least one broker')
+      for consumerId,v in currentConsumers:
+        res = callFunctionForBrokers(self._subscribe,  connections = [v['connection']],  ack=v['ack'], mId= consumerId, dest=v['dest'], headers=v['headers'], callback=v['callback'])
+        if not res:
+          return S_ERROR(EMQUKN, 'Failed to subscribe to at least one broker')
       return S_OK('Reconnection successful')
     return S_OK('Reconnection  not done')
 
@@ -229,11 +229,8 @@ class StompMQConnector(MQConnector):
     if self.parameters.get('Persistent', '').lower() in ['true', 'yes', '1']:
       headers = {'persistent': 'true'}
     ack = 'auto'
-    acknowledgement = False
     if self.parameters.get('Acknowledgement', '').lower() in ['true', 'yes', '1']:
-      acknowledgement = True
       ack = 'client-individual'
-
     callback = parameters.get('callback')
     res = callFunctionForBrokers(self._subscribe,  connections = self.connections.itervalues(),  ack=ack, mId=mId, dest=dest, headers=headers, callback=callback  )
     if not res:
@@ -246,10 +243,7 @@ class StompMQConnector(MQConnector):
                            id=mId,
                            ack=ack,
                            headers=headers)
-      #crazy hack for this moment
       connection.get_listener('StompListener').addConsumerInfo(mId, connection, ack, dest, headers, callback)
-      # addConsumerId(mId,connection, ack, dest, headers,callback)
-
     except Exception as e:
       self.log.error('Failed to subscribe: %s' % e)
       return False
@@ -285,6 +279,7 @@ class StompListener (stomp.ConnectionListener):
   Internal listener class responsible for handling new messages and errors.
   """
 
+
   def __init__(self, connection, callbackOnDisconnected=None):
     """
     Initializes the internal listener object
@@ -319,25 +314,39 @@ class StompListener (stomp.ConnectionListener):
   def removeAllConsumersInfo(self):
     self.consumersInfo.clear()
 
+  def isAck(self, consumerId):
+    try:
+      return self.consumersInfo[consumerId]['ack'] == 'client-individual'
+    except KeyError as e:
+      return False
+
   def on_message(self, headers, body):
     """
     Function called upon receiving a message
     :param dict headers: message headers
     :param json body: message body
     """
+
     if 'subscription' in headers:
       consumerId = headers['subscription']
       if consumerId in self.consumersInfo:
-        callback = self.consumersInfo[consumerId]['callback']
-        if callback is not None:
-          result = callback(headers, json.loads(body))
-        print "ack value:"
-        print self.consumersInfo[consumerId]['ack']
-        if self.consumersInfo[consumerId]['ack'] == 'client-individual':
-          if result['OK']:
-            self.connection.ack(headers['message-id'], consumerId)
-          else:
-            self.connection.nack(headers['message-id'], consumerId)
+        try:
+          callback = self.consumersInfo[consumerId]['callback']
+          if callback is not None:
+            result = callback(headers, json.loads(body))
+          if self.isAck(consumerId):
+            if result['OK']:
+              self.connection.ack(headers['message-id'], consumerId)
+            else:
+              self.connection.nack(headers['message-id'], consumerId)
+        except KeyError as e:
+          self.log.error("The consumer info is not complete %s" %e)
+        except Exception as e:
+          self.log.error("Unexpected error: %s" %e)
+      else:
+        self.log.error("The consumer id %s is not registered"% str(consumerId))
+    else:
+      self.log.error("Header of the message does not contain the subscription field. We dont know which consumer should get it!")
 
   def on_error(self, headers, message):
     """ Function called when an error happens
@@ -345,10 +354,11 @@ class StompListener (stomp.ConnectionListener):
     self.log.error(message)
 
   def on_disconnected(self):
-    """ Callback function called after disconnecting from broker.
+    """ Callback function called if the broker disconnects.
     """
-    #maybe it should be atomic?
-    #also what if we want to disconnect for real?
     self.log.warn('Disconnected from broker')
-    if self.callbackOnDisconnected:
-      self.callbackOnDisconnected(subscribedConsumers = self.consumersInfo)
+    try:
+      if self.callbackOnDisconnected:
+        self.callbackOnDisconnected(subscribedConsumers = self.consumersInfo)
+    except Exception as e:
+      self.log.error("Unexpected error while calling calback: %s" %e)
