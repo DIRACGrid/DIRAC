@@ -51,9 +51,12 @@ GETHOSTBYNAME = (HOST, [], [IP1, IP2])
 
 def pseudoReconnect(**kwargs):
   pass
+
+
 class StompListenerTestCase(unittest.TestCase):
   """ Test of Listener .
   """
+
   def setUp(self):
 
     # external dependencies
@@ -76,19 +79,21 @@ class StompListenerTestCase(unittest.TestCase):
 
     # prepare test object
     self.mqConnector = module.StompMQConnector()
+
   def test_createStompListener(self):
     connection = module.stomp.Connection()
-    listener = module.StompListener(connection,pseudoReconnect )
+    listener = module.StompListener(connection, pseudoReconnect)
     self.assertEqual(listener.connection, connection)
     self.assertEqual(listener.callbackOnDisconnected, pseudoReconnect)
 
   def test_methodsOfStompListener(self):
     connection = module.stomp.Connection()
-    listener = module.StompListener(connection,pseudoReconnect )
+    listener = module.StompListener(connection, pseudoReconnect)
     try:
       listener.removeConsumerInfo(1)
     except Exception as e:
       self.fail("removeConsumerInfo() raised exception!")
+
 
 class StompMQConnectorSuccessTestCase(unittest.TestCase):
   """ Test class to check success scenarios.
@@ -119,22 +124,23 @@ class StompMQConnectorSuccessTestCase(unittest.TestCase):
 
   def test_callFunctionForBrokers(self):
     testFuncTrue = lambda **kwargs: True
-    result = callFunctionForBrokers( testFuncTrue, connections=[1,2])
+    result = callFunctionForBrokers(testFuncTrue, connections=[1, 2])
     self.assertTrue(result)
     testFuncFalse = lambda **kwargs: False
-    result = callFunctionForBrokers(testFuncFalse, connections=[1,2])
+    result = callFunctionForBrokers(testFuncFalse, connections=[1, 2])
     self.assertFalse(result)
-    testFuncTrue2 = lambda connection: True if connection == 0 else False
-    result = callFunctionForBrokers(testFuncTrue2, connections=[0,1])
+
+    def testFuncTrue2(connection): return True if connection == 0 else False
+    result = callFunctionForBrokers(testFuncTrue2, connections=[0, 1])
     self.assertTrue(result)
-    result = callFunctionForBrokers(testFuncTrue2, connections=[1,0])
+    result = callFunctionForBrokers(testFuncTrue2, connections=[1, 0])
     self.assertTrue(result)
-    result = callFunctionForBrokers(testFuncTrue2, connections=[1,2])
+    result = callFunctionForBrokers(testFuncTrue2, connections=[1, 2])
     self.assertFalse(result)
 
   def test_createStompListener(self):
     connection = module.stomp.Connection()
-    listener = module.StompListener(connection,None )
+    listener = module.StompListener(connection, None)
     self.assertEqual(listener.connection, connection)
 
   def test_makeConnection(self):
@@ -146,14 +152,14 @@ class StompMQConnectorSuccessTestCase(unittest.TestCase):
 
     # check calls
     connectionArgs = {
-        'vhost': VHOST,
-        'keepalive': True,
-        'reconnect_sleep_initial': 1,
-        'reconnect_sleep_increase': 0.5,
-        'reconnect_sleep_max': 120,
-        'reconnect_sleep_jitter': 0.1,
-        'reconnect_attempts_max': 1e4,
-        'host_and_ports': [(IP1, int(PORT))]}
+      'vhost': VHOST,
+      'keepalive': True,
+      'reconnect_sleep_initial': 1,
+      'reconnect_sleep_increase': 0.5,
+      'reconnect_sleep_max': 120,
+      'reconnect_sleep_jitter': 0.1,
+      'reconnect_attempts_max': 1e4,
+      'host_and_ports': [(IP1, int(PORT))]}
     module.stomp.Connection.assert_any_call(**connectionArgs)
     connectionArgs.update({'host_and_ports': [(IP2, int(PORT))]})
     module.stomp.Connection.assert_any_call(**connectionArgs)
@@ -192,6 +198,34 @@ class StompMQConnectorSuccessTestCase(unittest.TestCase):
     self.assertTrue(result['OK'])
 
 
+class StompMQConnectorServerInteractions(unittest.TestCase):
+  """ Test class to check success scenarios.
+  """
+
+  def setUp(self):
+
+    # external dependencies
+    module.socket.gethostbyname_ex = MagicMock(return_value=GETHOSTBYNAME)
+
+    module.time = MagicMock()
+    module.ssl = MagicMock()
+    module.json = MagicMock()
+
+    connectionMock = MagicMock()
+    connectionMock.is_connected.return_value = True
+
+    module.stomp = MagicMock()
+    module.stomp.Connection = MagicMock()
+    module.stomp.Connection.return_value = connectionMock
+
+    # internal dependencies
+    module.MQConnector = MagicMock()
+    module.gLogger = MagicMock()
+
+    # prepare test object
+    self.mqConnector = module.StompMQConnector()
+
+
 class StompMQConnectorFailureTestCase(unittest.TestCase):
   """ Test class to check failure scenarios.
   """
@@ -226,8 +260,6 @@ class StompMQConnectorFailureTestCase(unittest.TestCase):
 
     result = self.mqConnector.setupConnection(parameters)
     self.assertFalse(result['OK'])
-
-  
 
 
 if __name__ == '__main__':
