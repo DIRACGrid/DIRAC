@@ -197,35 +197,6 @@ class StompMQConnectorSuccessTestCase(unittest.TestCase):
     result = self.mqConnector.connect()
     self.assertTrue(result['OK'])
 
-
-class StompMQConnectorServerInteractions(unittest.TestCase):
-  """ Test class to check success scenarios.
-  """
-
-  def setUp(self):
-
-    # external dependencies
-    module.socket.gethostbyname_ex = MagicMock(return_value=GETHOSTBYNAME)
-
-    module.time = MagicMock()
-    module.ssl = MagicMock()
-    module.json = MagicMock()
-
-    connectionMock = MagicMock()
-    connectionMock.is_connected.return_value = True
-
-    module.stomp = MagicMock()
-    module.stomp.Connection = MagicMock()
-    module.stomp.Connection.return_value = connectionMock
-
-    # internal dependencies
-    module.MQConnector = MagicMock()
-    module.gLogger = MagicMock()
-
-    # prepare test object
-    self.mqConnector = module.StompMQConnector()
-
-
 class StompMQConnectorFailureTestCase(unittest.TestCase):
   """ Test class to check failure scenarios.
   """

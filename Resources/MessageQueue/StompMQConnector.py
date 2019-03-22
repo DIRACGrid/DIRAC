@@ -129,25 +129,23 @@ class StompMQConnector(MQConnector):
         return S_ERROR(EMQCONN, 'Invalid SSL version provided: %s' % sslVersion)
     return S_OK(connectionArgs)
 
-  def reconnect(self, subscribedConsumers, tryReconnect):
-    if tryReconnect:
-      res = self.connect()
+  def reconnect(self, subscribedConsumers):
+    res = self.connect()
+    if not res:
+      return S_ERROR(EMQCONN, "Failed to reconnect")
+    for consumerId, v in subscribedConsumers:
+      res = callFunctionForBrokers(
+          self._subscribe,
+          connections=[
+              v['connection']],
+          ack=v['ack'],
+          mId=consumerId,
+          dest=v['dest'],
+          headers=v['headers'],
+          callback=v['callback'])
       if not res:
-        return S_ERROR(EMQCONN, "Failed to reconnect")
-      for consumerId, v in subscribedConsumers:
-        res = callFunctionForBrokers(
-            self._subscribe,
-            connections=[
-                v['connection']],
-            ack=v['ack'],
-            mId=consumerId,
-            dest=v['dest'],
-            headers=v['headers'],
-            callback=v['callback'])
-        if not res:
-          return S_ERROR(EMQUKN, 'Failed to subscribe to at least one broker')
-      return S_OK('Reconnection successful')
-    return S_OK('Reconnection  not done')
+        return S_ERROR(EMQUKN, 'Failed to subscribe to at least one broker')
+    return S_OK('Reconnection successful')
 
   def callFunctionForAnyBroker(self, func, *args, **kwargs):
     ok = False
