@@ -81,8 +81,6 @@ class StompMQConnector(MQConnector):
       for ip in ip_addresses:
         self.connections[ip] = stomp.Connection(host_and_ports=[(ip, int(port))], **connectionArgs)
         self.log.debug("Host and port: %s" % str([(ip, int(port))]))
-        # WK to change!!! listener = StompListener(callback, acknowledgement, self.connections[ip], mId)
-        # WK acknowledgment must be consumer-specific?
         listener = StompListener(self.connections[ip], self.reconnect)
         self.connections[ip].set_listener('StompListener', listener)
 
