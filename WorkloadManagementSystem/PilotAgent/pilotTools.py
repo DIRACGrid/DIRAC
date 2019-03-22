@@ -1,7 +1,6 @@
 """ A set of common tools to be used in pilot commands
 """
 
-from __future__ import print_function
 __RCSID__ = '$Id$'
 
 import sys
@@ -29,7 +28,7 @@ def pythonPathCheck():
   try:
     os.umask( 18 ) # 022
     pythonpath = os.getenv( 'PYTHONPATH', '' ).split( ':' )
-    print('Directories in PYTHONPATH:', pythonpath)
+    print 'Directories in PYTHONPATH:', pythonpath
     for p in pythonpath:
       if p == '':
         continue
@@ -38,15 +37,15 @@ def pythonPathCheck():
           # In case a given directory is twice in PYTHONPATH it has to removed only once
           sys.path.remove( os.path.normpath( p ) )
       except Exception, x:
-        print(x)
-        print("[EXCEPTION-info] Failing path:", p, os.path.normpath(p))
-        print("[EXCEPTION-info] sys.path:", sys.path)
+        print x
+        print "[EXCEPTION-info] Failing path:", p, os.path.normpath( p )
+        print "[EXCEPTION-info] sys.path:", sys.path
         raise x
   except Exception, x:
-    print(x)
-    print("[EXCEPTION-info] sys.executable:", sys.executable)
-    print("[EXCEPTION-info] sys.version:", sys.version)
-    print("[EXCEPTION-info] os.uname():", os.uname())
+    print x
+    print "[EXCEPTION-info] sys.executable:", sys.executable
+    print "[EXCEPTION-info] sys.version:", sys.version
+    print "[EXCEPTION-info] os.uname():", os.uname()
     raise x
 
 def alarmTimeoutHandler( *args ):
@@ -247,11 +246,11 @@ class Logger( object ):
                                               level,
                                               self.name,
                                               _line )
-            print(outLine)
+            print outLine
             if self.out:
               outputFile.write( outLine + '\n' )
           else:
-            print(_line)
+            print _line
             outputFile.write( _line + '\n' )
     sys.stdout.flush()
 
