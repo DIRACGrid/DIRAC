@@ -6,6 +6,7 @@
 """
 Compile DIRAC externals (does not require DIRAC code)
 """
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import tempfile
@@ -25,10 +26,10 @@ DIRACRoot = False
 def downloadExternals( destPath, version = False ):
   destPath = os.path.join( destPath, "Externals" )
   if os.system("git clone %s %s" % (gitRepo, destPath)) != 0:
-    print "Cannot clone git repo"
+    print("Cannot clone git repo")
     return False
   if version and os.system("cd %s; git checkout %s; git checkout -b comp-%s " % (destPath, version, version)) != 0:
-    print "Cannot find version %s" % version
+    print("Cannot find version %s" % version)
     return False
   return True
 
@@ -44,7 +45,7 @@ def copyFromDIRAC( filePath, destPath, isExecutable = False, filterLines = None 
     with open( os.path.join( DIRACRoot, filePath ), "r" ) as fd:
       data = fd.readlines()
   except IOError as e:
-    print "Could not open %s: %s" % ( filePath, e )
+    print("Could not open %s: %s" % (filePath, e))
     sys.exit( 1 )
   destFilePath = os.path.join( destPath, os.path.basename( filePath ) )
   try:
@@ -58,7 +59,7 @@ def copyFromDIRAC( filePath, destPath, isExecutable = False, filterLines = None 
         if not found:
           fd.write( line )
   except IOError as e:
-    print "Could not write into %s: %s" % ( destFilePath, e )
+    print("Could not write into %s: %s" % (destFilePath, e))
     sys.exit( 1 )
   if isExecutable:
     os.chmod( destFilePath, executablePerms )
@@ -110,8 +111,8 @@ def fixAbsoluteLinks( path ):
         finalDestination = [ ".." for d in absLinkDirSplit ]
         finalDestination.extend( absDestDirSplit )
         finalDestination = os.path.join( *finalDestination )
-        print "Relinking %s" % entryPath
-        print "    %s -> %s" % ( destPath, finalDestination )
+        print("Relinking %s" % entryPath)
+        print("    %s -> %s" % (destPath, finalDestination))
         os.unlink( entryPath )
         os.symlink( finalDestination, entryPath )
     elif os.path.isdir( entryPath ):
@@ -141,11 +142,11 @@ if __name__ == "__main__":
                                  [ opt[1] for opt in cmdOpts ] )
   for o, v in optList:
     if o in ( '-h', '--help' ):
-      print __doc__.split( '\n' )[1]
-      print "\nUsage:\n\n  %s [options]..." % sys.argv[0]
-      print "\nOptions:\n"
+      print(__doc__.split('\n')[1])
+      print("\nUsage:\n\n  %s [options]..." % sys.argv[0])
+      print("\nOptions:\n")
       for cmdOpt in cmdOpts:
-        print "  -%s --%s : %s" % ( cmdOpt[0].ljust( 3 ), cmdOpt[1].ljust( 15 ), cmdOpt[2] )
+        print("  -%s --%s : %s" % (cmdOpt[0].ljust(3), cmdOpt[1].ljust(15), cmdOpt[2]))
       sys.exit( 1 )
     elif o in ( '-t', '--type' ):
       compType = v.lower()
@@ -163,10 +164,10 @@ if __name__ == "__main__":
       try:
         v = int( v )
       except:
-        print "Value for makeJobs is not an integer (%s)" % v
+        print("Value for makeJobs is not an integer (%s)" % v)
         sys.exit( 1 )
       if v < 1:
-        print "Value for makeJobs mas to be greater than 0 (%s)" % v
+        print("Value for makeJobs mas to be greater than 0 (%s)" % v)
         sys.exit( 1 )
       makeArgs.append( "-j %d" % int( v ) )
 
@@ -181,33 +182,33 @@ if __name__ == "__main__":
 
   if not compDest:
     if not DIRACRoot:
-      print "Error: Could not find DIRAC root"
+      print("Error: Could not find DIRAC root")
       sys.exit( 1 )
-    print "Using platform %s" % platform
+    print("Using platform %s" % platform)
     if not platform or platform == "ERROR":
-      print >> sys.stderr, "Can not determine local platform"
+      print("Can not determine local platform", file=sys.stderr)
       sys.exit( -1 )
     compDest = os.path.join( DIRACRoot, platform )
 
   if onlyFixLinks:
-    print "Fixing absolute links"
+    print("Fixing absolute links")
     fixAbsoluteLinks( compDest )
     sys.exit( 0 )
 
   if compDest:
     if os.path.isdir( compDest ):
       oldCompDest = compDest + '.old'
-      print "Warning: %s already exists! Backing it up to %s" % ( compDest, oldCompDest )
+      print("Warning: %s already exists! Backing it up to %s" % (compDest, oldCompDest))
       if os.path.exists( oldCompDest ):
         shutil.rmtree( oldCompDest )
       os.rename( compDest, oldCompDest )
 
   if not compExtSource:
     workDir = tempfile.mkdtemp( prefix = "ExtDIRAC" )
-    print "Creating temporary work dir at %s" % workDir
+    print("Creating temporary work dir at %s" % workDir)
     downOK = False
     if not downloadExternals( workDir, compExtVersion ):
-      print "Oops! Could not download Externals!"
+      print("Oops! Could not download Externals!")
       sys.exit( 1 )
     externalsDir = os.path.join( workDir, "Externals" )
   else:
@@ -223,8 +224,8 @@ if __name__ == "__main__":
   buildCFG = CFG.CFG().loadFromFile( os.path.join( externalsDir, "builds.cfg" ) )
 
   if compType not in buildCFG.listSections():
-    print "Invalid compilation type %s" % compType
-    print " Valid ones are: %s" % ", ".join( buildCFG.listSections() )
+    print("Invalid compilation type %s" % compType)
+    print(" Valid ones are: %s" % ", ".join(buildCFG.listSections()))
     sys.exit( 1 )
 
   packagesToBuild = resolvePackagesToBuild( compType, buildCFG )
@@ -239,7 +240,7 @@ if __name__ == "__main__":
     for k in compVersionDict:
       finalPackages.append( prog.replace( "$%s$" % k, compVersionDict[k] ) )
 
-  print "Trying to get a raw environment"
+  print("Trying to get a raw environment")
   patDet = os.path.join( DIRACRoot, platform )
   for envVar in ( 'LD_LIBRARY_PATH', 'PATH' ):
     if envVar not in os.environ:
@@ -253,20 +254,20 @@ if __name__ == "__main__":
     os.environ[ envVar ] = ":".join( fixedValList )
 
   makeArgs = " ".join( makeArgs )
-  print "Building %s" % ", ".join ( finalPackages )
+  print("Building %s" % ", ".join(finalPackages))
   for prog in finalPackages:
-    print "== BUILDING %s == " % prog
+    print("== BUILDING %s == " % prog)
     progDir = os.path.join( externalsDir, prog )
     makePath = os.path.join( progDir, "dirac-make.py" )
     buildOutPath = os.path.join( progDir, "build.out" )
     os.chmod( makePath, executablePerms )
     instCmd = "'%s' %s" % ( makePath, makeArgs )
-    print " - Executing %s" % instCmd
+    print(" - Executing %s" % instCmd)
     ret = os.system( "%s  > '%s' 2>&1" % ( instCmd, buildOutPath ) )
     if ret:
-      print "Oops! Error while compiling %s" % prog
-      print "Take a look at %s for more info" % buildOutPath
+      print("Oops! Error while compiling %s" % prog)
+      print("Take a look at %s for more info" % buildOutPath)
       sys.exit( 1 )
 
-  print "Fixing absolute links"
+  print("Fixing absolute links")
   fixAbsoluteLinks( compDest )

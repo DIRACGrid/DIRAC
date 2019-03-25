@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
 __RCSID__   = "$Id$"
 
 from DIRAC           import exit as DIRACExit
@@ -40,10 +41,16 @@ else:
 
 res = FileCatalog( catalogs = catalogs ).getFileMetadata( lfns )
 if not res['OK']:
-  print "ERROR:",res['Message']
+  print("ERROR:", res['Message'])
   DIRACExit( -1 )
 
-print '%s %s %s %s %s' % ('FileName'.ljust(100),'Size'.ljust(10),'GUID'.ljust(40),'Status'.ljust(8),'Checksum'.ljust(10))
+print(
+    '%s %s %s %s %s' %
+    ('FileName'.ljust(100),
+     'Size'.ljust(10),
+     'GUID'.ljust(40),
+     'Status'.ljust(8),
+     'Checksum'.ljust(10)))
 for lfn in sorted( res['Value']['Successful'].keys() ):
   metadata = res['Value']['Successful'][lfn]
   checksum = ''
@@ -58,8 +65,8 @@ for lfn in sorted( res['Value']['Successful'].keys() ):
   status = ''
   if metadata.has_key('Status'):
     status = str(metadata['Status'])
-  print '%s %s %s %s %s' % (lfn.ljust(100),size.ljust(10),guid.ljust(40),status.ljust(8),checksum.ljust(10))
+  print('%s %s %s %s %s' % (lfn.ljust(100), size.ljust(10), guid.ljust(40), status.ljust(8), checksum.ljust(10)))
 
 for lfn in sorted( res['Value']['Failed'].keys() ):
   message = res['Value']['Failed'][lfn]
-  print lfn,message
+  print(lfn, message)

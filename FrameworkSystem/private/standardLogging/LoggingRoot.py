@@ -2,6 +2,7 @@
 Logging Root
 """
 
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import logging
@@ -202,7 +203,7 @@ class LoggingRoot(Logging):
       if retDictOptions['OK']:
         # We have to write the deprecated message with the print method because we are changing
         # the backends, so we can not be sure of the display using a log.
-        print "WARNING: Use of a deprecated cfg section: BackendsOptions. Please replace it by BackendConfig."
+        print("WARNING: Use of a deprecated cfg section: BackendsOptions. Please replace it by BackendConfig.")
         backendOptions.update(retDictOptions['Value'])
 
     return backendOptions

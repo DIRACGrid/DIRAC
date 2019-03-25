@@ -6,6 +6,7 @@
 """
 Start DIRAC MySQL server
 """
+from __future__ import print_function
 __RCSID__ = "$Id$"
 #
 from DIRAC.Core.Base import Script
@@ -20,4 +21,4 @@ from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 #
 gComponentInstaller.exitOnError = True
 #
-print gComponentInstaller.startMySQL()['Value'][1]
+print(gComponentInstaller.startMySQL()['Value'][1])

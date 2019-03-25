@@ -6,6 +6,7 @@
 """
   Obtain replica metadata from file catalogue client.
 """
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import DIRAC
@@ -37,7 +38,7 @@ if len(lfns) == 1:
 
 result = dirac.getLfnMetadata(lfns, printOutput=True)
 if not result['OK']:
-  print 'ERROR: ', result['Message']
+  print('ERROR: ', result['Message'])
   exitCode = 2
 
 DIRAC.exit(exitCode)

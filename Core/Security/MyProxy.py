@@ -1,6 +1,7 @@
 """ Utility class for dealing with MyProxy
 """
 
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import re
@@ -232,6 +233,6 @@ class MyProxy(BaseSecurity):
               secsLeft += int(fields[iP]) * 3600
           infoDict['timeLeft'] = secsLeft
         except Exception as x:
-          print x
+          print(x)
 
     return S_OK(infoDict)

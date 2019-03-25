@@ -1,6 +1,7 @@
 """ Example of ExecutorMindHandler implementation
 """
 
+from __future__ import print_function
 import time
 import random
 from DIRAC import S_OK, gLogger
@@ -85,7 +86,7 @@ class PingPongMindHandler(ExecutorMindHandler):
 
   @classmethod
   def exec_taskError(cls, taskid, taskData, errorMsg):
-    print "OOOOOO THERE WAS AN ERROR!!", errorMsg
+    print("OOOOOO THERE WAS AN ERROR!!", errorMsg)
     return S_OK()
 
   @classmethod
@@ -94,5 +95,5 @@ class PingPongMindHandler(ExecutorMindHandler):
     A task can be frozen either because there are no executors connected that can handle it
      or becase an executor has requested it.
     """
-    print "OOOOOO THERE WAS A TASK FROZEN"
+    print("OOOOOO THERE WAS A TASK FROZEN")
     return S_OK()

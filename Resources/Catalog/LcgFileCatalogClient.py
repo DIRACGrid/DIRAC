@@ -2,6 +2,7 @@
 
 """
 
+from __future__ import print_function
 __RCSID__ = "$Id"
 
 from stat import *
@@ -387,7 +388,7 @@ class LcgFileCatalogClient( FileCatalogClientBase ):
               lfcPerm['DN'] = val['DN']
               lfcPerm['Role'] = val['Role']
             except KeyError:
-              print 'key not found: __getACLInformation returned incomplete dictionary', KeyError
+              print('key not found: __getACLInformation returned incomplete dictionary', KeyError)
               failed[path] = lfcPerm
               continue
           # ACLs are just an additional information, therefore here it is successful
@@ -856,7 +857,7 @@ class LcgFileCatalogClient( FileCatalogClientBase ):
           oFile.lfn = self.__fullLfn( lfn )
           oFile.sfn = pfn
           oFile.size = size
-          oFile.mode = 0664
+          oFile.mode = 0o664
           oFile.server = se
           oFile.guid = guid
           oFile.csumtype = 'AD'
@@ -1490,7 +1491,7 @@ class LcgFileCatalogClient( FileCatalogClientBase ):
       return S_ERROR( "Directory not empty" )
     return self.__removeDirectory( path )
 
-  def __makeDirs( self, path, mode = 0775 ):
+  def __makeDirs(self, path, mode=0o775):
     """  Black magic contained within....
     """
     dirName = os.path.dirname( path )
@@ -1763,7 +1764,7 @@ class LcgFileCatalogClient( FileCatalogClientBase ):
       return S_ERROR( "Error opening LFC session" )
     for username in usernames:
       userDirectory = "/%s/user/%s/%s" % ( vo, username[0], username )
-      res = self.__makeDirs( userDirectory, 0755 )
+      res = self.__makeDirs(userDirectory, 0o755)
       if res['OK']:
         successful[username] = userDirectory
       else:

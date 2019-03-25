@@ -1,6 +1,7 @@
 """ This is a test code for this class, it requires access to a MySQL DB
 """
 
+from __future__ import print_function
 import os
 import sys
 import time
@@ -49,7 +50,7 @@ COND10 = {'Count': range( 10 )}
 try:
   RESULT = TESTDB._createTables( TESTDICT, force = True )
   assert RESULT['OK']
-  print 'Table Created'
+  print('Table Created')
 
   RESULT = TESTDB.getCounters( NAME, FIELDS, COND0 )
   assert RESULT['OK']
@@ -63,7 +64,7 @@ try:
   assert RESULT['OK']
   assert RESULT['Value'] == ()
 
-  print 'Inserting'
+  print('Inserting')
 
   for J in range( 100 ):
     RESULT = TESTDB.insertFields( NAME, SOMEFIELDS, ['Name1', 'Surn1', J] )
@@ -71,11 +72,11 @@ try:
     assert RESULT['Value'] == 1
     assert RESULT['lastRowId'] == J + 1
 
-  print 'Querying'
+  print('Querying')
 
   RESULT = TESTDB.getCounters( NAME, FIELDS, COND0 )
   assert RESULT['OK']
-  assert RESULT['Value'] == [( {'Surname': 'Surn1', 'Name': 'Name1'}, 100L )]
+  assert RESULT['Value'] == [({'Surname': 'Surn1', 'Name': 'Name1'}, 100)]
 
   RESULT = TESTDB.getDistinctAttributeValues( NAME, FIELDS[0], COND0 )
   assert RESULT['OK']
@@ -103,7 +104,7 @@ try:
 
   RESULT = TESTDB.getCounters( NAME, FIELDS, COND10 )
   assert RESULT['OK']
-  assert RESULT['Value'] == [( {'Surname': 'Surn1', 'Name': 'Name1'}, 10L )]
+  assert RESULT['Value'] == [({'Surname': 'Surn1', 'Name': 'Name1'}, 10)]
 
   RESULT = TESTDB._getFields( NAME, FIELDS, COND10.keys(), COND10.values() )
   assert RESULT['OK']
@@ -117,7 +118,7 @@ try:
   assert RESULT['OK']
   assert RESULT['Value'] == 0
 
-  print 'Removing'
+  print('Removing')
 
   RESULT = TESTDB.deleteEntries( NAME, COND10 )
   assert RESULT['OK']
@@ -161,11 +162,11 @@ try:
   assert RESULT['OK']
   assert RESULT['Value'] == 2
 
-  print 'OK'
+  print('OK')
 
 except AssertionError:
-  print 'ERROR ',
+  print('ERROR ', end=' ')
   if not RESULT['OK']:
-    print RESULT['Message']
+    print(RESULT['Message'])
   else:
-    print RESULT
+    print(RESULT)

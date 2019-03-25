@@ -7,6 +7,7 @@
 """
 Fixes the mysql.server script, it requires a proper /LocalInstallation section
 """
+from __future__ import print_function
 __RCSID__ = "$Id$"
 #
 from DIRAC.Core.Base import Script
@@ -24,5 +25,5 @@ gComponentInstaller.exitOnError = True
 #
 result = gComponentInstaller.fixMySQLScripts()
 if not result['OK']:
-  print "ERROR:", result['Message']
+  print("ERROR:", result['Message'])
   exit( -1 )

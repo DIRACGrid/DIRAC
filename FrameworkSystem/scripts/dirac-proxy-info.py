@@ -4,6 +4,7 @@
 # Author :  Adrian Casajus
 ########################################################################
 
+from __future__ import print_function
 from DIRAC.Core.Utilities.ReturnValues import S_OK
 
 class Params(object):
@@ -17,8 +18,8 @@ class Params(object):
   uploadedInfo = False
 
   def showVersion( self, arg ):
-    print "Version:"
-    print " ", __RCSID__
+    print("Version:")
+    print(" ", __RCSID__)
     sys.exit( 0 )
     return S_OK()
 
@@ -81,7 +82,7 @@ __RCSID__ = "$Id$"
 if params.csEnabled:
   retVal = Script.enableCS()
   if not retVal[ 'OK' ]:
-    print "Cannot contact CS to get user list"
+    print("Cannot contact CS to get user list")
 
 if params.checkClock:
   result = getClockDeviation()

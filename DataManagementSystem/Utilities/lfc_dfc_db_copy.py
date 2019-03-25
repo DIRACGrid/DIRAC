@@ -77,6 +77,7 @@ GOOD LUCK !
 # source /afs/cern.ch/project/oracle/script/setoraenv.sh  setoraenv -s 11203
 # source /afs/cern.ch/project/oracle/script/setoraenv.csh  setoraenv -s 11203
 
+from __future__ import print_function
 import time
 import os
 import multiprocessing
@@ -140,15 +141,16 @@ uid_name = {}
 
 # Converts the mode to a posix mode permission
 def S_IMODE( mode ):
-  return mode & 07777
+  return mode & 0o7777
 
 
 # Utilities to make the distinction between files and dir from the LFC
 
 def S_IFMT( mode ):
-  return mode & 0170000
+  return mode & 0o170000
 
-S_IFDIR = 0040000
+
+S_IFDIR = 0o040000
 def isDir( mode ):
   """ True if mode indicates a directory"""
   return S_IFMT( mode ) == S_IFDIR
@@ -282,7 +284,7 @@ def getDirAndFileData( fileQueue, dirQueue, dirClosureQueryQueue ):
 
   """
 
-  print "getDirAndFileData start"
+  print("getDirAndFileData start")
   startTime = time.time()
   stepCounter = 0
   fileCounter = 0
@@ -326,7 +328,8 @@ def getDirAndFileData( fileQueue, dirQueue, dirClosureQueryQueue ):
     batchSize = 1000  # Size of the batch that are retrieved at once
                       # The insertion is done in 2 times (part for the files, ther other for directories)
     while not done:
-      print "getDirAndFileData step %s elapsed time %s dir %s files %s" % ( stepCounter, time.time() - startTime, dirCounter, fileCounter )
+      print("getDirAndFileData step %s elapsed time %s dir %s files %s" %
+            (stepCounter, time.time() - startTime, dirCounter, fileCounter))
       stepCounter += 1
 
       # If doing an early stop
@@ -418,8 +421,7 @@ def getDirAndFileData( fileQueue, dirQueue, dirClosureQueryQueue ):
 #               fileAndDirInsert.write( "%s\n" % sqlDirClosureSub )
               dirClosureQueryQueue.put( "%s\n" % sqlDirClosureSub )
 
-
-        print "getDirAndFileData put in queues file %s" % ( len( fileTuple ) )
+        print("getDirAndFileData put in queues file %s" % (len(fileTuple)))
 
         # Add the list of tuples to be inserted to the queues
         if fileTuple:
@@ -427,9 +429,7 @@ def getDirAndFileData( fileQueue, dirQueue, dirClosureQueryQueue ):
         if dirTuple:
           dirQueue.put( dirTuple )
 
-
-
-  print "getDirAndFileData done. elapsed time %s dir %s files %s" % ( time.time() - startTime, dirCounter, fileCounter )
+  print("getDirAndFileData done. elapsed time %s dir %s files %s" % (time.time() - startTime, dirCounter, fileCounter))
   fromdbR_.close()
   connection.close()
 
@@ -449,8 +449,7 @@ def getReplicaData( replicaQueue, name_id_se ):
 
   """
 
-
-  print "getReplicaData start"
+  print("getReplicaData start")
   startTime = time.time()
   stepCounter = 0
   replicaCounter = 0
@@ -488,7 +487,8 @@ def getReplicaData( replicaQueue, name_id_se ):
     batchSize = 1000
 
     while not done:
-      print "getReplicaData step %s elapsed time %s replica %s" % ( stepCounter, time.time() - startTime, replicaCounter )
+      print("getReplicaData step %s elapsed time %s replica %s" %
+            (stepCounter, time.time() - startTime, replicaCounter))
       stepCounter += 1
 
       # If early stop enabled
@@ -534,15 +534,13 @@ def getReplicaData( replicaQueue, name_id_se ):
                                                               dfc_cdate, dfc_mdate, cns_rep_sfn ) )
           cns_rep_id += 1
 
-
-        print "getReplicaData add replicaQueue %s" % ( len( repTuple ) )
+        print("getReplicaData add replicaQueue %s" % (len(repTuple)))
 
         # Add the values to be inserted
         if repTuple:
           replicaQueue.put( repTuple )
 
-
-  print "getReplicaData done. elapsed time %s replicas %s" % ( time.time() - startTime, replicaCounter )
+  print("getReplicaData done. elapsed time %s replicas %s" % (time.time() - startTime, replicaCounter))
 
   fromdbR_.close()
   connection.close()
@@ -585,7 +583,7 @@ def loadDataInMySQL( queryQueue, workerId ):
       con.autocommit( True )
       cur.close()
       con.close()
-      print "loadDataInMySQL EXITING "
+      print("loadDataInMySQL EXITING ")
       logfile.write( "loadDataInMySQL EXITING " )
       logfile.close()
       return
@@ -602,8 +600,8 @@ def loadDataInMySQL( queryQueue, workerId ):
     try:
       cur.execute( next_query )
     except Exception as e:
-      print "worker %s : EXCEPTION %s\nworker %s :QUERY %s" % ( workerId, e, workerId, next_query )
-      print "worker %s trying again " % workerId
+      print("worker %s : EXCEPTION %s\nworker %s :QUERY %s" % (workerId, e, workerId, next_query))
+      print("worker %s trying again " % workerId)
 
       logfile.write( "worker %s : EXCEPTION %s\nworker %s :QUERY %s" % ( workerId, e, workerId, next_query ) )
       logfile.write( "worker %s trying again " % workerId )
@@ -611,8 +609,8 @@ def loadDataInMySQL( queryQueue, workerId ):
       try:
         cur.execute( next_query )
       except Exception, ee:
-        print "worker %s COMPLETELY FAILED " % workerId
-        print "worker %s : EXCEPTION %s\nworker %s :QUERY %s" % ( workerId, e, workerId, next_query )
+        print("worker %s COMPLETELY FAILED " % workerId)
+        print("worker %s : EXCEPTION %s\nworker %s :QUERY %s" % (workerId, e, workerId, next_query))
         logfile.write( "worker %s COMPLETELY FAILED " % workerId )
         logfile.write( "worker %s : EXCEPTION %s\nworker %s :QUERY %s" % ( workerId, e, workerId, next_query ) )
 
@@ -621,7 +619,7 @@ def loadDataInMySQL( queryQueue, workerId ):
     # Tell we are done with this task
     queryQueue.task_done()
     if queryExecuted % 10000 == 0:
-      print "worker %s (%s) : %s" % ( workerId, queryExecuted, next_query )
+      print("worker %s (%s) : %s" % (workerId, queryExecuted, next_query))
       logfile.write( "worker %s (%s) : %s" % ( workerId, queryExecuted, next_query ) )
 
   logfile.close()
@@ -656,18 +654,18 @@ def loadTupleDataInMySQL( queryQueue, workerId, querybase ):
 
     # If we get the poison pill, clean and exit
     if next_tuple is None:
-      print "worker %s : got poison pill. elapsed time %s" % ( workerId, time.time() - workerStart )
+      print("worker %s : got poison pill. elapsed time %s" % (workerId, time.time() - workerStart))
       logfile.write( "worker %s : got poison pill. elapsed time %s\n" % ( workerId, time.time() - workerStart ) )
 
       cur.execute( "SET FOREIGN_KEY_CHECKS = 1;" )
       cur.close()
       con.close()
-      print "loadDataInMySQL %s EXITING " % workerId
+      print("loadDataInMySQL %s EXITING " % workerId)
       logfile.write( "loadDataInMySQL %s EXITING " % workerId )
       logfile.close()
       return
 
-    print "worker %s : got %s" % ( workerId, len( next_tuple ) )
+    print("worker %s : got %s" % (workerId, len(next_tuple)))
     logfile.write( "worker %s : got %s\n" % ( workerId, len( next_tuple ) ) )
 
     # Build the query and execute
@@ -678,8 +676,8 @@ def loadTupleDataInMySQL( queryQueue, workerId, querybase ):
       cur.execute( next_query )
       con.commit()
     except Exception as e:
-      print "worker %s : EXCEPTION %s\nworker %s :QUERY %s" % ( workerId, e, workerId, next_query )
-      print "worker %s trying again " % workerId
+      print("worker %s : EXCEPTION %s\nworker %s :QUERY %s" % (workerId, e, workerId, next_query))
+      print("worker %s trying again " % workerId)
 
       logfile.write( "worker %s : EXCEPTION %s\nworker %s :QUERY %s" % ( workerId, e, workerId, next_query ) )
       logfile.write( "worker %s trying again " % workerId )
@@ -688,8 +686,8 @@ def loadTupleDataInMySQL( queryQueue, workerId, querybase ):
         cur.execute( next_query )
         con.commit()
       except Exception, ee:
-        print "worker %s COMPLETELY FAILED " % workerId
-        print "worker %s : EXCEPTION %s " % ( workerId, e )
+        print("worker %s COMPLETELY FAILED " % workerId)
+        print("worker %s : EXCEPTION %s " % (workerId, e))
         logfile.write( "worker %s COMPLETELY FAILED " % workerId )
         logfile.write( "worker %s : EXCEPTION %s\nworker %s :QUERY %s" % ( workerId, e, workerId, next_query ) )
 
@@ -697,7 +695,7 @@ def loadTupleDataInMySQL( queryQueue, workerId, querybase ):
     queryExecuted += len( next_tuple )
     queryQueue.task_done()
     if queryExecuted % 10000 == 0:
-      print "worker %s (%s) elapsed time %s" % ( workerId, queryExecuted, time.time() - workerStart )
+      print("worker %s (%s) elapsed time %s" % (workerId, queryExecuted, time.time() - workerStart))
       logfile.write( "worker %s (%s) elapsed time %s " % ( workerId, queryExecuted, time.time() - workerStart ) )
 
   logfile.close()
@@ -724,7 +722,7 @@ def updateAdminID():
 
 
   for desc, query in updateQueries.items():
-    print "worker %s : %s (%s)" % ( workerId, desc, query )
+    print("worker %s : %s (%s)" % (workerId, desc, query))
     logfile.write( "worker %s : %s (%s)\n" % ( workerId, desc, query ) )
 
     cur.execute( query )
@@ -732,7 +730,7 @@ def updateAdminID():
 
   cur.close()
   con.close()
-  print "updateAdminID EXITING "
+  print("updateAdminID EXITING ")
   logfile.write( "updateAdminID EXITING " )
   logfile.close()
   return
@@ -809,7 +807,7 @@ def databaseIntegrityCheck():
 
 
   for desc, query in integrityQueries.items():
-    print "worker %s : %s (%s)" % ( workerId, desc, query )
+    print("worker %s : %s (%s)" % (workerId, desc, query))
     logfile.write( "worker %s : %s (%s)\n" % ( workerId, desc, query ) )
 
     cur.execute( query )
@@ -817,12 +815,12 @@ def databaseIntegrityCheck():
     rows = cur.fetchall()
 
     for row in rows:
-      print "\t%s" % ( row, )
+      print("\t%s" % (row, ))
       logfile.write( "\t%s\n" % ( row, ) )
 
   cur.close()
   con.close()
-  print "databaseIntegrityCheck EXITING "
+  print("databaseIntegrityCheck EXITING ")
   logfile.write( "databaseIntegrityCheck EXITING " )
   logfile.close()
   return
@@ -857,42 +855,42 @@ def compareNumbers():
 
   if fromdbR_.execute( "SELECT count(*) from CNS_FILE_METADATA" ):
     rows = fromdbR_.fetchall()
-    print "rows lfc files %s" % ( rows, )
+    print("rows lfc files %s" % (rows, ))
     lfc_filesDir = rows[0][0]
 
   if fromdbR_.execute( "SELECT count(*) from CNS_FILE_REPLICA" ):
     rows = fromdbR_.fetchall()
-    print "rows lfc replicas %s" % ( rows, )
+    print("rows lfc replicas %s" % (rows, ))
     lfc_replicas = rows[0][0]
 
   cur.execute( "SELECT count(*) from FC_Files" )
   rows = cur.fetchall()
-  print "rows dfc files %s" % ( rows, )
+  print("rows dfc files %s" % (rows, ))
   dfc_files = rows[0][0]
 
   cur.execute( "SELECT count(*) from FC_DirectoryList" )
   rows = cur.fetchall()
-  print "rows dfc dir %s" % ( rows, )
+  print("rows dfc dir %s" % (rows, ))
   dfc_dir = rows[0][0]
 
   cur.execute( "SELECT count(*) from FC_Replicas" )
   rows = cur.fetchall()
-  print "rows dfc replicas %s" % ( rows, )
+  print("rows dfc replicas %s" % (rows, ))
   dfc_replicas = rows[0][0]
 
   allCounters = [lfc_filesDir, lfc_replicas, dfc_files, dfc_dir, dfc_replicas]
 
   for counter in allCounters:
     if counter:
-      print "OK"
+      print("OK")
     else:
-      print "EMPTY COUNTER"
+      print("EMPTY COUNTER")
 
   if lfc_filesDir != ( dfc_files + dfc_dir + 1 ) :  # /grid folder
-    print "ERROR !  lfc_filesDir != (dfc_files + dfc_dir + 1) %s != %s" % ( lfc_filesDir, dfc_files + dfc_dir + 1 )
+    print("ERROR !  lfc_filesDir != (dfc_files + dfc_dir + 1) %s != %s" % (lfc_filesDir, dfc_files + dfc_dir + 1))
 
   if lfc_replicas != dfc_replicas:
-    print "ERROR ! lfc_replicas != dfc_replicas %s != %s" % ( lfc_replicas, dfc_replicas )
+    print("ERROR ! lfc_replicas != dfc_replicas %s != %s" % (lfc_replicas, dfc_replicas))
 
 
   cur.close()
@@ -937,10 +935,7 @@ if __name__ == '__main__':
   replicaQueryQueue = multiprocessing.JoinableQueue()
   queueTab.append( replicaQueryQueue )
 
-
-
-
-  print "Starting the Worker processes"
+  print("Starting the Worker processes")
 
   # process to execute the query for Users, Groups and SEs
   workerUgsProcess = multiprocessing.Process( target = loadDataInMySQL, args = ( ugsQueryQueue, 'ugs' ) )
@@ -975,27 +970,27 @@ if __name__ == '__main__':
 
   # First we get dump the Users, Groups and SEs
 
-  print "Worker processes started"
-  print "Starting the ugsDumpProcess"
+  print("Worker processes started")
+  print("Starting the ugsDumpProcess")
   ugsDumpProcess = multiprocessing.Process( target = getUsersGroupsAndSEs, args = ( ugsQueryQueue, name_id_se ) )
   ugsDumpProcess.start()
 
-  print "ugsDumpProcess started"
-  print "Waiting for ugsDumpProcess to join"
+  print("ugsDumpProcess started")
+  print("Waiting for ugsDumpProcess to join")
   ugsDumpProcess.join()
-  print "ugsDumpProcess joined"
+  print("ugsDumpProcess joined")
 
-  print "Waiting for empty ugs query queue"
+  print("Waiting for empty ugs query queue")
   # We have to wait to fill in all the caches
   while not ugsQueryQueue.empty():
-    print "ugs queue not empty %s" % ( ugsQueryQueue.qsize() )
+    print("ugs queue not empty %s" % (ugsQueryQueue.qsize()))
     time.sleep( 5 )
 
   # Now we go :-)
   # We start getting and inserting in parallel files, directories and replicas
 
-  print "Queue is empty"
-  print "Start fileDumpProcess"
+  print("Queue is empty")
+  print("Start fileDumpProcess")
 
 
   fileDumpProcess = multiprocessing.Process( target = getDirAndFileData,
@@ -1003,89 +998,86 @@ if __name__ == '__main__':
                                                        dirQueryQueue, dirClosureQueryQueue ) )
   fileDumpProcess.start()
 
-  print "fileDumpProcess started"
-  print "Start replicaDumpProcess"
+  print("fileDumpProcess started")
+  print("Start replicaDumpProcess")
 
   replicaDumpProcess = multiprocessing.Process( target = getReplicaData, args = ( replicaQueryQueue, name_id_se ) )
   replicaDumpProcess.start()
 
-  print "replicaDumpProcess started"
+  print("replicaDumpProcess started")
 
-  print "joining fileDumpProcess"
+  print("joining fileDumpProcess")
   fileDumpProcess.join()
-  print "fileDumpProcess joined"
-  print "joining replicaDumpProcess"
+  print("fileDumpProcess joined")
+  print("joining replicaDumpProcess")
   replicaDumpProcess.join()
-  print "replicaDumpProcess joined"
+  print("replicaDumpProcess joined")
 
 
   # We wait till everything is empty
-  print "Waiting for empty query queue"
+  print("Waiting for empty query queue")
   allEmpty = False
   # We have to wait to fill in all the caches
   while not allEmpty :
     time.sleep( 5 )
     emptyTab = [ q.empty() for q in queueTab]
     allEmpty = reduce( lambda x, y: x and y, emptyTab, True )
-    print "Queues not empty %s " % ( [q.qsize() for q in queueTab] )
+    print("Queues not empty %s " % ([q.qsize() for q in queueTab]))
 
+  print("queues should be empty  %s" % ([q.empty() for q in queueTab]))
 
-
-  print "queues should be empty  %s" % ( [ q.empty() for q in queueTab] )
-
-  print "finished (before join...). Total time : %s" % ( time.time() - startTime )
+  print("finished (before join...). Total time : %s" % (time.time() - startTime))
 
   # Here we are done
   # Joining the process
 
-  print "joining worker processes"
-  print "file worker"
+  print("joining worker processes")
+  print("file worker")
   workerFileProcess.join()
-  print "dir worker"
+  print("dir worker")
   workerDirProcess.join()
-  print "dirClosure worker"
+  print("dirClosure worker")
   workerDirClosureProcess.join()
-  print "replica worker"
+  print("replica worker")
   workerReplicaProcess.join()
 
 
   # Translating admin ID from 0 to 1
-  print "Updating Admin ID"
+  print("Updating Admin ID")
   updateIDStart = time.time()
   updateAdminID()
   updateIDTime = time.time() - updateIDStart
 
-  print "Finished updating AdminID in %s" % updateIDTime
+  print("Finished updating AdminID in %s" % updateIDTime)
 
   # Doing the integrity check
 
-  print "doing integrity check"
+  print("doing integrity check")
   integrityStart = time.time()
   databaseIntegrityCheck()
   integrityTime = time.time() - integrityStart
 
-  print "Finished integrity check in %s" % integrityTime
+  print("Finished integrity check in %s" % integrityTime)
 
   # Comparing the numbers
-  print "doing number compare  check"
+  print("doing number compare  check")
   numberCompareStart = time.time()
   compareNumbers()
   numberCompareTime = time.time() - numberCompareStart
 
-  print "Finished comparing number in %s" % numberCompareTime
+  print("Finished comparing number in %s" % numberCompareTime)
 
   # To be clean, we try to join the queues
   # but here kicks the mystery of queues and multiprocess
   # in python, so it never ends
 
-
-  print "joining queues"
-  print "file queue"
+  print("joining queues")
+  print("file queue")
   fileQueryQueue.join()
 
-  print "replicas queue"
+  print("replicas queue")
   replicaQueryQueue.join()
-  print "queue joined"
+  print("queue joined")
 
 
 

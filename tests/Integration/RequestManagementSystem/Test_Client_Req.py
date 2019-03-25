@@ -6,6 +6,7 @@
 
 # pylint: disable=invalid-name,wrong-import-position
 
+from __future__ import print_function
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
@@ -187,12 +188,12 @@ class ReqClientMix(ReqClientTestCase):
     for reqID in reqIDs:
       get = db.getRequest(reqID)
       if "Message" in get:
-        print get["Message"]
+        print(get["Message"])
       self.assertEqual(get["OK"], True, get['Message'] if 'Message' in get else 'OK')
 
     endTime = time.time()
 
-    print "getRequest duration %s " % (endTime - startTime)
+    print("getRequest duration %s " % (endTime - startTime))
 
     for reqID in reqIDs:
       delete = db.deleteRequest(reqID)
@@ -223,14 +224,14 @@ class ReqClientMix(ReqClientTestCase):
     for i in xrange(loops):
       get = db.getBulkRequests(self.bulkRequest, True)
       if "Message" in get:
-        print get["Message"]
+        print(get["Message"])
       self.assertEqual(get["OK"], True, "get failed")
 
       totalSuccessful += len(get["Value"])
 
     endTime = time.time()
 
-    print "getRequests duration %s " % (endTime - startTime)
+    print("getRequests duration %s " % (endTime - startTime))
 
     self.assertEqual(
         totalSuccessful,

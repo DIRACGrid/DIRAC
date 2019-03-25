@@ -2,6 +2,7 @@
 """ update local cfg
 """
 
+from __future__ import print_function
 import os
 
 from DIRAC.Core.Base import Script
@@ -49,7 +50,7 @@ for sct in ['Systems/DataManagement',
             'Systems/DataManagement/Production/Databases/FileCatalogDB']:
   res = csAPI.createSection(sct)
   if not res['OK']:
-    print res['Message']
+    print(res['Message'])
     exit(1)
 
 dbHost = os.environ['DB_HOST']
@@ -84,7 +85,7 @@ for sct in ['Systems/Bookkeeping',
             'Systems/Bookkeeping/Production/Databases/BookkeepingDB']:
   res = csAPI.createSection(sct)
   if not res['OK']:
-    print res['Message']
+    print(res['Message'])
     exit(1)
 
 csAPI.setOption('Systems/Bookkeeping/Production/Databases/BookkeepingDB/LHCbDIRACBookkeepingTNS', 'FILL_ME')

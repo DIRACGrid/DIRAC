@@ -7,6 +7,7 @@
     and a Watchdog Agent that can monitor its progress.
 """
 
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import os
@@ -1252,7 +1253,7 @@ class JobWrapper(object):
         self.log.error("Job will fail, first trying to print out the content of the request")
         reqToJSON = request.toJSON()
         if reqToJSON['OK']:
-          print str(reqToJSON['Value'])
+          print(str(reqToJSON['Value']))
         else:
           self.log.error("Something went wrong creating the JSON from request", reqToJSON['Message'])
       else:
@@ -1388,10 +1389,10 @@ class ExecutionThread(threading.Thread):
   def sendOutput(self, stdid, line):
     if stdid == 0 and self.stdout:
       with open(self.stdout, 'a+') as outputFile:
-        print >> outputFile, line
+        print(line, file=outputFile)
     elif stdid == 1 and self.stderr:
       with open(self.stderr, 'a+') as errorFile:
-        print >> errorFile, line
+        print(line, file=errorFile)
     self.outputLines.append(line)
     size = len(self.outputLines)
     if size > self.maxPeekLines:

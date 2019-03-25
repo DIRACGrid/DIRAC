@@ -7,6 +7,7 @@
 """
   Replicate an existing LFN to another Storage Element
 """
+from __future__ import print_function
 __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
@@ -50,12 +51,12 @@ for lfn in lfns:
   result = dirac.replicateFile( lfn, seName, sourceSE, localCache, printOutput = True )
   if not result['OK']:
     finalResult["Failed"].append( lfn )
-    print 'ERROR %s' % ( result['Message'] )
+    print('ERROR %s' % (result['Message']))
     exitCode = 2
   else:
     finalResult["Successful"].append( lfn )
 
 if len( lfns ) > 1:
-  print finalResult
+  print(finalResult)
 
 DIRAC.exit( exitCode )

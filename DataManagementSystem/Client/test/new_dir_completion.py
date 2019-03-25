@@ -1,5 +1,6 @@
 # TO-DO: to be moved to tests directory
 
+from __future__ import print_function
 import cmd
 import sys
 import os.path
@@ -28,8 +29,8 @@ class DirCompletion(cmd.Cmd):
       return []
 
   def do_ls(self, args):
-    print
-    print " ".join(self._ls(args))
+    print()
+    print(" ".join(self._ls(args)))
 
   def complete_ls(self, text, line, begidx, endidx):
     #print

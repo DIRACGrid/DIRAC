@@ -5,6 +5,7 @@
 
 # pylint: disable=invalid-name,wrong-import-position
 
+from __future__ import print_function
 import unittest
 import itertools
 import os
@@ -176,10 +177,10 @@ class UserGroupCase(FileCatalogDBTestCase):
 
     expectedRes = None
     if isAdmin:
-      print "Running UserTest in admin mode"
+      print("Running UserTest in admin mode")
       expectedRes = True
     else:
-      print "Running UserTest in non admin mode"
+      print("Running UserTest in non admin mode")
       expectedRes = False
 
     # Add the user
@@ -207,10 +208,10 @@ class UserGroupCase(FileCatalogDBTestCase):
 
     expectedRes = None
     if isAdmin:
-      print "Running UserTest in admin mode"
+      print("Running UserTest in admin mode")
       expectedRes = True
     else:
-      print "Running UserTest in non admin mode"
+      print("Running UserTest in non admin mode")
       expectedRes = False
 
     # Create new group
@@ -796,7 +797,7 @@ class DirectoryCase(FileCatalogDBTestCase):
     # when updating something to the same value
     # returns a success if it is allowed
     for attempt in xrange(2):
-      print "Attempt %s" % (attempt + 1)
+      print("Attempt %s" % (attempt + 1))
 
       # Only admin can change path group
       resultM = self.db.changePathMode({parentDir: 0o777}, credDict)
@@ -1429,8 +1430,8 @@ if __name__ == '__main__':
   numberOfManager = len(managerTypes)
 
   for setup in all_combinations:
-    print "Running with:"
-    print ("".join(["\t %s : %s\n" % (managerTypes[i], setup[i]) for i in xrange(numberOfManager)]))
+    print("Running with:")
+    print(("".join(["\t %s : %s\n" % (managerTypes[i], setup[i]) for i in xrange(numberOfManager)])))
     for i in xrange(numberOfManager):
       DATABASE_CONFIG[managerTypes[i]] = setup[i]
 
@@ -1445,7 +1446,7 @@ if __name__ == '__main__':
     isAdmin = False
     if FC_MANAGEMENT in credDict['properties']:
       credDict['properties'].remove(FC_MANAGEMENT)
-    print "Running test without admin privileges"
+    print("Running test without admin privileges")
 
     testResult = unittest.TextTestRunner(verbosity=2).run(suite)
 
@@ -1453,7 +1454,7 @@ if __name__ == '__main__':
     isAdmin = True
     if FC_MANAGEMENT not in credDict['properties']:
       credDict['properties'].append(FC_MANAGEMENT)
-    print "Running test with admin privileges"
+    print("Running test with admin privileges")
 
     testResult = unittest.TextTestRunner(verbosity=2).run(suite)
     sys.exit(not testResult.wasSuccessful())

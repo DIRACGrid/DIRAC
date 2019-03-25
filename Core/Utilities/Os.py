@@ -3,6 +3,7 @@
    by default on Error they return None
 """
 
+from __future__ import print_function
 import os
 import distutils.spawn  # pylint: disable=no-name-in-module,import-error
 
@@ -60,7 +61,7 @@ def getDiskSpace(path='.'):
       try:
         value = int(fields[3])
       except Exception as error:
-        print "Exception during disk space evaluation:", str(error)
+        print("Exception during disk space evaluation:", str(error))
         value = -1
       return value
   else:
@@ -77,7 +78,7 @@ def getDirectorySize(path):
     return 0
   else:
     output = result['Value'][1]
-    print output
+    print(output)
     size = int(output.split()[0])
     return size
 

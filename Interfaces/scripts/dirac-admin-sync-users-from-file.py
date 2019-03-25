@@ -7,6 +7,7 @@
 """
   Sync users in Configuration with the cfg contents.
 """
+from __future__ import print_function
 __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
@@ -52,6 +53,6 @@ if not exitCode and not testOnly:
     exitCode = 255
 
 for error in errorList:
-  print "ERROR %s: %s" % error
+  print("ERROR %s: %s" % error)
 
 DIRAC.exit( exitCode )

@@ -6,6 +6,7 @@
     in the DISET framework
 """
 
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import types
@@ -138,7 +139,6 @@ class UserProfileManagerHandler( RequestHandler ):
     credDict = self.getRemoteCredentials()
     userName = credDict[ 'username' ]
     userGroup = credDict[ 'group' ]
-    print "ASDASDASD"
     return gUPDB.retrieveAllHashTags( userName, userGroup )
 
   types_deleteProfiles = [ types.ListType ]

@@ -10,6 +10,7 @@
       All exceptions report to the stdout.
 """
 
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 from zlib import adler32
@@ -25,7 +26,7 @@ def intAdlerToHex(intAdler):
     # Will always be 8 hex digits made from a positive integer
     return hex(intAdler & 0xffffffff).lower().replace('l', '').replace('x', '0000')[-8:]
   except Exception as error:
-    print repr(error).replace(',)', ')')
+    print(repr(error).replace(',)', ')'))
     return False
 
 
@@ -49,7 +50,7 @@ def hexAdlerToInt(hexAdler, pos=True):
     # Will always try to return the positive integer value of the provided hex
     return int(hexAdler, 16) & 0xffffffff
   except Exception as error:
-    print repr(error).replace(',)', ')')
+    print(repr(error).replace(',)', ')'))
     return False
 
 
@@ -96,7 +97,7 @@ def fileAdler(fileName):
         myAdler = adler32(data, myAdler)
       return intAdlerToHex(myAdler)
   except Exception as error:
-    print repr(error).replace(',)', ')')
+    print(repr(error).replace(',)', ')'))
     return False
 
 
@@ -109,11 +110,11 @@ def stringAdler(string):
     intAdler = adler32(string)
     return intAdlerToHex(intAdler)
   except Exception as error:
-    print repr(error).replace(',)', ')')
+    print(repr(error).replace(',)', ')'))
     return False
 
 
 if __name__ == "__main__":
   import sys
   for p in sys.argv[1:]:
-    print "%s : %s" % (p, fileAdler(p))
+    print("%s : %s" % (p, fileAdler(p)))

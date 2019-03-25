@@ -4,6 +4,7 @@
   Get the description of a given production
 """
 
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import DIRAC
@@ -37,7 +38,7 @@ else:
   DIRAC.gLogger.error(res['Message'])
   DIRAC.exit(-1)
 
-print 'Description for production %s:\n' % prodID
-print prod['Description']
+print('Description for production %s:\n' % prodID)
+print(prod['Description'])
 
 DIRAC.exit(0)

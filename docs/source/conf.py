@@ -11,6 +11,7 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
+from __future__ import print_function
 import datetime
 import os
 import sys
@@ -32,7 +33,7 @@ if os.environ.get('READTHEDOCS') == 'True':
   diracRelease = os.path.basename(os.path.abspath("../../"))
   if diracRelease.startswith("rel-"):
     diracRelease = diracRelease[4:]
-print 'conf.py: %s as DIRACVERSION' % diracRelease
+print('conf.py: %s as DIRACVERSION' % diracRelease)
 
 # Set this environment variable such tha the documentation
 # generated for the various X509* classes is the one with M2Crypto
@@ -49,7 +50,7 @@ if 'DIRAC_USE_M2CRYPTO' not in os.environ:
 if os.environ.get('READTHEDOCS') == 'True':
   sys.path.append(os.path.abspath('.'))
   diracPath = os.path.abspath(os.path.join(os.getcwd(), "../.."))
-  print "DiracPath", diracPath
+  print("DiracPath", diracPath)
 
   buildfolder = "_build"
   try:
@@ -61,7 +62,7 @@ if os.environ.get('READTHEDOCS') == 'True':
   # readtheDocs clones the repo into something based on the branchname
   if not os.path.exists("../../DIRAC"):
     diracLink = os.path.abspath(os.path.join(os.getcwd(), "../", buildfolder, "DIRAC"))
-    print "DiracLink", diracLink
+    print("DiracLink", diracLink)
     if not os.path.exists(diracLink):
       RES = subprocess.check_output(["ln", "-s", diracPath, diracLink])
     diracPath = os.path.abspath(os.path.join(diracLink, ".."))
@@ -86,33 +87,33 @@ if os.environ.get('READTHEDOCS') == 'True':
   # print "script",err
 
   os.environ["DIRAC"] = diracPath
-  print "DIRAC ENVIRON", os.environ["DIRAC"]
+  print("DIRAC ENVIRON", os.environ["DIRAC"])
 
   # re-create the RST files for the command references
   buildCommand = os.path.join(os.getcwd(), "../Tools/buildScriptsDocs.py")
   code = subprocess.Popen(["python", buildCommand], env=os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
   stdout, err = code.communicate()
-  print "scriptDocs:", stdout
-  print "scriptErrs:", err
+  print("scriptDocs:", stdout)
+  print("scriptErrs:", err)
 
   # singlehtml build needs too much memory, so we need to create less code documentation
   buildtype = "limited" if any("singlehtml" in arg for arg in sys.argv) else "full"
-  print "Chosing build type:", buildtype
+  print("Chosing build type:", buildtype)
   buildCommand = os.path.join(os.getcwd(), "../Tools/MakeDoc.py")
   code = subprocess.Popen(["python", buildCommand, buildtype], env=os.environ,
                           stdout=subprocess.PIPE, stderr=subprocess.PIPE)
   stdout, err = code.communicate()
-  print "code", stdout
-  print "code", err
+  print("code", stdout)
+  print("code", err)
 
 # always update dirac.cfg
 buildCommand = os.path.join(os.getcwd(), "../Tools/UpdateDiracCFG.py")
 code = subprocess.Popen(["python", buildCommand], env=os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 stdout, err = code.communicate()
 if stdout:
-  print "Config Output", stdout
+  print("Config Output", stdout)
 if err:
-  print "Config error", err
+  print("Config error", err)
 
 # -- General configuration -----------------------------------------------------
 

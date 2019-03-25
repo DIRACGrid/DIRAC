@@ -5,6 +5,7 @@
     CMS/Phedex Project by ... <to be added>
 """
 
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 # Make sure the the Agg backend is used despite arbitrary configuration
@@ -167,7 +168,7 @@ def histogram( data, fileName, bins, *args, **kw ):
   try:
     from pylab import hist
   except:
-    print "No pylab module available"
+    print("No pylab module available")
     return
   kw = __checkKW( kw )
   values, vbins, _patches = hist( data, bins )

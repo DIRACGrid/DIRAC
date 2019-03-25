@@ -2,13 +2,14 @@
 """ Remove the outputs produced by a transformation
 """
 
+from __future__ import print_function
 import sys
 
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
 if len( sys.argv ) < 2:
-  print 'Usage: dirac-transformation-remove-output transID [transID] [transID]'
+  print('Usage: dirac-transformation-remove-output transID [transID] [transID]')
   sys.exit()
 else:
   transIDs = [int( arg ) for arg in sys.argv[1:]]

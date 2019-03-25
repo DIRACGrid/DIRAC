@@ -26,6 +26,7 @@
 
 # pylint: disable=protected-access,wrong-import-position,invalid-name
 
+from __future__ import print_function
 import unittest
 import sys
 import datetime
@@ -331,7 +332,7 @@ class JobMonitoringMore(TestWMSTestCase):
       jobIDs.append(jobID)
 
     res = jobMonitor.getSites()
-    print res
+    print(res)
     self.assertTrue(res['OK'])
     self.assertTrue(set(res['Value']) <= {'ANY', 'DIRAC.Jenkins.ch'})
     res = jobMonitor.getJobTypes()
@@ -574,7 +575,7 @@ class Matcher (TestWMSTestCase):
     self.assertTrue(res['OK'])
 
     res = MatcherClient().requestJob(resourceDescription)
-    print res
+    print(res)
     self.assertTrue(res['OK'])
     wmsClient.deleteJob(jobID)
 

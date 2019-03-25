@@ -4,6 +4,7 @@
 # File :    dirac-admin-list-users
 # Author :  Adrian Casajus
 ########################################################################
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base import Script
@@ -27,12 +28,12 @@ for unprocSw in Script.getUnprocessedSwitches():
 if not extendedInfo:
   result = diracAdmin.csListHosts()
   for host in result[ 'Value' ]:
-    print " %s" % host
+    print(" %s" % host)
 else:
   result = diracAdmin.csDescribeHosts()
-  print diracAdmin.pPrint.pformat( result[ 'Value' ] )
+  print(diracAdmin.pPrint.pformat(result['Value']))
 
 for error in errorList:
-  print "ERROR %s: %s" % error
+  print("ERROR %s: %s" % error)
 
 DIRACExit( exitCode )

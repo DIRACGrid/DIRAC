@@ -3,6 +3,7 @@ ReportCLI class implementing command line interface to DIRAC Accounting
 ReportGenerator Service. It is not complete yet
 """
 
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import sys
@@ -48,15 +49,15 @@ class ReportCLI( CLI ):
   def printComment( self, comment ):
     commentList = comment.split( "\n" )
     for commentLine in commentList[ :-1 ]:
-      print "# %s" % commentLine.strip()
+      print("# %s" % commentLine.strip())
 
   def showTraceback( self ):
     import traceback
     type, value = sys.exc_info()[:2]
-    print "________________________\n"
-    print "Exception", type, ":", value
+    print("________________________\n")
+    print("Exception", type, ":", value)
     traceback.print_tb( sys.exc_info()[2] )
-    print "________________________\n"
+    print("________________________\n")
 
   def __getDatetimeFromArg( self, dtString ):
     if len( dtString ) != 12:

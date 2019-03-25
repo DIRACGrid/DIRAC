@@ -2,6 +2,7 @@
     Workflow class is the main container of Steps and Modules
 """
 
+from __future__ import print_function
 import os, re, types
 import xml.sax
 from DIRAC.Core.Workflow.Parameter import *
@@ -212,7 +213,11 @@ class Workflow( AttributeCollection ):
           # print "Workflow self." + wf_parameter.getName(), '=', wf_parameter.getLinkedModule() + '.' + wf_parameter.getLinkedParameter()
           if wf_parameter.getLinkedModule() == 'self':
             # this is not suppose to happen
-            print "Warning! Job attribute ", wf_parameter.getName(), "refers to the attribute of the same workflow", wf_parameter.getLinkedParameter()
+            print(
+                "Warning! Job attribute ",
+                wf_parameter.getName(),
+                "refers to the attribute of the same workflow",
+                wf_parameter.getLinkedParameter())
             wf_exec_attr[wf_parameter.getName()] = wf_exec_attr[wf_parameter.getLinkedParameter()]
           else:
             wf_exec_attr[wf_parameter.getName()] = wf_exec_attr[wf_parameter.getLinkedModule()][wf_parameter.getLinkedParameter()]
@@ -279,13 +284,21 @@ class Workflow( AttributeCollection ):
           # print "WorkflowInstance  self." + wf_parameter.getName(), '=', wf_parameter.getLinkedModule() + '.' + wf_parameter.getLinkedParameter()
           if wf_parameter.getLinkedModule() == 'self':
             # this is not suppose to happen
-            print "Warning! Workflow OUTPUT attribute ", wf_parameter.getName(), "refer on the attribute of the same workflow", wf_parameter.getLinkedParameter()
+            print(
+                "Warning! Workflow OUTPUT attribute ",
+                wf_parameter.getName(),
+                "refer on the attribute of the same workflow",
+                wf_parameter.getLinkedParameter())
             wf_exec_attr[wf_parameter.getName()] = wf_exec_attr[wf_parameter.getLinkedParameter()]
           else:
             wf_exec_attr[wf_parameter.getName()] = wf_exec_steps[wf_parameter.getLinkedModule()][wf_parameter.getLinkedParameter()]
         else:
           # it is also does not make sense - we can produce warning
-          print "Warning! Workflow OUTPUT attribute", wf_parameter.getName(), "assigned constant", wf_parameter.getValue()
+          print(
+              "Warning! Workflow OUTPUT attribute",
+              wf_parameter.getName(),
+              "assigned constant",
+              wf_parameter.getValue())
           # print "WorkflowInstance  self."+ wf_parameter.getName(),'=',wf_parameter.getValue()
           wf_exec_attr[wf_parameter.getName()] = wf_parameter.getValue()
         setattr( self, wf_parameter.getName(), wf_exec_attr[wf_parameter.getName()] )

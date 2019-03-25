@@ -3,6 +3,7 @@
 
 # pylint: disable=wrong-import-position, protected-access
 
+from __future__ import print_function
 import time
 import os
 
@@ -61,14 +62,14 @@ name = prodJob.workflow.getName()
 name = name.replace('/', '').replace('\\', '')
 prodJob.workflow.toXMLFile(name)
 
-print 'Workflow XML file name is: %s' % name
+print('Workflow XML file name is: %s' % name)
 
 workflowBody = ''
 if os.path.exists(name):
   with open(name, 'r') as fopen:
     workflowBody = fopen.read()
 else:
-  print 'Could not get workflow body'
+  print('Could not get workflow body')
 
 # Standard parameters
 transformation = Transformation()
@@ -121,10 +122,10 @@ if UseFilter:
 result = transformation.addTransformation()
 
 if not result['OK']:
-  print result
+  print(result)
   exit(1)
 
 transID = result['Value']
 with open('TransformationID', 'w') as fd:
   fd.write(str(transID))
-print "Created %s, stored in file 'TransformationID'" % transID
+print("Created %s, stored in file 'TransformationID'" % transID)

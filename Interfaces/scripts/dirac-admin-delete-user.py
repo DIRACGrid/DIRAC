@@ -7,6 +7,7 @@
 """
   Remove User from Configuration
 """
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base import Script
@@ -31,7 +32,7 @@ if len( args ) < 1:
 choice = raw_input( "Are you sure you want to delete user/s %s? yes/no [no]: " % ", ".join( args ) )
 choice = choice.lower()
 if choice not in ( "yes", "y" ):
-  print "Delete aborted"
+  print("Delete aborted")
   DIRACExit( 0 )
 
 for user in args:
@@ -46,6 +47,6 @@ if not exitCode:
     exitCode = 255
 
 for error in errorList:
-  print "ERROR %s: %s" % error
+  print("ERROR %s: %s" % error)
 
-DIRACExit( exitCode )
+DIRACExit(exitCode)

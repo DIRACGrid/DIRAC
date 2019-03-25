@@ -7,6 +7,7 @@
 """
   Report Normalization Factor applied by Site to the given Queue
 """
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import DIRAC
@@ -31,10 +32,10 @@ for ceUniqueID in args:
   cpuNorm = getQueueNormalization( ceUniqueID )
 
   if not cpuNorm['OK']:
-    print 'ERROR %s:' % ceUniqueID, cpuNorm['Message']
+    print('ERROR %s:' % ceUniqueID, cpuNorm['Message'])
     exitCode = 2
     continue
-  print ceUniqueID, cpuNorm['Value']
+  print(ceUniqueID, cpuNorm['Value'])
 
 DIRAC.exit( exitCode )
 

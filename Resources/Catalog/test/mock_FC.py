@@ -16,33 +16,33 @@ fc_mock.listDirectory.return_value = {'OK': True,
                                                                                   'Files': {'/this/is/dir1/file1.txt':{'MetaData': {'Checksum': '7149ed85',
                                                                                                                                     'ChecksumType': 'Adler32',
                                                                                                                                     'CreationDate': datetime.datetime(2014, 12, 4, 12, 16, 56),
-                                                                                                                                    'FileID': 156301805L,
-                                                                                                                                    'GID': 2695L,
+                                                                                                                                    'FileID': 156301805,  # noqa
+                                                                                                                                    'GID': 2695,  # noqa
                                                                                                                                     'GUID': '6A5C6C86-AD7B-E411-9EDB-AC162DA8C2B0',
                                                                                                                                     'Mode': 436,
                                                                                                                                     'ModificationDate': datetime.datetime(2014, 12, 4, 12, 16, 56),
                                                                                                                                     'Owner': 'phicharp',
                                                                                                                                     'OwnerGroup': 'lhcb_prod',
-                                                                                                                                    'Size': 206380531L,
+                                                                                                                                    'Size': 206380531,  # noqa
                                                                                                                                     'Status': 'AprioriGood',
                                                                                                                                     'Type': 'File',
-                                                                                                                                    'UID': 19503L
+                                                                                                                                    'UID': 19503  # noqa
                                                                                                                                    }
                                                                                                                       },
                                                                                             '/this/is/dir1/file2.foo.bar':{'MetaData': {'Checksum': '7149ed86',
                                                                                                                                         'ChecksumType': 'Adler32',
                                                                                                                                         'CreationDate': datetime.datetime(2014, 12, 4, 12, 16, 56),
-                                                                                                                                        'FileID': 156301805L,
-                                                                                                                                        'GID': 2695L,
+                                                                                                                                        'FileID': 156301805,  # noqa
+                                                                                                                                        'GID': 2695,  # noqa
                                                                                                                                         'GUID': '6A5C6C86-AD7B-E411-9EDB-AC162DA8C2B1',
                                                                                                                                         'Mode': 436,
                                                                                                                                         'ModificationDate': datetime.datetime(2014, 12, 4, 12, 16, 56),
                                                                                                                                         'Owner': 'phicharp',
                                                                                                                                         'OwnerGroup': 'lhcb_prod',
-                                                                                                                                        'Size': 206380532L,
+                                                                                                                                        'Size': 206380532,  # noqa
                                                                                                                                         'Status': 'AprioriGood',
                                                                                                                                         'Type': 'File',
-                                                                                                                                        'UID': 19503L
+                                                                                                                                        'UID': 19503  # noqa
                                                                                                                                        }
                                                                                                                           }
                                                                                            },
@@ -59,17 +59,17 @@ fc_mock.listDirectory.return_value = {'OK': True,
                                                                                            'Files': {'/this/is/dir2/subdir1/file3.pippo':{'MetaData': {'Checksum': '7149ed86',
                                                                                                                                                        'ChecksumType': 'Adler32',
                                                                                                                                                        'CreationDate': datetime.datetime(2014, 12, 4, 12, 16, 56),
-                                                                                                                                                       'FileID': 156301805L,
-                                                                                                                                                       'GID': 2695L,
+                                                                                                                                                       'FileID': 156301805,  # noqa
+                                                                                                                                                       'GID': 2695,  # noqa
                                                                                                                                                        'GUID': '6A5C6C86-AD7B-E411-9EDB-AC162DA8C2B1',
                                                                                                                                                        'Mode': 436,
                                                                                                                                                        'ModificationDate': datetime.datetime(2014, 12, 4, 12, 16, 56),
                                                                                                                                                        'Owner': 'phicharp',
                                                                                                                                                        'OwnerGroup': 'lhcb_prod',
-                                                                                                                                                       'Size': 206380532L,
+                                                                                                                                                       'Size': 206380532,  # noqa
                                                                                                                                                        'Status': 'AprioriGood',
                                                                                                                                                        'Type': 'File',
-                                                                                                                                                       'UID': 19503L
+                                                                                                                                                       'UID': 19503  # noqa
                                                                                                                                                       }
                                                                                                                                          }
                                                                                                     },

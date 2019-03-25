@@ -1,3 +1,4 @@
+from __future__ import print_function
 import unittest
 
 from DIRAC.Core.Workflow.Module import ModuleDefinition
@@ -66,7 +67,7 @@ from DIRAC.Workflow.Modules.<MODULE> import <MODULE>
     self.assertEqual( execT, 0 )
     self.assertEqual( cpuT, 0 )
     execT, cpuT = getStepCPUTimes( {'StartTime':0, 'StartStats': ( 0, 0, 0, 0, 0 )} )
-    print execT, cpuT
+    print(execT, cpuT)
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( UtilitiesTestCase )

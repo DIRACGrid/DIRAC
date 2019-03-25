@@ -147,6 +147,7 @@
 
 """
 
+from __future__ import print_function
 import collections
 import time
 import threading
@@ -592,7 +593,7 @@ class MySQL( object ):
       self._connected = True
       return S_OK()
     except Exception as x:
-      print x
+      print(x)
       return self._except( '_connect', x, 'Could not connect to DB.' )
 
 
@@ -651,7 +652,7 @@ class MySQL( object ):
       pass
 
     if gDebugFile:
-      print >> gDebugFile, time.time() - start, cmd.replace( '\n', '' )
+      print(time.time() - start, cmd.replace('\n', ''), file=gDebugFile)
       gDebugFile.flush()
 
     return retDict
@@ -699,7 +700,7 @@ class MySQL( object ):
       pass
 
     if gDebugFile:
-      print >> gDebugFile, time.time() - start, cmd.replace( '\n', '' )
+      print(time.time() - start, cmd.replace('\n', ''), file=gDebugFile)
       gDebugFile.flush()
 
     return retDict

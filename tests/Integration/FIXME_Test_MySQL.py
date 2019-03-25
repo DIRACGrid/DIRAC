@@ -176,7 +176,7 @@ testlist = [{ 'method'    : DB._connect,
             },
             { 'method'    : DB.insert,
               'arguments' : ( '`', ),
-              'output'    : {'OK': True, 'Value': 1L }
+              'output': {'OK': True, 'Value': 1}
             },
             { 'method'    : DB.retrieve,
               'arguments' : ( 11, ),
@@ -184,7 +184,7 @@ testlist = [{ 'method'    : DB._connect,
             },
             { 'method'    : DB.insert,
               'arguments' : ( '"', ),
-              'output'    : {'OK': True, 'Value': 1L }
+              'output': {'OK': True, 'Value': 1}
             },
             { 'method'    : DB.retrieve,
               'arguments' : ( 12, ),
@@ -192,7 +192,7 @@ testlist = [{ 'method'    : DB._connect,
             },
             { 'method'    : DB.insert,
               'arguments' : ( '\'', ),
-              'output'    : {'OK': True, 'Value': 1L }
+              'output': {'OK': True, 'Value': 1}
             },
             { 'method'    : DB.retrieve,
               'arguments' : ( 13, ),
@@ -200,7 +200,7 @@ testlist = [{ 'method'    : DB._connect,
             },
             { 'method'    : DB.insert,
               'arguments' : ( '`', ),
-              'output'    : {'OK': True, 'Value': 1L }
+              'output': {'OK': True, 'Value': 1}
             },
             { 'method'    : DB.retrieve,
               'arguments' : ( 14, ),

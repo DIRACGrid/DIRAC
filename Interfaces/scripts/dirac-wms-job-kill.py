@@ -7,6 +7,7 @@
 """
   Issue a kill signal to a running DIRAC job
 """
+from __future__ import print_function
 __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
@@ -26,10 +27,10 @@ from DIRAC.Interfaces.API.Dirac                              import Dirac, parse
 
 result = Dirac().killJob( parseArguments( args ) )
 if result['OK']:
-  print 'Killed jobs %s' % ','.join( [str( j ) for j in result['Value']] )
+  print('Killed jobs %s' % ','.join([str(j) for j in result['Value']]))
   exitCode = 0
 else:
-  print 'ERROR', result['Message']
+  print('ERROR', result['Message'])
   exitCode = 2
 
 DIRAC.exit( exitCode )

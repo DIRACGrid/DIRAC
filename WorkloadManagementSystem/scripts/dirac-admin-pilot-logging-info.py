@@ -2,6 +2,7 @@
 """
   Get Pilots Logging for specific Pilot UUID or Job ID.
 """
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import DIRAC
@@ -59,7 +60,7 @@ if uuid:
   pilotsLogging = PilotsLoggingClient()
   result = pilotsLogging.getPilotsLogging(uuid)
   if not result['OK']:
-    print 'ERROR: %s' % result['Message']
+    print('ERROR: %s' % result['Message'])
     DIRAC.exit(1)
   printPilotsLogging(result['Value'])
   DIRAC.exit(0)
@@ -68,14 +69,14 @@ else:
   pilotsLogging = PilotsLoggingClient()
   pilots = pilotDB.getPilotsForJobID(jobid)
   if not pilots['OK ']:
-    print pilots['Message']
+    print(pilots['Message'])
   for pilotID in pilots:
     info = pilotDB.getPilotInfo(pilotID=pilotID)
     if not info['OK']:
-      print info['Message']
+      print(info['Message'])
     for pilot in info:
       logging = pilotsLogging.getPilotsLogging(pilot['PilotJobReference'])
       if not logging['OK']:
-        print logging['Message']
+        print(logging['Message'])
       printPilotsLogging(logging)
   DIRAC.exit(0)

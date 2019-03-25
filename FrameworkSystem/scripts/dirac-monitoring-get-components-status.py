@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 import sys
 from DIRAC.Core.Base import Script
 
@@ -13,7 +14,7 @@ from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 
 result = gMonitor.getComponentsStatusWebFormatted( sortingList = [ [ 'ComponentName', 'ASC' ] ] )
 if not result[ 'OK' ]:
-  print "ERROR: %s" % result[ 'Message' ]
+  print("ERROR: %s" % result['Message'])
   sys.exit( 1 )
 paramNames = result[ 'Value' ][ 'ParameterNames' ]
 records = result[ 'Value' ][ 'Records' ]
@@ -33,14 +34,14 @@ for i in range( len( paramNames ) ):
   if param in fieldsToShow:
     line.append( "%s%s" % ( param, " " * ( fieldLengths[i] - len( param ) ) ) )
     sepLine.append( "-" * fieldLengths[i] )
-print "|".join( line )
+print("|".join(line))
 sepLine = "+".join( sepLine )
-print sepLine
+print(sepLine)
 for record in records:
   line = []
   for i in range( len( record ) ):
     if paramNames[i] in fieldsToShow:
       val = str( record[i] )
       line.append( "%s%s" % ( val, " " * ( fieldLengths[i] - len( val ) ) ) )
-  print "|".join( line )
+  print("|".join(line))
   #print sepLine

@@ -16,6 +16,7 @@ env:
     - CHECK=pytest_M2Crypto_security
     - CHECK=docs
     - CHECK=pylint
+    - CHECK=pylintPY3K
     - CHECK=format
 
 
@@ -39,6 +40,8 @@ script:
     elif [[ "${CHECK}" == "docs"  ]];
     then .travis.d/checkDocs.sh;
     elif [[ "${CHECK}" == "pylint"  ]];
+    then travis_wait 30 .travis.d/runPylint.sh;
+    elif [[ "${CHECK}" == "pylintPY3K"  ]];
     then travis_wait 30 .travis.d/runPylint.sh;
     elif [[ "${CHECK}" == "format" ]] && [[ "${TRAVIS_PULL_REQUEST}" != "false" ]];
     then git remote add GH https://github.com/DIRACGrid/DIRAC.git; git fetch --no-tags GH ${TRAVIS_BRANCH}; git branch -vv; git diff -U0 GH/${TRAVIS_BRANCH} ':(exclude)tests/formatting/pep8_bad.py' | pycodestyle --diff;

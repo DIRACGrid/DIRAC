@@ -3,6 +3,7 @@
     workflow operations
 """
 
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import re
@@ -51,7 +52,7 @@ def resolveVariables(varDict):
       break
     ntry += 1
   else:
-    print "Failed to resolve referencies in %d attempts" % max_tries
+    print("Failed to resolve referencies in %d attempts" % max_tries)
 
 
 def dataFromOption(parameter):

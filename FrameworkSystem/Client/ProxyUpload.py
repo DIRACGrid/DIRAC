@@ -3,6 +3,7 @@
 # Author :  Adrian Casajus
 ###########################################################from DIRAC.Core.Base import Script#############
 
+from __future__ import print_function
 import sys
 import getpass
 import DIRAC
@@ -39,7 +40,7 @@ class CLIParams(object):
       fields = [f.strip() for f in arg.split(":")]
       self.proxyLifeTime = int(fields[0]) * 3600 + int(fields[1]) * 60
     except ValueError:
-      print "Can't parse %s time! Is it a HH:MM?" % arg
+      print("Can't parse %s time! Is it a HH:MM?" % arg)
       return DIRAC.S_ERROR("Can't parse time argument")
     return DIRAC.S_OK()
 
@@ -83,8 +84,8 @@ class CLIParams(object):
     return DIRAC.S_OK()
 
   def showVersion(self, arg):
-    print "Version:"
-    print " ", __RCSID__
+    print("Version:")
+    print(" ", __RCSID__)
     sys.exit(0)
     return DIRAC.S_OK()
 

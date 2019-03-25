@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
 import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
@@ -18,7 +19,7 @@ class Params(object):
       fields = [ f.strip() for f in arg.split( ":" ) ]
       self.proxyLifeTime = int( fields[0] ) * 3600 + int( fields[1] ) * 60
     except:
-      print "Can't parse %s time! Is it a HH:MM?" % arg
+      print("Can't parse %s time! Is it a HH:MM?" % arg)
       return DIRAC.S_ERROR( "Can't parse time argument" )
     return DIRAC.S_OK()
 
@@ -32,7 +33,7 @@ Script.parseCommandLine( ignoreErrors = True )
 args = Script.getPositionalArgs()
 result = gProxyManager.getDBContents()
 if not result[ 'OK' ]:
-  print "Can't retrieve list of users: %s" % result[ 'Message' ]
+  print("Can't retrieve list of users: %s" % result['Message'])
   DIRAC.exit( 1 )
 
 keys = result[ 'Value' ][ 'ParameterNames' ]
@@ -52,15 +53,15 @@ for record in records:
 
 
 for userName in dataDict:
-  print "* %s" % userName
+  print("* %s" % userName)
   for iP in range( len( dataDict[ userName ] ) ):
     data = dataDict[ userName ][ iP ]
-    print " DN         : %s" % data[0]
-    print " group      : %s" % data[1]
-    print " not after  : %s" % Time.toString( data[2] )
-    print " persistent : %s" % data[3]
+    print(" DN         : %s" % data[0])
+    print(" group      : %s" % data[1])
+    print(" not after  : %s" % Time.toString(data[2]))
+    print(" persistent : %s" % data[3])
     if iP < len( dataDict[ userName ] ) - 1:
-      print " -"
+      print(" -")
 
 
 

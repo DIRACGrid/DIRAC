@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 """ Create a DIRAC RemoveReplica|RemoveFile request to be executed by the RMS
 """
+from __future__ import print_function
 __RCSID__ = "ea64b42 (2012-07-29 16:45:05 +0200) ricardo <Ricardo.Graciani@gmail.com>"
 
 import os
@@ -41,8 +42,8 @@ import DIRAC
 if targetSE != 'All':
   se = StorageElement( targetSE )
   if not se.valid:
-    print se.errorReason
-    print
+    print(se.errorReason)
+    print()
     Script.showHelp()
 
 from DIRAC.RequestManagementSystem.Client.Request           import Request
@@ -71,12 +72,12 @@ for lfnList in breakListIntoChunks( lfns, 100 ):
 
   res = fc.getFileMetadata( lfnList )
   if not res['OK']:
-    print "Can't get file metadata: %s" % res['Message']
+    print("Can't get file metadata: %s" % res['Message'])
     DIRAC.exit( 1 )
   if res['Value']['Failed']:
-    print "Could not get the file metadata of the following, so skipping them:"
+    print("Could not get the file metadata of the following, so skipping them:")
     for fFile in res['Value']['Failed']:
-      print fFile
+      print(fFile)
 
   lfnMetadata = res['Value']['Successful']
 
@@ -93,11 +94,11 @@ for lfnList in breakListIntoChunks( lfns, 100 ):
 
   isValid = RequestValidator().validate( oRequest )
   if not isValid['OK']:
-    print "Request is not valid: ", isValid['Message']
+    print("Request is not valid: ", isValid['Message'])
     DIRAC.exit( 1 )
 
   result = reqClient.putRequest( oRequest )
   if result['OK']:
-    print 'Request %d Submitted' % result['Value']
+    print('Request %d Submitted' % result['Value'])
   else:
-    print 'Failed to submit Request: ', result['Message']
+    print('Failed to submit Request: ', result['Message'])

@@ -7,6 +7,7 @@
 """
   Remove Site from Active mask for current Setup
 """
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base import Script
@@ -50,7 +51,7 @@ exitCode = 0
 errorList = []
 setup = gConfig.getValue( '/DIRAC/Setup', '' )
 if not setup:
-  print 'ERROR: Could not contact Configuration Service'
+  print('ERROR: Could not contact Configuration Service')
   exitCode = 2
   DIRACExit( exitCode )
 
@@ -69,7 +70,7 @@ else:
   if email:
     userName = diracAdmin._getCurrentUser()
     if not userName['OK']:
-      print 'ERROR: Could not obtain current username from proxy'
+      print('ERROR: Could not obtain current username from proxy')
       exitCode = 2
       DIRACExit( exitCode )
     userName = userName['Value']
@@ -84,9 +85,9 @@ else:
     else:
       result = diracAdmin.sendMail( address, subject, body )
   else:
-    print 'Automatic email disabled by flag.'
+    print('Automatic email disabled by flag.')
 
 for error in errorList:
-  print "ERROR %s: %s" % error
+  print("ERROR %s: %s" % error)
 
 DIRACExit( exitCode )

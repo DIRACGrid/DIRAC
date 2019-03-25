@@ -7,6 +7,7 @@
 Delete DIRAC job from WMS, if running it will be killed
 """
 
+from __future__ import print_function
 import os.path
 
 import DIRAC
@@ -46,7 +47,7 @@ if __name__ == "__main__":
       result = dirac.selectJobs( jobGroup = value, date = jobDate )
       if not result['OK']:
         if not "No jobs selected" in result['Message']:
-          print "Error:", result['Message']
+          print("Error:", result['Message'])
           DIRAC.exit( -1 )
       else:
         jobs += result['Value']
@@ -55,16 +56,16 @@ if __name__ == "__main__":
     jobs.append( arg )
 
   if not jobs:
-    print "Warning: no jobs selected"
+    print("Warning: no jobs selected")
     Script.showHelp()
     DIRAC.exit( 0 )
 
   result = dirac.deleteJob( jobs )
   if result['OK']:
-    print 'Deleted jobs %s' % ','.join( [str( j ) for j in result['Value'] ] )
+    print('Deleted jobs %s' % ','.join([str(j) for j in result['Value']]))
     exitCode = 0
   else:
-    print result['Message']
+    print(result['Message'])
     exitCode = 2
 
   DIRAC.exit( exitCode )

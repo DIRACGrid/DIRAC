@@ -1,4 +1,5 @@
 
+from __future__ import print_function
 import random
 import time
 import threading
@@ -88,19 +89,19 @@ class LockRing( object ):
 if __name__ == "__main__":
   lr = LockRing()
   lock = lr.getLock( "test1" )
-  print "ACQUIRING LOCK", lock
+  print("ACQUIRING LOCK", lock)
   lock.acquire()
-  print "IS THE SAME LOCK? ", lock == lr.getLock( "test1" )
-  print "OPENING ALL LOCKS"
+  print("IS THE SAME LOCK? ", lock == lr.getLock("test1"))
+  print("OPENING ALL LOCKS")
   lr._openAll()
-  print "REACQUIRING LOCK", lock
+  print("REACQUIRING LOCK", lock)
   lr.acquire( "test1" )
-  print "RELEASING LOCK"
+  print("RELEASING LOCK")
   lr.release( "test1" )
-  print "IS SINGLETON", lr == LockRing()
+  print("IS SINGLETON", lr == LockRing())
   ev = lr.getEvent( "POT" )
   ev.set()
   lr._setAllEvents()
-  print "ALL OK"
+  print("ALL OK")
 
 

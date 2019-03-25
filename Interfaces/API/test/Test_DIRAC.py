@@ -1,6 +1,7 @@
 """ Unit tests for the Dirac interface module
 """
 # pylint: disable=no-member, protected-access, missing-docstring
+from __future__ import print_function
 import logging
 
 from pprint import pformat
@@ -51,7 +52,7 @@ def osmock():
     return args[0]
 
   def existsMock(*args, **kwargs):
-    print "exists", args
+    print("exists", args)
     if any(f in args[0] for f in ('jobDescription', '/pwd/file_in_pwd.xml')):
       return True
     if 'absfile' in args[0] and args[0].startswith('/abspath'):

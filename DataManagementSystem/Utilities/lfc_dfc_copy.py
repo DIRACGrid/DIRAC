@@ -8,6 +8,7 @@
 #
 #########################################################################################
 
+from __future__ import print_function
 from DIRAC.Core.Base import Script
 Script.parseCommandLine()
 
@@ -31,14 +32,14 @@ dnCache = {}
 roleCache = {}
 
 def writer( filename, writerQueue, stopFlag ):
-  print "entering writer"
+  print("entering writer")
   outputFile = open( filename, 'w' )
 
   while not stopFlag.value or not writerQueue.empty():
     outputFile.write( writerQueue.get() )
 
   outputFile.close()
-  print "exciting writer stopValue %s" % stopFlag.value
+  print("exciting writer stopValue %s" % stopFlag.value)
   
 
 def getUserNameAndGroup(info):
@@ -124,7 +125,7 @@ def processDir( initPath, writerQueue, recursive = False, host = None, fcInit = 
       # print "Adding %d directories in %s" % ( nDir, initPath )
       result = dfc.createDirectory(paths)
       if not result['OK']:
-        print "Error adding directories:%s" % result['Message']
+        print("Error adding directories:%s" % result['Message'])
 
 
     e_dirs = time.time() - s
@@ -173,14 +174,14 @@ def processDir( initPath, writerQueue, recursive = False, host = None, fcInit = 
         count += 1
         result = dfc.addFile(lfns)
         if not result['OK']:
-          print "Error adding files %d:" % count, result['Message']
+          print("Error adding files %d:" % count, result['Message'])
           if count > 10:
-            print "Completely failed path %s" % initPath
+            print("Completely failed path %s" % initPath)
             break
           error = True
           time.sleep(2)
         elif error:
-          print "Successfully added files on retry %d" % count
+          print("Successfully added files on retry %d" % count)
           done = True
         else:
           done = True
@@ -228,23 +229,24 @@ def finalizeDirectory(task,result):
 
   if result['OK']:
     writerQueue = result['writerQueue']
-    print "Finished directory %(Path)s, dirs: %(NumberOfDirectories)s, files: %(NumberOfFiles)s, replicas: %(NumberOfReplicas)s" % result['Value']
-    print "%d active tasks remaining" % pPool.getNumWorkingProcesses()
+    print("Finished directory %(Path)s, dirs: %(NumberOfDirectories)s, files: "
+          "%(NumberOfFiles)s, replicas: %(NumberOfReplicas)s" % result['Value'])
+    print("%d active tasks remaining" % pPool.getNumWorkingProcesses())
 
 
     if "Directories" in result['Value']:
       for path in result['Value']['Directories']:
         random.shuffle(lfcHosts)
         #print pPool.getNumWorkingProcesses(), pPool.hasPendingTasks()
-        print "Queueing task for directory %s, lfc %s" % ( path, lfcHosts[0] )
+        print("Queueing task for directory %s, lfc %s" % (path, lfcHosts[0]))
         result = pPool.createAndQueueTask( processDir, [path , writerQueue, False, lfcHosts[0]], callback = finalizeDirectory )
         if not result['OK']:
-          print "Failed queueing %s" % path
+          print("Failed queueing %s" % path)
   else:
-    print "Task failed: %s" % result['Message']
+    print("Task failed: %s" % result['Message'])
     if 'Path' in result:
       random.shuffle(lfcHosts)
-      print "Requeueing task for directory %s, lfc %s" % ( result['Path'], lfcHosts[0] )
+      print("Requeueing task for directory %s, lfc %s" % (result['Path'], lfcHosts[0]))
 
 #########################################################################
 
@@ -268,7 +270,7 @@ lfcHosts = ['prod-lfc-lhcb-ro.cern.ch']
 
 # path = "/lhcb/LHCb"
 path = '/lhcb/user/c/chaen'
-print "Queueing task for directory", path, lfcHosts[0]
+print("Queueing task for directory", path, lfcHosts[0])
 
 
 writerProc = Process( target = writer, args = ( 'lfc_dfc.out', writerQueue, stopFlag ) )
@@ -278,7 +280,7 @@ writerProc.start()
 
 result = pPool.createAndQueueTask( processDir, [path , writerQueue, False, lfcHosts[0]], callback = finalizeDirectory )
 if not result['OK']:
-  print "Failed queueing", path
+  print("Failed queueing", path)
 
 for i in range(20):
   pPool.processResults()

@@ -18,6 +18,7 @@ Examples:
 
 # pylint: disable=invalid-name,wrong-import-position
 
+from __future__ import print_function
 import unittest
 import sys
 import os
@@ -90,7 +91,7 @@ try:
   DESTINATION_PATH = '/%s/user/%s/%s/gfaltests' % (vo, username[0], username)
 
 except Exception as e:  # pylint: disable=broad-except
-  print repr(e)
+  print(repr(e))
   sys.exit(2)
 
 
@@ -153,17 +154,17 @@ class basicTest(unittest.TestCase):
     pluginProtocol = specSE.protocolOptions[0]['Protocol']
 
     if pluginProtocol in specSE.localAccessProtocolList:
-      print "Using specific SE with %s only for reading" % pluginToTest
+      print("Using specific SE with %s only for reading" % pluginToTest)
       self.readSE = specSE
     else:
-      print "Plugin %s is not available for read. Use a generic SE" % pluginToTest
+      print("Plugin %s is not available for read. Use a generic SE" % pluginToTest)
       self.readSE = genericSE
 
     if pluginProtocol in specSE.localWriteProtocolList:
-      print "Using specific SE with %s only for writing" % pluginToTest
+      print("Using specific SE with %s only for writing" % pluginToTest)
       self.writeSE = specSE
     else:
-      print "Plugin %s is not available for write. Use a generic SE" % pluginToTest
+      print("Plugin %s is not available for write. Use a generic SE" % pluginToTest)
       self.writeSE = genericSE
 
     # Make sure we are testing the specific plugin at least for one
@@ -179,13 +180,13 @@ class basicTest(unittest.TestCase):
 
   def clearDirectory(self):
     """ Removing target directory """
-    print "=================================================="
-    print "==== Removing the older Directory ================"
+    print("==================================================")
+    print("==== Removing the older Directory ================")
     workflow_folder = DESTINATION_PATH + '/Workflow'
     res = self.writeSE.removeDirectory(workflow_folder)
     if not res['OK']:
-      print "basicTest.clearDirectory: Workflow folder maybe not empty"
-    print "=================================================="
+      print("basicTest.clearDirectory: Workflow folder maybe not empty")
+    print("==================================================")
 
   def testWorkflow(self):
     """ This perform a complete workflow puting, removing, stating files and directories

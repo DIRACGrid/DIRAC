@@ -7,6 +7,7 @@
 """
   Submit jobs to DIRAC WMS
 """
+from __future__ import print_function
 __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
@@ -44,16 +45,16 @@ jFile = None
 for sw, value in unprocessed_switches:
   if sw.lower() in ( 'f', 'file' ):
     if os.path.isfile( value ):
-      print 'Appending job ids to existing logfile: %s' %value
+      print('Appending job ids to existing logfile: %s' % value)
       if not os.access( value , os.W_OK ):
-        print 'Existing logfile %s must be writable by user.' %value
+        print('Existing logfile %s must be writable by user.' % value)
     jFile = open( value, 'a' )
 
 for jdl in args:
 
   result = dirac.submitJob( jdl )
   if result['OK']:
-    print 'JobID = %s' % ( result['Value'] )
+    print('JobID = %s' % (result['Value']))
     if jFile != None:
       # parametric jobs
       if isinstance( result['Value'], list ):
@@ -69,6 +70,6 @@ if jFile != None:
   jFile.close()
 
 for error in errorList:
-  print "ERROR %s: %s" % error
+  print("ERROR %s: %s" % error)
 
 DIRAC.exit( exitCode )

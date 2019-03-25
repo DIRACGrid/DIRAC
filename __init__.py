@@ -64,6 +64,7 @@
 
 """
 
+from __future__ import print_function
 import sys
 import os
 import platform as pyPlatform
@@ -110,11 +111,11 @@ __pythonMinorVersion = ("7")
 
 pythonVersion = pyPlatform.python_version_tuple()
 if str(pythonVersion[0]) not in __pythonMajorVersion or str(pythonVersion[1]) not in __pythonMinorVersion:
-  print "Python Version %s not supported by DIRAC" % pyPlatform.python_version()
-  print "Supported versions are: "
+  print("Python Version %s not supported by DIRAC" % pyPlatform.python_version())
+  print("Supported versions are: ")
   for major in __pythonMajorVersion:
     for minor in __pythonMinorVersion:
-      print "%s.%s.x" % (major, minor)
+      print("%s.%s.x" % (major, minor))
 
   sys.exit(1)
 

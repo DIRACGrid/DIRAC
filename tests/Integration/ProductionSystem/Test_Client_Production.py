@@ -4,6 +4,7 @@
     It supposes that the DB is present, and that the service is running
 """
 
+from __future__ import print_function
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
@@ -47,7 +48,7 @@ class ProductionClientChain(TestClientProductionTestCase):
 
     # delete the production
     res = self.prodClient.deleteProduction(prodID)
-    print type(prodID)
+    print(type(prodID))
     self.assertTrue(res['OK'])
 
     # delete non existing one (fails)

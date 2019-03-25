@@ -5,6 +5,7 @@
 #
 #####################################################################
 
+from __future__ import print_function
 __RCSID__ = '$Id$'
 
 import StringIO
@@ -72,7 +73,7 @@ def printTable( fields, records, sortField = '', numbering = True,
 
   if not records:
     if printOut:
-      print "No output"
+      print("No output")
     return "No output"
 
   # Strip all strings
@@ -94,7 +95,7 @@ def printTable( fields, records, sortField = '', numbering = True,
           else:
             out = "Wrong type for field value: %s" % type( ll )
             if printOut:
-              print out
+              print(out)
             return out
         strippedRecord.append( strippedList )
       elif isinstance( fieldValue, dict ):
@@ -110,7 +111,7 @@ def printTable( fields, records, sortField = '', numbering = True,
         else:
           out = "Wrong type for field value: %s" % type( itemValue )
           if printOut:
-            print out
+            print(out)
           return out
     recordList.append( strippedRecord )
 
@@ -119,7 +120,7 @@ def printTable( fields, records, sortField = '', numbering = True,
     if nFields != len( rec ):
       out = "Incorrect data structure to print, nFields %d, nRecords %d" % ( nFields, len( rec ) )
       if printOut:
-        print out
+        print(out)
       return out
 
   if sortField:
@@ -225,7 +226,7 @@ def printTable( fields, records, sortField = '', numbering = True,
 
   output = stringBuffer.getvalue()
   if printOut:
-    print output
+    print(output)
 
   return output
 

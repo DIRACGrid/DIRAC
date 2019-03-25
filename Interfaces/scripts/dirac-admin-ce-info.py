@@ -7,6 +7,7 @@
 """
   Retrieve Site Associated to a given CE
 """
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import DIRAC
@@ -40,7 +41,7 @@ gridCfgPath = cfgPath( 'Resources', 'Sites', grid )
 
 result = DIRAC.gConfig.getSections( gridCfgPath )
 if not result['OK']:
-  print 'Could not get DIRAC site list'
+  print('Could not get DIRAC site list')
   DIRAC.exit( 2 )
 
 sites = result['Value']
@@ -51,6 +52,6 @@ for site in sites:
     ces = result['Value'].get( 'CE', [] )
     for ce in args:
       if ce in ces:
-        print '%s: %s' % ( ce, site )
+        print('%s: %s' % (ce, site))
 
 DIRAC.exit( exitCode )

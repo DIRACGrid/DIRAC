@@ -4,6 +4,7 @@
 # Author : Adria Casajus
 ########################################################################
 
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 try:
@@ -123,4 +124,4 @@ except:
     return platformString
 
 if __name__ == "__main__":
-  print getPlatformString()
+  print(getPlatformString())
