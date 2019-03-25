@@ -50,7 +50,7 @@ class AuthManager(object):
       userString += " group=%s" % credDict[self.KW_GROUP]
     if self.KW_EXTRA_CREDENTIALS in credDict:
       userString += " extraCredentials=%s" % str(credDict[self.KW_EXTRA_CREDENTIALS])
-    self.__authLogger.verbose("Trying to authenticate %s" % userString)
+    self.__authLogger.debug("Trying to authenticate %s" % userString)
     # Get properties
     requiredProperties = self.getValidPropertiesForMethod(methodQuery, defaultProperties)
     # Extract valid groups
@@ -62,10 +62,18 @@ class AuthManager(object):
     allowAll = "any" in lowerCaseProperties or "all" in lowerCaseProperties
     # Set no properties by default
     credDict[self.KW_PROPERTIES] = []
-
+    # Check non secure backends
+    if self.KW_DN not in credDict or not credDict[self.KW_DN]:
+      if allowAll and not validGroups:
+        self.__authLogger.debug("Accepted request from unsecure transport")
+        return True
+      else:
+        self.__authLogger.debug(
+            "Explicit property required and query seems to be coming through an unsecure transport")
+        return False
     # Check if query comes though a gateway/web server
     if self.forwardedCredentials(credDict):
-      self.__authLogger.verbose("Query comes from a gateway")
+      self.__authLogger.debug("Query comes from a gateway")
       self.unpackForwardedCredentials(credDict)
       return self.authQuery(methodQuery, credDict, requiredProperties)
     # Get the properties
@@ -73,7 +81,7 @@ class AuthManager(object):
     if self.KW_EXTRA_CREDENTIALS in credDict:
       # Invalid forwarding?
       if not isinstance(credDict[self.KW_EXTRA_CREDENTIALS], basestring):
-        self.__authLogger.verbose("The credentials seem to be forwarded by a host, but it is not a trusted one")
+        self.__authLogger.debug("The credentials seem to be forwarded by a host, but it is not a trusted one")
         return False
     # Is it a host?
     if self.KW_EXTRA_CREDENTIALS in credDict and credDict[self.KW_EXTRA_CREDENTIALS] == self.KW_HOSTS_GROUP:
@@ -167,16 +175,16 @@ class AuthManager(object):
     if authProps:
       return authProps
     if defaultProperties:
-      self.__authLogger.verbose("Using hardcoded properties for method %s : %s" % (method, defaultProperties))
+      self.__authLogger.debug("Using hardcoded properties for method %s : %s" % (method, defaultProperties))
       if not isinstance(defaultProperties, (list, tuple)):
         return List.fromChar(defaultProperties)
       return defaultProperties
     defaultPath = "%s/Default" % "/".join(method.split("/")[:-1])
     authProps = gConfig.getValue("%s/%s" % (self.authSection, defaultPath), [])
     if authProps:
-      self.__authLogger.verbose("Method %s has no properties defined using %s" % (method, defaultPath))
+      self.__authLogger.debug("Method %s has no properties defined using %s" % (method, defaultPath))
       return authProps
-    self.__authLogger.verbose("Method %s has no authorization rules defined. Allowing no properties" % method)
+    self.__authLogger.debug("Method %s has no authorization rules defined. Allowing no properties" % method)
     return []
 
   def getValidGroups(self, rawProperties):

@@ -1112,15 +1112,21 @@ class ReleaseConfig(object):
 
   def getDiracOSVersion(self, diracOSVersion=None):
     """
-    It returns the DIRACOS version
-    :param str diracOSVersion: the OS version
-    """
+      It returns the DIRACOS version
+      :param str diracOSVersion: the OS version
+      """
 
     if diracOSVersion:
       return diracOSVersion
     try:
-      return self.prjRelCFG[self.projectName][cliParams.release].get(
+      diracOSVersion = self.prjRelCFG[self.projectName][cliParams.release].get(
           "Releases/%s/DIRACOS" % cliParams.release, diracOSVersion)
+      if not diracOSVersion:
+        # the DIRAC extension does not specify DIRACOS version
+        for release in self.prjRelCFG['DIRAC']:
+          logWARN("Getting DIRACOS version from DIRAC %s!" % release)
+          diracOSVersion = self.prjRelCFG['DIRAC'][release].get(
+              "Releases/%s/DIRACOS" % cliParams.release, diracOSVersion)
     except KeyError:
       pass
     return diracOSVersion
@@ -1812,6 +1818,10 @@ def loadConfiguration():
     except BaseException:
       pass
 
+  if not cliParams.diracOS and os.path.exists("%s/diracos" % cliParams.targetPath):
+    logWARN("Forcing to install DIRACOS, because it is already installed!")
+    cliParams.diracOS = True
+
   logNOTICE("Destination path for installation is %s" % cliParams.targetPath)
   releaseConfig.projectName = cliParams.project
 
@@ -2036,8 +2046,7 @@ def createBashrc():
           certDir = '%s/etc/grid-security/certificates' % proPath
       lines.extend(['# CAs path for SSL verification',
                     'export X509_CERT_DIR=%s' % certDir,
-                    'export SSL_CERT_DIR=%s' % certDir,
-                    'export REQUESTS_CA_BUNDLE=%s' % certDir])
+                    'export SSL_CERT_DIR=%s' % certDir])
 
       lines.append(
           'export X509_VOMS_DIR=%s' %
@@ -2155,8 +2164,7 @@ def createCshrc():
           certDir = '%s/etc/grid-security/certificates' % proPath
       lines.extend(['# CAs path for SSL verification',
                     'setenv X509_CERT_DIR %s' % certDir,
-                    'setenv SSL_CERT_DIR %s' % certDir,
-                    'setenv REQUESTS_CA_BUNDLE %s' % certDir])
+                    'setenv SSL_CERT_DIR %s' % certDir])
 
       lines.append(
           'setenv X509_VOMS_DIR %s' %
@@ -2323,8 +2331,7 @@ def createBashrcForDiracOS():
           certDir = '%s/etc/grid-security/certificates' % proPath
       lines.extend(['# CAs path for SSL verification',
                     'export X509_CERT_DIR=%s' % certDir,
-                    'export SSL_CERT_DIR=%s' % certDir,
-                    'export REQUESTS_CA_BUNDLE=%s' % certDir])
+                    'export SSL_CERT_DIR=%s' % certDir])
 
       lines.append(
           'export X509_VOMS_DIR=%s' %

@@ -205,15 +205,19 @@ def getPilotFiles(pilotFilesDir=None, pilotFilesLocation=None):
   shutil.rmtree(pilotFilesDir)  # make sure it's empty
   os.mkdir(pilotFilesDir)
 
+  # Default value is True such that if this value is
+  # not defined, we use the system CAs with requests
+  caPath = os.environ.get('X509_CERT_DIR', True)
+
   # getting the pilot files
   if pilotFilesLocation.startswith('http'):
-    res = requests.get(pilotFilesLocation)
+    res = requests.get(pilotFilesLocation, verify=caPath)
     if res.status_code != 200:
       raise IOError(res.text)
     fileObj = StringIO(res.content)
     tar = tarfile.open(fileobj=fileObj)
 
-    res = requests.get(os.path.join(os.path.dirname(pilotFilesLocation), 'pilot.json'))
+    res = requests.get(os.path.join(os.path.dirname(pilotFilesLocation), 'pilot.json'), verify=caPath)
     if res.status_code != 200:
       raise IOError(res.text)
     jsonCFG = res.json()

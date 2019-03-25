@@ -50,6 +50,18 @@ NEW: (#3744) Add WMS documentation in DeveloperGuide/Systems
 NEW: Added script (docs/Tools/UpdateDiracCFG.py) to collate the ConfigTemplate.cfg 
      files into the main dirac.cfg file
 
+[v6r21p2]
+
+*Core
+CHANGE: (#3992) dirac-install does not define REQUESTS_CA_BUNDLE in the bashrc anymore
+NEW: (#3998) dirac-install if DIRACOS already installed and DIRACOS is not requested, 
+             it will force to install it
+CHANGE: (#3992) specify the ca location when calling requests
+CHANGE: (#3991) MySQL class prints only debug logs
+
+*WorkloadManagementSystem
+CHANGE: (#3992) specify the ca location when calling requests
+
 [v6r21p1]
 
 *WorkloadManagementSystem
