@@ -1112,15 +1112,21 @@ class ReleaseConfig(object):
 
   def getDiracOSVersion(self, diracOSVersion=None):
     """
-    It returns the DIRACOS version
-    :param str diracOSVersion: the OS version
-    """
+      It returns the DIRACOS version
+      :param str diracOSVersion: the OS version
+      """
 
     if diracOSVersion:
       return diracOSVersion
     try:
-      return self.prjRelCFG[self.projectName][cliParams.release].get(
+      diracOSVersion = self.prjRelCFG[self.projectName][cliParams.release].get(
           "Releases/%s/DIRACOS" % cliParams.release, diracOSVersion)
+      if not diracOSVersion:
+        # the DIRAC extension does not specify DIRACOS version
+        for release in self.prjRelCFG['DIRAC']:
+          logWARN("Getting DIRACOS version from DIRAC %s!" % release)
+          diracOSVersion = self.prjRelCFG['DIRAC'][release].get(
+              "Releases/%s/DIRACOS" % cliParams.release, diracOSVersion)
     except KeyError:
       pass
     return diracOSVersion
@@ -1811,6 +1817,10 @@ def loadConfiguration():
       os.makedirs(cliParams.targetPath)
     except BaseException:
       pass
+
+  if not cliParams.diracOS and os.path.exists("%s/diracos" % cliParams.targetPath):
+    logWARN("Forcing to install DIRACOS, because it is already installed!")
+    cliParams.diracOS = True
 
   logNOTICE("Destination path for installation is %s" % cliParams.targetPath)
   releaseConfig.projectName = cliParams.project
