@@ -6,9 +6,16 @@ NEW: (#3998) dirac-install if DIRACOS already installed and DIRACOS is not reque
              it will force to install it
 CHANGE: (#3992) specify the ca location when calling requests
 CHANGE: (#3991) MySQL class prints only debug logs
+FIX: (#4003) dirac-install - if the DIRACOS version is not given then use the proper 
+             release version
 
 *WorkloadManagementSystem
 CHANGE: (#3992) specify the ca location when calling requests
+FIX: (#4002) Local protocols are retrieved as a list in InputDataResolution
+
+*Interfaces
+FIX: (#4000) Dirac.py - bug fixed: return value of getJobParameters changed that
+     should be taken into account by the clients
 
 [v6r21p1]
 
