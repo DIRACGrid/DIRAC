@@ -92,6 +92,7 @@ def getSEsFromCS(protocol='srm'):
 
   return S_OK(knownSEs)
 
+
 def getGridCEs(vo, bdiiInfo=None, ceBlackList=None, hostURL=None, glue2=False):
   """ Get all the CEs available for a given VO and having queues in Production state
   """
@@ -149,6 +150,8 @@ def getSiteUpdates(vo, bdiiInfo=None, log=None):
   """
 
   def addToChangeSet(entry, changeSet):
+    """ Inner function to update changeSet with entry (a tuple)
+    """
     _section, _option, value, new_value = entry
     if new_value and new_value != value:
       changeSet.add(entry)
@@ -289,7 +292,7 @@ def getSiteUpdates(vo, bdiiInfo=None, log=None):
               if int(wallTime) <= int(newMaxCPUTime):
                 newMaxCPUTime = str(int(0.8 * int(wallTime)))
           newSI00 = ''
-          caps = queueInfo['GlueCECapability']
+          caps = queueInfo.get('GlueCECapability', [])
           if isinstance(caps, basestring):
             caps = [caps]
           for cap in caps:
