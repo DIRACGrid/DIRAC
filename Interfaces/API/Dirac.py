@@ -1956,7 +1956,7 @@ class Dirac(API):
     """
     try:
       jobID = int(jobID)
-    except Exception as x:
+    except ValueError as x:
       return self._errorReport(str(x), 'Expected integer or string for existing jobID')
 
     result = self.getJobParameters(jobID)
@@ -1995,7 +1995,7 @@ class Dirac(API):
     """
     try:
       jobID = int(jobID)
-    except Exception as x:
+    except ValueError as x:
       return self._errorReport(str(x), 'Expected integer or string for existing jobID')
 
     result = self.getJobParameters(jobID)
@@ -2016,7 +2016,7 @@ class Dirac(API):
       elif isinstance(outputFiles, list):
         try:
           outputFiles = [os.path.basename(fname) for fname in outputFiles]
-        except Exception as x:
+        except AttributeError as x:
           return self._errorReport(str(x), 'Expected strings for output file names')
       else:
         return self._errorReport('Expected strings for output file names')
@@ -2030,9 +2030,6 @@ class Dirac(API):
           self.log.verbose('%s will be ignored' % outputFile)
       outputData = newOutputData
 
-    # These two lines will break backwards compatibility.
-    # if not destinationDir:
-    #  destinationDir = jobID
     obtainedFiles = []
     for outputFile in outputData:
       self.log.info('Attempting to retrieve %s' % outputFile)
@@ -2149,7 +2146,7 @@ class Dirac(API):
     try:
       jobSummary = eval(result['Value'])
       # self.log.info(self.pPrint.pformat(jobSummary))
-    except Exception as x:
+    except BaseException as x:
       self.log.warn('Problem interpreting result from job monitoring service')
       return S_ERROR('Problem while converting result from job monitoring')
 
@@ -2208,7 +2205,7 @@ class Dirac(API):
     """
     try:
       jobID = int(jobID)
-    except Exception as x:
+    except ValueError as x:
       return self._errorReport(str(x), 'Expected integer or string for existing jobID')
 
     result = self.getJobStatus(jobID)
@@ -2221,7 +2218,7 @@ class Dirac(API):
     debugDir = '%s/DEBUG_%s' % (os.getcwd(), jobID)
     try:
       os.mkdir(debugDir)
-    except Exception as x:
+    except OSError as x:
       return self._errorReport(str(x), 'Could not create directory in %s' % (debugDir))
 
     try:
@@ -2231,7 +2228,7 @@ class Dirac(API):
         msg.append('Output Sandbox: Retrieval Failed')
       else:
         msg.append('Output Sandbox: Retrieved')
-    except Exception as x:
+    except BaseException as x:
       msg.append('Output Sandbox: Not Available')
 
     try:
@@ -2240,7 +2237,7 @@ class Dirac(API):
         msg.append('Input Sandbox: Retrieval Failed')
       else:
         msg.append('Input Sandbox: Retrieved')
-    except Exception as x:
+    except BaseException as x:
       msg.append('Input Sandbox: Not Available')
 
     try:
@@ -2250,7 +2247,7 @@ class Dirac(API):
       else:
         self.__writeFile(result['Value'], '%s/JobParameters' % (debugDir))
         msg.append('Job Parameters: Retrieved')
-    except Exception as x:
+    except BaseException as x:
       msg.append('Job Parameters: Not Available')
 
     try:
@@ -2429,7 +2426,7 @@ class Dirac(API):
     if printOutput:
       print(self.pPrint.pformat(result['Value']))
 
-    return result
+    return S_OK(result['Value'][jobID])
 
   #############################################################################
   @deprecated("Use getJobLoggingInfo instead")
@@ -2639,7 +2636,7 @@ class Dirac(API):
           self.log.debug('Found standard parameter %s' % (param))
           parameters[param] = value.replace('"', '')
       return S_OK(parameters)
-    except Exception as x:
+    except BaseException as x:
       self.log.exception(lException=x)
       return S_ERROR('Exception while extracting JDL parameters for job')
 
