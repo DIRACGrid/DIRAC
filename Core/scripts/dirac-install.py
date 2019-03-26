@@ -1126,7 +1126,7 @@ class ReleaseConfig(object):
         for release in self.prjRelCFG['DIRAC']:
           logWARN("Getting DIRACOS version from DIRAC %s!" % release)
           diracOSVersion = self.prjRelCFG['DIRAC'][release].get(
-              "Releases/%s/DIRACOS" % cliParams.release, diracOSVersion)
+              "Releases/%s/DIRACOS" % release, diracOSVersion)
     except KeyError:
       pass
     return diracOSVersion
