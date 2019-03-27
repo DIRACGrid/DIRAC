@@ -111,7 +111,7 @@ class StompMQConnector(MQConnector):
     return S_OK('Setup successful')
 
   def reconnect(self):
-    res = self.connect()
+    res = self.connect(self.parameters)
     if not res:
       return S_ERROR(EMQCONN, "Failed to reconnect")
     return S_OK('Reconnection successful')
@@ -156,9 +156,8 @@ class StompMQConnector(MQConnector):
         connection.start()
         connection.connect(username=user, passcode=password)
         time.sleep(1)
-        try:
-          connection.get_listener('ReconnectListener')
-        except KeyError:
+        listener = connection.get_listener('ReconnectListener')
+        if listener is None: 
           listener = ReconnectListener(self.reconnect)
           connection.set_listener('ReconnectListener', listener)
 
