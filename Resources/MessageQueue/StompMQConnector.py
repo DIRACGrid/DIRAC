@@ -44,8 +44,11 @@ class StompMQConnector(MQConnector):
   def setupConnection(self, parameters=None):
     """
      Establishes a new connection to a Stomp server, e.g. RabbitMQ
-    :param dict parameters: dictionary with additional MQ parameters if any
-    :return: S_OK/S_ERROR
+
+    Args:
+      parameters(dict): dictionary with additional MQ parameters if any.
+    Returns:
+      S_OK/S_ERROR
     """
 
     if parameters is not None:
@@ -120,8 +123,9 @@ class StompMQConnector(MQConnector):
     """
     Sends a message to the queue
     message contains the body of the message
-
-    :param str message: string or any json encodable structure
+    Args:
+      message(str): string or any json encodable structure.
+      parameters(dict): parameters with 'destination' key defined.
     """
     destination = parameters.get('destination', '')
     error = False
@@ -241,7 +245,8 @@ class ReconnectListener (stomp.ConnectionListener):
   def __init__(self, callback=None):
     """
     Initializes the internal listener object
-    :param func callback: a function called when disconnection happens
+    Args:
+      callback: a function called when disconnection happens.
     """
 
     self.log = gLogger.getSubLogger('ReconnectListener')
@@ -265,11 +270,10 @@ class StompListener (stomp.ConnectionListener):
   def __init__(self, callback, ack, connection, messengerId):
     """
     Initializes the internal listener object
-
-    :param func callback: a defaultCallback compatible function
-    :param bool ack: if set to true an acknowledgement will be send back to the sender
-    :param str messengerId: messenger identifier sent with acknowledgement messages.
-
+    Args:
+      callback: a defaultCallback compatible function.
+      ack(bool): if set to true an acknowledgement will be send back to the sender.
+      messengerId(str): messenger identifier sent with acknowledgement messages.
     """
 
     self.log = gLogger.getSubLogger('StompListener')
@@ -283,8 +287,9 @@ class StompListener (stomp.ConnectionListener):
   def on_message(self, headers, body):
     """
     Function called upon receiving a message
-    :param dict headers: message headers
-    :param json body: message body
+    Args:
+      headers(dict): message headers.
+      body(json): message body.
     """
     result = self.callback(headers, json.loads(body))
     if self.ack:
@@ -295,5 +300,8 @@ class StompListener (stomp.ConnectionListener):
 
   def on_error(self, headers, message):
     """ Function called when an error happens
+    Args:
+      headers(dict): message headers.
+      body(json): message body.
     """
     self.log.error(message)
