@@ -98,7 +98,6 @@ class StompMQConnector(MQConnector):
       else:
         return S_ERROR(EMQCONN, 'Invalid SSL version provided: %s' % sslVersion)
 
-
     try:
       # Get IP addresses of brokers and ignoring two first returned arguments which are hostname and aliaslist.
       _, _, ip_addresses = socket.gethostbyname_ex(host)
@@ -161,7 +160,7 @@ class StompMQConnector(MQConnector):
         connection.connect(username=user, passcode=password)
         time.sleep(1)
         listener = connection.get_listener('ReconnectListener')
-        if listener is None: 
+        if listener is None:
           listener = ReconnectListener(self.reconnect)
           connection.set_listener('ReconnectListener', listener)
 
@@ -237,6 +236,7 @@ class StompMQConnector(MQConnector):
       return S_ERROR(EMQUKN, 'Failed to unsubscribe from at least one destination')
     return S_OK('Successfully unsubscribed from all destinations')
 
+
 class ReconnectListener (stomp.ConnectionListener):
   """
   Internal listener class responsible for reconnecting in case of disconnection.
@@ -261,6 +261,7 @@ class ReconnectListener (stomp.ConnectionListener):
         self.callback()
     except Exception as e:
       self.log.error("Unexpected error while calling reconnect callback: %s" % e)
+
 
 class StompListener (stomp.ConnectionListener):
   """
