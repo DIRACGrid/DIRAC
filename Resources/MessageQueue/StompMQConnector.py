@@ -95,6 +95,7 @@ class StompMQConnector(MQConnector):
       else:
         return S_ERROR(EMQCONN, 'Invalid SSL version provided: %s' % sslVersion)
 
+
     try:
       # Get IP addresses of brokers and ignoring two first returned arguments which are hostname and aliaslist.
       _, _, ip_addresses = socket.gethostbyname_ex(host)
@@ -108,6 +109,12 @@ class StompMQConnector(MQConnector):
     except Exception as e:
       return S_ERROR(EMQCONN, 'Failed to setup connection: %s' % e)
     return S_OK('Setup successful')
+
+  def reconnect(self):
+    res = self.connect()
+    if not res:
+      return S_ERROR(EMQCONN, "Failed to reconnect")
+    return S_OK('Reconnection successful')
 
   def put(self, message, parameters=None):
     """
@@ -149,6 +156,12 @@ class StompMQConnector(MQConnector):
         connection.start()
         connection.connect(username=user, passcode=password)
         time.sleep(1)
+        try:
+          connection.get_listener('ReconnectListener')
+        except KeyError:
+          listener = ReconnectListener( self.reconnect)
+          connection.set_listener('ReconnectListener', listener)
+
         if connection.is_connected():
           self.log.info("Connected to %s:%s" % (ip, port))
           connected = True
@@ -193,8 +206,8 @@ class StompMQConnector(MQConnector):
     fail = False
     for connection in self.connections.itervalues():
       try:
-        listener = StompListener(callback, acknowledgement, connection, mId)
-        connection.set_listener('', listener)
+        listener = StompListener(callback, acknowledgement, connection, mId, self.reconnect)
+        connection.set_listener('StompListener', listener)
         connection.subscribe(destination=dest,
                              id=mId,
                              ack=ack,
@@ -221,13 +234,36 @@ class StompMQConnector(MQConnector):
       return S_ERROR(EMQUKN, 'Failed to unsubscribe from at least one destination')
     return S_OK('Successfully unsubscribed from all destinations')
 
+class ReconnectListener (stomp.ConnectionListener):
+  """
+  Internal listener class responsible for reconnecting in case of disconnection.
+  """
+
+  def __init__(self, callback=None):
+    """
+    Initializes the internal listener object
+    :param func callback: a function called when disconnection happens
+    """
+
+    self.log = gLogger.getSubLogger('ReconnectListener')
+    self.callback = callback
+
+  def on_disconnected(self):
+    """ Callback function called after disconnecting from broker.
+    """
+    self.log.warn('Disconnected from broker')
+    try:
+      if self.callback:
+        self.callback()
+    except Exception as e:
+      self.log.error("Unexpected error while calling reconnect callback: %s" % e)
 
 class StompListener (stomp.ConnectionListener):
   """
   Internal listener class responsible for handling new messages and errors.
   """
 
-  def __init__(self, callback, ack, connection, messengerId):
+  def __init__(self, callback, ack, connection, messengerId, callbackOnDisconnected=None):
     """
     Initializes the internal listener object
 
@@ -244,6 +280,7 @@ class StompListener (stomp.ConnectionListener):
     self.ack = ack
     self.mId = messengerId
     self.connection = connection
+    self.callbackOnDisconnected = callbackOnDisconnected
 
   def on_message(self, headers, body):
     """
@@ -262,8 +299,3 @@ class StompListener (stomp.ConnectionListener):
     """ Function called when an error happens
     """
     self.log.error(message)
-
-  def on_disconnected(self):
-    """ Callback function called after disconnecting from broker.
-    """
-    self.log.warn('Disconnected from broker')
