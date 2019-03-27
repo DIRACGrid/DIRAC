@@ -159,7 +159,7 @@ class StompMQConnector(MQConnector):
         try:
           connection.get_listener('ReconnectListener')
         except KeyError:
-          listener = ReconnectListener( self.reconnect)
+          listener = ReconnectListener(self.reconnect)
           connection.set_listener('ReconnectListener', listener)
 
         if connection.is_connected():
@@ -206,7 +206,7 @@ class StompMQConnector(MQConnector):
     fail = False
     for connection in self.connections.itervalues():
       try:
-        listener = StompListener(callback, acknowledgement, connection, mId, self.reconnect)
+        listener = StompListener(callback, acknowledgement, connection, mId)
         connection.set_listener('StompListener', listener)
         connection.subscribe(destination=dest,
                              id=mId,
@@ -263,7 +263,7 @@ class StompListener (stomp.ConnectionListener):
   Internal listener class responsible for handling new messages and errors.
   """
 
-  def __init__(self, callback, ack, connection, messengerId, callbackOnDisconnected=None):
+  def __init__(self, callback, ack, connection, messengerId):
     """
     Initializes the internal listener object
 
@@ -280,7 +280,6 @@ class StompListener (stomp.ConnectionListener):
     self.ack = ack
     self.mId = messengerId
     self.connection = connection
-    self.callbackOnDisconnected = callbackOnDisconnected
 
   def on_message(self, headers, body):
     """
