@@ -66,7 +66,7 @@ class MQConnector( object ):
     """
     if not parameters:
       parameters = {}
-    self.parameters = parameters.copy()
+    self.parameters = parameters
 
   def setupConnection( self, parameters = None ):
     """
