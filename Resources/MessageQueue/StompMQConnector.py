@@ -80,6 +80,7 @@ class StompMQConnector(MQConnector):
                       'reconnect_sleep_jitter': reconnectSleepJitter,
                       'reconnect_attempts_max': reconnectAttemptsMax}
 
+    # We use ssl credentials and not user-password.
     if sslVersion is not None:
       if sslVersion == 'TLSv1':
         sslVersion = ssl.PROTOCOL_TLSv1
@@ -156,14 +157,13 @@ class StompMQConnector(MQConnector):
     connected = False
     for ip, connection in self.connections.iteritems():
       try:
-        connection.start()
-        connection.connect(username=user, passcode=password)
-        time.sleep(1)
         listener = connection.get_listener('ReconnectListener')
         if listener is None:
           listener = ReconnectListener(self.reconnect)
           connection.set_listener('ReconnectListener', listener)
-
+        connection.start()
+        connection.connect(username=user, passcode=password)
+        time.sleep(1)
         if connection.is_connected():
           self.log.info("Connected to %s:%s" % (ip, port))
           connected = True
