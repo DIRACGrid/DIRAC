@@ -7,36 +7,11 @@ import sys
 import logging
 import glob
 
+
+from Tools.Utilities import writeLinesToFile, mkdir
+
 logging.basicConfig(level=logging.INFO, format='%(name)s: %(levelname)8s: %(message)s')
 LOG = logging.getLogger('MakeDoc')
-
-
-def mkdir(folder):
-  """create a folder, ignore if it exists"""
-  try:
-    folder = os.path.join(os.getcwd(), folder)
-    os.mkdir(folder)
-  except OSError as e:
-    LOG.debug("Exception when creating folder %s: %r", folder, e)
-
-
-def writeLinesToFile(filename, lines):
-  """Write a list of lines into a file.
-
-  Checks that there are actual changes to be done.
-  """
-  newContent = '\n'.join(lines)
-  oldContent = None
-  if os.path.exists(filename):
-    with open(filename, 'r') as oldFile:
-      oldContent = ''.join(oldFile.readlines())
-  if oldContent is None or oldContent != newContent:
-    with open(filename, 'w') as rst:
-      LOG.info('Writing new content for %s', filename)
-      rst.write(newContent)
-  else:
-    LOG.debug('Not updating file content for %s', filename)
-
 
 BASEPATH = "docs/source/CodeDocumentation"
 DIRACPATH = os.environ.get("DIRAC", "") + "/DIRAC"
