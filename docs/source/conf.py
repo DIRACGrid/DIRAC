@@ -23,11 +23,6 @@ try:
   import fakeEnvironment
 except ImportError:
   pass
-try:
-  import fakeEnv
-except ImportError:
-  pass
-
 diracRelease = os.environ.get('DIRACVERSION', 'integration')
 if os.environ.get('READTHEDOCS') == 'True':
   diracRelease = os.path.basename(os.path.abspath("../../"))
