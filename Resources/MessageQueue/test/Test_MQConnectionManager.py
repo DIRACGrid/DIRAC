@@ -15,10 +15,10 @@ class TestMQConnectionManager( unittest.TestCase ):
   def setUp( self ):
     self.maxDiff = None  # To show full difference between structures in  case of error
     dest = {}
-    dest.update({'/queues/test1': ['producer4', 'consumer1', 'consumer2', 'consumer4']})
-    dest.update({'/queues/test2': ['producer2', 'consumer1', 'consumer2']})
-    dest.update({'/topics/test1': ['producer1']})
-    dest4 = {'/queues/test3': ['producer1', 'consumer2','consumer3','consumer4']}
+    dest.update({'/queue/test1': ['producer4', 'consumer1', 'consumer2', 'consumer4']})
+    dest.update({'/queue/test2': ['producer2', 'consumer1', 'consumer2']})
+    dest.update({'/topic/test1': ['producer1']})
+    dest4 = {'/queue/test3': ['producer1', 'consumer2','consumer3','consumer4']}
     conn1 = {'MQConnector':'TestConnector1', 'destinations':dest}
     conn2 = {'MQConnector':'TestConnector2', 'destinations':dest4}
     storage = {'mardirac3.in2p3.fr':conn1, 'testdir.blabla.ch':conn2}
@@ -35,26 +35,26 @@ class TestMQConnectionStorageFunctions_connectionExists( TestMQConnectionManager
 
 class TestMQConnectionStorageFunctions_destinationExists( TestMQConnectionManager ):
   def test_success( self ):
-    self.assertTrue(self.mgr._MQConnectionManager__destinationExists('mardirac3.in2p3.fr',  '/queues/test1'))
+    self.assertTrue(self.mgr._MQConnectionManager__destinationExists('mardirac3.in2p3.fr',  '/queue/test1'))
   def test_failure( self ):
-    self.assertFalse(self.mgr._MQConnectionManager__destinationExists( 'nonexisting', '/queues/test1'))
+    self.assertFalse(self.mgr._MQConnectionManager__destinationExists( 'nonexisting', '/queue/test1'))
   def test_failure2( self ):
-    self.assertFalse(self.mgr._MQConnectionManager__destinationExists('mardirac3.in2p3.fr', '/queues/nonexisting'))
+    self.assertFalse(self.mgr._MQConnectionManager__destinationExists('mardirac3.in2p3.fr', '/queue/nonexisting'))
 
 class TestMQConnectionStorageFunctions_messengerExists( TestMQConnectionManager ):
   def test_success( self ):
-    self.assertTrue(self.mgr._MQConnectionManager__messengerExists('mardirac3.in2p3.fr',  '/queues/test1','consumer2' ))
-    self.assertTrue(self.mgr._MQConnectionManager__messengerExists('mardirac3.in2p3.fr',  '/queues/test1','producer4' ))
+    self.assertTrue(self.mgr._MQConnectionManager__messengerExists('mardirac3.in2p3.fr',  '/queue/test1','consumer2' ))
+    self.assertTrue(self.mgr._MQConnectionManager__messengerExists('mardirac3.in2p3.fr',  '/queue/test1','producer4' ))
   def test_failure( self ):
-    self.assertFalse(self.mgr._MQConnectionManager__messengerExists('noexisting',  '/queues/test1','producer4' ))
+    self.assertFalse(self.mgr._MQConnectionManager__messengerExists('noexisting',  '/queue/test1','producer4' ))
   def test_failure2( self ):
-    self.assertFalse(self.mgr._MQConnectionManager__messengerExists( 'mardirac3.in2p3.fr', '/queues/nonexisting','producer4'))
+    self.assertFalse(self.mgr._MQConnectionManager__messengerExists( 'mardirac3.in2p3.fr', '/queue/nonexisting','producer4'))
   def test_failure3( self ):
-    self.assertFalse(self.mgr._MQConnectionManager__messengerExists( 'mardirac3.in2p3.fr', '/queues/test1','producer10'))
+    self.assertFalse(self.mgr._MQConnectionManager__messengerExists( 'mardirac3.in2p3.fr', '/queue/test1','producer10'))
 
 class TestMQConnectionStorageFunctions_getConnection( TestMQConnectionManager ):
   def test_success( self ):
-    expectedConn = {'MQConnector':'TestConnector2', 'destinations':{'/queues/test3': ['producer1', 'consumer2','consumer3','consumer4']}}
+    expectedConn = {'MQConnector':'TestConnector2', 'destinations':{'/queue/test3': ['producer1', 'consumer2','consumer3','consumer4']}}
     self.assertEqual(self.mgr._MQConnectionManager__getConnection('testdir.blabla.ch'),expectedConn)
   def test_failure( self ):
     self.assertEqual(self.mgr._MQConnectionManager__getConnection('nonexisiting'), {})
@@ -79,9 +79,9 @@ class TestMQConnectionStorageFunctions_setConnector( TestMQConnectionManager ):
 
 class TestMQConnectionStorageFunctions_getDestinations( TestMQConnectionManager ):
   def test_success( self ):
-    expectedDests ={'/queues/test1': ['producer4', 'consumer1', 'consumer2', 'consumer4'],
-                    '/queues/test2': ['producer2', 'consumer1', 'consumer2'],
-                    '/topics/test1': ['producer1']}
+    expectedDests ={'/queue/test1': ['producer4', 'consumer1', 'consumer2', 'consumer4'],
+                    '/queue/test2': ['producer2', 'consumer1', 'consumer2'],
+                    '/topic/test1': ['producer1']}
     self.assertEqual(self.mgr._MQConnectionManager__getDestinations('mardirac3.in2p3.fr'),expectedDests)
   def test_failure( self ):
     self.assertEqual(self.mgr._MQConnectionManager__getDestinations('nonexisiting'), {})
@@ -89,36 +89,36 @@ class TestMQConnectionStorageFunctions_getDestinations( TestMQConnectionManager 
 class TestMQConnectionStorageFunctions_getMessengersId( TestMQConnectionManager ):
   def test_success( self ):
     expectedMess =['producer4', 'consumer1', 'consumer2', 'consumer4']
-    self.assertEqual(self.mgr._MQConnectionManager__getMessengersId('mardirac3.in2p3.fr', '/queues/test1'),expectedMess)
+    self.assertEqual(self.mgr._MQConnectionManager__getMessengersId('mardirac3.in2p3.fr', '/queue/test1'),expectedMess)
   def test_success2( self ):
     expectedMess2 =['producer2', 'consumer1', 'consumer2']
-    self.assertEqual(self.mgr._MQConnectionManager__getMessengersId('mardirac3.in2p3.fr', '/queues/test2'),expectedMess2)
+    self.assertEqual(self.mgr._MQConnectionManager__getMessengersId('mardirac3.in2p3.fr', '/queue/test2'),expectedMess2)
   def test_failure( self ):
-    self.assertEqual(self.mgr._MQConnectionManager__getMessengersId('nonexisiting', '/queues/test2'), [])
+    self.assertEqual(self.mgr._MQConnectionManager__getMessengersId('nonexisiting', '/queue/test2'), [])
   def test_failure2( self ):
     self.assertEqual(self.mgr._MQConnectionManager__getMessengersId('mardirac3.in2p3.fr', 'nonexisiting'), [])
 
 class TestMQConnectionStorageFunctions_getMessengersIdWithType( TestMQConnectionManager ):
   def test_success( self ):
     expectedMess =['producer4']
-    self.assertEqual(self.mgr._MQConnectionManager__getMessengersIdWithType('mardirac3.in2p3.fr', '/queues/test1', 'producer'),expectedMess)
+    self.assertEqual(self.mgr._MQConnectionManager__getMessengersIdWithType('mardirac3.in2p3.fr', '/queue/test1', 'producer'),expectedMess)
   def test_success2( self ):
     expectedMess2 =['producer2']
-    self.assertEqual(self.mgr._MQConnectionManager__getMessengersIdWithType('mardirac3.in2p3.fr', '/queues/test2', 'producer'),expectedMess2)
+    self.assertEqual(self.mgr._MQConnectionManager__getMessengersIdWithType('mardirac3.in2p3.fr', '/queue/test2', 'producer'),expectedMess2)
   def test_success3( self ):
     expectedMess =[ 'consumer1', 'consumer2', 'consumer4']
-    self.assertEqual(self.mgr._MQConnectionManager__getMessengersIdWithType('mardirac3.in2p3.fr', '/queues/test1', 'consumer'),expectedMess)
+    self.assertEqual(self.mgr._MQConnectionManager__getMessengersIdWithType('mardirac3.in2p3.fr', '/queue/test1', 'consumer'),expectedMess)
   def test_success4( self ):
     expectedMess2 =['consumer1', 'consumer2']
-    self.assertEqual(self.mgr._MQConnectionManager__getMessengersIdWithType('mardirac3.in2p3.fr', '/queues/test2', 'consumer'),expectedMess2)
+    self.assertEqual(self.mgr._MQConnectionManager__getMessengersIdWithType('mardirac3.in2p3.fr', '/queue/test2', 'consumer'),expectedMess2)
   def test_failure( self ):
-    self.assertEqual(self.mgr._MQConnectionManager__getMessengersIdWithType('nonexisiting', '/queues/test2', 'producer'), [])
+    self.assertEqual(self.mgr._MQConnectionManager__getMessengersIdWithType('nonexisiting', '/queue/test2', 'producer'), [])
   def test_failure2( self ):
     self.assertEqual(self.mgr._MQConnectionManager__getMessengersIdWithType('mardirac3.in2p3.fr', 'nonexisiting', 'producer'), [])
 
 class TestMQConnectionStorageFunctions_getAllMessengersInfo( TestMQConnectionManager ):
   def test_success( self ):
-    expectedOutput= ['mardirac3.in2p3.fr/queues/test1/producer4', 'mardirac3.in2p3.fr/queues/test1/consumer1', 'mardirac3.in2p3.fr/queues/test1/consumer2', 'mardirac3.in2p3.fr/queues/test1/consumer4', 'mardirac3.in2p3.fr/queues/test2/producer2', 'mardirac3.in2p3.fr/queues/test2/consumer1', 'mardirac3.in2p3.fr/queues/test2/consumer2', 'mardirac3.in2p3.fr/topics/test1/producer1', 'testdir.blabla.ch/queues/test3/producer1', 'testdir.blabla.ch/queues/test3/consumer2', 'testdir.blabla.ch/queues/test3/consumer3', 'testdir.blabla.ch/queues/test3/consumer4']
+    expectedOutput= ['mardirac3.in2p3.fr/queue/test1/producer4', 'mardirac3.in2p3.fr/queue/test1/consumer1', 'mardirac3.in2p3.fr/queue/test1/consumer2', 'mardirac3.in2p3.fr/queue/test1/consumer4', 'mardirac3.in2p3.fr/queue/test2/producer2', 'mardirac3.in2p3.fr/queue/test2/consumer1', 'mardirac3.in2p3.fr/queue/test2/consumer2', 'mardirac3.in2p3.fr/topic/test1/producer1', 'testdir.blabla.ch/queue/test3/producer1', 'testdir.blabla.ch/queue/test3/consumer2', 'testdir.blabla.ch/queue/test3/consumer3', 'testdir.blabla.ch/queue/test3/consumer4']
     self.assertEqual(sorted(self.mgr._MQConnectionManager__getAllMessengersInfo()),sorted(expectedOutput))
 
 class TestMQConnectionStorageFunctions_getAllMessengersId( TestMQConnectionManager ):
@@ -136,71 +136,71 @@ class TestMQConnectionStorageFunctions_getAllMessengersIdWithType( TestMQConnect
 
 class TestMQConnectionStorageFunctions_addMessenger( TestMQConnectionManager ):
   def test_success( self ):
-    expectedOutput= ['mardirac3.in2p3.fr/queues/test1/producer1', 'mardirac3.in2p3.fr/queues/test1/producer4', 'mardirac3.in2p3.fr/queues/test1/consumer1', 'mardirac3.in2p3.fr/queues/test1/consumer2', 'mardirac3.in2p3.fr/queues/test1/consumer4', 'mardirac3.in2p3.fr/queues/test2/producer2', 'mardirac3.in2p3.fr/queues/test2/consumer1', 'mardirac3.in2p3.fr/queues/test2/consumer2', 'mardirac3.in2p3.fr/topics/test1/producer1', 'testdir.blabla.ch/queues/test3/producer1', 'testdir.blabla.ch/queues/test3/consumer2', 'testdir.blabla.ch/queues/test3/consumer3', 'testdir.blabla.ch/queues/test3/consumer4']
-    self.assertTrue(self.mgr._MQConnectionManager__addMessenger('mardirac3.in2p3.fr', '/queues/test1', 'producer1'))
+    expectedOutput= ['mardirac3.in2p3.fr/queue/test1/producer1', 'mardirac3.in2p3.fr/queue/test1/producer4', 'mardirac3.in2p3.fr/queue/test1/consumer1', 'mardirac3.in2p3.fr/queue/test1/consumer2', 'mardirac3.in2p3.fr/queue/test1/consumer4', 'mardirac3.in2p3.fr/queue/test2/producer2', 'mardirac3.in2p3.fr/queue/test2/consumer1', 'mardirac3.in2p3.fr/queue/test2/consumer2', 'mardirac3.in2p3.fr/topic/test1/producer1', 'testdir.blabla.ch/queue/test3/producer1', 'testdir.blabla.ch/queue/test3/consumer2', 'testdir.blabla.ch/queue/test3/consumer3', 'testdir.blabla.ch/queue/test3/consumer4']
+    self.assertTrue(self.mgr._MQConnectionManager__addMessenger('mardirac3.in2p3.fr', '/queue/test1', 'producer1'))
     self.assertEqual(sorted(self.mgr._MQConnectionManager__getAllMessengersInfo()),sorted(expectedOutput))
 
   def test_success2( self ):
     # new queue
-    expectedOutput= ['mardirac3.in2p3.fr/queues/test5/producer8', 'mardirac3.in2p3.fr/queues/test1/producer4', 'mardirac3.in2p3.fr/queues/test1/consumer1', 'mardirac3.in2p3.fr/queues/test1/consumer2', 'mardirac3.in2p3.fr/queues/test1/consumer4', 'mardirac3.in2p3.fr/queues/test2/producer2', 'mardirac3.in2p3.fr/queues/test2/consumer1', 'mardirac3.in2p3.fr/queues/test2/consumer2', 'mardirac3.in2p3.fr/topics/test1/producer1', 'testdir.blabla.ch/queues/test3/producer1', 'testdir.blabla.ch/queues/test3/consumer2', 'testdir.blabla.ch/queues/test3/consumer3', 'testdir.blabla.ch/queues/test3/consumer4']
-    self.assertTrue(self.mgr._MQConnectionManager__addMessenger('mardirac3.in2p3.fr', '/queues/test5', 'producer8'))
+    expectedOutput= ['mardirac3.in2p3.fr/queue/test5/producer8', 'mardirac3.in2p3.fr/queue/test1/producer4', 'mardirac3.in2p3.fr/queue/test1/consumer1', 'mardirac3.in2p3.fr/queue/test1/consumer2', 'mardirac3.in2p3.fr/queue/test1/consumer4', 'mardirac3.in2p3.fr/queue/test2/producer2', 'mardirac3.in2p3.fr/queue/test2/consumer1', 'mardirac3.in2p3.fr/queue/test2/consumer2', 'mardirac3.in2p3.fr/topic/test1/producer1', 'testdir.blabla.ch/queue/test3/producer1', 'testdir.blabla.ch/queue/test3/consumer2', 'testdir.blabla.ch/queue/test3/consumer3', 'testdir.blabla.ch/queue/test3/consumer4']
+    self.assertTrue(self.mgr._MQConnectionManager__addMessenger('mardirac3.in2p3.fr', '/queue/test5', 'producer8'))
     self.assertEqual(sorted(self.mgr._MQConnectionManager__getAllMessengersInfo()),sorted(expectedOutput))
 
   def test_success3( self ):
     # new connection
-    expectedOutput= ['mytest.is.the.best/queues/test10/producer24', 'mardirac3.in2p3.fr/queues/test1/producer4', 'mardirac3.in2p3.fr/queues/test1/consumer1', 'mardirac3.in2p3.fr/queues/test1/consumer2', 'mardirac3.in2p3.fr/queues/test1/consumer4', 'mardirac3.in2p3.fr/queues/test2/producer2', 'mardirac3.in2p3.fr/queues/test2/consumer1', 'mardirac3.in2p3.fr/queues/test2/consumer2', 'mardirac3.in2p3.fr/topics/test1/producer1', 'testdir.blabla.ch/queues/test3/producer1', 'testdir.blabla.ch/queues/test3/consumer2', 'testdir.blabla.ch/queues/test3/consumer3', 'testdir.blabla.ch/queues/test3/consumer4']
-    self.assertTrue(self.mgr._MQConnectionManager__addMessenger('mytest.is.the.best', '/queues/test10', 'producer24'))
+    expectedOutput= ['mytest.is.the.best/queue/test10/producer24', 'mardirac3.in2p3.fr/queue/test1/producer4', 'mardirac3.in2p3.fr/queue/test1/consumer1', 'mardirac3.in2p3.fr/queue/test1/consumer2', 'mardirac3.in2p3.fr/queue/test1/consumer4', 'mardirac3.in2p3.fr/queue/test2/producer2', 'mardirac3.in2p3.fr/queue/test2/consumer1', 'mardirac3.in2p3.fr/queue/test2/consumer2', 'mardirac3.in2p3.fr/topic/test1/producer1', 'testdir.blabla.ch/queue/test3/producer1', 'testdir.blabla.ch/queue/test3/consumer2', 'testdir.blabla.ch/queue/test3/consumer3', 'testdir.blabla.ch/queue/test3/consumer4']
+    self.assertTrue(self.mgr._MQConnectionManager__addMessenger('mytest.is.the.best', '/queue/test10', 'producer24'))
     self.assertEqual(sorted(self.mgr._MQConnectionManager__getAllMessengersInfo()),sorted(expectedOutput))
   def test_success4( self ):
     #  two times
-    expectedOutput= ['mytest.is.the.best/queues/test10/producer2', 'mytest.is.the.best/queues/test10/producer24', 'mardirac3.in2p3.fr/queues/test1/producer4', 'mardirac3.in2p3.fr/queues/test1/consumer1', 'mardirac3.in2p3.fr/queues/test1/consumer2', 'mardirac3.in2p3.fr/queues/test1/consumer4', 'mardirac3.in2p3.fr/queues/test2/producer2', 'mardirac3.in2p3.fr/queues/test2/consumer1', 'mardirac3.in2p3.fr/queues/test2/consumer2', 'mardirac3.in2p3.fr/topics/test1/producer1', 'testdir.blabla.ch/queues/test3/producer1', 'testdir.blabla.ch/queues/test3/consumer2', 'testdir.blabla.ch/queues/test3/consumer3', 'testdir.blabla.ch/queues/test3/consumer4']
-    self.assertTrue(self.mgr._MQConnectionManager__addMessenger('mytest.is.the.best', '/queues/test10', 'producer24'))
-    self.assertTrue(self.mgr._MQConnectionManager__addMessenger('mytest.is.the.best', '/queues/test10', 'producer2'))
+    expectedOutput= ['mytest.is.the.best/queue/test10/producer2', 'mytest.is.the.best/queue/test10/producer24', 'mardirac3.in2p3.fr/queue/test1/producer4', 'mardirac3.in2p3.fr/queue/test1/consumer1', 'mardirac3.in2p3.fr/queue/test1/consumer2', 'mardirac3.in2p3.fr/queue/test1/consumer4', 'mardirac3.in2p3.fr/queue/test2/producer2', 'mardirac3.in2p3.fr/queue/test2/consumer1', 'mardirac3.in2p3.fr/queue/test2/consumer2', 'mardirac3.in2p3.fr/topic/test1/producer1', 'testdir.blabla.ch/queue/test3/producer1', 'testdir.blabla.ch/queue/test3/consumer2', 'testdir.blabla.ch/queue/test3/consumer3', 'testdir.blabla.ch/queue/test3/consumer4']
+    self.assertTrue(self.mgr._MQConnectionManager__addMessenger('mytest.is.the.best', '/queue/test10', 'producer24'))
+    self.assertTrue(self.mgr._MQConnectionManager__addMessenger('mytest.is.the.best', '/queue/test10', 'producer2'))
     self.assertEqual(sorted(self.mgr._MQConnectionManager__getAllMessengersInfo()),sorted(expectedOutput))
 
   def test_failure( self ):
     # messenger already exists
-    expectedOutput= ['mardirac3.in2p3.fr/queues/test1/producer4', 'mardirac3.in2p3.fr/queues/test1/consumer1', 'mardirac3.in2p3.fr/queues/test1/consumer2', 'mardirac3.in2p3.fr/queues/test1/consumer4', 'mardirac3.in2p3.fr/queues/test2/producer2', 'mardirac3.in2p3.fr/queues/test2/consumer1', 'mardirac3.in2p3.fr/queues/test2/consumer2', 'mardirac3.in2p3.fr/topics/test1/producer1', 'testdir.blabla.ch/queues/test3/producer1', 'testdir.blabla.ch/queues/test3/consumer2', 'testdir.blabla.ch/queues/test3/consumer3', 'testdir.blabla.ch/queues/test3/consumer4']
-    self.assertFalse(self.mgr._MQConnectionManager__addMessenger('mardirac3.in2p3.fr', '/queues/test1', 'producer4'))
+    expectedOutput= ['mardirac3.in2p3.fr/queue/test1/producer4', 'mardirac3.in2p3.fr/queue/test1/consumer1', 'mardirac3.in2p3.fr/queue/test1/consumer2', 'mardirac3.in2p3.fr/queue/test1/consumer4', 'mardirac3.in2p3.fr/queue/test2/producer2', 'mardirac3.in2p3.fr/queue/test2/consumer1', 'mardirac3.in2p3.fr/queue/test2/consumer2', 'mardirac3.in2p3.fr/topic/test1/producer1', 'testdir.blabla.ch/queue/test3/producer1', 'testdir.blabla.ch/queue/test3/consumer2', 'testdir.blabla.ch/queue/test3/consumer3', 'testdir.blabla.ch/queue/test3/consumer4']
+    self.assertFalse(self.mgr._MQConnectionManager__addMessenger('mardirac3.in2p3.fr', '/queue/test1', 'producer4'))
     self.assertEqual(sorted(self.mgr._MQConnectionManager__getAllMessengersInfo()),sorted(expectedOutput))
 
 class TestMQConnectionStorageFunctions_removeMessenger( TestMQConnectionManager ):
   def test_success( self ):
-    expectedOutput= [ 'mardirac3.in2p3.fr/queues/test1/consumer1', 'mardirac3.in2p3.fr/queues/test1/consumer2', 'mardirac3.in2p3.fr/queues/test1/consumer4', 'mardirac3.in2p3.fr/queues/test2/producer2', 'mardirac3.in2p3.fr/queues/test2/consumer1', 'mardirac3.in2p3.fr/queues/test2/consumer2', 'mardirac3.in2p3.fr/topics/test1/producer1', 'testdir.blabla.ch/queues/test3/producer1', 'testdir.blabla.ch/queues/test3/consumer2', 'testdir.blabla.ch/queues/test3/consumer3', 'testdir.blabla.ch/queues/test3/consumer4']
-    self.assertTrue(self.mgr._MQConnectionManager__removeMessenger('mardirac3.in2p3.fr', '/queues/test1', 'producer4'))
+    expectedOutput= [ 'mardirac3.in2p3.fr/queue/test1/consumer1', 'mardirac3.in2p3.fr/queue/test1/consumer2', 'mardirac3.in2p3.fr/queue/test1/consumer4', 'mardirac3.in2p3.fr/queue/test2/producer2', 'mardirac3.in2p3.fr/queue/test2/consumer1', 'mardirac3.in2p3.fr/queue/test2/consumer2', 'mardirac3.in2p3.fr/topic/test1/producer1', 'testdir.blabla.ch/queue/test3/producer1', 'testdir.blabla.ch/queue/test3/consumer2', 'testdir.blabla.ch/queue/test3/consumer3', 'testdir.blabla.ch/queue/test3/consumer4']
+    self.assertTrue(self.mgr._MQConnectionManager__removeMessenger('mardirac3.in2p3.fr', '/queue/test1', 'producer4'))
     self.assertEqual(sorted(self.mgr._MQConnectionManager__getAllMessengersInfo()),sorted(expectedOutput))
 
   def test_success2( self ):
-    #remove whole destination /topics/test1 cause only one element
-    expectedOutput= [ 'mardirac3.in2p3.fr/queues/test1/producer4','mardirac3.in2p3.fr/queues/test1/consumer1', 'mardirac3.in2p3.fr/queues/test1/consumer2', 'mardirac3.in2p3.fr/queues/test1/consumer4', 'mardirac3.in2p3.fr/queues/test2/producer2', 'mardirac3.in2p3.fr/queues/test2/consumer1', 'mardirac3.in2p3.fr/queues/test2/consumer2','testdir.blabla.ch/queues/test3/producer1', 'testdir.blabla.ch/queues/test3/consumer2', 'testdir.blabla.ch/queues/test3/consumer3', 'testdir.blabla.ch/queues/test3/consumer4']
-    self.assertTrue(self.mgr._MQConnectionManager__removeMessenger('mardirac3.in2p3.fr', '/topics/test1', 'producer1'))
+    #remove whole destination /topic/test1 cause only one element
+    expectedOutput= [ 'mardirac3.in2p3.fr/queue/test1/producer4','mardirac3.in2p3.fr/queue/test1/consumer1', 'mardirac3.in2p3.fr/queue/test1/consumer2', 'mardirac3.in2p3.fr/queue/test1/consumer4', 'mardirac3.in2p3.fr/queue/test2/producer2', 'mardirac3.in2p3.fr/queue/test2/consumer1', 'mardirac3.in2p3.fr/queue/test2/consumer2','testdir.blabla.ch/queue/test3/producer1', 'testdir.blabla.ch/queue/test3/consumer2', 'testdir.blabla.ch/queue/test3/consumer3', 'testdir.blabla.ch/queue/test3/consumer4']
+    self.assertTrue(self.mgr._MQConnectionManager__removeMessenger('mardirac3.in2p3.fr', '/topic/test1', 'producer1'))
     self.assertEqual(sorted(self.mgr._MQConnectionManager__getAllMessengersInfo()),sorted(expectedOutput))
 
   def test_success3( self ):
-    expectedOutput= ['mardirac3.in2p3.fr/queues/test1/producer4', 'mardirac3.in2p3.fr/queues/test1/consumer1', 'mardirac3.in2p3.fr/queues/test1/consumer2', 'mardirac3.in2p3.fr/queues/test1/consumer4', 'mardirac3.in2p3.fr/queues/test2/producer2', 'mardirac3.in2p3.fr/queues/test2/consumer1', 'mardirac3.in2p3.fr/queues/test2/consumer2', 'mardirac3.in2p3.fr/topics/test1/producer1']
+    expectedOutput= ['mardirac3.in2p3.fr/queue/test1/producer4', 'mardirac3.in2p3.fr/queue/test1/consumer1', 'mardirac3.in2p3.fr/queue/test1/consumer2', 'mardirac3.in2p3.fr/queue/test1/consumer4', 'mardirac3.in2p3.fr/queue/test2/producer2', 'mardirac3.in2p3.fr/queue/test2/consumer1', 'mardirac3.in2p3.fr/queue/test2/consumer2', 'mardirac3.in2p3.fr/topic/test1/producer1']
     #remove whole connection
-    self.assertTrue(self.mgr._MQConnectionManager__removeMessenger('testdir.blabla.ch', '/queues/test3', 'producer1'))
-    self.assertTrue(self.mgr._MQConnectionManager__removeMessenger('testdir.blabla.ch', '/queues/test3', 'consumer2'))
-    self.assertTrue(self.mgr._MQConnectionManager__removeMessenger('testdir.blabla.ch', '/queues/test3', 'consumer3'))
-    self.assertTrue(self.mgr._MQConnectionManager__removeMessenger('testdir.blabla.ch', '/queues/test3', 'consumer4'))
+    self.assertTrue(self.mgr._MQConnectionManager__removeMessenger('testdir.blabla.ch', '/queue/test3', 'producer1'))
+    self.assertTrue(self.mgr._MQConnectionManager__removeMessenger('testdir.blabla.ch', '/queue/test3', 'consumer2'))
+    self.assertTrue(self.mgr._MQConnectionManager__removeMessenger('testdir.blabla.ch', '/queue/test3', 'consumer3'))
+    self.assertTrue(self.mgr._MQConnectionManager__removeMessenger('testdir.blabla.ch', '/queue/test3', 'consumer4'))
     self.assertEqual(sorted(self.mgr._MQConnectionManager__getAllMessengersInfo()),sorted(expectedOutput))
                                            
   def test_failure( self ):                
     #remove nonexisting messenger          
-    self.assertFalse(self.mgr._MQConnectionManager__removeMessenger('testdir.blabla.ch', '/queues/test3', 'producer10'))
+    self.assertFalse(self.mgr._MQConnectionManager__removeMessenger('testdir.blabla.ch', '/queue/test3', 'producer10'))
   def test_failure2( self ):
     #remove nonexisting destination
-    self.assertFalse(self.mgr._MQConnectionManager__removeMessenger('testdir.blabla.ch', '/queues/nonexisting', 'producer1'))
+    self.assertFalse(self.mgr._MQConnectionManager__removeMessenger('testdir.blabla.ch', '/queue/nonexisting', 'producer1'))
   def test_failure3( self ):
     #remove nonexisting connection
-    self.assertFalse(self.mgr._MQConnectionManager__removeMessenger('nonexisting', '/queues/test103', 'producer1'))
+    self.assertFalse(self.mgr._MQConnectionManager__removeMessenger('nonexisting', '/queue/test103', 'producer1'))
 
 class TestMQConnectionManager_addNewmessenger( TestMQConnectionManager ):
   def test_success( self ):
     result = self.mgr.addNewMessenger(mqURI = "mardirac3.in2p3.fr::Queues::test1", messengerType = "producer"  )
     self.assertTrue(result['OK'])
     self.assertEqual(result['Value'], 'producer5')
-    expectedOutput= ['mardirac3.in2p3.fr/queues/test1/producer5', 'mardirac3.in2p3.fr/queues/test1/producer4', 'mardirac3.in2p3.fr/queues/test1/consumer1', 'mardirac3.in2p3.fr/queues/test1/consumer2', 'mardirac3.in2p3.fr/queues/test1/consumer4', 'mardirac3.in2p3.fr/queues/test2/producer2', 'mardirac3.in2p3.fr/queues/test2/consumer1', 'mardirac3.in2p3.fr/queues/test2/consumer2', 'mardirac3.in2p3.fr/topics/test1/producer1', 'testdir.blabla.ch/queues/test3/producer1', 'testdir.blabla.ch/queues/test3/consumer2', 'testdir.blabla.ch/queues/test3/consumer3', 'testdir.blabla.ch/queues/test3/consumer4']
+    expectedOutput= ['mardirac3.in2p3.fr/queue/test1/producer5', 'mardirac3.in2p3.fr/queue/test1/producer4', 'mardirac3.in2p3.fr/queue/test1/consumer1', 'mardirac3.in2p3.fr/queue/test1/consumer2', 'mardirac3.in2p3.fr/queue/test1/consumer4', 'mardirac3.in2p3.fr/queue/test2/producer2', 'mardirac3.in2p3.fr/queue/test2/consumer1', 'mardirac3.in2p3.fr/queue/test2/consumer2', 'mardirac3.in2p3.fr/topic/test1/producer1', 'testdir.blabla.ch/queue/test3/producer1', 'testdir.blabla.ch/queue/test3/consumer2', 'testdir.blabla.ch/queue/test3/consumer3', 'testdir.blabla.ch/queue/test3/consumer4']
     result = self.mgr.getAllMessengers()
     self.assertEqual(sorted(result['Value']),sorted(expectedOutput))
 
@@ -219,7 +219,7 @@ class TestMQConnectionManager_addNewmessenger( TestMQConnectionManager ):
     result = self.mgr.addNewMessenger(mqURI = "noexisting.blabla.ch::Queues::test3", messengerType = "consumer"  )
     self.assertTrue(result['OK'])
     self.assertEqual(result['Value'], 'consumer5')
-    expectedOutput= ['noexisting.blabla.ch/queues/test3/consumer5', 'mardirac3.in2p3.fr/queues/test1/producer4', 'mardirac3.in2p3.fr/queues/test1/consumer1', 'mardirac3.in2p3.fr/queues/test1/consumer2', 'mardirac3.in2p3.fr/queues/test1/consumer4', 'mardirac3.in2p3.fr/queues/test2/producer2', 'mardirac3.in2p3.fr/queues/test2/consumer1', 'mardirac3.in2p3.fr/queues/test2/consumer2', 'mardirac3.in2p3.fr/topics/test1/producer1', 'testdir.blabla.ch/queues/test3/producer1', 'testdir.blabla.ch/queues/test3/consumer2', 'testdir.blabla.ch/queues/test3/consumer3', 'testdir.blabla.ch/queues/test3/consumer4']
+    expectedOutput= ['noexisting.blabla.ch/queue/test3/consumer5', 'mardirac3.in2p3.fr/queue/test1/producer4', 'mardirac3.in2p3.fr/queue/test1/consumer1', 'mardirac3.in2p3.fr/queue/test1/consumer2', 'mardirac3.in2p3.fr/queue/test1/consumer4', 'mardirac3.in2p3.fr/queue/test2/producer2', 'mardirac3.in2p3.fr/queue/test2/consumer1', 'mardirac3.in2p3.fr/queue/test2/consumer2', 'mardirac3.in2p3.fr/topic/test1/producer1', 'testdir.blabla.ch/queue/test3/producer1', 'testdir.blabla.ch/queue/test3/consumer2', 'testdir.blabla.ch/queue/test3/consumer3', 'testdir.blabla.ch/queue/test3/consumer4']
     result = self.mgr.getAllMessengers()
     self.assertEqual(sorted(result['Value']),sorted(expectedOutput))
 
@@ -229,7 +229,7 @@ class TestMQConnectionManager_startConnection( TestMQConnectionManager ):
     result = self.mgr.startConnection(mqURI = "mardirac3.in2p3.fr::Queues::test1", params ={}, messengerType = "producer")
     self.assertTrue(result['OK'])
     self.assertEqual(result['Value'], 'producer5')
-    expectedOutput= ['mardirac3.in2p3.fr/queues/test1/producer5', 'mardirac3.in2p3.fr/queues/test1/producer4', 'mardirac3.in2p3.fr/queues/test1/consumer1', 'mardirac3.in2p3.fr/queues/test1/consumer2', 'mardirac3.in2p3.fr/queues/test1/consumer4', 'mardirac3.in2p3.fr/queues/test2/producer2', 'mardirac3.in2p3.fr/queues/test2/consumer1', 'mardirac3.in2p3.fr/queues/test2/consumer2', 'mardirac3.in2p3.fr/topics/test1/producer1', 'testdir.blabla.ch/queues/test3/producer1', 'testdir.blabla.ch/queues/test3/consumer2', 'testdir.blabla.ch/queues/test3/consumer3', 'testdir.blabla.ch/queues/test3/consumer4']
+    expectedOutput= ['mardirac3.in2p3.fr/queue/test1/producer5', 'mardirac3.in2p3.fr/queue/test1/producer4', 'mardirac3.in2p3.fr/queue/test1/consumer1', 'mardirac3.in2p3.fr/queue/test1/consumer2', 'mardirac3.in2p3.fr/queue/test1/consumer4', 'mardirac3.in2p3.fr/queue/test2/producer2', 'mardirac3.in2p3.fr/queue/test2/consumer1', 'mardirac3.in2p3.fr/queue/test2/consumer2', 'mardirac3.in2p3.fr/topic/test1/producer1', 'testdir.blabla.ch/queue/test3/producer1', 'testdir.blabla.ch/queue/test3/consumer2', 'testdir.blabla.ch/queue/test3/consumer3', 'testdir.blabla.ch/queue/test3/consumer4']
     result = self.mgr.getAllMessengers()
     self.assertEqual(sorted(result['Value']),sorted(expectedOutput))
 
@@ -240,7 +240,7 @@ class TestMQConnectionManager_startConnection( TestMQConnectionManager ):
     result = self.mgr.startConnection(mqURI = "noexisting.blabla.ch::Queues::test3", params={}, messengerType = "consumer"  )
     self.assertTrue(result['OK'])
     self.assertEqual(result['Value'], 'consumer5')
-    expectedOutput= ['noexisting.blabla.ch/queues/test3/consumer5', 'mardirac3.in2p3.fr/queues/test1/producer4', 'mardirac3.in2p3.fr/queues/test1/consumer1', 'mardirac3.in2p3.fr/queues/test1/consumer2', 'mardirac3.in2p3.fr/queues/test1/consumer4', 'mardirac3.in2p3.fr/queues/test2/producer2', 'mardirac3.in2p3.fr/queues/test2/consumer1', 'mardirac3.in2p3.fr/queues/test2/consumer2', 'mardirac3.in2p3.fr/topics/test1/producer1', 'testdir.blabla.ch/queues/test3/producer1', 'testdir.blabla.ch/queues/test3/consumer2', 'testdir.blabla.ch/queues/test3/consumer3', 'testdir.blabla.ch/queues/test3/consumer4']
+    expectedOutput= ['noexisting.blabla.ch/queue/test3/consumer5', 'mardirac3.in2p3.fr/queue/test1/producer4', 'mardirac3.in2p3.fr/queue/test1/consumer1', 'mardirac3.in2p3.fr/queue/test1/consumer2', 'mardirac3.in2p3.fr/queue/test1/consumer4', 'mardirac3.in2p3.fr/queue/test2/producer2', 'mardirac3.in2p3.fr/queue/test2/consumer1', 'mardirac3.in2p3.fr/queue/test2/consumer2', 'mardirac3.in2p3.fr/topic/test1/producer1', 'testdir.blabla.ch/queue/test3/producer1', 'testdir.blabla.ch/queue/test3/consumer2', 'testdir.blabla.ch/queue/test3/consumer3', 'testdir.blabla.ch/queue/test3/consumer4']
     result = self.mgr.getAllMessengers()
     self.assertEqual(sorted(result['Value']),sorted(expectedOutput))
     result = self.mgr.getConnector('noexisting.blabla.ch')
@@ -251,14 +251,14 @@ class TestMQConnectionManager_stopConnection( TestMQConnectionManager ):
   def test_success( self ):
     result = self.mgr.stopConnection(mqURI = "mardirac3.in2p3.fr::Queues::test1", messengerId = "producer4")
     self.assertTrue(result['OK'])
-    expectedOutput= ['mardirac3.in2p3.fr/queues/test1/consumer1', 'mardirac3.in2p3.fr/queues/test1/consumer2', 'mardirac3.in2p3.fr/queues/test1/consumer4', 'mardirac3.in2p3.fr/queues/test2/producer2', 'mardirac3.in2p3.fr/queues/test2/consumer1', 'mardirac3.in2p3.fr/queues/test2/consumer2', 'mardirac3.in2p3.fr/topics/test1/producer1', 'testdir.blabla.ch/queues/test3/producer1', 'testdir.blabla.ch/queues/test3/consumer2', 'testdir.blabla.ch/queues/test3/consumer3', 'testdir.blabla.ch/queues/test3/consumer4']
+    expectedOutput= ['mardirac3.in2p3.fr/queue/test1/consumer1', 'mardirac3.in2p3.fr/queue/test1/consumer2', 'mardirac3.in2p3.fr/queue/test1/consumer4', 'mardirac3.in2p3.fr/queue/test2/producer2', 'mardirac3.in2p3.fr/queue/test2/consumer1', 'mardirac3.in2p3.fr/queue/test2/consumer2', 'mardirac3.in2p3.fr/topic/test1/producer1', 'testdir.blabla.ch/queue/test3/producer1', 'testdir.blabla.ch/queue/test3/consumer2', 'testdir.blabla.ch/queue/test3/consumer3', 'testdir.blabla.ch/queue/test3/consumer4']
     result = self.mgr.getAllMessengers()
     self.assertEqual(sorted(result['Value']),sorted(expectedOutput))
 
   def test_success2( self ):
     result = self.mgr.stopConnection(mqURI = "mardirac3.in2p3.fr::Topics::test1", messengerId = "producer1")
     self.assertTrue(result['OK'])
-    expectedOutput= ['mardirac3.in2p3.fr/queues/test1/producer4', 'mardirac3.in2p3.fr/queues/test1/consumer1', 'mardirac3.in2p3.fr/queues/test1/consumer2', 'mardirac3.in2p3.fr/queues/test1/consumer4', 'mardirac3.in2p3.fr/queues/test2/producer2', 'mardirac3.in2p3.fr/queues/test2/consumer1', 'mardirac3.in2p3.fr/queues/test2/consumer2', 'testdir.blabla.ch/queues/test3/producer1', 'testdir.blabla.ch/queues/test3/consumer2', 'testdir.blabla.ch/queues/test3/consumer3', 'testdir.blabla.ch/queues/test3/consumer4']
+    expectedOutput= ['mardirac3.in2p3.fr/queue/test1/producer4', 'mardirac3.in2p3.fr/queue/test1/consumer1', 'mardirac3.in2p3.fr/queue/test1/consumer2', 'mardirac3.in2p3.fr/queue/test1/consumer4', 'mardirac3.in2p3.fr/queue/test2/producer2', 'mardirac3.in2p3.fr/queue/test2/consumer1', 'mardirac3.in2p3.fr/queue/test2/consumer2', 'testdir.blabla.ch/queue/test3/producer1', 'testdir.blabla.ch/queue/test3/consumer2', 'testdir.blabla.ch/queue/test3/consumer3', 'testdir.blabla.ch/queue/test3/consumer4']
     result = self.mgr.getAllMessengers()
     self.assertEqual(sorted(result['Value']),sorted(expectedOutput))
 
@@ -275,7 +275,7 @@ class TestMQConnectionManager_stopConnection( TestMQConnectionManager ):
     self.assertTrue(result['OK'])
     result = self.mgr.stopConnection(mqURI = "testdir.blabla.ch::Queues::test3", messengerId = "consumer4")
     self.assertTrue(result['OK'])
-    expectedOutput= ['mardirac3.in2p3.fr/queues/test1/producer4', 'mardirac3.in2p3.fr/queues/test1/consumer1', 'mardirac3.in2p3.fr/queues/test1/consumer2', 'mardirac3.in2p3.fr/queues/test1/consumer4', 'mardirac3.in2p3.fr/queues/test2/producer2', 'mardirac3.in2p3.fr/queues/test2/consumer1', 'mardirac3.in2p3.fr/queues/test2/consumer2', 'mardirac3.in2p3.fr/topics/test1/producer1']
+    expectedOutput= ['mardirac3.in2p3.fr/queue/test1/producer4', 'mardirac3.in2p3.fr/queue/test1/consumer1', 'mardirac3.in2p3.fr/queue/test1/consumer2', 'mardirac3.in2p3.fr/queue/test1/consumer4', 'mardirac3.in2p3.fr/queue/test2/producer2', 'mardirac3.in2p3.fr/queue/test2/consumer1', 'mardirac3.in2p3.fr/queue/test2/consumer2', 'mardirac3.in2p3.fr/topic/test1/producer1']
     result = self.mgr.getAllMessengers()
     self.assertEqual(sorted(result['Value']),sorted(expectedOutput))
 
@@ -293,7 +293,7 @@ class TestMQConnectionManager_getAllMessengers( TestMQConnectionManager ):
   def test_success( self ):
     result = self.mgr.getAllMessengers()
     self.assertTrue(result['OK'])
-    expectedOutput= ['mardirac3.in2p3.fr/queues/test1/producer4', 'mardirac3.in2p3.fr/queues/test1/consumer1', 'mardirac3.in2p3.fr/queues/test1/consumer2', 'mardirac3.in2p3.fr/queues/test1/consumer4', 'mardirac3.in2p3.fr/queues/test2/producer2', 'mardirac3.in2p3.fr/queues/test2/consumer1', 'mardirac3.in2p3.fr/queues/test2/consumer2', 'mardirac3.in2p3.fr/topics/test1/producer1', 'testdir.blabla.ch/queues/test3/producer1', 'testdir.blabla.ch/queues/test3/consumer2', 'testdir.blabla.ch/queues/test3/consumer3', 'testdir.blabla.ch/queues/test3/consumer4']
+    expectedOutput= ['mardirac3.in2p3.fr/queue/test1/producer4', 'mardirac3.in2p3.fr/queue/test1/consumer1', 'mardirac3.in2p3.fr/queue/test1/consumer2', 'mardirac3.in2p3.fr/queue/test1/consumer4', 'mardirac3.in2p3.fr/queue/test2/producer2', 'mardirac3.in2p3.fr/queue/test2/consumer1', 'mardirac3.in2p3.fr/queue/test2/consumer2', 'mardirac3.in2p3.fr/topic/test1/producer1', 'testdir.blabla.ch/queue/test3/producer1', 'testdir.blabla.ch/queue/test3/consumer2', 'testdir.blabla.ch/queue/test3/consumer3', 'testdir.blabla.ch/queue/test3/consumer4']
     result = self.mgr.getAllMessengers()
     self.assertEqual(sorted(result['Value']),sorted(expectedOutput))
 

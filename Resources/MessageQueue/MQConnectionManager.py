@@ -6,9 +6,9 @@
     producer/consumer communication. Example structure::
 
       {
-        mardirac3.in2p3.fr: {'MQConnector':StompConnector, 'destinations':{'/queues/test1':['consumer1', 'producer1'],
-                                                                           '/queues/test2':['consumer1', 'producer1']}},
-        blabal.cern.ch:     {'MQConnector':None,           'destinations':{'/queues/test2':['consumer2', 'producer2',]}}
+        mardirac3.in2p3.fr: {'MQConnector':StompConnector, 'destinations':{'/queue/test1':['consumer1', 'producer1'],
+                                                                           '/queue/test2':['consumer1', 'producer1']}},
+        blabal.cern.ch:     {'MQConnector':None,           'destinations':{'/queue/test2':['consumer2', 'producer2',]}}
       }
 """
 
@@ -176,7 +176,7 @@ class MQConnectionManager( object ):
 
     Returns:
       S_OK or S_ERROR: with the list of strings in the pseudo-path format e.g.
-            ['blabla.cern.ch/queues/test1/consumer1','blabal.cern.ch/topics/test2/producer2']
+            ['blabla.cern.ch/queue/test1/consumer1','blabal.cern.ch/topic/test2/producer2']
     """
     self.lock.acquire()
     try:
@@ -248,7 +248,7 @@ class MQConnectionManager( object ):
     Args:
       mqConnection(str): message queue connection name.
     Returns:
-      dict: of form {'/queues/queue1':['producer1','consumer2']} or {}
+      dict: of form {'/queue/queue1':['producer1','consumer2']} or {}
     """
     return self.__getConnection( mqConnection ).get( "destinations", {} )
 
@@ -256,7 +256,7 @@ class MQConnectionManager( object ):
     """ Function returns list of messengers for given connection and given destination.
     Args:
       mqConnection(str): message queue connection name.
-      mqDestination(str): message queue or topic name e.g. '/queues/myQueue1' .
+      mqDestination(str): message queue or topic name e.g. '/queue/myQueue1' .
     Returns:
       list: of form ['producer1','consumer2'] or []
     """
@@ -266,7 +266,7 @@ class MQConnectionManager( object ):
     """ Function returns list of messnager for given connection, destination and type.
     Args:
       mqConnection(str): message queue connection name.
-      mqDestination(str): message queue or topic name e.g. '/queues/myQueue1' .
+      mqDestination(str): message queue or topic name e.g. '/queue/myQueue1' .
       messengerType(str): 'consumer' or 'producer'
     Returns:
       list: of form ['producer1','producer2'], ['consumer8', 'consumer20'] or []
@@ -295,7 +295,7 @@ class MQConnectionManager( object ):
   def __getAllMessengersInfo( self ):
     """ Function returns list of all messengers in the pseudo-path format.
     Returns:
-      list: of form ['blabla.cern.ch/queues/myQueue1/producer1','bibi.in2p3.fr/topics/myTopic331/consumer3'] or []
+      list: of form ['blabla.cern.ch/queue/myQueue1/producer1','bibi.in2p3.fr/topic/myTopic331/consumer3'] or []
     """
     output = lambda connection,dest,messenger: str( connection )+str( dest )+'/'+ str( messenger )
     return [output( c, d, m ) for c in self.__connectionStorage.keys() for d in self.__getDestinations( c )  for m in self.__getMessengersId( c, d )]
@@ -313,7 +313,7 @@ class MQConnectionManager( object ):
     """ Function checks if given destination(queue or topic) exists in the connection storage.
     Args:
       mqConnection(str): message queue connection name.
-      mqDestination(str): message queue or topic name e.g. '/queues/myQueue1' .
+      mqDestination(str): message queue or topic name e.g. '/queue/myQueue1' .
     Returns:
       bool:
     """
@@ -323,7 +323,7 @@ class MQConnectionManager( object ):
     """ Function checks if given messenger(producer or consumer) exists in the connection storage.
     Args:
       mqConnection(str): message queue connection name.
-      mqDestination(str): message queue or topic name e.g. '/queues/myQueue1' .
+      mqDestination(str): message queue or topic name e.g. '/queue/myQueue1' .
       messengerId(str): messenger name e.g. 'consumer1', 'producer4' .
     Returns:
       bool:
@@ -335,7 +335,7 @@ class MQConnectionManager( object ):
         If connection or/and destination do not exist, they are created as well.
     Args:
       mqConnection(str): message queue connection name.
-      mqDestination(str): message queue or topic name e.g. '/queues/myQueue1' .
+      mqDestination(str): message queue or topic name e.g. '/queue/myQueue1' .
       messengerId(str): messenger name e.g. 'consumer1', 'producer4'.
     Returns:
       bool: True if messenger is added or False if the messenger already exists.
@@ -356,7 +356,7 @@ class MQConnectionManager( object ):
         If it is the last messenger in given destination and/or connection they are removed as well..
     Args:
       mqConnection(str): message queue connection name.
-      mqDestination(str): message queue or topic name e.g. '/queues/myQueue1' .
+      mqDestination(str): message queue or topic name e.g. '/queue/myQueue1' .
       messengerId(str): messenger name e.g. 'consumer1', 'producer4'.
     Returns:
       bool: True if messenger is removed or False if the messenger was not in the storage.

@@ -21,8 +21,8 @@ class TestMQProducer( unittest.TestCase ):
   def setUp( self ):
     self.maxDiff = None  # To show full difference between structures in  case of error
     dest = {}
-    dest.update({'/queues/FakeQueue': ['producer4', 'producer2']})
-    dest4 = {'/queues/test3': ['producer1', 'consumer2','consumer3','consumer4']}
+    dest.update({'/queue/FakeQueue': ['producer4', 'producer2']})
+    dest4 = {'/queue/test3': ['producer1', 'consumer2','consumer3','consumer4']}
     conn1 = {'MQConnector':FakeMQConnector(), 'destinations':dest}
     conn2 = {'MQConnector':FakeMQConnector(), 'destinations':dest4}
     storage = {'fake.cern.ch':conn1, 'testdir.blabla.ch':conn2}
