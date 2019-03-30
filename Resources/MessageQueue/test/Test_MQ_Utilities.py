@@ -141,6 +141,21 @@ class Test_getMQParamFromCSSuccessTestCase( unittest.TestCase ):
     with self.assertRaises( KeyError ):
       result['Value']['Queue']
 
+  def test_getMQService( self ):
+    self.assertEqual(module.getMQService("bblabl.ch::Topics::MyTopic") , "bblabl.ch")
+    self.assertEqual(module.getMQService("bblabl.ch::Queues::MyQueue") , "bblabl.ch")
+
+  def test_getDestinationType( self ):
+    self.assertEqual(module.getDestinationType("bblabl.ch::Topics::MyTopic") , "Topics")
+    self.assertEqual(module.getDestinationType("bblabl.ch::Queues::MyQueue") , "Queues")
+
+  def test_getDestinationName( self ):
+    self.assertEqual(module.getDestinationName("bblabl.ch::Topics::MyTopic") , "MyTopic")
+    self.assertEqual(module.getDestinationName("bblabl.ch::Queues::MyQueue") , "MyQueue")
+
+  def test_getDestinationAddress( self ):
+    self.assertEqual(module.getDestinationAddress("bblabl.ch::Topics::MyTopic") , "/topic/MyTopic")
+    self.assertEqual(module.getDestinationAddress("bblabl.ch::Queues::MyQueue") , "/queue/MyQueue")
 
 class Test_getMQParamFromCSFailureTestCase( unittest.TestCase ):
   """ Test class to check known failure scenarios.

@@ -71,6 +71,8 @@ def getDestinationName(mqURI):
 
 def getDestinationAddress(mqURI):
   mqType, mqName = mqURI.split("::")[-2:]
+  # We remove the trailing 's to change from Queues to Queue
+  mqType = mqType.rstrip('s')
   return "/" + mqType.lower() + "/" + mqName
 
 
