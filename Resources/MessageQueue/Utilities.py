@@ -14,7 +14,7 @@ def getMQParamsFromCS(mqURI):
   Args:
     mqURI(str):Pseudo URI identifing the MQ service. It has the following format:
               mqConnection::DestinationType::DestinationName
-              e.g. blabla.cern.ch::Queue::MyQueue1
+              e.g. blabla.cern.ch::Queues::MyQueue1
     mType(str): 'consumer' or 'producer'
   Returns:
     S_OK(param_dicts) or S_ERROR
@@ -37,7 +37,7 @@ def getMQParamsFromCS(mqURI):
       mqDestinationPath = path
 
   # set-up internal parameter depending on the destination type
-  tmp = mqDestinationPath.split('Queue')[0].split('Topic')
+  tmp = mqDestinationPath.split('Queues')[0].split('Topics')
   servicePath = tmp[0]
   serviceDict = {}
   if len(tmp) > 1:
@@ -91,7 +91,7 @@ def generateDefaultCallback():
   Args:
     mqURI(str):Pseudo URI identifing MQ connection. It has the following format
               mqConnection::DestinationType::DestinationName
-              e.g. blabla.cern.ch::Queue::MyQueue1
+              e.g. blabla.cern.ch::Queues::MyQueue1
   Returns:
     object: callback function
   """

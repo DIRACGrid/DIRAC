@@ -93,7 +93,7 @@ Resources
 }
 """
 
-class _getMQParamFromCSSuccessTestCase( unittest.TestCase ):
+class Test_getMQParamFromCSSuccessTestCase( unittest.TestCase ):
   """ Test class to check success scenarios.
   """
 
@@ -142,7 +142,7 @@ class _getMQParamFromCSSuccessTestCase( unittest.TestCase ):
       result['Value']['Queue']
 
 
-class _getMQParamFromCSFailureTestCase( unittest.TestCase ):
+class Test_getMQParamFromCSFailureTestCase( unittest.TestCase ):
   """ Test class to check known failure scenarios.
   """
 
@@ -171,7 +171,7 @@ class _getMQParamFromCSFailureTestCase( unittest.TestCase ):
     result = module.getMQParamsFromCS( '%s::%s' % ( MQSERVICE_NAME, QUEUE_NAME ) )
     self.assertFalse( result['OK'] )
 
-class _generateDefaultCallbackTestCase( unittest.TestCase ):
+class Test_generateDefaultCallbackTestCase( unittest.TestCase ):
   """ Check default callback behaviour.
   """
   def test_EmptyMessage( self ):
@@ -206,7 +206,7 @@ class _generateDefaultCallbackTestCase( unittest.TestCase ):
     self.assertRaises(Queue.Empty, myCallback2.get)
 
 if __name__ == '__main__':
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase( _getMQParamFromCSSuccessTestCase )
-  suite.addTests( unittest.defaultTestLoader.loadTestsFromTestCase( _getMQParamFromCSFailureTestCase ) )
-  suite.addTests( unittest.defaultTestLoader.loadTestsFromTestCase( _generateDefaultCallbackTestCase ) )
+  suite = unittest.defaultTestLoader.loadTestsFromTestCase( Test_getMQParamFromCSSuccessTestCase )
+  suite.addTests( unittest.defaultTestLoader.loadTestsFromTestCase( Test_getMQParamFromCSFailureTestCase ) )
+  suite.addTests( unittest.defaultTestLoader.loadTestsFromTestCase( Test_generateDefaultCallbackTestCase ) )
   testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
