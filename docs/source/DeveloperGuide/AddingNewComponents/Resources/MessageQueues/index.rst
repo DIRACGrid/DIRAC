@@ -12,7 +12,7 @@ messages which are arbitrary json structures. The *MQProducer* objects are used 
 
    from DIRAC.Resources.MessageQueue.MQCommunication import createProducer
 
-   result = createProducer( "mardirac3.in2p3.fr::Queue::TestQueue" )
+   result = createProducer( "mardirac3.in2p3.fr::Queues::TestQueue" )
    if result['OK']:
       producer = result['Value']
    # Publish a message which is an arbitrary json structure
@@ -25,7 +25,7 @@ These objects can request messages explicitly:
 
    from DIRAC.Resources.MessageQueue.MQCommunication import createConsumer
 
-   result = createConsumer( "mardirac3.in2p3.fr::Queue::TestQueue" )
+   result = createConsumer( "mardirac3.in2p3.fr::Queues::TestQueue" )
    if result['OK']:
       consumer = result['Value']
    result = consumer.get( message )
@@ -42,14 +42,14 @@ when new messages will arrive:
   def myCallback( headers, message ):
     <function implementation>
 
-   result = createConsumer( "mardirac3.in2p3.fr::Queue::TestQueue", callback = myCallback )
+   result = createConsumer( "mardirac3.in2p3.fr::Queues::TestQueue", callback = myCallback )
    if result['OK']:
       consumer = result['Value']
 
 
 The destination name (queue or topic) in the consumer/producer instantiation must be given as
-fully qualified name like "mardirac3.in2p3.fr::Queue::TestQueue" or
-"mardirac3.in2p3.fr::Topic::TestTopic".
+fully qualified name like "mardirac3.in2p3.fr::Queues::TestQueue" or
+"mardirac3.in2p3.fr::Topics::TestTopic".
 
 ====================================
 Message Queue nomenclature in DIRAC
@@ -63,7 +63,7 @@ Message Queue nomenclature in DIRAC
 * mqService - unique identifier that characterises an MQ resource in the DIRAC CS. mqService can have one or more topics and/or queues assigned.
 * mqConnection: authenticated link between an MQ and one or more producers or/and consumers. The link can be characterised by mqService.
 * mqURI - pseudo URI identifier that univocally identifies the destination.
-  It has the following format mqService::mqDestinationType::mqDestination name e.g."mardirac3.in2p3.fr::Queue::TestQueue" or
-  "mardirac3.in2p3.fr::Topic::TestTopic".
+  It has the following format mqService::mqDestinationType::mqDestination name e.g."mardirac3.in2p3.fr::Queues::TestQueue" or
+  "mardirac3.in2p3.fr::Topics::TestTopic".
 * mqType - type of the MQ communication protocol e.g. Stomp.
 * MQConnector - provides abstract interface to communicate with a given MQ system. It can be specialized e.g.  StompMQConnector.

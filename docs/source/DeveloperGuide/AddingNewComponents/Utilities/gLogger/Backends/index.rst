@@ -107,6 +107,6 @@ MsgQueue represents a MessageQueue resources from DIRAC under this form:
 
 ::
 
-  mardirac3.in2p3.fr::Queue::TestQueue
+  mardirac3.in2p3.fr::Queues::TestQueue
 
 You will find more details about these resources in the :ref:`configuration_message_queues` section.

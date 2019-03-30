@@ -66,11 +66,11 @@ like described in :ref:`development_use_mq`, for example::
    from DIRAC.Resources.MessageQueue.MQCommunication import createProducer
    from DIRAC.Resources.MessageQueue.MQCommunication import createConsumer
 
-   result = createProducer( "mardirac3.in2p3.fr::Queue::TestQueue" )
+   result = createProducer( "mardirac3.in2p3.fr::Queues::TestQueue" )
    if result['OK']:
       producer = result['Value']
 
-   result = createConsumer( "mardirac3.in2p3.fr::Queue::TestQueue" )
+   result = createConsumer( "mardirac3.in2p3.fr::Queues::TestQueue" )
    if result['OK']:
       consumer = result['Value']
 

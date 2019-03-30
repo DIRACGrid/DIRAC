@@ -27,7 +27,7 @@ class MessageQueueHandler(logging.Handler):
     Initialization of the MessageQueueHandler.
 
     :params queue: string representing the queue identifier in the configuration.
-                   example: "mardirac3.in2p3.fr::Queue::TestQueue"
+                   example: "mardirac3.in2p3.fr::Queues::TestQueue"
     """
     super(MessageQueueHandler, self).__init__()
     self.producer = None

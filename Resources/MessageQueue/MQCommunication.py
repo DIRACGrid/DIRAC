@@ -21,7 +21,7 @@ def createConsumer(mqURI, callback=generateDefaultCallback()):
   Args:
     mqURI(str):Pseudo URI identifing MQ service. It has the following format
               mqConnection::DestinationType::DestinationName
-              e.g. blabla.cern.ch::Queue::MyQueue1
+              e.g. blabla.cern.ch::Queues::MyQueue1
     callback: callback function that can be used to process the incoming messages
 
   Returns:
@@ -45,7 +45,7 @@ def createProducer(mqURI):
   Args:
     mqURI(str):Pseudo URI identifing MQ service. It has the following format
               mqConnection::DestinationType::DestinationName
-              e.g. blabla.cern.ch::Queue::MyQueue1
+              e.g. blabla.cern.ch::Queues::MyQueue1
   Returns:
     S_OK/S_ERROR: with the producer object in S_OK.
   """
@@ -65,7 +65,7 @@ def _setupConnection(mqURI, mType):
   Args:
     mqURI(str):Pseudo URI identifing the MQ service. It has the following format:
               mqConnection::DestinationType::DestinationName
-              e.g. blabla.cern.ch::Queue::MyQueue1
+              e.g. blabla.cern.ch::Queues::MyQueue1
     mType(str): 'consumer' or 'producer'
   Returns:
     S_OK/S_ERROR: with the value of the messenger Id ( e.g. 'consumer4' ) in S_OK.

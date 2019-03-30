@@ -23,8 +23,8 @@ class TestMQConsumer( unittest.TestCase ):
   def setUp( self ):
     self.maxDiff = None  # To show full difference between structures in  case of error
     dest = {}
-    dest.update({'/queue/FakeQueue': ['consumer4', 'consumer2']})
-    dest4 = {'/queue/test3': ['consumer1', 'consumer2','consumer3','consumer4']}
+    dest.update({'/queues/FakeQueue': ['consumer4', 'consumer2']})
+    dest4 = {'/queues/test3': ['consumer1', 'consumer2','consumer3','consumer4']}
     conn1 = {'MQConnector':FakeMQConnector(), 'destinations':dest}
     conn2 = {'MQConnector':FakeMQConnector(), 'destinations':dest4}
     storage = {'fake.cern.ch':conn1, 'testdir.blabla.ch':conn2}
@@ -33,24 +33,24 @@ class TestMQConsumer( unittest.TestCase ):
     pass
 class TestMQConsumer_get( TestMQConsumer):
   def test_failure( self ):
-    consumer = MQConsumer(mqManager = self.myManager, mqURI  = "fake.cern.ch::Queue::FakeQueue", consumerId = 'consumer1')
+    consumer = MQConsumer(mqManager = self.myManager, mqURI  = "fake.cern.ch::Queues::FakeQueue", consumerId = 'consumer1')
     result = consumer.get()
     self.assertFalse(result['OK'])
     self.assertEqual(result['Message'], 'No messages ( 1141 : No messages in queue)')
 
   def test_sucess( self ):
-    consumer = MQConsumer(mqManager = self.myManager, mqURI  = "bad.cern.ch::Queue::FakeQueue", consumerId = 'consumer1')
+    consumer = MQConsumer(mqManager = self.myManager, mqURI  = "bad.cern.ch::Queues::FakeQueue", consumerId = 'consumer1')
     result = consumer.get()
     self.assertFalse(result['OK'])
 
 class TestMQConsumer_close( TestMQConsumer):
   def test_success( self ):
-    consumer = MQConsumer(mqManager = self.myManager, mqURI  = "fake.cern.ch::Queue::FakeQueue", consumerId ='consumer4')
+    consumer = MQConsumer(mqManager = self.myManager, mqURI  = "fake.cern.ch::Queues::FakeQueue", consumerId ='consumer4')
     result = consumer.close()
     self.assertTrue(result['OK'])
 
   def test_failure( self ):
-    consumer = MQConsumer(mqManager = self.myManager, mqURI  = "fake.cern.ch::Queue::FakeQueue", consumerId ='consumer4')
+    consumer = MQConsumer(mqManager = self.myManager, mqURI  = "fake.cern.ch::Queues::FakeQueue", consumerId ='consumer4')
     result = consumer.close()
     self.assertTrue(result['OK'])
     result = consumer.close()
@@ -58,8 +58,8 @@ class TestMQConsumer_close( TestMQConsumer):
     self.assertEqual(result['Message'], 'MQ connection failure ( 1142 : Failed to stop the connection!The messenger consumer4 does not exist!)')
 
   def test_failure2( self ):
-    consumer = MQConsumer(mqManager = self.myManager, mqURI  = "fake.cern.ch::Queue::FakeQueue", consumerId ='consumer4')
-    consumer2 = MQConsumer(mqManager = self.myManager, mqURI  = "fake.cern.ch::Queue::FakeQueue", consumerId ='consumer2')
+    consumer = MQConsumer(mqManager = self.myManager, mqURI  = "fake.cern.ch::Queues::FakeQueue", consumerId ='consumer4')
+    consumer2 = MQConsumer(mqManager = self.myManager, mqURI  = "fake.cern.ch::Queues::FakeQueue", consumerId ='consumer2')
     result = consumer.close()
     self.assertTrue(result['OK'])
     result = consumer.close()

@@ -21,8 +21,8 @@ class TestMQProducer( unittest.TestCase ):
   def setUp( self ):
     self.maxDiff = None  # To show full difference between structures in  case of error
     dest = {}
-    dest.update({'/queue/FakeQueue': ['producer4', 'producer2']})
-    dest4 = {'/queue/test3': ['producer1', 'consumer2','consumer3','consumer4']}
+    dest.update({'/queues/FakeQueue': ['producer4', 'producer2']})
+    dest4 = {'/queues/test3': ['producer1', 'consumer2','consumer3','consumer4']}
     conn1 = {'MQConnector':FakeMQConnector(), 'destinations':dest}
     conn2 = {'MQConnector':FakeMQConnector(), 'destinations':dest4}
     storage = {'fake.cern.ch':conn1, 'testdir.blabla.ch':conn2}
@@ -31,19 +31,19 @@ class TestMQProducer( unittest.TestCase ):
     pass
 class TestMQProducer_put( TestMQProducer):
   def test_success( self ):
-    producer = MQProducer(mqManager = self.myManager, mqURI  = "fake.cern.ch::Queue::FakeQueue", producerId = 'producer4')
+    producer = MQProducer(mqManager = self.myManager, mqURI  = "fake.cern.ch::Queues::FakeQueue", producerId = 'producer4')
     result = producer.put("wow!")
     self.assertTrue(result['OK'])
     self.assertEqual(result['Value'], "FakeMQConnection sending message: wow!")
 
   def test_failure( self ):
-    producer = MQProducer(mqManager = self.myManager, mqURI  = "bad.cern.ch::Queue::FakeQueue", producerId = 'producer4')
+    producer = MQProducer(mqManager = self.myManager, mqURI  = "bad.cern.ch::Queues::FakeQueue", producerId = 'producer4')
     result = producer.put("wow!")
     self.assertFalse(result['OK'])
 
 class TestMQProducer_close( TestMQProducer):
   def test_success( self ):
-    producer = MQProducer(mqManager = self.myManager, mqURI  = "fake.cern.ch::Queue::FakeQueue", producerId ='producer4')
+    producer = MQProducer(mqManager = self.myManager, mqURI  = "fake.cern.ch::Queues::FakeQueue", producerId ='producer4')
     result = producer.close()
     self.assertTrue(result['OK'])
     #producer is still able to sent cause the connection is still active (producer2 is connected)
@@ -51,7 +51,7 @@ class TestMQProducer_close( TestMQProducer):
     self.assertTrue(result['OK'])
 
   def test_failure( self ):
-    producer = MQProducer(mqManager = self.myManager, mqURI  = "fake.cern.ch::Queue::FakeQueue", producerId ='producer4')
+    producer = MQProducer(mqManager = self.myManager, mqURI  = "fake.cern.ch::Queues::FakeQueue", producerId ='producer4')
     result = producer.close()
     self.assertTrue(result['OK'])
     result = producer.close()
@@ -59,8 +59,8 @@ class TestMQProducer_close( TestMQProducer):
     self.assertEqual(result['Message'], 'MQ connection failure ( 1142 : Failed to stop the connection!The messenger producer4 does not exist!)')
 
   def test_failure2( self ):
-    producer = MQProducer(mqManager = self.myManager, mqURI  = "fake.cern.ch::Queue::FakeQueue", producerId ='producer4')
-    producer2 = MQProducer(mqManager = self.myManager, mqURI  = "fake.cern.ch::Queue::FakeQueue", producerId ='producer2')
+    producer = MQProducer(mqManager = self.myManager, mqURI  = "fake.cern.ch::Queues::FakeQueue", producerId ='producer4')
+    producer2 = MQProducer(mqManager = self.myManager, mqURI  = "fake.cern.ch::Queues::FakeQueue", producerId ='producer2')
     result = producer.close()
     self.assertTrue(result['OK'])
     result = producer.close()
