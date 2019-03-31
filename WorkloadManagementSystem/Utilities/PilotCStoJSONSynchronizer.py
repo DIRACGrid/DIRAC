@@ -36,7 +36,7 @@ class PilotCStoJSONSynchronizer(object):
     """ c'tor
         Just setting defaults
     """
-    self.pilotCertGroupName = 'Pilot'
+    self.pilotCertGroupName = 'lhcb_pilot'
     self.jsonFile = 'pilot.json'  # default filename of the pilot json file
 
     # domain name of the web server used to upload the pilot json file and the pilot scripts
