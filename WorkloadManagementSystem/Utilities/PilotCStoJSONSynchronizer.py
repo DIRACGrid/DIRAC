@@ -1,24 +1,25 @@
 """ CStoJSONSynchronizer
-
   Module that keeps the pilot parameters file synchronized with the information
   in the Operations/Pilot section of the CS. If there are additions in the CS,
   these are incorporated to the file.
   The module uploads to a web server the latest version of the pilot scripts.
-
 """
 
+from __future__ import print_function
 __RCSID__ = '$Id$'
 
 import json
-import urllib
+
 import shutil
 import os
 import glob
 import tarfile
+import requests
+
 from git import Repo
 
 from DIRAC import gLogger, S_OK, gConfig, S_ERROR
-from DIRAC.Core.DISET.HTTPDISETConnection import HTTPDISETConnection
+from DIRAC.Core.Security.Locations import getHostCertificateAndKeyLocation
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 
@@ -27,16 +28,15 @@ class PilotCStoJSONSynchronizer(object):
   2 functions are executed:
   - It updates a JSON file with the values on the CS which can be used by Pilot3 pilots
   - It updates the pilot 3 files
-
   This synchronizer can be triggered at any time via PilotCStoJSONSynchronizer().sync().
   As it is today, this is triggered every time there is a successful write on the CS.
   """
 
   def __init__(self):
     """ c'tor
-
         Just setting defaults
     """
+    self.pilotCertGroupName = 'Pilot'
     self.jsonFile = 'pilot.json'  # default filename of the pilot json file
 
     # domain name of the web server used to upload the pilot json file and the pilot scripts
@@ -54,6 +54,7 @@ class PilotCStoJSONSynchronizer(object):
     self.pilotVOScriptPath = ''
     self.pilotVersion = ''
     self.pilotVOVersion = ''
+    self.certAndKeyLocation = getHostCertificateAndKeyLocation()
 
   def sync(self):
     """ Main synchronizer method.
@@ -98,12 +99,11 @@ class PilotCStoJSONSynchronizer(object):
 
   def _getCSDict(self):
     """ Gets minimal info for running a pilot, from the CS
-
     :returns: pilotDict (containing pilots run info)
     :rtype: dict
     """
 
-    pilotDict = {'Setups': {}, 'CEs': {}}
+    pilotDict = {'Setups': {}, 'CEs': {}, 'DNs': {}}
 
     gLogger.info('-- Getting the content of the CS --')
 
@@ -160,6 +160,10 @@ class PilotCStoJSONSynchronizer(object):
           else:
             pilotDict['CEs'][ce] = {'Site': site, 'GridCEType': ceType}
 
+    certDNs = self._getDNs(self.pilotCertGroupName)
+    if certDNs['OK']:
+      pilotDict['DNs'] = certDNs['Value']
+
     defaultSetup = gConfig.getValue('/DIRAC/DefaultSetup')
     if defaultSetup:
       pilotDict['DefaultSetup'] = defaultSetup
@@ -170,6 +174,18 @@ class PilotCStoJSONSynchronizer(object):
     gLogger.verbose("Got %s" % str(pilotDict))
 
     return pilotDict
+
+  def _getDNs(self, certGroupName):
+    '''Returns DN list of users in given group.
+    :param certGroupName: name of the group.
+    :returns: S_OK with the list of DNs if successful, S_ERROR otherwise'''
+    try:
+      usersString = gConfig.getValue('/Registry/Groups/' + certGroupName + '/Users')
+      usersInGroup = usersString.split(',')
+      DNs = [gConfig.getValue('/Registry/Users/' + user + '/DN') for user in usersInGroup]
+      return S_OK(DNs)
+    except AttributeError:
+      return S_ERROR('Some error occured while getting the DNs.')
 
   def _getPilotOptionsPerSetup(self, setup, pilotDict):
     """ Given a setup, returns its pilot options in a dictionary
@@ -324,35 +340,41 @@ class PilotCStoJSONSynchronizer(object):
 
   def _upload(self, pilotDict=None, filename='', pilotScript=''):
     """ Method to upload the pilot json file and the pilot scripts to the server.
+        :param pilotDict: used only to upload the pilot.json, which is what it is
+        :param filename: remote filename
+        :param pilotScript: local path to the file to upload
+        :returns: S_OK if the upload was successful, S_ERROR otherwise
     """
+    # Note: this method could clearly get a revamp... also the upload is not done in an
+    # optimal way since we could send the file with request without reading it in memory,
+    # or even send multiple files:
+    # http://docs.python-requests.org/en/master/user/advanced/#post-multiple-multipart-encoded-files
+    # But well, maybe too much optimization :-)
 
     if pilotDict:  # this is for the pilot.json file
       if not self.pilotFileServer:
         gLogger.warn("NOT uploading the pilot JSON file, just printing it out")
-        print json.dumps(pilotDict, indent=4, sort_keys=True)  # just print here as formatting is important
+        print(json.dumps(pilotDict, indent=4, sort_keys=True))  # just print here as formatting is important
         return S_OK()
-      params = urllib.urlencode({'filename': self.jsonFile, 'data': json.dumps(pilotDict)})
+
+      data = {'filename': self.jsonFile, 'data': json.dumps(pilotDict)}
 
     else:  # we assume the method is asked to upload the pilots scripts
       if not self.pilotFileServer:
         gLogger.warn("NOT uploading %s" % filename)
         return S_OK()
+
+      # ALWAYS open binary when sending a file
       with open(pilotScript, "rb") as psf:
         script = psf.read()
-      params = urllib.urlencode({'filename': filename, 'data': script})
+      data = {'filename': filename, 'data': script}
 
-    if ':' in self.pilotFileServer:
-      con = HTTPDISETConnection(self.pilotFileServer.split(':')[0], self.pilotFileServer.split(':')[1])
-    else:
-      con = HTTPDISETConnection(self.pilotFileServer, '443')
+    resp = requests.post('https://%s/DIRAC/upload' % self.pilotFileServer,
+                         data=data,
+                         cert=self.certAndKeyLocation)
 
-    con.request("POST",
-                "/DIRAC/upload",
-                params,
-                {"Content-type": "application/x-www-form-urlencoded", "Accept": "text/plain"})
-    resp = con.getresponse()
-    if resp.status != 200:
-      return S_ERROR(resp.status)
+    if resp.status_code != 200:
+      return S_ERROR(resp.text)
     else:
       gLogger.info('-- File and scripts upload done --')
-    return S_OK()
+      return S_OK()
