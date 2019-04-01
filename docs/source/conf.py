@@ -17,12 +17,11 @@ import os
 import sys
 import subprocess
 
+from diracdoctools import fakeEnvironment, environmentSetup, DIRAC_DOC_MOCK_LIST
+
 sys.path.insert(0, ".")
 
-try:
-  import fakeEnvironment
-except ImportError:
-  pass
+
 diracRelease = os.environ.get('DIRACVERSION', 'integration')
 if os.environ.get('READTHEDOCS') == 'True':
   diracRelease = os.path.basename(os.path.abspath("../../"))
@@ -279,12 +278,7 @@ latex_documents = [
 #latex_use_modindex = True
 
 # packages that cannot be installed in RTD
-autodoc_mock_imports = ['lcg_util', 'cx_Oracle', 'fts3', 'XRootD', 'gfal2', 'arc', '_arc',
-                        'matplotlib',
-                        'git',
-                        'numpy', 'irods', 'pylab', 'stomp',
-                        'pythonjsonlogger', 'cmreslogging',
-                        ]
+autodoc_mock_imports = DIRAC_DOC_MOCK_LIST
 
 
 # link with the python standard library docs
