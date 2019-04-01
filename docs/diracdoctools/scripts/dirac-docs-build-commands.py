@@ -14,10 +14,10 @@ import sys
 import subprocess
 import shlex
 
+from diracdoctools.Utilities import writeLinesToFile, mkdir, PACKAGE_PATH
+
 # if true (-ddd on the command line) print also the content for all files
 SUPER_DEBUG = False
-
-ROOT_PATH = os.environ.get("DIRAC", "")
 
 logging.basicConfig(level=logging.INFO, format='%(name)s: %(levelname)8s: %(message)s', stream=sys.stdout)
 LOG = logging.getLogger('ScriptDoc')
@@ -63,14 +63,6 @@ MARKERS_SECTIONS_SCRIPTS = [(['dms'],
 EXITCODE = 0
 
 
-def mkdir(path):
-  """ save mkdir, ignores exceptions """
-  try:
-    os.makedirs(path)
-  except OSError:
-    pass
-
-
 def runCommand(command):
   """ execute shell command, return output, catch exceptions """
   try:
@@ -84,36 +76,14 @@ def runCommand(command):
     return ''
 
 
-def writeLinesToFile(filename, lines):
-  """Write a list of lines into a file.
-
-  Checks that there are actual changes to be done.
-  """
-  if isinstance(lines, list):
-    newContent = '\n'.join(lines)
-  else:
-    newContent = lines
-  oldContent = None
-  if os.path.exists(filename):
-    with open(filename, 'r') as oldFile:
-      oldContent = ''.join(oldFile.readlines())
-  if oldContent is None or oldContent != newContent:
-    with open(filename, 'w') as rst:
-      LOG.info('Writing new content for %s', filename)
-      rst.write(newContent)
-  else:
-    LOG.debug('Not updating file content for %s', filename)
-
-
 def getScripts():
   """Get all scripts in the Dirac System, split by type admin/wms/rms/other."""
 
-  diracPath = os.path.join(ROOT_PATH, 'DIRAC')
-  if not os.path.exists(diracPath):
-    sys.exit('%s does not exist' % diracPath)
+  if not os.path.exists(PACKAGE_PATH):
+    sys.exit('%s does not exist' % PACKAGE_PATH)
 
   # Get all scripts
-  scriptsPath = os.path.join(diracPath, '*', 'scripts', '*.py')
+  scriptsPath = os.path.join(PACKAGE_PATH, '*', 'scripts', '*.py')
 
   # Get all scripts on scriptsPath and sorts them, this will make our life easier afterwards
   scripts = glob.glob(scriptsPath)
@@ -162,11 +132,11 @@ This page is the work in progress. See more material here soon !
     userIndexRST += "   %s/index\n" % systemString
 
     LOG.debug("Index file:\n%s", userIndexRST) if SUPER_DEBUG else None
-    sectionPath = os.path.join(ROOT_PATH, 'DIRAC/docs/source/UserGuide/CommandReference/', systemString)
+    sectionPath = os.path.join(PACKAGE_PATH, 'docs/source/UserGuide/CommandReference/', systemString)
     mkdir(sectionPath)
     createSectionIndex(mT, sectionPath)
 
-  userIndexPath = os.path.join(ROOT_PATH, 'DIRAC/docs/source/UserGuide/CommandReference/index.rst')
+  userIndexPath = os.path.join(PACKAGE_PATH, 'docs/source/UserGuide/CommandReference/index.rst')
   writeLinesToFile(userIndexPath, userIndexRST)
 
 
@@ -176,7 +146,7 @@ def createAdminGuideCommandReference():
   source/AdministratorGuide/CommandReference
   """
 
-  sectionPath = os.path.join(ROOT_PATH, 'DIRAC/docs/source/AdministratorGuide/CommandReference/')
+  sectionPath = os.path.join(PACKAGE_PATH, 'docs/source/AdministratorGuide/CommandReference/')
 
   # read the script index
   with open(os.path.join(sectionPath, 'index.rst')) as adminIndexFile:
@@ -208,7 +178,7 @@ def cleanAdminGuideReference():
   """Make sure no superfluous commands are documented in the AdministratorGuide"""
   existingCommands = {os.path.basename(com).replace('.py', '') for mT in MARKERS_SECTIONS_SCRIPTS
                       for com in mT[2] + mT[3] if mT[1] == 'Admin'}
-  sectionPath = os.path.join(ROOT_PATH, 'DIRAC/docs/source/AdministratorGuide/CommandReference/')
+  sectionPath = os.path.join(PACKAGE_PATH, 'docs/source/AdministratorGuide/CommandReference/')
   # read the script index
   documentedCommands = set()
   with open(os.path.join(sectionPath, 'index.rst')) as adminIndexFile:

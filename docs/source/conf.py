@@ -67,26 +67,12 @@ if os.environ.get('READTHEDOCS') == 'True':
   for path in sys.path:
     os.environ['PYTHONPATH'] = os.environ.get('PYTHONPATH', '') + ":" + path
 
-  # this is not working at the moment because the DIRAC folder is not found by the buildScriptsDOC script
-  # print "Pythonpath",os.environ['PYTHONPATH']
-  # buildCommand = os.path.join( os.getcwd() , "../Tools/buildScriptsDOC.py" )
-  # scriptdir = os.path.abspath(os.path.join( os.getcwd() , "../", buildfolder, "scripts" ))
-  # try:
-  #   os.mkdir( scriptdir )
-  # except:
-  #   pass
-  # print "command", buildCommand
-  # code = subprocess.Popen( ["python", buildCommand, scriptdir ], env = os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-  # stdout , err = code.communicate()
-  # print "script",stdout
-  # print "script",err
-
   os.environ["DIRAC"] = diracPath
   print("DIRAC ENVIRON", os.environ["DIRAC"])
 
   # re-create the RST files for the command references
-  buildCommand = os.path.join(os.getcwd(), "../Tools/scripts/dirac-docs-build-commands.py")
-  code = subprocess.Popen(["python", buildCommand], env=os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+  buildCommand = 'dirac-docs-build-commands.py'
+  code = subprocess.Popen([buildCommand], env=os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
   stdout, err = code.communicate()
   print("scriptDocs:", stdout)
   print("scriptErrs:", err)
@@ -94,21 +80,19 @@ if os.environ.get('READTHEDOCS') == 'True':
   ##singlehtml build needs too much memory, so we need to create less code documentation
   buildtype = "limited" if any("singlehtml" in arg for arg in sys.argv) else "full"
   print("Chosing build type:", buildtype)
-  buildCommand = os.path.join(os.getcwd(), "../Tools/scripts/dirac-docs-build-code.py")
-  code = subprocess.Popen(["python", buildCommand, buildtype], env=os.environ,
-                          stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+  buildCommand = 'dirac-docs-build-code.py'
+  code = subprocess.Popen([buildCommand, buildtype],
+                          env=os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
   stdout, err = code.communicate()
-  print("code", stdout)
-  print("code", err)
+  print('codeDoc Output', stdout)
+  print('codeDoc Error', err)
 
-# always update dirac.cfg
-buildCommand = os.path.join(os.getcwd(), "../Tools/UpdateDiracCFG.py")
-code = subprocess.Popen(["python", buildCommand], env=os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+#Update dirac.cfg
+buildCommand = 'dirac-docs-concatenate-diraccfg.py'
+code = subprocess.Popen([buildCommand], env=os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 stdout, err = code.communicate()
-if stdout:
-  print("Config Output", stdout)
-if err:
-  print("Config error", err)
+print("Config Output", stdout)
+print("Config Error", err)
 
 # -- General configuration -----------------------------------------------------
 

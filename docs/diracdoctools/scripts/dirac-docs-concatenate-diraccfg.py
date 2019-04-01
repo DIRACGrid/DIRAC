@@ -9,12 +9,13 @@ import re
 from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC import gLogger, S_OK, S_ERROR
 
+from diracdoctools.Utilities import PACKAGE_PATH
+
 
 def updateCompleteDiracCFG():
   """Read the dirac.cfg and update the Systems sections from the ConfigTemplate.cfg files."""
   compCfg = CFG()
-  rootpath = os.environ.get('DIRAC', './')
-  mainDiracCfgPath = os.path.join(rootpath, 'DIRAC', 'dirac.cfg')
+  mainDiracCfgPath = os.path.join(PACKAGE_PATH, 'dirac.cfg')
 
   if not os.path.exists(mainDiracCfgPath):
     raise RuntimeError("Dirac.cfg not found at %s" % mainDiracCfgPath)
@@ -26,7 +27,7 @@ def updateCompleteDiracCFG():
 
   cfg = getSystemsCFG()
   compCfg = compCfg.mergeWith(cfg)
-  diracCfgOutput = os.path.join(rootpath, 'DIRAC/docs/source/AdministratorGuide/Configuration/ExampleConfig.rst')
+  diracCfgOutput = os.path.join(PACKAGE_PATH, 'docs/source/AdministratorGuide/Configuration/ExampleConfig.rst')
 
   with open(diracCfgOutput, 'w') as rst:
     rst.write(textwrap.dedent("""
@@ -51,7 +52,7 @@ def updateCompleteDiracCFG():
 def getSystemsCFG():
   """Find all the ConfigTemplates and collate them into one CFG object."""
   cfg = CFG()
-  cfg.createNewSection("/Systems")
+  cfg.createNewSection('/Systems')
   templateLocations = findConfigTemplates()
   for templatePath in templateLocations:
     cfgRes = parseConfigTemplate(templatePath, cfg)
@@ -63,8 +64,7 @@ def getSystemsCFG():
 def findConfigTemplates():
   """Traverse folders in DIRAC and find ConfigTemplate.cfg files."""
   configTemplates = dict()
-  diracPath = os.environ.get("DIRAC") + "/DIRAC"
-  for baseDirectory, _subdirectories, files in os.walk(diracPath):
+  for baseDirectory, _subdirectories, files in os.walk(PACKAGE_PATH):
     gLogger.debug('Looking in %r' % baseDirectory)
     if 'ConfigTemplate.cfg' in files:
       system = baseDirectory.rsplit('/', 1)[1]

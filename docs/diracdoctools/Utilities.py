@@ -5,6 +5,12 @@ import os
 
 LOG = logging.getLogger(__name__)
 
+# name of the Package
+BASE_MODULE_NAME = 'DIRAC'
+
+# where the source code can be found
+PACKAGE_PATH = os.path.join(os.environ.get('DIRAC', ''), BASE_MODULE_NAME)
+
 
 def mkdir(folder):
   """Create a folder, ignore if it exists.
@@ -25,7 +31,10 @@ def writeLinesToFile(filename, lines):
   :param str filename: name of the files
   :param list lines: list of lines to write to the file
   """
-  newContent = '\n'.join(lines)
+  if isinstance(lines, list):
+    newContent = '\n'.join(lines)
+  else:
+    newContent = lines
   oldContent = None
   if os.path.exists(filename):
     with open(filename, 'r') as oldFile:

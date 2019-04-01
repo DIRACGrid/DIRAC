@@ -2,7 +2,8 @@
 Commands Reference
 ==================
 
-.. this page is created in docs/Tools/buildScriptsDocs.py
+.. this page is created in docs/Tools/dirac-docs-build-commands.py
+
 
 This page is the work in progress. See more material here soon !
 
