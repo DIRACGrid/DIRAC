@@ -97,7 +97,7 @@ def getM2SSLContext(ctx=None, **kwargs):
   # Set peer verification
   if kwargs.get('skipCACheck', False):
     # Don't validate peer, but still request creds
-    ctx.set_verify(SSL.verify_fail_if_no_peer_cert, VERIFY_DEPTH)
+    ctx.set_verify(SSL.verify_none, VERIFY_DEPTH)
   else:
     # Do validate peer
     ctx.set_verify(SSL.verify_peer | SSL.verify_fail_if_no_peer_cert, VERIFY_DEPTH)
