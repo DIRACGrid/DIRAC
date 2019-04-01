@@ -11,6 +11,8 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
+# pylint: disable=invalid-name
+
 from __future__ import print_function
 import datetime
 import os
@@ -28,11 +30,6 @@ if os.environ.get('READTHEDOCS') == 'True':
   if diracRelease.startswith("rel-"):
     diracRelease = diracRelease[4:]
 print('conf.py: %s as DIRACVERSION' % diracRelease)
-
-# Set this environment variable such tha the documentation
-# generated for the various X509* classes is the one with M2Crypto
-if 'DIRAC_USE_M2CRYPTO' not in os.environ:
-  os.environ['DIRAC_USE_M2CRYPTO'] = "Yes"
 
 #...............................................................................
 # configuration
