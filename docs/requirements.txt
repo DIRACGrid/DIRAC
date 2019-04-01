@@ -1,5 +1,2 @@
 -r https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/requirements.txt
 git+https://github.com/andresailer/DIRAC/@fixDoc#subdirectory=docs
-
-Sphinx>=1.8.0
-GSI
