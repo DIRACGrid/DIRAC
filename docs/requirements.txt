@@ -13,3 +13,5 @@ psutil
 pyparsing
 GSI
 M2Crypto
+pyasn1>0.4.1
+pyasn1_modules
