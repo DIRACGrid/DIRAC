@@ -24,12 +24,10 @@ package_dir = dict(("%s" % p, os.path.join(base_dir, p.replace('.', '/'))) for p
 print 'CHRIS package_dir %s' % package_dir
 
 # We also rename the packages so that they contain diracdoctools
-ALL_PACKAGES = ['%s' % p for p in ALL_PACKAGES]
-print 'CHRIS allPackages %s' % ALL_PACKAGES
-
-# Artificially create the 'DIRAC' package
-# at the root
+ALL_PACKAGES = ['diracdoctools.%s' % p for p in ALL_PACKAGES]
 ALL_PACKAGES.insert(0, 'diracdoctools')
+
+print 'CHRIS allPackages %s' % ALL_PACKAGES
 package_dir['diracdoctools'] = base_dir
 # The scripts to be distributed
 SCRIPTS = glob.glob('%s/scripts/*.py' % base_dir)
@@ -42,10 +40,10 @@ setup(
     package_dir=package_dir,
     packages=ALL_PACKAGES,
     scripts=SCRIPTS,
-    entry_points={'console_scripts': [
-        'dirac-docs-build-commands.py = diracdoctools.cmd.codeReference:run',
-        'dirac-docs-concatenate-diraccfg.py = diracdoctools.cmd.concatcfg:run',
-        'dirac-docs-get-release-notes.py = diracdoctools.cmd.getrelnotes:run',
-        'dirac-docs-build-code.py = diracdoctools.cmd.codedoc:run',
-    ]},
+    # entry_points={'console_scripts': [
+    #   'dirac-docs-build-commands.py = diracdoctools.cmd.codeReference:run',
+    #   'dirac-docs-concatenate-diraccfg.py = diracdoctools.cmd.concatcfg:run',
+    #   'dirac-docs-get-release-notes.py = diracdoctools.cmd.getrelnotes:run',
+    #   'dirac-docs-build-code.py = diracdoctools.cmd.codedoc:run',
+    # ]},
 )
