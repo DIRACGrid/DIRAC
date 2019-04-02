@@ -11,6 +11,7 @@ BASE_MODULE_NAME = 'DIRAC'
 
 # where the source code can be found
 PACKAGE_PATH = os.path.join(os.environ.get('DIRAC', ''), BASE_MODULE_NAME)
+LOG.info('PACKAGE_PATH: %r', PACKAGE_PATH)
 
 
 def mkdir(folder):

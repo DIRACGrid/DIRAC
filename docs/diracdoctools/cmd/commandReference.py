@@ -75,7 +75,8 @@ def getScripts():
   """Get all scripts in the Dirac System, split by type admin/wms/rms/other."""
 
   if not os.path.exists(PACKAGE_PATH):
-    sys.exit('%s does not exist' % PACKAGE_PATH)
+    LOG.error('%s does not exist' % PACKAGE_PATH)
+    raise RuntimeError('Package not found')
 
   # Get all scripts
   scriptsPath = os.path.join(PACKAGE_PATH, '*', 'scripts', '*.py')
