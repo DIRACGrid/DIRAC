@@ -9,14 +9,14 @@ import glob
 
 
 import diracdoctools
-from diracdoctools.Utilities import writeLinesToFile, mkdir, BASE_MODULE_NAME, PACKAGE_PATH
+from diracdoctools.Utilities import writeLinesToFile, mkdir, BASE_MODULE_NAME, packagePath
 
 logging.basicConfig(level=logging.INFO, format='%(name)s: %(levelname)8s: %(message)s')
 LOG = logging.getLogger('MakeDoc')
 
 
 # where in doc the code documentation ends up
-CODE_DOC_TARGET_PATH = os.path.join(PACKAGE_PATH, 'docs/source/CodeDocumentation')
+CODE_DOC_TARGET_PATH = os.path.join(packagePath(), 'docs/source/CodeDocumentation')
 
 # files that call parseCommandLine or similar issues
 BAD_FILES = ('lfc_dfc_copy',
@@ -151,7 +151,7 @@ def getsubpackages(abspath, direc):
     if dire.lower() == 'docs' or '/docs' in dire.lower():
       LOG.debug('Skipping docs directory: %s/%s', abspath, dire)
       continue
-    if os.path.exists(os.path.join(PACKAGE_PATH, abspath, dire, '__init__.py')):
+    if os.path.exists(os.path.join(packagePath(), abspath, dire, '__init__.py')):
       packages.append(os.path.join(dire))
   return packages
 
@@ -174,7 +174,7 @@ def getmodules(abspath, _direc, files):
 
 def createDoc(buildtype="full"):
   """create the rst files for all the things we want them for"""
-  LOG.info('PACKAGE_PATH: %s', PACKAGE_PATH)
+  LOG.info('packagePath(): %s', packagePath())
   LOG.info('CODE_DOC_TARGET_PATH: %s', CODE_DOC_TARGET_PATH)
   LOG.info('Host: %s', socket.gethostname())
 
@@ -188,7 +188,7 @@ def createDoc(buildtype="full"):
   getCustomDocs()
 
   LOG.info('Now creating rst files')
-  for root, direc, files in os.walk(PACKAGE_PATH):
+  for root, direc, files in os.walk(packagePath()):
     configTemplate = [os.path.join(root, _) for _ in files if _ == 'ConfigTemplate.cfg']
     files = [_ for _ in files if _.endswith('.py')]
 
@@ -202,7 +202,7 @@ def createDoc(buildtype="full"):
       continue
 
     modulename = root.split('/')[-1]
-    abspath = root.split(PACKAGE_PATH)[1].strip('/')
+    abspath = root.split(packagePath())[1].strip('/')
     fullmodulename = BASE_MODULE_NAME + '.'.join(abspath.split('/'))
     packages = getsubpackages(abspath, direc)
     LOG.debug('Trying to create folder: %s', abspath)
@@ -256,7 +256,7 @@ def createDoc(buildtype="full"):
 
     os.chdir(CODE_DOC_TARGET_PATH)
 
-  shutil.copy(os.path.join(PACKAGE_PATH, 'dirac.cfg'), CODE_DOC_TARGET_PATH)
+  shutil.copy(os.path.join(packagePath(), 'dirac.cfg'), CODE_DOC_TARGET_PATH)
 
   return 0
 

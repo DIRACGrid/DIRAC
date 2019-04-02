@@ -8,7 +8,7 @@ import sys
 import subprocess
 import shlex
 
-from diracdoctools.Utilities import writeLinesToFile, mkdir, PACKAGE_PATH
+from diracdoctools.Utilities import writeLinesToFile, mkdir, packagePath
 
 # if true (-ddd on the command line) print also the content for all files
 SUPER_DEBUG = False
@@ -74,12 +74,12 @@ def runCommand(command):
 def getScripts():
   """Get all scripts in the Dirac System, split by type admin/wms/rms/other."""
   LOG.info('Looking for scripts')
-  if not os.path.exists(PACKAGE_PATH):
-    LOG.error('%s does not exist' % PACKAGE_PATH)
+  if not os.path.exists(packagePath()):
+    LOG.error('%s does not exist' % packagePath())
     raise RuntimeError('Package not found')
 
   # Get all scripts
-  scriptsPath = os.path.join(PACKAGE_PATH, '*', 'scripts', '*.py')
+  scriptsPath = os.path.join(packagePath(), '*', 'scripts', '*.py')
 
   # Get all scripts on scriptsPath and sorts them, this will make our life easier afterwards
   scripts = glob.glob(scriptsPath)
@@ -128,11 +128,11 @@ This page is the work in progress. See more material here soon !
     userIndexRST += '   %s/index\n' % systemString
 
     LOG.debug('Index file:\n%s', userIndexRST) if SUPER_DEBUG else None
-    sectionPath = os.path.join(PACKAGE_PATH, 'docs/source/UserGuide/CommandReference/', systemString)
+    sectionPath = os.path.join(packagePath(), 'docs/source/UserGuide/CommandReference/', systemString)
     mkdir(sectionPath)
     createSectionIndex(mT, sectionPath)
 
-  userIndexPath = os.path.join(PACKAGE_PATH, 'docs/source/UserGuide/CommandReference/index.rst')
+  userIndexPath = os.path.join(packagePath(), 'docs/source/UserGuide/CommandReference/index.rst')
   writeLinesToFile(userIndexPath, userIndexRST)
 
 
@@ -142,7 +142,7 @@ def createAdminGuideCommandReference():
   source/AdministratorGuide/CommandReference
   """
 
-  sectionPath = os.path.join(PACKAGE_PATH, 'docs/source/AdministratorGuide/CommandReference/')
+  sectionPath = os.path.join(packagePath(), 'docs/source/AdministratorGuide/CommandReference/')
 
   # read the script index
   with open(os.path.join(sectionPath, 'index.rst')) as adminIndexFile:
@@ -174,7 +174,7 @@ def cleanAdminGuideReference():
   """Make sure no superfluous commands are documented in the AdministratorGuide"""
   existingCommands = {os.path.basename(com).replace('.py', '') for mT in MARKERS_SECTIONS_SCRIPTS
                       for com in mT[2] + mT[3] if mT[1] == 'Admin'}
-  sectionPath = os.path.join(PACKAGE_PATH, 'docs/source/AdministratorGuide/CommandReference/')
+  sectionPath = os.path.join(packagePath(), 'docs/source/AdministratorGuide/CommandReference/')
   # read the script index
   documentedCommands = set()
   with open(os.path.join(sectionPath, 'index.rst')) as adminIndexFile:
