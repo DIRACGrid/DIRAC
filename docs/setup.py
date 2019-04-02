@@ -9,7 +9,7 @@ import glob
 from setuptools import setup, find_packages
 
 # Find the base dir where the setup.py lies
-base_dir = os.path.abspath(os.path.dirname(__file__))
+base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'diracdoctools'))
 
 # Take all the packages but the scripts and tests
 allPackages = find_packages(where=base_dir, exclude=["*test*", "*scripts*"])
@@ -20,11 +20,11 @@ print 'CHRIS allPackages %s' % allPackages
 # < module name : directory >
 # e.g. DIRAC.DataManagementSystem is base_dir/DataManagementSystem
 
-package_dir = dict(("diracdoctools.%s" % p, os.path.join(base_dir, p.replace('.', '/'))) for p in allPackages)
+package_dir = dict(("%s" % p, os.path.join(base_dir, p.replace('.', '/'))) for p in allPackages)
 print 'CHRIS package_dir %s' % package_dir
 
-# We also rename the packages so that they contain DIRAC
-allPackages = ['diracdoctools.%s' % p for p in allPackages]
+# We also rename the packages so that they contain diracdoctools
+allPackages = ['%s' % p for p in allPackages]
 print 'CHRIS allPackages %s' % allPackages
 
 # Artificially create the 'DIRAC' package
