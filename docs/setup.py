@@ -12,7 +12,7 @@ from setuptools import setup, find_packages
 base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 'diracdoctools'))
 print 'BASE DIR', base_dir
 # Take all the packages but the scripts and tests
-ALL_PACKAGES = find_packages(where=base_dir, exclude=["*test*", "*scripts*"])
+ALL_PACKAGES = find_packages(where=base_dir, exclude=['*test*'])
 print 'CHRIS allPackages %s' % ALL_PACKAGES
 
 # Because we want to have a 'DIRAC' base module and that the setup.py
@@ -33,14 +33,17 @@ ALL_PACKAGES.insert(0, 'diracdoctools')
 package_dir['diracdoctools'] = base_dir
 
 # The scripts to be distributed
-SCRIPTS = glob.glob('%s/scripts/*.py' % base_dir)
+SCRIPTS = []  # glob.glob('%s/scripts/*.py' % base_dir)
 print 'CHRIS scripts %s' % SCRIPTS
 setup(
-    name="diracdoctools",
-    version="6.19.0",
-    url="https://github.com/DIRACGRID/DIRAC/docs",
-    license="GPLv3",
+    name='diracdoctools',
+    version='6.19.0',
+    url='https://github.com/DIRACGRID/DIRAC/docs',
+    license='GPLv3',
     package_dir=package_dir,
     packages=ALL_PACKAGES,
     scripts=SCRIPTS,
+    entry_points={'console_scripts': ['dirac-docs-build-commands.py = diracdoctools.cmd.codeReference:run',
+                                      ],
+                  },
 )
