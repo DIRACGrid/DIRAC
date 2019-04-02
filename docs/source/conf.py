@@ -19,11 +19,12 @@ import os
 import sys
 import subprocess
 
+sys.path.insert(0, ".")
+
 import diracdoctools
 import diracdoctools.cmd
 from diracdoctools import fakeEnvironment, environmentSetup, DIRAC_DOC_MOCK_LIST
 from diracdoctools.Utilities import setUpReadTheDocsEnvironment
-sys.path.insert(0, ".")
 
 logging.basicConfig(level=logging.INFO, format='%(name)s: %(levelname)8s: %(message)s')
 LOG = logging.getLogger('conf.py')
