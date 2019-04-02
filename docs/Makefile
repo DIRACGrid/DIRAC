@@ -49,9 +49,9 @@ html:
 
 
 allhtml:
-	dirac-docs-build-commands.py
-	dirac-docs-build-code.py
-	dirac-docs-concatenate-diraccfg.py
+	diracdoctools/scripts/dirac-docs-build-commands.py
+	diracdoctools/scripts/dirac-docs-build-code.py
+	diracdoctools/scripts/dirac-docs-concatenate-diraccfg.py
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
