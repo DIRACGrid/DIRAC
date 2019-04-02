@@ -12,3 +12,4 @@ pytz
 psutil
 pyparsing
 GSI
+M2Crypto

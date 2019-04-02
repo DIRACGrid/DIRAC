@@ -58,7 +58,7 @@ if os.environ.get('READTHEDOCS') == 'True':
   buildtype = "limited" if any("singlehtml" in arg for arg in sys.argv) else "full"
   LOG.info('Chosing build type: %r', buildtype)
   from diracdoctools.cmd.codeReference import run as buildCodeDoc
-  buildCodeDoc(buildtype)
+  buildCodeDoc([buildtype])
 
   # Update dirac.cfg
   LOG.info('Concatenating dirac.cfg')
