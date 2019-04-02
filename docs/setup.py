@@ -31,10 +31,9 @@ print 'CHRIS allPackages %s' % ALL_PACKAGES
 # at the root
 ALL_PACKAGES.insert(0, 'diracdoctools')
 package_dir['diracdoctools'] = base_dir
-
 # The scripts to be distributed
-SCRIPTS = []  # glob.glob('%s/scripts/*.py' % base_dir)
-print 'CHRIS scripts %s' % SCRIPTS
+SCRIPTS = glob.glob('%s/scripts/*.py' % base_dir)
+
 setup(
     name='diracdoctools',
     version='6.19.0',
@@ -43,7 +42,10 @@ setup(
     package_dir=package_dir,
     packages=ALL_PACKAGES,
     scripts=SCRIPTS,
-    entry_points={'console_scripts': ['dirac-docs-build-commands.py = diracdoctools.cmd.codeReference:run',
-                                      ],
-                  },
+    entry_points={'console_scripts': [
+        'dirac-docs-build-commands.py = diracdoctools.cmd.codeReference:run',
+        'dirac-docs-concatenate-diraccfg.py = diracdoctools.cmd.concatcfg:run',
+        'dirac-docs-get-release-notes.py = diracdoctools.cmd.getrelnotes:run',
+        'dirac-docs-build-code.py = diracdoctools.cmd.codedoc:run',
+    ]},
 )
