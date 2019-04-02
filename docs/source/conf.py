@@ -13,23 +13,25 @@
 
 # pylint: disable=invalid-name
 
-from __future__ import print_function
+import logging
 import datetime
 import os
 import sys
 import subprocess
 
 from diracdoctools import fakeEnvironment, environmentSetup, DIRAC_DOC_MOCK_LIST
-
+from diracdoctools.Utilities import setUpReadTheDocsEnvironment
 sys.path.insert(0, ".")
 
+logging.basicConfig(level=logging.INFO, format='%(name)s: %(levelname)8s: %(message)s')
+LOG = logging.getLogger('conf.py')
 
 diracRelease = os.environ.get('DIRACVERSION', 'integration')
 if os.environ.get('READTHEDOCS') == 'True':
   diracRelease = os.path.basename(os.path.abspath("../../"))
   if diracRelease.startswith("rel-"):
     diracRelease = diracRelease[4:]
-print('conf.py: %s as DIRACVERSION' % diracRelease)
+LOG.info('DIRACVERSION is %r', diracRelease)
 
 #...............................................................................
 # configuration
@@ -39,56 +41,31 @@ print('conf.py: %s as DIRACVERSION' % diracRelease)
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 
 if os.environ.get('READTHEDOCS') == 'True':
-  sys.path.append(os.path.abspath('.'))
-  diracPath = os.path.abspath(os.path.join(os.getcwd(), "../.."))
-  print("DiracPath", diracPath)
-
-  buildfolder = "_build"
-  try:
-    os.mkdir(os.path.abspath("../" + buildfolder))
-  except BaseException:
-    pass
-
-  # We need to have the DIRAC module somewhere, or we cannot import it, as
-  # readtheDocs clones the repo into something based on the branchname
-  if not os.path.exists("../../DIRAC"):
-    diracLink = os.path.abspath(os.path.join(os.getcwd(), "../", buildfolder, "DIRAC"))
-    print("DiracLink", diracLink)
-    if not os.path.exists(diracLink):
-      RES = subprocess.check_output(["ln", "-s", diracPath, diracLink])
-    diracPath = os.path.abspath(os.path.join(diracLink, ".."))
-
-  sys.path.insert(0, diracPath)
-
-  for path in sys.path:
-    os.environ['PYTHONPATH'] = os.environ.get('PYTHONPATH', '') + ":" + path
-
-  os.environ["DIRAC"] = diracPath
-  print("DIRAC ENVIRON", os.environ["DIRAC"])
+  setUpReadTheDocsEnvironment()
 
   # re-create the RST files for the command references
   buildCommand = 'dirac-docs-build-commands.py'
   code = subprocess.Popen([buildCommand], env=os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
   stdout, err = code.communicate()
-  print("scriptDocs:", stdout)
-  print("scriptErrs:", err)
+  LOG.info('stdout command ref: %s', stdout)
+  LOG.info('stderr command ref: %s', err)
 
-  ##singlehtml build needs too much memory, so we need to create less code documentation
+  # singlehtml build needs too much memory, so we need to create less code documentation
   buildtype = "limited" if any("singlehtml" in arg for arg in sys.argv) else "full"
-  print("Chosing build type:", buildtype)
+  LOG.info('Chosing build type: %r', buildtype)
   buildCommand = 'dirac-docs-build-code.py'
   code = subprocess.Popen([buildCommand, buildtype],
                           env=os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
   stdout, err = code.communicate()
-  print('codeDoc Output', stdout)
-  print('codeDoc Error', err)
+  LOG.info('stdout codeDoc: %s', stdout)
+  LOG.info('stderr codeDoc: %s', err)
 
-#Update dirac.cfg
-buildCommand = 'dirac-docs-concatenate-diraccfg.py'
-code = subprocess.Popen([buildCommand], env=os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-stdout, err = code.communicate()
-print("Config Output", stdout)
-print("Config Error", err)
+  # Update dirac.cfg
+  buildCommand = 'dirac-docs-concatenate-diraccfg.py'
+  code = subprocess.Popen([buildCommand], env=os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+  stdout, err = code.communicate()
+  LOG.info('stdout Config: %s', stdout)
+  LOG.info('stderr Config: %s', err)
 
 # -- General configuration -----------------------------------------------------
 
