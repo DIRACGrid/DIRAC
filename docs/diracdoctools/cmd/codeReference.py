@@ -319,7 +319,11 @@ def createCodeDocIndex(subpackages, modules, buildtype="full"):
 def checkBuildTypeAndRun(arguments):
   """Check for input argument and then create the doc rst files."""
   buildtypes = ('full', 'limited')
-  buildtype = 'full' if len(arguments) <= 1 else arguments[1]
+  buildtype = 'full'
+  if isinstance(arguments, str):
+    buildtype = arguments
+  else:
+    buildtype = 'full' if len(arguments) <= 1 else arguments[1]
   if buildtype not in buildtypes:
     LOG.error('Unknown build type: %s use %s ', buildtype, ' '.join(buildtypes))
     return 1
