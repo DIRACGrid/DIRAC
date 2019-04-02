@@ -41,7 +41,7 @@ setup(
     packages=ALL_PACKAGES,
     scripts=SCRIPTS,
     # entry_points={'console_scripts': [
-    #   'dirac-docs-build-commands.py = diracdoctools.cmd.codeReference:run',
+    #   'dirac-docs-build-commands.py = diracdoctools.cmd.commandReference:run',
     #   'dirac-docs-concatenate-diraccfg.py = diracdoctools.cmd.concatcfg:run',
     #   'dirac-docs-get-release-notes.py = diracdoctools.cmd.getrelnotes:run',
     #   'dirac-docs-build-code.py = diracdoctools.cmd.codedoc:run',

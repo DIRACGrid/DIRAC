@@ -1,3 +1,4 @@
+"""Module to create command references for DIRAC."""
 import ast
 import logging
 import glob

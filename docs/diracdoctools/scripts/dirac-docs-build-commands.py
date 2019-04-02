@@ -7,6 +7,6 @@
 """
 import sys
 
-from diracdoctools.cmd.codeReference import run
+from diracdoctools.cmd.commandReference import run
 
 sys.exit(run())
