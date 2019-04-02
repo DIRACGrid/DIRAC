@@ -50,6 +50,7 @@ if os.environ.get('READTHEDOCS') == 'True':
   setUpReadTheDocsEnvironment()
 
   # re-create the RST files for the command references
+  LOG.info('Building command reference')
   from diracdoctools.cmd.commandReference import run as buildCommandReference
   buildCommandReference()
 
@@ -60,6 +61,7 @@ if os.environ.get('READTHEDOCS') == 'True':
   buildCodeDoc(buildtype)
 
   # Update dirac.cfg
+  LOG.info('Concatenating dirac.cfg')
   from diracdoctools.cmd.concatcfg import updateCompleteDiracCFG
   updateCompleteDiracCFG()
 

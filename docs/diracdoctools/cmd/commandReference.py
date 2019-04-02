@@ -73,7 +73,7 @@ def runCommand(command):
 
 def getScripts():
   """Get all scripts in the Dirac System, split by type admin/wms/rms/other."""
-
+  LOG.info('Looking for scripts')
   if not os.path.exists(PACKAGE_PATH):
     LOG.error('%s does not exist' % PACKAGE_PATH)
     raise RuntimeError('Package not found')
