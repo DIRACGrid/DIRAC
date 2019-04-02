@@ -336,10 +336,9 @@ def getContentFromScriptDoc(scriptRSTPath, marker):
   return '\n'.join(content)
 
 
-def run():
+def run(arguments=sys.argv):
   """Create the rst files right in the source tree of the docs."""
   global SUPER_DEBUG
-  arguments = sys.argv
   if '-ddd' in ''.join(arguments):
     LOG.setLevel(logging.DEBUG)
     SUPER_DEBUG = True
