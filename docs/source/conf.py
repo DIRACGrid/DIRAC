@@ -44,24 +44,18 @@ if os.environ.get('READTHEDOCS') == 'True':
   setUpReadTheDocsEnvironment()
 
   # re-create the RST files for the command references
-  from diracdoctools.cmd.commandReference import run
+  from diracdoctools.cmd.commandReference import run as buildCommandReference
+  buildCommandReference()
 
   # singlehtml build needs too much memory, so we need to create less code documentation
   buildtype = "limited" if any("singlehtml" in arg for arg in sys.argv) else "full"
   LOG.info('Chosing build type: %r', buildtype)
-  # buildCommand = 'dirac-docs-build-code.py'
-  # code = subprocess.Popen([buildCommand, buildtype],
-  #                         env=os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-  # stdout, err = code.communicate()
-  from diracdoctools.cmd.codeReference import run
-  run(buildtype)
+  from diracdoctools.cmd.codeReference import run as buildCodeDoc
+  buildCodeDoc(buildtype)
 
   # Update dirac.cfg
-  buildCommand = 'dirac-docs-concatenate-diraccfg.py'
-  code = subprocess.Popen([buildCommand], env=os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-  stdout, err = code.communicate()
-  LOG.info('stdout Config: %s', stdout)
-  LOG.info('stderr Config: %s', err)
+  from diracdoctools.cmd.concatcfg import updateCompleteDiracCFG
+  updateCompleteDiracCFG()
 
 # -- General configuration -----------------------------------------------------
 
