@@ -180,6 +180,7 @@ def createDoc(buildtype="full"):
 
   # we need to replace existing rst files so we can decide how much code-doc to create
   if os.path.exists(CODE_DOC_TARGET_PATH) and os.environ.get('READTHEDOCS', 'False') == 'True':
+    LOG.info('Removing existing code documentation')
     shutil.rmtree(CODE_DOC_TARGET_PATH)
   mkdir(CODE_DOC_TARGET_PATH)
   os.chdir(CODE_DOC_TARGET_PATH)

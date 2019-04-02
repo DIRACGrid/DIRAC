@@ -72,5 +72,7 @@ Local_*
 # this is auto generated
 docs/source/CodeDocumentation/
 docs/source/AdministratorGuide/Configuration/ExampleConfig.rst
+docs/source/AdministratorGuide/CommandReference
+docs/source/UserGuide/CommandReference
 docs/_build
 docs/source/_build
