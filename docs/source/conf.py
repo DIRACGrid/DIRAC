@@ -19,6 +19,8 @@ import os
 import sys
 import subprocess
 
+import diracdoctools
+import diracdoctools.cmd
 from diracdoctools import fakeEnvironment, environmentSetup, DIRAC_DOC_MOCK_LIST
 from diracdoctools.Utilities import setUpReadTheDocsEnvironment
 sys.path.insert(0, ".")
@@ -33,6 +35,10 @@ if os.environ.get('READTHEDOCS') == 'True':
     diracRelease = diracRelease[4:]
 LOG.info('DIRACVERSION is %r', diracRelease)
 
+LOG.info('Current location %r', os.getcwd())
+LOG.info('DiracDocTools location %r', diracdoctools.__file__)
+LOG.info('DiracDocTools location %r', diracdoctools.Utilities.__file__)
+LOG.info('DiracDocTools location %r', diracdoctools.cmd.__file__)
 #...............................................................................
 # configuration
 
