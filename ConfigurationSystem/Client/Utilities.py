@@ -11,6 +11,8 @@
   getSEUpdates
 """
 
+__RCSID__ = "$Id$"
+
 import re
 import types
 import socket
@@ -23,8 +25,6 @@ from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getDIRACSiteName, getDIR
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOs, getVOOption
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
-
-__RCSID__ = "$Id$"
 
 
 def getGridVOs():
@@ -151,6 +151,9 @@ def getSiteUpdates(vo, bdiiInfo=None, log=None):
 
   def addToChangeSet(entry, changeSet):
     """ Inner function to update changeSet with entry (a tuple)
+
+        :param tuple entry: entry to add to changeSet
+        :param set changeSet: set collecting stuff to change
     """
     _section, _option, value, new_value = entry
     if new_value and new_value != value:
@@ -209,7 +212,7 @@ def getSiteUpdates(vo, bdiiInfo=None, log=None):
           ceDict = result['Value']
         else:
           if ceBdiiDict[site]['CEs'].get(ce, None):
-            log.notice("Adding new CE %s to site %s/%s" % (ce, siteName, site))
+            log.notice("Adding new CE", "%s to site %s/%s" % (ce, siteName, site))
         ceInfo = ceBdiiDict[site]['CEs'].get(ce, None)
         if ceInfo is None:
           ceType = ceDict.get('CEType', '')
@@ -269,7 +272,7 @@ def getSiteUpdates(vo, bdiiInfo=None, log=None):
             queueDict = result['Value']
           else:
             if queueStatus.lower() == "production":
-              log.notice("Adding new queue %s to CE %s" % (queue, ce))
+              log.notice("Adding new queue", "%s to CE %s" % (queue, ce))
             else:
               continue
 
