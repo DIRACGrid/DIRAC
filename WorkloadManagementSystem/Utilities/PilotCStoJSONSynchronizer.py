@@ -184,7 +184,8 @@ class PilotCStoJSONSynchronizer(object):
       usersInGroup = usersString.split(',')
       DNs = [gConfig.getValue('/Registry/Users/' + user + '/DN') for user in usersInGroup]
       return S_OK(DNs)
-    except AttributeError:
+    except AttributeError as ae:
+      gLogger.exception("Error occured while getting the DNs", lException=ae)
       return S_ERROR('Some error occured while getting the DNs.')
 
   def _getPilotOptionsPerSetup(self, setup, pilotDict):
