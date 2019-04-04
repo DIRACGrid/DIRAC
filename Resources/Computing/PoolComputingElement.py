@@ -194,6 +194,40 @@ class PoolComputingElement(ComputingElement):
     result['AvailableProcessors'] = self.processors - processorsInUse
     return result
 
+  def getDescription(self):
+    """ Get CE description as a dictionary
+    """
+    result = super(PoolComputingElement, self).getDescription()
+    if not result['OK']:
+      return result
+    ceDict = result['Value']
+
+    ceDictList = []
+    if self.ceParameters.get('MultiProcessorStrategy'):
+      strategyRequiredTags = []
+      if not ceDict.get("ProcessorsInUse", 0):
+        # We are starting from a clean page, try to get the most demanding
+        # jobs first
+        strategyRequiredTags.append(['WholeNode'])
+      processors = ceDict.get('NumberOfProcessors', 0)
+      if processors > 1:
+        # We have several processors at hand, try to use most of them
+        strategyRequiredTags.append(['%dProcessors' % processors])
+        # Well, at least jobs with some processors requirement
+        strategyRequiredTags.append(['MultiProcessor'])
+      # Do not require anything special if nothing else was lucky
+      strategyRequiredTags.append([])
+
+      for strat in strategyRequiredTags:
+        newCEDict = dict(ceDict)
+        newCEDict.setdefault("RequiredTag", []).extend(strat)
+        ceDictList.append(newCEDict)
+
+    # Do not require anything special if nothing else was lucky
+    ceDictList.append(dict(ceDict))
+
+    return S_OK(ceDictList)
+
   #############################################################################
   def monitorProxy(self, pilotProxy, payloadProxy):
     """ Monitor the payload proxy and renew as necessary.
