@@ -350,15 +350,16 @@ used to fail jobs due to the optimizer chain.
         endTime = lastHeartBeatTime
 
       result = JobMonitoringClient().getJobParameter(jobID, 'CPUNormalizationFactor')
-      if not result['OK']:
+      if not result['OK'] or not result['Value']:
         self.log.error('Error getting Job Parameter CPUNormalizationFactor, setting 0', result['Message'])
         cpuNormalization = 0.0
       else:
         cpuNormalization = float(result['Value'].get('CPUNormalizationFactor'))
 
-    except Exception:
-      self.log.exception("Exception in __sendAccounting for job %s: endTime=%s, lastHBTime %s" %
-                         (str(jobID), str(endTime), str(lastHeartBeatTime)), '', False)
+    except Exception as e:
+      self.log.exception("Exception in __sendAccounting",
+                         "for job=%s: endTime=%s, lastHBTime=%s" % (str(jobID), str(endTime), str(lastHeartBeatTime)),
+                         lException=e)
       return S_ERROR("Exception")
 
     processingType = self.__getProcessingType(jobID)
