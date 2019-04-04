@@ -177,6 +177,7 @@ class PilotCStoJSONSynchronizer(object):
 
   def _getDNs(self, certGroupName):
     '''Returns DN list of users in given group.
+
     :param certGroupName: name of the group.
     :returns: S_OK with the list of DNs if successful, S_ERROR otherwise'''
     try:
