@@ -215,8 +215,6 @@ class PoolComputingElement(ComputingElement):
         strategyRequiredTags.append(['%dProcessors' % processors])
         # Well, at least jobs with some processors requirement
         strategyRequiredTags.append(['MultiProcessor'])
-      # Do not require anything special if nothing else was lucky
-      strategyRequiredTags.append([])
 
       for strat in strategyRequiredTags:
         newCEDict = dict(ceDict)
