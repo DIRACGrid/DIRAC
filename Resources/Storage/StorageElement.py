@@ -370,7 +370,7 @@ class StorageElementItem(object):
         It loops over the different Storage Plugins to query it.
 
         :params occupancyLFN: (named param) LFN where to find the space reporting json file on the storage
-                              The json file should contain the Free and Total space in MB.
+                              The json file should contain the Free and Total space in B.
                               If not specified, the default path will be </vo/occupancy.json>
 
         :returns: S_OK with dict (keys: Total, Free)
@@ -393,7 +393,7 @@ class StorageElementItem(object):
     # Try all of the storages one by one
     for storage in filteredPlugins:
 
-      # The result of the plugin is always in MB
+      # The result of the plugin is always in B
       res = storage.getOccupancy(**kwargs)
       if res['OK']:
         occupancyDict = res['Value']
@@ -403,9 +403,10 @@ class StorageElementItem(object):
           log.verbose("Missing mandatory parameters", mandatoryParams - set(occupancyDict))
           continue
 
-        if unit != 'MB':
+        # Since plugins return Bytes, we do not need to convert if that's what we want
+        if unit != 'B':
           for space in ['Total', 'Free']:
-            convertedSpace = convertSizeUnits(occupancyDict[space], 'MB', unit)
+            convertedSpace = convertSizeUnits(occupancyDict[space], 'B', unit)
             # If we have a conversion error, we go to the next plugin
             if convertedSpace == -sys.maxsize:
               log.verbose(
