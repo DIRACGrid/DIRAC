@@ -9,26 +9,30 @@ LOG = logging.getLogger(__name__)
 # name of the Package
 BASE_MODULE_NAME = 'DIRAC'
 
+# Need a way to configure so that the scripts can pick up the proper paths, or lists. Can we find a
+# way which makes it possible to inherit? Is it necessary to inherit this configuration?
+# Create a class, which parses config and passes it on to the scripts
+
 # Location where we can find CustomizedDocs
 CODE_CUSTOM_DOCS_FOLDER = os.path.join(os.path.basename(__file__), 'CustomizedDocs/')
 
-# Add private members in autodoc
-CODE_FORCE_ADD_PRIVATE = ['FCConditionParser']
+# # Add private members in autodoc
+# CODE_FORCE_ADD_PRIVATE = ['FCConditionParser']
 
-# inherited functions give warnings in docstrings
-CODE_NO_INHERITED = []
+# # inherited functions give warnings in docstrings
+# CODE_NO_INHERITED = []
 
-# where in doc the code documentation ends up
-CODE_DOC_TARGET_PATH = os.path.join(packagePath(), 'docs/source/CodeDocumentation')
+# # where in doc the code documentation ends up
+# CODE_DOC_TARGET_PATH = os.path.join(packagePath(), 'docs/source/CodeDocumentation')
 
-# files that call parseCommandLine or similar issues
-CODE_BAD_FILES = ('lfc_dfc_copy',
-                  'lfc_dfc_db_copy',
-                  'JobWrapperTemplate',
-                  'PlotCache',  # PlotCache creates a thread on import, which keeps sphinx from exiting
-                  'PlottingHandler',
-                  'setup.py',  # configuration for style check
-                  )
+# # files that call parseCommandLine or similar issues
+# CODE_BAD_FILES = ('lfc_dfc_copy',
+#                   'lfc_dfc_db_copy',
+#                   'JobWrapperTemplate',
+#                   'PlotCache',  # PlotCache creates a thread on import, which keeps sphinx from exiting
+#                   'PlottingHandler',
+#                   'setup.py',  # configuration for style check
+#                   )
 
 
 # list of commands: get the module docstring from the file to add to the docstring
@@ -63,11 +67,6 @@ COMMANDS_MARKERS_SECTIONS_SCRIPTS = [
 ]
 
 
-def packagePath():
-  """Where the source code can be found."""
-  return os.path.join(os.environ.get('DIRAC', ''), BASE_MODULE_NAME)
-
-
 def mkdir(folder):
   """Create a folder, ignore if it exists.
 
@@ -97,10 +96,10 @@ def writeLinesToFile(filename, lines):
       oldContent = ''.join(oldFile.readlines())
   if oldContent is None or oldContent != newContent:
     with open(filename, 'w') as rst:
-      LOG.info('Writing new content for %s', filename)
+      LOG.info('Writing new content for %s', os.path.join(os.getcwd(), filename))
       rst.write(newContent)
   else:
-    LOG.debug('Not updating file content for %s', filename)
+    LOG.debug('Not updating file content for %s', os.path.join(os.getcwd(), filename))
 
 
 def setUpReadTheDocsEnvironment():
