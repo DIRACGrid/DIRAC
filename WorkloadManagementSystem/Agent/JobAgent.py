@@ -18,12 +18,12 @@ from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Utilities.TimeLeft.TimeLeft import TimeLeft
 from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Security import Properties
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
 from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
+from DIRAC.WorkloadManagementSystem.Client.WMSAdministratorClient import WMSAdministratorClient
 from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
 from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
 from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
@@ -607,7 +607,7 @@ class JobAgent(AgentModule):
 
     gridCE = gConfig.getValue('/LocalSite/GridCE', '')
     queue = gConfig.getValue('/LocalSite/CEQueue', '')
-    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
+    wmsAdmin = WMSAdministratorClient()
     result = wmsAdmin.setPilotStatus(str(self.pilotReference), 'Done', gridCE,
                                      'Report from JobAgent', self.siteName, queue)
     if not result['OK']:

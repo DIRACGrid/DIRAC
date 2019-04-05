@@ -3,7 +3,10 @@
 # Author : Ricardo Graciani
 ########################################################################
 """
-  Provide uniform interface to backend for local and remote clients (ie Director Agents)
+  Provide uniform interface to backend for local and remote clients.return
+
+  There's a pretty big assumption here: that DB and Handler expose the same calls, with identical signatures.return
+  This is (and maybe shouldn't) be the case.
 """
 
 __RCSID__ = "$Id$"
@@ -37,16 +40,6 @@ def getPilotAgentsDB():
   return getDBOrClient(PilotAgentsDB, serverName)
 
 
-def getTaskQueueDB():
-  serverName = 'WorkloadManagement/Matcher'
-  TaskQueueDB = None
-  try:
-    from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
-  except BaseException:
-    pass
-  return getDBOrClient(TaskQueueDB, serverName)
-
-
 def getJobDB():
   serverName = 'WorkloadManagement/WMSAdministrator'
   JobDB = None
@@ -58,5 +51,4 @@ def getJobDB():
 
 
 pilotAgentsDB = getPilotAgentsDB()
-taskQueueDB = getTaskQueueDB()
 jobDB = getJobDB()
