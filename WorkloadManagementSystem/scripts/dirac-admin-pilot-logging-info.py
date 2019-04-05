@@ -54,27 +54,23 @@ def printPilotsLogging(logs):
 
 
 from DIRAC.WorkloadManagementSystem.Client.PilotsLoggingClient import PilotsLoggingClient
+from DIRAC.WorkloadManagementSystem.Client.WMSAdministratorClient import WMSAdministratorClient
 
 if uuid:
-  pilotsLogging = PilotsLoggingClient()
-  result = pilotsLogging.getPilotsLogging(uuid)
+  result = PilotsLoggingClient().getPilotsLogging(uuid)
   if not result['OK']:
     print 'ERROR: %s' % result['Message']
     DIRAC.exit(1)
   printPilotsLogging(result['Value'])
   DIRAC.exit(0)
 else:
-  pilotsLogging = PilotsLoggingClient()
-  pilots = pilotAgentsDB.getPilotsForJobID(jobid)
-  if not pilots['OK']:
-    print pilots['Message']
-  for pilotID in pilots:
-    info = pilotAgentsDB.getPilotInfo(pilotID)
-    if not info['OK']:
-      print info['Message']
-    for pilot in info['Value']:
-      logging = pilotsLogging.getPilotsLogging(pilot['PilotJobReference'])
-      if not logging['OK']:
-        print logging['Message']
-      printPilotsLogging(logging)
+  info = WMSAdministratorClient().getPilots(jobid)
+  if not info['OK']:
+    print info['Message']
+    DIRAC.exit(1)
+  for pilot in info['Value']:
+    logging = PilotsLoggingClient().getPilotsLogging(pilot['PilotJobReference'])
+    if not logging['OK']:
+      print logging['Message']
+    printPilotsLogging(logging)
   DIRAC.exit(0)
