@@ -17,7 +17,6 @@ import logging
 import datetime
 import os
 import sys
-import subprocess
 
 sys.path.insert(0, ".")
 
