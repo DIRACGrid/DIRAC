@@ -9,28 +9,12 @@ import glob
 
 
 import diracdoctools
-from diracdoctools.Utilities import writeLinesToFile, mkdir, BASE_MODULE_NAME, packagePath
+from diracdoctools.Utilities import writeLinesToFile, mkdir, BASE_MODULE_NAME, packagePath, CODE_CUSTOM_DOCS_FOLDER, \
+    CODE_DOC_TARGET_PATH, CODE_BAD_FILES, CODE_FORCE_ADD_PRIVATE, CODE_NO_INHERITED
+
 
 logging.basicConfig(level=logging.INFO, format='%(name)s: %(levelname)8s: %(message)s')
 LOG = logging.getLogger('MakeDoc')
-
-
-# where in doc the code documentation ends up
-CODE_DOC_TARGET_PATH = os.path.join(packagePath(), 'docs/source/CodeDocumentation')
-
-# files that call parseCommandLine or similar issues
-BAD_FILES = ('lfc_dfc_copy',
-             'lfc_dfc_db_copy',
-             'JobWrapperTemplate',
-             'PlotCache',  # PlotCache creates a thread on import, which keeps sphinx from exiting
-             'PlottingHandler',
-             'setup.py',  # configuration for style check
-             )
-
-FORCE_ADD_PRIVATE = ['FCConditionParser']
-
-# inherited functions give warnings in docstrings
-NO_INHERITED = []
 
 # global used inside the CustomizedDocs modules
 CUSTOMIZED_DOCSTRINGS = {}
@@ -41,7 +25,7 @@ def getCustomDocs():
 
   Use 'exec' to avoid a lot of relative import, pylint errors, etc.
   """
-  customizedPath = os.path.join(diracdoctools.__file__, '/CustomizedDocs/*.py')
+  customizedPath = os.path.join(CODE_CUSTOM_DOCS_FOLDER, '*.py')
   LOG.info('Looking for custom strings in %s', customizedPath)
   for filename in glob.glob(customizedPath):
     LOG.info('Found customization: %s', filename)
@@ -119,11 +103,11 @@ def mkModuleRst(classname, fullclassname, buildtype='full'):
   lines.append('.. automodule:: %s' % fullclassname)
   if buildtype == 'full':
     lines.append('   :members:')
-    if classname not in NO_INHERITED:
+    if classname not in CODE_NO_INHERITED:
       lines.append('   :inherited-members:')
     lines.append('   :undoc-members:')
     lines.append('   :show-inheritance:')
-    if classname in FORCE_ADD_PRIVATE:
+    if classname in CODE_FORCE_ADD_PRIVATE:
       lines.append('   :special-members:')
       lines.append('   :private-members:')
     else:
@@ -234,7 +218,7 @@ def createDoc(buildtype="full"):
     for filename in files:
       # Skip things that call parseCommandLine or similar issues
       fullclassname = '.'.join(abspath.split('/') + [filename])
-      if any(f in filename for f in BAD_FILES):
+      if any(f in filename for f in CODE_BAD_FILES):
         LOG.debug('Creating dummy for  file %r', filename)
         mkDummyRest(filename.split('.py')[0], fullclassname.split('.py')[0])
         continue

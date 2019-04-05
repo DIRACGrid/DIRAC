@@ -8,7 +8,8 @@ import sys
 import subprocess
 import shlex
 
-from diracdoctools.Utilities import writeLinesToFile, mkdir, packagePath
+from diracdoctools.Utilities import writeLinesToFile, mkdir, packagePath, runCommand, \
+    COMMANDS_BAD_SCRIPTS, COMMANDS_GET_MOD_STRING, COMMANDS_MARKERS_SECTIONS_SCRIPTS
 
 # if true (-ddd on the command line) print also the content for all files
 SUPER_DEBUG = False
@@ -16,59 +17,7 @@ SUPER_DEBUG = False
 logging.basicConfig(level=logging.INFO, format='%(name)s: %(levelname)8s: %(message)s', stream=sys.stdout)
 LOG = logging.getLogger('ScriptDoc')
 
-# Scripts that either do not have -h, are obsolete or cause havoc when called
-BAD_SCRIPTS = ['dirac-deploy-scripts',  # does not have --help, deploys scripts
-               'dirac-compile-externals',  # does not have --help, starts compiling externals
-               'dirac-install-client',  # does not have --help
-               'dirac-framework-self-ping',  # does not have --help
-               'dirac-dms-add-files',  # obsolete
-               'dirac-version',  # just prints version, no help
-               'dirac-platform',  # just prints platform, no help
-               'dirac-agent',  # no doc, purely internal use
-               'dirac-executor',  # no doc, purely internal use
-               'dirac-service',  # no doc, purely internal use
-               ]
-
-
-# list of commands: get the module docstring from the file to add to the docstring
-GET_MOD_STRING = ['dirac-install',
-                  ]
-
-
-# tuples: list of patterns to match in script names,
-#         Title of the index file
-#         list of script names
-#         list of patterns to reject scripts
-MARKERS_SECTIONS_SCRIPTS = [(['dms'],
-                             'Data Management', [], []),
-                            (['wms'], 'Workload Management', [], []),
-                            (['dirac-proxy', 'dirac-info', 'myproxy'],
-                             'Others', [], ['dirac-cert-convert.sh', 'dirac-platform', 'dirac-version']),
-                            # (['rss'],'Resource Status Management', [], []),
-                            #  (['rms'],'Request Management', [], []),
-                            # (['stager'],'Storage Management', [], []),
-                            # (['transformation'], 'Transformation Management', [], []),
-                            (['admin', 'accounting', 'FrameworkSystem', 'framework', 'install', 'utils',
-                              'dirac-repo-monitor', 'dirac-jobexec', 'dirac-info',
-                              'ConfigurationSystem', 'Core', 'rss', 'transformation', 'stager'], 'Admin',
-                             [], ['dirac-cert-convert.sh', 'dirac-platform', 'dirac-version']),
-                            # ([''], 'CatchAll', [], []),
-                            ]
-
 EXITCODE = 0
-
-
-def runCommand(command):
-  """Execute shell command, return output, catch exceptions."""
-  try:
-    result = subprocess.check_output(shlex.split(command), stderr=subprocess.STDOUT)
-    if 'NOTICE:' in result:
-      LOG.warn('NOTICE in output for: %s', command)
-      return ''
-    return result
-  except (OSError, subprocess.CalledProcessError) as e:
-    LOG.error('Error when runnning command %s: %r', command, e.output)
-    return ''
 
 
 def getScripts():
@@ -90,7 +39,7 @@ def getScripts():
       LOG.debug('Ignoring init file %s', scriptPath)
       continue
 
-    for mT in MARKERS_SECTIONS_SCRIPTS:
+    for mT in COMMANDS_MARKERS_SECTIONS_SCRIPTS:
       if any(pattern in scriptPath for pattern in mT[0]) and \
          not any(pattern in scriptPath for pattern in mT[3]):
         mT[2].append(scriptPath)
@@ -120,7 +69,7 @@ This page is the work in progress. See more material here soon !
 
 """.lstrip()
 
-  for mT in MARKERS_SECTIONS_SCRIPTS:
+  for mT in COMMANDS_MARKERS_SECTIONS_SCRIPTS:
     system = mT[1]
     if system == 'Admin':
       continue
@@ -150,7 +99,7 @@ def createAdminGuideCommandReference():
 
   # find the list of admin scripts
   mT = ([], '', [])
-  for mT in MARKERS_SECTIONS_SCRIPTS:
+  for mT in COMMANDS_MARKERS_SECTIONS_SCRIPTS:
     if mT[1] == 'Admin':
       break
 
@@ -172,7 +121,7 @@ def createAdminGuideCommandReference():
 
 def cleanAdminGuideReference():
   """Make sure no superfluous commands are documented in the AdministratorGuide"""
-  existingCommands = {os.path.basename(com).replace('.py', '') for mT in MARKERS_SECTIONS_SCRIPTS
+  existingCommands = {os.path.basename(com).replace('.py', '') for mT in COMMANDS_MARKERS_SECTIONS_SCRIPTS
                       for com in mT[2] + mT[3] if mT[1] == 'Admin'}
   sectionPath = os.path.join(packagePath(), 'docs/source/AdministratorGuide/CommandReference/')
   # read the script index
@@ -235,7 +184,7 @@ def createScriptDocFiles(script, sectionPath, scriptName, referencePrefix=''):
   Folders and indices already exist, just call the scripts and get the help messages. Format the help message.
 
   """
-  if scriptName in BAD_SCRIPTS:
+  if scriptName in COMMANDS_BAD_SCRIPTS:
     return False
 
   LOG.info("Creating Doc for %s", scriptName)
@@ -280,7 +229,7 @@ def createScriptDocFiles(script, sectionPath, scriptName, referencePrefix=''):
   fileContent = '\n'.join(rstLines).strip() + '\n'
 
   for index, marker in enumerate(['example', '.. note::']):
-    if scriptName in GET_MOD_STRING:
+    if scriptName in COMMANDS_GET_MOD_STRING:
       if index == 0:
         content = getContentFromModuleDocstring(script)
         fileContent += '\n' + content.strip() + '\n'
