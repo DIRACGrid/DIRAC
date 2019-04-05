@@ -8,9 +8,10 @@ import logging
 import glob
 
 
-import diracdoctools
-from diracdoctools.Utilities import writeLinesToFile, mkdir, BASE_MODULE_NAME, packagePath, CODE_CUSTOM_DOCS_FOLDER, \
-    CODE_DOC_TARGET_PATH, CODE_BAD_FILES, CODE_FORCE_ADD_PRIVATE, CODE_NO_INHERITED
+from diracdoctools.Utilities import writeLinesToFile, mkdir
+from diracdoctools.Utilities import BASE_MODULE_NAME, packagePath
+from diracdoctools.Utilities import CODE_CUSTOM_DOCS_FOLDER, CODE_DOC_TARGET_PATH, CODE_BAD_FILES, \
+    CODE_FORCE_ADD_PRIVATE, CODE_NO_INHERITED
 
 
 logging.basicConfig(level=logging.INFO, format='%(name)s: %(levelname)8s: %(message)s')

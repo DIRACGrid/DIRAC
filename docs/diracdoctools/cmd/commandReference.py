@@ -8,8 +8,9 @@ import sys
 import subprocess
 import shlex
 
-from diracdoctools.Utilities import writeLinesToFile, mkdir, packagePath, runCommand, \
-    COMMANDS_BAD_SCRIPTS, COMMANDS_GET_MOD_STRING, COMMANDS_MARKERS_SECTIONS_SCRIPTS
+from diracdoctools.Utilities import writeLinesToFile, mkdir, runCommand
+from diracdoctools.Utilities import packagePath
+from diracdoctools.Utilities import COMMANDS_BAD_SCRIPTS, COMMANDS_GET_MOD_STRING, COMMANDS_MARKERS_SECTIONS_SCRIPTS
 
 # if true (-ddd on the command line) print also the content for all files
 SUPER_DEBUG = False
