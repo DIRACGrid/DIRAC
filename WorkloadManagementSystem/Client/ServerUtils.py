@@ -5,8 +5,8 @@
 """
   Provide uniform interface to backend for local and remote clients.return
 
-  There's a pretty big assumption here: that DB and Handler expose the same calls, with identical signatures.return
-  This is (and maybe shouldn't) be the case.
+  There's a pretty big assumption here: that DB and Handler expose the same calls, with identical signatures.
+  This is not exactly the case for WMS DBs and services.
 """
 
 __RCSID__ = "$Id$"
@@ -40,15 +40,4 @@ def getPilotAgentsDB():
   return getDBOrClient(PilotAgentsDB, serverName)
 
 
-def getJobDB():
-  serverName = 'WorkloadManagement/WMSAdministrator'
-  JobDB = None
-  try:
-    from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
-  except BaseException:
-    pass
-  return getDBOrClient(JobDB, serverName)
-
-
 pilotAgentsDB = getPilotAgentsDB()
-jobDB = getJobDB()

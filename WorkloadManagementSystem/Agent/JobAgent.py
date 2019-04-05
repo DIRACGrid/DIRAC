@@ -607,9 +607,8 @@ class JobAgent(AgentModule):
 
     gridCE = gConfig.getValue('/LocalSite/GridCE', '')
     queue = gConfig.getValue('/LocalSite/CEQueue', '')
-    wmsAdmin = WMSAdministratorClient()
-    result = wmsAdmin.setPilotStatus(str(self.pilotReference), 'Done', gridCE,
-                                     'Report from JobAgent', self.siteName, queue)
+    result = WMSAdministratorClient().setPilotStatus(str(self.pilotReference), 'Done', gridCE,
+                                                     'Report from JobAgent', self.siteName, queue)
     if not result['OK']:
       self.log.warn(result['Message'])
 

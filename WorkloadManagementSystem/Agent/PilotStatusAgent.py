@@ -115,8 +115,7 @@ class PilotStatusAgent(AgentModule):
     refList = result['Value']
 
     for pilotRef in refList:
-      # FIXME: definitely, one of the 2 lines below is wrong...
-      self.log.info('Setting Waiting pilot to Aborted: %s' % pilotRef)
+      self.log.info('Setting Waiting pilot to Stalled: %s' % pilotRef)
       result = self.pilotDB.setPilotStatus(pilotRef, 'Stalled', statusReason='Exceeded max waiting time')
 
     return S_OK()

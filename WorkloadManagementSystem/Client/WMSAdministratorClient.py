@@ -11,6 +11,7 @@ class WMSAdministratorClient(Client):
   def __init__(self, url=None, **kwargs):
     """
     Sets URL for WMSAdministrator handler
+
     :param self: self reference
     :param url: url of the WMSAdministratorHandler
     :param kwargs: forwarded to the Base Client class
