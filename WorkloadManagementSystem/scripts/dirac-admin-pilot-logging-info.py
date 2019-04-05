@@ -7,8 +7,6 @@ __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC import S_OK
 from DIRAC.Core.Base import Script
-from DIRAC.WorkloadManagementSystem.Client.PilotsLoggingClient import PilotsLoggingClient
-from DIRAC.WorkloadManagementSystem.Client.ServerUtils import pilotAgentsDB
 from DIRAC.Core.Utilities.PrettyPrint import printTable
 
 uuid = None
@@ -55,6 +53,8 @@ def printPilotsLogging(logs):
   printTable(labels, content, numbering=False, columnSeparator=' | ')
 
 
+from DIRAC.WorkloadManagementSystem.Client.PilotsLoggingClient import PilotsLoggingClient
+
 if uuid:
   pilotsLogging = PilotsLoggingClient()
   result = pilotsLogging.getPilotsLogging(uuid)
@@ -64,16 +64,15 @@ if uuid:
   printPilotsLogging(result['Value'])
   DIRAC.exit(0)
 else:
-  pilotDB = pilotAgentsDB()
   pilotsLogging = PilotsLoggingClient()
-  pilots = pilotDB.getPilotsForJobID(jobid)
-  if not pilots['OK ']:
+  pilots = pilotAgentsDB.getPilotsForJobID(jobid)
+  if not pilots['OK']:
     print pilots['Message']
   for pilotID in pilots:
-    info = pilotDB.getPilotInfo(pilotID=pilotID)
+    info = pilotAgentsDB.getPilotInfo(pilotID)
     if not info['OK']:
       print info['Message']
-    for pilot in info:
+    for pilot in info['Value']:
       logging = pilotsLogging.getPilotsLogging(pilot['PilotJobReference'])
       if not logging['OK']:
         print logging['Message']
