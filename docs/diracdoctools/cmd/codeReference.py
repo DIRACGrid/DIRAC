@@ -188,18 +188,23 @@ class CodeReference(object):
         continue
 
       modulename = root.split('/')[-1]
-      abspath = root.split(packagePath())[1].strip('/')
-      fullmodulename = BASE_MODULE_NAME + '.'.join(abspath.split('/'))
-      packages = self.getsubpackages(abspath, direc)
-      LOG.debug('Trying to create folder: %s', abspath)
-      if abspath:
-        mkdir(abspath)
-        os.chdir(abspath)
-      if modulename == BASE_MODULE_NAME:
+      codePath = root.split(self.config.packagePath)[1].strip('/')
+      docPath = codePath
+      if docPath.startswith(self.config.moduleName):
+        docPath = docPath[len(self.config.moduleName) + 1:]
+      fullmodulename = '.'.join(codePath.split('/'))
+      if not fullmodulename.startswith(self.config.moduleName):
+        fullmodulename = '.'.join([self.config.moduleName, fullmodulename])
+      packages = self.getsubpackages(codePath, direc)
+      if docPath:
+        LOG.debug('Trying to create folder: %s', docPath)
+        mkdir(docPath)
+        os.chdir(docPath)
+      if modulename == self.config.moduleName:
         self.createCodeDocIndex(
             subpackages=packages,
             modules=self.getmodules(
-                abspath,
+                codePath,
                 direc,
                 files),
             buildtype=buildtype)
@@ -213,13 +218,13 @@ class CodeReference(object):
             fullmodulename,
             subpackages=packages,
             modules=self.getmodules(
-                abspath,
+                docPath,
                 direc,
                 files))
 
       for filename in files:
         # Skip things that call parseCommandLine or similar issues
-        fullclassname = '.'.join(abspath.split('/') + [filename])
+        fullclassname = '.'.join(docPath.split('/') + [filename])
         if any(f in filename for f in self.config.badFiles):
           LOG.debug('Creating dummy for  file %r', filename)
           self.mkDummyRest(filename.split('.py')[0], fullclassname.split('.py')[0])
