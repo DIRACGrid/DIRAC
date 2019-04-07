@@ -5,100 +5,112 @@ from collections import OrderedDict
 import os
 import textwrap
 import re
+import logging
+
+from diracdoctools.Config import Configuration
 
 from DIRAC.Core.Utilities.CFG import CFG
-from DIRAC import gLogger, S_OK, S_ERROR
-
-from diracdoctools.Utilities import packagePath
+from DIRAC import S_OK, S_ERROR
 
 
-def updateCompleteDiracCFG():
-  """Read the dirac.cfg and update the Systems sections from the ConfigTemplate.cfg files."""
-  compCfg = CFG()
-  mainDiracCfgPath = os.path.join(packagePath(), 'dirac.cfg')
-
-  if not os.path.exists(mainDiracCfgPath):
-    raise RuntimeError("Dirac.cfg not found at %s" % mainDiracCfgPath)
-
-  gLogger.notice('Extracting default configuration from', mainDiracCfgPath)
-  loadCFG = CFG()
-  loadCFG.loadFromFile(mainDiracCfgPath)
-  compCfg = loadCFG.mergeWith(compCfg)
-
-  cfg = getSystemsCFG()
-  compCfg = compCfg.mergeWith(cfg)
-  diracCfgOutput = os.path.join(packagePath(), 'docs/source/AdministratorGuide/Configuration/ExampleConfig.rst')
-
-  with open(diracCfgOutput, 'w') as rst:
-    rst.write(textwrap.dedent("""
-                              ==========================
-                              Full Configuration Example
-                              ==========================
-
-                              .. This file is created by docs/Tools/UpdateDiracCFG.py
-
-                              Below is a complete example configuration with anotations for some sections::
-
-                              """))
-    # indent the cfg text
-    cfgString = ''.join('  ' + line for line in str(compCfg).splitlines(True))
-    # fix the links, add back the # for targets
-    # match .html with following character using positive look ahead
-    htmlMatch = re.compile(r"\.html(?=[a-zA-Z0-9])")
-    cfgString = re.sub(htmlMatch, '.html#', cfgString)
-    rst.write(cfgString)
+logging.basicConfig(level=logging.INFO, format='%(name)25s: %(levelname)8s: %(message)s')
+LOG = logging.getLogger('ConcatCFG')
 
 
-def getSystemsCFG():
-  """Find all the ConfigTemplates and collate them into one CFG object."""
-  cfg = CFG()
-  cfg.createNewSection('/Systems')
-  templateLocations = findConfigTemplates()
-  for templatePath in templateLocations:
-    cfgRes = parseConfigTemplate(templatePath, cfg)
-    if cfgRes['OK']:
-      cfg = cfgRes['Value']
-  return cfg
+class ConcatCFG(object):
 
+  def __init__(self, confFile='docs.conf'):
+    self.config = Configuration(confFile)
 
-def findConfigTemplates():
-  """Traverse folders in DIRAC and find ConfigTemplate.cfg files."""
-  configTemplates = dict()
-  for baseDirectory, _subdirectories, files in os.walk(packagePath()):
-    gLogger.debug('Looking in %r' % baseDirectory)
-    if 'ConfigTemplate.cfg' in files:
-      system = baseDirectory.rsplit('/', 1)[1]
-      gLogger.notice('Found Template for %s in %s' % (system, baseDirectory))
-      configTemplates[system] = baseDirectory
-  return OrderedDict(sorted(configTemplates.items(), key=lambda t: t[0])).values()
+  def updateCompleteDiracCFG(self):
+    """Read the dirac.cfg and update the Systems sections from the ConfigTemplate.cfg files."""
+    compCfg = CFG()
+    mainDiracCfgPath = os.path.join(self.config.packagePath, 'dirac.cfg')
 
+    if not os.path.exists(mainDiracCfgPath):
+      LOG.error('Failed to find Main Dirac cfg at %r', mainDiracCfgPath)
+      return 1
 
-def parseConfigTemplate(templatePath, cfg):
-  """Parse the ConfigTemplate.cfg files.
+    LOG.info('Extracting default configuration from %r', mainDiracCfgPath)
+    loadCFG = CFG()
+    loadCFG.loadFromFile(mainDiracCfgPath)
+    compCfg = loadCFG.mergeWith(compCfg)
 
-  :param str templatePath: path to the folder containing a ConfigTemplate.cfg file
-  :param CFG cfg: cfg to merge with the systems config
-  :returns: CFG object
-  """
-  system = os.path.split(templatePath.rstrip("/"))[1]
-  if system.lower().endswith('system'):
-    system = system[:-len('System')]
+    cfg = self.getSystemsCFG()
+    compCfg = compCfg.mergeWith(cfg)
+    diracCfgOutput = os.path.join(self.config.packagePath,
+                                  'docs/source/AdministratorGuide/Configuration/ExampleConfig.rst')
+    LOG.info('Writing output to %r', diracCfgOutput)
 
-  templatePath = os.path.join(templatePath, 'ConfigTemplate.cfg')
-  if not os.path.exists(templatePath):
-    return S_ERROR("File not found: %s" % templatePath)
+    with open(diracCfgOutput, 'w') as rst:
+      rst.write(textwrap.dedent("""
+                                ==========================
+                                Full Configuration Example
+                                ==========================
 
-  loadCfg = CFG()
-  loadCfg.loadFromFile(templatePath)
+                                .. This file is created by docs/Tools/UpdateDiracCFG.py
 
-  cfg.createNewSection("/Systems/%s" % system, contents=loadCfg)
+                                Below is a complete example configuration with anotations for some sections::
 
-  return S_OK(cfg)
+                                """))
+      # indent the cfg text
+      cfgString = ''.join('  ' + line for line in str(compCfg).splitlines(True))
+      # fix the links, add back the # for targets
+      # match .html with following character using positive look ahead
+      htmlMatch = re.compile(r'\.html(?=[a-zA-Z0-9])')
+      cfgString = re.sub(htmlMatch, '.html#', cfgString)
+      rst.write(cfgString)
+    return 0
+
+  def getSystemsCFG(self):
+    """Find all the ConfigTemplates and collate them into one CFG object."""
+    cfg = CFG()
+    cfg.createNewSection('/Systems')
+    templateLocations = self.findConfigTemplates()
+    for templatePath in templateLocations:
+      cfgRes = self.parseConfigTemplate(templatePath, cfg)
+      if cfgRes['OK']:
+        cfg = cfgRes['Value']
+    return cfg
+
+  def findConfigTemplates(self):
+    """Traverse folders in DIRAC and find ConfigTemplate.cfg files."""
+    configTemplates = dict()
+    for baseDirectory, _subdirectories, files in os.walk(self.config.packagePath):
+      LOG.debug('Looking in %r', baseDirectory)
+      if 'ConfigTemplate.cfg' in files:
+        system = baseDirectory.rsplit('/', 1)[1]
+        LOG.info('Found Template for %r in %r', system, baseDirectory)
+        configTemplates[system] = baseDirectory
+    return OrderedDict(sorted(configTemplates.items(), key=lambda t: t[0])).values()
+
+  def parseConfigTemplate(self, templatePath, cfg):
+    """Parse the ConfigTemplate.cfg files.
+
+    :param str templatePath: path to the folder containing a ConfigTemplate.cfg file
+    :param CFG cfg: cfg to merge with the systems config
+    :returns: CFG object
+    """
+    system = os.path.split(templatePath.rstrip('/'))[1]
+    if system.lower().endswith('system'):
+      system = system[:-len('System')]
+
+    templatePath = os.path.join(templatePath, 'ConfigTemplate.cfg')
+    if not os.path.exists(templatePath):
+      return S_ERROR('File not found: %s' % templatePath)
+
+    loadCfg = CFG()
+    loadCfg.loadFromFile(templatePath)
+
+    cfg.createNewSection('/Systems/%s' % system, contents=loadCfg)
+
+    return S_OK(cfg)
 
 
 def run():
   """Wrapper around main working horse."""
-  updateCompleteDiracCFG()
+  C = ConcatCFG()
+  return C.updateCompleteDiracCFG()
 
 
 if __name__ == '__main__':
