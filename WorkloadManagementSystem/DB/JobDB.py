@@ -301,12 +301,12 @@ class JobDB(DB):
       result = self._query(cmd)
       if result['OK']:
         if result['Value']:
-          for jobID, name, value in result['Value']:
+          for res_jobID, res_name, res_value in result['Value']:
             try:
-              value = value.tostring()
+              res_value = res_value.tostring()
             except BaseException:
               pass
-            resultDict.setdefault(jobID, {})[name] = value
+            resultDict.setdefault(res_jobID, {})[res_name] = res_value
 
         return S_OK(resultDict)  # there's a slim chance that this is an empty dictionary
       else:
@@ -317,12 +317,12 @@ class JobDB(DB):
       if not result['OK']:
         return result
 
-      for jobID, name, value in result['Value']:
+      for res_jobID, res_name, res_value in result['Value']:
         try:
-          value = value.tostring()
+          res_value = res_value.tostring()
         except BaseException:
           pass
-        resultDict.setdefault(jobID, {})[name] = value
+        resultDict.setdefault(res_jobID, {})[res_name] = res_value
 
       return S_OK(resultDict)  # there's a slim chance that this is an empty dictionary
 

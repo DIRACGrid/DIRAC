@@ -495,7 +495,7 @@ class JobMonitoringHandler(RequestHandler):
     res = gJobDB.getJobParameters(jobID, [parName])
     if not res['OK']:
       return res
-    return S_OK(res['Value'].get(jobID, {}))
+    return S_OK(res['Value'].get(int(jobID), {}))
 
 ##############################################################################
   types_getJobParameters = [[basestring, int, long, list]]
