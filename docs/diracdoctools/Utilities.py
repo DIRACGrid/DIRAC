@@ -3,6 +3,8 @@
 import logging
 import os
 import sys
+import subprocess
+import shlex
 
 LOG = logging.getLogger(__name__)
 
@@ -14,7 +16,7 @@ BASE_MODULE_NAME = 'DIRAC'
 # Create a class, which parses config and passes it on to the scripts
 
 # Location where we can find CustomizedDocs
-CODE_CUSTOM_DOCS_FOLDER = os.path.join(os.path.basename(__file__), 'CustomizedDocs/')
+#CODE_CUSTOM_DOCS_FOLDER = os.path.join(os.path.basename(__file__), 'CustomizedDocs/')
 
 # # Add private members in autodoc
 # CODE_FORCE_ADD_PRIVATE = ['FCConditionParser']
@@ -39,32 +41,32 @@ CODE_CUSTOM_DOCS_FOLDER = os.path.join(os.path.basename(__file__), 'CustomizedDo
 COMMANDS_GET_MOD_STRING = ['dirac-install',
                            ]
 
-# Scripts that either do not have -h, are obsolete or cause havoc when called
-COMMANDS_BAD_SCRIPTS = ['dirac-deploy-scripts',  # does not have --help, deploys scripts
-                        'dirac-compile-externals',  # does not have --help, starts compiling externals
-                        'dirac-install-client',  # does not have --help
-                        'dirac-framework-self-ping',  # does not have --help
-                        'dirac-dms-add-files',  # obsolete
-                        'dirac-version',  # just prints version, no help
-                        'dirac-platform',  # just prints platform, no help
-                        'dirac-agent',  # no doc, purely internal use
-                        'dirac-executor',  # no doc, purely internal use
-                        'dirac-service',  # no doc, purely internal use
-                        ]
+# # Scripts that either do not have -h, are obsolete or cause havoc when called
+# COMMANDS_BAD_SCRIPTS = ['dirac-deploy-scripts',  # does not have --help, deploys scripts
+#                         'dirac-compile-externals',  # does not have --help, starts compiling externals
+#                         'dirac-install-client',  # does not have --help
+#                         'dirac-framework-self-ping',  # does not have --help
+#                         'dirac-dms-add-files',  # obsolete
+#                         'dirac-version',  # just prints version, no help
+#                         'dirac-platform',  # just prints platform, no help
+#                         'dirac-agent',  # no doc, purely internal use
+#                         'dirac-executor',  # no doc, purely internal use
+#                         'dirac-service',  # no doc, purely internal use
+#                         ]
 
 
 # tuples: list of patterns to match in script names,
 #         Title of the index file
 #         list of script names, filled during search, can be pre-filled
 #         list of patterns to reject scripts
-COMMANDS_MARKERS_SECTIONS_SCRIPTS = [
-    (['dms'], 'Data Management', [], []),
-    (['wms'], 'Workload Management', [], []),
-    (['dirac-proxy', 'dirac-info', 'myproxy'], 'Others', [], ['dirac-cert-convert.sh', 'dirac-platform', 'dirac-version']),
-    (['admin', 'accounting', 'FrameworkSystem', 'framework', 'install', 'utils', 'dirac-repo-monitor', 'dirac-jobexec',
-      'dirac-info', 'ConfigurationSystem', 'Core', 'rss', 'transformation', 'stager'], 'Admin',
-        [], ['dirac-cert-convert.sh', 'dirac-platform', 'dirac-version']),
-]
+# COMMANDS_MARKERS_SECTIONS_SCRIPTS = [
+#   (['dms'], 'Data Management', [], []),
+#   (['wms'], 'Workload Management', [], []),
+#   (['dirac-proxy', 'dirac-info', 'myproxy'], 'Others', [], ['dirac-cert-convert.sh', 'dirac-platform', 'dirac-version']),
+#   (['admin', 'accounting', 'FrameworkSystem', 'framework', 'install', 'utils', 'dirac-repo-monitor', 'dirac-jobexec',
+#     'dirac-info', 'ConfigurationSystem', 'Core', 'rss', 'transformation', 'stager'], 'Admin',
+#    [], ['dirac-cert-convert.sh', 'dirac-platform', 'dirac-version']),
+# ]
 
 
 def mkdir(folder):

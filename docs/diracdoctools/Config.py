@@ -2,13 +2,15 @@
 
 import logging
 import os
+from pprint import pformat
 import ConfigParser
+
 
 LOG = logging.getLogger(__name__)
 
 
 def listify(values):
-  return [entry.strip() for entry in values.split(',')]
+  return [entry.strip() for entry in values.split(',') if entry]
 
 
 class Configuration(object):
@@ -19,7 +21,8 @@ class Configuration(object):
 
     config = ConfigParser.SafeConfigParser(dict_type=dict)
     config.read(confFile)
-    config.optionxform = str  # do not transform options to lowercase
+    # config.optionxform = str  # do not transform options to lowercase
+    self.docsPath = os.path.dirname(os.path.abspath(confFile))
 
     self.moduleName = config.get('Docs', 'module_name')
     self.packagePath = os.path.join(os.environ.get('DIRAC', ''), self.moduleName)
@@ -30,8 +33,26 @@ class Configuration(object):
     self.badFiles = listify(config.get('Code', 'ignore_files'))
     relativeSourceFolder = config.get('Code', 'source_folder')
     self.sourcePath = os.path.join(self.packagePath, relativeSourceFolder)
-    for var, val in vars(self).items():
-       LOG.info('Parsed options: %s = %s', var, val)
+
+    self.com_ignore_commands = listify(config.get('Commands', 'ignore_commands'))
+    self.com_module_docstring = listify(config.get('Commands', 'module_docstring'))
+    self.com_index_file = config.get('Commands', 'index_file')
+
+    self.com_MSS = []
+
+    for section in sorted(config.sections()):
+      LOG.info('Parsing config sections: %r', section)
+      if section.startswith('commands.'):
+        pattern = listify(config.get(section, 'pattern'))
+        title = config.get(section, 'title')
+        scripts = listify(config.get(section, 'scripts'))
+        ignore = listify(config.get(section, 'ignore'))
+        sectionPath = config.get(section, 'sectionpath')
+        existingIndex = config.get(section, 'existingindex') if config.has_option(section, 'existingindex') else ''
+        self.com_MSS.append((pattern, title, scripts, ignore, existingIndex, sectionPath))
+
+    for var, val in sorted(vars(self).items()):
+      LOG.info('Parsed options: %s = %s', var, pformat(val))
 
   def __str__(self):
     """Return string containg options and values."""
