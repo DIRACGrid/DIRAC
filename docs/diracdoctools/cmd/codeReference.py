@@ -187,12 +187,12 @@ class CodeReference(object):
         LOG.debug('Skipping test, docs, or script folder: %s', root)
         continue
 
-      modulename = root.split('/')[-1]
-      codePath = root.split(self.config.packagePath)[1].strip('/')
+      modulename = root.split('/')[-1].strip('.')
+      codePath = root.split(self.config.packagePath)[1].strip('/.')
       docPath = codePath
       if docPath.startswith(self.config.moduleName):
         docPath = docPath[len(self.config.moduleName) + 1:]
-      fullmodulename = '.'.join(codePath.split('/'))
+      fullmodulename = '.'.join(codePath.split('/')).strip('.')
       if not fullmodulename.startswith(self.config.moduleName):
         fullmodulename = '.'.join([self.config.moduleName, fullmodulename])
       packages = self.getsubpackages(codePath, direc)
@@ -200,7 +200,7 @@ class CodeReference(object):
         LOG.debug('Trying to create folder: %s', docPath)
         mkdir(docPath)
         os.chdir(docPath)
-      if modulename == self.config.moduleName:
+      if modulename == self.config.moduleName or not modulename:
         self.createCodeDocIndex(
             subpackages=packages,
             modules=self.getmodules(
