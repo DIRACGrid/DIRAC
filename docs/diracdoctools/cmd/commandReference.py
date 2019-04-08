@@ -43,7 +43,7 @@ class CommandReference(object):
 #        [], ['dirac-cert-convert.sh', 'dirac-platform', 'dirac-version']),
 # ]
 
-    self.commands_markers_sections_scripts = self.config.com_MSS
+    self.sectionDicts = dict(self.config.com_MSS)
 
   def getScripts(self):
     """Get all scripts in the Dirac System, split by type admin/wms/rms/other."""
@@ -64,14 +64,15 @@ class CommandReference(object):
         LOG.debug('Ignoring init file %s', scriptPath)
         continue
 
-      for mT in self.commands_markers_sections_scripts:
-        if any(pattern in scriptPath for pattern in mT[PATTERN]) and \
-           not any(pattern in scriptPath for pattern in mT[IGNORE]):
-          mT[SCRIPTS].append(scriptPath)
+      for indexFile, mTs in self.sectionDicts.items():
+        for mT in mTs:
+          if any(pattern in scriptPath for pattern in mT[PATTERN]) and \
+             not any(pattern in scriptPath for pattern in mT[IGNORE]):
+            mT[SCRIPTS].append(scriptPath)
 
     return
 
-  def createUserGuideFoldersAndIndices(self):
+  def createUserGuideFoldersAndIndices(self, indexFile, sectionDicts):
     """ creates the index files and folders where the RST files will go
 
     e.g.:
@@ -83,7 +84,7 @@ class CommandReference(object):
     Commands Reference
     ==================
 
-    .. this page is created in docs/Tools/dirac-docs-build-commands.py
+    .. this page is created in %s
 
 
     This page is the work in progress. See more material here soon !
@@ -91,22 +92,20 @@ class CommandReference(object):
     .. toctree::
        :maxdepth: 1
 
-    """).lstrip()
+    """ % (__name__,)).lstrip()
 
-    for mT in self.commands_markers_sections_scripts:
-      system = mT[TITLE]
+    for mT in sectionDicts:
       existingIndex = mT[EXISTING_INDEX]
       if existingIndex:
-        continue
-      systemString = system.replace(' ', '')
-      userIndexRST += '   %s/index\n' % systemString
+        return
+      userIndexRST += '   %s/index\n' % mT[TITLE].replace(' ', '')
 
       LOG.debug('Index file:\n%s', userIndexRST) if self.debug else None
       sectionPath = os.path.join(self.config.packagePath, mT[SECTION_PATH])
       mkdir(sectionPath)
-      self.createSectionIndex(mT, sectionPath)
+      self.createSectionIndex(mT, indexFile)
 
-    userIndexPath = os.path.join(self.config.packagePath, self.config.com_index_file)
+    userIndexPath = os.path.join(self.config.packagePath, indexFile)
     writeLinesToFile(userIndexPath, userIndexRST)
 
   def createCommandReferenceForExistingIndex(self, mT):
@@ -162,7 +161,7 @@ class CommandReference(object):
         shutil.move(os.path.join(sectionPath, com + '.rst'), os.path.join(sectionPath, 'obs_' + com + '.rst'))
       self.exitcode = 1
 
-  def createSectionIndex(self, mT, sectionPath):
+  def createSectionIndex(self, mT, indexFile):
     """ create the index """
 
     systemName = mT[TITLE]
@@ -171,18 +170,18 @@ class CommandReference(object):
     sectionIndexRST = systemHeader + """
   In this subsection the %s commands are collected
 
-  .. this page is created in docs/Tools/dirac-docs-build-commands.py
+  .. this page is created in %s
 
 
   .. toctree::
      :maxdepth: 2
 
-  """ % systemName
+  """ % (systemName, __name__)
 
     listOfScripts = []
     # these scripts use pre-existing rst files, cannot re-create them automatically
     listOfScripts.extend(mT[IGNORE])
-
+    sectionPath = os.path.join(self.config.packagePath, mT[SECTION_PATH])
     for script in mT[SCRIPTS]:
       scriptName = os.path.basename(script)
       if scriptName.endswith('.py'):
@@ -193,8 +192,7 @@ class CommandReference(object):
     for scriptName in sorted(listOfScripts):
       sectionIndexRST += "   %s\n" % scriptName
 
-    sectionIndexPath = os.path.join(sectionPath, 'index.rst')
-    writeLinesToFile(sectionIndexPath, sectionIndexRST)
+    writeLinesToFile(os.path.join(self.config.packagePath, indexFile), sectionIndexRST)
 
   def createScriptDocFiles(self, script, sectionPath, scriptName, referencePrefix=''):
     """Create the RST files for all the scripts.
@@ -314,12 +312,14 @@ def run(arguments=sys.argv):
   LOG.setLevel(logging.DEBUG)
   C = CommandReference(debug=debug)
   C.getScripts()
-  C.createUserGuideFoldersAndIndices()
-  for mT in C.commands_markers_sections_scripts:
-    if not mT[EXISTING_INDEX]:
-      continue
-    C.createCommandReferenceForExistingIndex(mT)
-    C.cleanExistingIndex(mT)
+  for indexFile, mTs in C.sectionDicts.items():
+    C.createUserGuideFoldersAndIndices(indexFile, mTs)
+  for _indexFile, mTs in C.sectionDicts.items():
+    for mT in mTs:
+      if not mT[EXISTING_INDEX]:
+        continue
+      C.createCommandReferenceForExistingIndex(mT)
+      C.cleanExistingIndex(mT)
 
   LOG.info('Done')
   return C.exitcode

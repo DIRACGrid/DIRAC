@@ -1,5 +1,6 @@
 """Configuration for the documentation scripts."""
 
+from collections import defaultdict
 import logging
 import os
 from pprint import pformat
@@ -36,9 +37,8 @@ class Configuration(object):
 
     self.com_ignore_commands = listify(config.get('Commands', 'ignore_commands'))
     self.com_module_docstring = listify(config.get('Commands', 'module_docstring'))
-    self.com_index_file = config.get('Commands', 'index_file')
 
-    self.com_MSS = []
+    self.com_MSS = defaultdict(list)
 
     for section in sorted(config.sections()):
       LOG.info('Parsing config sections: %r', section)
@@ -48,13 +48,18 @@ class Configuration(object):
         scripts = listify(config.get(section, 'scripts'))
         ignore = listify(config.get(section, 'ignore'))
         sectionPath = config.get(section, 'sectionpath').replace(' ', '')
-        existingIndex = config.get(section, 'existingindex') if config.has_option(section, 'existingindex') else ''
-        self.com_MSS.append(dict(pattern=pattern,
-                                 title=title,
-                                 scripts=scripts,
-                                 ignore=ignore,
-                                 existingIndex=existingIndex,
-                                 sectionPath=sectionPath))
+        existingIndex = config.getboolean(
+            section, 'existingindex') if config.has_option(
+            section, 'existingindex') else False
+        indexFile = config.get(section, 'indexfile')
+
+        self.com_MSS[indexFile].append(dict(pattern=pattern,
+                                            title=title,
+                                            scripts=scripts,
+                                            ignore=ignore,
+                                            existingIndex=existingIndex,
+                                            indexFile=indexFile,
+                                            sectionPath=sectionPath))
 
     for var, val in sorted(vars(self).items()):
       LOG.info('Parsed options: %s = %s', var, pformat(val))

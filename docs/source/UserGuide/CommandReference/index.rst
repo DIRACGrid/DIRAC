@@ -2,7 +2,7 @@
 Commands Reference
 ==================
 
-.. this page is created in docs/Tools/dirac-docs-build-commands.py
+.. this page is created in diracdoctools.cmd.commandReference
 
 
 This page is the work in progress. See more material here soon !
