@@ -15,6 +15,14 @@ logging.basicConfig(level=logging.INFO, format='%(name)25s: %(levelname)8s: %(me
 LOG = logging.getLogger('CommandReference')
 
 
+TITLE = 'title'
+PATTERN = 'pattern'
+SCRIPTS = 'scripts'
+IGNORE = 'ignore'
+EXISTING_INDEX = 'existingIndex'
+SECTION_PATH = 'sectionPath'
+
+
 class CommandReference(object):
 
   def __init__(self, confFile='docs.conf', debug=False):
@@ -57,9 +65,9 @@ class CommandReference(object):
         continue
 
       for mT in self.commands_markers_sections_scripts:
-        if any(pattern in scriptPath for pattern in mT[0]) and \
-           not any(pattern in scriptPath for pattern in mT[3]):
-          mT[2].append(scriptPath)
+        if any(pattern in scriptPath for pattern in mT[PATTERN]) and \
+           not any(pattern in scriptPath for pattern in mT[IGNORE]):
+          mT[SCRIPTS].append(scriptPath)
 
     return
 
@@ -86,15 +94,15 @@ class CommandReference(object):
     """).lstrip()
 
     for mT in self.commands_markers_sections_scripts:
-      system = mT[1]
-      existingIndex = mT[4]
+      system = mT[TITLE]
+      existingIndex = mT[EXISTING_INDEX]
       if existingIndex:
         continue
       systemString = system.replace(' ', '')
       userIndexRST += '   %s/index\n' % systemString
 
       LOG.debug('Index file:\n%s', userIndexRST) if self.debug else None
-      sectionPath = os.path.join(self.config.packagePath, mT[5])
+      sectionPath = os.path.join(self.config.packagePath, mT[SECTION_PATH])
       mkdir(sectionPath)
       self.createSectionIndex(mT, sectionPath)
 
@@ -107,18 +115,18 @@ class CommandReference(object):
     source/AdministratorGuide/CommandReference
     """
 
-    sectionPath = os.path.join(self.config.packagePath, mT[5])
+    sectionPath = os.path.join(self.config.packagePath, mT[SECTION_PATH])
     LOG.info('Creating references for %r', sectionPath)
     # read the script index
     with open(os.path.join(sectionPath, 'index.rst')) as indexFile:
       commandList = indexFile.read().replace('\n', '')
 
     missingCommands = []
-    for script in mT[2]:
+    for script in mT[SCRIPTS]:
       scriptName = os.path.basename(script)
       if scriptName.endswith('.py'):
         scriptName = scriptName[:-3]
-      refPre = mT[1].lower() + '_'
+      refPre = mT[TITLE].replace(' ', '').lower() + '_'
       if self.createScriptDocFiles(script, sectionPath, scriptName, referencePrefix=refPre) and \
          scriptName not in commandList:
         missingCommands.append(scriptName)
@@ -130,10 +138,10 @@ class CommandReference(object):
 
   def cleanExistingIndex(self, mT):
     """Make sure no superfluous commands are documented in an existing index file"""
-    if not mT[4]:
+    if not mT[EXISTING_INDEX]:
       return
-    existingCommands = {os.path.basename(com).replace('.py', '') for com in mT[2] + mT[3]}
-    sectionPath = os.path.join(self.config.packagePath, mT[5])
+    existingCommands = {os.path.basename(com).replace('.py', '') for com in mT[SCRIPTS] + mT[IGNORE]}
+    sectionPath = os.path.join(self.config.packagePath, mT[SECTION_PATH])
     LOG.info('Checking %r for non-existent commands', sectionPath)
     # read the script index
     documentedCommands = set()
@@ -157,7 +165,7 @@ class CommandReference(object):
   def createSectionIndex(self, mT, sectionPath):
     """ create the index """
 
-    systemName = mT[1]
+    systemName = mT[TITLE]
     systemHeader = systemName + " Command Reference"
     systemHeader = "%s\n%s\n%s\n" % ("=" * len(systemHeader), systemHeader, "=" * len(systemHeader))
     sectionIndexRST = systemHeader + """
@@ -173,9 +181,9 @@ class CommandReference(object):
 
     listOfScripts = []
     # these scripts use pre-existing rst files, cannot re-create them automatically
-    listOfScripts.extend(mT[3])
+    listOfScripts.extend(mT[IGNORE])
 
-    for script in mT[2]:
+    for script in mT[SCRIPTS]:
       scriptName = os.path.basename(script)
       if scriptName.endswith('.py'):
         scriptName = scriptName[:-3]
@@ -303,11 +311,12 @@ def run(arguments=sys.argv):
   if '-dd' in ''.join(arguments):
     LOG.setLevel(logging.DEBUG)
     debug = False
+  LOG.setLevel(logging.DEBUG)
   C = CommandReference(debug=debug)
   C.getScripts()
   C.createUserGuideFoldersAndIndices()
   for mT in C.commands_markers_sections_scripts:
-    if not mT[4]:
+    if not mT[EXISTING_INDEX]:
       continue
     C.createCommandReferenceForExistingIndex(mT)
     C.cleanExistingIndex(mT)

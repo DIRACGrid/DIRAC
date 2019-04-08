@@ -47,9 +47,14 @@ class Configuration(object):
         title = config.get(section, 'title')
         scripts = listify(config.get(section, 'scripts'))
         ignore = listify(config.get(section, 'ignore'))
-        sectionPath = config.get(section, 'sectionpath')
+        sectionPath = config.get(section, 'sectionpath').replace(' ', '')
         existingIndex = config.get(section, 'existingindex') if config.has_option(section, 'existingindex') else ''
-        self.com_MSS.append((pattern, title, scripts, ignore, existingIndex, sectionPath))
+        self.com_MSS.append(dict(pattern=pattern,
+                                 title=title,
+                                 scripts=scripts,
+                                 ignore=ignore,
+                                 existingIndex=existingIndex,
+                                 sectionPath=sectionPath))
 
     for var, val in sorted(vars(self).items()):
       LOG.info('Parsed options: %s = %s', var, pformat(val))
