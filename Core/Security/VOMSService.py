@@ -9,7 +9,7 @@ import os
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.Decorators import deprecated
-from DIRAC.Core.Security.Locations import getProxyLocation
+from DIRAC.Core.Security.Locations import getProxyLocation, getCAsLocation
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOOption
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getVO
 
@@ -81,7 +81,7 @@ class VOMSService(object):
       return S_ERROR(DErrno.ENOAUTH, "No VOMS server defined")
 
     userProxy = getProxyLocation()
-    caPath = os.environ['X509_CERT_DIR']
+    caPath = getCAsLocation()
     rawUserList = []
     result = None
     for url in self.urls:
