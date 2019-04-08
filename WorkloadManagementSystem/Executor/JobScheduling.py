@@ -383,12 +383,15 @@ class JobScheduling(OptimizerExecutor):
       nProcessors = jobManifest.getOption("NumberOfProcessors", 0)
       if nProcessors:
         tagList.append("%dProcessors" % nProcessors)
+        tagList.append("MultiProcessor")
     if "WholeNode" in jobManifest:
       if jobManifest.getOption("WholeNode", "").lower() in ["1", "yes", "true"]:
         tagList.append("WholeNode")
+        tagList.append("MultiProcessor")
     if "Tags" in jobManifest:
       tagList.extend(jobManifest.getOption("Tags", []))
     if tagList:
+
       jobManifest.setOption("Tags", ", ".join(tagList))
 
     reqSection = "JobRequirements"

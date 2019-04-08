@@ -162,7 +162,9 @@ class Matcher(object):
   def _processResourceDescription(self, resourceDescription):
     """ Check and form the resource description dictionary
 
-        resourceDescription is a ceDict coming from a JobAgent, for example.
+        :param resourceDescription: a ceDict coming from a JobAgent,
+                                    for example.
+        :return: updated dictionary of resource description parameters
     """
 
     resourceDict = {}
@@ -201,6 +203,10 @@ class Matcher(object):
         paramTags = ['%d%s' % (par, key) for par in paramList]
         if paramTags:
           resourceDict.setdefault("Tag", []).extend(paramTags)
+
+    # Add 'MultiProcessor' to the list of tags
+    if nProcessors > 1:
+      resourceDict.setdefault("Tag", []).append("MultiProcessor")
 
     # Add 'WholeNode' to the list of tags
     if "WholeNode" in resourceDescription:

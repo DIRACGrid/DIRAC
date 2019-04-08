@@ -94,7 +94,10 @@ class JobAgent(AgentModule):
     if not result['OK']:
       self.log.warn("Can not get the CE description")
       return result
-    ceDict = result['Value']
+    if isinstance(result['Value'], list):
+      ceDict = result['Value'][0]
+    else:
+      ceDict = result['Value']
     self.timeLeft = ceDict.get('CPUTime', self.timeLeft)
     self.timeLeft = gConfig.getValue('/Resources/Computing/CEDefaults/MaxCPUTime', self.timeLeft)
 
@@ -177,28 +180,38 @@ class JobAgent(AgentModule):
     result = self.computingElement.getDescription()
     if not result['OK']:
       return result
-    ceDict = result['Value']
-    # Add pilot information
-    gridCE = gConfig.getValue('LocalSite/GridCE', 'Unknown')
-    if gridCE != 'Unknown':
-      ceDict['GridCE'] = gridCE
-    if 'PilotReference' not in ceDict:
-      ceDict['PilotReference'] = str(self.pilotReference)
-    ceDict['PilotBenchmark'] = self.cpuFactor
-    ceDict['PilotInfoReportedFlag'] = self.pilotInfoReportedFlag
 
-    # Add possible job requirements
-    result = gConfig.getOptionsDict('/AgentJobRequirements')
-    if result['OK']:
-      requirementsDict = result['Value']
-      ceDict.update(requirementsDict)
-      self.log.info('Requirements:', requirementsDict)
+    # We can have several prioritized job retrieval strategies
+    if isinstance(result['Value'], dict):
+      ceDictList = [result['Value']]
+    elif isinstance(result['Value'], list):
+      ceDictList = result['Value']
 
-    self.log.verbose(ceDict)
-    start = time.time()
-    jobRequest = MatcherClient().requestJob(ceDict)
-    matchTime = time.time() - start
-    self.log.info('MatcherTime = %.2f (s)' % (matchTime))
+    for ceDict in ceDictList:
+
+      # Add pilot information
+      gridCE = gConfig.getValue('LocalSite/GridCE', 'Unknown')
+      if gridCE != 'Unknown':
+        ceDict['GridCE'] = gridCE
+      if 'PilotReference' not in ceDict:
+        ceDict['PilotReference'] = str(self.pilotReference)
+      ceDict['PilotBenchmark'] = self.cpuFactor
+      ceDict['PilotInfoReportedFlag'] = self.pilotInfoReportedFlag
+
+      # Add possible job requirements
+      result = gConfig.getOptionsDict('/AgentJobRequirements')
+      if result['OK']:
+        requirementsDict = result['Value']
+        ceDict.update(requirementsDict)
+        self.log.info('Requirements:', requirementsDict)
+
+      self.log.verbose(ceDict)
+      start = time.time()
+      jobRequest = MatcherClient().requestJob(ceDict)
+      matchTime = time.time() - start
+      self.log.info('MatcherTime = %.2f (s)' % (matchTime))
+      if jobRequest['OK']:
+        break
 
     self.stopAfterFailedMatches = self.am_getOption('StopAfterFailedMatches', self.stopAfterFailedMatches)
 

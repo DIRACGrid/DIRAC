@@ -135,18 +135,39 @@ A commented example follows::
      }
    }
 
-Torque Computing Element
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+SSH Computing Element
+@@@@@@@@@@@@@@@@@@@@@
 
-A commented example follows::
+The SSHComputingElement is used to submit pilots through an SSH tunnel to
+computing clusters with various batch systems. A commented example of its
+configuration follows ::
 
    # Section placed in the */Resources/Sites/<domain>/<site>/CEs* directory
-   ce01.infn.it  
+   pc.farm.ch
    {
-     CEType = Torque
+     CEType = SSH
+     # Type of the local batch system. Available batch system implementations are:
+     # Torque, Condor, GE, LSF, OAR, SLURM
+     BatchSystem = Torque
      SubmissionMode = direct
-     
-     
+     SSHHost = pc.domain.ch
+     # SSH connection details to be defined in the local configuration
+     # of the corresponding SiteDirector
+     SSHUser = dirac_ssh
+     SSHPassword = XXXXXXX
+     # Alternatively, the private key location can be specified instead
+     # of the SSHPassword
+     SSHKey = /path/to/the/key
+     # SSH port if not standard one
+     SSHPort = 222
+     # Sometimes we need an extra tunnel where the batch system is on accessible
+     # directly from the site gateway host
+     SSHTunnel = ssh pcbatch.domain.ch
+     # SSH type: ssh (default) or gsissh
+     SSHType = ssh
+     # Options to SSH command
+     SSHOptions = -o option1=something -o option2=somethingelse
+     # Queues section contining queue definitions
      Queues
      {
        # The queue section name should be the same as the name of the actual batch queue
@@ -167,12 +188,15 @@ A commented example follows::
          # Directory where the payload executable will be stored temporarily before
          # submission to the batch system
          ExecutableArea = /home/dirac_ssh/localsite/submission
+         # Extra options to be passed to the qsub job submission command
+         SubmitOptions =
          # Flag to remove the pilot output after it was retrieved
          RemoveOutput = True
        }
      }
-   }   
-   
+   }
+
+
 SSHBatch Computing Element
 @@@@@@@@@@@@@@@@@@@@@@@@@@
 
@@ -201,29 +225,7 @@ Like all SSH Computing Elements, it's defined like the following::
 
      Queues
      {
-       # The queue section name should be the same as the name of the actual batch queue
-       long
-       {
-         # Max CPU time in HEP'06 unit secs
-         CPUTime = 10000
-         # Max total number of jobs in the queue
-         MaxTotalJobs = 5
-         # Max number of waitin jobs in the queue
-         MaxWaitingJobs = 2
-         # Flag to include pilot proxy in the payload sent to the batch system
-         BundleProxy = True
-         # Directory on the CE site where the pilot standard output stream will be stored
-         BatchOutput = /home/dirac_ssh/localsite/output
-         # Directory on the CE site where the pilot standard output stream will be stored
-         BatchError = /home/dirac_ssh/localsite/error
-         # Directory where the payload executable will be stored temporarily before
-         # submission to the batch system
-         ExecutableArea = /home/dirac_ssh/localsite/submission
-         # Extra options to be passed to the qsub job submission command
-         SubmitOptions = 
-         # Flag to remove the pilot output after it was retrieved
-         RemoveOutput = True
-       }
+       # Similar to the corresponding SSHComputingElement section
      }
    }         
 
@@ -241,51 +243,49 @@ For example::
 
 allows to have a local copy of the ``known_hosts`` file, independent of the HOME directory.
 
+InProcessComputingElement
+@@@@@@@@@@@@@@@@@@@@@@@@@
 
-SSHTorque Computing Element
-@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+The InProcessComputingElement is usually invoked by a JobAgent to execute user
+jobs in the same process as the one of the JobAgent. Its configuration options
+are usually defined in the local configuration /Resources/Computing/CEDefaults
+section ::
 
-A commented example follows::
+  Resources
+  {
+    Computing
+    {
+      CEDefaults
+      {
+        NumberOfProcessors = 2
+        Tag = MultiProcessor
+        RequiredTag = MultiProcessor
+      }
+    }
+  }
 
-   # Section placed in the */Resources/Sites/<domain>/<site>/CEs* directory
-   ce01.infn.it  
-   {
-     CEType = SSHTorque
-     SubmissionMode = direct
-     
-     # Parameters of the SSH conection to the site
-     SSHHost = lphelc1.epfl.ch
-     SSHUser = dirac_ssh
-     # if SSH password is no given, the public key connection is assumed
-     SSHPassword = XXXXXXXXX
-     # specify the SSHKey if needed (like in the SSHBatchComputingElement above)
-     Queues
-     {
-       # The queue section name should be the same as the name of the actual batch queue
-       long
-       {
-         # Max CPU time in HEP'06 unit secs
-         CPUTime = 10000
-         # Max total number of jobs in the queue
-         MaxTotalJobs = 5
-         # Max number of waitin jobs in the queue
-         MaxWaitingJobs = 2
-         # Flag to include pilot proxy in the payload sent to the batch system
-         BundleProxy = True
-         # Directory on the CE site where the pilot standard output stream will be stored
-         BatchOutput = /home/dirac_ssh/localsite/output
-         # Directory on the CE site where the pilot standard output stream will be stored
-         BatchError = /home/dirac_ssh/localsite/error
-         # Directory where the payload executable will be stored temporarily before
-         # submission to the batch system
-         ExecutableArea = /home/dirac_ssh/localsite/submission
-         # Extra options to be passed to the job submission command
-         SubmitOptions = 
-         # Flag to remove the pilot output after it was retrieved
-         RemoveOutput = True
-       }
-     }
-   }
+PoolComputingElement
+@@@@@@@@@@@@@@@@@@@@
 
-Similar to SSHTorqueComputingElement is the ``SSHCondorComputingElement``, the ``SSHGEComputingElement``, the ``SSHLSFComputingElement``, and the ``SSHOARComputingElement``.
-They differ in the final backend, respectively Condor, GridEngine, LSF, and OAR. 
+The Pool Computing Element is used on multi-processor nodes, e.g. cloud VMs
+and can execute several user payloads in parallel using an internal ProcessPool.
+Its configuration is also defined by pilots locally in the /Resources/Computing/CEDefaults
+section ::
+
+  Resources
+  {
+    Computing
+    {
+      CEDefaults
+      {
+        NumberOfProcessors = 2
+        Tag = MultiProcessor
+        RequiredTag = MultiProcessor
+        # The MultiProcessorStrategy flag defines if the Pool Computing Element
+        # will generate several descriptions to present possibly several queries
+        # to the Matcher in each cycle trying to select multi-processor jobs first
+        # and, if no match found, simple jobs finally
+        MultiProcessorStrategy = True
+      }
+    }
+  }
