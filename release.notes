@@ -1,3 +1,8 @@
+[v6r20p27]
+
+*WMS
+FIX: (#4020) SiteDirector - do not use keywords in addPilotTQReference/setPilotStatus calls
+
 [v6r20p26]
 
 *WorkloadManagementSystem
