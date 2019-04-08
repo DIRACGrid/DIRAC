@@ -10,13 +10,13 @@ from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.Time import fromString, toEpoch, dateTime, second
 from DIRAC import S_OK, S_ERROR, gConfig
-from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.AccountingSystem.Client.Types.Job import Job
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath
 from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemInstance
 from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
+from DIRAC.WorkloadManagementSystem.Client.WMSAdministratorClient import WMSAdministratorClient
 
 
 class StalledJobAgent(AgentModule):
@@ -225,8 +225,7 @@ for the agent restart
       # There is no pilot reference, hence its status is unknown
       return S_OK('NoPilot')
 
-    wmsAdminClient = RPCClient('WorkloadManagement/WMSAdministrator')
-    result = wmsAdminClient.getPilotInfo(pilotReference)
+    result = WMSAdministratorClient().getPilotInfo(pilotReference)
     if not result['OK']:
       if "No pilots found" in result['Message']:
         self.log.warn(result['Message'])

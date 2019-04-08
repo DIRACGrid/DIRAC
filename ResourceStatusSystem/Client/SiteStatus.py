@@ -13,10 +13,10 @@ from datetime import datetime, timedelta
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
-from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.WorkloadManagementSystem.Client.WMSAdministratorClient import WMSAdministratorClient
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.ResourceStatusSystem.Utilities.RSSCacheNoThread import RSSCache
@@ -108,7 +108,7 @@ class SiteStatus(object):
       return self.__getRSSSiteStatus(siteNames)
     else:
       siteStatusDict = {}
-      wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
+      wmsAdmin = WMSAdministratorClient()
       if siteNames:
         if isinstance(siteNames, basestring):
           siteNames = [siteNames]
@@ -277,9 +277,9 @@ class SiteStatus(object):
 
     else:
       if status in ['Active', 'Degraded']:
-        result = RPCClient('WorkloadManagement/WMSAdministrator').allowSite()
+        result = WMSAdministratorClient().allowSite()
       else:
-        result = RPCClient('WorkloadManagement/WMSAdministrator').banSite()
+        result = WMSAdministratorClient().banSite()
 
     return result
 
@@ -306,6 +306,3 @@ def getCacheDictFromRawData(rawList):  # FIXME: to remove?
     res.update({(entry[0]): entry[1]})
 
   return res
-
-#################################################################################
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

@@ -16,6 +16,7 @@ from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.LCG.GOCDBClient import GOCDBClient
+from DIRAC.WorkloadManagementSystem.Client.WMSAdministratorClient import WMSAdministratorClient
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Command import CommandCaller
 from DIRAC.ResourceStatusSystem.Utilities import Utils
@@ -87,7 +88,7 @@ class CacheFeederAgent(AgentModule):
     self.clients['ReportsClient'] = ReportsClient()
     self.clients['ResourceStatusClient'] = ResourceStatusClient()
     self.clients['ResourceManagementClient'] = ResourceManagementClient()
-    self.clients['WMSAdministrator'] = RPCClient('WorkloadManagement/WMSAdministrator')
+    self.clients['WMSAdministrator'] = WMSAdministratorClient()
 
     self.cCaller = CommandCaller
 

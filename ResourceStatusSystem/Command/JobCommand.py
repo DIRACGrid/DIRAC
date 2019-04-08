@@ -7,11 +7,10 @@
 __RCSID__ = '$Id$'
 
 from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 from DIRAC.ResourceStatusSystem.Command.Command import Command
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
-from DIRAC.ResourceStatusSystem.Utilities import CSHelpers
+from DIRAC.WorkloadManagementSystem.Client.WMSAdministratorClient import WMSAdministratorClient
 
 
 class JobCommand(Command):
@@ -26,7 +25,7 @@ class JobCommand(Command):
     if 'WMSAdministrator' in self.apis:
       self.wmsAdmin = self.apis['WMSAdministrator']
     else:
-      self.wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
+      self.wmsAdmin = WMSAdministratorClient()
 
     if 'ResourceManagementClient' in self.apis:
       self.rmClient = self.apis['ResourceManagementClient']
@@ -150,108 +149,6 @@ class JobCommand(Command):
 
     return S_OK(self.metrics)
 
-################################################################################
-################################################################################
-################################################################################
-################################################################################
-################################################################################
-################################################################################
-################################################################################
-################################################################################
-
-# class JobsStatsCommand( Command ):
-#
-#  def __init__( self, args = None, clients = None ):
-#
-#    super( JobsStatsCommand, self ).__init__( args, clients )
-#
-#    if 'JobsClient' in self.apis:
-#      self.jClient = self.apis[ 'JobsClient' ]
-#    else:
-#      self.jClient = JobsClient()
-#
-#  def doCommand( self ):
-#    """
-#    Return getJobStats from Jobs Client
-#
-#   :attr:`args`:
-#     - args[0]: string: should be a ValidElement
-#
-#     - args[1]: string: should be the name of the ValidElement
-#
-#  returns:
-#    {
-#      'MeanProcessedJobs': X
-#    }
-#    """
-#
-#    return self.jClient.getJobsStats( self.args[0], self.args[1], self.args[2] )
-
-################################################################################
-################################################################################
-
-# class JobsEffCommand( Command ):
-#
-#  def __init__( self, args = None, clients = None ):
-#
-#    super( JobsEffCommand, self ).__init__( args, clients )
-#
-#    if 'JobsClient' in self.apis:
-#      self.jClient = self.apis[ 'JobsClient' ]
-#    else:
-#      self.jClient = JobsClient()
-#
-#  def doCommand( self ):
-#    """
-#    Return getJobsEff from Jobs Client
-#
-#   :attr:`args`:
-#       - args[0]: string: should be a ValidElement
-#
-#       - args[1]: string: should be the name of the ValidElement
-#
-#    returns:
-#      {
-#        'JobsEff': X
-#      }
-#    """
-#
-#    res = self.jClient.getJobsEff( self.args[0], self.args[1], self.args[2] )
-#
-#    return S_OK( res )
-
-################################################################################
-################################################################################
-
-# class SystemChargeCommand( Command ):
-#
-#  def __init__( self, args = None, clients = None ):
-#
-#    super( SystemChargeCommand, self ).__init__( args, clients )
-#
-#    if 'JobsClient' in self.apis:
-#      self.jClient = self.apis[ 'JobsClient' ]
-#    else:
-#      self.jClient = JobsClient()
-#
-#  def doCommand(self):
-#    """ Returns last hour system charge, and the system charge of an hour before
-#
-#        returns:
-#          {
-#            'LastHour': n_lastHour
-#            'anHourBefore': n_anHourBefore
-#          }
-#    """
-#
-#
-#    res = self.jClient.getSystemCharge()
-#
-#    return S_OK( res )
-
-################################################################################
-################################################################################
-
 
 class JobsWMSCommand(Command):
 
@@ -262,7 +159,7 @@ class JobsWMSCommand(Command):
     if 'WMSAdministrator' in self.apis:
       self.wmsAdmin = self.apis['WMSAdministrator']
     else:
-      self.wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
+      self.wmsAdmin = WMSAdministratorClient()
 
   def doCommand(self):
     """
@@ -316,6 +213,3 @@ class JobsWMSCommand(Command):
       jobResults.append(jobDict)
 
     return S_OK(jobResults)
-
-################################################################################
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
