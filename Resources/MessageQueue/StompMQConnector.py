@@ -3,6 +3,7 @@ Class for management of Stomp MQ connections, e.g. RabbitMQ
 """
 
 import json
+import random
 import os
 import socket
 import stomp
@@ -107,7 +108,12 @@ class StompMQConnector(MQConnector):
     """
     destination = parameters.get('destination', '')
     error = False
-    for connection in self.connections.itervalues():
+
+    # Randomize the brokers to spread the load
+    randConn = self.connections.values()
+    random.shuffle(randConn)
+
+    for connection in randConn:
       try:
         if isinstance(message, (list, set, tuple)):
           for msg in message:
