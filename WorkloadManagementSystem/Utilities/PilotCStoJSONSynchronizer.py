@@ -36,7 +36,6 @@ class PilotCStoJSONSynchronizer(object):
     """ c'tor
         Just setting defaults
     """
-    self.pilotCertGroupName = 'lhcb_pilot'
     self.jsonFile = 'pilot.json'  # default filename of the pilot json file
 
     # domain name of the web server used to upload the pilot json file and the pilot scripts
@@ -103,7 +102,7 @@ class PilotCStoJSONSynchronizer(object):
     :rtype: dict
     """
 
-    pilotDict = {'Setups': {}, 'CEs': {}, 'DNs': {}}
+    pilotDict = {'Setups': {}, 'CEs': {}, 'GenericPilotDNs': []}
 
     gLogger.info('-- Getting the content of the CS --')
 
@@ -160,10 +159,6 @@ class PilotCStoJSONSynchronizer(object):
           else:
             pilotDict['CEs'][ce] = {'Site': site, 'GridCEType': ceType}
 
-    certDNs = self._getDNs(self.pilotCertGroupName)
-    if certDNs['OK']:
-      pilotDict['DNs'] = certDNs['Value']
-
     defaultSetup = gConfig.getValue('/DIRAC/DefaultSetup')
     if defaultSetup:
       pilotDict['DefaultSetup'] = defaultSetup
@@ -202,6 +197,11 @@ class PilotCStoJSONSynchronizer(object):
     if setup == self.pilotSetup:
       self.pilotVOVersion = options['Value']['Version']
     pilotDict['Setups'][setup] = options['Value']
+    # We update separately 'GenericPilotDNs'
+    try:
+      pilotDict['GenericPilotDNs'].append(pilotDict['Setups'][setup]['GenericPilotDN'])
+    except KeyError:
+      pass
     ceTypesCommands = gConfig.getOptionsDict('/Operations/%s/Pilot/Commands' % setup)
     if ceTypesCommands['OK']:
       # It's ok if the Pilot section doesn't list any Commands too
@@ -255,6 +255,7 @@ class PilotCStoJSONSynchronizer(object):
           return queueOptionRes
         queuesDict[queue] = queueOptionRes['Value']
       pilotDict['Setups'][setup]['Logging']['Queues'] = queuesDict
+      print (pilotDict)
 
   def _syncScripts(self):
     """Clone the pilot scripts from the repository and upload them to the web server

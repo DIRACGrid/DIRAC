@@ -50,6 +50,13 @@ class PilotCStoJSONSynchronizerTestCase(unittest.TestCase):
     Operations{
       Defaults
       {
+        Pilot
+        {
+          Project = LHCb
+          GenericPilotDN = /DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=romanov/CN=427293/CN=Vladimir Romanovskiy
+          GenericPilotGroup = lhcb_pilot
+        }
+
         MainServers = gw1, gw2
       }
     }
@@ -111,7 +118,6 @@ class Test_PilotCStoJSONSynchronizer_sync(PilotCStoJSONSynchronizerTestCase):
     synchroniser = PilotCStoJSONSynchronizer()
     res = synchroniser.sync()
     self.assertTrue(res['OK'])
-
 
 class Test_PilotCStoJSONSynchronizer_getDNs(PilotCStoJSONSynchronizerTestCase):
 
