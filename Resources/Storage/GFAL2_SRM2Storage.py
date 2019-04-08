@@ -181,7 +181,7 @@ class GFAL2_SRM2Storage(GFAL2_StorageBase):
       https://its.cern.ch/jira/browse/DMC-977
 
       It queries the srm interface for a given space token.
-      Out of the results, we keep totalsize, guaranteedsize, and unusedsize all in MB.
+      Out of the results, we keep totalsize, guaranteedsize, and unusedsize all in B.
     """
 
     # Gfal2 extended parameter name to query the space token occupancy
@@ -210,7 +210,7 @@ class GFAL2_SRM2Storage(GFAL2_StorageBase):
 
     sTokenDict = {}
 
-    sTokenDict['Total'] = float(occupancyDict.get('totalsize', '0')) / 1e6
-    sTokenDict['Free'] = float(occupancyDict.get('unusedsize', '0')) / 1e6
+    sTokenDict['Total'] = float(occupancyDict.get('totalsize', '0'))
+    sTokenDict['Free'] = float(occupancyDict.get('unusedsize', '0'))
 
     return S_OK(sTokenDict)

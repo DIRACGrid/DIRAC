@@ -228,7 +228,7 @@ Several methods allow to know how much space is left on a storage, depending on 
 * any other: a generic implementation has been made in order to retrieve a JSON file containing the necessary information.
 
 A WLCG working group is trying to standardize the space reporting. So a standard will probably emerge soon (before 2053).
-For the time being, we shall consider that the JSON file will contain a dictionary with keys `Total` and `Free` in MB.
+For the time being, we shall consider that the JSON file will contain a dictionary with keys `Total` and `Free` in Bytes.
 For example::
 
    {
