@@ -119,6 +119,7 @@ class Test_PilotCStoJSONSynchronizer_sync(PilotCStoJSONSynchronizerTestCase):
     res = synchroniser.sync()
     self.assertTrue(res['OK'])
 
+
 class Test_PilotCStoJSONSynchronizer_getDNs(PilotCStoJSONSynchronizerTestCase):
 
   def test_success(self):

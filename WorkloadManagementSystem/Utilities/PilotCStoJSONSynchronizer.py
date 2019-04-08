@@ -255,7 +255,7 @@ class PilotCStoJSONSynchronizer(object):
           return queueOptionRes
         queuesDict[queue] = queueOptionRes['Value']
       pilotDict['Setups'][setup]['Logging']['Queues'] = queuesDict
-      print (pilotDict)
+      print(pilotDict)
 
   def _syncScripts(self):
     """Clone the pilot scripts from the repository and upload them to the web server
