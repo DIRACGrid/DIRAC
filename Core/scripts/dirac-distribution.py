@@ -186,7 +186,7 @@ class DistributionMaker:
       if 'Web' in modName:  # we have to compile WebApp and also its extension.
         if modName != 'WebAppDIRAC' and modName != "Web":  # it means we have an extension!
           # Note: the old portal called Web
-          modules = self.relConf.getDiracModules()
+          modules = self.relConf.diracBaseModules
           webData = modules.get("WebAppDIRAC", None)
           if webData:
             dctArgs.append("-e '%s'" % webData.get("Version"))

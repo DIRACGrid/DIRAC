@@ -1,6 +1,5 @@
 #! /usr/bin/env python
 ########################################################################
-# $HeadURL$
 # File :    dirac-admin-bdii-info
 # Author :  Aresh Vedaee
 ########################################################################
@@ -10,9 +9,9 @@
 from __future__ import print_function
 __RCSID__ = "$Id$"
 import DIRAC
-from DIRAC.Core.Base                                         import Script
-from DIRAC.Core.Security.ProxyInfo                           import getProxyInfo
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry       import getVOForGroup
+from DIRAC.Core.Base import Script
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 
 
 def registerSwitches():
@@ -21,15 +20,15 @@ def registerSwitches():
     command line interface.
   '''
 
-  Script.registerSwitch( "H:", "host=", "BDII host" )
-  Script.registerSwitch( "V:", "vo=", "vo" )
-  Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
-                                     'Usage:',
-                                     '  %s [option|cfgfile] ... <info> <Site|CE>' % Script.scriptName,
-                                     'Arguments:',
-                                     '  Site:     Name of the Site (i.e. CERN-PROD)',
-                                     '  CE:       Name of the CE (i.e. cccreamceli05.in2p3.fr)',
-                                     '  info:     Accepted values (ce|ce-state|ce-cluster|ce-vo|site|site-se)' ] ) )
+  Script.registerSwitch("H:", "host=", "BDII host")
+  Script.registerSwitch("V:", "vo=", "vo")
+  Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
+                                    'Usage:',
+                                    '  %s [option|cfgfile] ... <info> <Site|CE>' % Script.scriptName,
+                                    'Arguments:',
+                                    '  Site:     Name of the Site (i.e. CERN-PROD)',
+                                    '  CE:       Name of the CE (i.e. cccreamceli05.in2p3.fr)',
+                                    '  info:     Accepted values (ce|ce-state|ce-cluster|ce-vo|site|site-se)']))
 
 
 def parseSwitches():
@@ -37,72 +36,72 @@ def parseSwitches():
     Parses the arguments passed by the user
   '''
 
-  Script.parseCommandLine( ignoreErrors = True )
+  Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
 
-  if not len( args ) == 2:
+  if not len(args) == 2:
     Script.showHelp()
 
   params = {}
-  params['ce'] = None 
-  params['site'] = None 
+  params['ce'] = None
+  params['site'] = None
   params['host'] = None
   params['vo'] = None
-  params['info'] = args[0] 
-  ret = getProxyInfo( disableVOMS = True )
+  params['info'] = args[0]
+  ret = getProxyInfo(disableVOMS=True)
 
   if ret['OK'] and 'group' in ret['Value']:
-    params['vo'] = getVOForGroup( ret['Value']['group'] )
+    params['vo'] = getVOForGroup(ret['Value']['group'])
   else:
-    Script.gLogger.error( 'Could not determine VO' )
-    Script.showHelp() 
+    Script.gLogger.error('Could not determine VO')
+    Script.showHelp()
 
   if params['info'] in ['ce', 'ce-state', 'ce-cluster', 'ce-vo']:
     params['ce'] = args[1]
   elif params['info']in ['site', 'site-se']:
     params['site'] = args[1]
   else:
-    Script.gLogger.error( 'Wrong argument value' )
-    Script.showHelp() 
+    Script.gLogger.error('Wrong argument value')
+    Script.showHelp()
 
   for unprocSw in Script.getUnprocessedSwitches():
-    if unprocSw[0] in ( "H", "host" ):
+    if unprocSw[0] in ("H", "host"):
       params['host'] = unprocSw[1]
-    if unprocSw[0] in ( "V", "vo" ):
+    if unprocSw[0] in ("V", "vo"):
       params['vo'] = unprocSw[1]
 
   return params
 
 
-def getInfo( params ):
+def getInfo(params):
   '''
-    Retrieve information from BDII 
+    Retrieve information from BDII
   '''
 
-  from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
+  from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
   diracAdmin = DiracAdmin()
 
   if params['info'] == 'ce':
-    result = diracAdmin.getBDIICE( params['ce'], host = params['host'] )
+    result = diracAdmin.getBDIICE(params['ce'], host=params['host'])
   if params['info'] == 'ce-state':
-    result = diracAdmin.getBDIICEState( params['ce'], useVO = params['vo'], host = params['host'] )
+    result = diracAdmin.getBDIICEState(params['ce'], useVO=params['vo'], host=params['host'])
   if params['info'] == 'ce-cluster':
-    result = diracAdmin.getBDIICluster( params['ce'], host = params['host'] )
+    result = diracAdmin.getBDIICluster(params['ce'], host=params['host'])
   if params['info'] == 'ce-vo':
-    result = diracAdmin.getBDIICEVOView( params['ce'], useVO = params['vo'], host = params['host'] )
+    result = diracAdmin.getBDIICEVOView(params['ce'], useVO=params['vo'], host=params['host'])
   if params['info'] == 'site':
-    result = diracAdmin.getBDIISite( params['site'], host = params['host'] )
+    result = diracAdmin.getBDIISite(params['site'], host=params['host'])
   if params['info'] == 'site-se':
-    result = diracAdmin.getBDIISE( params['site'], useVO = params['vo'], host = params['host'] )
- 
+    result = diracAdmin.getBDIISE(params['site'], useVO=params['vo'], host=params['host'])
+
   if not result['OK']:
     print(result['Message'])
-    DIRAC.exit( 2 )
+    DIRAC.exit(2)
 
   return result
 
 
-def showInfo( result, info ):
+def showInfo(result, info):
   '''
     Display information
   '''
@@ -133,18 +132,18 @@ def showInfo( result, info ):
     print("}")
 
 
-#...............................................................................
+# ...............................................................................
 
 if __name__ == "__main__":
-  
-  #Script initialization
+
+  # Script initialization
   registerSwitches()
-  #registerUsageMessage()
+  # registerUsageMessage()
   params = parseSwitches()
-  result = getInfo( params )
-  showInfo( result, params['info'] )
-  
-  DIRAC.exit( 0 )
+  result = getInfo(params)
+  showInfo(result, params['info'])
+
+  DIRAC.exit(0)
 
 ################################################################################
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
+# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

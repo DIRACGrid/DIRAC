@@ -226,7 +226,7 @@ Several methods allow to know how much space is left on a storage, depending on 
 * any other: a generic implementation has been made in order to retrieve a JSON file containing the necessary information.
 
 A WLCG working group is trying to standardize the space reporting. So a standard will probably emerge soon (before 2053).
-For the time being, we shall consider that the JSON file will contain a dictionary with keys `Total` and `Free` in MB.
+For the time being, we shall consider that the JSON file will contain a dictionary with keys `Total` and `Free` in Bytes.
 For example::
 
    {
@@ -278,6 +278,12 @@ External services like FTS requires pair of URLs to perform third party copy.
 This is implemented using the same logic as described above. There is however an extra step: once the common protocols between 2 SEs have been filtered, an extra loop filter is done to make sure that the selected protocol can be used as read from the source and as write to the destination. Finally, the URLs which are returned are not necessarily the url of the common protocol, but are the native urls of the plugin that can accept/generate the common protocol. For example, if the common protocol is gsiftp but one of the SE has only an SRM plugin, then you will get an srm URL (which is compatible with gsiftp).
 
 
+Protocol matrix
+^^^^^^^^^^^^^^^
+
+In order to make it easier to debug, the script :ref:`dirac-dms-protocol-matrix` will generate a CSV files that allows you to see what would happen if you were to try transfers between SEs
+
+--------------------
 StorageElementGroups
 --------------------
 

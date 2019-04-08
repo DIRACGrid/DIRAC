@@ -10,91 +10,97 @@
 """
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Base                                      import Script
-from DIRAC.ConfigurationSystem.Client.CSAPI               import CSAPI
-from DIRAC                                                import exit as DIRACExit, gConfig, gLogger
-from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping          import getDIRACSiteName
+from DIRAC.Core.Base import Script
+from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
+from DIRAC import exit as DIRACExit, gConfig, gLogger
+from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getDIRACSiteName
 
 if __name__ == "__main__":
-  
-  Script.setUsageMessage('\n'.join( [ __doc__.split( '\n' )[1],
-                                    'Usage:',
-                                    '  %s [option|cfgfile] ... DIRACSiteName GridSiteName CE [CE] ...' % Script.scriptName,
-                                    'Arguments:',
-                                    '  DIRACSiteName: Name of the site for DIRAC in the form GRID.LOCATION.COUNTRY (ie:LCG.CERN.ch)',
-                                    '  GridSiteName: Name of the site in the Grid (ie: CERN-PROD)',
-                                    '  CE: Name of the CE to be included in the site (ie: ce111.cern.ch)'] ) )
-  Script.parseCommandLine( ignoreErrors = True )
+
+  Script.setUsageMessage(
+      '\n'.join(
+          [
+              __doc__.split('\n')[1],
+              'Usage:',
+              '  %s [option|cfgfile] ... DIRACSiteName GridSiteName CE [CE] ...' %
+              Script.scriptName,
+              'Arguments:',
+              '  DIRACSiteName: Name of the site for DIRAC in the form GRID.LOCATION.COUNTRY (ie:LCG.CERN.ch)',
+              '  GridSiteName: Name of the site in the Grid (ie: CERN-PROD)',
+              '  CE: Name of the CE to be included in the site (ie: ce111.cern.ch)']))
+  Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
 
   csAPI = CSAPI()
-  
-  if len( args ) < 3:
+
+  if len(args) < 3:
     Script.showHelp()
-    DIRACExit( -1 )
-  
+    DIRACExit(-1)
+
   diracSiteName = args[0]
   gridSiteName = args[1]
   ces = args[2:]
   try:
-    diracGridType, place, country = diracSiteName.split( '.' )
+    diracGridType, place, country = diracSiteName.split('.')
   except ValueError:
-    gLogger.error( "The DIRACSiteName should be of the form GRID.LOCATION.COUNTRY for example LCG.CERN.ch" )
-    DIRACExit( -1 )
-  
-  result = getDIRACSiteName( gridSiteName )
+    gLogger.error("The DIRACSiteName should be of the form GRID.LOCATION.COUNTRY for example LCG.CERN.ch")
+    DIRACExit(-1)
+
+  result = getDIRACSiteName(gridSiteName)
   newSite = True
   if result['OK']:
-    if result['Value']: 
-      if len( result['Value'] ) > 1:
-        gLogger.notice( '%s GOC site name is associated with several DIRAC sites:' % gridSiteName )
-        for i, dSite in enumerate( result['Value'] ):
-          gLogger.notice( '%d: %s' % ( i, dSite ) )
-        inp = raw_input( 'Enter your choice number: ' )  
+    if result['Value']:
+      if len(result['Value']) > 1:
+        gLogger.notice('%s GOC site name is associated with several DIRAC sites:' % gridSiteName)
+        for i, dSite in enumerate(result['Value']):
+          gLogger.notice('%d: %s' % (i, dSite))
+        inp = raw_input('Enter your choice number: ')
         try:
-          inp = int( inp )
+          inp = int(inp)
         except ValueError:
-          gLogger.error( 'You should enter an integer number' )
-          DIRACExit( -1 )
-        if 0 <= inp < len( result['Value'] ):
+          gLogger.error('You should enter an integer number')
+          DIRACExit(-1)
+        if 0 <= inp < len(result['Value']):
           diracCSSite = result['Value'][inp]
         else:
-          gLogger.error( 'Number out of range: %d' % inp ) 
-          DIRACExit( -1 )
+          gLogger.error('Number out of range: %d' % inp)
+          DIRACExit(-1)
       else:
-        diracCSSite = result['Value'][0]     
+        diracCSSite = result['Value'][0]
       if diracCSSite == diracSiteName:
-        gLogger.notice( 'Site with GOC name %s is already defined as %s' % ( gridSiteName, diracSiteName ) )
+        gLogger.notice('Site with GOC name %s is already defined as %s' % (gridSiteName, diracSiteName))
         newSite = False
       else:
-        gLogger.error( 'ERROR: Site with GOC name %s is already defined as %s' % ( gridSiteName, diracCSSite ) )  
-        DIRACExit( -1 )
-  
-  cfgBase = "/Resources/Sites/%s/%s" % ( diracGridType, diracSiteName )
+        gLogger.error('ERROR: Site with GOC name %s is already defined as %s' % (gridSiteName, diracCSSite))
+        DIRACExit(-1)
+
+  cfgBase = "/Resources/Sites/%s/%s" % (diracGridType, diracSiteName)
   change = False
   if newSite:
-    gLogger.notice( "Adding new site to CS: %s" % diracSiteName )
-    csAPI.setOption( "%s/Name" % cfgBase, gridSiteName )
-    gLogger.notice( "Adding CEs: %s" % ','.join( ces ) )
-    csAPI.setOption( "%s/CE" % cfgBase, ','.join( ces ) )
+    gLogger.notice("Adding new site to CS: %s" % diracSiteName)
+    csAPI.setOption("%s/Name" % cfgBase, gridSiteName)
+    gLogger.notice("Adding CEs: %s" % ','.join(ces))
+    csAPI.setOption("%s/CE" % cfgBase, ','.join(ces))
     change = True
   else:
-    cesCS = set( gConfig.getValue( "%s/CE" % cfgBase, [] ) )
-    ces = set( ces )
+    cesCS = set(gConfig.getValue("%s/CE" % cfgBase, []))
+    ces = set(ces)
     newCEs = ces - cesCS
     if newCEs:
-      cesCS = cesCS.union( ces )
-      gLogger.notice( "Adding CEs %s" % ','.join( newCEs ) )
-      cesCS = cesCS.union( ces )
-      csAPI.modifyValue( "%s/CE" % cfgBase, ','.join( cesCS ) )
+      cesCS = cesCS.union(ces)
+      gLogger.notice("Adding CEs %s" % ','.join(newCEs))
+      cesCS = cesCS.union(ces)
+      csAPI.modifyValue("%s/CE" % cfgBase, ','.join(cesCS))
       change = True
-  if change:       
+  if change:
     res = csAPI.commitChanges()
     if not res['OK']:
-      gLogger.error( "Failed to commit changes to CS", res['Message'] )
-      DIRACExit( -1 )
+      gLogger.error("Failed to commit changes to CS", res['Message'])
+      DIRACExit(-1)
     else:
       if newSite:
-        gLogger.notice( "Successfully added site %s to the CS with name %s and CEs: %s" % ( diracSiteName, gridSiteName, ','.join( ces ) ) )
+        gLogger.notice(
+            "Successfully added site %s to the CS with name %s and CEs: %s" %
+            (diracSiteName, gridSiteName, ','.join(ces)))
       else:
-        gLogger.notice( "Successfully added new CEs to site %s: %s" % ( diracSiteName, ','.join( newCEs ) ) )  
+        gLogger.notice("Successfully added new CEs to site %s: %s" % (diracSiteName, ','.join(newCEs)))

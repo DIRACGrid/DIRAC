@@ -39,7 +39,7 @@ import shlex
 
 # from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities.File import mkDir
+from DIRAC.Core.Utilities.File import mkDir, convertSizeUnits
 from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
 from DIRAC.Core.Utilities.Os import getDirectorySize
 from DIRAC.Core.Utilities.Subprocess import systemCall
@@ -49,13 +49,15 @@ from DIRAC.Resources.Storage.StorageBase import StorageBase
 
 
 BASE_PATH = ""
+
+# This is in bytes, but in MB in the CS
 MAX_STORAGE_SIZE = 0
 USE_TOKENS = False
 
 
 def getDiskSpace(path, total=False):
   """
-    Returns disk usage of the given path, in MB.
+    Returns disk usage of the given path, in Bytes.
     If total is set to true, the total disk space will be returned instead.
   """
 
@@ -69,7 +71,7 @@ def getDiskSpace(path, total=False):
       # return free space
       queriedSize = st.f_bavail
 
-    result = float(queriedSize * st.f_frsize) / float(1024 * 1024)
+    result = float(queriedSize * st.f_frsize)
 
   except OSError as e:
     return S_ERROR(errno.EIO, "Error while getting the available disk space: %s" % repr(e))
@@ -78,11 +80,11 @@ def getDiskSpace(path, total=False):
 
 
 def getTotalDiskSpace():
-  """  Returns the total maximum volume of the SE storage in MB. The total volume
+  """  Returns the total maximum volume of the SE storage in B. The total volume
        can be limited either by the amount of the available disk space or by the
        MAX_STORAGE_SIZE value.
 
-       :return: S_OK/S_ERROR, Value is the max total volume of the SE storage in MB
+       :return: S_OK/S_ERROR, Value is the max total volume of the SE storage in B
   """
 
   global BASE_PATH
@@ -100,7 +102,7 @@ def getFreeDiskSpace(ignoreMaxStorageSize=True):
   """ Returns the free disk space still available for writing taking into account
       the total available disk space and the MAX_STORAGE_SIZE limitation
 
-      :return: S_OK/S_ERROR, Value is the free space of the SE storage in MB
+      :return: S_OK/S_ERROR, Value is the free space of the SE storage in B
   """
 
   global MAX_STORAGE_SIZE
@@ -138,11 +140,11 @@ def initializeStorageElementHandler(serviceInfo):
   mkDir(BASE_PATH)
 
   USE_TOKENS = getServiceOption(serviceInfo, "%UseTokens", USE_TOKENS)
-  MAX_STORAGE_SIZE = getServiceOption(serviceInfo, "MaxStorageSize", MAX_STORAGE_SIZE)
+  MAX_STORAGE_SIZE = convertSizeUnits(getServiceOption(serviceInfo, "MaxStorageSize", MAX_STORAGE_SIZE), 'MB', 'B')
 
   gLogger.info('Starting DIRAC Storage Element')
   gLogger.info('Base Path: %s' % BASE_PATH)
-  gLogger.info('Max size: %d MB' % MAX_STORAGE_SIZE)
+  gLogger.info('Max size: %d Bytes' % MAX_STORAGE_SIZE)
   gLogger.info('Use access control tokens: ' + str(USE_TOKENS))
   return S_OK()
 
@@ -170,7 +172,7 @@ class StorageElementHandler(RequestHandler):
     if not result['OK']:
       return result
     freeSpace = result['Value']
-    spaceFlag = freeSpace * 1024 * 1024 > size
+    spaceFlag = freeSpace > size
     if spaceFlag:
       return S_OK(spaceFlag)
 
@@ -180,7 +182,7 @@ class StorageElementHandler(RequestHandler):
     if not result['OK']:
       return result
     freeSpace = result['Value']
-    spaceFlag = freeSpace * 1024 * 1024 > size
+    spaceFlag = freeSpace > size
     if spaceFlag:
       gLogger.warn('Space limited by MAX_STORAGE_SIZE is not enough to store file')
     return S_OK(spaceFlag)
@@ -271,7 +273,7 @@ class StorageElementHandler(RequestHandler):
   def export_getFreeDiskSpace():
     """ Get the free disk space of the storage element
 
-        :return: S_OK/S_ERROR, Value is the free space on the SE storage in MB
+        :return: S_OK/S_ERROR, Value is the free space on the SE storage in B
     """
     return getFreeDiskSpace()
 
@@ -281,7 +283,7 @@ class StorageElementHandler(RequestHandler):
   def export_getTotalDiskSpace():
     """ Get the total disk space of the storage element
 
-        :return: S_OK/S_ERROR, Value is the max total volume of the SE storage in MB
+        :return: S_OK/S_ERROR, Value is the max total volume of the SE storage in B
     """
     return getTotalDiskSpace()
 
@@ -375,7 +377,7 @@ class StorageElementHandler(RequestHandler):
     try:
       mkDir(os.path.dirname(file_path))
       with open(file_path, "wb") as fd:
-        return fileHelper.networkToDataSink(fd, maxFileSize=(MAX_STORAGE_SIZE * 1024 * 1024))
+        return fileHelper.networkToDataSink(fd, maxFileSize=(MAX_STORAGE_SIZE))
     except Exception as error:
       return S_ERROR("Cannot open to write destination file %s: %s" % (file_path, str(error)))
 
@@ -406,7 +408,7 @@ class StorageElementHandler(RequestHandler):
     """ Receive files packed into a tar archive by the fileHelper logic.
         token is used for access rights confirmation.
     """
-    result = self.__checkForDiskSpace(10 * 1024 * 1024)
+    result = self.__checkForDiskSpace(10)
     if not result['OK']:
       return S_ERROR('Failed to get available free space')
     elif not result['Value']:
@@ -544,8 +546,8 @@ class StorageElementHandler(RequestHandler):
     storageDict['MaxCapacity'] = MAX_STORAGE_SIZE
     used_space = getDirectorySize(BASE_PATH)
     stats = os.statvfs(BASE_PATH)
-    available_space = (stats.f_bsize * stats.f_bavail) / 1024 / 1024
-    allowed_space = MAX_STORAGE_SIZE - used_space
+    available_space = convertSizeUnits(stats.f_bsize * stats.f_bavail, 'B', 'MB')
+    allowed_space = convertSizeUnits(MAX_STORAGE_SIZE, 'B', 'MB') - used_space
     actual_space = min(available_space, allowed_space)
     storageDict['AvailableSpace'] = actual_space
     storageDict['UsedSpace'] = used_space

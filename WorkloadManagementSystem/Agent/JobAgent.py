@@ -21,12 +21,12 @@ from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Utilities.TimeLeft.TimeLeft import TimeLeft
 from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Security import Properties
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
 from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
+from DIRAC.WorkloadManagementSystem.Client.WMSAdministratorClient import WMSAdministratorClient
 from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
 from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
 from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
@@ -97,7 +97,10 @@ class JobAgent(AgentModule):
     if not result['OK']:
       self.log.warn("Can not get the CE description")
       return result
-    ceDict = result['Value']
+    if isinstance(result['Value'], list):
+      ceDict = result['Value'][0]
+    else:
+      ceDict = result['Value']
     self.timeLeft = ceDict.get('CPUTime', self.timeLeft)
     self.timeLeft = gConfig.getValue('/Resources/Computing/CEDefaults/MaxCPUTime', self.timeLeft)
 
@@ -180,28 +183,38 @@ class JobAgent(AgentModule):
     result = self.computingElement.getDescription()
     if not result['OK']:
       return result
-    ceDict = result['Value']
-    # Add pilot information
-    gridCE = gConfig.getValue('LocalSite/GridCE', 'Unknown')
-    if gridCE != 'Unknown':
-      ceDict['GridCE'] = gridCE
-    if 'PilotReference' not in ceDict:
-      ceDict['PilotReference'] = str(self.pilotReference)
-    ceDict['PilotBenchmark'] = self.cpuFactor
-    ceDict['PilotInfoReportedFlag'] = self.pilotInfoReportedFlag
 
-    # Add possible job requirements
-    result = gConfig.getOptionsDict('/AgentJobRequirements')
-    if result['OK']:
-      requirementsDict = result['Value']
-      ceDict.update(requirementsDict)
-      self.log.info('Requirements:', requirementsDict)
+    # We can have several prioritized job retrieval strategies
+    if isinstance(result['Value'], dict):
+      ceDictList = [result['Value']]
+    elif isinstance(result['Value'], list):
+      ceDictList = result['Value']
 
-    self.log.verbose(ceDict)
-    start = time.time()
-    jobRequest = MatcherClient().requestJob(ceDict)
-    matchTime = time.time() - start
-    self.log.info('MatcherTime = %.2f (s)' % (matchTime))
+    for ceDict in ceDictList:
+
+      # Add pilot information
+      gridCE = gConfig.getValue('LocalSite/GridCE', 'Unknown')
+      if gridCE != 'Unknown':
+        ceDict['GridCE'] = gridCE
+      if 'PilotReference' not in ceDict:
+        ceDict['PilotReference'] = str(self.pilotReference)
+      ceDict['PilotBenchmark'] = self.cpuFactor
+      ceDict['PilotInfoReportedFlag'] = self.pilotInfoReportedFlag
+
+      # Add possible job requirements
+      result = gConfig.getOptionsDict('/AgentJobRequirements')
+      if result['OK']:
+        requirementsDict = result['Value']
+        ceDict.update(requirementsDict)
+        self.log.info('Requirements:', requirementsDict)
+
+      self.log.verbose(ceDict)
+      start = time.time()
+      jobRequest = MatcherClient().requestJob(ceDict)
+      matchTime = time.time() - start
+      self.log.info('MatcherTime = %.2f (s)' % (matchTime))
+      if jobRequest['OK']:
+        break
 
     self.stopAfterFailedMatches = self.am_getOption('StopAfterFailedMatches', self.stopAfterFailedMatches)
 
@@ -610,9 +623,8 @@ class JobAgent(AgentModule):
 
     gridCE = gConfig.getValue('/LocalSite/GridCE', '')
     queue = gConfig.getValue('/LocalSite/CEQueue', '')
-    wmsAdmin = RPCClient('WorkloadManagement/WMSAdministrator')
-    result = wmsAdmin.setPilotStatus(str(self.pilotReference), 'Done', gridCE,
-                                     'Report from JobAgent', self.siteName, queue)
+    result = WMSAdministratorClient().setPilotStatus(str(self.pilotReference), 'Done', gridCE,
+                                                     'Report from JobAgent', self.siteName, queue)
     if not result['OK']:
       self.log.warn(result['Message'])
 

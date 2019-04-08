@@ -58,7 +58,7 @@ class MonitoringReporter(object):
     else:
       return retVal
 
-    result = createConsumer("Monitoring::Queue::%s" % self.__failoverQueueName)
+    result = createConsumer("Monitoring::Queues::%s" % self.__failoverQueueName)
     if not result['OK']:
       gLogger.error("Fail to create Consumer: %s" % result['Message'])
       return S_ERROR("Fail to create Consumer: %s" % result['Message'])
@@ -167,7 +167,7 @@ class MonitoringReporter(object):
       MQProducer or None:
     """
     mqProducer = None
-    result = createProducer("Monitoring::Queue::%s" % self.__failoverQueueName)
+    result = createProducer("Monitoring::Queues::%s" % self.__failoverQueueName)
     if not result['OK']:
       gLogger.warn("Fail to create Producer:", result['Message'])
     else:

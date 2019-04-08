@@ -40,10 +40,10 @@ from DIRAC.tests.Utilities.utils import find_all
 
 from DIRAC import gLogger
 from DIRAC.Interfaces.API.Job import Job
-from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
+from DIRAC.WorkloadManagementSystem.Client.WMSAdministratorClient import WMSAdministratorClient
 from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
 from DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent import JobCleaningAgent
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
@@ -409,7 +409,7 @@ class WMSAdministrator(TestWMSTestCase):
 
   def test_JobDBWMSAdmin(self):
 
-    wmsAdministrator = RPCClient('WorkloadManagement/WMSAdministrator')
+    wmsAdministrator = WMSAdministratorClient()
 
     sitesList = ['My.Site.org', 'Your.Site.org']
     res = wmsAdministrator.setSiteMask(sitesList)
@@ -454,7 +454,7 @@ class WMSAdministratorPilots(TestWMSTestCase):
 
   def test_PilotsDB(self):
 
-    wmsAdministrator = RPCClient('WorkloadManagement/WMSAdministrator')
+    wmsAdministrator = WMSAdministratorClient()
     pilotAgentDB = PilotAgentsDB()
 
     res = wmsAdministrator.addPilotTQReference(['aPilot'], 1, '/a/ownerDN', 'a/owner/Group')

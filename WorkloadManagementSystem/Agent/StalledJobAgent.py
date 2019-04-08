@@ -1,9 +1,6 @@
-########################################################################
-# File : StalledJobAgent.py
-########################################################################
 """ The StalledJobAgent hunts for stalled jobs in the Job database. Jobs in "running"
-state not receiving a heart beat signal for more than stalledTime
-seconds will be assigned the "Stalled" state.
+    state not receiving a heart beat signal for more than stalledTime
+    seconds will be assigned the "Stalled" state.
 """
 
 from __future__ import absolute_import
@@ -15,13 +12,13 @@ from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.Time import fromString, toEpoch, dateTime, second
 from DIRAC import S_OK, S_ERROR, gConfig
-from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.AccountingSystem.Client.Types.Job import Job
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath
 from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemInstance
 from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
+from DIRAC.WorkloadManagementSystem.Client.WMSAdministratorClient import WMSAdministratorClient
 
 
 class StalledJobAgent(AgentModule):
@@ -63,6 +60,7 @@ for the agent restart
   def execute(self):
     """ The main agent execution method
     """
+
     self.log.verbose('Waking up Stalled Job Agent')
 
     wms_instance = getSystemInstance('WorkloadManagement')
@@ -89,7 +87,7 @@ for the agent restart
     stalledTime = watchdogCycle * (stalledTime + 0.5)
     failedTime = watchdogCycle * (failedTime + 0.5)
 
-    result = self._markStalledJobs(stalledTime)
+    result = self.__markStalledJobs(stalledTime)
     if not result['OK']:
       self.log.error('Failed to detect stalled jobs', result['Message'])
 
@@ -97,28 +95,28 @@ for the agent restart
     # subsequent status changes will result in jobs not being selected by the
     # stalled job agent.
 
-    result = self._failStalledJobs(failedTime)
+    result = self.__failStalledJobs(failedTime)
     if not result['OK']:
       self.log.error('Failed to process stalled jobs', result['Message'])
 
-    result = self._failCompletedJobs()
+    result = self.__failCompletedJobs()
     if not result['OK']:
       self.log.error('Failed to process completed jobs', result['Message'])
 
-    result = self._failSubmittingJobs()
+    result = self.__failSubmittingJobs()
     if not result['OK']:
       self.log.error('Failed to process jobs being submitted', result['Message'])
 
-    result = self._kickStuckJobs()
+    result = self.__kickStuckJobs()
     if not result['OK']:
       self.log.error('Failed to kick stuck jobs', result['Message'])
 
     return S_OK('Stalled Job Agent cycle complete')
 
   #############################################################################
-  def _markStalledJobs(self, stalledTime):
+  def __markStalledJobs(self, stalledTime):
     """ Identifies stalled jobs running without update longer than stalledTime.
-"""
+    """
     stalledCounter = 0
     runningCounter = 0
     result = self.jobDB.selectJobs({'Status': 'Running'})
@@ -149,7 +147,7 @@ for the agent restart
     return S_OK()
 
   #############################################################################
-  def _failStalledJobs(self, failedTime):
+  def __failStalledJobs(self, failedTime):
     """ Changes the Stalled status to Failed for jobs long in the Stalled status
     """
 
@@ -187,7 +185,7 @@ for the agent restart
         # Set the jobs Failed, send them a kill signal in case they are not really dead and send accounting info
         if setFailed:
           self.__sendKillCommand(job)
-          self.__updateJobStatus( job, 'Failed', setFailed )
+          self.__updateJobStatus(job, 'Failed', setFailed)
           failedCounter += 1
           result = self.__sendAccounting(job)
           if not result['OK']:
@@ -230,8 +228,7 @@ for the agent restart
       # There is no pilot reference, hence its status is unknown
       return S_OK('NoPilot')
 
-    wmsAdminClient = RPCClient('WorkloadManagement/WMSAdministrator')
-    result = wmsAdminClient.getPilotInfo(pilotReference)
+    result = WMSAdministratorClient().getPilotInfo(pilotReference)
     if not result['OK']:
       if "No pilots found" in result['Message']:
         self.log.warn(result['Message'])
@@ -335,7 +332,6 @@ used to fail jobs due to the optimizer chain.
       processingType = classAdJob.getAttributeString('ProcessingType')
     return processingType
 
-  #############################################################################
   def __sendAccounting(self, jobID):
     """ Send WMS accounting data for the given job
     """
@@ -356,15 +352,16 @@ used to fail jobs due to the optimizer chain.
         endTime = lastHeartBeatTime
 
       result = JobMonitoringClient().getJobParameter(jobID, 'CPUNormalizationFactor')
-      if not result['OK']:
+      if not result['OK'] or not result['Value']:
         self.log.error('Error getting Job Parameter CPUNormalizationFactor, setting 0', result['Message'])
         cpuNormalization = 0.0
       else:
         cpuNormalization = float(result['Value'].get('CPUNormalizationFactor'))
 
-    except Exception:
-      self.log.exception("Exception in __sendAccounting for job %s: endTime=%s, lastHBTime %s" %
-                         (str(jobID), str(endTime), str(lastHeartBeatTime)), '', False)
+    except Exception as e:
+      self.log.exception("Exception in __sendAccounting",
+                         "for job=%s: endTime=%s, lastHBTime=%s" % (str(jobID), str(endTime), str(lastHeartBeatTime)),
+                         lException=e)
       return S_ERROR("Exception")
     processingType = self.__getProcessingType(jobID)
 
@@ -460,7 +457,7 @@ used to fail jobs due to the optimizer chain.
       if not startTime or startTime == 'None':
         startTime = jobDict['SubmissionTime']
 
-    if isinstance(startTime, six.string_types):
+    if isinstance(startTime, basestring):
       startTime = fromString(startTime)
       if startTime is None:
         self.log.error('Wrong timestamp in DB', items[3])
@@ -477,9 +474,9 @@ used to fail jobs due to the optimizer chain.
 
     return startTime, endTime
 
-  def _kickStuckJobs(self):
+  def __kickStuckJobs(self):
     """ Reschedule jobs stuck in initialization status Rescheduled, Matched
-"""
+    """
 
     message = ''
 
@@ -515,7 +512,7 @@ used to fail jobs due to the optimizer chain.
       return S_ERROR(message)
     return S_OK()
 
-  def _failCompletedJobs(self):
+  def __failCompletedJobs(self):
     """ Failed Jobs stuck in Completed Status for a long time.
       They are due to pilots being killed during the
       finalization of the job execution.
@@ -552,7 +549,7 @@ used to fail jobs due to the optimizer chain.
 
     return S_OK()
 
-  def _failSubmittingJobs(self):
+  def __failSubmittingJobs(self):
     """ Failed Jobs stuck in Submitting Status for a long time.
         They are due to a failed bulk submission transaction.
     """

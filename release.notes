@@ -50,6 +50,39 @@ NEW: (#3744) Add WMS documentation in DeveloperGuide/Systems
 NEW: Added script (docs/Tools/UpdateDiracCFG.py) to collate the ConfigTemplate.cfg 
      files into the main dirac.cfg file
 
+[v6r21p3]
+
+*Core
+FIX: (#4005) getDiracModules is removed, class member is used instead.
+FIX: (#4013) Use getCAsLocation in order to avoid non-exist os.environ['X509_CERT_DIR']
+
+*ConfigurationSystem
+FIX: (#4004) BDII2CSAgent: fix for CEs with incomplete BDII info
+
+*WorkloadManagementSystem
+NEW: (#4016) JobAgent - added possibility to try out several CE descriptions when 
+             getting jobs in one cycle
+NEW: (#4016) Matcher - MultiProcessor tag is added to the resource description if appropriate
+NEW: (#4016) JobScheduling - MultiProcessor tag is added to the job description if it 
+             specifies multiple processor requirements
+FIX: (#4018) JobMonitoring.getJobParameter cast to int
+NEW: (#4019) added WMSAdministratorClient module, and using it throughout the code
+
+*Resources/MessageQueue
+CHANGE: (#4007) change the way of defining identifier  format for MQ resources: 
+        accepted values are  'Topics' or 'Queues'.
+
+*DataManagementSystem
+CHANGE: (#4017) DIP handler internally uses bytes instead of MB
+NEW: (#4010) add dirac-dms-protocol-matrix script
+CHANGE: (#4010) remove dirac-dms-add-files script
+
+*Resources
+NEW: (#4016) PoolComputingElement - getDescription returns a list of descriptions 
+             with different requirements to jobs to be matched
+CHANGE: (#4017) Standardize sizes returned by StoragePlugins in Bytes
+CHANGE: (#4011) MQ: randomzied the broker list when putting message
+
 [v6r21p2]
 
 *Core

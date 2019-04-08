@@ -9,8 +9,8 @@ from mock.mock import MagicMock
 
 __RCSID__ = "$Id$"
 
-MQURI1 = 'mq.dirac.net::Topic::perfsonar.summary.packet-loss-rate'
-MQURI2 = 'mq.dirac.net::Queue::perfsonar.summary.histogram-owdelay'
+MQURI1 = 'mq.dirac.net::Topics::perfsonar.summary.packet-loss-rate'
+MQURI2 = 'mq.dirac.net::Queues::perfsonar.summary.histogram-owdelay'
 
 ROOT_PATH = '/Resources/Sites'
 SITE1 = 'LCG.Dirac.net'

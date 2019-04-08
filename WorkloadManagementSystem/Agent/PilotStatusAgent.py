@@ -14,10 +14,10 @@ from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Security import CS
 from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE
-from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 from DIRAC.AccountingSystem.Client.Types.Pilot import Pilot as PilotAccounting
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
+from DIRAC.WorkloadManagementSystem.Client.WMSAdministratorClient import WMSAdministratorClient
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 
@@ -61,7 +61,7 @@ class PilotStatusAgent(AgentModule):
     self.jobDB = JobDB()
     self.clearPilotsDelay = self.am_getOption('ClearPilotsDelay', 30)
     self.clearAbortedDelay = self.am_getOption('ClearAbortedPilotsDelay', 7)
-    self.WMSAdministrator = RPCClient('WorkloadManagement/WMSAdministrator')
+    self.WMSAdministrator = WMSAdministratorClient()
 
     return S_OK()
 
@@ -116,8 +116,7 @@ class PilotStatusAgent(AgentModule):
     refList = result['Value']
 
     for pilotRef in refList:
-      # FIXME: definitely, one of the 2 lines below is wrong...
-      self.log.info('Setting Waiting pilot to Aborted: %s' % pilotRef)
+      self.log.info('Setting Waiting pilot to Stalled: %s' % pilotRef)
       result = self.pilotDB.setPilotStatus(pilotRef, 'Stalled', statusReason='Exceeded max waiting time')
 
     return S_OK()

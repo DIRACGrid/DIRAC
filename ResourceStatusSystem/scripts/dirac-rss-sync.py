@@ -13,10 +13,10 @@ Verbosity:
     -o LogLevel=LEVEL     NOTICE by default, levels available: INFO, DEBUG, VERBOSE..
 """
 
+__RCSID__ = '$Id$'
+
 from DIRAC import version, gLogger, exit as DIRACExit, S_OK
 from DIRAC.Core.Base import Script
-
-__RCSID__ = '$Id$'
 
 subLogger = None
 switchDict = {}
@@ -83,13 +83,13 @@ DEFAULT_STATUS = switchDict.get('defaultStatus', 'Banned')
 #############################################################################
 # We can define the script body now
 
-from DIRAC.WorkloadManagementSystem.Client.ServerUtils import jobDB
 from DIRAC import gConfig
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.ResourceStatusSystem.Utilities import Synchronizer, CSHelpers, RssConfiguration
 from DIRAC.ResourceStatusSystem.Client import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.PolicySystem import StateMachine
-from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.WorkloadManagementSystem.Client.WMSAdministratorClient import WMSAdministratorClient
 
 result = getProxyInfo()
 if result['OK']:
@@ -135,7 +135,7 @@ def initSites():
 
   rssClient = ResourceStatusClient.ResourceStatusClient()
 
-  sites = jobDB.getAllSiteMaskStatus()
+  sites = WMSAdministratorClient().getAllSiteMaskStatus()
 
   if not sites['OK']:
     subLogger.error(sites['Message'])
@@ -228,8 +228,6 @@ def initSEs():
 
   return S_OK()
 
-#...............................................................................
-
 
 def run():
   '''
@@ -255,8 +253,6 @@ def run():
         subLogger.error(result['Message'])
         DIRACExit(1)
 
-#...............................................................................
-
 
 if __name__ == "__main__":
 
@@ -265,6 +261,3 @@ if __name__ == "__main__":
 
   # Bye
   DIRACExit(0)
-
-################################################################################
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
