@@ -119,26 +119,7 @@ class Test_PilotCStoJSONSynchronizer_sync(PilotCStoJSONSynchronizerTestCase):
     res = synchroniser.sync()
     self.assertTrue(res['OK'])
 
-
-class Test_PilotCStoJSONSynchronizer_getDNs(PilotCStoJSONSynchronizerTestCase):
-
-  def test_success(self):
-    synchroniser = PilotCStoJSONSynchronizer()
-    res = synchroniser._getDNs('lhcb_pilot')
-    self.assertTrue(res['OK'])
-    DNs = res['Value']
-    expected = ['/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=ttester/CN=696969/CN=Thomas Tester',
-                '/DC=ch/DC=voodo/OU=Organic Units/OU=Users/CN=franekbolek/CN=111122/CN=Franek Bolek']
-    self.assertEqual(sorted(expected), sorted(DNs))
-
-  def test_failure(self):
-    synchroniser = PilotCStoJSONSynchronizer()
-    res = synchroniser._getDNs('nonExistingGroup')
-    self.assertFalse(res['OK'])
-
-
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(PilotCStoJSONSynchronizerTestCase)
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(Test_PilotCStoJSONSynchronizer_sync))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(Test_PilotCStoJSONSynchronizer_getDNs))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)

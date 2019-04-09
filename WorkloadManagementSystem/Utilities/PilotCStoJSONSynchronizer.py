@@ -170,20 +170,6 @@ class PilotCStoJSONSynchronizer(object):
 
     return pilotDict
 
-  def _getDNs(self, certGroupName):
-    '''Returns DN list of users in given group.
-
-    :param certGroupName: name of the group.
-    :returns: S_OK with the list of DNs if successful, S_ERROR otherwise'''
-    try:
-      usersString = gConfig.getValue('/Registry/Groups/' + certGroupName + '/Users')
-      usersInGroup = usersString.split(',')
-      DNs = [gConfig.getValue('/Registry/Users/' + user + '/DN') for user in usersInGroup]
-      return S_OK(DNs)
-    except AttributeError as ae:
-      gLogger.exception("Error occured while getting the DNs", lException=ae)
-      return S_ERROR('Some error occured while getting the DNs.')
-
   def _getPilotOptionsPerSetup(self, setup, pilotDict):
     """ Given a setup, returns its pilot options in a dictionary
     """
