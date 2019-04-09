@@ -18,8 +18,7 @@ class Configuration(object):
   """Provide configuraiton to the scripts."""
 
   def __init__(self, confFile):
-    LOG.info('Reading configFile %r', confFile)
-
+    LOG.info('Reading configFile %r', os.path.join(os.getcwd(), confFile))
     config = ConfigParser.SafeConfigParser(dict_type=dict)
     config.read(confFile)
     # config.optionxform = str  # do not transform options to lowercase

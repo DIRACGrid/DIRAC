@@ -25,8 +25,8 @@ SECTION_PATH = 'sectionPath'
 
 class CommandReference(object):
 
-  def __init__(self, confFile='docs.conf', debug=False):
-    self.config = Configuration(confFile)
+  def __init__(self, configFile='docs.conf', debug=False):
+    self.config = Configuration(configFile)
     self.exitcode = 0
     self.debug = debug
     # tuples: list of patterns to match in script names,
@@ -103,7 +103,7 @@ class CommandReference(object):
       LOG.debug('Index file:\n%s', userIndexRST) if self.debug else None
       sectionPath = os.path.join(self.config.packagePath, mT[SECTION_PATH])
       mkdir(sectionPath)
-      self.createSectionIndex(mT, indexFile)
+      self.createSectionIndex(mT)
 
     userIndexPath = os.path.join(self.config.packagePath, indexFile)
     writeLinesToFile(userIndexPath, userIndexRST)
@@ -161,22 +161,22 @@ class CommandReference(object):
         shutil.move(os.path.join(sectionPath, com + '.rst'), os.path.join(sectionPath, 'obs_' + com + '.rst'))
       self.exitcode = 1
 
-  def createSectionIndex(self, mT, indexFile):
+  def createSectionIndex(self, mT):
     """ create the index """
 
     systemName = mT[TITLE]
     systemHeader = systemName + " Command Reference"
     systemHeader = "%s\n%s\n%s\n" % ("=" * len(systemHeader), systemHeader, "=" * len(systemHeader))
-    sectionIndexRST = systemHeader + """
-  In this subsection the %s commands are collected
+    sectionIndexRST = systemHeader + textwrap.dedent("""
+                                                     In this subsection the %s commands are collected
 
-  .. this page is created in %s
+                                                     .. this page automatically is created in %s
 
 
-  .. toctree::
-     :maxdepth: 2
+                                                     .. toctree::
+                                                        :maxdepth: 2
 
-  """ % (systemName, __name__)
+                                                     """ % (systemName, __name__))
 
     listOfScripts = []
     # these scripts use pre-existing rst files, cannot re-create them automatically
@@ -192,7 +192,7 @@ class CommandReference(object):
     for scriptName in sorted(listOfScripts):
       sectionIndexRST += "   %s\n" % scriptName
 
-    writeLinesToFile(os.path.join(self.config.packagePath, indexFile), sectionIndexRST)
+    writeLinesToFile(os.path.join(self.config.packagePath, mT[SECTION_PATH], 'index.rst'), sectionIndexRST)
 
   def createScriptDocFiles(self, script, sectionPath, scriptName, referencePrefix=''):
     """Create the RST files for all the scripts.
@@ -300,9 +300,8 @@ class CommandReference(object):
     return '\n'.join(content)
 
 
-def run(arguments=sys.argv):
+def run(configFile='docs.conf', debug=False, arguments=sys.argv):
   """Create the rst files right in the source tree of the docs."""
-  debug = False
   if '-ddd' in ''.join(arguments):
     LOG.setLevel(logging.DEBUG)
     debug = True
@@ -310,7 +309,7 @@ def run(arguments=sys.argv):
     LOG.setLevel(logging.DEBUG)
     debug = False
   LOG.setLevel(logging.DEBUG)
-  C = CommandReference(debug=debug)
+  C = CommandReference(configFile=configFile, debug=debug)
   C.getScripts()
   for indexFile, mTs in C.sectionDicts.items():
     C.createUserGuideFoldersAndIndices(indexFile, mTs)

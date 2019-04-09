@@ -21,11 +21,15 @@ CUSTOMIZED_DOCSTRINGS = {}
 
 class CodeReference(object):
 
-  def __init__(self, confFile='docs.conf'):
-    self.config = Configuration(confFile)
-
+  def __init__(self, configFile='docs.conf'):
+    self.config = Configuration(configFile)
+    self.orgWorkingDir = os.getcwd()
     # from diracdoctools.Utilities import CODE_CUSTOM_DOCS_FOLDER, CODE_DOC_TARGET_PATH, CODE_BAD_FILES, \
     #   CODE_FORCE_ADD_PRIVATE, CODE_NO_INHERITED
+
+  def __del__(self):
+    LOG.info('Done with creating code reference')
+    os.chdir(self.orgWorkingDir)
 
   def getCustomDocs(self):
     """Import the dynamically created docstrings from the files in CustomizedDocs.
@@ -306,31 +310,29 @@ class CodeReference(object):
 
     writeLinesToFile(filename, lines)
 
-  def checkBuildTypeAndRun(self, arguments):
+  def checkBuildTypeAndRun(self, buildType='full'):
     """Check for input argument and then create the doc rst files."""
-    buildtypes = ('full', 'limited')
-    buildtype = 'full'
-    if isinstance(arguments, str):
-      buildtype = arguments
-    else:
-      buildtype = 'full' if len(arguments) <= 1 else arguments[1]
-    if buildtype not in buildtypes:
-      LOG.error('Unknown build type: %s use %s ', buildtype, ' '.join(buildtypes))
+    buildTypes = ('full', 'limited')
+    if buildType not in buildTypes:
+      LOG.error('Unknown build type: %s use %s ', buildType, ' '.join(buildTypes))
       return 1
-    LOG.info('buildtype: %s', buildtype)
-    return self.createDoc(buildtype)
+    LOG.info('Buildtype: %s', buildType)
+    return self.createDoc(buildType)
 
 
-def run(arguments=sys.argv):
+def run(configFile='docs.conf', debug=False, buildType=None, arguments=sys.argv):
   """Run and return exitcode."""
-  # get the options
-  LOG.setLevel(logging.DEBUG)
-  if '-ddd' in ''.join(arguments):
+  if '-ddd' in ''.join(arguments) or debug:
     LOG.setLevel(logging.DEBUG)
-  if '-dd' in ''.join(arguments):
+  if '-dd' in ''.join(arguments) or debug:
     LOG.setLevel(logging.DEBUG)
-  C = CodeReference()
-  return C.checkBuildTypeAndRun(arguments)
+  if buildType is None:
+    if isinstance(arguments, str):
+      buildType = arguments
+    else:
+      buildType = 'full' if len(arguments) <= 1 else arguments[1]
+  C = CodeReference(configFile=configFile)
+  return C.checkBuildTypeAndRun(buildType=buildType)
 
 
 if __name__ == '__main__':

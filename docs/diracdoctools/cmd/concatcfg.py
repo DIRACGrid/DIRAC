@@ -19,8 +19,8 @@ LOG = logging.getLogger('ConcatCFG')
 
 class ConcatCFG(object):
 
-  def __init__(self, confFile='docs.conf'):
-    self.config = Configuration(confFile)
+  def __init__(self, configFile='docs.conf'):
+    self.config = Configuration(configFile)
 
   def updateCompleteDiracCFG(self):
     """Read the dirac.cfg and update the Systems sections from the ConfigTemplate.cfg files."""
@@ -107,9 +107,9 @@ class ConcatCFG(object):
     return S_OK(cfg)
 
 
-def run():
+def run(configFile='docs.conf'):
   """Wrapper around main working horse."""
-  C = ConcatCFG()
+  C = ConcatCFG(configFile=configFile)
   return C.updateCompleteDiracCFG()
 
 
