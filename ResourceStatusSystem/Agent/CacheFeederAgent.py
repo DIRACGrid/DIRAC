@@ -18,7 +18,6 @@ from DIRAC.Core.LCG.GOCDBClient import GOCDBClient
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
 from DIRAC.WorkloadManagementSystem.Client.WMSAdministratorClient import WMSAdministratorClient
-from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Command import CommandCaller
 
 AGENT_NAME = 'ResourceStatus/CacheFeederAgent'
@@ -61,8 +60,6 @@ class CacheFeederAgent(AgentModule):
       return res
     rmClass = res['Value']
 
-    self.rmClient = rmClass()
-
     self.commands['Downtime'] = [{'Downtime': {}}]
     self.commands['GOCDBSync'] = [{'GOCDBSync': {}}]
     self.commands['FreeDiskSpace'] = [{'FreeDiskSpace': {}}]
@@ -97,8 +94,8 @@ class CacheFeederAgent(AgentModule):
     self.clients['GOCDBClient'] = GOCDBClient()
     self.clients['ReportGenerator'] = RPCClient('Accounting/ReportGenerator')
     self.clients['ReportsClient'] = ReportsClient()
-    self.clients['ResourceStatusClient'] = ResourceStatusClient()
-    self.clients['ResourceManagementClient'] = ResourceManagementClient()
+    self.clients['ResourceStatusClient'] = rsClass()
+    self.clients['ResourceManagementClient'] = rmClass()
     self.clients['WMSAdministrator'] = WMSAdministratorClient()
 
     self.cCaller = CommandCaller
