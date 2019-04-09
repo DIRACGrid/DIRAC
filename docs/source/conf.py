@@ -52,18 +52,18 @@ if os.environ.get('READTHEDOCS') == 'True':
   # re-create the RST files for the command references
   LOG.info('Building command reference')
   from diracdoctools.cmd.commandReference import run as buildCommandReference
-  buildCommandReference()
+  buildCommandReference(configFile='../docs.conf')
 
   # singlehtml build needs too much memory, so we need to create less code documentation
-  buildtype = "limited" if any("singlehtml" in arg for arg in sys.argv) else "full"
-  LOG.info('Chosing build type: %r', buildtype)
+  buildType = 'limited' if any('singlehtml' in arg for arg in sys.argv) else 'full'
+  LOG.info('Chosing build type: %r', buildType)
   from diracdoctools.cmd.codeReference import run as buildCodeDoc
-  buildCodeDoc(buildtype)
+  buildCodeDoc(configFile='../docs.conf', buildType=buildType)
 
   # Update dirac.cfg
   LOG.info('Concatenating dirac.cfg')
-  from diracdoctools.cmd.concatcfg import updateCompleteDiracCFG
-  updateCompleteDiracCFG()
+  from diracdoctools.cmd.concatcfg import run as updateCompleteDiracCFG
+  updateCompleteDiracCFG(configFile='../docs.conf')
 
 # -- General configuration -----------------------------------------------------
 
