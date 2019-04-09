@@ -4,7 +4,7 @@
 """
 
 from __future__ import absolute_import
-import six
+
 __RCSID__ = "$Id$"
 
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
@@ -87,7 +87,7 @@ for the agent restart
     stalledTime = watchdogCycle * (stalledTime + 0.5)
     failedTime = watchdogCycle * (failedTime + 0.5)
 
-    result = self.__markStalledJobs(stalledTime)
+    result = self._markStalledJobs(stalledTime)
     if not result['OK']:
       self.log.error('Failed to detect stalled jobs', result['Message'])
 
@@ -95,26 +95,26 @@ for the agent restart
     # subsequent status changes will result in jobs not being selected by the
     # stalled job agent.
 
-    result = self.__failStalledJobs(failedTime)
+    result = self._failStalledJobs(failedTime)
     if not result['OK']:
       self.log.error('Failed to process stalled jobs', result['Message'])
 
-    result = self.__failCompletedJobs()
+    result = self._failCompletedJobs()
     if not result['OK']:
       self.log.error('Failed to process completed jobs', result['Message'])
 
-    result = self.__failSubmittingJobs()
+    result = self._failSubmittingJobs()
     if not result['OK']:
       self.log.error('Failed to process jobs being submitted', result['Message'])
 
-    result = self.__kickStuckJobs()
+    result = self._kickStuckJobs()
     if not result['OK']:
       self.log.error('Failed to kick stuck jobs', result['Message'])
 
     return S_OK('Stalled Job Agent cycle complete')
 
   #############################################################################
-  def __markStalledJobs(self, stalledTime):
+  def _markStalledJobs(self, stalledTime):
     """ Identifies stalled jobs running without update longer than stalledTime.
     """
     stalledCounter = 0
@@ -147,7 +147,7 @@ for the agent restart
     return S_OK()
 
   #############################################################################
-  def __failStalledJobs(self, failedTime):
+  def _failStalledJobs(self, failedTime):
     """ Changes the Stalled status to Failed for jobs long in the Stalled status
     """
 
@@ -474,7 +474,7 @@ used to fail jobs due to the optimizer chain.
 
     return startTime, endTime
 
-  def __kickStuckJobs(self):
+  def _kickStuckJobs(self):
     """ Reschedule jobs stuck in initialization status Rescheduled, Matched
     """
 
@@ -512,7 +512,7 @@ used to fail jobs due to the optimizer chain.
       return S_ERROR(message)
     return S_OK()
 
-  def __failCompletedJobs(self):
+  def _failCompletedJobs(self):
     """ Failed Jobs stuck in Completed Status for a long time.
       They are due to pilots being killed during the
       finalization of the job execution.
@@ -549,7 +549,7 @@ used to fail jobs due to the optimizer chain.
 
     return S_OK()
 
-  def __failSubmittingJobs(self):
+  def _failSubmittingJobs(self):
     """ Failed Jobs stuck in Submitting Status for a long time.
         They are due to a failed bulk submission transaction.
     """
