@@ -53,8 +53,8 @@ class PilotCStoJSONSynchronizerTestCase(unittest.TestCase):
         Pilot
         {
           Project = LHCb
-          GenericPilotDN = /DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=romanov/CN=427293/CN=Vladimir Romanovskiy
-          GenericPilotGroup = lhcb_pilot
+          GenericPilotDN = /DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=doe/CN=111213/CN=Joe Doe
+          GenericPilotGroup = xxx_pilot
         }
 
         MainServers = gw1, gw2
