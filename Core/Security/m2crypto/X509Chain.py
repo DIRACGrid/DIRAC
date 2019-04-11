@@ -859,13 +859,12 @@ class X509Chain(object):
     retVal = self.dumpAllToString()
     if not retVal['OK']:
       return retVal
-
     pemData = retVal['Value']
     try:
       if not filename:
         fd, filename = tempfile.mkstemp()
       else:
-        fd = file(filename, "w")
+        fd = os.open(filename, os.O_RDWR | os.O_CREAT)
 
       os.write(fd, pemData)
       os.close(fd)
