@@ -27,3 +27,4 @@ This administration documentation refers to the "Core" DIRAC project.
    MultiVO/index
    CommandReference/index
    scalingAndLimitations
+   Tutorials/index
