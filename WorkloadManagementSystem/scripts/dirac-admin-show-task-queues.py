@@ -10,7 +10,7 @@ __RCSID__ = "$Id$"
 
 import sys
 
-from DIRAC import S_OK
+from DIRAC import S_OK, gLogger
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.PrettyPrint import printTable
 
@@ -46,7 +46,7 @@ Script.parseCommandLine(initializeMonitor=False)
 
 result = MatcherClient().getActiveTaskQueues()
 if not result['OK']:
-  print 'ERROR: %s' % result['Message']
+  gLogger.error(result['Message'])
   sys.exit(1)
 
 tqDict = result['Value']
@@ -56,7 +56,6 @@ if not verbose:
             'Platforms', 'SubmitPools', 'Setup', 'Priority']
   records = []
 
-  print
   for tqId in sorted(tqDict):
     if taskQueueID and tqId != taskQueueID:
       continue
@@ -88,7 +87,7 @@ else:
   for tqId in sorted(tqDict):
     if taskQueueID and tqId != taskQueueID:
       continue
-    print "\n==> TQ %s" % tqId
+    gLogger.notice("\n==> TQ %s" % tqId)
     records = []
     tqData = tqDict[tqId]
     for key in sorted(tqData):

@@ -5,7 +5,7 @@
 __RCSID__ = "$Id$"
 
 import DIRAC
-from DIRAC import S_OK
+from DIRAC import S_OK, gLogger
 from DIRAC.Core.Base import Script
 
 uuid = None
@@ -42,22 +42,18 @@ Script.parseCommandLine()
 
 from DIRAC.WorkloadManagementSystem.Client.WMSAdministratorClient import WMSAdministratorClient
 
-if uuid:
-  result = WMSAdministratorClient().getPilotLoggingInfo(uuid)
+if jobid:
+  result = WMSAdministratorClient().getPilots(jobid)
   if not result['OK']:
-    print 'ERROR: %s' % result['Message']
+    gLogger.error(result['Message'])
     DIRAC.exit(1)
-  print result['Value']
-else:
-  info = WMSAdministratorClient().getPilots(jobid)
-  if not info['OK']:
-    print info['Message']
-    DIRAC.exit(1)
-  for pilot in info['Value']:
-    logging = WMSAdministratorClient().getPilotLoggingInfo(pilot)
-    if not logging['OK']:
-      print logging['Message']
-      DIRAC.exit(1)
-    print logging['Value']
+  gLogger.debug(result['Value'])
+  uuid = result['Value'].keys()[0]
+
+result = WMSAdministratorClient().getPilotLoggingInfo(uuid)
+if not result['OK']:
+  gLogger.error(result['Message'])
+  DIRAC.exit(1)
+gLogger.notice(result['Value'])
 
 DIRAC.exit(0)
