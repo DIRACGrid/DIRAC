@@ -32,6 +32,7 @@ from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 from DIRAC.Core.Utilities.Grid import executeGridCommand
 from DIRAC.Core.Utilities.File import mkDir
+from DIRAC.Core.Utilities.List import breakListIntoChunks
 
 # BEWARE: this import makes it impossible to instantiate this CE client side
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
@@ -291,22 +292,25 @@ Queue %(nJobs)s
       job, jobID = condorIDFromJobRef(jobRef)
       condorIDs[job] = jobID
 
-    # This will return a list of 1245.75 3
-    status, stdout_q = commands.getstatusoutput(
+    qList = []
+    for _condorIDs in breakListIntoChunks(condorIDs.values(), 100):
+      
+      # This will return a list of 1245.75 3
+      status, stdout_q = commands.getstatusoutput(
         'condor_q %s %s -af:j JobStatus ' %
-        (self.remoteScheddOptions, ' '.join(
-            condorIDs.values())))
-    if status != 0:
-      return S_ERROR(stdout_q)
-    qList = stdout_q.strip().split('\n')
+        (self.remoteScheddOptions, ' '.join(_condorIDs)))
+      if status != 0:
+        return S_ERROR(stdout_q)
+      _qList = stdout_q.strip().split('\n')
+      qList.extend(_qList)
 
-    # FIXME: condor_history does only support j for autoformat from 8.5.3,
-    # format adds whitespace for each field This will return a list of 1245 75 3
-    # needs to cocatenate the first two with a dot
-    condorHistCall = 'condor_history %s %s -af ClusterId ProcId JobStatus' % (
-        self.remoteScheddOptions, ' '.join(condorIDs.itervalues()))
+      # FIXME: condor_history does only support j for autoformat from 8.5.3,
+      # format adds whitespace for each field This will return a list of 1245 75 3
+      # needs to cocatenate the first two with a dot
+      condorHistCall = 'condor_history %s %s -af ClusterId ProcId JobStatus' % (
+        self.remoteScheddOptions, ' '.join(_condorIDs))
 
-    treatCondorHistory(condorHistCall, qList)
+      treatCondorHistory(condorHistCall, _qList)
 
     for job, jobID in condorIDs.iteritems():
 
@@ -334,6 +338,20 @@ Queue %(nJobs)s
     #workingDirectory = self.ceParameters.get( 'WorkingDirectory', DEFAULT_WORKINGDIRECTORY )
 
     if not self.useLocalSchedd:
+      iwd = None
+      status, stdout_q = commands.getstatusoutput('condor_q %s %s -af SUBMIT_Iwd' % (self.remoteScheddOptions, condorID))
+      self.log.verbose('condor_q:', stdout_q)
+      if status != 0:
+        return S_ERROR(stdout_q)
+      if self.workingDirectory in stdout_q:
+        iwd = stdout_q
+        try:
+          os.makedirs(iwd)
+        except OSError as e:
+          self.log.verbose(str(e))
+      if iwd == None:
+        return S_ERROR("Failed to find condor job %s" % condorID)
+
       cmd = ['condor_transfer_data', '-pool', '%s:9619' % self.ceName, '-name', self.ceName, condorID]
       result = executeGridCommand(self.proxy, cmd, self.gridEnv)
       self.log.verbose(result)
