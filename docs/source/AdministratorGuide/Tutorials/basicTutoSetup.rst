@@ -42,48 +42,9 @@ The next step is to install `runit`, which is responsible for supervising DIRAC 
 
 First, install the `RPM <http://diracproject.web.cern.ch/diracproject/rpm/runit-2.1.2-1.el6.x86_64.rpm>`_::
 
-    [root@dirac-tuto ~]# yum install -y http://diracproject.web.cern.ch/diracproject/rpm/runit-2.1.2-1.el6.x86_64.rpm
-    Loaded plugins: changelog, kernel-module, protectbase, refresh-packagekit, security, tsflags,
-                  : versionlock
-    Setting up Install Process
-    runit-2.1.2-1.el6.x86_64.rpm                                              | 611 kB     00:00
-    Examining /var/tmp/yum-root-uyeABW/runit-2.1.2-1.el6.x86_64.rpm: runit-2.1.2-1.el6.x86_64
-    Marking /var/tmp/yum-root-uyeABW/runit-2.1.2-1.el6.x86_64.rpm to be installed
-    161 packages excluded due to repository protections
-    Resolving Dependencies
-    --> Running transaction check
-    ---> Package runit.x86_64 0:2.1.2-1.el6 will be installed
-    --> Finished Dependency Resolution
-    Beginning Kernel Module Plugin
-    Finished Kernel Module Plugin
+  yum install -y http://diracproject.web.cern.ch/diracproject/rpm/runit-2.1.2-1.el6.x86_64.rpm
 
-    Dependencies Resolved
 
-    =================================================================================================
-    Package        Arch            Version                 Repository                          Size
-    =================================================================================================
-    Installing:
-    runit          x86_64          2.1.2-1.el6             /runit-2.1.2-1.el6.x86_64          1.7 M
-
-    Transaction Summary
-    =================================================================================================
-    Install       1 Package(s)
-
-    Total size: 1.7 M
-    Installed size: 1.7 M
-    Downloading Packages:
-    Running rpm_check_debug
-    Running Transaction Test
-    Transaction Test Succeeded
-    Running Transaction
-      Installing : runit-2.1.2-1.el6.x86_64                                                      1/1
-    runsvdir start/running, process 7257
-      Verifying  : runit-2.1.2-1.el6.x86_64                                                      1/1
-
-    Installed:
-      runit.x86_64 0:2.1.2-1.el6
-
-    Complete!
 
 
 Next, edit the `/etc/init/runsvdir.conf` file to point to the future DIRAC installation as such::
@@ -349,7 +310,7 @@ First, download the installer, and make it executable::
   LocalInstallation
   {
     #  DIRAC release version to install
-    Release = v6r21p2
+    Release = v6r21p3
     #  Installation type
     InstallType = server
     #  Each DIRAC update will be installed in a separate directory, not overriding the previous ones
@@ -491,6 +452,7 @@ The installation created the file `/opt/dirac/etc/dirac.cfg`. The content is the
   }
 
 This part is used as configuration for all your services and agents that you will run. It contains two important information:
+
 * The database credentials
 * The address of the configuration server: `Servers = dips://dirac-tuto:9135/Configuration/Server`
 
@@ -633,6 +595,7 @@ The Configuration service will serve the content of the file `/opt/dirac/etc/MyD
 
 
 This configuration will be used for example by Services in order to:
+
 * know their configuration (for example the `ComponentMonitoring` Service will use everything under `Systems/Framework/Production/Services/ComponentMonitoring` )
 * Identify host and persons (`Registry` section)
 
