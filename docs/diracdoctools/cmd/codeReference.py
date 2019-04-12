@@ -143,7 +143,7 @@ class CodeReference(object):
       if dire.lower() == 'docs' or '/docs' in dire.lower():
         LOG.debug('Skipping docs directory: %s/%s', abspath, dire)
         continue
-      if os.path.exists(os.path.join(self.config.packagePath, abspath, dire, '__init__.py')):
+      if os.path.exists(os.path.join(self.config.sourcePath, abspath, dire, '__init__.py')):
         packages.append(os.path.join(dire))
     return packages
 
@@ -164,7 +164,7 @@ class CodeReference(object):
 
   def createDoc(self, buildtype="full"):
     """create the rst files for all the things we want them for"""
-    LOG.info('self.config.packagePath: %s', self.config.packagePath)
+    LOG.info('self.config.sourcePath: %s', self.config.sourcePath)
     LOG.info('CODE_DOC_TARGET_PATH: %s', self.config.codeTargetPath)
     LOG.info('Host: %s', socket.gethostname())
 
@@ -251,7 +251,7 @@ class CodeReference(object):
 
       os.chdir(self.config.codeTargetPath)
 
-      #shutil.copy(os.path.join(self.config.packagePath, 'dirac.cfg'), self.config.codeTargetPath)
+      #shutil.copy(os.path.join(self.config.sourcePath, 'dirac.cfg'), self.config.codeTargetPath)
 
     return 0
 
