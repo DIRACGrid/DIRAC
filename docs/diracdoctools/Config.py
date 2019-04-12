@@ -22,18 +22,19 @@ class Configuration(object):
     config = ConfigParser.SafeConfigParser(dict_type=dict)
     config.read(confFile)
     # config.optionxform = str  # do not transform options to lowercase
-    self.docsPath = os.path.dirname(os.path.abspath(confFile))
+    basePath = os.path.dirname(os.path.abspath(confFile))
+    self.packagePath = basePath
+
+    relativeSourceFolder = config.get('Docs', 'source_folder')
+    self.sourcePath = os.path.abspath(os.path.join(self.packagePath, relativeSourceFolder))
 
     self.moduleName = config.get('Docs', 'module_name')
-    self.packagePath = os.path.join(os.environ.get('DIRAC', ''), self.moduleName)
-    self.codeTargetPath = os.path.join(self.packagePath, config.get('Code', 'docs_target_path'))
-    self.customDocsPath = config.get('Code', 'customdocs_folder')
+    self.codeTargetPath = os.path.abspath(os.path.join(self.packagePath, config.get('Code', 'docs_target_path')))
+    self.customDocsPath = os.path.abspath(os.path.join(self.packagePath, config.get('Code', 'customdocs_folder')))
+
     self.privateMembers = listify(config.get('Code', 'document_private_members'))
     self.noInherited = listify(config.get('Code', 'no_inherited_members'))
     self.badFiles = listify(config.get('Code', 'ignore_files'))
-    relativeSourceFolder = config.get('Code', 'source_folder')
-    self.sourcePath = os.path.join(self.packagePath, relativeSourceFolder)
-
     self.com_ignore_commands = listify(config.get('Commands', 'ignore_commands'))
     self.com_module_docstring = listify(config.get('Commands', 'module_docstring'))
 

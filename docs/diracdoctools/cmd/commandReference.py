@@ -48,12 +48,12 @@ class CommandReference(object):
   def getScripts(self):
     """Get all scripts in the Dirac System, split by type admin/wms/rms/other."""
     LOG.info('Looking for scripts')
-    if not os.path.exists(self.config.packagePath):
-      LOG.error('%s does not exist' % self.config.packagePath)
+    if not os.path.exists(self.config.sourcePath):
+      LOG.error('%s does not exist' % self.config.sourcePath)
       raise RuntimeError('Package not found')
 
     # Get all scripts
-    scriptsPath = os.path.join(self.config.packagePath, '*', 'scripts', '*.py')
+    scriptsPath = os.path.join(self.config.sourcePath, '*', 'scripts', '*.py')
 
     # Get all scripts on scriptsPath and sorts them, this will make our life easier afterwards
     scripts = glob.glob(scriptsPath)
