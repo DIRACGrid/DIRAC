@@ -27,7 +27,7 @@ class CodeReference(object):
     # from diracdoctools.Utilities import CODE_CUSTOM_DOCS_FOLDER, CODE_DOC_TARGET_PATH, CODE_BAD_FILES, \
     #   CODE_FORCE_ADD_PRIVATE, CODE_NO_INHERITED
 
-  def __del__(self):
+  def end(self):
     LOG.info('Done with creating code reference')
     os.chdir(self.orgWorkingDir)
 
@@ -332,7 +332,9 @@ def run(configFile='docs.conf', debug=False, buildType=None, arguments=sys.argv)
     else:
       buildType = 'full' if len(arguments) <= 1 else arguments[1]
   C = CodeReference(configFile=configFile)
-  return C.checkBuildTypeAndRun(buildType=buildType)
+  retVal = C.checkBuildTypeAndRun(buildType=buildType)
+  C.end()
+  return retVal
 
 
 if __name__ == '__main__':
