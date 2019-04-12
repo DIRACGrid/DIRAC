@@ -310,7 +310,7 @@ Queue %(nJobs)s
       condorHistCall = 'condor_history %s %s -af ClusterId ProcId JobStatus' % (
         self.remoteScheddOptions, ' '.join(_condorIDs))
 
-      treatCondorHistory(condorHistCall, _qList)
+      treatCondorHistory(condorHistCall, qList)
 
     for job, jobID in condorIDs.iteritems():
 
