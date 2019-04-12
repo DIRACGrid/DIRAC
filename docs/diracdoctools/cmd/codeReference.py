@@ -192,7 +192,7 @@ class CodeReference(object):
         continue
 
       modulename = root.split('/')[-1].strip('.')
-      codePath = root.split(self.config.packagePath)[1].strip('/.')
+      codePath = root.split(self.config.sourcePath)[1].strip('/.')
       docPath = codePath
       if docPath.startswith(self.config.moduleName):
         docPath = docPath[len(self.config.moduleName) + 1:]

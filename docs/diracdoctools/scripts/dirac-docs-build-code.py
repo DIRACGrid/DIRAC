@@ -4,4 +4,4 @@ import sys
 
 from diracdoctools.cmd.codeReference import run
 
-sys.exit(run(sys.argv))
+sys.exit(run())
