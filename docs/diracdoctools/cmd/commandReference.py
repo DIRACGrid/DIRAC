@@ -19,6 +19,7 @@ SCRIPTS = 'scripts'
 IGNORE = 'ignore'
 SECTION_PATH = 'sectionPath'
 INDEX_FILE = 'indexFile'
+PREFIX = 'prefix'
 
 
 class CommandReference(object):
@@ -87,7 +88,9 @@ class CommandReference(object):
       scriptName = os.path.basename(script)
       if scriptName.endswith('.py'):
         scriptName = scriptName[:-3]
-      if self.createScriptDocFiles(script, sectionPath, scriptName):
+      prefix = sectionDict[PREFIX].lower()
+      prefix = prefix + '_' if prefix else ''
+      if self.createScriptDocFiles(script, sectionPath, scriptName, referencePrefix=prefix):
         listOfScripts.append(scriptName)
 
     for scriptName in sorted(listOfScripts):
@@ -112,8 +115,9 @@ class CommandReference(object):
       scriptName = os.path.basename(script)
       if scriptName.endswith('.py'):
         scriptName = scriptName[:-3]
-      refPre = sectionDict[TITLE].replace(' ', '').lower() + '_'
-      if self.createScriptDocFiles(script, sectionPath, scriptName, referencePrefix=refPre) and \
+      prefix = sectionDict[PREFIX].lower()
+      prefix = prefix + '_' if prefix else ''
+      if self.createScriptDocFiles(script, sectionPath, scriptName, referencePrefix=prefix) and \
          scriptName not in commandList:
         missingCommands.append(scriptName)
 

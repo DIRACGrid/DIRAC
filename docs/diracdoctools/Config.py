@@ -50,12 +50,15 @@ class Configuration(object):
         sectionPath = config.get(section, 'sectionpath').replace(' ', '')
         indexFile = self._fullPath(config.get(section, 'indexfile')) if \
             config.has_option(section, 'indexfile') else None
+        prefix = config.get(section, 'prefix') if \
+            config.has_option(section, 'prefix') else ''
 
         self.com_MSS.append(dict(pattern=pattern,
                                  title=title,
                                  scripts=scripts,
                                  ignore=ignore,
                                  indexFile=indexFile,
+                                 prefix=prefix,
                                  sectionPath=sectionPath))
 
     self.cfg_targetFile = self._fullPath(config.get('CFG', 'target_file'))
