@@ -1,3 +1,20 @@
+[v6r21p4]
+
+WorkloadManagementSystem
+CHANGE: (#4008) Modification of utility function PilotCStoJSONSynchronizer. The modification 
+        allows to add information to created json file about the DNs fields of users belonging 
+        to 'lhcb_pilot' group. This information is needed for the second level authorization 
+        used in the Pilot Logger architecture. Also, some basic unit tests are added.
+
+*Docs
+CHANGE: (#4028) update instructions to install and setup runit
+
+*TransformationSystem
+FIX: (#4022) when a site was requested inside the job workflow description, and BulkSubmission was used, such site was not considered.
+
+*Resources
+FIX: (#4006) Resources/MessageQueue: add a dedicated listener ReconnectListener
+
 [v6r21p3]
 
 *Core
