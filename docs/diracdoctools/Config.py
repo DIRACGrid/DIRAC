@@ -22,15 +22,14 @@ class Configuration(object):
     config = ConfigParser.SafeConfigParser(dict_type=dict)
     config.read(confFile)
     # config.optionxform = str  # do not transform options to lowercase
-    basePath = os.path.dirname(os.path.abspath(confFile))
-    self.packagePath = basePath
+    self.docsPath = os.path.dirname(os.path.abspath(confFile))
 
     relativeSourceFolder = config.get('Docs', 'source_folder')
-    self.sourcePath = os.path.abspath(os.path.join(self.packagePath, relativeSourceFolder))
+    self.sourcePath = self._fullPath(relativeSourceFolder)
 
     self.moduleName = config.get('Docs', 'module_name')
-    self.codeTargetPath = os.path.abspath(os.path.join(self.packagePath, config.get('Code', 'docs_target_path')))
-    self.customDocsPath = os.path.abspath(os.path.join(self.packagePath, config.get('Code', 'customdocs_folder')))
+    self.codeTargetPath = self._fullPath(config.get('Code', 'docs_target_path'))
+    self.customDocsPath = self._fullPath(config.get('Code', 'customdocs_folder'))
 
     self.privateMembers = listify(config.get('Code', 'document_private_members'))
     self.noInherited = listify(config.get('Code', 'no_inherited_members'))
@@ -61,8 +60,15 @@ class Configuration(object):
                                             indexFile=indexFile,
                                             sectionPath=sectionPath))
 
+    self.cfg_targetFile = self._fullPath(config.get('CFG', 'target_file'))
+    self.cfg_baseFile = self._fullPath(config.get('CFG', 'base_file'))
+
     for var, val in sorted(vars(self).items()):
       LOG.info('Parsed options: %s = %s', var, pformat(val))
+
+  def _fullPath(self, path):
+    """Return absolut path based on docsPath."""
+    return os.path.abspath(os.path.join(self.docsPath, path))
 
   def __str__(self):
     """Return string containg options and values."""

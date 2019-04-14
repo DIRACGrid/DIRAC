@@ -91,3 +91,9 @@ def runCommand(command):
   except (OSError, subprocess.CalledProcessError) as e:
     LOG.error('Error when runnning command %s: %r', command, e.output)
     return ''
+
+
+def makeLogger(name):
+  """Create a logger and return instance."""
+  logging.basicConfig(level=logging.INFO, format='%(name)25s: %(levelname)8s: %(message)s')
+  return logging.getLogger(name)

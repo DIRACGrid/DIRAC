@@ -8,13 +8,13 @@ import re
 import logging
 
 from diracdoctools.Config import Configuration
+from diracdoctools.Utilities import makeLogger
 
 from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC import S_OK, S_ERROR
 
 
-logging.basicConfig(level=logging.INFO, format='%(name)25s: %(levelname)8s: %(message)s')
-LOG = logging.getLogger('ConcatCFG')
+LOG = makeLogger('ConcatCFG')
 
 
 class ConcatCFG(object):
@@ -25,7 +25,7 @@ class ConcatCFG(object):
   def updateCompleteDiracCFG(self):
     """Read the dirac.cfg and update the Systems sections from the ConfigTemplate.cfg files."""
     compCfg = CFG()
-    mainDiracCfgPath = os.path.join(self.config.packagePath, 'dirac.cfg')
+    mainDiracCfgPath = self.config.cfg_baseFile
 
     if not os.path.exists(mainDiracCfgPath):
       LOG.error('Failed to find Main Dirac cfg at %r', mainDiracCfgPath)
@@ -38,8 +38,8 @@ class ConcatCFG(object):
 
     cfg = self.getSystemsCFG()
     compCfg = compCfg.mergeWith(cfg)
-    diracCfgOutput = os.path.join(self.config.packagePath,
-                                  'docs/source/AdministratorGuide/Configuration/ExampleConfig.rst')
+    diracCfgOutput = self.config.cfg_targetFile
+
     LOG.info('Writing output to %r', diracCfgOutput)
 
     with open(diracCfgOutput, 'w') as rst:
@@ -76,7 +76,7 @@ class ConcatCFG(object):
   def findConfigTemplates(self):
     """Traverse folders in DIRAC and find ConfigTemplate.cfg files."""
     configTemplates = dict()
-    for baseDirectory, _subdirectories, files in os.walk(self.config.packagePath):
+    for baseDirectory, _subdirectories, files in os.walk(self.config.sourcePath):
       LOG.debug('Looking in %r', baseDirectory)
       if 'ConfigTemplate.cfg' in files:
         system = baseDirectory.rsplit('/', 1)[1]

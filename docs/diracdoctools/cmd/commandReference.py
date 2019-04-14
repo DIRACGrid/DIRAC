@@ -101,11 +101,11 @@ class CommandReference(object):
       userIndexRST += '   %s/index\n' % mT[TITLE].replace(' ', '')
 
       LOG.debug('Index file:\n%s', userIndexRST) if self.debug else None
-      sectionPath = os.path.join(self.config.packagePath, mT[SECTION_PATH])
+      sectionPath = os.path.join(self.config.docsPath, mT[SECTION_PATH])
       mkdir(sectionPath)
       self.createSectionIndex(mT)
 
-    userIndexPath = os.path.join(self.config.packagePath, indexFile)
+    userIndexPath = os.path.join(self.config.docsPath, indexFile)
     writeLinesToFile(userIndexPath, userIndexRST)
 
   def createCommandReferenceForExistingIndex(self, mT):
@@ -114,7 +114,7 @@ class CommandReference(object):
     source/AdministratorGuide/CommandReference
     """
 
-    sectionPath = os.path.join(self.config.packagePath, mT[SECTION_PATH])
+    sectionPath = os.path.join(self.config.docsPath, mT[SECTION_PATH])
     LOG.info('Creating references for %r', sectionPath)
     # read the script index
     with open(os.path.join(sectionPath, 'index.rst')) as indexFile:
@@ -140,7 +140,7 @@ class CommandReference(object):
     if not mT[EXISTING_INDEX]:
       return
     existingCommands = {os.path.basename(com).replace('.py', '') for com in mT[SCRIPTS] + mT[IGNORE]}
-    sectionPath = os.path.join(self.config.packagePath, mT[SECTION_PATH])
+    sectionPath = os.path.join(self.config.docsPath, mT[SECTION_PATH])
     LOG.info('Checking %r for non-existent commands', sectionPath)
     # read the script index
     documentedCommands = set()
@@ -181,7 +181,7 @@ class CommandReference(object):
     listOfScripts = []
     # these scripts use pre-existing rst files, cannot re-create them automatically
     listOfScripts.extend(mT[IGNORE])
-    sectionPath = os.path.join(self.config.packagePath, mT[SECTION_PATH])
+    sectionPath = os.path.join(self.config.docsPath, mT[SECTION_PATH])
     for script in mT[SCRIPTS]:
       scriptName = os.path.basename(script)
       if scriptName.endswith('.py'):
@@ -192,7 +192,7 @@ class CommandReference(object):
     for scriptName in sorted(listOfScripts):
       sectionIndexRST += "   %s\n" % scriptName
 
-    writeLinesToFile(os.path.join(self.config.packagePath, mT[SECTION_PATH], 'index.rst'), sectionIndexRST)
+    writeLinesToFile(os.path.join(self.config.docsPath, mT[SECTION_PATH], 'index.rst'), sectionIndexRST)
 
   def createScriptDocFiles(self, script, sectionPath, scriptName, referencePrefix=''):
     """Create the RST files for all the scripts.
@@ -203,7 +203,7 @@ class CommandReference(object):
     if scriptName in self.config.com_ignore_commands:
       return False
 
-    LOG.info('Creating Doc for %r', scriptName)
+    LOG.info('Creating Doc for %r in %r', scriptName, sectionPath)
     helpMessage = runCommand('python %s -h' % script)
     if not helpMessage:
       LOG.warning('NO DOC for %s', scriptName)
