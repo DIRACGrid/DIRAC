@@ -48,7 +48,7 @@ LOG.info('DiracDocTools location %r', diracdoctools.cmd.__file__)
 
 # AUTO SETUP START
 if os.environ.get('READTHEDOCS') == 'True':
-  setUpReadTheDocsEnvironment()
+  setUpReadTheDocsEnvironment(moduleName='DIRAC')
 
   # re-create the RST files for the command references
   LOG.info('Building command reference')

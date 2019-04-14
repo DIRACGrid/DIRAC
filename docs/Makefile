@@ -47,7 +47,7 @@ html:
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
 
-
+# AUTO MAKE START
 allhtml:
 	diracdoctools/scripts/dirac-docs-build-commands.py
 	diracdoctools/scripts/dirac-docs-build-code.py
@@ -55,6 +55,7 @@ allhtml:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
+# AUTO MAKE END
 
 
 singlehtml:
