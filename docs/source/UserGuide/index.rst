@@ -15,6 +15,6 @@ User Guide
    GettingStarted/index
    WebPortalReference/index
    WebAppUserGuide/index
-   CommandReference/index
+   commands
    Tutorials/index
    HowTo/index

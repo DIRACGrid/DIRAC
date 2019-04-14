@@ -18,8 +18,8 @@ TITLE = 'title'
 PATTERN = 'pattern'
 SCRIPTS = 'scripts'
 IGNORE = 'ignore'
-EXISTING_INDEX = 'existingIndex'
 SECTION_PATH = 'sectionPath'
+INDEX_FILE = 'indexFile'
 
 
 class CommandReference(object):
@@ -28,21 +28,8 @@ class CommandReference(object):
     self.config = Configuration(configFile)
     self.exitcode = 0
     self.debug = debug
-    # tuples: list of patterns to match in script names,
-    #         Title of the index file
-    #         list of script names, filled during search, can be pre-filled
-    #         list of patterns to reject scripts
-    #         existing index
-#     self.commands_markers_sections_scripts = [
-#       (['dms'], 'Data Management', [], []),
-#       (['wms'], 'Workload Management', [], []),
-#       (['dirac-proxy', 'dirac-info', 'myproxy'], 'Others', [], ['dirac-cert-convert.sh', 'dirac-platform', 'dirac-version']),
-#       (['admin', 'accounting', 'FrameworkSystem', 'framework', 'install', 'utils', 'dirac-repo-monitor', 'dirac-jobexec',
-#         'dirac-info', 'ConfigurationSystem', 'Core', 'rss', 'transformation', 'stager'], 'Admin',
-#        [], ['dirac-cert-convert.sh', 'dirac-platform', 'dirac-version']),
-# ]
 
-    self.sectionDicts = dict(self.config.com_MSS)
+    self.sectionDicts = self.config.com_MSS
 
   def getScripts(self):
     """Get all scripts in the Dirac System, split by type admin/wms/rms/other."""
@@ -63,68 +50,70 @@ class CommandReference(object):
         LOG.debug('Ignoring init file %s', scriptPath)
         continue
 
-      for indexFile, mTs in self.sectionDicts.items():
-        for mT in mTs:
-          if any(pattern in scriptPath for pattern in mT[PATTERN]) and \
-             not any(pattern in scriptPath for pattern in mT[IGNORE]):
-            mT[SCRIPTS].append(scriptPath)
+      for mT in self.sectionDicts:
+        if any(pattern in scriptPath for pattern in mT[PATTERN]) and \
+           not any(pattern in scriptPath for pattern in mT[IGNORE]):
+          mT[SCRIPTS].append(scriptPath)
 
     return
 
-  def createUserGuideFoldersAndIndices(self, indexFile, sectionDicts):
-    """ creates the index files and folders where the RST files will go
+  def createFilesAndIndex(self, sectionDict):
+    """Create the index file and folder where the RST files will go
 
     e.g.:
-    source/UserGuide/CommandReference
+    source/UserGuide/CommandReference/DataManagement
     """
-    # create the main UserGuide Index file
-    userIndexRST = textwrap.dedent("""
-    ==================
-    Commands Reference
-    ==================
+    sectionPath = os.path.join(self.config.docsPath, sectionDict[SECTION_PATH])
+    mkdir(sectionPath)
 
-    .. this page is created in %s
+    systemName = sectionDict[TITLE]
+    systemHeader = systemName + " Command Reference"
+    systemHeader = "%s\n%s\n%s\n" % ("=" * len(systemHeader), systemHeader, "=" * len(systemHeader))
+    sectionIndexRST = systemHeader + textwrap.dedent("""
+                                                     In this subsection the %s commands are collected
+
+                                                     .. this page automatically is created in %s
 
 
-    This page is the work in progress. See more material here soon !
+                                                     .. toctree::
+                                                        :maxdepth: 2
 
-    .. toctree::
-       :maxdepth: 1
+                                                     """ % (systemName, __name__))
 
-    """ % (__name__,)).lstrip()
+    listOfScripts = []
+    # these scripts use pre-existing rst files, cannot re-create them automatically
+    listOfScripts.extend(sectionDict[IGNORE])
+    sectionPath = os.path.join(self.config.docsPath, sectionDict[SECTION_PATH])
+    for script in sectionDict[SCRIPTS]:
+      scriptName = os.path.basename(script)
+      if scriptName.endswith('.py'):
+        scriptName = scriptName[:-3]
+      if self.createScriptDocFiles(script, sectionPath, scriptName):
+        listOfScripts.append(scriptName)
 
-    for mT in sectionDicts:
-      existingIndex = mT[EXISTING_INDEX]
-      if existingIndex:
-        return
-      userIndexRST += '   %s/index\n' % mT[TITLE].replace(' ', '')
+    for scriptName in sorted(listOfScripts):
+      sectionIndexRST += "   %s\n" % scriptName
 
-      LOG.debug('Index file:\n%s', userIndexRST) if self.debug else None
-      sectionPath = os.path.join(self.config.docsPath, mT[SECTION_PATH])
-      mkdir(sectionPath)
-      self.createSectionIndex(mT)
+    writeLinesToFile(os.path.join(self.config.docsPath, sectionDict[SECTION_PATH], 'index.rst'), sectionIndexRST)
 
-    userIndexPath = os.path.join(self.config.docsPath, indexFile)
-    writeLinesToFile(userIndexPath, userIndexRST)
-
-  def createCommandReferenceForExistingIndex(self, mT):
-    """Create the command reference for the AdministratorGuide.
+  def createFiles(self, sectionDict):
+    """Create the command reference when an index already exists.
 
     source/AdministratorGuide/CommandReference
     """
 
-    sectionPath = os.path.join(self.config.docsPath, mT[SECTION_PATH])
+    sectionPath = os.path.join(self.config.docsPath, sectionDict[SECTION_PATH])
     LOG.info('Creating references for %r', sectionPath)
     # read the script index
     with open(os.path.join(sectionPath, 'index.rst')) as indexFile:
       commandList = indexFile.read().replace('\n', '')
 
     missingCommands = []
-    for script in mT[SCRIPTS]:
+    for script in sectionDict[SCRIPTS]:
       scriptName = os.path.basename(script)
       if scriptName.endswith('.py'):
         scriptName = scriptName[:-3]
-      refPre = mT[TITLE].replace(' ', '').lower() + '_'
+      refPre = sectionDict[TITLE].replace(' ', '').lower() + '_'
       if self.createScriptDocFiles(script, sectionPath, scriptName, referencePrefix=refPre) and \
          scriptName not in commandList:
         missingCommands.append(scriptName)
@@ -134,12 +123,10 @@ class CommandReference(object):
                 "\n\t\t\t\t".join(missingCommands))
       self.exitcode = 1
 
-  def cleanExistingIndex(self, mT):
+  def cleanExistingIndex(self, sectionDict):
     """Make sure no superfluous commands are documented in an existing index file"""
-    if not mT[EXISTING_INDEX]:
-      return
-    existingCommands = {os.path.basename(com).replace('.py', '') for com in mT[SCRIPTS] + mT[IGNORE]}
-    sectionPath = os.path.join(self.config.docsPath, mT[SECTION_PATH])
+    existingCommands = {os.path.basename(com).replace('.py', '') for com in sectionDict[SCRIPTS] + sectionDict[IGNORE]}
+    sectionPath = os.path.join(self.config.docsPath, sectionDict[SECTION_PATH])
     LOG.info('Checking %r for non-existent commands', sectionPath)
     # read the script index
     documentedCommands = set()
@@ -159,39 +146,6 @@ class CommandReference(object):
       for com in superfluousCommands:
         shutil.move(os.path.join(sectionPath, com + '.rst'), os.path.join(sectionPath, 'obs_' + com + '.rst'))
       self.exitcode = 1
-
-  def createSectionIndex(self, mT):
-    """ create the index """
-
-    systemName = mT[TITLE]
-    systemHeader = systemName + " Command Reference"
-    systemHeader = "%s\n%s\n%s\n" % ("=" * len(systemHeader), systemHeader, "=" * len(systemHeader))
-    sectionIndexRST = systemHeader + textwrap.dedent("""
-                                                     In this subsection the %s commands are collected
-
-                                                     .. this page automatically is created in %s
-
-
-                                                     .. toctree::
-                                                        :maxdepth: 2
-
-                                                     """ % (systemName, __name__))
-
-    listOfScripts = []
-    # these scripts use pre-existing rst files, cannot re-create them automatically
-    listOfScripts.extend(mT[IGNORE])
-    sectionPath = os.path.join(self.config.docsPath, mT[SECTION_PATH])
-    for script in mT[SCRIPTS]:
-      scriptName = os.path.basename(script)
-      if scriptName.endswith('.py'):
-        scriptName = scriptName[:-3]
-      if self.createScriptDocFiles(script, sectionPath, scriptName):
-        listOfScripts.append(scriptName)
-
-    for scriptName in sorted(listOfScripts):
-      sectionIndexRST += "   %s\n" % scriptName
-
-    writeLinesToFile(os.path.join(self.config.docsPath, mT[SECTION_PATH], 'index.rst'), sectionIndexRST)
 
   def createScriptDocFiles(self, script, sectionPath, scriptName, referencePrefix=''):
     """Create the RST files for all the scripts.
@@ -310,14 +264,12 @@ def run(configFile='docs.conf', debug=False, arguments=sys.argv):
   LOG.setLevel(logging.DEBUG)
   C = CommandReference(configFile=configFile, debug=debug)
   C.getScripts()
-  for indexFile, mTs in C.sectionDicts.items():
-    C.createUserGuideFoldersAndIndices(indexFile, mTs)
-  for _indexFile, mTs in C.sectionDicts.items():
-    for mT in mTs:
-      if not mT[EXISTING_INDEX]:
-        continue
-      C.createCommandReferenceForExistingIndex(mT)
-      C.cleanExistingIndex(mT)
+  for sectionDict in C.sectionDicts:
+    if sectionDict[INDEX_FILE] is None:
+      C.createFilesAndIndex(sectionDict)
+    else:
+      C.createFiles(sectionDict)
+      C.cleanExistingIndex(sectionDict)
 
   LOG.info('Done')
   return C.exitcode
