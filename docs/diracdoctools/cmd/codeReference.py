@@ -9,13 +9,34 @@ import glob
 
 
 from diracdoctools.Utilities import writeLinesToFile, mkdir, makeLogger
-from diracdoctools.Config import Configuration
+from diracdoctools.Config import Configuration, CLParser as clparser
 
 
 LOG = makeLogger('CodeReference')
 
 # global used inside the CustomizedDocs modules
 CUSTOMIZED_DOCSTRINGS = {}
+
+
+class CLParser(clparser):
+
+  def __init__(self):
+    super(CLParser, self).__init__()
+    self.log = LOG.getChild('CLParser')
+    self.parser.add_argument('--buildType', action='store', default='full',
+                             choices=['full', 'limited'],
+                             help='Build full or limited code reference',
+                             )
+
+  def parse(self):
+    super(CLParser, self).parse()
+    self.log.info('Parsing options')
+    self.buildType = self.parsed.buildType
+
+  def optionDict(self):
+    oDict = super(CLParser, self).optionDict()
+    oDict['buildType'] = self.buildType
+    return oDict
 
 
 class CodeReference(object):
@@ -317,17 +338,9 @@ class CodeReference(object):
     return self.createDoc(buildType)
 
 
-def run(configFile='docs.conf', debug=False, buildType=None, arguments=sys.argv):
+def run(configFile='docs.conf', logLevel=logging.INFO, debug=False, buildType='full'):
   """Run and return exitcode."""
-  if '-ddd' in ''.join(arguments) or debug:
-    LOG.setLevel(logging.DEBUG)
-  if '-dd' in ''.join(arguments) or debug:
-    LOG.setLevel(logging.DEBUG)
-  if buildType is None:
-    if isinstance(arguments, str):
-      buildType = arguments
-    else:
-      buildType = 'full' if len(arguments) <= 1 else arguments[1]
+  logging.getLogger().setLevel(logLevel)
   C = CodeReference(configFile=configFile)
   retVal = C.checkBuildTypeAndRun(buildType=buildType)
   C.end()

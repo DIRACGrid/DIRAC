@@ -1,5 +1,6 @@
 """Configuration for the documentation scripts."""
 
+import argparse
 from collections import defaultdict
 import logging
 import os
@@ -74,3 +75,44 @@ class Configuration(object):
       theStr += '%s = %s\n' % (var, val)
 
     return theStr
+
+
+class CLParser(object):
+
+  def __init__(self):
+    self.log = LOG.getChild('CLParser')
+    self.parsed = None
+    self.debug = False
+    self.parser = argparse.ArgumentParser("DiracDocTool",
+                                          formatter_class=argparse.RawTextHelpFormatter)
+
+    self.parser.add_argument('--configFile', action='store', default='docs.conf',
+                             dest='configFile',
+                             help='Name of the config file')
+
+    self.parser.add_argument('-d', '--debug', action='count', dest='debug', help='d, dd, ddd',
+                             default=0)
+
+  def parse(self):
+    self.log.info('Parsing common options')
+    self.parsed = self.parser.parse_args()
+    self.logLevel = self._parsePrintLevel(self.parsed.debug)
+    self.configFile = self.parsed.configFile
+
+  def optionDict(self):
+    """Return dictionary of options."""
+    if not self.parsed:
+      self.parse()
+    return (dict(configFile=self.configFile,
+                 logLevel=self.logLevel,
+                 debug=self.debug,
+                 ))
+
+  def _parsePrintLevel(self, level):
+    """Translate debug count to logging level."""
+    level = level if level <= 2 else 2
+    self.debug = level == 2
+    return [logging.INFO,
+            logging.INFO,
+            logging.DEBUG,
+            ][level]

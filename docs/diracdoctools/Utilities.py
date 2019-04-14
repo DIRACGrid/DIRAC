@@ -95,5 +95,6 @@ def runCommand(command):
 
 def makeLogger(name):
   """Create a logger and return instance."""
-  logging.basicConfig(level=logging.INFO, format='%(name)25s: %(levelname)8s: %(message)s')
+  logging.basicConfig(level=logging.INFO, format='%(name)25s: %(levelname)8s: %(message)s',
+                      stream=sys.stdout)
   return logging.getLogger(name)

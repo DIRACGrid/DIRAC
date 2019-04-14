@@ -2,10 +2,10 @@
 """script to concatenate the dirac.cfg file's Systems sections with the content of the ConfigTemplate.cfg files."""
 
 from collections import OrderedDict
-import os
-import textwrap
-import re
 import logging
+import os
+import re
+import textwrap
 
 from diracdoctools.Config import Configuration
 from diracdoctools.Utilities import makeLogger
@@ -107,8 +107,9 @@ class ConcatCFG(object):
     return S_OK(cfg)
 
 
-def run(configFile='docs.conf'):
+def run(configFile='docs.conf', logLevel=logging.INFO, debug=False):
   """Wrapper around main working horse."""
+  logging.getLogger().setLevel(logLevel)
   C = ConcatCFG(configFile=configFile)
   return C.updateCompleteDiracCFG()
 

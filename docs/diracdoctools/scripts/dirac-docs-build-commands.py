@@ -8,5 +8,5 @@
 import sys
 
 from diracdoctools.cmd.commandReference import run
-
-sys.exit(run())
+from diracdoctools.Config import CLParser
+sys.exit(run(**(CLParser().optionDict())))

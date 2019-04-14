@@ -4,9 +4,8 @@ import logging
 import glob
 import os
 import shutil
-import sys
-import shlex
 import textwrap
+
 from diracdoctools.Utilities import writeLinesToFile, mkdir, runCommand, makeLogger
 from diracdoctools.Config import Configuration
 
@@ -253,15 +252,9 @@ class CommandReference(object):
     return '\n'.join(content)
 
 
-def run(configFile='docs.conf', debug=False, arguments=sys.argv):
+def run(configFile='docs.conf', logLevel=logging.INFO, debug=False):
   """Create the rst files right in the source tree of the docs."""
-  if '-ddd' in ''.join(arguments):
-    LOG.setLevel(logging.DEBUG)
-    debug = True
-  if '-dd' in ''.join(arguments):
-    LOG.setLevel(logging.DEBUG)
-    debug = False
-  LOG.setLevel(logging.DEBUG)
+  logging.getLogger().setLevel(logLevel)
   C = CommandReference(configFile=configFile, debug=debug)
   C.getScripts()
   for sectionDict in C.sectionDicts:
