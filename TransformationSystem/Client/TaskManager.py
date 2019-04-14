@@ -534,6 +534,10 @@ class WorkflowTasks(TaskBase):
     oJob.setOwnerGroup(ownerGroup)
     oJob.setOwnerDN(ownerDN)
 
+    try:
+      site = oJob.workflow.findParameter('Site').getValue()
+    except AttributeError:
+      site = None
     jobType = oJob.workflow.findParameter('JobType').getValue()
     transGroup = str(transID).zfill(8)
 
@@ -564,6 +568,8 @@ class WorkflowTasks(TaskBase):
       paramsDict = taskDict[taskID]
       seqDict = {}
 
+      if site is not None:
+        paramsDict['Site'] = site
       paramsDict['JobType'] = jobType
 
       # Handle destination site
