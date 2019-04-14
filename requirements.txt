@@ -6,6 +6,8 @@ git+https://github.com/DIRACGrid/pyGSI.git#egg=GSI
 autopep8==1.3.3
 certifi
 CMRESHandler>=1.0.0b4
+coverage
+codecov
 elasticsearch-dsl>=2.0.0
 funcsigs
 futures
@@ -24,7 +26,6 @@ pyparsing>=2.0.6
 pytest>=3.6
 pytest-cov>=2.2.0
 pytest-mock
-python-coveralls
 pytz>=2015.7
 readline>=6.2.4
 requests>=2.9.1
