@@ -8,12 +8,11 @@ import logging
 import glob
 
 
-from diracdoctools.Utilities import writeLinesToFile, mkdir
+from diracdoctools.Utilities import writeLinesToFile, mkdir, makeLogger
 from diracdoctools.Config import Configuration
 
 
-logging.basicConfig(level=logging.INFO, format='%(name)25s: %(levelname)8s: %(message)s')
-LOG = logging.getLogger('MakeDoc')
+LOG = makeLogger('CodeReference')
 
 # global used inside the CustomizedDocs modules
 CUSTOMIZED_DOCSTRINGS = {}
@@ -24,8 +23,6 @@ class CodeReference(object):
   def __init__(self, configFile='docs.conf'):
     self.config = Configuration(configFile)
     self.orgWorkingDir = os.getcwd()
-    # from diracdoctools.Utilities import CODE_CUSTOM_DOCS_FOLDER, CODE_DOC_TARGET_PATH, CODE_BAD_FILES, \
-    #   CODE_FORCE_ADD_PRIVATE, CODE_NO_INHERITED
 
   def end(self):
     LOG.info('Done with creating code reference')

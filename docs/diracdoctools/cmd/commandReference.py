@@ -7,12 +7,11 @@ import shutil
 import sys
 import shlex
 import textwrap
-from diracdoctools.Utilities import writeLinesToFile, mkdir, runCommand
+from diracdoctools.Utilities import writeLinesToFile, mkdir, runCommand, makeLogger
 from diracdoctools.Config import Configuration
 
 
-logging.basicConfig(level=logging.INFO, format='%(name)25s: %(levelname)8s: %(message)s', stream=sys.stdout)
-LOG = logging.getLogger('CommandReference')
+LOG = makeLogger('CommandReference')
 
 
 TITLE = 'title'
