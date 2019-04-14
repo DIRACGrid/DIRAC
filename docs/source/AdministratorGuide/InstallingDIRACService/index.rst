@@ -117,6 +117,73 @@ the steps below. This procedure must be followed for the primary server and for 
       cd /home/dirac/DIRAC
       curl https://github.com/DIRACGrid/DIRAC/raw/integration/Core/scripts/install_site.sh -O
 
+
+----------------
+Installing runit
+----------------
+
+In order to make the DIRAC components running we use the *runit* mechanism (http://smarden.org/runit/).
+
+As *dirac* user, create the file `/opt/dirac/sbin/runsvdir-start` with the following content, and make it executable::
+
+  #!/bin/bash
+  cd /opt/dirac
+  RUNSVCTRL='/sbin/runsvctrl'
+  chpst -u dirac $RUNSVCTRL d /opt/dirac/startup/*
+  killall runsv svlogd
+  RUNSVDIR='/sbin/runsvdir'
+  exec chpst -u dirac $RUNSVDIR -P /opt/dirac/startup 'log:  DIRAC runsv'
+
+
+SLC6
+^^^^
+
+This section must be executed as *root*
+
+Install the `RPM  <http://diracproject.web.cern.ch/diracproject/rpm/runit-2.1.2-1.el6.x86_64.rpm>`_.
+
+Edit `/etc/init/runsvdir.conf` to the following::
+
+  # for runit - manage /usr/sbin/runsvdir-start
+  start on runlevel [2345]
+  stop on runlevel [^2345]
+  normal exit 0 111
+  respawn
+  exec /opt/dirac/sbin/runsvdir-start
+
+
+Restart runsvdir::
+
+  restart runsvdir
+
+
+
+CC7
+^^^
+
+This section must be executed as *root*
+
+Install the `RPM <http://diracproject.web.cern.ch/diracproject/rpm/runit-2.1.2-1.el7.cern.x86_64.rpm>`_.
+
+Edit the file `/usr/lib/systemd/system/runsvdir-start.service` to the following::
+
+  [Unit]
+  Description=Runit Process Supervisor
+
+  [Service]
+  ExecStart=/opt/dirac/sbin/runsvdir-start
+  Restart=always
+  KillMode=process
+
+  [Install]
+  WantedBy=multi-user.target
+
+
+Reload the configuration and restart::
+
+  systemctl daemon-reload
+  systemctl restart runsvdir-start
+
 Server Certificates
 -------------------
 
@@ -298,7 +365,7 @@ be taken:
       }
 
   - Run install_site.sh giving the edited configuration file as the argument. The configuration file must have
-    .cfg extension (CFG file). While not strictly necessary, it's advised that a version is added with the '-v' switch 
+    .cfg extension (CFG file). While not strictly necessary, it's advised that a version is added with the '-v' switch
     (pick the most recent one, see release notes in https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/release.notes)::
 
       ./install_site.sh -v v6r20p14 install.cfg
@@ -426,55 +493,6 @@ operation is the registration of the new host in the already functional Configur
 If the installation is successful, the SystemAdministrator service will be up and running on the
 server. You can now set up the required components as described in :ref:`setting_with_CLI`
 
-Post-Installation step
-----------------------
-
-In order to make the DIRAC components running we use the *runit* mechanism (http://smarden.org/runit/). You 
-could also use the RPM provided by LHCb at http://cern.ch/lhcbproject/dist/rpm/lhcbdirac/[ 
-slc6/runit-2.1.2-1.el6.x86_64.rpm, centos7/runit-2.1.2-1.el7.cern.x86_64.rpm]. For each component that
-must run permanently (services and agents) there is a directory created under */opt/dirac/startup* that is
-monitored by a *runsvdir* daemon. The installation procedures above will properly start this daemon. In order
-to ensure starting the DIRAC components at boot you need to add a hook in your boot sequence. A possible solution
-is to add an entry in the */etc/inittab*::
-
-      SV:123456:respawn:/opt/dirac/sbin/runsvdir-start
-
-or if using ``upstart`` (in RHEL6 for example), add a file ``/etc/init/dirac.conf`` containing::
-
-      start on runlevel [123456]
-      stop on runlevel [0]
-
-      respawn
-      exec /opt/dirac/sbin/runsvdir-start
-
-or if using ``systemd`` (in CENTOS7 for example), add a file ``/etc/systemd/system/multi-user.target.wants/dirac.service`` containing::
-
-      [Service]
-      ExecStart=/opt/dirac/sbin/runsvdir-start
-      Restart=on-failure
-
-On specific machines, or if network is needed, it's necessary to make sure the ``runsvdir_start`` script is executed
-after a certain service is started. For example, on Amazon EC2, I recommend changing the first line by::
-
-      start on started elastic-network-interfaces
-
-
-Together with a script like (it assumes that in your server DIRAC is using *dirac* local user to run)::
-
-      #!/bin/bash
-      source /opt/dirac/bashrc
-      RUNSVCTRL=`which runsvctrl`
-      chpst -u dirac $RUNSVCTRL d /opt/dirac/startup/*
-      killall runsv svlogd
-      killall runsvdir
-      /opt/dirac/pro/mysql/share/mysql/mysql.server stop  --user=dirac
-      sleep 10
-      /opt/dirac/pro/mysql/share/mysql/mysql.server start --user=dirac
-      sleep 20
-      RUNSVDIR=`which runsvdir`
-      exec chpst -u dirac $RUNSVDIR -P /opt/dirac/startup 'log:  DIRAC runsv'
-
-The same script can be used to restart all DIRAC components running on the machine.
 
 .. _setting_with_CLI:
 

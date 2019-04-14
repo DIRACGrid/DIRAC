@@ -6,9 +6,8 @@ from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import DIRAC
-from DIRAC import S_OK
+from DIRAC import S_OK, gLogger
 from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.PrettyPrint import printTable
 
 uuid = None
 jobid = None
@@ -42,36 +41,20 @@ Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
 
 Script.parseCommandLine()
 
-
-def printPilotsLogging(logs):
-  """
-  Print results using printTable from PrettyPrint
-  """
-  content = []
-  labels = ['pilotUUID', 'timestamp', 'source', 'phase', 'status', 'messageContent']
-  for log in logs:
-    content.append([log[label] for label in labels])
-  printTable(labels, content, numbering=False, columnSeparator=' | ')
-
-
-from DIRAC.WorkloadManagementSystem.Client.PilotsLoggingClient import PilotsLoggingClient
 from DIRAC.WorkloadManagementSystem.Client.WMSAdministratorClient import WMSAdministratorClient
 
-if uuid:
-  result = PilotsLoggingClient().getPilotsLogging(uuid)
+if jobid:
+  result = WMSAdministratorClient().getPilots(jobid)
   if not result['OK']:
-    print('ERROR: %s' % result['Message'])
+    gLogger.error(result['Message'])
     DIRAC.exit(1)
-  printPilotsLogging(result['Value'])
-  DIRAC.exit(0)
-else:
-  info = WMSAdministratorClient().getPilots(jobid)
-  if not info['OK']:
-    print(info['Message'])
-    DIRAC.exit(1)
-  for pilot in info['Value']:
-    logging = PilotsLoggingClient().getPilotsLogging(pilot['PilotJobReference'])
-    if not logging['OK']:
-      print(logging['Message'])
-    printPilotsLogging(logging)
-  DIRAC.exit(0)
+  gLogger.debug(result['Value'])
+  uuid = result['Value'].keys()[0]
+
+result = WMSAdministratorClient().getPilotLoggingInfo(uuid)
+if not result['OK']:
+  gLogger.error(result['Message'])
+  DIRAC.exit(1)
+gLogger.notice(result['Value'])
+
+DIRAC.exit(0)

@@ -51,9 +51,8 @@ if not numberOfProcessor:
                                                                                                        ceName,
                                                                                                        Queue))
   if not numberOfProcessor:
-    msg = "NumberOfProcessors could not be found in CS queue definition, "
-    msg += "trying from /Resources/Sites/%s/NumberOfProcessors" % grid
-    gLogger.info(msg)
+    gLogger.info("NumberOfProcessors could not be found in CS queue definition, ",
+                 "trying from /Resources/Sites/%s/NumberOfProcessors" % grid)
     numberOfProcessor = gConfig.getValue('/Resources/Sites/%s/NumberOfProcessors' % grid)
     if not numberOfProcessor:
       gLogger.info("NumberOfProcessors could not be found in CS, using multiprocessing.cpu_count()")

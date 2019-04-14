@@ -50,5 +50,5 @@ script:
 ## ignore errors for sourcefiles "-i"
 after_success:
   - if [[ "${CHECK}" == "pytest"  ]];
-    then coveralls -i;
+    then codecov;
     fi

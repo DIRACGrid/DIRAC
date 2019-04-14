@@ -1,10 +1,8 @@
 """ CStoJSONSynchronizer
-
   Module that keeps the pilot parameters file synchronized with the information
   in the Operations/Pilot section of the CS. If there are additions in the CS,
   these are incorporated to the file.
   The module uploads to a web server the latest version of the pilot scripts.
-
 """
 
 from __future__ import print_function
@@ -30,14 +28,12 @@ class PilotCStoJSONSynchronizer(object):
   2 functions are executed:
   - It updates a JSON file with the values on the CS which can be used by Pilot3 pilots
   - It updates the pilot 3 files
-
   This synchronizer can be triggered at any time via PilotCStoJSONSynchronizer().sync().
   As it is today, this is triggered every time there is a successful write on the CS.
   """
 
   def __init__(self):
     """ c'tor
-
         Just setting defaults
     """
     self.jsonFile = 'pilot.json'  # default filename of the pilot json file
@@ -102,12 +98,11 @@ class PilotCStoJSONSynchronizer(object):
 
   def _getCSDict(self):
     """ Gets minimal info for running a pilot, from the CS
-
     :returns: pilotDict (containing pilots run info)
     :rtype: dict
     """
 
-    pilotDict = {'Setups': {}, 'CEs': {}}
+    pilotDict = {'Setups': {}, 'CEs': {}, 'GenericPilotDNs': []}
 
     gLogger.info('-- Getting the content of the CS --')
 
@@ -188,6 +183,11 @@ class PilotCStoJSONSynchronizer(object):
     if setup == self.pilotSetup:
       self.pilotVOVersion = options['Value']['Version']
     pilotDict['Setups'][setup] = options['Value']
+    # We update separately 'GenericPilotDNs'
+    try:
+      pilotDict['GenericPilotDNs'].append(pilotDict['Setups'][setup]['GenericPilotDN'])
+    except KeyError:
+      pass
     ceTypesCommands = gConfig.getOptionsDict('/Operations/%s/Pilot/Commands' % setup)
     if ceTypesCommands['OK']:
       # It's ok if the Pilot section doesn't list any Commands too
@@ -332,7 +332,6 @@ class PilotCStoJSONSynchronizer(object):
         :param pilotDict: used only to upload the pilot.json, which is what it is
         :param filename: remote filename
         :param pilotScript: local path to the file to upload
-
         :returns: S_OK if the upload was successful, S_ERROR otherwise
     """
     # Note: this method could clearly get a revamp... also the upload is not done in an
@@ -367,4 +366,4 @@ class PilotCStoJSONSynchronizer(object):
       return S_ERROR(resp.text)
     else:
       gLogger.info('-- File and scripts upload done --')
-    return S_OK()
+      return S_OK()
