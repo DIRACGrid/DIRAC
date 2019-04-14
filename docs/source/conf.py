@@ -46,6 +46,7 @@ LOG.info('DiracDocTools location %r', diracdoctools.cmd.__file__)
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 
+# AUTO SETUP START
 if os.environ.get('READTHEDOCS') == 'True':
   setUpReadTheDocsEnvironment()
 
@@ -64,6 +65,8 @@ if os.environ.get('READTHEDOCS') == 'True':
   LOG.info('Concatenating dirac.cfg')
   from diracdoctools.cmd.concatcfg import run as updateCompleteDiracCFG
   updateCompleteDiracCFG(configFile='../docs.conf')
+
+# AUTO SETUP END
 
 # -- General configuration -----------------------------------------------------
 
