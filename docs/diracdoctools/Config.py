@@ -36,7 +36,7 @@ class Configuration(object):
     self.noInherited = listify(config.get('Code', 'no_inherited_members'))
     self.badFiles = listify(config.get('Code', 'ignore_files'))
     self.com_ignore_commands = listify(config.get('Commands', 'ignore_commands'))
-    self.com_module_docstring = listify(config.get('Commands', 'module_docstring'))
+    self.com_module_docstring = listify(config.get('Commands', 'add_module_docstring'))
 
     self.com_MSS = []
 
