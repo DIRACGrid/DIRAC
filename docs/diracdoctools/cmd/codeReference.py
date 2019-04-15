@@ -256,6 +256,7 @@ class CodeReference(object):
                 filename.endswith('CLI.py') or \
                 filename.lower().startswith('test') or \
                 filename == '__init__.py' or \
+                any(f in filename for f in self.config.code_ignoreFiles) or \
                 '-' in filename:  # not valid python identifier, e.g. dirac-pilot
           LOG.debug('Ignoring file %r', filename)
           continue
