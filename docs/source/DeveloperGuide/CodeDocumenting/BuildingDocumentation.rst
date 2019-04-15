@@ -8,7 +8,7 @@ The DIRAC documentation makes use of the ``diracdoctools`` to create the code
 documentation, command references, and concatenate the ``ConfigTemplates`` into
 one file. The ``diracdoctools`` are located in the ``DIRAC/docs`` folder, but
 they can be ``pip installed`` for use outside of DIRAC. In ``ReadTheDocs`` we do
-not install DIRAC via `dirac-install`, so we have to install dependencies via
+not install DIRAC via :ref:`admin_dirac-install`, so we have to install dependencies via
 pip, or ``Mock`` the packages if they cannot be installed.
 
 
@@ -28,7 +28,7 @@ In the sphinx configuration file, the functionality can then be called
    :caption: docs/source/conf.py
 
 
-The configuration for ``diracdoctools` for is done via a configuration file
+The configuration for ``diracdoctools`` for is done via a configuration file
 located in the docs folder. Just copy the file and adapt it to your needs. All
 options are mandatory.  If certain features are not used, simply leave the
 values empty
@@ -44,24 +44,24 @@ The scripts can also be called directly, like this example from the ``Makefile``
    :end-before:  # AUTO MAKE END
 
 
- Code Reference
- --------------
+Code Reference
+--------------
 
- The code reference is either created by calling ``run`` from
- ``diracdoctools.cmd.codeReference`` or by invoking the script
- ``dirac-docs-build-code.py``. This creates an ``rst`` file for each python
- file, using ``autodoc`` to document all classes inside those modules. The
- actual documentation is build when sphinx is invoked, which must be able to
- import the modules and all their dependencies
+The code reference is either created by calling ``run`` from
+``diracdoctools.cmd.codeReference`` or by invoking the script
+``dirac-docs-build-code.py``. This creates an ``rst`` file for each python
+file, using ``autodoc`` to document all classes inside those modules. The
+actual documentation is build when sphinx is invoked, which must be able to
+import the modules and all their dependencies
 
 
- Command Reference
- -----------------
+Command Reference
+-----------------
 
 The command references can be created by calling ``run`` from
 ``diracdoctools.cmd.commandReference``, or by calling the
 ``dirac-docs-build-command.py`` script. ``[commands.section]`` will result in a
 list of commands with links to their documentation, which is based on the output
-of their ``--help``. The resulting ``index.rst`` has to be included explicitely
+of their ``--help``. The resulting ``index.rst`` has to be included explicitly
 in the documentation. If ``indexFile`` is specified it has to contain all the
-links itself, or warnings are generated.
+links itself, or warnings are generated for missing and superfluous entries.
