@@ -294,11 +294,10 @@ Queue %(nJobs)s
 
     qList = []
     for _condorIDs in breakListIntoChunks(condorIDs.values(), 100):
-      
+
       # This will return a list of 1245.75 3
-      status, stdout_q = commands.getstatusoutput(
-        'condor_q %s %s -af:j JobStatus ' %
-        (self.remoteScheddOptions, ' '.join(_condorIDs)))
+      status, stdout_q = commands.getstatusoutput('condor_q %s %s -af:j JobStatus ' % (self.remoteScheddOptions,
+                                                                                       ' '.join(_condorIDs)))
       if status != 0:
         return S_ERROR(stdout_q)
       _qList = stdout_q.strip().split('\n')
@@ -307,8 +306,8 @@ Queue %(nJobs)s
       # FIXME: condor_history does only support j for autoformat from 8.5.3,
       # format adds whitespace for each field This will return a list of 1245 75 3
       # needs to cocatenate the first two with a dot
-      condorHistCall = 'condor_history %s %s -af ClusterId ProcId JobStatus' % (
-        self.remoteScheddOptions, ' '.join(_condorIDs))
+      condorHistCall = 'condor_history %s %s -af ClusterId ProcId JobStatus' % (self.remoteScheddOptions,
+                                                                                ' '.join(_condorIDs))
 
       treatCondorHistory(condorHistCall, qList)
 
@@ -339,7 +338,8 @@ Queue %(nJobs)s
 
     if not self.useLocalSchedd:
       iwd = None
-      status, stdout_q = commands.getstatusoutput('condor_q %s %s -af SUBMIT_Iwd' % (self.remoteScheddOptions, condorID))
+      status, stdout_q = commands.getstatusoutput('condor_q %s %s -af SUBMIT_Iwd' % (self.remoteScheddOptions,
+                                                                                     condorID))
       self.log.verbose('condor_q:', stdout_q)
       if status != 0:
         return S_ERROR(stdout_q)
@@ -349,7 +349,7 @@ Queue %(nJobs)s
           os.makedirs(iwd)
         except OSError as e:
           self.log.verbose(str(e))
-      if iwd == None:
+      if iwd is None:
         return S_ERROR("Failed to find condor job %s" % condorID)
 
       cmd = ['condor_transfer_data', '-pool', '%s:9619' % self.ceName, '-name', self.ceName, condorID]
