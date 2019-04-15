@@ -80,7 +80,7 @@ class CodeReference(object):
 
     subpackages = [s for s in subpackages if not s.endswith(('scripts', ))]
     if subpackages:
-      LOG.info('Module %s with subpackages: %s', fullmodulename, ', '.join(subpackages))
+      LOG.info('Module %r with subpackages: %r', fullmodulename, ', '.join(subpackages))
       lines.append('SubPackages')
       lines.append('...........')
       lines.append('')
@@ -169,7 +169,7 @@ class CodeReference(object):
     """Return list of subpackages with full path."""
     packages = []
     for filename in files:
-      if filename.lower().startswith('test') or filename.lower().endswith('test'):
+      if filename.lower().startswith('test') or filename.lower().endswith('test') or filename == 'setup.py':
         LOG.debug('Skipping test file: %s/%s', abspath, filename)
         continue
       if 'test' in filename.lower():
@@ -183,7 +183,7 @@ class CodeReference(object):
   def createDoc(self, buildtype="full"):
     """create the rst files for all the things we want them for"""
     LOG.info('self.config.sourcePath: %s', self.config.sourcePath)
-    LOG.info('CODE_DOC_TARGET_PATH: %s', self.config.codeTargetPath)
+    LOG.info('self.config.targetPath: %s', self.config.codeTargetPath)
     LOG.info('Host: %s', socket.gethostname())
 
     # we need to replace existing rst files so we can decide how much code-doc to create
@@ -216,7 +216,7 @@ class CodeReference(object):
         docPath = docPath[len(self.config.moduleName) + 1:]
       fullmodulename = '.'.join(codePath.split('/')).strip('.')
       if not fullmodulename.startswith(self.config.moduleName):
-        fullmodulename = '.'.join([self.config.moduleName, fullmodulename])
+        fullmodulename = ('.'.join([self.config.moduleName, fullmodulename])).strip('.')
       packages = self.getsubpackages(codePath, direc)
       if docPath:
         LOG.debug('Trying to create folder: %s', docPath)
@@ -275,6 +275,7 @@ class CodeReference(object):
 
   def createCodeDocIndex(self, subpackages, modules, buildtype="full"):
     """create the main index file"""
+    LOG.info('Creating base index file')
     filename = 'index.rst'
     lines = []
     lines.append('.. _code_documentation:')
