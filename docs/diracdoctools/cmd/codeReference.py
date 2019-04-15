@@ -54,7 +54,7 @@ class CodeReference(object):
 
     Use 'exec' to avoid a lot of relative import, pylint errors, etc.
     """
-    customizedPath = os.path.join(self.config.customDocsPath, '*.py')
+    customizedPath = os.path.join(self.config.code_customDocsPath, '*.py')
     LOG.info('Looking for custom strings in %s', customizedPath)
     for filename in glob.glob(customizedPath):
       LOG.info('Found customization: %s', filename)
@@ -130,11 +130,11 @@ class CodeReference(object):
     lines.append('.. automodule:: %s' % fullclassname)
     if buildtype == 'full':
       lines.append('   :members:')
-      if classname not in self.config.noInherited:
+      if classname not in self.config.code_noInherited:
         lines.append('   :inherited-members:')
       lines.append('   :undoc-members:')
       lines.append('   :show-inheritance:')
-      if classname in self.config.privateMembers:
+      if classname in self.config.code_privateMembers:
         lines.append('   :special-members:')
         lines.append('   :private-members:')
       else:
@@ -169,8 +169,9 @@ class CodeReference(object):
     """Return list of subpackages with full path."""
     packages = []
     for filename in files:
-      if filename.lower().startswith('test') or filename.lower().endswith('test') or filename == 'setup.py':
-        LOG.debug('Skipping test file: %s/%s', abspath, filename)
+      if filename.lower().startswith('test') or filename.lower().endswith('test') or \
+         any(f.lower() in filename.lower() for f in self.config.code_ignoreFiles):
+        LOG.debug('Skipping file: %s/%s', abspath, filename)
         continue
       if 'test' in filename.lower():
         LOG.warn("File contains 'test', but is kept: %s/%s", abspath, filename)
@@ -183,19 +184,20 @@ class CodeReference(object):
   def createDoc(self, buildtype="full"):
     """create the rst files for all the things we want them for"""
     LOG.info('self.config.sourcePath: %s', self.config.sourcePath)
-    LOG.info('self.config.targetPath: %s', self.config.codeTargetPath)
+    LOG.info('self.config.targetPath: %s', self.config.code_targetPath)
     LOG.info('Host: %s', socket.gethostname())
 
     # we need to replace existing rst files so we can decide how much code-doc to create
-    if os.path.exists(self.config.codeTargetPath) and os.environ.get('READTHEDOCS', 'False') == 'True':
+    if os.path.exists(self.config.code_targetPath) and os.environ.get('READTHEDOCS', 'False') == 'True':
       LOG.info('Removing existing code documentation')
-      shutil.rmtree(self.config.codeTargetPath)
-    mkdir(self.config.codeTargetPath)
-    os.chdir(self.config.codeTargetPath)
+      shutil.rmtree(self.config.code_targetPath)
+    mkdir(self.config.code_targetPath)
+    os.chdir(self.config.code_targetPath)
 
     self.getCustomDocs()
 
     LOG.info('Now creating rst files: starting in %r', self.config.sourcePath)
+    firstModule = True
     for root, direc, files in os.walk(self.config.sourcePath):
       configTemplate = [os.path.join(root, _) for _ in files if _ == 'ConfigTemplate.cfg']
       files = [_ for _ in files if _.endswith('.py')]
@@ -203,10 +205,8 @@ class CodeReference(object):
       if '__init__.py' not in files:
         continue
 
-      elif any(f.lower() in root.lower() for f in ('/test', 'scripts',
-                                                   'docs/diracdoctools',
-                                                   )):
-        LOG.debug('Skipping test, docs, or script folder: %s', root)
+      elif any(f.lower() in root.lower() for f in self.config.code_ignoreFolders):
+        LOG.debug('Skipping folder: %s', root)
         continue
 
       modulename = root.split('/')[-1].strip('.')
@@ -222,7 +222,8 @@ class CodeReference(object):
         LOG.debug('Trying to create folder: %s', docPath)
         mkdir(docPath)
         os.chdir(docPath)
-      if modulename == self.config.moduleName or not modulename:
+      if firstModule:
+        firstModule = False
         self.createCodeDocIndex(
             subpackages=packages,
             modules=self.getmodules(
@@ -231,7 +232,7 @@ class CodeReference(object):
                 files),
             buildtype=buildtype)
       elif buildtype == 'limited':
-        os.chdir(self.config.codeTargetPath)
+        os.chdir(self.config.code_targetPath)
         return 0
       else:
         self.mkPackageRst(
@@ -247,7 +248,7 @@ class CodeReference(object):
       for filename in files:
         # Skip things that call parseCommandLine or similar issues
         fullclassname = '.'.join(docPath.split('/') + [filename])
-        if any(f in filename for f in self.config.badFiles):
+        if any(f in filename for f in self.config.code_dummyFiles):
           LOG.debug('Creating dummy for  file %r', filename)
           self.mkDummyRest(filename.split('.py')[0], fullclassname.split('.py')[0])
           continue
@@ -265,11 +266,9 @@ class CodeReference(object):
 
       # copy configTemplate files to code doc so we can import them in the agent docstrings
       if configTemplate:
-        shutil.copy(configTemplate[0], os.path.join(self.config.codeTargetPath, docPath))
+        shutil.copy(configTemplate[0], os.path.join(self.config.code_targetPath, docPath))
 
-      os.chdir(self.config.codeTargetPath)
-
-      #shutil.copy(os.path.join(self.config.sourcePath, 'dirac.cfg'), self.config.codeTargetPath)
+      os.chdir(self.config.code_targetPath)
 
     return 0
 

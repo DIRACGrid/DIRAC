@@ -29,12 +29,15 @@ class Configuration(object):
     self.sourcePath = self._fullPath(relativeSourceFolder)
 
     self.moduleName = config.get('Docs', 'module_name')
-    self.codeTargetPath = self._fullPath(config.get('Code', 'docs_target_path'))
-    self.customDocsPath = self._fullPath(config.get('Code', 'customdocs_folder'))
 
-    self.privateMembers = listify(config.get('Code', 'document_private_members'))
-    self.noInherited = listify(config.get('Code', 'no_inherited_members'))
-    self.badFiles = listify(config.get('Code', 'ignore_files'))
+    self.code_targetPath = self._fullPath(config.get('Code', 'docs_target_path'))
+    self.code_customDocsPath = self._fullPath(config.get('Code', 'customdocs_folder'))
+    self.code_privateMembers = listify(config.get('Code', 'document_private_members'))
+    self.code_noInherited = listify(config.get('Code', 'no_inherited_members'))
+    self.code_dummyFiles = listify(config.get('Code', 'create_dummy_files'))
+    self.code_ignoreFiles = listify(config.get('Code', 'ignore_files'))
+    self.code_ignoreFolders = listify(config.get('Code', 'ignore_folders'))
+
     self.com_ignore_commands = listify(config.get('Commands', 'ignore_commands'))
     self.com_module_docstring = listify(config.get('Commands', 'add_module_docstring'))
 
