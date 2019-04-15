@@ -17,7 +17,7 @@ pip, or ``Mock`` the packages if they cannot be installed.
 
 For DIRAC extensions you also have to install DIRAC as a requirement:
 
-  FIXME
+  git+https://github.com/DIRACGrid/DIRAC/@integration
 
             
 In the sphinx configuration file, the functionality can then be called
