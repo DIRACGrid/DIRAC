@@ -11,6 +11,11 @@ import ConfigParser
 LOG = logging.getLogger(__name__)
 
 
+K_CODE = 'Code'
+K_COMMANDS = 'Commands'
+K_CFG = 'CFG'
+
+
 def listify(values):
   return [entry.strip() for entry in values.split(',') if entry]
 
@@ -18,7 +23,9 @@ def listify(values):
 class Configuration(object):
   """Provide configuraiton to the scripts."""
 
-  def __init__(self, confFile):
+  def __init__(self, confFile, sections=None):
+    if sections is None:
+      sections = [K_CODE, K_COMMANDS, K_CFG]
     LOG.info('Reading configFile %r', os.path.join(os.getcwd(), confFile))
     config = ConfigParser.SafeConfigParser(dict_type=dict)
     config.read(confFile)
@@ -30,42 +37,45 @@ class Configuration(object):
 
     self.moduleName = config.get('Docs', 'module_name')
 
-    self.code_targetPath = self._fullPath(config.get('Code', 'docs_target_path'))
-    self.code_customDocsPath = self._fullPath(config.get('Code', 'customdocs_folder'))
-    self.code_privateMembers = listify(config.get('Code', 'document_private_members'))
-    self.code_noInherited = listify(config.get('Code', 'no_inherited_members'))
-    self.code_dummyFiles = listify(config.get('Code', 'create_dummy_files'))
-    self.code_ignoreFiles = listify(config.get('Code', 'ignore_files'))
-    self.code_ignoreFolders = listify(config.get('Code', 'ignore_folders'))
+    if K_CODE in sections:
+      self.code_targetPath = self._fullPath(config.get(K_CODE, 'docs_target_path'))
+      self.code_customDocsPath = self._fullPath(config.get(K_CODE, 'customdocs_folder'))
+      self.code_privateMembers = listify(config.get(K_CODE, 'document_private_members'))
+      self.code_noInherited = listify(config.get(K_CODE, 'no_inherited_members'))
+      self.code_dummyFiles = listify(config.get(K_CODE, 'create_dummy_files'))
+      self.code_ignoreFiles = listify(config.get(K_CODE, 'ignore_files'))
+      self.code_ignoreFolders = listify(config.get(K_CODE, 'ignore_folders'))
 
-    self.com_ignore_commands = listify(config.get('Commands', 'ignore_commands'))
-    self.com_module_docstring = listify(config.get('Commands', 'add_module_docstring'))
+    if K_COMMANDS in sections:
+      self.com_ignore_commands = listify(config.get(K_COMMANDS, 'ignore_commands'))
+      self.com_module_docstring = listify(config.get(K_COMMANDS, 'add_module_docstring'))
 
-    self.com_MSS = []
+      self.com_MSS = []
 
-    for section in sorted(config.sections()):
-      LOG.info('Parsing config sections: %r', section)
-      if section.startswith('commands.'):
-        pattern = listify(config.get(section, 'pattern'))
-        title = config.get(section, 'title')
-        scripts = listify(config.get(section, 'scripts'))
-        ignore = listify(config.get(section, 'ignore'))
-        sectionPath = config.get(section, 'sectionpath').replace(' ', '')
-        indexFile = self._fullPath(config.get(section, 'indexfile')) if \
-            config.has_option(section, 'indexfile') else None
-        prefix = config.get(section, 'prefix') if \
-            config.has_option(section, 'prefix') else ''
+      for section in sorted(config.sections()):
+        if section.startswith('commands.'):
+          LOG.info('Parsing config section: %r', section)
+          pattern = listify(config.get(section, 'pattern'))
+          title = config.get(section, 'title')
+          scripts = listify(config.get(section, 'scripts'))
+          ignore = listify(config.get(section, 'ignore'))
+          sectionPath = config.get(section, 'sectionpath').replace(' ', '')
+          indexFile = self._fullPath(config.get(section, 'indexfile')) if \
+              config.has_option(section, 'indexfile') else None
+          prefix = config.get(section, 'prefix') if \
+              config.has_option(section, 'prefix') else ''
 
-        self.com_MSS.append(dict(pattern=pattern,
-                                 title=title,
-                                 scripts=scripts,
-                                 ignore=ignore,
-                                 indexFile=indexFile,
-                                 prefix=prefix,
-                                 sectionPath=sectionPath))
+          self.com_MSS.append(dict(pattern=pattern,
+                                   title=title,
+                                   scripts=scripts,
+                                   ignore=ignore,
+                                   indexFile=indexFile,
+                                   prefix=prefix,
+                                   sectionPath=sectionPath))
 
-    self.cfg_targetFile = self._fullPath(config.get('CFG', 'target_file'))
-    self.cfg_baseFile = self._fullPath(config.get('CFG', 'base_file'))
+    if K_CFG in sections:
+      self.cfg_targetFile = self._fullPath(config.get(K_CFG, 'target_file'))
+      self.cfg_baseFile = self._fullPath(config.get(K_CFG, 'base_file'))
 
     for var, val in sorted(vars(self).items()):
       LOG.info('Parsed options: %s = %s', var, pformat(val))

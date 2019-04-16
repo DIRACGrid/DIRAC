@@ -25,7 +25,7 @@ import diracdoctools.cmd
 from diracdoctools import fakeEnvironment, environmentSetup, DIRAC_DOC_MOCK_LIST
 from diracdoctools.Utilities import setUpReadTheDocsEnvironment
 
-logging.basicConfig(level=logging.INFO, format='%(name)s: %(levelname)8s: %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(name)25s: %(levelname)8s: %(message)s')
 LOG = logging.getLogger('conf.py')
 
 diracRelease = os.environ.get('DIRACVERSION', 'integration')

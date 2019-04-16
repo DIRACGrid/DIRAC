@@ -25,7 +25,7 @@ PREFIX = 'prefix'
 class CommandReference(object):
 
   def __init__(self, configFile='docs.conf', debug=False):
-    self.config = Configuration(configFile)
+    self.config = Configuration(configFile, sections=['Commands'])
     self.exitcode = 0
     self.debug = debug
 

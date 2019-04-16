@@ -42,7 +42,7 @@ class CLParser(clparser):
 class CodeReference(object):
 
   def __init__(self, configFile='docs.conf'):
-    self.config = Configuration(configFile)
+    self.config = Configuration(configFile, sections=['Code'])
     self.orgWorkingDir = os.getcwd()
 
   def end(self):

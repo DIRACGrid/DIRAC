@@ -20,7 +20,7 @@ LOG = makeLogger('ConcatCFG')
 class ConcatCFG(object):
 
   def __init__(self, configFile='docs.conf'):
-    self.config = Configuration(configFile)
+    self.config = Configuration(configFile, sections=['CFG'])
 
   def updateCompleteDiracCFG(self):
     """Read the dirac.cfg and update the Systems sections from the ConfigTemplate.cfg files."""
