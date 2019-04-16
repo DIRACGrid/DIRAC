@@ -11,3 +11,6 @@ Each of this tutorial is a step by step guide.
    :numbered:
 
    basicTutoSetup
+   diracSE.rst
+   installDFC.rst
+   dmsWithTs.rst
