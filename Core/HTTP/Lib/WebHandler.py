@@ -26,7 +26,8 @@ from concurrent.futures import ThreadPoolExecutor
 
 global gThreadPool
 gThreadPool = ThreadPoolExecutor(100)
-#FIXME: try to ubderstend tornado cookie
+# FIXME: try to ubderstend tornado cookie
+
 
 class WErr(tornado.web.HTTPError):
 
@@ -170,7 +171,7 @@ class WebHandler(tornado.web.RequestHandler):
         if not result['OK']:
           return result
         self.stream = None
-        self.set_secure_cookie("StateAuth", result['Value']['state'])#, expires_days=1)
+        self.set_secure_cookie("StateAuth", result['Value']['state'])  # , expires_days=1)
         self.__credDict['username'] = result['Value']['username']
         result = getDNForUsername(self.__credDict['username'])
         if not result['OK']:
