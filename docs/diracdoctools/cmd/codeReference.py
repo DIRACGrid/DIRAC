@@ -19,6 +19,7 @@ CUSTOMIZED_DOCSTRINGS = {}
 
 
 class CLParser(clparser):
+  """Extension to CLParser to also parse buildType."""
 
   def __init__(self):
     super(CLParser, self).__init__()
@@ -40,12 +41,14 @@ class CLParser(clparser):
 
 
 class CodeReference(object):
+  """Module to create rst files containing autodoc for sphinx."""
 
   def __init__(self, configFile='docs.conf'):
     self.config = Configuration(configFile, sections=['Code'])
     self.orgWorkingDir = os.getcwd()
 
   def end(self):
+    """Make sure we are back in the original working directory."""
     LOG.info('Done with creating code reference')
     os.chdir(self.orgWorkingDir)
 
@@ -340,11 +343,18 @@ class CodeReference(object):
 
 
 def run(configFile='docs.conf', logLevel=logging.INFO, debug=False, buildType='full'):
-  """Run and return exitcode."""
+  """Create the code reference.
+
+  :param str configFile: path to the configFile
+  :param logLevel: logging level to use
+  :param bool debug: if true even more debug information is printed
+  :param str buildType: 'full' or 'limited', use limited only when memory is limited
+  :returns: return value 1 or 0
+  """
   logging.getLogger().setLevel(logLevel)
-  C = CodeReference(configFile=configFile)
-  retVal = C.checkBuildTypeAndRun(buildType=buildType)
-  C.end()
+  code = CodeReference(configFile=configFile)
+  retVal = code.checkBuildTypeAndRun(buildType=buildType)
+  code.end()
   return retVal
 
 

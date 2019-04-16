@@ -6,6 +6,7 @@ import logging
 import os
 import re
 import textwrap
+import sys
 
 from diracdoctools.Config import Configuration
 from diracdoctools.Utilities import makeLogger
@@ -108,11 +109,17 @@ class ConcatCFG(object):
 
 
 def run(configFile='docs.conf', logLevel=logging.INFO, debug=False):
-  """Wrapper around main working horse."""
+  """Add sections from System/ConfigTemplates to main dirac.cfg file
+
+  :param str configFile: path to the configFile
+  :param logLevel: logging level to use
+  :param bool debug: unused
+  :returns: return value 1 or 0
+  """
   logging.getLogger().setLevel(logLevel)
-  C = ConcatCFG(configFile=configFile)
-  return C.updateCompleteDiracCFG()
+  concat = ConcatCFG(configFile=configFile)
+  return concat.updateCompleteDiracCFG()
 
 
 if __name__ == '__main__':
-  run()
+  sys.exit(run())

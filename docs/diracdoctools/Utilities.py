@@ -26,6 +26,7 @@ def writeLinesToFile(filename, lines):
   """Write a list of lines into a file.
 
   Checks that there are actual changes to be done.
+
   :param str filename: name of the files
   :param list lines: list of lines to write to the file
   """

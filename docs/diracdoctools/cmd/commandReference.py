@@ -257,19 +257,25 @@ class CommandReference(object):
 
 
 def run(configFile='docs.conf', logLevel=logging.INFO, debug=False):
-  """Create the rst files right in the source tree of the docs."""
+  """Create the rst files for dirac commands, parsed form the --help message.
+
+  :param str configFile: path to the configFile
+  :param logLevel: logging level to use
+  :param bool debug: if true even more debug information is printed
+  :returns: return value 1 or 0
+  """
   logging.getLogger().setLevel(logLevel)
-  C = CommandReference(configFile=configFile, debug=debug)
-  C.getScripts()
-  for sectionDict in C.sectionDicts:
+  commands = CommandReference(configFile=configFile, debug=debug)
+  commands.getScripts()
+  for sectionDict in commands.sectionDicts:
     if sectionDict[INDEX_FILE] is None:
-      C.createFilesAndIndex(sectionDict)
+      commands.createFilesAndIndex(sectionDict)
     else:
-      C.createFiles(sectionDict)
-      C.cleanExistingIndex(sectionDict)
+      commands.createFiles(sectionDict)
+      commands.cleanExistingIndex(sectionDict)
 
   LOG.info('Done')
-  return C.exitcode
+  return commands.exitcode
 
 
 if __name__ == "__main__":
