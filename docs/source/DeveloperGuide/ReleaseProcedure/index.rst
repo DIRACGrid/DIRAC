@@ -143,7 +143,7 @@ Then we commit the changes (those done to release.notes and __init__.py) and upd
 
 You can now proceed with tagging, pushing, and uploading::
 
-  > git tag v6r19p7 #this will create a tag, from the current branch, in the local repository
+  > git tag -a v6r19p7 -m "v6r19p7" #this will create an annotated tag, from the current branch, in the local repository
   > git push --tags release rel-v6r19 #we push to the *release* repository (so to GitHub-hosted one) the tag just created, and the rel-v6r19 branch.
 
 From the previous command, note that due to the fact that we are pushing a branch named *rel-v6r19*
