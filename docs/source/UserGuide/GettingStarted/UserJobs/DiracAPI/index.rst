@@ -21,6 +21,10 @@ Creating a DIRAC Job using API
 ==============================
 
   The API allows creating DIRAC jobs using the Job object, specifying job requirements.::
+    
+    # setup DIRAC
+    from DIRAC.Core.Base import Script
+    Script.parseCommandLine(ignoreErrors=False) 
   
     from DIRAC.Interfaces.API.Job import Job
     from DIRAC.Interfaces.API.Dirac import Dirac
@@ -55,6 +59,10 @@ Job Monitoring
 ==============
 
   Once you have submitted your jobs to the Grid, a little script can be used to monitor the job status::
+  
+    # setup DIRAC
+    from DIRAC.Core.Base import Script
+    Script.parseCommandLine(ignoreErrors=False) 
 
     from DIRAC.Interfaces.API.Dirac import Dirac
     from DIRAC.Interfaces.API.Job import Job
@@ -76,7 +84,11 @@ Job Output
 ==========
 
   When the status of the job is done, the outputs can be retrieved using also a simple script::
-
+  
+    # setup DIRAC
+    from DIRAC.Core.Base import Script
+    Script.parseCommandLine(ignoreErrors=False) 
+   
     from DIRAC.Interfaces.API.Dirac import Dirac
     from DIRAC.Interfaces.API.Job import Job
     import sys
