@@ -24,7 +24,8 @@ this line to your ``requirements.txt``
   git+https://github.com/DIRACGrid/DIRAC/@integration
 
 Some packages (e.g., FTS3) cannot be installed in READTHEDOCS, so we let sphinx
-mock these packages::
+mock these packages in the ``source/conf.py`` add the import at the top and set
+the ``autodoc_mock_imports`` variable.
 
   from diracdoctools import fakeEnvironment, DIRAC_DOC_MOCK_LIST
   ...
@@ -35,9 +36,10 @@ for DIRAC, and extend it with packages needed to be mocked for your extension.
 The ``fakeEnvironment`` sets up a special mock for GSI and simply needs to be
 imported.
 
-In the sphinx configuration file, the functionality can then be called to create
-code reference, command reference and concatenated CFG files.
-   
+In the sphinx configuration file (``source/conf.py``), the functionality can
+then be called to create code reference, command reference and concatenated CFG
+files.
+
 .. literalinclude:: ../../conf.py
    :start-after: # AUTO SETUP START
    :end-before:  # AUTO SETUP END
@@ -45,9 +47,9 @@ code reference, command reference and concatenated CFG files.
 
 
 The configuration for ``diracdoctools`` for is done via a configuration file
-located in the docs folder. Just copy the file and adapt it to your needs. All
-options are mandatory unless otherwise stated.  If certain features are not
-used, simply leave the values empty
+located in the docs folder. Just copy the file ``DIRAC/docs/docs.conf``  and
+adapt it to your needs. All options are mandatory unless otherwise stated.  If
+certain features are not used, simply leave the values empty
 
 .. literalinclude:: ../../../docs.conf
    :caption: docs/docs.conf
