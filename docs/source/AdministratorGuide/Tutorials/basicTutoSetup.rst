@@ -1,3 +1,5 @@
+.. _tuto_basic_setup:
+
 ====================
 Basic Tutorial setup
 ====================
@@ -88,9 +90,10 @@ First of all, remove the existing (outdated) installation::
    yum remove -y $(rpm -qa | grep -i mysql | paste -sd ' ')
 
 
-Install all the necessary RPMs for MySQL 5.6::
+Install all the necessary RPMs for MySQL 5.7::
 
-  yum install -y https://dev.mysql.com/get/Downloads/MySQL-5.6/MySQL-devel-5.6.43-1.el6.x86_64.rpm https://dev.mysql.com/get/Downloads/MySQL-5.6/MySQL-server-5.6.43-1.el6.x86_64.rpm https://dev.mysql.com/get/Downloads/MySQL-5.6/MySQL-client-5.6.43-1.el6.x86_64.rpm
+  yum install -y https://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-community-devel-5.7.25-1.el6.x86_64.rpm https://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-community-server-5.7.25-1.el6.x86_64.rpm https://dev.mysqlom/get/Downloads/MySQL-5.7/mysql-community-client-5.7.25-1.el6.x86_64.rpm  https://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-community-libs-5.7.25-1.el6.x86_64.rpm https://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-community-common-5.7.25-1.el6.x86_64.rpm
+
 
 Setup the root password::
 
@@ -125,11 +128,11 @@ Setup the root password::
   mysql> quit
   Bye
 
-  [root@dirac-tuto ~]# service mysql stop
+  [root@dirac-tuto ~]# service mysqld stop
   Shutting down MySQL..190410 16:12:52 mysqld_safe mysqld from pid file /var/lib/mysql/dirac-tuto.pid ended
                                                             [  OK  ]
   [1]+  Done                    mysqld_safe --skip-grant-tables
-  [root@dirac-tuto ~]# service mysql start
+  [root@dirac-tuto ~]# service mysqld start
   Starting MySQL.
 
 
@@ -670,7 +673,7 @@ In principle, your system administrator will have managed the CA for you. In thi
   mkdir -p ~/DIRAC/etc/grid-security/
   ln -s /opt/dirac/etc/grid-security/certificates/ ~/DIRAC/etc/grid-security/certificates
 
-The last step is to configure the client to talk to the proper configuration service. This is easily done by creating a `~/.dirac.cfg` file with the following content::
+The last step is to configure the client to talk to the proper configuration service. This is easily done by creating a `~/DIRAC/etc/dirac.cfg` file with the following content::
 
   DIRAC
   {
