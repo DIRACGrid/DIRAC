@@ -6,8 +6,7 @@ Scripts to build code documentation, and also some mocking, etc.
 
 # list of packages that should be mocked in sphinx
 # TODO: check if we can install more of these
-DIRAC_DOC_MOCK_LIST = ['XRootD',
-                       '_arc',
+DIRAC_DOC_MOCK_LIST = ['_arc',
                        'arc',
                        'cmreslogging',
                        'cx_Oracle',
