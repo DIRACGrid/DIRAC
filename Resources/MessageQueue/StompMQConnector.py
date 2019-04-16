@@ -10,6 +10,7 @@ import ssl
 import time
 import stomp
 
+from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.Resources.MessageQueue.MQConnector import MQConnector
 from DIRAC.Core.Security import Locations
 from DIRAC import S_OK, S_ERROR, gLogger
@@ -38,9 +39,18 @@ class StompMQConnector(MQConnector):
     super(StompMQConnector, self).__init__()
     self.log = gLogger.getSubLogger(self.__class__.__name__)
     self.connections = {}
+    self.__lock = None
 
     if 'DIRAC_DEBUG_STOMP' in os.environ:
       gLogger.enableLogsFromExternalLibs()
+
+  @property
+  def lock(self):
+    """ Lock to assure thread-safe calls of certain methods.
+    """
+    if not self.__lock:
+      self.__lock = LockRing().getLock(self.__class__.__name__, recursive=True)
+    return self.__lock
 
   def setupConnection(self, parameters=None):
     """
@@ -185,12 +195,27 @@ class StompMQConnector(MQConnector):
     Disconnects from the message queue server
     """
     fail = False
-    for connection in self.connections.itervalues():
-      try:
-        connection.disconnect()
-      except Exception as e:
-        self.log.error('Failed to disconnect: %s' % e)
-        fail = True
+    self.lock.acquire()
+    try:
+      connection = next(iter(self.connections.itervalues()), None)
+      if connection:
+        listener = connection.get_listener('ReconnectListener')
+        if listener:
+          listener.isActiveCallback = False
+
+      for connection in self.connections.itervalues():
+        try:
+          connection.disconnect()
+        except Exception as e:
+          self.log.error('Failed to disconnect: %s' % e)
+          fail = True
+    finally:
+      connection = next(iter(self.connections.itervalues()), None)
+      if connection:
+        listener = connection.get_listener('ReconnectListener')
+        if listener:
+          listener.isActiveCallback = True
+      self.lock.release()
 
     if fail:
       return S_ERROR(EMQUKN, 'Failed to disconnect from at least one broker')
@@ -257,16 +282,18 @@ class ReconnectListener (stomp.ConnectionListener):
 
     self.log = gLogger.getSubLogger('ReconnectListener')
     self.callback = callback
+    self.isActiveCallback = True
 
   def on_disconnected(self):
     """ Callback function called after disconnecting from broker.
     """
     self.log.warn('Disconnected from broker')
-    try:
-      if self.callback:
-        self.callback()
-    except Exception as e:
-      self.log.error("Unexpected error while calling reconnect callback: %s" % e)
+    if self.isActiveCallback:
+      try:
+        if self.callback:
+          self.callback()
+      except Exception as e:
+        self.log.error("Unexpected error while calling reconnect callback: %s" % e)
 
 
 class StompListener (stomp.ConnectionListener):
