@@ -55,6 +55,7 @@ def test_addAndRemove():
   assert res['OK']
 
   rc = ReportsClient()
+
   res = rc.listReports('DataOperation')
   assert res['OK']
 
