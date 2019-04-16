@@ -197,10 +197,12 @@ class StompMQConnector(MQConnector):
     fail = False
     self.lock.acquire()
     try:
+      isActiveCallbackOld = False
       connection = next(iter(self.connections.itervalues()), None)
       if connection:
         listener = connection.get_listener('ReconnectListener')
         if listener:
+          isActiveCallbackOld = listener.isActiveCallback
           listener.isActiveCallback = False
 
       for connection in self.connections.itervalues():
@@ -214,7 +216,7 @@ class StompMQConnector(MQConnector):
       if connection:
         listener = connection.get_listener('ReconnectListener')
         if listener:
-          listener.isActiveCallback = True
+          listener.isActiveCallback = isActiveCallbackOld
       self.lock.release()
 
     if fail:
