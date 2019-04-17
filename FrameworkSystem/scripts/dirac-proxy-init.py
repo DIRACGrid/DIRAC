@@ -6,15 +6,17 @@
 
 import os
 import sys
+import stat
 import glob
 import time
 import datetime
+
 import DIRAC
-from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base import Script
-from DIRAC.FrameworkSystem.Client import ProxyGeneration, ProxyUpload
 from DIRAC.Core.Security import X509Chain, ProxyInfo, Properties, VOMS
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+from DIRAC.FrameworkSystem.Client import ProxyGeneration, ProxyUpload
 from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClient
 
 __RCSID__ = "$Id$"
@@ -22,9 +24,14 @@ __RCSID__ = "$Id$"
 
 class Params(ProxyGeneration.CLIParams):
 
+  IdP = ''
+  IdPproxy = True
+  addEmail = False
+  addOAuth = False
+  addQRcode = False
+  addVOMSExt = False
   uploadProxy = False
   uploadPilot = False
-  addVOMSExt = False
 
   def setUploadProxy(self, _arg):
     self.uploadProxy = True
@@ -37,6 +44,24 @@ class Params(ProxyGeneration.CLIParams):
   def setVOMSExt(self, _arg):
     self.addVOMSExt = True
     return S_OK()
+  
+  def setOAuth( self, arg ):
+    self.IdP = arg
+    self.addOAuth = True
+    return S_OK()
+  
+  def setEmail( self, arg ):
+    self.Email = arg
+    self.addEmail = True
+    return S_OK()
+  
+  def setQRcode( self, _arg ):
+    self.addQRcode = True
+    return S_OK()
+  
+  def setOAuthProxy( self, _arg ):
+    self.IdPproxy = 'proxy_from_oauth_endpoint'
+    return S_OK()
 
   def registerCLISwitches(self):
     ProxyGeneration.CLIParams.registerCLISwitches(self)
@@ -44,7 +69,10 @@ class Params(ProxyGeneration.CLIParams):
     Script.registerSwitch("P", "uploadPilot", "Upload a long lived pilot proxy to the ProxyManager",
                           self.setUploadPilotProxy)
     Script.registerSwitch("M", "VOMS", "Add voms extension", self.setVOMSExt)
-
+    Script.registerSwitch( "O:", "OAuth:", "Set OAuth2 IdP for authentification", self.setOAuth )
+    Script.registerSwitch( "e:", "email:", "Send oauth authentification url on email", self.setEmail )
+    Script.registerSwitch( "G", "get_oauth_proxy", "Get proxy throught OAuth2", self.setOAuthProxy )
+    Script.registerSwitch( "q", "qrcode", "Print link as QR code", self.setQRcode )
 
 class ProxyInit(object):
 
@@ -264,6 +292,160 @@ class ProxyInit(object):
 
     return S_OK()
 
+  def doOAuthMagic( self ):
+    import urllib3
+    import requests
+    import itertools
+    import threading
+    import webbrowser
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+    
+    def restRequest(url=None,endpoint='',metod='GET', **kwargs):
+      """ Method to do http requests """
+      if not url or not kwargs:
+        return S_ERROR( 'Not arguments present.' )
+      __opts = None
+      for key in kwargs:
+        if kwargs[key]:
+          if not __opts:
+            __opts = '%s=%s' % (key,kwargs[key])
+          else:
+            __opts += '&%s=%s' % (key,kwargs[key])
+      try:
+        r = requests.get('%s%s?%s' % (url,endpoint,__opts), verify=False)
+      except Exception as ex:
+        return S_ERROR( ex )
+      if not r.status_code == 200:
+        return S_ERROR( 'Http request error: %s' % r.status_code )
+      try:
+        return S_OK( r.json() )
+      except Exception as ex:
+        return S_ERROR( 'Cannot read response: %s' % ex )
+
+    def loading():
+      """ Show loading string """
+      __start = time.time()
+      __runtime = 0
+      for c in itertools.cycle(['.*.            ','..*            ',' ..*           ','  ..*          ','   ..*         ','    ..*        ','     ..*       ','      ..*      ','       ..*     ','        ..*    ','         ..*   ','          ..*  ','           ..* ','            ..*',
+                                '            .*.','            *..','           *.. ','          *..  ','         *..   ','        *..    ','       *..     ','      *..      ','     *..       ','    *..        ','   *..         ','  *..          ',' *..           ','*..            ']):
+          __runtime = time.time() - __start
+          if done or __runtime > time_out:
+            sys.stdout.write('\r                                                                   \n')
+            break
+          lefttime = (time_out - __runtime)//60
+          sys.stdout.write('\r Waiting %s minutes when you authenticated..' % lefttime + c)
+          sys.stdout.flush()
+          time.sleep(0.1)
+
+    def qrterminal(url):
+      """ Show QR code """
+      try:
+        import pyqrcode
+      except Exception as ex:  
+        pass
+      else:
+        __qr = ''
+        qrA = pyqrcode.create(url).code
+        qrA.insert(0,[0 for i in range(0,len(qrA[0]))])
+        qrA.append([0 for i in range(0,len(qrA[0]))])
+        if not (len(qrA) % 2) == 0:
+          qrA.append([0 for i in range(0,len(qrA[0]))])
+        for i in range(0,len(qrA)):
+          if not (i % 2) == 0:
+            continue
+          __qr += '\033[0;30;47m '
+          for j in range(0,len(qrA[0])):
+            p = str(qrA[i][j])+str(qrA[i+1][j])
+            if p == '11': __qr += '\033[0;30;40m \033[0;30;47m' #black bg
+            if p == '10': __qr += u'\u2580' #upblock
+            if p == '01': __qr += u'\u2584' #downblock
+            if p == '00': __qr += ' ' #white bg
+          __qr += ' \033[0m\n'
+        print(__qr)
+
+    gLogger.notice( 'OAuth authentification from %s.' % self.__piParams.IdP )
+    
+    # Get https endpoint of OAuthService API from http API of ConfigurationService
+    confUrl = gConfig.getValue("/LocalInstallation/ConfigurationServerAPI")
+    if not confUrl:
+      gLogger.fatal( 'Cannot get http url of configuration server.' )
+      sys.exit( 1 )
+    res = restRequest(confUrl,'/get',**{'option':'/Systems/Framework/Production/URLs/OAuthAPI'})
+    if not res['OK']:
+      gLogger.fatal( 'Cannot get http url of oauth server:\n %s' % res['Message'] )
+      sys.exit( 1 )
+    oauthUrl = res['Value']
+    params = {'IdP':self.__piParams.IdP}
+    if self.__piParams.addEmail:
+      params['email'] = self.__piParams.Email
+    res = restRequest(oauthUrl,'/oauth',**params)
+    if not res['OK']:
+      gLogger.fatal( res['Message'] )
+    result = res['Value']
+    if not result['OK']:
+      # Print link in output if it was not sent by email
+      if not self.__piParams.addEmail:
+        gLogger.fatal( result['Message'] )
+        sys.exit( 1 )
+      gLogger.notice('Cannot not sent link to your email: %s' % result['Message'])
+    elif 'url' not in result['Value'] or 'state' not in result['Value']:
+      gLogger.fatal( 'Authentification url with state was not genereted by OAuth2service. Sorry sheet happends.' )
+      sys.exit( 1 )   
+    url = result['Value']['url']
+    state = result['Value']['state']
+    if not url or not state:
+      gLogger.fatal( 'Cannot get link for authentication.' )
+      sys.exit( 1 )
+    url = '%s/oauth?getlink=%s' % (oauthUrl,state)
+    
+    gLogger.notice('Use link to authentication..')
+
+    if self.__piParams.addEmail:
+      gLogger.notice('Likn was sent to your email(%s)!' % self.__piParams.Email)
+    else: 
+      if not webbrowser.open_new_tab(url):
+        print('%s\n' % url)
+        if self.__piParams.addQRcode:
+          qrterminal(url)
+    #Loop: waiting status of request
+    time_out = 300
+    done = False
+    threading.Thread(target=loading).start()
+    addVOMS = self.__piParams.addVOMSExt or Registry.getGroupOption( self.__piParams.diracGroup, "AutoAddVOMS", False )
+    res = restRequest(oauthUrl,'/redirect',status=state,group=self.__piParams.diracGroup,
+                      proxy=self.__piParams.IdPproxy,time_out=time_out,
+                      proxyLifeTime=self.__piParams.proxyLifeTime,voms=addVOMS)
+    done = True
+    time.sleep(1)
+    # End loop
+    if not res['OK']:
+      gLogger.error( res['Message'] )
+      sys.exit( 1 )
+    result = res['Value']
+    if not result['OK']:
+      gLogger.error( result['Message'] )
+      sys.exit( 1 )
+    if result['Value']['Status'] == 'visitor':
+      gLogger.notice( result['Value']['Message'] )
+      sys.exit( 1 )
+    if not self.__piParams.proxyLoc:
+      self.__piParams.proxyLoc = '/tmp/x509up_u%s' % os.getuid()
+    try:
+      with open(self.__piParams.proxyLoc, 'w') as fd:
+        fd.write(result['Value']['proxy'].encode("UTF-8"))
+    except Exception as e:
+      return S_ERROR("%s :%s" % (self.__piParams.proxyLoc, repr(e).replace(',)', ')')))
+    try:
+      os.chmod(self.__piParams.proxyLoc, stat.S_IRUSR | stat.S_IWUSR)
+    except Exception as e:
+      return S_ERROR("%s :%s" % (self.__piParams.proxyLoc, repr(e).replace(',)', ')')))
+    self.__piParams.certLoc = self.__piParams.proxyLoc
+    result = Script.enableCS()
+    if not result[ 'OK' ]:
+      return S_ERROR( "Cannot contact CS to get user list" )
+    threading.Thread(target=self.checkCAs).start()
+    gConfig.forceRefresh(fromMaster=True)
+    return S_OK(self.__piParams.proxyLoc)
 
 if __name__ == "__main__":
   piParams = Params()
@@ -274,10 +456,13 @@ if __name__ == "__main__":
   DIRAC.gConfig.setOptionValue("/DIRAC/Security/UseServerCertificate", "False")
 
   pI = ProxyInit(piParams)
-  resultDoTheMagic = pI.doTheMagic()
-  if not resultDoTheMagic['OK']:
-    gLogger.fatal(resultDoTheMagic['Message'])
-    sys.exit(1)
+  if piParams.addOAuth:
+    resultDoMagic = pI.doOAuthMagic()
+  else:
+    resultDoMagic = pI.doTheMagic()
+  if not resultDoMagic[ 'OK' ]:
+    gLogger.fatal( resultDoMagic[ 'Message' ] )
+    sys.exit( 1 )
 
   pI.printInfo()
 
