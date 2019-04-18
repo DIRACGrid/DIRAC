@@ -29,79 +29,6 @@ simpleCopyMask = [ os.path.basename( __file__ ),
                    'dirac_install.py',
                    'dirac_platform.py']
 
-wrapperTemplate = """#!$PYTHONLOCATION$
-#
-import os,sys,imp
-#
-DiracRoot = os.path.dirname(os.path.dirname( os.path.realpath( sys.argv[0] ) ))
-if 'DIRACPLAT' in os.environ:
-  DiracPlatform = os.environ['DIRACPLAT']
-else:
-  platformPath = os.path.join( DiracRoot, "DIRAC", "Core", "Utilities", "Platform.py" )
-  with open( platformPath, "r" ) as platFD:
-    Platform = imp.load_module( "Platform", platFD, platformPath, ( "", "r", imp.PY_SOURCE ) )
-  DiracPlatform = Platform.getPlatformString()
-  if not DiracPlatform or DiracPlatform == "ERROR":
-    print >> sys.stderr, "Can not determine local platform"
-    sys.exit(-1)
-DiracPath        = '%s' % ( os.path.join(DiracRoot,DiracPlatform,'bin'), )
-DiracPythonPath  = '%s' % ( DiracRoot, )
-DiracLibraryPath      = '%s' % ( os.path.join(DiracRoot,DiracPlatform,'lib'), )
-
-baseLibPath = DiracLibraryPath
-if os.path.exists( baseLibPath ):
-  for entry in os.listdir( baseLibPath ):
-    if os.path.isdir( entry ):
-      DiracLibraryPath = '%s:%s' % ( DiracLibraryPath, os.path.join( baseLibPath, entry ) )
-
-
-os.environ['PATH'] = '%s:%s' % ( DiracPath, os.environ['PATH'] )
-
-for varName in ( 'LD_LIBRARY_PATH', 'DYLD_LIBRARY_PATH'):
-  if varName not in os.environ:
-    os.environ[varName] = DiracLibraryPath
-  else:
-    os.environ[varName] = '%s:%s' % ( DiracLibraryPath, os.environ[varName] )
-
-if 'PYTHONPATH' not in os.environ:
-  os.environ['PYTHONPATH'] = DiracPythonPath
-else:
-  os.environ['PYTHONPATH'] = '%s:%s' % ( DiracPythonPath, os.environ['PYTHONPATH'] )
-
-DiracScript = os.path.join( DiracRoot, '$SCRIPTLOCATION$' )
-
-certDir = os.path.join( "etc", "grid-security", "certificates" )
-if 'X509_CERT_DIR' not in os.environ and \
-  not os.path.isdir( os.path.join( "/", certDir ) ) and \
-  os.path.isdir( os.path.join( DiracRoot, certDir ) ):
-  os.environ[ 'X509_CERT_DIR' ] = os.path.join( DiracRoot, certDir )
-
-# DCommands special
-os.environ['DCOMMANDS_PPID'] = str( os.getppid( ) )
-
-if sys.argv[1:]:
-  args = ' "%s"' % '" "'.join( sys.argv[1:] )
-else:
-  args = ''
-"""
-
-# Python interpreter location can be specified as an argument
-pythonLocation = "/usr/bin/env python"
-if len( sys.argv ) == 2:
-  pythonLocation = os.path.join( sys.argv[1], 'bin', 'python' )
-wrapperTemplate = wrapperTemplate.replace( '$PYTHONLOCATION$', pythonLocation )
-
-# On the newest MacOS the DYLD_LIBRARY_PATH variable is not passed to the shell of
-# the os.system() due to System Integrity Protection feature
-if platform.system() == "Darwin":
-  wrapperTemplate += """
-sys.exit( os.system( 'DYLD_LIBRARY_PATH=%s python "%s"%s' % ( DiracLibraryPath, DiracScript, args )  ) / 256 )
-"""
-else:
-  wrapperTemplate += """
-sys.exit( os.system('python "%s"%s' % ( DiracScript, args )  ) / 256 )
-"""
-
 def lookForScriptsInPath( basePath, rootModule ):
   isScriptsDir = os.path.split( rootModule )[1] == "scripts"
   scriptFiles = []
@@ -163,8 +90,14 @@ for rootModule in listDir:
       if DEBUG:
         print " Wrapping %s as %s" % ( scriptName, newScriptName )
       fakeScriptPath = os.path.join( targetScriptsPath, newScriptName )
-      with open( fakeScriptPath, "w" ) as fd:
-        fd.write( wrapperTemplate.replace( '$SCRIPTLOCATION$', scriptPath ) )
+
+      # We may overwrite already existing links (in extension for example)
+      # os.symlink will not allow that, so remove the existing first
+      if os.path.exists(fakeScriptPath):
+        os.remove(fakeScriptPath)
+      # Create the symlink
+      os.symlink(os.path.abspath(scriptPath), fakeScriptPath)
+
       os.chmod( fakeScriptPath, gDefaultPerms )
     else:
       if DEBUG:
@@ -175,7 +108,6 @@ for rootModule in listDir:
         with open( copyPath, 'r+' ) as script:
           scriptStr = script.read()
           script.seek( 0 )
-          script.write( scriptStr.replace( '/usr/bin/env python', pythonLocation ) )
       os.chmod( copyPath, gDefaultPerms )
       cLen = len( copyPath )
       reFound = pythonScriptRE.match( copyPath )
