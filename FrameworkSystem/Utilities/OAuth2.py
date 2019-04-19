@@ -105,11 +105,11 @@ class OIDCClient(requests.Session):
     self.max_proxylifetime = max_proxylifetime or 'max_proxylifetime' in optns and optns['max_proxylifetime'] or 86400
     self.revocation_endpoint = revocation_endpoint or 'revocation_endpoint' in optns and optns['revocation_endpoint']
     self.registration_endpoint = registration_endpoint or \
-                                 'registration_endpoint' in optns and optns['registration_endpoint']
+    'registration_endpoint' in optns and optns['registration_endpoint']
     self.authorization_endpoint = authorization_endpoint or \
-                                  'authorization_endpoint' in optns and optns['authorization_endpoint']
+    'authorization_endpoint' in optns and optns['authorization_endpoint']
     self.introspection_endpoint = introspection_endpoint or \
-                                  'introspection_endpoint' in optns and optns['introspection_endpoint']
+    'introspection_endpoint' in optns and optns['introspection_endpoint']
 
 
 class OAuth2(OIDCClient):

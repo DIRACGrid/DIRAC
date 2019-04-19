@@ -163,7 +163,7 @@ class OAuthDB(DB):
     DN = result['Value']['identity']
     self.updateFields('Tokens', ['Expires_in', 'UserDN', 'LastAccess'],
                                 ['UTC_TIMESTAMP()', DN, 'UTC_TIMESTAMP()'],
-                                 {'Access_token': access_token})
+                      {'Access_token': access_token})
     result = chain.getRemainingSecs()
     if not result['OK']:
       return result
@@ -285,7 +285,7 @@ class OAuthDB(DB):
               csModDict['UsrOptns']['DNProperties/%s/ProxyProviders' % secDN] = pP
               self.updateFields('Tokens', ['UserDN', 'LastAccess'],
                                           [proxyDN, 'UTC_TIMESTAMP()'],
-                                         {'State': state})
+                                {'State': state})
             else:
               result = self.get_auth_request_uri(pP, state + '_proxy')
               if not result['OK']:
