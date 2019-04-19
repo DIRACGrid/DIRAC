@@ -40,11 +40,11 @@ class OAuthDB(DB):
                                      'UserSetup': 'VARCHAR(32)',
                                      'Pem': 'BLOB',
                                      'LastAccess': 'DATETIME',
-                                    },
+                                     },
                           'PrimaryKey': 'Id',
                           'Engine': 'InnoDB',
-                         },
-              }
+                          },
+               }
 
   def __init__(self):
     """ Constructor
@@ -163,7 +163,7 @@ class OAuthDB(DB):
     DN = result['Value']['identity']
     self.updateFields('Tokens', ['Expires_in', 'UserDN', 'LastAccess'],
                                 ['UTC_TIMESTAMP()', DN, 'UTC_TIMESTAMP()'],
-                                {'Access_token': access_token})
+                                 {'Access_token': access_token})
     result = chain.getRemainingSecs()
     if not result['OK']:
       return result
@@ -233,7 +233,7 @@ class OAuthDB(DB):
                                   [status, oauthDict['Tokens']['token_type'], oauthDict['Tokens']['access_token'],
                                    exp_datetime, oauthDict['Tokens']['refresh_token'], oauthDict['UserProfile']['sub'],
                                    csModDict['username'], 'UTC_TIMESTAMP()'],
-                                  {'State': state})
+                        {'State': state})
       result = self.get_proxy_dn_exptime(OAuthProvider, state=state)
       if not result['OK']:
         _CRASH(result['Message'])
@@ -285,7 +285,7 @@ class OAuthDB(DB):
               csModDict['UsrOptns']['DNProperties/%s/ProxyProviders' % secDN] = pP
               self.updateFields('Tokens', ['UserDN', 'LastAccess'],
                                           [proxyDN, 'UTC_TIMESTAMP()'],
-                                          {'State': state})
+                                         {'State': state})
             else:
               result = self.get_auth_request_uri(pP, state + '_proxy')
               if not result['OK']:
@@ -309,7 +309,7 @@ class OAuthDB(DB):
                                    oauthDict['Tokens']['access_token'], exp_datetime,
                                    oauthDict['Tokens']['refresh_token'], oauthDict['UserProfile']['sub'],
                                    oauthDict['username'], 'UTC_TIMESTAMP()'],
-                                  {'State': state})
+                        {'State': state})
     else:
       _CRASH('No configuration found for %s provider' % OAuthProvider)
       return S_ERROR('No configuration found for %s provider' % OAuthProvider)
@@ -338,7 +338,7 @@ class OAuthDB(DB):
     return S_OK({'redirect': oauthDict['redirect'], 'Messages': oauthDict['messages']})
 
   def get_by_state(self, state, value=['OAuthProvider', 'Sub', 'State', 'Status', 'Comment', 'Token_type',
-                                      'Access_token', 'Expires_in', 'Refresh_token', 'UserName', 'LastAccess']):
+                                       'Access_token', 'Expires_in', 'Refresh_token', 'UserName', 'LastAccess']):
     """ Get filds from session """
     self.updateFields('Tokens', ['LastAccess'], ['UTC_TIMESTAMP()'], {'State': state})
     if not type(value) == list:
@@ -398,7 +398,7 @@ class OAuthDB(DB):
                                    'Refresh_token', 'LastAccess'],
                                   [tD['token_type'], tD['access_token'], exp_datetime,
                                    refresh_token, 'UTC_TIMESTAMP()'],
-                                  {'Access_token': token})
+                        {'Access_token': token})
       for k in tD.keys():
         resD[k.capitalize()] = tD[k]
     return S_OK(resD)

@@ -643,8 +643,7 @@ class ProxyDB(DB):
       return S_ERROR('Requested DN does not match the obtained one in the PUSP proxy')
     timeLeft = credDict['secondsLeft']
 
-    result = chain.generateProxyToString(lifeTime=timeLeft,
-                                         diracGroup=userGroup)
+    result = chain.generateProxyToString(timeLeft, diracGroup=userGroup)
     if not result['OK']:
       return result
     proxyString = result['Value']
