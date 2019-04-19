@@ -296,33 +296,41 @@ def getFilterConfig(filterID):
   """
   return gConfig.getOptionsDict('Resources/LogFilters/%s' % filterID)
 
+
 def getProxyProviders():
   """ Get the names of all the Proxy Providers defined in the CS """
   return gConfig.getSections('/Resources/ProxyProviders')
+
 
 def getProxyProviderOption(proxyProvider, Value):
   """ Get the value of the IdP """
   return gConfig.getValue("/Resources/ProxyProviders/%s/%s" % (proxyProvider, Value))
 
+
 def getProxyProviderDict(IdP):
   """ Get the dict of all the settings IdP defined in the CS """
   return gConfig.getOptionsDict("/Resources/ProxyProviders/%s" % IdP)
+
 
 def getIdPs():
   """ Get the names of all the Id Providers defined in the CS """
   return gConfig.getSections('/Resources/IdProviders')
 
+
 def getIdPOption(IdP, Value):
   """ Get the value of the IdP """
   return gConfig.getValue("/Resources/IdProviders/%s/%s" % (IdP, Value))
+
 
 def getIdPSections(IdP, path=''):
   """ Get the sections of the IdP """
   return gConfig.getSections("/Resources/IdProviders/%s/%s" % (IdP, path))
 
+
 def getIdPOptions(IdP, path=''):
   """ Get the options of the IdP """
   return gConfig.getOptions("/Resources/IdProviders/%s/%s" % (IdP, path))
+
 
 def getIdPDict(IdP):
   """ Get the dict of all the settings IdP defined in the CS """

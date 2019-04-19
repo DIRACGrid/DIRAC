@@ -359,18 +359,22 @@ def getCAForUsername(username):
     return S_OK(dnList)
   return S_ERROR("No CA found for user %s" % username)
 
+
 def getProxyProvidersForDN(DN):
   result = getUsernameForDN(DN)
   if not result['OK']:
     return []
   # Convert DN to section format
-  secDN = DN.replace('/','-').replace('=','_')
-  return gConfig.getValue("%s/Users/%s/DNProperties/%s/ProxyProviders" % (gBaseRegistrySection,result['Value'],secDN),[])
+  secDN = DN.replace('/', '-').replace('=', '_')
+  return gConfig.getValue("%s/Users/%s/DNProperties/%s/ProxyProviders" % 
+                         (gBaseRegistrySection, result['Value'], secDN), [])
+
 
 def getGroupsFromDNProperties(DN):
   result = getUsernameForDN(DN)
   if not result['OK']:
     return []
   # Convert DN to section format
-  secDN = DN.replace('/','-').replace('=','_')
-  return gConfig.getValue("%s/Users/%s/DNProperties/%s/Groups" % (gBaseRegistrySection,result['Value'],secDN),[])
+  secDN = DN.replace('/', '-').replace('=', '_')
+  return gConfig.getValue("%s/Users/%s/DNProperties/%s/Groups" % 
+                         (gBaseRegistrySection, result['Value'], secDN), [])

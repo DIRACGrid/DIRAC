@@ -18,10 +18,10 @@ from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Security import Properties
 from DIRAC.Core.Security.VOMS import VOMS
 from DIRAC.Core.Security.MyProxy import MyProxy
-from DIRAC.Core.Security.m2crypto.X509Request import X509Request       # pylint: disable=import-error
-from DIRAC.Core.Security.m2crypto.X509Chain import X509Chain, isPUSPdn # pylint: disable=import-error
+from DIRAC.Core.Security.m2crypto.X509Request import X509Request        # pylint: disable=import-error
+from DIRAC.Core.Security.m2crypto.X509Chain import X509Chain, isPUSPdn  # pylint: disable=import-error
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
-from DIRAC.ConfigurationSystem.Client.Helpers import Resources 
+from DIRAC.ConfigurationSystem.Client.Helpers import Resources
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 from DIRAC.FrameworkSystem.Client.OAuthClient import OAuthClient
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
@@ -82,13 +82,13 @@ class ProxyDB(DB):
 
     if 'ProxyDB_CleanProxies' not in tablesInDB:
       tablesD['ProxyDB_CleanProxies'] = {'Fields': {'UserName': 'VARCHAR(64) NOT NULL',
-                                               'UserDN': 'VARCHAR(255) NOT NULL',
-                                               'ProxyProvider': 'VARCHAR(64) NOT NULL',
-                                               'Pem': 'BLOB',
-                                               'ExpirationTime': 'DATETIME',
-                                               },
-                                    'PrimaryKey': ['UserDN', 'ProxyProvider']
-                                    }
+                                                    'UserDN': 'VARCHAR(255) NOT NULL',
+                                                    'ProxyProvider': 'VARCHAR(64) NOT NULL',
+                                                    'Pem': 'BLOB',
+                                                    'ExpirationTime': 'DATETIME',
+                                                    },
+                                         'PrimaryKey': ['UserDN', 'ProxyProvider']
+                                         }
 
     if 'ProxyDB_Proxies' not in tablesInDB:
       tablesD['ProxyDB_Proxies'] = {'Fields': {'UserName': 'VARCHAR(64) NOT NULL',
@@ -390,7 +390,7 @@ class ProxyDB(DB):
         sUserGroup = self._escapeString(userGroup)['Value']
         sTable = 'ProxyDB_Proxies'
       else:
-        sTable = 'ProxyDB_CleanProxies' 
+        sTable = 'ProxyDB_CleanProxies'
     except KeyError:
       return S_ERROR("Cannot escape DN")
     # Check what we have already got in the repository
@@ -398,7 +398,7 @@ class ProxyDB(DB):
     cmd += "FROM `%s` WHERE UserDN=%s " % (sTable, sUserDN)
     if proxyProvider:
       cmd += 'AND ProxyProvider="%s"' % proxyProvider
-    else:  
+    else:
       cmd += "AND UserGroup=%s" % sUserGroup
     result = self._query(cmd)
     if not result['OK']:
@@ -501,7 +501,7 @@ class ProxyDB(DB):
     elif not vomsAttr:
       sTable = "`ProxyDB_Proxies`"
     else:
-      sTable = "`ProxyDB_VOMSProxies`"    
+      sTable = "`ProxyDB_VOMSProxies`"
     cmd = "SELECT Pem, TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ) from %s " % sTable
     cmd += "WHERE UserDN=%s AND TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ) > 0" % (sUserDN)
     if proxyProvider:
@@ -522,7 +522,7 @@ class ProxyDB(DB):
           result = chain.loadProxyFromString(record[0])
           if not result['OK']:
             return result
-          result = chain.generateProxyToString(record[1], diracGroup=userGroup,rfc=True)
+          result = chain.generateProxyToString(record[1], diracGroup=userGroup, rfc=True)
           if not result['OK']:
             return result
           chain.loadProxyFromString(result['Value'])
@@ -682,30 +682,31 @@ class ProxyDB(DB):
       eMail = DN.split('/')[-1].split('=')[1]
       fullName = DN.split('/')[-2].split('=')[1]
     caConfigFile = gConfig.getValue('/Resources/ProxyProviders/%s/CAConfigFile' % proxyProvider)
-    maxPeriod = gConfig.getValue('/Resources/ProxyProviders/%s/max_proxylifetime' % proxyProvider) or 365*24*3600
+    maxPeriod = gConfig.getValue('/Resources/ProxyProviders/%s/max_proxylifetime' % proxyProvider) or 365 * 24 * 3600
     caDir = os.path.dirname(caConfigFile)
-    userConfFile = os.path.join(caDir,fullName.replace(' ','_')+'.cnf')
-    userReqFile = os.path.join(caDir,fullName.replace(' ','_')+'.req')
-    userKeyFile = os.path.join(caDir,fullName.replace(' ','_')+'.key.pem')
-    userCertFile = os.path.join(caDir,fullName.replace(' ','_')+'.cert.pem')
+    userConfFile = os.path.join(caDir, fullName.replace(' ', '_') + '.cnf')
+    userReqFile = os.path.join(caDir, fullName.replace(' ', '_') + '.req')
+    userKeyFile = os.path.join(caDir, fullName.replace(' ', '_') + '.key.pem')
+    userCertFile = os.path.join(caDir, fullName.replace(' ', '_') + '.cert.pem')
     writeUserConfigFile(userConfFile, fullName, eMail)
     status,output = commands.getstatusoutput('openssl genrsa -out %s 2048' % userKeyFile)
     if status:
       return S_ERROR(output)
-    status,output = commands.getstatusoutput('openssl req -config %s -key %s -new -out %s' % \
-                                            (userConfFile, userKeyFile, userReqFile) )
+    status,output = commands.getstatusoutput('openssl req -config %s -key %s -new -out %s' %
+                                            (userConfFile, userKeyFile, userReqFile))
     if status:
       return S_ERROR(output)
     # Empty the cert database
-    ffs = glob.glob(caDir+'/index.txt*')
+    ffs = glob.glob(caDir + '/index.txt*')
     for ff in ffs:
       os.unlink(ff)
-    with open(caDir+'/index.txt', 'w') as ind:
+    with open(caDir + '/index.txt', 'w') as ind:
       ind.write('')
-    status,output = commands.getstatusoutput('openssl ca -config %s -extensions usr_cert -batch -days 375 -in %s -out %s' % \
-                                            (caConfigFile, userReqFile, userCertFile) )
+    com = 'openssl ca -config %s -extensions usr_cert -batch -days 375 -in ' % caConfigFile
+    com += '%s -out %s' % (userReqFile, userCertFile)
+    status, output = commands.getstatusoutput(com)
     if status:
-      return S_ERROR(output)                                 
+      return S_ERROR(output)
     chain = X509Chain()
     result = chain.loadChainFromFile(userCertFile)
     if not result['OK']:
@@ -713,23 +714,23 @@ class ProxyDB(DB):
     result = chain.loadKeyFromFile(userKeyFile)
     if not result['OK']:
       return result
-    result = chain.generateProxyToString(maxPeriod, diracGroup=diracGroup, rfc = True)  
+    result = chain.generateProxyToString(maxPeriod, diracGroup=diracGroup, rfc=True)
     # Clean up temporary files
     for ff in [userConfFile, userReqFile, userKeyFile, userCertFile]:
       os.unlink(ff)
     # Empty the cert database
-    ffs = glob.glob(caDir+'/index.txt*')
+    ffs = glob.glob(caDir + '/index.txt*')
     for ff in ffs:
       os.unlink(ff)
     return result
-  
-  def __getProxyFromProxyProvider(self,userDN,proxyProvider): 
+
+  def __getProxyFromProxyProvider(self, userDN, proxyProvider):
     chain = None
     proxyStr = None
     remainingSecs = None
-    method = Resources.getProxyProviderOption(proxyProvider,'method')
+    method = Resources.getProxyProviderOption(proxyProvider, 'method')
     if method == 'oAuth2':
-      result = self.__oauthClient.getProxyDNExpTimeFromOAuthProxyProvider(proxyProvider,None,None,userDN)
+      result = self.__oauthClient.getProxyDNExpTimeFromOAuthProxyProvider(proxyProvider, None, None, userDN)
       if result['OK']:
         proxyStr = result['Value']['proxy']
         remainingSecs = result['Value']['exptime']
@@ -738,7 +739,7 @@ class ProxyDB(DB):
       if result['OK']:
         proxyStr = result['Value']
     else:
-      return S_ERROR( 'Cannot generate new proxy from %s proxy provider: no found method' % proxyProvider )
+      return S_ERROR('Cannot generate new proxy from %s proxy provider: no found method' % proxyProvider)
     if not chain:
       chain = X509Chain()
       result = chain.loadProxyFromString(proxyStr)
@@ -751,35 +752,35 @@ class ProxyDB(DB):
       remainingSecs = result['Value']
     result = self.storeProxy(userDN, False, chain, proxyProvider)
     if result['OK']:
-      return S_OK( {'proxy': proxyStr,'chain': chain,'remainingSecs':remainingSecs} )
+      return S_OK({'proxy': proxyStr, 'chain': chain, 'remainingSecs': remainingSecs})
     return result
-  
-  def __generateProxy(self,userDN,userGroup,requiredLifeTime):
+
+  def __generateProxy(self, userDN, userGroup, requiredLifeTime):
     """ Tryin to generate new proxy from exist clean proxy or from proxy provider
         for use with userDN in the userGroup
     """
     PPList = Registry.getProxyProvidersForDN(userDN)
     if not PPList:
-      return S_ERROR( 'No proxy providers found' )
+      return S_ERROR('No proxy providers found')
     for proxyProvider in PPList:
-      result = self.__getPemAndTimeLeft(userDN,userGroup,cleanProxy=True,proxyProvider=proxyProvider)
+      result = self.__getPemAndTimeLeft(userDN, userGroup, cleanProxy=True, proxyProvider=proxyProvider)
       if result['OK']:
         if requiredLifeTime:
           if result['Value'][1] < requiredLifeTime:
-            result = self.__getProxyFromProxyProvider(userDN,proxyProvider)
+            result = self.__getProxyFromProxyProvider(userDN, proxyProvider)
           else:
             return result
         else:
           return result
       else:
-        result = self.__getProxyFromProxyProvider(userDN,proxyProvider)
+        result = self.__getProxyFromProxyProvider(userDN, proxyProvider)
       if result['OK']:
         chain = result['Value']['chain']
         remainingSecs = result['Value']['remainingSecs']
-        result = chain.generateProxyToString(remainingSecs, diracGroup=userGroup,rfc=True)
+        result = chain.generateProxyToString(remainingSecs, diracGroup=userGroup, rfc=True)
         if not result['OK']:
           return result
-        return S_OK((result['Value'],remainingSecs))
+        return S_OK((result['Value'], remainingSecs))
     return result
 
   def getProxy(self, userDN, userGroup, requiredLifeTime=False):
@@ -804,9 +805,9 @@ class ProxyDB(DB):
     retVal = self.__getPemAndTimeLeft(userDN, userGroup)
     if retVal['OK'] and requiredLifeTime:
       if retVal['Value'][1] < requiredLifeTime and not self.__useMyProxy:
-        retVal = self.__generateProxy(userDN,userGroup,requiredLifeTime=requiredLifeTime)
+        retVal = self.__generateProxy(userDN, userGroup, requiredLifeTime=requiredLifeTime)
     else:
-      retVal = self.__generateProxy(userDN,userGroup,requiredLifeTime=requiredLifeTime)
+      retVal = self.__generateProxy(userDN, userGroup, requiredLifeTime=requiredLifeTime)
     if not retVal['OK']:
       return retVal
     pemData = retVal['Value'][0]

@@ -18,4 +18,3 @@ class OAuthClient(Client):
 
     self.log = gLogger.getSubLogger('OAuthClient')
     self.setServer('Framework/OAuth')
-  

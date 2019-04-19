@@ -654,6 +654,7 @@ def getElasticDBParameters(fullname):
 
   return S_OK(parameters)
 
+
 def getOAuthAPI():
   """ Get OAuth API url """
   return gConfig.getValue("/Systems/Framework/Production/URLs/OAuthAPI")
