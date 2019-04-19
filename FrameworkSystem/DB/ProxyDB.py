@@ -3,11 +3,14 @@
 
 __RCSID__ = "$Id$"
 
+import os
+import glob
 import time
 import types
 import urllib
 import random
 import hashlib
+import commands
 
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -15,8 +18,8 @@ from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Security import Properties
 from DIRAC.Core.Security.VOMS import VOMS
 from DIRAC.Core.Security.MyProxy import MyProxy
-from DIRAC.Core.Security.X509Request import X509Request       # pylint: disable=import-error
-from DIRAC.Core.Security.X509Chain import X509Chain, isPUSPdn # pylint: disable=import-error
+from DIRAC.Core.Security.m2crypto.X509Request import X509Request       # pylint: disable=import-error
+from DIRAC.Core.Security.m2crypto.X509Chain import X509Chain, isPUSPdn # pylint: disable=import-error
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.ConfigurationSystem.Client.Helpers import Resources 
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
@@ -647,7 +650,7 @@ class ProxyDB(DB):
     proxyString = result['Value']
     return S_OK((proxyString, timeLeft))
 
-  def __getDIRACCAProxy(fullName, eMail, DN=None, diracGroup=None, proxyProvider='DIRAC_EOSC_CA'):
+  def __getDIRACCAProxy(self, fullName, eMail, DN=None, diracGroup=None, proxyProvider='DIRAC_EOSC_CA'):
 
     def writeUserConfigFile(fileName, fullName, eMail):
       userConf = """[ req ]

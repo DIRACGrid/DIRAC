@@ -6,21 +6,17 @@ __RCSID__ = "$Id$"
 import re
 import time
 import json
-import types
-import random
-import urllib
-import hashlib
+
 from ast import literal_eval
 from datetime import datetime
 
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
-from DIRAC.Core.Utilities import DErrno
-from DIRAC.Core.Security.X509Chain import X509Chain
-from DIRAC.FrameworkSystem.Utilities.OAuth2 import OAuth2, getIdPSyntax
+from DIRAC.Core.Security.m2crypto.X509Chain import X509Chain
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry 
 from DIRAC.ConfigurationSystem.Client.Helpers import Resources
+from DIRAC.FrameworkSystem.Utilities.OAuth2 import OAuth2, getIdPSyntax
 
 
 gCSAPI = CSAPI()
@@ -483,7 +479,7 @@ class OAuthDB(DB):
             prepDict['UsrOptns']['Groups'].append(group)
     # Set DN
     if 'DN' in kwargs:
-      prepDict['UsrOptns']['DN'].append(setDN)
+      prepDict['UsrOptns']['DN'].append(kwargs['DN'])
     return S_OK( prepDict )
 
   def _getFromWhere( self, field='*', table='Tokens', conn='', **kwargs):

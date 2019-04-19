@@ -3,9 +3,6 @@
 import time
 
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
-from DIRAC.Core.Security import Locations
-from DIRAC.Core.Security.MyProxy import MyProxy
-from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.FrameworkSystem.DB.OAuthDB import OAuthDB
@@ -39,10 +36,10 @@ class OAuthHandler( RequestHandler ):
 
   types_checkToken = [basestring]
   def export_checkToken(self, token):
-    """ Check status of access_token, refresh and back userID.
+    """ Check status of tokens, refresh and back dict.
     """
     gLogger.notice("Check token %s." % token)
-    result = gOAuthDB.check_token(token)
+    result = gOAuthDB.fetch_token(token)
     gLogger.notice(result)
     return S_OK(result)  
 

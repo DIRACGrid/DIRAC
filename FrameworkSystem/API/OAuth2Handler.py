@@ -6,6 +6,7 @@ __RCSID__ = "$Id$"
 import json
 import time
 import tornado
+
 from tornado import web, gen
 from tornado.template import Template
 
@@ -13,9 +14,8 @@ from DIRAC import S_OK, S_ERROR, gConfig, gLogger
 from DIRAC.Core.HTTP.Lib.WebHandler import WebHandler, asyncGen
 from DIRAC.FrameworkSystem.Utilities.OAuth2 import OAuth2
 from DIRAC.FrameworkSystem.Client.OAuthClient import OAuthClient
+from DIRAC.ConfigurationSystem.Client.Utilities import getOAuthAPI
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
-
-from DIRAC.Core.Security.X509Chain import X509Chain
 
 gOAuthCli = OAuthClient()
 
@@ -53,7 +53,7 @@ class OAuth2Handler( WebHandler ):
           gLogger.error(result['Message'])
           raise tornado.web.HTTPError(404, result['Message'])
         state = result['Value']['state']
-        # url = '%s/oauth?getlink=%s' % (gConfig.getValue("Systems/Framework/Production/URLs/API/OAuth"),state)
+        url = '%s/oauth?getlink=%s' % (getOAuthAPI,state)
         if 'email' in args:
           result = yield self.threadTask( NotificationClient().sendMail,args['email'],'Authentication throught %s IdP' % idp,
                               'Please, go throught the link %s to authorize.' % url )

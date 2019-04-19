@@ -19,10 +19,10 @@ def getIdPWellKnownDict(idp=None, issuer=None, well_known_url=None):
     if not result[ 'OK' ]:
       result = Resources.getIdPOption(idp,'issuer')
       if result[ 'OK' ]:
-        result = ''.join(result,'/.well-known/openid-configuration')
+        result = ''.join([result,'/.well-known/openid-configuration'])
     url = result
   elif issuer:
-    url = ''.join(issuer,'/.well-known/openid-configuration')
+    url = ''.join([issuer,'/.well-known/openid-configuration'])
   elif well_known_url:
     url = well_known_url
   # FIXME: in production need to remove 'verify' parametr
@@ -181,9 +181,9 @@ class OAuth2(OIDCClient):
       port = result['Value'][voms]['Servers'][hostname]['Port']
       vomses = '"%s" "%s" "%s" "%s" "%s"' % (vomsname,hostname,port,hostDN,vomsname)
       params = '%s&voname=%s&vomses=%s' % (params,vomsname,vomses)
-    for k in kwargs:
-      if kwargs[k]:
-        params = '%s&%s=%s' % (params,unicode_type(k),kwargs[k])
+    for key in kwargs:
+      if kwargs[key]:
+        params += '&%s=%s' % (key,kwargs[key])
     url = proxy_endpoint+params
     gLogger.notice('Url for get proxy: %s' % url)
     r = requests.get(proxy_endpoint+params, verify=False)        
