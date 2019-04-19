@@ -689,11 +689,11 @@ class ProxyDB(DB):
     userKeyFile = os.path.join(caDir, fullName.replace(' ', '_') + '.key.pem')
     userCertFile = os.path.join(caDir, fullName.replace(' ', '_') + '.cert.pem')
     writeUserConfigFile(userConfFile, fullName, eMail)
-    status,output = commands.getstatusoutput('openssl genrsa -out %s 2048' % userKeyFile)
+    status, output = commands.getstatusoutput('openssl genrsa -out %s 2048' % userKeyFile)
     if status:
       return S_ERROR(output)
-    status,output = commands.getstatusoutput('openssl req -config %s -key %s -new -out %s' %
-                                            (userConfFile, userKeyFile, userReqFile))
+    status, output = commands.getstatusoutput('openssl req -config %s -key %s -new -out %s' %
+                                              (userConfFile, userKeyFile, userReqFile))
     if status:
       return S_ERROR(output)
     # Empty the cert database
@@ -735,7 +735,7 @@ class ProxyDB(DB):
         proxyStr = result['Value']['proxy']
         remainingSecs = result['Value']['exptime']
     elif method == 'DIRACCA':
-      result = self.__getDIRACCAProxy(None,None,DN=userDN,proxyProvider=proxyProvider)
+      result = self.__getDIRACCAProxy(None, None, DN=userDN, proxyProvider=proxyProvider)
       if result['OK']:
         proxyStr = result['Value']
     else:

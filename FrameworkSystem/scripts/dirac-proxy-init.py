@@ -329,17 +329,21 @@ class ProxyInit(object):
       """ Show loading string """
       __start = time.time()
       __runtime = 0
-      for c in itertools.cycle(['.*.            ', '..*            ', ' ..*           ', '  ..*          ', '   ..*         ',
-                                '    ..*        ', '     ..*       ', '      ..*      ', '       ..*     ', '        ..*    ',
-                                '         ..*   ', '          ..*  ', '           ..* ', '            ..*', '            .*.',
-                                '            *..', '           *.. ', '          *..  ', '         *..   ', '        *..    ',
-                                '       *..     ', '      *..      ', '     *..       ', '    *..        ', '   *..         ',
-                                '  *..          ', ' *..           ', '*..            ']):
+      for c in itertools.cycle(['.*.            ', '..*            ', ' ..*           ',
+                                '  ..*          ', '   ..*         ', '    ..*        ',
+                                '     ..*       ', '      ..*      ', '       ..*     ',
+                                '        ..*    ', '         ..*   ', '          ..*  ',
+                                '           ..* ', '            ..*', '            .*.',
+                                '            *..', '           *.. ', '          *..  ',
+                                '         *..   ', '        *..    ', '       *..     ',
+                                '      *..      ', '     *..       ', '    *..        ',
+                                '   *..         ', '  *..          ', ' *..           ',
+                                '*..            ']):
           __runtime = time.time() - __start
           if done or __runtime > time_out:
             sys.stdout.write('\r                                                                   \n')
             break
-          lefttime = (time_out - __runtime)//60
+          lefttime = (time_out - __runtime) // 60
           sys.stdout.write('\r Waiting %s minutes when you authenticated..' % lefttime + c)
           sys.stdout.flush()
           time.sleep(0.1)
@@ -363,10 +367,14 @@ class ProxyInit(object):
           __qr += '\033[0;30;47m '
           for j in range(0, len(qrA[0])):
             p = str(qrA[i][j]) + str(qrA[i + 1][j])
-            if p == '11': __qr += '\033[0;30;40m \033[0;30;47m'  # black bg
-            if p == '10': __qr += u'\u2580'                      # upblock
-            if p == '01': __qr += u'\u2584'                      # downblock
-            if p == '00': __qr += ' '                            # white bg
+            if p == '11':  # black bg
+              __qr += '\033[0;30;40m \033[0;30;47m'
+            if p == '10':  # upblock
+              __qr += u'\u2580'
+            if p == '01':  # downblock
+              __qr += u'\u2584'
+            if p == '00':  # white bg
+              __qr += ' '
           __qr += ' \033[0m\n'
         gLogger.notice(__qr)
 
@@ -446,7 +454,7 @@ class ProxyInit(object):
       return S_ERROR("%s :%s" % (self.__piParams.proxyLoc, repr(e).replace(',)', ')')))
     self.__piParams.certLoc = self.__piParams.proxyLoc
     result = Script.enableCS()
-    if not result[ 'OK' ]:
+    if not result['OK']:
       return S_ERROR("Cannot contact CS to get user list")
     threading.Thread(target=self.checkCAs).start()
     gConfig.forceRefresh(fromMaster=True)

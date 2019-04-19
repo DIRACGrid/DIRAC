@@ -60,7 +60,7 @@ class OAuthHandler(RequestHandler):
   types_getProxy = [basestring]
 
   def export_getProxy(self, username, group, voms=None, proxylivetime=None):
-    """ Create proxy 
+    """ Create proxy
         result: proxy pem type(str) or S_ERROR
     """
     result = Registry.getDNForUsername(username)
@@ -73,7 +73,7 @@ class OAuthHandler(RequestHandler):
         if voms:
           voms = Registry.getVOForGroup(group)
           result = gProxyManager.downloadVOMSProxy(DN, group, requiredVOMSAttribute=voms,
-                                                  requiredTimeLeft=proxylivetime)
+                                                   requiredTimeLeft=proxylivetime)
         else:
           result = gProxyManager.downloadProxy(DN, group, requiredTimeLeft=int(proxylivetime))
         if result['OK']:
@@ -86,7 +86,7 @@ class OAuthHandler(RequestHandler):
 
   def export_getUsrnameForState(self, state):
     """ Listen DB to get username by state """
-    result = gOAuthDB.get_by_state(state, ['UserName','State'])
+    result = gOAuthDB.get_by_state(state, ['UserName', 'State'])
     if result['OK']:
       return S_OK({'username': result['Value']['UserName'], 'state': result['Value']['State']})
     return result
@@ -105,7 +105,7 @@ class OAuthHandler(RequestHandler):
   types_waitStateResponse = [basestring]
 
   def export_waitStateResponse(self, state, group=None, needProxy=False,
-                              voms=None, proxyLifeTime=43200, time_out=20, sleeptime=5):
+                               voms=None, proxyLifeTime=43200, time_out=20, sleeptime=5):
     """ Listen DB to get status of auth """
     gLogger.notice("Read auth status for '%s' state." % state)
     start = time.time()

@@ -26,24 +26,24 @@ class OAuthDB(DB):
   """ OAuthDB class is a front-end to the OAuth Database
   """
   tableDict = {'Tokens': {'Fields': {'Id': 'INTEGER AUTO_INCREMENT NOT NULL',
-                                    'State': 'VARCHAR(64) NOT NULL',
-                                    'Status': 'VARCHAR(32) DEFAULT "prepared"',
-                                    'Comment': 'VARCHAR(1000) DEFAULT ""',
-                                    'OAuthProvider': 'VARCHAR(255) NOT NULL',
-                                    'Token_type': 'VARCHAR(32) DEFAULT "bearer"',
-                                    'Access_token': 'VARCHAR(1000)',
-                                    'Expires_in': 'DATETIME',
-                                    'Refresh_token': 'VARCHAR(1000)',
-                                    'Sub': 'VARCHAR(128)',
-                                    'UserName': 'VARCHAR(16)',
-                                    'UserDN': 'VARCHAR(128)',
-                                    'UserSetup': 'VARCHAR(32)',
-                                    'Pem': 'BLOB',
-                                    'LastAccess': 'DATETIME',
+                                     'State': 'VARCHAR(64) NOT NULL',
+                                     'Status': 'VARCHAR(32) DEFAULT "prepared"',
+                                     'Comment': 'VARCHAR(1000) DEFAULT ""',
+                                     'OAuthProvider': 'VARCHAR(255) NOT NULL',
+                                     'Token_type': 'VARCHAR(32) DEFAULT "bearer"',
+                                     'Access_token': 'VARCHAR(1000)',
+                                     'Expires_in': 'DATETIME',
+                                     'Refresh_token': 'VARCHAR(1000)',
+                                     'Sub': 'VARCHAR(128)',
+                                     'UserName': 'VARCHAR(16)',
+                                     'UserDN': 'VARCHAR(128)',
+                                     'UserSetup': 'VARCHAR(32)',
+                                     'Pem': 'BLOB',
+                                     'LastAccess': 'DATETIME',
                                     },
                           'PrimaryKey': 'Id',
                           'Engine': 'InnoDB',
-                          },
+                         },
               }
 
   def __init__(self):
@@ -93,9 +93,9 @@ class OAuthDB(DB):
             return result
     return S_OK()
 
-  def get_auth_request_uri( self, OAuthProvider, state=None ):
+  def get_auth_request_uri(self, OAuthProvider, state=None):
     """ Register new session """
-    url, state = OAuth2(OAuthProvider,state=state).create_auth_request_uri()
+    url, state = OAuth2(OAuthProvider, state=state).create_auth_request_uri()
     self.insertFields('Tokens', ['State', 'OAuthProvider', 'Comment', 'LastAccess'],
                                 [state, OAuthProvider, url, 'UTC_TIMESTAMP()'])
     return S_OK({'url': url, 'state': state})
@@ -103,14 +103,15 @@ class OAuthDB(DB):
   def get_link_by_state(self, state):
     """ Get authentification link """
     result = self._getFromWhere('Comment', 'Tokens', State=state,
-                               conn='Status = "prepared" and TIMESTAMPDIFF(SECOND,LastAccess,UTC_TIMESTAMP()) < 300')
+                                conn='Status = "prepared" and TIMESTAMPDIFF(SECOND,LastAccess,UTC_TIMESTAMP()) < 300')
     if not result['OK']:
       return result
     if result['Value'] is None:
       return S_ERROR('No link found.')
     return S_OK(result['Value'][0][0])
 
-  def get_proxy_dn_exptime(self, proxyProvider, DN=None, proxylivetime=None, voms=None, access_token=None, username=None, ID=None, state=None):
+  def get_proxy_dn_exptime(self, proxyProvider, DN=None, proxylivetime=None, voms=None,
+                           access_token=None, username=None, ID=None, state=None):
     _conn = ''
     _params = {'OAuthProvider': proxyProvider}
     result = Resources.getProxyProviders()
@@ -184,7 +185,7 @@ class OAuthDB(DB):
       return result
     if result['Value'] is None:
       _CRASH('No any provider found.')
-      return S_ERROR( 'No any provider found.' )
+      return S_ERROR('No any provider found.')
     OAuthProvider = result['Value'][0][0]
     self.__oauth = OAuth2(OAuthProvider)
     # Parsing response
@@ -211,7 +212,7 @@ class OAuthDB(DB):
     if OAuthProvider in Resources.getProxyProviders()['Value']:
       # For proxy provider
       gLogger.notice('%s: Proxy provider: %s' % (state, OAuthProvider))
-      result = self._getFromWhere('Comment', 'Tokens', State=state.replace('_proxy',''))
+      result = self._getFromWhere('Comment', 'Tokens', State=state.replace('_proxy', ''))
       if not result['OK']:
         _CRASH(result['Message'])
         return result
@@ -228,10 +229,10 @@ class OAuthDB(DB):
         return S_ERROR('Cannot get IdP info dict from "Comment" field: it`s not dict')
       status = 'authed'
       self.updateFields('Tokens', ['Status', 'Token_type', 'Access_token', 'Expires_in',
-                                  'Refresh_token', 'Sub', 'UserName', 'LastAccess'],
+                                   'Refresh_token', 'Sub', 'UserName', 'LastAccess'],
                                   [status, oauthDict['Tokens']['token_type'], oauthDict['Tokens']['access_token'],
-                                  exp_datetime, oauthDict['Tokens']['refresh_token'], oauthDict['UserProfile']['sub'],
-                                  csModDict['username'], 'UTC_TIMESTAMP()'],
+                                   exp_datetime, oauthDict['Tokens']['refresh_token'], oauthDict['UserProfile']['sub'],
+                                   csModDict['username'], 'UTC_TIMESTAMP()'],
                                   {'State': state})
       result = self.get_proxy_dn_exptime(OAuthProvider, state=state)
       if not result['OK']:
@@ -247,7 +248,7 @@ class OAuthDB(DB):
       secDN = proxyDN.replace('/', '-').replace('=', '_')
       csModDict['UsrOptns']['DNProperties/%s/Groups' % secDN] = ','.join(csModDict['UsrOptns']['Groups'])
       csModDict['UsrOptns']['DNProperties/%s/ProxyProviders' % secDN] = OAuthProvider
-    
+
     elif OAuthProvider in Resources.getIdPs()['Value']:
       # For IdP
       gLogger.notice('%s: Identity provider: %s' % (state, OAuthProvider))
@@ -273,7 +274,7 @@ class OAuthDB(DB):
             gLogger.info(result)
             if result['OK']:
               proxyDN = result['Value']['DN']
-              if proxyDN not in csModDict['UsrOptns']['DN']: 
+              if proxyDN not in csModDict['UsrOptns']['DN']:
                 csModDict['UsrOptns']['DN'].append(proxyDN)
               csModDict['UsrOptns']['DN'] = ','.join(csModDict['UsrOptns']['DN'])
               if 'Groups' not in csModDict['UsrOptns']:
@@ -283,7 +284,7 @@ class OAuthDB(DB):
               csModDict['UsrOptns']['DNProperties/%s/Groups' % secDN] = ','.join(csModDict['UsrOptns']['Groups'])
               csModDict['UsrOptns']['DNProperties/%s/ProxyProviders' % secDN] = pP
               self.updateFields('Tokens', ['UserDN', 'LastAccess'],
-                                          [proxyDN,'UTC_TIMESTAMP()'],
+                                          [proxyDN, 'UTC_TIMESTAMP()'],
                                           {'State': state})
             else:
               result = self.get_auth_request_uri(pP, state + '_proxy')
@@ -303,10 +304,11 @@ class OAuthDB(DB):
           _CRASH('No DN returned from %s OAuth provider' % OAuthProvider)
           return S_ERROR('No DN returned from %s OAuth provider' % OAuthProvider)
       self.updateFields('Tokens', ['Status', 'Comment', 'Token_type', 'Access_token', 'Expires_in',
-                                  'Refresh_token', 'Sub', 'UserName', 'LastAccess'],
+                                   'Refresh_token', 'Sub', 'UserName', 'LastAccess'],
                                   [status, comment, oauthDict['Tokens']['token_type'],
-                                  oauthDict['Tokens']['access_token'], exp_datetime, oauthDict['Tokens']['refresh_token'],
-                                  oauthDict['UserProfile']['sub'], oauthDict['username'], 'UTC_TIMESTAMP()'],
+                                   oauthDict['Tokens']['access_token'], exp_datetime,
+                                   oauthDict['Tokens']['refresh_token'], oauthDict['UserProfile']['sub'],
+                                   oauthDict['username'], 'UTC_TIMESTAMP()'],
                                   {'State': state})
     else:
       _CRASH('No configuration found for %s provider' % OAuthProvider)
@@ -341,7 +343,7 @@ class OAuthDB(DB):
     self.updateFields('Tokens', ['LastAccess'], ['UTC_TIMESTAMP()'], {'State': state})
     if not type(value) == list:
       value = list(value)
-    return self._getListFromWhere(value,'Tokens', State=state)
+    return self._getListFromWhere(value, 'Tokens', State=state)
 
   def kill_state(self, state, conn=''):
     """ Remove session """
@@ -392,8 +394,10 @@ class OAuthDB(DB):
       refresh_token = None
       if 'refresh_token' in tD:
         refresh_token = tD['refresh_token']
-      self.updateFields('Tokens', ['Token_type', 'Access_token', 'Expires_in', 'Refresh_token', 'LastAccess'],
-                                  [tD['token_type'], tD['access_token'], exp_datetime, refresh_token, 'UTC_TIMESTAMP()'],
+      self.updateFields('Tokens', ['Token_type', 'Access_token', 'Expires_in',
+                                   'Refresh_token', 'LastAccess'],
+                                  [tD['token_type'], tD['access_token'], exp_datetime,
+                                   refresh_token, 'UTC_TIMESTAMP()'],
                                   {'Access_token': token})
       for k in tD.keys():
         resD[k.capitalize()] = tD[k]
@@ -420,7 +424,7 @@ class OAuthDB(DB):
     allusrs = result['Value']
     # Look username
     result = Registry.getUsernameForID(kwargs['sub'])
-    if result[ 'OK' ]:
+    if result['OK']:
       prepDict['UsrExist'] = 'Yes'
       pre_usrname = result['Value']
       result = Registry.getDNForUsername(pre_usrname)
@@ -438,7 +442,7 @@ class OAuthDB(DB):
           pre_usrname = kwargs['name']
         pre_usrname = pre_usrname.lower().split(' ')[0][0] + pre_usrname.lower().split(' ')[1]
         pre_usrname = pre_usrname[:6]
-      for i in range(0,100):
+      for i in range(0, 100):
         if pre_usrname not in allusrs:
           break
         pre_usrname = pre_usrname + str(i)

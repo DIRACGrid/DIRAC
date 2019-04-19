@@ -366,8 +366,8 @@ def getProxyProvidersForDN(DN):
     return []
   # Convert DN to section format
   secDN = DN.replace('/', '-').replace('=', '_')
-  return gConfig.getValue("%s/Users/%s/DNProperties/%s/ProxyProviders" % 
-                         (gBaseRegistrySection, result['Value'], secDN), [])
+  return gConfig.getValue("%s/Users/%s/DNProperties/%s/ProxyProviders" %
+                          (gBaseRegistrySection, result['Value'], secDN), [])
 
 
 def getGroupsFromDNProperties(DN):
@@ -376,5 +376,5 @@ def getGroupsFromDNProperties(DN):
     return []
   # Convert DN to section format
   secDN = DN.replace('/', '-').replace('=', '_')
-  return gConfig.getValue("%s/Users/%s/DNProperties/%s/Groups" % 
-                         (gBaseRegistrySection, result['Value'], secDN), [])
+  return gConfig.getValue("%s/Users/%s/DNProperties/%s/Groups" %
+                          (gBaseRegistrySection, result['Value'], secDN), [])

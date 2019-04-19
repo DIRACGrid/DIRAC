@@ -104,11 +104,14 @@ class OIDCClient(requests.Session):
     self.userinfo_endpoint = userinfo_endpoint or 'userinfo_endpoint' in optns and optns['userinfo_endpoint']
     self.max_proxylifetime = max_proxylifetime or 'max_proxylifetime' in optns and optns['max_proxylifetime'] or 86400
     self.revocation_endpoint = revocation_endpoint or 'revocation_endpoint' in optns and optns['revocation_endpoint']
-    self.registration_endpoint = registration_endpoint or 'registration_endpoint' in optns and optns['registration_endpoint']
-    self.authorization_endpoint = authorization_endpoint or 'authorization_endpoint' in optns and optns['authorization_endpoint']
-    self.introspection_endpoint = introspection_endpoint or 'introspection_endpoint' in optns and optns['introspection_endpoint']
+    self.registration_endpoint = registration_endpoint or \
+      'registration_endpoint' in optns and optns['registration_endpoint']
+    self.authorization_endpoint = authorization_endpoint or \
+      'authorization_endpoint' in optns and optns['authorization_endpoint']
+    self.introspection_endpoint = introspection_endpoint or \
+      'introspection_endpoint' in optns and optns['introspection_endpoint']
 
-        
+
 class OAuth2(OIDCClient):
 
   def __init__(self, idp=None, state=None, client_id=None, client_secret=None, redirect_uri=None,
@@ -116,11 +119,11 @@ class OAuth2(OIDCClient):
                proxy_endpoint=None, max_proxylifetime=None, response_types_supported=None, grant_types_supported=None,
                revocation_endpoint=None, userinfo_endpoint=None, jwks_uri=None, registration_endpoint=None, **kwargs):
     """ OAuth2 constructor """
-    
+
     super(OAuth2, self).__init__(idp, client_id, client_secret, redirect_uri, scope, issuer, proxy_endpoint,
-                                max_proxylifetime, authorization_endpoint, token_endpoint, introspection_endpoint,
-                                response_types_supported, grant_types_supported, revocation_endpoint,
-                                userinfo_endpoint, jwks_uri, registration_endpoint, **kwargs)
+                                 max_proxylifetime, authorization_endpoint, token_endpoint, introspection_endpoint,
+                                 response_types_supported, grant_types_supported, revocation_endpoint,
+                                 userinfo_endpoint, jwks_uri, registration_endpoint, **kwargs)
     self.state = state or self.new_state()
     self.idp = idp
     oauthAPI = getOAuthAPI()
@@ -188,7 +191,7 @@ class OAuth2(OIDCClient):
         params += '&%s=%s' % (key, kwargs[key])
     url = proxy_endpoint + params
     gLogger.notice('Url for get proxy: %s' % url)
-    r = requests.get(url, verify=False)        
+    r = requests.get(url, verify=False)
     if not r.status_code == 200:
       return S_ERROR(r.status_code)
     return S_OK(r.text)
@@ -217,7 +220,7 @@ class OAuth2(OIDCClient):
   def fetch_token(self, code=None, refresh_token=None, token_endpoint=None,
                   client_secret=None, client_id=None,
                   redirect_uri=None):
-    """ Make token request """      
+    """ Make token request """
     token_endpoint = token_endpoint or self.token_endpoint
     client_secret = client_secret or self.client_secret
     redirect_uri = redirect_uri or self.redirect_uri

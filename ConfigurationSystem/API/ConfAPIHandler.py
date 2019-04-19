@@ -57,4 +57,3 @@ class ConfAPIHandler(WebHandler):
   def post(self):
     """ Post method """
     pass
-    

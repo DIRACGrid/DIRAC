@@ -56,9 +56,9 @@ class OAuth2Handler(WebHandler):
         state = result['Value']['state']
         url = '%s/oauth?getlink=%s' % (getOAuthAPI, state)
         if 'email' in args:
-          result = yield self.threadTask(NotificationClient().sendMail, args['email'], 
-                                        'Authentication throught %s IdP' % idp,
-                                        'Please, go throught the link %s to authorize.' % url)
+          result = yield self.threadTask(NotificationClient().sendMail, args['email'],
+                                         'Authentication throught %s IdP' % idp,
+                                         'Please, go throught the link %s to authorize.' % url)
           result['Value'] = {'state': state}
         gLogger.debug('Created authorized session "%s" for "%s" IdP' % (state, idp))
         self.finish(json.dumps(result))
@@ -118,7 +118,8 @@ class OAuth2Handler(WebHandler):
         if 'proxyLifeTime' in args:
           proxyLifeTime = args['proxyLifeTime'][0]
         gLogger.debug('Read authentication status of "%s" session.' % state)
-        result = yield self.threadTask(gOAuthCli.waitStateResponse, state, group, needProxy, voms, proxyLifeTime, time_out)
+        result = yield self.threadTask(gOAuthCli.waitStateResponse, state, group,
+                                       needProxy, voms, proxyLifeTime, time_out)
         if not result['OK']:
           gLogger.error(result['Message'])
           raise tornado.web.HTTPError(404, result['Message'])
@@ -148,7 +149,7 @@ class OAuth2Handler(WebHandler):
             </script>
           </body>
         </html>''')
-      self.finish(t.generate(redirect_uri=getOAuthAPI+'/redirect'))
+      self.finish(t.generate(redirect_uri=getOAuthAPI + '/redirect'))
 
   @asyncGen
   def post(self):
