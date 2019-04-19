@@ -129,7 +129,6 @@ class OAuthDB(DB):
           return S_ERROR( 'DN or username need to set.' )
         if ID:
           _params['Sub'] = ID
-      print(username)
       result = self._getFromWhere(field='Access_token', conn=_conn, **_params)
       if not result[ 'OK' ]:
         return result

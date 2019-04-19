@@ -369,7 +369,6 @@ def getProxyProvidersForDN(DN):
 
 def getGroupsFromDNProperties(DN):
   result = getUsernameForDN(DN)
-  print(result)
   if not result['OK']:
     return []
   # Convert DN to section format

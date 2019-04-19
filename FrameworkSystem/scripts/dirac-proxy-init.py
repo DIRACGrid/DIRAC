@@ -344,7 +344,7 @@ class ProxyInit(object):
       except Exception as ex:  
         pass
       else:
-        __qr = ''
+        __qr = '\n'
         qrA = pyqrcode.create(url).code
         qrA.insert(0,[0 for i in range(0,len(qrA[0]))])
         qrA.append([0 for i in range(0,len(qrA[0]))])
@@ -361,7 +361,7 @@ class ProxyInit(object):
             if p == '01': __qr += u'\u2584' #downblock
             if p == '00': __qr += ' ' #white bg
           __qr += ' \033[0m\n'
-        print(__qr)
+        gLogger.notice(__qr)
 
     gLogger.notice( 'OAuth authentification from %s.' % self.__piParams.IdP )
     
@@ -404,7 +404,7 @@ class ProxyInit(object):
       gLogger.notice('Likn was sent to your email(%s)!' % self.__piParams.Email)
     else: 
       if not webbrowser.open_new_tab(url):
-        print('%s\n' % url)
+        gLogger.notice('%s\n' % url)
         if self.__piParams.addQRcode:
           qrterminal(url)
     #Loop: waiting status of request
