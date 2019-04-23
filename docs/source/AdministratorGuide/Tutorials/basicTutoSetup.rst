@@ -303,7 +303,7 @@ We will install DIRAC v6r21 with DIRACOS.
 
 First, download the installer, and make it executable::
 
-  mkdir ~/DIRAC && cd ~/DIRAC
+  mkdir ~/DiracInstallation && cd ~/DiracInstallation
   curl -O -L https://github.com/DIRACGrid/DIRAC/raw/integration/Core/scripts/install_site.sh
   chmod +x install_site.sh
 
@@ -635,10 +635,10 @@ Install DIRAC client
 
 This section has to be ran as ``diracuser``
 
-We will do the installation in the ``~/DIRAC`` directory. For a client, the configuration is really minimal, so we will just install the code and its dependencies.
+We will do the installation in the ``~/DiracInstallation`` directory. For a client, the configuration is really minimal, so we will just install the code and its dependencies.
 First, create the structure, and download the installer::
 
-  mkdir ~/DIRAC && cd ~/DIRAC
+  mkdir ~/DiracInstallation && cd ~/DiracInstallation
   curl -O -L https://github.com/DIRACGrid/DIRAC/raw/integration/Core/scripts/dirac-install.py
   chmod +x dirac-install.py
 
@@ -666,14 +666,14 @@ Now we trigger the installation, with the same version as the server::
   2019-04-11 14:47:02 UTC dirac-install [NOTICE]  Executing /home/diracuser/DIRAC/scripts/dirac-externals-requirements...
   2019-04-11 14:47:03 UTC dirac-install [NOTICE]  DIRAC properly installed
 
-You will notice that among other things, the installation created a ``~/DIRAC/bashrc`` file. This file must be sourced whenever you want to use dirac client.
+You will notice that among other things, the installation created a ``~/DiracInstallation/bashrc`` file. This file must be sourced whenever you want to use dirac client.
 
 In principle, your system administrator will have managed the CA for you. In this specific case, since we have our own CA, we will just link the client installation CA with the server one::
 
-  mkdir -p ~/DIRAC/etc/grid-security/
-  ln -s /opt/dirac/etc/grid-security/certificates/ ~/DIRAC/etc/grid-security/certificates
+  mkdir -p ~/DiracInstallation/etc/grid-security/
+  ln -s /opt/dirac/etc/grid-security/certificates/ ~/DiracInstallation/etc/grid-security/certificates
 
-The last step is to configure the client to talk to the proper configuration service. This is easily done by creating a ``~/DIRAC/etc/dirac.cfg`` file with the following content::
+The last step is to configure the client to talk to the proper configuration service. This is easily done by creating a ``~/DiracInstallation/etc/dirac.cfg`` file with the following content::
 
   DIRAC
   {
@@ -686,7 +686,7 @@ The last step is to configure the client to talk to the proper configuration ser
 
 You should now be able to get a proxy::
 
-  [diracuser@dirac-tuto DIRAC]$ source ~/DIRAC/bashrc
+  [diracuser@dirac-tuto DIRAC]$ source ~/DiracInstallation/bashrc
   [diracuser@dirac-tuto DIRAC]$ dirac-proxy-init
   Generating proxy...
   Proxy generated:
