@@ -1,5 +1,5 @@
 """
-This is a DIRAC WMS administrator interface.
+This is a DIRAC Pilots interface.
 """
 
 __RCSID__ = "$Id$"
@@ -27,8 +27,8 @@ enablePilotsLogging = False
 FINAL_STATES = ['Done', 'Aborted', 'Cleared', 'Deleted', 'Stalled']
 
 
-def initializeWMSAdministratorHandler(serviceInfo):
-  """  WMS AdministratorService initialization
+def initializePilotsHandler(serviceInfo):
+  """  PilotsHandler initialization
   """
 
   global pilotDB
@@ -39,7 +39,7 @@ def initializeWMSAdministratorHandler(serviceInfo):
   # there is a problem with accessing CS with shorter paths, so full path is extracted from serviceInfo dict
   enablePilotsLogging = gConfig.getValue(
       serviceInfo['serviceSectionPath'].replace(
-          'WMSAdministrator',
+          'Pilots',
           'PilotsLogging') + '/Enable',
       'False').lower() in (
       'yes',
@@ -52,7 +52,7 @@ def initializeWMSAdministratorHandler(serviceInfo):
   return S_OK()
 
 
-class WMSAdministratorHandler(RequestHandler):
+class PilotsHandler(RequestHandler):
 
   ##############################################################################
   types_getCurrentPilotCounters = [dict]
