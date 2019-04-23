@@ -13,4 +13,5 @@ Each of this tutorial is a step by step guide.
    basicTutoSetup
    diracSE.rst
    installDFC.rst
+   installRMS.rst
    dmsWithTs.rst

@@ -1,3 +1,5 @@
+.. _tuto_install_dfc:
+
 =================================
 Installing the DIRAC File Catalog
 =================================

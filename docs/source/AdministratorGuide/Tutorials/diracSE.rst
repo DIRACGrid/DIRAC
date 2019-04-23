@@ -128,7 +128,7 @@ This file uploads `/tmp/dummy.txt` on the StorageElement, list the directory and
   Listing directory
   {'OK': True, 'Value': {'Successful': {'/tutoVO': {'Files': {'myFirstFile.txt': {'Accessible': True, 'Migrated': 0, 'Unavailable': 0, 'Lost': 0, 'Exists': True, 'Cached': 1, 'Checksum': '166203b7', 'Mode': 420, 'File': True, 'Directory': True, 'TimeStamps': (1555342476, 1555342476, 1555342476), 'Type': 'File', 'Size': 10}}, 'SubDirs': {}}}, 'Failed': {}}}
   Getting file
-  {'OK': True, 'Value': {'Successful': {}, 'Failed': {'/tutoVO/myFirstFile.txt': "/tmp/donwloaded.txt/myFirstFile.txt can't be opened"}}}
+  {'OK': True, 'Value': {'Successful': {'/tutoVO/myFirstFile.txt': 10}, 'Failed': {}}}
   Removing file
   {'OK': True, 'Value': {'Successful': {'/tutoVO/myFirstFile.txt': True}, 'Failed': {}}}
   Listing directory
@@ -138,3 +138,43 @@ This file uploads `/tmp/dummy.txt` on the StorageElement, list the directory and
 Note: you might be getting the following message if you have no Accounting system. you can safely ignore it::
 
   Error sending accounting record Cannot get URL for Accounting/DataStore in setup MyDIRAC-Production: RuntimeError('Option /DIRAC/Setups/MyDIRAC-Production/Accounting is not defined',)
+
+
+Adding a second DIRAC SE
+========================
+
+It is often interesting to have a second SE.
+
+As `dirac` user, create a new directory::
+
+  mkdir /opt/dirac/storageElementTwo/
+
+Now the rest is to be installed with `diracuser` and a proxy with `dirac_admin` group.
+
+We need another StorageElement service. However, it has to have a different name than the first one, so we will just call this service `StorageElementTwo`::
+
+  [diracuser@dirac-tuto ~]$ dirac-admin-sysadmin-cli --host dirac-tuto
+  Pinging dirac-tuto...
+  [dirac-tuto]> install service DataManagement StorageElementTwo -m StorageElement -p Port=9147
+  Loading configuration template /home/diracuser/DIRAC/DIRAC/DataManagementSystem/ConfigTemplate.cfg
+  Adding to CS service DataManagement/StorageElementTwo
+  service DataManagement_StorageElementTwo is installed, runit status: Run
+
+
+Using the WebApp, add the new StorageElement definition in the `/Resources/StorageElements` section::
+
+  StorageElementTwo
+  {
+    BackendType = DISET
+    DIP
+    {
+      Host = dirac-tuto
+      Port = 9147
+      Protocol = dips
+      Path = /DataManagement/StorageElementTwo
+      Access = remote
+    }
+  }
+
+
+In order to test it, just re-use `/tmp/testSE.py`, replacing `StorageElementOne` with `StorageElementTwo`
