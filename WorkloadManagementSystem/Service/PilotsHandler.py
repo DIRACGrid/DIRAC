@@ -4,23 +4,19 @@ This is a DIRAC Pilots interface.
 
 __RCSID__ = "$Id$"
 
-from DIRAC import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC import gConfig, S_OK, S_ERROR
 import DIRAC.Core.Utilities.Time as Time
 
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupOption, getUsernameForDN
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueue
-from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
-from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 from DIRAC.WorkloadManagementSystem.DB.PilotsLoggingDB import PilotsLoggingDB
-from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import getPilotLoggingInfo, getGridJobOutput
+from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import getPilotLoggingInfo,\
+    getGridJobOutput, killPilotsInQueues
 
 
 # This is a global instance of the database classes
 pilotDB = None
-taskQueueDB = None
 pilotsLoggingDB = None
 enablePilotsLogging = False
 
@@ -32,7 +28,6 @@ def initializePilotsHandler(serviceInfo):
   """
 
   global pilotDB
-  global taskQueueDB
   global pilotsLoggingDB
   global enablePilotsLogging
 
@@ -46,7 +41,6 @@ def initializePilotsHandler(serviceInfo):
       'true')
 
   pilotDB = PilotAgentsDB()
-  taskQueueDB = TaskQueueDB()
   if enablePilotsLogging:
     pilotsLoggingDB = PilotsLoggingDB()
   return S_OK()
@@ -219,7 +213,7 @@ class PilotsHandler(RequestHandler):
     if not pilots:
       # Pilots were not found try to look in the Task Queue
       taskQueueID = 0
-      result = taskQueueDB.getTaskQueueForJob(int(jobID))
+      result = TaskQueueDB().getTaskQueueForJob(int(jobID))
       if result['OK'] and result['Value']:
         taskQueueID = result['Value']
       if taskQueueID:
@@ -262,37 +256,7 @@ class PilotsHandler(RequestHandler):
       pilotRefDict[queue]['PilotList'].append(pilotReference)
       pilotRefDict[queue]['GridType'] = gridType
 
-    # Do the work now queue by queue
-    ceFactory = ComputingElementFactory()
-    failed = []
-    for key, pilotDict in pilotRefDict.items():
-
-      owner, group, site, ce, queue = key.split('@@@')
-      result = getQueue(site, ce, queue)
-      if not result['OK']:
-        return result
-      queueDict = result['Value']
-      gridType = pilotDict['GridType']
-      result = ceFactory.getCE(gridType, ce, queueDict)
-      if not result['OK']:
-        return result
-      ce = result['Value']
-
-      # FIXME: quite hacky. Should be either removed, or based on some flag
-      if gridType in ["LCG", "CREAM", "ARC", "Globus", "HTCondorCE"]:
-        group = getGroupOption(group, 'VOMSRole', group)
-        ret = gProxyManager.getPilotProxyFromVOMSGroup(owner, group)
-        if not ret['OK']:
-          gLogger.error(ret['Message'])
-          gLogger.error('Could not get proxy:', 'User "%s", Group "%s"' % (owner, group))
-          return S_ERROR("Failed to get the pilot's owner proxy")
-        proxy = ret['Value']
-        ce.setProxy(proxy)
-
-      pilotList = pilotDict['PilotList']
-      result = ce.killJob(pilotList)
-      if not result['OK']:
-        failed.extend(pilotList)
+    failed = killPilotsInQueues()
 
     if failed:
       return S_ERROR('Failed to kill at least some pilots')
@@ -404,9 +368,12 @@ class PilotsHandler(RequestHandler):
     return S_OK(statistics)
 
   ##############################################################################
-  types_deletePilots = [(list, int, long)]
+  types_deletePilots = [(list, int, long, basestring)]
 
   def export_deletePilots(self, pilotIDs):
+
+    if isinstance(pilotIDs, basestring):
+      return pilotDB.deletePilot(pilotIDs)
 
     if isinstance(pilotIDs, (int, long)):
       pilotIDs = [pilotIDs, ]

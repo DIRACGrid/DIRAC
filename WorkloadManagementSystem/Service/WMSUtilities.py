@@ -12,7 +12,9 @@ from DIRAC.Core.Utilities.Grid import executeGridCommand
 from DIRAC.Core.Utilities.Proxy import executeWithUserProxy
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueue
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupOption
+from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
+from DIRAC.WorkloadManagementSystem.Client.ServerUtils import pilotAgentsDB
 
 
 # List of files to be inserted/retrieved into/from pilot Output Sandbox
@@ -66,11 +68,12 @@ def getPilotLoggingInfo(grid, pilotRef):
 
 
 def getGridJobOutput(pilotReference):
-  """ Get the pilot job standard output and standard error files for the Grid
-      job reference
+  """ Get the pilot job standard output and standard error files for the Grid job reference
+
+      :param str pilotReference: a grid (job) pilot reference
   """
 
-  result = pilotDB.getPilotInfo(pilotReference)
+  result = pilotAgentsDB.getPilotInfo(pilotReference)
   if not result['OK'] or not result['Value']:
     return S_ERROR('Failed to get info for pilot ' + pilotReference)
 
@@ -79,7 +82,7 @@ def getGridJobOutput(pilotReference):
   group = pilotDict['OwnerGroup']
 
   # FIXME: What if the OutputSandBox is not StdOut and StdErr, what do we do with other files?
-  result = pilotDB.getPilotOutput(pilotReference)
+  result = pilotAgentsDB.getPilotOutput(pilotReference)
   if result['OK']:
     stdout = result['Value']['StdOut']
     error = result['Value']['StdErr']
@@ -126,7 +129,7 @@ def getGridJobOutput(pilotReference):
     return result
   stdout, error = result['Value']
   if stdout:
-    result = pilotDB.storePilotOutput(pilotReference, stdout, error)
+    result = pilotAgentsDB.storePilotOutput(pilotReference, stdout, error)
     if not result['OK']:
       gLogger.error('Failed to store pilot output:', result['Message'])
 
@@ -138,3 +141,43 @@ def getGridJobOutput(pilotReference):
   resultDict['FileList'] = []
   shutil.rmtree(queueDict['WorkingDirectory'])
   return S_OK(resultDict)
+
+
+def killPilotsInQueues(pilotRefDict):
+  """ kill pilots queue by queue
+
+      :params dict pilotRefDict: a dict of pilots in queues
+  """
+
+  ceFactory = ComputingElementFactory()
+  failed = []
+  for key, pilotDict in pilotRefDict.itertems():
+
+    owner, group, site, ce, queue = key.split('@@@')
+    result = getQueue(site, ce, queue)
+    if not result['OK']:
+      return result
+    queueDict = result['Value']
+    gridType = pilotDict['GridType']
+    result = ceFactory.getCE(gridType, ce, queueDict)
+    if not result['OK']:
+      return result
+    ce = result['Value']
+
+    # FIXME: quite hacky. Should be either removed, or based on some flag
+    if gridType in ["LCG", "CREAM", "ARC", "Globus", "HTCondorCE"]:
+      group = getGroupOption(group, 'VOMSRole', group)
+      ret = gProxyManager.getPilotProxyFromVOMSGroup(owner, group)
+      if not ret['OK']:
+        gLogger.error(ret['Message'])
+        gLogger.error('Could not get proxy:', 'User "%s", Group "%s"' % (owner, group))
+        return S_ERROR("Failed to get the pilot's owner proxy")
+      proxy = ret['Value']
+      ce.setProxy(proxy)
+
+    pilotList = pilotDict['PilotList']
+    result = ce.killJob(pilotList)
+    if not result['OK']:
+      failed.extend(pilotList)
+
+  return failed
