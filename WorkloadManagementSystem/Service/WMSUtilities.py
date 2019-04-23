@@ -4,9 +4,15 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC import S_OK, S_ERROR, gConfig
+from tempfile import mkdtemp
+import shutil
+
+from DIRAC import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.Core.Utilities.Grid import executeGridCommand
 from DIRAC.Core.Utilities.Proxy import executeWithUserProxy
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueue
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupOption
+from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
 
 
 # List of files to be inserted/retrieved into/from pilot Output Sandbox
@@ -57,3 +63,78 @@ def getPilotLoggingInfo(grid, pilotRef):
     return S_ERROR(error)
 
   return S_OK(output)
+
+
+def getGridJobOutput(pilotReference):
+  """ Get the pilot job standard output and standard error files for the Grid
+      job reference
+  """
+
+  result = pilotDB.getPilotInfo(pilotReference)
+  if not result['OK'] or not result['Value']:
+    return S_ERROR('Failed to get info for pilot ' + pilotReference)
+
+  pilotDict = result['Value'][pilotReference]
+  owner = pilotDict['OwnerDN']
+  group = pilotDict['OwnerGroup']
+
+  # FIXME: What if the OutputSandBox is not StdOut and StdErr, what do we do with other files?
+  result = pilotDB.getPilotOutput(pilotReference)
+  if result['OK']:
+    stdout = result['Value']['StdOut']
+    error = result['Value']['StdErr']
+    if stdout or error:
+      resultDict = {}
+      resultDict['StdOut'] = stdout
+      resultDict['StdErr'] = error
+      resultDict['OwnerDN'] = owner
+      resultDict['OwnerGroup'] = group
+      resultDict['FileList'] = []
+      return S_OK(resultDict)
+    else:
+      gLogger.warn('Empty pilot output found for %s' % pilotReference)
+
+  # Instantiate the appropriate CE
+  ceFactory = ComputingElementFactory()
+  result = getQueue(pilotDict['GridSite'], pilotDict['DestinationSite'], pilotDict['Queue'])
+  if not result['OK']:
+    return result
+  queueDict = result['Value']
+  gridEnv = getGridEnv()
+  queueDict['GridEnv'] = gridEnv
+  queueDict['WorkingDirectory'] = mkdtemp()
+  result = ceFactory.getCE(pilotDict['GridType'], pilotDict['DestinationSite'], queueDict)
+  if not result['OK']:
+    shutil.rmtree(queueDict['WorkingDirectory'])
+    return result
+  ce = result['Value']
+  groupVOMS = getGroupOption(group, 'VOMSRole', group)
+  result = gProxyManager.getPilotProxyFromVOMSGroup(owner, groupVOMS)
+  if not result['OK']:
+    gLogger.error(result['Message'])
+    gLogger.error('Could not get proxy:', 'User "%s", Group "%s"' % (owner, groupVOMS))
+    return S_ERROR("Failed to get the pilot's owner proxy")
+  proxy = result['Value']
+  ce.setProxy(proxy)
+  pilotStamp = pilotDict['PilotStamp']
+  pRef = pilotReference
+  if pilotStamp:
+    pRef = pRef + ':::' + pilotStamp
+  result = ce.getJobOutput(pRef)
+  if not result['OK']:
+    shutil.rmtree(queueDict['WorkingDirectory'])
+    return result
+  stdout, error = result['Value']
+  if stdout:
+    result = pilotDB.storePilotOutput(pilotReference, stdout, error)
+    if not result['OK']:
+      gLogger.error('Failed to store pilot output:', result['Message'])
+
+  resultDict = {}
+  resultDict['StdOut'] = stdout
+  resultDict['StdErr'] = error
+  resultDict['OwnerDN'] = owner
+  resultDict['OwnerGroup'] = group
+  resultDict['FileList'] = []
+  shutil.rmtree(queueDict['WorkingDirectory'])
+  return S_OK(resultDict)
