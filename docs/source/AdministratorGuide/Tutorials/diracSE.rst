@@ -7,7 +7,7 @@ Install a DIRAC Storage Element
 Pre-requisite
 =============
 
-You should have a machine setup as described in :ref:`tuto_basic_setup`, and be able to install dirac components. For simple interaction with the StorageElement using `dirac-dms-*` commands, you should also have a working FileCatalog.
+You should have a machine setup as described in :ref:`tuto_basic_setup`, and be able to install dirac components. For simple interaction with the StorageElement using ``dirac-dms-*`` commands, you should also have a working FileCatalog.
 
 
 Tutorial goal
@@ -19,7 +19,7 @@ The aim of the tutorial is to do a step by step guide to install a DIRAC Storage
 Machine setup
 =============
 
-This section is to be executed as `dirac` user.
+This section is to be executed as ``dirac`` user.
 
 We will simply create a folder where the files will be stored::
 
@@ -29,9 +29,9 @@ We will simply create a folder where the files will be stored::
 Installing the service
 ======================
 
-This section is to be executed as `diracuser` user, with `dirac_admin` proxy (reminder: `dirac-proxy-init -g dirac_admin).
+This section is to be executed as ``diracuser`` user, with ``dirac_admin`` proxy (reminder: ``dirac-proxy-init -g dirac_admin``).
 
-Install the StorageElement service using `dirac-admin-sysadmin-cli`::
+Install the StorageElement service using ``dirac-admin-sysadmin-cli``::
 
   [diracuser@dirac-tuto ~]$ dirac-admin-sysadmin-cli --host dirac-tuto
   [dirac-tuto]> add instance DataManagement Production
@@ -63,7 +63,7 @@ You now have a Service offering grid like storage. However, you still need to de
 Adding the StorageElement
 =========================
 
-You need to add a StorageElement in the `Resources/StorageElements` section.  Using the WebApp, just add the following::
+You need to add a StorageElement in the ``Resources/StorageElements`` section.  Using the WebApp, just add the following::
 
   StorageElementOne
   {
@@ -79,7 +79,7 @@ You need to add a StorageElement in the `Resources/StorageElements` section.  Us
   }
 
 
-You now have a storage that you can address as `StorageElementOne` in all the dirac commands or in your code.
+You now have a storage element that you can address as ``StorageElementOne`` in all the dirac commands or in your code.
 
 
 Test it
@@ -89,7 +89,7 @@ Create a dummy file::
 
   echo "dummyFile" > /tmp/dummy.txt
 
-Now create a file called `/tmp/testSE.py`, with the following content::
+Now create a file called ``/tmp/testSE.py``, with the following content::
 
   from DIRAC.Core.Base.Script import parseCommandLine
   parseCommandLine()
@@ -120,7 +120,7 @@ Now create a file called `/tmp/testSE.py`, with the following content::
 
 
 
-This file uploads `/tmp/dummy.txt` on the StorageElement, list the directory and removes it. The output should be something like that::
+This file uploads ``/tmp/dummy.txt`` on the StorageElement, list the directory and removes it. The output should be something like that::
 
   [diracuser@dirac-tuto ~]$ python /tmp/testSE.py
   Putting file
@@ -135,9 +135,9 @@ This file uploads `/tmp/dummy.txt` on the StorageElement, list the directory and
   {'OK': True, 'Value': {'Successful': {'/tutoVO': {'Files': {}, 'SubDirs': {}}}, 'Failed': {}}}
 
 
-Note: you might be getting the following message if you have no Accounting system. you can safely ignore it::
+.. note:: you might be getting the following message if you have no Accounting system. you can safely ignore it::
 
-  Error sending accounting record Cannot get URL for Accounting/DataStore in setup MyDIRAC-Production: RuntimeError('Option /DIRAC/Setups/MyDIRAC-Production/Accounting is not defined',)
+    Error sending accounting record Cannot get URL for Accounting/DataStore in setup MyDIRAC-Production: RuntimeError('Option /DIRAC/Setups/MyDIRAC-Production/Accounting is not defined',)
 
 
 Adding a second DIRAC SE
@@ -145,13 +145,13 @@ Adding a second DIRAC SE
 
 It is often interesting to have a second SE.
 
-As `dirac` user, create a new directory::
+As ``dirac`` user, create a new directory::
 
   mkdir /opt/dirac/storageElementTwo/
 
-Now the rest is to be installed with `diracuser` and a proxy with `dirac_admin` group.
+Now the rest is to be installed with ``diracuser`` and a proxy with ``dirac_admin`` group.
 
-We need another StorageElement service. However, it has to have a different name than the first one, so we will just call this service `StorageElementTwo`::
+We need another StorageElement service. However, it has to have a different name than the first one, so we will just call this service ``StorageElementTwo``::
 
   [diracuser@dirac-tuto ~]$ dirac-admin-sysadmin-cli --host dirac-tuto
   Pinging dirac-tuto...
@@ -161,7 +161,7 @@ We need another StorageElement service. However, it has to have a different name
   service DataManagement_StorageElementTwo is installed, runit status: Run
 
 
-Using the WebApp, add the new StorageElement definition in the `/Resources/StorageElements` section::
+Using the WebApp, add the new StorageElement definition in the ``/Resources/StorageElements`` section::
 
   StorageElementTwo
   {
@@ -177,4 +177,4 @@ Using the WebApp, add the new StorageElement definition in the `/Resources/Stora
   }
 
 
-In order to test it, just re-use `/tmp/testSE.py`, replacing `StorageElementOne` with `StorageElementTwo`
+In order to test it, just re-use ``/tmp/testSE.py``, replacing ``StorageElementOne`` with ``StorageElementTwo``

@@ -10,10 +10,10 @@ Tutorial goal
 The aim of the tutorial is to have a self contained DIRAC setup. You will be guided through the whole installation process both of the server part and the client part.
 By the end of the tutorial, you will have:
 
-  * a Configuration service, to server other servers and clients
-  * a ComponentMonitoring service to keep track of other services and agents installed
-  * a SystemAdministrator service to manage the DIRAC installation in the future
-  * the WebApp, to allow for web interface access
+* a Configuration service, to serve other servers and clients
+* a ComponentMonitoring service to keep track of other services and agents installed
+* a SystemAdministrator service to manage the DIRAC installation in the future
+* the WebApp, to allow for web interface access
 
 The setup you will have at the end is the base for all the other tutorials.
 
@@ -21,16 +21,16 @@ The setup you will have at the end is the base for all the other tutorials.
 Basic requirements
 ==================
 
-We here assume that you have at your disposition a fresh SLC6 64bits installation. If you don't, we recommend installing a virtual machine. Instr uctions for installing SLC6 can be found `here <http://linux.web.cern.ch/linux/scientific6/docs/install.shtml>`_
+We assume that you have at your disposition a fresh SLC6 64bit installation. If you don't, we recommend installing a virtual machine. Instructions for installing SLC6 can be found `here <http://linux.web.cern.ch/linux/scientific6/docs/install.shtml>`_
 
-In this tutorial, we will use a freshly installed SLC6 x86_64 virtual machine, with all the default options, except the hostname being `dirac-tuto`.
+In this tutorial, we will use a freshly installed SLC6 x86_64 virtual machine, with all the default options, except the hostname being ``dirac-tuto``.
 
 Machine setup
 =============
 
-This section is to be executed as `root` user.
+This section is to be executed as ``root`` user.
 
-Make sure that the machine can address itself using the 'dirac-tuto` alias. Modify the `/etc/host` file as such::
+Make sure that the machine can address itself using the ``dirac-tuto`` alias. Modify the ``/etc/host`` file as such::
 
   127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4 dirac-tuto
   ::1         localhost localhost.localdomain localhost6 localhost6.localdomain6 dirac-tuto
@@ -40,7 +40,7 @@ Make sure that the machine can address itself using the 'dirac-tuto` alias. Modi
 Install runit
 -------------
 
-The next step is to install `runit`, which is responsible for supervising DIRAC processes
+The next step is to install ``runit``, which is responsible for supervising DIRAC processes
 
 First, install the `RPM <http://diracproject.web.cern.ch/diracproject/rpm/runit-2.1.2-1.el6.x86_64.rpm>`_::
 
@@ -49,7 +49,7 @@ First, install the `RPM <http://diracproject.web.cern.ch/diracproject/rpm/runit-
 
 
 
-Next, edit the `/etc/init/runsvdir.conf` file to point to the future DIRAC installation as such::
+Next, edit the ``/etc/init/runsvdir.conf`` file to point to the future DIRAC installation as such::
 
   # for runit - manage /usr/sbin/runsvdir-start
   start on runlevel [2345]
@@ -58,11 +58,11 @@ Next, edit the `/etc/init/runsvdir.conf` file to point to the future DIRAC insta
   respawn
   exec /opt/dirac/sbin/runsvdir-start
 
-Finally, create the directory `/opt/dirac/sbin`::
+Finally, create the directory ``/opt/dirac/sbin``::
 
   mkdir -p /opt/dirac/sbin
 
-and the file `/opt/dirac/sbin/runsvdir-start` with the following content::
+and the file ``/opt/dirac/sbin/runsvdir-start`` with the following content::
 
   cd /opt/dirac
   RUNSVCTRL='/sbin/runsvctrl'
@@ -76,7 +76,7 @@ make it executable::
   chmod +x /opt/dirac/sbin/runsvdir-start
 
 
-and restart `runsvdir`::
+and restart ``runsvdir``::
 
   restart runsvdir
 
@@ -137,16 +137,16 @@ Setup the root password::
 
 
 -----------------------
-Create the `dirac` user
+Create the ``dirac`` user
 -----------------------
 
-The user that will run the server will be `dirac`. You can set a password for that user::
+The user that will run the server will be ``dirac``. You can set a password for that user::
 
   adduser -s /bin/bash -d /home/dirac dirac
   passwd dirac
 
 
-All files bellow `/opt/dirac/` should belong to this user::
+All files bellow ``/opt/dirac/`` should belong to this user::
 
   chown -R dirac:dirac /opt/dirac/
 
@@ -155,7 +155,7 @@ All files bellow `/opt/dirac/` should belong to this user::
 Server installation
 ===================
 
-This section is to be executed as `dirac` user
+This section is to be executed as ``dirac`` user
 
 ------------------
 CA and certificate
@@ -278,20 +278,20 @@ To finish, time to exit the subshell::
 
 At this point, you should find:
 
- * The CA in `/opt/dirac/etc/grid-security/certificates`::
+* The CA in ``/opt/dirac/etc/grid-security/certificates``::
 
-    [dirac@dirac-tuto caUtilities]$ ls /opt/dirac/etc/grid-security/certificates/
-    855f710d.0  ca.cert.pem
+  [dirac@dirac-tuto caUtilities]$ ls /opt/dirac/etc/grid-security/certificates/
+  855f710d.0  ca.cert.pem
 
- * The host certificate (`hostcert.pem`) and key (`hostkey.pem`) in `/opt/dirac/etc/grid-security`::
+* The host certificate (``hostcert.pem``) and key (``hostkey.pem``) in ``/opt/dirac/etc/grid-security``::
 
-    [dirac@dirac-tuto caUtilities]$ ls /opt/dirac/etc/grid-security/
-    ca  certificates  hostcert.pem  hostkey.pem  openssl_config_host.cnf  request.csr.pem
+  [dirac@dirac-tuto caUtilities]$ ls /opt/dirac/etc/grid-security/
+  ca  certificates  hostcert.pem  hostkey.pem  openssl_config_host.cnf  request.csr.pem
 
- * The user credentials for later in `/opt/dirac/user/`::
+* The user credentials for later in ``/opt/dirac/user/``::
 
-    [dirac@dirac-tuto caUtilities]$ ls /opt/dirac/user/
-    client.key  client.pem  client.req  openssl_config_user.cnf
+  [dirac@dirac-tuto caUtilities]$ ls /opt/dirac/user/
+  client.key  client.pem  client.req  openssl_config_user.cnf
 
 --------------------
 Install DIRAC Server
@@ -308,7 +308,7 @@ First, download the installer, and make it executable::
   chmod +x install_site.sh
 
 
-`install_site.sh` requires a configuration file to tell it what and how to install. Create a file called `installation.cfg` with the following content::
+``install_site.sh`` requires a configuration file to tell it what and how to install. Create a file called ``installation.cfg`` with the following content::
 
   LocalInstallation
   {
@@ -407,9 +407,9 @@ You can verify that the components are running::
   /opt/dirac/startup/Web_WebApp: run (pid 24338) 239 seconds
 
 
-The logs are to be found in `/opt/dirac/runit/`, grouped by component.
+The logs are to be found in ``/opt/dirac/runit/``, grouped by component.
 
-The installation created the file `/opt/dirac/etc/dirac.cfg`. The content is the same as the `installation.cfg`, with the addition of the following::
+The installation created the file ``/opt/dirac/etc/dirac.cfg``. The content is the same as the ``installation.cfg``, with the addition of the following::
 
   DIRAC
   {
@@ -457,9 +457,9 @@ The installation created the file `/opt/dirac/etc/dirac.cfg`. The content is the
 This part is used as configuration for all your services and agents that you will run. It contains two important information:
 
 * The database credentials
-* The address of the configuration server: `Servers = dips://dirac-tuto:9135/Configuration/Server`
+* The address of the configuration server: ``Servers = dips://dirac-tuto:9135/Configuration/Server``
 
-The Configuration service will serve the content of the file `/opt/dirac/etc/MyDIRAC-Production.cfg` to every client, be it a service, an agent, a job, or an interactive client. The content looks like such::
+The Configuration service will serve the content of the file ``/opt/dirac/etc/MyDIRAC-Production.cfg`` to every client, be it a service, an agent, a job, or an interactive client. The content looks like such::
 
   DIRAC
   {
@@ -599,27 +599,27 @@ The Configuration service will serve the content of the file `/opt/dirac/etc/MyD
 
 This configuration will be used for example by Services in order to:
 
-* know their configuration (for example the `ComponentMonitoring` Service will use everything under `Systems/Framework/Production/Services/ComponentMonitoring` )
-* Identify host and persons (`Registry` section)
+* know their configuration (for example the ``ComponentMonitoring`` Service will use everything under ``Systems/Framework/Production/Services/ComponentMonitoring`` )
+* Identify host and persons (``Registry`` section)
 
-Or by clients to get the URLs of given services (for example `ComponentMonitoring = dips://dirac-tuto:9190/Framework/ComponentMonitoring`)
+Or by clients to get the URLs of given services (for example ``ComponentMonitoring = dips://dirac-tuto:9190/Framework/ComponentMonitoring``)
 
-Since this configuration is given as a whole to every client, you understand why no database credentials are in this file. Services and Agents running on the machine will have their configuration as a merge of what is served by the Configuration service and the `/opt/dirac/etc/dirac.cfg`, and thus have access to these private information.
+Since this configuration is given as a whole to every client, you understand why no database credentials are in this file. Services and Agents running on the machine will have their configuration as a merge of what is served by the Configuration service and the ``/opt/dirac/etc/dirac.cfg``, and thus have access to these private information.
 
-The file `/opt/dirac/bashrc` is to be sourced whenever you want to use the server installation.
+The file ``/opt/dirac/bashrc`` is to be sourced whenever you want to use the server installation.
 
 Client installation
 ===================
 
-Now we will create another linux account `diracuser` and another installation to be used as client
+Now we will create another linux account ``diracuser`` and another installation to be used as client
 
 --------------------
 Setup client session
 --------------------
 
-This section has to be ran as `root`
+This section has to be ran as ``root``
 
-First, create an account, and add in its `~/.globus/` directory the user certificate you created earlier::
+First, create an account, and add in its ``~/.globus/`` directory the user certificate you created earlier::
 
   adduser -s /bin/bash -d /home/diracuser diracuser
   passwd diracuser
@@ -633,9 +633,9 @@ First, create an account, and add in its `~/.globus/` directory the user certifi
 Install DIRAC client
 --------------------
 
-This section has to be ran as `diracuser`
+This section has to be ran as ``diracuser``
 
-We will do the installation in the `~/DIRAC` directory. For a client, the configuration is really minimal, so we will just install the code and its dependencies.
+We will do the installation in the ``~/DIRAC`` directory. For a client, the configuration is really minimal, so we will just install the code and its dependencies.
 First, create the structure, and download the installer::
 
   mkdir ~/DIRAC && cd ~/DIRAC
@@ -666,14 +666,14 @@ Now we trigger the installation, with the same version as the server::
   2019-04-11 14:47:02 UTC dirac-install [NOTICE]  Executing /home/diracuser/DIRAC/scripts/dirac-externals-requirements...
   2019-04-11 14:47:03 UTC dirac-install [NOTICE]  DIRAC properly installed
 
-You will notice that among other things, the installation created a `~/DIRAC/bashrc` file. This file must be sourced whenever you want to use dirac client.
+You will notice that among other things, the installation created a ``~/DIRAC/bashrc`` file. This file must be sourced whenever you want to use dirac client.
 
 In principle, your system administrator will have managed the CA for you. In this specific case, since we have our own CA, we will just link the client installation CA with the server one::
 
   mkdir -p ~/DIRAC/etc/grid-security/
   ln -s /opt/dirac/etc/grid-security/certificates/ ~/DIRAC/etc/grid-security/certificates
 
-The last step is to configure the client to talk to the proper configuration service. This is easily done by creating a `~/DIRAC/etc/dirac.cfg` file with the following content::
+The last step is to configure the client to talk to the proper configuration service. This is easily done by creating a ``~/DIRAC/etc/dirac.cfg`` file with the following content::
 
   DIRAC
   {
@@ -711,18 +711,18 @@ And you can observe that the Configuration Service has served the client::
 Use the WebApp
 --------------
 
-This section is to be executed as `diracuser`.
+This section is to be executed as ``diracuser``.
 
-First you need to convert your user certificate into a `p12` format (you will be prompt for a password, you can leave it empty)::
+First you need to convert your user certificate into a ``p12`` format (you will be prompt for a password, you can leave it empty)::
 
   cd ~/.globus/
   openssl pkcs12 -export -out certificate.p12 -inkey userkey.pem -in usercert.pem
 
-This will create the file `~/.globus/certificate.p12`.
+This will create the file ``~/.globus/certificate.p12``.
 
 Use your favorite browser, and add this certificate.
 
-You should be able to access the WebApp using the following address `https://localhost:8443/DIRAC/`
+You should be able to access the WebApp using the following address ``https://localhost:8443/DIRAC/``
 
 
 Conclusion

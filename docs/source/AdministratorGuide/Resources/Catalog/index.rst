@@ -45,6 +45,8 @@ For example::
         FileCatalog
         {
         }
+        # This is not in DIRAC, just
+        # another catalog
         BookkeepingDB
         {
           CatalogURL = Bookkeeping/BookkeepingManager
@@ -77,6 +79,8 @@ For example::
         Status = Active
         Master = True
       }
+      # This is not in DIRAC, just
+      # another catalog
       BookkeepingDB
       {
         AccessType = Write

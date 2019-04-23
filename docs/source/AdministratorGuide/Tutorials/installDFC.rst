@@ -9,9 +9,9 @@ Pre-requisite
 
 You should:
 
- * have a machine setup as described in :ref:`tuto_basic_setup`
- * be able to install dirac components
- * have installed a DIRAC SE using the tutorial (:ref:`tuto_install_dirac_se`).
+* have a machine setup as described in :ref:`tuto_basic_setup`
+* be able to install dirac components
+* have installed a DIRAC SE using the tutorial (:ref:`tuto_install_dirac_se`).
 
 Tutorial goal
 =============
@@ -24,14 +24,14 @@ More links
 
 More information can be found at the following places:
 
- * Introduction to DataManagement: :ref:`data-management-system`
- * Catalog resource definition :ref:`resourcesCatalog`
- * How-to datamanagement for user :ref:`howto_user_dms`
+* Introduction to DataManagement: :ref:`data-management-system`
+* Catalog resource definition :ref:`resourcesCatalog`
+* How-to datamanagement for user :ref:`howto_user_dms`
 
 Installing the DFC
 ==================
 
-This section is to be executed as `diracuser` with a proxy with `dirac_admin` group.
+This section is to be executed as ``diracuser`` with a proxy with ``dirac_admin`` group.
 
 The DFC is no different than any other DIRAC service with a database. The installation step are thus very simple::
 
@@ -51,20 +51,20 @@ Adding the FileCatalog resource
 
 In order to be used as a FileCatalog by clients, the DFC needs to be declared. This happens in two places:
 
- * `/Resources/FileCatalogs/`: in this section, you define how to access the catalog
- * `/Operations/Defaults/Services/Catalogs/`: in this section, you define how to use the catalog (for example read/write)
+* ``/Resources/FileCatalogs/``: in this section, you define how to access the catalog
+* ``/Operations/Defaults/Services/Catalogs/``: in this section, you define how to use the catalog (for example read/write)
 
 
-Since we have only one catalog, we will use it as `Read-Write` and as `Master`.
+Since we have only one catalog, we will use it as ``Read-Write`` and as ``Master``.
 
-Using the WebApp, add the following in `/Resources/FileCatalogs/` (all options to defaults)::
+Using the WebApp, add the following in ``/Resources/FileCatalogs/`` (all options to defaults)::
 
     FileCatalog
     {
     }
 
 
-Using the WebApp, add the following in `/Operations/Defaults/Services/Catalogs`::
+Using the WebApp, add the following in ``/Operations/Defaults/Services/Catalogs``::
 
   FileCatalog
   {
@@ -78,7 +78,7 @@ From this moment onward, the catalog is totally usable.
 Test the catalog
 ================
 
-Since we have a StorageElement at our disposal, we can use the standard `dirac-dms-*` script.
+Since we have a StorageElement at our disposal, we can use the standard ``dirac-dms-*`` script.
 
 First, let us create a file and then "put it on the grid"::
 
@@ -90,7 +90,7 @@ First, let us create a file and then "put it on the grid"::
   Successfully uploaded file to StorageElementOne
 
 
-Now, let's check it's replicas and metadata::
+Now, let's check its replicas and metadata::
 
   [diracuser@dirac-tuto ~]$ dirac-dms-lfn-replicas /tutoVO/user/c/ciuser/world.txt
   LFN                             StorageElement    URL
