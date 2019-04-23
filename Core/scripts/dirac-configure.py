@@ -117,7 +117,6 @@ def setOutput(optionValue):
 def setServer(optionValue):
   global configurationServer
   configurationServer = optionValue
- # Script.localCfg.addDefaultEntry('/DIRAC/Configuration/Servers', configurationServer)
   DIRAC.gConfig.setOptionValue('/DIRAC/Configuration/Servers', configurationServer)
   DIRAC.gConfig.setOptionValue(cfgInstallPath('ConfigurationServer'), configurationServer)
   return DIRAC.S_OK()
