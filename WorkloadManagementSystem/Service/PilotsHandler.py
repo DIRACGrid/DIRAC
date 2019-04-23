@@ -8,6 +8,7 @@ from DIRAC import gConfig, S_OK, S_ERROR
 import DIRAC.Core.Utilities.Time as Time
 
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 from DIRAC.WorkloadManagementSystem.DB.PilotsLoggingDB import PilotsLoggingDB
@@ -256,7 +257,7 @@ class PilotsHandler(RequestHandler):
       pilotRefDict[queue]['PilotList'].append(pilotReference)
       pilotRefDict[queue]['GridType'] = gridType
 
-    failed = killPilotsInQueues()
+    failed = killPilotsInQueues(pilotRefDict)
 
     if failed:
       return S_ERROR('Failed to kill at least some pilots')
