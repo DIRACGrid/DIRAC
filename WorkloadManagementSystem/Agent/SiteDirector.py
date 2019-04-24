@@ -429,7 +429,7 @@ class SiteDirector(AgentModule):
   def execute(self):
     """ Main execution method (what is called at each agent cycle).
 
-        It basically just calls self.submitJobs() method
+        It basically just calls self.submitPilots() method
     """
 
     if not self.queueDict:
@@ -452,7 +452,7 @@ class SiteDirector(AgentModule):
       self.ceMaskList = [ceName for ceName in result['Value'].iterkeys() if result['Value'][ceName]
                          ['all'] in ('Active', 'Degraded')]
 
-    result = self.submitJobs()
+    result = self.submitPilots()
     if not result['OK']:
       self.log.error('Errors in the job submission: ', result['Message'])
       return result
@@ -467,8 +467,8 @@ class SiteDirector(AgentModule):
 
     return S_OK()
 
-  def submitJobs(self):
-    """ Go through defined computing elements and submit jobs if necessary and possible
+  def submitPilots(self):
+    """ Go through defined computing elements and submit pilots if necessary and possible
 
         :return: S_OK/S_ERROR
     """
@@ -507,8 +507,8 @@ class SiteDirector(AgentModule):
 
       ce, ceDict = self._getCE(queueName)
 
-      pilotsWeMayWantToSubmit, additionalInfo = self._getPilotsWeMayWantToSubmit(
-          ceDict)  # additionalInfo is normally taskQueueDict
+      # additionalInfo is normally taskQueueDict
+      pilotsWeMayWantToSubmit, additionalInfo = self._getPilotsWeMayWantToSubmit(ceDict)
       self.log.verbose('%d pilotsWeMayWantToSubmit are eligible for %s queue' % (pilotsWeMayWantToSubmit, queueName))
       if not pilotsWeMayWantToSubmit:
         self.log.verbose('...so skipping %s' % queueName)
@@ -570,10 +570,9 @@ class SiteDirector(AgentModule):
 
       # now really submitting
       while pilotsToSubmit:  # a cycle because pilots are submitted in chunks
-        res = self._submitPilotsToQueue(
-            pilotsToSubmit, ce, queueName)
+        res = self._submitPilotsToQueue(pilotsToSubmit, ce, queueName)
         if not res['OK']:
-          self.log.info("Won't try further %s because of failures" % queueName)
+          self.log.info("Won't try further because of failures", "Queue: %s" % queueName)
           pilotsToSubmit = 0
           pilotList = []
           stampDict = {}
@@ -583,7 +582,7 @@ class SiteDirector(AgentModule):
         # updating the pilotAgentsDB... done by default but maybe not strictly necessary
         res = self._addPilotTQReference(queueName, additionalInfo, pilotList, stampDict)
 
-    self.log.info("%d pilots submitted in total in this cycle," % self.totalSubmittedPilots)
+    self.log.info("%d pilots submitted in total in this cycle" % self.totalSubmittedPilots)
 
     return S_OK()
 
@@ -829,8 +828,7 @@ class SiteDirector(AgentModule):
                   stampDict is a dict of timestamps of pilots submission
        :rtype: dict
     """
-    self.log.info('Going to submit a maximum of %d pilots to %s queue' %
-                  (pilotsToSubmit, queue))
+    self.log.info('Going to submit a maximum of %d pilots to %s queue' % (pilotsToSubmit, queue))
 
     bundleProxy = self.queueDict[queue].get('BundleProxy', False)
     jobExecDir = self.queueDict[queue]['ParametersDict'].get('JobExecDir', '')
@@ -849,15 +847,14 @@ class SiteDirector(AgentModule):
             (self.queueDict[queue]['CEType'] == 'Local' and ce.batchSystem == 'Condor')):
       os.unlink(executable)
     if not submitResult['OK']:
-      self.log.error('Failed submission to queue %s:\n' %
-                     queue, submitResult['Message'])
+      self.log.error("Failed submission to queue",
+                     "Queue %s:\n, %s" % (queue, submitResult['Message']))
       pilotsToSubmit = 0
       self.failedQueues[queue] += 1
       return submitResult
 
     pilotsToSubmit = pilotsToSubmit - pilotSubmissionChunk
-    # Add pilots to the PilotAgentsDB assign pilots to TaskQueue proportionally to the
-    # task queue priorities
+    # Add pilots to the PilotAgentsDB: assign pilots to TaskQueue proportionally to the task queue priorities
     pilotList = submitResult['Value']
     self.queueSlots[queue]['AvailableSlots'] -= len(pilotList)
     self.totalSubmittedPilots += len(pilotList)
@@ -908,8 +905,7 @@ class SiteDirector(AgentModule):
                                                  gridType=self.queueDict[queue]['CEType'],
                                                  pilotStampDict=stampDict)
       if not result['OK']:
-        self.log.error(
-            'Failed add pilots to the PilotAgentsDB: ', result['Message'])
+        self.log.error('Failed add pilots to the PilotAgentsDB: ', result['Message'])
         continue
       for pilot in pilotsList:
         result = pilotAgentsDB.setPilotStatus(pilotRef=pilot,

@@ -59,7 +59,7 @@ class MultiProcessorSiteDirector(SiteDirector):
 
     return S_OK()
 
-  def submitJobs(self):
+  def submitPilots(self):
     """ Go through defined computing elements and submit jobs if necessary
     """
 
