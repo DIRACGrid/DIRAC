@@ -1,14 +1,14 @@
 #!/usr/bin/env python
-########################################################################
-# $HeadURL$
-# File :   dirac-deploy-scripts
-# Author : Adria Casajus
-########################################################################
 """
 Deploy all scripts and extensions
+Options:
+ * --symlink: this will create symlinks instead of wrappers
+ * <python path>: you can specify the folder where your pythin installation should be fetched from
+                  to replace the shebang
 """
 __RCSID__ = "$Id$"
 
+import getopt
 import os
 import shutil
 import stat
@@ -87,8 +87,26 @@ else:
 
 # Python interpreter location can be specified as an argument
 pythonLocation = "/usr/bin/env python"
-if len(sys.argv) == 2:
-  pythonLocation = os.path.join(sys.argv[1], 'bin', 'python')
+# if True, do not use the script wrapper but just use symlinks
+useSymlinks = False
+
+
+try:
+  opts, args = getopt.getopt(sys.argv[1:], "", ["symlink"])
+except getopt.GetoptError as err:
+  # print help information and exit:
+  print str(err)  # will print something like "option -a not recognized"
+  sys.exit(2)
+for o, a in opts:
+  if o == "--symlink":
+    useSymlinks = True
+  else:
+    assert False, "unhandled options %s" % o
+
+
+if args:
+  pythonLocation = os.path.join(args[0], 'bin', 'python')
+
 wrapperTemplate = wrapperTemplate.replace('$PYTHONLOCATION$', pythonLocation)
 
 # On the newest MacOS the DYLD_LIBRARY_PATH variable is not passed to the shell of
@@ -165,8 +183,19 @@ for rootModule in listDir:
       if DEBUG:
         print " Wrapping %s as %s" % (scriptName, newScriptName)
       fakeScriptPath = os.path.join(targetScriptsPath, newScriptName)
-      with open(fakeScriptPath, "w") as fd:
-        fd.write(wrapperTemplate.replace('$SCRIPTLOCATION$', scriptPath))
+
+      # Either create the symlink or write the wrapper script
+      if useSymlinks:
+        # We may overwrite already existing links (in extension for example)
+        # os.symlink will not allow that, so remove the existing first
+        if os.path.exists(fakeScriptPath):
+          os.remove(fakeScriptPath)
+        # Create the symlink
+        os.symlink(os.path.abspath(scriptPath), fakeScriptPath)
+      else:
+        with open(fakeScriptPath, "w") as fd:
+          fd.write(wrapperTemplate.replace('$SCRIPTLOCATION$', scriptPath))
+
       os.chmod(fakeScriptPath, gDefaultPerms)
     else:
       if DEBUG:

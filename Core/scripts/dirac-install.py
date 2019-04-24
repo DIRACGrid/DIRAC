@@ -196,6 +196,7 @@ class Params(object):
     self.externalVersion = ""
     self.cleanPYTHONPATH = False
     self.createLink = False
+    self.scriptSymlink = False
 
 
 cliParams = Params()
@@ -1657,7 +1658,8 @@ cmdOpts = (('r:', 'release=', 'Release version to install'),
            ('x:', 'external=', 'external version'),
            ('  ', 'cleanPYTHONPATH', 'Only use the DIRAC PYTHONPATH (for pilots installation)'),
            ('  ', 'createLink', 'create version symbolic link from the versions directory. This is equivalent to the \
-           following command: ln -s /opt/dirac/versions/vArBpC vArBpC')
+           following command: ln -s /opt/dirac/versions/vArBpC vArBpC'),
+           ('  ', 'scriptSymlink', 'Symlink the scripts instead of creating wrapper')
            )
 
 
@@ -1803,6 +1805,8 @@ def loadConfiguration():
       cliParams.cleanPYTHONPATH = True
     elif o == '--createLink':
       cliParams.createLink = True
+    elif o == '--scriptSymlink':
+      cliParams.scriptSymlink = True
 
   if not cliParams.release and not cliParams.modules:
     logERROR("Missing release to install")
@@ -2532,6 +2536,11 @@ if __name__ == "__main__":
                                  "scripts", "dirac_deploy_scripts.py")
     if os.path.isfile(ddeLocation):
       cmd = ddeLocation
+
+      # if specified, create symlink instead of wrapper.
+      if cliParams.scriptSymlink:
+        cmd += ' --symlink'
+
       # In MacOS /usr/bin/env does not find python in the $PATH, passing binary path
       # as an argument to the dirac-deploy-scripts
       if not cliParams.platform:
@@ -2540,6 +2549,7 @@ if __name__ == "__main__":
         binaryPath = os.path.join(cliParams.targetPath, cliParams.platform)
         logNOTICE("For MacOS (Darwin) use explicit binary path %s" % binaryPath)
         cmd += ' %s' % binaryPath
+
       os.system(cmd)
     else:
       logDEBUG("No dirac-deploy-scripts found. This doesn't look good")
