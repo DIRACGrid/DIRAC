@@ -11,6 +11,7 @@ Each of this tutorial is a step by step guide.
    :numbered:
 
    basicTutoSetup
+   managingIdentities
    diracSE
    installDFC
    installRMS

@@ -11,9 +11,10 @@ Pre-requisite
 You should:
 
 * have a machine setup as described in :ref:`tuto_basic_setup`
-* have installed a DIRAC SE using the tutorial (:ref:`tuto_install_dirac_se`).
+* have installed two DIRAC SE using the tutorial (:ref:`tuto_install_dirac_se`).
 * have installed the DFC using the tutorial (:ref:`tuto_install_dfc`).
-* be able to install dirac components
+* have followed the tutorial on identity management (:ref:`tuto_managing_identities`)
+* have installed the RMS using the tutorial (:ref:`tuto_install_rms`)
 
 
 Tutorial goal
@@ -30,7 +31,7 @@ By the end of the tutorial, you will be able to:
 More links
 ==========
 
-* RequestManagementSystem documentation: :ref:`requestManagementSystem`
+* :ref:`adminTS`
 
 
 Installing the RequestManagementSystem
