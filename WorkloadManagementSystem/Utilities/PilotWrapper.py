@@ -14,12 +14,8 @@
 
 import os
 import tempfile
-import shutil
-import json
 import base64
 import bz2
-
-import requests
 
 pilotWrapperContent = """#!/bin/bash
 /usr/bin/env python << EOF
@@ -34,6 +30,8 @@ import base64
 import bz2
 import logging
 import time
+import urllib2
+import tarfile
 
 # setting up the logging
 formatter = logging.Formatter(fmt='%%(asctime)s UTC %%(levelname)-8s %%(message)s', datefmt='%%Y-%%m-%%d %%H:%%M:%%S')
@@ -68,7 +66,8 @@ logger.info("Launching dirac-pilot script from %%s" %%os.getcwd())
 def pilotWrapperScript(pilotFilesCompressedEncodedDict=None,
                        pilotOptions='',
                        pilotExecDir='',
-                       envVariables=None):
+                       envVariables=None,
+                       location=''):
   """ Returns the content of the pilot wrapper script.
 
       The pilot wrapper script is a bash script that invokes the system python. Linux only.
@@ -80,6 +79,10 @@ def pilotWrapperScript(pilotFilesCompressedEncodedDict=None,
      :type pilotOptions: basestring
      :param pilotExecDir: pilot execution directory
      :type pilotExecDir: basestring
+     :param envVariables: dictionary of environment variables
+     :type envVariables: dict
+     :param location: location where to get the pilot files
+     :type location: basestring
 
      :returns: content of the pilot wrapper
      :rtype: basestring
@@ -135,6 +138,27 @@ logger.info("But first unpacking pilot files")
 # Modifying the environment
 %s
 """ % envVariablesString
+
+  if location:
+    localPilot += """
+# Getting the pilot files
+logger.info("Getting the pilot files from %(location)s")
+
+# Getting the json file
+rJson = urllib2.urlopen('http://' + '%(location)s' + '/pilot/pilot.json')
+with open('pilot.json', 'wb') as pj:
+  pj.write(rJson.read())
+  pj.close()
+
+# Getting the tar file
+rTar = urllib2.urlopen('http://' + '%(location)s' + '/pilot/pilot.tar')
+with open('pilot.tar', 'wb') as pt:
+  pt.write(rTar.read())
+  pt.close()
+with tarfile.open('pilot.tar', 'r') as pt:
+  pt.extractall()
+  pt.close()
+""" % {'location': location}
 
   localPilot += """
 # now finally launching the pilot script (which should be called dirac-pilot.py)

@@ -40,7 +40,7 @@ from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils import pilotAgentsDB
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import getGridEnv
 from DIRAC.WorkloadManagementSystem.private.ConfigHelper import findGenericPilotCredentials
-from DIRAC.WorkloadManagementSystem.Utilities.PilotWrapper import pilotWrapperScript, getPilotFiles,\
+from DIRAC.WorkloadManagementSystem.Utilities.PilotWrapper import pilotWrapperScript, \
     _writePilotWrapperFile, getPilotFilesCompressedEncodedDict
 from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
@@ -1170,10 +1170,14 @@ class SiteDirector(AgentModule):
     except BaseException as be:
       self.log.exception("Exception during pilot modules files compression", lException=be)
 
+    location = ''
+    if self.pilot3:
+      location = Operations().getValue("Pilot/pilotFileServer")
     localPilot = pilotWrapperScript(pilotFilesCompressedEncodedDict=pilotFilesCompressedEncodedDict,
                                     pilotOptions=pilotOptions,
                                     pilotExecDir=pilotExecDir,
-                                    envVariables=envVariables)
+                                    envVariables=envVariables,
+                                    location=location)
 
     return _writePilotWrapperFile(workingDirectory=workingDirectory, localPilot=localPilot)
 

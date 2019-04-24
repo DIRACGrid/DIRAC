@@ -78,3 +78,17 @@ def test_scriptWithEnvVars():
                     'someMore': 'oneMore'})
 
   assert 'os.environ["someName"]="someValue"' in res
+
+
+def test_scriptPilot3():
+  """ test script creation
+  """
+  res = pilotWrapperScript(
+      pilotFilesCompressedEncodedDict={'proxy': 'thisIsSomeProxy'},
+      pilotOptions="-c 123 --foo bar",
+      envVariables={'someName': 'someValue',
+                    'someMore': 'oneMore'},
+      location='lhcb-portal.cern.ch')
+
+  assert 'os.environ["someName"]="someValue"' in res
+  assert 'lhcb-portal.cern.ch' in res
