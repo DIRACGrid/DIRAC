@@ -1,3 +1,5 @@
+.. _manageAuthNAndAuthZ:
+
 Manage authentification and authorizations
 ==========================================
 

@@ -1,3 +1,5 @@
+.. _compAuthNAndAutZ:
+
 ===========================================
 Components authentication and authorization
 ===========================================
@@ -50,9 +52,9 @@ When a client calls a service, he needs to be identified. If a client opens a co
 	{
 		'DN': '/C=ch/O=DIRAC/[...]',
 		'group': 'devGroup',
-		'CN': u'ciuser', 
-		'x509Chain': <X509Chain 2 certs [...][...]>, 
-		'isLimitedProxy': False, 
+		'CN': u'ciuser',
+		'x509Chain': <X509Chain 2 certs [...][...]>,
+		'isLimitedProxy': False,
 		'isProxy': True
 	}
 
@@ -72,7 +74,7 @@ AuthManager.authQuery() returns boolean so it is easy to use, you just have to p
 	# credDict came from BaseTransport.getConnectingCredentials()
 	# hardcodedMethodAuth is optional
 
-To determine if a query can be authorized or not the AuthManager extract valid properties for a given method. 
+To determine if a query can be authorized or not the AuthManager extract valid properties for a given method.
 First AuthManager try to get it from gConfig, then try to get it from hardcoded list (hardcodedMethodAuth) in your service and if nothing was found get default properties from gConfig.
 
 AuthManager also extract properties from user with credential dictionary and configuration system to check if properties matches. So you don't have to extract properties by yourself, but if needed you can use :py:class:`DIRAC.Core.Security.CS.getPropertiesForGroup()`

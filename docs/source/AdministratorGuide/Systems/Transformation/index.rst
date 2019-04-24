@@ -1,3 +1,5 @@
+.. _adminTS:
+
 =====================
 Transformation System
 =====================
@@ -221,7 +223,7 @@ TransformationAgent plugins
 TaskManager plugins
 -------------------
 
-By default the standard plugin (BySE) sets job's destination depending on the location of its input data. 
+By default the standard plugin (BySE) sets job's destination depending on the location of its input data.
 
 One possibility is represented by the **ByJobType** TaskManager plugin,
 that allows to specify different rules for site destinations for each JobType.
@@ -309,7 +311,7 @@ In order to use the ByJobType plugin, one has to:
   * Sections under "JobTypeMapping" correspond to the different JobTypes one may want to define, *e.g.*: DataReprocessing, Merge, etc.
   * For each JobType one has to define:
 
-    * "Exclude": the list of sites that will be removed as destination sites ("ALL" for all sites). 
+    * "Exclude": the list of sites that will be removed as destination sites ("ALL" for all sites).
     * Optionally one may redefine the "AutoAddedSites" (including setting it empty)
     * "Allow": the list of 'helpers', specifying sites helping another site.
 
