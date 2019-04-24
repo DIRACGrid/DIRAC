@@ -119,7 +119,7 @@ class SiteDirector(AgentModule):
     self.sendAccounting = True
 
     self.pilot3 = False
-    self.pilotFiles = []
+    self.pilotFiles = []  # files whose content will be compressed and sent together with the pilot wrapper
 
     self.siteClient = None
     self.rssClient = None
@@ -272,12 +272,8 @@ class SiteDirector(AgentModule):
     self.firstPass = False
 
     # which files to send in the pilotWrapper?
-    if self.pilot3:
-      # this is a standard location, as done by the PilotCS2JSONSynchronizer
-      pilotFilesLocation = os.path.join(Operations().getValue("Pilot/pilotFileServer"), 'pilot/pilot.tar')
-      self.pilotFiles = getPilotFiles(pilotFilesDir=self.am_getWorkDirectory(),
-                                      pilotFilesLocation=pilotFilesLocation)
-    else:
+    if not self.pilot3:
+      # If it's pilot 3, nothing will be sent: the wrapper will get them all
       self.pilotFiles = DIRAC_MODULES + [DIRAC_PILOT]
 
     return S_OK()
