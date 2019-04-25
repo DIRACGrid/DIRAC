@@ -29,6 +29,8 @@ class DataStoreClient(Client):
 
   def __init__(self, retryGraceTime=0, **kwargs):
     """ Simple constructor
+
+        :params int retryGraceTime: the seconds to wait before sending records to the failover
     """
     super(DataStoreClient, self).__init__(**kwargs)
     self.setServer('Accounting/DataStore')
@@ -42,8 +44,7 @@ class DataStoreClient(Client):
     self.__commitTimer = threading.Timer(5, self.commit)
 
   def __checkBaseType(self, obj):
-    """
-    Check to find that the class inherits from the Base Type
+    """ Check to find that the class inherits from the Base Type
     """
     for parent in obj.__bases__:
       if parent.__name__ == "BaseAccountingType":
@@ -53,8 +54,9 @@ class DataStoreClient(Client):
     return False
 
   def addRegister(self, register):
-    """
-    Add a register to the list to be sent
+    """ Add a register to the list to be sent
+
+        :params BaseAccountingType register: the accounting record to send.
     """
     if not self.__checkBaseType(register.__class__):
       return S_ERROR("register is not a valid type (has to inherit from BaseAccountingType")
