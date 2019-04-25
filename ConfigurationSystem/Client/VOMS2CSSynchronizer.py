@@ -294,6 +294,7 @@ class VOMS2CSSynchronizer(object):
         if not newList:
           newList = ["None"]
         userDict['Suspended'] = ','.join(newList)
+        modified = True
 
       if newDNForExistingUser:
         userDict['DN'] = ','.join([dn, diracUserDict.get(diracName, newAddedUserDict.get(diracName))['DN']])
