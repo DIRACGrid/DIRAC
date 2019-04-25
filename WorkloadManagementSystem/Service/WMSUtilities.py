@@ -95,7 +95,8 @@ def getGridJobOutput(pilotReference):
       resultDict['FileList'] = []
       return S_OK(resultDict)
     else:
-      gLogger.warn('Empty pilot output found for %s' % pilotReference)
+      gLogger.warn('Empty pilot output found',
+                   'for %s' % pilotReference)
 
   # Instantiate the appropriate CE
   ceFactory = ComputingElementFactory()
@@ -114,8 +115,8 @@ def getGridJobOutput(pilotReference):
   groupVOMS = getGroupOption(group, 'VOMSRole', group)
   result = gProxyManager.getPilotProxyFromVOMSGroup(owner, groupVOMS)
   if not result['OK']:
-    gLogger.error(result['Message'])
-    gLogger.error('Could not get proxy:', 'User "%s", Group "%s"' % (owner, groupVOMS))
+    gLogger.error('Could not get proxy:',
+                  'User "%s" Group "%s" : %s' % (owner, groupVOMS, result['Message']))
     return S_ERROR("Failed to get the pilot's owner proxy")
   proxy = result['Value']
   ce.setProxy(proxy)
@@ -169,8 +170,8 @@ def killPilotsInQueues(pilotRefDict):
       group = getGroupOption(group, 'VOMSRole', group)
       ret = gProxyManager.getPilotProxyFromVOMSGroup(owner, group)
       if not ret['OK']:
-        gLogger.error(ret['Message'])
-        gLogger.error('Could not get proxy:', 'User "%s", Group "%s"' % (owner, group))
+        gLogger.error('Could not get proxy:',
+                      'User "%s" Group "%s" : %s' % (owner, group, ret['Message']))
         return S_ERROR("Failed to get the pilot's owner proxy")
       proxy = ret['Value']
       ce.setProxy(proxy)
