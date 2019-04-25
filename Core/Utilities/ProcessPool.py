@@ -131,6 +131,8 @@ except ImportError:
     return {'OK': False, 'Message': mess}
 
 
+LOG = gLogger.getSubLogger(__name__)
+
 class WorkingProcess(multiprocessing.Process):
   """
   .. class:: WorkingProcess
@@ -870,14 +872,14 @@ class ProcessPool(object):
     :param self: self reference
     """
     processed = 0
-    log = gLogger.getSubLogger('ProcessPool')
+    log = LOG.getSubLogger('ProcessPool')
     while True:
       if (
           not log.debug(
               "Start loop (t=0) queue size = %d, processed = %d" %
               (self.__resultsQueue.qsize(),
                processed)) and processed == 0 and self.__resultsQueue.qsize()):
-        log.info("Process results, queue size = %d" % self.__resultsQueue.qsize())
+        log.debug("Process results, queue size = %d" % self.__resultsQueue.qsize())
       start = time.time()
       self.__cleanDeadProcesses()
       log.debug("__cleanDeadProcesses", 't=%.2f' % (time.time() - start))
@@ -887,14 +889,14 @@ class ProcessPool(object):
       time.sleep(0.1)
       if self.__resultsQueue.empty():
         if self.__resultsQueue.qsize():
-          log.warn("Results queue is empty but has non zero size: %d" % self.__resultsQueue.qsize())
+          log.warn("Results queue is empty but has non zero size", "%d" % self.__resultsQueue.qsize())
           # We only commit suicide if we reach a backlog greater than the maximum number of workers
           if self.__resultsQueue.qsize() > self.__maxSize:
             return -1
           else:
             return 0
         if processed == 0:
-          log.verbose("Process results, but queue is empty...")
+          log.debug("Process results, but queue is empty...")
         break
       # # get task
       task = self.__resultsQueue.get()
@@ -915,7 +917,7 @@ class ProcessPool(object):
         pass
       processed += 1
     if processed:
-      log.info("Processed %d results" % processed)
+      log.debug("Processed %d results" % processed)
     else:
       log.debug("No results processed")
     return processed
@@ -952,7 +954,7 @@ class ProcessPool(object):
     self.__stopEvent.set()
     # # join idle workers
     start = time.time()
-    log = gLogger.getSubLogger("ProcessPool/finalize")
+    log = LOG.getSubLogger("ProcessPool/finalize")
     nWorkers = 9999999
     while self.__workersDict:
       self.__cleanDeadProcesses()
