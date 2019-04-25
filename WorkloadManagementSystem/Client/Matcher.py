@@ -311,11 +311,12 @@ class Matcher(object):
         vo = resourceDict.get('VirtualOrganization', '')
       else:
         vo = Registry.getVOForGroup(credDict['group'])
-      result = Registry.getGroupsForVO(vo)
-      if result['OK']:
-        resourceDict['OwnerGroup'] = result['Value']
-      else:
-        raise RuntimeError(result['Message'])
+      if 'OwnerGroup' not in resourceDict:
+        result = Registry.getGroupsForVO(vo)
+        if result['OK']:
+          resourceDict['OwnerGroup'] = result['Value']
+        else:
+          raise RuntimeError(result['Message'])
     else:
       # If it's a private pilot, the DN has to be the same
       if Properties.PILOT in credDict['properties']:
