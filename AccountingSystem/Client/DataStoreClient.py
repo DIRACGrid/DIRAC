@@ -94,12 +94,13 @@ class DataStoreClient(Client):
         if retVal['OK']:
           self.__lastSuccessfulCommit = time.time()
         else:
-          gLogger.error('Error sending accounting record', retVal['Message'])
+          gLogger.warn('Error sending accounting record', retVal['Message'])
           if self.__failoverEnabled and time.time() - self.__lastSuccessfulCommit > self.__maxTimeRetrying:
             gLogger.verbose("Sending accounting records to failover")
             result = _sendToFailover(retVal['rpcStub'])
             if not result['OK']:
               return result
+            gLogger.debug("Sent accounting record to failover")
           else:
             return S_ERROR("Cannot commit data to DataStore service")
         sent += len(registersToSend)
