@@ -97,7 +97,7 @@ class AccountingDB(DB):
       nct = nct.replace(hour=self.__compactTime.hour,
                         minute=self.__compactTime.minute,
                         second=self.__compactTime.second)
-      self.log.info("Next db compaction will be at %s" % nct)
+      self.log.info("Next db compaction", "will be at %s" % nct)
       sleepTime = Time.toEpoch(nct) - Time.toEpoch()
       time.sleep(sleepTime)
       self.compactBuckets()
@@ -119,14 +119,14 @@ class AccountingDB(DB):
         typeName = "%s_%s" % (setup, pythonClassName)
 
         typeDef = typeClass().getDefinition()
-        #dbTypeName = "%s_%s" % ( setup, typeName )
+        # dbTypeName = "%s_%s" % ( setup, typeName )
         definitionKeyFields, definitionAccountingFields, bucketsLength = typeDef[1:]
         # If already defined check the similarities
         if typeName in self.dbCatalog:
           bucketsLength.sort()
           if bucketsLength != self.dbBucketsLength[typeName]:
             bucketsLength = self.dbBucketsLength[typeName]
-            self.log.warn("Bucket length has changed for type %s" % typeName)
+            self.log.warn("Bucket length has changed", "for type %s" % typeName)
           keyFields = [f[0] for f in definitionKeyFields]
           if keyFields != self.dbCatalog[typeName]['keys']:
             keyFields = self.dbCatalog[typeName]['keys']
@@ -196,10 +196,11 @@ class AccountingDB(DB):
     now = Time.toEpoch()
     recordsPerSlot = self.getCSOption("RecordsPerSlot", 100)
     for typeName in self.dbCatalog:
-      self.log.info("[PENDING] Checking %s" % typeName)
+      self.log.info("[PENDING] Checking", "%s" % typeName)
       pendingInQueue = self.__threadPool.pendingJobs()
       emptySlots = max(0, 3000 - pendingInQueue)
-      self.log.info("[PENDING] %s in the queue, %d empty slots" % (pendingInQueue, emptySlots))
+      self.log.info("[PENDING] jobs in the queue",
+                    "%s (%d empty slots)" % (pendingInQueue, emptySlots))
       if emptySlots < 1:
         continue
       emptySlots = min(100, emptySlots)
@@ -262,7 +263,7 @@ class AccountingDB(DB):
     self.dbCatalog[typeName]['bucketFields'].extend(['entriesInBucket', 'startTime', 'bucketLength'])
     self.dbBucketsLength[typeName] = bucketsLength
     # ADRI: TEST COMPACT BUCKETS
-    #self.dbBucketsLength[ typeName ] = [ ( 31104000, 3600 ) ]
+    # self.dbBucketsLength[ typeName ] = [ ( 31104000, 3600 ) ]
 
   def changeBucketsLength(self, typeName, bucketsLength):
     gSynchro.lock()
