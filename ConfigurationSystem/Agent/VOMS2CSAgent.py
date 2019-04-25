@@ -32,6 +32,7 @@ class VOMS2CSAgent(AgentModule):
     self.autoDeleteUsers = False
     self.detailedReport = True
     self.makeFCEntry = False
+    self.autoLiftSuspendedStatus = False
 
   def initialize(self):
     """ Initialize the default parameters
@@ -73,11 +74,13 @@ class VOMS2CSAgent(AgentModule):
       autoAddUsers = getVOOption(vo, "AutoAddUsers", self.autoAddUsers)
       autoModifyUsers = getVOOption(vo, "AutoModifyUsers", self.autoModifyUsers)
       autoDeleteUsers = getVOOption(vo, "AutoDeleteUsers", self.autoDeleteUsers)
+      autoLiftSuspendedStatus = getVOOption(vo, "autoLiftSuspendedStatus", self.autoLiftSuspendedStatus)
 
       vomsSync = VOMS2CSSynchronizer(vo,
                                      autoAddUsers=autoAddUsers,
                                      autoModifyUsers=autoModifyUsers,
-                                     autoDeleteUsers=autoDeleteUsers)
+                                     autoDeleteUsers=autoDeleteUsers,
+                                     autoLiftSuspendedStatus=autoLiftSuspendedStatus)
 
       result = self.__syncCSWithVOMS(vomsSync,  # pylint: disable=unexpected-keyword-arg
                                      proxyUserName=voAdminUser,
