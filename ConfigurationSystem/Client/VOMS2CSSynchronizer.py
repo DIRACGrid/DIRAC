@@ -275,7 +275,7 @@ class VOMS2CSSynchronizer(object):
       suspendedVOList = getUserOption(diracName, 'Suspended', [])
       userDict = {"DN": dn,
                   "CA": self.vomsUserDict[dn]['CA'],
-                  "Email": self.vomsUserDict[dn]['mail']}
+                  "Email": self.vomsUserDict[dn].get('mail',self.vomsUserDict[dn].get('emailAddress'))}
 
       # Set Suspended status for the user for this particular VO
       if suspendedInVOMS and self.vo not in suspendedVOList:
