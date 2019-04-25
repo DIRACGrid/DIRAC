@@ -110,8 +110,14 @@ class AuthManager(object):
           credDict[self.KW_GROUP] = "visitor"
       else:
         # For users
-        if not self.getUsername(credDict):
+        username = self.getUsername(credDict)
+        suspended = self.isUserSuspended(credDict)
+        if not username:
           self.__authLogger.warn("User is invalid or does not belong to the group it's saying")
+        if suspended:
+          self.__authLogger.warn("User is Suspended")
+
+        if not username or suspended:
           if not allowAll:
             return False
           # If all, then set anon credentials
@@ -253,6 +259,26 @@ class AuthManager(object):
     retVal = CS.getUsernameForDN(credDict[self.KW_DN], usersInGroup)
     if retVal['OK']:
       credDict[self.KW_USERNAME] = retVal['Value']
+      return True
+    return False
+
+  def isUserSuspended(self, credDict):
+    """ Discover if the use is in Suspended status
+
+    :param credDict: Credentials to ckeck
+    :return: Boolean True if user is Suspended
+    """
+    if self.KW_USERNAME not in credDict:
+      self.getUsername(credDict)
+    if self.KW_USERNAME in credDict:
+      username = credDict[self.KW_USERNAME]
+    else:
+      return False
+    if self.KW_GROUP not in credDict:
+      return False
+    vo = CS.getVOForGroup(credDict[self.KW_GROUP])
+    suspendedVOList = CS.getUserOption(username, 'Suspended', [])
+    if vo in suspendedVOList:
       return True
     return False
 
