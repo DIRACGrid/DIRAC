@@ -114,7 +114,8 @@ def _getUserNameFromSurname(name, surname):
 
 class VOMS2CSSynchronizer(object):
 
-  def __init__(self, vo, autoModifyUsers=True, autoAddUsers=True, autoDeleteUsers=False):
+  def __init__(self, vo, autoModifyUsers=True, autoAddUsers=True,
+               autoDeleteUsers=False, autoLiftSuspendedStatus=False):
 
     self.log = gLogger.getSubLogger("VOMS2CSSynchronizer")
     self.csapi = CSAPI()
@@ -127,6 +128,7 @@ class VOMS2CSSynchronizer(object):
     self.autoModifyUsers = autoModifyUsers
     self.autoAddUsers = autoAddUsers
     self.autoDeleteUsers = autoDeleteUsers
+    self.autoLiftSuspendedStatus = autoLiftSuspendedStatus
     self.voChanged = False
 
   def syncCSWithVOMS(self):
@@ -284,7 +286,7 @@ class VOMS2CSSynchronizer(object):
         modified = True
 
       # Remove the lifted Suspended status
-      if not suspendedInVOMS and self.vo in suspendedVOList:
+      if not suspendedInVOMS and self.vo in suspendedVOList and self.autoLiftSuspendedStatus:
         newList = []
         for vo in suspendedVOList:
           if vo != self.vo:
