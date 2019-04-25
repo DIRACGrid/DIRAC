@@ -974,6 +974,7 @@ class SiteDirector(AgentModule):
         else:
           maxWaitingJobs = int(self.queueDict[queue]['ParametersDict'].get('MaxWaitingJobs', 10))
           maxTotalJobs = int(self.queueDict[queue]['ParametersDict'].get('MaxTotalJobs', 10))
+          waitingToRunningRatio = float(self.queueDict[queue]['ParametersDict'].get('WaitingToRunningRatio', 0.0))
           waitingJobs = 0
           totalJobs = 0
           if jobIDList:
@@ -990,6 +991,8 @@ class SiteDirector(AgentModule):
               runningJobs = totalJobs - waitingJobs
               self.log.info("PilotAgentsDB report(%s_%s): Wait=%d, Run=%d, Max=%d" %
                             (ceName, queueName, waitingJobs, runningJobs, maxTotalJobs))
+              maxWaitingJobs = int(max(maxWaitingJobs, runningJobs * waitingToRunningRatio))
+
           totalSlots = min((maxTotalJobs - totalJobs), (maxWaitingJobs - waitingJobs))
           self.queueSlots[queue]['AvailableSlots'] = max(totalSlots, 0)
 
