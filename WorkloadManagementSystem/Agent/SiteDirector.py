@@ -478,7 +478,7 @@ class SiteDirector(AgentModule):
     # From here on we assume we are going to (try to) submit some pilots
     self.log.debug("Going to try to submit some pilots")
 
-    self.log.verbose("Queues treated: %s" % ','.join(self.queueDict))
+    self.log.verbose("Queues treated", "%s" % ','.join(self.queueDict))
 
     self.totalSubmittedPilots = 0
 
@@ -487,7 +487,7 @@ class SiteDirector(AgentModule):
 
     for queueName, queueDictionary in queueDictItems:
       # now submitting to the single queues
-      self.log.verbose("Evaluating queue %s" % queueName)
+      self.log.verbose("Evaluating queue", "%s" % queueName)
 
       # are we going to submit pilots to this specific queue?
       if not self._allowedToSubmit(queueName, anySite, jobSites, testSites):
@@ -496,7 +496,8 @@ class SiteDirector(AgentModule):
       if 'CPUTime' in queueDictionary['ParametersDict']:
         queueCPUTime = int(queueDictionary['ParametersDict']['CPUTime'])
       else:
-        self.log.warn('CPU time limit is not specified for queue %s, skipping...' % queueName)
+        self.log.warn('CPU time limit is not specified, skipping',
+                      'queue %s' % queueName)
         continue
       if queueCPUTime > self.maxQueueLength:
         queueCPUTime = self.maxQueueLength
@@ -505,9 +506,9 @@ class SiteDirector(AgentModule):
 
       # additionalInfo is normally taskQueueDict
       pilotsWeMayWantToSubmit, additionalInfo = self._getPilotsWeMayWantToSubmit(ceDict)
-      self.log.verbose('%d pilotsWeMayWantToSubmit are eligible for %s queue' % (pilotsWeMayWantToSubmit, queueName))
+      self.log.debug('%d pilotsWeMayWantToSubmit are eligible for %s queue' % (pilotsWeMayWantToSubmit, queueName))
       if not pilotsWeMayWantToSubmit:
-        self.log.verbose('...so skipping %s' % queueName)
+        self.log.debug('...so skipping %s' % queueName)
         continue
 
       # Get the number of already waiting pilots for the queue
@@ -523,15 +524,15 @@ class SiteDirector(AgentModule):
           totalWaitingPilots = 0
         else:
           totalWaitingPilots = result['Value']
-          self.log.verbose('Waiting Pilots: %s' % totalWaitingPilots)
+          self.log.debug('Waiting Pilots: %s' % totalWaitingPilots)
       if totalWaitingPilots >= pilotsWeMayWantToSubmit:
-        self.log.verbose("%d pilots already waiting: possibly enough" % totalWaitingPilots)
+        self.log.verbose("Possibly enough pilots already waiting", '(%d)' % totalWaitingPilots)
         manyWaitingPilotsFlag = True
         if not self.addPilotsToEmptySites:
           continue
 
-      self.log.verbose("%d waiting pilots for the total of %d eligible pilots for %s" %
-                       (totalWaitingPilots, pilotsWeMayWantToSubmit, queueName))
+      self.log.debug("%d waiting pilots for the total of %d eligible pilots for %s" %
+                     (totalWaitingPilots, pilotsWeMayWantToSubmit, queueName))
 
       # Get the number of available slots on the target site/queue
       totalSlots = self.getQueueSlots(queueName, manyWaitingPilotsFlag)
@@ -552,7 +553,8 @@ class SiteDirector(AgentModule):
 
       # Get the working proxy
       cpuTime = queueCPUTime + 86400
-      self.log.verbose("Getting pilot proxy for %s/%s %d long" % (self.pilotDN, self.pilotGroup, cpuTime))
+      self.log.verbose("Getting pilot proxy",
+                       "for %s/%s %d long" % (self.pilotDN, self.pilotGroup, cpuTime))
       result = gProxyManager.getPilotProxyFromDIRACGroup(self.pilotDN, self.pilotGroup, cpuTime)
       if not result['OK']:
         return result
@@ -578,7 +580,7 @@ class SiteDirector(AgentModule):
         # updating the pilotAgentsDB... done by default but maybe not strictly necessary
         res = self._addPilotTQReference(queueName, additionalInfo, pilotList, stampDict)
 
-    self.log.info("%d pilots submitted in total in this cycle" % self.totalSubmittedPilots)
+    self.log.info("Total number of pilots submitted in this cycle", '%d' % self.totalSubmittedPilots)
 
     return S_OK()
 
@@ -648,8 +650,8 @@ class SiteDirector(AgentModule):
     if not result['OK']:
       self.log.error("Can't count pilots", result['Message'])
     else:
-      self.log.info('Total %d jobs in %d task queues with %d waiting pilots'
-                    % (totalWaitingJobs, len(tqIDList), result['Value']))
+      self.log.info("Total jobs : number of task queues : numeber of waiting pilots",
+                    "%d : %d : %d" % (totalWaitingJobs, len(tqIDList), result['Value']))
 
   def _getTQDictForMatching(self):
     """ Just construct a dictionary (tqDict)
@@ -694,8 +696,8 @@ class SiteDirector(AgentModule):
     """
     result = self.resourcesModule.getCompatiblePlatforms(self.platforms)
     if not result['OK']:
-      self.log.error("Issue getting platforms compatible with %s, will skip check of platforms" % self.platforms,
-                     result['Message'])
+      self.log.error("Issue getting compatible platforms, will skip check of platforms",
+                     self.platforms + " : " + result['Message'])
     return result['Value']
 
   def _allowedToSubmit(self, queue, anySite, jobSites, testSites):
@@ -716,30 +718,32 @@ class SiteDirector(AgentModule):
     # Check if the queue failed previously
     failedCount = self.failedQueues[queue] % self.failedQueueCycleFactor
     if failedCount != 0:
-      self.log.warn("%s queue failed recently, skipping %d cycles" % (queue, 10 - failedCount))
+      self.log.warn("queue failed recently ==> number of cycles skipped",
+                    "%s ==> %d" % (queue, 10 - failedCount))
       self.failedQueues[queue] += 1
       return False
 
     # Check the status of the site
     if self.queueDict[queue]['Site'] not in self.siteMaskList\
             and self.queueDict[queue]['Site'] not in testSites:
-      self.log.verbose(
-          "Skipping queue %s: site %s not in the mask" % (self.queueDict[queue]['QueueName'],
-                                                          self.queueDict[queue]['Site']))
+      self.log.verbose("Queue skipped (site not in mask)",
+                       "%s (%s)" % (self.queueDict[queue]['QueueName'],
+                                    self.queueDict[queue]['Site']))
       return False
 
     # Check that there are task queues waiting for this site
     if not anySite and self.queueDict[queue]['Site'] not in jobSites:
-      self.log.verbose(
-          "Skipping queue %s at %s: no workload expected" % (self.queueDict[queue]['QueueName'],
-                                                             self.queueDict[queue]['Site']))
+      self.log.verbose("Queue skipped: no workload expected",
+                       "%s at %s" % (self.queueDict[queue]['QueueName'],
+                                     self.queueDict[queue]['Site']))
       return False
 
     # Check the status of the CE (only for RSS=Active)
     if self.rssFlag:
       if self.queueDict[queue]['CEName'] not in self.ceMaskList:
-        self.log.verbose("Skipping computing element %s at %s: resource not usable" % (self.queueDict[queue]['CEName'],
-                                                                                       self.queueDict[queue]['Site']))
+        self.log.verbose("Skipping computing element: resource not usable",
+                         "%s at %s" % (self.queueDict[queue]['CEName'],
+                                       self.queueDict[queue]['Site']))
         return False
 
     # if we are here, it means that we are allowed to submit to the queue
@@ -771,8 +775,8 @@ class SiteDirector(AgentModule):
     if self.checkPlatform:
       result = self.resourcesModule.getCompatiblePlatforms(self.queueDict[queue]['Platform'])
       if not result['OK']:
-        self.log.error("Issue getting platforms compatible with %s, returning 'ANY'" % self.platforms,
-                       result['Message'])
+        self.log.error("Issue getting compatible platforms, returning 'ANY'",
+                       "%s: %s" % (self.platforms, result['Message']))
         ceDict['Platform'] = 'ANY'
       ceDict['Platform'] = result['Value']
 
@@ -799,7 +803,8 @@ class SiteDirector(AgentModule):
       return result
     taskQueueDict = result['Value']
     if not taskQueueDict:
-      self.log.verbose('No matching TQs found for %s' % ceDict)
+      self.log.verbose('No matching TQs found',
+                       'for %s' % ceDict)
 
     for tq in taskQueueDict.itervalues():
       pilotsWeMayWantToSubmit += tq['Jobs']
@@ -824,7 +829,8 @@ class SiteDirector(AgentModule):
                   stampDict is a dict of timestamps of pilots submission
        :rtype: dict
     """
-    self.log.info('Going to submit a maximum of %d pilots to %s queue' % (pilotsToSubmit, queue))
+    self.log.info('Going to submit pilots',
+                  "(a maximum of %d pilots to %s queue)" % (pilotsToSubmit, queue))
 
     bundleProxy = self.queueDict[queue].get('BundleProxy', False)
     jobExecDir = self.queueDict[queue]['ParametersDict'].get('JobExecDir', '')
@@ -901,7 +907,7 @@ class SiteDirector(AgentModule):
                                                  gridType=self.queueDict[queue]['CEType'],
                                                  pilotStampDict=stampDict)
       if not result['OK']:
-        self.log.error('Failed add pilots to the PilotAgentsDB: ', result['Message'])
+        self.log.error('Failed add pilots to the PilotAgentsDB', result['Message'])
         continue
       for pilot in pilotsList:
         result = pilotAgentsDB.setPilotStatus(pilotRef=pilot,
@@ -911,7 +917,7 @@ class SiteDirector(AgentModule):
                                               gridSite=self.queueDict[queue]['Site'],
                                               queue=self.queueDict[queue]['QueueName'])
         if not result['OK']:
-          self.log.error('Failed to set pilot status: ', result['Message'])
+          self.log.error('Failed to set pilot status', result['Message'])
           continue
 
   def getQueueSlots(self, queue, manyWaitingPilotsFlag):
@@ -953,11 +959,13 @@ class SiteDirector(AgentModule):
         if queryCEFlag:
           result = ce.available(jobIDList)
           if not result['OK']:
-            self.log.warn('Failed to check the availability of queue %s: \n%s' % (queue, result['Message']))
+            self.log.warn('Failed to check the availability of queue',
+                          '%s: \n%s' % (queue, result['Message']))
             self.failedQueues[queue] += 1
           else:
             ceInfoDict = result['CEInfoDict']
-            self.log.info("CE queue report(%s_%s): Wait=%d, Run=%d, Submitted=%d, Max=%d" %
+            self.log.info("CE queue report",
+                          "(%s_%s): Wait=%d, Run=%d, Submitted=%d, Max=%d" %
                           (ceName, queueName, ceInfoDict['WaitingJobs'], ceInfoDict['RunningJobs'],
                            ceInfoDict['SubmittedJobs'], ceInfoDict['MaxTotalJobs']))
             totalSlots = result['Value']
@@ -971,7 +979,8 @@ class SiteDirector(AgentModule):
           if jobIDList:
             result = pilotAgentsDB.getPilotInfo(jobIDList)
             if not result['OK']:
-              self.log.warn('Failed to check PilotAgentsDB for queue %s: \n%s' % (queue, result['Message']))
+              self.log.warn("Failed to check PilotAgentsDB",
+                            "for queue %s: \n%s" % (queue, result['Message']))
               self.failedQueues[queue] += 1
             else:
               for _pilotRef, pilotDict in result['Value'].iteritems():
@@ -980,7 +989,8 @@ class SiteDirector(AgentModule):
                   if pilotDict["Status"] in WAITING_PILOT_STATUS:
                     waitingJobs += 1
               runningJobs = totalJobs - waitingJobs
-              self.log.info("PilotAgentsDB report(%s_%s): Wait=%d, Run=%d, Max=%d" %
+              self.log.info("PilotAgentsDB report",
+                            "(%s_%s): Wait=%d, Run=%d, Max=%d" %
                             (ceName, queueName, waitingJobs, runningJobs, maxTotalJobs))
           totalSlots = min((maxTotalJobs - totalJobs), (maxWaitingJobs - waitingJobs))
           self.queueSlots[queue]['AvailableSlots'] = max(totalSlots, 0)
@@ -1077,8 +1087,8 @@ class SiteDirector(AgentModule):
     lcgBundleVersion = opsHelper.getValue("Pilot/LCGBundleVersion", "")
     if lcgBundleVersion:
       self.log.warn(
-          "lcgBundle version %s defined in CS: will overwrite possible per-release lcg bundle versions" %
-          lcgBundleVersion)
+          "lcgBundle defined in CS: will overwrite possible per-release lcg bundle versions",
+          "(version in CS: %s)" % lcgBundleVersion)
       pilotOptions.append('-g %s' % lcgBundleVersion)
 
     ownerDN = self.pilotDN
@@ -1099,7 +1109,8 @@ class SiteDirector(AgentModule):
     # pilots
     newPilotsToSubmit = numberOfUses / min(numberOfUses, self.maxJobsInFillMode)
     if newPilotsToSubmit != pilotsToSubmit:
-      self.log.info('Number of pilots to submit is changed to %d after getting the proxy token' % newPilotsToSubmit)
+      self.log.info("Number of pilots to submit is changed",
+                    "to %d after getting the proxy token" % newPilotsToSubmit)
       pilotsToSubmit = newPilotsToSubmit
     # Debug
     if self.pilotLogLevel.lower() == 'debug':
@@ -1341,7 +1352,8 @@ class SiteDirector(AgentModule):
         newStatus = ceStatus
 
       if newStatus:
-        self.log.info('Updating status to %s for pilot %s' % (newStatus, pRef))
+        self.log.info('Updating status',
+                      'to %s for pilot %s' % (newStatus, pRef))
         result = pilotAgentsDB.setPilotStatus(pRef, newStatus, statusReason='Updated by SiteDirector')
         if not result['OK']:
           self.log.error(result['Message'])
@@ -1365,7 +1377,8 @@ class SiteDirector(AgentModule):
       pRefStamp = pRef + ':::' + pilotStamp
     result = ce.getJobOutput(pRefStamp)
     if not result['OK']:
-      self.log.error('Failed to get pilot output', '%s: %s' % (ceName, result['Message']))
+      self.log.error('Failed to get pilot output',
+                     '%s: %s' % (ceName, result['Message']))
     else:
       output, error = result['Value']
       if output:
@@ -1379,14 +1392,15 @@ class SiteDirector(AgentModule):
     """ Send pilot accounting record
     """
     for pRef in pilotDict:
-      self.log.verbose('Preparing accounting record for pilot %s' % pRef)
+      self.log.verbose('Preparing accounting record',
+                       'for pilot %s' % pRef)
       pA = PilotAccounting()
       pA.setEndTime(pilotDict[pRef]['LastUpdateTime'])
       pA.setStartTime(pilotDict[pRef]['SubmissionTime'])
       retVal = CS.getUsernameForDN(pilotDict[pRef]['OwnerDN'])
       if not retVal['OK']:
         userName = 'unknown'
-        self.log.error("Can't determine username for dn:", pilotDict[pRef]['OwnerDN'])
+        self.log.error("Can't determine username for dn", pilotDict[pRef]['OwnerDN'])
       else:
         userName = retVal['Value']
       pA.setValueByKey('User', userName)
@@ -1404,7 +1418,8 @@ class SiteDirector(AgentModule):
         pA.setValueByKey('Jobs', 0)
       else:
         pA.setValueByKey('Jobs', len(pilotDict[pRef]['Jobs']))
-      self.log.verbose("Adding accounting record for pilot %s" % pilotDict[pRef]['PilotID'])
+      self.log.verbose("Adding accounting record",
+                       "for pilot %s" % pilotDict[pRef]['PilotID'])
       retVal = gDataStoreClient.addRegister(pA)
       if not retVal['OK']:
         self.log.error('Failed to send accounting info for pilot ', pRef)
@@ -1414,11 +1429,13 @@ class SiteDirector(AgentModule):
         if not result['OK']:
           self.log.error('Failed to set accounting flag for pilot ', pRef)
 
-    self.log.info('Committing accounting records for %d pilots' % len(pilotDict))
+    self.log.info('Committing accounting records',
+                  'for %d pilots' % len(pilotDict))
     result = gDataStoreClient.commit()
     if result['OK']:
       for pRef in pilotDict:
-        self.log.verbose('Setting AccountingSent flag for pilot %s' % pRef)
+        self.log.verbose('Setting AccountingSent flag',
+                         'for pilot %s' % pRef)
         result = pilotAgentsDB.setAccountingFlag(pRef)
         if not result['OK']:
           self.log.error('Failed to set accounting flag for pilot ', pRef)
