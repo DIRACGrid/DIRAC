@@ -872,7 +872,7 @@ class ProcessPool(object):
     :param self: self reference
     """
     processed = 0
-    log = LOG.getSubLogger('ProcessPool')
+    log = LOG.getSubLogger('WorkingProcess')
     while True:
       if (
           not log.debug(
@@ -954,7 +954,7 @@ class ProcessPool(object):
     self.__stopEvent.set()
     # # join idle workers
     start = time.time()
-    log = LOG.getSubLogger("ProcessPool/finalize")
+    log = LOG.getSubLogger("finalize")
     nWorkers = 9999999
     while self.__workersDict:
       self.__cleanDeadProcesses()
