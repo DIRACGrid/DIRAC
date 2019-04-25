@@ -3,7 +3,7 @@
 Deploy all scripts and extensions
 Options:
  * --symlink: this will create symlinks instead of wrappers
- * <python path>: you can specify the folder where your pythin installation should be fetched from
+ * <python path>: you can specify the folder where your python installation should be fetched from
                   to replace the shebang
 """
 __RCSID__ = "$Id$"
