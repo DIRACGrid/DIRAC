@@ -4,7 +4,7 @@
 Building the Documentation
 ==========================
 
-The DIRAC documentation is crated using ``sphinx`` and makes use of the
+The DIRAC documentation is created using ``sphinx`` and makes use of the
 ``diracdoctools`` to create the code documentation, command references, and
 concatenate the ``ConfigTemplates`` into one file. The ``diracdoctools`` are
 located in the ``DIRAC/docs`` folder, but they can be ``pip installed`` for use

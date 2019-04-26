@@ -28,7 +28,7 @@ ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) sou
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
 	@echo "  html      to make standalone HTML files"
-	@echo "  allhtml   to make standalone HTML files"
+	@echo "  htmlall   to make standalone HTML files, including auto generating various source files"
 	@echo "  dirhtml   to make HTML files named index.html in directories"
 	@echo "  pickle    to make pickle files"
 	@echo "  json      to make JSON files"
@@ -48,7 +48,7 @@ html:
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
 
 # AUTO MAKE START
-allhtml:
+htmlall:
 	diracdoctools/scripts/dirac-docs-build-commands.py
 	diracdoctools/scripts/dirac-docs-build-code.py
 	diracdoctools/scripts/dirac-docs-concatenate-diraccfg.py
