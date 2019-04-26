@@ -11,6 +11,6 @@ suds
 pytz
 psutil
 pyparsing
-M2Crypto
+M2Crypto==0.32
 pyasn1>0.4.1
 pyasn1_modules
