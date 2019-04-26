@@ -242,7 +242,7 @@ class AuthManager(object):
     The username will be included in the credentials dictionary.
 
     :type  credDict: dictionary
-    :param credDict: Credentials to ckeck
+    :param credDict: Credentials to check
     :return: Boolean specifying whether the username was found
     """
     if self.KW_DN not in credDict:
@@ -265,19 +265,18 @@ class AuthManager(object):
   def isUserSuspended(self, credDict):
     """ Discover if the use is in Suspended status
 
-    :param credDict: Credentials to ckeck
+    :param dict credDict: Credentials to check
     :return: Boolean True if user is Suspended
     """
     if self.KW_USERNAME not in credDict:
       self.getUsername(credDict)
-    if self.KW_USERNAME in credDict:
-      username = credDict[self.KW_USERNAME]
-    else:
+    if self.KW_USERNAME not in credDict or self.KW_GROUP not in credDict:
       return False
-    if self.KW_GROUP not in credDict:
+    suspendedVOList = CS.getUserOption(credDict[self.KW_USERNAME], 'Suspended', [])
+    if not suspendedVOList:
       return False
     vo = CS.getVOForGroup(credDict[self.KW_GROUP])
-    suspendedVOList = CS.getUserOption(username, 'Suspended', [])
+    suspendedVOList = CS.getUserOption(credDict[self.KW_USERNAME], 'Suspended', [])
     if vo in suspendedVOList:
       return True
     return False
