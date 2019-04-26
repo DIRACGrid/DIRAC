@@ -74,7 +74,7 @@ class VOMS2CSAgent(AgentModule):
       autoAddUsers = getVOOption(vo, "AutoAddUsers", self.autoAddUsers)
       autoModifyUsers = getVOOption(vo, "AutoModifyUsers", self.autoModifyUsers)
       autoDeleteUsers = getVOOption(vo, "AutoDeleteUsers", self.autoDeleteUsers)
-      autoLiftSuspendedStatus = getVOOption(vo, "autoLiftSuspendedStatus", self.autoLiftSuspendedStatus)
+      autoLiftSuspendedStatus = getVOOption(vo, "AutoLiftSuspendedStatus", self.autoLiftSuspendedStatus)
 
       vomsSync = VOMS2CSSynchronizer(vo,
                                      autoAddUsers=autoAddUsers,
