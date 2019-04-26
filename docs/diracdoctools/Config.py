@@ -21,7 +21,7 @@ def listify(values):
 
 
 class Configuration(object):
-  """Provide configuraiton to the scripts."""
+  """Provide configuration to the scripts."""
 
   def __init__(self, confFile, sections=None):
     if sections is None:

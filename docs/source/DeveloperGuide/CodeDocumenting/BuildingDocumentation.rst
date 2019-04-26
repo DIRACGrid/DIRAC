@@ -46,7 +46,7 @@ files.
    :caption: docs/source/conf.py
 
 
-The configuration for ``diracdoctools`` for is done via a configuration file
+The configuration for ``diracdoctools`` is done via a configuration file
 located in the docs folder. Just copy the file ``DIRAC/docs/docs.conf``  and
 adapt it to your needs. All options are mandatory unless otherwise stated.  If
 certain features are not used, simply leave the values empty
