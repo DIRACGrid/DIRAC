@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env python
 """Script to obtain release notes from PRs for DIRAC or other packages
 
 Use the command line parameters or a config file to configure the options.

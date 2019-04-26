@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env python
 """script to concatenate the dirac.cfg file's Systems sections with the content of the ConfigTemplate.cfg files."""
 
 from collections import OrderedDict

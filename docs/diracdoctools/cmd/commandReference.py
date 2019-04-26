@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """Module to create command references for DIRAC."""
 import ast
 import logging

@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env python
 """ create rst files for documentation of DIRAC """
 import os
 import shutil
