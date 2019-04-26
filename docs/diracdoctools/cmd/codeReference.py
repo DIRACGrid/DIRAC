@@ -24,19 +24,27 @@ class CLParser(clparser):
   def __init__(self):
     super(CLParser, self).__init__()
     self.log = LOG.getChild('CLParser')
+    self.clean = False
+
     self.parser.add_argument('--buildType', action='store', default='full',
                              choices=['full', 'limited'],
                              help='Build full or limited code reference',
+                             )
+
+    self.parser.add_argument('--clean', action='store_true',
+                             help='Remove rst files and exit',
                              )
 
   def parse(self):
     super(CLParser, self).parse()
     self.log.info('Parsing options')
     self.buildType = self.parsed.buildType
+    self.clean = self.parsed.clean
 
   def optionDict(self):
     oDict = super(CLParser, self).optionDict()
     oDict['buildType'] = self.buildType
+    oDict['clean'] = self.clean
     return oDict
 
 
@@ -184,6 +192,12 @@ class CodeReference(object):
 
     return packages
 
+  def cleanDoc(self):
+    """Remove the code output folder."""
+    LOG.info('Removing existing code documentation: %r', self.config.code_targetPath)
+    if os.path.exists(self.config.code_targetPath):
+      shutil.rmtree(self.config.code_targetPath)
+
   def createDoc(self, buildtype="full"):
     """create the rst files for all the things we want them for"""
     LOG.info('self.config.sourcePath: %s', self.config.sourcePath)
@@ -192,8 +206,7 @@ class CodeReference(object):
 
     # we need to replace existing rst files so we can decide how much code-doc to create
     if os.path.exists(self.config.code_targetPath) and os.environ.get('READTHEDOCS', 'False') == 'True':
-      LOG.info('Removing existing code documentation')
-      shutil.rmtree(self.config.code_targetPath)
+      self.cleanDoc()
     mkdir(self.config.code_targetPath)
     os.chdir(self.config.code_targetPath)
 
@@ -342,21 +355,25 @@ class CodeReference(object):
     return self.createDoc(buildType)
 
 
-def run(configFile='docs.conf', logLevel=logging.INFO, debug=False, buildType='full'):
+def run(configFile='docs.conf', logLevel=logging.INFO, debug=False, buildType='full', clean=False):
   """Create the code reference.
 
   :param str configFile: path to the configFile
   :param logLevel: logging level to use
   :param bool debug: if true even more debug information is printed
   :param str buildType: 'full' or 'limited', use limited only when memory is limited
+  :param bool clean: Remove rst files and exit
   :returns: return value 1 or 0
   """
   logging.getLogger().setLevel(logLevel)
   code = CodeReference(configFile=configFile)
+  if clean:
+    code.cleanDoc()
+    return 0
   retVal = code.checkBuildTypeAndRun(buildType=buildType)
   code.end()
   return retVal
 
 
 if __name__ == '__main__':
-  sys.exit(run(sys.argv))
+  sys.exit(run(**(CLParser().optionDict())))

@@ -1,4 +1,4 @@
-#!/bin/env python
+#!/usr/bin/env python
 """Create rst files for documentation of DIRAC source code."""
 import sys
 
