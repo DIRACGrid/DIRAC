@@ -57,7 +57,7 @@ In order to be used as a FileCatalog by clients, the DFC needs to be declared. T
 
 Since we have only one catalog, we will use it as ``Read-Write`` and as ``Master``.
 
-Using the WebApp, add the following in ``/Resources/FileCatalogs/`` (all options to defaults)::
+Using the WebApp (group ``dirac_admin``), add the following in ``/Resources/FileCatalogs/`` (all options to defaults)::
 
     FileCatalog
     {

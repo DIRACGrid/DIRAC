@@ -16,6 +16,13 @@ Tutorial goal
 The aim of the tutorial is to do a step by step guide to install a DIRAC StorageElement. By the end of the tutorial, you will be able to have a fully functional storage element that can be addressed like any other storage.
 
 
+More links
+==========
+
+* :ref:`resourcesStorageElement`
+* StorageElement service documentation: :py:mod:`DIRAC.DataManagementSystem.Service.StorageElementHandler`
+
+
 Machine setup
 =============
 

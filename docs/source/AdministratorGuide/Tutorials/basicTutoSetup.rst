@@ -18,6 +18,11 @@ By the end of the tutorial, you will have:
 The setup you will have at the end is the base for all the other tutorials.
 
 
+More links
+==========
+
+* :ref:`server_installation`
+
 Basic requirements
 ==================
 
@@ -146,7 +151,7 @@ The user that will run the server will be ``dirac``. You can set a password for 
   passwd dirac
 
 
-All files bellow ``/opt/dirac/`` should belong to this user::
+All files below ``/opt/dirac/`` should belong to this user::
 
   chown -R dirac:dirac /opt/dirac/
 
@@ -297,7 +302,7 @@ At this point, you should find:
 Install DIRAC Server
 --------------------
 
-This section is to be run as dirac user.
+This section is to be run as ``dirac`` user.
 
 We will install DIRAC v6r21 with DIRACOS.
 

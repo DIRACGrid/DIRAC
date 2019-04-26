@@ -5,9 +5,6 @@ Doing large scale DataManagement with the Transformation System
 Pre-requisite
 =============
 
-Pre-requisite
-=============
-
 You should:
 
 * have a machine setup as described in :ref:`tuto_basic_setup`
