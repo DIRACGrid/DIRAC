@@ -1,11 +1,14 @@
 """Configuration for the documentation scripts."""
 
 import argparse
-from collections import defaultdict
 import logging
 import os
 from pprint import pformat
-import ConfigParser
+
+try:
+  from configparser import ConfigParser  # python3
+except ImportError:
+  from ConfigParser import SafeConfigParser as ConfigParser  # python2
 
 
 LOG = logging.getLogger(__name__)
@@ -27,7 +30,7 @@ class Configuration(object):
     if sections is None:
       sections = [K_CODE, K_COMMANDS, K_CFG]
     LOG.info('Reading configFile %r', os.path.join(os.getcwd(), confFile))
-    config = ConfigParser.SafeConfigParser(dict_type=dict)
+    config = ConfigParser(dict_type=dict)
     config.read(confFile)
     # config.optionxform = str  # do not transform options to lowercase
     self.docsPath = os.path.dirname(os.path.abspath(confFile))

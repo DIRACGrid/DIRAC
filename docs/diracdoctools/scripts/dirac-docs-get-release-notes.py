@@ -30,8 +30,13 @@ import argparse
 from pprint import pformat
 import logging
 import textwrap
-import ConfigParser
 import requests
+
+try:
+  from configparser import ConfigParser  # python3
+except ImportError:
+  from ConfigParser import SafeConfigParser as ConfigParser  # python2
+
 
 G_ERROR = textwrap.dedent("""
                           ***********************
@@ -203,7 +208,7 @@ class GithubInterface(object):
     defaults = {}
     if args.configFile:
       log.debug('Parsing configFile: %r', args.configFile)
-      config = ConfigParser.SafeConfigParser()
+      config = ConfigParser()
       config.optionxform = str
       config.read([args.configFile])
       defaults.update(dict(config.items('ReleaseNotes')))
