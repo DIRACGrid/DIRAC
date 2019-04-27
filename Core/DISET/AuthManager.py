@@ -262,7 +262,7 @@ class AuthManager(object):
     return False
 
   def isUserSuspended(self, credDict):
-    """ Discover if the use is in Suspended status
+    """ Discover if the user is in Suspended status
 
     :param dict credDict: Credentials to check
     :return: Boolean True if user is Suspended
