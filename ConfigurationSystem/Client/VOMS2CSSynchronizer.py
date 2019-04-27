@@ -116,6 +116,16 @@ class VOMS2CSSynchronizer(object):
 
   def __init__(self, vo, autoModifyUsers=True, autoAddUsers=True,
                autoDeleteUsers=False, autoLiftSuspendedStatus=False):
+    """ VOMS2CSSynchronizer class constructor
+
+    :param str vo: VO to be synced
+    :param boolean autoModifyUsers: flag to automatically modify user data in CS
+    :param autoAddUsers: flag to automatically add new users to CS
+    :param autoDeleteUsers: flag to automatically delete users from CS if no more in VOMS
+    :param autoLiftSuspendedStatus: flag to automatically remove Suspended status in CS
+    :return: None
+    """
+
 
     self.log = gLogger.getSubLogger("VOMS2CSSynchronizer")
     self.csapi = CSAPI()
