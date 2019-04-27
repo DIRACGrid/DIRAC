@@ -38,6 +38,21 @@ Systems
 testRegistryCFG = """
 Registry
 {
+  VO
+  {
+    testVO
+    {
+      VOAdmin = userA
+    }
+    testVOBad
+    {
+      VOAdmin = userB
+    }
+    testVOOther
+    {
+      VOAdmin = userA
+    }
+  }
   Users
   {
     userA
