@@ -2,9 +2,8 @@
 """
 
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupsForVO
+import DIRAC.ConfigurationSystem.Client.Helpers.Registry as Registry
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
-from DIRAC.Core.Security import CS
 from DIRAC.Core.Security import Properties
 from DIRAC.Core.Utilities import List
 
@@ -95,7 +94,7 @@ class AuthManager(object):
     # Get the username
     if self.KW_DN in credDict and credDict[self.KW_DN]:
       if self.KW_GROUP not in credDict:
-        result = CS.findDefaultGroupForDN(credDict[self.KW_DN])
+        result = Registry.findDefaultGroupForDN(credDict[self.KW_DN])
         if not result['OK']:
           return False
         credDict[self.KW_GROUP] = result['Value']
@@ -153,12 +152,12 @@ class AuthManager(object):
       return True
     if self.KW_GROUP not in credDict:
       return False
-    retVal = CS.getHostnameForDN(credDict[self.KW_DN])
+    retVal = Registry.getHostnameForDN(credDict[self.KW_DN])
     if not retVal['OK']:
       gLogger.warn("Cannot find hostname for DN %s: %s" % (credDict[self.KW_DN], retVal['Message']))
       return False
     credDict[self.KW_USERNAME] = retVal['Value']
-    credDict[self.KW_PROPERTIES] = CS.getPropertiesForHost(credDict[self.KW_USERNAME], [])
+    credDict[self.KW_PROPERTIES] = Registry.getPropertiesForHost(credDict[self.KW_USERNAME], [])
     return True
 
   def getValidPropertiesForMethod(self, method, defaultProperties=False):
@@ -201,7 +200,7 @@ class AuthManager(object):
       elif prop.startswith('vo:'):
         rawProperties.remove(prop)
         vo = prop.replace('vo:', '')
-        result = getGroupsForVO(vo)
+        result = Registry.getGroupsForVO(vo)
         if result['OK']:
           validGroups.extend(result['Value'])
 
@@ -218,10 +217,10 @@ class AuthManager(object):
     """
     if self.KW_EXTRA_CREDENTIALS in credDict and isinstance(credDict[self.KW_EXTRA_CREDENTIALS], tuple):
       if self.KW_DN in credDict:
-        retVal = CS.getHostnameForDN(credDict[self.KW_DN])
+        retVal = Registry.getHostnameForDN(credDict[self.KW_DN])
         if retVal['OK']:
           hostname = retVal['Value']
-          if Properties.TRUSTED_HOST in CS.getPropertiesForHost(hostname, []):
+          if Properties.TRUSTED_HOST in Registry.getPropertiesForHost(hostname, []):
             return True
     return False
 
@@ -248,15 +247,15 @@ class AuthManager(object):
     if self.KW_DN not in credDict:
       return True
     if self.KW_GROUP not in credDict:
-      result = CS.findDefaultGroupForDN(credDict[self.KW_DN])
+      result = Registry.findDefaultGroupForDN(credDict[self.KW_DN])
       if not result['OK']:
         return False
       credDict[self.KW_GROUP] = result['Value']
-    credDict[self.KW_PROPERTIES] = CS.getPropertiesForGroup(credDict[self.KW_GROUP], [])
-    usersInGroup = CS.getUsersInGroup(credDict[self.KW_GROUP], [])
+    credDict[self.KW_PROPERTIES] = Registry.getPropertiesForGroup(credDict[self.KW_GROUP], [])
+    usersInGroup = Registry.getUsersInGroup(credDict[self.KW_GROUP], [])
     if not usersInGroup:
       return False
-    retVal = CS.getUsernameForDN(credDict[self.KW_DN], usersInGroup)
+    retVal = Registry.getUsernameForDN(credDict[self.KW_DN], usersInGroup)
     if retVal['OK']:
       credDict[self.KW_USERNAME] = retVal['Value']
       return True
@@ -272,11 +271,10 @@ class AuthManager(object):
       self.getUsername(credDict)
     if self.KW_USERNAME not in credDict or self.KW_GROUP not in credDict:
       return False
-    suspendedVOList = CS.getUserOption(credDict[self.KW_USERNAME], 'Suspended', [])
+    suspendedVOList = Registry.getUserOption(credDict[self.KW_USERNAME], 'Suspended', [])
     if not suspendedVOList:
       return False
-    vo = CS.getVOForGroup(credDict[self.KW_GROUP])
-    suspendedVOList = CS.getUserOption(credDict[self.KW_USERNAME], 'Suspended', [])
+    vo = Registry.getVOForGroup(credDict[self.KW_GROUP])
     if vo in suspendedVOList:
       return True
     return False
