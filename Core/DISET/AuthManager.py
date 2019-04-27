@@ -269,6 +269,9 @@ class AuthManager(object):
     """
     if self.KW_USERNAME not in credDict:
       self.getUsername(credDict)
+
+    # If username or group is not known we can not judge if the user is suspended
+    # These cases are treated elsewhere anyway
     if self.KW_USERNAME not in credDict or self.KW_GROUP not in credDict:
       return False
     suspendedVOList = Registry.getUserOption(credDict[self.KW_USERNAME], 'Suspended', [])
