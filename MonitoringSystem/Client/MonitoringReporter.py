@@ -47,6 +47,10 @@ class MonitoringReporter(object):
     self.__failoverQueueName = failoverQueueName
     self.__defaultMQProducer = None
 
+  def __del__(self):
+    if self.__defaultMQProducer is not None:
+      self.__defaultMQProducer.close()
+
   def processRecords(self):
     """
     It consumes all messaged from the MQ (these are failover messages). In case of failure, the messages
