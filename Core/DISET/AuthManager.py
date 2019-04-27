@@ -267,9 +267,9 @@ class AuthManager(object):
     :param dict credDict: Credentials to check
     :return: Boolean True if user is Suspended
     """
+    # Update credDict if the username is not there
     if self.KW_USERNAME not in credDict:
       self.getUsername(credDict)
-
     # If username or group is not known we can not judge if the user is suspended
     # These cases are treated elsewhere anyway
     if self.KW_USERNAME not in credDict or self.KW_GROUP not in credDict:
