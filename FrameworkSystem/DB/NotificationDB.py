@@ -9,7 +9,7 @@ from DIRAC  import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.Mail import Mail
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities import DEncode
-from DIRAC.Core.Security import CS
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
 class NotificationDB( DB ):
 
@@ -281,7 +281,7 @@ class NotificationDB( DB ):
       return S_OK( "Requirement needs at least one of %s" % " ".join( self.__updateAlarmAtLeastOneField ) )
     author = updateReq[ 'author' ]
     followers = [ author ]
-    if author not in CS.getAllUsers():
+    if author not in Registry.getAllUsers():
       return S_ERROR( "%s is not a known user" % author )
     result = self._escapeString( author )
     if not result[ 'OK' ]:
@@ -531,7 +531,7 @@ class NotificationDB( DB ):
 
   def modifyFollowerForAlarm( self, alarmId, user, notificationsDict, overwrite = True ):
     rawUser = user
-    if rawUser not in CS.getAllUsers():
+    if rawUser not in Registry.getAllUsers():
       return S_OK()
     result = self._escapeString( user )
     if not result[ 'OK' ]:
@@ -599,7 +599,7 @@ class NotificationDB( DB ):
 
   def getUserAsignees( self, assignee ):
     #Check if it is a user
-    if assignee in CS.getAllUsers():
+    if assignee in Registry.getAllUsers():
       return S_OK( [ assignee ] )
     result = self._escapeString( assignee )
     if not result[ 'OK' ]:
@@ -615,7 +615,7 @@ class NotificationDB( DB ):
     return S_OK( users )
 
   def setAssigneeGroup( self, groupName, usersList ):
-    validUsers = CS.getAllUsers()
+    validUsers = Registry.getAllUsers()
     result = self._escapeString( groupName )
     if not result[ 'OK' ]:
       return result
@@ -689,7 +689,7 @@ class NotificationDB( DB ):
     return S_OK( agDict )
 
   def getAssigneeGroupsForUser( self, user ):
-    if user not in CS.getAllUsers():
+    if user not in Registry.getAllUsers():
       return S_ERROR( "%s is an unknown user" % user )
     result = self._escapeString( user )
     if not result[ 'OK' ]:
@@ -705,7 +705,7 @@ class NotificationDB( DB ):
 ###
 
   def addNotificationForUser( self, user, message, lifetime = 0, deferToMail = 1 ):
-    if user not in CS.getAllUsers():
+    if user not in Registry.getAllUsers():
       return S_ERROR( "%s is an unknown user" % user )
     self.log.info( "Adding a notification for user %s (msg is %s chars)" % ( user, len( message ) ) )
     result = self._escapeString( user )
@@ -732,7 +732,7 @@ class NotificationDB( DB ):
     return S_OK( result[ 'lastRowId' ] )
 
   def removeNotificationsForUser( self, user, msgIds = False ):
-    if user not in CS.getAllUsers():
+    if user not in Registry.getAllUsers():
       return S_ERROR( "%s is an unknown user" % user )
     result = self._escapeString( user )
     if not result[ 'OK' ]:
@@ -750,7 +750,7 @@ class NotificationDB( DB ):
     return self._update( delSQL )
 
   def markNotificationsSeen( self, user, seen = True, msgIds = False ):
-    if user not in CS.getAllUsers():
+    if user not in Registry.getAllUsers():
       return S_ERROR( "%s is an unknown user" % user )
     result = self._escapeString( user )
     if not result[ 'OK' ]:

@@ -9,7 +9,7 @@ __RCSID__ = "$Id$"
 import stat
 
 from DIRAC import gConfig
-from DIRAC.Core.Security import CS
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
 class DirectoryListing( object ):
 
@@ -28,7 +28,7 @@ class DirectoryListing( object ):
     if fileDict.has_key('Owner'):
       uname = fileDict['Owner']
     elif fileDict.has_key('OwnerDN'):
-      result = CS.getUsernameForDN(fileDict['OwnerDN'])
+      result = Registry.getUsernameForDN(fileDict['OwnerDN'])
       if result['OK']:
         uname = result['Value']
       else:
@@ -40,7 +40,7 @@ class DirectoryListing( object ):
     if fileDict.has_key('OwnerGroup'):
       gname = fileDict['OwnerGroup']
     elif fileDict.has_key('OwnerRole'):
-      groups = CS.getGroupsWithVOMSAttribute('/'+fileDict['OwnerRole'])
+      groups = Registry.getGroupsWithVOMSAttribute('/'+fileDict['OwnerRole'])
       if groups:
         if len(groups) > 1:
           gname = groups[0]
@@ -68,7 +68,7 @@ class DirectoryListing( object ):
     if dirDict.has_key('Owner'):
       uname = dirDict['Owner']
     elif dirDict.has_key('OwnerDN'):
-      result = CS.getUsernameForDN(dirDict['OwnerDN'])
+      result = Registry.getUsernameForDN(dirDict['OwnerDN'])
       if result['OK']:
         uname = result['Value']
       else:
@@ -80,7 +80,7 @@ class DirectoryListing( object ):
     if dirDict.has_key('OwnerGroup'):
       gname = dirDict['OwnerGroup']
     elif dirDict.has_key('OwnerRole'):
-      groups = CS.getGroupsWithVOMSAttribute('/'+dirDict['OwnerRole'])
+      groups = Registry.getGroupsWithVOMSAttribute('/'+dirDict['OwnerRole'])
       if groups:
         if len(groups) > 1:
           gname = groups[0]
@@ -105,7 +105,7 @@ class DirectoryListing( object ):
     if datasetDict.has_key('Owner'):
       uname = datasetDict['Owner']
     elif datasetDict.has_key('OwnerDN'):
-      result = CS.getUsernameForDN(datasetDict['OwnerDN'])
+      result = Registry.getUsernameForDN(datasetDict['OwnerDN'])
       if result['OK']:
         uname = result['Value']
       else:
