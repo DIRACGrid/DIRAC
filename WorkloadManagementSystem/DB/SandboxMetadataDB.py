@@ -6,7 +6,8 @@ __RCSID__ = "$Id$"
 from DIRAC  import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities import List
-from DIRAC.Core.Security import Properties, CS
+from DIRAC.Core.Security import Properties
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
 class SandboxMetadataDB( DB ):
 
@@ -152,7 +153,7 @@ class SandboxMetadataDB( DB ):
     """
 
     if ownerName or ownerGroup:
-      requesterProps = CS.getPropertiesForEntity( requesterGroup, name = requesterName )
+      requesterProps = Registry.getPropertiesForEntity( requesterGroup, name = requesterName )
       if Properties.JOB_ADMINISTRATOR in requesterProps:
         if ownerName:
           requesterName = ownerName
@@ -213,7 +214,7 @@ class SandboxMetadataDB( DB ):
     Given a list of entities and a requester, return the ones that the requester is allowed to modify
     """
     sqlCond = [ "s.OwnerId=o.OwnerId" , "s.SBId=e.SBId", "e.EntitySetup=%s" % entitiesSetup ]
-    requesterProps = CS.getPropertiesForEntity( requesterGroup, name = requesterName )
+    requesterProps = Registry.getPropertiesForEntity( requesterGroup, name = requesterName )
     if Properties.JOB_ADMINISTRATOR in requesterProps:
       #Do nothing, just ensure it doesn't fit in the other cases
       pass
@@ -273,7 +274,7 @@ class SandboxMetadataDB( DB ):
     sqlCond = ["s.SBId = e.SBId",
                "e.EntityId = %s" % self._escapeString(entityId)['Value'],
                "e.EntitySetup = %s" % self._escapeString(entitySetup)['Value']]
-    requesterProps = CS.getPropertiesForEntity( requesterGroup, name = requesterName )
+    requesterProps = Registry.getPropertiesForEntity( requesterGroup, name = requesterName )
     if Properties.JOB_ADMINISTRATOR in requesterProps or Properties.JOB_MONITOR in requesterProps:
       #Do nothing, just ensure it doesn't fit in the other cases
       pass
@@ -321,7 +322,7 @@ class SandboxMetadataDB( DB ):
                 "s.SEName=%s" % self._escapeString( SEName )['Value'],
                 's.OwnerId=o.OwnerId' ]
     sqlCmd = "SELECT s.SBId FROM `sb_SandBoxes` s, `sb_Owners` o WHERE"
-    requesterProps = CS.getPropertiesForEntity( requesterGroup, name = requesterName )
+    requesterProps = Registry.getPropertiesForEntity( requesterGroup, name = requesterName )
     if Properties.JOB_ADMINISTRATOR in requesterProps or Properties.JOB_MONITOR in requesterProps:
       #Do nothing, just ensure it doesn't fit in the other cases
       pass
