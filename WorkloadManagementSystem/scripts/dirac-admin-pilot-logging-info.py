@@ -40,17 +40,17 @@ Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
 
 Script.parseCommandLine()
 
-from DIRAC.WorkloadManagementSystem.Client.PilotsClient import PilotsClient
+from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 
 if jobid:
-  result = PilotsClient().getPilots(jobid)
+  result = PilotManagerClient().getPilots(jobid)
   if not result['OK']:
     gLogger.error(result['Message'])
     DIRAC.exit(1)
   gLogger.debug(result['Value'])
   uuid = result['Value'].keys()[0]
 
-result = PilotsClient().getPilotLoggingInfo(uuid)
+result = PilotManagerClient().getPilotLoggingInfo(uuid)
 if not result['OK']:
   gLogger.error(result['Message'])
   DIRAC.exit(1)

@@ -12,7 +12,7 @@ from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import getGridJobOutput
 
-# imports for interacting with PilotAgentsDB -- moved to PilotsHandler and deprecated
+# imports for interacting with PilotAgentsDB -- moved to PilotManagerHandler and deprecated
 import DIRAC.Core.Utilities.Time as Time
 from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
@@ -248,13 +248,13 @@ class WMSAdministratorHandler(RequestHandler):
     return S_OK(resultDict)
 
   ##############################################################################
-  # Methods below moved to PilotsHandler -- all marked as deprecated
+  # Methods below moved to PilotManagerHandler -- all marked as deprecated
   ##############################################################################
 
   types_getCurrentPilotCounters = [dict]
 
   @classmethod
-  @deprecated("Moved to PilotsHandler")
+  @deprecated("Moved to PilotManagerHandler")
   def export_getCurrentPilotCounters(cls, attrDict={}):
     """ Get pilot counters per Status with attrDict selection. Final statuses are given for
         the last day.
@@ -286,7 +286,7 @@ class WMSAdministratorHandler(RequestHandler):
   types_addPilotTQReference = [list, (int, long), basestring, basestring]
 
   @classmethod
-  @deprecated("Moved to PilotsHandler")
+  @deprecated("Moved to PilotManagerHandler")
   def export_addPilotTQReference(cls, pilotRef, taskQueueID, ownerDN, ownerGroup, broker='Unknown',
                                  gridType='DIRAC', pilotStampDict={}):
     """ Add a new pilot job reference """
@@ -298,7 +298,7 @@ class WMSAdministratorHandler(RequestHandler):
   types_getPilotOutput = [basestring]
 
   @classmethod
-  @deprecated("Moved to PilotsHandler")
+  @deprecated("Moved to PilotManagerHandler")
   def export_getPilotOutput(cls, pilotReference):
     """ Get the pilot job standard output and standard error files for the Grid
         job reference
@@ -310,7 +310,7 @@ class WMSAdministratorHandler(RequestHandler):
   types_getPilotInfo = [(list, basestring)]
 
   @classmethod
-  @deprecated("Moved to PilotsHandler")
+  @deprecated("Moved to PilotManagerHandler")
   def export_getPilotInfo(cls, pilotReference):
     """ Get the info about a given pilot job reference
     """
@@ -320,7 +320,7 @@ class WMSAdministratorHandler(RequestHandler):
   types_selectPilots = [dict]
 
   @classmethod
-  @deprecated("Moved to PilotsHandler")
+  @deprecated("Moved to PilotManagerHandler")
   def export_selectPilots(cls, condDict):
     """ Select pilots given the selection conditions
     """
@@ -330,7 +330,7 @@ class WMSAdministratorHandler(RequestHandler):
   types_storePilotOutput = [basestring, basestring, basestring]
 
   @classmethod
-  @deprecated("Moved to PilotsHandler")
+  @deprecated("Moved to PilotManagerHandler")
   def export_storePilotOutput(cls, pilotReference, output, error):
     """ Store the pilot output and error
     """
@@ -340,7 +340,7 @@ class WMSAdministratorHandler(RequestHandler):
   types_getPilotLoggingInfo = [basestring]
 
   @classmethod
-  @deprecated("Moved to PilotsHandler")
+  @deprecated("Moved to PilotManagerHandler")
   def export_getPilotLoggingInfo(cls, pilotReference):
     """ Get the pilot logging info for the Grid job reference
     """
@@ -361,7 +361,7 @@ class WMSAdministratorHandler(RequestHandler):
   types_getPilotSummary = []
 
   @classmethod
-  @deprecated("Moved to PilotsHandler")
+  @deprecated("Moved to PilotManagerHandler")
   def export_getPilotSummary(cls, startdate='', enddate=''):
     """ Get summary of the status of the LCG Pilot Jobs
     """
@@ -373,7 +373,7 @@ class WMSAdministratorHandler(RequestHandler):
   types_getPilotMonitorWeb = [dict, list, (int, long), [int, long]]
 
   @classmethod
-  @deprecated("Moved to PilotsHandler")
+  @deprecated("Moved to PilotManagerHandler")
   def export_getPilotMonitorWeb(cls, selectDict, sortList, startItem, maxItems):
     """ Get the summary of the pilot information for a given page in the
         pilot monitor in a generic format
@@ -386,7 +386,7 @@ class WMSAdministratorHandler(RequestHandler):
   types_getPilotMonitorSelectors = []
 
   @classmethod
-  @deprecated("Moved to PilotsHandler")
+  @deprecated("Moved to PilotManagerHandler")
   def export_getPilotMonitorSelectors(cls):
     """ Get all the distinct selector values for the Pilot Monitor web portal page
     """
@@ -398,7 +398,7 @@ class WMSAdministratorHandler(RequestHandler):
   types_getPilotSummaryWeb = [dict, list, (int, long), [int, long]]
 
   @classmethod
-  @deprecated("Moved to PilotsHandler")
+  @deprecated("Moved to PilotManagerHandler")
   def export_getPilotSummaryWeb(cls, selectDict, sortList, startItem, maxItems):
     """ Get the summary of the pilot information for a given page in the
         pilot monitor in a generic format
@@ -411,7 +411,7 @@ class WMSAdministratorHandler(RequestHandler):
   types_getPilots = [(basestring, int, long)]
 
   @classmethod
-  @deprecated("Moved to PilotsHandler")
+  @deprecated("Moved to PilotManagerHandler")
   def export_getPilots(cls, jobID):
     """ Get pilot references and their states for :
       - those pilots submitted for the TQ where job is sitting
@@ -446,7 +446,7 @@ class WMSAdministratorHandler(RequestHandler):
   types_killPilot = [(basestring, list)]
 
   @classmethod
-  @deprecated("Moved to PilotsHandler")
+  @deprecated("Moved to PilotManagerHandler")
   def export_killPilot(cls, pilotRefList):
     """ Kill the specified pilots
     """
@@ -483,7 +483,7 @@ class WMSAdministratorHandler(RequestHandler):
   types_setJobForPilot = [(basestring, int, long), basestring]
 
   @classmethod
-  @deprecated("Moved to PilotsHandler")
+  @deprecated("Moved to PilotManagerHandler")
   def export_setJobForPilot(cls, jobID, pilotRef, destination=None):
     """ Report the DIRAC job ID which is executed by the given pilot job
     """
@@ -503,7 +503,7 @@ class WMSAdministratorHandler(RequestHandler):
   types_setPilotBenchmark = [basestring, float]
 
   @classmethod
-  @deprecated("Moved to PilotsHandler")
+  @deprecated("Moved to PilotManagerHandler")
   def export_setPilotBenchmark(cls, pilotRef, mark):
     """ Set the pilot agent benchmark
     """
@@ -513,7 +513,7 @@ class WMSAdministratorHandler(RequestHandler):
   types_setAccountingFlag = [basestring]
 
   @classmethod
-  @deprecated("Moved to PilotsHandler")
+  @deprecated("Moved to PilotManagerHandler")
   def export_setAccountingFlag(cls, pilotRef, mark='True'):
     """ Set the pilot AccountingSent flag
     """
@@ -522,7 +522,7 @@ class WMSAdministratorHandler(RequestHandler):
   ##########################################################################################
   types_setPilotStatus = [basestring, basestring]
 
-  @deprecated("Moved to PilotsHandler")
+  @deprecated("Moved to PilotManagerHandler")
   def export_setPilotStatus(self, pilotRef, status, destination=None, reason=None, gridSite=None, queue=None):
     """ Set the pilot agent status
     """
@@ -534,7 +534,7 @@ class WMSAdministratorHandler(RequestHandler):
   types_countPilots = [dict]
 
   @classmethod
-  @deprecated("Moved to PilotsHandler")
+  @deprecated("Moved to PilotManagerHandler")
   def export_countPilots(cls, condDict, older=None, newer=None, timeStamp='SubmissionTime'):
     """ Set the pilot agent status
     """
@@ -545,7 +545,7 @@ class WMSAdministratorHandler(RequestHandler):
   types_getCounters = [basestring, list, dict]
 
   @classmethod
-  @deprecated("Moved to PilotsHandler")
+  @deprecated("Moved to PilotManagerHandler")
   def export_getCounters(cls, table, keys, condDict, newer=None, timeStamp='SubmissionTime'):
     """ Set the pilot agent status
     """
@@ -556,7 +556,7 @@ class WMSAdministratorHandler(RequestHandler):
   types_getPilotStatistics = [basestring, dict]
 
   @staticmethod
-  @deprecated("Moved to PilotsHandler")
+  @deprecated("Moved to PilotManagerHandler")
   def export_getPilotStatistics(attribute, selectDict):
     """ Get pilot statistics distribution per attribute value with a given selection
     """
@@ -594,7 +594,7 @@ class WMSAdministratorHandler(RequestHandler):
   types_deletePilots = [(list, int, long, basestring)]
 
   @classmethod
-  @deprecated("Moved to PilotsHandler")
+  @deprecated("Moved to PilotManagerHandler")
   def export_deletePilots(cls, pilotIDs):
 
     if isinstance(pilotIDs, basestring):
@@ -624,7 +624,7 @@ class WMSAdministratorHandler(RequestHandler):
   types_clearPilots = [(int, long), (int, long)]
 
   @classmethod
-  @deprecated("Moved to PilotsHandler")
+  @deprecated("Moved to PilotManagerHandler")
   def export_clearPilots(cls, interval=30, aborted_interval=7):
 
     result = PilotAgentsDB().clearPilots(interval, aborted_interval)

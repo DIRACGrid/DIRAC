@@ -20,7 +20,7 @@ from DIRAC.Core.Utilities.SiteCEMapping import getSiteCEMapping
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
 from DIRAC.WorkloadManagementSystem.Client.WMSAdministratorClient import WMSAdministratorClient
-from DIRAC.WorkloadManagementSystem.Client.PilotsClient import PilotsClient
+from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
@@ -523,7 +523,7 @@ class DiracAdmin(API):
     if not os.path.exists(directory):
       return self._errorReport('Directory %s does not exist' % directory)
 
-    result = PilotsClient().getPilotOutput(gridReference)
+    result = PilotManagerClient().getPilotOutput(gridReference)
     if not result['OK']:
       return result
 
@@ -574,7 +574,7 @@ class DiracAdmin(API):
     if not isinstance(gridReference, basestring):
       return self._errorReport('Expected string for pilot reference')
 
-    result = PilotsClient().getPilotInfo(gridReference)
+    result = PilotManagerClient().getPilotInfo(gridReference)
     return result
 
   #############################################################################
@@ -590,7 +590,7 @@ class DiracAdmin(API):
     if not isinstance(gridReference, basestring):
       return self._errorReport('Expected string for pilot reference')
 
-    result = PilotsClient().killPilot(gridReference)
+    result = PilotManagerClient().killPilot(gridReference)
     return result
 
   #############################################################################
@@ -607,7 +607,7 @@ class DiracAdmin(API):
     if not isinstance(gridReference, basestring):
       return self._errorReport('Expected string for pilot reference')
 
-    return PilotsClient().getPilotLoggingInfo(gridReference)
+    return PilotManagerClient().getPilotLoggingInfo(gridReference)
 
   #############################################################################
   def getJobPilots(self, jobID):
@@ -628,7 +628,7 @@ class DiracAdmin(API):
       except Exception as x:
         return self._errorReport(str(x), 'Expected integer or string for existing jobID')
 
-    result = PilotsClient().getPilots(jobID)
+    result = PilotManagerClient().getPilots(jobID)
     if result['OK']:
       print self.pPrint.pformat(result['Value'])
     return result
@@ -645,7 +645,7 @@ class DiracAdmin(API):
        :type job: integer or string
        :return: S_OK,S_ERROR
     """
-    result = PilotsClient().getPilotSummary(startDate, endDate)
+    result = PilotManagerClient().getPilotSummary(startDate, endDate)
     if not result['OK']:
       return result
 

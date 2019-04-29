@@ -16,7 +16,7 @@ from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE
 from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 from DIRAC.AccountingSystem.Client.Types.Pilot import Pilot as PilotAccounting
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
-from DIRAC.WorkloadManagementSystem.Client.PilotsClient import PilotsClient
+from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 
@@ -60,7 +60,7 @@ class PilotStatusAgent(AgentModule):
     self.jobDB = JobDB()
     self.clearPilotsDelay = self.am_getOption('ClearPilotsDelay', 30)
     self.clearAbortedDelay = self.am_getOption('ClearAbortedPilotsDelay', 7)
-    self.pilots = PilotsClient()
+    self.pilots = PilotManagerClient()
 
     return S_OK()
 

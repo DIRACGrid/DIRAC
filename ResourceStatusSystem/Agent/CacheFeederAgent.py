@@ -23,7 +23,7 @@ ResourceManagementClient = getattr(
     Utils.voimport('DIRAC.ResourceStatusSystem.Client.ResourceManagementClient'),
     'ResourceManagementClient')
 from DIRAC.WorkloadManagementSystem.Client.WMSAdministratorClient import WMSAdministratorClient
-from DIRAC.WorkloadManagementSystem.Client.PilotsClient import PilotsClient
+from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 
 AGENT_NAME = 'ResourceStatus/CacheFeederAgent'
 
@@ -90,7 +90,7 @@ class CacheFeederAgent(AgentModule):
     self.clients['ResourceStatusClient'] = ResourceStatusClient()
     self.clients['ResourceManagementClient'] = ResourceManagementClient()
     self.clients['WMSAdministrator'] = WMSAdministratorClient()
-    self.clients['Pilots'] = PilotsClient()
+    self.clients['Pilots'] = PilotManagerClient()
 
     self.cCaller = CommandCaller
 

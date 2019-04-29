@@ -11,7 +11,7 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 from DIRAC.ResourceStatusSystem.Command.Command import Command
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
-from DIRAC.WorkloadManagementSystem.Client.PilotsClient import PilotsClient
+from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 from DIRAC.ResourceStatusSystem.Utilities import CSHelpers
 
 
@@ -27,7 +27,7 @@ class PilotCommand(Command):
     if 'Pilots' in self.apis:
       self.pilots = self.apis['Pilots']
     else:
-      self.pilots = PilotsClient()
+      self.pilots = PilotManagerClient()
 
     if 'ResourceManagementClient' in self.apis:
       self.rmClient = self.apis['ResourceManagementClient']

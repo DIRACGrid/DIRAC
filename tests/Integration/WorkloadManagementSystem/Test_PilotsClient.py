@@ -1,4 +1,4 @@
-""" This is a test of using PilotsClient
+""" This is a test of using PilotManagerClient
 
     In order to run this test we need the following DBs installed:
     - PilotAgentsDB
@@ -15,7 +15,7 @@ parseCommandLine()
 
 
 from DIRAC import gLogger
-from DIRAC.WorkloadManagementSystem.Client.PilotsClient import PilotsClient
+from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 
 
 gLogger.setLevel('VERBOSE')
@@ -23,7 +23,7 @@ gLogger.setLevel('VERBOSE')
 
 def test_PilotsDB():
 
-  pilots = PilotsClient()
+  pilots = PilotManagerClient()
 
   res = pilots.addPilotTQReference(['aPilot'], 1, '/a/ownerDN', 'a/owner/Group')
   assert res['OK'] is True

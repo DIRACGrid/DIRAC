@@ -24,8 +24,8 @@ enablePilotsLogging = False
 FINAL_STATES = ['Done', 'Aborted', 'Cleared', 'Deleted', 'Stalled']
 
 
-def initializePilotsHandler(serviceInfo):
-  """  PilotsHandler initialization
+def initializePilotsManagerHandler(serviceInfo):
+  """  PilotsManagerHandler initialization
   """
 
   global pilotDB
@@ -47,7 +47,7 @@ def initializePilotsHandler(serviceInfo):
   return S_OK()
 
 
-class PilotsHandler(RequestHandler):
+class PilotsManagerHandler(RequestHandler):
 
   ##############################################################################
   types_getCurrentPilotCounters = [dict]
