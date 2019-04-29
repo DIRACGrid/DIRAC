@@ -78,7 +78,7 @@ class JobAgent(AgentModule):
     ceType = self.am_getOption('CEType', 'InProcess')
     localCE = gConfig.getValue('/LocalSite/LocalCE', '')
     if localCE:
-      self.log.info('Defining CE from local configuration = %s' % localCE)
+      self.log.info('Defining CE from local configuration', '= %s' % localCE)
       ceType = localCE
 
     # Create backend Computing Element
@@ -86,7 +86,7 @@ class JobAgent(AgentModule):
     self.ceName = ceType
     ceInstance = ceFactory.getCE(ceType)
     if not ceInstance['OK']:
-      self.log.warn(ceInstance['Message'])
+      self.log.warn("Can't instantiate a CE", ceInstance['Message'])
       return ceInstance
     self.computingElement = ceInstance['Value']
 
@@ -131,9 +131,9 @@ class JobAgent(AgentModule):
       self.log.info('Attempting to check CPU time left for filling mode')
       if self.fillingMode:
         if self.timeLeftError:
-          self.log.warn(self.timeLeftError)
+          self.log.warn("Disabling filling mode as errors calculating time left", self.timeLeftError)
           return self.__finish(self.timeLeftError)
-        self.log.info('%s normalized CPU units remaining in slot' % (self.timeLeft))
+        self.log.info('normalized CPU units remaining in slot', self.timeLeft)
         if self.timeLeft <= self.minimumTimeLeft:
           return self.__finish('No more time left')
         # Need to update the Configuration so that the new value is published in the next matching request
@@ -159,11 +159,8 @@ class JobAgent(AgentModule):
     self.log.verbose('Job Agent execution loop')
     result = self.computingElement.available()
     if not result['OK']:
-      self.log.info('Resource is not available')
-      self.log.info(result['Message'])
+      self.log.info('Resource is not available', result['Message'])
       return self.__finish('CE Not Available')
-
-    self.log.info(result['Message'])
 
     ceInfoDict = result['CEInfoDict']
     runningJobs = ceInfoDict.get("RunningJobs")
@@ -171,7 +168,7 @@ class JobAgent(AgentModule):
 
     if not availableSlots:
       if runningJobs:
-        self.log.info('No available slots with %d running jobs' % runningJobs)
+        self.log.info('No available slots', '%d running jobs' % runningJobs)
         return S_OK('Job Agent cycle complete with %d running jobs' % runningJobs)
       else:
         self.log.info('CE is not available')
@@ -205,11 +202,11 @@ class JobAgent(AgentModule):
         ceDict.update(requirementsDict)
         self.log.info('Requirements:', requirementsDict)
 
-      self.log.verbose(ceDict)
+      self.log.verbose('CE dict', ceDict)
       start = time.time()
       jobRequest = MatcherClient().requestJob(ceDict)
       matchTime = time.time() - start
-      self.log.info('MatcherTime = %.2f (s)' % (matchTime))
+      self.log.info('MatcherTime', '= %.2f (s)' % (matchTime))
       if jobRequest['OK']:
         break
 
@@ -217,7 +214,7 @@ class JobAgent(AgentModule):
 
     if not jobRequest['OK']:
       if re.search('No match found', jobRequest['Message']):
-        self.log.notice('Job request OK: %s' % (jobRequest['Message']))
+        self.log.notice('Job request OK, but no match found', ': %s' % (jobRequest['Message']))
         self.matchFailedCount += 1
         if self.matchFailedCount > self.stopAfterFailedMatches:
           return self.__finish('Nothing to do for more than %d cycles' % self.stopAfterFailedMatches)
@@ -233,7 +230,7 @@ class JobAgent(AgentModule):
         self.log.error(errorMsg, jobRequest['Message'].replace(errorMsg, ''))
         return S_ERROR(jobRequest['Message'])
       else:
-        self.log.notice('Failed to get jobs: %s' % (jobRequest['Message']))
+        self.log.notice('Failed to get jobs', ': %s' % (jobRequest['Message']))
         self.matchFailedCount += 1
         if self.matchFailedCount > self.stopAfterFailedMatches:
           return self.__finish('Nothing to do for more than %d cycles' % self.stopAfterFailedMatches)
@@ -256,7 +253,7 @@ class JobAgent(AgentModule):
         self.__report(jobID, 'Failed', 'Matcher returned null %s' % (param))
         return self.__finish('Matcher Failed')
       else:
-        self.log.verbose('Matcher returned %s = %s ' % (param, matcherInfo[param]))
+        self.log.verbose('Matcher returned', '%s = %s ' % (param, matcherInfo[param]))
 
     jobJDL = matcherInfo['JDL']
     jobGroup = matcherInfo['Group']
@@ -270,7 +267,7 @@ class JobAgent(AgentModule):
     parameters = self.__getJDLParameters(jobJDL)
     if not parameters['OK']:
       self.__report(jobID, 'Failed', 'Could Not Extract JDL Parameters')
-      self.log.warn(parameters['Message'])
+      self.log.warn('Could Not Extract JDL Parameters', parameters['Message'])
       return self.__finish('JDL Problem')
 
     params = parameters['Value']
@@ -300,8 +297,8 @@ class JobAgent(AgentModule):
       params['ExtraOptions'] = self.extraOptions
 
     self.log.verbose('Job request successful: \n', jobRequest['Value'])
-    self.log.info('Received JobID=%s, JobType=%s' % (jobID, jobType))
-    self.log.info('OwnerDN: %s JobGroup: %s' % (ownerDN, jobGroup))
+    self.log.info('Received',
+                  'JobID=%s, JobType=%s, OwnerDN=%s, JobGroup=%s' % (jobID, jobType, ownerDN, jobGroup))
     self.jobCount += 1
     try:
       jobReport = JobReport(jobID, 'JobAgent@%s' % self.siteName)
@@ -425,7 +422,7 @@ class JobAgent(AgentModule):
        run job locally.
     """
 
-    self.log.info("Requesting proxy for %s@%s" % (ownerDN, ownerGroup))
+    self.log.info("Requesting proxy', 'for %s@%s" % (ownerDN, ownerGroup))
     token = gConfig.getValue("/Security/ProxyToken", "")
     if not token:
       self.log.info("No token defined. Trying to download proxy without token")
@@ -434,7 +431,6 @@ class JobAgent(AgentModule):
                                                          self.defaultProxyLength, token)
     if not retVal['OK']:
       self.log.error('Could not retrieve payload proxy', retVal['Message'])
-      self.log.warn(retVal)
       os.system('dirac-proxy-info')
       sys.stdout.flush()
       return S_ERROR('Error retrieving proxy')
@@ -454,7 +450,7 @@ class JobAgent(AgentModule):
 
     self.__report(jobID, 'Matched', 'Installing Software')
     softwareDist = jobParams['SoftwareDistModule']
-    self.log.verbose('Found VO Software Distribution module: %s' % (softwareDist))
+    self.log.verbose('Found VO Software Distribution module', ': %s' % (softwareDist))
     argumentsDict = {'Job': jobParams, 'CE': resourceParams}
     moduleFactory = ModuleFactory()
     moduleInstance = moduleFactory.getModule(softwareDist, argumentsDict)
@@ -486,7 +482,8 @@ class JobAgent(AgentModule):
     wrapperFile = result['Value']
     self.__report(jobID, 'Matched', 'Submitted To CE')
 
-    self.log.info('Submitting JobWrapper %s to %sCE' % (os.path.basename(wrapperFile), self.ceName))
+    self.log.info('Submitting JobWrapper',
+                  '%s to %sCE' % (os.path.basename(wrapperFile), self.ceName))
 
     # Pass proxy to the CE
     proxy = proxyChain.dumpAllToString()
@@ -505,7 +502,7 @@ class JobAgent(AgentModule):
 
     if submission['OK']:
       batchID = submission['Value']
-      self.log.info('Job %s submitted as %s' % (jobID, batchID))
+      self.log.info('Job submitted', '%s as %s' % (jobID, batchID))
       if 'PayloadFailed' in submission:
         ret['PayloadFailed'] = submission['PayloadFailed']
         return ret
@@ -558,9 +555,10 @@ class JobAgent(AgentModule):
     """Wraps around setJobStatus of state update client
     """
     jobStatus = JobStateUpdateClient().setJobStatus(int(jobID), status, minorStatus, 'JobAgent@%s' % self.siteName)
-    self.log.verbose('setJobStatus(%s,%s,%s,%s)' % (jobID, status, minorStatus, 'JobAgent@%s' % self.siteName))
+    self.log.verbose('Setting job status',
+                     'setJobStatus(%s,%s,%s,%s)' % (jobID, status, minorStatus, 'JobAgent@%s' % self.siteName))
     if not jobStatus['OK']:
-      self.log.warn(jobStatus['Message'])
+      self.log.warn('Issue setting the job status', jobStatus['Message'])
 
     return jobStatus
 
@@ -569,9 +567,10 @@ class JobAgent(AgentModule):
     """Wraps around setJobParameter of state update client
     """
     jobParam = JobStateUpdateClient().setJobParameter(int(jobID), str(name), str(value))
-    self.log.verbose('setJobParameter(%s,%s,%s)' % (jobID, name, value))
+    self.log.verbose('Setting job parameter',
+                     'setJobParameter(%s,%s,%s)' % (jobID, name, value))
     if not jobParam['OK']:
-      self.log.warn(jobParam['Message'])
+      self.log.warn('Issue setting the job parameter', jobParam['Message'])
 
     return jobParam
 
@@ -580,7 +579,8 @@ class JobAgent(AgentModule):
     """Force the JobAgent to complete gracefully.
     """
     if stop:
-      self.log.info('JobAgent will stop with message "%s", execution complete.' % message)
+      self.log.info('JobAgent will stop',
+                    'with message "%s", execution complete.' % message)
       self.am_stopExecution()
       return S_ERROR(message)
     else:
@@ -592,7 +592,8 @@ class JobAgent(AgentModule):
     Set Job Status to "Rescheduled" and issue a reschedule command to the Job Manager
     """
 
-    self.log.warn('Failure during %s' % (message))
+    self.log.warn('Failure ==> rescheduling',
+                  '(during %s)' % (message))
 
     jobReport = JobReport(int(jobID), 'JobAgent@%s' % self.siteName)
 
@@ -610,7 +611,7 @@ class JobAgent(AgentModule):
       self.log.error('Failed to reschedule job', result['Message'])
       return self.__finish('Problem Rescheduling Job', stop)
 
-    self.log.info('Job Rescheduled %s' % (jobID))
+    self.log.info('Job Rescheduled', jobID)
     return self.__finish('Job Rescheduled', stop)
 
   #############################################################################
@@ -623,7 +624,7 @@ class JobAgent(AgentModule):
     result = WMSAdministratorClient().setPilotStatus(str(self.pilotReference), 'Done', gridCE,
                                                      'Report from JobAgent', self.siteName, queue)
     if not result['OK']:
-      self.log.warn(result['Message'])
+      self.log.warn('Issue setting the pilot status', result['Message'])
 
     return S_OK()
 

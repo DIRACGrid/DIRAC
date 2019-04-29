@@ -478,7 +478,7 @@ class SiteDirector(AgentModule):
     # From here on we assume we are going to (try to) submit some pilots
     self.log.debug("Going to try to submit some pilots")
 
-    self.log.verbose("Queues treated", "%s" % ','.join(self.queueDict))
+    self.log.verbose("Queues treated", ','.join(self.queueDict))
 
     self.totalSubmittedPilots = 0
 
@@ -487,7 +487,7 @@ class SiteDirector(AgentModule):
 
     for queueName, queueDictionary in queueDictItems:
       # now submitting to the single queues
-      self.log.verbose("Evaluating queue", "%s" % queueName)
+      self.log.verbose("Evaluating queue", queueName)
 
       # are we going to submit pilots to this specific queue?
       if not self._allowedToSubmit(queueName, anySite, jobSites, testSites):
