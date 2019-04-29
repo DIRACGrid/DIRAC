@@ -77,8 +77,11 @@ class SandboxMetadataDB(DB):
     """
     Get the owner ID and register it if it's not there
     """
+    ownerEscaped = self._escapeString(owner)['Value']
+    ownerDNEscaped = self._escapeString(ownerDN)['Value']
+    ownerGroupEscaped = self._escapeString(ownerGroup)['Value']
     sqlCmd = "SELECT OwnerId FROM `sb_Owners` WHERE Owner = %s AND OwnerDN = %s AND OwnerGroup = %s" % (
-        self._escapeString(owner)['Value'], self._escapeString(ownerDN)['Value'], self._escapeString(ownerGroup)['Value'])
+        ownerEscaped, ownerDNEscaped, ownerGroupEscaped)
     result = self._query(sqlCmd)
     if not result['OK']:
       return result
@@ -87,7 +90,7 @@ class SandboxMetadataDB(DB):
       return S_OK(data[0][0])
     # Its not there, insert it
     sqlCmd = "INSERT INTO `sb_Owners` ( OwnerId, Owner, OwnerDN, OwnerGroup ) VALUES ( 0, %s, %s, %s )" % (
-        self._escapeString(owner)['Value'], self._escapeString(ownerDN)['Value'], self._escapeString(ownerGroup)['Value'])
+        ownerEscaped, ownerDNEscaped, ownerGroupEscaped)
     result = self._update(sqlCmd)
     if not result['OK']:
       return result
@@ -297,8 +300,8 @@ class SandboxMetadataDB(DB):
     Get sandboxes that have been assigned but the job is no longer there
     """
     sqlCond = [
-        "Assigned AND SBId NOT IN ( SELECT SBId FROM `sb_EntityMapping` ) AND TIMESTAMPDIFF( DAY, LastAccessTime, UTC_TIMESTAMP() ) >= %d" %
-        self.__assignedSBGraceDays,
+        "Assigned AND SBId NOT IN ( SELECT SBId FROM `sb_EntityMapping` ) AND "
+        "TIMESTAMPDIFF( DAY, LastAccessTime, UTC_TIMESTAMP() ) >= %d" % self.__assignedSBGraceDays,
         "! Assigned AND TIMESTAMPDIFF( DAY, LastAccessTime, UTC_TIMESTAMP() ) >= %s" %
         self.__unassignedSBGraceDays]
     sqlCmd = "SELECT SBId, SEName, SEPFN FROM `sb_SandBoxes` WHERE ( %s )" % " ) OR ( ".join(sqlCond)
