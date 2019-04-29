@@ -134,6 +134,7 @@ class OAuth2(OIDCClient):
     """ Create link for authorization """
     uri = uri or self.authorization_endpoint
     url = '%s?state=%s&response_type=code&client_id=%s' % (uri, self.state, self.client_id)
+    url += '&access_type=offline&prompt=consent'
     if 'redirect_uri' not in kwargs:
       kwargs['redirect_uri'] = self.redirect_uri
     if 'scope' not in kwargs:
@@ -170,6 +171,7 @@ class OAuth2(OIDCClient):
     client_secret = self.client_secret
     params = '?client_id=%s&client_secret=%s' % (client_id, client_secret)
     params += '&access_token=%s&proxylifetime=%s' % (access_token, proxylifetime)
+    params += '&access_type=offline&prompt=consent'
     if voms:
       result = Registry.getVOs()
       if not result['OK']:
@@ -226,12 +228,12 @@ class OAuth2(OIDCClient):
     redirect_uri = redirect_uri or self.redirect_uri
     client_id = client_id or self.client_id
     # FIXME: in production need to remove 'verify' parametr
+    uri = "%s?access_type=offline&prompt=consent" % token_endpoint
+    uri += "&client_id=%s&client_secret=%s" % (client_id, client_secret)
     if code:
-      uri = "%s?grant_type=authorization_code&code=%s'" % (token_endpoint, code)
-      uri += "&client_id=%s&client_secret=%s&redirect_uri=%s" % (client_id, client_secret, redirect_uri)
+      uri += "&grant_type=authorization_code&code=%s&redirect_uri=%s" % (code, redirect_uri)
     else:
-      uri = "%s?grant_type=refresh_token&client_id=%s" % (token_endpoint, client_id)
-      uri += "&client_secret=%s&refresh_token=%s" % (client_secret, refresh_token)
+      uri += "&grant_type=refresh_token&refresh_token=%s" % refresh_token
     r = requests.post(uri, verify=False)
     if not r.status_code == 200:
       return S_ERROR(r.status_code)

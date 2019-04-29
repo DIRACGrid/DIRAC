@@ -264,10 +264,10 @@ class OAuthDB(DB):
         _CRASH(comment, st='visitor')
         return S_OK({'redirect': '', 'Messages': comment})
       else:
-        # Set redirect if IdP have oidc proxy provider
         pP = Resources.getIdPOption(OAuthProvider, 'proxy_provider')
         if pP:
           method = Resources.getProxyProviderOption(pP, 'method')
+          # Set redirect if IdP have oidc proxy provider
           if method == 'oAuth2':
             result = self.get_proxy_dn_exptime(pP, username=csModDict['username'], ID=csModDict['UsrOptns']['ID'])
             gLogger.info('Trying to find proxy prov tokens')
@@ -448,53 +448,56 @@ class OAuthDB(DB):
         pre_usrname = pre_usrname + str(i)
     # Set username
     prepDict['username'] = pre_usrname
-    # Parse VO/Role from IdP
-    result = getIdPSyntax(idp, 'VOMS')
-    if not result['OK']:
-      return result
-    synDict = result['Value']
-    if synDict['claim'] not in kwargs:
-      return S_ERROR('No found needed claim: %s.' % synDict['claim'])
-    voFromClaimList = kwargs[synDict['claim']]
-    if not isinstance(voFromClaimList, (list,)):
-      voFromClaimList = voFromClaimList.split(',')
-    for item in voFromClaimList:
-      r = synDict['vo'].split('<VALUE>')
-      if not re.search(r[0], item):
-        continue
-      # Parse VO
-      vo = re.sub(r[1], '', re.sub(r[0], '', item))
-      allvos = Registry.getVOs()
-      if not allvos['OK']:
-        return allvos
-      if vo not in allvos['Value']:
-        prepDict['noregvos'].append(vo)
-        continue
-      r = synDict['role'].split('<VALUE>')
-      # Parse Role
-      role = re.sub(r[1], '', re.sub(r[0], '', item))
-      result = Registry.getVOMSRoleGroupMapping(vo)
-      if not result['OK']:
-        return result
-      roleGroup = result['Value']['VOMSDIRAC']
-      groupRole = result['Value']['DIRACVOMS']
-      noVoms = result['Value']['NoVOMS']
-      for group in noVoms:
-        # Set groups with no role
-        prepDict['UsrOptns']['Groups'].append(group)
-      if role not in roleGroup:
-        # Create new group
-        group = vo + '_' + role
-        properties = {'VOMSRole': role, 'VOMSVO': vo, 'VO': vo, 'Properties': 'NormalUser', 'Users': pre_usrname}
-        prepDict['Groups'].append({group: properties})
-      else:
-        for group in groupRole:
-          if role == groupRole[group]:
-            # Set groups with role
-            prepDict['UsrOptns']['Groups'].append(group)
     # Set DN
     if 'DN' in kwargs:
       prepDict['UsrOptns']['DN'].append(kwargs['DN'])
+    # Parse VO/Role from IdP
+    defGroup = Resources.getIdPOption(idp, 'dirac_groups')
+    prepDict['UsrOptns']['Groups'].append(defGroup) 
+    result = getIdPSyntax(idp, 'VOMS')
+    if result['OK']:
+      synDict = result['Value']
+      if synDict['claim'] not in kwargs:
+        return S_ERROR('No found needed claim: %s.' % synDict['claim'])
+      voFromClaimList = kwargs[synDict['claim']]
+      if not isinstance(voFromClaimList, (list,)):
+        voFromClaimList = voFromClaimList.split(',')
+      for item in voFromClaimList:
+        r = synDict['vo'].split('<VALUE>')
+        if not re.search(r[0], item):
+          continue
+        # Parse VO
+        vo = re.sub(r[1], '', re.sub(r[0], '', item))
+        allvos = Registry.getVOs()
+        if not allvos['OK']:
+          return allvos
+        if vo not in allvos['Value']:
+          prepDict['noregvos'].append(vo)
+          continue
+        r = synDict['role'].split('<VALUE>')
+        # Parse Role
+        role = re.sub(r[1], '', re.sub(r[0], '', item))
+        result = Registry.getVOMSRoleGroupMapping(vo)
+        if not result['OK']:
+          return result
+        roleGroup = result['Value']['VOMSDIRAC']
+        groupRole = result['Value']['DIRACVOMS']
+        noVoms = result['Value']['NoVOMS']
+        for group in noVoms:
+          # Set groups with no role
+          prepDict['UsrOptns']['Groups'].append(group)
+        if role not in roleGroup:
+          # Create new group
+          group = vo + '_' + role
+          properties = {'VOMSRole': role, 'VOMSVO': vo, 'VO': vo, 'Properties': 'NormalUser', 'Users': pre_usrname}
+          prepDict['Groups'].append({group: properties})
+        else:
+          for group in groupRole:
+            if role == groupRole[group]:
+              # Set groups with role
+              prepDict['UsrOptns']['Groups'].append(group)
+    elif not prepDict['UsrOptns']['Groups']:
+      return S_ERROR('No "dirac_groups", no Syntax section in configuration file.')
     return S_OK(prepDict)
 
   def _getFromWhere(self, field='*', table='Tokens', conn='', **kwargs):
