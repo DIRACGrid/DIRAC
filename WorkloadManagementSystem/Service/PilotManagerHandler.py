@@ -1,5 +1,5 @@
 """
-This is a DIRAC Pilots interface.
+This is the interface to DIRAC PilotAgentsDB.
 """
 
 __RCSID__ = "$Id$"
@@ -24,8 +24,8 @@ enablePilotsLogging = False
 FINAL_STATES = ['Done', 'Aborted', 'Cleared', 'Deleted', 'Stalled']
 
 
-def initializePilotsManagerHandler(serviceInfo):
-  """  PilotsManagerHandler initialization
+def initializePilotManagerHandler(serviceInfo):
+  """  PilotManagerHandler initialization
   """
 
   global pilotDB
@@ -47,7 +47,7 @@ def initializePilotsManagerHandler(serviceInfo):
   return S_OK()
 
 
-class PilotsManagerHandler(RequestHandler):
+class PilotManagerHandler(RequestHandler):
 
   ##############################################################################
   types_getCurrentPilotCounters = [dict]

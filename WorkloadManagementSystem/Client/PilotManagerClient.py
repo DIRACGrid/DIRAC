@@ -4,23 +4,23 @@
 from DIRAC.Core.Base.Client import Client
 
 
-class PilotsManagerClient(Client):
-  """ PilotsManagerClient sets url for the PilotsManagerHandler.
+class PilotManagerClient(Client):
+  """ PilotManagerClient sets url for the PilotManagerHandler.
   """
 
   def __init__(self, url=None, **kwargs):
     """
-    Sets URL for PilotsManager handler
+    Sets URL for PilotManager handler
 
     :param self: self reference
-    :param url: url of the PilotsManagerHandler
+    :param url: url of the PilotManagerHandler
     :param kwargs: forwarded to the Base Client class
     """
 
-    super(PilotsManagerClient, self).__init__(**kwargs)
+    super(PilotManagerClient, self).__init__(**kwargs)
 
     if not url:
-      self.serverURL = 'WorkloadManagement/PilotsManager'
+      self.serverURL = 'WorkloadManagement/PilotManager'
 
     else:
       self.serverURL = url
