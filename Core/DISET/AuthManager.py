@@ -2,7 +2,7 @@
 """
 
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
-import DIRAC.ConfigurationSystem.Client.Helpers.Registry as Registry
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Security import Properties
 from DIRAC.Core.Utilities import List

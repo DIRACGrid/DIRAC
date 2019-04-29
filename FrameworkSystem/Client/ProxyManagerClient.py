@@ -4,7 +4,7 @@ import os
 import datetime
 
 from DIRAC import S_OK, S_ERROR, gLogger
-import DIRAC.ConfigurationSystem.Client.Helpers.Registry as Registry
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Utilities import ThreadSafe, DIRACSingleton
 from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Core.Security.ProxyFile import multiProxyArgument, deleteMultiProxy
