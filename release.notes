@@ -1,3 +1,18 @@
+[v6r22-pre1]
+
+*WorkloadManagementSystem
+CHANGE: (#4049) Pilot wrapper for pilot3: download files at runtime
+NEW: (#4045) PilotsHandler service (to interact with PilotAgentsDB)
+
+*ConfigurationSystem
+NEW: (#4053) VOMS2CSSynchronizer/VOMS2CSAgent - enable automatic synchronization of the 
+     Suspended user status with the VOMS database
+
+*Core
+NEW: (#4053) AuthManager - interpret the Suspended user status considering suspended 
+     users as anonymous visitors
+CHANGE: (#4053) The use of CS.py module is replaced by the use of Registry.py and CSGlobals.py
+
 [v6r21p5]
 
 *Core
