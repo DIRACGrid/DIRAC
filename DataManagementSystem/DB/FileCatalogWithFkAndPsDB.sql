@@ -336,7 +336,7 @@ CREATE TABLE FC_DatasetAnnotations (
 -- dir_id : directory id
 -- dir_lvl : directory depth
 
-
+DROP PROCEDURE IF EXISTS ps_find_dir;
 DELIMITER //
 CREATE PROCEDURE ps_find_dir
 (IN dirName varchar(255), OUT dir_id INT, OUT dir_lvl INT)
@@ -374,6 +374,7 @@ DELIMITER ;
 -- dir_id : directory id
 
 
+DROP PROCEDURE IF EXISTS ps_remove_dir;
 DELIMITER //
 CREATE PROCEDURE ps_remove_dir
 (IN dir_id INT)
@@ -396,7 +397,7 @@ DELIMITER ;
 --
 -- returns (errno, message)
 
-
+DROP PROCEDURE IF EXISTS ps_insert_dir;
 DELIMITER //
 CREATE PROCEDURE ps_insert_dir
 (IN parent_id INT, IN child_name varchar(255), IN UID INT,
@@ -404,7 +405,11 @@ CREATE PROCEDURE ps_insert_dir
 BEGIN
   DECLARE dir_id INT DEFAULT 0;
 
-
+  DECLARE exit handler for sqlexception
+    BEGIN
+    ROLLBACK;
+    RESIGNAL;
+  END;
 
   START TRANSACTION;
 
@@ -432,6 +437,7 @@ DELIMITER ;
 -- dir_id : directory id
 -- dirName (out param): the name of the directory
 
+DROP PROCEDURE IF EXISTS ps_get_dirName_from_id;
 DELIMITER //
 CREATE PROCEDURE ps_get_dirName_from_id
 (IN dir_id INT, OUT dirName varchar(255) )
@@ -444,6 +450,7 @@ DELIMITER ;
 -- dirIds : comma separated list of ids
 -- returns (directory id, directory name)
 
+DROP PROCEDURE IF EXISTS ps_get_dirNames_from_ids;
 DELIMITER //
 CREATE PROCEDURE ps_get_dirNames_from_ids
 (IN dirIds TEXT)
@@ -462,6 +469,7 @@ DELIMITER ;
 -- dir_id : directory id
 -- returns : (directory id)
 
+DROP PROCEDURE IF EXISTS ps_get_parentIds_from_id;
 DELIMITER //
 CREATE PROCEDURE ps_get_parentIds_from_id
 (IN dir_id INT )
@@ -475,6 +483,7 @@ DELIMITER ;
 -- dir_id : directory id
 -- returns : (directory id)
 
+DROP PROCEDURE IF EXISTS ps_get_direct_children;
 DELIMITER //
 CREATE PROCEDURE ps_get_direct_children
 (IN dir_id INT )
@@ -489,6 +498,7 @@ DELIMITER ;
 -- includeParent: if true, include oneself
 -- returns (directory id, absolute level)
 
+DROP PROCEDURE IF EXISTS ps_get_sub_directories;
 DELIMITER //
 CREATE PROCEDURE ps_get_sub_directories
 (IN dir_id INT, IN includeParent BOOLEAN )
@@ -518,6 +528,7 @@ DELIMITER ;
 -- dirIds: comma separated list of directory ids
 -- returns (directory ID)
 
+DROP PROCEDURE IF EXISTS ps_get_multiple_sub_directories;
 DELIMITER //
 CREATE PROCEDURE ps_get_multiple_sub_directories
 (IN dirIds TEXT)
@@ -536,7 +547,7 @@ DELIMITER ;
 -- includeParent : if true, counts oneself
 -- countDir (out value): amount of subdir
 
-
+DROP PROCEDURE IF EXISTS ps_count_sub_directories;
 DELIMITER //
 CREATE PROCEDURE ps_count_sub_directories
 (IN dir_id INT, IN includeParent BOOLEAN, OUT countDir INT )
@@ -557,6 +568,7 @@ DELIMITER ;
 -- dir_id : directory id
 -- countFile (out value): amount of files
 
+DROP PROCEDURE IF EXISTS ps_count_files_in_dir;
 DELIMITER //
 CREATE PROCEDURE ps_count_files_in_dir
 (IN dir_id INT, OUT countFile INT )
@@ -568,17 +580,16 @@ END //
 DELIMITER ;
 
 
-
-DELIMITER //
-CREATE PROCEDURE update_directory_usage
-(IN dir_id INT, IN se_id INT, IN size_diff BIGINT, IN file_diff INT)
 -- dir_id : the id of the dir in which we insert/remove
 -- se_id : the id of the SE in which the replica was inserted
 -- size_diff : the modification to bring to the size (positif if adding a replica, negatif otherwise)
 -- file_diff : + or - 1 depending whether we add or remove a replica
+
+DROP PROCEDURE IF EXISTS update_directory_usage;
+DELIMITER //
+CREATE PROCEDURE update_directory_usage
+(IN dir_id INT, IN se_id INT, IN size_diff BIGINT, IN file_diff INT)
 BEGIN
-
-
 
     -- alternative
     -- If it is the first replica inserted for the given SE, then we insert the new row, otherwise we do an update
@@ -588,6 +599,7 @@ END //
 DELIMITER ;
 
 
+DROP TRIGGER IF EXISTS trg_after_update_replica_move_size;
 DELIMITER //
 CREATE TRIGGER trg_after_update_replica_move_size AFTER UPDATE ON FC_Replicas
 FOR EACH ROW
@@ -625,6 +637,7 @@ DELIMITER ;
 -- visibleReplicaStatus : status of replicas to be considered
 -- outputs : FileName, FileID, SEName, PFN
 
+DROP PROCEDURE IF EXISTS ps_get_replicas_for_files_in_dir;
 DELIMITER //
 CREATE PROCEDURE ps_get_replicas_for_files_in_dir
 (IN dir_id INT, IN allStatus BOOLEAN, IN visibleFileStatus VARCHAR(255), IN visibleReplicaStatus VARCHAR(255) )
@@ -651,6 +664,7 @@ DELIMITER ;
 -- fileName : name of the file
 -- file_id (out) : id of the file
 
+DROP PROCEDURE IF EXISTS ps_get_file_id_from_lfn;
 DELIMITER //
 CREATE PROCEDURE ps_get_file_id_from_lfn
 (IN dirName VARCHAR(255), IN fileName VARCHAR(255), OUT file_id INT )
@@ -672,6 +686,7 @@ DELIMITER ;
 -- file_names : names of the files we are interested in
 -- output : FileID, FileName
 
+DROP PROCEDURE IF EXISTS ps_get_file_ids_from_dir_id;
 DELIMITER //
 CREATE PROCEDURE ps_get_file_ids_from_dir_id
 (IN dir_id INT, IN file_names MEDIUMTEXT)
@@ -733,6 +748,7 @@ DELIMITER ;
 -- file_ids : list of file ids
 -- output : FileID, Size, UID, GID, s.Status, GUID, CreationDate
 
+DROP PROCEDURE IF EXISTS ps_get_all_info_for_file_ids;
 DELIMITER //
 CREATE PROCEDURE ps_get_all_info_for_file_ids
 (IN file_ids TEXT)
@@ -756,7 +772,7 @@ DELIMITER ;
 -- ps_insert_file : insert a new file and update the DirectoryUsage table
 -- parameter list is self explaining
 -- output : new fileId, message. If fileId == 0, an error happened
-
+DROP PROCEDURE IF EXISTS ps_insert_file;
 DELIMITER //
 CREATE PROCEDURE ps_insert_file
 (IN dir_id INT, IN size BIGINT, IN UID INT, IN GID INT,
@@ -764,6 +780,12 @@ CREATE PROCEDURE ps_insert_file
  IN checksum VARCHAR(32), IN checksumtype ENUM('Adler32','MD5'), IN mode SMALLINT )
 BEGIN
   DECLARE file_id INT DEFAULT 0;
+
+  DECLARE exit handler for sqlexception
+    BEGIN
+    ROLLBACK;
+    RESIGNAL;
+  END;
 
 
   START TRANSACTION;
@@ -787,10 +809,17 @@ DELIMITER ;
 -- fileDesc : unique identifier of files formated like " (DirID = x and FileName = y) OR (DirID = u and FileName = v)"
 -- output : DirID, FileName, FileID
 
+DROP PROCEDURE IF EXISTS ps_insert_multiple_file;
 DELIMITER //
 CREATE PROCEDURE ps_insert_multiple_file
 (IN fileValues LONGTEXT, IN fileDesc LONGTEXT )
 BEGIN
+
+  DECLARE exit handler for sqlexception
+    BEGIN
+    ROLLBACK;
+    RESIGNAL;
+  END;
 
   START TRANSACTION;
   SET @sql = CONCAT('INSERT INTO FC_Files (DirID, Size, UID, GID, Status, FileName, GUID, Checksum, ChecksumType, CreationDate, ModificationDate, Mode) VALUES ', fileValues);
@@ -825,6 +854,7 @@ DELIMITER ;
 -- guids : list of guids
 -- output : GUID, FileID
 
+DROP PROCEDURE IF EXISTS ps_get_file_ids_from_guids;
 DELIMITER //
 CREATE PROCEDURE ps_get_file_ids_from_guids
 (IN  guids TEXT)
@@ -843,6 +873,7 @@ DELIMITER ;
 -- guids : list of guids
 -- output : GUID, LFN
 
+DROP PROCEDURE IF EXISTS ps_get_lfns_from_guids;
 DELIMITER //
 CREATE PROCEDURE ps_get_lfns_from_guids
 (IN  guids TEXT)
@@ -867,6 +898,12 @@ DELIMITER //
 CREATE PROCEDURE ps_delete_replicas_from_file_ids
 (IN  file_ids TEXT)
 BEGIN
+
+  DECLARE exit handler for sqlexception
+    BEGIN
+    ROLLBACK;
+    RESIGNAL;
+  END;
 
   START TRANSACTION;
 
@@ -930,6 +967,13 @@ DELIMITER //
 CREATE PROCEDURE ps_delete_files
 (IN  file_ids MEDIUMTEXT)
 BEGIN
+
+  DECLARE exit handler for sqlexception
+    BEGIN
+    ROLLBACK;
+    RESIGNAL;
+  END;
+
    START TRANSACTION;
 
    -- Store the name of the tmp table once for all
@@ -989,6 +1033,7 @@ DELIMITER ;
 -- pfn : url of the file on the SE
 -- output : replica ID, msg. if ReplicaID == 0, msg is an error message
 
+DROP PROCEDURE IF EXISTS ps_insert_replica;
 DELIMITER //
 CREATE PROCEDURE ps_insert_replica
 (IN file_id INT, IN se_id INT, IN status_id INT,
@@ -997,10 +1042,20 @@ CREATE PROCEDURE ps_insert_replica
 BEGIN
   DECLARE replica_id INT DEFAULT 0;
 
-  -- The replica already exists
-  DECLARE EXIT HANDLER FOR 1062 BEGIN
+
+  DECLARE EXIT HANDLER FOR sqlexception BEGIN
+    -- retrieve the error message
+    GET DIAGNOSTICS CONDITION 1
+         @errno = MYSQL_ERRNO;
     ROLLBACK;
-    SELECT RepID as replica_id from FC_Replicas where FileID = file_id and SEID = se_id;
+
+    -- The replica already exists
+    IF @errno = 1062
+    THEN
+      SELECT RepID as replica_id from FC_Replicas where FileID = file_id and SEID = se_id;
+    ELSE
+      RESIGNAL;
+    END IF;
   END;
 
 
@@ -1023,11 +1078,17 @@ DELIMITER ;
 -- replicaValues : FileID, SEID, Status, RepType, CreationDate, ModificationDate, PFN formated like "(a,y,z), (u,v,w)"
 -- replicaDesc formated like " (FileID = x and SEID = y) OR (FileID = u and SEID = v)"
 -- output : FileID, SEID, RepID
-
+DROP PROCEDURE IF EXISTS ps_insert_multiple_replica;
 DELIMITER //
 CREATE PROCEDURE ps_insert_multiple_replica
 (IN replicaValues LONGTEXT, IN replicaDesc LONGTEXT )
 BEGIN
+
+  DECLARE exit handler for sqlexception
+    BEGIN
+    ROLLBACK;
+    RESIGNAL;
+  END;
 
   START TRANSACTION;
 
@@ -1063,6 +1124,7 @@ DELIMITER ;
 -- se id : storage element id
 -- rep_id (out) : replica id
 
+DROP PROCEDURE IF EXISTS ps_get_replica_id;
 DELIMITER //
 CREATE PROCEDURE ps_get_replica_id
 (IN  file_id INT, IN se_id INT, OUT rep_id INT)
@@ -1094,6 +1156,12 @@ BEGIN
   DECLARE file_size BIGINT DEFAULT 0;
   DECLARE dir_id INT DEFAULT 0;
 
+  DECLARE exit handler for sqlexception
+    BEGIN
+    ROLLBACK;
+    RESIGNAL;
+  END;
+
   -- We need to join on the replicas to make sure that there is a replica at the given se
   -- otherwise the DirectoryUsage will be updated for no good reason
   SELECT Size, DirID INTO file_size, dir_id from FC_Files f JOIN FC_Replicas r on f.FileID = r.FileID where f.FileID = file_id and r.SEID = se_id;
@@ -1116,6 +1184,7 @@ DELIMITER ;
 --
 -- output : 0, number of column affected (should be 1 or 0), 'OK'
 
+DROP PROCEDURE IF EXISTS ps_set_replica_status;
 DELIMITER //
 CREATE PROCEDURE ps_set_replica_status
 (IN  file_id INT, IN se_id INT, IN status_id INT)
@@ -1138,7 +1207,7 @@ DELIMITER ;
 --
 -- output : errno, number of column affected (should be 1 or 0), msg. errno == 0 -> all good
 
-drop procedure if exists ps_set_replica_host;
+DROP PROCEDURE IF EXISTS ps_set_replica_host;
 DELIMITER //
 CREATE PROCEDURE ps_set_replica_host
 (IN  file_id INT, IN old_se_id INT, IN new_se_id INT)
@@ -1146,7 +1215,11 @@ BEGIN
   DECLARE file_size BIGINT DEFAULT 0;
   DECLARE dir_id INT DEFAULT 0;
 
-
+  DECLARE exit handler for sqlexception
+    BEGIN
+    ROLLBACK;
+    RESIGNAL;
+  END;
 
   SELECT Size, DirID INTO file_size, dir_id from FC_Files WHERE FileID = file_id;
 
@@ -1169,6 +1242,7 @@ DELIMITER ;
 --
 -- output : errno, msg. If errno ==0, all good
 
+DROP PROCEDURE IF EXISTS ps_set_file_uid;
 DELIMITER //
 CREATE PROCEDURE ps_set_file_uid
 (IN  file_id INT, IN in_uid INT)
@@ -1189,6 +1263,7 @@ DELIMITER ;
 --
 -- output : errno, msg. If errno ==0, all good
 
+DROP PROCEDURE IF EXISTS ps_set_file_gid;
 DELIMITER //
 CREATE PROCEDURE ps_set_file_gid
 (IN  file_id INT, IN in_gid INT)
@@ -1210,6 +1285,7 @@ DELIMITER ;
 --
 -- output errno, msg. If errno ==0, all good
 
+DROP PROCEDURE IF EXISTS ps_set_file_status;
 DELIMITER //
 CREATE PROCEDURE ps_set_file_status
 (IN  file_id INT, IN status_id INT)
@@ -1231,6 +1307,7 @@ DELIMITER ;
 --
 -- output errno, msg. If errno ==0, all good
 
+DROP PROCEDURE IF EXISTS ps_set_file_mode;
 DELIMITER //
 CREATE PROCEDURE ps_set_file_mode
 (IN  file_id INT, IN in_mode SMALLINT UNSIGNED)
@@ -1253,6 +1330,7 @@ DELIMITER ;
 --
 -- output :  FileID, se.SEName, st.Status, RepType, CreationDate, ModificationDate, PFN
 
+DROP PROCEDURE IF EXISTS ps_get_all_info_of_replicas;
 DELIMITER //
 CREATE PROCEDURE ps_get_all_info_of_replicas
 (IN file_id INT, IN allStatus BOOLEAN, IN visibleReplicaStatus TEXT)
@@ -1292,6 +1370,7 @@ DELIMITER ;
 --
 -- output : d.DirID, d.UID, u.UserName, d.GID, g.GroupName, d.Status, d.Mode, d.CreationDate, d.ModificationDate
 
+DROP PROCEDURE IF EXISTS ps_get_all_directory_info;
 DELIMITER //
 CREATE PROCEDURE ps_get_all_directory_info
 (IN dir_name VARCHAR(255))
@@ -1312,6 +1391,7 @@ DELIMITER ;
 --
 -- output : d.DirID, d.UID, u.UserName, d.GID, g.GroupName, d.Status, d.Mode, d.CreationDate, d.ModificationDate
 
+DROP PROCEDURE IF EXISTS ps_get_all_directory_info_from_id;
 DELIMITER //
 CREATE PROCEDURE ps_get_all_directory_info_from_id
 (IN dir_id INT)
@@ -1334,6 +1414,7 @@ DELIMITER ;
 --
 -- output errno, affected column (should be 0/1), errmsg. if errno == 0, all good
 
+DROP PROCEDURE IF EXISTS ps_set_dir_gid;
 DELIMITER //
 CREATE PROCEDURE ps_set_dir_gid
 (IN  dir_name VARCHAR(255), IN gid INT)
@@ -1395,6 +1476,7 @@ DELIMITER ;
 --
 -- output errno, affected column (should be 0/1), errmsg. if errno == 0, all good
 
+DROP PROCEDURE IF EXISTS ps_set_dir_uid;
 DELIMITER //
 CREATE PROCEDURE ps_set_dir_uid
 (IN  dir_name VARCHAR(255), IN uid INT)
@@ -1458,6 +1540,7 @@ DELIMITER ;
 --
 -- output errno, affected column (should be 0/1), errmsg. if errno == 0, all good
 
+DROP PROCEDURE IF EXISTS ps_set_dir_status;
 DELIMITER //
 CREATE PROCEDURE ps_set_dir_status
 (IN  dir_name VARCHAR(255), IN status_id INT)
@@ -1478,6 +1561,7 @@ DELIMITER ;
 --
 -- output errno, affected column (should be 0/1), errmsg. if errno == 0, all good
 
+DROP PROCEDURE IF EXISTS ps_set_dir_mode;
 DELIMITER //
 CREATE PROCEDURE ps_set_dir_mode
 (IN  dir_name VARCHAR(255), IN mode SMALLINT UNSIGNED)
@@ -1540,6 +1624,7 @@ DELIMITER ;
 -- output : FileID, DirID, FileName
 --
 
+DROP PROCEDURE IF EXISTS ps_get_files_in_dir;
 DELIMITER //
 CREATE PROCEDURE ps_get_files_in_dir
 (IN dir_id INT)
@@ -1663,10 +1748,16 @@ DELIMITER ;
 
 -- Rebuild the directoryUsage table
 
+DROP PROCEDURE IF EXISTS ps_rebuild_directory_usage;
 DELIMITER //
-
 CREATE PROCEDURE ps_rebuild_directory_usage()
 BEGIN
+
+  DECLARE exit handler for sqlexception
+    BEGIN
+    ROLLBACK;
+    RESIGNAL;
+  END;
 
   START TRANSACTION;
 
@@ -1691,10 +1782,17 @@ DELIMITER ;
 
 
 -- Rebuild the directoryUsage table for one directory
+DROP PROCEDURE IF EXISTS ps_rebuild_directory_usage_for_dir;
 DELIMITER //
 CREATE PROCEDURE ps_rebuild_directory_usage_for_dir
 (IN dir_id INT)
 BEGIN
+
+  DECLARE exit handler for sqlexception
+    BEGIN
+    ROLLBACK;
+    RESIGNAL;
+  END;
 
   START TRANSACTION;
 
@@ -1725,6 +1823,7 @@ DELIMITER ;
 -- file_ids : list of file ids
 -- output : FileID, lfn
 
+DROP PROCEDURE IF EXISTS ps_get_full_lfn_for_file_ids;
 DELIMITER //
 CREATE PROCEDURE ps_get_full_lfn_for_file_ids
 (IN file_ids TEXT)
@@ -1748,6 +1847,7 @@ DELIMITER ;
 -- se_id : storageElement's ID
 -- output : LFN, Checksum, Size
 
+DROP PROCEDURE IF EXISTS ps_get_se_dump;
 DELIMITER //
 CREATE PROCEDURE ps_get_se_dump
 (IN se_id INT)
