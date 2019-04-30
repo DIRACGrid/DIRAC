@@ -161,6 +161,7 @@ class MonitoringReporter(object):
   def __getProducer(self):
     """
     This method is used to get the default MQ producer or create it if needed.
+
     Returns:
       MQProducer or None:
     """
