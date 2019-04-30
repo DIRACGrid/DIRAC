@@ -8,8 +8,9 @@ import sys
 import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import ProxyManagerClient
-from DIRAC.Core.Security import CS, Properties
+from DIRAC.Core.Security import Properties
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
 __RCSID__ = "$Id:"
 
@@ -36,12 +37,12 @@ proxyProps = result['Value']
 if not userName:
   userName = proxyProps['username']
 
-if userName in CS.getAllUsers():
+if userName in Registry.getAllUsers():
   if Properties.PROXY_MANAGEMENT not in proxyProps['groupProperties']:
     if userName != proxyProps['username'] and userName != proxyProps['issuer']:
       print("You can only query info about yourself!")
       sys.exit(1)
-  result = CS.getDNForUsername(userName)
+  result = Registry.getDNForUsername(userName)
   if not result['OK']:
     print("Oops %s" % result['Message'])
   dnList = result['Value']
@@ -85,3 +86,4 @@ for row in data['Records']:
   lines.append("-" * tL)
 
 print("\n".join(lines))
+

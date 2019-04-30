@@ -624,8 +624,7 @@ class StorageElementItem(object):
         :param proto = InputProtocols or OutputProtocols
 
     """
-    return set(reduce(lambda x, y: x +
-                      y, [plugin.protocolParameters[protoType] for plugin in self.storages]))
+    return set(reduce(lambda x, y: x + y, [plugin.protocolParameters[protoType] for plugin in self.storages]))
 
   def _getAllInputProtocols(self):
     """ Returns all the protocols supported by the SE for Input
@@ -666,6 +665,22 @@ class StorageElementItem(object):
 
     commonProtocols = res['Value']
 
+    # We sort the storage plugins based on their native protocol
+    # according to the common protocol list
+    # This is to favor for example the xroot plugin over the SRM plugin
+    # even if both can provide xroot
+    sourceSEStorages = sorted(
+        sourceSE.storages,
+        key=lambda x: self.__getIndexInList(
+            x.getParameters()['Protocol'],
+            commonProtocols))
+
+    selfStorages = sorted(
+        self.storages,
+        key=lambda x: self.__getIndexInList(
+            x.getParameters()['Protocol'],
+            commonProtocols))
+
     # Taking each protocol at the time, we try to generate src and dest URLs
     for proto in commonProtocols:
       srcPlugin = None
@@ -674,7 +689,7 @@ class StorageElementItem(object):
       log.debug("Trying to find plugins for protocol %s" % proto)
 
       # Finding the source storage plugin
-      for storagePlugin in sourceSE.storages:
+      for storagePlugin in sourceSEStorages:
         log.debug("Testing %s as source plugin" % storagePlugin.pluginName)
         storageParameters = storagePlugin.getParameters()
         nativeProtocol = storageParameters['Protocol']
@@ -691,7 +706,7 @@ class StorageElementItem(object):
         continue
 
       # Finding the destination storage plugin
-      for storagePlugin in self.storages:
+      for storagePlugin in selfStorages:
         log.debug("Testing %s as destination plugin" % storagePlugin.pluginName)
 
         storageParameters = storagePlugin.getParameters()

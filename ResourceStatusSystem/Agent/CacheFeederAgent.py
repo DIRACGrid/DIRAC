@@ -19,6 +19,7 @@ from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
 from DIRAC.WorkloadManagementSystem.Client.WMSAdministratorClient import WMSAdministratorClient
 from DIRAC.ResourceStatusSystem.Command import CommandCaller
+from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 
 AGENT_NAME = 'ResourceStatus/CacheFeederAgent'
 
@@ -97,6 +98,7 @@ class CacheFeederAgent(AgentModule):
     self.clients['ResourceStatusClient'] = rsClass()
     self.clients['ResourceManagementClient'] = rmClass()
     self.clients['WMSAdministrator'] = WMSAdministratorClient()
+    self.clients['Pilots'] = PilotManagerClient()
 
     self.cCaller = CommandCaller
 

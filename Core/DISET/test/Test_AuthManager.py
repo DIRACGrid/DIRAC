@@ -20,8 +20,11 @@ Systems
       MethodAll = Any
       MethodAuth = Authenticated
       MethodGroup = NormalUser,group:group_test
+      MethodGroupOther = NormalUser,group:group_test_other
       MethodAllGroup = Any,group:group_test
+      MethodAllGroupOther = Any,group:group_test_other
       MethodAuthGroup = Authenticated,group:group_test
+      MethodAuthGroupOther = Authenticated,group:group_test_other
       MethodVO = NormalUser,vo:testVO
       MethodAllVO = Any,vo:testVO
       MethodAuthVO = Authenticated,vo:testVO
@@ -35,6 +38,21 @@ Systems
 testRegistryCFG = """
 Registry
 {
+  VO
+  {
+    testVO
+    {
+      VOAdmin = userA
+    }
+    testVOBad
+    {
+      VOAdmin = userB
+    }
+    testVOOther
+    {
+      VOAdmin = userA
+    }
+  }
   Users
   {
     userA
@@ -44,6 +62,11 @@ Registry
     userB
     {
       DN = /User/test/DN/CN=userB
+    }
+    userS
+    {
+      DN = /User/test/DN/CN=userS
+      Suspended = testVO
     }
   }
   Hosts
@@ -63,8 +86,14 @@ Registry
   {
     group_test
     {
-      Users = userA
+      Users = userA, userS
       VO = testVO
+      Properties = NormalUser
+    }
+    group_test_other
+    {
+      Users = userS
+      VO = testVOOther
       Properties = NormalUser
     }
     group_bad
@@ -90,17 +119,16 @@ class AuthManagerTest(unittest.TestCase):
     cfg.loadFromBuffer(testRegistryCFG)
     gConfig.loadCFG(cfg)
 
-    self.emptyCredDict = {}
-
     self.noAuthCredDict = {'group': 'group_test'}
-
-    self.unregistredCredDict = {'DN': '/User/test/DN/CN=userC'}
 
     self.userCredDict = {'DN': '/User/test/DN/CN=userA',
                          'group': 'group_test'}
-
+    self.suspendedOtherVOUserCredDict = {'DN': '/User/test/DN/CN=userS',
+                                         'group': 'group_test_other'}
     self.badUserCredDict = {'DN': '/User/test/DN/CN=userB',
                             'group': 'group_bad'}
+    self.suspendedUserCredDict = {'DN': '/User/test/DN/CN=userS',
+                                  'group': 'group_test'}
     self.hostCredDict = {'DN': '/User/test/DN/CN=test.hostA.ch',
                          'group': 'hosts'}
     self.badHostCredDict = {'DN': '/User/test/DN/CN=test.hostB.ch',
@@ -112,115 +140,151 @@ class AuthManagerTest(unittest.TestCase):
   def test_userProperties(self):
 
     # MethodAll accepts everybody
-    result = self.authMgr.authQuery('MethodAll', self.emptyCredDict)
-    self.assertTrue(result)
-    result = self.authMgr.authQuery('MethodAll', self.unregistredCredDict)
-    self.assertTrue(result)
     result = self.authMgr.authQuery('MethodAll', self.userCredDict)
     self.assertTrue(result)
     result = self.authMgr.authQuery('MethodAll', self.noAuthCredDict)
     self.assertTrue(result)
     result = self.authMgr.authQuery('MethodAll', self.badUserCredDict)
     self.assertTrue(result)
+    result = self.authMgr.authQuery('MethodAll', self.suspendedUserCredDict)
+    self.assertTrue(result)
+    result = self.authMgr.authQuery('MethodAll', self.suspendedOtherVOUserCredDict)
+    self.assertTrue(result)
 
     # MethodAuth requires DN to be identified
-    result = self.authMgr.authQuery('MethodAuth', self.emptyCredDict)
-    self.assertFalse(result)
-    result = self.authMgr.authQuery('MethodAuth', self.unregistredCredDict)
-    self.assertFalse(result)
     result = self.authMgr.authQuery('MethodAuth', self.userCredDict)
     self.assertTrue(result)
     result = self.authMgr.authQuery('MethodAuth', self.noAuthCredDict)
     self.assertFalse(result)
     result = self.authMgr.authQuery('MethodAuth', self.badUserCredDict)
     self.assertTrue(result)
+    result = self.authMgr.authQuery('MethodAuth', self.suspendedUserCredDict)
+    self.assertFalse(result)
+    result = self.authMgr.authQuery('MethodAuth', self.suspendedOtherVOUserCredDict)
+    self.assertTrue(result)
 
     # Method requires NormalUser property
-    result = self.authMgr.authQuery('Method', self.emptyCredDict)
-    self.assertFalse(result)
-    result = self.authMgr.authQuery('Method', self.unregistredCredDict)
-    self.assertFalse(result)
     result = self.authMgr.authQuery('Method', self.userCredDict)
     self.assertTrue(result)
     result = self.authMgr.authQuery('Method', self.badUserCredDict)
     self.assertFalse(result)
     result = self.authMgr.authQuery('Method', self.noAuthCredDict)
     self.assertFalse(result)
+    result = self.authMgr.authQuery('Method', self.suspendedUserCredDict)
+    self.assertFalse(result)
+    result = self.authMgr.authQuery('Method', self.suspendedOtherVOUserCredDict)
+    self.assertTrue(result)
 
   def test_userGroup(self):
 
     # MethodAllGroup accepts everybody from the right group
-    result = self.authMgr.authQuery('MethodAllGroup', self.emptyCredDict)
-    self.assertFalse(result)
-    result = self.authMgr.authQuery('MethodAllGroup', self.unregistredCredDict)
-    self.assertFalse(result)
     result = self.authMgr.authQuery('MethodAllGroup', self.userCredDict)
     self.assertTrue(result)
     result = self.authMgr.authQuery('MethodAllGroup', self.noAuthCredDict)
     self.assertFalse(result)
     result = self.authMgr.authQuery('MethodAllGroup', self.badUserCredDict)
     self.assertFalse(result)
+    result = self.authMgr.authQuery('MethodAllGroup', self.suspendedUserCredDict)
+    self.assertFalse(result)
+    result = self.authMgr.authQuery('MethodAllGroup', self.suspendedOtherVOUserCredDict)
+    self.assertFalse(result)
+
+    # MethodAllGroupOther accepts everybody from the right group
+    result = self.authMgr.authQuery('MethodAllGroupOther', self.userCredDict)
+    self.assertFalse(result)
+    result = self.authMgr.authQuery('MethodAllGroupOther', self.noAuthCredDict)
+    self.assertFalse(result)
+    result = self.authMgr.authQuery('MethodAllGroupOther', self.badUserCredDict)
+    self.assertFalse(result)
+    result = self.authMgr.authQuery('MethodAllGroupOther', self.suspendedUserCredDict)
+    self.assertFalse(result)
+    result = self.authMgr.authQuery('MethodAllGroupOther', self.suspendedOtherVOUserCredDict)
+    self.assertTrue(result)
 
     # MethodAuthGroup requires DN to be identified from the right group
-    result = self.authMgr.authQuery('MethodAuthGroup', self.emptyCredDict)
-    self.assertFalse(result)
-    result = self.authMgr.authQuery('MethodAuthGroup', self.unregistredCredDict)
-    self.assertFalse(result)
     result = self.authMgr.authQuery('MethodAuthGroup', self.userCredDict)
     self.assertTrue(result)
     result = self.authMgr.authQuery('MethodAuthGroup', self.noAuthCredDict)
     self.assertFalse(result)
     result = self.authMgr.authQuery('MethodAuthGroup', self.badUserCredDict)
     self.assertFalse(result)
+    result = self.authMgr.authQuery('MethodAuthGroup', self.suspendedUserCredDict)
+    self.assertFalse(result)
+    result = self.authMgr.authQuery('MethodAuthGroup', self.suspendedOtherVOUserCredDict)
+    self.assertFalse(result)
 
-    # Method requires NormalUser property and the right group
-    result = self.authMgr.authQuery('MethodGroup', self.emptyCredDict)
+    # MethodAuthGroupOther requires DN to be identified from the right group
+    result = self.authMgr.authQuery('MethodAuthGroupOther', self.userCredDict)
     self.assertFalse(result)
-    result = self.authMgr.authQuery('MethodGroup', self.unregistredCredDict)
+    result = self.authMgr.authQuery('MethodAuthGroupOther', self.noAuthCredDict)
     self.assertFalse(result)
+    result = self.authMgr.authQuery('MethodAuthGroupOther', self.badUserCredDict)
+    self.assertFalse(result)
+    result = self.authMgr.authQuery('MethodAuthGroupOther', self.suspendedUserCredDict)
+    self.assertFalse(result)
+    result = self.authMgr.authQuery('MethodAuthGroupOther', self.suspendedOtherVOUserCredDict)
+    self.assertTrue(result)
+
+    # MethodGroup requires NormalUser property and the right group
     result = self.authMgr.authQuery('MethodGroup', self.userCredDict)
     self.assertTrue(result)
     result = self.authMgr.authQuery('MethodGroup', self.badUserCredDict)
     self.assertFalse(result)
     result = self.authMgr.authQuery('MethodGroup', self.noAuthCredDict)
     self.assertFalse(result)
+    result = self.authMgr.authQuery('MethodGroup', self.suspendedUserCredDict)
+    self.assertFalse(result)
+    result = self.authMgr.authQuery('MethodGroup', self.suspendedOtherVOUserCredDict)
+    self.assertFalse(result)
+
+    # MethodGroupOther requires NormalUser property and the right group
+    result = self.authMgr.authQuery('MethodGroupOther', self.userCredDict)
+    self.assertFalse(result)
+    result = self.authMgr.authQuery('MethodGroupOther', self.badUserCredDict)
+    self.assertFalse(result)
+    result = self.authMgr.authQuery('MethodGroupOther', self.noAuthCredDict)
+    self.assertFalse(result)
+    result = self.authMgr.authQuery('MethodGroupOther', self.suspendedUserCredDict)
+    self.assertFalse(result)
+    result = self.authMgr.authQuery('MethodGroupOther', self.suspendedOtherVOUserCredDict)
+    self.assertTrue(result)
 
   def test_userVO(self):
 
     # MethodAllGroup accepts everybody from the right group
-    result = self.authMgr.authQuery('MethodAllVO', self.emptyCredDict)
-    self.assertFalse(result)
-    result = self.authMgr.authQuery('MethodAllVO', self.unregistredCredDict)
-    self.assertFalse(result)
     result = self.authMgr.authQuery('MethodAllVO', self.userCredDict)
     self.assertTrue(result)
     result = self.authMgr.authQuery('MethodAllVO', self.noAuthCredDict)
     self.assertFalse(result)
     result = self.authMgr.authQuery('MethodAllVO', self.badUserCredDict)
     self.assertFalse(result)
+    result = self.authMgr.authQuery('MethodAllVO', self.suspendedUserCredDict)
+    self.assertFalse(result)
+    result = self.authMgr.authQuery('MethodAllVO', self.suspendedOtherVOUserCredDict)
+    self.assertFalse(result)
 
     # MethodAuthGroup requires DN to be identified from the right group
-    result = self.authMgr.authQuery('MethodAuthVO', self.emptyCredDict)
-    self.assertFalse(result)
-    result = self.authMgr.authQuery('MethodAuthVO', self.unregistredCredDict)
-    self.assertFalse(result)
     result = self.authMgr.authQuery('MethodAuthVO', self.userCredDict)
     self.assertTrue(result)
     result = self.authMgr.authQuery('MethodAuthVO', self.noAuthCredDict)
     self.assertFalse(result)
     result = self.authMgr.authQuery('MethodAuthVO', self.badUserCredDict)
     self.assertFalse(result)
+    result = self.authMgr.authQuery('MethodAuthVO', self.suspendedUserCredDict)
+    self.assertFalse(result)
+    result = self.authMgr.authQuery('MethodAuthVO', self.suspendedOtherVOUserCredDict)
+    self.assertFalse(result)
 
     # Method requires NormalUser property and the right group
-    result = self.authMgr.authQuery('MethodVO', self.emptyCredDict)
-    self.assertFalse(result)
-    result = self.authMgr.authQuery('MethodVO', self.unregistredCredDict)
-    self.assertFalse(result)
     result = self.authMgr.authQuery('MethodVO', self.userCredDict)
     self.assertTrue(result)
     result = self.authMgr.authQuery('MethodVO', self.badUserCredDict)
     self.assertFalse(result)
     result = self.authMgr.authQuery('MethodVO', self.noAuthCredDict)
+    self.assertFalse(result)
+    result = self.authMgr.authQuery('MethodVO', self.suspendedUserCredDict)
+    self.assertFalse(result)
+    result = self.authMgr.authQuery('MethodVO', self.suspendedOtherVOUserCredDict)
     self.assertFalse(result)
 
   def test_hostProperties(self):

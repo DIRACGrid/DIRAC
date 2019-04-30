@@ -534,14 +534,12 @@ class TransformationCleaningAgent(AgentModule):
     """
     rIDs = [int(long(j)) for j in requestIDs if long(j)]
     for reqID in rIDs:
-      self.reqClient.deleteRequest(reqID)
+      self.reqClient.cancelRequest(reqID)
 
     return S_OK()
 
   def __removeWMSTasks(self, transJobIDs):
     """ wipe out jobs and their requests from the system
-
-    TODO: should check request status, maybe FTS files as well ???
 
     :param self: self reference
     :param list trasnJobIDs: job IDs
@@ -596,7 +594,7 @@ class TransformationCleaningAgent(AgentModule):
       # Put this check just in case, tasks must have associated jobs
       if jobID == 0 or jobID == '0':
         continue
-      res = self.reqClient.deleteRequest(requestID)
+      res = self.reqClient.cancelRequest(requestID)
       if not res['OK']:
         self.log.error("Failed to remove request from RequestDB", res['Message'])
         failed += 1

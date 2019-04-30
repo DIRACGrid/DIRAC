@@ -10,26 +10,27 @@ __RCSID__ = "$Id$"
 import stat
 
 from DIRAC import gConfig
-from DIRAC.Core.Security import CS
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
-class DirectoryListing( object ):
 
-  def __init__( self ):
+class DirectoryListing(object):
+
+  def __init__(self):
 
     self.entries = []
 
-  def addFile( self, name, fileDict, repDict, numericid ):
+  def addFile(self, name, fileDict, repDict, numericid):
     """ Pretty print of the file ls output
     """
     perm = fileDict['Mode']
     date = fileDict['ModificationDate']
     #nlinks = fileDict.get('NumberOfLinks',0)
-    nreplicas = len( repDict )
+    nreplicas = len(repDict)
     size = fileDict['Size']
-    if fileDict.has_key('Owner'):
+    if 'Owner' in fileDict:
       uname = fileDict['Owner']
-    elif fileDict.has_key('OwnerDN'):
-      result = CS.getUsernameForDN(fileDict['OwnerDN'])
+    elif 'OwnerDN' in fileDict:
+      result = Registry.getUsernameForDN(fileDict['OwnerDN'])
       if result['OK']:
         uname = result['Value']
       else:
@@ -38,14 +39,14 @@ class DirectoryListing( object ):
       uname = 'unknown'
     if numericid:
       uname = str(fileDict['UID'])
-    if fileDict.has_key('OwnerGroup'):
+    if 'OwnerGroup' in fileDict:
       gname = fileDict['OwnerGroup']
-    elif fileDict.has_key('OwnerRole'):
-      groups = CS.getGroupsWithVOMSAttribute('/'+fileDict['OwnerRole'])
+    elif 'OwnerRole' in fileDict:
+      groups = Registry.getGroupsWithVOMSAttribute('/' + fileDict['OwnerRole'])
       if groups:
         if len(groups) > 1:
           gname = groups[0]
-          default_group = gConfig.getValue('/Registry/DefaultGroup','unknown')
+          default_group = gConfig.getValue('/Registry/DefaultGroup', 'unknown')
           if default_group in groups:
             gname = default_group
         else:
@@ -57,19 +58,19 @@ class DirectoryListing( object ):
     if numericid:
       gname = str(fileDict['GID'])
 
-    self.entries.append( ('-'+self.__getModeString(perm),nreplicas,uname,gname,size,date,name) )
+    self.entries.append(('-' + self.__getModeString(perm), nreplicas, uname, gname, size, date, name))
 
-  def addDirectory( self, name, dirDict, numericid ):
+  def addDirectory(self, name, dirDict, numericid):
     """ Pretty print of the file ls output
     """
     perm = dirDict['Mode']
     date = dirDict['ModificationDate']
     nlinks = 0
     size = 0
-    if dirDict.has_key('Owner'):
+    if 'Owner' in dirDict:
       uname = dirDict['Owner']
-    elif dirDict.has_key('OwnerDN'):
-      result = CS.getUsernameForDN(dirDict['OwnerDN'])
+    elif 'OwnerDN' in dirDict:
+      result = Registry.getUsernameForDN(dirDict['OwnerDN'])
       if result['OK']:
         uname = result['Value']
       else:
@@ -78,14 +79,14 @@ class DirectoryListing( object ):
       uname = 'unknown'
     if numericid:
       uname = str(dirDict['UID'])
-    if dirDict.has_key('OwnerGroup'):
+    if 'OwnerGroup' in dirDict:
       gname = dirDict['OwnerGroup']
-    elif dirDict.has_key('OwnerRole'):
-      groups = CS.getGroupsWithVOMSAttribute('/'+dirDict['OwnerRole'])
+    elif 'OwnerRole' in dirDict:
+      groups = Registry.getGroupsWithVOMSAttribute('/' + dirDict['OwnerRole'])
       if groups:
         if len(groups) > 1:
           gname = groups[0]
-          default_group = gConfig.getValue('/Registry/DefaultGroup','unknown')
+          default_group = gConfig.getValue('/Registry/DefaultGroup', 'unknown')
           if default_group in groups:
             gname = default_group
         else:
@@ -95,18 +96,18 @@ class DirectoryListing( object ):
     if numericid:
       gname = str(dirDict['GID'])
 
-    self.entries.append( ('d'+self.__getModeString(perm),nlinks,uname,gname,size,date,name) )
+    self.entries.append(('d' + self.__getModeString(perm), nlinks, uname, gname, size, date, name))
 
-  def addDataset( self, name, datasetDict, numericid ):
+  def addDataset(self, name, datasetDict, numericid):
     """ Pretty print of the dataset ls output
     """
     perm = datasetDict['Mode']
     date = datasetDict['ModificationDate']
     size = datasetDict['TotalSize']
-    if datasetDict.has_key('Owner'):
+    if 'Owner' in datasetDict:
       uname = datasetDict['Owner']
-    elif datasetDict.has_key('OwnerDN'):
-      result = CS.getUsernameForDN(datasetDict['OwnerDN'])
+    elif 'OwnerDN' in datasetDict:
+      result = Registry.getUsernameForDN(datasetDict['OwnerDN'])
       if result['OK']:
         uname = result['Value']
       else:
@@ -114,19 +115,19 @@ class DirectoryListing( object ):
     else:
       uname = 'unknown'
     if numericid:
-      uname = str( datasetDict['UID'] )
+      uname = str(datasetDict['UID'])
 
     gname = 'unknown'
-    if datasetDict.has_key('OwnerGroup'):
+    if 'OwnerGroup' in datasetDict:
       gname = datasetDict['OwnerGroup']
     if numericid:
-      gname = str( datasetDict ['GID'] )
+      gname = str(datasetDict['GID'])
 
-    numberOfFiles = datasetDict ['NumberOfFiles']
+    numberOfFiles = datasetDict['NumberOfFiles']
 
-    self.entries.append( ('s'+self.__getModeString(perm),numberOfFiles,uname,gname,size,date,name) )
+    self.entries.append(('s' + self.__getModeString(perm), numberOfFiles, uname, gname, size, date, name))
 
-  def __getModeString( self, perm ):
+  def __getModeString(self, perm):
     """ Get string representation of the file/directory mode
     """
 
@@ -169,38 +170,38 @@ class DirectoryListing( object ):
       pstring += '-'
 
     return pstring
-  
-  def humanReadableSize( self, num, suffix = 'B' ):
+
+  def humanReadableSize(self, num, suffix='B'):
     """ Translate file size in bytes to human readable
 
         Powers of 2 are used (1Mi = 2^20 = 1048576 bytes).
     """
     num = int(num)
-    for unit in ['','Ki','Mi','Gi','Ti','Pi','Ei','Zi']:
+    for unit in ['', 'Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi']:
       if abs(num) < 1024.0:
         return "%3.1f%s%s" % (num, unit, suffix)
       num /= 1024.0
     return "%.1f%s%s" % (num, 'Yi', suffix)
 
-  def printListing( self, reverse, timeorder, sizeorder, humanread ):
+  def printListing(self, reverse, timeorder, sizeorder, humanread):
     """
     """
     if timeorder:
       if reverse:
         self.entries.sort(key=lambda x: x[5])
       else:
-        self.entries.sort(key=lambda x: x[5],reverse=True)
+        self.entries.sort(key=lambda x: x[5], reverse=True)
     elif sizeorder:
       if reverse:
         self.entries.sort(key=lambda x: x[4])
       else:
-        self.entries.sort(key=lambda x: x[4],reverse=True)
-    else:  
+        self.entries.sort(key=lambda x: x[4], reverse=True)
+    else:
       if reverse:
-        self.entries.sort(key=lambda x: x[6],reverse=True) 
-      else:  
-        self.entries.sort(key=lambda x: x[6]) 
-        
+        self.entries.sort(key=lambda x: x[6], reverse=True)
+      else:
+        self.entries.sort(key=lambda x: x[6])
+
     # Determine the field widths
     wList = [0] * 7
     for d in self.entries:
@@ -225,12 +226,13 @@ class DirectoryListing( object ):
       print(str(e[5]).rjust(wList[5]), end=' ')
       print(str(e[6]))
 
-  def addSimpleFile( self, name ):
+  def addSimpleFile(self, name):
     """ Add single files to be sorted later"""
     self.entries.append(name)
 
-  def printOrdered( self ):
+  def printOrdered(self):
     """ print the ordered list"""
     self.entries.sort()
     for entry in self.entries:
       print(entry)
+

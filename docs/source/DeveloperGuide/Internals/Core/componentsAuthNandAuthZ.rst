@@ -1,3 +1,5 @@
+.. _compAuthNAndAutZ:
+
 ===========================================
 Components authentication and authorization
 ===========================================

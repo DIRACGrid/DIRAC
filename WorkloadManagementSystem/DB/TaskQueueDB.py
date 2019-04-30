@@ -11,8 +11,9 @@ from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Utilities.PrettyPrint import printDict
 from DIRAC.Core.Utilities.DictCache import DictCache
-from DIRAC.Core.Security import Properties, CS
+from DIRAC.Core.Security import Properties
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.WorkloadManagementSystem.private.SharesCorrector import SharesCorrector
 
 DEFAULT_GROUP_SHARE = 1000
@@ -685,7 +686,7 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
         dns = [dns]
       ownerConds = []
       for group in groups:
-        if Properties.JOB_SHARING in CS.getPropertiesForGroup(group.replace('"', "")):
+        if Properties.JOB_SHARING in Registry.getPropertiesForGroup(group.replace('"', "")):
           ownerConds.append("tq.OwnerGroup = %s" % group)
         else:
           for dn in dns:
@@ -1155,7 +1156,7 @@ WHERE j.JobId = %s AND t.TQId = j.TQId" %
       share = self.__groupShares[userGroup]
     else:
       share = float(DEFAULT_GROUP_SHARE)
-    if Properties.JOB_SHARING in CS.getPropertiesForGroup(userGroup):
+    if Properties.JOB_SHARING in Registry.getPropertiesForGroup(userGroup):
       # If group has JobSharing just set prio for that entry, userDN is irrelevant
       return self.__setPrioritiesForEntity(userDN, userGroup, share, connObj=connObj)
 
@@ -1193,7 +1194,7 @@ WHERE j.JobId = %s AND t.TQId = j.TQId" %
     self.log.info("Setting priorities to %s@%s TQs" % (userDN, userGroup))
     tqCond = ["t.OwnerGroup='%s'" % userGroup]
     allowBgTQs = gConfig.getValue("/Registry/Groups/%s/AllowBackgroundTQs" % userGroup, False)
-    if Properties.JOB_SHARING not in CS.getPropertiesForGroup(userGroup):
+    if Properties.JOB_SHARING not in Registry.getPropertiesForGroup(userGroup):
       res = self._escapeString(userDN)
       if not res['OK']:
         return res

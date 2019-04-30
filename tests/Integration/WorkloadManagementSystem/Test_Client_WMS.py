@@ -5,7 +5,6 @@
     - JobLoggingDB
     - TaskQueueDB
     - SandboxMetadataDB
-    - PilotAgentsDB
 
     And the following services should also be on:
     - OptimizationMind
@@ -46,7 +45,6 @@ from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateU
 from DIRAC.WorkloadManagementSystem.Client.WMSAdministratorClient import WMSAdministratorClient
 from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
 from DIRAC.WorkloadManagementSystem.Agent.JobCleaningAgent import JobCleaningAgent
-from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 
 
@@ -448,95 +446,6 @@ class WMSAdministrator(TestWMSTestCase):
     self.assertEqual(res['Value'], [])
 
 
-class WMSAdministratorPilots(TestWMSTestCase):
-  """ testing WMSAdmin - for PilotAgentsDB
-  """
-
-  def test_PilotsDB(self):
-
-    wmsAdministrator = WMSAdministratorClient()
-    pilotAgentDB = PilotAgentsDB()
-
-    res = wmsAdministrator.addPilotTQReference(['aPilot'], 1, '/a/ownerDN', 'a/owner/Group')
-    self.assertTrue(res['OK'])
-    res = wmsAdministrator.getCurrentPilotCounters({})
-    self.assertTrue(res['OK'])
-    self.assertEqual(res['Value'], {'Submitted': 1})
-    res = pilotAgentDB.deletePilot('aPilot')
-    self.assertTrue(res['OK'])
-    res = wmsAdministrator.getCurrentPilotCounters({})
-    self.assertTrue(res['OK'])
-    self.assertEqual(res['Value'], {})
-
-    res = wmsAdministrator.addPilotTQReference(['anotherPilot'], 1, '/a/ownerDN', 'a/owner/Group')
-    self.assertTrue(res['OK'])
-    res = wmsAdministrator.storePilotOutput('anotherPilot', 'This is an output', 'this is an error')
-    self.assertTrue(res['OK'])
-    res = wmsAdministrator.getPilotOutput('anotherPilot')
-    self.assertTrue(res['OK'])
-    self.assertEqual(res['Value'], {'OwnerDN': '/a/ownerDN',
-                                    'OwnerGroup': 'a/owner/Group',
-                                    'StdErr': 'this is an error',
-                                    'FileList': [],
-                                    'StdOut': 'This is an output'})
-    # need a job for the following
-#     res = wmsAdministrator.getJobPilotOutput( 1 )
-#     self.assertEqual( res['Value'], {'OwnerDN': '/a/ownerDN', 'OwnerGroup': 'a/owner/Group',
-#                                      'StdErr': 'this is an error', 'FileList': [], 'StdOut': 'This is an output'} )
-#     self.assertTrue(res['OK'])
-    res = wmsAdministrator.getPilotInfo('anotherPilot')
-    self.assertTrue(res['OK'])
-    self.assertEqual(res['Value']['anotherPilot']['AccountingSent'], 'False')
-    self.assertEqual(res['Value']['anotherPilot']['PilotJobReference'], 'anotherPilot')
-
-    res = wmsAdministrator.selectPilots({})
-    self.assertTrue(res['OK'])
-#     res = wmsAdministrator.getPilotLoggingInfo( 'anotherPilot' )
-#     self.assertTrue(res['OK'])
-    res = wmsAdministrator.getPilotSummary('', '')
-    self.assertTrue(res['OK'])
-    self.assertEqual(res['Value']['Total']['Submitted'], 1)
-    res = wmsAdministrator.getPilotMonitorWeb({}, [], 0, 100)
-    self.assertTrue(res['OK'])
-    self.assertEqual(res['Value']['TotalRecords'], 1)
-    res = wmsAdministrator.getPilotMonitorSelectors()
-    self.assertTrue(res['OK'])
-    self.assertEqual(res['Value'], {'GridType': ['DIRAC'],
-                                    'OwnerGroup': ['a/owner/Group'],
-                                    'DestinationSite': ['NotAssigned'],
-                                    'Broker': ['Unknown'], 'Status': ['Submitted'],
-                                    'OwnerDN': ['/a/ownerDN'],
-                                    'GridSite': ['Unknown'],
-                                    'Owner': []})
-    res = wmsAdministrator.getPilotSummaryWeb({}, [], 0, 100)
-    self.assertTrue(res['OK'])
-    self.assertEqual(res['Value']['TotalRecords'], 1)
-
-    res = wmsAdministrator.setAccountingFlag('anotherPilot', 'True')
-    self.assertTrue(res['OK'])
-    res = wmsAdministrator.setPilotStatus('anotherPilot', 'Running')
-    self.assertTrue(res['OK'])
-    res = wmsAdministrator.getPilotInfo('anotherPilot')
-    self.assertTrue(res['OK'])
-    self.assertEqual(res['Value']['anotherPilot']['AccountingSent'], 'True')
-    self.assertEqual(res['Value']['anotherPilot']['Status'], 'Running')
-
-    res = wmsAdministrator.setJobForPilot(123, 'anotherPilot')
-    self.assertTrue(res['OK'])
-    res = wmsAdministrator.setPilotBenchmark('anotherPilot', 12.3)
-    self.assertTrue(res['OK'])
-    res = wmsAdministrator.countPilots({})
-    self.assertTrue(res['OK'])
-#     res = wmsAdministrator.getCounters()
-#     # getPilotStatistics
-
-    res = pilotAgentDB.deletePilot('anotherPilot')
-    self.assertTrue(res['OK'])
-    res = wmsAdministrator.getCurrentPilotCounters({})
-    self.assertTrue(res['OK'])
-    self.assertEqual(res['Value'], {})
-
-
 class Matcher (TestWMSTestCase):
   """Testing Matcher
   """
@@ -586,7 +495,6 @@ if __name__ == '__main__':
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobMonitoring))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobMonitoringMore))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(WMSAdministrator))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(WMSAdministratorPilots))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(Matcher))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
   sys.exit(not testResult.wasSuccessful())

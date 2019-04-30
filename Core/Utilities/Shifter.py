@@ -11,8 +11,7 @@ from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath
-from DIRAC.Core.Security import CS
-
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
 def getShifterProxy(shifterType, fileName=False):
   """
@@ -27,16 +26,16 @@ def getShifterProxy(shifterType, fileName=False):
   userName = opsHelper.getValue(cfgPath('Shifter', shifterType, 'User'), '')
   if not userName:
     return S_ERROR("No shifter User defined for %s" % shifterType)
-  result = CS.getDNForUsername(userName)
+  result = Registry.getDNForUsername(userName)
   if not result['OK']:
     return result
   userDN = result['Value'][0]
-  result = CS.findDefaultGroupForDN(userDN)
+  result = Registry.findDefaultGroupForDN(userDN)
   if not result['OK']:
     return result
   defaultGroup = result['Value']
   userGroup = opsHelper.getValue(cfgPath('Shifter', shifterType, 'Group'), defaultGroup)
-  vomsAttr = CS.getVOMSAttributeForGroup(userGroup)
+  vomsAttr = Registry.getVOMSAttributeForGroup(userGroup)
   if vomsAttr:
     gLogger.info("Getting VOMS [%s] proxy for shifter %s@%s (%s)" % (vomsAttr, userName,
                                                                      userGroup, userDN))

@@ -8,8 +8,9 @@ import cStringIO
 from DIRAC import S_OK, gLogger
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.DISET.TransferClient import TransferClient
-from DIRAC.Core.Security import Locations, CS, Utilities
-
+from DIRAC.Core.Security import Locations, Utilities
+from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import skipCACheck
+__RCSID__ = "$Id$"
 
 class BundleDeliveryClient:
 
@@ -22,13 +23,13 @@ class BundleDeliveryClient:
     if self.rpcClient:
       return self.rpcClient
     return RPCClient("Framework/BundleDelivery",
-                     skipCACheck=CS.skipCACheck())
+                     skipCACheck=skipCACheck())
 
   def __getTransferClient(self):
     if self.transferClient:
       return self.transferClient
     return TransferClient("Framework/BundleDelivery",
-                          skipCACheck=CS.skipCACheck())
+                          skipCACheck=skipCACheck())
 
   def __getHash(self, bundleID, dirToSyncTo):
     try:

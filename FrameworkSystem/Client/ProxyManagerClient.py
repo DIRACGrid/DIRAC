@@ -4,13 +4,14 @@ import os
 import datetime
 
 from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Utilities import ThreadSafe, DIRACSingleton
 from DIRAC.Core.Utilities.DictCache import DictCache
-from DIRAC.Core.Security import Locations, CS
 from DIRAC.Core.Security.ProxyFile import multiProxyArgument, deleteMultiProxy
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Core.Security.X509Request import X509Request  # pylint: disable=import-error
 from DIRAC.Core.Security.VOMS import VOMS
+from DIRAC.Core.Security import Locations
 from DIRAC.Core.DISET.RPCClient import RPCClient
 
 __RCSID__ = "$Id$"
@@ -156,7 +157,6 @@ class ProxyManagerClient(object):
     #rpcClient = RPCClient( "Framework/ProxyManager", proxyChain = chainToConnect )
     rpcClient = RPCClient("Framework/ProxyManager", timeout=120)
     # Get a delegation request
-
     result = rpcClient.requestDelegationUpload(chain.getRemainingSecs()['Value'], diracGroup)
     if not result['OK']:
       return result
@@ -285,7 +285,7 @@ class ProxyManagerClient(object):
     Download a pilot proxy with VOMS extensions depending on the group
     """
     # Assign VOMS attribute
-    vomsAttr = CS.getVOMSAttributeForGroup(userGroup)
+    vomsAttr = Registry.getVOMSAttributeForGroup(userGroup)
     if not vomsAttr:
       gLogger.verbose("No voms attribute assigned to group %s when requested pilot proxy" % userGroup)
       return self.downloadProxy(userDN, userGroup, limited=False, requiredTimeLeft=requiredTimeLeft,
@@ -298,7 +298,7 @@ class ProxyManagerClient(object):
     """
     Download a pilot proxy with VOMS extensions depending on the group
     """
-    groups = CS.getGroupsWithVOMSAttribute(vomsAttr)
+    groups = Registry.getGroupsWithVOMSAttribute(vomsAttr)
     if not groups:
       return S_ERROR("No group found that has %s as voms attrs" % vomsAttr)
 
@@ -317,7 +317,7 @@ class ProxyManagerClient(object):
     Download a payload proxy with VOMS extensions depending on the group
     """
     # Assign VOMS attribute
-    vomsAttr = CS.getVOMSAttributeForGroup(userGroup)
+    vomsAttr = Registry.getVOMSAttributeForGroup(userGroup)
     if not vomsAttr:
       gLogger.verbose("No voms attribute assigned to group %s when requested payload proxy" % userGroup)
       return self.downloadProxy(userDN, userGroup, limited=True, requiredTimeLeft=requiredTimeLeft,
@@ -331,7 +331,7 @@ class ProxyManagerClient(object):
     """
     Download a payload proxy with VOMS extensions depending on the VOMS attr
     """
-    groups = CS.getGroupsWithVOMSAttribute(vomsAttr)
+    groups = Registry.getGroupsWithVOMSAttribute(vomsAttr)
     if not groups:
       return S_ERROR("No group found that has %s as voms attrs" % vomsAttr)
     userGroup = groups[0]
