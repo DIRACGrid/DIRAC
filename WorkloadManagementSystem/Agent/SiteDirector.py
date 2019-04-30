@@ -25,7 +25,7 @@ from collections import defaultdict
 import DIRAC
 from DIRAC import S_OK, gConfig
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.Core.Security import CS
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE
 from DIRAC.Core.Utilities.Time import dateTime, second
 from DIRAC.Core.Utilities.List import fromChar
@@ -1400,7 +1400,7 @@ class SiteDirector(AgentModule):
       pA = PilotAccounting()
       pA.setEndTime(pilotDict[pRef]['LastUpdateTime'])
       pA.setStartTime(pilotDict[pRef]['SubmissionTime'])
-      retVal = CS.getUsernameForDN(pilotDict[pRef]['OwnerDN'])
+      retVal = Registry.getUsernameForDN(pilotDict[pRef]['OwnerDN'])
       if not retVal['OK']:
         userName = 'unknown'
         self.log.error("Can't determine username for dn", pilotDict[pRef]['OwnerDN'])

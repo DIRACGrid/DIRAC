@@ -36,7 +36,7 @@ from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC.Core.Security import CS
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
 ########################################################################
 
@@ -114,12 +114,12 @@ class RequestTask(object):
       userName = shifterDict["Value"].get("User", "")
       userGroup = shifterDict["Value"].get("Group", "")
 
-      userDN = CS.getDNForUsername(userName)
+      userDN = Registry.getDNForUsername(userName)
       if not userDN["OK"]:
         self.log.error("Cannot get DN For Username", "%s: %s" % (userName, userDN["Message"]))
         continue
       userDN = userDN["Value"][0]
-      vomsAttr = CS.getVOMSAttributeForGroup(userGroup)
+      vomsAttr = Registry.getVOMSAttributeForGroup(userGroup)
       if vomsAttr:
         self.log.debug("getting VOMS [%s] proxy for shifter %s@%s (%s)" % (vomsAttr, userName,
                                                                            userGroup, userDN))

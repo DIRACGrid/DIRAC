@@ -36,7 +36,7 @@ from DIRAC.Core.Security.ProxyInfo import formatProxyInfoAsString
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.Core.Security.VOMS import VOMS
-from DIRAC.Core.Security import CS
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Security import Properties
 from DIRAC.Core.Utilities.Time import dateTime, second
 from DIRAC import S_OK, S_ERROR, gLogger, version
@@ -411,8 +411,8 @@ class ComputingElement(object):
     if pilotProxyDict.get('hasVOMS', False):
       return pilotProxyDict['chain'].dumpAllToFile(payloadProxy)
 
-    attribute = CS.getVOMSAttributeForGroup(payloadGroup)
-    vo = CS.getVOMSVOForGroup(payloadGroup)
+    attribute = Registry.getVOMSAttributeForGroup(payloadGroup)
+    vo = Registry.getVOMSVOForGroup(payloadGroup)
 
     retVal = VOMS().setVOMSAttributes(pilotProxyDict['chain'], attribute=attribute, vo=vo)
     if not retVal['OK']:

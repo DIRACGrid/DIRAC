@@ -11,7 +11,7 @@ __RCSID__ = "$Id$"
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities import Time
-from DIRAC.Core.Security import CS
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE
 from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 from DIRAC.AccountingSystem.Client.Types.Pilot import Pilot as PilotAccounting
@@ -264,7 +264,7 @@ class PilotStatusAgent(AgentModule):
       pA = PilotAccounting()
       pA.setEndTime(pData['LastUpdateTime'])
       pA.setStartTime(pData['SubmissionTime'])
-      retVal = CS.getUsernameForDN(pData['OwnerDN'])
+      retVal = Registry.getUsernameForDN(pData['OwnerDN'])
       if not retVal['OK']:
         userName = 'unknown'
         self.log.error("Can't determine username for dn:", pData['OwnerDN'])
