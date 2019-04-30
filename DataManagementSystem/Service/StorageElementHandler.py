@@ -8,22 +8,17 @@
   :synopsis: StorageElementHandler is the implementation of a simple StorageElement
   service in the DISET framework
 
-The following methods are available in the Service interface
-
-getMetadata()      - get file metadata
-listDirectory()    - get directory listing
-remove()           - remove one file
-removeDirectory()  - remove on directory recursively
-removeFileList()   - remove files in the list
-getAdminInfo()     - get administration information about the SE status
-getFreeDiskSpace() - get the free disk space
-getTotalDiskSpace() - get the free total space
-
 The handler implements also the DISET data transfer calls
 toClient(), fromClient(), bulkToClient(), bulkFromClient
 which support single file, directory and file list upload and download
 
 The class can be used as the basis for more advanced StorageElement implementations
+
+.. literalinclude:: ../ConfigTemplate.cfg
+  :start-after: ##BEGIN StorageElement
+  :end-before: ##END
+  :dedent: 2
+  :caption: StorageElementHandler options
 
 """
 

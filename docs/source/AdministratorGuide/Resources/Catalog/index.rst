@@ -44,14 +44,11 @@ For example::
       {
         FileCatalog
         {
-          AccessType = Read-Write
-          Status = Active
-          Master = True
         }
+        # This is not in DIRAC, just
+        # another catalog
         BookkeepingDB
         {
-          AccessType = Write
-          Status = Active
           CatalogURL = Bookkeeping/BookkeepingManager
         }
       }
@@ -69,6 +66,27 @@ Then, each catalog should have a few (case-sensitive) options defined:
 * `Status`: (default `Active`). If anything else than `Active`, the catalog will not be used
 * `AccessType`: `Read`/`Write`/`Read-Write`. No default, must be defined. This defines if the catalog is read-only, write only or both.
 * `Master`: see :ref:`masterCatalog`
+
+For example::
+
+
+   Catalogs
+   {
+
+      FileCatalog
+      {
+        AccessType = Read-Write
+        Status = Active
+        Master = True
+      }
+      # This is not in DIRAC, just
+      # another catalog
+      BookkeepingDB
+      {
+        AccessType = Write
+        Status = Active
+      }
+   }
 
 .. _masterCatalog:
 
