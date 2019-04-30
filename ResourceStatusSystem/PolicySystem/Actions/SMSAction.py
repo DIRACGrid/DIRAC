@@ -1,68 +1,70 @@
 ''' SMSAction
 '''
 
-#FIXME: not ready
+__RCSID__ = '$Id$'
 
-from DIRAC                                                      import S_ERROR, S_OK
+# FIXME: not ready
+
+from DIRAC import S_ERROR, S_OK
 from DIRAC.ResourceStatusSystem.PolicySystem.Actions.BaseAction import BaseAction
 #from DIRAC.ResourceStatusSystem.Utilities.InfoGetter            import getNotificationsThatApply
 
-__RCSID__ = '$Id:  $'
 
-class SMSAction( BaseAction ):
+class SMSAction(BaseAction):
   '''
     Action that sends a brief SMS to the user with a few keywords that will make
     him run to his or her office.
   '''
 
-  def __init__( self, name, decisionParams, enforcementResult, singlePolicyResults,
-                clients = None ):
+  def __init__(self, name, decisionParams, enforcementResult, singlePolicyResults,
+               clients=None):
 
-    super( SMSAction, self ).__init__( name, decisionParams, enforcementResult,
-                                       singlePolicyResults, clients )
-  def run( self ):
+    super(SMSAction, self).__init__(name, decisionParams, enforcementResult,
+                                    singlePolicyResults, clients)
+
+  def run(self):
     '''
       Checks it has the parameters it needs and tries to send an sms to the users
       that apply.
     '''
     # Minor security checks
 
-    element = self.decisionParams[ 'element' ]
+    element = self.decisionParams['element']
     if element is None:
-      return S_ERROR( 'element should not be None' )
+      return S_ERROR('element should not be None')
 
-    name = self.decisionParams[ 'name' ]
+    name = self.decisionParams['name']
     if name is None:
-      return S_ERROR( 'name should not be None' )
+      return S_ERROR('name should not be None')
 
-    statusType = self.decisionParams[ 'statusType' ]
+    statusType = self.decisionParams['statusType']
     if statusType is None:
-      return S_ERROR( 'statusType should not be None' )
+      return S_ERROR('statusType should not be None')
 
-    status = self.enforcementResult[ 'Status' ]
+    status = self.enforcementResult['Status']
     if status is None:
-      return S_ERROR( 'status should not be None' )
+      return S_ERROR('status should not be None')
 
-    reason = self.enforcementResult[ 'Reason' ]
+    reason = self.enforcementResult['Reason']
     if reason is None:
-      return S_ERROR( 'reason should not be None' )
+      return S_ERROR('reason should not be None')
 
-    if self.decisionParams[ 'status' ] == status:
+    if self.decisionParams['status'] == status:
       # If status has not changed, we skip
       return S_OK()
 
-    if self.decisionParams[ 'reason' ] == reason:
+    if self.decisionParams['reason'] == reason:
       # If reason has not changed, we skip
       return S_OK()
 
-    text = '%s %s is %s ( %s )' % ( name, statusType, status, reason )
+    text = '%s %s is %s ( %s )' % (name, statusType, status, reason)
 
-    return self._sendSMS( text )
+    return self._sendSMS(text)
 
-  def _sendSMS( self, text ):
+  def _sendSMS(self, text):
 
-    #FIXME: implement it !
-    return S_ERROR( 'Not implemented yet' )
+    # FIXME: implement it !
+    return S_ERROR('Not implemented yet')
 
 #    from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 #    diracAdmin = DiracAdmin()
@@ -89,4 +91,4 @@ class SMSAction( BaseAction ):
 #    return resSMS
 
 ################################################################################
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
+# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
