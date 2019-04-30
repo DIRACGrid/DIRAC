@@ -11,78 +11,82 @@ from DIRAC.Core.Utilities.CFG import CFG
 
 __RCSID__ = "$Id$"
 
-def defaultSection( resource ):
+
+def defaultSection(resource):
   """
   Build the path for the Defaults section
   """
-  return cfgPath( cfgResourceSection, 'Defaults', resource )
+  return cfgPath(cfgResourceSection, 'Defaults', resource)
 
-def getComputingElementDefaults( ceName = '', ceType = '', cfg = None, currentSectionPath = '' ):
+
+def getComputingElementDefaults(ceName='', ceType='', cfg=None, currentSectionPath=''):
   """
   Return cfgDefaults with defaults for the given CEs defined either in arguments or in the provided cfg
   """
   cesCfg = CFG()
   if cfg:
     try:
-      cesCfg.loadFromFile( cfg )
-      cesPath = cfgInstallPath( 'ComputingElements' )
-      if cesCfg.isSection( cesPath ):
-        for section in cfgPathToList( cesPath ):
+      cesCfg.loadFromFile(cfg)
+      cesPath = cfgInstallPath('ComputingElements')
+      if cesCfg.isSection(cesPath):
+        for section in cfgPathToList(cesPath):
           cesCfg = cesCfg[section]
-    except:
+    except BaseException:
       return CFG()
 
   # Overwrite the cfg with Command line arguments
   if ceName:
-    if not cesCfg.isSection( ceName ):
-      cesCfg.createNewSection( ceName )
+    if not cesCfg.isSection(ceName):
+      cesCfg.createNewSection(ceName)
     if currentSectionPath:
       # Add Options from Command Line
-      optionsDict = __getExtraOptions( currentSectionPath )
+      optionsDict = __getExtraOptions(currentSectionPath)
       for name, value in optionsDict.items():
-        cesCfg[ceName].setOption( name, value ) #pylint: disable=no-member
+        cesCfg[ceName].setOption(name, value)  # pylint: disable=no-member
     if ceType:
-      cesCfg[ceName].setOption( 'CEType', ceType ) #pylint: disable=no-member
+      cesCfg[ceName].setOption('CEType', ceType)  # pylint: disable=no-member
 
-  ceDefaultSection = cfgPath( defaultSection( 'ComputingElements' ) )
+  ceDefaultSection = cfgPath(defaultSection('ComputingElements'))
   # Load Default for the given type from Central configuration is defined
-  ceDefaults = __gConfigDefaults( ceDefaultSection )
+  ceDefaults = __gConfigDefaults(ceDefaultSection)
   for ceName in cesCfg.listSections():
     if 'CEType' in cesCfg[ceName]:
       ceType = cesCfg[ceName]['CEType']
       if ceType in ceDefaults:
-        for option in ceDefaults[ceType].listOptions(): #pylint: disable=no-member
+        for option in ceDefaults[ceType].listOptions():  # pylint: disable=no-member
           if option not in cesCfg[ceName]:
-            cesCfg[ceName].setOption( option, ceDefaults[ceType][option] ) #pylint: disable=unsubscriptable-object
+            cesCfg[ceName].setOption(option, ceDefaults[ceType][option])  # pylint: disable=unsubscriptable-object
 
   return cesCfg
 
-def __gConfigDefaults( defaultPath ):
+
+def __gConfigDefaults(defaultPath):
   """
   Build a cfg from a Default Section
   """
   from DIRAC import gConfig
   cfgDefaults = CFG()
-  result = gConfig.getSections( defaultPath )
+  result = gConfig.getSections(defaultPath)
   if not result['OK']:
     return cfgDefaults
   for name in result['Value']:
-    typePath = cfgPath( defaultPath, name )
-    cfgDefaults.createNewSection( name )
-    result = gConfig.getOptionsDict( typePath )
+    typePath = cfgPath(defaultPath, name)
+    cfgDefaults.createNewSection(name)
+    result = gConfig.getOptionsDict(typePath)
     if result['OK']:
       optionsDict = result['Value']
       for option, value in optionsDict.items():
-        cfgDefaults[name].setOption( option, value )
+        cfgDefaults[name].setOption(option, value)
 
   return cfgDefaults
 
-def __getExtraOptions( currentSectionPath ):
+
+def __getExtraOptions(currentSectionPath):
   from DIRAC import gConfig
   optionsDict = {}
   if not currentSectionPath:
     return optionsDict
-  result = gConfig.getOptionsDict( currentSectionPath )
+  result = gConfig.getOptionsDict(currentSectionPath)
   if not result['OK']:
     return optionsDict
   print result

@@ -14,7 +14,6 @@
 __RCSID__ = "$Id$"
 
 import re
-import types
 import socket
 from urlparse import urlparse
 
@@ -353,7 +352,7 @@ def getGridSEs(vo, bdiiInfo=None, seBlackList=None):
 
       if gridSE not in knownSEs:
         siteDict.setdefault(site, {})
-        if isinstance(seDict['GlueSAAccessControlBaseRule'], types.ListType):
+        if isinstance(seDict['GlueSAAccessControlBaseRule'], list):
           voList = [re.sub('^VO:', '', s) for s in seDict['GlueSAAccessControlBaseRule']]
         else:
           voList = [re.sub('^VO:', '', seDict['GlueSAAccessControlBaseRule'])]
