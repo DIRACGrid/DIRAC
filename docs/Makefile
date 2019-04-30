@@ -23,7 +23,8 @@ PAPEROPT_a4     = -D latex_paper_size=a4
 PAPEROPT_letter = -D latex_paper_size=letter
 ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) source
 
-.PHONY: help clean html dirhtml pickle json htmlhelp qthelp latex changes linkcheck doctest singlehtml
+.PHONY: help clean html dirhtml pickle json htmlhelp qthelp latex changes linkcheck doctest singlehtml \
+	htmlall cleanall
 
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
@@ -38,9 +39,15 @@ help:
 	@echo "  changes   to make an overview of all changed/added/deprecated items"
 	@echo "  linkcheck to check all external links for integrity"
 	@echo "  doctest   to run all doctests embedded in the documentation (if enabled)"
+	@echo "  clean     to remove the build directory"
+	@echo "  cleanall  to remove the build directory and also the code documentation rst files"
 
 clean:
 	-rm -rf $(BUILDDIR)/*
+
+cleanall: clean
+	diracdoctools/scripts/dirac-docs-build-code.py --clean
+	@echo "Cleaned..., for even more thorough cleaning, use 'git clean'"
 
 html:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
