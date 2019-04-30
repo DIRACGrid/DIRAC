@@ -188,6 +188,8 @@ class StompMQConnector(MQConnector):
     fail = False
     for connection in self.connections.itervalues():
       try:
+        if connection.get_listener('ReconnectListener'):
+          connection.remove_listener('ReconnectListener')
         connection.disconnect()
       except Exception as e:
         self.log.error('Failed to disconnect: %s' % e)
