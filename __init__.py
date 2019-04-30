@@ -90,10 +90,10 @@ import _strptime
 
 # Define Version
 
-majorVersion = 6
-minorVersion = 22
+majorVersion = 7
+minorVersion = 0
 patchLevel = 0
-preVersion = 1
+preVersion = 14
 
 version = "v%sr%s" % (majorVersion, minorVersion)
 buildVersion = "v%dr%d" % (majorVersion, minorVersion)
