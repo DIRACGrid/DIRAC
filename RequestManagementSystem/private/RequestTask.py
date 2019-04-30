@@ -79,7 +79,7 @@ class RequestTask(object):
     self.__managersDict = {}
     shifterProxies = self.__setupManagerProxies()
     if not shifterProxies["OK"]:
-      self.log.error(shifterProxies["Message"])
+      self.log.error("Cannot setup shifter proxies", shifterProxies["Message"])
 
     # # initialize gMonitor
     gMonitor.setComponentType(gMonitor.COMPONENT_AGENT)
@@ -104,20 +104,19 @@ class RequestTask(object):
     oHelper = Operations()
     shifters = oHelper.getSections("Shifter")
     if not shifters["OK"]:
-      self.log.error(shifters["Message"])
       return shifters
     shifters = shifters["Value"]
     for shifter in shifters:
       shifterDict = oHelper.getOptionsDict("Shifter/%s" % shifter)
       if not shifterDict["OK"]:
-        self.log.error(shifterDict["Message"])
+        self.log.error("Cannot get options dict for shifter", "%s: %s" % (shifter, shifterDict["Message"]))
         continue
       userName = shifterDict["Value"].get("User", "")
       userGroup = shifterDict["Value"].get("Group", "")
 
       userDN = CS.getDNForUsername(userName)
       if not userDN["OK"]:
-        self.log.error(userDN["Message"])
+        self.log.error("Cannot get DN For Username", "%s: %s" % (userName, userDN["Message"]))
         continue
       userDN = userDN["Value"][0]
       vomsAttr = CS.getVOMSAttributeForGroup(userGroup)
@@ -133,7 +132,6 @@ class RequestTask(object):
                                                      requiredTimeLeft=1200,
                                                      cacheTime=4 * 43200)
       if not getProxy["OK"]:
-        self.log.error(getProxy["Message"])
         return S_ERROR("unable to setup shifter proxy for %s: %s" % (shifter, getProxy["Message"]))
       chain = getProxy["chain"]
       fileName = getProxy["Value"]
@@ -244,7 +242,7 @@ class RequestTask(object):
             csPath="%s/OperationHandlers/%s" % (self.csPath, operation.Type))
         handler = self.handlers[operation.Type]
       except (ImportError, TypeError) as error:
-        self.log.exception("getHandler: %s" % str(error), lException=error)
+        self.log.exception("Error getting Handler", "%s" % error, lException=error)
         return S_ERROR(str(error))
     # # set operation for this handler
     handler.setOperation(operation)
@@ -256,7 +254,7 @@ class RequestTask(object):
     updateRequest = self.requestClient.putRequest(
         self.request, useFailoverProxy=False, retryMainService=2)
     if not updateRequest["OK"]:
-      self.log.error(updateRequest["Message"])
+      self.log.error("Cannot updateRequest", updateRequest["Message"])
     return updateRequest
 
   def __call__(self):
@@ -270,14 +268,14 @@ class RequestTask(object):
     if not setupProxy["OK"]:
       self.request.Error = setupProxy["Message"]
       if 'has no proxy registered' in setupProxy["Message"]:
-        self.log.error('Request set to Failed:', setupProxy["Message"])
+        self.log.error('Error setting proxy. Request set to Failed:', setupProxy["Message"])
         # If user is no longer registered, fail the request
         for operation in self.request:
           for opFile in operation:
             opFile.Status = 'Failed'
           operation.Status = 'Failed'
       else:
-        self.log.error(setupProxy["Message"])
+        self.log.error("Error setting proxy", setupProxy["Message"])
       return S_OK(self.request)
     shifter = setupProxy["Value"]["Shifter"]
     proxyFile = setupProxy["Value"]["ProxyFile"]
@@ -288,15 +286,15 @@ class RequestTask(object):
       # # get waiting operation
       operation = self.request.getWaiting()
       if not operation["OK"]:
-        self.log.error(operation["Message"])
+        self.log.error("Cannot get waiting operation", operation["Message"])
         return operation
       operation = operation["Value"]
-      self.log.info("executing operation #%s '%s'" % (operation.Order, operation.Type))
+      self.log.info("executing operation", "%s" % operation.Type)
 
       # # and handler for it
       handler = self.getHandler(operation)
       if not handler["OK"]:
-        self.log.error("unable to process operation %s: %s" % (operation.Type, handler["Message"]))
+        self.log.error("Unable to process operation", "%s: %s" % (operation.Type, handler["Message"]))
         # gMonitor.addMark( "%s%s" % ( operation.Type, "Fail" ), 1 )
         operation.Error = handler["Message"]
         break
@@ -321,7 +319,7 @@ class RequestTask(object):
         if useServerCertificate:
           gConfigurationData.setOptionInCFG('/DIRAC/Security/UseServerCertificate', 'true')
         if not exe["OK"]:
-          self.log.error("unable to process operation %s: %s" % (operation.Type, exe["Message"]))
+          self.log.error("unable to process operation", "%s: %s" % (operation.Type, exe["Message"]))
           if pluginName:
             gMonitor.addMark("%s%s" % (pluginName, "Fail"), 1)
           gMonitor.addMark("RequestFail", 1)
@@ -330,18 +328,17 @@ class RequestTask(object):
             monitorServer = RPCClient("WorkloadManagement/JobMonitoring", useCertificates=True)
             res = monitorServer.getJobPrimarySummary(int(self.request.JobID))
             if not res["OK"]:
-              self.log.error("RequestTask: Failed to get job %d status" % self.request.JobID)
+              self.log.error("RequestTask: Failed to get job status", "%d" % self.request.JobID)
             elif not res['Value']:
               self.log.warn(
-                  "RequestTask: job %d does not exist (anymore): failed request" %
-                  self.request.JobID)
+                  "RequestTask: job does not exist (anymore): failed request", "JobID: %d" % self.request.JobID)
               for opFile in operation:
                 opFile.Status = 'Failed'
               if operation.Status != 'Failed':
                 operation.Status = 'Failed'
               self.request.Error = 'Job no longer exists'
       except Exception as error:
-        self.log.exception("hit by exception: %s" % str(error))
+        self.log.exception("hit by exception:", "%s" % error)
         if pluginName:
           gMonitor.addMark("%s%s" % (pluginName, "Fail"), 1)
         gMonitor.addMark("RequestFail", 1)
@@ -366,12 +363,12 @@ class RequestTask(object):
     # # request done?
     if self.request.Status == "Done":
       # # update request to the RequestDB
-      self.log.info('updating request with status %s' % self.request.Status)
+      self.log.info("Updating request status:", "%s" % self.request.Status)
       update = self.updateRequest()
       if not update["OK"]:
-        self.log.error(update["Message"])
+        self.log.error("Cannot update request status", update["Message"])
         return update
-      self.log.info("request '%s' is done" % self.request.RequestName)
+      self.log.info("request is done", "%s" % self.request.RequestName)
       gMonitor.addMark("RequestOK", 1)
       # # and there is a job waiting for it? finalize!
       if self.request.JobID:
@@ -382,24 +379,24 @@ class RequestTask(object):
           if not finalizeRequest["OK"]:
             if not attempts:
               self.log.error(
-                  "unable to finalize request %s: %s, will retry" %
+                  "unable to finalize request, will retry", "ReqName %s:%s" %
                   (self.request.RequestName, finalizeRequest["Message"]))
-            self.log.verbose("Waiting 10 seconds")
+            self.log.debug("Waiting 10 seconds")
             attempts += 1
             if attempts == 10:
-              self.log.error("giving up finalize request after %d attempts" % attempts)
+              self.log.error("Giving up finalize request")
               return S_ERROR('Could not finalize request')
 
             time.sleep(10)
 
           else:
             self.log.info(
-                "request '%s' is finalized%s" %
+                "request is finalized", "ReqName %s %s" %
                 (self.request.RequestName,
                  (' after %d attempts' %
                   attempts) if attempts else ''))
             break
 
     # Request will be updated by the callBack method
-    self.log.verbose("RequestTasks exiting, request %s" % self.request.Status)
+    self.log.verbose("RequestTasks exiting", "request %s" % self.request.Status)
     return S_OK(self.request)

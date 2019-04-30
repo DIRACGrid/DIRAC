@@ -61,7 +61,9 @@ from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 
 ########################################################################
-class OperationHandlerBase( object ):
+
+
+class OperationHandlerBase(object):
   """
   .. class:: OperationHandlerBase
 
@@ -76,7 +78,7 @@ class OperationHandlerBase( object ):
   # # shifter list
   __shifterList = []
 
-  def __init__( self, operation = None, csPath = None ):
+  def __init__(self, operation=None, csPath=None):
     """c'tor
 
     :param Operation operation: Operation instance
@@ -89,53 +91,52 @@ class OperationHandlerBase( object ):
     self.dm = DataManager()
     self.fc = FileCatalog()
 
-
     self.csPath = csPath if csPath else ""
     # # get name
     name = self.__class__.__name__
     # # all options are r/o properties now
-    csOptionsDict = gConfig.getOptionsDict( self.csPath )
-    csOptionsDict = csOptionsDict.get( "Value", {} )
+    csOptionsDict = gConfig.getOptionsDict(self.csPath)
+    csOptionsDict = csOptionsDict.get("Value", {})
 
     for option, value in csOptionsDict.iteritems():
       # # hack to set proper types
       try:
-        value = eval( value )
+        value = eval(value)
       except NameError:
         pass
-      self.makeProperty( option, value, True ) #pylint: disable=no-member
+      self.makeProperty(option, value, True)  # pylint: disable=no-member
 
     # # pre setup logger
-    self.log = gLogger.getSubLogger( name, True )
+    self.log = gLogger.getSubLogger(name, True)
     # # set log level
-    logLevel = getattr( self, "LogLevel" ) if hasattr( self, "LogLevel" ) else "INFO"
-    self.log.setLevel( logLevel )
+    logLevel = getattr(self, "LogLevel") if hasattr(self, "LogLevel") else "INFO"
+    self.log.setLevel(logLevel)
 
     # # list properties
     for option in csOptionsDict:
-      self.log.debug( "%s = %s" % ( option, getattr( self, option ) ) )
+      self.log.debug("%s = %s" % (option, getattr(self, option)))
 
     # # setup operation
     if operation:
-      self.setOperation( operation )
+      self.setOperation(operation)
     # # initialize at least
-    if hasattr( self, "initialize" ) and callable( getattr( self, "initialize" ) ):
-      getattr( self, "initialize" )()
+    if hasattr(self, "initialize") and callable(getattr(self, "initialize")):
+      getattr(self, "initialize")()
 
-  def setOperation( self, operation ):
+  def setOperation(self, operation):
     """ operation and request setter
 
       :param ~DIRAC.RequestManagementSystem.Client.Operation.Operation operation: operation instance
       :raises TypeError: if `operation` in not an instance of :class:`~DIRAC.RequestManagementSystem.Client.Operation.Operation`
 
     """
-    if not isinstance( operation, Operation ):
-      raise TypeError( "expecting Operation instance" )
+    if not isinstance(operation, Operation):
+      raise TypeError("expecting Operation instance")
     self.operation = operation
     self.request = operation._parent
-    self.log = gLogger.getSubLogger( "pid_%s/%s/%s/%s" % ( os.getpid(), self.request.RequestName,
-                                                           self.request.Order,
-                                                           self.operation.Type ) )
+    self.log = gLogger.getSubLogger("pid_%s/%s/%s/%s" % (os.getpid(), self.request.RequestName,
+                                                         self.request.Order,
+                                                         self.operation.Type))
 
 
 #   @classmethod
@@ -147,91 +148,91 @@ class OperationHandlerBase( object ):
 #     return cls.__dataLoggingClient
 
   @classmethod
-  def rssClient( cls ):
+  def rssClient(cls):
     """ ResourceStatusClient getter """
     if not cls.__rssClient:
       from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
       cls.__rssClient = ResourceStatus()
     return cls.__rssClient
 
-  def getProxyForLFN( self, lfn ):
+  def getProxyForLFN(self, lfn):
     """ get proxy for lfn
 
     :param str lfn: LFN
     :return: S_ERROR or S_OK( "/path/to/proxy/file" )
     """
-    dirMeta = returnSingleResult( self.fc.getDirectoryMetadata( os.path.dirname( lfn ) ) )
+    dirMeta = returnSingleResult(self.fc.getDirectoryMetadata(os.path.dirname(lfn)))
     if not dirMeta["OK"]:
       return dirMeta
     dirMeta = dirMeta["Value"]
 
-    ownerRole = "/%s" % dirMeta["OwnerRole"] if not dirMeta["OwnerRole"].startswith( "/" ) else dirMeta["OwnerRole"]
+    ownerRole = "/%s" % dirMeta["OwnerRole"] if not dirMeta["OwnerRole"].startswith("/") else dirMeta["OwnerRole"]
     ownerDN = dirMeta["OwnerDN"]
 
     ownerProxy = None
-    for ownerGroup in getGroupsWithVOMSAttribute( ownerRole ):
-      vomsProxy = gProxyManager.downloadVOMSProxy( ownerDN, ownerGroup, limited = True,
-                                                   requiredVOMSAttribute = ownerRole )
+    for ownerGroup in getGroupsWithVOMSAttribute(ownerRole):
+      vomsProxy = gProxyManager.downloadVOMSProxy(ownerDN, ownerGroup, limited=True,
+                                                  requiredVOMSAttribute=ownerRole)
       if not vomsProxy["OK"]:
-        self.log.debug( "getProxyForLFN: failed to get VOMS proxy for %s role=%s: %s" % ( ownerDN,
-                                                                                          ownerRole,
-                                                                                          vomsProxy["Message"] ) )
+        self.log.debug("getProxyForLFN: failed to get VOMS proxy for %s role=%s: %s" % (ownerDN,
+                                                                                        ownerRole,
+                                                                                        vomsProxy["Message"]))
         continue
       ownerProxy = vomsProxy["Value"]
-      self.log.debug( "getProxyForLFN: got proxy for %s@%s [%s]" % ( ownerDN, ownerGroup, ownerRole ) )
+      self.log.debug("getProxyForLFN: got proxy for %s@%s [%s]" % (ownerDN, ownerGroup, ownerRole))
       break
 
     if not ownerProxy:
-      return S_ERROR( "Unable to get owner proxy" )
+      return S_ERROR("Unable to get owner proxy")
 
     dumpToFile = ownerProxy.dumpAllToFile()
     if not dumpToFile["OK"]:
-      self.log.error( "getProxyForLFN: error dumping proxy to file: %s" % dumpToFile["Message"] )
+      self.log.debug("getProxyForLFN: error dumping proxy to file: %s" % dumpToFile["Message"])
     else:
       os.environ["X509_USER_PROXY"] = dumpToFile["Value"]
     return dumpToFile
 
-  def getWaitingFilesList( self ):
+  def getWaitingFilesList(self):
     """ prepare waiting files list, update Attempt, filter out MaxAttempt """
     if not self.operation:
-      self.log.warning( "getWaitingFilesList: operation not set, returning empty list" )
+      self.log.warning("getWaitingFilesList: operation not set, returning empty list")
       return []
-    waitingFiles = [ opFile for opFile in self.operation if opFile.Status == "Waiting" ]
+    waitingFiles = [opFile for opFile in self.operation if opFile.Status == "Waiting"]
     for opFile in waitingFiles:
       opFile.Attempt += 1
-      maxAttempts = getattr( self, "MaxAttempts" ) if hasattr( self, "MaxAttempts" ) else 1024
+      maxAttempts = getattr(self, "MaxAttempts") if hasattr(self, "MaxAttempts") else 1024
       if opFile.Attempt > maxAttempts:
         opFile.Status = "Failed"
         if opFile.Error is None:
           opFile.Error = ''
         opFile.Error += " (Max attempts limit reached)"
-    return [ opFile for opFile in self.operation if opFile.Status == "Waiting" ]
+    return [opFile for opFile in self.operation if opFile.Status == "Waiting"]
 
-  def rssSEStatus( self, se, status, retries = 2 ):
+  def rssSEStatus(self, se, status, retries=2):
     """ check SE :se: for status :status:
 
     :param str se: SE name
     :param str status: RSS status
     """
     # Allow a transient failure
-    for _i in range( retries ):
-      rssStatus = self.rssClient().getElementStatus( se, "StorageElement", status )
+    for _i in range(retries):
+      rssStatus = self.rssClient().getElementStatus(se, "StorageElement", status)
       # gLogger.always( rssStatus )
       if rssStatus["OK"]:
-        return S_OK( rssStatus["Value"][se][status] != "Banned" )
-    return S_ERROR( "%s status not found in RSS for SE %s" % ( status, se ) )
+        return S_OK(rssStatus["Value"][se][status] != "Banned")
+    return S_ERROR("%s status not found in RSS for SE %s" % (status, se))
 
   @property
-  def shifter( self ):
+  def shifter(self):
     return self.__shifterList
 
   @shifter.setter
-  def shifter( self, shifterList ):
+  def shifter(self, shifterList):
     self.__shifterList = shifterList
 
-  def __call__( self ):
+  def __call__(self):
     """ this one should be implemented in the inherited class
 
     should return S_OK/S_ERROR
     """
-    raise NotImplementedError( "Implement me please!" )
+    raise NotImplementedError("Implement me please!")
