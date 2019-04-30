@@ -433,6 +433,9 @@ have to be careful with its use. Here is an example:
     # > {'Color': False, 'Path': False,
     #    'headerIsShown': True, 'threadIsShown': False}
 
+
+.. _gLogger_gLogger_basics_backend:
+
 Send a log record in different outputs
 --------------------------------------
 
@@ -442,6 +445,7 @@ Backend presentation
 *Backend* objects are used to receive the log record created before,
 format it according to the choice of the client, and send it in the
 right output. We can find an exhaustive list of the existing *Backend* types in the :ref:`gLogger_backends` part.
+
 
 Backend resources
 ~~~~~~~~~~~~~~~~~
