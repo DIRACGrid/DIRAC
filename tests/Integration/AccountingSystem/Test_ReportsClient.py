@@ -1,12 +1,15 @@
 """ This is a test of the chain
-    DataStoreClient -> DataStoreHandler -> AccountingDB
+    ReportsClient -> ReportsGeneratorHandler -> AccountingDB
 
-    It supposes that the DB is present, and that the service is running
+    It supposes that the DB is present, and that the service is running.
+    Also the service DataStore has to be up and running.
 
     this is pytest!
 """
 
 # pylint: disable=invalid-name,wrong-import-position
+
+import datetime
 
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
@@ -14,6 +17,7 @@ parseCommandLine()
 from DIRAC import gLogger
 
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
+from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 
 gLogger.setLevel('DEBUG')
@@ -48,6 +52,19 @@ def test_addAndRemove():
   res = gDataStoreClient.addRegister(record)
   assert res['OK']
   res = gDataStoreClient.commit()
+  assert res['OK']
+
+  rc = ReportsClient()
+
+  res = rc.listReports('DataOperation')
+  assert res['OK']
+
+  res = rc.listUniqueKeyValues('DataOperation')
+  assert res['OK']
+
+  res = rc.getReport('DataOperation', 'Successful transfers',
+                     datetime.datetime.utcnow(), datetime.datetime.utcnow(),
+                     {}, 'Destination')
   assert res['OK']
 
   # now removing that record
