@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
   Generate a matrix of protocols used between SEs for FTS transfers.
   The output is a CSV file containing a matrix source/destination.
@@ -25,20 +26,17 @@
 
   You can have the following combinations::
 
-    DIRAC-PROD>python ~/DIRAC/DataManagementSystem/scripts/dirac-dms-protocol-matrix
+    DIRAC-PROD>dirac-dms-protocol-matrix
     Using sources: IN2P3-Disk, AnotherDisk
     Using target: IN2P3-Disk, AnotherDisk
 
-    DIRAC-PROD>python ~/DIRAC/DataManagementSystem/scripts/dirac-dms-protocol-matrix --FromSE=IN2P3-User
+    DIRAC-PROD>dirac-dms-protocol-matrix --FromSE=IN2P3-User
     Using sources: IN2P3-User
     Using target: IN2P3-Disk, AnotherDisk
 
-    DIRAC-PROD>python ~/DIRAC/DataManagementSystem/scripts/dirac-dms-protocol-matrix --FromSE=IN2P3-User --Bidirection
+    DIRAC-PROD>dirac-dms-protocol-matrix --FromSE=IN2P3-User --Bidirection
     Using sources: IN2P3-User
     Using target: IN2P3-User
-
-
-
 
 """
 import csv
@@ -159,8 +157,7 @@ if __name__ == '__main__':
   with open(outputFile, 'wb') as csvfile:
     csvWriter = csv.writer(csvfile, delimiter=';', quoting=csv.QUOTE_MINIMAL)
 
-    allSrcDst = sorted(tpMatrix)
-    csvWriter.writerow(['src/dst'] + sorted(tpMatrix))
+    csvWriter.writerow(['src/dst'] + targetSE)
 
     for src in fromSE:
       srcRow = [src]
