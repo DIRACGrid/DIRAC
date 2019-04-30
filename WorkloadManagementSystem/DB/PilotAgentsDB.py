@@ -17,6 +17,8 @@
 
 """
 
+__RCSID__ = "$Id$"
+
 import threading
 
 from DIRAC import gLogger, S_OK, S_ERROR
@@ -25,12 +27,6 @@ from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE, getCESiteMapping
 import DIRAC.Core.Utilities.Time as Time
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN, getDNForUsername
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
-
-DEBUG = 1
-
-__RCSID__ = "$Id$"
-
-#############################################################################
 
 
 class PilotAgentsDB(DB):

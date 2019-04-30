@@ -23,7 +23,7 @@ from DIRAC.Core.Security import Properties
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
 from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
-from DIRAC.WorkloadManagementSystem.Client.WMSAdministratorClient import WMSAdministratorClient
+from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 from DIRAC.Resources.Computing.ComputingElementFactory import ComputingElementFactory
 from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
 from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
@@ -620,10 +620,10 @@ class JobAgent(AgentModule):
 
     gridCE = gConfig.getValue('/LocalSite/GridCE', '')
     queue = gConfig.getValue('/LocalSite/CEQueue', '')
-    result = WMSAdministratorClient().setPilotStatus(str(self.pilotReference), 'Done', gridCE,
-                                                     'Report from JobAgent', self.siteName, queue)
+    result = PilotManagerClient().setPilotStatus(str(self.pilotReference), 'Done', gridCE,
+                                                 'Report from JobAgent', self.siteName, queue)
     if not result['OK']:
-      self.log.warn(result['Message'])
+      self.log.warn('Issue setting the pilot status', result['Message'])
 
     return S_OK()
 
