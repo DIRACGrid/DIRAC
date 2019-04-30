@@ -181,7 +181,7 @@ def getBackgroud():
 
 
 def getWelcome():
-  return getCSValue("WelcomeHTML","")
+  return getCSValue("WelcomeHTML", "")
 
 
 def bugReportURL():
@@ -200,7 +200,5 @@ def getAuthSettingsOptions(authname):
   return getCSOptions("TypeAuths/%s" % authname)
 
 
-def getAuthCFG(authname,getvalue):
+def getAuthCFG(authname, getvalue):
   return getCSValue("TypeAuths/%s/%s" % (authname, getvalue))
-  
-

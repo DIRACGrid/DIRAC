@@ -14,6 +14,7 @@ from DIRAC.Core.Utilities.Decorators import deprecated
 
 _RCSID_ = "$Id$"
 
+
 class Compiler(object):
 
   def __init__(self):
@@ -78,7 +79,7 @@ class Compiler(object):
     if not os.path.isdir(buildDir):
       try:
         os.makedirs(buildDir)
-      except IOError, excp:
+      except IOError as excp:
         return S_ERROR("Can't create build dir %s" % excp)
     outFile = os.path.join(buildDir, "index.html")
     compressedJsFile = os.path.join(buildDir, appName + '.js')
