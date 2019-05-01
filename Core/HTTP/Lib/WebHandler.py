@@ -14,7 +14,7 @@ import tornado.stack_context
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.HTTP.Lib import Conf
 from DIRAC.Core.HTTP.Lib.SessionData import SessionData
-from DIRAC.Core.Security import CS, Properties
+from DIRAC.Core.Security import Properties
 from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.Core.DISET.AuthManager import AuthManager
 from DIRAC.Core.DISET.ThreadConfig import ThreadConfig
@@ -342,10 +342,10 @@ class WebHandler(tornado.web.RequestHandler):
     :param str dn: certificate DN
     :return: bool if the host is Trusrted it return true otherwise false
     """
-    retVal = CS.getHostnameForDN(dn)
+    retVal = Registry.getHostnameForDN(dn)
     if retVal['OK']:
       hostname = retVal['Value']
-      if Properties.TRUSTED_HOST in CS.getPropertiesForHost(hostname, []):
+      if Properties.TRUSTED_HOST in Registry.getPropertiesForHost(hostname, []):
         return True
     return False
 
