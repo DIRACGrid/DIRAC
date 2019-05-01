@@ -139,8 +139,9 @@ class App(object):
     self.log.always("\n ====== Starting DIRAC web app ====== \n")
 
     # Load required CFG files
-    if not self._loadDefaultWebCFG(
-    ):  # if we have a web.cfg under etc directory we use it, otherwise we use the configuration file defined by the developer
+    if not self._loadDefaultWebCFG():  
+      # if we have a web.cfg under etc directory we use it, 
+      # otherwise we use the configuration file defined by the developer
       self._loadWebAppCFGFiles()
     # Calculating routes
     result = self.__handlerMgr.getRoutes()

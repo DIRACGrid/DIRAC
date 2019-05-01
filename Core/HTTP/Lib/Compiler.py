@@ -104,9 +104,9 @@ class Compiler(object):
 
   def __zip(self, staticPath, stack=""):
     c = 0
-    l = "|/-\\"
+    ll = "|/-\\"
     for entry in os.listdir(staticPath):
-      n = stack + l[c % len(l)]
+      n = stack + ll[c % len(ll)]
       if entry[-3:] == ".gz":
         continue
       ePath = os.path.join(staticPath, entry)
@@ -165,7 +165,8 @@ class Compiler(object):
       for extName in self.__extensions:
         if extName != 'DIRAC':  # if we have a VO specific installation we have to discover the extension name.
           # For example: self.__extensions=['DIRAC','LHCbWebDIRAC'] and staticPath = '../LHCbWebDIRAC/WebApp/static'
-          # extPath='../LHCbWebDIRAC/WebApp/static/LHCbWebDIRAC' this directory does not exits because we call it LHCbDIRAC.
+          # extPath='../LHCbWebDIRAC/WebApp/static/LHCbWebDIRAC'
+          #  this directory does not exits because we call it LHCbDIRAC.
           # In that case the extPath='../LHCbWebDIRAC/WebApp/static/LHCbDIRAC'
           extDirectoryContent = os.listdir(staticPath)
           if len(extDirectoryContent) == 0:
