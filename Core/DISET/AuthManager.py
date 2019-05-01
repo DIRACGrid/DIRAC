@@ -2,9 +2,8 @@
 """
 
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupsForVO
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
-from DIRAC.Core.Security import CS
 from DIRAC.Core.Security import Properties
 from DIRAC.Core.Utilities import List
 
@@ -95,7 +94,7 @@ class AuthManager(object):
     # Get the username
     if self.KW_DN in credDict and credDict[self.KW_DN]:
       if self.KW_GROUP not in credDict:
-        result = CS.findDefaultGroupForDN(credDict[self.KW_DN])
+        result = Registry.findDefaultGroupForDN(credDict[self.KW_DN])
         if not result['OK']:
           return False
         credDict[self.KW_GROUP] = result['Value']
@@ -110,8 +109,14 @@ class AuthManager(object):
           credDict[self.KW_GROUP] = "visitor"
       else:
         # For users
-        if not self.getUsername(credDict):
+        username = self.getUsername(credDict)
+        suspended = self.isUserSuspended(credDict)
+        if not username:
           self.__authLogger.warn("User is invalid or does not belong to the group it's saying")
+        if suspended:
+          self.__authLogger.warn("User is Suspended")
+
+        if not username or suspended:
           if not allowAll:
             return False
           # If all, then set anon credentials
@@ -147,12 +152,12 @@ class AuthManager(object):
       return True
     if self.KW_GROUP not in credDict:
       return False
-    retVal = CS.getHostnameForDN(credDict[self.KW_DN])
+    retVal = Registry.getHostnameForDN(credDict[self.KW_DN])
     if not retVal['OK']:
       gLogger.warn("Cannot find hostname for DN %s: %s" % (credDict[self.KW_DN], retVal['Message']))
       return False
     credDict[self.KW_USERNAME] = retVal['Value']
-    credDict[self.KW_PROPERTIES] = CS.getPropertiesForHost(credDict[self.KW_USERNAME], [])
+    credDict[self.KW_PROPERTIES] = Registry.getPropertiesForHost(credDict[self.KW_USERNAME], [])
     return True
 
   def getValidPropertiesForMethod(self, method, defaultProperties=False):
@@ -195,7 +200,7 @@ class AuthManager(object):
       elif prop.startswith('vo:'):
         rawProperties.remove(prop)
         vo = prop.replace('vo:', '')
-        result = getGroupsForVO(vo)
+        result = Registry.getGroupsForVO(vo)
         if result['OK']:
           validGroups.extend(result['Value'])
 
@@ -212,10 +217,10 @@ class AuthManager(object):
     """
     if self.KW_EXTRA_CREDENTIALS in credDict and isinstance(credDict[self.KW_EXTRA_CREDENTIALS], tuple):
       if self.KW_DN in credDict:
-        retVal = CS.getHostnameForDN(credDict[self.KW_DN])
+        retVal = Registry.getHostnameForDN(credDict[self.KW_DN])
         if retVal['OK']:
           hostname = retVal['Value']
-          if Properties.TRUSTED_HOST in CS.getPropertiesForHost(hostname, []):
+          if Properties.TRUSTED_HOST in Registry.getPropertiesForHost(hostname, []):
             return True
     return False
 
@@ -236,23 +241,44 @@ class AuthManager(object):
     The username will be included in the credentials dictionary.
 
     :type  credDict: dictionary
-    :param credDict: Credentials to ckeck
+    :param credDict: Credentials to check
     :return: Boolean specifying whether the username was found
     """
     if self.KW_DN not in credDict:
       return True
     if self.KW_GROUP not in credDict:
-      result = CS.findDefaultGroupForDN(credDict[self.KW_DN])
+      result = Registry.findDefaultGroupForDN(credDict[self.KW_DN])
       if not result['OK']:
         return False
       credDict[self.KW_GROUP] = result['Value']
-    credDict[self.KW_PROPERTIES] = CS.getPropertiesForGroup(credDict[self.KW_GROUP], [])
-    usersInGroup = CS.getUsersInGroup(credDict[self.KW_GROUP], [])
+    credDict[self.KW_PROPERTIES] = Registry.getPropertiesForGroup(credDict[self.KW_GROUP], [])
+    usersInGroup = Registry.getUsersInGroup(credDict[self.KW_GROUP], [])
     if not usersInGroup:
       return False
-    retVal = CS.getUsernameForDN(credDict[self.KW_DN], usersInGroup)
+    retVal = Registry.getUsernameForDN(credDict[self.KW_DN], usersInGroup)
     if retVal['OK']:
       credDict[self.KW_USERNAME] = retVal['Value']
+      return True
+    return False
+
+  def isUserSuspended(self, credDict):
+    """ Discover if the user is in Suspended status
+
+    :param dict credDict: Credentials to check
+    :return: Boolean True if user is Suspended
+    """
+    # Update credDict if the username is not there
+    if self.KW_USERNAME not in credDict:
+      self.getUsername(credDict)
+    # If username or group is not known we can not judge if the user is suspended
+    # These cases are treated elsewhere anyway
+    if self.KW_USERNAME not in credDict or self.KW_GROUP not in credDict:
+      return False
+    suspendedVOList = Registry.getUserOption(credDict[self.KW_USERNAME], 'Suspended', [])
+    if not suspendedVOList:
+      return False
+    vo = Registry.getVOForGroup(credDict[self.KW_GROUP])
+    if vo in suspendedVOList:
       return True
     return False
 

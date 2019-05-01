@@ -13,12 +13,10 @@ parseCommandLine()
 
 from DIRAC import gLogger
 
-from DIRAC.AccountingSystem.Client.DataStoreClient import DataStoreClient
+from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 
 gLogger.setLevel('DEBUG')
-
-dsc = DataStoreClient()
 
 
 def createAccountingRecord():
@@ -47,11 +45,11 @@ def test_addAndRemove():
   record = createAccountingRecord()
   record.setStartTime()
   record.setEndTime()
-  res = dsc.addRegister(record)
+  res = gDataStoreClient.addRegister(record)
   assert res['OK']
-  res = dsc.commit()
+  res = gDataStoreClient.commit()
   assert res['OK']
 
   # now removing that record
-  res = dsc.remove(record)
+  res = gDataStoreClient.remove(record)
   assert res['OK']

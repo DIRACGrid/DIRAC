@@ -31,6 +31,10 @@ do
     DEBUG='-o LogLevel=DEBUG'
   ;;
 
+  -o | --dirac-os )
+    USE_DIRACOS='--dirac-os'
+  ;;
+
   -v | --version )
     switch=$1
     shift
@@ -62,7 +66,7 @@ installDir=`grep TargetPath $installCfg | grep -v '#' | cut -d '=' -f 2 | sed -e
 mkdir -p $installDir || exit
 #
 
-python dirac-install -t server $installCfg
+python dirac-install -t server $USE_DIRACOS $installCfg
 source $installDir/bashrc
 dirac-configure $installCfg $DEBUG
 dirac-setup-site $DEBUG

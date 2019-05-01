@@ -134,8 +134,8 @@ and merge the commits from the patches::
 
 We can now start merging PRs, directly from GitHub. At the same time we edit
 the release notes to reflect what has been merged (please see the note below about how to edit this file).
-Once finished, save the file. Then, modify the __init__.py file of the root directory and define the version also there.
-Then we commit the changes (those done to release.notes and __init__.py) and update the current repository::
+Once finished, save the file. Then, modify the __init__.py and the setup.py files of the root directory and define the version also there.
+Then we commit the changes (those done to release.notes, __init__.py, and setup.py) and update the current repository::
 
   > git commit -a #this will commit the changes we made to the release notes in rel-v6r19 local branch
   > git fetch release #this will bring in the updated release/rel-v6r19 branch from the github repository
@@ -143,7 +143,7 @@ Then we commit the changes (those done to release.notes and __init__.py) and upd
 
 You can now proceed with tagging, pushing, and uploading::
 
-  > git tag v6r19p7 #this will create a tag, from the current branch, in the local repository
+  > git tag -a v6r19p7 -m "v6r19p7" #this will create an annotated tag, from the current branch, in the local repository
   > git push --tags release rel-v6r19 #we push to the *release* repository (so to GitHub-hosted one) the tag just created, and the rel-v6r19 branch.
 
 From the previous command, note that due to the fact that we are pushing a branch named *rel-v6r19*
@@ -167,8 +167,9 @@ One typical conflict is about the content of the release.notes file.
 From now on, the process will look very similar to what we have already done for
 creating tag v6r19p7. We should then repeat the process for v6r20::
 
-  > vim release.notes 
+  > vim release.notes
   > vim __init__.py
+  > vim setup.py
 
 Merge PRs (if any), then save the files above. Then::
 
@@ -198,6 +199,7 @@ The procedure for creating pre-releases is very similar to creating releases::
   > git merge rel-v6r20 #replace with the "last" branch
   > vim release.notes 
   > vim __init__.py
+  > vim setup.py
   > vim releases.cfg #add the created tags (all of them, releases and pre-releases)
 
 Merge all the PRs targeting integration that have been approved (if any), then save the files above. Then::

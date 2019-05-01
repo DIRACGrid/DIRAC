@@ -13,7 +13,8 @@ from DIRAC.Core.Utilities import List, Network
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceURL, getServiceFailoverURL
-from DIRAC.Core.Security import CS
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import skipCACheck
 from DIRAC.Core.DISET.private.TransportPool import getGlobalTransportPool
 from DIRAC.Core.DISET.ThreadConfig import ThreadConfig
 
@@ -204,7 +205,7 @@ class BaseClient(object):
       if self.__useCertificates:
         self.kwargs[self.KW_SKIP_CA_CHECK] = False
       else:
-        self.kwargs[self.KW_SKIP_CA_CHECK] = CS.skipCACheck()
+        self.kwargs[self.KW_SKIP_CA_CHECK] = skipCACheck()
     if self.KW_PROXY_CHAIN in self.kwargs:
       try:
         self.kwargs[self.KW_PROXY_STRING] = self.kwargs[self.KW_PROXY_CHAIN].dumpAllToString()['Value']
@@ -245,7 +246,7 @@ class BaseClient(object):
       self.kwargs[self.KW_DELEGATED_GROUP] = delegatedGroup
     if delegatedDN:
       if not delegatedGroup:
-        result = CS.findDefaultGroupForDN(self.kwargs[self.KW_DELEGATED_DN])
+        result = Registry.findDefaultGroupForDN(self.kwargs[self.KW_DELEGATED_DN])
         if not result['OK']:
           return result
       self.__extraCredentials = (delegatedDN, delegatedGroup)

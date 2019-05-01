@@ -45,6 +45,11 @@ class MonitoringReporter(object):
     self.__documents = []
     self.__monitoringType = monitoringType
     self.__failoverQueueName = failoverQueueName
+    self.__defaultMQProducer = None
+
+  def __del__(self):
+    if self.__defaultMQProducer is not None:
+      self.__defaultMQProducer.close()
 
   def processRecords(self):
     """
@@ -98,15 +103,13 @@ class MonitoringReporter(object):
     :param object mqProducer: We can provide the instance of a producer, which will be used to publish the data
     """
 
-    # If no mqProducer provided, we create one just to send those records and close it.
+    # If no mqProducer provided, we try to get the default one to send those records.
     if mqProducer is None:
-      mqProducer = self.__createProducer()
+      mqProducer = self.__getProducer()
       if mqProducer is None:
-        gLogger.error("Fail to create Producer")
-        return S_ERROR("Fail to create Producer")
+        gLogger.error("Fail to get Producer")
+        return S_ERROR("Fail to get Producer")
       result = mqProducer.put(json.dumps(records))
-      mqProducer.close()
-      mqProducer = None
       return result
 
     return mqProducer.put(json.dumps(records))
@@ -118,7 +121,7 @@ class MonitoringReporter(object):
     """
     # before we try to insert the data to the db, we process all the data
     # which are already in the queue
-    mqProducer = self.__createProducer()  # we are sure that we can connect to MQ
+    mqProducer = self.__getProducer()  # we are sure that we can connect to MQ
     if mqProducer is not None:
       result = self.processRecords()
       if not result['OK']:
@@ -152,11 +155,19 @@ class MonitoringReporter(object):
       gLogger.exception("Error committing", lException=e)
       return S_ERROR("Error committing %s" % repr(e).replace(',)', ')'))
     finally:
-      if mqProducer is not None:
-        mqProducer.close()
-        mqProducer = None
       self.__documents.extend(documents)
     return S_OK(recordSent)
+
+  def __getProducer(self):
+    """
+    This method is used to get the default MQ producer or create it if needed.
+
+    Returns:
+      MQProducer or None:
+    """
+    if self.__defaultMQProducer is None:
+      self.__defaultMQProducer = self.__createProducer()
+    return self.__defaultMQProducer
 
   def __createProducer(self):
     """

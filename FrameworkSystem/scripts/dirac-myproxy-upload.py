@@ -7,7 +7,6 @@
 __RCSID__ = "$Id$"
 
 import sys
-import getpass
 import DIRAC
 from DIRAC.Core.Base import Script
 
@@ -39,10 +38,8 @@ Script.registerSwitch( "i", "version", "Print version", params.showVersion )
 Script.addDefaultOptionValue( "LogLevel", "always" )
 Script.parseCommandLine()
 
-from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.Core.Security.MyProxy import MyProxy
-from DIRAC.Core.Security.X509Chain import X509Chain
-from DIRAC.Core.Security import Locations, CS
+from DIRAC.Core.Security import Locations
 
 if not params.proxyLoc:
   params.proxyLoc = Locations.getProxyLocation()

@@ -13,7 +13,7 @@ from DIRAC.Core.Utilities.List import fromChar
 from DIRAC.Core.Utilities.PrettyPrint import printTable
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOOption, getVOMSRoleGroupMapping, \
-    getUsersInVO, getAllUsers
+    getUsersInVO, getAllUsers, getUserOption
 
 
 def _getUserNameFromMail(mail):
@@ -114,7 +114,17 @@ def _getUserNameFromSurname(name, surname):
 
 class VOMS2CSSynchronizer(object):
 
-  def __init__(self, vo, autoModifyUsers=True, autoAddUsers=True, autoDeleteUsers=False):
+  def __init__(self, vo, autoModifyUsers=True, autoAddUsers=True,
+               autoDeleteUsers=False, autoLiftSuspendedStatus=False):
+    """ VOMS2CSSynchronizer class constructor
+
+    :param str vo: VO to be synced
+    :param boolean autoModifyUsers: flag to automatically modify user data in CS
+    :param autoAddUsers: flag to automatically add new users to CS
+    :param autoDeleteUsers: flag to automatically delete users from CS if no more in VOMS
+    :param autoLiftSuspendedStatus: flag to automatically remove Suspended status in CS
+    :return: None
+    """
 
     self.log = gLogger.getSubLogger("VOMS2CSSynchronizer")
     self.csapi = CSAPI()
@@ -127,6 +137,7 @@ class VOMS2CSSynchronizer(object):
     self.autoModifyUsers = autoModifyUsers
     self.autoAddUsers = autoAddUsers
     self.autoDeleteUsers = autoDeleteUsers
+    self.autoLiftSuspendedStatus = autoLiftSuspendedStatus
     self.voChanged = False
 
   def syncCSWithVOMS(self):
@@ -271,7 +282,29 @@ class VOMS2CSSynchronizer(object):
 
       # We have an already existing user
       modified = False
-      userDict = {"DN": dn, "CA": self.vomsUserDict[dn]['CA'], "Email": self.vomsUserDict[dn]['mail']}
+      suspendedInVOMS = self.vomsUserDict[dn]['suspended'] or self.vomsUserDict[dn]['certSuspended']
+      suspendedVOList = getUserOption(diracName, 'Suspended', [])
+      userDict = {"DN": dn,
+                  "CA": self.vomsUserDict[dn]['CA'],
+                  "Email": self.vomsUserDict[dn].get('mail', self.vomsUserDict[dn].get('emailAddress'))}
+
+      # Set Suspended status for the user for this particular VO
+      if suspendedInVOMS and self.vo not in suspendedVOList:
+        suspendedVOList.append(self.vo)
+        userDict['Suspended'] = ','.join(suspendedVOList)
+        modified = True
+
+      # Remove the lifted Suspended status
+      if not suspendedInVOMS and self.vo in suspendedVOList and self.autoLiftSuspendedStatus:
+        newList = []
+        for vo in suspendedVOList:
+          if vo != self.vo:
+            newList.append(vo)
+        if not newList:
+          newList = ["None"]
+        userDict['Suspended'] = ','.join(newList)
+        modified = True
+
       if newDNForExistingUser:
         userDict['DN'] = ','.join([dn, diracUserDict.get(diracName, newAddedUserDict.get(diracName))['DN']])
         modified = True
@@ -319,6 +352,11 @@ class VOMS2CSSynchronizer(object):
               modMsg += "    Added to group(s) %s\n" % ','.join(addedGroups)
             if removedGroups:
               modMsg += "    Removed from group(s) %s\n" % ','.join(removedGroups)
+          elif key == "Suspended":
+            if userDict['Suspended'] == "None":
+              modMsg += "    Suspended status removed\n"
+            else:
+              modMsg += "    User Suspended in VOs: %s\n" % userDict['Suspended']
           else:
             oldValue = str(diracUserDict.get(diracName, {}).get(key, ''))
             if str(userDict[key]) != oldValue:

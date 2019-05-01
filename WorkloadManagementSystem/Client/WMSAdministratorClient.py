@@ -5,7 +5,7 @@ from DIRAC.Core.Base.Client import Client
 
 
 class WMSAdministratorClient(Client):
-  """JobManagerClient sets url for the JobManagerHandler.
+  """JobManagerClient sets url for the WMSAdministratorHandler.
   """
 
   def __init__(self, url=None, **kwargs):

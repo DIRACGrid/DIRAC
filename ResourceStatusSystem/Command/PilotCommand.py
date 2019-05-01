@@ -11,7 +11,7 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 from DIRAC.ResourceStatusSystem.Command.Command import Command
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
-from DIRAC.WorkloadManagementSystem.Client.WMSAdministratorClient import WMSAdministratorClient
+from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 from DIRAC.ResourceStatusSystem.Utilities import CSHelpers
 
 
@@ -24,10 +24,10 @@ class PilotCommand(Command):
 
     super(PilotCommand, self).__init__(args, clients)
 
-    if 'WMSAdministrator' in self.apis:
-      self.wmsAdmin = self.apis['WMSAdministrator']
+    if 'Pilots' in self.apis:
+      self.pilots = self.apis['Pilots']
     else:
-      self.wmsAdmin = WMSAdministratorClient()
+      self.pilots = PilotManagerClient()
 
     if 'ResourceManagementClient' in self.apis:
       self.rmClient = self.apis['ResourceManagementClient']
@@ -90,19 +90,19 @@ class PilotCommand(Command):
       # You should never see this error
       return S_ERROR('"%s" is not  Site nor Resource' % element)
 
-    wmsResults = self.wmsAdmin.getPilotSummaryWeb(wmsDict, [], 0, 0)
+    pilotsResults = self.pilots.getPilotSummaryWeb(wmsDict, [], 0, 0)
 
-    if not wmsResults['OK']:
-      return wmsResults
-    wmsResults = wmsResults['Value']
+    if not pilotsResults['OK']:
+      return pilotsResults
+    pilotsResults = pilotsResults['Value']
 
-    if 'ParameterNames' not in wmsResults:
+    if 'ParameterNames' not in pilotsResults:
       return S_ERROR('Wrong result dictionary, missing "ParameterNames"')
-    params = wmsResults['ParameterNames']
+    params = pilotsResults['ParameterNames']
 
-    if 'Records' not in wmsResults:
+    if 'Records' not in pilotsResults:
       return S_ERROR('Wrong formed result dictionary, missing "Records"')
-    records = wmsResults['Records']
+    records = pilotsResults['Records']
 
     uniformResult = []
 

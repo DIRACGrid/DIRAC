@@ -11,12 +11,12 @@ __RCSID__ = "$Id$"
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities import Time
-from DIRAC.Core.Security import CS
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE
 from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 from DIRAC.AccountingSystem.Client.Types.Pilot import Pilot as PilotAccounting
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
-from DIRAC.WorkloadManagementSystem.Client.WMSAdministratorClient import WMSAdministratorClient
+from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 
@@ -60,7 +60,7 @@ class PilotStatusAgent(AgentModule):
     self.jobDB = JobDB()
     self.clearPilotsDelay = self.am_getOption('ClearPilotsDelay', 30)
     self.clearAbortedDelay = self.am_getOption('ClearAbortedPilotsDelay', 7)
-    self.WMSAdministrator = WMSAdministratorClient()
+    self.pilots = PilotManagerClient()
 
     return S_OK()
 
@@ -90,7 +90,7 @@ class PilotStatusAgent(AgentModule):
 
     connection.close()
 
-    result = self.WMSAdministrator.clearPilots(self.clearPilotsDelay, self.clearAbortedDelay)
+    result = self.pilots.clearPilots(self.clearPilotsDelay, self.clearAbortedDelay)
     if not result['OK']:
       self.log.warn('Failed to clear old pilots in the PilotAgentsDB')
 
@@ -264,7 +264,7 @@ class PilotStatusAgent(AgentModule):
       pA = PilotAccounting()
       pA.setEndTime(pData['LastUpdateTime'])
       pA.setStartTime(pData['SubmissionTime'])
-      retVal = CS.getUsernameForDN(pData['OwnerDN'])
+      retVal = Registry.getUsernameForDN(pData['OwnerDN'])
       if not retVal['OK']:
         userName = 'unknown'
         self.log.error("Can't determine username for dn:", pData['OwnerDN'])

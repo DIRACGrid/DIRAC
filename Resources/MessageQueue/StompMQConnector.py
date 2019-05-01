@@ -124,6 +124,7 @@ class StompMQConnector(MQConnector):
     """
     Sends a message to the queue
     message contains the body of the message
+
     Args:
       message(str): string or any json encodable structure.
       parameters(dict): parameters with 'destination' key defined.
@@ -187,6 +188,8 @@ class StompMQConnector(MQConnector):
     fail = False
     for connection in self.connections.itervalues():
       try:
+        if connection.get_listener('ReconnectListener'):
+          connection.remove_listener('ReconnectListener')
         connection.disconnect()
       except Exception as e:
         self.log.error('Failed to disconnect: %s' % e)
@@ -251,6 +254,7 @@ class ReconnectListener (stomp.ConnectionListener):
   def __init__(self, callback=None):
     """
     Initializes the internal listener object
+
     Args:
       callback: a function called when disconnection happens.
     """
@@ -277,6 +281,7 @@ class StompListener (stomp.ConnectionListener):
   def __init__(self, callback, ack, connection, messengerId):
     """
     Initializes the internal listener object
+
     Args:
       callback: a defaultCallback compatible function.
       ack(bool): if set to true an acknowledgement will be send back to the sender.
@@ -307,6 +312,7 @@ class StompListener (stomp.ConnectionListener):
 
   def on_error(self, headers, message):
     """ Function called when an error happens
+
     Args:
       headers(dict): message headers.
       body(json): message body.
