@@ -174,14 +174,14 @@ class WebHandler(tornado.web.RequestHandler):
           self.log.error('OIDC request error: %s' % requests.get(url, headers=heads, verify=False).json()['error'])
           return
         ID = requests.get(url, headers=heads, verify=False).json()['sub']
-        result = Register.getUsernameForID(ID)
+        result = Registry.getUsernameForID(ID)
         if result['OK']:
           self.__credDict['username'] = result['Value']
-        result = Register.getDNForUsername(self.__credDict['username'])
+        result = Registry.getDNForUsername(self.__credDict['username'])
         if result['OK']:
           self.__credDict['validDN'] = True
           self.__credDict['DN'] = result['Value'][0]
-        result = Register.getCAForUsername(self.__credDict['username'])
+        result = Registry.getCAForUsername(self.__credDict['username'])
         if result['OK']:
           self.__credDict['issuer'] = result['Value'][0]
         return
