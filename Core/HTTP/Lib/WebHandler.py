@@ -11,7 +11,7 @@ import tornado.ioloop
 import tornado.websocket
 import tornado.stack_context
 
-from DIRAC import gLogger, S_ERROR, S_OK
+from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.HTTP.Lib import Conf
 from DIRAC.Core.HTTP.Lib.SessionData import SessionData
 from DIRAC.Core.Security import CS, Properties
@@ -20,7 +20,6 @@ from DIRAC.Core.DISET.AuthManager import AuthManager
 from DIRAC.Core.DISET.ThreadConfig import ThreadConfig
 from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForID, getDNForUsername, getCAForUsername
 
 from concurrent.futures import ThreadPoolExecutor
 
@@ -28,6 +27,7 @@ _RCSID_ = "$Id$"
 
 global gThreadPool
 gThreadPool = ThreadPoolExecutor(100)
+
 
 class WErr(tornado.web.HTTPError):
 
@@ -174,14 +174,14 @@ class WebHandler(tornado.web.RequestHandler):
           self.log.error('OIDC request error: %s' % requests.get(url, headers=heads, verify=False).json()['error'])
           return
         ID = requests.get(url, headers=heads, verify=False).json()['sub']
-        result = getUsernameForID(ID)
+        result = Register.getUsernameForID(ID)
         if result['OK']:
           self.__credDict['username'] = result['Value']
-        result = getDNForUsername(self.__credDict['username'])
+        result = Register.getDNForUsername(self.__credDict['username'])
         if result['OK']:
           self.__credDict['validDN'] = True
           self.__credDict['DN'] = result['Value'][0]
-        result = getCAForUsername(self.__credDict['username'])
+        result = Register.getCAForUsername(self.__credDict['username'])
         if result['OK']:
           self.__credDict['issuer'] = result['Value'][0]
         return
