@@ -35,7 +35,7 @@ Machine setup
 
 This section is to be executed as ``root`` user.
 
-Make sure that the machine can address itself using the ``dirac-tuto`` alias. Modify the ``/etc/host`` file as such::
+Make sure that the machine can address itself using the ``dirac-tuto`` alias. Modify the ``/etc/hosts`` file as such::
 
   127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4 dirac-tuto
   ::1         localhost localhost.localdomain localhost6 localhost6.localdomain6 dirac-tuto
