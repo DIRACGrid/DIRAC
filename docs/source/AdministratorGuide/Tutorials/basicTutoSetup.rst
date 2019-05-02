@@ -313,7 +313,7 @@ First, download the installer, and make it executable::
   chmod +x install_site.sh
 
 
-``install_site.sh`` requires a configuration file to tell it what and how to install. Create a file called ``installation.cfg`` with the following content::
+``install_site.sh`` requires a configuration file to tell it what and how to install. Create a file called ``install.cfg`` with the following content::
 
   LocalInstallation
   {
@@ -414,7 +414,7 @@ You can verify that the components are running::
 
 The logs are to be found in ``/opt/dirac/runit/``, grouped by component.
 
-The installation created the file ``/opt/dirac/etc/dirac.cfg``. The content is the same as the ``installation.cfg``, with the addition of the following::
+The installation created the file ``/opt/dirac/etc/dirac.cfg``. The content is the same as the ``install.cfg``, with the addition of the following::
 
   DIRAC
   {
