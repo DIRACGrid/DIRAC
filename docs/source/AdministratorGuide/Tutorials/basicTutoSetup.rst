@@ -97,7 +97,12 @@ First of all, remove the existing (outdated) installation::
 
 Install all the necessary RPMs for MySQL 5.7::
 
-  yum install -y https://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-community-devel-5.7.25-1.el6.x86_64.rpm https://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-community-server-5.7.25-1.el6.x86_64.rpm https://dev.mysqlom/get/Downloads/MySQL-5.7/mysql-community-client-5.7.25-1.el6.x86_64.rpm  https://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-community-libs-5.7.25-1.el6.x86_64.rpm https://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-community-common-5.7.25-1.el6.x86_64.rpm
+  yum install -y \
+    https://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-community-devel-5.7.25-1.el6.x86_64.rpm \
+    https://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-community-server-5.7.25-1.el6.x86_64.rpm \
+    https://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-community-client-5.7.25-1.el6.x86_64.rpm \
+    https://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-community-libs-5.7.25-1.el6.x86_64.rpm \
+    https://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-community-common-5.7.25-1.el6.x86_64.rpm
 
 
 Setup the root password::
