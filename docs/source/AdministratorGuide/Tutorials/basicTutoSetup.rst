@@ -141,9 +141,9 @@ Setup the root password::
   Starting MySQL.
 
 
------------------------
+-------------------------
 Create the ``dirac`` user
------------------------
+-------------------------
 
 The user that will run the server will be ``dirac``. You can set a password for that user::
 
