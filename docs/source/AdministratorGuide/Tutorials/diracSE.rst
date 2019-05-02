@@ -142,9 +142,11 @@ This file uploads ``/tmp/dummy.txt`` on the StorageElement, list the directory a
   {'OK': True, 'Value': {'Successful': {'/tutoVO': {'Files': {}, 'SubDirs': {}}}, 'Failed': {}}}
 
 
-.. note:: you might be getting the following message if you have no Accounting system. you can safely ignore it::
+.. note::
 
-    Error sending accounting record Cannot get URL for Accounting/DataStore in setup MyDIRAC-Production: RuntimeError('Option /DIRAC/Setups/MyDIRAC-Production/Accounting is not defined',)
+   You might be getting the following message if you have no Accounting system. You can safely ignore it::
+
+     Error sending accounting record Cannot get URL for Accounting/DataStore in setup MyDIRAC-Production\: RuntimeError('Option /DIRAC/Setups/MyDIRAC-Production/Accounting is not defined',)
 
 
 Adding a second DIRAC SE

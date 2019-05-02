@@ -91,7 +91,7 @@ Let's replicate it to ``StorageElementTwo`` using the RMS::
   You can monitor requests' status using command: 'dirac-rms-request <requestName/ID>'
 
 
-The Request has a name (``myFirstRequest``) that we chose, but also an ID, returned by the system (here ````). The ID is guaranteed to be unique, while the name is not, so it is recommended to use the ID when you interact with the RMS. You can see the status of your Request, using its name or ID::
+The Request has a name (``myFirstRequest``) that we chose, but also an ID, returned by the system (here ``8``). The ID is guaranteed to be unique, while the name is not, so it is recommended to use the ID when you interact with the RMS. You can see the status of your Request, using its name or ID::
 
   [diracuser@dirac-tuto ~]$ dirac-rms-request myFirstRequest
   Request name='myFirstRequest' ID=8 Status='Waiting'

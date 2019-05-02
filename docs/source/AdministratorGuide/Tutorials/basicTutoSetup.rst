@@ -141,9 +141,9 @@ Setup the root password::
   Starting MySQL.
 
 
------------------------
+-------------------------
 Create the ``dirac`` user
------------------------
+-------------------------
 
 The user that will run the server will be ``dirac``. You can set a password for that user::
 
@@ -285,18 +285,18 @@ At this point, you should find:
 
 * The CA in ``/opt/dirac/etc/grid-security/certificates``::
 
-  [dirac@dirac-tuto caUtilities]$ ls /opt/dirac/etc/grid-security/certificates/
-  855f710d.0  ca.cert.pem
+    [dirac@dirac-tuto caUtilities]$ ls /opt/dirac/etc/grid-security/certificates/
+    855f710d.0  ca.cert.pem
 
 * The host certificate (``hostcert.pem``) and key (``hostkey.pem``) in ``/opt/dirac/etc/grid-security``::
 
-  [dirac@dirac-tuto caUtilities]$ ls /opt/dirac/etc/grid-security/
-  ca  certificates  hostcert.pem  hostkey.pem  openssl_config_host.cnf  request.csr.pem
+    [dirac@dirac-tuto caUtilities]$ ls /opt/dirac/etc/grid-security/
+    ca  certificates  hostcert.pem  hostkey.pem  openssl_config_host.cnf  request.csr.pem
 
 * The user credentials for later in ``/opt/dirac/user/``::
 
-  [dirac@dirac-tuto caUtilities]$ ls /opt/dirac/user/
-  client.key  client.pem  client.req  openssl_config_user.cnf
+    [dirac@dirac-tuto caUtilities]$ ls /opt/dirac/user/
+    client.key  client.pem  client.req  openssl_config_user.cnf
 
 --------------------
 Install DIRAC Server
