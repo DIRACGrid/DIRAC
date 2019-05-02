@@ -128,7 +128,11 @@ class CommandReference(object):
       self.exitcode = 1
 
   def cleanExistingIndex(self, sectionDict):
-    """Make sure no superfluous commands are documented in an existing index file"""
+    """Make sure no superfluous commands are documented in an existing index file.
+
+    If an rst file exists for a command, we move it.
+    An existing entry for a non existing rst file will create a warning when running sphinx.
+    """
     existingCommands = {os.path.basename(com).replace('.py', '') for com in sectionDict[SCRIPTS] + sectionDict[IGNORE]}
     sectionPath = os.path.join(self.config.docsPath, sectionDict[SECTION_PATH])
     LOG.info('Checking %r for non-existent commands', sectionPath)
@@ -148,7 +152,9 @@ class CommandReference(object):
           '\n\t\t\t\t'.join(
               sorted(superfluousCommands)))
       for com in superfluousCommands:
-        shutil.move(os.path.join(sectionPath, com + '.rst'), os.path.join(sectionPath, 'obs_' + com + '.rst'))
+        commandDocPath = os.path.join(sectionPath, com + '.rst')
+        if os.path.exists(commandDocPath):
+          shutil.move(commandDocPath, os.path.join(sectionPath, 'obs_' + com + '.rst'))
       self.exitcode = 1
 
   def createScriptDocFiles(self, script, sectionPath, scriptName, referencePrefix=''):
