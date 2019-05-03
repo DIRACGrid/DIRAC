@@ -19,6 +19,7 @@ from functools import reduce
 from DIRAC import gLogger, gConfig, siteName
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.File import convertSizeUnits
+from DIRAC.Core.Utilities.List import getIndexInList
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR, returnSingleResult
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 from DIRAC.Core.Utilities.Pfn import pfnparse
@@ -670,13 +671,13 @@ class StorageElementItem(object):
     # even if both can provide xroot
     sourceSEStorages = sorted(
         sourceSE.storages,
-        key=lambda x: self.__getIndexInList(
+        key=lambda x: getIndexInList(
             x.getParameters()['Protocol'],
             commonProtocols))
 
     selfStorages = sorted(
         self.storages,
-        key=lambda x: self.__getIndexInList(
+        key=lambda x: getIndexInList(
             x.getParameters()['Protocol'],
             commonProtocols))
 
@@ -795,7 +796,7 @@ class StorageElementItem(object):
       protocolList = list(protocols)
       commonProtocols = sorted(
           commonProtocols & set(protocolList),
-          key=lambda x: self.__getIndexInList(
+          key=lambda x: getIndexInList(
               x,
               protocolList))
 
@@ -967,21 +968,6 @@ class StorageElementItem(object):
 #     res['Failed'] = failed
     return res
 
-  @staticmethod
-  def __getIndexInList(x, l):
-    """ Return the index of the element x in the list l
-        or sys.maxint if it does not exist
-
-        :param x: element to look for
-        :param l: list to look int
-
-        :return: the index or sys.maxint
-    """
-    try:
-      return l.index(x)
-    except ValueError:
-      return sys.maxsize
-
   def __filterPlugins(self, methodName, protocols=None, inputProtocol=None):
     """ Determine the list of plugins that
         can be used for a particular action
@@ -1030,7 +1016,7 @@ class StorageElementItem(object):
 
       # The closest list for "OK" methods is the AccessProtocol preference, so we sort based on that
       pluginsToUse.sort(
-          key=lambda x: self.__getIndexInList(
+          key=lambda x: getIndexInList(
               x.protocolParameters['Protocol'],
               self.localAccessProtocolList))
       log.debug("Plugins to be used for %s: %s" %
@@ -1079,7 +1065,7 @@ class StorageElementItem(object):
 
     # sort the plugins according to the lists in the CS
     pluginsToUse.sort(
-        key=lambda x: self.__getIndexInList(
+        key=lambda x: getIndexInList(
             x.protocolParameters['Protocol'],
             allowedProtocols))
 
