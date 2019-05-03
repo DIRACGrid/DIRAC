@@ -29,9 +29,17 @@ Further reading
 Installing the ``ProxyManager``
 ===============================
 
-This section is to be performed as ``diracuser`` with ``dirac_admin`` group proxy.
+This section is to be performed as ``diracuser`` with ``dirac_admin`` group proxy::
 
-The ``ProxyManager`` will host delegated proxies of the users. As any other service, it is very easy to install::
+  source ~/DiracInstallation/bashrc
+  dirac-proxy-init -g dirac_admin
+
+
+The ``ProxyManager`` will host delegated proxies of the users. As any other service, it is very easy to install with the ``dirac-admin-sysadmin-cli``::
+
+  dirac-admin-sysadmin-cli -H dirac-tuto
+
+And then in the CLI::
 
   [dirac-tuto]> install db ProxyDB
   MySQL root password:
@@ -70,7 +78,7 @@ The simplest way to test it is to upload your user proxy::
   DN                                                                     | Group      | Until (GMT)
   /C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch | dirac_user | 2020/04/09 14:43
 
-As you can see, the proxyDB now contains a delegated proxy for the ``ciuser`` with the group ``dirac_user``.
+As you can see, the ProxyDB now contains a delegated proxy for the ``ciuser`` with the group ``dirac_user``.
 
 If you use a proxy with the ``ProxyManagement`` permission, like the ``dirac_admin`` group has, you can retrieve proxies stored in the DB::
 
