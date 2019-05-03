@@ -366,7 +366,12 @@ class StorageElementItem(object):
 
   def getOccupancy(self, unit='MB', **kwargs):
     """ Retrieves the space information about the storage.
-        It returns the Total and Free space.
+        It returns the Total and Free space, and a SpaceReservation.
+
+        The SpaceReservation is just a name of a zone of the physical storage which can have some space reserved.
+        It corresponds to the ``SpaceToken`` concept of SRM.
+        If the StorageElement definition has a ``SpaceReservation`` option in the CS, this is returned, unless
+        it is overwritten by the storage plugin.
 
         It loops over the different Storage Plugins to query it.
 
@@ -374,7 +379,11 @@ class StorageElementItem(object):
                               The json file should contain the Free and Total space in B.
                               If not specified, the default path will be </vo/occupancy.json>
 
-        :returns: S_OK with dict (keys: Total, Free)
+        :params unit: (default MB)unit of the value returned. See :py:func:`~DIRAC.Core.Utilities.File.convertSizeUnits`
+                      CAUTION: only the `Total` and `Free` field are converted !
+                      Since the rest is whatever is returned by the plugin no conversion is performed
+
+        :returns: S_OK with dict (keys: Total, Free, SpaceReservation)
     """
     log = self.log.getSubLogger('getOccupancy', True)
 
@@ -415,6 +424,11 @@ class StorageElementItem(object):
                   (space, unit, occupancyDict[space]))
               break
             occupancyDict[space] = convertedSpace
+
+        # If the plugin does not return the SpaceReservation, take it from the CS
+
+        if 'SpaceReservation' not in occupancyDict:
+          occupancyDict['SpaceReservation'] = self.options.get('SpaceReservation')
         return res
 
     return S_ERROR("Could not retrieve the occupancy from any plugin")
