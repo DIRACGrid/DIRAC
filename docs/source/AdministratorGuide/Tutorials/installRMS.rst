@@ -42,6 +42,8 @@ The RMS is no different than any other DIRAC system. The installation step are t
   [dirac-tuto]> add instance RequestManagement Production
   Adding RequestManagement system as Production self.instance for MyDIRAC-Production self.setup to dirac.cfg and CS
   RequestManagement system instance Production added successfully
+  [dirac-tuto]> restart *
+  All systems are restarted, connection to SystemAdministrator is lost
   [dirac-tuto]> install db ReqDB
   MySQL root password:
   Adding to CS RequestManagement/ReqDB
