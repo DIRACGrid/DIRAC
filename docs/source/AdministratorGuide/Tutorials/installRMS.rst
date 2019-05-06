@@ -65,7 +65,7 @@ By default, the installation of the ``RequestExecutingAgent`` will configure it 
 Testing the RMS
 ===============
 
-This section is to be executed with a proxy with `dirac_user` group.
+This section is to be executed with a proxy with `dirac_data` group.
 
 The test we are going to do consists in transferring a file from one storage element to another, using the RequestExecutingAgent.
 
