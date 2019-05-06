@@ -38,33 +38,24 @@ Installing the service
 
 This section is to be executed as ``diracuser`` user, with ``dirac_admin`` proxy (reminder: ``dirac-proxy-init -g dirac_admin``).
 
-Install the StorageElement service using ``dirac-admin-sysadmin-cli``::
+Install the StorageElement service using ``dirac-admin-sysadmin-cli``. First we add the *DataManagement* system to the
+*Production* instance on the configuration, then we *restart* all services so they pick up the new configuration, and finally we install the
+``StorageElement`` pointing to the ``BasePath`` we created earlier::
 
   [diracuser@dirac-tuto ~]$ dirac-admin-sysadmin-cli --host dirac-tuto
+  Pinging dirac-tuto...
   [dirac-tuto]> add instance DataManagement Production
   Adding DataManagement system as Production self.instance for MyDIRAC-Production self.setup to dirac.cfg and CS
   DataManagement system instance Production added successfully
-  [dirac-tuto]> install service DataManagement StorageElement
+  [dirac-tuto]> restart *
+  All systems are restarted, connection to SystemAdministrator is lost
+  [dirac-tuto]> install service DataManagement StorageElement -p BasePath=/opt/dirac/storageElementOne/
   Loading configuration template /home/diracuser/DIRAC/DIRAC/DataManagementSystem/ConfigTemplate.cfg
   Adding to CS service DataManagement/StorageElement
   service DataManagement_StorageElement is installed, runit status: Run
   [dirac-tuto]> quit
 
-From the web interface, change the configuration of the StorageElement you just installed to point to the folder you created earlier::
-
-  Systems/DataManagement/Production/StorageElement/BasePath = /opt/dirac/storageElementOne/
-
-And restart the service::
-
-  [diracuser@dirac-tuto ~]$ dirac-admin-sysadmin-cli --host dirac-tuto
-  [dirac-tuto]> restart DataManagement StorageElement
-
-  DataManagement_StorageElement started successfully, runit status:
-
-  ('   DataManagement_StorageElement', ':', 'Run')
-
-
-You now have a Service offering grid like storage. However, you still need to declare a StorageElement for it to be usable within DIRAC.
+You now have a *Service* offering grid like storage. However, you still need to declare a *StorageElement* for it to be usable within DIRAC.
 
 
 Adding the StorageElement
@@ -160,11 +151,11 @@ As ``dirac`` user, create a new directory::
 
 Now the rest is to be installed with ``diracuser`` and a proxy with ``dirac_admin`` group.
 
-We need another StorageElement service. However, it has to have a different name than the first one, so we will just call this service ``StorageElementTwo``::
+We need another StorageElement service. However, it has to have a different *name*, *Port* and *BasePath* than the first one, so we will just call this service ``StorageElementTwo``::
 
   [diracuser@dirac-tuto ~]$ dirac-admin-sysadmin-cli --host dirac-tuto
   Pinging dirac-tuto...
-  [dirac-tuto]> install service DataManagement StorageElementTwo -m StorageElement -p Port=9147
+  [dirac-tuto]> install service DataManagement StorageElementTwo -m StorageElement -p Port=9147 -p BasePath=/opt/dirac/storageElementTwo/
   Loading configuration template /home/diracuser/DIRAC/DIRAC/DataManagementSystem/ConfigTemplate.cfg
   Adding to CS service DataManagement/StorageElementTwo
   service DataManagement_StorageElementTwo is installed, runit status: Run
