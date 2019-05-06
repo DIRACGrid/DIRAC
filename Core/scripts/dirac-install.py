@@ -1822,7 +1822,8 @@ def loadConfiguration():
     except BaseException:
       pass
 
-  if not cliParams.diracOS and os.path.exists("%s/diracos" % cliParams.targetPath):
+  # If we are running an update, DIRACOS will be set in the environment
+  if not cliParams.diracOS and 'DIRACOS' in os.environ:
     logWARN("Forcing to install DIRACOS, because it is already installed!")
     cliParams.diracOS = True
 
