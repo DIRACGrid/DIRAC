@@ -431,7 +431,7 @@ class CSAPI(object):
     Adds or modify one or more shifters. Also, adds the shifter section in case this is not present.
     Shifter identities are used in several places, mostly for running agents
 
-    shifters should be in the form {'ShifterRole':{'User':'aUserName', 'Group':'aDIRACGroup'}}
+    :param dict shifters: has to be in the form {'ShifterRole':{'User':'aUserName', 'Group':'aDIRACGroup'}}
 
     :return: S_OK/S_ERROR
     """
