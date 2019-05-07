@@ -485,7 +485,7 @@ class CSAPI(object):
       currentShiftersDict[currentShifterRole] = currentShifter
 
     # Removing from shifters what does not need to be changed
-    for sRole in shifters:
+    for sRole in shifters.keys():  # note the pop below
       if sRole in currentShiftersDict:
         if currentShiftersDict[sRole] == shifters[sRole]:
           shifters.pop(sRole)
