@@ -4,6 +4,9 @@
 Basic Tutorial setup
 ====================
 
+.. set highlighting to console input/output
+.. highlight:: console
+
 Tutorial goal
 =============
 

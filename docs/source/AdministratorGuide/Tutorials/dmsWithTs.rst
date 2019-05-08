@@ -1,8 +1,8 @@
 ===============================================================
-Doing large scale DataManagement with the Transformation System
+Doing Large Scale DataManagement with the Transformation System
 ===============================================================
 
-Pre-requisite
+Pre-Requisite
 =============
 
 You should:
@@ -15,18 +15,18 @@ You should:
 * have installed the TS using the tutorial (:ref:`tuto_install_ts`)
 
 
-Tutorial goal
+Tutorial Goal
 =============
 
-The aim of the tutorial is to demonstrate how large scale data management operations (removals, replications, etc.) can be achieved using the Transformation System.
-By the end of the tutorial, you will be able to:
+The aim of the tutorial is to demonstrate how large scale data management operations (removals, replications, etc.) can
+be achieved using the Transformation System.  By the end of the tutorial, you will be able to:
 
 * Submit simple transformation for manipulating a given list of files
 * Have transformations automatically fed thanks to metadata
 * Write your own plugin for the TransformationSystem
 
 
-More links
+More Links
 ==========
 
 * :ref:`adminTS`

@@ -4,6 +4,9 @@
 Install a DIRAC Storage Element
 ===============================
 
+.. set highlighting to console input/output
+.. highlight:: console
+
 Pre-requisite
 =============
 
@@ -30,7 +33,7 @@ This section is to be executed as ``dirac`` user.
 
 We will simply create a folder where the files will be stored::
 
-  mkdir /opt/dirac/storageElementOne/
+  [dirac@dirac-tuto ~]$ mkdir /opt/dirac/storageElementOne/
 
 
 Installing the service
@@ -44,16 +47,16 @@ Install the StorageElement service using ``dirac-admin-sysadmin-cli``. First we 
 
   [diracuser@dirac-tuto ~]$ dirac-admin-sysadmin-cli --host dirac-tuto
   Pinging dirac-tuto...
-  [dirac-tuto]> add instance DataManagement Production
+  [dirac-tuto]$ add instance DataManagement Production
   Adding DataManagement system as Production self.instance for MyDIRAC-Production self.setup to dirac.cfg and CS
   DataManagement system instance Production added successfully
-  [dirac-tuto]> restart *
+  [dirac-tuto]$ restart *
   All systems are restarted, connection to SystemAdministrator is lost
-  [dirac-tuto]> install service DataManagement StorageElement -p BasePath=/opt/dirac/storageElementOne/
+  [dirac-tuto]$ install service DataManagement StorageElement -p BasePath=/opt/dirac/storageElementOne/
   Loading configuration template /home/diracuser/DIRAC/DIRAC/DataManagementSystem/ConfigTemplate.cfg
   Adding to CS service DataManagement/StorageElement
   service DataManagement_StorageElement is installed, runit status: Run
-  [dirac-tuto]> quit
+  [dirac-tuto]$ quit
 
 You now have a *Service* offering grid like storage. However, you still need to declare a *StorageElement* for it to be usable within DIRAC.
 
@@ -85,9 +88,11 @@ Test it
 
 Create a dummy file::
 
-  echo "dummyFile" > /tmp/dummy.txt
+  [dirauserc@dirac-tuto ~]$ echo "dummyFile" > /tmp/dummy.txt
 
-Now create a file called ``/tmp/testSE.py``, with the following content::
+Now create a file called ``/tmp/testSE.py``, with the following content
+
+.. code-block:: python
 
   from DIRAC.Core.Base.Script import parseCommandLine
   parseCommandLine()
@@ -147,7 +152,7 @@ It is often interesting to have a second SE.
 
 As ``dirac`` user, create a new directory::
 
-  mkdir /opt/dirac/storageElementTwo/
+ [dirac@dirac-tuto ~]$  mkdir /opt/dirac/storageElementTwo/
 
 Now the rest is to be installed with ``diracuser`` and a proxy with ``dirac_admin`` group.
 
@@ -155,7 +160,7 @@ We need another StorageElement service. However, it has to have a different *nam
 
   [diracuser@dirac-tuto ~]$ dirac-admin-sysadmin-cli --host dirac-tuto
   Pinging dirac-tuto...
-  [dirac-tuto]> install service DataManagement StorageElementTwo -m StorageElement -p Port=9147 -p BasePath=/opt/dirac/storageElementTwo/
+  [dirac-tuto]$ install service DataManagement StorageElementTwo -m StorageElement -p Port=9147 -p BasePath=/opt/dirac/storageElementTwo/
   Loading configuration template /home/diracuser/DIRAC/DIRAC/DataManagementSystem/ConfigTemplate.cfg
   Adding to CS service DataManagement/StorageElementTwo
   service DataManagement_StorageElementTwo is installed, runit status: Run

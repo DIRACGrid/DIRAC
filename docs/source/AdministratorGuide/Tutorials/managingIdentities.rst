@@ -4,6 +4,9 @@
 Managing identities
 ===================
 
+.. set highlighting to console input/output
+.. highlight:: console
+
 Pre-requisite
 =============
 
@@ -31,21 +34,21 @@ Installing the ``ProxyManager``
 
 This section is to be performed as ``diracuser`` with ``dirac_admin`` group proxy::
 
-  source ~/DiracInstallation/bashrc
-  dirac-proxy-init -g dirac_admin
+  [diracuser@dirac-tuto ~]$ source ~/DiracInstallation/bashrc
+  [diracuser@dirac-tuto ~]$ dirac-proxy-init -g dirac_admin
 
 
 The ``ProxyManager`` will host delegated proxies of the users. As any other service, it is very easy to install with the ``dirac-admin-sysadmin-cli``::
 
-  dirac-admin-sysadmin-cli -H dirac-tuto
+  [diracuser@dirac-tuto ~]$ dirac-admin-sysadmin-cli -H dirac-tuto
 
 And then in the CLI::
 
-  [dirac-tuto]> install db ProxyDB
+  [dirac-tuto]$ install db ProxyDB
   MySQL root password:
   Adding to CS Framework/ProxyDB
   Database ProxyDB from DIRAC/FrameworkSystem installed successfully
-  [dirac-tuto]> install service Framework ProxyManager
+  [dirac-tuto]$ install service Framework ProxyManager
   Loading configuration template /home/diracuser/DiracInstallation/DIRAC/FrameworkSystem/ConfigTemplate.cfg
   Adding to CS service Framework/ProxyManager
   service Framework_ProxyManager is installed, runit status: Run
