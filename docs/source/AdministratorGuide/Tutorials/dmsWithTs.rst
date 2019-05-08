@@ -62,7 +62,7 @@ command::
 
 This created transformation with the unique transformation ID *NNN* (e.g., 1).
 
-By default this transformation uses *MetaData* information to obtain the input files using the *InputDataAgent*. Instead
+By default this transformation uses *Metadata* information to obtain the input files using the ``InputDataAgent``. Instead
 we can also just add files manually using the list we created previously, replace NNN by the ID of the transformation
 that was just created::
 
@@ -71,8 +71,8 @@ that was just created::
 
 
 Now we have to wait until the ``TransformationAgent`` runs again and creates a *Task* for each of the files. Once the
-tasks are created, the *RequestTaskAgent* creates a request out of each task, which is then processed in the
-*RequestExecutingAgent* of the RMS.
+tasks are created, the ``RequestTaskAgent`` creates a request out of each task, which is then processed in the
+``RequestExecutingAgent`` of the RMS.
 
 
 Creating a Replica Removal Transformation
