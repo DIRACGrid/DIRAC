@@ -25,6 +25,9 @@ be achieved using the Transformation System.  By the end of the tutorial, you wi
 * Have transformations automatically fed thanks to metadata
 * Write your own plugin for the TransformationSystem
 
+The transformations can be monitored and controlled with the ``Transformation Monitor`` in the ``WebApp`` when you use
+the ``dirac_prod`` group.
+
 
 More Links
 ==========
@@ -146,7 +149,7 @@ script that creates a removal transformation:
     gLogger.notice('Created RemoveReplica transformation: %r' % transID)
     exit(0)
 
-When we execute the script, the transformation is created::
+When we execute the script, the transformation is created with the ID MMM (e.g. 2)::
 
     [diracuser@dirac-tuto ~]$ python createRemoval.py
     Created transformation MMM
@@ -232,3 +235,38 @@ Now upload some files to this folder::
 We can also use the command ``dirac-dms-find-lfns`` to search for files with given metadata::
 
   [diracuser@dirac-tuto ~]$ dirac-dms-find-lfns Path=/ TransformationID=2
+
+
+Now we create a transformation, which uses the metadata to pick up the files::
+
+ [diracuser@dirac-tuto ~]$ dirac-transformation-replication 2 StorageElementTwo --SourceSEs StorageElementOne --Extraname _2 --Enable
+ Created transformation LLL
+ Successfully created replication transformation
+
+In fact the command ``dirac-transformation-replication`` already uses metadata, the first argument is the value for the
+``TransformationID`` metadata. Now we have to wait for the ``InputDataAgent``, ``TransformationAgent``,
+``RequestTaskAgent``, ``RequestExecutingAgent`` chain to run its course.
+
+In the log file of the ``InputDataAgent`` in ``/opt/dirac/pro/runit/Transformation/InputDataAgent/log/current``
+eventually this line should appear::
+
+  <SomeDate> Transformation/InputDataAgent INFO: 10 files returned for transformation LLL from the metadata catalog
+
+To add the metadata query functionality to our ``createRemoval.py`` script from above, we just need to insert a couple
+of lines
+
+.. code-block:: python
+   :lineno-start: 61
+
+   from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
+   metadata = {'TransformationID': 2}
+   res = TransformationClient().createTransformationInputDataQuery(transID, metadata)
+   gLogger.notice('Added input data query', res)
+   ...
+
+Adapt the script by inserting the lines and changing the ``uniqueIdentifier`` and execute it::
+
+  [diracuser@dirac-tuto ~]$ python createRemoval.py
+  Created transformation JJJ
+  Added input data query {'OK': True, 'rpcStub': (('Transformation/TransformationManager', {'skipCACheck': False, 'keepAliveLapse': 150, 'timeout': 120}), 'createTransformationInputDataQuery', (JJJL, {'TransformationID': 2})), 'Value': 1L}
+  Created RemoveReplica transformation: JJJL
