@@ -113,6 +113,8 @@ class StorageBase(object):
     parameterDict["StorageName"] = self.name
     parameterDict["PluginName"] = self.pluginName
     parameterDict['URLBase'] = self.getURLBase().get('Value', '')
+    parameterDict['Endpoint'] = self.getEndpoint().get('Value', '')
+
     return parameterDict
 
   def exists(self, *parms, **kws):
@@ -282,6 +284,18 @@ class StorageBase(object):
     urlDict = dict(self.protocolParameters)
     if not withWSUrl:
       urlDict['WSUrl'] = ''
+    return pfnunparse(urlDict, srmSpecific=self.srmSpecificParse)
+
+  def getEndpoint(self):
+    """ This will get endpoint of the storage. It basically is the same as :py:meth:`getURLBase`
+        but without the basePath
+
+    :returns: 'proto://hostname<:port>'
+
+    """
+    urlDict = dict(self.protocolParameters)
+    # We remove the basePath
+    urlDict['Path'] = ''
     return pfnunparse(urlDict, srmSpecific=self.srmSpecificParse)
 
   def isURL(self, path):
