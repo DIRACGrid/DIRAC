@@ -35,8 +35,8 @@ More Links
 * :ref:`adminTS`
 
 
-Creating a Replication Transformation
-=====================================
+Creating a Transformation with a DIRAC Command
+==============================================
 
 .. highlight:: console
 
@@ -48,23 +48,21 @@ First we need to create some files and upload them to ``StorageElementOne``::
 
 Then we create the list of LFNs we just uploaded::
 
-  [diracuser@dirac-tuto ~]$ dirac-dms-user-lfns -b /tutoVO/data/Trans_01
-  Will search for files in /tutoVO/data/Trans_01
-  /tutoVO/data/Trans_01: 10 files, 0 sub-directories
-  10 matched files have been put in tutoVO-data-Trans_01.lfns
+  [diracuser@dirac-tuto ~]$ dirac-dms-find-lfns Path=/tutoVO/data/Trans_01 > trans01.lfns
 
-The easiest way to create a transformation to replicate files is by using the ``dirac-transformation-replication``
-command::
+The easiest way to create a transformation to replicate files is by using the
+:doc:`/AdministratorGuide/CommandReference/dirac-transformation-replication` command::
 
-  [diracuser@dirac-tuto ~]$ dirac-transformation-replication 0 StorageElementTwo --SourceSEs StorageElementOne -x
+  [diracuser@dirac-tuto ~]$ dirac-transformation-replication 0 StorageElementTwo --Plugin Standard --Enable
   Created transformation NNN
   Successfully created replication transformation
 
 This created transformation with the unique transformation ID *NNN* (e.g., 1).
 
-By default this transformation uses *Metadata* information to obtain the input files using the ``InputDataAgent``. Instead
-we can also just add files manually using the list we created previously, replace NNN by the ID of the transformation
-that was just created::
+By default this transformation uses *Metadata* information to obtain the input files using the
+``InputDataAgent``. Instead we can also just add files manually with the :doc:`dirac-transformation-add-files
+</AdministratorGuide/CommandReference/dirac-transformation-add-files>` command and using the list we created previously,
+replace NNN by the ID of the transformation that was just created::
 
   [diracuser@dirac-tuto ~]$ dirac-transformation-add-files NNN tutoVO-data-Trans_01.lfns
   Successfully added 10 files
@@ -75,8 +73,8 @@ tasks are created, the ``RequestTaskAgent`` creates a request out of each task, 
 ``RequestExecutingAgent`` of the RMS.
 
 
-Creating a Replica Removal Transformation
-=========================================
+Creating a Transformation with a Script
+=======================================
 
 
 In this step we want to remove the replicas of our files from ``StorageElementOne``, for this purpose we have to write a
@@ -87,7 +85,6 @@ script that creates a removal transformation:
    :linenos:
 
     #!/bin/env python
-    # pylint: disable = invalid-name
 
     # set up the DIRAC configuration, parse command line arguments
     from DIRAC import gLogger, S_OK, S_ERROR
@@ -95,7 +92,6 @@ script that creates a removal transformation:
     Script.parseCommandLine()
 
     from DIRAC.TransformationSystem.Client.Transformation import Transformation
-    #from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 
     # create a Transformation instance
     myTrans = Transformation()
@@ -163,7 +159,7 @@ To remove a replica from StorageElementOne, we just have to add files to this tr
 And then wait again for the ``TransformationAgent``, ``RequestTaskAgent``, ``RequestExecutingAgent`` chain to complete.
 
 After a short while, you should see that the folder ``/opt/dirac/storageElementOne/tutoVO/data/Trans_01/``, no longer
-contains ``File_10``
+contains ``File_10``.
 
 
 Using Metadata Queries to Add Files to Transformations
@@ -239,7 +235,7 @@ We can also use the command ``dirac-dms-find-lfns`` to search for files with giv
 
 Now we create a transformation, which uses the metadata to pick up the files::
 
- [diracuser@dirac-tuto ~]$ dirac-transformation-replication 2 StorageElementTwo --SourceSEs StorageElementOne --Extraname _2 --Enable
+ [diracuser@dirac-tuto ~]$ dirac-transformation-replication 2 StorageElementTwo --Plugin Standard --Extraname _2 --Enable
  Created transformation LLL
  Successfully created replication transformation
 
@@ -251,6 +247,10 @@ In the log file of the ``InputDataAgent`` in ``/opt/dirac/pro/runit/Transformati
 eventually this line should appear::
 
   <SomeDate> Transformation/InputDataAgent INFO: 10 files returned for transformation LLL from the metadata catalog
+
+
+InputDataQuery in the Script
+----------------------------
 
 To add the metadata query functionality to our ``createRemoval.py`` script from above, we just need to insert a couple
 of lines

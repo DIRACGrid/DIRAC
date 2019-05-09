@@ -7,7 +7,7 @@ Installing the TransformationSystem
 .. set highlighting to console input/output
 .. highlight:: console
 
-Pre-requisite
+Pre-Requisite
 =============
 
 You should:
@@ -19,27 +19,25 @@ You should:
 * have installed the RMS using the tutorial (:ref:`tuto_install_rms`)
 
 
-Tutorial goal
+Tutorial Goal
 =============
 
 The aim of the tutorial is to install the Transformation system components and to use it to perform an automatic replication.
 
 
-More links
+More Links
 ==========
 
 * :ref:`adminTS`
 
 Installing the TransformationSystem
-======================================
+===================================
 
 .. highlight:: console
 
-This section is to be performed as ``diracuser`` with a proxy in ``dirac_admin`` group.
+This section is to be executed as ``diracuser`` with a proxy int the ``dirac_admin`` group.
 
-This section is to be executed as ``diracuser`` with a proxy with ``dirac_admin`` group.
-
-The TS needs the ``TransformationManager`` service and the ``TransformationAgent``, ``InputDataAgent``,
+The Transformation System(TS) needs the ``TransformationManager`` service and the ``TransformationAgent``, ``InputDataAgent``,
 ``RequestTaskAgent`` to work for data management purposes. The ``WorkflowTaskAgent`` is needed to submit jobs.
 Finally the ``TransformationCleaning`` cleans up if transformations are finished. As the agents need to run one after
 the other we set the PollingTime to 30 seconds to reduce the waiting time once we create transformations.
