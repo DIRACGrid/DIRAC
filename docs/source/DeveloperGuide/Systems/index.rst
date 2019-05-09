@@ -7,7 +7,7 @@ Developer Guides for DIRAC Systems
 Here the reader can find technical documentation for developing DIRAC systems
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
 
    Framework/index
    Transformation/index

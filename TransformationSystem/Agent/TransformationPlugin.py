@@ -1,4 +1,21 @@
-"""  TransformationPlugin is a class wrapping the supported transformation plugins
+"""TransformationPlugin is a class wrapping the supported transformation plugins
+
+New plugins can be created by defining a function.
+The function name has to be ``_MyPlugin``, and the plugin is then call ``'MyPlugin'``. Do not forget to enable new
+plugins in the ``Operations/Transformation/AllowedPlugins`` list.
+The return value of the function has to be ``S_OK`` with a list of tuples. Each Tuple is a pair of a StorageElement
+and list of LFNs to treat in given task::
+
+  return S_OK([('SE_1', [lfn_1_1, lfn_1_2, ...]),
+               ('SE_1', [lfn_2_1, lfn_2_2, ...]),
+               # ...
+               ('SE_I', [lfn_J_1, lfn_J_2, ...]),
+               ])
+
+Inside the plugin function, the relevant LFNs can be accessed in the ``self.data`` dictionary, and transformation
+parameters are obtained contained in the ``self.params`` dictionary. See also the
+:class:`~DIRAC.TransformationSystem.Client.Utilities.PluginUtilities` class.
+
 """
 
 import random
@@ -19,11 +36,19 @@ __RCSID__ = "$Id$"
 
 class TransformationPlugin(PluginBase):
   """ A TransformationPlugin object should be instantiated by every transformation.
+
+  :param str plugin: A plugin name has to be passed in: it will then be executed as one of the functions below, e.g.
+     plugin = 'BySize' will execute TransformationPlugin('BySize')._BySize()
+
+  :param transClient: TransformationManagerClient instance
+  :param dataManager: DataManager instance
+  :param fc: FileCatalog instance
   """
 
   def __init__(self, plugin, transClient=None, dataManager=None, fc=None):
-    """ plugin name has to be passed in: it will then be executed as one of the functions below, e.g.
-        plugin = 'BySize' will execute TransformationPlugin('BySize')._BySize()
+    """Constructor of the TransformationPlugin.
+
+    Instantiate clients, if not given, and set up the PluginUtilities.
     """
     super(TransformationPlugin, self).__init__(plugin)
 

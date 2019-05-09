@@ -4,6 +4,9 @@
 Basic Tutorial setup
 ====================
 
+.. set highlighting to console input/output
+.. highlight:: console
+
 Tutorial goal
 =============
 
@@ -35,11 +38,23 @@ Machine setup
 
 This section is to be executed as ``root`` user.
 
-Make sure that the machine can address itself using the ``dirac-tuto`` alias. Modify the ``/etc/host`` file as such::
+Make sure that the machine can address itself using the ``dirac-tuto`` alias. Modify the ``/etc/hosts`` file as such::
 
   127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4 dirac-tuto
   ::1         localhost localhost.localdomain localhost6 localhost6.localdomain6 dirac-tuto
 
+
+-------------------------
+Create the ``dirac`` user
+-------------------------
+
+The user that will run the server will be ``dirac``. Set the password for that user to ``diracpw``,
+and ensure that files below ``/opt/dirac/`` belong to this user:
+
+.. literalinclude:: basicTutoSetup.sh
+   :language: bash
+   :start-after: # START add_dirac
+   :end-before: # END add_dirac
 
 -------------
 Install runit
@@ -47,115 +62,78 @@ Install runit
 
 The next step is to install ``runit``, which is responsible for supervising DIRAC processes
 
-First, install the `RPM <http://diracproject.web.cern.ch/diracproject/rpm/runit-2.1.2-1.el6.x86_64.rpm>`_::
+First, install the `RPM <http://diracproject.web.cern.ch/diracproject/rpm/runit-2.1.2-1.el6.x86_64.rpm>`_:
 
-  yum install -y http://diracproject.web.cern.ch/diracproject/rpm/runit-2.1.2-1.el6.x86_64.rpm
+.. literalinclude:: basicTutoSetup.sh
+   :language: bash
+   :start-after: # START runit
+   :end-before: # END runit
 
+Next, edit the ``/etc/init/runsvdir.conf`` file to point to the future DIRAC installation as such:
 
+.. literalinclude:: basicTutoSetup.sh
+   :start-after: # START runsvdir.conf
+   :end-before: # END runsvdir.conf
+   :caption: /etc/init/runsvdir.conf
 
+Finally, create the directory ``/opt/dirac/sbin``:
 
-Next, edit the ``/etc/init/runsvdir.conf`` file to point to the future DIRAC installation as such::
+.. literalinclude:: basicTutoSetup.sh
+   :language: bash
+   :start-after: # START sbin
+   :end-before: # END sbin
 
-  # for runit - manage /usr/sbin/runsvdir-start
-  start on runlevel [2345]
-  stop on runlevel [^2345]
-  normal exit 0 111
-  respawn
-  exec /opt/dirac/sbin/runsvdir-start
+and the file ``/opt/dirac/sbin/runsvdir-start`` with the following content:
 
-Finally, create the directory ``/opt/dirac/sbin``::
+.. literalinclude:: basicTutoSetup.sh
+   :language: bash
+   :start-after: # START runsvdir-start
+   :end-before: # END runsvdir-start
+   :caption: /opt/dirac/sbin/runsvdir-start
 
-  mkdir -p /opt/dirac/sbin
+make it executable and (re)start ``runsvdir``:
 
-and the file ``/opt/dirac/sbin/runsvdir-start`` with the following content::
-
-  cd /opt/dirac
-  RUNSVCTRL='/sbin/runsvctrl'
-  chpst -u dirac $RUNSVCTRL d /opt/dirac/startup/*
-  killall runsv svlogd
-  RUNSVDIR='/sbin/runsvdir'
-  exec chpst -u dirac $RUNSVDIR -P /opt/dirac/startup 'log:  DIRAC runsv'
-
-make it executable::
-
-  chmod +x /opt/dirac/sbin/runsvdir-start
-
-
-and restart ``runsvdir``::
-
-  restart runsvdir
+.. literalinclude:: basicTutoSetup.sh
+   :language: bash
+   :start-after: # START restartrunsv
+   :end-before: # END restartrunsv
 
 
 -------------
 Install MySQL
 -------------
 
-First of all, remove the existing (outdated) installation::
+First of all, remove the existing (outdated) installation, and install all the necessary RPMs for MySQL 5.7:
 
-   yum remove -y $(rpm -qa | grep -i mysql | paste -sd ' ')
+.. literalinclude:: basicTutoSetup.sh
+   :language: bash
+   :start-after: # START mysqlInstall
+   :end-before: # END mysqlInstall
 
+Start the mysql service, which will then initialize itself, and, among other things, create temporary password for the
+mysql ``root`` account, which needs to be changed during the first login:
 
-Install all the necessary RPMs for MySQL 5.7::
+.. literalinclude:: basicTutoSetup.sh
+   :language: bash
+   :start-after: # START mysqlStart
+   :end-before: # END mysqlStart
 
-  yum install -y https://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-community-devel-5.7.25-1.el6.x86_64.rpm https://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-community-server-5.7.25-1.el6.x86_64.rpm https://dev.mysqlom/get/Downloads/MySQL-5.7/mysql-community-client-5.7.25-1.el6.x86_64.rpm  https://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-community-libs-5.7.25-1.el6.x86_64.rpm https://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-community-common-5.7.25-1.el6.x86_64.rpm
+To change the root password, create a ``mysqlSetup.sql`` file, which changes the password to a strong password, removes
+a plugin to enforce the strong password (only for tutorial purposes, of course), and then sets the password to
+``password``, which is easier to remember:
 
+.. literalinclude:: basicTutoSetup.sh
+   :language: mysql
+   :start-after: # START mysqlSetup
+   :end-before: # END mysqlSetup
+   :caption: mysqlSetup.sql
 
-Setup the root password::
+Now get the temporary password from the ``/var/log/mysqld.log``, and change it using the ``mysqlSetup.sql`` file:
 
-  [root@dirac-tuto ~]# mysqld_safe --skip-grant-tables &
-  [1] 8840
-  [root@dirac-tuto ~]# 190410 16:11:21 mysqld_safe Logging to '/var/lib/mysql/dirac-tuto.err'.
-  190410 16:11:21 mysqld_safe Starting mysqld daemon with databases from /var/lib/mysql
-
-  [root@dirac-tuto ~]# mysql -u root
-  Welcome to the MySQL monitor.  Commands end with ; or \g.
-  Your MySQL connection id is 1
-  Server version: 5.6.43 MySQL Community Server (GPL)
-
-  Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
-
-  Oracle is a registered trademark of Oracle Corporation and/or its
-  affiliates. Other names may be trademarks of their respective
-  owners.
-
-  Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
-
-  mysql> FLUSH PRIVILEGES;
-  Query OK, 0 rows affected (0.00 sec)
-
-
-  mysql> SET PASSWORD FOR 'root'@'localhost' = PASSWORD('password');
-  Query OK, 0 rows affected (0.00 sec)
-
-  mysql> FLUSH PRIVILEGES;
-  Query OK, 0 rows affected (0.00 sec)
-
-  mysql> quit
-  Bye
-
-  [root@dirac-tuto ~]# service mysqld stop
-  Shutting down MySQL..190410 16:12:52 mysqld_safe mysqld from pid file /var/lib/mysql/dirac-tuto.pid ended
-                                                            [  OK  ]
-  [1]+  Done                    mysqld_safe --skip-grant-tables
-  [root@dirac-tuto ~]# service mysqld start
-  Starting MySQL.
-
-
--------------------------
-Create the ``dirac`` user
--------------------------
-
-The user that will run the server will be ``dirac``. You can set a password for that user::
-
-  adduser -s /bin/bash -d /home/dirac dirac
-  passwd dirac
-
-
-All files below ``/opt/dirac/`` should belong to this user::
-
-  chown -R dirac:dirac /opt/dirac/
-
-
+.. literalinclude:: basicTutoSetup.sh
+   :language: bash
+   :start-after: # START mysqlInit
+   :end-before: # END mysqlInit
 
 Server installation
 ===================
@@ -168,118 +146,18 @@ CA and certificate
 
 DIRAC relies on TLS for securing its connections and for authorization and authentication. Since we are using a self contained installation, we will be using our own CA. There are a bunch of utilities that we will be using to generate the necessary files.
 
-First of all, download the utilities from the DIRAC repository::
+We create a script ``setupCA`` to download utilities from the DIRAC repository and source ``utilities.sh``, and then
+create the CA and certificates both for the server and the client:
 
-  mkdir ~/caUtilities/ && cd ~/caUtilities/
-  curl -O -L https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/tests/Jenkins/utilities.sh
-  curl -O -L https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/tests/Jenkins/config/ci/openssl_config_ca.cnf
-  curl -O -L https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/tests/Jenkins/config/ci/openssl_config_host.cnf
-  curl -O -L https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/tests/Jenkins/config/ci/openssl_config_user.cnf
+.. literalinclude:: basicTutoSetup.sh
+   :language: bash
+   :start-after: # START setupCA
+   :end-before: # END setupCA
+   :caption: setupCA
 
-We then will generate the CA, the host certificate, and the client certificate that will be used by our client later. First, we create a subshell, and source the tools to be able to call the functions::
+Execute the script::
 
-  bash
-  export SERVERINSTALLDIR=/opt/dirac
-  export CI_CONFIG=~/caUtilities/
-  source utilities.sh
-
-
-Then we generate the CA::
-
-  [dirac@dirac-tuto caUtilities]$ generateCA
-  ==> [generateCA]
-  Generating RSA private key, 2048 bit long modulus
-  .............+++
-  ...............+++
-  e is 65537 (0x10001)
-
-Now generate a host certificate, valid for 1 year::
-
-  [dirac@dirac-tuto ca]$ generateCertificates 365
-  ==> [generateCertificates]
-  Using configuration from /opt/dirac/etc/grid-security/ca/openssl_config_ca.cnf
-  Check that the request matches the signature
-  Signature ok
-  Certificate Details:
-          Serial Number: 4096 (0x1000)
-          Validity
-              Not Before: Apr 10 14:47:38 2019 GMT
-              Not After : Apr  9 14:47:38 2020 GMT
-          Subject:
-              countryName               = ch
-              organizationName          = DIRAC
-              organizationalUnitName    = DIRAC CI
-              commonName                = dirac-tuto
-              emailAddress              = lhcb-dirac-ci@cern.ch
-          X509v3 extensions:
-              X509v3 Basic Constraints:
-                  CA:FALSE
-              Netscape Comment:
-                  OpenSSL Generated Server Certificate
-              X509v3 Subject Key Identifier:
-                  85:90:F4:7D:6E:31:50:F7:3E:53:7E:0B:B3:22:D5:5C:37:D4:D0:5A
-              X509v3 Authority Key Identifier:
-                  keyid:33:F0:C8:60:6D:6B:52:BD:E9:A7:FA:57:27:72:5A:5D:7E:43:12:ED
-                  DirName:/O=DIRAC CI/CN=DIRAC CI Signing Certification Authority
-                  serial:88:B1:7A:54:17:8C:00:13
-
-              X509v3 Key Usage: critical
-                  Digital Signature, Key Encipherment
-              X509v3 Extended Key Usage:
-                  TLS Web Server Authentication, TLS Web Client Authentication
-              X509v3 Subject Alternative Name:
-                  DNS:dirac-tuto, DNS:localhost
-  Certificate is to be certified until Apr  9 14:47:38 2020 GMT (365 days)
-
-  Write out database with 1 new entries
-  Data Base Updated
-
-
-Finally, generate the client certificate for later, also valid one year::
-
-  [dirac@dirac-tuto grid-security]$ generateUserCredentials 365
-  ==> [generateUserCredentials]
-  Generating RSA private key, 2048 bit long modulus
-  ................................................................................+++
-  ...........................................................................................................................................+++
-  e is 65537 (0x10001)
-  Using configuration from /opt/dirac/etc/grid-security/ca/openssl_config_ca.cnf
-  Check that the request matches the signature
-  Signature ok
-  Certificate Details:
-          Serial Number: 4097 (0x1001)
-          Validity
-              Not Before: Apr 10 14:48:31 2019 GMT
-              Not After : Apr  9 14:48:31 2020 GMT
-          Subject:
-              countryName               = ch
-              organizationName          = DIRAC
-              organizationalUnitName    = DIRAC CI
-              commonName                = ciuser
-              emailAddress              = lhcb-dirac-ci@cern.ch
-          X509v3 extensions:
-              X509v3 Basic Constraints:
-                  CA:FALSE
-              X509v3 Subject Key Identifier:
-                  98:BB:F0:A8:96:4F:80:C8:3E:21:60:5E:FD:17:4E:34:97:EF:31:17
-              X509v3 Authority Key Identifier:
-                  keyid:33:F0:C8:60:6D:6B:52:BD:E9:A7:FA:57:27:72:5A:5D:7E:43:12:ED
-
-              X509v3 Key Usage: critical
-                  Digital Signature, Non Repudiation, Key Encipherment
-              X509v3 Extended Key Usage:
-                  TLS Web Client Authentication
-              Netscape Comment:
-                  OpenSSL Generated Client Certificate
-  Certificate is to be certified until Apr  9 14:48:31 2020 GMT (365 days)
-
-  Write out database with 1 new entries
-  Data Base Updated
-
-To finish, time to exit the subshell::
-
-  exit
-
+  bash setupCA
 
 At this point, you should find:
 
@@ -302,96 +180,37 @@ At this point, you should find:
 Install DIRAC Server
 --------------------
 
-This section is to be run as ``dirac`` user.
+This section is to be run as ``dirac`` user in its home folder::
+
+  sudo su dirac
+  cd ~
 
 We will install DIRAC v6r21 with DIRACOS.
 
-First, download the installer, and make it executable::
+First we create the ``install.cfg`` file, which is used to tell the installation script we obtain in a moment what to
+install and how to configure the server with the following content:
 
-  mkdir ~/DiracInstallation && cd ~/DiracInstallation
-  curl -O -L https://github.com/DIRACGrid/DIRAC/raw/integration/Core/scripts/install_site.sh
-  chmod +x install_site.sh
+.. literalinclude:: basicTutoSetup.sh
+   :start-after: # START install.cfg
+   :end-before: # END install.cfg
+   :caption: install.cfg
 
+Then we download the installer, make it executable, and run it with the ``install.cfg`` file (assuming the file is in
+the user's home folder):
 
-``install_site.sh`` requires a configuration file to tell it what and how to install. Create a file called ``installation.cfg`` with the following content::
-
-  LocalInstallation
-  {
-    #  DIRAC release version to install
-    Release = v6r21p3
-    #  Installation type
-    InstallType = server
-    #  Each DIRAC update will be installed in a separate directory, not overriding the previous ones
-    UseVersionsDir = yes
-    #  The directory of the DIRAC software installation
-    TargetPath = /opt/dirac
-    #  Install the WebApp extension
-    Extensions = WebApp
-
-    # Name of the VO we will use
-    VirtualOrganization = tutoVO
-    # Name of the site or host
-    SiteName = dirac-tuto
-    # Setup name
-    Setup = MyDIRAC-Production
-    #  Default name of system instances
-    InstanceName = Production
-    #  Flag to skip download of CAs
-    SkipCADownload = yes
-    #  Flag to use the server certificates
-    UseServerCertificate = yes
-
-    # Name of the Admin user (from the user certificate we created )
-    AdminUserName = ciuser
-    # DN of the Admin user certificate (from the user certificate we created)
-    AdminUserDN = /C=ch/O=DIRAC/OU=DIRAC CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch
-    AdminUserEmail= adminUser@cern.ch
-    # Name of the Admin group
-    AdminGroupName = dirac_admin
-
-    # DN of the host certificate (from the host certificate we created)
-    HostDN = /C=ch/O=DIRAC/OU=DIRAC CI/CN=dirac-tuto/emailAddress=lhcb-dirac-ci@cern.ch
-    # Define the Configuration Server as Master
-    ConfigurationMaster = yes
-
-    # List of DataBases to be installed (what's here is a list for a basic installation)
-    Databases = InstalledComponentsDB
-    Databases += ResourceStatusDB
-
-    #  List of Services to be installed (what's here is a list for a basic installation)
-    Services  = Configuration/Server
-    Services += Framework/ComponentMonitoring
-    Services += Framework/SystemAdministrator
-    #  Flag determining whether the Web Portal will be installed
-    WebPortal = yes
-    WebApp = yes
-
-    Database
-    {
-      #  User name used to connect the DB server
-      User = Dirac
-      #  Password for database user access
-      Password = Dirac
-      #  Password for root DB user
-      RootPwd = password
-      #  location of DB server
-      Host = localhost
-    }
-  }
+.. literalinclude:: basicTutoSetup.sh
+   :start-after: # START installDirac
+   :end-before: # END installDirac
 
 
-And then run it::
+The output should look something like this::
 
-
-  [dirac@dirac-tuto DIRAC]$ ./install_site.sh --dirac-os install.cfg
   --2019-04-11 08:51:21--  https://github.com/DIRACGrid/DIRAC/raw/integration/Core/scripts/dirac-install.py
   Resolving github.com... 140.82.118.4, 140.82.118.3
   Connecting to github.com|140.82.118.4|:443... connected.
   HTTP request sent, awaiting response... 302 Found
 
-
   [...]
-
 
   Status of installed components:
 
@@ -414,7 +233,7 @@ You can verify that the components are running::
 
 The logs are to be found in ``/opt/dirac/runit/``, grouped by component.
 
-The installation created the file ``/opt/dirac/etc/dirac.cfg``. The content is the same as the ``installation.cfg``, with the addition of the following::
+The installation created the file ``/opt/dirac/etc/dirac.cfg``. The content is the same as the ``install.cfg``, with the addition of the following::
 
   DIRAC
   {
@@ -624,70 +443,68 @@ Setup client session
 
 This section has to be ran as ``root``
 
-First, create an account, and add in its ``~/.globus/`` directory the user certificate you created earlier::
+Create an account ``diracuser`` with password ``password``, and add in its ``~/.globus/`` directory the user
+certificate you created earlier:
 
-  adduser -s /bin/bash -d /home/diracuser diracuser
-  passwd diracuser
-  mkdir ~diracuser/.globus/
-  cp /opt/dirac/user/client.pem ~diracuser/.globus/usercert.pem
-  cp /opt/dirac/user/client.key ~diracuser/.globus/userkey.pem
-  chown -R diracuser:diracuser ~diracuser/.globus/
+.. literalinclude:: basicTutoSetup.sh
+   :start-after: # START user_diracuser
+   :end-before: # END user_diracuser
 
 
 --------------------
 Install DIRAC client
 --------------------
 
-This section has to be ran as ``diracuser``
+This section has to be ran as ``diracuser`` in its home directory::
 
-We will do the installation in the ``~/DiracInstallation`` directory. For a client, the configuration is really minimal, so we will just install the code and its dependencies.
-First, create the structure, and download the installer::
+  sudo su diracuser
+  cd
 
-  mkdir ~/DiracInstallation && cd ~/DiracInstallation
-  curl -O -L https://github.com/DIRACGrid/DIRAC/raw/integration/Core/scripts/dirac-install.py
-  chmod +x dirac-install.py
+We will do the installation in the ``~/DiracInstallation`` directory. For a client, the configuration is really minimal,
+so we will just install the code and its dependencies.  Create the structure, download the installer, and then install
+the same version as for the server:
 
+.. literalinclude:: basicTutoSetup.sh
+   :start-after: # START installClient1
+   :end-before: # END installClient1
 
-Now we trigger the installation, with the same version as the server::
+The output from the ``dirac-install.py`` command should look something like this::
 
-  [diracuser@dirac-tuto DIRAC]$ ./dirac-install.py -r v6r21 --dirac-os
-  2019-04-11 14:46:41 UTC dirac-install [NOTICE]  Processing installation requirements
-  2019-04-11 14:46:41 UTC dirac-install [NOTICE]  Destination path for installation is /home/diracuser/DIRAC
-  2019-04-11 14:46:41 UTC dirac-install [NOTICE]  Discovering modules to install
-  2019-04-11 14:46:41 UTC dirac-install [NOTICE]  Installing modules...
-  2019-04-11 14:46:41 UTC dirac-install [NOTICE]  Installing DIRAC:v6r21
-  2019-04-11 14:46:41 UTC dirac-install [NOTICE]  Retrieving http://diracproject.web.cern.ch/diracproject/tars/DIRAC-v6r21.tar.gz
-  2019-04-11 14:46:41 UTC dirac-install [NOTICE]  Retrieving http://diracproject.web.cern.ch/diracproject/tars/DIRAC-v6r21.md5
-  2019-04-11 14:46:42 UTC dirac-install [NOTICE]  Deploying scripts...
-  Scripts will be deployed at /home/diracuser/DIRAC/scripts
-  Inspecting DIRAC module
-  2019-04-11 14:46:42 UTC dirac-install [NOTICE]  Installing DIRAC OS ...
-  2019-04-11 14:46:42 UTC dirac-install [NOTICE]  Retrieving https://diracos.web.cern.ch/diracos/releases/diracos-1.0.0.tar.gz
-  .........................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................2019-04-11 14:46:46 UTC dirac-install [NOTICE]  Retrieving https://diracos.web.cern.ch/diracos/releases/diracos-1.0.0.md5
-  2019-04-11 14:47:02 UTC dirac-install [NOTICE]  Fixing externals paths...
-  2019-04-11 14:47:02 UTC dirac-install [NOTICE]  Running externals post install...
-  2019-04-11 14:47:02 UTC dirac-install [NOTICE]  Creating /home/diracuser/DIRAC/bashrc
-  2019-04-11 14:47:02 UTC dirac-install [NOTICE]  Defaults written to defaults-DIRAC.cfg
-  2019-04-11 14:47:02 UTC dirac-install [NOTICE]  Executing /home/diracuser/DIRAC/scripts/dirac-externals-requirements...
-  2019-04-11 14:47:03 UTC dirac-install [NOTICE]  DIRAC properly installed
+  <SomeDate> dirac-install [NOTICE]  Processing installation requirements
+  <SomeDate> dirac-install [NOTICE]  Destination path for installation is /home/diracuser/DIRAC
+  <SomeDate> dirac-install [NOTICE]  Discovering modules to install
+  <SomeDate> dirac-install [NOTICE]  Installing modules...
+  <SomeDate> dirac-install [NOTICE]  Installing DIRAC:v6r21
+  <SomeDate> dirac-install [NOTICE]  Retrieving http://diracproject.web.cern.ch/diracproject/tars/DIRAC-v6r21.tar.gz
+  <SomeDate> dirac-install [NOTICE]  Retrieving http://diracproject.web.cern.ch/diracproject/tars/DIRAC-v6r21.md5
+  <SomeDate> dirac-install [NOTICE]  Deploying scripts...
+             Scripts will be deployed at /home/diracuser/DIRAC/scripts
+             Inspecting DIRAC module
+  <SomeDate> dirac-install [NOTICE]  Installing DIRAC OS ...
+  <SomeDate> dirac-install [NOTICE]  Retrieving https://diracos.web.cern.ch/diracos/releases/diracos-1.0.0.tar.gz ...........................................................................................................................
+  <SomeDate> dirac-install [NOTICE]  Retrieving https://diracos.web.cern.ch/diracos/releases/diracos-1.0.0.md5
+  <SomeDate> dirac-install [NOTICE]  Fixing externals paths...
+  <SomeDate> dirac-install [NOTICE]  Running externals post install...
+  <SomeDate> dirac-install [NOTICE]  Creating /home/diracuser/DIRAC/bashrc
+  <SomeDate> dirac-install [NOTICE]  Defaults written to defaults-DIRAC.cfg
+  <SomeDate> dirac-install [NOTICE]  Executing /home/diracuser/DIRAC/scripts/dirac-externals-requirements...
+  <SomeDate> dirac-install [NOTICE]  DIRAC properly installed
 
 You will notice that among other things, the installation created a ``~/DiracInstallation/bashrc`` file. This file must be sourced whenever you want to use dirac client.
 
-In principle, your system administrator will have managed the CA for you. In this specific case, since we have our own CA, we will just link the client installation CA with the server one::
+In principle, your system administrator will have managed the CA for you. In this specific case, since we have our own CA, we will just link the client installation CA with the server one:
 
-  mkdir -p ~/DiracInstallation/etc/grid-security/
-  ln -s /opt/dirac/etc/grid-security/certificates/ ~/DiracInstallation/etc/grid-security/certificates
+.. literalinclude:: basicTutoSetup.sh
+   :language: bash
+   :start-after: # START installClient2
+   :end-before: # END installClient2
 
-The last step is to configure the client to talk to the proper configuration service. This is easily done by creating a ``~/DiracInstallation/etc/dirac.cfg`` file with the following content::
+The last step is to configure the client to talk to the proper configuration service. This is easily done by creating a ``~/DiracInstallation/etc/dirac.cfg`` file with the following content:
 
-  DIRAC
-  {
-    Setup = MyDIRAC-Production
-    Configuration
-    {
-      Servers = dips://dirac-tuto:9135/Configuration/Server
-    }
-  }
+.. literalinclude:: basicTutoSetup.sh
+   :caption: ~/DiracInstallation/etc/dirac.cfg
+   :start-after: # START dirac.cfg
+   :end-before: # END dirac.cfg
 
 You should now be able to get a proxy::
 
