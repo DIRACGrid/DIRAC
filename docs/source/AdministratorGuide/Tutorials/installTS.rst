@@ -83,12 +83,10 @@ We create a new group ``dirac_prod``, which will be used to manage transformatio
 
 Using the ``Configuration Manager`` application in the WebApp, create a new section ``dirac_prod`` in ``/Registry/Groups``::
 
-  dirac_prod
-  {
     Users = ciuser
     Properties = ProductionManagement, NormalUser
     AutoUploadProxy = True
-  }
+
 
 After restarting the ``ProxyManager``, you should now be able to get a proxy belonging to the ``dirac_prod`` group that
 will be automatically uploaded.

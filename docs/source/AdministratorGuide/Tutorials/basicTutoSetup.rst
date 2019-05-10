@@ -48,7 +48,7 @@ Make sure that the machine can address itself using the ``dirac-tuto`` alias. Mo
 Create the ``dirac`` user
 -------------------------
 
-The user that will run the server will be ``dirac``. Set the password for that user to ``diracpw``,
+The user that will run the server will be ``dirac``. Set the password for that user to ``password``,
 and ensure that files below ``/opt/dirac/`` belong to this user:
 
 .. literalinclude:: basicTutoSetup.sh
@@ -76,12 +76,6 @@ Next, edit the ``/etc/init/runsvdir.conf`` file to point to the future DIRAC ins
    :end-before: # END runsvdir.conf
    :caption: /etc/init/runsvdir.conf
 
-Finally, create the directory ``/opt/dirac/sbin``:
-
-.. literalinclude:: basicTutoSetup.sh
-   :language: bash
-   :start-after: # START sbin
-   :end-before: # END sbin
 
 and the file ``/opt/dirac/sbin/runsvdir-start`` with the following content:
 
