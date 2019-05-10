@@ -14,15 +14,16 @@ HOSTNAME=`hostname`
 # avoid calling passwd, which might be the cern passwd in /usr/sue/bin
 # START add_dirac
 adduser -s /bin/bash -d /home/dirac dirac
-echo diracpw | /usr/bin/passwd --stdin dirac
+echo password | /usr/bin/passwd --stdin dirac
+mkdir -p /opt/dirac/sbin
 chown -R dirac:dirac /opt/dirac/
 # END add_dirac
 
 
 #localinstall does not error when rpm is already installed
-# START runit 
+# START runit
 yum localinstall -y http://diracproject.web.cern.ch/diracproject/rpm/runit-2.1.2-1.el6.x86_64.rpm
-# END runit 
+# END runit
 
 cat > /etc/init/runsvdir.conf <<EOF
 # START runsvdir.conf
@@ -35,22 +36,20 @@ exec /opt/dirac/sbin/runsvdir-start
 # END runsvdir.conf
 EOF
 
-# START sbin
-mkdir -p /opt/dirac/sbin
-# END sbin
 
-cat > /opt/dirac/sbin/runsvdir-start <<EOF
+cat > /opt/dirac/sbin/runsvdir-start <<'EOF'
 # START runsvdir-start
 cd /opt/dirac
 RUNSVCTRL='/sbin/runsvctrl'
-chpst -u dirac \$RUNSVCTRL d /opt/dirac/startup/*
+chpst -u dirac $RUNSVCTRL d /opt/dirac/startup/*
 killall runsv svlogd
 RUNSVDIR='/sbin/runsvdir'
-exec chpst -u dirac \$RUNSVDIR -P /opt/dirac/startup 'log:  DIRAC runsv'
+exec chpst -u dirac $RUNSVDIR -P /opt/dirac/startup 'log:  DIRAC runsv'
 # END runsvdir-start
 EOF
 
 # START restartrunsv
+chown dirac:dirac /opt/dirac/sbin/runsvdir-start
 chmod +x /opt/dirac/sbin/runsvdir-start
 start runsvdir || restart runsvdir
 # END restartrunsv
@@ -95,7 +94,7 @@ cat > install.cfg <<EOF
 LocalInstallation
 {
   #  DIRAC release version to install
-  Release = v6r21p3
+  Release = v6r21p5
   #  Installation type
   InstallType = server
   #  Each DIRAC update will be installed in a separate directory, not overriding the previous ones
@@ -206,7 +205,7 @@ sudo -u dirac /home/dirac/installDirac
 
 # START user_diracuser
 adduser -s /bin/bash -d /home/diracuser diracuser
-echo password | /usr/bin/passwd diracuser --stdin 
+echo password | /usr/bin/passwd --stdin diracuser
 mkdir ~diracuser/.globus/
 cp /opt/dirac/user/client.pem ~diracuser/.globus/usercert.pem
 cp /opt/dirac/user/client.key ~diracuser/.globus/userkey.pem
@@ -218,7 +217,7 @@ cat > InstallDiracClient <<EOF
 mkdir ~/DiracInstallation && cd ~/DiracInstallation
 curl -O -L https://github.com/DIRACGrid/DIRAC/raw/integration/Core/scripts/dirac-install.py
 chmod +x dirac-install.py
-./dirac-install.py -r v6r21 --dirac-os
+./dirac-install.py -r v6r21p5 --dirac-os
 # END installClient1
 # START installClient2
 mkdir -p ~/DiracInstallation/etc/grid-security/

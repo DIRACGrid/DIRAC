@@ -64,7 +64,7 @@ You now have a *Service* offering grid like storage. However, you still need to 
 Adding the StorageElement
 =========================
 
-You need to add a StorageElement in the ``Resources/StorageElements`` section.  Using the WebApp, just add the following::
+You need to add a StorageElement in the ``Resources/StorageElements`` section (create the sections if necessary).  Using the WebApp, just add the following::
 
   StorageElementOne
   {
@@ -112,7 +112,7 @@ Now create a file called ``/tmp/testSE.py``, with the following content
   print se.listDirectory('/tutoVO')
 
   print "Getting file"
-  print se.getFile(lfn, '/tmp/donwloaded.txt')
+  print se.getFile(lfn, '/tmp/')
 
   print "Removing file"
   print se.removeFile(lfn)
@@ -137,12 +137,6 @@ This file uploads ``/tmp/dummy.txt`` on the StorageElement, list the directory a
   Listing directory
   {'OK': True, 'Value': {'Successful': {'/tutoVO': {'Files': {}, 'SubDirs': {}}}, 'Failed': {}}}
 
-
-.. note::
-
-   You might be getting the following message if you have no Accounting system. You can safely ignore it::
-
-     Error sending accounting record Cannot get URL for Accounting/DataStore in setup MyDIRAC-Production\: RuntimeError('Option /DIRAC/Setups/MyDIRAC-Production/Accounting is not defined',)
 
 
 Adding a second DIRAC SE

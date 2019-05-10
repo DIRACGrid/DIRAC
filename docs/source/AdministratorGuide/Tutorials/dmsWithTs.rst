@@ -53,7 +53,7 @@ Then we create the list of LFNs we just uploaded::
 The easiest way to create a transformation to replicate files is by using the
 :doc:`/AdministratorGuide/CommandReference/dirac-transformation-replication` command::
 
-  [diracuser@dirac-tuto ~]$ dirac-transformation-replication 0 StorageElementTwo --Plugin Standard --Enable
+  [diracuser@dirac-tuto ~]$ dirac-transformation-replication 0 StorageElementTwo --Plugin Broadcast --Enable --SourceSEs StorageElementOne
   Created transformation NNN
   Successfully created replication transformation
 
@@ -64,7 +64,7 @@ By default this transformation uses *Metadata* information to obtain the input f
 </AdministratorGuide/CommandReference/dirac-transformation-add-files>` command and using the list we created previously,
 replace NNN by the ID of the transformation that was just created::
 
-  [diracuser@dirac-tuto ~]$ dirac-transformation-add-files NNN tutoVO-data-Trans_01.lfns
+  [diracuser@dirac-tuto ~]$ dirac-transformation-add-files NNN trans01.lfns
   Successfully added 10 files
 
 
@@ -235,7 +235,7 @@ We can also use the command ``dirac-dms-find-lfns`` to search for files with giv
 
 Now we create a transformation, which uses the metadata to pick up the files::
 
- [diracuser@dirac-tuto ~]$ dirac-transformation-replication 2 StorageElementTwo --Plugin Standard --Extraname _2 --Enable
+ [diracuser@dirac-tuto ~]$  dirac-transformation-replication 2 StorageElementTwo --Plugin=Broadcast --Enable --SourceSEs StorageElementOne
  Created transformation LLL
  Successfully created replication transformation
 
@@ -247,6 +247,11 @@ In the log file of the ``InputDataAgent`` in ``/opt/dirac/pro/runit/Transformati
 eventually this line should appear::
 
   <SomeDate> Transformation/InputDataAgent INFO: 10 files returned for transformation LLL from the metadata catalog
+
+
+You may add some more files to ``/tutoVO/data/Trans_02/`` and see them appearing in your transformation::
+
+  [diracuser@dirac-tuto ~]$ for ID in {11..20}; do echo "MyContent $ID" > File_${ID} ; dirac-dms-add-file /tutoVO/data/Trans_02/File_${ID} File_${ID} StorageElementOne ; done
 
 
 InputDataQuery in the Script

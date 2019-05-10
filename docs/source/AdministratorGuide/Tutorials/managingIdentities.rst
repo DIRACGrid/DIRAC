@@ -106,7 +106,7 @@ Adding a new group
 
 Groups are useful to manage permissions and separate activities. For example, we will create a new group ``dirac_data``, and decide to use that group for all the data centrally managed.
 
-Using the ``Configuration Manager`` application in the WebApp, create a new section ``dirac_data`` in ``/Registry/Groups``::
+Using the ``Configuration Manager`` application in the WebApp using the ``dirac_admin`` group, create a new section ``dirac_data`` in ``/Registry/Groups``::
 
   Users = ciuser
   Properties = NormalUser
