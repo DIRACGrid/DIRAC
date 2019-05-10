@@ -43,7 +43,7 @@ class ProxyDB(DB):
     try:
       from OAuthDIRAC.FrameworkSystem.Client.OAuthManagerClient import OAuthManagerClient
       self.__oauthClient = OAuthManagerClient()
-    except:
+    except BaseException:
       self.__oauthClient = None
 
     retVal = self.__initializeDB()
