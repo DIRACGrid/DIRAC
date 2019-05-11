@@ -26,6 +26,14 @@ class PUSPProxyProvider(ProxyProvider):
     :return: S_OK/S_ERROR, Value is a proxy string
     """
 
+    userDN = userDict.get('DN')
+    if not userDN:
+      return S_ERROR('Incomplete user information')
+
+    diracGroup = userDict.get('DiracGroup')
+    if not diracGroup:
+      return S_ERROR('Incomplete user information')
+
     result = Registry.getGroupsForDN(userDN)
     if not result['OK']:
       return result
@@ -38,13 +46,13 @@ class PUSPProxyProvider(ProxyProvider):
     if not voName:
       return S_ERROR('Can not determine VO for group %s' % diracGroup)
 
-    retVal = self.__getVOMSAttribute(diracGroup, requestedVOMSAttr)
-    if not retVal['OK']:
-      return retVal
-    vomsAttribute = retVal['Value']['attribute']
-    vomsVO = retVal['Value']['VOMSVO']
+    csVOMSMapping = Registry.getVOMSAttributeForGroup(diracGroup)
+    if not csVOMSMapping:
+      return S_ERROR("No VOMS mapping defined for group %s in the CS" % diracGroup)
+    vomsAttribute = csVOMSMapping
+    vomsVO = Registry.getVOMSVOForGroup(diracGroup)
 
-    puspServiceURL = Registry.getVOOption(voName, 'PUSPServiceURL')
+    puspServiceURL = self.parameters.get('ServiceURL')
     if not puspServiceURL:
       return S_ERROR('Can not determine PUSP service URL for VO %s' % voName)
 
@@ -76,3 +84,16 @@ class PUSPProxyProvider(ProxyProvider):
       return result
     proxyString = result['Value']
     return S_OK((proxyString, timeLeft))
+
+  def getUserDN(self, userDict):
+    """ Get DN of the user certificate that will be created
+
+    :param dict userDict:
+    :return: S_OK/S_ERROR, Value is the DN string
+    """
+
+    userDN = userDict.get('DN')
+    if not userDN:
+      return S_ERROR('Incomplete user information')
+
+    return S_OK(userDN)

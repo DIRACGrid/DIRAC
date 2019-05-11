@@ -205,3 +205,25 @@ extendedKeyUsage = clientAuth
 
     return result
 
+  def getUserDN(self, userDict):
+    """ Get DN of the user certificate that will be created
+
+    :param dict userDict:
+    :return: S_OK/S_ERROR, Value is the DN string
+    """
+
+    if "DN" in userDict:
+      return S_OK(userDict['DN'])
+
+    dnParameters = dict(self.parameters)
+    dnParameters.update(userDict)
+
+    for field in ['C', 'O', 'OU', 'FullName', 'EMail']:
+      if field not in dnParameters:
+        return S_ERROR('Incomplete user information')
+
+    dn = "/C=%(C)s/O=%(O)s/OU=%(OU)s/CN=%(FullName)s/emailAddress=%(EMail)s" % dnParameters
+    return S_OK(dn)
+
+
+
