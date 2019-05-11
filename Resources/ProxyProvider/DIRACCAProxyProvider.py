@@ -15,6 +15,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
 __RCSID__ = "$Id$"
 
+
 class DIRACCAProxyProvider(ProxyProvider):
 
   def __init__(self, parameters=None):
@@ -75,10 +76,10 @@ extendedKeyUsage = clientAuth
         os.makedirs(newCertsDir)
 
       # Empty the cert database
-      ffs = glob.glob(caDirName+'/index.txt*')
+      ffs = glob.glob(caDirName + '/index.txt*')
       for ff in ffs:
         os.unlink(ff)
-      with open(caDirName+'/index.txt', 'w') as ind:
+      with open(caDirName + '/index.txt', 'w') as ind:
         ind.write('')
 
       # Write down serial
@@ -131,7 +132,7 @@ extendedKeyUsage = clientAuth
 ######################################################################
 
     workingDirectory = self.parameters.get('WorkingDirectory')
-    caWorkingDirectory = tempfile.mkdtemp(dir = workingDirectory)
+    caWorkingDirectory = tempfile.mkdtemp(dir=workingDirectory)
 
     caConfigFile = os.path.join(caWorkingDirectory, 'CA.cnf')
     certLocation = self.parameters.get('CertFile')
@@ -143,7 +144,7 @@ extendedKeyUsage = clientAuth
     eMail = userDict.get('EMail')
     if "DN" in userDict:
       # Get the DN info as a dictionary
-      dnDict = dict([ field.split('=') for field in userDict['DN'].lstrip('/').split('/')])
+      dnDict = dict([field.split('=') for field in userDict['DN'].lstrip('/').split('/')])
       if not fullName:
         fullName = dnDict.get('CN')
       if not eMail:
@@ -151,10 +152,10 @@ extendedKeyUsage = clientAuth
     if not fullName or not eMail:
       return S_ERROR("Incomplete user information")
 
-    userConfFile = os.path.join(caWorkingDirectory,fullName.replace(' ','_')+'.cnf')
-    userReqFile = os.path.join(caWorkingDirectory,fullName.replace(' ','_')+'.req')
-    userKeyFile = os.path.join(caWorkingDirectory,fullName.replace(' ','_')+'.key.pem')
-    userCertFile = os.path.join(caWorkingDirectory,fullName.replace(' ','_')+'.cert.pem')
+    userConfFile = os.path.join(caWorkingDirectory, fullName.replace(' ', '_') + '.cnf')
+    userReqFile = os.path.join(caWorkingDirectory, fullName.replace(' ', '_') + '.req')
+    userKeyFile = os.path.join(caWorkingDirectory, fullName.replace(' ', '_') + '.key.pem')
+    userCertFile = os.path.join(caWorkingDirectory, fullName.replace(' ', '_') + '.cert.pem')
 
     dnFields = {}
     for field in ['C', 'O', 'OU']:
@@ -162,17 +163,17 @@ extendedKeyUsage = clientAuth
 
     writeUserConfigFile(userConfFile, fullName, eMail, dnFields)
 
-    status,output = commands.getstatusoutput('openssl genrsa -out %s 2048' % userKeyFile)
+    status, output = commands.getstatusoutput('openssl genrsa -out %s 2048' % userKeyFile)
     if status:
       return S_ERROR(output)
-    status,output = commands.getstatusoutput('openssl req -config %s -key %s -new -out %s' % \
-                                             (userConfFile, userKeyFile, userReqFile) )
+    status, output = commands.getstatusoutput('openssl req -config %s -key %s -new -out %s' %
+                                              (userConfFile, userKeyFile, userReqFile))
     if status:
       return S_ERROR(output)
 
     cmd = 'openssl ca -config %s -extensions usr_cert -batch -days 375 -in %s -out %s'
     cmd = cmd % (caConfigFile, userReqFile, userCertFile)
-    status,output = commands.getstatusoutput(cmd)
+    status, output = commands.getstatusoutput(cmd)
     if status:
       return S_ERROR(output)
 
@@ -198,7 +199,7 @@ extendedKeyUsage = clientAuth
       if diracGroup not in result['Value']:
         return S_ERROR('Requested group is not valid for the user')
 
-    result = chain.generateProxyToString(365*24*3600, diracGroup=diracGroup, rfc = True)
+    result = chain.generateProxyToString(365 * 24 * 3600, diracGroup=diracGroup, rfc=True)
 
     # Clean up temporary files
     shutil.rmtree(caWorkingDirectory)
@@ -224,6 +225,3 @@ extendedKeyUsage = clientAuth
 
     dn = "/C=%(C)s/O=%(O)s/OU=%(OU)s/CN=%(FullName)s/emailAddress=%(EMail)s" % dnParameters
     return S_OK(dn)
-
-
-

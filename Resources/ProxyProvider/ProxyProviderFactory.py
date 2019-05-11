@@ -12,6 +12,7 @@ from DIRAC.Resources.ProxyProvider.ProxyProvider import getProxyProviderConfigDi
 
 __RCSID__ = "$Id$"
 
+
 class ProxyProviderFactory(object):
 
   #############################################################################

@@ -105,6 +105,7 @@ P0JRow1JioXLH/c6XDRHrASuzdrNya0logqWh56wn11BBBz94PUMNoWNPGtpKS/S
 -----END CERTIFICATE-----
 """
 
+
 class DIRACCAPPTest(unittest.TestCase):
   """ Base class for the Modules test cases
   """
@@ -127,22 +128,22 @@ class DIRACCAPPTest(unittest.TestCase):
     self.pp = result['Value']
 
     self.userDictClean = {
-      "FullName": "DIRAC test user",
-      "EMail": "testuser@diracgrid.org"
+        "FullName": "DIRAC test user",
+        "EMail": "testuser@diracgrid.org"
     }
     self.userDictCleanDN = {
-      "DN": "/C=FR/O=DIRAC/OU=DIRAC Consortium/CN=DIRAC test user/emailAddress=testuser@diracgrid.org",
-      "EMail": "testuser@diracgrid.org"
+        "DN": "/C=FR/O=DIRAC/OU=DIRAC Consortium/CN=DIRAC test user/emailAddress=testuser@diracgrid.org",
+        "EMail": "testuser@diracgrid.org"
     }
     self.userDictGroup = {
-      "FullName": "DIRAC test user",
-      "EMail": "testuser@diracgrid.org",
-      "DiracGroup": "dirac_user"
+        "FullName": "DIRAC test user",
+        "EMail": "testuser@diracgrid.org",
+        "DiracGroup": "dirac_user"
     }
     self.userDictNoGroup = {
-      "FullName": "DIRAC test user",
-      "EMail": "testuser@diracgrid.org",
-      "DiracGroup": "dirac_no_user"
+        "FullName": "DIRAC test user",
+        "EMail": "testuser@diracgrid.org",
+        "DiracGroup": "dirac_no_user"
     }
 
   def tearDown(self):
@@ -158,8 +159,8 @@ class DIRACCAPPTest(unittest.TestCase):
     result = chain.getCredentials()
     self.assertTrue(result['OK'])
     credDict = result['Value']
-    self.assertEqual(credDict['username'],'testuser')
-    self.assertEqual(credDict['group'],'dirac_user')
+    self.assertEqual(credDict['username'], 'testuser')
+    self.assertEqual(credDict['group'], 'dirac_user')
 
   def test_getProxyDN(self):
 
@@ -170,8 +171,8 @@ class DIRACCAPPTest(unittest.TestCase):
     result = chain.getCredentials()
     self.assertTrue(result['OK'])
     credDict = result['Value']
-    self.assertEqual(credDict['username'],'testuser')
-    self.assertEqual(credDict['group'],'dirac_user')
+    self.assertEqual(credDict['username'], 'testuser')
+    self.assertEqual(credDict['group'], 'dirac_user')
 
   def test_getProxyGroup(self):
 
@@ -182,16 +183,15 @@ class DIRACCAPPTest(unittest.TestCase):
     result = chain.getCredentials()
     self.assertTrue(result['OK'])
     credDict = result['Value']
-    self.assertEqual(credDict['username'],'testuser')
-    self.assertEqual(credDict['group'],'dirac_user')
+    self.assertEqual(credDict['username'], 'testuser')
+    self.assertEqual(credDict['group'], 'dirac_user')
 
   def test_getProxyNoGroup(self):
 
     result = self.pp.getProxy(self.userDictNoGroup)
     self.assertFalse(result['OK'])
 
+
 if __name__ == '__main__':
-  SUITE = unittest.defaultTestLoader.loadTestsFromTestCase( DIRACCAPPTest )
-  unittest.TextTestRunner( verbosity = 2 ).run( SUITE )
-
-
+  SUITE = unittest.defaultTestLoader.loadTestsFromTestCase(DIRACCAPPTest)
+  unittest.TextTestRunner(verbosity=2).run(SUITE)

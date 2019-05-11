@@ -11,6 +11,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
 __RCSID__ = "$Id$"
 
+
 class PUSPProxyProvider(ProxyProvider):
 
   def __init__(self, parameters=None):
