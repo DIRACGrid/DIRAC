@@ -6,7 +6,6 @@ __RCSID__ = "$Id$"
 import os
 import glob
 import time
-import types
 import urllib
 import random
 import hashlib
@@ -23,6 +22,7 @@ from DIRAC.Core.Security.X509Chain import X509Chain, isPUSPdn
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry, Resources
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
+from DIRAC.Resources.ProxyProvider.ProxyProviderFactory import ProxyProviderFactory
 
 
 class ProxyDB(DB):
@@ -40,11 +40,11 @@ class ProxyDB(DB):
     self._minSecsToAllowStore = 3600
     self.__notifClient = NotificationClient()
 
-    try:
-      from OAuthDIRAC.FrameworkSystem.Client.OAuthManagerClient import OAuthManagerClient
-      self.__oauthClient = OAuthManagerClient()
-    except BaseException:
-      self.__oauthClient = None
+    # try:
+    #   from OAuthDIRAC.FrameworkSystem.Client.OAuthManagerClient import OAuthManagerClient
+    #   self.__oauthClient = OAuthManagerClient()
+    # except BaseException:
+    #   self.__oauthClient = None
 
     retVal = self.__initializeDB()
     if not retVal['OK']:
@@ -651,104 +651,26 @@ class ProxyDB(DB):
     proxyString = result['Value']
     return S_OK((proxyString, timeLeft))
 
-  def __getDIRACCAProxy(self, fullName, eMail, DN=None, diracGroup=None, proxyProvider='DIRAC_EOSC_CA'):
-
-    def writeUserConfigFile(fileName, fullName, eMail):
-      userConf = """[ req ]
-        default_bits           = 2048
-        encrypt_key            = yes
-        distinguished_name     = req_dn
-        prompt                 = no
-        req_extensions        = v3_req
-        # Generates the following subject
-        # Subject: O=DIRAC CI, O=CERN, CN=ciuser
-        [ req_dn ]
-        C                      = FR
-        O                      = DIRAC
-        OU                     = DIRAC Consortium
-        CN                     = %s
-        emailAddress           = %s
-        [ v3_req ]
-        # Extensions for client certificates (`man x509v3_config`).
-        nsComment = "OpenSSL Generated Client Certificate"
-        keyUsage = critical, nonRepudiation, digitalSignature, keyEncipherment
-        extendedKeyUsage = clientAuth
-        """ % (fullName, eMail)
-      with open(fileName, "w") as userConfigFile:
-        userConfigFile.write(userConf)
-
-    if DN:
-      eMail = DN.split('/')[-1].split('=')[1]
-      fullName = DN.split('/')[-2].split('=')[1]
-    caConfigFile = gConfig.getValue('/Resources/ProxyProviders/%s/CAConfigFile' % proxyProvider)
-    maxPeriod = gConfig.getValue('/Resources/ProxyProviders/%s/max_proxylifetime' % proxyProvider) or 365 * 24 * 3600
-    caDir = os.path.dirname(caConfigFile)
-    userConfFile = os.path.join(caDir, fullName.replace(' ', '_') + '.cnf')
-    userReqFile = os.path.join(caDir, fullName.replace(' ', '_') + '.req')
-    userKeyFile = os.path.join(caDir, fullName.replace(' ', '_') + '.key.pem')
-    userCertFile = os.path.join(caDir, fullName.replace(' ', '_') + '.cert.pem')
-    writeUserConfigFile(userConfFile, fullName, eMail)
-    status, output = commands.getstatusoutput('openssl genrsa -out %s 2048' % userKeyFile)
-    if status:
-      return S_ERROR(output)
-    status, output = commands.getstatusoutput('openssl req -config %s -key %s -new -out %s' %
-                                              (userConfFile, userKeyFile, userReqFile))
-    if status:
-      return S_ERROR(output)
-    # Empty the cert database
-    ffs = glob.glob(caDir + '/index.txt*')
-    for ff in ffs:
-      os.unlink(ff)
-    with open(caDir + '/index.txt', 'w') as ind:
-      ind.write('')
-    com = 'openssl ca -config %s -extensions usr_cert -batch -days 375 -in ' % caConfigFile
-    com += '%s -out %s' % (userReqFile, userCertFile)
-    status, output = commands.getstatusoutput(com)
-    if status:
-      return S_ERROR(output)
-    chain = X509Chain()
-    result = chain.loadChainFromFile(userCertFile)
-    if not result['OK']:
-      return result
-    result = chain.loadKeyFromFile(userKeyFile)
-    if not result['OK']:
-      return result
-    result = chain.generateProxyToString(maxPeriod, diracGroup=diracGroup, rfc=True)
-    # Clean up temporary files
-    for ff in [userConfFile, userReqFile, userKeyFile, userCertFile]:
-      os.unlink(ff)
-    # Empty the cert database
-    ffs = glob.glob(caDir + '/index.txt*')
-    for ff in ffs:
-      os.unlink(ff)
-    return result
-
   def __getProxyFromProxyProvider(self, userDN, proxyProvider):
-    chain = None
-    proxyStr = None
-    remainingSecs = None
-    method = Resources.getProxyProviderOption(proxyProvider, 'method')
-    if method == 'oAuth2':
-      result = self.__oauthClient.getProxyDNExpTimeFromOAuthProxyProvider(proxyProvider, None, None, userDN)
-      if result['OK']:
-        proxyStr = result['Value']['proxy']
-        remainingSecs = result['Value']['exptime']
-    elif method == 'DIRACCA':
-      result = self.__getDIRACCAProxy(None, None, DN=userDN, proxyProvider=proxyProvider)
-      if result['OK']:
-        proxyStr = result['Value']
-    else:
-      return S_ERROR('Cannot generate new proxy from %s proxy provider: no found method' % proxyProvider)
-    if not chain:
-      chain = X509Chain()
-      result = chain.loadProxyFromString(proxyStr)
-      if not result['OK']:
-        return result
-    if not remainingSecs:
-      result = chain.getRemainingSecs()
-      if not result['OK']:
-        return result
-      remainingSecs = result['Value']
+    """ Get proxy from proxy provider
+
+    """
+    result = ProxyProviderFactory().getProxyProvider(proxyProvider)
+    if not result['OK']:
+      return result
+    pp = result['Value']
+    result = pp.getProxy({"userDN": userDN})
+    if not result['OK']:
+      return result
+    proxyStr = result['Value']
+    chain = X509Chain()
+    result = chain.loadProxyFromString(proxyStr)
+    if not result['OK']:
+      return result
+    result = chain.getRemainingSecs()
+    if not result['OK']:
+      return result
+    remainingSecs = result['Value']
     result = self.storeProxy(userDN, False, chain, proxyProvider)
     if result['OK']:
       return S_OK({'proxy': proxyStr, 'chain': chain, 'remainingSecs': remainingSecs})
@@ -994,7 +916,7 @@ class ProxyDB(DB):
     for field, mask in (('UserDN', dnMask), ('UserGroup', groupMask), ('UserName', userMask)):
       if not mask:
         continue
-      if type(mask) not in (types.ListType, types.TupleType):
+      if not isinstance(mask,(list,tuple)):
         mask = [mask]
       mask = [self._escapeString(entry)['Value'] for entry in mask]
       sqlCond.append("%s in ( %s )" % (field, ", ".join(mask)))
@@ -1072,7 +994,7 @@ class ProxyDB(DB):
       if field not in fields:
         continue
       fVal = selDict[field]
-      if type(fVal) in (types.DictType, types.TupleType, types.ListType):
+      if isinstance(fVal,(dict,tuple,list)):
         sqlWhere.append("%s in (%s)" % (field, ", ".join([self._escapeString(str(value))['Value'] for value in fVal])))
       else:
         sqlWhere.append("%s = %s" % (field, self._escapeString(str(fVal))['Value']))

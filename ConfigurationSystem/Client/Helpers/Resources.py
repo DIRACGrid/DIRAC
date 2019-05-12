@@ -372,41 +372,52 @@ def getFilterConfig(filterID):
   return gConfig.getOptionsDict('Resources/LogFilters/%s' % filterID)
 
 
-def getProxyProviders():
-  """ Get the names of all the Proxy Providers defined in the CS """
-  return gConfig.getSections('/Resources/ProxyProviders')
+def getProxyProviders(providerName=None):
+  """ Return list of all proxy provider names defined in the CS
+      
+      :return: S_OK(lisl)/S_ERROR
+  """
+  return gConfig.getSections('%s/ProxyProviders' % gBaseResourcesSection)
 
 
 def getProxyProviderOption(proxyProvider, Value):
   """ Get the value of the IdP """
-  return gConfig.getValue("/Resources/ProxyProviders/%s/%s" % (proxyProvider, Value))
+  return gConfig.getValue("%s/ProxyProviders/%s/%s" % (gBaseResourcesSection, proxyProvider, Value))
 
 
 def getProxyProviderDict(IdP):
   """ Get the dict of all the settings IdP defined in the CS """
-  return gConfig.getOptionsDict("/Resources/ProxyProviders/%s" % IdP)
+  return gConfig.getOptionsDict("%s/ProxyProviders/%s" % (gBaseResourcesSection, IdP))
 
 
 def getIdPs():
-  """ Get the names of all the Id Providers defined in the CS """
-  return gConfig.getSections('/Resources/IdProviders')
+  """ Return list of all identity provider names defined in the CS
+      
+      :return: S_OK(lisl)/S_ERROR
+  """
+  return gConfig.getSections('%s/IdProviders' % gBaseResourcesSection)
 
 
-def getIdPOption(IdP, Value):
-  """ Get the value of the IdP """
-  return gConfig.getValue("/Resources/IdProviders/%s/%s" % (IdP, Value))
+def getIdPOption(providerName, option):
+  """ Get the option from identity provider configuration
+
+      :param basestring providerName: identity provider name
+      :param basestring option: option name that need to get
+      :return: basestring option value
+  """
+  return gConfig.getValue("%s/IdProviders/%s/%s" % (gBaseResourcesSection, providerName, option))
 
 
 def getIdPSections(IdP, path=''):
   """ Get the sections of the IdP """
-  return gConfig.getSections("/Resources/IdProviders/%s/%s" % (IdP, path))
+  return gConfig.getSections("%s/IdProviders/%s/%s" % (gBaseResourcesSection, IdP, path))
 
 
 def getIdPOptions(IdP, path=''):
   """ Get the options of the IdP """
-  return gConfig.getOptions("/Resources/IdProviders/%s/%s" % (IdP, path))
+  return gConfig.getOptions("%s/IdProviders/%s/%s" % (gBaseResourcesSection, IdP, path))
 
 
 def getIdPDict(IdP):
   """ Get the dict of all the settings IdP defined in the CS """
-  return gConfig.getOptionsDict("/Resources/IdProviders/%s" % IdP)
+  return gConfig.getOptionsDict("%s/IdProviders/%s" % (gBaseResourcesSection, IdP))

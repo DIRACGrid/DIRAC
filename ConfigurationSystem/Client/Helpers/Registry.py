@@ -379,7 +379,13 @@ def getVOMSRoleGroupMapping(vo=''):
                "NoSyncVOMS": noVOMSSyncGroupList})
 
 
-def getUsernameForID(ID, usersList=False):
+def getUsernameForID(ID, usersList=[]):
+  """ Get DIRAC user name by ID
+
+      :param basestring DN: user DN
+      :param list usersList: list of DIRAC user names
+      :return: basestring
+  """
   if not usersList:
     retVal = gConfig.getSections("%s/Users" % gBaseRegistrySection)
     if not retVal['OK']:
@@ -399,6 +405,11 @@ def getCAForUsername(username):
 
 
 def getProxyProvidersForDN(DN):
+  """ Get proxy providers by DN
+
+      :param basestring DN: user DN
+      :return: list
+  """
   result = getUsernameForDN(DN)
   if not result['OK']:
     return []
@@ -409,6 +420,11 @@ def getProxyProvidersForDN(DN):
 
 
 def getGroupsFromDNProperties(DN):
+  """ Get groups by DN in DNProperties
+
+      :param basestring DN: user DN
+      :return: list
+  """
   result = getUsernameForDN(DN)
   if not result['OK']:
     return []
@@ -416,3 +432,23 @@ def getGroupsFromDNProperties(DN):
   secDN = DN.replace('/', '-').replace('=', '_')
   return gConfig.getValue("%s/Users/%s/DNProperties/%s/Groups" %
                           (gBaseRegistrySection, result['Value'], secDN), [])
+
+def getDNFromProxyProviderForUserID(proxyProvider, userID):
+  """ Get groups by DN in DNProperties
+
+      :param basestring proxyProvider: proxy provider name
+      :param basestring userID: user identificator
+      :return: S_OK(list)/S_ERROR
+  """
+  # Get user name
+  result = getUsernameForID(userID)
+  if not result['OK']:
+    return result
+  # Get DNs from user
+  result = getDNForUsername(result['Value'])
+  if not result['OK']:
+    return result
+  for DN in result['Value']:
+    if proxyProvider in getProxyProvidersForDN(DN):
+      return S_OK(DN)
+  return S_ERROR("No DN found for %s proxy provider for user ID %s" % (proxyProvider, userID))
