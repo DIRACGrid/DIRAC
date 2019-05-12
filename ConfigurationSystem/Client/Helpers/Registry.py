@@ -433,6 +433,7 @@ def getGroupsFromDNProperties(DN):
   return gConfig.getValue("%s/Users/%s/DNProperties/%s/Groups" %
                           (gBaseRegistrySection, result['Value'], secDN), [])
 
+
 def getDNFromProxyProviderForUserID(proxyProvider, userID):
   """ Get groups by DN in DNProperties
 

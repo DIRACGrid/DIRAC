@@ -916,7 +916,7 @@ class ProxyDB(DB):
     for field, mask in (('UserDN', dnMask), ('UserGroup', groupMask), ('UserName', userMask)):
       if not mask:
         continue
-      if not isinstance(mask,(list,tuple)):
+      if not isinstance(mask, (list, tuple)):
         mask = [mask]
       mask = [self._escapeString(entry)['Value'] for entry in mask]
       sqlCond.append("%s in ( %s )" % (field, ", ".join(mask)))
@@ -994,7 +994,7 @@ class ProxyDB(DB):
       if field not in fields:
         continue
       fVal = selDict[field]
-      if isinstance(fVal,(dict,tuple,list)):
+      if isinstance(fVal, (dict, tuple, list)):
         sqlWhere.append("%s in (%s)" % (field, ", ".join([self._escapeString(str(value))['Value'] for value in fVal])))
       else:
         sqlWhere.append("%s = %s" % (field, self._escapeString(str(fVal))['Value']))
