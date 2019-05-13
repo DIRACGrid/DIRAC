@@ -138,7 +138,6 @@ User convenience:
 .. toctree::
     :maxdepth: 2
     
-    dirac-accounting-report-cli
     dirac-accounting-decode-fileid
     dirac-cert-convert.sh
     dirac-myproxy-upload

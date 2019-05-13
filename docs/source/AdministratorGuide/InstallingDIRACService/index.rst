@@ -116,7 +116,7 @@ the steps below. This procedure must be followed for the primary server and for 
 
      mkdir /home/dirac/DIRAC
      cd /home/dirac/DIRAC
-     curl https://github.com/DIRACGrid/DIRAC/raw/integration/Core/scripts/install_site.sh -O
+     curl -O https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/Core/scripts/install_site.sh
 
 
 ----------------
@@ -125,7 +125,7 @@ Installing runit
 
 In order to make the DIRAC components running we use the *runit* mechanism (http://smarden.org/runit/).
 
-As *dirac* user, create the file ``/opt/dirac/sbin/runsvdir-start`` with the following content, and make it executable::
+As *dirac* user, create ``/opt/dirac/sbin directory`` and create the file ``/opt/dirac/sbin/runsvdir-start`` with the following content, and make it executable::
 
   #!/bin/bash
   cd /opt/dirac
@@ -366,6 +366,10 @@ be taken:
         #                       innodb_buffer_pool_size=10000MB
       }
     }
+
+or You can download the full server installation from::  
+
+	curl https://github.com/DIRACGrid/DIRAC/raw/integration/Core/scripts/install_full.cfg -o install.cfg
 
 - Run install_site.sh giving the edited configuration file as the argument. The configuration file must have
   .cfg extension (CFG file). While not strictly necessary, it's advised that a version is added with the '-v' switch

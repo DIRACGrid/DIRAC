@@ -4,6 +4,9 @@
 Installing the RequestManagement System
 =======================================
 
+.. set highlighting to console input/output
+.. highlight:: console
+
 Pre-requisite
 =============
 
@@ -39,22 +42,24 @@ The RMS is no different than any other DIRAC system. The installation step are t
 
   [diracuser@dirac-tuto ~]$ dirac-admin-sysadmin-cli --host dirac-tuto
   Pinging dirac-tuto...
-  [dirac-tuto]> add instance RequestManagement Production
+  [dirac-tuto]$ add instance RequestManagement Production
   Adding RequestManagement system as Production self.instance for MyDIRAC-Production self.setup to dirac.cfg and CS
   RequestManagement system instance Production added successfully
-  [dirac-tuto]> install db ReqDB
+  [dirac-tuto]$ restart *
+  All systems are restarted, connection to SystemAdministrator is lost
+  [dirac-tuto]$ install db ReqDB
   MySQL root password:
   Adding to CS RequestManagement/ReqDB
   Database ReqDB from DIRAC/RequestManagementSystem installed successfully
-  [dirac-tuto]> install service RequestManagement ReqManager
+  [dirac-tuto]$ install service RequestManagement ReqManager
   Loading configuration template /home/diracuser/DiracInstallation/DIRAC/RequestManagementSystem/ConfigTemplate.cfg
   Adding to CS service RequestManagement/ReqManager
   service RequestManagement_ReqManager is installed, runit status: Run
-  [dirac-tuto]> install agent RequestManagement RequestExecutingAgent
+  [dirac-tuto]$ install agent RequestManagement RequestExecutingAgent
   Loading configuration template /home/diracuser/DiracInstallation/DIRAC/RequestManagementSystem/ConfigTemplate.cfg
   Adding to CS agent RequestManagement/RequestExecutingAgent
   agent RequestManagement_RequestExecutingAgent is installed, runit status: Run
-  [dirac-tuto]> quit
+  [dirac-tuto]$ quit
 
 
 By default, the installation of the ``RequestExecutingAgent`` will configure it with a whole bunch of default Operations possible. You can see that in the Agent configuration in ``/Systems/RequestManagement/Production/Agents/RequestExecutingAgent/OperationHandlers``
@@ -63,7 +68,7 @@ By default, the installation of the ``RequestExecutingAgent`` will configure it 
 Testing the RMS
 ===============
 
-This section is to be executed with a proxy with `dirac_user` group.
+This section is to be executed with a proxy with `dirac_data` group.
 
 The test we are going to do consists in transferring a file from one storage element to another, using the RequestExecutingAgent.
 
@@ -91,7 +96,7 @@ Let's replicate it to ``StorageElementTwo`` using the RMS::
   You can monitor requests' status using command: 'dirac-rms-request <requestName/ID>'
 
 
-The Request has a name (``myFirstRequest``) that we chose, but also an ID, returned by the system (here ````). The ID is guaranteed to be unique, while the name is not, so it is recommended to use the ID when you interact with the RMS. You can see the status of your Request, using its name or ID::
+The Request has a name (``myFirstRequest``) that we chose, but also an ID, returned by the system (here ``8``). The ID is guaranteed to be unique, while the name is not, so it is recommended to use the ID when you interact with the RMS. You can see the status of your Request, using its name or ID::
 
   [diracuser@dirac-tuto ~]$ dirac-rms-request myFirstRequest
   Request name='myFirstRequest' ID=8 Status='Waiting'

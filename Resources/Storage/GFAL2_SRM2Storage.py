@@ -212,5 +212,6 @@ class GFAL2_SRM2Storage(GFAL2_StorageBase):
 
     sTokenDict['Total'] = float(occupancyDict.get('totalsize', '0'))
     sTokenDict['Free'] = float(occupancyDict.get('unusedsize', '0'))
+    sTokenDict['SpaceReservation'] = self.protocolParameters['SpaceToken']
 
     return S_OK(sTokenDict)

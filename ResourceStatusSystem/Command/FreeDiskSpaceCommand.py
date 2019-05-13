@@ -84,10 +84,12 @@ class FreeDiskSpaceCommand(Command):
     occupancy = occupancyResult['Value']
     free = occupancy['Free']
     total = occupancy['Total']
+    spaceReservation = occupancy.get('SpaceReservation', '')
 
     results = {'Endpoint': endpointResult['Value'],
                'Free': free,
                'Total': total,
+               'SpaceReservation': spaceReservation,
                'ElementName': elementName}
     result = self._storeCommand(results)
     if not result['OK']:
