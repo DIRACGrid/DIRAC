@@ -1,3 +1,6 @@
+# cannot use DIRAC requirements because of inability to install pycurl (from FTS dependency) on RTD
+#-r https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/requirements.txt
+-e git+https://github.com/DIRACGrid/DIRAC/@integration#egg=diracdoctools&subdirectory=docs
 Sphinx>=1.8.0
 mock
 elasticsearch_dsl
@@ -8,4 +11,6 @@ suds
 pytz
 psutil
 pyparsing
-GSI
+M2Crypto==0.32
+pyasn1>0.4.1
+pyasn1_modules

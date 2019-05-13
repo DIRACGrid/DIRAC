@@ -16,6 +16,7 @@ class MyMock(mock.Mock):
   def __len__(self):
     return 0
 
+
 # Needed
 # GSI
 mockGSI = MyMock()

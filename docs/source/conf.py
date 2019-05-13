@@ -11,35 +11,34 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-from __future__ import print_function
+# pylint: disable=invalid-name
+
+import logging
 import datetime
 import os
 import sys
-import subprocess
 
 sys.path.insert(0, ".")
 
-try:
-  import fakeEnvironment
-except ImportError:
-  pass
-try:
-  import fakeEnv
-except ImportError:
-  pass
+import diracdoctools
+import diracdoctools.cmd
+from diracdoctools import fakeEnvironment, environmentSetup, DIRAC_DOC_MOCK_LIST
+from diracdoctools.Utilities import setUpReadTheDocsEnvironment
+
+logging.basicConfig(level=logging.INFO, format='%(name)25s: %(levelname)8s: %(message)s')
+LOG = logging.getLogger('conf.py')
 
 diracRelease = os.environ.get('DIRACVERSION', 'integration')
 if os.environ.get('READTHEDOCS') == 'True':
   diracRelease = os.path.basename(os.path.abspath("../../"))
   if diracRelease.startswith("rel-"):
     diracRelease = diracRelease[4:]
-print('conf.py: %s as DIRACVERSION' % diracRelease)
+LOG.info('DIRACVERSION is %r', diracRelease)
 
-# Set this environment variable such tha the documentation
-# generated for the various X509* classes is the one with M2Crypto
-if 'DIRAC_USE_M2CRYPTO' not in os.environ:
-  os.environ['DIRAC_USE_M2CRYPTO'] = "Yes"
-
+LOG.info('Current location %r', os.getcwd())
+LOG.info('DiracDocTools location %r', diracdoctools.__file__)
+LOG.info('DiracDocTools location %r', diracdoctools.Utilities.__file__)
+LOG.info('DiracDocTools location %r', diracdoctools.cmd.__file__)
 #...............................................................................
 # configuration
 
@@ -47,73 +46,27 @@ if 'DIRAC_USE_M2CRYPTO' not in os.environ:
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 
+# AUTO SETUP START
 if os.environ.get('READTHEDOCS') == 'True':
-  sys.path.append(os.path.abspath('.'))
-  diracPath = os.path.abspath(os.path.join(os.getcwd(), "../.."))
-  print("DiracPath", diracPath)
-
-  buildfolder = "_build"
-  try:
-    os.mkdir(os.path.abspath("../" + buildfolder))
-  except BaseException:
-    pass
-
-  # We need to have the DIRAC module somewhere, or we cannot import it, as
-  # readtheDocs clones the repo into something based on the branchname
-  if not os.path.exists("../../DIRAC"):
-    diracLink = os.path.abspath(os.path.join(os.getcwd(), "../", buildfolder, "DIRAC"))
-    print("DiracLink", diracLink)
-    if not os.path.exists(diracLink):
-      RES = subprocess.check_output(["ln", "-s", diracPath, diracLink])
-    diracPath = os.path.abspath(os.path.join(diracLink, ".."))
-
-  sys.path.insert(0, diracPath)
-
-  for path in sys.path:
-    os.environ['PYTHONPATH'] = os.environ.get('PYTHONPATH', '') + ":" + path
-
-  # this is not working at the moment because the DIRAC folder is not found by the buildScriptsDOC script
-  # print "Pythonpath",os.environ['PYTHONPATH']
-  # buildCommand = os.path.join( os.getcwd() , "../Tools/buildScriptsDOC.py" )
-  # scriptdir = os.path.abspath(os.path.join( os.getcwd() , "../", buildfolder, "scripts" ))
-  # try:
-  #   os.mkdir( scriptdir )
-  # except:
-  #   pass
-  # print "command", buildCommand
-  # code = subprocess.Popen( ["python", buildCommand, scriptdir ], env = os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-  # stdout , err = code.communicate()
-  # print "script",stdout
-  # print "script",err
-
-  os.environ["DIRAC"] = diracPath
-  print("DIRAC ENVIRON", os.environ["DIRAC"])
+  setUpReadTheDocsEnvironment(moduleName='DIRAC')
 
   # re-create the RST files for the command references
-  buildCommand = os.path.join(os.getcwd(), "../Tools/buildScriptsDocs.py")
-  code = subprocess.Popen(["python", buildCommand], env=os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-  stdout, err = code.communicate()
-  print("scriptDocs:", stdout)
-  print("scriptErrs:", err)
+  LOG.info('Building command reference')
+  from diracdoctools.cmd.commandReference import run as buildCommandReference
+  buildCommandReference(configFile='../docs.conf')
 
   # singlehtml build needs too much memory, so we need to create less code documentation
-  buildtype = "limited" if any("singlehtml" in arg for arg in sys.argv) else "full"
-  print("Chosing build type:", buildtype)
-  buildCommand = os.path.join(os.getcwd(), "../Tools/MakeDoc.py")
-  code = subprocess.Popen(["python", buildCommand, buildtype], env=os.environ,
-                          stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-  stdout, err = code.communicate()
-  print("code", stdout)
-  print("code", err)
+  buildType = 'limited' if any('singlehtml' in arg for arg in sys.argv) else 'full'
+  LOG.info('Chosing build type: %r', buildType)
+  from diracdoctools.cmd.codeReference import run as buildCodeDoc
+  buildCodeDoc(configFile='../docs.conf', buildType=buildType)
 
-# always update dirac.cfg
-buildCommand = os.path.join(os.getcwd(), "../Tools/UpdateDiracCFG.py")
-code = subprocess.Popen(["python", buildCommand], env=os.environ, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-stdout, err = code.communicate()
-if stdout:
-  print("Config Output", stdout)
-if err:
-  print("Config error", err)
+  # Update dirac.cfg
+  LOG.info('Concatenating dirac.cfg')
+  from diracdoctools.cmd.concatcfg import run as updateCompleteDiracCFG
+  updateCompleteDiracCFG(configFile='../docs.conf')
+
+# AUTO SETUP END
 
 # -- General configuration -----------------------------------------------------
 
@@ -300,12 +253,7 @@ latex_documents = [
 #latex_use_modindex = True
 
 # packages that cannot be installed in RTD
-autodoc_mock_imports = ['lcg_util', 'cx_Oracle', 'fts3', 'XRootD', 'gfal2', 'arc', '_arc',
-                        'matplotlib',
-                        'git',
-                        'numpy', 'irods', 'pylab', 'stomp',
-                        'pythonjsonlogger', 'cmreslogging',
-                        ]
+autodoc_mock_imports = DIRAC_DOC_MOCK_LIST
 
 
 # link with the python standard library docs
