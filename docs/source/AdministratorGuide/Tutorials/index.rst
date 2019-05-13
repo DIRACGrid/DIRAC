@@ -15,4 +15,5 @@ Each of this tutorial is a step by step guide.
    diracSE
    installDFC
    installRMS
+   installTS
    dmsWithTs

@@ -65,6 +65,31 @@ NEW: (#4053) AuthManager - interpret the Suspended user status considering suspe
      users as anonymous visitors
 CHANGE: (#4053) The use of CS.py module is replaced by the use of Registry.py and CSGlobals.py
 
+[v6r21p6]
+
+*CS
+FIX: (#4064) Fix exception when calling dirac-admin-add-shifter with already existing values
+
+*Core
+NEW: (#4065) getIndexInList utility in List.py
+
+*Resources
+NEW: (#4065) add a SpaceReservation concept to storages
+NEW: (#4065) add a getEndpoint method to StorageBase
+
+*RSS
+CHANGE: (#4065) CSHelpers.getStorageElementEndpoint returns the endpoint or non srm protocol
+CHANGE: (#4065) add the SpaceReservation to the FreeDiskSpaceCommand result
+
+*TS
+FIX: (#4066) The dirac-transformation-replication script will now create valid transformations 
+     given only the required arguments. Instead of the 'Broadcast' plugin, the 'Standard' plugin 
+     is created if not SourceSE is given. If a value for the plugin argument is given, that will 
+     be used.
+
+*docs
+CHANGE: (#4069) DIRAC installation procedure is updated taking account DIRACOS
+
 [v6r21p5]
 
 *Core

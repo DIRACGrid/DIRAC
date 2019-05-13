@@ -165,7 +165,16 @@ def getSEHost(seName):
 
 
 def getStorageElementEndpoint(seName):
-  """ Get endpoint as combination of host, port, wsurl
+  """ Get one endpoint of a StorageElement
+
+      Like all the rest of the methods here, they will need to adapt to an SRM free world.
+      This is planned for a future version. See https://github.com/DIRACGrid/DIRAC/issues/3908
+
+      :param seName: name of the storage element
+
+      :returns: for historical reasons, if the protocol is SRM, you get  'httpg://host:port/WSUrl'
+                For other protocols, you get :py:meth:`~DIRAC.Resources.Storage.StorageBase.StorageBase.getEndpoint`
+
   """
   seParameters = _getSEParameters(seName)
   if not seParameters['OK']:
@@ -183,7 +192,7 @@ def getStorageElementEndpoint(seName):
       url = url.replace('?SFN=', '')
       return S_OK(url)
   else:
-    return S_OK(seParameters['Value']['URLBase'])
+    return S_OK(seParameters['Value']['Endpoint'])
 
   return S_ERROR((host, port, wsurl))
 

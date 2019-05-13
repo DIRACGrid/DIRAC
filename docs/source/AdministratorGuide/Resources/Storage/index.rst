@@ -10,6 +10,7 @@ DIRAC provides an abstraction of a SE interface that allows to access different 
     CERN-USER
     {
       OccupancyLFN = /lhcb/spaceReport.json
+      SpaceReservation = LHCb_USER
       ReadAccess = Active
       WriteAccess = Active
       AccessProtocol.1
@@ -42,16 +43,17 @@ DIRAC provides an abstraction of a SE interface that allows to access different 
 
 Configuration options are:
 
-* `BackendType`: just used for information. No internal use at the moment
-* `SEType`: Can be `T0D1` or `T1D0` or `T1D1`. it is used to asses whether the SE is a tape SE or not. If the digit after `T` is `1`, then it is a tape.
-* `UseCatalogURL`: default `False`. If `True`, use the url stored in the catalog instead of regenerating it
-* `ChecksumType`: default `ADLER32`. NOT ACTIVE !
-* `Alias`: when set to the name of another storage element, it instanciates the other SE instead.
-* `ReadAccess`: default `True`. Allowed for Read if no RSS enabled (:ref:`activateRSS`)
-* `WriteAccess`: default `True`. Allowed for Write if no RSS enabled
-* `CheckAccess`: default `True`. Allowed for Check if no RSS enabled
-* `RemoveAccess`: default `True`. Allowed for Remove if no RSS enabled
-* `OccupancyLFN`: default (`/<vo>/occupancy.json`). LFN where the json file containing the space reporting is to be found
+* ``BackendType``: just used for information. No internal use at the moment
+* ``SEType``: Can be `T0D1` or `T1D0` or `T1D1`. it is used to asses whether the SE is a tape SE or not. If the digit after `T` is `1`, then it is a tape.
+* ``UseCatalogURL``: default `False`. If `True`, use the url stored in the catalog instead of regenerating it
+* ``ChecksumType``: default `ADLER32`. NOT ACTIVE !
+* ``Alias``: when set to the name of another storage element, it instanciates the other SE instead.
+* ``ReadAccess``: default `True`. Allowed for Read if no RSS enabled (:ref:`activateRSS`)
+* ``WriteAccess``: default `True`. Allowed for Write if no RSS enabled
+* ``CheckAccess``: default `True`. Allowed for Check if no RSS enabled
+* ``RemoveAccess``: default `True`. Allowed for Remove if no RSS enabled
+* ``OccupancyLFN``: default (`/<vo>/occupancy.json`). LFN where the json file containing the space reporting is to be found
+* ``SpaceReservation``: just a name of a zone of the physical storage which can have some space reserved. Extends the SRM ``SpaceToken`` concept.
 
 VO specific paths
 -----------------
@@ -235,6 +237,8 @@ For example::
    }
 
 The LFN of this file is by default `/<vo>/occupancy.json`, but can be overwritten with the `OccupancyLFN` option of the SE.
+
+The ``SpaceReservation`` option allows to specify a physical zone of the storage which would have space reservation (for example ``LHCb_USER``, ``LHCb_PROD``, etc). It extends the concept of ``SpaceToken`` that SRM has. This option is only used if the StoragePlugin does not return itself a ``SpaceReservation`` value.
 
 
 Multi Protocol

@@ -87,13 +87,16 @@ Parameters
 | FlushTime | maximum waiting time in seconds before sending           | 1                    |
 +-----------+----------------------------------------------------------+----------------------+
 
+
+.. _gLogger_backends_messagequeue:
+
 MessageQueueBackend
 -------------------
 
 Description
 ~~~~~~~~~~~
 Used to emit log records in a MessageQueue server using Stomp protocol.
-The *Backend* acccepts logs from *Debug* to *Always* level.
+The *Backend* acccepts logs from *Verbose* to *Always* level, and this cannot be changed.
 
 Parameters
 ~~~~~~~~~~

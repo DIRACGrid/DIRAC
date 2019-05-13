@@ -431,7 +431,7 @@ class CSAPI(object):
     Adds or modify one or more shifters. Also, adds the shifter section in case this is not present.
     Shifter identities are used in several places, mostly for running agents
 
-    shifters should be in the form {'ShifterRole':{'User':'aUserName', 'Group':'aDIRACGroup'}}
+    :param dict shifters: has to be in the form {'ShifterRole':{'User':'aUserName', 'Group':'aDIRACGroup'}}
 
     :return: S_OK/S_ERROR
     """
@@ -485,7 +485,7 @@ class CSAPI(object):
       currentShiftersDict[currentShifterRole] = currentShifter
 
     # Removing from shifters what does not need to be changed
-    for sRole in shifters:
+    for sRole in shifters.keys():  # note the pop below
       if sRole in currentShiftersDict:
         if currentShiftersDict[sRole] == shifters[sRole]:
           shifters.pop(sRole)
