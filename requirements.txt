@@ -1,5 +1,5 @@
 # From repo
-git+https://:@gitlab.cern.ch:8443/fts/fts-rest.git#egg=fts3
+fts3-rest
 git+https://github.com/DIRACGrid/pyGSI.git#egg=GSI
 
 # From pypi
