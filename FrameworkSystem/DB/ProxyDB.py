@@ -39,13 +39,6 @@ class ProxyDB(DB):
     self.__useMyProxy = useMyProxy
     self._minSecsToAllowStore = 3600
     self.__notifClient = NotificationClient()
-
-    # try:
-    #   from OAuthDIRAC.FrameworkSystem.Client.OAuthManagerClient import OAuthManagerClient
-    #   self.__oauthClient = OAuthManagerClient()
-    # except BaseException:
-    #   self.__oauthClient = None
-
     retVal = self.__initializeDB()
     if not retVal['OK']:
       raise Exception("Can't create tables: %s" % retVal['Message'])
@@ -654,12 +647,16 @@ class ProxyDB(DB):
   def __getProxyFromProxyProvider(self, userDN, proxyProvider):
     """ Get proxy from proxy provider
 
+        :param basestring userDN: user DN for what need to create proxy
+        :param basestring proxyProvider: proxy provider name that will ganarete proxy
+        :return: S_OK(dict)/S_ERROR()
     """
+    gLogger.notice('Getting proxy for "%s" DN by "%s" proxy provider' % (userDN, proxyProvider))
     result = ProxyProviderFactory().getProxyProvider(proxyProvider)
     if not result['OK']:
       return result
     pp = result['Value']
-    result = pp.getProxy({"userDN": userDN})
+    result = pp.getProxy({"DN": userDN})
     if not result['OK']:
       return result
     proxyStr = result['Value']
@@ -682,7 +679,7 @@ class ProxyDB(DB):
     """
     PPList = Registry.getProxyProvidersForDN(userDN)
     if not PPList:
-      return S_ERROR('No proxy providers found')
+      return S_ERROR('No proxy providers found for "%s" user DN' % userDN)
     for proxyProvider in PPList:
       result = self.__getPemAndTimeLeft(userDN, userGroup, cleanProxy=True, proxyProvider=proxyProvider)
       if result['OK']:
