@@ -22,7 +22,7 @@ from DIRAC.Core.Security.X509Chain import X509Chain, isPUSPdn
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry, Resources
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
-from DIRAC.Resources.ProxyProvider.ProxyProviderFactory import ProxyProviderFactory
+from DIRAC.Resources.ProxyProvider.ProxyProviderFactory import ProxyProviderFactory  # pylint: disable=invalid-name,wrong-import-position
 
 
 class ProxyDB(DB):
@@ -329,12 +329,20 @@ class ProxyDB(DB):
 
   def storeProxy(self, userDN, userGroup, chain, proxyProvider=None):
     """ Store user proxy into the Proxy repository for a user specified by his
-        DN and group.
+        DN and group or proxy provider.
+
+        :param basestring userDN: user DN from proxy
+        :param basestring userGroup: group extension from proxy
+        :param X509Chain() chain: proxy chain
+        :param basestring proxyProvider: proxy provider name. In case this
+        parameter set userGroup is ignored
+        :return: S_OK()/S_ERROR()
     """
     retVal = Registry.getUsernameForDN(userDN)
     if not retVal['OK']:
       return retVal
     userName = retVal['Value']
+
     # Get remaining secs
     retVal = chain.getRemainingSecs()
     if not retVal['OK']:
@@ -355,6 +363,7 @@ class ProxyDB(DB):
       vMsg = "Proxy says %s and credentials are %s" % (proxyIdentityDN, userDN)
       self.log.error(msg, vMsg)
       return S_ERROR("%s. %s" % (msg, vMsg))
+    
     # Check the groups
     if userGroup and not proxyProvider:
       retVal = chain.getDIRACGroup()
@@ -368,6 +377,7 @@ class ProxyDB(DB):
         vMsg = "Proxy says %s and credentials are %s" % (proxyGroup, userGroup)
         self.log.error(msg, vMsg)
         return S_ERROR("%s. %s" % (msg, vMsg))
+    
     # Check if its limited
     if chain.isLimitedProxy()['Value']:
       return S_ERROR("Limited proxies are not allowed to be stored")
@@ -387,6 +397,7 @@ class ProxyDB(DB):
         sTable = 'ProxyDB_CleanProxies'
     except KeyError:
       return S_ERROR("Cannot escape DN")
+    
     # Check what we have already got in the repository
     cmd = "SELECT TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ), Pem "
     cmd += "FROM `%s` WHERE UserDN=%s " % (sTable, sUserDN)
@@ -397,7 +408,8 @@ class ProxyDB(DB):
     result = self._query(cmd)
     if not result['OK']:
       return result
-    # check if there is a previous ticket for the DN
+    
+    # Check if there is a previous ticket for the DN
     data = result['Value']
     sqlInsert = True
     if len(data) > 0:
@@ -743,6 +755,7 @@ class ProxyDB(DB):
           chain = retVal['Value']
         else:
           return S_ERROR("Can't get a proxy: the required lifetime is less than the time left in the proxy")
+
     # Proxy is invalid for some reason, let's delete it
     if not chain.isValidProxy()['Value']:
       self.deleteProxy(userDN, userGroup)
@@ -796,6 +809,7 @@ class ProxyDB(DB):
       result = chain.loadProxyFromString(pemData)
       if not result['OK']:
         return result
+
     else:
       # Get the stored proxy and dress it with the VOMS extension
       retVal = self.getProxy(userDN, userGroup, requiredLifeTime)
