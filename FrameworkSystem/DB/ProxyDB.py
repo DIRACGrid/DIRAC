@@ -22,7 +22,8 @@ from DIRAC.Core.Security.X509Chain import X509Chain, isPUSPdn
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry, Resources
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
-from DIRAC.Resources.ProxyProvider.ProxyProviderFactory import ProxyProviderFactory  # pylint: disable=invalid-name,wrong-import-position
+# pylint: disable=import-error,no-name-in-module
+from DIRAC.Resources.ProxyProvider.ProxyProviderFactory import ProxyProviderFactory
 
 
 class ProxyDB(DB):
@@ -363,7 +364,7 @@ class ProxyDB(DB):
       vMsg = "Proxy says %s and credentials are %s" % (proxyIdentityDN, userDN)
       self.log.error(msg, vMsg)
       return S_ERROR("%s. %s" % (msg, vMsg))
-    
+
     # Check the groups
     if userGroup and not proxyProvider:
       retVal = chain.getDIRACGroup()
@@ -377,7 +378,7 @@ class ProxyDB(DB):
         vMsg = "Proxy says %s and credentials are %s" % (proxyGroup, userGroup)
         self.log.error(msg, vMsg)
         return S_ERROR("%s. %s" % (msg, vMsg))
-    
+
     # Check if its limited
     if chain.isLimitedProxy()['Value']:
       return S_ERROR("Limited proxies are not allowed to be stored")
@@ -397,7 +398,7 @@ class ProxyDB(DB):
         sTable = 'ProxyDB_CleanProxies'
     except KeyError:
       return S_ERROR("Cannot escape DN")
-    
+
     # Check what we have already got in the repository
     cmd = "SELECT TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ), Pem "
     cmd += "FROM `%s` WHERE UserDN=%s " % (sTable, sUserDN)
@@ -408,7 +409,7 @@ class ProxyDB(DB):
     result = self._query(cmd)
     if not result['OK']:
       return result
-    
+
     # Check if there is a previous ticket for the DN
     data = result['Value']
     sqlInsert = True
