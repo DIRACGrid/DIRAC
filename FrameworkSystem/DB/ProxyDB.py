@@ -337,7 +337,7 @@ class ProxyDB(DB):
         :param X509Chain() chain: proxy chain
         :param basestring proxyProvider: proxy provider name. In case this
                parameter set userGroup is ignored
-        
+
         :return: S_OK()/S_ERROR()
     """
     retVal = Registry.getUsernameForDN(userDN)
@@ -683,7 +683,7 @@ class ProxyDB(DB):
 
         :param basestring userDN: user DN for what need to create proxy
         :param basestring proxyProvider: proxy provider name that will ganarete proxy
-        
+
         :return: S_OK(dict)/S_ERROR() -- dict with remaining secudnds, proxy as string and as chain
     """
     gLogger.notice('Getting proxy for "%s" DN by "%s" proxy provider' % (userDN, proxyProvider))
