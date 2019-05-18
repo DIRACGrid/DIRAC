@@ -336,7 +336,8 @@ class ProxyDB(DB):
         :param basestring userGroup: group extension from proxy
         :param X509Chain() chain: proxy chain
         :param basestring proxyProvider: proxy provider name. In case this
-        parameter set userGroup is ignored
+               parameter set userGroup is ignored
+        
         :return: S_OK()/S_ERROR()
     """
     retVal = Registry.getUsernameForDN(userDN)
@@ -478,24 +479,44 @@ class ProxyDB(DB):
         return result
     return S_OK(purged)
 
-  def deleteProxy(self, userDN, userGroup='any'):
+  def deleteProxy(self, userDN, userGroup='any', proxyProvider=None):
     """ Remove proxy of the given user from the repository
+
+        :param basestring userDN: user DN
+        :param basestring userGroup: DIRAC group
+        :param basestring proxyProvider: proxy provider name
+
+        :return: S_OK()/S_ERROR()
     """
     try:
       userDN = self._escapeString(userDN)['Value']
       if userGroup != 'any':
         userGroup = self._escapeString(userGroup)['Value']
+      if proxyProvider:
+        proxyProvider = self._escapeString(proxyProvider)['Value']
     except KeyError:
-      return S_ERROR("Invalid DN or group")
+      return S_ERROR("Invalid DN or group or proxy provider")
 
     req = "DELETE FROM `%%s` WHERE UserDN=%s" % userDN
-    if userGroup != 'any':
+    if proxyProvider:
+      req += " AND ProxyProvider=%s" % proxyProvider
+      return self._update(req % 'ProxyDB_CleanProxies')
+    elif userGroup != 'any':
       req += " AND UserGroup=%s" % userGroup
     for db in ['ProxyDB_Proxies', 'ProxyDB_VOMSProxies']:
       result = self._update(req % db)
     return result
 
-  def __getPemAndTimeLeft(self, userDN, userGroup=False, vomsAttr=False, cleanProxy=False, proxyProvider=False):
+  def __getPemAndTimeLeft(self, userDN, userGroup=False, vomsAttr=False, proxyProvider=False):
+    """ Get proxy from database
+
+        :param basestring userDN: user DN
+        :param basestring userGroup: requested DIRAC group
+        :param basestring vomsAttr: VOMS name
+        :param basestring proxyProvider: proxy provider name
+
+        :return: S_OK(tuple)/S_ERROR() -- tuple contain proxy as string and remaining seconds
+    """
     try:
       sUserDN = self._escapeString(userDN)['Value']
       if userGroup:
@@ -504,7 +525,7 @@ class ProxyDB(DB):
         sVomsAttr = self._escapeString(vomsAttr)['Value']
     except KeyError:
       return S_ERROR("Invalid DN or Group")
-    if cleanProxy and proxyProvider:
+    if proxyProvider:
       sTable = "`ProxyDB_CleanProxies`"
     elif not vomsAttr:
       sTable = "`ProxyDB_Proxies`"
@@ -515,7 +536,7 @@ class ProxyDB(DB):
     if proxyProvider:
       cmd += ' AND ProxyProvider="%s"' % proxyProvider
     else:
-      if userGroup and not cleanProxy:
+      if userGroup and not proxyProvider:
         cmd += " AND UserGroup=%s" % sUserGroup
       if vomsAttr:
         cmd += " AND VOMSAttr=%s" % sVomsAttr
@@ -525,7 +546,7 @@ class ProxyDB(DB):
     data = retVal['Value']
     for record in data:
       if record[0]:
-        if cleanProxy:
+        if proxyProvider:
           chain = X509Chain()
           result = chain.loadProxyFromString(record[0])
           if not result['OK']:
@@ -662,7 +683,8 @@ class ProxyDB(DB):
 
         :param basestring userDN: user DN for what need to create proxy
         :param basestring proxyProvider: proxy provider name that will ganarete proxy
-        :return: S_OK(dict)/S_ERROR()
+        
+        :return: S_OK(dict)/S_ERROR() -- dict with remaining secudnds, proxy as string and as chain
     """
     gLogger.notice('Getting proxy for "%s" DN by "%s" proxy provider' % (userDN, proxyProvider))
     result = ProxyProviderFactory().getProxyProvider(proxyProvider)
@@ -687,14 +709,20 @@ class ProxyDB(DB):
     return result
 
   def __generateProxy(self, userDN, userGroup, requiredLifeTime):
-    """ Tryin to generate new proxy from exist clean proxy or from proxy provider
+    """ Generate new proxy from exist clean proxy or from proxy provider
         for use with userDN in the userGroup
+
+        :param basestring userDN: user DN
+        :param basestring userGroup: required group name
+        :param int requiredLifeTime: required proxy live time in a seconds
+
+        :return: S_OK(tuple)/S_ERROR() -- tuple contain proxy as string and remainig seconds
     """
     PPList = Registry.getProxyProvidersForDN(userDN)
     if not PPList:
       return S_ERROR('No proxy providers found for "%s" user DN' % userDN)
     for proxyProvider in PPList:
-      result = self.__getPemAndTimeLeft(userDN, userGroup, cleanProxy=True, proxyProvider=proxyProvider)
+      result = self.__getPemAndTimeLeft(userDN, userGroup, proxyProvider=proxyProvider)
       if result['OK']:
         if requiredLifeTime:
           if result['Value'][1] < requiredLifeTime:
@@ -717,8 +745,13 @@ class ProxyDB(DB):
   def getProxy(self, userDN, userGroup, requiredLifeTime=False):
     """ Get proxy string from the Proxy Repository for use with userDN
         in the userGroup
-    """
 
+        :param basestring userDN: user DN
+        :param basestring userGroup: required DIRAC group
+        :param int requiredLifeTime: required proxy live time in a seconds
+
+        :return: S_OK(tuple)/S_ERROR() -- tuple with proxy as chain and proxy live time in a seconds
+    """
     # Get the Per User SubProxy if one is requested
     if isPUSPdn(userDN):
       result = self.__getPUSProxy(userDN, userGroup, requiredLifeTime)
