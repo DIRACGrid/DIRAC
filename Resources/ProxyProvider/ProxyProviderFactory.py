@@ -38,7 +38,7 @@ class ProxyProviderFactory(object):
     objectLoader = ObjectLoader.ObjectLoader()
     result = objectLoader.loadObject('Resources.ProxyProvider.%s' % subClassName, subClassName)
     if not result['OK']:
-      gLogger.error('Failed to load object', '%s: %s' % (subClassName, result['Message']))
+      self.log.error('Failed to load object', '%s: %s' % (subClassName, result['Message']))
       return result
 
     ppClass = result['Value']
