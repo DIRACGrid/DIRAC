@@ -19,6 +19,7 @@ class ProxyProvider(object):
     self.parameters = parameters
     self.name = parameters.get('ProxyProviderName')
 
+
 def getProxyProviderConfigDict(ppName):
   """ Get the proxy provider configuration parameters
 
