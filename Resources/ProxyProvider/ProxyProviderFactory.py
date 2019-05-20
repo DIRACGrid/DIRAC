@@ -31,6 +31,7 @@ class ProxyProviderFactory(object):
        :return: S_OK/S_ERROR with ProxyProvider object as Value
     """
     ppDict = getProxyProviderConfigDict(proxyProvider)
+    ppDict['ProxyProviderName'] = proxyProvider
     ppType = ppDict.get('ProxyProviderType')
     self.log.verbose('Creating ProxyProvider of %s type with the name %s' % (ppType, proxyProvider))
     subClassName = "%sProxyProvider" % (ppType)
