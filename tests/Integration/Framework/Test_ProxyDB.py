@@ -115,7 +115,7 @@ P0JRow1JioXLH/c6XDRHrASuzdrNya0logqWh56wn11BBBz94PUMNoWNPGtpKS/S
 """
 
 
-class TestProxyDBTestCase(unittest.TestCase):
+class ProxyDBTestCase(unittest.TestCase):
 
   def setUp(self):
     cfg = CFG()
@@ -141,7 +141,7 @@ class TestProxyDBTestCase(unittest.TestCase):
     os.unlink('CAcert.pem')
 
 
-class testDB(TestProxyDBTestCase):
+class testDB(ProxyDBTestCase):
 
   def test_getRemoveProxy(self):
     """ Some test cases
@@ -173,7 +173,7 @@ class testDB(TestProxyDBTestCase):
 
 
 if __name__ == '__main__':
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestProxyDBTestCase)
+  suite = unittest.defaultTestLoader.loadTestsFromTestCase(ProxyDBTestCase)
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(testDB))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
   sys.exit(not testResult.wasSuccessful())
