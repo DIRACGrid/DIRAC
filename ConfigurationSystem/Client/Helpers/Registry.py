@@ -379,12 +379,13 @@ def getVOMSRoleGroupMapping(vo=''):
                "NoSyncVOMS": noVOMSSyncGroupList})
 
 
-def getUsernameForID(ID, usersList=[]):
+def getUsernameForID(ID, usersList=None):
   """ Get DIRAC user name by ID
 
       :param basestring DN: user DN
       :param list usersList: list of DIRAC user names
-      :return: basestring
+
+      :return: S_OK(basestring)/S_ERROR()
   """
   if not usersList:
     retVal = gConfig.getSections("%s/Users" % gBaseRegistrySection)
@@ -398,48 +399,70 @@ def getUsernameForID(ID, usersList=[]):
 
 
 def getCAForUsername(username):
+  """ Get CA option by user name
+
+      :param basestring username: user name
+
+      :return: S_OK(basestring)/S_ERROR()
+  """
   dnList = gConfig.getValue("%s/Users/%s/CA" % (gBaseRegistrySection, username), [])
   if dnList:
     return S_OK(dnList)
   return S_ERROR("No CA found for user %s" % username)
 
 
-def getProxyProvidersForDN(DN):
-  """ Get proxy providers by DN
+def getDNSectionName(userDN):
+  """ Change user DN string by replacing spécial symbol that not used in
+      a section names, e.g.: "/O=O_test/OU=OU_test/F=F_test" 
+      will replace to:       "-O_O_test-OU_OU_test-F_F_test"
 
-      :param basestring DN: user DN
-      :return: list
+      :param basestring userDN: user DN
+
+      :return: basestring that can be use as a section name
   """
-  result = getUsernameForDN(DN)
-  if not result['OK']:
-    return []
-  # Convert DN to section format
-  secDN = DN.replace('/', '-').replace('=', '_')
-  return gConfig.getValue("%s/Users/%s/DNProperties/%s/ProxyProviders" %
-                          (gBaseRegistrySection, result['Value'], secDN), [])
+  return userDN.replace('/', '-').replace('=', '_')
 
 
-def getGroupsFromDNProperties(DN):
-  """ Get groups by DN in DNProperties
+def getDNProperty(userDN, value):
+  """ Get property from PNProperties section by user DN
 
-      :param basestring DN: user DN
-      :return: list
+      :param basestring userDN: user DN
+      :param basestring value: option that need to get
+
+      :return: S_OK(basestring,list)/S_ERROR() -- basestring or list that contain option value 
   """
-  result = getUsernameForDN(DN)
+  result = getUsernameForDN(userDN)
   if not result['OK']:
-    return []
-  # Convert DN to section format
-  secDN = DN.replace('/', '-').replace('=', '_')
-  return gConfig.getValue("%s/Users/%s/DNProperties/%s/Groups" %
-                          (gBaseRegistrySection, result['Value'], secDN), [])
+    return result
+  secDN = getDNSectionName(userDN)
+  return S_OK(gConfig.getValue("%s/Users/%s/DNProperties/%s/ProxyProviders" %
+                               (gBaseRegistrySection, result['Value'], secDN)))
+
+
+def getProxyProvidersForDN(userDN):
+  """ Get proxy providers by user DN
+
+      :param basestring userDN: user DN
+
+      :return: S_OK(list)/S_ERROR()
+  """
+  result = getDNProperty(userDN, 'ProxyProviders')
+  if not result['OK']:
+    return result
+  if not result['Value']:
+    return S_ERROR('No proxy providers found for "%s" user DN' % userDN)
+  if not isinstance(PPList,list):
+    PPList = PPList.split()
+  return S_OK(ppList)
 
 
 def getDNFromProxyProviderForUserID(proxyProvider, userID):
-  """ Get groups by DN in DNProperties
+  """ Get groups by user DN in DNProperties
 
       :param basestring proxyProvider: proxy provider name
       :param basestring userID: user identificator
-      :return: S_OK(list)/S_ERROR
+
+      :return: S_OK(basestring)/S_ERROR
   """
   # Get user name
   result = getUsernameForID(userID)
@@ -450,6 +473,9 @@ def getDNFromProxyProviderForUserID(proxyProvider, userID):
   if not result['OK']:
     return result
   for DN in result['Value']:
-    if proxyProvider in getProxyProvidersForDN(DN):
+    result = getProxyProvidersForDN(DN)
+    if not result['OK']:
+      return result
+    if proxyProvider in result['Value']:
       return S_OK(DN)
   return S_ERROR("No DN found for %s proxy provider for user ID %s" % (proxyProvider, userID))

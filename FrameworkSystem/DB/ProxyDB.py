@@ -496,15 +496,21 @@ class ProxyDB(DB):
         proxyProvider = self._escapeString(proxyProvider)['Value']
     except KeyError:
       return S_ERROR("Invalid DN or group or proxy provider")
-
+    errMsgs = []
     req = "DELETE FROM `%%s` WHERE UserDN=%s" % userDN
     if proxyProvider:
-      req += " AND ProxyProvider=%s" % proxyProvider
-      return self._update(req % 'ProxyDB_CleanProxies')
-    elif userGroup != 'any':
+      ppReq = '%s AND ProxyProvider=%s' % (req, proxyProvider)
+      result = self._update(ppReq % 'ProxyDB_CleanProxies')
+      if not result['OK']:
+        errMsgs += result['Message']
+    if userGroup != 'any':
       req += " AND UserGroup=%s" % userGroup
     for db in ['ProxyDB_Proxies', 'ProxyDB_VOMSProxies']:
       result = self._update(req % db)
+      if not result['OK']:
+        errMsgs += result['Message']
+    if errMsgs:
+      return S_ERROR(', '.join(errMsgs))
     return result
 
   def __getPemAndTimeLeft(self, userDN, userGroup=False, vomsAttr=False, proxyProvider=False):
@@ -536,7 +542,7 @@ class ProxyDB(DB):
     if proxyProvider:
       cmd += ' AND ProxyProvider="%s"' % proxyProvider
     else:
-      if userGroup and not proxyProvider:
+      if userGroup:
         cmd += " AND UserGroup=%s" % sUserGroup
       if vomsAttr:
         cmd += " AND VOMSAttr=%s" % sVomsAttr
@@ -718,9 +724,10 @@ class ProxyDB(DB):
 
         :return: S_OK(tuple)/S_ERROR() -- tuple contain proxy as string and remainig seconds
     """
-    PPList = Registry.getProxyProvidersForDN(userDN)
-    if not PPList:
-      return S_ERROR('No proxy providers found for "%s" user DN' % userDN)
+    result = Registry.getProxyProvidersForDN(userDN)
+    if not result['OK']:
+      return result
+    PPList = result['Value']
     for proxyProvider in PPList:
       result = self.__getPemAndTimeLeft(userDN, userGroup, proxyProvider=proxyProvider)
       if result['OK']:
