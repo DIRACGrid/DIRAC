@@ -214,7 +214,19 @@ extendedKeyUsage = clientAuth
     """
 
     if "DN" in userDict:
-      return S_OK(userDict['DN'])
+      # Get the DN info as a dictionary
+      dnDict = dict([field.split('=') for field in userDict['DN'].lstrip('/').split('/')])
+      # check that the DN corresponds to the template
+      valid = True
+      for field in ['C', 'O', 'OU']:
+        if dnDict.get(field) != self.parameters.get(field):
+          valid = False
+      if not (dnDict.get('CN') and dnDict.get('emailAddress')):
+        valid = False
+      if valid:
+        return S_OK(userDict['DN'])
+      else:
+        return S_ERROR('Invalid DN')
 
     dnParameters = dict(self.parameters)
     dnParameters.update(userDict)

@@ -191,6 +191,25 @@ class DIRACCAPPTest(unittest.TestCase):
     result = self.pp.getProxy(self.userDictNoGroup)
     self.assertFalse(result['OK'])
 
+  def test_getUserDN(self):
+
+    goodDN = {"DN": '/C=FR/O=DIRAC/OU=DIRAC TEST/CN=DIRAC test user/emailAddress=testuser@diracgrid.org'}
+    badDN_1 = {"DN": '/C=FR/OU=DIRAC TEST/CN=DIRAC test user/emailAddress=testuser@diracgrid.org'}
+    badDN_2 = {"DN": '/C=FR/O=DIRAC/OU=DIRAC TEST/emailAddress=testuser@diracgrid.org'}
+    badDN_3 = {"DN": '/C=FR/O=DIRAC/OU=DIRAC TEST/CN=DIRAC test user'}
+    result = self.pp.getUserDN(goodDN)
+    self.assertTrue(result['OK'])
+    result = self.pp.getUserDN(badDN_1)
+    self.assertFalse(result['OK'])
+    result = self.pp.getUserDN(badDN_2)
+    self.assertFalse(result['OK'])
+    result = self.pp.getUserDN(badDN_3)
+    self.assertFalse(result['OK'])
+    userDict = {"FullName": "John Doe", "EMail": "john.doe@nowhere.net"}
+    result = self.pp.getUserDN(userDict)
+    self.assertTrue(result['OK'])
+    self.assertEqual(result['Value'], '/C=FR/O=DIRAC/OU=DIRAC TEST/CN=John Doe/emailAddress=john.doe@nowhere.net')
+
 
 if __name__ == '__main__':
   SUITE = unittest.defaultTestLoader.loadTestsFromTestCase(DIRACCAPPTest)
