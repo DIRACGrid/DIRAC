@@ -109,7 +109,7 @@ class TransformationInfo(object):
     return result
 
   def __findAllDescendants(self, lfnList):
-    """finds all descendants of a list of LFNs"""
+    """Find all descendants of a list of LFNs"""
     allDescendants = []
     result = self.fcClient.getFileDescendents(lfnList, range(1, 8))
     if not result['OK']:
@@ -119,7 +119,10 @@ class TransformationInfo(object):
     return allDescendants
 
   def cleanOutputs(self, jobInfo):
-    """remove all job outputs"""
+    """Remove all job outputs for job represented by jobInfo object.
+
+    Including removal of descendents, if defined.
+    """
     if len(jobInfo.outputFiles) == 0:
       return
     descendants = self.__findAllDescendants(jobInfo.outputFiles)
@@ -158,7 +161,12 @@ class TransformationInfo(object):
     self.log.notice("Successfully removed %d files" % successfullyRemoved)
 
   def getJobs(self, statusList=None):
-    """get done and failed jobs"""
+    """Get done and failed jobs.
+
+    :param list statusList: optional list of status to find jobs
+    :returns: 3-tuple of OrderedDict of JobInfo objects, keyed by jobID;
+              number of Done jobs; number of Failed jobs
+    """
     done = S_OK([])
     failed = S_OK([])
     if statusList is None:
@@ -184,19 +192,17 @@ class TransformationInfo(object):
     return jobs, len(done), len(failed)
 
   def __getJobs(self, status):
-    """returns list of done jobs"""
-    attrDict = dict(Status=status, JobGroup="%08d" % int(self.tID))
-    # if 'Done' in status:
-    #   resAppStates = self.jobMon.getApplicationStates()
-    #   if not resAppStates['OK']:
-    #     raise RuntimeError( "Failed to get application states" )
-    #   appStates = resAppStates['Value']
-    #   appStates.remove( "Job Finished Successfully" )
-    #   attrDict['ApplicationStatus'] = appStates
+    """Return list of jobs with given status.
+
+    :param list status: list of status to find
+    :returns: S_OK with result
+    :raises: RuntimeError when failing to find jobs
+    """
+    attrDict = dict(Status=status, JobGroup='%08d' % int(self.tID))
     res = self.jobMon.getJobs(attrDict)
     if res['OK']:
-      self.log.debug("Found Prod jobs: %s" % res['Value'])
+      self.log.debug('Found Prod jobs: %s' % res['Value'])
       return res
     else:
-      self.log.error("Error finding jobs: ", res['Message'])
-      raise RuntimeError("Failed to get jobs")
+      self.log.error('Error finding jobs: ', res['Message'])
+      raise RuntimeError('Failed to get jobs')
