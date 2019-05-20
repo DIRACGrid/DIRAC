@@ -1,6 +1,5 @@
 __RCSID__ = "$Id$"
 
-import types
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import ThreadScheduler
 from DIRAC.Core.Base.ExecutorMindHandler import ExecutorMindHandler
@@ -14,7 +13,7 @@ class OptimizationMindHandler(ExecutorMindHandler):
   __optimizationStates = ['Received', 'Checking']
   __loadTaskId = False
 
-  MSG_DEFINITIONS = {'OptimizeJobs': {'jids': (types.ListType, types.TupleType)}}
+  MSG_DEFINITIONS = {'OptimizeJobs': {'jids': (list, tuple)}}
 
   auth_msg_OptimizeJobs = ['all']
 
