@@ -686,7 +686,7 @@ class ProxyDB(DB):
 
         :return: S_OK(dict)/S_ERROR() -- dict with remaining secudnds, proxy as string and as chain
     """
-    gLogger.notice('Getting proxy for "%s" DN by "%s" proxy provider' % (userDN, proxyProvider))
+    gLogger.info('Getting proxy from proxyProvider', '(for "%s" DN by "%s")' % (userDN, proxyProvider))
     result = ProxyProviderFactory().getProxyProvider(proxyProvider)
     if not result['OK']:
       return result
