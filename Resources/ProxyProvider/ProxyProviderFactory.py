@@ -19,7 +19,7 @@ class ProxyProviderFactory(object):
   def __init__(self):
     """ Standard constructor
     """
-    self.log = gLogger.getSubLogger('ProxyProviderFactory')
+    self.log = gLogger.getSubLogger(__name__)
 
   #############################################################################
   def getProxyProvider(self, proxyProvider):
