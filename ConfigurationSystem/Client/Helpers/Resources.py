@@ -382,7 +382,7 @@ def getProxyProviders():
 
 def getProxyProviderOption(proxyProvider, option):
   """ Get the option of the proxy provider
-  
+
       :param basestring proxyProvider: proxy provider name
       :param basestring option: option that need to get
 
@@ -393,7 +393,7 @@ def getProxyProviderOption(proxyProvider, option):
 
 def getProxyProviderDict(proxyProvider):
   """ Get the dict of all the proxy provider settings
-  
+
       :param basestring proxyProvider: proxy provider name
 
       :return: S_OK(dict)/S_ERROR() -- dict with all proxy provider options
@@ -422,7 +422,7 @@ def getIdPOption(providerName, option):
 
 def getIdPSections(IdP, path=''):
   """ Get the sections of the identity provider section
-  
+
       :param basestring IdP: identity provider name
       :param basestring path: path to need sections
 
@@ -433,7 +433,7 @@ def getIdPSections(IdP, path=''):
 
 def getIdPOptions(IdP, path=''):
   """ Get the options of the identity provider section
-  
+
       :param basestring IdP: identity provider name
       :param basestring path: path to need options
 
@@ -444,7 +444,7 @@ def getIdPOptions(IdP, path=''):
 
 def getIdPDict(IdP):
   """ Get the dict of all the identity provider settings
-  
+
       :param basestring IdP: identity provider name
 
       :return: S_OK(dict)/S_ERROR() -- dict with all identity provider options

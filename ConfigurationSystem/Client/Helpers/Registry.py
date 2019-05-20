@@ -413,7 +413,7 @@ def getCAForUsername(username):
 
 def getDNSectionName(userDN):
   """ Change user DN string by replacing spécial symbol that not used in
-      a section names, e.g.: "/O=O_test/OU=OU_test/F=F_test" 
+      a section names, e.g.: "/O=O_test/OU=OU_test/F=F_test"
       will replace to:       "-O_O_test-OU_OU_test-F_F_test"
 
       :param basestring userDN: user DN
@@ -429,7 +429,7 @@ def getDNProperty(userDN, value):
       :param basestring userDN: user DN
       :param basestring value: option that need to get
 
-      :return: S_OK(basestring,list)/S_ERROR() -- basestring or list that contain option value 
+      :return: S_OK(basestring,list)/S_ERROR() -- basestring or list that contain option value
   """
   result = getUsernameForDN(userDN)
   if not result['OK']:
@@ -451,8 +451,9 @@ def getProxyProvidersForDN(userDN):
     return result
   if not result['Value']:
     return S_ERROR('No proxy providers found for "%s" user DN' % userDN)
-  if not isinstance(PPList,list):
-    PPList = PPList.split()
+  ppList = result['Value']
+  if not isinstance(result['Value'], list):
+    ppList = ppList.split()
   return S_OK(ppList)
 
 
