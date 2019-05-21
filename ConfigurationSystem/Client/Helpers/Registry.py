@@ -2,6 +2,7 @@
 """
 
 from DIRAC import S_OK, S_ERROR
+from DIRAC.Core.Utilities import DErrno
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getVO
 
@@ -382,7 +383,7 @@ def getVOMSRoleGroupMapping(vo=''):
 def getUsernameForID(ID, usersList=None):
   """ Get DIRAC user name by ID
 
-      :param basestring DN: user DN
+      :param basestring ID: user ID
       :param list usersList: list of DIRAC user names
 
       :return: S_OK(basestring)/S_ERROR()
@@ -412,7 +413,7 @@ def getCAForUsername(username):
 
 
 def getDNSectionName(userDN):
-  """ Change user DN string by replacing spécial symbol that not used in
+  """ Change user DN string by replacing special symbol that not used in
       a section names, e.g.: "/O=O_test/OU=OU_test/F=F_test"
       will replace to:       "-O_O_test-OU_OU_test-F_F_test"
 
@@ -452,18 +453,18 @@ def getProxyProvidersForDN(userDN):
   if not result['Value']:
     return S_ERROR('No proxy providers found for "%s" user DN' % userDN)
   ppList = result['Value']
-  if not isinstance(result['Value'], list):
+  if not isinstance(ppList, list):
     ppList = ppList.split()
   return S_OK(ppList)
 
 
 def getDNFromProxyProviderForUserID(proxyProvider, userID):
   """ Get groups by user DN in DNProperties
-
+  
       :param basestring proxyProvider: proxy provider name
       :param basestring userID: user identificator
 
-      :return: S_OK(basestring)/S_ERROR
+      :return: S_OK(basestring)/S_ERROR()
   """
   # Get user name
   result = getUsernameForID(userID)
@@ -479,4 +480,5 @@ def getDNFromProxyProviderForUserID(proxyProvider, userID):
       return result
     if proxyProvider in result['Value']:
       return S_OK(DN)
-  return S_ERROR("No DN found for %s proxy provider for user ID %s" % (proxyProvider, userID))
+  return S_ERROR(DErrno.ENOVALUE,
+                 "No DN found for %s proxy provider for user ID %s" % (proxyProvider, userID))

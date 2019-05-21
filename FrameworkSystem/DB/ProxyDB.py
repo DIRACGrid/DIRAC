@@ -360,7 +360,7 @@ class ProxyDB(DB):
     if not retVal['OK']:
       return retVal
     proxyIdentityDN = retVal['Value'].getSubjectDN()['Value']
-    if not userDN == proxyIdentityDN:
+    if userDN != proxyIdentityDN:
       msg = "Mismatch in the user DN"
       vMsg = "Proxy says %s and credentials are %s" % (proxyIdentityDN, userDN)
       self.log.error(msg, vMsg)
@@ -374,7 +374,7 @@ class ProxyDB(DB):
       proxyGroup = retVal['Value']
       if not proxyGroup:
         proxyGroup = Registry.getDefaultUserGroup()
-      if not userGroup == proxyGroup:
+      if userGroup != proxyGroup:
         msg = "Mismatch in the user group"
         vMsg = "Proxy says %s and credentials are %s" % (proxyGroup, userGroup)
         self.log.error(msg, vMsg)
@@ -689,7 +689,7 @@ class ProxyDB(DB):
         :param basestring userDN: user DN for what need to create proxy
         :param basestring proxyProvider: proxy provider name that will ganarete proxy
 
-        :return: S_OK(dict)/S_ERROR() -- dict with remaining secudnds, proxy as string and as chain
+        :return: S_OK(dict)/S_ERROR() -- dict with remaining seconds, proxy as a string and as a chain
     """
     gLogger.info('Getting proxy from proxyProvider', '(for "%s" DN by "%s")' % (userDN, proxyProvider))
     result = ProxyProviderFactory().getProxyProvider(proxyProvider)
@@ -713,7 +713,7 @@ class ProxyDB(DB):
       return S_OK({'proxy': proxyStr, 'chain': chain, 'remainingSecs': remainingSecs})
     return result
 
-  def __generateProxy(self, userDN, userGroup, requiredLifeTime):
+  def __generateProxyFromProxyProviders(self, userDN, userGroup, requiredLifeTime):
     """ Generate new proxy from exist clean proxy or from proxy provider
         for use with userDN in the userGroup
 
@@ -724,29 +724,20 @@ class ProxyDB(DB):
         :return: S_OK(tuple)/S_ERROR() -- tuple contain proxy as string and remainig seconds
     """
     result = Registry.getProxyProvidersForDN(userDN)
-    if not result['OK']:
-      return result
-    PPList = result['Value']
-    for proxyProvider in PPList:
-      result = self.__getPemAndTimeLeft(userDN, userGroup, proxyProvider=proxyProvider)
-      if result['OK']:
-        if requiredLifeTime:
-          if result['Value'][1] < requiredLifeTime:
-            result = self.__getProxyFromProxyProvider(userDN, proxyProvider)
-          else:
-            return result
-        else:
+    if result['OK']:
+      PPList = result['Value']
+      for proxyProvider in PPList:
+        result = self.__getPemAndTimeLeft(userDN, userGroup, proxyProvider=proxyProvider)
+        if result['OK'] and (not requiredLifeTime or result['Value'][1] > requiredLifeTime):
           return result
-      else:
         result = self.__getProxyFromProxyProvider(userDN, proxyProvider)
-      if result['OK']:
-        chain = result['Value']['chain']
-        remainingSecs = result['Value']['remainingSecs']
-        result = chain.generateProxyToString(remainingSecs, diracGroup=userGroup, rfc=True)
-        if not result['OK']:
-          return result
-        return S_OK((result['Value'], remainingSecs))
-    return result
+        if result['OK']:
+          chain = result['Value']['chain']
+          remainingSecs = result['Value']['remainingSecs']
+          result = chain.generateProxyToString(remainingSecs, diracGroup=userGroup, rfc=True)
+          if result['OK']:
+            return S_OK((result['Value'], remainingSecs))
+    return S_ERROR('Cannot generate proxy%s' % (result.get('Message') and ': ' + result.get('Message') or ''))
 
   def getProxy(self, userDN, userGroup, requiredLifeTime=False):
     """ Get proxy string from the Proxy Repository for use with userDN
@@ -775,26 +766,28 @@ class ProxyDB(DB):
     retVal = self.__getPemAndTimeLeft(userDN, userGroup)
     if retVal['OK'] and requiredLifeTime:
       if retVal['Value'][1] < requiredLifeTime and not self.__useMyProxy:
-        retVal = self.__generateProxy(userDN, userGroup, requiredLifeTime=requiredLifeTime)
+        errMsg = 'the required lifetime is less than the time left in the proxy'
+        retVal = self.__generateProxyFromProxyProviders(userDN, userGroup, requiredLifeTime=requiredLifeTime)
     else:
-      retVal = self.__generateProxy(userDN, userGroup, requiredLifeTime=requiredLifeTime)
-    if not retVal['OK']:
-      return retVal
-    pemData = retVal['Value'][0]
-    timeLeft = retVal['Value'][1]
-    chain = X509Chain()
-    retVal = chain.loadProxyFromString(pemData)
-    if not retVal['OK']:
-      return retVal
-    if requiredLifeTime:
-      if timeLeft < requiredLifeTime:
-        if self.__useMyProxy:
-          retVal = self.renewFromMyProxy(userDN, userGroup, lifeTime=requiredLifeTime, chain=chain)
-          if not retVal['OK']:
-            return S_ERROR("Can't get a proxy for %s seconds: %s" % (requiredLifeTime, retVal['Message']))
-          chain = retVal['Value']
-        else:
-          return S_ERROR("Can't get a proxy: the required lifetime is less than the time left in the proxy")
+      errMsg = retVal['Message']
+      retVal = self.__generateProxyFromProxyProviders(userDN, userGroup, requiredLifeTime=requiredLifeTime)
+    if retVal['OK']:
+      pemData = retVal['Value'][0]
+      timeLeft = retVal['Value'][1]
+      chain = X509Chain()
+      retVal = chain.loadProxyFromString(pemData)
+      if retVal['OK']:
+        if requiredLifeTime:
+          if timeLeft < requiredLifeTime:
+            if self.__useMyProxy:
+              retVal = self.renewFromMyProxy(userDN, userGroup, lifeTime=requiredLifeTime, chain=chain)
+              if retVal['OK']:
+                chain = retVal['Value']
+              errMsg = retVal['Message']
+            else:
+              errMsg = "the required lifetime is less than the time left in the proxy"
+    return S_ERROR("Can't get a proxy%s %s" % (requiredLifeTime and ' for %s seconds:' % requiredLifeTime or ':',
+                                               errMsg))
 
     # Proxy is invalid for some reason, let's delete it
     if not chain.isValidProxy()['Value']:

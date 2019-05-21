@@ -375,7 +375,7 @@ def getFilterConfig(filterID):
 def getProxyProviders():
   """ Return list of all proxy provider names defined in the CS
 
-      :return: S_OK(lisl)/S_ERROR
+      :return: S_OK(list)/S_ERROR
   """
   return gConfig.getSections('%s/ProxyProviders' % gBaseResourcesSection)
 
@@ -404,7 +404,7 @@ def getProxyProviderDict(proxyProvider):
 def getIdPs():
   """ Return list of all identity provider names defined in the CS
 
-      :return: S_OK(lisl)/S_ERROR
+      :return: S_OK(list)/S_ERROR
   """
   return gConfig.getSections('%s/IdProviders' % gBaseResourcesSection)
 
