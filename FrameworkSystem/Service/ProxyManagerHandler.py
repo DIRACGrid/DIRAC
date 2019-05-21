@@ -139,7 +139,7 @@ class ProxyManagerHandler( RequestHandler ):
         return S_ERROR( "You can't download proxies for that group" )
       return S_OK( True )
     # Not authorized!
-    return S_ERROR( "You can't get proxies! Bad boy!" )
+    return S_ERROR( "You can't get proxies!" )
 
   types_getProxy = [ basestring, basestring, basestring, ( int, long ) ]
   def export_getProxy( self, userDN, userGroup, requestPem, requiredLifetime ):
@@ -264,7 +264,7 @@ class ProxyManagerHandler( RequestHandler ):
     credDict = self.getRemoteCredentials()
     if not Properties.PROXY_MANAGEMENT in credDict[ 'properties' ]:
       if userDN != credDict[ 'DN' ]:
-        return S_ERROR( "You aren't allowed! Bad boy!" )
+        return S_ERROR( "You aren't allowed!" )
     retVal = self.__proxyDB.deleteProxy( userDN, userGroup )
     if not retVal[ 'OK' ]:
       return retVal
