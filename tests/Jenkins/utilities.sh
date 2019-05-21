@@ -345,52 +345,6 @@ finalCleanup(){
   rm -Rf /tmp/tmp.*
 }
 
-#.............................................................................
-#
-# diracReplace
-#
-#   This function gets DIRAC sources from an alternative github repository,
-#   and replace the existing sources used for installation by these ones.
-#
-#   It is done only the environment variable $DIRAC_ALTERNATIVE_SRC_ZIP is set
-#
-# Define it in your environment if you want to replace the DIRAC source with custom ones
-# The URL has to be a zip file provided by github
-#DIRAC_ALTERNATIVE_SRC_ZIP=''
-#
-#.............................................................................
-#-------------------------------------------https://github.com/chaen/DIRAC/archive/rel-v6r12_NEW_PsAndFkDfc.zip------------------------------------
-
-function diracReplace(){
-  echo '==> [diracReplace]'
-
-  if [[ -z $DIRAC_ALTERNATIVE_SRC_ZIP ]]
-  then
-    echo '==> Variable $DIRAC_ALTERNATIVE_SRC_ZIP not defined';
-    return
-  fi
-
-  cwd=$PWD
-  cd $SERVERINSTALLDIR
-
-  wget $DIRAC_ALTERNATIVE_SRC_ZIP
-  zipName=$(basename $DIRAC_ALTERNATIVE_SRC_ZIP)
-  unzip $zipName
-  cd $SERVERINSTALLDIR
-  dirName=$(unzip -l $zipName | head | tail -n 1 | sed 's/  */ /g' | cut -f 5 -d ' ' | cut -f 1 -d '/')
-  if [ -d "DIRAC" ]
-  then
-    mv DIRAC DIRAC.bak
-  else
-    echo "There is no previous DIRAC directory ??!!!"
-    ls
-  fi
-  cd $SERVERINSTALLDIR
-  mv $dirName DIRAC
-
-  cd $cwd
-
-}
 
 # Getting a CFG file for the installation: this may be replaced by VOs
 function getCFGFile(){
@@ -398,46 +352,6 @@ function getCFGFile(){
 
   cp $TESTCODE/DIRAC/tests/Jenkins/install.cfg $SERVERINSTALLDIR/
   sed -i s/VAR_Release/$projectVersion/g $SERVERINSTALLDIR/install.cfg
-}
-
-
-#.............................................................................
-#
-# diracInstall:
-#
-#   This function gets the DIRAC install script defined on $DIRAC_INSTAll and
-#   runs it with some hardcoded options. The only option that varies is the
-#   project version, in this case DIRAC version, obtained from the file 'dirac.version'
-#   (which coincides with the project version).
-#
-#.............................................................................
-
-function diracInstall(){
-  echo '==> [diracInstall]'
-
-  cp $TESTCODE/DIRAC/Core/scripts/dirac-install.py $SERVERINSTALLDIR/dirac-install
-  chmod +x $SERVERINSTALLDIR/dirac-install
-
-  diracInstallCommand
-  if [ $? -ne 0 ]
-  then
-    echo 'ERROR: dirac-install failed'
-    return
-  fi
-}
-
-#This is what VOs may replace
-# If DIRACOSVER env variable is defined, use diracos
-function diracInstallCommand(){
-   # If DIRACOSVER is not defined, use Externals
-   if [ -z $DIRACOSVER ];
-   then
-     echo "Installing with externals";
-     $SERVERINSTALLDIR/dirac-install -r `cat $SERVERINSTALLDIR/dirac.version` -t fullserver -d
-   else
-     echo "Installing with DIRACOS $DIRACOSVER";
-     $SERVERINSTALLDIR/dirac-install -r `cat $SERVERINSTALLDIR/dirac.version` -t fullserver -d --dirac-os --dirac-os-version=$DIRACOSVER
-   fi
 }
 
 

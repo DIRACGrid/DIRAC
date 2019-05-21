@@ -22,6 +22,8 @@
 # DEBUG (set it to whatever value to turn on debug messages)
 #
 # DIRAC_RELEASE (for installing a specific release)
+# ALTERNATIVE_MODULES (for installing a non-released version(s), e.g. "https://github.com/$username/DIRAC.git:::DIRAC:::someBranch")
+#                     (also valid for extensions)
 # DIRACOSVER (a DIRACOS version, or simply "True" for installing with DIRACOS)
 #
 # JENKINS_SITE (site name, by default DIRAC.Jenkins.ch)
@@ -128,24 +130,31 @@ function installSite(){
   sed -i s/VAR_NoSQLDB_Port/$NoSQLDB_PORT/g $SERVERINSTALLDIR/install.cfg
 
   echo '==> Started installing'
+
+  installOptions="-t server $DEBUG "
+
   # If DIRACOSVER is not defined, use LcgBundle
-  if [ -z $DIRACOSVER ]
+  if [ $DIRACOSVER ]
   then
-    echo "Installing with LcgBundle"
-    $SERVERINSTALLDIR/dirac-install.py -t fullserver $DEBUG $SERVERINSTALLDIR/install.cfg
-  else
     if [ $DIRACOSVER == True ]
     then
       echo "Installing with DIRACOS"
-      $SERVERINSTALLDIR/dirac-install.py -t fullserver $DEBUG --dirac-os $SERVERINSTALLDIR/install.cfg
+      installOptions+="--dirac-os "
     else
       echo "Installing with DIRACOS $DIRACOSVER"
-      $SERVERINSTALLDIR/dirac-install.py -t fullserver $DEBUG --dirac-os --dirac-os-version=$DIRACOSVER $SERVERINSTALLDIR/install.cfg
+      installOptions+="--dirac-os --dirac-os-version=$DIRACOSVER "
     fi
   fi
 
+  if [ $ALTERNATIVE_MODULES ]
+  then
+    echo "Installing from non-release code"
+    installOptions+="--module=$ALTERNATIVE_MODULES "
+  fi
 
-
+  echo '==> Installing with options' $installOptions $SERVERINSTALLDIR/install.cfg
+  
+  $SERVERINSTALLDIR/dirac-install.py $installOptions $SERVERINSTALLDIR/install.cfg
   if [ $? -ne 0 ]
   then
     echo 'ERROR: dirac-install.py -t fullserver failed'
@@ -160,9 +169,6 @@ function installSite(){
     echo 'ERROR: dirac-configure failed'
     return
   fi
-
-  #replace the sources with custom ones if defined
-  diracReplace
 
   dirac-setup-site $DEBUG
   if [ $? -ne 0 ]
