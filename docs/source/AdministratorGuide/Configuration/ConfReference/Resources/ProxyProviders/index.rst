@@ -34,7 +34,7 @@ OAuth2 Parameters
 +-------------------------+---------------------------------------------------+-------------------------------------------------------------------------------+
 | **Name**                | **Description**                                   | **Example**                                                                   |
 +-------------------------+---------------------------------------------------+-------------------------------------------------------------------------------+
-| issuer                  | Authorization server's issuer identifier URL	    | https://masterportal-pilot.aai.egi.eu/mp-oa2-server                           |
+| issuer                  | Authorization server's issuer identifier URL      | https://masterportal-pilot.aai.egi.eu/mp-oa2-server                           |
 +-------------------------+---------------------------------------------------+-------------------------------------------------------------------------------+
 | client_id               | Identifier of OAuth client                        | myproxy:oa4mp,2012:/client_id/aca7c8dfh439fewjb298fdb                         |
 +-------------------------+---------------------------------------------------+-------------------------------------------------------------------------------+
@@ -44,7 +44,7 @@ OAuth2 Parameters
 |                         | framework(https://tools.ietf.org/html/rfc6749)    |                                                                               |
 +-------------------------+---------------------------------------------------+-------------------------------------------------------------------------------+
 | <specific parameter>    | Some specific parameter for specific proxy        | max_proxylifetime = 864000                                                    |
-|                         | provider installation, e.g. CheckIns MasterPortal | proxy_endpoint = https://masterportal-pilot.aai.egi.eu/mp-oa2-server/getproxy |                                                           |
+|                         | provider installation, e.g. CheckIns MasterPortal | proxy_endpoint = https://masterportal-pilot.aai.egi.eu/mp-oa2-server/getproxy |
 +-------------------------+---------------------------------------------------+-------------------------------------------------------------------------------+
 
 
