@@ -425,7 +425,7 @@ def getDNSectionName(userDN):
 
 
 def getDNProperty(userDN, value):
-  """ Get property from PNProperties section by user DN
+  """ Get property from DNProperties section by user DN
 
       :param basestring userDN: user DN
       :param basestring value: option that need to get
