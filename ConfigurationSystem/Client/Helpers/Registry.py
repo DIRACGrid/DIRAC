@@ -460,7 +460,7 @@ def getProxyProvidersForDN(userDN):
 
 def getDNFromProxyProviderForUserID(proxyProvider, userID):
   """ Get groups by user DN in DNProperties
-  
+
       :param basestring proxyProvider: proxy provider name
       :param basestring userID: user identificator
 
