@@ -560,7 +560,6 @@ class ProxyDB(DB):
           result = chain.generateProxyToString(record[1], diracGroup=userGroup, rfc=True)
           if not result['OK']:
             return result
-          chain.loadProxyFromString(result['Value'])
           return S_OK((result['Value'], record[1]))
         return S_OK((record[0], record[1]))
     if userGroup:
