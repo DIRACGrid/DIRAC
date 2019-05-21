@@ -13,15 +13,26 @@
 # A CI job needs:
 #
 # === environment variables (minimum set):
-# DEBUG
-# WORKSPACE
-# DIRACBRANCH
+#
+# DIRACBRANCH (branch of DIRAC, e.g. v6r22)
+#
+# === optional environment variables:
+# 
+# WORKSPACE (set by Jenkins, normally. If not there, will be $PWD)
+# DEBUG (set it to whatever value to turn on debug messages)
+#
+# DIRAC_RELEASE (for installing a specific release)
+# DIRACOSVER (a DIRACOS version, or simply "True" for installing with DIRACOS)
+#
+# JENKINS_SITE (site name, by default DIRAC.Jenkins.ch)
+# JENKINS_CE (CE name, by default jenkins.cern.ch)
+# JENKINS_QUEUE (queue name, by default jenkins-queue_not_important)
 #
 # === a default directory structure is created:
 # ~/TestCode
 # ~/ServerInstallDIR
 # ~/PilotInstallDIR
-
+# ~/ClientInstallDIR
 
 
 
@@ -88,7 +99,7 @@ function installSite(){
 
   echo '==> Fixing install.cfg file'
   # If DIRACOS is to be used, we remove the Lcg version from install.cfg
-  if [ -z $DIRACOSVER ];
+  if [ -z $DIRACOSVER ]
   then
      echo "==> Not using DIRACOS, setting LcgVer"
      # DIRACOS is not used
@@ -118,13 +129,19 @@ function installSite(){
 
   echo '==> Started installing'
   # If DIRACOSVER is not defined, use LcgBundle
-  if [ -z $DIRACOSVER ];
+  if [ -z $DIRACOSVER ]
   then
-    echo "Installing with LcgBundle";
-    $SERVERINSTALLDIR/dirac-install.py -t fullserver $DEBUG $SERVERINSTALLDIR/install.cfg;
+    echo "Installing with LcgBundle"
+    $SERVERINSTALLDIR/dirac-install.py -t fullserver $DEBUG $SERVERINSTALLDIR/install.cfg
   else
-    echo "Installing with DIRACOS $DIRACOSVER";
-    $SERVERINSTALLDIR/dirac-install.py -t fullserver $DEBUG --dirac-os --dirac-os-version=$DIRACOSVER $SERVERINSTALLDIR/install.cfg;
+    if [ $DIRACOSVER == True ]
+    then
+      echo "Installing with DIRACOS"
+      $SERVERINSTALLDIR/dirac-install.py -t fullserver $DEBUG --dirac-os $SERVERINSTALLDIR/install.cfg
+    else
+      echo "Installing with DIRACOS $DIRACOSVER"
+      $SERVERINSTALLDIR/dirac-install.py -t fullserver $DEBUG --dirac-os --dirac-os-version=$DIRACOSVER $SERVERINSTALLDIR/install.cfg
+    fi
   fi
 
 
