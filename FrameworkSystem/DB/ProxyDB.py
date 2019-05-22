@@ -764,13 +764,13 @@ class ProxyDB(DB):
 
     # Standard proxy is requested
     retVal = self.__getPemAndTimeLeft(userDN, userGroup)
-    if retVal['OK'] and requiredLifeTime:
+    if not retVal['OK']:
+      errMsg = retVal['Message']
+      retVal = self.__generateProxyFromProxyProviders(userDN, userGroup, requiredLifeTime=requiredLifeTime)
+    elif requiredLifeTime:
       if retVal['Value'][1] < requiredLifeTime and not self.__useMyProxy:
         errMsg = 'the required lifetime is less than the time left in the proxy'
         retVal = self.__generateProxyFromProxyProviders(userDN, userGroup, requiredLifeTime=requiredLifeTime)
-    else:
-      errMsg = retVal['Message']
-      retVal = self.__generateProxyFromProxyProviders(userDN, userGroup, requiredLifeTime=requiredLifeTime)
     if retVal['OK']:
       pemData = retVal['Value'][0]
       timeLeft = retVal['Value'][1]
