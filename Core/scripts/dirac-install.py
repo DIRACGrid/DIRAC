@@ -2505,7 +2505,7 @@ if __name__ == "__main__":
       logNOTICE("Writing down the releases files")
       releaseConfig.dumpReleasesToPath()
     logNOTICE("Installing modules...")
-    for modName in modsOrder:
+    for modName in set(modsOrder):
       tarsURL, modVersion = modsToInstall[modName]
       if cliParams.installSource and not cliParams.modules:
         # we install not release version of DIRAC
