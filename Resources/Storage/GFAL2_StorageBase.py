@@ -75,9 +75,6 @@ class GFAL2_StorageBase(StorageBase):
     # by default turn off BDII checks
     self.ctx.set_opt_boolean("BDII", "ENABLE", False)
 
-    # FIXME: Avoid caching because of a bug in globus (https://its.cern.ch/jira/browse/DMC-853)
-    self.ctx.set_opt_boolean("GRIDFTP PLUGIN", "SESSION_REUSE", False)
-
     # Enable IPV6 for gsiftp
     self.ctx.set_opt_boolean("GRIDFTP PLUGIN", "IPV6", True)
 
