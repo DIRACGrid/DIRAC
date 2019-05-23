@@ -61,6 +61,10 @@ class StorageElementCache(object):
     # If we see its memory consumtpion exploding, this might be a place to look
     proxyLoc = getProxyLocation()
 
+    # ensure plugins is hashable! (tuple)
+    if isinstance(plugins, list):
+      plugins = tuple(plugins)
+
     argTuple = (tId, name, plugins, vo, proxyLoc)
     seObj = self.seCache.get(argTuple)
 
