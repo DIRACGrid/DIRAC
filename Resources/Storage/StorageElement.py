@@ -165,6 +165,9 @@ class StorageElementItem(object):
 
     self.methodName = None
 
+    if plugins is None:
+      plugins = []
+
     if vo:
       self.vo = vo
     else:
@@ -187,20 +190,10 @@ class StorageElementItem(object):
       self.useProxy = self.opHelper.getValue('/Services/StorageElements/%s/UseProxy' % name, False)
 
     self.valid = True
-    if plugins is None:
-      res = StorageFactory(
-          useProxy=self.useProxy,
-          vo=self.vo).getStorages(
-              name,
-              pluginList=[],
-              hideExceptions=hideExceptions)
-    else:
-      res = StorageFactory(
-          useProxy=self.useProxy,
-          vo=self.vo).getStorages(
-              name,
-              pluginList=plugins,
-              hideExceptions=hideExceptions)
+
+    res = StorageFactory(useProxy=self.useProxy, vo=self.vo).getStorages(name,
+                                                                         pluginList=plugins,
+                                                                         hideExceptions=hideExceptions)
 
     if not res['OK']:
       self.valid = False
