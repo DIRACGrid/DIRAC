@@ -1,0 +1,37 @@
+version: '3'
+services:
+  dirac:
+    container_name: dirac_devbox
+    hostname: dirac-dev
+    build:
+      context: .
+      dockerfile: ./dockerfiles/DIRAC_Dockerfile
+    privileged: true
+    entrypoint: /sbin/init
+    volumes:
+      - ../../:/localMount/DIRAC
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+    ports:
+      - "8089:8080"
+      - "8443:8443"
+    links:
+      - mysqldb
+      - elasticdb
+  mysqldb:
+    container_name: mysqldb
+    build:
+      context: .
+      dockerfile: ./dockerfiles/MySQL_Dockerfile
+    environment:
+      - "MYSQL_DATABASE=mysql"
+      - "MYSQL_ROOT_PASSWORD=demopass"
+    ports:
+      - "3306:3306"
+  elasticdb:
+    container_name: elasticdb
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.0.0
+    environment:
+      - "discovery.type=single-node"
+    ports:
+      - "9200:9200"
+      - "9300:9300"
