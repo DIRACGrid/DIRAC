@@ -5,10 +5,8 @@ envsubst < env_files/env_dirac.cfg > resources/dirac.cfg
 
 docker-compose up -d --build
 
-sleep 1.5m
+docker exec -it dirac_devbox bash -c "cd /resources/ && chmod +x setupDIRAC.sh && ./setupDIRAC.sh"
+
+sleep 1m
 
 docker exec -it mysqldb bash -c "mysql -p$root_pass -uroot < /resources/setupMySQL.sql"
-
-sleep 10s
-
-docker exec -it dirac_devbox bash -c "cd /resources/ && chmod +x setupDIRAC.sh && ./setupDIRAC.sh"

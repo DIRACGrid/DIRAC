@@ -40,8 +40,7 @@ Status of installed components:
 ## DIRAC Client Setup 
 Run the below commands:
 ```
-su diracuser
-~/setupDIRACClient.sh
+~/DiracInstallation/setupDIRACClient.sh
 ```
 
 After this you can access the WebAppDIRAC from your local machine at the following URLs: 
@@ -51,11 +50,15 @@ https://localhost:8443
 ```
 In order to access the HTTPS client you wil need a `certificate` to get the certificate use the below command:
 ```
-docker cp dirac_devbox:/home/diracuser/.globus/certificate.p12 /<your-path>/certificate.p12
+docker cp dirac_devbox:/root/.globus/certificate.p12 /<your-path>/certificate.p12
 ```
 After you receive the `certificate.p12` file at your desired path you can upload it in our browser and use it to login to the HTTPS client.
 
-## Making changes to DIRAC for Development
+## Making changes to DIRAC for Development and using DIRAC
+After the installation always run this command in order to execute any DIRAC Commands:
+```
+docker exec -it dirac_devbox bash -c "source /opt/dirac/bashrc && bash"
+```
 If you make changes to DIRAC from your local host then run this inside the `dirac_devbox` container to see them effective:
 ```
 cp -rn /localMount/DIRAC /opt/dirac/pro/

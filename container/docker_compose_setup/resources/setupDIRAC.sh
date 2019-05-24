@@ -26,9 +26,6 @@ mkdir -p ~/DiracInstallation && cd ~/DiracInstallation
 curl -O -L https://github.com/DIRACGrid/DIRAC/raw/integration/Core/scripts/install_site.sh
 chmod +x install_site.sh
 cp ../install.cfg .
-adduser -s /bin/bash -d /home/diracuser diracuser
-mkdir ~diracuser/.globus/
-cp /opt/dirac/user/client.pem ~diracuser/.globus/usercert.pem
-cp /opt/dirac/user/client.key ~diracuser/.globus/userkey.pem
-chown -R diracuser:diracuser ~diracuser/.globus/
-chmod +x /resources/setupDIRACClient.sh && cp /resources/setupDIRACClient.sh ~diracuser/setupDIRACClient.sh
+chmod +x /resources/setupDIRACClient.sh && cp /resources/setupDIRACClient.sh ~/DiracInstallation/
+
+
