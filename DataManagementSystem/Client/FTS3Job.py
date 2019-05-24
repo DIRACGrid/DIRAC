@@ -18,14 +18,14 @@ from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.Utilities.DErrno import cmpError
 
-from DIRAC.DataManagementSystem.private.FTS3Utilities import FTS3Serializable
+from DIRAC.Core.Utilities.JEncode import JSerializable
 from DIRAC.DataManagementSystem.Client.FTS3File import FTS3File
 
 # 3 days in seconds
 BRING_ONLINE_TIMEOUT = 259200
 
 
-class FTS3Job(FTS3Serializable):
+class FTS3Job(JSerializable):
   """ Abstract class to represent a job to be executed by FTS. It belongs
       to an FTS3Operation
   """

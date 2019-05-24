@@ -1,15 +1,15 @@
 """
-:mod: FTS3ManagerHandler
-
-.. module: FTS3ManagerHandler
-  :synopsis: handler for FTS3DB using DISET
-
 Service handler for FT3SDB using DISET
+
+.. literalinclude:: ../ConfigTemplate.cfg
+  :start-after: ##BEGIN FTS3Manager
+  :end-before: ##END
+  :dedent: 2
+  :caption: FTS3Manager options
+
 """
 
 __RCSID__ = "$Id$"
-
-import json
 
 # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
@@ -17,7 +17,7 @@ from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
 
 
 from DIRAC.DataManagementSystem.DB.FTS3DB import FTS3DB
-from DIRAC.DataManagementSystem.private.FTS3Utilities import FTS3JSONEncoder, FTS3JSONDecoder
+from DIRAC.Core.Utilities.JEncode import encode, decode
 
 ########################################################################
 
@@ -54,7 +54,7 @@ class FTS3ManagerHandler(RequestHandler):
         :return: OperationID
     """
 
-    opObj = json.loads(opJSON, cls=FTS3JSONDecoder)
+    opObj, _size = decode(opJSON)
     return cls.fts3db.persistOperation(opObj)
 
   types_getOperation = [(long, int)]
@@ -73,7 +73,7 @@ class FTS3ManagerHandler(RequestHandler):
       return getOperation
 
     getOperation = getOperation["Value"]
-    opJSON = getOperation.toJSON()
+    opJSON = encode(getOperation)
     return S_OK(opJSON)
 
   types_getActiveJobs = [(long, int), [None] + [basestring], basestring]
@@ -96,7 +96,7 @@ class FTS3ManagerHandler(RequestHandler):
       return res
 
     activeJobs = res['Value']
-    activeJobsJSON = json.dumps(activeJobs, cls=FTS3JSONEncoder)
+    activeJobsJSON = encode(activeJobs)
 
     return S_OK(activeJobsJSON)
 
@@ -140,7 +140,7 @@ class FTS3ManagerHandler(RequestHandler):
       return res
 
     nonFinishedOperations = res['Value']
-    nonFinishedOperationsJSON = json.dumps(nonFinishedOperations, cls=FTS3JSONEncoder)
+    nonFinishedOperationsJSON = encode(nonFinishedOperations)
 
     return S_OK(nonFinishedOperationsJSON)
 
@@ -160,6 +160,6 @@ class FTS3ManagerHandler(RequestHandler):
       return res
 
     operations = res["Value"]
-    opsJSON = json.dumps(operations, cls=FTS3JSONEncoder)
+    opsJSON = encode(operations)
 
     return S_OK(opsJSON)
