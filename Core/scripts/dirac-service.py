@@ -10,6 +10,7 @@ from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfigurati
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.DISET.ServiceReactor import ServiceReactor
 from DIRAC.Core.Utilities.DErrno import includeExtensionErrors
+from DIRAC.Core.Security.Properties import includeExtensionProperties
 
 localCfg = LocalConfiguration()
 
@@ -33,7 +34,7 @@ if not resultDict[ 'OK' ]:
   sys.exit( 1 )
 
 includeExtensionErrors()
-
+includeExtensionProperties()
 
 serverToLaunch = ServiceReactor()
 result = serverToLaunch.initialize( positionalArgs )

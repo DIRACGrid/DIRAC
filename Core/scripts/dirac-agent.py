@@ -13,6 +13,7 @@ from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfigurati
 from DIRAC import gLogger
 from DIRAC.Core.Base.AgentReactor import AgentReactor
 from DIRAC.Core.Utilities.DErrno import includeExtensionErrors
+from DIRAC.Core.Security.Properties import includeExtensionProperties
 
 localCfg = LocalConfiguration()
 
@@ -33,6 +34,7 @@ if not resultDict[ 'OK' ]:
   sys.exit( 1 )
 
 includeExtensionErrors()
+includeExtensionProperties()
 
 if len( positionalArgs ) == 1:
   mainName = positionalArgs[0]
