@@ -4,6 +4,8 @@ We assume that your system has `Docker` and `Docker Compose` running if not then
 ## Initial Setup 
 Run the below commands for the setup of DIRAC Devbox, MySQL, and ElasticSearch:
 ```
+source .env
+export root_pass dirac_hostname
 chmod +x setup.sh && ./setup.sh
 ```
 **NOTE:-** &ensp;1) You must be inside this directory `<base_path>/DIRAC/container/docker_compose_setup` <br>
@@ -57,4 +59,13 @@ After you receive the `certificate.p12` file at your desired path you can upload
 If you make changes to DIRAC from your local host then run this inside the `dirac_devbox` container to see them effective:
 ```
 cp -rn /localMount/DIRAC /opt/dirac/pro/
+```
+
+## Version Changes for Linux, MySQL, and ElasticSearch:
+In order to change the versions you need to point the correct `dockerfiles` inside the `env_files/env_docker-compose.yml` file and the files are present in `dockerfiles/`.
+
+## Bringing things down
+In order to stop, remove, and bring all volume mounts down use this command:
+```
+docker-compose down --volume
 ```

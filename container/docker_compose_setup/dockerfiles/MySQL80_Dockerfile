@@ -1,0 +1,3 @@
+FROM mysql/mysql-server:8.0
+
+COPY ./resources/setupMySQL.sql /resources/setupMySQL.sql

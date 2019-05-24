@@ -5,7 +5,7 @@ services:
     hostname: $dirac_hostname
     build:
       context: .
-      dockerfile: ./dockerfiles/DIRAC_Dockerfile
+      dockerfile: ./dockerfiles/DIRAC_SLC6_Dockerfile
     privileged: true
     entrypoint: /sbin/init
     volumes:
@@ -21,7 +21,7 @@ services:
     container_name: mysqldb
     build:
       context: .
-      dockerfile: ./dockerfiles/MySQL_Dockerfile
+      dockerfile: ./dockerfiles/MySQL57_Dockerfile
     environment:
       - "MYSQL_DATABASE=mysql"
       - "MYSQL_ROOT_PASSWORD=$root_pass"
@@ -29,7 +29,9 @@ services:
       - "3306:3306"
   elasticdb:
     container_name: elasticdb
-    image: docker.elastic.co/elasticsearch/elasticsearch:6.0.0
+    build:
+      context: .
+      dockerfile: ./dockerfiles/ES6_Dockerfile
     environment:
       - "discovery.type=single-node"
     ports:
