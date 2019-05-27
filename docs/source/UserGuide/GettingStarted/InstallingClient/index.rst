@@ -109,7 +109,7 @@ It is then possible to issue the *dirac-configure* command::
 **Using a host certificate**
 
 If you have a host certificate for the machine where the client is being installed,
-and if this Host Certificate Distinguished Name(DN) is registered in the Configuration Server of the DIRAC server
+and if this host certificate Distinguished Name (DN) is registered in the Configuration Server of the DIRAC server
 machine, then such a host certificate can be used instead of the user proxy certificate,
 with the following command::
 
