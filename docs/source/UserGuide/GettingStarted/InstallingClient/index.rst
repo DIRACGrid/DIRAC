@@ -6,10 +6,10 @@ Installing DIRAC client
 ==================================
 
 The DIRAC client installation procedure consists of few steps.
-You can do these steps as any user, there's no need to be root.
+You can do these steps as any user without the need to be root.
 
-A DIRAC client installation (and a server too) is fully in user space, and in fact, it's all in one directory.
-Which means that on a same machine you can have several client (or server even) installed.
+A DIRAC client installation (and a server too) is fully in user space, and in fact, it's all in one directory,
+which means that on the same machine you can have several client(s) (or even server(s)) installed.
 
 If you want to create a shared client installation, you can do it by simply giving (UNIX) access
 to the directory where the client is installed.
@@ -25,7 +25,7 @@ Download the *dirac-install* script from::
 
 Choose the directory where you want to install the DIRAC software and run the dirac-install script from
 this directory giving the appropriate version of the DIRAC release,
-and the version of the "lcgBundle" (with "-g" option) that you want to use::
+and the version of the "lcgBundle" (with "-g" option, not required for MacOS 10.14 users) that you want to use::
 
   dirac-install -r v6r20p14 -g v14r2
 
@@ -37,7 +37,7 @@ The libraries in "lcgBundle" are not maintained within DIRAC, but DIRAC may use 
 The produced lcgBundles can also be found on `this server <http://diracproject.web.cern.ch/diracproject/lcgBundles/>`_.
 
 
-This installs the software as well as creating the following directories and files::
+This installs the software and you should get the following directories and files::
 
    drwxr-xr-x. 20 dirac dirac  4096 Jul 25 15:13 DIRAC
    drwxr-xr-x.  6 dirac dirac  4096 Jul 21 16:27 Linux_x86_64_glibc-2.12
@@ -76,14 +76,14 @@ The ConfigurationServer option is used to define the URL of the Configuration Se
 that the client will contact to discover all the DIRAC services.
 
 The exact values for the command options are specific to a given user community, ask the
-group administrators for its details. Typically, single community specific installation scripts are
+group administrators for details. Typically, a single-community specific installation script will be 
 provided, which includes all the necessary specifications.
 
 In any case, save a "install.cfg" file with the content desired.
 
-At this point, in order to issue the *dirac-configure* command, you need either a user proxy, or a host certificate.
-These are needed because dirac-configure will take care of updating the local configuration as well as 
-download the Client Authentication Certificates used for connecting to DIRAC services
+At this point, in order to successfully issue the *dirac-configure* command, you need either a user proxy, or a host certificate.
+These are needed because dirac-configure will take care of updating the local configuration, but more importantly, it will
+download the CAs(Certification Authorities) used for connecting to DIRAC services
 (this option may be overridden if necessary).
 
 **Using a user proxy**
