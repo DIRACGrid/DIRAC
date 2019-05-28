@@ -107,16 +107,11 @@ class PilotCStoJSONSynchronizer(object):
     gLogger.info('-- Getting the content of the CS --')
 
     # These are in fact not only setups: they may be "Defaults" sections, or VOs, in multi-VOs installations
-    setups = gConfig.getSections('/Operations/')
-    if not setups['OK']:
-      gLogger.error(setups['Message'])
-      return setups
-    setups = setups['Value']
-
-    try:
-      setups.remove('SoftwareDistribution')  # TODO: remove this section
-    except (AttributeError, ValueError):
-      pass
+    setupsRes = gConfig.getSections('/Operations/')
+    if not setupsRes['OK']:
+      gLogger.error(setupsRes['Message'])
+      return setupsRes
+    setups = setupsRes['Value']
 
     # Something inside? (for multi-VO setups)
     for vo in setups:
@@ -124,7 +119,7 @@ class PilotCStoJSONSynchronizer(object):
       if not setupsFromVOs['OK']:
         continue
       else:
-        setups.append("%s/%s" % (vo, setupsFromVOs))
+        setups.append("%s/%s" % (vo, setupsFromVOs['Value']))
 
     gLogger.verbose('From Operations/[Setup]/Pilot')
 
@@ -166,7 +161,7 @@ class PilotCStoJSONSynchronizer(object):
     gLogger.verbose('From DIRAC/Configuration')
     pilotDict['ConfigurationServers'] = gConfig.getServersList()
 
-    gLogger.verbose("Got %s" % str(pilotDict))
+    gLogger.verbose("Got pilotDict", str(pilotDict))
 
     return pilotDict
 

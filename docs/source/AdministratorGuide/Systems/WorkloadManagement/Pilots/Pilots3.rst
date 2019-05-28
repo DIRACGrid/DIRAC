@@ -21,8 +21,23 @@ From DIRAC v6r20, there is the possibility to set the option *UpdatePilotCStoJSO
 the Configuration/Server service (please see :ref:`ConfigurationServer` for detais). If this option is set,
 at every configuration update, the pilot.json file content will also be updated (if necessary).
 
-If *UpdatePilotCStoJSONFile* is True, then also the option *pilotFileServer* should be set to the webserver chosen for the upload.
+If *UpdatePilotCStoJSONFile* is True, then also the Operations option *Pilot/<...>/pilotFileServer* should be set to the webserver chosen for the upload.
 We suggest to use simply the DIRAC webserver.
+
+Other options that can be set also in the Operations part of the CS include:
+
++------------------------------------+--------------------------------------------+-------------------------------------------------------------------------+
+| *pilotRepo*                        | Pointer to git repository of DIRAC pilot   | pilotRepo = https://github.com/DIRACGrid/Pilot.git                      |
+|                                    |                                            | The value above is the default                                          |
++------------------------------------+--------------------------------------------+-------------------------------------------------------------------------+
+| *pilotVORepo*                      | Pointer to git repository of VO DIRAC      | pilotVORepo = https://github.com/MyDIRAC/VOPilot.git                    |
+|                                    | extension of pilot                         |                                                                         |
++------------------------------------+--------------------------------------------+-------------------------------------------------------------------------+
+| *pilotScriptsPath*                 | Path to the code, inside the Git repository| pilotScriptsPath = Pilot                                                |
+|                                    |                                            | The value above is the default                                          |
++------------------------------------+--------------------------------------------+-------------------------------------------------------------------------+
+| *pilotScriptsVOPath*               | Path to the code, inside the Git repository| pilotScriptsVOPath = VOPilot                                            |
++------------------------------------+--------------------------------------------+-------------------------------------------------------------------------+
 
 
 Starting Pilots3 via SiteDirectors
