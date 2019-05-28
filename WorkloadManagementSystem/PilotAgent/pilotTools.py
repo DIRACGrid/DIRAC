@@ -483,7 +483,7 @@ class PilotParams( object ):
       elif o == '-p' or o == '--platform':
         self.platform = v
       elif o == '-m' or o == '--maxNumberOfProcessors':
-        self.maxNumberOfProcessors = v
+        self.maxNumberOfProcessors = int( v )
       elif o == '-D' or o == '--disk':
         try:
           self.minDiskSpace = int( v )
