@@ -14,6 +14,8 @@ FIX: (#4093) better logging from services
 
 *TS
 CHANGE: (#4095) ConfigTemplate for RequestTaskAgent now contains all options
+CHANGE: (#4096) the Broadcast TransformationPlugin no longer requires a SourceSE to be set. If it is set, the behaviour is unchanged
+CHANGE: (#4096) dirac-transformation-replication: change default pluging back to Broadcast (reverts #4066)
 
 *Docs:
 CHANGE: (#4095) AdministratorGuide install TS tutorial: added options MonitorFiles and MonitorTasks for TaskAgents
