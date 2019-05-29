@@ -25,12 +25,15 @@ Download the *dirac-install* script from::
 
 Choose the directory where you want to install the DIRAC software and run the dirac-install script from
 this directory giving the appropriate version of the DIRAC release,
-and the version of the "lcgBundle" (with "-g" option, not required for MacOS 10.14 users) that you want to use::
+and the version of the "lcgBundle"(with "-g" option), to be skipped by MacOS users as they are currently unavailable, that you want to
+use::
 
   dirac-install -r v6r20p14 -g v14r2
 
 The example above assumes that you need the release version v6r20p14 and along with that lcgBundle version v14r2 to be installed.
 
+Currently, there are no available lcgBundles for MacOS users and  
+ 
 An "lcgBundle" is simply a tarball(.tar) file containing a number of statically-compiled libraries that are used
 for interacting with grid environments (e.g. GFAL2, or ARC, or Condor).
 The libraries in "lcgBundle" are not maintained within DIRAC, but DIRAC may use them.
