@@ -1,7 +1,7 @@
 [v6r21p7]
 
 *Core
-FIX: (#4076)  A certain module like WebAppDIRAC must be checked out from the code repository once.
+FIX: (#4076) A certain module like WebAppDIRAC must be checked out from the code repository once.
 
 *Resources
 FIX: (#4078) Fix the exception when StorageElement objects are created with a list of plugins
