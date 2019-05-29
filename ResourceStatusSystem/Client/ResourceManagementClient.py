@@ -20,30 +20,10 @@ class ResourceManagementClient(object):
   The :class:`ResourceManagementClient` class exposes the :mod:`DIRAC.ResourceManagement`
   API. All functions you need are on this client.
 
-  It has the 'direct-db-access' functions, the ones of the type:
-   - insert
-   - update
-   - select
-   - delete
-
-  that return parts of the RSSConfiguration stored on the CS, and used everywhere
-  on the RSS module. Finally, and probably more interesting, it exposes a set
-  of functions, badly called 'boosters'. They are 'home made' functions using the
-  basic database functions that are interesting enough to be exposed.
-
-  The client will ALWAYS try to connect to the DB, and in case of failure, to the
-  XML-RPC server ( namely :mod:`~DIRAC.ResourceStatusSystem.DB.ResourceManagementDB` and
-  :mod:`~DIRAC.ResourceStatusSystem.Service.ResourceManagementHandler` ).
-
-
   You can use this client on this way
 
    >>> from DIRAC.ResourceManagementSystem.Client.ResourceManagementClient import ResourceManagementClient
    >>> rsClient = ResourceManagementClient()
-
-  All functions calling methods exposed on the database or on the booster are
-  making use of some syntactic sugar, in this case a decorator that simplifies
-  the client considerably.
   """
 
   def _prepare(self, sendDict):
