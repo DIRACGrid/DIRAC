@@ -241,6 +241,16 @@ CHANGE: (#3948) integration tests run with unittest now exit with exit code != 0
 *docs
 NEW: (#3974) Added HowTo section to the User Guide
 
+[v6r20p28]
+
+*WorkloadManagementSystem
+FIX: (#4092) pilotTools - Ensure maxNumberOfProcessors is an int
+
+[v6r20p27]
+
+*WMS
+FIX: (#4020) SiteDirector - do not use keywords in addPilotTQReference/setPilotStatus calls
+
 [v6r20p26]
 
 *WorkloadManagementSystem
