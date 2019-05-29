@@ -11,7 +11,7 @@ import tempfile
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.File import mkDir
-from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
+from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Security import Properties
 from DIRAC.WorkloadManagementSystem.DB.SandboxMetadataDB import SandboxMetadataDB
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
