@@ -26,7 +26,7 @@ services:
       - "MYSQL_DATABASE=mysql"
       - "MYSQL_ROOT_PASSWORD=demopass"
     ports:
-      - "3306:3306"
+      - "3308:3306"
   elasticdb:
     container_name: elasticdb
     build:

@@ -1,7 +1,6 @@
 envsubst < env_files/env_docker-compose.yml > docker-compose.yml  
 envsubst < env_files/env_setupMySQL.sql > resources/setupMySQL.sql
 envsubst < env_files/env_install.cfg > resources/install.cfg
-envsubst < env_files/env_dirac.cfg > resources/dirac.cfg
 
 docker-compose up -d --build
 
