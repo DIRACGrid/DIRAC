@@ -194,6 +194,7 @@ def _getSEParameters(seName):
   return seParameters
 
 
+@deprecated("unused")
 def getSEToken(seName):
   """ Get StorageElement token
   """

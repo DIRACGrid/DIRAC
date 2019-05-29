@@ -1458,8 +1458,7 @@ class Dirac(API):
   #############################################################################
   def getAccessURL(self, lfn, storageElement, printOutput=False, protocol=False):
     """Allows to retrieve an access URL for an LFN replica given a valid DIRAC SE
-       name.  Contacts the file catalog and contacts the site SRM endpoint behind
-       the scenes.
+       name.  Contacts the file catalog and contacts the site endpoint behind the scenes.
 
        Example Usage:
 
@@ -1523,7 +1522,7 @@ class Dirac(API):
   #############################################################################
   def getPhysicalFileMetadata(self, pfn, storageElement, printOutput=False):
     """Allows to retrieve metadata for physical file(s) on a supplied storage
-       element.  Contacts the site SRM endpoint and performs a gfal_ls behind
+       element.  Contacts the site endpoint and performs a gfal_ls behind
        the scenes.
 
        Example Usage:

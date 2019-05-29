@@ -357,42 +357,5 @@ class PublisherHandler(RequestHandler):
     """ Exporting to web the
     """
 
-    endpoint2Site = {}
-
-    for seName in DMSHelpers().getStorageElements():
-      res = CSHelpers.getStorageElementEndpoint(seName)
-      if not res['OK']:
-        continue
-
-      if not res['Value'] in endpoint2Site:
-        endpoint2Site[res['Value']] = seName.split('-', 1)[0]
-
-    endpointSet = set()
-
-    if site:
-      if isinstance(site, basestring):
-        site = [site]
-
-      for ep, siteName in endpoint2Site.items():
-        if siteName in site:
-          endpointSet.add(ep)
-
-    if endpointSet:
-      endpoint = list(endpointSet)
-    else:
-      endpoint = None
-
-    res = rmClient.selectSpaceTokenOccupancyCache(endpoint=endpoint, token=token)
-    if not res['OK']:
-      return res
-
-    spList = [dict(zip(res['Columns'], sp)) for sp in res['Value']]
-
-    for spd in spList:
-
-      try:
-        spd['Site'] = endpoint2Site[spd['Endpoint']]
-      except KeyError:
-        spd['Site'] = 'Unknown'
-
-    return S_OK(spList)
+    # FIXME: TBD
+    return S_ERROR("Not implemented")
