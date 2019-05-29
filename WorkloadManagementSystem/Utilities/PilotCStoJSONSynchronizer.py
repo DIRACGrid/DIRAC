@@ -115,31 +115,40 @@ class PilotCStoJSONSynchronizer(object):
     if not setupsRes['OK']:
       self.log.error("Can't get sections from Operations", setupsRes['Message'])
       return setupsRes
-    setups = setupsRes['Value']
+    setupsInOperations = setupsRes['Value']
 
-    # Something inside? (for multi-VO setups)
-    for vo in setups:
-      setupsFromVOs = gConfig.getSections('/Operations/%s' % vo)
-      if not setupsFromVOs['OK']:
-        continue
-      else:
-        setups.append("%s/%s" % (vo, setupsFromVOs['Value']))
+    # getting the setup(s) in this CS, and comparing with what we found in Operations
+    setupsInDIRACRes = gConfig.getSections('DIRAC/Setups')
+    if not setupsInDIRACRes['OK']:
+      self.log.error("Can't get sections from DIRAC/Setups", setupsInDIRACRes['Message'])
+      return setupsInDIRACRes
+    setupsInDIRAC = setupsInDIRACRes['Value']
+
+    # Handling the case of multi-VO CS
+    if not set(setupsInDIRAC).intersection(set(setupsInOperations)):
+      vos = list(setupsInOperations)
+      for vo in vos:
+        setupsFromVOs = gConfig.getSections('/Operations/%s' % vo)
+        if not setupsFromVOs['OK']:
+          continue
+        else:
+          setupsInOperations = setupsFromVOs['Value']
 
     self.log.verbose('From Operations/[Setup]/Pilot')
 
-    for setup in setups:
+    for setup in setupsInOperations:
       self._getPilotOptionsPerSetup(setup, pilotDict)
 
     self.log.verbose('From Resources/Sites')
     sitesSection = gConfig.getSections('/Resources/Sites/')
     if not sitesSection['OK']:
-      self.log.error(sitesSection['Message'])
+      self.log.error("Can't get sections from Resources", sitesSection['Message'])
       return sitesSection
 
     for grid in sitesSection['Value']:
       gridSection = gConfig.getSections('/Resources/Sites/' + grid)
       if not gridSection['OK']:
-        self.log.error(gridSection['Message'])
+        self.log.error("Can't get sections from Resources", gridSection['Message'])
         return gridSection
 
       for site in gridSection['Value']:
