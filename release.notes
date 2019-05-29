@@ -1,3 +1,8 @@
+[v6r20p28]
+
+*WorkloadManagementSystem
+FIX: (#4092) pilotTools - Ensure maxNumberOfProcessors is an int
+
 [v6r20p27]
 
 *WMS
