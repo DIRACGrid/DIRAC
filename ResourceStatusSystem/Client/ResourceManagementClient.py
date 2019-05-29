@@ -586,6 +586,6 @@ class ResourceManagementClient(Client):
     '''
 
     return self._getRPC().addOrModify('SpaceTokenOccupancyCache',
-                                                                         self._prepare(locals()))
+                                      self._prepare(locals()))
 
 # EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
