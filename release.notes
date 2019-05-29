@@ -14,6 +14,26 @@ NEW: (#4053) AuthManager - interpret the Suspended user status considering suspe
      users as anonymous visitors
 CHANGE: (#4053) The use of CS.py module is replaced by the use of Registry.py and CSGlobals.py
 
+[v6r21p7]
+
+*Core
+FIX: (#4076) A certain module like WebAppDIRAC must be checked out from the code repository once.
+
+*Resources
+FIX: (#4078) Fix the exception when StorageElement objects are created with a list of plugins
+
+*SMS
+NEW: (#4086) StageMonitorAgent: new option StoragePlugins to limit the protocols used to contact storagelements for staged files.
+
+*WMS
+FIX: (#4093) better logging from services
+
+*TS
+CHANGE: (#4095) ConfigTemplate for RequestTaskAgent now contains all options
+
+*Docs:
+CHANGE: (#4095) AdministratorGuide install TS tutorial: added options MonitorFiles and MonitorTasks for TaskAgents
+
 [v6r21p6]
 
 *CS
@@ -237,6 +257,16 @@ CHANGE: (#3948) integration tests run with unittest now exit with exit code != 0
 
 *docs
 NEW: (#3974) Added HowTo section to the User Guide
+
+[v6r20p28]
+
+*WorkloadManagementSystem
+FIX: (#4092) pilotTools - Ensure maxNumberOfProcessors is an int
+
+[v6r20p27]
+
+*WMS
+FIX: (#4020) SiteDirector - do not use keywords in addPilotTQReference/setPilotStatus calls
 
 [v6r20p26]
 

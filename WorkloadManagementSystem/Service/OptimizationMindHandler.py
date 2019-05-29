@@ -1,5 +1,6 @@
 __RCSID__ = "$Id$"
 
+
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import ThreadScheduler
 from DIRAC.Core.Base.ExecutorMindHandler import ExecutorMindHandler

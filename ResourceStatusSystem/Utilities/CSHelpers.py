@@ -366,10 +366,11 @@ def getSiteComputingElements(siteName):
   return []
 
 
-@deprecated("unused")
 def getSiteStorageElements(siteName):
   """
-    Gets all computing elements from /Resources/Sites/<>/<siteName>/SE
+    Gets all storage elements from /Resources/Sites/<>/<siteName>/SE
+
+      Used by WebApp/SiteSummaryHandler.py
   """
 
   _basePath = 'Resources/Sites'

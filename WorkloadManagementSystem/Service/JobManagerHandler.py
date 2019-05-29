@@ -12,7 +12,7 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC import gConfig, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.DISET.MessageClient import MessageClient
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
@@ -97,15 +97,15 @@ class JobManagerHandler(RequestHandler):
       return
     result = self.msgClient.createMessage("OptimizeJobs")
     if not result['OK']:
-      self.log.error("Cannot create Optimize message: %s" % result['Message'])
+      self.log.error("Cannot create Optimize message", result['Message'])
       return
     msgObj = result['Value']
     msgObj.jids = list(sorted(jids))
     result = self.msgClient.sendMessage(msgObj)
     if not result['OK']:
-      self.log.error("Cannot send Optimize message: %s" % result['Message'])
+      self.log.error("Cannot send Optimize message", result['Message'])
       return
-    self.log.info("Optimize msg sent for %s jobs" % len(jids))
+    self.log.info("Optimize msg sent", "for %s jobs" % len(jids))
 
   ###########################################################################
   types_getMaxParametricJobs = []
@@ -148,7 +148,7 @@ class JobManagerHandler(RequestHandler):
     jobClassAd = ClassAd(jobDesc)
     result = getParameterVectorLength(jobClassAd)
     if not result['OK']:
-      gLogger.error("Issue with getParameterVectorLength:", result['Message'])
+      self.log.error("Issue with getParameterVectorLength", result['Message'])
       return result
     nJobs = result['Value']
     parametricJob = False
@@ -156,8 +156,8 @@ class JobManagerHandler(RequestHandler):
       # if we are here, then jobDesc was the description of a parametric job. So we start unpacking
       parametricJob = True
       if nJobs > self.maxParametricJobs:
-        gLogger.error("Maximum of parametric jobs exceeded:",
-                      "limit %d smaller than number of jobs %d" % (self.maxParametricJobs, nJobs))
+        self.log.error("Maximum of parametric jobs exceeded:",
+                       "limit %d smaller than number of jobs %d" % (self.maxParametricJobs, nJobs))
         return S_ERROR(EWMSJDL, "Number of parametric jobs exceeds the limit of %d" % self.maxParametricJobs)
       result = generateParametricJobs(jobClassAd)
       if not result['OK']:
@@ -188,7 +188,7 @@ class JobManagerHandler(RequestHandler):
         return result
 
       jobID = result['JobID']
-      gLogger.info('Job %s added to the JobDB for %s/%s' % (jobID, self.ownerDN, self.ownerGroup))
+      self.log.info('Job added to the JobDB", "%s for %s/%s' % (jobID, self.ownerDN, self.ownerGroup))
 
       gJobLoggingDB.addLoggingRecord(jobID, result['Status'], result['MinorStatus'], source='JobManager')
 
@@ -224,7 +224,7 @@ class JobManagerHandler(RequestHandler):
     """
     jobList = self.__getJobList(jobIDs)
     if not jobList:
-      gLogger.error("Issue with __getJobList", ": invalid job specification %s" % str(jobIDs))
+      self.log.error("Issue with __getJobList", ": invalid job specification %s" % str(jobIDs))
       return S_ERROR(EWMSSUBM, 'Invalid job specification: ' + str(jobIDs))
 
     validJobList, _invalidJobList, _nonauthJobList, _ownerJobList = self.jobPolicy.evaluateJobRights(jobList,
@@ -269,7 +269,7 @@ class JobManagerHandler(RequestHandler):
   def __checkIfProxyUploadIsRequired(self):
     result = gProxyManager.userHasProxy(self.ownerDN, self.ownerGroup, validSeconds=18000)
     if not result['OK']:
-      gLogger.error("Can't check if the user has proxy uploaded:", result['Message'])
+      self.log.error("Can't check if the user has proxy uploaded", result['Message'])
       return True
     # Check if an upload is required
     return not result['Value']
@@ -323,7 +323,7 @@ class JobManagerHandler(RequestHandler):
       gtaskQueueDB.deleteJob(jobID)
       # gJobDB.deleteJobFromQueue(jobID)
       result = gJobDB.rescheduleJob(jobID)
-      gLogger.debug(str(result))
+      self.log.debug(str(result))
       if not result['OK']:
         return result
       gJobLoggingDB.addLoggingRecord(result['JobID'], result['Status'], result['MinorStatus'],
@@ -342,8 +342,7 @@ class JobManagerHandler(RequestHandler):
     self.__sendJobsToOptimizationMind(validJobList)
     return result
 
-  @staticmethod
-  def __deleteJob(jobID):
+  def __deleteJob(self, jobID):
     """ Delete one job
     """
     result = gJobDB.setJobStatus(jobID, 'Deleted', 'Checking accounting')
@@ -352,38 +351,37 @@ class JobManagerHandler(RequestHandler):
 
     result = gtaskQueueDB.deleteJob(jobID)
     if not result['OK']:
-      gLogger.warn('Failed to delete job from the TaskQueue')
+      self.log.warn('Failed to delete job from the TaskQueue')
 
     # if it was the last job for the pilot, clear PilotsLogging about it
     result = gPilotAgentsDB.getPilotsForJobID(jobID)
     if not result['OK']:
-      gLogger.error("Failed to get Pilots for JobID", result['Message'])
+      self.log.error("Failed to get Pilots for JobID", result['Message'])
       return result
     for pilot in result['Value']:
       res = gPilotAgentsDB.getJobsForPilot(pilot)
       if not res['OK']:
-        gLogger.error("Failed to get jobs for pilot", res['Message'])
+        self.log.error("Failed to get jobs for pilot", res['Message'])
         return res
       if not res['Value']:  # if list of jobs for pilot is empty, delete pilot and pilotslogging
         result = gPilotAgentsDB.getPilotInfo(pilotID=pilot)
         if not result['OK']:
-          gLogger.error("Failed to get pilot info", result['Message'])
+          self.log.error("Failed to get pilot info", result['Message'])
           return result
         pilotRef = result[0]['PilotJobReference']
         ret = gPilotAgentsDB.deletePilot(pilot)
         if not ret['OK']:
-          gLogger.error("Failed to delete pilot from PilotAgentsDB", ret['Message'])
+          self.log.error("Failed to delete pilot from PilotAgentsDB", ret['Message'])
           return ret
         if enablePilotsLogging:
           ret = gPilotsLoggingDB.deletePilotsLogging(pilotRef)
           if not ret['OK']:
-            gLogger.error("Failed to delete pilot logging from PilotAgentsDB", ret['Message'])
+            self.log.error("Failed to delete pilot logging from PilotAgentsDB", ret['Message'])
             return ret
 
     return S_OK()
 
-  @staticmethod
-  def __killJob(jobID, sendKillCommand=True):
+  def __killJob(self, jobID, sendKillCommand=True):
     """  Kill one job
     """
     if sendKillCommand:
@@ -391,13 +389,13 @@ class JobManagerHandler(RequestHandler):
       if not result['OK']:
         return result
 
-    gLogger.info('Job %d is marked for termination' % jobID)
+    self.log.info('Job marked for termination', jobID)
     result = gJobDB.setJobStatus(jobID, 'Killed', 'Marked for termination')
     if not result['OK']:
-      gLogger.warn('Failed to set job Killed status', result['Message'])
+      self.log.warn('Failed to set job Killed status', result['Message'])
     result = gtaskQueueDB.deleteJob(jobID)
     if not result['OK']:
-      gLogger.warn('Failed to delete job from the TaskQueue', result['Message'])
+      self.log.warn('Failed to delete job from the TaskQueue', result['Message'])
 
     return S_OK()
 
@@ -448,18 +446,18 @@ class JobManagerHandler(RequestHandler):
 
     if stagingJobList:
       stagerClient = StorageManagerClient()
-      gLogger.info('Going to send killing signal to stager as well!')
+      self.log.info('Going to send killing signal to stager as well!')
       result = stagerClient.killTasksBySourceTaskID(stagingJobList)
       if not result['OK']:
-        gLogger.warn('Failed to kill some Stager tasks: %s' % result['Message'])
+        self.log.warn('Failed to kill some Stager tasks', result['Message'])
 
     if nonauthJobList or badIDs:
       result = S_ERROR('Some jobs failed deletion')
       if nonauthJobList:
-        gLogger.warn("Non-authorized JobIDs won't be deleted", str(nonauthJobList))
+        self.log.warn("Non-authorized JobIDs won't be deleted", str(nonauthJobList))
         result['NonauthorizedJobIDs'] = nonauthJobList
       if badIDs:
-        gLogger.warn("JobIDs failed to be deleted", str(badIDs))
+        self.log.warn("JobIDs failed to be deleted", str(badIDs))
         result['FailedJobIDs'] = badIDs
       return result
 
