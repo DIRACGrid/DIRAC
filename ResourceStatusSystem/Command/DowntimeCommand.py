@@ -140,8 +140,7 @@ class DowntimeCommand(Command):
       try:
         seOptions = StorageElement(elementName).options
       except AttributeError:  # Sometimes the SE can't be instantiated properly
-        self.log.error(
-            "Failure instantiating StorageElement object for %s" % elementName)
+        self.log.error("Failure instantiating StorageElement object", elementName)
         return S_ERROR("Failure instantiating StorageElement")
       if 'SEType' in seOptions:
         # Type should follow the convention TXDY
@@ -167,7 +166,7 @@ class DowntimeCommand(Command):
       # WARNING: this method presupposes that the server is an FTS3 type
       gocSite = getGOCFTSName(elementName)
       if not gocSite['OK']:
-        self.log.warn("%s not in Resources/FTSEndpoints/FTS3 ?" % elementName)
+        self.log.warn("FTS not in Resources/FTSEndpoints/FTS3 ?", elementName)
       else:
         elementName = gocSite['Value']
 
@@ -235,9 +234,10 @@ class DowntimeCommand(Command):
 
       if dt['gOCDBServiceType'] and gOCDBServiceType:
         if gOCDBServiceType.lower() != downDic['SERVICE_TYPE'].lower():
-          return S_ERROR("SERVICE_TYPE mismatch between GOCDB (%s) and CS (%s) for %s" % (gOCDBServiceType,
-                                                                                          downDic['SERVICE_TYPE'],
-                                                                                          dt['Name']))
+          self.log.warn("SERVICE_TYPE mismatch",
+                        "between GOCDB (%s) and CS (%s) for %s" % (gOCDBServiceType,
+                                                                   downDic['SERVICE_TYPE'],
+                                                                   dt['Name']))
 
       dt['DowntimeID'] = downtime
       dt['Element'] = element
@@ -360,13 +360,13 @@ class DowntimeCommand(Command):
     if ce['OK']:
       resources.extend(ce['Value'])
 
-    self.log.verbose('Processing Sites: %s' % ', '.join(gocSites))
+    self.log.verbose('Processing Sites', ', '.join(gocSites))
 
     siteRes = self.doNew(('Site', gocSites))
     if not siteRes['OK']:
       self.metrics['failed'].append(siteRes['Message'])
 
-    self.log.verbose('Processing Resources: %s' % ', '.join(resources))
+    self.log.verbose('Processing Resources', ', '.join(resources))
 
     resourceRes = self.doNew(('Resource', resources))
     if not resourceRes['OK']:
