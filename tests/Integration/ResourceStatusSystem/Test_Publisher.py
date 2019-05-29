@@ -11,14 +11,14 @@ import sys
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
-from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC import gLogger
+from DIRAC.ResourceStatusSystem.Client.PublisherClient import PublisherClient
 
 
 class TestPublisherTestCase(unittest.TestCase):
 
   def setUp(self):
-    self.publisher = RPCClient("ResourceStatus/Publisher")
+    self.publisher = PublisherClient()
     gLogger.setLevel('DEBUG')
 
   def tearDown(self):
