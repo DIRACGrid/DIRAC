@@ -2442,11 +2442,12 @@ def checkoutFromGit(moduleName, sourceURL, tagVersion, destinationDir=None):
 
   if exportRes:
     return S_ERROR("Error while exporting from git")
+
+  # replacing the code
   if os.path.exists(fDirName + '/' + moduleName):
     cmd = "ln -s %s/%s" % (codeRepo, moduleName)
   else:
-    cmd = "mv %s %s" % (codeRepo, moduleName)
-
+    cmd = "mv %s %s" % (fDirName, os.path.join(cliParams.targetPath, moduleName))
   logNOTICE("Executing: %s" % cmd)
   retVal = os.system(cmd)
 
