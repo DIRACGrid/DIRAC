@@ -29,6 +29,7 @@ More Links
 ==========
 
 * :ref:`adminTS`
+* See the options for services and agents in code documentation of the :mod:`~DIRAC.TransformationSystem`
 
 Installing the TransformationSystem
 ===================================
@@ -67,11 +68,11 @@ The TS is no different than any other DIRAC system. The installation steps are t
   Loading configuration template /home/diracuser/DiracInstallation/DIRAC/TransformationSystem/ConfigTemplate.cfg
   Adding to CS agent Transformation/InputDataAgent
   agent Transformation_InputDataAgent is installed, runit status: Run
-  [dirac-tuto]$ install agent Transformation WorkflowTaskAgent -p PollingTime=30
+  [dirac-tuto]$ install agent Transformation WorkflowTaskAgent -p PollingTime=30 -p MonitorTasks=True -p MonitorFiles=True
   Loading configuration template /home/diracuser/DiracInstallation/DIRAC/TransformationSystem/ConfigTemplate.cfg
   Adding to CS agent Transformation/WorkflowTaskAgent
   agent Transformation_WorkflowTaskAgent is installed, runit status: Run
-  [dirac-tuto]$ install agent Transformation RequestTaskAgent -p PollingTime=30
+  [dirac-tuto]$ install agent Transformation RequestTaskAgent -p PollingTime=30 -p MonitorTasks=True -p MonitorFiles=True
   Loading configuration template /home/diracuser/DiracInstallation/DIRAC/TransformationSystem/ConfigTemplate.cfg
   Adding to CS agent Transformation/RequestTaskAgent
   agent Transformation_RequestTaskAgent is installed, runit status: Run
