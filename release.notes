@@ -1,8 +1,9 @@
-[v6r22-pre1]
+[v6r22-pre2]
 
 *WorkloadManagementSystem
 CHANGE: (#4049) Pilot wrapper for pilot3: download files at runtime
 NEW: (#4045) PilotsHandler service (to interact with PilotAgentsDB)
+FIX: (#4074) fixed PilotManager service name in ConfigTemplate.cfg
 
 *ConfigurationSystem
 NEW: (#4053) VOMS2CSSynchronizer/VOMS2CSAgent - enable automatic synchronization of the 
@@ -37,6 +38,7 @@ FIX: (#4066) The dirac-transformation-replication script will now create valid t
 
 *docs
 CHANGE: (#4069) DIRAC installation procedure is updated taking account DIRACOS
+CHANGE: (#4094) Pilots3 options: moved to /Operation/Pilot section
 
 [v6r21p5]
 
