@@ -53,7 +53,7 @@ Then we create the list of LFNs we just uploaded::
 The easiest way to create a transformation to replicate files is by using the
 :doc:`/AdministratorGuide/CommandReference/dirac-transformation-replication` command::
 
-  [diracuser@dirac-tuto ~]$ dirac-transformation-replication 0 StorageElementTwo --Plugin Broadcast --Enable --SourceSEs StorageElementOne
+  [diracuser@dirac-tuto ~]$ dirac-transformation-replication 0 StorageElementTwo --Plugin Broadcast --Enable
   Created transformation NNN
   Successfully created replication transformation
 
@@ -118,7 +118,7 @@ script that creates a removal transformation:
     myTrans.setGroupSize(groupSize)
 
     # the transformation plugin defines which input files are treated, and how they are grouped, for example
-    plugin = 'Standard'
+    plugin = 'Broadcast'
     myTrans.setPlugin(plugin)
 
     # the 'body' of the transformation, defines a list of Request Operations
@@ -235,7 +235,7 @@ We can also use the command ``dirac-dms-find-lfns`` to search for files with giv
 
 Now we create a transformation, which uses the metadata to pick up the files::
 
- [diracuser@dirac-tuto ~]$  dirac-transformation-replication 2 StorageElementTwo --Plugin=Broadcast --Enable --SourceSEs StorageElementOne
+ [diracuser@dirac-tuto ~]$  dirac-transformation-replication 2 StorageElementTwo --Plugin=Broadcast --Enable
  Created transformation LLL
  Successfully created replication transformation
 
