@@ -14,6 +14,9 @@ NEW: (#4053) AuthManager - interpret the Suspended user status considering suspe
      users as anonymous visitors
 CHANGE: (#4053) The use of CS.py module is replaced by the use of Registry.py and CSGlobals.py
 
+*RSS
+CHANGE: clients: using DIRAC.Core.Base.Client as base
+
 [v6r21p7]
 
 *Core
