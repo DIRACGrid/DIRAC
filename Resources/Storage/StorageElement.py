@@ -34,6 +34,7 @@ from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 
 __RCSID__ = "$Id$"
 
@@ -397,11 +398,24 @@ class StorageElementItem(object):
     filteredPlugins = self.__filterPlugins('getOccupancy')
     if not filteredPlugins:
       return S_ERROR(errno.EPROTONOSUPPORT, "No storage plugins to query the occupancy")
+
+    occupancyPlugin = self.options.get('OccupancyPlugin')
+    if occupancyPlugin:
+      res = ObjectLoader().loadObject(occupancyPlugin)
+      if not res['OK']:
+        return S_ERROR(errno.EPROTONOSUPPORT, 'Failed to load occupancy plugin %s' % occupancyPlugin)
+      log.verbose('Use occupancy plugin %s' % occupancyPlugin)
+      occupancyPlugin = res['Value']()
+
     # Try all of the storages one by one
     for storage in filteredPlugins:
 
-      # The result of the plugin is always in B
-      res = storage.getOccupancy(**kwargs)
+      if occupancyPlugin:
+        # Call occupancy plugin if requested
+        res = occupancyPlugin.getOccupancy(storage)
+      else:
+        # The result of the plugin is always in B
+        res = storage.getOccupancy(**kwargs)
       if res['OK']:
         occupancyDict = res['Value']
 
