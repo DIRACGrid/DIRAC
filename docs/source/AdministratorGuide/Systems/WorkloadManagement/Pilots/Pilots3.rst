@@ -24,6 +24,17 @@ at every configuration update, the pilot.json file content will also be updated 
 If *UpdatePilotCStoJSONFile* is True, then also the Operations option *Pilot/<...>/pilotFileServer* should be set to the webserver chosen for the upload.
 We suggest to use simply the DIRAC webserver.
 
+If you use the DIRAC webserver please:: 
+
+  - add the following option to the WebApp CS section:
+       
+       /WebApp/StaticDirs=pilot
+       
+  - create the following directory in the DIRAC webserver machine:
+   
+     mkdir /opt/dirac/webRoot/www/pilot/
+  
+
 Other options that can be set also in the Operations part of the CS include:
 
 +------------------------------------+--------------------------------------------+-------------------------------------------------------------------------+
