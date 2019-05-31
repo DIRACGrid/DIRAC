@@ -367,7 +367,7 @@ class PilotCStoJSONSynchronizer(object):
       with open(pilotScript, "rb") as psf:
         script = psf.read()
       data = {'filename': filename, 'data': script}
-    
+
     bd = BundleDeliveryClient()
     retVal = bd.getCAs()
     casFile = None
@@ -376,7 +376,7 @@ class PilotCStoJSONSynchronizer(object):
       casFile = certifi.where()
     else:
       casFile = retVal['Value']
-      
+
     resp = requests.post('https://%s/DIRAC/upload' % self.pilotFileServer,
                          data=data,
                          verify=casFile,
