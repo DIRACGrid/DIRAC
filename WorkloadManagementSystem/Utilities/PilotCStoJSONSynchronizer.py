@@ -15,12 +15,14 @@ import os
 import glob
 import tarfile
 import requests
+import certifi
 
 from git import Repo
 
 from DIRAC import gLogger, S_OK, gConfig, S_ERROR
 from DIRAC.Core.Security.Locations import getHostCertificateAndKeyLocation
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClient
 
 
 class PilotCStoJSONSynchronizer(object):
@@ -365,9 +367,19 @@ class PilotCStoJSONSynchronizer(object):
       with open(pilotScript, "rb") as psf:
         script = psf.read()
       data = {'filename': filename, 'data': script}
-
+    
+    bd = BundleDeliveryClient()
+    retVal = bd.getCAs()
+    casFile = None
+    if not retVal['OK']:
+      gLogger.error("CAs file does not exists:", retVal['Message'])
+      casFile = certifi.where()
+    else:
+      casFile = retVal['Value']
+      
     resp = requests.post('https://%s/DIRAC/upload' % self.pilotFileServer,
                          data=data,
+                         verify = casFile,
                          cert=self.certAndKeyLocation)
 
     if resp.status_code != 200:
