@@ -4,16 +4,17 @@
 
 '''
 
-#pylint: disable=too-many-arguments
+# pylint: disable=too-many-arguments
 
-__RCSID__ = '$Id: $'
+__RCSID__ = '$Id$'
 
-from DIRAC                                             import gLogger, S_OK
-from DIRAC.Core.DISET.RequestHandler                   import RequestHandler
-from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB    import ResourceStatusDB
+from DIRAC import gLogger, S_OK
+from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import ResourceStatusDB
 
 
 db = None
+
 
 def convert(table, params):
   """ Conversion utility for backward compatibility
@@ -44,7 +45,7 @@ def convert(table, params):
   return params, table
 
 
-def initializeResourceStatusHandler( _serviceInfo ):
+def initializeResourceStatusHandler(_serviceInfo):
   '''
     Handler initialization, where we set the ResourceStatusDB as global db, and
     we instantiate the synchronizer.
@@ -57,7 +58,8 @@ def initializeResourceStatusHandler( _serviceInfo ):
 
 ################################################################################
 
-class ResourceStatusHandler( RequestHandler ):
+
+class ResourceStatusHandler(RequestHandler):
   '''
   The ResourceStatusHandler exposes the DB front-end functions through a XML-RPC
   server, functionalities inherited from
@@ -81,22 +83,21 @@ class ResourceStatusHandler( RequestHandler ):
    >>> server = RPCCLient( "ResourceStatus/ResourceStatus" )
   '''
 
-  def __init__( self, *args, **kwargs ):
+  def __init__(self, *args, **kwargs):
 
-
-    super( ResourceStatusHandler, self ).__init__( *args, **kwargs )
+    super(ResourceStatusHandler, self).__init__(*args, **kwargs)
 
   @staticmethod
-  def __logResult( methodName, result ):
+  def __logResult(methodName, result):
     '''
       Method that writes to log error messages
     '''
 
-    if not result[ 'OK' ]:
-      gLogger.error( '%s%s' % ( methodName, result[ 'Message' ] ) )
+    if not result['OK']:
+      gLogger.error('%s%s' % (methodName, result['Message']))
 
   @staticmethod
-  def setDatabase( database ):
+  def setDatabase(database):
     '''
     This method let us inherit from this class and overwrite the database object
     without having problems with the global variables.
@@ -110,9 +111,9 @@ class ResourceStatusHandler( RequestHandler ):
     global db
     db = database
 
+  types_insert = [[basestring, dict], dict]
 
-  types_insert = [ [basestring, dict], dict ]
-  def export_insert( self, table, params ):
+  def export_insert(self, table, params):
     '''
     This method is a bridge to access :class:`ResourceStatusDB` remotely. It
     does not add neither processing nor validation. If you need to know more
@@ -130,19 +131,18 @@ class ResourceStatusHandler( RequestHandler ):
     :return: S_OK() || S_ERROR()
     '''
 
-    if isinstance(table, dict): #for backward compatibility: conversion is needed
+    if isinstance(table, dict):  # for backward compatibility: conversion is needed
       params, table = convert(table, params)
 
-    gLogger.info( 'insert: %s %s' % ( table, params ) )
-    res = db.insert( table, params )
-    self.__logResult( 'insert', res )
+    gLogger.info('insert: %s %s' % (table, params))
+    res = db.insert(table, params)
+    self.__logResult('insert', res)
 
     return res
 
+  types_select = [[basestring, dict], dict]
 
-
-  types_select = [ [basestring, dict], dict ]
-  def export_select( self, table, params ):
+  def export_select(self, table, params):
     '''
     This method is a bridge to access :class:`ResourceStatusDB` remotely. It
     does not add neither processing nor validation. If you need to know more
@@ -160,18 +160,18 @@ class ResourceStatusHandler( RequestHandler ):
     :return: S_OK() || S_ERROR()
     '''
 
-    if isinstance(table, dict): #for backward compatibility: conversion is needed
+    if isinstance(table, dict):  # for backward compatibility: conversion is needed
       params, table = convert(table, params)
 
-    gLogger.info( 'select: %s %s' % ( table, params ) )
-    res = db.select( table, params )
-    self.__logResult( 'select', res )
+    gLogger.info('select: %s %s' % (table, params))
+    res = db.select(table, params)
+    self.__logResult('select', res)
 
     return res
 
+  types_delete = [[basestring, dict], dict]
 
-  types_delete = [ [basestring, dict], dict ]
-  def export_delete( self, table, params ):
+  def export_delete(self, table, params):
     '''
     This method is a bridge to access :class:`ResourceStatusDB` remotely.\
     It does not add neither processing nor validation. If you need to know more \
@@ -190,18 +190,18 @@ class ResourceStatusHandler( RequestHandler ):
     :return: S_OK() || S_ERROR()
     '''
 
-    if isinstance(table, dict): #for backward compatibility: conversion is needed
+    if isinstance(table, dict):  # for backward compatibility: conversion is needed
       params, table = convert(table, params)
 
-    gLogger.info( 'delete: %s %s' % ( table, params ) )
-    res = db.delete( table, params )
-    self.__logResult( 'delete', res )
+    gLogger.info('delete: %s %s' % (table, params))
+    res = db.delete(table, params)
+    self.__logResult('delete', res)
 
     return res
 
+  types_addOrModify = [[basestring, dict], dict]
 
-  types_addOrModify = [ [basestring, dict], dict ]
-  def export_addOrModify( self, table, params ):
+  def export_addOrModify(self, table, params):
     '''
     This method is a bridge to access :class:`ResourceStatusDB` remotely.\
     It does not add neither processing nor validation. If you need to know more \
@@ -220,18 +220,18 @@ class ResourceStatusHandler( RequestHandler ):
     :return: S_OK() || S_ERROR()
     '''
 
-    if isinstance(table, dict): #for backward compatibility: conversion is needed
+    if isinstance(table, dict):  # for backward compatibility: conversion is needed
       params, table = convert(table, params)
 
-    gLogger.info( 'addOrModify: %s %s' % ( table, params ) )
-    res = db.addOrModify( table, params )
-    self.__logResult( 'addOrModify', res )
+    gLogger.info('addOrModify: %s %s' % (table, params))
+    res = db.addOrModify(table, params)
+    self.__logResult('addOrModify', res)
 
     return res
 
+  types_addIfNotThere = [[basestring, dict], dict]
 
-  types_addIfNotThere = [ [basestring, dict], dict ]
-  def export_addIfNotThere( self, table, params ):
+  def export_addIfNotThere(self, table, params):
     '''
     This method is a bridge to access :class:`ResourceStatusDB` remotely.\
     It does not add neither processing nor validation. If you need to know more \
@@ -250,15 +250,11 @@ class ResourceStatusHandler( RequestHandler ):
     :return: S_OK() || S_ERROR()
     '''
 
-    if isinstance(table, dict): #for backward compatibility: conversion is needed
+    if isinstance(table, dict):  # for backward compatibility: conversion is needed
       params, table = convert(table, params)
 
-    gLogger.info( 'addIfNotThere: %s %s' % ( table, params ) )
-    res = db.addIfNotThere( table, params )
-    self.__logResult( 'addIfNotThere', res )
+    gLogger.info('addIfNotThere: %s %s' % (table, params))
+    res = db.addIfNotThere(table, params)
+    self.__logResult('addIfNotThere', res)
 
     return res
-
-
-################################################################################
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
