@@ -379,7 +379,7 @@ class PilotCStoJSONSynchronizer(object):
       
     resp = requests.post('https://%s/DIRAC/upload' % self.pilotFileServer,
                          data=data,
-                         verify = casFile,
+                         verify=casFile,
                          cert=self.certAndKeyLocation)
 
     if resp.status_code != 200:
