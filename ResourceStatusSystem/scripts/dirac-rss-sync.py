@@ -60,7 +60,7 @@ def parseSwitches():
 
   # Default values
   switches.setdefault('element', None)
-  switches.setdefault('defaultStatus', None)
+  switches.setdefault('defaultStatus', 'Banned')
   if not switches['element'] in ('all', 'Site', 'Resource', 'Node', None):
     subLogger.error("Found %s as element switch" % switches['element'])
     subLogger.error("Please, check documentation below")
@@ -84,19 +84,11 @@ DEFAULT_STATUS = switchDict.get('defaultStatus', 'Banned')
 # We can define the script body now
 
 from DIRAC import gConfig
-from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.ResourceStatusSystem.Utilities import Synchronizer, CSHelpers, RssConfiguration
 from DIRAC.ResourceStatusSystem.Client import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.PolicySystem import StateMachine
 from DIRAC.WorkloadManagementSystem.Client.WMSAdministratorClient import WMSAdministratorClient
-
-result = getProxyInfo()
-if result['OK']:
-  tokenOwner = result['Value']['username']
-else:
-  gLogger.error('No proxy found')
-  DIRACExit(1)
 
 
 def synchronize():
@@ -143,8 +135,12 @@ def initSites():
 
   for site, elements in sites['Value'].iteritems():
     result = rssClient.addOrModifyStatusElement("Site", "Status",
-                                                name=site, statusType='all', status=elements[0],
-                                                elementType=site.split('.')[0], reason='dirac-rss-sync')
+						name=site,
+						statusType='all',
+						status=elements[0],
+						elementType=site.split('.')[0],
+						tokenOwner='rs_svc',
+						reason='dirac-rss-sync')
     if not result['OK']:
       subLogger.error(result['Message'])
       DIRACExit(1)
@@ -204,9 +200,12 @@ def initSEs():
       statusTypesList.remove(statusType)
 
       subLogger.debug([se, statusType, status, reason])
-      result = rssClient.addOrModifyStatusElement('Resource', 'Status', name=se,
-                                                  statusType=statusType, status=status,
+      result = rssClient.addOrModifyStatusElement('Resource', 'Status',
+						  name=se,
+						  statusType=statusType,
+						  status=status,
                                                   elementType='StorageElement',
+						  tokenOwner='rs_svc',
                                                   reason=reason)
 
       if not result['OK']:
@@ -217,10 +216,12 @@ def initSEs():
     # Backtracking: statusTypes not present on CS
     for statusType in statusTypesList:
 
-      result = rssClient.addOrModifyStatusElement('Resource', 'Status', name=se,
-                                                  statusType=statusType, status=DEFAULT_STATUS,
+      result = rssClient.addOrModifyStatusElement('Resource', 'Status',
+						  name=se,
+						  statusType=statusType,
+						  status=DEFAULT_STATUS,
                                                   elementType='StorageElement',
-
+						  tokenOwner='rs_svc',
                                                   reason=reason)
       if not result['OK']:
         subLogger.error('Error in backtracking for %s,%s,%s' % (se, statusType, status))
