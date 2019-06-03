@@ -622,16 +622,14 @@ class DirectoryTreeBase:
     if not result['OK']:
       return result
 
-    lfnDict = {}
-    lfnIDList = []
+    dirLfnDict = {}
+    idLfnDict = {}
     for dir_, fname, fileID in result['Value']:
-      lfnDict.setdefault( dir_, [] )
-      lfnDict[dir_].append( fname )
-      lfnIDList.append( fileID )
+      dirLfnDict.setdefault(dir_, []).append(fname)
+      idLfnDict[fileID] = dir_+'/'+fname
 
-    result = S_OK( lfnDict )
-    result['LFNIDList'] = lfnIDList
-    return result
+    return S_OK( {"DirLFNDict": dirLfnDict,
+                  "IDLFNDict": idLfnDict} )
 
   def _getDirectoryContents( self, path, details = False ):
     """ Get contents of a given directory
