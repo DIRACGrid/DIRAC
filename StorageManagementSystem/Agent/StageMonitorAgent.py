@@ -1,3 +1,15 @@
+"""StageMonitorAgent
+
+This agents queries the storage element about staging requests, to see if files are staged or not.
+
+.. literalinclude:: ../ConfigTemplate.cfg
+  :start-after: ##BEGIN StageMonitorAgent
+  :end-before: ##END
+  :caption: StageMonitorAgent options
+  :dedent: 2
+
+"""
+
 __RCSID__ = "$Id$"
 
 from DIRAC import gLogger, S_OK, S_ERROR, siteName
@@ -21,6 +33,7 @@ class StageMonitorAgent( AgentModule ):
     # /Operations/Shifter/DataManager
     # the shifterProxy option in the Configuration can be used to change this default.
     self.am_setOption( 'shifterProxy', 'DataManager' )
+    self.storagePlugins = self.am_getOption('StoragePlugins', [])
 
     return S_OK()
 
@@ -73,7 +86,7 @@ class StageMonitorAgent( AgentModule ):
     oAccounting = DataOperation()
     oAccounting.setStartTime()
 
-    res = StorageElement( storageElement ).getFileMetadata( lfnRepIDs )
+    res = StorageElement(storageElement, plugins=self.storagePlugins).getFileMetadata(lfnRepIDs)
     if not res['OK']:
       gLogger.error( "StageMonitor.__monitorStorageElementStageRequests: Completely failed to monitor stage requests for replicas.", res['Message'] )
       return

@@ -1,7 +1,7 @@
 __RCSID__ = "$Id$"
 
-import types
-from DIRAC import gLogger, S_OK, S_ERROR
+
+from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import ThreadScheduler
 from DIRAC.Core.Base.ExecutorMindHandler import ExecutorMindHandler
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobState import JobState
@@ -11,40 +11,13 @@ from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 
 
-def cleanTaskQueues():
-  tqDB = TaskQueueDB()
-  jobDB = JobDB()
-  logDB = JobLoggingDB()
-
-  result = tqDB.enableAllTaskQueues()
-  if not result['OK']:
-    return result
-  result = tqDB.findOrphanJobs()
-  if not result['OK']:
-    return result
-  for jid in result['Value']:
-    result = tqDB.deleteJob(jid)
-    if not result['OK']:
-      gLogger.error("Cannot delete from TQ job %s" % jid, result['Message'])
-      continue
-    result = jobDB.rescheduleJob(jid)
-    if not result['OK']:
-      gLogger.error("Cannot reschedule in JobDB job %s" % jid, result['Message'])
-      continue
-    result = logDB.addLoggingRecord(jid, "Received", "", "", source="JobState")
-    if not result['OK']:
-      gLogger.error("Cannot add logging record in JobLoggingDB %s" % jid, result['Message'])
-      continue
-  return S_OK()
-
-
 class OptimizationMindHandler(ExecutorMindHandler):
 
   __jobDB = False
   __optimizationStates = ['Received', 'Checking']
   __loadTaskId = False
 
-  MSG_DEFINITIONS = {'OptimizeJobs': {'jids': (types.ListType, types.TupleType)}}
+  MSG_DEFINITIONS = {'OptimizeJobs': {'jids': (list, tuple)}}
 
   auth_msg_OptimizeJobs = ['all']
 
@@ -120,7 +93,8 @@ class OptimizationMindHandler(ExecutorMindHandler):
     cls.setFreezeOnFailedDispatch(False)
     cls.setFreezeOnUnknownExecutor(False)
     cls.setAllowedClients("JobManager")
-    cleanTaskQueues()    
+    JobState.checkDBAccess()
+    JobState.cleanTaskQueues()
     period = cls.srv_getCSOption("LoadJobPeriod", 60)
     result = ThreadScheduler.gThreadScheduler.addPeriodicTask(period, cls.__loadJobs)
     if not result['OK']:

@@ -113,7 +113,7 @@ with `setEvenOdd`, and then execute this function to test it.
 
     myTrans = Transformation()
     uniqueIdentifier = "OddOnly"
-    myTrans.setTransformationName("RemoveReplicas_%s" % uniqueIdentifier)
+    myTrans.setTransformationName("ReplicateAndRegister_%s" % uniqueIdentifier)
     myTrans.setDescription("Replicate only Odd files from StorageElementOne")
     myTrans.setLongDescription("Replicate only Odd files from StorageElementOne")
     myTrans.setType('Replication')

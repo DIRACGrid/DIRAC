@@ -10,7 +10,7 @@ FTS3 support in DIRAC
    :depth: 2
 
 
-DIRAC DMS can be configured to make use of FTS3 servers in order to schedule and monitor efficient transfer of large amounts of data between SEs. As of today, FTS servers are only able to handle transfers between SRM SEs.
+DIRAC DMS can be configured to make use of FTS3 servers in order to schedule and monitor efficient transfer of large amounts of data between SEs. Please see :ref:`multiProtocol` for more details about the protocol used for transfers.
 
 The transfers using FTS come from the RequestManagementSystem ( see :ref:`requestManagementSystem`). It will receive the files to transfer, as well as the list of destinations. If no source is defined, it will choose one. The files will then be grouped together and submited as jobs to the fts servers. These jobs will be monitored, retried if needed, the new replicas will be registered, and the status of the files will be reported back to the RMS.
 
@@ -27,7 +27,7 @@ FTS3 Installation
 
 One needs to install an FTS3DB, the FTS3Manager, and the FTS3Agent. Install the
 FTS3DB with `dirac-install-db` or directly on your mysql server and add the
-Databse in the Configuration System.
+Database in the Configuration System::
 
   dirac-admin-sysadmin-cli -H diracserver034.institute.tld
   > install service DataManagement FTS3Manager
@@ -39,10 +39,11 @@ Databse in the Configuration System.
 Enable FTS transfers in the RMS
 ===============================
 
-In order for the transfers to be submitted to the FTS system:
+In order for the transfers to be submitted to the FTS system, the following options in the configuration section ``Systems/RequestManagement/Agents/RequestExecutingAgent/OperationHandlers/ReplicateAndRegister/`` need to be set:
 
-   * `Systems/RequestManagementSystem/Agents/RequestExecutingAgent/OperationHandlers/ReplicateAndRegister/FTSMode` must be True
-   * `Systems/RequestManagementSystem/Agents/RequestExecutingAgent/OperationHandlers/ReplicateAndRegister/FTSBannedGroups` should contain the list of groups for which you'd rather do direct transfers.
+   * ``FTSMode`` must be True
+   * ``FTSBannedGroups`` should contain the list of groups for which you'd rather do direct transfers.
+   * ``UseNewFTS3`` should be True in order to use this new FTS system (soon to be deprecated)
 
 ========================
 Operations configuration
@@ -56,7 +57,7 @@ Operations configuration
 FTS servers definition
 ======================
 
-The servers to be used are defined in the `Resources/FTSEndpoints/FTS3` section. Example:
+The servers to be used are defined in the ``Resources/FTSEndpoints/FTS3`` section. Example:
 
 .. code-block:: python
 
@@ -71,17 +72,16 @@ FTS3Agent
 
 This agent is in charge of performing and monitoring all the transfers. Note that this agent can be duplicated as many time as you wish.
 
-See :py:mod:`~DIRAC.DataManagementSystem.Agent.FTS3Agent` for configuration details.
+See: :py:mod:`~DIRAC.DataManagementSystem.Agent.FTS3Agent` for configuration details.
 
 FTS3 system overview
 --------------------
 
 There are two possible tasks that can be done with the FTS3 system: transferring and staging.
 
-Each of these task is performed by a dedicated FTS3Operation: *FTS3TransferOperation* and *FTS3StagingOperation*.
-These FTS3Operation contain a list of FTS3File. An FTS3File is for a specific targetSE. The FTS3Agent will take an FTS3Operation, group the files following some criteria (see later) into FTS3Jobs. These FTS3Jobs will then be submitted to the FTS3 servers to become real FTS3 jobs. These Jobs are regularly monitored by the FTS3Agent. When all the FTS3Files have reached a final status, the FTS3Operation callback method is called. This callback method depends on the type of FTS3Operation.
+Each of these task is performed by a dedicated ``FTS3Operation``: ``FTS3TransferOperation`` and ``FTS3StagingOperation``. These ``FTS3Operation`` contain a list of ``FTS3File``. An ``FTS3File`` is for a specific targetSE. The ``FTS3Agent`` will take an ``FTS3Operation``, group the files following some criteria (see later) into ``FTS3Jobs``. These ``FTS3Jobs`` will then be submitted to the FTS3 servers to become real FTS3 jobs. These Jobs are regularly monitored by the ``FTS3Agent``. When all the ``FTS3Files`` have reached a final status, the ``FTS3Operation`` callback method is called. This callback method depends on the type of ``FTS3Operation``.
 
-Note that by default, the FTS3Agent is meant to run without shifter proxy. It will however download the proxy of the user submitting the job in order to delegate it to FTS. This also means that it is not able to perform registration in the DFC, and relies on Operation callback for that.
+Note that by default, the ``FTS3Agent`` is meant to run without shifter proxy. It will however download the proxy of the user submitting the job in order to delegate it to FTS. This also means that it is not able to perform registration in the DFC, and relies on Operation callback for that.
 
 
 =====================

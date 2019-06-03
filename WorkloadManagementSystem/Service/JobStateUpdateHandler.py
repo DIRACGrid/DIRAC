@@ -7,19 +7,17 @@
 
 """
 
-# from types import *
-from __future__ import absolute_import
 import time
+from __future__ import absolute_import
+
+from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities import Time
-from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.ElasticJobDB import ElasticJobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 import six
 from six.moves import range
-
-__RCSID__ = "$Id$"
 
 # This is a global instance of the JobDB class
 jobDB = False
@@ -281,7 +279,7 @@ class JobStateUpdateHandler(RequestHandler):
     """ Set the application status for job specified by its JobId.
     """
 
-    result = jobDB.getJobStatus(int(jobID))
+    result = jobDB.getJobAttributes(int(jobID), ['Status', 'MinorStatus'])
     if not result['OK']:
       return result
 
@@ -359,7 +357,7 @@ class JobStateUpdateHandler(RequestHandler):
 
     result = jobDB.setHeartBeatData(int(jobID), staticData, dynamicData)
     if not result['OK']:
-      gLogger.warn('Failed to set the heart beat data for job %d ' % int(jobID))
+      self.log.warn('Failed to set the heart beat data', 'for job %d ' % int(jobID))
 
     # Restore the Running status if necessary
     # result = jobDB.getJobAttributes(jobID,['Status'])
@@ -373,7 +371,7 @@ class JobStateUpdateHandler(RequestHandler):
     # if status == "Stalled" or status == "Matched":
     #  result = jobDB.setJobAttribute(jobID,'Status','Running',True)
     #  if not result['OK']:
-    #    gLogger.warn('Failed to restore the job status to Running')
+    #    self.log.warn('Failed to restore the job status to Running')
 
     jobMessageDict = {}
     result = jobDB.getJobCommand(int(jobID))
