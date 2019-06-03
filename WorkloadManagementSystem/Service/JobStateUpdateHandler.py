@@ -7,8 +7,8 @@
 
 """
 
-import time
 from __future__ import absolute_import
+import time
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
