@@ -568,10 +568,7 @@ class FileCatalogHandler(RequestHandler):
     if not result['OK'] or not result['Value']:
       return result
 
-    lfns = []
-    for directory in result['Value']:
-      for fname in result['Value'][directory]:
-        lfns.append(os.path.join(directory, fname))
+    lfns = result['Value'].values()
     return gFileCatalogDB.getFileDetails(lfns, self.getRemoteCredentials())
 
   types_findFilesByMetadataWeb = [DictType, StringTypes, [IntType, LongType], [IntType, LongType]]
