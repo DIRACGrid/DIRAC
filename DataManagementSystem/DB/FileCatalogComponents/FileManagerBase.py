@@ -1029,7 +1029,7 @@ class FileManagerBase(object):
     result = self.db.fmeta.findFilesByMetadata(metaDict, path, credDict, extra=True)
     if not result['OK']:
       return result
-    fileIDLFNs = result['Value']
+    fileIDLFNs = result['LFNIDDict']
 
     result = self.__getReplicasForIDs(fileIDLFNs, allStatus, connection)
     if not result['OK']:
