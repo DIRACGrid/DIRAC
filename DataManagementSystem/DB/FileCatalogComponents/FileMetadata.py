@@ -582,8 +582,14 @@ class FileMetadata:
     return S_OK( fileList )
 
   @queryTime
-  def findFilesByMetadata( self, metaDict, path, credDict, extra = False ):
+  def findFilesByMetadata(self, metaDict, path, credDict):
     """ Find Files satisfying the given metadata
+
+        :param dict metaDict: dictionary with the metaquery parameters
+        :param str path: Path to search into
+        :param dict credDict: Dictionary with the user credentials
+
+        :return: S_OK/S_ERROR, Value ID:LFN dictionary of selected files
     """
     if not path:
       path = '/'
@@ -604,8 +610,7 @@ class FileMetadata:
     fileMetaDict = dict( item for item in metaDict.items() if item[0] in fileMetaKeys )
 
     fileList = []
-    lfnIdDict = {}
-    lfnList = []
+    idLfnDict = {}
 
     if dirFlag != 'None':
       # None means that no Directory satisfies the given query, thus the search is empty
@@ -621,22 +626,19 @@ class FileMetadata:
         fileList = result['Value']
       elif dirList:
         # 4.- if not File Metadata, return the list of files in given directories
-        return self.db.dtree.getFileLFNsInDirectoryByDirectory( dirList, credDict )
+        result = self.db.dtree.getFileLFNsInDirectoryByDirectory( dirList, credDict )
+        if not result['OK']:
+          return result
+        return S_OK(result['Value']['IDLFNDict'])
       else:
         # if there is no File Metadata and no Dir Metadata, return an empty list
-        lfnList = []
+        idLfnDict = {}
 
     if fileList:
       # 5.- get the LFN
       result = self.db.fileManager._getFileLFNs( fileList )
       if not result['OK']:
         return result
-      lfnList = result['Value']['Successful'].values()
-      if extra:
-        lfnIdDict = result['Value']['Successful']
+      idLfnDict = result['Value']['Successful']
 
-    result = S_OK( lfnList )
-    if extra:
-      result['LFNIDDict'] = lfnIdDict
-
-    return result
+    return S_OK(idLfnDict)
