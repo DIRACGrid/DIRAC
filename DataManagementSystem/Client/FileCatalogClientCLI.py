@@ -1919,7 +1919,10 @@ File Catalog Client $Revision: 1.17 $Date:
 
     if result['Value']:
 
-      lfnList = result['Value'].values()
+      lfnList = result['Value']
+      # Be forward compatible with the new interface
+      if isinstance(lfnList, dict):
+        lfnList = result['Value'].values()
       if dirsOnly:
         listToPrint = set(os.path.dirname(fullpath) for fullpath in lfnList)
       else:
