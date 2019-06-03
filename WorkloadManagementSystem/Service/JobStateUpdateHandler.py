@@ -279,7 +279,7 @@ class JobStateUpdateHandler(RequestHandler):
     """ Set the application status for job specified by its JobId.
     """
 
-    result = jobDB.getJobAttributes(int(jobID), ['Status', 'MinorStatus'])
+    result = jobDB.getJobStatus(int(jobID))
     if not result['OK']:
       return result
 
