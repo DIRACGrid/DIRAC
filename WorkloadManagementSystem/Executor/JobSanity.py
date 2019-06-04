@@ -60,14 +60,14 @@ class JobSanity(OptimizerExecutor):
       result = self.checkInputData(jobState, jobType, voName)
       if not result['OK']:
         return result
-      self.jobLog.info("%s LFNs" % result['Value'])
+      self.jobLog.info("Found LFNs", result['Value'])
 
     # Input Sandbox uploaded check
     if self.ex_getOption('InputSandboxCheck', True):
       result = self.checkInputSandbox(jobState, manifest)
       if not result['OK']:
         return result
-      self.jobLog.info("Assigned %s ISBs" % result['Value'])
+      self.jobLog.info("Assigned ISBs", result['Value'])
 
     return self.setNextOptimizer(jobState)
 
@@ -79,8 +79,7 @@ class JobSanity(OptimizerExecutor):
 
     result = jobState.getInputData()
     if not result['OK']:
-      self.jobLog.warn('Failed to get input data from JobDB')
-      self.jobLog.warn(result['Message'])
+      self.jobLog.warn('Failed to get input data from JobDB', result['Message'])
       return S_ERROR("Input Data Specification")
 
     data = result['Value']  # seems to be [''] when null, which isn't an empty list ;)
@@ -139,12 +138,14 @@ class JobSanity(OptimizerExecutor):
     numSBsToAssign = len(sbsToAssign)
     if not numSBsToAssign:
       return S_OK(0)
-    self.jobLog.info("Assigning %s sandboxes on behalf of %s@%s" % (numSBsToAssign, ownerName, ownerGroup))
+    self.jobLog.info("Assigning sandboxes",
+                     "(%s on behalf of %s@%s)" % (numSBsToAssign, ownerName, ownerGroup))
     result = self.sandboxClient.assignSandboxesToJob(jobState.jid, sbsToAssign, ownerName, ownerGroup, jobSetup)
     if not result['OK']:
       self.jobLog.error("Could not assign sandboxes in the SandboxStore")
       return S_ERROR("Cannot assign sandbox to job")
     assigned = result['Value']
     if assigned != numSBsToAssign:
-      self.jobLog.error("Could not assign all sandboxes (%s). Only assigned %s" % (numSBsToAssign, assigned))
+      self.jobLog.error("Could not assign all sandboxes",
+                        "(%s). Only assigned %s" % (numSBsToAssign, assigned))
     return S_OK(numSBsToAssign)

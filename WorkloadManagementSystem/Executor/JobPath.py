@@ -53,7 +53,7 @@ class JobPath(OptimizerExecutor):
       modInstance = self.__voPlugins[voPlugin](argsDict)
       result = modInstance.execute()
     except Exception as excp:
-      self.jobLog.exception("Excp while executing %s" % voPlugin)
+      self.jobLog.exception("Excp while executing", voPlugin)
       return S_ERROR("Could not execute VO plugin %s: %s" % (voPlugin, excp))
 
     if not result['OK']:
@@ -70,7 +70,7 @@ class JobPath(OptimizerExecutor):
     jobManifest = result['Value']
     opChain = jobManifest.getOption("JobPath", [])
     if opChain:
-      self.jobLog.info('Job defines its own optimizer chain %s' % opChain)
+      self.jobLog.info('Job defines its own optimizer chain', opChain)
       return self.__setOptimizerChain(jobState, opChain)
     # Construct path
     opPath = self.ex_getOption('BasePath', ['JobPath', 'JobSanity'])
@@ -83,7 +83,7 @@ class JobPath(OptimizerExecutor):
       extraPath = result['Value']
       if extraPath:
         opPath.extend(extraPath)
-        self.jobLog.verbose('Adding extra VO specific optimizers to path: %s' % (extraPath))
+        self.jobLog.verbose('Adding extra VO specific optimizers to path', extraPath)
     else:
       # Generic path: Should only rely on an input data setting in absence of VO plugin
       self.jobLog.verbose('No VO specific plugin module specified')
@@ -103,7 +103,7 @@ class JobPath(OptimizerExecutor):
       if opN not in uPath:
         uPath.append(opN)
     opPath = uPath
-    self.jobLog.info('Constructed path is: %s' % "->".join(opPath))
+    self.jobLog.info('Constructed path is' ': %s' % "->".join(opPath))
     result = self.__setOptimizerChain(jobState, opPath)
     if not result['OK']:
       return result
