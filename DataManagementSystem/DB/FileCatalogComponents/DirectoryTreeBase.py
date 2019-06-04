@@ -607,12 +607,19 @@ class DirectoryTreeBase:
     lfnList = [ x[0] for x in result['Value'] ]
     return S_OK( lfnList )
 
-  def getFileLFNsInDirectoryByDirectory( self, dirID, credDict ):
-    """ Get file lfns for the given directory or directory list 
+  def getFileLFNsInDirectoryByDirectory( self, dirIDList, credDict ):
+    """ Get file LFNs and IDs for the given directory or directory list
+
+        :param list dirIDList: List of directory IDs
+        :param dict credDict: dictionary of user credentials
+
+        :return: S_OK/S_ERROR with Value dictionary {"DirLFNDict": dirLfnDict, "IDLFNDict": idLfnDict}
+                 where dirLfnDict has the structure <directory_name>:<list of contained file names>,
+                 idLfnDict has structure <fileID>:<LFN>
     """
-    dirs = dirID
-    if type( dirID ) != ListType:
-      dirs = [dirID]
+    dirs = dirIDList
+    if not isinstance(dirIDList, list):
+      dirs = [dirIDList]
 
     dirListString = ','.join( [ str( dir_ ) for dir_ in dirs ] )
     treeTable = self.getTreeTable()
