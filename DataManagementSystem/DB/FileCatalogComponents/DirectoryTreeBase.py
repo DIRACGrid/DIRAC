@@ -10,7 +10,6 @@ from DIRAC import S_OK, S_ERROR, gLogger
 import time
 import threading
 import os
-from types import StringTypes, ListType
 import stat
 
 DEBUG = 0
@@ -565,7 +564,7 @@ class DirectoryTreeBase:
     """ Get file IDs for the given directory
     """
     dirs = dirID
-    if not isinstance(dirID, ListType):
+    if not isinstance(dirID, list):
       dirs = [dirID]
 
     if not dirs:
@@ -597,7 +596,7 @@ class DirectoryTreeBase:
     """ Get file lfns for the given directory or directory list
     """
     dirs = dirID
-    if not isinstance(dirID, ListType):
+    if not isinstance(dirID, list):
       dirs = [dirID]
 
     dirListString = ','.join([str(dir) for dir in dirs])
