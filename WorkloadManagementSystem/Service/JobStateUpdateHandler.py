@@ -7,8 +7,8 @@
 
 """
 
-import time
 from __future__ import absolute_import
+import time
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -279,7 +279,7 @@ class JobStateUpdateHandler(RequestHandler):
     """ Set the application status for job specified by its JobId.
     """
 
-    result = jobDB.getJobAttributes(int(jobID), ['Status', 'MinorStatus'])
+    result = jobDB.getJobStatus(int(jobID))
     if not result['OK']:
       return result
 

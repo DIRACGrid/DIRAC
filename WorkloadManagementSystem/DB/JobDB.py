@@ -54,7 +54,7 @@ from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities.DErrno import EWMSSUBM
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup, getVOOption, getGroupOption
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Base.DB import DB
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest

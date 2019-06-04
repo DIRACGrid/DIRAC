@@ -22,6 +22,7 @@ class ConcatCFG(object):
 
   def __init__(self, configFile='docs.conf'):
     self.config = Configuration(configFile, sections=['CFG'])
+    self.retVal = 0
 
   def updateCompleteDiracCFG(self):
     """Read the dirac.cfg and update the Systems sections from the ConfigTemplate.cfg files."""
@@ -61,7 +62,7 @@ class ConcatCFG(object):
       htmlMatch = re.compile(r'\.html(?=[a-zA-Z0-9])')
       cfgString = re.sub(htmlMatch, '.html#', cfgString)
       rst.write(cfgString)
-    return 0
+    return self.retVal
 
   def getSystemsCFG(self):
     """Find all the ConfigTemplates and collate them into one CFG object."""
@@ -101,8 +102,12 @@ class ConcatCFG(object):
       return S_ERROR('File not found: %s' % templatePath)
 
     loadCfg = CFG()
-    loadCfg.loadFromFile(templatePath)
-
+    try:
+      loadCfg.loadFromFile(templatePath)
+    except ValueError as err:
+      LOG.error('Failed loading file %r: %r', templatePath, err)
+      self.retVal = 1
+      return S_ERROR()
     cfg.createNewSection('/Systems/%s' % system, contents=loadCfg)
 
     return S_OK(cfg)
