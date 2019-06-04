@@ -69,9 +69,6 @@ if __name__ == "__main__":
   if not result['OK']:
     gLogger.error( 'Can not access File Catalog:', result['Message'] )
     DIRAC.exit( -1 )
-  lfnList = result['Value']
-  if isinstance(lfnList, dict):
-    lfnList = result['Value'].values()
-  lfnList = sorted(lfnList)
+  lfnList = sorted(result['Value'])
 
   gLogger.notice( '\n'.join( lfn for lfn in lfnList ) )

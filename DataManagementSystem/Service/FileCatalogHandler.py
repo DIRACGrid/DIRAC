@@ -547,7 +547,11 @@ class FileCatalogHandler(RequestHandler):
   def export_findFilesByMetadata(self, metaDict, path='/'):
     """ Find all the files satisfying the given metadata set
     """
-    return gFileCatalogDB.fmeta.findFilesByMetadata(metaDict, path, self.getRemoteCredentials())
+    result = gFileCatalogDB.fmeta.findFilesByMetadata(metaDict, path, self.getRemoteCredentials())
+    if not result['OK']:
+      return result
+    lfns = result['Value'].values()
+    return S_OK(lfns)
 
   types_getReplicasByMetadata = [DictType, StringTypes, BooleanType]
 
