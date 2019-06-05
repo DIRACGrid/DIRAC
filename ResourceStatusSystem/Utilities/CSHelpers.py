@@ -282,7 +282,9 @@ def getSiteComputingElements(siteName):
 # NOTE: this method is used by Web
 def getSiteStorageElements(siteName):
   """
-    Gets all computing elements from /Resources/Sites/<>/<siteName>/SE
+    Gets all storage elements from /Resources/Sites/<>/<siteName>/SE
+
+      Used by WebApp/SiteSummaryHandler.py
   """
 
   _basePath = 'Resources/Sites'

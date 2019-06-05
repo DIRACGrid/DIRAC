@@ -185,6 +185,7 @@ First we create the ``install.cfg`` file, which is used to tell the installation
 install and how to configure the server with the following content:
 
 .. literalinclude:: basicTutoSetup.sh
+   :language: bash
    :start-after: # START install.cfg
    :end-before: # END install.cfg
    :caption: install.cfg
@@ -193,6 +194,7 @@ Then we download the installer, make it executable, and run it with the ``instal
 the user's home folder):
 
 .. literalinclude:: basicTutoSetup.sh
+   :language: bash
    :start-after: # START installDirac
    :end-before: # END installDirac
 
@@ -441,6 +443,7 @@ Create an account ``diracuser`` with password ``password``, and add in its ``~/.
 certificate you created earlier:
 
 .. literalinclude:: basicTutoSetup.sh
+   :language: bash
    :start-after: # START user_diracuser
    :end-before: # END user_diracuser
 
@@ -459,6 +462,7 @@ so we will just install the code and its dependencies.  Create the structure, do
 the same version as for the server:
 
 .. literalinclude:: basicTutoSetup.sh
+   :language: bash
    :start-after: # START installClient1
    :end-before: # END installClient1
 
@@ -496,6 +500,7 @@ In principle, your system administrator will have managed the CA for you. In thi
 The last step is to configure the client to talk to the proper configuration service. This is easily done by creating a ``~/DiracInstallation/etc/dirac.cfg`` file with the following content:
 
 .. literalinclude:: basicTutoSetup.sh
+   :language: bash
    :caption: ~/DiracInstallation/etc/dirac.cfg
    :start-after: # START dirac.cfg
    :end-before: # END dirac.cfg

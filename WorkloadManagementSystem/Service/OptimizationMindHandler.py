@@ -1,7 +1,7 @@
 __RCSID__ = "$Id$"
 
-import types
-from DIRAC import gLogger, S_OK, S_ERROR
+
+from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities import ThreadScheduler
 from DIRAC.Core.Base.ExecutorMindHandler import ExecutorMindHandler
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobState import JobState
@@ -44,7 +44,7 @@ class OptimizationMindHandler(ExecutorMindHandler):
   __optimizationStates = ['Received', 'Checking']
   __loadTaskId = False
 
-  MSG_DEFINITIONS = {'OptimizeJobs': {'jids': (types.ListType, types.TupleType)}}
+  MSG_DEFINITIONS = {'OptimizeJobs': {'jids': (list, tuple)}}
 
   auth_msg_OptimizeJobs = ['all']
 
@@ -120,7 +120,7 @@ class OptimizationMindHandler(ExecutorMindHandler):
     cls.setFreezeOnFailedDispatch(False)
     cls.setFreezeOnUnknownExecutor(False)
     cls.setAllowedClients("JobManager")
-    cleanTaskQueues()    
+    cleanTaskQueues()
     period = cls.srv_getCSOption("LoadJobPeriod", 60)
     result = ThreadScheduler.gThreadScheduler.addPeriodicTask(period, cls.__loadJobs)
     if not result['OK']:

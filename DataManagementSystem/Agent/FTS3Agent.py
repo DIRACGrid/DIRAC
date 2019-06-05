@@ -1,13 +1,13 @@
 """
-
 .. versionadded:: v6r20
 
 FTS3Agent implementation.
 It is in charge of submitting and monitoring all the transfers. It can be duplicated.
 
+
 .. literalinclude:: ../ConfigTemplate.cfg
   :start-after: ##BEGIN FTS3Agent
-  :end-before: ##END
+  :end-before: ##END FTS3Agent
   :dedent: 2
   :caption: FTS3Agent options
 

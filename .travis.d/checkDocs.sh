@@ -3,7 +3,7 @@ cd docs;
 # need to have this folder in the PYTHONPATH so we can find diracdoctools
 export PYTHONPATH=$PWD:$PYTHONPATH
 
-SPHINXOPTS=-wsphinxWarnings READTHEDOCS=True make html
+SPHINXOPTS=-wsphinxWarnings make htmlall
 
 # check for :param / :return in html, points to faulty syntax, missing empty lines, etc.
 grep --color -nH -e :param -e :return -r build/html/CodeDocumentation/ >> sphinxWarnings

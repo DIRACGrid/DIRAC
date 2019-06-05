@@ -9,40 +9,27 @@
 __RCSID__ = '$Id$'
 
 from DIRAC import S_OK
-from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.Core.Base.Client import Client
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import uppercase_first_letter
 
 
-class ResourceStatusClient(object):
+class ResourceStatusClient(Client):
   """
   The :class:`ResourceStatusClient` class exposes the :mod:`DIRAC.ResourceStatus`
   API. All functions you need are on this client.
-
-  It has the 'direct-db-access' functions, the ones of the type:
-   - insert
-   - update
-   - select
-   - delete
-
-  that return parts of the RSSConfiguration stored on the CS, and used everywhere
-  on the RSS module. Finally, and probably more interesting, it exposes a set
-  of functions, badly called 'boosters'. They are 'home made' functions using the
-  basic database functions that are interesting enough to be exposed.
-
-  The client will ALWAYS try to connect to the DB, and in case of failure, to the
-  XML-RPC server ( namely :class:`ResourceStatusDB` and :class:`ResourceStatusHancler` ).
 
   You can use this client on this way
 
    >>> from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
    >>> rsClient = ResourceStatusClient()
-
-  All functions calling methods exposed on the database or on the booster are
-  making use of some syntactic sugar, in this case a decorator that simplifies
-  the client considerably.
   """
+
+  def __init__(self, **kwargs):
+
+    super(ResourceStatusClient, self).__init__(**kwargs)
+    self.setServer('ResourceStatus/ResourceStatus')
 
   def _prepare(self, sendDict):
 
@@ -97,7 +84,7 @@ class ResourceStatusClient(object):
 
     :return: S_OK() || S_ERROR()
     '''
-    return RPCClient("ResourceStatus/ResourceStatus").insert(element + tableType, self._prepare(locals()))
+    return self._getRPC().insert(element + tableType, self._prepare(locals()))
 
   def selectStatusElement(self, element, tableType, name=None, statusType=None,
                           status=None, elementType=None, reason=None,
@@ -138,7 +125,7 @@ class ResourceStatusClient(object):
 
     :return: S_OK() || S_ERROR()
     '''
-    return RPCClient("ResourceStatus/ResourceStatus").select(element + tableType, self._prepare(locals()))
+    return self._getRPC().select(element + tableType, self._prepare(locals()))
 
   def deleteStatusElement(self, element, tableType, name=None, statusType=None,
                           status=None, elementType=None, reason=None,
@@ -179,7 +166,7 @@ class ResourceStatusClient(object):
     :return: S_OK() || S_ERROR()
     '''
 
-    return RPCClient("ResourceStatus/ResourceStatus").delete(element + tableType, self._prepare(locals()))
+    return self._getRPC().delete(element + tableType, self._prepare(locals()))
 
   def addOrModifyStatusElement(self, element, tableType, name=None,
                                statusType=None, status=None,
@@ -219,7 +206,7 @@ class ResourceStatusClient(object):
 
     :return: S_OK() || S_ERROR()
     '''
-    return RPCClient("ResourceStatus/ResourceStatus").addOrModify(element + tableType, self._prepare(locals()))
+    return self._getRPC().addOrModify(element + tableType, self._prepare(locals()))
 
   def modifyStatusElement(self, element, tableType, name=None, statusType=None,
                           status=None, elementType=None, reason=None,
@@ -257,7 +244,7 @@ class ResourceStatusClient(object):
 
     :return: S_OK() || S_ERROR()
     '''
-    return RPCClient("ResourceStatus/ResourceStatus").addOrModify(element + tableType, self._prepare(locals()))
+    return self._getRPC().addOrModify(element + tableType, self._prepare(locals()))
 
   def addIfNotThereStatusElement(self, element, tableType, name=None,
                                  statusType=None, status=None,
@@ -297,7 +284,7 @@ class ResourceStatusClient(object):
 
     :return: S_OK() || S_ERROR()
     '''
-    return RPCClient("ResourceStatus/ResourceStatus").addIfNotThere(element + tableType, self._prepare(locals()))
+    return self._getRPC().addIfNotThere(element + tableType, self._prepare(locals()))
 
   ##############################################################################
   # Protected methods - Use carefully !!

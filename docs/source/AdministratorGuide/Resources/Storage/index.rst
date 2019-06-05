@@ -241,6 +241,8 @@ The LFN of this file is by default `/<vo>/occupancy.json`, but can be overwritte
 The ``SpaceReservation`` option allows to specify a physical zone of the storage which would have space reservation (for example ``LHCb_USER``, ``LHCb_PROD``, etc). It extends the concept of ``SpaceToken`` that SRM has. This option is only used if the StoragePlugin does not return itself a ``SpaceReservation`` value.
 
 
+.. _multiProtocol:
+
 Multi Protocol
 --------------
 

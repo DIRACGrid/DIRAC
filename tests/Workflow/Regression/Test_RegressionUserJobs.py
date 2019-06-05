@@ -8,7 +8,6 @@ import os
 import sys
 import shutil
 
-#!/usr/bin/env python
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
@@ -33,11 +32,11 @@ class RegressionTestCase(IntegrationTest):
     self.dirac = Dirac()
 
     try:
-      exeScriptLoc = find_all('exe-script.py', rootPath, '/DIRAC/tests/Workflow/Regression')[0]
-      helloWorldLoc = find_all('helloWorld.py', rootPath, '/DIRAC/tests/Workflow/Regression')[0]
+      exeScriptLoc = find_all('exe-script.py', rootPath, '/DIRAC/tests/Workflow')[0]
+      helloWorldLoc = find_all('helloWorld.py', rootPath, '/DIRAC/tests/Workflow')[0]
     except IndexError:  # we are in Jenkins
-      exeScriptLoc = find_all('exe-script.py', os.environ['WORKSPACE'], '/DIRAC/tests/Workflow/Regression')[0]
-      helloWorldLoc = find_all('helloWorld.py', os.environ['WORKSPACE'], '/DIRAC/tests/Workflow/Regression')[0]
+      exeScriptLoc = find_all('exe-script.py', os.environ['WORKSPACE'], '/DIRAC/tests/Workflow')[0]
+      helloWorldLoc = find_all('helloWorld.py', os.environ['WORKSPACE'], '/DIRAC/tests/Workflow')[0]
 
     shutil.copyfile(exeScriptLoc, './exe-script.py')
     shutil.copyfile(helloWorldLoc, './helloWorld.py')

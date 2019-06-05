@@ -271,7 +271,7 @@ class Matcher(object):
     """ Update pilot information - do not fail if we don't manage to do it
     """
     pilotReference = resourceDict.get('PilotReference', '')
-    if pilotReference:
+    if pilotReference and pilotReference != 'Unknown':
       gridCE = resourceDict.get('GridCE', 'Unknown')
       site = resourceDict.get('Site', 'Unknown')
       benchmark = resourceDict.get('PilotBenchmark', 0.0)
@@ -290,7 +290,7 @@ class Matcher(object):
     """ Update pilot to job mapping information
     """
     pilotReference = resourceDict.get('PilotReference', '')
-    if pilotReference:
+    if pilotReference and pilotReference != 'Unknown':
       result = self.pilotAgentsDB.setCurrentJobID(pilotReference, jobID)
       if not result['OK']:
         self.log.error("Problem updating pilot information",
