@@ -400,49 +400,59 @@ class StorageElementItem(object):
       return S_ERROR(errno.EPROTONOSUPPORT, "No storage plugins to query the occupancy")
 
     occupancyPlugin = self.options.get('OccupancyPlugin')
+    # Call occupancy plugin if requested
     if occupancyPlugin:
       res = ObjectLoader().loadObject(occupancyPlugin)
       if not res['OK']:
         return S_ERROR(errno.EPROTONOSUPPORT, 'Failed to load occupancy plugin %s' % occupancyPlugin)
       log.verbose('Use occupancy plugin %s' % occupancyPlugin)
-      occupancyPlugin = res['Value']()
+      occupancyPlugin = res['Value'](self)
+      if occupancyPlugin.isUsable:
+        res = occupancyPlugin.getOccupancy()
+        if res['OK']:
+          occupancyDict = res['Value']
+          result = self.checkOccupancy(occupancyDict, mandatoryParams, unit)
+          if result['OK']:
+            return result['Value']
 
     # Try all of the storages one by one
     for storage in filteredPlugins:
 
-      if occupancyPlugin:
-        # Call occupancy plugin if requested
-        res = occupancyPlugin.getOccupancy(storage)
-      else:
-        # The result of the plugin is always in B
-        res = storage.getOccupancy(**kwargs)
+      # The result of the plugin is always in B
+      res = storage.getOccupancy(**kwargs)
       if res['OK']:
         occupancyDict = res['Value']
-
-        # Make sure all the mandatory parameters are present
-        if set(occupancyDict) & mandatoryParams != mandatoryParams:
-          log.verbose("Missing mandatory parameters", mandatoryParams - set(occupancyDict))
+        result = self.checkOccupancy(occupancyDict, mandatoryParams, unit)
+        if not result['OK']:
           continue
-
-        # Since plugins return Bytes, we do not need to convert if that's what we want
-        if unit != 'B':
-          for space in ['Total', 'Free']:
-            convertedSpace = convertSizeUnits(occupancyDict[space], 'B', unit)
-            # If we have a conversion error, we go to the next plugin
-            if convertedSpace == -sys.maxsize:
-              log.verbose(
-                  "Error converting %s space from MB to %s: %s" %
-                  (space, unit, occupancyDict[space]))
-              break
-            occupancyDict[space] = convertedSpace
-
-        # If the plugin does not return the SpaceReservation, take it from the CS
+        occupancyDict = result['Value']
 
         if 'SpaceReservation' not in occupancyDict:
           occupancyDict['SpaceReservation'] = self.options.get('SpaceReservation')
         return res
 
     return S_ERROR("Could not retrieve the occupancy from any plugin")
+
+  def checkOccupancy(self, occupancyDict, mandatoryParams, unit):
+    log = self.log.getSubLogger('checkOccupancy', True)
+    # Make sure all the mandatory parameters are present
+    if set(occupancyDict) & mandatoryParams != mandatoryParams:
+
+      msg = "Missing mandatory parameters %s" % str(mandatoryParams - set(occupancyDict))
+      log.error(msg)
+      return S_ERROR(msg)
+
+    # Since plugins return Bytes, we do not need to convert if that's what we want
+    if unit != 'B':
+      for space in ['Total', 'Free']:
+        convertedSpace = convertSizeUnits(occupancyDict[space], 'B', unit)
+        # If we have a conversion error, we go to the next plugin
+        if convertedSpace == -sys.maxsize:
+          msg = "Error converting %s space from MB to %s: %s" % (space, unit, occupancyDict[space])
+          log.error(msg)
+          return S_ERROR('Error converting')
+        occupancyDict[space] = convertedSpace
+    return S_OK(occupancyDict)
 
   def status(self):
     """
