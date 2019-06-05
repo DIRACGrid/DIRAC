@@ -511,10 +511,6 @@ class VOMSPolicy(SecurityManagerBase):
 
     return S_OK({'Successful': dict.fromkeys(paths, False), 'Failed': {}})
 
-
-#
-# __writeMethods = ['setMetadata','__removeMetadata']
-
   def hasAccess(self, opType, paths, credDict):
     """ Checks whether a given operation on given paths is permitted
 
