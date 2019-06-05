@@ -11,18 +11,15 @@ else
 fi
 
 # Go to server
-cd $SERVERINSTALLDIR
-source bashrc
-runsvctrl d /opt/dirac/startup/Framework_ProxyManager
-$DIRACSCRIPTS/dirac-service Framework/ProxyManager $DIRAC/DIRAC/tests/Integration/Framework/Test_ProxyManager.cfg > /dev/null  &
+source $SERVERINSTALLDIR/bashrc
+runsvctrl d $SERVERINSTALLDIR/startup/Framework_ProxyManager
+$DIRACSCRIPTS/dirac-service Framework/ProxyManager $SERVERINSTALLDIR/DIRAC/tests/Integration/Framework/Test_ProxyManager.cfg > /dev/null  &
 
 # Go to client
-cd $CLIENTINSTALLDIR
-source bashrc
+source $CLIENTINSTALLDIR/bashrc
 python $CLIENTINSTALLDIR/DIRAC/tests/Integration/Framework/Test_ProxyManager.py $DEBUG
 
 # Go to server
-cd $SERVERINSTALLDIR
-source bashrc
+source $SERVERINSTALLDIR/bashrc
 kill -9 `jobs -p`
-runsvctrl u /opt/dirac/startup/Framework_ProxyManager
+runsvctrl u $SERVERINSTALLDIR/startup/Framework_ProxyManager
