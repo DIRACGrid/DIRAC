@@ -38,8 +38,8 @@ class JobPath(OptimizerExecutor):
       try:
         module = __import__(voPlugin, globals(), locals(), [modName])
       except ImportError as excp:
-        self.jobLog.exception("Could not import VO plugin %s" % voPlugin)
-        return S_ERROR("Could not import VO plugin %s: %s" % (voPlugin, excp))
+        self.jobLog.exception("Could not import VO plugin", voPlugin)
+        return S_ERROR("Could not import VO plugin")
 
       try:
         self.__voPlugins[voPlugin] = getattr(module, modName)
@@ -54,7 +54,7 @@ class JobPath(OptimizerExecutor):
       result = modInstance.execute()
     except Exception as excp:
       self.jobLog.exception("Excp while executing", voPlugin)
-      return S_ERROR("Could not execute VO plugin %s: %s" % (voPlugin, excp))
+      return S_ERROR("Could not execute VO plugin")
 
     if not result['OK']:
       return result
@@ -103,7 +103,7 @@ class JobPath(OptimizerExecutor):
       if opN not in uPath:
         uPath.append(opN)
     opPath = uPath
-    self.jobLog.info('Constructed path is' ': %s' % "->".join(opPath))
+    self.jobLog.info('Constructed path is', '%s' % "->".join(opPath))
     result = self.__setOptimizerChain(jobState, opPath)
     if not result['OK']:
       return result
