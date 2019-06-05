@@ -36,12 +36,17 @@ class Params( ProxyGeneration.CLIParams ):
   def setVOMSExt( self, _arg ):
     self.addVOMSExt = True
     return S_OK()
+  
+  # def setDIRACGroup( self, arg ):
+  #  self.diracGroup = arg
+  #  return DIRAC.S_OK()
 
   def registerCLISwitches( self ):
     ProxyGeneration.CLIParams.registerCLISwitches( self )
     Script.registerSwitch( "U", "upload", "Upload a long lived proxy to the ProxyManager", self.setUploadProxy )
     Script.registerSwitch( "P", "uploadPilot", "Upload a long lived pilot proxy to the ProxyManager", self.setUploadPilotProxy )
     Script.registerSwitch( "M", "VOMS", "Add voms extension", self.setVOMSExt )
+    #Script.registerSwitch( "g:", "group=", "DIRAC Group to embed in the proxy", self.setDIRACGroup )
 
 class ProxyInit( object ):
 
@@ -81,33 +86,33 @@ class ProxyInit( object ):
       msg = "%s\n  %s  \n%s" % ( sep, msg, sep )
       gLogger.notice( msg )
 
-  def getGroupsToUpload( self ):
-    uploadGroups = []
+  # def getGroupsToUpload( self ):
+  #   uploadGroups = []
 
-    if self.__piParams.uploadProxy or Registry.getGroupOption( self.__piParams.diracGroup, "AutoUploadProxy", False ):
-      uploadGroups.append( self.__piParams.diracGroup )
+  #   if self.__piParams.uploadProxy or Registry.getGroupOption( self.__piParams.diracGroup, "AutoUploadProxy", False ):
+  #     uploadGroups.append( self.__piParams.diracGroup )
 
-    if not self.__piParams.uploadPilot:
-      if not Registry.getGroupOption( self.__piParams.diracGroup, "AutoUploadPilotProxy", False ):
-        return uploadGroups
+  #   if not self.__piParams.uploadPilot:
+  #     if not Registry.getGroupOption( self.__piParams.diracGroup, "AutoUploadPilotProxy", False ):
+  #       return uploadGroups
 
-    issuerCert = self.getIssuerCert()
-    resultUserDN = issuerCert.getSubjectDN() #pylint: disable=no-member
-    if not resultUserDN['OK']:
-      return resultUserDN
-    userDN = resultUserDN[ 'Value' ]
+  #   issuerCert = self.getIssuerCert()
+  #   resultUserDN = issuerCert.getSubjectDN() #pylint: disable=no-member
+  #   if not resultUserDN['OK']:
+  #     return resultUserDN
+  #   userDN = resultUserDN[ 'Value' ]
 
-    resultGroups = Registry.getGroupsForDN( userDN )
-    if not resultGroups[ 'OK' ]:
-      gLogger.error( "No groups defined for DN %s" % userDN )
-      return []
-    availableGroups = resultGroups[ 'Value' ]
+  #   resultGroups = Registry.getGroupsForDN( userDN )
+  #   if not resultGroups[ 'OK' ]:
+  #     gLogger.error( "No groups defined for DN %s" % userDN )
+  #     return []
+  #   availableGroups = resultGroups[ 'Value' ]
 
-    for group in availableGroups:
-      groupProps = Registry.getPropertiesForGroup( group )
-      if Properties.PILOT in groupProps or Properties.GENERIC_PILOT in groupProps:
-        uploadGroups.append( group )
-    return uploadGroups
+  #   for group in availableGroups:
+  #     groupProps = Registry.getPropertiesForGroup( group )
+  #     if Properties.PILOT in groupProps or Properties.GENERIC_PILOT in groupProps:
+  #       uploadGroups.append( group )
+  #   return uploadGroups
 
   def addVOMSExtIfNeeded( self ):
     addVOMS = self.__piParams.addVOMSExt or Registry.getGroupOption( self.__piParams.diracGroup, "AutoAddVOMS", False )
@@ -139,7 +144,7 @@ class ProxyInit( object ):
     self.__proxyGenerated = resultProxyGenerated[ 'Value' ]
     return resultProxyGenerated
 
-  def uploadProxy( self, userGroup = False ):
+  def uploadProxy( self ):#, userGroup = False ):
     """ Upload the proxy to the proxyManager service
     """
     issuerCert = self.getIssuerCert()
@@ -147,24 +152,24 @@ class ProxyInit( object ):
     if not resultUserDN['OK']:
       return resultUserDN
     userDN = resultUserDN['Value']
-    if not userGroup:
-      userGroup = self.__piParams.diracGroup
-    gLogger.notice( "Uploading proxy for %s..." % userGroup )
+    # if not userGroup:
+    #   userGroup = self.__piParams.diracGroup
+    # gLogger.notice( "Uploading proxy for %s..." % userGroup )
     if userDN in self.__uploadedInfo:
-      expiry = self.__uploadedInfo[ userDN ].get( userGroup )
-      if expiry:
+      # expiry = self.__uploadedInfo[ userDN ].get( userGroup )
+      # if expiry:
         if issuerCert.getNotAfterDate()[ 'Value' ] - datetime.timedelta( minutes = 10 ) < expiry: #pylint: disable=no-member
-          gLogger.info( "SKipping upload for group %s. Already uploaded" % userGroup )
+          gLogger.info( 'Proxy with DN "%s" already uploaded' % userDN)#"SKipping upload for group %s. Already uploaded" % userGroup )
           return S_OK()
-    gLogger.info( "Uploading %s proxy to ProxyManager..." % self.__piParams.diracGroup )
+    gLogger.info( "Uploading %s proxy to ProxyManager..." % userDN)#self.__piParams.diracGroup )
     upParams = ProxyUpload.CLIParams()
     upParams.onTheFly = True
     upParams.proxyLifeTime = issuerCert.getRemainingSecs()[ 'Value' ] - 300 #pylint: disable=no-member
     upParams.rfcIfPossible = self.__piParams.rfc
-    upParams.diracGroup = userGroup
-    for k in ( 'certLoc', 'keyLoc', 'userPasswd' ):
+    #upParams.diracGroup = userGroup
+    for k in ('certLoc', 'keyLoc', 'userPasswd'):#'userGroup'
       setattr( upParams, k , getattr( self.__piParams, k ) )
-    resultProxyUpload = ProxyUpload.uploadProxy( upParams )
+    resultProxyUpload = ProxyUpload.uploadProxy(upParams)
     if not resultProxyUpload[ 'OK' ]:
       gLogger.error( resultProxyUpload[ 'Message' ] )
       sys.exit( 1 )
@@ -247,11 +252,12 @@ class ProxyInit( object ):
       if self.__piParams.strict:
         return resultProxyWithVOMS
 
-    for pilotGroup in pI.getGroupsToUpload():
-      resultProxyUpload = pI.uploadProxy( userGroup = pilotGroup )
-      if not resultProxyUpload[ 'OK' ]:
-        if self.__piParams.strict:
-          return resultProxyUpload
+    # for pilotGroup in pI.getGroupsToUpload():
+    resultProxyUpload = pI.uploadProxy()# userGroup = pilotGroup )
+    if not resultProxyUpload[ 'OK' ]:
+      if self.__piParams.strict:
+        return resultProxyUpload
+
 
     return S_OK()
 

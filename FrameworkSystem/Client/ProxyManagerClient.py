@@ -62,6 +62,10 @@ class ProxyManagerClient(object):
       self.__usersCache.add(cacheKey,
                             self.__getSecondsLeftToExpiration(record['expirationtime']),
                             record)
+      gLogger.verbose("  Add to cache: %s, %s, %s" % (str(cacheKey),
+                                                    self.__getSecondsLeftToExpiration(record['expirationtime']),
+                                                    'record'))
+      #gLogger.verbose(str(self.__usersCache.exists(cacheKey, validSeconds)))
     return S_OK()
 
   @gUsersSync
@@ -79,6 +83,7 @@ class ProxyManagerClient(object):
     retVal = self.__refreshUserCache(validSeconds)
     if not retVal['OK']:
       return retVal
+    #gLogger.verbose("Get %s: %s" % (cacheKey, self.__usersCache.get(cacheKey, validSeconds)))
     return S_OK(self.__usersCache.exists(cacheKey, validSeconds))
 
   @gUsersSync
@@ -103,6 +108,7 @@ class ProxyManagerClient(object):
       return S_OK(userData['persistent'])
     return S_OK(False)
 
+  # FIXME: Old method?
   def setPersistency(self, userDN, userGroup, persistent):
     """
     Set the persistency for user/group
@@ -125,7 +131,7 @@ class ProxyManagerClient(object):
                             record)
     return retVal
 
-  def uploadProxy(self, proxy=False, diracGroup=False, chainToConnect=False, restrictLifeTime=0, rfcIfPossible=False):
+  def uploadProxy(self, proxy=False, restrictLifeTime=0, rfcIfPossible=False):
     """
     Upload a proxy to the proxy management service using delegation
     """
@@ -147,25 +153,17 @@ class ProxyManagerClient(object):
       if not result['OK']:
         return S_ERROR("Can't load %s: %s " % (proxyLocation, result['Message']))
 
-    if not chainToConnect:
-      chainToConnect = chain
-
     # Make sure it's valid
-    if chain.hasExpired()['Value']:
+    if chain.hasExpired().get('Value'):
       return S_ERROR("Proxy %s has expired" % proxyLocation)
+    if chain.getDIRACGroup().get('Value') or chain.isVOMS().get('Value'):
+      return S_ERROR("Cannot upload proxy with DIRAC group or VOMS extensions")
 
-    #rpcClient = RPCClient( "Framework/ProxyManager", proxyChain = chainToConnect )
     rpcClient = RPCClient("Framework/ProxyManager", timeout=120)
     # Get a delegation request
-    result = rpcClient.requestDelegationUpload(chain.getRemainingSecs()['Value'], diracGroup)
+    result = rpcClient.requestDelegationUpload(chain.getRemainingSecs()['Value'])#, diracGroup)
     if not result['OK']:
       return result
-    # Check if the delegation has been granted
-    if 'Value' not in result or not result['Value']:
-      if 'proxies' in result:
-        return S_OK(result['proxies'])
-      else:
-        return S_OK()
     reqDict = result['Value']
     # Generate delegated chain
     chainLifeTime = chain.getRemainingSecs()['Value'] - 60
@@ -173,17 +171,16 @@ class ProxyManagerClient(object):
       chainLifeTime = restrictLifeTime
     retVal = chain.generateChainFromRequestString(reqDict['request'],
                                                   lifetime=chainLifeTime,
-                                                  diracGroup=diracGroup, rfc=rfcIfPossible)
+                                                  rfc=rfcIfPossible)
     if not retVal['OK']:
       return retVal
     # Upload!
     result = rpcClient.completeDelegationUpload(reqDict['id'], retVal['Value'])
     if not result['OK']:
       return result
-    if 'proxies' in result:
-      return S_OK(result['proxies'])
-    return S_OK()
+    return S_OK(result.get('proxies') or result['Value'])
 
+  # FIXME: Old method
   @gProxiesSync
   def downloadProxy(self, userDN, userGroup, limited=False, requiredTimeLeft=1200,
                     cacheTime=14400, proxyToConnect=False, token=False):

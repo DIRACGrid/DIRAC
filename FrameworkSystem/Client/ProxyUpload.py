@@ -13,7 +13,7 @@ __RCSID__ = "$Id$"
 class CLIParams(object):
 
   proxyLifeTime = 2592000
-  diracGroup = False
+  #diracGroup = False
   certLoc = False
   keyLoc = False
   proxyLoc = False
@@ -24,7 +24,7 @@ class CLIParams(object):
 
   def __str__( self ):
     data = []
-    for k in ( 'proxyLifeTime', 'diracGroup', 'certLoc', 'keyLoc', 'proxyLoc',
+    for k in ( 'proxyLifeTime', 'certLoc', 'keyLoc', 'proxyLoc',#, 'diracGroup'
                'onTheFly', 'stdinPasswd', 'userPasswd' ):
       if k == 'userPasswd':
         data.append( "userPasswd = *****" )
@@ -54,12 +54,12 @@ class CLIParams(object):
   def getProxyRemainingSecs( self ):
     return self.proxyLifeTime
 
-  def setDIRACGroup( self, arg ):
-    self.diracGroup = arg
-    return DIRAC.S_OK()
+  #def setDIRACGroup( self, arg ):
+  #  self.diracGroup = arg
+  #  return DIRAC.S_OK()
 
-  def getDIRACGroup( self ):
-    return self.diracGroup
+  #def getDIRACGroup( self ):
+  #  return self.diracGroup
 
   def setCertLocation( self, arg ):
     self.certLoc = arg
@@ -89,7 +89,7 @@ class CLIParams(object):
 
   def registerCLISwitches( self ):
     Script.registerSwitch( "v:", "valid=", "Valid HH:MM for the proxy. By default is one month", self.setProxyLifeTime )
-    Script.registerSwitch( "g:", "group=", "DIRAC Group to embed in the proxy", self.setDIRACGroup )
+    #Script.registerSwitch( "g:", "group=", "DIRAC Group to embed in the proxy", self.setDIRACGroup )
     Script.registerSwitch( "C:", "Cert=", "File to use as user certificate", self.setCertLocation )
     Script.registerSwitch( "K:", "Key=", "File to use as user key", self.setKeyLocation )
     Script.registerSwitch( "P:", "Proxy=", "File to use as proxy", self.setProxyLocation )
@@ -148,14 +148,14 @@ def uploadProxy( params ):
       return S_ERROR( "Can't load %s" % keyLoc )
     DIRAC.gLogger.info( "User credentials loaded" )
 
-    diracGroup = params.diracGroup
-    if not diracGroup:
-      result = chain.getCredentials()
-      if not result['OK']:
-        return result
-      if 'group' not in result['Value']:
-        return S_ERROR( 'Can not get Group from existing credentials' )
-      diracGroup = result['Value']['group']
+    # diracGroup = params.diracGroup
+    # if not diracGroup:
+    #   result = chain.getCredentials()
+    #   if not result['OK']:
+    #     return result
+    #   if 'group' not in result['Value']:
+    #     return S_ERROR( 'Can not get Group from existing credentials' )
+    #   diracGroup = result['Value']['group']
     restrictLifeTime = params.proxyLifeTime
 
   else:
@@ -165,15 +165,15 @@ def uploadProxy( params ):
       return S_ERROR( "Can't load proxy file %s: %s" % ( params.proxyLoc, retVal[ 'Message' ] ) )
 
     chain = proxyChain
-    diracGroup = params.diracGroup
-    if params.diracGroup:
-      # Check that there is no conflict with the already present DIRAC group
-      result = chain.getDIRACGroup( ignoreDefault = True )
-      if result['OK'] and result['Value'] and result['Value'] == params.diracGroup:
-        # No need to embed a new DIRAC group
-        diracGroup = False
+    # diracGroup = params.diracGroup
+    # if params.diracGroup:
+    #   # Check that there is no conflict with the already present DIRAC group
+    #   result = chain.getDIRACGroup( ignoreDefault = True )
+    #   if result['OK'] and result['Value'] and result['Value'] == params.diracGroup:
+    #     # No need to embed a new DIRAC group
+    #     diracGroup = False
 
     restrictLifeTime = 0
 
   DIRAC.gLogger.info( " Uploading..." )
-  return gProxyManager.uploadProxy( chain, diracGroup, restrictLifeTime = restrictLifeTime, rfcIfPossible = params.rfcIfPossible )
+  return gProxyManager.uploadProxy(proxy=chain, restrictLifeTime=restrictLifeTime, rfcIfPossible=params.rfcIfPossible) #diracGroup

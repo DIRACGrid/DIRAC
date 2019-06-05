@@ -45,7 +45,7 @@ class ProxyManagerHandler( RequestHandler ):
     if not result[ 'OK' ]:
       return result
     selDict = { 'UserDN' : result[ 'Value' ] }
-    result = self.__proxyDB.getProxiesContent( selDict, {}, 0, 0 )
+    result = self.__proxyDB.getProxiesContent( selDict, {} )
     if not result[ 'OK']:
       return result
     contents = result[ 'Value' ]
@@ -73,15 +73,14 @@ class ProxyManagerHandler( RequestHandler ):
     """
     return S_OK( self.__generateUserProxiesInfo() )
 
-  types_requestDelegationUpload = [ [int, long], [basestring, bool] ]
-  def export_requestDelegationUpload( self, requestedUploadTime, userGroup ):
+  types_requestDelegationUpload = [ [int, long]]#, [basestring, bool] ]
+  def export_requestDelegationUpload( self, requestedUploadTime):#, userGroup ):
     """ Request a delegation. Send a delegation request to client
     """
     credDict = self.getRemoteCredentials()
     userDN = credDict[ 'DN' ]
     userName = credDict[ 'username' ]
-    if not userGroup:
-      userGroup = credDict[ 'group' ]
+    userGroup = credDict[ 'group' ]
     retVal = Registry.getGroupsForUser( credDict[ 'username' ] )
     if not retVal[ 'OK' ]:
       return retVal
@@ -113,15 +112,17 @@ class ProxyManagerHandler( RequestHandler ):
 
   types_getRegisteredUsers = []
   def export_getRegisteredUsers( self, validSecondsRequired = 0 ):
-    """
-    Get the list of users who have a valid proxy in the system
-      - validSecondsRequired is an optional argument to specify the required
-          seconds the proxy is valid for
+    """ Get the list of users who have a valid proxy in the system
+        
+        :param basestring validSecondsRequired: required seconds the proxy is valid for
+
+        :return: S_OK(list)/S_ERROR() -- list contain dicts with user name, DN, group
+                                         expiration time, persistent flag
     """
     credDict = self.getRemoteCredentials()
     if not Properties.PROXY_MANAGEMENT in credDict[ 'properties' ]:
-      return self.__proxyDB.getUsers( validSecondsRequired, userMask = [ credDict[ 'username' ] ] )
-    return self.__proxyDB.getUsers( validSecondsRequired )
+      return self.__proxyDB.getUsers(validSecondsRequired, userName=credDict['username'])
+    return self.__proxyDB.getUsers(validSecondsRequired)
 
   def __checkProperties( self, requestedUserDN, requestedUserGroup ):
     """
