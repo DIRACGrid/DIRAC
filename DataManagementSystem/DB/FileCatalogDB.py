@@ -115,7 +115,7 @@ class FileCatalogDB(DB):
     result = self.objectLoader.loadObject('%s.%s' % (componentPath, moduleName),
                                           componentName.split('.')[-1])
     if not result['OK']:
-      gLogger.error('Failed to load catalog component', result['Message'])
+      gLogger.error('Failed to load catalog component', '%s: %s' % (componentName, result['Message']))
       return result
     componentClass = result['Value']
     component = componentClass(self)
