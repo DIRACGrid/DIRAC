@@ -385,9 +385,6 @@ class StorageElementItem(object):
     """
     log = self.log.getSubLogger('getOccupancy', True)
 
-    # Mandatory parameters
-    mandatoryParams = set(['Total', 'Free'])
-
     if 'occupancyLFN' not in kwargs:
       occupancyLFN = self.options.get('OccupancyLFN')
       if not occupancyLFN:
@@ -399,8 +396,8 @@ class StorageElementItem(object):
     if not filteredPlugins:
       return S_ERROR(errno.EPROTONOSUPPORT, "No storage plugins to query the occupancy")
 
-    occupancyPlugin = self.options.get('OccupancyPlugin')
     # Call occupancy plugin if requested
+    occupancyPlugin = self.options.get('OccupancyPlugin')
     if occupancyPlugin:
       res = ObjectLoader().loadObject(occupancyPlugin)
       if not res['OK']:
@@ -411,7 +408,7 @@ class StorageElementItem(object):
         res = occupancyPlugin.getOccupancy()
         if res['OK']:
           occupancyDict = res['Value']
-          result = self.checkOccupancy(occupancyDict, mandatoryParams, unit)
+          result = self.checkOccupancy(occupancyDict, unit)
           if result['OK']:
             return result['Value']
 
@@ -422,7 +419,7 @@ class StorageElementItem(object):
       res = storage.getOccupancy(**kwargs)
       if res['OK']:
         occupancyDict = res['Value']
-        result = self.checkOccupancy(occupancyDict, mandatoryParams, unit)
+        result = self.checkOccupancy(occupancyDict, unit)
         if not result['OK']:
           continue
         occupancyDict = result['Value']
@@ -433,8 +430,18 @@ class StorageElementItem(object):
 
     return S_ERROR("Could not retrieve the occupancy from any plugin")
 
-  def checkOccupancy(self, occupancyDict, mandatoryParams, unit):
+  def checkOccupancy(self, occupancyDict, unit):
+    """ Validate occupancy dict given by getOccupancy
+
+      :param occupancyDict: occupancy given by occupancy or storage plugins
+      :param unit: inherited from getOccupancy
+
+      :returns: S_OK with updated occupancyDict
+    """
     log = self.log.getSubLogger('checkOccupancy', True)
+
+    # Mandatory parameters
+    mandatoryParams = set(['Total', 'Free'])
     # Make sure all the mandatory parameters are present
     if set(occupancyDict) & mandatoryParams != mandatoryParams:
 
