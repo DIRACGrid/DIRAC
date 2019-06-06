@@ -31,7 +31,8 @@ class FileCatalogDB(DB):
     self.fileManager = None
     self.dmeta = None
     self.fmeta = None
-    self.statusDict = {}
+    self.datasetManager = None
+    self.objectLoader = None
 
   def setConfig(self, databaseConfig):
 
