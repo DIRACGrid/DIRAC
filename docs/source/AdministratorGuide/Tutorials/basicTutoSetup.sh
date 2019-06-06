@@ -22,22 +22,10 @@ chown -R dirac:dirac /opt/dirac/
 
 #localinstall does not error when rpm is already installed
 # START runit
-yum localinstall -y http://diracproject.web.cern.ch/diracproject/rpm/runit-2.1.2-1.el6.x86_64.rpm
+yum localinstall -y http://diracproject.web.cern.ch/diracproject/rpm/runit-2.1.2-1.el7.cern.x86_64.rpm
 # END runit
 
-cat > /etc/init/runsvdir.conf <<EOF
-# START runsvdir.conf
-# for runit - manage /usr/sbin/runsvdir-start
-start on runlevel [2345]
-stop on runlevel [^2345]
-normal exit 0 111
-respawn
-exec /opt/dirac/sbin/runsvdir-start
-# END runsvdir.conf
-EOF
-
-
-cat > /opt/dirac/sbin/runsvdir-start <<'EOF'
+cat > /opt/dirac/sbin/runsvdir-start <<EOF
 # START runsvdir-start
 cd /opt/dirac
 RUNSVCTRL='/sbin/runsvctrl'
@@ -48,10 +36,28 @@ exec chpst -u dirac $RUNSVDIR -P /opt/dirac/startup 'log:  DIRAC runsv'
 # END runsvdir-start
 EOF
 
+sed -iE "s@ExecStart=/.*@ExecStart=/opt/dirac/sbin/runsvdir-start@g" /usr/lib/systemd/system/runsvdir-start.service
+cat > /dev/null <<EOF
+# START systemd-runsvdir
+[Unit]
+Description=Runit Process Supervisor
+
+[Service]
+ExecStart=/opt/dirac/sbin/runsvdir-start
+Restart=always
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target
+# END systemd-runsvdir
+EOF
+
+
 # START restartrunsv
 chown dirac:dirac /opt/dirac/sbin/runsvdir-start
 chmod +x /opt/dirac/sbin/runsvdir-start
-start runsvdir || restart runsvdir
+systemctl daemon-reload
+systemctl start runsvdir-start
 # END restartrunsv
 
 ## SETUP FOR MYSQL
@@ -60,15 +66,15 @@ start runsvdir || restart runsvdir
 yum remove -y $(rpm -qa | grep -i mysql | paste -sd ' ')
 rm -rf /var/lib/mysql/*
 yum install -y \
-    https://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-community-devel-5.7.25-1.el6.x86_64.rpm \
-    https://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-community-server-5.7.25-1.el6.x86_64.rpm \
-    https://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-community-client-5.7.25-1.el6.x86_64.rpm \
-    https://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-community-libs-5.7.25-1.el6.x86_64.rpm \
-    https://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-community-common-5.7.25-1.el6.x86_64.rpm
+    https://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-community-devel-5.7.25-1.el7.x86_64.rpm \
+    https://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-community-server-5.7.25-1.el7.x86_64.rpm \
+    https://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-community-client-5.7.25-1.el7.x86_64.rpm \
+    https://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-community-libs-5.7.25-1.el7.x86_64.rpm \
+    https://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-community-common-5.7.25-1.el7.x86_64.rpm
 # END mysqlInstall
 
 # START mysqlStart
-service mysqld start
+systemctl start mysqld
 # END mysqlStart
 
 cat > mysqlSetup.sql <<EOF
