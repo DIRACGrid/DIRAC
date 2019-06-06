@@ -39,9 +39,9 @@ class BDIIOccupancy(object):
     ret = ldapsearchBDII(filt, BDIIAttr, host=self.bdii)
     if not ret['OK']:
       return ret
-    if len(ret['Value']) > 0:
-      if 'attr' in ret['Value'][0]:
-        attr = ret['Value'][0]['attr']
+    for value in ret['Value']:
+      if 'attr' in value:
+        attr = value['attr']
         sTokenDict['Total'] = float(attr.get(BDIIAttr[0], 0)) * 1024 * 1024 * 1024
         sTokenDict['Free'] = float(attr.get(BDIIAttr[1], 0)) * 1024 * 1024 * 1024
     return S_OK(sTokenDict)
