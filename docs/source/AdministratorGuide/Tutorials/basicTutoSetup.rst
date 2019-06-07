@@ -29,9 +29,9 @@ More links
 Basic requirements
 ==================
 
-We assume that you have at your disposition a fresh SLC6 64bit installation. If you don't, we recommend installing a virtual machine. Instructions for installing SLC6 can be found `here <http://linux.web.cern.ch/linux/scientific6/docs/install.shtml>`_
+We assume that you have at your disposition a fresh CC7 64bit installation. If you don't, we recommend installing a virtual machine. Instructions for installing CC7 can be found `here <http://linux.web.cern.ch/linux/centos7/docs/install.shtml>`_
 
-In this tutorial, we will use a freshly installed SLC6 x86_64 virtual machine, with all the default options, except the hostname being ``dirac-tuto``.
+In this tutorial, we will use a freshly installed CC7 x86_64 virtual machine, with all the default options, except the hostname being ``dirac-tuto``.
 
 Machine setup
 =============

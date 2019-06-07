@@ -25,7 +25,7 @@ chown -R dirac:dirac /opt/dirac/
 yum localinstall -y http://diracproject.web.cern.ch/diracproject/rpm/runit-2.1.2-1.el7.cern.x86_64.rpm
 # END runit
 
-cat > /opt/dirac/sbin/runsvdir-start <<EOF
+cat > /opt/dirac/sbin/runsvdir-start <<'EOF'
 # START runsvdir-start
 cd /opt/dirac
 RUNSVCTRL='/sbin/runsvctrl'
@@ -36,8 +36,7 @@ exec chpst -u dirac $RUNSVDIR -P /opt/dirac/startup 'log:  DIRAC runsv'
 # END runsvdir-start
 EOF
 
-sed -iE "s@ExecStart=/.*@ExecStart=/opt/dirac/sbin/runsvdir-start@g" /usr/lib/systemd/system/runsvdir-start.service
-cat > /dev/null <<EOF
+cat > /lib/systemd/system/runsvdir-start.service <<EOF
 # START systemd-runsvdir
 [Unit]
 Description=Runit Process Supervisor
