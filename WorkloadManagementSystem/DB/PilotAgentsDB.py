@@ -21,7 +21,7 @@ __RCSID__ = "$Id$"
 
 import threading
 
-from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE, getCESiteMapping
 import DIRAC.Core.Utilities.Time as Time
@@ -249,13 +249,13 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
     for req in reqList:
       result = self._query(req)
       if not result['OK']:
-        gLogger.warn('Error while clearing up pilots')
+        self.log.warn('Error while clearing up pilots')
       else:
         if result['Value']:
           idList = [x[0] for x in result['Value']]
           result = self.deletePilots(idList)
           if not result['OK']:
-            gLogger.warn('Error while deleting pilots')
+            self.log.warn('Error while deleting pilots')
 
     return S_OK(idList)
 
@@ -512,13 +512,13 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
     result = self._query('SELECT PilotID FROM JobToPilotMapping WHERE JobID=%s' % jobID)
 
     if not result['OK']:
-      gLogger.error("getPilotsForJobID failed", result['Message'])
+      self.log.error("getPilotsForJobID failed", result['Message'])
       return result
 
     if result['Value']:
       pilotList = [x[0] for x in result['Value']]
       return S_OK(pilotList)
-    gLogger.warn('PilotID for job %d not found: not matched yet?' % jobID)
+    self.log.warn('PilotID for job %d not found: not matched yet?' % jobID)
     return S_OK([])
 
 ##########################################################################################
@@ -533,7 +533,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
     if result['Value']:
       jobID = int(result['Value'][0][0])
       return S_OK(jobID)
-    gLogger.warn('Current job ID for pilot %s is not known: pilot did not match jobs yet?' % pilotRef)
+    self.log.warn('Current job ID for pilot %s is not known: pilot did not match jobs yet?' % pilotRef)
     return S_OK()
 
 ##########################################################################################

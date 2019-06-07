@@ -335,8 +335,8 @@ class Matcher(object):
             raise RuntimeError(result['Message'])
           if credDict['group'] not in result['Value']:
             # DN is not in the same group! bad boy.
-            self.log.notice("You cannot request jobs from this DN, as it does not belong to your group!",
-                            "(%s)" % ownerDN)
+            self.log.warn("You cannot request jobs from this DN, as it does not belong to your group!",
+                          "(%s)" % ownerDN)
             resourceDict['OwnerDN'] = credDict['DN']
       # Nothing special, group and DN have to be the same
       else:
