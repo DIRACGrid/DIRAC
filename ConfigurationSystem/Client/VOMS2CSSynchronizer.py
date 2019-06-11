@@ -170,7 +170,8 @@ class VOMS2CSSynchronizer(object):
     self.vomsUserDict = result['Value']
     message = "There are %s user entries in VOMS for VO %s" % (len(self.vomsUserDict), self.vomsVOName)
     self.adminMsgs['Info'].append(message)
-    self.log.info(message)
+    self.log.info('VOMS user entries', message)
+    self.log.debug(self.vomsUserDict)
 
     # Get DIRAC users
     result = self.getVOUserData(self.vo)
@@ -178,7 +179,8 @@ class VOMS2CSSynchronizer(object):
       return result
     diracUserDict = result['Value']
     self.adminMsgs['Info'].append("There are %s registered users in DIRAC for VO %s" % (len(diracUserDict), self.vo))
-    self.log.info("There are %s registered users in DIRAC VO %s" % (len(diracUserDict), self.vo))
+    self.log.info("Users already registered",
+                  ": there are %s registered users in DIRAC VO %s" % (len(diracUserDict), self.vo))
 
     # Find new and obsoleted user DNs
     existingDNs = []
@@ -509,25 +511,25 @@ class VOMS2CSSynchronizer(object):
       surnameName = _getUserNameFromSurname(name, surname)
       return surnameName
 
-    mail = self.vomsUserDict[dn]['mail']
-
     dnName = _getUserNameFromDN(dn, self.vo)
-    mailName = _getUserNameFromMail(mail)
 
     # If robot, take the dn based name
     if dnName.startswith('robot'):
       return dnName
 
     # Is mailName reasonable ?
-    if len(mailName) > 5 and mailName.isalpha():
-      return mailName
+    mail = self.vomsUserDict[dn]['mail']
+    if mail:
+      mailName = _getUserNameFromMail(mail)
+      if len(mailName) > 5 and mailName.isalpha():
+        return mailName
 
     # dnName too long
     if len(dnName) >= 12:
       return dnName[:11]
 
     # May be the mail name is still more reasonable
-    if len(dnName) < len(mailName) and mailName.isalpha():
+    if mail and len(dnName) < len(mailName) and mailName.isalpha():
       return mailName
 
     return dnName
