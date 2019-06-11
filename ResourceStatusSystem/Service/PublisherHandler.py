@@ -9,6 +9,7 @@ __RCSID__ = '$Id$'
 
 #  pylint: disable=no-self-use
 
+import types
 from datetime import datetime, timedelta
 
 # DIRAC
@@ -68,7 +69,7 @@ class PublisherHandler(RequestHandler):
     gLogger.info('getSites')
     return getSites()
 
-  types_getSitesResources = [(basestring, list, None)]
+  types_getSitesResources = [(basestring, list, types.NoneType)]
 
   def export_getSitesResources(self, siteNames):
     """
@@ -110,9 +111,9 @@ class PublisherHandler(RequestHandler):
 
     return S_OK(sitesRes)
 
-  types_getElementStatuses = [basestring, (basestring, list, None), (basestring, list, None),
-                              (basestring, list, None), (basestring, list, None),
-                              (basestring, list, None)]
+  types_getElementStatuses = [basestring, (basestring, list, types.NoneType), (basestring, list, types.NoneType),
+                              (basestring, list, types.NoneType), (basestring, list, types.NoneType),
+                              (basestring, list, types.NoneType)]
 
   def export_getElementStatuses(self, element, name, elementType, statusType, status, tokenOwner):
     """
@@ -124,8 +125,8 @@ class PublisherHandler(RequestHandler):
                                         statusType=statusType, status=status,
                                         tokenOwner=tokenOwner)
 
-  types_getElementHistory = [basestring, (basestring, list, None), (basestring, list, None),
-                             (basestring, list, None)]
+  types_getElementHistory = [basestring, (basestring, list, types.NoneType), (basestring, list, types.NoneType),
+                             (basestring, list, types.NoneType)]
 
   def export_getElementHistory(self, element, name, elementType, statusType):
     """
@@ -138,7 +139,7 @@ class PublisherHandler(RequestHandler):
                                         statusType=statusType,
                                         meta={'columns': columns})
 
-  types_getElementPolicies = [basestring, (basestring, list, None), (basestring, list, None)]
+  types_getElementPolicies = [basestring, (basestring, list, types.NoneType), (basestring, list, types.NoneType)]
 
   def export_getElementPolicies(self, element, name, statusType):
     """
@@ -294,8 +295,8 @@ class PublisherHandler(RequestHandler):
                                                           'Link', 'Description',
                                                           'Severity']})
 
-  types_getCachedDowntimes = [(basestring, None, list), (basestring, None, list), (basestring, None, list),
-                              (basestring, None, list)]
+  types_getCachedDowntimes = [(basestring, types.NoneType, list), (basestring, types.NoneType, list), (basestring, types.NoneType, list),
+                              (basestring, types.NoneType, list)]
 
   def export_getCachedDowntimes(self, element, elementType, name, severity):
 
@@ -351,7 +352,7 @@ class PublisherHandler(RequestHandler):
 
     return S_OK(reason)
 
-  types_getFreeDiskSpace = [(basestring, None, list), (basestring, None, list)]
+  types_getFreeDiskSpace = [(basestring, types.NoneType, list), (basestring, types.NoneType, list)]
 
   def export_getFreeDiskSpace(self, site, token):
     """ Exporting to web the
