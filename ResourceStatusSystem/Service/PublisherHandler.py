@@ -295,7 +295,9 @@ class PublisherHandler(RequestHandler):
                                                           'Link', 'Description',
                                                           'Severity']})
 
-  types_getCachedDowntimes = [(basestring, types.NoneType, list), (basestring, types.NoneType, list), (basestring, types.NoneType, list),
+  types_getCachedDowntimes = [(basestring, types.NoneType, list),
+                              (basestring, types.NoneType, list),
+                              (basestring, types.NoneType, list),
                               (basestring, types.NoneType, list)]
 
   def export_getCachedDowntimes(self, element, elementType, name, severity):
