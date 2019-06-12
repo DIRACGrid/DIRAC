@@ -450,9 +450,7 @@ def getProxyProvidersForDN(userDN):
   result = getDNProperty(userDN, 'ProxyProviders')
   if not result['OK']:
     return result
-  if not result['Value']:
-    return S_ERROR('No proxy providers found for "%s" user DN' % userDN)
-  ppList = result['Value']
+  ppList = result['Value'] or [None]
   if not isinstance(ppList, list):
     ppList = ppList.split()
   return S_OK(ppList)
