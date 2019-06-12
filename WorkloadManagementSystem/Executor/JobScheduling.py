@@ -390,6 +390,8 @@ class JobScheduling(OptimizerExecutor):
         tagList.append("MultiProcessor")
     if "Tags" in jobManifest:
       tagList.extend(jobManifest.getOption("Tags", []))
+    if "Tag" in jobManifest:
+      tagList.extend(jobManifest.getOption("Tag", []))
     if tagList:
 
       jobManifest.setOption("Tags", ", ".join(tagList))
