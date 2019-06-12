@@ -57,7 +57,7 @@ class DiracAdmin(API):
     self.sitestatus = SiteStatus()
 
   #############################################################################
-  def uploadProxy(self): #, group):
+  def uploadProxy(self):
     """Upload a proxy to the DIRAC WMS.  This method
 
        Example usage:
@@ -65,15 +65,13 @@ class DiracAdmin(API):
          >>> print diracAdmin.uploadProxy('lhcb_pilot')
          {'OK': True, 'Value': 0L}
 
-       :param group: DIRAC Group
-       :type job: string
        :return: S_OK,S_ERROR
 
        :param permanent: Indefinitely update proxy
        :type permanent: boolean
 
     """
-    return gProxyManager.uploadProxy()#diracGroup=group)
+    return gProxyManager.uploadProxy()
 
   #############################################################################
   def setProxyPersistency(self, userDN, userGroup, persistent=True):

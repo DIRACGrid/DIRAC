@@ -62,17 +62,16 @@ class ProxyManagerClient(object):
       self.__usersCache.add(cacheKey,
                             self.__getSecondsLeftToExpiration(record['expirationtime']),
                             record)
-      gLogger.verbose("  Add to cache: %s, %s, %s" % (str(cacheKey),
-                                                    self.__getSecondsLeftToExpiration(record['expirationtime']),
-                                                    'record'))
-      #gLogger.verbose(str(self.__usersCache.exists(cacheKey, validSeconds)))
+      gLogger.verbose("  Add to cache: %s, %s, %s" %
+                      (str(cacheKey),
+                       self.__getSecondsLeftToExpiration(record['expirationtime']),
+                       'record'))
     return S_OK()
 
   @gUsersSync
   def userHasProxy(self, userDN, userGroup, validSeconds=0):
-    """
-    Check if a user(DN-group) has a proxy in the proxy management
-      - Updates internal cache if needed to minimize queries to the
+    """ Check if a user(DN-group) has a proxy in the proxy management
+        - Updates internal cache if needed to minimize queries to the
           service
     """
     cacheKey = (userDN, userGroup)
@@ -83,14 +82,12 @@ class ProxyManagerClient(object):
     retVal = self.__refreshUserCache(validSeconds)
     if not retVal['OK']:
       return retVal
-    #gLogger.verbose("Get %s: %s" % (cacheKey, self.__usersCache.get(cacheKey, validSeconds)))
     return S_OK(self.__usersCache.exists(cacheKey, validSeconds))
 
   @gUsersSync
   def getUserPersistence(self, userDN, userGroup, validSeconds=0):
-    """
-    Check if a user(DN-group) has a proxy in the proxy management
-      - Updates internal cache if needed to minimize queries to the
+    """ Check if a user(DN-group) has a proxy in the proxy management
+        - Updates internal cache if needed to minimize queries to the
           service
     """
     cacheKey = (userDN, userGroup)
@@ -108,7 +105,6 @@ class ProxyManagerClient(object):
       return S_OK(userData['persistent'])
     return S_OK(False)
 
-  # FIXME: Old method?
   def setPersistency(self, userDN, userGroup, persistent):
     """
     Set the persistency for user/group
@@ -132,8 +128,7 @@ class ProxyManagerClient(object):
     return retVal
 
   def uploadProxy(self, proxy=False, restrictLifeTime=0, rfcIfPossible=False):
-    """
-    Upload a proxy to the proxy management service using delegation
+    """ Upload a proxy to the proxy management service using delegation
     """
     # Discover proxy location
     if isinstance(proxy, g_X509ChainType):
@@ -161,7 +156,7 @@ class ProxyManagerClient(object):
 
     rpcClient = RPCClient("Framework/ProxyManager", timeout=120)
     # Get a delegation request
-    result = rpcClient.requestDelegationUpload(chain.getRemainingSecs()['Value'])#, diracGroup)
+    result = rpcClient.requestDelegationUpload(chain.getRemainingSecs()['Value'])
     if not result['OK']:
       return result
     reqDict = result['Value']
@@ -180,12 +175,10 @@ class ProxyManagerClient(object):
       return result
     return S_OK(result.get('proxies') or result['Value'])
 
-  # FIXME: Old method
   @gProxiesSync
   def downloadProxy(self, userDN, userGroup, limited=False, requiredTimeLeft=1200,
                     cacheTime=14400, proxyToConnect=False, token=False):
-    """
-    Get a proxy Chain from the proxy management
+    """ Get a proxy Chain from the proxy management
     """
     cacheKey = (userDN, userGroup)
     if self.__proxiesCache.exists(cacheKey, requiredTimeLeft):
@@ -213,8 +206,7 @@ class ProxyManagerClient(object):
 
   def downloadProxyToFile(self, userDN, userGroup, limited=False, requiredTimeLeft=1200,
                           cacheTime=14400, filePath=False, proxyToConnect=False, token=False):
-    """
-    Get a proxy Chain from the proxy management and write it to file
+    """ Get a proxy Chain from the proxy management and write it to file
     """
     retVal = self.downloadProxy(userDN, userGroup, limited, requiredTimeLeft, cacheTime, proxyToConnect, token)
     if not retVal['OK']:
@@ -230,10 +222,8 @@ class ProxyManagerClient(object):
   def downloadVOMSProxy(self, userDN, userGroup, limited=False, requiredTimeLeft=1200,
                         cacheTime=14400, requiredVOMSAttribute=False,
                         proxyToConnect=False, token=False):
+    """ Download a proxy if needed and transform it into a VOMS one
     """
-    Download a proxy if needed and transform it into a VOMS one
-    """
-
     cacheKey = (userDN, userGroup, requiredVOMSAttribute, limited)
     if self.__vomsProxiesCache.exists(cacheKey, requiredTimeLeft):
       return S_OK(self.__vomsProxiesCache.get(cacheKey))
@@ -262,8 +252,7 @@ class ProxyManagerClient(object):
   def downloadVOMSProxyToFile(self, userDN, userGroup, limited=False, requiredTimeLeft=1200,
                               cacheTime=14400, requiredVOMSAttribute=False, filePath=False,
                               proxyToConnect=False, token=False):
-    """
-    Download a proxy if needed, transform it into a VOMS one and write it to file
+    """ Download a proxy if needed, transform it into a VOMS one and write it to file
     """
     retVal = self.downloadVOMSProxy(userDN, userGroup, limited, requiredTimeLeft, cacheTime,
                                     requiredVOMSAttribute, proxyToConnect, token)
@@ -277,8 +266,7 @@ class ProxyManagerClient(object):
     return retVal
 
   def getPilotProxyFromDIRACGroup(self, userDN, userGroup, requiredTimeLeft=43200, proxyToConnect=False):
-    """
-    Download a pilot proxy with VOMS extensions depending on the group
+    """ Download a pilot proxy with VOMS extensions depending on the group
     """
     # Assign VOMS attribute
     vomsAttr = Registry.getVOMSAttributeForGroup(userGroup)
@@ -291,8 +279,7 @@ class ProxyManagerClient(object):
                                     requiredVOMSAttribute=vomsAttr, proxyToConnect=proxyToConnect)
 
   def getPilotProxyFromVOMSGroup(self, userDN, vomsAttr, requiredTimeLeft=43200, proxyToConnect=False):
-    """
-    Download a pilot proxy with VOMS extensions depending on the group
+    """ Download a pilot proxy with VOMS extensions depending on the group
     """
     groups = Registry.getGroupsWithVOMSAttribute(vomsAttr)
     if not groups:
@@ -309,8 +296,7 @@ class ProxyManagerClient(object):
     return result
 
   def getPayloadProxyFromDIRACGroup(self, userDN, userGroup, requiredTimeLeft, token=False, proxyToConnect=False):
-    """
-    Download a payload proxy with VOMS extensions depending on the group
+    """ Download a payload proxy with VOMS extensions depending on the group
     """
     # Assign VOMS attribute
     vomsAttr = Registry.getVOMSAttributeForGroup(userGroup)
@@ -324,8 +310,7 @@ class ProxyManagerClient(object):
                                     token=token)
 
   def getPayloadProxyFromVOMSGroup(self, userDN, vomsAttr, token, requiredTimeLeft, proxyToConnect=False):
-    """
-    Download a payload proxy with VOMS extensions depending on the VOMS attr
+    """ Download a payload proxy with VOMS extensions depending on the VOMS attr
     """
     groups = Registry.getGroupsWithVOMSAttribute(vomsAttr)
     if not groups:
@@ -341,8 +326,7 @@ class ProxyManagerClient(object):
                                   token=token)
 
   def dumpProxyToFile(self, chain, destinationFile=False, requiredTimeLeft=600):
-    """
-    Dump a proxy to a file. It's cached so multiple calls won't generate extra files
+    """ Dump a proxy to a file. It's cached so multiple calls won't generate extra files
     """
     result = chain.hash()
     if not result['OK']:
@@ -361,28 +345,25 @@ class ProxyManagerClient(object):
     return S_OK(filename)
 
   def deleteGeneratedProxyFile(self, chain):
-    """
-    Delete a file generated by a dump
+    """ Delete a file generated by a dump
     """
     self.__filesCache.delete(chain)
     return S_OK()
 
   def requestToken(self, requesterDN, requesterGroup, numUses=1):
-    """
-    Request a number of tokens. usesList must be a list of integers and each integer is the number of uses a token
-    must have
+    """ Request a number of tokens. usesList must be a list of integers and each integer is the number of uses a token
+        must have
     """
     rpcClient = RPCClient("Framework/ProxyManager", timeout=120)
     return rpcClient.generateToken(requesterDN, requesterGroup, numUses)
 
   def renewProxy(self, proxyToBeRenewed=False, minLifeTime=3600, newProxyLifeTime=43200, proxyToConnect=False):
-    """
-    Renew a proxy using the ProxyManager
-    Arguments:
-      proxyToBeRenewed : proxy to renew
-      minLifeTime : if proxy life time is less than this, renew. Skip otherwise
-      newProxyLifeTime : life time of new proxy
-      proxyToConnect : proxy to use for connecting to the service
+    """ Renew a proxy using the ProxyManager
+        Arguments:
+          proxyToBeRenewed : proxy to renew
+          minLifeTime : if proxy life time is less than this, renew. Skip otherwise
+          newProxyLifeTime : life time of new proxy
+          proxyToConnect : proxy to use for connecting to the service
     """
     retVal = multiProxyArgument(proxyToBeRenewed)
     if not retVal['Value']:
@@ -447,21 +428,18 @@ class ProxyManagerClient(object):
     return S_OK(chain)
 
   def getDBContents(self, condDict={}):
-    """
-    Get the contents of the db
+    """ Get the contents of the db
     """
     rpcClient = RPCClient("Framework/ProxyManager", timeout=120)
     return rpcClient.getContents(condDict, [['UserDN', 'DESC']], 0, 0)
 
   def getVOMSAttributes(self, chain):
-    """
-    Get the voms attributes for a chain
+    """ Get the voms attributes for a chain
     """
     return VOMS().getVOMSAttributes(chain)
 
   def getUploadedProxyLifeTime(self, DN, group):
-    """
-    Get the remaining seconds for an uploaded proxy
+    """ Get the remaining seconds for an uploaded proxy
     """
     result = self.getDBContents({'UserDN': [DN], 'UserGroup': [group]})
     if not result['OK']:
@@ -487,6 +465,5 @@ class ProxyManagerClient(object):
     if 'rpcStub' in result:
       result.pop('rpcStub')
     return result
-
 
 gProxyManager = ProxyManagerClient()

@@ -134,7 +134,7 @@ class ProxyDB(DB):
                                 'PrimaryKey': 'ID',
                                 'Indexes': {'Timestamp': ['Timestamp']}
                                 }
-    # FIXME: This table is needed in v7?
+
     if 'ProxyDB_Tokens' not in tablesInDB:
       tablesD['ProxyDB_Tokens'] = {'Fields': {'Token': 'VARCHAR(64) NOT NULL',
                                               'RequesterDN': 'VARCHAR(255) NOT NULL',
@@ -252,11 +252,6 @@ class ProxyDB(DB):
     data = retVal['Value']
     if len(data) == 0:
       return S_ERROR("Insertion of the request in the db didn't work as expected")
-    # retVal = proxyChain.getDIRACGroup()
-    # if retVal['OK'] and retVal['Value']:
-    #   userGroup = retVal['Value']
-    # else:
-    #   userGroup = "unset"
     userGroup = proxyChain.getDIRACGroup().get('Value') or "unset"
     self.logAction("request upload", userDN, userGroup, userDN, "any")
     # Here we go!
@@ -322,20 +317,11 @@ class ProxyDB(DB):
     retVal = chain.loadChainFromString(delegatedPem)
     if not retVal['OK']:
       return retVal
-    retVal = chain.isValidProxy()#ignoreDefault=True)
+    retVal = chain.isValidProxy()
     if not retVal['OK']:
       return retVal
-    
-      # if DErrno.cmpError(retVal, DErrno.ENOGROUP):
-      #   # For proxies without embedded DIRAC group only one default is allowed
-      #   # Cleaning all the proxies for this DN if any before uploading the new one.
-      #   retVal = self.deleteProxy(userDN)
-      #   if not retVal['OK']:
-      #     return retVal
-      # else:
-      #   return retVal
 
-    result = chain.isVOMS() # FIXME: Add exception when is group extention also
+    result = chain.isVOMS()
     if result['OK'] and result.get('Value'):
       return S_ERROR("Proxies with VOMS extensions are not allowed to be uploaded")
 
@@ -350,15 +336,8 @@ class ProxyDB(DB):
       return retVal
     if retVal['Value']:
       return S_ERROR("Proxies with DIRAC group extensions are not allowed to be uploaded: %s" % retVal['Value'])
-    #  userGroup = retVal['Value']
 
-    # retVal = Registry.getGroupsForDN(userDN)
-    # if not retVal['OK']:
-    #   return retVal
-    # if userGroup and userGroup not in retVal['Value']:
-    #   return S_ERROR("%s group is not valid for %s" % (userGroup, userDN))
-
-    retVal = self.storeProxy(userDN, chain)#, userGroup
+    retVal = self.storeProxy(userDN, chain)
     if not retVal['OK']:
       return retVal
     retVal = self.deleteRequest(requestId)
@@ -366,13 +345,11 @@ class ProxyDB(DB):
       return retVal
     return S_OK()
 
-  # FIXME: For v7 need to delete userGroup parameter
-  def storeProxy(self, userDN, chain, proxyProvider=None):#userGroup,
+  def storeProxy(self, userDN, chain, proxyProvider=None):
     """ Store user proxy into the Proxy repository for a user specified by his
         DN and group or proxy provider.
 
         :param basestring userDN: user DN from proxy
-        :param basestring,boolean userGroup: group extension from proxy
         :param X509Chain() chain: proxy chain
         :param basestring proxyProvider: proxy provider name. In case this
                parameter set userGroup is ignored
@@ -410,20 +387,6 @@ class ProxyDB(DB):
       self.log.error(msg, vMsg)
       return S_ERROR("%s. %s" % (msg, vMsg))
 
-    # Check the groups
-    # if userGroup and not proxyProvider:
-    #   retVal = chain.getDIRACGroup()
-    #   if not retVal['OK']:
-    #     return retVal
-    #   proxyGroup = retVal['Value']
-    #   if not proxyGroup:
-    #     proxyGroup = Registry.getDefaultUserGroup()
-    #   if userGroup != proxyGroup:
-    #     msg = "Mismatch in the user group"
-    #     vMsg = "Proxy says %s and credentials are %s" % (proxyGroup, userGroup)
-    #     self.log.error(msg, vMsg)
-    #     return S_ERROR("%s. %s" % (msg, vMsg))
-
     # Check if its limited
     if chain.isLimitedProxy()['Value']:
       return S_ERROR("Limited proxies are not allowed to be stored")
@@ -436,10 +399,6 @@ class ProxyDB(DB):
 
     try:
       sUserDN = self._escapeString(userDN)['Value']
-      # if userGroup and not proxyProvider:
-      #   sUserGroup = self._escapeString(userGroup)['Value']
-      #   sTable = 'ProxyDB_Proxies'
-      # else:
       sTable = 'ProxyDB_CleanProxies'
     except KeyError:
       return S_ERROR("Cannot escape DN")
@@ -447,10 +406,6 @@ class ProxyDB(DB):
     # Check what we have already got in the repository
     cmd = "SELECT TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ), Pem "
     cmd += "FROM `%s` WHERE UserDN=%s " % (sTable, sUserDN)
-    # if proxyProvider:
-    #   cmd += 'AND ProxyProvider="%s"' % proxyProvider
-    # else:
-    #   cmd += "AND UserGroup=%s" % sUserGroup
     result = self._query(cmd)
     if not result['OK']:
       return result
@@ -476,10 +431,6 @@ class ProxyDB(DB):
                'UserDN': sUserDN,
                'Pem': self._escapeString(pemChain)['Value'],
                'ExpirationTime': 'TIMESTAMPADD( SECOND, %d, UTC_TIMESTAMP() )' % int(remainingSecs)}
-    # if userGroup and not proxyProvider:
-    #   dValues['UserGroup'] = sUserGroup
-    #   dValues['PersistentFlag'] = "'False'"
-    # else:
     if proxyProvider:
       dValues['ProxyProvider'] = "'%s'" % proxyProvider
     if sqlInsert:
@@ -493,16 +444,12 @@ class ProxyDB(DB):
       sqlSet = []
       sqlWhere = []
       for k in dValues:
-        if k in ('UserDN', 'ProxyProvider'):#, 'UserGroup'
+        if k in ('UserDN', 'ProxyProvider'):
           sqlWhere.append("%s = %s" % (k, dValues[k]))
         else:
           sqlSet.append("%s = %s" % (k, dValues[k]))
       cmd = "UPDATE `%s` SET %s WHERE %s" % (sTable, ", ".join(sqlSet), " AND ".join(sqlWhere))
-
-    # if userGroup and not proxyProvider:
-    #   self.logAction("store proxy", userDN, userGroup, userDN, userGroup)
-    # else:
-    #   self.logAction("store clean proxy", userDN, proxyProvider, userDN, proxyProvider)
+      
     self.logAction("store proxy", userDN, proxyProvider, userDN, proxyProvider)
     return self._update(cmd)
 
@@ -1236,8 +1183,7 @@ class ProxyDB(DB):
     return S_OK({'ParameterNames': fields, 'Records': data, 'TotalRecords': totalRecords})
 
   def generateToken(self, requesterDN, requesterGroup, numUses=1, lifeTime=0, retries=10):
-    """
-    Generate and return a token and the number of uses for the token
+    """ Generate and return a token and the number of uses for the token
     """
     if not lifeTime:
       lifeTime = gConfig.getValue("/DIRAC/VOPolicy/TokenLifeTime", self.__defaultTokenLifetime)
