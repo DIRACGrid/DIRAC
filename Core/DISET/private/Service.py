@@ -28,6 +28,7 @@ from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
 from DIRAC.Core.DISET.AuthManager import AuthManager
 from DIRAC.FrameworkSystem.Client.SecurityLogClient import SecurityLogClient
 from DIRAC.ConfigurationSystem.Client import PathFinder
+from DIRAC.ConfigurationSystem.Client.Config import gConfig
 
 __RCSID__ = "$Id$"
 
@@ -54,6 +55,7 @@ class Service(object):
         Standalone is true if there is only one service started
         If it's false, every service is linked to a different MonitoringClient
     """
+    self.activityMonitoring = gConfig.getValue("/DIRAC/ActivityMonitoring")
     self._svcData = serviceData
     self._name = serviceData['modName']
     self._startTime = Time.dateTime()
