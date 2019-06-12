@@ -526,7 +526,7 @@ class VOMS2CSSynchronizer(object):
 
     # dnName too long
     if len(dnName) >= 12:
-      return dnName[:11]
+      dnName = dnName[:11]
 
     # May be the mail name is still more reasonable
     if mail and len(dnName) < len(mailName) and mailName.isalpha():
