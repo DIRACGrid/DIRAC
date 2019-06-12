@@ -341,7 +341,7 @@ class RequestTasks(TaskBase):
     for taskDict in taskDicts:
       requestName = self._transTaskName(taskDict['TransformationID'], taskDict['TaskID'])
       reqID = taskDict['ExternalID']
-      if reqID:
+      if reqID and int(reqID):
         requestNameIDs[requestName] = reqID
       else:
         noTasks.append(requestName)
