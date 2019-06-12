@@ -33,8 +33,10 @@ if not result['OK']:
   sys.exit(1)
 proxyProps = result['Value']
 
+userName = userName or proxyProps.get('username')
 if not userName:
-  userName = proxyProps['username']
+  print "Your proxy don`t have username extension"
+  sys.exit(1)
 
 if userName in Registry.getAllUsers():
   if Properties.PROXY_MANAGEMENT not in proxyProps['groupProperties']:

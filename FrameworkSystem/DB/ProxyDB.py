@@ -93,7 +93,7 @@ class ProxyDB(DB):
     if 'ProxyDB_CleanProxies' not in tablesInDB:
       tablesD['ProxyDB_CleanProxies'] = {'Fields': {'UserName': 'VARCHAR(64) NOT NULL',
                                                     'UserDN': 'VARCHAR(255) NOT NULL',
-                                                    'ProxyProvider': 'VARCHAR(64) NOT NULL',
+                                                    'ProxyProvider': 'VARCHAR(64) DEFAULT "Certificate"',
                                                     'Pem': 'BLOB',
                                                     'ExpirationTime': 'DATETIME',
                                                     },
@@ -749,6 +749,8 @@ class ProxyDB(DB):
 
         :return: S_OK(dict)/S_ERROR() -- dict with remaining seconds, proxy as a string and as a chain
     """
+    if not proxyProvider:
+      return S_ERROR('No proxy providers found for "%s" user DN' % userDN)
     gLogger.info('Getting proxy from proxyProvider', '(for "%s" DN by "%s")' % (userDN, proxyProvider))
     result = ProxyProviderFactory().getProxyProvider(proxyProvider)
     if not result['OK']:
@@ -785,9 +787,8 @@ class ProxyDB(DB):
     if isPUSPdn(userDN):
       result = S_OK(['PUSP'])
     if result['OK']:
-      PPList = result['Value']
-      for proxyProvider in PPList:
-        result = self.__getPemAndTimeLeft(userDN, userGroup, proxyProvider=proxyProvider)
+      for proxyProvider in result['Value']:
+        result = self.__getPemAndTimeLeft(userDN, userGroup, proxyProvider=proxyProvider or 'Certificate')
         if result['OK'] and (not requiredLifeTime or result['Value'][1] > requiredLifeTime):
           return result
         result = self.__generateProxyFromProxyProvider(userDN, proxyProvider)
@@ -825,36 +826,36 @@ class ProxyDB(DB):
       return S_OK((chain, timeLeft))
 
     # Standard proxy is requested
+    errMsg = "Can't get proxy%s: " % (requiredLifeTime and ' for %s seconds' % requiredLifeTime or '')
     retVal = self.__getPemAndTimeLeft(userDN, userGroup)
     if not retVal['OK']:
-      errMsg = '%s and ' % retVal['Message']
+      errMsg += '%s, try to use proxy provider' %retVal['Message']
       retVal = self.__getProxyFromProxyProviders(userDN, userGroup, requiredLifeTime=requiredLifeTime)
     elif requiredLifeTime:
       if retVal['Value'][1] < requiredLifeTime and not self.__useMyProxy:
-        errMsg = 'the time left in the proxy from repository is less than required and '
+        errMsg += 'the time left in the proxy from repository is less than required'
+        errMsg += ', try to use proxy provider'
         retVal = self.__getProxyFromProxyProviders(userDN, userGroup, requiredLifeTime=requiredLifeTime)
-    if retVal['OK']:
-      pemData = retVal['Value'][0]
-      timeLeft = retVal['Value'][1]
-      chain = X509Chain()
-      retVal = chain.loadProxyFromString(pemData)
-      if retVal['OK']:
-        if requiredLifeTime:
-          if timeLeft < requiredLifeTime:
-            if not self.__useMyProxy:
-              retVal = self.renewFromMyProxy(userDN, userGroup, lifeTime=requiredLifeTime, chain=chain)
-              if retVal['OK']:
-                chain = retVal['Value']
-            else:
-              retVal['Message'] = "the proxy lifetime from MyProxy is less than required"
-    return S_ERROR("Can't get a proxy%s %s " % (requiredLifeTime and ' for %s seconds:' % requiredLifeTime or ':',
-                                               '%s%s' % (errMsg or '', retVal['Message'])))
+    if not retVal['OK']:
+      return S_ERROR("%s; %s" % (errMsg, retVal['Message']))
+    pemData = retVal['Value'][0]
+    timeLeft = retVal['Value'][1]
+    chain = X509Chain()
+    result = chain.loadProxyFromString(pemData)
+    if not retVal['OK']:
+      return S_ERROR("%s; %s" % (errMsg, retVal['Message']))
+    if self.__useMyProxy:
+      if requiredLifeTime:
+        if timeLeft < requiredLifeTime:
+          retVal = self.renewFromMyProxy(userDN, userGroup, lifeTime=requiredLifeTime, chain=chain)
+          if not retVal['OK']:
+            return S_ERROR("%s; the proxy lifetime from MyProxy is less than required." % errMsg)
+          chain = retVal['Value']
 
     # Proxy is invalid for some reason, let's delete it
     if not chain.isValidProxy()['Value']:
       self.deleteProxy(userDN, userGroup)
       return S_ERROR("%s@%s has no proxy registered" % (userDN, userGroup))
-
     return S_OK((chain, timeLeft))
 
   def __getVOMSAttribute(self, userGroup, requiredVOMSAttribute=False):
@@ -1101,61 +1102,65 @@ class ProxyDB(DB):
       cmd = "UPDATE `ProxyDB_Proxies` SET PersistentFlag='%s' WHERE UserDN=%s AND UserGroup=%s" % (sqlFlag,
                                                                                                    sUserDN,
                                                                                                    sUserGroup)
-
     retVal = self._update(cmd)
     if not retVal['OK']:
       return retVal
     return S_OK()
 
-  # FIXME: need to add clean DB search
   def getProxiesContent(self, selDict, sortList, start=0, limit=0):
     """ Get the contents of the db, parameters are a filter to the db
     """
-    fields = ("UserName", "UserDN", "UserGroup", "ExpirationTime", "PersistentFlag")
-    cmd = "SELECT %s FROM `ProxyDB_Proxies`" % ", ".join(fields)
-    sqlWhere = ["Pem is not NULL"]
-    for field in selDict:
-      if field not in fields:
-        continue
-      fVal = selDict[field]
-      if isinstance(fVal, (dict, tuple, list)):
-        sqlWhere.append("%s in (%s)" % (field, ", ".join([self._escapeString(str(value))['Value'] for value in fVal])))
-      else:
-        sqlWhere.append("%s = %s" % (field, self._escapeString(str(fVal))['Value']))
-    sqlOrder = []
-    if sortList:
-      for sort in sortList:
-        if len(sort) == 1:
-          sort = (sort, "DESC")
-        elif len(sort) > 2:
-          return S_ERROR("Invalid sort %s" % sort)
-        if sort[0] not in fields:
-          return S_ERROR("Invalid sorting field %s" % sort[0])
-        if sort[1].upper() not in ("ASC", "DESC"):
-          return S_ERROR("Invalid sorting order %s" % sort[1])
-        sqlOrder.append("%s %s" % (sort[0], sort[1]))
-    if sqlWhere:
-      cmd = "%s WHERE %s" % (cmd, " AND ".join(sqlWhere))
-    if sqlOrder:
-      cmd = "%s ORDER BY %s" % (cmd, ", ".join(sqlOrder))
-    if limit:
-      try:
-        start = int(start)
-        limit = int(limit)
-      except ValueError:
-        return S_ERROR("start and limit have to be integers")
-      cmd += " LIMIT %d,%d" % (start, limit)
-    retVal = self._query(cmd)
-    if not retVal['OK']:
-      return retVal
     data = []
-    for record in retVal['Value']:
-      record = list(record)
-      if record[4] == 'True':
-        record[4] = True
-      else:
-        record[4] = False
-      data.append(record)
+    sqlWhere = ["Pem is not NULL"]
+    for table, fields in [('ProxyDB_CleanProxies', ("UserName", "UserDN", "ExpirationTime")),
+                          ('ProxyDB_Proxies', ("UserName", "UserDN", "UserGroup", "ExpirationTime", "PersistentFlag"))]:
+      cmd = "SELECT %s FROM `%s`" % (", ".join(fields), table)
+      for field in selDict:
+        if field not in fields:
+          continue
+        fVal = selDict[field]
+        if isinstance(fVal, (dict, tuple, list)):
+          sqlWhere.append("%s in (%s)" % (field, ", ".join([self._escapeString(str(value))['Value'] for value in fVal])))
+        else:
+          sqlWhere.append("%s = %s" % (field, self._escapeString(str(fVal))['Value']))
+      sqlOrder = []
+      if sortList:
+        for sort in sortList:
+          if len(sort) == 1:
+            sort = (sort, "DESC")
+          elif len(sort) > 2:
+            return S_ERROR("Invalid sort %s" % sort)
+          if sort[0] not in fields:
+            if table == 'ProxyDB_CleanProxies' and sort[0] in ['UserGroup', 'PersistentFlag']:
+              continue
+            return S_ERROR("Invalid sorting field %s" % sort[0])
+          if sort[1].upper() not in ("ASC", "DESC"):
+            return S_ERROR("Invalid sorting order %s" % sort[1])
+          sqlOrder.append("%s %s" % (sort[0], sort[1]))
+      if sqlWhere:
+        cmd = "%s WHERE %s" % (cmd, " AND ".join(sqlWhere))
+      if sqlOrder:
+        cmd = "%s ORDER BY %s" % (cmd, ", ".join(sqlOrder))
+      if limit:
+        try:
+          start = int(start)
+          limit = int(limit)
+        except ValueError:
+          return S_ERROR("start and limit have to be integers")
+        cmd += " LIMIT %d,%d" % (start, limit)
+      retVal = self._query(cmd)
+      if not retVal['OK']:
+        return retVal
+      for record in retVal['Value']:
+        record = list(record)
+        if table == 'ProxyDB_CleanProxies':
+          record.insert(2, '')
+          record.insert(4, False)
+        if record[4] == 'True':
+          record[4] = True
+        else:
+          record[4] = False
+        data.append(record)
     totalRecords = len(data)
     cmd = "SELECT COUNT( UserGroup ) FROM `ProxyDB_Proxies`"
     if sqlWhere:
