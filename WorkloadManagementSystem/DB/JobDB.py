@@ -99,7 +99,7 @@ class JobDB(DB):
 
     self.jdl2DBParameters = ['JobName', 'JobType', 'JobGroup']
 
-    self.log.info("MaxReschedule:  %s" % self.maxRescheduling)
+    self.log.info("MaxReschedule", self.maxRescheduling)
     self.log.info("==================================================")
     self.__initialized = True
 
@@ -1005,7 +1005,7 @@ class JobDB(DB):
 
     jobID = int(result['lastRowId'])
 
-    self.log.info('JobDB: New JobID served "%s"' % jobID)
+    self.log.info('JobDB: New JobID served', "%s" % jobID)
 
     return S_OK(jobID)
 
@@ -1691,7 +1691,7 @@ class JobDB(DB):
       req = "INSERT INTO SiteMaskLogging VALUES (%s,%s,UTC_TIMESTAMP(),%s,%s)" % (site, status, authorDN, comment)
       result = self._update(req)
       if not result['OK']:
-        self.log.warn('Failed to update site mask logging for %s' % site)
+        self.log.warn('Failed to update site mask logging', 'for %s' % site)
     else:
       return S_ERROR('Failed to get the Site Status from the Mask')
 
@@ -2004,12 +2004,12 @@ class JobDB(DB):
     for key, value in dynamicDataDict.items():
       result = self._escapeString(key)
       if not result['OK']:
-        self.log.warn('Failed to escape string ' + key)
+        self.log.warn('Failed to escape string ', key)
         continue
       e_key = result['Value']
       result = self._escapeString(value)
       if not result['OK']:
-        self.log.warn('Failed to escape string ' + value)
+        self.log.warn('Failed to escape string ', value)
         continue
       e_value = result['Value']
       valueList.append("( %s, %s,%s,UTC_TIMESTAMP())" % (e_jobID, e_key, e_value))

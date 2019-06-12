@@ -131,7 +131,7 @@ function installSite(){
 
   echo '==> Started installing'
 
-  installOptions="-t server $DEBUG "
+  installOptions="$DEBUG "
 
   # If DIRACOSVER is not defined, use LcgBundle
   if [ $DIRACOSVER ]
@@ -144,7 +144,11 @@ function installSite(){
       echo "Installing with DIRACOS $DIRACOSVER"
       installOptions+="--dirac-os --dirac-os-version=$DIRACOSVER "
     fi
+  else
+    echo "Installing using externals + lcgBundle"
+    installOptions+="-t fullserver "
   fi
+
 
   if [ $ALTERNATIVE_MODULES ]
   then
@@ -157,7 +161,7 @@ function installSite(){
   $SERVERINSTALLDIR/dirac-install.py $installOptions $SERVERINSTALLDIR/install.cfg
   if [ $? -ne 0 ]
   then
-    echo 'ERROR: dirac-install.py -t fullserver failed'
+    echo 'ERROR: dirac-install.py failed'
     return
   fi
 

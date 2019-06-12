@@ -50,17 +50,20 @@ NEW: (#3744) Add WMS documentation in DeveloperGuide/Systems
 NEW: Added script (docs/Tools/UpdateDiracCFG.py) to collate the ConfigTemplate.cfg 
      files into the main dirac.cfg file
 
-
-[v6r22-pre2]
+[v6r22-pre3]
 
 *WorkloadManagementSystem
 CHANGE: (#4049) Pilot wrapper for pilot3: download files at runtime
 NEW: (#4045) PilotsHandler service (to interact with PilotAgentsDB)
 FIX: (#4074) fixed PilotManager service name in ConfigTemplate.cfg
+FIX: (#4100) use CAs to upload the pilot files to a dedicated web server using requests
+FIX: (#4106) fixes for logging messages for Matcher
+FIX: (#4106) fixes for logging messages for Optimizers
 
 *ConfigurationSystem
 NEW: (#4053) VOMS2CSSynchronizer/VOMS2CSAgent - enable automatic synchronization of the 
      Suspended user status with the VOMS database
+CHANGE: (#4113) VOMS2CSSynchronizer: considering the case when no email is provided by VOMS
 
 *Core
 NEW: (#4053) AuthManager - interpret the Suspended user status considering suspended 
@@ -69,6 +72,22 @@ CHANGE: (#4053) The use of CS.py module is replaced by the use of Registry.py an
 
 *RSS
 CHANGE: clients: using DIRAC.Core.Base.Client as base
+
+*docs
+NEW: (#4099) Instructions about setting up the DIRAC web server for pilot3
+
+[v6r21p8]
+
+*WMS
+CHANGE: (#4111) Better logging in JobWrapper
+CHANGE: (#4114) JobScheduling - allow both Tag and Tags option in the job JDL
+
+*DMS
+FIX: (#4101) FileManagerBase - use returned ID:LFN dict instead of the LFN list. Fixes the bug in 
+             getReplicasByMetadata reported in #4058
+
+*TransformationSystem
+FIX: (#4112) TaskManager.py - testing if the request ID is correct was not done properly, test the numerical value
 
 [v6r21p7]
 
@@ -86,6 +105,8 @@ FIX: (#4093) better logging from services
 
 *TS
 CHANGE: (#4095) ConfigTemplate for RequestTaskAgent now contains all options
+CHANGE: (#4096) the Broadcast TransformationPlugin no longer requires a SourceSE to be set. If it is set, the behaviour is unchanged
+CHANGE: (#4096) dirac-transformation-replication: change default pluging back to Broadcast (reverts #4066)
 
 *Docs:
 CHANGE: (#4095) AdministratorGuide install TS tutorial: added options MonitorFiles and MonitorTasks for TaskAgents

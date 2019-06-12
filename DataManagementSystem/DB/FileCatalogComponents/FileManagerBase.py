@@ -1026,12 +1026,12 @@ class FileManagerBase(object):
 
     # Get FileID <-> LFN correspondence first
     failed = {}
-    result = self.db.fmeta.findFilesByMetadata(metaDict, path, credDict, extra=True)
+    result = self.db.fmeta.findFilesByMetadata(metaDict, path, credDict)
     if not result['OK']:
       return result
-    fileIDLFNs = result['Value']
+    idLfnDict = result['Value']
 
-    result = self.__getReplicasForIDs(fileIDLFNs, allStatus, connection)
+    result = self.__getReplicasForIDs(idLfnDict, allStatus, connection)
     if not result['OK']:
       return result
     replicas = result['Value']

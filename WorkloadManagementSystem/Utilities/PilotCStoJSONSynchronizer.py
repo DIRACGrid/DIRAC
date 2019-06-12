@@ -19,7 +19,7 @@ import requests
 from git import Repo
 
 from DIRAC import gLogger, S_OK, gConfig, S_ERROR
-from DIRAC.Core.Security.Locations import getHostCertificateAndKeyLocation
+from DIRAC.Core.Security.Locations import getHostCertificateAndKeyLocation, getCAsLocation
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 
@@ -54,6 +54,7 @@ class PilotCStoJSONSynchronizer(object):
     self.pilotVersion = ''
     self.pilotVOVersion = ''
     self.certAndKeyLocation = getHostCertificateAndKeyLocation()
+    self.casLocation = getCAsLocation()
 
     self.log = gLogger.getSubLogger(__name__)
 
@@ -369,6 +370,7 @@ class PilotCStoJSONSynchronizer(object):
 
     resp = requests.post('https://%s/DIRAC/upload' % self.pilotFileServer,
                          data=data,
+                         verify=self.casLocation,
                          cert=self.certAndKeyLocation)
 
     if resp.status_code != 200:

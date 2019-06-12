@@ -56,7 +56,7 @@ class VOMS2CSAgent(AgentModule):
       if not result['OK']:
         return result
       self.voList = result['Value']
-      self.log.notice("VOs: %s" % self.voList)
+      self.log.notice("VOs", self.voList)
 
     return S_OK()
 
@@ -69,7 +69,8 @@ class VOMS2CSAgent(AgentModule):
         voAdminMail = getUserOption(voAdminUser, "Email")
       voAdminGroup = getVOOption(vo, "VOAdminGroup", getVOOption(vo, "DefaultGroup"))
 
-      self.log.info('Performing VOMS sync for VO %s with credentials %s@%s' % (vo, voAdminUser, voAdminGroup))
+      self.log.info('Performing VOMS sync',
+                    'for VO %s with credentials %s@%s' % (vo, voAdminUser, voAdminGroup))
 
       autoAddUsers = getVOOption(vo, "AutoAddUsers", self.autoAddUsers)
       autoModifyUsers = getVOOption(vo, "AutoModifyUsers", self.autoModifyUsers)
@@ -96,12 +97,13 @@ class VOMS2CSAgent(AgentModule):
       csapi = resultDict.get("CSAPI")
       adminMessages = resultDict.get("AdminMessages", {'Errors': [], 'Info': []})
       voChanged = resultDict.get("VOChanged", False)
-      self.log.info("Run user results: new %d, modified %d, deleted %d, new/suspended %d" %
+      self.log.info("Run user results",
+                    ": new %d, modified %d, deleted %d, new/suspended %d" %
                     (len(newUsers), len(modUsers), len(delUsers), len(susUsers)))
 
       if csapi.csModified:
         # We have accumulated all the changes, commit them now
-        self.log.info("There are changes to the CS for vo %s ready to be committed" % vo)
+        self.log.info("There are changes to the CS ready to be committed", "for VO %s" % vo)
         if self.dryRun:
           self.log.info("Dry Run: CS won't be updated")
           csapi.showDiff()
@@ -110,13 +112,13 @@ class VOMS2CSAgent(AgentModule):
           if not result['OK']:
             self.log.error("Could not commit configuration changes", result['Message'])
             return result
-          self.log.notice("Configuration committed for VO %s" % vo)
+          self.log.notice("Configuration committed", "for VO %s" % vo)
       else:
-        self.log.info("No changes to the CS for VO %s recorded at this cycle" % vo)
+        self.log.info("No changes to the CS recorded at this cycle", "for VO %s" % vo)
 
       # Add user home directory in the file catalog
       if self.makeFCEntry and newUsers:
-        self.log.info("Creating home directories for users %s" % str(newUsers))
+        self.log.info("Creating home directories for users", str(newUsers))
         result = self.__addHomeDirectory(vo, newUsers,  # pylint: disable=unexpected-keyword-arg
                                          proxyUserName=voAdminUser,
                                          proxyUserGroup=voAdminGroup)

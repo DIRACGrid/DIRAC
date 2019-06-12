@@ -69,8 +69,6 @@ class JobWrapper(object):
     """
     self.initialTiming = os.times()
     self.section = os.path.join(getSystemSection('WorkloadManagement/JobWrapper'), 'JobWrapper')
-    self.log = gLogger
-    self.log.showHeaders(True)
     # Create the accounting report
     self.accountingReport = AccountingJob()
     # Initialize for accounting
@@ -88,6 +86,9 @@ class JobWrapper(object):
     else:
       self.jobReport = JobReport(self.jobID, 'JobWrapper@%s' % self.siteName)
     self.failoverTransfer = FailoverTransfer()
+
+    self.log = gLogger.getSubLogger('JobWrapper[%s]' % self.jobID)
+    self.log.showHeaders(True)
 
     # self.root is the path the Wrapper is running at
     self.root = os.getcwd()
@@ -1362,14 +1363,16 @@ class ExecutionThread(threading.Thread):
     """ Method representing the thread activity.
         This one overrides the ~threading.Thread `run` method
     """
+    log = gLogger.getSubLogger("ExecutionThread")
+
     # FIXME: why local instances of object variables are created?
     cmd = self.cmd
     spObject = self.spObject
     start = time.time()
     initialStat = os.times()
+    log.verbose("Cmd called", cmd)
     output = spObject.systemCall(cmd, env=self.exeEnv, callbackFunction=self.sendOutput, shell=True)
-    gLogger.verbose(
-        "Output of system call within execution thread: %s" % output)
+    log.verbose("Output of system call within execution thread: %s" % output)
     EXECUTION_RESULT['Thread'] = output
     timing = time.time() - start
     EXECUTION_RESULT['Timing'] = timing
@@ -1378,8 +1381,8 @@ class ExecutionThread(threading.Thread):
     for i in range(len(finalStat)):
       EXECUTION_RESULT['CPU'].append(finalStat[i] - initialStat[i])
     cpuString = ' '.join(['%.2f' % x for x in EXECUTION_RESULT['CPU']])
-    gLogger.info('EXECUTION_RESULT[CPU] after Execution of spObject.systemCall', cpuString)
-    gLogger.info('EXECUTION_RESULT[Thread] after Execution of spObject.systemCall', str(EXECUTION_RESULT['Thread']))
+    log.info('EXECUTION_RESULT[CPU] after Execution of spObject.systemCall', cpuString)
+    log.info('EXECUTION_RESULT[Thread] after Execution of spObject.systemCall', str(EXECUTION_RESULT['Thread']))
 
   #############################################################################
   def getCurrentPID(self):

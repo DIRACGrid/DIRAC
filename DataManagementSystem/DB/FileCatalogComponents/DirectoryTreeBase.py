@@ -5,18 +5,21 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities  import getIDSelectString
-from DIRAC                                                          import S_OK, S_ERROR, gLogger
-import time, threading, os
-from types import StringTypes, ListType
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities import getIDSelectString
+from DIRAC import S_OK, S_ERROR, gLogger
+import time
+import threading
+import os
 import stat
 
 DEBUG = 0
 
 #############################################################################
+
+
 class DirectoryTreeBase:
 
-  def __init__( self, database = None ):
+  def __init__(self, database=None):
     self.db = database
     self.lock = threading.Lock()
     self.treeTable = ''
@@ -27,68 +30,67 @@ class DirectoryTreeBase:
 #
 ############################################################################
 
-  def findDir( self, path, connection = False ):
+  def findDir(self, path, connection=False):
     """  Find directory ID for the given path
     """
-    return S_ERROR( "To be implemented on derived class" )
+    return S_ERROR("To be implemented on derived class")
 
-  def findDirs( self, paths, connection = False ):
+  def findDirs(self, paths, connection=False):
     """ Find DirIDs for the given path list
     """
-    return S_ERROR( "To be implemented on derived class" )
+    return S_ERROR("To be implemented on derived class")
 
-  def makeDir( self, path ):
+  def makeDir(self, path):
 
-    return S_ERROR( "To be implemented on derived class" )
+    return S_ERROR("To be implemented on derived class")
 
-  def removeDir( self, path ):
+  def removeDir(self, path):
 
-    return S_ERROR( "To be implemented on derived class" )
+    return S_ERROR("To be implemented on derived class")
 
-  def getChildren( self, path, connection = False ):
-    return S_ERROR( "To be implemented on derived class" )
+  def getChildren(self, path, connection=False):
+    return S_ERROR("To be implemented on derived class")
 
-  def getDirectoryPath( self, dirID ):
+  def getDirectoryPath(self, dirID):
     """ Get directory name by directory ID
     """
-    return S_ERROR( "To be implemented on derived class" )
+    return S_ERROR("To be implemented on derived class")
 
-  def countSubdirectories( self, dirId, includeParent = True ):
-    return S_ERROR( "To be implemented on derived class" )
+  def countSubdirectories(self, dirId, includeParent=True):
+    return S_ERROR("To be implemented on derived class")
 
-  def getSubdirectoriesByID( self, dirID, requestString = False, includeParent = False ):
+  def getSubdirectoriesByID(self, dirID, requestString=False, includeParent=False):
     """ Get all the subdirectories of the given directory at a given level
     """
-    return S_ERROR( "To be implemented on derived class" )
+    return S_ERROR("To be implemented on derived class")
 
 ##########################################################################
 
-
-  def _getConnection( self, connection ):
+  def _getConnection(self, connection):
     if connection:
       return connection
     res = self.db._getConnection()
     if res['OK']:
       return res['Value']
-    gLogger.warn( "Failed to get MySQL connection", res['Message'] )
+    gLogger.warn("Failed to get MySQL connection", res['Message'])
     return connection
 
-  def getTreeTable( self ):
+  def getTreeTable(self):
     """ Get the string of the Directory Tree type
     """
     return self.treeTable
-    
-  def setDatabase(self,database):
-    self.db = database  
 
-  def makeDirectory(self,path,credDict,status=0):
+  def setDatabase(self, database):
+    self.db = database
+
+  def makeDirectory(self, path, credDict, status=0):
     """Create a new directory. The return value is the dictionary
        containing all the parameters of the newly created directory
     """
     if path[0] != '/':
-      return S_ERROR( 'Not an absolute path' )
+      return S_ERROR('Not an absolute path')
     # Strip off the trailing slash if necessary
-    if len( path ) > 1 and path[-1] == '/':
+    if len(path) > 1 and path[-1] == '/':
       path = path[:-1]
 
     if path == '/':
@@ -96,107 +98,107 @@ class DirectoryTreeBase:
       l_uid = 0
       l_gid = 0
     else:
-      result = self.db.ugManager.getUserAndGroupID( credDict )
+      result = self.db.ugManager.getUserAndGroupID(credDict)
       if not result['OK']:
         return result
-      ( l_uid, l_gid ) = result['Value']
+      (l_uid, l_gid) = result['Value']
 
     dirDict = {}
-    result = self.makeDir( path )
+    result = self.makeDir(path)
     if not result['OK']:
       return result
     dirID = result['Value']
     if result['NewDirectory']:
       req = "INSERT INTO FC_DirectoryInfo (DirID,UID,GID,CreationDate,ModificationDate,Mode,Status) Values "
-      req = req + "(%d,%d,%d,UTC_TIMESTAMP(),UTC_TIMESTAMP(),%d,%d)" % ( dirID, l_uid, l_gid, self.db.umask, status )
-      result = self.db._update( req )
+      req = req + "(%d,%d,%d,UTC_TIMESTAMP(),UTC_TIMESTAMP(),%d,%d)" % (dirID, l_uid, l_gid, self.db.umask, status)
+      result = self.db._update(req)
       if result['OK']:
-        resGet = self.getDirectoryParameters( dirID )
+        resGet = self.getDirectoryParameters(dirID)
         if resGet['OK']:
           dirDict = resGet['Value']
     else:
-      return S_OK( dirID )
+      return S_OK(dirID)
 
     if not dirDict:
-      self.removeDir( path )
-      return S_ERROR( 'Failed to create directory %s' % path )
-    return S_OK( dirID )
+      self.removeDir(path)
+      return S_ERROR('Failed to create directory %s' % path)
+    return S_OK(dirID)
 
 #####################################################################
-  def makeDirectories( self, path, credDict ):
+  def makeDirectories(self, path, credDict):
     """Make all the directories recursively in the path. The return value
        is the dictionary containing all the parameters of the newly created
        directory
     """
 
     if not path or path[0] != '/':
-      return S_ERROR( 'Not an absolute path' )
+      return S_ERROR('Not an absolute path')
 
-    result = self.existsDir( path )
+    result = self.existsDir(path)
     if not result['OK']:
       return result
     result = result['Value']
     if result['Exists']:
-      return S_OK( result['DirID'] )
+      return S_OK(result['DirID'])
 
     if path == '/':
-      result = self.makeDirectory( path, credDict )
+      result = self.makeDirectory(path, credDict)
       return result
 
-    parentDir = os.path.dirname( path )
-    result = self.existsDir( parentDir )
+    parentDir = os.path.dirname(path)
+    result = self.existsDir(parentDir)
     if not result['OK']:
       return result
     result = result['Value']
     if result['Exists']:
-      result = self.makeDirectory( path, credDict )
+      result = self.makeDirectory(path, credDict)
     else:
-      result = self.makeDirectories( parentDir, credDict )
+      result = self.makeDirectories(parentDir, credDict)
       if not result['OK']:
         return result
-      result = self.makeDirectory( path, credDict )
+      result = self.makeDirectory(path, credDict)
 
     return result
 
 #####################################################################
-  def exists( self, lfns ):
+  def exists(self, lfns):
     successful = {}
     failed = {}
     for lfn in lfns:
-      res = self.findDir( lfn )
+      res = self.findDir(lfn)
       if not res['OK']:
         failed[lfn] = res['Message']
       if not res['Value']:
         successful[lfn] = False
       else:
         successful[lfn] = lfn
-    return S_OK( {'Successful':successful, 'Failed':failed} )
+    return S_OK({'Successful': successful, 'Failed': failed})
 
-  def existsDir( self, path ):
+  def existsDir(self, path):
     """ Check the existence of the directory path
     """
-    result = self.findDir( path )
+    result = self.findDir(path)
     if not result['OK']:
       return result
     if result['Value']:
-      result = S_OK( int( result['Value'] ) )
+      result = S_OK(int(result['Value']))
       result['Exists'] = True
       result['DirID'] = result['Value']
     else:
-      result = S_OK( 0 )
+      result = S_OK(0)
       result['Exists'] = False
 
     return result
 
   #####################################################################
-  def isDirectory( self, paths ):
+  def isDirectory(self, paths):
     """ Checking for existence of directories
     """
     dirs = paths.keys()
     successful = {}
     failed = {}
     for dir in dirs:
-      result = self.existsDir( dir )
+      result = self.existsDir(dir)
       if not result['OK']:
         failed[dir] = result['Message']
       elif result['Value']['Exists']:
@@ -204,138 +206,138 @@ class DirectoryTreeBase:
       else:
         successful[dir] = False
 
-    return S_OK( {'Successful':successful, 'Failed':failed} )
+    return S_OK({'Successful': successful, 'Failed': failed})
 
   #####################################################################
-  def createDirectory( self, dirs, credDict ):
+  def createDirectory(self, dirs, credDict):
     """ Checking for existence of directories
     """
     successful = {}
     failed = {}
     for dir in dirs:
-      result = self.makeDirectories( dir, credDict )
+      result = self.makeDirectories(dir, credDict)
       if not result['OK']:
         failed[dir] = result['Message']
       else:
         successful[dir] = True
 
-    return S_OK( {'Successful':successful, 'Failed':failed} )
+    return S_OK({'Successful': successful, 'Failed': failed})
 
   #####################################################################
-  def isEmpty( self, path ):
+  def isEmpty(self, path):
     """ Find out if the given directory is empty
     """
     # Check if there are subdirectories
-    result = self.getChildren( path )
+    result = self.getChildren(path)
     if not result['OK']:
       return result
     childIDs = result['Value']
     if childIDs:
-      return S_OK( False )
+      return S_OK(False)
 
-    #Check if there are files
-    result = self.__getDirID( path )
+    # Check if there are files
+    result = self.__getDirID(path)
     if not result['OK']:
       return result
     dirID = result['Value']
-    result = self.db.fileManager.getFilesInDirectory( dirID )
+    result = self.db.fileManager.getFilesInDirectory(dirID)
     if not result['OK']:
       return result
     files = result['Value']
     if files:
-      return S_OK( False )
+      return S_OK(False)
 
-    return S_OK( True )
+    return S_OK(True)
 
 #####################################################################
-  def removeDirectory( self, dirs, force = False ):
+  def removeDirectory(self, dirs, force=False):
     """Remove an empty directory from the catalog """
     successful = {}
     failed = {}
-    
+
     # Check if requested directories exist in the catalog
-    result = self.findDirs( dirs )
+    result = self.findDirs(dirs)
     if not result['OK']:
       return result
     dirDict = result['Value']
     for d in dirs:
-      if not d in dirDict:
+      if d not in dirDict:
         successful[d] = "Directory does not exist"
     dirList = dirDict.keys()
 
     for dir in dirList:
-      result = self.isEmpty( dir )
+      result = self.isEmpty(dir)
       if not result['OK']:
         return result
       if not result['Value']:
         failed[dir] = 'Failed to remove non-empty directory'
         continue
-      result = self.removeDir( dir )
+      result = self.removeDir(dir)
       if not result['OK']:
         failed[dir] = result['Message']
       else:
         successful[dir] = result
-    return S_OK( {'Successful':successful, 'Failed':failed} )
+    return S_OK({'Successful': successful, 'Failed': failed})
 
 #####################################################################
-  def __getDirID( self, path ):
+  def __getDirID(self, path):
     """ Get directory ID from the given path or already evaluated ID
     """
 
-    if isinstance( path, basestring ):
-      result = self.findDir( path )
+    if isinstance(path, basestring):
+      result = self.findDir(path)
       if not result['OK']:
         return result
       dirID = result['Value']
       if not dirID:
-        return S_ERROR( '%s: not found' % str( path ) )
-      return S_OK( dirID )
+        return S_ERROR('%s: not found' % str(path))
+      return S_OK(dirID)
     else:
-      return S_OK( path )
+      return S_OK(path)
 
 #####################################################################
-  def getDirectoryParameters( self, path ):
+  def getDirectoryParameters(self, path):
     """ Get the given directory parameters
     """
 
-    result = self.__getDirID( path )
+    result = self.__getDirID(path)
     if not result['OK']:
       return result
     dirID = result['Value']
 
     query = "SELECT DirID,UID,GID,Status,Mode,CreationDate,ModificationDate from FC_DirectoryInfo"
     query = query + " WHERE DirID=%d" % dirID
-    resQuery = self.db._query( query )
+    resQuery = self.db._query(query)
     if not resQuery['OK']:
       return resQuery
 
     if not resQuery['Value']:
-      return S_ERROR( 'Directory not found' )
+      return S_ERROR('Directory not found')
     dirDict = {}
-    dirDict['DirID'] = int( resQuery['Value'][0][0] )
-    uid = int( resQuery['Value'][0][1] )
+    dirDict['DirID'] = int(resQuery['Value'][0][0])
+    uid = int(resQuery['Value'][0][1])
     dirDict['UID'] = uid
     owner = 'unknown'
-    result = self.db.ugManager.getUserName( uid )
+    result = self.db.ugManager.getUserName(uid)
     if result['OK']:
       owner = result['Value']
     dirDict['Owner'] = owner
-    gid = int( resQuery['Value'][0][2] )
-    dirDict['GID'] = int( resQuery['Value'][0][2] )
+    gid = int(resQuery['Value'][0][2])
+    dirDict['GID'] = int(resQuery['Value'][0][2])
     group = 'unknown'
-    result = self.db.ugManager.getGroupName( gid )
+    result = self.db.ugManager.getGroupName(gid)
     if result['OK']:
       group = result['Value']
     dirDict['OwnerGroup'] = group
-    dirDict['Status'] = int( resQuery['Value'][0][3] )
-    dirDict['Mode'] = int( resQuery['Value'][0][4] )
+    dirDict['Status'] = int(resQuery['Value'][0][3])
+    dirDict['Mode'] = int(resQuery['Value'][0][4])
     dirDict['CreationDate'] = resQuery['Value'][0][5]
     dirDict['ModificationDate'] = resQuery['Value'][0][6]
 
-    return S_OK( dirDict )
+    return S_OK(dirDict)
 
 #####################################################################
-  def _setDirectoryParameter( self, path, pname, pvalue ):
+  def _setDirectoryParameter(self, path, pname, pvalue):
     """ Set a numerical directory parameter
 
         :param mixed path: Directory path or paths as a string or directory ID as int,
@@ -343,102 +345,102 @@ class DirectoryTreeBase:
         :param str pname: parameter name
         :param int pvalue: parameter value
     """
-    result = getIDSelectString( path )
-    if not result['OK'] and isinstance( path, basestring ):
-      result = self.__getDirID( path )
+    result = getIDSelectString(path)
+    if not result['OK'] and isinstance(path, basestring):
+      result = self.__getDirID(path)
       if not result['OK']:
         return result
       dirID = result['Value']
-      result = getIDSelectString( dirID )
+      result = getIDSelectString(dirID)
       if not result['OK']:
         return result
 
     dirIDString = result['Value']
     req = "UPDATE FC_DirectoryInfo SET %s=%d, " \
           "ModificationDate=UTC_TIMESTAMP() WHERE DirID IN ( %s )" % \
-          ( pname, pvalue, dirIDString )
-    result = self.db._update( req )
+          (pname, pvalue, dirIDString)
+    result = self.db._update(req)
     return result
 
 #####################################################################
-  def _setDirectoryGroup( self, path, gname ):
+  def _setDirectoryGroup(self, path, gname):
     """ Set the directory group
 
         :param mixed path: directory path as a string or int or list of ints or select statement
         :param mixt group: new group as a string or int gid
     """
 
-    result = self.db.ugManager.findGroup( gname )
+    result = self.db.ugManager.findGroup(gname)
     if not result['OK']:
       return result
 
     gid = result['Value']
 
-    return self._setDirectoryParameter( path, 'GID', gid )
+    return self._setDirectoryParameter(path, 'GID', gid)
 
 #####################################################################
-  def _setDirectoryOwner( self, path, owner ):
+  def _setDirectoryOwner(self, path, owner):
     """ Set the directory owner
 
         :param mixed path: directory path as a string or int or list of ints or select statement
         :param mixt owner: new user as a string or int uid
     """
 
-    result = self.db.ugManager.findUser( owner )
+    result = self.db.ugManager.findUser(owner)
     if not result['OK']:
       return result
 
     uid = result['Value']
 
-    return self._setDirectoryParameter( path, 'UID', uid )
+    return self._setDirectoryParameter(path, 'UID', uid)
 
 #####################################################################
-  def changeDirectoryOwner( self, paths, recursive = False ):
+  def changeDirectoryOwner(self, paths, recursive=False):
     """ Bulk setting of the directory owner
 
         :param dictionary paths: dictionary < lfn : owner >
     """
-    return self._changeDirectoryParameter( paths,
-                                           self._setDirectoryOwner,
-                                           self.db.fileManager.setFileOwner,
-                                           recursive = recursive )
+    return self._changeDirectoryParameter(paths,
+                                          self._setDirectoryOwner,
+                                          self.db.fileManager.setFileOwner,
+                                          recursive=recursive)
 
 #####################################################################
-  def changeDirectoryGroup( self, paths, recursive = False ):
+  def changeDirectoryGroup(self, paths, recursive=False):
     """ Bulk setting of the directory group
 
         :param dictionary paths: dictionary < lfn : group >
     """
-    return self._changeDirectoryParameter( paths,
-                                           self._setDirectoryGroup,
-                                           self.db.fileManager.setFileGroup,
-                                           recursive = recursive )
+    return self._changeDirectoryParameter(paths,
+                                          self._setDirectoryGroup,
+                                          self.db.fileManager.setFileGroup,
+                                          recursive=recursive)
 
 #####################################################################
-  def _setDirectoryMode( self, path, mode ):
+  def _setDirectoryMode(self, path, mode):
     """ set the directory mode
 
         :param mixed path: directory path as a string or int or list of ints or select statement
         :param int mode: new mode
     """
-    return self._setDirectoryParameter( path, 'Mode', mode )
+    return self._setDirectoryParameter(path, 'Mode', mode)
 
 #####################################################################
-  def changeDirectoryMode( self, paths, recursive = False ):
+  def changeDirectoryMode(self, paths, recursive=False):
     """ Bulk setting of the directory mode
 
         :param dictionary paths: dictionary < lfn : mode >
     """
-    return self._changeDirectoryParameter( paths,
-                                           self._setDirectoryMode,
-                                           self.db.fileManager.setFileMode,
-                                           recursive = recursive )
+    return self._changeDirectoryParameter(paths,
+                                          self._setDirectoryMode,
+                                          self.db.fileManager.setFileMode,
+                                          recursive=recursive)
 
 #####################################################################
-  def _changeDirectoryParameter( self, paths,
-                                 directoryFunction,
-                                 fileFunction,
-                                 recursive = False ):
+  def _changeDirectoryParameter(self, paths,
+                                directoryFunction,
+                                fileFunction,
+                                recursive=False):
     """ Bulk setting of the directory parameter with recursion for all the subdirectories and files
 
         :param dictionary paths: dictionary < lfn : value >, where value is the value of parameter to be set
@@ -450,33 +452,33 @@ class DirectoryTreeBase:
     successful = {}
     failed = {}
     for path, attribute in arguments.items():
-      result = directoryFunction( path, attribute )
+      result = directoryFunction(path, attribute)
       if not result['OK']:
         failed[path] = result['Message']
         continue
       if recursive:
-        result = self.__getDirID( path )
+        result = self.__getDirID(path)
         if not result['OK']:
           failed[path] = result['Message']
           continue
         dirID = result['Value']
-        result = self.getSubdirectoriesByID( dirID, requestString = True, includeParent = True )
+        result = self.getSubdirectoriesByID(dirID, requestString=True, includeParent=True)
         if not result['OK']:
           failed[path] = result['Message']
           continue
 
         subDirQuery = result['Value']
-        result = self.db.fileManager.getFileIDsInDirectory( subDirQuery, requestString = True )
+        result = self.db.fileManager.getFileIDsInDirectory(subDirQuery, requestString=True)
         if not result['OK']:
           failed[path] = result['Message']
           continue
         fileQuery = result['Value']
 
-        result = directoryFunction( subDirQuery, attribute )
+        result = directoryFunction(subDirQuery, attribute)
         if not result['OK']:
           failed[path] = result['Message']
           continue
-        result = fileFunction( fileQuery, attribute )
+        result = fileFunction(fileQuery, attribute)
         if not result['OK']:
           failed[path] = result['Message']
         else:
@@ -484,51 +486,51 @@ class DirectoryTreeBase:
       else:
         successful[path] = True
 
-    return S_OK( {'Successful':successful, 'Failed':failed} )
+    return S_OK({'Successful': successful, 'Failed': failed})
 
   #####################################################################
-  def setDirectoryStatus( self, path, status ):
+  def setDirectoryStatus(self, path, status):
     """ set the directory status
     """
-    return self._setDirectoryParameter( path, 'Status', status )
+    return self._setDirectoryParameter(path, 'Status', status)
 
-  def getPathPermissions( self, lfns, credDict ):
-    """ Get permissions for the given user/group to manipulate the given lfns 
+  def getPathPermissions(self, lfns, credDict):
+    """ Get permissions for the given user/group to manipulate the given lfns
     """
     successful = {}
     failed = {}
     for path in lfns:
-      result = self.getDirectoryPermissions( path, credDict )
+      result = self.getDirectoryPermissions(path, credDict)
       if not result['OK']:
         failed[path] = result['Message']
       else:
         successful[path] = result['Value']
 
-    return S_OK( {'Successful':successful, 'Failed':failed} )
+    return S_OK({'Successful': successful, 'Failed': failed})
 
   #####################################################################
-  def getDirectoryPermissions( self, path, credDict ):
-    """ Get permissions for the given user/group to manipulate the given directory 
+  def getDirectoryPermissions(self, path, credDict):
+    """ Get permissions for the given user/group to manipulate the given directory
     """
-    result = self.db.ugManager.getUserAndGroupID( credDict )
+    result = self.db.ugManager.getUserAndGroupID(credDict)
     if not result['OK']:
       return result
     uid, gid = result['Value']
 
-    result = self.getDirectoryParameters( path )
+    result = self.getDirectoryParameters(path)
     if not result['OK']:
       if "not found" in result['Message'] or "not exist" in result['Message']:
         # If the directory does not exist, check the nearest parent for the permissions
         if path == '/':
           # Nothing yet exists, starting from the scratch
-          resultDict = {}  
+          resultDict = {}
           resultDict['Write'] = True
-          resultDict['Read'] = True 
+          resultDict['Read'] = True
           resultDict['Execute'] = True
-          return S_OK( resultDict )
+          return S_OK(resultDict)
         else:
-          pDir = os.path.dirname( path )
-          result = self.getDirectoryPermissions( pDir, credDict )
+          pDir = os.path.dirname(path)
+          result = self.getDirectoryPermissions(pDir, credDict)
           return result
       else:
         return result
@@ -544,184 +546,189 @@ class DirectoryTreeBase:
     if self.db.globalReadAccess:
       resultDict['Read'] = True
     else:
-      resultDict['Read'] = ( owner and mode & stat.S_IRUSR > 0 )\
-                           or ( group and mode & stat.S_IRGRP > 0 )\
-                           or mode & stat.S_IROTH > 0
-                           
-    resultDict['Write'] = ( owner and mode & stat.S_IWUSR > 0 )\
-                          or ( group and mode & stat.S_IWGRP > 0 )\
-                          or mode & stat.S_IWOTH > 0
+      resultDict['Read'] = (owner and mode & stat.S_IRUSR > 0)\
+          or (group and mode & stat.S_IRGRP > 0)\
+          or mode & stat.S_IROTH > 0
 
-    resultDict['Execute'] = ( owner and mode & stat.S_IXUSR > 0 )\
-                            or ( group and mode & stat.S_IXGRP > 0 )\
-                            or mode & stat.S_IXOTH > 0
+    resultDict['Write'] = (owner and mode & stat.S_IWUSR > 0)\
+        or (group and mode & stat.S_IWGRP > 0)\
+        or mode & stat.S_IWOTH > 0
 
-    return S_OK( resultDict )
+    resultDict['Execute'] = (owner and mode & stat.S_IXUSR > 0)\
+        or (group and mode & stat.S_IXGRP > 0)\
+        or mode & stat.S_IXOTH > 0
 
-  def getFileIDsInDirectoryWithLimits( self, dirID, credDict, startItem = 1, maxItems = 25 ):
+    return S_OK(resultDict)
+
+  def getFileIDsInDirectoryWithLimits(self, dirID, credDict, startItem=1, maxItems=25):
     """ Get file IDs for the given directory
     """
     dirs = dirID
-    if type( dirID ) != ListType:
+    if not isinstance(dirID, list):
       dirs = [dirID]
 
     if not dirs:
-      dirs = [ -1 ]
+      dirs = [-1]
 
-    dirListString = ','.join( [ str( dir ) for dir in dirs ] )
+    dirListString = ','.join([str(dir) for dir in dirs])
 
     req = "SELECT COUNT( DirID ) FROM FC_Files USE INDEX (DirID) WHERE DirID IN ( %s )" % dirListString
-    result = self.db._query( req )
+    result = self.db._query(req)
     if not result['OK']:
       return result
 
     totalRecords = result['Value'][0][0]
 
     if not totalRecords:
-      result = S_OK( [] )
+      result = S_OK([])
       result['TotalRecords'] = totalRecords
       return result
 
-    req = "SELECT FileID FROM FC_Files WHERE DirID IN ( %s ) LIMIT %s, %s " % ( dirListString, startItem, maxItems )
-    result = self.db._query( req )
+    req = "SELECT FileID FROM FC_Files WHERE DirID IN ( %s ) LIMIT %s, %s " % (dirListString, startItem, maxItems)
+    result = self.db._query(req)
     if not result['OK']:
       return result
-    result = S_OK( [ fileId[0] for fileId in result['Value'] ] )
+    result = S_OK([fileId[0] for fileId in result['Value']])
     result['TotalRecords'] = totalRecords
     return result
 
-  def getFileLFNsInDirectory( self, dirID, credDict ):
-    """ Get file lfns for the given directory or directory list 
+  def getFileLFNsInDirectory(self, dirID, credDict):
+    """ Get file lfns for the given directory or directory list
     """
     dirs = dirID
-    if type( dirID ) != ListType:
+    if not isinstance(dirID, list):
       dirs = [dirID]
 
-    dirListString = ','.join( [ str( dir ) for dir in dirs ] )
+    dirListString = ','.join([str(dir) for dir in dirs])
     treeTable = self.getTreeTable()
     req = "SELECT CONCAT(D.DirName,'/',F.FileName) FROM FC_Files as F, %s as D WHERE D.DirID IN ( %s ) and D.DirID=F.DirID"
-    req = req % ( treeTable, dirListString )
-    result = self.db._query( req )
+    req = req % (treeTable, dirListString)
+    result = self.db._query(req)
     if not result['OK']:
       return result
-    lfnList = [ x[0] for x in result['Value'] ]
-    return S_OK( lfnList )
+    lfnList = [x[0] for x in result['Value']]
+    return S_OK(lfnList)
 
-  def getFileLFNsInDirectoryByDirectory( self, dirID, credDict ):
-    """ Get file lfns for the given directory or directory list 
+  def getFileLFNsInDirectoryByDirectory(self, dirIDList, credDict):
+    """ Get file LFNs and IDs for the given directory or directory list
+
+        :param list dirIDList: List of directory IDs
+        :param dict credDict: dictionary of user credentials
+
+        :return: S_OK/S_ERROR with Value dictionary {"DirLFNDict": dirLfnDict, "IDLFNDict": idLfnDict}
+                 where dirLfnDict has the structure <directory_name>:<list of contained file names>,
+                 idLfnDict has structure <fileID>:<LFN>
     """
-    dirs = dirID
-    if type( dirID ) != ListType:
-      dirs = [dirID]
+    dirs = dirIDList
+    if not isinstance(dirIDList, list):
+      dirs = [dirIDList]
 
-    dirListString = ','.join( [ str( dir_ ) for dir_ in dirs ] )
+    dirListString = ','.join([str(dir_) for dir_ in dirs])
     treeTable = self.getTreeTable()
     req = "SELECT D.DirName,F.FileName,F.FileID FROM FC_Files as F, %s as D WHERE D.DirID IN ( %s ) and D.DirID=F.DirID"
-    req = req % ( treeTable, dirListString )
-    result = self.db._query( req )
+    req = req % (treeTable, dirListString)
+    result = self.db._query(req)
     if not result['OK']:
       return result
 
-    lfnDict = {}
-    lfnIDList = []
+    dirLfnDict = {}
+    idLfnDict = {}
     for dir_, fname, fileID in result['Value']:
-      lfnDict.setdefault( dir_, [] )
-      lfnDict[dir_].append( fname )
-      lfnIDList.append( fileID )
+      dirLfnDict.setdefault(dir_, []).append(fname)
+      idLfnDict[fileID] = dir_ + '/' + fname
 
-    result = S_OK( lfnDict )
-    result['LFNIDList'] = lfnIDList
-    return result
+    return S_OK({"DirLFNDict": dirLfnDict,
+                 "IDLFNDict": idLfnDict})
 
-  def _getDirectoryContents( self, path, details = False ):
+  def _getDirectoryContents(self, path, details=False):
     """ Get contents of a given directory
     """
-    result = self.findDir( path )
+    result = self.findDir(path)
     if not result['OK']:
       return result
     directoryID = result['Value']
     directories = {}
     files = {}
     links = {}
-    result = self.getChildren( path )
+    result = self.getChildren(path)
     if not result['OK']:
       return result
 
     # Get subdirectories
     dirIDList = result['Value']
     for dirID in dirIDList:
-      result = self.getDirectoryPath( dirID )
+      result = self.getDirectoryPath(dirID)
       if not result['OK']:
         return result
       dirName = result['Value']
       if details:
-        result = self.getDirectoryParameters( dirID )
+        result = self.getDirectoryParameters(dirID)
         if not result['OK']:
           directories[dirName] = False
         else:
           directories[dirName] = result['Value']
       else:
         directories[dirName] = True
-    result = self.db.fileManager.getFilesInDirectory( directoryID, verbose = details )
+    result = self.db.fileManager.getFilesInDirectory(directoryID, verbose=details)
     if not result['OK']:
       return result
     files = result['Value']
-    result = self.db.datasetManager.getDatasetsInDirectory( directoryID, verbose = details )
+    result = self.db.datasetManager.getDatasetsInDirectory(directoryID, verbose=details)
     if not result['OK']:
       return result
     datasets = result['Value']
-    pathDict = {'Files': files, 'SubDirs':directories, 'Links':links, 'Datasets':datasets }
+    pathDict = {'Files': files, 'SubDirs': directories, 'Links': links, 'Datasets': datasets}
 
-    return S_OK( pathDict )
+    return S_OK(pathDict)
 
-  def listDirectory( self, lfns, verbose = False ):
+  def listDirectory(self, lfns, verbose=False):
     """ Get the directory listing
     """
     paths = lfns.keys()
     successful = {}
     failed = {}
     for path in paths:
-      result = self._getDirectoryContents( path, details = verbose )
+      result = self._getDirectoryContents(path, details=verbose)
       if not result['OK']:
         failed[path] = result['Message']
       else:
         successful[path] = result['Value']
 
-    return S_OK( {'Successful':successful, 'Failed':failed} )
-  
-  def getDirectoryReplicas( self, lfns, allStatus = False ):
+    return S_OK({'Successful': successful, 'Failed': failed})
+
+  def getDirectoryReplicas(self, lfns, allStatus=False):
     """ Get replicas for files in the given directories
     """
     paths = lfns.keys()
     successful = {}
     failed = {}
     for path in paths:
-      result = self.findDir( path )
+      result = self.findDir(path)
       if not result['OK']:
         failed[path] = result['Message']
         continue
       directoryID = result['Value']
-      result = self.db.fileManager.getDirectoryReplicas( directoryID, path, allStatus )
+      result = self.db.fileManager.getDirectoryReplicas(directoryID, path, allStatus)
       if not result['OK']:
         failed[path] = result['Message']
         continue
       fileDict = result['Value']
-      successful[path] = {} 
+      successful[path] = {}
       for fileName in fileDict:
-        successful[path][fileName] = fileDict[fileName]  
-        
-    result = S_OK( {'Successful':successful, 'Failed':failed} )
-    
+        successful[path][fileName] = fileDict[fileName]
+
+    result = S_OK({'Successful': successful, 'Failed': failed})
+
     if self.db.lfnPfnConvention:
       sePrefixDict = {}
       resSE = self.db.seManager.getSEPrefixes()
       if resSE['OK']:
         sePrefixDict = resSE['Value']
       result['Value']['SEPrefixes'] = sePrefixDict
-      
+
     return result
 
-  def getDirectorySize( self, lfns, longOutput = False, rawFileTables = False ):
+  def getDirectorySize(self, lfns, longOutput=False, rawFileTables=False):
     """ Get the total size of the requested directories. If long flag
         is True, get also physical size per Storage Element
     """
@@ -733,9 +740,9 @@ class DirectoryTreeBase:
     connection = result['Value']
 
     if rawFileTables:
-      resultLogical = self._getDirectoryLogicalSize( lfns, connection )
+      resultLogical = self._getDirectoryLogicalSize(lfns, connection)
     else:
-      resultLogical = self._getDirectoryLogicalSizeFromUsage( lfns, connection )
+      resultLogical = self._getDirectoryLogicalSizeFromUsage(lfns, connection)
 
     if not resultLogical['OK']:
       connection.close()
@@ -749,12 +756,12 @@ class DirectoryTreeBase:
     if longOutput:
       # Continue with only successful directories
       if rawFileTables:
-        resultPhysical = self._getDirectoryPhysicalSize( resultDict['Successful'], connection )
+        resultPhysical = self._getDirectoryPhysicalSize(resultDict['Successful'], connection)
       else:
-        resultPhysical = self._getDirectoryPhysicalSizeFromUsage( resultDict['Successful'], connection )
+        resultPhysical = self._getDirectoryPhysicalSizeFromUsage(resultDict['Successful'], connection)
       if not resultPhysical['OK']:
         resultDict['QueryTime'] = time.time() - start
-        result = S_OK( resultDict )
+        result = S_OK(resultDict)
         result['Message'] = "Failed to get the physical size on storage"
         connection.close()
         return result
@@ -763,16 +770,16 @@ class DirectoryTreeBase:
     connection.close()
     resultDict['QueryTime'] = time.time() - start
 
-    return S_OK( resultDict )
+    return S_OK(resultDict)
 
-  def _getDirectoryLogicalSizeFromUsage( self, lfns, connection ):
+  def _getDirectoryLogicalSizeFromUsage(self, lfns, connection):
     """ Get the total "logical" size of the requested directories
     """
     paths = lfns.keys()
     successful = {}
     failed = {}
     for path in paths:
-      result = self.findDir( path )
+      result = self.findDir(path)
       if not result['OK']:
         failed[path] = "Directory not found"
         continue
@@ -782,28 +789,26 @@ class DirectoryTreeBase:
       dirID = result['Value']
       req = "SELECT SESize, SEFiles FROM FC_DirectoryUsage WHERE SEID=0 AND DirID=%d" % dirID
 
-      result = self.db._query( req, connection )
+      result = self.db._query(req, connection)
       if not result['OK']:
         failed[path] = result['Message']
       elif not result['Value']:
-        successful[path] = {"LogicalSize":0, "LogicalFiles":0, 'LogicalDirectories':0}
+        successful[path] = {"LogicalSize": 0, "LogicalFiles": 0, 'LogicalDirectories': 0}
       elif result['Value'][0][0]:
-        successful[path] = {"LogicalSize":int( result['Value'][0][0] ),
-                            "LogicalFiles":int( result['Value'][0][1] )}
-        result = self.countSubdirectories( dirID, includeParent = False )
+        successful[path] = {"LogicalSize": int(result['Value'][0][0]),
+                            "LogicalFiles": int(result['Value'][0][1])}
+        result = self.countSubdirectories(dirID, includeParent=False)
         if result['OK']:
           successful[path]['LogicalDirectories'] = result['Value']
         else:
           successful[path]['LogicalDirectories'] = -1
 
-
       else:
-        successful[path] = {"LogicalSize":0, "LogicalFiles":0, 'LogicalDirectories':0}
+        successful[path] = {"LogicalSize": 0, "LogicalFiles": 0, 'LogicalDirectories': 0}
 
-    return S_OK( {'Successful':successful, 'Failed':failed} )
+    return S_OK({'Successful': successful, 'Failed': failed})
 
-
-  def _getDirectoryLogicalSize( self, lfns, connection ):
+  def _getDirectoryLogicalSize(self, lfns, connection):
     """ Get the total "logical" size of the requested directories
     """
     paths = lfns.keys()
@@ -816,7 +821,7 @@ class DirectoryTreeBase:
         req = "SELECT SUM(Size),COUNT(*) FROM FC_Files"
         reqDir = "SELECT count(*) FROM %s" % treeTable
       else:
-        result = self.findDir( path )
+        result = self.findDir(path)
         if not result['OK']:
           failed[path] = "Directory not found"
           continue
@@ -824,43 +829,42 @@ class DirectoryTreeBase:
           failed[path] = "Directory not found"
           continue
         dirID = result['Value']
-        result = self.getSubdirectoriesByID( dirID, requestString = True, includeParent = True )
+        result = self.getSubdirectoriesByID(dirID, requestString=True, includeParent=True)
         if not result['OK']:
           failed[path] = result['Message']
           continue
         else:
           dirString = result['Value']
           req = "SELECT SUM(F.Size),COUNT(*) FROM FC_Files as F JOIN (%s) as T WHERE F.DirID=T.DirID" % dirString
-          reqDir = dirString.replace( 'SELECT DirID FROM', 'SELECT count(*) FROM' )
+          reqDir = dirString.replace('SELECT DirID FROM', 'SELECT count(*) FROM')
 
-      result = self.db._query( req, connection )
+      result = self.db._query(req, connection)
       if not result['OK']:
         failed[path] = result['Message']
       elif not result['Value']:
-        successful[path] = {"LogicalSize":0, "LogicalFiles":0, 'LogicalDirectories':0}
+        successful[path] = {"LogicalSize": 0, "LogicalFiles": 0, 'LogicalDirectories': 0}
       elif result['Value'][0][0]:
-        successful[path] = {"LogicalSize":int( result['Value'][0][0] ),
-                            "LogicalFiles":int( result['Value'][0][1] )}
-        result = self.db._query( reqDir, connection )
+        successful[path] = {"LogicalSize": int(result['Value'][0][0]),
+                            "LogicalFiles": int(result['Value'][0][1])}
+        result = self.db._query(reqDir, connection)
         if result['OK'] and result['Value']:
           successful[path]['LogicalDirectories'] = result['Value'][0][0] - 1
         else:
           successful[path]['LogicalDirectories'] = -1
 
-
       else:
-        successful[path] = {"LogicalSize":0, "LogicalFiles":0, 'LogicalDirectories':0}
+        successful[path] = {"LogicalSize": 0, "LogicalFiles": 0, 'LogicalDirectories': 0}
 
-    return S_OK( {'Successful':successful, 'Failed':failed} )
+    return S_OK({'Successful': successful, 'Failed': failed})
 
-  def _getDirectoryPhysicalSizeFromUsage( self, lfns, connection ):
+  def _getDirectoryPhysicalSizeFromUsage(self, lfns, connection):
     """ Get the total size of the requested directories
     """
     paths = lfns.keys()
     successful = {}
     failed = {}
     for path in paths:
-      result = self.findDir( path )
+      result = self.findDir(path)
       if not result['OK']:
         failed[path] = "Directory not found"
         continue
@@ -871,7 +875,7 @@ class DirectoryTreeBase:
 
       req = "SELECT S.SEID, S.SEName, D.SESize, D.SEFiles FROM FC_DirectoryUsage as D, FC_StorageElements as S"
       req += "  WHERE S.SEID=D.SEID AND D.DirID=%d" % dirID
-      result = self.db._query( req, connection )
+      result = self.db._query(req, connection)
       if not result['OK']:
         failed[path] = result['Message']
       elif not result['Value']:
@@ -882,24 +886,23 @@ class DirectoryTreeBase:
         totalFiles = 0
         for seID, seName, seSize, seFiles in result['Value']:
           if seSize or seFiles:
-            seDict[seName] = {'Size':seSize, 'Files':seFiles}
+            seDict[seName] = {'Size': seSize, 'Files': seFiles}
             totalSize += seSize
             totalFiles += seFiles
           else:
-            req = 'DELETE FROM FC_DirectoryUsage WHERE SEID=%d AND DirID=%d' % ( seID, dirID )
-            result = self.db._update( req )
+            req = 'DELETE FROM FC_DirectoryUsage WHERE SEID=%d AND DirID=%d' % (seID, dirID)
+            result = self.db._update(req)
             if not result['OK']:
-              gLogger.error( 'Failed to delete entry from FC_DirectoryUsage', result['Message'] )
-        seDict['TotalSize'] = int( totalSize )
-        seDict['TotalFiles'] = int( totalFiles )
+              gLogger.error('Failed to delete entry from FC_DirectoryUsage', result['Message'])
+        seDict['TotalSize'] = int(totalSize)
+        seDict['TotalFiles'] = int(totalFiles)
         successful[path] = seDict
       else:
         successful[path] = {}
 
-    return S_OK( {'Successful':successful, 'Failed':failed} )
+    return S_OK({'Successful': successful, 'Failed': failed})
 
-
-  def _getDirectoryPhysicalSizeFromUsage_old( self, lfns, connection ):
+  def _getDirectoryPhysicalSizeFromUsage_old(self, lfns, connection):
     """ Get the total size of the requested directories
     """
     paths = lfns.keys()
@@ -911,7 +914,7 @@ class DirectoryTreeBase:
         req = "SELECT S.SEName, D.SESize, D.SEFiles FROM FC_DirectoryUsage as D, FC_StorageElements as S"
         req += "  WHERE S.SEID=D.SEID"
       else:
-        result = self.findDir( path )
+        result = self.findDir(path)
         if not result['OK']:
           failed[path] = "Directory not found"
           continue
@@ -919,7 +922,7 @@ class DirectoryTreeBase:
           failed[path] = "Directory not found"
           continue
         dirID = result['Value']
-        result = self.getSubdirectoriesByID( dirID, requestString = True, includeParent = True )
+        result = self.getSubdirectoriesByID(dirID, requestString=True, includeParent=True)
         if not result['OK']:
           return result
         subDirString = result['Value']
@@ -927,7 +930,7 @@ class DirectoryTreeBase:
         req += " JOIN (%s) AS F" % subDirString
         req += " WHERE S.SEID=D.SEID AND D.DirID=F.DirID"
 
-      result = self.db._query( req, connection )
+      result = self.db._query(req, connection)
       if not result['OK']:
         failed[path] = result['Message']
       elif not result['Value']:
@@ -937,21 +940,21 @@ class DirectoryTreeBase:
         totalSize = 0
         totalFiles = 0
         for seName, seSize, seFiles in result['Value']:
-          sfDict = seDict.get( seName, {'Size':0, 'Files':0} )
+          sfDict = seDict.get(seName, {'Size': 0, 'Files': 0})
           sfDict['Size'] += seSize
           sfDict['Files'] += seFiles
           seDict[seName] = sfDict
           totalSize += seSize
           totalFiles += seFiles
-        seDict['TotalSize'] = int( totalSize )
-        seDict['TotalFiles'] = int( totalFiles )
+        seDict['TotalSize'] = int(totalSize)
+        seDict['TotalFiles'] = int(totalFiles)
         successful[path] = seDict
       else:
         successful[path] = {}
 
-    return S_OK( {'Successful':successful, 'Failed':failed} )
+    return S_OK({'Successful': successful, 'Failed': failed})
 
-  def _getDirectoryPhysicalSize( self, lfns, connection ):
+  def _getDirectoryPhysicalSize(self, lfns, connection):
     """ Get the total size of the requested directories
     """
     paths = lfns.keys()
@@ -963,7 +966,7 @@ class DirectoryTreeBase:
         req += "WHERE R.SEID=S.SEID AND F.FileID=R.FileID "
         req += "GROUP BY S.SEID"
       else:
-        result = self.findDir( path )
+        result = self.findDir(path)
         if not result['OK']:
           failed[path] = "Directory not found"
           continue
@@ -971,7 +974,7 @@ class DirectoryTreeBase:
           failed[path] = "Directory not found"
           continue
         dirID = result['Value']
-        result = self.getSubdirectoriesByID( dirID, requestString = True, includeParent = True )
+        result = self.getSubdirectoriesByID(dirID, requestString=True, includeParent=True)
         if not result['OK']:
           failed[path] = result['Message']
           continue
@@ -982,7 +985,7 @@ class DirectoryTreeBase:
           req += "WHERE R.SEID=S.SEID AND F.FileID=R.FileID AND F.DirID=T.DirID "
           req += "GROUP BY S.SEID"
 
-      result = self.db._query( req, connection )
+      result = self.db._query(req, connection)
       if not result['OK']:
         failed[path] = result['Message']
       elif not result['Value']:
@@ -992,27 +995,27 @@ class DirectoryTreeBase:
         totalSize = 0
         totalFiles = 0
         for size, files, seName in result['Value']:
-          seDict[seName] = {"Size":int( size ), "Files":int( files )}
+          seDict[seName] = {"Size": int(size), "Files": int(files)}
           totalSize += size
           totalFiles += files
-        seDict['TotalSize'] = int( totalSize )
-        seDict['TotalFiles'] = int( totalFiles )
+        seDict['TotalSize'] = int(totalSize)
+        seDict['TotalFiles'] = int(totalFiles)
         successful[path] = seDict
       else:
         successful[path] = {}
 
-    return S_OK( {'Successful':successful, 'Failed':failed} )
+    return S_OK({'Successful': successful, 'Failed': failed})
 
-  def _rebuildDirectoryUsage( self ):
+  def _rebuildDirectoryUsage(self):
     """ Recreate and replenish the Storage Usage tables
     """
 
     req = "DROP TABLE IF EXISTS FC_DirectoryUsage_backup"
-    result = self.db._update( req )
+    result = self.db._update(req)
     req = "RENAME TABLE FC_DirectoryUsage TO FC_DirectoryUsage_backup"
-    result = self.db._update( req )
+    result = self.db._update(req)
     req = "CREATE TABLE `FC_DirectoryUsage` LIKE `FC_DirectoryUsage_backup`"
-    result = self.db._update( req )
+    result = self.db._update(req)
     if not result['OK']:
       return result
 
@@ -1020,26 +1023,26 @@ class DirectoryTreeBase:
     if not result['OK']:
       return result
 
-    result = self.db.dtree.findDir( '/' )
+    result = self.db.dtree.findDir('/')
     if not result['OK']:
       return result
     if not result['Value']:
-      return S_ERROR( 'Directory / not found' )
+      return S_ERROR('Directory / not found')
     dirID = result['Value']
-    result = self.__rebuildDirectoryUsage( dirID )
-    gLogger.verbose( 'Finished rebuilding Directory Usage' )
+    result = self.__rebuildDirectoryUsage(dirID)
+    gLogger.verbose('Finished rebuilding Directory Usage')
     return result
 
-  def __rebuildDirectoryUsageLeaves( self ):
+  def __rebuildDirectoryUsageLeaves(self):
     """ Rebuild DirectoryUsage entries for directories having files
     """
     req = 'SELECT DISTINCT(DirID) FROM FC_Files'
-    result = self.db._query( req )
+    result = self.db._query(req)
     if not result['OK']:
       return result
 
-    dirIDs = [ x[0] for x in result['Value'] ]
-    gLogger.verbose( 'Starting rebuilding Directory Usage, number of visible directories %d' % len( dirIDs ) )
+    dirIDs = [x[0] for x in result['Value']]
+    gLogger.verbose('Starting rebuilding Directory Usage, number of visible directories %d' % len(dirIDs))
 
     insertFields = ['DirID', 'SEID', 'SESize', 'SEFiles', 'LastUpdate']
     insertCount = 0
@@ -1054,8 +1057,8 @@ class DirectoryTreeBase:
 
       # Get the physical size
       req = "SELECT SUM(F.Size),COUNT(F.Size),R.SEID from FC_Files as F, FC_Replicas as R "
-      req += "WHERE F.FileID=R.FileID AND F.DirID=%d GROUP BY R.SEID" % int( dirID )
-      result = self.db._query( req )
+      req += "WHERE F.FileID=R.FileID AND F.DirID=%d GROUP BY R.SEID" % int(dirID)
+      result = self.db._query(req)
       if not result['OK']:
         return result
       if not result['Value']:
@@ -1063,55 +1066,55 @@ class DirectoryTreeBase:
 
       for seSize, seFiles, seID in result['Value']:
         insertValues = [dirID, seID, seSize, seFiles, 'UTC_TIMESTAMP()']
-        result = self.db.insertFields( 'FC_DirectoryUsage', insertFields, insertValues )
+        result = self.db.insertFields('FC_DirectoryUsage', insertFields, insertValues)
         if not result['OK']:
           if "Duplicate" in result['Message']:
-            req = "UPDATE FC_DirectoryUsage SET SESize=%d, SEFiles=%d, LastUpdate=UTC_TIMESTAMP()" % ( seSize, seFiles )
-            req += " WHERE DirID=%s AND SEID=%s" % ( dirID, seID )
-            result = self.db._update( req )
+            req = "UPDATE FC_DirectoryUsage SET SESize=%d, SEFiles=%d, LastUpdate=UTC_TIMESTAMP()" % (seSize, seFiles)
+            req += " WHERE DirID=%s AND SEID=%s" % (dirID, seID)
+            result = self.db._update(req)
             if not result['OK']:
               return result
           return result
 
       # Get the logical size
-      req = "SELECT SUM(Size),COUNT(Size) from FC_Files WHERE DirID=%d " % int( dirID )
-      result = self.db._query( req )
+      req = "SELECT SUM(Size),COUNT(Size) from FC_Files WHERE DirID=%d " % int(dirID)
+      result = self.db._query(req)
       if not result['OK']:
         return result
       if not result['Value']:
-        return S_ERROR( 'Empty directory' )
+        return S_ERROR('Empty directory')
       seSize, seFiles = result['Value'][0]
       insertValues = [dirID, 0, seSize, seFiles, 'UTC_TIMESTAMP()']
-      result = self.db.insertFields( 'FC_DirectoryUsage', insertFields, insertValues )
+      result = self.db.insertFields('FC_DirectoryUsage', insertFields, insertValues)
       if not result['OK']:
         if "Duplicate" in result['Message']:
-          req = "UPDATE FC_DirectoryUsage SET SESize=%d, SEFiles=%d, LastUpdate=UTC_TIMESTAMP()" % ( seSize, seFiles )
+          req = "UPDATE FC_DirectoryUsage SET SESize=%d, SEFiles=%d, LastUpdate=UTC_TIMESTAMP()" % (seSize, seFiles)
           req += " WHERE DirID=%s AND SEID=0" % dirID
-          result = self.db._update( req )
+          result = self.db._update(req)
           if not result['OK']:
             return result
         else:
           return result
 
-    gLogger.verbose( "Processed %d directories, %d empty " % ( count, empty ) )
+    gLogger.verbose("Processed %d directories, %d empty " % (count, empty))
 
     return S_OK()
 
-  def __rebuildDirectoryUsage( self, directoryID ):
+  def __rebuildDirectoryUsage(self, directoryID):
     """ Rebuild DirectoryUsage entries recursively for the given path
     """
-    result = self.getChildren( directoryID )
+    result = self.getChildren(directoryID)
     if not result['OK']:
       return result
     dirIDs = result['Value']
     resultDict = {}
     for dirID in dirIDs:
-      result = self.__rebuildDirectoryUsage( dirID )
+      result = self.__rebuildDirectoryUsage(dirID)
       if not result['OK']:
         return result
       dirDict = result['Value']
       for seID in dirDict:
-        resultDict.setdefault( seID, {'Size':0, 'Files':0} )
+        resultDict.setdefault(seID, {'Size': 0, 'Files': 0})
         resultDict[seID]['Size'] += dirDict[seID]['Size']
         resultDict[seID]['Files'] += dirDict[seID]['Files']
 
@@ -1121,64 +1124,64 @@ class DirectoryTreeBase:
       size = resultDict[seID]['Size']
       files = resultDict[seID]['Files']
       req = "UPDATE FC_DirectoryUsage SET SESize=SESize+%d, SEFiles=SEFiles+%d WHERE DirID=%d AND SEID=%d"
-      req = req % ( size, files, directoryID, seID )
-      result = self.db._update( req )
+      req = req % (size, files, directoryID, seID)
+      result = self.db._update(req)
       if not result['OK']:
         return result
       if not result['Value']:
         insertValues = [directoryID, seID, size, files, 'UTC_TIMESTAMP()']
-        result = self.db.insertFields( 'FC_DirectoryUsage', insertFields, insertValues )
+        result = self.db.insertFields('FC_DirectoryUsage', insertFields, insertValues)
         if not result['OK']:
           return result
 
     req = "SELECT SEID,SESize,SEFiles from FC_DirectoryUsage WHERE DirID=%d" % directoryID
-    result = self.db._query( req )
+    result = self.db._query(req)
     if not result['OK']:
       return result
 
     resultDict = {}
     for seid, size, files in result['Value']:
-      resultDict[seid] = {'Size':size, 'Files':files}
+      resultDict[seid] = {'Size': size, 'Files': files}
 
-    return S_OK( resultDict )
+    return S_OK(resultDict)
 
-  def getDirectoryCounters( self, connection = False ):
+  def getDirectoryCounters(self, connection=False):
     """ Get the total number of directories
     """
-    conn = self._getConnection( connection )
+    conn = self._getConnection(connection)
     resultDict = {}
     req = "SELECT COUNT(*) from FC_DirectoryInfo"
-    res = self.db._query( req, connection )
+    res = self.db._query(req, connection)
     if not res['OK']:
       return res
     resultDict['Directories'] = res['Value'][0][0]
 
     treeTable = self.getTreeTable()
 
-    req = "SELECT COUNT(DirID) FROM %s WHERE Parent NOT IN ( SELECT DirID from %s )" % ( treeTable, treeTable )
+    req = "SELECT COUNT(DirID) FROM %s WHERE Parent NOT IN ( SELECT DirID from %s )" % (treeTable, treeTable)
     req += " AND DirID <> 1"
-    res = self.db._query( req, connection )
+    res = self.db._query(req, connection)
     if not res['OK']:
       return res
     resultDict['Orphan Directories'] = res['Value'][0][0]
 
-    req = "SELECT COUNT(DirID) FROM %s WHERE DirID NOT IN ( SELECT Parent from %s )" % ( treeTable, treeTable )
+    req = "SELECT COUNT(DirID) FROM %s WHERE DirID NOT IN ( SELECT Parent from %s )" % (treeTable, treeTable)
     req += " AND DirID NOT IN ( SELECT DirID from FC_Files ) "
-    res = self.db._query( req, connection )
+    res = self.db._query(req, connection)
     if not res['OK']:
       return res
     resultDict['Empty Directories'] = res['Value'][0][0]
 
     req = "SELECT COUNT(DirID) FROM %s WHERE DirID NOT IN ( SELECT DirID FROM FC_DirectoryInfo )" % treeTable
-    res = self.db._query( req, connection )
+    res = self.db._query(req, connection)
     if not res['OK']:
       return res
     resultDict['DirTree w/o DirInfo'] = res['Value'][0][0]
 
     req = "SELECT COUNT(DirID) FROM FC_DirectoryInfo WHERE DirID NOT IN ( SELECT DirID FROM %s )" % treeTable
-    res = self.db._query( req, connection )
+    res = self.db._query(req, connection)
     if not res['OK']:
       return res
     resultDict['DirInfo w/o DirTree'] = res['Value'][0][0]
 
-    return S_OK( resultDict )
+    return S_OK(resultDict)

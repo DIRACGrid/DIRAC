@@ -1914,17 +1914,18 @@ File Catalog Client $Revision: 1.17 $Date:
     if verbose:
       print("Query:", metaDict)
 
-    result = self.fc.findFilesByMetadata(metaDict,path)
+    result = self.fc.findFilesByMetadata(metaDict, path)
     if not result['OK']:
       print(("Error: %s" % result['Message']))
       return 
 
     if result['Value']:
 
+      lfnList = result['Value']
       if dirsOnly:
-        listToPrint = set( os.path.dirname(fullpath) for fullpath in result['Value'] )
+        listToPrint = set(os.path.dirname(fullpath) for fullpath in lfnList)
       else:
-        listToPrint = result['Value']
+        listToPrint = lfnList
 
       for dir_ in listToPrint:
         print(dir_)

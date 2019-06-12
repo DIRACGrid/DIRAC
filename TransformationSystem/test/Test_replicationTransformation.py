@@ -59,7 +59,7 @@ class TestMoving(unittest.TestCase):
     self.assertTrue(ret['OK'], ret.get('Message', ""))
     self.assertEqual(ret['Value'].getPlugin().get('Value'), 'Broadcast')
 
-  def test_createRepl_Standard(self):
+  def test_createRepl_NoSource(self):
     """ test creating transformation """
     tSE = 'Target-SRM'
     sSE = ''
@@ -72,7 +72,7 @@ class TestMoving(unittest.TestCase):
             patch('%s.TransformationClient' % module_name, new=self.tMock):
       ret = createDataTransformation('Moving', tSE, sSE, 'prodID', prodID, enable=True)
     self.assertTrue(ret['OK'], ret.get('Message', ''))
-    self.assertEqual(ret['Value'].getPlugin().get('Value'), 'Standard')
+    self.assertEqual(ret['Value'].getPlugin().get('Value'), 'Broadcast')
 
 
   def test_createRepl_Dry(self):
