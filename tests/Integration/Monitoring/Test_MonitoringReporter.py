@@ -72,6 +72,7 @@ class MonitoringTestCase(unittest.TestCase):
     self.monitoringDB = MonitoringDB()
     self.wmsMonitoringReporter = MonitoringReporter(monitoringType="WMSHistory")
     self.componentMonitoringReporter = MonitoringReporter(monitoringType="ComponentMonitoring")
+    self.componentsActivityMonitoringReporter = MonitoringReporter(monitoringType="ComponentsActivityMonitoring")
 
     self.data = [{u'Status': u'Waiting', 'Jobs': 2, u'timestamp': 1458130176,
                   u'JobSplitType': u'MCStripping', u'MinorStatus': u'unset',
@@ -250,6 +251,12 @@ class MonitoringReporterAdd(MonitoringTestCase):
     self.assertTrue(result['OK'])
     self.assertEqual(result['Value'], len(self.data))
 
+  def test_addComponentsActivityRecords(self):
+    for record in self.data:
+      self.componentsActivityMonitoringReporter.addRecord(record)
+    result = self.componentsActivityMonitoringReporter.commit()
+    self.assertTrue(result['OK'])
+    self.assertEqual(result['Value'], len(self.data))
 
 class MonitoringDeleteChain(MonitoringTestCase):
 
@@ -271,6 +278,14 @@ class MonitoringDeleteChain(MonitoringTestCase):
     res = self.monitoringDB.deleteIndex(indexName)
     self.assertTrue(res['OK'])
 
+  def test_deleteComponentsActivityIndex(self):
+    result = self.monitoringDB.getIndexName("ComponentsActivityMonitoring")
+    self.assertTrue(result['OK'])
+
+    today = datetime.today().strftime("%Y-%m")
+    indexName = "%s-%s" % (result['Value'], today)
+    res = self.monitoringDB.deleteIndex(indexName)
+    self.assertTrue(res['OK'])
 
 if __name__ == '__main__':
   testSuite = unittest.defaultTestLoader.loadTestsFromTestCase(MonitoringTestCase)
