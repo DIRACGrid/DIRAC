@@ -11,12 +11,9 @@ __RCSID__ = "$Id$"
 
 import time
 
-from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Base.DB import DB
-
-# Here for debugging purpose; should be initialized by the containing component
-gLogger.initialize('WMS', '/Databases/JobLoggingDB/Test')
 
 MAGIC_EPOC_NUMBER = 1270000000
 
@@ -32,7 +29,6 @@ class JobLoggingDB(DB):
     """
 
     DB.__init__(self, 'JobLoggingDB', 'WorkloadManagement/JobLoggingDB')
-    self.gLogger = gLogger
 
 #############################################################################
   def addLoggingRecord(self,
@@ -51,7 +47,7 @@ class JobLoggingDB(DB):
     """
 
     event = 'status/minor/app=%s/%s/%s' % (status, minor, application)
-    self.gLogger.info("Adding record for job " + str(jobID) + ": '" + event + "' from " + source)
+    self.log.info("Adding record for job ", str(jobID) + ": '" + event + "' from " + source)
 
     if not date:
       # Make the UTC datetime string and float
@@ -71,12 +67,12 @@ class JobLoggingDB(DB):
               MAGIC_EPOC_NUMBER  # pylint: disable=no-member
           time_order = round(epoc, 3)
         else:
-          self.gLogger.error('Incorrect date for the logging record')
+          self.log.error('Incorrect date for the logging record')
           _date = Time.dateTime()
           epoc = time.mktime(_date.timetuple()) - MAGIC_EPOC_NUMBER
           time_order = round(epoc, 3)
       except BaseException:
-        self.gLogger.exception('Exception while date evaluation')
+        self.log.exception('Exception while date evaluation')
         _date = Time.dateTime()
         epoc = time.mktime(_date.timetuple()) - MAGIC_EPOC_NUMBER
         time_order = round(epoc, 3)
@@ -141,7 +137,7 @@ class JobLoggingDB(DB):
     """ Get TimeStamps for job MajorState transitions
         return a {State:timestamp} dictionary
     """
-    self.gLogger.debug('getWMSTimeStamps: Retrieving Timestamps for Job %d' % int(jobID))
+    self.log.debug('getWMSTimeStamps: Retrieving Timestamps for Job %d' % int(jobID))
 
     result = {}
     cmd = 'SELECT Status,StatusTimeOrder FROM LoggingInfo WHERE JobID=%d' % int(jobID)

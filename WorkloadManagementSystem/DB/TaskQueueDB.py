@@ -284,10 +284,11 @@ class TaskQueueDB(DB):
       cmd += ", ".join(["( %s, %s )" % (tqId, str(value)) for value in values])
       result = self._update(cmd, conn=connObj)
       if not result['OK']:
-        self.log.error("Failed to insert %s condition" % field, result['Message'])
+        self.log.error("Failed to insert condition",
+                       "%s : %s" % field, result['Message'])
         self.cleanOrphanedTaskQueues(connObj=connObj)
         return S_ERROR("Can't insert values %s for field %s: %s" % (str(values), field, result['Message']))
-    self.log.info("Created TQ %s" % tqId)
+    self.log.info("Created TQ", tqId)
     return S_OK(tqId)
 
   def cleanOrphanedTaskQueues(self, connObj=False):
@@ -328,7 +329,8 @@ class TaskQueueDB(DB):
       return result
     updated = result['Value'] > 0
     if updated:
-      self.log.info("Set enabled = %s for TQ %s" % (enabled, tqId))
+      self.log.verbose("Set enabled for TQ",
+                       "(%s for TQ %s)" % (enabled, tqId))
     return S_OK(updated)
 
   def __hackJobPriority(self, jobPriority):
@@ -364,14 +366,15 @@ class TaskQueueDB(DB):
         return retVal
       tqDefDict = retVal['Value']
     tqDefDict['CPUTime'] = self.fitCPUTimeToSegments(tqDefDict['CPUTime'])
-    self.log.info("Inserting job %s with requirements: %s" % (jobId, printDict(tqDefDict)))
+    self.log.info("Inserting job with requirements",
+                  "(%s : %s)" % (jobId, printDict(tqDefDict)))
     retVal = self.__findAndDisableTaskQueue(tqDefDict, skipDefinitionCheck=True, connObj=connObj)
     if not retVal['OK']:
       return retVal
     tqInfo = retVal['Value']
     newTQ = False
     if not tqInfo['found']:
-      self.log.info("Creating a TQ for job %s" % jobId)
+      self.log.info("Creating a TQ for job", jobId)
       retVal = self.__createTaskQueue(tqDefDict, 1, connObj=connObj)
       if not retVal['OK']:
         return retVal
@@ -379,7 +382,8 @@ class TaskQueueDB(DB):
       newTQ = True
     else:
       tqId = tqInfo['tqId']
-      self.log.info("Found TQ %s for job %s requirements" % (tqId, jobId))
+      self.log.info("Found TQ for job requirements",
+                    "(%s : %s)" % (tqId, jobId))
     try:
       result = self.__insertJobInTaskQueue(jobId, tqId, int(jobPriority), checkTQExists=False, connObj=connObj)
       if not result['OK']:
@@ -400,7 +404,8 @@ class TaskQueueDB(DB):
 
         :returns: S_OK() / S_ERROR
     """
-    self.log.info("Inserting job %s in TQ %s with priority %s" % (jobId, tqId, jobPriority))
+    self.log.info("Inserting job in TQ with priority",
+                  "(%s : %s : %s)" % (jobId, tqId, jobPriority))
     if not connObj:
       result = self._getConnection()
       if not result['OK']:
@@ -470,7 +475,7 @@ class TaskQueueDB(DB):
       if not data['found']:
         return result
       if data['enabled'] < 1:
-        self.log.notice("TaskQueue {tqId} seems to be already disabled ({enabled})".format(**data))
+        self.log.debug("TaskQueue {tqId} seems to be already disabled ({enabled})".format(**data))
       result = self.__setTaskQueueEnabled(data['tqId'], False)
       if result['OK']:
         return S_OK(data)
@@ -493,7 +498,7 @@ FROM `tq_TaskQueues`, `tq_Jobs`"
 ORDER BY COUNT( `tq_Jobs`.JobID ) ASC" % (sqlCmd, result['Value'])
     result = self._query(sqlCmd, conn=connObj)
     if not result['OK']:
-      self.log.error("Can't find task queue: %s" % result['Message'])
+      self.log.error("Can't find task queue", result['Message'])
       return result
     data = result['Value']
     if not data or data[0][0] >= self.__maxJobsInTQ:
@@ -545,7 +550,7 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
         self.log.info("No TQ matches requirements")
         return S_OK({'matchFound': False, 'tqMatch': tqMatchDict})
       for tqId, tqOwnerDN, tqOwnerGroup in tqList:
-        self.log.info("Trying to extract jobs from TQ %s" % tqId)
+        self.log.info("Trying to extract jobs from TQ", tqId)
         retVal = self._query(prioSQL % tqId, conn=connObj)
         if not retVal['OK']:
           return S_ERROR("Can't retrieve winning priority for matching job: %s" % retVal['Message'])
@@ -558,11 +563,12 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
           return S_ERROR("Can't begin transaction for matching job: %s" % retVal['Message'])
         jobTQList = [(row[0], row[1]) for row in retVal['Value']]
         if not jobTQList:
-          self.log.info("Task queue %s seems to be empty, triggering a cleaning" % tqId)
+          self.log.info("Task queue seems to be empty, triggering a cleaning of", tqId)
           self.__deleteTQWithDelay.add(tqId, 300, (tqId, tqOwnerDN, tqOwnerGroup))
         while jobTQList:
           jobId, tqId = jobTQList.pop(random.randint(0, len(jobTQList) - 1))
-          self.log.info("Trying to extract job %s from TQ %s" % (jobId, tqId))
+          self.log.info("Trying to extract job from TQ",
+                        "%s : %s" % (jobId, tqId))
           retVal = self.deleteJob(jobId, connObj=connObj)
           if not retVal['OK']:
             msgFix = "Could not take job"
@@ -570,9 +576,10 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
             self.log.error(msgFix, msgVar)
             return S_ERROR(msgFix + msgVar)
           if retVal['Value']:
-            self.log.info("Extracted job %s with prio %s from TQ %s" % (jobId, prio, tqId))
+            self.log.info("Extracted job with prio from TQ",
+                          "(%s : %s : %s)" % (jobId, prio, tqId))
             return S_OK({'matchFound': True, 'jobId': jobId, 'taskQueueId': tqId, 'tqMatch': tqMatchDict})
-        self.log.info("No jobs could be extracted from TQ %s" % tqId)
+        self.log.info("No jobs could be extracted from TQ", tqId)
     if noJobsFound:
       return S_OK({'matchFound': False, 'tqMatch': tqMatchDict})
 
@@ -882,7 +889,7 @@ WHERE j.JobId = %s AND t.TQId = j.TQId" %
     if not data:
       return S_OK(False)
     tqId, tqOwnerDN, tqOwnerGroup = data[0]
-    self.log.info("Deleting job %s" % jobId)
+    self.log.info("Deleting job", jobId)
     retVal = self._update("DELETE FROM `tq_Jobs` WHERE JobId = %s" % jobId, conn=connObj)
     if not retVal['OK']:
       return S_ERROR("Could not delete job from task queue %s: %s" % (jobId, retVal['Message']))
@@ -921,7 +928,8 @@ WHERE j.JobId = %s AND t.TQId = j.TQId" %
     if not connObj:
       retVal = self._getConnection()
       if not retVal['OK']:
-        return S_ERROR("Can't get TQs for a job list: %s" % retVal['Message'])
+        self.log.error("Can't get TQs for a job list", retVal['Message'])
+        return retVal
       connObj = retVal['Value']
 
     jobString = ','.join([str(x) for x in jobIDs])
@@ -956,7 +964,8 @@ WHERE j.JobId = %s AND t.TQId = j.TQId" %
       result = self.deleteTaskQueueIfEmpty(tqId, tqOwnerDN, tqOwnerGroup)
       if result['OK']:
         return
-    self.log.error("Could not delete TQ %s: %s" % (tqId, result['Message']))
+    self.log.error("Could not delete TQ",
+                   "%s: %s" % (tqId, result['Message']))
 
   def deleteTaskQueueIfEmpty(self, tqId, tqOwnerDN=False, tqOwnerGroup=False, connObj=False):
     """
@@ -965,7 +974,7 @@ WHERE j.JobId = %s AND t.TQId = j.TQId" %
     if not connObj:
       retVal = self._getConnection()
       if not retVal['OK']:
-        self.log.error("Can't insert job: %s" % retVal['Message'])
+        self.log.error("Can't insert job", retVal['Message'])
         return retVal
       connObj = retVal['Value']
     if not tqOwnerDN or not tqOwnerGroup:
@@ -981,7 +990,8 @@ WHERE j.JobId = %s AND t.TQId = j.TQId" %
     sqlCmd += "AND `tq_TaskQueues`.TQId not in ( SELECT DISTINCT TQId from `tq_Jobs` )"
     retVal = self._query(sqlCmd, conn=connObj)
     if not retVal['OK']:
-      self.log.error("Could not select task queue %s" % tqId, retVal['Message'])
+      self.log.error("Could not select task queue",
+                     "%s : %s" % tqId, retVal['Message'])
       return retVal
     tqToDel = retVal['Value']
 
@@ -994,7 +1004,7 @@ WHERE j.JobId = %s AND t.TQId = j.TQId" %
       if not retVal['OK']:
         return retVal
       self.recalculateTQSharesForEntity(tqOwnerDN, tqOwnerGroup, connObj=connObj)
-      self.log.info("Deleted empty and enabled TQ %s" % tqId)
+      self.log.info("Deleted empty and enabled TQ", tqId)
       return S_OK()
     return S_OK(False)
 
@@ -1002,7 +1012,7 @@ WHERE j.JobId = %s AND t.TQId = j.TQId" %
     """
     Try to delete a task queue even if it has jobs
     """
-    self.log.info("Deleting TQ %s" % tqId)
+    self.log.info("Deleting TQ", tqId)
     if not connObj:
       retVal = self._getConnection()
       if not retVal['OK']:
@@ -1074,7 +1084,8 @@ WHERE j.JobId = %s AND t.TQId = j.TQId" %
                                                                                 ", ".join(sqlGroupEntries))
     retVal = self._query(sqlCmd)
     if not retVal['OK']:
-      return S_ERROR("Can't retrieve task queues info: %s" % retVal['Message'])
+      self.log.error("Can't retrieve task queues info", retVal['Message'])
+      return retVal
     tqData = {}
     for record in retVal['Value']:
       tqId = record[0]
@@ -1089,15 +1100,17 @@ WHERE j.JobId = %s AND t.TQId = j.TQId" %
       sqlCmd = "SELECT %s.TQId, %s.Value FROM %s" % (table, table, table)
       retVal = self._query(sqlCmd)
       if not retVal['OK']:
-        return S_ERROR("Can't retrieve task queues field % info: %s" % (field, retVal['Message']))
+        self.log.error("Can't retrieve task queues field",
+                       "% info: %s" % (field, retVal['Message']))
+        return retVal
       for record in retVal['Value']:
         tqId = record[0]
         value = record[1]
         if tqId not in tqData:
           if tqIdList is None or tqId in tqIdList:
             self.log.warn(
-                "Task Queue %s is defined in field %s but does not exist, triggering a cleaning" %
-                (tqId, field))
+                "Task Queue is defined for a field, but does not exist: triggering a cleaning",
+                "TQID: %s, field: %s" % (tqId, field))
             tqNeedCleaning = True
         else:
           if field not in tqData[tqId]:
@@ -1151,7 +1164,8 @@ WHERE j.JobId = %s AND t.TQId = j.TQId" %
     """
     Recalculate the shares for a userDN/userGroup combo
     """
-    self.log.info("Recalculating shares for %s@%s TQs" % (userDN, userGroup))
+    self.log.info("Recalculating shares",
+                  "for %s@%s TQs" % (userDN, userGroup))
     if userGroup in self.__groupShares:
       share = self.__groupShares[userGroup]
     else:
@@ -1191,7 +1205,7 @@ WHERE j.JobId = %s AND t.TQId = j.TQId" %
     """
     Set the priority for a userDN/userGroup combo given a splitted share
     """
-    self.log.info("Setting priorities to %s@%s TQs" % (userDN, userGroup))
+    self.log.info("Setting priorities", "to %s@%s TQs" % (userDN, userGroup))
     tqCond = ["t.OwnerGroup='%s'" % userGroup]
     allowBgTQs = gConfig.getValue("/Registry/Groups/%s/AllowBackgroundTQs" % userGroup, False)
     if Properties.JOB_SHARING not in Registry.getPropertiesForGroup(userGroup):

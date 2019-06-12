@@ -130,7 +130,7 @@ class JobScheduling(OptimizerExecutor):
         return S_ERROR("Unable to get OSCompatibility list")
       allPlatforms = result['Value']
       if jobPlatform not in allPlatforms:
-        self.jobLog.error("Platform %s is not supported" % jobPlatform)
+        self.jobLog.error("Platform not supported", jobPlatform)
         return S_ERROR("Platform %s is not supported" % jobPlatform)
 
     # Filter the userSites by the platform selection (if there is one)
@@ -138,18 +138,18 @@ class JobScheduling(OptimizerExecutor):
       if jobPlatform:
         result = self.__filterByPlatform(jobPlatform, userSites)
         if not result['OK']:
-          self.jobLog.error("Failed to filter job sites by platform: %s" % result['Message'])
+          self.jobLog.error("Failed to filter job sites by platform", result['Message'])
           return S_ERROR("Failed to filter job sites by platform")
         userSites = result['Value']
         if not userSites:
           # No sites left after filtering -> Invalid platform/sites combination
-          self.jobLog.error("No selected sites match platform '%s'" % jobPlatform)
+          self.jobLog.error("No selected sites match platform", jobPlatform)
           return S_ERROR("No selected sites match platform '%s'" % jobPlatform)
 
     # Check if there is input data
     result = jobState.getInputData()
     if not result['OK']:
-      self.jobLog.error("Cannot get input data %s" % (result['Message']))
+      self.jobLog.error("Cannot get input data", result['Message'])
       return S_ERROR("Failed to get input data from JobDB")
 
     if not result['Value']:
