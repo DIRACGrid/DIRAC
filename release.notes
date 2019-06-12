@@ -1,3 +1,16 @@
+[v6r21p8]
+
+*WMS
+CHANGE: (#4111) Better logging in JobWrapper
+CHANGE: (#4114) JobScheduling - allow both Tag and Tags option in the job JDL
+
+*DMS
+FIX: (#4101) FileManagerBase - use returned ID:LFN dict instead of the LFN list. Fixes the bug in 
+             getReplicasByMetadata reported in #4058
+
+*TransformationSystem
+FIX: (#4112) TaskManager.py - testing if the request ID is correct was not done properly, test the numerical value
+
 [v6r21p7]
 
 *Core
