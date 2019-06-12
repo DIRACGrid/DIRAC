@@ -11,7 +11,7 @@ def createDataTransformation(flavour, targetSE, sourceSE,
                              metaKey, metaValue,
                              extraData=None, extraname='',
                              groupSize=1,
-                             plugin=None,
+                             plugin='Broadcast',
                              tGroup=None,
                              tBody=None,
                              enable=False,
@@ -42,10 +42,6 @@ def createDataTransformation(flavour, targetSE, sourceSE,
   if isinstance(targetSE, basestring):
     targetSE = [targetSE]
 
-  if sourceSE and plugin is None:
-    plugin = 'Broadcast'
-  if plugin is None:
-    plugin = 'Standard'
   gLogger.debug('Using plugin: %r' % plugin)
 
   if flavour not in ('Replication', 'Moving'):

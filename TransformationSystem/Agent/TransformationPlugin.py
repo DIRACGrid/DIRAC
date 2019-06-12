@@ -118,21 +118,20 @@ class TransformationPlugin(PluginBase):
 
   def _Broadcast(self):
     """ This plug-in takes files found at the sourceSE and broadcasts to all (or a selection of) targetSEs.
+
+    Parameters used by this plugin:
+
+    * SourceSE: Optional: only files at this location are treated
+    * TargetSE: Where to broadcast files to
+    * Destinations: Optional: integer, files are only broadcast to this number of TargetSEs, Destinations has to be
+      larger than the number of TargetSEs
+    * GroupSize: number of files per task
     """
     if not self.params:
       return S_ERROR("TransformationPlugin._Broadcast: The 'Broadcast' plugin requires additional parameters.")
 
-    targetseParam = self.params['TargetSE']
-    targetSEs = []
-    sourceSEs = eval(self.params['SourceSE'])  # pylint: disable=eval-used
-    if targetseParam.count('['):
-      targetSEs = eval(targetseParam)  # pylint: disable=eval-used
-    elif isinstance(targetseParam, list):
-      targetSEs = targetseParam
-    else:
-      targetSEs = [targetseParam]
-    # sourceSEs = eval(self.params['SourceSE'])
-    # targetSEs = eval(self.params['TargetSE'])
+    sourceSEs = set(self.util.seParamtoList(self.params.get('SourceSE', [])))
+    targetSEs = self.util.seParamtoList(self.params['TargetSE'])
     destinations = int(self.params.get('Destinations', 0))
     if destinations and (destinations >= len(targetSEs)):
       destinations = 0
@@ -144,26 +143,22 @@ class TransformationPlugin(PluginBase):
     targetSELfns = {}
     for replicaSE, lfns in fileGroups.items():
       ses = replicaSE.split(',')
-      # sourceSites = self._getSitesForSEs(ses)
-      atSource = False
-      for se in ses:
-        if se in sourceSEs:
-          atSource = True
+      atSource = (not sourceSEs) or set(ses).intersection(sourceSEs)
       if not atSource:
         continue
 
       for lfn in lfns:
         targets = []
-        sources = self._getSitesForSEs(ses)
+        sourceSites = self._getSitesForSEs(ses)
         random.shuffle(targetSEs)
         for targetSE in targetSEs:
           site = self._getSiteForSE(targetSE)['Value']
-          if not site in sources:
+          if site not in sourceSites:
             if (destinations) and (len(targets) >= destinations):
               continue
-            sources.append(site)
+            sourceSites.append(site)
           targets.append(targetSE)  # after all, if someone wants to copy to the source, it's his choice
-        strTargetSEs = str.join(',', sorted(targets))
+        strTargetSEs = ','.join(sorted(targets))
         targetSELfns.setdefault(strTargetSEs, []).append(lfn)
     tasks = []
     for ses, lfns in targetSELfns.items():
