@@ -449,7 +449,7 @@ class ProxyDB(DB):
         else:
           sqlSet.append("%s = %s" % (k, dValues[k]))
       cmd = "UPDATE `%s` SET %s WHERE %s" % (sTable, ", ".join(sqlSet), " AND ".join(sqlWhere))
-      
+
     self.logAction("store proxy", userDN, proxyProvider, userDN, proxyProvider)
     return self._update(cmd)
 
@@ -730,6 +730,12 @@ class ProxyDB(DB):
 
         :return: S_OK(tuple)/S_ERROR() -- tuple contain proxy as string and remainig seconds
     """
+    result = Registry.getGroupsForDN(userDN)
+    if not result['OK']:
+      return S_ERROR('Cannot generate proxy: %s' % result['Message'])
+    if userGroup not in result['Value']:
+      return S_ERROR('Cannot generate proxy: Invalid group %s for user' % userGroup)
+
     result = Registry.getProxyProvidersForDN(userDN)
     if isPUSPdn(userDN):
       result = S_OK(['PUSP'])
