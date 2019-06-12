@@ -99,7 +99,7 @@ class ProxyDB(DB):
                                                     },
                                          'PrimaryKey': ['UserDN', 'ProxyProvider']
                                          }
-    # FIXME: Need to delete this table in v7
+    # FIXME: This table not need in v7 if ProxyDB_CleanProxies will be used
     if 'ProxyDB_Proxies' not in tablesInDB:
       tablesD['ProxyDB_Proxies'] = {'Fields': {'UserName': 'VARCHAR(64) NOT NULL',
                                                'UserDN': 'VARCHAR(255) NOT NULL',
@@ -364,7 +364,7 @@ class ProxyDB(DB):
     if not proxyProvider:
       result = Registry.getProxyProvidersForDN(userDN)
       if result['OK']:
-        proxyProvider = result['Value'][0] 
+        proxyProvider = result['Value'][0]
 
     # Get remaining secs
     retVal = chain.getRemainingSecs()
@@ -637,7 +637,7 @@ class ProxyDB(DB):
 
   # FIXME: this method not need if DIRAC setup use DNProperties section in configuration
   def __getPUSProxy(self, userDN, userGroup, requiredLifetime, requestedVOMSAttr=None):
-    
+
     result = Registry.getGroupsForDN(userDN)
     if not result['OK']:
       return result
@@ -782,7 +782,7 @@ class ProxyDB(DB):
     errMsg = "Can't get proxy%s: " % (requiredLifeTime and ' for %s seconds' % requiredLifeTime or '')
     retVal = self.__getPemAndTimeLeft(userDN, userGroup)
     if not retVal['OK']:
-      errMsg += '%s, try to use proxy provider' %retVal['Message']
+      errMsg += '%s, try to use proxy provider' % retVal['Message']
       retVal = self.__getProxyFromProxyProviders(userDN, userGroup, requiredLifeTime=requiredLifeTime)
     elif requiredLifeTime:
       if retVal['Value'][1] < requiredLifeTime and not self.__useMyProxy:
@@ -1073,7 +1073,8 @@ class ProxyDB(DB):
           continue
         fVal = selDict[field]
         if isinstance(fVal, (dict, tuple, list)):
-          sqlWhere.append("%s in (%s)" % (field, ", ".join([self._escapeString(str(value))['Value'] for value in fVal])))
+          sqlWhere.append("%s in (%s)" %
+                          (field, ", ".join([self._escapeString(str(value))['Value'] for value in fVal])))
         else:
           sqlWhere.append("%s = %s" % (field, self._escapeString(str(fVal))['Value']))
       sqlOrder = []

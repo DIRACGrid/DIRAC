@@ -74,6 +74,7 @@ class ProxyManagerHandler(RequestHandler):
 
   auth_getUserProxiesInfo = ['authenticated']
   types_getUserProxiesInfo = []
+
   def export_getUserProxiesInfo(self):
     """ Get the info about the user proxies in the system
 
@@ -82,6 +83,7 @@ class ProxyManagerHandler(RequestHandler):
     return S_OK(self.__generateUserProxiesInfo())
 
   types_requestDelegationUpload = [[int, long]]
+
   def export_requestDelegationUpload(self, requestedUploadTime):
     """ Request a delegation. Send a delegation request to client
 
@@ -101,7 +103,7 @@ class ProxyManagerHandler(RequestHandler):
       return S_ERROR("%s is not a valid group for user %s" % (userGroup, userName))
     clientChain = credDict['x509Chain']
     clientSecs = clientChain.getIssuerCert()['Value'].getRemainingSecs()['Value']
-    requestedUploadTime = min(requestedUploadTime, clientSecs) #FIXME: this is useless now...
+    requestedUploadTime = min(requestedUploadTime, clientSecs)  # FIXME: this is useless now...
     result = self.__proxyDB.generateDelegationRequest(credDict['x509Chain'], userDN)
     if result['OK']:
       gLogger.info("Upload request by %s:%s given id %s" % (userName, userGroup, result['Value']['id']))
@@ -110,6 +112,7 @@ class ProxyManagerHandler(RequestHandler):
     return result
 
   types_completeDelegationUpload = [(int, long), basestring]
+
   def export_completeDelegationUpload(self, requestId, pemChain):
     """ Upload result of delegation
 
@@ -128,16 +131,17 @@ class ProxyManagerHandler(RequestHandler):
     return self.__addKnownUserProxiesInfo(S_OK())
 
   types_getRegisteredUsers = []
+
   def export_getRegisteredUsers(self, validSecondsRequired=0):
     """ Get the list of users who have a valid proxy in the system
-        
+
         :param basestring validSecondsRequired: required seconds the proxy is valid for
 
         :return: S_OK(list)/S_ERROR() -- list contain dicts with user name, DN, group
                                          expiration time, persistent flag
     """
     credDict = self.getRemoteCredentials()
-    if not Properties.PROXY_MANAGEMENT in credDict['properties']:
+    if Properties.PROXY_MANAGEMENT not in credDict['properties']:
       return self.__proxyDB.getUsers(validSecondsRequired, userName=credDict['username'])
     return self.__proxyDB.getUsers(validSecondsRequired)
 
@@ -164,6 +168,7 @@ class ProxyManagerHandler(RequestHandler):
     return S_ERROR("You can't get proxies!")
 
   types_getProxy = [basestring, basestring, basestring, (int, long)]
+
   def export_getProxy(self, userDN, userGroup, requestPem, requiredLifetime):
     """ Get a proxy for a userDN/userGroup
 
@@ -210,6 +215,7 @@ class ProxyManagerHandler(RequestHandler):
     return S_OK(retVal['Value'])
 
   types_getVOMSProxy = [basestring, basestring, basestring, (int, long)]
+
   def export_getVOMSProxy(self, userDN, userGroup, requestPem, requiredLifetime, vomsAttribute=False):
     """ Get a proxy for a userDN/userGroup
 
@@ -250,6 +256,7 @@ class ProxyManagerHandler(RequestHandler):
     return S_OK(retVal['Value'])
 
   types_setPersistency = [basestring, basestring, bool]
+
   def export_setPersistency(self, userDN, userGroup, persistentFlag):
     """ Set the persistency for a given dn/group
 
@@ -268,6 +275,7 @@ class ProxyManagerHandler(RequestHandler):
     return S_OK()
 
   types_deleteProxyBundle = [(list, tuple)]
+
   def export_deleteProxyBundle(self, idList):
     """ delete a list of id's
 
@@ -290,6 +298,7 @@ class ProxyManagerHandler(RequestHandler):
     return S_OK(deleted)
 
   types_deleteProxy = [(list, tuple)]
+
   def export_deleteProxy(self, userDN, userGroup):
     """ Delete a proxy from the DB
 
@@ -299,7 +308,7 @@ class ProxyManagerHandler(RequestHandler):
         :return: S_OK()/S_ERROR()
     """
     credDict = self.getRemoteCredentials()
-    if not Properties.PROXY_MANAGEMENT in credDict['properties']:
+    if Properties.PROXY_MANAGEMENT not in credDict['properties']:
       if userDN != credDict['DN']:
         return S_ERROR("You aren't allowed!")
     retVal = self.__proxyDB.deleteProxy(userDN, userGroup)
@@ -309,6 +318,7 @@ class ProxyManagerHandler(RequestHandler):
     return S_OK()
 
   types_getContents = [dict, (list, tuple), (int, long), (int, long)]
+
   def export_getContents(self, selDict, sortDict, start, limit):
     """ Retrieve the contents of the DB
 
@@ -320,11 +330,12 @@ class ProxyManagerHandler(RequestHandler):
         :return: S_OK(dict)/S_ERROR() -- dict contain fields, record list, total records
     """
     credDict = self.getRemoteCredentials()
-    if not Properties.PROXY_MANAGEMENT in credDict['properties']:
+    if Properties.PROXY_MANAGEMENT not in credDict['properties']:
       selDict['UserName'] = credDict['username']
     return self.__proxyDB.getProxiesContent(selDict, sortDict, start, limit)
 
   types_getLogContents = [dict, (list, tuple), (int, long), (int, long)]
+
   def export_getLogContents(self, selDict, sortDict, start, limit):
     """ Retrieve the contents of the DB
 
@@ -337,8 +348,8 @@ class ProxyManagerHandler(RequestHandler):
     """
     return self.__proxyDB.getLogsContent(selDict, sortDict, start, limit)
 
-
   types_generateToken = [basestring, basestring, (int, long)]
+
   def export_generateToken(self, requesterDN, requesterGroup, tokenUses):
     """ Generate tokens for proxy retrieval
 
@@ -353,6 +364,7 @@ class ProxyManagerHandler(RequestHandler):
     return self.__proxyDB.generateToken(requesterDN, requesterGroup, numUses=tokenUses)
 
   types_getProxyWithToken = [basestring, basestring, basestring, (int, long), basestring]
+
   def export_getProxyWithToken(self, userDN, userGroup, requestPem, requiredLifetime, token):
     """ Get a proxy for a userDN/userGroup
 
@@ -381,6 +393,7 @@ class ProxyManagerHandler(RequestHandler):
     return self.__getProxy(userDN, userGroup, requestPem, requiredLifetime, True)
 
   types_getVOMSProxyWithToken = [basestring, basestring, basestring, (int, long), basestring]
+  
   def export_getVOMSProxyWithToken(self, userDN, userGroup, requestPem, requiredLifetime, token, vomsAttribute=False):
     """ Get a proxy for a userDN/userGroup
 

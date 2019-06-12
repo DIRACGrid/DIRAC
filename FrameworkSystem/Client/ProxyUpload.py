@@ -6,6 +6,8 @@
 import sys
 import getpass
 import DIRAC
+
+from DIRAC import gLogger
 from DIRAC.Core.Base import Script
 
 __RCSID__ = "$Id$"
@@ -37,7 +39,7 @@ class CLIParams(object):
       fields = [f.strip() for f in arg.split(":")]
       self.proxyLifeTime = int(fields[0]) * 3600 + int(fields[1]) * 60
     except ValueError:
-      print "Can't parse %s time! Is it a HH:MM?" % arg
+      gLogger.notice("Can't parse %s time! Is it a HH:MM?" % arg)
       return DIRAC.S_ERROR("Can't parse time argument")
     return DIRAC.S_OK()
 
@@ -74,8 +76,8 @@ class CLIParams(object):
     return DIRAC.S_OK()
 
   def showVersion(self, arg):
-    print "Version:"
-    print " ", __RCSID__
+    gLogger.notice("Version:")
+    gLogger.notice(" ", __RCSID__)
     sys.exit(0)
     return DIRAC.S_OK()
 
@@ -93,6 +95,7 @@ from DIRAC import S_ERROR
 from DIRAC.Core.Security import Locations
 from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
+
 
 def uploadProxy(params):
   DIRAC.gLogger.info("Loading user proxy")
