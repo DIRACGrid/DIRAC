@@ -63,7 +63,7 @@ class DiracAdmin(API):
 
        Example usage:
 
-         >>> print diracAdmin.uploadProxy('lhcb_pilot')
+	 >>> print diracAdmin.uploadProxy('dteam_pilot')
          {'OK': True, 'Value': 0L}
 
        :param group: DIRAC Group

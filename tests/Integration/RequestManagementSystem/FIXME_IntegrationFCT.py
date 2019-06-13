@@ -110,7 +110,7 @@ class FullChainTest( object ):
     files = []
     for i in xrange( 10 ):
       fname = "/tmp/testUserFile-%s" % i
-      if userGroup == "lhcb_user":
+      if userGroup == "dteam_user":
         lfn = "/lhcb/user/%s/%s/%s" % ( userName[0], userName, fname.split( "/" )[-1] )
       else:
         lfn = "/lhcb/certification/test/rmsdms/%s" % fname.split( "/" )[-1]
