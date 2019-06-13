@@ -292,27 +292,6 @@ def getVOMSServerInfo(requestedVO=''):
   """ Get information on VOMS servers for the given VO or for all of them
   """
   vomsDict = {}
-  # For backward compatibility check the VOMS section first
-  result = gConfig.getSections('%s/VOMS/Servers' % gBaseRegistrySection)
-  if result['OK']:
-    voNames = result['Value']
-    for vo in voNames:
-      if requestedVO and vo != requestedVO:
-        continue
-      vomsDict.setdefault(vo, {})
-      vomsDict[vo]['VOMSName'] = vo
-      result = gConfig.getSections('%s/VOMS/Servers/%s' % (gBaseRegistrySection, vo))
-      if result['OK']:
-        serverList = result['Value']
-        vomsDict[vo].setdefault("Servers", {})
-        for server in serverList:
-          DN = gConfig.getValue('%s/VOMS/Servers/%s/%s/DN' % (gBaseRegistrySection, vo, server), '')
-          CA = gConfig.getValue('%s/VOMS/Servers/%s/%s/CA' % (gBaseRegistrySection, vo, server), '')
-          port = gConfig.getValue('%s/VOMS/Servers/%s/%s/Port' % (gBaseRegistrySection, vo, server), 0)
-          vomsDict[vo]['Servers'].setdefault(server, {})
-          vomsDict[vo]['Servers'][server]['DN'] = DN
-          vomsDict[vo]['Servers'][server]['CA'] = CA
-          vomsDict[vo]['Servers'][server]['Port'] = port
 
   result = getVOs()
   if result['OK']:
