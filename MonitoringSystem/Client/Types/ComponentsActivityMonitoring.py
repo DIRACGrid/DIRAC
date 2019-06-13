@@ -24,7 +24,7 @@ class ComponentsActivityMonitoring(BaseType):
     :param self: self reference
     """
 
-    self.keyFields = ["site", "componentType", "componentName"]
+    self.keyFields = ["site", "componentType", "componentName", "componentLocation"]
 
     self.monitoringFields = ["Connections", "Queries", "CPU",
                              "MEM", "PendingQueries", "ActiveQueries",
@@ -33,7 +33,7 @@ class ComponentsActivityMonitoring(BaseType):
     self.doc_type = "ComponentsActivityMonitoring"
 
     self.addMapping({"site": {"type": "keyword"}, "componentType": {"type": "keyword"},
-                     "componentName": {"type": "keyword"}})
+                     "componentName": {"type": "keyword"}, "componentLocation": {"type": "keyword"}})
 
     self.dataToKeep = 86400 * 30
 
