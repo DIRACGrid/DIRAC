@@ -28,6 +28,7 @@ from sqlalchemy import create_engine, Column, String, DateTime, exc, Text, Integ
 
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig
 from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
+from DIRAC.Core.Base.BaseRSSDB import BaseRSSDB
 from DIRAC.ResourceStatusSystem.Utilities import Utils
 
 
@@ -360,7 +361,7 @@ class TransferCache(rmsBase):
     return [self.sourcename, self.destinationname, self.metric, self.value, self.lastchecktime]
 
 
-class ResourceManagementDB(object):
+class ResourceManagementDB(BaseRSSDB):
   """
     Class that defines the methods to interact to the ResourceManagementDB tables
   """
@@ -379,37 +380,8 @@ class ResourceManagementDB(object):
                               'TABLESLIST')
 
     self.extensions = gConfig.getValue('DIRAC/Extensions', [])
-    self.__initializeConnection('ResourceStatus/ResourceManagementDB')
+    self._initializeConnection('ResourceStatus/ResourceManagementDB')
     self.__initializeDB()
-
-  def __initializeConnection(self, dbPath):
-    """
-    Collects from the CS all the info needed to connect to the DB.
-    This should be in a base class eventually
-    """
-
-    result = getDBParameters(dbPath)
-    if not result['OK']:
-      raise Exception('Cannot get database parameters: %s' % result['Message'])
-
-    dbParameters = result['Value']
-    self.log.debug("db parameters: %s" % dbParameters)
-    self.host = dbParameters['Host']
-    self.port = dbParameters['Port']
-    self.user = dbParameters['User']
-    self.password = dbParameters['Password']
-    self.dbName = dbParameters['DBName']
-
-    self.engine = create_engine('mysql://%s:%s@%s:%s/%s' % (self.user,
-                                                            self.password,
-                                                            self.host,
-                                                            self.port,
-                                                            self.dbName),
-                                pool_recycle=3600,
-                                echo_pool=True,
-                                echo=self.log.getLevel() == 'DEBUG')
-    self.sessionMaker_o = sessionmaker(bind=self.engine)
-    self.inspector = Inspector.from_engine(self.engine)
 
   def __initializeDB(self):
     """
