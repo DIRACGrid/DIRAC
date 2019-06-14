@@ -51,6 +51,7 @@ Resources
 
 # pylint: disable=invalid-name,wrong-import-position
 
+from __future__ import absolute_import
 import unittest
 import sys
 from datetime import datetime
@@ -72,7 +73,7 @@ class MonitoringTestCase(unittest.TestCase):
     self.monitoringDB = MonitoringDB()
     self.wmsMonitoringReporter = MonitoringReporter(monitoringType="WMSHistory")
     self.componentMonitoringReporter = MonitoringReporter(monitoringType="ComponentMonitoring")
-    
+
     self.data = [{u'Status': u'Waiting', 'Jobs': 2, u'timestamp': 1458130176,
                   u'JobSplitType': u'MCStripping', u'MinorStatus': u'unset',
                   u'Site': u'LCG.GRIDKA.de', u'Reschedules': 0, u'ApplicationStatus': u'unset',
@@ -279,77 +280,92 @@ class TestComponentsActivityMonitoring(unittest.TestCase):
     self.monitoringDB = MonitoringDB()
     self.componentsActivityMonitoringReporter = MonitoringReporter(monitoringType="ComponentsActivityMonitoring")
 
-    self.data = [{u'site': u'dirac-dev', 'componentType': u'service', u'componentName': u'Framework/SystemAdministrator',
+    self.data = [{u'site': u'dirac-dev', 'componentType': u'service',
+                  u'componentName': u'Framework/SystemAdministrator',
                   u'componentLocation': u'dips://dirac-dev:9162/Framework/SystemAdministrator', u'Connections': 92946,
                   u'Queries': 1880, u'CPU': 2360, u'MEM': 2360,
                   u'PendingQueries': 200, u'ActiveQueries': 200,
                   u'RunningThreads': 200, u'MaxFD': 200, u'timestamp': 1458226213},
-                  {u'site': u'dirac-dev', 'componentType': u'service', u'componentName': u'Framework/SystemAdministrator',
+                 {u'site': u'dirac-dev', 'componentType': u'service',
+                  u'componentName': u'Framework/SystemAdministrator',
                   u'componentLocation': u'dips://dirac-dev:9162/Framework/SystemAdministrator', u'Connections': 92946,
                   u'Queries': 1880, u'CPU': 2360, u'MEM': 2360,
                   u'PendingQueries': 200, u'ActiveQueries': 200,
                   u'RunningThreads': 200, u'MaxFD': 200, u'timestamp': 1458226213},
-                  {u'site': u'dirac-dev', 'componentType': u'service', u'componentName': u'Framework/SystemAdministrator',
+                 {u'site': u'dirac-dev', 'componentType': u'service',
+                  u'componentName': u'Framework/SystemAdministrator',
                   u'componentLocation': u'dips://dirac-dev:9162/Framework/SystemAdministrator', u'Connections': 92946,
                   u'Queries': 1880, u'CPU': 2360, u'MEM': 2360,
                   u'PendingQueries': 200, u'ActiveQueries': 200,
                   u'RunningThreads': 200, u'MaxFD': 200, u'timestamp': 1458226213},
-                  {u'site': u'dirac-dev', 'componentType': u'service', u'componentName': u'Framework/SystemAdministrator',
+                 {u'site': u'dirac-dev', 'componentType': u'service',
+                  u'componentName': u'Framework/SystemAdministrator',
                   u'componentLocation': u'dips://dirac-dev:9162/Framework/SystemAdministrator', u'Connections': 92946,
                   u'Queries': 1880, u'CPU': 2360, u'MEM': 2360,
                   u'PendingQueries': 200, u'ActiveQueries': 200,
                   u'RunningThreads': 200, u'MaxFD': 200, u'timestamp': 1458226213},
-                  {u'site': u'dirac-dev', 'componentType': u'service', u'componentName': u'Framework/SystemAdministrator',
+                 {u'site': u'dirac-dev', 'componentType': u'service',
+                  u'componentName': u'Framework/SystemAdministrator',
                   u'componentLocation': u'dips://dirac-dev:9162/Framework/SystemAdministrator', u'Connections': 92946,
                   u'Queries': 1880, u'CPU': 2360, u'MEM': 2360,
                   u'PendingQueries': 200, u'ActiveQueries': 200,
                   u'RunningThreads': 200, u'MaxFD': 200, u'timestamp': 1458226213},
-                  {u'site': u'dirac-dev', 'componentType': u'service', u'componentName': u'Framework/SystemAdministrator',
+                 {u'site': u'dirac-dev', 'componentType': u'service',
+                  u'componentName': u'Framework/SystemAdministrator',
                   u'componentLocation': u'dips://dirac-dev:9162/Framework/SystemAdministrator', u'Connections': 92946,
                   u'Queries': 1880, u'CPU': 2360, u'MEM': 2360,
                   u'PendingQueries': 200, u'ActiveQueries': 200,
                   u'RunningThreads': 200, u'MaxFD': 200, u'timestamp': 1458226213},
-                  {u'site': u'dirac-dev', 'componentType': u'service', u'componentName': u'Framework/SystemAdministrator',
+                 {u'site': u'dirac-dev', 'componentType': u'service',
+                  u'componentName': u'Framework/SystemAdministrator',
                   u'componentLocation': u'dips://dirac-dev:9162/Framework/SystemAdministrator', u'Connections': 92946,
                   u'Queries': 1880, u'CPU': 2360, u'MEM': 2360,
                   u'PendingQueries': 200, u'ActiveQueries': 200,
                   u'RunningThreads': 200, u'MaxFD': 200, u'timestamp': 1458226213},
-                  {u'site': u'dirac-dev', 'componentType': u'service', u'componentName': u'Framework/SystemAdministrator',
+                 {u'site': u'dirac-dev', 'componentType': u'service',
+                  u'componentName': u'Framework/SystemAdministrator',
                   u'componentLocation': u'dips://dirac-dev:9162/Framework/SystemAdministrator', u'Connections': 92946,
                   u'Queries': 1880, u'CPU': 2360, u'MEM': 2360,
                   u'PendingQueries': 200, u'ActiveQueries': 200,
                   u'RunningThreads': 200, u'MaxFD': 200, u'timestamp': 1458226213},
-                  {u'site': u'dirac-dev', 'componentType': u'service', u'componentName': u'Framework/SystemAdministrator',
+                 {u'site': u'dirac-dev', 'componentType': u'service',
+                  u'componentName': u'Framework/SystemAdministrator',
                   u'componentLocation': u'dips://dirac-dev:9162/Framework/SystemAdministrator', u'Connections': 92946,
                   u'Queries': 1880, u'CPU': 2360, u'MEM': 2360,
                   u'PendingQueries': 200, u'ActiveQueries': 200,
                   u'RunningThreads': 200, u'MaxFD': 200, u'timestamp': 1458226213},
-                  {u'site': u'dirac-dev', 'componentType': u'service', u'componentName': u'Framework/SystemAdministrator',
+                 {u'site': u'dirac-dev', 'componentType': u'service',
+                  u'componentName': u'Framework/SystemAdministrator',
                   u'componentLocation': u'dips://dirac-dev:9162/Framework/SystemAdministrator', u'Connections': 92946,
                   u'Queries': 1880, u'CPU': 2360, u'MEM': 2360,
                   u'PendingQueries': 200, u'ActiveQueries': 200,
                   u'RunningThreads': 200, u'MaxFD': 200, u'timestamp': 1458226213},
-                  {u'site': u'dirac-dev', 'componentType': u'service', u'componentName': u'Framework/SystemAdministrator',
+                 {u'site': u'dirac-dev', 'componentType': u'service',
+                  u'componentName': u'Framework/SystemAdministrator',
                   u'componentLocation': u'dips://dirac-dev:9162/Framework/SystemAdministrator', u'Connections': 92946,
                   u'Queries': 1880, u'CPU': 2360, u'MEM': 2360,
                   u'PendingQueries': 200, u'ActiveQueries': 200,
                   u'RunningThreads': 200, u'MaxFD': 200, u'timestamp': 1458226213},
-                  {u'site': u'dirac-dev', 'componentType': u'service', u'componentName': u'Framework/SystemAdministrator',
+                 {u'site': u'dirac-dev', 'componentType': u'service',
+                  u'componentName': u'Framework/SystemAdministrator',
                   u'componentLocation': u'dips://dirac-dev:9162/Framework/SystemAdministrator', u'Connections': 92946,
                   u'Queries': 1880, u'CPU': 2360, u'MEM': 2360,
                   u'PendingQueries': 200, u'ActiveQueries': 200,
                   u'RunningThreads': 200, u'MaxFD': 200, u'timestamp': 1458226213},
-                  {u'site': u'dirac-dev', 'componentType': u'service', u'componentName': u'Framework/SystemAdministrator',
+                 {u'site': u'dirac-dev', 'componentType': u'service',
+                  u'componentName': u'Framework/SystemAdministrator',
                   u'componentLocation': u'dips://dirac-dev:9162/Framework/SystemAdministrator', u'Connections': 92946,
                   u'Queries': 1880, u'CPU': 2360, u'MEM': 2360,
                   u'PendingQueries': 200, u'ActiveQueries': 200,
                   u'RunningThreads': 200, u'MaxFD': 200, u'timestamp': 1458226213},
-                  {u'site': u'dirac-dev', 'componentType': u'service', u'componentName': u'Framework/SystemAdministrator',
+                 {u'site': u'dirac-dev', 'componentType': u'service',
+                  u'componentName': u'Framework/SystemAdministrator',
                   u'componentLocation': u'dips://dirac-dev:9162/Framework/SystemAdministrator', u'Connections': 92946,
                   u'Queries': 1880, u'CPU': 2360, u'MEM': 2360,
                   u'PendingQueries': 200, u'ActiveQueries': 200,
                   u'RunningThreads': 200, u'MaxFD': 200, u'timestamp': 1458226213},
-                  {u'site': u'dirac-dev', 'componentType': u'service', u'componentName': u'Framework/SystemAdministrator',
+                 {u'site': u'dirac-dev', 'componentType': u'service',
+                  u'componentName': u'Framework/SystemAdministrator',
                   u'componentLocation': u'dips://dirac-dev:9162/Framework/SystemAdministrator', u'Connections': 92946,
                   u'Queries': 1880, u'CPU': 2360, u'MEM': 2360,
                   u'PendingQueries': 200, u'ActiveQueries': 200,
@@ -373,6 +389,7 @@ class TestComponentsActivityMonitoring(unittest.TestCase):
     indexName = "%s-%s" % (result['Value'], today)
     res = self.monitoringDB.deleteIndex(indexName)
     self.assertTrue(res['OK'])
+
 
 if __name__ == '__main__':
   testSuite = unittest.defaultTestLoader.loadTestsFromTestCase(MonitoringTestCase)

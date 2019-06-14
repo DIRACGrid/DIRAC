@@ -2,6 +2,7 @@
 ComponentsActivityMonitoring type is used to monitor activity of DIRAC components.
 """
 
+from __future__ import absolute_import
 from DIRAC.MonitoringSystem.Client.Types.BaseType import BaseType
 
 __RCSID__ = "$Id$"
