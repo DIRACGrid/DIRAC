@@ -387,39 +387,7 @@ class ResourceManagementDB(BaseRSSDB):
     """
     Creates the tables
     """
-
-    tablesInDB = self.inspector.get_table_names()
-
-    for table in self.tablesList:
-      if table not in tablesInDB:
-        found = False
-        # is it in the extension? (fully or extended)
-        for ext in self.extensions:
-          try:
-            getattr(
-                __import__(
-                    ext + __name__,
-                    globals(),
-                    locals(),
-                    [table]),
-                table).__table__.create(
-                self.engine)  # pylint: disable=no-member
-            found = True
-            break
-          except (ImportError, AttributeError):
-            continue
-        # If not found in extensions, import it from DIRAC base.
-        if not found:
-          getattr(
-              __import__(
-                  __name__,
-                  globals(),
-                  locals(),
-                  [table]),
-              table).__table__.create(
-              self.engine)  # pylint: disable=no-member
-      else:
-        gLogger.debug("Table %s already exists" % table)
+    self._createTablesIfNotThere(self.tablesList)
 
  # SQL Methods ###############################################################
 

@@ -234,70 +234,8 @@ class ResourceStatusDB(BaseRSSDB):
     """
     Create the tables, if they are not there yet
     """
-
-    tablesInDB = self.inspector.get_table_names()
-
-    for table in self.tablesList:
-      if table not in tablesInDB:
-        found = False
-        # is it in the extension? (fully or extended)
-        for ext in gConfig.getValue('DIRAC/Extensions', []):
-          try:
-            getattr(
-                __import__(
-                    ext + __name__,
-                    globals(),
-                    locals(),
-                    [table]),
-                table).__table__.create(
-                self.engine)  # pylint: disable=no-member
-            found = True
-            break
-          except (ImportError, AttributeError):
-            continue
-        # If not found in extensions, import it from DIRAC base.
-        if not found:
-          getattr(
-              __import__(
-                  __name__,
-                  globals(),
-                  locals(),
-                  [table]),
-              table).__table__.create(
-              self.engine)  # pylint: disable=no-member
-      else:
-        gLogger.debug("Table %s already exists" % table)
-
-    for table in self.tablesListWithID:
-      if table not in tablesInDB:
-        found = False
-        # is it in the extension? (fully or extended)
-        for ext in gConfig.getValue('DIRAC/Extensions', []):
-          try:
-            getattr(
-                __import__(
-                    ext + __name__,
-                    globals(),
-                    locals(),
-                    [table]),
-                table).__table__.create(
-                self.engine)  # pylint: disable=no-member
-            found = True
-            break
-          except (ImportError, AttributeError):
-            continue
-        # If not found in extensions, import it from DIRAC base.
-        if not found:
-          getattr(
-              __import__(
-                  __name__,
-                  globals(),
-                  locals(),
-                  [table]),
-              table).__table__.create(
-              self.engine)  # pylint: disable=no-member
-      else:
-        gLogger.debug("Table %s already exists" % table)
+    self._createTablesIfNotThere(self.tablesList)
+    self._createTablesIfNotThere(self.tablesListWithID)
 
  # SQL Methods ###############################################################
 
