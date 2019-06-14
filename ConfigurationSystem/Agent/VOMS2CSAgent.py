@@ -44,6 +44,7 @@ class VOMS2CSAgent(AgentModule):
     self.autoAddUsers = self.am_getOption('AutoAddUsers', self.autoAddUsers)
     self.autoModifyUsers = self.am_getOption('AutoModifyUsers', self.autoModifyUsers)
     self.autoDeleteUsers = self.am_getOption('AutoDeleteUsers', self.autoDeleteUsers)
+    self.autoLiftSuspendedStatus = self.am_getOption('AutoLiftSuspendedStatus', self.autoLiftSuspendedStatus)
     self.makeFCEntry = self.am_getOption('MakeHomeDirectory', self.makeFCEntry)
 
     self.detailedReport = self.am_getOption('DetailedReport', self.detailedReport)
