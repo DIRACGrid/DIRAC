@@ -1,3 +1,8 @@
+""" BaseRSSDB:
+    This module provides the BaseRSSDB class for providing standard DB interactions.
+
+    Uses sqlalchemy
+"""
 
 __RCSID__ = "$Id$"
 
@@ -11,6 +16,17 @@ from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
 
 
 class BaseRSSDB(object):
+  """
+    Base class that defines some of the basic DB interactions.
+  """
+  
+  def __init__(self):
+    """c'tor
+
+    :param self: self reference
+    """
+    pass
+
   def _initializeConnection(self, dbPath):
     """
     Collect from the CS all the info needed to connect to the DB.
