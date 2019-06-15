@@ -323,7 +323,7 @@ class ProxyManagerHandler(RequestHandler):
     """ Retrieve the contents of the DB
 
         :param dict selDict: selection fields
-        :param list,tuple sortDict: search filter
+        :param list,tuple sortDict: sorting fields
         :param int,long start: search limit start
         :param int,long start: search limit amount
 

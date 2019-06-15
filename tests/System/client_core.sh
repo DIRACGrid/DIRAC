@@ -4,106 +4,126 @@
 #
 # Submitter should follow through the logs
 
-echo " "
-echo " "
+echo
+echo
 echo " ########################## REAL BASICS #############################"
-echo " "
-echo " "
+echo
+echo
 
-echo "dirac-proxy-init"
-dirac-proxy-init
+echo "________________________"
+echo "===  dirac-proxy-init -U"
+dirac-proxy-init -C $WORKSPACE/ServerInstallDIR/user/client.pem -K $WORKSPACE/ServerInstallDIR/user/client.key -U
 if [ $? -ne 0 ]
 then
    exit $?
 fi
+echo
 
-echo " "
-echo "======  dirac-proxy-info"
+echo "_____________________"
+echo "===  dirac-proxy-info"
 dirac-proxy-info
 if [ $? -ne 0 ]
 then
    exit $?
 fi
+echo
 
-echo " "
-echo "======  dirac-proxy-get-uploaded-info"
+echo "__________________________________"
+echo "===  dirac-proxy-get-uploaded-info"
 dirac-proxy-get-uploaded-info
 if [ $? -ne 0 ]
 then
    exit $?
 fi
+echo
 
-echo " "
-echo "======  dirac-proxy-destroy"
-dirac-proxy-destroy
+echo "___________________________"
+echo "===  dirac-proxy-destroy -a"
+dirac-proxy-destroy -a
 if [ $? -ne 0 ]
 then
    exit $?
 fi
+echo
 
-echo " "
-echo "======  dirac-info"
-dirac-info
-if [ $? -ne 0 ]
-then
-   exit $?
-fi
-
-echo " "
-echo "======  dirac-proxy-info (now this will fail...)"
+echo "_____________________________________________"
+echo "===  dirac-proxy-info (now this will fail...)"
 dirac-proxy-info
 if [ $? -eq 0 ]
 then
    exit $?
 fi
+echo
 
-echo " "
-echo "dirac-proxy-init -g dirac_prod"
-dirac-proxy-init -g dirac_prod
+echo "___________________________________"
+echo "===  dirac-proxy-init -g dirac_prod"
+dirac-proxy-init -g dirac_prod -C $WORKSPACE/ServerInstallDIR/user/client.pem -K $WORKSPACE/ServerInstallDIR/user/client.key -U
 if [ $? -ne 0 ]
 then
    exit $?
 fi
+echo
 
-echo " "
-echo "======  dirac-version"
+diracCredentials
+
+echo "_______________________________________________________"
+echo "dirac-admin-get-proxy adminusername dirac_prod -v 4:00"
+dirac-admin-get-proxy adminusername dirac-admin -v 4:00
+if [ $? -ne 0 ]
+then
+   exit $?
+fi
+echo
+
+echo "_______________"
+echo "===  dirac-info"
+dirac-info
+if [ $? -ne 0 ]
+then
+   exit $?
+fi
+echo
+
+echo "__________________"
+echo "===  dirac-version"
 dirac-version
 if [ $? -ne 0 ]
 then
    exit $?
 fi
+echo
 
-echo " "
-echo "======  dirac-platform"
+echo "___________________"
+echo "===  dirac-platform"
 dirac-platform
 if [ $? -ne 0 ]
 then
    exit $?
 fi
 
-echo " "
-echo "======  dirac-configuration-dump-local-cache"
+echo "_________________________________________"
+echo "===  dirac-configuration-dump-local-cache"
 dirac-configuration-dump-local-cache
 if [ $? -ne 0 ]
 then
    exit $?
 fi
-echo " "
+echo
 
 
 
-echo " "
-echo " "
+echo
+echo
 echo " ########################## Framework #############################"
-echo " "
-echo " "
+echo
+echo
 
 
-echo " "
-echo "======  dirac-monitoring-get-components-status"
+echo "___________________________________________"
+echo "===  dirac-monitoring-get-components-status"
 dirac-monitoring-get-components-status
 if [ $? -ne 0 ]
 then
    exit $?
 fi
-echo " "
+echo

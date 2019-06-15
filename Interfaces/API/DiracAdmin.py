@@ -9,7 +9,7 @@ __RCSID__ = "$Id$"
 
 import os
 
-from DIRAC import gConfig, S_OK, S_ERROR
+from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.PromptUser import promptUser
 from DIRAC.Core.Base.API import API
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
