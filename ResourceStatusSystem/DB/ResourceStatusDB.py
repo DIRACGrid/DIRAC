@@ -456,7 +456,7 @@ class ResourceStatusDB(BaseRSSDB):
         column_a = getattr(table_c, columnName.lower())
         if isinstance(columnValue, (list, tuple)):
           select = select.filter(column_a.in_(list(columnValue)))
-        elif isinstance(columnValue, six.string_types):
+        elif isinstance(columnValue, basestring):
           select = select.filter(column_a == columnValue)
         else:
           self.log.error("type(columnValue) == %s" % type(columnValue))

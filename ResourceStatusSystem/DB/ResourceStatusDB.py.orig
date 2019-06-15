@@ -238,8 +238,6 @@ class ResourceStatusDB(BaseRSSDB):
     self._createTablesIfNotThere(self.tablesList)
     self._createTablesIfNotThere(self.tablesListWithID)
 
- # SQL Methods ###############################################################
-
   def insert(self, table, params):
     '''
     Inserts params in the DB.
@@ -352,8 +350,6 @@ class ResourceStatusDB(BaseRSSDB):
     finally:
       session.close()
 
-=======
->>>>>>> Move function select  to the base module
   def delete(self, table, params):
     """
     :param table: table from where to delete
@@ -424,6 +420,8 @@ class ResourceStatusDB(BaseRSSDB):
 
   ## Extended SQL methods ######################################################
 
+=======
+>>>>>>> Move delete function to the base module
   def addOrModify(self, table, params):
     '''
     Using the PrimaryKeys of the table, it looks for the record in the database.

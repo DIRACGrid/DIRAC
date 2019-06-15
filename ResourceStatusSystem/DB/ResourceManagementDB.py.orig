@@ -390,9 +390,9 @@ class ResourceManagementDB(BaseRSSDB):
     """
     self._createTablesIfNotThere(self.tablesList)
 
+<<<<<<< HEAD
  # SQL Methods ###############################################################
 
-<<<<<<< HEAD
   def select(self, table, params):
     """
     Uses params to build conditional SQL statement ( WHERE ... ).
@@ -457,7 +457,7 @@ class ResourceManagementDB(BaseRSSDB):
         column_a = getattr(table_c, newer[0].lower())
         select = select.filter(column_a > newer[1])
       if order:
-        order = [order] if isinstance(order, six.string_types) else list(order)
+        order = [order] if isinstance(order, basestring) else list(order)
         column_a = getattr(table_c, order[0].lower())
         if len(order) == 2 and order[1].lower() == 'desc':
           select = select.order_by(desc(column_a))
@@ -487,8 +487,6 @@ class ResourceManagementDB(BaseRSSDB):
     finally:
       session.close()
 
-=======
->>>>>>> Move function select  to the base module
   def delete(self, table, params):
     """
     :param table: table from where to delete
@@ -538,7 +536,7 @@ class ResourceManagementDB(BaseRSSDB):
         column_a = getattr(table_c, newer[0].lower())
         deleteQuery = deleteQuery.filter(column_a > newer[1])
       if order:
-        order = [order] if isinstance(order, six.string_types) else list(order)
+        order = [order] if isinstance(order, basestring) else list(order)
         column_a = getattr(table_c, order[0].lower())
         if len(order) == 2 and order[1].lower() == 'desc':
           deleteQuery = deleteQuery.order_by(desc(column_a))
@@ -560,6 +558,8 @@ class ResourceManagementDB(BaseRSSDB):
 
   ## Extended SQL methods ######################################################
 
+=======
+>>>>>>> Move delete function to the base module
   def addOrModify(self, table, params):
     """
     Using the PrimaryKeys of the table, it looks for the record in the database.
@@ -598,7 +598,7 @@ class ResourceManagementDB(BaseRSSDB):
         column_a = getattr(table_c, columnName.lower())
         if isinstance(columnValue, (list, tuple)):
           select = select.filter(column_a.in_(list(columnValue)))
-        elif isinstance(columnValue, six.string_types):
+        elif isinstance(columnValue, basestring):
           select = select.filter(column_a == columnValue)
         else:
           self.log.error("type(columnValue) == %s" % type(columnValue))
