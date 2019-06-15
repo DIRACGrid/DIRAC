@@ -251,39 +251,10 @@ class ResourceStatusDB(BaseRSSDB):
     :return: S_OK() || S_ERROR()
     '''
 
-    # expire_on_commit is set to False so that we can still use the object after we close the session
-    session = self.sessionMaker_o(expire_on_commit=False)  # FIXME: should we use this flag elsewhere?
-
-    found = False
-    for ext in self.extensions:
-      try:
-        tableRow_o = getattr(__import__(ext + __name__, globals(), locals(), [table]), table)()
-        found = True
-        break
-      except (ImportError, AttributeError):
-        continue
-    # If not found in extensions, import it from DIRAC base (this same module).
-    if not found:
-      tableRow_o = getattr(__import__(__name__, globals(), locals(), [table]), table)()
-
     if not params.get('DateEffective'):
       params['DateEffective'] = datetime.datetime.utcnow().replace(microsecond=0)
 
-    tableRow_o.fromDict(params)
-
-    try:
-      session.add(tableRow_o)
-      session.commit()
-      return S_OK()
-    except exc.IntegrityError as err:
-      self.log.warn("insert: trying to insert a duplicate key? %s" % err)
-      session.rollback()
-    except exc.SQLAlchemyError as e:
-      session.rollback()
-      self.log.exception("insert: unexpected exception", lException=e)
-      return S_ERROR("insert: unexpected exception %s" % e)
-    finally:
-      session.close()
+    return super(ResourceStatusDB, self).insert(table, params)
 
   def select(self, table, params):
     '''

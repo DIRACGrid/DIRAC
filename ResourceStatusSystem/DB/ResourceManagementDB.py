@@ -391,49 +391,6 @@ class ResourceManagementDB(BaseRSSDB):
 
  # SQL Methods ###############################################################
 
-  def insert(self, table, params):
-    """
-    Inserts params in the DB.
-
-    :param table: table where to insert
-    :type table: str
-    :param params: Dictionary to fill a single line
-    :type params: dict
-
-    :return: S_OK() || S_ERROR()
-    """
-
-    # expire_on_commit is set to False so that we can still use the object after we close the session
-    session = self.sessionMaker_o(expire_on_commit=False)  # FIXME: should we use this flag elsewhere?
-
-    found = False
-    for ext in self.extensions:
-      try:
-        tableRow_o = getattr(__import__(ext + __name__, globals(), locals(), [table]), table)()
-        found = True
-        break
-      except (ImportError, AttributeError):
-        continue
-    # If not found in extensions, import it from DIRAC base (this same module).
-    if not found:
-      tableRow_o = getattr(__import__(__name__, globals(), locals(), [table]), table)()
-
-    tableRow_o.fromDict(params)
-
-    try:
-      session.add(tableRow_o)
-      session.commit()
-      return S_OK()
-    except exc.IntegrityError as err:
-      self.log.warn("insert: trying to insert a duplicate key? %s" % err)
-      session.rollback()
-    except exc.SQLAlchemyError as e:
-      session.rollback()
-      self.log.exception("insert: unexpected exception", lException=e)
-      return S_ERROR("insert: unexpected exception %s" % e)
-    finally:
-      session.close()
-
   def select(self, table, params):
     """
     Uses params to build conditional SQL statement ( WHERE ... ).
