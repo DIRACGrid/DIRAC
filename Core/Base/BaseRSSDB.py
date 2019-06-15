@@ -1,10 +1,11 @@
 
 __RCSID__ = "$Id$"
 
-from sqlalchemy import create_engine, exc
+import datetime
+from sqlalchemy import create_engine, desc, exc
 from sqlalchemy.engine.reflection import Inspector
 from sqlalchemy.orm import sessionmaker
-
+from sqlalchemy.orm.query import Query
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
 
@@ -117,3 +118,97 @@ class BaseRSSDB(object):
       return S_ERROR("insert: unexpected exception %s" % e)
     finally:
       session.close()
+
+  def select(self, table, params):
+      """
+      Uses params to build conditional SQL statement ( WHERE ... ).
+
+      :Parameters:
+        **params** - `dict`
+          arguments for the mysql query ( must match table columns ! ).
+
+      :return: S_OK() || S_ERROR()
+      """
+
+      session = self.sessionMaker_o()
+
+      # finding the table
+      found = False
+      for ext in self.extensions:
+        try:
+          table_c = getattr(__import__(ext + self.__class__.__module__, globals(), locals(), [table]), table)
+          found = True
+          break
+        except (ImportError, AttributeError):
+          continue
+      # If not found in extensions, import it from DIRAC base (this same module).
+      if not found:
+        table_c = getattr(__import__(self.__class__.__module__, globals(), locals(), [table]), table)
+
+      # handling query conditions found in 'Meta'
+      columnNames = [column.lower() for column in params.get('Meta', {}).get('columns', [])]
+      older = params.get('Meta', {}).get('older', None)
+      newer = params.get('Meta', {}).get('newer', None)
+      order = params.get('Meta', {}).get('order', None)
+      limit = params.get('Meta', {}).get('limit', None)
+      params.pop('Meta', None)
+
+      try:
+        # setting up the select query
+        if not columnNames:  # query on the whole table
+          wholeTable = True
+          columns = table_c.__table__.columns  # retrieve the column names
+          columnNames = [str(column).split('.')[1] for column in columns]
+          select = Query(table_c, session=session)
+        else:  # query only the selected columns
+          wholeTable = False
+          columns = [getattr(table_c, column) for column in columnNames]
+          select = Query(columns, session=session)
+
+        # query conditions
+        for columnName, columnValue in params.iteritems():
+          if not columnValue:
+            continue
+          column_a = getattr(table_c, columnName.lower())
+          if isinstance(columnValue, (list, tuple)):
+            select = select.filter(column_a.in_(list(columnValue)))
+          elif isinstance(columnValue, (basestring, datetime.datetime, bool)):
+            select = select.filter(column_a == columnValue)
+          else:
+            self.log.error("type(columnValue) == %s" % type(columnValue))
+        if older:
+          column_a = getattr(table_c, older[0].lower())
+          select = select.filter(column_a < older[1])
+        if newer:
+          column_a = getattr(table_c, newer[0].lower())
+          select = select.filter(column_a > newer[1])
+        if order:
+          order = [order] if isinstance(order, basestring) else list(order)
+          column_a = getattr(table_c, order[0].lower())
+          if len(order) == 2 and order[1].lower() == 'desc':
+            select = select.order_by(desc(column_a))
+          else:
+            select = select.order_by(column_a)
+        if limit:
+          select = select.limit(int(limit))
+
+        # querying
+        selectionRes = select.all()
+
+        # handling the results
+        if wholeTable:
+          selectionResToList = [res.toList() for res in selectionRes]
+        else:
+          selectionResToList = [[getattr(res, col) for col in columnNames] for res in selectionRes]
+
+        finalResult = S_OK(selectionResToList)
+
+        finalResult['Columns'] = columnNames
+        return finalResult
+
+      except exc.SQLAlchemyError as e:
+        session.rollback()
+        self.log.exception("select: unexpected exception", lException=e)
+        return S_ERROR("select: unexpected exception %s" % e)
+      finally:
+        session.close()
