@@ -12,7 +12,8 @@ echo
 
 echo "________________________"
 echo "===  dirac-proxy-init -U"
-dirac-proxy-init -C $WORKSPACE/ServerInstallDIR/user/client.pem -K $WORKSPACE/ServerInstallDIR/user/client.key -U
+dirac-proxy-init -C $SERVERINSTALLDIR/DIRAC/Core/Security/test/certs/user/client.pem\
+ -K $SERVERINSTALLDIR/DIRAC/Core/Security/test/certs/user/client.key -U
 if [ $? -ne 0 ]
 then
    exit $?
@@ -57,7 +58,8 @@ echo
 
 echo "___________________________________"
 echo "===  dirac-proxy-init -g dirac_prod"
-dirac-proxy-init -g dirac_prod -C $WORKSPACE/ServerInstallDIR/user/client.pem -K $WORKSPACE/ServerInstallDIR/user/client.key -U
+dirac-proxy-init -g dirac_prod $SERVERINSTALLDIR/DIRAC/Core/Security/test/certs/user/client.pem\
+ -K $SERVERINSTALLDIR/DIRAC/Core/Security/test/certs/user/client.key -U
 if [ $? -ne 0 ]
 then
    exit $?
