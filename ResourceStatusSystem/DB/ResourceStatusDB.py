@@ -20,16 +20,12 @@ __RCSID__ = "$Id$"
 
 
 import datetime
-
-from sqlalchemy import desc
 from sqlalchemy.orm import sessionmaker, class_mapper
 from sqlalchemy.orm.query import Query
-from sqlalchemy.engine.reflection import Inspector
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import create_engine, Column, String, DateTime, exc, BigInteger
+from sqlalchemy import Column, String, DateTime, exc, BigInteger
 
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig
-from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
 from DIRAC.Core.Base.BaseRSSDB import BaseRSSDB
 from DIRAC.ResourceStatusSystem.Utilities import Utils
 
@@ -217,6 +213,7 @@ class ResourceStatusDB(BaseRSSDB):
     :param self: self reference
     """
 
+    super(ResourceStatusDB, self).__init__()
     self.log = gLogger.getSubLogger('ResourceStatusDB')
 
     # These are the list of tables that will be created.
