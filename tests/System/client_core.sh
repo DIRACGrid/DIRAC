@@ -13,7 +13,7 @@ echo
 echo "________________________"
 echo "===  dirac-proxy-init -U"
 dirac-proxy-init -C $SERVERINSTALLDIR/DIRAC/Core/Security/test/certs/user/usercert.pem\
- -K $SERVERINSTALLDIR/DIRAC/Core/Security/test/certs/user/userkey.pem -U
+ -K $SERVERINSTALLDIR/DIRAC/Core/Security/test/certs/user/userkey.pem -U -ddd
 if [ $? -ne 0 ]
 then
    exit $?
