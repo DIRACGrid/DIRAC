@@ -494,12 +494,12 @@ class ProxyDB(DB):
     req = "DELETE FROM `%%s` WHERE UserDN=%s" % userDN
     if proxyProvider or not userGroup:
       result = self._update('%s %s' % (req % 'ProxyDB_CleanProxies',
-                                      proxyProvider and 'AND ProxyProvider=%s' % proxyProvider or ''))
+                                       proxyProvider and 'AND ProxyProvider=%s' % proxyProvider or ''))
       if not result['OK']:
         errMsgs.append(result['Message'])
     for table in ['ProxyDB_Proxies', 'ProxyDB_VOMSProxies']:
       result = self._update('%s %s' % (req % table,
-                                      userGroup and 'AND UserGroup=%s' % userGroup or ''))
+                                       userGroup and 'AND UserGroup=%s' % userGroup or ''))
       if not result['OK']:
         if result['Message'] not in errMsgs:
           errMsgs.append(result['Message'])
@@ -893,7 +893,7 @@ class ProxyDB(DB):
     return S_OK((chain, result['Value']))
 
   def __storeVOMSProxy(self, userDN, userGroup, vomsAttr, chain):
-    """ Store VOMS proxy 
+    """ Store VOMS proxy
 
         :param basestring userDN: user DN
         :param basestring userGroup: DIRAC group
@@ -981,10 +981,10 @@ class ProxyDB(DB):
           record.insert(2, '')
           record.insert(4, False)
         data.append({'Name': record[0],
-                    'DN': record[1],
-                    'group': record[2],
-                    'expirationtime': record[3],
-                    'persistent': record[4] == 'True'})
+                     'DN': record[1],
+                     'group': record[2],
+                     'expirationtime': record[3],
+                     'persistent': record[4] == 'True'})
     return S_OK(data)
 
   def getCredentialsAboutToExpire(self, requiredSecondsLeft, onlyPersistent=True):

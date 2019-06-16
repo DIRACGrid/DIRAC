@@ -393,7 +393,7 @@ class ProxyManagerHandler(RequestHandler):
     return self.__getProxy(userDN, userGroup, requestPem, requiredLifetime, True)
 
   types_getVOMSProxyWithToken = [basestring, basestring, basestring, (int, long), basestring]
-  
+
   def export_getVOMSProxyWithToken(self, userDN, userGroup, requestPem, requiredLifetime, token, vomsAttribute=False):
     """ Get a proxy for a userDN/userGroup
 
