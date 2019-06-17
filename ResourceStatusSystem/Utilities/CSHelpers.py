@@ -124,20 +124,15 @@ def _getSEParameters(seName):
   if not pluginsList['OK']:
     gLogger.warn(pluginsList['Message'], "SE: %s" % seName)
     return pluginsList
-  pluginsList = pluginsList['Value']
-  # Put the srm capable protocol first, but why doing that is a
-  # mystery that will eventually need to be sorted out...
-  for plugin in ('GFAL2_SRM2', 'SRM2'):
-    if plugin in pluginsList:
-      pluginsList.remove(plugin)
-      pluginsList.insert(0, plugin)
+  pluginsSet = set(pluginsList['Value'])
 
-  for plugin in pluginsList:
+  seParametersList = []
+  for plugin in pluginsSet:
     seParameters = se.getStorageParameters(plugin)
     if seParameters['OK']:
-      break
+      seParametersList.append(seParameters['Value'])
 
-  return seParameters
+  return S_OK(seParametersList)
 
 
 @deprecated("unused")
@@ -154,7 +149,7 @@ def getSEToken(seName):
 
 
 def getSEHost(seName):
-  """ Get StorageElement host name
+  """ Get StorageElement host names (can be more than one depending on the protocol)
   """
 
   seParameters = _getSEParameters(seName)
@@ -162,14 +157,11 @@ def getSEHost(seName):
     gLogger.warn("Could not get SE parameters", "SE: %s" % seName)
     return seParameters
 
-  return S_OK(seParameters['Value']['Host'])
+  return S_OK([parameters['Host'] for parameters in seParameters['Value']])
 
 
 def getStorageElementEndpoint(seName):
-  """ Get one endpoint of a StorageElement
-
-      Like all the rest of the methods here, they will need to adapt to an SRM free world.
-      This is planned for a future version. See https://github.com/DIRACGrid/DIRAC/issues/3908
+  """ Get endpoints of a StorageElement
 
       :param seName: name of the storage element
 
@@ -179,23 +171,26 @@ def getStorageElementEndpoint(seName):
   """
   seParameters = _getSEParameters(seName)
   if not seParameters['OK']:
-    gLogger.warn("Could not get SE parameters", "SE: %s" % seName)
+    gLogger.warn("Could not get SE parameters", "for SE %s" % seName)
     return seParameters
 
-  if seParameters['Value']['Protocol'].lower() == 'srm':
-    # we need to construct the URL with httpg://
-    host = seParameters['Value']['Host']
-    port = seParameters['Value']['Port']
-    wsurl = seParameters['Value']['WSUrl']
-    # MAYBE wusrl is not defined
-    if host and port:
-      url = 'httpg://%s:%s%s' % (host, port, wsurl)
-      url = url.replace('?SFN=', '')
-      return S_OK(url)
-  else:
-    return S_OK(seParameters['Value']['Endpoint'])
+  seEndpoints = []
 
-  return S_ERROR((host, port, wsurl))
+  for parameters in seParameters['Value']:
+    if parameters['Protocol'].lower() == 'srm':
+      # we need to construct the URL with httpg://
+      host = parameters['Host']
+      port = parameters['Port']
+      wsurl = parameters['WSUrl']
+      # MAYBE wusrl is not defined
+      if host and port:
+	url = 'httpg://%s:%s%s' % (host, port, wsurl)
+	url = url.replace('?SFN=', '')
+	seEndpoints.append(url)
+    else:
+      seEndpoints.append(parameters['Endpoint'])
+
+  return S_OK(seEndpoints)
 
 
 def getFTS():

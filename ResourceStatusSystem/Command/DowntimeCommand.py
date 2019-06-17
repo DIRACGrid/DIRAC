@@ -1,5 +1,5 @@
-""" DowntimeCommand module will look into GOC DB to find announced downtimes for RSS-managed sites and resources.S_ERROR
-    If found, downtimes are added to the internal RSS cache using ResourceManagementClient.S_ERROR
+""" DowntimeCommand module will look into GOC DB to find announced downtimes for RSS-managed sites and resources.
+    If found, downtimes are added to the internal RSS cache using ResourceManagementClient.
 
     GOCDB downtimes that are modified or deleted are also synced.
 """
@@ -152,14 +152,14 @@ class DowntimeCommand(Command):
         elif diskSE:
           gOCDBServiceType = "srm"
 
-      seHost = CSHelpers.getSEHost(elementName)
-      if not seHost['OK']:
-        return seHost
-      seHost = seHost['Value']
+      res = CSHelpers.getSEHost(elementName)
+      if not res['OK']:
+	return res
+      seHosts = res['Value']
 
-      if not seHost:
-        return S_ERROR('No seHost for %s' % elementName)
-      elementName = seHost
+      if not seHosts:
+	return S_ERROR('No seHost(s) for %s' % elementName)
+      elementName = seHosts  # in this case it will return a list, because there might be more than one host only
 
     elif elementType in ['FTS', 'FTS3']:
       gOCDBServiceType = 'FTS'
@@ -195,7 +195,10 @@ class DowntimeCommand(Command):
       if not params['OK']:
         return params
       element, elementName, hours, gOCDBServiceType = params['Value']
-      elementNames = [elementName]
+      if not isinstance(elementName, list):
+	elementNames = [elementName]
+      else:
+	elementNames = elementName
 
     # WARNING: checking all the DT that are ongoing or starting in given <hours> from now
     try:
