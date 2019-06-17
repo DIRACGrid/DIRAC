@@ -26,7 +26,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, String, DateTime, exc, BigInteger
 
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig
-from DIRAC.Core.Base.BaseRSSDB import BaseRSSDB
+from DIRAC.Core.Base.SQLAlchemyDB import SQLAlchemyDB
 from DIRAC.ResourceStatusSystem.Utilities import Utils
 
 
@@ -202,7 +202,7 @@ class NodeHistory(ElementStatusBaseWithID, rssBase):
 
 # Interaction with the DB
 
-class ResourceStatusDB(BaseRSSDB):
+class ResourceStatusDB(SQLAlchemyDB):
   '''
     Class that defines the interactions with the tables of the ResourceStatusDB.
   '''
@@ -213,8 +213,8 @@ class ResourceStatusDB(BaseRSSDB):
     :param self: self reference
     """
 
-    super(ResourceStatusDB, self).__init__()
-    self.log = gLogger.getSubLogger('ResourceStatusDB')
+    logSubName = 'ResourceStatusDB'
+    super(ResourceStatusDB, self).__init__(logSubName)
 
     # These are the list of tables that will be created.
     # They can be extended in an extension module
