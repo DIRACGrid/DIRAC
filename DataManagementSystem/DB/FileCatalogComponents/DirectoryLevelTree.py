@@ -150,8 +150,8 @@ class DirectoryLevelTree(DirectoryTreeBase):
 
     result = self.db._getConnection()
     conn = result['Value']
-    #result = self.db._query("LOCK TABLES FC_DirectoryLevelTree WRITE; ",conn)
-    result = self.db._insert('FC_DirectoryLevelTree', names, values, conn)
+    # result = self.db._query("LOCK TABLES FC_DirectoryLevelTree WRITE; ",conn)
+    result = self.db.insertFields('FC_DirectoryLevelTree', names, values, conn)
     if not result['OK']:
       # resUnlock = self.db._query("UNLOCK TABLES;",conn)
       if result['Message'].find('Duplicate') != -1:

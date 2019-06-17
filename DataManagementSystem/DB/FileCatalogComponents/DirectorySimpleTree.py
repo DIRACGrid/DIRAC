@@ -55,7 +55,7 @@ class DirectorySimpleTree( DirectoryTreeBase ):
       return S_OK(dirID)     
     names = ['DirName']
     values = [path]
-    result = self.db._insert( 'FC_DirectoryTree', names, values )
+    result = self.db.insertFields( 'FC_DirectoryTree', names, values )
     if not result['OK']:
       return result
     return S_OK(result['lastRowId'])

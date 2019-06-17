@@ -88,7 +88,7 @@ class SEManagerDB(SEManagerBase):
       self.lock.release()
       return S_OK(seid)
     connection = self.db._getConnection()
-    res = self.db._insert('FC_StorageElements', ['SEName'], [seName], connection)
+    res = self.db.insertFields('FC_StorageElements', ['SEName'], [seName], connection)
     if not res['OK']:
       gLogger.debug("SEManager AddSE lock released. Used %.3f seconds. %s" % (time.time() - waitTime, seName))
       self.lock.release()

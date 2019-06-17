@@ -64,7 +64,7 @@ class FileMetadata:
     if not result['OK']:
       return result
 
-    result = self.db._insert('FC_FileMetaFields', ['MetaName', 'MetaType'], [pname, ptype])
+    result = self.db.insertFields('FC_FileMetaFields', ['MetaName', 'MetaType'], [pname, ptype])
     if not result['OK']:
       return result
 
@@ -132,7 +132,9 @@ class FileMetadata:
       if metaName not in metaFields:
         result = self.__setFileMetaParameter(fileID, metaName, metaValue, credDict)
       else:
-        result = self.db._insert('FC_FileMeta_%s' % metaName, ['FileID', 'Value'], [fileID, metaValue])
+        result = self.db.insertFields('FC_FileMeta_%s' % metaName,
+                                      ['FileID', 'Value'],
+                                      [fileID, metaValue])
         if not result['OK']:
           if result['Message'].find('Duplicate') != -1:
             req = "UPDATE FC_FileMeta_%s SET Value='%s' WHERE FileID=%d" % (metaName, metaValue, fileID)
@@ -197,9 +199,9 @@ class FileMetadata:
     """ Set an meta parameter - metadata which is not used in the the data
         search operations
     """
-    result = self.db._insert('FC_FileMeta',
-                             ['FileID', 'MetaKey', 'MetaValue'],
-                             [fileID, metaName, str(metaValue)])
+    result = self.db.insertFields('FC_FileMeta',
+                                  ['FileID', 'MetaKey', 'MetaValue'],
+                                  [fileID, metaName, str(metaValue)])
     return result
 
   def setFileMetaParameter(self, path, metaName, metaValue, credDict):

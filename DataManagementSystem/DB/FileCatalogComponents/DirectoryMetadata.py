@@ -62,7 +62,7 @@ class DirectoryMetadata:
     if not result['OK']:
       return result
 
-    result = self.db._insert('FC_MetaFields', ['MetaName', 'MetaType'], [pname, ptype])
+    result = self.db.insertFields('FC_MetaFields', ['MetaName', 'MetaType'], [pname, ptype])
     if not result['OK']:
       return result
 
@@ -116,7 +116,7 @@ class DirectoryMetadata:
       if key not in metaTypeDict:
         return S_ERROR('Unknown key %s' % key)
 
-    result = self.db._insert('FC_MetaSetNames', ['MetaSetName'], [metaSetName])
+    result = self.db.insertFields('FC_MetaSetNames', ['MetaSetName'], [metaSetName])
     if not result['OK']:
       return result
 
@@ -197,7 +197,7 @@ class DirectoryMetadata:
       # Check that the metadata is not defined for the parent directories
       if metaName in dirmeta['Value']:
         return S_ERROR('Metadata conflict detected for %s for directory %s' % (metaName, dpath))
-      result = self.db._insert('FC_Meta_%s' % metaName, ['DirID', 'Value'], [dirID, metaValue])
+      result = self.db.insertFields('FC_Meta_%s' % metaName, ['DirID', 'Value'], [dirID, metaValue])
       if not result['OK']:
         if result['Message'].find('Duplicate') != -1:
           req = "UPDATE FC_Meta_%s SET Value='%s' WHERE DirID=%d" % (metaName, metaValue, dirID)
@@ -257,9 +257,9 @@ class DirectoryMetadata:
       return S_ERROR('Path not found: %s' % dpath)
     dirID = result['Value']
 
-    result = self.db._insert('FC_DirMeta',
-                             ['DirID', 'MetaKey', 'MetaValue'],
-                             [dirID, metaName, str(metaValue)])
+    result = self.db.insertFields('FC_DirMeta',
+                                  ['DirID', 'MetaKey', 'MetaValue'],
+                                  [dirID, metaName, str(metaValue)])
     return result
 
   def getDirectoryMetaParameters(self, dpath, credDict, inherited=True, owndata=True):

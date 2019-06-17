@@ -104,7 +104,7 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
       gLogger.debug("UserGroupManager AddUser lock released. Used %.3f seconds. %s" % (time.time()-waitTime,uname))
       self.lock.release()
       return S_OK(uid)
-    res = self.db._insert('FC_Users',['UserName'],[uname])
+    res = self.db.insertFields('FC_Users',['UserName'],[uname])
     if not res['OK']:
       gLogger.debug("UserGroupManager AddUser lock released. Used %.3f seconds. %s" % (time.time()-waitTime,uname))
       self.lock.release()
@@ -210,7 +210,7 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
       gLogger.debug("UserGroupManager AddGroup lock released. Used %.3f seconds. %s" % (time.time()-waitTime,group))
       self.lock.release()
       return S_OK(gid)
-    res = self.db._insert('FC_Groups',['GroupName'],[group])
+    res = self.db.insertFields('FC_Groups',['GroupName'],[group])
     if not res['OK']:
       gLogger.debug("UserGroupManager AddGroup lock released. Used %.3f seconds. %s" % (time.time()-waitTime,group))
       self.lock.release()

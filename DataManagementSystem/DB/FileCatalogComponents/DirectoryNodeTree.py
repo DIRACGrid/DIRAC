@@ -69,7 +69,7 @@ class DirectoryNodeTree( DirectoryTreeBase ):
 
     names = ['DirName', 'Level', 'Parent']
     values = [dirName, level, parentDirID]
-    result = self.db._insert( 'FC_DirectoryTreeM', names, values )
+    result = self.db.insertFields( 'FC_DirectoryTreeM', names, values )
     if not result['OK']:
       return result
     return S_OK( result['lastRowId'] )
