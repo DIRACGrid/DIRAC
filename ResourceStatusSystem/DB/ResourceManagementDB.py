@@ -27,7 +27,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, String, DateTime, exc, Text, Integer, Float
 
 from DIRAC import S_OK, S_ERROR, gLogger, gConfig
-from DIRAC.Core.Base.BaseRSSDB import BaseRSSDB
+from DIRAC.Core.Base.SQLAlchemyDB import SQLAlchemyDB
 from DIRAC.ResourceStatusSystem.Utilities import Utils
 
 
@@ -360,7 +360,7 @@ class TransferCache(rmsBase):
     return [self.sourcename, self.destinationname, self.metric, self.value, self.lastchecktime]
 
 
-class ResourceManagementDB(BaseRSSDB):
+class ResourceManagementDB(SQLAlchemyDB):
   """
     Class that defines the methods to interact to the ResourceManagementDB tables
   """
@@ -371,15 +371,13 @@ class ResourceManagementDB(BaseRSSDB):
     :param self: self reference
     """
 
-    super(ResourceManagementDB, self).__init__()
-    self.log = gLogger.getSubLogger('ResourceManagementDB')
+    logSubName = 'ResourceManagementDB'
+    super(ResourceManagementDB, self).__init__(logSubName)
 
     # This is the list of tables that will be created.
     # It can be extended in an extension module
     self.tablesList = getattr(Utils.voimport('DIRAC.ResourceStatusSystem.DB.ResourceManagementDB'),
                               'TABLESLIST')
-
-    self.extensions = gConfig.getValue('DIRAC/Extensions', [])
     self._initializeConnection('ResourceStatus/ResourceManagementDB')
     self.__initializeDB()
 

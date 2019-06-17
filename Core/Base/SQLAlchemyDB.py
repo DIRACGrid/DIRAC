@@ -1,4 +1,4 @@
-""" BaseRSSDB:
+""" SQLAlchemyDB:
     This module provides the BaseRSSDB class for providing standard DB interactions.
 
     Uses sqlalchemy
@@ -11,21 +11,25 @@ from sqlalchemy import create_engine, desc, exc
 from sqlalchemy.engine.reflection import Inspector
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.query import Query
-from DIRAC import gLogger, S_OK, S_ERROR
+
+from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
 
 
-class BaseRSSDB(object):
+class SQLAlchemyDB(object):
   """
     Base class that defines some of the basic DB interactions.
   """
-  
-  def __init__(self):
+
+  def __init__(self, logSubName):
     """c'tor
 
     :param self: self reference
     """
-    pass
+
+    self.log = gLogger.getSubLogger(logSubName)
+    self.extensions = gConfig.getValue('DIRAC/Extensions', [])
+    self.tablesList = []
 
   def _initializeConnection(self, dbPath):
     """
@@ -61,7 +65,7 @@ class BaseRSSDB(object):
     """
     tablesInDB = self.inspector.get_table_names()
 
-    for table in self.tablesList:
+    for table in tablesList:
       if table not in tablesInDB:
         found = False
         # is it in the extension? (fully or extended)
@@ -74,7 +78,7 @@ class BaseRSSDB(object):
                     locals(),
                     [table]),
                 table).__table__.create(
-                self.engine)  # pylint: disable=no-member
+                    self.engine)  # pylint: disable=no-member
             found = True
             break
           except (ImportError, AttributeError):
@@ -88,7 +92,7 @@ class BaseRSSDB(object):
                   locals(),
                   [table]),
               table).__table__.create(
-              self.engine)  # pylint: disable=no-member
+                  self.engine)  # pylint: disable=no-member
       else:
         gLogger.debug("Table %s already exists" % table)
 
@@ -136,98 +140,98 @@ class BaseRSSDB(object):
       session.close()
 
   def select(self, table, params):
-      """
-      Uses params to build conditional SQL statement ( WHERE ... ).
+    """
+    Uses params to build conditional SQL statement ( WHERE ... ).
 
-      :Parameters:
-        **params** - `dict`
-          arguments for the mysql query ( must match table columns ! ).
+    :Parameters:
+      **params** - `dict`
+        arguments for the mysql query ( must match table columns ! ).
 
-      :return: S_OK() || S_ERROR()
-      """
+    :return: S_OK() || S_ERROR()
+    """
 
-      session = self.sessionMaker_o()
+    session = self.sessionMaker_o()
 
-      # finding the table
-      found = False
-      for ext in self.extensions:
-        try:
-          table_c = getattr(__import__(ext + self.__class__.__module__, globals(), locals(), [table]), table)
-          found = True
-          break
-        except (ImportError, AttributeError):
-          continue
-      # If not found in extensions, import it from DIRAC base (this same module).
-      if not found:
-        table_c = getattr(__import__(self.__class__.__module__, globals(), locals(), [table]), table)
-
-      # handling query conditions found in 'Meta'
-      columnNames = [column.lower() for column in params.get('Meta', {}).get('columns', [])]
-      older = params.get('Meta', {}).get('older', None)
-      newer = params.get('Meta', {}).get('newer', None)
-      order = params.get('Meta', {}).get('order', None)
-      limit = params.get('Meta', {}).get('limit', None)
-      params.pop('Meta', None)
-
+    # finding the table
+    found = False
+    for ext in self.extensions:
       try:
-        # setting up the select query
-        if not columnNames:  # query on the whole table
-          wholeTable = True
-          columns = table_c.__table__.columns  # retrieve the column names
-          columnNames = [str(column).split('.')[1] for column in columns]
-          select = Query(table_c, session=session)
-        else:  # query only the selected columns
-          wholeTable = False
-          columns = [getattr(table_c, column) for column in columnNames]
-          select = Query(columns, session=session)
+        table_c = getattr(__import__(ext + self.__class__.__module__, globals(), locals(), [table]), table)
+        found = True
+        break
+      except (ImportError, AttributeError):
+        continue
+    # If not found in extensions, import it from DIRAC base (this same module).
+    if not found:
+      table_c = getattr(__import__(self.__class__.__module__, globals(), locals(), [table]), table)
 
-        # query conditions
-        for columnName, columnValue in params.iteritems():
-          if not columnValue:
-            continue
-          column_a = getattr(table_c, columnName.lower())
-          if isinstance(columnValue, (list, tuple)):
-            select = select.filter(column_a.in_(list(columnValue)))
-          elif isinstance(columnValue, (basestring, datetime.datetime, bool)):
-            select = select.filter(column_a == columnValue)
-          else:
-            self.log.error("type(columnValue) == %s" % type(columnValue))
-        if older:
-          column_a = getattr(table_c, older[0].lower())
-          select = select.filter(column_a < older[1])
-        if newer:
-          column_a = getattr(table_c, newer[0].lower())
-          select = select.filter(column_a > newer[1])
-        if order:
-          order = [order] if isinstance(order, basestring) else list(order)
-          column_a = getattr(table_c, order[0].lower())
-          if len(order) == 2 and order[1].lower() == 'desc':
-            select = select.order_by(desc(column_a))
-          else:
-            select = select.order_by(column_a)
-        if limit:
-          select = select.limit(int(limit))
+    # handling query conditions found in 'Meta'
+    columnNames = [column.lower() for column in params.get('Meta', {}).get('columns', [])]
+    older = params.get('Meta', {}).get('older', None)
+    newer = params.get('Meta', {}).get('newer', None)
+    order = params.get('Meta', {}).get('order', None)
+    limit = params.get('Meta', {}).get('limit', None)
+    params.pop('Meta', None)
 
-        # querying
-        selectionRes = select.all()
+    try:
+      # setting up the select query
+      if not columnNames:  # query on the whole table
+        wholeTable = True
+        columns = table_c.__table__.columns  # retrieve the column names
+        columnNames = [str(column).split('.')[1] for column in columns]
+        select = Query(table_c, session=session)
+      else:  # query only the selected columns
+        wholeTable = False
+        columns = [getattr(table_c, column) for column in columnNames]
+        select = Query(columns, session=session)
 
-        # handling the results
-        if wholeTable:
-          selectionResToList = [res.toList() for res in selectionRes]
+      # query conditions
+      for columnName, columnValue in params.iteritems():
+        if not columnValue:
+          continue
+        column_a = getattr(table_c, columnName.lower())
+        if isinstance(columnValue, (list, tuple)):
+          select = select.filter(column_a.in_(list(columnValue)))
+        elif isinstance(columnValue, (basestring, datetime.datetime, bool)):
+          select = select.filter(column_a == columnValue)
         else:
-          selectionResToList = [[getattr(res, col) for col in columnNames] for res in selectionRes]
+          self.log.error("type(columnValue) == %s" % type(columnValue))
+      if older:
+        column_a = getattr(table_c, older[0].lower())
+        select = select.filter(column_a < older[1])
+      if newer:
+        column_a = getattr(table_c, newer[0].lower())
+        select = select.filter(column_a > newer[1])
+      if order:
+        order = [order] if isinstance(order, basestring) else list(order)
+        column_a = getattr(table_c, order[0].lower())
+        if len(order) == 2 and order[1].lower() == 'desc':
+          select = select.order_by(desc(column_a))
+        else:
+          select = select.order_by(column_a)
+      if limit:
+        select = select.limit(int(limit))
 
-        finalResult = S_OK(selectionResToList)
+      # querying
+      selectionRes = select.all()
 
-        finalResult['Columns'] = columnNames
-        return finalResult
+      # handling the results
+      if wholeTable:
+        selectionResToList = [res.toList() for res in selectionRes]
+      else:
+        selectionResToList = [[getattr(res, col) for col in columnNames] for res in selectionRes]
 
-      except exc.SQLAlchemyError as e:
-        session.rollback()
-        self.log.exception("select: unexpected exception", lException=e)
-        return S_ERROR("select: unexpected exception %s" % e)
-      finally:
-        session.close()
+      finalResult = S_OK(selectionResToList)
+
+      finalResult['Columns'] = columnNames
+      return finalResult
+
+    except exc.SQLAlchemyError as e:
+      session.rollback()
+      self.log.exception("select: unexpected exception", lException=e)
+      return S_ERROR("select: unexpected exception %s" % e)
+    finally:
+      session.close()
 
   def delete(self, table, params):
     """
