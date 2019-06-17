@@ -106,7 +106,8 @@ class OptimizerModule(AgentModule):
   def optimizeJob(self, job, classAdJob):
     """ Call the corresponding Optimizer checkJob method
     """
-    self.log.info('Job %s will be processed by %sAgent' % (job, self.am_getModuleParam('optimizerName')))
+    self.log.verbose('Job will be processed',
+                     '%s by %sExecutor' % (job, self.am_getModuleParam('optimizerName')))
     result = self.checkJob(job, classAdJob)
     if not result['OK']:
       self.setFailedJob(job, result['Message'], classAdJob)
@@ -150,12 +151,12 @@ class OptimizerModule(AgentModule):
     """This method gets job optimizer information that will
        be used for
     """
-    self.log.verbose("self.jobDB.getJobOptParameter(%s,'%s')" % (job, reportName))
+    self.log.debug("self.jobDB.getJobOptParameter(%s,'%s')" % (job, reportName))
     result = self.jobDB.getJobOptParameter(job, reportName)
     if result['OK']:
       value = result['Value']
       if not value:
-        self.log.warn('JobDB returned null value for %s %s' % (job, reportName))
+        self.log.warn('JobDB returned null value', 'for %s %s' % (job, reportName))
         return S_ERROR('No optimizer info returned')
       else:
         try:
@@ -170,7 +171,7 @@ class OptimizerModule(AgentModule):
     """This method sets the job optimizer information that will subsequently
        be used for job scheduling and TURL queries on the WN.
     """
-    self.log.verbose("self.jobDB.setJobOptParameter(%s,'%s','%s')" % (job, reportName, value))
+    self.log.debug("self.jobDB.setJobOptParameter(%s,'%s','%s')" % (job, reportName, value))
     if not self.am_Enabled():
       return S_OK()
     return self.jobDB.setJobOptParameter(job, reportName, str(value))
@@ -180,7 +181,7 @@ class OptimizerModule(AgentModule):
     """This method sets the job optimizer chain, in principle only needed by
        one of the optimizers.
     """
-    self.log.verbose("self.jobDB.setOptimizerChain(%s,%s)" % (job, value))
+    self.log.debug("self.jobDB.setOptimizerChain(%s,%s)" % (job, value))
     if not self.am_Enabled():
       return S_OK()
     return self.jobDB.setOptimizerChain(job, value)
@@ -196,9 +197,9 @@ class OptimizerModule(AgentModule):
                                          minor=self.startingMinorStatus,
                                          source=self.am_getModuleParam("optimizerName"))
     if not result['OK']:
-      self.log.warn(result['Message'])
+      self.log.warn("Can't add logging record", result['Message'])
 
-    self.log.verbose("self.jobDB.setNextOptimizer(%s,'%s')" % (job, self.am_getModuleParam("optimizerName")))
+    self.log.debug("self.jobDB.setNextOptimizer(%s,'%s')" % (job, self.am_getModuleParam("optimizerName")))
     return self.jobDB.setNextOptimizer(job, self.am_getModuleParam("optimizerName"))
 
   #############################################################################
@@ -206,8 +207,8 @@ class OptimizerModule(AgentModule):
     """This method updates the job status in the JobDB, this should only be
        used to fail jobs due to the optimizer chain.
     """
-    self.log.verbose("self.jobDB.setJobStatus(%s,'Status/Minor/Application','%s'/'%s'/'%s',update=True)" %
-                     (job, status, str(minorStatus), str(appStatus)))
+    self.log.debug("self.jobDB.setJobStatus(%s,'Status/Minor/Application','%s'/'%s'/'%s',update=True)" %
+                   (job, status, str(minorStatus), str(appStatus)))
     if not self.am_Enabled():
       return S_OK()
 
@@ -218,7 +219,7 @@ class OptimizerModule(AgentModule):
     result = self.logDB.addLoggingRecord(job, status=status, minor=minorStatus, application=appStatus,
                                          source=self.am_getModuleParam('optimizerName'))
     if not result['OK']:
-      self.log.warn(result['Message'])
+      self.log.warn("Can't add logging record", result['Message'])
 
     return S_OK()
 
@@ -226,7 +227,7 @@ class OptimizerModule(AgentModule):
   def setJobParam(self, job, reportName, value):
     """This method updates a job parameter in the JobDB.
     """
-    self.log.verbose("self.jobDB.setJobParameter(%s,'%s','%s')" % (job, reportName, value))
+    self.log.debug("self.jobDB.setJobParameter(%s,'%s','%s')" % (job, reportName, value))
     if not self.am_Enabled():
       return S_OK()
     return self.jobDB.setJobParameter(job, reportName, value)
@@ -235,7 +236,7 @@ class OptimizerModule(AgentModule):
   def setFailedJob(self, job, msg, classAdJob=None):
     """This method moves the job to the failed status
     """
-    self.log.verbose("self.updateJobStatus(%s,'%s','%s')" % (job, self.failedStatus, msg))
+    self.log.debug("self.updateJobStatus(%s,'%s','%s')" % (job, self.failedStatus, msg))
     if not self.am_Enabled():
       return S_OK()
     self.updateJobStatus(job, self.failedStatus, msg)
@@ -299,9 +300,7 @@ class OptimizerModule(AgentModule):
         'ProcessedEvents': 0.0
     }
 
-    self.log.verbose('Accounting Report is:')
-    self.log.verbose(acData)
+    self.log.debug('Accounting Report is:')
+    self.log.debug(acData)
     accountingReport.setValuesFromDict(acData)
     return accountingReport.commit()
-
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

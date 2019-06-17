@@ -56,7 +56,7 @@ class InputData(OptimizerExecutor):
 
     try:
       self.__dataManDict[vo] = DataManager(vo=vo)
-    except Exception as _e:
+    except Exception:
       msg = 'Failed to create DataManager'
       self.log.exception(msg)
       return None
@@ -68,7 +68,7 @@ class InputData(OptimizerExecutor):
 
     try:
       self.__fcDict[vo] = FileCatalog(vo=vo)
-    except Exception as _e:
+    except Exception:
       msg = 'Failed to create FileCatalog'
       self.log.exception(msg)
       return None
@@ -94,7 +94,7 @@ class InputData(OptimizerExecutor):
     # Is there input data or not?
     result = jobState.getInputData()
     if not result['OK']:
-      self.jobLog.error("Cannot retrieve input data: %s" % result['Message'])
+      self.jobLog.error("Cannot retrieve input data", result['Message'])
       return S_ERROR("Cannot retrieve input data")
     if not result['Value']:
       self.jobLog.notice("No input data. Skipping.")
@@ -153,14 +153,14 @@ class InputData(OptimizerExecutor):
       # This will return already active replicas, excluding banned SEs, and
       # removing tape replicas if there are disk replicas
       result = dm.getReplicasForJobs(lfns)
-    self.jobLog.info('Catalog replicas lookup time: %.2f seconds ' % (time.time() - startTime))
+    self.jobLog.verbose('Catalog replicas lookup time', '%.2f seconds ' % (time.time() - startTime))
     if not result['OK']:
       self.log.warn(result['Message'])
       return result
 
     replicaDict = result['Value']
 
-    self.jobLog.verbose("REPLICA DICT: %s" % replicaDict)
+    self.jobLog.verbose("REPLICA DICT", replicaDict)
 
     result = self.__checkReplicas(replicaDict, vo)
 
@@ -180,7 +180,8 @@ class InputData(OptimizerExecutor):
         return S_ERROR('Failed to instantiate FileCatalog for vo %s' % vo)
       else:
         guidDict = fc.getFileMetadata(lfns)
-      self.jobLog.info('Catalog Metadata Lookup Time: %.2f seconds ' % (time.time() - startTime))
+      self.jobLog.info('Catalog Metadata Lookup Time',
+                       '%.2f seconds ' % (time.time() - startTime))
 
       if not guidDict['OK']:
         self.log.warn(guidDict['Message'])
@@ -198,7 +199,7 @@ class InputData(OptimizerExecutor):
     resolvedData = {}
     resolvedData['Value'] = guidDict
     resolvedData['SiteCandidates'] = siteCandidates
-    self.jobLog.verbose("Storing:\n%s" % pprint.pformat(resolvedData))
+    self.jobLog.debug("Storing:\n%s" % pprint.pformat(resolvedData))
     result = self.storeOptimizerParam(self.ex_getProperty('optimizerName'), resolvedData)
     if not result['OK']:
       self.log.warn(result['Message'])
@@ -226,7 +227,8 @@ class InputData(OptimizerExecutor):
 
     if badLFNs:
       errorMsg = "\n".join(badLFNs)
-      self.jobLog.info('Found %s problematic LFN(s):\n%s' % (len(badLFNs), errorMsg))
+      self.jobLog.info('Found a number of problematic LFN(s)',
+                       '%d\n: %s' % (len(badLFNs), errorMsg))
       result = self.storeOptimizerParam(self.ex_getProperty('optimizerName'), errorMsg)
       if not result['OK']:
         self.log.error('Failed to set job parameter', result['Message'])
@@ -268,7 +270,8 @@ class InputData(OptimizerExecutor):
       for seName in replicas:
         result = self.__getSitesForSE(seName)
         if not result['OK']:
-          self.jobLog.warn("Could not get sites for SE %s: %s" % (seName, result['Message']))
+          self.jobLog.warn("Could not get sites for SE",
+                           "%s: %s" % (seName, result['Message']))
           return result
         siteSet.update(result['Value'])
       lfnSEs[lfn] = siteSet
@@ -298,7 +301,8 @@ class InputData(OptimizerExecutor):
         if seName not in seDict:
           result = self.__getSitesForSE(seName)
           if not result['OK']:
-            self.jobLog.warn("Could not get sites for SE %s: %s" % (seName, result['Message']))
+            self.jobLog.warn("Could not get sites for SE",
+                             "%s: %s" % (seName, result['Message']))
             continue
           siteList = result['Value']
           seObj = StorageElement(seName, vo=vo)
@@ -330,5 +334,3 @@ class InputData(OptimizerExecutor):
       sitesData[siteName]['disk'] = len(sitesData[siteName]['disk'])
       sitesData[siteName]['tape'] = len(sitesData[siteName]['tape'])
     return S_OK(sitesData)
-
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

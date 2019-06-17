@@ -79,7 +79,7 @@ class Matcher(object):
           toPrintDict['Tag'].append(tag)
     if not toPrintDict['Tag']:
       toPrintDict.pop('Tag')
-    gLogger.info('Resource description for matching', printDict(toPrintDict))
+    self.log.info('Resource description for matching', printDict(toPrintDict))
 
     negativeCond = self.limiter.getNegativeCondForSite(resourceDict['Site'])
     result = self.tqDB.matchAndGetJob(resourceDict, negativeCond=negativeCond)
@@ -115,7 +115,7 @@ class Matcher(object):
     resultDict['JobID'] = jobID
 
     matchTime = time.time() - startTime
-    self.log.info("Match time: [%s]" % str(matchTime))
+    self.log.info("Match time", "[%s]" % str(matchTime))
     gMonitor.addMark("matchTime", matchTime)
 
     # Get some extra stuff into the response returned
@@ -153,9 +153,9 @@ class Matcher(object):
       # Banned destinations can only take Test jobs
       resourceDict['JobType'] = 'Test'
 
-    self.log.verbose("Resource description:")
+    self.log.verbose("Resource description")
     for key in resourceDict:
-      self.log.verbose("%s : %s" % (key.rjust(20), resourceDict[key]))
+      self.log.debug("%s : %s" % (key.rjust(20), resourceDict[key]))
 
     return resourceDict
 
@@ -234,7 +234,7 @@ class Matcher(object):
       self.log.error("Problem reporting job status",
                      "setJobAttributes, jobID = %s: %s" % (jobID, result['Message']))
     else:
-      self.log.verbose("Set job attributes for jobID %s" % jobID)
+      self.log.verbose("Set job attributes for jobID", jobID)
 
     result = self.jlDB.addLoggingRecord(jobID,
                                         status='Matched',
@@ -244,7 +244,7 @@ class Matcher(object):
       self.log.error("Problem reporting job status",
                      "addLoggingRecord, jobID = %s: %s" % (jobID, result['Message']))
     else:
-      self.log.verbose("Added logging record for jobID %s" % jobID)
+      self.log.verbose("Added logging record for jobID", jobID)
 
   def _checkMask(self, resourceDict):
     """ Check the mask: are we allowed to run normal jobs?
@@ -271,14 +271,15 @@ class Matcher(object):
     """ Update pilot information - do not fail if we don't manage to do it
     """
     pilotReference = resourceDict.get('PilotReference', '')
-    if pilotReference:
+    if pilotReference and pilotReference != 'Unknown':
       gridCE = resourceDict.get('GridCE', 'Unknown')
       site = resourceDict.get('Site', 'Unknown')
       benchmark = resourceDict.get('PilotBenchmark', 0.0)
-      self.log.verbose('Reporting pilot info for %s: gridCE=%s, site=%s, benchmark=%f' % (pilotReference,
-                                                                                          gridCE,
-                                                                                          site,
-                                                                                          benchmark))
+      self.log.verbose('Reporting pilot info',
+                       'for %s: gridCE=%s, site=%s, benchmark=%f' % (pilotReference,
+                                                                     gridCE,
+                                                                     site,
+                                                                     benchmark))
 
       result = self.pilotAgentsDB.setPilotStatus(pilotReference, status='Running', gridSite=site,
                                                  destination=gridCE, benchmark=benchmark)
@@ -290,7 +291,7 @@ class Matcher(object):
     """ Update pilot to job mapping information
     """
     pilotReference = resourceDict.get('PilotReference', '')
-    if pilotReference:
+    if pilotReference and pilotReference != 'Unknown':
       result = self.pilotAgentsDB.setCurrentJobID(pilotReference, jobID)
       if not result['OK']:
         self.log.error("Problem updating pilot information",
@@ -334,7 +335,8 @@ class Matcher(object):
             raise RuntimeError(result['Message'])
           if credDict['group'] not in result['Value']:
             # DN is not in the same group! bad boy.
-            self.log.notice("You cannot request jobs from DN %s. It does not belong to your group!" % ownerDN)
+            self.log.warn("You cannot request jobs from this DN, as it does not belong to your group!",
+                          "(%s)" % ownerDN)
             resourceDict['OwnerDN'] = credDict['DN']
       # Nothing special, group and DN have to be the same
       else:

@@ -87,17 +87,20 @@ class Limiter(object):
       result = self.__getRunningCondition(siteName)
       if result['OK']:
         negativeCond = result['Value']
-      self.log.verbose('Negative conditions for site %s after checking limits are: %s' % (siteName, str(negativeCond)))
+      self.log.verbose('Negative conditions for site',
+                       '%s after checking limits are: %s' % (siteName, str(negativeCond)))
 
     if self.__opsHelper.getValue("JobScheduling/CheckMatchingDelay", True):
       result = self.__getDelayCondition(siteName)
       if result['OK']:
         delayCond = result['Value']
-        self.log.verbose('Negative conditions for site %s after delay checking are: %s' % (siteName, str(delayCond)))
+        self.log.verbose('Negative conditions for site',
+                         '%s after delay checking are: %s' % (siteName, str(delayCond)))
         negativeCond = self.__mergeCond(negativeCond, delayCond)
 
     if negativeCond:
-      self.log.info('Negative conditions for site %s are: %s' % (siteName, str(negativeCond)))
+      self.log.info('Negative conditions for site',
+                    '%s are: %s' % (siteName, str(negativeCond)))
 
     return negativeCond
 
@@ -157,7 +160,8 @@ class Limiter(object):
     negCond = {}
     for attName in limitsDict:
       if attName not in self.jobDB.jobAttributeNames:
-        self.log.error("Attribute %s does not exist. Check the job limits" % attName)
+        self.log.error("Attribute does not exist",
+                       "(%s). Check the job limits" % attName)
         continue
       cK = "Running:%s:%s" % (siteName, attName)
       data = self.condCache.get(cK)
@@ -175,8 +179,9 @@ class Limiter(object):
         limit = limitsDict[attName][attValue]
         running = data.get(attValue, 0)
         if running >= limit:
-          self.log.verbose('Job Limit imposed at %s on %s/%s=%d,'
-                           ' %d jobs already deployed' % (siteName, attName, attValue, limit, running))
+          self.log.verbose('Job Limit imposed',
+                           'at %s on %s/%s=%d, %d jobs already deployed' % (siteName,
+                                                                            attName, attValue, limit, running))
           if attName not in negCond:
             negCond[attName] = []
           negCond[attName].append(attValue)
@@ -196,12 +201,14 @@ class Limiter(object):
     attNames = []
     for attName in delayDict:
       if attName not in self.jobDB.jobAttributeNames:
-        self.log.error("Attribute %s does not exist in the JobDB. Please fix it!" % attName)
+        self.log.error("Attribute does not exist in the JobDB. Please fix it!",
+                       "(%s)" % attName)
       else:
         attNames.append(attName)
     result = self.jobDB.getJobAttributes(jid, attNames)
     if not result['OK']:
-      self.log.error("While retrieving attributes coming from %s: %s" % (siteSection, result['Message']))
+      self.log.error("Error while retrieving attributes",
+                     "coming from %s: %s" % (siteSection, result['Message']))
       return result
     atts = result['Value']
     # Create the DictCache if not there
