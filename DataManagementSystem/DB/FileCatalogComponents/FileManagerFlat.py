@@ -203,7 +203,7 @@ class FileManagerFlat(FileManagerBase):
       deleteTuples.append((fileID, seID))
     if insertTuples:
       fields = "FileID,SEID,Status,RepType,CreationDate,ModificationDate,PFN"
-      req = "INSERT INTO FC_Replicas (%s) VALUES %s" % ','.join(fields, insertTuples.values())
+      req = "INSERT INTO FC_Replicas (%s) VALUES %s" % (fields, ','.join(insertTuples.values()))
       res = self.db._update(req, connection)
       if not res['OK']:
         self.__deleteReplicas(deleteTuples, connection=connection)

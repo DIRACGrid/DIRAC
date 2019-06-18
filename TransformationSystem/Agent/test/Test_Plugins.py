@@ -6,7 +6,6 @@
 
 # imports
 import pytest
-import importlib
 from mock import MagicMock
 
 from DIRAC.DataManagementSystem.Client.test.mock_DM import dm_mock
@@ -15,7 +14,6 @@ from DIRAC.Resources.Catalog.test.mock_FC import fc_mock
 from DIRAC import gLogger, S_OK
 
 from DIRAC.TransformationSystem.Agent.TransformationPlugin import TransformationPlugin
-from DIRAC.TransformationSystem.Client import Utilities
 
 paramsBase = {'AgentType': 'Automatic',
               'DerivedProduction': '0',
@@ -43,7 +41,6 @@ data = {'/this/is/at.1': ['SE1'],
         '/this/is/at_4': ['SE4']}
 
 
-
 @pytest.fixture
 def setup(mocker):
   tpName = 'DIRAC.TransformationSystem.Agent.TransformationPlugin'
@@ -59,7 +56,7 @@ def setup(mocker):
 def test__Standard_G10(setup):
   """Test StandardPlugin: no input data, active."""
   params = dict(paramsBase)
-  params['GroupSize'] = 10L
+  params['GroupSize'] = 10
   pluginStandard = TransformationPlugin('Standard')
   pluginStandard.setParameters(params)
   res = pluginStandard.run()
@@ -71,7 +68,7 @@ def test__Standard_G10(setup):
 def test__Standard_Data_G10(setup):
   """Test StandardPlugin: input data, active."""
   params = dict(paramsBase)
-  params['GroupSize'] = 10L
+  params['GroupSize'] = 10
   pluginStandard = TransformationPlugin('Standard')
   pluginStandard.setParameters(params)
   pluginStandard.setInputData(data)
@@ -85,7 +82,7 @@ def test__Standard_Flush_G10(setup):
   """Test StandardPlugin: input data, flush."""
   pluginStandard = TransformationPlugin('Standard')
   params = dict(paramsBase)
-  params['GroupSize'] = 10L
+  params['GroupSize'] = 10
   params['Status'] = 'Flush'
   pluginStandard.setParameters(params)
   pluginStandard.setInputData(data)
