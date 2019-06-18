@@ -1,10 +1,10 @@
-""" DIRAC FileCatalog component representing a directory tree with simple
-    nodes
+""" DIRAC FileCatalog component representing a directory tree with simple nodes
 """
 
 __RCSID__ = "$Id$"
 
 import os
+
 from DIRAC import S_OK, S_ERROR
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryTreeBase import DirectoryTreeBase
 
