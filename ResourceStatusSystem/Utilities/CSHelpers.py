@@ -197,7 +197,7 @@ def getSEToken(seName):
   return S_OK(seParameters['Value']['SpaceToken'])
 
 
-def getSEHost(seName, plugins=[]):
+def getSEHost(seName, plugins=None):
   """ Get StorageElement host names (can be more than one depending on the protocol)
 
       :param str seName: name of the storage element
