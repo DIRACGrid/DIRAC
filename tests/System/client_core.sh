@@ -10,18 +10,19 @@ echo " ########################## REAL BASICS #############################"
 echo
 echo
 
-echo "________________________"
+echo "========================"
 echo "===  dirac-proxy-init -U"
-dirac-proxy-init -C $SERVERINSTALLDIR/DIRAC/Core/Security/test/certs/user/usercert.pem\
- -K $SERVERINSTALLDIR/DIRAC/Core/Security/test/certs/user/userkey.pem -U -ddd
+echo
+dirac-proxy-init -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key -U
 if [ $? -ne 0 ]
 then
    exit $?
 fi
 echo
 
-echo "_____________________"
+echo "====================="
 echo "===  dirac-proxy-info"
+echo
 dirac-proxy-info
 if [ $? -ne 0 ]
 then
@@ -29,8 +30,9 @@ then
 fi
 echo
 
-echo "__________________________________"
+echo "=================================="
 echo "===  dirac-proxy-get-uploaded-info"
+echo
 dirac-proxy-get-uploaded-info
 if [ $? -ne 0 ]
 then
@@ -38,8 +40,9 @@ then
 fi
 echo
 
-echo "___________________________"
+echo "==========================="
 echo "===  dirac-proxy-destroy -a"
+echo
 dirac-proxy-destroy -a
 if [ $? -ne 0 ]
 then
@@ -47,8 +50,9 @@ then
 fi
 echo
 
-echo "_____________________________________________"
+echo "============================================="
 echo "===  dirac-proxy-info (now this will fail...)"
+echo
 dirac-proxy-info
 if [ $? -eq 0 ]
 then
@@ -56,29 +60,49 @@ then
 fi
 echo
 
-echo "___________________________________"
-echo "===  dirac-proxy-init -g dirac_prod"
-dirac-proxy-init -g dirac_prod $SERVERINSTALLDIR/DIRAC/Core/Security/test/certs/user/usercert.pem\
- -K $SERVERINSTALLDIR/DIRAC/Core/Security/test/certs/user/userkey.pem -U
+echo "===================================="
+echo "===  dirac-proxy-init -g dirac_admin"
+echo
+dirac-proxy-init -g dirac_admin -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key -U
 if [ $? -ne 0 ]
 then
    exit $?
 fi
 echo
 
-diracCredentials
-
-echo "_______________________________________________________"
-echo "dirac-admin-get-proxy adminusername dirac_prod -v 4:00"
-dirac-admin-get-proxy adminusername dirac-admin -v 4:00
+echo "====================================================="
+echo "===  dirac-admin-get-proxy adminusername prod -v 4:00"
+echo
+dirac-admin-get-proxy adminusername prod -v 4:00
 if [ $? -ne 0 ]
 then
    exit $?
 fi
 echo
 
-echo "_______________"
+echo "===================================================================================="
+echo "===  dirac-admin-get-proxy adminusername no_exist -v 4:00 (now this will fail...)"
+echo
+dirac-admin-get-proxy adminusername no_exist -v 4:00
+if [ $? -eq 0 ]
+then
+   exit $?
+fi
+echo
+
+echo "====================="
+echo "===  dirac-proxy-info"
+echo
+dirac-proxy-info -f $SERVERINSTALLDIR/proxy.adminusername.prod
+if [ $? -ne 0 ]
+then
+   exit $?
+fi
+echo
+
+echo "==============="
 echo "===  dirac-info"
+echo
 dirac-info
 if [ $? -ne 0 ]
 then
@@ -86,8 +110,9 @@ then
 fi
 echo
 
-echo "__________________"
+echo "=================="
 echo "===  dirac-version"
+echo
 dirac-version
 if [ $? -ne 0 ]
 then
@@ -95,22 +120,25 @@ then
 fi
 echo
 
-echo "___________________"
+echo "==================="
 echo "===  dirac-platform"
+echo
 dirac-platform
 if [ $? -ne 0 ]
 then
    exit $?
 fi
 
-echo "_________________________________________"
+echo "========================================="
 echo "===  dirac-configuration-dump-local-cache"
+echo
 dirac-configuration-dump-local-cache
 if [ $? -ne 0 ]
 then
    exit $?
 fi
 echo
+
 
 
 
@@ -121,7 +149,7 @@ echo
 echo
 
 
-echo "___________________________________________"
+echo "==========================================="
 echo "===  dirac-monitoring-get-components-status"
 dirac-monitoring-get-components-status
 if [ $? -ne 0 ]
