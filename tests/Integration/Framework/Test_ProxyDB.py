@@ -275,18 +275,15 @@ class testDB(ProxyDBTestCase):
   def test_getUsers(self):
     """ Try to get users from DB
     """
+    field = '("%%s", "/C=DN/O=DIRAC/CN=%%s", %%s "PEM", TIMESTAMPADD(SECOND, %%s, UTC_TIMESTAMP()))%s' % ''
     # Fill table for test
     for table, values, fields in [('ProxyDB_Proxies',
-                                  ['("user_1", "/C=DN/O=DIRAC/CN=user_1", "group_1",' +
-                                   ' "PEM", TIMESTAMPADD(SECOND, 800, UTC_TIMESTAMP()))',
-                                   '("user_2", "/C=DN/O=DIRAC/CN=user_2", "group_1",' +
-                                   ' "PEM", TIMESTAMPADD(SECOND, -1, UTC_TIMESTAMP()))'],
+                                  [field % ('user_1', 'user_1', '"group_1",', '800'),
+                                   field % ('user_2', 'user_2', '"group_1",', '-1')],
                                   '(UserName, UserDN, UserGroup, Pem, ExpirationTime)'),
                                   ('ProxyDB_CleanProxies',
-                                  ['("user_3", "/C=DN/O=DIRAC/CN=user_3", "PEM",' +
-                                   ' TIMESTAMPADD(SECOND, 43200, UTC_TIMESTAMP()))'],
+                                  [field % ('user_3', 'user_3', '', '43200')],
                                   '(UserName, UserDN, Pem, ExpirationTime)')]:
-      fields = '("%s", "%s", %s "PEM", TIMESTAMPADD(SECOND, 800, UTC_TIMESTAMP()))'
       result = self.db._update('INSERT INTO %s%s VALUES %s ;' % (table, fields, ', '.join(values)))
       self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
     gLogger.info('\n Causes:')
