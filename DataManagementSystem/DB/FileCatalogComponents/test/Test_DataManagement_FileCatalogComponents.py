@@ -8,7 +8,11 @@ from mock import MagicMock
 
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryTreeBase import DirectoryTreeBase
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryLevelTree import DirectoryLevelTree
+# from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectorySimpleTree import DirectorySimpleTree
+# from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryFlatTree import DirectoryFlatTree
 # from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryNodeTree import DirectoryNodeTree
+
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManagerBase import FileManagerBase
 
 dbMock = MagicMock()
 ugManagerMock = MagicMock()
@@ -41,6 +45,32 @@ def test_Level_makeDirectory():
 
 
 ####################################################################################
+# SimpleTree
+# FIXME: this fails... is it a genuine failure?
+
+# dst = DirectorySimpleTree()
+# dst.db = dbMock
+
+
+# def test_Simple_makeDirectory():
+#   res = dst.makeDirectory('/path', {})
+#   assert res['OK'] is True  # this will need to be implemented on a derived class
+
+
+####################################################################################
+# FlatTree
+# FIXME: this fails... is it a genuine failure?
+
+# dft = DirectoryFlatTree()
+# dft.db = dbMock
+
+
+# def test_Flat_makeDirectory():
+#   res = dft.makeDirectory('/path', {})
+#   assert res['OK'] is True  # this will need to be implemented on a derived class
+
+
+####################################################################################
 # NodeTree
 # FIXME: this fails... is it a genuine failure?
 
@@ -52,3 +82,20 @@ def test_Level_makeDirectory():
 #   res = dnt.makeDirectory('/path', {})
 
 #   assert res['OK'] is True  # this will need to be implemented on a derived class
+
+
+####################################################################################
+####################################################################################
+# FileManagerBase
+
+fmb = FileManagerBase()
+fmb.db = dbMock
+
+
+def test_Base_addFile():
+  res = fmb.addFile({}, {})
+  assert res['OK'] is True  # this will need to be implemented on a derived class, but it anyway returns S_OK()
+
+  res = fmb.addFile({'aa': 'aaa/bbb'}, {})
+  assert res['OK'] is True  # this will need to be implemented on a derived class, but it anyway returns S_OK()
+  assert 'aa' in res['Value']['Failed']

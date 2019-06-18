@@ -5,7 +5,6 @@
 
 __RCSID__ = "$Id$"
 
-import time
 import os
 import stat
 
