@@ -634,7 +634,7 @@ class ProxyDB(DB):
     self.logAction("myproxy renewal", hostDN, "host", userDN, userGroup)
     return S_OK(mpChain)
 
-  # FIXME: this method not need if DIRAC setup use DNProperties section in configuration
+  # WARN: this method not need if DIRAC setup use <user name>/DNProperties section in configuration
   def __getPUSProxy(self, userDN, userGroup, requiredLifetime, requestedVOMSAttr=None):
     result = Registry.getGroupsForDN(userDN)
     if not result['OK']:
@@ -735,8 +735,6 @@ class ProxyDB(DB):
       return S_ERROR('Cannot generate proxy: Invalid group %s for user' % userGroup)
 
     result = Registry.getProxyProvidersForDN(userDN)
-    if isPUSPdn(userDN):
-      result = S_OK(['PUSP'])
     if result['OK']:
       for proxyProvider in result['Value']:
         result = self.__getPemAndTimeLeft(userDN, userGroup, proxyProvider=proxyProvider or 'Certificate')
@@ -762,7 +760,7 @@ class ProxyDB(DB):
 
         :return: S_OK(tuple)/S_ERROR() -- tuple with proxy as chain and proxy live time in a seconds
     """
-    # FIXME: this block not need if DIRAC setup use DNProperties section in configuration
+    # WARN: this block not need if DIRAC setup use <user name>/DNProperties section in configuration
     # Get the Per User SubProxy if one is requested
     if isPUSPdn(userDN):
       result = self.__getPUSProxy(userDN, userGroup, requiredLifeTime)

@@ -173,7 +173,7 @@ class ProxyDBTestCase(unittest.TestCase):
     os.makedirs(cls.tmpDir)
 
     # Prepare CA
-    certsPath = os.path.join(os.environ['DIRAC'], 'DIRAC/Core/Security/test/certs')
+    certsPath = os.path.join(os.environ['DIRAC'], 'DIRAC/tests/Integration/certs')
     cls.caWorkingDirectory = os.path.join(cls.tmpDir, 'ca')
     if os.path.exists(cls.caWorkingDirectory):
       shutil.rmtree(cls.caWorkingDirectory)
@@ -196,8 +196,6 @@ class ProxyDBTestCase(unittest.TestCase):
     oldFile.close()
     os.remove(cls.caConfigFile)
     shutil.move(absPath, cls.caConfigFile)
-    # Erase index
-    open(cls.caWorkingDirectory + '/index.txt', 'w').close()
 
     # Add configuration
     cfg = CFG()
