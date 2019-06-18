@@ -9,7 +9,6 @@ __RCSID__ = '$Id$'
 import errno
 
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName
 from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueues
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
@@ -54,23 +53,31 @@ def getSites():
   return S_OK(sites)
 
 
-def getGOCSites(diracSites=None):
+@deprecated("unused")
+def getDomainSites():
+  """
+    Gets all sites from /Resources/Sites
+  """
 
-  if diracSites is None:
-    diracSites = getSites()
-    if not diracSites['OK']:
-      return diracSites
-    diracSites = diracSites['Value']
+  _basePath = 'Resources/Sites'
 
-  gocSites = []
+  sites = {}
 
-  for diracSite in diracSites:
-    gocSite = getGOCSiteName(diracSite)
-    if not gocSite['OK']:
-      continue
-    gocSites.append(gocSite['Value'])
+  domainNames = gConfig.getSections(_basePath)
+  if not domainNames['OK']:
+    return domainNames
+  domainNames = domainNames['Value']
 
-  return S_OK(list(set(gocSites)))
+  for domainName in domainNames:
+    domainSites = gConfig.getSections('%s/%s' % (_basePath, domainName))
+    if not domainSites['OK']:
+      return domainSites
+
+    domainSites = domainSites['Value']
+
+    sites[domainName] = domainSites
+
+  return S_OK(sites)
 
 
 def getResources():

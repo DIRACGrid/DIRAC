@@ -14,7 +14,7 @@ from operator import itemgetter
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.LCG.GOCDBClient import GOCDBClient
-from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName, getGOCFTSName
+from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName, getGOCSites, getGOCFTSName
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFTS3Servers
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
@@ -337,7 +337,7 @@ class DowntimeCommand(Command):
         - It gets the the CEs (FTS and file catalogs will come).
     """
 
-    gocSites = CSHelpers.getGOCSites()
+    gocSites = getGOCSites()
     if not gocSites['OK']:
       return gocSites
     gocSites = gocSites['Value']
