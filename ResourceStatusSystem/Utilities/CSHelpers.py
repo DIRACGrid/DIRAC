@@ -149,8 +149,13 @@ def getStorageElements():
   return seNames
 
 
-def getStorageElementsHosts(seNames=None):
-  """ Get the hosts of the Storage Elements
+def getStorageElementsHosts(seNames=None, plugins=None):
+  """ Get StorageElement host names
+
+      :param list seNames: possible list of storage element names (if not provided, will use all)
+      :param list plugins: if provided, restrict to a certain list of plugins
+
+      :return: S_OK() with list of hosts or S_ERROR
   """
 
   seHosts = []
@@ -160,7 +165,7 @@ def getStorageElementsHosts(seNames=None):
 
   for seName in seNames:
 
-    seHost = getSEHost(seName)
+    seHost = getSEHost(seName, plugins)
     if not seHost['OK']:
       gLogger.warn("Could not get SE Host", "SE: %s" % seName)
       continue
@@ -170,7 +175,14 @@ def getStorageElementsHosts(seNames=None):
   return S_OK(list(set(seHosts)))
 
 
-def _getSEParameters(seName):
+def getSEParameters(seName, plugins=None):
+  """ get all the SE parameters in a list
+
+      :param str seName: name of the Storage Element
+      :param list plugins: if provided, restrict to a certain list of plugins
+
+      :return: S_OK() or S_ERROR
+  """
   se = StorageElement(seName, hideExceptions=True)
 
   seParameters = S_ERROR(errno.ENODATA, 'No SE parameters obtained')
@@ -178,7 +190,10 @@ def _getSEParameters(seName):
   if not pluginsList['OK']:
     gLogger.warn(pluginsList['Message'], "SE: %s" % seName)
     return pluginsList
-  pluginsSet = set(pluginsList['Value'])
+  if plugins:
+    pluginsSet = set(pluginsList['Value']).intersection(set(plugins))
+  else:
+    pluginsSet = set(pluginsList['Value'])
 
   seParametersList = []
   for plugin in pluginsSet:
@@ -194,7 +209,7 @@ def getSEToken(seName):
   """ Get StorageElement token
   """
 
-  seParameters = _getSEParameters(seName)
+  seParameters = getSEParameters(seName)
   if not seParameters['OK']:
     gLogger.warn("Could not get SE parameters", "SE: %s" % seName)
     return seParameters
@@ -202,11 +217,16 @@ def getSEToken(seName):
   return S_OK(seParameters['Value']['SpaceToken'])
 
 
-def getSEHost(seName):
+def getSEHost(seName, plugins=[]):
   """ Get StorageElement host names (can be more than one depending on the protocol)
+
+      :param str seName: name of the storage element
+      :param list plugins: if provided, restrict to a certain list of plugins
+
+      :return: S_OK() with list of hosts or S_ERROR
   """
 
-  seParameters = _getSEParameters(seName)
+  seParameters = getSEParameters(seName, plugins)
   if not seParameters['OK']:
     gLogger.warn("Could not get SE parameters", "SE: %s" % seName)
     return seParameters
@@ -214,16 +234,18 @@ def getSEHost(seName):
   return S_OK([parameters['Host'] for parameters in seParameters['Value']])
 
 
-def getStorageElementEndpoint(seName):
+def getStorageElementEndpoint(seName, plugins=[]):
   """ Get endpoints of a StorageElement
 
-      :param seName: name of the storage element
+      :param str seName: name of the storage element
+      :param list plugins: if provided, restrict to a certain list of plugins
 
-      :returns: for historical reasons, if the protocol is SRM, you get  'httpg://host:port/WSUrl'
+      :returns: S_OK() or S_ERROR
+                for historical reasons, if the protocol is SRM, you get  'httpg://host:port/WSUrl'
                 For other protocols, you get :py:meth:`~DIRAC.Resources.Storage.StorageBase.StorageBase.getEndpoint`
 
   """
-  seParameters = _getSEParameters(seName)
+  seParameters = getSEParameters(seName, plugins)
   if not seParameters['OK']:
     gLogger.warn("Could not get SE parameters", "for SE %s" % seName)
     return seParameters
