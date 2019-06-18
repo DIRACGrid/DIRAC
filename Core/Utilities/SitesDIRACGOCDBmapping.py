@@ -6,8 +6,10 @@
 __RCSID__ = "$Id$"
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.ResourceStatusSystem.Utilities.CSHelpers import getSEHost
+
 
 #############################################################################
 
@@ -25,6 +27,25 @@ def getGOCSiteName(diracSiteName):
     return S_ERROR("No GOC site name for %s in CS (Not a grid site ?)" % diracSiteName)
   else:
     return S_OK(gocDBName)
+
+
+def getGOCSites(diracSites=None):
+
+  if diracSites is None:
+    diracSites = getSites()
+    if not diracSites['OK']:
+      return diracSites
+    diracSites = diracSites['Value']
+
+  gocSites = []
+
+  for diracSite in diracSites:
+    gocSite = getGOCSiteName(diracSite)
+    if not gocSite['OK']:
+      continue
+    gocSites.append(gocSite['Value'])
+
+  return S_OK(list(set(gocSites)))
 
 
 def getGOCFTSName(diracFTSName):

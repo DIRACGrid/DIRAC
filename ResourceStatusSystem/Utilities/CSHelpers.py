@@ -9,7 +9,6 @@ __RCSID__ = '$Id$'
 import errno
 
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName
 from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueues
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
@@ -52,25 +51,6 @@ def getSites():
   # Remove duplicated ( just in case )
   sites = list(set(sites))
   return S_OK(sites)
-
-
-def getGOCSites(diracSites=None):
-
-  if diracSites is None:
-    diracSites = getSites()
-    if not diracSites['OK']:
-      return diracSites
-    diracSites = diracSites['Value']
-
-  gocSites = []
-
-  for diracSite in diracSites:
-    gocSite = getGOCSiteName(diracSite)
-    if not gocSite['OK']:
-      continue
-    gocSites.append(gocSite['Value'])
-
-  return S_OK(list(set(gocSites)))
 
 
 @deprecated("unused")
