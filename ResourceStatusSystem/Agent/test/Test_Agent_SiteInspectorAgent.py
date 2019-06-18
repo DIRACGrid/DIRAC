@@ -33,7 +33,7 @@ queueFilled.put({'status': 'status',
         (queueFilled)
     ])
 def test__execute(mocker, sitesToBeCheckedValue):
-  """ Testing JobCleaningAgent()._getAllowedJobTypes()
+  """ Testing SiteInspectorAgent.execute()
   """
 
   mocker.patch("DIRAC.ResourceStatusSystem.Agent.SiteInspectorAgent.AgentModule.__init__")
