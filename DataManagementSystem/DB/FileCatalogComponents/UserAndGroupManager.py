@@ -3,11 +3,11 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC import S_OK, S_ERROR, gConfig, gLogger
-from DIRAC.Core.Security import Properties
 import time
 import threading
-from types import *
+
+from DIRAC import S_OK, S_ERROR, gConfig, gLogger
+from DIRAC.Core.Security import Properties
 
 
 class UserAndGroupManagerBase:
@@ -62,7 +62,7 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
 
   def getUserID(self, user):
     """ Get ID for a user specified by its name """
-    if type(user) in [IntType, LongType]:
+    if isinstance(user, (int, long)):
       return S_OK(user)
     if user in self.db.users.keys():
       return S_OK(self.db.users[user])
@@ -170,7 +170,7 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
 
   def getGroupID(self, group):
     """ Get ID for a group specified by its name """
-    if type(group) in [IntType, LongType]:
+    if isinstance(group, (int, long)):
       return S_OK(group)
     if group in self.db.groups.keys():
       return S_OK(self.db.groups[group])

@@ -1,10 +1,10 @@
 __RCSID__ = "$Id$"
 
+import os
+
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.List import stringListToString, intListToString
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManagerBase import FileManagerBase
-
-import os
 
 
 class FileManagerFlat(FileManagerBase):

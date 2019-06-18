@@ -2,12 +2,12 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC import S_OK, S_ERROR, gConfig, gLogger
-from DIRAC.Core.Utilities.Pfn import pfnunparse
 import threading
 import time
 import random
-from types import IntType, LongType, StringTypes
+
+from DIRAC import S_OK, S_ERROR, gConfig, gLogger
+from DIRAC.Core.Utilities.Pfn import pfnunparse
 
 
 class SEManagerBase:
@@ -131,7 +131,7 @@ class SEManagerDB(SEManagerBase):
 
   def getSEID(self, seName):
     """ Get ID for a SE specified by its name """
-    if type(seName) in [IntType, LongType]:
+    if isinstance(seName, (int, long)):
       return S_OK(seName)
     if seName in self.db.seNames.keys():
       return S_OK(self.db.seNames[seName])
@@ -154,7 +154,7 @@ class SEManagerDB(SEManagerBase):
   def getSEDefinition(self, seID):
     """ Get the Storage Element definition
     """
-    if type(seID) in StringTypes:
+    if isinstance(seID, str):
       result = self.getSEID(seID)
       if not result['OK']:
         return result

@@ -586,7 +586,7 @@ class FileManagerBase(object):
     for lfn, error in res['Value']['Failed'].items():
       if error == 'No such file or directory':
         failed.pop(lfn)
-    return S_OK(successful, failed)
+    return S_OK((successful, failed))
 
   def _checkExistingMetadata(self, existingLfns, lfns):
     failed = {}

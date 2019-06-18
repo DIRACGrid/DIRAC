@@ -750,7 +750,7 @@ class JobDB(DB):
       return ret
     application = ret['Value']
 
-    cmd = 'REPLACE JobsStatus (JobID,Status,MinorStatus,ApplicationStatus) VALUES (%d,%s,%s,%s)' % (
+    cmd = 'REPLACE INTO JobsStatus (JobID,Status,MinorStatus,ApplicationStatus) VALUES (%d,%s,%s,%s)' % (
         int(jobID), status, minor, application)
 
     result = self._update(cmd)
@@ -1409,7 +1409,9 @@ class JobDB(DB):
     # Exit if the limit of the reschedulings is reached
     if rescheduleCounter > self.maxRescheduling:
       self.log.warn('Maximum number of reschedulings is reached', 'Job %s' % jobID)
-      self.setJobStatus(jobID, status='Failed', minor='Maximum of reschedulings reached')
+      res = self.setJobStatus(jobID, status='Failed', minor='Maximum of reschedulings reached')
+      if not res['OK']:
+        return res
       return S_ERROR('Maximum number of reschedulings is reached: %s' % self.maxRescheduling)
 
     jobAttrNames = []
@@ -1511,7 +1513,6 @@ class JobDB(DB):
       return result
 
     result = self.setJobStatus(jobID, status='Received', minor='Job Rescheduled', application='Unknown')
-
     if not result['OK']:
       return result
 
