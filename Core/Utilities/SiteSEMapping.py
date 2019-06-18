@@ -53,7 +53,8 @@ def getSitesForSE(storageElement, gridName='', withSiteLocalSEMapping=False):
       Optionally restrict to Grid specified by name.
   """
 
-  result = DMSHelpers().getSitesForSE(storageElement, connectionLevel='DOWNLOAD' if withSiteLocalSEMapping else 'LOCAL')
+  result = DMSHelpers().getSitesForSE(storageElement,
+				      connectionLevel='DOWNLOAD' if withSiteLocalSEMapping else 'LOCAL')
   if not result['OK'] or not gridName:
     return result
 
