@@ -6,7 +6,8 @@
 __RCSID__ = "$Id$"
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
+from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
+from DIRAC.ResourceStatusSystem.Utilities.CSHelpers import getSEHost
 
 #############################################################################
 
@@ -70,26 +71,23 @@ def getDIRACSiteName(gocSiteName):
   return S_ERROR("There's no site with GOCDB name = %s in DIRAC CS" % gocSiteName)
 
 
-def getDIRACSesForSRM(srmService):
+def getDIRACSesForHostName(hostName):
+  """ returns the DIRAC SEs that share the same hostName
 
-  result = gConfig.getSections("/Resources/StorageElements")
-  if not result['OK']:
-    return result
-  diracSEs = result['Value']
+      :param str hostName: host name, e.g. 'storm-fe-lhcb.cr.cnaf.infn.it'
+
+      :return: S_OK with list of DIRAC SE names, or S_ERROR
+  """
+
+  seNames = DMSHelpers().getStorageElements()
 
   resultDIRACSEs = []
-  for se in diracSEs:
-    seSection = "/Resources/StorageElements/%s" % se
-    result = gConfig.getSections(seSection)
-    if not result['OK']:
-      continue
-    accesses = result['Value']
-    for access in accesses:
-      protocol = gConfig.getValue(cfgPath(seSection, access, 'Protocol'), 'Unknown')
-      if protocol == 'srm':
-        seHost = gConfig.getValue(cfgPath(seSection, access, 'Host'), 'Unknown')
-        if seHost == srmService:
-          resultDIRACSEs.append(se)
+  for seName in seNames:
+    res = getSEHost(seName)
+    if not res['OK']:
+      return res
+    if hostName in res['Value']:
+      resultDIRACSEs.append(seName)
 
   return S_OK(resultDIRACSEs)
 
