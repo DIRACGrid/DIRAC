@@ -2,7 +2,7 @@
     nodes
 """
 
-__RCSID__ = "$Id:  $"
+__RCSID__ = "$Id$"
 
 import os
 from DIRAC import S_OK, S_ERROR

@@ -1,7 +1,3 @@
-########################################################################
-# $HeadURL$
-########################################################################
-
 """ DIRAC FileCatalog mix-in class to manage users and groups
 """
 
@@ -250,7 +246,8 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
     if gid != 'Missing':
       self.db.groups.pop(group)
       self.db.gids.pop(gid)
-    gLogger.debug("UserGroupManager RemoveGroup lock released. Used %.3f seconds. %s" % (time.time() - waitTime, group))
+    gLogger.debug("UserGroupManager RemoveGroup lock released. Used %.3f seconds. %s" % (time.time() - waitTime,
+                                                                                         group))
     self.lock.release()
     return S_OK()
 
