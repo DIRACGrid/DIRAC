@@ -213,8 +213,7 @@ class ResourceStatusDB(SQLAlchemyDB):
     :param self: self reference
     """
 
-    logSubName = 'ResourceStatusDB'
-    super(ResourceStatusDB, self).__init__(logSubName)
+    super(ResourceStatusDB, self).__init__()
 
     # These are the list of tables that will be created.
     # They can be extended in an extension module
@@ -225,12 +224,8 @@ class ResourceStatusDB(SQLAlchemyDB):
 
     self.extensions = gConfig.getValue('DIRAC/Extensions', [])
     self._initializeConnection('ResourceStatus/ResourceStatusDB')
-    self.__initializeDB()
 
-  def __initializeDB(self):
-    """
-    Create the tables, if they are not there yet
-    """
+    # Create required tables
     self._createTablesIfNotThere(self.tablesList)
     self._createTablesIfNotThere(self.tablesListWithID)
 

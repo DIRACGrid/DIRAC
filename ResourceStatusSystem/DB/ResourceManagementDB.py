@@ -370,20 +370,15 @@ class ResourceManagementDB(SQLAlchemyDB):
     :param self: self reference
     """
 
-    logSubName = 'ResourceManagementDB'
-    super(ResourceManagementDB, self).__init__(logSubName)
+    super(ResourceManagementDB, self).__init__()
 
     # This is the list of tables that will be created.
     # It can be extended in an extension module
     self.tablesList = getattr(Utils.voimport('DIRAC.ResourceStatusSystem.DB.ResourceManagementDB'),
                               'TABLESLIST')
     self._initializeConnection('ResourceStatus/ResourceManagementDB')
-    self.__initializeDB()
 
-  def __initializeDB(self):
-    """
-    Creates the tables
-    """
+    # Create required tables
     self._createTablesIfNotThere(self.tablesList)
 
   def addOrModify(self, table, params):

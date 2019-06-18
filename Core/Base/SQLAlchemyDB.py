@@ -21,13 +21,13 @@ class SQLAlchemyDB(object):
     Base class that defines some of the basic DB interactions.
   """
 
-  def __init__(self, logSubName):
+  def __init__(self):
     """c'tor
 
     :param self: self reference
     """
 
-    self.log = gLogger.getSubLogger(logSubName)
+    self.log = gLogger.getSubLogger(self.__class__.__name__)
     self.extensions = gConfig.getValue('DIRAC/Extensions', [])
     self.tablesList = []
 
@@ -73,7 +73,7 @@ class SQLAlchemyDB(object):
           try:
             getattr(
                 __import__(
-                    ext + __name__,
+                    ext + self.__class__.__module__,
                     globals(),
                     locals(),
                     [table]),
@@ -87,7 +87,7 @@ class SQLAlchemyDB(object):
         if not found:
           getattr(
               __import__(
-                  __name__,
+                  self.__class__.__module__,
                   globals(),
                   locals(),
                   [table]),
