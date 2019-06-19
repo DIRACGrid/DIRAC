@@ -12,7 +12,7 @@ echo -e '*******' "integration server tests" '*******\n'
 
 #-------------------------------------------------------------------------------#
 echo -e '***' $(date -u) "**** Core TESTS ****\n"
-python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/Test_ElasticsearchDB.py >> testOutputs.txt 2>&1
+python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/Core/Test_ElasticsearchDB.py >> testOutputs.txt 2>&1
 
 
 #-------------------------------------------------------------------------------#
@@ -24,7 +24,6 @@ python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/Framework/Test_Instal
 #-------------------------------------------------------------------------------#
 echo -e '***' $(date -u)  "**** RSS TESTS ****\n"
 python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/ResourceStatusSystem/Test_FullChain.py >> testOutputs.txt 2>&1
-python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/ResourceStatusSystem/Test_Publisher.py >> testOutputs.txt 2>&1
 
 
 #-------------------------------------------------------------------------------#
