@@ -32,6 +32,7 @@ echo -e '***' $(date -u)  "**** WMS TESTS ****\n"
 python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_JobDB.py >> testOutputs.txt 2>&1
 python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_JobLoggingDB.py >> testOutputs.txt 2>&1
 python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_TaskQueueDB.py >> testOutputs.txt 2>&1
+python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_ElasticJobDB.py >> testOutputs.txt 2>&1
 
 
 #-------------------------------------------------------------------------------#

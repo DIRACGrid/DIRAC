@@ -64,3 +64,9 @@ pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/Monitoring/Test_MonitoringSyste
 echo -e '***' $(date -u)  "**** TS TESTS ****\n"
 pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/TransformationSystem/Test_Client_Transformation.py >> testOutputs.txt 2>&1
 # pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/TransformationSystem/Test_TS_DFC_Catalog.py >> testOutputs.txt 2>&1
+
+
+#-------------------------------------------------------------------------------#
+echo -e '***' $(date -u)  "**** PS TESTS ****\n"
+pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/ProductionSystem/Test_Client_Production.py >> testOutputs.txt 2>&1
+pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/ProductionSystem/Test_Client_TS_Prod.py >> testOutputs.txt 2>&1
