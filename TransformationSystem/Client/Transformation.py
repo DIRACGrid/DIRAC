@@ -1,4 +1,6 @@
-""" A generic client for creating transformations
+"""A generic client for creating and managing transformations.
+
+See the information about transformation parameters below.
 """
 
 from __future__ import print_function
