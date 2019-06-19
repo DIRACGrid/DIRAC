@@ -4,6 +4,15 @@
     - Adds new users for the given VO taking into account the VO VOMS information
     - Updates the data in the CS for existing users including DIRAC group membership
     -
+
+The following options can be set for the VOMS2CSAgent.
+
+.. literalinclude:: ../ConfigTemplate.cfg
+  :start-after: ##BEGIN VOMS2CSAgent
+  :end-before: ##END
+  :dedent: 2
+  :caption: VOMS2CSAgent options
+
 """
 
 from DIRAC import S_OK, gConfig, S_ERROR
