@@ -3,6 +3,8 @@
 Do the initial installation and configuration of a DIRAC component
 """
 
+from __future__ import absolute_import, unicode_literals
+
 from DIRAC import gConfig, gLogger, S_OK
 from DIRAC.ConfigurationSystem.Client.Helpers import getCSExtensions
 from DIRAC.FrameworkSystem.Utilities import MonitoringUtilities
