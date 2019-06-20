@@ -192,7 +192,7 @@ for rootModule in listDir:
         if os.path.exists(fakeScriptPath):
           os.remove(fakeScriptPath)
         # Create the symlink
-        os.symlink(os.path.abspath(scriptPath), fakeScriptPath)
+	os.symlink(os.path.join(rootPath, scriptPath), fakeScriptPath)
       else:
         with open(fakeScriptPath, "w") as fd:
           fd.write(wrapperTemplate.replace('$SCRIPTLOCATION$', scriptPath))
