@@ -54,7 +54,7 @@ def getSitesForSE(storageElement, gridName='', withSiteLocalSEMapping=False):
   """
 
   result = DMSHelpers().getSitesForSE(storageElement,
-				      connectionLevel='DOWNLOAD' if withSiteLocalSEMapping else 'LOCAL')
+                                      connectionLevel='DOWNLOAD' if withSiteLocalSEMapping else 'LOCAL')
   if not result['OK'] or not gridName:
     return result
 

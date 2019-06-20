@@ -154,11 +154,11 @@ class DowntimeCommand(Command):
 
       res = CSHelpers.getSEHost(elementName)
       if not res['OK']:
-	return res
+        return res
       seHosts = res['Value']
 
       if not seHosts:
-	return S_ERROR('No seHost(s) for %s' % elementName)
+        return S_ERROR('No seHost(s) for %s' % elementName)
       elementName = seHosts  # in this case it will return a list, because there might be more than one host only
 
     elif elementType in ['FTS', 'FTS3']:
@@ -196,9 +196,9 @@ class DowntimeCommand(Command):
         return params
       element, elementName, hours, gOCDBServiceType = params['Value']
       if not isinstance(elementName, list):
-	elementNames = [elementName]
+        elementNames = [elementName]
       else:
-	elementNames = elementName
+        elementNames = elementName
 
     # WARNING: checking all the DT that are ongoing or starting in given <hours> from now
     try:

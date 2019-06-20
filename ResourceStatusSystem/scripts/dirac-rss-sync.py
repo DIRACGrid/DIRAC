@@ -135,12 +135,12 @@ def initSites():
 
   for site, elements in sites['Value'].iteritems():
     result = rssClient.addOrModifyStatusElement("Site", "Status",
-						name=site,
-						statusType='all',
-						status=elements[0],
-						elementType=site.split('.')[0],
-						tokenOwner='rs_svc',
-						reason='dirac-rss-sync')
+                                                name=site,
+                                                statusType='all',
+                                                status=elements[0],
+                                                elementType=site.split('.')[0],
+                                                tokenOwner='rs_svc',
+                                                reason='dirac-rss-sync')
     if not result['OK']:
       subLogger.error(result['Message'])
       DIRACExit(1)
@@ -201,11 +201,11 @@ def initSEs():
 
       subLogger.debug([se, statusType, status, reason])
       result = rssClient.addOrModifyStatusElement('Resource', 'Status',
-						  name=se,
-						  statusType=statusType,
-						  status=status,
+                                                  name=se,
+                                                  statusType=statusType,
+                                                  status=status,
                                                   elementType='StorageElement',
-						  tokenOwner='rs_svc',
+                                                  tokenOwner='rs_svc',
                                                   reason=reason)
 
       if not result['OK']:
@@ -217,11 +217,11 @@ def initSEs():
     for statusType in statusTypesList:
 
       result = rssClient.addOrModifyStatusElement('Resource', 'Status',
-						  name=se,
-						  statusType=statusType,
-						  status=DEFAULT_STATUS,
+                                                  name=se,
+                                                  statusType=statusType,
+                                                  status=DEFAULT_STATUS,
                                                   elementType='StorageElement',
-						  tokenOwner='rs_svc',
+                                                  tokenOwner='rs_svc',
                                                   reason=reason)
       if not result['OK']:
         subLogger.error('Error in backtracking for %s,%s,%s' % (se, statusType, status))

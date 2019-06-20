@@ -157,14 +157,14 @@ class SiteInspectorAgent(AgentModule):
       # This if-clause skips all the elements that should not be checked yet
       timeToNextCheck = self.__checkingFreqs[siteDict['Status']]
       if utcnow <= siteDict['LastCheckTime'] + datetime.timedelta(minutes=timeToNextCheck):
-	continue
+        continue
 
       # We skip the elements with token different than "rs_svc"
       if siteDict['TokenOwner'] != 'rs_svc':
-	self.log.verbose('Skipping %s ( %s ) with token %s' % (siteDict['Name'],
-							       siteDict['StatusType'],
-							       siteDict['TokenOwner']))
-	continue
+        self.log.verbose('Skipping %s ( %s ) with token %s' % (siteDict['Name'],
+                                                               siteDict['StatusType'],
+                                                               siteDict['TokenOwner']))
+        continue
 
       toBeChecked.put({'status': status,
                        'name': site,
@@ -173,10 +173,10 @@ class SiteInspectorAgent(AgentModule):
                        'statusType': 'all',
                        'elementType': 'Site'})
       self.log.verbose('%s # "%s" # "%s" # %s # %s' % (siteDict['Name'],
-						       siteDict['ElementType'],
-						       siteDict['StatusType'],
-						       siteDict['Status'],
-						       siteDict['LastCheckTime']))
+                                                       siteDict['ElementType'],
+                                                       siteDict['StatusType'],
+                                                       siteDict['Status'],
+                                                       siteDict['LastCheckTime']))
 
     return S_OK(toBeChecked)
 

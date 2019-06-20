@@ -20,17 +20,17 @@ mockSM = MagicMock()
 
 queueFilled = Queue.Queue()
 queueFilled.put({'status': 'status',
-		 'name': 'site',
-		 'site': 'site',
-		 'element': 'Site',
-		 'statusType': 'all',
-		 'elementType': 'Site'})
+                 'name': 'site',
+                 'site': 'site',
+                 'element': 'Site',
+                 'statusType': 'all',
+                 'elementType': 'Site'})
 
 
 @pytest.mark.parametrize(
     "elementsToBeCheckedValue", [
-	(Queue.Queue()),
-	(queueFilled)
+        (Queue.Queue()),
+        (queueFilled)
     ])
 def test__execute(mocker, elementsToBeCheckedValue):
   """ Testing JobCleaningAgent()._getAllowedJobTypes()

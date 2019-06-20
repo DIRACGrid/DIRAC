@@ -164,7 +164,7 @@ class VOMS2CSAgent(AgentModule):
         else:
           NotificationClient().sendMail(self.am_getOption('MailTo', voAdminMail),
                                         "VOMS2CSAgent run log", mailMsg,
-					self.mailFrom)
+                                        self.mailFrom)
 
     return S_OK()
 
