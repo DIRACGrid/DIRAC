@@ -114,33 +114,6 @@ Here define the users part of the "superb_user" group, its DIRAC properties, and
      }
    }
 
-Registry/VOMS
--------------
-::
-
-   Registry
-   {
-     VOMS
-     {
-       Mapping
-       {
-         superb_user = /superbvo.org
-       }
-       Servers
-       {
-         superbvo.org
-         {
-           voms2.cnaf.infn.it
-           {
-             DN = /C=IT/O=INFN/OU=Host/L=CNAF/CN=voms2.cnaf.infn.it
-             CA = /C=IT/O=INFN/CN=INFN CA
-             Port = 15009
-           }
-         }
-       }
-     }
-   }
-
 $HOME/.glite/vomses
 -------------------
 

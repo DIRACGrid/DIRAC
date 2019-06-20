@@ -11,7 +11,7 @@ AGENTS = [('DIRAC.AccountingSystem.Agent.NetworkAgent', {'IgnoreOptions': ['MaxC
           ('DIRAC.ConfigurationSystem.Agent.Bdii2CSAgent', {'IgnoreOptions': ['BannedCEs', 'BannedSEs', 'DryRun',
                                                                               'AlternativeBDIIs', 'VO']}),
           ('DIRAC.ConfigurationSystem.Agent.GOCDB2CSAgent', {'IgnoreOptions': ['Cycles', 'DryRun']}),
-          ('DIRAC.ConfigurationSystem.Agent.VOMS2CSAgent', {'IgnoreOptions': ['mailFrom', 'DryRun', 'VO']}),
+          ('DIRAC.ConfigurationSystem.Agent.VOMS2CSAgent', {'IgnoreOptions': ['VO']}),
           ('DIRAC.DataManagementSystem.Agent.CleanFTSDBAgent', {'IgnoreOptions': ['DeleteGraceDays']}),
           ('DIRAC.DataManagementSystem.Agent.FTS3Agent', {}),
           ('DIRAC.DataManagementSystem.Agent.FTSAgent', {'IgnoreOptions': ['StageFiles', 'UseProxies', 'shifterProxy',

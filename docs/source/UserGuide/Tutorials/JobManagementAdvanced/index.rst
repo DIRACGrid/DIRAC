@@ -447,11 +447,19 @@ Jobs that can (or should) run using more than 1 processor should be described as
       j.setExecutable('ls',arguments='-l')
       j.setExecutable('echo', arguments='hello again')
       j.setName('MP test')
+      j.setTag('MultiProcessor')
 
-<this is today possible by using setTag() but the specific Tag to use is not yet carved in stone>
+.. versionadded:: v6r20p5
 
-<to expand, e.g. put about NumberOfProcessor = X that becomes XNumberOfProcessors>
+Users can specify in the job descriptions NumberOfProcessors and WholeNode parameters, e.g.::
 
+   NumberOfProcessors = 16;
+   WholeNode = True;
+
+This will be translated internally into 16Processors and WholeNode tags.
+"MultiProcessor" tag is added automatically to the job description if more than 1 processor is specified.
+
+This would allow resources (WN's) to put flexibly requirements on jobs to be taken, for example, avoiding single-core jobs on a multi-core nodes.
 
 
 7.3.8 Submitting jobs with specifc requirements (e.g. GPU)
