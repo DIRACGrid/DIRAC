@@ -24,6 +24,11 @@ CHANGE: clients: using DIRAC.Core.Base.Client as base
 *docs
 NEW: (#4099) Instructions about setting up the DIRAC web server for pilot3
 
+[v6r21p9]
+
+*Core
+FIX: (#4130) correct symlinks in dirac-deploy
+
 [v6r21p8]
 
 *WMS
