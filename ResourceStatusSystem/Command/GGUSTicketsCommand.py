@@ -11,10 +11,9 @@ import urllib2
 
 from DIRAC import S_ERROR, S_OK
 from DIRAC.Core.LCG.GGUSTicketsClient import GGUSTicketsClient
-from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName
+from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName, getGOCSites
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.Command.Command import Command
-from DIRAC.ResourceStatusSystem.Utilities import CSHelpers
 
 
 class GGUSTicketsCommand(Command):
@@ -150,7 +149,7 @@ class GGUSTicketsCommand(Command):
       It queries a portion of them.
     '''
 
-    gocSites = CSHelpers.getGOCSites()
+    gocSites = getGOCSites()
     if not gocSites['OK']:
       return gocSites
     gocSites = gocSites['Value']
@@ -176,6 +175,3 @@ class GGUSTicketsCommand(Command):
         self.metrics['failed'].append(result)
 
     return S_OK(self.metrics)
-
-################################################################################
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

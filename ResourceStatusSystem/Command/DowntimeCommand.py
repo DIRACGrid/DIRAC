@@ -1,5 +1,5 @@
-""" DowntimeCommand module will look into GOC DB to find announced downtimes for RSS-managed sites and resources.S_ERROR
-    If found, downtimes are added to the internal RSS cache using ResourceManagementClient.S_ERROR
+""" DowntimeCommand module will look into GOC DB to find announced downtimes for RSS-managed sites and resources.
+    If found, downtimes are added to the internal RSS cache using ResourceManagementClient.
 
     GOCDB downtimes that are modified or deleted are also synced.
 """
@@ -14,7 +14,7 @@ from operator import itemgetter
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.LCG.GOCDBClient import GOCDBClient
-from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName, getGOCFTSName
+from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName, getGOCSites, getGOCFTSName
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFTS3Servers
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
@@ -140,8 +140,7 @@ class DowntimeCommand(Command):
       try:
         seOptions = StorageElement(elementName).options
       except AttributeError:  # Sometimes the SE can't be instantiated properly
-        self.log.error(
-            "Failure instantiating StorageElement object for %s" % elementName)
+        self.log.error("Failure instantiating StorageElement object", elementName)
         return S_ERROR("Failure instantiating StorageElement")
       if 'SEType' in seOptions:
         # Type should follow the convention TXDY
@@ -153,21 +152,21 @@ class DowntimeCommand(Command):
         elif diskSE:
           gOCDBServiceType = "srm"
 
-      seHost = CSHelpers.getSEHost(elementName)
-      if not seHost['OK']:
-        return seHost
-      seHost = seHost['Value']
+      res = CSHelpers.getSEHost(elementName)
+      if not res['OK']:
+        return res
+      seHosts = res['Value']
 
-      if not seHost:
-        return S_ERROR('No seHost for %s' % elementName)
-      elementName = seHost
+      if not seHosts:
+        return S_ERROR('No seHost(s) for %s' % elementName)
+      elementName = seHosts  # in this case it will return a list, because there might be more than one host only
 
     elif elementType in ['FTS', 'FTS3']:
       gOCDBServiceType = 'FTS'
       # WARNING: this method presupposes that the server is an FTS3 type
       gocSite = getGOCFTSName(elementName)
       if not gocSite['OK']:
-        self.log.warn("%s not in Resources/FTSEndpoints/FTS3 ?" % elementName)
+        self.log.warn("FTS not in Resources/FTSEndpoints/FTS3 ?", elementName)
       else:
         elementName = gocSite['Value']
 
@@ -196,7 +195,10 @@ class DowntimeCommand(Command):
       if not params['OK']:
         return params
       element, elementName, hours, gOCDBServiceType = params['Value']
-      elementNames = [elementName]
+      if not isinstance(elementName, list):
+        elementNames = [elementName]
+      else:
+        elementNames = elementName
 
     # WARNING: checking all the DT that are ongoing or starting in given <hours> from now
     try:
@@ -235,9 +237,10 @@ class DowntimeCommand(Command):
 
       if dt['gOCDBServiceType'] and gOCDBServiceType:
         if gOCDBServiceType.lower() != downDic['SERVICE_TYPE'].lower():
-          return S_ERROR("SERVICE_TYPE mismatch between GOCDB (%s) and CS (%s) for %s" % (gOCDBServiceType,
-                                                                                          downDic['SERVICE_TYPE'],
-                                                                                          dt['Name']))
+          self.log.warn("SERVICE_TYPE mismatch",
+                        "between GOCDB (%s) and CS (%s) for %s" % (gOCDBServiceType,
+                                                                   downDic['SERVICE_TYPE'],
+                                                                   dt['Name']))
 
       dt['DowntimeID'] = downtime
       dt['Element'] = element
@@ -334,7 +337,7 @@ class DowntimeCommand(Command):
         - It gets the the CEs (FTS and file catalogs will come).
     """
 
-    gocSites = CSHelpers.getGOCSites()
+    gocSites = getGOCSites()
     if not gocSites['OK']:
       return gocSites
     gocSites = gocSites['Value']
@@ -360,13 +363,13 @@ class DowntimeCommand(Command):
     if ce['OK']:
       resources.extend(ce['Value'])
 
-    self.log.verbose('Processing Sites: %s' % ', '.join(gocSites))
+    self.log.verbose('Processing Sites', ', '.join(gocSites))
 
     siteRes = self.doNew(('Site', gocSites))
     if not siteRes['OK']:
       self.metrics['failed'].append(siteRes['Message'])
 
-    self.log.verbose('Processing Resources: %s' % ', '.join(resources))
+    self.log.verbose('Processing Resources', ', '.join(resources))
 
     resourceRes = self.doNew(('Resource', resources))
     if not resourceRes['OK']:
