@@ -1,3 +1,8 @@
+[v6r21p9]
+
+*Core
+FIX: (#4130) correct symlinks in dirac-deploy
+
 [v6r21p8]
 
 *WMS
