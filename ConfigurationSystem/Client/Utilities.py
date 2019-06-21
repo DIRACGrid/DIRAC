@@ -20,7 +20,7 @@ from urlparse import urlparse
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities import List
 from DIRAC.Core.Utilities.Grid import getBdiiCEInfo, getBdiiSEInfo, ldapService
-from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getDIRACSiteName, getDIRACSesForSRM
+from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getDIRACSiteName, getDIRACSesForHostName
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOs, getVOOption
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
@@ -392,7 +392,7 @@ def getGridSRMs(vo, bdiiInfo=None, srmBlackList=None, unUsed=False):
       continue
 
     if unUsed:
-      result = getDIRACSesForSRM(srmHost)
+      result = getDIRACSesForHostName(srmHost)
       if not result['OK']:
         return result
       diracSEs = result['Value']

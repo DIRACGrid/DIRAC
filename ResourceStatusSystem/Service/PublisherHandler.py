@@ -9,8 +9,8 @@ __RCSID__ = '$Id$'
 
 #  pylint: disable=no-self-use
 
+import types
 from datetime import datetime, timedelta
-from types import NoneType
 
 # DIRAC
 from DIRAC import gLogger, S_OK, gConfig, S_ERROR
@@ -69,7 +69,7 @@ class PublisherHandler(RequestHandler):
     gLogger.info('getSites')
     return getSites()
 
-  types_getSitesResources = [(basestring, list, NoneType)]
+  types_getSitesResources = [(basestring, list, types.NoneType)]
 
   def export_getSitesResources(self, siteNames):
     """
@@ -111,9 +111,9 @@ class PublisherHandler(RequestHandler):
 
     return S_OK(sitesRes)
 
-  types_getElementStatuses = [basestring, (basestring, list, NoneType), (basestring, list, NoneType),
-                              (basestring, list, NoneType), (basestring, list, NoneType),
-                              (basestring, list, NoneType)]
+  types_getElementStatuses = [basestring, (basestring, list, types.NoneType), (basestring, list, types.NoneType),
+                              (basestring, list, types.NoneType), (basestring, list, types.NoneType),
+                              (basestring, list, types.NoneType)]
 
   def export_getElementStatuses(self, element, name, elementType, statusType, status, tokenOwner):
     """
@@ -125,8 +125,8 @@ class PublisherHandler(RequestHandler):
                                         statusType=statusType, status=status,
                                         tokenOwner=tokenOwner)
 
-  types_getElementHistory = [basestring, (basestring, list, NoneType), (basestring, list, NoneType),
-                             (basestring, list, NoneType)]
+  types_getElementHistory = [basestring, (basestring, list, types.NoneType), (basestring, list, types.NoneType),
+                             (basestring, list, types.NoneType)]
 
   def export_getElementHistory(self, element, name, elementType, statusType):
     """
@@ -139,7 +139,7 @@ class PublisherHandler(RequestHandler):
                                         statusType=statusType,
                                         meta={'columns': columns})
 
-  types_getElementPolicies = [basestring, (basestring, list, NoneType), (basestring, list, NoneType)]
+  types_getElementPolicies = [basestring, (basestring, list, types.NoneType), (basestring, list, types.NoneType)]
 
   def export_getElementPolicies(self, element, name, statusType):
     """
@@ -295,8 +295,10 @@ class PublisherHandler(RequestHandler):
                                                           'Link', 'Description',
                                                           'Severity']})
 
-  types_getCachedDowntimes = [(basestring, NoneType, list), (basestring, NoneType, list), (basestring, NoneType, list),
-                              (basestring, NoneType, list)]
+  types_getCachedDowntimes = [(basestring, types.NoneType, list),
+                              (basestring, types.NoneType, list),
+                              (basestring, types.NoneType, list),
+                              (basestring, types.NoneType, list)]
 
   def export_getCachedDowntimes(self, element, elementType, name, severity):
 
@@ -352,48 +354,11 @@ class PublisherHandler(RequestHandler):
 
     return S_OK(reason)
 
-  types_getFreeDiskSpace = [(basestring, NoneType, list), (basestring, NoneType, list)]
+  types_getFreeDiskSpace = [(basestring, types.NoneType, list), (basestring, types.NoneType, list)]
 
   def export_getFreeDiskSpace(self, site, token):
     """ Exporting to web the
     """
 
-    endpoint2Site = {}
-
-    for seName in DMSHelpers().getStorageElements():
-      res = CSHelpers.getStorageElementEndpoint(seName)
-      if not res['OK']:
-        continue
-
-      if not res['Value'] in endpoint2Site:
-        endpoint2Site[res['Value']] = seName.split('-', 1)[0]
-
-    endpointSet = set()
-
-    if site:
-      if isinstance(site, basestring):
-        site = [site]
-
-      for ep, siteName in endpoint2Site.items():
-        if siteName in site:
-          endpointSet.add(ep)
-
-    if endpointSet:
-      endpoint = list(endpointSet)
-    else:
-      endpoint = None
-
-    res = rmClient.selectSpaceTokenOccupancyCache(endpoint=endpoint, token=token)
-    if not res['OK']:
-      return res
-
-    spList = [dict(zip(res['Columns'], sp)) for sp in res['Value']]
-
-    for spd in spList:
-
-      try:
-        spd['Site'] = endpoint2Site[spd['Endpoint']]
-      except KeyError:
-        spd['Site'] = 'Unknown'
-
-    return S_OK(spList)
+    # FIXME: TBD
+    return S_ERROR("Not implemented")

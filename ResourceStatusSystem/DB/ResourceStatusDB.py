@@ -45,10 +45,10 @@ TABLESLISTWITHID = ['SiteLog',
                     'NodeHistory']
 
 
-
 # Defining the tables
 
 rssBase = declarative_base()
+
 
 class ElementStatusBase(object):
   """ Prototype for tables
@@ -57,17 +57,17 @@ class ElementStatusBase(object):
   __table_args__ = {'mysql_engine': 'InnoDB',
                     'mysql_charset': 'utf8'}
 
-  name = Column( 'Name', String( 64 ), nullable = False, primary_key = True )
-  statustype = Column( 'StatusType', String( 128 ), nullable = False, server_default = 'all', primary_key = True )
-  status = Column( 'Status', String( 8 ), nullable = False, server_default = '' )
-  reason = Column( 'Reason', String( 512 ), nullable = False, server_default = 'Unspecified' )
-  dateeffective = Column( 'DateEffective', DateTime, nullable = False )
-  tokenexpiration = Column( 'TokenExpiration', DateTime, nullable = False , server_default = '9999-12-31 23:59:59' )
-  elementtype = Column( 'ElementType', String( 32 ), nullable = False, server_default = '' )
-  lastchecktime = Column( 'LastCheckTime', DateTime, nullable = False , server_default = '1000-01-01 00:00:00' )
-  tokenowner = Column( 'TokenOwner', String( 16 ), nullable = False , server_default = 'rs_svc')
+  name = Column('Name', String(64), nullable=False, primary_key=True)
+  statustype = Column('StatusType', String(128), nullable=False, server_default='all', primary_key=True)
+  status = Column('Status', String(8), nullable=False, server_default='')
+  reason = Column('Reason', String(512), nullable=False, server_default='Unspecified')
+  dateeffective = Column('DateEffective', DateTime, nullable=False)
+  tokenexpiration = Column('TokenExpiration', DateTime, nullable=False, server_default='9999-12-31 23:59:59')
+  elementtype = Column('ElementType', String(32), nullable=False, server_default='')
+  lastchecktime = Column('LastCheckTime', DateTime, nullable=False, server_default='1000-01-01 00:00:00')
+  tokenowner = Column('TokenOwner', String(16), nullable=False, server_default='rs_svc')
 
-  def fromDict( self, dictionary ):
+  def fromDict(self, dictionary):
     """
     Fill the fields of the AccountingCache object from a dictionary
 
@@ -75,23 +75,23 @@ class ElementStatusBase(object):
     :type arguments: dict
     """
 
-    utcnow = self.lastchecktime.replace(microsecond = 0) if self.lastchecktime\
-             else datetime.datetime.utcnow().replace(microsecond = 0)
+    utcnow = self.lastchecktime.replace(microsecond=0) if self.lastchecktime\
+        else datetime.datetime.utcnow().replace(microsecond=0)
 
-    self.name = dictionary.get( 'Name', self.name )
-    self.statustype = dictionary.get( 'StatusType', self.statustype )
-    self.status = dictionary.get( 'Status', self.status )
-    self.reason = dictionary.get( 'Reason', self.reason )
-    self.dateeffective = dictionary.get( 'DateEffective', self.dateeffective )
-    self.tokenexpiration = dictionary.get( 'TokenExpiration', self.tokenexpiration )
-    self.elementtype = dictionary.get( 'ElementType', self.elementtype )
-    self.lastchecktime = dictionary.get( 'LastCheckTime', utcnow )
-    self.tokenowner = dictionary.get( 'TokenOwner', self.tokenowner )
+    self.name = dictionary.get('Name', self.name)
+    self.statustype = dictionary.get('StatusType', self.statustype)
+    self.status = dictionary.get('Status', self.status)
+    self.reason = dictionary.get('Reason', self.reason)
+    self.dateeffective = dictionary.get('DateEffective', self.dateeffective)
+    self.tokenexpiration = dictionary.get('TokenExpiration', self.tokenexpiration)
+    self.elementtype = dictionary.get('ElementType', self.elementtype)
+    self.lastchecktime = dictionary.get('LastCheckTime', utcnow)
+    self.tokenowner = dictionary.get('TokenOwner', self.tokenowner)
 
     if self.dateeffective:
-      self.dateeffective = self.dateeffective.replace(microsecond = 0)
+      self.dateeffective = self.dateeffective.replace(microsecond=0)
     if self.tokenexpiration:
-      self.tokenexpiration = self.tokenexpiration.replace(microsecond = 0)
+      self.tokenexpiration = self.tokenexpiration.replace(microsecond=0)
 
   def toList(self):
     """ Simply returns a list of column values
@@ -109,18 +109,18 @@ class ElementStatusBaseWithID(ElementStatusBase):
       - the name and statusType components are not part of the primary key
   """
 
-  id = Column( 'ID', BigInteger, nullable = False, autoincrement= True, primary_key = True )
-  name = Column( 'Name', String( 64 ), nullable = False )
-  statustype = Column( 'StatusType', String( 128 ), nullable = False, server_default = 'all' )
-  status = Column( 'Status', String( 8 ), nullable = False, server_default = '' )
-  reason = Column( 'Reason', String( 512 ), nullable = False, server_default = 'Unspecified' )
-  dateeffective = Column( 'DateEffective', DateTime, nullable = False )
-  tokenexpiration = Column( 'TokenExpiration', DateTime, nullable = False , server_default = '9999-12-31 23:59:59' )
-  elementtype = Column( 'ElementType', String( 32 ), nullable = False, server_default = '' )
-  lastchecktime = Column( 'LastCheckTime', DateTime, nullable = False , server_default = '1000-01-01 00:00:00' )
-  tokenowner = Column( 'TokenOwner', String( 16 ), nullable = False , server_default = 'rs_svc')
+  id = Column('ID', BigInteger, nullable=False, autoincrement=True, primary_key=True)
+  name = Column('Name', String(64), nullable=False)
+  statustype = Column('StatusType', String(128), nullable=False, server_default='all')
+  status = Column('Status', String(8), nullable=False, server_default='')
+  reason = Column('Reason', String(512), nullable=False, server_default='Unspecified')
+  dateeffective = Column('DateEffective', DateTime, nullable=False)
+  tokenexpiration = Column('TokenExpiration', DateTime, nullable=False, server_default='9999-12-31 23:59:59')
+  elementtype = Column('ElementType', String(32), nullable=False, server_default='')
+  lastchecktime = Column('LastCheckTime', DateTime, nullable=False, server_default='1000-01-01 00:00:00')
+  tokenowner = Column('TokenOwner', String(16), nullable=False, server_default='rs_svc')
 
-  def fromDict( self, dictionary ):
+  def fromDict(self, dictionary):
     """
     Fill the fields of the AccountingCache object from a dictionary
 
@@ -128,7 +128,7 @@ class ElementStatusBaseWithID(ElementStatusBase):
     :type arguments: dict
     """
 
-    self.id = dictionary.get( 'ID', self.id )
+    self.id = dictionary.get('ID', self.id)
     super(ElementStatusBaseWithID, self).fromDict(dictionary)
 
   def toList(self):
@@ -139,7 +139,7 @@ class ElementStatusBaseWithID(ElementStatusBase):
             self.lastchecktime, self.tokenowner]
 
 
-### tables with schema defined in ElementStatusBase
+# tables with schema defined in ElementStatusBase
 
 class SiteStatus(ElementStatusBase, rssBase):
   """ SiteStatus table
@@ -147,11 +147,13 @@ class SiteStatus(ElementStatusBase, rssBase):
 
   __tablename__ = 'SiteStatus'
 
+
 class ResourceStatus(ElementStatusBase, rssBase):
   """ ResourceStatusDB table
   """
 
   __tablename__ = 'ResourceStatus'
+
 
 class NodeStatus(ElementStatusBase, rssBase):
   """ NodeStatus table
@@ -160,14 +162,14 @@ class NodeStatus(ElementStatusBase, rssBase):
   __tablename__ = 'NodeStatus'
 
 
-
-### tables with schema defined in ElementStatusBaseWithID
+# tables with schema defined in ElementStatusBaseWithID
 
 class SiteLog(ElementStatusBaseWithID, rssBase):
   """ SiteLog table
   """
 
   __tablename__ = 'SiteLog'
+
 
 class SiteHistory(ElementStatusBaseWithID, rssBase):
   """ SiteHistory table
@@ -181,6 +183,7 @@ class ResourceLog(ElementStatusBaseWithID, rssBase):
 
   __tablename__ = 'ResourceLog'
 
+
 class ResourceHistory(ElementStatusBaseWithID, rssBase):
   """ ResourceHistory table
   """
@@ -193,70 +196,68 @@ class NodeLog(ElementStatusBaseWithID, rssBase):
 
   __tablename__ = 'NodeLog'
 
+
 class NodeHistory(ElementStatusBaseWithID, rssBase):
   """ NodeHistory table
   """
   __tablename__ = 'NodeHistory'
 
 
+# Interaction with the DB
 
-
-### Interaction with the DB
-
-class ResourceStatusDB( object ):
+class ResourceStatusDB(object):
   '''
     Class that defines the interactions with the tables of the ResourceStatusDB.
   '''
 
-  def __init__( self ):
+  def __init__(self):
     """c'tor
 
     :param self: self reference
     """
 
-    self.log = gLogger.getSubLogger( 'ResourceStatusDB' )
+    self.log = gLogger.getSubLogger('ResourceStatusDB')
 
-    #These are the list of tables that will be created.
-    #They can be extended in an extension module
-    self.tablesList = getattr(Utils.voimport( 'DIRAC.ResourceStatusSystem.DB.ResourceStatusDB' ),
+    # These are the list of tables that will be created.
+    # They can be extended in an extension module
+    self.tablesList = getattr(Utils.voimport('DIRAC.ResourceStatusSystem.DB.ResourceStatusDB'),
                               'TABLESLIST')
-    self.tablesListWithID = getattr(Utils.voimport( 'DIRAC.ResourceStatusSystem.DB.ResourceStatusDB' ),
+    self.tablesListWithID = getattr(Utils.voimport('DIRAC.ResourceStatusSystem.DB.ResourceStatusDB'),
                                     'TABLESLISTWITHID')
 
-    self.extensions = gConfig.getValue( 'DIRAC/Extensions', [] )
-    self.__initializeConnection( 'ResourceStatus/ResourceStatusDB' )
+    self.extensions = gConfig.getValue('DIRAC/Extensions', [])
+    self.__initializeConnection('ResourceStatus/ResourceStatusDB')
     self.__initializeDB()
 
-  def __initializeConnection( self, dbPath ):
+  def __initializeConnection(self, dbPath):
     """ Collect from the CS all the info needed to connect to the DB.
     This should be in a base class eventually
     """
 
-    result = getDBParameters( dbPath )
-    if not result[ 'OK' ]:
-      raise Exception( 'Cannot get database parameters: %s' % result['Message'] )
+    result = getDBParameters(dbPath)
+    if not result['OK']:
+      raise Exception('Cannot get database parameters: %s' % result['Message'])
 
-    dbParameters = result[ 'Value' ]
+    dbParameters = result['Value']
     self.log.debug("db parameters: %s" % dbParameters)
-    self.host = dbParameters[ 'Host' ]
-    self.port = dbParameters[ 'Port' ]
-    self.user = dbParameters[ 'User' ]
-    self.password = dbParameters[ 'Password' ]
-    self.dbName = dbParameters[ 'DBName' ]
+    self.host = dbParameters['Host']
+    self.port = dbParameters['Port']
+    self.user = dbParameters['User']
+    self.password = dbParameters['Password']
+    self.dbName = dbParameters['DBName']
 
-    self.engine = create_engine( 'mysql://%s:%s@%s:%s/%s' % ( self.user,
-                                                              self.password,
-                                                              self.host,
-                                                              self.port,
-                                                              self.dbName ),
-                                 pool_recycle = 3600,
-                                 echo_pool = True,
-                                 echo = self.log.getLevel() == 'DEBUG')
-    self.sessionMaker_o = sessionmaker( bind = self.engine )
-    self.inspector = Inspector.from_engine( self.engine )
+    self.engine = create_engine('mysql://%s:%s@%s:%s/%s' % (self.user,
+                                                            self.password,
+                                                            self.host,
+                                                            self.port,
+                                                            self.dbName),
+                                pool_recycle=3600,
+                                echo_pool=True,
+                                echo=self.log.getLevel() == 'DEBUG')
+    self.sessionMaker_o = sessionmaker(bind=self.engine)
+    self.inspector = Inspector.from_engine(self.engine)
 
-
-  def __initializeDB( self ):
+  def __initializeDB(self):
     """
     Create the tables, if they are not there yet
     """
@@ -266,42 +267,68 @@ class ResourceStatusDB( object ):
     for table in self.tablesList:
       if table not in tablesInDB:
         found = False
-        #is it in the extension? (fully or extended)
-        for ext in gConfig.getValue( 'DIRAC/Extensions', [] ):
+        # is it in the extension? (fully or extended)
+        for ext in gConfig.getValue('DIRAC/Extensions', []):
           try:
-            getattr(__import__(ext + __name__, globals(), locals(), [table]), table).__table__.create( self.engine ) #pylint: disable=no-member
+            getattr(
+                __import__(
+                    ext + __name__,
+                    globals(),
+                    locals(),
+                    [table]),
+                table).__table__.create(
+                self.engine)  # pylint: disable=no-member
             found = True
             break
           except (ImportError, AttributeError):
             continue
         # If not found in extensions, import it from DIRAC base.
         if not found:
-          getattr(__import__(__name__, globals(), locals(), [table]), table).__table__.create( self.engine ) #pylint: disable=no-member
+          getattr(
+              __import__(
+                  __name__,
+                  globals(),
+                  locals(),
+                  [table]),
+              table).__table__.create(
+              self.engine)  # pylint: disable=no-member
       else:
         gLogger.debug("Table %s already exists" % table)
 
     for table in self.tablesListWithID:
       if table not in tablesInDB:
         found = False
-        #is it in the extension? (fully or extended)
-        for ext in gConfig.getValue( 'DIRAC/Extensions', [] ):
+        # is it in the extension? (fully or extended)
+        for ext in gConfig.getValue('DIRAC/Extensions', []):
           try:
-            getattr(__import__(ext + __name__, globals(), locals(), [table]), table).__table__.create( self.engine ) #pylint: disable=no-member
+            getattr(
+                __import__(
+                    ext + __name__,
+                    globals(),
+                    locals(),
+                    [table]),
+                table).__table__.create(
+                self.engine)  # pylint: disable=no-member
             found = True
             break
           except (ImportError, AttributeError):
             continue
         # If not found in extensions, import it from DIRAC base.
         if not found:
-          getattr(__import__(__name__, globals(), locals(), [table]), table).__table__.create( self.engine ) #pylint: disable=no-member
+          getattr(
+              __import__(
+                  __name__,
+                  globals(),
+                  locals(),
+                  [table]),
+              table).__table__.create(
+              self.engine)  # pylint: disable=no-member
       else:
         gLogger.debug("Table %s already exists" % table)
 
-
-
  # SQL Methods ###############################################################
 
-  def insert( self, table, params ):
+  def insert(self, table, params):
     '''
     Inserts params in the DB.
 
@@ -314,7 +341,7 @@ class ResourceStatusDB( object ):
     '''
 
     # expire_on_commit is set to False so that we can still use the object after we close the session
-    session = self.sessionMaker_o( expire_on_commit = False ) #FIXME: should we use this flag elsewhere?
+    session = self.sessionMaker_o(expire_on_commit=False)  # FIXME: should we use this flag elsewhere?
 
     found = False
     for ext in self.extensions:
@@ -329,7 +356,7 @@ class ResourceStatusDB( object ):
       tableRow_o = getattr(__import__(__name__, globals(), locals(), [table]), table)()
 
     if not params.get('DateEffective'):
-      params['DateEffective'] = datetime.datetime.utcnow().replace(microsecond = 0)
+      params['DateEffective'] = datetime.datetime.utcnow().replace(microsecond=0)
 
     tableRow_o.fromDict(params)
 
@@ -338,16 +365,16 @@ class ResourceStatusDB( object ):
       session.commit()
       return S_OK()
     except exc.IntegrityError as err:
-      self.log.warn("insert: trying to insert a duplicate key? %s" %err)
+      self.log.warn("insert: trying to insert a duplicate key? %s" % err)
       session.rollback()
     except exc.SQLAlchemyError as e:
       session.rollback()
-      self.log.exception( "insert: unexpected exception", lException = e )
-      return S_ERROR( "insert: unexpected exception %s" % e )
+      self.log.exception("insert: unexpected exception", lException=e)
+      return S_ERROR("insert: unexpected exception %s" % e)
     finally:
       session.close()
 
-  def select( self, table, params ):
+  def select(self, table, params):
     '''
     Uses params to build conditional SQL statement ( WHERE ... ).
 
@@ -383,15 +410,15 @@ class ResourceStatusDB( object ):
 
     try:
       # setting up the select query
-      if not columnNames: # query on the whole table
+      if not columnNames:  # query on the whole table
         wholeTable = True
-        columns = table_c.__table__.columns # retrieve the column names
+        columns = table_c.__table__.columns  # retrieve the column names
         columnNames = [str(column).split('.')[1] for column in columns]
-        select = Query(table_c, session = session)
-      else: # query only the selected columns
+        select = Query(table_c, session=session)
+      else:  # query only the selected columns
         wholeTable = False
         columns = [getattr(table_c, column) for column in columnNames]
-        select = Query(columns, session = session)
+        select = Query(columns, session=session)
 
       # query conditions
       for columnName, columnValue in params.iteritems():
@@ -403,7 +430,7 @@ class ResourceStatusDB( object ):
         elif isinstance(columnValue, (basestring, datetime.datetime, bool)):
           select = select.filter(column_a == columnValue)
         else:
-          self.log.error("type(columnValue) == %s" %type(columnValue))
+          self.log.error("type(columnValue) == %s" % type(columnValue))
       if older:
         column_a = getattr(table_c, older[0].lower())
         select = select.filter(column_a < older[1])
@@ -436,12 +463,12 @@ class ResourceStatusDB( object ):
 
     except exc.SQLAlchemyError as e:
       session.rollback()
-      self.log.exception( "select: unexpected exception", lException = e )
-      return S_ERROR( "select: unexpected exception %s" % e )
+      self.log.exception("select: unexpected exception", lException=e)
+      return S_ERROR("select: unexpected exception %s" % e)
     finally:
       session.close()
 
-  def delete( self, table, params ):
+  def delete(self, table, params):
     """
     :param table: table from where to delete
     :type table: str
@@ -471,17 +498,17 @@ class ResourceStatusDB( object ):
     params.pop('Meta', None)
 
     try:
-      deleteQuery = Query(table_c, session = session)
+      deleteQuery = Query(table_c, session=session)
       for columnName, columnValue in params.iteritems():
         if not columnValue:
           continue
         column_a = getattr(table_c, columnName.lower())
         if isinstance(columnValue, (list, tuple)):
           deleteQuery = deleteQuery.filter(column_a.in_(list(columnValue)))
-        elif isinstance(columnValue, (basestring, datetime.datetime, bool) ):
+        elif isinstance(columnValue, (basestring, datetime.datetime, bool)):
           deleteQuery = deleteQuery.filter(column_a == columnValue)
         else:
-          self.log.error("type(columnValue) == %s" %type(columnValue))
+          self.log.error("type(columnValue) == %s" % type(columnValue))
       if older:
         column_a = getattr(table_c, older[0].lower())
         deleteQuery = deleteQuery.filter(column_a < older[1])
@@ -498,21 +525,20 @@ class ResourceStatusDB( object ):
       if limit:
         deleteQuery = deleteQuery.limit(int(limit))
 
-      res = deleteQuery.delete(synchronize_session=False) #FIXME: unsure about it
+      res = deleteQuery.delete(synchronize_session=False)  # FIXME: unsure about it
       session.commit()
       return S_OK(res)
 
-
     except exc.SQLAlchemyError as e:
       session.rollback()
-      self.log.exception( "delete: unexpected exception", lException = e )
-      return S_ERROR( "delete: unexpected exception %s" % e )
+      self.log.exception("delete: unexpected exception", lException=e)
+      return S_ERROR("delete: unexpected exception %s" % e)
     finally:
       session.close()
 
   ## Extended SQL methods ######################################################
 
-  def addOrModify( self, table, params ):
+  def addOrModify(self, table, params):
     '''
     Using the PrimaryKeys of the table, it looks for the record in the database.
     If it is there, it is updated, if not, it is inserted as a new entry.
@@ -540,7 +566,7 @@ class ResourceStatusDB( object ):
     primaryKeys = [key.name for key in class_mapper(table_c).primary_key]
 
     try:
-      select = Query(table_c, session = session)
+      select = Query(table_c, session=session)
       for columnName, columnValue in params.iteritems():
         if not columnValue or columnName not in primaryKeys:
           continue
@@ -550,12 +576,11 @@ class ResourceStatusDB( object ):
         elif isinstance(columnValue, basestring):
           select = select.filter(column_a == columnValue)
         else:
-          self.log.error("type(columnValue) == %s" %type(columnValue))
+          self.log.error("type(columnValue) == %s" % type(columnValue))
 
-      res = select.first() # the selection is done via primaryKeys only
-      if not res: # if not there, let's insert it (and exit)
+      res = select.first()  # the selection is done via primaryKeys only
+      if not res:  # if not there, let's insert it (and exit)
         return self.insert(table, params)
-
 
       # From now on, we assume we need to modify
 
@@ -568,17 +593,17 @@ class ResourceStatusDB( object ):
       # Should we change DateEffective?
       changeDE = False
       if params.get('Status'):
-        if params.get('Status') != res.status: # we update dateEffective iff we change the status
+        if params.get('Status') != res.status:  # we update dateEffective iff we change the status
           changeDE = True
 
       for columnName, columnValue in params.iteritems():
-        if columnName == 'LastCheckTime' and not columnValue: # we always update lastCheckTime
-          columnValue = datetime.datetime.utcnow().replace(microsecond = 0)
+        if columnName == 'LastCheckTime' and not columnValue:  # we always update lastCheckTime
+          columnValue = datetime.datetime.utcnow().replace(microsecond=0)
         if changeDE and columnName == 'DateEffective' and not columnValue:
-          columnValue = datetime.datetime.utcnow().replace(microsecond = 0)
+          columnValue = datetime.datetime.utcnow().replace(microsecond=0)
         if columnValue:
           if isinstance(columnValue, datetime.datetime):
-            columnValue = columnValue.replace(microsecond = 0)
+            columnValue = columnValue.replace(microsecond=0)
           setattr(res, columnName.lower(), columnValue)
       session.commit()
 
@@ -588,13 +613,12 @@ class ResourceStatusDB( object ):
 
     except exc.SQLAlchemyError as e:
       session.rollback()
-      self.log.exception( "addOrModify: unexpected exception", lException = e )
-      return S_ERROR( "addOrModify: unexpected exception %s" % e )
+      self.log.exception("addOrModify: unexpected exception", lException=e)
+      return S_ERROR("addOrModify: unexpected exception %s" % e)
     finally:
       session.close()
 
-
-  def addIfNotThere( self, table, params ):
+  def addIfNotThere(self, table, params):
     '''
     Using the PrimaryKeys of the table, it looks for the record in the database.
     If it is not there, it is inserted as a new entry.
@@ -612,7 +636,7 @@ class ResourceStatusDB( object ):
     primaryKeys = [key.name for key in class_mapper(table_c).primary_key]
 
     try:
-      select = Query(table_c, session = session)
+      select = Query(table_c, session=session)
       for columnName, columnValue in params.iteritems():
         if not columnValue or columnName not in primaryKeys:
           continue
@@ -622,10 +646,10 @@ class ResourceStatusDB( object ):
         elif isinstance(columnValue, basestring):
           select = select.filter(column_a == columnValue)
         else:
-          self.log.error("type(columnValue) == %s" %type(columnValue))
+          self.log.error("type(columnValue) == %s" % type(columnValue))
 
-      res = select.first() # the selection is done via primaryKeys only
-      if not res: # if not there, let's insert it
+      res = select.first()  # the selection is done via primaryKeys only
+      if not res:  # if not there, let's insert it
         return self.insert(table, params)
 
       session.commit()
@@ -633,10 +657,10 @@ class ResourceStatusDB( object ):
 
     except exc.SQLAlchemyError as e:
       session.rollback()
-      self.log.exception( "addIfNotThere: unexpected exception", lException = e )
-      return S_ERROR( "addIfNotThere: unexpected exception %s" % e )
+      self.log.exception("addIfNotThere: unexpected exception", lException=e)
+      return S_ERROR("addIfNotThere: unexpected exception %s" % e)
     finally:
       session.close()
 
 ################################################################################
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
+# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

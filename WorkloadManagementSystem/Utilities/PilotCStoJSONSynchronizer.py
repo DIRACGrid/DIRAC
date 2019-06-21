@@ -19,7 +19,7 @@ import requests
 from git import Repo
 
 from DIRAC import gLogger, S_OK, gConfig, S_ERROR
-from DIRAC.Core.Security.Locations import getHostCertificateAndKeyLocation
+from DIRAC.Core.Security.Locations import getHostCertificateAndKeyLocation, getCAsLocation
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 
@@ -54,6 +54,9 @@ class PilotCStoJSONSynchronizer(object):
     self.pilotVersion = ''
     self.pilotVOVersion = ''
     self.certAndKeyLocation = getHostCertificateAndKeyLocation()
+    self.casLocation = getCAsLocation()
+
+    self.log = gLogger.getSubLogger(__name__)
 
   def sync(self):
     """ Main synchronizer method.
@@ -62,11 +65,12 @@ class PilotCStoJSONSynchronizer(object):
 
     self.pilotFileServer = ops.getValue("Pilot/pilotFileServer", self.pilotFileServer)
     if not self.pilotFileServer:
-      gLogger.warn("The /Operations/<Setup>/Pilot/pilotFileServer option is not defined")
-      gLogger.warn("Pilot 3 files won't be updated, and you won't be able to use Pilot 3")
-      gLogger.warn("The Synchronization steps are anyway displayed")
+      self.log.warn("The /Operations/<Setup>/Pilot/pilotFileServer option is not defined")
+      self.log.warn("Pilot 3 files won't be updated, and you won't be able to use Pilot 3")
+      self.log.warn("The Synchronization steps are anyway displayed")
 
-    gLogger.notice('-- Synchronizing the content of the JSON file %s with the content of the CS --' % self.jsonFile)
+    self.log.notice('-- Synchronizing the content of the JSON file with the content of the CS --',
+                    '(%s)' % self.jsonFile)
 
     self.pilotRepo = ops.getValue("Pilot/pilotRepo", self.pilotRepo)
     self.pilotVORepo = ops.getValue("Pilot/pilotVORepo", self.pilotVORepo)
@@ -76,10 +80,11 @@ class PilotCStoJSONSynchronizer(object):
 
     result = self._syncJSONFile()
     if not result['OK']:
-      gLogger.error("Error uploading the pilot file: %s" % result['Message'])
+      self.log.error("Error uploading the pilot file", result['Message'])
       return result
 
-    gLogger.notice('-- Synchronizing the pilot scripts %s with the content of the repository --' % self.pilotRepo)
+    self.log.notice('-- Synchronizing the pilot scripts with the content of the repository --',
+                    '(%s)' % self.pilotRepo)
 
     self._syncScripts()
 
@@ -92,7 +97,7 @@ class PilotCStoJSONSynchronizer(object):
 
     result = self._upload(pilotDict=pilotDict)
     if not result['OK']:
-      gLogger.error("Error uploading the pilot file: %s" % result['Message'])
+      self.log.error("Error uploading the pilot file", result['Message'])
       return result
     return S_OK()
 
@@ -104,50 +109,54 @@ class PilotCStoJSONSynchronizer(object):
 
     pilotDict = {'Setups': {}, 'CEs': {}, 'GenericPilotDNs': []}
 
-    gLogger.info('-- Getting the content of the CS --')
+    self.log.info('-- Getting the content of the CS --')
 
     # These are in fact not only setups: they may be "Defaults" sections, or VOs, in multi-VOs installations
-    setups = gConfig.getSections('/Operations/')
-    if not setups['OK']:
-      gLogger.error(setups['Message'])
-      return setups
-    setups = setups['Value']
+    setupsRes = gConfig.getSections('/Operations/')
+    if not setupsRes['OK']:
+      self.log.error("Can't get sections from Operations", setupsRes['Message'])
+      return setupsRes
+    setupsInOperations = setupsRes['Value']
 
-    try:
-      setups.remove('SoftwareDistribution')  # TODO: remove this section
-    except (AttributeError, ValueError):
-      pass
+    # getting the setup(s) in this CS, and comparing with what we found in Operations
+    setupsInDIRACRes = gConfig.getSections('DIRAC/Setups')
+    if not setupsInDIRACRes['OK']:
+      self.log.error("Can't get sections from DIRAC/Setups", setupsInDIRACRes['Message'])
+      return setupsInDIRACRes
+    setupsInDIRAC = setupsInDIRACRes['Value']
 
-    # Something inside? (for multi-VO setups)
-    for vo in setups:
-      setupsFromVOs = gConfig.getSections('/Operations/%s' % vo)
-      if not setupsFromVOs['OK']:
-        continue
-      else:
-        setups.append("%s/%s" % (vo, setupsFromVOs))
+    # Handling the case of multi-VO CS
+    if not set(setupsInDIRAC).intersection(set(setupsInOperations)):
+      vos = list(setupsInOperations)
+      for vo in vos:
+        setupsFromVOs = gConfig.getSections('/Operations/%s' % vo)
+        if not setupsFromVOs['OK']:
+          continue
+        else:
+          setupsInOperations = setupsFromVOs['Value']
 
-    gLogger.verbose('From Operations/[Setup]/Pilot')
+    self.log.verbose('From Operations/[Setup]/Pilot')
 
-    for setup in setups:
+    for setup in setupsInOperations:
       self._getPilotOptionsPerSetup(setup, pilotDict)
 
-    gLogger.verbose('From Resources/Sites')
+    self.log.verbose('From Resources/Sites')
     sitesSection = gConfig.getSections('/Resources/Sites/')
     if not sitesSection['OK']:
-      gLogger.error(sitesSection['Message'])
+      self.log.error("Can't get sections from Resources", sitesSection['Message'])
       return sitesSection
 
     for grid in sitesSection['Value']:
       gridSection = gConfig.getSections('/Resources/Sites/' + grid)
       if not gridSection['OK']:
-        gLogger.error(gridSection['Message'])
+        self.log.error("Can't get sections from Resources", gridSection['Message'])
         return gridSection
 
       for site in gridSection['Value']:
         ceList = gConfig.getSections('/Resources/Sites/' + grid + '/' + site + '/CEs/')
         if not ceList['OK']:
           # Skip but log it
-          gLogger.error('Site ' + site + ' has no CEs! - skipping')
+          self.log.error('Site has no CEs! - skipping', site)
           continue
 
         for ce in ceList['Value']:
@@ -155,7 +164,7 @@ class PilotCStoJSONSynchronizer(object):
 
           if ceType is None:
             # Skip but log it
-            gLogger.error('CE ' + ce + ' at ' + site + ' has no option CEType! - skipping')
+            self.log.error('CE has no option CEType! - skipping', ce + ' at ' + site)
           else:
             pilotDict['CEs'][ce] = {'Site': site, 'GridCEType': ceType}
 
@@ -163,10 +172,10 @@ class PilotCStoJSONSynchronizer(object):
     if defaultSetup:
       pilotDict['DefaultSetup'] = defaultSetup
 
-    gLogger.verbose('From DIRAC/Configuration')
+    self.log.debug('From DIRAC/Configuration')
     pilotDict['ConfigurationServers'] = gConfig.getServersList()
 
-    gLogger.verbose("Got %s" % str(pilotDict))
+    self.log.debug("Got pilotDict", str(pilotDict))
 
     return pilotDict
 
@@ -176,7 +185,8 @@ class PilotCStoJSONSynchronizer(object):
 
     options = gConfig.getOptionsDict('/Operations/%s/Pilot' % setup)
     if not options['OK']:
-      gLogger.warn("Section /Operations/%s/Pilot does not exist: skipping" % setup)
+      self.log.warn("Section does not exist: skipping",
+                    "/Operations/%s/Pilot " % setup)
       return
 
     # We include everything that's in the Pilot section for this setup
@@ -207,7 +217,7 @@ class PilotCStoJSONSynchronizer(object):
       loggingMQService = gConfig.getOptionsDict('/Resources/MQServices/%s'
                                                 % pilotDict['Setups'][setup]['LoggingMQService'])
       if not loggingMQService['OK']:
-        gLogger.error(loggingMQService['Message'])
+        self.log.error(loggingMQService['Message'])
         return loggingMQService
       pilotDict['Setups'][setup]['Logging'] = {}
       pilotDict['Setups'][setup]['Logging']['Host'] = loggingMQService['Value']['Host']
@@ -216,7 +226,7 @@ class PilotCStoJSONSynchronizer(object):
       loggingMQServiceQueuesSections = gConfig.getSections('/Resources/MQServices/%s/Queues'
                                                            % pilotDict['Setups'][setup]['LoggingMQService'])
       if not loggingMQServiceQueuesSections['OK']:
-        gLogger.error(loggingMQServiceQueuesSections['Message'])
+        self.log.error(loggingMQServiceQueuesSections['Message'])
         return loggingMQServiceQueuesSections
       pilotDict['Setups'][setup]['Logging']['Queue'] = {}
 
@@ -224,7 +234,7 @@ class PilotCStoJSONSynchronizer(object):
         loggingMQServiceQueue = gConfig.getOptionsDict('/Resources/MQServices/%s/Queues/%s'
                                                        % (pilotDict['Setups'][setup]['LoggingMQService'], queue))
         if not loggingMQServiceQueue['OK']:
-          gLogger.error(loggingMQServiceQueue['Message'])
+          self.log.error(loggingMQServiceQueue['Message'])
           return loggingMQServiceQueue
         pilotDict['Setups'][setup]['Logging']['Queue'][queue] = loggingMQServiceQueue['Value']
 
@@ -245,7 +255,7 @@ class PilotCStoJSONSynchronizer(object):
   def _syncScripts(self):
     """Clone the pilot scripts from the repository and upload them to the web server
     """
-    gLogger.info('-- Uploading the pilot scripts --')
+    self.log.info('-- Uploading the pilot scripts --')
 
     tarFiles = []
 
@@ -266,10 +276,10 @@ class PilotCStoJSONSynchronizer(object):
       for fileVO in glob.glob(scriptDir):
         result = self._upload(filename=os.path.basename(fileVO), pilotScript=fileVO)
         if not result['OK']:
-          gLogger.error("Error uploading the VO pilot script: %s" % result['Message'])
+          self.log.error("Error uploading the VO pilot script", result['Message'])
         tarFiles.append(fileVO)
     else:
-      gLogger.warn("The /Operations/<Setup>/Pilot/pilotVORepo option is not defined")
+      self.log.warn("The /Operations/<Setup>/Pilot/pilotVORepo option is not defined")
 
     # DIRAC repo
     if os.path.isdir('pilotLocalRepo'):
@@ -298,7 +308,7 @@ class PilotCStoJSONSynchronizer(object):
         result = self._upload(filename=os.path.basename(filename),
                               pilotScript=filename)
         if not result['OK']:
-          gLogger.error("Error uploading the pilot script: %s" % result['Message'])
+          self.log.error("Error uploading the pilot script", result['Message'])
         tarFiles.append(filename)
       if not os.path.isfile(os.path.join('pilotLocalRepo',
                                          self.pilotScriptPath,
@@ -306,7 +316,7 @@ class PilotCStoJSONSynchronizer(object):
         result = self._upload(filename='dirac-install.py',
                               pilotScript=os.path.join('pilotLocalRepo', "Core/scripts/dirac-install.py"))
         if not result['OK']:
-          gLogger.error("Error uploading dirac-install.py: %s" % result['Message'])
+          self.log.error("Error uploading dirac-install.py", result['Message'])
         tarFiles.append('dirac-install.py')
 
       with tarfile.TarFile(name='pilot.tar', mode='w') as tf:
@@ -318,11 +328,11 @@ class PilotCStoJSONSynchronizer(object):
       result = self._upload(filename='pilot.tar',
                             pilotScript='pilot.tar')
       if not result['OK']:
-        gLogger.error("Error uploading pilot.tar: %s" % result['Message'])
+        self.log.error("Error uploading pilot.tar", result['Message'])
         return result
 
     except ValueError:
-      gLogger.error("Error uploading the pilot scripts: %s" % result['Message'])
+      self.log.error("Error uploading the pilot scripts", result['Message'])
       return result
     return S_OK()
 
@@ -341,7 +351,7 @@ class PilotCStoJSONSynchronizer(object):
 
     if pilotDict:  # this is for the pilot.json file
       if not self.pilotFileServer:
-        gLogger.warn("NOT uploading the pilot JSON file, just printing it out")
+        self.log.warn("NOT uploading the pilot JSON file, just printing it out")
         print(json.dumps(pilotDict, indent=4, sort_keys=True))  # just print here as formatting is important
         return S_OK()
 
@@ -349,7 +359,7 @@ class PilotCStoJSONSynchronizer(object):
 
     else:  # we assume the method is asked to upload the pilots scripts
       if not self.pilotFileServer:
-        gLogger.warn("NOT uploading %s" % filename)
+        self.log.warn("NOT uploading", filename)
         return S_OK()
 
       # ALWAYS open binary when sending a file
@@ -359,10 +369,11 @@ class PilotCStoJSONSynchronizer(object):
 
     resp = requests.post('https://%s/DIRAC/upload' % self.pilotFileServer,
                          data=data,
+                         verify=self.casLocation,
                          cert=self.certAndKeyLocation)
 
     if resp.status_code != 200:
       return S_ERROR(resp.text)
     else:
-      gLogger.info('-- File and scripts upload done --')
+      self.log.info('-- File and scripts upload done --')
       return S_OK()

@@ -6,7 +6,7 @@
 
 __RCSID__ = '$Id$'
 
-from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.Core.Base.Client import Client
 
 
 def uppercase_first_letter(key):
@@ -15,36 +15,21 @@ def uppercase_first_letter(key):
   return key[0].upper() + key[1:]
 
 
-class ResourceManagementClient(object):
+class ResourceManagementClient(Client):
   """
   The :class:`ResourceManagementClient` class exposes the :mod:`DIRAC.ResourceManagement`
   API. All functions you need are on this client.
-
-  It has the 'direct-db-access' functions, the ones of the type:
-   - insert
-   - update
-   - select
-   - delete
-
-  that return parts of the RSSConfiguration stored on the CS, and used everywhere
-  on the RSS module. Finally, and probably more interesting, it exposes a set
-  of functions, badly called 'boosters'. They are 'home made' functions using the
-  basic database functions that are interesting enough to be exposed.
-
-  The client will ALWAYS try to connect to the DB, and in case of failure, to the
-  XML-RPC server ( namely :mod:`~DIRAC.ResourceStatusSystem.DB.ResourceManagementDB` and
-  :mod:`~DIRAC.ResourceStatusSystem.Service.ResourceManagementHandler` ).
-
 
   You can use this client on this way
 
    >>> from DIRAC.ResourceManagementSystem.Client.ResourceManagementClient import ResourceManagementClient
    >>> rsClient = ResourceManagementClient()
-
-  All functions calling methods exposed on the database or on the booster are
-  making use of some syntactic sugar, in this case a decorator that simplifies
-  the client considerably.
   """
+
+  def __init__(self, **kwargs):
+
+    super(ResourceManagementClient, self).__init__(**kwargs)
+    self.setServer('ResourceStatus/ResourceManagement')
 
   def _prepare(self, sendDict):
 
@@ -83,7 +68,7 @@ class ResourceManagementClient(object):
     :return: S_OK() || S_ERROR()
     '''
 
-    return RPCClient("ResourceStatus/ResourceManagement").select('AccountingCache', self._prepare(locals()))
+    return self._getRPC().select('AccountingCache', self._prepare(locals()))
 
   def addOrModifyAccountingCache(self, name=None, plotType=None, plotName=None,
                                  result=None, dateEffective=None, lastCheckTime=None):
@@ -101,7 +86,7 @@ class ResourceManagementClient(object):
     :return: S_OK() || S_ERROR()
     '''
 
-    return RPCClient("ResourceStatus/ResourceManagement").addOrModify('AccountingCache', self._prepare(locals()))
+    return self._getRPC().addOrModify('AccountingCache', self._prepare(locals()))
 
   def deleteAccountingCache(self, name=None, plotType=None, plotName=None,
                             result=None, dateEffective=None, lastCheckTime=None):
@@ -117,7 +102,7 @@ class ResourceManagementClient(object):
     :return: S_OK() || S_ERROR()
     '''
 
-    return RPCClient("ResourceStatus/ResourceManagement").delete('AccountingCache', self._prepare(locals()))
+    return self._getRPC().delete('AccountingCache', self._prepare(locals()))
 
   # GGUSTicketsCache Methods ...................................................
 
@@ -136,7 +121,7 @@ class ResourceManagementClient(object):
     :return: S_OK() || S_ERROR()
     '''
 
-    return RPCClient("ResourceStatus/ResourceManagement").select('GGUSTicketsCache', self._prepare(locals()))
+    return self._getRPC().select('GGUSTicketsCache', self._prepare(locals()))
 
   def deleteGGUSTicketsCache(self, gocSite=None, link=None, openTickets=None,
                              tickets=None, lastCheckTime=None):
@@ -151,7 +136,7 @@ class ResourceManagementClient(object):
     :return: S_OK() || S_ERROR()
     '''
 
-    return RPCClient("ResourceStatus/ResourceManagement").delete('GGUSTicketsCache', self._prepare(locals()))
+    return self._getRPC().delete('GGUSTicketsCache', self._prepare(locals()))
 
   def addOrModifyGGUSTicketsCache(self, gocSite=None, link=None, openTickets=None,
                                   tickets=None, lastCheckTime=None):
@@ -166,7 +151,7 @@ class ResourceManagementClient(object):
     :return: S_OK() || S_ERROR()
     '''
 
-    return RPCClient("ResourceStatus/ResourceManagement").addOrModify('GGUSTicketsCache', self._prepare(locals()))
+    return self._getRPC().addOrModify('GGUSTicketsCache', self._prepare(locals()))
 
   # DowntimeCache Methods ......................................................
 
@@ -204,7 +189,7 @@ class ResourceManagementClient(object):
     :return: S_OK() || S_ERROR()
     '''
 
-    return RPCClient("ResourceStatus/ResourceManagement").select('DowntimeCache', self._prepare(locals()))
+    return self._getRPC().select('DowntimeCache', self._prepare(locals()))
 
   def deleteDowntimeCache(self, downtimeID=None, element=None, name=None,
                           startDate=None, endDate=None, severity=None,
@@ -237,7 +222,7 @@ class ResourceManagementClient(object):
     :return: S_OK() || S_ERROR()
     '''
 
-    return RPCClient("ResourceStatus/ResourceManagement").delete('DowntimeCache', self._prepare(locals()))
+    return self._getRPC().delete('DowntimeCache', self._prepare(locals()))
 
   def addOrModifyDowntimeCache(self, downtimeID=None, element=None, name=None,
                                startDate=None, endDate=None, severity=None,
@@ -261,7 +246,7 @@ class ResourceManagementClient(object):
     :return: S_OK() || S_ERROR()
     '''
 
-    return RPCClient("ResourceStatus/ResourceManagement").addOrModify('DowntimeCache', self._prepare(locals()))
+    return self._getRPC().addOrModify('DowntimeCache', self._prepare(locals()))
 
   # JobCache Methods ...........................................................
 
@@ -285,7 +270,7 @@ class ResourceManagementClient(object):
     :return: S_OK() || S_ERROR()
     '''
 
-    return RPCClient("ResourceStatus/ResourceManagement").select('JobCache', self._prepare(locals()))
+    return self._getRPC().select('JobCache', self._prepare(locals()))
 
   def deleteJobCache(self, site=None, maskStatus=None, efficiency=None,
                      status=None, lastCheckTime=None):
@@ -305,7 +290,7 @@ class ResourceManagementClient(object):
     :return: S_OK() || S_ERROR()
     '''
 
-    return RPCClient("ResourceStatus/ResourceManagement").delete('JobCache', self._prepare(locals()))
+    return self._getRPC().delete('JobCache', self._prepare(locals()))
 
   def addOrModifyJobCache(self, site=None, maskStatus=None, efficiency=None,
                           status=None, lastCheckTime=None):
@@ -326,7 +311,7 @@ class ResourceManagementClient(object):
     :return: S_OK() || S_ERROR()
     '''
 
-    return RPCClient("ResourceStatus/ResourceManagement").addOrModify('JobCache', self._prepare(locals()))
+    return self._getRPC().addOrModify('JobCache', self._prepare(locals()))
 
   # TransferCache Methods ......................................................
 
@@ -350,7 +335,7 @@ class ResourceManagementClient(object):
     :return: S_OK() || S_ERROR()
     '''
 
-    return RPCClient("ResourceStatus/ResourceManagement").select('TransferCache', self._prepare(locals()))
+    return self._getRPC().select('TransferCache', self._prepare(locals()))
 
   def deleteTransferCache(self, sourceName=None, destinationName=None, metric=None,
                           value=None, lastCheckTime=None):
@@ -370,7 +355,7 @@ class ResourceManagementClient(object):
     :return: S_OK() || S_ERROR()
     '''
 
-    return RPCClient("ResourceStatus/ResourceManagement").delete('TransferCache', self._prepare(locals()))
+    return self._getRPC().delete('TransferCache', self._prepare(locals()))
 
   def addOrModifyTransferCache(self, sourceName=None, destinationName=None, metric=None,
                                value=None, lastCheckTime=None):
@@ -386,7 +371,7 @@ class ResourceManagementClient(object):
     :return: S_OK() || S_ERROR()
     '''
 
-    return RPCClient("ResourceStatus/ResourceManagement").addOrModify('TransferCache', self._prepare(locals()))
+    return self._getRPC().addOrModify('TransferCache', self._prepare(locals()))
 
   # PilotCache Methods .........................................................
 
@@ -412,7 +397,7 @@ class ResourceManagementClient(object):
     :return: S_OK() || S_ERROR()
     '''
 
-    return RPCClient("ResourceStatus/ResourceManagement").select('PilotCache', self._prepare(locals()))
+    return self._getRPC().select('PilotCache', self._prepare(locals()))
 
   def deletePilotCache(self, site=None, cE=None, pilotsPerJob=None,
                        pilotJobEff=None, status=None, lastCheckTime=None):
@@ -434,7 +419,7 @@ class ResourceManagementClient(object):
     :return: S_OK() || S_ERROR()
     '''
 
-    return RPCClient("ResourceStatus/ResourceManagement").delete('PilotCache', self._prepare(locals()))
+    return self._getRPC().delete('PilotCache', self._prepare(locals()))
 
   def addOrModifyPilotCache(self, site=None, cE=None, pilotsPerJob=None,
                             pilotJobEff=None, status=None, lastCheckTime=None):
@@ -451,7 +436,7 @@ class ResourceManagementClient(object):
     :return: S_OK() || S_ERROR()
     '''
 
-    return RPCClient("ResourceStatus/ResourceManagement").addOrModify('PilotCache', self._prepare(locals()))
+    return self._getRPC().addOrModify('PilotCache', self._prepare(locals()))
 
   # PolicyResult Methods .......................................................
 
@@ -482,7 +467,7 @@ class ResourceManagementClient(object):
     :return: S_OK() || S_ERROR()
     '''
 
-    return RPCClient("ResourceStatus/ResourceManagement").select('PolicyResult', self._prepare(locals()))
+    return self._getRPC().select('PolicyResult', self._prepare(locals()))
 
   def deletePolicyResult(self, element=None, name=None, policyName=None,
                          statusType=None, status=None, reason=None,
@@ -509,7 +494,7 @@ class ResourceManagementClient(object):
     :return: S_OK() || S_ERROR()
     '''
 
-    return RPCClient("ResourceStatus/ResourceManagement").delete('PolicyResult', self._prepare(locals()))
+    return self._getRPC().delete('PolicyResult', self._prepare(locals()))
 
   def addOrModifyPolicyResult(self, element=None, name=None, policyName=None,
                               statusType=None, status=None, reason=None,
@@ -531,7 +516,7 @@ class ResourceManagementClient(object):
     :return: S_OK() || S_ERROR()
     '''
 
-    return RPCClient("ResourceStatus/ResourceManagement").addOrModify('PolicyResult', self._prepare(locals()))
+    return self._getRPC().addOrModify('PolicyResult', self._prepare(locals()))
 
   # SpaceTokenOccupancyCache Methods ...........................................
 
@@ -541,7 +526,7 @@ class ResourceManagementClient(object):
     '''
     Gets from SpaceTokenOccupancyCache all rows that match the parameters given.
 
-    :param endpoint: srm endpoint
+    :param endpoint: endpoint
     :type endpoint: string, list
     :param token: name of the token
     :type token: string, list
@@ -558,7 +543,7 @@ class ResourceManagementClient(object):
     :return: S_OK() || S_ERROR()
     '''
 
-    return RPCClient("ResourceStatus/ResourceManagement").select('SpaceTokenOccupancyCache', self._prepare(locals()))
+    return self._getRPC().select('SpaceTokenOccupancyCache', self._prepare(locals()))
 
   def deleteSpaceTokenOccupancyCache(self, endpoint=None, token=None,
                                      total=None, guaranteed=None, free=None,
@@ -566,7 +551,7 @@ class ResourceManagementClient(object):
     '''
     Deletes from SpaceTokenOccupancyCache all rows that match the parameters given.
 
-    :param endpoint: srm endpoint
+    :param endpoint: endpoint
     :type endpoint: string, list
     :param token: name of the token
     :type token: string, list
@@ -581,7 +566,7 @@ class ResourceManagementClient(object):
     :return: S_OK() || S_ERROR()
     '''
 
-    return RPCClient("ResourceStatus/ResourceManagement").delete('SpaceTokenOccupancyCache', self._prepare(locals()))
+    return self._getRPC().delete('SpaceTokenOccupancyCache', self._prepare(locals()))
 
   def addOrModifySpaceTokenOccupancyCache(self, endpoint=None, token=None,
                                           total=None, guaranteed=None, free=None,
@@ -590,7 +575,7 @@ class ResourceManagementClient(object):
     Adds or updates-if-duplicated to SpaceTokenOccupancyCache. Using `site` and `token`
     to query the database, decides whether to insert or update the table.
 
-    :param endpoint: srm endpoint
+    :param endpoint: endpoint
     :type endpoint: string, list
     :param str token: name of the token
     :param int total: total terabytes
@@ -600,7 +585,7 @@ class ResourceManagementClient(object):
     :return: S_OK() || S_ERROR()
     '''
 
-    return RPCClient("ResourceStatus/ResourceManagement").addOrModify('SpaceTokenOccupancyCache',
-                                                                      self._prepare(locals()))
+    return self._getRPC().addOrModify('SpaceTokenOccupancyCache',
+                                      self._prepare(locals()))
 
 # EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

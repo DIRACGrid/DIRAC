@@ -319,21 +319,13 @@ class DatasetManager( object ):
       path = findMetaQuery['Path']
       findMetaQuery.pop( 'Path' )
 
-    result = self.db.fmeta.findFilesByMetadata( findMetaQuery, path, credDict, extra=True )
+    result = self.db.fmeta.findFilesByMetadata(findMetaQuery, path, credDict)
     if not result['OK']:
       return S_ERROR( 'Failed to apply the metaQuery' )
-    if isinstance( result['Value'], list ):
-      lfnList = result['Value']
-    elif isinstance( result['Value'], dict ):
-      # Process into the lfn list
-      lfnList = []
-      for dir_,fList in result['Value'].items():
-        for f in fList:
-          lfnList.append(dir_+'/'+f)
-    lfnIDDict = result.get( 'LFNIDDict', {} )
-    lfnIDList = result.get( 'LFNIDList', [] )
-    if not lfnIDList:
-      lfnIDList = lfnIDDict.keys()
+
+    idLfnDict = result['Value']
+    lfnIDList = idLfnDict.keys()
+    lfnList = idLfnDict.values()
     lfnList.sort()
     myMd5 = hashlib.md5()
     myMd5.update( str( lfnList ) )

@@ -19,6 +19,7 @@ from functools import reduce
 from DIRAC import gLogger, gConfig, siteName
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.File import convertSizeUnits
+from DIRAC.Core.Utilities.List import getIndexInList
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR, returnSingleResult
 from DIRAC.Resources.Storage.StorageFactory import StorageFactory
 from DIRAC.Core.Utilities.Pfn import pfnparse
@@ -59,6 +60,10 @@ class StorageElementCache(object):
     # In practice, there should almost always be one, except for the REA
     # If we see its memory consumtpion exploding, this might be a place to look
     proxyLoc = getProxyLocation()
+
+    # ensure plugins is hashable! (tuple)
+    if isinstance(plugins, list):
+      plugins = tuple(plugins)
 
     argTuple = (tId, name, plugins, vo, proxyLoc)
     seObj = self.seCache.get(argTuple)
@@ -160,6 +165,9 @@ class StorageElementItem(object):
 
     self.methodName = None
 
+    if plugins is None:
+      plugins = []
+
     if vo:
       self.vo = vo
     else:
@@ -182,20 +190,10 @@ class StorageElementItem(object):
       self.useProxy = self.opHelper.getValue('/Services/StorageElements/%s/UseProxy' % name, False)
 
     self.valid = True
-    if plugins is None:
-      res = StorageFactory(
-          useProxy=self.useProxy,
-          vo=self.vo).getStorages(
-              name,
-              pluginList=[],
-              hideExceptions=hideExceptions)
-    else:
-      res = StorageFactory(
-          useProxy=self.useProxy,
-          vo=self.vo).getStorages(
-              name,
-              pluginList=plugins,
-              hideExceptions=hideExceptions)
+
+    res = StorageFactory(useProxy=self.useProxy, vo=self.vo).getStorages(name,
+                                                                         pluginList=plugins,
+                                                                         hideExceptions=hideExceptions)
 
     if not res['OK']:
       self.valid = False
@@ -365,7 +363,12 @@ class StorageElementItem(object):
 
   def getOccupancy(self, unit='MB', **kwargs):
     """ Retrieves the space information about the storage.
-        It returns the Total and Free space.
+        It returns the Total and Free space, and a SpaceReservation.
+
+        The SpaceReservation is just a name of a zone of the physical storage which can have some space reserved.
+        It corresponds to the ``SpaceToken`` concept of SRM.
+        If the StorageElement definition has a ``SpaceReservation`` option in the CS, this is returned, unless
+        it is overwritten by the storage plugin.
 
         It loops over the different Storage Plugins to query it.
 
@@ -373,7 +376,11 @@ class StorageElementItem(object):
                               The json file should contain the Free and Total space in B.
                               If not specified, the default path will be </vo/occupancy.json>
 
-        :returns: S_OK with dict (keys: Total, Free)
+        :params unit: (default MB)unit of the value returned. See :py:func:`~DIRAC.Core.Utilities.File.convertSizeUnits`
+                      CAUTION: only the `Total` and `Free` field are converted !
+                      Since the rest is whatever is returned by the plugin no conversion is performed
+
+        :returns: S_OK with dict (keys: Total, Free, SpaceReservation)
     """
     log = self.log.getSubLogger('getOccupancy', True)
 
@@ -414,6 +421,11 @@ class StorageElementItem(object):
                   (space, unit, occupancyDict[space]))
               break
             occupancyDict[space] = convertedSpace
+
+        # If the plugin does not return the SpaceReservation, take it from the CS
+
+        if 'SpaceReservation' not in occupancyDict:
+          occupancyDict['SpaceReservation'] = self.options.get('SpaceReservation')
         return res
 
     return S_ERROR("Could not retrieve the occupancy from any plugin")
@@ -670,13 +682,13 @@ class StorageElementItem(object):
     # even if both can provide xroot
     sourceSEStorages = sorted(
         sourceSE.storages,
-        key=lambda x: self.__getIndexInList(
+        key=lambda x: getIndexInList(
             x.getParameters()['Protocol'],
             commonProtocols))
 
     selfStorages = sorted(
         self.storages,
-        key=lambda x: self.__getIndexInList(
+        key=lambda x: getIndexInList(
             x.getParameters()['Protocol'],
             commonProtocols))
 
@@ -795,7 +807,7 @@ class StorageElementItem(object):
       protocolList = list(protocols)
       commonProtocols = sorted(
           commonProtocols & set(protocolList),
-          key=lambda x: self.__getIndexInList(
+          key=lambda x: getIndexInList(
               x,
               protocolList))
 
@@ -967,21 +979,6 @@ class StorageElementItem(object):
 #     res['Failed'] = failed
     return res
 
-  @staticmethod
-  def __getIndexInList(x, l):
-    """ Return the index of the element x in the list l
-        or sys.maxint if it does not exist
-
-        :param x: element to look for
-        :param l: list to look int
-
-        :return: the index or sys.maxint
-    """
-    try:
-      return l.index(x)
-    except ValueError:
-      return sys.maxsize
-
   def __filterPlugins(self, methodName, protocols=None, inputProtocol=None):
     """ Determine the list of plugins that
         can be used for a particular action
@@ -1030,7 +1027,7 @@ class StorageElementItem(object):
 
       # The closest list for "OK" methods is the AccessProtocol preference, so we sort based on that
       pluginsToUse.sort(
-          key=lambda x: self.__getIndexInList(
+          key=lambda x: getIndexInList(
               x.protocolParameters['Protocol'],
               self.localAccessProtocolList))
       log.debug("Plugins to be used for %s: %s" %
@@ -1079,7 +1076,7 @@ class StorageElementItem(object):
 
     # sort the plugins according to the lists in the CS
     pluginsToUse.sort(
-        key=lambda x: self.__getIndexInList(
+        key=lambda x: getIndexInList(
             x.protocolParameters['Protocol'],
             allowedProtocols))
 

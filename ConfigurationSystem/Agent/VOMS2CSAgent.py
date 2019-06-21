@@ -4,6 +4,15 @@
     - Adds new users for the given VO taking into account the VO VOMS information
     - Updates the data in the CS for existing users including DIRAC group membership
     -
+
+The following options can be set for the VOMS2CSAgent.
+
+.. literalinclude:: ../ConfigTemplate.cfg
+  :start-after: ##BEGIN VOMS2CSAgent
+  :end-before: ##END
+  :dedent: 2
+  :caption: VOMS2CSAgent options
+
 """
 
 from DIRAC import S_OK, gConfig, S_ERROR
@@ -24,15 +33,16 @@ class VOMS2CSAgent(AgentModule):
     """
     super(VOMS2CSAgent, self).__init__(*args, **kwargs)
 
-    self.voList = []
-    self.dryRun = False
+    self.voList = ['any']
+    self.dryRun = True
 
-    self.autoAddUsers = False
-    self.autoModifyUsers = False
-    self.autoDeleteUsers = False
+    self.autoAddUsers = True
+    self.autoModifyUsers = True
+    self.autoDeleteUsers = True
     self.detailedReport = True
     self.makeFCEntry = False
-    self.autoLiftSuspendedStatus = False
+    self.autoLiftSuspendedStatus = True
+    self.mailFrom = 'noreply@dirac.system'
 
   def initialize(self):
     """ Initialize the default parameters
@@ -40,15 +50,17 @@ class VOMS2CSAgent(AgentModule):
 
     self.dryRun = self.am_getOption('DryRun', self.dryRun)
 
-    # General agent options, can be overridden by VO options
+    # # General agent options, can be overridden by VO options
     self.autoAddUsers = self.am_getOption('AutoAddUsers', self.autoAddUsers)
     self.autoModifyUsers = self.am_getOption('AutoModifyUsers', self.autoModifyUsers)
     self.autoDeleteUsers = self.am_getOption('AutoDeleteUsers', self.autoDeleteUsers)
+    self.autoLiftSuspendedStatus = self.am_getOption('AutoLiftSuspendedStatus', self.autoLiftSuspendedStatus)
     self.makeFCEntry = self.am_getOption('MakeHomeDirectory', self.makeFCEntry)
 
     self.detailedReport = self.am_getOption('DetailedReport', self.detailedReport)
+    self.mailFrom = self.am_getOption('MailFrom', self.mailFrom)
 
-    self.voList = self.am_getOption('VO', [])
+    self.voList = self.am_getOption('VO', self.voList)
     if not self.voList:
       return S_ERROR("Option 'VO' not configured")
     if self.voList[0].lower() == "any":
@@ -56,7 +68,7 @@ class VOMS2CSAgent(AgentModule):
       if not result['OK']:
         return result
       self.voList = result['Value']
-      self.log.notice("VOs: %s" % self.voList)
+      self.log.notice("VOs", self.voList)
 
     return S_OK()
 
@@ -69,7 +81,8 @@ class VOMS2CSAgent(AgentModule):
         voAdminMail = getUserOption(voAdminUser, "Email")
       voAdminGroup = getVOOption(vo, "VOAdminGroup", getVOOption(vo, "DefaultGroup"))
 
-      self.log.info('Performing VOMS sync for VO %s with credentials %s@%s' % (vo, voAdminUser, voAdminGroup))
+      self.log.info('Performing VOMS sync',
+                    'for VO %s with credentials %s@%s' % (vo, voAdminUser, voAdminGroup))
 
       autoAddUsers = getVOOption(vo, "AutoAddUsers", self.autoAddUsers)
       autoModifyUsers = getVOOption(vo, "AutoModifyUsers", self.autoModifyUsers)
@@ -96,12 +109,13 @@ class VOMS2CSAgent(AgentModule):
       csapi = resultDict.get("CSAPI")
       adminMessages = resultDict.get("AdminMessages", {'Errors': [], 'Info': []})
       voChanged = resultDict.get("VOChanged", False)
-      self.log.info("Run user results: new %d, modified %d, deleted %d, new/suspended %d" %
+      self.log.info("Run user results",
+                    ": new %d, modified %d, deleted %d, new/suspended %d" %
                     (len(newUsers), len(modUsers), len(delUsers), len(susUsers)))
 
       if csapi.csModified:
         # We have accumulated all the changes, commit them now
-        self.log.info("There are changes to the CS for vo %s ready to be committed" % vo)
+        self.log.info("There are changes to the CS ready to be committed", "for VO %s" % vo)
         if self.dryRun:
           self.log.info("Dry Run: CS won't be updated")
           csapi.showDiff()
@@ -110,13 +124,13 @@ class VOMS2CSAgent(AgentModule):
           if not result['OK']:
             self.log.error("Could not commit configuration changes", result['Message'])
             return result
-          self.log.notice("Configuration committed for VO %s" % vo)
+          self.log.notice("Configuration committed", "for VO %s" % vo)
       else:
-        self.log.info("No changes to the CS for VO %s recorded at this cycle" % vo)
+        self.log.info("No changes to the CS recorded at this cycle", "for VO %s" % vo)
 
       # Add user home directory in the file catalog
       if self.makeFCEntry and newUsers:
-        self.log.info("Creating home directories for users %s" % str(newUsers))
+        self.log.info("Creating home directories for users", str(newUsers))
         result = self.__addHomeDirectory(vo, newUsers,  # pylint: disable=unexpected-keyword-arg
                                          proxyUserName=voAdminUser,
                                          proxyUserGroup=voAdminGroup)
@@ -150,7 +164,7 @@ class VOMS2CSAgent(AgentModule):
         else:
           NotificationClient().sendMail(self.am_getOption('MailTo', voAdminMail),
                                         "VOMS2CSAgent run log", mailMsg,
-                                        self.am_getOption('MailFrom', self.am_getOption('mailFrom', "DIRAC system")))
+                                        self.mailFrom)
 
     return S_OK()
 

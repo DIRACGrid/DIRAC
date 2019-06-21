@@ -4,6 +4,9 @@
 Installing the DIRAC File Catalog
 =================================
 
+.. set highlighting to console input/output
+.. highlight:: console
+
 Pre-requisite
 =============
 
@@ -37,10 +40,10 @@ The DFC is no different than any other DIRAC service with a database. The instal
 
   [diracuser@dirac-tuto ~]$ dirac-admin-sysadmin-cli --host dirac-tuto
   Pinging dirac-tuto...
-  [dirac-tuto]> install db FileCatalogDB
+  [dirac-tuto]$ install db FileCatalogDB
   Adding to CS DataManagement/FileCatalogDB
   Database FileCatalogDB from DIRAC/DataManagementSystem installed successfully
-  [dirac-tuto]> install service DataManagement FileCatalog
+  [dirac-tuto]$ install service DataManagement FileCatalog
   Loading configuration template /home/diracuser/DIRAC/DIRAC/DataManagementSystem/ConfigTemplate.cfg
   Adding to CS service DataManagement/FileCatalog
   service DataManagement_FileCatalog is installed, runit status: Run

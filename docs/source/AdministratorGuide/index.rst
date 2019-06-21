@@ -28,3 +28,5 @@ This administration documentation refers to the "Core" DIRAC project.
    CommandReference/index
    scalingAndLimitations
    Tutorials/index
+   centralizedLogging
+   pitExport

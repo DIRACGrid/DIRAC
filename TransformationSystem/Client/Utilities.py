@@ -447,6 +447,21 @@ class PluginUtilities(object):
       targetSEs = []
     return (targetSEs + list(sameSEs)) if not local else targetSEs
 
+  @staticmethod
+  def seParamtoList(inputParam):
+    """Transform ``inputParam`` to list.
+
+    :param inputParam: can be string, list, or string representation of list
+    :returns: list
+    """
+    if not inputParam:
+      return []
+    if inputParam.count('['):
+      return eval(inputParam)  # pylint: disable=eval-used
+    elif isinstance(inputParam, list):
+      return inputParam
+    return [inputParam]
+
 
 def getFileGroups(fileReplicas, groupSE=True):
   """

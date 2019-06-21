@@ -25,7 +25,6 @@ from collections import defaultdict
 import DIRAC
 from DIRAC import S_OK, gConfig
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE
 from DIRAC.Core.Utilities.Time import dateTime, second
 from DIRAC.Core.Utilities.List import fromChar
