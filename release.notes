@@ -885,8 +885,7 @@ FIX: MJF utility won't throw exceptions when MJF is not fully deployed at a site
 NEW: WebAppCompiler methods is implemented, which is used to compile the web framework
 NEW: add JsonFormatter for logs
 NEW: add default configuration to CS: only TrustedHost can upload file
-CHANGE: ComponentInstaller - remove the old web portal configuration data
-	used during the installation
+CHANGE: ComponentInstaller - remove the old web portal configuration data used during the installation
 CHANGE: MessageQueue log handler uses JsonFormatter
 
 *Monitoring

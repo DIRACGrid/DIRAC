@@ -5,7 +5,7 @@ coverage:
     project:
       default: off
       unittest:
-	flags: unittest
+      flags: unittest
 
 flags:
   # filter the folder(s) you wish to measure by that flag
