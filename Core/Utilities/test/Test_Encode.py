@@ -278,6 +278,7 @@ def test_missingAttrToSerialize():
 
 
 @given(data=nestedStrategyJson)
+@settings(suppress_health_check=(HealthCheck.too_slow,))
 def test_nestedSerializable(data):
   """ Test that a serializable containing a serializable class
       can be serialized
