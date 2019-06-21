@@ -1,8 +1,10 @@
-""" CSHelpers
-
-  Module containing functions interacting with the CS and useful for the RSS
-  modules.
 """
+Module containing functions interacting with the CS and useful for the RSS
+modules.
+
+"""
+
+from __future__ import absolute_import, unicode_literals
 
 __RCSID__ = '$Id$'
 
@@ -136,7 +138,6 @@ def getStorageElementsHosts(seNames=None, plugins=None):
       :param list plugins: if provided, restrict to a certain list of plugins
 
       :return: S_OK() with list of hosts or S_ERROR
->>>>>>> added possibility to restrict to a plugin list
   """
 
   seHosts = []

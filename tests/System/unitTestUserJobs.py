@@ -3,7 +3,10 @@
 
 # pylint: disable=wrong-import-position, invalid-name
 
-from __future__ import print_function
+from __future__ import print_function, absolute_import, unicode_literals
+
+__RCSID__ = "$Id$"
+
 import unittest
 import time
 
@@ -19,7 +22,7 @@ from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 time.sleep(3)  # in theory this should not be needed, but I don't know why, without, it fails.
 result = getProxyInfo()
 if result['Value']['group'] not in ['dteam_user', 'dirac_user']:
-  print "GET A USER GROUP"
+  print("GET A USER GROUP")
   exit(1)
 
 
