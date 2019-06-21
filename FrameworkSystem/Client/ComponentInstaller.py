@@ -1,6 +1,6 @@
 """
 Module for managing the installation of DIRAC components:
-MySQL, DB's, NoSQL DBs, Services, Agents, Executors and Consumers
+MySQL, DB's, NoSQL DBs, Services, Agents, Executors
 
 It only makes use of defaults in LocalInstallation Section in dirac.cfg
 
