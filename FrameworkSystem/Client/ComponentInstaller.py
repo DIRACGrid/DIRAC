@@ -1716,7 +1716,8 @@ class ComponentInstaller(object):
       for system, service in setupServices:
         if not self.addDefaultOptionsToCS(None, 'service', system, service, extensions, overwrite=True)['OK']:
           # If we are not allowed to write to the central CS, add the configuration to the local file
-          gLogger.warn("Can't write to central CS, so adding to the specific component CFG")
+          gLogger.warn("Can't write to central CS, so adding to the specific component CFG",
+                       "for %s : %s" % (system, service))
           res = self.addDefaultOptionsToComponentCfg('service', system, service, extensions)
           if not res['OK']:
             gLogger.warn("Can't write to the specific component CFG")
@@ -1726,14 +1727,16 @@ class ComponentInstaller(object):
           gLogger.warn("Can't write to central CS, so adding to the specific component CFG")
           res = self.addDefaultOptionsToComponentCfg('agent', system, agent, extensions)
           if not res['OK']:
-            gLogger.warn("Can't write to the specific component CFG")
+            gLogger.warn("Can't write to the specific component CFG",
+                         "for %s : %s" % (system, agent))
       for system, executor in setupExecutors:
         if not self.addDefaultOptionsToCS(None, 'executor', system, executor, extensions, overwrite=True)['OK']:
           # If we are not allowed to write to the central CS, add the configuration to the local file
           gLogger.warn("Can't write to central CS, so adding to the specific component CFG")
           res = self.addDefaultOptionsToComponentCfg('executor', system, executor, extensions)
           if not res['OK']:
-            gLogger.warn("Can't write to the specific component CFG")
+            gLogger.warn("Can't write to the specific component CFG",
+                         "for %s : %s" % (system, executor))
     else:
       gLogger.warn('Configuration parameters definition is not requested')
 
