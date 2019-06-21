@@ -2382,6 +2382,7 @@ def createBashrcForDiracOS():
                     'export OPENSSL_CONF=/tmp'])
 
       # gfal2 requires some environment variables to be set
+      # Note: eventually this line should disappear as already set by diracosrc
       lines.extend(['# Gfal2 configuration and plugins',
                     'export GFAL_CONFIG_DIR=$DIRACOS/etc/gfal2.d',
                     'export  GFAL_PLUGIN_DIR=$DIRACOS/usr/lib64/gfal2-plugins/'])
@@ -2394,8 +2395,9 @@ def createBashrcForDiracOS():
                     'export GLOBUS_IO_IPV6=TRUE',
                     'export GLOBUS_FTP_CLIENT_IPV6=TRUE'])
       # Add the lines required for ARC CE support
+      # Note: eventually this line should disappear as already set by diracosrc
       lines.extend(['# ARC Computing Element',
-                    'export ARC_PLUGIN_PATH=$DIRACLIB/arc'])
+                    'export ARC_PLUGIN_PATH=$DIRACOS/usr/lib64/arc'])
       lines.append('')
       with open(bashrcFile, 'w') as f:
         f.write('\n'.join(lines))
