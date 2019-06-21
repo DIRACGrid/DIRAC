@@ -75,6 +75,7 @@ keyUsage = critical, nonRepudiation, digitalSignature, keyEncipherment
 extendedKeyUsage = clientAuth
 %s""" % ''
 
+
 class DIRACCAProxyProvider(ProxyProvider):
 
   def __init__(self, parameters=None):
@@ -116,7 +117,7 @@ class DIRACCAProxyProvider(ProxyProvider):
       dnFields = {}
       for field in ['C', 'O', 'OU']:
         dnFields[field] = self.parameters.get(field)
-      
+
       # Write user configuration file
       with open(userConfFile, "w") as f:
         f.write(userConf % (dnFields['C'], dnFields['O'], dnFields['OU'], fullName, eMail))
@@ -172,7 +173,7 @@ class DIRACCAProxyProvider(ProxyProvider):
                 if cfg.get(i):
                   val = val.replace('$%s' % i, cfg[i])
               cfg[field] = val
-    
+
     workingDirectory = self.parameters.get('WorkingDirectory')
     caWorkingDirectory = cfg.get('dir') or tempfile.mkdtemp(dir=workingDirectory)
     certLocation = cfg.get('certificate') or self.parameters.get('CertFile')
@@ -183,7 +184,7 @@ class DIRACCAProxyProvider(ProxyProvider):
       caConfigFile = os.path.join(caWorkingDirectory, 'CA.cnf')
       with open(caConfigFile, "w") as caCFG:
         caCFG.write(caConf % (caWorkingDirectory, keyLocation, certLocation))
-    
+
     # Check directory for new certificates
     newCertsDir = cfg.get('new_certs_dir') or os.path.join(caWorkingDirectory, 'newcerts')
     if not os.path.exists(newCertsDir):
