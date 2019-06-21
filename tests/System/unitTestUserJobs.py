@@ -17,7 +17,7 @@ from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
 time.sleep(3)  # in theory this should not be needed, but I don't know why, without, it fails.
 result = getProxyInfo()
-if result['Value']['group'] not in ['lhcb_user', 'dirac_user']:
+if result['Value']['group'] not in ['dteam_user', 'dirac_user']:
   print "GET A USER GROUP"
   exit(1)
 

@@ -5,6 +5,7 @@
 __RCSID__ = "$Id$"
 
 import random
+import sys
 random.seed()
 
 
@@ -125,3 +126,18 @@ def breakListIntoChunks(aList, chunkSize):
   if isinstance(aList, (set, dict, tuple)):
     aList = list(aList)
   return [chunk for chunk in getChunk(aList, chunkSize)]
+
+
+def getIndexInList(anItem, aList):
+  """ Return the index of the element x in the list l
+      or sys.maxint if it does not exist
+
+      :param anItem: element to look for
+      :param list aList: list to look into
+
+      :return: the index or sys.maxint
+  """
+  try:
+    return aList.index(anItem)
+  except ValueError:
+    return sys.maxsize

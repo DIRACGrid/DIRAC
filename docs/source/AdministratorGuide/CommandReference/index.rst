@@ -59,7 +59,6 @@ Managing Resources:
     dirac-admin-ce-info
     dirac-admin-get-banned-sites
     dirac-admin-get-site-mask
-    dirac-admin-get-site-protocols
     dirac-admin-set-site-protocols
     dirac-admin-site-info
     dirac-admin-site-mask-logging
@@ -138,7 +137,6 @@ User convenience:
 .. toctree::
     :maxdepth: 2
     
-    dirac-accounting-report-cli
     dirac-accounting-decode-fileid
     dirac-cert-convert.sh
     dirac-myproxy-upload

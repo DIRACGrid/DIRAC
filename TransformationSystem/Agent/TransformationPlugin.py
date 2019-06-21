@@ -1,4 +1,21 @@
-"""  TransformationPlugin is a class wrapping the supported transformation plugins
+"""TransformationPlugin is a class wrapping the supported transformation plugins
+
+New plugins can be created by defining a function.
+The function name has to be ``_MyPlugin``, and the plugin is then call ``'MyPlugin'``. Do not forget to enable new
+plugins in the ``Operations/Transformation/AllowedPlugins`` list.
+The return value of the function has to be ``S_OK`` with a list of tuples. Each Tuple is a pair of a StorageElement
+and list of LFNs to treat in given task::
+
+  return S_OK([('SE_1', [lfn_1_1, lfn_1_2, ...]),
+               ('SE_1', [lfn_2_1, lfn_2_2, ...]),
+               # ...
+               ('SE_I', [lfn_J_1, lfn_J_2, ...]),
+               ])
+
+Inside the plugin function, the relevant LFNs can be accessed in the ``self.data`` dictionary, and transformation
+parameters are obtained contained in the ``self.params`` dictionary. See also the
+:class:`~DIRAC.TransformationSystem.Client.Utilities.PluginUtilities` class.
+
 """
 
 import random
@@ -19,11 +36,19 @@ __RCSID__ = "$Id$"
 
 class TransformationPlugin(PluginBase):
   """ A TransformationPlugin object should be instantiated by every transformation.
+
+  :param str plugin: A plugin name has to be passed in: it will then be executed as one of the functions below, e.g.
+     plugin = 'BySize' will execute TransformationPlugin('BySize')._BySize()
+
+  :param transClient: TransformationManagerClient instance
+  :param dataManager: DataManager instance
+  :param fc: FileCatalog instance
   """
 
   def __init__(self, plugin, transClient=None, dataManager=None, fc=None):
-    """ plugin name has to be passed in: it will then be executed as one of the functions below, e.g.
-        plugin = 'BySize' will execute TransformationPlugin('BySize')._BySize()
+    """Constructor of the TransformationPlugin.
+
+    Instantiate clients, if not given, and set up the PluginUtilities.
     """
     super(TransformationPlugin, self).__init__(plugin)
 
@@ -93,21 +118,20 @@ class TransformationPlugin(PluginBase):
 
   def _Broadcast(self):
     """ This plug-in takes files found at the sourceSE and broadcasts to all (or a selection of) targetSEs.
+
+    Parameters used by this plugin:
+
+    * SourceSE: Optional: only files at this location are treated
+    * TargetSE: Where to broadcast files to
+    * Destinations: Optional: integer, files are only broadcast to this number of TargetSEs, Destinations has to be
+      larger than the number of TargetSEs
+    * GroupSize: number of files per task
     """
     if not self.params:
       return S_ERROR("TransformationPlugin._Broadcast: The 'Broadcast' plugin requires additional parameters.")
 
-    targetseParam = self.params['TargetSE']
-    targetSEs = []
-    sourceSEs = eval(self.params['SourceSE'])  # pylint: disable=eval-used
-    if targetseParam.count('['):
-      targetSEs = eval(targetseParam)  # pylint: disable=eval-used
-    elif isinstance(targetseParam, list):
-      targetSEs = targetseParam
-    else:
-      targetSEs = [targetseParam]
-    # sourceSEs = eval(self.params['SourceSE'])
-    # targetSEs = eval(self.params['TargetSE'])
+    sourceSEs = set(self.util.seParamtoList(self.params.get('SourceSE', [])))
+    targetSEs = self.util.seParamtoList(self.params['TargetSE'])
     destinations = int(self.params.get('Destinations', 0))
     if destinations and (destinations >= len(targetSEs)):
       destinations = 0
@@ -119,26 +143,22 @@ class TransformationPlugin(PluginBase):
     targetSELfns = {}
     for replicaSE, lfns in fileGroups.items():
       ses = replicaSE.split(',')
-      # sourceSites = self._getSitesForSEs(ses)
-      atSource = False
-      for se in ses:
-        if se in sourceSEs:
-          atSource = True
+      atSource = (not sourceSEs) or set(ses).intersection(sourceSEs)
       if not atSource:
         continue
 
       for lfn in lfns:
         targets = []
-        sources = self._getSitesForSEs(ses)
+        sourceSites = self._getSitesForSEs(ses)
         random.shuffle(targetSEs)
         for targetSE in targetSEs:
           site = self._getSiteForSE(targetSE)['Value']
-          if not site in sources:
+          if site not in sourceSites:
             if (destinations) and (len(targets) >= destinations):
               continue
-            sources.append(site)
+            sourceSites.append(site)
           targets.append(targetSE)  # after all, if someone wants to copy to the source, it's his choice
-        strTargetSEs = str.join(',', sorted(targets))
+        strTargetSEs = ','.join(sorted(targets))
         targetSELfns.setdefault(strTargetSEs, []).append(lfn)
     tasks = []
     for ses, lfns in targetSELfns.items():

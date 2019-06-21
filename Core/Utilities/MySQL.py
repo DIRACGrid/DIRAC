@@ -692,7 +692,7 @@ class MySQL(object):
         cmdRet.append((cmd, cursor.execute(cmd)))
       connection.commit()
     except Exception as error:
-      self.logger.execption(error)
+      self.logger.exception(error)
       # # rollback, put back connection to the pool
       connection.rollback()
       return S_ERROR(DErrno.EMYSQL, error)

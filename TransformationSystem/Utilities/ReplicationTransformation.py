@@ -42,6 +42,8 @@ def createDataTransformation(flavour, targetSE, sourceSE,
   if isinstance(targetSE, basestring):
     targetSE = [targetSE]
 
+  gLogger.debug('Using plugin: %r' % plugin)
+
   if flavour not in ('Replication', 'Moving'):
     return S_ERROR('Unsupported flavour %s' % flavour)
 

@@ -1,17 +1,105 @@
-[v6r22-pre1]
+[v6r22-pre4]
 
 *WorkloadManagementSystem
-CHANGE: (#4049) Pilot wrapper for pilot3: download files at runtime
 NEW: (#4045) PilotsHandler service (to interact with PilotAgentsDB)
+CHANGE: (#4049) Pilot wrapper for pilot3: download files at runtime
+CHANGE: (#4119) removed last bit looking into /Registry/VOMS/ section
+CHANGE: (#4119) VOMS2CSAgent: mailFrom option is invalid, use MailFrom instead
+FIX: (#4074) fixed PilotManager service name in ConfigTemplate.cfg
+FIX: (#4100) use CAs to upload the pilot files to a dedicated web server using requests
+FIX: (#4106) fixes for logging messages for Matcher
+FIX: (#4106) fixes for logging messages for Optimizers
 
 *ConfigurationSystem
 NEW: (#4053) VOMS2CSSynchronizer/VOMS2CSAgent - enable automatic synchronization of the 
      Suspended user status with the VOMS database
+CHANGE: (#4113) VOMS2CSSynchronizer: considering the case when no email is provided by VOMS
 
 *Core
 NEW: (#4053) AuthManager - interpret the Suspended user status considering suspended 
      users as anonymous visitors
 CHANGE: (#4053) The use of CS.py module is replaced by the use of Registry.py and CSGlobals.py
+
+*Interfaces
+CHANGE: (#4098) removed dirac-admin-get-site-protocols.py as it could give potentially wrong results (use dirac-dms-protocol-matrix instead)
+
+*ResourceStatusSystem
+CHANGE: clients: using DIRAC.Core.Base.Client as base
+CHANGE: (#4098) SiteInspectorAgent runs only on sites with tokenOwner="rs_svc"
+CHANGE: (#4098) remove SRM dependencies
+
+*docs
+NEW: (#4099) Instructions about setting up the DIRAC web server for pilot3
+CHANGE: (#4119) added note on MultiProcessor jobs preparation
+
+*test
+FIX: (#4119) Not lhcb but dteam (for DIRAC certification)
+
+[v6r21p9]
+
+*Core
+FIX: (#4130) correct symlinks in dirac-deploy
+
+[v6r21p8]
+
+*WMS
+CHANGE: (#4111) Better logging in JobWrapper
+CHANGE: (#4114) JobScheduling - allow both Tag and Tags option in the job JDL
+
+*DMS
+FIX: (#4101) FileManagerBase - use returned ID:LFN dict instead of the LFN list. Fixes the bug in 
+             getReplicasByMetadata reported in #4058
+
+*TransformationSystem
+FIX: (#4112) TaskManager.py - testing if the request ID is correct was not done properly, test the numerical value
+
+[v6r21p7]
+
+*Core
+FIX: (#4076) A certain module like WebAppDIRAC must be checked out from the code repository once.
+
+*Resources
+FIX: (#4078) Fix the exception when StorageElement objects are created with a list of plugins
+
+*SMS
+NEW: (#4086) StageMonitorAgent: new option StoragePlugins to limit the protocols used to contact storagelements for staged files.
+
+*WMS
+FIX: (#4093) better logging from services
+
+*TS
+CHANGE: (#4095) ConfigTemplate for RequestTaskAgent now contains all options
+CHANGE: (#4096) the Broadcast TransformationPlugin no longer requires a SourceSE to be set. If it is set, the behaviour is unchanged
+CHANGE: (#4096) dirac-transformation-replication: change default pluging back to Broadcast (reverts #4066)
+
+*Docs:
+CHANGE: (#4095) AdministratorGuide install TS tutorial: added options MonitorFiles and MonitorTasks for TaskAgents
+
+[v6r21p6]
+
+*CS
+FIX: (#4064) Fix exception when calling dirac-admin-add-shifter with already existing values
+
+*Core
+NEW: (#4065) getIndexInList utility in List.py
+
+*Resources
+NEW: (#4065) add a SpaceReservation concept to storages
+NEW: (#4065) add a getEndpoint method to StorageBase
+
+*RSS
+CHANGE: (#4065) CSHelpers.getStorageElementEndpoint returns the endpoint or non srm protocol
+CHANGE: (#4065) add the SpaceReservation to the FreeDiskSpaceCommand result
+
+*TS
+FIX: (#4066) The dirac-transformation-replication script will now create valid transformations 
+     given only the required arguments. Instead of the 'Broadcast' plugin, the 'Standard' plugin 
+     is created if not SourceSE is given. If a value for the plugin argument is given, that will 
+     be used.
+
+*docs
+CHANGE: (#4069) DIRAC installation procedure is updated taking account DIRACOS
+CHANGE: (#4094) Pilots3 options: moved to /Operation/Pilot section
 
 [v6r21p5]
 
@@ -210,6 +298,16 @@ CHANGE: (#3948) integration tests run with unittest now exit with exit code != 0
 
 *docs
 NEW: (#3974) Added HowTo section to the User Guide
+
+[v6r20p28]
+
+*WorkloadManagementSystem
+FIX: (#4092) pilotTools - Ensure maxNumberOfProcessors is an int
+
+[v6r20p27]
+
+*WMS
+FIX: (#4020) SiteDirector - do not use keywords in addPilotTQReference/setPilotStatus calls
 
 [v6r20p26]
 

@@ -50,7 +50,7 @@ class DIRACAccountingCommand(Command):
        - args[1]: string - should be the name of the ValidElement
 
        - args[2]: string - should be 'Job' or 'Pilot' or 'DataOperation'
-         or 'WMSHistory' (??) or 'SRM' (??)
+         or 'WMSHistory' (??)
 
        - args[3]: string - should be the plot to generate (e.g. CPUEfficiency)
 

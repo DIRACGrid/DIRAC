@@ -1822,7 +1822,8 @@ def loadConfiguration():
     except BaseException:
       pass
 
-  if not cliParams.diracOS and os.path.exists("%s/diracos" % cliParams.targetPath):
+  # If we are running an update, DIRACOS will be set in the environment
+  if not cliParams.diracOS and 'DIRACOS' in os.environ:
     logWARN("Forcing to install DIRACOS, because it is already installed!")
     cliParams.diracOS = True
 
@@ -2441,11 +2442,12 @@ def checkoutFromGit(moduleName, sourceURL, tagVersion, destinationDir=None):
 
   if exportRes:
     return S_ERROR("Error while exporting from git")
+
+  # replacing the code
   if os.path.exists(fDirName + '/' + moduleName):
     cmd = "ln -s %s/%s" % (codeRepo, moduleName)
   else:
-    cmd = "mv %s %s" % (codeRepo, moduleName)
-
+    cmd = "mv %s %s" % (fDirName, os.path.join(cliParams.targetPath, moduleName))
   logNOTICE("Executing: %s" % cmd)
   retVal = os.system(cmd)
 
@@ -2504,7 +2506,7 @@ if __name__ == "__main__":
       logNOTICE("Writing down the releases files")
       releaseConfig.dumpReleasesToPath()
     logNOTICE("Installing modules...")
-    for modName in modsOrder:
+    for modName in set(modsOrder):
       tarsURL, modVersion = modsToInstall[modName]
       if cliParams.installSource and not cliParams.modules:
         # we install not release version of DIRAC
