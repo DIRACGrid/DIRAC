@@ -17,6 +17,7 @@ from DIRAC.Core.Utilities.DEncode import encode as disetEncode, decode as disetD
 from DIRAC.Core.Utilities.JEncode import encode as jsonEncode, decode as jsonDecode, JSerializable
 
 from hypothesis import given
+from hypothesis import settings
 from hypothesis.strategies import integers, lists, recursive, floats, text,\
     booleans, none, dictionaries, tuples
 from hypothesis.searchstrategy.datetime import DatetimeStrategy
