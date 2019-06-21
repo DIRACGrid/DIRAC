@@ -56,6 +56,8 @@ For DIRAC client installation instructions, see the `web page <http://dirac.read
 
 For DIRAC server installation instructions, see the `web page <http://dirac.readthedocs.io/en/latest/AdministratorGuide/InstallingDIRACService/index.html>`_.
 
+The supported distributions are EL6 (e.g. SLC6) and EL7 (e.g. CC7).
+
 Development
 ===========
 
