@@ -15,7 +15,7 @@ class Transaction(object):
 
   def __init__(self):
     self.custom_timers = {}
-    self.url = "/DIRAC/s:LHCb-Certification/g:lhcb_prmgr/ExampleApp/getSelectionData"
+    self.url = "/DIRAC/s:DIRAC-Certification/g:dteam_user/ExampleApp/getSelectionData"
     self.conn = httplib.HTTPConnection("lhcb-cert-dirac.cern.ch")
 
   def run(self):

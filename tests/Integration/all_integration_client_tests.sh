@@ -36,6 +36,7 @@ echo -e '***' $(date -u)  "**** RSS TESTS ****\n"
 python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/ResourceStatusSystem/Test_ResourceManagement.py >> testOutputs.txt 2>&1
 python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/ResourceStatusSystem/Test_ResourceStatus.py >> testOutputs.txt 2>&1
 python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/ResourceStatusSystem/Test_SiteStatus.py >> testOutputs.txt 2>&1
+python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/ResourceStatusSystem/Test_Publisher.py >> testOutputs.txt 2>&1
 
 
 #-------------------------------------------------------------------------------#
@@ -44,6 +45,7 @@ echo -e '***' $(date -u)  "**** WMS TESTS ****\n"
 python $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_Client_WMS.py $WORKSPACE/TestCode/DIRAC/tests/Integration/WorkloadManagementSystem/sb.cfg >> testOutputs.txt 2>&1
 python $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_SandboxStoreClient.py $WORKSPACE/TestCode/DIRAC/tests/Integration/WorkloadManagementSystem/sb.cfg >> testOutputs.txt 2>&1
 python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_JobWrapper.py >> testOutputs.txt 2>&1
+python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_PilotsClient.py >> testOutputs.txt 2>&1
 ## no real tests
 python $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/createJobXMLDescriptions.py >> testOutputs.txt 2>&1
 $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_dirac-jobexec.sh >> testOutputs.txt 2>&1
@@ -64,3 +66,9 @@ pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/Monitoring/Test_MonitoringSyste
 echo -e '***' $(date -u)  "**** TS TESTS ****\n"
 pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/TransformationSystem/Test_Client_Transformation.py >> testOutputs.txt 2>&1
 # pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/TransformationSystem/Test_TS_DFC_Catalog.py >> testOutputs.txt 2>&1
+
+
+#-------------------------------------------------------------------------------#
+echo -e '***' $(date -u)  "**** PS TESTS ****\n"
+pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/ProductionSystem/Test_Client_Production.py >> testOutputs.txt 2>&1
+pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/ProductionSystem/Test_Client_TS_Prod.py >> testOutputs.txt 2>&1

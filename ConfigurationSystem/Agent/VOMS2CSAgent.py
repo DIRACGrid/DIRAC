@@ -1,10 +1,20 @@
 """
-  VOMS2CSAgent performs the following operations:
+VOMS2CSAgent performs the following operations:
 
-    - Adds new users for the given VO taking into account the VO VOMS information
-    - Updates the data in the CS for existing users including DIRAC group membership
-    -
+- Adds new users for the given VO taking into account the VO VOMS information
+- Updates the data in the CS for existing users including DIRAC group membership
+
+The following options can be set for the VOMS2CSAgent.
+
+.. literalinclude:: ../ConfigTemplate.cfg
+  :start-after: ##BEGIN VOMS2CSAgent
+  :end-before: ##END
+  :dedent: 2
+  :caption: VOMS2CSAgent options
+
 """
+
+from __future__ import absolute_import, unicode_literals
 
 from DIRAC import S_OK, gConfig, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
@@ -24,15 +34,16 @@ class VOMS2CSAgent(AgentModule):
     """
     super(VOMS2CSAgent, self).__init__(*args, **kwargs)
 
-    self.voList = []
-    self.dryRun = False
+    self.voList = ['any']
+    self.dryRun = True
 
-    self.autoAddUsers = False
-    self.autoModifyUsers = False
-    self.autoDeleteUsers = False
+    self.autoAddUsers = True
+    self.autoModifyUsers = True
+    self.autoDeleteUsers = True
     self.detailedReport = True
     self.makeFCEntry = False
-    self.autoLiftSuspendedStatus = False
+    self.autoLiftSuspendedStatus = True
+    self.mailFrom = 'noreply@dirac.system'
 
   def initialize(self):
     """ Initialize the default parameters
@@ -40,15 +51,17 @@ class VOMS2CSAgent(AgentModule):
 
     self.dryRun = self.am_getOption('DryRun', self.dryRun)
 
-    # General agent options, can be overridden by VO options
+    # # General agent options, can be overridden by VO options
     self.autoAddUsers = self.am_getOption('AutoAddUsers', self.autoAddUsers)
     self.autoModifyUsers = self.am_getOption('AutoModifyUsers', self.autoModifyUsers)
     self.autoDeleteUsers = self.am_getOption('AutoDeleteUsers', self.autoDeleteUsers)
+    self.autoLiftSuspendedStatus = self.am_getOption('AutoLiftSuspendedStatus', self.autoLiftSuspendedStatus)
     self.makeFCEntry = self.am_getOption('MakeHomeDirectory', self.makeFCEntry)
 
     self.detailedReport = self.am_getOption('DetailedReport', self.detailedReport)
+    self.mailFrom = self.am_getOption('MailFrom', self.mailFrom)
 
-    self.voList = self.am_getOption('VO', [])
+    self.voList = self.am_getOption('VO', self.voList)
     if not self.voList:
       return S_ERROR("Option 'VO' not configured")
     if self.voList[0].lower() == "any":
@@ -152,7 +165,7 @@ class VOMS2CSAgent(AgentModule):
         else:
           NotificationClient().sendMail(self.am_getOption('MailTo', voAdminMail),
                                         "VOMS2CSAgent run log", mailMsg,
-                                        self.am_getOption('MailFrom', self.am_getOption('mailFrom', "DIRAC system")))
+                                        self.mailFrom)
 
     return S_OK()
 

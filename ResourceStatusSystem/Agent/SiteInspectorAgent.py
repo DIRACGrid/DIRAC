@@ -13,6 +13,7 @@ The following options can be set for the SiteInspectorAgent.
 
 __RCSID__ = '$Id$'
 
+import datetime
 import math
 import Queue
 
@@ -96,7 +97,7 @@ class SiteInspectorAgent(AgentModule):
     # Gets sites to be checked ( returns a Queue )
     sitesToBeChecked = self.getSitesToBeChecked()
     if not sitesToBeChecked['OK']:
-      self.log.error(sitesToBeChecked['Message'])
+      self.log.error("Failure getting sites to be checked", sitesToBeChecked['Message'])
       return sitesToBeChecked
     self.sitesToBeChecked = sitesToBeChecked['Value']
 
@@ -126,7 +127,8 @@ class SiteInspectorAgent(AgentModule):
   def getSitesToBeChecked(self):
     """ getElementsToBeChecked
 
-    This method gets all the site names from the SiteStatus table, after that it get the details of each
+    This method gets all the site names from the SiteStatus table,
+    after that it get the details of each
     site (status, name, etc..) and adds them to a queue.
 
     """
@@ -142,9 +144,27 @@ class SiteInspectorAgent(AgentModule):
     if not res['OK']:
       return res
 
+    utcnow = datetime.datetime.utcnow().replace(microsecond=0)
+
     # filter elements
     for site in res['Value']:
       status = res['Value'].get(site, 'Unknown')
+
+      # Maybe an overkill, but this way I have NEVER again to worry about order
+      # of elements returned by mySQL on tuples
+      siteDict = dict(zip(res['Columns'], site))
+
+      # This if-clause skips all the elements that should not be checked yet
+      timeToNextCheck = self.__checkingFreqs[siteDict['Status']]
+      if utcnow <= siteDict['LastCheckTime'] + datetime.timedelta(minutes=timeToNextCheck):
+        continue
+
+      # We skip the elements with token different than "rs_svc"
+      if siteDict['TokenOwner'] != 'rs_svc':
+        self.log.verbose('Skipping %s ( %s ) with token %s' % (siteDict['Name'],
+                                                               siteDict['StatusType'],
+                                                               siteDict['TokenOwner']))
+        continue
 
       toBeChecked.put({'status': status,
                        'name': site,
@@ -152,6 +172,11 @@ class SiteInspectorAgent(AgentModule):
                        'element': 'Site',
                        'statusType': 'all',
                        'elementType': 'Site'})
+      self.log.verbose('%s # "%s" # "%s" # %s # %s' % (siteDict['Name'],
+                                                       siteDict['ElementType'],
+                                                       siteDict['StatusType'],
+                                                       siteDict['Status'],
+                                                       siteDict['LastCheckTime']))
 
     return S_OK(toBeChecked)
 

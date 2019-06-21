@@ -63,7 +63,7 @@ class DiracAdmin(API):
 
        Example usage:
 
-         >>> print diracAdmin.uploadProxy('lhcb_pilot')
+         >>> print diracAdmin.uploadProxy('dteam_pilot')
          {'OK': True, 'Value': 0L}
 
        :param group: DIRAC Group
@@ -671,44 +671,6 @@ class DiracAdmin(API):
       print(line)
 
     return result
-
-  #############################################################################
-  def getSiteProtocols(self, site, printOutput=False):
-    """
-    Allows to check the defined protocols for each site SE.
-    """
-    result = self.__checkSiteIsValid(site)
-    if not result['OK']:
-      return result
-
-    siteSection = '/Resources/Sites/%s/%s/SE' % (site.split('.')[0], site)
-    siteSEs = gConfig.getValue(siteSection, [])
-    if not siteSEs:
-      return S_ERROR('No SEs found for site %s in section %s' % (site, siteSection))
-
-    defaultProtocols = gConfig.getValue('/Resources/StorageElements/DefaultProtocols', [])
-    self.log.verbose('Default list of protocols are' ', '.join(defaultProtocols))
-    seInfo = {}
-    siteSEs.sort()
-    for se in siteSEs:
-      sections = gConfig.getSections('/Resources/StorageElements/%s/' % (se))
-      if not sections['OK']:
-        return sections
-      for section in sections['Value']:
-        if gConfig.getValue('/Resources/StorageElements/%s/%s/ProtocolName' % (se, section), '') == 'SRM2':
-          path = '/Resources/StorageElements/%s/%s/ProtocolsList' % (se, section)
-          seProtocols = gConfig.getValue(path, [])
-          if not seProtocols:
-            seProtocols = defaultProtocols
-          seInfo[se] = seProtocols
-
-    if printOutput:
-      print('\nSummary of protocols for StorageElements at site %s' % site)
-      print('\nStorageElement'.ljust(30) + 'ProtocolsList'.ljust(30) + '\n')
-      for se, protocols in seInfo.iteritems():
-        print(se.ljust(30) + ', '.join(protocols).ljust(30))
-
-    return S_OK(seInfo)
 
   #############################################################################
   def setSiteProtocols(self, site, protocolsList, printOutput=False):

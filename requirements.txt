@@ -43,6 +43,8 @@ sqlalchemy>=1.0.9
 stomp.py>=3.1.5
 suds-jurko>=0.6
 sphinx
+# typing comes in via m2crypto. newer versions of typing caused an error in hypothesis
+typing==3.6.6
 hypothesis
 python-json-logger>=0.1.8
 multi-mechanize>=1.2.0

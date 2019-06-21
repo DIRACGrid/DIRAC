@@ -1,15 +1,16 @@
-""" CSHelpers
-
-  Module containing functions interacting with the CS and useful for the RSS
-  modules.
 """
+Module containing functions interacting with the CS and useful for the RSS
+modules.
+
+"""
+
+from __future__ import absolute_import, unicode_literals
 
 __RCSID__ = '$Id$'
 
 import errno
 
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName
 from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueues
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
@@ -54,23 +55,31 @@ def getSites():
   return S_OK(sites)
 
 
-def getGOCSites(diracSites=None):
+@deprecated("unused")
+def getDomainSites():
+  """
+    Gets all sites from /Resources/Sites
+  """
 
-  if diracSites is None:
-    diracSites = getSites()
-    if not diracSites['OK']:
-      return diracSites
-    diracSites = diracSites['Value']
+  _basePath = 'Resources/Sites'
 
-  gocSites = []
+  sites = {}
 
-  for diracSite in diracSites:
-    gocSite = getGOCSiteName(diracSite)
-    if not gocSite['OK']:
-      continue
-    gocSites.append(gocSite['Value'])
+  domainNames = gConfig.getSections(_basePath)
+  if not domainNames['OK']:
+    return domainNames
+  domainNames = domainNames['Value']
 
-  return S_OK(list(set(gocSites)))
+  for domainName in domainNames:
+    domainSites = gConfig.getSections('%s/%s' % (_basePath, domainName))
+    if not domainSites['OK']:
+      return domainSites
+
+    domainSites = domainSites['Value']
+
+    sites[domainName] = domainSites
+
+  return S_OK(sites)
 
 
 def getResources():
@@ -95,8 +104,40 @@ def getResources():
   return S_OK(resources)
 
 
-def getStorageElementsHosts(seNames=None):
-  """ Get the hosts of the Storage Elements
+@deprecated("unused")
+def getNodes():
+  """
+    Gets all nodes
+  """
+
+  nodes = []
+
+  queues = getQueues()
+  if queues['OK']:
+    nodes = nodes + queues['Value']
+
+  return S_OK(nodes)
+
+
+@deprecated("unused")
+def getStorageElements():
+  """
+    Gets all storage elements from /Resources/StorageElements
+  """
+
+  _basePath = 'Resources/StorageElements'
+
+  seNames = gConfig.getSections(_basePath)
+  return seNames
+
+
+def getStorageElementsHosts(seNames=None, plugins=None):
+  """ Get StorageElement host names
+
+      :param list seNames: possible list of storage element names (if not provided, will use all)
+      :param list plugins: if provided, restrict to a certain list of plugins
+
+      :return: S_OK() with list of hosts or S_ERROR
   """
 
   seHosts = []
@@ -106,7 +147,7 @@ def getStorageElementsHosts(seNames=None):
 
   for seName in seNames:
 
-    seHost = getSEHost(seName)
+    seHost = getSEHost(seName, plugins)
     if not seHost['OK']:
       gLogger.warn("Could not get SE Host", "SE: %s" % seName)
       continue
@@ -116,7 +157,14 @@ def getStorageElementsHosts(seNames=None):
   return S_OK(list(set(seHosts)))
 
 
-def _getSEParameters(seName):
+def getSEParameters(seName, plugins=None):
+  """ get all the SE parameters in a list
+
+      :param str seName: name of the Storage Element
+      :param list plugins: if provided, restrict to a certain list of plugins
+
+      :return: S_OK() or S_ERROR
+  """
   se = StorageElement(seName, hideExceptions=True)
 
   seParameters = S_ERROR(errno.ENODATA, 'No SE parameters obtained')
@@ -124,27 +172,26 @@ def _getSEParameters(seName):
   if not pluginsList['OK']:
     gLogger.warn(pluginsList['Message'], "SE: %s" % seName)
     return pluginsList
-  pluginsList = pluginsList['Value']
-  # Put the srm capable protocol first, but why doing that is a
-  # mystery that will eventually need to be sorted out...
-  for plugin in ('GFAL2_SRM2', 'SRM2'):
-    if plugin in pluginsList:
-      pluginsList.remove(plugin)
-      pluginsList.insert(0, plugin)
+  if plugins:
+    pluginsSet = set(pluginsList['Value']).intersection(set(plugins))
+  else:
+    pluginsSet = set(pluginsList['Value'])
 
-  for plugin in pluginsList:
+  seParametersList = []
+  for plugin in pluginsSet:
     seParameters = se.getStorageParameters(plugin)
     if seParameters['OK']:
-      break
+      seParametersList.append(seParameters['Value'])
 
-  return seParameters
+  return S_OK(seParametersList)
 
 
+@deprecated("unused")
 def getSEToken(seName):
   """ Get StorageElement token
   """
 
-  seParameters = _getSEParameters(seName)
+  seParameters = getSEParameters(seName)
   if not seParameters['OK']:
     gLogger.warn("Could not get SE parameters", "SE: %s" % seName)
     return seParameters
@@ -152,49 +199,56 @@ def getSEToken(seName):
   return S_OK(seParameters['Value']['SpaceToken'])
 
 
-def getSEHost(seName):
-  """ Get StorageElement host name
+def getSEHost(seName, plugins=None):
+  """ Get StorageElement host names (can be more than one depending on the protocol)
+
+      :param str seName: name of the storage element
+      :param list plugins: if provided, restrict to a certain list of plugins
+
+      :return: S_OK() with list of hosts or S_ERROR
   """
 
-  seParameters = _getSEParameters(seName)
+  seParameters = getSEParameters(seName, plugins)
   if not seParameters['OK']:
     gLogger.warn("Could not get SE parameters", "SE: %s" % seName)
     return seParameters
 
-  return S_OK(seParameters['Value']['Host'])
+  return S_OK([parameters['Host'] for parameters in seParameters['Value']])
 
 
-def getStorageElementEndpoint(seName):
-  """ Get one endpoint of a StorageElement
+def getStorageElementEndpoint(seName, plugins=[]):
+  """ Get endpoints of a StorageElement
 
-      Like all the rest of the methods here, they will need to adapt to an SRM free world.
-      This is planned for a future version. See https://github.com/DIRACGrid/DIRAC/issues/3908
+      :param str seName: name of the storage element
+      :param list plugins: if provided, restrict to a certain list of plugins
 
-      :param seName: name of the storage element
-
-      :returns: for historical reasons, if the protocol is SRM, you get  'httpg://host:port/WSUrl'
+      :returns: S_OK() or S_ERROR
+                for historical reasons, if the protocol is SRM, you get  'httpg://host:port/WSUrl'
                 For other protocols, you get :py:meth:`~DIRAC.Resources.Storage.StorageBase.StorageBase.getEndpoint`
 
   """
-  seParameters = _getSEParameters(seName)
+  seParameters = getSEParameters(seName, plugins)
   if not seParameters['OK']:
-    gLogger.warn("Could not get SE parameters", "SE: %s" % seName)
+    gLogger.warn("Could not get SE parameters", "for SE %s" % seName)
     return seParameters
 
-  if seParameters['Value']['Protocol'].lower() == 'srm':
-    # we need to construct the URL with httpg://
-    host = seParameters['Value']['Host']
-    port = seParameters['Value']['Port']
-    wsurl = seParameters['Value']['WSUrl']
-    # MAYBE wusrl is not defined
-    if host and port:
-      url = 'httpg://%s:%s%s' % (host, port, wsurl)
-      url = url.replace('?SFN=', '')
-      return S_OK(url)
-  else:
-    return S_OK(seParameters['Value']['Endpoint'])
+  seEndpoints = []
 
-  return S_ERROR((host, port, wsurl))
+  for parameters in seParameters['Value']:
+    if parameters['Protocol'].lower() == 'srm':
+      # we need to construct the URL with httpg://
+      host = parameters['Host']
+      port = parameters['Port']
+      wsurl = parameters['WSUrl']
+      # MAYBE wusrl is not defined
+      if host and port:
+        url = 'httpg://%s:%s%s' % (host, port, wsurl)
+        url = url.replace('?SFN=', '')
+        seEndpoints.append(url)
+    else:
+      seEndpoints.append(parameters['Endpoint'])
+
+  return S_OK(seEndpoints)
 
 
 def getFTS():

@@ -367,9 +367,9 @@ be taken:
       }
     }
 
-or You can download the full server installation from::  
+or You can download the full server installation from::
 
-	curl https://github.com/DIRACGrid/DIRAC/raw/integration/Core/scripts/install_full.cfg -o install.cfg
+   curl https://github.com/DIRACGrid/DIRAC/raw/integration/Core/scripts/install_full.cfg -o install.cfg
 
 - Run install_site.sh giving the edited configuration file as the argument. The configuration file must have
   .cfg extension (CFG file). While not strictly necessary, it's advised that a version is added with the '-v' switch

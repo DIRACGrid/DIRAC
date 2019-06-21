@@ -526,7 +526,7 @@ class ResourceManagementClient(Client):
     '''
     Gets from SpaceTokenOccupancyCache all rows that match the parameters given.
 
-    :param endpoint: srm endpoint
+    :param endpoint: endpoint
     :type endpoint: string, list
     :param token: name of the token
     :type token: string, list
@@ -551,7 +551,7 @@ class ResourceManagementClient(Client):
     '''
     Deletes from SpaceTokenOccupancyCache all rows that match the parameters given.
 
-    :param endpoint: srm endpoint
+    :param endpoint: endpoint
     :type endpoint: string, list
     :param token: name of the token
     :type token: string, list
@@ -575,7 +575,7 @@ class ResourceManagementClient(Client):
     Adds or updates-if-duplicated to SpaceTokenOccupancyCache. Using `site` and `token`
     to query the database, decides whether to insert or update the table.
 
-    :param endpoint: srm endpoint
+    :param endpoint: endpoint
     :type endpoint: string, list
     :param str token: name of the token
     :param int total: total terabytes
