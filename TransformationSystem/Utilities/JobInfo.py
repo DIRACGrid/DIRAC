@@ -78,10 +78,10 @@ class JobInfo(object):
     self.__getTaskID(jdlParameters)
     self.__getInputFile(jdlParameters)
 
-  def getTaskInfo(self, tasksDict, lfnTaskDict):
+  def getTaskInfo(self, tasksDict, lfnTaskDict, withInputTypes):
     """extract the task information from the taskDict"""
 
-    if self.inputFile is None and self.tType == "WithInputFiles":
+    if self.inputFile is None and self.tType in withInputTypes:
       raise TaskInfoException("InputFile is None: %s" % str(self))
 
     if self.taskID not in tasksDict:

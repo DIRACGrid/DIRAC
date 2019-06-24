@@ -11,6 +11,7 @@ import DIRAC
 
 from DIRAC.TransformationSystem.Utilities.JobInfo import TaskInfoException, JobInfo
 import ILCDIRAC
+import ILCDIRAC.Interfaces.API.DiracILC
 
 gLogger.setLevel("DEBUG")
 
@@ -24,9 +25,6 @@ class TestJI(unittest.TestCase):
 
   def setUp(self):
     self.jbi = JobInfo(jobID=123, status="Failed", tID=1234, tType="MCReconstruction")
-    self.jobMonMock = Mock(
-        name="jobMonMock",
-        spec=DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient.JobMonitoringClient)
     self.diracILC = Mock(name="jobMonMock", spec=ILCDIRAC.Interfaces.API.DiracILC.DiracILC)
     self.diracILC.getJobJDL = Mock()
 
@@ -384,11 +382,12 @@ class TestJI(unittest.TestCase):
   def test_getTaskInfo_1(self):
     # task is only one
     wit = ['MCReconstruction']
+    ## task is only one
     self.jbi.taskID = 1234
     self.jbi.inputFile = "lfn"
     tasksDict = {1234: dict(FileID=123456, LFN="lfn", Status="Assigned", ErrorCount=7)}
     lfnTaskDict = {}
-    self.jbi.getTaskInfo(tasksDict, lfnTaskDict)
+    self.jbi.getTaskInfo(tasksDict, lfnTaskDict, wit)
     self.assertEqual(self.jbi.fileStatus, "Assigned")
     self.assertEqual(self.jbi.taskFileID, 123456)
     self.assertIsNone(self.jbi.otherTasks)
@@ -400,7 +399,7 @@ class TestJI(unittest.TestCase):
     self.jbi.inputFile = "lfn"
     tasksDict = {12: dict(FileID=123456, LFN="lfn", Status="Processed", ErrorCount=7)}
     lfnTaskDict = {"lfn": 12}
-    self.jbi.getTaskInfo(tasksDict, lfnTaskDict)
+    self.jbi.getTaskInfo(tasksDict, lfnTaskDict, wit)
     self.assertEqual(self.jbi.fileStatus, "Processed")
     self.assertEqual(self.jbi.taskFileID, 123456)
     self.assertEqual(self.jbi.otherTasks, 12)
@@ -413,7 +412,7 @@ class TestJI(unittest.TestCase):
     tasksDict = {1234: dict(FileID=123456, LFN="lfn", Status="Processed")}
     lfnTaskDict = {}
     with self.assertRaisesRegexp(TaskInfoException, "InputFiles do not agree"):
-      self.jbi.getTaskInfo(tasksDict, lfnTaskDict)
+      self.jbi.getTaskInfo(tasksDict, lfnTaskDict, wit)
 
     # raise keyError
     self.jbi.taskID = 1235
@@ -421,7 +420,7 @@ class TestJI(unittest.TestCase):
     tasksDict = {1234: dict(FileID=123456, LFN="lfn", Status="Processed")}
     lfnTaskDict = {}
     with self.assertRaisesRegexp(KeyError, ""):
-      self.jbi.getTaskInfo(tasksDict, lfnTaskDict)
+      self.jbi.getTaskInfo(tasksDict, lfnTaskDict, wit)
 
     # raise inputFile
     self.jbi.taskID = 1235
@@ -429,7 +428,7 @@ class TestJI(unittest.TestCase):
     tasksDict = {1234: dict(FileID=123456, LFN="lfn", Status="Processed")}
     lfnTaskDict = {}
     with self.assertRaisesRegexp(TaskInfoException, "InputFile is None"):
-      self.jbi.getTaskInfo(tasksDict, lfnTaskDict)
+      self.jbi.getTaskInfo(tasksDict, lfnTaskDict, wit)
 
   def test_getJobInformation(self):
     """ILCTransformation.Utilities.JobInfo.getJobInformation........................................"""
