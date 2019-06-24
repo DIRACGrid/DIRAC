@@ -3,6 +3,13 @@
 # This is a generic list of commands run from a client for testing/certification purposes.
 #
 # Submitter should follow through the logs
+#
+
+if [ -z ${TESTCODE+x} ]; then
+  $PARAMS = ""
+else  # To run in Jenkins
+  $PARAMS = "-C $TESTCODE/user/client.pem -K $TESTCODE/user/client.key"
+fi
 
 echo
 echo
@@ -13,7 +20,7 @@ echo
 echo "========================"
 echo "===  dirac-proxy-init -U"
 echo
-dirac-proxy-init -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key -U
+dirac-proxy-init $PARAMS -U
 if [ $? -ne 0 ]
 then
    exit $?
@@ -63,7 +70,7 @@ echo
 echo "===================================="
 echo "===  dirac-proxy-init -g dirac_admin"
 echo
-dirac-proxy-init -g dirac_admin -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key -U
+dirac-proxy-init -g dirac_admin $PARAMS -U
 if [ $? -ne 0 ]
 then
    exit $?
@@ -93,7 +100,7 @@ echo
 echo "====================="
 echo "===  dirac-proxy-info"
 echo
-dirac-proxy-info -f $SERVERINSTALLDIR/proxy.adminusername.prod
+dirac-proxy-info -f `pwd`/proxy.adminusername.prod
 if [ $? -ne 0 ]
 then
    exit $?
