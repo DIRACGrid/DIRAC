@@ -21,12 +21,12 @@ class GOCDBStatusCommand_TestCase( unittest.TestCase ):
     """
     Setup
     """
-    gLogger.setLevel( 'DEBUG' )
+    gLogger.setLevel('DEBUG' )
     # Mock external libraries / modules not interesting for the unit test
-    self.CSHelpersMock = mock.MagicMock()
-    self.CSHelpersMock.getSEHost.return_value = S_OK('aRealName')
+    self.DMSHelpersMock = mock.MagicMock()
+    self.DMSHelpersMock.getSEHost.return_value = S_OK('aRealName')
     self.dowtimeCommandModule = importlib.import_module( 'DIRAC.ResourceStatusSystem.Command.DowntimeCommand' )
-    self.dowtimeCommandModule.CSHelpers = self.CSHelpersMock
+    self.dowtimeCommandModule.DMSHelpers = self.DMSHelpersMock
     self.mock_GOCDBClient = mock.MagicMock()
     self.args = {'name':'aName', 'element':'Resource', 'elementType': 'StorageElement'}
 

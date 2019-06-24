@@ -16,7 +16,7 @@ from datetime import datetime, timedelta
 from DIRAC import gLogger, S_OK, gConfig, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
-from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
+from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers, getSEHost, getStorageElementsHosts
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Utilities import CSHelpers, Utils
 ResourceManagementClient = getattr(
@@ -101,7 +101,7 @@ class PublisherHandler(RequestHandler):
       if not res['OK']:
         return res
       ses = res['Value'][1].get(siteName, [])
-      sesHosts = CSHelpers.getStorageElementsHosts(ses)
+      sesHosts = getStorageElementsHosts(ses)
       if not sesHosts['OK']:
         return sesHosts
       # Remove duplicates
@@ -285,7 +285,7 @@ class PublisherHandler(RequestHandler):
   def export_getDowntimes(self, element, elementType, name):
 
     if elementType == 'StorageElement':
-      name = CSHelpers.getSEHost(name)
+      name = getSEHost(name)
       if not name['OK']:
         return name
       name = name['Value']
@@ -303,7 +303,7 @@ class PublisherHandler(RequestHandler):
   def export_getCachedDowntimes(self, element, elementType, name, severity):
 
     if elementType == 'StorageElement':
-      name = CSHelpers.getSEHost(name)
+      name = getSEHost(name)
       if not name['OK']:
         return name
       name = name['Value']

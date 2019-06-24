@@ -16,6 +16,7 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.LCG.GOCDBClient import GOCDBClient
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName, getGOCSites, getGOCFTSName
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFTS3Servers
+from DIRAC.DataManagementSystem.Utilities.DMSHelpers import getSEHost, getStorageElementsHosts
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.Command.Command import Command
@@ -152,7 +153,7 @@ class DowntimeCommand(Command):
         elif diskSE:
           gOCDBServiceType = "srm"
 
-      res = CSHelpers.getSEHost(elementName)
+      res = getSEHost(elementName)
       if not res['OK']:
         return res
       seHosts = res['Value']
@@ -342,7 +343,7 @@ class DowntimeCommand(Command):
       return gocSites
     gocSites = gocSites['Value']
 
-    sesHosts = CSHelpers.getStorageElementsHosts()
+    sesHosts = getStorageElementsHosts()
     if not sesHosts['OK']:
       return sesHosts
     sesHosts = sesHosts['Value']

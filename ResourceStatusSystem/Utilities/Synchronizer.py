@@ -14,7 +14,7 @@ from DIRAC import gLogger, S_OK
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites, getFTS3Servers
 from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceURL
-from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
+from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers, getStorageElementsHosts
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Utilities import CSHelpers
 from DIRAC.ResourceStatusSystem.Utilities.RssConfiguration import RssConfiguration
@@ -193,7 +193,7 @@ class Synchronizer(object):
           'ResourceManagement is not installed, skipping removal of non existing resources...')
       return S_OK()
 
-    sesHosts = CSHelpers.getStorageElementsHosts()
+    sesHosts = getStorageElementsHosts()
     if not sesHosts['OK']:
       return sesHosts
     sesHosts = sesHosts['Value']
