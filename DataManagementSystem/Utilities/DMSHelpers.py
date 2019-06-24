@@ -3,12 +3,9 @@
 
 """
 
-import errno
-
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.Resources.Storage.StorageElement import StorageElement
 
 LOCAL = 1
 PROTOCOL = LOCAL + 1
@@ -57,78 +54,6 @@ def resolveSEGroup(seGroupList, allSEs=None):
     seList += newSEs
 
   return seList
-
-
-def getSEParameters(seName, plugins=None):
-  """ get all the SE parameters in a list
-
-      :param str seName: name of the Storage Element
-      :param list plugins: if provided, restrict to a certain list of plugins
-
-      :return: S_OK() or S_ERROR
-  """
-  se = StorageElement(seName, hideExceptions=True)
-
-  seParameters = S_ERROR(errno.ENODATA, 'No SE parameters obtained')
-  pluginsList = se.getPlugins()
-  if not pluginsList['OK']:
-    gLogger.warn(pluginsList['Message'], "SE: %s" % seName)
-    return pluginsList
-  if plugins:
-    pluginsSet = set(pluginsList['Value']).intersection(set(plugins))
-  else:
-    pluginsSet = set(pluginsList['Value'])
-
-  seParametersList = []
-  for plugin in pluginsSet:
-    seParameters = se.getStorageParameters(plugin)
-    if seParameters['OK']:
-      seParametersList.append(seParameters['Value'])
-
-  return S_OK(seParametersList)
-
-
-def getSEHost(seName, plugins=None):
-  """ Get StorageElement host names (can be more than one depending on the protocol)
-
-      :param str seName: name of the storage element
-      :param list plugins: if provided, restrict to a certain list of plugins
-
-      :return: S_OK() with list of hosts or S_ERROR
-  """
-
-  seParameters = getSEParameters(seName, plugins)
-  if not seParameters['OK']:
-    gLogger.warn("Could not get SE parameters", "SE: %s" % seName)
-    return seParameters
-
-  return S_OK([parameters['Host'] for parameters in seParameters['Value']])
-
-
-def getStorageElementsHosts(seNames=None, plugins=None):
-  """ Get StorageElement host names
-
-      :param list seNames: possible list of storage element names (if not provided, will use all)
-      :param list plugins: if provided, restrict to a certain list of plugins
-
-      :return: S_OK() with list of hosts or S_ERROR
-  """
-
-  seHosts = []
-
-  if seNames is None:
-    seNames = DMSHelpers().getStorageElements()
-
-  for seName in seNames:
-
-    seHost = getSEHost(seName, plugins)
-    if not seHost['OK']:
-      gLogger.warn("Could not get SE Host", "SE: %s" % seName)
-      continue
-    if seHost['Value']:
-      seHosts.append(seHost['Value'])
-
-  return S_OK(list(set(seHosts)))
 
 
 def siteGridName(site):

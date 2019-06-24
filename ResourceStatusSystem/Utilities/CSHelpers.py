@@ -8,8 +8,9 @@ __RCSID__ = '$Id$'
 
 from DIRAC import gConfig, gLogger, S_OK
 from DIRAC.Core.Utilities.Decorators import deprecated
+from DIRAC.Core.Utilities.SiteSEMapping import getSEParameters
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueues
-from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers, getSEParameters
+from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.ResourceStatusSystem.Utilities import Utils
 
 

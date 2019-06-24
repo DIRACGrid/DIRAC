@@ -15,8 +15,9 @@ from datetime import datetime, timedelta
 # DIRAC
 from DIRAC import gLogger, S_OK, gConfig, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.Core.Utilities.SiteSEMapping import getSEHost, getStorageElementsHosts
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
-from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers, getSEHost, getStorageElementsHosts
+from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Utilities import CSHelpers, Utils
 ResourceManagementClient = getattr(
