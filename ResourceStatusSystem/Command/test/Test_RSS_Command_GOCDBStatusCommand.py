@@ -15,20 +15,21 @@ from DIRAC.ResourceStatusSystem.Command.DowntimeCommand import DowntimeCommand
 
 ################################################################################
 
-class GOCDBStatusCommand_TestCase( unittest.TestCase ):
 
-  def setUp( self ):
+class GOCDBStatusCommand_TestCase(unittest.TestCase):
+
+  def setUp(self):
     """
     Setup
     """
-    gLogger.setLevel('DEBUG' )
+    gLogger.setLevel('DEBUG')
     # Mock external libraries / modules not interesting for the unit test
     self.DMSHelpersMock = mock.MagicMock()
     self.DMSHelpersMock.getSEHost.return_value = S_OK('aRealName')
-    self.dowtimeCommandModule = importlib.import_module( 'DIRAC.ResourceStatusSystem.Command.DowntimeCommand' )
+    self.dowtimeCommandModule = importlib.import_module('DIRAC.ResourceStatusSystem.Command.DowntimeCommand')
     self.dowtimeCommandModule.DMSHelpers = self.DMSHelpersMock
     self.mock_GOCDBClient = mock.MagicMock()
-    self.args = {'name':'aName', 'element':'Resource', 'elementType': 'StorageElement'}
+    self.args = {'name': 'aName', 'element': 'Resource', 'elementType': 'StorageElement'}
 
 #     mock_GOCDB = mock.MagicMock()
 #     mock_GOCDB.getStatus.return_value = { 'OK' : True, 'Value' : None }
@@ -50,8 +51,7 @@ class GOCDBStatusCommand_TestCase( unittest.TestCase ):
 #     self.moduleTested = moduleTested
 #     self.testClass = self.moduleTested.DowntimeCommand
 
-
-  def tearDown( self ):
+  def tearDown(self):
     """
     TearDown
     """
@@ -64,37 +64,38 @@ class GOCDBStatusCommand_TestCase( unittest.TestCase ):
 ################################################################################
 # Tests
 
-class GOCDBStatusCommand_Success( GOCDBStatusCommand_TestCase ):
 
-  def test_instantiate( self ):
+class GOCDBStatusCommand_Success(GOCDBStatusCommand_TestCase):
+
+  def test_instantiate(self):
     """ tests that we can instantiate one object of the tested class
     """
 
     command = DowntimeCommand()
-    self.assertEqual( 'DowntimeCommand', command.__class__.__name__ )
+    self.assertEqual('DowntimeCommand', command.__class__.__name__)
 
-  def test_init( self ):
+  def test_init(self):
     """ tests that the init method does what it should do
     """
 
     command = DowntimeCommand()
-    self.assertEqual( {'onlyCache': False}, command.args )
-    self.assertEqual( {}, command.apis )
+    self.assertEqual({'onlyCache': False}, command.args)
+    self.assertEqual({}, command.apis)
 
-    command = DowntimeCommand( clients = {'GOCDBClient': self.mock_GOCDBClient} )
-    self.assertEqual( {'onlyCache': False}, command.args )
-    self.assertEqual( {'GOCDBClient': self.mock_GOCDBClient}, command.apis )
+    command = DowntimeCommand(clients={'GOCDBClient': self.mock_GOCDBClient})
+    self.assertEqual({'onlyCache': False}, command.args)
+    self.assertEqual({'GOCDBClient': self.mock_GOCDBClient}, command.apis)
 
-    command = DowntimeCommand( self.args )
+    command = DowntimeCommand(self.args)
     _args = dict(self.args)
-    _args.update( {'onlyCache': False} )
-    self.assertEqual( _args, command.args )
-    self.assertEqual( {}, command.apis )
+    _args.update({'onlyCache': False})
+    self.assertEqual(_args, command.args)
+    self.assertEqual({}, command.apis)
 
-  def test_doCache( self ):
+  def test_doCache(self):
     """ tests the doCache method
     """
-    self.mock_GOCDBClient.selectDowntimeCache.return_value = {'OK':True, 'Value':{}}
+    self.mock_GOCDBClient.selectDowntimeCache.return_value = {'OK': True, 'Value': {}}
 
     with mock.patch("DIRAC.ResourceStatusSystem.Command.DowntimeCommand.StorageElement", new=mock.MagicMock()):
       command = DowntimeCommand(
@@ -104,7 +105,7 @@ class GOCDBStatusCommand_Success( GOCDBStatusCommand_TestCase ):
       res = command.doCache()
       self.assert_(res['OK'])
 
-      #CASE01: get ongoing DT from 2 DTs where one ongoing the other in the future
+      # CASE01: get ongoing DT from 2 DTs where one ongoing the other in the future
       now = datetime.utcnow()
       resFromDB = {'OK': True,
                    'Value': ((now - timedelta(hours=2),
@@ -146,7 +147,7 @@ class GOCDBStatusCommand_Success( GOCDBStatusCommand_TestCase ):
       self.assert_(res['OK'])
       self.assertEqual(res['Value']['DowntimeID'], '1 aRealName')
 
-      #CASE02: get future DT from 2 DTs where one ongoing the other in the future
+      # CASE02: get future DT from 2 DTs where one ongoing the other in the future
       resFromDB = {'OK': True,
                    'Value': ((now - timedelta(hours=12),
                               '1 aRealName',
@@ -180,7 +181,7 @@ class GOCDBStatusCommand_Success( GOCDBStatusCommand_TestCase ):
       self.assert_(res['OK'])
       self.assertEqual(res['Value']['DowntimeID'], '2 aRealName')
 
-      #CASE03: get DT from 2 overlapping OUTAGE DTs, one ongoing the other starting in the future
+      # CASE03: get DT from 2 overlapping OUTAGE DTs, one ongoing the other starting in the future
       resFromDB = {'OK': True,
                    'Value': ((now - timedelta(hours=12),
                               '1 aRealName',
@@ -214,7 +215,7 @@ class GOCDBStatusCommand_Success( GOCDBStatusCommand_TestCase ):
       self.assert_(res['OK'])
       self.assertEqual(res['Value']['DowntimeID'], '1 aRealName')
 
-      #CASE04: get DT from 2 ongoing DTs, first OUTAGE the other WARNING
+      # CASE04: get DT from 2 ongoing DTs, first OUTAGE the other WARNING
       resFromDB = {'OK': True,
                    'Value': ((now - timedelta(hours=10),
                               '1 aRealName',
@@ -226,16 +227,16 @@ class GOCDBStatusCommand_Success( GOCDBStatusCommand_TestCase ):
                               'OUTAGE',
                               now,
                               'Resource'),
-                             ( now - timedelta( hours = 12 ),
-                               '2 aRealName',
-                               'https://blah',
-                               now + timedelta( hours = 4 ),
-                               'aRealName',
-                               now + timedelta( hours = 2 ),
-                               'maintenance',
-                               'WARNING',
-                               now,
-                               'Resource' )
+                             (now - timedelta(hours=12),
+                              '2 aRealName',
+                              'https://blah',
+                              now + timedelta(hours=4),
+                              'aRealName',
+                              now + timedelta(hours=2),
+                              'maintenance',
+                              'WARNING',
+                              now,
+                              'Resource')
                              ),
                    'Columns': ['StartDate', 'DowntimeID', 'Link', 'EndDate', 'Name',
                                'DateEffective', 'Description', 'Severity', 'LastCheckTime', 'Element']
@@ -249,7 +250,7 @@ class GOCDBStatusCommand_Success( GOCDBStatusCommand_TestCase ):
       self.assert_(res['OK'])
       self.assertEqual(res['Value']['DowntimeID'], '1 aRealName')
 
-      #CASE05: get DT from 2 overlapping future DTs, the first WARNING the other OUTAGE
+      # CASE05: get DT from 2 overlapping future DTs, the first WARNING the other OUTAGE
       resFromDB = {'OK': True,
                    'Value': ((now + timedelta(hours=8),
                               '1 aRealName',
@@ -261,16 +262,16 @@ class GOCDBStatusCommand_Success( GOCDBStatusCommand_TestCase ):
                               'WARNING',
                               now,
                               'Resource'),
-                             ( now + timedelta( hours = 9 ),
-                               '2 aRealName',
-                               'https://blah',
-                               now + timedelta( hours = 11 ),
-                               'aRealName',
-                               now + timedelta( hours = 9 ),
-                               'maintenance',
-                               'OUTAGE',
-                               now,
-                               'Resource' )
+                             (now + timedelta(hours=9),
+                              '2 aRealName',
+                              'https://blah',
+                              now + timedelta(hours=11),
+                              'aRealName',
+                              now + timedelta(hours=9),
+                              'maintenance',
+                              'OUTAGE',
+                              now,
+                              'Resource')
                              ),
                    'Columns': ['StartDate', 'DowntimeID', 'Link', 'EndDate', 'Name',
                                'DateEffective', 'Description', 'Severity', 'LastCheckTime', 'Element']
@@ -286,7 +287,7 @@ class GOCDBStatusCommand_Success( GOCDBStatusCommand_TestCase ):
 
 
 # FIXME: rest to be reviewed: doNew
-#===============================================================================
+# ===============================================================================
 #   def test_doNew( self ):
 #     """ tests the doNew method
 #     """
@@ -331,8 +332,7 @@ class GOCDBStatusCommand_Success( GOCDBStatusCommand_TestCase ):
 #     self.assertEqual( [ 'DT', 'EndDate' ], res[ 'Value' ].keys() )
 #     self.assertEqual( 'OUTAGE', res[ 'Value' ][ 'DT' ] )
 #     self.assertEqual( '2011-07-20 00:00', res[ 'Value' ][ 'EndDate' ] )
-#===============================================================================
-
+# ===============================================================================
 
 
 # FIXME: rest to be reviewed: doMaster
@@ -487,4 +487,4 @@ class GOCDBStatusCommand_Success( GOCDBStatusCommand_TestCase ):
 #     reload( self.moduleTested )
 
 ################################################################################
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
+# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
