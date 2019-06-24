@@ -1078,12 +1078,14 @@ class SiteDirector(AgentModule):
       self.log.info('DIRAC project will be installed by pilots')
 
     # Request a release
-    diracVersion = opsHelper.getValue("Pilot/Version", [])
-    if not diracVersion:
-      self.log.error('Pilot/Version is not defined in the configuration')
-      return [None, None]
-    # diracVersion is a list of accepted releases
-    pilotOptions.append('-r %s' % ','.join(str(it) for it in diracVersion))
+    # FIXME: this can disapper at some point (when there will only be pilot 3)
+    if not self.pilot3:  # in pilot 3 the version is taken from the JSON file exported from the CS
+      diracVersion = opsHelper.getValue("Pilot/Version", [])
+      if not diracVersion:
+        self.log.error('Pilot/Version is not defined in the configuration')
+        return [None, None]
+      # diracVersion is a list of accepted releases
+      pilotOptions.append('-r %s' % ','.join(str(it) for it in diracVersion))
 
     # lcgBundle defined?
     lcgBundleVersion = opsHelper.getValue("Pilot/LCGBundleVersion", "")
@@ -1092,6 +1094,13 @@ class SiteDirector(AgentModule):
           "lcgBundle defined in CS: will overwrite possible per-release lcg bundle versions",
           "(version in CS: %s)" % lcgBundleVersion)
       pilotOptions.append('-g %s' % lcgBundleVersion)
+
+    # DIRACOS defined?
+    # FIXME: this can disapper at some point
+    diracOS = opsHelper.getValue("Pilot/DIRACOS", False)
+    if diracOS:
+      self.log.warn("DIRACOS forced with CS option: will overwrite possible per-release lcg bundle versions")
+      pilotOptions.append('--dirac-os')
 
     ownerDN = self.pilotDN
     ownerGroup = self.pilotGroup
