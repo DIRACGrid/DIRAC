@@ -96,17 +96,17 @@ class DataRecoveryAgent(AgentModule):
     self.diracILC = DiracILC()
     self.inputFilesProcessed = set()
     self.todo = {'NoInputFiles':
-                 [dict(Message="MCGeneration: OutputExists: Job 'Done'",
-                       ShortMessage="MCGeneration: job 'Done' ",
+                 [dict(Message="NoInputFiles: OutputExists: Job 'Done'",
+                       ShortMessage="NoInputFiles: job 'Done' ",
                        Counter=0,
                        Check=lambda job: job.allFilesExist() and job.status == 'Failed',
-                       Actions=lambda job, tInfo: [job.setJobDone(tInfo)]
+                       Actions=lambda job, tInfo: [job.setJobDone(tInfo)],
                        ),
-                  dict(Message="MCGeneration: OutputMissing: Job 'Failed'",
-                       ShortMessage="MCGeneration: job 'Failed' ",
+                  dict(Message="NoInputFiles: OutputMissing: Job 'Failed'",
+                       ShortMessage="NoInputFiles: job 'Failed' ",
                        Counter=0,
                        Check=lambda job: job.allFilesMissing() and job.status == 'Done',
-                       Actions=lambda job, tInfo: [job.setJobFailed(tInfo)]
+                       Actions=lambda job, tInfo: [job.setJobFailed(tInfo)],
                        ),
                   ],
                  'InputFiles':
@@ -336,7 +336,7 @@ class DataRecoveryAgent(AgentModule):
     lfnTaskDict = None
 
     self.startTime = time.time()
-    if not transInfoDict['Type'].startswith("MCGeneration"):
+    if transInfoDict['Type'] in self.transWithInput:
       self.log.notice('Getting tasks...')
       tasksDict = tInfo.checkTasksStatus()
       lfnTaskDict = dict([(tasksDict[taskID]['LFN'], taskID) for taskID in tasksDict])
@@ -436,10 +436,10 @@ class DataRecoveryAgent(AgentModule):
           job.checkFileExistence(lfnExistence)
           if tasksDict and lfnTaskDict:
             try:
-              job.getTaskInfo(tasksDict, lfnTaskDict)
+              job.getTaskInfo(tasksDict, lfnTaskDict, self.transWithInput)
             except TaskInfoException as e:
               self.log.error(" Skip Task, due to TaskInfoException: %s" % e)
-              if job.inputFile is None and not job.tType.startswith("MCGeneration"):
+              if job.inputFile is None and job.tType in self.transWithInput:
                 self.__failJobHard(job, tInfo)
               break
             fileJobDict[job.inputFile].append(job.jobID)
@@ -476,7 +476,7 @@ class DataRecoveryAgent(AgentModule):
     self.log.notice("Failing job hard %s" % job)
     self.notesToSend += "Failing job %s: no input file?\n" % job.jobID
     self.notesToSend += str(job) + '\n'
-    self.todo['OtherProductions'][-1]['Counter'] += 1
+    self.todo['InputFiles'][-1]['Counter'] += 1
     job.cleanOutputs(tInfo)
     job.setJobFailed(tInfo)
     # if job.inputFile is not None:
@@ -488,10 +488,10 @@ class DataRecoveryAgent(AgentModule):
     in this case we do not have to send report email or run again next time
 
     """
-    if transType.startswith('MCGeneration'):
+    if transType in self.transNoInput:
       return True
 
-    checks = self.todo['OtherProductions']
+    checks = self.todo['InputFiles']
     totalCount = 0
     for check in checks[1:]:
       totalCount += check['Counter']
