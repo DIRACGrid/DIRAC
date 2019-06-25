@@ -20,12 +20,12 @@ __RCSID__ = "$Id$"
 
 
 import datetime
-from sqlalchemy.orm import sessionmaker, class_mapper
+from sqlalchemy.orm import class_mapper
 from sqlalchemy.orm.query import Query
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, String, DateTime, exc, BigInteger
 
-from DIRAC import S_OK, S_ERROR, gLogger, gConfig
+from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.Core.Base.SQLAlchemyDB import SQLAlchemyDB
 from DIRAC.ResourceStatusSystem.Utilities import Utils
 
@@ -34,7 +34,8 @@ TABLESLIST = ['SiteStatus',
               'ResourceStatus',
               'NodeStatus']
 
-TABLESLISTWITHID = ['SiteLog',
+TABLESLISTWITHID = ['ResourceStatusCache',
+                    'SiteLog',
                     'SiteHistory',
                     'ResourceLog',
                     'ResourceHistory',
@@ -46,6 +47,45 @@ TABLESLISTWITHID = ['SiteLog',
 
 rssBase = declarative_base()
 
+
+class ResourceStatusCache(rssBase):
+  """
+  Table for EmailAction
+  """
+  __tablename__ = 'ResourceStatusCache'
+  __table_args__ = {'mysql_engine': 'InnoDB',
+                    'mysql_charset': 'utf8'}
+
+  id = Column('ID', BigInteger, nullable=False, autoincrement=True, primary_key=True)
+  sitename = Column('SiteName', String(64), nullable=False)
+  name = Column('ResourceName', String(64), nullable=False)
+  status = Column('Status', String(8), nullable=False, server_default='')
+  previousstatus = Column('PreviousStatus', String(8), nullable=False, server_default='')
+  statustype = Column('StatusType', String(128), nullable=False, server_default='all')
+  time = Column('Time', DateTime, nullable=False, server_default='9999-12-31 23:59:59')
+
+  def fromDict(self, dictionary):
+    """
+    Fill the fields of the AccountingCache object from a dictionary
+
+    :param dictionary: Dictionary to fill a single line
+    :type arguments: dict
+    """
+
+    self.id = dictionary.get('ID', self.id)
+    self.name = dictionary.get('ResourceName', self.name)
+    self.sitename = dictionary.get('SiteName', self.sitename)
+    self.status = dictionary.get('Status', self.status)
+    self.previousstatus = dictionary.get('PreviousStatus', self.previousstatus)
+    self.statustype = dictionary.get('StatusType', self.statustype)
+    self.time = dictionary.get('Time', datetime.datetime.utcnow())
+
+  def toList(self):
+    """
+    Simply returns a list of column values
+    """
+
+    return [self.id, self.sitename, self.name, self.status, self.previousstatus, self.statustype, self.time]
 
 class ElementStatusBase(object):
   """ Prototype for tables
@@ -369,6 +409,3 @@ class ResourceStatusDB(SQLAlchemyDB):
       return S_ERROR("addIfNotThere: unexpected exception %s" % e)
     finally:
       session.close()
-
-################################################################################
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

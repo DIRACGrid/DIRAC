@@ -7,9 +7,8 @@
 
 __RCSID__ = '$Id$'
 
-import os
-import sqlite3
-from DIRAC import S_ERROR, S_OK
+from DIRAC import S_ERROR
+from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.PolicySystem.Actions.BaseAction import BaseAction
 from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
 from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE
@@ -23,11 +22,10 @@ class EmailAction(BaseAction):
     super(EmailAction, self).__init__(name, decisionParams, enforcementResult,
                                       singlePolicyResults, clients)
 
-    if 'DIRAC' in os.environ:
-      self.cacheFile = os.path.join(
-          os.getenv('DIRAC'), 'work/ResourceStatus/cache.db')
+    if clients is not None and 'ResourceStatusClient' in clients:
+      self.rsClient = clients['ResourceStatusClient']
     else:
-      self.cacheFile = os.path.realpath('cache.db')
+      self.rsClient = ResourceStatusClient()
 
   def run(self):
     ''' Checks it has the parameters it needs and writes the date to a cache file.
@@ -78,26 +76,14 @@ class EmailAction(BaseAction):
       else:
         siteName = siteName['Value'] if isinstance(siteName['Value'], basestring) else siteName['Value'][0]
 
-    with sqlite3.connect(self.cacheFile) as conn:
+    # create record for insertion
+    recordDict = {}
+    recordDict['SiteName'] = siteName
+    recordDict['ResourceName'] = name
+    recordDict['Status'] = status
+    recordDict['PreviousStatus'] = previousStatus
+    recordDict['StatusType'] = statusType
 
-      try:
-        conn.execute('''CREATE TABLE IF NOT EXISTS ResourceStatusCache(
-                      SiteName VARCHAR(64) NOT NULL,
-                      ResourceName VARCHAR(64) NOT NULL,
-                      Status VARCHAR(8) NOT NULL DEFAULT "",
-                      PreviousStatus VARCHAR(8) NOT NULL DEFAULT "",
-                      StatusType VARCHAR(128) NOT NULL DEFAULT "all",
-                      Time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                     );''')
+    resInsert = self.rsClient.insert('ResourceStatusCache', recordDict)
 
-        insertQuery = "INSERT INTO ResourceStatusCache (SiteName, ResourceName, Status, PreviousStatus, StatusType)"
-        insertQuery += " VALUES ('%s', '%s', '%s', '%s', '%s' ); " % (siteName, name, status,
-                                                                      previousStatus, statusType)
-        conn.execute(insertQuery)
-
-        conn.commit()
-
-      except sqlite3.OperationalError:
-        self.log.error('Email cache database is locked')
-
-    return S_OK()
+    return resInsert

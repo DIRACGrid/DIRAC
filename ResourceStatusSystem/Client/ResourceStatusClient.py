@@ -46,6 +46,56 @@ class ResourceStatusClient(Client):
 
     return sendDict
 
+  def insert(self, tableName, record):
+    """
+    Insert a dictionary `record` as a row in table `tableName`
+
+    :params:
+      **tableName** - `string`
+        the name of the table
+      **record** - 'dict'
+        the record to insert in the table
+
+    :return: S_OK() || S_ERROR()
+    """
+
+    return self._getRPC().insert(tableName, record)
+
+  def select(self, tableName, params=None):
+    """
+    Select rows from the table `tableName`
+
+    :params:
+      **tableName** - `string`
+        the name of the table
+      **params** - 'dict'
+        selection parameters
+
+    :return: S_OK() || S_ERROR()
+    """
+
+    if params is None:
+      params = {}
+    return self._getRPC().select(tableName, params)
+
+  def delete(self, tableName, params=None):
+    """
+    Delect rows from the table `tableName`
+
+    :params:
+      **tableName** - `string`
+        the name of the table
+      **params** - 'dict'
+        delete parameters
+
+    :Returns:
+      S_OK() || S_ERROR()
+    """
+
+    if params is None:
+      params = {}
+    return self._getRPC().delete(tableName, params)
+
   ################################################################################
   # Element status methods - enjoy !
 

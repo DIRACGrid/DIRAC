@@ -1,40 +1,29 @@
-""" Test class for EmailAction / EmailAgent
+""" This is a test for EmailAction and EmailAgent
+    Requires DB to be present and ResourceStatusHandler to be working
 """
 
-# imports
 import importlib
-import os
-import sys
 import unittest
-from mock import MagicMock, patch
+from mock import MagicMock
 
 from DIRAC import gLogger
-
 from DIRAC.ResourceStatusSystem.PolicySystem.Actions.EmailAction import EmailAction
+from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+from DIRAC.Core.Base.Script import parseCommandLine
 
+parseCommandLine()
 gLogger.setLevel('DEBUG')
 
 
-class TestCase(unittest.TestCase):
-  """ Base class for the EmailAction / EmailAgent test cases
-  """
+class TestEmailActionAgentTestCase(unittest.TestCase):
 
   def setUp(self):
-    self.mockAM = MagicMock()
-    self.agent_m = importlib.import_module('DIRAC.ResourceStatusSystem.Agent.EmailAgent')
-    self.agent_m.AgentModule = self.mockAM
-    self.agent_m.FileReport = MagicMock()
-    self.agent = self.agent_m.EmailAgent()
-    self.agent.log = gLogger
-    self.agent.am_getOption = self.mockAM
-    self.agent.log.setLevel('DEBUG')
 
-    self.action_m = importlib.import_module('DIRAC.ResourceStatusSystem.PolicySystem.Actions.EmailAction')
-    self.action_m.AgentModule = self.mockAM
+    self.rssClient = ResourceStatusClient()
 
-    name = "LogStatusAction"
+    name = 'LogStatusAction'
     decisionParams = {'status': 'Banned', 'reason': 'test', 'tokenOwner': None,
-                      'active': 'Active', 'name': 'test1.test1.ch', 'element': 'Resource',
+                      'active': 'Active', 'name': 'ProductionSandboxSE', 'element': 'Resource',
                       'elementType': 'StorageElement', 'statusType': 'ReadAccess'}
 
     enforcementResult = {'Status': 'Banned', 'Reason': 'test ###',
@@ -56,41 +45,37 @@ class TestCase(unittest.TestCase):
                                                            'description': 'A Policy that always returns Active'},
                             'Reason': 'AlwaysActive'}]
 
-    with patch.dict(os.environ):
-      os.environ.pop('DIRAC', None)
-      self.action = EmailAction(name, decisionParams, enforcementResult, singlePolicyResults)
+    self.action = EmailAction(name, decisionParams, enforcementResult, singlePolicyResults)
     self.action.log = gLogger
+    self.action.log.setLevel('DEBUG')
+
+    self.mockAM = MagicMock()
+    self.agent_m = importlib.import_module('DIRAC.ResourceStatusSystem.Agent.EmailAgent')
+    self.agent_m.AgentModule = self.mockAM
+    self.agent = self.agent_m.EmailAgent()
+    self.agent.am_getOption = self.mockAM
+    self.agent.log = gLogger
     self.agent.log.setLevel('DEBUG')
 
-    self.tc_mock = MagicMock()
-    self.tm_mock = MagicMock()
-
-  @classmethod
-  def tearDownClass(cls):
-    sys.modules.pop('DIRAC.ResourceStatusSystem.Agent.EmailAgent')
+  def tearDown(self):
+    pass
 
 
-class EmailActionSuccess(TestCase):
+class EmailActionAgent(TestEmailActionAgentTestCase):
 
-  def test__createTheDatabase(self):
+  def test__emailActionAgent(self):
+
+    # clean up
+    res = self.rssClient.delete('ResourceStatusCache')
+    self.assertTrue(res['OK'])
+
     res = self.action.run()
     self.assertTrue(res['OK'])
 
-
-class EmailAgentSuccess(TestCase):
-
-  def test__getData(self):
-    self.agent.diracAdmin = MagicMock()
     res = self.agent.execute()
     self.assertTrue(res['OK'])
 
-#############################################################################
-# Test Suite run
-#############################################################################
-
-
 if __name__ == '__main__':
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestCase)
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(EmailActionSuccess))
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(EmailAgentSuccess))
-  testResult = unittest.TextTestRunner(verbosity=2).run(suite)
+  suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestEmailActionAgentTestCase)
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(EmailActionAgent))
+  unittest.TextTestRunner(verbosity=2).run(suite)
