@@ -137,13 +137,16 @@ class DowntimeCommand(Command):
 
     # The DIRAC se names mean nothing on the grid, but their hosts do mean.
     elif elementType == 'StorageElement':
-      # We need to distinguish if it's tape or disk
+      # for SRM and SRM only, we need to distinguish if it's tape or disk
+      # if it's not SRM, then gOCDBServiceType will be None (and we'll use them all)
       try:
-        seOptions = StorageElement(elementName).options
+        se = StorageElement(elementName)
+        seOptions = se.options
+        seProtocols = set(se.localAccessProtocolList) & set(se.localWriteProtocolList)
       except AttributeError:  # Sometimes the SE can't be instantiated properly
         self.log.error("Failure instantiating StorageElement object", elementName)
         return S_ERROR("Failure instantiating StorageElement")
-      if 'SEType' in seOptions:
+      if 'SEType' in seOptions and 'srm' in seProtocols:
         # Type should follow the convention TXDY
         seType = seOptions['SEType']
         diskSE = re.search('D[1-9]', seType) is not None
