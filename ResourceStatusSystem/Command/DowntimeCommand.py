@@ -142,7 +142,7 @@ class DowntimeCommand(Command):
       try:
         se = StorageElement(elementName)
         seOptions = se.options
-        seProtocols = set(se.localAccessProtocolList) & set(se.localWriteProtocolList)
+        seProtocols = set(se.localAccessProtocolList) | set(se.localWriteProtocolList)
       except AttributeError:  # Sometimes the SE can't be instantiated properly
         self.log.error("Failure instantiating StorageElement object", elementName)
         return S_ERROR("Failure instantiating StorageElement")

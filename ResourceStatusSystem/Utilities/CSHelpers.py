@@ -140,18 +140,17 @@ def getSEToken(seName):
   return S_OK(seParameters['Value']['SpaceToken'])
 
 
-def getStorageElementEndpoint(seName, plugins=[]):
+def getStorageElementEndpoint(seName):
   """ Get endpoints of a StorageElement
 
       :param str seName: name of the storage element
-      :param list plugins: if provided, restrict to a certain list of plugins
 
       :returns: S_OK() or S_ERROR
                 for historical reasons, if the protocol is SRM, you get  'httpg://host:port/WSUrl'
                 For other protocols, you get :py:meth:`~DIRAC.Resources.Storage.StorageBase.StorageBase.getEndpoint`
 
   """
-  seParameters = getSEParameters(seName, plugins)
+  seParameters = getSEParameters(seName)
   if not seParameters['OK']:
     gLogger.warn("Could not get SE parameters", "for SE %s" % seName)
     return seParameters
