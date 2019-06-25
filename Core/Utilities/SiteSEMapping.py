@@ -45,7 +45,7 @@ def getSEParameters(seName, plugins=None):
   return S_OK(seParametersList)
 
 
-def getSEHost(seName, plugins=None):
+def getSEHosts(seName, plugins=None):
   """ Get StorageElement host names (can be more than one depending on the protocol)
 
       :param str seName: name of the storage element
@@ -78,12 +78,12 @@ def getStorageElementsHosts(seNames=None, plugins=None):
 
   for seName in seNames:
 
-    seHost = getSEHost(seName, plugins)
+    seHost = getSEHosts(seName, plugins)
     if not seHost['OK']:
       gLogger.warn("Could not get SE Host", "SE: %s" % seName)
       continue
     if seHost['Value']:
-      seHosts.append(seHost['Value'])
+      seHosts.extend(seHost['Value'])
 
   return S_OK(list(set(seHosts)))
 

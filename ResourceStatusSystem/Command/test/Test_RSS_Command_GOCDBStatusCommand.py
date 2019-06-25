@@ -57,7 +57,7 @@ def test_doCache(mocker):
   """ tests the doCache method
   """
   mocker.patch("DIRAC.ResourceStatusSystem.Command.DowntimeCommand.StorageElement", return_value=seMock)
-  mocker.patch("DIRAC.ResourceStatusSystem.Command.DowntimeCommand.getSEHost",
+  mocker.patch("DIRAC.ResourceStatusSystem.Command.DowntimeCommand.getSEHosts",
                return_value=S_OK(['someHost', 'aSecondHost']))
 
   command = DowntimeCommand(args, {'ResourceManagementClient': mock_RMClient})

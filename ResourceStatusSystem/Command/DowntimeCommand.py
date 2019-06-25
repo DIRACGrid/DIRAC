@@ -15,7 +15,7 @@ from operator import itemgetter
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.LCG.GOCDBClient import GOCDBClient
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName, getGOCSites, getGOCFTSName
-from DIRAC.Core.Utilities.SiteSEMapping import getSEHost, getStorageElementsHosts
+from DIRAC.Core.Utilities.SiteSEMapping import getSEHosts, getStorageElementsHosts
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFTS3Servers
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
@@ -156,7 +156,7 @@ class DowntimeCommand(Command):
         elif diskSE:
           gOCDBServiceType = "srm"
 
-      res = getSEHost(elementName)
+      res = getSEHosts(elementName)
       if not res['OK']:
         return res
       seHosts = res['Value']

@@ -6,7 +6,7 @@
 __RCSID__ = "$Id$"
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.Core.Utilities.SiteSEMapping import getSEHost
+from DIRAC.Core.Utilities.SiteSEMapping import getSEHosts
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 
@@ -104,11 +104,11 @@ def getDIRACSesForHostName(hostName):
 
   resultDIRACSEs = []
   for seName in seNames:
-    res = getSEHost(seName)
+    res = getSEHosts(seName)
     if not res['OK']:
       return res
     if hostName in res['Value']:
-      resultDIRACSEs.append(seName)
+      resultDIRACSEs.extend(seName)
 
   return S_OK(resultDIRACSEs)
 
