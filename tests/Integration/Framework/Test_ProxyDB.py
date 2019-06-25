@@ -4,13 +4,13 @@
 
 # pylint: disable=invalid-name,wrong-import-position,protected-access
 import os
+import re
 import sys
 import stat
 import shutil
+import tempfile
 import commands
 import unittest
-
-from tempfile import mkstemp
 
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
@@ -20,6 +20,8 @@ from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.FrameworkSystem.DB.ProxyDB import ProxyDB
 
+certsPath = os.path.join(os.environ['DIRAC'], 'DIRAC/tests/Integration/certs')
+
 diracTestCACFG = """
 Resources
 {
@@ -28,14 +30,14 @@ Resources
     DIRAC_CA
     {
       ProxyProviderType = DIRACCA
-      CertFile = %%s
-      KeyFile = %%s
+      CAConfigFile = %s
       C = DN
       O = DIRACCA
     }
   }
 }
-%s""" % ''
+""" % os.path.join(certsPath, 'ca/openssl_config_ca.cnf')
+
 userCFG = """
 Registry
 {
@@ -116,11 +118,11 @@ class ProxyDBTestCase(unittest.TestCase):
 
   @classmethod
   def createProxy(self, userName, group, time, rfc=True, limit=False, vo=False, role=None, path=None):
-    """ Create proxy
+    """ Create user proxy
     """
-    userCertFile = os.path.join(self.tmpDir, userName + '.cert.pem')
-    userKeyFile = os.path.join(self.tmpDir, userName + '.key.pem')
-    self.proxyPath = path or os.path.join(self.tmpDir, userName + '.pem')
+    userCertFile = os.path.join(self.userDir, userName + '.cert.pem')
+    userKeyFile = os.path.join(self.userDir, userName + '.key.pem')
+    self.proxyPath = path or os.path.join(self.userDir, userName + '.pem')
     if not vo:
       chain = X509Chain()
       # Load user cert and key
@@ -164,45 +166,65 @@ class ProxyDBTestCase(unittest.TestCase):
 
   @classmethod
   def setUpClass(cls):
+    cls.failed = False
     cls.db = ProxyDB()
-
-    # Create tmp dir
-    cls.tmpDir = os.path.join(os.environ['HOME'], 'tmpDirForTesting')
-    if os.path.exists(cls.tmpDir):
-      shutil.rmtree(cls.tmpDir)
-    os.makedirs(cls.tmpDir)
-
-    # Prepare CA
-    certsPath = os.path.join(os.environ['DIRAC'], 'DIRAC/tests/Integration/certs')
-    cls.caWorkingDirectory = os.path.join(cls.tmpDir, 'ca')
-    if os.path.exists(cls.caWorkingDirectory):
-      shutil.rmtree(cls.caWorkingDirectory)
-    # Copy CA files to temporaly directory
-    shutil.copytree(os.path.join(certsPath, 'ca'), cls.caWorkingDirectory)
-    cls.hostCert = os.path.join(certsPath, 'host/hostcert.pem')
-    cls.hostKey = os.path.join(certsPath, 'host/hostkey.pem')
-    cls.caCert = os.path.join(cls.caWorkingDirectory, 'ca.cert.pem')
-    cls.caKey = os.path.join(cls.caWorkingDirectory, 'ca.key.pem')
-    os.chmod(cls.caKey, stat.S_IREAD)
-    cls.caConfigFile = os.path.join(cls.caWorkingDirectory, 'openssl_config_ca.cnf')
-    # Fix CA configuration file
-    fh, absPath = mkstemp()
-    newFile = open(absPath, 'w')
-    oldFile = open(cls.caConfigFile)
-    for line in oldFile:
-      newFile.write('dir = %s' % (cls.caWorkingDirectory) if '#PUT THE RIGHT DIR HERE!' in line else line)
-    newFile.close()
-    os.close(fh)
-    oldFile.close()
-    os.remove(cls.caConfigFile)
-    shutil.move(absPath, cls.caConfigFile)
 
     # Add configuration
     cfg = CFG()
-    cfg.loadFromBuffer(diracTestCACFG % (cls.caCert, cls.caKey))
+    cfg.loadFromBuffer(diracTestCACFG)
     gConfig.loadCFG(cfg)
     cfg.loadFromBuffer(userCFG)
     gConfig.loadCFG(cfg)
+
+    # Prepare CA
+    lines = []
+    cfgDict = {}
+    cls.caPath = os.path.join(certsPath, 'ca')
+    cls.caConfigFile = os.path.join(cls.caPath, 'openssl_config_ca.cnf')
+    # Save original configuration file
+    shutil.copyfile(cls.caConfigFile, cls.caConfigFile + 'bak')
+    # Parse
+    fields = ['dir', 'database', 'serial', 'new_certs_dir', 'private_key', 'certificate']
+    with open(cls.caConfigFile, "rw+") as caCFG:
+      for line in caCFG:
+        if re.findall('=', re.sub(r'#.*', '', line)):
+          field = re.sub(r'#.*', '', line).replace(' ', '').rstrip().split('=')[0]
+          line = 'dir = %s #PUT THE RIGHT DIR HERE!\n' % (cls.caPath) if field == 'dir' else line
+          val = re.sub(r'#.*', '', line).replace(' ', '').rstrip().split('=')[1]
+          if field in fields:
+            for i in fields:
+              if cfgDict.get(i):
+                val = val.replace('$%s' % i, cfgDict[i])
+            cfgDict[field] = val
+            if not cfgDict[field]:
+              cls.failed = '%s have empty value in %s' % (field, cls.caConfigFile)
+        lines.append(line)
+      caCFG.seek(0)
+      caCFG.writelines(lines)
+    for field in fields:
+      if field not in cfgDict.keys():
+        cls.failed = '%s value is absent in %s' % (field, cls.caConfigFile)
+    cls.hostCert = os.path.join(certsPath, 'host/hostcert.pem')
+    cls.hostKey = os.path.join(certsPath, 'host/hostkey.pem')
+    cls.caCert = cfgDict['certificate']
+    cls.caKey = cfgDict['private_key']
+    os.chmod(cls.caKey, stat.S_IREAD)
+    # Check directory for new certificates
+    cls.newCertDir = cfgDict['new_certs_dir']
+    if not os.path.exists(cls.newCertDir):
+      os.makedirs(cls.newCertDir)
+    for f in os.listdir(cls.newCertDir):
+      os.remove(os.path.join(cls.newCertDir, f))
+    # Empty the certificate database
+    with open(cfgDict['database'], 'w') as indx:
+      indx.write('')
+    # Write down serial
+    if not os.path.exists(cfgDict['serial']):
+      with open(cfgDict['serial'], 'w') as serialFile:
+        serialFile.write('1000')
+
+    # Create temporaly directory for users certificates
+    cls.userDir = tempfile.mkdtemp(dir=certsPath)
 
     # Create user certificates
     for userName in ['no_user', 'user_1', 'user_2', 'user_3']:
@@ -222,10 +244,10 @@ class ProxyDBTestCase(unittest.TestCase):
         keyUsage = critical, nonRepudiation, digitalSignature, keyEncipherment
         extendedKeyUsage = clientAuth
         """ % (userName)
-      userConfFile = os.path.join(cls.tmpDir, userName + '.cnf')
-      userReqFile = os.path.join(cls.tmpDir, userName + '.req')
-      userKeyFile = os.path.join(cls.tmpDir, userName + '.key.pem')
-      userCertFile = os.path.join(cls.tmpDir, userName + '.cert.pem')
+      userConfFile = os.path.join(cls.userDir, userName + '.cnf')
+      userReqFile = os.path.join(cls.userDir, userName + '.req')
+      userKeyFile = os.path.join(cls.userDir, userName + '.key.pem')
+      userCertFile = os.path.join(cls.userDir, userName + '.cert.pem')
       with open(userConfFile, "w") as f:
         f.write(userConf)
       status, output = commands.getstatusoutput('openssl genrsa -out %s 2048' % userKeyFile)
@@ -249,6 +271,8 @@ class ProxyDBTestCase(unittest.TestCase):
       gLogger.debug(output)
 
   def setUp(self):
+    if self.failed:
+       self.fail(self.failed)
     self.db._update('DELETE FROM ProxyDB_Proxies WHERE UserName IN ("user_ca", "user_1", "user_2", "user_3")')
     self.db._update('DELETE FROM ProxyDB_CleanProxies WHERE UserName IN ("user_ca", "user_1", "user_2", "user_3")')
 
@@ -258,9 +282,15 @@ class ProxyDBTestCase(unittest.TestCase):
 
   @classmethod
   def tearDownClass(cls):
-    if os.path.exists(cls.tmpDir):
-      shutil.rmtree(cls.tmpDir)
-
+    shutil.move(cls.caConfigFile + 'bak', cls.caConfigFile)
+    if os.path.exists(cls.newCertDir):
+      for f in os.listdir(cls.newCertDir):
+        os.remove(os.path.join(cls.newCertDir, f))
+    for f in os.listdir(cls.caPath):
+      if f.endswith(".old"):
+        os.remove(os.path.join(cls.caPath, f))
+    if os.path.exists(cls.userDir):
+      shutil.rmtree(cls.userDir)
 
 class testDB(ProxyDBTestCase):
 

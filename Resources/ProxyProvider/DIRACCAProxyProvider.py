@@ -166,7 +166,7 @@ class DIRACCAProxyProvider(ProxyProvider):
     if caConfigFile:
       with open(caConfigFile, "r") as caCFG:
         for line in caCFG:
-          if re.findall('=', line):
+          if re.findall('=', re.sub(r'#.*', '', line)):
             field, val = re.sub(r'#.*', '', line).replace(' ', '').rstrip().split('=')
             if field in ['dir', 'database', 'serial', 'new_certs_dir', 'private_key', 'certificate']:
               for i in ['dir', 'database', 'serial', 'new_certs_dir', 'private_key', 'certificate']:
@@ -211,7 +211,11 @@ class DIRACCAProxyProvider(ProxyProvider):
     # Clean up temporary files
     if cfg.get('dir'):
       shutil.rmtree(userDir)
-      shutil.rmtree(newCertsDir)
+      for f in os.listdir(newCertsDir):
+        os.remove(os.path.join(newCertsDir, f))
+      for f in os.listdir(caWorkingDirectory):
+        if f.endswith(".old"):
+          os.remove(os.path.join(caWorkingDirectory, f))
     else:
       shutil.rmtree(caWorkingDirectory)
 
