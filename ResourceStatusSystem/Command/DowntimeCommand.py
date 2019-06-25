@@ -20,7 +20,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFTS3Servers
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.Command.Command import Command
-from DIRAC.ResourceStatusSystem.Utilities import CSHelpers
+from DIRAC.ResourceStatusSystem.Utilities.CSHelpers import getComputingElements
 
 
 class DowntimeCommand(Command):
@@ -219,9 +219,10 @@ class DowntimeCommand(Command):
       return S_OK(None)
 
     # cleaning the Cache
-    cleanRes = self._cleanCommand(element, elementNames)
-    if not cleanRes['OK']:
-      return cleanRes
+    if elementName:
+      cleanRes = self._cleanCommand(element, elementNames)
+      if not cleanRes['OK']:
+        return cleanRes
 
     uniformResult = []
 
@@ -348,10 +349,10 @@ class DowntimeCommand(Command):
       return sesHosts
     sesHosts = sesHosts['Value']
 
-    resources = sesHosts
+    resources = sesHosts if sesHosts else []
 
     ftsServer = getFTS3Servers()
-    if ftsServer['OK']:
+    if ftsServer['OK'] and ftsServer['Value']:
       resources.extend(ftsServer['Value'])
 
     # TODO: file catalogs need also to use their hosts
@@ -360,17 +361,17 @@ class DowntimeCommand(Command):
     # if fc[ 'OK' ]:
     #  resources = resources + fc[ 'Value' ]
 
-    ce = CSHelpers.getComputingElements()
-    if ce['OK']:
+    ce = getComputingElements()
+    if ce['OK'] and ce['Value']:
       resources.extend(ce['Value'])
 
-    self.log.verbose('Processing Sites', ', '.join(gocSites))
+    self.log.verbose('Processing Sites', ', '.join(gocSites if gocSites else ['NONE']))
 
     siteRes = self.doNew(('Site', gocSites))
     if not siteRes['OK']:
       self.metrics['failed'].append(siteRes['Message'])
 
-    self.log.verbose('Processing Resources', ', '.join(resources))
+    self.log.verbose('Processing Resources', ', '.join(resources if resources else ['NONE']))
 
     resourceRes = self.doNew(('Resource', resources))
     if not resourceRes['OK']:
