@@ -223,7 +223,7 @@ class ProxyInit(object):
       if self.__piParams.strict:
         return resultProxyWithVOMS
 
-    if uploadProxy:
+    if self.__piParams.uploadProxy:
       resultProxyUpload = pI.uploadProxy()
       if not resultProxyUpload['OK']:
         if self.__piParams.strict:
