@@ -8,9 +8,7 @@
 
 __RCSID__ = "$Id$"
 
-import errno
-
-from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC import gLogger, S_OK
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers, siteGridName
 
 
@@ -19,7 +17,7 @@ def getSEParameters(seName):
 
       :param str seName: name of the Storage Element
 
-      :return: S_OK() or S_ERROR
+      :return: S_OK() with list of dict with parameters
   """
   # This import is here to avoid circular imports
   from DIRAC.Resources.Storage.StorageElement import StorageElement
@@ -33,7 +31,7 @@ def getSEParameters(seName):
     if seParameters['OK']:
       seParametersList.append(seParameters['Value'])
     else:
-      return S_ERROR(errno.ENODATA, 'No SE parameters obtained')
+      gLogger.warn("No SE parameters obtained", "for SE %s and protocol %s" % (seName, protocol))
 
   return S_OK(seParametersList)
 
