@@ -300,6 +300,7 @@ class ProxyDBTestCase(unittest.TestCase):
     with open(cls.serial, 'w') as serialFile:
       serialFile.write('1000')
 
+
 class testDB(ProxyDBTestCase):
 
   def test_connectDB(self):

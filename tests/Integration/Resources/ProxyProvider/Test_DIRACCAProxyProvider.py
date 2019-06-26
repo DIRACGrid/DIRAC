@@ -52,6 +52,7 @@ Registry
 }
 """
 
+
 class DIRACCAPPTest(unittest.TestCase):
   """ Base class for the Modules test cases
   """
