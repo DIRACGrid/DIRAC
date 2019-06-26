@@ -289,6 +289,7 @@ def getSiteComputingElements(siteName):
   return []
 
 
+@deprecated("Use DIRAC.Core.Utilities.SiteSEMapping.getSEsForSite() instead")
 def getSiteStorageElements(siteName):
   """
     Gets all storage elements from /Resources/Sites/<>/<siteName>/SE
