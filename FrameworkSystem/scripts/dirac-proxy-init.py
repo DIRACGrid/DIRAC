@@ -125,6 +125,7 @@ class ProxyInit(object):
     if not resultUserDN['OK']:
       return resultUserDN
     userDN = resultUserDN['Value']
+
     gLogger.notice("Uploading proxy..")
     if userDN in self.__uploadedInfo:
       expiry = self.__uploadedInfo[userDN].get('')
@@ -222,10 +223,11 @@ class ProxyInit(object):
       if self.__piParams.strict:
         return resultProxyWithVOMS
 
-    resultProxyUpload = pI.uploadProxy()
-    if not resultProxyUpload['OK']:
-      if self.__piParams.strict:
-        return resultProxyUpload
+    if uploadProxy:
+      resultProxyUpload = pI.uploadProxy()
+      if not resultProxyUpload['OK']:
+        if self.__piParams.strict:
+          return resultProxyUpload
 
 
     return S_OK()
