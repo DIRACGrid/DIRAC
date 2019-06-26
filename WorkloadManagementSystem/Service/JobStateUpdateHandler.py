@@ -327,18 +327,18 @@ class JobStateUpdateHandler(RequestHandler):
       self.log.warn('Failed to set the heart beat data', 'for job %d ' % int(jobID))
 
     # Restore the Running status if necessary
-    # result = jobDB.getJobAttributes(jobID,['Status'])
-    # if not result['OK']:
-    #  return result
+    result = jobDB.getJobAttributes(jobID, ['Status'])
+    if not result['OK']:
+     return result
 
-    # if not result['Value']:
-    #  return S_ERROR('Job %d not found' % jobID)
+    if not result['Value']:
+     return S_ERROR('Job %d not found' % jobID)
 
-    # status = result['Value']['Status']
-    # if status == "Stalled" or status == "Matched":
-    #  result = jobDB.setJobAttribute(jobID,'Status','Running',True)
-    #  if not result['OK']:
-    #    self.log.warn('Failed to restore the job status to Running')
+    status = result['Value']['Status']
+    if status == "Stalled" or status == "Matched":
+     result = jobDB.setJobAttribute(jobID, 'Status', 'Running', True)
+     if not result['OK']:
+       self.log.warn('Failed to restore the job status to Running')
 
     jobMessageDict = {}
     result = jobDB.getJobCommand(int(jobID))
