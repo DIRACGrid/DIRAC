@@ -8,8 +8,74 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC import S_OK
+from DIRAC import gLogger, S_OK
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers, siteGridName
+
+
+def getSEParameters(seName):
+  """ get all the SE parameters in a list
+
+      :param str seName: name of the Storage Element
+
+      :return: S_OK() with list of dict with parameters
+  """
+  # This import is here to avoid circular imports
+  from DIRAC.Resources.Storage.StorageElement import StorageElement
+  se = StorageElement(seName, hideExceptions=True)
+
+  protocolsSet = set(se.localAccessProtocolList) | set(se.localWriteProtocolList)
+
+  seParametersList = []
+  for protocol in protocolsSet:
+    seParameters = se.getStorageParameters(protocol=protocol)
+    if seParameters['OK']:
+      seParametersList.append(seParameters['Value'])
+    else:
+      gLogger.warn("No SE parameters obtained", "for SE %s and protocol %s" % (seName, protocol))
+
+  return S_OK(seParametersList)
+
+
+def getSEHosts(seName):
+  """ Get StorageElement host names (can be more than one depending on the protocol)
+
+      :param str seName: name of the storage element
+
+      :return: S_OK() with list of hosts or S_ERROR
+  """
+
+  seParameters = getSEParameters(seName)
+  if not seParameters['OK']:
+    gLogger.warn("Could not get SE parameters", "SE: %s" % seName)
+    return seParameters
+
+  return S_OK([parameters['Host'] for parameters in seParameters['Value']])
+
+
+def getStorageElementsHosts(seNames=None):
+  """ Get StorageElement host names
+
+      :param list seNames: possible list of storage element names (if not provided, will use all)
+      :param list plugins: if provided, restrict to a certain list of plugins
+
+      :return: S_OK() with list of hosts or S_ERROR
+  """
+
+  seHosts = []
+
+  if seNames is None:
+    seNames = DMSHelpers().getStorageElements()
+
+  for seName in seNames:
+
+    seHost = getSEHosts(seName)
+    if not seHost['OK']:
+      gLogger.warn("Could not get SE Host", "SE: %s" % seName)
+      continue
+    if seHost['Value']:
+      seHosts.extend(seHost['Value'])
+
+  return S_OK(list(set(seHosts)))
 
 
 #############################################################################

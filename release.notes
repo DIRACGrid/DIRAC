@@ -50,7 +50,7 @@ NEW: (#3744) Add WMS documentation in DeveloperGuide/Systems
 NEW: Added script (docs/Tools/UpdateDiracCFG.py) to collate the ConfigTemplate.cfg 
      files into the main dirac.cfg file
 
-[v6r22-pre4]
+[v6r22-pre5]
 
 *WorkloadManagementSystem
 NEW: (#4045) PilotsHandler service (to interact with PilotAgentsDB)
@@ -61,6 +61,7 @@ FIX: (#4074) fixed PilotManager service name in ConfigTemplate.cfg
 FIX: (#4100) use CAs to upload the pilot files to a dedicated web server using requests
 FIX: (#4106) fixes for logging messages for Matcher
 FIX: (#4106) fixes for logging messages for Optimizers
+NEW: (#4136) added DIRACOS option (for SiteDirectors)
 
 *ConfigurationSystem
 NEW: (#4053) VOMS2CSSynchronizer/VOMS2CSAgent - enable automatic synchronization of the 
@@ -79,6 +80,10 @@ CHANGE: (#4098) removed dirac-admin-get-site-protocols.py as it could give poten
 CHANGE: clients: using DIRAC.Core.Base.Client as base
 CHANGE: (#4098) SiteInspectorAgent runs only on sites with tokenOwner="rs_svc"
 CHANGE: (#4098) remove SRM dependencies
+CHANGE: (#4136) downtimeCommand will use the GOCServiceType only for SRM SEs
+
+*DataManagementSystem
+CHANGE: (#4136) Moved methods from ResourceStatusSystem/CSHelpers to DMSHelpers
 
 *docs
 NEW: (#4099) Instructions about setting up the DIRAC web server for pilot3
@@ -86,6 +91,17 @@ CHANGE: (#4119) added note on MultiProcessor jobs preparation
 
 *test
 FIX: (#4119) Not lhcb but dteam (for DIRAC certification)
+
+[v6r21p10]
+
+*Core
+FIX: (#4133) dirac-install: correct location for ARC plugins with DIRACOS
+
+*WMS
+CHANGE: (#4136) JobStateUpdateHandler - restoring the job status to Running after hearbeat
+
+*Docs
+NEW: (#4134) Added /Operations/DataManagement parameters for protocols
 
 [v6r21p9]
 

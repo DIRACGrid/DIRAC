@@ -15,6 +15,7 @@ from datetime import datetime, timedelta
 # DIRAC
 from DIRAC import gLogger, S_OK, gConfig, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.Core.Utilities.SiteSEMapping import getSEHosts, getStorageElementsHosts
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
@@ -101,7 +102,7 @@ class PublisherHandler(RequestHandler):
       if not res['OK']:
         return res
       ses = res['Value'][1].get(siteName, [])
-      sesHosts = CSHelpers.getStorageElementsHosts(ses)
+      sesHosts = getStorageElementsHosts(ses)
       if not sesHosts['OK']:
         return sesHosts
       # Remove duplicates
@@ -285,12 +286,12 @@ class PublisherHandler(RequestHandler):
   def export_getDowntimes(self, element, elementType, name):
 
     if elementType == 'StorageElement':
-      name = CSHelpers.getSEHost(name)
-      if not name['OK']:
-        return name
-      name = name['Value']
+      res = getSEHosts(name)
+      if not res['OK']:
+        return res
+      names = name['Value']
 
-    return rmClient.selectDowntimeCache(element=element, name=name,
+    return rmClient.selectDowntimeCache(element=element, name=names,
                                         meta={'columns': ['StartDate', 'EndDate',
                                                           'Link', 'Description',
                                                           'Severity']})
@@ -303,14 +304,14 @@ class PublisherHandler(RequestHandler):
   def export_getCachedDowntimes(self, element, elementType, name, severity):
 
     if elementType == 'StorageElement':
-      name = CSHelpers.getSEHost(name)
-      if not name['OK']:
-        return name
-      name = name['Value']
+      res = getSEHosts(name)
+      if not res['OK']:
+        return res
+      names = res['Value']
 
     columns = ['Element', 'Name', 'StartDate', 'EndDate', 'Severity', 'Description', 'Link']
 
-    res = rmClient.selectDowntimeCache(element=element, name=name, severity=severity,
+    res = rmClient.selectDowntimeCache(element=element, name=names, severity=severity,
                                        meta={'columns': columns})
     if not res['OK']:
       return res
