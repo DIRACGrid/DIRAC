@@ -1,4 +1,4 @@
-[v6r22-pre4]
+[v6r22-pre5]
 
 *WorkloadManagementSystem
 NEW: (#4045) PilotsHandler service (to interact with PilotAgentsDB)
@@ -9,6 +9,7 @@ FIX: (#4074) fixed PilotManager service name in ConfigTemplate.cfg
 FIX: (#4100) use CAs to upload the pilot files to a dedicated web server using requests
 FIX: (#4106) fixes for logging messages for Matcher
 FIX: (#4106) fixes for logging messages for Optimizers
+NEW: (#4136) added DIRACOS option (for SiteDirectors)
 
 *ConfigurationSystem
 NEW: (#4053) VOMS2CSSynchronizer/VOMS2CSAgent - enable automatic synchronization of the 
@@ -27,6 +28,10 @@ CHANGE: (#4098) removed dirac-admin-get-site-protocols.py as it could give poten
 CHANGE: clients: using DIRAC.Core.Base.Client as base
 CHANGE: (#4098) SiteInspectorAgent runs only on sites with tokenOwner="rs_svc"
 CHANGE: (#4098) remove SRM dependencies
+CHANGE: (#4136) downtimeCommand will use the GOCServiceType only for SRM SEs
+
+*DataManagementSystem
+CHANGE: (#4136) Moved methods from ResourceStatusSystem/CSHelpers to DMSHelpers
 
 *docs
 NEW: (#4099) Instructions about setting up the DIRAC web server for pilot3
