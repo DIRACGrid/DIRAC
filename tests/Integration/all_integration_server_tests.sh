@@ -37,7 +37,7 @@ python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSys
 #-------------------------------------------------------------------------------#
 echo -e '***' $(date -u)  "**** DMS TESTS ****\n"
 ## DFC
-python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/DataManagementSystem/Test_DataIntegrityDB.py
+python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/DataManagementSystem/Test_DataIntegrityDB.py >> testOutputs.txt 2>&1
 
 echo "Test DFC DB" >> testOutputs.txt 2>&1
 python $SERVERINSTALLDIR/DIRAC/tests/Integration/DataManagementSystem/Test_FileCatalogDB.py >> testOutputs.txt 2>&1
