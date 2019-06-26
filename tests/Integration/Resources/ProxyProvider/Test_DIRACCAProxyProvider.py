@@ -1,6 +1,5 @@
 #!/bin/env python
-"""
-tests for ProxyProvider modules module
+""" Tests for ProxyProvider modules module
 """
 
 import unittest
@@ -65,12 +64,6 @@ class DIRACCAPPTest(unittest.TestCase):
     cfg.loadFromBuffer(userCFG)
     gConfig.loadCFG(cfg)
 
-    # with open('CAkey.pem', 'w') as keyfile:
-    #   keyfile.write(CAkey)
-
-    # with open('CAcert.pem', 'w') as certfile:
-    #   certfile.write(CAcert)
-
     result = ProxyProviderFactory().getProxyProvider('DIRAC_TEST_CA')
     self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
     self.pp = result['Value']
@@ -95,8 +88,6 @@ class DIRACCAPPTest(unittest.TestCase):
     }
 
   def tearDown(self):
-    # os.unlink('CAkey.pem')
-    # os.unlink('CAcert.pem')
     pass
 
   def test_getProxy(self):

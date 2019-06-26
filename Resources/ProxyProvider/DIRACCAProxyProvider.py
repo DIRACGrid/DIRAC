@@ -91,7 +91,7 @@ class DIRACCAProxyProvider(ProxyProvider):
         :return: S_OK/S_ERROR, Value is a proxy string
     """
 
-    def createProxy():
+    def __createProxy():
       """ Create proxy
 
           :return: S_OK()/S_ERROR()
@@ -192,21 +192,17 @@ class DIRACCAProxyProvider(ProxyProvider):
 
     # Empty the certificate database
     indexTxt = cfg.get('database') or caWorkingDirectory + '/index.txt'
-    ffs = glob.glob(indexTxt + '*')
-    for ff in ffs:
-      os.unlink(ff)
     with open(indexTxt, 'w') as ind:
       ind.write('')
 
     # Write down serial
     serialLocation = cfg.get('serial') or '%s/serial' % caWorkingDirectory
-    if not os.path.exists(serialLocation):
-      with open(serialLocation, 'w') as serialFile:
-        serialFile.write('1000')
+    with open(serialLocation, 'w') as serialFile:
+      serialFile.write('1000')
 
     # Create user proxy
     userDir = tempfile.mkdtemp(dir=caWorkingDirectory)
-    result = createProxy()
+    result = __createProxy()
 
     # Clean up temporary files
     if cfg.get('dir'):
@@ -214,8 +210,12 @@ class DIRACCAProxyProvider(ProxyProvider):
       for f in os.listdir(newCertsDir):
         os.remove(os.path.join(newCertsDir, f))
       for f in os.listdir(caWorkingDirectory):
-        if f.endswith(".old"):
+        if re.match("%s..*" % os.path.basename(indexTxt), f) or f.endswith('.old'):
           os.remove(os.path.join(caWorkingDirectory, f))
+      with open(indexTxt, 'w') as indx:
+        indx.write('')
+      with open(serialLocation, 'w') as serialFile:
+        serialFile.write('1000')
     else:
       shutil.rmtree(caWorkingDirectory)
 
