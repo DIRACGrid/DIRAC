@@ -1,4 +1,6 @@
-""" A generic client for creating transformations
+"""A generic client for creating and managing transformations.
+
+See the information about transformation parameters below.
 """
 
 from __future__ import print_function
@@ -56,6 +58,12 @@ class Transformation(API):
                         'Body': '',
                         'MaxNumberOfTasks': 0,
                         'EventsPerTask': 0}
+
+    # the metaquery parameters are neither part of the transformation parameters nor the additional parameters, so
+    # special treatment is necessary
+    self.inputMetaQuery = None
+    self.outputMetaQuery = None
+
     self.ops = Operations()
     self.supportedPlugins = self.ops.getValue('Transformations/AllowedPlugins',
                                               ['Broadcast', 'Standard', 'BySize', 'ByShare'])
@@ -131,6 +139,20 @@ class Transformation(API):
         if not isinstance(val, (basestring, int, long, float, list, tuple, dict)):
           raise TypeError("Cannot encode %r, in json" % (val))
       return self.__setParam(json.dumps(body))
+
+  def setInputMetaQuery(self, query):
+    """Set the input meta query.
+
+    :param dict query: dictionary to use for input meta query
+    """
+    self.inputMetaQuery = query
+
+  def setOutputMetaQuery(self, query):
+    """Set the output meta query.
+
+    :param dict query: dictionary to use for output meta query
+    """
+    self.outputMetaQuery = query
 
   def __setSE(self, seParam, seList):
     if isinstance(seList, basestring):
@@ -471,6 +493,13 @@ class Transformation(API):
 
   #############################################################################
   def addTransformation(self, addFiles=True, printOutput=False):
+    """Add transformation to the transformation system.
+
+    Sets all parameters currently assigned to the transformation.
+
+    :param bool addFiles: if True, immediately perform input data query
+    :param bool printOutput: if True, print information about transformation
+    """
     res = self._checkCreation()
     if not res['OK']:
       return self._errorReport(res, 'Failed transformation sanity check')
@@ -491,7 +520,10 @@ class Transformation(API):
                                              body=self.paramValues['Body'],
                                              maxTasks=self.paramValues['MaxNumberOfTasks'],
                                              eventsPerTask=self.paramValues['EventsPerTask'],
-                                             addFiles=addFiles)
+                                             addFiles=addFiles,
+                                             inputMetaQuery=self.inputMetaQuery,
+                                             outputMetaQuery=self.outputMetaQuery,
+                                             )
     if not res['OK']:
       if printOutput:
         self._prettyPrint(res)

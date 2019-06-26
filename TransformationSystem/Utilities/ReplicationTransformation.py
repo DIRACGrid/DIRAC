@@ -3,7 +3,6 @@ Utilities to create replication transformations
 """
 
 from DIRAC.TransformationSystem.Client.Transformation import Transformation
-from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 from DIRAC import gLogger, S_OK, S_ERROR
 
 
@@ -70,6 +69,7 @@ def createDataTransformation(flavour, targetSE, sourceSE,
                }[flavour] if tBody is None else tBody
 
   trans.setBody(transBody)
+  trans.setInputMetaQuery(metadata)
 
   if sourceSE:
     res = trans.setSourceSE(sourceSE)
@@ -89,12 +89,6 @@ def createDataTransformation(flavour, targetSE, sourceSE,
   gLogger.verbose(res)
   trans.setStatus('Active')
   trans.setAgentType('Automatic')
-  currtrans = trans.getTransformationID()['Value']
-  client = TransformationClient()
-  # res = client.createTransformationInputDataQuery(currtrans, metadata)
-  res = client.createTransformationMetaQuery(currtrans, metadata, 'Input')
-  if not res['OK']:
-    return res
 
   gLogger.always("Successfully created replication transformation")
   return S_OK(trans)
