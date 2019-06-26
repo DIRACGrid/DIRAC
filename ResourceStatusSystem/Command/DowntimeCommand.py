@@ -15,11 +15,12 @@ from operator import itemgetter
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.LCG.GOCDBClient import GOCDBClient
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName, getGOCSites, getGOCFTSName
+from DIRAC.Core.Utilities.SiteSEMapping import getSEHosts, getStorageElementsHosts
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFTS3Servers
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.Command.Command import Command
-from DIRAC.ResourceStatusSystem.Utilities import CSHelpers
+from DIRAC.ResourceStatusSystem.Utilities.CSHelpers import getComputingElements
 
 
 class DowntimeCommand(Command):
@@ -136,13 +137,16 @@ class DowntimeCommand(Command):
 
     # The DIRAC se names mean nothing on the grid, but their hosts do mean.
     elif elementType == 'StorageElement':
-      # We need to distinguish if it's tape or disk
+      # for SRM and SRM only, we need to distinguish if it's tape or disk
+      # if it's not SRM, then gOCDBServiceType will be None (and we'll use them all)
       try:
-        seOptions = StorageElement(elementName).options
+        se = StorageElement(elementName)
+        seOptions = se.options
+        seProtocols = set(se.localAccessProtocolList) | set(se.localWriteProtocolList)
       except AttributeError:  # Sometimes the SE can't be instantiated properly
         self.log.error("Failure instantiating StorageElement object", elementName)
         return S_ERROR("Failure instantiating StorageElement")
-      if 'SEType' in seOptions:
+      if 'SEType' in seOptions and 'srm' in seProtocols:
         # Type should follow the convention TXDY
         seType = seOptions['SEType']
         diskSE = re.search('D[1-9]', seType) is not None
@@ -152,7 +156,7 @@ class DowntimeCommand(Command):
         elif diskSE:
           gOCDBServiceType = "srm"
 
-      res = CSHelpers.getSEHost(elementName)
+      res = getSEHosts(elementName)
       if not res['OK']:
         return res
       seHosts = res['Value']
@@ -218,9 +222,10 @@ class DowntimeCommand(Command):
       return S_OK(None)
 
     # cleaning the Cache
-    cleanRes = self._cleanCommand(element, elementNames)
-    if not cleanRes['OK']:
-      return cleanRes
+    if elementName:
+      cleanRes = self._cleanCommand(element, elementNames)
+      if not cleanRes['OK']:
+        return cleanRes
 
     uniformResult = []
 
@@ -342,15 +347,15 @@ class DowntimeCommand(Command):
       return gocSites
     gocSites = gocSites['Value']
 
-    sesHosts = CSHelpers.getStorageElementsHosts()
+    sesHosts = getStorageElementsHosts()
     if not sesHosts['OK']:
       return sesHosts
     sesHosts = sesHosts['Value']
 
-    resources = sesHosts
+    resources = sesHosts if sesHosts else []
 
     ftsServer = getFTS3Servers()
-    if ftsServer['OK']:
+    if ftsServer['OK'] and ftsServer['Value']:
       resources.extend(ftsServer['Value'])
 
     # TODO: file catalogs need also to use their hosts
@@ -359,17 +364,17 @@ class DowntimeCommand(Command):
     # if fc[ 'OK' ]:
     #  resources = resources + fc[ 'Value' ]
 
-    ce = CSHelpers.getComputingElements()
-    if ce['OK']:
+    ce = getComputingElements()
+    if ce['OK'] and ce['Value']:
       resources.extend(ce['Value'])
 
-    self.log.verbose('Processing Sites', ', '.join(gocSites))
+    self.log.verbose('Processing Sites', ', '.join(gocSites if gocSites else ['NONE']))
 
     siteRes = self.doNew(('Site', gocSites))
     if not siteRes['OK']:
       self.metrics['failed'].append(siteRes['Message'])
 
-    self.log.verbose('Processing Resources', ', '.join(resources))
+    self.log.verbose('Processing Resources', ', '.join(resources if resources else ['NONE']))
 
     resourceRes = self.doNew(('Resource', resources))
     if not resourceRes['OK']:

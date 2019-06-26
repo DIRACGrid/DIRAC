@@ -12,6 +12,7 @@ __RCSID__ = '$Id$'
 
 from DIRAC import gLogger, S_OK
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.Core.Utilities.SiteSEMapping import getStorageElementsHosts
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites, getFTS3Servers
 from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceURL
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
@@ -193,7 +194,7 @@ class Synchronizer(object):
           'ResourceManagement is not installed, skipping removal of non existing resources...')
       return S_OK()
 
-    sesHosts = CSHelpers.getStorageElementsHosts()
+    sesHosts = getStorageElementsHosts()
     if not sesHosts['OK']:
       return sesHosts
     sesHosts = sesHosts['Value']
