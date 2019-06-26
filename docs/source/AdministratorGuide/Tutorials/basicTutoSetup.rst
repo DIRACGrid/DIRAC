@@ -29,9 +29,9 @@ More links
 Basic requirements
 ==================
 
-We assume that you have at your disposition a fresh SLC6 64bit installation. If you don't, we recommend installing a virtual machine. Instructions for installing SLC6 can be found `here <http://linux.web.cern.ch/linux/scientific6/docs/install.shtml>`_
+We assume that you have at your disposition a fresh CC7 64bit installation. If you don't, we recommend installing a virtual machine. Instructions for installing CC7 can be found `here <http://linux.web.cern.ch/linux/centos7/docs/install.shtml>`_
 
-In this tutorial, we will use a freshly installed SLC6 x86_64 virtual machine, with all the default options, except the hostname being ``dirac-tuto``.
+In this tutorial, we will use a freshly installed CC7 x86_64 virtual machine, with all the default options, except the hostname being ``dirac-tuto``.
 
 Machine setup
 =============
@@ -62,22 +62,15 @@ Install runit
 
 The next step is to install ``runit``, which is responsible for supervising DIRAC processes
 
-First, install the `RPM <http://diracproject.web.cern.ch/diracproject/rpm/runit-2.1.2-1.el6.x86_64.rpm>`_:
+First, install the `RPM <http://diracproject.web.cern.ch/diracproject/rpm/runit-2.1.2-1.el7.cern.x86_64.rpm>`_:
 
 .. literalinclude:: basicTutoSetup.sh
    :language: bash
    :start-after: # START runit
    :end-before: # END runit
 
-Next, edit the ``/etc/init/runsvdir.conf`` file to point to the future DIRAC installation as such:
 
-.. literalinclude:: basicTutoSetup.sh
-   :start-after: # START runsvdir.conf
-   :end-before: # END runsvdir.conf
-   :caption: /etc/init/runsvdir.conf
-
-
-and the file ``/opt/dirac/sbin/runsvdir-start`` with the following content:
+Create the file ``/opt/dirac/sbin/runsvdir-start``, which is responsible for starting runit, with the following content:
 
 .. literalinclude:: basicTutoSetup.sh
    :language: bash
@@ -85,7 +78,15 @@ and the file ``/opt/dirac/sbin/runsvdir-start`` with the following content:
    :end-before: # END runsvdir-start
    :caption: /opt/dirac/sbin/runsvdir-start
 
-make it executable and (re)start ``runsvdir``:
+Then, edit the systemd ``runsvdir-start`` service to match the following:
+
+.. literalinclude:: basicTutoSetup.sh
+   :language: bash
+   :start-after: # START systemd-runsvdir
+   :end-before: # END systemd-runsvdir
+   :caption: /usr/lib/systemd/systemd/runsvdir-start.service
+
+make ``runsvdir-start`` executable and (re)start ``runsvdir``:
 
 .. literalinclude:: basicTutoSetup.sh
    :language: bash

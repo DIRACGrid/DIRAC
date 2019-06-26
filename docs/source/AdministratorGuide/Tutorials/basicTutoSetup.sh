@@ -13,7 +13,7 @@ HOSTNAME=`hostname`
 
 # avoid calling passwd, which might be the cern passwd in /usr/sue/bin
 # START add_dirac
-adduser -s /bin/bash -d /home/dirac dirac
+adduser -s /bin/bash -d /home/dirac dirac || echo "User dirac already exists."
 echo password | /usr/bin/passwd --stdin dirac
 mkdir -p /opt/dirac/sbin
 chown -R dirac:dirac /opt/dirac/
@@ -22,20 +22,8 @@ chown -R dirac:dirac /opt/dirac/
 
 #localinstall does not error when rpm is already installed
 # START runit
-yum localinstall -y http://diracproject.web.cern.ch/diracproject/rpm/runit-2.1.2-1.el6.x86_64.rpm
+yum localinstall -y http://diracproject.web.cern.ch/diracproject/rpm/runit-2.1.2-1.el7.cern.x86_64.rpm
 # END runit
-
-cat > /etc/init/runsvdir.conf <<EOF
-# START runsvdir.conf
-# for runit - manage /usr/sbin/runsvdir-start
-start on runlevel [2345]
-stop on runlevel [^2345]
-normal exit 0 111
-respawn
-exec /opt/dirac/sbin/runsvdir-start
-# END runsvdir.conf
-EOF
-
 
 cat > /opt/dirac/sbin/runsvdir-start <<'EOF'
 # START runsvdir-start
@@ -48,27 +36,44 @@ exec chpst -u dirac $RUNSVDIR -P /opt/dirac/startup 'log:  DIRAC runsv'
 # END runsvdir-start
 EOF
 
+cat > /lib/systemd/system/runsvdir-start.service <<EOF
+# START systemd-runsvdir
+[Unit]
+Description=Runit Process Supervisor
+
+[Service]
+ExecStart=/opt/dirac/sbin/runsvdir-start
+Restart=always
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target
+# END systemd-runsvdir
+EOF
+
+
 # START restartrunsv
 chown dirac:dirac /opt/dirac/sbin/runsvdir-start
 chmod +x /opt/dirac/sbin/runsvdir-start
-start runsvdir || restart runsvdir
+systemctl daemon-reload
+systemctl start runsvdir-start
 # END restartrunsv
 
 ## SETUP FOR MYSQL
 # remove mysql
 # START mysqlInstall
-yum remove -y $(rpm -qa | grep -i mysql | paste -sd ' ')
+yum remove -y $(rpm -qa | grep -i -e mysql -e mariadb | paste -sd ' ') || echo  "MySQL is not yet installed"
 rm -rf /var/lib/mysql/*
 yum install -y \
-    https://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-community-devel-5.7.25-1.el6.x86_64.rpm \
-    https://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-community-server-5.7.25-1.el6.x86_64.rpm \
-    https://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-community-client-5.7.25-1.el6.x86_64.rpm \
-    https://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-community-libs-5.7.25-1.el6.x86_64.rpm \
-    https://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-community-common-5.7.25-1.el6.x86_64.rpm
+    https://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-community-devel-5.7.25-1.el7.x86_64.rpm \
+    https://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-community-server-5.7.25-1.el7.x86_64.rpm \
+    https://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-community-client-5.7.25-1.el7.x86_64.rpm \
+    https://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-community-libs-5.7.25-1.el7.x86_64.rpm \
+    https://dev.mysql.com/get/Downloads/MySQL-5.7/mysql-community-common-5.7.25-1.el7.x86_64.rpm
 # END mysqlInstall
 
 # START mysqlStart
-service mysqld start
+systemctl start mysqld || systemctl restart mysqld
 # END mysqlStart
 
 cat > mysqlSetup.sql <<EOF
@@ -204,9 +209,9 @@ sudo -u dirac /home/dirac/installDirac
 # add user to be used as a user
 
 # START user_diracuser
-adduser -s /bin/bash -d /home/diracuser diracuser
+adduser -s /bin/bash -d /home/diracuser diracuser || echo "User diracuser already exists."
 echo password | /usr/bin/passwd --stdin diracuser
-mkdir ~diracuser/.globus/
+mkdir -p ~diracuser/.globus/
 cp /opt/dirac/user/client.pem ~diracuser/.globus/usercert.pem
 cp /opt/dirac/user/client.key ~diracuser/.globus/userkey.pem
 chown -R diracuser:diracuser ~diracuser/.globus/
@@ -214,14 +219,14 @@ chown -R diracuser:diracuser ~diracuser/.globus/
 
 cat > InstallDiracClient <<EOF
 # START installClient1
-mkdir ~/DiracInstallation && cd ~/DiracInstallation
+mkdir -p ~/DiracInstallation && cd ~/DiracInstallation
 curl -O -L https://github.com/DIRACGrid/DIRAC/raw/integration/Core/scripts/dirac-install.py
 chmod +x dirac-install.py
 ./dirac-install.py -r v6r21p5 --dirac-os
 # END installClient1
 # START installClient2
 mkdir -p ~/DiracInstallation/etc/grid-security/
-ln -s /opt/dirac/etc/grid-security/certificates/ ~/DiracInstallation/etc/grid-security/certificates
+ln -fs /opt/dirac/etc/grid-security/certificates/ ~/DiracInstallation/etc/grid-security/certificates
 # END installClient2
 EOF
 
