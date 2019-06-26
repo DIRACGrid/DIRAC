@@ -157,6 +157,7 @@ from DIRAC import gLogger
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.Time import fromString
 from DIRAC.Core.Utilities import DErrno
+from DIRAC.Core.Utilities.Decorators import deprecated
 
 # This is for proper initialization of embedded server, it should only be called once
 try:
@@ -586,7 +587,6 @@ class MySQL(object):
       print(x)
       return self._except('_connect', x, 'Could not connect to DB.')
 
-
   def _query(self, cmd, conn=None, debug=False):
     """
     execute MySQL query command
@@ -917,11 +917,11 @@ class MySQL(object):
 
     return self.getFields(tableName, outFields, condDict, limit, conn, older, newer, timeStamp, orderAttribute)
 
+  @deprecated("Use method insertFields instead")
   def _insert(self, tableName, inFields=None, inValues=None, conn=None):
     """
       Wrapper to the new method for backward compatibility
     """
-    self.log.debug('_insert:', 'deprecation warning, use insertFields methods instead of _insert.')
     return self.insertFields(tableName, inFields, inValues, conn)
 
   def _to_value(self, param):
@@ -1057,8 +1057,8 @@ class MySQL(object):
     try:
       cond = self.buildCondition(condDict=condDict, older=older, newer=newer, timeStamp=timeStamp,
                                  greater=greater, smaller=smaller)
-    except Exception as x:
-      return S_ERROR(DErrno.EMYSQL, x)
+    except Exception as exc:
+      return S_ERROR(DErrno.EMYSQL, exc)
 
     cmd = 'SELECT  DISTINCT( %s ) FROM %s %s ORDER BY %s' % (attributeName, table, cond, attributeName)
     res = self._query(cmd, connection)

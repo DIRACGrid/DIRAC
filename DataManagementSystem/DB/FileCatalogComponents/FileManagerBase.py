@@ -258,7 +258,10 @@ class FileManagerBase(object):
           extraLfns[lfn]['SE'] = lfns[lfn]['SE'][1:]
 
     # Check whether the supplied files have been registered already
-    existingMetadata, failed = self._getExistingMetadata(masterLfns.keys(), connection=connection)
+    res = self._getExistingMetadata(masterLfns.keys(), connection=connection)
+    if not res['OK']:
+      return res
+    existingMetadata, failed = res['Value']
     if existingMetadata:
       success, fail = self._checkExistingMetadata(existingMetadata, masterLfns)
       successful.update(success)
@@ -583,7 +586,7 @@ class FileManagerBase(object):
     for lfn, error in res['Value']['Failed'].items():
       if error == 'No such file or directory':
         failed.pop(lfn)
-    return successful, failed
+    return S_OK((successful, failed))
 
   def _checkExistingMetadata(self, existingLfns, lfns):
     failed = {}

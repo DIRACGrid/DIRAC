@@ -1,23 +1,21 @@
-########################################################################
-# $Id$
-########################################################################
 """ DIRAC DirectoryTree base class """
 
 __RCSID__ = "$Id$"
 
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities import getIDSelectString
-from DIRAC import S_OK, S_ERROR, gLogger
 import time
 import threading
 import os
 import stat
+
+from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.Utilities import getIDSelectString
 
 DEBUG = 0
 
 #############################################################################
 
 
-class DirectoryTreeBase:
+class DirectoryTreeBase(object):
 
   def __init__(self, database=None):
     self.db = database
