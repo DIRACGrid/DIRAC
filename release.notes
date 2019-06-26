@@ -1,3 +1,14 @@
+[v6r21p10]
+
+*Core
+FIX: (#4133) dirac-install: correct location for ARC plugins with DIRACOS
+
+*WMS
+CHANGE: (#4136) JobStateUpdateHandler - restoring the job status to Running after hearbeat
+
+*Docs
+NEW: (#4134) Added /Operations/DataManagement parameters for protocols
+
 [v6r21p9]
 
 *Core
