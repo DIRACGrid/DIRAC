@@ -194,10 +194,9 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
         self.log.verbose("usage of FTS system is banned for request's owner")
         return self.dmTransfer()
 
-      if getattr(self, 'UseNewFTS3', False):
+      if getattr(self, 'UseNewFTS3', True):
         return self.fts3Transfer()
-      else:
-        return self.ftsTransfer()
+      return self.ftsTransfer()  # this would use still the old FTS system (deprecated)
 
     return self.dmTransfer()
 
