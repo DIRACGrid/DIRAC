@@ -2,7 +2,7 @@ version: '3.3'
 
 services:
   mysql:
-    image: gitlab-registry.cern.ch/alu/dirac-ci/mysql:${MYSQL_VER}
+    image: gitlab-registry.cern.ch/alu/dirac/mysql:${MYSQL_VER}
     container_name: mysql
     environment:
       - MYSQL_ROOT_PASSWORD=password
@@ -14,7 +14,7 @@ services:
       retries: 3
      
   elasticsearch:
-    image: gitlab-registry.cern.ch/alu/dirac-ci/elasticsearch:${ES_VER}
+    image: gitlab-registry.cern.ch/alu/dirac/elasticsearch:${ES_VER}
     container_name: elasticsearch
     hostname: elasticsearch
     ports:
@@ -28,7 +28,7 @@ services:
       retries: 5
 
   dirac-server:
-    image: gitlab-registry.cern.ch/alu/dirac-ci/cc7-dirac
+    image: gitlab-registry.cern.ch/alu/dirac/cc7-dirac
     container_name: server
     hostname: server
 #    extra_hosts:
@@ -39,7 +39,7 @@ services:
       - elasticsearch
       
   dirac-client:
-    image: gitlab-registry.cern.ch/alu/dirac-ci/cc7-dirac
+    image: gitlab-registry.cern.ch/alu/dirac/cc7-dirac
     container_name: client
     hostname: client
     depends_on:

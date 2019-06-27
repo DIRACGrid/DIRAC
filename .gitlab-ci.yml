@@ -1,4 +1,4 @@
-image: gitlab-registry.cern.ch/alu/dirac-ci/docker-compose
+image: gitlab-registry.cern.ch/alu/dirac/docker-compose
 
 services:
   - name: docker:dind
