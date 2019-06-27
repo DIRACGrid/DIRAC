@@ -85,8 +85,12 @@ class FreeDiskSpaceCommand(Command):
     free = occupancy['Free']
     total = occupancy['Total']
     spaceReservation = occupancy.get('SpaceReservation', '')
+    # We only take the first one, in case there are severals.
+    # Most probably not ideal, because it would be nice to stay
+    # consistent, but well...
+    endpoint = endpointResult['Value'][0]
 
-    results = {'Endpoint': endpointResult['Value'],
+    results = {'Endpoint': endpoint,
                'Free': free,
                'Total': total,
                'SpaceReservation': spaceReservation,
