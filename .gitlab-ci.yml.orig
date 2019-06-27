@@ -13,6 +13,9 @@ build_compose_image:
   script: "echo" # unused but this line is required by GitLab CI
   only:
     - schedules
+=======
+image: gitlab-registry.cern.ch/alu/dirac/docker-compose
+>>>>>>> changed registry for docker images
 
 build_slc6-dirac_image:
   stage: build_images
@@ -54,25 +57,6 @@ test:
     - git fetch --all
   script:
     - "bash tests/CI/run_docker_setup.sh"
-=======
-image: gitlab-registry.cern.ch/alu/dirac-ci/docker-compose
-
-services:
-  - name: docker:dind
-#  - name: mysql:5.7
-#    alias: db
-#  - name: elasticsearch:6.6.0
-#    alias: es
-#    command: [ "bin/elasticsearch", "-Ediscovery.type=single-node" ]
-
-before_script:
-  - "echo ${CI_REGISTRY_PASSWORD} | docker login -u ${CI_REGISTRY_USER} ${CI_REGISTRY} --password-stdin"
-
-install_and_test:
-  stage: test
-  script:
-    - "bash tests/CI/run_integration_docker.sh"
->>>>>>> migrate tests to real integration
   after_script:
     - "bash -c 'source tests/CI/utils.sh && getLogs'"
   artifacts:
@@ -84,12 +68,3 @@ install_and_test:
       - log_client_tests.txt
     expire_in: 1 week
     when: always
-<<<<<<< HEAD
-=======
-  except:
-    - pushes
-
-stages:
-  - test
-
->>>>>>> migrate tests to real integration

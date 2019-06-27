@@ -64,3 +64,9 @@ test:
       - log_client_tests.txt
     expire_in: 1 week
     when: always
+  except:
+    - pushes
+
+stages:
+  - test
+

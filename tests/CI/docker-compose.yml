@@ -1,8 +1,8 @@
-version: '2.4'
+version: '3.3'
 
 services:
   mysql:
-    image: mysql:${MYSQL_VER}
+    image: gitlab-registry.cern.ch/alu/dirac/mysql:${MYSQL_VER}
     container_name: mysql
     environment:
       - MYSQL_ROOT_PASSWORD=password
@@ -11,10 +11,10 @@ services:
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       timeout: 20s
-      retries: 10
-
+      retries: 3
+     
   elasticsearch:
-    image: elasticsearch:${ES_VER}
+    image: gitlab-registry.cern.ch/alu/dirac-ci/elasticsearch:${ES_VER}
     container_name: elasticsearch
     hostname: elasticsearch
     ports:
@@ -23,25 +23,24 @@ services:
       - discovery.type=single-node
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9200"]
-      interval: 5s
+      interval: 2s
       timeout: 2s
-      retries: 10
+      retries: 5
 
   dirac-server:
-    image: ${CI_REGISTRY_IMAGE}/${HOST_OS}-dirac
+    image: gitlab-registry.cern.ch/alu/dirac/cc7-dirac
     container_name: server
     hostname: server
+#    extra_hosts:
+#      mysql: mysql
+#      elasticsearch: elasticsearch
     depends_on:
-      mysql:
-        condition: service_healthy
-      elasticsearch:
-        condition: service_healthy
-
+      - mysql
+      - elasticsearch
+      
   dirac-client:
-    image: ${CI_REGISTRY_IMAGE}/${HOST_OS}-dirac
+    image: gitlab-registry.cern.ch/alu/dirac/cc7-dirac
     container_name: client
     hostname: client
     depends_on:
       - dirac-server
-
-
