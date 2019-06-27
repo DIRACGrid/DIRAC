@@ -15,7 +15,7 @@
 #
 #........................................................................
 
-set -ex
+set -e
 
 SCRIPT_DIR="$( cd "$( dirname "$0" )" >/dev/null 2>&1 && pwd )"
 
@@ -92,13 +92,15 @@ docker exec client bash -c "chown -R dirac:dirac /home/dirac/"
 docker cp $SCRIPT_DIR/run_tests.sh server:$USER_HOME/
 docker cp $SCRIPT_DIR/run_tests.sh client:$USER_HOME/
 
+set +e
+
 echo -e "\n****" $(date -u) "Starting server tests ****"
 docker exec -u $USER \
        -w $USER_HOME \
        -e INSTALLROOT=$USER_HOME \
        -e AGENT=server \
        server \
-       bash -c "source run_tests.sh"
+       bash run_tests.sh
 
 echo -e "\n****" $(date -u) "Starting client tests ****"
 docker exec -u $USER \
@@ -106,7 +108,7 @@ docker exec -u $USER \
        -e INSTALLROOT=$USER_HOME \
        -e AGENT=client \
        client \
-       bash -c "source run_tests.sh"
+       bash run_tests.sh
 
 
 echo -e "\n****" $(date -u) "ALL DONE ****"
