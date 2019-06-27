@@ -30,7 +30,7 @@ echo -e '***' $(date -u) "**** Starting integration tests on ${AGENT} ****\n"
 if [ $AGENT == "server" ]; then
     source $SERVERINSTALLDIR/bashrc
 
-    sed -i "s/\(elHost = \).*/\1'elasticsearch'/" $TESTCODE/DIRAC/tests/Integration/Test_ElasticsearchDB.py
+    sed -i "s/\(elHost = \).*/\1'elasticsearch'/" $TESTCODE/DIRAC/tests/Integration/Core/Test_ElasticsearchDB.py
 
     cp -r $TESTCODE/DIRAC/tests $SERVERINSTALLDIR/DIRAC/
 
@@ -47,9 +47,9 @@ fi
 echo -e '***' $(date -u) "**** TESTS OVER ****\n"
 
 if [ -z $ERR ]; then
-    echo "WARN: Variable $ERR not defined, check the test logs for possible failed tests"
+    echo "WARN: Variable \$ERR not defined, check the test logs for possible failed tests"
     exit 0
-elif [ ! $ERR != "0" ]; then
+elif [ $ERR != "0" ]; then
    echo "ERROR: At least one unit test failed !!!"
    exit $ERR
 else
