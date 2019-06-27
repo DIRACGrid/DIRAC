@@ -20,9 +20,9 @@ mkdir -p $PWD/TestCode
 cd $PWD/TestCode
 
 
-git clone https://github.com/$repository/DIRAC.git
+git clone https://github.com/$TESTREPO/DIRAC.git
 cd DIRAC
-git checkout $branch
+git checkout $TESTBRANCH
 
 cd ../..
 

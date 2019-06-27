@@ -30,9 +30,9 @@ echo -e '***' $(date -u) "**** Starting integration tests on ${AGENT} ****\n"
 if [ $AGENT == "server" ]; then
     source $SERVERINSTALLDIR/bashrc
 
-    cp -r $TESTCODE/DIRAC/tests $SERVERINSTALLDIR/DIRAC/
+    sed -i "s/\(elHost = \).*/\1'elasticsearch'/" $TESTCODE/DIRAC/tests/Integration/Test_ElasticsearchDB.py
 
-    sed -i "s/\(elHost = \).*/\1'elasticsearch'/" $SERVERINSTALLDIR/DIRAC/tests/Integration/Test_ElasticsearchDB.py
+    cp -r $TESTCODE/DIRAC/tests $SERVERINSTALLDIR/DIRAC/
 
     source $SERVERINSTALLDIR/DIRAC/tests/Integration/all_integration_server_tests.sh
 elif [ $AGENT == "client" ]; then
