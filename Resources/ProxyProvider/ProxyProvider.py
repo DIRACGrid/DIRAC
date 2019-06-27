@@ -24,6 +24,8 @@ def getProxyProviderConfigDict(ppName):
   """ Get the proxy provider configuration parameters
 
       :param str ppName: proxy provider name
+
+      :return: dict
   """
   ppConfigDict = {}
   if ppName:

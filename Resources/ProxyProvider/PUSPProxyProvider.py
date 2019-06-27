@@ -21,10 +21,10 @@ class PUSPProxyProvider(ProxyProvider):
   def getProxy(self, userDict):
     """ Generate user proxy
 
-    :param dict userDict: user description dictionary with possible fields:
-                          FullName, UserName, DN, EMail, DiracGroup
+        :param dict userDict: user description dictionary with possible fields:
+                              FullName, UserName, DN, EMail, DiracGroup
 
-    :return: S_OK/S_ERROR, Value is a proxy string
+        :return: S_OK/S_ERROR, Value is a proxy string
     """
 
     userDN = userDict.get('DN')
