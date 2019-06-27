@@ -3,8 +3,6 @@
 # parseCommandLine from utils.sh, the `DEFAULT` prefix will be stripped
 # unless the unstripped version of the variable already exists.
 
-# Variables used to install DIRAC server/client
-
 export DEFAULT_DEBUG=True
 
 # Settings for external services 

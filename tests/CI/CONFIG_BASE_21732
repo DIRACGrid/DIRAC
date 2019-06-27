@@ -7,7 +7,9 @@
 
 export DEFAULT_DEBUG=True
 
-# Settings for external services 
+#export DEFAULT_PRERELEASE=True
+
+export DEFAULT_DIRAC_RELEASE=v6r22-pre3
 
 export DEFAULT_DB_USER=Dirac
 export DEFAULT_DB_PASSWORD=Dirac
@@ -15,6 +17,7 @@ export DEFAULT_DB_ROOTUSER=root
 export DEFAULT_DB_ROOTPWD=password
 export DEFAULT_DB_HOST=mysql
 export DEFAULT_DB_PORT=3306
+export DEFAULT_DIRACOSVER=v1r1
 
 export DEFAULT_NoSQLDB_HOST=elasticsearch
 export DEFAULT_NoSQLDB_PORT=9200
@@ -22,15 +25,9 @@ export DEFAULT_NoSQLDB_PORT=9200
 export DEFAULT_SERVER_HOST=server
 export DEFAULT_CLIENT_HOST=client
 
-# Settings for DIRAC installation
-#export DEFAULT_PRERELEASE=True
-export DEFAULT_DIRAC_RELEASE=v6r22-pre3
+export DEFAULT_repository=DIRACGrid
+export DEFAULT_branch=rel-v6r22
 export DEFAULT_DIRACBRANCH=rel-v6r22
-
-export DEFAULT_TESTREPO=DIRACGrid
-export DEFAULT_TESTBRANCH=rel-v6r22
-
-export DEFAULT_DIRACOSVER=v1r1
 
 #export DEFAULT_ALTERNATIVE_MODULES=https://github.com/antolu/DIRAC.git:::DIRAC:::v6r21
 

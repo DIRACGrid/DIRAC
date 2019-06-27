@@ -6,37 +6,25 @@
 #   Requires arguments
 #     $INSTALLROOT - should contain directories TestCode, ServerInstallDIR,
 #                    ClientInstallDIR
-<<<<<<< HEAD
 #     $INSTALLTYPE - client or server, deciding which tests to run
 #
 #.........................................................................
 
 if [[ -z $INSTALLROOT || -z $INSTALLTYPE ]]; then
-=======
-#     $AGENT       - client or server, deciding which tests to run
-#
-#.........................................................................
-
-if [[ -z $INSTALLROOT || -z $AGENT ]]; then
->>>>>>> migrate tests to real integration
     echo "Arguments missing. "
     exit 1
 fi
 
-<<<<<<< HEAD
 cd "$INSTALLROOT" || exit 1
-=======
-cd $INSTALLROOT
->>>>>>> migrate tests to real integration
 
 SERVERINSTALLDIR=$INSTALLROOT/ServerInstallDIR
 CLIENTINSTALLDIR=$INSTALLROOT/ClientInstallDIR
 TESTCODE=$INSTALLROOT/TestCode
 WORKSPACE=$INSTALLROOT
 
-<<<<<<< HEAD
 # shellcheck source=tests/CI/CONFIG
 source CONFIG
+<<<<<<< HEAD
 # shellcheck source=tests/Jenkins/dirac_ci.sh
 source "$TESTCODE/DIRAC/tests/Jenkins/dirac_ci.sh"
 
@@ -55,6 +43,26 @@ elif [ "$INSTALLTYPE" == "client" ]; then
     cp -r "$TESTCODE/DIRAC/tests" "$CLIENTINSTALLDIR/DIRAC/"
     # shellcheck source=tests/Integration/all_integration_client_tests.sh
     source "$CLIENTINSTALLDIR/DIRAC/tests/Integration/all_integration_client_tests.sh"
+=======
+
+echo -e '***' $(date -u) "**** Starting integration tests on ${AGENT} ****\n"
+
+if [ $AGENT == "server" ]; then
+    source $SERVERINSTALLDIR/bashrc
+
+    sed -i "s/\(elHost = \).*/\1'elasticsearch'/" $TESTCODE/DIRAC/tests/Integration/Test_ElasticsearchDB.py
+
+    cp -r $TESTCODE/DIRAC/tests $SERVERINSTALLDIR/DIRAC/
+
+    source $SERVERINSTALLDIR/DIRAC/tests/Integration/all_integration_server_tests.sh
+elif [ $AGENT == "client" ]; then
+    source $CLIENTINSTALLDIR/bashrc
+
+    cp -r $TESTCODE/DIRAC/tests $CLIENTINSTALLDIR/DIRAC/
+
+    SERVERINSTALLDIR=$CLIENTINSTALLDIR
+    source $CLIENTINSTALLDIR/DIRAC/tests/Integration/all_integration_client_tests.sh
+>>>>>>> refactored and renamed default variables, change ES host before copy
 fi
 
 echo -e "*** $(date -u) **** TESTS OVER ****\n"
@@ -69,28 +77,3 @@ else
    echo "SUCCESS: All tests succeded"
    exit 0
 fi
-=======
-source $TESTCODE/DIRAC/tests/Jenkins/dirac_ci.sh
-source CONFIG
-
-echo -e '***' $(date -u) "**** Starting integration tests on ${AGENT} ****\n"
-
-if [ $AGENT == "server" ]; then
-    source $SERVERINSTALLDIR/bashrc
-
-    cp -r $TESTCODE/DIRAC/tests $SERVERINSTALLDIR/DIRAC/
-
-    sed -i "s/\(elHost = \).*/\1'elasticsearch'/" $SERVERINSTALLDIR/DIRAC/tests/Integration/Test_ElasticsearchDB.py
-
-    source $SERVERINSTALLDIR/DIRAC/tests/Integration/all_integration_server_tests.sh
-elif [ $AGENT == "client" ]; then
-    source $CLIENTINSTALLDIR/bashrc
-
-    cp -r $TESTCODE/DIRAC/tests $CLIENTINSTALLDIR/DIRAC/
-
-    SERVERINSTALLDIR=$CLIENTINSTALLDIR
-    source $CLIENTINSTALLDIR/DIRAC/tests/Integration/all_integration_client_tests.sh
-fi
-
-echo -e '***' $(date -u) "**** TESTS OVER ****\n"
->>>>>>> migrate tests to real integration

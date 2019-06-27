@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # This file contains all the environment variables necessary to run a full integration test
 
-<<<<<<< HEAD
 export DEBUG=${DEBUG:-True}
 
 # Settings for external services
@@ -21,18 +20,6 @@ export NoSQLDB_PORT=${NoSQLDB_PORT:-9200}
 # Hostnames
 export SERVER_HOST=${SERVER_HOST:-server}
 export CLIENT_HOST=${CLIENT_HOST:-client}
-=======
-export DEFAULT_DEBUG=True
-
-# Settings for external services 
-
-export DEFAULT_DB_USER=Dirac
-export DEFAULT_DB_PASSWORD=Dirac
-export DEFAULT_DB_ROOTUSER=root
-export DEFAULT_DB_ROOTPWD=password
-export DEFAULT_DB_HOST=mysql
-export DEFAULT_DB_PORT=3306
->>>>>>> refactored and renamed default variables, change ES host before copy
 
 # Settings for DIRAC installation
 export PRERELEASE=${PRERELEASE:-}
@@ -43,25 +30,11 @@ export DIRACBRANCH=${DIRACBRANCH:-}
 export TESTREPO=${TESTREPO:-antolu}
 export TESTBRANCH=${TESTBRANCH:-ci}
 
-<<<<<<< HEAD
 export DIRACOSVER=${DIRACOSVER:-master}
 
 # Versions of external services
 export MYSQL_VER=${MYSQL_VER:-5.7}
 export ES_VER=${ES_VER:-6.6.0}
-=======
-# Settings for DIRAC installation
-#export DEFAULT_PRERELEASE=True
-export DEFAULT_DIRAC_RELEASE=v6r22-pre3
-export DEFAULT_DIRACBRANCH=rel-v6r22
-
-export DEFAULT_TESTREPO=DIRACGrid
-export DEFAULT_TESTBRANCH=rel-v6r22
-
-export DEFAULT_DIRACOSVER=v1r1
-
-#export DEFAULT_ALTERNATIVE_MODULES=https://github.com/antolu/DIRAC.git:::DIRAC:::v6r21
->>>>>>> refactored and renamed default variables, change ES host before copy
 
 # Optional parameters
 export ALTERNATIVE_MODULES=${ALTERNATIVE_MODULES:-}
