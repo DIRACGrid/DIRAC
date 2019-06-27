@@ -75,4 +75,4 @@ echo -e '***' $(date -u)  "**** Resources TESTS ****\n"
 python $SERVERINSTALLDIR/DIRAC/tests/Integration/Resources/Storage/Test_Resources_GFAL2StorageBase.py ProductionSandboxSE >> testOutputs.txt 2>&1
 # python $SERVERINSTALLDIR/DIRAC/tests/Integration/Resources/Storage/Test_Resources_Echo.py >> testOutputs.txt 2>&1
 
-python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/Resources/MessageQueue/Test_ActiveClose.py >> testOutputs.txt 2>&1
+# python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/Resources/MessageQueue/Test_ActiveClose.py >> testOutputs.txt 2>&1
