@@ -7,7 +7,10 @@
 
 """
 
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
+
+__RCSID__ = "$Id$"
+
 import time
 
 from DIRAC import S_OK, S_ERROR
@@ -73,7 +76,7 @@ class JobStateUpdateHandler(RequestHandler):
 
     infoStr = None
     trials = 10
-    for i in xrange(trials):
+    for i in range(trials):
       result = jobDB.getJobStatus(jobID)
       if not result['OK']:
         return result
