@@ -45,3 +45,15 @@ elif [ $AGENT == "client" ]; then
 fi
 
 echo -e '***' $(date -u) "**** TESTS OVER ****\n"
+
+if [ -z $ERR ]; then
+    echo "WARN: Variable $ERR not defined, check the test logs for possible failed tests"
+    exit 0
+elif [ ! $ERR != "0" ]; then
+   echo "ERROR: At least one unit test failed !!!"
+   exit $ERR
+else
+   echo "SUCCESS: All test succeded"
+   exit 0
+fi
+   
