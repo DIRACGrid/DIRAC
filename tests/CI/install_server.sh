@@ -28,7 +28,6 @@ set -e
 
 alias pytest='pytest -v -s'
 
-sed -i '/installES/d' TestCode/DIRAC/tests/Jenkins/dirac_ci.sh
 sed -i "0,/\(Host = \).*/s//\1$SERVER_HOST/" TestCode/DIRAC/tests/Jenkins/install.cfg
 source TestCode/DIRAC/tests/Jenkins/dirac_ci.sh
 
