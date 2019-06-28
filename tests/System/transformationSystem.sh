@@ -2,7 +2,7 @@
 
 usage="$(basename "$0") needs -test_filter option to be set:
 Example:
-$(basename "$0") -test_filter [true,false]"
+$(basename "$0") -test_filter [True,False]"
 
 if [ $# -ne 2 ]
 then
@@ -42,10 +42,11 @@ if [ -d "TransformationSystemTest" ]; then
 fi
 echo "Creating TransformationSystemTest"
 mkdir -p TransformationSystemTest
-directory=/lhcb/certification/Test/INIT/$version/$tdate/$stime
+directory=/dteam/diracCertification/Test/INIT/$version/$tdate/$stime
 #selecting a random USER Storage Element
 #SEs=$(dirac-dms-show-se-status |grep USER |grep -v 'Banned\|Degraded\|-2' | awk '{print $1}')
-SEs=$(dirac-dms-show-se-status |grep BUFFER |grep -v 'Banned\|Degraded\|-new' | awk '{print $1}')
+#get all SEs ending with -SE that are Active
+SEs=$(dirac-dms-show-se-status | grep -e "-SE " | grep -v 'Banned\|Probing\|-new' | awk '{print $1}')
 
 x=0
 for n in $SEs
@@ -86,6 +87,17 @@ done < TransformationSystemTest/LFNlist.txt >> ./LFNlistNew.txt
 dirac-dms-add-file LFNlistNew.txt -ddd
 
 cat TransformationSystemTest/LFNlist.txt | awk '{print $1}' | sort > ./LFNstoTS.txt
+
+
+echo "Checking if files have been uploaded"
+dirac-dms-lfn-replicas ./LFNstoTS.txt | grep "No such file"
+# grep returns 1 if it cannot find anything, if we cannot find "No such file" we successfully uploaded all files
+if [ $? -ne 1 ]
+then
+    echo "Failed to upload all files, please check"
+    exit 1
+fi
+
 
 echo ""
 echo "Submitting test production"
