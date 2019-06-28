@@ -178,9 +178,7 @@ Below is a complete example configuration with anotations for some sections::
               Location = DIRAC/DataManagementSystem/Agent/RequestOperations/ReplicateAndRegister
               FTSMode = True # If True
               FTSMode += will use FTS to transfer files
-              UseNewFTS3 = False # If True
-              UseNewFTS3 += will target the new FTS3 system
-              UseNewFTS3 += instead of the old one
+              UseNewFTS3 = True
               FTSBannedGroups = lhcb_user # list of groups for which not to use FTS
             }
             SetFileStatus
@@ -761,7 +759,7 @@ Below is a complete example configuration with anotations for some sections::
             {
               Location = DIRAC/DataManagementSystem/Agent/RequestOperations/ReplicateAndRegister
               FTSMode = False
-              UseNewFTS3 = False
+              UseNewFTS3 = True
               FTSBannedGroups = dirac_user
               FTSBannedGroups += lhcb_user
               LogLevel = INFO
