@@ -22,8 +22,8 @@ CLIENTINSTALLDIR=$INSTALLROOT/ClientInstallDIR
 TESTCODE=$INSTALLROOT/TestCode
 WORKSPACE=$INSTALLROOT
 
-source $TESTCODE/DIRAC/tests/Jenkins/dirac_ci.sh
 source CONFIG
+source $TESTCODE/DIRAC/tests/Jenkins/dirac_ci.sh
 
 echo -e '***' $(date -u) "**** Starting integration tests on ${AGENT} ****\n"
 
