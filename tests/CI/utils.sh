@@ -26,7 +26,7 @@ function parseCommandLine() {
     
     for DEFAULT_VAR in "${DEFAULT_VARS[@]}"; do
         local VAR_NAME=${DEFAULT_VAR#"DEFAULT_"}
-	
+
 	if [ -z "${!VAR_NAME}" ]; then
 	    local DEFAULT_VAL=${!DEFAULT_VAR}
 	    if [[ $DEFAULT_VAL == "unset" ]]; then
@@ -38,8 +38,8 @@ function parseCommandLine() {
 		export $VAR_NAME
 	    fi
         else
-	    echo "Using injected value ${VAR_VAL} for ${VAR_NAME}"
 	    local VAR_VAL="${!VAR_NAME}"
+	    echo "Using injected value ${VAR_VAL} for ${VAR_NAME}"
 	fi
 
 	if [ ! -z $CONFIGFILE ]; then

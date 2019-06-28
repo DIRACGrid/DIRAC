@@ -36,6 +36,11 @@ USER_HOME=/home/${USER}
 # DIRAC server user and scripts
 docker exec server adduser -s /bin/bash -d $USER_HOME $USER
 
+if [[ ! -z $ALTERNATIVE_MODULES && -d $ALTERNATIVE_MODULES ]]; then
+    echo "export ALTERNATIVE_MODULES=$(basename $ALTERNATIVE_MODULES)" > $CONFIGFILE
+    docker cp $ALTERNATIVE_MODULES server:$USER_HOME/$(basename $ALTERATIVE_MODULES)
+fi
+
 docker cp $SCRIPT_DIR/install_server.sh server:$USER_HOME
 docker cp $CONFIGFILE server:$USER_HOME
 
