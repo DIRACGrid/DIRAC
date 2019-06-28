@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 stages:
   - build_images
   - run_tests
@@ -13,10 +12,8 @@ build_compose_image:
   script: "echo" # unused but this line is required by GitLab CI
   only:
     - schedules
-=======
-image: gitlab-registry.cern.ch/alu/dirac/docker-compose
->>>>>>> changed registry for docker images
 
+<<<<<<< HEAD
 build_slc6-dirac_image:
   stage: build_images
   tags:
@@ -30,6 +27,10 @@ build_slc6-dirac_image:
   script: "echo" # unused but this line is required by GitLab CI
   only:
     - schedules
+=======
+services:
+  - name: docker:dind
+>>>>>>> cleanup
 
 build_cc7-dirac_image:
   stage: build_images
@@ -68,3 +69,7 @@ test:
       - log_client_tests.txt
     expire_in: 1 week
     when: always
+
+stages:
+  - test
+
