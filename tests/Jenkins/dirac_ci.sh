@@ -161,11 +161,11 @@ function installSite(){
   if [ $ALTERNATIVE_MODULES ]
   then
      echo "Installing from non-release code"
-     if [[ $ALTERNATIVE_MODULES == "http://"*  ]]
+     if [[ -d $ALTERNATIVE_MODULES ]]
      then
-	 installOptions+="--module=$ALTERNATIVE_MODULES "
-     else
 	 installOptions+="--source=$ALTERNATIVE_MODULES"
+     else
+	 installOptions+="--module=$ALTERNATIVE_MODULES "
      fi
   fi
 
