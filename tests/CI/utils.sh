@@ -29,12 +29,17 @@ function parseCommandLine() {
 	
 	if [ -z "${!VAR_NAME}" ]; then
 	    local DEFAULT_VAL=${!DEFAULT_VAR}
-	    eval $VAR_NAME="${DEFAULT_VAL}"
-	    export $VAR_NAME
-	    echo "Setting default value ${DEFAULT_VAL} for ${VAR_NAME}"
+	    if [[ $DEFAULT_VAL == "unset" ]]; then
+		echo "Variable ${VAR_NAME} is unset, skipping."
+		continue
+	    else
+		echo "Setting default value ${DEFAULT_VAL} for ${VAR_NAME}"
+		eval $VAR_NAME="${DEFAULT_VAL}"
+		export $VAR_NAME
+	    fi
         else
-	    local VAR_VAL="${!VAR_NAME}"
 	    echo "Using injected value ${VAR_VAL} for ${VAR_NAME}"
+	    local VAR_VAL="${!VAR_NAME}"
 	fi
 
 	if [ ! -z $CONFIGFILE ]; then
