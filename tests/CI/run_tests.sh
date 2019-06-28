@@ -40,7 +40,6 @@ elif [ $AGENT == "client" ]; then
 
     cp -r $TESTCODE/DIRAC/tests $CLIENTINSTALLDIR/DIRAC/
 
-    SERVERINSTALLDIR=$CLIENTINSTALLDIR
     source $CLIENTINSTALLDIR/DIRAC/tests/Integration/all_integration_client_tests.sh
 fi
 
