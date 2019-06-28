@@ -2,11 +2,6 @@ image: gitlab-registry.cern.ch/alu/dirac/docker-compose
 
 services:
   - name: docker:dind
-#  - name: mysql:5.7
-#    alias: db
-#  - name: elasticsearch:6.6.0
-#    alias: es
-#    command: [ "bin/elasticsearch", "-Ediscovery.type=single-node" ]
 
 before_script:
   - "echo ${CI_REGISTRY_PASSWORD} | docker login -u ${CI_REGISTRY_USER} ${CI_REGISTRY} --password-stdin"
@@ -26,8 +21,6 @@ install_and_test:
       - log_client_tests.txt
     expire_in: 1 week
     when: always
-  except:
-    - pushes
 
 stages:
   - test
