@@ -1,3 +1,9 @@
+"""
+  Defines the plugin to take storage space information given by BDII
+"""
+
+__RCSID__ = "$Id$"
+
 import os
 
 from DIRAC import gLogger, gConfig
@@ -6,6 +12,11 @@ from DIRAC.Core.Utilities.Grid import ldapsearchBDII
 
 
 class BDIIOccupancy(object):
+  """ .. class:: BDIIOccupancy
+
+  Occupancy plugin to return the space information given by BDII
+  Assuming the protocol is SRM
+  """
   def __init__(self, se):
     # flag to show initalization status of the plugin
     self.isUsable = False
