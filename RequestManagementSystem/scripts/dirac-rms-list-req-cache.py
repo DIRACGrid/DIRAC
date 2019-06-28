@@ -1,6 +1,6 @@
 #!/bin/env python
 """ List the number of requests in the caches of all the ReqProxyies """
-__RCSID__ = "$Id: $"
+__RCSID__ = "$Id$"
 import DIRAC
 
 from DIRAC.Core.Base import Script

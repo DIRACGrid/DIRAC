@@ -322,3 +322,4 @@ if __name__ == '__main__':
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(Test_MQProducers_4))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(Test_MQProducers_5))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
+  sys.exit(not testResult.wasSuccessful())
