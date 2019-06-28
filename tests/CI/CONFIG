@@ -3,8 +3,6 @@
 # parseCommandLine from utils.sh, the `DEFAULT` prefix will be stripped
 # unless the unstripped version of the variable already exists.
 
-# Variables used to install DIRAC server/client
-
 export DEFAULT_DEBUG=True
 
 # Settings for external services 
@@ -37,3 +35,8 @@ export DEFAULT_DIRACOSVER=v1r1
 # Variables for other Docker services
 export DEFAULT_MYSQL_VER=5.7
 export DEFAULT_ES_VER=6.6.0
+
+# Optional parameters
+
+#export DEFAULT_ALTERNATIVE_MODULES=https://github.com/antolu/DIRAC.git:::DIRAC:::v6r21
+export DEFAULT_ALTERNATIVE_MODULES=unset

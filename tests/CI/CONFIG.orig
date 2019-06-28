@@ -1,27 +1,10 @@
-#!/usr/bin/env bash
-# This file contains all the environment variables necessary to run a full integration test
+# This file contains all the environment variables neccessary to run
+# a full integration test. When sourcing this file and executing
+# parseCommandLine from utils.sh, the `DEFAULT` prefix will be stripped
+# unless the unstripped version of the variable already exists.
 
-<<<<<<< HEAD
-export DEBUG=${DEBUG:-True}
+# Variables used to install DIRAC server/client
 
-# Settings for external services
-
-# MYSQL Settings
-export DB_USER=${DB_USER:-Dirac}
-export DB_PASSWORD=${DB_PASSWORD:-Dirac}
-export DB_ROOTUSER=${DB_ROOTUSER:-root}
-export DB_ROOTPWD=${DB_ROOTPWD:-password}
-export DB_HOST=${DB_HOST:-mysql}
-export DB_PORT=${DB_PORT:-3306}
-
-# ElasticSearch settings
-export NoSQLDB_HOST=${NoSQLDB_HOST:-elasticsearch}
-export NoSQLDB_PORT=${NoSQLDB_PORT:-9200}
-
-# Hostnames
-export SERVER_HOST=${SERVER_HOST:-server}
-export CLIENT_HOST=${CLIENT_HOST:-client}
-=======
 export DEFAULT_DEBUG=True
 
 # Settings for external services 
@@ -32,24 +15,13 @@ export DEFAULT_DB_ROOTUSER=root
 export DEFAULT_DB_ROOTPWD=password
 export DEFAULT_DB_HOST=mysql
 export DEFAULT_DB_PORT=3306
->>>>>>> refactored and renamed default variables, change ES host before copy
 
-# Settings for DIRAC installation
-export PRERELEASE=${PRERELEASE:-}
-export DIRAC_RELEASE=${DIRAC_RELEASE:-}
-export DIRACBRANCH=${DIRACBRANCH:-}
+export DEFAULT_NoSQLDB_HOST=elasticsearch
+export DEFAULT_NoSQLDB_PORT=9200
 
-# repository to get tests and install scripts from
-export TESTREPO=${TESTREPO:-antolu}
-export TESTBRANCH=${TESTBRANCH:-ci}
+export DEFAULT_SERVER_HOST=server
+export DEFAULT_CLIENT_HOST=client
 
-<<<<<<< HEAD
-export DIRACOSVER=${DIRACOSVER:-master}
-
-# Versions of external services
-export MYSQL_VER=${MYSQL_VER:-5.7}
-export ES_VER=${ES_VER:-6.6.0}
-=======
 # Settings for DIRAC installation
 #export DEFAULT_PRERELEASE=True
 export DEFAULT_DIRAC_RELEASE=v6r22-pre3
@@ -60,13 +32,14 @@ export DEFAULT_TESTBRANCH=rel-v6r22
 
 export DEFAULT_DIRACOSVER=v1r1
 
-#export DEFAULT_ALTERNATIVE_MODULES=https://github.com/antolu/DIRAC.git:::DIRAC:::v6r21
->>>>>>> refactored and renamed default variables, change ES host before copy
+# Variables for other Docker services
+export DEFAULT_MYSQL_VER=5.7
+export DEFAULT_ES_VER=6.6.0
+<<<<<<< HEAD
+=======
 
 # Optional parameters
-export ALTERNATIVE_MODULES=${ALTERNATIVE_MODULES:-}
 
-# Test specific variables
-export DOCKER_USER=dirac
-export USER_HOME=/home/${DOCKER_USER}
-export WORKSPACE=$USER_HOME
+#export DEFAULT_ALTERNATIVE_MODULES=https://github.com/antolu/DIRAC.git:::DIRAC:::v6r21
+export DEFAULT_ALTERNATIVE_MODULES=unset
+>>>>>>> theoretical support for ALTERNATIVE_MODULES
