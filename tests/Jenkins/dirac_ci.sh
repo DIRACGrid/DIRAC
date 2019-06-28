@@ -160,9 +160,16 @@ function installSite(){
 
   if [ $ALTERNATIVE_MODULES ]
   then
-    echo "Installing from non-release code"
-    installOptions+="--module=$ALTERNATIVE_MODULES "
+     echo "Installing from non-release code"
+     if [[ -d $ALTERNATIVE_MODULES ]]
+     then
+	 installOptions+="--source=$ALTERNATIVE_MODULES"
+     else
+	 installOptions+="--module=$ALTERNATIVE_MODULES "
+     fi
   fi
+
+  
 
   echo '==> Installing with options' $installOptions $SERVERINSTALLDIR/install.cfg
   
