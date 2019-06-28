@@ -1,3 +1,4 @@
+#!/bin/bash
 # This file contains all the environment variables neccessary to run
 # a full integration test. When sourcing this file and executing
 # parseCommandLine from utils.sh, the `DEFAULT` prefix will be stripped
@@ -38,3 +39,16 @@ export DEFAULT_ES_VER=6.6.0
 
 #export DEFAULT_ALTERNATIVE_MODULES=https://github.com/antolu/DIRAC.git:::DIRAC:::v6r21
 export DEFAULT_ALTERNATIVE_MODULES=unset
+
+
+# GitLab variables
+
+if [[ ! ${!CI_@} -eq 0 ]]; then
+   export DEFAULT_TESTBRANCH=$CI_COMMIT_REF_NAME
+fi
+
+# Test specific variables
+export USER=dirac
+export USER_HOME=/home/${USER}
+export WORKSPACE=$USER_HOME
+

@@ -28,18 +28,12 @@ parseCommandLine
 
 docker-compose -f $SCRIPT_DIR/docker-compose.yml up -d
 
+set -x
 
 echo -e "\n****" $(date -u) "Creating user and copying scripts ****"
-USER=dirac
-USER_HOME=/home/${USER}
 
 # DIRAC server user and scripts
 docker exec server adduser -s /bin/bash -d $USER_HOME $USER
-
-if [[ ! -z $ALTERNATIVE_MODULES && -d $ALTERNATIVE_MODULES ]]; then
-    echo "export ALTERNATIVE_MODULES=$(basename $ALTERNATIVE_MODULES)" > $CONFIGFILE
-    docker cp $ALTERNATIVE_MODULES server:$USER_HOME/$(basename $ALTERATIVE_MODULES)
-fi
 
 docker cp $SCRIPT_DIR/install_server.sh server:$USER_HOME
 docker cp $CONFIGFILE server:$USER_HOME
@@ -49,6 +43,19 @@ docker exec client adduser -s /bin/bash -d $USER_HOME $USER
 
 docker cp $CONFIGFILE client:$USER_HOME
 docker cp $SCRIPT_DIR/install_client.sh client:$USER_HOME
+
+if [[ -d $TESTREPO ]]; then
+    docker exec server mkdir -p $WORKSPACE/LocalRepo/TestCode
+    docker exec client mkdir -p $WORKSPACE/LocalRepo/TestCode
+    docker cp $TESTREPO server:$WORKSPACE/LocalRepo/TestCode
+    docker cp $TESTREPO client:$WORKSPACE/LocalRepo/TestCode
+fi
+if [[ -d $ALTERNATIVE_MODULES ]]; then
+    docker exec server mkdir -p $WORKSPACE/LocalRepo/ALTERNATIVE_MODULES
+    docker exec client mkdir -p $WORKSPACE/LocalRepo/ALTERNATIVE_MODULES
+    docker cp $ALTERNATIVE_MODULES server:$WORKSPACE/LocalRepo/ALTERNATIVE_MODULES
+    docker cp $ALTERNATIVE_MODULES client:$WORKSPACE/LocalRepo/ALTERNATIVE_MODULES
+fi
 
 
 echo -e "\n****" $(date -u) "Configuring MySQL admin user ****"

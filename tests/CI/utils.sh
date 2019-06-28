@@ -1,5 +1,4 @@
 #!/bin/bash
-
 #...............................................................................
 #
 # parseCommandLine:
@@ -43,6 +42,14 @@ function parseCommandLine() {
 	fi
 
 	if [ ! -z $CONFIGFILE ]; then
+	    if [[ $VAR_NAME == "ALTERNATIVE_MODULES" && -d $ALTERNATIVE_MODULES ]]; then
+		echo "export ALTERNATIVE_MODULES=${WORKSPACE}/LocalRepo/ALTERNATIVE_MODULES/$(basename $ALTERNATIVE_MODULES)" >> $CONFIGFILE
+		continue
+	    elif [[ $VAR_NAME == "TESTREPO" && -d $TESTREPO ]]; then
+		echo "export TESTREPO=${WORKSPACE}/LocalRepo/TestCode/$(basename $TESTREPO)" >> $CONFIGFILE
+		continue
+	    fi
+	    
 	    echo "export ${VAR_NAME}=${!VAR_NAME}" >> $CONFIGFILE
 	fi
     done
