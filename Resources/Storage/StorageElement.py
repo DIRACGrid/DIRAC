@@ -410,7 +410,7 @@ class StorageElementItem(object):
           occupancyDict = res['Value']
           result = self.checkOccupancy(occupancyDict, unit)
           if result['OK']:
-            return result['Value']
+            return result
 
     # Try all of the storages one by one
     for storage in filteredPlugins:
@@ -426,15 +426,15 @@ class StorageElementItem(object):
 
         if 'SpaceReservation' not in occupancyDict:
           occupancyDict['SpaceReservation'] = self.options.get('SpaceReservation')
-        return res
+        return S_OK(occupancyDict)
 
     return S_ERROR("Could not retrieve the occupancy from any plugin")
 
   def checkOccupancy(self, occupancyDict, unit):
     """ Validate occupancy dict given by getOccupancy
 
-      :param occupancyDict: occupancy given by occupancy or storage plugins
-      :param unit: inherited from getOccupancy
+      :param dict occupancyDict: occupancy given by occupancy or storage plugins
+      :param str unit: Any of ( 'B', 'kB', 'MB', 'GB', 'TB', 'PB')
 
       :returns: S_OK with updated occupancyDict
     """
