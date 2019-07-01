@@ -38,9 +38,9 @@ services:
       mysql:
         condition: service_healthy
       elasticsearch:
-        condition: service_health
+        condition: service_healthy
     healthcheck:
-      test: ["ping -c locahost"]
+      test: ["CMD", "ping -c locahost"]
       interval: 30s
       timeout: 1s
       retries: 5
@@ -51,3 +51,9 @@ services:
     hostname: client
     depends_on:
       - dirac-server
+    healthcheck:
+      test: ["CMD", "ping -c locahost"]
+      interval: 30s
+      timeout: 1s
+      retries: 5
+
