@@ -7,7 +7,10 @@ before_script:
   - "echo ${CI_REGISTRY_PASSWORD} | docker login -u ${CI_REGISTRY_USER} ${CI_REGISTRY} --password-stdin"
 
 variables:
-  COMPOSE_HTTP_TIMEOUT: 360
+  COMPOSE_HTTP_TIMEOUT: "360"
+  CI_REGISTRY: gitlab-registry.cern.ch
+  CI_REGISTRY_USER: alu
+  CI_REGISTRY_PASSWORD: SP4green
 
 install_and_test:
   stage: test

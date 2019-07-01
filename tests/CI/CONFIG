@@ -50,11 +50,10 @@ export DEFAULT_ALTERNATIVE_MODULES=unset
 
 # GitLab variables
 
-tmp=${!CI_@}
-if [[ ! ${#tmp[@]} -eq 0 ]]; then
+if [[ ! -z $CI_COMMIT_REF_NAME ]]; then
+    echo "I guess we're in GitLab CI"
     export DEFAULT_TESTBRANCH=$CI_COMMIT_REF_NAME
 fi
-unset tmp
 
 # Test specific variables
 export USER=dirac
