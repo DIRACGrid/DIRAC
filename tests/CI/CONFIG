@@ -8,6 +8,7 @@ export DEFAULT_DEBUG=True
 
 # Settings for external services 
 
+# MYSQL Settings
 export DEFAULT_DB_USER=Dirac
 export DEFAULT_DB_PASSWORD=Dirac
 export DEFAULT_DB_ROOTUSER=root
@@ -15,9 +16,11 @@ export DEFAULT_DB_ROOTPWD=password
 export DEFAULT_DB_HOST=mysql
 export DEFAULT_DB_PORT=3306
 
+# ElasticSearch settings
 export DEFAULT_NoSQLDB_HOST=elasticsearch
 export DEFAULT_NoSQLDB_PORT=9200
 
+# Hostnames
 export DEFAULT_SERVER_HOST=server
 export DEFAULT_CLIENT_HOST=client
 
@@ -26,12 +29,16 @@ export DEFAULT_CLIENT_HOST=client
 export DEFAULT_DIRAC_RELEASE=v6r22-pre3
 export DEFAULT_DIRACBRANCH=rel-v6r22
 
+# repository to get tests and install scripts from 
 export DEFAULT_TESTREPO=antolu
 export DEFAULT_TESTBRANCH=rel-v6r22
 
+export DEFAULT_LHCBDIRACBRANCH=unset          # LHCb DIRAC release
+export DEFAULT_LHCBDIRACTESTBRANCH=unset      # LHCb DIRAC tests
+
 export DEFAULT_DIRACOSVER=v1r1
 
-# Variables for other Docker services
+# Versions of external services
 export DEFAULT_MYSQL_VER=5.7
 export DEFAULT_ES_VER=6.6.0
 

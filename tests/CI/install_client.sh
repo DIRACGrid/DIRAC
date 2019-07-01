@@ -27,7 +27,19 @@ git checkout $TESTBRANCH
 cd ../..
 
 
-echo -e '***' $(date -u) "**** Got the tests ****\n"
+echo -e '***' $(date -u) "**** Got the DIRAC tests ****\n"
+
+
+if [ ! -z $LHCBDIRACTESTBRANCH ]; then
+    echo "Detected LHCb branch ${LHCBDIRACTESTBRANCH}, getting the tests"
+    
+    git clone https://gitlab.cern.ch/lhcb-dirac/LHCbDIRAC.git
+    cd LHCbDIRAC
+    git checkout $LHCBDIRACTESTBRANCH
+    cd ../..
+
+    echo -e '***' $(date -u) "**** Got the LHCb DIRAC tests ****\n"
+fi
 
 set -e
 
@@ -38,8 +50,9 @@ source TestCode/DIRAC/tests/Jenkins/dirac_ci.sh
 
 
 echo -e '***' $(date -u) "**** Client INSTALLATION START ****\n"
-set -x
 
 findRelease
 
 installDIRAC
+
+
