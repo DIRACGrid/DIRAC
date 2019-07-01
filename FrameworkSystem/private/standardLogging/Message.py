@@ -31,7 +31,7 @@ class Message:
     self.variableText = str(variableText)
     self.frameInfo = frameInfo
     self.subSystemName = subSystemName
-    self.threadId = threading.ident
+    self.threadId = threading.get_ident()
 
   def getName(self):
     return self.systemName
