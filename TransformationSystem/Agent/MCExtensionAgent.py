@@ -93,7 +93,7 @@ class MCExtensionAgent( AgentModule ):
     done = statusDict.get( 'Done', 0 )
     failed = statusDict.get( 'Failed', 0 )
     waiting = statusDict.get( 'Waiting', 0 )
-    total = statusDict.get( 'Created', 0 )
+    total = statusDict.get( 'TotalCreated', 0 )
     # If the failure rate is higher than acceptable
     if ( total != 0 ) and ( ( 100.0 * float( failed ) / float( total ) ) > self.maxFailRate ):
       return 0
