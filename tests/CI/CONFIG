@@ -26,7 +26,7 @@ export DEFAULT_CLIENT_HOST=client
 export DEFAULT_DIRAC_RELEASE=v6r22-pre3
 export DEFAULT_DIRACBRANCH=rel-v6r22
 
-export DEFAULT_TESTREPO=DIRACGrid
+export DEFAULT_TESTREPO=antolu
 export DEFAULT_TESTBRANCH=rel-v6r22
 
 export DEFAULT_DIRACOSVER=v1r1
@@ -43,9 +43,11 @@ export DEFAULT_ALTERNATIVE_MODULES=unset
 
 # GitLab variables
 
-if [[ ! ${!CI_@} -eq 0 ]]; then
-   export DEFAULT_TESTBRANCH=$CI_COMMIT_REF_NAME
+tmp=${!CI_@}
+if [[ ! ${#tmp[@]} -eq 0 ]]; then
+    export DEFAULT_TESTBRANCH=$CI_COMMIT_REF_NAME
 fi
+unset tmp
 
 # Test specific variables
 export USER=dirac
