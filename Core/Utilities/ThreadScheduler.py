@@ -3,10 +3,10 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+from __future__ import unicode_literals
 
 __RCSID__ = "$Id$"
 
-from past.builtins import long
 import hashlib
 import threading
 import time
@@ -45,7 +45,8 @@ class ThreadScheduler(object):
             'func': taskFunc,
             'args': taskArgs,
             }
-    md.update(str(task))
+    res = str(task).encode('utf-8')
+    md.update(res)
     taskId = md.hexdigest()
     if taskId in self.__taskDict:
       return S_ERROR("Task %s is already added" % taskId)

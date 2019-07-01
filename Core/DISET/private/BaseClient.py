@@ -417,7 +417,7 @@ class BaseClient(object):
     """
     if not self.__initStatus['OK']:
       return self.__initStatus
-    cThID = threading.get_ident()
+    cThID = threading._get_ident()
     if not self.__allowedThreadID:
       self.__allowedThreadID = cThID
     elif cThID != self.__allowedThreadID:

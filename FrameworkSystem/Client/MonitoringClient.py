@@ -5,10 +5,11 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+from __future__ import unicode_literals
+
 __RCSID__ = "$Id"
 
 import time
-
 import six
 
 import DIRAC
@@ -272,7 +273,8 @@ class MonitoringClient(object):
       raise MonitoringClientActivityNotDefined("You must register activity %s before adding marks to it" % name)
       # raise Exception( "You must register activity %s before adding marks to it" % name )
     if not isinstance(value, self.__validMonitoringValues):
-      raise MonitoringClientActivityValueTypeError("Activity '%s' value's type (%s) is not valid" % (name, type(value)))
+      raise MonitoringClientActivityValueTypeError("Activity '%s' value's type (%s) is not valid" % (name,
+                                                                                                     type(value)))
       # raise Exception( "Value's type %s is not valid" % value )
     self.activitiesLock.acquire()
     try:
@@ -472,7 +474,7 @@ class MonitoringClient(object):
         return False
       condVal = condDict[key]
       componentVal = component[key]
-      if type(condVal) in (list, tuple):
+      if isinstance(condVal, (list, tuple)):
         if componentVal not in condVal:
           return False
       else:

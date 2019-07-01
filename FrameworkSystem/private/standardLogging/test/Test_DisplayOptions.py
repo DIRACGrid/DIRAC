@@ -61,7 +61,7 @@ class Test_DisplayOptions(Test_Logging):
 
     logstring1 = cleaningLog(self.buffer.getvalue())
 
-    self.assertIn(str(threading.get_ident()), logstring1)
+    self.assertIn(str(threading._get_ident()), logstring1)
     self.buffer.truncate(0)
 
   def test_02setShowThreadIDsHeaders(self):
@@ -97,7 +97,7 @@ class Test_DisplayOptions(Test_Logging):
 
     logstring1 = cleaningLog(self.buffer.getvalue())
 
-    self.assertIn(str(threading.get_ident()), logstring1)
+    self.assertIn(str(threading._get_ident()), logstring1)
     self.buffer.truncate(0)
 
   def test_03setSubLogShowHeaders(self):

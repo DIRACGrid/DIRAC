@@ -1,4 +1,3 @@
-# $HeadURL$
 """
 Encoding and decoding for dirac, Ids:
  i -> int
@@ -15,14 +14,13 @@ Encoding and decoding for dirac, Ids:
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
+from __future__ import unicode_literals
+
 __RCSID__ = "$Id$"
 
-from past.builtins import long
 import six
-import types
 import datetime
 import os
-
 import functools
 import inspect
 import traceback
@@ -221,7 +219,7 @@ def decodeInt(data, i):
   return (value, end + 1)
 
 
-g_dEncodeFunctions[types.IntType] = encodeInt
+g_dEncodeFunctions[int] = encodeInt  # FIXME: put int... but this should desappear!!!
 g_dDecodeFunctions["i"] = decodeInt
 
 
@@ -241,7 +239,7 @@ def decodeLong(data, i):
   return (value, end + 1)
 
 
-g_dEncodeFunctions[types.LongType] = encodeLong
+g_dEncodeFunctions[int] = encodeLong
 g_dDecodeFunctions["I"] = decodeLong
 
 
@@ -265,7 +263,7 @@ def decodeFloat(data, i):
   return (value, end + 1)
 
 
-g_dEncodeFunctions[types.FloatType] = encodeFloat
+g_dEncodeFunctions[float] = encodeFloat
 g_dDecodeFunctions["f"] = decodeFloat
 
 
@@ -287,7 +285,7 @@ def decodeBool(data, i):
     return (True, i + 2)
 
 
-g_dEncodeFunctions[types.BooleanType] = encodeBool
+g_dEncodeFunctions[bool] = encodeBool
 g_dDecodeFunctions["b"] = decodeBool
 
 
@@ -306,7 +304,7 @@ def decodeString(data, i):
   return (data[colon: end], end)
 
 
-g_dEncodeFunctions[types.StringType] = encodeString
+g_dEncodeFunctions[str] = encodeString
 g_dDecodeFunctions["s"] = decodeString
 
 
@@ -326,8 +324,10 @@ def decodeUnicode(data, i):
   end = colon + value
   return (unicode(data[colon: end], 'utf-8'), end)
 
+#  g_dEncodeFunctions[types.UnicodeType] = encodeUnicode  # FIXME: Unicode and python 3
 
-g_dEncodeFunctions[types.UnicodeType] = encodeUnicode
+
+g_dEncodeFunctions[str] = encodeUnicode
 g_dDecodeFunctions["u"] = decodeUnicode
 
 
@@ -391,7 +391,7 @@ def decodeNone(_data, i):
   return (None, i + 1)
 
 
-g_dEncodeFunctions[types.NoneType] = encodeNone
+g_dEncodeFunctions[type(None)] = encodeNone
 g_dDecodeFunctions['n'] = decodeNone
 
 
@@ -415,7 +415,7 @@ def decodeList(data, i):
   return(oL, i + 1)
 
 
-g_dEncodeFunctions[types.ListType] = encodeList
+g_dEncodeFunctions[list] = encodeList
 g_dDecodeFunctions["l"] = decodeList
 
 
@@ -441,7 +441,7 @@ def decodeTuple(data, i):
   return (tuple(oL), i)
 
 
-g_dEncodeFunctions[types.TupleType] = encodeTuple
+g_dEncodeFunctions[tuple] = encodeTuple
 g_dDecodeFunctions["t"] = decodeTuple
 
 
@@ -477,7 +477,7 @@ def decodeDict(data, i):
   return (oD, i + 1)
 
 
-g_dEncodeFunctions[types.DictType] = encodeDict
+g_dEncodeFunctions[dict] = encodeDict
 g_dDecodeFunctions["d"] = decodeDict
 
 
