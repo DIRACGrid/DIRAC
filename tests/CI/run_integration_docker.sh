@@ -67,8 +67,6 @@ FLUSH PRIVILEGES;
 quit
 EOF
 
-# Wait for mysql to boot up
-sleep 20
 docker cp $SCRIPT_DIR/tmp/mysql.sql mysql:/mysql.sql
 docker exec mysql bash -c "mysql -u root --password=password < mysql.sql"
 
