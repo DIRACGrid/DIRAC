@@ -31,7 +31,7 @@ export DEFAULT_DIRACBRANCH=rel-v6r22
 
 # repository to get tests and install scripts from 
 export DEFAULT_TESTREPO=antolu
-export DEFAULT_TESTBRANCH=rel-v6r22
+export DEFAULT_TESTBRANCH=ci
 
 export DEFAULT_LHCBDIRACBRANCH=unset          # LHCb DIRAC release
 export DEFAULT_LHCBDIRACTESTBRANCH=unset      # LHCb DIRAC tests
