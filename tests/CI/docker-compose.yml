@@ -1,4 +1,4 @@
-version: '3.3'
+version: '2.4'
 
 services:
   mysql:
@@ -35,8 +35,15 @@ services:
 #      mysql: mysql
 #      elasticsearch: elasticsearch
     depends_on:
-      - mysql
-      - elasticsearch
+      mysql:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_health
+    healthcheck:
+      test: ["ping -c locahost"]
+      interval: 30s
+      timeout: 1s
+      retries: 5
       
   dirac-client:
     image: gitlab-registry.cern.ch/alu/dirac/cc7-dirac
