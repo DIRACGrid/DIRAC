@@ -40,7 +40,7 @@ services:
       elasticsearch:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "ping -c locahost"]
+      test: ["CMD", "ping -c 1 locahost"]
       interval: 30s
       timeout: 10s
       retries: 5
