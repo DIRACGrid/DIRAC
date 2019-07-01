@@ -51,7 +51,7 @@ export DEFAULT_ALTERNATIVE_MODULES=unset
 # GitLab variables
 
 if [[ ! -z $CI_COMMIT_REF_NAME ]]; then
-    echo "I guess we're in GitLab CI"
+    echo "I guess we're in GitLab CI, using branch ${CI_COMMIT_REF_NAME}"
     export DEFAULT_TESTBRANCH=$CI_COMMIT_REF_NAME
 fi
 

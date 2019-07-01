@@ -42,7 +42,7 @@ services:
     healthcheck:
       test: ["CMD", "ping -c locahost"]
       interval: 30s
-      timeout: 1s
+      timeout: 10s
       retries: 5
       
   dirac-client:
@@ -54,6 +54,6 @@ services:
     healthcheck:
       test: ["CMD", "ping -c locahost"]
       interval: 30s
-      timeout: 1s
+      timeout: 10s
       retries: 5
 
