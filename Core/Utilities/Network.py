@@ -5,15 +5,17 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+from __future__ import unicode_literals
+
 __RCSID__ = "$Id$"
 
 import socket
-import urlparse
 import os
 import struct
 import array
 import fcntl
 import platform
+from six.moves.urllib.parse import urlparse
 
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 
@@ -57,7 +59,7 @@ def getFQDN():
 
 
 def splitURL(url):
-  o = urlparse.urlparse(url)
+  o = urlparse(url)
   if o.scheme == "":
     return S_ERROR("'%s' URL is missing protocol" % url)
   path = o.path

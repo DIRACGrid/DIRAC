@@ -2,10 +2,11 @@
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
+from __future__ import unicode_literals
+
 import random
 import time
 import threading
-import thread
 from hashlib import md5
 
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
@@ -21,10 +22,10 @@ class LockRing(object):
     self.__events = {}
 
   def __genName(self, container):
-    name = md5(str(time.time() + random.random())).hexdigest()
+    name = md5(str(time.time() + random.random()).encode('utf-8')).hexdigest()
     retries = 10
     while name in container and retries:
-      name = md5(str(time.time() + random.random())).hexdigest()
+      name = md5(str(time.time() + random.random()).encode('utf-8')).hexdigest()
       retries -= 1
     return name
 
@@ -73,7 +74,7 @@ class LockRing(object):
     for lockName in self.__locks.keys():
       try:
         self.__locks[lockName].release()
-      except (RuntimeError, thread.error, KeyError):
+      except (RuntimeError, threading.ThreadError, KeyError):
         pass
 
   def _setAllEvents(self):

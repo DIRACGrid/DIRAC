@@ -11,10 +11,14 @@ from __future__ import division
 from __future__ import print_function
 
 
-from string import printable
+from __future__ import absolute_import, print_function, unicode_literals
+
+
 import datetime
 import sys
+from string import printable
 
+from six import itervalues
 
 from DIRAC.Core.Utilities.DEncode import encode as disetEncode, decode as disetDecode, g_dEncodeFunctions
 from DIRAC.Core.Utilities.JEncode import encode as jsonEncode, decode as jsonDecode, JSerializable
@@ -99,7 +103,7 @@ def test_everyBaseTypeIsTested():
   """
   current_module = sys.modules[__name__]
 
-  for encodeFunc in g_dEncodeFunctions.itervalues():
+  for encodeFunc in itervalues(g_dEncodeFunctions):
     testFuncName = ('test_BaseType_%s' % encodeFunc.__name__).replace('encode', '')
     getattr(current_module, testFuncName)
 

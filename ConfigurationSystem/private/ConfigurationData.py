@@ -4,11 +4,15 @@
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
+from __future__ import unicode_literals
+
 import os.path
 import zlib
 import zipfile
-import thread
+import threading
 import time
+from io import open
+
 import DIRAC
 
 from diraccfg import CFG
@@ -397,7 +401,7 @@ class ConfigurationData(object):
     self.runningThreadsNumber += 1
     try:
       self.threadingLock.release()
-    except thread.error:
+    except threading.ThreadError:
       pass
 
   def dangerZoneEnd(self, returnValue=None):
@@ -409,6 +413,6 @@ class ConfigurationData(object):
     self.runningThreadsNumber -= 1
     try:
       self.threadingLock.release()
-    except thread.error:
+    except threading.ThreadError:
       pass
     return returnValue

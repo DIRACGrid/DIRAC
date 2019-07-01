@@ -104,7 +104,7 @@ if preVersion:
 
 # Check of python version
 
-__pythonMajorVersion = ("2", )
+__pythonMajorVersion = ("2", "3")
 __pythonMinorVersion = ("7")
 
 pythonVersion = pyPlatform.python_version_tuple()

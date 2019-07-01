@@ -9,12 +9,16 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+from __future__ import unicode_literals
+
 __RCSID__ = "$Id$"
 
 import pprint
 import sys
-import urlparse
 import cgi
+
+from six.moves.urllib.parse import urlparse
+
 from DIRAC import gLogger
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.Plotting.FileCoding import extractRequestFromFileId
@@ -30,7 +34,7 @@ fileIds = Script.getPositionalArgs()
 
 for fileId in fileIds:
   # Try to find if it's a url
-  parseRes = urlparse.urlparse(fileId)
+  parseRes = urlparse(fileId)
   if parseRes.query:
     queryRes = cgi.parse_qs(parseRes.query)
     if 'file' in queryRes:

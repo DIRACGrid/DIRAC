@@ -1,5 +1,3 @@
-# $HeadURL$
-
 """
 :mod: Pfn
 
@@ -13,14 +11,16 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+from __future__ import unicode_literals
 
-__RCSID__ = "$Id:$"
+__RCSID__ = "$Id$"
 
 # # imports
 import os
+from six.moves.urllib.parse import urlparse
+
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
-import urlparse
 
 
 def pfnunparse(pfnDict, srmSpecific=True):
@@ -217,7 +217,7 @@ def default_pfnparse(pfn):
   pfnDict = dict.fromkeys(["Protocol", "Host", "Port", "WSUrl", "Path", "FileName"], "")
   try:
 
-    parse = urlparse.urlparse(pfn)
+    parse = urlparse(pfn)
     pfnDict['Protocol'] = parse.scheme
     if ':' in parse.netloc:
       pfnDict['Host'], pfnDict['Port'] = parse.netloc.split(':')

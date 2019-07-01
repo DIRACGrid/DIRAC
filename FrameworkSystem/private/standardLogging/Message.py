@@ -7,6 +7,8 @@ from __future__ import division
 from __future__ import print_function
 
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Utilities import Time
@@ -21,7 +23,7 @@ def tupleToMessage(varTuple):
 class Message:
 
   def __init__(self, systemName, level, time, msgText, variableText, frameInfo, subSystemName=''):
-    import thread
+    import threading
     self.systemName = systemName
     self.level = level
     self.time = time
@@ -29,7 +31,7 @@ class Message:
     self.variableText = str(variableText)
     self.frameInfo = frameInfo
     self.subSystemName = subSystemName
-    self.threadId = thread.get_ident()
+    self.threadId = threading.ident
 
   def getName(self):
     return self.systemName

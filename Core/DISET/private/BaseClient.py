@@ -4,12 +4,14 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+from __future__ import unicode_literals
 
 __RCSID__ = "$Id$"
 
 import six
 import time
-import thread
+import threading
+
 import DIRAC
 from DIRAC.Core.DISET.private.Protocols import gProtocolDict
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
@@ -415,7 +417,7 @@ class BaseClient(object):
     """
     if not self.__initStatus['OK']:
       return self.__initStatus
-    cThID = thread.get_ident()
+    cThID = threading.ident
     if not self.__allowedThreadID:
       self.__allowedThreadID = cThID
     elif cThID != self.__allowedThreadID:

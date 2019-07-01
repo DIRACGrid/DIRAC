@@ -5,11 +5,15 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+from __future__ import unicode_literals
 
-import copy
-from DIRAC import gLogger
 
 __RCSID__ = "$Id $"
+
+import copy
+from six import itervalues, iteritems
+
+from DIRAC import gLogger
 
 
 class DAG(object):
@@ -50,7 +54,7 @@ class DAG(object):
       gLogger.error("Missing node to where the edge lands")
       return
 
-    for node, toNodes in self.graph.iteritems():
+    for node, toNodes in iteritems(self.graph):
       # This is clearly not enough to assure that it's really acyclic...
       if toNode == node and fromNode in toNodes:
         gLogger.error("Can't insert this edge")
@@ -61,7 +65,7 @@ class DAG(object):
     """ Return a list of index nodes
     """
     notIndexNodes = set()
-    for depNodes in self.graph.itervalues():
+    for depNodes in itervalues(self.graph):
       [notIndexNodes.add(depNode) for depNode in depNodes]
     indexNodes = list(set(self.graph.keys()) - notIndexNodes)
     return [unHashNode(inu) for inu in indexNodes]

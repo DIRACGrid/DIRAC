@@ -7,7 +7,9 @@ from __future__ import print_function
 # FIXME: NOT Usable ATM
 # missing doNew, doCache, doMaster
 
-import urlparse
+from __future__ import absolute_import, print_function, unicode_literals
+
+from six.moves.urllib.parse import urlparse
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -45,7 +47,7 @@ class VOBOXAvailabilityCommand(Command):
 
     ##
 
-    parsed = urlparse.urlparse(serviceURL)
+    parsed = urlparse(serviceURL)
     site = parsed[1].split(':')[0]
 
     try:

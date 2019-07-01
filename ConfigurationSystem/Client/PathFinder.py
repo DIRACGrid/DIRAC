@@ -4,9 +4,11 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __RCSID__ = "$Id$"
 
-import urlparse
+from six.moves.urllib.parse import urlparse
 
 from DIRAC.Core.Utilities import List
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
@@ -110,8 +112,8 @@ def getServiceURL(serviceName, serviceTuple=False, setup=False):
   # This can only happen if there is only one server defined
   if ',' not in url:
 
-    urlParse = urlparse.urlparse(url)
-    server, port = urlParse.netloc.split(':')
+    urlParsed = urlparse(url)
+    server, port = urlParsed.netloc.split(':')
     mainUrlsList = []
 
     if server == '$MAINSERVERS$':
@@ -123,8 +125,8 @@ def getServiceURL(serviceName, serviceTuple=False, setup=False):
         raise Exception("No Main servers defined")
 
       for srv in mainServers:
-        mainUrlsList.append(urlparse.ParseResult(scheme=urlParse.scheme, netloc=':'.join([srv, port]),
-                                                 path=urlParse.path, params='', query='', fragment='').geturl())
+        mainUrlsList.append(urlparse.ParseResult(scheme=urlParsed.scheme, netloc=':'.join([srv, port]),
+                                                 path=urlParsed.path, params='', query='', fragment='').geturl())
       return ','.join(mainUrlsList)
 
   if len(url.split("/")) < 5:

@@ -5,10 +5,12 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __RCSID__ = "$Id$"
 
 import unittest
-import thread
+import threading
 
 from DIRAC.FrameworkSystem.private.standardLogging.test.TestLoggingBase import Test_Logging, gLogger, cleaningLog
 
@@ -59,7 +61,7 @@ class Test_DisplayOptions(Test_Logging):
 
     logstring1 = cleaningLog(self.buffer.getvalue())
 
-    self.assertIn(str(thread.get_ident()), logstring1)
+    self.assertIn(str(threading.ident), logstring1)
     self.buffer.truncate(0)
 
   def test_02setShowThreadIDsHeaders(self):
@@ -95,7 +97,7 @@ class Test_DisplayOptions(Test_Logging):
 
     logstring1 = cleaningLog(self.buffer.getvalue())
 
-    self.assertIn(str(thread.get_ident()), logstring1)
+    self.assertIn(str(threading.ident), logstring1)
     self.buffer.truncate(0)
 
   def test_03setSubLogShowHeaders(self):

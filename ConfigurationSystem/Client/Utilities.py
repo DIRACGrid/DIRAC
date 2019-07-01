@@ -12,12 +12,15 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+from __future__ import unicode_literals
 
 __RCSID__ = "$Id$"
 
 import re
 import socket
-from urlparse import urlparse
+
+from builtins import str
+from six.moves.urllib.parse import urlparse
 
 import six
 

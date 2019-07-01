@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL $
 # File: RemoveReplica.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/03/25 07:45:06
@@ -20,6 +19,7 @@
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
+from __future__ import unicode_literals
 
 __RCSID__ = "$Id $"
 
@@ -31,11 +31,12 @@ __RCSID__ = "$Id $"
 
 # # imports
 import os
+from six import itervalues, iteritems
+
 # # from DIRAC
 from DIRAC import S_OK
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase import DMSRequestOperationsBase
-
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 
 ########################################################################
@@ -184,16 +185,16 @@ class RemoveReplica(DMSRequestOperationsBase):
     :param str targetSE: target SE name
     """
     # Clear the error
-    for opFile in toRemoveDict.itervalues():
+    for opFile in itervalues(toRemoveDict):
       opFile.Error = ''
     removeReplicas = self.dm.removeReplica(targetSE, toRemoveDict.keys())
     if not removeReplicas["OK"]:
-      for opFile in toRemoveDict.itervalues():
+      for opFile in itervalues(toRemoveDict):
         opFile.Error = removeReplicas["Message"]
       return removeReplicas
     removeReplicas = removeReplicas["Value"]
     # # filter out failed
-    for lfn, opFile in toRemoveDict.iteritems():
+    for lfn, opFile in iteritems(toRemoveDict):
       if lfn in removeReplicas["Failed"]:
         errorReason = str(removeReplicas['Failed'][lfn])
         # If the reason is that the file does not exist,

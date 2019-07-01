@@ -5,10 +5,13 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+from __future__ import absolute_import, print_function, unicode_literals
+
 __RCSID__ = "$Id$"
 
 import logging
 import os
+from six import itervalues
 
 from DIRAC import S_ERROR
 from DIRAC.FrameworkSystem.private.standardLogging.LogLevels import LogLevels
@@ -144,7 +147,7 @@ class Logging(object):
       self._options[optionName] = value
 
       # propagate in the children
-      for child in self._children.itervalues():
+      for child in itervalues(self._children):
         child._setOption(optionName, value, directCall=False)  # pylint: disable=protected-access
       # update the format to apply the option change
       self._generateBackendFormat()
@@ -259,7 +262,7 @@ class Logging(object):
         self._lockOptions.release()
 
       # propagate in the children
-      for child in self._children.itervalues():
+      for child in itervalues(self._children):
         child._setLevel(level, directCall=False)  # pylint: disable=protected-access
     finally:
       self._lockLevel.release()

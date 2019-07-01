@@ -28,10 +28,12 @@ if a give datetime is in the defined interval.
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
+from __future__ import unicode_literals
+
 import time as nativetime
 import datetime
-from types import StringTypes
 import sys
+import time as nativetime
 
 __RCSID__ = "$Id$"
 
@@ -194,46 +196,33 @@ def fromString(myDate=None):
   See notice on toString method
   On Error, return None
   """
-  if StringTypes.__contains__(type(myDate)):
-    if myDate.find(' ') > 0:
-      dateTimeTuple = myDate.split(' ')
-      dateTuple = dateTimeTuple[0].split('-')
+  if myDate.find(' ') > 0:
+    dateTimeTuple = myDate.split(' ')
+    dateTuple = dateTimeTuple[0].split('-')
+    try:
+      return (datetime.datetime(year=dateTuple[0],
+                                month=dateTuple[1],
+                                day=dateTuple[2]) +
+              fromString(dateTimeTuple[1]))
+      # return dt.combine( fromString( dateTimeTuple[0] ),
+      #                                   fromString( dateTimeTuple[1] ) )
+    except BaseException:
       try:
-        return (datetime.datetime(year=dateTuple[0],
-                                  month=dateTuple[1],
-                                  day=dateTuple[2]) +
+        return (datetime.datetime(year=int(dateTuple[0]),
+                                  month=int(dateTuple[1]),
+                                  day=int(dateTuple[2])) +
                 fromString(dateTimeTuple[1]))
         # return dt.combine( fromString( dateTimeTuple[0] ),
         #                                   fromString( dateTimeTuple[1] ) )
-      except BaseException:
+      except Exception:
         try:
-          return (datetime.datetime(year=int(dateTuple[0]),
-                                    month=int(dateTuple[1]),
-                                    day=int(dateTuple[2])) +
-                  fromString(dateTimeTuple[1]))
-        except ValueError:
-          return None
-        # return dt.combine( fromString( dateTimeTuple[0] ),
-        #                                   fromString( dateTimeTuple[1] ) )
-    elif myDate.find(':') > 0:
-      timeTuple = myDate.replace('.', ':').split(':')
-      try:
-        if len(timeTuple) == 4:
           return datetime.timedelta(hours=int(timeTuple[0]),
                                     minutes=int(timeTuple[1]),
                                     seconds=int(timeTuple[2]),
-                                    microseconds=int(timeTuple[3]))
-        elif len(timeTuple) == 3:
-          try:
-            return datetime.timedelta(hours=int(timeTuple[0]),
-                                      minutes=int(timeTuple[1]),
-                                      seconds=int(timeTuple[2]),
-                                      microseconds=0)
-          except ValueError:
-            return None
-        else:
+                                    microseconds=0)
+        except ValueError:
           return None
-      except BaseException:
+      except Exception:
         return None
     elif myDate.find('-') > 0:
       dateTuple = myDate.split('-')
@@ -241,8 +230,14 @@ def fromString(myDate=None):
         return datetime.date(int(dateTuple[0]), int(dateTuple[1]), int(dateTuple[2]))
       except BaseException:
         return None
-
-  return None
+    except BaseException:
+      return None
+  elif myDate.find('-') > 0:
+    dateTuple = myDate.split('-')
+    try:
+      return datetime.date(int(dateTuple[0]), int(dateTuple[1]), int(dateTuple[2]))
+    except BaseException:
+      return None
 
 
 class timeInterval:
@@ -259,8 +254,7 @@ class timeInterval:
        If not properly initialized an error flag is set, and subsequent calls
        to any method will return None
     """
-    if (not isinstance(initialDateTime, _dateTimeType) or
-            not isinstance(intervalTimeDelta, _timeType)):
+    if (not isinstance(initialDateTime, _dateTimeType) or not isinstance(intervalTimeDelta, _timeType)):
       self.__error = True
       return None
     self.__error = False
