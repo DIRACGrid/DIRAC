@@ -103,7 +103,7 @@ function installSite(){
   findRelease
 
   generateCA
-  generateCertificates
+  generateCertificates 7
 
   getCFGFile
 
