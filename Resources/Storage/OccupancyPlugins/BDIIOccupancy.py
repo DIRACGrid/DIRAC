@@ -19,7 +19,6 @@ class BDIIOccupancy(object):
   """
   def __init__(self, se):
     # flag to show initalization status of the plugin
-    self.isUsable = False
     self.log = se.log.getSubLogger('BDIIOccupancy')
     # BDII host to query
     self.bdii = 'lcg-bdii.cern.ch:2170'
@@ -29,15 +28,12 @@ class BDIIOccupancy(object):
     # assume given SE speaks SRM
     ret = se.getStorageParameters(protocol='srm')
     if not ret['OK']:
-      self.log.error(ret['Message'])
-      return
+      raise RuntimeError(ret['Message'])
     if 'Host' not in ret['Value']:
-      self.log.error('No Host is found from StorageParameters')
-      return
+      raise RuntimeError('No Host is found from StorageParameters')
     self.host = ret['Value']['Host']
-    self.isUsable = True
 
-  def getOccupancy(self):
+  def getOccupancy(self, **kwargs):
     """ Returns the space information given by BDII
         Total and Free space are taken from GlueSATotalOnlineSize and GlueSAFreeOnlineSize, respectively.
 
