@@ -10,6 +10,12 @@ from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.Resources.ProxyProvider.ProxyProviderFactory import ProxyProviderFactory
 
+# For Jenkins
+for f in [os.environ['DIRAC'], 'TestCode', '']:
+  certsPath = os.path.join(f, 'DIRAC/tests/Integration/certs')
+  if os.path.exists(certsPath):
+    break
+
 diracTestCACFG = """
 Resources
 {
@@ -26,7 +32,7 @@ Resources
     }
   }
 }
-""" % os.path.join(os.environ['DIRAC'], 'DIRAC/tests/Integration/certs/ca/openssl_config_ca.cnf')
+""" % os.path.join(certsPath, 'ca/openssl_config_ca.cnf')
 
 userCFG = """
 Registry
