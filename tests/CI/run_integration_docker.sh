@@ -26,6 +26,10 @@ export CONFIGFILE=$SCRIPT_DIR/tmp/CONFIG
 
 parseCommandLine
 
+echo
+echo $NoSQLDB_HOST
+echo
+
 docker-compose -f $SCRIPT_DIR/docker-compose.yml up -d
 
 set -x
