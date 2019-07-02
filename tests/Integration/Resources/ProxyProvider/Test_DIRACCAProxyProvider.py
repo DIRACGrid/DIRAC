@@ -2,8 +2,10 @@
 """ Tests for ProxyProvider modules module
 """
 
-import unittest
 import os
+import re
+import shutil
+import unittest
 
 from DIRAC import gConfig
 from DIRAC.Core.Utilities.CFG import CFG
@@ -62,6 +64,27 @@ Registry
 class DIRACCAPPTest(unittest.TestCase):
   """ Base class for the Modules test cases
   """
+
+  @classmethod
+  def setUpClass(cls):
+    __caPath = os.path.join(certsPath, 'ca')
+    cls.caConfigFile = os.path.join(__caPath, 'openssl_config_ca.cnf')
+
+    # Save original configuration file
+    lines = []
+    shutil.copyfile(cls.caConfigFile, cls.caConfigFile + 'bak')
+    with open(cls.caConfigFile, "rw+") as caCFG:
+      for line in caCFG:
+        if re.findall('=', re.sub(r'#.*', '', line)):
+          field = re.sub(r'#.*', '', line).replace(' ', '').rstrip().split('=')[0]
+          line = 'dir = %s #PUT THE RIGHT DIR HERE!\n' % (__caPath) if field == 'dir' else line
+        lines.append(line)
+      caCFG.seek(0)
+      caCFG.writelines(lines)
+  
+  @classmethod
+  def tearDownClass(cls):
+    shutil.move(cls.caConfigFile + 'bak', cls.caConfigFile)
 
   def setUp(self):
 
