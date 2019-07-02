@@ -22,8 +22,10 @@ from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.FrameworkSystem.DB.ProxyDB import ProxyDB
 
 # For Jenkins
-certsPath = os.path.join(os.environ.get('TESTCODE') or os.environ['DIRAC'],
-                         'DIRAC/tests/Integration/certs')
+for f in [os.environ['DIRAC'], 'TestCode', '']:
+  certsPath = os.path.join(f, 'DIRAC/tests/Integration/certs')
+  if os.path.exists(certsPath):
+    break
 
 diracTestCACFG = """
 Resources
