@@ -450,7 +450,7 @@ using the "setNumberOfProcessors" method of the API::
       j.setName('MP test')
       j.setNumberOfProcessors(16)
 
-By calling Job().setNumberOfProcessors(), with a value bigger than 1,
+Calling ``Job().setNumberOfProcessors()``, with a value bigger than 1,
 will translate into adding also the "MultiProcessor" tag to the job description.
 
 .. versionadded:: v6r20p5
