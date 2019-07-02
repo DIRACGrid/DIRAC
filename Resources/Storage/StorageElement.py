@@ -403,14 +403,17 @@ class StorageElementItem(object):
       if not res['OK']:
         return S_ERROR(errno.EPROTONOSUPPORT, 'Failed to load occupancy plugin %s' % occupancyPlugin)
       log.verbose('Use occupancy plugin %s' % occupancyPlugin)
-      occupancyPlugin = res['Value'](self)
-      if occupancyPlugin.isUsable:
-        res = occupancyPlugin.getOccupancy()
+      try:
+        occupancyPlugin = res['Value'](self)
+        res = occupancyPlugin.getOccupancy(**kwargs)
         if res['OK']:
           occupancyDict = res['Value']
           result = self.checkOccupancy(occupancyDict, unit)
           if result['OK']:
             return result
+          log.warn('Occupancy plugin failed: %s' % str(result['Message']))
+      except Exception as e:
+        log.warn('Occupancy plugin failed: %s' % str(e))
 
     # Try all of the storages one by one
     for storage in filteredPlugins:
