@@ -93,7 +93,8 @@ def test_checkTasksStatus(tiFixture, tdFixture):
   assert len(retDict) == 2
   assert 123 in retDict
   assert 124 in retDict
-  assert "FileID" in retDict[124]
+  assert len(retDict[124]) == 1
+  assert 'FileID' in retDict[124][0]
 
 
 def test_setJob_Status(tiFixture):
@@ -173,7 +174,7 @@ def test_setInputStatusFuncs(tiFixture):
 def test_setInputStatus(tiFixture):
   """DIRAC.TransformationSystem.Utilities.TransformationInfo setInputStatus................."""
   job = Mock(spec=JobInfo)
-  job.inputFile = "dummylfn"
+  job.inputFiles = ['dummylfn', 'otherDummy']
   status = "Unused"
 
   tiFixture.enabled = False

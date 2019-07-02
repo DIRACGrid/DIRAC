@@ -116,36 +116,39 @@ class DataRecoveryAgent(AgentModule):
                           ShortMessage="Other Tasks --> Keep",
                           Counter=0,
                           Check=lambda job: job.allFilesExist() and job.otherTasks and \
-                          job.inputFile not in self.inputFilesProcessed,
-                          Actions=lambda job, tInfo: [self.inputFilesProcessed.add(job.inputFile),
+                          not set(job.inputFiles).issubset(self.inputFilesProcessed),
+                          Actions=lambda job, tInfo: [self.inputFilesProcessed.update(job.inputFiles),
                                                       job.setJobDone(tInfo),
                                                       job.setInputProcessed(tInfo)]
                           ),
                      dict(Message="Other Task processed Input, no Output: Fail",
                           ShortMessage="Other Tasks --> Fail",
                           Counter=0,
-                          Check=lambda job: job.inputFile in self.inputFilesProcessed and \
+                          Check=lambda job: set(job.inputFiles).issubset(self.inputFilesProcessed) and \
                           job.allFilesMissing() and job.status != 'Failed',
                           Actions=lambda job, tInfo: [job.setJobFailed(tInfo)]
                           ),
                      dict(Message="Other Task processed Input: Fail and clean",
                           ShortMessage="Other Tasks --> Cleanup",
                           Counter=0,
-                          Check=lambda job: job.inputFile in self.inputFilesProcessed and not job.allFilesMissing(),
+                          Check=lambda job: set(job.inputFiles).issubset(
+                              self.inputFilesProcessed) and not job.allFilesMissing(),
                           Actions=lambda job, tInfo: [job.setJobFailed(tInfo), job.cleanOutputs(tInfo)]
                           ),
-                     dict(Message="InputFile missing: mark job 'Failed', mark input 'Deleted', clean",
+                     dict(Message="InputFile(s) missing: mark job 'Failed', mark input 'Deleted', clean",
                           ShortMessage="Input Missing --> Job 'Failed, Input 'Deleted', Cleanup",
                           Counter=0,
-                          Check=lambda job: job.inputFile and not job.inputFileExists and job.fileStatus != "Deleted",
-                          Actions=lambda job, tInfo: [
-                              job.cleanOutputs(tInfo), job.setJobFailed(tInfo), job.setInputDeleted(tInfo)]
+                          Check=lambda job: job.inputFiles and job.allInputFilesMissing() and \
+                          not job.allTransFilesDeleted(),
+                          Actions=lambda job, tInfo: [job.cleanOutputs(tInfo), job.setJobFailed(tInfo),
+                                                      job.setInputDeleted(tInfo)],
                           ),
-                     dict(Message="InputFile Deleted, output Exists: mark job 'Failed', clean",
+                     dict(Message="InputFile(s) Deleted, output Exists: mark job 'Failed', clean",
                           ShortMessage="Input Deleted --> Job 'Failed, Cleanup",
                           Counter=0,
-                          Check=lambda job: job.inputFile and not job.inputFileExists and job.fileStatus == "Deleted" and not job.allFilesMissing(),
-                          Actions=lambda job, tInfo: [job.cleanOutputs(tInfo), job.setJobFailed(tInfo)]
+                          Check=lambda job: job.inputFiles and job.allInputFilesMissing() and \
+                          job.allTransFilesDeleted() and not job.allFilesMissing(),
+                          Actions=lambda job, tInfo: [job.cleanOutputs(tInfo), job.setJobFailed(tInfo)],
                           ),
                      # All Output Exists
                      dict(Message="Output Exists, job Failed, input not Processed --> Job Done, Input Processed",
@@ -154,8 +157,8 @@ class DataRecoveryAgent(AgentModule):
                           Check=lambda job: job.allFilesExist() and \
                           not job.otherTasks and \
                           job.status == 'Failed' and \
-                          job.fileStatus != "Processed" and \
-                          job.inputFileExists,
+                          not job.allFilesProcessed() and \
+                          job.allInputFilesExist(),
                           Actions=lambda job, tInfo: [job.setJobDone(tInfo), job.setInputProcessed(tInfo)]
                           ),
                      dict(Message="Output Exists, job Failed, input Processed --> Job Done",
@@ -164,8 +167,8 @@ class DataRecoveryAgent(AgentModule):
                           Check=lambda job: job.allFilesExist() and \
                           not job.otherTasks and \
                           job.status == 'Failed' and \
-                          job.fileStatus == "Processed" and \
-                          job.inputFileExists,
+                          job.allFilesProcessed() and \
+                          job.allInputFilesExist(),
                           Actions=lambda job, tInfo: [job.setJobDone(tInfo)]
                           ),
                      dict(Message="Output Exists, job Done, input not Processed --> Input Processed",
@@ -174,20 +177,21 @@ class DataRecoveryAgent(AgentModule):
                           Check=lambda job: job.allFilesExist() and \
                           not job.otherTasks and \
                           job.status == 'Done' and \
-                          job.fileStatus != "Processed" and \
-                          job.inputFileExists,
+                          not job.allFilesProcessed() and \
+                          job.allInputFilesExist(),
                           Actions=lambda job, tInfo: [job.setInputProcessed(tInfo)]
                           ),
-                     ## outputmissing
+                     # outputmissing
                      dict(Message="Output Missing, job Failed, input Assigned, MaxError --> Input MaxReset",
                           ShortMessage="Max ErrorCount --> Input MaxReset",
                           Counter=0,
                           Check=lambda job: job.allFilesMissing() and \
                           not job.otherTasks and \
                           job.status == 'Failed' and \
-                          job.fileStatus in ASSIGNEDSTATES and \
-                          job.inputFileExists and \
-                          job.errorCount > MAXRESET,
+                          job.allFilesAssigned() and \
+                          not set(job.inputFiles).issubset(self.inputFilesProcessed) and \
+                          job.allInputFilesExist() and \
+                          job.checkErrorCount(),
                           Actions=lambda job, tInfo: [job.setInputMaxReset(tInfo)]
                           ),
                      dict(Message="Output Missing, job Failed, input Assigned --> Input Unused",
@@ -196,8 +200,9 @@ class DataRecoveryAgent(AgentModule):
                           Check=lambda job: job.allFilesMissing() and \
                           not job.otherTasks and \
                           job.status == 'Failed' and \
-                          job.fileStatus in ASSIGNEDSTATES and \
-                          job.inputFileExists,
+                          job.allFilesAssigned() and \
+                          not set(job.inputFiles).issubset(self.inputFilesProcessed) and \
+                          job.allInputFilesExist(),
                           Actions=lambda job, tInfo: [job.setInputUnused(tInfo)]
                           ),
                      dict(Message="Output Missing, job Done, input Assigned --> Job Failed, Input Unused",
@@ -206,8 +211,9 @@ class DataRecoveryAgent(AgentModule):
                           Check=lambda job: job.allFilesMissing() and \
                           not job.otherTasks and \
                           job.status == 'Done' and \
-                          job.fileStatus in ASSIGNEDSTATES and \
-                          job.inputFileExists,
+                          job.allFilesAssigned() and \
+                          not set(job.inputFiles).issubset(self.inputFilesProcessed) and \
+                          job.allInputFilesExist(),
                           Actions=lambda job, tInfo: [job.setInputUnused(tInfo), job.setJobFailed(tInfo)]
                           ),
                      # some files missing, needing cleanup. Only checking for
@@ -221,8 +227,8 @@ class DataRecoveryAgent(AgentModule):
                           Check=lambda job: job.someFilesMissing() and \
                           not job.otherTasks and \
                           job.status == 'Failed' and \
-                          job.fileStatus in ASSIGNEDSTATES and \
-                          job.inputFileExists,
+                          job.allFilesAssigned() and \
+                          job.allInputFilesExist(),
                           Actions=lambda job, tInfo: [job.cleanOutputs(tInfo), job.setInputUnused(tInfo)]
                           ),
                      dict(Message="Some missing, job Done, input Assigned --> cleanup, job Failed, Input 'Unused'",
@@ -231,8 +237,8 @@ class DataRecoveryAgent(AgentModule):
                           Check=lambda job: job.someFilesMissing() and \
                           not job.otherTasks and \
                           job.status == 'Done' and \
-                          job.fileStatus in ASSIGNEDSTATES and \
-                          job.inputFileExists,
+                          job.allFilesAssigned() and \
+                          job.allInputFilesExist(),
                           Actions=lambda job, tInfo: [
                               job.cleanOutputs(tInfo), job.setInputUnused(tInfo), job.setJobFailed(tInfo)]
                           ),
@@ -339,7 +345,10 @@ class DataRecoveryAgent(AgentModule):
     if transInfoDict['Type'] in self.transWithInput:
       self.log.notice('Getting tasks...')
       tasksDict = tInfo.checkTasksStatus()
-      lfnTaskDict = dict([(tasksDict[taskID]['LFN'], taskID) for taskID in tasksDict])
+      lfnTaskDict = dict([(taskDict['LFN'], taskID)
+                          for taskID, taskDicts in tasksDict.items()
+                          for taskDict in taskDicts
+                          ])
 
     self.checkAllJobs(jobs, tInfo, tasksDict, lfnTaskDict)
     self.printSummary()
@@ -348,6 +357,7 @@ class DataRecoveryAgent(AgentModule):
     """Deal with the job."""
     checks = self.todo['NoInputFiles'] if job.tType in self.transNoInput else self.todo['InputFiles']
     for do in checks:
+      self.log.verbose('Testing: ', do['Message'])
       if do['Check'](job):
         do['Counter'] += 1
         self.log.notice(do['Message'])
@@ -362,27 +372,32 @@ class DataRecoveryAgent(AgentModule):
     self.log.notice('Collecting LFNs...')
     lfnExistence = {}
     lfnCache = []
+    counter = 0
+    jobInfoStart = time.time()
     for counter, job in enumerate(jobs.values()):
       if counter % self.printEveryNJobs == 0:
         self.log.notice('Getting JobInfo: %d/%d: %3.1fs' %
-                        (counter, len(jobs), float(time.time() - self.startTime)))
+                        (counter, len(jobs), float(time.time() - jobInfoStart)))
       while True:
         try:
-          job.getJobInformation(self.diracILC)
-          if job.inputFile:
-            lfnCache.append(job.inputFile)
-          if job.outputFiles:
-            lfnCache.extend(job.outputFiles)
+          job.getJobInformation(self.diracILC, self.jobMon)
+          lfnCache.extend(job.inputFiles)
+          lfnCache.extend(job.outputFiles)
           break
         except RuntimeError as e:  # try again
           self.log.error('+++++ Failure for job:', job.jobID)
           self.log.error('+++++ Exception: ', str(e))
 
+    timeSpent = float(time.time() - jobInfoStart)
+    self.log.notice('Getting JobInfo Done: %3.1fs (%3.3fs per job)' % (timeSpent, timeSpent / counter))
+
     counter = 0
+    fileInfoStart = time.time()
     for lfnChunk in breakListIntoChunks(list(lfnCache), 200):
       counter += 200
       if counter % 1000 == 0:
-        self.log.notice('Getting FileInfo: %d/%d: %3.1fs' % (counter, len(jobs), float(time.time() - self.startTime)))
+        self.log.notice('Getting FileInfo: %d/%d: %3.1fs' %
+                        (counter, len(lfnCache), float(time.time() - fileInfoStart)))
       while True:
         try:
           reps = self.fcClient.exists(lfnChunk)
@@ -394,6 +409,7 @@ class DataRecoveryAgent(AgentModule):
           break
         except RuntimeError:  # try again
           pass
+    self.log.notice('Getting FileInfo Done: %3.1fs' % (float(time.time() - fileInfoStart)))
 
     return lfnExistence
 
@@ -425,9 +441,10 @@ class DataRecoveryAgent(AgentModule):
     self.setPendingRequests(jobs)
     lfnExistence = self.getLFNStatus(jobs)
     self.log.notice('Running over all the jobs')
+    jobCheckStart = time.time()
     for counter, job in enumerate(jobs.values()):
       if counter % self.printEveryNJobs == 0:
-        self.log.notice('%d/%d: %3.1fs' % (counter, nJobs, float(time.time() - self.startTime)))
+        self.log.notice('Checking Jobs %d/%d: %3.1fs' % (counter, nJobs, float(time.time() - jobCheckStart)))
       while True:
         try:
           if job.pendingRequest:
@@ -439,16 +456,17 @@ class DataRecoveryAgent(AgentModule):
               job.getTaskInfo(tasksDict, lfnTaskDict, self.transWithInput)
             except TaskInfoException as e:
               self.log.error(" Skip Task, due to TaskInfoException: %s" % e)
-              if job.inputFile is None and job.tType in self.transWithInput:
+              if not job.inputFiles and job.tType in self.transWithInput:
                 self.__failJobHard(job, tInfo)
               break
-            fileJobDict[job.inputFile].append(job.jobID)
+            for inputFile in job.inputFiles:
+              fileJobDict[inputFile].append(job.jobID)
           self.checkJob(job, tInfo)
           break  # get out of the while loop
         except RuntimeError as e:
           self.log.error("+++++ Failure for job: %d " % job.jobID)
           self.log.error("+++++ Exception: ", str(e))
-          # runs these again because of RuntimeError
+          # run these again because of RuntimeError
     self.log.notice('Checking Jobs Done: %d/%d: %3.1fs' % (counter, nJobs, float(time.time() - jobCheckStart)))
 
   def printSummary(self):
@@ -468,7 +486,7 @@ class DataRecoveryAgent(AgentModule):
 
   def __failJobHard(self, job, tInfo):
     """ set job to failed and remove output files if there are any """
-    if job.inputFile is not None:
+    if job.inputFiles:
       return
     if job.status in ("Failed",) \
        and job.allFilesMissing():

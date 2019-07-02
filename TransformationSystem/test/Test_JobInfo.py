@@ -6,6 +6,8 @@ from StringIO import StringIO
 
 from mock import MagicMock as Mock
 
+from parameterized import parameterized, param
+
 from DIRAC import S_OK, S_ERROR, gLogger
 import DIRAC
 
@@ -25,7 +27,9 @@ class TestJI(unittest.TestCase):
 
   def setUp(self):
     self.jbi = JobInfo(jobID=123, status="Failed", tID=1234, tType="MCReconstruction")
-    self.diracILC = Mock(name="jobMonMock", spec=ILCDIRAC.Interfaces.API.DiracILC.DiracILC)
+    self.diracILC = Mock(name="dilcMock", spec=ILCDIRAC.Interfaces.API.DiracILC.DiracILC)
+    self.jobMon = Mock(
+        name="jobMonMock", spec=DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient.JobMonitoringClient)
     self.diracILC.getJobJDL = Mock()
 
     self.jdl2 = {
@@ -325,7 +329,7 @@ class TestJI(unittest.TestCase):
 
   def test_Init(self):
     """ILCTransformation.Utilities.JobInfo init ...................................................."""
-    self.assertIsNone(self.jbi.outputFiles)
+    assert self.jbi.outputFiles == []
     self.assertFalse(self.jbi.pendingRequest)
 
   def test_allFilesExist(self):
@@ -339,7 +343,7 @@ class TestJI(unittest.TestCase):
     self.jbi.outputFileStatus = ["Missing", "Missing"]
     self.assertFalse(self.jbi.allFilesExist())
     self.jbi.outputFileStatus = []
-    self.assertTrue(self.jbi.allFilesExist())
+    self.assertFalse(self.jbi.allFilesExist())
 
   def test_allFilesMissing(self):
     """ILCTransformation.Utilities.JobInfo.allFilesMissing.........................................."""
@@ -354,18 +358,50 @@ class TestJI(unittest.TestCase):
     self.jbi.outputFileStatus = []
     self.assertFalse(self.jbi.allFilesMissing())
 
-  def test_someFilesMissing(self):
-    """ILCTransformation.Utilities.JobInfo.someFilesMissing........................................."""
-    self.jbi.outputFileStatus = ["Exists", "Exists"]
-    self.assertFalse(self.jbi.someFilesMissing())
-    self.jbi.outputFileStatus = ["Exists", "Missing"]
-    self.assertTrue(self.jbi.someFilesMissing())
-    self.jbi.outputFileStatus = ["Missing", "Exists"]
-    self.assertTrue(self.jbi.someFilesMissing())
-    self.jbi.outputFileStatus = ["Missing", "Missing"]
-    self.assertFalse(self.jbi.someFilesMissing())
-    self.jbi.outputFileStatus = []
-    self.assertFalse(self.jbi.someFilesMissing())
+  @parameterized.expand([('someFilesMissing', 'outputFileStatus', ['Exists', 'Exists'], False),
+                         ('someFilesMissing', 'outputFileStatus', ['Exists', 'Missing'], True),
+                         ('someFilesMissing', 'outputFileStatus', ['Missing', 'Exists'], True),
+                         ('someFilesMissing', 'outputFileStatus', ['Missing', 'Missing'], False),
+                         ('someFilesMissing', 'outputFileStatus', [], False),
+                         ('allInputFilesExist', 'inputFileStatus', ['Exists', 'Exists'], True),
+                         ('allInputFilesExist', 'inputFileStatus', ['Exists', 'Missing'], False),
+                         ('allInputFilesExist', 'inputFileStatus', ['Missing', 'Missing'], False),
+                         ('allInputFilesExist', 'inputFileStatus', [], False),
+                         ('allInputFilesMissing', 'inputFileStatus', ['Exists', 'Exists'], False),
+                         ('allInputFilesMissing', 'inputFileStatus', ['Exists', 'Missing'], False),
+                         ('allInputFilesMissing', 'inputFileStatus', ['Missing', 'Missing'], True),
+                         ('allInputFilesMissing', 'inputFileStatus', [], False),
+                         ('someInputFilesMissing', 'inputFileStatus', ['Exists', 'Exists'], False),
+                         ('someInputFilesMissing', 'inputFileStatus', ['Exists', 'Missing'], True),
+                         ('someInputFilesMissing', 'inputFileStatus', ['Missing', 'Exists'], True),
+                         ('someInputFilesMissing', 'inputFileStatus', ['Missing', 'Missing'], False),
+                         ('someInputFilesMissing', 'inputFileStatus', [], False),
+                         ('allFilesProcessed', 'transFileStatus', ['Processed', 'Processed'], True),
+                         ('allFilesProcessed', 'transFileStatus', ['Processed', 'Assigned'], False),
+                         ('allFilesProcessed', 'transFileStatus', ['Assigned', 'Assigned'], False),
+                         ('allFilesProcessed', 'transFileStatus', ['Deleted', 'Deleted'], False),
+                         ('allFilesProcessed', 'transFileStatus', ['Unused', 'Unused'], False),
+                         ('allFilesProcessed', 'transFileStatus', [], False),
+                         ('allFilesAssigned', 'transFileStatus', ['Processed', 'Processed'], True),
+                         ('allFilesAssigned', 'transFileStatus', ['Processed', 'Assigned'], True),
+                         ('allFilesAssigned', 'transFileStatus', ['Assigned', 'Assigned'], True),
+                         ('allFilesAssigned', 'transFileStatus', ['Assigned', 'Unused'], False),
+                         ('allFilesAssigned', 'transFileStatus', ['Deleted', 'Deleted'], False),
+                         ('allFilesAssigned', 'transFileStatus', ['Unused', 'Unused'], False),
+                         ('allFilesAssigned', 'transFileStatus', [], False),
+                         ('checkErrorCount', 'errorCounts', [0, 9], False),
+                         ('checkErrorCount', 'errorCounts', [0, 10], False),
+                         ('checkErrorCount', 'errorCounts', [0, 11], True),
+                         ('checkErrorCount', 'errorCounts', [0, 12], True),
+                         ('allTransFilesDeleted', 'transFileStatus', ['Deleted', 'Deleted'], True),
+                         ('allTransFilesDeleted', 'transFileStatus', ['Deleted', 'Assigned'], False),
+                         ('allTransFilesDeleted', 'transFileStatus', ['Assigned', 'Deleted'], False),
+                         ('allTransFilesDeleted', 'transFileStatus', ['Assigned', 'Assigned'], False),
+                         ])
+  def test_fileChecker(self, func, attr, value, expected):
+    setattr(self.jbi, attr, value)
+    gLogger.notice('%s, %s, %s, %s, %s' % (getattr(self.jbi, func)(), func, attr, value, expected))
+    assert expected == getattr(self.jbi, func)()
 
   def test_getJDL(self):
     """ILCTransformation.Utilities.JobInfo.getJDL..................................................."""
@@ -380,73 +416,74 @@ class TestJI(unittest.TestCase):
     self.assertIn("Failed to get jobJDL", str(contextManagedException.exception))
 
   def test_getTaskInfo_1(self):
-    # task is only one
-    wit = ['MCReconstruction']
     ## task is only one
+    wit = ['MCReconstruction']
     self.jbi.taskID = 1234
-    self.jbi.inputFile = "lfn"
-    tasksDict = {1234: dict(FileID=123456, LFN="lfn", Status="Assigned", ErrorCount=7)}
+    self.jbi.inputFiles = ["lfn"]
+    tasksDict = {1234: [dict(FileID=123456, LFN="lfn", Status="Assigned", ErrorCount=7)]}
     lfnTaskDict = {}
     self.jbi.getTaskInfo(tasksDict, lfnTaskDict, wit)
-    self.assertEqual(self.jbi.fileStatus, "Assigned")
-    self.assertEqual(self.jbi.taskFileID, 123456)
-    self.assertIsNone(self.jbi.otherTasks)
+    self.assertEqual(self.jbi.transFileStatus, ['Assigned'])
+    self.assertEqual(self.jbi.otherTasks, [])
 
   def test_getTaskInfo_2(self):
     # there are other tasks
     wit = ['MCReconstruction']
     self.jbi.taskID = 1234
-    self.jbi.inputFile = "lfn"
-    tasksDict = {12: dict(FileID=123456, LFN="lfn", Status="Processed", ErrorCount=7)}
+    self.jbi.inputFiles = ["lfn"]
+    tasksDict = {12: [dict(FileID=123456, LFN="lfn", Status="Processed", ErrorCount=7)]}
     lfnTaskDict = {"lfn": 12}
     self.jbi.getTaskInfo(tasksDict, lfnTaskDict, wit)
-    self.assertEqual(self.jbi.fileStatus, "Processed")
-    self.assertEqual(self.jbi.taskFileID, 123456)
-    self.assertEqual(self.jbi.otherTasks, 12)
+    self.assertEqual(self.jbi.transFileStatus, ['Processed'])
+    self.assertEqual(self.jbi.otherTasks, [12])
 
   def test_getTaskInfo_3(self):
     # raise
     wit = ['MCReconstruction']
     self.jbi.taskID = 1234
-    self.jbi.inputFile = ""
-    tasksDict = {1234: dict(FileID=123456, LFN="lfn", Status="Processed")}
+    self.jbi.inputFiles = ['otherLFN']
+    tasksDict = {1234: [dict(FileID=123456, LFN='lfn', Status='Processed', ErrorCount=23)]}
     lfnTaskDict = {}
     with self.assertRaisesRegexp(TaskInfoException, "InputFiles do not agree"):
       self.jbi.getTaskInfo(tasksDict, lfnTaskDict, wit)
 
-    # raise keyError
-    self.jbi.taskID = 1235
-    self.jbi.inputFile = ""
-    tasksDict = {1234: dict(FileID=123456, LFN="lfn", Status="Processed")}
-    lfnTaskDict = {}
-    with self.assertRaisesRegexp(KeyError, ""):
-      self.jbi.getTaskInfo(tasksDict, lfnTaskDict, wit)
+  # def test_getTaskInfo_4(self):
+  #   # raise keyError
+  #   wit = ['MCReconstruction']
+  #   self.jbi.taskID = 1235
+  #   self.jbi.inputFiles = []
+  #   tasksDict = {1234: dict(FileID=123456, LFN="lfn", Status="Processed")}
+  #   lfnTaskDict = {}
+  #   with self.assertRaisesRegexp(KeyError, ""):
+  #     self.jbi.getTaskInfo(tasksDict, lfnTaskDict, wit)
 
+  def test_getTaskInfo_5(self):
     # raise inputFile
+    wit = ['MCReconstruction']
     self.jbi.taskID = 1235
-    self.jbi.inputFile = None
+    self.jbi.inputFiles = []
     tasksDict = {1234: dict(FileID=123456, LFN="lfn", Status="Processed")}
     lfnTaskDict = {}
-    with self.assertRaisesRegexp(TaskInfoException, "InputFile is None"):
+    with self.assertRaisesRegexp(TaskInfoException, "InputFiles is empty"):
       self.jbi.getTaskInfo(tasksDict, lfnTaskDict, wit)
 
   def test_getJobInformation(self):
     """ILCTransformation.Utilities.JobInfo.getJobInformation........................................"""
     self.diracILC.getJobJDL.return_value = S_OK(self.jdl1)
-    self.jbi.getJobInformation(self.diracILC)
+    self.jbi.getJobInformation(self.diracILC, self.jobMon)
     self.assertEqual(
         self.jbi.outputFiles,
         ["/ilc/prod/clic/3tev/e1e1_o/SID/SIM/00006301/010/e1e1_o_sim_6301_10256.slcio"])
     self.assertEqual(10256, self.jbi.taskID)
-    self.assertEqual(self.jbi.inputFile, "/ilc/prod/clic/3tev/e1e1_o/gen/00006300/004/e1e1_o_gen_6300_4077.stdhep")
+    self.assertEqual(self.jbi.inputFiles, ["/ilc/prod/clic/3tev/e1e1_o/gen/00006300/004/e1e1_o_gen_6300_4077.stdhep"])
 
-    ##empty jdl
+    # empty jdl
     self.setUp()
     self.diracILC.getJobJDL.return_value = S_OK({})
-    self.jbi.getJobInformation(self.diracILC)
+    self.jbi.getJobInformation(self.diracILC, self.jobMon)
     self.assertEqual(self.jbi.outputFiles, [])
     self.assertIsNone(self.jbi.taskID)
-    self.assertIsNone(self.jbi.inputFile)
+    self.assertEqual(self.jbi.inputFiles, [])
 
 
   def test_getOutputFiles(self):
@@ -487,81 +524,62 @@ class TestJI(unittest.TestCase):
     """Test the extraction of the inputFile from the JDL parameters."""
     # singleLFN
     self.jbi._JobInfo__getInputFile({'InputData': '/single/lfn2'})
-    self.assertEqual(self.jbi.inputFile, '/single/lfn2')
+    self.assertEqual(self.jbi.inputFiles, ['/single/lfn2'])
 
     # list with singleLFN
     self.jbi._JobInfo__getInputFile({'InputData': ['/single/lfn1']})
-    self.assertEqual(self.jbi.inputFile, '/single/lfn1')
+    self.assertEqual(self.jbi.inputFiles, ['/single/lfn1'])
 
     # list with two LFN
-    with self.assertRaisesRegexp(TaskInfoException, 'InputFile is terrible'):
-      self.jbi._JobInfo__getInputFile({'InputData': ['/lfn1', '/lfn2']})
+    self.jbi._JobInfo__getInputFile({'InputData': ['/lfn1', '/lfn2']})
+    self.assertEqual(self.jbi.inputFiles, ['/lfn1', '/lfn2'])
 
-    # list with two LFN
-    with self.assertRaisesRegexp(TaskInfoException, 'InputFile is terrible'):
-      self.jbi._JobInfo__getInputFile({'InputData': 124})
 
   def test_checkFileExistence(self):
     """ILCTransformation.Utilities.JobInfo.checkFileExistance......................................."""
     # input and output files
-    repStatus = {'inputFile': True, 'outputFile1': False, 'outputFile2': True}
-    self.jbi.inputFile = "inputFile"
-    self.jbi.outputFiles = ["outputFile1", "outputFile2", "unknownFile"]
+    repStatus = {'inputFile1': True, 'inputFile2': False, 'outputFile1': False, 'outputFile2': True}
+    self.jbi.inputFiles = ['inputFile1', 'inputFile2', 'inputFile3']
+    self.jbi.outputFiles = ['outputFile1', 'outputFile2', 'unknownFile']
     self.jbi.checkFileExistence(repStatus)
-    self.assertTrue(self.jbi.inputFileExists)
+    self.assertTrue(self.jbi.inputFilesExist[0])
+    self.assertFalse(self.jbi.inputFilesExist[1])
+    self.assertFalse(self.jbi.inputFilesExist[2])
+    self.assertEqual(self.jbi.inputFileStatus, ["Exists", "Missing", "Unknown"])
     self.assertEqual(self.jbi.outputFileStatus, ["Missing", "Exists", "Unknown"])
 
     # just output files
     self.setUp()
     repStatus = {'inputFile': True, 'outputFile1': False, 'outputFile2': True}
-    self.jbi.inputFile = ""
+    self.jbi.inputFiles = []
     self.jbi.outputFiles = ["outputFile1", "outputFile2", "unknownFile"]
     self.jbi.checkFileExistence(repStatus)
     self.assertEqual(self.jbi.outputFileStatus, ["Missing", "Exists", "Unknown"])
 
-
-  def test__str__(self):
-    """ILCTransformation.Utilities.JobInfo.__str__.................................................."""
-    jbi = JobInfo(jobID=123, status="Failed", tID=1234, tType="MCReconstruction")
-    jbi.tID = 1234
-    jbi.taskID = 5678
-    jbi.fileStatus = "Assigned"
-    jbi.otherTasks = True
-    jbi.inputFile = "inputFile"
+  @parameterized.expand([
+      param(['123: Failed MCReconstruction Transformation: 1234 -- 5678 ', 'inputFile (True, Assigned, Errors 0'], []),
+      param(['123: Failed MCReconstruction Transformation: 1234 -- 5678  (Last task 1)'], [], otherTasks=True),
+      param([], ['MCReconstruction Transformation'], trID=0, taID=0),
+      param([], ['(Last task'], otherTasks=False),
+      param(['PENDING REQUEST IGNORE THIS JOB'], [], pendingRequest=True, ),
+      param(['No Pending Requests'], [], pendingRequest=False,),
+  ])
+  def test__str__(self, asserts, assertNots, trID=1234, taID=5678, otherTasks=False, pendingRequest=False):
+    jbi = JobInfo(jobID=123, status="Failed", tID=trID, tType="MCReconstruction")
+    jbi.pendingRequest = pendingRequest
+    jbi.otherTasks = otherTasks
+    gLogger.notice('otherTasks: ', jbi.otherTasks)
+    jbi.taskID = taID
+    jbi.inputFiles = ['inputFile']
+    jbi.inputFilesExist = [True]
+    jbi.transFileStatus = ['Assigned']
     jbi.outputFiles = ["outputFile"]
+    jbi.errorCounts = [0]
     info = str(jbi)
-    self.assertIn("123: Failed MCReconstruction Transformation: 1234 -- 5678 TaskStatus: Assigned", info)
-
-    ## other tasks exist, no tID or taskID
-    jbi = JobInfo(jobID=123, status="Failed", tID=1234, tType="MCReconstruction")
-    jbi.fileStatus = "Assigned"
-    jbi.otherTasks = True
-    jbi.inputFile = "inputFile"
-    jbi.outputFiles = ["outputFile"]
-    info = str(jbi)
-    self.assertIn("123: FailedTaskStatus: Assigned (Last task 1)", info)
-
-    ## no otherTasks
-    jbi = JobInfo(jobID=123, status="Failed", tID=1234, tType="MCReconstruction")
-    jbi.fileStatus = "Assigned"
-    jbi.otherTasks = False
-    jbi.inputFile = "inputFile"
-    jbi.outputFiles = ["outputFile"]
-    jbi.errorCount = 3
-    info = str(jbi)
-    self.assertIn("123: FailedTaskStatus: Assigned ErrorCount: 3\n---> inputFile: inputFile (False)\n", info)
-
-    ## pending Requests
-    jbi = JobInfo(jobID=123, status="Failed", tID=1234, tType="MCReconstruction")
-    jbi.pendingRequest = True
-    info = str(jbi)
-    self.assertIn("PENDING REQUEST IGNORE THIS JOB", info)
-
-    ## pending Requests
-    jbi = JobInfo(jobID=123, status="Failed", tID=1234, tType="MCReconstruction")
-    jbi.pendingRequest = False
-    info = str(jbi)
-    self.assertIn(" No Pending Requests", info)
+    for assertStr in asserts:
+      self.assertIn(assertStr, info)
+    for assertStr in assertNots:
+      self.assertNotIn(assertStr, info)
 
   def test_TaskInfoException(self):
     """ILCTransformation.Utilities.JobInfo.TaskInfoException........................................"""
