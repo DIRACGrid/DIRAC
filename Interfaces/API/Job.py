@@ -560,8 +560,6 @@ class Job(API):
   def setCPUTime(self, timeInSecs):
     """Helper function.
 
-       Under Development. Specify CPU time requirement in DIRAC units.
-
        Example usage:
 
        >>> job = Job()
@@ -616,6 +614,28 @@ class Job(API):
     else:
       return self._reportError('Invalid destination site, expected string or list', **kwargs)
     return S_OK()
+
+  #############################################################################
+  def setNumberOfProcessors(self, processors):
+    """Helper function.
+
+       Example usage:
+
+       >>> job = Job()
+       >>> job.setNumberOfProcessors(4)
+
+       :param processors: number of processors required by the job
+       :type processors: Int
+    """
+    kwargs = {'processors': processors}
+    if not isinstance(processors, int):
+      try:
+        processors = int(processors)
+      except ValueError:
+        if not re.search('{{', processors):
+          return self._reportError('Expected numerical string or int for number of processors', **kwargs)
+
+    return self.setTag(['MultiProcessor', '%dProcessors' % processors])
 
   #############################################################################
   def __checkSiteIsValid(self, site):
