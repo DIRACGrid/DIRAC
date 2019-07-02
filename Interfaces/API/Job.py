@@ -566,7 +566,7 @@ class Job(API):
        >>> job.setCPUTime(5000)
 
        :param timeInSecs: CPU time
-       :type timeInSecs: Int
+       :type timeInSecs: int
     """
     kwargs = {'timeInSecs': timeInSecs}
     if not isinstance(timeInSecs, int):
@@ -625,17 +625,18 @@ class Job(API):
        >>> job.setNumberOfProcessors(4)
 
        :param processors: number of processors required by the job
-       :type processors: Int
+       :type processors: int
     """
     kwargs = {'processors': processors}
     if not isinstance(processors, int):
       try:
         processors = int(processors)
       except ValueError:
-        if not re.search('{{', processors):
-          return self._reportError('Expected numerical string or int for number of processors', **kwargs)
+        return self._reportError('Expected numerical string or int for number of processors', **kwargs)
 
-    return self.setTag(['MultiProcessor', '%dProcessors' % processors])
+    if processors > 1:
+      return self.setTag(['MultiProcessor', '%dProcessors' % processors])
+    return S_OK()
 
   #############################################################################
   def __checkSiteIsValid(self, site):
