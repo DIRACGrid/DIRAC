@@ -9,6 +9,7 @@ import sys
 import glob
 import time
 import datetime
+
 import DIRAC
 
 from DIRAC import gLogger, S_OK, S_ERROR
@@ -23,27 +24,21 @@ __RCSID__ = "$Id$"
 
 class Params(ProxyGeneration.CLIParams):
 
+  addVOMSExt = False
   uploadProxy = False
   uploadPilot = False
-  addVOMSExt = False
-
-  def setUploadProxy(self, _arg):
-    self.uploadProxy = True
-    return S_OK()
-
-  def setUploadPilotProxy(self, _arg):
-    self.uploadPilot = True
-    return S_OK()
 
   def setVOMSExt(self, _arg):
     self.addVOMSExt = True
     return S_OK()
 
+  def setUploadProxy(self, _arg):
+    self.uploadProxy = True
+    return S_OK()
+
   def registerCLISwitches(self):
     ProxyGeneration.CLIParams.registerCLISwitches(self)
     Script.registerSwitch("U", "upload", "Upload a long lived proxy to the ProxyManager", self.setUploadProxy)
-    Script.registerSwitch("P", "uploadPilot", "Upload a long lived pilot proxy to the ProxyManager",
-                          self.setUploadPilotProxy)
     Script.registerSwitch("M", "VOMS", "Add voms extension", self.setVOMSExt)
 
 

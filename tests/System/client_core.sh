@@ -5,10 +5,10 @@
 # Submitter should follow through the logs
 #
 
-if [ -z ${TESTCODE+x} ]; then
-  $PARAMS = ""
+if [ -z ${SERVERINSTALLDIR+x} ]; then
+  PARAMS=""
 else  # To run in Jenkins
-  $PARAMS = "-C $TESTCODE/user/client.pem -K $TESTCODE/user/client.key"
+  PARAMS="-C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key"
 fi
 
 echo

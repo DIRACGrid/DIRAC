@@ -21,7 +21,9 @@ from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.FrameworkSystem.DB.ProxyDB import ProxyDB
 
-certsPath = os.path.join(os.environ['DIRAC'], 'DIRAC/tests/Integration/certs')
+# For Jenkins
+certsPath = os.path.join(os.environ.get('TESTCODE') or os.environ['DIRAC'],
+                         'DIRAC/tests/Integration/certs')
 
 diracTestCACFG = """
 Resources
