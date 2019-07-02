@@ -13,7 +13,7 @@ from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.Resources.ProxyProvider.ProxyProviderFactory import ProxyProviderFactory
 
 # For Jenkins
-for f in [os.environ['DIRAC'], 'TestCode', '']:
+for f in ['', 'TestCode', os.environ['DIRAC']]:
   certsPath = os.path.join(f, 'DIRAC/tests/Integration/certs')
   if os.path.exists(certsPath):
     break
