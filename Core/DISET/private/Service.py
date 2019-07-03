@@ -86,7 +86,6 @@ class Service(object):
     # Initialize Monitoring
     self.activityMonitoring = gConfig.getValue("/DIRAC/ActivityMonitoring", "false").lower() in ("yes", "true")
     if self.activityMonitoring:
-      self.activityMonitoringData = {}
       self.activityMonitoringReporter = MonitoringReporter(monitoringType="ComponentMonitoring")
       gThreadScheduler.addPeriodicTask(100, self.__activityMonitoringReporting)
     elif self._standalone:
@@ -252,12 +251,7 @@ class Service(object):
     return S_OK({'methods': methodsList, 'auth': authRules, 'types': typeCheck})
 
   def _initMonitoring(self):
-    if self.activityMonitoring:
-      self.activityMonitoringData["site"] = self._cfg.getHostname()
-      self.activityMonitoringData["componentType"] = "service"
-      self.activityMonitoringData["componentName"] = self._name
-      self.activityMonitoringData["componentLocation"] = self._cfg.getURL()
-    else:
+    if not self.activityMonitoring:
       # Init extra bits of monitoring
       self._monitor.setComponentType(MonitoringClient.COMPONENT_SERVICE)
       self._monitor.setComponentName(self._name)
@@ -312,11 +306,17 @@ class Service(object):
 
   def __reportThreadPoolContents(self):
     if self.activityMonitoring:
-      # Add ThreadPool Contents
-      self.activityMonitoringData["PendingQueries"] = self._threadPool.pendingJobs()
-      self.activityMonitoringData["ActiveQueries"] = self._threadPool.numWorkingThreads()
-      self.activityMonitoringData["RunningThreads"] = threading.activeCount()
-      self.activityMonitoringData["MaxFD"] = self.__maxFD
+      self.activityMonitoringReporter.addRecord({
+          'timestamp': time.time(),
+          'site': self._cfg.getHostname(),
+          'componentType': 'service',
+          'componentName': self._name,
+          'componentLocation': self._cfg.getURL(),
+          'PendingQueries': self._threadPool.pendingJobs(),
+          'ActiveQueries': self._threadPool.numWorkingThreads(),
+          'RunningThreads': threading.activeCount(),
+          'MaxFD': self.__maxFD,
+      })
     else:
       self._monitor.addMark('PendingQueries', self._threadPool.pendingJobs())
       self._monitor.addMark('ActiveQueries', self._threadPool.numWorkingThreads())
@@ -339,8 +339,14 @@ class Service(object):
     """
     self._stats['connections'] += 1
     if self.activityMonitoring:
-      self.activityMonitoringData["Queries"] = self._stats["connections"]
-      self.activityMonitoringData["Connections"] = self._stats["connections"]
+      self.activityMonitoringReporter.addRecord({
+          'timestamp': time.time(),
+          'site': self._cfg.getHostname(),
+          'componentType': 'service',
+          'componentName': self._name,
+          'componentLocation': self._cfg.getURL(),
+          'Connections': 1
+      })
     else:
       self._monitor.setComponentExtraParam('queries', self._stats['connections'])
 
@@ -635,9 +641,7 @@ class Service(object):
     membytes = MemStat.VmB('VmRSS:')
     if membytes:
       mem = membytes / (1024. * 1024.)
-      if self.activityMonitoring:
-        self.activityMonitoringData["MEM"] = mem
-      else:
+      if not self.activityMonitoring:
         self._monitor.addMark('MEM', mem)
     return (now, cpuTime)
 
@@ -647,9 +651,5 @@ class Service(object):
     cpuTime = stats[0] + stats[2] - initialCPUTime
     percentage = cpuTime / wallTime * 100.
     if percentage > 0:
-      if self.activityMonitoring:
-        self.activityMonitoringData["CPU"] = percentage
-        self.activityMonitoringData["timestamp"] = time.time()
-        self.activityMonitoringReporter.addRecord(self.activityMonitoringData)
-      else:
+      if not self.activityMonitoring:
         self._monitor.addMark('CPU', percentage)
