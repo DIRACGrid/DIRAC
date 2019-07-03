@@ -170,7 +170,7 @@ class PilotCStoJSONSynchronizer(object):
             pilotDict['CEs'][ce] = {'Site': site, 'GridCEType': ceType}
 
           if localCEType is not None:
-            pilotDict['CEs'][ce] = {'Site': site, 'LocalCEType': ceType}
+            pilotDict['CEs'][ce] = {'Site': site, 'LocalCEType': localCEType}
 
     defaultSetup = gConfig.getValue('/DIRAC/DefaultSetup')
     if defaultSetup:

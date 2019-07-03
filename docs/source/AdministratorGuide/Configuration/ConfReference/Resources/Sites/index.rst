@@ -49,7 +49,7 @@ This sub-subsection specify the attributes of each particular CE of the site. Mu
 +------------------------------------------------+-------------------------------------------------------------+--------------------------------+
 | *<CE_NAME>/CEType*                             | Type of CE, can take values as LCG or CREAM                 | CEType = ARC                   |
 +------------------------------------------------+-------------------------------------------------------------+--------------------------------+
-| *<CE_NAME>/LocalCEType*                        | Type of Local CE, normally empty. Defaul = "InProcess"      | CEType = Pool                  |
+| *<CE_NAME>/LocalCEType*                        | Type of Local CE, normally empty. Default = "InProcess"     | LocalCEType = Pool             |
 +------------------------------------------------+-------------------------------------------------------------+--------------------------------+
 | *<CE_NAME>/OS*                                 | CE operating system in a DIRAC format                       | OS = ScientificLinux_Boron_5.3 |
 +------------------------------------------------+-------------------------------------------------------------+--------------------------------+
