@@ -8,6 +8,8 @@
 """
 
 from __future__ import absolute_import, unicode_literals
+import six
+from six.moves import range
 
 __RCSID__ = "$Id$"
 
@@ -19,8 +21,6 @@ from DIRAC.Core.Utilities import Time
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.ElasticJobDB import ElasticJobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
-import six
-from six.moves import range
 
 # This is a global instance of the JobDB class
 jobDB = False
@@ -363,7 +363,7 @@ class JobStateUpdateHandler(RequestHandler):
       self.log.warn('Failed to set the heart beat data', 'for job %d ' % int(jobID))
 
     # Restore the Running status if necessary
-    result = jobDB.getJobAttributes(jobID, ['Status'])
+    result = jobDB.getJobStatus(jobID)
     if not result['OK']:
      return result
 
@@ -372,7 +372,7 @@ class JobStateUpdateHandler(RequestHandler):
 
     status = result['Value']['Status']
     if status == "Stalled" or status == "Matched":
-     result = jobDB.setJobAttribute(jobID, 'Status', 'Running', True)
+     result = jobDB.setJobStatus(jobID, 'Running')
      if not result['OK']:
        self.log.warn('Failed to restore the job status to Running')
 
