@@ -386,7 +386,7 @@ class testDB(ProxyDBTestCase):
       gLogger.info('== > %s:\nMsg: %s' % (log, result['Message']))
     # In the last case method found proxy and must to delete it as not valid
     cmd = 'SELECT COUNT( * ) FROM ProxyDB_Proxies WHERE UserName="user_1"'
-    self.assertTrue(bool(self.db._query(cmd)['Value'][0][0] == 0), 'GetProxy method was not delete proxy.')
+    self.assertTrue(bool(self.db._query(cmd)['Value'][0][0] == 0), "GetProxy method didn't delete proxy.")
 
     gLogger.info('* Check that DB is clean..')
     result = self.db.getProxiesContent({'UserName': ['user_ca', 'user_1', 'user_2', 'user_3']}, {})
