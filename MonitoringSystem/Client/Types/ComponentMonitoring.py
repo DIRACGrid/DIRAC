@@ -28,7 +28,7 @@ class ComponentMonitoring(BaseType):
                       'site', 'componentType', 'componentName', 'componentLocation']
 
     self.monitoringFields = ['runningTime', 'memoryUsage', 'threads', 'cpuUsage',
-                             'Connections', 'Queries', 'CPU', 'MEM', 'PendingQueries',
+                             'Connections', 'Queries', 'PendingQueries',
                              'ActiveQueries', 'RunningThreads', 'MaxFD']
 
     self.doc_type = "ComponentMonitoring"
