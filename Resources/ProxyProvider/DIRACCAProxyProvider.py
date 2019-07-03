@@ -9,7 +9,7 @@ import shutil
 import tempfile
 import commands
 
-from DIRAC import S_OK, S_ERROR
+from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Resources.ProxyProvider.ProxyProvider import ProxyProvider
 from DIRAC.Core.Security.X509Chain import X509Chain
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
@@ -167,7 +167,7 @@ class DIRACCAProxyProvider(ProxyProvider):
       with open(caConfigFile, "r") as caCFG:
         for line in caCFG:
           if re.findall('=', re.sub(r'#.*', '', line)):
-            print(line)  # For testing on Jenkins
+            gLogger.notice('======>', line)  # For testing on Jenkins
             field, val = re.sub(r'#.*', '', line).replace(' ', '').rstrip().split('=')
             if field in ['dir', 'database', 'serial', 'new_certs_dir', 'private_key', 'certificate']:
               for i in ['dir', 'database', 'serial', 'new_certs_dir', 'private_key', 'certificate']:
