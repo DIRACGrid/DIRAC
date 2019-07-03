@@ -406,14 +406,12 @@ class StorageElementItem(object):
       try:
         occupancyPlugin = res['Value'](self)
         res = occupancyPlugin.getOccupancy(**kwargs)
-        if res['OK']:
-          occupancyDict = res['Value']
-          result = self.checkOccupancy(occupancyDict, unit)
-          if result['OK']:
-            return result
-          log.warn('Occupancy plugin failed: %s' % str(result['Message']))
+        if not res['OK']:
+          return res
+        occupancyDict = res['Value']
+        return self.checkOccupancy(occupancyDict, unit)
       except Exception as e:
-        log.warn('Occupancy plugin failed: %s' % str(e))
+        return S_ERROR('Occupancy plugin failed: %s' % str(e))
 
     # Try all of the storages one by one
     for storage in filteredPlugins:
