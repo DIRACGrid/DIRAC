@@ -49,6 +49,15 @@ FIX: (#4119) Not lhcb but dteam (for DIRAC certification)
 FIX: (#4139) client_dms.sh not lhcb specific
 CHANGE:(#4140) adapt transformation certification tests to dteam VO
 
+[v6r21p11]
+
+*Transformation
+FIX: (#4144) fixed a logic bug in counting numberOfTasks in MCExtension which is expected
+     to limit the total number of tasks for MC transformations
+
+*Accounting
+FIX: (#4151) In AccountingDB.insertRecordThroughQueue fix bad dictionary key "0K"
+
 [v6r21p10]
 
 *Core
