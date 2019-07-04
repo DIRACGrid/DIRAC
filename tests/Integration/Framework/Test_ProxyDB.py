@@ -204,7 +204,8 @@ class ProxyDBTestCase(unittest.TestCase):
             if not cfgDict[field]:
               cls.failed = '%s have empty value in %s' % (field, cls.caConfigFile)
         lines.append(line)
-      lines.append('')
+      lines.append('\n')
+      gLogger.notice('LINES == > ', lines)
       caCFG.seek(0)
       caCFG.writelines(lines)
     for field in fields:

@@ -69,6 +69,7 @@ class DIRACCAPPTest(unittest.TestCase):
   def setUpClass(cls):
     __caPath = os.path.join(certsPath, 'ca')
     cls.caConfigFile = os.path.join(__caPath, 'openssl_config_ca.cnf')
+    
 
     # Save original configuration file
     lines = []
