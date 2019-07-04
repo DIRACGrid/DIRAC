@@ -9,7 +9,6 @@ coverage:
   status:
     project:
       default:
-        unittest:
         threshold: 0.03
     patch:
       default:
