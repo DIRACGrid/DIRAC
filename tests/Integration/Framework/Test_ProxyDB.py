@@ -44,6 +44,10 @@ Resources
 """ % os.path.join(certsPath, 'ca/openssl_config_ca.cnf')
 
 userCFG = """
+DIRAC
+{
+  Setup = Test
+}
 Registry
 {
   Users
