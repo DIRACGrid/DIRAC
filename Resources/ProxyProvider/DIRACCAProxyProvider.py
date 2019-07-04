@@ -167,7 +167,6 @@ class DIRACCAProxyProvider(ProxyProvider):
       with open(caConfigFile, "r") as caCFG:
         for line in caCFG:
           if re.findall('=', re.sub(r'#.*', '', line)):
-            gLogger.notice('======>', line)  # For testing on Jenkins
             field, val = re.sub(r'#.*', '', line).replace(' ', '').rstrip().split('=')
             if field in ['dir', 'database', 'serial', 'new_certs_dir', 'private_key', 'certificate']:
               for i in ['dir', 'database', 'serial', 'new_certs_dir', 'private_key', 'certificate']:

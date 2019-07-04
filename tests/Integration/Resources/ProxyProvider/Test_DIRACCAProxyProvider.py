@@ -69,7 +69,7 @@ class DIRACCAPPTest(unittest.TestCase):
   def setUpClass(cls):
     __caPath = os.path.join(certsPath, 'ca')
     cls.caConfigFile = os.path.join(__caPath, 'openssl_config_ca.cnf')
-    
+
 
     # Save original configuration file
     lines = []
@@ -80,6 +80,7 @@ class DIRACCAPPTest(unittest.TestCase):
           field = re.sub(r'#.*', '', line).replace(' ', '').rstrip().split('=')[0]
           line = 'dir = %s #PUT THE RIGHT DIR HERE!\n' % (__caPath) if field == 'dir' else line
         lines.append(line)
+      lines.append('\n')
       caCFG.seek(0)
       caCFG.writelines(lines)
 
