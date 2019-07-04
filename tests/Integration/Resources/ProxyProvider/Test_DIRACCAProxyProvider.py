@@ -74,14 +74,13 @@ class DIRACCAPPTest(unittest.TestCase):
     # Save original configuration file
     lines = []
     shutil.copyfile(cls.caConfigFile, cls.caConfigFile + 'bak')
-    with open(cls.caConfigFile, "rw+") as caCFG:
+    with open(cls.caConfigFile, "r") as caCFG:
       for line in caCFG:
         if re.findall('=', re.sub(r'#.*', '', line)):
           field = re.sub(r'#.*', '', line).replace(' ', '').rstrip().split('=')[0]
           line = 'dir = %s #PUT THE RIGHT DIR HERE!\n' % (__caPath) if field == 'dir' else line
         lines.append(line)
-      lines.append('\n')
-      caCFG.seek(0)
+    with open(cls.caConfigFile, "w") as caCFG:
       caCFG.writelines(lines)
 
   @classmethod
