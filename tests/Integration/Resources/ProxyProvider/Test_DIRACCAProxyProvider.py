@@ -81,7 +81,7 @@ class DIRACCAPPTest(unittest.TestCase):
         lines.append(line)
       caCFG.seek(0)
       caCFG.writelines(lines)
-  
+
   @classmethod
   def tearDownClass(cls):
     shutil.move(cls.caConfigFile + 'bak', cls.caConfigFile)
