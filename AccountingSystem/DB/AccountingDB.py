@@ -621,7 +621,7 @@ class AccountingDB(DB):
     if typeName not in self.dbCatalog:
       return S_ERROR("Type %s has not been defined in the db" % typeName)
     result = self.__insertInQueueTable(typeName, startTime, endTime, valuesList)
-    if not result['0K']:
+    if not result['OK']:
       return result
 
     return S_OK()

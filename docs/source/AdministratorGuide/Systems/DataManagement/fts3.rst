@@ -33,6 +33,10 @@ Database in the Configuration System::
   > install service DataManagement FTS3Manager
   > install agent DataManagement FTS3Agent
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> rel-v6r22
 
 
 ===============================
