@@ -1,6 +1,6 @@
 #!/bin/env python
 """ Show request given its ID, a jobID or a transformation and a task """
-__RCSID__ = "$Id: $"
+__RCSID__ = "$Id$"
 
 import datetime
 import os

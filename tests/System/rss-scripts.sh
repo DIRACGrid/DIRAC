@@ -66,28 +66,11 @@ then
 fi
 echo " "
 echo "======  dirac-rss-list-status --element=Resource --name=CERN-USER"
-dirac-rss-list-status --element=Resource --name=CERN-USER
+dirac-rss-list-status --element=Resource --name=RAL-SE
 if [ $? -ne 0 ]
 then
    exit $?
 fi
-# echo " "
-# echo "======  dirac-rss-list-status --element=Resource --name=CERN-RAW,CERN-DST"
-# dirac-rss-list-status --element=Resource --name=CERN-RAW,CERN-DST
-# if [ $? -ne 0 ]
-# then
-#    exit $?
-# fi
-# echo " "
-
-# echo " "
-# echo "======  dirac-rss-query-dt-cache select --element=Site"
-# dirac-rss-query-dt-cache select --element=Site
-# if [ $? -ne 0 ]
-# then
-#    exit $?
-# fi
-echo " "
 
 
 echo -e "\n\n TESTING: dirac-rss-query-db --name=test123 --status=Banned --statusType=ReadAccess --reason=test add resource status"
@@ -161,8 +144,8 @@ echo " ########################## Resource Management ##########################
 echo " "
 echo " "
 
-echo -e "\n\n TESTING: dirac-rss-query-dtcache --name=dtest123 --element=Site --downtimeID=4354354789 add"
-TEST_OUT=$( dirac-rss-query-dtcache --name=dtest123 --element=Site --downtimeID=4354354789 add -dd )
+echo -e "\n\n TESTING: dirac-rss-query-dtcache --name=dtest123 --element=Site --downtimeID=4354354789 --severity=OUTAGE --description='just a test DT' add --startDate='2019-06-12 15:00:00' --endDate='2020-06-12 15:00:00' -dd"
+TEST_OUT=$( dirac-rss-query-dtcache --name=dtest123 --element=Site --downtimeID=4354354789 --severity=OUTAGE --description='just a test DT' add --startDate='2019-06-12 15:00:00' --endDate='2020-06-12 15:00:00' -dd )
 
 if [[ $TEST_OUT != *"successfully executed"* ]]
 then

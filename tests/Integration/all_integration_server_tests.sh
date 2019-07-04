@@ -73,6 +73,6 @@ pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/Monitoring/Test_MonitoringRepor
 #-------------------------------------------------------------------------------#
 echo -e '***' $(date -u)  "**** Resources TESTS ****\n"
 python $SERVERINSTALLDIR/DIRAC/tests/Integration/Resources/Storage/Test_Resources_GFAL2StorageBase.py ProductionSandboxSE >> testOutputs.txt 2>&1
-# python $SERVERINSTALLDIR/DIRAC/tests/Integration/Resources/Storage/Test_Resources_Echo.py >> testOutputs.txt 2>&1
 
-python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/Resources/MessageQueue/Test_ActiveClose.py >> testOutputs.txt 2>&1
+# Can only run if there's a Stomp MQ local... 
+# python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/Resources/MessageQueue/Test_ActiveClose.py >> testOutputs.txt 2>&1

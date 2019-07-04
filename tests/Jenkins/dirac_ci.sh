@@ -301,7 +301,7 @@ function fullInstallDIRAC(){
     return
   fi
 
-  #fix the services
+  #fix the DFC services options
   python $TESTCODE/DIRAC/tests/Jenkins/dirac-cfg-update-services.py $DEBUG
 
   #fix the SandboxStore and other stuff
@@ -368,6 +368,8 @@ function miniInstallDIRAC(){
 
   finalCleanup
 
+  killRunsv
+
   #basic install, with only the CS (and ComponentMonitoring) running, together with DB InstalledComponentsDB, which is needed)
   installSite
   if [ $? -ne 0 ]
@@ -400,6 +402,11 @@ function miniInstallDIRAC(){
     return
   fi
 
+  # fix the SandboxStore and other stuff
+  python $TESTCODE/DIRAC/tests/Jenkins/dirac-cfg-update-server.py dirac-JenkinsSetup $DEBUG
+
+  echo '==> Restarting Configuration Server'
+  dirac-restart-component Configuration Server $DEBUG
 }
 
 
