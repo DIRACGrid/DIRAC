@@ -70,7 +70,6 @@ class DIRACCAPPTest(unittest.TestCase):
     __caPath = os.path.join(certsPath, 'ca')
     cls.caConfigFile = os.path.join(__caPath, 'openssl_config_ca.cnf')
 
-
     # Save original configuration file
     lines = []
     shutil.copyfile(cls.caConfigFile, cls.caConfigFile + 'bak')

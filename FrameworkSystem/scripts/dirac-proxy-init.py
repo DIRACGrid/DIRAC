@@ -245,4 +245,3 @@ if __name__ == "__main__":
   pI.printInfo()
 
   sys.exit(0)
-  

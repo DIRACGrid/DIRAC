@@ -120,6 +120,7 @@ Registry
 
 db = ProxyDB()
 
+
 class ProxyDBTestCase(unittest.TestCase):
 
   @classmethod
@@ -395,7 +396,7 @@ class testDB(ProxyDBTestCase):
 
     gLogger.info('* Generate proxy on the fly..')
     result = db.getProxy('/C=DN/O=DIRACCA/OU=None/CN=user_ca/emailAddress=user_ca@diracgrid.org',
-                              'group_1', 1800)
+                         'group_1', 1800)
     self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
 
     gLogger.info('* Check that ProxyDB_CleanProxy contain generated proxy..')
@@ -408,7 +409,7 @@ class testDB(ProxyDBTestCase):
 
     gLogger.info('* Check that DB is clean..')
     result = db.deleteProxy('/C=DN/O=DIRACCA/OU=None/CN=user_ca/emailAddress=user_ca@diracgrid.org',
-                                 proxyProvider='DIRAC_CA')
+                            proxyProvider='DIRAC_CA')
     self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
     result = db.getProxiesContent({'UserName': ['user_ca', 'user_1', 'user_2', 'user_3']}, {})
     self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
