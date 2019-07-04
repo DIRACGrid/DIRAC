@@ -1,10 +1,9 @@
 comment: off
 
 ignore:
-  - ".*/[Tt]ests/.*"
-  - ".*/[Tt]est/.*"
   - "^docs"
   - "^container"
+  - "^tests"
 
 coverage:
   status:
