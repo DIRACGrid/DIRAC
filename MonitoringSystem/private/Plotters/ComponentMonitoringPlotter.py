@@ -15,7 +15,7 @@ class ComponentMonitoringPlotter(BasePlotter):
   """
   .. class:: ComponentMonitoringPlotter
 
-  It is used to crate the plots.
+  It is used to create the plots.
 
   param: str _typeName monitoring type
   param: list _typeKeyFields list of keys what we monitor (list of attributes)
@@ -142,3 +142,103 @@ class ComponentMonitoringPlotter(BasePlotter):
     :return: S_OK or S_ERROR { 'plot' : value1, 'thumbnail' : value2 } value1 and value2 are TRUE/FALSE
     """
     return self.__plotAllResources(reportRequest, plotInfo, filename, 'Running time')
+
+  _reportConnectionsName = "Number of Connections"
+
+  def _reportConnections(self, reportRequest):
+    """It is used to retrieve the data from the database.
+
+    :param dict reportRequest: contains attributes used to create the plot.
+    :return: S_OK or S_ERROR {'data':value1, 'granularity':value2} value1 is a dictionary, value2 is the bucket length
+    """
+    return self.__reportAllResources(reportRequest, "Connections", "Connections")
+
+  def _plotConnections(self, reportRequest, plotInfo, filename):
+    """It creates the plot.
+
+    :param dict reportRequest: plot attributes
+    :param dict plotInfo: contains all the data which are used to create the plot
+    :param str filename:
+    :return: S_OK or S_ERROR { 'plot' : value1, 'thumbnail' : value2 } value1 and value2 are TRUE/FALSE
+    """
+    return self.__plotAllResources(reportRequest, plotInfo, filename, 'Number of Connections')
+
+  _reportActiveQueriesName = "Number of ActiveQueries"
+
+  def _reportActiveQueries(self, reportRequest):
+    """It is used to retrieve the data from the database.
+
+    :param dict reportRequest: contains attributes used to create the plot.
+    :return: S_OK or S_ERROR {'data':value1, 'granularity':value2} value1 is a dictionary, value2 is the bucket length
+    """
+    return self.__reportAllResources(reportRequest, "ActiveQueries", "ActiveQueries")
+
+  def _plotActiveQueries(self, reportRequest, plotInfo, filename):
+    """It creates the plot.
+
+    :param dict reportRequest: plot attributes
+    :param dict plotInfo: contains all the data which are used to create the plot
+    :param str filename:
+    :return: S_OK or S_ERROR { 'plot' : value1, 'thumbnail' : value2 } value1 and value2 are TRUE/FALSE
+    """
+    return self.__plotAllResources(reportRequest, plotInfo, filename, 'Number of ActiveQueries')
+
+  _reportPendingQueriesName = "Number of PendingQueries"
+
+  def _reportPendingQueries(self, reportRequest):
+    """It is used to retrieve the data from the database.
+
+    :param dict reportRequest: contains attributes used to create the plot.
+    :return: S_OK or S_ERROR {'data':value1, 'granularity':value2} value1 is a dictionary, value2 is the bucket length
+    """
+    return self.__reportAllResources(reportRequest, "PendingQueries", "PendingQueries")
+
+  def _plotPendingQueries(self, reportRequest, plotInfo, filename):
+    """It creates the plot.
+
+    :param dict reportRequest: plot attributes
+    :param dict plotInfo: contains all the data which are used to create the plot
+    :param str filename:
+    :return: S_OK or S_ERROR { 'plot' : value1, 'thumbnail' : value2 } value1 and value2 are TRUE/FALSE
+    """
+    return self.__plotAllResources(reportRequest, plotInfo, filename, 'Number of PendingQueries')
+
+  _reportMaxFDName = "Max File Descriptors"
+
+  def _reportMaxFD(self, reportRequest):
+    """It is used to retrieve the data from the database.
+
+    :param dict reportRequest: contains attributes used to create the plot.
+    :return: S_OK or S_ERROR {'data':value1, 'granularity':value2} value1 is a dictionary, value2 is the bucket length
+    """
+    return self.__reportAllResources(reportRequest, "MaxFD", "MaxFD")
+
+  def _plotMaxFD(self, reportRequest, plotInfo, filename):
+    """It creates the plot.
+
+    :param dict reportRequest: plot attributes
+    :param dict plotInfo: contains all the data which are used to create the plot
+    :param str filename:
+    :return: S_OK or S_ERROR { 'plot' : value1, 'thumbnail' : value2 } value1 and value2 are TRUE/FALSE
+    """
+    return self.__plotAllResources(reportRequest, plotInfo, filename, 'Max File Descriptors')
+
+  _reportActivityRunningThreadsName = "Number of activity running threads(activity)"
+
+  def _reportActivityRunningThreads(self, reportRequest):
+    """It is used to retrieve the data from the database.
+
+    :param dict reportRequest: contains attributes used to create the plot.
+    :return S_OK or S_ERROR {'data':value1, 'granularity':value2} value1 is a dictionary, value2 is the bucket length
+    """
+    return self.__reportAllResources(reportRequest, "RunningThreads", "RunningThreads")
+
+  def _plotActivityRunningThreads(self, reportRequest, plotInfo, filename):
+    """It creates the plot.
+
+    :param dict reportRequest: plot attributes
+    :param dict plotInfo: contains all the data which are used to create the plot
+    :param str filename:
+    :return: S_OK or S_ERROR { 'plot' : value1, 'thumbnail' : value2 } value1 and value2 are TRUE/FALSE
+    """
+    return self.__plotAllResources(reportRequest, plotInfo, filename, 'Number of running threads(activity)')
