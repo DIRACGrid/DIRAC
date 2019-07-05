@@ -635,7 +635,7 @@ class Job(API):
         return self._reportError('Expected numerical string or int for number of processors', **kwargs)
 
     if processors > 1:
-      return self.setTag(['MultiProcessor', '%dProcessors' % processors])
+      self._addParameter(self.workflow, 'NumberOfProcessors', 'JDL', processors, "Number of processors requested")
     return S_OK()
 
   #############################################################################
