@@ -417,9 +417,9 @@ class testDB(ProxyDBTestCase):
 
     gLogger.info('* Upload proxy..')
     for user, dn, group, vo, time, res, log in [("user_1", '/C=DN/O=DIRAC/CN=user_1', "group_1", False, 12,
-                                                 False, 'With group extansion'),
+                                                 False, 'With group extension'),
                                                 ("user_1", '/C=DN/O=DIRAC/CN=user_1', False, "vo_1", 12,
-                                                 False, 'With voms extansion'),
+                                                 False, 'With voms extension'),
                                                 ("user_1", '/C=DN/O=DIRAC/CN=user_1', False, False, 0,
                                                  False, 'Expired proxy'),
                                                 ("no_user", '/C=DN/O=DIRAC/CN=no_user', False, False, 12,
@@ -501,7 +501,7 @@ class testDB(ProxyDBTestCase):
     self.assertTrue(bool(int(result['Value']['TotalRecords']) == 0), 'In DB present proxies.')
 
     gLogger.info('* Get VOMS proxy..')
-    # Create proxy with VOMS extansion
+    # Create proxy with VOMS extension
     result = self.createProxy('user_1', 'group_1', 12, vo='vo_1', role='role_2')
     self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
 
@@ -511,11 +511,11 @@ class testDB(ProxyDBTestCase):
     cmd += 'TIMESTAMPADD(SECOND, 43200, UTC_TIMESTAMP()))'
     result = db._update(cmd)
     self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
-    # Try to get proxy with VOMS extansion
+    # Try to get proxy with VOMS extension
     for dn, group, role, time, log in [('/C=DN/O=DIRAC/CN=user_4', 'group_2', False, 9999,
                                         'Not exist VO for current group'),
                                        ('/C=DN/O=DIRAC/CN=user_1', 'group_1', 'role_1', 9999,
-                                        'Stored proxy already have different VOMS extansion'),
+                                        'Stored proxy already have different VOMS extension'),
                                        ('/C=DN/O=DIRACCA/OU=None/CN=user_ca/emailAddress=user_ca@diracgrid.org',
                                         'group_1', 'role_1', 9999, 'Not correct VO configuration')]:
       result = db.getVOMSProxy(dn, group, time, role)

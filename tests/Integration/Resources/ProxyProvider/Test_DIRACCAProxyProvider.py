@@ -4,6 +4,7 @@
 
 import os
 import re
+import sys
 import shutil
 import unittest
 
@@ -188,5 +189,6 @@ class DIRACCAPPTest(unittest.TestCase):
 
 
 if __name__ == '__main__':
-  SUITE = unittest.defaultTestLoader.loadTestsFromTestCase(DIRACCAPPTest)
-  unittest.TextTestRunner(verbosity=2).run(SUITE)
+  suite = unittest.defaultTestLoader.loadTestsFromTestCase(DIRACCAPPTest)
+  testResult = unittest.TextTestRunner(verbosity=2).run(suite)
+  sys.exit(not testResult.wasSuccessful())
