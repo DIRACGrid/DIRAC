@@ -6,7 +6,9 @@
 
 # pylint: disable=wrong-import-position
 
-import time
+from __future__ import print_function, absolute_import, unicode_literals
+
+__RCSID__ = "$Id$"
 
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
