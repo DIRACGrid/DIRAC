@@ -217,7 +217,7 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
 
     for successfulLFN, reps in replicas["Value"]["Successful"].iteritems():
       if targetSESet.issubset(set(reps)):
-        self.log.info("file %s has been replicated to all targets" % successfulLFN)
+        self.log.info("file replicated to all targets", successfulLFN)
         waitingFiles[successfulLFN].Status = "Done"
 
     return S_OK()
@@ -370,7 +370,8 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
       else:
         gMonitor.addMark("FTSScheduleFail")
         if noMetaReplicas:
-          self.log.warn("unable to schedule '%s', couldn't get metadata at %s" % (opFile.LFN, ','.join(noMetaReplicas)))
+          self.log.warn("unable to schedule file",
+                        "'%s': couldn't get metadata at %s" % (opFile.LFN, ','.join(noMetaReplicas)))
           opFile.Error = "Couldn't get metadata"
         elif noReplicas:
           self.log.error(

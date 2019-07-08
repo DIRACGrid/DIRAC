@@ -184,6 +184,7 @@ Reload the configuration and restart::
 
   systemctl daemon-reload
   systemctl restart runsvdir-start
+  systemctl enable runsvdir-start
 
 Server Certificates
 -------------------

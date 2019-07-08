@@ -145,13 +145,13 @@ logger.info("But first unpacking pilot files")
 logger.info("Getting the pilot files from %(location)s")
 
 # Getting the json file
-rJson = urllib2.urlopen('http://' + '%(location)s' + '/pilot/pilot.json')
+rJson = urllib2.urlopen('https://' + '%(location)s' + '/pilot/pilot.json')
 with open('pilot.json', 'wb') as pj:
   pj.write(rJson.read())
   pj.close()
 
 # Getting the tar file
-rTar = urllib2.urlopen('http://' + '%(location)s' + '/pilot/pilot.tar')
+rTar = urllib2.urlopen('https://' + '%(location)s' + '/pilot/pilot.tar')
 with open('pilot.tar', 'wb') as pt:
   pt.write(rTar.read())
   pt.close()

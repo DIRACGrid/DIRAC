@@ -1,9 +1,10 @@
 """ Module that contains client access to the WMSAdministrator handler.
 """
 
-from DIRAC.Core.Base.Client import Client
+from DIRAC.Core.Base.Client import Client, createClient
 
 
+@createClient('WorkloadManagement/WMSAdministrator')
 class WMSAdministratorClient(Client):
   """JobManagerClient sets url for the WMSAdministratorHandler.
   """

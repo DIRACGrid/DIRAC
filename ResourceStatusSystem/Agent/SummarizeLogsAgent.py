@@ -176,7 +176,11 @@ class SummarizeLogsAgent(AgentModule):
       return selectedRes
     selectedRes = selectedRes['Value']
     if not selectedRes:
-      return S_OK()
+      for selectedItemDict in logs:
+        res = self.__logToHistoryTable(element, selectedItemDict)
+        if not res['OK']:
+          return res
+        return S_OK()
 
     # We want from the <element>History table the last Status, and TokenOwner
     lastStatus, lastToken = None, None

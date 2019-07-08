@@ -55,7 +55,7 @@ NEW: Added script (docs/Tools/UpdateDiracCFG.py) to collate the ConfigTemplate.c
      files into the main dirac.cfg file
 CHANGE: (#4110) updated basic tutorial for CC7 instead of SLC6.     
 
-[v6r22-pre5]
+[v6r22]
 
 *WorkloadManagementSystem
 NEW: (#4045) PilotsHandler service (to interact with PilotAgentsDB)
@@ -81,14 +81,21 @@ CHANGE: (#4053) The use of CS.py module is replaced by the use of Registry.py an
 *Interfaces
 CHANGE: (#4098) removed dirac-admin-get-site-protocols.py as it could give potentially wrong results (use dirac-dms-protocol-matrix instead)
 
+*Resources
+NEW: (#4142) enable to get SE occupancy from plugin
+NEW: (#4142) add occupancy plugin to retrieve the info from BDII
+CHANGE: (#4142) GFAL2_SRM2Storage.getOccupancy() calls parent if SpaceToken is not given
+
 *ResourceStatusSystem
 CHANGE: clients: using DIRAC.Core.Base.Client as base
 CHANGE: (#4098) SiteInspectorAgent runs only on sites with tokenOwner="rs_svc"
 CHANGE: (#4098) remove SRM dependencies
 CHANGE: (#4136) downtimeCommand will use the GOCServiceType only for SRM SEs
+FIX: (#4139) only take the first endpoint for the SpaceOccupancy
 
 *DataManagementSystem
 CHANGE: (#4136) Moved methods from ResourceStatusSystem/CSHelpers to DMSHelpers
+CHANGE: (#4138) FTS3 is now the default
 
 *docs
 NEW: (#4099) Instructions about setting up the DIRAC web server for pilot3
@@ -96,6 +103,17 @@ CHANGE: (#4119) added note on MultiProcessor jobs preparation
 
 *test
 FIX: (#4119) Not lhcb but dteam (for DIRAC certification)
+FIX: (#4139) client_dms.sh not lhcb specific
+CHANGE:(#4140) adapt transformation certification tests to dteam VO
+
+[v6r21p11]
+
+*Transformation
+FIX: (#4144) fixed a logic bug in counting numberOfTasks in MCExtension which is expected
+     to limit the total number of tasks for MC transformations
+
+*Accounting
+FIX: (#4151) In AccountingDB.insertRecordThroughQueue fix bad dictionary key "0K"
 
 [v6r21p10]
 

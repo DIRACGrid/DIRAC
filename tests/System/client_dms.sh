@@ -9,12 +9,12 @@ echo " "
 echo "====== dirac-proxy-init -g dteam_user" #this is necesary to upload user files
 dirac-proxy-init -g dteam_user
 
-dir=$( echo "$USER" |cut -c 1)/$USER
+userdir="/dteam/user/$( echo "$USER" |cut -c 1)/$USER"
 echo "this is a test file" >> DMS_Scripts_Test_File.txt
 
 echo " "
-echo "====== dirac-dms-add-file /lhcb/user/$dir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt ./DMS_Scripts_Test_File.txt CERN-USER"
-dirac-dms-add-file /lhcb/user/$dir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt ./DMS_Scripts_Test_File.txt CERN-USER
+echo "====== dirac-dms-add-file $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt ./DMS_Scripts_Test_File.txt RAL-SE"
+dirac-dms-add-file $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt ./DMS_Scripts_Test_File.txt RAL-SE
 if [ $? -ne 0 ]
 then
    exit $?
@@ -22,32 +22,32 @@ fi
 
 echo " "
 mv DMS_Scripts_Test_File.txt DMS_Scripts_Test_File.old
-echo "======  dirac-dms-replicate-lfn /lhcb/user/$dir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt GRIDKA-USER CERN-USER"
-dirac-dms-replicate-lfn /lhcb/user/$dir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt GRIDKA-USER CERN-USER
+echo "======  dirac-dms-replicate-lfn $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt CESNET-SE RAL-SE"
+dirac-dms-replicate-lfn $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt CESNET-SE RAL-SE
 if [ $? -ne 0 ]
 then
    exit $?
 fi
 
 echo " "
-echo "====== dirac-dms-catalog-metadata /lhcb/user/$dir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt"
-dirac-dms-catalog-metadata /lhcb/user/$dir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt
+echo "====== dirac-dms-catalog-metadata $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt"
+dirac-dms-catalog-metadata $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt
 if [ $? -ne 0 ]
 then
    exit $?
 fi
 
 echo " "
-echo "====== dirac-dms-lfn-metadata /lhcb/user/$dir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt"
-dirac-dms-lfn-metadata /lhcb/user/$dir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt
+echo "====== dirac-dms-lfn-metadata $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt"
+dirac-dms-lfn-metadata $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt
 if [ $? -ne 0 ]
 then
    exit $?
 fi
 
 echo " "
-echo "====== dirac-dms-lfn-accessURL /lhcb/user/$dir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt CERN-USER"
-dirac-dms-lfn-accessURL /lhcb/user/$dir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt CERN-USER
+echo "====== dirac-dms-lfn-accessURL $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt RAL-SE"
+dirac-dms-lfn-accessURL $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt RAL-SE
 if [ $? -ne 0 ]
 then
    exit $?
@@ -55,8 +55,8 @@ fi
 echo " "
 
 echo " "
-echo "====== dirac-dms-get-file /lhcb/user/$dir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt"
-dirac-dms-get-file /lhcb/user/$dir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt
+echo "====== dirac-dms-get-file $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt"
+dirac-dms-get-file $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt
 if [ $? -ne 0 ]
 then
    exit $?
@@ -72,8 +72,8 @@ else
 fi
 
 echo " "
-echo "====== dirac-dms-lfn-replicas /lhcb/user/$dir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt"
-dirac-dms-lfn-replicas /lhcb/user/$dir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt
+echo "====== dirac-dms-lfn-replicas $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt"
+dirac-dms-lfn-replicas $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt
 if [ $? -ne 0 ]
 then
    exit $?
@@ -88,32 +88,32 @@ then
 fi
 
 echo " "
-echo "====== dirac-dms-remove-replicas /lhcb/user/$dir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt GRIDKA-USER"
-dirac-dms-remove-replicas /lhcb/user/$dir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt GRIDKA-USER
+echo "====== dirac-dms-remove-replicas $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt CESNET-SE"
+dirac-dms-remove-replicas $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt CESNET-SE
 if [ $? -ne 0 ]
 then
    exit $?
 fi
 
 echo " "
-echo "====== dirac-dms-lfn-replicas /lhcb/user/$dir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt second time: now there should be only 1 replica"
-dirac-dms-lfn-replicas /lhcb/user/$dir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt
+echo "====== dirac-dms-lfn-replicas $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt second time: now there should be only 1 replica"
+dirac-dms-lfn-replicas $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt
 if [ $? -ne 0 ]
 then
    exit $?
 fi
 
 echo " "
-echo "====== dirac-dms-remove-files /lhcb/user/$dir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt CERN-USER"
-dirac-dms-remove-files /lhcb/user/$dir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt CERN-USER
+echo "====== dirac-dms-remove-files $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt RAL-SE"
+dirac-dms-remove-files $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt RAL-SE
 if [ $? -ne 0 ]
 then
    exit $?
 fi
 
 echo " "
-echo "====== dirac-dms-lfn-replicas /lhcb/user/$dir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt third time: now there should be no replicas"
-dirac-dms-lfn-replicas /lhcb/user/$dir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt
+echo "====== dirac-dms-lfn-replicas $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt third time: now there should be no replicas"
+dirac-dms-lfn-replicas $userdir/Dirac_Scripts_Test_Directory/DMS_Scripts_Test_File.txt
 if [ $? -ne 0 ]
 then
    exit $?
