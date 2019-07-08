@@ -1,6 +1,9 @@
 """ This object is a wrapper for setting and getting jobs states
 """
 
+from __future__ import print_function, absolute_import, unicode_literals
+from builtins import str
+
 __RCSID__ = "$Id"
 
 import datetime
@@ -151,10 +154,10 @@ class JobState(object):
 
   def setStatus(self, majorStatus, minorStatus=None, appStatus=None, source=None, updateTime=None):
     try:
-      self.__checkType(majorStatus, basestring)
-      self.__checkType(minorStatus, basestring, canBeNone=True)
-      self.__checkType(appStatus, basestring, canBeNone=True)
-      self.__checkType(source, basestring, canBeNone=True)
+      self.__checkType(majorStatus, str)
+      self.__checkType(minorStatus, str, canBeNone=True)
+      self.__checkType(appStatus, str, canBeNone=True)
+      self.__checkType(source, str, canBeNone=True)
       self.__checkType(updateTime, datetime.datetime, canBeNone=True)
     except TypeError as excp:
       return S_ERROR(str(excp))
@@ -173,8 +176,8 @@ class JobState(object):
 
   def setMinorStatus(self, minorStatus, source=None, updateTime=None):
     try:
-      self.__checkType(minorStatus, basestring)
-      self.__checkType(source, basestring, canBeNone=True)
+      self.__checkType(minorStatus, str)
+      self.__checkType(source, str, canBeNone=True)
     except TypeError as excp:
       return S_ERROR(str(excp))
     result = self.jobDB.setJobStatus(self.__jid, minor=minorStatus)
@@ -186,7 +189,7 @@ class JobState(object):
                                        date=updateTime, source=source)
 
   def getStatus(self):
-    result = self.jobDB.getJobAttributes(self.__jid, ['Status', 'MinorStatus'])
+    result = self.jobDB.getJobStatus(self.__jid)
     if not result['OK']:
       return result
     data = result['Value']
@@ -199,8 +202,8 @@ class JobState(object):
 
   def setAppStatus(self, appStatus, source=None, updateTime=None):
     try:
-      self.__checkType(appStatus, basestring)
-      self.__checkType(source, basestring, canBeNone=True)
+      self.__checkType(appStatus, str)
+      self.__checkType(source, str, canBeNone=True)
     except TypeError as excp:
       return S_ERROR(str(excp))
     result = self.jobDB.setJobStatus(self.__jid, application=appStatus)
@@ -214,7 +217,7 @@ class JobState(object):
   right_getAppStatus = RIGHT_GET_INFO
 
   def getAppStatus(self):
-    result = self.jobDB.getJobAttributes(self.__jid, ['ApplicationStatus'])
+    result = self.jobDB.getJobStatus(self.__jid)
     if result['OK']:
       result['Value'] = result['Value']['ApplicationStatus']
     return result
@@ -225,8 +228,8 @@ class JobState(object):
 
   def setAttribute(self, name, value):
     try:
-      self.__checkType(name, basestring)
-      self.__checkType(value, basestring)
+      self.__checkType(name, str)
+      self.__checkType(value, str)
     except TypeError as excp:
       return S_ERROR(str(excp))
     return self.jobDB.setJobAttribute(self.__jid, name, value)
@@ -246,7 +249,7 @@ class JobState(object):
 
   def getAttribute(self, name):
     try:
-      self.__checkType(name, basestring)
+      self.__checkType(name, str)
     except TypeError as excp:
       return S_ERROR(str(excp))
     return self.jobDB.getJobAttribute(self.__jid, name)
@@ -266,8 +269,8 @@ class JobState(object):
 
   def setOptParameter(self, name, value):
     try:
-      self.__checkType(name, basestring)
-      self.__checkType(value, basestring)
+      self.__checkType(name, str)
+      self.__checkType(value, str)
     except TypeError as excp:
       return S_ERROR(str(excp))
     return self.jobDB.setJobOptParameter(self.__jid, name, value)
@@ -288,7 +291,7 @@ class JobState(object):
   right_removeOptParameters = RIGHT_GET_INFO
 
   def removeOptParameters(self, nameList):
-    if isinstance(nameList, basestring):
+    if isinstance(nameList, str):
       nameList = [nameList]
     try:
       self.__checkType(nameList, (list, tuple))
@@ -304,7 +307,7 @@ class JobState(object):
 
   def getOptParameter(self, name):
     try:
-      self.__checkType(name, basestring)
+      self.__checkType(name, str)
     except TypeError as excp:
       return S_ERROR(str(excp))
     return self.jobDB.getJobOptParameter(self.__jid, name)

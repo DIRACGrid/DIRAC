@@ -167,7 +167,7 @@ class JobStateUpdateHandler(RequestHandler):
     startFlag = ''
     jobID = int(jobID)
 
-    result = jobDB.getJobAttributes(jobID, ['Status'])
+    result = jobDB.getJobStatus(jobID)
     if not result['OK']:
       return result
 
