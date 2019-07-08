@@ -50,11 +50,8 @@ class ResourceStatusClient(Client):
     """
     Insert a dictionary `record` as a row in table `tableName`
 
-    :params:
-      **tableName** - `string`
-        the name of the table
-      **record** - 'dict'
-        the record to insert in the table
+    :param str tableName: the name of the table
+    :param dict record: dictionary of record to insert in the table
 
     :return: S_OK() || S_ERROR()
     """
@@ -65,11 +62,8 @@ class ResourceStatusClient(Client):
     """
     Select rows from the table `tableName`
 
-    :params:
-      **tableName** - `string`
-        the name of the table
-      **params** - 'dict'
-        selection parameters
+    :param str tableName: the name of the table
+    :param dict record: dictionary of the selection parameters
 
     :return: S_OK() || S_ERROR()
     """
@@ -82,11 +76,8 @@ class ResourceStatusClient(Client):
     """
     Delect rows from the table `tableName`
 
-    :params:
-      **tableName** - `string`
-        the name of the table
-      **params** - 'dict'
-        delete parameters
+    :param str tableName: the name of the table
+    :param dict record: dictionary of the deletion parameters
 
     :Returns:
       S_OK() || S_ERROR()
