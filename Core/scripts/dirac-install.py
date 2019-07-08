@@ -1896,6 +1896,9 @@ def installExternals(releaseConfig):
   else:
     externalsVersion = releaseConfig.getExtenalsVersion()
   if not externalsVersion:
+    res = installDiracOS(releaseConfig)
+    if res:
+      return True
     logERROR("No externals defined")
     return False
 
