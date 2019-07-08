@@ -84,6 +84,4 @@ class EmailAction(BaseAction):
     recordDict['PreviousStatus'] = previousStatus
     recordDict['StatusType'] = statusType
 
-    resInsert = self.rsClient.insert('ResourceStatusCache', recordDict)
-
-    return resInsert
+    return self.rsClient.insert('ResourceStatusCache', recordDict)

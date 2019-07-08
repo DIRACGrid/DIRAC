@@ -2,6 +2,7 @@
     Requires DB to be present and ResourceStatusHandler to be working
 """
 
+import sys
 import importlib
 import unittest
 from mock import MagicMock
@@ -78,4 +79,5 @@ class EmailActionAgent(TestEmailActionAgentTestCase):
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestEmailActionAgentTestCase)
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(EmailActionAgent))
-  unittest.TextTestRunner(verbosity=2).run(suite)
+  testResult = unittest.TextTestRunner(verbosity=2).run(suite)
+  sys.exit(not testResult.wasSuccessful())
