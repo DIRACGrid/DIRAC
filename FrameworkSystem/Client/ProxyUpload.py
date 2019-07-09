@@ -94,7 +94,7 @@ class CLIParams(object):
 
 from DIRAC import S_ERROR
 from DIRAC.Core.Security import Locations
-from DIRAC.Core.Security.X509Chain import X509Chain
+from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 
 
