@@ -103,6 +103,7 @@ EELNOFOUND = 1146
 
 # config
 ESECTION = 1400
+ENOVALUE = 1401
 
 # processes
 EEZOMBIE = 1147
@@ -179,6 +180,7 @@ dErrorCode = {
     1146: 'EELNOFOUND',
     # Config
     1400: "ESECTION",
+    1401: 'ENOVALUE',
     # Processes
     1147: 'EEZOMBIE',
     1148: 'EENOPID',
@@ -251,6 +253,7 @@ dStrError = {  # Generic (10XX)
     EELNOFOUND: "Index not found",
     # Config
     ESECTION: "Section is not found",
+    ENOVALUE: "Value is not found",
     # processes
     EEZOMBIE: "Zombie process",
     EENOPID: "No PID of process",
