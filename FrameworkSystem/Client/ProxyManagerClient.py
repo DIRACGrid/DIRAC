@@ -413,7 +413,7 @@ class ProxyManagerClient(object):
 
   def getPayloadProxyFromVOMSGroup(self, userDN, vomsAttr, token, requiredTimeLeft, proxyToConnect=False):
     """ Download a payload proxy with VOMS extensions depending on the VOMS attr
-        
+
         :param basestring userDN: user DN
         :param basestring vomsAttr: VOMS attribute
         :param basestring token: valid token to get a proxy
