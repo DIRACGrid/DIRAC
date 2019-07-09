@@ -465,7 +465,7 @@ class ProxyManagerClient(object):
 
         :param X509Chain chain: proxy as a chain
 
-        :return S_OK()
+        :return: S_OK()
     """
     self.__filesCache.delete(chain)
     return S_OK()
