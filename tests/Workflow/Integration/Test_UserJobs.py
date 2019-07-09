@@ -136,7 +136,7 @@ class MPSuccess(UserJobTestCase):
     j.setName("MP-test")
     j.setExecutable(self.mpExe)
     j.setInputSandbox(find_all('mpTest.py', rootPath, 'DIRAC/tests/Utilities')[0])
-    j.setTag('MultiProcessor')
+    j.setNumberOfProcessors(4)
     j.setLogLevel('DEBUG')
     res = j.runLocal(self.d)
     if multiprocessing.cpu_count() > 1:
@@ -150,6 +150,6 @@ if __name__ == '__main__':
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(HelloWorldSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(HelloWorldPlusSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(LSSuccess))
-  # suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( MPSuccess ) )
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(MPSuccess))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
   sys.exit(not testResult.wasSuccessful())
