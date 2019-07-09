@@ -3,6 +3,7 @@
 
 __RCSID__ = "$Id$"
 
+import re
 from distutils.version import LooseVersion  # pylint: disable=no-name-in-module,import-error
 
 from DIRAC import S_OK, S_ERROR, gConfig
@@ -295,3 +296,83 @@ def getFilterConfig(filterID):
   :params filterID: string representing a filter identifier.
   """
   return gConfig.getOptionsDict('Resources/LogFilters/%s' % filterID)
+
+
+def getProxyProviders():
+  """ Return list of all proxy provider names defined in the CS
+
+      :return: S_OK(list)/S_ERROR
+  """
+  return gConfig.getSections('%s/ProxyProviders' % gBaseResourcesSection)
+
+
+def getProxyProviderOption(proxyProvider, option):
+  """ Get the option of the proxy provider
+
+      :param basestring proxyProvider: proxy provider name
+      :param basestring option: option that need to get
+
+      :return: basestring -- option value
+  """
+  return gConfig.getValue("%s/ProxyProviders/%s/%s" % (gBaseResourcesSection, proxyProvider, option))
+
+
+def getProxyProviderDict(proxyProvider):
+  """ Get the dict of all the proxy provider settings
+
+      :param basestring proxyProvider: proxy provider name
+
+      :return: S_OK(dict)/S_ERROR() -- dict with all proxy provider options
+  """
+  return gConfig.getOptionsDict("%s/ProxyProviders/%s" % (gBaseResourcesSection, proxyProvider))
+
+
+def getIdPs():
+  """ Return list of all identity provider names defined in the CS
+
+      :return: S_OK(list)/S_ERROR
+  """
+  return gConfig.getSections('%s/IdProviders' % gBaseResourcesSection)
+
+
+def getIdPOption(providerName, option):
+  """ Get the option from identity provider configuration
+
+      :param basestring providerName: identity provider name
+      :param basestring option: option name that need to get
+
+      :return: basestring -- option value
+  """
+  return gConfig.getValue("%s/IdProviders/%s/%s" % (gBaseResourcesSection, providerName, option))
+
+
+def getIdPSections(IdP, path=''):
+  """ Get the sections of the identity provider section
+
+      :param basestring IdP: identity provider name
+      :param basestring path: path to need sections
+
+      :return: S_OK(list)/S_ERROR()
+  """
+  return gConfig.getSections("%s/IdProviders/%s/%s" % (gBaseResourcesSection, IdP, path))
+
+
+def getIdPOptions(IdP, path=''):
+  """ Get the options of the identity provider section
+
+      :param basestring IdP: identity provider name
+      :param basestring path: path to need options
+
+      :result: S_OK(list)/S_ERROR() -- list of option names
+  """
+  return gConfig.getOptions("%s/IdProviders/%s/%s" % (gBaseResourcesSection, IdP, path))
+
+
+def getIdPDict(IdP):
+  """ Get the dict of all the identity provider settings
+
+      :param basestring IdP: identity provider name
+
+      :return: S_OK(dict)/S_ERROR() -- dict with all identity provider options
+  """
+  return gConfig.getOptionsDict("%s/IdProviders/%s" % (gBaseResourcesSection, IdP))
