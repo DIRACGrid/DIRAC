@@ -135,7 +135,7 @@ class ProxyManagerHandler(RequestHandler):
   def export_getRegisteredUsers(self, validSecondsRequired=0):
     """ Get the list of users who have a valid proxy in the system
 
-        :param basestring validSecondsRequired: required seconds the proxy is valid for
+        :param int validSecondsRequired: required seconds the proxy is valid for
 
         :return: S_OK(list)/S_ERROR() -- list contain dicts with user name, DN, group
                                          expiration time, persistent flag
