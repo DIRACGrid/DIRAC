@@ -17,8 +17,8 @@ from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Security import Properties
 from DIRAC.Core.Security.VOMS import VOMS
 from DIRAC.Core.Security.MyProxy import MyProxy
-from DIRAC.Core.Security.X509Request import X509Request
-from DIRAC.Core.Security.X509Chain import X509Chain, isPUSPdn
+from DIRAC.Core.Security.X509Request import X509Request  # pylint: disable=import-error
+from DIRAC.Core.Security.X509Chain import X509Chain, isPUSPdn  # pylint: disable=import-error
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry, Resources
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient

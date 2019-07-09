@@ -8,8 +8,8 @@ from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Core.Utilities import ThreadSafe, DIRACSingleton
 from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Core.Security.ProxyFile import multiProxyArgument, deleteMultiProxy
-from DIRAC.Core.Security.X509Chain import X509Chain, g_X509ChainType
-from DIRAC.Core.Security.X509Request import X509Request
+from DIRAC.Core.Security.X509Chain import X509Chain, g_X509ChainType  # pylint: disable=import-error
+from DIRAC.Core.Security.X509Request import X509Request  # pylint: disable=import-error
 from DIRAC.Core.Security.VOMS import VOMS
 from DIRAC.Core.Security import Locations
 from DIRAC.Core.DISET.RPCClient import RPCClient

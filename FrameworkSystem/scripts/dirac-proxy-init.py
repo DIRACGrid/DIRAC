@@ -68,7 +68,7 @@ class ProxyInit(object):
   def certLifeTimeCheck(self):
     minLife = Registry.getGroupOption(self.__piParams.diracGroup, "SafeCertificateLifeTime", 2592000)
     resultIssuerCert = self.getIssuerCert()
-    resultRemainingSecs = resultIssuerCert.getRemainingSecs() #pylint: disable=no-member
+    resultRemainingSecs = resultIssuerCert.getRemainingSecs()  # pylint: disable=no-member
     if not resultRemainingSecs['OK']:
       gLogger.error("Could not retrieve certificate expiration time", resultRemainingSecs['Message'])
       return
@@ -172,7 +172,7 @@ class ProxyInit(object):
       gLogger.warn("X509_CERT_DIR is unset. Abort check of CAs")
       return
     caDir = os.environ["X509_CERT_DIR"]
-     # In globus standards .r0 files are CRLs. They have the same names of the CAs but diffent file extension
+    # In globus standards .r0 files are CRLs. They have the same names of the CAs but diffent file extension
     searchExp = os.path.join(caDir, "*.r0")
     crlList = glob.glob(searchExp)
     if not crlList:
@@ -194,7 +194,7 @@ class ProxyInit(object):
     if not res['OK']:
       gLogger.error("Failed to update CAs", res['Message'])
     res = bdc.syncCRLs()
-    if not res[ 'OK' ]:
+    if not res['OK']:
       gLogger.error("Failed to update CRLs", res['Message'])
     # Continue even if the update failed...
     return S_OK()

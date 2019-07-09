@@ -1,4 +1,3 @@
-#!/bin/env python
 """ Tests for ProxyProvider modules module
 """
 
@@ -10,7 +9,7 @@ import unittest
 
 from DIRAC import gConfig
 from DIRAC.Core.Utilities.CFG import CFG
-from DIRAC.Core.Security.X509Chain import X509Chain
+from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Resources.ProxyProvider.ProxyProviderFactory import ProxyProviderFactory
 
 # For Jenkins

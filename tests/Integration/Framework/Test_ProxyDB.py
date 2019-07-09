@@ -1,4 +1,3 @@
-#!/bin/env python
 """ This is a test of the ProxyDB
     It supposes that the DB is present and installed in DIRAC
 """
@@ -18,7 +17,7 @@ parseCommandLine()
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.CFG import CFG
-from DIRAC.Core.Security.X509Chain import X509Chain
+from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.FrameworkSystem.DB.ProxyDB import ProxyDB
 
 # For Jenkins
