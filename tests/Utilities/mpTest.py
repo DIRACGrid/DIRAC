@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 from multiprocessing import Process, Queue, current_process
 
@@ -10,14 +10,14 @@ def do_sum(q, l):
 
 
 def main():
-  my_list = range(100000000)
+  my_list = range(20000000)
 
   q = Queue()
 
-  p1 = Process(target=do_sum, args=(q, my_list[:25000000]))
-  p2 = Process(target=do_sum, args=(q, my_list[25000000:50000000]))
-  p3 = Process(target=do_sum, args=(q, my_list[50000000:75000000]))
-  p4 = Process(target=do_sum, args=(q, my_list[75000000:]))
+  p1 = Process(target=do_sum, args=(q, my_list[:5000000]))
+  p2 = Process(target=do_sum, args=(q, my_list[5000000:10000000]))
+  p3 = Process(target=do_sum, args=(q, my_list[10000000:15000000]))
+  p4 = Process(target=do_sum, args=(q, my_list[15000000:]))
   p1.start()
   p2.start()
   p3.start()
