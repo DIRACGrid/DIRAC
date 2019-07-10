@@ -316,7 +316,7 @@ def getInfoAboutProviders(ofWhat=None, providerName=None, option='', section='')
     result = gConfig.getSections(gBaseResourcesSection)
     if not result['OK']:
       return result
-    return S_OK([i.replace('Providers','') for i in result['Value']])
+    return S_OK([i.replace('Providers', '') for i in result['Value']])
   if not providerName:
     return gConfig.getSections('%s/%sProviders' % (gBaseResourcesSection, ofWhat))
   if not option:
@@ -327,4 +327,5 @@ def getInfoAboutProviders(ofWhat=None, providerName=None, option='', section='')
   elif option == 'all':
     return gConfig.getOptions('%s/%sProviders/%s/%s/' % (gBaseResourcesSection, ofWhat, providerName, section))
   else:
-    return S_OK(gConfig.getValue('%s/%sProviders/%s/%s/%s' % (gBaseResourcesSection, ofWhat, providerName, section, option)))
+    return S_OK(gConfig.getValue('%s/%sProviders/%s/%s/%s' % (gBaseResourcesSection, ofWhat, providerName,
+                                                              section, option)))
