@@ -63,6 +63,12 @@ FIX: (#4119) Not lhcb but dteam (for DIRAC certification)
 FIX: (#4139) client_dms.sh not lhcb specific
 CHANGE:(#4140) adapt transformation certification tests to dteam VO
 
+[v6r21p12]
+
+*WMS
+FIX: (#4155) JobDB.getAttributesForJobList: Return S_ERROR if unknown attributes are requested. 
+     Instead of potentially returning garbage a clear error message is returned.
+
 [v6r21p11]
 
 *Transformation

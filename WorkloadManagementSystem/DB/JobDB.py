@@ -127,6 +127,9 @@ class JobDB(DB):
     if not jobIDList:
       return S_OK({})
     if attrList:
+      missingAttr = [repr(x) for x in attrList if x not in self.jobAttributeNames]
+      if missingAttr:
+        return S_ERROR("JobDB.getAttributesForJobList: Unknown Attribute(s): %s" % ", ".join(missingAttr))
       attrNames = ','.join(str(x) for x in attrList if x in self.jobAttributeNames)
       attr_tmp_list = attrList
     else:
