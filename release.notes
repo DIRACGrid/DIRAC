@@ -1,3 +1,17 @@
+[v6r22p1]
+
+*WMS
+NEW: (#4147) added option for specifying a LocalCEType (which by default is "InProcess")
+
+*Interfaces
+NEW: (#4146) added setNumberOfProcessors method to Job() API
+
+*Resources
+NEW: (#4159) add dav(s) in the protocol lists of GFAL2_HTTPS
+
+*tests
+NEW: (#4154) Using variable for location of INSTALL_CFG_FILE (useful for extensions)
+
 [v6r22]
 
 *WorkloadManagementSystem
