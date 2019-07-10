@@ -30,6 +30,12 @@
 # JENKINS_CE (CE name, by default jenkins.cern.ch)
 # JENKINS_QUEUE (queue name, by default jenkins-queue_not_important)
 #
+# === for extensions
+# INSTALL_CFG_FILE environment variable:
+# location of the CFG file to be used for extensions --> where at least the following options are set:
+# "LocalInstalltion/Project"
+# "LocalInstalltion/VirtualOrganization"
+#
 # === a default directory structure is created:
 # ~/TestCode
 # ~/ServerInstallDIR
@@ -72,6 +78,8 @@ CLIENTINSTALLDIR=$_
 mkdir -p $WORKSPACE/PilotInstallDIR # Where pilots are installed
 PILOTINSTALLDIR=$_
 
+# Location of the CFG file to be used (this can be replaced by the extensions)
+INSTALL_CFG_FILE=$TESTCODE/DIRAC/tests/Jenkins/install.cfg
 
 # Sourcing utility file
 source $TESTCODE/DIRAC/tests/Jenkins/utilities.sh
