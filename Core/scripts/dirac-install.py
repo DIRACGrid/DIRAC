@@ -1093,7 +1093,7 @@ class ReleaseConfig(object):
       return S_OK((False, modTpl[0]))
     return S_OK((modTpl[0], modTpl[1]))
 
-  def getExtenalsVersion(self, release=None):
+  def getExternalsVersion(self, release=None):
     """
     It returns the version of DIRAC Externals. If it is not provided,
     uses the default cfg
@@ -1894,7 +1894,7 @@ def installExternals(releaseConfig):
   if not releaseConfig:
     externalsVersion = cliParams.externalVersion
   else:
-    externalsVersion = releaseConfig.getExtenalsVersion()
+    externalsVersion = releaseConfig.getExternalsVersion()
   if not externalsVersion:
     res = installDiracOS(releaseConfig)
     if res:
