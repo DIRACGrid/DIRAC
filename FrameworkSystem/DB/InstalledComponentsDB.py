@@ -33,7 +33,7 @@ class Component(componentsBase):
                     'mysql_charset': 'utf8'}
 
   componentID = Column('ComponentID', Integer, primary_key=True)
-  system = Column('System', String(32), nullable=False)
+  system = Column('DiracSystem', String(32), nullable=False)
   module = Column('Module', String(32), nullable=False)
   cType = Column('Type', String(32), nullable=False)
 
@@ -48,11 +48,11 @@ class Component(componentsBase):
   def fromDict(self, dictionary):
     """
     Fill the fields of the Component object from a dictionary
-    The dictionary may contain the keys: ComponentID, System, Module, Type
+    The dictionary may contain the keys: ComponentID, DiracSystem, Module, Type
     """
 
     self.componentID = dictionary.get('ComponentID', self.componentID)
-    self.system = dictionary.get('System', self.system)
+    self.system = dictionary.get('DiracSystem', self.system)
     self.module = dictionary.get('Module', self.module)
     self.cType = dictionary.get('Type', self.cType)
 
@@ -68,7 +68,7 @@ class Component(componentsBase):
     """
 
     dictionary = {'ComponentID': self.componentID,
-                  'System': self.system,
+                  'DiracSystem': self.system,
                   'Module': self.module,
                   'Type': self.cType}
 
@@ -473,7 +473,7 @@ class InstalledComponentsDB(object):
     The main difference with '__filterFields' is that this function is
     targeted towards the InstalledComponents table
     and accepts fields of the form <Component.Field> and <Host.Field>
-    ( e.g., 'Component.System' ) to filter installations using attributes
+    ( e.g., 'Component.DiracSystem' ) to filter installations using attributes
     from their associated Components and Hosts.
     session argument is a Session instance used to retrieve the items
     matchFields also accepts fields of the form <Field.bigger> and
