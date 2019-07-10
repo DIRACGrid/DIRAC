@@ -649,7 +649,7 @@ class SiteDirector(AgentModule):
     if not result['OK']:
       self.log.error("Can't count pilots", result['Message'])
     else:
-      self.log.info("Total jobs : number of task queues : numeber of waiting pilots",
+      self.log.info("Total jobs : number of task queues : number of waiting pilots",
                     "%d : %d : %d" % (totalWaitingJobs, len(tqIDList), result['Value']))
 
   def _getTQDictForMatching(self):

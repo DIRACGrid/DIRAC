@@ -66,19 +66,32 @@ def helloWorld():
 
 
 def mpJob():
-  """ simple hello world job, with MultiProcessor tag
+  """ simple hello world job, with 4Processors and MultiProcessor tags
   """
 
   J = baseToAllJobs('mpJob')
   try:
-    J.setInputSandbox([find_all('mpTest.py', rootPath, 'DIRAC/tests/Utilities')[0]] +
-                      [find_all('testMpJob.sh', rootPath, 'DIRAC/tests/Utilities')[0]])
+    J.setInputSandbox([find_all('mpTest.py', rootPath, 'DIRAC/tests/Utilities')[0]])
   except IndexError:  # we are in Jenkins
-    J.setInputSandbox([find_all('mpTest.py', os.environ['WORKSPACE'], 'DIRAC/tests/Utilities')[0]] +
-                      [find_all('testMpJob.sh', os.environ['WORKSPACE'], 'DIRAC/tests/Utilities')[0]])
+    J.setInputSandbox([find_all('mpTest.py', os.environ['WORKSPACE'], 'DIRAC/tests/Utilities')[0]])
 
-  J.setExecutable('testMpJob.sh mpTest.py')
-  J.setTag('MultiProcessor')
+  J.setExecutable('mpTest.py')
+  J.setTag(['4Processors', 'MultiProcessor'])
+  return endOfAllJobs(J)
+
+
+def wholeNodeJob():
+  """ simple hello world job, with WholeNode and MultiProcessor tags
+  """
+
+  J = baseToAllJobs('mpJob')
+  try:
+    J.setInputSandbox([find_all('mpTest.py', rootPath, 'DIRAC/tests/Utilities')[0]])
+  except IndexError:  # we are in Jenkins
+    J.setInputSandbox([find_all('mpTest.py', os.environ['WORKSPACE'], 'DIRAC/tests/Utilities')[0]])
+
+  J.setExecutable('mpTest.py')
+  J.setTag(['WholeNode', 'MultiProcessor'])
   return endOfAllJobs(J)
 
 

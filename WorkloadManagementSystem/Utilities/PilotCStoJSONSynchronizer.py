@@ -161,12 +161,17 @@ class PilotCStoJSONSynchronizer(object):
 
         for ce in ceList['Value']:
           ceType = gConfig.getValue('/Resources/Sites/' + grid + '/' + site + '/CEs/' + ce + '/CEType')
+          localCEType = gConfig.getValue('/Resources/Sites/' + grid + '/' + site + '/CEs/' + ce + '/LocalCEType')
 
           if ceType is None:
             # Skip but log it
-            self.log.error('CE has no option CEType! - skipping', ce + ' at ' + site)
+            self.log.error('CE has no option CEType!', ce + ' at ' + site)
+            pilotDict['CEs'][ce] = {'Site': site}
           else:
             pilotDict['CEs'][ce] = {'Site': site, 'GridCEType': ceType}
+
+          if localCEType is not None:
+            pilotDict['CEs'][ce].setDefault('LocalCEType', localCEType)
 
     defaultSetup = gConfig.getValue('/DIRAC/DefaultSetup')
     if defaultSetup:

@@ -498,15 +498,13 @@ class Job(API):
   def setCPUTime(self, timeInSecs):
     """Helper function.
 
-       Under Development. Specify CPU time requirement in DIRAC units.
-
        Example usage:
 
        >>> job = Job()
        >>> job.setCPUTime(5000)
 
        :param timeInSecs: CPU time
-       :type timeInSecs: Int
+       :type timeInSecs: int
     """
     kwargs = {'timeInSecs': timeInSecs}
     if not isinstance(timeInSecs, int):
@@ -553,6 +551,29 @@ class Job(API):
       self._addParameter(self.workflow, 'Site', 'JDL', destSites, description)
     else:
       return self._reportError('Invalid destination site, expected string or list', **kwargs)
+    return S_OK()
+
+  #############################################################################
+  def setNumberOfProcessors(self, processors):
+    """Helper function.
+
+       Example usage:
+
+       >>> job = Job()
+       >>> job.setNumberOfProcessors(4)
+
+       :param processors: number of processors required by the job
+       :type processors: int
+    """
+    kwargs = {'processors': processors}
+    if not isinstance(processors, int):
+      try:
+        processors = int(processors)
+      except ValueError:
+        return self._reportError('Expected numerical string or int for number of processors', **kwargs)
+
+    if processors > 1:
+      self._addParameter(self.workflow, 'NumberOfProcessors', 'JDL', processors, "Number of processors requested")
     return S_OK()
 
   #############################################################################
