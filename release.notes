@@ -1,3 +1,9 @@
+[v6r21p12]
+
+*WMS
+FIX: (#4155) JobDB.getAttributesForJobList: Return S_ERROR if unknown attributes are requested. 
+     Instead of potentially returning garbage a clear error message is returned.
+
 [v6r21p11]
 
 *Transformation
