@@ -78,7 +78,7 @@ class JobAgent(AgentModule):
     self.am_setOption('MonitoringEnabled', False)
     self.am_setOption('MaxCycles', loops)
 
-    ceType = self.am_getOption('CEType', 'InProcess')
+    ceType = self.am_getOption('CEType', self.ceName)
     localCE = gConfig.getValue('/LocalSite/LocalCE', '')
     if localCE:
       self.log.info('Defining CE from local configuration', '= %s' % localCE)

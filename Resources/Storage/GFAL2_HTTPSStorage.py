@@ -12,8 +12,9 @@ class GFAL2_HTTPSStorage( GFAL2_StorageBase ):
   HTTP interface to StorageElement using gfal2
   """
 
-  _INPUT_PROTOCOLS = ['file', 'http', 'https']
-  _OUTPUT_PROTOCOLS = ['http', 'https']
+  # davs is for https with direct access + third party
+  _INPUT_PROTOCOLS = ['file', 'http', 'https', 'dav', 'davs']
+  _OUTPUT_PROTOCOLS = ['http', 'https', 'dav', 'davs']
 
   def __init__( self, storageName, parameters ):
     """ c'tor

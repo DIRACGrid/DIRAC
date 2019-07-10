@@ -439,7 +439,8 @@ It can now be used together with the **dirac-wms-job-submit** command line tool.
 7.3.7 Submitting MultiProcessor (MP) jobs
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-Jobs that can (or should) run using more than 1 processor should be described as such, using the "Tag" mechanism::
+Jobs that can (or should) run using more than 1 processor should be described as such,
+using the "setNumberOfProcessors" method of the API::
 
       j = Job()
       j.setCPUTime(500)
@@ -447,7 +448,10 @@ Jobs that can (or should) run using more than 1 processor should be described as
       j.setExecutable('ls',arguments='-l')
       j.setExecutable('echo', arguments='hello again')
       j.setName('MP test')
-      j.setTag('MultiProcessor')
+      j.setNumberOfProcessors(16)
+
+Calling ``Job().setNumberOfProcessors()``, with a value bigger than 1,
+will translate into adding also the "MultiProcessor" tag to the job description.
 
 .. versionadded:: v6r20p5
 

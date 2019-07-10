@@ -10,7 +10,7 @@ __RCSID__ = "$Id$"
 import unittest
 import time
 
-from DIRAC.tests.Utilities.testJobDefinitions import helloWorld, mpJob, parametricJob
+from DIRAC.tests.Utilities.testJobDefinitions import helloWorld, mpJob, wholeNodeJob, parametricJob
 from DIRAC import gLogger
 gLogger.setLevel('DEBUG')
 
@@ -52,6 +52,10 @@ class submitSuccess(GridSubmissionTestCase):
     jobsSubmittedList.append(res['Value'])
 
     res = mpJob()
+    self.assertTrue(res['OK'])
+    jobsSubmittedList.append(res['Value'])
+
+    res = wholeNodeJob()
     self.assertTrue(res['OK'])
     jobsSubmittedList.append(res['Value'])
 

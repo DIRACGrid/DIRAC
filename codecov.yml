@@ -1,12 +1,5 @@
 comment: off
 
-coverage:
-  status:
-    project:
-      default: off
-      unittest:
-      flags: unittest
-
 flags:
   # filter the folder(s) you wish to measure by that flag
   unittest:
@@ -25,3 +18,19 @@ flags:
       - DIRAC/TransformationSystem
       - DIRAC/Workflow
       - DIRAC/WorkloadManagementSystem
+
+ignore:
+  - ".*/[Tt]ests/.*"
+  - ".*/[Tt]est/.*"
+  - "^docs"
+  - "^container"
+  - "^tests"
+
+coverage:
+  status:
+    project:
+      default:
+        threshold: 0.03
+    patch:
+      default:
+        target: 0

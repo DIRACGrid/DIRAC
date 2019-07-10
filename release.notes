@@ -55,6 +55,20 @@ NEW: Added script (docs/Tools/UpdateDiracCFG.py) to collate the ConfigTemplate.c
      files into the main dirac.cfg file
 CHANGE: (#4110) updated basic tutorial for CC7 instead of SLC6.     
 
+[v6r22p1]
+
+*WMS
+NEW: (#4147) added option for specifying a LocalCEType (which by default is "InProcess")
+
+*Interfaces
+NEW: (#4146) added setNumberOfProcessors method to Job() API
+
+*Resources
+NEW: (#4159) add dav(s) in the protocol lists of GFAL2_HTTPS
+
+*tests
+NEW: (#4154) Using variable for location of INSTALL_CFG_FILE (useful for extensions)
+
 [v6r22]
 
 *WorkloadManagementSystem
@@ -105,6 +119,12 @@ CHANGE: (#4119) added note on MultiProcessor jobs preparation
 FIX: (#4119) Not lhcb but dteam (for DIRAC certification)
 FIX: (#4139) client_dms.sh not lhcb specific
 CHANGE:(#4140) adapt transformation certification tests to dteam VO
+
+[v6r21p12]
+
+*WMS
+FIX: (#4155) JobDB.getAttributesForJobList: Return S_ERROR if unknown attributes are requested. 
+     Instead of potentially returning garbage a clear error message is returned.
 
 [v6r21p11]
 
