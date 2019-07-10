@@ -1093,7 +1093,7 @@ class ReleaseConfig(object):
       return S_OK((False, modTpl[0]))
     return S_OK((modTpl[0], modTpl[1]))
 
-  def getExtenalsVersion(self, release=None):
+  def getExternalsVersion(self, release=None):
     """
     It returns the version of DIRAC Externals. If it is not provided,
     uses the default cfg
@@ -1894,7 +1894,7 @@ def installExternals(releaseConfig):
   if not releaseConfig:
     externalsVersion = cliParams.externalVersion
   else:
-    externalsVersion = releaseConfig.getExtenalsVersion()
+    externalsVersion = releaseConfig.getExternalsVersion()
   if not externalsVersion:
     logERROR("No externals defined")
     return False
@@ -2407,6 +2407,7 @@ def createBashrcForDiracOS():
 
   return True
 
+
 def checkoutFromGit(moduleName, sourceURL, tagVersion, destinationDir=None):
   """
   This method checkout a given tag from a git repository.
@@ -2559,7 +2560,8 @@ if __name__ == "__main__":
   else:
     logNOTICE("Skipping installing DIRAC")
 
-  if cliParams.diracOS:
+  # we install with DIRACOS from v7rX DIRAC release
+  if cliParams.diracOS or int(releaseConfig.prjRelCFG['DIRAC'].keys()[0][1]) > 6:
     logNOTICE("Installing DIRAC OS %s..." % cliParams.diracOSVersion)
     if not installDiracOS(releaseConfig):
       sys.exit(1)
