@@ -8,6 +8,7 @@ __RCSID__ = '$Id$'
 import json
 import requests
 from DIRAC import S_ERROR, S_OK
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ResourceStatusSystem.PolicySystem.Actions.BaseAction import BaseAction
 from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
 from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE
@@ -26,13 +27,17 @@ class SlackAction(BaseAction):
     if url is not None:
       self.url = url
     else:
-      self.url = "https://hooks.slack.com/services/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"
+      self.url = Operations().getValue('ResourceStatus/Config/Slack')
 
   def run(self):
     '''
       Checks it has the parameters it needs and tries to send an sms to the users
       that apply.
     '''
+
+    if self.url is None:
+      return S_ERROR('Slack URL not set')
+
     # Minor security checks
     element = self.decisionParams['element']
     if element is None:
