@@ -1,5 +1,6 @@
 """ Helper for /Registry section
 """
+import errno
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
@@ -391,7 +392,7 @@ def getCAForUsername(username):
   return S_ERROR("No CA found for user %s" % username)
 
 
-def getDNSectionName(userDN):
+def __getDNSectionName(userDN):
   """ Change user DN string by replacing special symbol that not used in
       a section names, e.g.: "/O=O_test/OU=OU_test/F=F_test"
       will replace to:       "-O_O_test-OU_OU_test-F_F_test"
@@ -414,9 +415,9 @@ def getDNProperty(userDN, value):
   result = getUsernameForDN(userDN)
   if not result['OK']:
     return result
-  secDN = getDNSectionName(userDN)
-  return S_OK(gConfig.getValue("%s/Users/%s/DNProperties/%s/ProxyProviders" %
-                               (gBaseRegistrySection, result['Value'], secDN)))
+  secDN = __getDNSectionName(userDN)
+  return S_OK(gConfig.getValue("%s/Users/%s/DNProperties/%s/%s" %
+                               (gBaseRegistrySection, result['Value'], secDN, value)))
 
 
 def getProxyProvidersForDN(userDN):
@@ -429,7 +430,7 @@ def getProxyProvidersForDN(userDN):
   result = getDNProperty(userDN, 'ProxyProviders')
   if not result['OK']:
     return result
-  ppList = result['Value'] or [None]
+  ppList = result['Value'] or []
   if not isinstance(ppList, list):
     ppList = ppList.split()
   return S_OK(ppList)
@@ -457,5 +458,5 @@ def getDNFromProxyProviderForUserID(proxyProvider, userID):
       return result
     if proxyProvider in result['Value']:
       return S_OK(DN)
-  return S_ERROR(DErrno.ENOVALUE,
+  return S_ERROR(errno.ENODATA,
                  "No DN found for %s proxy provider for user ID %s" % (proxyProvider, userID))

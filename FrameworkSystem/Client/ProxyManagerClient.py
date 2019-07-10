@@ -167,7 +167,7 @@ class ProxyManagerClient(object):
         :return: S_OK(dict)/S_ERROR() -- dict contain proxies
     """
     # Discover proxy location
-    if isinstance(proxy, X509Chain()):
+    if isinstance(proxy, X509Chain):
       chain = proxy
       proxyLocation = ""
     else:

@@ -381,9 +381,10 @@ class testDB(ProxyDBTestCase):
                                      'Group not valid, proxy not in DB tables'),
                                     ('/C=DN/O=DIRAC/CN=user_1', 'group_1', 0,
                                      'No proxy provider for user, proxy not in DB tables')]:
+      gLogger.info('== > %s:' % log)
       result = db.getProxy(dn, group, reqtime)
       self.assertFalse(result['OK'], 'Must be fail.')
-      gLogger.info('== > %s:\nMsg: %s' % (log, result['Message']))
+      gLogger.info('Msg: %s' % result['Message'])
     # In the last case method found proxy and must to delete it as not valid
     cmd = 'SELECT COUNT( * ) FROM ProxyDB_Proxies WHERE UserName="user_1"'
     self.assertTrue(bool(db._query(cmd)['Value'][0][0] == 0), "GetProxy method didn't delete proxy.")
@@ -404,7 +405,8 @@ class testDB(ProxyDBTestCase):
     self.assertTrue(bool(int(result['Value']['TotalRecords']) == 1), 'Generated proxy must be one.')
     for table, count in [('ProxyDB_Proxies', 0), ('ProxyDB_CleanProxies', 1)]:
       cmd = 'SELECT COUNT( * ) FROM %s WHERE UserName="user_ca"' % table
-      self.assertTrue(bool(db._query(cmd)['Value'][0][0] == count))
+      self.assertTrue(bool(db._query(cmd)['Value'][0][0] == count),
+                      '%s must %s' % (table, count and 'contain proxy' or 'be empty'))
 
     gLogger.info('* Check that DB is clean..')
     result = db.deleteProxy('/C=DN/O=DIRACCA/OU=None/CN=user_ca/emailAddress=user_ca@diracgrid.org',
@@ -429,7 +431,6 @@ class testDB(ProxyDBTestCase):
       result = self.createProxy(user, group, time, vo=vo)
       self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
       chain = result['Value'][0]
-      self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
       result = db.generateDelegationRequest(chain, dn)
       self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
       resDict = result['Value']
@@ -442,11 +443,19 @@ class testDB(ProxyDBTestCase):
       if not res:
         gLogger.info('Msg: %s' % (result['Message']))
       cmd = 'SELECT COUNT( * ) FROM ProxyDB_Proxies WHERE UserName="%s"' % user
-      self.assertTrue(bool(db._query(cmd)['Value'][0][0] == 0))
+      self.assertTrue(bool(db._query(cmd)['Value'][0][0] == 0), 'ProxyDB_Proxies must be empty')
       cmd = 'SELECT COUNT( * ) FROM ProxyDB_CleanProxies WHERE UserName="%s"' % user
-      self.assertTrue(bool(db._query(cmd)['Value'][0][0] == res and 1 or 0))
+      self.assertTrue(bool(db._query(cmd)['Value'][0][0] == res and 1 or 0),
+                      'ProxyDB_CleanProxies must %s' % (res and 'contain proxy' or 'be empty'))
 
-    gLogger.info('* Get proxy when it store only in ProxyDB_CleanProxies..')
+    gLogger.info('* Check that ProxyDB_CleanProxy contain generated proxy..')
+    result = db.getProxiesContent({'UserName': 'user_1'}, {})
+    self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
+    self.assertTrue(bool(int(result['Value']['TotalRecords']) == 1), 'Generated proxy must be one.')
+    cmd = 'SELECT COUNT( * ) FROM ProxyDB_CleanProxies WHERE UserName="user_1"'
+    self.assertTrue(bool(db._query(cmd)['Value'][0][0] == 1), 'ProxyDB_CleanProxies must contain proxy')
+
+    gLogger.info('* Get proxy that store only in ProxyDB_CleanProxies..')
     # Try to get proxy that was stored in previous step
     for res, group, reqtime, log in [(False, 'group_1', 24 * 3600, 'Request time more that in stored proxy'),
                                      (False, 'group_2', 0, 'Request group not contain user'),
@@ -517,9 +526,10 @@ class testDB(ProxyDBTestCase):
                                         'Stored proxy already have different VOMS extension'),
                                        ('/C=DN/O=DIRACCA/OU=None/CN=user_ca/emailAddress=user_ca@diracgrid.org',
                                         'group_1', 'role_1', 9999, 'Not correct VO configuration')]:
+      gLogger.info('== > %s:' % log)
       result = db.getVOMSProxy(dn, group, time, role)
       self.assertFalse(result['OK'], 'Must be fail.')
-      gLogger.info('== > %s:\nMsg: %s' % (log, result['Message']))
+      gLogger.info('Msg: %s' % result['Message'])
     # Check stored proxies
     for table, user, count in [('ProxyDB_Proxies', 'user_1', 1), ('ProxyDB_CleanProxies', 'user_ca', 1)]:
       cmd = 'SELECT COUNT( * ) FROM %s WHERE UserName="%s"' % (table, user)

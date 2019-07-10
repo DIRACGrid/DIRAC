@@ -10,9 +10,9 @@ import tempfile
 import commands
 
 from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.Resources.ProxyProvider.ProxyProvider import ProxyProvider
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+from DIRAC.Resources.ProxyProvider.ProxyProvider import ProxyProvider
 
 __RCSID__ = "$Id$"
 
@@ -86,9 +86,9 @@ class DIRACCAProxyProvider(ProxyProvider):
     """ Generate user proxy
 
         :param dict userDict: user description dictionary with possible fields:
-                              FullName, UserName, DN, EMail, DiracGroup
+               FullName, UserName, DN, EMail, DiracGroup
 
-        :return: S_OK/S_ERROR, Value is a proxy string
+        :return: S_OK(basestring)/S_ERROR() -- basestring is a proxy string
     """
 
     def __createProxy():
@@ -224,8 +224,9 @@ class DIRACCAProxyProvider(ProxyProvider):
   def getUserDN(self, userDict):
     """ Get DN of the user certificate that will be created
 
-    :param dict userDict:
-    :return: S_OK/S_ERROR, Value is the DN string
+        :param dict userDict: dictionary with user information
+
+        :return: S_OK(basestring)/S_ERROR() -- basestring is the DN string
     """
 
     if "DN" in userDict:

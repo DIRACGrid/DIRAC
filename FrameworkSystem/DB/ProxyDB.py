@@ -19,10 +19,9 @@ from DIRAC.Core.Security.VOMS import VOMS
 from DIRAC.Core.Security.MyProxy import MyProxy
 from DIRAC.Core.Security.X509Request import X509Request  # pylint: disable=import-error
 from DIRAC.Core.Security.X509Chain import X509Chain, isPUSPdn  # pylint: disable=import-error
-from DIRAC.ConfigurationSystem.Client.Helpers import Registry, Resources
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
-# pylint: disable=import-error,no-name-in-module
 from DIRAC.Resources.ProxyProvider.ProxyProviderFactory import ProxyProviderFactory
 
 
@@ -99,7 +98,7 @@ class ProxyDB(DB):
                                                     },
                                          'PrimaryKey': ['UserDN', 'ProxyProvider']
                                          }
-    # FIXME: This table not need in v7 if ProxyDB_CleanProxies will be used
+    # WARN: Now proxies upload only in ProxyDB_CleanProxies, so this table will not be needed in some future
     if 'ProxyDB_Proxies' not in tablesInDB:
       tablesD['ProxyDB_Proxies'] = {'Fields': {'UserName': 'VARCHAR(64) NOT NULL',
                                                'UserDN': 'VARCHAR(255) NOT NULL',
@@ -365,7 +364,7 @@ class ProxyDB(DB):
 
     if not proxyProvider:
       result = Registry.getProxyProvidersForDN(userDN)
-      if result['OK']:
+      if result['OK'] and result.get('Value'):
         proxyProvider = result['Value'][0]
 
     # Get remaining secs
@@ -636,7 +635,8 @@ class ProxyDB(DB):
     self.logAction("myproxy renewal", hostDN, "host", userDN, userGroup)
     return S_OK(mpChain)
 
-  # WARN: this method not need if DIRAC setup use <user name>/DNProperties section in configuration
+  # WARN: this method will not be needed if CS section Users/<user>/DNProperties will be for every user
+  # in this case will be used proxy providers that described there
   def __getPUSProxy(self, userDN, userGroup, requiredLifetime, requestedVOMSAttr=None):
     result = Registry.getGroupsForDN(userDN)
     if not result['OK']:
@@ -696,8 +696,6 @@ class ProxyDB(DB):
 
         :return: S_OK(dict)/S_ERROR() -- dict with remaining seconds, proxy as a string and as a chain
     """
-    if not proxyProvider:
-      return S_ERROR('No proxy providers found for "%s" user DN' % userDN)
     gLogger.info('Getting proxy from proxyProvider', '(for "%s" DN by "%s")' % (userDN, proxyProvider))
     result = ProxyProviderFactory().getProxyProvider(proxyProvider)
     if not result['OK']:
@@ -738,10 +736,14 @@ class ProxyDB(DB):
 
     result = Registry.getProxyProvidersForDN(userDN)
     if result['OK']:
-      for proxyProvider in result['Value']:
-        result = self.__getPemAndTimeLeft(userDN, userGroup, proxyProvider=proxyProvider or 'Certificate')
+      providers = result['Value']
+      providers.append('Certificate')
+      for proxyProvider in providers:
+        result = self.__getPemAndTimeLeft(userDN, userGroup, proxyProvider=proxyProvider)
         if result['OK'] and (not requiredLifeTime or result['Value'][1] > requiredLifeTime):
           return result
+        if len(providers) == 1:
+          return S_ERROR('Cannot generate proxy: No proxy providers found for "%s"' % userDN)
         result = self.__generateProxyFromProxyProvider(userDN, proxyProvider)
         if result['OK']:
           chain = result['Value']['chain']
@@ -762,7 +764,8 @@ class ProxyDB(DB):
 
         :return: S_OK(tuple)/S_ERROR() -- tuple with proxy as chain and proxy live time in a seconds
     """
-    # WARN: this block not need if DIRAC setup use <user name>/DNProperties section in configuration
+    # WARN: this block will not be needed if CS section Users/<user>/DNProperties will be for every user
+    # in this case will be used proxy providers that described there
     # Get the Per User SubProxy if one is requested
     if isPUSPdn(userDN):
       result = self.__getPUSProxy(userDN, userGroup, requiredLifeTime)

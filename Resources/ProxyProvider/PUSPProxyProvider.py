@@ -5,9 +5,9 @@
 import urllib
 
 from DIRAC import S_OK, S_ERROR
-from DIRAC.Resources.ProxyProvider.ProxyProvider import ProxyProvider
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+from DIRAC.Resources.ProxyProvider.ProxyProvider import ProxyProvider
 
 __RCSID__ = "$Id$"
 
@@ -22,9 +22,9 @@ class PUSPProxyProvider(ProxyProvider):
     """ Generate user proxy
 
         :param dict userDict: user description dictionary with possible fields:
-                              FullName, UserName, DN, EMail, DiracGroup
+               FullName, UserName, DN, EMail, DiracGroup
 
-        :return: S_OK/S_ERROR, Value is a proxy string
+        :return: S_OK(basestring)/S_ERROR() -- basestring is a proxy string
     """
 
     userDN = userDict.get('DN')

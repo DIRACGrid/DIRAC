@@ -8,7 +8,7 @@
 """
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities import ObjectLoader
-from DIRAC.Resources.ProxyProvider.ProxyProvider import getProxyProviderConfigDict
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getInfoAboutProviders
 
 __RCSID__ = "$Id$"
 
@@ -23,14 +23,17 @@ class ProxyProviderFactory(object):
 
   #############################################################################
   def getProxyProvider(self, proxyProvider):
-    """This method returns a ProxyProvider instance corresponding to the supplied
-       name.
+    """ This method returns a ProxyProvider instance corresponding to the supplied
+        name.
 
-       :param str proxyProvider: the name of the Proxy Provider
+        :param basestring proxyProvider: the name of the Proxy Provider
 
-       :return: S_OK/S_ERROR with ProxyProvider object as Value
+        :return: S_OK(ProxyProvider)/S_ERROR()
     """
-    ppDict = getProxyProviderConfigDict(proxyProvider)
+    result = getInfoAboutProviders(ofWhat='Proxy', providerName=proxyProvider)
+    if not result['OK']:
+      return result
+    ppDict = result['Value']
     ppDict['ProxyProviderName'] = proxyProvider
     ppType = ppDict.get('ProxyProviderType')
     self.log.verbose('Creating ProxyProvider of %s type with the name %s' % (ppType, proxyProvider))
