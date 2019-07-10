@@ -6,6 +6,10 @@
 
 # pylint: disable=wrong-import-position
 
+from __future__ import print_function, absolute_import, unicode_literals
+
+__RCSID__ = "$Id$"
+
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
@@ -49,6 +53,7 @@ gLogger.setLevel('DEBUG')
 def fakegetDIRACPlatform(OSList):
   return {'OK': True, 'Value': 'pippo'}
 
+
 jobDB = JobDB()
 jobDB.getDIRACPlatform = fakegetDIRACPlatform
 
@@ -67,6 +72,11 @@ def test_insertAndRemoveJobIntoDB():
   res = jobDB.getJobOptParameters(jobID)
   assert res['OK'] is True
   assert res['Value'] == {}
+
+  res = jobDB.getJobStatus(jobID)
+  assert res['OK'] is True
+  assert res['Value']['Status'] == 'Received'
+  assert res['Value']['MinorStatus'] == 'Job accepted'
 
   res = jobDB.selectJobs({})
   assert res['OK'] is True
@@ -91,6 +101,11 @@ def test_rescheduleJob():
   res = jobDB.getJobAttribute(jobID, 'MinorStatus')
   assert res['OK'] is True
   assert res['Value'] == 'Job Rescheduled'
+
+  res = jobDB.getJobStatus(jobID)
+  assert res['OK'] is True
+  assert res['Value']['Status'] == 'Received'
+  assert res['Value']['MinorStatus'] == 'Job Rescheduled'
 
 
 def test_getCounters():
