@@ -69,7 +69,6 @@ import stat
 import time
 import shutil
 import socket
-from io import open
 
 import DIRAC
 from DIRAC import rootPath
