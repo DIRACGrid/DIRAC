@@ -226,11 +226,11 @@ class ComponentMonitoringDB( DB ):
     for field in condDict:
       val = condDict[ field ]
       if isinstance( val, basestring ):
-        sqlWhere.append( "`%s`='%s'" % ( field, val ) )
+        sqlWhere.append( "%s='%s'" % ( field, val ) )
       elif isinstance( val, ( int, long, float ) ):
         sqlWhere.append( "%s='%s'" % ( field, val ) )
       else:
-        sqlWhere.append( "( %s )" % " OR ".join( [ "`%s`='%s'" % ( field, v ) for v in val ] ) )
+        sqlWhere.append( "( %s )" % " OR ".join( [ "%s='%s'" % ( field, v ) for v in val ] ) )
     if sqlWhere:
       sqlWhere = "WHERE %s" % " AND ".join( sqlWhere )
     else:
