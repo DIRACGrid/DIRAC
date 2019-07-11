@@ -1095,13 +1095,6 @@ class SiteDirector(AgentModule):
             "(version in CS: %s)" % lcgBundleVersion)
         pilotOptions.append('-g %s' % lcgBundleVersion)
 
-    # DIRACOS defined?
-    # FIXME: this can disapper at some point
-    diracOS = opsHelper.getValue("Pilot/DIRACOS", False)
-    if diracOS:
-      self.log.warn("DIRACOS forced with CS option: will overwrite possible per-release lcg bundle versions")
-      pilotOptions.append('--dirac-os')
-
     ownerDN = self.pilotDN
     ownerGroup = self.pilotGroup
     # Request token for maximum pilot efficiency
@@ -1192,9 +1185,7 @@ class SiteDirector(AgentModule):
     except BaseException as be:
       self.log.exception("Exception during pilot modules files compression", lException=be)
 
-    location = ''
-    if self.pilot3:
-      location = Operations().getValue("Pilot/pilotFileServer")
+    location = Operations().getValue("Pilot/pilotFileServer", '')
     localPilot = pilotWrapperScript(pilotFilesCompressedEncodedDict=pilotFilesCompressedEncodedDict,
                                     pilotOptions=pilotOptions,
                                     pilotExecDir=pilotExecDir,
