@@ -41,7 +41,8 @@ class PlotterTestCase(unittest.TestCase):
 
 
 class ComponentMonitoringPlotterUnitTest(PlotterTestCase):
-  """ First you will need to generate plots on the DIRAC WebApp and then add it to the DIRAC/tests/Integration/Monitoring/png/ folder.
+  """ First you will need to generate plots on the DIRAC WebApp and then add it to the
+      DIRAC/tests/Integration/Monitoring/png/ folder.
       Then change the data dictionary here according to the WebApp plot and then run this regression test.
   """
 
@@ -52,25 +53,26 @@ class ComponentMonitoringPlotterUnitTest(PlotterTestCase):
     plotName = "ComponentMonitoringPlotter_plotRunningThreads"
     reportRequest = {'grouping': 'component',
                      'groupingFields': ('%s', ['component']),
-                     'startTime': 1562623200,
-                     'endTime': 1562709600,
-                     'condDict': {'component': 'Configuration_Server'}
+                     'startTime': 1562796000,
+                     'endTime': 1562882400,
+                     'condDict': {'component': 'Monitoring_Monitoring'}
                      }
 
-    plotInfo = {'data': {'Configuration_Server': {1562659200: 6.0,
-                                                  1562673600: 6.0,
-                                                  1562660100: 6.0,
-                                                  1562661000: 6.0,
-                                                  1562651100: 6.0,
-                                                  1562676300: 6.25,
-                                                  1562675400: 6.142857142857143,
-                                                  1562677200: 6.0,
-                                                  1562671800: 6.2,
-                                                  1562649300: 6.0,
-                                                  1562650200: 6.0,
-                                                  1562674500: 6.0,
-                                                  1562658300: 6.0,
-                                                  1562672700: 6.125}
+    plotInfo = {'data': {'Monitoring_Monitoring': {1562853600: 9.0,
+                                                   1562857200: 0,
+                                                   1562854500: 0,
+                                                   1562855400: 0,
+                                                   1562856300: 0,
+                                                   1562858100: 0,
+                                                   1562849100: 9.75,
+                                                   1562860800: 0,
+                                                   1562850000: 10.0,
+                                                   1562848200: 9.142857142857142,
+                                                   1562859900: 0,
+                                                   1562850900: 9.428571428571429,
+                                                   1562851800: 9.0,
+                                                   1562847300: 8.5,
+                                                   1562852700: 9.0}
                          },
                 'unit': 'threads',
                 'granularity': 900}
@@ -90,25 +92,24 @@ class ComponentMonitoringPlotterUnitTest(PlotterTestCase):
     plotName = "ComponentMonitoringPlotter_plotCpuUsage"
     reportRequest = {'grouping': 'component',
                      'groupingFields': ('%s', ['component']),
-                     'startTime': 1562623200,
-                     'endTime': 1562709600,
-                     'condDict': {'component': 'Configuration_Server'}
+                     'startTime': 1562796000,
+                     'endTime': 1562882400,
+                     'condDict': {'component': 'Monitoring_Monitoring'}
                      }
 
-    plotInfo = {'data': {'Configuration_Server': {1562659200: 0.271428573344435,
-                                                  1562673600: 0.17142857504742487,
-                                                  1562660100: 0.17500000353902578,
-                                                  1562661000: 0.10000000149011612,
-                                                  1562651100: 0.22500000335276127,
-                                                  1562676300: 0.32500001043081284,
-                                                  1562675400: 0.3285714387893677,
-                                                  1562677200: 0.30000001192092896,
-                                                  1562671800: 0.10000000149011612,
-                                                  1562649300: 0.7333333430190881,
-                                                  1562650200: 0.12857143048729217,
-                                                  1562674500: 0.1875000037252903,
-                                                  1562658300: 0.15000000596046448,
-                                                  1562672700: 0.12500000186264515}
+    plotInfo = {'data': {'Monitoring_Monitoring': {1562857200: 0,
+                                                   1562854500: 0,
+                                                   1562855400: 0,
+                                                   1562856300: 0,
+                                                   1562858100: 0,
+                                                   1562849100: 2.5875000450760126,
+                                                   1562850000: 0.9428571707436016,
+                                                   1562848200: 2.171428546309471,
+                                                   1562859900: 0,
+                                                   1562850900: 0.9428571473274913,
+                                                   1562851800: 0.10000000149011612,
+                                                   1562847300: 4.950000047683716,
+                                                   1562852700: 0.033333333830038704}
                          },
                 'unit': 'percentage',
                 'granularity': 900}
@@ -128,25 +129,26 @@ class ComponentMonitoringPlotterUnitTest(PlotterTestCase):
     plotName = "ComponentMonitoringPlotter_plotMemoryUsage"
     reportRequest = {'grouping': 'component',
                      'groupingFields': ('%s', ['component']),
-                     'startTime': 1562623200,
-                     'endTime': 1562709600,
-                     'condDict': {'component': 'Configuration_Server'}
+                     'startTime': 1562796000,
+                     'endTime': 1562882400,
+                     'condDict': {'component': 'Monitoring_Monitoring'}
                      }
 
-    plotInfo = {'data': {'Configuration_Server': {1562659200: 26.622767857142858,
-                                                  1562673600: 27.118861607142858,
-                                                  1562660100: 28.90380859375,
-                                                  1562661000: 28.94921875,
-                                                  1562651100: 30.0810546875,
-                                                  1562676300: 27.07666015625,
-                                                  1562675400: 27.028459821428573,
-                                                  1562677200: 27.128125,
-                                                  1562671800: 28.96640625,
-                                                  1562649300: 31.048177083333332,
-                                                  1562650200: 31.618303571428573,
-                                                  1562674500: 26.9345703125,
-                                                  1562658300: 29.453125,
-                                                  1562672700: 28.9833984375}
+    plotInfo = {'data': {'Monitoring_Monitoring': {1562853600: 93.03776041666667,
+                                                   1562857200: 0,
+                                                   1562854500: 0,
+                                                   1562855400: 0,
+                                                   1562856300: 0,
+                                                   1562858100: 0,
+                                                   1562849100: 249.76318359375,
+                                                   1562860800: 0,
+                                                   1562850000: 165.26674107142858,
+                                                   1562848200: 260.68917410714283,
+                                                   1562859900: 0,
+                                                   1562850900: 180.12890625,
+                                                   1562851800: 186.35546875,
+                                                   1562847300: 121.13671875,
+                                                   1562852700: 186.35807291666666}
                          },
                 'unit': 'MB',
                 'granularity': 900}
@@ -166,34 +168,28 @@ class ComponentMonitoringPlotterUnitTest(PlotterTestCase):
     plotName = "ComponentMonitoringPlotter_plotRunningTime"
     reportRequest = {'grouping': 'component',
                      'groupingFields': ('%s', ['component']),
-                     'startTime': 1562709600,
-                     'endTime': 1562796000,
-                     'condDict': {'component': 'Configuration_Server'}
+                     'startTime': 1562796000,
+                     'endTime': 1562882400,
+                     'condDict': {'component': 'Monitoring_Monitoring'}
                      }
 
-    plotInfo = {'data': {'Configuration_Server': {1562738400: 78936.08482142857,
-                                                  1562745600: 1393.6852798461914,
-                                                  1562739300: 79775.76897321429,
-                                                  1562747400: 1420.906736101423,
-                                                  1562740200: 80676.3212890625,
-                                                  1562737500: 77748.236328125,
-                                                  1562765400: 17522.12667410714,
-                                                  1562741100: 16424.6253112793,
-                                                  1562760900: 13118.525716145834,
-                                                  1562742000: 914.428466796875,
-                                                  1562736600: 77267.6640625,
-                                                  1562764500: 16622.072998046875,
-                                                  1562762700: 14802.015380859375,
-                                                  1562742900: 1754.463887532552,
-                                                  1562766300: 18062.3916015625,
-                                                  1562743800: 493.6506870814732,
-                                                  1562746500: 2293.4739815848216,
-                                                  1562748300: 437.6035334269206,
-                                                  1562744700: 493.71276201520647,
-                                                  1562763600: 15722.109375,
-                                                  1562761800: 13898.59486607143}
+    plotInfo = {'data': {'Monitoring_Monitoring': {1562853600: 313.32080459594727,
+                                                   1562857200: 0,
+                                                   1562854500: 0,
+                                                   1562855400: 0,
+                                                   1562856300: 0,
+                                                   1562858100: 0,
+                                                   1562849100: 1754.9678344726562,
+                                                   1562860800: 0,
+                                                   1562850000: 492.68797302246094,
+                                                   1562848200: 854.48386492048,
+                                                   1562859900: 0,
+                                                   1562850900: 1332.7680140904017,
+                                                   1562851800: 1812.8760986328125,
+                                                   1562847300: 314.9701385498047,
+                                                   1562852700: 3452.56787109375}
                          },
-                'unit': 'hours',
+                'unit': 'seconds',
                 'granularity': 900}
 
     obj = ComponentMonitoringPlotter(None, None)
@@ -209,23 +205,28 @@ class ComponentMonitoringPlotterUnitTest(PlotterTestCase):
     """
 
     plotName = "ComponentMonitoringPlotter_plotConnections"
-    reportRequest = {'grouping': 'componentName',
-                     'groupingFields': ('%s', ['componentName']),
-                     'startTime': 1562623200,
-                     'endTime': 1562709600,
-                     'condDict': {'componentName': 'Configuration/Server'}
+    reportRequest = {'grouping': 'component',
+                     'groupingFields': ('%s', ['component']),
+                     'startTime': 1562796000,
+                     'endTime': 1562882400,
+                     'condDict': {'component': 'Monitoring_Monitoring'}
                      }
 
-    plotInfo = {'data': {'Configuration/Server': {1562666400: 1.0,
-                                                  1562679000: 1.0,
-                                                  1562667300: 1.0,
-                                                  1562680800: 1.0,
-                                                  1562668200: 1.0,
-                                                  1562681700: 1.0,
-                                                  1562683500: 1.0,
-                                                  1562679900: 1.0,
-                                                  1562682600: 1.0,
-                                                  1562684400: 1.0}
+    plotInfo = {'data': {'Monitoring_Monitoring': {1562853600: 0,
+                                                   1562857200: 1.0,
+                                                   1562854500: 1.0,
+                                                   1562855400: 1.0,
+                                                   1562856300: 1.0,
+                                                   1562858100: 1.0,
+                                                   1562849100: 0,
+                                                   1562860800: 1.0,
+                                                   1562850000: 0,
+                                                   1562848200: 0,
+                                                   1562859900: 0,
+                                                   1562850900: 0,
+                                                   1562851800: 0,
+                                                   1562847300: 0,
+                                                   1562852700: 0}
                          },
                 'unit': 'Connections',
                 'granularity': 900}
@@ -243,32 +244,28 @@ class ComponentMonitoringPlotterUnitTest(PlotterTestCase):
     """
 
     plotName = "ComponentMonitoringPlotter_plotActiveQueries"
-    reportRequest = {'grouping': 'componentName',
-                     'groupingFields': ('%s', ['componentName']),
-                     'startTime': 1562709600,
-                     'endTime': 1562796000,
-                     'condDict': {'componentName': 'Configuration/Server'}
+    reportRequest = {'grouping': 'component',
+                     'groupingFields': ('%s', ['component']),
+                     'startTime': 1562796000,
+                     'endTime': 1562882400,
+                     'condDict': {'component': 'Monitoring_Monitoring'}
                      }
 
-    plotInfo = {'data': {'Configuration/Server': {1562745600: 0.07692307692307693,
-                                                  1562752800: 0,
-                                                  1562746500: 0.06666666666666667,
-                                                  1562771700: 0,
-                                                  1562754600: 0,
-                                                  1562747400: 0.06666666666666667,
-                                                  1562744700: 0,
-                                                  1562769000: 0.06666666666666667,
-                                                  1562748300: 0,
-                                                  1562770800: 0,
-                                                  1562749200: 0,
-                                                  1562743800: 0,
-                                                  1562750100: 0,
-                                                  1562768100: 0.09090909090909091,
-                                                  1562751000: 0,
-                                                  1562753700: 0,
-                                                  1562755500: 0,
-                                                  1562751900: 0,
-                                                  1562769900: 0.2}
+    plotInfo = {'data': {'Monitoring_Monitoring': {1562853600: 0,
+                                                   1562857200: 0.06666666666666667,
+                                                   1562854500: 0,
+                                                   1562855400: 0.2,
+                                                   1562856300: 0,
+                                                   1562858100: 0,
+                                                   1562849100: 0,
+                                                   1562860800: 0,
+                                                   1562850000: 0,
+                                                   1562848200: 0,
+                                                   1562859900: 0,
+                                                   1562850900: 0,
+                                                   1562851800: 0,
+                                                   1562847300: 0,
+                                                   1562852700: 0}
                          },
                 'unit': 'ActiveQueries',
                 'granularity': 900}
@@ -286,26 +283,28 @@ class ComponentMonitoringPlotterUnitTest(PlotterTestCase):
     """
 
     plotName = "ComponentMonitoringPlotter_plotPendingQueries"
-    reportRequest = {'grouping': 'componentName',
-                     'groupingFields': ('%s', ['componentName']),
-                     'startTime': 1562709600,
-                     'endTime': 1562796000,
-                     'condDict': {'componentName': 'Configuration/Server'}
+    reportRequest = {'grouping': 'component',
+                     'groupingFields': ('%s', ['component']),
+                     'startTime': 1562796000,
+                     'endTime': 1562882400,
+                     'condDict': {'component': 'Monitoring_Monitoring'}
                      }
 
-    plotInfo = {'data': {'Configuration/Server': {1562745600: 0,
-                                                  1562752800: 0,
-                                                  1562746500: 0,
-                                                  1562771700: 0,
-                                                  1562754600: 0,
-                                                  1562747400: 0,
-                                                  1562744700: 0,
-                                                  1562769000: 0,
-                                                  1562748300: 0,
-                                                  1562770800: 0,
-                                                  1562749200: 0,
-                                                  1562743800: 0,
-                                                  1562750100: 0, }
+    plotInfo = {'data': {'Monitoring_Monitoring': {1562853600: 0,
+                                                   1562857200: 0,
+                                                   1562854500: 0,
+                                                   1562855400: 0,
+                                                   1562856300: 0,
+                                                   1562858100: 0,
+                                                   1562849100: 0,
+                                                   1562860800: 0,
+                                                   1562850000: 0,
+                                                   1562848200: 0,
+                                                   1562859900: 0,
+                                                   1562850900: 0,
+                                                   1562851800: 0,
+                                                   1562847300: 0,
+                                                   1562852700: 0}
                          },
                 'unit': 'PendingQueries',
                 'granularity': 900}
@@ -323,23 +322,29 @@ class ComponentMonitoringPlotterUnitTest(PlotterTestCase):
     """
 
     plotName = "ComponentMonitoringPlotter_plotMaxFD"
-    reportRequest = {'grouping': 'componentName',
-                     'groupingFields': ('%s', ['componentName']),
-                     'startTime': 1562623200,
-                     'endTime': 1562709600,
-                     'condDict': {'componentName': 'Configuration/Server'}
+    reportRequest = {'grouping': 'component',
+                     'groupingFields': ('%s', ['component']),
+                     'startTime': 1562796000,
+                     'endTime': 1562882400,
+                     'condDict': {'component': 'Monitoring_Monitoring'}
                      }
 
-    plotInfo = {'data': {'Configuration/Server': {1562666400: 13.0,
-                                                  1562679000: 3.9,
-                                                  1562667300: 4.533333333333333,
-                                                  1562680800: 4.333333333333333,
-                                                  1562668200: 3.3333333333333335,
-                                                  1562681700: 4.4,
-                                                  1562683500: 4.4,
-                                                  1562679900: 4.4,
-                                                  1562682600: 4.066666666666666,
-                                                  1562684400: 4.2}
+    plotInfo = {'data': {'Monitoring_Monitoring': {1562853600: 0,
+                                                   1562857200: 1.0,
+                                                   1562861700: 2.5,
+                                                   1562854500: 4.4,
+                                                   1562855400: 2.3333333333333335,
+                                                   1562856300: 2.076923076923077,
+                                                   1562858100: 1.3333333333333333,
+                                                   1562849100: 0,
+                                                   1562860800: 3.4615384615384617,
+                                                   1562850000: 0,
+                                                   1562848200: 0,
+                                                   1562859900: 0,
+                                                   1562850900: 0,
+                                                   1562851800: 0,
+                                                   1562847300: 0,
+                                                   1562852700: 0}
                          },
                 'unit': 'MaxFD',
                 'granularity': 900}
@@ -357,33 +362,29 @@ class ComponentMonitoringPlotterUnitTest(PlotterTestCase):
     """
 
     plotName = "ComponentMonitoringPlotter_plotActivityRunningThreads"
-    reportRequest = {'grouping': 'componentName',
-                     'groupingFields': ('%s', ['componentName']),
-                     'startTime': 1562709600,
-                     'endTime': 1562796000,
-                     'condDict': {'componentName': 'Configuration/Server'}
+    reportRequest = {'grouping': 'component',
+                     'groupingFields': ('%s', ['component']),
+                     'startTime': 1562796000,
+                     'endTime': 1562882400,
+                     'condDict': {'component': 'Monitoring_Monitoring'}
                      }
 
-    plotInfo = {'data': {'Configuration/Server': {1562745600: 6.3076923076923075,
-                                                  1562752800: 6.266666666666667,
-                                                  1562746500: 6.2,
-                                                  1562771700: 6.133333333333334,
-                                                  1562754600: 6.0,
-                                                  1562747400: 6.0,
-                                                  1562744700: 6.25,
-                                                  1562769000: 6.133333333333334,
-                                                  1562748300: 6.25,
-                                                  1562770800: 6.0,
-                                                  1562749200: 6.2,
-                                                  1562743800: 6.5,
-                                                  1562750100: 6.076923076923077,
-                                                  1562768100: 6.090909090909091,
-                                                  1562751000: 6.0,
-                                                  1562753700: 6.0,
-                                                  1562755500: 6.230769230769231,
-                                                  1562751900: 6.066666666666666,
-                                                  1562769900: 6.066666666666666,
-                                                  1562772600: 6.0}
+    plotInfo = {'data': {'Monitoring_Monitoring': {1562853600: 0,
+                                                   1562857200: 6.866666666666666,
+                                                   1562861700: 6.0,
+                                                   1562854500: 5.6,
+                                                   1562855400: 6.2,
+                                                   1562856300: 6.538461538461538,
+                                                   1562858100: 6.333333333333333,
+                                                   1562849100: 0,
+                                                   1562860800: 6.153846153846154,
+                                                   1562850000: 0,
+                                                   1562848200: 0,
+                                                   1562859900: 6.2,
+                                                   1562850900: 0,
+                                                   1562851800: 0,
+                                                   1562847300: 0,
+                                                   1562852700: 0}
                          },
                 'unit': 'RunningThreads',
                 'granularity': 900}

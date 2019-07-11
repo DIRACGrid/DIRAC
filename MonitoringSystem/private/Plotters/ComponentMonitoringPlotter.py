@@ -46,7 +46,6 @@ class ComponentMonitoringPlotter(BasePlotter):
     return S_OK({'data': dataDict, 'granularity': granularity, 'unit': unitName})
 
   def __plotAllResources(self, reportRequest, plotInfo, filename, title):
-  
     metadata = {'title': '%s by %s' % (title, reportRequest['grouping']),
                 'starttime': reportRequest['startTime'],
                 'endtime': reportRequest['endTime'],

@@ -310,7 +310,7 @@ class Service(object):
           'timestamp': time.time(),
           'site': self._cfg.getHostname(),
           'componentType': 'service',
-          'componentName': self._name,
+          'component': "_".join(self._name.split("/")),
           'componentLocation': self._cfg.getURL(),
           'PendingQueries': self._threadPool.pendingJobs(),
           'ActiveQueries': self._threadPool.numWorkingThreads(),
@@ -343,7 +343,7 @@ class Service(object):
           'timestamp': time.time(),
           'site': self._cfg.getHostname(),
           'componentType': 'service',
-          'componentName': self._name,
+          'component': "_".join(self._name.split("/")),
           'componentLocation': self._cfg.getURL(),
           'Connections': 1
       })
