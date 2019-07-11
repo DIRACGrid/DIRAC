@@ -25,7 +25,7 @@ class ComponentMonitoring(BaseType):
     """
 
     self.keyFields = ['host', 'component', 'pid', 'status',
-                      'site', 'componentType', 'componentName', 'componentLocation']
+                      'site', 'componentType', 'componentLocation']
 
     self.monitoringFields = ['runningTime', 'memoryUsage', 'threads', 'cpuPercentage',
                              'Connections', 'PendingQueries', 'ActiveQueries',
@@ -35,7 +35,7 @@ class ComponentMonitoring(BaseType):
 
     self.addMapping({"host": {"type": "keyword"}, "component": {"type": "keyword"}, "status": {"type": "keyword"},
                      "site": {"type": "keyword"}, "componentType": {"type": "keyword"},
-                     "componentName": {"type": "keyword"}, "componentLocation": {"type": "keyword"}})
+                     "componentLocation": {"type": "keyword"}})
 
     self.dataToKeep = 86400 * 30  # we need to define...
 
