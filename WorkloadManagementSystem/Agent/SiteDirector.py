@@ -117,7 +117,7 @@ class SiteDirector(AgentModule):
     self.getOutput = False
     self.sendAccounting = True
 
-    self.pilot3 = False
+    self.pilot3 = True
     self.pilotFiles = []  # files whose content will be compressed and sent together with the pilot wrapper
 
     self.siteClient = None
@@ -1087,13 +1087,13 @@ class SiteDirector(AgentModule):
       # diracVersion is a list of accepted releases
       pilotOptions.append('-r %s' % ','.join(str(it) for it in diracVersion))
 
-    # lcgBundle defined?
-    lcgBundleVersion = opsHelper.getValue("Pilot/LCGBundleVersion", "")
-    if lcgBundleVersion:
-      self.log.warn(
-          "lcgBundle defined in CS: will overwrite possible per-release lcg bundle versions",
-          "(version in CS: %s)" % lcgBundleVersion)
-      pilotOptions.append('-g %s' % lcgBundleVersion)
+      # lcgBundle defined? (pilot 2 only)
+      lcgBundleVersion = opsHelper.getValue("Pilot/LCGBundleVersion", "")
+      if lcgBundleVersion:
+        self.log.warn(
+            "lcgBundle defined in CS: will overwrite possible per-release lcg bundle versions",
+            "(version in CS: %s)" % lcgBundleVersion)
+        pilotOptions.append('-g %s' % lcgBundleVersion)
 
     # DIRACOS defined?
     # FIXME: this can disapper at some point
