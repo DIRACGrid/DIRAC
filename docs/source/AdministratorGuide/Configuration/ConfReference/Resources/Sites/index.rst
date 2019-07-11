@@ -47,7 +47,9 @@ This sub-subsection specify the attributes of each particular CE of the site. Mu
 +------------------------------------------------+-------------------------------------------------------------+--------------------------------+
 | *<CE_NAME>/architecture*                       | CE architecture                                             | architecture = x86_64          |
 +------------------------------------------------+-------------------------------------------------------------+--------------------------------+
-| *<CE_NAME>/CEType*                             | Type of CE, can take values as LCG or CREAM                 | CEType = LCG                   |
+| *<CE_NAME>/CEType*                             | Type of CE, can take values as LCG or CREAM                 | CEType = ARC                   |
++------------------------------------------------+-------------------------------------------------------------+--------------------------------+
+| *<CE_NAME>/LocalCEType*                        | Type of Local CE, normally empty. Default = "InProcess"     | LocalCEType = Pool             |
 +------------------------------------------------+-------------------------------------------------------------+--------------------------------+
 | *<CE_NAME>/OS*                                 | CE operating system in a DIRAC format                       | OS = ScientificLinux_Boron_5.3 |
 +------------------------------------------------+-------------------------------------------------------------+--------------------------------+
@@ -148,6 +150,7 @@ An example for this session follows::
             SI00 = 0
             Pilot = False
             CEType = HTCondorCE
+            LocalCEType = Pool
             SubmissionMode = Direct
             Queues
             {
