@@ -46,7 +46,7 @@ class ComponentMonitoringPlotter(BasePlotter):
     return S_OK({'data': dataDict, 'granularity': granularity, 'unit': unitName})
 
   def __plotAllResources(self, reportRequest, plotInfo, filename, title):
-
+  
     metadata = {'title': '%s by %s' % (title, reportRequest['grouping']),
                 'starttime': reportRequest['startTime'],
                 'endtime': reportRequest['endTime'],
@@ -91,7 +91,7 @@ class ComponentMonitoringPlotter(BasePlotter):
     :param dict reportRequest: contains attributes used to create the plot.
     :return: S_OK or S_ERROR {'data':value1, 'granularity':value2} value1 is a dictionary, value2 is the bucket length
     """
-    return self.__reportAllResources(reportRequest, "cpuUsage", "percentage")
+    return self.__reportAllResources(reportRequest, "cpuPercentage", "percentage")
 
   def _plotCpuUsage(self, reportRequest, plotInfo, filename):
     """It creates the plot.

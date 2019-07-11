@@ -27,7 +27,7 @@ class ComponentMonitoring(BaseType):
     self.keyFields = ['host', 'component', 'pid', 'status',
                       'site', 'componentType', 'componentName', 'componentLocation']
 
-    self.monitoringFields = ['runningTime', 'memoryUsage', 'threads', 'cpuUsage',
+    self.monitoringFields = ['runningTime', 'memoryUsage', 'threads', 'cpuPercentage',
                              'Connections', 'PendingQueries', 'ActiveQueries',
                              'RunningThreads', 'MaxFD']
 
