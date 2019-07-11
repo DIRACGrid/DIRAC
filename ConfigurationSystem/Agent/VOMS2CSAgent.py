@@ -14,7 +14,7 @@ The following options can be set for the VOMS2CSAgent.
 
 """
 
-from __future__ import absolute_import, unicode_literals
+from __future__ import absolute_import
 
 from DIRAC import S_OK, gConfig, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule

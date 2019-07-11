@@ -3,7 +3,7 @@
     seconds will be assigned the "Stalled" state.
 """
 
-from __future__ import print_function, absolute_import, unicode_literals
+from __future__ import print_function, absolute_import
 from builtins import str
 
 __RCSID__ = "$Id$"
