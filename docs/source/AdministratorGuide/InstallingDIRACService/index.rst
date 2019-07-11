@@ -220,6 +220,19 @@ you need to make sure the hash of that CA certificate is created. Make sure the 
 where the output of the ``openssl`` command gives you the hash of the certificate ``cert.pem``, and must be used for the
 ``hash.0`` link name. Make sure the ``.0`` part is present in the name, as this is looked for when starting the web server.
 
+
+MySQL database preparation
+--------------------------
+
+Before proceeding with the primary server installation, a MYSQL server must be available.
+DIRAC supports MySQL versions 5.6 and 5.7 (8.0 support in preparation).
+In addition to the root/admin user(s) the following users must be created, with the same PASSWORD::
+
+   CREATE USER 'Dirac'@'%' IDENTIFIED BY '[PASSWORD]';
+   CREATE USER 'Dirac'@'localhost' IDENTIFIED BY '[PASSWORD]';
+   CREATE USER 'Dirac'@'[DB-SERVER-HOSTNAME]' IDENTIFIED BY '[PASSWORD]';
+
+
 .. _install_primary_server:
 
 Primary server installation
