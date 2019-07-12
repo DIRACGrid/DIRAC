@@ -16,7 +16,7 @@ import sys
 from DIRAC.Core.Utilities.DEncode import encode as disetEncode, decode as disetDecode, g_dEncodeFunctions
 from DIRAC.Core.Utilities.JEncode import encode as jsonEncode, decode as jsonDecode, JSerializable
 
-from hypothesis import given  # , settings, HealthCheck
+from hypothesis import given
 from hypothesis.strategies import integers, lists, recursive, floats, text,\
     booleans, none, dictionaries, tuples
 from hypothesis.searchstrategy.datetime import DatetimeStrategy
@@ -278,7 +278,6 @@ def test_missingAttrToSerialize():
 
 
 @given(data=nestedStrategyJson)
-# @settings(suppress_health_check=(HealthCheck.too_slow,))
 def test_nestedSerializable(data):
   """ Test that a serializable containing a serializable class
       can be serialized
