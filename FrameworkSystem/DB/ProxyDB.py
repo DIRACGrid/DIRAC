@@ -764,6 +764,10 @@ class ProxyDB(DB):
 
         :return: S_OK(tuple)/S_ERROR() -- tuple with proxy as chain and proxy live time in a seconds
     """
+    # Test that group enable to download
+    if not Registry.isDownloadableGroup(userGroup):
+      return S_ERROR('"%s" group is disable to download.' % userGroup)
+
     # WARN: this block will not be needed if CS section Users/<user>/DNProperties will be for every user
     # in this case will be used proxy providers that described there
     # Get the Per User SubProxy if one is requested

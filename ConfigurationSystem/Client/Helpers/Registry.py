@@ -460,3 +460,8 @@ def getDNFromProxyProviderForUserID(proxyProvider, userID):
       return S_OK(DN)
   return S_ERROR(errno.ENODATA,
                  "No DN found for %s proxy provider for user ID %s" % (proxyProvider, userID))
+
+
+def isDownloadableGroup(groupName):
+  option = "%s/Groups/%s/enableToDownload" % (gBaseRegistrySection, groupName)
+  return gConfig.getValue(option, True)
