@@ -26,10 +26,6 @@ export CONFIGFILE=$SCRIPT_DIR/tmp/CONFIG
 
 parseCommandLine
 
-echo
-echo $NoSQLDB_HOST
-echo
-
 docker-compose -f $SCRIPT_DIR/docker-compose.yml up -d
 
 set -x
@@ -79,7 +75,7 @@ echo -e "\n****" $(date -u) "Installing DIRAC server ****"
 docker exec -u $USER \
        -w $USER_HOME \
        server \
-       bash -c "./install_server.sh" 
+       bash -c "./install_server.sh > log.txt 2>&1" 
 
 echo -e "\n****" $(date -u) "Copying user certificates and installing client ****"
 
@@ -92,7 +88,7 @@ docker cp server:$USER_HOME/ServerInstallDIR/etc/grid-security $SCRIPT_DIR/tmp/
 docker exec -u $USER \
        -w $USER_HOME \
        client \
-       bash -c "./install_client.sh"
+       bash -c "./install_client.sh  > log.txt 2>&1"
 
 # copy credentials to client
 docker exec client bash -c "mkdir /home/dirac/.globus"

@@ -553,7 +553,7 @@ function generateCertificates(){
 
   if [ -z ${1} ]
   then
-    nDays=1
+    nDays=7	
   else
     nDays=$1
   fi
@@ -624,7 +624,7 @@ function generateUserCredentials(){
   # validity of the certificate
   if [ -z ${1} ]
   then
-    nDays=1
+    nDays=7
   else
     nDays=$1
   fi
