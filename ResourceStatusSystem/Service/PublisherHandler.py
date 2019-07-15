@@ -308,6 +308,8 @@ class PublisherHandler(RequestHandler):
       if not res['OK']:
         return res
       names = res['Value']
+    else:
+      names = name
 
     columns = ['Element', 'Name', 'StartDate', 'EndDate', 'Severity', 'Description', 'Link']
 
@@ -354,12 +356,3 @@ class PublisherHandler(RequestHandler):
       return newStatus
 
     return S_OK(reason)
-
-  types_getFreeDiskSpace = [(basestring, types.NoneType, list), (basestring, types.NoneType, list)]
-
-  def export_getFreeDiskSpace(self, site, token):
-    """ Exporting to web the
-    """
-
-    # FIXME: TBD
-    return S_ERROR("Not implemented")
