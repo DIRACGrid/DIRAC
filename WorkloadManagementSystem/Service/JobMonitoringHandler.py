@@ -296,7 +296,6 @@ class JobMonitoringHandler(RequestHandler):
     return gJobDB.getAttributesForJobList(jobIDs, parameters)
 
 
-
 ##############################################################################
   types_getJobsStatus = [list]
 

@@ -325,7 +325,7 @@ class GraphData:
     """
 
     numData = self.getPlotNumData(zipFlag=False)
-    if not len(numData):
+    if not len(numData):  # pylint: disable=len-as-condition
       return 0, 0, 0, 0
 
     numData = numpy.array(numData)
@@ -347,25 +347,25 @@ class GraphData:
       try:
         s = "Max: " + pretty_float(max_value) + " " + unitString
         tmpList.append(s.strip())
-      except Exception as e:
+      except BaseException:
         pass
     if min_value:
       try:
         s = "Min: " + pretty_float(min_value) + " " + unitString
         tmpList.append(s.strip())
-      except Exception as e:
+      except BaseException:
         pass
     if average:
       try:
         s = "Average: " + pretty_float(average) + " " + unitString
         tmpList.append(s.strip())
-      except Exception as e:
+      except BaseException:
         pass
     if current:
       try:
         s = "Current: " + pretty_float(current) + " " + unitString
         tmpList.append(s.strip())
-      except Exception as e:
+      except BaseException:
         pass
 
     resultString = ', '.join(tmpList)
@@ -493,7 +493,7 @@ class PlotData:
       return abs(item[0])
     try:
       return abs(item)
-    except TypeError as te:
+    except TypeError:
       return - 1
 
   def parseKey(self, key):
