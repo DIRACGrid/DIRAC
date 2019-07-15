@@ -102,6 +102,7 @@ Registry
     group_2
     {
       Users = user_4
+      enableToDownload = False
     }
   }
   VO
@@ -375,12 +376,14 @@ class testDB(ProxyDBTestCase):
                                      'No proxy provider, set request time, not valid proxy in ProxyDB_Proxies'),
                                     ('/C=DN/O=DIRAC/CN=user_1', 'group_1', 0,
                                      'Not valid proxy in ProxyDB_Proxies'),
-                                    ('/C=DN/O=DIRAC/CN=no_user', 'group', 0,
+                                    ('/C=DN/O=DIRAC/CN=no_user', 'no_valid_group', 0,
                                      'User no exist, proxy not in DB tables'),
-                                    ('/C=DN/O=DIRAC/CN=user_1', 'group', 0,
+                                    ('/C=DN/O=DIRAC/CN=user_1', 'no_valid_group', 0,
                                      'Group not valid, proxy not in DB tables'),
                                     ('/C=DN/O=DIRAC/CN=user_1', 'group_1', 0,
-                                     'No proxy provider for user, proxy not in DB tables')]:
+                                     'No proxy provider for user, proxy not in DB tables'),
+                                    ('/C=DN/O=DIRAC/CN=user_4', 'group_2', 0,
+                                     'Group has option enableToDownload = False in CS')]:
       gLogger.info('== > %s:' % log)
       result = db.getProxy(dn, group, reqtime)
       self.assertFalse(result['OK'], 'Must be fail.')
