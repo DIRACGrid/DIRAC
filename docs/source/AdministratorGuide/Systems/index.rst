@@ -19,6 +19,7 @@ of all the constituent components are described together with their configuratio
    ResourceStatus/index
    StorageManagement/index
    Transformation/index
+   Production/index
    WorkloadManagement/index
    MonitoringSystem/index
    Workflow/index
