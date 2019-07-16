@@ -13,7 +13,6 @@ The following options can be set for the SiteInspectorAgent.
 
 __RCSID__ = '$Id$'
 
-import datetime
 import math
 import Queue
 

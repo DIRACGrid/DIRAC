@@ -6,21 +6,22 @@
 
 from DIRAC.ResourceStatusSystem.Command.Command import Command
 
-__RCSID__ = '$Id: $'
+__RCSID__ = '$Id$'
 
-class PolicyBase( object ):
+
+class PolicyBase(object):
   """ Base class for all the policies. Do not instantiate directly.
       To use, you should call `setCommand` on the real policy instance.
   """
 
-  def __init__( self ):
+  def __init__(self):
     """ Constructor
     """
 
     self.command = Command()
     self.result = {}
 
-  def setCommand( self, policyCommand ):
+  def setCommand(self, policyCommand):
     """
     Set `self.command`.
 
@@ -30,7 +31,7 @@ class PolicyBase( object ):
     if policyCommand is not None:
       self.command = policyCommand
 
-  def evaluate( self ):
+  def evaluate(self):
     """
     Before use, call `setCommand`.
 
@@ -39,16 +40,13 @@ class PolicyBase( object ):
     """
 
     commandResult = self.command.doCommand()
-    return self._evaluate( commandResult )
+    return self._evaluate(commandResult)
 
   @staticmethod
-  def _evaluate( commandResult ):
+  def _evaluate(commandResult):
     """
       Method that will do the real processing of the policy, it has to be extended
       on the real policies.
     """
 
     return commandResult
-
-################################################################################
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
