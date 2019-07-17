@@ -157,7 +157,7 @@ class ProxyManagerClient(object):
                             record)
     return retVal
 
-  def uploadProxy(self, proxy=False, restrictLifeTime=0, rfcIfPossible=False):
+  def uploadProxy(self, proxy=None, restrictLifeTime=0, rfcIfPossible=False):
     """ Upload a proxy to the proxy management service using delegation
 
         :param X509Chain proxy: proxy as a chain
@@ -213,7 +213,7 @@ class ProxyManagerClient(object):
 
   @gProxiesSync
   def downloadProxy(self, userDN, userGroup, limited=False, requiredTimeLeft=1200,
-                    cacheTime=14400, proxyToConnect=False, token=False):
+                    cacheTime=14400, proxyToConnect=None, token=None):
     """ Get a proxy Chain from the proxy management
 
         :param basestring userDN: user DN
@@ -251,7 +251,7 @@ class ProxyManagerClient(object):
     return S_OK(chain)
 
   def downloadProxyToFile(self, userDN, userGroup, limited=False, requiredTimeLeft=1200,
-                          cacheTime=14400, filePath=False, proxyToConnect=False, token=False):
+                          cacheTime=14400, filePath=None, proxyToConnect=None, token=None):
     """ Get a proxy Chain from the proxy management and write it to file
 
         :param basestring userDN: user DN
@@ -277,8 +277,8 @@ class ProxyManagerClient(object):
 
   @gVOMSProxiesSync
   def downloadVOMSProxy(self, userDN, userGroup, limited=False, requiredTimeLeft=1200,
-                        cacheTime=14400, requiredVOMSAttribute=False,
-                        proxyToConnect=False, token=False):
+                        cacheTime=14400, requiredVOMSAttribute=None,
+                        proxyToConnect=None, token=None):
     """ Download a proxy if needed and transform it into a VOMS one
 
         :param basestring userDN: user DN
@@ -318,8 +318,8 @@ class ProxyManagerClient(object):
     return S_OK(chain)
 
   def downloadVOMSProxyToFile(self, userDN, userGroup, limited=False, requiredTimeLeft=1200,
-                              cacheTime=14400, requiredVOMSAttribute=False, filePath=False,
-                              proxyToConnect=False, token=False):
+                              cacheTime=14400, requiredVOMSAttribute=None, filePath=None,
+                              proxyToConnect=None, token=None):
     """ Download a proxy if needed, transform it into a VOMS one and write it to file
 
         :param basestring userDN: user DN
@@ -345,7 +345,7 @@ class ProxyManagerClient(object):
     retVal['chain'] = chain
     return retVal
 
-  def getPilotProxyFromDIRACGroup(self, userDN, userGroup, requiredTimeLeft=43200, proxyToConnect=False):
+  def getPilotProxyFromDIRACGroup(self, userDN, userGroup, requiredTimeLeft=43200, proxyToConnect=None):
     """ Download a pilot proxy with VOMS extensions depending on the group
 
         :param basestring userDN: user DN
@@ -365,7 +365,7 @@ class ProxyManagerClient(object):
       return self.downloadVOMSProxy(userDN, userGroup, limited=False, requiredTimeLeft=requiredTimeLeft,
                                     requiredVOMSAttribute=vomsAttr, proxyToConnect=proxyToConnect)
 
-  def getPilotProxyFromVOMSGroup(self, userDN, vomsAttr, requiredTimeLeft=43200, proxyToConnect=False):
+  def getPilotProxyFromVOMSGroup(self, userDN, vomsAttr, requiredTimeLeft=43200, proxyToConnect=None):
     """ Download a pilot proxy with VOMS extensions depending on the group
 
         :param basestring userDN: user DN
@@ -389,7 +389,7 @@ class ProxyManagerClient(object):
         return result
     return result
 
-  def getPayloadProxyFromDIRACGroup(self, userDN, userGroup, requiredTimeLeft, token=False, proxyToConnect=False):
+  def getPayloadProxyFromDIRACGroup(self, userDN, userGroup, requiredTimeLeft, token=None, proxyToConnect=None):
     """ Download a payload proxy with VOMS extensions depending on the group
 
         :param basestring userDN: user DN
@@ -411,7 +411,7 @@ class ProxyManagerClient(object):
                                     requiredVOMSAttribute=vomsAttr, proxyToConnect=proxyToConnect,
                                     token=token)
 
-  def getPayloadProxyFromVOMSGroup(self, userDN, vomsAttr, token, requiredTimeLeft, proxyToConnect=False):
+  def getPayloadProxyFromVOMSGroup(self, userDN, vomsAttr, token, requiredTimeLeft, proxyToConnect=None):
     """ Download a payload proxy with VOMS extensions depending on the VOMS attr
 
         :param basestring userDN: user DN
@@ -435,7 +435,7 @@ class ProxyManagerClient(object):
                                   proxyToConnect=proxyToConnect,
                                   token=token)
 
-  def dumpProxyToFile(self, chain, destinationFile=False, requiredTimeLeft=600):
+  def dumpProxyToFile(self, chain, destinationFile=None, requiredTimeLeft=600):
     """ Dump a proxy to a file. It's cached so multiple calls won't generate extra files
 
         :param X509Chain chain: proxy as a chain
@@ -483,7 +483,7 @@ class ProxyManagerClient(object):
     rpcClient = RPCClient("Framework/ProxyManager", timeout=120)
     return rpcClient.generateToken(requesterDN, requesterGroup, numUses)
 
-  def renewProxy(self, proxyToBeRenewed=False, minLifeTime=3600, newProxyLifeTime=43200, proxyToConnect=False):
+  def renewProxy(self, proxyToBeRenewed=None, minLifeTime=3600, newProxyLifeTime=43200, proxyToConnect=None):
     """ Renew a proxy using the ProxyManager
 
         :param X509Chain proxyToBeRenewed: proxy to renew

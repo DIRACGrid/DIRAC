@@ -508,7 +508,7 @@ class ProxyDB(DB):
       return S_ERROR(', '.join(errMsgs))
     return result
 
-  def __getPemAndTimeLeft(self, userDN, userGroup=False, vomsAttr=False, proxyProvider=False):
+  def __getPemAndTimeLeft(self, userDN, userGroup=None, vomsAttr=None, proxyProvider=None):
     """ Get proxy from database
 
         :param basestring userDN: user DN
@@ -563,15 +563,15 @@ class ProxyDB(DB):
       userMask = userDN
     return S_ERROR("%s has no proxy registered" % userMask)
 
-  def renewFromMyProxy(self, userDN, userGroup, lifeTime=False, chain=False):
+  def renewFromMyProxy(self, userDN, userGroup, lifeTime=None, chain=None):
     """ Renew proxy from MyProxy
 
         :param basestring userDN: user DN
         :param basestring userGroup: user group
         :param int lifeTime: needed proxy live time in a seconds
-        :param X509Chain() chain: proxy as chain
+        :param X509Chain chain: proxy as chain
 
-        :return: S_OK(X509Chain())/S_ERROR()
+        :return: S_OK(X509Chain/S_ERROR()
     """
     if not lifeTime:
       lifeTime = 43200
@@ -637,7 +637,7 @@ class ProxyDB(DB):
 
   # WARN: this method will not be needed if CS section Users/<user>/DNProperties will be for every user
   # in this case will be used proxy providers that described there
-  def __getPUSProxy(self, userDN, userGroup, requiredLifetime, requestedVOMSAttr=None):
+  def __getPUSProxy(self, userDN, userGroup, requiredLifetime, requestedVOMSAttr=False):
     result = Registry.getGroupsForDN(userDN)
     if not result['OK']:
       return result
@@ -754,7 +754,7 @@ class ProxyDB(DB):
     return S_ERROR('Cannot generate proxy%s' %
                    (result.get('Message') and ': ' + result.get('Message') or ''))
 
-  def getProxy(self, userDN, userGroup, requiredLifeTime=False):
+  def getProxy(self, userDN, userGroup, requiredLifeTime=None):
     """ Get proxy string from the Proxy Repository for use with userDN
         in the userGroup
 
@@ -832,7 +832,7 @@ class ProxyDB(DB):
 
     return S_OK({'attribute': csVOMSMapping, 'VOMSVO': Registry.getVOMSVOForGroup(userGroup)})
 
-  def getVOMSProxy(self, userDN, userGroup, requiredLifeTime=False, requestedVOMSAttr=False):
+  def getVOMSProxy(self, userDN, userGroup, requiredLifeTime=None, requestedVOMSAttr=None):
     """ Get proxy string from the Proxy Repository for use with userDN
         in the userGroup
 
@@ -948,7 +948,7 @@ class ProxyDB(DB):
       return result
     return S_OK(secsLeft)
 
-  def getUsers(self, validSecondsLeft=0, userName=False):
+  def getUsers(self, validSecondsLeft=0, userName=None):
     """ Get all the distinct users from the Proxy Repository. Optionally, only users
         with valid proxies within the given validity period expressed in seconds
 

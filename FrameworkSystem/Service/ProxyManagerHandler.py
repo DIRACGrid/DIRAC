@@ -214,9 +214,9 @@ class ProxyManagerHandler(RequestHandler):
       return retVal
     return S_OK(retVal['Value'])
 
-  types_getVOMSProxy = [basestring, basestring, basestring, (int, long)]
+  types_getVOMSProxy = [basestring, basestring, basestring, (int, long), basestring]
 
-  def export_getVOMSProxy(self, userDN, userGroup, requestPem, requiredLifetime, vomsAttribute=False):
+  def export_getVOMSProxy(self, userDN, userGroup, requestPem, requiredLifetime, vomsAttribute=None):
     """ Get a proxy for a userDN/userGroup
 
         :param requestPem: PEM encoded request object for delegation
@@ -394,7 +394,7 @@ class ProxyManagerHandler(RequestHandler):
 
   types_getVOMSProxyWithToken = [basestring, basestring, basestring, (int, long), basestring]
 
-  def export_getVOMSProxyWithToken(self, userDN, userGroup, requestPem, requiredLifetime, token, vomsAttribute=False):
+  def export_getVOMSProxyWithToken(self, userDN, userGroup, requestPem, requiredLifetime, token, vomsAttribute=None):
     """ Get a proxy for a userDN/userGroup
 
         :param requestPem: PEM encoded request object for delegation
