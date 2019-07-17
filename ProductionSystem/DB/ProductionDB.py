@@ -85,11 +85,6 @@ class ProductionDB(DB):
 
     self.lock.acquire()
 
-    res = self._escapeString(prodDescription)
-    if not res['OK']:
-      return res
-    prodDescription = res['Value']
-
     req = "INSERT INTO Productions (ProductionName,Description,CreationDate,LastUpdate, \
                                     AuthorDN,AuthorGroup,Status)\
                                 VALUES ('%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),'%s','%s','New');" % \
@@ -262,6 +257,7 @@ class ProductionDB(DB):
     if not res['OK']:
       return res
 
+    print res['Value']
     prodDescription = json.loads(res['Value'])
     transIDs = []
     for step in sorted(prodDescription):
