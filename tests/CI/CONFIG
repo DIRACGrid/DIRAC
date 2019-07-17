@@ -26,7 +26,7 @@ export DEFAULT_CLIENT_HOST=client
 
 # Settings for DIRAC installation
 #export DEFAULT_PRERELEASE=True
-#export DEFAULT_DIRAC_RELEASE=v6r22-pre3
+export DEFAULT_DIRAC_RELEASE=v7r0-pre18
 
 # repository to get tests and install scripts from 
 export DEFAULT_TESTREPO=antolu
