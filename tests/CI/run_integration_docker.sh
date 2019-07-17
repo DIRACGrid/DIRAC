@@ -127,7 +127,7 @@ CLIENT_ERR=$?
 echo -e "\n****" $(date -u) "ALL DONE ****"
 
 
-if [ SERVER_ERR ] && [ CLIENT_ERR ]; then
+if [ $SERVER_ERR -eq 0 ] && [ $CLIENT_ERR -eq 0 ]; then
     echo "SUCCESS: All tests succeded" 
     exit 0
 else
