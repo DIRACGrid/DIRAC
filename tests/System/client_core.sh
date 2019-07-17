@@ -17,8 +17,8 @@ echo " ########################## REAL BASICS #############################"
 echo
 echo
 
-echo "========================"
-echo "===  dirac-proxy-init -U"
+echo "================================"
+echo "===  dirac-proxy-init $PARAMS -U"
 echo
 dirac-proxy-init $PARAMS -U
 if [ $? -ne 0 ]
@@ -67,8 +67,8 @@ then
 fi
 echo
 
-echo "===================================="
-echo "===  dirac-proxy-init -g dirac_admin"
+echo "==============================================="
+echo "===  dirac-proxy-init -g dirac_admin $PARAMS -U"
 echo
 dirac-proxy-init -g dirac_admin $PARAMS -U
 if [ $? -ne 0 ]
@@ -87,7 +87,7 @@ then
 fi
 echo
 
-echo "===================================================================================="
+echo "================================================================================="
 echo "===  dirac-admin-get-proxy adminusername no_exist -v 4:00 (now this will fail...)"
 echo
 dirac-admin-get-proxy adminusername no_exist -v 4:00
@@ -97,10 +97,13 @@ then
 fi
 echo
 
-echo "====================="
-echo "===  dirac-proxy-info"
+# Find proxy file
+PROXYFILE=`pwd`/proxy.adminusername.prod
+
+echo "================================"
+echo "===  dirac-proxy-info $PROXYFILE"
 echo
-dirac-proxy-info -f `pwd`/proxy.adminusername.prod
+dirac-proxy-info $PROXYFILE
 if [ $? -ne 0 ]
 then
    exit $?
