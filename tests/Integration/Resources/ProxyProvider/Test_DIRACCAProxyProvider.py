@@ -14,7 +14,7 @@ from DIRAC.Resources.ProxyProvider.ProxyProviderFactory import ProxyProviderFact
 
 # For Jenkins
 for f in ['', 'TestCode', os.environ['DIRAC']]:
-  certsPath = os.path.join(f, 'DIRAC/tests/Integration/certs')
+  certsPath = os.path.join(f, 'DIRAC/Core/Security/test/certs')
   if os.path.exists(certsPath):
     break
 

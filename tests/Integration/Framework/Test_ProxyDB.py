@@ -22,7 +22,7 @@ from DIRAC.FrameworkSystem.DB.ProxyDB import ProxyDB
 
 # For Jenkins
 for f in ['', 'TestCode', os.environ['DIRAC']]:
-  certsPath = os.path.join(f, 'DIRAC/tests/Integration/certs')
+  certsPath = os.path.join(f, 'DIRAC/Core/Security/test/certs')
   if os.path.exists(certsPath):
     break
 
@@ -124,7 +124,7 @@ db = ProxyDB()
 class ProxyDBTestCase(unittest.TestCase):
 
   @classmethod
-  def createProxy(self, userName, group, time, rfc=True, limit=False, vo=False, role=None, path=None):
+  def createProxy(self, userName, group, time, rfc=True, limit=False, vo=None, role=None, path=None):
     """ Create user proxy
     """
     userCertFile = os.path.join(self.userDir, userName + '.cert.pem')
