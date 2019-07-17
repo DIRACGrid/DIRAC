@@ -26,7 +26,7 @@ export DEFAULT_CLIENT_HOST=client
 
 # Settings for DIRAC installation
 #export DEFAULT_PRERELEASE=True
-export DEFAULT_DIRAC_RELEASE=v6r22-pre3
+#export DEFAULT_DIRAC_RELEASE=v6r22-pre3
 
 # repository to get tests and install scripts from 
 export DEFAULT_TESTREPO=antolu
@@ -35,7 +35,7 @@ export DEFAULT_TESTBRANCH=ci
 export DEFAULT_LHCBDIRACBRANCH=unset          # LHCb DIRAC release
 export DEFAULT_LHCBDIRACTESTBRANCH=unset      # LHCb DIRAC tests
 
-export DEFAULT_DIRACOSVER=v1r1
+export DEFAULT_DIRACOSVER=master
 
 # Versions of external services
 export DEFAULT_MYSQL_VER=5.7
@@ -49,9 +49,10 @@ export DEFAULT_ALTERNATIVE_MODULES=unset
 
 # GitLab variables
 
-if [[ ! -z $CI_COMMIT_REF_NAME ]]; then
-    echo "I guess we're in GitLab CI, using branch ${CI_COMMIT_REF_NAME}"
-    export DEFAULT_TESTBRANCH=$CI_COMMIT_REF_NAME
+if [[ ! -z $CI_PROJECT_DIR ]]; then
+    echo "I guess we're in GitLab CI, using local repository in branch ${CI_COMMIT_REF_NAME}"
+    export DEFAULT_TESTREPO=$CI_PROJECT_DIR
+    export DEFAULT_ALTERNATIVE_MODULES=$CI_PROJECT_DIR
 fi
 
 # Test specific variables
