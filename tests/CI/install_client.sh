@@ -19,10 +19,16 @@ echo -e '***' $(date -u) "**** Getting the tests ****\n"
 mkdir -p $PWD/TestCode
 cd $PWD/TestCode
 
-
-git clone https://github.com/$TESTREPO/DIRAC.git
-cd DIRAC
-git checkout $TESTBRANCH
+if [[ -d $TESTREPO ]]; then
+    cp -r $TESTREPO ./DIRAC
+    cd DIRAC
+    echo "Using local test repository in branch $(git branch | grep \* | sed -e "s/*^* //")"
+else
+    git clone https://github.com/$TESTREPO/DIRAC.git
+    cd DIRAC
+    git checkout $TESTBRANCH
+    echo "Using remote test repository ${TESTREPO} in branch ${TESTBRANCH}"
+fi
 
 cd ../..
 
