@@ -6,12 +6,12 @@
 #
 #.....................................................
 
+set -e
+
 source CONFIG
 
 CSURL=dips://$SERVER_HOST:9135/Configuration/Server
 DIRACSETUP=dirac-JenkinsSetup
-
-export PATH=$PATH:/sbin
 
 
 echo -e '***' $(date -u) "**** Getting the tests ****\n"
@@ -41,11 +41,7 @@ if [ ! -z $LHCBDIRACTESTBRANCH ]; then
     echo -e '***' $(date -u) "**** Got the LHCb DIRAC tests ****\n"
 fi
 
-set -e
 
-alias pytest='pytest -v -s'
-
-sed -i '/installES/d' TestCode/DIRAC/tests/Jenkins/dirac_ci.sh
 source TestCode/DIRAC/tests/Jenkins/dirac_ci.sh
 
 

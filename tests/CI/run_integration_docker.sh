@@ -5,7 +5,7 @@
 #
 #    The following software is required on top of Cern Centos 7 (CC7):
 #      * Docker v18+
-#      * Docker-Compose v3.3+
+#      * Docker-Compose v2.4+
 #
 #    For the script to run, the shell must be logged into the CERN
 #    container registry at gitlab-registry.cern.ch using
@@ -24,7 +24,7 @@ source $SCRIPT_DIR/utils.sh
 mkdir  $SCRIPT_DIR/tmp || ( echo "Did you run cleanup.sh before trying again?" && exit 1 )
 export CONFIGFILE=$SCRIPT_DIR/tmp/CONFIG
 
-parseCommandLine
+parseArguments
 
 docker-compose -f $SCRIPT_DIR/docker-compose.yml up -d
 
@@ -104,6 +104,8 @@ docker cp $SCRIPT_DIR/run_tests.sh client:$USER_HOME/
 
 set +e
 
+ERR=0
+
 echo -e "\n****" $(date -u) "Starting server tests ****"
 docker exec -u $USER \
        -w $USER_HOME \
@@ -111,6 +113,7 @@ docker exec -u $USER \
        -e AGENT=server \
        server \
        bash run_tests.sh
+SERVER_ERR=$?
 
 echo -e "\n****" $(date -u) "Starting client tests ****"
 docker exec -u $USER \
@@ -119,6 +122,15 @@ docker exec -u $USER \
        -e AGENT=client \
        client \
        bash run_tests.sh
-
+CLIENT_ERR=$?
 
 echo -e "\n****" $(date -u) "ALL DONE ****"
+
+
+if [ SERVER_ERR ] && [ CLIENT_ERR ]; then
+    echo "SUCCESS: All tests succeded" 
+    exit 0
+else
+    echo "At least one unit test failed. Check the logs for more info. "
+    exit 1
+fi

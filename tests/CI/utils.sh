@@ -1,9 +1,9 @@
 #!/bin/bash
 #...............................................................................
 #
-# parseCommandLine:
+# parseArguments:
 #
-#   parseCommandLine looks at the environment variables that are prefixed with 
+#   parseArguments looks at the environment variables that are prefixed with 
 #       DEFAULT_ and sets the unprefixed variable to the DEFAULT_* (default) value
 #       if the unprefixed variable does not exists. Otherwise the unprefixed
 #       variable is kept.
@@ -18,7 +18,7 @@
 #       MYSQL_VER=8.0     ==> MYSQL_VER=8.0
 #
 #............................................................................... 
-function parseCommandLine() {
+function parseArguments() {
 
     local DEFAULT_VARS=( ${!DEFAULT_@} )
     local DEFAULT_VAR

@@ -49,10 +49,10 @@ if [ -z $ERR ]; then
     echo "WARN: Variable \$ERR not defined, check the test logs for possible failed tests"
     exit 0
 elif [ $ERR != "0" ]; then
-   echo "ERROR: At least one unit test failed !!!"
+   echo "ERROR: At least one unit test in ${AGENT} failed !!!"
    exit $ERR
 else
-   echo "SUCCESS: All test succeded"
+   echo "SUCCESS: All tests succeded"
    exit 0
 fi
    
