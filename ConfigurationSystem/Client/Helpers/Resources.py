@@ -4,6 +4,7 @@
 __RCSID__ = "$Id$"
 
 import re
+import urlparse
 from distutils.version import LooseVersion  # pylint: disable=no-name-in-module,import-error
 
 from DIRAC import S_OK, S_ERROR, gConfig
@@ -74,8 +75,10 @@ def getFTS2ServersForSites(siteList=None):
   return S_OK(ftsServers)
 
 
-def getFTS3Servers():
-  """ get FTSServers for sites
+def getFTS3Servers(hostOnly=False):
+  """ get list of FTS3 servers that are in CS
+
+      :param bool hostOnly: flag for stripping down the protocol and ports
   """
 
   csPath = cfgPath(gBaseResourcesSection, "FTSEndpoints/FTS3")
@@ -84,7 +87,10 @@ def getFTS3Servers():
 
   ftsServers = []
   for name in ftsServerNames:
-    ftsServers.append(gConfig.getValue(cfgPath(csPath, name)))
+    serverPath = gConfig.getValue(cfgPath(csPath, name))
+    if hostOnly:
+      serverPath = urlparse.urlparse(serverPath).hostname
+    ftsServers.append(serverPath)
 
   return S_OK(ftsServers)
 
