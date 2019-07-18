@@ -22,7 +22,7 @@ First of all, you should configure a MQ in your ``Resources`` that will be used 
         MQType = Stomp
         Port = 61713
         User = myUser
-        password = myPassword
+        Password = myPassword
         Host = messagebroker.cern.ch
         Queues
         {
