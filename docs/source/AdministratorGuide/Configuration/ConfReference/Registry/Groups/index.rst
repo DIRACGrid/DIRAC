@@ -47,7 +47,6 @@ This subsection is used to describe DIRAC groups registered in the server.
    -   Properties += FullDelegation
    -   Properties += ProxyManagement
    -   Properties += Operator
-   -   Properties += NotDownloadable
 
   ** dirac_pilot
 
