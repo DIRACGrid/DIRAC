@@ -13,7 +13,7 @@ Operations / DataManagement
 * ForceSingleSitePerSE (True): return an error if an SE is associated to more than 1 site
 * RegistrationProtocols (['srm', 'dips']): list of the possible protocols to be used to generate a SURL stored in the FileCatalog
 * ThirdPartyProtocols (['srm']): list of the possible protocols to be used in replications
-* AccessProtocols (['srm', 'dips']): list of the possible protocols to be used to perform the read operations and to get the space occupancy. Overwritten at the level of a StorageElement configuration. 
+* AccessProtocols (['srm', 'dips']): list of the possible protocols to be used to perform the read operations and to get the space occupancy. Overwritten at the level of a StorageElement configuration.
 * WriteProtocols (['srm', 'dips']): list of the possible protocols to be used to perform the write and remove operations. Overwritten at the level of a StorageElement configuration.
 * FTSVersion (FTS2): version of FTS to use. Possibilities: FTS3 or FTS2 (deprecated)
 * FTSPlacement section:
@@ -21,3 +21,5 @@ Operations / DataManagement
   - FTS3 section:
 
     - ServerPolicy (Random): policy to choose between FTS3 servers (Random, Sequence, Failover)
+
+Read :ref:`multiProtocol` for more details on the meanings of RegistrationProtocols, ThirdPartyProtocols, AccessProtocols, and WriteProtocols

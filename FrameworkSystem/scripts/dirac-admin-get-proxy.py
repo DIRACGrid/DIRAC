@@ -17,7 +17,8 @@ from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
 __RCSID__ = "$Id$"
 
-class Params:
+
+class Params(object):
 
   limited = False
   proxyPath = False
@@ -37,9 +38,9 @@ class Params:
     try:
       fields = [f.strip() for f in arg.split(":")]
       self.proxyLifeTime = int(fields[0]) * 3600 + int(fields[1]) * 60
-    except:
+    except BaseException:
       gLogger.notice("Can't parse %s time! Is it a HH:MM?" % arg)
-      return DIRAC.S_ERROR( "Can't parse time argument" )
+      return DIRAC.S_ERROR("Can't parse time argument")
     return DIRAC.S_OK()
 
   def automaticVOMS(self, arg):

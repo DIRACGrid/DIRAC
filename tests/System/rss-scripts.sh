@@ -65,7 +65,7 @@ then
    exit $?
 fi
 echo " "
-echo "======  dirac-rss-list-status --element=Resource --name=CERN-USER"
+echo "======  dirac-rss-list-status --element=Resource --name=RAL-SE"
 dirac-rss-list-status --element=Resource --name=RAL-SE
 if [ $? -ne 0 ]
 then
@@ -73,7 +73,7 @@ then
 fi
 
 
-echo -e "\n\n TESTING: dirac-rss-query-db --name=test123 --status=Banned --statusType=ReadAccess --reason=test add resource status"
+echo -e "\n\n TESTING: dirac-rss-query-db --name=test123 --status=Banned --statusType=ReadAccess --elementType=StorageElement --reason=test add resource status"
 dirac-rss-query-db --name=test123 --status=Banned --statusType=ReadAccess --elementType=StorageElement --reason=test add resource status -dd
 if [ $? -ne 0 ]
 then

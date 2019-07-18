@@ -1,12 +1,14 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
+
 from multiprocessing import Process, Queue, current_process
 
 
 def do_sum(q, l):
   q.put(sum(l))
   proc_name = current_process().name
-  print proc_name  # pylint: disable=print-statement
+  print(proc_name)  # pylint: disable=print-statement
 
 
 def main():
@@ -35,7 +37,7 @@ def main():
   p3.join()
   p4.join()
 
-  print r1 + r2 + r3 + r4  # pylint: disable=print-statement
+  print(r1 + r2 + r3 + r4)  # pylint: disable=print-statement
 
 if __name__ == '__main__':
   main()

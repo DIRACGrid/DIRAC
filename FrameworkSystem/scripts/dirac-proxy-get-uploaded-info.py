@@ -2,9 +2,11 @@
 ########################################################################
 # File :    dirac-proxy-init.py
 # Author :  Adrian Casajus
-###########################################################from DIRAC.Core.Base import Script#############
+########################################################################
 from __future__ import print_function
+
 import sys
+
 import DIRAC
 
 from DIRAC import gLogger

@@ -354,7 +354,7 @@ class DowntimeCommand(Command):
 
     resources = sesHosts if sesHosts else []
 
-    ftsServer = getFTS3Servers()
+    ftsServer = getFTS3Servers(hostOnly=True)
     if ftsServer['OK'] and ftsServer['Value']:
       resources.extend(ftsServer['Value'])
 

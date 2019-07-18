@@ -296,7 +296,7 @@ class TarModuleCreator(object):
                 continue
               toReplace = po2.stdout.read().strip()
               toReplace = "".join(i for i in toReplace if ord(i) < 128)
-              fileContents = fileContents.replace(keyWord, toReplace)
+              fileContents = fileContents.replace(keyWord, toReplace, 1)
 
           with open(objPath, "w") as fd:
             fd.write(fileContents)
