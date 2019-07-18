@@ -2,9 +2,11 @@
 ########################################################################
 # File :    dirac-proxy-init.py
 # Author :  Adrian Casajus
-###########################################################from DIRAC.Core.Base import Script#############
+########################################################################
 from __future__ import print_function
+
 import sys
+
 import DIRAC
 from DIRAC.Core.Base import Script
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import ProxyManagerClient
@@ -86,4 +88,3 @@ for row in data['Records']:
   lines.append("-" * tL)
 
 print("\n".join(lines))
-

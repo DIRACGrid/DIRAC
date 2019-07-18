@@ -9,6 +9,7 @@ import sys
 import glob
 import time
 import datetime
+
 import DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base import Script
@@ -206,7 +207,7 @@ class ProxyInit(object):
                                             self.__uploadedInfo[userDN][group].strftime("%Y/%m/%d %H:%M")))
 
   def checkCAs(self):
-    if not "X509_CERT_DIR" in os.environ:
+    if "X509_CERT_DIR" not in os.environ:
       gLogger.warn("X509_CERT_DIR is unset. Abort check of CAs")
       return
     caDir = os.environ["X509_CERT_DIR"]

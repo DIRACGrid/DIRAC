@@ -13,153 +13,163 @@ from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.Core.Utilities import File, List
 from DIRAC.Core.Security import Locations, Utilities
 
-class BundleManager:
 
-  def __init__( self, baseCSPath ):
+class BundleManager(object):
+
+  def __init__(self, baseCSPath):
     self.__csPath = baseCSPath
     self.__bundles = {}
     self.updateBundles()
 
-  def __getDirsToBundle( self ):
+  def __getDirsToBundle(self):
     dirsToBundle = {}
-    result = gConfig.getOptionsDict( "%s/DirsToBundle" % self.__csPath )
-    if result[ 'OK' ]:
-      dB = result[ 'Value' ]
+    result = gConfig.getOptionsDict("%s/DirsToBundle" % self.__csPath)
+    if result['OK']:
+      dB = result['Value']
       for bId in dB:
-        dirsToBundle[ bId ] = List.fromChar( dB[ bId ] )
-    if gConfig.getValue( "%s/BundleCAs" % self.__csPath, True ):
-      dirsToBundle[ 'CAs' ] = [ "%s/*.0" % Locations.getCAsLocation(), "%s/*.signing_policy" % Locations.getCAsLocation(), "%s/*.pem" % Locations.getCAsLocation() ]
-    if gConfig.getValue( "%s/BundleCRLs" % self.__csPath, True ):
-      dirsToBundle[ 'CRLs' ] = [ "%s/*.r0" % Locations.getCAsLocation() ]
+        dirsToBundle[bId] = List.fromChar(dB[bId])
+    if gConfig.getValue("%s/BundleCAs" % self.__csPath, True):
+      dirsToBundle['CAs'] = [
+          "%s/*.0" %
+          Locations.getCAsLocation(),
+          "%s/*.signing_policy" %
+          Locations.getCAsLocation(),
+          "%s/*.pem" %
+          Locations.getCAsLocation()]
+    if gConfig.getValue("%s/BundleCRLs" % self.__csPath, True):
+      dirsToBundle['CRLs'] = ["%s/*.r0" % Locations.getCAsLocation()]
     return dirsToBundle
 
-  def getBundles( self ):
-    return dict( [ ( bId, self.__bundles[ bId ] )  for bId in self.__bundles ] )
+  def getBundles(self):
+    return dict([(bId, self.__bundles[bId]) for bId in self.__bundles])
 
-  def bundleExists( self, bId ):
+  def bundleExists(self, bId):
     return bId in self.__bundles
 
-  def getBundleVersion( self, bId ):
+  def getBundleVersion(self, bId):
     try:
-      return self.__bundles[ bId ][0]
-    except:
+      return self.__bundles[bId][0]
+    except BaseException:
       return ""
 
-  def getBundleData( self, bId ):
+  def getBundleData(self, bId):
     try:
-      return self.__bundles[ bId ][1]
-    except:
+      return self.__bundles[bId][1]
+    except BaseException:
       return ""
 
-  def updateBundles( self ):
+  def updateBundles(self):
     dirsToBundle = self.__getDirsToBundle()
-    #Delete bundles that don't have to be updated
+    # Delete bundles that don't have to be updated
     for bId in self.__bundles:
       if bId not in dirsToBundle:
-        gLogger.info( "Deleting old bundle %s" % bId )
-        del( self.__bundles[ bId ] )
+        gLogger.info("Deleting old bundle %s" % bId)
+        del(self.__bundles[bId])
     for bId in dirsToBundle:
-      bundlePaths = dirsToBundle[ bId ]
-      gLogger.info( "Updating %s bundle %s" % ( bId, bundlePaths ) )
+      bundlePaths = dirsToBundle[bId]
+      gLogger.info("Updating %s bundle %s" % (bId, bundlePaths))
       buffer_ = cStringIO.StringIO()
-      filesToBundle = sorted( File.getGlobbedFiles( bundlePaths ) )
+      filesToBundle = sorted(File.getGlobbedFiles(bundlePaths))
       if filesToBundle:
-        commonPath = File.getCommonPath( filesToBundle )
-        commonEnd = len( commonPath )
-        gLogger.info( "Bundle will have %s files with common path %s" % ( len( filesToBundle ), commonPath ) )
-        with tarfile.open( 'dummy', "w:gz", buffer_ ) as tarBuffer:
+        commonPath = File.getCommonPath(filesToBundle)
+        commonEnd = len(commonPath)
+        gLogger.info("Bundle will have %s files with common path %s" % (len(filesToBundle), commonPath))
+        with tarfile.open('dummy', "w:gz", buffer_) as tarBuffer:
           for filePath in filesToBundle:
-            tarBuffer.add( filePath, filePath[ commonEnd: ] )
+            tarBuffer.add(filePath, filePath[commonEnd:])
         zippedData = buffer_.getvalue()
         buffer_.close()
-        hash_ = File.getMD5ForFiles( filesToBundle )
-        gLogger.info( "Bundled %s : %s bytes (%s)" % ( bId, len( zippedData ), hash_ ) )
-        self.__bundles[ bId ] = ( hash_, zippedData )
+        hash_ = File.getMD5ForFiles(filesToBundle)
+        gLogger.info("Bundled %s : %s bytes (%s)" % (bId, len(zippedData), hash_))
+        self.__bundles[bId] = (hash_, zippedData)
       else:
-        self.__bundles[ bId ] = ( None, None )
+        self.__bundles[bId] = (None, None)
+
 
 gBundleManager = False
 
-def initializeBundleDeliveryHandler( serviceInfoDict ):
+
+def initializeBundleDeliveryHandler(serviceInfoDict):
   global gBundleManager
-  csPath = serviceInfoDict[ 'serviceSectionPath' ]
-  gBundleManager = BundleManager( csPath )
-  updateBundleTime = gConfig.getValue( "%s/BundlesLifeTime" % csPath, 3600 * 6 )
-  gLogger.info( "Bundles will be updated each %s secs" % updateBundleTime )
-  gThreadScheduler.addPeriodicTask( updateBundleTime, gBundleManager.updateBundles )
+  csPath = serviceInfoDict['serviceSectionPath']
+  gBundleManager = BundleManager(csPath)
+  updateBundleTime = gConfig.getValue("%s/BundlesLifeTime" % csPath, 3600 * 6)
+  gLogger.info("Bundles will be updated each %s secs" % updateBundleTime)
+  gThreadScheduler.addPeriodicTask(updateBundleTime, gBundleManager.updateBundles)
   return S_OK()
 
 
-class BundleDeliveryHandler( RequestHandler ):
+class BundleDeliveryHandler(RequestHandler):
 
   types_getListOfBundles = []
-  def export_getListOfBundles( self ):
-    global gBundleManager
-    return S_OK( gBundleManager.getBundles() )
 
-  def transfer_toClient( self, fileId, token, fileHelper ):
+  def export_getListOfBundles(self):
+    global gBundleManager
+    return S_OK(gBundleManager.getBundles())
+
+  def transfer_toClient(self, fileId, token, fileHelper):
     global gBundleManager
     version = ""
-    if isinstance( fileId, basestring ):
+    if isinstance(fileId, basestring):
       if fileId in ['CAs', 'CRLs']:
         return self.__transferFile(fileId, fileHelper)
       else:
         bId = fileId
-    elif isinstance( fileId, ( list, tuple ) ):
-      if len( fileId ) == 0:
+    elif isinstance(fileId, (list, tuple)):
+      if len(fileId) == 0:
         fileHelper.markAsTransferred()
-        return S_ERROR( "No bundle specified!" )
-      elif len( fileId ) == 1:
+        return S_ERROR("No bundle specified!")
+      elif len(fileId) == 1:
         bId = fileId[0]
       else:
         bId = fileId[0]
         version = fileId[1]
-    if not gBundleManager.bundleExists( bId ):
+    if not gBundleManager.bundleExists(bId):
       fileHelper.markAsTransferred()
-      return S_ERROR( "Unknown bundle %s" % bId )
+      return S_ERROR("Unknown bundle %s" % bId)
 
-    bundleVersion = gBundleManager.getBundleVersion( bId )
+    bundleVersion = gBundleManager.getBundleVersion(bId)
     if bundleVersion is None:
       fileHelper.markAsTransferred()
-      return S_ERROR( "Empty bundle %s" % bId )
+      return S_ERROR("Empty bundle %s" % bId)
 
     if version == bundleVersion:
       fileHelper.markAsTransferred()
-      return S_OK( bundleVersion )
+      return S_OK(bundleVersion)
 
-    buffer_ = cStringIO.StringIO( gBundleManager.getBundleData( bId ) )
-    result = fileHelper.DataSourceToNetwork( buffer_ )
+    buffer_ = cStringIO.StringIO(gBundleManager.getBundleData(bId))
+    result = fileHelper.DataSourceToNetwork(buffer_)
     buffer_.close()
-    if not result[ 'OK' ]:
+    if not result['OK']:
       return result
-    return S_OK( bundleVersion )
-  
+    return S_OK(bundleVersion)
+
   def __transferFile(self, filetype, fileHelper):
     """
     This file is creates and transfers the CAs or CRLs file to the client.
     :param str filetype: we can define which file will be transfered to the client
     :param object fileHelper:
-    :return: S_OK or S_ERROR 
+    :return: S_OK or S_ERROR
     """
     if filetype == 'CAs':
       retVal = Utilities.generateCAFile()
     elif filetype == 'CRLs':
       retVal = Utilities.generateRevokedCertsFile()
     else:
-      return S_ERROR( "Not supported file type %s" % filetype )
-    
+      return S_ERROR("Not supported file type %s" % filetype)
+
     if not retVal['OK']:
       return retVal
     else:
-      result = fileHelper.getFileDescriptor( retVal['Value'], 'r' )
+      result = fileHelper.getFileDescriptor(retVal['Value'], 'r')
       if not result['OK']:
         result = fileHelper.sendEOF()
         # better to check again the existence of the file
-        if not os.path.exists( retVal['Value'] ):
-          return S_ERROR( 'File %s does not exist' % os.path.basename( retVal['Value'] ) )
+        if not os.path.exists(retVal['Value']):
+          return S_ERROR('File %s does not exist' % os.path.basename(retVal['Value']))
         else:
-          return S_ERROR( 'Failed to get file descriptor' )
+          return S_ERROR('Failed to get file descriptor')
       fileDescriptor = result['Value']
-      result = fileHelper.FDToNetwork( fileDescriptor )
+      result = fileHelper.FDToNetwork(fileDescriptor)
       fileHelper.oFile.close()  # close the file and return
       return result
