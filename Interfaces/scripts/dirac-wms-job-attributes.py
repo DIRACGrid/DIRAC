@@ -6,7 +6,7 @@
 """
   Retrieve attributes associated with the given DIRAC job
 """
-from __future__ import print_function, absolute_import, unicode_literals
+from __future__ import print_function, absolute_import
 
 __RCSID__ = "$Id$"
 

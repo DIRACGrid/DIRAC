@@ -41,8 +41,7 @@
     getCounters()
 """
 
-from __future__ import print_function, absolute_import, unicode_literals, division
-from builtins import str, int
+from __future__ import print_function, absolute_import, division
 from six.moves import range
 
 __RCSID__ = "$Id$"
@@ -282,7 +281,7 @@ class JobDB(DB):
         If parameterList is empty - all the parameters are returned.
     """
 
-    if isinstance(jobID, (str, int)):
+    if isinstance(jobID, (basestring, int, long)):
       jobID = [jobID]
 
     jobIDList = []
@@ -296,7 +295,7 @@ class JobDB(DB):
 
     resultDict = {}
     if paramList:
-      if isinstance(paramList, str):
+      if isinstance(paramList, basestring):
         paramList = paramList.split(',')
       paramNameList = []
       for pn in paramList:

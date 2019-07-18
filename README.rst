@@ -78,7 +78,9 @@ The contributions are subject to reviews.
 Pylint, and pep8 style checker are run regularly on the source code. The .pylintrc file defines the expected coding rules and peculiarities (e.g.: tabs consists of 2 spaces instead of 4).
 Each Pull Request is checked for pylint and pep8 compliance.
 
-Each PR is a also subject to check for python 3 compatibility. If you are issuing PRs, for each of the python files touched please run (and react to)::
+Each PR is a also subject to check for python 3 compatibility.
+If you are issuing PRs that are devoted to future versions of DIRAC (so, not for patch releases),
+for each of the python files touched please run (and react to)::
 
    pylint --rcfile=.travis.d/.pylintrc3k --py3k --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" --extension-pkg-whitelist=GSI,numpy path/to/file.py
 

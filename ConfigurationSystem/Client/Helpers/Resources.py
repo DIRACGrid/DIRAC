@@ -8,7 +8,6 @@ from distutils.version import LooseVersion  # pylint: disable=no-name-in-module,
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
 from DIRAC.Core.Utilities.List import uniqueElements, fromChar
-from DIRAC.Core.Utilities.Decorators import deprecated
 
 
 gBaseResourcesSection = "/Resources"

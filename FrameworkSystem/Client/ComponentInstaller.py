@@ -60,7 +60,7 @@ If a Master Configuration Server is being installed the following Options can be
 
 """
 
-from __future__ import print_function, absolute_import, unicode_literals
+from __future__ import print_function, absolute_import
 
 import os
 import re
@@ -69,7 +69,6 @@ import stat
 import time
 import shutil
 import socket
-from io import open
 
 import DIRAC
 from DIRAC import rootPath
