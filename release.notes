@@ -4,10 +4,10 @@
 FIX: (#4165) $Id$ keyword must be replaced only at the beginning of the file
 
 *RSS
-FIX: PublisherHandler fix (UnboundLocalError)
+FIX: (#4169) PublisherHandler fix (UnboundLocalError)
 
 *Docs
-NEW: /Operations/DataManagement - Added a link to the documentation on "Multi Protocol"
+NEW: (#4167) /Operations/DataManagement - Added a link to the documentation on "Multi Protocol"
 
 [v6r22p1]
 
