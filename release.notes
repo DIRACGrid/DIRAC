@@ -61,6 +61,17 @@ NEW: Added script (docs/Tools/UpdateDiracCFG.py) to collate the ConfigTemplate.c
 CHANGE: (#4110) updated basic tutorial for CC7 instead of SLC6.     
 NEW: (#4170) added Production system documentation
 
+[v6r22p2]
+
+*Core
+FIX: (#4165) $Id$ keyword must be replaced only at the beginning of the file
+
+*RSS
+FIX: (#4169) PublisherHandler fix (UnboundLocalError)
+
+*Docs
+NEW: (#4167) /Operations/DataManagement - Added a link to the documentation on "Multi Protocol"
+
 [v6r22p1]
 
 *WMS
@@ -125,6 +136,11 @@ CHANGE: (#4119) added note on MultiProcessor jobs preparation
 FIX: (#4119) Not lhcb but dteam (for DIRAC certification)
 FIX: (#4139) client_dms.sh not lhcb specific
 CHANGE:(#4140) adapt transformation certification tests to dteam VO
+
+[v6r21p13]
+
+*RSS
+FIX: (#4173) only use the hostname of FTS servers in the RSS commands
 
 [v6r21p12]
 
