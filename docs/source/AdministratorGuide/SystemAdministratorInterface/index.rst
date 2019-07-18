@@ -197,14 +197,14 @@ To install MySQL server::
 
 Installation of Databases for services can be added::
 
-    mardirac1.in2p3.fr >install db MPIJobDB
-    Adding to CS WorkloadManagement/MPIJobDB
-    Database MPIJobDB from EELADIRAC/WorkloadManagementSystem installed successfully
+    mardirac1.in2p3.fr >install db PilotAgentsDB
+    Adding to CS WorkloadManagement/PilotAgentsDB
+    Database PilotAgentsDB from EELADIRAC/WorkloadManagementSystem installed successfully
 
 Addition of new services::
 
-    mardirac1.in2p3.fr >install service WorkloadManagement MPIService
-    service WorkloadManagement_MPIService is installed, runit status: Run
+    mardirac1.in2p3.fr >install service WorkloadManagement PilotManager
+    service WorkloadManagement_PilotManager is installed, runit status: Run
 
 Addition of new agents::
 
@@ -220,11 +220,11 @@ Usage::
 
 For example, start a service::
 
-    mardirac1.in2p3.fr >start WorkloadManagement MPIService
+    mardirac1.in2p3.fr >start WorkloadManagement PilotManager
 
-    WorkloadManagement_MPIService started successfully, runit status:
+    WorkloadManagement_PilotManager started successfully, runit status:
 
-    WorkloadManagement_MPIService : Run
+    WorkloadManagement_PilotManager : Run
 
 Restart services or agents or database server::
 
@@ -238,11 +238,11 @@ Restarting all the services and agents::
 
 Restarting a specific service or agent::
 
-   mardirac1.in2p3.fr >restart WorkloadManagement MPIService
+   mardirac1.in2p3.fr >restart WorkloadManagement PilotManager
 
-   WorkloadManagement_MPIService started successfully, runit status:
+   WorkloadManagement_PilotManager started successfully, runit status:
 
-   WorkloadManagement_MPIService : Run
+   WorkloadManagement_PilotManager : Run
 
 Stop services or agents or database server::
 
@@ -255,11 +255,11 @@ Stop all the services and agents::
 
 Stop a specific service or agent::
 
-   mardirac1.in2p3.fr >stop WorkloadManagement MPIService
+   mardirac1.in2p3.fr >stop WorkloadManagement PilotManager
 
-   WorkloadManagement_MPIService stopped successfully, runit status:
+   WorkloadManagement_PilotManager stopped successfully, runit status:
 
-   WorkloadManagement_MPIService : Down
+   WorkloadManagement_PilotManager : Down
 
 
 
