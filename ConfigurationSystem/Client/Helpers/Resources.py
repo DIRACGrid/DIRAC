@@ -4,6 +4,8 @@
 __RCSID__ = "$Id$"
 
 import re
+import urlparse
+
 from distutils.version import LooseVersion  # pylint: disable=no-name-in-module,import-error
 
 from DIRAC import S_OK, S_ERROR, gConfig
