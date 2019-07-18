@@ -56,7 +56,7 @@ $installCfg::
      Project = DIRAC
      WebPortal = yes
      WebApp = yes
-     # Note: This service only needed, if does not exists in the machine used to install WebApp
+     # Note: This service is only needed, if does not exist on the machine used to install the WebApp
      Services = Framework/SystemAdministrator
      UseServerCertificate = yes
      SkipCADownload = yes
