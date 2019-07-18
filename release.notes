@@ -1,4 +1,4 @@
-[v7r0-pre18]
+[v7r0-pre19]
 
 FIX: (#3962) use print function instead of print statement
 FIX: (#3962) remove the usage of the long suffix to distinguish between long and int
@@ -24,6 +24,8 @@ CHANGE: Pilot Watchdog - using python UNIX services for some watchdog calls
 CHANGE: (#3890) JobState always connects to DBs directly
 CHANGE: (#3890) remove JobStateSync service
 CHANGE: (#3873) Watchdog: use Profiler instead of ProcessMonitor
+NEW: (#4163) SiteDirectors send by default Pilot3 (flag for pilot2 is still kept)
+FIX: (#4163) removed unicode_literals (messes up things with DEncode)
 
 *Core
 NEW: (#3744) Add update method to the ElasticSearchDB.py to update or if not available create the values 
@@ -42,6 +44,9 @@ NEW: (#4124) InputDataQuery and OutputDataQuery parameters can be set for Transf
 *ProductionManagement
 NEW: (#3703) ProductionManagement system is introduced
 
+*Interfaces
+CHANGE: (#4163) removed deprecated methods from Dirac.py
+
 *tests
 NEW: Add ChangeESFlag.py script to modify useES flag in dirac.cfg. To be integrated with Jenkins code.
 CHANGE: (#3760) Use the above Client classes instead of invoking RPCClient()
@@ -54,6 +59,7 @@ NEW: (#3744) Add WMS documentation in DeveloperGuide/Systems
 NEW: Added script (docs/Tools/UpdateDiracCFG.py) to collate the ConfigTemplate.cfg 
      files into the main dirac.cfg file
 CHANGE: (#4110) updated basic tutorial for CC7 instead of SLC6.     
+NEW: (#4170) added Production system documentation
 
 [v6r22p1]
 
