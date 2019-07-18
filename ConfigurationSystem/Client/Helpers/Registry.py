@@ -463,5 +463,12 @@ def getDNFromProxyProviderForUserID(proxyProvider, userID):
 
 
 def isDownloadableGroup(groupName):
-  option = "%s/Groups/%s/enableToDownload" % (gBaseRegistrySection, groupName)
-  return gConfig.getValue(option, True)
+  """ Get permission to download proxy with group in a argument
+
+      :params basestring groupName: DIRAC group
+
+      :return: boolean
+  """
+  if getGroupOption(groupName, 'DownloadableProxy') in [False, 'False', 'false', 'no']:
+    return False
+  return True
