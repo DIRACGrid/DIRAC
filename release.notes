@@ -1,3 +1,8 @@
+[v6r21p13]
+
+*RSS
+FIX: (#4173) only use the hostname of FTS servers in the RSS commands
+
 [v6r21p12]
 
 *WMS
