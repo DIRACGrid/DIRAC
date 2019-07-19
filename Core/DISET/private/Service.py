@@ -84,6 +84,12 @@ class Service(object):
 
   def initialize(self):
     # Initialize Monitoring
+    """ The global flag variable activityMonitoring is a newly added flag for extending the ES based Monitoring System
+        to support Service.py to send useful data to the ES backend which was being previously sent to RRD only through
+        gMonitor object.
+        Now in order to turn ES based monitoring which is completely based on the user he/she needs to add the
+        following flag i.e. 'AcitivityMonitoring = yes' inside /DIRAC/ of the configuration file.
+    """
     self.activityMonitoring = gConfig.getValue("/DIRAC/ActivityMonitoring", "false").lower() in ("yes", "true")
     if self.activityMonitoring:
       self.activityMonitoringReporter = MonitoringReporter(monitoringType="ComponentMonitoring")
@@ -306,6 +312,8 @@ class Service(object):
 
   def __reportThreadPoolContents(self):
     if self.activityMonitoring:
+      """ As ES accepts raw data these monitoring fields are being sent here because they are time dependant.
+      """
       self.activityMonitoringReporter.addRecord({
           'timestamp': time.time(),
           'site': self._cfg.getHostname(),
@@ -339,6 +347,8 @@ class Service(object):
     """
     self._stats['connections'] += 1
     if self.activityMonitoring:
+      """ As ES accepts raw data these monitoring fields are being sent here because they are action dependant.
+      """
       self.activityMonitoringReporter.addRecord({
           'timestamp': time.time(),
           'site': self._cfg.getHostname(),
@@ -623,6 +633,9 @@ class Service(object):
     return handlerObj._rh_executeConnectionCallback('drop')
 
   def __activityMonitoringReporting(self):
+    """ This method is called by the ThreadScheduler as a periodic task in order to commit the collected data which
+        is done by the MonitoringReporter and is send to the 'ComponentMonitoring' type.
+    """
     result = self.activityMonitoringReporter.commit()
     return result['OK']
 
