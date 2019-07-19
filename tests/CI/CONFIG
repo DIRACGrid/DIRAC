@@ -25,8 +25,9 @@ export DEFAULT_SERVER_HOST=server
 export DEFAULT_CLIENT_HOST=client
 
 # Settings for DIRAC installation
-#export DEFAULT_PRERELEASE=True
-export DEFAULT_DIRAC_RELEASE=v7r0-pre18
+export DEFAULT_PRERELEASE=unset
+export DEFAULT_DIRAC_RELEASE=unset
+export DEFAULT_DIRACBRANCH=unset
 
 # repository to get tests and install scripts from 
 export DEFAULT_TESTREPO=antolu
@@ -53,6 +54,11 @@ if [[ ! -z $CI_PROJECT_DIR ]]; then
     echo "I guess we're in GitLab CI, using local repository in branch ${CI_COMMIT_REF_NAME}"
     export DEFAULT_TESTREPO=$CI_PROJECT_DIR
     export DEFAULT_ALTERNATIVE_MODULES=$CI_PROJECT_DIR
+
+    # find the latest version
+    majorVersion=`grep "majorVersion =" __init__.py | cut -d "=" -f 2`
+    minorVersion=`grep "minorVersion =" __init__.py | cut -d "=" -f 2`
+    export DEFAULT_DIRACBRANCH=v${majorVersion// }r${minorVersion// }
 fi
 
 # Test specific variables
