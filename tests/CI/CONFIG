@@ -33,9 +33,6 @@ export DEFAULT_DIRACBRANCH=unset
 export DEFAULT_TESTREPO=antolu
 export DEFAULT_TESTBRANCH=ci
 
-export DEFAULT_LHCBDIRACBRANCH=unset          # LHCb DIRAC release
-export DEFAULT_LHCBDIRACTESTBRANCH=unset      # LHCb DIRAC tests
-
 export DEFAULT_DIRACOSVER=master
 
 # Versions of external services
@@ -44,7 +41,6 @@ export DEFAULT_ES_VER=6.6.0
 
 # Optional parameters
 
-#export DEFAULT_ALTERNATIVE_MODULES=https://github.com/antolu/DIRAC.git:::DIRAC:::v6r21
 export DEFAULT_ALTERNATIVE_MODULES=unset
 
 
@@ -59,6 +55,7 @@ if [[ ! -z $CI_PROJECT_DIR ]]; then
     majorVersion=`grep "majorVersion =" __init__.py | cut -d "=" -f 2`
     minorVersion=`grep "minorVersion =" __init__.py | cut -d "=" -f 2`
     export DEFAULT_DIRACBRANCH=v${majorVersion// }r${minorVersion// }
+    echo "Deduced DIRACBRANCH ${DEFAULT_DIRACBRANCH} from __init__.py"
 fi
 
 # Test specific variables
