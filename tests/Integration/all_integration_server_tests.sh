@@ -48,9 +48,9 @@ diracDFCDB >> testOutputs.txt 2>&1
 
 echo -e '***' $(date -u)  "Run the DFC client tests as user without admin privileges" >> testOutputs.txt 2>&1
 echo -e '***' $(date -u)  "Getting a non privileged user\n" >> testOutputs.txt 2>&1
-dirac-proxy-init -C $WORKSPACE/ServerInstallDIR/user/client.pem -K $WORKSPACE/ServerInstallDIR/user/client.key $DEBUG
+dirac-proxy-init -C $WORKSPACE/ServerInstallDIR/user/client.pem -K $WORKSPACE/ServerInstallDIR/user/client.key $DEBUG >> testOutputs.txt 2>&1
 python $SERVERINSTALLDIR/DIRAC/tests/Integration/DataManagementSystem/Test_Client_DFC.py >> testOutputs.txt 2>&1; (( ERR |= $? ))
-diracDFCDB
+diracDFCDB >> testOutputs.txt 2&>1
 python $SERVERINSTALLDIR/DIRAC/tests/Integration/DataManagementSystem/Test_FileCatalogDB.py >> testOutputs.txt 2>&1; (( ERR |= $? ))
 
 echo "Reinitialize the DFC DB" >> testOutputs.txt 2>&1
