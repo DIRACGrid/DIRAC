@@ -62,59 +62,28 @@ class FileCatalogDB(DB):
     # Obtain the plugins to be used for DB interaction
     self.objectLoader = ObjectLoader()
 
-    result = self.__loadCatalogComponent(databaseConfig['UserGroupManager'])
-    if not result['OK']:
-      return result
-    self.ugManager = result['Value']
+    # Load the configured components
+    for compAttribute, componentType in [(self.ugManager, "UserGroupManager"),
+                                         (self.seManager, "SEManager"),
+                                         (self.securityManager, "SecurityManager"),
+                                         (self.dtree, "DirectoryManager"),
+                                         (self.fileManager, "FileManager"),
+                                         (self.datasetManager, "DatasetManager"),
+                                         (self.dmeta, "DirectoryMetadata"),
+                                         (self.fmeta, "FileMetadata")] :
 
-    result = self.__loadCatalogComponent(databaseConfig['SEManager'])
-    if not result['OK']:
-      return result
-    self.seManager = result['Value']
-
-    result = self.__loadCatalogComponent(databaseConfig['SecurityManager'])
-    if not result['OK']:
-      return result
-    self.securityManager = result['Value']
-
-    result = self.__loadCatalogComponent(databaseConfig['DirectoryManager'])
-    if not result['OK']:
-      return result
-    self.dtree = result['Value']
-
-    result = self.__loadCatalogComponent(databaseConfig['FileManager'])
-    if not result['OK']:
-      return result
-    self.fileManager = result['Value']
-
-    result = self.__loadCatalogComponent(databaseConfig['DatasetManager'])
-    if not result['OK']:
-      return result
-    self.datasetManager = result['Value']
-
-    result = self.__loadCatalogComponent(databaseConfig['DirectoryMetadata'])
-    if not result['OK']:
-      return result
-    self.dmeta = result['Value']
-
-    result = self.__loadCatalogComponent(databaseConfig['FileMetadata'])
-    if not result['OK']:
-      return result
-    self.fmeta = result['Value']
+      result = self.__loadCatalogComponent(componentType, databaseConfig[componentType])
+      if not result['OK']:
+        return result
+      compAttribute = result['Value']
 
     return S_OK()
 
-  def __loadCatalogComponent(self, componentName):
+  def __loadCatalogComponent(self, componentType, componentName):
     """ Create an object of a given catalog component
     """
-    moduleName = componentName
-    # some modules contain several implementation classes
-    for m in ['SEManager', 'UserAndGroupManager', 'SecurityManager']:
-      if m in componentName:
-        moduleName = m
-    componentPath = 'DataManagementSystem.DB.FileCatalogComponents'
-    result = self.objectLoader.loadObject('%s.%s' % (componentPath, moduleName),
-                                          componentName.split('.')[-1])
+    componentPath = 'DataManagementSystem.DB.FileCatalogComponents.%s.%s' % (componentType, componentName)
+    result = self.objectLoader.loadObject('%s.%s' % (componentPath, componentName), componentName)
     if not result['OK']:
       gLogger.error('Failed to load catalog component', '%s: %s' % (componentName, result['Message']))
       return result

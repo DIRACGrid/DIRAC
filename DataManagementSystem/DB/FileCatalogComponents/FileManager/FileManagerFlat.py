@@ -4,7 +4,7 @@ import os
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.List import stringListToString, intListToString
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManagerBase import FileManagerBase
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManager.FileManagerBase import FileManagerBase
 
 
 class FileManagerFlat(FileManagerBase):

@@ -4,8 +4,9 @@
 __RCSID__ = "$Id$"
 
 import os
+
 from DIRAC import S_OK
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManagerBase import SecurityManagerBase, \
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager.SecurityManagerBase import SecurityManagerBase, \
     _readMethods, _writeMethods
 
 class NoSecurityManager(SecurityManagerBase):
