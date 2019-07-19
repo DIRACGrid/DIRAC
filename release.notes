@@ -1,3 +1,16 @@
+[v7r0-pre1]
+
+*Configuration
+CHANGE: (#4157) add new helper methods for IdP/Proxy Providers, OAuthManager. Add methods that 
+        read DN options in dirac user section
+
+*Framework
+CHANGE: (#4157) add possibility to work with Proxy Providers and "clean" proxy without 
+        voms/dirac extensions
+
+*Resources
+NEW: (#4157) ProxyProvider resources with implementation for DIRAC CA and PUSP proxy providers
+
 [v7r0-pre19]
 
 FIX: (#3962) use print function instead of print statement
