@@ -30,26 +30,11 @@ cd ../..
 
 echo -e '***' $(date -u) "**** Got the DIRAC tests ****\n"
 
-if [ ! -z $LHCBDIRACTESTBRANCH ]; then
-    echo "Detected LHCb branch ${LHCBDIRACTESTBRANCH}, getting the tests"
-    
-    git clone https://gitlab.cern.ch/lhcb-dirac/LHCbDIRAC.git
-    cd LHCbDIRAC
-    git checkout $LHCBDIRACTESTBRANCH
-    cd ../..
 
-    echo -e '***' $(date -u) "**** Got the LHCb DIRAC tests ****\n"
-fi
- 
 echo -e '***' $(date -u) "**** Server INSTALLATION START ****\n"
 
 sed -i "0,/\(Host = \).*/s//\1$SERVER_HOST/" TestCode/DIRAC/tests/Jenkins/install.cfg
-if [ -z $LHCBDIRACTESTBRANCH ]; then
-    source TestCode/DIRAC/tests/Jenkins/dirac_ci.sh
-else
-    sed -i "0,/\(Host = \).*/s//\1$SERVER_HOST/" TestCode/LHCbDIRAC/tests/Jenkins/install.cfg
-    source TestCode/LHCbDIRAC/tests/Jenkins/lhcb_ci.sh
-fi
+source TestCode/DIRAC/tests/Jenkins/dirac_ci.sh
 
 
 X509_CERT_DIR=$SERVERINSTALLDIR/etc/grid-security/certificates/ fullInstallDIRAC
