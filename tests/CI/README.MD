@@ -13,7 +13,7 @@ The default test environment can be overridden with manual pipelines and followi
 
 
 ## Running tests locally
-To run a test locally using the default configuration, make sure that the local computer fulfills the requirements [below](#system-requirements), and simply execute `run_integration_tests.sh` with *bash*. 
+To run a test locally using the default configuration, make sure that the local computer fulfills the requirements [below](#system-requirements), and simply execute `run_integration_docker.sh` with *bash*. 
 
 After the test process has been run, the server and client installation logs, as well as the server/client test logs can be retrieved to $PWD from the docker containers using `source utils.sh && getLogs`.
 
@@ -31,6 +31,8 @@ The following dependencies/softwares are required:
 sudo yum install -y docker
 sudo systemctl enable docker
 sudo systemctl start docker
+sudo groupadd docker
+sudo usermod -aG docker $USER    # So that you don't need sudo docker
 
 sudo yum install -y python-pip python-devel libffi-devel openssl-devel gcc glibc-devel make curl
 pip install docker-compose
@@ -40,7 +42,7 @@ pip install docker-compose
 
 The environment variables injected into the test environment are located in the CONFIG file. 
 
-The configuration will automatically detect if it is in GitLab CI, and will automatically configure to retrieve TestCode from the current branch. 
+The configuration will automatically detect if it is in GitLab CI, and will automatically configure to retrieve TestCode and source from the current branch, as well as setting the release to the one in `__init__.py`. 
 
 See the CONFIG file for specific details for every variable. 
 
@@ -53,15 +55,9 @@ I want to change the version of MySQL to 8.0 (from default 5.7). The correspondi
 
 ### Using local test repository and local source
 
-The pytests and DIRAC installations scripts (located in DIRAC/tests/Jenkins) can be fetched from a local source instead of a remote Git. 
+The pytests and DIRAC installations scripts (commonly referred to as TestCode) can be fetched from a local source instead of a remote Git. 
 To do this, export the `TESTREPO` variable as the absolute file path of the root of the local DIRAC repository. 
 
 DIRAC can also be (partially) installed from a local source by overriding the `ALTERNATIVE_MODULES` with the absolute file path of the root of the local DIRAC repository. 
 
-### LHCb DIRAC 
-
-LHCb DIRAC can be automatically installed alongside DIRAC, by exporting the variables `LHCBDIRACBRANCH` and `LHCBTESTBRANCH`, which will prompt the script to install LHCb DIRAC as well. 
-
-This feature is currently untested and may not work as intended. 
-
-There are plans to also run pytests from LHCb DIRAC, but they have not been implemented as of now. 
+The default for Gitlab CI is to use the local source (current repo/branch) for both TestCode and for DIRAC installation. 
