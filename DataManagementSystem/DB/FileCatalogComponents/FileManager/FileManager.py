@@ -6,7 +6,7 @@ __RCSID__ = "$Id$"
 import os
 
 from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManagerBase import FileManagerBase
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManager.FileManagerBase import FileManagerBase
 from DIRAC.Core.Utilities.List import stringListToString, \
     intListToString, \
     breakListIntoChunks

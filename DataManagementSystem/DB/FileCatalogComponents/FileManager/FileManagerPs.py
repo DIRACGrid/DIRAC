@@ -7,12 +7,10 @@ import os
 import datetime
 
 from DIRAC import S_OK, S_ERROR
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManagerBase import FileManagerBase
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManager.FileManagerBase import FileManagerBase
 from DIRAC.Core.Utilities.List import stringListToString, \
     intListToString, \
     breakListIntoChunks
-
-
 
 # The logic of some methods is basically a copy/paste from the FileManager class,
 # so I could have inherited from it. However, I did not want to depend on it
