@@ -1,7 +1,9 @@
 """ Helper for /Registry section
 """
+import errno
 
 from DIRAC import S_OK, S_ERROR
+from DIRAC.Core.Utilities import DErrno
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getVO
 
@@ -358,7 +360,14 @@ def getVOMSRoleGroupMapping(vo=''):
                "NoSyncVOMS": noVOMSSyncGroupList})
 
 
-def getUsernameForID(ID, usersList=False):
+def getUsernameForID(ID, usersList=None):
+  """ Get DIRAC user name by ID
+
+      :param basestring ID: user ID
+      :param list usersList: list of DIRAC user names
+
+      :return: S_OK(basestring)/S_ERROR()
+  """
   if not usersList:
     retVal = gConfig.getSections("%s/Users" % gBaseRegistrySection)
     if not retVal['OK']:
@@ -371,7 +380,95 @@ def getUsernameForID(ID, usersList=False):
 
 
 def getCAForUsername(username):
+  """ Get CA option by user name
+
+      :param basestring username: user name
+
+      :return: S_OK(basestring)/S_ERROR()
+  """
   dnList = gConfig.getValue("%s/Users/%s/CA" % (gBaseRegistrySection, username), [])
   if dnList:
     return S_OK(dnList)
   return S_ERROR("No CA found for user %s" % username)
+
+
+def __getDNSectionName(userDN):
+  """ Change user DN string by replacing special symbol that not used in
+      a section names, e.g.: "/O=O_test/OU=OU_test/F=F_test"
+      will replace to:       "-O_O_test-OU_OU_test-F_F_test"
+
+      :param basestring userDN: user DN
+
+      :return: basestring that can be use as a section name
+  """
+  return userDN.replace('/', '-').replace('=', '_')
+
+
+def getDNProperty(userDN, value):
+  """ Get property from DNProperties section by user DN
+
+      :param basestring userDN: user DN
+      :param basestring value: option that need to get
+
+      :return: S_OK(basestring,list)/S_ERROR() -- basestring or list that contain option value
+  """
+  result = getUsernameForDN(userDN)
+  if not result['OK']:
+    return result
+  secDN = __getDNSectionName(userDN)
+  return S_OK(gConfig.getValue("%s/Users/%s/DNProperties/%s/%s" %
+                               (gBaseRegistrySection, result['Value'], secDN, value)))
+
+
+def getProxyProvidersForDN(userDN):
+  """ Get proxy providers by user DN
+
+      :param basestring userDN: user DN
+
+      :return: S_OK(list)/S_ERROR()
+  """
+  result = getDNProperty(userDN, 'ProxyProviders')
+  if not result['OK']:
+    return result
+  ppList = result['Value'] or []
+  if not isinstance(ppList, list):
+    ppList = ppList.split()
+  return S_OK(ppList)
+
+
+def getDNFromProxyProviderForUserID(proxyProvider, userID):
+  """ Get groups by user DN in DNProperties
+
+      :param basestring proxyProvider: proxy provider name
+      :param basestring userID: user identificator
+
+      :return: S_OK(basestring)/S_ERROR()
+  """
+  # Get user name
+  result = getUsernameForID(userID)
+  if not result['OK']:
+    return result
+  # Get DNs from user
+  result = getDNForUsername(result['Value'])
+  if not result['OK']:
+    return result
+  for DN in result['Value']:
+    result = getProxyProvidersForDN(DN)
+    if not result['OK']:
+      return result
+    if proxyProvider in result['Value']:
+      return S_OK(DN)
+  return S_ERROR(errno.ENODATA,
+                 "No DN found for %s proxy provider for user ID %s" % (proxyProvider, userID))
+
+
+def isDownloadableGroup(groupName):
+  """ Get permission to download proxy with group in a argument
+
+      :params basestring groupName: DIRAC group
+
+      :return: boolean
+  """
+  if getGroupOption(groupName, 'DownloadableProxy') in [False, 'False', 'false', 'no']:
+    return False
+  return True

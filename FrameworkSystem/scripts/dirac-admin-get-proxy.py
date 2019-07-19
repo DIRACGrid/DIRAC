@@ -9,6 +9,8 @@
 from __future__ import print_function
 import os
 import DIRAC
+
+from DIRAC import gLogger
 from DIRAC.Core.Base import Script
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
@@ -37,7 +39,7 @@ class Params(object):
       fields = [f.strip() for f in arg.split(":")]
       self.proxyLifeTime = int(fields[0]) * 3600 + int(fields[1]) * 60
     except BaseException:
-      print("Can't parse %s time! Is it a HH:MM?" % arg)
+      gLogger.notice("Can't parse %s time! Is it a HH:MM?" % arg)
       return DIRAC.S_ERROR("Can't parse time argument")
     return DIRAC.S_OK()
 
@@ -56,7 +58,6 @@ class Params(object):
     Script.registerSwitch("u:", "out=", "File to write as proxy", self.setProxyLocation)
     Script.registerSwitch("a", "voms", "Get proxy with VOMS extension mapped to the DIRAC group", self.automaticVOMS)
     Script.registerSwitch("m:", "vomsAttr=", "VOMS attribute to require", self.setVOMSAttr)
-
 
 params = Params()
 params.registerCLISwitches()
@@ -82,14 +83,14 @@ if userDN.find("/") != 0:
   userName = userDN
   retVal = Registry.getDNForUsername(userName)
   if not retVal['OK']:
-    print("Cannot discover DN for username %s\n\t%s" % (userName, retVal['Message']))
+    gLogger.notice("Cannot discover DN for username %s\n\t%s" % (userName, retVal['Message']))
     DIRAC.exit(2)
   DNList = retVal['Value']
   if len(DNList) > 1:
-    print("Username %s has more than one DN registered" % userName)
+    gLogger.notice("Username %s has more than one DN registered" % userName)
     ind = 0
     for dn in DNList:
-      print("%d %s" % (ind, dn))
+      gLogger.notice("%d %s" % (ind, dn))
       ind += 1
     inp = raw_input("Which DN do you want to download? [default 0] ")
     if not inp:
@@ -104,7 +105,7 @@ if not params.proxyPath:
   if not userName:
     result = Registry.getUsernameForDN(userDN)
     if not result['OK']:
-      print("DN '%s' is not registered in DIRAC" % userDN)
+      gLogger.notice("DN '%s' is not registered in DIRAC" % userDN)
       DIRAC.exit(2)
     userName = result['Value']
   params.proxyPath = "%s/proxy.%s.%s" % (os.getcwd(), userName, userGroup)
@@ -117,12 +118,12 @@ else:
   result = gProxyManager.downloadProxy(userDN, userGroup, limited=params.limited,
                                        requiredTimeLeft=params.proxyLifeTime)
 if not result['OK']:
-  print('Proxy file cannot be retrieved: %s' % result['Message'])
+  gLogger.notice('Proxy file cannot be retrieved: %s' % result['Message'])
   DIRAC.exit(2)
 chain = result['Value']
 result = chain.dumpAllToFile(params.proxyPath)
 if not result['OK']:
-  print('Proxy file cannot be written to %s: %s' % (params.proxyPath, result['Message']))
+  gLogger.notice('Proxy file cannot be written to %s: %s' % (params.proxyPath, result['Message']))
   DIRAC.exit(2)
-print("Proxy downloaded to %s" % params.proxyPath)
+gLogger.notice("Proxy downloaded to %s" % params.proxyPath)
 DIRAC.exit(0)

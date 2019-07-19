@@ -652,3 +652,8 @@ def getElasticDBParameters(fullname):
   parameters['SSL'] = ssl
 
   return S_OK(parameters)
+
+
+def getOAuthAPI(instance):
+  """ Get OAuth API url """
+  return gConfig.getValue("/Systems/Framework/%s/URLs/OAuthAPI" % instance)

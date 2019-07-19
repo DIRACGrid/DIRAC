@@ -5,6 +5,7 @@ __RCSID__ = "$Id$"
 
 import re
 import urlparse
+
 from distutils.version import LooseVersion  # pylint: disable=no-name-in-module,import-error
 
 from DIRAC import S_OK, S_ERROR, gConfig
@@ -301,3 +302,36 @@ def getFilterConfig(filterID):
   :params filterID: string representing a filter identifier.
   """
   return gConfig.getOptionsDict('Resources/LogFilters/%s' % filterID)
+
+
+def getInfoAboutProviders(ofWhat=None, providerName=None, option='', section=''):
+  """ Get the information about providers
+
+      :param basestring ofWhat: provider of what(Id, Proxy or etc.) need to look,
+             don't set to get list of instance of what this providers
+      :param basestring providerName: provider name,
+             don't set to get list of providers names
+      :param basestring option: option name that need to get,
+             don't set to get all sections in section that set in argument section
+             set to 'all' to get all options in a section
+      :param basestring section: section path in root section of provider
+
+      :return: S_OK()/S_ERROR()
+  """
+  if not ofWhat:
+    result = gConfig.getSections(gBaseResourcesSection)
+    if not result['OK']:
+      return result
+    return S_OK([i.replace('Providers', '') for i in result['Value']])
+  if not providerName:
+    return gConfig.getSections('%s/%sProviders' % (gBaseResourcesSection, ofWhat))
+  if not option:
+    if not section:
+      return gConfig.getOptionsDict("%s/%sProviders/%s" % (gBaseResourcesSection, ofWhat, providerName))
+    else:
+      return gConfig.getSections('%s/%sProviders/%s/%s/' % (gBaseResourcesSection, ofWhat, providerName, section))
+  elif option == 'all':
+    return gConfig.getOptions('%s/%sProviders/%s/%s/' % (gBaseResourcesSection, ofWhat, providerName, section))
+  else:
+    return S_OK(gConfig.getValue('%s/%sProviders/%s/%s/%s' % (gBaseResourcesSection, ofWhat, providerName,
+                                                              section, option)))
