@@ -1,3 +1,10 @@
+#
+#   Extension docker image to contain Docker-compose, curl and bash
+#       to run the tests scripts in.
+#
+#.......................................................................
+
+
 FROM docker:latest
 MAINTAINER "Anton Lu" anton.lu@cern.ch
 

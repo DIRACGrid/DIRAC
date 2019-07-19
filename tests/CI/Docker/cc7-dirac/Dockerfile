@@ -1,3 +1,8 @@
+#
+#   Simple extension of CC7 with git, openssl and runit
+#
+#..................................................................
+
 FROM cern/cc7-base
 MAINTAINER "Anton" anton.lu@cern.ch
 
