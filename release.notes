@@ -1,4 +1,4 @@
-[v7r0-pre19]
+[v7r0-pre20]
 
 FIX: (#3962) use print function instead of print statement
 FIX: (#3962) remove the usage of the long suffix to distinguish between long and int
@@ -47,11 +47,15 @@ NEW: (#3703) ProductionManagement system is introduced
 *Interfaces
 CHANGE: (#4163) removed deprecated methods from Dirac.py
 
+*ResourceStatusSystem
+CHANGE: (#4177) use the ObjectLoader for Clients, in PEP
+
 *tests
 NEW: Add ChangeESFlag.py script to modify useES flag in dirac.cfg. To be integrated with Jenkins code.
 CHANGE: (#3760) Use the above Client classes instead of invoking RPCClient()
 NEW: (#3744) Added performance tests for ES and MySQL for WMS DB backends
 NEW: (#3744) Added miniInstallDIRAC function for Jenkins jobs
+FIX: (#4177) restored test of JobsMonitor().JobParameters
 
 *Docs
 FIX: Better dirac.cfg example configuration for web
