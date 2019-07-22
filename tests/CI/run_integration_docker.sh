@@ -22,9 +22,10 @@ cd $SCRIPT_DIR
 TMP=/tmp/DIRAC_CI_`date +"%Y%m%d%I%M%p"`
 mkdir -p $TMP
 
-source CONFIG
-source utils.sh
-mkdir tmp || ( echo "Did you run cleanup.sh before trying again?" && exit 1 )
+echo $PWD
+ls
+source ./CONFIG
+source ./utils.sh
 export CONFIGFILE=$TMP/CONFIG
 
 parseArguments
@@ -36,14 +37,14 @@ echo -e "\n****" $(date -u) "Creating user and copying scripts ****"
 # DIRAC server user and scripts
 docker exec server adduser -s /bin/bash -d $USER_HOME $USER
 
-docker cp install_server.sh server:$USER_HOME
+docker cp ./install_server.sh server:$USER_HOME
 docker cp $CONFIGFILE server:$USER_HOME
 
 # DIRAC client user and scripts
 docker exec client adduser -s /bin/bash -d $USER_HOME $USER
 
 docker cp $CONFIGFILE client:$USER_HOME
-docker cp install_client.sh client:$USER_HOME
+docker cp ./install_client.sh client:$USER_HOME
 
 if [[ -d $TESTREPO ]]; then
     docker exec server mkdir -p $WORKSPACE/LocalRepo/TestCode
