@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 #
 #   Executable script to install full DIRAC server
 #

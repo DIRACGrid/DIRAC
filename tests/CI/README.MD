@@ -17,7 +17,7 @@ To run a test locally using the default configuration, make sure that the local 
 
 After the test process has been run, the server and client installation logs, as well as the server/client test logs can be retrieved to $PWD from the docker containers using `source utils.sh && getLogs`.
 
-The `cleanup.sh` script is a convenience script to take down and remove the created Docker containers and removes temporary files. 
+The command `docker-compose -f tests/CI/docker-compose.yml down -v` stops and removes the spawned containers (cleanup). 
 
 ### System requirements
 

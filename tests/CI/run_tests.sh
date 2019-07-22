@@ -6,11 +6,11 @@
 #   Requires arguments
 #     $INSTALLROOT - should contain directories TestCode, ServerInstallDIR,
 #                    ClientInstallDIR
-#     $AGENT       - client or server, deciding which tests to run
+#     $INSTALLTYPE - client or server, deciding which tests to run
 #
 #.........................................................................
 
-if [[ -z $INSTALLROOT || -z $AGENT ]]; then
+if [[ -z $INSTALLROOT || -z $INSTALLTYPE ]]; then
     echo "Arguments missing. "
     exit 1
 fi
@@ -27,7 +27,7 @@ source $TESTCODE/DIRAC/tests/Jenkins/dirac_ci.sh
 
 echo -e '***' $(date -u) "**** Starting integration tests on ${AGENT} ****\n"
 
-if [ $AGENT == "server" ]; then
+if [ $INSTALLTYPE == "server" ]; then
     source $SERVERINSTALLDIR/bashrc
 
     sed -i "s/\(elHost = \).*/\1'elasticsearch'/" $TESTCODE/DIRAC/tests/Integration/Core/Test_ElasticsearchDB.py
@@ -35,7 +35,7 @@ if [ $AGENT == "server" ]; then
     cp -r $TESTCODE/DIRAC/tests $SERVERINSTALLDIR/DIRAC/
 
     source $SERVERINSTALLDIR/DIRAC/tests/Integration/all_integration_server_tests.sh
-elif [ $AGENT == "client" ]; then
+elif [ $INSTALLTYPE == "client" ]; then
     source $CLIENTINSTALLDIR/bashrc
 
     cp -r $TESTCODE/DIRAC/tests $CLIENTINSTALLDIR/DIRAC/
