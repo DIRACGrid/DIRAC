@@ -65,6 +65,16 @@ NEW: Added script (docs/Tools/UpdateDiracCFG.py) to collate the ConfigTemplate.c
 CHANGE: (#4110) updated basic tutorial for CC7 instead of SLC6.     
 NEW: (#4170) added Production system documentation
 
+[v6r22p3]
+
+*WMS
+CHANGE: (#4175) added function to get the number of Processors, using it in dirac-wms-get-wn-parameters (invoked by the pilots)
+CHANGE: (#4175) changed port of PilotManager from 9129 to 9171
+
+*docs
+CHANGE: (#4174) update WebApp administrator docs
+CHANGE: (#4175) removed mentions of MPIService
+
 [v6r22p2]
 
 *Core
