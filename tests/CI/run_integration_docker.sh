@@ -17,16 +17,17 @@
 
 set -e
 
+CWD=$PWD
 SCRIPT_DIR="$( cd "$( dirname "$0" )" >/dev/null 2>&1 && pwd )"
-cd $SCRIPT_DIR
 TMP=/tmp/DIRAC_CI_`date +"%Y%m%d%I%M%p"`
 mkdir -p $TMP
 
 echo $PWD
 ls
-source ./CONFIG
-source ./utils.sh
+source $SCRIPT_DIR/CONFIG
+source $SCRIPT_DIR/utils.sh
 export CONFIGFILE=$TMP/CONFIG
+cd $SCRIPT_DIR
 
 parseArguments
 
