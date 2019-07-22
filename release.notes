@@ -1,4 +1,4 @@
-[v7r0-pre1]
+[v7r1-pre1]
 
 *Configuration
 CHANGE: (#4157) add new helper methods for IdP/Proxy Providers, OAuthManager. Add methods that 
