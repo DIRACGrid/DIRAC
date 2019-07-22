@@ -23,7 +23,7 @@ Services associated with WorkloadManagement System:
 +--------------------+----------+
 | *Matcher*          | 9170     |
 +--------------------+----------+
-| *MPIService*       | 9171     |
+| *PilotManager*     | 9171     |
 +--------------------+----------+
 | *SandboxStore*     | 9196     |
 +--------------------+----------+
