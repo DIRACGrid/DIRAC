@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 #    Executable script to set up DIRAC server and client instances with
 #        ElasticSearch and MySQL services, all in docker containers.
