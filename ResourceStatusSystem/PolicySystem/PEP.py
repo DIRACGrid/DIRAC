@@ -47,21 +47,21 @@ class PEP(object):
                                     'ResourceStatusClient')
     if not res['OK']:
       self.log.error('Failed to load ResourceStatusClient class: %s' % res['Message'])
-      return res
+      raise ImportError(res['Message'])
     rsClass = res['Value']
 
     res = ObjectLoader().loadObject('DIRAC.ResourceStatusSystem.Client.ResourceManagementClient',
                                     'ResourceManagementClient')
     if not res['OK']:
       self.log.error('Failed to load ResourceManagementClient class: %s' % res['Message'])
-      return res
+      raise ImportError(res['Message'])
     rmClass = res['Value']
 
     res = ObjectLoader().loadObject('DIRAC.ResourceStatusSystem.Client.SiteStatus',
                                     'SiteStatus')
     if not res['OK']:
       self.log.error('Failed to load SiteStatus class: %s' % res['Message'])
-      return res
+      raise ImportError(res['Message'])
     ssClass = res['Value']
 
     if 'ResourceStatusClient' not in clients:
