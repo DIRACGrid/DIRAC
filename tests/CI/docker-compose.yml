@@ -31,19 +31,11 @@ services:
     image: gitlab-registry.cern.ch/alu/dirac/cc7-dirac
     container_name: server
     hostname: server
-#    extra_hosts:
-#      mysql: mysql
-#      elasticsearch: elasticsearch
     depends_on:
       mysql:
         condition: service_healthy
       elasticsearch:
         condition: service_healthy
-    # healthcheck:
-    #   test: ["CMD", "ping -c 1 locahost"]
-    #   interval: 30s
-    #   timeout: 10s
-    #   retries: 5
       
   dirac-client:
     image: gitlab-registry.cern.ch/alu/dirac/cc7-dirac
@@ -51,9 +43,5 @@ services:
     hostname: client
     depends_on:
       - dirac-server
-    # healthcheck:
-    #   test: ["CMD", "ping -c locahost"]
-    #   interval: 30s
-    #   timeout: 10s
-    #   retries: 5
+
 

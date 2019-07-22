@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 #
 #   Executable script to install the DIRAC client
 #
@@ -11,7 +11,6 @@ set -e
 source CONFIG
 
 CSURL=dips://$SERVER_HOST:9135/Configuration/Server
-DIRACSETUP=dirac-JenkinsSetup
 
 
 echo -e '***' $(date -u) "**** Getting the tests ****\n"
@@ -29,6 +28,9 @@ else
     git checkout $TESTBRANCH
     echo "Using remote test repository ${TESTREPO} in branch ${TESTBRANCH}"
 fi
+
+
+DIRACSETUP=`cat tests/Jenkins/install.cfg | grep "Setup = " | cut -f5 -d " "`
 
 cd ../..
 
