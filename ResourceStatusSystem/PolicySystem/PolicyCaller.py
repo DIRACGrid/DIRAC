@@ -1,4 +1,3 @@
-# $HeadURL $
 ''' PolicyCaller
 
   Module used for calling policies. Its class is used for invoking

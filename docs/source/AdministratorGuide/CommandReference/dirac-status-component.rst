@@ -53,7 +53,6 @@ Example::
                    Framework_UserProfileManager : Run        4025     2182
                   DataManagement_StorageElement : Run        4024     2227
              Framework_TopErrorMessagesReporter : Run        4029     1672
-                  WorkloadManagement_MPIService : Run        4024     2226
                        Configuration_CE2CSAgent : Run           1    32461
               WorkloadManagement_JobStateUpdate : Run        4025     2117
                   Framework_SystemLoggingReport : Run        4024     2220

@@ -1,4 +1,4 @@
-[v7r0-pre1]
+[v7r1-pre1]
 
 *Configuration
 CHANGE: (#4157) add new helper methods for IdP/Proxy Providers, OAuthManager. Add methods that 
@@ -11,7 +11,7 @@ CHANGE: (#4157) add possibility to work with Proxy Providers and "clean" proxy w
 *Resources
 NEW: (#4157) ProxyProvider resources with implementation for DIRAC CA and PUSP proxy providers
 
-[v7r0-pre19]
+[v7r0-pre20]
 
 FIX: (#3962) use print function instead of print statement
 FIX: (#3962) remove the usage of the long suffix to distinguish between long and int
@@ -60,11 +60,15 @@ NEW: (#3703) ProductionManagement system is introduced
 *Interfaces
 CHANGE: (#4163) removed deprecated methods from Dirac.py
 
+*ResourceStatusSystem
+CHANGE: (#4177) use the ObjectLoader for Clients, in PEP
+
 *tests
 NEW: Add ChangeESFlag.py script to modify useES flag in dirac.cfg. To be integrated with Jenkins code.
 CHANGE: (#3760) Use the above Client classes instead of invoking RPCClient()
 NEW: (#3744) Added performance tests for ES and MySQL for WMS DB backends
 NEW: (#3744) Added miniInstallDIRAC function for Jenkins jobs
+FIX: (#4177) restored test of JobsMonitor().JobParameters
 
 *Docs
 FIX: Better dirac.cfg example configuration for web
@@ -73,6 +77,16 @@ NEW: Added script (docs/Tools/UpdateDiracCFG.py) to collate the ConfigTemplate.c
      files into the main dirac.cfg file
 CHANGE: (#4110) updated basic tutorial for CC7 instead of SLC6.     
 NEW: (#4170) added Production system documentation
+
+[v6r22p3]
+
+*WMS
+CHANGE: (#4175) added function to get the number of Processors, using it in dirac-wms-get-wn-parameters (invoked by the pilots)
+CHANGE: (#4175) changed port of PilotManager from 9129 to 9171
+
+*docs
+CHANGE: (#4174) update WebApp administrator docs
+CHANGE: (#4175) removed mentions of MPIService
 
 [v6r22p2]
 

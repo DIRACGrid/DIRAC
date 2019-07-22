@@ -19,7 +19,6 @@ Databases used by WorkloadManagement System. Note that each database is a separa
 The databases associated to WorkloadManagement System are:
 - JobDB
 - JobLoggingDB
-- MPIJobDB
 - PilotAgentDB
 - SandboxMetadataDB
 - TaskQueueDB
