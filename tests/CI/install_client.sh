@@ -8,7 +8,7 @@
 
 set -e
 
-source CONFIG
+source ./CONFIG
 
 CSURL=dips://$SERVER_HOST:9135/Configuration/Server
 
@@ -37,6 +37,7 @@ cd ../..
 
 echo -e '***' $(date -u) "**** Got the DIRAC tests ****\n"
 
+source ./TestCode/DIRAC/tests/Jenkins/dirac_ci.sh
 
 echo -e '***' $(date -u) "**** Client INSTALLATION START ****\n"
 
