@@ -10,7 +10,7 @@ from DIRAC.ResourceStatusSystem.Service.ResourceStatusHandler import convert
 from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
 
 
-__RCSID__ = '$Id: $'
+__RCSID__ = '$Id$'
 
 
 def initializeResourceManagementHandler(_serviceInfo):

@@ -5,10 +5,8 @@
 
 __RCSID__ = "$Id$"
 
-import multiprocessing
-
 from DIRAC.Core.Base import Script
-from DIRAC import gLogger, gConfig
+from DIRAC import gLogger
 from DIRAC.WorkloadManagementSystem.Utilities import JobParameters
 
 Script.setUsageMessage('\n'.join(['Get the parameters (Memory and Number of processors) of a worker node',
@@ -41,26 +39,16 @@ Script.registerSwitch("S:", "Site=", "Site Name (Mandatory)", setSite)
 Script.registerSwitch("Q:", "Queue=", "Queue Name (Mandatory)", setQueue)
 Script.parseCommandLine(ignoreErrors=True)
 
-grid = Site.split('.')[0]
-gLogger.info("Getting numberOfProcessors from MJF")
-numberOfProcessor = JobParameters.getProcessorFromMJF()
-if not numberOfProcessor:
-  gLogger.info("NumberOfProcessors could not be found in MJF, trying from CS (queue definition)")
-  numberOfProcessor = gConfig.getValue('/Resources/Sites/%s/%s/CEs/%s/Queues/%s/NumberOfProcessors' % (grid,
-                                                                                                       Site,
-                                                                                                       ceName,
-                                                                                                       Queue))
-  if not numberOfProcessor:
-    gLogger.info("NumberOfProcessors could not be found in CS queue definition, ",
-                 "trying from /Resources/Sites/%s/NumberOfProcessors" % grid)
-    numberOfProcessor = gConfig.getValue('/Resources/Sites/%s/NumberOfProcessors' % grid)
-    if not numberOfProcessor:
-      gLogger.info("NumberOfProcessors could not be found in CS, using multiprocessing.cpu_count()")
-      numberOfProcessor = multiprocessing.cpu_count()
+
+gLogger.info("Getting number of processors")
+numberOfProcessor = JobParameters.getNumberOfProcessors(Site, ceName, Queue)
+
 
 gLogger.info("Getting memory (RAM) from MJF")
 maxRAM = JobParameters.getMemoryFromMJF()
 if not maxRAM:
   gLogger.info("maxRAM could not be found in MJF, using JobParameters.getMemoryFromProc()")
   maxRAM = JobParameters.getMemoryFromProc()
+
+# just communicating it back
 gLogger.notice(numberOfProcessor, maxRAM)
