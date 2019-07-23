@@ -22,39 +22,124 @@ function parseArguments() {
 
     local DEFAULT_VARS=( ${!DEFAULT_@} )
     local DEFAULT_VAR
-    
+
+    echo "=> Parsing configuration"
     for DEFAULT_VAR in "${DEFAULT_VARS[@]}"; do
         local VAR_NAME=${DEFAULT_VAR#"DEFAULT_"}
+	local CLIENT_VAR_NAME="CLIENT_"$VAR_NAME
+	local SERVER_VAR_NAME="SERVER_"$VAR_NAME
 
-	if [ -z "${!VAR_NAME}" ]; then
+	# Client config
+	if [ ! -z "${!CLIENT_VAR_NAME}" ]; then
+	    local CLIENT_VAR_VAL=${!CLIENT_VAR_NAME}
+	    if [ $CLIENT_VAR_VAL == "unset" ]; then
+		echo "[CLIENT] Unsetting default value ${CLIENT_VAR_VAL}"
+	    else
+		echo "[CLIENT] Overriding default value with ${CLIENT_VAR_VAL} for ${CLIENT_VAR_NAME}"
+		writeToConfig $VAR_NAME $CLIENT_VAR_VAL $CLIENTCONFIG
+	    fi
+	elif [ -z "${!VAR_NAME}" ]; then
 	    local DEFAULT_VAL=${!DEFAULT_VAR}
-	    if [[ $DEFAULT_VAL == "unset" ]]; then
-		echo "Variable ${VAR_NAME} is unset, skipping."
+	    if [ $DEFAULT_VAL == "unset" ]; then
+		echo "[CLIENT] Variable ${VAR_NAME} is unset, skipping."
 		continue
 	    else
-		echo "Setting default value ${DEFAULT_VAL} for ${VAR_NAME}"
-		eval $VAR_NAME="${DEFAULT_VAL}"
-		export $VAR_NAME
+		echo "[CLIENT] Setting default value ${DEFAULT_VAL} for ${VAR_NAME}"
+		writeToConfig $VAR_NAME $DEFAULT_VAL $CLIENTCONFIG
 	    fi
         else
 	    local VAR_VAL="${!VAR_NAME}"
-	    echo "Using injected value ${VAR_VAL} for ${VAR_NAME}"
+
+	    if [ $VAR_VAL == "unset" ]; then
+		echo "[CLIENT] Unsetting default value ${VAR_NAME}"
+	    else
+		echo "[CLIENT] Using injected value ${VAR_VAL} for ${VAR_NAME}"
+		writeToConfig $VAR_NAME $VAR_VAL $CLIENTCONFIG
+	    fi
 	fi
 
-	if [ ! -z $CONFIGFILE ]; then
-	    if [[ $VAR_NAME == "ALTERNATIVE_MODULES" && -d $ALTERNATIVE_MODULES ]]; then
-		echo "export ALTERNATIVE_MODULES=${WORKSPACE}/LocalRepo/ALTERNATIVE_MODULES/$(basename $ALTERNATIVE_MODULES)" >> $CONFIGFILE
-		continue
-	    elif [[ $VAR_NAME == "TESTREPO" && -d $TESTREPO ]]; then
-		echo "export TESTREPO=${WORKSPACE}/LocalRepo/TestCode/$(basename $TESTREPO)" >> $CONFIGFILE
-		continue
+	# Server config
+	if [ ! -z "${!SERVER_VAR_NAME}" ]; then
+	    local SERVER_VAR_VAL=${!SERVER_VAR_NAME}
+	    if [ $SERVER_VAR_VAL == "unset" ]; then
+		echo "[SERVER] Unsetting default value ${SERVER_VAR_VAL}"
+	    else
+		echo "[SERVER] Overriding default value with ${SERVER_VAR_VAL} for ${SERVER_VAR_NAME}"
+		writeToConfig $VAR_NAME $SERVER_VAR_VAL $SERVERCONFIG
 	    fi
-	    
-	    echo "export ${VAR_NAME}=${!VAR_NAME}" >> $CONFIGFILE
+	elif [ -z "${!VAR_NAME}" ]; then
+	    local DEFAULT_VAL=${!DEFAULT_VAR}
+	    if [ $DEFAULT_VAL == "unset" ]; then
+		echo "[SERVER] Variable ${VAR_NAME} is unset, skipping."
+		continue
+	    else
+		echo "[SERVER] Setting default value ${DEFAULT_VAL} for ${VAR_NAME}"
+		writeToConfig $VAR_NAME $DEFAULT_VAL $SERVERCONFIG
+	    fi
+        else
+	    local VAR_VAL="${!VAR_NAME}"
+
+	    if [ $VAR_VAL == "unset" ]; then
+		echo "[SERVER] Unsetting default value ${VAR_NAME}"
+	    else
+		echo "[SERVER] Using injected value ${VAR_VAL} for ${VAR_NAME}"
+		writeToConfig $VAR_NAME $VAR_VAL $SERVERCONFIG
+	    fi
 	fi
     done
 }
 
+#...............................................................................
+#
+#   Writes "export $1=$2" to $3 (Config file)
+#
+#...............................................................................
+
+writeToConfig() {
+    local VAR_NAME=$1
+    local VAR_VAL=$2
+    local CONFIG=$3
+    if [[ $VAR_NAME == "ALTERNATIVE_MODULES" && -d $VAR_VAL ]]; then
+	echo "export ALTERNATIVE_MODULES=${WORKSPACE}/LocalRepo/ALTERNATIVE_MODULES/$(basename $VAR_VAL)" >> $CONFIG
+    elif [[ $VAR_NAME == "TESTREPO" && -d $VAR_VAL ]]; then
+	echo "export TESTREPO=${WORKSPACE}/LocalRepo/TestCode/$(basename $VAR_VAL)" >> $CONFIG
+    elif [ $VAR_NAME == "MYSQL_VER" || $VAR_NAME == "ES_VER" ]; then
+	eval $VAR_NAME="${VAR_VAL}"
+	export $VAR_NAME
+    else
+	echo "export ${1}=${2}" >> $CONFIG
+    fi
+}
+
+#...............................................................................
+#
+#   Copies local source and test code to docker containers, if they are
+#       directories.
+#   Requires $CLIENTCONFIG and $SERVERCONFIG to be defined. 
+#
+#...............................................................................
+
+function copyLocalSource() {
+    source $CLIENTCONFIG
+    if [ -d $TESTREPO ]; then
+	docker exec client mkdir -p $WORKSPACE/LocalRepo/TestCode
+	docker cp $TESTREPO client:$WORKSPACE/LocalRepo/TestCode
+    fi
+    if [ -d $ALTERNATIVE_MODULES ]; then
+	docker exec client mkdir -p $WORKSPACE/LocalRepo/ALTERNATIVE_MODULES
+	docker cp $ALTERNATIVE_MODULES client:$WORKSPACE/LocalRepo/ALTERNATIVE_MODULES
+    fi
+
+    source $SERVERCONFIG
+    if [ -d $TESTREPO ]; then
+	docker exec server mkdir -p $WORKSPACE/LocalRepo/TestCode
+	docker cp $TESTREPO server:$WORKSPACE/LocalRepo/TestCode
+    fi
+    if [ -d $ALTERNATIVE_MODULES ]; then
+	docker exec server mkdir -p $WORKSPACE/LocalRepo/ALTERNATIVE_MODULES
+	docker cp $ALTERNATIVE_MODULES server:$WORKSPACE/LocalRepo/ALTERNATIVE_MODULES
+    fi
+}
 
 #...............................................................................
 #
