@@ -1,7 +1,7 @@
 image: gitlab-registry.cern.ch/alu/dirac/docker-compose
 
 services:
-  - name: docker:dind
+  - name: docker:18-dind
 
 before_script:
   - "echo ${CI_REGISTRY_PASSWORD} | docker login -u ${CI_REGISTRY_USER} ${CI_REGISTRY} --password-stdin"
@@ -11,7 +11,7 @@ variables:
 
 test:
   script:
-    - "bash tests/CI/run_docker_setup"
+    - "bash tests/CI/run_docker_setup.sh"
   after_script:
     - "bash -c 'source tests/CI/utils.sh && getLogs'"
   artifacts:
