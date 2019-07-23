@@ -384,8 +384,13 @@ function installDIRAC(){
     return
   fi
 
-  # now configuring
+  # make sure there's no variable in between
+  unset DIRAC
+  unset DIRACOS
+  unset DIRACPLAT
   source bashrc
+
+  # now configuring
   dirac-configure -S $DIRACSETUP -C $CSURL --SkipCAChecks $CONFIGUREOPTIONS $DEBUG
   if [ $? -ne 0 ]
   then
@@ -395,13 +400,6 @@ function installDIRAC(){
 
   echo 'Content of etc/dirac.cfg:'
   more $CLIENTINSTALLDIR/etc/dirac.cfg
-
-  source bashrc
-  if [ $? -ne 0 ]
-  then
-    echo 'ERROR: source bashrc failed'
-    return
-  fi
 }
 
 ##############################################################################
