@@ -177,6 +177,11 @@ class WMSChain(TestWMSTestCase):
     jobIDList = result['Value']
     self.assertEqual(len(jobIDList), 3)
 
+    result = jobMonitor.getJobsParameters(jobIDList, ['JobName'])
+    self.assertTrue(result['OK'])
+    jobNames = [result['Value'][jobID]['JobName'] for jobID in result['Value']]
+    self.assertEqual(set(jobNames), set(['parametric_helloWorld_%s' % nJob for nJob in range(3)]))
+
     for jobID in jobIDList:
       result = jobStateUpdate.setJobStatus(jobID, 'Done', 'matching', 'source')
       self.assertTrue(result['OK'])
@@ -212,6 +217,9 @@ class JobMonitoring(TestWMSTestCase):
     self.assertTrue(res['OK'])
     res = jobMonitor.getJobJDL(jobID, False)
     self.assertTrue(res['OK'])
+    res = jobMonitor.getJobsParameters([jobID], [])
+    self.assertTrue(res['OK'])
+    self.assertEqual(res['Value'], {})
     res = jobMonitor.getJobOwner(jobID)
     self.assertTrue(res['OK'])
 

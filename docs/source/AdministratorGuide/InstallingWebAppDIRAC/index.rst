@@ -26,7 +26,7 @@ Configuration file
 You can use a standard configuration file for example :ref:`install_primary_server`. Please make sure that the following lines are exists in the
 configuration file::
 
-   Externals = WebApp
+   Extensions = WebApp
    WebApp = yes
 
 $installCfg::
@@ -52,10 +52,11 @@ $installCfg::
      # (WebApp is required if you are installing the Portal on this server).
      #  Only modules not defined as default to install in their projects need to be defined here:
      #   i.e. LHCb, LHCbWeb for LHCb for example: Extensions = WebAppDIRAC,LHCb,LHCbWeb
-     Externals = WebApp
+     Extensions = WebApp
      Project = DIRAC
      WebPortal = yes
      WebApp = yes
+     # Note: This service is only needed, if does not exist on the machine used to install the WebApp
      Services = Framework/SystemAdministrator
      UseServerCertificate = yes
      SkipCADownload = yes
@@ -73,6 +74,7 @@ Create the configuration file::
    - vim /home/dirac/DIRAC/install.cfg
    - copy the lines above the this file...
    - cd /home/dirac/DIRAC
+   - curl -O https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/Core/scripts/install_site.sh
    - chmod +x install_site.sh
    - ./install_site.sh install.cfg # use -v for specifying a version
    - source /opt/dirac/bashrc

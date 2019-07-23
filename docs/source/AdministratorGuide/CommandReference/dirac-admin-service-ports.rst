@@ -36,7 +36,7 @@ Example::
    'WorkloadManagement/JobManager': 9132,
    'WorkloadManagement/JobMonitoring': 9130,
    'WorkloadManagement/JobStateUpdate': 9136,
-   'WorkloadManagement/MPIService': 9171,
+   'WorkloadManagement/PilotManager': 9171,
    'WorkloadManagement/Matcher': 9170,
    'WorkloadManagement/SandboxStore': 9196,
    'WorkloadManagement/WMSAdministrator': 9145}
