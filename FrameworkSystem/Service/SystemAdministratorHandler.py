@@ -241,23 +241,6 @@ class SystemAdministratorHandler(RequestHandler):
     """
     return gComponentInstaller.getAvailableDatabases(getCSExtensions())
 
-  types_installMySQL = []
-
-  def export_installMySQL(self, mysqlPassword=None, diracPassword=None):
-    """ Install MySQL database server
-    """
-
-    if mysqlPassword or diracPassword:
-      gComponentInstaller.setMySQLPasswords(mysqlPassword, diracPassword)
-    if gComponentInstaller.mysqlInstalled()['OK']:
-      return S_OK('Already installed')
-
-    result = gComponentInstaller.installMySQL()
-    if not result['OK']:
-      return result
-
-    return S_OK('Successfully installed')
-
   types_installDatabase = [basestring]
 
   def export_installDatabase(self, dbName, mysqlPassword=None):

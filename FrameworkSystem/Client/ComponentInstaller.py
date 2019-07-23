@@ -1502,7 +1502,6 @@ class ComponentInstaller(object):
 
     # Now get the necessary info from self.localCfg
     setupSystems = self.localCfg.getOption(cfgInstallPath('Systems'), ['Configuration', 'Framework'])
-    installMySQLFlag = self.localCfg.getOption(cfgInstallPath('InstallMySQL'), False)
     setupDatabases = self.localCfg.getOption(cfgInstallPath('Databases'), [])
     setupServices = [k.split('/') for k in self.localCfg.getOption(cfgInstallPath('Services'), [])]
     setupAgents = [k.split('/') for k in self.localCfg.getOption(cfgInstallPath('Agents'), [])]
@@ -1708,13 +1707,7 @@ class ComponentInstaller(object):
       cfg = self.__getCfg(cfgPath('DIRAC', 'Configuration'), 'AutoPublish', 'no')
       self._addCfgToDiracCfg(cfg)
 
-    # 2.- Check if MySQL is to be installed
-    if installMySQLFlag:
-      gLogger.notice('Installing MySQL')
-      self.getMySQLPasswords()
-      self.installMySQL()
-
-    # 3.- Install requested Databases
+    # 2.- Install requested Databases
     # if MySQL is not installed locally, we assume a host is given
     if setupDatabases:
       result = self.getDatabases()
@@ -1761,28 +1754,28 @@ class ComponentInstaller(object):
           DIRAC.exit(-1)
         return S_ERROR(error)
 
-    # 4.- Then installed requested services
+    # 3.- Then installed requested services
     for system, service in setupServices:
       result = self.setupComponent('service', system, service, extensions)
       if not result['OK']:
         gLogger.error(result['Message'])
         continue
 
-    # 5.- Now the agents
+    # 4.- Now the agents
     for system, agent in setupAgents:
       result = self.setupComponent('agent', system, agent, extensions)
       if not result['OK']:
         gLogger.error(result['Message'])
         continue
 
-    # 6.- Now the executors
+    # 5.- Now the executors
     for system, executor in setupExecutors:
       result = self.setupComponent('executor', system, executor, extensions)
       if not result['OK']:
         gLogger.error(result['Message'])
         continue
 
-    # 7.- And finally the Portal
+    # 6.- And finally the Portal
     if setupWeb:
       self.setupPortal()
 
