@@ -99,11 +99,8 @@ writeToConfig() {
     local VAR_NAME=$1
     local VAR_VAL=$2
     local CONFIG=$3
-    if [[ $VAR_NAME == "ALTERNATIVE_MODULES" && -d $VAR_VAL ]]; then
-	echo "export ALTERNATIVE_MODULES=${WORKSPACE}/LocalRepo/ALTERNATIVE_MODULES/$(basename $VAR_VAL)" >> $CONFIG
-    elif [[ $VAR_NAME == "TESTREPO" && -d $VAR_VAL ]]; then
-	echo "export TESTREPO=${WORKSPACE}/LocalRepo/TestCode/$(basename $VAR_VAL)" >> $CONFIG
-    elif [ $VAR_NAME == "MYSQL_VER" ] || [ $VAR_NAME == "ES_VER" ]; then
+    
+    if [ $VAR_NAME == "MYSQL_VER" ] || [ $VAR_NAME == "ES_VER" ]; then
 	eval $VAR_NAME="${VAR_VAL}"
 	export $VAR_NAME
     else
@@ -124,20 +121,28 @@ function copyLocalSource() {
     if [ ! -z $TESTREPO ] && [ -d $TESTREPO ]; then
 	docker exec client mkdir -p $WORKSPACE/LocalRepo/TestCode
 	docker cp $TESTREPO client:$WORKSPACE/LocalRepo/TestCode
+	
+	sed -i "s@\(export TESTREPO=\).*@\1${WORKSPACE}/LocalRepo/TestCode/$(basename $TESTREPO)@" $CLIENTCONFIG
     fi
     if [ ! -z $ALTERNATIVE_MODULES ] && [ -d $ALTERNATIVE_MODULES ]; then
 	docker exec client mkdir -p $WORKSPACE/LocalRepo/ALTERNATIVE_MODULES
 	docker cp $ALTERNATIVE_MODULES client:$WORKSPACE/LocalRepo/ALTERNATIVE_MODULES
+	
+	sed -i "s@\(export ALTERNATIVE_MODULES=\).*@\1${WORKSPACE}/LocalRepo/ALTERNATIVE_MODULES/$(basename $ALTERNATIVE_MODULES)@" $CLIENTCONFIG
     fi
 
     source $SERVERCONFIG
     if [ ! -z $TESTREPO ] && [ -d $TESTREPO ]; then
 	docker exec server mkdir -p $WORKSPACE/LocalRepo/TestCode
 	docker cp $TESTREPO server:$WORKSPACE/LocalRepo/TestCode
+
+	sed -i "s@\(export TESTREPO=\).*@\1${WORKSPACE}/LocalRepo/TestCode/$(basename $TESTREPO)@" $SERVERCONFIG
     fi
     if [ ! -z $ALTERNATIVE_MODULES ] && [ -d $ALTERNATIVE_MODULES ]; then
 	docker exec server mkdir -p $WORKSPACE/LocalRepo/ALTERNATIVE_MODULES
 	docker cp $ALTERNATIVE_MODULES server:$WORKSPACE/LocalRepo/ALTERNATIVE_MODULES
+	
+	sed -i "s@\(export ALTERNATIVE_MODULES=\).*@\1${WORKSPACE}/LocalRepo/ALTERNATIVE_MODULES/$(basename $ALTERNATIVE_MODULES)@" $SERVERCONFIG
     fi
 }
 

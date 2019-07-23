@@ -6,7 +6,7 @@
 #
 #.........................................................
 
-set -e
+set -ex
 
 source CONFIG
 
@@ -15,7 +15,7 @@ echo -e '***' $(date -u) "**** Getting the tests ****\n"
 mkdir -p $PWD/TestCode
 cd $PWD/TestCode
 
-if [[ -d $TESTREPO ]]; then
+if [ -d $TESTREPO ]; then
     cp -r $TESTREPO ./DIRAC
     cd DIRAC
     echo "Using local test repository in branch $(git branch | grep \* | sed -e "s/*^* //")"
