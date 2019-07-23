@@ -375,16 +375,8 @@ function installDIRAC(){
   fi
 
   # actually installing
-  # If DIRACOSVER is not defined, use exterals
-  if [ -z $DIRACOSVER ];
-  then
-    echo "Installing with Externals";
-    ./dirac-install -r $DIRAC_RELEASE -t client $DEBUG
-  else
-    echo "Installing with DIRACOS $DIRACOSVER";
-    ./dirac-install -r $DIRAC_RELEASE -t client --dirac-os --dirac-os-version=$DIRACOSVER $DEBUG
-  fi
-
+  echo "Installing with DIRACOS $DIRACOSVER";
+  ./dirac-install -r $DIRAC_RELEASE -t client --dirac-os --dirac-os-version=$DIRACOSVER $DEBUG
 
   if [ $? -ne 0 ]
   then
@@ -394,7 +386,7 @@ function installDIRAC(){
 
   # now configuring
   source bashrc
-  dirac-configure -S $DIRACSETUP -C $CSURL --SkipCAChecks $DEBUG
+  dirac-configure -S $DIRACSETUP -C $CSURL --SkipCAChecks $CONFIGUREOPTIONS $DEBUG
   if [ $? -ne 0 ]
   then
     echo 'ERROR: dirac-configure failed'
