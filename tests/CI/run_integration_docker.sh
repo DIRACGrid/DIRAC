@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 #
 #    Executable script to set up DIRAC server and client instances with
 #        ElasticSearch and MySQL services, all in docker containers.
@@ -19,17 +19,25 @@ set -e
 
 CWD=$PWD
 SCRIPT_DIR="$( cd "$( dirname "$0" )" >/dev/null 2>&1 && pwd )"
-TMP=/tmp/DIRAC_CI_`date +"%Y%m%d%I%M%p"`
-mkdir -p $TMP
+
+if [ -z $TMP ]; then
+    TMP=/tmp/DIRAC_CI_`date +"%Y%m%d%I%M%p"`
+    mkdir -p $TMP
+fi
+if [ -z $CLIENTCONFIG ]; then
+    CLIENTCONFIG=$TMP/CLIENTCONFIG
+fi
+if [-z $SERVERCONFIG ]; then
+    SERVERCONFIG=$TMP/SERVERCONFIG
+fi
 
 source $SCRIPT_DIR/CONFIG
 source $SCRIPT_DIR/utils.sh
-export CONFIGFILE=$TMP/CONFIG
 cd $SCRIPT_DIR
 
 parseArguments
 
-docker-compose -f docker-compose.yml up -d
+docker-compose -f ./docker-compose.yml up -d
 
 echo -e "\n****" $(date -u) "Creating user and copying scripts ****"
 
@@ -37,26 +45,15 @@ echo -e "\n****" $(date -u) "Creating user and copying scripts ****"
 docker exec server adduser -s /bin/bash -d $USER_HOME $USER
 
 docker cp ./install_server.sh server:$USER_HOME
-docker cp $CONFIGFILE server:$USER_HOME
+docker cp $SERVERCONFIG server:$USER_HOME/CONFIG
 
 # DIRAC client user and scripts
 docker exec client adduser -s /bin/bash -d $USER_HOME $USER
 
-docker cp $CONFIGFILE client:$USER_HOME
 docker cp ./install_client.sh client:$USER_HOME
+docker cp $CLIENTCONFIG client:$USER_HOME/CONFIG
 
-if [[ -d $TESTREPO ]]; then
-    docker exec server mkdir -p $WORKSPACE/LocalRepo/TestCode
-    docker exec client mkdir -p $WORKSPACE/LocalRepo/TestCode
-    docker cp $TESTREPO server:$WORKSPACE/LocalRepo/TestCode
-    docker cp $TESTREPO client:$WORKSPACE/LocalRepo/TestCode
-fi
-if [[ -d $ALTERNATIVE_MODULES ]]; then
-    docker exec server mkdir -p $WORKSPACE/LocalRepo/ALTERNATIVE_MODULES
-    docker exec client mkdir -p $WORKSPACE/LocalRepo/ALTERNATIVE_MODULES
-    docker cp $ALTERNATIVE_MODULES server:$WORKSPACE/LocalRepo/ALTERNATIVE_MODULES
-    docker cp $ALTERNATIVE_MODULES client:$WORKSPACE/LocalRepo/ALTERNATIVE_MODULES
-fi
+copyLocalSource
 
 
 echo -e "\n****" $(date -u) "Installing DIRAC server ****"
