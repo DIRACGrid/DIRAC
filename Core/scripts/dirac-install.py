@@ -2319,8 +2319,9 @@ def createBashrcForDiracOS():
       lines = ['# DIRAC bashrc file, used by service and agent run scripts to set environment',
                'export PYTHONUNBUFFERED=yes',
                'export PYTHONOPTIMIZE=x',
-               '[ -z "$DIRACOS" ] && export DIRACOS=%s/diracos' % proPath,
-               '. %s/diracos/diracosrc' % proPath]
+               '[ -z "$DIRAC" ] && export DIRAC=%s' % proPath,
+               '[ -z "$DIRACOS" ] && export DIRACOS=$DIRAC/diracos',
+               '. $DIRAC/diracos/diracosrc']
       if 'HOME' in os.environ:
         lines.append('[ -z "$HOME" ] && export HOME=%s' % os.environ['HOME'])
 
@@ -2348,8 +2349,6 @@ def createBashrcForDiracOS():
       lines.extend(
           [
               '# Some DIRAC locations',
-              '[ -z "$DIRAC" ] && export DIRAC=%s' %
-              proPath,
               'export DIRACSCRIPTS=%s' %
               os.path.join(
                   "$DIRAC",
