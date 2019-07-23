@@ -27,7 +27,7 @@ fi
 if [ -z $CLIENTCONFIG ]; then
     CLIENTCONFIG=$TMP/CLIENTCONFIG
 fi
-if [-z $SERVERCONFIG ]; then
+if [ -z $SERVERCONFIG ]; then
     SERVERCONFIG=$TMP/SERVERCONFIG
 fi
 
