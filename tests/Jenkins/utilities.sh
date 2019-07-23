@@ -358,6 +358,7 @@ function getCFGFile(){
 # This installs the DIRAC client
 # it needs a $DIRAC_RELEASE env var defined
 # if DIRACOSVER env var is defined, it will install dirac with DIRACOS
+# it also wants the env variables DIRACSETUP and CSURLS
 
 function installDIRAC(){
 
@@ -393,7 +394,7 @@ function installDIRAC(){
 
   # now configuring
   source bashrc
-  dirac-configure -S $DIRACSETUP -C $CSURL --UseServerCertificate -o /DIRAC/Security/CertFile=/home/dirac/certs/hostcert.pem -o /DIRAC/Security/KeyFile=/home/dirac/certs/hostkey.pem $DEBUG
+  dirac-configure -S $DIRACSETUP -C $CSURL --SkipCAChecks $DEBUG
   if [ $? -ne 0 ]
   then
     echo 'ERROR: dirac-configure failed'

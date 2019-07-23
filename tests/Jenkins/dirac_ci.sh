@@ -209,9 +209,6 @@ function fullInstallDIRAC(){
 
   killRunsv
 
-  # install ElasticSearch locally
-  installES
-
   #basic install, with only the CS (and ComponentMonitoring) running, together with DB InstalledComponentsDB, which is needed)
   installSite
   if [ $? -ne 0 ]
