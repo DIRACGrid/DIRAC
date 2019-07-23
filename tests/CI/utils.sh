@@ -121,21 +121,21 @@ writeToConfig() {
 
 function copyLocalSource() {
     source $CLIENTCONFIG
-    if [ -d $TESTREPO ]; then
+    if [ ! -z $TESTREPO ] && [ -d $TESTREPO ]; then
 	docker exec client mkdir -p $WORKSPACE/LocalRepo/TestCode
 	docker cp $TESTREPO client:$WORKSPACE/LocalRepo/TestCode
     fi
-    if [ -d $ALTERNATIVE_MODULES ]; then
+    if [ ! -z $ALTERNATIVE_MODULES ] && [ -d $ALTERNATIVE_MODULES ]; then
 	docker exec client mkdir -p $WORKSPACE/LocalRepo/ALTERNATIVE_MODULES
 	docker cp $ALTERNATIVE_MODULES client:$WORKSPACE/LocalRepo/ALTERNATIVE_MODULES
     fi
 
     source $SERVERCONFIG
-    if [ -d $TESTREPO ]; then
+    if [ ! -z $TESTREPO ] && [ -d $TESTREPO ]; then
 	docker exec server mkdir -p $WORKSPACE/LocalRepo/TestCode
 	docker cp $TESTREPO server:$WORKSPACE/LocalRepo/TestCode
     fi
-    if [ -d $ALTERNATIVE_MODULES ]; then
+    if [ ! -z $ALTERNATIVE_MODULES ] && [ -d $ALTERNATIVE_MODULES ]; then
 	docker exec server mkdir -p $WORKSPACE/LocalRepo/ALTERNATIVE_MODULES
 	docker cp $ALTERNATIVE_MODULES server:$WORKSPACE/LocalRepo/ALTERNATIVE_MODULES
     fi

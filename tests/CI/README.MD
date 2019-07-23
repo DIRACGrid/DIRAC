@@ -11,6 +11,7 @@ By default, the full CI job is executed on each push to the remote. Server and c
 
 The default test environment can be overridden with manual pipelines and following the instructions in [Overriding default configuration](#overriding-default-configuration). 
 
+*NOTE*: The version of the Docker executor must be v18, or it might not be compatible with the Docker-In-Docker image 18-dind, which is specified in `.gitlab-ci.yml`.
 
 ## Running tests locally
 To run a test locally using the default configuration, make sure that the local computer fulfills the requirements [below](#system-requirements), and simply execute `run_docker_setup.sh` with *bash*. 
@@ -24,7 +25,7 @@ The command `docker-compose -f tests/CI/docker-compose.yml down -v` stops and re
 The officially supported operating system is CERN Centos 7 ([CC7](http://linux.web.cern.ch/linux/centos7/)), should you use another Linux distribution, please install the dependencies according to your distribution. 
 
 The following dependencies/softwares are required:
-* Docker v18+ (lower version should work, but no promises are made).
+* Docker v18+ (lower version should work, but no promises are made). 
 * Docker-Compose v2.4+ 
 
 ```
@@ -48,7 +49,7 @@ See the CONFIG file for specific details for every variable.
 
 ### Overriding default configuration
 
-The environment variables are easily overridable by exporting the variable with the DEFAULT_ name prefix stripped, with whichever value you wish. Do this _before_ running `run_integration_docker.sh` if running local testing, or inject custom variables in the GitLab CI Pipeline. 
+The environment variables are easily overridable by exporting the variable with the DEFAULT_ name prefix stripped, with whichever value you wish. Do this _before_ running `run_docker_setup.sh` if running local testing, or inject custom variables in the GitLab CI Pipeline. 
 
 Example:
 I want to change the version of MySQL to 8.0 (from default 5.7). The corresponding variable in CONFIG is `DEFAULT_MYSQL_VER=5.7`. Export `MYSQL_VER=8.0` to override defaults. 
