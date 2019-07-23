@@ -43,17 +43,15 @@ echo -e "\n****" $(date -u) "Creating user and copying scripts ****"
 
 # DIRAC server user and scripts
 docker exec server adduser -s /bin/bash -d $USER_HOME $USER
-
-docker cp ./install_server.sh server:$USER_HOME
-docker cp $SERVERCONFIG server:$USER_HOME/CONFIG
-
-# DIRAC client user and scripts
 docker exec client adduser -s /bin/bash -d $USER_HOME $USER
 
+docker cp ./install_server.sh server:$USER_HOME
 docker cp ./install_client.sh client:$USER_HOME
-docker cp $CLIENTCONFIG client:$USER_HOME/CONFIG
 
 copyLocalSource
+
+docker cp $SERVERCONFIG server:$USER_HOME/CONFIG
+docker cp $CLIENTCONFIG client:$USER_HOME/CONFIG
 
 
 echo -e "\n****" $(date -u) "Installing DIRAC server ****"
