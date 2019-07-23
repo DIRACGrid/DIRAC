@@ -18,17 +18,12 @@ The Following Options are used::
                                       service (default: socket.getfqdn())
   /LocalInstallation/RunitDir:        Location where runit directory is created (default InstancePath/runit)
   /LocalInstallation/StartupDir:      Location where startup directory is created (default InstancePath/startup)
-  /LocalInstallation/MySQLDir:        Location where mysql databases are created (default InstancePath/mysql)
   /LocalInstallation/Database/User:                 (default Dirac)
   /LocalInstallation/Database/Password:             (must be set for SystemAdministrator Service to work)
   /LocalInstallation/Database/RootUser:             (default root)
   /LocalInstallation/Database/RootPwd:              (must be set for SystemAdministrator Service to work)
   /LocalInstallation/Database/Host:                 (must be set for SystemAdministrator Service to work)
   /LocalInstallation/Database/Port:                 (default 3306)
-  /LocalInstallation/Database/MySQLSmallMem:        Configure a MySQL with small memory requirements
-                                                    for testing purposes innodb_buffer_pool_size=200MB
-  /LocalInstallation/Database/MySQLLargeMem:        Configure a MySQL with high memory requirements
-                                                    for production purposes innodb_buffer_pool_size=10000MB
   /LocalInstallation/NoSQLDatabase/Host:            (must be set for SystemAdministrator Service to work)
   /LocalInstallation/NoSQLDatabase/Port:            (default 9200)
   /LocalInstallation/NoSQLDatabase/User:            (default '')
@@ -68,7 +63,6 @@ import glob
 import stat
 import time
 import shutil
-import socket
 
 import DIRAC
 from DIRAC import rootPath
@@ -95,7 +89,6 @@ from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Base.ExecutorModule import ExecutorModule
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.PrettyPrint import printTable
-from DIRAC.Core.Utilities.Platform import getPlatformString
 
 __RCSID__ = "$Id$"
 
@@ -125,27 +118,19 @@ class ComponentInstaller(object):
     self.runitDir = ''
     self.startDir = ''
     self.db = {}
-    self.mysqlDir = ''
-    self.mysqlDbDir = ''
-    self.mysqlLogDir = ''
-    self.mysqlMyOrg = ''
-    self.mysqlMyCnf = ''
-    self.mysqlStartupScript = ''
     self.mysqlUser = ''
     self.mysqlPassword = ''
     self.mysqlRootUser = ''
     self.mysqlRootPwd = ''
     self.mysqlHost = ''
     self.mysqlPort = ''
-    self.mysqlSmallMem = ''
-    self.mysqlLargeMem = ''
     self.noSQLHost = ''
     self.noSQLPort = ''
     self.noSQLUser = ''
     self.noSQLPassword = ''
     self.noSQLSSL = ''
     self.controlDir = ''
-    self.componentTypes = ['service', 'agent', 'executor', 'consumer']
+    self.componentTypes = ['service', 'agent', 'executor']
     self.monitoringClient = None
 
     self.loadDiracCfg()
@@ -193,17 +178,6 @@ class ComponentInstaller(object):
     gLogger.verbose('Using Control Dir at', self.controlDir)
 
     # Now some MySQL default values
-    self.mysqlDir = os.path.join(self.instancePath, 'mysql')
-    self.mysqlDir = self.localCfg.getOption(cfgInstallPath('MySQLDir'), self.mysqlDir)
-    gLogger.verbose('Using MySQL Dir at', self.mysqlDir)
-
-    self.mysqlDbDir = os.path.join(self.mysqlDir, 'db')
-    self.mysqlLogDir = os.path.join(self.mysqlDir, 'log')
-    self.mysqlMyOrg = os.path.join(rootPath, 'mysql', 'etc', 'my.cnf')
-    self.mysqlMyCnf = os.path.join(self.mysqlDir, '.my.cnf')
-
-    self.mysqlStartupScript = os.path.join(rootPath, 'mysql', 'share', 'mysql', 'mysql.server')
-
     self.mysqlRootPwd = self.localCfg.getOption(cfgInstallPath('Database', 'RootPwd'), self.mysqlRootPwd)
     if self.mysqlRootPwd:
       gLogger.verbose('Reading Root MySQL Password from local configuration')
@@ -247,14 +221,6 @@ class ComponentInstaller(object):
     self.mysqlMode = self.localCfg.getOption(cfgInstallPath('Database', 'MySQLMode'), '')
     if self.mysqlMode:
       gLogger.verbose('Configuring MySQL server as %s' % self.mysqlMode)
-
-    self.mysqlSmallMem = self.localCfg.getOption(cfgInstallPath('Database', 'MySQLSmallMem'), False)
-    if self.mysqlSmallMem:
-      gLogger.verbose('Configuring MySQL server for Low Memory usage')
-
-    self.mysqlLargeMem = self.localCfg.getOption(cfgInstallPath('Database', 'MySQLLargeMem'), False)
-    if self.mysqlLargeMem:
-      gLogger.verbose('Configuring MySQL server for Large Memory usage')
 
     # Now some noSQL defaults
     self.noSQLHost = self.localCfg.getOption(cfgInstallPath('NoSQLDatabase', 'Host'), '')
@@ -2301,60 +2267,6 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
 
     return S_OK(runitWebAppDir)
 
-  def fixMySQLScripts(self, startupScript=None):
-    """
-    Edit MySQL scripts to point to desired locations for db and my.cnf
-    """
-    if startupScript is None:
-      startupScript = self.mysqlStartupScript
-
-    gLogger.verbose('Updating:', startupScript)
-    try:
-      fd = open(startupScript, 'r')
-      orgLines = fd.readlines()
-      fd.close()
-      fd = open(startupScript, 'w')
-      for line in orgLines:
-        if line.find('export HOME') == 0:
-          continue
-        if line.find('datadir=') == 0:
-          line = 'datadir=%s\n' % self.mysqlDbDir
-          gLogger.debug(line)
-          line += 'export HOME=%s\n' % self.mysqlDir
-        if line.find('basedir=') == 0:
-          platform = getPlatformString()
-          line = 'basedir=%s\n' % os.path.join(rootPath, platform)
-        if line.find('extra_args=') == 0:
-          line = 'extra_args="-n"\n'
-        if line.find('$bindir/mysqld_safe --') >= 0 and ' --defaults-file' not in line:
-          line = line.replace('mysqld_safe', 'mysqld_safe --defaults-file=$HOME/.my.cnf')
-        fd.write(line)
-      fd.close()
-    except Exception:
-      error = 'Failed to Update MySQL startup script'
-      gLogger.exception(error)
-      if self.exitOnError:
-        DIRAC.exit(-1)
-      return S_ERROR(error)
-
-    return S_OK()
-
-  def mysqlInstalled(self, doNotExit=False):
-    """
-    Check if MySQL is already installed
-    """
-
-    if os.path.exists(self.mysqlDbDir) or os.path.exists(self.mysqlLogDir):
-      return S_OK()
-    if doNotExit:
-      return S_ERROR()
-
-    error = 'MySQL not properly Installed'
-    gLogger.error(error)
-    if self.exitOnError:
-      DIRAC.exit(-1)
-    return S_ERROR(error)
-
   def getMySQLPasswords(self):
     """
     Get MySQL passwords from local configuration or prompt
@@ -2379,148 +2291,6 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
       self.mysqlRootPwd = root
     if dirac:
       self.mysqlPassword = dirac
-
-    return S_OK()
-
-  def startMySQL(self):
-    """
-    Start MySQL server
-    """
-    result = self.mysqlInstalled()
-    if not result['OK']:
-      return result
-    return self.execCommand(0, [self.mysqlStartupScript, 'start'])
-
-  def stopMySQL(self):
-    """
-    Stop MySQL server
-    """
-    result = self.mysqlInstalled()
-    if not result['OK']:
-      return result
-    return self.execCommand(0, [self.mysqlStartupScript, 'stop'])
-
-  def installMySQL(self):
-    """
-    Attempt an installation of MySQL
-    mode:
-
-      -Master
-      -Slave
-      -None
-
-    """
-    self.fixMySQLScripts()
-
-    if self.mysqlInstalled(doNotExit=True)['OK']:
-      gLogger.notice('MySQL already installed')
-      return S_OK()
-
-    if self.mysqlMode.lower() not in ['', 'master', 'slave']:
-      error = 'Unknown MySQL server Mode'
-      if self.exitOnError:
-        gLogger.fatal(error, self.mysqlMode)
-        DIRAC.exit(-1)
-      gLogger.error(error, self.mysqlMode)
-      return S_ERROR(error)
-
-    if self.mysqlHost:
-      gLogger.notice('Installing MySQL server at', self.mysqlHost)
-
-    if self.mysqlMode:
-      gLogger.notice('This is a MySQl %s server' % self.mysqlMode)
-
-    mkDir(self.mysqlDbDir)
-    mkDir(self.mysqlLogDir)
-
-    try:
-      with open(self.mysqlMyOrg, 'r') as fd:
-        myOrg = fd.readlines()
-
-      with open(self.mysqlMyCnf, 'w') as fd:
-        for line in myOrg:
-          if line.find('[mysqld]') == 0:
-            line += '\n'.join(['innodb_file_per_table', ''])
-          elif line.find('innodb_log_arch_dir') == 0:
-            line = ''
-          elif line.find('innodb_data_file_path') == 0:
-            line = line.replace('2000M', '200M')
-          elif line.find('server-id') == 0 and self.mysqlMode.lower() == 'master':
-            # MySQL Configuration for Master Server
-            line = '\n'.join(['server-id = 1',
-                              '# DIRAC Master-Server',
-                              'sync-binlog = 1',
-                              'replicate-ignore-table = mysql.MonitorData',
-                              '# replicate-ignore-db=db_name',
-                              'log-bin = mysql-bin',
-                              'log-slave-updates', ''])
-          elif line.find('server-id') == 0 and self.mysqlMode.lower() == 'slave':
-            # MySQL Configuration for Slave Server
-            line = '\n'.join(['server-id = %s' % int(time.time()),
-                              '# DIRAC Slave-Server',
-                              'sync-binlog = 1',
-                              'replicate-ignore-table = mysql.MonitorData',
-                              '# replicate-ignore-db=db_name',
-                              'log-bin = mysql-bin',
-                              'log-slave-updates', ''])
-          elif line.find('/opt/dirac/mysql') > -1:
-            line = line.replace('/opt/dirac/mysql', self.mysqlDir)
-
-          if self.mysqlSmallMem:
-            if line.find('innodb_buffer_pool_size') == 0:
-              line = 'innodb_buffer_pool_size = 200M\n'
-          elif self.mysqlLargeMem:
-            if line.find('innodb_buffer_pool_size') == 0:
-              line = 'innodb_buffer_pool_size = 10G\n'
-
-          fd.write(line)
-    except Exception:
-      error = 'Can not create my.cnf'
-      gLogger.exception(error)
-      if self.exitOnError:
-        DIRAC.exit(-1)
-      return S_ERROR(error)
-
-    gLogger.notice('Initializing MySQL...')
-    platform = getPlatformString()
-    baseDir = os.path.join(rootPath, platform)
-    result = self.execCommand(0, ['mysql_install_db',
-                                  '--defaults-file=%s' % self.mysqlMyCnf,
-                                  '--baseDir=%s' % baseDir,
-                                  '--datadir=%s' % self.mysqlDbDir])
-    if not result['OK']:
-      return result
-
-    gLogger.notice('Starting MySQL...')
-    result = self.startMySQL()
-    if not result['OK']:
-      return result
-
-    gLogger.notice('Setting MySQL root password')
-    result = self.execCommand(0, ['mysqladmin', '-u', self.mysqlRootUser, 'password', self.mysqlRootPwd])
-    if not result['OK']:
-      return result
-
-    # MySQL tends to define root@host user rather than root@host.domain
-    hostName = self.mysqlHost.split('.')[0]
-    result = self.execMySQL("UPDATE user SET Host='%s' WHERE Host='%s'" % (self.mysqlHost, hostName),
-                            localhost=True)
-    if not result['OK']:
-      return result
-    result = self.execMySQL("FLUSH PRIVILEGES")
-    if not result['OK']:
-      return result
-
-    if self.mysqlHost and socket.gethostbyname(self.mysqlHost) != '127.0.0.1':
-      result = self.execCommand(0, ['mysqladmin', '-u', self.mysqlRootUser, '-h',
-                                    self.mysqlHost, 'password', self.mysqlRootPwd])
-      if not result['OK']:
-        return result
-
-    result = self.execMySQL("DELETE from user WHERE Password=''", localhost=True)
-
-    if not self._addMySQLToDiracCfg():
-      return S_ERROR('Failed to add MySQL user password to local configuration')
 
     return S_OK()
 
