@@ -103,7 +103,7 @@ writeToConfig() {
 	echo "export ALTERNATIVE_MODULES=${WORKSPACE}/LocalRepo/ALTERNATIVE_MODULES/$(basename $VAR_VAL)" >> $CONFIG
     elif [[ $VAR_NAME == "TESTREPO" && -d $VAR_VAL ]]; then
 	echo "export TESTREPO=${WORKSPACE}/LocalRepo/TestCode/$(basename $VAR_VAL)" >> $CONFIG
-    elif [ $VAR_NAME == "MYSQL_VER" || $VAR_NAME == "ES_VER" ]; then
+    elif [ $VAR_NAME == "MYSQL_VER" ] || [ $VAR_NAME == "ES_VER" ]; then
 	eval $VAR_NAME="${VAR_VAL}"
 	export $VAR_NAME
     else
