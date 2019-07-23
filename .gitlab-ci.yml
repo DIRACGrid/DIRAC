@@ -9,10 +9,9 @@ before_script:
 variables:
   COMPOSE_HTTP_TIMEOUT: "360"
 
-install_and_test:
-  stage: test
+test:
   script:
-    - "bash tests/CI/run_integration_docker.sh"
+    - "bash tests/CI/run_docker_setup"
   after_script:
     - "bash -c 'source tests/CI/utils.sh && getLogs'"
   artifacts:
@@ -25,6 +24,4 @@ install_and_test:
     expire_in: 1 week
     when: always
 
-stages:
-  - test
 
