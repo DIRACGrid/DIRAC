@@ -25,7 +25,7 @@ WORKSPACE=$INSTALLROOT
 source CONFIG
 source $TESTCODE/DIRAC/tests/Jenkins/dirac_ci.sh
 
-echo -e '***' $(date -u) "**** Starting integration tests on ${AGENT} ****\n"
+echo -e '***' $(date -u) "**** Starting integration tests on ${INSTALLTYPE} ****\n"
 
 if [ $INSTALLTYPE == "server" ]; then
     source $SERVERINSTALLDIR/bashrc
@@ -49,7 +49,7 @@ if [ -z $ERR ]; then
     echo "WARN: Variable \$ERR not defined, check the test logs for possible failed tests"
     exit 0
 elif [ $ERR != "0" ]; then
-   echo "ERROR: At least one unit test in ${AGENT} failed !!!"
+   echo "ERROR: At least one unit test in ${INSTALLTYPE} failed !!!"
    exit $ERR
 else
    echo "SUCCESS: All tests succeded"
