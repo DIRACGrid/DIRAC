@@ -1508,7 +1508,6 @@ class ComponentInstaller(object):
     setupAgents = [k.split('/') for k in self.localCfg.getOption(cfgInstallPath('Agents'), [])]
     setupExecutors = [k.split('/') for k in self.localCfg.getOption(cfgInstallPath('Executors'), [])]
     setupWeb = self.localCfg.getOption(cfgInstallPath('WebPortal'), False)
-    setupWebApp = self.localCfg.getOption(cfgInstallPath('WebApp'), True)
     setupConfigurationMaster = self.localCfg.getOption(cfgInstallPath('ConfigurationMaster'), False)
     setupPrivateConfiguration = self.localCfg.getOption(cfgInstallPath('PrivateConfiguration'), False)
     setupConfigurationName = self.localCfg.getOption(cfgInstallPath('ConfigurationName'), self.setup)
@@ -1785,10 +1784,7 @@ class ComponentInstaller(object):
 
     # 7.- And finally the Portal
     if setupWeb:
-      if setupWebApp:
-        self.setupNewPortal()
-      else:
-        self.setupPortal()
+      self.setupPortal()
 
     if localServers != masterServer:
       self._addCfgToDiracCfg(initialCfg)
@@ -2030,139 +2026,11 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
 
     return S_OK()
 
-  def installPortal(self):
-    """
-    Install runit directories for the Web Portal
-    """
-    # Check that the software for the Web Portal is installed
-    error = ''
-    webDir = os.path.join(self.linkedRootPath, 'Web')
-    if not os.path.exists(webDir):
-      error = 'Web extension not installed at %s' % webDir
-      if self.exitOnError:
-        gLogger.error(error)
-        DIRAC.exit(-1)
-      return S_ERROR(error)
-
-    # First the lighthttpd server
-
-    # Check if the component is already installed
-    runitHttpdDir = os.path.join(self.runitDir, 'Web', 'httpd')
-    runitPasterDir = os.path.join(self.runitDir, 'Web', 'paster')
-
-    if os.path.exists(runitHttpdDir):
-      msg = "lighthttpd already installed"
-      gLogger.notice(msg)
-    else:
-      gLogger.notice('Installing Lighttpd')
-      # Now do the actual installation
-      try:
-        self._createRunitLog(runitHttpdDir)
-        runFile = os.path.join(runitHttpdDir, 'run')
-        fd = open(runFile, 'w')
-        fd.write(
-            """#!/bin/bash
-  rcfile=%(bashrc)s
-  [ -e $rcfile ] && source $rcfile
-  #
-  exec 2>&1
-  #
-  exec lighttpdSvc.sh < /dev/null
-  """ % {'bashrc': os.path.join(self.instancePath, 'bashrc'), })
-        fd.close()
-
-        os.chmod(runFile, self.gDefaultPerms)
-      except Exception:
-        error = 'Failed to prepare self.setup for lighttpd'
-        gLogger.exception(error)
-        if self.exitOnError:
-          DIRAC.exit(-1)
-        return S_ERROR(error)
-
-      result = self.execCommand(5, [runFile])
-      gLogger.notice(result['Value'][1])
-
-    # Second the Web portal
-
-    # Check if the component is already installed
-    if os.path.exists(runitPasterDir):
-      msg = "Web Portal already installed"
-      gLogger.notice(msg)
-    else:
-      gLogger.notice('Installing Web Portal')
-      # Now do the actual installation
-      try:
-        self._createRunitLog(runitPasterDir)
-        runFile = os.path.join(runitPasterDir, 'run')
-        fd = open(runFile, 'w')
-        fd.write(
-            """#!/bin/bash
-  rcfile=%(bashrc)s
-  [ -e $rcfile ] && source $rcfile
-  #
-  exec 2>&1
-  #
-  cd %(DIRAC)s/Web
-  exec paster serve --reload production.ini < /dev/null
-  """ % {'bashrc': os.path.join(self.instancePath, 'bashrc'),
-                'DIRAC': self.linkedRootPath})
-        fd.close()
-
-        os.chmod(runFile, self.gDefaultPerms)
-      except Exception:
-        error = 'Failed to prepare self.setup for Web Portal'
-        gLogger.exception(error)
-        if self.exitOnError:
-          DIRAC.exit(-1)
-        return S_ERROR(error)
-
-      result = self.execCommand(5, [runFile])
-      gLogger.notice(result['Value'][1])
-
-    return S_OK([runitHttpdDir, runitPasterDir])
-
   def setupPortal(self):
     """
     Install and create link in startup
     """
     result = self.installPortal()
-    if not result['OK']:
-      return result
-
-    # Create the startup entries now
-    runitCompDir = result['Value']
-    startCompDir = [os.path.join(self.startDir, 'Web_httpd'),
-                    os.path.join(self.startDir, 'Web_paster')]
-
-    mkDir(self.startDir)
-
-    for i in range(2):
-      if not os.path.lexists(startCompDir[i]):
-        gLogger.notice('Creating startup link at', startCompDir[i])
-        mkLink(runitCompDir[i], startCompDir[i])
-        time.sleep(1)
-    time.sleep(5)
-
-    # Check the runsv status
-    start = time.time()
-    while (time.time() - 10) < start:
-      result = self.getStartupComponentStatus([('Web', 'httpd'), ('Web', 'paster')])
-      if not result['OK']:
-        return S_ERROR('Failed to start the Portal')
-      if result['Value'] and \
-         result['Value']['%s_%s' % ('Web', 'httpd')]['RunitStatus'] == "Run" and \
-         result['Value']['%s_%s' % ('Web', 'paster')]['RunitStatus'] == "Run":
-        break
-      time.sleep(1)
-
-    # Final check
-    return self.getStartupComponentStatus([('Web', 'httpd'), ('Web', 'paster')])
-
-  def setupNewPortal(self):
-    """
-    Install and create link in startup
-    """
-    result = self.installNewPortal()
     if not result['OK']:
       return result
 
@@ -2190,7 +2058,7 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
     # Final check
     return self.getStartupComponentStatus([('Web', 'WebApp')])
 
-  def installNewPortal(self):
+  def installPortal(self):
     """
     Install runit directories for the Web Portal
     """
