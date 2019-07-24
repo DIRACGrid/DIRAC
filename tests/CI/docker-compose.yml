@@ -11,7 +11,7 @@ services:
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       timeout: 20s
-      retries: 3
+      retries: 10
      
   elasticsearch:
     image: gitlab-registry.cern.ch/alu/dirac-ci/elasticsearch:${ES_VER}
@@ -25,7 +25,7 @@ services:
       test: ["CMD", "curl", "-f", "http://localhost:9200"]
       interval: 5s
       timeout: 2s
-      retries: 5
+      retries: 10
 
   dirac-server:
     image: gitlab-registry.cern.ch/alu/dirac/cc7-dirac
