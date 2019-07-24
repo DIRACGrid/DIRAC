@@ -107,6 +107,63 @@ The MonitoringUtilities module provides the functionality needed to store or del
   if not result[ 'OK' ]:
     print 'Something went wrong'
 
+gMonitor object Internals
+============================
+This part covers the internal workings of the **gMonitor** object.
+**gMonitor** is a singleton object meaning its instance is only created once from the **MonitoringClient** and is used throughout in other systems for monitoring the component details like CPU, MEM, threads, etc.
+
+Client - Server interactions of the **gMonitor** object (basic overview diagram):
+
+.. image:: /_static/Systems/FS/gMonitorInteractions.png
+   :alt: gMonitor Client & Server internal interactions.
+   :align: center
+
+**1) MonitoringClient (inherited by gMonitor singleton object):**
+This class is inherited by the gMonitor object and is used for reporting all types of components
+Activities.
+Basically, from here all the information is sent to the MonitoringHandler(server side) using methods like
+**registerActivity** and **addMark** and all the data is flushed periodicaly by the object **gMonitoringFlusher**
+every 300 seconds.
+
+**2) MonitoringHandler:**
+This class is inherited from the **RequestHandler** class which is the base required for running any kind of services in DIRAC.
+This class is basically used to expose methods inside ServiceInterface which is accessed 
+with the help of the **gServiceInterface** (singleton object) and before exposing the methods
+there are some filters applied like not including invalid actions, decoding view descriptions, etc.
+Here the methods called inside **export_** methods will be explained in depth inside the 
+**ServiceInterface** part.
+
+**3) ServiceInterface (inherited by the gServiceInterface singleton object):**
+This is the place where all the activity data is received from the **gMonitor** object and from here the other the internal interactions of the 
+**Framework/MonitoringHandler** happens with components like **RRDManager** used for reporting data to the **rrdtool** which is based on command line 
+used for generating plots, the **ComponentMonitoringDB** which is used to store the basic component information like component type, component name, 
+number of queries performed, etc and the **MonitoringCatalog** which is used to store all the activity data inside the sqlite3 database which is lastly
+referred by the **rrdtool** and the Web interface i.e. the **ActivityMonitor** part.
+
+**4) RRDManager (wrapper around the rrdtool):**
+This is class is called by the **ServiceInterface** 
+This class is a wrap around the **rrdtool** as it is a command line based tool within this class there are several methods which take in some parameters
+required by the corresponding rrd command and executes it.
+
+**5) MonitoringCatalog (based on sqlite3):**
+Here all the information about the activity of the components is maintained like which rrd file to refer for what components
+then other details like CPU, MEM, Queries, etc. is stored here.
+
+**6) ComponentMonitoringDB (based on MySQL):**
+This database basically stores the basic information of the components not the activity data like **Type, ComponentName, Port, Host, etc**
+and this all is stored under the **compmon_Components** table inside this database.
+The other info like version history of the components like **VersionTimestamp, DIRACVersion, etc.** is stored under **compmon_VersionHistory**
+table of the database.
+
+**7) PlotCache**
+This is basically used to cache the graphs that are generated once so if the user tries to generate them again the entire
+process of graph generation using **RRDManager** is not performed instead a cached version of the graph is returned to reduce the
+response time.
+
+This was just an overview of the components that **gMonitor** object interacts with more detail can be found inside the code of that particular
+component.
+The use cases of **gMonitor** object can be found inside the **DIRAC/Core/DISET/private/Service.py, DIRAC/Core/Base/AgentModule.py, Transformation System, etc.** 
+
 Dynamic Component Monitoring
 ============================
 

@@ -1,6 +1,7 @@
 """ Interacts with sqlite3 db
 """
 
+import six
 import sqlite3
 import os
 import hashlib
@@ -11,7 +12,6 @@ from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.FrameworkSystem.private.monitoring.Activity import Activity
 from DIRAC.Core.Utilities import Time
 
-class MonitoringCatalog( object ):
 
 class MonitoringCatalog(object):
   """
@@ -144,12 +144,21 @@ class MonitoringCatalog(object):
           orList.append("%s = ?" % key)
         keysList.append("( %s )" % " OR ".join(orList))
       else:
+<<<<<<< HEAD
+        valuesList.append( dataDict[ key ] )
+        keysList.append( "%s = ?" % key )
+    if isinstance(fields, six.string_types):
+      fields = [ fields ]
+    if len( keysList ) > 0:
+      whereCond = "WHERE %s" % ( " AND ".join( keysList ) )
+=======
         valuesList.append(dataDict[key])
         keysList.append("%s = ?" % key)
     if isinstance(fields, basestring):
       fields = [fields]
     if len(keysList) > 0:
       whereCond = "WHERE %s" % (" AND ".join(keysList))
+>>>>>>> Add technical documentation on the gMonitor object internals.
     else:
       whereCond = ""
     if extraCond:
@@ -465,8 +474,13 @@ class MonitoringCatalog(object):
     :param viewId: The view id.
     :return: A list of values.
     """
+<<<<<<< HEAD
+    if isinstance(viewId, six.string_types):
+      return self.__select( "definition, variableFields", "views", { "name" : viewId } )
+=======
     if isinstance(viewId, basestring):
       return self.__select("definition, variableFields", "views", {"name": viewId})
+>>>>>>> Add technical documentation on the gMonitor object internals.
     else:
       return self.__select("definition, variableFields", "views", {"id": viewId})
 

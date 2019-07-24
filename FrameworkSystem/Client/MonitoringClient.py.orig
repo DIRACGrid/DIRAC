@@ -2,7 +2,6 @@
 
     Uses RPC Framework/Monitoring service. Calls registerActivities exposed function
 """
-
 __RCSID__ = "$Id"
 
 import time
@@ -103,7 +102,11 @@ class MonitoringClient(object):
   COMPONENT_WEB = "web"
   COMPONENT_SCRIPT = "script"
 
+<<<<<<< HEAD
+  __validMonitoringValues = six.integer_types + (float,)
+=======
   __validMonitoringValues = (int, int, float)
+>>>>>>> Add technical documentation on the gMonitor object internals.
 
   def __init__(self):
     self.sourceId = 0
@@ -269,7 +272,7 @@ class MonitoringClient(object):
     if name not in self.activitiesDefinitions:
       raise MonitoringClientActivityNotDefined("You must register activity %s before adding marks to it" % name)
       # raise Exception( "You must register activity %s before adding marks to it" % name )
-    if type(value) not in self.__validMonitoringValues:
+    if not isinstance(value, self.__validMonitoringValues):
       raise MonitoringClientActivityValueTypeError("Activity '%s' value's type (%s) is not valid" % (name, type(value)))
       # raise Exception( "Value's type %s is not valid" % value )
     self.activitiesLock.acquire()
