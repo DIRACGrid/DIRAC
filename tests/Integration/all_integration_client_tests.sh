@@ -21,13 +21,13 @@ python -m pytest $CLIENTINSTALLDIR/DIRAC/tests/Integration/AccountingSystem/Test
 echo -e '***' $(date -u)  "**** RMS TESTS ****\n"
 
 echo -e '***' $(date -u)  "Getting a non privileged user\n" >> clientTestOutputs.txt 2>&1
-dirac-proxy-init -C $CLIENTINSTALLDIR/user/client.pem -K $CLIENTINSTALLDIR/user/client.key $DEBUG >> clientTestOutputs.txt 2>&1
+dirac-proxy-init -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key $DEBUG >> clientTestOutputs.txt 2>&1
 
 echo -e '***' $(date -u)  "Starting RMS Client test as a non privileged user\n" >> clientTestOutputs.txt 2>&1
 python -m pytest $CLIENTINSTALLDIR/DIRAC/tests/Integration/RequestManagementSystem/Test_Client_Req.py >> clientTestOutputs.txt 2>&1
 
 echo -e '***' $(date -u)  "getting the prod role again\n" >> clientTestOutputs.txt 2>&1
-dirac-proxy-init -g prod -C $CLIENTINSTALLDIR/user/client.pem -K $CLIENTINSTALLDIR/user/client.key $DEBUG >> clientTestOutputs.txt 2>&1
+dirac-proxy-init -g prod -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key $DEBUG >> clientTestOutputs.txt 2>&1
 echo -e '***' $(date -u)  "Starting RMS Client test as an admin user\n" >> clientTestOutputs.txt 2>&1
 python -m pytest $CLIENTINSTALLDIR/DIRAC/tests/Integration/RequestManagementSystem/Test_Client_Req.py >> clientTestOutputs.txt 2>&1
 
