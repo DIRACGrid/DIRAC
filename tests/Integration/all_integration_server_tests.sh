@@ -65,6 +65,9 @@ python $SERVERINSTALLDIR/DIRAC/tests/Integration/DataManagementSystem/Test_Clien
 diracDFCDB
 python $SERVERINSTALLDIR/DIRAC/tests/Integration/DataManagementSystem/Test_FileCatalogDB.py >> serverTestOutputs.txt 2>&1
 
+#-------------------------------------------------------------------------------#
+echo -e '***' $(date -u)  "**** RMS TESTS ****\n"
+python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/RequestManagementSystem/Test_ReqDB.py >> serverTestOutputs.txt 2>&1
 
 #-------------------------------------------------------------------------------#
 echo -e '***' $(date -u)  "**** MONITORING TESTS ****\n"
