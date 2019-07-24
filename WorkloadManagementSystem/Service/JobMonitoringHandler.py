@@ -534,7 +534,7 @@ class JobMonitoringHandler(RequestHandler):
 ##############################################################################
   types_getJobParameters = [[basestring, int, long, list]]
 
-  @staticmethod  
+  @staticmethod
   def export_getJobParameters(jobIDs, parName=None):
     """
     :param str/int/long/list jobIDs: one single job ID or a list of them

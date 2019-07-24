@@ -2,11 +2,10 @@
 '''Script to run Executable application'''
 
 import sys
-from os import system
+import subprocess
+import shlex
 
 # Main
 if __name__ == '__main__':
 
-  args = ' '.join(sys.argv[1:])
-
-  sys.exit(system('''echo Hello World%s''' % args) / 256)
+  sys.exit(subprocess.call(shlex.split('echo Hello World')))

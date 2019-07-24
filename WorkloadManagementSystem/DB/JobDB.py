@@ -745,23 +745,37 @@ class JobDB(DB):
     """ Set status of the job specified by its jobID
     """
 
-    ret = self._escapeString(status)
-    if not ret['OK']:
-      return ret
-    status = ret['Value']
+    if not (status or minor or application):
+      return S_OK()
 
-    ret = self._escapeString(minor)
-    if not ret['OK']:
-      return ret
-    minor = ret['Value']
+    cmd = "REPLACE JobsStatus (JobID"
+    values = []
 
-    ret = self._escapeString(application)
-    if not ret['OK']:
-      return ret
-    application = ret['Value']
+    if status:
+      ret = self._escapeString(status)
+      if not ret['OK']:
+        return ret
+      status = ret['Value']
+      cmd += ", Status"
+      values.append(status)
 
-    cmd = 'REPLACE JobsStatus (JobID,Status,MinorStatus,ApplicationStatus) VALUES (%d,%s,%s,%s)' % (
-        int(jobID), status, minor, application)
+    if minor:
+      ret = self._escapeString(minor)
+      if not ret['OK']:
+        return ret
+      minor = ret['Value']
+      cmd += ", MinorStatus"
+      values.append(minor)
+
+    if application:
+      ret = self._escapeString(application)
+      if not ret['OK']:
+        return ret
+      application = ret['Value']
+      cmd += ", ApplicationStatus"
+      values.append(application)
+
+    cmd += ") VALUE (%d, %s)" % (int(jobID), ', '.join(values))
 
     return self._update(cmd)
 

@@ -101,9 +101,9 @@ class JobStateUpdateHandler(RequestHandler):
     return result
 
   ###########################################################################
-  types_setJobStatus = [[six.string_types, int], six.string_types, six.string_types, six.string_types]
+  types_setJobStatus = [[six.string_types, int]]
 
-  def export_setJobStatus(self, jobID, status, minorStatus, source='Unknown', datetime=None):
+  def export_setJobStatus(self, jobID, status='', minorStatus='', source='Unknown', datetime=None):
     """ Set the major and minor status for job specified by its JobId.
         Set optionally the status date and source component which sends the
         status information.
@@ -111,9 +111,9 @@ class JobStateUpdateHandler(RequestHandler):
     return self.__setJobStatus(int(jobID), status, minorStatus, source, datetime)
 
   ###########################################################################
-  types_setJobsStatus = [list, six.string_types, six.string_types, six.string_types]
+  types_setJobsStatus = [list]
 
-  def export_setJobsStatus(self, jobIDs, status, minorStatus, source='Unknown', datetime=None):
+  def export_setJobsStatus(self, jobIDs, status='', minorStatus='', source='Unknown', datetime=None):
     """ Set the major and minor status for job specified by its JobId.
         Set optionally the status date and source component which sends the
         status information.
