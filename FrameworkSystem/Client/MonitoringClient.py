@@ -2,7 +2,6 @@
 
     Uses RPC Framework/Monitoring service. Calls registerActivities exposed function
 """
-
 __RCSID__ = "$Id"
 
 import time
@@ -17,6 +16,10 @@ from DIRAC.Core.DISET.RPCClient import RPCClient
 
 
 class MonitoringClientActivityNotDefined(Exception):
+  """ This class is used to raise an exception if an activity is not defined meaning
+      not registered using the registerActivity method of the gMonitor object.
+  """
+
   def __init__(self, message):
     self.message = str(message)
 
@@ -25,6 +28,10 @@ class MonitoringClientActivityNotDefined(Exception):
 
 
 class MonitoringClientActivityValueTypeError(Exception):
+  """ This class is used to raise an exception if an activity type is mismatched while
+      calling the addMark method of the gMonitor object.
+  """
+
   def __init__(self, message):
     self.message = message
 
@@ -33,6 +40,10 @@ class MonitoringClientActivityValueTypeError(Exception):
 
 
 class MonitoringClientUnknownParameter(Exception):
+  """ This class is used to raise an exception when some unkown parameter is passed
+      to the setComponentExtraParam method of the gMonitor object.
+  """
+
   def __init__(self, message):
     self.message = message
 
@@ -42,7 +53,7 @@ class MonitoringClientUnknownParameter(Exception):
 
 class MonitoringFlusher(object):
   """
-  This class flushes all monitoring clients registered
+  This class is used to flush all the instances of the MonitoringClient registered periodically.
   """
 
   def __init__(self):
@@ -52,10 +63,20 @@ class MonitoringFlusher(object):
     time.sleep(0.1)
 
   def flush(self, allData=False):
+    """ This method is used to periodically flush the data.
+
+        :type allData: bool
+        :param allData: This is used to indicate whether all the data is present or not.
+    """
     for mc in self.__mcList:
       mc.flush(allData)
 
   def registerMonitoringClient(self, mc):
+    """ This method is used to register instances of the MonitoringClient.
+
+        :type mc: object of MonitoringClient
+        :param mc: Its just an instance of the MonitoringClient that we want to register.
+    """
     if mc not in self.__mcList:
       self.__mcList.append(mc)
 
@@ -64,7 +85,8 @@ gMonitoringFlusher = MonitoringFlusher()
 
 
 class MonitoringClient(object):
-  """ It accumulates monitoring info from components before flushing using gMonitoringFlusher
+  """ This class is used to create the gMonitor object and acts as a client side for registering activities
+      and committing the data.
   """
 
   # Different types of operations
@@ -79,7 +101,7 @@ class MonitoringClient(object):
   COMPONENT_WEB = "web"
   COMPONENT_SCRIPT = "script"
 
-  __validMonitoringValues = (types.IntType, types.LongType, types.FloatType)
+  __validMonitoringValues = (int, int, float)
 
   def __init__(self):
     self.sourceId = 0
@@ -118,6 +140,15 @@ class MonitoringClient(object):
     self.__enabled = True
 
   def setComponentExtraParam(self, name, value):
+    """
+    Sets the extra parameters of the component reporting.
+
+    :type  name: string
+    :param name: It should belong to one of these 'version', 'DIRACVersion', 'description', 'startTime', 'platform',
+                                                  'cycles', 'queries'.
+    :type value: string
+    :param value: The proper value corresponding to one of the selected names.
+    """
     if name in ('version', 'DIRACVersion', 'description', 'startTime', 'platform'):
       self.__compRegistrationExtraDict[name] = str(value)
     elif name in ('cycles', 'queries'):
@@ -150,7 +181,7 @@ class MonitoringClient(object):
 
   def setComponentLocation(self, componentLocation=False):
     """
-    Set the location of the component reporting.
+    Sets the location of the component reporting.
 
     :type  componentLocation: string
     :param componentLocation: Location of the component reporting
@@ -162,7 +193,7 @@ class MonitoringClient(object):
 
   def setComponentName(self, componentName):
     """
-    Set the name of the component reporting.
+    Sets the name of the component reporting.
 
     :type  componentName: string
     :param componentName: Name of the component reporting
@@ -171,17 +202,17 @@ class MonitoringClient(object):
 
   def setComponentType(self, componentType):
     """
-    Define the type of component reporting data.
+    Defines the type of component reporting data.
 
     :type  componentType: string
     :param componentType: Defines the grouping of the host by type. All the possibilities
-                            are defined in the Constants.py file
+                          are defined in the Constants.py file
     """
     self.sourceDict['componentType'] = componentType
 
   def registerActivity(self, name, description, category, unit, operation, bucketLength=60):
     """
-    Register new activity. Before reporting information to the server, the activity
+    Registers new activity. Before reporting information to the server, the activity
     must be registered.
 
     :type  name: string
@@ -194,7 +225,7 @@ class MonitoringClient(object):
     :param unit: String representing the unit that will be printed in the plots
     :type  operation: string
     :param operation: Type of data operation to represent data. All the possibilities
-                        are defined in the Constants.py file
+                      are defined in the Constants.py file
     :type  bucketLength: int
     :param bucketLength: Bucket length in seconds
     """
@@ -222,7 +253,7 @@ class MonitoringClient(object):
 
   def addMark(self, name, value=1):
     """
-    Add a new mark to the specified activity
+    Adds a new mark to the specified activity
 
     :type  name: string
     :param name: Name of the activity to report
@@ -252,8 +283,11 @@ class MonitoringClient(object):
 
   def __consolidateMarks(self, allData):
     """
-      Copies all marks except last step ones
-      and consolidates them
+      Copies all marks except last step ones and consolidates them.
+
+      :type allData: bool
+      :param allData: This is used to indicate whether all the data is present or not.
+      :return: dictionary of consolidatedMarks.
     """
     consolidatedMarks = {}
     remainderMarks = {}
@@ -283,6 +317,11 @@ class MonitoringClient(object):
     return consolidatedMarks
 
   def flush(self, allData=False):
+    """ This method is used to periodically flush the data and send it to the server side.
+
+        :type allData: bool
+        :param allData: This is used to indicate whether all the data is present or not.
+    """
     if not self.__enabled or not self.__initialized:
       return
     self.flushingLock.acquire()
@@ -297,12 +336,16 @@ class MonitoringClient(object):
       # Commit new activities
       if self.__dataToSend():
         if not self.__disabled():
+          # this also creates a point of contact between te client and the server as it calls the __sendData method.
           self.__sendData()
       self.__pruneMarksData()
     finally:
       self.flushingLock.release()
 
   def __disabled(self):
+    """ This method is basically used to check whether monitoring is disabled or not inside the
+        configuration file.
+    """
     return gConfig.getValue("%s/DisableMonitoring" % self.cfgSection, "false").lower() in \
         ("yes", "y", "true", "1")
 
@@ -320,12 +363,19 @@ class MonitoringClient(object):
         self.marksToSend[acName] = acMarks[acName]
 
   def __sendData(self, secsTimeout=False):
+    """ This method is used to initialize the rpcClient from the server and also to initiate the task
+        of registering the activities and committing the marks.
+
+        :type secsTimeout: int
+        :param secsTimeout: The timeout in seconds for the rpcClient.
+    """
     from DIRAC.FrameworkSystem.private.monitoring.ServiceInterface import gServiceInterface
     if gServiceInterface.srvUp:
       self.logger.debug("Using internal interface to send data")
       rpcClient = gServiceInterface
     else:
       self.logger.debug("Creating RPC client")
+      # Here is where the client is created from the running Framework/Monitoring service.
       rpcClient = RPCClient("Framework/Monitoring", timeout=secsTimeout)
     # Send registrations
     if not self.__sendRegistration(rpcClient):
@@ -338,6 +388,8 @@ class MonitoringClient(object):
         return False
 
   def __pruneMarksData(self):
+    """ This basically prunes the marks which exceed the bucket length.
+    """
     for acName in self.marksToSend:
       maxBuckets = 86400 / self.activitiesDefinitions[acName]['bucketLength']
       if len(self.marksToSend[acName]) > maxBuckets:
@@ -346,6 +398,12 @@ class MonitoringClient(object):
           del(self.marksToSend[acName][timeSlots.pop(0)])
 
   def __sendRegistration(self, rpcClient):
+    """ This method registers all the activities using the rpcClient.
+
+        :type rpcClient: object of RPCClient
+        :param rpcClient: This is used to access the methods within the service and register the activities.
+        :return: bool
+    """
     if not len(self.definitionsToSend):
       return True
     self.logger.debug("Registering activities")
@@ -361,7 +419,11 @@ class MonitoringClient(object):
 
   def __sendMarks(self, rpcClient):
     """
-    Return true if activities to declare
+    This method sends all the marks accumulated to the server using the rpcClient.
+
+    :type rpcClient: object of RPCClient
+    :param rpcClient: This is used to access the methods within the service and register the activities.
+    :return: bool
     """
     assert self.sourceId
     self.logger.debug("Sending marks")
@@ -384,10 +446,19 @@ class MonitoringClient(object):
     return len(self.definitionsToSend)
 
   def forceFlush(self, exitCode):
+    """ This method can be used to force flush all the data directly without flushing the
+        data periodically.
+    """
     self.sendingMode = "none"
     self.flush(allData=True)
 
   def getComponentsStatus(self, condDict):
+    """ This method is used to get the status of the components.
+
+        :type condDict: dictionary
+        :param condDict: A condition dictionary.
+        :return: S_OK with status and message about the component.
+    """
     rpcClient = RPCClient("Framework/Monitoring", timeout=100)
     return rpcClient.getComponentsStatus(condDict)
 
@@ -397,7 +468,7 @@ class MonitoringClient(object):
         return False
       condVal = condDict[key]
       componentVal = component[key]
-      if type(condVal) in (types.ListType, types.TupleType):
+      if type(condVal) in (list, tuple):
         if componentVal not in condVal:
           return False
       else:
@@ -457,4 +528,5 @@ class MonitoringClient(object):
     return S_OK(returnData)
 
 
+# Here the singleton gMonitor object is created which is used in all other use cases.
 gMonitor = MonitoringClient()
