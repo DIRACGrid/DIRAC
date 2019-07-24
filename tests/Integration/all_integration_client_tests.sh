@@ -43,7 +43,6 @@ python -m pytest $CLIENTINSTALLDIR/DIRAC/tests/Integration/ResourceStatusSystem/
 #-------------------------------------------------------------------------------#
 echo -e '***' $(date -u)  "**** WMS TESTS ****\n"
 # python -m pytest $CLIENTINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_PilotsLoggingClient.py >> clientTestOutputs.txt 2>&1
-python $CLIENTINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_Client_WMS.py $WORKSPACE/TestCode/DIRAC/tests/Integration/WorkloadManagementSystem/sb.cfg >> clientTestOutputs.txt 2>&1
 python $CLIENTINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_SandboxStoreClient.py $WORKSPACE/TestCode/DIRAC/tests/Integration/WorkloadManagementSystem/sb.cfg >> clientTestOutputs.txt 2>&1
 python -m pytest $CLIENTINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_JobWrapper.py >> clientTestOutputs.txt 2>&1
 python -m pytest $CLIENTINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_PilotsClient.py >> clientTestOutputs.txt 2>&1
