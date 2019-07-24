@@ -10,14 +10,15 @@ __RCSID__ = "$Id$"
 import unittest
 import time
 
-from DIRAC.tests.Utilities.testJobDefinitions import helloWorld, mpJob, wholeNodeJob, parametricJob
-from DIRAC import gLogger
-gLogger.setLevel('DEBUG')
 
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
+from DIRAC import gLogger
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.tests.Utilities.testJobDefinitions import helloWorld, mpJob, wholeNodeJob, parametricJob
+
+gLogger.setLevel('DEBUG')
 
 time.sleep(3)  # in theory this should not be needed, but I don't know why, without, it fails.
 
