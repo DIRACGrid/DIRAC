@@ -1111,6 +1111,19 @@ class ReleaseConfig(object):
     except KeyError:
       return False
 
+  def getDiracOSExtensionAndVersion(self, diracOSVersion):
+    """
+    This method return the diracos and version taking into 
+    account the extension
+    :param str diracOSVersion: column separated string for example: LHCb:v1
+    :return: if the extension is not provided, it will return DIRACOS defined in DIRAC otherwise 
+    the DIRACOS specified in the extension
+    """
+    if ":" in diracOSVersion:
+      return [i.strip() for i in diracOSVersion.split(':')]
+    else:
+      return ['diracos', diracOSVersion]
+    
   def getDiracOSVersion(self, diracOSVersion=None):
     """
       It returns the DIRACOS version
@@ -1118,7 +1131,7 @@ class ReleaseConfig(object):
       """
 
     if diracOSVersion:
-      return diracOSVersion
+      return self.getDiracOSExtensionAndVersion(diracOSVersion)
     try:
       diracOSVersion = self.prjRelCFG[self.projectName][cliParams.release].get(
           "Releases/%s/DIRACOS" % cliParams.release, diracOSVersion)
@@ -1130,7 +1143,7 @@ class ReleaseConfig(object):
               "Releases/%s/DIRACOS" % release, diracOSVersion)
     except KeyError:
       pass
-    return diracOSVersion
+    return self.getDiracOSExtensionAndVersion(diracOSVersion)
 
   def getLCGVersion(self, lcgVersion=None):
     """
@@ -2282,7 +2295,7 @@ def installDiracOS(releaseConfig):
 
   :param str releaseConfig: the version of the DIRAC OS
   """
-  diracOSVersion = releaseConfig.getDiracOSVersion(cliParams.diracOSVersion)
+  diracos, diracOSVersion = releaseConfig.getDiracOSVersion(cliParams.diracOSVersion)
   if not diracOSVersion:
     logERROR("No diracos defined")
     return False
@@ -2294,7 +2307,7 @@ def installDiracOS(releaseConfig):
   if not tarsURL:
     tarsURL = releaseConfig.getTarsLocation('DIRAC')['Value']
     logWARN("DIRACOS location is not specified using %s" % tarsURL)
-  if not downloadAndExtractTarball(tarsURL, "diracos", diracOSVersion, cache=True):
+  if not downloadAndExtractTarball(tarsURL, diracos, diracOSVersion, cache=True):
     return False
   logNOTICE("Fixing externals paths...")
   fixBuildPaths()
