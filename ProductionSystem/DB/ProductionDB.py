@@ -61,6 +61,20 @@ class ProductionDB(DB):
                              'ParentTransformationID',
                              'ProductionID']
 
+    self.PRODSTEPSPARAMS = ['StepID',
+                            'Name',
+                            'Description',
+                            'LongDescription',
+                            'Body',
+                            'Type',
+                            'Plugin',
+                            'AgentType',
+                            'GroupSize',
+                            'InputQuery',
+                            'OutputQuery',
+                            'LastUpdate',
+                            'InsertedTime']
+
     self.statusActionDict = {
         'New': None,
         'Active': 'startTransformation',
@@ -85,10 +99,11 @@ class ProductionDB(DB):
 
     self.lock.acquire()
 
-    req = "INSERT INTO Productions (ProductionName,Description,CreationDate,LastUpdate, \
+    req = "INSERT INTO Productions (ProductionName,Description,CreationDate,LastUpdate,\
                                     AuthorDN,AuthorGroup,Status)\
                                 VALUES ('%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),'%s','%s','New');" % \
         (prodName, prodDescription, authorDN, authorGroup)
+
     res = self._update(req, connection)
     if not res['OK']:
       self.lock.release()
@@ -165,6 +180,62 @@ class ProductionDB(DB):
     if len(paramDict) == 1:
       return S_OK(paramDict[reqParam])
     return S_OK(paramDict)
+
+  ###########################################################################
+  #
+  # These methods manipulate the ProductionSteps table
+  #
+
+  def getProductionStep(self, stepID, connection=False):
+    """
+    :param stepID:
+    :return:
+    """
+    connection = self.__getConnection(connection)
+    req = "SELECT %s FROM ProductionSteps WHERE StepID = %s" % (intListToString(self.PRODSTEPSPARAMS), str(stepID))
+    res = self._query(req, connection)
+    if not res['OK']:
+      return res
+    if not res['Value']:
+      return S_ERROR("ProductionStep %s did not exist" % str(stepID))
+    return S_OK(res['Value'][0])
+
+
+  def addProductionStep(self, stepName, stepDescription, stepLongDescription, stepBody, stepType, stepPlugin, stepAgentType,\
+                    stepGroupSize, stepInputquery, stepOutputquery, connection=False):
+    """
+    Add a Production Step
+    :param stepName:
+    :param stepDescription:
+    :param stepLongDescription:
+    :param stepBody:
+    :param stepType:
+    :param stepPlugin:
+    :param stepAgentType:
+    :param stepGroupSize:
+    :param stepInputquery:
+    :param stepOutputquery:
+    :param connection:
+    :return:
+    """
+    connection = self.__getConnection(connection)
+    self.lock.acquire()
+    req = "INSERT INTO ProductionSteps (Name,Description,LongDescription,Body,Type,Plugin,AgentType,GroupSize,\
+                                    InputQuery,OutputQuery,LastUpdate,InsertedTime)\
+                                VALUES ('%s','%s', '%s', %s, '%s', '%s', '%s', '%s', '%s', '%s',\
+                                UTC_TIMESTAMP(),UTC_TIMESTAMP());" % \
+          (stepName, stepDescription, stepLongDescription, stepBody, stepType, stepPlugin, stepAgentType, \
+           stepGroupSize, stepInputquery, stepOutputquery)
+
+    res = self._update(req, connection)
+    if not res['OK']:
+      self.lock.release()
+      return res
+    stepID = int(res['lastRowId'])
+    self.lock.release()
+
+    return S_OK(stepID)
+
 
     ###########################################################################
   #
@@ -260,7 +331,7 @@ class ProductionDB(DB):
     prodDescription = json.loads(res['Value'])
     transIDs = []
     for step in sorted(prodDescription):
-      res = self.ProdTransManager.addTransformationStep(prodDescription[step], prodID)
+      res = self.ProdTransManager.addTransformationStep(prodDescription[step]['stepID'], prodID)
       # If the addition of at least one step failes, clean the already added transformation steps from the TS
       if not res['OK']:
         self.ProdTransManager.deleteTransformations(transIDs)

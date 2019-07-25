@@ -4,6 +4,8 @@
 
 __RCSID__ = "$Id $"
 
+import json
+
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 from DIRAC.ProductionSystem.Client.ProductionClient import ProductionClient
@@ -48,34 +50,39 @@ class ProdTransManager(object):
 
     return S_OK()
 
-  def addTransformationStep(self, prodStep, prodID):
+  def addTransformationStep(self, stepID, prodID):
     """ Add the transformation step to the TS
 
     :param object prodStep: an object of type ~:mod:`~DIRAC.ProductionSystem.Client.ProductionStep`
     :param prodID: the ProductionID
     """
-    gLogger.notice("Add step %s to production %s" % (prodStep['name'], prodID))
+    res = self.prodClient.getProductionStep(stepID)
+    if not res['OK']:
+      return S_ERROR(res['Message'])
+    prodStep = res['Value']
 
-    description = prodStep['description']
-    longDescription = prodStep['longDescription']
-    stepType = prodStep['stepType']
-    plugin = prodStep['plugin']
-    agentType = prodStep['agentType']
-    fileMask = prodStep['fileMask']
-    groupsize = prodStep['groupsize']
-    body = prodStep['body']
-    inputquery = prodStep['inputquery']
-    outputquery = prodStep['outputquery']
-    name = '%08d' % prodID + '_' + prodStep['name']
+    gLogger.notice("Add step %s to production %s" % (prodStep[0], prodID))
+
+    description = prodStep[2]
+    longDescription = prodStep[3]
+    body = prodStep[4]
+    type = prodStep[5]
+    plugin = prodStep[6]
+    agentType = prodStep[7]
+    groupsize = prodStep[8]
+    inputquery = json.loads(prodStep[9])
+    outputquery = json.loads(prodStep[10])
+
+    name = '%08d' % prodID + '_' + prodStep[1]
 
     res = self.transClient.addTransformation(
         name,
         description,
         longDescription,
-        stepType,
+        type,
         plugin,
         agentType,
-        fileMask,
+        '',
         groupSize=groupsize,
         body=body,
         inputMetaQuery=inputquery,
@@ -83,6 +90,8 @@ class ProdTransManager(object):
 
     if not res['OK']:
       return S_ERROR(res['Message'])
+
+    # Here I could update the prodDescription with the real transID
 
     return S_OK(res['Value'])
 

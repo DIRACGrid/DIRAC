@@ -18,6 +18,8 @@ class ProductionClient(Client):
 
     Client.__init__(self, **kwargs)
     self.setServer('Production/ProductionManager')
+    self.prodDescription = {}
+    self.stepCounter = 1
 
   # Method applying the Production System State machine
 
@@ -118,3 +120,24 @@ class ProductionClient(Client):
         if len(res['Value']) < limit:
           break
     return S_OK(productionTransformations)
+
+  def addProductionStep(self, prodStep):
+    """ Add a production step and update the production description
+
+    :param prodStep: prodStep
+    """
+    stepName = 'Step' + str(self.stepCounter) + '_' + prodStep.Name
+    self.stepCounter += 1
+    prodStep.Name = stepName
+
+    res = prodStep.getAsDict()
+    if not res['OK']:
+      return res
+    prodStepDict = res['Value']
+    rpcClient = self._getRPC()
+    res = rpcClient.addProductionStep(prodStepDict)
+    if not res['OK']:
+      return res
+    stepID = res['Value']
+    self.prodDescription[prodStep.Name] = {'stepID': stepID, 'parentStep': prodStepDict['parentStep']}
+    return S_OK()
