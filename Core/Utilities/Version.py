@@ -5,6 +5,7 @@ import DIRAC
 from DIRAC import S_OK
 from DIRAC.ConfigurationSystem.Client.Helpers import getCSExtensions
 
+
 def getCurrentVersion():
   """ Get a string corresponding to the current version of the DIRAC package and all the installed
       extension packages

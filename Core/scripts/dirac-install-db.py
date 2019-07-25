@@ -5,7 +5,7 @@ Create a new DB on the local MySQL server
 # Script initialization and parseCommandLine
 from __future__ import print_function
 from DIRAC.Core.Base import Script
-Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
+Script.setUsageMessage( '\n'.join([ __doc__.split( '\n' )[1],
                                      'Usage:',
                                      '  %s [option|cfgFile] ... DB ...' % Script.scriptName,
                                      'Arguments:',

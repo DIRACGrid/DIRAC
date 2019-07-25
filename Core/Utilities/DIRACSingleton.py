@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL $
 # File: DIRACSingleton.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2011/11/24 13:40:38
