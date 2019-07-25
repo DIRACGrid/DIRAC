@@ -430,15 +430,28 @@ function clean(){
 
   pwd
 
+  echo $DIRAC
+  echo $DIRACSCRIPTS
+  echo $PATH
+
   unset DIRAC
+
+  echo $DIRAC
+
   unset DIRACOS
   unset DIRACPLAT
+  unset DIRACSCRIPTS
   source bashrc
   if [ $? -ne 0 ]
   then
     echo 'ERROR: cannot source bashrc'
     return
   fi
+
+  echo $DIRAC
+  echo $DIRACSCRIPTS
+  echo $PATH
+
   ####
 
   # Uninstalling the services
@@ -545,6 +558,7 @@ function fullPilot(){
   unset DIRAC
   unset DIRACOS
   unset DIRACPLAT
+  unset DIRACSCRIPTS
   #this should have been created, we source it so that we can continue
   source $PILOTINSTALLDIR/bashrc
   if [ $? -ne 0 ]
