@@ -5,23 +5,28 @@
 # Googling names or values of those OIDs, especially VOMS related, usually result in up to three pages of results,
 # mainly Java code defining those values like code below.
 # This is literally lookup table, so I know WTH is this, when I read value and see '1.3.6.1.4.1.8005.100.100.4'.
-VOMS_EXTENSION_OID = '1.3.6.1.4.1.8005.100.100.5'
-VOMS_FQANS_OID = '1.3.6.1.4.1.8005.100.100.4'
-VOMS_TAGS_EXT_OID = '1.3.6.1.4.1.8005.100.100.11'
+
 DOMAIN_COMPONENT_OID = '0.9.2342.19200300.100.1.25'
+DIRAC_GROUP_OID = '1.2.42.42'
+VOMS_FQANS_OID = '1.3.6.1.4.1.8005.100.100.4'
+VOMS_EXTENSION_OID = '1.3.6.1.4.1.8005.100.100.5'
+VOMS_TAGS_EXT_OID = '1.3.6.1.4.1.8005.100.100.11'
 ORGANIZATIONAL_UNIT_NAME_OID = '2.5.4.11'
 COMMON_NAME_OID = '2.5.4.3'
+COUNTRY_NAME = '2.5.4.6'
 ORGANIZATION_NAME = '2.5.4.10'
-DIRAC_GROUP_OID = '1.2.42.42'
 
 
 # See https://tools.ietf.org/html/rfc3820#appendix-A
 PROXY_OID = '1.3.6.1.5.5.7.21.1'
 LIMITED_PROXY_OID = '1.3.6.1.4.1.3536.1.1.1.9'
 
+# Some specific distinguished names: https://www.cryptosys.net/pki/manpki/pki_distnames.html
+
 DN_MAPPING = {
-    DOMAIN_COMPONENT_OID: '/DC=',
-    ORGANIZATIONAL_UNIT_NAME_OID: '/OU=',
     COMMON_NAME_OID: '/CN=',
+    COUNTRY_NAME: '/C=',
+    DOMAIN_COMPONENT_OID: '/DC=',
     ORGANIZATION_NAME: '/O=',
+    ORGANIZATIONAL_UNIT_NAME_OID: '/OU=',
 }
