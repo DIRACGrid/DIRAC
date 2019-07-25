@@ -427,31 +427,12 @@ function clean(){
     echo 'ERROR: cannot change to ' $SERVERINSTALLDIR
     return
   fi
-
-  pwd
-
-  echo $DIRAC
-  echo $DIRACSCRIPTS
-  echo $PATH
-
-  unset DIRAC
-
-  echo $DIRAC
-
-  unset DIRACOS
-  unset DIRACPLAT
-  unset DIRACSCRIPTS
   source bashrc
   if [ $? -ne 0 ]
   then
     echo 'ERROR: cannot source bashrc'
     return
   fi
-
-  echo $DIRAC
-  echo $DIRACSCRIPTS
-  echo $PATH
-
   ####
 
   # Uninstalling the services
@@ -554,11 +535,6 @@ function fullPilot(){
     return
   fi
 
-  # make sure there's no variable in between
-  unset DIRAC
-  unset DIRACOS
-  unset DIRACPLAT
-  unset DIRACSCRIPTS
   #this should have been created, we source it so that we can continue
   source $PILOTINSTALLDIR/bashrc
   if [ $? -ne 0 ]

@@ -384,11 +384,6 @@ function installDIRAC(){
     return
   fi
 
-  # make sure there's no variable in between
-  unset DIRAC
-  unset DIRACOS
-  unset DIRACPLAT
-  unset DIRACSCRIPTS
   source bashrc
 
   # now configuring
