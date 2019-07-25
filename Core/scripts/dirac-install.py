@@ -1113,10 +1113,10 @@ class ReleaseConfig(object):
 
   def getDiracOSExtensionAndVersion(self, diracOSVersion):
     """
-    This method return the diracos and version taking into 
+    This method return the diracos and version taking into
     account the extension
     :param str diracOSVersion: column separated string for example: LHCb:v1
-    :return: if the extension is not provided, it will return DIRACOS defined in DIRAC otherwise 
+    :return: if the extension is not provided, it will return DIRACOS defined in DIRAC otherwise
     the DIRACOS specified in the extension
     """
     if ":" in diracOSVersion:
@@ -1124,7 +1124,7 @@ class ReleaseConfig(object):
       return [package + 'diracos', packageVersion]
     else:
       return ['diracos', diracOSVersion]
-    
+
   def getDiracOSVersion(self, diracOSVersion=None):
     """
       It returns the DIRACOS version
