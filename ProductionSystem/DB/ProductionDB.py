@@ -257,7 +257,6 @@ class ProductionDB(DB):
     if not res['OK']:
       return res
 
-    print res['Value']
     prodDescription = json.loads(res['Value'])
     transIDs = []
     for step in sorted(prodDescription):
