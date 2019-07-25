@@ -1120,7 +1120,8 @@ class ReleaseConfig(object):
     the DIRACOS specified in the extension
     """
     if ":" in diracOSVersion:
-      return [i.strip() for i in diracOSVersion.split(':')]
+      package, packageVersion = [i.strip() for i in diracOSVersion.split(':')]
+      return [package + 'diracos', packageVersion]
     else:
       return ['diracos', diracOSVersion]
     
