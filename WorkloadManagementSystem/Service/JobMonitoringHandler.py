@@ -7,6 +7,8 @@
 from __future__ import print_function
 __RCSID__ = "$Id$"
 
+from datetime import timedelta
+
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 import DIRAC.Core.Utilities.Time as Time
@@ -243,12 +245,7 @@ class JobMonitoringHandler(RequestHandler):
   @staticmethod
   def export_getJobStatus(jobID):
 
-    result = gJobDB.getJobStatus(jobID)
-
-    if not result['OK']:
-      return result
-
-    return S_OK(result['Value']['Status'])
+    return gJobDB.getJobAttribute(jobID, 'Status')
 
 ##############################################################################
   types_getJobOwner = [int]
@@ -438,8 +435,10 @@ class JobMonitoringHandler(RequestHandler):
           hbTime = Time.fromString(jobDict['HeartBeatTime'])
           # There is no way to express a timedelta of 0 ;-)
           # Not only Stalled jobs but also Failed jobs because Stalled
-          if ((hbTime - lastTime) > 0 or jobDict['Status'] == "Stalled" or jobDict['MinorStatus'].startswith(
-                  'Job stalled') or jobDict['MinorStatus'].startswith('Stalling')):
+          if ((hbTime - lastTime) > timedelta(0) or
+              jobDict['Status'] == "Stalled" or
+              jobDict['MinorStatus'].startswith('Job stalled') or
+              jobDict['MinorStatus'].startswith('Stalling')):
             jobDict['LastSignOfLife'] = jobDict['HeartBeatTime']
           else:
             jobDict['LastSignOfLife'] = jobDict['LastUpdateTime']

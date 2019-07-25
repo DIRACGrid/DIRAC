@@ -296,20 +296,20 @@ the stalledTime limit.
     """ This method updates the job status in the JobDB, this should only be
         used to fail jobs due to the optimizer chain.
     """
-    self.log.verbose("self.jobDB.setJobStatus(%s, '%s')" % (job, status))
+    self.log.verbose("self.jobDB.setJobAttribute(%s,'Status','%s',update=True)" % (job, status))
 
     if self.am_getOption('Enable', True):
-      result = self.jobDB.setJobStatus(job, status)
+      result = self.jobDB.setJobAttribute(job, 'Status', status, update=True)
     else:
       result = S_OK('DisabledMode')
 
     if result['OK']:
       if minorstatus:
-        self.log.verbose("self.jobDB.setJobStatus(%s, minor ='%s')" % (job, minorstatus))
-        result = self.jobDB.setJobStatus(job, minor=minorstatus)
+        self.log.verbose("self.jobDB.setJobAttribute(%s,'MinorStatus','%s',update=True)" % (job, minorstatus))
+        result = self.jobDB.setJobAttribute(job, 'MinorStatus', minorstatus, update=True)
 
     if not minorstatus:  # Retain last minor status for stalled jobs
-      result = self.jobDB.getJobStatus(job)
+      result = self.jobDB.getJobAttributes(job, ['MinorStatus'])
       if result['OK']:
         minorstatus = result['Value']['MinorStatus']
 
@@ -531,9 +531,9 @@ the stalledTime limit.
 
     # Remove those with Minor Status "Pending Requests"
     for jobID in jobIDs:
-      result = self.jobDB.getJobStatus(jobID)
+      result = self.jobDB.getJobAttributes(jobID, ['Status', 'MinorStatus'])
       if not result['OK']:
-        self.log.error('Failed to get job status', result['Message'])
+        self.log.error('Failed to get job attributes', result['Message'])
         continue
       if result['Value']['Status'] != "Completed":
         continue
