@@ -84,12 +84,11 @@ class Service(object):
 
   def initialize(self):
     # Initialize Monitoring
-    """ The global flag variable activityMonitoring is a newly added flag for extending the ES based Monitoring System
-        to support Service.py to send useful data to the ES backend which was being previously sent to RRD only through
-        gMonitor object.
-        Now in order to turn ES based monitoring which is completely based on the user he/she needs to add the
-        following flag i.e. 'AcitivityMonitoring = yes' inside /DIRAC/ of the configuration file.
-    """
+    # The global flag variable activityMonitoring is a newly added flag for extending the ES based Monitoring System
+    # to support Service.py to send useful data to the ES backend which was being previously sent to RRD only through
+    # gMonitor object.
+    # Now in order to turn ES based monitoring which is completely based on the user he/she needs to add the
+    # following flag i.e. 'AcitivityMonitoring = yes' inside /DIRAC/ of the configuration file.
     self.activityMonitoring = gConfig.getValue("/DIRAC/ActivityMonitoring", "false").lower() in ("yes", "true")
     if self.activityMonitoring:
       self.activityMonitoringReporter = MonitoringReporter(monitoringType="ComponentMonitoring")
@@ -607,7 +606,17 @@ class Service(object):
 
   def _executeAction(self, trid, proposalTuple, handlerObj):
     try:
-      return handlerObj._rh_executeAction(proposalTuple)
+      response = handlerObj._rh_executeAction(proposalTuple)
+      if self.activityMonitoring:
+        self.activityMonitoringReporter.addRecord({
+            'timestamp': time.time(),
+            'site': self._cfg.getHostname(),
+            'componentType': 'service',
+            'component': "_".join(self._name.split("/")),
+            'componentLocation': self._cfg.getURL(),
+            'ServiceResponseTime': response[1]
+        })
+      return response[0]
     except Exception as e:
       gLogger.exception("Exception while executing handler action")
       return S_ERROR("Server error while executing action: %s" % str(e))
@@ -622,7 +631,17 @@ class Service(object):
     if not result['OK']:
       return result
     handlerObj = result['Value']
-    return handlerObj._rh_executeMessageCallback(msgObj)
+    response = handlerObj._rh_executeMessageCallback(msgObj)
+    if self.activityMonitoring:
+      self.activityMonitoringReporter.addRecord({
+          'timestamp': time.time(),
+          'site': self._cfg.getHostname(),
+          'componentType': 'service',
+          'component': "_".join(self._name.split("/")),
+          'componentLocation': self._cfg.getURL(),
+          'ServiceResponseTime': response[1]
+      })
+    return response[0]
 
   def _mbDisconnect(self, trid):
     result = self._instantiateHandler(trid)
