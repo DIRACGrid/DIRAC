@@ -436,9 +436,9 @@ class JobMonitoringHandler(RequestHandler):
           # There is no way to express a timedelta of 0 ;-)
           # Not only Stalled jobs but also Failed jobs because Stalled
           if ((hbTime - lastTime) > timedelta(0) or
-              jobDict['Status'] == "Stalled" or
-              jobDict['MinorStatus'].startswith('Job stalled') or
-              jobDict['MinorStatus'].startswith('Stalling')):
+                  jobDict['Status'] == "Stalled" or
+                  jobDict['MinorStatus'].startswith('Job stalled') or
+                  jobDict['MinorStatus'].startswith('Stalling')):
             jobDict['LastSignOfLife'] = jobDict['HeartBeatTime']
           else:
             jobDict['LastSignOfLife'] = jobDict['LastUpdateTime']
