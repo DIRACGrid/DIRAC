@@ -53,7 +53,7 @@ Then we create the list of LFNs we just uploaded::
 The easiest way to create a transformation to replicate files is by using the
 :doc:`/AdministratorGuide/CommandReference/dirac-transformation-replication` command::
 
-  [diracuser@dirac-tuto ~]$ dirac-transformation-replication 0 StorageElementTwo --Plugin Broadcast --Enable
+  [diracuser@dirac-tuto ~]$ dirac-transformation-replication 0 StorageElementTwo --Plugin Broadcast --Enable --SourceSEs StorageElementOne
   Created transformation NNN
   Successfully created replication transformation
 
