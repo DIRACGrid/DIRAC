@@ -241,3 +241,23 @@ class ComponentMonitoringPlotter(BasePlotter):
     :return: S_OK or S_ERROR { 'plot' : value1, 'thumbnail' : value2 } value1 and value2 are TRUE/FALSE
     """
     return self.__plotAllResources(reportRequest, plotInfo, filename, 'Number of running threads(activity)')
+
+  _reportServiceResponseTimeName = "Service response time"
+
+  def _reportServiceResponseTime(self, reportRequest):
+    """It is used to retrieve the data from the database.
+
+    :param dict reportRequest: contains attributes used to create the plot.
+    :return S_OK or S_ERROR {'data':value1, 'granularity':value2} value1 is a dictionary, value2 is the bucket length
+    """
+    return self.__reportAllResources(reportRequest, "ServiceResponseTime", "time")
+
+  def _plotServiceResponseTime(self, reportRequest, plotInfo, filename):
+    """It creates the plot.
+
+    :param dict reportRequest: plot attributes
+    :param dict plotInfo: contains all the data which are used to create the plot
+    :param str filename:
+    :return: S_OK or S_ERROR { 'plot' : value1, 'thumbnail' : value2 } value1 and value2 are TRUE/FALSE
+    """
+    return self.__plotAllResources(reportRequest, plotInfo, filename, 'Service response time')
