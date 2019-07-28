@@ -311,8 +311,7 @@ class Service(object):
 
   def __reportThreadPoolContents(self):
     if self.activityMonitoring:
-      """ As ES accepts raw data these monitoring fields are being sent here because they are time dependant.
-      """
+      # As ES accepts raw data these monitoring fields are being sent here because they are time dependant.
       self.activityMonitoringReporter.addRecord({
           'timestamp': time.time(),
           'site': self._cfg.getHostname(),
@@ -346,8 +345,7 @@ class Service(object):
     """
     self._stats['connections'] += 1
     if self.activityMonitoring:
-      """ As ES accepts raw data these monitoring fields are being sent here because they are action dependant.
-      """
+      #  As ES accepts raw data these monitoring fields are being sent here because they are action dependant.
       self.activityMonitoringReporter.addRecord({
           'timestamp': time.time(),
           'site': self._cfg.getHostname(),
@@ -607,7 +605,7 @@ class Service(object):
   def _executeAction(self, trid, proposalTuple, handlerObj):
     try:
       response = handlerObj._rh_executeAction(proposalTuple)
-      if self.activityMonitoring:
+      if self.activityMonitoring and len(response) == 2:
         self.activityMonitoringReporter.addRecord({
             'timestamp': time.time(),
             'site': self._cfg.getHostname(),
@@ -632,7 +630,7 @@ class Service(object):
       return result
     handlerObj = result['Value']
     response = handlerObj._rh_executeMessageCallback(msgObj)
-    if self.activityMonitoring:
+    if self.activityMonitoring and len(response) == 2:
       self.activityMonitoringReporter.addRecord({
           'timestamp': time.time(),
           'site': self._cfg.getHostname(),
