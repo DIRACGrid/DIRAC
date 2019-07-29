@@ -138,7 +138,7 @@ class RequestHandler(object):
     self.__logRemoteQueryResponse(retVal, elapsedTime)
     result = self.__trPool.send(self.__trid, retVal)  # this will delete the value from the S_OK(value)
     del retVal
-    return result, elapsedTime
+    return S_OK([result, elapsedTime])
 
 #####
 #
@@ -411,7 +411,7 @@ class RequestHandler(object):
       uReturnValue = S_ERROR("Message %s does not return a S_OK/S_ERROR" % msgName)
     elapsedTime = time.time() - startTime
     self.__logRemoteQueryResponse(uReturnValue, elapsedTime)
-    return uReturnValue, elapsedTime
+    return S_OK([uReturnValue, elapsedTime])
 
 ####
 #
