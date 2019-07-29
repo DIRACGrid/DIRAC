@@ -135,9 +135,9 @@ class ProductionManagerHandlerBase(RequestHandler):
     stepDescription = prodStep['description']
     stepLongDescription = prodStep['longDescription']
     stepBody = prodStep['body']
-    stepType =  prodStep['stepType']
+    stepType = prodStep['stepType']
     stepPlugin = prodStep['plugin']
-    stepAgentType =  prodStep['agentType']
+    stepAgentType = prodStep['agentType']
     stepGroupSize = prodStep['groupsize']
     stepInputQuery = prodStep['inputquery']
     stepOutputQuery = prodStep['outputquery']
@@ -146,7 +146,6 @@ class ProductionManagerHandlerBase(RequestHandler):
     if res['OK']:
       gLogger.info("Added production step %d" % res['Value'])
     return self._parseRes(res)
-
 
   types_getProductionStep = [int]
 

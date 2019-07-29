@@ -115,7 +115,19 @@ class ProductionDB(DB):
 
   def getProductions(self, condDict=None, older=None, newer=None, timeStamp='LastUpdate',
                      orderAttribute=None, limit=None, offset=None, connection=False):
-    """ Get parameters of all the Productions with support for the web standard structure """
+    """ Get parameters of all the Productions with support for the web standard structure
+
+    :param condDict:
+    :param older:
+    :param newer:
+    :param timeStamp:
+    :param orderAttribute:
+    :param limit:
+    :param offset:
+    :param connection:
+    :return:
+    """
+
     connection = self.__getConnection(connection)
     req = "SELECT %s FROM Productions %s" % (intListToString(self.PRODPARAMS),
                                              self.buildCondition(condDict, older, newer, timeStamp,
@@ -131,11 +143,6 @@ class ProductionDB(DB):
       rList = [str(item) if not isinstance(item, (long, int)) else item for item in row]
       prodDict = dict(zip(self.PRODPARAMS, row))
       webList.append(rList)
-      # if extraParams:
-      #  res = self.__getAdditionalParameters( transDict['TransformationID'], connection = connection )
-      #  if not res['OK']:
-      #    return res
-      #  transDict.update( res['Value'] )
       resultList.append(prodDict)
     result = S_OK(resultList)
     result['Records'] = webList
@@ -200,9 +207,8 @@ class ProductionDB(DB):
       return S_ERROR("ProductionStep %s did not exist" % str(stepID))
     return S_OK(res['Value'][0])
 
-
-  def addProductionStep(self, stepName, stepDescription, stepLongDescription, stepBody, stepType, stepPlugin, stepAgentType,\
-                    stepGroupSize, stepInputquery, stepOutputquery, connection=False):
+  def addProductionStep(self, stepName, stepDescription, stepLongDescription, stepBody, stepType, stepPlugin,
+                        stepAgentType, stepGroupSize, stepInputquery, stepOutputquery, connection=False):
     """
     Add a Production Step
     :param stepName:
@@ -224,8 +230,8 @@ class ProductionDB(DB):
                                     InputQuery,OutputQuery,LastUpdate,InsertedTime)\
                                 VALUES ('%s','%s', '%s', %s, '%s', '%s', '%s', '%s', '%s', '%s',\
                                 UTC_TIMESTAMP(),UTC_TIMESTAMP());" % \
-          (stepName, stepDescription, stepLongDescription, stepBody, stepType, stepPlugin, stepAgentType, \
-           stepGroupSize, stepInputquery, stepOutputquery)
+          (stepName, stepDescription, stepLongDescription, stepBody, stepType, stepPlugin, stepAgentType, stepGroupSize,
+           stepInputquery, stepOutputquery)
 
     res = self._update(req, connection)
     if not res['OK']:
@@ -235,7 +241,6 @@ class ProductionDB(DB):
     self.lock.release()
 
     return S_OK(stepID)
-
 
     ###########################################################################
   #
