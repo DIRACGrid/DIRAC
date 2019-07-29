@@ -32,8 +32,6 @@ class ProductionStep(object):
 
   def getAsDict(self):
     """ It returns the Step description as a dictionary
-
-    :return: a dictionary with the Step description
     """
     prodStepDict = {}
     prodStepDict['name'] = self.Name

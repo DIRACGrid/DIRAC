@@ -209,8 +209,8 @@ class ProductionDB(DB):
 
   def addProductionStep(self, stepName, stepDescription, stepLongDescription, stepBody, stepType, stepPlugin,
                         stepAgentType, stepGroupSize, stepInputquery, stepOutputquery, connection=False):
-    """
-    Add a Production Step
+    """ Add a Production Step
+
     :param stepName:
     :param stepDescription:
     :param stepLongDescription:
@@ -221,7 +221,6 @@ class ProductionDB(DB):
     :param stepGroupSize:
     :param stepInputquery:
     :param stepOutputquery:
-    :param connection:
     :return:
     """
     connection = self.__getConnection(connection)
@@ -253,7 +252,7 @@ class ProductionDB(DB):
     """ Gets the transformations of a given Production
 
     :param prodName: the Production name or ID
-    :return: the list of transformations belonging to the production as dictionaries
+    :return:
     """
     res = self._getConnectionProdID(connection, prodName)
     if not res['OK']:
@@ -291,7 +290,7 @@ class ProductionDB(DB):
     req = "UPDATE Productions SET Status='%s', LastUpdate=UTC_TIMESTAMP() WHERE ProductionID=%d" % (status, prodID)
     return self._update(req, connection)
 
-# This is to be replaced by startProduction, stopProduction etc.
+  # This is to be replaced by startProduction, stopProduction etc.
   def setProductionStatus(self, prodName, status, connection=False):
     """ Set the status to the production and to all the associated transformations
 

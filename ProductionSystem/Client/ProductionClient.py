@@ -67,13 +67,6 @@ class ProductionClient(Client):
   def getProductions(self, condDict=None, older=None, newer=None, timeStamp=None,
                      orderAttribute=None, limit=100):
     """ Gets all the productions in the system, incrementally. "limit" here is just used to determine the offset.
-    :param condDict:
-    :param older:
-    :param newer:
-    :param timeStamp:
-    :param orderAttribute:
-    :param limit:
-    :return:
     """
 
     rpcClient = self._getRPC()
@@ -104,12 +97,6 @@ class ProductionClient(Client):
         "limit" here is just used to determine the offset.
 
     :param prodName:
-    :param condDict:
-    :param older:
-    :param newer:
-    :param timeStamp:
-    :param orderAttribute:
-    :param limit:
     :return:
     """
 
