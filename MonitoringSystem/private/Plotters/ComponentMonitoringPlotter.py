@@ -261,3 +261,43 @@ class ComponentMonitoringPlotter(BasePlotter):
     :return: S_OK or S_ERROR { 'plot' : value1, 'thumbnail' : value2 } value1 and value2 are TRUE/FALSE
     """
     return self.__plotAllResources(reportRequest, plotInfo, filename, 'Service response time')
+
+  _reportAgentCycleDurationName = "Agent cycle duration"
+
+  def _reportAgentCycleDuration(self, reportRequest):
+    """It is used to retrieve the data from the database.
+
+    :param dict reportRequest: contains attributes used to create the plot.
+    :return S_OK or S_ERROR {'data':value1, 'granularity':value2} value1 is a dictionary, value2 is the bucket length
+    """
+    return self.__reportAllResources(reportRequest, "cycleDuration", "seconds")
+
+  def _plotAgentCycleDuration(self, reportRequest, plotInfo, filename):
+    """It creates the plot.
+
+    :param dict reportRequest: plot attributes
+    :param dict plotInfo: contains all the data which are used to create the plot
+    :param str filename:
+    :return: S_OK or S_ERROR { 'plot' : value1, 'thumbnail' : value2 } value1 and value2 are TRUE/FALSE
+    """
+    return self.__plotAllResources(reportRequest, plotInfo, filename, 'Agent cycle duration')
+
+  _reportAgentCyclesName = "Number of agent cycles"
+
+  def _reportAgentCycles(self, reportRequest):
+    """It is used to retrieve the data from the database.
+
+    :param dict reportRequest: contains attributes used to create the plot.
+    :return S_OK or S_ERROR {'data':value1, 'granularity':value2} value1 is a dictionary, value2 is the bucket length
+    """
+    return self.__reportAllResources(reportRequest, "cycles", "AgentCycles")
+
+  def _plotAgentCycles(self, reportRequest, plotInfo, filename):
+    """It creates the plot.
+
+    :param dict reportRequest: plot attributes
+    :param dict plotInfo: contains all the data which are used to create the plot
+    :param str filename:
+    :return: S_OK or S_ERROR { 'plot' : value1, 'thumbnail' : value2 } value1 and value2 are TRUE/FALSE
+    """
+    return self.__plotAllResources(reportRequest, plotInfo, filename, 'Number of agent cycles')
