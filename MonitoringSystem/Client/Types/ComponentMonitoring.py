@@ -29,7 +29,8 @@ class ComponentMonitoring(BaseType):
 
     self.monitoringFields = ['runningTime', 'memoryUsage', 'threads', 'cpuPercentage',
                              'Connections', 'PendingQueries', 'ActiveQueries',
-                             'RunningThreads', 'MaxFD', 'ServiceResponseTime']
+                             'RunningThreads', 'MaxFD', 'ServiceResponseTime',
+                             'cycleDuration', 'cycles']
 
     self.doc_type = "ComponentMonitoring"
 

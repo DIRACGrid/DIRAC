@@ -11,6 +11,7 @@ __RCSID__ = "$Id$"
 import os
 import threading
 import time
+import datetime
 import signal
 
 import DIRAC
@@ -22,6 +23,8 @@ from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
+from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
+from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 
 
 class AgentModule(object):
@@ -187,7 +190,7 @@ class AgentModule(object):
     os.environ['AGENT_WORKDIRECTORY'] = workDirectory
 
     self.__moduleProperties['shifterProxy'] = self.am_getOption('shifterProxy')
-    if self.am_monitoringEnabled():
+    if self.am_monitoringEnabled() and not self.activityMonitoring:
       self.monitor.enable()
     if len(self.__moduleProperties['executors']) < 1:
       return S_ERROR("At least one executor method has to be defined")
@@ -301,24 +304,29 @@ class AgentModule(object):
 
   def __initializeMonitor(self):
     """
-    Initialize the system monitor client
+    Initialize the system monitoring.
     """
-    if self.__moduleProperties['standalone']:
+    self.activityMonitoring = gConfig.getValue("/DIRAC/ActivityMonitoring", "false").lower() in ("yes", "true")
+    if self.activityMonitoring:
+      self.activityMonitoringReporter = MonitoringReporter(monitoringType="ComponentMonitoring")
+      gThreadScheduler.addPeriodicTask(100, self.__activityMonitoringReporting)
+    elif self.__moduleProperties['standalone']:
       self.monitor = gMonitor
     else:
       self.monitor = MonitoringClient()
-    self.monitor.setComponentType(self.monitor.COMPONENT_AGENT)
-    self.monitor.setComponentName(self.__moduleProperties['fullName'])
-    self.monitor.initialize()
-    self.monitor.registerActivity('CPU', "CPU Usage", 'Framework', "CPU,%", self.monitor.OP_MEAN, 600)
-    self.monitor.registerActivity('MEM', "Memory Usage", 'Framework', 'Memory,MB', self.monitor.OP_MEAN, 600)
-    # Component monitor
-    for field in ('version', 'DIRACVersion', 'description', 'platform'):
-      self.monitor.setComponentExtraParam(field, self.__codeProperties[field])
-    self.monitor.setComponentExtraParam('startTime', Time.dateTime())
-    self.monitor.setComponentExtraParam('cycles', 0)
-    self.monitor.disable()
-    self.__monitorLastStatsUpdate = time.time()
+    if not self.activityMonitoring:
+      self.monitor.setComponentType(self.monitor.COMPONENT_AGENT)
+      self.monitor.setComponentName(self.__moduleProperties['fullName'])
+      self.monitor.initialize()
+      self.monitor.registerActivity('CPU', "CPU Usage", 'Framework', "CPU,%", self.monitor.OP_MEAN, 600)
+      self.monitor.registerActivity('MEM', "Memory Usage", 'Framework', 'Memory,MB', self.monitor.OP_MEAN, 600)
+      # Component monitor
+      for field in ('version', 'DIRACVersion', 'description', 'platform'):
+        self.monitor.setComponentExtraParam(field, self.__codeProperties[field])
+      self.monitor.setComponentExtraParam('startTime', Time.dateTime())
+      self.monitor.setComponentExtraParam('cycles', 0)
+      self.monitor.disable()
+      self.__monitorLastStatsUpdate = time.time()
 
   def am_secureCall(self, functor, args=(), name=False):
     if not name:
@@ -381,11 +389,21 @@ class AgentModule(object):
     self.log.notice(" Average execution/polling time: %.2f%%" % elapsedPollingRate)
     if cycleResult['OK']:
       self.log.notice(" Cycle was successful")
+      if self.activityMonitoring:
+        self.activityMonitoringReporter.addRecord({
+            'timestamp': datetime.datetime.utcnow(),
+            'site': DIRAC.siteName(),
+            'componentType': "agent",
+            'component': "_".join(self.__moduleProperties['fullName'].split("/")),
+            'cycleDuration': elapsedTime,
+            'cycles': 1
+        })
     else:
       self.log.warn(" Cycle had an error:", cycleResult['Message'])
     self.log.notice("-" * 40)
     # Update number of cycles
-    self.monitor.setComponentExtraParam('cycles', self.__moduleProperties['cyclesDone'])
+    if not self.activityMonitoring:
+      self.monitor.setComponentExtraParam('cycles', self.__moduleProperties['cyclesDone'])
     # cycle finished successfully, cancel watchdog
     if watchdogInt > 0:
       signal.alarm(0)
@@ -393,19 +411,22 @@ class AgentModule(object):
 
   def _startReportToMonitoring(self):
     try:
-      now = time.time()
-      stats = os.times()
-      cpuTime = stats[0] + stats[2]
-      if now - self.__monitorLastStatsUpdate < 10:
-        return (now, cpuTime)
-      # Send CPU consumption mark
-      self.__monitorLastStatsUpdate = now
-      # Send Memory consumption mark
-      membytes = MemStat.VmB('VmRSS:')
-      if membytes:
-        mem = membytes / (1024. * 1024.)
-        gMonitor.addMark('MEM', mem)
-      return(now, cpuTime)
+      if not self.activityMonitoring:
+        now = time.time()
+        stats = os.times()
+        cpuTime = stats[0] + stats[2]
+        if now - self.__monitorLastStatsUpdate < 10:
+          return (now, cpuTime)
+        # Send CPU consumption mark
+        self.__monitorLastStatsUpdate = now
+        # Send Memory consumption mark
+        membytes = MemStat.VmB('VmRSS:')
+        if membytes:
+          mem = membytes / (1024. * 1024.)
+          gMonitor.addMark('MEM', mem)
+        return(now, cpuTime)
+      else:
+        return False
     except Exception:
       return False
 
@@ -457,3 +478,10 @@ class AgentModule(object):
 
   def execute(self):
     return S_ERROR("Execute method has to be overwritten by agent module")
+
+  def __activityMonitoringReporting(self):
+    """ This method is called by the ThreadScheduler as a periodic task in order to commit the collected data which
+        is done by the MonitoringReporter and is send to the 'ComponentMonitoring' type.
+    """
+    result = self.activityMonitoringReporter.commit()
+    return result['OK']
