@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 ########################################################################
-# $HeadURL$
 # File :    dirac-proxy-init.py
 # Author :  Adrian Casajus
 ########################################################################
+
 from __future__ import print_function
 __RCSID__ = "$Id$"
 

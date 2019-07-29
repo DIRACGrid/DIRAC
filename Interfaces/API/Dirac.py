@@ -37,7 +37,6 @@ from DIRAC.Core.Base.AgentReactor import AgentReactor
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities.File import mkDir
-from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Utilities.SiteSEMapping import getSEsForSite
 from DIRAC.Core.Utilities.PrettyPrint import printTable, printDict
@@ -286,9 +285,6 @@ class Dirac(API):
     return S_OK()
 
   #############################################################################
-  @deprecated("Use function submitJob instead")
-  def submit(self, job, mode='wms'):
-    return self.submitJob(job, mode=mode)
 
   def submitJob(self, job, mode='wms'):
     """Submit jobs to DIRAC (by default to the Worload Management System).
@@ -1225,9 +1221,6 @@ class Dirac(API):
     return S_OK(lfnGroups)
 
   #############################################################################
-  @deprecated("Use function getLfnMetadata instead")
-  def getMetadata(self, lfns, printOutput=False):
-    return self.getLfnMetadata(lfns, printOutput=printOutput)
 
   def getLfnMetadata(self, lfns, printOutput=False):
     """Obtain replica metadata from file catalogue client.
@@ -1755,9 +1748,6 @@ class Dirac(API):
     return result
 
   #############################################################################
-  @deprecated("Use function deleteJob instead")
-  def delete(self, jobID):
-    return self.deleteJob(jobID)
 
   def deleteJob(self, jobID):
     """Delete job or list of jobs from the WMS, if running these jobs will
@@ -1786,9 +1776,6 @@ class Dirac(API):
     return result
 
   #############################################################################
-  @deprecated("Use function rescheduleJob instead")
-  def reschedule(self, jobID):
-    return self.rescheduleJob(jobID)
 
   def rescheduleJob(self, jobID):
     """Reschedule a job or list of jobs in the WMS.  This operation is the same
@@ -1820,10 +1807,6 @@ class Dirac(API):
         self.jobRepo.updateJobs(repoDict)
     return result
 
-  @deprecated("Use function killJob instead")
-  def kill(self, jobID):
-    return self.killJob(jobID)
-
   def killJob(self, jobID):
     """Issue a kill signal to a running job.  If a job has already completed this
        action is harmless but otherwise the process will be killed on the compute
@@ -1852,9 +1835,6 @@ class Dirac(API):
     return result
 
   #############################################################################
-  @deprecated("Use function getJobStatus instead")
-  def status(self, jobID):
-    return self.getJobStatus(jobID)
 
   def getJobStatus(self, jobID):
     """Monitor the status of DIRAC Jobs.
@@ -2347,9 +2327,6 @@ class Dirac(API):
     return S_OK(summary)
 
   #############################################################################
-  @deprecated("Use function getJobAttributes instead")
-  def attributes(self, jobID, printOutput=False):
-    return self.getJobAttributes(jobID, printOutput=printOutput)
 
   def getJobAttributes(self, jobID, printOutput=False):
     """Return DIRAC attributes associated with the given job.
@@ -2388,9 +2365,6 @@ class Dirac(API):
     return result
 
   #############################################################################
-  @deprecated("Use function getJobParameters instead")
-  def parameters(self, jobID, printOutput=False):
-    return self.getJobParameters(jobID, printOutput=printOutput)
 
   def getJobParameters(self, jobID, printOutput=False):
     """Return DIRAC parameters associated with the given job.
@@ -2428,9 +2402,6 @@ class Dirac(API):
     return S_OK(result['Value'][jobID])
 
   #############################################################################
-  @deprecated("Use getJobLoggingInfo instead")
-  def loggingInfo(self, jobID, printOutput=False):
-    return self.getJobLoggingInfo(jobID, printOutput=printOutput)
 
   def getJobLoggingInfo(self, jobID, printOutput=False):
     """DIRAC keeps track of job transitions which are kept in the job monitoring
@@ -2473,9 +2444,6 @@ class Dirac(API):
     return result
 
   #############################################################################
-  @deprecated("Use function peekJob instead")
-  def peek(self, jobID, printout=False, printOutput=False):
-    return self.peekJob(jobID, printOutput=printout or printOutput)
 
   def peekJob(self, jobID, printOutput=False):
     """The peek function will attempt to return standard output from the WMS for
@@ -2515,9 +2483,6 @@ class Dirac(API):
     return S_OK(stdout)
 
   #############################################################################
-  @deprecated("Use function pingService instead")
-  def ping(self, system, service, printOutput=False, url=None):
-    return self.pingService(system, service, printOutput=printOutput, url=url)
 
   def pingService(self, system, service, printOutput=False, url=None):
     """The ping function will attempt to return standard information from a system

@@ -1,4 +1,3 @@
-# $HeadURL $
 ''' PolicyCaller
 
   Module used for calling policies. Its class is used for invoking
@@ -6,18 +5,19 @@
 
 '''
 
-from DIRAC                                import S_ERROR
+from DIRAC import S_ERROR
 from DIRAC.ResourceStatusSystem.Utilities import Utils
-from DIRAC.ResourceStatusSystem.Command   import CommandCaller
+from DIRAC.ResourceStatusSystem.Command import CommandCaller
 
-__RCSID__  = '$Id: $'
+__RCSID__ = '$Id$'
 
-class PolicyCaller( object ):
+
+class PolicyCaller(object):
   '''
     PolicyCaller loads policies, sets commands and runs them.
   '''
 
-  def __init__( self, clients = None ):
+  def __init__(self, clients=None):
     '''
       Constructor
     '''
@@ -28,7 +28,7 @@ class PolicyCaller( object ):
     if clients is not None:
       self.clients = clients
 
-  def policyInvocation( self, decisionParams, policyDict ):
+  def policyInvocation(self, decisionParams, policyDict):
     '''
     Invokes a policy:
 
@@ -45,51 +45,51 @@ class PolicyCaller( object ):
     to get a command object
     '''
 
-    if not 'module' in policyDict:
-      return S_ERROR( 'Malformed policyDict %s' % policyDict )
-    pModuleName = policyDict[ 'module' ]
+    if 'module' not in policyDict:
+      return S_ERROR('Malformed policyDict %s' % policyDict)
+    pModuleName = policyDict['module']
 
-    if not 'command' in policyDict:
-      return S_ERROR( 'Malformed policyDict %s' % policyDict )
-    pCommand = policyDict[ 'command' ]
+    if 'command' not in policyDict:
+      return S_ERROR('Malformed policyDict %s' % policyDict)
+    pCommand = policyDict['command']
 
-    if not 'args' in policyDict:
-      return S_ERROR( 'Malformed policyDict %s' % policyDict )
-    pArgs = policyDict[ 'args' ]
+    if 'args' not in policyDict:
+      return S_ERROR('Malformed policyDict %s' % policyDict)
+    pArgs = policyDict['args']
 
     try:
-      policyModule = Utils.voimport( 'DIRAC.ResourceStatusSystem.Policy.%s' % pModuleName )
+      policyModule = Utils.voimport('DIRAC.ResourceStatusSystem.Policy.%s' % pModuleName)
     except ImportError:
-      return S_ERROR( 'Unable to import DIRAC.ResourceStatusSystem.Policy.%s' % pModuleName )
+      return S_ERROR('Unable to import DIRAC.ResourceStatusSystem.Policy.%s' % pModuleName)
 
-    if not hasattr( policyModule, pModuleName ):
-      return S_ERROR( '%s has no attibute %s' % ( policyModule, pModuleName ) )
+    if not hasattr(policyModule, pModuleName):
+      return S_ERROR('%s has no attibute %s' % (policyModule, pModuleName))
 
-    policy  = getattr( policyModule, pModuleName )()
+    policy = getattr(policyModule, pModuleName)()
 
-    command = self.cCaller.commandInvocation( pCommand, pArgs, decisionParams, self.clients )
-    if not command[ 'OK' ]:
+    command = self.cCaller.commandInvocation(pCommand, pArgs, decisionParams, self.clients)
+    if not command['OK']:
       return command
-    command = command[ 'Value' ]
+    command = command['Value']
 
-    evaluationResult = self.policyEvaluation( policy, command )
+    evaluationResult = self.policyEvaluation(policy, command)
 
-    if evaluationResult[ 'OK' ]:
-      evaluationResult[ 'Value' ][ 'Policy' ] = policyDict
+    if evaluationResult['OK']:
+      evaluationResult['Value']['Policy'] = policyDict
 
     return evaluationResult
 
   @staticmethod
-  def policyEvaluation( policy, command ):
+  def policyEvaluation(policy, command):
     '''
     Method that given a policy and a command objects, assigns the second one as
     a member of the first and evaluates the policy.
     '''
 
-    policy.setCommand( command )
+    policy.setCommand(command)
     evaluationResult = policy.evaluate()
 
     return evaluationResult
 
 ################################################################################
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
+# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

@@ -85,16 +85,6 @@ class ProductionDB(DB):
 
     self.lock.acquire()
 
-    res = self._escapeString(prodName)
-    if not res['OK']:
-      return res
-    prodName = res['Value']
-
-    res = self._escapeString(prodDescription)
-    if not res['OK']:
-      return res
-    prodDescription = res['Value']
-
     req = "INSERT INTO Productions (ProductionName,Description,CreationDate,LastUpdate, \
                                     AuthorDN,AuthorGroup,Status)\
                                 VALUES ('%s','%s',UTC_TIMESTAMP(),UTC_TIMESTAMP(),'%s','%s','New');" % \

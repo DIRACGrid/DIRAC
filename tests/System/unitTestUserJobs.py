@@ -3,7 +3,7 @@
 
 # pylint: disable=wrong-import-position, invalid-name
 
-from __future__ import print_function, absolute_import, unicode_literals
+from __future__ import print_function, absolute_import
 
 __RCSID__ = "$Id$"
 
@@ -20,11 +20,6 @@ parseCommandLine()
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
 time.sleep(3)  # in theory this should not be needed, but I don't know why, without, it fails.
-result = getProxyInfo()
-if result['Value']['group'] not in ['dteam_user', 'dirac_user']:
-  print("GET A USER GROUP")
-  exit(1)
-
 
 jobsSubmittedList = []
 

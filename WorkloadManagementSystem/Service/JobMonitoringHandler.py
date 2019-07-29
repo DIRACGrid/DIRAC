@@ -10,7 +10,6 @@ __RCSID__ = "$Id$"
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 import DIRAC.Core.Utilities.Time as Time
-from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
@@ -169,8 +168,6 @@ class JobMonitoringHandler(RequestHandler):
     #    if attrDict.has_key(attribute):
     #      queryDict[attribute] = attrDict[attribute]
 
-    print(attrDict)
-
     return gJobDB.selectJobs(attrDict, newer=cutDate)
 
 ##############################################################################
@@ -293,11 +290,11 @@ class JobMonitoringHandler(RequestHandler):
   types_getJobsParameters = [list, list]
 
   @staticmethod
-  @deprecated("Unused")
   def export_getJobsParameters(jobIDs, parameters):
     if not (jobIDs and parameters):
       return S_OK({})
     return gJobDB.getAttributesForJobList(jobIDs, parameters)
+
 
 ##############################################################################
   types_getJobsStatus = [list]

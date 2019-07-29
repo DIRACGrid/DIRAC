@@ -7,9 +7,10 @@
 
 from DIRAC import S_OK, S_ERROR, gLogger
 
-__RCSID__  = '$Id$'
+__RCSID__ = '$Id$'
 
-class State( object ):
+
+class State(object):
   """
     State class that represents a single step on a StateMachine, with all the
     possible transitions, the default transition and an ordering level.
@@ -34,16 +35,16 @@ class State( object ):
 
   """
 
-  def __init__( self, level, stateMap = list(), defState = None ):
+  def __init__(self, level, stateMap=list(), defState=None):
     """
     Constructor.
     """
 
-    self.level    = level
+    self.level = level
     self.stateMap = stateMap
-    self.default  = defState
+    self.default = defState
 
-  def transitionRule( self, nextState ):
+  def transitionRule(self, nextState):
     """
     Method that selects next state, knowing the default and the transitions
     map, and the proposed next state. If <nextState> is in stateMap, goes there.
@@ -65,17 +66,18 @@ class State( object ):
     :rtype: str
     """
 
-    #If next state is on the list of next states, go ahead.
+    # If next state is on the list of next states, go ahead.
     if nextState in self.stateMap:
       return nextState
 
-    #If not, calculate defaultState:
+    # If not, calculate defaultState:
     # if there is a default, that one
     # otherwise is nextState ( states with empty list have no movement restrictions )
-    defaultNext = ( 1 and self.default ) or nextState
+    defaultNext = (1 and self.default) or nextState
     return defaultNext
 
-class StateMachine( object ):
+
+class StateMachine(object):
   """
     StateMachine class that represents the whole state machine with all transitions.
 
@@ -90,16 +92,16 @@ class StateMachine( object ):
 
   """
 
-  def __init__( self, state = None ):
+  def __init__(self, state=None):
     """
     Constructor.
     """
 
-    self.state  = state
+    self.state = state
     # To be overwritten by child classes, unless you like Nirvana state that much.
-    self.states = { 'Nirvana' : State( 100 ) }
+    self.states = {'Nirvana': State(100)}
 
-  def levelOfState( self, state ):
+  def levelOfState(self, state):
     """
     Given a state name, it returns its level ( integer ), which defines the hierarchy.
 
@@ -112,9 +114,9 @@ class StateMachine( object ):
     :return: `int` || -1 ( if not in <self.states> )
     """
 
-    if not state in self.states:
+    if state not in self.states:
       return -1
-    return self.states[ state ].level
+    return self.states[state].level
 
   def setState(self, candidateState):
     """ Makes sure the state is either None or known to the machine, and that it is a valid state to move into.
@@ -144,18 +146,17 @@ class StateMachine( object ):
         return S_OK(self.state)
       if candidateState not in self.states[self.state].stateMap:
         gLogger.warn("Can't move from %s to %s, choosing a good one" % (self.state, candidateState))
-      nextState = self.getNextState(candidateState)
-      if not nextState['OK']:
-        return nextState
-      nextState = nextState['Value']
+      result = self.getNextState(candidateState)
+      if not result['OK']:
+        return result
+      self.state = result['Value']
       # If the StateMachine does not accept the candidate, return error message
-      self.state = nextState
     else:
       return S_ERROR("%s is not a valid state" % candidateState)
 
-    return S_OK(nextState)
+    return S_OK(self.state)
 
-  def getStates( self ):
+  def getStates(self):
     """
     Returns all possible states in the state map
 
@@ -168,7 +169,7 @@ class StateMachine( object ):
 
     return self.states.keys()
 
-  def getNextState( self, candidateState ):
+  def getNextState(self, candidateState):
     """
     Method that gets the next state, given the proposed transition to candidateState.
     If candidateState is not on the state map <self.states>, it is rejected. If it is
@@ -186,18 +187,19 @@ class StateMachine( object ):
     :return: S_OK( nextState ) || S_ERROR
     """
 
-    if not candidateState in self.states:
-      return S_ERROR( '%s is not a valid state' % candidateState )
+    if candidateState not in self.states:
+      return S_ERROR('%s is not a valid state' % candidateState)
 
     # FIXME: do we need this anymore ?
     if self.state is None:
-      return S_OK( candidateState )
+      return S_OK(candidateState)
 
-    return S_OK( self.states[ self.state ].transitionRule( candidateState ) )
+    return S_OK(self.states[self.state].transitionRule(candidateState))
 
-#...............................................................................
+# ...............................................................................
 
-class RSSMachine( StateMachine ):
+
+class RSSMachine(StateMachine):
   """
   RSS implementation of the State Machine. It defines six states, which ordered
   by level conform the following list ( higher level first ): Unknown, Active,
@@ -216,25 +218,25 @@ class RSSMachine( StateMachine ):
 
   """
 
-  def __init__( self, state ):
+  def __init__(self, state):
     """
     Constructor.
 
     """
 
-    super( RSSMachine, self ).__init__( state )
+    super(RSSMachine, self).__init__(state)
 
     # Defines state map.
     self.states = {
-                   'Unknown'  : State( 5 ),
-                   'Active'   : State( 4 ),
-                   'Degraded' : State( 3 ),
-                   'Probing'  : State( 2 ),
-                   'Banned'   : State( 1, [ 'Error', 'Banned', 'Probing' ], defState = 'Probing' ),
-                   'Error'    : State( 0 )
-                  }
+        'Unknown': State(5),
+        'Active': State(4),
+        'Degraded': State(3),
+        'Probing': State(2),
+        'Banned': State(1, ['Error', 'Banned', 'Probing'], defState='Probing'),
+        'Error': State(0)
+    }
 
-  def orderPolicyResults( self, policyResults ):
+  def orderPolicyResults(self, policyResults):
     """
     Method built specifically to interact with the policy results obtained on the
     PDP module. It sorts the input based on the level of their statuses, the lower
@@ -258,10 +260,10 @@ class RSSMachine( StateMachine ):
     :result: list( dict ), which is ordered
     """
 
-    #We really do not need to return, as the list is mutable
-    policyResults.sort( key = self.levelOfPolicyState )
+    # We really do not need to return, as the list is mutable
+    policyResults.sort(key=self.levelOfPolicyState)
 
-  def levelOfPolicyState( self, policyResult ):
+  def levelOfPolicyState(self, policyResult):
     """
     Returns the level of the state associated with the policy, -1 if something
     goes wrong. It is mostly used while sorting policies with method `orderPolicyResults`.
@@ -276,7 +278,7 @@ class RSSMachine( StateMachine ):
     :return: int || -1 ( if policyResult[ 'Status' ] is not known by the StateMachine )
     """
 
-    return self.levelOfState( policyResult[ 'Status' ] )
+    return self.levelOfState(policyResult['Status'])
 
-#...............................................................................
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
+# ...............................................................................
+# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

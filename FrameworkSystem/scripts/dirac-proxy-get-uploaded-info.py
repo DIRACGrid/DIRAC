@@ -2,10 +2,14 @@
 ########################################################################
 # File :    dirac-proxy-init.py
 # Author :  Adrian Casajus
-###########################################################from DIRAC.Core.Base import Script#############
+########################################################################
 from __future__ import print_function
+
 import sys
+
 import DIRAC
+
+from DIRAC import gLogger
 from DIRAC.Core.Base import Script
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import ProxyManagerClient
 from DIRAC.Core.Security import Properties
@@ -29,36 +33,38 @@ Script.parseCommandLine()
 
 result = getProxyInfo()
 if not result['OK']:
-  print("Do you have a valid proxy?")
-  print(result['Message'])
+  gLogger.notice("Do you have a valid proxy?")
+  gLogger.notice(result['Message'])
   sys.exit(1)
 proxyProps = result['Value']
 
+userName = userName or proxyProps.get('username')
 if not userName:
-  userName = proxyProps['username']
+  gLogger.notice("Your proxy don`t have username extension")
+  sys.exit(1)
 
 if userName in Registry.getAllUsers():
   if Properties.PROXY_MANAGEMENT not in proxyProps['groupProperties']:
     if userName != proxyProps['username'] and userName != proxyProps['issuer']:
-      print("You can only query info about yourself!")
+      gLogger.notice("You can only query info about yourself!")
       sys.exit(1)
   result = Registry.getDNForUsername(userName)
   if not result['OK']:
-    print("Oops %s" % result['Message'])
+    gLogger.notice("Oops %s" % result['Message'])
   dnList = result['Value']
   if not dnList:
-    print("User %s has no DN defined!" % userName)
+    gLogger.notice("User %s has no DN defined!" % userName)
     sys.exit(1)
   userDNs = dnList
 else:
   userDNs = [userName]
 
 
-print("Checking for DNs %s" % " | ".join(userDNs))
+gLogger.notice("Checking for DNs %s" % " | ".join(userDNs))
 pmc = ProxyManagerClient()
 result = pmc.getDBContents({'UserDN': userDNs})
 if not result['OK']:
-  print("Could not retrieve the proxy list: %s" % result['Message'])
+  gLogger.notice("Could not retrieve the proxy list: %s" % result['Value'])
   sys.exit(1)
 
 data = result['Value']
@@ -85,5 +91,4 @@ for row in data['Records']:
   lines.append(nL)
   lines.append("-" * tL)
 
-print("\n".join(lines))
-
+gLogger.notice("\n".join(lines))

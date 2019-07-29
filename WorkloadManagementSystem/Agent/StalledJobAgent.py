@@ -3,8 +3,7 @@
     seconds will be assigned the "Stalled" state.
 """
 
-from __future__ import print_function, absolute_import, unicode_literals
-from builtins import str
+from __future__ import print_function, absolute_import
 
 __RCSID__ = "$Id$"
 
@@ -458,7 +457,7 @@ the stalledTime limit.
       if not startTime or startTime == 'None':
         startTime = jobDict['SubmissionTime']
 
-    if isinstance(startTime, str):
+    if isinstance(startTime, basestring):
       startTime = fromString(startTime)
       if startTime is None:
         self.log.error('Wrong timestamp in DB', items[3])

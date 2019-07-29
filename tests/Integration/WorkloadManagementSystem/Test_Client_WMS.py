@@ -220,7 +220,7 @@ class JobMonitoring(TestWMSTestCase):
     res = jobMonitor.getJobsParameters([jobID], [])
     self.assertTrue(res['OK'])
     self.assertEqual(res['Value'], {})
-    res = jobMonitor.getJobsParameters([jobID], ['Owner'])
+    res = jobMonitor.getJobOwner(jobID)
     self.assertTrue(res['OK'])
 
     # Adding stuff

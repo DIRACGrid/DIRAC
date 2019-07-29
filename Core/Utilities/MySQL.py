@@ -157,7 +157,6 @@ from DIRAC import gLogger
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.Time import fromString
 from DIRAC.Core.Utilities import DErrno
-from DIRAC.Core.Utilities.Decorators import deprecated
 
 # This is for proper initialization of embedded server, it should only be called once
 try:
@@ -916,13 +915,6 @@ class MySQL(object):
         return S_ERROR(DErrno.EMYSQL, x)
 
     return self.getFields(tableName, outFields, condDict, limit, conn, older, newer, timeStamp, orderAttribute)
-
-  @deprecated("Use method insertFields instead")
-  def _insert(self, tableName, inFields=None, inValues=None, conn=None):
-    """
-      Wrapper to the new method for backward compatibility
-    """
-    return self.insertFields(tableName, inFields, inValues, conn)
 
   def _to_value(self, param):
     """

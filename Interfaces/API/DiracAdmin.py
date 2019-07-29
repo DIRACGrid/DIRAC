@@ -10,7 +10,7 @@ __RCSID__ = "$Id$"
 
 import os
 
-from DIRAC import gConfig, S_OK, S_ERROR
+from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.PromptUser import promptUser
 from DIRAC.Core.Base.API import API
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
@@ -58,7 +58,7 @@ class DiracAdmin(API):
     self.sitestatus = SiteStatus()
 
   #############################################################################
-  def uploadProxy(self, group):
+  def uploadProxy(self):
     """Upload a proxy to the DIRAC WMS.  This method
 
        Example usage:
@@ -66,15 +66,13 @@ class DiracAdmin(API):
          >>> print diracAdmin.uploadProxy('dteam_pilot')
          {'OK': True, 'Value': 0L}
 
-       :param group: DIRAC Group
-       :type job: string
        :return: S_OK,S_ERROR
 
        :param permanent: Indefinitely update proxy
        :type permanent: boolean
 
     """
-    return gProxyManager.uploadProxy(diracGroup=group)
+    return gProxyManager.uploadProxy()
 
   #############################################################################
   def setProxyPersistency(self, userDN, userGroup, persistent=True):
@@ -82,7 +80,7 @@ class DiracAdmin(API):
 
        Example usage:
 
-         >>> print diracAdmin.setProxyPersistency( 'some DN', 'dirac group', True )
+         >>> gLogger.notice(diracAdmin.setProxyPersistency( 'some DN', 'dirac group', True ))
          {'OK': True }
 
        :param userDN: User DN
@@ -101,7 +99,7 @@ class DiracAdmin(API):
 
        Example usage:
 
-         >>> print diracAdmin.setProxyPersistency( 'some DN', 'dirac group', True )
+         >>> gLogger.notice(diracAdmin.setProxyPersistency( 'some DN', 'dirac group', True ))
          {'OK': True, 'Value' : True/False }
 
        :param userDN: User DN
@@ -120,7 +118,7 @@ class DiracAdmin(API):
 
        Example usage:
 
-         >>> print diracAdmin.getSiteMask()
+         >>> gLogger.notice(diracAdmin.getSiteMask())
          {'OK': True, 'Value': 0L}
 
        :return: S_OK,S_ERROR
@@ -133,7 +131,7 @@ class DiracAdmin(API):
       if printOutput:
         sites.sort()
         for site in sites:
-          print(site)
+          gLogger.notice(site)
 
     return result
 
@@ -143,7 +141,7 @@ class DiracAdmin(API):
 
        Example usage:
 
-         >>> print diracAdmin.getBannedSites()
+         >>> gLogger.notice(diracAdmin.getBannedSites())
          {'OK': True, 'Value': []}
 
        :return: S_OK,S_ERROR
@@ -161,7 +159,7 @@ class DiracAdmin(API):
     mergedList = sorted(bannedSites['Value'] + probingSites['Value'])
 
     if printOutput:
-      print('\n'.join(mergedList))
+      gLogger.notice('\n'.join(mergedList))
 
     return S_OK(mergedList)
 
@@ -171,7 +169,7 @@ class DiracAdmin(API):
 
        Example usage:
 
-         >>> print diracAdmin.getSiteSection('LCG.CERN.ch')
+         >>> gLogger.notice(diracAdmin.getSiteSection('LCG.CERN.ch'))
          {'OK': True, 'Value':}
 
        :return: S_OK,S_ERROR
@@ -182,7 +180,7 @@ class DiracAdmin(API):
 
     result = gConfig.getOptionsDict('/Resources/Sites/%s/%s' % (gridType, site))
     if printOutput and result['OK']:
-      print(self.pPrint.pformat(result['Value']))
+      gLogger.notice(self.pPrint.pformat(result['Value']))
     return result
 
   #############################################################################
@@ -191,7 +189,7 @@ class DiracAdmin(API):
 
        Example usage:
 
-         >>> print diracAdmin.allowSite()
+         >>> gLogger.notice(diracAdmin.allowSite())
          {'OK': True, 'Value': }
 
        :return: S_OK,S_ERROR
@@ -207,7 +205,7 @@ class DiracAdmin(API):
     siteMask = result['Value']
     if site in siteMask:
       if printOutput:
-        print('Site %s is already Active' % site)
+        gLogger.notice('Site %s is already Active' % site)
       return S_OK('Site %s is already Active' % site)
 
     if self.rssFlag:
@@ -218,7 +216,7 @@ class DiracAdmin(API):
       return result
 
     if printOutput:
-      print('Site %s status is set to Active' % site)
+      gLogger.notice('Site %s status is set to Active' % site)
 
     return result
 
@@ -228,7 +226,7 @@ class DiracAdmin(API):
 
        Example usage:
 
-         >>> print diracAdmin.getSiteMaskLogging('LCG.AUVER.fr')
+         >>> gLogger.notice(diracAdmin.getSiteMaskLogging('LCG.AUVER.fr'))
          {'OK': True, 'Value': }
 
        :return: S_OK,S_ERROR
@@ -247,19 +245,20 @@ class DiracAdmin(API):
 
     if printOutput:
       if site:
-        print('\nSite Mask Logging Info for %s\n' % site)
+        gLogger.notice('\nSite Mask Logging Info for %s\n' % site)
       else:
-        print('\nAll Site Mask Logging Info\n')
+        gLogger.notice('\nAll Site Mask Logging Info\n')
 
       sitesLogging = result['Value']
       if isinstance(sitesLogging, dict):
         for siteName, tupleList in sitesLogging.iteritems():
           if not siteName:
-            print('\n===> %s\n' % siteName)
+            gLogger.notice('\n===> %s\n' % siteName)
           for tup in tupleList:
-            print(str(tup[0]).ljust(8) + str(tup[1]).ljust(20) +
-                  '( ' + str(tup[2]).ljust(len(str(tup[2]))) + ' )  "' + str(tup[3]) + '"')
-          print(' ')
+            stup = str(tup[0]).ljust(8) + str(tup[1]).ljust(20)
+            stup += '( ' + str(tup[2]).ljust(len(str(tup[2]))) + ' )  "' + str(tup[3]) + '"'
+            gLogger.notice(stup)
+          gLogger.notice(' ')
       elif isinstance(sitesLogging, list):
         result = [(sl[1], sl[3], sl[4]) for sl in sitesLogging]
 
@@ -271,7 +270,7 @@ class DiracAdmin(API):
 
        Example usage:
 
-         >>> print diracAdmin.banSite()
+         >>> gLogger.notice(diracAdmin.banSite())
          {'OK': True, 'Value': }
 
        :return: S_OK,S_ERROR
@@ -287,7 +286,7 @@ class DiracAdmin(API):
     siteMask = mask['Value']
     if site in siteMask:
       if printOutput:
-        print('Site %s is already Banned' % site)
+        gLogger.notice('Site %s is already Banned' % site)
       return S_OK('Site %s is already Banned' % site)
 
     if self.rssFlag:
@@ -298,7 +297,7 @@ class DiracAdmin(API):
       return result
 
     if printOutput:
-      print('Site %s status is set to Banned' % site)
+      gLogger.notice('Site %s status is set to Banned' % site)
 
     return result
 
@@ -322,7 +321,7 @@ class DiracAdmin(API):
 
        Example usage:
 
-         >>> print diracAdmin.getServicePorts()
+         >>> gLogger.notice(diracAdmin.getServicePorts())
          {'OK': True, 'Value':''}
 
        :return: S_OK,S_ERROR
@@ -370,7 +369,7 @@ class DiracAdmin(API):
         self.log.warn('%s is not defined in /DIRAC/Setups/%s' % (system, setup))
 
     if printOutput:
-      print(self.pPrint.pformat(result))
+      gLogger.notice(self.pPrint.pformat(result))
 
     return S_OK(result)
 
@@ -381,7 +380,7 @@ class DiracAdmin(API):
 
        Example usage:
 
-         >>> print diracAdmin.getProxy()
+         >>> gLogger.notice(diracAdmin.getProxy())
          {'OK': True, 'Value': }
 
        :return: S_OK,S_ERROR
@@ -397,7 +396,7 @@ class DiracAdmin(API):
 
        Example usage:
 
-         >>> print diracAdmin.getVOMSProxy()
+         >>> gLogger.notice(diracAdmin.getVOMSProxy())
          {'OK': True, 'Value': }
 
        :return: S_OK,S_ERROR
@@ -414,7 +413,7 @@ class DiracAdmin(API):
 
        Example usage:
 
-         >>> print diracAdmin.getVOMSProxy()
+         >>> gLogger.notice(diracAdmin.getVOMSProxy())
          {'OK': True, 'Value': }
 
        :return: S_OK,S_ERROR
@@ -430,7 +429,7 @@ class DiracAdmin(API):
 
        Example::
 
-         >>> print dirac.reset(12345)
+         >>> gLogger.notice(dirac.reset(12345))
          {'OK': True, 'Value': [12345]}
 
        :param job: JobID
@@ -458,7 +457,7 @@ class DiracAdmin(API):
        The output will be retrieved in a local directory unless
        otherwise specified.
 
-         >>> print dirac.getJobPilotOutput(12345)
+         >>> gLogger.notice(dirac.getJobPilotOutput(12345))
          {'OK': True, StdOut:'',StdError:''}
 
        :param job: JobID
@@ -508,7 +507,7 @@ class DiracAdmin(API):
   def getPilotOutput(self, gridReference, directory=''):
     """Retrieve the pilot output  (std.out and std.err) for an existing job in the WMS.
 
-         >>> print dirac.getJobPilotOutput(12345)
+         >>> gLogger.notice(dirac.getJobPilotOutput(12345))
          {'OK': True, 'Value': {}}
 
        :param job: JobID
@@ -565,7 +564,7 @@ class DiracAdmin(API):
   def getPilotInfo(self, gridReference):
     """Retrieve info relative to a pilot reference
 
-         >>> print dirac.getPilotInfo(12345)
+         >>> gLogger.notice(dirac.getPilotInfo(12345))
          {'OK': True, 'Value': {}}
 
        :param gridReference: Pilot Job Reference
@@ -582,7 +581,7 @@ class DiracAdmin(API):
   def killPilot(self, gridReference):
     """Kill the pilot specified
 
-         >>> print dirac.getPilotInfo(12345)
+         >>> gLogger.notice(dirac.getPilotInfo(12345))
          {'OK': True, 'Value': {}}
 
        :param gridReference: Pilot Job Reference
@@ -598,7 +597,7 @@ class DiracAdmin(API):
   def getPilotLoggingInfo(self, gridReference):
     """Retrieve the pilot logging info for an existing job in the WMS.
 
-         >>> print dirac.getPilotLoggingInfo(12345)
+         >>> gLogger.notice(dirac.getPilotLoggingInfo(12345))
          {'OK': True, 'Value': {"The output of the command"}}
 
        :param gridReference: Gridp pilot job reference Id
@@ -615,7 +614,7 @@ class DiracAdmin(API):
     """Extract the list of submitted pilots and their status for a given
        jobID from the WMS.  Useful information is printed to the screen.
 
-         >>> print dirac.getJobPilots()
+         >>> gLogger.notice(dirac.getJobPilots())
          {'OK': True, 'Value': {PilotID:{StatusDict}}}
 
        :param job: JobID
@@ -631,7 +630,7 @@ class DiracAdmin(API):
 
     result = PilotManagerClient().getPilots(jobID)
     if result['OK']:
-      print(self.pPrint.pformat(result['Value']))
+      gLogger.notice(self.pPrint.pformat(result['Value']))
     return result
 
   #############################################################################
@@ -639,7 +638,7 @@ class DiracAdmin(API):
     """Retrieve the pilot output for an existing job in the WMS.  Summary is
        printed at INFO level, full dictionary of results also returned.
 
-         >>> print dirac.getPilotSummary()
+         >>> gLogger.notice(dirac.getPilotSummary())
          {'OK': True, 'Value': {CE:{Status:Count}}}
 
        :param job: JobID
@@ -660,7 +659,7 @@ class DiracAdmin(API):
 
     for i in xrange(i):
       headers += 'Status'.ljust(12) + 'Count'.ljust(12)
-    print(headers)
+    gLogger.notice(headers)
 
     for ce, summary in ceDict.iteritems():
       line = ce.ljust(28)
@@ -668,7 +667,7 @@ class DiracAdmin(API):
       for state in states:
         count = str(summary[state])
         line += state.ljust(12) + count.ljust(12)
-      print(line)
+      gLogger.notice(line)
 
     return result
 
@@ -722,10 +721,10 @@ class DiracAdmin(API):
         return S_ERROR('CS Commit failed with message = %s' % (result['Message']))
       else:
         if printOutput:
-          print('Successfully committed changes to CS')
+          gLogger.notice('Successfully committed changes to CS')
     else:
       if printOutput:
-        print('No modifications to CS required')
+        gLogger.notice('No modifications to CS required')
 
     return S_OK()
 

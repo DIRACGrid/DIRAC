@@ -9,7 +9,9 @@ import sys
 import glob
 import time
 import datetime
+
 import DIRAC
+
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base import Script
 from DIRAC.FrameworkSystem.Client import ProxyGeneration, ProxyUpload
@@ -22,27 +24,21 @@ __RCSID__ = "$Id$"
 
 class Params(ProxyGeneration.CLIParams):
 
+  addVOMSExt = False
   uploadProxy = False
   uploadPilot = False
-  addVOMSExt = False
-
-  def setUploadProxy(self, _arg):
-    self.uploadProxy = True
-    return S_OK()
-
-  def setUploadPilotProxy(self, _arg):
-    self.uploadPilot = True
-    return S_OK()
 
   def setVOMSExt(self, _arg):
     self.addVOMSExt = True
     return S_OK()
 
+  def setUploadProxy(self, _arg):
+    self.uploadProxy = True
+    return S_OK()
+
   def registerCLISwitches(self):
     ProxyGeneration.CLIParams.registerCLISwitches(self)
     Script.registerSwitch("U", "upload", "Upload a long lived proxy to the ProxyManager", self.setUploadProxy)
-    Script.registerSwitch("P", "uploadPilot", "Upload a long lived pilot proxy to the ProxyManager",
-                          self.setUploadPilotProxy)
     Script.registerSwitch("M", "VOMS", "Add voms extension", self.setVOMSExt)
 
 
@@ -84,34 +80,6 @@ class ProxyInit(object):
       msg = "%s\n  %s  \n%s" % (sep, msg, sep)
       gLogger.notice(msg)
 
-  def getGroupsToUpload(self):
-    uploadGroups = []
-
-    if self.__piParams.uploadProxy or Registry.getGroupOption(self.__piParams.diracGroup, "AutoUploadProxy", False):
-      uploadGroups.append(self.__piParams.diracGroup)
-
-    if not self.__piParams.uploadPilot:
-      if not Registry.getGroupOption(self.__piParams.diracGroup, "AutoUploadPilotProxy", False):
-        return uploadGroups
-
-    issuerCert = self.getIssuerCert()
-    resultUserDN = issuerCert.getSubjectDN()  # pylint: disable=no-member
-    if not resultUserDN['OK']:
-      return resultUserDN
-    userDN = resultUserDN['Value']
-
-    resultGroups = Registry.getGroupsForDN(userDN)
-    if not resultGroups['OK']:
-      gLogger.error("No groups defined for DN %s" % userDN)
-      return []
-    availableGroups = resultGroups['Value']
-
-    for group in availableGroups:
-      groupProps = Registry.getPropertiesForGroup(group)
-      if Properties.PILOT in groupProps or Properties.GENERIC_PILOT in groupProps:
-        uploadGroups.append(group)
-    return uploadGroups
-
   def addVOMSExtIfNeeded(self):
     addVOMS = self.__piParams.addVOMSExt or Registry.getGroupOption(self.__piParams.diracGroup, "AutoAddVOMS", False)
     if not addVOMS:
@@ -119,22 +87,18 @@ class ProxyInit(object):
 
     vomsAttr = Registry.getVOMSAttributeForGroup(self.__piParams.diracGroup)
     if not vomsAttr:
-      return S_ERROR(
-          "Requested adding a VOMS extension but no VOMS attribute defined for group %s" %
-          self.__piParams.diracGroup)
+      return S_ERROR("Requested adding a VOMS extension but no VOMS attribute defined for group %s" %
+                     self.__piParams.diracGroup)
 
     resultVomsAttributes = VOMS.VOMS().setVOMSAttributes(self.__proxyGenerated, attribute=vomsAttr,
                                                          vo=Registry.getVOMSVOForGroup(self.__piParams.diracGroup))
     if not resultVomsAttributes['OK']:
-      return S_ERROR(
-          "Could not add VOMS extensions to the proxy\nFailed adding VOMS attribute: %s" %
-          resultVomsAttributes['Message'])
+      return S_ERROR("Could not add VOMS extensions to the proxy\nFailed adding VOMS attribute: %s" %
+                     resultVomsAttributes['Message'])
 
     gLogger.notice("Added VOMS attribute %s" % vomsAttr)
     chain = resultVomsAttributes['Value']
-    retDump = chain.dumpAllToFile(self.__proxyGenerated)
-    if not retDump['OK']:
-      return retDump
+    chain.dumpAllToFile(self.__proxyGenerated)
     return S_OK()
 
   def createProxy(self):
@@ -148,7 +112,7 @@ class ProxyInit(object):
     self.__proxyGenerated = resultProxyGenerated['Value']
     return resultProxyGenerated
 
-  def uploadProxy(self, userGroup=False):
+  def uploadProxy(self):
     """ Upload the proxy to the proxyManager service
     """
     issuerCert = self.getIssuerCert()
@@ -156,21 +120,19 @@ class ProxyInit(object):
     if not resultUserDN['OK']:
       return resultUserDN
     userDN = resultUserDN['Value']
-    if not userGroup:
-      userGroup = self.__piParams.diracGroup
-    gLogger.notice("Uploading proxy for %s..." % userGroup)
+
+    gLogger.notice("Uploading proxy..")
     if userDN in self.__uploadedInfo:
-      expiry = self.__uploadedInfo[userDN].get(userGroup)
+      expiry = self.__uploadedInfo[userDN].get('')
       if expiry:
         if issuerCert.getNotAfterDate()['Value'] - datetime.timedelta(minutes=10) < expiry:  # pylint: disable=no-member
-          gLogger.info("SKipping upload for group %s. Already uploaded" % userGroup)
+          gLogger.info('Proxy with DN "%s" already uploaded' % userDN)
           return S_OK()
-    gLogger.info("Uploading %s proxy to ProxyManager..." % self.__piParams.diracGroup)
+    gLogger.info("Uploading %s proxy to ProxyManager..." % userDN)
     upParams = ProxyUpload.CLIParams()
     upParams.onTheFly = True
     upParams.proxyLifeTime = issuerCert.getRemainingSecs()['Value'] - 300  # pylint: disable=no-member
     upParams.rfcIfPossible = self.__piParams.rfc
-    upParams.diracGroup = userGroup
     for k in ('certLoc', 'keyLoc', 'userPasswd'):
       setattr(upParams, k, getattr(self.__piParams, k))
     resultProxyUpload = ProxyUpload.uploadProxy(upParams)
@@ -206,7 +168,7 @@ class ProxyInit(object):
                                             self.__uploadedInfo[userDN][group].strftime("%Y/%m/%d %H:%M")))
 
   def checkCAs(self):
-    if not "X509_CERT_DIR" in os.environ:
+    if "X509_CERT_DIR" not in os.environ:
       gLogger.warn("X509_CERT_DIR is unset. Abort check of CAs")
       return
     caDir = os.environ["X509_CERT_DIR"]
@@ -219,7 +181,7 @@ class ProxyInit(object):
     newestFPath = max(crlList, key=os.path.getmtime)
     newestFTime = os.path.getmtime(newestFPath)
     if newestFTime > (time.time() - (2 * 24 * 3600)):
-      # At least one of the files has been updated in the last 28 days
+      # At least one of the files has been updated in the last 2 days
       return S_OK()
     if not os.access(caDir, os.W_OK):
       gLogger.error("Your CRLs appear to be outdated, but you have no access to update them.")
@@ -256,11 +218,12 @@ class ProxyInit(object):
       if self.__piParams.strict:
         return resultProxyWithVOMS
 
-    for pilotGroup in pI.getGroupsToUpload():
-      resultProxyUpload = pI.uploadProxy(userGroup=pilotGroup)
+    if self.__piParams.uploadProxy:
+      resultProxyUpload = pI.uploadProxy()
       if not resultProxyUpload['OK']:
         if self.__piParams.strict:
           return resultProxyUpload
+
 
     return S_OK()
 

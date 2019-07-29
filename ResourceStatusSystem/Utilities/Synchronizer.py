@@ -201,7 +201,7 @@ class Synchronizer(object):
 
     resources = sesHosts
 
-    ftsServer = getFTS3Servers()
+    ftsServer = getFTS3Servers(hostOnly=True)
     if ftsServer['OK']:
       resources.extend(ftsServer['Value'])
 
