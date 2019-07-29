@@ -96,8 +96,8 @@ class ProductionClient(Client):
     """ Gets all the production transformations for a production, incrementally.
         "limit" here is just used to determine the offset.
 
-    :param prodName:
-    :return:
+    :param prodName: the production name
+    :return: the list of the transformations associated to the production
     """
 
     rpcClient = self._getRPC()
@@ -126,7 +126,7 @@ class ProductionClient(Client):
   def addProductionStep(self, prodStep):
     """ Add a production step and update the production description
 
-    :param prodStep: prodStep
+    :param prodStep: the production step, i.e. a ProductionStep object describing the transformation
     """
     stepName = 'Step' + str(self.stepCounter) + '_' + prodStep.Name
     self.stepCounter += 1

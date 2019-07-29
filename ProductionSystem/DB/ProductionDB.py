@@ -194,9 +194,10 @@ class ProductionDB(DB):
   #
 
   def getProductionStep(self, stepID, connection=False):
-    """
-    :param stepID:
-    :return:
+    """ It returns the ProductionStep corresponding to the stepID
+
+    :param stepID: the ID of the production Step stored in the ProductionSteps table
+    :return: the attributes of Production Step corresponding to the stepID
     """
     connection = self.__getConnection(connection)
     req = "SELECT %s FROM ProductionSteps WHERE StepID = %s" % (intListToString(self.PRODSTEPSPARAMS), str(stepID))

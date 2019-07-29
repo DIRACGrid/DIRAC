@@ -53,45 +53,45 @@ class ProdTransManager(object):
   def addTransformationStep(self, stepID, prodID):
     """ Add the transformation step to the TS
 
-    :param object prodStep: an object of type ~:mod:`~DIRAC.ProductionSystem.Client.ProductionStep`
-    :param prodID: the ProductionID
+    :param stepID: the production step ID
+    :param prodID: the Production ID
+    :return:
     """
+
     res = self.prodClient.getProductionStep(stepID)
     if not res['OK']:
-      return S_ERROR(res['Message'])
+      return res
     prodStep = res['Value']
 
     gLogger.notice("Add step %s to production %s" % (prodStep[0], prodID))
 
-    description = prodStep[2]
-    longDescription = prodStep[3]
-    body = prodStep[4]
-    type = prodStep[5]
-    plugin = prodStep[6]
-    agentType = prodStep[7]
-    groupsize = prodStep[8]
-    inputquery = json.loads(prodStep[9])
-    outputquery = json.loads(prodStep[10])
+    stepDesc = prodStep[2]
+    stepLongDesc = prodStep[3]
+    stepBody = prodStep[4]
+    stepType = prodStep[5]
+    stepPlugin = prodStep[6]
+    stepAgentType = prodStep[7]
+    stepGroupsize = prodStep[8]
+    stepInputquery = json.loads(prodStep[9])
+    stepOutputquery = json.loads(prodStep[10])
 
-    name = '%08d' % prodID + '_' + prodStep[1]
+    stepName = '%08d' % prodID + '_' + prodStep[1]
 
     res = self.transClient.addTransformation(
-        name,
-        description,
-        longDescription,
-        type,
-        plugin,
-        agentType,
+        stepName,
+        stepDesc,
+        stepLongDesc,
+        stepType,
+        stepPlugin,
+        stepAgentType,
         '',
-        groupSize=groupsize,
-        body=body,
-        inputMetaQuery=inputquery,
-        outputMetaQuery=outputquery)
+        groupSize=stepGroupsize,
+        body=stepBody,
+        inputMetaQuery=stepInputquery,
+        outputMetaQuery=stepOutputquery)
 
     if not res['OK']:
       return S_ERROR(res['Message'])
-
-    # Here I could update the prodDescription with the real transID
 
     return S_OK(res['Value'])
 
