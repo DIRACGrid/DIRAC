@@ -10,6 +10,7 @@
 
 import os
 import time
+import datetime
 import threading
 
 import DIRAC
@@ -313,7 +314,7 @@ class Service(object):
     if self.activityMonitoring:
       # As ES accepts raw data these monitoring fields are being sent here because they are time dependant.
       self.activityMonitoringReporter.addRecord({
-          'timestamp': time.time(),
+          'timestamp': datetime.datetime.utcnow(),
           'site': self._cfg.getHostname(),
           'componentType': 'service',
           'component': "_".join(self._name.split("/")),
@@ -347,7 +348,7 @@ class Service(object):
     if self.activityMonitoring:
       #  As ES accepts raw data these monitoring fields are being sent here because they are action dependant.
       self.activityMonitoringReporter.addRecord({
-          'timestamp': time.time(),
+          'timestamp': datetime.datetime.utcnow(),
           'site': self._cfg.getHostname(),
           'componentType': 'service',
           'component': "_".join(self._name.split("/")),
@@ -605,16 +606,16 @@ class Service(object):
   def _executeAction(self, trid, proposalTuple, handlerObj):
     try:
       response = handlerObj._rh_executeAction(proposalTuple)
-      if self.activityMonitoring and len(response) == 2:
+      if self.activityMonitoring and response["OK"]:
         self.activityMonitoringReporter.addRecord({
-            'timestamp': time.time(),
+            'timestamp': datetime.datetime.utcnow(),
             'site': self._cfg.getHostname(),
             'componentType': 'service',
             'component': "_".join(self._name.split("/")),
             'componentLocation': self._cfg.getURL(),
-            'ServiceResponseTime': response[1]
+            'ServiceResponseTime': response["Value"][1]
         })
-      return response[0]
+      return response["Value"][0]
     except Exception as e:
       gLogger.exception("Exception while executing handler action")
       return S_ERROR("Server error while executing action: %s" % str(e))
@@ -630,16 +631,19 @@ class Service(object):
       return result
     handlerObj = result['Value']
     response = handlerObj._rh_executeMessageCallback(msgObj)
-    if self.activityMonitoring and len(response) == 2:
+    if self.activityMonitoring and response["OK"]:
       self.activityMonitoringReporter.addRecord({
-          'timestamp': time.time(),
+          'timestamp': datetime.datetime.utcnow(),
           'site': self._cfg.getHostname(),
           'componentType': 'service',
           'component': "_".join(self._name.split("/")),
           'componentLocation': self._cfg.getURL(),
-          'ServiceResponseTime': response[1]
+          'ServiceResponseTime': response["Value"][1]
       })
-    return response[0]
+    if response["OK"]:
+      return response["Value"][0]
+    else:
+      return response
 
   def _mbDisconnect(self, trid):
     result = self._instantiateHandler(trid)

@@ -250,7 +250,7 @@ class ComponentMonitoringPlotter(BasePlotter):
     :param dict reportRequest: contains attributes used to create the plot.
     :return S_OK or S_ERROR {'data':value1, 'granularity':value2} value1 is a dictionary, value2 is the bucket length
     """
-    return self.__reportAllResources(reportRequest, "ServiceResponseTime", "time")
+    return self.__reportAllResources(reportRequest, "ServiceResponseTime", "seconds")
 
   def _plotServiceResponseTime(self, reportRequest, plotInfo, filename):
     """It creates the plot.
