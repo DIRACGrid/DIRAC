@@ -416,6 +416,8 @@ function installDIRAC(){
 
   echo 'Content of etc/dirac.cfg:'
   more $CLIENTINSTALLDIR/etc/dirac.cfg
+
+  echo '==> Done installDIRAC'
 }
 
 ##############################################################################
@@ -444,6 +446,8 @@ function submitJob(){
   python dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True -o /DIRAC/Security/CertFile=/home/dirac/certs/hostcert.pem -o /DIRAC/Security/KeyFile=/home/dirac/certs/hostkey.pem -o /DIRAC/Setup=$DIRACSETUP -ddd
   cp $TESTCODE/DIRAC/tests/Jenkins/dirac-test-job.py .
   python dirac-test-job.py -o /DIRAC/Setup=$DIRACSETUP $DEBUG
+
+  echo '==> Done submitJob'
 }
 
 function getUserProxy(){
@@ -1037,7 +1041,7 @@ function killRunsv(){
     set -e
   fi
 
-
+  echo '==> [Done killRunsv]'
 }
 
 #.............................................................................
@@ -1058,6 +1062,8 @@ function killES(){
     then
       kill -9 $res
     fi
+
+  echo '==> [Done killES]'
 }
 
 #.............................................................................
@@ -1079,6 +1085,8 @@ function stopRunsv(){
 
   # If does not work, let's kill it.
   killRunsv
+
+  echo '==> [Done stopRunsv]'
 }
 
 
@@ -1114,6 +1122,7 @@ function startRunsv(){
 
   runsvstat $SERVERINSTALLDIR/startup/*
 
+  echo '==> [Done startRunsv]'
 }
 
 
@@ -1132,6 +1141,7 @@ function getCertificate(){
   cp /root/hostkey.pem $PILOTINSTALLDIR/etc/grid-security/
   chmod 0600 $PILOTINSTALLDIR/etc/grid-security/hostkey.pem
 
+  echo '==> [Done getCertificate]'
 }
 
 function prepareForPilot(){
@@ -1146,6 +1156,7 @@ function prepareForPilot(){
   cp $TESTCODE/DIRAC/WorkloadManagementSystem/PilotAgent/pilotTools.py $PILOTINSTALLDIR/
   cp $TESTCODE/DIRAC/WorkloadManagementSystem/PilotAgent/pilotCommands.py $PILOTINSTALLDIR/
 
+  echo '==> [Done prepareForPilot]'
 }
 
 
