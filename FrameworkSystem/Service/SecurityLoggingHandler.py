@@ -29,7 +29,7 @@ def initializeSecurityLoggingHandler(serviceInfo):
 
   try:
     testFile = "%s/seclog.jarl.test" % dataPath
-    fd = file(testFile, "w")
+    fd = open(testFile, "w")
     fd.close()
     os.unlink(testFile)
   except IOError:

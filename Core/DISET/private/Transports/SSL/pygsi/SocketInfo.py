@@ -156,7 +156,7 @@ class SocketInfo:
           filePath = os.path.join(casPath, fileName)
           if not os.path.isfile(filePath):
             continue
-          fObj = file(filePath, "rb")
+          fObj = open(filePath, "rb")
           pemData = fObj.read()
           fObj.close()
           # Try to load CA Cert

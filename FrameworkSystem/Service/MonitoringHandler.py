@@ -29,7 +29,7 @@ def initializeMonitoringHandler(serviceInfo):
     pass
   try:
     testFile = "%s/mon.jarl.test" % dataPath
-    with file(testFile, "w"):
+    with open(testFile, "w"):
       pass
     os.unlink(testFile)
   except IOError:

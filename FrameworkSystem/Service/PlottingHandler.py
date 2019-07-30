@@ -29,7 +29,7 @@ def initializePlottingHandler(serviceInfo):
     pass
   try:
     testFile = "%s/plot__.test" % dataPath
-    fd = file(testFile, "w")
+    fd = open(testFile, "w")
     fd.close()
     os.unlink(testFile)
   except IOError:

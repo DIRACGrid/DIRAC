@@ -50,7 +50,7 @@ class ReportGeneratorHandler(RequestHandler):
     mkDir(dataPath)
     try:
       testFile = "%s/acc.jarl.test" % dataPath
-      fd = file(testFile, "w")
+      fd = open(testFile, "w")
       fd.close()
       os.unlink(testFile)
     except IOError:
@@ -58,7 +58,8 @@ class ReportGeneratorHandler(RequestHandler):
       return S_ERROR("Data location is not writable")
     gDataCache.setGraphsLocation(dataPath)
     gMonitor.registerActivity("plotsDrawn", "Drawn plot images", "Accounting reports", "plots", gMonitor.OP_SUM)
-    gMonitor.registerActivity("reportsRequested", "Generated reports", "Accounting reports", "reports", gMonitor.OP_SUM)
+    gMonitor.registerActivity("reportsRequested", "Generated reports", "Accounting reports",
+                              "reports", gMonitor.OP_SUM)
     return S_OK()
 
   def __checkPlotRequest(self, reportRequest):
