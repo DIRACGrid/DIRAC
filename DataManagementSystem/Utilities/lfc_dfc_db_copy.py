@@ -690,7 +690,7 @@ def loadTupleDataInMySQL(queryQueue, workerId, querybase):
       try:
         cur.execute(next_query)
         con.commit()
-      except Exception as ee:
+      except Exception:
         print("worker %s COMPLETELY FAILED " % workerId)
         print("worker %s : EXCEPTION %s " % (workerId, e))
         logfile.write("worker %s COMPLETELY FAILED " % workerId)
@@ -718,7 +718,8 @@ def updateAdminID():
   logfile = open(os.path.join(logDir, "worker%s.txt" % workerId), 'w')
 
   updateQueries = {"Update FC_Files": "Update FC_Files set UID = 1, GID = 1 where UID = 0 and GID = 0",
-                   "Update FC_DirectoryList": "Update FC_DirectoryList set UID = 1, GID = 1 where UID = 0 and GID = 0", }
+                   "Update FC_DirectoryList":
+                   "Update FC_DirectoryList set UID = 1, GID = 1 where UID = 0 and GID = 0"}
 
   for desc, query in updateQueries.items():
     print("worker %s : %s (%s)" % (workerId, desc, query))
