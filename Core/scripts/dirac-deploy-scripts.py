@@ -15,7 +15,6 @@ import shutil
 import stat
 import re
 import sys
-import platform
 
 DEBUG = False
 
