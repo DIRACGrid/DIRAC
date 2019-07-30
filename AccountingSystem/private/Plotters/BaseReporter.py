@@ -1,6 +1,6 @@
 import time
 import copy
-import types
+
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.AccountingSystem.private.DBUtils import DBUtils
 from DIRAC.Core.Utilities.Plotting import gDataCache
@@ -120,7 +120,7 @@ class BaseReporter(DBUtils):
 
   def __init__(self, db, setup, extraArgs=None):
     DBUtils.__init__(self, db, setup)
-    if isinstance(extraArgs, types.DictType):
+    if isinstance(extraArgs, dict):
       self._extraArgs = extraArgs
     else:
       self._extraArgs = {}

@@ -4,10 +4,10 @@
     value pairs.
 """
 
-from DIRAC.Resources.Catalog.PoolXMLCatalog import PoolXMLCatalog
-from DIRAC import S_OK, S_ERROR, gLogger
-
 import os
+
+from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC.Resources.Catalog.PoolXMLCatalog import PoolXMLCatalog
 
 __RCSID__ = "$Id$"
 

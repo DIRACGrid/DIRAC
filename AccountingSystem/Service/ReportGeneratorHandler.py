@@ -99,7 +99,7 @@ class ReportGeneratorHandler(RequestHandler):
 
     return S_OK(reportRequest)
 
-  types_generatePlot = [types.DictType]
+  types_generatePlot = [dict]
 
   def export_generatePlot(self, reportRequest):
     """
@@ -121,7 +121,7 @@ class ReportGeneratorHandler(RequestHandler):
     reportRequest['generatePlot'] = True
     return reporter.generate(reportRequest, self.getRemoteCredentials())
 
-  types_getReport = [types.DictType]
+  types_getReport = [dict]
 
   def export_getReport(self, reportRequest):
     """

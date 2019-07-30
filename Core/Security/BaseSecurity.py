@@ -3,7 +3,6 @@
 
 __RCSID__ = "$Id$"
 
-import types
 import os
 import tempfile
 
