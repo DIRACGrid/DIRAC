@@ -26,9 +26,9 @@ class ProductionClient(Client):
   def _applyProductionStatusStateMachine(self, prodID, status, force=False):
     """ Performs a state machine check for productions when asked to change the status
 
-    :param prodID: the ProductionID on which the state machine check is performed
-    :param status: the proposed status which is checked to be valid
-    :param force: a boolean. When force=True the proposed status is forced to pass the state machine check
+    :param int prodID: the ProductionID on which the state machine check is performed
+    :param str status: the proposed status which is checked to be valid
+    :param bool force: a boolean. When force=True the proposed status is forced to pass the state machine check
 
     :return: S_OK with the new status or S_ERROR
     """
@@ -51,8 +51,8 @@ class ProductionClient(Client):
   def setProductionStatus(self, prodID, status):
     """ Sets the status of a production
 
-    :param prodID: the ProductionID
-    :param status: the production status to be set to the prodID
+    :param int prodID: the ProductionID
+    :param str status: the production status to be set to the prodID
     """
     rpcClient = self._getRPC()
     # Apply the production state machine
@@ -96,7 +96,7 @@ class ProductionClient(Client):
     """ Gets all the production transformations for a production, incrementally.
         "limit" here is just used to determine the offset.
 
-    :param prodName: the production name
+    :param str prodName: the production name
     :return: the list of the transformations associated to the production
     """
 
@@ -126,7 +126,7 @@ class ProductionClient(Client):
   def addProductionStep(self, prodStep):
     """ Add a production step and update the production description
 
-    :param prodStep: the production step, i.e. a ProductionStep object describing the transformation
+    :param object prodStep: the production step, i.e. a ProductionStep object describing the transformation
     """
     stepName = 'Step' + str(self.stepCounter) + '_' + prodStep.Name
     self.stepCounter += 1
