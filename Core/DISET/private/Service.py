@@ -10,7 +10,6 @@
 
 import os
 import time
-import datetime
 import threading
 
 import DIRAC
@@ -314,7 +313,7 @@ class Service(object):
     if self.activityMonitoring:
       # As ES accepts raw data these monitoring fields are being sent here because they are time dependant.
       self.activityMonitoringReporter.addRecord({
-          'timestamp': datetime.datetime.utcnow(),
+          'timestamp': time.time(),
           'site': self._cfg.getHostname(),
           'componentType': 'service',
           'component': "_".join(self._name.split("/")),
@@ -348,7 +347,7 @@ class Service(object):
     if self.activityMonitoring:
       #  As ES accepts raw data these monitoring fields are being sent here because they are action dependant.
       self.activityMonitoringReporter.addRecord({
-          'timestamp': datetime.datetime.utcnow(),
+          'timestamp': time.time(),
           'site': self._cfg.getHostname(),
           'componentType': 'service',
           'component': "_".join(self._name.split("/")),
@@ -608,7 +607,7 @@ class Service(object):
       response = handlerObj._rh_executeAction(proposalTuple)
       if self.activityMonitoring and response["OK"]:
         self.activityMonitoringReporter.addRecord({
-            'timestamp': datetime.datetime.utcnow(),
+            'timestamp': time.time(),
             'site': self._cfg.getHostname(),
             'componentType': 'service',
             'component': "_".join(self._name.split("/")),
@@ -633,7 +632,7 @@ class Service(object):
     response = handlerObj._rh_executeMessageCallback(msgObj)
     if self.activityMonitoring and response["OK"]:
       self.activityMonitoringReporter.addRecord({
-          'timestamp': datetime.datetime.utcnow(),
+          'timestamp': time.time(),
           'site': self._cfg.getHostname(),
           'componentType': 'service',
           'component': "_".join(self._name.split("/")),
@@ -655,6 +654,8 @@ class Service(object):
   def __activityMonitoringReporting(self):
     """ This method is called by the ThreadScheduler as a periodic task in order to commit the collected data which
         is done by the MonitoringReporter and is send to the 'ComponentMonitoring' type.
+
+        :return: True / False
     """
     result = self.activityMonitoringReporter.commit()
     return result['OK']

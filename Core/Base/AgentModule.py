@@ -11,7 +11,6 @@ __RCSID__ = "$Id$"
 import os
 import threading
 import time
-import datetime
 import signal
 
 import DIRAC
@@ -306,9 +305,12 @@ class AgentModule(object):
     """
     Initialize the system monitoring.
     """
+    # This flag is used to activate ES based monitoring
+    # if the "ActivityMonitoring" flag in "yes" or "true" in the cfg file.
     self.activityMonitoring = gConfig.getValue("/DIRAC/ActivityMonitoring", "false").lower() in ("yes", "true")
     if self.activityMonitoring:
       self.activityMonitoringReporter = MonitoringReporter(monitoringType="ComponentMonitoring")
+      # With the help of this periodic task we commit the data to ES at an interval of 100 seconds.
       gThreadScheduler.addPeriodicTask(100, self.__activityMonitoringReporting)
     elif self.__moduleProperties['standalone']:
       self.monitor = gMonitor
@@ -390,8 +392,10 @@ class AgentModule(object):
     if cycleResult['OK']:
       self.log.notice(" Cycle was successful")
       if self.activityMonitoring:
+        # Here we record the data about the cycle duration along with some basic details about the
+        # component and right now it isn't committed to the ES backend.
         self.activityMonitoringReporter.addRecord({
-            'timestamp': datetime.datetime.utcnow(),
+            'timestamp': time.time(),
             'site': DIRAC.siteName(),
             'componentType': "agent",
             'component': "_".join(self.__moduleProperties['fullName'].split("/")),
@@ -482,6 +486,8 @@ class AgentModule(object):
   def __activityMonitoringReporting(self):
     """ This method is called by the ThreadScheduler as a periodic task in order to commit the collected data which
         is done by the MonitoringReporter and is send to the 'ComponentMonitoring' type.
+
+        :return: True / False
     """
     result = self.activityMonitoringReporter.commit()
     return result['OK']

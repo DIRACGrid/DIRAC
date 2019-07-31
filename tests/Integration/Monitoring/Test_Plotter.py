@@ -16,11 +16,16 @@ from six.moves import map
 
 
 def compare(file1Path, file2Path):
-  '''
-    Function used to compare two plots
+  """
+  Function used to compare two plots.
 
-    returns 0.0 if both are identical
-  '''
+  :type file1Path: string
+  :param file1Path: Path to the file1.
+  :type file2Path: string
+  :param file2Path: Path to the file2.
+
+  :return: float value rms.
+  """
   # Crops image to remove the "Generated on xxxx UTC" string
   image1 = Image.open(file1Path).crop((0, 0, 800, 570))
   image2 = Image.open(file2Path).crop((0, 0, 800, 570))
@@ -41,10 +46,9 @@ class PlotterTestCase(unittest.TestCase):
 
 
 class ComponentMonitoringPlotterUnitTest(PlotterTestCase):
-  """ First you will need to generate plots on the DIRAC WebApp and then add it to the
-      DIRAC/tests/Integration/Monitoring/png/ folder.
-      Then change the data dictionary here according to the WebApp plot and then run this regression test.
-  """
+  # First you will need to generate plots on the DIRAC WebApp and then add it to the
+  # DIRAC/tests/Integration/Monitoring/png/ folder.
+  # Then change the data dictionary here according to the WebApp plot and then run this regression test.
 
   def test_plotRunningThreads(self):
     """ test for the method "_plotRunningThreads"

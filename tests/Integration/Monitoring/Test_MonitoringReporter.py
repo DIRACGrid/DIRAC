@@ -231,6 +231,8 @@ class MonitoringTestCase(unittest.TestCase):
                   u'ApplicationStatus': u'unset', u'User': u'phicharp', u'JobGroup': u'00050247',
                   u'UserGroup': u'lhcb_mc', u'metric': u'WMSHistory'}]
 
+    # This dataset is used for the ComponentMonitoringType as the data which gets stored in this type
+    # is usually with these type of fields.
     self.activityMonitoringData = [
         {u'site': u'dirac-dev', 'componentType': u'service',
          u'component': u'Framework_SystemAdministrator',
