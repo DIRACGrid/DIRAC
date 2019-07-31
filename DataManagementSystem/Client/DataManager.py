@@ -173,9 +173,19 @@ class DataManager(object):
       errStr = "Write access not permitted for this credential."
       log.debug(errStr, folder)
       return S_ERROR(errStr)
-    res = self.__getCatalogDirectoryContents([folder])
+    res = self.__getCatalogDirectoryContents([folder], includeDirectories=True)
     if not res['OK']:
       return res
+
+    # create a list of folders so that empty folders are also deleted
+    listOfFolders = []
+    areDirs = self.fileCatalog.isDirectory(res['Value'])
+    if not areDirs['OK']:
+      return areDirs
+    listOfFolders = [aDir for aDir in areDirs['Value']['Successful'] if areDirs['Value']['Successful'][aDir]]
+    for lfn in listOfFolders:
+      res['Value'].pop(lfn)
+
     res = self.removeFile(res['Value'])
     if not res['OK']:
       return res
@@ -196,6 +206,13 @@ class DataManager(object):
         failed = True
     if failed:
       return S_ERROR("Failed to clean storage directory at all SEs")
+
+    for aFolder in sorted(listOfFolders, reverse=True):
+      res = returnSingleResult(self.fileCatalog.removeDirectory(aFolder, recursive=True))
+      log.verbose('Removed folder', '%s: %s' % (aFolder, res))
+      if not res['OK']:
+        return res
+
     res = returnSingleResult(
         self.fileCatalog.removeDirectory(folder, recursive=True))
     if not res['OK']:
@@ -234,11 +251,13 @@ class DataManager(object):
                                                                storageElement))
     return S_OK()
 
-  def __getCatalogDirectoryContents(self, directories):
+  def __getCatalogDirectoryContents(self, directories, includeDirectories=False):
     """ ls recursively all files in directories
 
     :param self: self reference
     :param list directories: folder names
+    :param bool includeDirectories: if True includes directories in the return dictionary
+    :return: S_OK with dict of LFNs and their attribute dictionary
     """
     log = self.log.getSubLogger('__getCatalogDirectoryContents')
     log.debug('Obtaining the catalog contents for %d directories:' %
@@ -258,7 +277,8 @@ class DataManager(object):
         dirContents = res['Value']
         activeDirs.extend(dirContents['SubDirs'])
         allFiles.update(dirContents['Files'])
-
+        if includeDirectories:
+          allFiles.update(dirContents['SubDirs'])
     log.debug("Found %d files" % len(allFiles))
     return S_OK(allFiles)
 
