@@ -84,11 +84,8 @@ class Service(object):
 
   def initialize(self):
     # Initialize Monitoring
-    # The global flag variable activityMonitoring is a newly added flag for extending the ES based Monitoring System
-    # to support Service.py to send useful data to the ES backend which was being previously sent to RRD only through
-    # gMonitor object.
-    # Now in order to turn ES based monitoring which is completely based on the user he/she needs to add the
-    # following flag i.e. 'AcitivityMonitoring = yes' inside /DIRAC/ of the configuration file.
+
+    # This is a flag used to check whether "ActivityMonitoring" is enabled or not from the config file.
     self.activityMonitoring = gConfig.getValue("/DIRAC/ActivityMonitoring", "false").lower() in ("yes", "true")
     if self.activityMonitoring:
       self.activityMonitoringReporter = MonitoringReporter(monitoringType="ComponentMonitoring")

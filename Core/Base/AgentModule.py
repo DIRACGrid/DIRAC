@@ -312,11 +312,11 @@ class AgentModule(object):
       self.activityMonitoringReporter = MonitoringReporter(monitoringType="ComponentMonitoring")
       # With the help of this periodic task we commit the data to ES at an interval of 100 seconds.
       gThreadScheduler.addPeriodicTask(100, self.__activityMonitoringReporting)
-    elif self.__moduleProperties['standalone']:
-      self.monitor = gMonitor
     else:
-      self.monitor = MonitoringClient()
-    if not self.activityMonitoring:
+      if self.__moduleProperties['standalone']:
+        self.monitor = gMonitor
+      else:
+        self.monitor = MonitoringClient()
       self.monitor.setComponentType(self.monitor.COMPONENT_AGENT)
       self.monitor.setComponentName(self.__moduleProperties['fullName'])
       self.monitor.initialize()

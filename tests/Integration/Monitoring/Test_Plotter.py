@@ -86,7 +86,7 @@ class ComponentMonitoringPlotterUnitTest(PlotterTestCase):
     self.assertEqual(res['OK'], True)
     self.assertEqual(res['Value'], {'plot': True, 'thumbnail': False})
 
-    res = compare('%s.png' % plotName, '/home/dirac/DIRAC/tests/Integration/Monitoring/png/%s.png' % plotName)
+    res = compare('%s.png' % plotName, 'DIRAC/tests/Integration/Monitoring/png/%s.png' % plotName)
     self.assertEqual(0.0, res)
 
   def test_plotCpuUsage(self):
@@ -123,7 +123,7 @@ class ComponentMonitoringPlotterUnitTest(PlotterTestCase):
     self.assertEqual(res['OK'], True)
     self.assertEqual(res['Value'], {'plot': True, 'thumbnail': False})
 
-    res = compare('%s.png' % plotName, '/home/dirac/DIRAC/tests/Integration/Monitoring/png/%s.png' % plotName)
+    res = compare('%s.png' % plotName, 'DIRAC/tests/Integration/Monitoring/png/%s.png' % plotName)
     self.assertEqual(0.0, res)
 
   def test_plotMemoryUsage(self):
@@ -162,7 +162,7 @@ class ComponentMonitoringPlotterUnitTest(PlotterTestCase):
     self.assertEqual(res['OK'], True)
     self.assertEqual(res['Value'], {'plot': True, 'thumbnail': False})
 
-    res = compare('%s.png' % plotName, '/home/dirac/DIRAC/tests/Integration/Monitoring/png/%s.png' % plotName)
+    res = compare('%s.png' % plotName, 'DIRAC/tests/Integration/Monitoring/png/%s.png' % plotName)
     self.assertEqual(0.0, res)
 
   def test_plotRunningTime(self):
@@ -201,7 +201,7 @@ class ComponentMonitoringPlotterUnitTest(PlotterTestCase):
     self.assertEqual(res['OK'], True)
     self.assertEqual(res['Value'], {'plot': True, 'thumbnail': False})
 
-    res = compare('%s.png' % plotName, '/home/dirac/DIRAC/tests/Integration/Monitoring/png/%s.png' % plotName)
+    res = compare('%s.png' % plotName, 'DIRAC/tests/Integration/Monitoring/png/%s.png' % plotName)
     self.assertEqual(0.0, res)
 
   def test_plotConnections(self):
@@ -240,7 +240,7 @@ class ComponentMonitoringPlotterUnitTest(PlotterTestCase):
     self.assertEqual(res['OK'], True)
     self.assertEqual(res['Value'], {'plot': True, 'thumbnail': False})
 
-    res = compare('%s.png' % plotName, '/home/dirac/DIRAC/tests/Integration/Monitoring/png/%s.png' % plotName)
+    res = compare('%s.png' % plotName, 'DIRAC/tests/Integration/Monitoring/png/%s.png' % plotName)
     self.assertEqual(0.0, res)
 
   def test_plotActiveQueries(self):
@@ -279,7 +279,7 @@ class ComponentMonitoringPlotterUnitTest(PlotterTestCase):
     self.assertEqual(res['OK'], True)
     self.assertEqual(res['Value'], {'plot': True, 'thumbnail': False})
 
-    res = compare('%s.png' % plotName, '/home/dirac/DIRAC/tests/Integration/Monitoring/png/%s.png' % plotName)
+    res = compare('%s.png' % plotName, 'DIRAC/tests/Integration/Monitoring/png/%s.png' % plotName)
     self.assertEqual(0.0, res)
 
   def test_plotPendingQueries(self):
@@ -318,7 +318,7 @@ class ComponentMonitoringPlotterUnitTest(PlotterTestCase):
     self.assertEqual(res['OK'], True)
     self.assertEqual(res['Value'], {'plot': True, 'thumbnail': False})
 
-    res = compare('%s.png' % plotName, '/home/dirac/DIRAC/tests/Integration/Monitoring/png/%s.png' % plotName)
+    res = compare('%s.png' % plotName, 'DIRAC/tests/Integration/Monitoring/png/%s.png' % plotName)
     self.assertEqual(0.0, res)
 
   def test_plotMaxFD(self):
@@ -358,7 +358,7 @@ class ComponentMonitoringPlotterUnitTest(PlotterTestCase):
     self.assertEqual(res['OK'], True)
     self.assertEqual(res['Value'], {'plot': True, 'thumbnail': False})
 
-    res = compare('%s.png' % plotName, '/home/dirac/DIRAC/tests/Integration/Monitoring/png/%s.png' % plotName)
+    res = compare('%s.png' % plotName, 'DIRAC/tests/Integration/Monitoring/png/%s.png' % plotName)
     self.assertEqual(0.0, res)
 
   def test_plotActivityRunningThreads(self):
@@ -398,7 +398,7 @@ class ComponentMonitoringPlotterUnitTest(PlotterTestCase):
     self.assertEqual(res['OK'], True)
     self.assertEqual(res['Value'], {'plot': True, 'thumbnail': False})
 
-    res = compare('%s.png' % plotName, '/home/dirac/DIRAC/tests/Integration/Monitoring/png/%s.png' % plotName)
+    res = compare('%s.png' % plotName, 'DIRAC/tests/Integration/Monitoring/png/%s.png' % plotName)
     self.assertEqual(0.0, res)
 
 
