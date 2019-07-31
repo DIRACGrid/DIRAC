@@ -530,6 +530,8 @@ class DirectoryTreeBase:
           return S_OK(resultDict)
         else:
           pDir = os.path.dirname(path)
+          if not pDir:
+            return S_ERROR('Illegal Path')
           result = self.getDirectoryPermissions(pDir, credDict)
           return result
       else:
