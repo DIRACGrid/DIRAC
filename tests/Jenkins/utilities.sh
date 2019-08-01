@@ -358,6 +358,13 @@ function getCFGFile(){
 # This installs the DIRAC client
 # it needs a $DIRAC_RELEASE env var defined
 # if DIRACOSVER env var is defined, it will install dirac with DIRACOS
+# it also wants the env variables DIRACSETUP and CSURLS
+#
+# dirac-install also accepts a env variable $INSTALLOPTIONS (e.g. useful for extensions)
+# dirac-configure also accepts a env variable $CONFIGUREOPTIONS
+#  (e.g. useful for extensions or for using the certificates:
+#   --UseServerCertificate -o /DIRAC/Security/CertFile=some/location.pem -o /DIRAC/Security/KeyFile=some/location.pem
+
 
 function installDIRAC(){
 
@@ -373,15 +380,18 @@ function installDIRAC(){
     return
   fi
 
+  cp $TESTCODE/DIRAC/Core/scripts/dirac-install.py $CLIENTINSTALLDIR/dirac-install
+  chmod +x $CLIENTINSTALLDIR/dirac-install
+
   # actually installing
-  # If DIRACOSVER is not defined, use exterals
+  # If DIRACOSVER is not defined, use externals
   if [ -z $DIRACOSVER ];
   then
     echo "Installing with Externals";
-    ./dirac-install -r $DIRAC_RELEASE -t client $DEBUG
+    ./dirac-install -r $DIRAC_RELEASE -t client $INSTALLOPTIONS $DEBUG
   else
     echo "Installing with DIRACOS $DIRACOSVER";
-    ./dirac-install -r $DIRAC_RELEASE -t client --dirac-os --dirac-os-version=$DIRACOSVER $DEBUG
+    ./dirac-install -r $DIRAC_RELEASE -t client --dirac-os --dirac-os-version=$DIRACOSVER $INSTALLOPTIONS $DEBUG
   fi
 
 
@@ -391,9 +401,13 @@ function installDIRAC(){
     return
   fi
 
-  # now configuring
   source bashrc
-  dirac-configure -S $DIRACSETUP -C $CSURL --UseServerCertificate -o /DIRAC/Security/CertFile=/home/dirac/certs/hostcert.pem -o /DIRAC/Security/KeyFile=/home/dirac/certs/hostkey.pem $DEBUG
+  echo $DIRAC
+  echo $PATH
+
+  # now configuring
+
+  dirac-configure -S $DIRACSETUP -C $CSURL --SkipCAChecks $CONFIGUREOPTIONS $DEBUG
   if [ $? -ne 0 ]
   then
     echo 'ERROR: dirac-configure failed'
@@ -403,16 +417,15 @@ function installDIRAC(){
   echo 'Content of etc/dirac.cfg:'
   more $CLIENTINSTALLDIR/etc/dirac.cfg
 
-  source bashrc
-  if [ $? -ne 0 ]
-  then
-    echo 'ERROR: source bashrc failed'
-    return
-  fi
+  echo '==> Done installDIRAC'
 }
 
 ##############################################################################
 # This function submits a job or more (it assumes a DIRAC client is installed)
+# it needs the following environment variables:
+# $DIRACUSERDN for the DN of the user used to submit the job
+# $DIRACUSERROLE for the role of the proxy of the user used to submit the job
+# $DIRACSETUP for the setup
 
 function submitJob(){
 
@@ -430,9 +443,11 @@ function submitJob(){
   #Get a proxy and submit the job: this job will go to the certification setup, so we suppose the JobManager there is accepting jobs
   getUserProxy #this won't really download the proxy, so that's why the next command is needed
   cp $TESTCODE/DIRAC/tests/Jenkins/dirac-proxy-download.py .
-  python dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True -o /DIRAC/Security/CertFile=/home/dirac/certs/hostcert.pem -o /DIRAC/Security/KeyFile=/home/dirac/certs/hostkey.pem -o /DIRAC/Setup=DIRAC-Certification -ddd
+  python dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True -o /DIRAC/Security/CertFile=/home/dirac/certs/hostcert.pem -o /DIRAC/Security/KeyFile=/home/dirac/certs/hostkey.pem -o /DIRAC/Setup=$DIRACSETUP -ddd
   cp $TESTCODE/DIRAC/tests/Jenkins/dirac-test-job.py .
-  python dirac-test-job.py -o /DIRAC/Setup=DIRAC-Certification $DEBUG
+  python dirac-test-job.py -o /DIRAC/Setup=$DIRACSETUP $DEBUG
+
+  echo '==> Done submitJob'
 }
 
 function getUserProxy(){
@@ -1026,7 +1041,7 @@ function killRunsv(){
     set -e
   fi
 
-
+  echo '==> [Done killRunsv]'
 }
 
 #.............................................................................
@@ -1047,6 +1062,8 @@ function killES(){
     then
       kill -9 $res
     fi
+
+  echo '==> [Done killES]'
 }
 
 #.............................................................................
@@ -1068,6 +1085,8 @@ function stopRunsv(){
 
   # If does not work, let's kill it.
   killRunsv
+
+  echo '==> [Done stopRunsv]'
 }
 
 
@@ -1103,6 +1122,7 @@ function startRunsv(){
 
   runsvstat $SERVERINSTALLDIR/startup/*
 
+  echo '==> [Done startRunsv]'
 }
 
 
@@ -1121,6 +1141,7 @@ function getCertificate(){
   cp /root/hostkey.pem $PILOTINSTALLDIR/etc/grid-security/
   chmod 0600 $PILOTINSTALLDIR/etc/grid-security/hostkey.pem
 
+  echo '==> [Done getCertificate]'
 }
 
 function prepareForPilot(){
@@ -1135,6 +1156,7 @@ function prepareForPilot(){
   cp $TESTCODE/DIRAC/WorkloadManagementSystem/PilotAgent/pilotTools.py $PILOTINSTALLDIR/
   cp $TESTCODE/DIRAC/WorkloadManagementSystem/PilotAgent/pilotCommands.py $PILOTINSTALLDIR/
 
+  echo '==> [Done prepareForPilot]'
 }
 
 
