@@ -16,7 +16,7 @@ import signal
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger, rootPath
 from DIRAC.Core.Utilities.File import mkDir
-from DIRAC.Core.Utilities import Time, MemStat
+from DIRAC.Core.Utilities import Time, MemStat, Network
 from DIRAC.Core.Utilities.Shifter import setupShifterProxyInEnv
 from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
@@ -399,8 +399,8 @@ class AgentModule(object):
         # Here we record the data about the cycle duration along with some basic details about the
         # component and right now it isn't committed to the ES backend.
         self.activityMonitoringReporter.addRecord({
-            'timestamp': time.time(),
-            'site': DIRAC.siteName(),
+            'timestamp': int(Time.toEpoch()),
+            'host': Network.getFQDN(),
             'componentType': "agent",
             'component': "_".join(self.__moduleProperties['fullName'].split("/")),
             'cycleDuration': elapsedTime,
