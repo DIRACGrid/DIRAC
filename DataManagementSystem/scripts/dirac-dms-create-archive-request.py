@@ -15,6 +15,22 @@ another storage element. Once the file is migrated to tape the original files wi
 removed. Optionally the original files can be registered in a special archive SE, so that their
 metadata is preserved.
 
+
+Related Options:
+
+This script only works if the ``ArchiveFiles`` and ``CheckMigration`` RequestHandlers are configured
+to prevent submission of broken requests the script needs to be enabled in the Operations section of the CS
+
+* Operations/DataManagement/ArchiveFiles/Enabled=True
+
+Default values for any of the command line options can also be set in the CS:
+
+* Operations/DataManagement/ArchiveFiles/ArchiveSE
+* Operations/DataManagement/ArchiveFiles/TarballSE
+* Operations/DataManagement/ArchiveFiles/SourceSE
+* Operations/DataManagement/ArchiveFiles/MaxFiles
+* ...
+
 """
 import os
 
@@ -44,8 +60,8 @@ class CreateArchiveRequest(BaseRequest):
     options = [('A', 'ArchiveSE', 'SE for registering archive files at'),
                ('I', 'TarballSE', 'SE to initially upload tarball'),
                ('P', 'Path', 'LFN path to folder, all files in the folder will be archived'),
-               ('N', 'Name', 'Name of the Tarball, if not given Path_Tars/Path_N.tar'
-                'will be used to store tarballs'),
+               ('N', 'Name', 'Name of the Tarball, if not given: Path_Tars/Path_N.tar'
+                ' will be used to store tarballs'),
                ('L', 'List', 'File containing list of LFNs to archive, requires Name to be given'),
                ('', 'MaxFiles', 'Maximum number to put in one tarball: Default %d' % MAX_FILES),
                ('', 'MaxSize', 'Maximum number of Bytes to put in one tarball: Default %d' % MAX_SIZE),
@@ -53,13 +69,16 @@ class CreateArchiveRequest(BaseRequest):
     flags = [('C', 'ReplicateTarball', 'Replicate the tarball'),
              ('D', 'RemoveReplicas', 'Remove Replicas from non-ArchiveSE'),
              ('U', 'RemoveFiles', 'Remove Archived files completely'),
-             ('', 'AllowReplication', 'Enable first replicating to SOURCE-SE'),
-             ('', 'SourceOnly', 'Only treat files that are already at the SOURCE-SE'),
+             ('R', 'RegisterDescedent', 'Register the Tarball as a descendent of the archived LFNs'),
+             ('', 'AllowReplication', 'Enable first replicating to Source-SE'),
+             ('', 'SourceOnly', 'Only treat files that are already at the Source-SE'),
              ]
     self.setUsage()
-    self.registerSwitchesAndParseCommandLine(options, flags)
+    self.registerSwitchesAndParseCommandLine(options, flags, opName='ArchiveFiles')
+
     self.switches['MaxSize'] = int(self.switches.setdefault('MaxSize', MAX_SIZE))
     self.switches['MaxFiles'] = int(self.switches.setdefault('MaxFiles', MAX_FILES))
+
     self.getLFNList()
     self.getLFNMetadata()
     self.lfnChunks = []

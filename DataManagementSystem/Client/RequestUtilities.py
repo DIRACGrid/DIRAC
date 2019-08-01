@@ -4,6 +4,7 @@ import os
 
 import DIRAC
 from DIRAC import gLogger
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.RequestManagementSystem.Client.File import File
@@ -71,11 +72,12 @@ class BaseRequest(object):
     """Return dry run flag"""
     return self.switches['DryRun']
 
-  def registerSwitchesAndParseCommandLine(self, options, flags):
+  def registerSwitchesAndParseCommandLine(self, options, flags, opName=''):
     """Register the default plus additional parameters and parse options.
 
     :param list options: list of three tuple for options to add to the script
     :param list flags:  list of three tuple for flags to add to the script
+    :param str opName
     """
     self.options.extend(options)
     self.flags.extend(flags)
@@ -89,10 +91,25 @@ class BaseRequest(object):
       Script.showHelp()
       DIRAC.exit(1)
 
+    ops = Operations()
+    if not ops.getValue('DataManagement/ArchiveFiles/Enabled', False):
+      LOG.error("The 'ArchiveFiles' operation is not enabled, contact your administrator!")
+      DIRAC.exit(1)
+    for _short, longOption, _doc in self.options:
+      defaultValue = ops.getValue('DataManagement/%s/%s' % (opName, longOption), None)
+      if defaultValue:
+        LOG.verbose('Found default value in the CS for %r with value %r' % (longOption, defaultValue))
+        self.switches[longOption] = defaultValue
+    for _short, longOption, _doc in self.flags:
+      defaultValue = ops.getValue('DataManagement/%s/%s' % (opName, longOption), False)
+      if defaultValue:
+        LOG.verbose('Found default value in the CS for %r with value %r' % (longOption, defaultValue))
+        self.switches[longOption] = defaultValue
+
     for switch in Script.getUnprocessedSwitches():
       for short, longOption, doc in self.options:
         if switch[0] == short or switch[0].lower() == longOption.lower():
-          LOG.debug('Found switch %r with value %r' % (longOption, switch[1]))
+          LOG.verbose('Found switch %r with value %r' % (longOption, switch[1]))
           self.switches[longOption] = switch[1]
           break
       for short, longOption, doc in self.flags:

@@ -36,8 +36,7 @@ class ArchiveFiles(OperationHandlerBase):
                               'RequestExecutingAgent', 'Files/min', gMonitor.OP_SUM)
     gMonitor.registerActivity('ArchiveFilesFail', 'Requests failed',
                               'RequestExecutingAgent', 'Files/min', gMonitor.OP_SUM)
-    self.workDirectory = os.environ.get('DIRAC_ARCHIVE_CACHE',
-                                        os.environ.get('AGENT_WORKDIRECTORY', './ARCHIVE_TMP'))
+    self.workDirectory = os.environ.get('AGENT_WORKDIRECTORY', './ARCHIVE_TMP')
     self.parameterDict = {}
     self.cacheFolder = None
     self.waitingFiles = []
@@ -95,7 +94,7 @@ class ArchiveFiles(OperationHandlerBase):
     atSource = []
     notAt = []
     failed = []
-    sourceSE = self.parameterDict.get('SourceSE', 'CERN-DST-EOS')
+    sourceSE = self.parameterDict['SourceSE']
     for lfn, replInfo in resReplica['Value']['Successful'].iteritems():
       if sourceSE in replInfo:
         atSource.append(lfn)
