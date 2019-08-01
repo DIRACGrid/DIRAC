@@ -16,7 +16,7 @@ import DIRAC
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.DErrno import ENOAUTH
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
-from DIRAC.Core.Utilities import Time, MemStat
+from DIRAC.Core.Utilities import Time, MemStat, Network
 from DIRAC.Core.DISET.private.LockManager import LockManager
 from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
 from DIRAC.Core.DISET.private.ServiceConfiguration import ServiceConfiguration
@@ -314,8 +314,8 @@ class Service(object):
     if self.activityMonitoring:
       # As ES accepts raw data these monitoring fields are being sent here because they are time dependant.
       self.activityMonitoringReporter.addRecord({
-          'timestamp': time.time(),
-          'site': self._cfg.getHostname(),
+          'timestamp': int(Time.toEpoch()),
+          'host': Network.getFQDN(),
           'componentType': 'service',
           'component': "_".join(self._name.split("/")),
           'componentLocation': self._cfg.getURL(),
@@ -348,8 +348,8 @@ class Service(object):
     if self.activityMonitoring:
       #  As ES accepts raw data these monitoring fields are being sent here because they are action dependant.
       self.activityMonitoringReporter.addRecord({
-          'timestamp': time.time(),
-          'site': self._cfg.getHostname(),
+          'timestamp': int(Time.toEpoch()),
+          'host': Network.getFQDN(),
           'componentType': 'service',
           'component': "_".join(self._name.split("/")),
           'componentLocation': self._cfg.getURL(),
@@ -609,8 +609,8 @@ class Service(object):
       response = handlerObj._rh_executeAction(proposalTuple)
       if self.activityMonitoring and response["OK"]:
         self.activityMonitoringReporter.addRecord({
-            'timestamp': time.time(),
-            'site': self._cfg.getHostname(),
+            'timestamp': int(Time.toEpoch()),
+            'host': Network.getFQDN(),
             'componentType': 'service',
             'component': "_".join(self._name.split("/")),
             'componentLocation': self._cfg.getURL(),
@@ -634,8 +634,8 @@ class Service(object):
     response = handlerObj._rh_executeMessageCallback(msgObj)
     if self.activityMonitoring and response["OK"]:
       self.activityMonitoringReporter.addRecord({
-          'timestamp': time.time(),
-          'site': self._cfg.getHostname(),
+          'timestamp': int(Time.toEpoch()),
+          'host': Network.getFQDN(),
           'componentType': 'service',
           'component': "_".join(self._name.split("/")),
           'componentLocation': self._cfg.getURL(),
