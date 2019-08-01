@@ -185,7 +185,7 @@ class ArchiveFiles(OperationHandlerBase):
     upload = returnSingleResult(self.dm.putAndRegister(lfn, localFile, tarballSE))
     if not upload['OK']:
       raise RuntimeError('Failed to upload tarball: %s' % upload['Message'])
-    self.log.debug('Uploading finished')
+    self.log.verbose('Uploading finished')
 
   def _markFilesDone(self):
     """Mark all the files as done."""
