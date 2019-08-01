@@ -18,15 +18,17 @@ class ProductionClient(Client):
 
     Client.__init__(self, **kwargs)
     self.setServer('Production/ProductionManager')
+    self.prodDescription = {}
+    self.stepCounter = 1
 
   # Method applying the Production System State machine
 
   def _applyProductionStatusStateMachine(self, prodID, status, force=False):
     """ Performs a state machine check for productions when asked to change the status
 
-    :param prodID: the ProductionID on which the state machine check is performed
-    :param status: the proposed status which is checked to be valid
-    :param force: a boolean. When force=True the proposed status is forced to pass the state machine check
+    :param int prodID: the ProductionID on which the state machine check is performed
+    :param str status: the proposed status which is checked to be valid
+    :param bool force: a boolean. When force=True the proposed status is forced to pass the state machine check
 
     :return: S_OK with the new status or S_ERROR
     """
@@ -49,8 +51,8 @@ class ProductionClient(Client):
   def setProductionStatus(self, prodID, status):
     """ Sets the status of a production
 
-    :param prodID: the ProductionID
-    :param status: the production status to be set to the prodID
+    :param int prodID: the ProductionID
+    :param str status: the production status to be set to the prodID
     """
     rpcClient = self._getRPC()
     # Apply the production state machine
@@ -66,8 +68,8 @@ class ProductionClient(Client):
                      orderAttribute=None, limit=100):
     """ Gets all the productions in the system, incrementally. "limit" here is just used to determine the offset.
     """
-    rpcClient = self._getRPC()
 
+    rpcClient = self._getRPC()
     productions = []
     if condDict is None:
       condDict = {}
@@ -94,8 +96,10 @@ class ProductionClient(Client):
     """ Gets all the production transformations for a production, incrementally.
         "limit" here is just used to determine the offset.
 
-    :param prodName: the Production name or ID
+    :param str prodName: the production name
+    :return: the list of the transformations associated to the production
     """
+
     rpcClient = self._getRPC()
     productionTransformations = []
 
@@ -118,3 +122,24 @@ class ProductionClient(Client):
         if len(res['Value']) < limit:
           break
     return S_OK(productionTransformations)
+
+  def addProductionStep(self, prodStep):
+    """ Add a production step and update the production description
+
+    :param object prodStep: the production step, i.e. a ProductionStep object describing the transformation
+    """
+    stepName = 'Step' + str(self.stepCounter) + '_' + prodStep.Name
+    self.stepCounter += 1
+    prodStep.Name = stepName
+
+    res = prodStep.getAsDict()
+    if not res['OK']:
+      return res
+    prodStepDict = res['Value']
+    rpcClient = self._getRPC()
+    res = rpcClient.addProductionStep(prodStepDict)
+    if not res['OK']:
+      return res
+    stepID = res['Value']
+    self.prodDescription[prodStep.Name] = {'stepID': stepID, 'parentStep': prodStepDict['parentStep']}
+    return S_OK()

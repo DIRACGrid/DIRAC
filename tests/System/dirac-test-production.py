@@ -25,7 +25,7 @@ from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 
 # Parse the arguments
-args = Script.getUnprocessedSwitches()
+args = Script.getPositionalArgs()
 if len(args) != 1:
   Script.showHelp()
 directory = args[0]
@@ -113,9 +113,9 @@ if UseFilter:
   # Set the transformation meta data filter
   MDdict1b = {'particle': 'gamma', 'timestamp': timestamp}
   mqJson1b = json.dumps(MDdict1b)
-  res = transformation.setFileMask(mqJson1b)
+  res = transformation.setInputMetaQuery(MDdict1b)
   if not res['OK']:
-    gLogger.error("Failed to set FileMask", res['Message'])
+    gLogger.error("Failed to set InputMetaQuery", res['Message'])
     exit(-1)
 
 # Create the transformation

@@ -20,4 +20,3 @@ from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
 gComponentInstaller.getMySQLPasswords()
 for db in args:
   print(gComponentInstaller.execMySQL("DROP DATABASE IF EXISTS %s" % db))
-

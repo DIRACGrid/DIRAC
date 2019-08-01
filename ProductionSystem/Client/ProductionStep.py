@@ -2,6 +2,8 @@
 
 __RCSID__ = "$Id$"
 
+import json
+
 from DIRAC import S_OK, S_ERROR
 
 
@@ -30,11 +32,10 @@ class ProductionStep(object):
 
   def getAsDict(self):
     """ It returns the Step description as a dictionary
-
-    :return: a dictionary with the Step description
     """
     prodStepDict = {}
     prodStepDict['name'] = self.Name
+    prodStepDict['parentStep'] = []
     # check the ParentStep format
     if self.ParentStep:
       if isinstance(self.ParentStep, list):
@@ -57,9 +58,9 @@ class ProductionStep(object):
     prodStepDict['agentType'] = self.AgentType
     prodStepDict['fileMask'] = self.FileMask
     # Optional fields
-    prodStepDict['inputquery'] = self.Inputquery
-    prodStepDict['outputquery'] = self.Outputquery
+    prodStepDict['inputquery'] = json.dumps(self.Inputquery)
+    prodStepDict['outputquery'] = json.dumps(self.Outputquery)
     prodStepDict['groupsize'] = self.GroupSize
-    prodStepDict['body'] = self.Body
+    prodStepDict['body'] = json.dumps(self.Body)
 
     return S_OK(prodStepDict)

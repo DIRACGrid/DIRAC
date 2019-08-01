@@ -146,6 +146,7 @@ class Transformation(API):
     :param dict query: dictionary to use for input meta query
     """
     self.inputMetaQuery = query
+    return S_OK()
 
   def setOutputMetaQuery(self, query):
     """Set the output meta query.
@@ -153,6 +154,7 @@ class Transformation(API):
     :param dict query: dictionary to use for output meta query
     """
     self.outputMetaQuery = query
+    return S_OK()
 
   def __setSE(self, seParam, seList):
     if isinstance(seList, basestring):

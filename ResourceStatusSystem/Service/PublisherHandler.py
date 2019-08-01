@@ -290,7 +290,8 @@ class PublisherHandler(RequestHandler):
       if not res['OK']:
         return res
       names = name['Value']
-
+    else:
+      names = name
     return rmClient.selectDowntimeCache(element=element, name=names,
                                         meta={'columns': ['StartDate', 'EndDate',
                                                           'Link', 'Description',

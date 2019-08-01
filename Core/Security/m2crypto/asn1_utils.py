@@ -16,6 +16,7 @@ C library (https://github.com/italiangrid/voms) instead...
 """
 
 from pyasn1.codec.der.decoder import decode as der_decode
+from pyasn1.error import PyAsn1Error
 from pyasn1.type import namedtype, univ, char as asn1char
 from pyasn1_modules import rfc2459, rfc3281
 from DIRAC.Core.Security.m2crypto import VOMS_EXTENSION_OID, VOMS_FQANS_OID, DN_MAPPING,\
@@ -87,6 +88,37 @@ def decodeDIRACGroup(m2cert):
   return diracGroupUTF8Str.asOctets()
 
 
+def _decodeASN1String(rdnNameAttrValue):
+  """ Tries to decode a string encoded with the following type:
+      * UTF8String
+      * PrintableString
+      * IA5String
+
+
+      This utility function is needed for 2 reasons:
+      * Not all the attributes are encoded the same way, and as we do not want to bother
+        with zillions of `if` conditions, we may just as well try
+      * It seems like the RFCs are not always respected, and the encoding is not always the correct one
+
+      http://www.oid-info.com/ is a very good source of information for looking up the type of
+      a specific OID
+
+      :param rdnNameAttrValue: the value part of rfc3280.AttributeTypeAndValue
+
+      :returns: the decoded value or raises PyAsn1Error if nothing worked
+  """
+  for decodeType in (asn1char.UTF8String, asn1char.PrintableString, asn1char.IA5String):
+    try:
+      attrValStr, _rest = der_decode(rdnNameAttrValue, decodeType())
+    # Decoding error, try the next type
+    except PyAsn1Error:
+      pass
+    else:
+      # If the decoding worked, return it
+      return attrValStr
+  raise PyAsn1Error("Could not find a correct decoding type")
+
+
 def decodeVOMSExtension(m2cert):
   """ Decode the content of the VOMS extension
 
@@ -150,9 +182,9 @@ def decodeVOMSExtension(m2cert):
 
     attrOid = '.'.join([str(e) for e in rdnNameAttr['type'].asTuple()])
 
-    # Now finally convert the last part into a UTF8String
-    attrValUTF8Str, _rest = der_decode(rdnNameAttr['value'], asn1char.UTF8String())
-    attrVal = attrValUTF8Str.asOctets()
+    # Now finally convert the last part into a asn1char.*String
+    attrValStr = _decodeASN1String(rdnNameAttr['value'])
+    attrVal = attrValStr.asOctets()
     #
     issuer += '%s%s' % (DN_MAPPING[attrOid], attrVal)
 
@@ -177,9 +209,9 @@ def decodeVOMSExtension(m2cert):
     #
     # attrVal = ''.join([chr(c) for c in rdnNameAttr['value'].asNumbers() if 32 <= c <= 126 ])
 
-    # Now finally convert the last part into a UTF8String
-    attrValUTF8Str, _rest = der_decode(rdnNameAttr['value'], asn1char.UTF8String())
-    attrVal = attrValUTF8Str.asOctets()
+    # Now finally convert the last part into a asn1char.*String
+    attrValStr = _decodeASN1String(rdnNameAttr['value'])
+    attrVal = attrValStr.asOctets()
 
     subject += '%s%s' % (DN_MAPPING[attrOid], attrVal)
 
