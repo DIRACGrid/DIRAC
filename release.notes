@@ -1,4 +1,7 @@
-[v7r1-pre1]
+[v7r1-pre2]
+
+*Core
+NEW: initial support for mysql8
 
 *Configuration
 CHANGE: (#4157) add new helper methods for IdP/Proxy Providers, OAuthManager. Add methods that 
