@@ -2321,7 +2321,7 @@ def createBashrcForDiracOS():
                'export PYTHONOPTIMIZE=x',
                '[ -z "$DIRAC" ] && export DIRAC=%s' % proPath,
                '[ -z "$DIRACOS" ] && export DIRACOS=$DIRAC/diracos',
-               '. $DIRAC/diracos/diracosrc']
+               '. $DIRACOS/diracosrc']
       if 'HOME' in os.environ:
         lines.append('[ -z "$HOME" ] && export HOME=%s' % os.environ['HOME'])
 
