@@ -74,6 +74,7 @@ class ArchiveFiles(OperationHandlerBase):
     self._downloadFiles()
     self._tarFiles()
     self._uploadTarBall()
+    self._registerDescendent()
     self._markFilesDone()
 
   def _checkArchiveLFN(self):
@@ -186,6 +187,29 @@ class ArchiveFiles(OperationHandlerBase):
     if not upload['OK']:
       raise RuntimeError('Failed to upload tarball: %s' % upload['Message'])
     self.log.verbose('Uploading finished')
+
+  def _registerDescendent(self):
+    """Register the tarball as a descendent of the archived LFNs.
+
+    Actually registers all LFNs as an ancestor to the Tarball.
+    """
+    archiveSE = self.parameterDict.get('RegisterDescedent', None)
+    if not archiveSE:
+      self.log.verbose('Will not register tarball as descendent to the Archived LFNs.')
+      return
+
+    self.log.info('Will register tarball as descendent to the Archived LFNs.')
+    tarballLFN = self.parameterDict['ArchiveLFN']
+    ancestorDict = {tarballLFN: {'Ancestors': self.lfns}}
+
+    for _trial in range(3):
+      resAncestors = returnSingleResult(self.fc.addFilesAncestors(ancestorDict))
+      if resAncestors['OK']:
+        break
+    else:
+      self.log.error('Failed to register ancestors', resAncestors['Message'])
+      raise RuntimeError('Failed to register ancestors')
+    self.log.info('Successfully registered ancestors')
 
   def _markFilesDone(self):
     """Mark all the files as done."""
