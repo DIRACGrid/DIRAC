@@ -2368,7 +2368,7 @@ def createBashrcForDiracOS():
                   'fonts',
                   'DejaVuSansMono-Roman.ttf')])
 
-      lines.extend(['# Prepend the PYTHONPATH, the LD_LIBRARY_PATH, and the DYLD_LIBRARY_PATH'])
+      lines.extend(['# Prepend the PATH and set the PYTHONPATH'])
 
       lines.extend(['( echo $PATH | grep -q $DIRACSCRIPTS ) || export PATH=$DIRACSCRIPTS:$PATH'])
 

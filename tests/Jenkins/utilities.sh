@@ -364,9 +364,6 @@ function installDIRAC(){
 
   echo '==> Installing DIRAC client'
 
-  cp $TESTCODE/DIRAC/Core/scripts/dirac-install.py $CLIENTINSTALLDIR/dirac-install
-  chmod +x $CLIENTINSTALLDIR/dirac-install
-
   cd $CLIENTINSTALLDIR
   if [ $? -ne 0 ]
   then
@@ -374,9 +371,12 @@ function installDIRAC(){
     return
   fi
 
+  cp $TESTCODE/DIRAC/Core/scripts/dirac-install.py $CLIENTINSTALLDIR/dirac-install
+  chmod +x $CLIENTINSTALLDIR/dirac-install
+
   # actually installing
   echo "Installing with DIRACOS $DIRACOSVER";
-  ./dirac-install -r $DIRAC_RELEASE -t client --dirac-os --dirac-os-version=$DIRACOSVER $DEBUG
+  $CLIENTINSTALLDIR/dirac-install -r $DIRAC_RELEASE -t client --dirac-os --dirac-os-version=$DIRACOSVER $DEBUG
 
   if [ $? -ne 0 ]
   then
@@ -384,11 +384,9 @@ function installDIRAC(){
     return
   fi
 
-  # make sure there's no variable in between
-  unset DIRAC
-  unset DIRACOS
-  unset DIRACPLAT
   source bashrc
+  echo $DIRAC
+  echo $PATH
 
   # now configuring
   dirac-configure -S $DIRACSETUP -C $CSURL --SkipCAChecks $CONFIGUREOPTIONS $DEBUG

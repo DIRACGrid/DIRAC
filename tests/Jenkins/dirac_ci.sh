@@ -418,6 +418,23 @@ function miniInstallDIRAC(){
 
 function clean(){
 
+  echo '==> [clean]'
+
+  #### make sure we're using the server
+  cd $SERVERINSTALLDIR
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: cannot change to ' $SERVERINSTALLDIR
+    return
+  fi
+  source bashrc
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: cannot source bashrc'
+    return
+  fi
+  ####
+
   # Uninstalling the services
   diracUninstallServices
 
@@ -518,10 +535,6 @@ function fullPilot(){
     return
   fi
 
-  # make sure there's no variable in between
-  unset DIRAC
-  unset DIRACOS
-  unset DIRACPLAT
   #this should have been created, we source it so that we can continue
   source $PILOTINSTALLDIR/bashrc
   if [ $? -ne 0 ]

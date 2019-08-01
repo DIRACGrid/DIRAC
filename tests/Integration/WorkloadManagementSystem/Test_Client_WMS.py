@@ -135,10 +135,10 @@ class WMSChain(TestWMSTestCase):
     self.assertEqual(res['Value'], 'Received')
     res = jobMonitor.getJobsMinorStatus([jobID])
     self.assertTrue(res['OK'])
-    self.assertEqual(res['Value'], {jobID: {'MinorStatus': 'Job Rescheduled'}})
+    self.assertEqual(res['Value'], {jobID: {'MinorStatus': 'Job Rescheduled', 'JobID': jobID}})
     res = jobMonitor.getJobsApplicationStatus([jobID])
     self.assertTrue(res['OK'])
-    self.assertEqual(res['Value'], {jobID: {'MinorStatus': 'Unknown'}})
+    self.assertEqual(res['Value'], {jobID: {'ApplicationStatus': 'Unknown', 'JobID': jobID}})
 
     # updating the status again
     res = jobStateUpdate.setJobStatus(jobID, 'Matched', 'matching', 'source')
