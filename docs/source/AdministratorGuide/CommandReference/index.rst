@@ -123,7 +123,6 @@ Managing DIRAC software:
     dirac-deploy-scripts
     dirac-distribution
     dirac-externals-requirements
-    dirac-fix-ld-library-path
 
 User convenience:
 
