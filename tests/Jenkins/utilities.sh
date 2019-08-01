@@ -358,13 +358,11 @@ function getCFGFile(){
 # This installs the DIRAC client
 # it needs a $DIRAC_RELEASE env var defined
 # if DIRACOSVER env var is defined, it will install dirac with DIRACOS
+# it also wants the env variables DIRACSETUP and CSURLS
 
 function installDIRAC(){
 
   echo '==> Installing DIRAC client'
-
-  cp $TESTCODE/DIRAC/Core/scripts/dirac-install.py $CLIENTINSTALLDIR/dirac-install
-  chmod +x $CLIENTINSTALLDIR/dirac-install
 
   cd $CLIENTINSTALLDIR
   if [ $? -ne 0 ]
@@ -373,17 +371,12 @@ function installDIRAC(){
     return
   fi
 
-  # actually installing
-  # If DIRACOSVER is not defined, use exterals
-  if [ -z $DIRACOSVER ];
-  then
-    echo "Installing with Externals";
-    ./dirac-install -r $DIRAC_RELEASE -t client $DEBUG
-  else
-    echo "Installing with DIRACOS $DIRACOSVER";
-    ./dirac-install -r $DIRAC_RELEASE -t client --dirac-os --dirac-os-version=$DIRACOSVER $DEBUG
-  fi
+  cp $TESTCODE/DIRAC/Core/scripts/dirac-install.py $CLIENTINSTALLDIR/dirac-install
+  chmod +x $CLIENTINSTALLDIR/dirac-install
 
+  # actually installing
+  echo "Installing with DIRACOS $DIRACOSVER";
+  $CLIENTINSTALLDIR/dirac-install -r $DIRAC_RELEASE -t client --dirac-os --dirac-os-version=$DIRACOSVER $DEBUG
 
   if [ $? -ne 0 ]
   then
@@ -391,9 +384,12 @@ function installDIRAC(){
     return
   fi
 
-  # now configuring
   source bashrc
-  dirac-configure -S $DIRACSETUP -C $CSURL --UseServerCertificate -o /DIRAC/Security/CertFile=/home/dirac/certs/hostcert.pem -o /DIRAC/Security/KeyFile=/home/dirac/certs/hostkey.pem $DEBUG
+  echo $DIRAC
+  echo $PATH
+
+  # now configuring
+  dirac-configure -S $DIRACSETUP -C $CSURL --SkipCAChecks $CONFIGUREOPTIONS $DEBUG
   if [ $? -ne 0 ]
   then
     echo 'ERROR: dirac-configure failed'
@@ -402,13 +398,6 @@ function installDIRAC(){
 
   echo 'Content of etc/dirac.cfg:'
   more $CLIENTINSTALLDIR/etc/dirac.cfg
-
-  source bashrc
-  if [ $? -ne 0 ]
-  then
-    echo 'ERROR: source bashrc failed'
-    return
-  fi
 }
 
 ##############################################################################

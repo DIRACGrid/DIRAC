@@ -4,7 +4,6 @@
 __RCSID__ = "$Id$"
 
 from DIRAC import gLogger, S_OK, S_ERROR
-
 from DIRAC.Core.Utilities import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.WorkloadManagementSystem.private.correctors.BaseCorrector import BaseCorrector
