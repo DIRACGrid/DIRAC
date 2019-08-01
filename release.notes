@@ -1,3 +1,12 @@
+[v6r22p4]
+
+*Core
+NEW: (#4181) Allow to install an extension of DIRACOS
+
+*Docs
+FIX: (#4187) Create a TransformationAgent Plugin -- more concrete 
+     descriptions for adding a plugin to AllowedPlugins
+
 [v6r22p3]
 
 *WMS
