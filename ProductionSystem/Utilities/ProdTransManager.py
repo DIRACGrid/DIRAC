@@ -4,6 +4,8 @@
 
 __RCSID__ = "$Id $"
 
+import json
+
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 from DIRAC.ProductionSystem.Client.ProductionClient import ProductionClient
@@ -18,7 +20,7 @@ class ProdTransManager(object):
   def deleteTransformations(self, transIDs):
     """ Delete given transformations from the TS
 
-    :param transIDs: a list of Transformation IDs
+    :param list transIDs: a list of Transformation IDs
     """
     gLogger.notice("Deleting transformations %s from the TS" % transIDs)
 
@@ -32,7 +34,7 @@ class ProdTransManager(object):
   def deleteProductionTransformations(self, prodID):
     """ Delete the production transformations from the TS
 
-    :param prodID: the ProductionID
+    :param int prodID: the ProductionID
     """
     res = self.prodClient.getProductionTransformations(prodID)
     if res['OK']:
@@ -48,38 +50,45 @@ class ProdTransManager(object):
 
     return S_OK()
 
-  def addTransformationStep(self, prodStep, prodID):
+  def addTransformationStep(self, stepID, prodID):
     """ Add the transformation step to the TS
 
-    :param object prodStep: an object of type ~:mod:`~DIRAC.ProductionSystem.Client.ProductionStep`
-    :param prodID: the ProductionID
+    :param int stepID: the production step ID
+    :param int prodID: the production ID
+    :return:
     """
-    gLogger.notice("Add step %s to production %s" % (prodStep['name'], prodID))
 
-    description = prodStep['description']
-    longDescription = prodStep['longDescription']
-    stepType = prodStep['stepType']
-    plugin = prodStep['plugin']
-    agentType = prodStep['agentType']
-    fileMask = prodStep['fileMask']
-    groupsize = prodStep['groupsize']
-    body = prodStep['body']
-    inputquery = prodStep['inputquery']
-    outputquery = prodStep['outputquery']
-    name = '%08d' % prodID + '_' + prodStep['name']
+    res = self.prodClient.getProductionStep(stepID)
+    if not res['OK']:
+      return res
+    prodStep = res['Value']
+
+    gLogger.notice("Add step %s to production %s" % (prodStep[0], prodID))
+
+    stepDesc = prodStep[2]
+    stepLongDesc = prodStep[3]
+    stepBody = prodStep[4]
+    stepType = prodStep[5]
+    stepPlugin = prodStep[6]
+    stepAgentType = prodStep[7]
+    stepGroupsize = prodStep[8]
+    stepInputquery = json.loads(prodStep[9])
+    stepOutputquery = json.loads(prodStep[10])
+
+    stepName = '%08d' % prodID + '_' + prodStep[1]
 
     res = self.transClient.addTransformation(
-        name,
-        description,
-        longDescription,
+        stepName,
+        stepDesc,
+        stepLongDesc,
         stepType,
-        plugin,
-        agentType,
-        fileMask,
-        groupSize=groupsize,
-        body=body,
-        inputMetaQuery=inputquery,
-        outputMetaQuery=outputquery)
+        stepPlugin,
+        stepAgentType,
+        '',
+        groupSize=stepGroupsize,
+        body=stepBody,
+        inputMetaQuery=stepInputquery,
+        outputMetaQuery=stepOutputquery)
 
     if not res['OK']:
       return S_ERROR(res['Message'])
@@ -89,8 +98,8 @@ class ProdTransManager(object):
   def executeActionOnTransformations(self, prodID, action):
     """ Wrapper to start/stop/clean the transformations of a production
 
-    :param prodID: the ProductionID
-    :param action: it can be start/stop/clean
+    :param int prodID: the production ID
+    :param str action: it can be start/stop/clean
     """
 
     # Check if there is any action to do
