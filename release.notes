@@ -93,6 +93,21 @@ FIX: (#4119) Not lhcb but dteam (for DIRAC certification)
 FIX: (#4139) client_dms.sh not lhcb specific
 CHANGE:(#4140) adapt transformation certification tests to dteam VO
 
+[v6r21p14]
+
+*DMS
+FIX: (#4192) dirac-dms-clean-directory correct usage message for list of arguments
+FIX: (#4192) dirac-dms-clean-directory now properly prints error messages
+FIX: (#4192) dirac-dms-clean-directory will now also clean empty directories
+FIX: (#4192) FileCatalog.DirectoryMetadata: prevent error when removeMetadataDirectory is 
+     called on empty list of directories, triggered when calling removeDirectory 
+     on non-existing directory
+FIX: (#4192) FileCatalog.DirectoryTreeBase: prevent maximum recursion depth exception 
+     when calling remove directory with illegal path
+
+*Resources
+CHANGE: (#4191) Storages: catch specific DPM/Globus error code when creating existing directory
+
 [v6r21p13]
 
 *RSS

@@ -1086,7 +1086,13 @@ class GFAL2_StorageBase(StorageBase):
         return S_ERROR(errStr)
     except gfal2.GError as e:
       # error: directory already exists
-      if e.code == errno.EEXIST:  # or e.code == errno.EACCES:
+      # Explanations for ECOMM:
+      # Because of the way the new DPM DOME flavor works
+      # and the poor error handling of Globus works, we might
+      # encounter ECOMM when creating an existing directory
+      # This will be fixed in the future versions of DPM,
+      # but in the meantime, we catch it ourselves.
+      if e.code in (errno.EEXIST, errno.ECOMM):
         log.debug("Directory already exists")
         return S_OK()
       # any other error: failed to create directory
