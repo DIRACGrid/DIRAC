@@ -30,6 +30,8 @@ from DIRAC.FrameworkSystem.Client.SecurityLogClient import SecurityLogClient
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
+from DIRAC.Core.DISET.RequestHandler import getServiceOption
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 __RCSID__ = "$Id$"
 
@@ -83,17 +85,6 @@ class Service(object):
     return False
 
   def initialize(self):
-    # Initialize Monitoring
-
-    # This is a flag used to check whether "ActivityMonitoring" is enabled or not from the config file.
-    self.activityMonitoring = gConfig.getValue("/DIRAC/ActivityMonitoring", "false").lower() in ("yes", "true")
-    if self.activityMonitoring:
-      self.activityMonitoringReporter = MonitoringReporter(monitoringType="ComponentMonitoring")
-      gThreadScheduler.addPeriodicTask(100, self.__activityMonitoringReporting)
-    elif self._standalone:
-      self._monitor = gMonitor
-    else:
-      self._monitor = MonitoringClient()
     # Build the URLs
     self._url = self._cfg.getURL()
     if not self._url:
@@ -106,7 +97,6 @@ class Service(object):
     self._handler = result['Value']
     # Initialize lock manager
     self._lockManager = LockManager(self._cfg.getMaxWaitingPetitions())
-    self._initMonitoring()
     self._threadPool = ThreadPool(max(1, self._cfg.getMinThreads()),
                                   max(0, self._cfg.getMaxThreads()),
                                   self._cfg.getMaxWaitingPetitions())
@@ -120,6 +110,20 @@ class Service(object):
                              'validNames': self._validNames,
                              'csPaths': [PathFinder.getServiceSection(svcName) for svcName in self._validNames]
                              }
+    # Initialize Monitoring
+    # This is a flag used to check whether "EnableActivityMonitoring" is enabled or not from the config file.
+    self.activityMonitoring = (
+      Operations().getValue("EnableActivityMonitoring", False) or
+      getServiceOption(self._serviceInfoDict, "EnableActivityMonitoring", False)
+    )
+    if self.activityMonitoring:
+      self.activityMonitoringReporter = MonitoringReporter(monitoringType="ComponentMonitoring")
+      gThreadScheduler.addPeriodicTask(100, self.__activityMonitoringReporting)
+    elif self._standalone:
+      self._monitor = gMonitor
+    else:
+      self._monitor = MonitoringClient()
+    self._initMonitoring()
     # Call static initialization function
     try:
       if self.activityMonitoring:
