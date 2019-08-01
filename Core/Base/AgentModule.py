@@ -24,6 +24,7 @@ from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 
 class AgentModule(object):
@@ -306,8 +307,11 @@ class AgentModule(object):
     Initialize the system monitoring.
     """
     # This flag is used to activate ES based monitoring
-    # if the "ActivityMonitoring" flag in "yes" or "true" in the cfg file.
-    self.activityMonitoring = gConfig.getValue("/DIRAC/ActivityMonitoring", "false").lower() in ("yes", "true")
+    # if the "EnableActivityMonitoring" flag in "yes" or "true" in the cfg file.
+    self.activityMonitoring = (
+      Operations().getValue("EnableActivityMonitoring", False) or
+      self.am_getOption("EnableActivityMonitoring", False)
+    )
     if self.activityMonitoring:
       self.activityMonitoringReporter = MonitoringReporter(monitoringType="ComponentMonitoring")
       # With the help of this periodic task we commit the data to ES at an interval of 100 seconds.
