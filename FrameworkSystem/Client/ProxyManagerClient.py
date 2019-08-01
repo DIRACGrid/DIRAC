@@ -154,7 +154,7 @@ class ProxyManagerClient(object):
     if chain.hasExpired()['Value']:
       return S_ERROR("Proxy %s has expired" % proxyLocation)
 
-    #rpcClient = RPCClient( "Framework/ProxyManager", proxyChain = chainToConnect )
+    # rpcClient = RPCClient( "Framework/ProxyManager", proxyChain = chainToConnect )
     rpcClient = RPCClient("Framework/ProxyManager", timeout=120)
     # Get a delegation request
     result = rpcClient.requestDelegationUpload(chain.getRemainingSecs()['Value'], diracGroup)
