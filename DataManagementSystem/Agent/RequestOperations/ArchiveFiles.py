@@ -207,7 +207,7 @@ class ArchiveFiles(OperationHandlerBase):
     ancestorDict = {tarballLFN: {'Ancestors': self.lfns}}
 
     for _trial in range(3):
-      resAncestors = returnSingleResult(self.fc.addFilesAncestors(ancestorDict))
+      resAncestors = returnSingleResult(self.fc.addFileAncestors(ancestorDict))
       if resAncestors['OK']:
         break
     else:

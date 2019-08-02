@@ -316,39 +316,39 @@ def test_checkReplicas_failed(archiveFiles, mocker):
 def test_registerDescendent_disabled(archiveFiles):
   archiveFiles.parameterDict = {'RegisterDescendent': False}
   archiveFiles.lfns = [opFile.LFN for opFile in archiveFiles.waitingFiles]
-  archiveFiles.fc.addFilesAncestors = Mock(name='AFA')
+  archiveFiles.fc.addFileAncestors = Mock(name='AFA')
   assert archiveFiles._registerDescendent() is None
-  archiveFiles.fc.addFilesAncestors.assert_not_called()
+  archiveFiles.fc.addFileAncestors.assert_not_called()
 
 
 def test_registerDescendent_success(archiveFiles, listOfLFNs):
   archiveFiles.lfns = listOfLFNs
   archiveLFN = '/vo/tars/myTar.tar'
   archiveFiles.parameterDict = {'RegisterDescendent': True, 'ArchiveLFN': archiveLFN}
-  archiveFiles.fc.addFilesAncestors = Mock(name='AFA',
-                                           return_value=S_OK({'Failed': {},
-                                                              'Successful': {archiveLFN: 'Done'}}))
+  archiveFiles.fc.addFileAncestors = Mock(name='AFA',
+                                          return_value=S_OK({'Failed': {},
+                                                             'Successful': {archiveLFN: 'Done'}}))
   assert archiveFiles._registerDescendent() is None
-  archiveFiles.fc.addFilesAncestors.assert_called_with({archiveLFN: {'Ancestors': archiveFiles.lfns}})
+  archiveFiles.fc.addFileAncestors.assert_called_with({archiveLFN: {'Ancestors': archiveFiles.lfns}})
 
 
 def test_registerDescendent_PartialFailure(archiveFiles, listOfLFNs):
   archiveFiles.lfns = listOfLFNs
   archiveLFN = '/vo/tars/myTar.tar'
   archiveFiles.parameterDict = {'RegisterDescendent': True, 'ArchiveLFN': archiveLFN}
-  archiveFiles.fc.addFilesAncestors = Mock(name='AFA',
-                                           side_effect=(S_ERROR('Failure'),
-                                                        S_OK({'Failed': {},
-                                                              'Successful': {archiveLFN: 'Done'}})))
+  archiveFiles.fc.addFileAncestors = Mock(name='AFA',
+                                          side_effect=(S_ERROR('Failure'),
+                                                       S_OK({'Failed': {},
+                                                             'Successful': {archiveLFN: 'Done'}})))
   archiveFiles._registerDescendent()
-  archiveFiles.fc.addFilesAncestors.assert_called_with({archiveLFN: {'Ancestors': archiveFiles.lfns}})
+  archiveFiles.fc.addFileAncestors.assert_called_with({archiveLFN: {'Ancestors': archiveFiles.lfns}})
 
 
 def test_registerDescendent_completeFailure(archiveFiles, listOfLFNs):
   archiveFiles.lfns = listOfLFNs
   archiveLFN = '/vo/tars/myTar.tar'
   archiveFiles.parameterDict = {'RegisterDescendent': True, 'ArchiveLFN': archiveLFN}
-  archiveFiles.fc.addFilesAncestors = Mock(name='AFA', return_value=S_ERROR('Failure'))
+  archiveFiles.fc.addFileAncestors = Mock(name='AFA', return_value=S_ERROR('Failure'))
   with pytest.raises(RuntimeError, match='Failed to register ancestors'):
     archiveFiles._registerDescendent()
-  archiveFiles.fc.addFilesAncestors.assert_called_with({archiveLFN: {'Ancestors': archiveFiles.lfns}})
+  archiveFiles.fc.addFileAncestors.assert_called_with({archiveLFN: {'Ancestors': archiveFiles.lfns}})
