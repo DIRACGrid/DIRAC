@@ -1,6 +1,22 @@
 """The FCOnly storage can only be used to register replicas in a FileCatalog.
 
 It is used to preserve LFN metadata, no actual file content will be stored.
+
+Example Configuration for Resources/StorageElement::
+
+  ARCHIVE-SE
+  {
+    BackendType = None
+    FCOnly
+    {
+      Access = remote
+      Protocol = dfc
+    }
+  }
+
+The 'dfc' protocol also needs to be added to the RegistrationProtocols and WriteProtocols lists in the
+Operations/DataManagement section.
+
 """
 
 __RCSID__ = "$Id$"
