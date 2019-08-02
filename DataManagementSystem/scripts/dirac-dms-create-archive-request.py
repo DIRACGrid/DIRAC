@@ -18,8 +18,8 @@ metadata is preserved.
 
 Related Options:
 
-This script only works if the ``ArchiveFiles`` and ``CheckMigration`` RequestHandlers are configured
-to prevent submission of broken requests the script needs to be enabled in the Operations section of the CS
+This script only works if the ``ArchiveFiles`` and ``CheckMigration`` RequestHandlers are configured.
+To prevent submission of broken requests the script needs to be enabled in the Operations section of the CS
 
 * Operations/DataManagement/ArchiveFiles/Enabled=True
 
@@ -40,6 +40,8 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Utilities import DEncode
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.Core.Base import Script
+
+from DIRAC.FrameworkSystem.private.standardLogging.LogLevels import LogLevels
 
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
@@ -512,5 +514,13 @@ class CreateArchiveRequest(object):
 
 
 if __name__ == '__main__':
-  CAR = CreateArchiveRequest()
-  CAR.run()
+  try:
+    CAR = CreateArchiveRequest()
+    CAR.run()
+  except Exception as e:
+    if LogLevels.getLevelValue(LOG.getLevel()) <= LogLevels.VERBOSE:
+      LOG.exception('Failed to create Archive Request')
+    else:
+      LOG.error('ERROR: Failed to create Archive Request:', str(e))
+    exit(1)
+  exit(0)
