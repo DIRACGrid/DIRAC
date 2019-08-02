@@ -101,12 +101,9 @@ Managing DIRAC installation:
     dirac-install
     dirac-uninstall-component
     dirac-restart-component
-    dirac-restart-mysql
     dirac-start-component
-    dirac-start-mysql
     dirac-status-component
     dirac-stop-component
-    dirac-stop-mysql
     dirac-monitoring-get-components-status
     dirac-service
     dirac-setup-site
@@ -126,8 +123,6 @@ Managing DIRAC software:
     dirac-deploy-scripts
     dirac-distribution
     dirac-externals-requirements
-    dirac-fix-ld-library-path
-    dirac-install-mysql
 
 User convenience:
 
@@ -184,7 +179,5 @@ Other commands:
     
     dirac-agent
     dirac-executor
-    dirac-compile-externals
-    dirac-fix-mysql-script
 
     dirac-sys-sendmail

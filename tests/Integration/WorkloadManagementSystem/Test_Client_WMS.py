@@ -120,7 +120,8 @@ class WMSChain(TestWMSTestCase):
     jobID = res['Value']
 
     # updating the status
-    jobStateUpdate.setJobStatus(jobID, 'Running', 'Executing Minchiapp', 'source')
+    res = jobStateUpdate.setJobStatus(jobID, 'Running', 'Executing Minchiapp', 'source')
+    self.assertTrue(res['OK'])
 
     # reset the job
     res = wmsClient.resetJob(jobID)
@@ -132,9 +133,16 @@ class WMSChain(TestWMSTestCase):
     res = jobMonitor.getJobStatus(jobID)
     self.assertTrue(res['OK'])
     self.assertEqual(res['Value'], 'Received')
+    res = jobMonitor.getJobsMinorStatus([jobID])
+    self.assertTrue(res['OK'])
+    self.assertEqual(res['Value'], {jobID: {'MinorStatus': 'Job Rescheduled', 'JobID': jobID}})
+    res = jobMonitor.getJobsApplicationStatus([jobID])
+    self.assertTrue(res['OK'])
+    self.assertEqual(res['Value'], {jobID: {'ApplicationStatus': 'Unknown', 'JobID': jobID}})
 
     # updating the status again
-    jobStateUpdate.setJobStatus(jobID, 'Matched', 'matching', 'source')
+    res = jobStateUpdate.setJobStatus(jobID, 'Matched', 'matching', 'source')
+    self.assertTrue(res['OK'])
 
     # kill the job
     res = wmsClient.killJob(jobID)
@@ -144,7 +152,8 @@ class WMSChain(TestWMSTestCase):
     self.assertEqual(res['Value'], 'Killed')
 
     # updating the status aaaagain
-    jobStateUpdate.setJobStatus(jobID, 'Done', 'matching', 'source')
+    res = jobStateUpdate.setJobStatus(jobID, 'Done', 'matching', 'source')
+    self.assertTrue(res['OK'])
 
     # kill the job
     res = wmsClient.killJob(jobID)
@@ -255,13 +264,11 @@ class JobMonitoring(TestWMSTestCase):
     res = jobMonitor.getJobAttribute(jobID, 'Site')
     self.assertTrue(res['OK'])
     self.assertEqual(res['Value'], 'Site')
-    res = jobMonitor.getJobStatus(jobID)
-    self.assertTrue(res['OK'])
-    self.assertEqual(res['Value']['ApplicationStatus'], 'app status')
     res = jobMonitor.getJobAttributes(jobID)
     self.assertTrue(res['OK'])
+    self.assertEqual(res['Value']['ApplicationStatus'], 'app status')
     self.assertEqual(res['Value']['JobName'], 'helloWorld')
-    res = jobMonitor.getJobStatus(jobID)
+    res = jobMonitor.getJobSummary(jobID)
     self.assertTrue(res['OK'])
     self.assertEqual(res['Value']['ApplicationStatus'], 'app status')
     self.assertEqual(res['Value']['Status'], 'Running')
@@ -277,7 +284,7 @@ class JobMonitoring(TestWMSTestCase):
     self.assertTrue(res['OK'])
     res = jobStateUpdate.setJobsStatus([jobID], 'Done', 'MinorStatus', 'Unknown')
     self.assertTrue(res['OK'])
-    res = jobMonitor.getJobStatus(jobID)
+    res = jobMonitor.getJobSummary(jobID)
     self.assertTrue(res['OK'])
     self.assertEqual(res['Value']['Status'], 'Done')
     self.assertEqual(res['Value']['MinorStatus'], 'MinorStatus')

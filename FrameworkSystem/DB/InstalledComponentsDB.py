@@ -429,10 +429,10 @@ class InstalledComponentsDB(object):
         actualKey = key.replace('.smaller', '')
 
       if matchFields[key] is None:
-        sql = '%s IS NULL' % (actualKey)
+        sql = '`%s` IS NULL' % (actualKey)
       elif isinstance(matchFields[key], list):
         if len(matchFields[key]) > 0 and None not in matchFields[key]:
-          sql = '%s IN ( ' % (actualKey)
+          sql = '`%s` IN ( ' % (actualKey)
           for i, element in enumerate(matchFields[key]):
             toAppend = element
             if isinstance(toAppend, datetime.datetime):
@@ -447,14 +447,14 @@ class InstalledComponentsDB(object):
         else:
           continue
       elif isinstance(matchFields[key], basestring):
-        sql = '%s %s \'%s\'' % (actualKey, comparison, matchFields[key])
+        sql = '`%s` %s \'%s\'' % (actualKey, comparison, matchFields[key])
       elif isinstance(matchFields[key], datetime.datetime):
         sql = '%s %s \'%s\'' % \
             (actualKey,
              comparison,
              matchFields[key].strftime("%Y-%m-%d %H:%M:%S"))
       else:
-        sql = '%s %s %s' % (actualKey, comparison, matchFields[key])
+        sql = '`%s` %s %s' % (actualKey, comparison, matchFields[key])
 
       filteredTemp = filtered.filter(text(sql))
       try:
