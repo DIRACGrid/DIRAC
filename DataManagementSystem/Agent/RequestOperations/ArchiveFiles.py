@@ -41,9 +41,8 @@ class ArchiveFiles(OperationHandlerBase):
                               'RequestExecutingAgent', 'Files/min', gMonitor.OP_SUM)
     gMonitor.registerActivity('ArchiveFilesFail', 'Requests failed',
                               'RequestExecutingAgent', 'Files/min', gMonitor.OP_SUM)
-    self.workDirectory = os.environ.get('AGENT_WORKDIRECTORY')
+    self.cacheFolder = os.environ.get('AGENT_WORKDIRECTORY')
     self.parameterDict = {}
-    self.cacheFolder = None
     self.waitingFiles = []
     self.lfns = []
 
@@ -68,7 +67,7 @@ class ArchiveFiles(OperationHandlerBase):
   def _run(self):
     """Execute the download and tarring."""
     self.parameterDict = DEncode.decode(self.operation.Arguments)[0]  # tuple: dict, number of characters
-    self.cacheFolder = os.path.join(self.workDirectory, self.request.RequestName)
+    self.cacheFolder = os.path.join(self.cacheFolder, self.request.RequestName)
     self._checkArchiveLFN()
     for parameter, value in self.parameterDict.iteritems():
       self.log.info('Parameters: %s = %s' % (parameter, value))
@@ -226,7 +225,8 @@ class ArchiveFiles(OperationHandlerBase):
     """Remove the tarball and the downloaded files."""
     self.log.info('Cleaning files and tarball')
     try:
-      os.remove(os.path.basename(self.parameterDict['ArchiveLFN']))
+      if 'ArchiveLFN' in self.parameterDict:
+        os.remove(os.path.basename(self.parameterDict['ArchiveLFN']))
     except OSError as e:
       self.log.debug('Error when removing tarball: %s' % str(e))
     try:

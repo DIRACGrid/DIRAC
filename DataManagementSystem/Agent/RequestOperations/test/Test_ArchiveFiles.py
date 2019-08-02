@@ -7,6 +7,7 @@ import logging
 import os
 
 import pytest
+from mock import MagicMock as Mock
 
 from DIRAC import S_ERROR, S_OK
 from DIRAC.Core.Utilities import DEncode
@@ -86,8 +87,7 @@ def archiveRequestAndOp(listOfLFNs):
   archiveLFN = '/vo/tars/myTar.tar'
   op.Arguments = DEncode.encode({'SourceSE': switches.get('SourceSE', 'SOURCE-SE'),
                                  'TarballSE': switches.get('TarballSE', 'TARBALL-SE'),
-                                 'ArchiveSE': switches.get('ArchiveSE', 'ARCHIVE-SE'),
-                                 'FinalSE': switches.get('FinalSE', 'FINAL-SE'),
+                                 'RegisterDescendent': False,
                                  'ArchiveLFN': archiveLFN})
   op.Type = 'ArchiveFiles'
   for index, lfn in enumerate(listOfLFNs):
@@ -105,7 +105,7 @@ def archiveRequestAndOp(listOfLFNs):
 @pytest.fixture
 def archiveFiles(mocker, archiveRequestAndOp, multiRetValOK):
   """Return the ArchiveFiles operation instance."""
-  mocker.patch.dict(os.environ, {'DIRAC_ARCHIVE_CACHE': DEST_DIR})
+  mocker.patch.dict(os.environ, {'AGENT_WORKDIRECTORY': DEST_DIR})
   af = ArchiveFiles.ArchiveFiles(archiveRequestAndOp[1])
   af.fc = mocker.MagicMock('FileCatalogMock')
   af.fc.hasAccess = mocker.MagicMock()
@@ -123,11 +123,10 @@ def archiveFiles(mocker, archiveRequestAndOp, multiRetValOK):
 
 
 def test_constructor(archiveFiles):
-  assert archiveFiles.cacheFolder is None
   assert archiveFiles.parameterDict == {}
   assert archiveFiles.lfns == []
   assert archiveFiles.waitingFiles == []
-  assert archiveFiles.workDirectory == '/Some/Local/Folder'
+  assert archiveFiles.cacheFolder == '/Some/Local/Folder'
 
 
 def test_run_OK(archiveFiles, _myMocker, listOfLFNs):
@@ -312,3 +311,44 @@ def test_checkReplicas_failed(archiveFiles, mocker):
   archiveFiles.fc.getReplicas.return_value = S_ERROR('some error')
   with pytest.raises(RuntimeError, match='Failed to get replica information'):
     archiveFiles._checkReplicas()
+
+
+def test_registerDescendent_disabled(archiveFiles):
+  archiveFiles.parameterDict = {'RegisterDescendent': False}
+  archiveFiles.lfns = [opFile.LFN for opFile in archiveFiles.waitingFiles]
+  archiveFiles.fc.addFilesAncestors = Mock(name='AFA')
+  assert archiveFiles._registerDescendent() is None
+  archiveFiles.fc.addFilesAncestors.assert_not_called()
+
+
+def test_registerDescendent_success(archiveFiles, listOfLFNs):
+  archiveFiles.lfns = listOfLFNs
+  archiveLFN = '/vo/tars/myTar.tar'
+  archiveFiles.parameterDict = {'RegisterDescendent': True, 'ArchiveLFN': archiveLFN}
+  archiveFiles.fc.addFilesAncestors = Mock(name='AFA',
+                                           return_value=S_OK({'Failed': {},
+                                                              'Successful': {archiveLFN: 'Done'}}))
+  assert archiveFiles._registerDescendent() is None
+  archiveFiles.fc.addFilesAncestors.assert_called_with({archiveLFN: {'Ancestors': archiveFiles.lfns}})
+
+
+def test_registerDescendent_PartialFailure(archiveFiles, listOfLFNs):
+  archiveFiles.lfns = listOfLFNs
+  archiveLFN = '/vo/tars/myTar.tar'
+  archiveFiles.parameterDict = {'RegisterDescendent': True, 'ArchiveLFN': archiveLFN}
+  archiveFiles.fc.addFilesAncestors = Mock(name='AFA',
+                                           side_effect=(S_ERROR('Failure'),
+                                                        S_OK({'Failed': {},
+                                                              'Successful': {archiveLFN: 'Done'}})))
+  archiveFiles._registerDescendent()
+  archiveFiles.fc.addFilesAncestors.assert_called_with({archiveLFN: {'Ancestors': archiveFiles.lfns}})
+
+
+def test_registerDescendent_completeFailure(archiveFiles, listOfLFNs):
+  archiveFiles.lfns = listOfLFNs
+  archiveLFN = '/vo/tars/myTar.tar'
+  archiveFiles.parameterDict = {'RegisterDescendent': True, 'ArchiveLFN': archiveLFN}
+  archiveFiles.fc.addFilesAncestors = Mock(name='AFA', return_value=S_ERROR('Failure'))
+  with pytest.raises(RuntimeError, match='Failed to register ancestors'):
+    archiveFiles._registerDescendent()
+  archiveFiles.fc.addFilesAncestors.assert_called_with({archiveLFN: {'Ancestors': archiveFiles.lfns}})
