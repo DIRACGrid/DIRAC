@@ -33,6 +33,7 @@ class FileCatalogClient(FileCatalogClientBase):
       'createLink',
       'removeLink',
       'addFile',
+      'addFileAncestors',
       'setFileStatus',
       'addReplica',
       'removeReplica',
