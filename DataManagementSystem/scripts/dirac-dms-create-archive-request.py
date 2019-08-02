@@ -73,9 +73,11 @@ class CreateArchiveRequest(object):
                     ('', 'MaxFiles', 'Maximum number to put in one tarball: Default %d' % MAX_FILES),
                     ('', 'MaxSize', 'Maximum number of Bytes to put in one tarball: Default %d' % MAX_SIZE),
                     ('S', 'SourceSE', 'Where to remove the LFNs from'),
-                    ('T', 'TargetSE', 'Where to move the LFNs'),
+                    ('T', 'TargetSE', 'Where to move the Tarball to'),
                     ]
-    self.flags = [('C', 'ReplicateTarball', 'Replicate the tarball'),
+    self.flags = [('M', 'ReplicateTarball', 'Replicate the tarball'),
+                  ('C', 'CheckMigration',
+                   'Ensure the tarball is migrated to tape before removing any files or replicas'),
                   ('D', 'RemoveReplicas', 'Remove Replicas from non-ArchiveSE'),
                   ('U', 'RemoveFiles', 'Remove Archived files completely'),
                   ('R', 'RegisterDescendent', 'Register the Tarball as a descendent of the archived LFNs'),
@@ -280,6 +282,10 @@ class CreateArchiveRequest(object):
       LOG.error("Use either 'RemoveReplicas' or 'RemoveFiles', not both!")
       raise RuntimeError('Too many removal flags')
 
+    if self.switches.get('ReplicateTarball') and not self.switches.get('TargetSE'):
+      LOG.error("Have to set 'TargetSE' with 'ReplicateTarball'")
+      raise RuntimeError('ReplicateTarball missing TargetSE')
+
   def splitLFNsBySize(self):
     """Split LFNs into MAX_SIZE chunks of at most MAX_FILES length.
 
@@ -408,9 +414,11 @@ class CreateArchiveRequest(object):
       replicateAndRegisterTarBall.addFile(opFile)
       request.addOperation(replicateAndRegisterTarBall)
 
+    if self.switches.get('CheckMigration'):
       checkMigrationTarBall = Operation()
       checkMigrationTarBall.Type = 'CheckMigration'
-      checkMigrationTarBall.TargetSE = self.targetSE
+      migrationTarget = self.targetSE if self.switches.get('ReplicateTarball') else self.switches['TarballSE']
+      checkMigrationTarBall.TargetSE = migrationTarget
       opFile = File()
       opFile.LFN = archiveLFN
       checkMigrationTarBall.addFile(opFile)
