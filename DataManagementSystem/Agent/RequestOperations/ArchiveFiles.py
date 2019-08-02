@@ -1,9 +1,14 @@
 """
-RequestOperation to Tar and Upload a list of Files.
+RequestOperation to create a tarball from a list of LFNs.
 
 Download a list of files to local storage, then tars it and uploads it to a StorageElement
 
-Environment Variable:
+This operation requires the following arguments:
+
+ * ArchiveLFN: The LFN of the tarball
+ * SourceSE: Where the files to be archived are downloaded from
+ * TarballSE: Where the tarball will be uploaded to
+ * RegisterDescendent: If True the tarball will be registered as a descendent of the LFNs
 
 """
 
@@ -36,7 +41,7 @@ class ArchiveFiles(OperationHandlerBase):
                               'RequestExecutingAgent', 'Files/min', gMonitor.OP_SUM)
     gMonitor.registerActivity('ArchiveFilesFail', 'Requests failed',
                               'RequestExecutingAgent', 'Files/min', gMonitor.OP_SUM)
-    self.workDirectory = os.environ.get('AGENT_WORKDIRECTORY', './ARCHIVE_TMP')
+    self.workDirectory = os.environ.get('AGENT_WORKDIRECTORY')
     self.parameterDict = {}
     self.cacheFolder = None
     self.waitingFiles = []
@@ -193,8 +198,8 @@ class ArchiveFiles(OperationHandlerBase):
 
     Actually registers all LFNs as an ancestor to the Tarball.
     """
-    archiveSE = self.parameterDict.get('RegisterDescedent', None)
-    if not archiveSE:
+    registerDescendents = self.parameterDict.get('RegisterDescendent', None)
+    if not registerDescendents:
       self.log.verbose('Will not register tarball as descendent to the Archived LFNs.')
       return
 

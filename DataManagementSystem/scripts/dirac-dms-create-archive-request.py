@@ -34,7 +34,9 @@ Default values for any of the command line options can also be set in the CS:
 """
 import os
 
+import DIRAC
 from DIRAC import gLogger
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Utilities import DEncode
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.Core.Base import Script
@@ -43,38 +45,44 @@ from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Client.File import File
 
-from DIRAC.DataManagementSystem.Client.RequestUtilities import BaseRequest
-
 LOG = gLogger.getSubLogger('AddArchive')
 __RCSID__ = '$Id$'
 MAX_SIZE = 2 * 1024 * 1024 * 1024  # 2 GB
 MAX_FILES = 2000
 
 
-class CreateArchiveRequest(BaseRequest):
+class CreateArchiveRequest(object):
   """Create the request to archive files."""
 
   def __init__(self):
     """Constructor."""
-    super(CreateArchiveRequest, self).__init__()
-    options = [('A', 'ArchiveSE', 'SE for registering archive files at'),
-               ('I', 'TarballSE', 'SE to initially upload tarball'),
-               ('P', 'Path', 'LFN path to folder, all files in the folder will be archived'),
-               ('N', 'Name', 'Name of the Tarball, if not given: Path_Tars/Path_N.tar'
-                ' will be used to store tarballs'),
-               ('L', 'List', 'File containing list of LFNs to archive, requires Name to be given'),
-               ('', 'MaxFiles', 'Maximum number to put in one tarball: Default %d' % MAX_FILES),
-               ('', 'MaxSize', 'Maximum number of Bytes to put in one tarball: Default %d' % MAX_SIZE),
-               ]
-    flags = [('C', 'ReplicateTarball', 'Replicate the tarball'),
-             ('D', 'RemoveReplicas', 'Remove Replicas from non-ArchiveSE'),
-             ('U', 'RemoveFiles', 'Remove Archived files completely'),
-             ('R', 'RegisterDescedent', 'Register the Tarball as a descendent of the archived LFNs'),
-             ('', 'AllowReplication', 'Enable first replicating to Source-SE'),
-             ('', 'SourceOnly', 'Only treat files that are already at the Source-SE'),
-             ]
+    self._fcClient = None
+    self._reqClient = None
+    self.switches = {}
+    self.requests = []
+    self.lfnList = []
+    self.metaData = None
+    self.options = [('A', 'ArchiveSE', 'SE for registering archive files at'),
+                    ('I', 'TarballSE', 'SE to initially upload tarball'),
+                    ('P', 'Path', 'LFN path to folder, all files in the folder will be archived'),
+                    ('N', 'Name', 'Name of the Tarball, if not given: Path_Tars/Path_N.tar'
+                     ' will be used to store tarballs'),
+                    ('L', 'List', 'File containing list of LFNs to archive, requires Name to be given'),
+                    ('', 'MaxFiles', 'Maximum number to put in one tarball: Default %d' % MAX_FILES),
+                    ('', 'MaxSize', 'Maximum number of Bytes to put in one tarball: Default %d' % MAX_SIZE),
+                    ('S', 'SourceSE', 'Where to remove the LFNs from'),
+                    ('T', 'TargetSE', 'Where to move the LFNs'),
+                    ]
+    self.flags = [('C', 'ReplicateTarball', 'Replicate the tarball'),
+                  ('D', 'RemoveReplicas', 'Remove Replicas from non-ArchiveSE'),
+                  ('U', 'RemoveFiles', 'Remove Archived files completely'),
+                  ('R', 'RegisterDescendent', 'Register the Tarball as a descendent of the archived LFNs'),
+                  ('', 'AllowReplication', 'Enable first replicating to Source-SE'),
+                  ('', 'SourceOnly', 'Only treat files that are already at the Source-SE'),
+                  ('X', 'Execute', 'Put Requests, else dryrun'),
+                  ]
     self.setUsage()
-    self.registerSwitchesAndParseCommandLine(options, flags, opName='ArchiveFiles')
+    self.registerSwitchesAndParseCommandLine()
 
     self.switches['MaxSize'] = int(self.switches.setdefault('MaxSize', MAX_SIZE))
     self.switches['MaxFiles'] = int(self.switches.setdefault('MaxFiles', MAX_FILES))
@@ -92,17 +100,179 @@ class CreateArchiveRequest(BaseRequest):
                                       ' %s [option|cfgfile] LFNs tarBallName' % Script.scriptName,
                                       ]))
 
+  @property
+  def fcClient(self):
+    """Return FileCatalogClient."""
+    if not self._fcClient:
+      from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
+      self._fcClient = FileCatalog()
+    return self._fcClient
+
+  @property
+  def reqClient(self):
+    """Return RequestClient."""
+    if not self._reqClient:
+      from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
+      self._reqClient = ReqClient()
+    return self._reqClient
+
+  @property
+  def dryRun(self):
+    """Return dry run flag."""
+    return self.switches['DryRun']
+
+  @property
+  def targetSE(self):
+    """Return the list of targetSE."""
+    return self.switches['TargetSE']
+
+  @property
+  def sourceSEs(self):
+    """Return the list of sourceSEs."""
+    return self.switches['SourceSE']
+
+  @property
+  def name(self):
+    """Return the name of the Request."""
+    return self.switches.get('Name', None)
+
+  @property
+  def lfnFolderPath(self):
+    """Return the lfn folder path where to find the files of the request."""
+    return self.switches.get('Path', None)
+
+  def registerSwitchesAndParseCommandLine(self):
+    """Register the default plus additional parameters and parse options.
+
+    :param list options: list of three tuple for options to add to the script
+    :param list flags:  list of three tuple for flags to add to the script
+    :param str opName
+    """
+    for short, longOption, doc in self.options:
+      Script.registerSwitch(short + ':' if short else '', longOption + '=', doc)
+    for short, longOption, doc in self.flags:
+      Script.registerSwitch(short, longOption, doc)
+      self.switches[longOption] = False
+    Script.parseCommandLine()
+    if Script.getPositionalArgs():
+      Script.showHelp()
+      DIRAC.exit(1)
+
+    ops = Operations()
+    if not ops.getValue('DataManagement/ArchiveFiles/Enabled', False):
+      LOG.error('The "ArchiveFiles" operation is not enabled, contact your administrator!')
+      DIRAC.exit(1)
+    for _short, longOption, _doc in self.options:
+      defaultValue = ops.getValue('DataManagement/ArchiveFiles/%s' % longOption, None)
+      if defaultValue:
+        LOG.verbose('Found default value in the CS for %r with value %r' % (longOption, defaultValue))
+        self.switches[longOption] = defaultValue
+    for _short, longOption, _doc in self.flags:
+      defaultValue = ops.getValue('DataManagement/ArchiveFiles/%s' % longOption, False)
+      if defaultValue:
+        LOG.verbose('Found default value in the CS for %r with value %r' % (longOption, defaultValue))
+        self.switches[longOption] = defaultValue
+
+    for switch in Script.getUnprocessedSwitches():
+      for short, longOption, doc in self.options:
+        if switch[0] == short or switch[0].lower() == longOption.lower():
+          LOG.verbose('Found switch %r with value %r' % (longOption, switch[1]))
+          self.switches[longOption] = switch[1]
+          break
+      for short, longOption, doc in self.flags:
+        if switch[0] == short or switch[0].lower() == longOption.lower():
+          self.switches[longOption] = True
+          break
+
+    self.checkSwitches()
+    self.switches['DryRun'] = not self.switches.get('Execute', False)
+    self.switches['SourceSE'] = self.switches.get('SourceSE', '').split(',')
+
+  def getLFNList(self):
+    """Get list of LFNs.
+
+    Either read the provided file, or get the files found beneath the provided folder.
+
+    :param dict switches: options from command line
+    :returns: list of lfns
+    :raises: RuntimeError, ValueError
+    """
+    if self.switches.get('List'):
+      if os.path.exists(self.switches.get('List')):
+        self.lfnList = list(set([line.split()[0]
+                                 for line in open(self.switches.get('List')).read().splitlines()]))
+      else:
+        raise ValueError('%s not a file' % self.switches.get('List'))
+    elif self.lfnFolderPath:
+      path = self.lfnFolderPath
+      LOG.debug('Check if %r is a directory' % path)
+      isDir = returnSingleResult(self.fcClient.isDirectory(path))
+      LOG.debug('Result: %r' % isDir)
+      if not isDir['OK'] or not isDir['Value']:
+        LOG.error('Path is not a directory', isDir.get('Message', ''))
+        raise RuntimeError('Path %r is not a directory' % path)
+      LOG.notice('Looking for files in %r' % path)
+
+      metaDict = {'SE': self.sourceSEs[0]} if self.switches.get('SourceOnly') else {}
+      lfns = self.fcClient.findFilesByMetadata(metaDict=metaDict, path=path)
+      if not lfns['OK']:
+        LOG.error('Could not find files')
+        raise RuntimeError(lfns['Message'])
+      self.lfnList = lfns['Value']
+
+    if self.lfnList:
+      LOG.notice('Will create request(s) with %d lfns' % len(self.lfnList))
+      if len(self.lfnList) == 1:
+        raise RuntimeError('Only 1 file in the list, aborting!')
+      return
+
+    raise ValueError('"Path" or "List" need to be provided!')
+
+  def putOrRunRequests(self):
+    """Run or put requests."""
+    requestIDs = []
+
+    if self.dryRun:
+      LOG.notice('Would have created %d requests' % len(self.requests))
+      for reqID, req in enumerate(self.requests):
+        LOG.notice('Request %d:' % reqID)
+        for opID, op in enumerate(req):
+          LOG.notice('        Operation %d: %s #lfn %d' % (opID, op.Type, len(op)))
+      return 0
+    for request in self.requests:
+      putRequest = self.reqClient.putRequest(request)
+      if not putRequest['OK']:
+        LOG.error('unable to put request %r: %s' % (request.RequestName, putRequest['Message']))
+        continue
+      requestIDs.append(str(putRequest['Value']))
+      LOG.always('Request %r has been put to ReqDB for execution.' % request.RequestName)
+
+    if requestIDs:
+      LOG.always('%d requests have been put to ReqDB for execution' % len(requestIDs))
+      LOG.always('RequestID(s): %s' % ' '.join(requestIDs))
+      LOG.always('You can monitor the request status using the command: dirac-rms-request <requestName/ID>')
+      return 0
+
+    LOG.error('No requests created')
+    return 1
+
   def checkSwitches(self):
     """Check the switches, set autoName if needed."""
-    super(CreateArchiveRequest, self).checkSwitches()
+    if not self.switches.get('SourceSE'):
+      raise RuntimeError('Have to set "SourceSE"')
+    if not self.switches.get('List') and not self.switches.get('Path'):
+      raise RuntimeError('Have to set "List" or "Path"')
     if not self.name and self.lfnFolderPath:
       self.switches['AutoName'] = os.path.join(os.path.dirname(self.lfnFolderPath),
                                                os.path.basename(self.lfnFolderPath) + '.tar')
       LOG.notice('Using %r for tarball' % self.switches.get('AutoName'))
 
+    if self.switches.get('List') and not self.name:
+      raise RuntimeError('Have to set "Name" with "List"')
+
     if self.switches.get('RemoveReplicas') and self.switches.get('ArchiveSE') is None:
-      LOG.error("Use either 'RemoveReplicas' Does not work without 'ArchiveSE'")
-      raise RuntimeError('Too many removal flags')
+      LOG.error("'RemoveReplicas' does not work without 'ArchiveSE'")
+      raise RuntimeError('ArchiveSE missing')
 
     if self.switches.get('RemoveReplicas') and self.switches.get('RemoveFiles'):
       LOG.error("Use either 'RemoveReplicas' or 'RemoveFiles', not both!")
@@ -169,6 +339,47 @@ class CreateArchiveRequest(BaseRequest):
     self.putOrRunRequests()
     return 0
 
+  def addLFNs(self, operation, lfns, addPFN=False):
+    """Add lfns to operation.
+
+    :param operation: the operation instance to which the files will be added
+    :param list lfns: list of lfns
+    :param bool addPFN: if true adds PFN to each File
+    """
+    if not self.metaData:
+      self.getLFNMetadata()
+
+    for lfn in lfns:
+      metaDict = self.metaData['Successful'][lfn]
+      opFile = File()
+      opFile.LFN = lfn
+      if addPFN:
+        opFile.PFN = lfn
+      opFile.Size = metaDict['Size']
+      if 'Checksum' in metaDict:
+        # should check checksum type, now assuming Adler32 (metaDict['ChecksumType'] = 'AD')
+        opFile.Checksum = metaDict['Checksum']
+        opFile.ChecksumType = 'ADLER32'
+      operation.addFile(opFile)
+
+  def getLFNMetadata(self):
+    """Get the metadata for all the LFNs."""
+    metaData = self.fcClient.getFileMetadata(self.lfnList)
+    error = False
+    if not metaData['OK']:
+      LOG.error('Unable to read metadata for lfns: %s' % metaData['Message'])
+      raise RuntimeError('Could not read metadata: %s' % metaData['Message'])
+
+    self.metaData = metaData['Value']
+    for failedLFN, reason in self.metaData['Failed'].items():
+      LOG.error('skipping %s: %s' % (failedLFN, reason))
+      error = True
+    if error:
+      raise RuntimeError('Could not read all metadata')
+
+    for lfn in self.metaData['Successful'].keys():
+      LOG.verbose('found %s' % lfn)
+
   def createRequest(self, requestName, archiveLFN, lfnChunk):
     """Create the Request."""
     request = Request()
@@ -180,8 +391,7 @@ class CreateArchiveRequest(BaseRequest):
     archiveFiles.Type = 'ArchiveFiles'
     archiveFiles.Arguments = DEncode.encode({'SourceSE': self.sourceSEs[0],
                                              'TarballSE': self.switches['TarballSE'],
-                                             'ArchiveSE': self.switches.get('ArchiveSE'),
-                                             'TargetSE': self.targetSE,
+                                             'RegisterDescendent': self.switches['RegisterDescendent'],
                                              'ArchiveLFN': archiveLFN})
     self.addLFNs(archiveFiles, lfnChunk)
     request.addOperation(archiveFiles)
@@ -220,7 +430,7 @@ class CreateArchiveRequest(BaseRequest):
         self.addLFNs(removeArchiveReplicas, lfnChunk)
         request.addOperation(removeArchiveReplicas)
 
-    # Remove all Other Replicas for LFNs
+    # Remove all Replicas for LFNs
     if self.switches.get('RemoveFiles'):
       removeArchiveFiles = Operation()
       removeArchiveFiles.Type = 'RemoveFile'
@@ -242,7 +452,7 @@ class CreateArchiveRequest(BaseRequest):
     """Check that archiveLFN does not exist yet."""
     LOG.notice('Using Tarball: %s' % archiveLFN)
     exists = returnSingleResult(self.fcClient.isFile(archiveLFN))
-    LOG.debug('Checking for Tarball existance %r' % exists)
+    LOG.debug('Checking for Tarball existence %r' % exists)
     if exists['OK'] and exists['Value']:
       raise RuntimeError('Tarball %r already exists' % archiveLFN)
 
@@ -255,9 +465,8 @@ class CreateArchiveRequest(BaseRequest):
   def _checkReplicaSites(self, request, lfnChunk):
     """Ensure that all lfns can be found at the SourceSE, otherwise add replication operation to request.
 
-    If SourceOnly is set just rejetct those LFNs
+    If SourceOnly is set just rejetct those LFNs.
 
-    TODO: Abort if too many files are not at the source?
     """
     resReplica = self.fcClient.getReplicas(lfnChunk)
     if not resReplica['OK']:
