@@ -44,6 +44,9 @@ class CheckMigration(OperationHandlerBase):
       self.log.notice('Checking:', opFile.LFN)
       for targetSE in targetSESet:
         se = StorageElement(targetSE)
+        if not se.status()['TapeSE']:
+          migrated = True and migrated
+          continue
         metaData = returnSingleResult(se.getFileMetadata(opFile.LFN))
         self.log.debug('MetaData: %s' % pformat(metaData))
         if not metaData['OK']:
