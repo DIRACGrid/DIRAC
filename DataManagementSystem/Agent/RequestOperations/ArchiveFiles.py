@@ -233,12 +233,3 @@ class ArchiveFiles(OperationHandlerBase):
       shutil.rmtree(self.cacheFolder, ignore_errors=True)
     except OSError as e:
       self.log.debug('Error when removing cacheFolder: %s' % str(e))
-
-  def setOperation(self, operation):  # pylint: disable=useless-super-delegation
-    """Set Operation and request setter.
-
-    :param ~DIRAC.RequestManagementSystem.Client.Operation.Operation operation: operation instance
-    :raises TypeError: if ``operation`` in not an instance
-        of :class:`~DIRAC.RequestManagementSystem.Client.Operation.Operation`
-    """
-    super(ArchiveFiles, self).setOperation(operation)

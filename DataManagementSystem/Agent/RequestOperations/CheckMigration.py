@@ -62,12 +62,3 @@ class CheckMigration(OperationHandlerBase):
         now = datetime.datetime.utcnow().replace(microsecond=0)
         extraDelay = datetime.timedelta(minutes=20)
         self.request.NotBefore = now + extraDelay
-
-  def setOperation(self, operation):  # pylint: disable=useless-super-delegation
-    """Set Operation and request setter.
-
-    :param ~DIRAC.RequestManagementSystem.Client.Operation.Operation operation: operation instance
-    :raises TypeError: if ``operation`` in not an instance
-        of :class:`~DIRAC.RequestManagementSystem.Client.Operation.Operation`
-    """
-    super(CheckMigration, self).setOperation(operation)
