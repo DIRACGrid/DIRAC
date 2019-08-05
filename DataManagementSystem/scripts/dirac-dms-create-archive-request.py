@@ -40,12 +40,10 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Utilities import DEncode
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.Core.Base import Script
-
 from DIRAC.FrameworkSystem.private.standardLogging.LogLevels import LogLevels
-
+from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
-from DIRAC.RequestManagementSystem.Client.File import File
 
 LOG = gLogger.getSubLogger('AddArchive')
 __RCSID__ = '$Id$'
@@ -101,7 +99,7 @@ class CreateArchiveRequest(object):
     """Set flags and options."""
     Script.setUsageMessage('\n'.join([__doc__,
                                       'Usage:',
-                                      ' %s [option|cfgfile] LFNs tarBallName' % Script.scriptName,
+                                      ' %s [option|cfgfile]' % Script.scriptName,
                                       ]))
 
   @property
