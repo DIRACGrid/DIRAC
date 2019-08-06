@@ -22,7 +22,7 @@ class FileCatalogDB(DB):
     if db.find('/') == -1:
       db = 'DataManagement/' + db
 
-    DB.__init__(self, 'FileCatalogDB', db)
+    #DB.__init__(self, 'FileCatalogDB', db)
 
     self.ugManager = None
     self.seManager = None
@@ -63,27 +63,27 @@ class FileCatalogDB(DB):
     self.objectLoader = ObjectLoader()
 
     # Load the configured components
-    for compAttribute, componentType in [(self.ugManager, "UserGroupManager"),
-                                         (self.seManager, "SEManager"),
-                                         (self.securityManager, "SecurityManager"),
-                                         (self.dtree, "DirectoryManager"),
-                                         (self.fileManager, "FileManager"),
-                                         (self.datasetManager, "DatasetManager"),
-                                         (self.dmeta, "DirectoryMetadata"),
-                                         (self.fmeta, "FileMetadata")] :
+    for compAttribute, componentType in [("ugManager", "UserGroupManager"),
+                                         ("seManager", "SEManager"),
+                                         ("securityManager", "SecurityManager"),
+                                         ("dtree", "DirectoryManager"),
+                                         ("fileManager", "FileManager"),
+                                         ("datasetManager", "DatasetManager"),
+                                         ("dmeta", "DirectoryMetadata"),
+                                         ("fmeta", "FileMetadata")] :
 
       result = self.__loadCatalogComponent(componentType, databaseConfig[componentType])
       if not result['OK']:
         return result
-      compAttribute = result['Value']
+      self.__setattr__(compAttribute, result['Value'])
 
     return S_OK()
 
   def __loadCatalogComponent(self, componentType, componentName):
     """ Create an object of a given catalog component
     """
-    componentPath = 'DataManagementSystem.DB.FileCatalogComponents.%s.%s' % (componentType, componentName)
-    result = self.objectLoader.loadObject('%s.%s' % (componentPath, componentName), componentName)
+    componentModule = 'DataManagementSystem.DB.FileCatalogComponents.%s.%s' % (componentType, componentName)
+    result = self.objectLoader.loadObject(componentModule, componentName)
     if not result['OK']:
       gLogger.error('Failed to load catalog component', '%s: %s' % (componentName, result['Message']))
       return result
