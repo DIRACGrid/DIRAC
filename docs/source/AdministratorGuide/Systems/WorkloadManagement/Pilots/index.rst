@@ -7,12 +7,11 @@ DIRAC pilots
 This page describes what are DIRAC pilots, and how they work.
 To know how to develop DIRAC pilots, please refer to the Developers documentation
 
-The current production version of pilots are sometimes dubbed as "Pilots 2.0", or "the pilots to fly in all the skies".
+Since version v7r0, the production version of pilots are dubbed as "Pilot3", still "the pilots to fly in all the skies".
 
-It's in pre-production a new generation of pilots, dubbed "Pilots 3". Pilots3 become, from version v6r20 of DIRAC, optional.
-Pilots3 development is done in the separate repository from that of DIRAC: https://github.com/DIRACGrid/Pilot
+Pilot3 development is done in the separate repository from that of DIRAC: https://github.com/DIRACGrid/Pilot
 The definitions that follow in this page are still valid for Pilots3. 
-Some specific information about Pilots3 can be found in the next sections.
+Some specific information about Pilot3 can be found in the next section (:ref:`pilot3`).
 
 
 
