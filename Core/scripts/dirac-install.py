@@ -2313,7 +2313,7 @@ def installDiracOS(releaseConfig):
     tarsURL = cliParams.installSource
   else:
     # if : is not exists in diracos version, we use diracos from DIRAC
-    if diracos == 'diracos':      
+    if diracos == 'diracos':    
       tarsURL = releaseConfig.getDiracOsLocation(diracOSFromDIRAC=True)['Value']
     else:
       tarsURL = releaseConfig.getDiracOsLocation()['Value']
