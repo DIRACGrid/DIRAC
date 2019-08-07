@@ -185,9 +185,9 @@ class ProxyManagerClient(object):
         return S_ERROR("Can't load %s: %s " % (proxyLocation, result['Message']))
 
     # Make sure it's valid
-    if chain.hasExpired()['OK']:
+    if chain.hasExpired().get('Value'):
       return S_ERROR("Proxy %s has expired" % proxyLocation)
-    if chain.getDIRACGroup()['OK'] or chain.isVOMS()['OK']:
+    if chain.getDIRACGroup().get('Value') or chain.isVOMS().get('Value'):
       return S_ERROR("Cannot upload proxy with DIRAC group or VOMS extensions")
 
     rpcClient = RPCClient("Framework/ProxyManager", timeout=120)
