@@ -9,7 +9,7 @@ import datetime
 from DIRAC import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getAllGroups, getGroupOption
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager.SecurityManagerBase \
-     import SecurityManagerBase, _readMethods, _writeMethods
+    import SecurityManagerBase, _readMethods, _writeMethods
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 
 
