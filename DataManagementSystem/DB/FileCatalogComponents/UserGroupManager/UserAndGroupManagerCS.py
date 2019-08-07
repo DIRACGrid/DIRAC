@@ -8,7 +8,7 @@ import threading
 
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.UserGroupManager.UserAndGroupManagerBase \
-  import UserAndGroupManagerBase
+     import UserAndGroupManagerBase
 
 
 class UserAndGroupManagerCS(UserAndGroupManagerBase):
