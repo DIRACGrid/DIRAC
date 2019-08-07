@@ -9,6 +9,7 @@ import threading
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
 from DIRAC.Core.Security import Properties
 
+
 class UserAndGroupManagerBase(object):
 
   def _refreshGroups(self):

@@ -5,6 +5,7 @@ __RCSID__ = "$Id$"
 
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager.SecurityManagerBase import SecurityManagerBase
 
+
 class PolicyBasedSecurityManager(SecurityManagerBase):
   """ This security manager loads a python plugin and forwards the
     calls to it. The python plugin has to be defined in the CS under
