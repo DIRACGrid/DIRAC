@@ -3,6 +3,8 @@
 
 __RCSID__ = "$Id$"
 
+import os
+
 from DIRAC import S_OK
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager.SecurityManagerBase import SecurityManagerBase
 
