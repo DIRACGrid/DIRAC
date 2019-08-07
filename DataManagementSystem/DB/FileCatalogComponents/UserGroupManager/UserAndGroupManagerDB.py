@@ -9,6 +9,7 @@ import threading
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.UserGroupManager.UserAndGroupManagerBase import UserAndGroupManagerBase
 
+
 class UserAndGroupManagerDB(UserAndGroupManagerBase):
 
   def getUserAndGroupID(self, credDict):
@@ -244,4 +245,3 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
     gLogger.debug("UserGroupManager RefreshGroups lock released. Used %.3f seconds." % (time.time() - waitTime))
     self.lock.release()
     return S_OK()
-
