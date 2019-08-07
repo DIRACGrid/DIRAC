@@ -8,6 +8,7 @@ import os
 from DIRAC import S_OK
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager.SecurityManagerBase import SecurityManagerBase
 
+
 class FullSecurityManager(SecurityManagerBase):
 
   def getPathPermissions(self, paths, credDict):

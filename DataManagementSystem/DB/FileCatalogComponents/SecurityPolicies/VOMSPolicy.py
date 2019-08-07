@@ -8,9 +8,10 @@ import datetime
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getAllGroups, getGroupOption
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager.SecurityManagerBase import SecurityManagerBase, \
-    _readMethods, _writeMethods
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager.SecurityManagerBase \
+                                    import SecurityManagerBase, _readMethods, _writeMethods
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
+
 
 class VOMSPolicy(SecurityManagerBase):
   """ This class implements a 3-level POSIX permission, wrapping up
