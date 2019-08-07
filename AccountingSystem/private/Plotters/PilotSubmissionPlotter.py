@@ -1,7 +1,7 @@
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.AccountingSystem.private.Plotters.BaseReporter import BaseReporter
-from BelleDIRAC.AccountingSystem.Client.Types.PilotSubmission import PilotSubmission
+from DIRAC.AccountingSystem.Client.Types.PilotSubmission import PilotSubmission
 
 
 class PilotSubmissionPlotter(BaseReporter):

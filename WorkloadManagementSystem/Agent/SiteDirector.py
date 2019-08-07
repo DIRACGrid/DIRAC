@@ -1480,11 +1480,12 @@ class SiteDirector(AgentModule):
 
     """ Send pilot submission accounting record
     """
+
     pA = PilotSubmissionAccounting()
     pA.setStartTime(dateTime())
     pA.setEndTime(dateTime())
     pA.setValueByKey('HostName', DIRAC.siteName())
-    pA.setValueByKey('SiteDirector', self._AgentModule__moduleProperties['agentName'])
+    pA.setValueByKey('SiteDirector', self.am_getModuleParam('agentName'))
     pA.setValueByKey('Site', siteName)
     pA.setValueByKey('CE', ceName)
     pA.setValueByKey('Queue', queueName)
