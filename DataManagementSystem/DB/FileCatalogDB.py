@@ -22,7 +22,7 @@ class FileCatalogDB(DB):
     if db.find('/') == -1:
       db = 'DataManagement/' + db
 
-    #DB.__init__(self, 'FileCatalogDB', db)
+    # DB.__init__(self, 'FileCatalogDB', db)
 
     self.ugManager = None
     self.seManager = None
@@ -70,7 +70,7 @@ class FileCatalogDB(DB):
                                          ("fileManager", "FileManager"),
                                          ("datasetManager", "DatasetManager"),
                                          ("dmeta", "DirectoryMetadata"),
-                                         ("fmeta", "FileMetadata")] :
+                                         ("fmeta", "FileMetadata")]:
 
       result = self.__loadCatalogComponent(componentType, databaseConfig[componentType])
       if not result['OK']:

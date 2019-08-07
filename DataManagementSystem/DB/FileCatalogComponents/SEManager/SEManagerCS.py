@@ -5,6 +5,7 @@ __RCSID__ = "$Id$"
 from DIRAC import S_OK, gConfig
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SEManager.SEManagerBase import SEManagerBase
 
+
 class SEManagerCS(SEManagerBase):
 
   def findSE(self, se):

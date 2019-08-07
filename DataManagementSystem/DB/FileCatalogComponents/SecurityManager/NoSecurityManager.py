@@ -6,6 +6,7 @@ __RCSID__ = "$Id$"
 from DIRAC import S_OK
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager.SecurityManagerBase import SecurityManagerBase
 
+
 class NoSecurityManager(SecurityManagerBase):
 
   def getPathPermissions(self, paths, credDict):
