@@ -4,10 +4,10 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager.DirectorySecurityManager \
-     import DirectorySecurityManager
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager.SecurityManagerBase \
-     import _readMethods, _writeMethods
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager.DirectorySecurityManager import \
+    DirectorySecurityManager
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager.SecurityManagerBase import \
+    _readMethods, _writeMethods
 
 
 class DirectorySecurityManagerWithDelete(DirectorySecurityManager):
