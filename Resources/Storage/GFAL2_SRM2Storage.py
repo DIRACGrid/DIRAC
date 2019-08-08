@@ -185,7 +185,7 @@ class GFAL2_SRM2Storage(GFAL2_StorageBase):
     """
 
     if not self.spaceToken:
-      self.log.info( "getOccupancy: SpaceToken not defined for this SE. Falling back to the default getOccupancy." )                                                                                     
+      self.log.info("getOccupancy: SpaceToken not defined for this SE. Falling back to the default getOccupancy.")
       return super(GFAL2_SRM2Storage, self).getOccupancy(*parms, **kws)
 
     # Gfal2 extended parameter name to query the space token occupancy
