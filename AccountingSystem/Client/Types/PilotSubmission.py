@@ -1,8 +1,9 @@
 ''' Accounting Type for Pilot Submission
 '''
-__RCSID__ = "(2019-08-06  +0000) Yuji Kato <kato@hepl.phys.nagoya-u.ac.jp>"
 
 from DIRAC.AccountingSystem.Client.Types.BaseAccountingType import BaseAccountingType
+
+__RCSID__ = "$Id$"
 
 
 class PilotSubmission(BaseAccountingType):
