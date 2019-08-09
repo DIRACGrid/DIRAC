@@ -1484,7 +1484,7 @@ class SiteDirector(AgentModule):
         :param str queueName:    queue Name
         :param int numTotal:     Total number of submission
         :param int numSucceeded: Total number of submission succeeded
-        :param str status:       'Succeeded' or 'Failed' 
+        :param str status:       'Succeeded' or 'Failed'
     """
 
     pA = PilotSubmissionAccounting()
