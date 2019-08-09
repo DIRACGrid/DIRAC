@@ -1479,6 +1479,12 @@ class SiteDirector(AgentModule):
                                     status):
 
     """ Send pilot submission accounting record
+        :param str siteName:     Site name
+        :param str ceName:       CE name
+        :param str queueName:    queue Name
+        :param int numTotal:     Total number of submission
+        :param int numSucceeded: Total number of submission succeeded
+        :param str status:       'Succeeded' or 'Failed' 
     """
 
     pA = PilotSubmissionAccounting()
@@ -1499,7 +1505,7 @@ class SiteDirector(AgentModule):
       return result
 
     self.log.verbose("Begin commit")
-    result = gDataStoreClient.commit()
+    result = gDataStoreClient.delayedCommit()
     if not result['OK']:
       self.log.error('Error in Commit:' + result['Message'])
       return result
