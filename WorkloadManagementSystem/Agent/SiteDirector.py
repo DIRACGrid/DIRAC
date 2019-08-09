@@ -1491,7 +1491,11 @@ class SiteDirector(AgentModule):
     pA.setStartTime(dateTime())
     pA.setEndTime(dateTime())
     pA.setValueByKey('HostName', DIRAC.siteName())
-    pA.setValueByKey('SiteDirector', self.am_getModuleParam('agentName'))
+    if hasattr(self, "_AgentModule__moduleProperties"):
+      pA.setValueByKey('SiteDirector', self.am_getModuleParam('agentName'))
+    else:  # In case it is not executed as agent
+      pA.setValueByKey('SiteDirector', 'Client')
+
     pA.setValueByKey('Site', siteName)
     pA.setValueByKey('CE', ceName)
     pA.setValueByKey('Queue', queueName)
