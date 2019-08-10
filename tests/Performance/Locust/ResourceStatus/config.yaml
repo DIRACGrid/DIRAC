@@ -1,0 +1,17 @@
+services:
+- module: shellexec
+  startup:
+  - python setup.py
+  shutdown:
+  - python teardown.py
+
+execution:
+- executor: locust
+  concurrency: 60
+  ramp-up: 1m
+  scenario: example
+
+scenarios:
+  example:
+    default-address: 
+    script: ResourceStatusPerformance.py
