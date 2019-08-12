@@ -53,14 +53,14 @@ class FileHelper(object):
   def sendData( self, sBuffer ):
     if self.__checkMD5:
       self.__oMD5.update( sBuffer )
-    retVal = self.oTransport.sendData( S_OK( ( True, sBuffer ) ) )
+    retVal = self.oTransport.sendData( S_OK( [ True, sBuffer ] ) )
     if not retVal[ 'OK' ]:
       return retVal
     retVal = self.oTransport.receiveData()
     return retVal
 
   def sendEOF( self ):
-    retVal = self.oTransport.sendData( S_OK( ( False, self.__oMD5.hexdigest() ) ) )
+    retVal = self.oTransport.sendData( S_OK( [ False, self.__oMD5.hexdigest() ] ) )
     if not retVal[ 'OK' ]:
       return retVal
     self.__finishedTransmission()

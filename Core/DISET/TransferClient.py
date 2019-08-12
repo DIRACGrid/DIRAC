@@ -31,7 +31,8 @@ class TransferClient( BaseClient ):
       retVal = self._proposeAction( transport, ( "FileTransfer", actionName ) )
       if not retVal[ 'OK' ]:
         return retVal
-      retVal = transport.sendData( S_OK( fileInfo ) )
+      # We need to convert to list
+      retVal = transport.sendData( S_OK( list(fileInfo) ) )
       if not retVal[ 'OK' ]:
         return retVal
       retVal = transport.receiveData()
