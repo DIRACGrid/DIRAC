@@ -498,6 +498,15 @@ and this is thread %s
     """
     getGlobalTransportPool().close(trid)
 
+  @staticmethod
+  def _serializeStConnectionInfo(stConnectionInfo):
+    """ We want to send tuple but we need to convert
+        into a list
+    """
+    serializedTuple = [list(x) if isinstance(x, tuple) else x for x in stConnectionInfo]
+
+    return serializedTuple
+
   def _proposeAction(self, transport, action):
     """ Proposes an action by sending a tuple containing
 
@@ -528,7 +537,7 @@ and this is thread %s
                         DIRAC.version)
 
     # Send the connection info and get the answer back
-    retVal = transport.sendData(S_OK(stConnectionInfo))
+    retVal = transport.sendData(S_OK(BaseClient._serializeStConnectionInfo(stConnectionInfo)))
     if not retVal['OK']:
       return retVal
     serverReturn = transport.receiveData()
