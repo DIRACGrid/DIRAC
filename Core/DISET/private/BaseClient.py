@@ -502,10 +502,7 @@ and this is thread %s
     """ We want to send tuple but we need to convert
         into a list
     """
-    print "CHRIS WANTS %s" % (stConnectionInfo,)
     serializedTuple = [list(x) if isinstance(x, tuple) else x for x in stConnectionInfo]
-
-    print "CHRIS SERIALIZED %s" % (serializedTuple,)
     return serializedTuple
 
   def _proposeAction(self, transport, action):

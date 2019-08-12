@@ -397,9 +397,7 @@ class Service(object):
     """ We receive the proposalTuple as a list.
         Turn it into a tuple again
     """
-    print "CHRIS RECEIVED %s" % (serializedProposal,)
     proposalTuple = tuple(tuple(x) if isinstance(x, list) else x for x in serializedProposal)
-    print "CHRIS CONVERTED %s" % (proposalTuple,)
     return proposalTuple
 
   def _receiveAndCheckProposal(self, trid):
