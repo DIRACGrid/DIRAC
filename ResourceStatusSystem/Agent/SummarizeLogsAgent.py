@@ -170,7 +170,7 @@ class SummarizeLogsAgent(AgentModule):
                                                     statusType,
                                                     meta={'columns': ['Status', 'TokenOwner'],
                                                           'limit': 1,
-                                                          'order': ('DateEffective', 'desc')})
+                                                          'order': ['DateEffective', 'desc']})
 
     if not selectedRes['OK']:
       return selectedRes
