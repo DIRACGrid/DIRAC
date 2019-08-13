@@ -1698,7 +1698,7 @@ class Dirac(API):
 
     # New download
     result = SandboxStoreClient(smdb=False,
-                                useCertificates=self.useCertificates,).downloadSandboxForJob(jobID,
+                                useCertificates=self.useCertificates).downloadSandboxForJob(jobID,
                                                                                              'Output',
                                                                                              dirPath,
                                                                                              inMemory=False,
