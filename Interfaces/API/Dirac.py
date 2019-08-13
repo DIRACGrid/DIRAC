@@ -1699,10 +1699,10 @@ class Dirac(API):
     # New download
     result = SandboxStoreClient(smdb=False,
                                 useCertificates=self.useCertificates).downloadSandboxForJob(jobID,
-                                                                                             'Output',
-                                                                                             dirPath,
-                                                                                             inMemory=False,
-                                                                                             unpack=unpack)
+                                                                                            'Output',
+                                                                                            dirPath,
+                                                                                            inMemory=False,
+                                                                                            unpack=unpack)
     if result['OK']:
       self.log.info('Files retrieved and extracted in %s' % (dirPath))
       if self.jobRepo:
