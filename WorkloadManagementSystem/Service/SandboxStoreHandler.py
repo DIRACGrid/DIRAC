@@ -461,13 +461,13 @@ class SandboxStoreHandler(RequestHandler):
         gLogger.error("Cannot delete local sandbox", "%s : %s" % (hdPath, repr(e).replace(',)', ')')))
       while hdPath:
         hdPath = os.path.dirname(hdPath)
-        gLogger.info("Checking if dir is empty", "%s" % hdPath)
+        gLogger.info("Checking if dir is empty", hdPath)
         try:
           if not os.path.isdir(hdPath):
             break
           if os.listdir(hdPath):
             break
-          gLogger.info("Trying to clean dir", "%s" % hdPath)
+          gLogger.info("Trying to clean dir", hdPath)
           # Empty dir!
           os.rmdir(hdPath)
         except Exception as e:
