@@ -22,7 +22,7 @@ __RCSID__ = "$Id$"
 from DIRAC import S_OK, S_ERROR, gLogger
 
 
-from DIRAC.DataManagementSystem.Client.DataManager          import DataManager
+from DIRAC.DataManagementSystem.Client.DataManager       import DataManager
 from DIRAC.Resources.Storage.StorageElement                 import StorageElement
 from DIRAC.Resources.Catalog.FileCatalog                    import FileCatalog
 from DIRAC.RequestManagementSystem.Client.Request           import Request
