@@ -427,7 +427,7 @@ class SandboxStoreHandler(RequestHandler):
       SandboxStoreHandler.__purgeWorking = False
       return result
     sbList = result['Value']
-    gLogger.info("Got %s sandboxes to purge" % len(sbList))
+    gLogger.info("Got sandboxes to purge", "(%d)" % len(sbList))
     for sbId, SEName, SEPFN in sbList:  # pylint: disable=invalid-name
       self.__purgeSandbox(sbId, SEName, SEPFN)
 
@@ -461,13 +461,13 @@ class SandboxStoreHandler(RequestHandler):
         gLogger.error("Cannot delete local sandbox", "%s : %s" % (hdPath, repr(e).replace(',)', ')')))
       while hdPath:
         hdPath = os.path.dirname(hdPath)
-        gLogger.info("Checking if dir %s is empty" % hdPath)
+        gLogger.info("Checking if dir is empty", "%s" % hdPath)
         try:
           if not os.path.isdir(hdPath):
             break
           if os.listdir(hdPath):
             break
-          gLogger.info("Trying to clean dir %s" % hdPath)
+          gLogger.info("Trying to clean dir", "%s" % hdPath)
           # Empty dir!
           os.rmdir(hdPath)
         except Exception as e:
@@ -479,9 +479,16 @@ class SandboxStoreHandler(RequestHandler):
     if self.getCSOption("DelayedExternalDeletion", True):
       gLogger.info("Setting deletion request")
       try:
+        credDict = self.getRemoteCredentials()
+        result = sandboxDB.getSandboxOwner(SEName, SEPFN, credDict['username'], credDict['group'])
+        if not result['OK']:
+          return result
+        _owner, ownerDN, ownerGroup = result['Value']
 
         request = Request()
         request.RequestName = "RemoteSBDeletion:%s|%s:%s" % (SEName, SEPFN, time.time())
+        request.OwnerDN = ownerDN
+        request.OwnerGroup = ownerGroup
         physicalRemoval = Operation()
         physicalRemoval.Type = "PhysicalRemoval"
         physicalRemoval.TargetSE = SEName
