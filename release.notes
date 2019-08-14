@@ -1,3 +1,22 @@
+[v6r21p15]
+
+*WMS
+CHANGE: (#4214) Add an argument to the constructor of SandboxStoreClient for using in scripts 
+        that cannot use the DB directly
+
+*DMS
+NEW: (#4171) ArchiveFiles Request Operation: to create a tarball out of a list of LFNs
+NEW: (#4171) CheckMigration Request Operation to hold the request progress until the attached 
+             LFNs are migrated to tape
+NEW: (#4171) FCOnlyStorage StorageElement plugin to register LFNs without physical replica to 
+             conserve LFN metadata when they are archived, for example
+NEW: (#4171) dirac-dms-create-archive-request command to create a request to archive a list of 
+             LFNs and remove their physical copies
+NEW: (#4171) dirac-dms-create-moving-request command to move LFNs from a to b with optional 
+             "CheckMigration" step. as it uses the ReplicateAndRegister operation, transfer via 
+             FTS is also possible
+FIX: (#4171) FileCatalogClient: add "addFileAncestors" to list of "write functions"
+
 [v6r21p14]
 
 *DMS
