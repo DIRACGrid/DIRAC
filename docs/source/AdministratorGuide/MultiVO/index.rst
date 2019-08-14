@@ -290,42 +290,6 @@ Add pamela_user
      }
    }
 
-Registry/VOMS
--------------
-
-Add pamela parameters...
-::
-
-   Registry
-   {
-     VOMS
-     {
-       Mapping
-       {
-         pamela_user = /pamela
-       }
-       Servers
-       {
-         pamela
-         {
-           voms-01.pd.infn.it
-           {
-             DN = /C=IT/O=INFN/OU=Host/L=Padova/CN=voms-01.pd.infn.it
-             CA = /C=IT/O=INFN/CN=INFN CA
-             Port = 15013
-           }
-         }
-       }
-     }
-   }
-
-
-As dirac_admin group member, enter dirac-admin-sysadmin-cli
-::
-
-   (dirac.ba.infn.it)> install agent Configuration CE2CSAgent_pamela -m CE2CSAgent -p VirtualOrganization=pamela
-   agent Configuration_CE2CSAgent_pamela is installed, runit status: Run
-
 Operations - adding pamela section
 ----------------------------------
 ::
