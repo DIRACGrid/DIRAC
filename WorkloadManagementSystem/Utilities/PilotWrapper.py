@@ -21,6 +21,8 @@ pilotWrapperContent = """#!/bin/bash
 /usr/bin/env python << EOF
 
 # imports
+from __future__ import print_function
+
 import os
 import stat
 import tempfile
@@ -46,11 +48,11 @@ logger.setLevel(logging.DEBUG)
 logger.addHandler(screen_handler)
 
 # just logging the environment as first thing
-print '==========================================================='
+print('===========================================================')
 logger.debug('Environment of execution host\\n')
 for key, val in os.environ.iteritems():
   logger.debug(key + '=' + val)
-print '===========================================================\\n'
+print('===========================================================', end='\n')
 
 # putting ourselves in the right directory
 pilotExecDir = '%(pilotExecDir)s'
@@ -103,7 +105,7 @@ try:
     fd.write(bz2.decompress(base64.b64decode(\"\"\"%(encodedPf)s\"\"\")))
   os.chmod('%(pfName)s', stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
 except BaseException as x:
-  print >> sys.stderr, x
+  print(x, file=sys.stderr)
   shutil.rmtree(pilotWorkingDirectory)
   sys.exit(-1)
 """ % {'encodedPf': encodedPf,
