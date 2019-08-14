@@ -101,10 +101,8 @@ class InputDataAgent(AgentModule):
         if transID in self.timeLog:
           if transID in self.fullTimeLog:
             # If it is more than a day since the last reduced query, make a full query just in case
-            if (
-                    datetime.datetime.utcnow() -
-                    self.fullTimeLog[transID]) < datetime.timedelta(
-                    seconds=self.fullUpdatePeriod):
+            if (datetime.datetime.utcnow() -
+                    self.fullTimeLog[transID]) < datetime.timedelta(seconds=self.fullUpdatePeriod):
               timeStamp = self.timeLog[transID]
               if self.dateKey:
                 inputDataQuery[self.dateKey] = (timeStamp -
