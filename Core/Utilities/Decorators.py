@@ -71,6 +71,11 @@ def deprecated(reason, onlyOnce=False):
 
     decFunc.warningEn = True
 
+    if func.__doc__ is None:
+      func.__doc__ = '\n\n**Deprecated**: ' + reason
+    else:
+      func.__doc__ += '\n\n**Deprecated**: ' + reason
+
     @functools.wraps(func)
     def innerFunc(*args, **kwargs):
       """ Prints a suitable deprectaion notice and calls
