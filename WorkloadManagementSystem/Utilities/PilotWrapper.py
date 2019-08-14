@@ -144,20 +144,37 @@ logger.info("But first unpacking pilot files")
 # Getting the pilot files
 logger.info("Getting the pilot files from %(location)s")
 
-# Getting the json file
-rJson = urllib2.urlopen('https://' + '%(location)s' + '/pilot/pilot.json')
-with open('pilot.json', 'wb') as pj:
-  pj.write(rJson.read())
-  pj.close()
+# Getting the json file and the tar file
+try:
+  # needs to distinguish versions prior to or after 2.7.9
+  if sys.version_info >= (2, 7, 9):
+    import ssl
+    context = ssl._create_unverified_context()
+    rJson = urllib2.urlopen('https://' + '%(location)s' + '/pilot/pilot.json',
+                            timeout=10,
+                            context=context)
+    rTar = urllib2.urlopen('https://' + '%(location)s' + '/pilot/pilot.tar',
+                            timeout=10,
+                            context=context)
+  else:
+    rJson = urllib2.urlopen('https://' + '%(location)s' + '/pilot/pilot.json',
+                            timeout=10)
+    rTar = urllib2.urlopen('https://' + '%(location)s' + '/pilot/pilot.tar',
+                            timeout=10)
+  except urllib2.URLError:
+    print('%(location)s unreacheable')
 
-# Getting the tar file
-rTar = urllib2.urlopen('https://' + '%(location)s' + '/pilot/pilot.tar')
-with open('pilot.tar', 'wb') as pt:
-  pt.write(rTar.read())
-  pt.close()
-with tarfile.open('pilot.tar', 'r') as pt:
-  pt.extractall()
-  pt.close()
+pj = open('pilot.json', 'wb') pj:
+pj.write(rJson.read())
+pj.close()
+
+pt = open('pilot.tar', 'wb') pt:
+pt.write(rTar.read())
+pt.close()
+
+pt = tarfile.open('pilot.tar', 'r'):
+pt.extractall()
+pt.close()
 """ % {'location': location}
 
   localPilot += """
