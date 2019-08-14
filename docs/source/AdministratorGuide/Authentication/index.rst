@@ -1,7 +1,7 @@
 .. _manageAuthNAndAuthZ:
 
-Manage authentification and authorizations
-==========================================
+Manage Authentication and Authorizations
+========================================
 
 **************
 Authentication
@@ -52,6 +52,9 @@ Bellow a simple example with only one user, one group and one host::
      }
    }
 
+
+Users and their roles registered in a VOMS server can be synchronized to the DIRAC configuration using the
+:mod:`~DIRAC.ConfigurationSystem.Agent.VOMS2CSAgent`.
 
 
 **************
