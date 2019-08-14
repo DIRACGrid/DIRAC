@@ -52,7 +52,7 @@ print('===========================================================')
 logger.debug('Environment of execution host\\n')
 for key, val in os.environ.iteritems():
   logger.debug(key + '=' + val)
-print('===========================================================', end='\n')
+print('===========================================================', end='\\n')
 
 # putting ourselves in the right directory
 pilotExecDir = '%(pilotExecDir)s'
@@ -163,8 +163,8 @@ try:
                             timeout=10)
     rTar = urllib2.urlopen('https://' + '%(location)s' + '/pilot/pilot.tar',
                             timeout=10)
-  except urllib2.URLError:
-    print('%(location)s unreacheable')
+except urllib2.URLError:
+  print('%(location)s unreacheable')
 
 pj = open('pilot.json', 'wb') pj:
 pj.write(rJson.read())
