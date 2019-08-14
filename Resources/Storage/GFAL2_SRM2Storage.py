@@ -184,7 +184,8 @@ class GFAL2_SRM2Storage(GFAL2_StorageBase):
       Out of the results, we keep totalsize, guaranteedsize, and unusedsize all in B.
     """
 
-    if self.protocolParameters['SpaceToken'] == '':
+    if not self.spaceToken:
+      self.log.info("getOccupancy: SpaceToken not defined for this SE. Falling back to the default getOccupancy.")
       return super(GFAL2_SRM2Storage, self).getOccupancy(*parms, **kws)
 
     # Gfal2 extended parameter name to query the space token occupancy

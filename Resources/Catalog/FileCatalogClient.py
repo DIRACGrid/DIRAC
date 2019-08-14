@@ -33,6 +33,7 @@ class FileCatalogClient(FileCatalogClientBase):
       'createLink',
       'removeLink',
       'addFile',
+      'addFileAncestors',
       'setFileStatus',
       'addReplica',
       'removeReplica',
@@ -429,7 +430,10 @@ class FileCatalogClient(FileCatalogClientBase):
 
   @checkCatalogArguments
   def addFileAncestors(self, lfns, timeout=120):
-    """ Add file ancestor information for the given list of LFNs """
+    """Add file ancestor information for the given dict of LFNs.
+
+    :param dict lfns: {lfn1: {'Ancestor': [ancestorLFNs]}, lfn2: {'Ancestors': ...}}
+    """
     return self._getRPC(timeout=timeout).addFileAncestors(lfns)
 
   ########################################################################

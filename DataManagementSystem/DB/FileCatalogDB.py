@@ -811,15 +811,8 @@ class FileCatalogDB(DB):
 
         :return: S_OK({guid:lfn}) dict.
     """
+    return self.fileManager.getLFNForGUID(guids)
 
-    res = self._checkAdminPermission(credDict)
-    if not res['OK']:
-      return res
-    if not res['Value']:
-      return S_ERROR("Permission denied")
-    res = self.fileManager.getLFNForGUID(guids)
-
-    return res
   ########################################################################
   #
   #  Directory based Write methods

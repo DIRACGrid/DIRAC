@@ -1,4 +1,4 @@
-[v7r1-pre2]
+[v7r1-pre3]
 
 *Core
 NEW: initial support for mysql8
@@ -14,7 +14,7 @@ CHANGE: (#4157) add possibility to work with Proxy Providers and "clean" proxy w
 *Resources
 NEW: (#4157) ProxyProvider resources with implementation for DIRAC CA and PUSP proxy providers
 
-[v7r0-pre21]
+[v7r0-pre22]
 
 FIX: (#3962) use print function instead of print statement
 FIX: (#3962) remove the usage of the long suffix to distinguish between long and int
@@ -88,6 +88,18 @@ NEW: Added script (docs/Tools/UpdateDiracCFG.py) to collate the ConfigTemplate.c
      files into the main dirac.cfg file
 CHANGE: (#4110) updated basic tutorial for CC7 instead of SLC6.     
 NEW: (#4170) added Production system documentation
+
+[v6r22p5]
+
+*WMS
+CHANGE: (#4217) Sandbox: Adding OwnerDN and OwnerGroup for DelayedExternalDeletion
+
+*DMS
+CHANGE: (#4202) relax permissions on getLFNForGUID
+
+*Resources
+FIX: (#4200) re-allow the use of the gsiftp cache in the SE
+CHANGE: (#4206) Storage - improved treatment for the case without SpaceToken in SpaceOccupancy
 
 [v6r22p4]
 
@@ -183,6 +195,25 @@ CHANGE: (#4119) added note on MultiProcessor jobs preparation
 FIX: (#4119) Not lhcb but dteam (for DIRAC certification)
 FIX: (#4139) client_dms.sh not lhcb specific
 CHANGE:(#4140) adapt transformation certification tests to dteam VO
+
+[v6r21p15]
+
+*WMS
+CHANGE: (#4214) Add an argument to the constructor of SandboxStoreClient for using in scripts 
+        that cannot use the DB directly
+
+*DMS
+NEW: (#4171) ArchiveFiles Request Operation: to create a tarball out of a list of LFNs
+NEW: (#4171) CheckMigration Request Operation to hold the request progress until the attached 
+             LFNs are migrated to tape
+NEW: (#4171) FCOnlyStorage StorageElement plugin to register LFNs without physical replica to 
+             conserve LFN metadata when they are archived, for example
+NEW: (#4171) dirac-dms-create-archive-request command to create a request to archive a list of 
+             LFNs and remove their physical copies
+NEW: (#4171) dirac-dms-create-moving-request command to move LFNs from a to b with optional 
+             "CheckMigration" step. as it uses the ReplicateAndRegister operation, transfer via 
+             FTS is also possible
+FIX: (#4171) FileCatalogClient: add "addFileAncestors" to list of "write functions"
 
 [v6r21p14]
 

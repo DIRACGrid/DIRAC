@@ -120,6 +120,7 @@ def createClient(serviceName):
   def genFunc(funcName, arguments, handlerClassPath, doc):
     """Create a function with *funcName* taking *arguments*."""
     doc = '' if doc is None else doc
+    funcDocString = '%s(%s, **kwargs)\n' % (funcName, ', '.join(arguments))
     # do not describe self or cls in the parameter description
     if arguments and arguments[0] in ('self', 'cls'):
       arguments = arguments[1:]
@@ -133,7 +134,8 @@ def createClient(serviceName):
       def func(self, **kwargs):  # pylint: disable=missing-docstring
         self.call = funcName
         return self.executeRPC(**kwargs)
-    func.__doc__ = doc + "\n\nAutomatically created for the service function :func:`~%s.export_%s`" % \
+    func.__doc__ = funcDocString + doc + \
+        "\n\nAutomatically created for the service function :func:`~%s.export_%s`" % \
         (handlerClassPath, funcName)
     parameterDoc = ''
     # add description for parameters, if that is not already done for the docstring of function in the service

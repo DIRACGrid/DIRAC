@@ -1,38 +1,42 @@
-.. _pilots3:
+.. _pilot3:
 
-========================
-DIRAC pilots 3
-========================
+=============
+DIRAC Pilot 3
+=============
 
-All concepts defined for Pilots 2 are valid also for Pilots3. There are anyway some differences for what regards their usage.
+All concepts defined for Pilot2 are valid also for Pilot3. There are anyway some differences for what regards their usage.
+
+.. meta::
+   :keywords: Pilots3, Pilot3, Pilot
 
 
 Bootstrap
 =========
 
-Pilots3 need a JSON file for bootstrapping. We simply call this file the *pilot.json* file.
-The pilot.json file is created starting from information found in the Configuration Service.
+Pilot3 needs a JSON file for bootstrapping. We simply call this file the ``pilot.json`` file.
+The ``pilot.json`` file is created starting from information found in the Configuration Service.
 
-The pilot wrapper (the script that starts the pilot, which is effectively equivalent to what SiteDirectors send)
-expects to find (download) such pilot.json file from a known location, which can be for example exposed by the DIRAC WebApp webserver.
+The pilot wrapper (the script that starts the pilot, which is effectively equivalent to what SiteDirectors send) expects
+to find (download) such a ``pilot.json`` file from a known location, which can be for example exposed by the DIRAC
+WebApp webserver.
 
-The pilot.json file is therefore always kept in sync with the content of the Configuration Service.
+The ``pilot.json`` file is therefore always kept in sync with the content of the Configuration Service.
 From DIRAC v6r20, there is the possibility to set the option *UpdatePilotCStoJSONFile* to True in the configuration of
 the Configuration/Server service (please see :ref:`ConfigurationServer` for detais). If this option is set,
-at every configuration update, the pilot.json file content will also be updated (if necessary).
+at every configuration update, the ``pilot.json`` file content will also be updated (if necessary).
 
 If *UpdatePilotCStoJSONFile* is True, then also the Operations option *Pilot/<...>/pilotFileServer* should be set to the webserver chosen for the upload.
 We suggest to use simply the DIRAC webserver.
 
-If you use the DIRAC webserver please:: 
+If you use the DIRAC webserver please
 
-  - add the following option to the WebApp CS section:
+- add the following option to the WebApp CS section::
        
-       /WebApp/StaticDirs=pilot
+    /WebApp/StaticDirs=pilot
        
-  - create the following directory in the DIRAC webserver machine:
+- create the following directory in the DIRAC webserver machine::
    
-     mkdir /opt/dirac/webRoot/www/pilot/
+    mkdir /opt/dirac/webRoot/www/pilot/
   
 
 Other options that can be set also in the Operations part of the CS include:
@@ -45,24 +49,30 @@ Other options that can be set also in the Operations part of the CS include:
 |                                    | extension of pilot                         |                                                                         |
 +------------------------------------+--------------------------------------------+-------------------------------------------------------------------------+
 | *pilotScriptsPath*                 | Path to the code, inside the Git repository| pilotScriptsPath = Pilot                                                |
-|                                    |                                            | The value above is the default                                          |
+|                                    |                                            | This value is the default                                               |
 +------------------------------------+--------------------------------------------+-------------------------------------------------------------------------+
 | *pilotScriptsVOPath*               | Path to the code, inside the Git repository| pilotScriptsVOPath = VOPilot                                            |
 +------------------------------------+--------------------------------------------+-------------------------------------------------------------------------+
 
 
-Starting Pilots3 via SiteDirectors
+Starting Pilot3 via SiteDirectors
 ==================================
 
 .. versionadded:: v6r20
 
+  Since DIRAC v6r20, SiteDirectors can send "pilot2" or "pilot3". Pilot2 is the default,
+  but the "Pilot3=True" flag can be used for sending Pilot3 files instead, see the documentation
+  for the :mod:`~DIRAC.WorkloadManagementSystem.Agent.SiteDirector`.
 
-Since DIRAC v6r20, SiteDirectors can send "pilots2" or "pilots3". Pilots2 are the default, 
-but the "Pilots3" flag can be used for sending Pilots3 files instead, see the documentation
-for the :mod:`~DIRAC.WorkloadManagementSystem.Agent.SiteDirector`.
+.. versionchanged:: v7r0
+
+  The default is now to send Pilot3. Pilot2 can be enabled by setting the SiteDirector option Pilot3 to False::
+
+    Pilot3=False
+
 
 
 Pilot logging
 =============
 
-Advanced pilot logging comes together with Pilots3. To enable... <to complete>
+Advanced pilot logging comes together with Pilot3. To enable... <to complete>
