@@ -1,3 +1,15 @@
+[v6r22p5]
+
+*WMS
+CHANGE: (#4217) Sandbox: Adding OwnerDN and OwnerGroup for DelayedExternalDeletion
+
+*DMS
+CHANGE: (#4202) relax permissions on getLFNForGUID
+
+*Resources
+FIX: (#4200) re-allow the use of the gsiftp cache in the SE
+CHANGE: (#4206) Storage - improved treatment for the case without SpaceToken in SpaceOccupancy
+
 [v6r22p4]
 
 *Core
