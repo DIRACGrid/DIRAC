@@ -1,4 +1,7 @@
-[v7r1-pre1]
+[v7r1-pre2]
+
+*Core
+NEW: initial support for mysql8
 
 *Configuration
 CHANGE: (#4157) add new helper methods for IdP/Proxy Providers, OAuthManager. Add methods that 
@@ -11,12 +14,16 @@ CHANGE: (#4157) add possibility to work with Proxy Providers and "clean" proxy w
 *Resources
 NEW: (#4157) ProxyProvider resources with implementation for DIRAC CA and PUSP proxy providers
 
-[v7r0-pre20]
+[v7r0-pre21]
 
 FIX: (#3962) use print function instead of print statement
 FIX: (#3962) remove the usage of the long suffix to distinguish between long and int
 FIX: (#3962) convert octal literals to new syntax
 NEW: (#3962) Add pylint test to check python 3 compatibility
+
+*Framework
+CHANGE: (#4180) Removed local MySQL handling (DIRACOS won't have install it)
+CHANGE: (#4180) Removed setup of old portal
 
 *Accounting
 CHANGE: (Multi)AccountingDB - Grouping Type and Object loader together with the MonitoringSystem ones.
@@ -49,6 +56,7 @@ FIX: check for empty /etc/grid-security/certificates dir
 NEW: (#3842) Add createClient decorator to add wrapper for all export_ functions automatically
 NEW: (#3678) dirac-install can install a non released code directly from the git repository
 FIX: (#3931) AuthManager - modified to work with the case of unregistered DN in credDict
+FIX: (#4182) Add CountryName OID and be more permissive in the String type for decoding VOMSExtensions
 
 *TransformationSystem
 NEW: (#4124) InputDataQuery and OutputDataQuery parameters can be set for Transformations before 
@@ -62,6 +70,9 @@ CHANGE: (#4163) removed deprecated methods from Dirac.py
 
 *ResourceStatusSystem
 CHANGE: (#4177) use the ObjectLoader for Clients, in PEP
+
+*Monitoring
+FIX: MonitoringReporter - make processResords() method thread safe, fixes #4193
 
 *tests
 NEW: Add ChangeESFlag.py script to modify useES flag in dirac.cfg. To be integrated with Jenkins code.
@@ -77,6 +88,15 @@ NEW: Added script (docs/Tools/UpdateDiracCFG.py) to collate the ConfigTemplate.c
      files into the main dirac.cfg file
 CHANGE: (#4110) updated basic tutorial for CC7 instead of SLC6.     
 NEW: (#4170) added Production system documentation
+
+[v6r22p4]
+
+*Core
+NEW: (#4181) Allow to install an extension of DIRACOS
+
+*Docs
+FIX: (#4187) Create a TransformationAgent Plugin -- more concrete 
+     descriptions for adding a plugin to AllowedPlugins
 
 [v6r22p3]
 
@@ -163,6 +183,21 @@ CHANGE: (#4119) added note on MultiProcessor jobs preparation
 FIX: (#4119) Not lhcb but dteam (for DIRAC certification)
 FIX: (#4139) client_dms.sh not lhcb specific
 CHANGE:(#4140) adapt transformation certification tests to dteam VO
+
+[v6r21p14]
+
+*DMS
+FIX: (#4192) dirac-dms-clean-directory correct usage message for list of arguments
+FIX: (#4192) dirac-dms-clean-directory now properly prints error messages
+FIX: (#4192) dirac-dms-clean-directory will now also clean empty directories
+FIX: (#4192) FileCatalog.DirectoryMetadata: prevent error when removeMetadataDirectory is 
+     called on empty list of directories, triggered when calling removeDirectory 
+     on non-existing directory
+FIX: (#4192) FileCatalog.DirectoryTreeBase: prevent maximum recursion depth exception 
+     when calling remove directory with illegal path
+
+*Resources
+CHANGE: (#4191) Storages: catch specific DPM/Globus error code when creating existing directory
 
 [v6r21p13]
 

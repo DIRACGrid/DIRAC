@@ -23,10 +23,25 @@ Add New Plugin to the List of Allowed Plugins
 ---------------------------------------------
 
 The plugins that can be used inside the Transformation System, need to be added in the list of allowed plugins in the
-``Operations/Transformations/AllowedPlugins`` option in the Configuration System::
+``Operations/Transformations/AllowedPlugins`` option in the Configuration System.
+
+If the option ``AllowedPlugins`` is already defined, simply add the new plugin::
 
   Transformations
   {
+    AllowedPlugins = ...
+    AllowedPlugins += ...
+    AllowedPlugins += MyNewPlugin
+  }
+  
+Or, if it is not defined, you need to add the ``AllowedPlugins`` option including the list of default plugins, otherwise the other plugins would stop working::
+
+  Transformations
+  {
+    AllowedPlugins = Broadcast
+    AllowedPlugins += Standard
+    AllowedPlugins += BySize
+    AllowedPlugins += ByShare
     AllowedPlugins += MyNewPlugin
   }
 

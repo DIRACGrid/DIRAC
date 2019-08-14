@@ -33,6 +33,26 @@ CREATE TABLE Productions(
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8;
 
 -- -------------------------------------------------------------------------------
+DROP TABLE IF EXISTS ProductionSteps;
+CREATE TABLE ProductionSteps(
+    StepID INTEGER NOT NULL AUTO_INCREMENT,
+    Name VARCHAR(255),
+    Description VARCHAR(255),
+    LongDescription BLOB,
+    Body LONGBLOB,
+    Type CHAR(32) DEFAULT 'Simulation',
+    Plugin CHAR(32) DEFAULT 'None',
+    AgentType CHAR(32) DEFAULT 'Manual',
+    GroupSize INT NOT NULL DEFAULT 1,
+    InputQuery VARCHAR(255) DEFAULT 'None',
+    OutputQuery VARCHAR(255) DEFAULT 'None',
+    LastUpdate DATETIME,
+    InsertedTime DATETIME,
+    PRIMARY KEY(StepID),
+    UNIQUE INDEX(StepID)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8;
+
+-- -------------------------------------------------------------------------------
 DROP TABLE IF EXISTS ProductionTransformations;
 CREATE TABLE ProductionTransformations(
     ProductionID INTEGER NOT NULL,

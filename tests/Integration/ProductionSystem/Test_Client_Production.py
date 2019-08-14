@@ -12,7 +12,6 @@ import unittest
 import json
 
 from DIRAC.ProductionSystem.Client.ProductionClient import ProductionClient
-from DIRAC.ProductionSystem.Client.Production import Production
 from DIRAC.ProductionSystem.Client.ProductionStep import ProductionStep
 
 
@@ -28,22 +27,21 @@ class TestClientProductionTestCase(unittest.TestCase):
 class ProductionClientChain(TestClientProductionTestCase):
 
   def test_addAndRemove(self):
-    # add
-    prod = Production()
+    # add a production step
     prodStep = ProductionStep()
-    res = prod.addStep(prodStep)
+    res = self.prodClient.addProductionStep(prodStep)
     self.assertTrue(res['OK'])
 
-    # Get the production description
-    prodDescription = prod.prodDescription
+    # get the updated production description
+    prodDesc = self.prodClient.prodDescription
 
-    # Create the production
-    res = self.prodClient.addProduction('prodName', json.dumps(prodDescription))
+    # create the production starting from the production description
+    res = self.prodClient.addProduction('prodName', json.dumps(prodDesc))
     self.assertTrue(res['OK'])
     prodID = res['Value']
 
-    # try to add again (this should fail)
-    res = self.prodClient.addProduction('prodName', json.dumps(prodDescription))
+    # try to add another production with the same Name (this should fail)
+    res = self.prodClient.addProduction('prodName', json.dumps(prodDesc))
     self.assertFalse(res['OK'])
 
     # delete the production

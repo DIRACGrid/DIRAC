@@ -20,16 +20,13 @@ __RCSID__ = "$Id$"
 
 
 import datetime
-
-from sqlalchemy import desc
-from sqlalchemy.orm import sessionmaker, class_mapper
+from sqlalchemy.orm import class_mapper
 from sqlalchemy.orm.query import Query
-from sqlalchemy.engine.reflection import Inspector
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import create_engine, Column, String, DateTime, exc, BigInteger
+from sqlalchemy import Column, String, DateTime, exc, BigInteger
 
-from DIRAC import S_OK, S_ERROR, gLogger, gConfig
-from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
+from DIRAC import S_OK, S_ERROR, gConfig
+from DIRAC.Core.Base.SQLAlchemyDB import SQLAlchemyDB
 from DIRAC.ResourceStatusSystem.Utilities import Utils
 
 
@@ -37,7 +34,8 @@ TABLESLIST = ['SiteStatus',
               'ResourceStatus',
               'NodeStatus']
 
-TABLESLISTWITHID = ['SiteLog',
+TABLESLISTWITHID = ['ResourceStatusCache',
+                    'SiteLog',
                     'SiteHistory',
                     'ResourceLog',
                     'ResourceHistory',
@@ -49,6 +47,45 @@ TABLESLISTWITHID = ['SiteLog',
 
 rssBase = declarative_base()
 
+
+class ResourceStatusCache(rssBase):
+  """
+  Table for EmailAction
+  """
+  __tablename__ = 'ResourceStatusCache'
+  __table_args__ = {'mysql_engine': 'InnoDB',
+                    'mysql_charset': 'utf8'}
+
+  id = Column('ID', BigInteger, nullable=False, autoincrement=True, primary_key=True)
+  sitename = Column('SiteName', String(64), nullable=False)
+  name = Column('ResourceName', String(64), nullable=False)
+  status = Column('Status', String(8), nullable=False, server_default='')
+  previousstatus = Column('PreviousStatus', String(8), nullable=False, server_default='')
+  statustype = Column('StatusType', String(128), nullable=False, server_default='all')
+  time = Column('Time', DateTime, nullable=False, server_default='9999-12-31 23:59:59')
+
+  def fromDict(self, dictionary):
+    """
+    Fill the fields of the AccountingCache object from a dictionary
+
+    :param dictionary: Dictionary to fill a single line
+    :type arguments: dict
+    """
+
+    self.id = dictionary.get('ID', self.id)
+    self.name = dictionary.get('ResourceName', self.name)
+    self.sitename = dictionary.get('SiteName', self.sitename)
+    self.status = dictionary.get('Status', self.status)
+    self.previousstatus = dictionary.get('PreviousStatus', self.previousstatus)
+    self.statustype = dictionary.get('StatusType', self.statustype)
+    self.time = dictionary.get('Time', datetime.datetime.utcnow())
+
+  def toList(self):
+    """
+    Simply returns a list of column values
+    """
+
+    return [self.id, self.sitename, self.name, self.status, self.previousstatus, self.statustype, self.time]
 
 class ElementStatusBase(object):
   """ Prototype for tables
@@ -205,7 +242,7 @@ class NodeHistory(ElementStatusBaseWithID, rssBase):
 
 # Interaction with the DB
 
-class ResourceStatusDB(object):
+class ResourceStatusDB(SQLAlchemyDB):
   '''
     Class that defines the interactions with the tables of the ResourceStatusDB.
   '''
@@ -216,7 +253,7 @@ class ResourceStatusDB(object):
     :param self: self reference
     """
 
-    self.log = gLogger.getSubLogger('ResourceStatusDB')
+    super(ResourceStatusDB, self).__init__()
 
     # These are the list of tables that will be created.
     # They can be extended in an extension module
@@ -226,107 +263,11 @@ class ResourceStatusDB(object):
                                     'TABLESLISTWITHID')
 
     self.extensions = gConfig.getValue('DIRAC/Extensions', [])
-    self.__initializeConnection('ResourceStatus/ResourceStatusDB')
-    self.__initializeDB()
+    self._initializeConnection('ResourceStatus/ResourceStatusDB')
 
-  def __initializeConnection(self, dbPath):
-    """ Collect from the CS all the info needed to connect to the DB.
-    This should be in a base class eventually
-    """
-
-    result = getDBParameters(dbPath)
-    if not result['OK']:
-      raise Exception('Cannot get database parameters: %s' % result['Message'])
-
-    dbParameters = result['Value']
-    self.log.debug("db parameters: %s" % dbParameters)
-    self.host = dbParameters['Host']
-    self.port = dbParameters['Port']
-    self.user = dbParameters['User']
-    self.password = dbParameters['Password']
-    self.dbName = dbParameters['DBName']
-
-    self.engine = create_engine('mysql://%s:%s@%s:%s/%s' % (self.user,
-                                                            self.password,
-                                                            self.host,
-                                                            self.port,
-                                                            self.dbName),
-                                pool_recycle=3600,
-                                echo_pool=True,
-                                echo=self.log.getLevel() == 'DEBUG')
-    self.sessionMaker_o = sessionmaker(bind=self.engine)
-    self.inspector = Inspector.from_engine(self.engine)
-
-  def __initializeDB(self):
-    """
-    Create the tables, if they are not there yet
-    """
-
-    tablesInDB = self.inspector.get_table_names()
-
-    for table in self.tablesList:
-      if table not in tablesInDB:
-        found = False
-        # is it in the extension? (fully or extended)
-        for ext in gConfig.getValue('DIRAC/Extensions', []):
-          try:
-            getattr(
-                __import__(
-                    ext + __name__,
-                    globals(),
-                    locals(),
-                    [table]),
-                table).__table__.create(
-                self.engine)  # pylint: disable=no-member
-            found = True
-            break
-          except (ImportError, AttributeError):
-            continue
-        # If not found in extensions, import it from DIRAC base.
-        if not found:
-          getattr(
-              __import__(
-                  __name__,
-                  globals(),
-                  locals(),
-                  [table]),
-              table).__table__.create(
-              self.engine)  # pylint: disable=no-member
-      else:
-        gLogger.debug("Table %s already exists" % table)
-
-    for table in self.tablesListWithID:
-      if table not in tablesInDB:
-        found = False
-        # is it in the extension? (fully or extended)
-        for ext in gConfig.getValue('DIRAC/Extensions', []):
-          try:
-            getattr(
-                __import__(
-                    ext + __name__,
-                    globals(),
-                    locals(),
-                    [table]),
-                table).__table__.create(
-                self.engine)  # pylint: disable=no-member
-            found = True
-            break
-          except (ImportError, AttributeError):
-            continue
-        # If not found in extensions, import it from DIRAC base.
-        if not found:
-          getattr(
-              __import__(
-                  __name__,
-                  globals(),
-                  locals(),
-                  [table]),
-              table).__table__.create(
-              self.engine)  # pylint: disable=no-member
-      else:
-        gLogger.debug("Table %s already exists" % table)
-
- # SQL Methods ###############################################################
+    # Create required tables
+    self._createTablesIfNotThere(self.tablesList)
+    self._createTablesIfNotThere(self.tablesListWithID)
 
   def insert(self, table, params):
     '''
@@ -340,203 +281,10 @@ class ResourceStatusDB(object):
     :return: S_OK() || S_ERROR()
     '''
 
-    # expire_on_commit is set to False so that we can still use the object after we close the session
-    session = self.sessionMaker_o(expire_on_commit=False)  # FIXME: should we use this flag elsewhere?
-
-    found = False
-    for ext in self.extensions:
-      try:
-        tableRow_o = getattr(__import__(ext + __name__, globals(), locals(), [table]), table)()
-        found = True
-        break
-      except (ImportError, AttributeError):
-        continue
-    # If not found in extensions, import it from DIRAC base (this same module).
-    if not found:
-      tableRow_o = getattr(__import__(__name__, globals(), locals(), [table]), table)()
-
     if not params.get('DateEffective'):
       params['DateEffective'] = datetime.datetime.utcnow().replace(microsecond=0)
 
-    tableRow_o.fromDict(params)
-
-    try:
-      session.add(tableRow_o)
-      session.commit()
-      return S_OK()
-    except exc.IntegrityError as err:
-      self.log.warn("insert: trying to insert a duplicate key? %s" % err)
-      session.rollback()
-    except exc.SQLAlchemyError as e:
-      session.rollback()
-      self.log.exception("insert: unexpected exception", lException=e)
-      return S_ERROR("insert: unexpected exception %s" % e)
-    finally:
-      session.close()
-
-  def select(self, table, params):
-    '''
-    Uses params to build conditional SQL statement ( WHERE ... ).
-
-    :Parameters:
-      **params** - `dict`
-        arguments for the mysql query ( must match table columns ! ).
-
-    :return: S_OK() || S_ERROR()
-    '''
-
-    session = self.sessionMaker_o()
-
-    # finding the table
-    found = False
-    for ext in self.extensions:
-      try:
-        table_c = getattr(__import__(ext + __name__, globals(), locals(), [table]), table)
-        found = True
-        break
-      except (ImportError, AttributeError):
-        continue
-    # If not found in extensions, import it from DIRAC base (this same module).
-    if not found:
-      table_c = getattr(__import__(__name__, globals(), locals(), [table]), table)
-
-    # handling query conditions found in 'Meta'
-    columnNames = [column.lower() for column in params.get('Meta', {}).get('columns', [])]
-    older = params.get('Meta', {}).get('older', None)
-    newer = params.get('Meta', {}).get('newer', None)
-    order = params.get('Meta', {}).get('order', None)
-    limit = params.get('Meta', {}).get('limit', None)
-    params.pop('Meta', None)
-
-    try:
-      # setting up the select query
-      if not columnNames:  # query on the whole table
-        wholeTable = True
-        columns = table_c.__table__.columns  # retrieve the column names
-        columnNames = [str(column).split('.')[1] for column in columns]
-        select = Query(table_c, session=session)
-      else:  # query only the selected columns
-        wholeTable = False
-        columns = [getattr(table_c, column) for column in columnNames]
-        select = Query(columns, session=session)
-
-      # query conditions
-      for columnName, columnValue in params.iteritems():
-        if not columnValue:
-          continue
-        column_a = getattr(table_c, columnName.lower())
-        if isinstance(columnValue, (list, tuple)):
-          select = select.filter(column_a.in_(list(columnValue)))
-        elif isinstance(columnValue, (basestring, datetime.datetime, bool)):
-          select = select.filter(column_a == columnValue)
-        else:
-          self.log.error("type(columnValue) == %s" % type(columnValue))
-      if older:
-        column_a = getattr(table_c, older[0].lower())
-        select = select.filter(column_a < older[1])
-      if newer:
-        column_a = getattr(table_c, newer[0].lower())
-        select = select.filter(column_a > newer[1])
-      if order:
-        order = [order] if isinstance(order, basestring) else list(order)
-        column_a = getattr(table_c, order[0].lower())
-        if len(order) == 2 and order[1].lower() == 'desc':
-          select = select.order_by(desc(column_a))
-        else:
-          select = select.order_by(column_a)
-      if limit:
-        select = select.limit(int(limit))
-
-      # querying
-      selectionRes = select.all()
-
-      # handling the results
-      if wholeTable:
-        selectionResToList = [res.toList() for res in selectionRes]
-      else:
-        selectionResToList = [[getattr(res, col) for col in columnNames] for res in selectionRes]
-
-      finalResult = S_OK(selectionResToList)
-
-      finalResult['Columns'] = columnNames
-      return finalResult
-
-    except exc.SQLAlchemyError as e:
-      session.rollback()
-      self.log.exception("select: unexpected exception", lException=e)
-      return S_ERROR("select: unexpected exception %s" % e)
-    finally:
-      session.close()
-
-  def delete(self, table, params):
-    """
-    :param table: table from where to delete
-    :type table: str
-    :param params: dictionary of which line(s) to delete
-    :type params: dict
-
-    :return: S_OK() || S_ERROR()
-    """
-    session = self.sessionMaker_o()
-    found = False
-    for ext in self.extensions:
-      try:
-        table_c = getattr(__import__(ext + __name__, globals(), locals(), [table]), table)
-        found = True
-        break
-      except (ImportError, AttributeError):
-        continue
-    # If not found in extensions, import it from DIRAC base (this same module).
-    if not found:
-      table_c = getattr(__import__(__name__, globals(), locals(), [table]), table)
-
-    # handling query conditions found in 'Meta'
-    older = params.get('Meta', {}).get('older', None)
-    newer = params.get('Meta', {}).get('newer', None)
-    order = params.get('Meta', {}).get('order', None)
-    limit = params.get('Meta', {}).get('limit', None)
-    params.pop('Meta', None)
-
-    try:
-      deleteQuery = Query(table_c, session=session)
-      for columnName, columnValue in params.iteritems():
-        if not columnValue:
-          continue
-        column_a = getattr(table_c, columnName.lower())
-        if isinstance(columnValue, (list, tuple)):
-          deleteQuery = deleteQuery.filter(column_a.in_(list(columnValue)))
-        elif isinstance(columnValue, (basestring, datetime.datetime, bool)):
-          deleteQuery = deleteQuery.filter(column_a == columnValue)
-        else:
-          self.log.error("type(columnValue) == %s" % type(columnValue))
-      if older:
-        column_a = getattr(table_c, older[0].lower())
-        deleteQuery = deleteQuery.filter(column_a < older[1])
-      if newer:
-        column_a = getattr(table_c, newer[0].lower())
-        deleteQuery = deleteQuery.filter(column_a > newer[1])
-      if order:
-        order = [order] if isinstance(order, basestring) else list(order)
-        column_a = getattr(table_c, order[0].lower())
-        if len(order) == 2 and order[1].lower() == 'desc':
-          deleteQuery = deleteQuery.order_by(desc(column_a))
-        else:
-          deleteQuery = deleteQuery.order_by(column_a)
-      if limit:
-        deleteQuery = deleteQuery.limit(int(limit))
-
-      res = deleteQuery.delete(synchronize_session=False)  # FIXME: unsure about it
-      session.commit()
-      return S_OK(res)
-
-    except exc.SQLAlchemyError as e:
-      session.rollback()
-      self.log.exception("delete: unexpected exception", lException=e)
-      return S_ERROR("delete: unexpected exception %s" % e)
-    finally:
-      session.close()
-
-  ## Extended SQL methods ######################################################
+    return super(ResourceStatusDB, self).insert(table, params)
 
   def addOrModify(self, table, params):
     '''
@@ -661,6 +409,3 @@ class ResourceStatusDB(object):
       return S_ERROR("addIfNotThere: unexpected exception %s" % e)
     finally:
       session.close()
-
-################################################################################
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

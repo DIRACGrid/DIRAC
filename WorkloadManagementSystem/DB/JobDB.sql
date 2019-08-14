@@ -103,17 +103,6 @@ CREATE TABLE `JobParameters` (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 -- ------------------------------------------------------------------------------
-DROP TABLE IF EXISTS `JobsStatus`;
-CREATE TABLE `JobsStatus` (
-  `JobID` INT(11) UNSIGNED NOT NULL,
-  `Status` VARCHAR(32) NOT NULL DEFAULT 'Received',
-  `MinorStatus` VARCHAR(128) NOT NULL DEFAULT 'Unknown',
-  `ApplicationStatus` VARCHAR(255) DEFAULT 'Unknown',
-  PRIMARY KEY (`JobID`),
-  FOREIGN KEY (`JobID`) REFERENCES `JobJDLs`(`JobID`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
-
--- ------------------------------------------------------------------------------
 DROP TABLE IF EXISTS `OptimizerParameters`;
 CREATE TABLE `OptimizerParameters` (
   `JobID` INT(11) UNSIGNED NOT NULL,

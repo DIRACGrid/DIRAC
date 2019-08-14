@@ -188,7 +188,7 @@ class JobState(object):
                                        date=updateTime, source=source)
 
   def getStatus(self):
-    result = self.jobDB.getJobStatus(self.__jid)
+    result = self.jobDB.getJobAttributes(self.__jid, ['Status', 'MinorStatus'])
     if not result['OK']:
       return result
     data = result['Value']
@@ -215,7 +215,7 @@ class JobState(object):
   right_getAppStatus = RIGHT_GET_INFO
 
   def getAppStatus(self):
-    result = self.jobDB.getJobStatus(self.__jid)
+    result = self.jobDB.getJobAttributes(self.__jid, ['ApplicationStatus'])
     if result['OK']:
       result['Value'] = result['Value']['ApplicationStatus']
     return result
