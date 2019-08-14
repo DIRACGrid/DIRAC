@@ -27,13 +27,14 @@ class SandboxStoreClient(object):
   __validSandboxTypes = ('Input', 'Output')
   __smdb = None
 
-  def __init__(self, rpcClient=None, transferClient=None, **kwargs):
+  def __init__(self, rpcClient=None, transferClient=None, smdb=None, **kwargs):
 
     self.__serviceName = "WorkloadManagement/SandboxStore"
     self.__rpcClient = rpcClient
     self.__transferClient = transferClient
     self.__kwargs = kwargs
     self.__vo = None
+    SandboxStoreClient.__smdb = smdb
     if 'delegatedGroup' in kwargs:
       self.__vo = getVOForGroup(kwargs['delegatedGroup'])
     if SandboxStoreClient.__smdb is None:
