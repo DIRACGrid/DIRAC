@@ -117,7 +117,7 @@ class CodeReference(object):
 
     writeLinesToFile(filename, lines)
 
-  def mkDummyRest(self, classname, _fullclassname):
+  def mkDummyRest(self, classname, fullclassname):
     """Create a dummy rst file for files that behave badly."""
     filename = classname + '.rst'
 
@@ -125,8 +125,10 @@ class CodeReference(object):
     lines.append('%s' % classname)
     lines.append('=' * len(classname))
     lines.append('')
-    lines.append(' This is an empty file, because we cannot parse this file correctly or it causes problems')
-    lines.append(' , please look at the source code directly')
+    lines.append('.. py:module:: %s' % fullclassname)
+    lines.append('')
+    lines.append('This is an empty file, because we cannot parse this file correctly or it causes problems.')
+    lines.append('Please look at the source code directly')
     writeLinesToFile(filename, lines)
 
   def mkModuleRst(self, classname, fullclassname, buildtype='full'):
@@ -264,6 +266,8 @@ class CodeReference(object):
       for filename in files:
         # Skip things that call parseCommandLine or similar issues
         fullclassname = '.'.join(docPath.split('/') + [filename])
+        if not fullclassname.startswith(self.config.moduleName):
+          fullclassname = '.'.join([self.config.moduleName, fullclassname])
         if any(f in filename for f in self.config.code_dummyFiles):
           LOG.debug('Creating dummy for  file %r', filename)
           self.mkDummyRest(filename.split('.py')[0], fullclassname.split('.py')[0])
@@ -276,8 +280,6 @@ class CodeReference(object):
                 '-' in filename:  # not valid python identifier, e.g. dirac-pilot
           LOG.debug('Ignoring file %r', filename)
           continue
-        if not fullclassname.startswith(self.config.moduleName):
-          fullclassname = '.'.join([self.config.moduleName, fullclassname])
 
         self.mkModuleRst(filename.split('.py')[0], fullclassname.split('.py')[0], buildtype)
 
