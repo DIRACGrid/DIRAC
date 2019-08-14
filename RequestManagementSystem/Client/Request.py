@@ -78,6 +78,7 @@ class Request(object):
     self.RequestName = None
     self.OwnerGroup = None
     self.SourceComponent = None
+    self.RequestID = None
 
     self.dmsHelper = DMSHelpers()
 

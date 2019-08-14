@@ -26,6 +26,8 @@ __RCSID__ = "$Id $"
 # # imports
 import os
 import time
+import datetime
+import socket
 # # from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR, gConfig
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
@@ -37,6 +39,8 @@ from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationDat
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 ########################################################################
 
@@ -81,18 +85,24 @@ class RequestTask(object):
     if not shifterProxies["OK"]:
       self.log.error("Cannot setup shifter proxies", shifterProxies["Message"])
 
-    # # initialize gMonitor
-    gMonitor.setComponentType(gMonitor.COMPONENT_AGENT)
-    gMonitor.setComponentName(self.agentName)
-    gMonitor.initialize()
+    # Check whether the ES flag is enabled so we can send the data accordingly.
+    self.rmsMonitoring = Operations().getValue("EnableActivityMonitoring", False)
 
-    # # own gMonitor activities
-    gMonitor.registerActivity("RequestAtt", "Requests processed",
-                              "RequestExecutingAgent", "Requests/min", gMonitor.OP_SUM)
-    gMonitor.registerActivity("RequestFail", "Requests failed",
-                              "RequestExecutingAgent", "Requests/min", gMonitor.OP_SUM)
-    gMonitor.registerActivity("RequestOK", "Requests done",
-                              "RequestExecutingAgent", "Requests/min", gMonitor.OP_SUM)
+    if self.rmsMonitoring:
+      self.rmsMonitoringReporter = MonitoringReporter(monitoringType="RMSMonitoring")
+    else:
+      # # initialize gMonitor
+      gMonitor.setComponentType(gMonitor.COMPONENT_AGENT)
+      gMonitor.setComponentName(self.agentName)
+      gMonitor.initialize()
+
+      # # own gMonitor activities
+      gMonitor.registerActivity("RequestAtt", "Requests processed",
+                                "RequestExecutingAgent", "Requests/min", gMonitor.OP_SUM)
+      gMonitor.registerActivity("RequestFail", "Requests failed",
+                                "RequestExecutingAgent", "Requests/min", gMonitor.OP_SUM)
+      gMonitor.registerActivity("RequestOK", "Requests done",
+                                "RequestExecutingAgent", "Requests/min", gMonitor.OP_SUM)
 
     if requestClient is None:
       self.requestClient = ReqClient()
@@ -182,8 +192,7 @@ class RequestTask(object):
       pluginPath = ".".join([chunk for chunk in pluginPath.split("/") if chunk])
     return pluginPath.split(".")[-1]
 
-  @staticmethod
-  def loadHandler(pluginPath):
+  def loadHandler(self, pluginPath):
     """ Create an instance of requested plugin class, loading and importing it when needed.
     This function could raise ImportError when plugin cannot be find or TypeError when
     loaded class object isn't inherited from BaseOperation class.
@@ -218,11 +227,13 @@ class RequestTask(object):
       raise TypeError(
           "operation handler '%s' isn't inherited from OperationHandlerBase class" %
           pluginName)
-    for key, status in (("Att", "Attempted"), ("OK", "Successful"), ("Fail", "Failed")):
-      gMonitor.registerActivity(
-          "%s%s" %
-          (pluginName, key), "%s operations %s" %
-          (pluginName, status), "RequestExecutingAgent", "Operations/min", gMonitor.OP_SUM)
+
+    if not self.rmsMonitoring:
+      for key, status in (("Att", "Attempted"), ("OK", "Successful"), ("Fail", "Failed")):
+        gMonitor.registerActivity(
+            "%s%s" %
+            (pluginName, key), "%s operations %s" %
+            (pluginName, status), "RequestExecutingAgent", "Operations/min", gMonitor.OP_SUM)
     # # return an instance
     return pluginClassObj
 
@@ -261,7 +272,8 @@ class RequestTask(object):
     """ request processing """
 
     self.log.debug("about to execute request")
-    gMonitor.addMark("RequestAtt", 1)
+    if not self.rmsMonitoring:
+      gMonitor.addMark("RequestAtt", 1)
 
     # # setup proxy for request owner
     setupProxy = self.setupProxy()
@@ -281,6 +293,7 @@ class RequestTask(object):
     proxyFile = setupProxy["Value"]["ProxyFile"]
 
     error = None
+
     while self.request.Status == "Waiting":
 
       # # get waiting operation
@@ -311,7 +324,19 @@ class RequestTask(object):
         useServerCertificate = True
       try:
         if pluginName:
-          gMonitor.addMark("%s%s" % (pluginName, "Att"), 1)
+          if self.rmsMonitoring:
+            self.rmsMonitoringReporter.addRecord({
+                "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
+                "host": socket.getfqdn(),
+                "objectType": "Operation",
+                "operationType": pluginName,
+                "objectID": operation.OperationID,
+                "parentID": operation.RequestID,
+                "status": "OperationAttempted",
+                "nbObject": 1
+            })
+          else:
+            gMonitor.addMark("%s%s" % (pluginName, "Att"), 1)
         # Always use request owner proxy
         if useServerCertificate:
           gConfigurationData.setOptionInCFG('/DIRAC/Security/UseServerCertificate', 'false')
@@ -321,8 +346,31 @@ class RequestTask(object):
         if not exe["OK"]:
           self.log.error("unable to process operation", "%s: %s" % (operation.Type, exe["Message"]))
           if pluginName:
-            gMonitor.addMark("%s%s" % (pluginName, "Fail"), 1)
-          gMonitor.addMark("RequestFail", 1)
+            if self.rmsMonitoring:
+              self.rmsMonitoringReporter.addRecord({
+                  "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
+                  "host": socket.getfqdn(),
+                  "objectType": "Operation",
+                  "operationType": pluginName,
+                  "objectID": operation.OperationID,
+                  "parentID": operation.RequestID,
+                  "status": "OperationFailed",
+                  "nbObject": 1
+              })
+            else:
+              gMonitor.addMark("%s%s" % (pluginName, "Fail"), 1)
+          if self.rmsMonitoring:
+            self.rmsMonitoringReporter.addRecord({
+                "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
+                "host": socket.getfqdn(),
+                "objectType": "Request",
+                "objectID": operation.RequestID,
+                "status": "RequestFailed",
+                "nbObject": 1
+            })
+          else:
+            gMonitor.addMark("RequestFail", 1)
+
           if self.request.JobID:
             # Check if the job exists
             monitorServer = RPCClient("WorkloadManagement/JobMonitoring", useCertificates=True)
@@ -340,22 +388,70 @@ class RequestTask(object):
       except Exception as error:
         self.log.exception("hit by exception:", "%s" % error)
         if pluginName:
-          gMonitor.addMark("%s%s" % (pluginName, "Fail"), 1)
-        gMonitor.addMark("RequestFail", 1)
+          if self.rmsMonitoring:
+            self.rmsMonitoringReporter.addRecord({
+                "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
+                "host": socket.getfqdn(),
+                "objectType": "Operation",
+                "operationType": pluginName,
+                "objectID": operation.OperationID,
+                "parentID": operation.RequestID,
+                "status": "OperationFailed",
+                "nbObject": 1
+            })
+          else:
+            gMonitor.addMark("%s%s" % (pluginName, "Fail"), 1)
+        if self.rmsMonitoring:
+          self.rmsMonitoringReporter.addRecord({
+              "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
+              "host": socket.getfqdn(),
+              "objectType": "Request",
+              "objectID": operation.RequestID,
+              "status": "RequestFailed",
+              "nbObject": 1
+          })
+        else:
+          gMonitor.addMark("RequestFail", 1)
+
         if useServerCertificate:
           gConfigurationData.setOptionInCFG('/DIRAC/Security/UseServerCertificate', 'true')
         break
 
       # # operation status check
       if operation.Status == "Done" and pluginName:
-        gMonitor.addMark("%s%s" % (pluginName, "OK"), 1)
+        if self.rmsMonitoring:
+          self.rmsMonitoringReporter.addRecord({
+              "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
+              "host": socket.getfqdn(),
+              "objectType": "Operation",
+              "operationType": pluginName,
+              "objectID": operation.OperationID,
+              "parentID": operation.RequestID,
+              "status": "OperationSuccessful",
+              "nbObject": 1
+          })
+        else:
+          gMonitor.addMark("%s%s" % (pluginName, "OK"), 1)
       elif operation.Status == "Failed" and pluginName:
-        gMonitor.addMark("%s%s" % (pluginName, "Fail"), 1)
+        if self.rmsMonitoring:
+          self.rmsMonitoringReporter.addRecord({
+              "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
+              "host": socket.getfqdn(),
+              "objectType": "Operation",
+              "operationType": pluginName,
+              "objectID": operation.OperationID,
+              "parentID": operation.RequestID,
+              "status": "OperationFailed",
+              "nbObject": 1
+          })
+        else:
+          gMonitor.addMark("%s%s" % (pluginName, "Fail"), 1)
       elif operation.Status in ("Waiting", "Scheduled"):
         # # no update for waiting or all files scheduled
         break
 
-    gMonitor.flush()
+    if not self.rmsMonitoring:
+      gMonitor.flush()
 
     if error:
       return S_ERROR(error)
@@ -369,7 +465,17 @@ class RequestTask(object):
         self.log.error("Cannot update request status", update["Message"])
         return update
       self.log.info("request is done", "%s" % self.request.RequestName)
-      gMonitor.addMark("RequestOK", 1)
+      if self.rmsMonitoring:
+        self.rmsMonitoringReporter.addRecord({
+            "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
+            "host": socket.getfqdn(),
+            "objectType": "Request",
+            "objectID": self.request.RequestID,
+            "status": "RequestSuccessful",
+            "nbObject": 1
+        })
+      else:
+        gMonitor.addMark("RequestOK", 1)
       # # and there is a job waiting for it? finalize!
       if self.request.JobID:
         attempts = 0
@@ -397,6 +503,9 @@ class RequestTask(object):
                   attempts) if attempts else ''))
             break
 
+    # Commit all the data to the ES Backend
+    if self.rmsMonitoring:
+      self.rmsMonitoringReporter.commit()
     # Request will be updated by the callBack method
     self.log.verbose("RequestTasks exiting", "request %s" % self.request.Status)
     return S_OK(self.request)

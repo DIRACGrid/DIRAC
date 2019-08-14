@@ -24,7 +24,7 @@ class RMSMonitoring(BaseType):
     :param self: self reference
     """
 
-    self.keyFields = ["host", "objecType", "operationType", "status", "objectID", "parentID"]
+    self.keyFields = ["host", "objectType", "operationType", "status", "objectID", "parentID"]
 
     self.monitoringFields = ["nbObject"]
 
