@@ -6,7 +6,7 @@
 # - starts it
 #
 # It should be executed for different versions of python, e.g.:
-# - 2.5.x
+# - 2.6.x
 # - 2.7.x (x < 9)
 # - 2.7.x (x >= 9)
 # (- 3.6.x)
@@ -27,11 +27,18 @@ if sys.version_info >= (2, 7, 9):
   context = ssl._create_unverified_context()
   rf = urllib2.urlopen(sys.argv[1],
                        context=context)
-  di = urllib2.urlopen('https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/Core/scripts/dirac-install.py',
-                       context=context)
+  try:  # dirac-install.py location from the args, if provided
+    di = urllib2.urlopen(sys.argv[2],
+                         context=context)
+  except IndexError:
+    di = urllib2.urlopen('https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/Core/scripts/dirac-install.py',
+                         context=context)
 else:
   rf = urllib2.urlopen(sys.argv[1])
-  di = urllib2.urlopen('https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/Core/scripts/dirac-install.py')
+  try:  # dirac-install.py location from the args, if provided
+    di = urllib2.urlopen(sys.argv[2])
+  except IndexError:
+    di = urllib2.urlopen('https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/Core/scripts/dirac-install.py')
 
 with open('PilotWrapper.py', 'wb') as pj:
   pj.write(rf.read())
@@ -52,7 +59,7 @@ diracInstallEncoded = base64.b64encode(bz2.compress(diracInstall, 9))
 
 res = pilotWrapperScript(
     pilotFilesCompressedEncodedDict={'dirac-install.py': diracInstallEncoded},
-    pilotOptions="-c 123 --foo bar",
+    pilotOptions="--commands CheckWorkerNode,InstallDIRAC --setup=DIRAC-Certification --debug",
     location='lbcertifdirac7.cern.ch:8443')
 
 with open('pilot-wrapper.sh', 'wb') as pj:

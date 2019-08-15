@@ -166,15 +166,15 @@ try:
 except urllib2.URLError:
   print('%(location)s unreacheable')
 
-pj = open('pilot.json', 'wb') pj:
+pj = open('pilot.json', 'wb')
 pj.write(rJson.read())
 pj.close()
 
-pt = open('pilot.tar', 'wb') pt:
+pt = open('pilot.tar', 'wb')
 pt.write(rTar.read())
 pt.close()
 
-pt = tarfile.open('pilot.tar', 'r'):
+pt = tarfile.open('pilot.tar', 'r')
 pt.extractall()
 pt.close()
 """ % {'location': location}
