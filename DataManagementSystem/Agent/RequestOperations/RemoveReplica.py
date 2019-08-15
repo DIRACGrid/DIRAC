@@ -28,10 +28,16 @@ __RCSID__ = "$Id $"
 
 # # imports
 import os
+import time
+import datetime
+import socket
 # # from DIRAC
 from DIRAC import S_OK
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase import DMSRequestOperationsBase
+
+from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 ########################################################################
 
@@ -51,13 +57,20 @@ class RemoveReplica(DMSRequestOperationsBase):
     """
     # # base class ctor
     DMSRequestOperationsBase.__init__(self, operation, csPath)
-    # # gMonitor stuff
-    gMonitor.registerActivity("RemoveReplicaAtt", "Replica removals attempted",
-                              "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
-    gMonitor.registerActivity("RemoveReplicaOK", "Successful replica removals",
-                              "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
-    gMonitor.registerActivity("RemoveReplicaFail", "Failed replica removals",
-                              "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
+
+    # Check whether the ES flag is enabled so we can send the data accordingly.
+    self.rmsMonitoring = Operations().getValue("EnableActivityMonitoring", False)
+
+    if self.rmsMonitoring:
+      self.rmsMonitoringReporter = MonitoringReporter(monitoringType="RMSMonitoring")
+    else:
+      # # gMonitor stuff
+      gMonitor.registerActivity("RemoveReplicaAtt", "Replica removals attempted",
+                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
+      gMonitor.registerActivity("RemoveReplicaOK", "Successful replica removals",
+                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
+      gMonitor.registerActivity("RemoveReplicaFail", "Failed replica removals",
+                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
 
   def __call__(self):
     """ remove replicas """
@@ -66,8 +79,23 @@ class RemoveReplica(DMSRequestOperationsBase):
     # # check targetSEs for removal
     bannedTargets = self.checkSEsRSS(targetSEs, access='RemoveAccess')
     if not bannedTargets['OK']:
-      gMonitor.addMark("RemoveReplicaAtt")
-      gMonitor.addMark("RemoveReplicaFail")
+      if self.rmsMonitoring:
+        for opFile in self.operation:
+          for status in ["FileAttempted", "FileFailed"]:
+            self.rmsMonitoringReporter.addRecord({
+                "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
+                "host": socket.getfqdn(),
+                "objectType": "File",
+                "operationType": self.operation.Type,
+                "objectID": opFile.FileID,
+                "parentID": self.operation.OperationID,
+                "status": status,
+                "nbObject": 1
+            })
+        self.rmsMonitoringReporter.commit()
+      else:
+        gMonitor.addMark("RemoveReplicaAtt")
+        gMonitor.addMark("RemoveReplicaFail")
       return bannedTargets
 
     if bannedTargets['Value']:
@@ -79,7 +107,21 @@ class RemoveReplica(DMSRequestOperationsBase):
     toRemoveDict = dict((opFile.LFN, opFile) for opFile in waitingFiles)
 
     self.log.info("Todo: %s replicas to delete from %s SEs" % (len(toRemoveDict), len(targetSEs)))
-    gMonitor.addMark("RemoveReplicaAtt", len(toRemoveDict) * len(targetSEs))
+
+    if self.rmsMonitoring:
+      for opFile in toRemoveDict.values():
+        self.rmsMonitoringReporter.addRecord({
+            "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
+            "host": socket.getfqdn(),
+            "objectType": "File",
+            "operationType": self.operation.Type,
+            "objectID": opFile.FileID,
+            "parentID": self.operation.OperationID,
+            "status": "FileAttempted",
+            "nbObject": len(targetSEs)
+        })
+    else:
+      gMonitor.addMark("RemoveReplicaAtt", len(toRemoveDict) * len(targetSEs))
 
     # # keep status for each targetSE
     removalStatus = dict.fromkeys(toRemoveDict, None)
@@ -95,20 +137,62 @@ class RemoveReplica(DMSRequestOperationsBase):
       bulkRemoval = self._bulkRemoval(toRemoveDict, targetSE)
       if not bulkRemoval["OK"]:
         self.log.error('Bulk replica removal failed', bulkRemoval["Message"])
+
+        if self.rmsMonitoring:
+          self.rmsMonitoringReporter.commit()
+
         return bulkRemoval
 
       # # report removal status for successful files
-      gMonitor.addMark("RemoveReplicaOK", len([opFile for opFile in toRemoveDict.itervalues() if not opFile.Error]))
+      if self.rmsMonitoring:
+        for opFile in toRemoveDict.values():
+          if not opFile.Error:
+            self.rmsMonitoringReporter.addRecord({
+                "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
+                "host": socket.getfqdn(),
+                "objectType": "File",
+                "operationType": self.operation.Type,
+                "objectID": opFile.FileID,
+                "parentID": self.operation.OperationID,
+                "status": "FileSuccessful",
+                "nbObject": 1
+            })
+      else:
+        gMonitor.addMark("RemoveReplicaOK", len([opFile for opFile in toRemoveDict.itervalues() if not opFile.Error]))
 
       # # 2nd step - process the rest again
       toRetry = dict((lfn, opFile) for lfn, opFile in toRemoveDict.iteritems() if opFile.Error)
       for lfn, opFile in toRetry.iteritems():
         self._removeWithOwnerProxy(opFile, targetSE)
         if opFile.Error:
-          gMonitor.addMark("RemoveReplicaFail", 1)
+          if self.rmsMonitoring:
+            self.rmsMonitoringReporter.addRecord({
+                "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
+                "host": socket.getfqdn(),
+                "objectType": "File",
+                "operationType": self.operation.Type,
+                "objectID": opFile.FileID,
+                "parentID": self.operation.OperationID,
+                "status": "FileFailed",
+                "nbObject": 1
+            })
+          else:
+            gMonitor.addMark("RemoveReplicaFail", 1)
           removalStatus[lfn][targetSE] = opFile.Error
         else:
-          gMonitor.addMark("RemoveReplicaOK", 1)
+          if self.rmsMonitoring:
+            self.rmsMonitoringReporter.addRecord({
+                "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
+                "host": socket.getfqdn(),
+                "objectType": "File",
+                "operationType": self.operation.Type,
+                "objectID": opFile.FileID,
+                "parentID": self.operation.OperationID,
+                "status": "FileSuccessful",
+                "nbObject": 1
+            })
+          else:
+            gMonitor.addMark("RemoveReplicaOK", 1)
 
     # # update file status for waiting files
     failed = 0
@@ -126,6 +210,9 @@ class RemoveReplica(DMSRequestOperationsBase):
 
     if failed:
       self.operation.Error = "failed to remove %s replicas" % failed
+
+    if self.rmsMonitoring:
+      self.rmsMonitoringReporter.commit()
 
     return S_OK()
 

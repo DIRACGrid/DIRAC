@@ -27,13 +27,20 @@ __RCSID__ = "$Id $"
 # @brief Definition of ReTransfer class.
 
 # # imports
+import time
+import datetime
+import socket
 from DIRAC import S_OK, S_ERROR
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase import DMSRequestOperationsBase
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 
+from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 ########################################################################
+
+
 class ReTransfer(DMSRequestOperationsBase):
   """
   .. class:: ReTransfer
@@ -53,13 +60,20 @@ class ReTransfer(DMSRequestOperationsBase):
     """
     # # base class ctor
     DMSRequestOperationsBase.__init__(self, operation, csPath)
-    # # gMonitor stuff
-    gMonitor.registerActivity("FileReTransferAtt", "File retransfers attempted",
-                              "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
-    gMonitor.registerActivity("FileReTransferOK", "File retransfers successful",
-                              "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
-    gMonitor.registerActivity("FileReTransferFail", "File retransfers failed",
-                              "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
+
+    # Check whether the ES flag is enabled so we can send the data accordingly.
+    self.rmsMonitoring = Operations().getValue("EnableActivityMonitoring", False)
+
+    if self.rmsMonitoring:
+      self.rmsMonitoringReporter = MonitoringReporter(monitoringType="RMSMonitoring")
+    else:
+      # # gMonitor stuff
+      gMonitor.registerActivity("FileReTransferAtt", "File retransfers attempted",
+                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
+      gMonitor.registerActivity("FileReTransferOK", "File retransfers successful",
+                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
+      gMonitor.registerActivity("FileReTransferFail", "File retransfers failed",
+                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
 
   def __call__(self):
     """ reTransfer operation execution """
@@ -69,8 +83,23 @@ class ReTransfer(DMSRequestOperationsBase):
     targetSE = targetSEs[0]
     bannedTargets = self.checkSEsRSS(targetSE)
     if not bannedTargets['OK']:
-      gMonitor.addMark("FileReTransferAtt")
-      gMonitor.addMark("FileReTransferFail")
+      if self.rmsMonitoring:
+        for opFile in self.operation:
+          for status in ["FileAttempted", "FileFailed"]:
+            self.rmsMonitoringReporter.addRecord({
+                "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
+                "host": socket.getfqdn(),
+                "objectType": "File",
+                "operationType": self.operation.Type,
+                "objectID": opFile.FileID,
+                "parentID": self.operation.OperationID,
+                "status": status,
+                "nbObject": 1
+            })
+        self.rmsMonitoringReporter.commit()
+      else:
+        gMonitor.addMark("FileReTransferAtt")
+        gMonitor.addMark("FileReTransferFail")
       return bannedTargets
 
     if bannedTargets['Value']:
@@ -81,7 +110,20 @@ class ReTransfer(DMSRequestOperationsBase):
     # # prepare waiting files
     toRetransfer = dict([(opFile.PFN, opFile) for opFile in waitingFiles])
 
-    gMonitor.addMark("FileReTransferAtt", len(toRetransfer))
+    if self.rmsMonitoring:
+      for opFile in toRetransfer.values():
+        self.rmsMonitoringReporter.addRecord({
+            "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
+            "host": socket.getfqdn(),
+            "objectType": "File",
+            "operationType": self.operation.Type,
+            "objectID": opFile.FileID,
+            "parentID": self.operation.OperationID,
+            "status": "FileAttempted",
+            "nbObject": 1
+        })
+    else:
+      gMonitor.addMark("FileReTransferAtt", len(toRetransfer))
 
     if len(targetSEs) != 1:
       error = "only one TargetSE allowed, got %d" % len(targetSEs)
@@ -89,25 +131,75 @@ class ReTransfer(DMSRequestOperationsBase):
         opFile.Error = error
         opFile.Status = "Failed"
       self.operation.Error = error
-      gMonitor.addMark("FileReTransferFail", len(toRetransfer))
+
+      if self.rmsMonitoring:
+        for opFile in toRetransfer.values():
+          self.rmsMonitoringReporter.addRecord({
+              "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
+              "host": socket.getfqdn(),
+              "objectType": "File",
+              "operationType": self.operation.Type,
+              "objectID": opFile.FileID,
+              "parentID": self.operation.OperationID,
+              "status": "FileFailed",
+              "nbObject": 1
+          })
+        self.rmsMonitoringReporter.commit()
+      else:
+        gMonitor.addMark("FileReTransferFail", len(toRetransfer))
+
       return S_ERROR(error)
 
     se = StorageElement(targetSE)
     for opFile in toRetransfer.values():
+      # template for file object
+      if self.rmsMonitoring:
+        fileObj = {
+            "host": socket.getfqdn(),
+            "objectType": "File",
+            "operationType": self.operation.Type,
+            "objectID": opFile.FileID,
+            "parentID": self.operation.OperationID,
+            "nbObject": 1
+        }
+
       reTransfer = se.retransferOnlineFile(opFile.LFN)
       if not reTransfer["OK"]:
         opFile.Error = reTransfer["Message"]
         self.log.error("Retransfer failed", opFile.Error)
-        gMonitor.addMark("FileReTransferFail", 1)
+
+        if self.rmsMonitoring:
+          fileObj["timestamp"] = time.mktime(datetime.datetime.utcnow().timetuple())
+          fileObj["status"] = "FileFailed"
+          self.rmsMonitoringReporter.addRecord(fileObj)
+        else:
+          gMonitor.addMark("FileReTransferFail", 1)
+
         continue
       reTransfer = reTransfer["Value"]
       if opFile.LFN in reTransfer["Failed"]:
         opFile.Error = reTransfer["Failed"][opFile.LFN]
         self.log.error("Retransfer failed", opFile.Error)
-        gMonitor.addMark("FileReTransferFail", 1)
+
+        if self.rmsMonitoring:
+          fileObj["timestamp"] = time.mktime(datetime.datetime.utcnow().timetuple())
+          fileObj["status"] = "FileFailed"
+          self.rmsMonitoringReporter.addRecord(fileObj)
+        else:
+          gMonitor.addMark("FileReTransferFail", 1)
+
         continue
       opFile.Status = "Done"
       self.log.info("%s retransfer done" % opFile.LFN)
-      gMonitor.addMark("FileReTransferOK", 1)
+
+      if self.rmsMonitoring:
+        fileObj["timestamp"] = time.mktime(datetime.datetime.utcnow().timetuple())
+        fileObj["status"] = "FileSuccessful"
+        self.rmsMonitoringReporter.addRecord(fileObj)
+      else:
+        gMonitor.addMark("FileReTransferOK", 1)
+
+    if self.rmsMonitoring:
+      self.rmsMonitoringReporter.commit()
 
     return S_OK()

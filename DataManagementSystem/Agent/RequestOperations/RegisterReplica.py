@@ -11,9 +11,15 @@
 
 __RCSID__ = "$Id $"
 
+import time
+import datetime
+import socket
 from DIRAC import S_OK, S_ERROR
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase import DMSRequestOperationsBase
+
+from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 ########################################################################
 
@@ -34,13 +40,20 @@ class RegisterReplica(DMSRequestOperationsBase):
 
     """
     DMSRequestOperationsBase.__init__(self, operation, csPath)
-    # # RegisterReplica specific monitor info
-    gMonitor.registerActivity("RegisterReplicaAtt", "Attempted replicas registrations",
-                              "RequestExecutingAgent", "Replicas/min", gMonitor.OP_SUM)
-    gMonitor.registerActivity("RegisterReplicaOK", "Successful replicas registrations",
-                              "RequestExecutingAgent", "Replicas/min", gMonitor.OP_SUM)
-    gMonitor.registerActivity("RegisterReplicaFail", "Failed replicas registrations",
-                              "RequestExecutingAgent", "Replicas/min", gMonitor.OP_SUM)
+
+    # Check whether the ES flag is enabled so we can send the data accordingly.
+    self.rmsMonitoring = Operations().getValue("EnableActivityMonitoring", False)
+
+    if self.rmsMonitoring:
+      self.rmsMonitoringReporter = MonitoringReporter(monitoringType="RMSMonitoring")
+    else:
+      # # RegisterReplica specific monitor info
+      gMonitor.registerActivity("RegisterReplicaAtt", "Attempted replicas registrations",
+                                "RequestExecutingAgent", "Replicas/min", gMonitor.OP_SUM)
+      gMonitor.registerActivity("RegisterReplicaOK", "Successful replicas registrations",
+                                "RequestExecutingAgent", "Replicas/min", gMonitor.OP_SUM)
+      gMonitor.registerActivity("RegisterReplicaFail", "Failed replicas registrations",
+                                "RequestExecutingAgent", "Replicas/min", gMonitor.OP_SUM)
 
   def __call__(self):
     """ call me maybe """
@@ -57,7 +70,19 @@ class RegisterReplica(DMSRequestOperationsBase):
     registerOperations = {}
     for opFile in waitingFiles:
 
-      gMonitor.addMark("RegisterReplicaAtt", 1)
+      if self.rmsMonitoring:
+        self.rmsMonitoringReporter.addRecord({
+            "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
+            "host": socket.getfqdn(),
+            "objectType": "File",
+            "operationType": self.operation.Type,
+            "objectID": opFile.FileID,
+            "parentID": self.operation.OperationID,
+            "status": "FileAttempted",
+            "nbObject": 1
+        })
+      else:
+        gMonitor.addMark("RegisterReplicaAtt", 1)
 
       # # get LFN
       lfn = opFile.LFN
@@ -69,7 +94,21 @@ class RegisterReplica(DMSRequestOperationsBase):
       # # check results
       if not registerReplica["OK"] or lfn in registerReplica["Value"]["Failed"]:
         # There have been some errors
-        gMonitor.addMark("RegisterReplicaFail", 1)
+
+        if self.rmsMonitoring:
+          self.rmsMonitoringReporter.addRecord({
+              "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
+              "host": socket.getfqdn(),
+              "objectType": "File",
+              "operationType": self.operation.Type,
+              "objectID": opFile.FileID,
+              "parentID": self.operation.OperationID,
+              "status": "FileFailed",
+              "nbObject": 1
+          })
+        else:
+          gMonitor.addMark("RegisterReplicaFail", 1)
+#        self.dataLoggingClient().addFileRecord( lfn, "RegisterReplicaFail", ','.join( catalogs ) if catalogs else "all catalogs", "", "RegisterReplica" )
 
         reason = registerReplica.get("Message", registerReplica.get("Value", {}).get("Failed", {}).get(lfn, 'Unknown'))
         errorStr = "failed to register LFN %s: %s" % (lfn, str(reason))
@@ -92,8 +131,8 @@ class RegisterReplica(DMSRequestOperationsBase):
           if isinstance(reason, dict):
             from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
             for failedCatalog in reason:
-              catMaster = catMaster and FileCatalog()._getCatalogConfigDetails(failedCatalog)\
-                  .get('Value', {}).get('Master', False)
+              catMaster = (catMaster and
+                           FileCatalog()._getCatalogConfigDetails(failedCatalog).get('Value', {}).get('Master', False))
           # If one targets explicitly a catalog and it fails or if it fails on the master catalog
           if (
                   catalogs or catMaster) and (
@@ -111,7 +150,20 @@ class RegisterReplica(DMSRequestOperationsBase):
 
       else:
         # All is OK
-        gMonitor.addMark("RegisterReplicaOK", 1)
+        if self.rmsMonitoring:
+          self.rmsMonitoringReporter.addRecord({
+              "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
+              "host": socket.getfqdn(),
+              "objectType": "File",
+              "operationType": self.operation.Type,
+              "objectID": opFile.FileID,
+              "parentID": self.operation.OperationID,
+              "status": "FileSuccessful",
+              "nbObject": 1
+          })
+        else:
+          gMonitor.addMark("RegisterReplicaOK", 1)
+#        self.dataLoggingClient().addFileRecord( lfn, "RegisterReplicaOK", ','.join( catalogs ) if catalogs else "all catalogs", "", "RegisterReplica" )
 
         self.log.info("Replica %s has been registered at %s" %
                       (lfn, ','.join(catalogs) if catalogs else "all catalogs"))
@@ -122,6 +174,10 @@ class RegisterReplica(DMSRequestOperationsBase):
       self.log.info("adding %d operations to the request" % len(registerOperations))
     for operation in registerOperations.values():
       self.operation._parent.addOperation(operation)
+
+    if self.rmsMonitoring:
+      self.rmsMonitoringReporter.commit()
+
     # # final check
     if failedReplicas:
       self.log.info("all replicas processed, %s replicas failed to register" % failedReplicas)

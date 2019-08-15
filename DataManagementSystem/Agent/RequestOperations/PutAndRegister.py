@@ -27,10 +27,16 @@ __RCSID__ = "$Id $"
 # @brief Definition of PutAndRegister class.
 
 # # imports
+import time
+import datetime
+import socket
 from DIRAC import S_OK, S_ERROR
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase import DMSRequestOperationsBase
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
+
+from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 ########################################################################
 
@@ -54,17 +60,24 @@ class PutAndRegister(DMSRequestOperationsBase):
     """
     # # base classes ctor
     super(PutAndRegister, self).__init__(operation, csPath)
-    # # gMonitor stuff
-    gMonitor.registerActivity("PutAtt", "File put attempts",
-                              "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
-    gMonitor.registerActivity("PutFail", "Failed file puts",
-                              "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
-    gMonitor.registerActivity("PutOK", "Successful file puts",
-                              "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
-    gMonitor.registerActivity("RegisterOK", "Successful file registrations",
-                              "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
-    gMonitor.registerActivity("RegisterFail", "Failed file registrations",
-                              "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
+
+    # Check whether the ES flag is enabled so we can send the data accordingly.
+    self.rmsMonitoring = Operations().getValue("EnableActivityMonitoring", False)
+
+    if self.rmsMonitoring:
+      self.rmsMonitoringReporter = MonitoringReporter(monitoringType="RMSMonitoring")
+    else:
+      # # gMonitor stuff
+      gMonitor.registerActivity("PutAtt", "File put attempts",
+                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
+      gMonitor.registerActivity("PutFail", "Failed file puts",
+                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
+      gMonitor.registerActivity("PutOK", "Successful file puts",
+                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
+      gMonitor.registerActivity("RegisterOK", "Successful file registrations",
+                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
+      gMonitor.registerActivity("RegisterFail", "Failed file registrations",
+                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
 
     self.dm = DataManager()
 
@@ -82,16 +95,45 @@ class PutAndRegister(DMSRequestOperationsBase):
         opFile.Status = "Failed"
         opFile.Error = "Wrong parameters: TargetSE should contain only one targetSE"
 
-        gMonitor.addMark("PutAtt", 1)
-        gMonitor.addMark("PutFail", 1)
+        if self.rmsMonitoring:
+          for status in ["FileAttempted", "FileFailed"]:
+            self.rmsMonitoringReporter.addRecord({
+                "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
+                "host": socket.getfqdn(),
+                "objectType": "File",
+                "operationType": self.operation.Type,
+                "objectID": opFile.FileID,
+                "parentID": self.operation.OperationID,
+                "status": status,
+                "nbObject": 1
+            })
+          self.rmsMonitoringReporter.commit()
+        else:
+          gMonitor.addMark("PutAtt", 1)
+          gMonitor.addMark("PutFail", 1)
 
       return S_ERROR("TargetSE should contain only one target, got %s" % targetSEs)
 
     targetSE = targetSEs[0]
     bannedTargets = self.checkSEsRSS(targetSE)
     if not bannedTargets['OK']:
-      gMonitor.addMark("PutAtt")
-      gMonitor.addMark("PutFail")
+      if self.rmsMonitoring:
+        for opFile in self.operation:
+          for status in ["FileAttempted", "FileFailed"]:
+            self.rmsMonitoringReporter.addRecord({
+                "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
+                "host": socket.getfqdn(),
+                "objectType": "File",
+                "operationType": self.operation.Type,
+                "objectID": opFile.FileID,
+                "parentID": self.operation.OperationID,
+                "status": status,
+                "nbObject": 1
+            })
+        self.rmsMonitoringReporter.commit()
+      else:
+        gMonitor.addMark("PutAtt")
+        gMonitor.addMark("PutFail")
       return bannedTargets
 
     if bannedTargets['Value']:
@@ -105,7 +147,20 @@ class PutAndRegister(DMSRequestOperationsBase):
       # # get LFN
       lfn = opFile.LFN
       self.log.info("processing file %s" % lfn)
-      gMonitor.addMark("PutAtt", 1)
+
+      if self.rmsMonitoring:
+        self.rmsMonitoringReporter.addRecord({
+            "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
+            "host": socket.getfqdn(),
+            "objectType": "File",
+            "operationType": self.operation.Type,
+            "objectID": opFile.FileID,
+            "parentID": self.operation.OperationID,
+            "status": "FileAttempted",
+            "nbObject": 1
+        })
+      else:
+        gMonitor.addMark("PutAtt", 1)
 
       pfn = opFile.PFN
       guid = opFile.GUID
@@ -120,8 +175,23 @@ class PutAndRegister(DMSRequestOperationsBase):
                                                                      targetSE,
                                                                      guid=guid,
                                                                      checksum=checksum)
+      # Template object for a failing file object.
+      if self.rmsMonitoring:
+        failFileObj = {
+            "host": socket.getfqdn(),
+            "objectType": "File",
+            "operationType": self.operation.Type,
+            "objectID": opFile.FileID,
+            "parentID": self.operation.OperationID,
+            "status": "FileFailed",
+            "nbObject": 1
+        }
       if not putAndRegister["OK"]:
-        gMonitor.addMark("PutFail", 1)
+        if self.rmsMonitoring:
+          failFileObj["timestamp"] = time.mktime(datetime.datetime.utcnow().timetuple())
+          self.rmsMonitoringReporter.addRecord(failFileObj)
+        else:
+          gMonitor.addMark("PutFail", 1)
 #         self.dataLoggingClient().addFileRecord( lfn, "PutFail", targetSE, "", "PutAndRegister" )
         self.log.error("Completely failed to put and register file", putAndRegister["Message"])
         opFile.Error = str(putAndRegister["Message"])
@@ -131,7 +201,11 @@ class PutAndRegister(DMSRequestOperationsBase):
       putAndRegister = putAndRegister["Value"]
 
       if lfn in putAndRegister["Failed"]:
-        gMonitor.addMark("PutFail", 1)
+        if self.rmsMonitoring:
+          failFileObj["timestamp"] = time.mktime(datetime.datetime.utcnow().timetuple())
+          self.rmsMonitoringReporter.addRecord(failFileObj)
+        else:
+          gMonitor.addMark("PutFail", 1)
 #         self.dataLoggingClient().addFileRecord( lfn, "PutFail", targetSE, "", "PutAndRegister" )
 
         reason = putAndRegister["Failed"][lfn]
@@ -145,7 +219,11 @@ class PutAndRegister(DMSRequestOperationsBase):
 
         if "put" not in putAndRegister[lfn]:
 
-          gMonitor.addMark("PutFail", 1)
+          if self.rmsMonitoring:
+            failFileObj["timestamp"] = time.mktime(datetime.datetime.utcnow().timetuple())
+            self.rmsMonitoringReporter.addRecord(failFileObj)
+          else:
+            gMonitor.addMark("PutFail", 1)
 #           self.dataLoggingClient().addFileRecord( lfn, "PutFail", targetSE, "", "PutAndRegister" )
 
           self.log.info("failed to put %s to %s" % (lfn, targetSE))
@@ -156,8 +234,12 @@ class PutAndRegister(DMSRequestOperationsBase):
 
         if "register" not in putAndRegister[lfn]:
 
-          gMonitor.addMark("PutOK", 1)
-          gMonitor.addMark("RegisterFail", 1)
+          if self.rmsMonitoring:
+            failFileObj["timestamp"] = time.mktime(datetime.datetime.utcnow().timetuple())
+            self.rmsMonitoringReporter.addRecord(failFileObj)
+          else:
+            gMonitor.addMark("PutOK", 1)
+            gMonitor.addMark("RegisterFail", 1)
 
 #           self.dataLoggingClient().addFileRecord( lfn, "Put", targetSE, "", "PutAndRegister" )
 #           self.dataLoggingClient().addFileRecord( lfn, "RegisterFail", targetSE, "", "PutAndRegister" )
@@ -173,8 +255,20 @@ class PutAndRegister(DMSRequestOperationsBase):
           self.request.insertAfter(registerOperation, self.operation)
           continue
 
-        gMonitor.addMark("PutOK", 1)
-        gMonitor.addMark("RegisterOK", 1)
+        if self.rmsMonitoring:
+          self.rmsMonitoringReporter.addRecord({
+              "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
+              "host": socket.getfqdn(),
+              "objectType": "File",
+              "operationType": self.operation.Type,
+              "objectID": opFile.FileID,
+              "parentID": self.operation.OperationID,
+              "status": "FileSuccessful",
+              "nbObject": 1
+          })
+        else:
+          gMonitor.addMark("PutOK", 1)
+          gMonitor.addMark("RegisterOK", 1)
 
 #         self.dataLoggingClient().addFileRecord( lfn, "Put", targetSE, "", "PutAndRegister" )
 #         self.dataLoggingClient().addFileRecord( lfn, "Register", targetSE, "", "PutAndRegister" )
@@ -182,5 +276,8 @@ class PutAndRegister(DMSRequestOperationsBase):
         opFile.Status = "Done"
         for op in ("put", "register"):
           self.log.info("%s of %s to %s took %s seconds" % (op, lfn, targetSE, putAndRegister[lfn][op]))
+
+    if self.rmsMonitoring:
+      self.rmsMonitoringReporter.commit()
 
     return S_OK()

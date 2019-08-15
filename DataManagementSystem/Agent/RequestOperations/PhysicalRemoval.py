@@ -27,11 +27,17 @@ __RCSID__ = "$Id $"
 
 # # imports
 import os
+import time
+import datetime
+import socket
 # # from DIRAC
 from DIRAC import S_OK
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase import DMSRequestOperationsBase
 from DIRAC.Resources.Storage.StorageElement import StorageElement
+
+from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 ########################################################################
 
@@ -50,6 +56,7 @@ class PhysicalRemoval(DMSRequestOperationsBase):
     :param str csPath: cs config path
     """
     DMSRequestOperationsBase.__init__(self, operation, csPath)
+<<<<<<< HEAD
     # # gMonitor stuff
     gMonitor.registerActivity("PhysicalRemovalAtt", "Physical file removals attempted",
                               "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
@@ -59,13 +66,51 @@ class PhysicalRemoval(DMSRequestOperationsBase):
                               "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
     gMonitor.registerActivity("PhysicalRemovalSize", "Physically removed size",
                               "RequestExecutingAgent", "Bytes", gMonitor.OP_ACUM)
+=======
+
+    # Check whether the ES flag is enabled so we can send the data accordingly.
+    self.rmsMonitoring = Operations().getValue("EnableActivityMonitoring", False)
+
+    if self.rmsMonitoring:
+      self.rmsMonitoringReporter = MonitoringReporter(monitoringType="RMSMonitoring")
+    else:
+      # # gMonitor stuff
+      gMonitor.registerActivity("PhysicalRemovalAtt", "Physical file removals attempted",
+                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
+      gMonitor.registerActivity("PhysicalRemovalOK", "Successful file physical removals",
+                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
+      gMonitor.registerActivity("PhysicalRemovalFail", "Failed file physical removals",
+                                "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
+      gMonitor.registerActivity("PhysicalRemovalSize", "Physically removed size",
+                                "RequestExecutingAgent", "Bytes", gMonitor.OP_ACUM)
+>>>>>>> Migrate DMS/Agent/RequestOperations to ES.
 
   def __call__(self):
     """ perform physical removal operation """
     bannedTargets = self.checkSEsRSS(access='RemoveAccess')
     if not bannedTargets['OK']:
+<<<<<<< HEAD
       gMonitor.addMark("PhysicalRemovalAtt")
       gMonitor.addMark("PhysicalRemovalFail")
+=======
+      if self.rmsMonitoring:
+        for opFile in self.operation:
+          for status in ["FileAttempted", "FileFailed"]:
+            self.rmsMonitoringReporter.addRecord({
+                "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
+                "host": socket.getfqdn(),
+                "objectType": "File",
+                "operationType": self.operation.Type,
+                "objectID": opFile.FileID,
+                "parentID": self.operation.OperationID,
+                "status": status,
+                "nbObject": 1
+            })
+        self.rmsMonitoringReporter.commit()
+      else:
+        gMonitor.addMark("PhysicalRemovalAtt")
+        gMonitor.addMark("PhysicalRemovalFail")
+>>>>>>> Migrate DMS/Agent/RequestOperations to ES.
       return bannedTargets
 
     if bannedTargets['Value']:
@@ -77,7 +122,26 @@ class PhysicalRemoval(DMSRequestOperationsBase):
     toRemoveDict = dict((opFile.LFN, opFile) for opFile in waitingFiles)
 
     targetSEs = self.operation.targetSEList
+<<<<<<< HEAD
     gMonitor.addMark("PhysicalRemovalAtt", len(toRemoveDict) * len(targetSEs))
+=======
+
+    if self.rmsMonitoring:
+      for opFile in toRemoveDict.values():
+        self.rmsMonitoringReporter.addRecord({
+            "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
+            "host": socket.getfqdn(),
+            "objectType": "File",
+            "operationType": self.operation.Type,
+            "objectID": opFile.FileID,
+            "parentID": self.operation.OperationID,
+            "status": "FileAttempted",
+            "nbObject": len(targetSEs)
+        })
+      self.rmsMonitoringReporter.commit()
+    else:
+      gMonitor.addMark("PhysicalRemovalAtt", len(toRemoveDict) * len(targetSEs))
+>>>>>>> Migrate DMS/Agent/RequestOperations to ES.
 
     # # keep errors dict
     removalStatus = dict.fromkeys(toRemoveDict.keys(), None)
@@ -108,7 +172,23 @@ class PhysicalRemoval(DMSRequestOperationsBase):
         if not opFile.Error:
           removalStatus[lfn][targetSE] = ""
         else:
+<<<<<<< HEAD
           gMonitor.addMark("PhysicalRemovalFail", 1)
+=======
+          if self.rmsMonitoring:
+            self.rmsMonitoringReporter.addRecord({
+                "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
+                "host": socket.getfqdn(),
+                "objectType": "File",
+                "operationType": self.operation.Type,
+                "objectID": opFile.FileID,
+                "parentID": self.operation.OperationID,
+                "status": "FileFailed",
+                "nbObject": 1
+            })
+          else:
+            gMonitor.addMark("PhysicalRemovalFail", 1)
+>>>>>>> Migrate DMS/Agent/RequestOperations to ES.
           removalStatus[lfn][targetSE] = opFile.Error
 
     # # update file status for waiting files
@@ -121,14 +201,51 @@ class PhysicalRemoval(DMSRequestOperationsBase):
           opFile.Error = ",".join(errors)
           if "Write access not permitted for this credential" in opFile.Error:
             opFile.Status = "Failed"
+<<<<<<< HEAD
             gMonitor.addMark("PhysicalRemovalFail", len(errors))
           continue
         gMonitor.addMark("PhysicalRemovalOK", len(targetSEs))
         gMonitor.addMark("PhysicalRemovalSize", opFile.Size * len(targetSEs))
+=======
+
+            if self.rmsMonitoring:
+              self.rmsMonitoringReporter.addRecord({
+                  "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
+                  "host": socket.getfqdn(),
+                  "objectType": "File",
+                  "operationType": self.operation.Type,
+                  "objectID": opFile.FileID,
+                  "parentID": self.operation.OperationID,
+                  "status": "FileFailed",
+                  "nbObject": len(errors)
+              })
+            else:
+              gMonitor.addMark("PhysicalRemovalFail", len(errors))
+
+          continue
+
+        if self.rmsMonitoring:
+          self.rmsMonitoringReporter.addRecord({
+              "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
+              "host": socket.getfqdn(),
+              "objectType": "File",
+              "operationType": self.operation.Type,
+              "objectID": opFile.FileID,
+              "parentID": self.operation.OperationID,
+              "status": "FileSuccessful",
+              "nbObject": len(targetSEs)
+          })
+        else:
+          gMonitor.addMark("PhysicalRemovalOK", len(targetSEs))
+          gMonitor.addMark("PhysicalRemovalSize", opFile.Size * len(targetSEs))
+>>>>>>> Migrate DMS/Agent/RequestOperations to ES.
         opFile.Status = "Done"
 
     if failed:
       self.operation.Error = "failed to remove %s files" % failed
+
+    if self.rmsMonitoring:
+      self.rmsMonitoringReporter.commit()
 
     return S_OK()
 
