@@ -146,25 +146,37 @@ logger.info("But first unpacking pilot files")
 # Getting the pilot files
 logger.info("Getting the pilot files from %(location)s")
 
-# Getting the json file and the tar file
-try:
-  # needs to distinguish versions prior to or after 2.7.9
-  if sys.version_info >= (2, 7, 9):
-    import ssl
-    context = ssl._create_unverified_context()
-    rJson = urllib2.urlopen('https://' + '%(location)s' + '/pilot/pilot.json',
-                            timeout=10,
-                            context=context)
-    rTar = urllib2.urlopen('https://' + '%(location)s' + '/pilot/pilot.tar',
-                            timeout=10,
-                            context=context)
-  else:
-    rJson = urllib2.urlopen('https://' + '%(location)s' + '/pilot/pilot.json',
-                            timeout=10)
-    rTar = urllib2.urlopen('https://' + '%(location)s' + '/pilot/pilot.tar',
-                            timeout=10)
-except urllib2.URLError:
-  print('%(location)s unreacheable')
+location = '%(location)s'.replace(' ', '').split(',')
+
+import random
+random.shuffle(location)
+
+# we try from the available locations
+for loc in location:
+  # Getting the json file and the tar file
+  try:
+
+    # needs to distinguish versions prior to or after 2.7.9
+    if sys.version_info >= (2, 7, 9):
+      import ssl
+      context = ssl._create_unverified_context()
+      rJson = urllib2.urlopen('https://' + loc + '/pilot/pilot.json',
+                              timeout=10,
+                              context=context)
+      rTar = urllib2.urlopen('https://' + loc + '/pilot/pilot.tar',
+                              timeout=10,
+                              context=context)
+      break
+
+    else:
+      rJson = urllib2.urlopen('https://' + loc + '/pilot/pilot.json',
+                              timeout=10)
+      rTar = urllib2.urlopen('https://' + loc + '/pilot/pilot.tar',
+                              timeout=10)
+      break
+
+  except urllib2.URLError:
+    print('%%s unreacheable' %% loc)
 
 pj = open('pilot.json', 'wb')
 pj.write(rJson.read())

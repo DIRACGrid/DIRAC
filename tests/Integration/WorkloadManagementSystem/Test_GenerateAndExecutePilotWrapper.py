@@ -60,7 +60,7 @@ diracInstallEncoded = base64.b64encode(bz2.compress(diracInstall, 9))
 res = pilotWrapperScript(
     pilotFilesCompressedEncodedDict={'dirac-install.py': diracInstallEncoded},
     pilotOptions="--commands CheckWorkerNode,InstallDIRAC --setup=DIRAC-Certification --debug",
-    location='lbcertifdirac7.cern.ch:8443')
+    location='lbcertifdirac7.cern.ch:8443,wrong.cern.ch')
 
 with open('pilot-wrapper.sh', 'wb') as pj:
   pj.write(res)

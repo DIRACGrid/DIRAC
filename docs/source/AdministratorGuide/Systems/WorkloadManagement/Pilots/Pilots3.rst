@@ -16,17 +16,19 @@ Bootstrap
 Pilot3 needs a JSON file for bootstrapping. We simply call this file the ``pilot.json`` file.
 The ``pilot.json`` file is created starting from information found in the Configuration Service.
 
-The pilot wrapper (the script that starts the pilot, which is effectively equivalent to what SiteDirectors send) expects
-to find (download) such a ``pilot.json`` file from a known location, which can be for example exposed by the DIRAC
-WebApp webserver.
+The pilot wrapper (the script that starts the pilot, which is effectively equivalent to what SiteDirectors send)
+expects to find (download) such pilot.json file from a known location, or a set of them.
+Such location can be, for example, exposed via *https://* by the DIRAC WebApp webserver. Other protocols (including *file://*) are possible.
 
 The ``pilot.json`` file is therefore always kept in sync with the content of the Configuration Service.
 From DIRAC v6r20, there is the possibility to set the option *UpdatePilotCStoJSONFile* to True in the configuration of
 the Configuration/Server service (please see :ref:`ConfigurationServer` for detais). If this option is set,
 at every configuration update, the ``pilot.json`` file content will also be updated (if necessary).
 
-If *UpdatePilotCStoJSONFile* is True, then also the Operations option *Pilot/<...>/pilotFileServer* should be set to the webserver chosen for the upload.
-We suggest to use simply the DIRAC webserver.
+If *UpdatePilotCStoJSONFile* is True, then also the Operations option *Pilot/<...>/pilotFileServer*
+should be set to the webserver(s) chosen for the upload.
+If more than one location are used, add them as a list.
+We suggest to use simply the DIRAC webserver, but multiple locations are also possible, and advised.
 
 If you use the DIRAC webserver please
 
