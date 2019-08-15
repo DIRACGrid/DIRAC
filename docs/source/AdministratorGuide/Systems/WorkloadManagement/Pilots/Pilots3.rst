@@ -1,8 +1,8 @@
 .. _pilot3:
 
-=============
-DIRAC Pilot 3
-=============
+==============
+DIRAC pilots 3
+==============
 
 All concepts defined for Pilot2 are valid also for Pilot3. There are anyway some differences for what regards their usage.
 
@@ -54,21 +54,12 @@ Other options that can be set also in the Operations part of the CS include:
 +------------------------------------+--------------------------------------------+-------------------------------------------------------------------------+
 
 
-Starting Pilot3 via SiteDirectors
-==================================
+Starting the old Pilot 2 via SiteDirectors
+==========================================
 
-.. versionadded:: v6r20
-
-  Since DIRAC v6r20, SiteDirectors can send "pilot2" or "pilot3". Pilot2 is the default,
-  but the "Pilot3=True" flag can be used for sending Pilot3 files instead, see the documentation
-  for the :mod:`~DIRAC.WorkloadManagementSystem.Agent.SiteDirector`.
-
-.. versionchanged:: v7r0
-
-  The default is now to send Pilot3. Pilot2 can be enabled by setting the SiteDirector option Pilot3 to False::
-
-    Pilot3=False
-
+Since DIRAC v7r0, SiteDirectors will send by default "pilots3".
+To still send Pilot 2 type of pilots, the Pilot3 flag should be set explicitely to False
+(see :mod:`~DIRAC.WorkloadManagementSystem.Agent.SiteDirector`).
 
 
 Pilot logging
