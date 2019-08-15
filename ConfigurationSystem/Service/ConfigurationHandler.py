@@ -60,7 +60,7 @@ class ConfigurationHandler(RequestHandler):
       return res
 
     # Check the flag for updating the pilot 3 JSON file
-    updatePilotCStoJSONFileFlag = self.srv_getCSOption('UpdatePilotCStoJSONFile', False)
+    updatePilotCStoJSONFileFlag = self.srv_getCSOption('UpdatePilotCStoJSONFile', True)
     if updatePilotCStoJSONFileFlag and gServiceInterface.isMaster():
       if gPilotSynchronizer is None:
         try:
