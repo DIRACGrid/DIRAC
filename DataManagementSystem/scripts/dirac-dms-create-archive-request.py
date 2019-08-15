@@ -1,6 +1,6 @@
 """Create and put Requests to archive files.
 
-List of operations:
+**List of operations**
 
 #. Optionally replicate files to SourceSE
 #. ArchiveFiles: Create a tarball from input files, upload tarball  to TarballSE
@@ -15,15 +15,14 @@ another storage element. Once the file is migrated to tape the original files wi
 removed. Optionally the original files can be registered in a special archive SE, so that their
 metadata is preserved.
 
-
-Related Options:
+**Related Options**
 
 This script only works if the ``ArchiveFiles`` and ``CheckMigration`` RequestHandlers are configured.
 To prevent submission of broken requests the script needs to be enabled in the Operations section of the CS
 
 * Operations/DataManagement/ArchiveFiles/Enabled=True
 
-Default values for any of the command line options can also be set in the CS:
+Default values for any of the command line options can also be set in the CS
 
 * Operations/DataManagement/ArchiveFiles/ArchiveSE
 * Operations/DataManagement/ArchiveFiles/TarballSE
