@@ -32,7 +32,6 @@ import base64
 import bz2
 import logging
 import time
-import urllib2
 import tarfile
 
 # setting up the logging
@@ -156,26 +155,35 @@ for loc in location:
   # Getting the json file and the tar file
   try:
 
+    # urllib is different between python 2 and 3
+    if sys.version_info < (3,):
+      from urllib2 import urlopen as url_library_urlopen
+      from urllib2 import URLError as url_library_URLError
+    else:
+      from urllib.request import urlopen as url_library_urlopen
+      from urllib.error import URLError as url_library_URLError
+
+
     # needs to distinguish versions prior to or after 2.7.9
     if sys.version_info >= (2, 7, 9):
       import ssl
       context = ssl._create_unverified_context()
-      rJson = urllib2.urlopen('https://' + loc + '/pilot/pilot.json',
-                              timeout=10,
-                              context=context)
-      rTar = urllib2.urlopen('https://' + loc + '/pilot/pilot.tar',
-                              timeout=10,
-                              context=context)
+      rJson = url_library_urlopen('https://' + loc + '/pilot/pilot.json',
+                                  timeout=10,
+                                  context=context)
+      rTar = url_library_urlopen('https://' + loc + '/pilot/pilot.tar',
+                                 timeout=10,
+                                 context=context)
       break
 
     else:
-      rJson = urllib2.urlopen('https://' + loc + '/pilot/pilot.json',
-                              timeout=10)
-      rTar = urllib2.urlopen('https://' + loc + '/pilot/pilot.tar',
-                              timeout=10)
+      rJson = url_library_urlopen('https://' + loc + '/pilot/pilot.json',
+                                  timeout=10)
+      rTar = url_library_urlopen('https://' + loc + '/pilot/pilot.tar',
+                                 timeout=10)
       break
 
-  except urllib2.URLError:
+  except url_library_URLError:
     print('%%s unreacheable' %% loc)
 
 pj = open('pilot.json', 'wb')
