@@ -107,7 +107,7 @@ def initializeIRODSStorageElementHandler(serviceInfo):
   IRODS_PORT = gConfig.getValue("%s/iRodsPort" % cfgPath, IRODS_PORT)
   try:
     IRODS_PORT = int(IRODS_PORT)
-  except BaseException:
+  except ValueError:
     pass
   if not IRODS_PORT:
     gLogger.error('Failed to get iRods server port')

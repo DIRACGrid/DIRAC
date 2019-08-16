@@ -370,7 +370,7 @@ class WebAppCompiler(object):
           gLogger.verbose("%s:%s is an absolute definition" % (modName, current))
           try:
             webCFG.deleteKey(current)
-          except BaseException:
+          except Exception:
             pass
           modCFG.deleteKey("%s/AbsoluteDefinition" % current)
         else:
