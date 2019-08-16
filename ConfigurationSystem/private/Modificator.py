@@ -96,7 +96,7 @@ class Modificator(object):
       for section in sectionList:
         cfg = cfg[section]
       return cfg
-    except BaseException:
+    except Exception:
       return False
 
   def __setCommiter(self, entryPath, cfg=False):
@@ -148,7 +148,7 @@ class Modificator(object):
       for section in sectionList[:-1]:
         cfg = cfg[section]
       return len(sectionList) == 0 or sectionList[-1] in cfg.listSections()
-    except BaseException:
+    except Exception:
       return False
 
   def existsOption(self, optionPath):
@@ -158,7 +158,7 @@ class Modificator(object):
       for section in sectionList[:-1]:
         cfg = cfg[section]
       return sectionList[-1] in cfg.listOptions()
-    except BaseException:
+    except Exception:
       return False
 
   def renameKey(self, path, newName):

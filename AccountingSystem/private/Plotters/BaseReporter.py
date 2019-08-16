@@ -194,7 +194,7 @@ class BaseReporter(DBUtils):
     funcName = "_report%s" % reportRequest['reportName']
     try:
       funcObj = getattr(self, funcName)
-    except BaseException:
+    except Exception:
       return S_ERROR("Report %s is not defined" % reportRequest['reportName'])
     return gDataCache.getReportData(reportRequest, reportHash, funcObj)
 
@@ -202,7 +202,7 @@ class BaseReporter(DBUtils):
     funcName = "_plot%s" % reportRequest['reportName']
     try:
       funcObj = getattr(self, funcName)
-    except BaseException:
+    except Exception:
       return S_ERROR("Plot function for report %s is not defined" % reportRequest['reportName'])
     return gDataCache.getReportPlot(reportRequest, reportHash, reportData, funcObj)
 
@@ -339,12 +339,12 @@ class BaseReporter(DBUtils):
     if self._EA_WIDTH in self._extraArgs and self._extraArgs[self._EA_WIDTH]:
       try:
         metadata[self._EA_WIDTH] = min(1600, max(200, int(self._extraArgs[self._EA_WIDTH])))
-      except BaseException:
+      except Exception:
         pass
     if self._EA_HEIGHT in self._extraArgs and self._extraArgs[self._EA_HEIGHT]:
       try:
         metadata[self._EA_HEIGHT] = min(1600, max(200, int(self._extraArgs[self._EA_HEIGHT])))
-      except BaseException:
+      except Exception:
         pass
     if self._EA_TITLE in self._extraArgs and self._extraArgs[self._EA_TITLE]:
       metadata['title'] = self._extraArgs[self._EA_TITLE]

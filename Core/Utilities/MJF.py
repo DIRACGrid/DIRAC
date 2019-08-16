@@ -79,7 +79,7 @@ class MJF(object):
 
     try:
       return int(value)
-    except BaseException:
+    except ValueError:
       return None
 
   def getJobFeature(self, key):
@@ -103,7 +103,7 @@ class MJF(object):
 
     try:
       return int(value)
-    except BaseException:
+    except ValueError:
       return None
 
   def __fetchMachineJobFeature(self, mORj, key):
@@ -125,7 +125,7 @@ class MJF(object):
       try:
         with open(url, 'r') as fd:
           return fd.read().strip()
-      except BaseException:
+      except Exception:
         return None
 
     # Otherwise make sure it's an HTTP(S) URL

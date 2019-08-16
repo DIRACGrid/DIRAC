@@ -55,7 +55,7 @@ class MonitoringCatalog(object):
         else:
           cursor.execute(query)
         executed = True
-      except BaseException:
+      except Exception:
         time.sleep(0.01)
     return cursor
 
