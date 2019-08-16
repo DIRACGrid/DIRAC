@@ -35,7 +35,7 @@ import bz2
 if sys.version_info < (3,):
   from urllib2 import urlopen as url_library_urlopen  # pylint: disable=import-error
 else:
-  from urllib.request import urlopen as url_library_urlopen  # pylint: disable=no-name-in-module
+  from urllib.request import urlopen as url_library_urlopen  # pylint: disable=import-error,no-name-in-module
 
 
 if sys.version_info >= (2, 7, 9):
