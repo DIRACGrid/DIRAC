@@ -49,7 +49,7 @@ logger.addHandler(screen_handler)
 # just logging the environment as first thing
 print('===========================================================')
 logger.debug('Environment of execution host\\n')
-for key, val in os.environ.iteritems():
+for key, val in os.environ.items():
   logger.debug(key + '=' + val)
 print('===========================================================', end='\\n')
 
@@ -96,8 +96,8 @@ def pilotWrapperScript(pilotFilesCompressedEncodedDict=None,
     envVariables = {}
 
   compressedString = ""
-  for pfName, encodedPf in pilotFilesCompressedEncodedDict.iteritems():  # are there some pilot files to unpack?
-                                                                         # then we create the unpacking string
+  for pfName, encodedPf in pilotFilesCompressedEncodedDict.items():  # are there some pilot files to unpack?
+                                                                     # then we create the unpacking string
     compressedString += """
 try:
   with open('%(pfName)s', 'w') as fd:
@@ -111,7 +111,7 @@ except BaseException as x:
        'pfName': pfName}
 
   envVariablesString = ""
-  for name, value in envVariables.iteritems():  # are there some environment variables to add?
+  for name, value in envVariables.items():  # are there some environment variables to add?
     envVariablesString += """
 os.environ[\"%(name)s\"]=\"%(value)s\"
 """ % {'name': name,

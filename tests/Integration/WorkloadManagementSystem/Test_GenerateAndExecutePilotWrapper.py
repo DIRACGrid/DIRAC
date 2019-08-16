@@ -74,7 +74,10 @@ from PilotWrapper import pilotWrapperScript  # pylint: disable=import-error
 diracInstall = os.path.join(os.getcwd(), 'dirac-install.py')
 with open(diracInstall, "r") as fd:
   diracInstall = fd.read()
-diracInstallEncoded = base64.b64encode(bz2.compress(diracInstall, 9))
+if sys.version_info < (3,):
+  diracInstallEncoded = base64.b64encode(bz2.compress(bytes(diracInstall, 'UTF-8'), 9))
+else:
+  diracInstallEncoded = base64.b64encode(bz2.compress(diracInstall, 9))
 
 res = pilotWrapperScript(
     pilotFilesCompressedEncodedDict={'dirac-install.py': diracInstallEncoded},
