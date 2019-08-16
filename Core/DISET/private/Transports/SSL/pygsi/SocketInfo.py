@@ -1,11 +1,8 @@
-# $HeadURL$
 __RCSID__ = "$Id$"
 
 import time
-import copy
 import os
 import os.path
-import tempfile
 import GSI
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
 from DIRAC.Core.Utilities.Network import checkHostsMatch
@@ -156,9 +153,8 @@ class SocketInfo:
           filePath = os.path.join(casPath, fileName)
           if not os.path.isfile(filePath):
             continue
-          fObj = open(filePath, "rb")
-          pemData = fObj.read()
-          fObj.close()
+          with open(filePath, "rb") as fObj:
+            pemData = fObj.read()
           # Try to load CA Cert
           try:
             caCert = GSI.crypto.load_certificate(GSI.crypto.FILETYPE_PEM, pemData)

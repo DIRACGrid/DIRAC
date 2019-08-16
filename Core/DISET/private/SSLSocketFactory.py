@@ -31,8 +31,8 @@ class SSLSocketFactory:
         kwargs[arg] = value
 
   def createClientSocket(self, addressTuple, **kwargs):
-    if type(addressTuple) not in (list, tuple):
-      return S_ERROR("hostAdress is not in a tuple form ( 'hostnameorip', port )")
+    if not isinstance(addressTuple, (list, tuple)):
+      return S_ERROR("hostAdress is not in a tuple form ('hostnameorip', port)")
     res = gConfig.getOptionsDict("/DIRAC/ConnConf/%s:%s" % addressTuple[0:2])
     if res['OK']:
       opts = res['Value']
