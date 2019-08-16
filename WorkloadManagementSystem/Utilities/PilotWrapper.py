@@ -47,11 +47,11 @@ logger.setLevel(logging.DEBUG)
 logger.addHandler(screen_handler)
 
 # just logging the environment as first thing
-print('===========================================================')
+logger.debug('===========================================================')
 logger.debug('Environment of execution host\\n')
 for key, val in os.environ.items():
   logger.debug(key + '=' + val)
-print('===========================================================', end='\\n')
+logger.debug('===========================================================\\n')
 
 # putting ourselves in the right directory
 pilotExecDir = '%(pilotExecDir)s'
@@ -105,6 +105,7 @@ try:
   os.chmod('%(pfName)s', stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
 except BaseException as x:
   print(x, file=sys.stderr)
+  logger.error(x)
   shutil.rmtree(pilotWorkingDirectory)
   sys.exit(-1)
 """ % {'encodedPf': encodedPf,
@@ -184,7 +185,13 @@ for loc in location:
       break
 
   except url_library_URLError:
-    print('%%s unreacheable' %% loc)
+    print('%%s unreacheable' %% loc, file=sys.stderr)
+    logger.error('%%s unreacheable' %% loc)
+
+else:
+  print("None of the locations of the pilot files is reachable", file=sys.stderr)
+  logger.error("None of the locations of the pilot files is reachable")
+  sys.exit(-1)
 
 pj = open('pilot.json', 'wb')
 pj.write(rJson.read())
