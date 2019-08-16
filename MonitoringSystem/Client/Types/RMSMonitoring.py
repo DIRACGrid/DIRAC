@@ -30,7 +30,7 @@ class RMSMonitoring(BaseType):
 
     self.doc_type = "RMSMonitoring"
 
-    self.addMapping({"host": {"type": "keyword"}, "objecType": {"type": "keyword"},
+    self.addMapping({"host": {"type": "keyword"}, "objectType": {"type": "keyword"},
                      "operationType": {"type": "keyword"}, "status": {"type": "keyword"},
                      "objectID": {"type": "long"}, "parentID": {"type": "long"}})
 
