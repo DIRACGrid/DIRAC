@@ -4,6 +4,9 @@
 DIRAC pilots
 ========================
 
+.. meta::
+   :keywords: Pilots3, Pilot3, Pilot
+
 This page describes what are DIRAC pilots, and how they work.
 To know how to develop DIRAC pilots, please refer to the Developers documentation
 

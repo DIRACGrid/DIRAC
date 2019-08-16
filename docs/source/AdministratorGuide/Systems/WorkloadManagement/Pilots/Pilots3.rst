@@ -18,14 +18,15 @@ The ``pilot.json`` file is created starting from information found in the Config
 
 The pilot wrapper (the script that starts the pilot, which is effectively equivalent to what SiteDirectors send)
 expects to find and download such a ``pilot.json`` file from a known location, or a set of them.
-Such a location can be, for example, exposed via *https://* by the DIRAC WebApp webserver. Other protocols (including *file://*) are possible.
+Such a location should be exposed via *https://* by, for example, the DIRAC WebApp webserver.
+
+The (list of) location(s) has to be added in the Operations option *Pilot/pilotFileServer*.
+If more than one location is used, add them as a list.
+We suggest to add at least the URL of the DIRAC WebApp webserver, but multiple locations are also possible, and advised.
 
 The pilot.json file is always kept in sync with the content of the Configuration Service.
 At every configuration update, the pilot.json file content will also be updated.
 
-Also the Operations option *Pilot/<...>/pilotFileServer* should be set to the webserver(s) chosen for the upload.
-If more than one location is used, add them as a list.
-We suggest to use simply the DIRAC webserver, but multiple locations are also possible, and advised.
 
 If you use the DIRAC webserver please
 
@@ -45,12 +46,15 @@ Other options that can be set also in the Operations part of the CS include:
 |                                    |                                            | The value above is the default                                          |
 +------------------------------------+--------------------------------------------+-------------------------------------------------------------------------+
 | *pilotVORepo*                      | Pointer to git repository of VO DIRAC      | pilotVORepo = https://github.com/MyDIRAC/VOPilot.git                    |
-|                                    | extension of pilot                         |                                                                         |
+|                                    | extension of pilot.                        |                                                                         |
+|                                    | This option is needed in case you have an  |                                                                         |
+|                                    | extension of the pilot                     |                                                                         |
 +------------------------------------+--------------------------------------------+-------------------------------------------------------------------------+
 | *pilotScriptsPath*                 | Path to the code, inside the Git repository| pilotScriptsPath = Pilot                                                |
 |                                    |                                            | This value is the default                                               |
 +------------------------------------+--------------------------------------------+-------------------------------------------------------------------------+
 | *pilotScriptsVOPath*               | Path to the code, inside the Git repository| pilotScriptsVOPath = VOPilot                                            |
+|                                    | of the pilot extension                     |                                                                         |
 +------------------------------------+--------------------------------------------+-------------------------------------------------------------------------+
 
 
@@ -60,6 +64,8 @@ Starting the old Pilot 2 via SiteDirectors
 Since DIRAC v7r0, SiteDirectors will send by default "pilots3".
 To still send Pilot 2 type of pilots, the Pilot3 flag should be set explicitely to False
 (see :mod:`~DIRAC.WorkloadManagementSystem.Agent.SiteDirector`).
+
+It should be anyway noted that "Pilot 2" are not maintained anymore, and that their code will be removed in a future version of DIRAC.
 
 
 Pilot logging
