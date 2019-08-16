@@ -26,8 +26,7 @@ __RCSID__ = "$Id $"
 # # imports
 import os
 import time
-import datetime
-import socket
+
 # # from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR, gConfig
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
@@ -39,8 +38,9 @@ from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationDat
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.Core.Utilities import Time, Network
 
 ########################################################################
 
@@ -59,7 +59,8 @@ class RequestTask(object):
           csPath,
           agentName,
           standalone=False,
-          requestClient=None):
+          requestClient=None,
+          rmsMonitoring=False):
     """c'tor
 
     :param self: self reference
@@ -85,8 +86,8 @@ class RequestTask(object):
     if not shifterProxies["OK"]:
       self.log.error("Cannot setup shifter proxies", shifterProxies["Message"])
 
-    # Check whether the ES flag is enabled so we can send the data accordingly.
-    self.rmsMonitoring = Operations().getValue("EnableActivityMonitoring", False)
+    # Set the ES flag which is sent from the RequestExecutingAgent
+    self.rmsMonitoring = rmsMonitoring
 
     if self.rmsMonitoring:
       self.rmsMonitoringReporter = MonitoringReporter(monitoringType="RMSMonitoring")
@@ -315,6 +316,8 @@ class RequestTask(object):
       handler = handler["Value"]
       # # set shifters list in the handler
       handler.shifter = shifter
+      # set rmsMonitoring flag for the RequestOperation
+      handler.rmsMonitoring = self.rmsMonitoring
       # # and execute
       pluginName = self.getPluginName(self.handlersDict.get(operation.Type))
       if self.standalone:
@@ -326,13 +329,13 @@ class RequestTask(object):
         if pluginName:
           if self.rmsMonitoring:
             self.rmsMonitoringReporter.addRecord({
-                "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
-                "host": socket.getfqdn(),
+                "timestamp": int(Time.toEpoch()),
+                "host": Network.getFQDN(),
                 "objectType": "Operation",
                 "operationType": pluginName,
                 "objectID": operation.OperationID,
                 "parentID": operation.RequestID,
-                "status": "OperationAttempted",
+                "status": "Attempted",
                 "nbObject": 1
             })
           else:
@@ -348,24 +351,24 @@ class RequestTask(object):
           if pluginName:
             if self.rmsMonitoring:
               self.rmsMonitoringReporter.addRecord({
-                  "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
-                  "host": socket.getfqdn(),
+                  "timestamp": int(Time.toEpoch()),
+                  "host": Network.getFQDN(),
                   "objectType": "Operation",
                   "operationType": pluginName,
                   "objectID": operation.OperationID,
                   "parentID": operation.RequestID,
-                  "status": "OperationFailed",
+                  "status": "Failed",
                   "nbObject": 1
               })
             else:
               gMonitor.addMark("%s%s" % (pluginName, "Fail"), 1)
           if self.rmsMonitoring:
             self.rmsMonitoringReporter.addRecord({
-                "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
-                "host": socket.getfqdn(),
+                "timestamp": int(Time.toEpoch()),
+                "host": Network.getFQDN(),
                 "objectType": "Request",
                 "objectID": operation.RequestID,
-                "status": "RequestFailed",
+                "status": "Failed",
                 "nbObject": 1
             })
           else:
@@ -390,24 +393,24 @@ class RequestTask(object):
         if pluginName:
           if self.rmsMonitoring:
             self.rmsMonitoringReporter.addRecord({
-                "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
-                "host": socket.getfqdn(),
+                "timestamp": int(Time.toEpoch()),
+                "host": Network.getFQDN(),
                 "objectType": "Operation",
                 "operationType": pluginName,
                 "objectID": operation.OperationID,
                 "parentID": operation.RequestID,
-                "status": "OperationFailed",
+                "status": "Failed",
                 "nbObject": 1
             })
           else:
             gMonitor.addMark("%s%s" % (pluginName, "Fail"), 1)
         if self.rmsMonitoring:
           self.rmsMonitoringReporter.addRecord({
-              "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
-              "host": socket.getfqdn(),
+              "timestamp": int(Time.toEpoch()),
+              "host": Network.getFQDN(),
               "objectType": "Request",
               "objectID": operation.RequestID,
-              "status": "RequestFailed",
+              "status": "Failed",
               "nbObject": 1
           })
         else:
@@ -421,13 +424,13 @@ class RequestTask(object):
       if operation.Status == "Done" and pluginName:
         if self.rmsMonitoring:
           self.rmsMonitoringReporter.addRecord({
-              "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
-              "host": socket.getfqdn(),
+              "timestamp": int(Time.toEpoch()),
+              "host": Network.getFQDN(),
               "objectType": "Operation",
               "operationType": pluginName,
               "objectID": operation.OperationID,
               "parentID": operation.RequestID,
-              "status": "OperationSuccessful",
+              "status": "Successful",
               "nbObject": 1
           })
         else:
@@ -435,13 +438,13 @@ class RequestTask(object):
       elif operation.Status == "Failed" and pluginName:
         if self.rmsMonitoring:
           self.rmsMonitoringReporter.addRecord({
-              "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
-              "host": socket.getfqdn(),
+              "timestamp": int(Time.toEpoch()),
+              "host": Network.getFQDN(),
               "objectType": "Operation",
               "operationType": pluginName,
               "objectID": operation.OperationID,
               "parentID": operation.RequestID,
-              "status": "OperationFailed",
+              "status": "Failed",
               "nbObject": 1
           })
         else:
@@ -467,11 +470,11 @@ class RequestTask(object):
       self.log.info("request is done", "%s" % self.request.RequestName)
       if self.rmsMonitoring:
         self.rmsMonitoringReporter.addRecord({
-            "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
-            "host": socket.getfqdn(),
+            "timestamp": int(Time.toEpoch()),
+            "host": Network.getFQDN(),
             "objectType": "Request",
-            "objectID": self.request.RequestID,
-            "status": "RequestSuccessful",
+            "objectID": getattr(self.request, "RequestID", 0),
+            "status": "Successful",
             "nbObject": 1
         })
       else:

@@ -88,6 +88,8 @@ class OperationHandlerBase(object):
     self.operation = None
     self.request = None
 
+    self.rmsMonitoring = False
+
     self.dm = DataManager()
     self.fc = FileCatalog()
 

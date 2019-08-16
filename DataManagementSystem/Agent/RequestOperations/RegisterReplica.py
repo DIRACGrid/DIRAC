@@ -11,15 +11,12 @@
 
 __RCSID__ = "$Id $"
 
-import time
-import datetime
-import socket
 from DIRAC import S_OK, S_ERROR
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase import DMSRequestOperationsBase
 
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.Core.Utilities import Time, Network
 
 ########################################################################
 
@@ -41,9 +38,10 @@ class RegisterReplica(DMSRequestOperationsBase):
     """
     DMSRequestOperationsBase.__init__(self, operation, csPath)
 
-    # Check whether the ES flag is enabled so we can send the data accordingly.
-    self.rmsMonitoring = Operations().getValue("EnableActivityMonitoring", False)
+  def __call__(self):
+    """ call me maybe """
 
+    # Check whether the ES flag is enabled so we can send the data accordingly.
     if self.rmsMonitoring:
       self.rmsMonitoringReporter = MonitoringReporter(monitoringType="RMSMonitoring")
     else:
@@ -55,8 +53,6 @@ class RegisterReplica(DMSRequestOperationsBase):
       gMonitor.registerActivity("RegisterReplicaFail", "Failed replicas registrations",
                                 "RequestExecutingAgent", "Replicas/min", gMonitor.OP_SUM)
 
-  def __call__(self):
-    """ call me maybe """
     # # counter for failed replicas
 
     failedReplicas = 0
@@ -66,22 +62,23 @@ class RegisterReplica(DMSRequestOperationsBase):
       catalogs = [cat.strip() for cat in catalogs.split(',')]
     # # get waiting files
     waitingFiles = self.getWaitingFilesList()
+
+    if self.rmsMonitoring:
+      self.rmsMonitoringReporter.addRecord({
+          "timestamp": int(Time.toEpoch()),
+          "host": Network.getFQDN(),
+          "objectType": "File",
+          "operationType": self.operation.Type,
+          "parentID": self.operation.OperationID,
+          "status": "Attempted",
+          "nbObject": len(waitingFiles)
+      })
+
     # # loop over files
     registerOperations = {}
     for opFile in waitingFiles:
 
-      if self.rmsMonitoring:
-        self.rmsMonitoringReporter.addRecord({
-            "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
-            "host": socket.getfqdn(),
-            "objectType": "File",
-            "operationType": self.operation.Type,
-            "objectID": opFile.FileID,
-            "parentID": self.operation.OperationID,
-            "status": "FileAttempted",
-            "nbObject": 1
-        })
-      else:
+      if not self.rmsMonitoring:
         gMonitor.addMark("RegisterReplicaAtt", 1)
 
       # # get LFN
@@ -97,13 +94,12 @@ class RegisterReplica(DMSRequestOperationsBase):
 
         if self.rmsMonitoring:
           self.rmsMonitoringReporter.addRecord({
-              "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
-              "host": socket.getfqdn(),
+              "timestamp": int(Time.toEpoch()),
+              "host": Network.getFQDN(),
               "objectType": "File",
               "operationType": self.operation.Type,
-              "objectID": opFile.FileID,
               "parentID": self.operation.OperationID,
-              "status": "FileFailed",
+              "status": "Failed",
               "nbObject": 1
           })
         else:
@@ -152,13 +148,12 @@ class RegisterReplica(DMSRequestOperationsBase):
         # All is OK
         if self.rmsMonitoring:
           self.rmsMonitoringReporter.addRecord({
-              "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
-              "host": socket.getfqdn(),
+              "timestamp": int(Time.toEpoch()),
+              "host": Network.getFQDN(),
               "objectType": "File",
               "operationType": self.operation.Type,
-              "objectID": opFile.FileID,
               "parentID": self.operation.OperationID,
-              "status": "FileSuccessful",
+              "status": "Successful",
               "nbObject": 1
           })
         else:

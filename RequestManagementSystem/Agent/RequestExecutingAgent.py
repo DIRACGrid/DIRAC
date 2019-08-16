@@ -32,9 +32,7 @@ __RCSID__ = '$Id$'
 # # imports
 import sys
 import time
-import datetime
 import errno
-import socket
 
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig
@@ -44,9 +42,11 @@ from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Utilities.ProcessPool import ProcessPool
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.RequestManagementSystem.private.RequestTask import RequestTask
+
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
+from DIRAC.Core.Utilities import Time, Network
 
 from DIRAC.Core.Utilities.DErrno import cmpError
 # # agent name
@@ -163,7 +163,10 @@ class RequestExecutingAgent(AgentModule):
                                                                      self.timeOuts[opHandler]['PerFile']))
 
     # Check whether the ES flag is enabled so we can send the data accordingly.
-    self.rmsMonitoring = Operations().getValue("EnableActivityMonitoring", False)
+    self.rmsMonitoring = (
+        Operations().getValue("EnableActivityMonitoring", False) or
+        self.am_getOption("EnableActivityMonitoring", False)
+    )
 
     if self.rmsMonitoring:
       self.rmsMonitoringReporter = MonitoringReporter(monitoringType="RMSMonitoring")
@@ -356,7 +359,8 @@ class RequestExecutingAgent(AgentModule):
                                                             kwargs={"requestJSON": requestJSON,
                                                                     "handlersDict": self.handlersDict,
                                                                     "csPath": self.__configPath,
-                                                                    "agentName": self.agentName},
+                                                                    "agentName": self.agentName,
+                                                                    "rmsMonitoring": self.rmsMonitoring},
                                                             taskID=taskID,
                                                             blocking=True,
                                                             usePoolCallbacks=True,
@@ -368,10 +372,10 @@ class RequestExecutingAgent(AgentModule):
               # # update monitor
               if self.rmsMonitoring:
                 self.rmsMonitoringReporter.addRecord({
-                    "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
-                    "host": socket.getfqdn(),
+                    "timestamp": int(Time.toEpoch()),
+                    "host": Network.getFQDN(),
                     "objectType": "Request",
-                    "status": "RequestAttempted",
+                    "status": "Attempted",
                     "objectID": request.RequestID,
                     "nbObject": 1
                 })

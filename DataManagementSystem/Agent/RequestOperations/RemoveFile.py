@@ -29,9 +29,6 @@ __RCSID__ = "$Id $"
 # # imports
 import os
 import re
-import time
-import datetime
-import socket
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
@@ -39,7 +36,7 @@ from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.Core.Utilities import Time, Network
 
 ########################################################################
 
@@ -61,9 +58,13 @@ class RemoveFile(DMSRequestOperationsBase):
     # # call base class ctor
     DMSRequestOperationsBase.__init__(self, operation, csPath)
 
-    # Check whether the ES flag is enabled so we can send the data accordingly.
-    self.rmsMonitoring = Operations().getValue("EnableActivityMonitoring", False)
+    # # re pattern for not existing files
+    self.reNotExisting = re.compile(r"(no|not) such file.*", re.IGNORECASE)
 
+  def __call__(self):
+    """ action for 'removeFile' operation  """
+
+    # Check whether the ES flag is enabled so we can send the data accordingly.
     if self.rmsMonitoring:
       self.rmsMonitoringReporter = MonitoringReporter(monitoringType="RMSMonitoring")
     else:
@@ -74,11 +75,7 @@ class RemoveFile(DMSRequestOperationsBase):
                                 "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
       gMonitor.registerActivity("RemoveFileFail", "Failed file removals",
                                 "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
-    # # re pattern for not existing files
-    self.reNotExisting = re.compile(r"(no|not) such file.*", re.IGNORECASE)
 
-  def __call__(self):
-    """ action for 'removeFile' operation  """
     # # get waiting files
     waitingFiles = self.getWaitingFilesList()
     fc = FileCatalog(self.operation.catalogList)
@@ -86,18 +83,16 @@ class RemoveFile(DMSRequestOperationsBase):
     res = fc.getReplicas([wf.LFN for wf in waitingFiles])
     if not res['OK']:
       if self.rmsMonitoring:
-        for opFile in waitingFiles:
-          for status in ["FileAttempted", "FileFailed"]:
-            self.rmsMonitoringReporter.addRecord({
-                "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
-                "host": socket.getfqdn(),
-                "objectType": "File",
-                "operationType": self.operation.Type,
-                "objectID": opFile.FileID,
-                "parentID": self.operation.OperationID,
-                "status": status,
-                "nbObject": 1
-            })
+        for status in ["Attempted", "Failed"]:
+          self.rmsMonitoringReporter.addRecord({
+              "timestamp": int(Time.toEpoch()),
+              "host": Network.getFQDN(),
+              "objectType": "File",
+              "operationType": self.operation.Type,
+              "parentID": self.operation.OperationID,
+              "status": status,
+              "nbObject": len(waitingFiles)
+          })
         self.rmsMonitoringReporter.commit()
       else:
         gMonitor.addMark("RemoveFileAtt")
@@ -114,18 +109,16 @@ class RemoveFile(DMSRequestOperationsBase):
       bannedTargets = self.checkSEsRSS(targetSEs, access='RemoveAccess', failIfBanned=False)
       if not bannedTargets['OK']:
         if self.rmsMonitoring:
-          for opFile in waitingFiles:
-            for status in ["FileAttempted", "FileFailed"]:
-              self.rmsMonitoringReporter.addRecord({
-                  "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
-                  "host": socket.getfqdn(),
-                  "objectType": "File",
-                  "operationType": self.operation.Type,
-                  "objectID": opFile.FileID,
-                  "parentID": self.operation.OperationID,
-                  "status": status,
-                  "nbObject": 1
-              })
+          for status in ["Attempted", "Failed"]:
+            self.rmsMonitoringReporter.addRecord({
+                "timestamp": int(Time.toEpoch()),
+                "host": Network.getFQDN(),
+                "objectType": "File",
+                "operationType": self.operation.Type,
+                "parentID": self.operation.OperationID,
+                "status": status,
+                "nbObject": len(replicas)
+            })
           self.rmsMonitoringReporter.commit()
         else:
           gMonitor.addMark("RemoveFileAtt")
@@ -144,21 +137,19 @@ class RemoveFile(DMSRequestOperationsBase):
       for opFile in waitingFiles:
         if opFile.LFN not in toRemoveDict:
           # Set the files that cannot be removed Failed
-          if self.rmsMonitoring:
-            self.rmsMonitoringReporter.addRecord({
-                "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
-                "host": socket.getfqdn(),
-                "objectType": "File",
-                "operationType": self.operation.Type,
-                "objectID": opFile.FileID,
-                "parentID": self.operation.OperationID,
-                "status": "FileFailed",
-                "nbObject": 1
-            })
           opFile.Error = self.operation.Error
           opFile.Status = "Failed"
 
       if self.rmsMonitoring:
+        self.rmsMonitoringReporter.addRecord({
+            "timestamp": int(Time.toEpoch()),
+            "host": Network.getFQDN(),
+            "objectType": "File",
+            "operationType": self.operation.Type,
+            "parentID": self.operation.OperationID,
+            "status": "Failed",
+            "nbObject": len(waitingFiles) - len(toRemoveDict)
+        })
         self.rmsMonitoringReporter.commit()
 
       if not toRemoveDict:
@@ -167,17 +158,15 @@ class RemoveFile(DMSRequestOperationsBase):
 
     if toRemoveDict:
       if self.rmsMonitoring:
-        for opFile in toRemoveDict.values():
-          self.rmsMonitoringReporter.addRecord({
-              "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
-              "host": socket.getfqdn(),
-              "objectType": "File",
-              "operationType": self.operation.Type,
-              "objectID": opFile.FileID,
-              "parentID": self.operation.OperationID,
-              "status": "FileAttempted",
-              "nbObject": 1
-          })
+        self.rmsMonitoringReporter.addRecord({
+            "timestamp": int(Time.toEpoch()),
+            "host": Network.getFQDN(),
+            "objectType": "File",
+            "operationType": self.operation.Type,
+            "parentID": self.operation.OperationID,
+            "status": "Attempted",
+            "nbObject": len(toRemoveDict)
+        })
       else:
         gMonitor.addMark("RemoveFileAtt", len(toRemoveDict))
       # # 1st step - bulk removal
@@ -186,21 +175,16 @@ class RemoveFile(DMSRequestOperationsBase):
       if not bulkRemoval["OK"]:
         self.log.error("Bulk file removal failed", bulkRemoval["Message"])
       else:
-        toRemoveDictCopy = toRemoveDict
-        toRemoveDict = bulkRemoval["Value"]
         if self.rmsMonitoring:
-          for opFile in toRemoveDictCopy.values():
-            if opFile not in toRemoveDict.values():
-              self.rmsMonitoringReporter.addRecord({
-                  "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
-                  "host": socket.getfqdn(),
-                  "objectType": "File",
-                  "operationType": self.operation.Type,
-                  "objectID": opFile.FileID,
-                  "parentID": self.operation.OperationID,
-                  "status": "FileSuccessful",
-                  "nbObject": 1
-              })
+          self.rmsMonitoringReporter.addRecord({
+              "timestamp": int(Time.toEpoch()),
+              "host": Network.getFQDN(),
+              "objectType": "File",
+              "operationType": self.operation.Type,
+              "parentID": self.operation.OperationID,
+              "status": "Successful",
+              "nbObject": len(toRemoveDict) - len(bulkRemoval["Value"])
+          })
         else:
           gMonitor.addMark("RemoveFileOK", len(toRemoveDict) - len(bulkRemoval["Value"]))
 
@@ -212,13 +196,12 @@ class RemoveFile(DMSRequestOperationsBase):
           self.log.error('Error removing single file', singleRemoval["Message"])
           if self.rmsMonitoring:
             self.rmsMonitoringReporter.addRecord({
-                "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
-                "host": socket.getfqdn(),
+                "timestamp": int(Time.toEpoch()),
+                "host": Network.getFQDN(),
                 "objectType": "File",
                 "operationType": self.operation.Type,
-                "objectID": opFile.FileID,
                 "parentID": self.operation.OperationID,
-                "status": "FileFailed",
+                "status": "Failed",
                 "nbObject": 1
             })
           else:
@@ -227,13 +210,12 @@ class RemoveFile(DMSRequestOperationsBase):
           self.log.info("file %s has been removed" % lfn)
           if self.rmsMonitoring:
             self.rmsMonitoringReporter.addRecord({
-                "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
-                "host": socket.getfqdn(),
+                "timestamp": int(Time.toEpoch()),
+                "host": Network.getFQDN(),
                 "objectType": "File",
                 "operationType": self.operation.Type,
-                "objectID": opFile.FileID,
                 "parentID": self.operation.OperationID,
-                "status": "FileSuccessful",
+                "status": "Successful",
                 "nbObject": 1
             })
           else:

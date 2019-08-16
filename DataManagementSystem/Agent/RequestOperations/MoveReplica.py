@@ -7,9 +7,6 @@ __RCSID__ = "$Id $"
 
 # # imports
 import os
-import time
-import datetime
-import socket
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
@@ -17,7 +14,7 @@ from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase
 from DIRAC.DataManagementSystem.Client.ConsistencyInspector import ConsistencyInspector
 
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.Core.Utilities import Time, Network
 
 ####
 
@@ -38,9 +35,13 @@ class MoveReplica(DMSRequestOperationsBase):
     """
     super(MoveReplica, self).__init__(operation, csPath)
 
-    # Check whether the ES flag is enabled so we can send the data accordingly.
-    self.rmsMonitoring = Operations().getValue("EnableActivityMonitoring", False)
+    # Init ConsistencyInspector: used to check replicas
+    self.ci = ConsistencyInspector()
 
+  def __call__(self):
+    """ call me maybe """
+
+    # Check whether the ES flag is enabled so we can send the data accordingly.
     if self.rmsMonitoring:
       self.rmsMonitoringReporter = MonitoringReporter(monitoringType="RMSMonitoring")
     else:
@@ -62,11 +63,6 @@ class MoveReplica(DMSRequestOperationsBase):
       gMonitor.registerActivity("RemoveReplicaFail", "Failed replica removals",
                                 "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
 
-    # Init ConsistencyInspector: used to check replicas
-    self.ci = ConsistencyInspector()
-
-  def __call__(self):
-    """ call me maybe """
     # # check replicas first
     res = self.__checkReplicas()
     if not res["OK"]:
@@ -78,18 +74,16 @@ class MoveReplica(DMSRequestOperationsBase):
       bannedSource = self.checkSEsRSS(sourceSE, 'ReadAccess')
       if not bannedSource["OK"]:
         if self.rmsMonitoring:
-          for opFile in self.operation:
-            for status in ["FileAttempted", "FileFailed"]:
-              self.rmsMonitoringReporter.addRecord({
-                  "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
-                  "host": socket.getfqdn(),
-                  "objectType": "File",
-                  "operationType": self.operation.Type,
-                  "objectID": opFile.FileID,
-                  "parentID": self.operation.OperationID,
-                  "status": status,
-                  "nbObject": 1
-              })
+          for status in ["Attempted", "Failed"]:
+            self.rmsMonitoringReporter.addRecord({
+                "timestamp": int(Time.toEpoch()),
+                "host": Network.getFQDN(),
+                "objectType": "File",
+                "operationType": self.operation.Type,
+                "parentID": self.operation.OperationID,
+                "status": status,
+                "nbObject": len(self.operation)
+            })
           self.rmsMonitoringReporter.commit()
         else:
           gMonitor.addMark("ReplicateAndRegisterAtt", len(self.operation))
@@ -105,18 +99,16 @@ class MoveReplica(DMSRequestOperationsBase):
     bannedTargets = self.checkSEsRSS()
     if not bannedTargets['OK']:
       if self.rmsMonitoring:
-        for opFile in self.operation:
-          for status in ["FileAttempted", "FileFailed"]:
-            self.rmsMonitoringReporter.addRecord({
-                "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
-                "host": socket.getfqdn(),
-                "objectType": "File",
-                "operationType": self.operation.Type,
-                "objectID": opFile.FileID,
-                "parentID": self.operation.OperationID,
-                "status": status,
-                "nbObject": 1
-            })
+        for status in ["Attempted", "Failed"]:
+          self.rmsMonitoringReporter.addRecord({
+              "timestamp": int(Time.toEpoch()),
+              "host": Network.getFQDN(),
+              "objectType": "File",
+              "operationType": self.operation.Type,
+              "parentID": self.operation.OperationID,
+              "status": status,
+              "nbObject": len(self.operation)
+          })
         self.rmsMonitoringReporter.commit()
       else:
         gMonitor.addMark("ReplicateAndRegisterAtt", len(self.operation))
@@ -136,18 +128,16 @@ class MoveReplica(DMSRequestOperationsBase):
     bannedTargets = self.checkSEsRSS(targetSEs, access='RemoveAccess')
     if not bannedTargets['OK']:
       if self.rmsMonitoring:
-        for opFile in self.operation:
-          for status in ["FileAttempted", "FileFailed"]:
-            self.rmsMonitoringReporter.addRecord({
-                "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
-                "host": socket.getfqdn(),
-                "objectType": "File",
-                "operationType": self.operation.Type,
-                "objectID": opFile.FileID,
-                "parentID": self.operation.OperationID,
-                "status": status,
-                "nbObject": 1
-            })
+        for status in ["Attempted", "Failed"]:
+          self.rmsMonitoringReporter.addRecord({
+              "timestamp": int(Time.toEpoch()),
+              "host": Network.getFQDN(),
+              "objectType": "File",
+              "operationType": self.operation.Type,
+              "parentID": self.operation.OperationID,
+              "status": status,
+              "nbObject": len(self.operation)
+          })
         self.rmsMonitoringReporter.commit()
       else:
         gMonitor.addMark("RemoveReplicaAtt")
@@ -206,22 +196,20 @@ class MoveReplica(DMSRequestOperationsBase):
     noReplicas = replicas['NoReplicas']
 
     if noReplicas:
+      if self.rmsMonitoring:
+        self.rmsMonitoringReporter.addRecord({
+            "timestamp": int(Time.toEpoch()),
+            "host": Network.getFQDN(),
+            "objectType": "File",
+            "operationType": self.operation.Type,
+            "parentID": self.operation.OperationID,
+            "status": "Failed",
+            "nbObject": len(noReplicas)
+        })
+        self.rmsMonitoringReporter.commit()
       for lfn in noReplicas.keys():
         self.log.error("File %s doesn't exist" % lfn)
-        if self.rmsMonitoring:
-          opFile = noReplicas[lfn]
-          self.rmsMonitoringReporter.addRecord({
-              "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
-              "host": socket.getfqdn(),
-              "objectType": "File",
-              "operationType": self.operation.Type,
-              "objectID": opFile.FileID,
-              "parentID": self.operation.OperationID,
-              "status": "FileFailed",
-              "nbObject": len(targetSESet)
-          })
-          self.rmsMonitoringReporter.commit()
-        else:
+        if not self.rmsMonitoring:
           gMonitor.addMark("ReplicateFail", len(targetSESet))
         waitingFiles[lfn].Status = "Failed"
 
@@ -235,17 +223,15 @@ class MoveReplica(DMSRequestOperationsBase):
   def dmRemoval(self, toRemoveDict, targetSEs):
 
     if self.rmsMonitoring:
-      for opFile in toRemoveDict.values():
-        self.rmsMonitoringReporter.addRecord({
-            "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
-            "host": socket.getfqdn(),
-            "objectType": "File",
-            "operationType": self.operation.Type,
-            "objectID": opFile.FileID,
-            "parentID": self.operation.OperationID,
-            "status": "FileAttempted",
-            "nbObject": len(targetSEs)
-        })
+      self.rmsMonitoringReporter.addRecord({
+          "timestamp": int(Time.toEpoch()),
+          "host": Network.getFQDN(),
+          "objectType": "File",
+          "operationType": self.operation.Type,
+          "parentID": self.operation.OperationID,
+          "status": "Attempted",
+          "nbObject": len(toRemoveDict)
+      })
       self.rmsMonitoringReporter.commit()
     else:
       gMonitor.addMark("RemoveReplicaAtt", len(toRemoveDict) * len(targetSEs))
@@ -270,18 +256,18 @@ class MoveReplica(DMSRequestOperationsBase):
 
       for opFile in removalOK:
         removalStatus[opFile.LFN][targetSE] = ""
-        if self.rmsMonitoring:
-          self.rmsMonitoringReporter.addRecord({
-              "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
-              "host": socket.getfqdn(),
-              "objectType": "File",
-              "operationType": self.operation.Type,
-              "objectID": opFile.FileID,
-              "parentID": self.operation.OperationID,
-              "status": "FileSuccessful",
-              "nbObject": 1
-          })
-      if not self.rmsMonitoring:
+
+      if self.rmsMonitoring:
+        self.rmsMonitoringReporter.addRecord({
+            "timestamp": int(Time.toEpoch()),
+            "host": Network.getFQDN(),
+            "objectType": "File",
+            "operationType": self.operation.Type,
+            "parentID": self.operation.OperationID,
+            "status": "Successful",
+            "nbObject": len(removalOK)
+        })
+      else:
         gMonitor.addMark("RemoveReplicaOK", len(removalOK))
 
       # # 2nd step - process the rest again
@@ -291,13 +277,12 @@ class MoveReplica(DMSRequestOperationsBase):
         if not opFile.Error:
           if self.rmsMonitoring:
             self.rmsMonitoringReporter.addRecord({
-                "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
-                "host": socket.getfqdn(),
+                "timestamp": int(Time.toEpoch()),
+                "host": Network.getFQDN(),
                 "objectType": "File",
                 "operationType": self.operation.Type,
-                "objectID": opFile.FileID,
                 "parentID": self.operation.OperationID,
-                "status": "FileSuccessful",
+                "status": "Successful",
                 "nbObject": 1
             })
           else:
@@ -306,13 +291,12 @@ class MoveReplica(DMSRequestOperationsBase):
         else:
           if self.rmsMonitoring:
             self.rmsMonitoringReporter.addRecord({
-                "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
-                "host": socket.getfqdn(),
+                "timestamp": int(Time.toEpoch()),
+                "host": Network.getFQDN(),
                 "objectType": "File",
                 "operationType": self.operation.Type,
-                "objectID": opFile.FileID,
                 "parentID": self.operation.OperationID,
-                "status": "FileFailed",
+                "status": "Failed",
                 "nbObject": 1
             })
           else:
@@ -348,13 +332,12 @@ class MoveReplica(DMSRequestOperationsBase):
 
     if self.rmsMonitoring:
       self.rmsMonitoringReporter.addRecord({
-          "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
-          "host": socket.getfqdn(),
+          "timestamp": int(Time.toEpoch()),
+          "host": Network.getFQDN(),
           "objectType": "File",
           "operationType": self.operation.Type,
-          "objectID": opFile.FileID,
           "parentID": self.operation.OperationID,
-          "status": "FileAttempted",
+          "status": "Attempted",
           "nbObject": 1
       })
       self.rmsMonitoringReporter.commit()
@@ -411,13 +394,12 @@ class MoveReplica(DMSRequestOperationsBase):
     if opFile.Error:
       if self.rmsMonitoring:
         self.rmsMonitoringReporter.addRecord({
-            "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
-            "host": socket.getfqdn(),
+            "timestamp": int(Time.toEpoch()),
+            "host": Network.getFQDN(),
             "objectType": "File",
             "operationType": self.operation.Type,
-            "objectID": opFile.FileID,
             "parentID": self.operation.OperationID,
-            "status": "FileFailed",
+            "status": "Failed",
             "nbObject": 1
         })
         self.rmsMonitoringReporter.commit()
@@ -459,18 +441,7 @@ class MoveReplica(DMSRequestOperationsBase):
 
             if "register" in res["Value"]["Successful"][lfn]:
 
-              if self.rmsMonitoring:
-                self.rmsMonitoringReporter.addRecord({
-                    "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
-                    "host": socket.getfqdn(),
-                    "objectType": "File",
-                    "operationType": self.operation.Type,
-                    "objectID": opFile.FileID,
-                    "parentID": self.operation.OperationID,
-                    "status": "FileSuccessful",
-                    "nbObject": 1
-                })
-              else:
+              if not self.rmsMonitoring:
                 gMonitor.addMark("RegisterOK", 1)
 
               regTime = res["Value"]["Successful"][lfn]["register"]
@@ -512,18 +483,27 @@ class MoveReplica(DMSRequestOperationsBase):
         self.log.error("DataManager error", res["Message"])
 
     if not opFile.Error:
+      if self.rmsMonitoring:
+        self.rmsMonitoringReporter.addRecord({
+            "timestamp": int(Time.toEpoch()),
+            "host": Network.getFQDN(),
+            "objectType": "File",
+            "operationType": self.operation.Type,
+            "parentID": self.operation.OperationID,
+            "status": "Successful",
+            "nbObject": 1
+        })
       if len(self.operation.targetSEList) > 1:
         self.log.info("file %s has been replicated to all targetSEs" % lfn)
     else:
       if self.rmsMonitoring:
         self.rmsMonitoringReporter.addRecord({
-            "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
-            "host": socket.getfqdn(),
+            "timestamp": int(Time.toEpoch()),
+            "host": Network.getFQDN(),
             "objectType": "File",
             "operationType": self.operation.Type,
-            "objectID": opFile.FileID,
             "parentID": self.operation.OperationID,
-            "status": "FileFailed",
+            "status": "Failed",
             "nbObject": 1
         })
         self.rmsMonitoringReporter.commit()

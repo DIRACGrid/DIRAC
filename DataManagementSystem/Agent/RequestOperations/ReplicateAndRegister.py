@@ -24,9 +24,6 @@ __RCSID__ = "$Id$"
 
 # # imports
 import re
-import time
-import datetime
-import socket
 from collections import defaultdict
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
@@ -45,7 +42,7 @@ from DIRAC.DataManagementSystem.Client.FTS3Client import FTS3Client
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.Core.Utilities import Time, Network
 
 def filterReplicas(opFile, logger=None, dataManager=None):
   """ filter out banned/invalid source SEs """
@@ -163,9 +160,15 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
     """
     super(ReplicateAndRegister, self).__init__(operation, csPath)
 
-    # Check whether the ES flag is enabled so we can send the data accordingly.
-    self.rmsMonitoring = Operations().getValue("EnableActivityMonitoring", False)
+    # # SE cache
 
+    # Clients
+    self.fc = FileCatalog()
+
+  def __call__(self):
+    """ call me maybe """
+
+    # Check whether the ES flag is enabled so we can send the data accordingly.
     if self.rmsMonitoring:
       self.rmsMonitoringReporter = MonitoringReporter(monitoringType="RMSMonitoring")
     else:
@@ -187,13 +190,7 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
                                 "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
       gMonitor.registerActivity("FTSScheduleFail", "File schedule failed",
                                 "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
-    # # SE cache
 
-    # Clients
-    self.fc = FileCatalog()
-
-  def __call__(self):
-    """ call me maybe """
     # # check replicas first
     checkReplicas = self.__checkReplicas()
     if not checkReplicas["OK"]:
@@ -226,14 +223,13 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
         self.log.error("File does not exists", failedLFN)
         if self.rmsMonitoring:
           self.rmsMonitoringReporter.addRecord({
-              "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
-              "host": socket.getfqdn(),
+              "timestamp": int(Time.toEpoch()),
+              "host": Network.getFQDN(),
               "objectType": "File",
               "operationType": self.operation.Type,
-              "objectID": waitingFiles[failedLFN].FileID,
               "parentID": self.operation.OperationID,
-              "status": "FileFailed",
-              "nbObject": len(targetSESet)
+              "status": "Failed",
+              "nbObject": 1
           })
         else:
           gMonitor.addMark("ReplicateFail", len(targetSESet))
@@ -366,22 +362,22 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
     # Dict which maps the FileID to the object
     rmsFilesIds = {}
 
+    if self.rmsMonitoring:
+      self.rmsMonitoringReporter.addRecord({
+          "timestamp": int(Time.toEpoch()),
+          "host": Network.getFQDN(),
+          "objectType": "File",
+          "operationType": self.operation.Type,
+          "parentID": self.operation.OperationID,
+          "status": "Attempted",
+          "nbObject": len(self.getWaitingFilesList())
+      })
+
     for opFile in self.getWaitingFilesList():
       rmsFilesIds[opFile.FileID] = opFile
 
       opFile.Error = ''
-      if self.rmsMonitoring:
-        self.rmsMonitoringReporter.addRecord({
-            "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
-            "host": socket.getfqdn(),
-            "objectType": "File",
-            "operationType": self.operation.Type,
-            "objectID": opFile.FileID,
-            "parentID": self.operation.OperationID,
-            "status": "FileAttempted",
-            "nbObject": 1
-        })
-      else:
+      if not self.rmsMonitoring:
         gMonitor.addMark("FTSScheduleAtt")
       # # check replicas
       replicas = self._filterReplicas(opFile)
@@ -406,13 +402,12 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
       else:
         if self.rmsMonitoring:
           self.rmsMonitoringReporter.addRecord({
-              "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
-              "host": socket.getfqdn(),
+              "timestamp": int(Time.toEpoch()),
+              "host": Network.getFQDN(),
               "objectType": "File",
               "operationType": self.operation.Type,
-              "objectID": opFile.FileID,
               "parentID": self.operation.OperationID,
-              "status": "FileFailed",
+              "status": "Failed",
               "nbObject": 1
           })
         else:
@@ -479,20 +474,20 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
 
       self.log.info("%d files have been scheduled to FTS3" % len(fts3Files))
 
+      if self.rmsMonitoring:
+        self.rmsMonitoringReporter.addRecord({
+            "timestamp": int(Time.toEpoch()),
+            "host": Network.getFQDN(),
+            "objectType": "File",
+            "operationType": self.operation.Type,
+            "parentID": self.operation.OperationID,
+            "status": "Successful",
+            "nbObject": len(fts3Files)
+        })
+
       for ftsFile in fts3Files:
         opFile = rmsFilesIds[ftsFile.rmsFileID]
-        if self.rmsMonitoring:
-          self.rmsMonitoringReporter.addRecord({
-              "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
-              "host": socket.getfqdn(),
-              "objectType": "File",
-              "operationType": self.operation.Type,
-              "objectID": opFile.FileID,
-              "parentID": self.operation.OperationID,
-              "status": "FileSuccessful",
-              "nbObject": 1
-          })
-        else:
+        if not self.rmsMonitoring:
           gMonitor.addMark("FTSScheduleOK", 1)
         opFile.Status = "Scheduled"
         self.log.debug("%s has been scheduled for FTS" % opFile.LFN)
@@ -515,18 +510,16 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
       bannedSource = self.checkSEsRSS(sourceSE, 'ReadAccess')
       if not bannedSource["OK"]:
         if self.rmsMonitoring:
-          for opFile in self.operation:
-            for status in ["FileAttempted", "FileFailed"]:
-              self.rmsMonitoringReporter.addRecord({
-                  "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
-                  "host": socket.getfqdn(),
-                  "objectType": "File",
-                  "operationType": self.operation.Type,
-                  "objectID": opFile.FileID,
-                  "parentID": self.operation.OperationID,
-                  "status": status,
-                  "nbObject": 1
-              })
+          for status in ["Attempted", "Failed"]:
+            self.rmsMonitoringReporter.addRecord({
+                "timestamp": int(Time.toEpoch()),
+                "host": Network.getFQDN(),
+                "objectType": "File",
+                "operationType": self.operation.Type,
+                "parentID": self.operation.OperationID,
+                "status": status,
+                "nbObject": len(self.operation)
+            })
           self.rmsMonitoringReporter.commit()
         else:
           gMonitor.addMark("ReplicateAndRegisterAtt", len(self.operation))
@@ -542,18 +535,16 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
     bannedTargets = self.checkSEsRSS()
     if not bannedTargets['OK']:
       if self.rmsMonitoring:
-        for opFile in self.operation:
-          for status in ["FileAttempted", "FileFailed"]:
-            self.rmsMonitoringReporter.addRecord({
-                "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
-                "host": socket.getfqdn(),
-                "objectType": "File",
-                "operationType": self.operation.Type,
-                "objectID": opFile.FileID,
-                "parentID": self.operation.OperationID,
-                "status": status,
-                "nbObject": 1
-            })
+        for status in ["Attempted", "Failed"]:
+          self.rmsMonitoringReporter.addRecord({
+              "timestamp": int(Time.toEpoch()),
+              "host": Network.getFQDN(),
+              "objectType": "File",
+              "operationType": self.operation.Type,
+              "parentID": self.operation.OperationID,
+              "status": status,
+              "nbObject": len(self.operation)
+          })
         self.rmsMonitoringReporter.commit()
       else:
         gMonitor.addMark("ReplicateAndRegisterAtt", len(self.operation))
@@ -577,6 +568,18 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
       self.log.info("Transferring files using Data manager...")
     errors = defaultdict(int)
     delayExecution = 0
+
+    if self.rmsMonitoring:
+      self.rmsMonitoringReporter.addRecord({
+          "timestamp": int(Time.toEpoch()),
+          "host": Network.getFQDN(),
+          "objectType": "File",
+          "operationType": self.operation.Type,
+          "parentID": self.operation.OperationID,
+          "status": "Attempted",
+          "nbObject": len(waitingFiles)
+      })
+
     for opFile in waitingFiles:
       if opFile.Error in ("Couldn't get metadata",
                           "File doesn't exist",
@@ -585,19 +588,9 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
         err = "File already in error status"
         errors[err] += 1
 
-      if self.rmsMonitoring:
-        self.rmsMonitoringReporter.addRecord({
-            "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
-            "host": socket.getfqdn(),
-            "objectType": "File",
-            "operationType": self.operation.Type,
-            "objectID": opFile.FileID,
-            "parentID": self.operation.OperationID,
-            "status": "FileAttempted",
-            "nbObject": 1
-        })
-      else:
+      if not self.rmsMonitoring:
         gMonitor.addMark("ReplicateAndRegisterAtt", 1)
+
       opFile.Error = ''
       lfn = opFile.LFN
 
@@ -616,13 +609,12 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
       if not validReplicas:
         if self.rmsMonitoring:
           self.rmsMonitoringReporter.addRecord({
-              "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
-              "host": socket.getfqdn(),
+              "timestamp": int(Time.toEpoch()),
+              "host": Network.getFQDN(),
               "objectType": "File",
               "operationType": self.operation.Type,
-              "objectID": opFile.FileID,
               "parentID": self.operation.OperationID,
-              "status": "FileFailed",
+              "status": "Failed",
               "nbObject": 1
           })
         else:
@@ -695,19 +687,9 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
 
               if "register" in res["Value"]["Successful"][lfn]:
 
-                if self.rmsMonitoring:
-                  self.rmsMonitoringReporter.addRecord({
-                      "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
-                      "host": socket.getfqdn(),
-                      "objectType": "File",
-                      "operationType": self.operation.Type,
-                      "objectID": opFile.FileID,
-                      "parentID": self.operation.OperationID,
-                      "status": "FileSuccessful",
-                      "nbObject": 1
-                  })
-                else:
+                if not self.rmsMonitoring:
                   gMonitor.addMark("RegisterOK", 1)
+
                 regTime = res["Value"]["Successful"][lfn]["register"]
                 prString += ' and registered in %s s.' % regTime
                 self.log.info(prString)
@@ -749,18 +731,28 @@ class ReplicateAndRegister(DMSRequestOperationsBase):
           self.log.error("DataManager error", res["Message"])
 
       if not opFile.Error:
+        if self.rmsMonitoring:
+          self.rmsMonitoringReporter.addRecord({
+              "timestamp": int(Time.toEpoch()),
+              "host": Network.getFQDN(),
+              "objectType": "File",
+              "operationType": self.operation.Type,
+              "parentID": self.operation.OperationID,
+              "status": "Successful",
+              "nbObject": 1
+          })
+
         if len(self.operation.targetSEList) > 1:
           self.log.info("file %s has been replicated to all targetSEs" % lfn)
         opFile.Status = "Done"
       elif self.rmsMonitoring:
         self.rmsMonitoringReporter.addRecord({
-            "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
-            "host": socket.getfqdn(),
+            "timestamp": int(Time.toEpoch()),
+            "host": Network.getFQDN(),
             "objectType": "File",
             "operationType": self.operation.Type,
-            "objectID": opFile.FileID,
             "parentID": self.operation.OperationID,
-            "status": "FileFailed",
+            "status": "Failed",
             "nbObject": 1
         })
     # Log error counts

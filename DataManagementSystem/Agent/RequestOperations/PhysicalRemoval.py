@@ -27,9 +27,6 @@ __RCSID__ = "$Id $"
 
 # # imports
 import os
-import time
-import datetime
-import socket
 # # from DIRAC
 from DIRAC import S_OK
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
@@ -37,7 +34,7 @@ from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.Core.Utilities import Time, Network
 
 ########################################################################
 
@@ -68,9 +65,10 @@ class PhysicalRemoval(DMSRequestOperationsBase):
                               "RequestExecutingAgent", "Bytes", gMonitor.OP_ACUM)
 =======
 
-    # Check whether the ES flag is enabled so we can send the data accordingly.
-    self.rmsMonitoring = Operations().getValue("EnableActivityMonitoring", False)
+  def __call__(self):
+    """ perform physical removal operation """
 
+    # Check whether the ES flag is enabled so we can send the data accordingly.
     if self.rmsMonitoring:
       self.rmsMonitoringReporter = MonitoringReporter(monitoringType="RMSMonitoring")
     else:
@@ -85,8 +83,6 @@ class PhysicalRemoval(DMSRequestOperationsBase):
                                 "RequestExecutingAgent", "Bytes", gMonitor.OP_ACUM)
 >>>>>>> Migrate DMS/Agent/RequestOperations to ES.
 
-  def __call__(self):
-    """ perform physical removal operation """
     bannedTargets = self.checkSEsRSS(access='RemoveAccess')
     if not bannedTargets['OK']:
 <<<<<<< HEAD
@@ -94,18 +90,16 @@ class PhysicalRemoval(DMSRequestOperationsBase):
       gMonitor.addMark("PhysicalRemovalFail")
 =======
       if self.rmsMonitoring:
-        for opFile in self.operation:
-          for status in ["FileAttempted", "FileFailed"]:
-            self.rmsMonitoringReporter.addRecord({
-                "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
-                "host": socket.getfqdn(),
-                "objectType": "File",
-                "operationType": self.operation.Type,
-                "objectID": opFile.FileID,
-                "parentID": self.operation.OperationID,
-                "status": status,
-                "nbObject": 1
-            })
+        for status in ["Attempted", "Failed"]:
+          self.rmsMonitoringReporter.addRecord({
+              "timestamp": int(Time.toEpoch()),
+              "host": Network.getFQDN(),
+              "objectType": "File",
+              "operationType": self.operation.Type,
+              "parentID": self.operation.OperationID,
+              "status": status,
+              "nbObject": len(self.operation)
+          })
         self.rmsMonitoringReporter.commit()
       else:
         gMonitor.addMark("PhysicalRemovalAtt")
@@ -127,17 +121,15 @@ class PhysicalRemoval(DMSRequestOperationsBase):
 =======
 
     if self.rmsMonitoring:
-      for opFile in toRemoveDict.values():
-        self.rmsMonitoringReporter.addRecord({
-            "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
-            "host": socket.getfqdn(),
-            "objectType": "File",
-            "operationType": self.operation.Type,
-            "objectID": opFile.FileID,
-            "parentID": self.operation.OperationID,
-            "status": "FileAttempted",
-            "nbObject": len(targetSEs)
-        })
+      self.rmsMonitoringReporter.addRecord({
+          "timestamp": int(Time.toEpoch()),
+          "host": Network.getFQDN(),
+          "objectType": "File",
+          "operationType": self.operation.Type,
+          "parentID": self.operation.OperationID,
+          "status": "Attempted",
+          "nbObject": len(toRemoveDict)
+      })
       self.rmsMonitoringReporter.commit()
     else:
       gMonitor.addMark("PhysicalRemovalAtt", len(toRemoveDict) * len(targetSEs))
@@ -177,13 +169,12 @@ class PhysicalRemoval(DMSRequestOperationsBase):
 =======
           if self.rmsMonitoring:
             self.rmsMonitoringReporter.addRecord({
-                "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
-                "host": socket.getfqdn(),
+                "timestamp": int(Time.toEpoch()),
+                "host": Network.getFQDN(),
                 "objectType": "File",
                 "operationType": self.operation.Type,
-                "objectID": opFile.FileID,
                 "parentID": self.operation.OperationID,
-                "status": "FileFailed",
+                "status": "Failed",
                 "nbObject": 1
             })
           else:
@@ -210,14 +201,13 @@ class PhysicalRemoval(DMSRequestOperationsBase):
 
             if self.rmsMonitoring:
               self.rmsMonitoringReporter.addRecord({
-                  "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
-                  "host": socket.getfqdn(),
+                  "timestamp": int(Time.toEpoch()),
+                  "host": Network.getFQDN(),
                   "objectType": "File",
                   "operationType": self.operation.Type,
-                  "objectID": opFile.FileID,
                   "parentID": self.operation.OperationID,
-                  "status": "FileFailed",
-                  "nbObject": len(errors)
+                  "status": "Failed",
+                  "nbObject": 1
               })
             else:
               gMonitor.addMark("PhysicalRemovalFail", len(errors))
@@ -226,14 +216,13 @@ class PhysicalRemoval(DMSRequestOperationsBase):
 
         if self.rmsMonitoring:
           self.rmsMonitoringReporter.addRecord({
-              "timestamp": time.mktime(datetime.datetime.utcnow().timetuple()),
-              "host": socket.getfqdn(),
+              "timestamp": int(Time.toEpoch()),
+              "host": Network.getFQDN(),
               "objectType": "File",
               "operationType": self.operation.Type,
-              "objectID": opFile.FileID,
               "parentID": self.operation.OperationID,
-              "status": "FileSuccessful",
-              "nbObject": len(targetSEs)
+              "status": "Successful",
+              "nbObject": 1
           })
         else:
           gMonitor.addMark("PhysicalRemovalOK", len(targetSEs))
