@@ -10,6 +10,16 @@
 # - 2.7.x (x < 9)
 # - 2.7.x (x >= 9)
 # (- 3.6.x)
+#
+#
+# Invoke this with:
+#
+# python Test_GenerateAndExecutePilotWrapper.py url://to_PilotWrapper.py
+# (and in this case it will download dirac-install.py from github)
+# or
+# python Test_GenerateAndExecutePilotWrapper.py url://to_PilotWrapper.py url://to_dirac-install.py
+#
+
 
 from __future__ import print_function
 
@@ -50,7 +60,8 @@ with open('dirac-install.py', 'wb') as pj:
 
 # use its functions to generate a pilot wrapper
 time.sleep(1)
-from PilotWrapper import pilotWrapperScript
+# by now this will be in the local dir
+from PilotWrapper import pilotWrapperScript  # pylint: disable=import-error
 
 diracInstall = os.path.join(os.getcwd(), 'dirac-install.py')
 with open(diracInstall, "r") as fd:
