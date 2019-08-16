@@ -24,31 +24,39 @@
 from __future__ import print_function
 
 import sys
-import urllib2
 import os
 import time
 import base64
 import bz2
 
-# gets the (DIRAC-free) PilotWrapper.py, and dirac-install.py
+# 1) gets the (DIRAC-free) PilotWrapper.py, and dirac-install.py
+
+# urllib is different between python 2 and 3
+if sys.version_info < (3,):
+  from urllib2 import urlopen as url_library_urlopen
+else:
+  from urllib.request import urlopen as url_library_urlopen
+
 
 if sys.version_info >= (2, 7, 9):
   import ssl
   context = ssl._create_unverified_context()
-  rf = urllib2.urlopen(sys.argv[1],
-                       context=context)
+  rf = url_library_urlopen(sys.argv[1],
+                           context=context)
   try:  # dirac-install.py location from the args, if provided
-    di = urllib2.urlopen(sys.argv[2],
-                         context=context)
+    di = url_library_urlopen(sys.argv[2],
+                             context=context)
   except IndexError:
-    di = urllib2.urlopen('https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/Core/scripts/dirac-install.py',
-                         context=context)
+    di_loc = 'https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/Core/scripts/dirac-install.py'
+    di = url_library_urlopen(di_loc,
+                             context=context)
 else:
-  rf = urllib2.urlopen(sys.argv[1])
+  rf = url_library_urlopen(sys.argv[1])
   try:  # dirac-install.py location from the args, if provided
-    di = urllib2.urlopen(sys.argv[2])
+    di = url_library_urlopen(sys.argv[2])
   except IndexError:
-    di = urllib2.urlopen('https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/Core/scripts/dirac-install.py')
+    di_loc = 'https://raw.githubusercontent.com/DIRACGrid/DIRAC/integration/Core/scripts/dirac-install.py'
+    di = url_library_urlopen(di_loc)
 
 with open('PilotWrapper.py', 'wb') as pj:
   pj.write(rf.read())
@@ -58,7 +66,7 @@ with open('dirac-install.py', 'wb') as pj:
   pj.close()  # for python 2.6
 
 
-# use its functions to generate a pilot wrapper
+# 2)  use its functions to generate a pilot wrapper
 time.sleep(1)
 # by now this will be in the local dir
 from PilotWrapper import pilotWrapperScript  # pylint: disable=import-error
@@ -76,6 +84,6 @@ res = pilotWrapperScript(
 with open('pilot-wrapper.sh', 'wb') as pj:
   pj.write(res)
 
-# now start it
+# 3) now start it
 
 os.system("sh pilot-wrapper.sh")
