@@ -21,10 +21,10 @@ expects to find and download such a ``pilot.json`` file from a known location, o
 Such a location can be, for example, exposed via *https://* by the DIRAC WebApp webserver. Other protocols (including *file://*) are possible.
 
 The pilot.json file is always kept in sync with the content of the Configuration Service.
-At every configuration update, the pilot.json file content will also be updated (if necessary).
+At every configuration update, the pilot.json file content will also be updated.
 
 Also the Operations option *Pilot/<...>/pilotFileServer* should be set to the webserver(s) chosen for the upload.
-If more than one location are used, add them as a list.
+If more than one location is used, add them as a list.
 We suggest to use simply the DIRAC webserver, but multiple locations are also possible, and advised.
 
 If you use the DIRAC webserver please

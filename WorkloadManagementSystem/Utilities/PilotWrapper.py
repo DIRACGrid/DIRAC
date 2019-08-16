@@ -96,8 +96,8 @@ def pilotWrapperScript(pilotFilesCompressedEncodedDict=None,
     envVariables = {}
 
   compressedString = ""
-  for pfName, encodedPf in pilotFilesCompressedEncodedDict.items():  # are there some pilot files to unpack?
-                                                                     # then we create the unpacking string
+  # are there some pilot files to unpack? Then we create the unpacking string
+  for pfName, encodedPf in pilotFilesCompressedEncodedDict.items():
     compressedString += """
 try:
   with open('%(pfName)s', 'w') as fd:

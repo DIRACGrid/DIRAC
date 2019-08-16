@@ -33,13 +33,13 @@ import bz2
 
 # urllib is different between python 2 and 3
 if sys.version_info < (3,):
-  from urllib2 import urlopen as url_library_urlopen
+  from urllib2 import urlopen as url_library_urlopen  # pylint: disable=import-error
 else:
-  from urllib.request import urlopen as url_library_urlopen
+  from urllib.request import urlopen as url_library_urlopen  # pylint: disable=no-name-in-module
 
 
 if sys.version_info >= (2, 7, 9):
-  import ssl
+  import ssl  # pylint: disable=import-error
   context = ssl._create_unverified_context()
   rf = url_library_urlopen(sys.argv[1],
                            context=context)
@@ -74,7 +74,7 @@ from PilotWrapper import pilotWrapperScript  # pylint: disable=import-error
 diracInstall = os.path.join(os.getcwd(), 'dirac-install.py')
 with open(diracInstall, "r") as fd:
   diracInstall = fd.read()
-if sys.version_info < (3,):
+if sys.version_info >= (3,):
   diracInstallEncoded = base64.b64encode(bz2.compress(bytes(diracInstall, 'UTF-8'), 9))
 else:
   diracInstallEncoded = base64.b64encode(bz2.compress(diracInstall, 9))
