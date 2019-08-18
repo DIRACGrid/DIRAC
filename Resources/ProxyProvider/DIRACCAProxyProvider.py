@@ -279,8 +279,8 @@ class DIRACCAProxyProvider(ProxyProvider):
 
         :return: S_OK()/S_ERROR()
     """
-    if value and m2.x509_name_set_by_nid(self.__X509Name.x509_name,
-                                         self.fs2nid[field], value) == 0:  # pylint: disable=no-member
+    if value and m2.x509_name_set_by_nid(self.__X509Name.x509_name,  # pylint: disable=no-member
+                                         self.fs2nid[field], value) == 0:
       if not self.__X509Name.add_entry_by_txt(field=field, type=ASN1.MBSTRING_ASC,
                                               entry=value, len=-1, loc=-1, set=0) == 1:
         return S_ERROR('Cannot set "%s" field.' % field)
