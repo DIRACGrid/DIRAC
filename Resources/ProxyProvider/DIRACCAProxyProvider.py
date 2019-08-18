@@ -7,7 +7,8 @@ import re
 import time
 import random
 import datetime
-import M2Crypto
+
+from M2Crypto import m2, util, X509, ASN1, EVP, RSA
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
@@ -24,7 +25,7 @@ class DIRACCAProxyProvider(ProxyProvider):
     """ Constructor
     """
     super(DIRACCAProxyProvider, self).__init__(parameters)
-    self.__X509Name = M2Crypto.X509.X509_Name()
+    self.__X509Name = X509.X509_Name()
     self.log = gLogger.getSubLogger(__name__)
     # Initialize
     self.maxDict = {}
@@ -33,7 +34,7 @@ class DIRACCAProxyProvider(ProxyProvider):
     self.algoritm = 'sha256'
     self.match, self.supplied, self.optional = [], [], []
     # Add not supported distributes names
-    self.fs2nid = M2Crypto.X509.X509_Name.nid.copy()
+    self.fs2nid = X509.X509_Name.nid.copy()
     self.fs2nid['DC'] = -1
     self.fs2nid['domainComponent'] = -1
     self.n2field = {}  # nid: most short or specidied in CS distributes name
@@ -55,19 +56,22 @@ class DIRACCAProxyProvider(ProxyProvider):
         :param dict parameters: provider parameters
     """
     self.parameters = parameters
-    if 'Bits' in self.parameters:
-      self.bits = int(self.parameters['Bits'])
-    if 'Algoritm' in self.parameters:
-      self.algoritm = self.parameters['Algoritm']
-    for field in self.parameters.get('Match') and self.parameters['Match'].replace(' ', '').split(',') or []:
+    if 'Bits' in parameters:
+      self.bits = int(parameters['Bits'])
+    if 'Algoritm' in parameters:
+      self.algoritm = parameters['Algoritm']
+    for field in parameters.get('Match') and parameters['Match'].replace(' ', '').split(',') or []:
       self.match.append(self.fs2nid[field])
-    for field in self.parameters.get('Supplied') and self.parameters['Supplied'].replace(' ', '').split(',') or ['CN']:
+    for field in parameters.get('Supplied') and parameters['Supplied'].replace(' ', '').split(',') or ['CN']:
       self.supplied.append(self.fs2nid[field])
-    for field in self.parameters.get('Optional') and self.parameters['Optional'].replace(' ', '').split(',') or ['C', 'O', 'OU', 'emailAddress']:
+    for field in parameters.get('Optional') and parameters['Optional'].replace(' ', '').split(',') or ['C',
+                                                                                                       'O',
+                                                                                                       'OU',
+                                                                                                       'emailAddress']:
       self.optional.append(self.fs2nid[field])
     # Set defaults for distridutes names
     self.defDict = {}
-    for field, value in self.parameters.items():
+    for field, value in parameters.items():
       if field in self.fs2nid:
         self.defDict[field] = value
     self.defFieldByNid = dict([[self.fs2nid[field], field] for field in self.defDict])
@@ -75,11 +79,11 @@ class DIRACCAProxyProvider(ProxyProvider):
       if nid in self.defFieldByNid:
         self.n2field[nid] = self.defFieldByNid[nid]
     # If CA file exist
-    if self.parameters.get('CAConfigFile'):
+    if parameters.get('CAConfigFile'):
       self.__parseCACFG()
     self.match.sort()
     self.supplied.sort()
-    
+
   def checkStatus(self, userDict=None, sessionDict=None):
     """ Read ready to work status of proxy provider
 
@@ -110,7 +114,7 @@ class DIRACCAProxyProvider(ProxyProvider):
         fullName = dnDict.get('CN')
       if not eMail:
         eMail = dnDict.get('emailAddress')
-    
+
     if not fullName or not eMail:
       return S_ERROR("Incomplete user information")
 
@@ -128,7 +132,7 @@ class DIRACCAProxyProvider(ProxyProvider):
     result = self.getUserDN(userDict, sessionDict, userDN=userDict.get('DN'))
     if not result['OK']:
       return result
-    
+
     result = self.__createCertM2Crypto()
     if not result['OK']:
       return result
@@ -167,7 +171,7 @@ class DIRACCAProxyProvider(ProxyProvider):
     caDN = result['Value']['subject']
     caDict = dict([field.split('=') for field in caDN.lstrip('/').split('/')])
     caFieldByNid = dict([[self.fs2nid[field], field] for field in caDict])
-    
+
     dnDict = {}
     if userDN:
       self.log.info('Checking %s user DN' % userDN)
@@ -180,11 +184,14 @@ class DIRACCAProxyProvider(ProxyProvider):
         if nid not in self.supplied + self.match + self.optional:
           return S_ERROR('Current DN is invalid, "%s" field is not found for current CA.' % dnFieldByNid[nid])
         if nid in self.match and not caDict[caFieldByNid[nid]] == dnDict[dnFieldByNid[nid]]:
-          return S_ERROR('Current DN is invalid, "%s" field must be %s.' % (dnFieldByNid[nid], caDict[caFieldByNid[nid]]))
+          return S_ERROR('Current DN is invalid, "%s" field must be %s.' % (dnFieldByNid[nid],
+                                                                            caDict[caFieldByNid[nid]]))
         if nid in self.maxDict and len(dnDict[dnFieldByNid[nid]]) > self.maxDict[nid]:
-          return S_ERROR('Current DN is invalid, "%s" field must be less then %s.' % (dnDict[dnFieldByNid[nid]], self.maxDict[nid]))
+          return S_ERROR('Current DN is invalid, "%s" field must be less then %s.' % (dnDict[dnFieldByNid[nid]],
+                                                                                      self.maxDict[nid]))
         if nid in self.minDict and len(dnDict[dnFieldByNid[nid]]) < self.minDict[nid]:
-          return S_ERROR('Current DN is invalid, "%s" field must be more then %s.' % (dnDict[dnFieldByNid[nid]], self.minDict[nid]))
+          return S_ERROR('Current DN is invalid, "%s" field must be more then %s.' % (dnDict[dnFieldByNid[nid]],
+                                                                                      self.minDict[nid]))
       for k, v in dnDict.items():
         if self.defDict.get(k):
           self.defDict[k] = v
@@ -218,7 +225,7 @@ class DIRACCAProxyProvider(ProxyProvider):
           return result
 
     # WARN: This logic not support list of distribtes name elements
-    resDN = M2Crypto.m2.x509_name_oneline(self.__X509Name.x509_name)
+    resDN = m2.x509_name_oneline(self.__X509Name.x509_name)
     if userDN and not userDN == resDN:
       return S_ERROR('%s not match with generated DN: %s' % (userDN, resDN))
     return S_OK(resDN)
@@ -246,7 +253,7 @@ class DIRACCAProxyProvider(ProxyProvider):
               if v in self.cfg[b]:
                 val = val.replace('$' + v, self.cfg[b][v])
           self.cfg[block][field] = val.strip()
-    
+
     self.bits = self.cfg['req'].get('default_bits') or self.bits
     self.algoritm = self.cfg[self.cfg['ca']['default_ca']].get('default_md') or self.algoritm
     for k, v in self.cfg[self.cfg[self.cfg['ca']['default_ca']]['policy']].items():
@@ -272,8 +279,9 @@ class DIRACCAProxyProvider(ProxyProvider):
 
         :return: S_OK()/S_ERROR()
     """
-    if value and M2Crypto.m2.x509_name_set_by_nid(self.__X509Name.x509_name, self.fs2nid[field], value) == 0:
-      if not self.__X509Name.add_entry_by_txt(field=field, type=M2Crypto.ASN1.MBSTRING_ASC, entry=value, len=-1, loc=-1, set=0) == 1:
+    if value and m2.x509_name_set_by_nid(self.__X509Name.x509_name, self.fs2nid[field], value) == 0:
+      if not self.__X509Name.add_entry_by_txt(field=field, type=ASN1.MBSTRING_ASC,
+                                              entry=value, len=-1, loc=-1, set=0) == 1:
         return S_ERROR('Cannot set "%s" field.' % field)
     return S_OK()
 
@@ -283,38 +291,38 @@ class DIRACCAProxyProvider(ProxyProvider):
         :return: S_OK(basestring, basestring)/S_ERROR()
     """
     # Create publik key
-    userPubKey = M2Crypto.EVP.PKey()
-    userPubKey.assign_rsa(M2Crypto.RSA.gen_key(self.bits, 65537, M2Crypto.util.quiet_genparam_callback))
+    userPubKey = EVP.PKey()
+    userPubKey.assign_rsa(RSA.gen_key(self.bits, 65537, util.quiet_genparam_callback))
     # Create certificate
-    userCert = M2Crypto.X509.X509()
+    userCert = X509.X509()
     userCert.set_pubkey(userPubKey)
     userCert.set_version(2)
     userCert.set_subject(self.__X509Name)
     userCert.set_serial_number(int(random.random() * 10 ** 10))
     # Add extentionals
-    userCert.add_ext(M2Crypto.X509.new_extension('basicConstraints', 'CA:' + str(False).upper()))
-    userCert.add_ext(M2Crypto.X509.new_extension('extendedKeyUsage', 'clientAuth', critical=1))
+    userCert.add_ext(X509.new_extension('basicConstraints', 'CA:' + str(False).upper()))
+    userCert.add_ext(X509.new_extension('extendedKeyUsage', 'clientAuth', critical=1))
     # Set livetime
     validityTime = datetime.timedelta(days=400)
-    notBefore = M2Crypto.ASN1.ASN1_UTCTIME()
-    notBefore.set_time(long(time.time()))    
-    notAfter = M2Crypto.ASN1.ASN1_UTCTIME()
+    notBefore = ASN1.ASN1_UTCTIME()
+    notBefore.set_time(long(time.time()))
+    notAfter = ASN1.ASN1_UTCTIME()
     notAfter.set_time(long(time.time()) + long(validityTime.total_seconds()))
     userCert.set_not_before(notBefore)
     userCert.set_not_after(notAfter)
     # Add subject from CA
     with open(self.parameters['CertFile']) as f:
       caCertStr = f.read()
-    caCert = M2Crypto.X509.load_cert_string(caCertStr)
+    caCert = X509.load_cert_string(caCertStr)
     userCert.set_issuer(caCert.get_subject())
     # Use CA key
     with open(self.parameters['KeyFile']) as f:
       caKeyStr = f.read()
-    pkey = M2Crypto.EVP.PKey()
-    pkey.assign_rsa(M2Crypto.RSA.load_key_string(caKeyStr, callback=M2Crypto.util.no_passphrase_callback))
+    pkey = EVP.PKey()
+    pkey.assign_rsa(RSA.load_key_string(caKeyStr, callback=util.no_passphrase_callback))
     # Sign
     userCert.sign(pkey, self.algoritm)
 
     userCertStr = userCert.as_pem()
-    userPubKeyStr = userPubKey.as_pem(cipher=None, callback=M2Crypto.util.no_passphrase_callback)
+    userPubKeyStr = userPubKey.as_pem(cipher=None, callback=util.no_passphrase_callback)
     return S_OK((userCertStr, userPubKeyStr))

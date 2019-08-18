@@ -473,9 +473,10 @@ def isDownloadableGroup(groupName):
     return False
   return True
 
+
 def getUserDict(username):
   """ Get full information from user section
-  
+
       :param basestring username: DIRAC user name
 
       :return: S_OK()/S_ERROR()
