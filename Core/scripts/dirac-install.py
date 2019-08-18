@@ -741,17 +741,20 @@ class ReleaseConfig(object):
       return S_OK(sourceUrl)
     return S_ERROR("Don't know how to find the installation tarballs for project %s" % project)
 
-  def getDiracOsLocation(self, project=None):
+  def getDiracOsLocation(self, project=None, diracosDefault=False):
     """
     Returns the location of the DIRAC os binary for a given project for example: LHCb or DIRAC, etc...
 
     :param str project: the name of the project
+    :param bool diracosDefault: flag to take diracos distribution from the default location
+
+    :return: the location of the tar balls
     """
     if project is None:
       project = 'DIRAC'
 
     diracOsLoc = "Projects/%s/DIRACOS" % self.projectName
-    if self.globalDefaults.isOption(diracOsLoc):
+    if not diracosDefault and self.globalDefaults.isOption(diracOsLoc):
       # use from the VO specific configuration file
       location = self.globalDefaults.get(diracOsLoc, "")
     else:
@@ -2311,7 +2314,19 @@ def installDiracOS(releaseConfig):
   if cliParams.installSource:
     tarsURL = cliParams.installSource
   else:
-    tarsURL = releaseConfig.getDiracOsLocation()['Value']
+    # if ":" is not present in diracos name, we take the diracos tarball from vanilla DIRAC location
+    if diracos.lower() == 'diracos':
+      retVal = releaseConfig.getDiracOsLocation(diracosDefault=True)
+      if retVal['OK']:
+        tarsURL = retVal['Value']
+      else:
+        logERROR(retVal['Message'])
+    else:
+      retVal = releaseConfig.getDiracOsLocation()
+      if retVal['OK']:
+        tarsURL = retVal['Value']
+      else:
+        logERROR(retVal['Message'])
   if not tarsURL:
     tarsURL = releaseConfig.getTarsLocation('DIRAC')['Value']
     logWARN("DIRACOS location is not specified using %s" % tarsURL)
