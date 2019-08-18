@@ -823,7 +823,6 @@ class WorkflowTasks(TaskBase):
   def _handleHospital(self, oJob):
     """ Optional handle of hospital jobs
     """
-    oJob.setType('Hospital')
     oJob.setInputDataPolicy('download', dataScheduling=False)
     hospitalSite = self.opsH.getValue("Hospital/HospitalSite", 'DIRAC.JobDebugger.ch')
     oJob.setDestination(hospitalSite)
