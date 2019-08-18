@@ -29,9 +29,21 @@ More links
 Basic requirements
 ==================
 
+This section is to be executed as ``root`` user.
+
 We assume that you have at your disposition a fresh CC7 64bit installation. If you don't, we recommend installing a virtual machine. Instructions for installing CC7 can be found `here <http://linux.web.cern.ch/linux/centos7/docs/install.shtml>`_
 
 In this tutorial, we will use a freshly installed CC7 x86_64 virtual machine, with all the default options, except the hostname being ``dirac-tuto``.
+
+Make sure that the hostname of the machine is set to ``dirac-tuto``. Modify the ``HOSTNAME`` variable in the ``/etc/sysconfig/network`` file as such::
+
+  HOSTNAME=dirac-tuto
+
+Then reboot the machine and check the hostname. You should get the following output::
+
+  [root@dirac-tuto ~]# hostname
+  dirac-tuto
+
 
 Machine setup
 =============
