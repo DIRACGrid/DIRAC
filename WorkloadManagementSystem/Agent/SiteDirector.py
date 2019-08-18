@@ -117,6 +117,7 @@ class SiteDirector(AgentModule):
     self.updateStatus = True
     self.getOutput = False
     self.sendAccounting = True
+    self.sendSubmissionAccounting = True
 
     self.pilot3 = False
     self.pilotFiles = []  # files whose content will be compressed and sent together with the pilot wrapper
@@ -215,6 +216,7 @@ class SiteDirector(AgentModule):
     self.updateStatus = self.am_getOption('UpdatePilotStatus', self.updateStatus)
     self.getOutput = self.am_getOption('GetPilotOutput', self.getOutput)
     self.sendAccounting = self.am_getOption('SendPilotAccounting', self.sendAccounting)
+    self.sendSubmissionAccounting = self.am_getOption('SendPilotSubmissionAccounting', self.sendSubmissionAccounting)
 
     # Get the site description dictionary
     siteNames = None
@@ -258,6 +260,8 @@ class SiteDirector(AgentModule):
       self.log.always('Pilot output retrieval requested')
     if self.sendAccounting:
       self.log.always('Pilot accounting sending requested')
+    if self.sendSubmissionAccounting:
+      self.log.always('Pilot submission accounting sending requested')
 
     self.log.always('MaxPilotsToSubmit:', self.maxPilotsToSubmit)
     self.log.always('MaxJobsInFillMode:', self.maxJobsInFillMode)
@@ -852,12 +856,13 @@ class SiteDirector(AgentModule):
       self.log.error("Failed submission to queue",
                      "Queue %s:\n, %s" % (queue, submitResult['Message']))
 
-      self.sendPilotSubmissionAccounting(self.queueDict[queue]['Site'],
-                                         self.queueDict[queue]['CEName'],
-                                         self.queueDict[queue]['QueueName'],
-                                         pilotsToSubmit,
-                                         0,
-                                         'Failed')
+      if self.sendSubmissionAccounting:
+        self.sendPilotSubmissionAccounting(self.queueDict[queue]['Site'],
+                                           self.queueDict[queue]['CEName'],
+                                           self.queueDict[queue]['QueueName'],
+                                           pilotsToSubmit,
+                                           0,
+                                           'Failed')
 
       pilotsToSubmit = 0
       self.failedQueues[queue] += 1
@@ -872,12 +877,13 @@ class SiteDirector(AgentModule):
                                                     self.queueDict[queue]['QueueName'],
                                                     self.queueDict[queue]['CEName']))
     stampDict = submitResult.get('PilotStampDict', {})
-    self.sendPilotSubmissionAccounting(self.queueDict[queue]['Site'],
-                                       self.queueDict[queue]['CEName'],
-                                       self.queueDict[queue]['QueueName'],
-                                       len(pilotList),
-                                       len(pilotList),
-                                       'Succeeded')
+    if self.sendSubmissionAccounting:
+      self.sendPilotSubmissionAccounting(self.queueDict[queue]['Site'],
+                                         self.queueDict[queue]['CEName'],
+                                         self.queueDict[queue]['QueueName'],
+                                         len(pilotList),
+                                         len(pilotList),
+                                         'Succeeded')
 
     return S_OK((pilotsToSubmit, pilotList, stampDict))
 
