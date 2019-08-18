@@ -1,3 +1,11 @@
+[v6r22p6]
+
+*Core
+CHANGE: (#4203) A VO with diracos extension, must be able to install the main diracos from DIRAC repository.
+
+*TS
+CHANGE: (#4218) do not set Job type 'hospital'
+
 [v6r22p5]
 
 *WMS
