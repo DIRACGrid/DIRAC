@@ -123,7 +123,7 @@ class DIRACCAProxyProvider(ProxyProvider):
                FullName, UserName, DN, EMail, DiracGroup
         :param dict sessionDict: session dictionary
 
-        :return: S_OK(basestring)/S_ERROR() -- basestring is a proxy string
+        :return: S_OK(dict)/S_ERROR() -- dict contain 'proxy' field with is a proxy string
     """
     result = self.getUserDN(userDict, sessionDict, userDN=userDict.get('DN'))
     if not result['OK']:
@@ -155,7 +155,7 @@ class DIRACCAProxyProvider(ProxyProvider):
         :param dict sessionDict: session dictionary
         :param basestring userDN: user DN
 
-        :return: S_OK/S_ERROR, Value is the DN string
+        :return: S_OK()/S_ERROR(), Value is the DN string
     """
     chain = X509Chain()
     result = chain.loadChainFromFile(self.parameters['CertFile'])
@@ -217,7 +217,7 @@ class DIRACCAProxyProvider(ProxyProvider):
         if not result['OK']:
           return result
 
-    # FIXME howto list dns
+    # WARN: This logic not support list of distribtes name elements
     resDN = M2Crypto.m2.x509_name_oneline(self.__X509Name.x509_name)
     if userDN and not userDN == resDN:
       return S_ERROR('%s not match with generated DN: %s' % (userDN, resDN))
