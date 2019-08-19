@@ -472,3 +472,21 @@ def isDownloadableGroup(groupName):
   if getGroupOption(groupName, 'DownloadableProxy') in [False, 'False', 'false', 'no']:
     return False
   return True
+
+
+def getUserDict(username):
+  """ Get full information from user section
+
+      :param basestring username: DIRAC user name
+
+      :return: S_OK()/S_ERROR()
+  """
+  resDict = {}
+  relPath = '%s/Users/%s/' % (gBaseRegistrySection, username)
+  result = gConfig.getConfigurationTree(relPath)
+  if not result['OK']:
+    return result
+  for key, value in result['Value'].items():
+    if value:
+      resDict[key.replace(relPath, '')] = value
+  return S_OK(resDict)
