@@ -87,7 +87,7 @@ def processDir(initPath, writerQueue, recursive=False, host=None, fcInit=None, d
 
   fc = fcInit
   if not fc:
-    fc = LcgFileCatalogClient(host=host)
+    fc = LcgFileCatalogClient.LcgFileCatalogClient(host=host)
   dfc = dfcInit
   if not dfc:
     dfc = FileCatalogClient()
