@@ -21,30 +21,31 @@ __RCSID__ = "$Id$"
 
 from DIRAC import S_OK, S_ERROR, gLogger
 
-
-from DIRAC.DataManagementSystem.Client.DataManager          import DataManager
-from DIRAC.Resources.Storage.StorageElement                 import StorageElement
-from DIRAC.Resources.Catalog.FileCatalog                    import FileCatalog
-from DIRAC.RequestManagementSystem.Client.Request           import Request
-from DIRAC.RequestManagementSystem.Client.Operation         import Operation
-from DIRAC.RequestManagementSystem.Client.File              import File
+from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
+from DIRAC.DataManagementSystem.Client.DataManager import DataManager
+from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
+from DIRAC.RequestManagementSystem.Client.Request import Request
+from DIRAC.RequestManagementSystem.Client.Operation import Operation
+from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
-from DIRAC.RequestManagementSystem.Client.ReqClient         import ReqClient
-from DIRAC.DataManagementSystem.Utilities.DMSHelpers        import DMSHelpers
+from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
+from DIRAC.Resources.Storage.StorageElement import StorageElement
+from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 
-class FailoverTransfer( object ):
+
+class FailoverTransfer(object):
   """ .. class:: FailoverTransfer
 
   """
 
   #############################################################################
-  def __init__( self, requestObject = None, log = None, defaultChecksumType = 'ADLER32' ):
+  def __init__(self, requestObject=None, log=None, defaultChecksumType='ADLER32'):
     """ Constructor function, can specify request object to instantiate
         FailoverTransfer or a new request object is created.
     """
     self.log = log
     if not self.log:
-      self.log = gLogger.getSubLogger( "FailoverTransfer" )
+      self.log = gLogger.getSubLogger("FailoverTransfer")
 
     self.request = requestObject
     if not self.request:
@@ -56,46 +57,50 @@ class FailoverTransfer( object ):
     self.registrationProtocols = DMSHelpers().getRegistrationProtocols()
 
   #############################################################################
-  def transferAndRegisterFile( self,
-                               fileName,
-                               localPath,
-                               lfn,
-                               destinationSEList,
-                               fileMetaDict,
-                               fileCatalog = None,
-                               masterCatalogOnly = False ):
+  def transferAndRegisterFile(self,
+                              fileName,
+                              localPath,
+                              lfn,
+                              destinationSEList,
+                              fileMetaDict,
+                              fileCatalog=None,
+                              masterCatalogOnly=False):
     """Performs the transfer and register operation with failover.
     """
     errorList = []
-    fileGUID = fileMetaDict.get( "GUID", None )
-    fileChecksum = fileMetaDict.get( "Checksum", None )
+    fileGUID = fileMetaDict.get("GUID", None)
+    fileChecksum = fileMetaDict.get("Checksum", None)
 
     for se in destinationSEList:
-      self.log.info( "Attempting dm.putAndRegister('%s','%s','%s',guid='%s',catalog='%s', checksum = '%s')" % ( lfn,
-                                                                                               localPath,
-                                                                                               se,
-                                                                                               fileGUID,
-                                                                                               fileCatalog, fileChecksum ) )
+      self.log.info("Attempting dm.putAndRegister",
+                    "('%s','%s','%s',guid='%s',catalog='%s', checksum = '%s')" %
+                    (lfn, localPath, se, fileGUID, fileCatalog, fileChecksum))
 
-      result = DataManager( catalogs = fileCatalog, masterCatalogOnly = masterCatalogOnly ).putAndRegister( lfn, localPath, se, guid = fileGUID,
-                                                                                                            checksum = fileChecksum )
-      self.log.verbose( result )
+      result = DataManager(
+          catalogs=fileCatalog,
+          masterCatalogOnly=masterCatalogOnly).putAndRegister(lfn,
+                                                              localPath,
+                                                              se,
+                                                              guid=fileGUID,
+                                                              checksum=fileChecksum)
+      self.log.verbose(result)
       if not result['OK']:
-        self.log.error( 'dm.putAndRegister failed with message', result['Message'] )
-        errorList.append( result['Message'] )
+        self.log.error('dm.putAndRegister failed with message', result['Message'])
+        errorList.append(result['Message'])
         continue
 
       if not result['Value']['Failed']:
-        self.log.info( 'dm.putAndRegister successfully uploaded and registered %s to %s' % ( fileName, se ) )
-        return S_OK( {'uploadedSE':se, 'lfn':lfn} )
+        self.log.info('dm.putAndRegister successfully uploaded and registered',
+                      '%s to %s' % (fileName, se))
+        return S_OK({'uploadedSE': se, 'lfn': lfn})
 
       # Now we know something went wrong
-      self.log.warn( "Didn't manage to do everything, now adding requests for the missing operation" )
+      self.log.warn("Didn't manage to do everything, now adding requests for the missing operation")
 
       errorDict = result['Value']['Failed'][lfn]
       if 'register' not in errorDict:
-        self.log.error( 'dm.putAndRegister failed with unknown error', str( errorDict ) )
-        errorList.append( 'Unknown error while attempting upload to %s' % se )
+        self.log.error('dm.putAndRegister failed with unknown error', str(errorDict))
+        errorList.append('Unknown error while attempting upload to %s' % se)
         continue
 
       # fileDict = errorDict['register']
@@ -106,81 +111,91 @@ class FailoverTransfer( object ):
       if masterCatalogOnly:
         fileCatalog = FileCatalog().getMasterCatalogNames()['Value']
 
-      result = self._setRegistrationRequest( lfn, se, fileMetaDict, fileCatalog )
+      result = self._setRegistrationRequest(lfn, se, fileMetaDict, fileCatalog)
       if not result['OK']:
-        self.log.error( 'Failed to set registration request', 'SE %s and metadata: \n%s' % ( se, fileMetaDict ) )
-        errorList.append( 'Failed to set registration request for: SE %s and metadata: \n%s' % ( se, fileMetaDict ) )
+        self.log.error('Failed to set registration request', 'SE %s and metadata: \n%s' % (se, fileMetaDict))
+        errorList.append('Failed to set registration request for: SE %s and metadata: \n%s' % (se, fileMetaDict))
         continue
       else:
-        self.log.info( 'Successfully set registration request for: SE %s and metadata: \n%s' % ( se, fileMetaDict ) )
+        self.log.info('Successfully set registration request',
+                      'for: SE %s and metadata: \n%s' % (se, fileMetaDict))
         metadata = {}
         metadata['filedict'] = fileMetaDict
         metadata['uploadedSE'] = se
         metadata['lfn'] = lfn
         metadata['registration'] = 'request'
-        return S_OK( metadata )
+        return S_OK(metadata)
 
-    self.log.error( 'Failed to upload output data file', 'Encountered %s errors' % len( errorList ) )
-    return S_ERROR( 'Failed to upload output data file' )
+    self.log.error('Failed to upload output data file', 'Encountered %s errors' % len(errorList))
+    return S_ERROR('Failed to upload output data file')
 
   #############################################################################
-  def transferAndRegisterFileFailover( self,
-                                       fileName,
-                                       localPath,
-                                       lfn,
-                                       targetSE,
-                                       failoverSEList,
-                                       fileMetaDict,
-                                       fileCatalog = None,
-                                       masterCatalogOnly = False ):
+  def transferAndRegisterFileFailover(self,
+                                      fileName,
+                                      localPath,
+                                      lfn,
+                                      targetSE,
+                                      failoverSEList,
+                                      fileMetaDict,
+                                      fileCatalog=None,
+                                      masterCatalogOnly=False):
     """Performs the transfer and register operation to failover storage and sets the
        necessary replication and removal requests to recover.
     """
-    failover = self.transferAndRegisterFile( fileName, localPath, lfn, failoverSEList, fileMetaDict, fileCatalog, masterCatalogOnly = masterCatalogOnly )
+    failover = self.transferAndRegisterFile(
+        fileName,
+        localPath,
+        lfn,
+        failoverSEList,
+        fileMetaDict,
+        fileCatalog,
+        masterCatalogOnly=masterCatalogOnly)
     if not failover['OK']:
-      self.log.error( 'Could not upload file to failover SEs', failover['Message'] )
+      self.log.error('Could not upload file to failover SEs', failover['Message'])
       return failover
 
     # set removal requests and replication requests
-    result = self._setFileReplicationRequest( lfn, targetSE, fileMetaDict, sourceSE = failover['Value']['uploadedSE'] )
+    result = self._setFileReplicationRequest(lfn, targetSE, fileMetaDict, sourceSE=failover['Value']['uploadedSE'])
     if not result['OK']:
-      self.log.error( 'Could not set file replication request', result['Message'] )
+      self.log.error('Could not set file replication request', result['Message'])
       return result
 
     lfn = failover['Value']['lfn']
     failoverSE = failover['Value']['uploadedSE']
-    self.log.info( 'Attempting to set replica removal request for LFN %s at failover SE %s' % ( lfn, failoverSE ) )
-    result = self._setReplicaRemovalRequest( lfn, failoverSE )
+    self.log.info('Attempting to set replica removal request',
+                  'for LFN %s at failover SE %s' % (lfn, failoverSE))
+    result = self._setReplicaRemovalRequest(lfn, failoverSE)
     if not result['OK']:
-      self.log.error( 'Could not set removal request', result['Message'] )
+      self.log.error('Could not set removal request', result['Message'])
       return result
 
-    return S_OK( {'uploadedSE':failoverSE, 'lfn':lfn} )
+    return S_OK({'uploadedSE': failoverSE, 'lfn': lfn})
 
-  def getRequest( self ):
+  def getRequest(self):
     """ get the accumulated request object
     """
     return self.request
 
-  def commitRequest( self ):
+  def commitRequest(self):
     """ Send request to the Request Management Service
     """
     if self.request.isEmpty():
       return S_OK()
 
-    isValid = RequestValidator().validate( self.request )
+    isValid = RequestValidator().validate(self.request)
     if not isValid["OK"]:
-      return S_ERROR( "Failover request is not valid: %s" % isValid["Message"] )
+      return S_ERROR("Failover request is not valid: %s" % isValid["Message"])
     else:
       requestClient = ReqClient()
-      result = requestClient.putRequest( self.request )
+      result = requestClient.putRequest(self.request)
       return result
 
   #############################################################################
-  def _setFileReplicationRequest( self, lfn, targetSE, fileMetaDict, sourceSE = '' ):
+  def _setFileReplicationRequest(self, lfn, targetSE, fileMetaDict, sourceSE=''):
     """ Sets a registration request.
     """
-    self.log.info( 'Setting ReplicateAndRegister request for %s to %s' % ( lfn, targetSE ) )
+    self.log.info('Setting ReplicateAndRegister request',
+                  'for %s to %s' % (lfn, targetSE))
 
     transfer = Operation()
     transfer.Type = "ReplicateAndRegister"
@@ -191,26 +206,26 @@ class FailoverTransfer( object ):
     trFile = File()
     trFile.LFN = lfn
 
-    cksm = fileMetaDict.get( "Checksum", None )
-    cksmType = fileMetaDict.get( "ChecksumType", self.defaultChecksumType )
+    cksm = fileMetaDict.get("Checksum", None)
+    cksmType = fileMetaDict.get("ChecksumType", self.defaultChecksumType)
     if cksm and cksmType:
       trFile.Checksum = cksm
       trFile.ChecksumType = cksmType
-    size = fileMetaDict.get( "Size", 0 )
+    size = fileMetaDict.get("Size", 0)
     if size:
       trFile.Size = size
-    guid = fileMetaDict.get( "GUID", "" )
+    guid = fileMetaDict.get("GUID", "")
     if guid:
       trFile.GUID = guid
 
-    transfer.addFile( trFile )
+    transfer.addFile(trFile)
 
-    self.request.addOperation( transfer )
+    self.request.addOperation(transfer)
 
     return S_OK()
 
   #############################################################################
-  def _setRegistrationRequest( self, lfn, targetSE, fileDict, catalog ):
+  def _setRegistrationRequest(self, lfn, targetSE, fileDict, catalog):
     """ Sets a registration request
 
     :param str lfn: LFN
@@ -218,9 +233,10 @@ class FailoverTransfer( object ):
     :param list catalog: list (or string) of catalogs to use
     :param dict fileDict: file metadata
     """
-    self.log.info( 'Setting registration request for %s at %s.' % ( lfn, targetSE ) )
+    self.log.info('Setting registration request',
+                  'for %s at %s.' % (lfn, targetSE))
 
-    if not isinstance( catalog, list ):
+    if not isinstance(catalog, list):
       catalog = [catalog]
 
     for cat in catalog:
@@ -232,32 +248,32 @@ class FailoverTransfer( object ):
 
       regFile = File()
       regFile.LFN = lfn
-      regFile.Checksum = fileDict.get( "Checksum", "" )
-      regFile.ChecksumType = fileDict.get( "ChecksumType", self.defaultChecksumType )
-      regFile.Size = fileDict.get( "Size", 0 )
-      regFile.GUID = fileDict.get( "GUID", "" )
+      regFile.Checksum = fileDict.get("Checksum", "")
+      regFile.ChecksumType = fileDict.get("ChecksumType", self.defaultChecksumType)
+      regFile.Size = fileDict.get("Size", 0)
+      regFile.GUID = fileDict.get("GUID", "")
 
-      se = StorageElement( targetSE )
-      pfn = se.getURL( lfn, self.registrationProtocols )
-      if not pfn["OK"] or lfn not in pfn["Value"]['Successful']:
-        self.log.error( "Unable to get PFN for LFN", "%s" % pfn.get( 'Message', pfn.get( 'Value', {} ).get( 'Failed', {} ).get( lfn ) ) )
-        return pfn
-      regFile.PFN = pfn["Value"]['Successful'][lfn]
+      se = StorageElement(targetSE)
+      res = returnSingleResult(se.getURL(lfn, self.registrationProtocols))
+      if not res["OK"]:
+        self.log.error("Unable to get PFN for LFN", res['Message'])
+        return res
+      regFile.PFN = res["Value"]
 
-      register.addFile( regFile )
-      self.request.addOperation( register )
+      register.addFile(regFile)
+      self.request.addOperation(register)
 
     return S_OK()
 
   #############################################################################
-  def _setReplicaRemovalRequest( self, lfn, se ):
+  def _setReplicaRemovalRequest(self, lfn, se):
     """ Sets a removal request for a replica.
 
     :param str lfn: LFN
     :param se:
     """
-    if isinstance( se, str ):
-      se = ",".join( [ se.strip() for se in se.split( "," ) if se.strip() ] )
+    if isinstance(se, str):
+      se = ",".join([se.strip() for se in se.split(",") if se.strip()])
 
     removeReplica = Operation()
 
@@ -267,13 +283,13 @@ class FailoverTransfer( object ):
     replicaToRemove = File()
     replicaToRemove.LFN = lfn
 
-    removeReplica.addFile( replicaToRemove )
+    removeReplica.addFile(replicaToRemove)
 
-    self.request.addOperation( removeReplica )
+    self.request.addOperation(removeReplica)
     return S_OK()
 
   #############################################################################
-  def _setFileRemovalRequest( self, lfn, se = '', pfn = '' ):
+  def _setFileRemovalRequest(self, lfn, se='', pfn=''):
     """ Sets a removal request for a file including all replicas.
     """
     remove = Operation()
@@ -284,6 +300,6 @@ class FailoverTransfer( object ):
     rmFile.LFN = lfn
     if pfn:
       rmFile.PFN = pfn
-    remove.addFile( rmFile )
-    self.request.addOperation( remove )
+    remove.addFile(rmFile)
+    self.request.addOperation(remove)
     return S_OK()
