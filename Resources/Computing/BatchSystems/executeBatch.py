@@ -10,7 +10,7 @@
 #
 ###########################################################
 
-from __future__ import print_function
+executeBatchContent = """
 if __name__ == "__main__":
 
   import sys
@@ -32,3 +32,4 @@ if __name__ == "__main__":
   resultJson = urllib.quote(json.dumps(result))
   print("============= Start output ===============")
   print(resultJson)
+"""

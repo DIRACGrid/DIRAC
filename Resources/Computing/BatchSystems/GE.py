@@ -14,11 +14,12 @@
     SubmitOption = -l ct=6000
 """
 
-__RCSID__ = "$Id$"
-
+from __future__ import print_function
 import re
 import commands
 import os
+
+__RCSID__ = "$Id$"
 
 
 class GE(object):
