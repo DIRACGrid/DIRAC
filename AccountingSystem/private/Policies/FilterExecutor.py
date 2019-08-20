@@ -28,14 +28,14 @@ class FilterExecutor(object):
 
   def addFilter(self, iD, myFilter):
     if iD not in self.__filters:
-      self.__filters[ iD ] = []
+      self.__filters[iD] = []
     if isinstance(myFilter, (list, tuple)):
-      self.__filters[ iD ].extend( myFilter )
+      self.__filters[iD].extend(myFilter)
     else:
       self.__filters[iD].append(myFilter)
 
-  def addGlobalFilter( self, myFilter ):
+  def addGlobalFilter(self, myFilter):
     if isinstance(myFilter, (list, tuple)):
-      self.__globalFilters.extend( myFilter )
+      self.__globalFilters.extend(myFilter)
     else:
       self.__globalFilters.append(myFilter)

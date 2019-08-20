@@ -208,9 +208,8 @@ class Modificator(object):
     self.mergeFromFile(filename)
 
   def dumpToFile(self, filename):
-    fd = open(filename, "w")
-    fd.write(str(self.cfgData))
-    fd.close()
+    with open(filename, "wt") as fd:
+      fd.write(str(self.cfgData))
 
   def mergeFromFile(self, filename):
     cfg = CFG()
