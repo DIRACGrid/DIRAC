@@ -487,6 +487,8 @@ class Service(object):
     clientTransport = self._transportPool.get(trid)
     if clientTransport:
       clientParams['clientAddress'] = clientTransport.getRemoteAddress()
+    if len(proposalTuple) > 3:
+      clientParams['clientVersion'] = proposalTuple[3]
     # Generate handler dict with per client info
     handlerInitDict = dict(self._serviceInfoDict)
     for key in clientParams:
