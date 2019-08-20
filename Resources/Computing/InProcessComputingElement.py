@@ -127,5 +127,3 @@ class InProcessComputingElement(ComputingElement):
     """ Monitor the payload proxy and renew as necessary.
     """
     return self._monitorProxy(pilotProxy, payloadProxy)
-
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
