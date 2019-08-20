@@ -231,7 +231,7 @@ class SSHComputingElement(ComputingElement):
   def __init__(self, ceUniqueID):
     """ Standard constructor.
     """
-    ComputingElement.__init__(self, ceUniqueID)
+    super(SSHComputingElement, self).__init__(ceUniqueID)
 
     self.ceType = 'SSH'
     self.execution = "SSH"
@@ -251,7 +251,7 @@ class SSHComputingElement(ComputingElement):
       self.ceParameters['ExecQueue'] = self.ceParameters.get('Queue', '')
 
     if 'SharedArea' not in self.ceParameters:
-      #. isn't a good location, move to $HOME
+      # . isn't a good location, move to $HOME
       self.ceParameters['SharedArea'] = '$HOME'
 
     if 'BatchOutput' not in self.ceParameters:
