@@ -46,7 +46,7 @@ class GFAL2_XROOTStorage(GFAL2_StorageBase):
     super(GFAL2_XROOTStorage, self).__init__(storageName, parameters)
     self.srmSpecificParse = False
 
-    self.log = LOG.getSubLogger("GFAL2_XROOTStorage")
+    self.log = LOG.getSubLogger(storageName)
 
     self.pluginName = 'GFAL2_XROOT'
 
