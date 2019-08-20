@@ -476,7 +476,7 @@ class Service(object):
     """
     Generate an instance of the handler for a given service
 
-    :param int trid: transprot ID
+    :param int trid: transport ID
     :param tuple proposalTuple: tuple describing the proposed action
 
     :return: S_OK/S_ERROR, Value is the handler object
