@@ -5,11 +5,15 @@ services:
 
 before_script:
   - "echo ${CI_REGISTRY_PASSWORD} | docker login -u ${CI_REGISTRY_USER} ${CI_REGISTRY} --password-stdin"
+  # GitLab only clones the current reference but DIRAC's tests require other branches
+  - git fetch --all
 
 variables:
   COMPOSE_HTTP_TIMEOUT: "360"
 
 test:
+  tags:
+    - docker-privileged
   script:
     - "bash tests/CI/run_docker_setup.sh"
   after_script:
