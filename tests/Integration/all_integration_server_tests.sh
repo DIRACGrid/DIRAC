@@ -17,14 +17,9 @@ python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/Core/Test_Elasticsear
 
 #-------------------------------------------------------------------------------#
 echo -e '***' $(date -u) "**** FRAMEWORK TESTS (partially skipped) ****\n"
-<<<<<<< HEAD
 python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/Framework/Test_InstalledComponentsDB.py >> testOutputs.txt 2>&1
 python $SERVERINSTALLDIR/DIRAC/tests/Integration/Framework/Test_ProxyDB.py >> testOutputs.txt 2>&1
 #pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/Framework/Test_LoggingDB.py >> testOutputs.txt 2>&1
-=======
-python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/Framework/Test_InstalledComponentsDB.py >> serverTestOutputs.txt 2>&1
-#pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/Framework/Test_LoggingDB.py >> serverTestOutputs.txt 2>&1
->>>>>>> rel-v7r0
 
 
 #-------------------------------------------------------------------------------#
@@ -83,12 +78,8 @@ pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/Monitoring/Test_MonitoringRepor
 
 #-------------------------------------------------------------------------------#
 echo -e '***' $(date -u)  "**** Resources TESTS ****\n"
-<<<<<<< HEAD
 python $SERVERINSTALLDIR/DIRAC/tests/Integration/Resources/Storage/Test_Resources_GFAL2StorageBase.py ProductionSandboxSE >> testOutputs.txt 2>&1
 python $SERVERINSTALLDIR/DIRAC/tests/Integration/Resources/ProxyProvider/Test_DIRACCAProxyProvider.py >> testOutputs.txt 2>&1
-=======
-python $SERVERINSTALLDIR/DIRAC/tests/Integration/Resources/Storage/Test_Resources_GFAL2StorageBase.py ProductionSandboxSE >> serverTestOutputs.txt 2>&1
->>>>>>> rel-v7r0
 
 # Can only run if there's a Stomp MQ local... 
 # python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/Resources/MessageQueue/Test_ActiveClose.py >> serverTestOutputs.txt 2>&1
