@@ -143,7 +143,7 @@ def getQueues(siteList=None, ceList=None, ceTypeList=None, community=None, mode=
         continue
       if community:
         comList = gConfig.getValue('/Resources/Sites/%s/%s/VO' % (grid, site), [])
-        if comList and community not in comList:
+        if comList and community.lower() not in [cl.lower() for cl in comList]:
           continue
       siteCEParameters = {}
       result = gConfig.getOptionsDict('/Resources/Sites/%s/%s/CEs' % (grid, site))
@@ -156,7 +156,7 @@ def getQueues(siteList=None, ceList=None, ceTypeList=None, community=None, mode=
       for ce in ces:
         if mode:
           ceMode = gConfig.getValue('/Resources/Sites/%s/%s/CEs/%s/SubmissionMode' % (grid, site, ce), 'Direct')
-          if not ceMode or ceMode != mode:
+          if not ceMode or ceMode.lower() != mode.lower():
             continue
         if ceTypeList:
           ceType = gConfig.getValue('/Resources/Sites/%s/%s/CEs/%s/CEType' % (grid, site, ce), '')
@@ -166,7 +166,7 @@ def getQueues(siteList=None, ceList=None, ceTypeList=None, community=None, mode=
           continue
         if community:
           comList = gConfig.getValue('/Resources/Sites/%s/%s/CEs/%s/VO' % (grid, site, ce), [])
-          if comList and community not in comList:
+          if comList and community.lower() not in [cl.lower() for cl in comList]:
             continue
         ceOptionsDict = dict(siteCEParameters)
         result = gConfig.getOptionsDict('/Resources/Sites/%s/%s/CEs/%s' % (grid, site, ce))
@@ -180,7 +180,7 @@ def getQueues(siteList=None, ceList=None, ceTypeList=None, community=None, mode=
         for queue in queues:
           if community:
             comList = gConfig.getValue('/Resources/Sites/%s/%s/CEs/%s/Queues/%s/VO' % (grid, site, ce, queue), [])
-            if comList and community not in comList:
+            if comList and community.lower() not in [cl.lower() for cl in comList]:
               continue
           resultDict.setdefault(site, {})
           resultDict[site].setdefault(ce, ceOptionsDict)
