@@ -12,7 +12,7 @@ from DIRAC import S_OK
 from DIRAC.Core.Base.Client import Client
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
-
+from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import prepareDict
 
 class ResourceStatusClient(Client):
   """
@@ -29,25 +29,6 @@ class ResourceStatusClient(Client):
 
     super(ResourceStatusClient, self).__init__(**kwargs)
     self.setServer('ResourceStatus/ResourceStatus')
-
-  def _prepare(self, columnNames, columnValues):
-    """
-    Convert 2 same size lists into a key->value dict. All Nonetype values are removed.
-
-    :param list columnNames: list containing column names, which are the keys in the returned dict
-    :param list columnValues: list of the corresponding values
-
-    :return: dict
-    """
-
-    sendDict = {}
-
-    # make each key name uppercase to match database column names (case sensitive)
-    for key, value in zip(columnNames, columnValues):
-      if value is not None:
-        sendDict[key] = value
-
-    return sendDict
 
   def insert(self, tableName, record):
     """
@@ -133,7 +114,7 @@ class ResourceStatusClient(Client):
     columnValues = [name, statusType, status, elementType, reason, dateEffective,
                     lastCheckTime, tokenOwner, tokenExpiration]
 
-    return self._getRPC().insert(element + tableType, self._prepare(columnNames, columnValues))
+    return self._getRPC().insert(element + tableType, prepareDict(columnNames, columnValues))
 
   def selectStatusElement(self, element, tableType, name=None, statusType=None,
                           status=None, elementType=None, reason=None,
@@ -179,7 +160,7 @@ class ResourceStatusClient(Client):
     columnValues = [name, statusType, status, elementType, reason, dateEffective,
                     lastCheckTime, tokenOwner, tokenExpiration, meta]
 
-    return self._getRPC().select(element + tableType, self._prepare(columnNames, columnValues))
+    return self._getRPC().select(element + tableType, prepareDict(columnNames, columnValues))
 
   def deleteStatusElement(self, element, tableType, name=None, statusType=None,
                           status=None, elementType=None, reason=None,
@@ -224,7 +205,7 @@ class ResourceStatusClient(Client):
     columnValues = [name, statusType, status, elementType, reason, dateEffective,
                     lastCheckTime, tokenOwner, tokenExpiration, meta]
 
-    return self._getRPC().delete(element + tableType, self._prepare(columnNames, columnValues))
+    return self._getRPC().delete(element + tableType, prepareDict(columnNames, columnValues))
 
 
   def addOrModifyStatusElement(self, element, tableType, name=None,
@@ -270,7 +251,7 @@ class ResourceStatusClient(Client):
     columnValues = [name, statusType, status, elementType, reason, dateEffective,
                     lastCheckTime, tokenOwner, tokenExpiration]
 
-    return self._getRPC().addOrModify(element + tableType, self._prepare(columnNames, columnValues))
+    return self._getRPC().addOrModify(element + tableType, prepareDict(columnNames, columnValues))
 
   def modifyStatusElement(self, element, tableType, name=None, statusType=None,
                           status=None, elementType=None, reason=None,
@@ -313,7 +294,7 @@ class ResourceStatusClient(Client):
     columnValues = [name, statusType, status, elementType, reason, dateEffective,
                     lastCheckTime, tokenOwner, tokenExpiration]
 
-    return self._getRPC().addOrModify(element + tableType, self._prepare(columnNames, columnValues))
+    return self._getRPC().addOrModify(element + tableType, prepareDict(columnNames, columnValues))
 
   def addIfNotThereStatusElement(self, element, tableType, name=None,
                                  statusType=None, status=None,
@@ -358,7 +339,7 @@ class ResourceStatusClient(Client):
     columnValues = [name, statusType, status, elementType, reason, dateEffective,
                     lastCheckTime, tokenOwner, tokenExpiration]
 
-    return self._getRPC().addIfNotThere(element + tableType, self._prepare(columnNames, columnValues))
+    return self._getRPC().addIfNotThere(element + tableType, prepareDict(columnNames, columnValues))
 
   ##############################################################################
   # Protected methods - Use carefully !!
