@@ -45,31 +45,31 @@ echo -e "\n****" $(date -u) "Creating user and copying scripts ****"
 docker exec server adduser -s /bin/bash -d $USER_HOME $USER
 docker exec client adduser -s /bin/bash -d $USER_HOME $USER
 
-docker cp ./install_server.sh server:$USER_HOME
-docker cp ./install_client.sh client:$USER_HOME
+docker cp ./install_server.sh server:$WORKSPACE
+docker cp ./install_client.sh client:$WORKSPACE
 
 copyLocalSource
 
-docker cp $SERVERCONFIG server:$USER_HOME/CONFIG
-docker cp $CLIENTCONFIG client:$USER_HOME/CONFIG
+docker cp $SERVERCONFIG server:$WORKSPACE/CONFIG
+docker cp $CLIENTCONFIG client:$WORKSPACE/CONFIG
 
 
 echo -e "\n****" $(date -u) "Installing DIRAC server ****"
 docker exec -u $USER \
-       -w $USER_HOME \
+       -w $WORKSPACE \
        server \
        bash -c "./install_server.sh > log.txt 2>&1" 
 
 echo -e "\n****" $(date -u) "Copying user certificates and installing client ****"
 
 # Copy generated user credentials from server to temp folder
-docker cp server:$USER_HOME/ServerInstallDIR/user/client.pem $TMP/usercert.pem
-docker cp server:$USER_HOME/ServerInstallDIR/user/client.key $TMP/userkey.pem
-docker cp server:$USER_HOME/ServerInstallDIR/etc/grid-security $TMP/
+docker cp server:$WORKSPACE/ServerInstallDIR/user/client.pem $TMP/usercert.pem
+docker cp server:$WORKSPACE/ServerInstallDIR/user/client.key $TMP/userkey.pem
+docker cp server:$WORKSPACE/ServerInstallDIR/etc/grid-security $TMP/
 
 # install client
 docker exec -u $USER \
-       -w $USER_HOME \
+       -w $WORKSPACE \
        client \
        bash -c "./install_client.sh  > log.txt 2>&1"
 
@@ -77,7 +77,12 @@ docker exec -u $USER \
 docker exec client bash -c "mkdir /home/dirac/.globus"
 docker cp $TMP/usercert.pem client:$USER_HOME/.globus/
 docker cp $TMP/userkey.pem client:$USER_HOME/.globus/
-docker cp $TMP/grid-security client:$USER_HOME/ClientInstallDIR/etc/
+docker cp $TMP/grid-security client:$WORKSPACE/ClientInstallDIR/etc/
+
+# copy credentials to location required by all_integration_client_tests.sh
+docker exec client bash -c "mkdir -p ${WORKSPACE}/ServerInstallDIR/user"
+docker cp $TMP/usercert.pem client:$WORKSPACE/ServerInstallDIR/user/client.pem
+docker cp $TMP/userkey.pem client:$WORKSPACE/ServerInstallDIR/user/client.key
 
 docker exec client bash -c "chown -R dirac:dirac /home/dirac/"
 
@@ -86,8 +91,8 @@ set +e
 
 echo -e "\n****" $(date -u) "Starting server tests ****"
 docker exec -u $USER \
-       -w $USER_HOME \
-       -e INSTALLROOT=$USER_HOME \
+       -w $WORKSPACE \
+       -e INSTALLROOT=$WORKSPACE \
        -e INSTALLTYPE=server \
        server \
        bash TestCode/DIRAC/tests/CI/run_tests.sh
@@ -95,8 +100,8 @@ SERVER_ERR=$?
 
 echo -e "\n****" $(date -u) "Starting client tests ****"
 docker exec -u $USER \
-       -w $USER_HOME \
-       -e INSTALLROOT=$USER_HOME \
+       -w $WORKSPACE \
+       -e INSTALLROOT=$WORKSPACE \
        -e INSTALLTYPE=client \
        client \
        bash TestCode/DIRAC/tests/CI/run_tests.sh
