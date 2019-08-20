@@ -125,6 +125,36 @@ class ProductionManagerHandlerBase(RequestHandler):
 
   ####################################################################
   #
+  # These are the methods to manipulate the ProductionSteps table
+  #
+
+  types_addProductionStep = [dict]
+
+  def export_addProductionStep(self, prodStep):
+    stepName = prodStep['name']
+    stepDescription = prodStep['description']
+    stepLongDescription = prodStep['longDescription']
+    stepBody = prodStep['body']
+    stepType = prodStep['stepType']
+    stepPlugin = prodStep['plugin']
+    stepAgentType = prodStep['agentType']
+    stepGroupSize = prodStep['groupsize']
+    stepInputQuery = prodStep['inputquery']
+    stepOutputQuery = prodStep['outputquery']
+    res = database.addProductionStep(stepName, stepDescription, stepLongDescription, stepBody, stepType, stepPlugin,
+                                     stepAgentType, stepGroupSize, stepInputQuery, stepOutputQuery)
+    if res['OK']:
+      gLogger.info("Added production step %d" % res['Value'])
+    return self._parseRes(res)
+
+  types_getProductionStep = [int]
+
+  def export_getProductionStep(self, stepID):
+    res = database.getProductionStep(stepID)
+    return self._parseRes(res)
+
+  ####################################################################
+  #
   # These are the methods for production logging manipulation
   #
 

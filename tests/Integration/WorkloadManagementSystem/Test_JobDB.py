@@ -73,11 +73,6 @@ def test_insertAndRemoveJobIntoDB():
   assert res['OK'] is True
   assert res['Value'] == {}
 
-  res = jobDB.getJobStatus(jobID)
-  assert res['OK'] is True
-  assert res['Value']['Status'] == 'Received'
-  assert res['Value']['MinorStatus'] == 'Job accepted'
-
   res = jobDB.selectJobs({})
   assert res['OK'] is True
   jobs = res['Value']
@@ -101,11 +96,6 @@ def test_rescheduleJob():
   res = jobDB.getJobAttribute(jobID, 'MinorStatus')
   assert res['OK'] is True
   assert res['Value'] == 'Job Rescheduled'
-
-  res = jobDB.getJobStatus(jobID)
-  assert res['OK'] is True
-  assert res['Value']['Status'] == 'Received'
-  assert res['Value']['MinorStatus'] == 'Job Rescheduled'
 
 
 def test_getCounters():

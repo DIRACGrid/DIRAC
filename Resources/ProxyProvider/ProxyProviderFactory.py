@@ -30,12 +30,14 @@ class ProxyProviderFactory(object):
 
         :return: S_OK(ProxyProvider)/S_ERROR()
     """
-    result = getInfoAboutProviders(ofWhat='Proxy', providerName=proxyProvider)
+    if not proxyProvider:
+      return S_ERROR('Provider name not set.')
+    result = getInfoAboutProviders(of='Proxy', providerName=proxyProvider, option='all', section='all')
     if not result['OK']:
       return result
     ppDict = result['Value']
-    ppDict['ProxyProviderName'] = proxyProvider
-    ppType = ppDict.get('ProxyProviderType')
+    ppDict['ProviderName'] = proxyProvider
+    ppType = ppDict.get('ProviderType')
     self.log.verbose('Creating ProxyProvider of %s type with the name %s' % (ppType, proxyProvider))
     subClassName = "%sProxyProvider" % (ppType)
 

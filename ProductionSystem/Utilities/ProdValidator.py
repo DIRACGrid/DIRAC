@@ -18,7 +18,7 @@ class ProdValidator(object):
     """ Check if the status of the transformation is valid for the transformation to be added to a production.
         New is the only valid status
 
-    :param transID: the TransformationID
+    :param int transID: the TransformationID
     """
     res = self.transClient.getTransformationParameters(transID, 'Status')
     if not res['OK']:
@@ -32,8 +32,8 @@ class ProdValidator(object):
   def checkTransDependency(self, transID, parentTransID):
     """ Check if the transformation and the parent transformation are linked
 
-    :param transID: the TransformationID
-    :param parentTransID: the parent TransformationID
+    :param int transID: the TransformationID
+    :param int parentTransID: the parent TransformationID
     """
     res = self.transClient.getTransformationMetaQuery(transID, 'Input')
     if not res['OK']:
@@ -65,8 +65,8 @@ class ProdValidator(object):
   def checkMatchQuery(self, mq, mqParent):
     """ Check the logical intersection between the two metaqueries
 
-    :param mq: a dictionary of the MetaQuery to be checked against the mqParent
-    :param mqParent: a dictionary of the parent MetaQuery to be checked against the mq
+    :param dict mq: a dictionary of the MetaQuery to be checked against the mqParent
+    :param dict mqParent: a dictionary of the parent MetaQuery to be checked against the mq
     """
     # Get the metadata types defined in the catalog
     catalog = FileCatalog()
@@ -114,7 +114,7 @@ class ProdValidator(object):
   def checkformatQuery(self, MetaQueryDict):
     """ Check the format query and transform all dict values in dict for uniform treatment
 
-    :param MetaQueryDict: a dictionary of the MetaQuery
+    :param dict MetaQueryDict: a dictionary of the MetaQuery
     """
     for meta, value in MetaQueryDict.items():
       values = []
@@ -132,8 +132,8 @@ class ProdValidator(object):
   def compareValues(self, value, parentValue):
     """ Very simple comparison. To be improved
 
-    :param value: a meta data value to be compared with the parentValue
-    :param parentValue: a meta data value to be compared with value
+    :param str value: a meta data value (str, int, ...) to be compared with the parentValue
+    :param str parentValue: a meta data value (str, int, ...) to be compared with value
     """
     return set(
         value.values()[0]).issubset(

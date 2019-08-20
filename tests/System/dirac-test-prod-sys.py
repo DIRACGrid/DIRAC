@@ -13,7 +13,6 @@ Script.parseCommandLine()
 # from DIRAC
 from DIRAC import gLogger
 from DIRAC.ProductionSystem.Client.ProductionClient import ProductionClient
-from DIRAC.ProductionSystem.Client.Production import Production
 from DIRAC.ProductionSystem.Client.ProductionStep import ProductionStep
 from DIRAC.Interfaces.API.Job import Job
 from DIRAC.Core.Workflow.Parameter import Parameter
@@ -91,15 +90,13 @@ for MDField in MDFieldDict.keys():
 
 # Instantiate the ProductionClient
 prodClient = ProductionClient()
-# Instantiate the Production
-prod = Production()
 
 # Create the first production step and add it to the Production
 outputquery = {"application": "mandelbrot", "image_format": "ascii", "image_width": 7680, "image_height": 200}
 prodStep1 = createProductionStep('ImageProd', 'MCSimulation', outputQuery=outputquery)
 body = createWorkflowBodyStep1()
 prodStep1.Body = body
-res = prod.addStep(prodStep1)
+res = prodClient.addProductionStep(prodStep1)
 if not res['OK']:
   gLogger.error("Failed to add production step", res['Message'])
   exit(-1)
@@ -108,20 +105,21 @@ if not res['OK']:
 inputquery = {"application": "mandelbrot", "image_format": "ascii", "image_width": 7680, "image_height": 200}
 outputquery = {"application": "mandelbrot", "image_format": "ascii", "image_width": 7680, "image_height": 1400}
 prodStep2 = createProductionStep('MergeImage', 'DataProcessing', inputQuery=inputquery, outputQuery=outputquery)
+
 body = createWorkflowBodyStep2()
 prodStep2.Body = body
 prodStep2.ParentStep = prodStep1
-res = prod.addStep(prodStep2)
+res = prodClient.addProductionStep(prodStep2)
 if not res['OK']:
   gLogger.error("Failed to add production step", res['Message'])
   exit(-1)
 
 # Get the production description
-prodDescription = prod.prodDescription
+prodDesc = prodClient.prodDescription
 
 # Create the production
 prodName = 'SeqProd'
-res = prodClient.addProduction(prodName, json.dumps(prodDescription))
+res = prodClient.addProduction(prodName, json.dumps(prodDesc))
 if not res['OK']:
   gLogger.error("Failed to add production", res['Message'])
   exit(-1)

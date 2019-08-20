@@ -4,14 +4,6 @@ Do the initial configuration of a DIRAC component
 from __future__ import print_function
 __RCSID__ = "$Id$"
 
-from DIRAC import gConfig
-from DIRAC import exit as DIRACexit
-
-from DIRAC.ConfigurationSystem.Client.Helpers import getCSExtensions
-from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
-
-gComponentInstaller.exitOnError = True
-#
 from DIRAC.Core.Base import Script
 
 Script.setUsageMessage(
@@ -35,6 +27,16 @@ if len(args) == 2:
 else:
   system = args[1]
   component = args[2]
+
+# imports
+from DIRAC import gConfig
+from DIRAC import exit as DIRACexit
+
+from DIRAC.ConfigurationSystem.Client.Helpers import getCSExtensions
+from DIRAC.FrameworkSystem.Client.ComponentInstaller import gComponentInstaller
+#
+
+gComponentInstaller.exitOnError = True
 
 result = gComponentInstaller.addDefaultOptionsToCS(gConfig, componentType, system, component,
                                                    getCSExtensions(),

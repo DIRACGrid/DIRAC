@@ -85,12 +85,18 @@ A very different type of agent is the *JobAgent*, which is run by the pilot jobs
 Executors
 ---------
 
-Optimizer
-  optimizers for jobs submission and scheduling. The 4 executors that are run are: InputData, JobPath, JobSanity, JobScheduling.
+Optimizers
+  optimize job submission and scheduling. The four executors that are run by default are: InputData, JobPath,
+  JobSanity, JobScheduling. The ``Optimizers`` executor is a wrapper around all executors that are to be run. The executor modules
+  it will run is given by the ``Load`` configuration option.
 
-The optimizer executors are necessary for the WMS. They should be installed using the :ref:`system administrator console <system-admin-console>` and they can also be duplicated.
 
+The ``Optimizers`` executor is necessary for the WMS. It should be installed using the :ref:`system administrator console
+<system-admin-console>` and it can also be duplicated.
 
+To run additional executors inside the ``Optimizers`` executor change its ``Load`` parameter in the CS or during the
+installation with the :ref:`system administrator console <system-admin-console>`::
 
+  install executor WorkloadManagement Optimizers -p Load=JobPath,JobSanity,InputData,MyCustomExecutor,JobScheduling
 
 For detailed information on each of these components, please do refer to the WMS :ref:`Code Documentation<code_documentation>`.

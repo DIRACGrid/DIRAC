@@ -12,7 +12,6 @@ import unittest
 import json
 
 from DIRAC.ProductionSystem.Client.ProductionClient import ProductionClient
-from DIRAC.ProductionSystem.Client.Production import Production
 from DIRAC.ProductionSystem.Client.ProductionStep import ProductionStep
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
@@ -49,8 +48,6 @@ class ProductionClientChain(TestClientProductionTestCase):
 
   def test_SeqProduction(self):
 
-    # Define the production
-    prod = Production()
     # Define the first step of the production
     prodStep1 = ProductionStep()
     prodStep1.Name = 'Sim_prog'
@@ -69,7 +66,7 @@ class ProductionClientChain(TestClientProductionTestCase):
     prodStep1.Outputquery = outputquery
 
     # Add the step to the production
-    res = prod.addStep(prodStep1)
+    res = self.prodClient.addProductionStep(prodStep1)
     self.assertTrue(res['OK'])
 
     # Define the second step of the production
@@ -93,7 +90,7 @@ class ProductionClientChain(TestClientProductionTestCase):
     prodStep2.Outputquery = outputquery
 
     # Add the step to the production
-    res = prod.addStep(prodStep2)
+    res = self.prodClient.addProductionStep(prodStep2)
     self.assertTrue(res['OK'])
 
     # Define the third step of the production
@@ -117,15 +114,15 @@ class ProductionClientChain(TestClientProductionTestCase):
     prodStep3.Outputquery = outputquery
 
     # Add the step to the production
-    res = prod.addStep(prodStep3)
+    res = self.prodClient.addProductionStep(prodStep3)
     self.assertTrue(res['OK'])
 
     # Get the production description
-    prodDescription = prod.prodDescription
+    prodDesc = self.prodClient.prodDescription
 
     # Create the production
     prodName = 'SeqProd'
-    res = self.prodClient.addProduction(prodName, json.dumps(prodDescription))
+    res = self.prodClient.addProduction(prodName, json.dumps(prodDesc))
     self.assertTrue(res['OK'])
 
     # Start the production, i.e. instatiate the transformation steps
@@ -147,8 +144,6 @@ class ProductionClientChain(TestClientProductionTestCase):
 
   def test_MergeProduction(self):
 
-    # Define the production
-    prod = Production()
     # Define the first step of the production
     prodStep1 = ProductionStep()
     prodStep1.Name = 'Sim_prog'
@@ -157,7 +152,7 @@ class ProductionClientChain(TestClientProductionTestCase):
     prodStep1.Outputquery = outputquery
 
     # Add the step to the production
-    res = prod.addStep(prodStep1)
+    res = self.prodClient.addProductionStep(prodStep1)
     self.assertTrue(res['OK'])
 
     # Define the second step of the production
@@ -168,7 +163,7 @@ class ProductionClientChain(TestClientProductionTestCase):
     prodStep2.Outputquery = outputquery
 
     # Add the step to the production
-    res = prod.addStep(prodStep2)
+    res = self.prodClient.addProductionStep(prodStep2)
     self.assertTrue(res['OK'])
 
     # Define the third step of the production
@@ -195,15 +190,15 @@ class ProductionClientChain(TestClientProductionTestCase):
     prodStep3.Outputquery = outputquery
 
     # Add the steps to the production
-    res = prod.addStep(prodStep3)
+    res = self.prodClient.addProductionStep(prodStep3)
     self.assertTrue(res['OK'])
 
     # Get the production description
-    prodDescription = prod.prodDescription
+    prodDesc = self.prodClient.prodDescription
 
     # Create the production
     prodName = 'MergeProd'
-    res = self.prodClient.addProduction(prodName, json.dumps(prodDescription))
+    res = self.prodClient.addProduction(prodName, json.dumps(prodDesc))
     self.assertTrue(res['OK'])
 
     # Start the production, i.e. instatiate the transformation steps
@@ -225,8 +220,6 @@ class ProductionClientChain(TestClientProductionTestCase):
 
   def test_SplitProduction(self):
 
-    # Define the production
-    prod = Production()
     # Define the first step of the production
     prodStep1 = ProductionStep()
     prodStep1.Name = 'Sim_prog'
@@ -245,7 +238,7 @@ class ProductionClientChain(TestClientProductionTestCase):
     prodStep1.Outputquery = outputquery
 
     # Add the step to the production
-    res = prod.addStep(prodStep1)
+    res = self.prodClient.addProductionStep(prodStep1)
     self.assertTrue(res['OK'])
 
     # Define the second step of the production
@@ -268,7 +261,7 @@ class ProductionClientChain(TestClientProductionTestCase):
     prodStep2.Outputquery = outputquery
 
     # Add the step to the production
-    res = prod.addStep(prodStep2)
+    res = self.prodClient.addProductionStep(prodStep2)
     self.assertTrue(res['OK'])
 
     # Define the third step of the production
@@ -292,15 +285,15 @@ class ProductionClientChain(TestClientProductionTestCase):
     prodStep3.Outputquery = outputquery
 
     # Add the steps to the production
-    res = prod.addStep(prodStep3)
+    res = self.prodClient.addProductionStep(prodStep3)
     self.assertTrue(res['OK'])
 
     # Get the production description
-    prodDescription = prod.prodDescription
+    prodDesc = self.prodClient.prodDescription
 
     # Create the production
     prodName = 'SplitProd'
-    res = self.prodClient.addProduction(prodName, json.dumps(prodDescription))
+    res = self.prodClient.addProduction(prodName, json.dumps(prodDesc))
     self.assertTrue(res['OK'])
 
     # Start the production, i.e. instatiate the transformation steps

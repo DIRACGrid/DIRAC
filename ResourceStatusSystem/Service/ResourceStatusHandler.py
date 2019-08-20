@@ -16,35 +16,6 @@ from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import ResourceStatusDB
 db = None
 
 
-def convert(table, params):
-  """ Conversion utility for backward compatibility
-  """
-  gLogger.debug("Calls from old client")
-  # In this case, "params" contain the "meta", so we at least need to swap!
-  tableFromOldCall = params['table']
-  columnsFromOldCall = params.get('columns')
-  olderFromOldCall = params.get('older')
-  newerFromOldCall = params.get('newer')
-  orderFromOldCall = params.get('order')
-  limitFromOldCall = params.get('limit')
-  params = table
-  if columnsFromOldCall or olderFromOldCall or newerFromOldCall or orderFromOldCall or limitFromOldCall:
-    params['Meta'] = {}
-    if columnsFromOldCall:
-      params['Meta']['columns'] = columnsFromOldCall
-    if olderFromOldCall:
-      params['Meta']['older'] = olderFromOldCall
-    if newerFromOldCall:
-      params['Meta']['newer'] = newerFromOldCall
-    if orderFromOldCall:
-      params['Meta']['order'] = orderFromOldCall
-    if limitFromOldCall:
-      params['Meta']['limit'] = limitFromOldCall
-  table = tableFromOldCall
-
-  return params, table
-
-
 def initializeResourceStatusHandler(_serviceInfo):
   '''
     Handler initialization, where we set the ResourceStatusDB as global db, and
@@ -131,9 +102,6 @@ class ResourceStatusHandler(RequestHandler):
     :return: S_OK() || S_ERROR()
     '''
 
-    if isinstance(table, dict):  # for backward compatibility: conversion is needed
-      params, table = convert(table, params)
-
     gLogger.info('insert: %s %s' % (table, params))
     res = db.insert(table, params)
     self.__logResult('insert', res)
@@ -159,9 +127,6 @@ class ResourceStatusHandler(RequestHandler):
 
     :return: S_OK() || S_ERROR()
     '''
-
-    if isinstance(table, dict):  # for backward compatibility: conversion is needed
-      params, table = convert(table, params)
 
     gLogger.info('select: %s %s' % (table, params))
     res = db.select(table, params)
@@ -190,9 +155,6 @@ class ResourceStatusHandler(RequestHandler):
     :return: S_OK() || S_ERROR()
     '''
 
-    if isinstance(table, dict):  # for backward compatibility: conversion is needed
-      params, table = convert(table, params)
-
     gLogger.info('delete: %s %s' % (table, params))
     res = db.delete(table, params)
     self.__logResult('delete', res)
@@ -220,9 +182,6 @@ class ResourceStatusHandler(RequestHandler):
     :return: S_OK() || S_ERROR()
     '''
 
-    if isinstance(table, dict):  # for backward compatibility: conversion is needed
-      params, table = convert(table, params)
-
     gLogger.info('addOrModify: %s %s' % (table, params))
     res = db.addOrModify(table, params)
     self.__logResult('addOrModify', res)
@@ -249,9 +208,6 @@ class ResourceStatusHandler(RequestHandler):
 
     :return: S_OK() || S_ERROR()
     '''
-
-    if isinstance(table, dict):  # for backward compatibility: conversion is needed
-      params, table = convert(table, params)
 
     gLogger.info('addIfNotThere: %s %s' % (table, params))
     res = db.addIfNotThere(table, params)

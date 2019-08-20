@@ -434,6 +434,23 @@ function miniInstallDIRAC(){
 
 function clean(){
 
+  echo '==> [clean]'
+
+  #### make sure we're using the server
+  cd $SERVERINSTALLDIR
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: cannot change to ' $SERVERINSTALLDIR
+    return
+  fi
+  source bashrc
+  if [ $? -ne 0 ]
+  then
+    echo 'ERROR: cannot source bashrc'
+    return
+  fi
+  ####
+
   # Uninstalling the services
   diracUninstallServices
 

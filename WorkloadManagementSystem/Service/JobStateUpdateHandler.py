@@ -77,7 +77,7 @@ class JobStateUpdateHandler(RequestHandler):
     infoStr = None
     trials = 10
     for i in range(trials):
-      result = jobDB.getJobStatus(jobID)
+      result = jobDB.getJobAttributes(jobID, ['Status'])
       if not result['OK']:
         return result
       if not result['Value']:
@@ -101,9 +101,9 @@ class JobStateUpdateHandler(RequestHandler):
     return result
 
   ###########################################################################
-  types_setJobStatus = [[six.string_types, int], six.string_types, six.string_types, six.string_types]
+  types_setJobStatus = [[six.string_types, int]]
 
-  def export_setJobStatus(self, jobID, status, minorStatus, source='Unknown', datetime=None):
+  def export_setJobStatus(self, jobID, status='', minorStatus='', source='Unknown', datetime=None):
     """ Set the major and minor status for job specified by its JobId.
         Set optionally the status date and source component which sends the
         status information.
@@ -111,9 +111,9 @@ class JobStateUpdateHandler(RequestHandler):
     return self.__setJobStatus(int(jobID), status, minorStatus, source, datetime)
 
   ###########################################################################
-  types_setJobsStatus = [list, six.string_types, six.string_types, six.string_types]
+  types_setJobsStatus = [list]
 
-  def export_setJobsStatus(self, jobIDs, status, minorStatus, source='Unknown', datetime=None):
+  def export_setJobsStatus(self, jobIDs, status='', minorStatus='', source='Unknown', datetime=None):
     """ Set the major and minor status for job specified by its JobId.
         Set optionally the status date and source component which sends the
         status information.
@@ -134,7 +134,7 @@ class JobStateUpdateHandler(RequestHandler):
     if status == 'Running' and minorStatus == 'Application':
       result = jobDB.setStartExecTime(jobID)
 
-    result = jobDB.getJobStatus(jobID)
+    result = jobDB.getJobAttributes(jobID, ['Status', 'MinorStatus'])
     if not result['OK']:
       return result
     if not result['Value']:
@@ -167,7 +167,7 @@ class JobStateUpdateHandler(RequestHandler):
     startFlag = ''
     jobID = int(jobID)
 
-    result = jobDB.getJobStatus(jobID)
+    result = jobDB.getJobAttributes(jobID, ['Status'])
     if not result['OK']:
       return result
 
@@ -282,7 +282,7 @@ class JobStateUpdateHandler(RequestHandler):
     """ Set the application status for job specified by its JobId.
     """
 
-    result = jobDB.getJobStatus(int(jobID))
+    result = jobDB.getJobAttributes(int(jobID), ['Status', 'MinorStatus'])
     if not result['OK']:
       return result
 
@@ -363,7 +363,7 @@ class JobStateUpdateHandler(RequestHandler):
       self.log.warn('Failed to set the heart beat data', 'for job %d ' % int(jobID))
 
     # Restore the Running status if necessary
-    result = jobDB.getJobStatus(jobID)
+    result = jobDB.getJobAttributes(jobID, ['Status'])
     if not result['OK']:
      return result
 
@@ -372,7 +372,7 @@ class JobStateUpdateHandler(RequestHandler):
 
     status = result['Value']['Status']
     if status == "Stalled" or status == "Matched":
-     result = jobDB.setJobStatus(jobID, 'Running')
+     result = jobDB.setJobAttribute(jobID, 'Status', 'Running', True)
      if not result['OK']:
        self.log.warn('Failed to restore the job status to Running')
 

@@ -704,7 +704,7 @@ class ProxyDB(DB):
     result = pp.getProxy({"DN": userDN})
     if not result['OK']:
       return result
-    proxyStr = result['Value']
+    proxyStr = result['Value']['proxy']
     chain = X509Chain()
     result = chain.loadProxyFromString(proxyStr)
     if not result['OK']:
@@ -733,8 +733,9 @@ class ProxyDB(DB):
       return S_ERROR('Cannot generate proxy: %s' % result['Message'])
     if userGroup not in result['Value']:
       return S_ERROR('Cannot generate proxy: Invalid group %s for user' % userGroup)
-
     result = Registry.getProxyProvidersForDN(userDN)
+
+    errMsgs = []
     if result['OK']:
       providers = result['Value']
       providers.append('Certificate')
@@ -751,8 +752,9 @@ class ProxyDB(DB):
           result = chain.generateProxyToString(remainingSecs, diracGroup=userGroup, rfc=True)
           if result['OK']:
             return S_OK((result['Value'], remainingSecs))
-    return S_ERROR('Cannot generate proxy%s' %
-                   (result.get('Message') and ': ' + result.get('Message') or ''))
+        errMsgs.append('"%s": %s' % (proxyProvider, result['Message']))
+
+    return S_ERROR('Cannot generate proxy%s' % (errMsgs and ': ' + ', '.join(errMsgs) or ''))
 
   def getProxy(self, userDN, userGroup, requiredLifeTime=None):
     """ Get proxy string from the Proxy Repository for use with userDN
