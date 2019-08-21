@@ -1068,7 +1068,7 @@ class FileManagerBase(object):
       return res
     failed = res['Value']['Failed']
     fileIDLFNs = {}
-    for lfn, fileDict in res['Value']['Successful'].iteriteritems():
+    for lfn, fileDict in res['Value']['Successful'].iteritems():
       fileID = fileDict['FileID']
       fileIDLFNs[fileID] = lfn
     successful = {}
