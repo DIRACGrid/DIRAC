@@ -48,10 +48,9 @@ class JobMonitoringHandler(RequestHandler):
 
   def initialize(self):
     """
-    Flags gESFlag and gMySQLFlag have bool values (True/False)
-    Determines the switching of ElasticSearch and MySQL backends for the JobParameters DB table
-
-    For version v7r0, the MySQL backend is the default.
+    Flags useESForJobParametersFlag (in /Operations/[]/Services/JobMonitoring/) have bool value (True/False)
+    and determines the switching of backends from MySQL to ElasticSearch for the JobParameters DB table.
+    For version v7r0, the MySQL backend is (still) the default.
     """
 
     credDict = self.getRemoteCredentials()
@@ -66,6 +65,7 @@ class JobMonitoringHandler(RequestHandler):
     global gElasticJobDB
     if useESForJobParametersFlag:
       gElasticJobDB = ElasticJobDB()
+      self.log.verbose("Using ElasticSearch for JobParameters")
 
     return S_OK()
 

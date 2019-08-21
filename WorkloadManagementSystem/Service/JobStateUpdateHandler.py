@@ -55,6 +55,7 @@ class JobStateUpdateHandler(RequestHandler):
     global elasticJobDB
     if useESForJobParametersFlag:
       elasticJobDB = ElasticJobDB()
+      self.log.verbose("Using ElasticSearch for JobParameters")
 
     return S_OK()
 
