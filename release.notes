@@ -86,6 +86,14 @@ CHANGE: (#4110) updated basic tutorial for CC7 instead of SLC6.
 NEW: (#4170) added Production system documentation
 CHANGE: (#4224) Pilot 3 is the default
 
+[v6r22p7]
+
+*WMS
+NEW: (#4205) Statistics of Pilot submission is sent to Accounting System by SiteDirector.
+
+*Resources
+CHANGE: (#4242) DFC SEManagerDB: only acquire the lock if the cache needs to be modified
+
 [v6r22p6]
 
 *Core
