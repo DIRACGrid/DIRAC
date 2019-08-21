@@ -1,3 +1,8 @@
+<<<<<<< HEAD
+[v7r1-pre10]
+
+NEW: Add environment.yml file for preparing an environment with conda
+=======
 [v7r2-pre1]
 
 *ResourceStatusSystem
@@ -7,6 +12,7 @@ CHANGE: (#4235) Removes locals() way of passing parameters
 NEW: (#4279) Set up Gitlab CI pipeline using Docker containers
 
 [v7r1-pre3]
+>>>>>>> v7r2-pre1 notes
 
 *Core
 NEW: initial support for mysql8
@@ -40,7 +46,67 @@ CHANGE: (#4279) FileCatalog - dropped PolicyBasedSecurityManager and VOMSPolicy 
 NEW: (#4157) ProxyProvider resources with implementation for DIRAC CA and PUSP proxy providers
 NEW: (#4276) IdProvider resources to represent external user identity providers
 
-[v7r0-pre22]
+*tests
+CHANGE: (#4279) use VOMSSecurityManager for integration instead of PolicyBasedSecurityManager/VOMSPolicy
+FIX: (#4284) DMS client tests to use DIRAC user name, rather than the local system user name
+NEW: (#4289) CI for unit/lint/integration testing with GitHub actions
+NEW: (#4289) Start using shell linting of the test scripts
+FIX: (#4289) Exit quickly if the installation fails to make it easier to find issues
+
+*docs
+NEW: (#4289) Document how to run integration tests in docker
+
+[v7r0p5]
+
+FIX: changes from v6r22p15 included
+
+[v7r0p4]
+
+*Core
+FIX: (#4337) remove unexisting import from dirac-info
+
+*WMS
+CHANGE: (#4317) dealing with min and max number of processors from the job
+
+*docs
+CHANGE: (#4317) added WMS admin doc (job state machine)
+
+[v7r0p3]
+
+*Core
+FIX: (#4298) install_site.sh : set UpdatePilotCStoJSONFile=False for initial installations
+
+*WMS
+FIX: (#4294) JobState - restored logic of having database clients at the class level
+
+*TS
+CHANGE: (#4308) Rename Operations option Productions/ProductionFilesMaxResetCounter to Transformations/FilesMaxResetCounter
+
+*Resources, WMS, tests
+CHANGE: (#4295) save the number of processors as jobLimits in pilot cfg
+
+*tests
+CHANGE: (#4291) removed pilot2 tests
+
+*docs
+NEW: (#4309) Added how to create a dedicated dirac file catalog
+
+[v7r0p2]
+
+*Accounting
+FIX: (#4290) Allow longer user and site names.
+
+*WMS
+NEW: (#4287) dirac-wms-get-wn and dirac-wms-pilot-job-info scripts (ported from LHCbDIRAC)
+
+*docs
+CHANGE: (#4266) the AdministratorGuide has been restructured
+
+[v7r0p1]
+
+FIX: Removing some deprecated codes
+
+[v7r0]
 
 FIX: (#3962) use print function instead of print statement
 FIX: (#3962) remove the usage of the long suffix to distinguish between long and int
