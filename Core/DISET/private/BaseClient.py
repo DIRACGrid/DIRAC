@@ -523,7 +523,8 @@ and this is thread %s
       return self.__initStatus
     stConnectionInfo = ((self.__URLTuple[3], self.setup, self.vo),
                         action,
-                        self.__extraCredentials)
+                        self.__extraCredentials,
+                        DIRAC.version)
 
     # Send the connection info and get the answer back
     retVal = transport.sendData(S_OK(stConnectionInfo))
