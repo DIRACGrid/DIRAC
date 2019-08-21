@@ -778,5 +778,3 @@ class CSAPI(object):
     """
 
     return self.__rpcClient.forceGlobalConfigurationUpdate()
-
-

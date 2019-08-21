@@ -21,6 +21,7 @@ from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 from DIRAC.Core.Security.Locations import getHostCertificateAndKeyLocation
 
+
 class ServiceInterface(threading.Thread):
 
   def __init__(self, sURL):
@@ -39,7 +40,7 @@ class ServiceInterface(threading.Thread):
       self.dAliveSlaveServers = {}
       self.__launchCheckSlaves()
 
-    self.__updateResultDict = {"Successful":{}, "Failed": {}}
+    self.__updateResultDict = {"Successful": {}, "Failed": {}}
 
   def isMaster(self):
     return gConfigurationData.isMaster()
@@ -170,7 +171,7 @@ class ServiceInterface(threading.Thread):
     """
     gLogger.info("Updating configuration on slave servers")
     iGraceTime = gConfigurationData.getSlavesGraceTime()
-    self.__updateResultDict = {"Successful":{}, "Failed": {}}
+    self.__updateResultDict = {"Successful": {}, "Failed": {}}
     urlSet = set()
     for slaveURL in self.dAliveSlaveServers:
       if time.time() - self.dAliveSlaveServers[slaveURL] <= iGraceTime:
@@ -190,7 +191,7 @@ class ServiceInterface(threading.Thread):
     for system_ in cfg:
       for instance in cfg[system_]:
         for url in cfg[system_][instance]['URLs']:
-          urlSet = urlSet.union(set([u.strip() for u in cfg[system_][instance]['URLs'][url].split(',') \
+          urlSet = urlSet.union(set([u.strip() for u in cfg[system_][instance]['URLs'][url].split(',')
                                      if 'Configuration/Server' not in u]))
     return self.__updateServiceConfiguration(urlSet)
 
