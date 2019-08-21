@@ -27,6 +27,9 @@ class SEManagerBase:
     self._refreshSEs()
     self.seUpdatePeriod = 600
 
+    # last time the cache was updated (epoch)
+    self.lastUpdate = 0
+
   def setUpdatePeriod(self, period):
     self.seUpdatePeriod = period
 
@@ -50,16 +53,26 @@ class SEManagerDB(SEManagerBase):
   def _refreshSEs(self, connection=False):
 
     req = "SELECT SEID,SEName FROM FC_StorageElements;"
+    res = self.db._query(req)
+    if not res['OK']:
+      return res
+    seNames = set([se[1] for se in res['Value']])
+
+    # If there are no changes between the DB and the cache
+    # and we updated the cache recently enough, just return
+    if seNames == set(self.db.seNames) and ((time.time() - self.lastUpdate) < self.seUpdatePeriod):
+      return S_OK()
+
     startTime = time.time()
     self.lock.acquire()
     waitTime = time.time()
     gLogger.debug("SEManager RefreshSEs lock created. Waited %.3f seconds." % (waitTime - startTime))
-    res = self.db._query(req)
-    if not res['OK']:
-      gLogger.debug("SEManager RefreshSEs lock released. Used %.3f seconds." % (time.time() - waitTime))
+
+    # Check once more the lastUpdate because it could have been updated while we were waiting for the lock
+    if (time.time() - self.lastUpdate) < self.seUpdatePeriod:
       self.lock.release()
-      return res
-    seNames = [se[1] for se in res['Value']]
+      return S_OK()
+
     for seName, seId in self.db.seNames.items():
       if seName not in seNames:
         del self.db.seNames[seName]
@@ -71,6 +84,9 @@ class SEManagerDB(SEManagerBase):
       self.db.seNames[seName] = seid
       self.db.seids[seid] = seName
     gLogger.debug("SEManager RefreshSEs lock released. Used %.3f seconds." % (time.time() - waitTime))
+
+    # Update the lastUpdate time
+    self.lastUpdate = time.time()
     self.lock.release()
     return S_OK()
 

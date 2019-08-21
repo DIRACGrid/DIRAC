@@ -10,8 +10,11 @@ import re
 import time
 import threading
 
+from errno import ENOENT
+
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
+from DIRAC.Core.Utilities.DErrno import cmpError
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities.List import stringListToString, intListToString, breakListIntoChunks
@@ -995,7 +998,7 @@ class TransformationDB(DB):
     res = self.getTransformationMetaQuery(transID, queryType, connection=connection)
     if res['OK']:
       return S_ERROR("Meta query already exists for transformation")
-    if res['Message'] != 'No MetaQuery found for transformation':
+    if not cmpError(res, ENOENT):
       return res
 
     for parameterName in sorted(queryDict):
@@ -1051,7 +1054,14 @@ class TransformationDB(DB):
     return res
 
   def getTransformationMetaQuery(self, transName, queryType, connection=False):
-    """ Get the Meta Query for a given transformation """
+    """Get the Meta Query for a given transformation.
+
+    :param transName: transformation name or ID
+    :type transName: str or int
+    :param str queryType: 'Input' or 'Output' query
+    :param connection: DB connection
+    :returns: S_OK with query dictionary, S_ERROR, ENOENT if no query defined
+    """
     res = self._getConnectionTransID(connection, transName)
     if not res['OK']:
       return res
@@ -1078,7 +1088,7 @@ class TransformationDB(DB):
         parameterValue = eval(parameterValue)
       queryDict[parameterName] = parameterValue
     if not queryDict:
-      return S_ERROR("No MetaQuery found for transformation")
+      return S_ERROR(ENOENT, "No MetaQuery found for transformation")
     return S_OK(queryDict)
 
   ###########################################################################

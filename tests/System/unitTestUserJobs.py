@@ -16,7 +16,7 @@ parseCommandLine()
 
 from DIRAC import gLogger
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.tests.Utilities.testJobDefinitions import helloWorld, mpJob, wholeNodeJob, parametricJob
+from DIRAC.tests.Utilities.testJobDefinitions import *
 
 gLogger.setLevel('DEBUG')
 
@@ -44,6 +44,26 @@ class submitSuccess(GridSubmissionTestCase):
     """ submit jobs defined in DIRAC.tests.Utilities.testJobDefinitions
     """
     res = helloWorld()
+    self.assertTrue(res['OK'])
+    jobsSubmittedList.append(res['Value'])
+
+    res = helloWorldCERN()
+    self.assertTrue(res['OK'])
+    jobsSubmittedList.append(res['Value'])
+
+    res = helloWorldNCBJ()
+    self.assertTrue(res['OK'])
+    jobsSubmittedList.append(res['Value'])
+
+    res = helloWorldGRIDKA()
+    self.assertTrue(res['OK'])
+    jobsSubmittedList.append(res['Value'])
+
+    res = helloWorldGRIF()
+    self.assertTrue(res['OK'])
+    jobsSubmittedList.append(res['Value'])
+
+    res = helloWorldSSHBatch()
     self.assertTrue(res['OK'])
     jobsSubmittedList.append(res['Value'])
 

@@ -475,6 +475,11 @@ class Service(object):
   def _instantiateHandler(self, trid, proposalTuple=None):
     """
     Generate an instance of the handler for a given service
+
+    :param int trid: transport ID
+    :param tuple proposalTuple: tuple describing the proposed action
+
+    :return: S_OK/S_ERROR, Value is the handler object
     """
     # Generate the client params
     clientParams = {'serviceStartTime': self._startTime}
@@ -487,6 +492,9 @@ class Service(object):
     clientTransport = self._transportPool.get(trid)
     if clientTransport:
       clientParams['clientAddress'] = clientTransport.getRemoteAddress()
+    # The 4th element is the client version if available
+    if len(proposalTuple) > 3:
+      clientParams['clientVersion'] = proposalTuple[3]
     # Generate handler dict with per client info
     handlerInitDict = dict(self._serviceInfoDict)
     for key in clientParams:

@@ -18,9 +18,12 @@ The following options can be set for the InputDataAgent.
 import time
 import datetime
 
+from errno import ENOENT
+
 from DIRAC import S_OK, gLogger
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.Core.Base.AgentModule import AgentModule
+from DIRAC.Core.Utilities.DErrno import cmpError
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
@@ -90,7 +93,7 @@ class InputDataAgent(AgentModule):
       # res = self.transClient.getTransformationInputDataQuery( transID )
       res = self.transClient.getTransformationMetaQuery(transID, 'Input')
       if not res['OK']:
-        if res['Message'] == 'No InputDataQuery found for transformation':
+        if cmpError(res, ENOENT):
           gLogger.info("InputDataAgent.execute: No input data query found for transformation %d" % transID)
         else:
           gLogger.error("InputDataAgent.execute: Failed to get input data query for %d" % transID, res['Message'])

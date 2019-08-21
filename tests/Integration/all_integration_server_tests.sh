@@ -77,6 +77,7 @@ pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/Monitoring/Test_MonitoringRepor
 
 #-------------------------------------------------------------------------------#
 echo -e '***' $(date -u)  "**** Resources TESTS ****\n"
+
 python $SERVERINSTALLDIR/DIRAC/tests/Integration/Resources/Storage/Test_Resources_GFAL2StorageBase.py ProductionSandboxSE >> serverTestOutputs.txt 2>&1; (( ERR |= $? ))
 python $SERVERINSTALLDIR/DIRAC/tests/Integration/Resources/ProxyProvider/Test_DIRACCAProxyProvider.py >> serverTestOutputs.txt 2>&1; (( ERR |= $? ))
 
