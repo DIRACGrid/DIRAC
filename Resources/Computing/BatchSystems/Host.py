@@ -8,8 +8,7 @@
     with LocalComputingElement or SSHComputingElement objects
 """
 
-__RCSID__ = "$Id$"
-
+from __future__ import print_function
 import commands
 import os
 import glob
@@ -20,6 +19,8 @@ import stat
 import json
 import multiprocessing
 from datetime import datetime, timedelta
+
+__RCSID__ = "$Id$"
 
 # Clean job info and output after so many days
 CLEAN_DELAY = timedelta(7)
