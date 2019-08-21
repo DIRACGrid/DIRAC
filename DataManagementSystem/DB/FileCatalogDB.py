@@ -22,7 +22,7 @@ class FileCatalogDB(DB):
     if db.find('/') == -1:
       db = 'DataManagement/' + db
 
-    # DB.__init__(self, 'FileCatalogDB', db)
+    super(FileCatalogDB, self).__init__('FileCatalogDB', db)
 
     self.ugManager = None
     self.seManager = None
