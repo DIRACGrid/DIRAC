@@ -2154,6 +2154,10 @@ def createBashrc():
       # Add the lines required for ARC CE support
       lines.extend(['# ARC Computing Element',
                     'export ARC_PLUGIN_PATH=$DIRACLIB/arc'])
+
+      # Add the lines required for fork support for xrootd
+      lines.extend(['# Fork support for xrootd',
+                    'export XRD_RUNFORKHANDLER=1'])
       lines.append('')
       f = open(bashrcFile, 'w')
       f.write('\n'.join(lines))
@@ -2250,6 +2254,11 @@ def createCshrc():
       # Add the lines required for ARC CE support
       lines.extend(['# ARC Computing Element',
                     'setenv ARC_PLUGIN_PATH $DIRACLIB/arc'])
+
+      # Add the lines required for fork support for xrootd
+      lines.extend(['# Fork support for xrootd',
+                    'setenv XRD_RUNFORKHANDLER 1'])
+
       lines.append('')
       f = open(cshrcFile, 'w')
       f.write('\n'.join(lines))
@@ -2433,6 +2442,11 @@ def createBashrcForDiracOS():
       # Note: eventually this line should disappear as already set by diracosrc
       lines.extend(['# ARC Computing Element',
                     'export ARC_PLUGIN_PATH=$DIRACOS/usr/lib64/arc'])
+
+      # Add the lines required for fork support for xrootd
+      lines.extend(['# Fork support for xrootd',
+                    'export XRD_RUNFORKHANDLER=1'])
+
       lines.append('')
       with open(bashrcFile, 'w') as f:
         f.write('\n'.join(lines))

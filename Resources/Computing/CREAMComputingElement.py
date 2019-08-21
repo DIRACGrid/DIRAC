@@ -30,7 +30,7 @@ class CREAMComputingElement(ComputingElement):
   def __init__(self, ceUniqueID):
     """ Standard constructor.
     """
-    ComputingElement.__init__(self, ceUniqueID)
+    super(CREAMComputingElement, self).__init__(ceUniqueID)
 
     self.ceType = CE_NAME
     self.submittedJobs = 0

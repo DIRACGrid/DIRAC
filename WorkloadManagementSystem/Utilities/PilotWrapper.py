@@ -21,6 +21,8 @@ pilotWrapperContent = """#!/bin/bash
 /usr/bin/env python << EOF
 
 # imports
+from __future__ import print_function
+
 import os
 import stat
 import tempfile
@@ -30,7 +32,6 @@ import base64
 import bz2
 import logging
 import time
-import urllib2
 import tarfile
 
 # setting up the logging
@@ -46,11 +47,11 @@ logger.setLevel(logging.DEBUG)
 logger.addHandler(screen_handler)
 
 # just logging the environment as first thing
-print '==========================================================='
+logger.debug('===========================================================')
 logger.debug('Environment of execution host\\n')
-for key, val in os.environ.iteritems():
+for key, val in os.environ.items():
   logger.debug(key + '=' + val)
-print '===========================================================\\n'
+logger.debug('===========================================================\\n')
 
 # putting ourselves in the right directory
 pilotExecDir = '%(pilotExecDir)s'
@@ -95,22 +96,23 @@ def pilotWrapperScript(pilotFilesCompressedEncodedDict=None,
     envVariables = {}
 
   compressedString = ""
-  for pfName, encodedPf in pilotFilesCompressedEncodedDict.iteritems():  # are there some pilot files to unpack?
-                                                                         # then we create the unpacking string
+  # are there some pilot files to unpack? Then we create the unpacking string
+  for pfName, encodedPf in pilotFilesCompressedEncodedDict.items():
     compressedString += """
 try:
   with open('%(pfName)s', 'w') as fd:
     fd.write(bz2.decompress(base64.b64decode(\"\"\"%(encodedPf)s\"\"\")))
   os.chmod('%(pfName)s', stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
 except BaseException as x:
-  print >> sys.stderr, x
+  print(x, file=sys.stderr)
+  logger.error(x)
   shutil.rmtree(pilotWorkingDirectory)
   sys.exit(-1)
 """ % {'encodedPf': encodedPf,
        'pfName': pfName}
 
   envVariablesString = ""
-  for name, value in envVariables.iteritems():  # are there some environment variables to add?
+  for name, value in envVariables.items():  # are there some environment variables to add?
     envVariablesString += """
 os.environ[\"%(name)s\"]=\"%(value)s\"
 """ % {'name': name,
@@ -144,20 +146,64 @@ logger.info("But first unpacking pilot files")
 # Getting the pilot files
 logger.info("Getting the pilot files from %(location)s")
 
-# Getting the json file
-rJson = urllib2.urlopen('https://' + '%(location)s' + '/pilot/pilot.json')
-with open('pilot.json', 'wb') as pj:
-  pj.write(rJson.read())
-  pj.close()
+location = '%(location)s'.replace(' ', '').split(',')
 
-# Getting the tar file
-rTar = urllib2.urlopen('https://' + '%(location)s' + '/pilot/pilot.tar')
-with open('pilot.tar', 'wb') as pt:
-  pt.write(rTar.read())
-  pt.close()
-with tarfile.open('pilot.tar', 'r') as pt:
-  pt.extractall()
-  pt.close()
+import random
+random.shuffle(location)
+
+# we try from the available locations
+for loc in location:
+  # Getting the json file and the tar file
+  try:
+
+    # urllib is different between python 2 and 3
+    if sys.version_info < (3,):
+      from urllib2 import urlopen as url_library_urlopen
+      from urllib2 import URLError as url_library_URLError
+    else:
+      from urllib.request import urlopen as url_library_urlopen
+      from urllib.error import URLError as url_library_URLError
+
+
+    # needs to distinguish versions prior to or after 2.7.9
+    if sys.version_info >= (2, 7, 9):
+      import ssl
+      context = ssl._create_unverified_context()
+      rJson = url_library_urlopen('https://' + loc + '/pilot/pilot.json',
+                                  timeout=10,
+                                  context=context)
+      rTar = url_library_urlopen('https://' + loc + '/pilot/pilot.tar',
+                                 timeout=10,
+                                 context=context)
+      break
+
+    else:
+      rJson = url_library_urlopen('https://' + loc + '/pilot/pilot.json',
+                                  timeout=10)
+      rTar = url_library_urlopen('https://' + loc + '/pilot/pilot.tar',
+                                 timeout=10)
+      break
+
+  except url_library_URLError:
+    print('%%s unreacheable' %% loc, file=sys.stderr)
+    logger.error('%%s unreacheable' %% loc)
+
+else:
+  print("None of the locations of the pilot files is reachable", file=sys.stderr)
+  logger.error("None of the locations of the pilot files is reachable")
+  sys.exit(-1)
+
+pj = open('pilot.json', 'wb')
+pj.write(rJson.read())
+pj.close()
+
+pt = open('pilot.tar', 'wb')
+pt.write(rTar.read())
+pt.close()
+
+pt = tarfile.open('pilot.tar', 'r')
+pt.extractall()
+pt.close()
 """ % {'location': location}
 
   localPilot += """

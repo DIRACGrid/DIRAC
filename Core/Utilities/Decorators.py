@@ -33,6 +33,13 @@ def deprecated(reason, onlyOnce=False):
         @deprecated("Use otherClass instead", onlyOnce=True)
         class MyOldClass:
 
+      If used on a classmethod, it should be used after the `@classmethod` decorator
+      for example::
+
+        @classmethod
+        @deprecated("Do not put me before @classmethod")
+        def methodX(cls):
+
       Parameters
       ----------
       reason : str
