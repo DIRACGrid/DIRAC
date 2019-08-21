@@ -1,0 +1,65 @@
+#!/bin/bash
+# This file contains all the environment variables neccessary to run
+# a full integration test. When sourcing this file and executing
+# parseCommandLine from utils.sh, the `DEFAULT` prefix will be stripped
+# unless the unstripped version of the variable already exists.
+
+export DEFAULT_DEBUG=True
+
+# Settings for external services 
+
+# MYSQL Settings
+export DEFAULT_DB_USER=Dirac
+export DEFAULT_DB_PASSWORD=Dirac
+export DEFAULT_DB_ROOTUSER=root
+export DEFAULT_DB_ROOTPWD=password
+export DEFAULT_DB_HOST=mysql
+export DEFAULT_DB_PORT=3306
+
+# ElasticSearch settings
+export DEFAULT_NoSQLDB_HOST=elasticsearch
+export DEFAULT_NoSQLDB_PORT=9200
+
+# Hostnames
+export DEFAULT_SERVER_HOST=server
+export DEFAULT_CLIENT_HOST=client
+
+# Settings for DIRAC installation
+export DEFAULT_PRERELEASE=unset
+export DEFAULT_DIRAC_RELEASE=unset
+export DEFAULT_DIRACBRANCH=unset
+
+# repository to get tests and install scripts from 
+export DEFAULT_TESTREPO=antolu
+export DEFAULT_TESTBRANCH=ci
+
+export DEFAULT_DIRACOSVER=master
+
+# Versions of external services
+export DEFAULT_MYSQL_VER=5.7
+export DEFAULT_ES_VER=6.6.0
+
+# Optional parameters
+
+export DEFAULT_ALTERNATIVE_MODULES=unset
+
+
+# GitLab variables
+
+if [[ ! -z $CI_PROJECT_DIR ]]; then
+    echo "I guess we're in GitLab CI, using local repository in branch ${CI_COMMIT_REF_NAME}"
+    export DEFAULT_TESTREPO=$CI_PROJECT_DIR
+    export DEFAULT_ALTERNATIVE_MODULES=$CI_PROJECT_DIR
+
+    # find the latest version
+    majorVersion=`grep "majorVersion =" __init__.py | cut -d "=" -f 2`
+    minorVersion=`grep "minorVersion =" __init__.py | cut -d "=" -f 2`
+    export DEFAULT_DIRACBRANCH=v${majorVersion// }r${minorVersion// }
+    echo "Deduced DIRACBRANCH ${DEFAULT_DIRACBRANCH} from __init__.py"
+fi
+
+# Test specific variables
+export USER=dirac
+export USER_HOME=/home/${USER}
+export WORKSPACE=$USER_HOME
+

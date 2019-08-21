@@ -116,9 +116,9 @@ function findRelease(){
     then
       if [ ! -z "$DIRACBRANCH" ]
       then
-        projectVersion=`cat $TESTCODE/releases.cfg | grep '[^:]v[[:digit:]]*r[[:digit:]]*p[[:digit:]]*' | grep $DIRACBRANCH | head -1 | sed 's/ //g'`
+        projectVersion=`cat $TESTCODE/releases.cfg | grep '^\s*v[[:digit:]]*r[[:digit:]]*p[[:digit:]]*' | grep $DIRACBRANCH | head -1 | sed 's/ //g'`
       else
-        projectVersion=`cat $TESTCODE/releases.cfg | grep '[^:]v[[:digit:]]*r[[:digit:]]*p[[:digit:]]*' | head -1 | sed 's/ //g'`
+        projectVersion=`cat $TESTCODE/releases.cfg | grep '^\s*v[[:digit:]]*r[[:digit:]]*p[[:digit:]]*' | head -1 | sed 's/ //g'`
       fi
       # projectVersion=`cat releases.cfg | grep [^:]v[[:digit:]]r[[:digit:]]*$PRE | head -1 | sed 's/ //g'`
     fi
@@ -128,9 +128,9 @@ function findRelease(){
     then
       if [ ! -z "$DIRACBRANCH" ]
       then
-        projectVersion=`cat $TESTCODE/releases.cfg | grep '[^:]v[[:digit:]]*r[[:digit:]]' | grep $DIRACBRANCH | head -1 | sed 's/ //g'`
+        projectVersion=`cat $TESTCODE/releases.cfg | grep '^\s*v[[:digit:]]*r[[:digit:]]' | grep $DIRACBRANCH | head -1 | sed 's/ //g'`
       else
-        projectVersion=`cat $TESTCODE/releases.cfg | grep '[^:]v[[:digit:]]*r[[:digit:]]' | head -1 | sed 's/ //g'`
+        projectVersion=`cat $TESTCODE/releases.cfg | grep '^\s*v[[:digit:]]*r[[:digit:]]' | head -1 | sed 's/ //g'`
       fi
     fi
 
@@ -139,9 +139,9 @@ function findRelease(){
     then
       if [ ! -z "$DIRACBRANCH" ]
       then
-        projectVersion=`cat $TESTCODE/releases.cfg | grep '[^:]v[[:digit:]]*r[[:digit:]]*'-pre'' | grep $DIRACBRANCH | head -1 | sed 's/ //g'`
+        projectVersion=`cat $TESTCODE/releases.cfg | grep '^\s*v[[:digit:]]*r[[:digit:]]*'-pre'' | grep $DIRACBRANCH | head -1 | sed 's/ //g'`
       else
-        projectVersion=`cat $TESTCODE/releases.cfg | grep '[^:]v[[:digit:]]*r[[:digit:]]*'-pre'' | head -1 | sed 's/ //g'`
+        projectVersion=`cat $TESTCODE/releases.cfg | grep '^\s*v[[:digit:]]*r[[:digit:]]*'-pre'' | head -1 | sed 's/ //g'`
       fi
     fi
 
@@ -566,7 +566,7 @@ function generateCertificates(){
 
   if [ -z ${1} ]
   then
-    nDays=1
+    nDays=7	
   else
     nDays=$1
   fi
@@ -637,7 +637,7 @@ function generateUserCredentials(){
   # validity of the certificate
   if [ -z ${1} ]
   then
-    nDays=1
+    nDays=7
   else
     nDays=$1
   fi
