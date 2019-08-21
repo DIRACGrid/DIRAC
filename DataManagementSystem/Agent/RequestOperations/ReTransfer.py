@@ -60,7 +60,8 @@ class ReTransfer(DMSRequestOperationsBase):
   def __call__(self):
     """ reTransfer operation execution """
 
-    # Check whether the ES flag is enabled so we can send the data accordingly.
+    # The flag  'rmsMonitoring' is set by the RequestTask and is False by default.
+    # Here we use 'createRMSRecord' to create the ES record which is defined inside OperationHandlerBase.
     if self.rmsMonitoring:
       self.rmsMonitoringReporter = MonitoringReporter(monitoringType="RMSMonitoring")
     else:

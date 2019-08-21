@@ -86,7 +86,7 @@ class RequestTask(object):
     if not shifterProxies["OK"]:
       self.log.error("Cannot setup shifter proxies", shifterProxies["Message"])
 
-    # Set the ES flag which is sent from the RequestExecutingAgent
+    #  This flag which is set and sent from the RequestExecutingAgent and is False by default.
     self.rmsMonitoring = rmsMonitoring
 
     if self.rmsMonitoring:

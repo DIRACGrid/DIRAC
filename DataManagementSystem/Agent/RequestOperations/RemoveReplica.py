@@ -57,7 +57,8 @@ class RemoveReplica(DMSRequestOperationsBase):
   def __call__(self):
     """ remove replicas """
 
-    # Check whether the ES flag is enabled so we can send the data accordingly.
+    # The flag  'rmsMonitoring' is set by the RequestTask and is False by default.
+    # Here we use 'createRMSRecord' to create the ES record which is defined inside OperationHandlerBase.
     if self.rmsMonitoring:
       self.rmsMonitoringReporter = MonitoringReporter(monitoringType="RMSMonitoring")
     else:
@@ -125,8 +126,8 @@ class RemoveReplica(DMSRequestOperationsBase):
       # # report removal status for successful files
       if self.rmsMonitoring:
         self.rmsMonitoringReporter.addRecord(
-            self.createRMSRecord("Successful",len(([opFile for opFile in toRemoveDict.itervalues()
-                                                    if not opFile.Error])))
+            self.createRMSRecord("Successful", len(([opFile for opFile in toRemoveDict.itervalues()
+                                                     if not opFile.Error])))
         )
       else:
         gMonitor.addMark("RemoveReplicaOK", len([opFile for opFile in toRemoveDict.itervalues() if not opFile.Error]))

@@ -163,6 +163,7 @@ class RequestExecutingAgent(AgentModule):
                                                                      self.timeOuts[opHandler]['PerFile']))
 
     # Check whether the ES flag is enabled so we can send the data accordingly.
+    # This flag can be enabled inside /Operations/Defaults or RequestExecutingAgent of the 'cfg' file.
     self.rmsMonitoring = (
         Operations().getValue("EnableActivityMonitoring", False) or
         self.am_getOption("EnableActivityMonitoring", False)
