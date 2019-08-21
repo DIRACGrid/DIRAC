@@ -50,7 +50,7 @@ class FileManagerPs(FileManagerBase):
       res = self._getDirectoryFiles(directoryIDs[dirPath], fileNames, metadata,
                                     allStatus=allStatus, connection=connection)
 
-      for fileName, fileDict in res.get('Value', {}).items():
+      for fileName, fileDict in res.get('Value', {}).iteritems():
         fname = os.path.join(dirPath, fileName)
         successful[fname] = fileDict
 
@@ -616,14 +616,14 @@ class FileManagerPs(FileManagerBase):
       return res
 
     # If the file does not exist we consider the deletion successful
-    for lfn, error in res['Value']['Failed'].items():
+    for lfn, error in res['Value']['Failed'].iteritems():
       if error == 'No such file or directory':
         successful[lfn] = True
       else:
         failed[lfn] = error
 
     lfnFileIDDict = res['Value']['Successful']
-    for lfn, fileDict in lfnFileIDDict.items():
+    for lfn, fileDict in lfnFileIDDict.iteritems():
       fileID = fileDict['FileID']
 
       # Then we get our StorageElement Id (cached in seManager)

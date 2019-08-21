@@ -64,7 +64,7 @@ class SecurityManagerBase(object):
       return result
 
     permissions = result['Value']['Successful']
-    for path, permDict in permissions.iteritems():
+    for path, permDict in permissions.iteriteritems():
       if permDict[opType]:
         successful[path] = True
       else:

@@ -30,7 +30,7 @@ class SEManagerBase(object):
   def setSEDefinitions(self, seDefinitions):
     self.db.seDefinitions = seDefinitions
     self.seNames = {}
-    for seID, seDef in self.db.seDefinitions.items():
+    for seID, seDef in self.db.seDefinitions.iteritems():
       seName = seDef['SEName']
       self.seNames[seName] = seID
 

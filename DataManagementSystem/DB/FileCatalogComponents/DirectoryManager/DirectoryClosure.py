@@ -683,7 +683,7 @@ class DirectoryClosure( DirectoryTreeBase ):
     arguments = paths
     successful = {}
     failed = {}
-    for path, attribute in arguments.items():
+    for path, attribute in arguments.iteritems():
       result = directoryFunction( path, attribute, recursive = recursive )
       if not result['OK']:
         failed[path] = result['Message']

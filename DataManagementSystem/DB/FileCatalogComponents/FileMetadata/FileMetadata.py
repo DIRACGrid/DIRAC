@@ -123,7 +123,7 @@ class FileMetadata:
     else:
       return S_ERROR('File %s not found' % path)
 
-    for metaName, metaValue in metadict.items():
+    for metaName, metaValue in metadict.iteritems():
       if metaName not in metaFields:
         result = self.__setFileMetaParameter(fileID, metaName, metaValue, credDict)
       else:
@@ -370,7 +370,7 @@ class FileMetadata:
         query = '( $s )' % ', '.join(result['Value'])
         queryList.append(('IN', query))
     elif isinstance(value, dict):
-      for operation, operand in value.items():
+      for operation, operand in value.iteritems():
 
         # Prepare the escaped operand first
         if isinstance(operand, list):
@@ -431,7 +431,7 @@ class FileMetadata:
       return S_OK([])
     resultList = []
     leftJoinTables = []
-    for meta, value in userMetaDict.items():
+    for meta, value in userMetaDict.iteritems():
       table = 'FC_FileMeta_%s' % meta
 
       result = self.__createMetaSelection(value)
@@ -451,7 +451,7 @@ class FileMetadata:
     table = 'FC_Files'
     queriesFiles = []
     queriesFileInfo = []
-    for infield, invalue in standardMetaDict.items():
+    for infield, invalue in standardMetaDict.iteritems():
       value = invalue
       if infield in FILES_TABLE_METAKEYS:
         if infield == 'User':
@@ -502,7 +502,7 @@ class FileMetadata:
     standardMetaDict = {}
     userMetaDict = {}
     leftJoinTables = []
-    for meta, value in metaDict.items():
+    for meta, value in metaDict.iteritems():
       if meta == "SE":
         if isinstance(value, dict):
           storageElements = value.get('in', [])
@@ -604,7 +604,7 @@ class FileMetadata:
     if not result['OK']:
       return result
     fileMetaKeys = result['Value'].keys() + FILE_STANDARD_METAKEYS.keys()
-    fileMetaDict = dict(item for item in metaDict.items() if item[0] in fileMetaKeys)
+    fileMetaDict = dict(item for item in metaDict.iteritems() if item[0] in fileMetaKeys)
 
     fileList = []
     idLfnDict = {}
