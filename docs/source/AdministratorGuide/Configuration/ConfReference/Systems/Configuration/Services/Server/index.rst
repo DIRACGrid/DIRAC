@@ -13,8 +13,8 @@ In this subsection the Server service is configured. The attributes are showed i
 +------------------------------------+--------------------------------------------+-------------------------------------------------------------------------+
 | *Port*                             | Port where the service is responding       | Port = 9135                                                             |
 +------------------------------------+--------------------------------------------+-------------------------------------------------------------------------+
-| *UpdatePilotCStoJSONFile*          | Optional flag to enable if you want that   | UpdatePilotCStoJSONFile = True                                          |
-|                                    | the configuration on the pilot is dumped   | Default is False                                                        |
+| *UpdatePilotCStoJSONFile*          | Optional flag to disable the dumping of    | UpdatePilotCStoJSONFile = False                                         |
+|                                    | the configuration on the pilot             | Default is True                                                         |
 |                                    | in a JSON file and uploaded to a webserver |                                                                         |
 +------------------------------------+--------------------------------------------+-------------------------------------------------------------------------+
 | *Authorization*                    | Subsection to configure authorization over | Authorization                                                           |
