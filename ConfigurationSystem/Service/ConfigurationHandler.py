@@ -65,7 +65,7 @@ class ConfigurationHandler(RequestHandler):
       if gPilotSynchronizer is None:
         try:
           # This import is only needed for the Master CS service, making it conditional avoids
-          # dependency on the git client preinstalled on all the servers running CS slaves
+          # dependency on the git client pre-installed on all the servers running CS slaves
           from DIRAC.WorkloadManagementSystem.Utilities.PilotCStoJSONSynchronizer import PilotCStoJSONSynchronizer
         except ImportError as exc:
           self.log.exception("Failed to import PilotCStoJSONSynchronizer", repr(exc))
@@ -74,6 +74,16 @@ class ConfigurationHandler(RequestHandler):
       return gPilotSynchronizer.sync()
 
     return res
+
+  types_forceGlobalConfigurationUpdate = []
+
+  def export_forceGlobalConfigurationUpdate(self):
+    """
+    Attempt to request all the configured services to update their configuration
+
+    :return: S_OK, Value Successful/Failed dict with service URLs
+    """
+    return gServiceInterface.forceGlobalUpdate()
 
   types_writeEnabled = []
 
