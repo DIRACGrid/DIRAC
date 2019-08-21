@@ -49,27 +49,24 @@ class JobMonitoringHandler(RequestHandler):
   def initialize(self):
     """
     Flags gESFlag and gMySQLFlag have bool values (True/False)
-    derived from dirac.cfg configuration file
+    Determines the switching of ElasticSearch and MySQL backends for the JobParameters DB table
 
-    Determines the switching of ElasticSearch and MySQL backends
+    For version v7r0, the MySQL backend is the default.
     """
-    global gElasticJobDB, gJobDB
 
-    gESFlag = self.srv_getCSOption('useES', False)
-    if gESFlag:
-      gElasticJobDB = ElasticJobDB()
-
-    gMySQLFlag = self.srv_getCSOption('useMySQL', True)
-    if not gMySQLFlag:
-      gJobDB = False
+    operations = Operations(group=self.ownerGroup)
 
     credDict = self.getRemoteCredentials()
     self.ownerDN = credDict['DN']
     self.ownerGroup = credDict['group']
-    operations = Operations(group=self.ownerGroup)
     self.globalJobsInfo = operations.getValue('/Services/JobMonitoring/GlobalJobsInfo', True)
     self.jobPolicy = JobPolicy(self.ownerDN, self.ownerGroup, self.globalJobsInfo)
     self.jobPolicy.jobDB = gJobDB
+
+    useESForJobParametersFlag = operations.getValue('/Services/JobMonitoring/useESForJobParametersFlag', False)
+    global gElasticJobDB
+    if useESForJobParametersFlag:
+      gElasticJobDB = ElasticJobDB()
 
     return S_OK()
 
@@ -254,10 +251,13 @@ class JobMonitoringHandler(RequestHandler):
   def export_getJobOwner(jobID):
 
     if gElasticJobDB:
-      return gElasticJobDB.getJobParametersAndAttributes(jobID, 'Owner')
+      res = gElasticJobDB.getJobParametersAndAttributes(jobID, 'Owner')
+      if not res['OK']:
+        return res
+      if res['Value']:
+        return res
 
-    else:
-      return gJobDB.getJobAttribute(jobID, 'Owner')
+    return gJobDB.getJobAttribute(jobID, 'Owner')
 
 ##############################################################################
   types_getJobSite = [int]
@@ -515,7 +515,11 @@ class JobMonitoringHandler(RequestHandler):
     :param str parName: one single parameter name
     """
     if gElasticJobDB:
-      return gElasticJobDB.getJobParameters(jobID, [parName])
+      res = gElasticJobDB.getJobParameters(jobID, [parName])
+      if not res['OK']:
+        return res
+      if res['Value']:
+        return res
 
     res = gJobDB.getJobParameters(jobID, [parName])
     if not res['OK']:
@@ -539,7 +543,12 @@ class JobMonitoringHandler(RequestHandler):
     :param str parName: one single parameter name, or None (meaning all of them)
     """
     if gElasticJobDB:
-      return gElasticJobDB.getJobParameters(jobIDs)
+      res = gElasticJobDB.getJobParameters(jobIDs)
+      if not res['OK']:
+        return res
+      if res['Value']:
+        return res
+
     return gJobDB.getJobParameters(jobIDs, parName)
 
 ##############################################################################
@@ -583,10 +592,13 @@ class JobMonitoringHandler(RequestHandler):
   def export_getJobAttribute(jobID, attribute):
 
     if gElasticJobDB:
-      return gElasticJobDB.getJobParametersAndAttributes(jobID, attribute)
+      res = gElasticJobDB.getJobParametersAndAttributes(jobID, attribute)
+      if not res['OK']:
+        return res
+      if res['Value']:
+        return res
 
-    else:
-      return gJobDB.getJobAttribute(jobID, attribute)
+    return gJobDB.getJobAttribute(jobID, attribute)
 
 ##############################################################################
   types_getSiteSummary = []
