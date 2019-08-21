@@ -1,7 +1,8 @@
-[v7r1-pre3]
+[v7r1-pre4]
 
 *Core
 NEW: initial support for mysql8
+NEW: (#4236) DISET - pass the client DIRAC version as part of the request description structure
 
 *Configuration
 CHANGE: (#4157) add new helper methods for IdP/Proxy Providers, OAuthManager. Add methods that 
