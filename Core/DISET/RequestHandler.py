@@ -496,9 +496,24 @@ class RequestHandler(object):
   @staticmethod
   def export_echo(data):
     """
-    This method used for testing the performance of a service
+    This method is used for testing performance of the service
+
+    :param str data: data to be sent back to the caller
+
+    :return: S_OK, Value is the input data
     """
     return S_OK(data)
+
+  types_refreshConfiguration = [bool]
+
+  @staticmethod
+  def export_refreshConfiguration(fromMaster):
+    """
+    Force refreshing the configuration data
+
+    :param bool fromMaster: flag to refresh from the master configuration service
+    """
+    return gConfig.forceRefresh(fromMaster=fromMaster)
 
 ####
 #
@@ -556,6 +571,9 @@ class RequestHandler(object):
     if 'actionTuple' not in self.serviceInfoDict:
       return ('Unknown yet', )
     return self.serviceInfoDict['actionTuple']
+
+  def srv_getClientVersion(self):
+    return self.serviceInfoDict.get("clientVersion")
 
   @classmethod
   def srv_getURL(cls):
