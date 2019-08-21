@@ -16,7 +16,6 @@ from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase import DMSRequestOperationsBase
 
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
-from DIRAC.Core.Utilities import Time, Network
 
 ########################################################################
 
@@ -64,15 +63,9 @@ class RegisterReplica(DMSRequestOperationsBase):
     waitingFiles = self.getWaitingFilesList()
 
     if self.rmsMonitoring:
-      self.rmsMonitoringReporter.addRecord({
-          "timestamp": int(Time.toEpoch()),
-          "host": Network.getFQDN(),
-          "objectType": "File",
-          "operationType": self.operation.Type,
-          "parentID": self.operation.OperationID,
-          "status": "Attempted",
-          "nbObject": len(waitingFiles)
-      })
+      self.rmsMonitoringReporter.addRecord(
+          self.createRMSRecord("Attempted", len(waitingFiles))
+      )
 
     # # loop over files
     registerOperations = {}
@@ -93,15 +86,9 @@ class RegisterReplica(DMSRequestOperationsBase):
         # There have been some errors
 
         if self.rmsMonitoring:
-          self.rmsMonitoringReporter.addRecord({
-              "timestamp": int(Time.toEpoch()),
-              "host": Network.getFQDN(),
-              "objectType": "File",
-              "operationType": self.operation.Type,
-              "parentID": self.operation.OperationID,
-              "status": "Failed",
-              "nbObject": 1
-          })
+          self.rmsMonitoringReporter.addRecord(
+              self.createRMSRecord("Failed", 1)
+          )
         else:
           gMonitor.addMark("RegisterReplicaFail", 1)
 #        self.dataLoggingClient().addFileRecord( lfn, "RegisterReplicaFail", ','.join( catalogs ) if catalogs else "all catalogs", "", "RegisterReplica" )
@@ -147,15 +134,9 @@ class RegisterReplica(DMSRequestOperationsBase):
       else:
         # All is OK
         if self.rmsMonitoring:
-          self.rmsMonitoringReporter.addRecord({
-              "timestamp": int(Time.toEpoch()),
-              "host": Network.getFQDN(),
-              "objectType": "File",
-              "operationType": self.operation.Type,
-              "parentID": self.operation.OperationID,
-              "status": "Successful",
-              "nbObject": 1
-          })
+          self.rmsMonitoringReporter.addRecord(
+              self.createRMSRecord("Successful", 1)
+          )
         else:
           gMonitor.addMark("RegisterReplicaOK", 1)
 #        self.dataLoggingClient().addFileRecord( lfn, "RegisterReplicaOK", ','.join( catalogs ) if catalogs else "all catalogs", "", "RegisterReplica" )

@@ -33,7 +33,6 @@ from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
-from DIRAC.Core.Utilities import Time, Network
 
 ########################################################################
 
@@ -96,15 +95,9 @@ class PutAndRegister(DMSRequestOperationsBase):
 
       if self.rmsMonitoring:
         for status in ["Attempted", "Failed"]:
-          self.rmsMonitoringReporter.addRecord({
-              "timestamp": int(Time.toEpoch()),
-              "host": Network.getFQDN(),
-              "objectType": "File",
-              "operationType": self.operation.Type,
-              "parentID": self.operation.OperationID,
-              "status": status,
-              "nbObject": len(self.operation)
-          })
+          self.rmsMonitoringReporter.addRecord(
+              self.createRMSRecord(status, len(self.operation))
+          )
           self.rmsMonitoringReporter.commit()
 
       return S_ERROR("TargetSE should contain only one target, got %s" % targetSEs)
@@ -114,15 +107,9 @@ class PutAndRegister(DMSRequestOperationsBase):
     if not bannedTargets['OK']:
       if self.rmsMonitoring:
         for status in ["Attempted", "Failed"]:
-          self.rmsMonitoringReporter.addRecord({
-              "timestamp": int(Time.toEpoch()),
-              "host": Network.getFQDN(),
-              "objectType": "File",
-              "operationType": self.operation.Type,
-              "parentID": self.operation.OperationID,
-              "status": status,
-              "nbObject": len(self.operation)
-          })
+          self.rmsMonitoringReporter.addRecord(
+              self.createRMSRecord(status, len(self.operation))
+          )
         self.rmsMonitoringReporter.commit()
       else:
         gMonitor.addMark("PutAtt")
@@ -136,15 +123,9 @@ class PutAndRegister(DMSRequestOperationsBase):
     waitingFiles = self.getWaitingFilesList()
 
     if self.rmsMonitoring:
-      self.rmsMonitoringReporter.addRecord({
-          "timestamp": int(Time.toEpoch()),
-          "host": Network.getFQDN(),
-          "objectType": "File",
-          "operationType": self.operation.Type,
-          "parentID": self.operation.OperationID,
-          "status": "Attempted",
-          "nbObject": len(waitingFiles)
-      })
+      self.rmsMonitoringReporter.addRecord(
+          self.createRMSRecord("Attempted", len(waitingFiles))
+      )
 
     # # loop over files
     for opFile in waitingFiles:
@@ -170,15 +151,9 @@ class PutAndRegister(DMSRequestOperationsBase):
                                                                      checksum=checksum)
       if not putAndRegister["OK"]:
         if self.rmsMonitoring:
-          self.rmsMonitoringReporter.addRecord({
-              "timestamp": int(Time.toEpoch()),
-              "host": Network.getFQDN(),
-              "objectType": "File",
-              "operationType": self.operation.Type,
-              "parentID": self.operation.OperationID,
-              "status": "Failed",
-              "nbObject": 1
-          })
+          self.rmsMonitoringReporter.addRecord(
+              self.createRMSRecord("Failed", 1)
+          )
         else:
           gMonitor.addMark("PutFail", 1)
 #         self.dataLoggingClient().addFileRecord( lfn, "PutFail", targetSE, "", "PutAndRegister" )
@@ -191,15 +166,9 @@ class PutAndRegister(DMSRequestOperationsBase):
 
       if lfn in putAndRegister["Failed"]:
         if self.rmsMonitoring:
-          self.rmsMonitoringReporter.addRecord({
-              "timestamp": int(Time.toEpoch()),
-              "host": Network.getFQDN(),
-              "objectType": "File",
-              "operationType": self.operation.Type,
-              "parentID": self.operation.OperationID,
-              "status": "Failed",
-              "nbObject": 1
-          })
+          self.rmsMonitoringReporter.addRecord(
+              self.createRMSRecord("Failed", 1)
+          )
         else:
           gMonitor.addMark("PutFail", 1)
 #         self.dataLoggingClient().addFileRecord( lfn, "PutFail", targetSE, "", "PutAndRegister" )
@@ -216,15 +185,9 @@ class PutAndRegister(DMSRequestOperationsBase):
         if "put" not in putAndRegister[lfn]:
 
           if self.rmsMonitoring:
-            self.rmsMonitoringReporter.addRecord({
-                "timestamp": int(Time.toEpoch()),
-                "host": Network.getFQDN(),
-                "objectType": "File",
-                "operationType": self.operation.Type,
-                "parentID": self.operation.OperationID,
-                "status": "Failed",
-                "nbObject": 1
-            })
+            self.rmsMonitoringReporter.addRecord(
+                self.createRMSRecord("Failed", 1)
+            )
           else:
             gMonitor.addMark("PutFail", 1)
 #           self.dataLoggingClient().addFileRecord( lfn, "PutFail", targetSE, "", "PutAndRegister" )
@@ -238,15 +201,9 @@ class PutAndRegister(DMSRequestOperationsBase):
         if "register" not in putAndRegister[lfn]:
 
           if self.rmsMonitoring:
-            self.rmsMonitoringReporter.addRecord({
-                "timestamp": int(Time.toEpoch()),
-                "host": Network.getFQDN(),
-                "objectType": "File",
-                "operationType": self.operation.Type,
-                "parentID": self.operation.OperationID,
-                "status": "Failed",
-                "nbObject": 1
-            })
+            self.rmsMonitoringReporter.addRecord(
+                self.createRMSRecord("Failed", 1)
+            )
           else:
             gMonitor.addMark("PutOK", 1)
             gMonitor.addMark("RegisterFail", 1)
@@ -266,15 +223,9 @@ class PutAndRegister(DMSRequestOperationsBase):
           continue
 
         if self.rmsMonitoring:
-          self.rmsMonitoringReporter.addRecord({
-              "timestamp": int(Time.toEpoch()),
-              "host": Network.getFQDN(),
-              "objectType": "File",
-              "operationType": self.operation.Type,
-              "parentID": self.operation.OperationID,
-              "status": "Successful",
-              "nbObject": 1
-          })
+          self.rmsMonitoringReporter.addRecord(
+              self.createRMSRecord("Successful", 1)
+          )
         else:
           gMonitor.addMark("PutOK", 1)
           gMonitor.addMark("RegisterOK", 1)

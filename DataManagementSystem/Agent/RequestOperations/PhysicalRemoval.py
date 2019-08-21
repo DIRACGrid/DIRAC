@@ -34,7 +34,6 @@ from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
-from DIRAC.Core.Utilities import Time, Network
 
 ########################################################################
 
@@ -91,15 +90,9 @@ class PhysicalRemoval(DMSRequestOperationsBase):
 =======
       if self.rmsMonitoring:
         for status in ["Attempted", "Failed"]:
-          self.rmsMonitoringReporter.addRecord({
-              "timestamp": int(Time.toEpoch()),
-              "host": Network.getFQDN(),
-              "objectType": "File",
-              "operationType": self.operation.Type,
-              "parentID": self.operation.OperationID,
-              "status": status,
-              "nbObject": len(self.operation)
-          })
+          self.rmsMonitoringReporter.addRecord(
+              self.createRMSRecord(status, len(self.operation))
+          )
         self.rmsMonitoringReporter.commit()
       else:
         gMonitor.addMark("PhysicalRemovalAtt")
@@ -121,15 +114,9 @@ class PhysicalRemoval(DMSRequestOperationsBase):
 =======
 
     if self.rmsMonitoring:
-      self.rmsMonitoringReporter.addRecord({
-          "timestamp": int(Time.toEpoch()),
-          "host": Network.getFQDN(),
-          "objectType": "File",
-          "operationType": self.operation.Type,
-          "parentID": self.operation.OperationID,
-          "status": "Attempted",
-          "nbObject": len(toRemoveDict)
-      })
+      self.rmsMonitoringReporter.addRecord(
+          self.createRMSRecord("Attempted", len(toRemoveDict))
+      )
       self.rmsMonitoringReporter.commit()
     else:
       gMonitor.addMark("PhysicalRemovalAtt", len(toRemoveDict) * len(targetSEs))
@@ -168,15 +155,9 @@ class PhysicalRemoval(DMSRequestOperationsBase):
           gMonitor.addMark("PhysicalRemovalFail", 1)
 =======
           if self.rmsMonitoring:
-            self.rmsMonitoringReporter.addRecord({
-                "timestamp": int(Time.toEpoch()),
-                "host": Network.getFQDN(),
-                "objectType": "File",
-                "operationType": self.operation.Type,
-                "parentID": self.operation.OperationID,
-                "status": "Failed",
-                "nbObject": 1
-            })
+            self.rmsMonitoringReporter.addRecord(
+                self.createRMSRecord("Failed", 1)
+            )
           else:
             gMonitor.addMark("PhysicalRemovalFail", 1)
 >>>>>>> Migrate DMS/Agent/RequestOperations to ES.
@@ -200,30 +181,18 @@ class PhysicalRemoval(DMSRequestOperationsBase):
 =======
 
             if self.rmsMonitoring:
-              self.rmsMonitoringReporter.addRecord({
-                  "timestamp": int(Time.toEpoch()),
-                  "host": Network.getFQDN(),
-                  "objectType": "File",
-                  "operationType": self.operation.Type,
-                  "parentID": self.operation.OperationID,
-                  "status": "Failed",
-                  "nbObject": 1
-              })
+              self.rmsMonitoringReporter.addRecord(
+                  self.createRMSRecord("Failed", 1)
+              )
             else:
               gMonitor.addMark("PhysicalRemovalFail", len(errors))
 
           continue
 
         if self.rmsMonitoring:
-          self.rmsMonitoringReporter.addRecord({
-              "timestamp": int(Time.toEpoch()),
-              "host": Network.getFQDN(),
-              "objectType": "File",
-              "operationType": self.operation.Type,
-              "parentID": self.operation.OperationID,
-              "status": "Successful",
-              "nbObject": 1
-          })
+          self.rmsMonitoringReporter.addRecord(
+              self.createRMSRecord("Successful", 1)
+          )
         else:
           gMonitor.addMark("PhysicalRemovalOK", len(targetSEs))
           gMonitor.addMark("PhysicalRemovalSize", opFile.Size * len(targetSEs))

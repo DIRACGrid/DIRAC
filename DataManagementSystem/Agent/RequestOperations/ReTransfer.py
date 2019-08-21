@@ -33,7 +33,6 @@ from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
-from DIRAC.Core.Utilities import Time, Network
 
 ########################################################################
 
@@ -81,15 +80,9 @@ class ReTransfer(DMSRequestOperationsBase):
     if not bannedTargets['OK']:
       if self.rmsMonitoring:
         for status in ["Attempted", "Failed"]:
-          self.rmsMonitoringReporter.addRecord({
-              "timestamp": int(Time.toEpoch()),
-              "host": Network.getFQDN(),
-              "objectType": "File",
-              "operationType": self.operation.Type,
-              "parentID": self.operation.OperationID,
-              "status": status,
-              "nbObject": len(self.operation)
-          })
+          self.rmsMonitoringReporter.addRecord(
+              self.createRMSRecord(status, len(self.operation))
+          )
         self.rmsMonitoringReporter.commit()
       else:
         gMonitor.addMark("FileReTransferAtt")
@@ -105,15 +98,9 @@ class ReTransfer(DMSRequestOperationsBase):
     toRetransfer = dict([(opFile.PFN, opFile) for opFile in waitingFiles])
 
     if self.rmsMonitoring:
-      self.rmsMonitoringReporter.addRecord({
-          "timestamp": int(Time.toEpoch()),
-          "host": Network.getFQDN(),
-          "objectType": "File",
-          "operationType": self.operation.Type,
-          "parentID": self.operation.OperationID,
-          "status": "Attempted",
-          "nbObject": len(toRetransfer)
-      })
+      self.rmsMonitoringReporter.addRecord(
+          self.createRMSRecord("Attempted", len(toRetransfer))
+      )
     else:
       gMonitor.addMark("FileReTransferAtt", len(toRetransfer))
 
@@ -125,15 +112,9 @@ class ReTransfer(DMSRequestOperationsBase):
       self.operation.Error = error
 
       if self.rmsMonitoring:
-        self.rmsMonitoringReporter.addRecord({
-            "timestamp": int(Time.toEpoch()),
-            "host": Network.getFQDN(),
-            "objectType": "File",
-            "operationType": self.operation.Type,
-            "parentID": self.operation.OperationID,
-            "status": "Failed",
-            "nbObject": len(toRetransfer)
-        })
+        self.rmsMonitoringReporter.addRecord(
+            self.createRMSRecord("Failed", len(toRetransfer))
+        )
         self.rmsMonitoringReporter.commit()
       else:
         gMonitor.addMark("FileReTransferFail", len(toRetransfer))
@@ -149,15 +130,9 @@ class ReTransfer(DMSRequestOperationsBase):
         self.log.error("Retransfer failed", opFile.Error)
 
         if self.rmsMonitoring:
-          self.rmsMonitoringReporter.addRecord({
-              "timestamp": int(Time.toEpoch()),
-              "host": Network.getFQDN(),
-              "objectType": "File",
-              "operationType": self.operation.Type,
-              "parentID": self.operation.OperationID,
-              "status": "Failed",
-              "nbObject": 1
-          })
+          self.rmsMonitoringReporter.addRecord(
+              self.createRMSRecord("Failed", 1)
+          )
         else:
           gMonitor.addMark("FileReTransferFail", 1)
 
@@ -168,15 +143,9 @@ class ReTransfer(DMSRequestOperationsBase):
         self.log.error("Retransfer failed", opFile.Error)
 
         if self.rmsMonitoring:
-          self.rmsMonitoringReporter.addRecord({
-              "timestamp": int(Time.toEpoch()),
-              "host": Network.getFQDN(),
-              "objectType": "File",
-              "operationType": self.operation.Type,
-              "parentID": self.operation.OperationID,
-              "status": "Failed",
-              "nbObject": 1
-          })
+          self.rmsMonitoringReporter.addRecord(
+              self.createRMSRecord("Failed", 1)
+          )
         else:
           gMonitor.addMark("FileReTransferFail", 1)
 
@@ -185,15 +154,9 @@ class ReTransfer(DMSRequestOperationsBase):
       self.log.info("%s retransfer done" % opFile.LFN)
 
       if self.rmsMonitoring:
-        self.rmsMonitoringReporter.addRecord({
-            "timestamp": int(Time.toEpoch()),
-            "host": Network.getFQDN(),
-            "objectType": "File",
-            "operationType": self.operation.Type,
-            "parentID": self.operation.OperationID,
-            "status": "Successful",
-            "nbObject": 1
-        })
+        self.rmsMonitoringReporter.addRecord(
+            self.createRMSRecord("Successful", 1)
+        )
       else:
         gMonitor.addMark("FileReTransferOK", 1)
 

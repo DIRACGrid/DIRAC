@@ -34,7 +34,6 @@ from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase import DMSRequestOperationsBase
 
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
-from DIRAC.Core.Utilities import Time, Network
 
 ########################################################################
 
@@ -77,15 +76,9 @@ class RemoveReplica(DMSRequestOperationsBase):
     if not bannedTargets['OK']:
       if self.rmsMonitoring:
         for status in ["Attempted", "Failed"]:
-          self.rmsMonitoringReporter.addRecord({
-              "timestamp": int(Time.toEpoch()),
-              "host": Network.getFQDN(),
-              "objectType": "File",
-              "operationType": self.operation.Type,
-              "parentID": self.operation.OperationID,
-              "status": status,
-              "nbObject": len(self.operation)
-          })
+          self.rmsMonitoringReporter.addRecord(
+              self.createRMSRecord(status, len(self.operation))
+          )
         self.rmsMonitoringReporter.commit()
       else:
         gMonitor.addMark("RemoveReplicaAtt")
@@ -103,15 +96,9 @@ class RemoveReplica(DMSRequestOperationsBase):
     self.log.info("Todo: %s replicas to delete from %s SEs" % (len(toRemoveDict), len(targetSEs)))
 
     if self.rmsMonitoring:
-      self.rmsMonitoringReporter.addRecord({
-          "timestamp": int(Time.toEpoch()),
-          "host": Network.getFQDN(),
-          "objectType": "File",
-          "operationType": self.operation.Type,
-          "parentID": self.operation.OperationID,
-          "status": "Attempted",
-          "nbObject": len(toRemoveDict)
-      })
+      self.rmsMonitoringReporter.addRecord(
+          self.createRMSRecord("Attempted", len(toRemoveDict))
+      )
     else:
       gMonitor.addMark("RemoveReplicaAtt", len(toRemoveDict) * len(targetSEs))
 
@@ -137,15 +124,10 @@ class RemoveReplica(DMSRequestOperationsBase):
 
       # # report removal status for successful files
       if self.rmsMonitoring:
-        self.rmsMonitoringReporter.addRecord({
-            "timestamp": int(Time.toEpoch()),
-            "host": Network.getFQDN(),
-            "objectType": "File",
-            "operationType": self.operation.Type,
-            "parentID": self.operation.OperationID,
-            "status": "Successful",
-            "nbObject": len([opFile for opFile in toRemoveDict.itervalues() if not opFile.Error])
-        })
+        self.rmsMonitoringReporter.addRecord(
+            self.createRMSRecord("Successful",len(([opFile for opFile in toRemoveDict.itervalues()
+                                                    if not opFile.Error])))
+        )
       else:
         gMonitor.addMark("RemoveReplicaOK", len([opFile for opFile in toRemoveDict.itervalues() if not opFile.Error]))
 
@@ -155,29 +137,17 @@ class RemoveReplica(DMSRequestOperationsBase):
         self._removeWithOwnerProxy(opFile, targetSE)
         if opFile.Error:
           if self.rmsMonitoring:
-            self.rmsMonitoringReporter.addRecord({
-                "timestamp": int(Time.toEpoch()),
-                "host": Network.getFQDN(),
-                "objectType": "File",
-                "operationType": self.operation.Type,
-                "parentID": self.operation.OperationID,
-                "status": "Failed",
-                "nbObject": 1
-            })
+            self.rmsMonitoringReporter.addRecord(
+                self.createRMSRecord("Failed", 1)
+            )
           else:
             gMonitor.addMark("RemoveReplicaFail", 1)
           removalStatus[lfn][targetSE] = opFile.Error
         else:
           if self.rmsMonitoring:
-            self.rmsMonitoringReporter.addRecord({
-                "timestamp": int(Time.toEpoch()),
-                "host": Network.getFQDN(),
-                "objectType": "File",
-                "operationType": self.operation.Type,
-                "parentID": self.operation.OperationID,
-                "status": "Successful",
-                "nbObject": 1
-            })
+            self.rmsMonitoringReporter.addRecord(
+                self.createRMSRecord("Successful", 1)
+            )
           else:
             gMonitor.addMark("RemoveReplicaOK", 1)
 

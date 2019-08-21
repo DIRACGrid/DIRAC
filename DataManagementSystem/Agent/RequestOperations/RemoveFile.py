@@ -36,7 +36,6 @@ from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 
 from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
-from DIRAC.Core.Utilities import Time, Network
 
 ########################################################################
 
@@ -84,15 +83,9 @@ class RemoveFile(DMSRequestOperationsBase):
     if not res['OK']:
       if self.rmsMonitoring:
         for status in ["Attempted", "Failed"]:
-          self.rmsMonitoringReporter.addRecord({
-              "timestamp": int(Time.toEpoch()),
-              "host": Network.getFQDN(),
-              "objectType": "File",
-              "operationType": self.operation.Type,
-              "parentID": self.operation.OperationID,
-              "status": status,
-              "nbObject": len(waitingFiles)
-          })
+          self.rmsMonitoringReporter.addRecord(
+              self.createRMSRecord(status, len(waitingFiles))
+          )
         self.rmsMonitoringReporter.commit()
       else:
         gMonitor.addMark("RemoveFileAtt")
@@ -110,15 +103,9 @@ class RemoveFile(DMSRequestOperationsBase):
       if not bannedTargets['OK']:
         if self.rmsMonitoring:
           for status in ["Attempted", "Failed"]:
-            self.rmsMonitoringReporter.addRecord({
-                "timestamp": int(Time.toEpoch()),
-                "host": Network.getFQDN(),
-                "objectType": "File",
-                "operationType": self.operation.Type,
-                "parentID": self.operation.OperationID,
-                "status": status,
-                "nbObject": len(replicas)
-            })
+            self.rmsMonitoringReporter.addRecord(
+                self.createRMSRecord(status, len(replicas))
+            )
           self.rmsMonitoringReporter.commit()
         else:
           gMonitor.addMark("RemoveFileAtt")
@@ -141,15 +128,9 @@ class RemoveFile(DMSRequestOperationsBase):
           opFile.Status = "Failed"
 
       if self.rmsMonitoring:
-        self.rmsMonitoringReporter.addRecord({
-            "timestamp": int(Time.toEpoch()),
-            "host": Network.getFQDN(),
-            "objectType": "File",
-            "operationType": self.operation.Type,
-            "parentID": self.operation.OperationID,
-            "status": "Failed",
-            "nbObject": len(waitingFiles) - len(toRemoveDict)
-        })
+        self.rmsMonitoringReporter.addRecord(
+            self.createRMSRecord("Failed", len(waitingFiles) - len(toRemoveDict))
+        )
         self.rmsMonitoringReporter.commit()
 
       if not toRemoveDict:
@@ -158,15 +139,9 @@ class RemoveFile(DMSRequestOperationsBase):
 
     if toRemoveDict:
       if self.rmsMonitoring:
-        self.rmsMonitoringReporter.addRecord({
-            "timestamp": int(Time.toEpoch()),
-            "host": Network.getFQDN(),
-            "objectType": "File",
-            "operationType": self.operation.Type,
-            "parentID": self.operation.OperationID,
-            "status": "Attempted",
-            "nbObject": len(toRemoveDict)
-        })
+        self.rmsMonitoringReporter.addRecord(
+            self.createRMSRecord("Attempted", len(toRemoveDict))
+        )
       else:
         gMonitor.addMark("RemoveFileAtt", len(toRemoveDict))
       # # 1st step - bulk removal
@@ -176,15 +151,9 @@ class RemoveFile(DMSRequestOperationsBase):
         self.log.error("Bulk file removal failed", bulkRemoval["Message"])
       else:
         if self.rmsMonitoring:
-          self.rmsMonitoringReporter.addRecord({
-              "timestamp": int(Time.toEpoch()),
-              "host": Network.getFQDN(),
-              "objectType": "File",
-              "operationType": self.operation.Type,
-              "parentID": self.operation.OperationID,
-              "status": "Successful",
-              "nbObject": len(toRemoveDict) - len(bulkRemoval["Value"])
-          })
+          self.rmsMonitoringReporter.addRecord(
+              self.createRMSRecord("Successful", len(toRemoveDict) - len(bulkRemoval["Value"]))
+          )
         else:
           gMonitor.addMark("RemoveFileOK", len(toRemoveDict) - len(bulkRemoval["Value"]))
 
@@ -195,29 +164,17 @@ class RemoveFile(DMSRequestOperationsBase):
         if not singleRemoval["OK"]:
           self.log.error('Error removing single file', singleRemoval["Message"])
           if self.rmsMonitoring:
-            self.rmsMonitoringReporter.addRecord({
-                "timestamp": int(Time.toEpoch()),
-                "host": Network.getFQDN(),
-                "objectType": "File",
-                "operationType": self.operation.Type,
-                "parentID": self.operation.OperationID,
-                "status": "Failed",
-                "nbObject": 1
-            })
+            self.rmsMonitoringReporter.addRecord(
+                self.createRMSRecord("Failed", 1)
+            )
           else:
             gMonitor.addMark("RemoveFileFail", 1)
         else:
           self.log.info("file %s has been removed" % lfn)
           if self.rmsMonitoring:
-            self.rmsMonitoringReporter.addRecord({
-                "timestamp": int(Time.toEpoch()),
-                "host": Network.getFQDN(),
-                "objectType": "File",
-                "operationType": self.operation.Type,
-                "parentID": self.operation.OperationID,
-                "status": "Successful",
-                "nbObject": 1
-            })
+            self.rmsMonitoringReporter.addRecord(
+                self.createRMSRecord("Successful", 1)
+            )
           else:
             gMonitor.addMark("RemoveFileOK", 1)
 
