@@ -54,11 +54,10 @@ class JobMonitoringHandler(RequestHandler):
     For version v7r0, the MySQL backend is the default.
     """
 
-    operations = Operations(group=self.ownerGroup)
-
     credDict = self.getRemoteCredentials()
     self.ownerDN = credDict['DN']
     self.ownerGroup = credDict['group']
+    operations = Operations(group=self.ownerGroup)
     self.globalJobsInfo = operations.getValue('/Services/JobMonitoring/GlobalJobsInfo', True)
     self.jobPolicy = JobPolicy(self.ownerDN, self.ownerGroup, self.globalJobsInfo)
     self.jobPolicy.jobDB = gJobDB
