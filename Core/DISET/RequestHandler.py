@@ -572,9 +572,6 @@ class RequestHandler(object):
       return ('Unknown yet', )
     return self.serviceInfoDict['actionTuple']
 
-  def srv_getClientVersion(self):
-    return self.serviceInfoDict.get("clientVersion")
-
   @classmethod
   def srv_getURL(cls):
     return cls.__srvInfoDict['URL']
