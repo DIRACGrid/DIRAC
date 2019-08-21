@@ -1,5 +1,4 @@
 ########################################################################
-# $Id$
 # File :   PoolComputingElement.py
 # Author : A.T.
 ########################################################################
@@ -26,12 +25,12 @@ MAX_NUMBER_OF_SUDO_UNIX_USERS = 32
 
 def executeJob(executableFile, proxy, taskID, **kwargs):
   """ wrapper around ce.submitJob: decides which CE to use (Sudo or InProcess)
-  
+
   :param str executableFile: location of the executable file
   :param str proxy: proxy file location to be used for job submission
   :param int taskID: local task ID of the PoolCE
 
-  :return:
+  :return: the result of the job submission
   """
 
   useSudo = kwargs.pop('UseSudo', False)
@@ -54,7 +53,8 @@ class PoolComputingElement(ComputingElement):
   def __init__(self, ceUniqueID):
     """ Standard constructor.
     """
-    ComputingElement.__init__(self, ceUniqueID)
+    super(PoolComputingElement, self).__init__(ceUniqueID)
+
     self.ceType = "Pool"
     self.log = gLogger.getSubLogger('Pool')
     self.submittedJobs = 0

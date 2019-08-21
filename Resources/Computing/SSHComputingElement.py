@@ -146,7 +146,7 @@ class SSH(object):
                                                                                    self.user, self.host,
                                                                                    self.sshTunnel, pattern, command)
     else:
-      #command = command.replace( '$', '\$' )
+      # command = command.replace( '$', '\$' )
       command = '%s -q %s -l %s %s "echo %s; %s"' % (self.sshType, self.options, self.user, self.host,
                                                      pattern, command)
     self.log.debug("SSH command: %s" % command)
@@ -233,7 +233,7 @@ class SSHComputingElement(ComputingElement):
   def __init__(self, ceUniqueID):
     """ Standard constructor.
     """
-    ComputingElement.__init__(self, ceUniqueID)
+    super(SSHComputingElement, self).__init__(ceUniqueID)
 
     self.ceType = 'SSH'
     self.execution = "SSH"
@@ -253,7 +253,7 @@ class SSHComputingElement(ComputingElement):
       self.ceParameters['ExecQueue'] = self.ceParameters.get('Queue', '')
 
     if 'SharedArea' not in self.ceParameters:
-      #. isn't a good location, move to $HOME
+      # . isn't a good location, move to $HOME
       self.ceParameters['SharedArea'] = '$HOME'
 
     if 'BatchOutput' not in self.ceParameters:
@@ -379,12 +379,12 @@ class SSHComputingElement(ComputingElement):
       return S_ERROR('Failed removing the generated control script locally')
 
     # Chmod the control scripts
-    #self.log.verbose( 'Chmod +x control script' )
-    #result = ssh.sshCall( 10, "chmod +x %s/%s" % ( self.sharedArea, self.controlScript ) )
+    # self.log.verbose( 'Chmod +x control script' )
+    # result = ssh.sshCall( 10, "chmod +x %s/%s" % ( self.sharedArea, self.controlScript ) )
     # if not result['OK']:
     #  self.log.warn( 'Failed chmod control script: %s' % result['Message'][1] )
     #  return result
-    #status, output, _error = result['Value']
+    # status, output, _error = result['Value']
     # if status != 0:
     #  if status == -1:
     #    self.log.warn( 'Timeout while chmod control script' )
@@ -709,5 +709,3 @@ class SSHComputingElement(ComputingElement):
       error = localErrorFile
 
     return S_OK((output, error))
-
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
