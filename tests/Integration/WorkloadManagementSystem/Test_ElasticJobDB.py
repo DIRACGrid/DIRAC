@@ -39,14 +39,14 @@ class JobParametersCase(JobDBTestCase):
     dirac@cern: Value (basestring)
     """
     res = self.jobDB.setJobParameter(100, 'DIRAC', 'dirac@cern')
-    self.assertTrue(res['OK'])
+    self.assertTrue(res['OK'], res.get('Message'))
     time.sleep(1)
     res = self.jobDB.getJobParameters(100)
-    self.assertTrue(res['OK'])
-    self.assertEqual(res['Value']['DIRAC'], 'dirac@cern')
+    self.assertTrue(res['OK'], res.get('Message'))
+    self.assertEqual(res['Value']['DIRAC'], 'dirac@cern', msg="Got %s" % res['Value']['DIRAC'])
     res = self.jobDB.getJobParametersAndAttributes(100)
-    self.assertTrue(res['OK'])
-    self.assertEqual(res['Value'][100]['Name'], 'DIRAC')
+    self.assertTrue(res['OK'], res.get('Message'))
+    self.assertEqual(res['Value'][100]['Name'], 'DIRAC', msg="Got %s" % res['Value'][100]['Name'])
 
 
 if __name__ == '__main__':

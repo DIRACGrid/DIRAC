@@ -450,7 +450,7 @@ class WMSAdministrator(TestWMSTestCase):
                      msg="Got %s" % str(res['Value']['My.Site.org'][0][3]))
     res = wmsAdministrator.getSiteMaskSummary()
     self.assertTrue(res['OK'], res.get('Message'))
-    self.assertEqual(res['Value']['My.Site.org'], msg="Got %s" % res['Value']['My.Site.org'])
+    self.assertEqual(res['Value']['My.Site.org'], 'Active', msg="Got %s" % res['Value']['My.Site.org'])
 
     res = wmsAdministrator.getSiteSummaryWeb({}, [], 0, 100)
     self.assertTrue(res['OK'], res.get('Message'))
