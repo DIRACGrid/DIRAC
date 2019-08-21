@@ -190,7 +190,7 @@ class ServiceInterface(threading.Thread):
     for system_ in cfg:
       for instance in cfg[system_]:
         for url in cfg[system_][instance]['URLs']:
-          urlSet = urlSet.union(set([u for u in cfg[system_][instance]['URLs'][url].split(',') \
+          urlSet = urlSet.union(set([u.strip() for u in cfg[system_][instance]['URLs'][url].split(',') \
                                      if 'Configuration/Server' not in u]))
     return self.__updateServiceConfiguration(urlSet)
 
