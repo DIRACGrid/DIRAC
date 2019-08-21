@@ -1,3 +1,11 @@
+[v6r22p7]
+
+*WMS
+NEW: (#4205) Statistics of Pilot submission is sent to Accounting System by SiteDirector.
+
+*Resources
+CHANGE: (#4242) DFC SEManagerDB: only acquire the lock if the cache needs to be modified
+
 [v6r22p6]
 
 *Core
