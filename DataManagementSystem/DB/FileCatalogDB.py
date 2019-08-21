@@ -1068,7 +1068,7 @@ class FileCatalogDB(DB):
     """
     successful = {}
     failed = {}
-    for path, metadataDict in pathMetadataDict.items():
+    for path, metadataDict in pathMetadataDict.iteritems():
       result = self.setMetadata(path, metadataDict, credDict)
       if result['OK']:
         successful[path] = True
@@ -1082,7 +1082,7 @@ class FileCatalogDB(DB):
     """
     successful = {}
     failed = {}
-    for path, metadataDict in pathMetadataDict.items():
+    for path, metadataDict in pathMetadataDict.iteritems():
       result = self.__removeMetadata(path, metadataDict, credDict)
       if result['OK']:
         successful[path] = True
@@ -1168,7 +1168,7 @@ class FileCatalogDB(DB):
       lfns.pop(lfn)
     # Do not consider those paths for which access is denied
     successful = {}
-    for lfn, access in res['Value']['Successful'].items():
+    for lfn, access in res['Value']['Successful'].iteritems():
       if not access:
         failed[lfn] = 'Permission denied'
       else:
