@@ -123,19 +123,19 @@ class ServiceInterface(threading.Thread):
     :param bool fromMaster: flag to force updating from the master CS
     :return: S_OK/S_ERROR
     """
+    gLogger.info('Updating service configuration on', url)
     if url.startswith('dip'):
       rpc = RPCClient(url)
-      gLogger.info('Updating service configuration on', url)
       result = rpc.refreshConfiguration(fromMaster)
     elif url.startswith('http'):
       hostCertTuple = getHostCertificateAndKeyLocation()
       resultRequest = requests.get(url,
-                                   headers={'X-RefreshConfiguration:': "True"},
+                                   headers={'X-RefreshConfiguration': "True"},
                                    cert=hostCertTuple,
                                    verify=False)
       result = S_OK()
       if resultRequest.status_code != 200:
-        result = S_ERROR(resultRequest.text)
+        result = S_ERROR("Status code returned %d" % resultRequest.status_code)
     result['URL'] = url
     return result
 
@@ -143,7 +143,7 @@ class ServiceInterface(threading.Thread):
     if result['OK']:
       self.__updateResultDict['Successful'][result['URL']] = True
     else:
-      gLogger.warn("Failed to update configuration on", result['URL'])
+      gLogger.warn("Failed to update configuration on", result['URL'] + ':' + result['Message'])
       self.__updateResultDict['Failed'][result['URL']] = result['Message']
 
   def __updateServiceConfiguration(self, urlSet, fromMaster=False):
