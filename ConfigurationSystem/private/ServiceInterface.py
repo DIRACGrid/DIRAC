@@ -202,7 +202,7 @@ class ServiceInterface(threading.Thread):
     :param str sBuffer: newly received configuration data
     :param str committer: the user name of the committer
     :param bool updateVersionOption: flag to update the current configuration version
-    :return:
+    :return: S_OK/S_ERROR of the write-to-disk of the new configuration
     """
     if not gConfigurationData.isMaster():
       return S_ERROR("Configuration modification is not allowed in this server")
