@@ -78,6 +78,7 @@ class SSHBatchComputingElement(SSHComputingElement):
     if 'RemoveOutput' in self.ceParameters:
       if self.ceParameters['RemoveOutput'].lower() in ['no', 'false', '0']:
         self.removeOutput = False
+    self.preamble = self.ceParameters.get('Preamble', '')
 
   #############################################################################
   def submitJob(self, executableFile, proxy, numberOfJobs=1):
