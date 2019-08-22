@@ -47,7 +47,7 @@ class FullSecurityManager(SecurityManagerBase):
           for resolvedPath in toGet[path]:
             failed[resolvedPath] = error
           toGet.pop(path)
-      for path, resolvedPaths in toGet.iteritems():
+      for path, resolvedPaths in toGet.items():
         if path == '/':
           for resolvedPath in resolvedPaths:
             permissions[path] = {'Read': True, 'Write': True, 'Execute': True}

@@ -25,7 +25,7 @@ class SEManagerDB(SEManagerBase):
       self.lock.release()
       return res
     seNames = [se[1] for se in res['Value']]
-    for seName, seId in self.db.seNames.iteritems():
+    for seName, seId in self.db.seNames.items():
       if seName not in seNames:
         del self.db.seNames[seName]
         del self.db.seids[seId]
