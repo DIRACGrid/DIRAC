@@ -583,7 +583,7 @@ class FileManagerBase(object):
       return res
     successful = res['Value']['Successful']
     failed = res['Value']['Failed']
-    for lfn, error in res['Value']['Failed'].iteritems():
+    for lfn, error in res['Value']['Failed'].items():
       if error == 'No such file or directory':
         failed.pop(lfn)
     return S_OK((successful, failed))
@@ -739,7 +739,7 @@ class FileManagerBase(object):
     connection = self._getConnection(connection)
     successful = {}
     failed = {}
-    for lfn, info in lfns.iteritems():
+    for lfn, info in lfns.items():
       res = self._checkInfo(info, ['PFN', 'SE'])
       if not res['OK']:
         failed[lfn] = res['Message']
@@ -780,7 +780,7 @@ class FileManagerBase(object):
     connection = self._getConnection(connection)
     successful = {}
     failed = {}
-    for lfn, info in lfns.iteritems():
+    for lfn, info in lfns.items():
       res = self._checkInfo(info, ['SE'])
       if not res['OK']:
         failed[lfn] = res['Message']
