@@ -186,7 +186,7 @@ class ServiceInterface(threading.Thread):
     """
     gLogger.info("Updating services configuration")
     # Get URLs of all the services except for Configuration services
-    cfg = gConfigurationData.remoteCFG['Systems'].getAsDict()
+    cfg = gConfigurationData.remoteCFG.getAsDict()['Systems']
     urlSet = set()
     for system_ in cfg:
       for instance in cfg[system_]:
