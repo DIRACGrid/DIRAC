@@ -7,6 +7,7 @@ from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.private.ServiceInterface import ServiceInterface
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities import DErrno
+from DIRAC.Core.Security.Properties import CS_ADMINISTRATOR
 
 gServiceInterface = None
 gPilotSynchronizer = None
@@ -76,6 +77,7 @@ class ConfigurationHandler(RequestHandler):
     return res
 
   types_forceGlobalConfigurationUpdate = []
+  auth_forceGlobalConfigurationUpdate = [CS_ADMINISTRATOR]
 
   def export_forceGlobalConfigurationUpdate(self):
     """
