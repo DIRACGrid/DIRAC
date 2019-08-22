@@ -222,7 +222,7 @@ class FileManagerBase(object):
     connection = self._getConnection(connection)
     successful = {}
     failed = {}
-    for lfn, info in lfns.iteritems():
+    for lfn, info in lfns.items():
       res = self._checkInfo(info, ['PFN', 'SE', 'Size', 'Checksum'])
       if not res['OK']:
         failed[lfn] = res['Message']
