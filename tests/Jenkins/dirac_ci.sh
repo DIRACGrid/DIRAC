@@ -183,7 +183,7 @@ function installSite(){
   fi
 
   echo '=> The pilot flag should be False'
-  dirac-configure -o /Systems/Configuration/Certification/Services/Server/UpdatePilotCStoJSONFile=False -FDMH $DEBUG
+  dirac-configure -o /Systems/Configuration/Production/Services/Server/UpdatePilotCStoJSONFile=False -FDMH $DEBUG
   if [ $? -ne 0 ]
   then
     echo 'ERROR: dirac-configure failed'
