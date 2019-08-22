@@ -44,6 +44,10 @@ def initializeMonitoringHandler(serviceInfo):
 
 
 class MonitoringHandler(RequestHandler):
+  """
+  This class is inherited from the RequestHandler class which is the base required for running
+  any kind of services in DIRAC.
+  """
 
   types_registerActivities = [dict, dict]
 
@@ -205,17 +209,20 @@ class MonitoringHandler(RequestHandler):
       return S_ERROR("\n".join(failed))
     return S_OK()
 
-  # Component monitoring functions
   types_getComponentsStatus = [dict]
 
   def export_getComponentsStatus(self, condDict):
+    """
+    Shows the status of the components.
+    """
     if 'Setup' not in condDict:
       condDict['Setup'] = self.serviceInfoDict['clientSetup']
     return gServiceInterface.getComponentsStatus(condDict)
 
-  # Transfer files
-
   def transfer_toClient(self, fileId, token, fileHelper):
+    """
+    Transfers files
+    """
     retVal = gServiceInterface.getGraphData(fileId)
     if not retVal['OK']:
       return retVal

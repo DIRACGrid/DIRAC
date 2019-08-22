@@ -16,7 +16,7 @@ import DIRAC
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.DErrno import ENOAUTH
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
-from DIRAC.Core.Utilities import Time, MemStat
+from DIRAC.Core.Utilities import Time, MemStat, Network
 from DIRAC.Core.DISET.private.LockManager import LockManager
 from DIRAC.FrameworkSystem.Client.MonitoringClient import MonitoringClient
 from DIRAC.Core.DISET.private.ServiceConfiguration import ServiceConfiguration
@@ -28,6 +28,10 @@ from DIRAC.Core.Utilities.ReturnValues import isReturnStructure
 from DIRAC.Core.DISET.AuthManager import AuthManager
 from DIRAC.FrameworkSystem.Client.SecurityLogClient import SecurityLogClient
 from DIRAC.ConfigurationSystem.Client import PathFinder
+from DIRAC.ConfigurationSystem.Client.Config import gConfig
+from DIRAC.MonitoringSystem.Client.MonitoringReporter import MonitoringReporter
+from DIRAC.Core.DISET.RequestHandler import getServiceOption
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 __RCSID__ = "$Id$"
 
@@ -56,15 +60,12 @@ class Service(object):
     """
     self._svcData = serviceData
     self._name = serviceData['modName']
+    self._standalone = serviceData['standalone']
     self._startTime = Time.dateTime()
     self._validNames = [serviceData['modName']]
     if serviceData['loadName'] not in self._validNames:
       self._validNames.append(serviceData['loadName'])
     self._cfg = ServiceConfiguration(list(self._validNames))
-    if serviceData['standalone']:
-      self._monitor = gMonitor
-    else:
-      self._monitor = MonitoringClient()
     self.__monitorLastStatsUpdate = time.time()
     self._stats = {'queries': 0, 'connections': 0}
     self._authMgr = AuthManager("%s/Authorization" % PathFinder.getServiceSection(serviceData['loadName']))
@@ -74,7 +75,8 @@ class Service(object):
 
   def setCloneProcessId(self, cloneId):
     self.__cloneId = cloneId
-    self._monitor.setComponentName("%s-Clone:%s" % (self._name, cloneId))
+    if not self.activityMonitoring:
+      self._monitor.setComponentName("%s-Clone:%s" % (self._name, cloneId))
 
   def _isMetaAction(self, action):
     referedAction = Service.SVC_VALID_ACTIONS[action]
@@ -95,7 +97,6 @@ class Service(object):
     self._handler = result['Value']
     # Initialize lock manager
     self._lockManager = LockManager(self._cfg.getMaxWaitingPetitions())
-    self._initMonitoring()
     self._threadPool = ThreadPool(max(1, self._cfg.getMinThreads()),
                                   max(0, self._cfg.getMaxThreads()),
                                   self._cfg.getMaxWaitingPetitions())
@@ -109,12 +110,32 @@ class Service(object):
                              'validNames': self._validNames,
                              'csPaths': [PathFinder.getServiceSection(svcName) for svcName in self._validNames]
                              }
+    # Initialize Monitoring
+    # This is a flag used to check whether "EnableActivityMonitoring" is enabled or not from the config file.
+    self.activityMonitoring = (
+        Operations().getValue("EnableActivityMonitoring", False) or
+        getServiceOption(self._serviceInfoDict, "EnableActivityMonitoring", False)
+    )
+    if self.activityMonitoring:
+      self.activityMonitoringReporter = MonitoringReporter(monitoringType="ComponentMonitoring")
+      gThreadScheduler.addPeriodicTask(100, self.__activityMonitoringReporting)
+    elif self._standalone:
+      self._monitor = gMonitor
+    else:
+      self._monitor = MonitoringClient()
+    self._initMonitoring()
     # Call static initialization function
     try:
-      self._handler['class']._rh__initializeClass(dict(self._serviceInfoDict),
-                                                  self._lockManager,
-                                                  self._msgBroker,
-                                                  self._monitor)
+      if self.activityMonitoring:
+        self._handler['class']._rh__initializeClass(dict(self._serviceInfoDict),
+                                                    self._lockManager,
+                                                    self._msgBroker,
+                                                    self.activityMonitoringReporter)
+      else:
+        self._handler['class']._rh__initializeClass(dict(self._serviceInfoDict),
+                                                    self._lockManager,
+                                                    self._msgBroker,
+                                                    self._monitor)
       if self._handler['init']:
         for initFunc in self._handler['init']:
           gLogger.verbose("Executing initialization function")
@@ -236,56 +257,78 @@ class Service(object):
     return S_OK({'methods': methodsList, 'auth': authRules, 'types': typeCheck})
 
   def _initMonitoring(self):
-    # Init extra bits of monitoring
-    self._monitor.setComponentType(MonitoringClient.COMPONENT_SERVICE)
-    self._monitor.setComponentName(self._name)
-    self._monitor.setComponentLocation(self._cfg.getURL())
-    self._monitor.initialize()
-    self._monitor.registerActivity(
-        "Connections",
-        "Connections received",
-        "Framework",
-        "connections",
-        MonitoringClient.OP_RATE)
-    self._monitor.registerActivity("Queries", "Queries served", "Framework", "queries", MonitoringClient.OP_RATE)
-    self._monitor.registerActivity('CPU', "CPU Usage", 'Framework', "CPU,%", MonitoringClient.OP_MEAN, 600)
-    self._monitor.registerActivity('MEM', "Memory Usage", 'Framework', 'Memory,MB', MonitoringClient.OP_MEAN, 600)
-    self._monitor.registerActivity(
-        'PendingQueries',
-        "Pending queries",
-        'Framework',
-        'queries',
-        MonitoringClient.OP_MEAN)
-    self._monitor.registerActivity('ActiveQueries', "Active queries", 'Framework', 'threads', MonitoringClient.OP_MEAN)
-    self._monitor.registerActivity(
-        'RunningThreads',
-        "Running threads",
-        'Framework',
-        'threads',
-        MonitoringClient.OP_MEAN)
-    self._monitor.registerActivity('MaxFD', "Max File Descriptors", 'Framework', 'fd', MonitoringClient.OP_MEAN)
+    if not self.activityMonitoring:
+      # Init extra bits of monitoring
+      self._monitor.setComponentType(MonitoringClient.COMPONENT_SERVICE)
+      self._monitor.setComponentName(self._name)
+      self._monitor.setComponentLocation(self._cfg.getURL())
+      self._monitor.initialize()
+      self._monitor.registerActivity(
+          "Connections",
+          "Connections received",
+          "Framework",
+          "connections",
+          MonitoringClient.OP_RATE)
+      self._monitor.registerActivity("Queries", "Queries served", "Framework", "queries", MonitoringClient.OP_RATE)
+      self._monitor.registerActivity('CPU', "CPU Usage", 'Framework', "CPU,%", MonitoringClient.OP_MEAN, 600)
+      self._monitor.registerActivity('MEM', "Memory Usage", 'Framework', 'Memory,MB', MonitoringClient.OP_MEAN, 600)
+      self._monitor.registerActivity(
+          'PendingQueries',
+          "Pending queries",
+          'Framework',
+          'queries',
+          MonitoringClient.OP_MEAN)
+      self._monitor.registerActivity(
+          'ActiveQueries',
+          "Active queries",
+          'Framework',
+          'threads',
+          MonitoringClient.OP_MEAN)
+      self._monitor.registerActivity(
+          'RunningThreads',
+          "Running threads",
+          'Framework',
+          'threads',
+          MonitoringClient.OP_MEAN)
+      self._monitor.registerActivity('MaxFD', "Max File Descriptors", 'Framework', 'fd', MonitoringClient.OP_MEAN)
 
-    self._monitor.setComponentExtraParam('DIRACVersion', DIRAC.version)
-    self._monitor.setComponentExtraParam('platform', DIRAC.getPlatform())
-    self._monitor.setComponentExtraParam('startTime', Time.dateTime())
-    for prop in (("__RCSID__", "version"), ("__doc__", "description")):
-      try:
-        value = getattr(self._handler['module'], prop[0])
-      except Exception as e:
-        gLogger.exception(e)
-        gLogger.error("Missing property", prop[0])
-        value = 'unset'
-      self._monitor.setComponentExtraParam(prop[1], value)
+      self._monitor.setComponentExtraParam('DIRACVersion', DIRAC.version)
+      self._monitor.setComponentExtraParam('platform', DIRAC.getPlatform())
+      self._monitor.setComponentExtraParam('startTime', Time.dateTime())
+      for prop in (("__RCSID__", "version"), ("__doc__", "description")):
+        try:
+          value = getattr(self._handler['module'], prop[0])
+        except Exception as e:
+          gLogger.exception(e)
+          gLogger.error("Missing property", prop[0])
+          value = 'unset'
+        self._monitor.setComponentExtraParam(prop[1], value)
+
     for secondaryName in self._cfg.registerAlsoAs():
       gLogger.info("Registering %s also as %s" % (self._name, secondaryName))
       self._validNames.append(secondaryName)
+
     return S_OK()
 
   def __reportThreadPoolContents(self):
-    self._monitor.addMark('PendingQueries', self._threadPool.pendingJobs())
-    self._monitor.addMark('ActiveQueries', self._threadPool.numWorkingThreads())
-    self._monitor.addMark('RunningThreads', threading.activeCount())
-    self._monitor.addMark('MaxFD', self.__maxFD)
+    if self.activityMonitoring:
+      # As ES accepts raw data these monitoring fields are being sent here because they are time dependant.
+      self.activityMonitoringReporter.addRecord({
+          'timestamp': int(Time.toEpoch()),
+          'host': Network.getFQDN(),
+          'componentType': 'service',
+          'component': "_".join(self._name.split("/")),
+          'componentLocation': self._cfg.getURL(),
+          'PendingQueries': self._threadPool.pendingJobs(),
+          'ActiveQueries': self._threadPool.numWorkingThreads(),
+          'RunningThreads': threading.activeCount(),
+          'MaxFD': self.__maxFD,
+      })
+    else:
+      self._monitor.addMark('PendingQueries', self._threadPool.pendingJobs())
+      self._monitor.addMark('ActiveQueries', self._threadPool.numWorkingThreads())
+      self._monitor.addMark('RunningThreads', threading.activeCount())
+      self._monitor.addMark('MaxFD', self.__maxFD)
     self.__maxFD = 0
 
   def getConfig(self):
@@ -302,7 +345,19 @@ class Service(object):
       :param clientTransport: Object wich describe opened connection (PlainTransport or SSLTransport)
     """
     self._stats['connections'] += 1
-    self._monitor.setComponentExtraParam('queries', self._stats['connections'])
+    if self.activityMonitoring:
+      #  As ES accepts raw data these monitoring fields are being sent here because they are action dependant.
+      self.activityMonitoringReporter.addRecord({
+          'timestamp': int(Time.toEpoch()),
+          'host': Network.getFQDN(),
+          'componentType': 'service',
+          'component': "_".join(self._name.split("/")),
+          'componentLocation': self._cfg.getURL(),
+          'Connections': 1
+      })
+    else:
+      self._monitor.setComponentExtraParam('queries', self._stats['connections'])
+
     self._threadPool.generateJobAndQueueIt(self._processInThread,
                                            args=(clientTransport, ))
 
@@ -551,7 +606,17 @@ class Service(object):
 
   def _executeAction(self, trid, proposalTuple, handlerObj):
     try:
-      return handlerObj._rh_executeAction(proposalTuple)
+      response = handlerObj._rh_executeAction(proposalTuple)
+      if self.activityMonitoring and response["OK"]:
+        self.activityMonitoringReporter.addRecord({
+            'timestamp': int(Time.toEpoch()),
+            'host': Network.getFQDN(),
+            'componentType': 'service',
+            'component': "_".join(self._name.split("/")),
+            'componentLocation': self._cfg.getURL(),
+            'ServiceResponseTime': response["Value"][1]
+        })
+      return response["Value"][0]
     except Exception as e:
       gLogger.exception("Exception while executing handler action")
       return S_ERROR("Server error while executing action: %s" % str(e))
@@ -566,7 +631,20 @@ class Service(object):
     if not result['OK']:
       return result
     handlerObj = result['Value']
-    return handlerObj._rh_executeMessageCallback(msgObj)
+    response = handlerObj._rh_executeMessageCallback(msgObj)
+    if self.activityMonitoring and response["OK"]:
+      self.activityMonitoringReporter.addRecord({
+          'timestamp': int(Time.toEpoch()),
+          'host': Network.getFQDN(),
+          'componentType': 'service',
+          'component': "_".join(self._name.split("/")),
+          'componentLocation': self._cfg.getURL(),
+          'ServiceResponseTime': response["Value"][1]
+      })
+    if response["OK"]:
+      return response["Value"][0]
+    else:
+      return response
 
   def _mbDisconnect(self, trid):
     result = self._instantiateHandler(trid)
@@ -575,8 +653,19 @@ class Service(object):
     handlerObj = result['Value']
     return handlerObj._rh_executeConnectionCallback('drop')
 
+  def __activityMonitoringReporting(self):
+    """ This method is called by the ThreadScheduler as a periodic task in order to commit the collected data which
+        is done by the MonitoringReporter and is send to the 'ComponentMonitoring' type.
+
+        :return: True / False
+    """
+    result = self.activityMonitoringReporter.commit()
+    return result['OK']
+
   def __startReportToMonitoring(self):
-    self._monitor.addMark("Queries")
+    if not self.activityMonitoring:
+      self._monitor.addMark("Queries")
+
     now = time.time()
     stats = os.times()
     cpuTime = stats[0] + stats[2]
@@ -589,7 +678,8 @@ class Service(object):
     membytes = MemStat.VmB('VmRSS:')
     if membytes:
       mem = membytes / (1024. * 1024.)
-      self._monitor.addMark('MEM', mem)
+      if not self.activityMonitoring:
+        self._monitor.addMark('MEM', mem)
     return (now, cpuTime)
 
   def __endReportToMonitoring(self, initialWallTime, initialCPUTime):
@@ -598,4 +688,5 @@ class Service(object):
     cpuTime = stats[0] + stats[2] - initialCPUTime
     percentage = cpuTime / wallTime * 100.
     if percentage > 0:
-      self._monitor.addMark('CPU', percentage)
+      if not self.activityMonitoring:
+        self._monitor.addMark('CPU', percentage)

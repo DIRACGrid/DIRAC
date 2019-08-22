@@ -5,6 +5,11 @@ import types
 from string import Template
 
 class Activity:
+  """
+  This class is maintained in order to maintain a basic mapping of the sqlite3 database meaning
+  what all tables and fields the database uses and it creates a mapping for them which is further
+  used by the MonitoringCatalog class.
+  """
 
   dbFields = [ 'activities.unit',
                'activities.type',
@@ -44,6 +49,9 @@ class Activity:
         self.dbMapping[ self.dbFields[index] ] = index
 
   def setBucketScaleFactor( self, scaleFactor ):
+    """
+    Sets a bucket scale factor.
+    """
     self.scaleFactor = scaleFactor
     self.__calculateUnit()
 
@@ -73,44 +81,74 @@ class Activity:
 
   def setLabel( self, labelTemplate ):
     """
-    Set activity label
+    Sets an activity label
     """
     self.labelTemplate = labelTemplate
 
   def __getField( self, name ):
     """
-    Get field value
+    Gets a field value
     """
     return self.dataList[ self.dbMapping[ name ] ]
 
   def getUnit(self):
+    """
+    Gets an activity's unit.
+    """
     return self.__getField( 'activities.unit' )
 
   def getFile(self):
+    """
+    Gets an activity's file.
+    """
     return self.__getField( 'activities.filename' )
 
   def getType(self):
+    """
+    Gets an activity's type.
+    """
     return self.__getField( 'activities.type' )
 
   def getDescription(self):
+    """
+    Gets an activity's unit
+    """
     return self.__getField( 'activities.description' )
 
   def getBucketLength(self):
+    """
+    Gets an activity's bucket length.
+    """
     return self.__getField( 'activities.bucketLength' )
 
   def getSite(self):
+    """
+    Gets an source's site.
+    """
     return self.__getField( 'sources.site' )
 
   def getComponentType(self):
+    """
+    Gets an source's component type.
+    """
     return self.__getField( 'sources.componentType' )
 
   def getComponentName(self):
+    """
+    Gets an source's component name.
+    """
     return self.__getField( 'sources.componentName' )
 
   def getComponentLocation(self):
+    """
+    Gets an source's component location.
+    """
     return self.__getField( 'sources.componentLocation' )
 
   def getGroupLabel(self):
+    """
+    Gets a group's label.
+    """
     return self.groupLabel
 
   def getLabel(self):

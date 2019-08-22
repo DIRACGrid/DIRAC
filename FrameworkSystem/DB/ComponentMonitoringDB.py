@@ -80,13 +80,16 @@ class ComponentMonitoringDB(DB):
     return self._createTables(tablesD)
 
   def __datetime2str(self, dt):
+    """
+    This method converts the datetime type to a string type.
+    """
     if isinstance(dt, basestring):
       return dt
     return "%s-%s-%s %s:%s:%s" % (dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second)
 
   def __registerIfNotThere(self, compDict):
     """
-    Register the component if it's not there
+    Registers the component if it's not there
     """
     sqlCond = []
     sqlInsertFields = []
@@ -140,7 +143,7 @@ class ComponentMonitoringDB(DB):
 
   def __updateVersionHistoryIfNeeded(self, compId, compDict):
     """
-    Register the component if it's not there
+    Updates the version history given the condition dictionary and component id.
     """
     sqlCond = ["CompId=%s" % compId]
     sqlInsertFields = []
@@ -179,7 +182,8 @@ class ComponentMonitoringDB(DB):
 
   def registerComponent(self, compDict, shallow=False):
     """
-    Register a new component in the DB. If it's already registered return id
+    Register a new component in the DB given a component dictionary and returns a component id.
+    And if it's already registered it returns the corresponding component id.
     """
     result = self.__registerIfNotThere(compDict)
     if not result['OK']:
@@ -195,7 +199,7 @@ class ComponentMonitoringDB(DB):
 
   def heartbeat(self, compDict):
     """
-    Update heartbeat
+    Updates the heartbeat
     """
     if 'compId' not in compDict:
       result = self.__registerIfNotThere(compDict)
@@ -217,7 +221,11 @@ class ComponentMonitoringDB(DB):
 
   def __getComponents(self, condDict):
     """
-    Load the components in the DB
+    Loads the components from the DB.
+
+    :type sourceDict: dictionary
+    :param sourceDict: The dictionary containing source information.
+    :return: S_OK with the components / the error message.
     """
     compTable = self.__getTableName("Components")
     mainFields = ", ".join(self.__mainFields)
@@ -259,6 +267,17 @@ class ComponentMonitoringDB(DB):
     return S_OK(StatusSet(records))
 
   def __checkCondition(self, condDict, field, value):
+    """
+    It is used to check if a field is present in the condition dictionary or not with the corresponding value.
+
+    :type condDict: dictionary
+    :param condDict: The dictionary containing the conditions.
+    :type field: string
+    :param field: The field.
+    :type value: string
+    :param field: The value.
+    :return: True / False
+    """
     if field not in condDict:
       return True
     condVal = condDict[field]
@@ -267,6 +286,21 @@ class ComponentMonitoringDB(DB):
     return value == condVal
 
   def __getComponentDefinitionFromCS(self, system, setup, instance, cType, component):
+    """
+    Gets the basic component details from the configuration file.
+
+    :type system: string
+    :param system: The system name.
+    :type setup: string
+    :param setup: The setup site.
+    :type instance: string
+    :param instance: The instance.
+    :type cType: string
+    :param cType: The component type.
+    :type component: string
+    :param component: The component name.
+    :return: a component dictionary.
+    """
     componentName = "%s/%s" % (system, component)
     compDict = {'ComponentName': componentName,
                 'Type': cType,
@@ -292,6 +326,10 @@ class ComponentMonitoringDB(DB):
     return compDict
 
   def __componentMatchesCondition(self, compDict, requiredComponents, conditionDict={}):
+    """
+    This method uses __checkCondition method to check if the (key, field) inside component dictionary
+    are already present in condition dictionary or not.
+    """
     for key in compDict:
       if not self.__checkCondition(conditionDict, key, compDict[key]):
         return False
@@ -300,6 +338,10 @@ class ComponentMonitoringDB(DB):
   def getComponentsStatus(self, conditionDict={}):
     """
     Get the status of the defined components in the CS compared to the ones that are known in the DB
+
+    :type condDict: dictionary
+    :param condDict: The dictionary containing the conditions.
+    :return: S_OK with the requires results.
     """
     result = self.__getComponents(conditionDict)
     if not result['OK']:
@@ -362,7 +404,10 @@ class ComponentMonitoringDB(DB):
 
 
 class StatusSet:
-
+  """
+  This class is used to set component status as required and this method is used only by the
+  ComponentMonitoringDB class.
+  """
   def __init__(self, dbRecordsList=[]):
     self.__requiredSet = {}
     self.__requiredFields = ('Setup', 'Type', 'ComponentName')
@@ -370,6 +415,13 @@ class StatusSet:
     self.setDBRecords(dbRecordsList)
 
   def setDBRecords(self, recordsList):
+    """
+    This sets the DB records given a records list.
+
+    :type recordsList: list
+    :param recordsList: a set of records.
+    :return: S_OK
+    """
     self.__dbSet = {}
     for record in recordsList:
       cD = self.walkSet(self.__dbSet, record)
@@ -377,6 +429,14 @@ class StatusSet:
     return S_OK()
 
   def addUniqueToSet(self, setDict, compDict):
+    """
+    Adds unique components to a separate set.
+
+    :type setDict: dictionary
+    :param setDict: The set dictionary.
+    :type compDict: dictionary
+    :param compDict: The dictionary containing the component information.
+    """
     rC = self.walkSet(setDict, compDict)
     if compDict not in rC:
       rC.append(compDict)
@@ -390,6 +450,17 @@ class StatusSet:
           cD['Status'] = 'Inactive'
 
   def walkSet(self, setDict, compDict, createMissing=True):
+    """
+    Updates the set dictionary.
+
+    :type setDict: dictionary
+    :param setDict: The set dictionary.
+    :type compDict: dictionary
+    :param compDict: The dictionary containing the component information.
+    :type creatMissing: bool
+    :param createMissing: A variable for adding missing values.
+    :return: The set dictionary.
+    """
     sD = setDict
     for field in self.__requiredFields:
       val = compDict[field]
@@ -405,7 +476,11 @@ class StatusSet:
 
   def __reduceComponentList(self, componentList):
     """
-    Only keep the most restrictive components
+    Only keep the most restrictive components.
+
+    :type componentList: list
+    :param componentList: A list of components.
+    :return: A list of reduced components.
     """
     for i in range(len(componentList)):
       component = componentList[i]
@@ -434,6 +509,12 @@ class StatusSet:
     return [comp for comp in componentList if comp]
 
   def setComponentsAsRequired(self, requiredSet):
+    """
+    Sets component details according to the required set.
+
+    :type requiredSet: dictionary
+    :param requiredSet: The required set dictionary.
+    """
     for setup in requiredSet:
       for cType in requiredSet[setup]:
         for name in requiredSet[setup][cType]:
@@ -457,6 +538,17 @@ class StatusSet:
       cD.append(compDict)
 
   def __setStatus(self, compDict, status, message=False):
+    """
+    Sets status within the component dict.
+
+    :type compDict: dictionary
+    :param compDict: The component dictionary.
+    :type status: string
+    :param status: the status.
+    :type message: bool
+    :param message: the message.
+    :return: A component dictionary.
+    """
     if 'Status' in compDict:
       return compDict
     compDict['Status'] = status

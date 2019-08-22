@@ -134,10 +134,11 @@ class RequestHandler(object):
       message = "Method %s for action %s does not return a S_OK/S_ERROR!" % (actionTuple[1], actionTuple[0])
       gLogger.error(message)
       retVal = S_ERROR(message)
-    self.__logRemoteQueryResponse(retVal, time.time() - startTime)
+    elapsedTime = time.time() - startTime
+    self.__logRemoteQueryResponse(retVal, elapsedTime)
     result = self.__trPool.send(self.__trid, retVal)  # this will delete the value from the S_OK(value)
     del retVal
-    return result
+    return S_OK([result, elapsedTime])
 
 #####
 #
@@ -408,8 +409,9 @@ class RequestHandler(object):
     if not isReturnStructure(uReturnValue):
       gLogger.error("Message does not return a S_OK/S_ERROR", msgName)
       uReturnValue = S_ERROR("Message %s does not return a S_OK/S_ERROR" % msgName)
-    self.__logRemoteQueryResponse(uReturnValue, time.time() - startTime)
-    return uReturnValue
+    elapsedTime = time.time() - startTime
+    self.__logRemoteQueryResponse(uReturnValue, elapsedTime)
+    return S_OK([uReturnValue, elapsedTime])
 
 ####
 #
