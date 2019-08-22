@@ -67,6 +67,8 @@ To still send Pilot 2 type of pilots, the Pilot3 flag should be set explicitely 
 
 It should be anyway noted that "Pilot 2" are not maintained anymore, and that their code will be removed in a future version of DIRAC.
 
+In this case, the option ``Operations/[Defaults | Setup]/Pilot/UpdatePilotCStoJSONFile`` could be also set to False.
+
 
 Pilot logging
 =============
