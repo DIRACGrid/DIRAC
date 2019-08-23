@@ -981,7 +981,7 @@ class CFG(object):
       if directory and (not os.path.exists(directory)):
         os.makedirs(directory)
       with open(fileName, "w") as fd:
-	fd.write(str(self))
+        fd.write(str(self))
       return True
     except Exception:
       return False
