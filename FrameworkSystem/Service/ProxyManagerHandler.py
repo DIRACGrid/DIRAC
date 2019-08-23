@@ -84,13 +84,15 @@ class ProxyManagerHandler(RequestHandler):
 
   types_requestDelegationUpload = [[int, long]]
 
-  def export_requestDelegationUpload(self, requestedUploadTime):
+  def export_requestDelegationUpload(self, requestedUploadTime, diracGroup=None):
     """ Request a delegation. Send a delegation request to client
 
         :param int,long requestedUploadTime: requested live time
 
         :return: S_OK(dict)/S_ERROR() -- dict contain id and proxy as string of the request
     """
+    if diracGroup:
+      return S_ERROR("Cannot upload proxy with DIRAC group or VOMS extensions; Please update your DIRAC client.")
     credDict = self.getRemoteCredentials()
     userDN = credDict['DN']
     userName = credDict['username']
