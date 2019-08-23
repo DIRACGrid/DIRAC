@@ -4,6 +4,7 @@
 
 import os, re, types
 import xml.sax
+import six
 from DIRAC.Core.Workflow.Parameter import *
 from DIRAC.Core.Workflow.Module import *
 from DIRAC.Core.Workflow.Step import *
@@ -34,7 +35,7 @@ class Workflow( AttributeCollection ):
 
     elif isinstance( obj, Workflow ):
       self.fromWorkflow( obj )
-    elif isinstance( obj, str ):
+    elif isinstance( obj, six.string_types ):
       self.parameters = ParameterCollection( None )
       self.step_instances = InstancesPool( self )
       self.step_definitions = DefinitionsPool( self )
