@@ -46,6 +46,10 @@ res = jobMonitoringClient.getJobParameter(jobID, 'ParName-fromMySQL')  # This wi
 assert res['OK']
 assert res['Value'] == {'ParName-fromMySQL': 'ParValue-fromMySQL'}
 
+res = jobMonitoringClient.getJobOwner(jobID)
+assert res['OK']
+print(res)
+
 # Here now setting the flag as the following inside /Operations/Defaults:
 # in Operations/Defaults/Services/JobMonitoring/useESForJobParametersFlag
 
@@ -84,6 +88,21 @@ assert res['Value'] == {'ParName-fromMySQL': 'ParValue-fromMySQL'}
 # Now we insert
 res = jobStateUpdateClient.setJobParameter(jobID, 'ParName-fromES', 'ParValue-fromES')
 assert res['OK']
+
+# sleep to give time to ES to index
+time.sleep(2)
+
 res = jobMonitoringClient.getJobParameter(jobID, 'ParName-fromES')  # This will be in ES
 assert res['OK']
 assert res['Value'] == {'ParName-fromES': 'ParValue-fromES'}
+
+res = jobMonitoringClient.getJobOwner(jobID)
+assert res['OK']
+print(res)
+
+
+# setJobsParameter
+
+# getJobParameters
+
+# getJobAttribute
