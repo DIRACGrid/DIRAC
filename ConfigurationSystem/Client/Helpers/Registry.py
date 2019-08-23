@@ -490,3 +490,19 @@ def getUserDict(username):
     if value:
       resDict[key.replace(relPath, '')] = value
   return S_OK(resDict)
+
+
+def getEmailsForGroup(groupName):
+  """ Get email list of users in group
+
+      :param basestring groupName: DIRAC group name
+
+      :return: basestring -- emails listed by ', '
+  """
+  emails = []
+  for username in getUsersInGroup(groupName, defaultValue=[]):
+    email = gConfig.getValue("%s/Users/%s/EMail" % (gBaseRegistrySection, username), [])
+    if not isinstance(email, list):
+      email = email.replace(' ','').split(',')
+    emails += email
+  return list(set(emails))
