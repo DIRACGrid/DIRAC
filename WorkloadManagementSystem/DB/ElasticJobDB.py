@@ -96,7 +96,7 @@ class ElasticJobDB(DB):
     :return: dict with all Job Parameter and Attribute values
     """
 
-    self.log.debug('JobDB.getParameters: Getting Parameters for job %s' % jobID)
+    self.log.debug('JobDB.getParameters: Getting Parameters for job %d' % jobID)
 
     jobParameters = ["JobID", "Name", "Value", "JobGroup", "Owner", "Proxy", "SubmissionTime", "RunningTime"]
     resultDict = {}
@@ -149,8 +149,8 @@ class ElasticJobDB(DB):
 
     :param self: self reference
     :param int jobID: Job ID
-    :param basestring key: Name
-    :param keyword value: value
+    :param str key: parameter name
+    :param str value: parameter value
 
     :return: S_OK/S_ERROR
     """

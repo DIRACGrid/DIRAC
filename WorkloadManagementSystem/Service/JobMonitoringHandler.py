@@ -253,7 +253,7 @@ class JobMonitoringHandler(RequestHandler):
       res = gElasticJobDB.getJobParametersAndAttributes(jobID, 'Owner')
       if not res['OK']:
         return res
-      if res['Value']:
+      if res['Value'] and res['Value'] != 'Unknown':
         return res
 
     return gJobDB.getJobAttribute(jobID, 'Owner')
@@ -542,11 +542,19 @@ class JobMonitoringHandler(RequestHandler):
     :param str parName: one single parameter name, or None (meaning all of them)
     """
     if gElasticJobDB:
-      res = gElasticJobDB.getJobParameters(jobIDs)
+      res = gElasticJobDB.getJobParameters(jobIDs, parName)
       if not res['OK']:
         return res
-      if res['Value']:
-        return res
+      parameters = res['Value']
+      if parameters:
+        # get also those from JobDB, for those jobs with parameters registered in both backends
+        # TO-DO: remove this call one day
+        res = gJobDB.getJobParameters(jobIDs, parName)
+        if not res['OK']:
+          return res
+        for key, value in res['Value'].iteritems():
+          parameters.setdefault(key, value)
+        return S_OK(parameters)
 
     return gJobDB.getJobParameters(jobIDs, parName)
 
