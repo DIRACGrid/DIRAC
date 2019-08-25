@@ -768,3 +768,12 @@ class CSAPI(object):
     for line in diffData:
       if line[0] in ('+', '-'):
         gLogger.notice(line)
+
+  def forceGlobalConfigurationUpdate(self):
+    """
+    Force global update of configuration on all the registered services
+
+    :return: S_OK/S_ERROR
+    """
+
+    return self.__rpcClient.forceGlobalConfigurationUpdate()

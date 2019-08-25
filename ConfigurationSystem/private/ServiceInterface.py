@@ -9,6 +9,7 @@ import re
 import threading
 import zipfile
 import zlib
+import requests
 
 import DIRAC
 from DIRAC.Core.Utilities.File import mkDir
@@ -17,6 +18,8 @@ from DIRAC.ConfigurationSystem.private.Refresher import gRefresher
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.Core.Utilities.ThreadPool import ThreadPool
+from DIRAC.Core.Security.Locations import getHostCertificateAndKeyLocation
 
 
 class ServiceInterface(threading.Thread):
@@ -36,6 +39,8 @@ class ServiceInterface(threading.Thread):
       self.__loadConfigurationData()
       self.dAliveSlaveServers = {}
       self.__launchCheckSlaves()
+
+    self.__updateResultDict = {"Successful": {}, "Failed": {}}
 
   def isMaster(self):
     return gConfigurationData.isMaster()
@@ -109,7 +114,96 @@ class ServiceInterface(threading.Thread):
                                                 ", ".join(self.dAliveSlaveServers.keys())))
       self.__generateNewVersion()
 
-  def updateConfiguration(self, sBuffer, commiter="", updateVersionOption=False):
+  @staticmethod
+  def __forceServiceUpdate(url, fromMaster):
+    """
+    Force updating configuration on a given service
+
+    :param str url: service URL
+    :param bool fromMaster: flag to force updating from the master CS
+    :return: S_OK/S_ERROR
+    """
+    gLogger.info('Updating service configuration on', url)
+    if url.startswith('dip'):
+      rpc = RPCClient(url)
+      result = rpc.refreshConfiguration(fromMaster)
+    elif url.startswith('http'):
+      hostCertTuple = getHostCertificateAndKeyLocation()
+      resultRequest = requests.get(url,
+                                   headers={'X-RefreshConfiguration': "True"},
+                                   cert=hostCertTuple,
+                                   verify=False)
+      result = S_OK()
+      if resultRequest.status_code != 200:
+        result = S_ERROR("Status code returned %d" % resultRequest.status_code)
+    result['URL'] = url
+    return result
+
+  def __processResults(self, id_, result):
+    if result['OK']:
+      self.__updateResultDict['Successful'][result['URL']] = True
+    else:
+      gLogger.warn("Failed to update configuration on", result['URL'] + ':' + result['Message'])
+      self.__updateResultDict['Failed'][result['URL']] = result['Message']
+
+  def __updateServiceConfiguration(self, urlSet, fromMaster=False):
+    """
+    Update configuration in a set of service in parallel
+
+    :param set urlSet: a set of service URLs
+    :param fromMaster: flag to force updating from the master CS
+    :return: S_OK/S_ERROR, Value Successful/Failed dict with service URLs
+    """
+    pool = ThreadPool(len(urlSet))
+    for url in urlSet:
+      pool.generateJobAndQueueIt(self.__forceServiceUpdate,
+                                 args=[url, fromMaster],
+                                 kwargs={},
+                                 oCallback=self.__processResults)
+    pool.processAllResults()
+    return S_OK(self.__updateResultDict)
+
+  def forceSlavesUpdate(self):
+    """
+    Force updating configuration on all the slave configuration servers
+
+    :return: S_OK/S_ERROR, Value Successful/Failed dict with service URLs
+    """
+    gLogger.info("Updating configuration on slave servers")
+    iGraceTime = gConfigurationData.getSlavesGraceTime()
+    self.__updateResultDict = {"Successful": {}, "Failed": {}}
+    urlSet = set()
+    for slaveURL in self.dAliveSlaveServers:
+      if time.time() - self.dAliveSlaveServers[slaveURL] <= iGraceTime:
+        urlSet.add(slaveURL)
+    return self.__updateServiceConfiguration(urlSet, fromMaster=True)
+
+  def forceGlobalUpdate(self):
+    """
+    Force updating configuration of all the registered services
+
+    :return: S_OK/S_ERROR, Value Successful/Failed dict with service URLs
+    """
+    gLogger.info("Updating services configuration")
+    # Get URLs of all the services except for Configuration services
+    cfg = gConfigurationData.remoteCFG.getAsDict()['Systems']
+    urlSet = set()
+    for system_ in cfg:
+      for instance in cfg[system_]:
+        for url in cfg[system_][instance]['URLs']:
+          urlSet = urlSet.union(set([u.strip() for u in cfg[system_][instance]['URLs'][url].split(',')
+                                     if 'Configuration/Server' not in u]))
+    return self.__updateServiceConfiguration(urlSet)
+
+  def updateConfiguration(self, sBuffer, committer="", updateVersionOption=False):
+    """
+    Update the master configuration with the newly received changes
+
+    :param str sBuffer: newly received configuration data
+    :param str committer: the user name of the committer
+    :param bool updateVersionOption: flag to update the current configuration version
+    :return: S_OK/S_ERROR of the write-to-disk of the new configuration
+    """
     if not gConfigurationData.isMaster():
       return S_ERROR("Configuration modification is not allowed in this server")
     # Load the data in a ConfigurationData object
@@ -149,9 +243,16 @@ class ServiceInterface(threading.Thread):
     gLogger.info("Generating new version")
     gConfigurationData.generateNewVersion()
     # self.__checkSlavesStatus( forceWriteConfiguration = True )
-    gLogger.info("Writing new version to disk!")
-    retVal = gConfigurationData.writeRemoteConfigurationToDisk("%s@%s" % (commiter, gConfigurationData.getVersion()))
-    gLogger.info("New version it is!")
+    gLogger.info("Writing new version to disk")
+    retVal = gConfigurationData.writeRemoteConfigurationToDisk("%s@%s" % (committer, gConfigurationData.getVersion()))
+    gLogger.info("New version", gConfigurationData.getVersion())
+
+    # Attempt to update the configuration on currently registered slave services
+    if gConfigurationData.getAutoSlaveSync():
+      result = self.forceSlavesUpdate()
+      if not result['OK']:
+        gLogger.warn('Failed to update slave servers')
+
     return retVal
 
   def getCompressedConfigurationData(self):
@@ -198,7 +299,7 @@ class ServiceInterface(threading.Thread):
   def __getPreviousCFG(self, oRemoteConfData):
     backupsList = self.__getCfgBackups(gConfigurationData.getBackupDir(), date=oRemoteConfData.getVersion())
     if not backupsList:
-      return S_ERROR("Could not AutoMerge. Could not retrieve original commiter's version")
+      return S_ERROR("Could not AutoMerge. Could not retrieve original committer's version")
     prevRemoteConfData = ConfigurationData()
     backFile = backupsList[0]
     if backFile[0] == "/":
@@ -206,7 +307,7 @@ class ServiceInterface(threading.Thread):
     try:
       prevRemoteConfData.loadConfigurationData(backFile)
     except Exception as e:
-      return S_ERROR("Could not load original commiter's version: %s" % str(e))
+      return S_ERROR("Could not load original committer's version: %s" % str(e))
     gLogger.info("Loaded client original version %s" % prevRemoteConfData.getVersion())
     return S_OK(prevRemoteConfData.getRemoteCFG())
 

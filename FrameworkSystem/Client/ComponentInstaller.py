@@ -724,7 +724,9 @@ class ComponentInstaller(object):
     compCfg = result['Value']
 
     compCfgFile = os.path.join(rootPath, 'etc', '%s_%s.cfg' % (system, component))
-    return compCfg.writeToFile(compCfgFile)
+    if compCfg.writeToFile(compCfgFile):  # this returns a True/False
+      return S_OK()
+    return S_ERROR()
 
   def addCfgToComponentCfg(self, componentType, systemName, component, cfg):
     """

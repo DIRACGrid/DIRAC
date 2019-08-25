@@ -14,6 +14,7 @@ from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR, isReturnStructure
 from DIRAC.Core.Utilities import Time
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
+from DIRAC.Core.Security.Properties import CS_ADMINISTRATOR
 
 
 def getServiceOption(serviceInfo, optionName, defaultValue):
@@ -498,9 +499,25 @@ class RequestHandler(object):
   @staticmethod
   def export_echo(data):
     """
-    This method used for testing the performance of a service
+    This method is used for testing performance of the service
+
+    :param str data: data to be sent back to the caller
+
+    :return: S_OK, Value is the input data
     """
     return S_OK(data)
+
+  types_refreshConfiguration = [bool]
+  auth_refreshConfiguration = [CS_ADMINISTRATOR]
+
+  @staticmethod
+  def export_refreshConfiguration(fromMaster):
+    """
+    Force refreshing the configuration data
+
+    :param bool fromMaster: flag to refresh from the master configuration service
+    """
+    return gConfig.forceRefresh(fromMaster=fromMaster)
 
 ####
 #

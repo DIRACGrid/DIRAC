@@ -12,7 +12,7 @@ import tempfile
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.Core.Security import Properties
+from DIRAC.Core.Security import Locations, Properties, X509Certificate
 from DIRAC.WorkloadManagementSystem.DB.SandboxMetadataDB import SandboxMetadataDB
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.DataManagementSystem.Service.StorageElementHandler import getDiskSpace
@@ -54,6 +54,14 @@ class SandboxStoreHandler(RequestHandler):
       SandboxStoreHandler.__purgeCount = 0
     if SandboxStoreHandler.__purgeCount == 0:
       threading.Thread(target=self.purgeUnusedSandboxes).start()
+
+    # We need the hostDN used in order to pass these credentials to the
+    # SandboxStoreDB..
+    hostCertLocation, _ = Locations.getHostCertificateAndKeyLocation()
+    hostCert = X509Certificate.X509Certificate()
+    hostCert.loadFromFile(hostCertLocation)
+    self.hostDN = hostCert.getSubjectDN().get('Value')
+
 
   def __getSandboxPath(self, md5):
     """ Generate the sandbox path
@@ -479,8 +487,8 @@ class SandboxStoreHandler(RequestHandler):
     if self.getCSOption("DelayedExternalDeletion", True):
       gLogger.info("Setting deletion request")
       try:
-        credDict = self.getRemoteCredentials()
-        result = sandboxDB.getSandboxOwner(SEName, SEPFN, credDict['username'], credDict['group'])
+        # use the host authentication to fetch the data
+        result = sandboxDB.getSandboxOwner(SEName, SEPFN, self.hostDN, 'hosts')
         if not result['OK']:
           return result
         _owner, ownerDN, ownerGroup = result['Value']
