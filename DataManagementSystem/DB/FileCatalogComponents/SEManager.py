@@ -24,11 +24,11 @@ class SEManagerBase:
       self.db.seids = {}
       self.db.seDefinitions = {}
     self.lock = threading.Lock()
-    self._refreshSEs()
     self.seUpdatePeriod = 600
 
     # last time the cache was updated (epoch)
     self.lastUpdate = 0
+    self._refreshSEs()
 
   def setUpdatePeriod(self, period):
     self.seUpdatePeriod = period

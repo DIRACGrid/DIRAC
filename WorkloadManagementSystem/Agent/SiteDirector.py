@@ -1476,12 +1476,15 @@ class SiteDirector(AgentModule):
                                     status):
 
     """ Send pilot submission accounting record
+
         :param str siteName:     Site name
         :param str ceName:       CE name
         :param str queueName:    queue Name
         :param int numTotal:     Total number of submission
         :param int numSucceeded: Total number of submission succeeded
         :param str status:       'Succeeded' or 'Failed'
+
+        :returns: S_OK / S_ERROR
     """
 
     pA = PilotSubmissionAccounting()

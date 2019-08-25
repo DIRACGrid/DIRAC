@@ -19,12 +19,15 @@ CHANGE: (#4157) add possibility to work with Proxy Providers and "clean" proxy w
 *Resources
 NEW: (#4157) ProxyProvider resources with implementation for DIRAC CA and PUSP proxy providers
 
-[v7r0-pre23]
+[v7r0-pre24]
 
 FIX: (#3962) use print function instead of print statement
 FIX: (#3962) remove the usage of the long suffix to distinguish between long and int
 FIX: (#3962) convert octal literals to new syntax
 NEW: (#3962) Add pylint test to check python 3 compatibility
+
+*Configuration
+CHANGE: (#4249) The flag UpdatePilotCStoJSONFile has been moved to Operations/[]/Pilot section
 
 *Framework
 CHANGE: (#4180) Removed local MySQL handling (DIRACOS won't have install it)
@@ -109,11 +112,20 @@ CHANGE: (#4224) Pilot 3 is the default
 
 [v6r22p7]
 
+*Core
+FIX: (#4253) Workflow - accept unicode file path to workflow XML
+
 *WMS
 NEW: (#4205) Statistics of Pilot submission is sent to Accounting System by SiteDirector.
+FIX: (#4250) use host credentials to query the SandboxMetadataDB for async removal
 
 *Resources
 CHANGE: (#4242) DFC SEManagerDB: only acquire the lock if the cache needs to be modified
+FIX: (#4251) preamble attribute was missing in SSHBatchComputingElement causing an error 
+     in _submitJobHost()
+
+*DMS
+FIX: (#4248) SEManager correct order of calls at init
 
 [v6r22p6]
 

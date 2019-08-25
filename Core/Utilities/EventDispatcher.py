@@ -1,6 +1,5 @@
 __RCSID__ = "$Id$"
 
-import types
 import threading
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.Utilities.ThreadSafe import Synchronizer
