@@ -1,4 +1,4 @@
-[v7r1-pre4]
+[v7r1-pre5]
 
 *Core
 NEW: initial support for mysql8
@@ -7,6 +7,10 @@ NEW: (#4236) DISET - pass the client DIRAC version as part of the request descri
 *Configuration
 CHANGE: (#4157) add new helper methods for IdP/Proxy Providers, OAuthManager. Add methods that 
         read DN options in dirac user section
+NEW: (#4241) Slave configuration servers are automatically updated as part of the new configuration 
+     changes commit
+NEW: (#4241) Configuration Server - added forceGlobalConfigurationUpdate() interface to force all 
+     registered service to update their configuration
 
 *Framework
 CHANGE: (#4157) add possibility to work with Proxy Providers and "clean" proxy without 
