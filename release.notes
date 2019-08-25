@@ -1,10 +1,19 @@
 [v6r22p7]
 
+*Core
+FIX: (#4253) Workflow - accept unicode file path to workflow XML
+
 *WMS
 NEW: (#4205) Statistics of Pilot submission is sent to Accounting System by SiteDirector.
+FIX: (#4250) use host credentials to query the SandboxMetadataDB for async removal
 
 *Resources
 CHANGE: (#4242) DFC SEManagerDB: only acquire the lock if the cache needs to be modified
+FIX: (#4251) preamble attribute was missing in SSHBatchComputingElement causing an error 
+     in _submitJobHost()
+
+*DMS
+FIX: (#4248) SEManager correct order of calls at init
 
 [v6r22p6]
 
