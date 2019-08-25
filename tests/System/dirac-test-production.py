@@ -53,10 +53,10 @@ prodJob.workflow.setDescrShort(desc)
 prodJob.workflow.setDescription(desc)
 prodJob.setCPUTime(86400)
 prodJob.setInputDataPolicy('Download')
-prodJob.setExecutable('/bin/ls', '-l')
+prodJob.setExecutable('/bin/ls', '-l', modulesList=['Script', 'FailoverRequest'])
 
 # Let's submit the prodJobuction now
-#result = prodJob.create()
+# result = prodJob.create()
 
 name = prodJob.workflow.getName()
 name = name.replace('/', '').replace('\\', '')
