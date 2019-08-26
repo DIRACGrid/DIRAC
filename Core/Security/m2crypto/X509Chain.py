@@ -166,8 +166,8 @@ class X509Chain(object):
     if keyObj:
       self._keyObj = keyObj
 
-  @deprecated
   @classmethod
+  @deprecated("Use loadChainFromFile instead", onlyOnce=True)
   def instanceFromFile(cls, chainLocation):
     """ Class method to generate a X509Chain from a file
 

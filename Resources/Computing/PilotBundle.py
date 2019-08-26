@@ -30,24 +30,31 @@ def bundleProxy(executableFile, proxy):
 
   bundle = """#!/usr/bin/env python
 # Wrapper script for executable and proxy
-import os, tempfile, sys, stat, base64, bz2, shutil
+import os
+import tempfile
+import sys
+import stat
+import base64
+import bz2
+import shutil
+
 try:
-  workingDirectory = tempfile.mkdtemp( suffix = '_wrapper', prefix= 'TORQUE_' )
-  os.chdir( workingDirectory )
-  open( 'proxy', "w" ).write(bz2.decompress( base64.decodestring( "%(compressedAndEncodedProxy)s" ) ) )
-  open( '%(executable)s', "w" ).write(bz2.decompress( base64.decodestring( "%(compressedAndEncodedExecutable)s" ) ) )
+  workingDirectory = tempfile.mkdtemp(suffix='_wrapper', prefix='TORQUE_')
+  os.chdir(workingDirectory)
+  open('proxy', "w").write(bz2.decompress(base64.decodestring("%(compressedAndEncodedProxy)s")))
+  open('%(executable)s', "w").write(bz2.decompress(base64.decodestring("%(compressedAndEncodedExecutable)s")))
   os.chmod('proxy', stat.S_IRUSR | stat.S_IWUSR)
   os.chmod('%(executable)s', stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
-  os.environ["X509_USER_PROXY"]=os.path.join(workingDirectory, 'proxy')
+  os.environ["X509_USER_PROXY"] = os.path.join(workingDirectory, 'proxy')
 except Exception as x:
   print >> sys.stderr, x
   sys.exit(-1)
 cmd = "./%(executable)s"
 print 'Executing: ', cmd
 sys.stdout.flush()
-os.system( cmd )
+os.system(cmd)
 
-shutil.rmtree( workingDirectory )
+shutil.rmtree(workingDirectory)
 
 """ % {'compressedAndEncodedProxy': compressedAndEncodedProxy,
        'compressedAndEncodedExecutable': compressedAndEncodedExecutable,

@@ -34,6 +34,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals, Registry
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.AccountingSystem.Client.Types.Pilot import Pilot as PilotAccounting
+from DIRAC.AccountingSystem.Client.Types.PilotSubmission import PilotSubmission as PilotSubmissionAccounting
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.WorkloadManagementSystem.Client.MatcherClient import MatcherClient
 from DIRAC.WorkloadManagementSystem.Client.ServerUtils import pilotAgentsDB
@@ -116,6 +117,7 @@ class SiteDirector(AgentModule):
     self.updateStatus = True
     self.getOutput = False
     self.sendAccounting = True
+    self.sendSubmissionAccounting = True
 
     self.pilot3 = True
     self.pilotFiles = []  # files whose content will be compressed and sent together with the pilot wrapper
@@ -214,6 +216,7 @@ class SiteDirector(AgentModule):
     self.updateStatus = self.am_getOption('UpdatePilotStatus', self.updateStatus)
     self.getOutput = self.am_getOption('GetPilotOutput', self.getOutput)
     self.sendAccounting = self.am_getOption('SendPilotAccounting', self.sendAccounting)
+    self.sendSubmissionAccounting = self.am_getOption('SendPilotSubmissionAccounting', self.sendSubmissionAccounting)
 
     # Get the site description dictionary
     siteNames = None
@@ -257,6 +260,8 @@ class SiteDirector(AgentModule):
       self.log.always('Pilot output retrieval requested')
     if self.sendAccounting:
       self.log.always('Pilot accounting sending requested')
+    if self.sendSubmissionAccounting:
+      self.log.always('Pilot submission accounting sending requested')
 
     self.log.always('MaxPilotsToSubmit:', self.maxPilotsToSubmit)
     self.log.always('MaxJobsInFillMode:', self.maxJobsInFillMode)
@@ -850,6 +855,15 @@ class SiteDirector(AgentModule):
     if not submitResult['OK']:
       self.log.error("Failed submission to queue",
                      "Queue %s:\n, %s" % (queue, submitResult['Message']))
+
+      if self.sendSubmissionAccounting:
+        self.sendPilotSubmissionAccounting(self.queueDict[queue]['Site'],
+                                           self.queueDict[queue]['CEName'],
+                                           self.queueDict[queue]['QueueName'],
+                                           pilotsToSubmit,
+                                           0,
+                                           'Failed')
+
       pilotsToSubmit = 0
       self.failedQueues[queue] += 1
       return submitResult
@@ -863,6 +877,13 @@ class SiteDirector(AgentModule):
                                                     self.queueDict[queue]['QueueName'],
                                                     self.queueDict[queue]['CEName']))
     stampDict = submitResult.get('PilotStampDict', {})
+    if self.sendSubmissionAccounting:
+      self.sendPilotSubmissionAccounting(self.queueDict[queue]['Site'],
+                                         self.queueDict[queue]['CEName'],
+                                         self.queueDict[queue]['QueueName'],
+                                         len(pilotList),
+                                         len(pilotList),
+                                         'Succeeded')
 
     return S_OK((pilotsToSubmit, pilotList, stampDict))
 
@@ -1445,3 +1466,50 @@ class SiteDirector(AgentModule):
       return result
 
     return S_OK()
+
+  def sendPilotSubmissionAccounting(self,
+                                    siteName,
+                                    ceName,
+                                    queueName,
+                                    numTotal,
+                                    numSucceeded,
+                                    status):
+
+    """ Send pilot submission accounting record
+
+        :param str siteName:     Site name
+        :param str ceName:       CE name
+        :param str queueName:    queue Name
+        :param int numTotal:     Total number of submission
+        :param int numSucceeded: Total number of submission succeeded
+        :param str status:       'Succeeded' or 'Failed'
+
+        :returns: S_OK / S_ERROR
+    """
+
+    pA = PilotSubmissionAccounting()
+    pA.setStartTime(dateTime())
+    pA.setEndTime(dateTime())
+    pA.setValueByKey('HostName', DIRAC.siteName())
+    if hasattr(self, "_AgentModule__moduleProperties"):
+      pA.setValueByKey('SiteDirector', self.am_getModuleParam('agentName'))
+    else:  # In case it is not executed as agent
+      pA.setValueByKey('SiteDirector', 'Client')
+
+    pA.setValueByKey('Site', siteName)
+    pA.setValueByKey('CE', ceName)
+    pA.setValueByKey('Queue', queueName)
+    pA.setValueByKey('Status', status)
+    pA.setValueByKey('NumTotal', numTotal)
+    pA.setValueByKey('NumSucceeded', numSucceeded)
+    result = gDataStoreClient.addRegister(pA)
+
+    if not result['OK']:
+      self.log.warn('Error in add Register:' + result['Message'])
+      return result
+
+    self.log.verbose("Begin commit")
+    result = gDataStoreClient.delayedCommit()
+    if not result['OK']:
+      self.log.error('Error in Commit:' + result['Message'])
+      return result
