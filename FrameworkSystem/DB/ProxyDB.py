@@ -1109,17 +1109,11 @@ class ProxyDB(DB):
       for record in retVal['Value']:
         record = list(record)
         if table == 'ProxyDB_CleanProxies':
-          record.insert(2, '')
+          record.insert(2, 'no group')
           record.insert(4, False)
         record[4] = record[4] == 'True'
         data.append(record)
     totalRecords = len(data)
-    # cmd = "SELECT COUNT( UserGroup ) FROM `ProxyDB_Proxies`"
-    # if sqlWhere:
-    #   cmd = "%s WHERE %s" % (cmd, " AND ".join(sqlWhere))
-    # retVal = self._query(cmd)
-    # if retVal['OK']:
-    #   totalRecords = retVal['Value'][0][0]
     return S_OK({'ParameterNames': fields, 'Records': data, 'TotalRecords': totalRecords})
 
   def logAction(self, action, issuerDN, issuerGroup, targetDN, targetGroup):
