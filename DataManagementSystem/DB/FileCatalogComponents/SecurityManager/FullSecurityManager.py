@@ -25,7 +25,8 @@ class FullSecurityManager(SecurityManagerBase):
       for resolvedPath in toGet[path]:
         permissions[resolvedPath] = mode
       toGet.pop(path)
-    for path, resolvedPaths in toGet.iteritems():
+    # Copying items because toGet is changed in the cycle
+    for path, resolvedPaths in list(toGet.iteritems()):
       if path == '/':
         for resolvedPath in resolvedPaths:
           permissions[path] = {'Read': True, 'Write': True, 'Execute': True}
@@ -47,7 +48,8 @@ class FullSecurityManager(SecurityManagerBase):
           for resolvedPath in toGet[path]:
             failed[resolvedPath] = error
           toGet.pop(path)
-      for path, resolvedPaths in toGet.items():
+      # Copying items because toGet is changed in the cycle
+      for path, resolvedPaths in list(toGet.iteritems()):
         if path == '/':
           for resolvedPath in resolvedPaths:
             permissions[path] = {'Read': True, 'Write': True, 'Execute': True}
