@@ -8,6 +8,7 @@ import json
 import os
 import tempfile
 import shutil
+import errno
 import gfal2  # pylint: disable=import-error
 
 from DIRAC import S_OK, S_ERROR
@@ -68,7 +69,7 @@ class WLCGAccountingJson(object):
     try:
       storageShares = occupancyDict['storageservice']['storageshares']
     except KeyError as e:
-      return S_ERROR('Could not find %s key in %s at %s' % (str(e), occupancyLFN, self.name))
+      return S_ERROR(errno.ENOMSG, 'Issue finding storage shares. %s in %s at %s.' % (repr(e), occupancyLFN, self.name))
 
     spaceReservation = self.se.options.get('SpaceReservation')
 
@@ -96,6 +97,7 @@ class WLCGAccountingJson(object):
       sTokenDict['Total'] = storageSharesSR['totalsize']
       sTokenDict['Free'] = sTokenDict['Total'] - storageSharesSR['usedsize']
     except KeyError as e:
-      return S_ERROR('Could not find %s key in %s storageshares' % (str(e), spaceReservation))
+      return S_ERROR(
+          errno.ENOMSG, 'Issue finding Total or Free space left. %s in %s storageshares.' % (repr(e), spaceReservation))
 
     return S_OK(sTokenDict)
