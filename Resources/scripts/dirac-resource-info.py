@@ -8,32 +8,36 @@ __RCSID__ = "$Id$"
 from DIRAC.Core.Base import Script
 from DIRAC import S_OK, gLogger, exit as DIRACExit
 
-Script.setUsageMessage( '\n'.join( ['Get information on resources',
-                                    'Usage:',
-                                    '%s [option]...' % Script.scriptName ] ) )
+Script.setUsageMessage('\n'.join(['Get information on resources',
+                                  'Usage:',
+                                  '%s [option]...' % Script.scriptName]))
 
 ceFlag = False
 seFlag = False
 voName = None
 
+
 def setCEFlag(args_):
   global ceFlag
   ceFlag = True
+
 
 def setSEFlag(args_):
   global seFlag
   seFlag = True
 
+
 def setVOName(args):
   global voName
   voName = args
+
 
 Script.registerSwitch("C", "ce", "Get CE info", setCEFlag)
 Script.registerSwitch("S", "se", "Get SE info", setSEFlag)
 Script.registerSwitch("V:", "vo=", "Get resources for the given VO", setVOName)
 
 
-Script.parseCommandLine( ignoreErrors = True )
+Script.parseCommandLine(ignoreErrors=True)
 
 from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 from DIRAC.ConfigurationSystem.Client.Helpers import Resources
@@ -42,14 +46,15 @@ from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 
+
 def printCEInfo(voName):
 
-  resultQueues = Resources.getQueues(community = voName)
+  resultQueues = Resources.getQueues(community=voName)
   if not resultQueues['OK']:
     gLogger.error('Failed to get CE information')
     DIRACExit(-1)
 
-  fields = ("Site",'CE','CEType','Queue', 'Status')
+  fields = ("Site", 'CE', 'CEType', 'Queue', 'Status')
   records = []
 
   # get list of usable sites within this cycle
@@ -83,8 +88,9 @@ def printCEInfo(voName):
         ceNew = False
         siteNew = False
 
-  gLogger.notice(printTable(fields, records, printOut=False, columnSeparator = '  '))
+  gLogger.notice(printTable(fields, records, printOut=False, columnSeparator='  '))
   return S_OK()
+
 
 def printSEInfo(voName):
 
@@ -94,7 +100,7 @@ def printSEInfo(voName):
     DIRACExit(-1)
   seDict = result['Value']
 
-  fields = ('SE','Status', 'Protocols', 'Aliases')
+  fields = ('SE', 'Status', 'Protocols', 'Aliases')
   records = []
 
   for se in seDict:
@@ -114,8 +120,9 @@ def printSEInfo(voName):
                     ",".join(seDict[se]["Protocols"]),
                     ",".join(seDict[se]["Aliases"])))
 
-  gLogger.notice(printTable(fields, records, printOut=False, columnSeparator = '  '))
+  gLogger.notice(printTable(fields, records, printOut=False, columnSeparator='  '))
   return S_OK()
+
 
 if __name__ == '__main__':
   if not voName:

@@ -193,6 +193,7 @@ def getQueues(siteList=None, ceList=None, ceTypeList=None, community=None, mode=
 
   return S_OK(resultDict)
 
+
 def getStorageElements(vo=None):
   """
   Get configuration of storage elements
@@ -236,6 +237,7 @@ def getStorageElements(vo=None):
     seDict[se]['Protocols'] = protocols
 
   return S_OK(seDict)
+
 
 def getCompatiblePlatforms(originalPlatforms):
   """ Get a list of platforms compatible with the given list
