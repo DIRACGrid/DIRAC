@@ -497,7 +497,7 @@ def getEmailsForGroup(groupName):
 
       :param basestring groupName: DIRAC group name
 
-      :return: list
+      :return: list(list) -- inner list contains emails for a user
   """
   emails = []
   for username in getUsersInGroup(groupName, defaultValue=[]):
