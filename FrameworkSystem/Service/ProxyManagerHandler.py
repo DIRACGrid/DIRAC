@@ -94,11 +94,14 @@ class ProxyManagerHandler(RequestHandler):
         :return: S_OK(dict)/S_ERROR() -- dict contain id and proxy as string of the request
     """
     if diracGroup:
-      return S_ERROR("Cannot upload proxy with DIRAC group or VOMS extensions; Please update your DIRAC client.")
+      # WARN: Since v7r1, DIRAC has implemented the ability to store only one proxy and
+      # WARN:   dynamically add a group at the request of a proxy. This means that group extensions
+      # WARN:   doesn't need for storing proxies.
+      self.log.warn("Proxy with DIRAC group or VOMS extensions must be not allowed to be uploaded.")
     credDict = self.getRemoteCredentials()
     userDN = credDict['DN']
     userName = credDict['username']
-    userGroup = credDict['group']
+    userGroup = diracGroup or credDict['group']
     retVal = Registry.getGroupsForUser(credDict['username'])
     if not retVal['OK']:
       return retVal
