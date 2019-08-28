@@ -84,8 +84,7 @@ class NotificationHandler(RequestHandler):
     eMail._mailAddress = address
     if not fromAddress == 'None':
       eMail._fromAddress = fromAddress
-    if gConfig.getValue('%s/FromAddress' % csSection):
-      eMail._fromAddress = gConfig.getValue('%s/FromAddress' % csSection)
+    eMail._fromAddress = gConfig.getValue('%s/FromAddress' % csSection) or eMail._fromAddress
     if avoidSpam:
       gMailSet.add(eMail)
       return S_OK("Mail added to gMailSet")
