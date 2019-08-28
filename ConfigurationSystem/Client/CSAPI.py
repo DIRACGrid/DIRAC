@@ -775,4 +775,5 @@ class CSAPI(object):
 
     :return: S_OK/S_ERROR
     """
+
     return self.__rpcClient.forceGlobalConfigurationUpdate()
