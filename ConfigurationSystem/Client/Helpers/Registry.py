@@ -502,7 +502,5 @@ def getEmailsForGroup(groupName):
   emails = []
   for username in getUsersInGroup(groupName, defaultValue=[]):
     email = gConfig.getValue("%s/Users/%s/Email" % (gBaseRegistrySection, username), [])
-    if not isinstance(email, list):
-      email = email.replace(' ', '').split(',')
     emails.append(email)
   return emails
