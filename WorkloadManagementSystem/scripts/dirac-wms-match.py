@@ -42,7 +42,7 @@ if len(args) == 0:
   Script.showHelp()
   DIRACExit(-1)
 
-from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup, getProxyInfo
+from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 from DIRAC.ConfigurationSystem.Client.Helpers import Resources
 from DIRAC.Core.Utilities.PrettyPrint import printTable
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
