@@ -41,7 +41,7 @@ def setVOName(args):
 
 Script.registerSwitch("C", "ce", "Get CE info", setCEFlag)
 Script.registerSwitch("S", "se", "Get SE info", setSEFlag)
-Script.registerSwitch("V:", "vo=", "Get resources for the given VO", setVOName)
+Script.registerSwitch("V:", "vo=", "Get resources for the given VO. If not set, taken from the proxy", setVOName)
 
 
 Script.parseCommandLine(ignoreErrors=True)
