@@ -1,0 +1,11 @@
+execution:
+- executor: locust
+  concurrency: 50
+  ramp-up: 36s
+  hold-for: 600s
+  scenario: example
+
+scenarios:
+  example:
+    default-address: lhcb-cert-dirac.cern.ch
+    script: WebPerformance.py
