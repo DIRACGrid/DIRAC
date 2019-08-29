@@ -376,8 +376,9 @@ class ProxyDB(DB):
 
     if not proxyProvider:
       result = Registry.getProxyProvidersForDN(userDN)
-      if result['OK'] and result.get('Value'):
-        proxyProvider = result['Value'][0] or 'Certificate'
+      if not result['OK']:
+        return result
+      proxyProvider = result.get('Value') and result['Value'][0] or 'Certificate'
 
     # Get remaining secs
     retVal = chain.getRemainingSecs()
@@ -751,11 +752,13 @@ class ProxyDB(DB):
       providers = result['Value']
       providers.append('Certificate')
       for proxyProvider in providers:
+        self.log.verbose('Try to get proxy from ProxyDB_CleanProxies')
         result = self.__getPemAndTimeLeft(userDN, userGroup, proxyProvider=proxyProvider)
         if result['OK'] and (not requiredLifeTime or result['Value'][1] > requiredLifeTime):
           return result
         if len(providers) == 1:
           return S_ERROR('Cannot generate proxy: No proxy providers found for "%s"' % userDN)
+        self.log.verbose('Try to generate proxy from %s proxy provider' % proxyProvider)
         result = self.__generateProxyFromProxyProvider(userDN, proxyProvider)
         if result['OK']:
           chain = result['Value']['chain']
@@ -797,6 +800,7 @@ class ProxyDB(DB):
       return S_OK((chain, timeLeft))
 
     # Standard proxy is requested
+    self.log.verbose('Try to get proxy from ProxyDB_Proxies')
     retVal = self.__getPemAndTimeLeft(userDN, userGroup)
     errMsg = "Can't get proxy%s: " % (requiredLifeTime and ' for %s seconds' % requiredLifeTime or '')
     if not retVal['OK']:
