@@ -251,4 +251,7 @@ def printDict( dDict, printOut = False ):
     else:
       line += str( value )
     lines.append( line )
-  return "{\n%s\n}" % "\n".join( lines )
+  output = "{\n%s\n}" % "\n".join( lines )
+  if printOut:
+    print(output)
+  return output
