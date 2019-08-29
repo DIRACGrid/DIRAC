@@ -6,7 +6,7 @@
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base import Script
-from DIRAC import S_OK, gLogger, exit as DIRACExit
+from DIRAC import S_OK, gLogger, gConfig, exit as DIRACExit
 
 Script.setUsageMessage('\n'.join(['Get information on resources',
                                   'Usage:',
@@ -132,6 +132,14 @@ if __name__ == '__main__':
       gLogger.error('No proxy found, please login')
       DIRACExit(-1)
     voName = result['Value']
+  else:
+    result = gConfig.getSections('/Registry/VO')
+    if not result['OK']:
+      gLogger.error('Failed to contact the CS')
+      DIRACExit(-1)
+    if voName not in result['Value']:
+      gLogger.error('Invalid VO name')
+      DIRACExit(-1)
 
   if not (ceFlag or seFlag):
     gLogger.error('Resource type is not specified')
