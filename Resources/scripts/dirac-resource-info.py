@@ -10,7 +10,7 @@ from DIRAC import S_OK, gLogger, exit as DIRACExit
 
 Script.setUsageMessage('\n'.join(['Get information on resources',
                                   'Usage:',
-                                  '%s [option]...' % Script.scriptName]))
+                                  '  %s [option]...' % Script.scriptName]))
 
 ceFlag = False
 seFlag = False
