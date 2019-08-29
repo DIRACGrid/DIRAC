@@ -24,7 +24,7 @@ from DIRAC.FrameworkSystem.DB.NotificationDB import NotificationDB
 from DIRAC.Core.Utilities.DictCache import DictCache
 
 __RCSID__ = "$Id$"
- 
+
 gNotDB = None
 gMailSet = set()
 gMailCache = DictCache()
@@ -75,7 +75,7 @@ class NotificationHandler(RequestHandler):
         :param basestring fromAddress: sender address, if None, will be used default from CS
         :param bool avoidSpam: if True, then emails are first added to a set so that duplicates are removed,
                and sent every hour.
-        
+
         :return: S_OK(basestring)/S_ERROR() -- basestring is status message
     """
     gLogger.verbose('Received signal to send the following mail to %s:\nSubject = %s\n%s' % (address, subject, body))
