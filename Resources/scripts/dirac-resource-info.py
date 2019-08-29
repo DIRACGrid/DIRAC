@@ -8,7 +8,14 @@ __RCSID__ = "$Id$"
 from DIRAC.Core.Base import Script
 from DIRAC import S_OK, gLogger, gConfig, exit as DIRACExit
 
-Script.setUsageMessage('\n'.join(['Get information on resources',
+description = """Get information on resources available for the given VO.
+
+By default, resources for the VO corresponding to the current user
+identity are displayed
+
+"""
+
+Script.setUsageMessage('\n'.join([description,
                                   'Usage:',
                                   '  %s [option]...' % Script.scriptName]))
 
