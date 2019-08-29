@@ -1,7 +1,8 @@
 """Utilities to help Computing Element Queues manipulation
 """
 
-__RCSID__ = '$Id$'
+from __future__ import absolute_import
+from __future__ import division
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.List import fromChar
@@ -10,6 +11,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getDIRACPlatform
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
+__RCSID__ = '$Id$'
 
 def getQueuesResolved(siteDict):
   """
@@ -21,29 +23,27 @@ def getQueuesResolved(siteDict):
   :return: S_OK/S_ERROR, Value dictionary per queue with configuration data updated, e.g. for SiteDirector
   """
 
-  queueDict = {}
+  queueFinalDict = {}
 
   for site in siteDict:
-    for ce in siteDict[site]:
-      ceDict = siteDict[site][ce]
+    for ce, ceDict in siteDict[site].items():
       qDict = ceDict.pop('Queues')
       for queue in qDict:
+        
         queueName = '%s_%s' % (ce, queue)
-        queueDict[queueName] = qDict[queue]
-        queueDict[queueName] = qDict[queue]
-        queueDict[queueName]['Queue'] = queue
-        queueDict[queueName]['Site'] = site
+        queueDict = qDict[queue]
+        queueDict['Queue'] = queue
+        queueDict['Site'] = site
         # Evaluate the CPU limit of the queue according to the Glue convention
         # To Do: should be a utility
-        if "maxCPUTime" in queueDict[queueName] and \
-           "SI00" in queueDict[queueName]:
-          maxCPUTime = float(queueDict[queueName]['maxCPUTime'])
+        if "maxCPUTime" in queueDict and "SI00" in queueDict:
+          maxCPUTime = float(queueDict['maxCPUTime'])
           # For some sites there are crazy values in the CS
           maxCPUTime = max(maxCPUTime, 0)
           maxCPUTime = min(maxCPUTime, 86400 * 12.5)
-          si00 = float(queueDict[queueName]['SI00'])
-          queueCPUTime = 60. / 250. * maxCPUTime * si00
-          queueDict[queueName]['CPUTime'] = int(queueCPUTime)
+          si00 = float(queueDict['SI00'])
+          queueCPUTime = 60 / 250 * maxCPUTime * si00
+          queueDict['CPUTime'] = int(queueCPUTime)
 
         # Tags & RequiredTags defined on the Queue level and on the CE level are concatenated
         # This also converts them from a string to a list if required.
@@ -51,51 +51,41 @@ def getQueuesResolved(siteDict):
           ceTags = ceDict.get(tagFieldName, [])
           if isinstance(ceTags, basestring):
             ceTags = fromChar(ceTags)
-          queueTags = queueDict[queueName].get(tagFieldName)
-          if queueTags and isinstance(queueTags, basestring):
+          queueTags = queueDict.get(tagFieldName, [])
+          if isinstance(queueTags, basestring):
             queueTags = fromChar(queueTags)
-            queueDict[queueName][tagFieldName] = queueTags
-          if ceTags:
-            if queueTags:
-              allTags = list(set(ceTags + queueTags))
-              queueDict[queueName][tagFieldName] = allTags
-            else:
-              queueDict[queueName][tagFieldName] = ceTags
+          queueDict[tagFieldName] = list(set(ceTags + queueTags))
 
         # Some parameters can be defined on the CE level and are inherited by all Queues
         for parameter in ['MaxRAM', 'NumberOfProcessors', 'WholeNode']:
-          queueParameter = queueDict[queueName].get(parameter)
-          ceParameter = ceDict.get(parameter)
-          if ceParameter or queueParameter:
-            queueDict[queueName][parameter] = ceParameter if not queueParameter \
-                else queueParameter
+          queueParameter = queueDict.get(parameter, ceDict.get(parameter))
+          if queueParameter:
+            queueDict[parameter] = queueParameter
 
         # If we have a multi-core queue add MultiProcessor tag
-        if queueDict[queueName].get('NumberOfProcessors', 1) > 1:
-          queueDict[queueName].setdefault('Tag', []).append('MultiProcessor')
+        if queueDict.get('NumberOfProcessors', 1) > 1:
+          queueDict.setdefault('Tag', []).append('MultiProcessor')
 
-        queueDict[queueName]['CEName'] = ce
-        queueDict[queueName]['GridCE'] = ce
-        queueDict[queueName]['CEType'] = ceDict['CEType']
-        queueDict[queueName]['GridMiddleware'] = ceDict['CEType']
-        queueDict[queueName]['QueueName'] = queue
+        queueDict['CEName'] = ce
+        queueDict['GridCE'] = ce
+        queueDict['CEType'] = ceDict['CEType']
+        queueDict['GridMiddleware'] = ceDict['CEType']
+        queueDict['QueueName'] = queue
 
-        platform = ''
-        if "Platform" in queueDict[queueName]:
-          platform = queueDict[queueName]['Platform']
-        elif "Platform" in ceDict:
-          platform = ceDict['Platform']
-        elif "OS" in ceDict:
+        platform = queueDict.get('Platform', ceDict.get('Platform', ''))
+        if not platform and "OS" in ceDict:
           architecture = ceDict.get('architecture', 'x86_64')
           platform = '_'.join([architecture, ceDict['OS']])
 
-        queueDict[queueName]['Platform'] = platform
-        if "Platform" not in queueDict[queueName] and platform:
+        queueDict['Platform'] = platform
+        if platform:
           result = getDIRACPlatform(platform)
           if result['OK']:
-            queueDict[queueName]['Platform'] = result['Value'][0]
+            queueDict['Platform'] = result['Value'][0]
+        
+        queueFinalDict[queueName] = queueDict
 
-  return S_OK(queueDict)
+  return S_OK(queueFinalDict)
 
 
 def matchQueue(jobJDL, queueDict, fullMatch=False):
@@ -122,7 +112,7 @@ def matchQueue(jobJDL, queueDict, fullMatch=False):
   cpuTime = job.getAttributeInt('CPUTime')
   if not cpuTime:
     cpuTime = 84600
-  if cpuTime and cpuTime > queueDict.get('CPUTime', 0.):
+  if cpuTime > queueDict.get('CPUTime', 0.):
     noMatchReasons.append('Job CPUTime requirement not satisfied')
     if not fullMatch:
       return S_OK({'Match': False, 'Reason': noMatchReasons[0]})
@@ -220,6 +210,4 @@ def matchQueue(jobJDL, queueDict, fullMatch=False):
           if not fullMatch:
             return S_OK({'Match': False, 'Reason': noMatchReasons[0]})
 
-  if noMatchReasons:
-    return S_OK({'Match': False, 'Reason': noMatchReasons})
-  return S_OK({'Match': True, 'Reason': noMatchReasons})
+  return S_OK({'Match': not bool(noMatchReasons), 'Reason': noMatchReasons})

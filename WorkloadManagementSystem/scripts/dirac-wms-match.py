@@ -3,10 +3,13 @@
   Get computing resources capable to execute the given job
 """
 
-__RCSID__ = "$Id$"
+from __future__ import absolute_import
+from __future__ import division
 
 from DIRAC.Core.Base import Script
 from DIRAC import S_OK, gLogger, exit as DIRACExit
+
+__RCSID__ = "$Id$"
 
 fullMatch = False
 sites = None
@@ -54,7 +57,7 @@ from DIRAC.WorkloadManagementSystem.Utilities.QueueUtilities import getQueuesRes
 
 
 if __name__ == '__main__':
-  with file(args[0]) as f:
+  with open(args[0]) as f:
     jdl = f.read()
 
   # Get the current VO
@@ -87,9 +90,9 @@ if __name__ == '__main__':
   fields = ('Site', 'CE', 'Queue', 'Status', 'Match', 'Reason')
   records = []
 
-  for queue in queueDict:
-    site = queueDict[queue]['Site']
-    ce = queueDict[queue]['CEName']
+  for queue, queueInfo in queueDict.iteritems():
+    site = queueInfo['Site']
+    ce = queueInfo['CEName']
     siteStatus = "Active" if site in siteMaskList else "InActive"
     ceStatus = siteStatus
     if rssClient.rssFlag:
@@ -97,14 +100,14 @@ if __name__ == '__main__':
       if result['OK']:
         ceStatus = result['Value'][ce]['all']
 
-    result = matchQueue(jdl, queueDict[queue], fullMatch=fullMatch)
+    result = matchQueue(jdl, queueInfo, fullMatch=fullMatch)
     if not result['OK']:
       gLogger.error('Failed in getting match data', result['Message'])
       DIRACExit(-1)
-    status = "Active" if siteStatus is "Active" and ceStatus is "Active" else "InActive"
+    status = "Active" if siteStatus is "Active" and ceStatus is "Active" else "Inactive"
     if result['Value']['Match']:
-      records.append((site, ce, queueDict[queue]['Queue'], status, 'Yes', ''))
+      records.append((site, ce, queueInfo['Queue'], status, 'Yes', ''))
     else:
-      records.append((site, ce, queueDict[queue]['Queue'], status, 'No', result['Value']['Reason']))
+      records.append((site, ce, queueInfo['Queue'], status, 'No', result['Value']['Reason']))
 
   gLogger.notice(printTable(fields, records, sortField='Site', columnSeparator='  ', printOut=False))
