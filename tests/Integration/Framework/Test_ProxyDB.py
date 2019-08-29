@@ -466,7 +466,6 @@ class testDB(ProxyDBTestCase):
     self.assertTrue(bool(db._query(cmd)['Value'][0][0] == 1), 'ProxyDB_CleanProxies must contain proxy')
 
     gLogger.info('* Get proxy that store only in ProxyDB_CleanProxies..')
-    db._query('SELECT * from `ProxyDB_CleanProxies` WHERE UserDN="/C=DN/O=DIRAC/CN=user_1" AND TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ) > 0')
     # Try to get proxy that was stored to ProxyDB_CleanProxies in previous step
     for res, group, reqtime, log in [(False, 'group_1', 24 * 3600, 'Request time more that in stored proxy'),
                                      (False, 'group_2', 0, 'Request group not contain user'),
