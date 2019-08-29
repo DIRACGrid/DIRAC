@@ -3,6 +3,7 @@
 
 from __future__ import absolute_import
 from __future__ import division
+import six
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.List import fromChar
@@ -49,10 +50,10 @@ def getQueuesResolved(siteDict):
         # This also converts them from a string to a list if required.
         for tagFieldName in ('Tag', 'RequiredTag'):
           ceTags = ceDict.get(tagFieldName, [])
-          if isinstance(ceTags, basestring):
+          if isinstance(ceTags, six.string_types):
             ceTags = fromChar(ceTags)
           queueTags = queueDict.get(tagFieldName, [])
-          if isinstance(queueTags, basestring):
+          if isinstance(queueTags, six.string_types):
             queueTags = fromChar(queueTags)
           queueDict[tagFieldName] = list(set(ceTags + queueTags))
 
