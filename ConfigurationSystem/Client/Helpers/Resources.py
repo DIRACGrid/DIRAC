@@ -209,14 +209,12 @@ def getStorageElements(vo=None):
   storageElements = result['Value']
   baseSEs = {}
   for se in storageElements:
-    alias = False
     for option in ('BaseSE', 'Alias'):
       originalSE = gConfig.getValue('Resources/StorageElements/%s/%s' % (se, option))
       if originalSE:
         baseSEs.setdefault(originalSE, []).append(se)
-        alias = True
         break
-    if not alias:
+    else:
       baseSEs.setdefault(se, [])
 
   seDict = {}
