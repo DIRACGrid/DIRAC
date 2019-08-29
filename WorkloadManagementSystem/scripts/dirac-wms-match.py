@@ -11,15 +11,18 @@ from DIRAC import S_OK, gLogger, exit as DIRACExit
 fullMatch = False
 sites = None
 
+
 def setFullMatch(optVal_):
   global fullMatch
   fullMatch = True
   return S_OK()
 
+
 def setSites(optVal_):
   global sites
   sites = optVal_.split(',')
   return S_OK()
+
 
 description = """Get computing resources capable to execute a job with the given description.
 
@@ -61,7 +64,7 @@ if __name__ == '__main__':
     DIRACExit(-1)
   voName = result['Value']
 
-  resultQueues = Resources.getQueues(siteList = sites, community=voName)
+  resultQueues = Resources.getQueues(siteList=sites, community=voName)
   if not resultQueues['OK']:
     gLogger.error('Failed to get CE information')
     DIRACExit(-1)
@@ -94,7 +97,7 @@ if __name__ == '__main__':
       if result['OK']:
         ceStatus = result['Value'][ce]['all']
 
-    result = matchQueue(jdl, queueDict[queue], fullMatch = fullMatch)
+    result = matchQueue(jdl, queueDict[queue], fullMatch=fullMatch)
     if not result['OK']:
       gLogger.error('Failed in getting match data', result['Message'])
       DIRACExit(-1)

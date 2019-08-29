@@ -10,6 +10,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getDIRACPlatform
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
+
 def getQueuesResolved(siteDict):
   """
   Get the list of queue descriptions merging site/ce/queue parameters and adding some
@@ -70,7 +71,7 @@ def getQueuesResolved(siteDict):
                 else queueParameter
 
         # If we have a multi-core queue add MultiProcessor tag
-        if queueDict[queueName].get('NumberOfProcessors',1) > 1:
+        if queueDict[queueName].get('NumberOfProcessors', 1) > 1:
           queueDict[queueName].setdefault('Tag', []).append('MultiProcessor')
 
         queueDict[queueName]['CEName'] = ce
@@ -96,7 +97,8 @@ def getQueuesResolved(siteDict):
 
   return S_OK(queueDict)
 
-def matchQueue(jobJDL, queueDict, fullMatch = False):
+
+def matchQueue(jobJDL, queueDict, fullMatch=False):
   """
   Match the job description to the queue definition
 
@@ -143,7 +145,7 @@ def matchQueue(jobJDL, queueDict, fullMatch = False):
 
   # 3. Banned multi-value match requirements
   for par in ['Site', 'GridCE', 'Platform', 'GridMiddleware',
-                    'PilotType', 'SubmitPool', 'JobType']:
+              'PilotType', 'SubmitPool', 'JobType']:
     parameter = "Banned%s" % par
     if par in queueDict:
       valueSet = set(job.getListFromExpression(parameter))
@@ -166,7 +168,7 @@ def matchQueue(jobJDL, queueDict, fullMatch = False):
   wholeNode = job.getAttributeString('WholeNode')
   if wholeNode:
     tags.add('WholeNode')
-  queueTags = set(queueDict.get('Tags',[]))
+  queueTags = set(queueDict.get('Tags', []))
   if not tags.issubset(queueTags):
     noMatchReasons.append('Job Tag %s not satisfied' % ','.join(tags))
     if not fullMatch:
@@ -198,7 +200,7 @@ def matchQueue(jobJDL, queueDict, fullMatch = False):
         return S_OK({'Match': False, 'Reason': noMatchReasons[0]})
 
   # 2. Required tags
-  requiredTags = set(queueDict.get('RequiredTags',[]))
+  requiredTags = set(queueDict.get('RequiredTags', []))
   if not requiredTags.issubset(tags):
     noMatchReasons.append('Resource RequiredTags %s not satisfied' % ','.join(requiredTags))
     if not fullMatch:
