@@ -46,7 +46,7 @@ echo "Creating TransformationSystemTest"
 mkdir -p TransformationSystemTest
 directory=/dteam/diracCertification/Test/INIT/$version/$tdate/$stime/replication
 #get all SEs ending with -SE that are Active
-SEs=$(dirac-dms-show-se-status | grep -e "-SE " | grep -v 'Banned\|Probing\|-new' | awk '{print $1}')
+SEs=$(dirac-dms-show-se-status | grep -e "-SE " | grep -v 'Banned\|Probing\|Error\|-new' | awk '{print $1}')
 
 x=0
 
