@@ -120,6 +120,9 @@ class SingularityComputingElement(ComputingElement):
       extensionsList = CSGlobals.getCSExtensions()
     if extensionsList:
       instOpts.append("-e '%s'" % ','.join([ext for ext in extensionsList if 'Web' not in ext]))
+    lcgVer = opsHelper.getValue("Pilot/LCGBundleVersion", None)
+    if lcgVer:
+      instOpts.append("-g %s" % lcgVer)
     if 'ContainerExtraOpts' in self.ceParameters:
       instOpts.append(self.ceParameters['ContainerExtraOpts'])
     return ' '.join(instOpts)
