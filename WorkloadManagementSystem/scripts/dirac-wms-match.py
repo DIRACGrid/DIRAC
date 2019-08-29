@@ -32,7 +32,7 @@ can fail matching due to their dynamic state, e.g. occupancy by other jobs.
 
 Script.setUsageMessage('\n'.join([description,
                                   'Usage:',
-                                  '%s [option]... <job_JDL>' % Script.scriptName]))
+                                  '  %s [option]... <job_JDL>' % Script.scriptName]))
 
 Script.registerSwitch("F", "full-match", "Check all the matching criteria", setFullMatch)
 Script.registerSwitch("S:", "site=", "Check matching for these sites (comma separated list)", setSites)
