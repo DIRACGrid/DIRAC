@@ -30,7 +30,8 @@ def setSites(optVal_):
 description = """Get computing resources capable to execute a job with the given description.
 
 Note that only statically defined computing resource parameters are considered although sites
-can fail matching due to their dynamic state, e.g. occupancy by other jobs.
+can fail matching due to their dynamic state, e.g. occupancy by other jobs. Also input data
+proximity is not taken into account.
 """
 
 Script.setUsageMessage('\n'.join([description,
