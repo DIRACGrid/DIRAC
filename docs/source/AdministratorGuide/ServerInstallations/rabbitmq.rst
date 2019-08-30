@@ -1,6 +1,10 @@
-==================================
-RabbitMQ  administration tools
-==================================
+========
+RabbitMQ
+========
+
+
+RabbitMQ Administration Tools
+------------------------------
 
 RabbitMQ uses a two-step access-control(https://www.rabbitmq.com/access-control.html). Apart
 from the standard user/password (or ssl-based) authentication, RabbitMQ has an internal database
@@ -14,9 +18,8 @@ to the AMPQ and general RabbitMQ philosophy those operations should be done by c
 with given permissions. 
 
 
-==========================================
 Synchronization of RabbitMQ user database
-==========================================
+-----------------------------------------
 
 The synchronization between the DIRAC Configuration System and the RabbitMQ internal
 database is assured by RabbitMQSynchronizer.
