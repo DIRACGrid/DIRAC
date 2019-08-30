@@ -18,9 +18,12 @@ This administration documentation refers to the "Core" DIRAC project.
    HowTo/index
    Configuration/index
    Resources/index
-   MultiVO/index
-   CommandReference/index
-   scalingAndLimitations
    technologyPreviews
    Tutorials/index
    Systems/index
+
+.. toctree::
+   :maxdepth: 1
+
+   CommandReference/index
+   

@@ -15,3 +15,4 @@ This sections constains the documentation for installing new DIRAC Servers or se
    InstallingVMDIRAC
    centralizedLogging
    rabbitmq
+   scalingAndLimitations
