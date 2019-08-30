@@ -16,11 +16,9 @@ This administration documentation refers to the "Core" DIRAC project.
    Introduction/index
    ServerInstallations/index
    HowTo/index
-   SystemAdministratorInterface/index
    Configuration/index
    Systems/index
    Resources/index
-   DIRACSites/index
    MultiVO/index
    CommandReference/index
    scalingAndLimitations
