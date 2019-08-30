@@ -17,11 +17,10 @@ This administration documentation refers to the "Core" DIRAC project.
    ServerInstallations/index
    HowTo/index
    Configuration/index
-   Systems/index
    Resources/index
    MultiVO/index
    CommandReference/index
    scalingAndLimitations
    technologyPreviews
    Tutorials/index
-   pitExport
+   Systems/index
