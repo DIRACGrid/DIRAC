@@ -18,8 +18,8 @@ This administration documentation refers to the "Core" DIRAC project.
    HowTo/index
    Configuration/index
    Resources/index
-   technologyPreviews
    Tutorials/index
+   technologyPreviews
    Systems/index
 
 .. toctree::

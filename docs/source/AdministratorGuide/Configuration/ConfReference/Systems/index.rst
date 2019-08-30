@@ -19,7 +19,7 @@ Each DIRAC system has its corresponding section in the Configuration namespace.
 
 
 Default structure
-=================
+-----------------
 
 In each system, per setup, you normally find the following sections:
 
@@ -31,7 +31,7 @@ In each system, per setup, you normally find the following sections:
 
 
 Main Servers
-============
+------------
 
 There might be setup in which all services are installed behind one or several dns alias(es) or gateways (typically orchestrator like Mesos/Kubernetes). When this is the case, it can be bothering to redefine the very same URL everywhere, especially the day the machine name changes.
 

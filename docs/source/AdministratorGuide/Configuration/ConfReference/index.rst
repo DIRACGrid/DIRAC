@@ -11,7 +11,7 @@ This file is divided in sections and subsections.
 A similar tree with the description of all the attributes is tried to be represented in this help tree.
 
 The detailed configuration options for agents, services, and executors are in the process of being migrated to the
-`code_documentation`, so also see in the relevant module documentation there.
+:ref:`code_documentation`, so also see in the relevant module documentation there.
 
 .. toctree::
    :maxdepth: 1
