@@ -15,8 +15,8 @@ The detailed configuration options for agents, services, and executors are in th
 
 .. toctree::
    :maxdepth: 1
-   
-   DIRAC/index
+
+   DiracSection
    Operations/index
    Registry/index
    Resources/index
