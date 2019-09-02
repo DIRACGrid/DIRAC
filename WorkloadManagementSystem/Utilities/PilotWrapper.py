@@ -164,9 +164,10 @@ for loc in location:
       from urllib.request import urlopen as url_library_urlopen
       from urllib.error import URLError as url_library_URLError
 
-
-    # needs to distinguish versions prior to or after 2.7.9
-    if sys.version_info >= (2, 7, 9):
+    # needs to distinguish wether urlopen method contains the 'context' param
+    # in theory, it should be available from python 2.7.9
+    # in practice, some prior versions may be composed of recent urllib version containing the param
+    if 'context' in url_library_urlopen.__code__.co_varnames:
       import ssl
       context = ssl._create_unverified_context()
       rJson = url_library_urlopen('https://' + loc + '/pilot/pilot.json',
