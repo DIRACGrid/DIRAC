@@ -14,6 +14,7 @@ from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
 __RCSID__ = '$Id$'
 
+
 def getQueuesResolved(siteDict):
   """
   Get the list of queue descriptions merging site/ce/queue parameters and adding some
@@ -30,7 +31,7 @@ def getQueuesResolved(siteDict):
     for ce, ceDict in siteDict[site].items():
       qDict = ceDict.pop('Queues')
       for queue in qDict:
-        
+
         queueName = '%s_%s' % (ce, queue)
         queueDict = qDict[queue]
         queueDict['Queue'] = queue
@@ -83,7 +84,7 @@ def getQueuesResolved(siteDict):
           result = getDIRACPlatform(platform)
           if result['OK']:
             queueDict['Platform'] = result['Value'][0]
-        
+
         queueFinalDict[queueName] = queueDict
 
   return S_OK(queueFinalDict)
