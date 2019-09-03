@@ -12,9 +12,9 @@ from DIRAC.ConfigurationSystem.Client.Helpers import Resources
 
 Script.setUsageMessage( '\n'.join( ['Get the parameters of a CE',
                                     'Usage:',
-                                    '%s [option]... [cfgfile]' % Script.scriptName,
+                                    '  %s [option]... [cfgfile]' % Script.scriptName,
                                     'Arguments:',
-                                    ' cfgfile: DIRAC Cfg with description of the configuration (optional)'] ) )
+                                    '  cfgfile: DIRAC Cfg with description of the configuration (optional)'] ) )
 
 ceName = ''
 ceType = ''
