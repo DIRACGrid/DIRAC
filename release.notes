@@ -96,6 +96,15 @@ CHANGE: (#4110) updated basic tutorial for CC7 instead of SLC6.
 NEW: (#4170) added Production system documentation
 CHANGE: (#4224) Pilot 3 is the default
 
+[v6r22p8]
+
+*WMS
+FIX: (#4256) handle empty results of getJobParameter in StalledJobAgent
+
+*Resources
+NEW: (#4223) Storage - occupancy plugin for WLCG standard accounting JSON
+FIX: (#4259) SingularityComputingElement - ensure lcgBundle is installed in container if LCGBundleVersion is set.
+
 [v6r22p7]
 
 *Core
