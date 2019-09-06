@@ -21,15 +21,16 @@ from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.Core.Security import Properties
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.FrameworkSystem.DB.NotificationDB import NotificationDB
+from DIRAC.Core.Utilities.DictCache import DictCache
 
 __RCSID__ = "$Id$"
 
 gNotDB = None
 gMailSet = set()
-
+gMailCache = DictCache()
 
 def purgeDelayedEMails():
-  """ purges the emails accumulated in gMailSet
+  """ Purges the emails accumulated in gMailSet
   """
   while gMailSet:
     eMail = gMailSet.pop()
@@ -51,6 +52,7 @@ class NotificationHandler(RequestHandler):
     global gNotDB
     gNotDB = NotificationDB()
     gThreadScheduler.addPeriodicTask(3600, gNotDB.purgeExpiredNotifications)
+    gThreadScheduler.addPeriodicTask(3600, gMailCache.purgeExpired())
     gThreadScheduler.addPeriodicTask(3600, purgeDelayedEMails)
     return S_OK()
 
@@ -67,10 +69,18 @@ class NotificationHandler(RequestHandler):
   def export_sendMail(self, address, subject, body, fromAddress, avoidSpam=False):
     """ Send an email with supplied body to the specified address using the Mail utility.
 
-        if avoidSpam is True, then emails are first added to a set so that duplicates are removed,
-        and sent every hour.
+        :param basestring address: recipient addresses
+        :param basestring subject: subject of letter
+        :param basestring body: body of letter
+        :param basestring fromAddress: sender address, if None, will be used default from CS
+        :param bool avoidSpam: if True, then emails are first added to a set so that duplicates are removed,
+               and sent every hour.
+
+        :return: S_OK(basestring)/S_ERROR() -- basestring is status message
     """
     gLogger.verbose('Received signal to send the following mail to %s:\nSubject = %s\n%s' % (address, subject, body))
+    if gMailCache.exists(hash(address + subject + body)) and not avoidSpam:
+      return S_OK('Email with the same content already sent today to current addresses, come back tomorrow')
     eMail = Mail()
     notificationSection = PathFinder.getServiceSection("Framework/Notification")
     csSection = notificationSection + '/SMTP'
@@ -84,8 +94,7 @@ class NotificationHandler(RequestHandler):
     eMail._mailAddress = address
     if not fromAddress == 'None':
       eMail._fromAddress = fromAddress
-    if gConfig.getValue('%s/FromAddress' % csSection):
-      eMail._fromAddress = gConfig.getValue('%s/FromAddress' % csSection)
+    eMail._fromAddress = gConfig.getValue('%s/FromAddress' % csSection) or eMail._fromAddress
     if avoidSpam:
       gMailSet.add(eMail)
       return S_OK("Mail added to gMailSet")
@@ -94,6 +103,7 @@ class NotificationHandler(RequestHandler):
       if not result['OK']:
         gLogger.warn('Could not send mail with the following message:\n%s' % result['Message'])
       else:
+        gMailCache.add(hash(address + subject + body), 3600 * 24)
         gLogger.info('Mail sent successfully to %s with subject %s' % (address, subject))
         gLogger.debug(result['Value'])
 
@@ -104,6 +114,12 @@ class NotificationHandler(RequestHandler):
 
   def export_sendSMS(self, userName, body, fromAddress):
     """ Send an SMS with supplied body to the specified DIRAC user using the Mail utility via an SMS switch.
+
+        :param basestring userName: user name
+        :param basestring body: message
+        :param basestring fromAddress: sender address
+
+        :return: S_OK()/S_ERROR()
     """
     gLogger.verbose('Received signal to send the following SMS to %s:\n%s' % (userName, body))
     mobile = gConfig.getValue('/Registry/Users/%s/Mobile' % userName, '')

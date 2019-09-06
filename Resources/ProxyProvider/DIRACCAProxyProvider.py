@@ -88,7 +88,7 @@ class DIRACCAProxyProvider(ProxyProvider):
     """ Read ready to work status of proxy provider
 
         :param dict userDict: user description dictionary with possible fields:
-                FullName, UserName, DN, EMail, DiracGroup
+                FullName, UserName, DN, Email, DiracGroup
         :param dict sessionDict: session dictionary
 
         :return: S_OK(dict)/S_ERROR() -- dictionary contain fields:
@@ -97,7 +97,7 @@ class DIRACCAProxyProvider(ProxyProvider):
     self.log.info('Ckecking work status of', self.parameters['ProviderName'])
     # Evaluate full name and e-mail of the user
     fullName = userDict.get('FullName')
-    eMail = userDict.get('EMail')
+    eMail = userDict.get('Email')
 
     reqDNs = userDict.get('DN') or []
     if not isinstance(reqDNs, list):
@@ -114,9 +114,12 @@ class DIRACCAProxyProvider(ProxyProvider):
         fullName = dnDict.get('CN')
       if not eMail:
         eMail = dnDict.get('emailAddress')
-
-    if not fullName or not eMail:
-      return S_ERROR("Incomplete user information")
+    self.log.info('Full name:', fullName)
+    self.log.info('Email:', eMail)
+    if not fullName:
+      return S_ERROR("Incomplete user information: no full name found")
+    if not eMail:
+      return S_ERROR("Incomplete user information: no email found")
 
     return S_OK({'Status': 'ready'})
 
@@ -124,7 +127,7 @@ class DIRACCAProxyProvider(ProxyProvider):
     """ Generate user proxy
 
         :param dict userDict: user description dictionary with possible fields:
-               FullName, UserName, DN, EMail, DiracGroup
+               FullName, UserName, DN, Email, DiracGroup
         :param dict sessionDict: session dictionary
 
         :return: S_OK(dict)/S_ERROR() -- dict contain 'proxy' field with is a proxy string
@@ -155,7 +158,7 @@ class DIRACCAProxyProvider(ProxyProvider):
     """ Get DN of the user certificate that will be created
 
         :param dict userDict: user description dictionary with possible fields:
-               FullName, UserName, DN, EMail, DiracGroup
+               FullName, UserName, DN, Email, DiracGroup
         :param dict sessionDict: session dictionary
         :param basestring userDN: user DN
 
@@ -198,7 +201,7 @@ class DIRACCAProxyProvider(ProxyProvider):
         if self.fs2nid[k] == self.fs2nid['CN']:
           userDict['FullName'] = v
         if self.fs2nid[k] == self.fs2nid['emailAddress']:
-          userDict['EMail'] = v
+          userDict['Email'] = v
     else:
       result = self.checkStatus(userDict)
       if not result['OK']:
@@ -218,7 +221,7 @@ class DIRACCAProxyProvider(ProxyProvider):
         if not result['OK']:
           return result
     for nid, value in [(self.fs2nid['CN'], userDict['FullName']),
-                       (self.fs2nid['emailAddress'], userDict['EMail'])]:
+                       (self.fs2nid['emailAddress'], userDict['Email'])]:
       if nid in self.supplied + self.optional:
         result = self.__fillX509Name(self.n2field[nid], value)
         if not result['OK']:
