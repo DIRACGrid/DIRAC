@@ -1,4 +1,4 @@
-[v7r1-pre5]
+[v7r1-pre6]
 
 *Core
 NEW: initial support for mysql8
@@ -11,10 +11,16 @@ NEW: (#4241) Slave configuration servers are automatically updated as part of th
      changes commit
 NEW: (#4241) Configuration Server - added forceGlobalConfigurationUpdate() interface to force all 
      registered service to update their configuration
+NEW: (#4257) Add search emails for group method in Registry
 
 *Framework
 CHANGE: (#4157) add possibility to work with Proxy Providers and "clean" proxy without 
         voms/dirac extensions
+NEW: (#4257) Filter of duplicate mails in Notification
+FIX: (#4257) Optimize test in NotificationHandler
+
+*DMS
+CHANGE: (#4243) FileCatalog - standard components are loaded using ObjectLoader mechanism
 
 *Resources
 NEW: (#4157) ProxyProvider resources with implementation for DIRAC CA and PUSP proxy providers
