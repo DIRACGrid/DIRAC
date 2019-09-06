@@ -4,29 +4,8 @@ __RCSID__ = "$Id$"
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryMetadata import DirectoryMetadata
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileMetadata import FileMetadata
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectorySimpleTree import DirectorySimpleTree
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryNodeTree import DirectoryNodeTree
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryLevelTree import DirectoryLevelTree
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryFlatTree import DirectoryFlatTree
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.WithFkAndPs.DirectoryClosure import DirectoryClosure
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManagerFlat import FileManagerFlat
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManager import FileManager
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.WithFkAndPs.FileManagerPs import FileManagerPs
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SEManager import SEManagerCS, SEManagerDB
-
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager import NoSecurityManager,\
-    DirectorySecurityManager,\
-    FullSecurityManager,\
-    DirectorySecurityManagerWithDelete,\
-    PolicyBasedSecurityManager
-
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.UserAndGroupManager import UserAndGroupManagerCS,\
-    UserAndGroupManagerDB
-
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DatasetManager import DatasetManager
 from DIRAC.Resources.Catalog.Utilities import checkArgumentFormat
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 
 #############################################################################
 
@@ -43,7 +22,17 @@ class FileCatalogDB(DB):
     if db.find('/') == -1:
       db = 'DataManagement/' + db
 
-    DB.__init__(self, 'FileCatalogDB', db)
+    super(FileCatalogDB, self).__init__('FileCatalogDB', db)
+
+    self.ugManager = None
+    self.seManager = None
+    self.securityManager = None
+    self.dtree = None
+    self.fileManager = None
+    self.dmeta = None
+    self.fmeta = None
+    self.datasetManager = None
+    self.objectLoader = None
 
   def setConfig(self, databaseConfig):
 
@@ -70,21 +59,37 @@ class FileCatalogDB(DB):
     self.visibleFileStatus = databaseConfig['VisibleFileStatus']
     self.visibleReplicaStatus = databaseConfig['VisibleReplicaStatus']
 
-    try:
-      # Obtain the plugins to be used for DB interaction
-      self.ugManager = eval("%s(self)" % databaseConfig['UserGroupManager'])
-      self.seManager = eval("%s(self)" % databaseConfig['SEManager'])
-      self.securityManager = eval("%s(self)" % databaseConfig['SecurityManager'])
-      self.dtree = eval("%s(self)" % databaseConfig['DirectoryManager'])
-      self.fileManager = eval("%s(self)" % databaseConfig['FileManager'])
-      self.datasetManager = eval("%s(self)" % databaseConfig['DatasetManager'])
-      self.dmeta = eval("%s(self)" % databaseConfig['DirectoryMetadata'])
-      self.fmeta = eval("%s(self)" % databaseConfig['FileMetadata'])
-    except Exception as x:
-      gLogger.fatal("Failed to create database objects", x)
-      return S_ERROR("Failed to create database objects")
+    # Obtain the plugins to be used for DB interaction
+    self.objectLoader = ObjectLoader()
+
+    # Load the configured components
+    for compAttribute, componentType in [("ugManager", "UserGroupManager"),
+                                         ("seManager", "SEManager"),
+                                         ("securityManager", "SecurityManager"),
+                                         ("dtree", "DirectoryManager"),
+                                         ("fileManager", "FileManager"),
+                                         ("datasetManager", "DatasetManager"),
+                                         ("dmeta", "DirectoryMetadata"),
+                                         ("fmeta", "FileMetadata")]:
+
+      result = self.__loadCatalogComponent(componentType, databaseConfig[componentType])
+      if not result['OK']:
+        return result
+      self.__setattr__(compAttribute, result['Value'])
 
     return S_OK()
+
+  def __loadCatalogComponent(self, componentType, componentName):
+    """ Create an object of a given catalog component
+    """
+    componentModule = 'DataManagementSystem.DB.FileCatalogComponents.%s.%s' % (componentType, componentName)
+    result = self.objectLoader.loadObject(componentModule, componentName)
+    if not result['OK']:
+      gLogger.error('Failed to load catalog component', '%s: %s' % (componentName, result['Message']))
+      return result
+    componentClass = result['Value']
+    component = componentClass(self)
+    return S_OK(component)
 
   def setUmask(self, umask):
     self.umask = umask
@@ -1063,7 +1068,7 @@ class FileCatalogDB(DB):
     """
     successful = {}
     failed = {}
-    for path, metadataDict in pathMetadataDict.items():
+    for path, metadataDict in pathMetadataDict.iteritems():
       result = self.setMetadata(path, metadataDict, credDict)
       if result['OK']:
         successful[path] = True
@@ -1077,7 +1082,7 @@ class FileCatalogDB(DB):
     """
     successful = {}
     failed = {}
-    for path, metadataDict in pathMetadataDict.items():
+    for path, metadataDict in pathMetadataDict.iteritems():
       result = self.__removeMetadata(path, metadataDict, credDict)
       if result['OK']:
         successful[path] = True
@@ -1163,7 +1168,7 @@ class FileCatalogDB(DB):
       lfns.pop(lfn)
     # Do not consider those paths for which access is denied
     successful = {}
-    for lfn, access in res['Value']['Successful'].items():
+    for lfn, access in res['Value']['Successful'].iteritems():
       if not access:
         failed[lfn] = 'Permission denied'
       else:

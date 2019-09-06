@@ -12,7 +12,7 @@ import os
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.List import intListToString, stringListToString
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryTreeBase import DirectoryTreeBase
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryManager.DirectoryTreeBase import DirectoryTreeBase
 
 __RCSID__ = "$Id$"
 
@@ -683,7 +683,7 @@ class DirectoryClosure( DirectoryTreeBase ):
     arguments = paths
     successful = {}
     failed = {}
-    for path, attribute in arguments.items():
+    for path, attribute in arguments.iteritems():
       result = directoryFunction( path, attribute, recursive = recursive )
       if not result['OK']:
         failed[path] = result['Message']

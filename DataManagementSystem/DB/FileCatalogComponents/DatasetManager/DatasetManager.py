@@ -92,7 +92,7 @@ class DatasetManager( object ):
     failed = dict()
     successful = dict()
 
-    for datasetName, metaQuery in datasets.items():
+    for datasetName, metaQuery in datasets.iteritems():
       result = self.__addDataset( datasetName, metaQuery, credDict, uid, gid )
       if result['OK']:
         successful[datasetName] = True
@@ -265,7 +265,7 @@ class DatasetManager( object ):
       return result
     failed = result['Value']['Failed']
     datasetDict = result['Value']['Successful']
-    for dataset, annotation in datasets.items():
+    for dataset, annotation in datasets.iteritems():
       if dataset in datasetDict:
         req = "REPLACE FC_DatasetAnnotations (Annotation,DatasetID) VALUE ('%s',%d)" % (annotation,datasetDict[dataset]['DatasetID'])
         result = self.db._update( req, connection)

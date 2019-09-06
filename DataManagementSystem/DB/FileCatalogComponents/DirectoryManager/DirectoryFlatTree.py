@@ -10,8 +10,7 @@ import stat
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.List import stringListToString, intListToString
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryTreeBase import DirectoryTreeBase
-
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryManager.DirectoryTreeBase import DirectoryTreeBase
 
 class DirectoryFlatTree(DirectoryTreeBase):
 
@@ -72,7 +71,7 @@ class DirectoryFlatTree(DirectoryTreeBase):
     if not res['OK']:
       return res
     successful = {}
-    for dirName, dirDict in res['Value']['Successful'].items():
+    for dirName, dirDict in res['Value']['Successful'].iteritems():
       mode = dirDict['Mode']
       p_uid = dirDict['UID']
       p_gid = dirDict['GID']

@@ -6,7 +6,7 @@ __RCSID__ = "$Id:  $"
 import os
 
 from DIRAC import S_OK, S_ERROR
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryTreeBase import DirectoryTreeBase
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryManager.DirectoryTreeBase import DirectoryTreeBase
 
 
 class DirectorySimpleTree(DirectoryTreeBase):

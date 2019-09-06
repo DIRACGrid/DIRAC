@@ -6,7 +6,7 @@ __RCSID__ = "$Id$"
 import os
 
 from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManagerBase import FileManagerBase
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManager.FileManagerBase import FileManagerBase
 from DIRAC.Core.Utilities.List import stringListToString, \
     intListToString, \
     breakListIntoChunks
@@ -56,7 +56,7 @@ class FileManager(FileManagerBase):
           fname = fname.replace('//', '/')
           failed[fname] = error
       else:
-        for fileName, fileDict in res['Value'].items():
+        for fileName, fileDict in res['Value'].iteritems():
           fname = '%s/%s' % (dirPath, fileName)
           fname = fname.replace('//', '/')
           successful[fname] = fileDict
@@ -286,7 +286,7 @@ class FileManager(FileManagerBase):
       failed.update(res['Value']['Failed'])
       for lfn in res['Value']['Failed'].keys():
         lfns.pop(lfn)
-      for lfn, fileDict in res['Value']['Successful'].items():
+      for lfn, fileDict in res['Value']['Successful'].iteritems():
         lfns[lfn]['FileID'] = fileDict['FileID']
     insertTuples = []
     toDelete = []
@@ -449,8 +449,8 @@ class FileManager(FileManagerBase):
       res = self._getRepIDsForReplica(insertTuples, connection=connection)
       if not res['OK']:
         return res
-      for fileID, repDict in res['Value'].items():
-        for seID, repID in repDict.items():
+      for fileID, repDict in res['Value'].iteritems():
+        for seID, repID in repDict.iteritems():
           successful[fileIDLFNs[fileID]] = True
           insertTuples.remove((fileID, seID))
 
@@ -467,11 +467,11 @@ class FileManager(FileManagerBase):
       return res
     replicaDict = res['Value']
     directorySESizeDict = {}
-    for fileID, repDict in replicaDict.items():
+    for fileID, repDict in replicaDict.iteritems():
       lfn = fileIDLFNs[fileID]
       dirID = lfns[lfn]['DirID']
       directorySESizeDict.setdefault(dirID, {})
-      for seID, repID in repDict.items():
+      for seID, repID in repDict.iteritems():
         lfns[lfn]['RepID'] = repID
         directorySESizeDict[dirID].setdefault(seID, {'Files': 0, 'Size': 0})
         directorySESizeDict[dirID][seID]['Size'] += lfns[lfn]['Size']
@@ -532,7 +532,7 @@ class FileManager(FileManagerBase):
     res = self._findFiles(lfns.keys(), ['DirID', 'FileID', 'Size'], connection=connection)
 
     # If the file does not exist we consider the deletion successful
-    for lfn, error in res['Value']['Failed'].items():
+    for lfn, error in res['Value']['Failed'].iteritems():
       if error == 'No such file or directory':
         successful[lfn] = True
       else:
@@ -541,7 +541,7 @@ class FileManager(FileManagerBase):
     lfnFileIDDict = res['Value']['Successful']
     toRemove = []
     directorySESizeDict = {}
-    for lfn, fileDict in lfnFileIDDict.items():
+    for lfn, fileDict in lfnFileIDDict.iteritems():
       fileID = fileDict['FileID']
       se = lfns[lfn]['SE']
       if isinstance(se, str):
@@ -562,8 +562,8 @@ class FileManager(FileManagerBase):
         failed[lfn] = res['Message']
     else:
       repIDs = []
-      for fileID, seDict in res['Value'].items():
-        for seID, repID in seDict.items():
+      for fileID, seDict in res['Value'].iteritems():
+        for seID, repID in seDict.iteritems():
           repIDs.append(repID)
       res = self.__deleteReplicas(repIDs, connection=connection)
       if not res['OK']:

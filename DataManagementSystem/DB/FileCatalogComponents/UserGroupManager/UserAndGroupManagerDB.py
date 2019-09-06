@@ -1,4 +1,4 @@
-""" DIRAC FileCatalog mix-in class to manage users and groups
+""" DIRAC FileCatalog mix-in class to manage users and groups within the FC database
 """
 
 __RCSID__ = "$Id$"
@@ -7,33 +7,8 @@ import time
 import threading
 
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
-from DIRAC.Core.Security import Properties
-
-
-class UserAndGroupManagerBase:
-
-  def _refreshGroups(self):
-    """ Refresh the group cache """
-    return S_ERROR("To be implemented on derived class")
-
-  def _refreshUsers(self):
-    """ Refresh the user cache """
-    return S_ERROR("To be implemented on derived class")
-
-  def __init__(self, database=None):
-    self.db = database
-    self.lock = threading.Lock()
-    self._refreshUsers()
-    self._refreshGroups()
-
-  def setDatabase(self, database):
-    self.db = database
-
-  def getUserAndGroupRight(self, credDict):
-    """ Evaluate rights for user and group operations """
-    if Properties.FC_MANAGEMENT in credDict['properties']:
-      return S_OK(True)
-    return S_OK(False)
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.UserGroupManager.UserAndGroupManagerBase \
+    import UserAndGroupManagerBase
 
 
 class UserAndGroupManagerDB(UserAndGroupManagerBase):
@@ -271,65 +246,3 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
     gLogger.debug("UserGroupManager RefreshGroups lock released. Used %.3f seconds." % (time.time() - waitTime))
     self.lock.release()
     return S_OK()
-
-
-class UserAndGroupManagerCS(UserAndGroupManagerBase):
-
-  def getUserAndGroupID(self, credDict):
-    user = credDict.get('username', 'anon')
-    group = credDict.get('group', 'anon')
-    return S_OK((user, group))
-
-  #####################################################################
-  #
-  #  User related methods
-  #
-  #####################################################################
-
-  def addUser(self, name):
-    return S_OK(name)
-
-  def deleteUser(self, name, force=True):
-    return S_OK()
-
-  def getUsers(self):
-    res = gConfig.getSections('/Registry/Users')
-    if not res['OK']:
-      return res
-    userDict = {}
-    for user in res['Value']:
-      userDict[user] = user
-    return S_OK(userDict)
-
-  def getUserName(self, uid):
-    return S_OK(uid)
-
-  def findUser(self, user):
-    return S_OK(user)
-
-  #####################################################################
-  #
-  #  Group related methods
-  #
-  #####################################################################
-
-  def addGroup(self, gname):
-    return S_OK(gname)
-
-  def deleteGroup(self, gname, force=True):
-    return S_OK()
-
-  def getGroups(self):
-    res = gConfig.getSections('/Registry/Groups')
-    if not res['OK']:
-      return res
-    groupDict = {}
-    for group in res['Value']:
-      groupDict[group] = group
-    return S_OK(groupDict)
-
-  def getGroupName(self, gid):
-    return S_OK(gid)
-
-  def findGroup(self, group):
-    return S_OK(group)

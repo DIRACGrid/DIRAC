@@ -124,7 +124,7 @@ class DirectoryMetadata:
 
     req = "INSERT INTO FC_MetaSets (MetaSetID,MetaKey,MetaValue) VALUES %s"
     vList = []
-    for key, value in metaSetDict.items():
+    for key, value in metaSetDict.iteritems():
       vList.append("(%d,'%s','%s')" % (metaSetID, key, str(value)))
     vString = ','.join(vList)
     result = self.db._update(req % vString)
@@ -188,7 +188,7 @@ class DirectoryMetadata:
     if not dirmeta['OK']:
       return dirmeta
 
-    for metaName, metaValue in metadict.items():
+    for metaName, metaValue in metadict.iteritems():
       if metaName not in metaFields:
         result = self.setMetaParameter(dpath, metaName, metaValue, credDict)
         if not result['OK']:
@@ -406,7 +406,7 @@ class DirectoryMetadata:
 
     if isinstance(value, dict):
       selectList = []
-      for operation, operand in value.items():
+      for operation, operand in value.iteritems():
         if operation in ['>', '<', '>=', '<=']:
           if isinstance(operand, list):
             return S_ERROR('Illegal query: list of values for comparison operation')
@@ -514,7 +514,7 @@ class DirectoryMetadata:
     metaTypeDict = result['Value']
     resultDict = {}
     extraDict = {}
-    for key, value in metaDict.items():
+    for key, value in metaDict.iteritems():
       if key not in metaTypeDict:
         # return S_ERROR( 'Unknown metadata field %s' % key )
         extraDict[key] = value
@@ -527,7 +527,7 @@ class DirectoryMetadata:
         if not result['OK']:
           return result
         mDict = result['Value']
-        for mk, mv in mDict.items():
+        for mk, mv in mDict.iteritems():
           if mk in resultDict:
             return S_ERROR('Contradictory query for key %s' % mk)
           else:
@@ -602,7 +602,7 @@ class DirectoryMetadata:
         pathSelection = result['Value']
       dirList = []
       first = True
-      for meta, value in finalMetaDict.items():
+      for meta, value in finalMetaDict.iteritems():
         if value == "Missing":
           result = self.__findSubdirMissingMeta(meta, pathSelection)
         else:
@@ -815,7 +815,7 @@ class DirectoryMetadata:
     anyMeta = True
     if metaDict:
       anyMeta = False
-      for meta, value in metaDict.items():
+      for meta, value in metaDict.iteritems():
         result = self.__findCompatibleDirectories(meta, value, fromList)
         if not result['OK']:
           return result
