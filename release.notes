@@ -1,4 +1,4 @@
-[v7r0-pre24]
+[v7r0]
 
 FIX: (#3962) use print function instead of print statement
 FIX: (#3962) remove the usage of the long suffix to distinguish between long and int
@@ -7,6 +7,7 @@ NEW: (#3962) Add pylint test to check python 3 compatibility
 
 *Configuration
 CHANGE: (#4249) The flag UpdatePilotCStoJSONFile has been moved to Operations/[]/Pilot section
+NEW: (#4255) Resources - added getStorageElements() method
 
 *Framework
 CHANGE: (#4180) Removed local MySQL handling (DIRACOS won't have install it)
@@ -35,6 +36,10 @@ NEW: (#4163) SiteDirectors send by default Pilot3 (flag for pilot2 is still kept
 FIX: (#4163) removed unicode_literals (messes up things with DEncode)
 NEW: (#4224) PilotWrapper can get the Pilot files from a list of locations
 CHANGE: (#4224) PilotWrapper is compatible with several python versions
+NEW: (#4260) New dirac-wms-match command to test a given job for matching computing resources
+NEW: (#4260) QueueUtilities - utilities relevant to queues manipulation
+FIX: (#4265) urllib.urlopen() call with and without the 'context' parameter in Utilities/PilotWrapper.py 
+     according to the version of urllib instead of the python version
 
 *Core
 NEW: (#3744) Add update method to the ElasticSearchDB.py to update or if not available create the values 
@@ -65,6 +70,8 @@ CHANGE: (#4163) removed deprecated methods from Dirac.py
 FIX: (#4229) add proxy location as a virtual user for xroot urls
 FIX: (#4234) future import in executeBatch script that prevented the pilot deployment on SSH CE, fixes #4233
 FIX: (#4231) SE __executeMethod: only pass protocols parameter to getTransportURL
+NEW: (#4255) New dirac-resource-info command to display computing and storage resources available
+     to a given VO     
 
 *ResourceStatusSystem
 CHANGE: (#4177) use the ObjectLoader for Clients, in PEP
