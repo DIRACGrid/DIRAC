@@ -15,7 +15,8 @@ __RCSID__ = "$Id$"
 import sys
 import os
 import re
-import urllib2
+from six.moves.urllib.request import urlopen
+from six.moves.urllib.error import URLError
 import tempfile
 import imp
 import hashlib
@@ -223,8 +224,8 @@ class DistributionMaker:
   def getAvailableExternals(self):
     packagesURL = "http://diracproject.web.cern.ch/diracproject/tars/tars.list"
     try:
-      remoteFile = urllib2.urlopen(packagesURL)
-    except urllib2.URLError:
+      remoteFile = urlopen(packagesURL)
+    except URLError:
       gLogger.exception()
       return []
     remoteData = remoteFile.read()

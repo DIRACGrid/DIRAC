@@ -6,7 +6,7 @@ __RCSID__ = "$Id$"
 import os
 import re
 import multiprocessing
-import urllib2
+from six.moves.urllib.request import urlopen
 
 from DIRAC import gLogger, gConfig
 from DIRAC.Core.Utilities.List import fromChar
@@ -21,7 +21,7 @@ def getJobFeatures():
                'cpu_limit_secs', 'max_rss_bytes', 'max_swap_bytes', 'scratch_limit_bytes'):
     fname = os.path.join(os.environ['JOBFEATURES'], item)
     try:
-      val = urllib2.urlopen(fname).read()
+      val = urlopen(fname).read()
     except BaseException:
       val = 0
     features[item] = val

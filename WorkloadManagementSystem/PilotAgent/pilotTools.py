@@ -11,7 +11,8 @@ import os
 import pickle
 import getopt
 import imp
-import urllib2
+from six.moves.urllib.request import urlopen
+from six.moves.urllib.error import URLError, HTTPError
 import signal
 
 
@@ -66,7 +67,7 @@ def retrieveUrlTimeout(url, fileName, log, timeout=0):
     # set timeout alarm
     signal.alarm(timeout + 5)
   try:
-    remoteFD = urllib2.urlopen(url)
+    remoteFD = urlopen(url)
     expectedBytes = 0
     # Sometimes repositories do not return Content-Length parameter
     try:
@@ -91,13 +92,13 @@ def retrieveUrlTimeout(url, fileName, log, timeout=0):
     else:
       return urlData
 
-  except urllib2.HTTPError as x:
+  except HTTPError as x:
     if x.code == 404:
       log.error("URL retrieve: %s does not exist" % url)
       if timeout:
         signal.alarm(0)
       return False
-  except urllib2.URLError:
+  except URLError:
     log.error('Timeout after %s seconds on transfer request for "%s"' % (str(timeout), url))
     return False
   except Exception as x:

@@ -6,7 +6,7 @@ __RCSID__ = "$Id$"
 import os
 import glob
 import time
-import urllib
+from six.moves.urllib.request import urlopen
 import random
 import hashlib
 import commands
@@ -678,8 +678,8 @@ class ProxyDB(DB):
               "&rfc-proxy=true&cn-label=user:%s" % (puspServiceURL, vomsVO, vomsAttribute, user)
 
     try:
-      proxy = urllib.urlopen(puspURL).read()
-    except Exception as e:
+      proxy = urlopen(puspURL).read()
+    except Exception:
       return S_ERROR('Failed to get proxy from the PUSP server')
 
     chain = X509Chain()

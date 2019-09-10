@@ -10,7 +10,7 @@
 import os
 import ssl
 import time
-import urllib
+from six.moves.urllib.request import urlopen
 
 import DIRAC
 
@@ -136,7 +136,7 @@ class MJF(object):
     # need to check HTTP return code in case we get an HTML error page
     # instead of a true key value.
     try:
-      mjfUrl = urllib.urlopen(url=url, context=self.context)
+      mjfUrl = urlopen(url=url, context=self.context)
       # HTTP return codes other than 2xx mean failure
       if mjfUrl.getcode() / 100 != 2:
         return None
