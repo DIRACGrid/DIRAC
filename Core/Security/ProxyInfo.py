@@ -1,6 +1,7 @@
 """
  Set of utilities to retrieve Information from proxy
 """
+from __future__ import division
 
 import base64
 
