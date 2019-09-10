@@ -140,7 +140,7 @@ class ProductionDB(DB):
     resultList = []
     for row in res['Value']:
       # Prepare the structure for the web
-      rList = [str(item) if not isinstance(item, (long, int)) else item for item in row]
+      rList = [str(item) if not isinstance(item, six.integer_types) else item for item in row]
       prodDict = dict(zip(self.PRODPARAMS, row))
       webList.append(rList)
       resultList.append(prodDict)
@@ -273,7 +273,7 @@ class ProductionDB(DB):
     resultList = []
     for row in res['Value']:
       # Prepare the structure for the web
-      rList = [str(item) if not isinstance(item, (long, int)) else item for item in row]
+      rList = [str(item) if not isinstance(item, six.integer_types) else item for item in row]
       transDict = dict(zip(self.TRANSPARAMS, row))
       webList.append(rList)
       resultList.append(transDict)

@@ -109,7 +109,7 @@ class SEManagerDB(SEManagerBase):
 
   def getSEID(self, seName):
     """ Get ID for a SE specified by its name """
-    if isinstance(seName, (int, long)):
+    if isinstance(seName, six.integer_types):
       return S_OK(seName)
     if seName in self.db.seNames.keys():
       return S_OK(self.db.seNames[seName])

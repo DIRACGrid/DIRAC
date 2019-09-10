@@ -1033,7 +1033,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
     for pilot in pilotList:
       parList = []
       for parameter in paramNames:
-        if not isinstance(pilotDict[pilot][parameter], (int, long)):
+        if not isinstance(pilotDict[pilot][parameter], six.integer_types):
           parList.append(str(pilotDict[pilot][parameter]))
         else:
           parList.append(pilotDict[pilot][parameter])

@@ -250,7 +250,7 @@ class SandboxStoreClient(object):
 
   def unassignJobs(self, jobIdList):
     """ Unassign SB to a job """
-    if isinstance(jobIdList, (int, long)):
+    if isinstance(jobIdList, six.integer_types):
       jobIdList = [jobIdList]
     entitiesList = []
     for jobId in jobIdList:
@@ -296,7 +296,7 @@ class SandboxStoreClient(object):
 
   def unassignPilots(self, pilotIdIdList):
     """ Unassign SB to a pilot """
-    if isinstance(pilotIdIdList, (int, long)):
+    if isinstance(pilotIdIdList, six.integer_types):
       pilotIdIdList = [pilotIdIdList]
     entitiesList = []
     for pilotId in pilotIdIdList:

@@ -14,7 +14,7 @@ def getIDSelectString(ids):
   """
   if isinstance(ids, six.string_types) and ids.lower().startswith('select'):
     idString = ids
-  elif isinstance(ids, (int, long)):
+  elif isinstance(ids, six.integer_types):
     idString = '%d' % ids
   elif isinstance(ids, (tuple, list)):
     idString = intListToString(ids)

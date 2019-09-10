@@ -81,7 +81,7 @@ def _getConnectionIndex(connectionLevel, default=None):
   """
   if connectionLevel is None:
     connectionLevel = default
-  if isinstance(connectionLevel, (int, long)):
+  if isinstance(connectionLevel, six.integer_types):
     return connectionLevel
   if isinstance(connectionLevel, six.string_types):
     connectionLevel = connectionLevel.upper()
@@ -226,7 +226,7 @@ class DMSHelpers(object):
     if result['OK']:
       for site in self.siteSEMapping[LOCAL] if withStorage else self.siteSet:
         grid, shortSite, _country = site.split('.')
-        if isinstance(tier, (int, long)) and \
+        if isinstance(tier, six.integer_types) and \
             (grid != 'LCG' or
              gConfig.getValue('/Resources/Sites/%s/%s/MoUTierLevel' % (grid, site), 999) != tier):
           continue

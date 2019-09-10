@@ -166,7 +166,7 @@ class MonitoringHandler(RequestHandler):
     return S_OK(gServiceInterface.getActivities(dbCondition))
 
   types_getActivitiesContents = [dict, (list, tuple),
-                                 (int, long), (int, long)]
+                                 six.integer_types, six.integer_types]
 
   def export_getActivitiesContents(self, selDict, sortList, start, limit):
     """

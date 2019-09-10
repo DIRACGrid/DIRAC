@@ -13,7 +13,7 @@ random.seed()
 
 class PingPongMindHandler(ExecutorMindHandler):
 
-  MSG_DEFINITIONS = {'StartReaction': {'numBounces': (int, long)}}
+  MSG_DEFINITIONS = {'StartReaction': {'numBounces': six.integer_types}}
 
   auth_msg_StartReaction = ['all']
 

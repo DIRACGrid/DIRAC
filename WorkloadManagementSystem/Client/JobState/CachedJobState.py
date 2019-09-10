@@ -121,7 +121,7 @@ class CachedJobState(object):
     if len(dataTuple) != 7:
       return S_ERROR("Invalid stub")
     # jid
-    if not isinstance(dataTuple[0], (int, long)):
+    if not isinstance(dataTuple[0], six.integer_types):
       return S_ERROR("Invalid stub 0")
     # cache
     if not isinstance(dataTuple[1], dict):

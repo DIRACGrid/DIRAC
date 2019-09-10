@@ -410,7 +410,7 @@ class DirectoryMetadata:
         if operation in ['>', '<', '>=', '<=']:
           if isinstance(operand, list):
             return S_ERROR('Illegal query: list of values for comparison operation')
-          if isinstance(operand, (int, long)):
+          if isinstance(operand, six.integer_types):
             selectList.append("%sValue%s%d" % (table, operation, operand))
           elif isinstance(operand, float):
             selectList.append("%sValue%s%f" % (table, operation, operand))

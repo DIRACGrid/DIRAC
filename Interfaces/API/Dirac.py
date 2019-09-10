@@ -975,7 +975,7 @@ class Dirac(API):
     """Internal callback function to return standard output when running locally.
     """
     if fd:
-      if isinstance(fd, (int, long)):
+      if isinstance(fd, six.integer_types):
         if fd == 0:
           print(message, file=sys.stdout)
         elif fd == 1:
@@ -1191,7 +1191,7 @@ class Dirac(API):
       return ret
     lfns = ret['Value']
 
-    if not isinstance(maxFilesPerJob, (int, long)):
+    if not isinstance(maxFilesPerJob, six.integer_types):
       try:
         maxFilesPerJob = int(maxFilesPerJob)
       except Exception as x:

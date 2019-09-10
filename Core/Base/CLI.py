@@ -29,7 +29,7 @@ def colorize( text, color ):
 
   startCode = '\033[;3'
   endCode = '\033[0m'
-  if isinstance( color, ( int, long ) ):
+  if isinstance( color, six.integer_types ):
     return "%s%sm%s%s" % ( startCode, color, text, endCode )
   try:
     return "%s%sm%s%s" % ( startCode, gColors[ color ], text, endCode )

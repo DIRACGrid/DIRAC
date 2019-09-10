@@ -23,7 +23,7 @@ def S_ERROR(*args):
 
   message = ''
   if args:
-    if isinstance(args[0], (int, long)):
+    if isinstance(args[0], six.integer_types):
       result['Errno'] = args[0]
       if len(args) > 1:
         message = args[1]

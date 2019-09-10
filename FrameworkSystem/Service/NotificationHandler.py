@@ -174,7 +174,7 @@ class NotificationHandler(RequestHandler):
     updateDefinition['author'] = credDict['username']
     return gNotDB.updateAlarm(updateDefinition)
 
-  types_getAlarmInfo = [(int, long)]
+  types_getAlarmInfo = [six.integer_types]
 
   def export_getAlarmInfo(self, alarmId):
     """ Get the extended info of an alarm

@@ -120,7 +120,7 @@ class JobLoggingDB(DB):
     """
 
     # Make sure that we have a list of jobs
-    if isinstance(jobID, (int, long)):
+    if isinstance(jobID, six.integer_types):
       jobList = [str(jobID)]
     elif isinstance(jobID, six.string_types):
       jobList = [jobID]

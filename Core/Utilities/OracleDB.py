@@ -229,7 +229,7 @@ class OracleDB(object):
         if isinstance(type(array[0]), six.string_types):
           result = cursor.arrayvar(cx_Oracle.STRING, array)
           parameters += [result]
-        elif isinstance(array[0], (long, int)):
+        elif isinstance(array[0], six.integer_types):
           result = cursor.arrayvar(cx_Oracle.NUMBER, array)
           parameters += [result]
         else:

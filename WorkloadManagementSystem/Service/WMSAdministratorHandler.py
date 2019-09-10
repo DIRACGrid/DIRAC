@@ -219,7 +219,7 @@ class WMSAdministratorHandler(RequestHandler):
     return S_ERROR('No pilot job reference found')
 
   ##############################################################################
-  types_getSiteSummaryWeb = [dict, list, (int, long), (int, long)]
+  types_getSiteSummaryWeb = [dict, list, six.integer_types, six.integer_types]
 
   @classmethod
   def export_getSiteSummaryWeb(cls, selectDict, sortList, startItem, maxItems):
@@ -304,7 +304,7 @@ class WMSAdministratorHandler(RequestHandler):
     return S_OK(resultDict)
 
   ##########################################################################################
-  types_addPilotTQReference = [list, (int, long), basestring, basestring]
+  types_addPilotTQReference = [list, six.integer_types, basestring, basestring]
 
   @classmethod
   @deprecated("Moved to PilotManagerHandler")
@@ -391,7 +391,7 @@ class WMSAdministratorHandler(RequestHandler):
     return result
 
   ##############################################################################
-  types_getPilotMonitorWeb = [dict, list, (int, long), [int, long]]
+  types_getPilotMonitorWeb = [dict, list, six.integer_types, [int, long]]
 
   @classmethod
   @deprecated("Moved to PilotManagerHandler")
@@ -416,7 +416,7 @@ class WMSAdministratorHandler(RequestHandler):
     return result
 
   ##############################################################################
-  types_getPilotSummaryWeb = [dict, list, (int, long), [int, long]]
+  types_getPilotSummaryWeb = [dict, list, six.integer_types, [int, long]]
 
   @classmethod
   @deprecated("Moved to PilotManagerHandler")
@@ -621,7 +621,7 @@ class WMSAdministratorHandler(RequestHandler):
     if isinstance(pilotIDs, six.string_types):
       return PilotAgentsDB().deletePilot(pilotIDs)
 
-    if isinstance(pilotIDs, (int, long)):
+    if isinstance(pilotIDs, six.integer_types):
       pilotIDs = [pilotIDs, ]
 
     result = PilotAgentsDB().deletePilots(pilotIDs)
@@ -642,7 +642,7 @@ class WMSAdministratorHandler(RequestHandler):
     return S_OK()
 
 ##############################################################################
-  types_clearPilots = [(int, long), (int, long)]
+  types_clearPilots = [six.integer_types, six.integer_types]
 
   @classmethod
   @deprecated("Moved to PilotManagerHandler")

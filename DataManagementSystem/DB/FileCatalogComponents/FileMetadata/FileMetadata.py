@@ -340,7 +340,7 @@ class FileMetadata:
     queryList = []
     if isinstance(value, float):
       queryList.append(('=', '%f' % value))
-    elif isinstance(value, (int, long)):
+    elif isinstance(value, six.integer_types):
       queryList.append(('=', '%d' % value))
     elif isinstance(value, str):
       if value.lower() == 'any':
@@ -378,7 +378,7 @@ class FileMetadata:
           if not result['OK']:
             return result
           escapedOperand = ', '.join(result['Value'])
-        elif isinstance(operand, (int, long)):
+        elif isinstance(operand, six.integer_types):
           escapedOperand = '%d' % operand
         elif isinstance(operand, float):
           escapedOperand = '%f' % operand
