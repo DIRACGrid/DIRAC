@@ -291,9 +291,9 @@ def createRemoteDirectory(fc,newdir):
   """
   result = fc.createDirectory(newdir)
   if result['OK']:
-    if result['Value']['Successful'] and result['Value']['Successful'].has_key(newdir):
+    if result['Value']['Successful'] and newdir in result['Value']['Successful']:
       return S_OK("Successfully created directory:" + newdir)
-    elif result['Value']['Failed'] and result['Value']['Failed'].has_key(newdir):
+    elif result['Value']['Failed'] and newdir in result['Value']['Failed']:
       return S_ERROR('Failed to create directory: ' + result['Value']['Failed'][newdir])
   else:
     return S_ERROR('Failed to create directory:' + result['Message'])

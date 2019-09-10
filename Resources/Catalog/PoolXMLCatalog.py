@@ -336,7 +336,7 @@ class PoolXMLCatalog( object ):
     for guid, pfile in self.files.items():
       for l in pfile.lfns:
         if lfn == l:
-          if self.files.has_key( guid ):
+          if guid in self.files:
             del self.files[guid]
 
   def addFile( self, fileTuple ):
