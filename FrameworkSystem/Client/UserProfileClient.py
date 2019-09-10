@@ -1,4 +1,5 @@
 
+import six
 import re
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient

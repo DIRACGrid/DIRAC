@@ -1,6 +1,7 @@
 """ interacts with sqlite3 db
 """
 
+import six
 import sqlite3
 import os
 import hashlib

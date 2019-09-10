@@ -4,6 +4,7 @@ This is the interface to DIRAC PilotAgentsDB.
 
 __RCSID__ = "$Id$"
 
+import six
 from DIRAC import gConfig, S_OK, S_ERROR
 import DIRAC.Core.Utilities.Time as Time
 

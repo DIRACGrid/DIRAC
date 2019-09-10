@@ -19,6 +19,7 @@
 __RCSID__ = "$Id$"
 
 
+import six
 import datetime
 
 from sqlalchemy import desc

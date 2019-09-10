@@ -13,6 +13,7 @@
     subscribing to them.
 """
 
+import six
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 
 from DIRAC.Core.DISET.RequestHandler import RequestHandler

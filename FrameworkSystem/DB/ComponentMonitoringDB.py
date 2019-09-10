@@ -1,6 +1,7 @@
 """ ComponentMonitoring class is a front-end to the Component monitoring Database
 """
 
+import six
 import random
 
 from DIRAC import gConfig, S_OK, S_ERROR

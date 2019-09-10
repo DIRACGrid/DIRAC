@@ -10,6 +10,7 @@ This module consists of DataManager and related classes.
 """
 
 # # imports
+import six
 from datetime import datetime, timedelta
 import fnmatch
 import os

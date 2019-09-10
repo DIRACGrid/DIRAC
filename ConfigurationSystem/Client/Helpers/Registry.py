@@ -1,5 +1,6 @@
 """ Helper for /Registry section
 """
+import six
 import errno
 
 from DIRAC import S_OK, S_ERROR

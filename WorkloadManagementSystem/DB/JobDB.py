@@ -41,6 +41,7 @@
 """
 
 from __future__ import print_function, absolute_import, division
+import six
 from six.moves import range
 
 __RCSID__ = "$Id$"

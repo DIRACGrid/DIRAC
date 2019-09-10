@@ -1,5 +1,6 @@
 """ ProxyManagementAPI has the functions to "talk" to the ProxyManagement service
 """
+import six
 import os
 import datetime
 

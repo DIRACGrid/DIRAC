@@ -15,6 +15,7 @@
 
 __RCSID__ = "$Id$"
 
+import six
 import os
 import sys
 import random

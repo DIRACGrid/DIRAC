@@ -3,6 +3,7 @@
 
 # # custom duty
 
+import six
 import copy
 import datetime
 import errno

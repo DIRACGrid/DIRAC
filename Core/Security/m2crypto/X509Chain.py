@@ -9,6 +9,7 @@ here: https://wiki.egi.eu/wiki/Usage_of_the_per_user_sub_proxy_in_EGI
 """
 __RCSID__ = "$Id$"
 
+import six
 import copy
 import os
 import stat

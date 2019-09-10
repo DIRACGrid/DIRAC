@@ -18,6 +18,7 @@
 
 __RCSID__ = "$Id$"
 
+import six
 import datetime
 from sqlalchemy import desc
 from sqlalchemy.orm import sessionmaker, class_mapper

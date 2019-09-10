@@ -6,6 +6,7 @@
 
 __RCSID__ = '$Id$'
 
+import six
 import errno
 import math
 from time import sleep

@@ -2,6 +2,7 @@
     Extremely simple utility class to send mails
 """
 
+import six
 import os
 import socket
 

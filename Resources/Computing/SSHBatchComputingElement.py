@@ -10,6 +10,7 @@
 
 __RCSID__ = "$Id$"
 
+import six
 import os
 import socket
 import stat

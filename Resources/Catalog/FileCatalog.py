@@ -44,6 +44,7 @@
 
 """
 
+import six
 import re
 
 from DIRAC                                               import gLogger, gConfig, S_OK, S_ERROR

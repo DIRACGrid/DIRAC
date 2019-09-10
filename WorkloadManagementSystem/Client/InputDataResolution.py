@@ -7,6 +7,7 @@
     for applications.
 """
 
+import six
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.ModuleFactory import ModuleFactory

@@ -4,6 +4,7 @@ This is a DIRAC WMS administrator interface.
 
 __RCSID__ = "$Id$"
 
+import six
 from DIRAC import gConfig, S_OK, S_ERROR
 
 from DIRAC.Core.DISET.RequestHandler import RequestHandler

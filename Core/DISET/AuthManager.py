@@ -1,6 +1,7 @@
 """ Module that holds DISET Authorization class for services
 """
 
+import six
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.FrameworkSystem.Client.Logger import gLogger

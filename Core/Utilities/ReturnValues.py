@@ -6,6 +6,7 @@
    keys are converted to string
 """
 
+import six
 import types
 import traceback
 from DIRAC.Core.Utilities.DErrno import strerror

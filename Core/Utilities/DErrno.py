@@ -37,6 +37,7 @@
                              DErrno.ERRX : ['An error message for ERRX that is specific to LHCb']}
 
 """
+import six
 import os
 import imp
 import sys

@@ -4,6 +4,7 @@
 
 __RCSID__ = "$Id$"
 
+import six
 from DIRAC import gLogger, S_ERROR
 from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.Core.Utilities.Mail import Mail

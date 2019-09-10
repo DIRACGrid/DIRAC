@@ -9,6 +9,7 @@
 """
 __RCSID__ = "$Id$"
 
+import six
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import List
 from DIRAC.WorkloadManagementSystem.Executor.Base.OptimizerExecutor import OptimizerExecutor

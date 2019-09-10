@@ -5,6 +5,7 @@
 
 __RCSID__ = "$Id$"
 
+import six
 import os
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.Time import queryTime

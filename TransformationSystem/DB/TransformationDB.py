@@ -6,6 +6,7 @@
     databases
 """
 
+import six
 import re
 import time
 import threading

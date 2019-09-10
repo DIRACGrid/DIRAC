@@ -25,6 +25,7 @@ __RCSID__ = "$Id$"
 # @brief Definition of RequestTests class.
 
 # # imports
+import six
 import unittest
 import datetime
 # # from DIRAC

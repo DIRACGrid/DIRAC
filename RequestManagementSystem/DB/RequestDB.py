@@ -16,6 +16,7 @@
 
     db holding Request, Operation and File
 """
+import six
 import random
 
 import datetime

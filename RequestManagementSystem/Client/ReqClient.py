@@ -6,6 +6,7 @@
 
 """
 
+import six
 import os
 import time
 import random

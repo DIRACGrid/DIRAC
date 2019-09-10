@@ -20,6 +20,7 @@ __RCSID__ = "$Id $"
 # @date 2012/07/19 12:16:48
 
 ## imports 
+import six
 import unittest
 ## SUT
 from DIRAC.Core.Utilities.TypedList import TypedList, TDeque

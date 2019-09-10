@@ -9,6 +9,7 @@
 
 __RCSID__ = "$Id$"
 
+import six
 import time
 
 from DIRAC import S_OK, S_ERROR

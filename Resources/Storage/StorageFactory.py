@@ -14,6 +14,7 @@
 
 __RCSID__ = "$Id$"
 
+import six
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath

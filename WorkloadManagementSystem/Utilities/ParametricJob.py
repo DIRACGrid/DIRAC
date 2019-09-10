@@ -7,6 +7,7 @@
 
 __RCSID__ = "$Id$"
 
+import six
 import re
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd

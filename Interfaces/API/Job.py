@@ -25,6 +25,7 @@
 
 __RCSID__ = "$Id$"
 
+import six
 import re
 import os
 import urllib

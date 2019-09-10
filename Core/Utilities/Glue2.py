@@ -14,6 +14,7 @@ published information, like a foreign key pointing to non-existant entry.
 
 """
 
+import six
 from pprint import pformat
 
 from DIRAC import gLogger

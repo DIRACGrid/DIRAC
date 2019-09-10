@@ -2,6 +2,7 @@
 
 __RCSID__ = "$Id$"
 
+import six
 import time
 import random
 

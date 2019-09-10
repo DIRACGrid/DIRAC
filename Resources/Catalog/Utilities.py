@@ -7,6 +7,7 @@
 
 __RCSID__ = "$Id$"
 
+import six
 import os
 import errno
 import functools

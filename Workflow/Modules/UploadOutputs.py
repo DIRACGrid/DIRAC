@@ -6,6 +6,7 @@
     defined in the production workflow.
 """
 
+import six
 from DIRAC import gLogger
 from DIRAC.Workflow.Modules.ModuleBase import ModuleBase, GracefulTermination
 

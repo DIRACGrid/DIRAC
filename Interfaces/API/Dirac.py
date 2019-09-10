@@ -17,6 +17,7 @@
 from __future__ import print_function
 __RCSID__ = "$Id$"
 
+import six
 import re
 import os
 import sys

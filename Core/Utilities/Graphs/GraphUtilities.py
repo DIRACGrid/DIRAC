@@ -8,6 +8,7 @@
 __RCSID__ = "$Id$"
 
 
+import six
 import os
 import time
 import datetime

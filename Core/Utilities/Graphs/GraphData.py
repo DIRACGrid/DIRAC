@@ -7,6 +7,7 @@
 from __future__ import print_function
 __RCSID__ = "$Id$"
 
+import six
 import time
 import datetime
 import numpy

@@ -4,6 +4,7 @@
 
 __RCSID__ = "$Id$"
 
+import six
 import time
 import thread
 import DIRAC

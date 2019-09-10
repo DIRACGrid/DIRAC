@@ -2,6 +2,7 @@
 Classes and functions for easier management of the InstalledComponents database
 """
 
+import six
 import re
 import datetime
 from sqlalchemy import MetaData, Column, Integer, String, DateTime, create_engine, text

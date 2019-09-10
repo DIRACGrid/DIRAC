@@ -4,6 +4,7 @@
 """
 
 from __future__ import print_function
+import six
 import os
 import distutils.spawn  # pylint: disable=no-name-in-module,import-error
 

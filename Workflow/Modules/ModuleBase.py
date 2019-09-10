@@ -10,6 +10,7 @@
     The DIRAC APIs are used to create Jobs that make use of these modules.
 """
 
+import six
 import os
 import copy
 

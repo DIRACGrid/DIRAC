@@ -8,6 +8,7 @@
 
 """
 
+import six
 import os
 
 from DIRAC import S_OK, S_ERROR

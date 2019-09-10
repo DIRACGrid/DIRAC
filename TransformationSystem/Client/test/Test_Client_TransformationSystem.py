@@ -3,6 +3,7 @@
 
 # pylint: disable=protected-access,missing-docstring,invalid-name
 
+import six
 import unittest
 import json
 import mock

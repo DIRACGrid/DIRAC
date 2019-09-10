@@ -4,6 +4,7 @@
     everything locally instead of going to the DB.
 """
 
+import six
 import copy
 import time
 

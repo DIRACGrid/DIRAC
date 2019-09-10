@@ -12,6 +12,7 @@
 __RCSID__ = "$Id$"
 
 # imports
+import six
 import cStringIO
 import csv
 import os

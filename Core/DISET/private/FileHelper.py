@@ -1,5 +1,6 @@
 __RCSID__ = "$Id$"
 
+import six
 import os
 import hashlib
 import threading

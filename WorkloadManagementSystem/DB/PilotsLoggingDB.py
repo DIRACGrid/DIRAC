@@ -14,6 +14,7 @@
 __RCSID__ = "$Id$"
 
 
+import six
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters

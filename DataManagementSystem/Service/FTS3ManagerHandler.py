@@ -9,6 +9,7 @@ Service handler for FT3SDB using DISET
 
 __RCSID__ = "$Id$"
 
+import six
 import json
 
 # from DIRAC

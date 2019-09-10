@@ -10,6 +10,7 @@
 
 __RCSID__ = "$Id$"
 
+import six
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient

@@ -50,6 +50,7 @@
 __RCSID__ = "$Id$"
 
 
+import six
 import Queue
 import time
 import threading

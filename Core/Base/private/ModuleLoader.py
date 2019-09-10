@@ -1,6 +1,7 @@
 """ Module invoked for finding and loading DIRAC (and extensions) modules
 """
 
+import six
 import os
 import imp
 from DIRAC.Core.Utilities import List

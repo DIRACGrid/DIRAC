@@ -70,6 +70,7 @@
 
 """
 
+import six
 import thread
 import os
 from DIRAC import S_OK, S_ERROR, gConfig

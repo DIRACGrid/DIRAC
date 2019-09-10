@@ -6,6 +6,7 @@ __RCSID__ = "$Id$"
 # pylint: disable=protected-access
 
 
+import six
 import time
 import StringIO
 import json

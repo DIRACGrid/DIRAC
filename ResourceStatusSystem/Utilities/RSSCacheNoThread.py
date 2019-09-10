@@ -10,6 +10,7 @@ After that, the cache is empty.
 
 __RCSID__ = '$Id$'
 
+import six
 import itertools
 import random
 

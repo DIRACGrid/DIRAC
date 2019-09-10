@@ -12,6 +12,7 @@
 
 __RCSID__ = "$Id$"
 
+import six
 import inspect
 import threading
 

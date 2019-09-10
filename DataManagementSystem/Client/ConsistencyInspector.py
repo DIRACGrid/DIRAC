@@ -5,6 +5,7 @@
     Should be extended to include the Storage (in DIRAC)
 """
 
+import six
 import os
 import time
 import sys

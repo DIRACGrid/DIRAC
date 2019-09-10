@@ -10,6 +10,7 @@
 """
 __RCSID__ = "$Id$"
 # # imports
+import six
 import json
 import datetime
 import math

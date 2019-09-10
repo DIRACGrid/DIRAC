@@ -2,6 +2,7 @@
 Utilities to create replication transformations
 """
 
+import six
 from DIRAC.TransformationSystem.Client.Transformation import Transformation
 from DIRAC import gLogger, S_OK, S_ERROR
 

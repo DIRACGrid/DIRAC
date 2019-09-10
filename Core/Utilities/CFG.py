@@ -5,6 +5,7 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
+import six
 import copy
 import os
 import re

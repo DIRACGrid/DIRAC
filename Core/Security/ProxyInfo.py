@@ -3,6 +3,7 @@
 """
 from __future__ import division
 
+import six
 import base64
 
 from DIRAC import S_OK, S_ERROR

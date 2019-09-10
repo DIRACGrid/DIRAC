@@ -2,6 +2,7 @@
 
 # pylint: disable=protected-access, redefined-outer-name
 
+import six
 from functools import partial
 import logging
 import os

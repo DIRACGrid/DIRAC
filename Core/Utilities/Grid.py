@@ -2,6 +2,7 @@
 The Grid module contains several utilities for grid operations
 """
 
+import six
 import os
 import re
 

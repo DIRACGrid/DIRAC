@@ -23,6 +23,7 @@
 # created documentation, there should only be one slash when setting the option,
 # but "\n" gets rendered as a linebreak in sphinx
 
+import six
 import os
 import tempfile
 import commands

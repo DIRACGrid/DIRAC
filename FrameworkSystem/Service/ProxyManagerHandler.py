@@ -4,6 +4,7 @@
 
 __RCSID__ = "$Id$"
 
+import six
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Security import Properties

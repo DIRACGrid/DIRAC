@@ -7,6 +7,7 @@
 
 __RCSID__ = '$Id$'
 
+import six
 import os
 import sqlite3
 from DIRAC import S_ERROR, S_OK

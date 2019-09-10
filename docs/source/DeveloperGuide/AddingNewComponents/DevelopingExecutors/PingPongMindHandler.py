@@ -2,6 +2,7 @@
 """
 
 from __future__ import print_function
+import six
 import time
 import random
 from DIRAC import S_OK, gLogger

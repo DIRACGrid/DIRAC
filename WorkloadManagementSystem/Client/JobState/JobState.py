@@ -5,6 +5,7 @@ from __future__ import print_function, absolute_import
 
 __RCSID__ = "$Id"
 
+import six
 import datetime
 
 from DIRAC import gLogger, S_OK, S_ERROR

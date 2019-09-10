@@ -8,6 +8,7 @@ site banning and unbanning, WMS proxy uploading etc.
 from __future__ import print_function
 __RCSID__ = "$Id$"
 
+import six
 import os
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR

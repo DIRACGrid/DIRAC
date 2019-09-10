@@ -13,6 +13,7 @@
     }
 """
 
+import six
 from DIRAC import S_OK
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 

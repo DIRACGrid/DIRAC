@@ -9,6 +9,7 @@
 
 # pylint: disable=invalid-name
 
+import six
 import errno
 import json
 
