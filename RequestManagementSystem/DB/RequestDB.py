@@ -22,10 +22,10 @@ import random
 import datetime
 
 from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.orm import relationship, backref, sessionmaker, joinedload_all, mapper
+from sqlalchemy.orm import relationship, backref, sessionmaker, joinedload, mapper
 from sqlalchemy.sql import update
 from sqlalchemy import create_engine, func, Table, Column, MetaData, ForeignKey, \
-                       Integer, String, DateTime, Enum, BLOB, BigInteger, distinct
+    Integer, String, DateTime, Enum, BLOB, BigInteger, distinct
 
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
@@ -355,12 +355,11 @@ class RequestDB( object ):
         random.shuffle( reqIDs )
         requestID = reqIDs[0]
 
-
       # If we are here, the request MUST exist, so no try catch
-      # the joinedload_all is to force the non-lazy loading of all the attributes, especially _parent
-      request = session.query( Request )\
-                       .options( joinedload_all( '__operations__.__files__' ) )\
-                       .filter( Request.RequestID == requestID )\
+      # the joinedload is to force the non-lazy loading of all the attributes, especially _parent
+      request = session.query(Request) \
+                       .options(joinedload('__operations__').joinedload('__files__')) \
+                       .filter(Request.RequestID == requestID)\
                        .one()
 
       if not reqID:
@@ -405,7 +404,7 @@ class RequestDB( object ):
 
     try:
       # If we are here, the request MUST exist, so no try catch
-      # the joinedload_all is to force the non-lazy loading of all the attributes, especially _parent
+      # the joinedload is to force the non-lazy loading of all the attributes, especially _parent
       try:
         now = datetime.datetime.utcnow().replace( microsecond = 0 )
         requestIDs = session.query( Request.RequestID )\
@@ -419,9 +418,9 @@ class RequestDB( object ):
         requestIDs = [ridTuple[0] for ridTuple in requestIDs]
         log.debug( "Got request ids %s" % requestIDs )
 
-        requests = session.query( Request )\
-                          .options( joinedload_all( '__operations__.__files__' ) )\
-                          .filter( Request.RequestID.in_( requestIDs ) )\
+        requests = session.query(Request) \
+                          .options(joinedload('__operations__').joinedload('__files__')) \
+                          .filter(Request.RequestID.in_(requestIDs))\
                           .all()
         log.debug( "Got %s Request objects " % len( requests ) )
         requestDict = dict( ( req.RequestID, req ) for req in requests )
@@ -787,9 +786,9 @@ class RequestDB( object ):
     session = self.DBSession( expire_on_commit = False )
 
     try:
-      ret = session.query( Request.JobID, Request )\
-                   .options( joinedload_all( '__operations__.__files__' ) )\
-                   .filter( Request.JobID.in_( jobIDs ) ).all()
+      ret = session.query(Request.JobID, Request) \
+                   .options(joinedload('__operations__').joinedload('__files__')) \
+                   .filter(Request.JobID.in_(jobIDs)).all()
 
       reqDict['Successful'] = dict( ( jobId, reqObj ) for jobId, reqObj in ret )
 
