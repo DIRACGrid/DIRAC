@@ -110,7 +110,7 @@ class SiteStatus(object):
       siteStatusDict = {}
       wmsAdmin = WMSAdministratorClient()
       if siteNames:
-        if isinstance(siteNames, basestring):
+        if isinstance(siteNames, six.string_types):
           siteNames = [siteNames]
         for siteName in siteNames:
           result = wmsAdmin.getSiteMaskStatus(siteName)

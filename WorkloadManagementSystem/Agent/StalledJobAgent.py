@@ -461,7 +461,7 @@ the stalledTime limit.
       if not startTime or startTime == 'None':
         startTime = jobDict['SubmissionTime']
 
-    if isinstance(startTime, basestring):
+    if isinstance(startTime, six.string_types):
       startTime = fromString(startTime)
       if startTime is None:
         self.log.error('Wrong timestamp in DB', items[3])

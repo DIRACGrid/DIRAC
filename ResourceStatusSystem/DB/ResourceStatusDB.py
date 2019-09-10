@@ -438,7 +438,7 @@ class ResourceStatusDB(object):
         column_a = getattr(table_c, newer[0].lower())
         select = select.filter(column_a > newer[1])
       if order:
-        order = [order] if isinstance(order, basestring) else list(order)
+        order = [order] if isinstance(order, six.string_types) else list(order)
         column_a = getattr(table_c, order[0].lower())
         if len(order) == 2 and order[1].lower() == 'desc':
           select = select.order_by(desc(column_a))
@@ -516,7 +516,7 @@ class ResourceStatusDB(object):
         column_a = getattr(table_c, newer[0].lower())
         deleteQuery = deleteQuery.filter(column_a > newer[1])
       if order:
-        order = [order] if isinstance(order, basestring) else list(order)
+        order = [order] if isinstance(order, six.string_types) else list(order)
         column_a = getattr(table_c, order[0].lower())
         if len(order) == 2 and order[1].lower() == 'desc':
           deleteQuery = deleteQuery.order_by(desc(column_a))
@@ -573,7 +573,7 @@ class ResourceStatusDB(object):
         column_a = getattr(table_c, columnName.lower())
         if isinstance(columnValue, (list, tuple)):
           select = select.filter(column_a.in_(list(columnValue)))
-        elif isinstance(columnValue, basestring):
+        elif isinstance(columnValue, six.string_types):
           select = select.filter(column_a == columnValue)
         else:
           self.log.error("type(columnValue) == %s" % type(columnValue))
@@ -643,7 +643,7 @@ class ResourceStatusDB(object):
         column_a = getattr(table_c, columnName.lower())
         if isinstance(columnValue, (list, tuple)):
           select = select.filter(column_a.in_(list(columnValue)))
-        elif isinstance(columnValue, basestring):
+        elif isinstance(columnValue, six.string_types):
           select = select.filter(column_a == columnValue)
         else:
           self.log.error("type(columnValue) == %s" % type(columnValue))

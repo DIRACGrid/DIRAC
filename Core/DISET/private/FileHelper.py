@@ -262,7 +262,7 @@ class FileHelper(object):
 
   def getFileDescriptor( self, uFile, sFileMode ):
     closeAfter = True
-    if isinstance( uFile, basestring ):
+    if isinstance(uFile, six.string_types):
       try:
         self.oFile = open(uFile, sFileMode)
       except IOError:
@@ -281,7 +281,7 @@ class FileHelper(object):
 
   def getDataSink( self, uFile ):
     closeAfter = True
-    if isinstance( uFile, basestring ):
+    if isinstance(uFile, six.string_types):
       try:
         oFile = open(uFile, "wb")
       except IOError:

@@ -24,7 +24,7 @@ class UserProfileClient(object):
       return "o"
     if isinstance(dataObj, (int, long, float)):
       return "n"
-    if isinstance(dataObj, basestring):
+    if isinstance(dataObj, six.string_types):
       return "s"
     # Not even trying here...
     if type(dataObj) in Time._allTypes:

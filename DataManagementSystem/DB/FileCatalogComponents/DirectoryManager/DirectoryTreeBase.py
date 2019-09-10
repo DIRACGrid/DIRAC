@@ -282,7 +282,7 @@ class DirectoryTreeBase(object):
     """ Get directory ID from the given path or already evaluated ID
     """
 
-    if isinstance(path, basestring):
+    if isinstance(path, six.string_types):
       result = self.findDir(path)
       if not result['OK']:
         return result
@@ -344,7 +344,7 @@ class DirectoryTreeBase(object):
         :param int pvalue: parameter value
     """
     result = getIDSelectString(path)
-    if not result['OK'] and isinstance(path, basestring):
+    if not result['OK'] and isinstance(path, six.string_types):
       result = self.__getDirID(path)
       if not result['OK']:
         return result

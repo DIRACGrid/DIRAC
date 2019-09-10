@@ -38,7 +38,7 @@ def createDataTransformation(flavour, targetSE, sourceSE,
 
   gLogger.debug("Using %r for metadata search" % metadata)
 
-  if isinstance(targetSE, basestring):
+  if isinstance(targetSE, six.string_types):
     targetSE = [targetSE]
 
   gLogger.debug('Using plugin: %r' % plugin)

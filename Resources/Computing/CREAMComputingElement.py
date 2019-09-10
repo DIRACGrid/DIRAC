@@ -169,7 +169,7 @@ class CREAMComputingElement(ComputingElement):
     """ Kill the specified jobs
     """
     jobList = list(jobIDList)
-    if isinstance(jobIDList, basestring):
+    if isinstance(jobIDList, six.string_types):
       jobList = [jobIDList]
 
     cmd = ['glite-ce-job-cancel', '-n', '-N'] + jobList

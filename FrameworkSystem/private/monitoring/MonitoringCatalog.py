@@ -123,7 +123,7 @@ class MonitoringCatalog( object ):
       else:
         valuesList.append( dataDict[ key ] )
         keysList.append( "%s = ?" % key )
-    if isinstance( fields, basestring ):
+    if isinstance(fields, six.string_types):
       fields = [ fields ]
     if len( keysList ) > 0:
       whereCond = "WHERE %s" % ( " AND ".join( keysList ) )
@@ -336,7 +336,7 @@ class MonitoringCatalog( object ):
     """
     Get a view for a given id
     """
-    if isinstance( viewId, basestring ):
+    if isinstance(viewId, six.string_types):
       return self.__select( "definition, variableFields", "views", { "name" : viewId } )
     else:
       return self.__select( "definition, variableFields", "views", { "id" : viewId } )

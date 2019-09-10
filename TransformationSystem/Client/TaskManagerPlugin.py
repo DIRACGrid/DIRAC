@@ -30,7 +30,7 @@ class TaskManagerPlugin(PluginBase):
     try:
       seList = ['Unknown']
       if self.params['TargetSE']:
-        if isinstance(self.params['TargetSE'], basestring):
+        if isinstance(self.params['TargetSE'], six.string_types):
           seList = fromChar(self.params['TargetSE'])
         elif isinstance(self.params['TargetSE'], list):
           seList = self.params['TargetSE']

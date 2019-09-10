@@ -483,7 +483,7 @@ class UserProfileDB(DB):
       pass
 
   def __profilesCondGenerator(self, value, varType, initialValue=False):
-    if isinstance(value, basestring):
+    if isinstance(value, six.string_types):
       value = [value]
     ids = []
     if initialValue:

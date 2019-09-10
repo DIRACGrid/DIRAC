@@ -165,7 +165,7 @@ class CachedJobState(object):
     self.__dirtyKeys.add(key)
 
   def __cacheExists(self, keyList):
-    if isinstance(keyList, basestring):
+    if isinstance(keyList, six.string_types):
       keyList = [keyList]
     for key in keyList:
       if key not in self.__cache:
@@ -174,7 +174,7 @@ class CachedJobState(object):
 
   def __cacheResult(self, cKey, functor, fArgs=None):
     # If it's a string
-    if isinstance(cKey, basestring):
+    if isinstance(cKey, six.string_types):
       if cKey not in self.__cache:
         if self.dOnlyCache:
           return S_ERROR("%s is not cached")
@@ -311,7 +311,7 @@ class CachedJobState(object):
 #
 
   def setAttribute(self, name, value):
-    if not isinstance(name, basestring):
+    if not isinstance(name, six.string_types):
       return S_ERROR("Attribute name has to be a string")
     self.__cacheAdd("att.%s" % name, value)
     return S_OK()
@@ -334,7 +334,7 @@ class CachedJobState(object):
 # Optimizer params
 
   def setOptParameter(self, name, value):
-    if not isinstance(name, basestring):
+    if not isinstance(name, six.string_types):
       return S_ERROR("Optimizer parameter name has to be a string")
     self.__cacheAdd('optp.%s' % name, value)
     return S_OK()

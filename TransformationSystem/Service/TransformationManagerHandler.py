@@ -194,7 +194,7 @@ class TransformationManagerHandler(RequestHandler):
       return S_OK({})
 
     statusSample = dictOfNewFilesStatus.values()[0]
-    if isinstance(statusSample, basestring):
+    if isinstance(statusSample, six.string_types):
       # FIXME: kept for backward compatibility with old clients... Remove when no longer needed
       # This comes from an old client, set the error flag but we must get the current status first
       newStatusForFileIDs = {}

@@ -437,7 +437,7 @@ class InstalledComponentsDB(object):
             toAppend = element
             if isinstance(toAppend, datetime.datetime):
               toAppend = toAppend.strftime("%Y-%m-%d %H:%M:%S")
-            if isinstance(toAppend, basestring):
+            if isinstance(toAppend, six.string_types):
               toAppend = '\'%s\'' % (toAppend)
             if i == 0:
               sql = '%s%s' % (sql, toAppend)
@@ -446,7 +446,7 @@ class InstalledComponentsDB(object):
           sql = '%s )' % (sql)
         else:
           continue
-      elif isinstance(matchFields[key], basestring):
+      elif isinstance(matchFields[key], six.string_types):
         sql = '`%s` %s \'%s\'' % (actualKey, comparison, matchFields[key])
       elif isinstance(matchFields[key], datetime.datetime):
         sql = '%s %s \'%s\'' % \

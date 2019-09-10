@@ -343,10 +343,10 @@ class TransformationClient(Client):
 
     """
     # create dictionary in case newLFNsStatus is a string
-    if isinstance(newLFNsStatus, basestring):
+    if isinstance(newLFNsStatus, six.string_types):
       if not lfns:
         return S_OK({})
-      if isinstance(lfns, basestring):
+      if isinstance(lfns, six.string_types):
         lfns = [lfns]
       newLFNsStatus = dict.fromkeys(lfns, newLFNsStatus)
     if not newLFNsStatus:

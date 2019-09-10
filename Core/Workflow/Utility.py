@@ -27,7 +27,7 @@ def substitute(param, variable, value):
   """
 
   tmp_string = str(param).replace('@{' + variable + '}', value)
-  if isinstance(param, basestring):
+  if isinstance(param, six.string_types):
     return tmp_string
   return eval(tmp_string)
 
@@ -42,7 +42,7 @@ def resolveVariables(varDict):
   while ntry < max_tries:
     substFlag = False
     for var, value in varDict.iteritems():
-      if isinstance(value, basestring):
+      if isinstance(value, six.string_types):
         substitute_vars = getSubstitute(value)
         for substitute_var in substitute_vars:
           if substitute_var in variables:

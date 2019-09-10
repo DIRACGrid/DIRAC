@@ -77,7 +77,7 @@ class FileCatalog( object ):
     self.opHelper = Operations( vo = self.vo )
 
     catalogList = []
-    if isinstance( catalogs, basestring ):
+    if isinstance(catalogs, six.string_types):
       catalogList = [catalogs]
     elif isinstance( catalogs, ( list, tuple ) ):
       catalogList = list( catalogs )

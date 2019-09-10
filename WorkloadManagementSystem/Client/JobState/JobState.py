@@ -289,7 +289,7 @@ class JobState(object):
   right_removeOptParameters = RIGHT_GET_INFO
 
   def removeOptParameters(self, nameList):
-    if isinstance(nameList, basestring):
+    if isinstance(nameList, six.string_types):
       nameList = [nameList]
     try:
       self.__checkType(nameList, (list, tuple))

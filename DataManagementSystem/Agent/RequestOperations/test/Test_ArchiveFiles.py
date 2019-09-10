@@ -65,7 +65,7 @@ def multiRetVal(*args, **kwargs):
              'Successful': {},
              }}
   lfns = args[0]
-  if isinstance(lfns, basestring):
+  if isinstance(lfns, six.string_types):
     lfns = [lfns]
   for _index, lfn in enumerate(lfns):
     if str(kwargs.get('Index', 5)) in lfn:

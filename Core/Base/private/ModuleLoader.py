@@ -200,7 +200,7 @@ class ModuleLoader( object ):
     return S_OK()
 
   def __recurseImport( self, modName, parentModule = None, hideExceptions = False ):
-    if isinstance( modName, basestring):
+    if isinstance(modName, six.string_types):
       modName = List.fromChar( modName, "." )
     try:
       if parentModule:

@@ -237,7 +237,7 @@ class PilotManagerHandler(RequestHandler):
     """
     # Make a list if it is not yet
     pilotRefs = list(pilotRefList)
-    if isinstance(pilotRefList, basestring):
+    if isinstance(pilotRefList, six.string_types):
       pilotRefs = [pilotRefList]
 
     # Regroup pilots per site and per owner
@@ -373,7 +373,7 @@ class PilotManagerHandler(RequestHandler):
 
   def export_deletePilots(self, pilotIDs):
 
-    if isinstance(pilotIDs, basestring):
+    if isinstance(pilotIDs, six.string_types):
       return pilotDB.deletePilot(pilotIDs)
 
     if isinstance(pilotIDs, (int, long)):

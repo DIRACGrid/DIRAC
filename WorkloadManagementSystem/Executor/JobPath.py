@@ -28,7 +28,7 @@ class JobPath(OptimizerExecutor):
     return S_OK()
 
   def __setOptimizerChain(self, jobState, opChain):
-    if not isinstance(opChain, basestring):
+    if not isinstance(opChain, six.string_types):
       opChain = ",".join(opChain)
     return jobState.setOptParameter("OptimizerChain", opChain)
 
@@ -59,7 +59,7 @@ class JobPath(OptimizerExecutor):
     if not result['OK']:
       return result
     extraPath = result['Value']
-    if isinstance(extraPath, basestring):
+    if isinstance(extraPath, six.string_types):
       extraPath = List.fromChar(result['Value'])
     return S_OK(extraPath)
 

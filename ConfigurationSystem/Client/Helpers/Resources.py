@@ -241,7 +241,7 @@ def getStorageElements(vo=None):
 def getCompatiblePlatforms(originalPlatforms):
   """ Get a list of platforms compatible with the given list
   """
-  if isinstance(originalPlatforms, basestring):
+  if isinstance(originalPlatforms, six.string_types):
     platforms = [originalPlatforms]
   else:
     platforms = list(originalPlatforms)
@@ -282,7 +282,7 @@ def getDIRACPlatform(OSList):
 
   # For backward compatibility allow a single string argument
   osList = OSList
-  if isinstance(OSList, basestring):
+  if isinstance(OSList, six.string_types):
     osList = [OSList]
 
   result = gConfig.getOptionsDict('/Resources/Computing/OSCompatibility')

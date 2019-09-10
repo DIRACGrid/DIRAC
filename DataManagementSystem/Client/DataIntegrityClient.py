@@ -35,7 +35,7 @@ class DataIntegrityClient(Client):
     """
     if isinstance( lfn, list ):
       lfns = lfn
-    elif isinstance( lfn, basestring ):
+    elif isinstance(lfn, six.string_types):
       lfns = [lfn]
     else:
       errStr = "DataIntegrityClient.setFileProblematic: Supplied file info must be list or a single LFN."

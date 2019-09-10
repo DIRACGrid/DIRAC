@@ -286,7 +286,7 @@ class ARCComputingElement(ComputingElement):
     self.usercfg.ProxyPath(os.environ['X509_USER_PROXY'])
 
     jobList = list(jobIDList)
-    if isinstance(jobIDList, basestring):
+    if isinstance(jobIDList, six.string_types):
       jobList = [jobIDList]
 
     gLogger.debug("Killing jobs %s" % jobIDList)
@@ -363,7 +363,7 @@ class ARCComputingElement(ComputingElement):
     self.usercfg.ProxyPath(os.environ['X509_USER_PROXY'])
 
     jobTmpList = list(jobIDList)
-    if isinstance(jobIDList, basestring):
+    if isinstance(jobIDList, six.string_types):
       jobTmpList = [jobIDList]
 
     # Pilots are stored with a DIRAC stamp (":::XXXXX") appended

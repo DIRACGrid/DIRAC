@@ -294,7 +294,7 @@ class JobDB(DB):
 
     resultDict = {}
     if paramList:
-      if isinstance(paramList, basestring):
+      if isinstance(paramList, six.string_types):
         paramList = paramList.split(',')
       paramNameList = []
       for pn in paramList:

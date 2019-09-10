@@ -165,7 +165,7 @@ class PilotsLoggingDB(object):
   def deletePilotsLogging(self, pilotUUID):
     """Delete all logging entries for pilot"""
 
-    if isinstance(pilotUUID, basestring):
+    if isinstance(pilotUUID, six.string_types):
       pilotUUID = [pilotUUID, ]
 
     session = self.sqlalchemySession()

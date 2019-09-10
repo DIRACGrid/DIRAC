@@ -74,7 +74,7 @@ class Mail( object ):
 
     if msg is None:
       addresses = self._mailAddress
-      if isinstance( self._mailAddress, basestring ):
+      if isinstance(self._mailAddress, six.string_types):
         addresses = self._mailAddress.split( ", " )
 
       result = self._create(addresses)

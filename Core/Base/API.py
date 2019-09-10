@@ -90,7 +90,7 @@ class API(object):
     self.__dict__.update(state)
     # Build the Logging instance again because it can not be in the dictionary
     # due to the thread locks
-    if isinstance(state['log'], basestring):
+    if isinstance(state['log'], six.string_types):
       self.log = gLogger.getSubLogger(state['log'])
 
   #############################################################################

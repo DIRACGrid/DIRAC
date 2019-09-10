@@ -113,7 +113,7 @@ class GFAL2_SRM2Storage(GFAL2_StorageBase):
       if not listProtocols:
         return S_ERROR(
             "GFAL2_SRM2Storage.getTransportURL: No local protocols defined and no defaults found.")
-    elif isinstance(protocols, basestring):
+    elif isinstance(protocols, six.string_types):
       listProtocols = [protocols]
     elif isinstance(protocols, list):
       listProtocols = protocols

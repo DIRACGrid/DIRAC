@@ -30,7 +30,7 @@ def resolveSEGroup(seGroupList, allSEs=None):
       return []
     allSEs = res['Value']
   seList = []
-  if isinstance(seGroupList, basestring):
+  if isinstance(seGroupList, six.string_types):
     seGroupList = [se.strip() for se in seGroupList.split(',') if se.strip()]
   for se in seGroupList:
     seConfig = gConfig.getValue('/Resources/StorageElementGroups/%s' % se, se)
@@ -58,7 +58,7 @@ def resolveSEGroup(seGroupList, allSEs=None):
 
 def siteGridName(site):
   """ Returns the Grid name for a site"""
-  if not isinstance(site, basestring):
+  if not isinstance(site, six.string_types):
     return None
   siteSplit = site.split('.')
   if len(siteSplit) < 3:
@@ -68,7 +68,7 @@ def siteGridName(site):
 
 def siteCountryName(site):
   """ Returns the Grid name for a site"""
-  if not isinstance(site, basestring):
+  if not isinstance(site, six.string_types):
     return None
   siteSplit = site.split('.')
   if len(siteSplit) < 3:
@@ -83,7 +83,7 @@ def _getConnectionIndex(connectionLevel, default=None):
     connectionLevel = default
   if isinstance(connectionLevel, (int, long)):
     return connectionLevel
-  if isinstance(connectionLevel, basestring):
+  if isinstance(connectionLevel, six.string_types):
     connectionLevel = connectionLevel.upper()
   return {'LOCAL': LOCAL, 'PROTOCOL': PROTOCOL, 'DOWNLOAD': DOWNLOAD}.get(connectionLevel)
 
@@ -252,7 +252,7 @@ class DMSHelpers(object):
           'DataManagement/SEsUsedForFailover', []))
       self.failoverSEs = resolveSEGroup(seList)
     # FIXME: remove string test at some point
-    return storageElement in self.failoverSEs or (not self.failoverSEs and isinstance(storageElement, basestring) and
+    return storageElement in self.failoverSEs or (not self.failoverSEs and isinstance(storageElement, six.string_types) and
                                                   'FAILOVER' in storageElement.upper())
 
   def isSEForJobs(self, storageElement, checkSE=True):
@@ -274,7 +274,7 @@ class DMSHelpers(object):
           'DataManagement/SEsUsedForArchive', []))
       self.archiveSEs = resolveSEGroup(seList)
     # FIXME: remove string test at some point
-    return storageElement in self.archiveSEs or (not self.archiveSEs and isinstance(storageElement, basestring) and
+    return storageElement in self.archiveSEs or (not self.archiveSEs and isinstance(storageElement, six.string_types) and
                                                  'ARCHIVE' in storageElement.upper())
 
   def getSitesForSE(self, storageElement, connectionLevel=None):

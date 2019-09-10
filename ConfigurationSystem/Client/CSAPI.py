@@ -196,7 +196,7 @@ class CSAPI(object):
     """
     if not self.__initialized['OK']:
       return self.__initialized
-    if isinstance(users, basestring):
+    if isinstance(users, six.string_types):
       users = [users]
     usersData = self.describeUsers(users)['Value']
     for username in users:

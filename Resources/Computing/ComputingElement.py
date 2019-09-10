@@ -430,7 +430,7 @@ class ComputingElement(object):
     for option, value in self.ceParameters.iteritems():
       if isinstance(value, list):
         ceDict[option] = value
-      elif isinstance(value, basestring):
+      elif isinstance(value, six.string_types):
         try:
           ceDict[option] = int(value)
         except ValueError:

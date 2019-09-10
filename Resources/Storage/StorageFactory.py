@@ -90,7 +90,7 @@ class StorageFactory(object):
     self.storages = []
     if pluginList is None:
       pluginList = []
-    elif isinstance(pluginList, basestring):
+    elif isinstance(pluginList, six.string_types):
       pluginList = [pluginList]
     if not self.vo:
       gLogger.warn('No VO information available')

@@ -211,7 +211,7 @@ class DirectoryClosure( DirectoryTreeBase ):
   def getChildren( self, path, connection = False ):
     """ Get child directory IDs for the given directory
     """
-    if isinstance( path, basestring ):
+    if isinstance(path, six.string_types):
       result = self.findDir( path, connection )
       if not result['OK']:
         return result
@@ -454,7 +454,7 @@ class DirectoryClosure( DirectoryTreeBase ):
     # Which procedure to use
     psName = None
     # it is a path ...
-    if isinstance( pathOrDirId, basestring ):
+    if isinstance(pathOrDirId, six.string_types):
       psName = 'ps_get_all_directory_info'
     # it is the dirId
     elif isinstance( pathOrDirId, (list, long) ):

@@ -226,7 +226,7 @@ class OracleDB(object):
       result = None
       results = None
       if array:
-        if isinstance(type(array[0]), basestring):
+        if isinstance(type(array[0]), six.string_types):
           result = cursor.arrayvar(cx_Oracle.STRING, array)
           parameters += [result]
         elif isinstance(array[0], (long, int)):

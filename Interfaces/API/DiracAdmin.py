@@ -437,7 +437,7 @@ class DiracAdmin(API):
        :return: S_OK,S_ERROR
 
     """
-    if isinstance(jobID, basestring):
+    if isinstance(jobID, six.string_types):
       try:
         jobID = int(jobID)
       except Exception as x:
@@ -514,7 +514,7 @@ class DiracAdmin(API):
        :type job: integer or string
        :return: S_OK,S_ERROR
     """
-    if not isinstance(gridReference, basestring):
+    if not isinstance(gridReference, six.string_types):
       return self._errorReport('Expected string for pilot reference')
 
     if not directory:
@@ -571,7 +571,7 @@ class DiracAdmin(API):
        :type gridReference: string
        :return: S_OK,S_ERROR
     """
-    if not isinstance(gridReference, basestring):
+    if not isinstance(gridReference, six.string_types):
       return self._errorReport('Expected string for pilot reference')
 
     result = PilotManagerClient().getPilotInfo(gridReference)
@@ -587,7 +587,7 @@ class DiracAdmin(API):
        :param gridReference: Pilot Job Reference
        :return: S_OK,S_ERROR
     """
-    if not isinstance(gridReference, basestring):
+    if not isinstance(gridReference, six.string_types):
       return self._errorReport('Expected string for pilot reference')
 
     result = PilotManagerClient().killPilot(gridReference)
@@ -604,7 +604,7 @@ class DiracAdmin(API):
        :type gridReference: string
        :return: S_OK,S_ERROR
     """
-    if not isinstance(gridReference, basestring):
+    if not isinstance(gridReference, six.string_types):
       return self._errorReport('Expected string for pilot reference')
 
     return PilotManagerClient().getPilotLoggingInfo(gridReference)
@@ -622,7 +622,7 @@ class DiracAdmin(API):
        :return: S_OK,S_ERROR
 
     """
-    if isinstance(jobID, basestring):
+    if isinstance(jobID, six.string_types):
       try:
         jobID = int(jobID)
       except Exception as x:

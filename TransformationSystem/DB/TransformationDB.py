@@ -301,7 +301,7 @@ class TransformationDB(DB):
 
   def getTransformationParameters(self, transName, parameters, connection=False):
     """ Get the requested parameters for a supplied transformation """
-    if isinstance(parameters, basestring):
+    if isinstance(parameters, six.string_types):
       parameters = [parameters]
     extraParams = bool(set(parameters) - set(self.TRANSPARAMS))
     res = self.getTransformation(transName, extraParams=extraParams, connection=connection)
@@ -372,7 +372,7 @@ class TransformationDB(DB):
       transName = long(transName)
       cmd = "SELECT TransformationID from Transformations WHERE TransformationID=%d;" % transName
     except ValueError:
-      if not isinstance(transName, basestring):
+      if not isinstance(transName, six.string_types):
         return S_ERROR("Transformation should be ID or name")
       cmd = "SELECT TransformationID from Transformations WHERE TransformationName='%s';" % transName
     res = self._query(cmd, connection)
@@ -542,7 +542,7 @@ class TransformationDB(DB):
     if condDict or older or newer:
       lfns = condDict.pop('LFN', None)
       if lfns:
-        if isinstance(lfns, basestring):
+        if isinstance(lfns, six.string_types):
           lfns = [lfns]
         res = self.__getFileIDsForLfns(lfns, connection=connection)
         if not res['OK']:

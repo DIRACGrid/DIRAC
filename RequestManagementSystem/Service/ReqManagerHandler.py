@@ -63,7 +63,7 @@ class ReqManagerHandler(RequestHandler):
   @classmethod
   def export_getRequestIDForName(cls, requestName):
     """ get requestID for given :requestName: """
-    if isinstance(requestName, basestring):
+    if isinstance(requestName, six.string_types):
       result = cls.__requestDB.getRequestIDForName(requestName)
       if not result["OK"]:
         return result
@@ -343,7 +343,7 @@ class ReqManagerHandler(RequestHandler):
   @classmethod
   def export_getRequestFileStatus(cls, requestID, lfnList):
     """ get request file status for a given LFNs list and requestID """
-    if isinstance(lfnList, basestring):
+    if isinstance(lfnList, six.string_types):
       lfnList = [lfnList]
     res = cls.__requestDB.getRequestFileStatus(requestID, lfnList)
     if not res["OK"]:

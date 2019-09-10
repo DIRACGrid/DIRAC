@@ -175,7 +175,7 @@ Queue %(nJobs)s
     self.daysToKeepLogs = self.ceParameters.get('DaysToKeepLogs', DEFAULT_DAYSTOKEEPLOGS)
     self.extraSubmitString = self.ceParameters.get('ExtraSubmitString', '').decode('string_escape')
     self.useLocalSchedd = self.ceParameters.get('UseLocalSchedd', self.useLocalSchedd)
-    if isinstance(self.useLocalSchedd, basestring):
+    if isinstance(self.useLocalSchedd, six.string_types):
       if self.useLocalSchedd == "False":
         self.useLocalSchedd = False
 
@@ -233,7 +233,7 @@ Queue %(nJobs)s
   def killJob(self, jobIDList):
     """ Kill the specified jobs
     """
-    if isinstance(jobIDList, basestring):
+    if isinstance(jobIDList, six.string_types):
       jobIDList = [jobIDList]
 
     self.log.verbose("KillJob jobIDList: %s" % jobIDList)
@@ -282,7 +282,7 @@ Queue %(nJobs)s
     self.__cleanup()
 
     self.log.verbose("Job ID List for status: %s " % jobIDList)
-    if isinstance(jobIDList, basestring):
+    if isinstance(jobIDList, six.string_types):
       jobIDList = [jobIDList]
 
     resultDict = {}

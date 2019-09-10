@@ -656,7 +656,7 @@ class StorageManagementDB(DB):
     allReplicaIDs = []
     taskStates = []
     for se, lfns in lfnDict.iteritems():
-      if isinstance(lfns, basestring):
+      if isinstance(lfns, six.string_types):
         lfns = [lfns]
       res = self._getExistingReplicas(se, lfns, connection=connection)
       if not res['OK']:

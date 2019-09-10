@@ -88,7 +88,7 @@ class PublisherHandler(RequestHandler):
         return siteNames
       siteNames = siteNames['Value']
 
-    if isinstance(siteNames, basestring):
+    if isinstance(siteNames, six.string_types):
       siteNames = [siteNames]
 
     sitesRes = {}

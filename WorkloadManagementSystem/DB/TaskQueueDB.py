@@ -179,7 +179,7 @@ class TaskQueueDB(DB):
         if not isinstance(tqDefDict[field], (int, long)):
           return S_ERROR("Mandatory field %s value type is not valid: %s" % (field, type(tqDefDict[field])))
       else:
-        if not isinstance(tqDefDict[field], basestring):
+        if not isinstance(tqDefDict[field], six.string_types):
           return S_ERROR("Mandatory field %s value type is not valid: %s" % (field, type(tqDefDict[field])))
         result = self._escapeString(tqDefDict[field])
         if not result['OK']:

@@ -53,7 +53,7 @@ class InputDataByProtocol(object):
       self.log.verbose('Data to resolve passed directly to InputDataByProtocol module')
       self.inputData = dataToResolve  # e.g. list supplied by another module
 
-    if isinstance(self.inputData, basestring):
+    if isinstance(self.inputData, six.string_types):
       self.inputData = self.inputData.replace(' ', '').split(',')
 
     self.inputData = [x.replace('LFN:', '') for x in self.inputData]

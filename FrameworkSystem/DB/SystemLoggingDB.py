@@ -275,7 +275,7 @@ class SystemLoggingDB( DB ):
                        'VariableText', 'SystemName',
                        'SubSystemName', 'OwnerDN', 'OwnerGroup',
                        'ClientIPNumberString', 'SiteName']
-    elif isinstance( showFieldList, basestring ):
+    elif isinstance(showFieldList, six.string_types):
       showFieldList = [ showFieldList ]
     elif not isinstance( showFieldList, list ):
       errorString = 'The showFieldList variable should be a string or a list of strings'

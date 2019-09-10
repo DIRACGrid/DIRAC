@@ -155,7 +155,7 @@ class WMSAdministratorHandler(RequestHandler):
     """ Get the site mask logging history
     """
 
-    if isinstance(sites, basestring):
+    if isinstance(sites, six.string_types):
       sites = [sites]
 
     return jobDB.getSiteMaskLogging(sites)
@@ -473,7 +473,7 @@ class WMSAdministratorHandler(RequestHandler):
     """
     # Make a list if it is not yet
     pilotRefs = list(pilotRefList)
-    if isinstance(pilotRefList, basestring):
+    if isinstance(pilotRefList, six.string_types):
       pilotRefs = [pilotRefList]
 
     # Regroup pilots per site and per owner
@@ -618,7 +618,7 @@ class WMSAdministratorHandler(RequestHandler):
   @deprecated("Moved to PilotManagerHandler")
   def export_deletePilots(cls, pilotIDs):
 
-    if isinstance(pilotIDs, basestring):
+    if isinstance(pilotIDs, six.string_types):
       return PilotAgentsDB().deletePilot(pilotIDs)
 
     if isinstance(pilotIDs, (int, long)):

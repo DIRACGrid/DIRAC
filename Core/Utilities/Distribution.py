@@ -63,7 +63,7 @@ def writeVersionToInit(rootPath, version):
 def createTarball(tarballPath, directoryToTar, additionalDirectoriesToTar=None):
   tf = tarfile.open(tarballPath, "w:gz")
   tf.add(directoryToTar, os.path.basename(os.path.abspath(directoryToTar)), recursive=True)
-  if isinstance(additionalDirectoriesToTar, basestring):
+  if isinstance(additionalDirectoriesToTar, six.string_types):
     additionalDirectoriesToTar = [additionalDirectoriesToTar]
   if additionalDirectoriesToTar:
     for dirToTar in additionalDirectoriesToTar:

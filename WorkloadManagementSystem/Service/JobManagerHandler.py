@@ -287,7 +287,7 @@ class JobManagerHandler(RequestHandler):
 
     if isinstance(jobInput, int):
       return [jobInput]
-    if isinstance(jobInput, basestring):
+    if isinstance(jobInput, six.string_types):
       try:
         ijob = int(jobInput)
         return [ijob]

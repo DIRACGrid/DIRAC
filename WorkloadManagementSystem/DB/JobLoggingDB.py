@@ -56,7 +56,7 @@ class JobLoggingDB(DB):
       time_order = round(epoc, 3)
     else:
       try:
-        if isinstance(date, basestring):
+        if isinstance(date, six.string_types):
           # The date is provided as a string in UTC
           _date = Time.fromString(date)
           epoc = time.mktime(_date.timetuple()) + _date.microsecond / 1000000. - MAGIC_EPOC_NUMBER
@@ -122,7 +122,7 @@ class JobLoggingDB(DB):
     # Make sure that we have a list of jobs
     if isinstance(jobID, (int, long)):
       jobList = [str(jobID)]
-    elif isinstance(jobID, basestring):
+    elif isinstance(jobID, six.string_types):
       jobList = [jobID]
     else:
       jobList = list(jobID)

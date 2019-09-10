@@ -118,7 +118,7 @@ class MatcherHandler(RequestHandler):
   def export_getMatchingTaskQueues(self, resourceDict):
     """ Return all task queues that match the resourceDict
     """
-    if 'Site' in resourceDict and isinstance(resourceDict['Site'], basestring):
+    if 'Site' in resourceDict and isinstance(resourceDict['Site'], six.string_types):
       negativeCond = self.limiter.getNegativeCondForSite(resourceDict['Site'])
     else:
       negativeCond = self.limiter.getNegativeCond()

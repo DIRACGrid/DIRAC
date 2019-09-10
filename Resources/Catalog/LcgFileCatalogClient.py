@@ -304,7 +304,7 @@ class LcgFileCatalogClient( FileCatalogClientBase ):
         failed[lfn] = res['Message']
       elif res['Value']:
         successful[lfn] = lfn
-      elif not isinstance( guid, basestring ):
+      elif not isinstance(guid, six.string_types):
         successful[lfn] = False
       else:
         res = existsGuid( guid )

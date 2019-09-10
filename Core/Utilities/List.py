@@ -48,7 +48,7 @@ def fromChar(inputString, sepChar=","):
      :return: list of strings or None if sepChar has a wrong type
   """
   # to prevent getting an empty String as argument
-  if not (isinstance(inputString, basestring) and isinstance(sepChar, basestring) and sepChar):
+  if not (isinstance(inputString, basestring) and isinstance(sepChar, six.string_types) and sepChar):
     return None
   return [fieldString.strip() for fieldString in inputString.split(sepChar) if len(fieldString.strip()) > 0]
 

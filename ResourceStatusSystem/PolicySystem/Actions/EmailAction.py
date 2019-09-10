@@ -76,7 +76,7 @@ class EmailAction(BaseAction):
       elif not siteName['Value']:
         siteName = "Unassigned Resources"
       else:
-        siteName = siteName['Value'] if isinstance(siteName['Value'], basestring) else siteName['Value'][0]
+        siteName = siteName['Value'] if isinstance(siteName['Value'], six.string_types) else siteName['Value'][0]
 
     with sqlite3.connect(self.cacheFile) as conn:
 

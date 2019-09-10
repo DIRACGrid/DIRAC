@@ -143,7 +143,7 @@ class ObjectLoader(object):
   def __recurseImport(self, modName, parentModule=None, hideExceptions=False):
     """ Internal function to load modules
     """
-    if isinstance(modName, basestring):
+    if isinstance(modName, six.string_types):
       modName = modName.split('.')
     try:
       if parentModule:

@@ -251,7 +251,7 @@ class TransformationSuccess(ClientsTestCase):
     self.assertTrue(res['OK'])
     defaultParams = res['Value'].copy()
     for parameterName, defaultValue in res['Value'].items():
-      if isinstance(defaultValue, basestring):
+      if isinstance(defaultValue, six.string_types):
         testValue = 'TestValue'
       else:
         testValue = 99999

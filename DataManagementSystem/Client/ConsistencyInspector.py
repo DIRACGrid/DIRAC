@@ -529,7 +529,7 @@ class ConsistencyInspector(object):
 
   def set_lfns(self, value):
     """ Setter """
-    if isinstance(value, basestring):
+    if isinstance(value, six.string_types):
       value = [value]
     value = [v.replace(' ', '').replace('//', '/') for v in value]
     self._lfns = value
@@ -554,7 +554,7 @@ class ConsistencyInspector(object):
     gLogger.info("-" * 40)
     gLogger.info("Performing the FC->SE check")
     gLogger.info("-" * 40)
-    if isinstance(lfnDir, basestring):
+    if isinstance(lfnDir, six.string_types):
       lfnDir = [lfnDir]
     res = self._getCatalogDirectoryContents(lfnDir)
     if not res['OK']:
@@ -573,7 +573,7 @@ class ConsistencyInspector(object):
     gLogger.info("-" * 40)
     gLogger.info("Performing the FC->SE check")
     gLogger.info("-" * 40)
-    if isinstance(lfns, basestring):
+    if isinstance(lfns, six.string_types):
       lfns = [lfns]
     res = self._getCatalogMetadata(lfns)
     if not res['OK']:

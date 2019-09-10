@@ -224,7 +224,7 @@ class PilotAgentsDB(DB):
   def deletePilot(self, pilotRef, conn=False):
     """ Delete Pilot with the given reference from the PilotAgentsDB """
 
-    if isinstance(pilotRef, basestring):
+    if isinstance(pilotRef, six.string_types):
       pilotID = self.__getPilotID(pilotRef)
     else:
       pilotID = pilotRef
@@ -410,7 +410,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
     """ Get Pilot ID for the given pilot reference or a list of references
     """
 
-    if isinstance(pilotRef, basestring):
+    if isinstance(pilotRef, six.string_types):
       req = "SELECT PilotID from PilotAgents WHERE PilotJobReference='%s'" % pilotRef
       result = self._query(req)
       if not result['OK']:

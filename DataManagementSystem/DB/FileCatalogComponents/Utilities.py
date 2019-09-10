@@ -12,7 +12,7 @@ def getIDSelectString(ids):
   :param ids: input IDs - can be single int, list or tuple or a SELECT string
   :return: Select string
   """
-  if isinstance(ids, basestring) and ids.lower().startswith('select'):
+  if isinstance(ids, six.string_types) and ids.lower().startswith('select'):
     idString = ids
   elif isinstance(ids, (int, long)):
     idString = '%d' % ids

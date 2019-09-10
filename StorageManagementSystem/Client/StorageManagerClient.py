@@ -22,7 +22,7 @@ def getFilesToStage( lfnList, jobState = None, checkOnlyTapeSEs = None, jobLog =
     return S_OK( {'onlineLFNs':[], 'offlineLFNs': {}, 'failedLFNs':[], 'absentLFNs':{}} )
 
   dm = DataManager()
-  if isinstance( lfnList, basestring ):
+  if isinstance(lfnList, six.string_types):
     lfnList = [lfnList]
 
   lfnListReplicas = dm.getReplicasForJobs( lfnList, getUrl = False )
