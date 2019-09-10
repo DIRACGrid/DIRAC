@@ -12,6 +12,7 @@ If option --sync is used contend that is not in the source directory but is
 only in the target directory will be deleted.
 """
 
+from past.builtins import long
 import os
 import DIRAC
 from DIRAC.Core.Base import Script

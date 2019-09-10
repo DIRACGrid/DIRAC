@@ -6,6 +6,7 @@
     databases
 """
 
+from past.builtins import long
 import six
 import re
 import time

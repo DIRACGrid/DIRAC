@@ -12,6 +12,7 @@
 
 __RCSID__ = "$Id$"
 
+from past.builtins import long
 import six
 import inspect
 import threading

@@ -1,6 +1,7 @@
 """
 """
 
+from past.builtins import long
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.Core.Utilities import List

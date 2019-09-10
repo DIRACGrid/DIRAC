@@ -4,6 +4,7 @@
     class which is the base class for the main Workflow classes.
 """
 from __future__ import print_function
+from past.builtins import long
 from DIRAC.Core.Workflow.Utility import *
 
 __RCSID__ = "$Id$"

@@ -7,6 +7,7 @@
 from __future__ import print_function
 __RCSID__ = "$Id$"
 
+from past.builtins import long
 from datetime import timedelta
 
 from DIRAC import S_OK, S_ERROR

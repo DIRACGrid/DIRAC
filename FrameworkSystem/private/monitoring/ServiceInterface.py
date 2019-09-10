@@ -7,6 +7,7 @@
 
 __RCSID__ = "$Id$"
 
+from past.builtins import long
 from DIRAC import S_OK, S_ERROR
 
 from DIRAC import gLogger, rootPath, gConfig

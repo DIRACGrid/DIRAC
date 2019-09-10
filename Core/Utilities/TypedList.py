@@ -19,6 +19,7 @@ __RCSID__ = "$Id $"
 # @date 2012/07/19 08:21:22
 # @brief Definition of TypedList class.
 
+from past.builtins import long
 import six
 from collections import deque
 

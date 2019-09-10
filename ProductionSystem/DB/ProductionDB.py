@@ -5,6 +5,7 @@
 """
 
 # # imports
+from past.builtins import long
 import six
 import json
 import threading

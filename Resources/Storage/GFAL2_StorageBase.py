@@ -10,6 +10,7 @@
 # pylint: disable=arguments-differ
 
 # # imports
+from past.builtins import long
 import six
 import os
 import datetime

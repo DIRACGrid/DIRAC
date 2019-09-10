@@ -11,6 +11,7 @@
 __RCSID__ = "$Id$"
 
 # # imports
+from past.builtins import long
 import re
 import ast
 import os

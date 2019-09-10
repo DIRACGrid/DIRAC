@@ -4,6 +4,7 @@
 
 __RCSID__ = "$Id$"
 
+from past.builtins import long
 import six
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler

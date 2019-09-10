@@ -8,6 +8,7 @@
 
 from __future__ import print_function
 
+from past.builtins import long
 import unittest
 import sys
 
