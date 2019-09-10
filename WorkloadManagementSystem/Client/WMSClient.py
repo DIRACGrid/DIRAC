@@ -174,10 +174,9 @@ class WMSClient(object):
     if not result['OK']:
       return result
     nJobs = result['Value']
-    parametricJob = nJobs > 0
     result = self.jobManager.submitJob(classAdJob.asJDL())
 
-    if parametricJob:
+    if nJobs:
       gLogger.debug('Applying transactional job submission')
       # The server applies transactional bulk submission, we should confirm the jobs
       if result['OK']:

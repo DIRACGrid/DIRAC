@@ -1202,7 +1202,7 @@ class ComponentInstaller(object):
         if result['OK'] and result['Value']:
           stats = result['Value'][1]
           values = re.findall(r"\d*\.\d+|\d+", stats)
-          if values > 0:
+          if values:
             runDict['CPU'] = values[1]
             runDict['MEM'] = values[2]
             runDict['VSZ'] = values[3]

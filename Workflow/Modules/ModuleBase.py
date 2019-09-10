@@ -137,11 +137,11 @@ class ModuleBase(object):
 
     # This catches everything that is voluntarily thrown within the modules, so an error
     except RuntimeError as rte:
-      if len(rte.args) > 1:  # In this case the RuntimeError is supposed to return in rte[1] an error code
-                             # (possibly from DErrno)
-        self.log.error(rte[0])
-        self.setApplicationStatus(rte[0])
-        return S_ERROR(rte[1], rte[0])  # rte[1] should be an error code
+      if len(rte.args) > 1:
+        # In this case the RuntimeError is supposed to return in rte[1] an error code (possibly from DErrno)
+        self.log.error(rte.args[0])
+        self.setApplicationStatus(rte.args[0])
+        return S_ERROR(rte.args[1], rte.args[0])  # rte[1] should be an error code
 
       # If we are here it is just a string
       self.log.error(rte)
