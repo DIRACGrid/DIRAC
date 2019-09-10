@@ -118,7 +118,7 @@ class BaseAccountingType(object):
       key = self.fieldsList[i]
       if self.valuesList[i] is None:
         errorList.append("no value for %s" % key)
-      if key in self.valueFieldsList and not isinstance(self.valuesList[i], (int, long, float)):
+      if key in self.valueFieldsList and not isinstance(self.valuesList[i], six.integer_types + (float,)):
         errorList.append("value for key %s is not numerical type" % key)
     if errorList:
       return S_ERROR("Invalid values: %s" % ", ".join(errorList))

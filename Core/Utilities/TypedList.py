@@ -238,7 +238,7 @@ class NumericList( TypedList ):
     :param mixed iterable: initial values
     """
 
-    TypedList.__init__( self, iterable, allowedTypes = ( int, long, float ) )
+    TypedList.__init__( self, iterable, allowedTypes = six.integer_types + (float,) )
 
 class StrList( TypedList ):
   """

@@ -36,7 +36,7 @@ class TypedListTestCase(unittest.TestCase):
   """
   def setUp( self ):
     """ test setup """
-    self.numericTypes = ( int, long, float )
+    self.numericTypes = six.integer_types + (float,)
     self.floatType = float 
     self.testClassType = TestClass
 

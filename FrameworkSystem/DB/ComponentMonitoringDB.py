@@ -228,7 +228,7 @@ class ComponentMonitoringDB(DB):
       val = condDict[field]
       if isinstance(val, six.string_types):
         sqlWhere.append("%s='%s'" % (field, val))
-      elif isinstance(val, (int, long, float)):
+      elif isinstance(val, six.integer_types + (float,)):
         sqlWhere.append("%s='%s'" % (field, val))
       else:
         sqlWhere.append("( %s )" % " OR ".join(["%s='%s'" % (field, v) for v in val]))

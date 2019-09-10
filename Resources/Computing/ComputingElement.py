@@ -435,7 +435,7 @@ class ComputingElement(object):
           ceDict[option] = int(value)
         except ValueError:
           ceDict[option] = value
-      elif isinstance(value, (int, long, float)):
+      elif isinstance(value, six.integer_types + (float,)):
         ceDict[option] = value
       else:
         self.log.warn('Type of option %s = %s not determined' % (option, value))

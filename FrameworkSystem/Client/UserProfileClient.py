@@ -22,7 +22,7 @@ class UserProfileClient(object):
       return "b"
     if dataObj is None:
       return "o"
-    if isinstance(dataObj, (int, long, float)):
+    if isinstance(dataObj, six.integer_types + (float,)):
       return "n"
     if isinstance(dataObj, six.string_types):
       return "s"

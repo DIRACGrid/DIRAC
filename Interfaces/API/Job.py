@@ -1159,7 +1159,7 @@ class Job(API):
             classadJob.insertAttributeVectorInt(name, value)
         elif isinstance(value, six.string_types) and value:
           classadJob.insertAttributeInt(name, value)
-        elif isinstance(value, (int, long, float)):
+        elif isinstance(value, six.integer_types + (float,)):
           classadJob.insertAttributeInt(name, value)
 
     if self.numberOfParameters > 0:
