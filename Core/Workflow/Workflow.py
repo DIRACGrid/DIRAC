@@ -2,6 +2,9 @@
     Workflow class is the main container of Steps and Modules
 """
 
+import os
+import re
+import types
 import xml.sax
 
 from DIRAC.Core.Workflow.Parameter import *
