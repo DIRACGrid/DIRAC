@@ -353,7 +353,11 @@ the stalledTime limit.
 
       result = JobMonitoringClient().getJobParameter(jobID, 'CPUNormalizationFactor')
       if not result['OK'] or not result['Value']:
-        self.log.error('Error getting Job Parameter CPUNormalizationFactor, setting 0', result['Message'])
+        self.log.error(
+            'Error getting Job Parameter CPUNormalizationFactor, setting 0',
+            result.get(
+                'Message',
+                'No such value'))
         cpuNormalization = 0.0
       else:
         cpuNormalization = float(result['Value'].get('CPUNormalizationFactor'))

@@ -449,7 +449,7 @@ class DirectoryTreeBase(object):
     arguments = paths
     successful = {}
     failed = {}
-    for path, attribute in arguments.items():
+    for path, attribute in arguments.iteritems():
       result = directoryFunction(path, attribute)
       if not result['OK']:
         failed[path] = result['Message']

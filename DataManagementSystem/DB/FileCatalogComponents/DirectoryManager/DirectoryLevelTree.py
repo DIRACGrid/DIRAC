@@ -7,8 +7,9 @@
 __RCSID__ = "$Id$"
 
 import os
+
 from DIRAC import S_OK, S_ERROR
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryTreeBase import DirectoryTreeBase
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryManager.DirectoryTreeBase import DirectoryTreeBase
 
 MAX_LEVELS = 15
 
@@ -480,7 +481,7 @@ class DirectoryLevelTree(DirectoryTreeBase):
         parentDict[parentPath]['DirList'].append(dirID)
         parentDict[parentPath]['OldParentID'] = parentID
 
-    for parentPath, dirDict in parentDict.items():
+    for parentPath, dirDict in parentDict.iteritems():
       dirIDList = dirDict['DirList']
       oldParentID = dirDict['OldParentID']
       result = self.findDir(parentPath)

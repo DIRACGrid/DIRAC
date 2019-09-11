@@ -82,19 +82,26 @@ class ProxyManagerHandler(RequestHandler):
     """
     return S_OK(self.__generateUserProxiesInfo())
 
-  types_requestDelegationUpload = [[int, long]]
+  # WARN: Since v7r1 requestDelegationUpload method use only first argument!
+  # WARN:   Second argument for compatibility with older versions
+  types_requestDelegationUpload = [[int, long], [basestring, bool]]
 
-  def export_requestDelegationUpload(self, requestedUploadTime):
+  def export_requestDelegationUpload(self, requestedUploadTime, diracGroup=None):
     """ Request a delegation. Send a delegation request to client
 
         :param int,long requestedUploadTime: requested live time
 
         :return: S_OK(dict)/S_ERROR() -- dict contain id and proxy as string of the request
     """
+    if diracGroup:
+      # WARN: Since v7r1, DIRAC has implemented the ability to store only one proxy and
+      # WARN:   dynamically add a group at the request of a proxy. This means that group extensions
+      # WARN:   doesn't need for storing proxies.
+      self.log.warn("Proxy with DIRAC group or VOMS extensions must be not allowed to be uploaded.")
     credDict = self.getRemoteCredentials()
     userDN = credDict['DN']
     userName = credDict['username']
-    userGroup = credDict['group']
+    userGroup = diracGroup or credDict['group']
     retVal = Registry.getGroupsForUser(credDict['username'])
     if not retVal['OK']:
       return retVal
@@ -142,7 +149,7 @@ class ProxyManagerHandler(RequestHandler):
     """
     credDict = self.getRemoteCredentials()
     if Properties.PROXY_MANAGEMENT not in credDict['properties']:
-      return self.__proxyDB.getUsers(validSecondsRequired, userName=credDict['username'])
+      return self.__proxyDB.getUsers(validSecondsRequired, userMask=credDict['username'])
     return self.__proxyDB.getUsers(validSecondsRequired)
 
   def __checkProperties(self, requestedUserDN, requestedUserGroup):

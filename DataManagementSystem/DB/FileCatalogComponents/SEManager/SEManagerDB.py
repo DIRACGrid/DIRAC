@@ -1,51 +1,13 @@
-""" DIRAC FileCatalog Storage Element Manager mix-in class """
+""" DIRAC FileCatalog Storage Element Manager mix-in class for SE definitions within the FC database"""
 
 __RCSID__ = "$Id$"
 
-import threading
 import time
 import random
 
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
 from DIRAC.Core.Utilities.Pfn import pfnunparse
-
-
-class SEManagerBase:
-
-  def _refreshSEs(self, connection=False):
-    """Refresh the SE cache"""
-
-    return S_ERROR("To be implemented on derived class")
-
-  def __init__(self, database=None):
-    self.db = database
-    if self.db:
-      self.db.seNames = {}
-      self.db.seids = {}
-      self.db.seDefinitions = {}
-    self.lock = threading.Lock()
-    self.seUpdatePeriod = 600
-
-    # last time the cache was updated (epoch)
-    self.lastUpdate = 0
-    self._refreshSEs()
-
-  def setUpdatePeriod(self, period):
-    self.seUpdatePeriod = period
-
-  def setSEDefinitions(self, seDefinitions):
-    self.db.seDefinitions = seDefinitions
-    self.seNames = {}
-    for seID, seDef in self.db.seDefinitions.items():
-      seName = seDef['SEName']
-      self.seNames[seName] = seID
-
-  def setDatabase(self, database):
-    self.db = database
-    self.db.seNames = {}
-    self.db.seids = {}
-    self.db.seDefinitions = {}
-    self._refreshSEs()
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SEManager.SEManagerBase import SEManagerBase
 
 
 class SEManagerDB(SEManagerBase):
@@ -73,7 +35,7 @@ class SEManagerDB(SEManagerBase):
       self.lock.release()
       return S_OK()
 
-    for seName, seId in self.db.seNames.items():
+    for seName, seId in list(self.db.seNames.iteritems()):
       if seName not in seNames:
         del self.db.seNames[seName]
         del self.db.seids[seId]
@@ -248,16 +210,3 @@ class SEManagerDB(SEManagerBase):
             self.db.seDefinitions[seID]['SEDict'].get('VOPrefix')
 
     return S_OK(resultDict)
-
-
-class SEManagerCS(SEManagerBase):
-
-  def findSE(self, se):
-    return S_OK(se)
-
-  def addSE(self, se):
-    return S_OK(se)
-
-  def getSEDefinition(self, se):
-    # TODO Think about using a cache for this information
-    return gConfig.getOptionsDict('/Resources/StorageElements/%s/AccessProtocol.1' % se)

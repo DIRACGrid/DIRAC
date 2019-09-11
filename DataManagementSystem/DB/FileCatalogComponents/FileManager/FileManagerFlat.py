@@ -4,7 +4,7 @@ import os
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.List import stringListToString, intListToString
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManagerBase import FileManagerBase
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManager.FileManagerBase import FileManagerBase
 
 
 class FileManagerFlat(FileManagerBase):
@@ -37,7 +37,7 @@ class FileManagerFlat(FileManagerBase):
         for fileName in fileNames:
           failed['%s/%s' % (dirPath, fileName)] = error
       else:
-        for fileName, fileDict in res['Value'].items():
+        for fileName, fileDict in res['Value'].iteritems():
           successful["%s/%s" % (dirPath, fileName)] = fileDict
     return S_OK({"Successful": successful, "Failed": failed})
 
@@ -106,7 +106,7 @@ class FileManagerFlat(FileManagerBase):
         lfns.pop(lfn)
     else:
       failed.update(res['Value']['Failed'])
-      for lfn, fileDict in res['Value']['Successful'].items():
+      for lfn, fileDict in res['Value']['Successful'].iteritems():
         lfns[lfn]['FileID'] = fileDict['FileID']
     return S_OK({'Successful': lfns, 'Failed': failed})
 
@@ -246,7 +246,7 @@ class FileManagerFlat(FileManagerBase):
     lfnFileIDDict = res['Value']['Successful']
     toRemove = []
     directorySESizeDict = {}
-    for lfn, fileDict in lfnFileIDDict.items():
+    for lfn, fileDict in lfnFileIDDict.iteritems():
       fileID = fileDict['FileID']
       se = lfns[lfn]['SE']
       toRemove.append((fileID, se))

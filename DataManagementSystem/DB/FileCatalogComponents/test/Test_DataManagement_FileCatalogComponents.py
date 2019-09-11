@@ -6,13 +6,13 @@
 # imports
 from mock import MagicMock
 
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryTreeBase import DirectoryTreeBase
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryLevelTree import DirectoryLevelTree
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryManager.DirectoryTreeBase import DirectoryTreeBase
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryManager.DirectoryLevelTree import DirectoryLevelTree
 # from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectorySimpleTree import DirectorySimpleTree
 # from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryFlatTree import DirectoryFlatTree
 # from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryNodeTree import DirectoryNodeTree
 
-from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManagerBase import FileManagerBase
+from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileManager.FileManagerBase import FileManagerBase
 
 dbMock = MagicMock()
 ugManagerMock = MagicMock()

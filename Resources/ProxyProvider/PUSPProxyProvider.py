@@ -22,7 +22,7 @@ class PUSPProxyProvider(ProxyProvider):
     """ Generate user proxy
 
         :param dict userDict: user description dictionary with possible fields:
-               FullName, UserName, DN, EMail, DiracGroup
+               FullName, UserName, DN, Email, DiracGroup
 
         :return: S_OK(basestring)/S_ERROR() -- basestring is a proxy string
     """
