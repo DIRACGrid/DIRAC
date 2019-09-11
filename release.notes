@@ -1,3 +1,8 @@
+[v6r22p9]
+
+*Core
+FIX: (#4269) Workflow - revert changes introduced in #4253
+
 [v6r22p8]
 
 *WMS
