@@ -56,7 +56,7 @@ class StateMachine( object ):
     if not issubclass( state.__class__, State ):
       raise TypeError("state should be inherited from State")
     self.__state = state
-    self.transTable = transTable if type(transTable) == dict else {}
+    self.transTable = transTable if isinstance(transTable, dict) else {}
 
   def setState( self, state ):
     """ set state """

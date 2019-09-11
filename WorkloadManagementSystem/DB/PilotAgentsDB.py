@@ -649,14 +649,14 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
     site_select = []
     if 'GridSite' in selectDict:
       site_select = selectDict['GridSite']
-      if not isinstance(site_select, type([])):
+      if not isinstance(site_select, list):
         site_select = [site_select]
       del selectDict['GridSite']
 
     status_select = []
     if 'Status' in selectDict:
       status_select = selectDict['Status']
-      if not isinstance(status_select, type([])):
+      if not isinstance(status_select, list):
         status_select = [status_select]
       del selectDict['Status']
 
@@ -970,7 +970,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
       del selectDict['LastUpdateTime']
     if 'Owner' in selectDict:
       userList = selectDict['Owner']
-      if not isinstance(userList, type([])):
+      if not isinstance(userList, list):
         userList = [userList]
       dnList = []
       for uName in userList:

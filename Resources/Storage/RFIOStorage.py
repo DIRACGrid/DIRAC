@@ -3,10 +3,11 @@
 
 __RCSID__ = "$Id$"
 
-import types
 import re
 import os
 import time
+
+import six
 
 from DIRAC                                      import gLogger, S_OK, S_ERROR
 from DIRAC.Resources.Storage.Utilities          import checkArgumentFormat
@@ -994,11 +995,11 @@ class RFIOStorage( StorageBase ):
   def __checkArgumentFormat( self, path ):
     """  FIXME: Can be replaced by a generic checkArgumentFormat Utility 
     """
-    if type( path ) in types.StringTypes:
+    if isinstance(path, six.string_types):
       urls = [path]
-    elif type( path ) == types.ListType:
+    elif isinstance(path, list):
       urls = path
-    elif type( path ) == types.DictType:
+    elif isinstance(path, dict):
       urls = path.keys()
     else:
       return S_ERROR( "RFIOStorage.__checkArgumentFormat: Supplied path is not of the correct format." )
