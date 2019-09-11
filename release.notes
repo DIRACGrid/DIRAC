@@ -96,6 +96,11 @@ CHANGE: (#4110) updated basic tutorial for CC7 instead of SLC6.
 NEW: (#4170) added Production system documentation
 CHANGE: (#4224) Pilot 3 is the default
 
+[v6r22p9]
+
+*Core
+FIX: (#4269) Workflow - revert changes introduced in #4253
+
 [v6r22p8]
 
 *WMS
