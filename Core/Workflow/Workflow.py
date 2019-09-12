@@ -2,14 +2,9 @@
     Workflow class is the main container of Steps and Modules
 """
 
-<<<<<<< HEAD
-from __future__ import print_function
-import os, re, types
-=======
 import os
 import re
 import types
->>>>>>> rel-v6r22
 import xml.sax
 
 from DIRAC.Core.Workflow.Parameter import *
@@ -113,25 +108,11 @@ class Workflow(AttributeCollection):
     # we have to join all Modules definition from all added steps in the single dictionary
     # and we have to share this dictionary between all included steps
     # we also have to check versions of the modules and instances
-<<<<<<< HEAD
     for type_o in step.module_definitions:
       if type_o not in self.module_definitions:
         self.module_definitions.append(step.module_definitions[type_o])
-    self.step_definitions.append( step )
-    del step.module_definitions # we need to clean up all unwanted definitions
-=======
-    for type in step.module_definitions.keys():
-      # if self.module_definitions.has_key(type):
-        # we have the same ModuleDefinition in 2 places
-        # we need to find way to synchronise it
-        # print "Workflow:addStep - we need to write ModuleDefinitions synchronisation code"
-      # else:
-        # new module - just append it
-      if type not in self.module_definitions:
-        self.module_definitions.append(step.module_definitions[type])
     self.step_definitions.append(step)
-    del step.module_definitions  # we need to clean up all unwanted definitions
->>>>>>> rel-v6r22
+    del step.module_definitions # we need to clean up all unwanted definitions
     step.module_definitions = None
     return step
 
@@ -140,21 +121,12 @@ class Workflow(AttributeCollection):
     self.module_definitions.append(module)
     return module
 
-<<<<<<< HEAD
   def createStepInstance(self, type_o, name):
     """ Creates step instance of type 'type_o' with the name 'name'
     """
     if type_o in self.step_definitions:
       stepi = StepInstance(name, self.step_definitions[type_o])
       self.step_instances.append( stepi )
-=======
-  def createStepInstance(self, type, name):
-    """ Creates step instance of type 'type' with the name 'name'
-    """
-    if type in self.step_definitions:
-      stepi = StepInstance(name, self.step_definitions[type])
-      self.step_instances.append(stepi)
->>>>>>> rel-v6r22
       return stepi
     else:
       raise KeyError('Can not find StepDefinition ' + type + ' to create StepInstrance ' + name)
@@ -307,13 +279,8 @@ class Workflow(AttributeCollection):
           error_message = result['Message']
         self.workflowStatus = S_ERROR(result['Message'])
         self.workflowStatus['Errno'] = result['Errno']
-<<<<<<< HEAD
 
       step_result = result.get('Value', step_result)
-=======
-      if 'Value' in result:
-        step_result = result['Value']
->>>>>>> rel-v6r22
 
     # now we need to copy output values to the STEP!!! parameters
     # print "WorkflowInstance output assignment"
@@ -347,13 +314,8 @@ class Workflow(AttributeCollection):
     if not self.workflowStatus['OK']:
       # return S_ERROR( error_message )
       return self.workflowStatus
-<<<<<<< HEAD
     return S_OK(step_result)
-=======
-    else:
-      return S_OK(step_result)
 
->>>>>>> rel-v6r22
 
 from DIRAC.Core.Workflow.WorkflowReader import WorkflowXMLHandler
 
