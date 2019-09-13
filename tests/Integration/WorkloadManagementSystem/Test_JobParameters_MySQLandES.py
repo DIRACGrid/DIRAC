@@ -122,7 +122,7 @@ def test_MySQLandES_jobParameters():
   assert res['OK']
   assert res['Value'] == 'adminusername'
 
-  # These parameters will be looked up in MySQL and in ES, and combine
+  # These parameters will be looked up in MySQL and in ES, and combined
   res = jobMonitoringClient.getJobParameters(jobID)
   assert res['OK']
   assert res['Value'] == {jobID: {'ParName-fromMySQL': 'ParValue-fromMySQL', 'Status': 'Waiting',
@@ -168,6 +168,11 @@ def test_MySQLandES_jobParameters():
   assert res['Value'] == {jobID: {'ParName-fromMySQL': 'ParValue-fromMySQL', 'Status': 'Running',
                                   'ParName-fromES': 'ParValue-fromES'},
                           secondJobID: {'ParName-fromES-2': 'ParValue-fromES-2'}}
+
+  # These parameters will be looked up in MySQL and in ES, and combined
+  res = jobMonitoringClient.getJobParameters([jobID, secondJobID], 'Status')
+  assert res['OK']
+  assert res['Value'] == {jobID: {'Status': 'Running'}}
 
 
 # def test_MySQLandES_jobAttributes():

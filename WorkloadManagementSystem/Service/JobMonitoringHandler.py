@@ -517,8 +517,8 @@ class JobMonitoringHandler(RequestHandler):
       res = gElasticJobDB.getJobParameters(jobID, [parName])
       if not res['OK']:
         return res
-      if res['Value']:
-        return res
+      if res['Value'].get(int(jobID)):
+        return S_OK(res['Value'][jobID])
 
     res = gJobDB.getJobParameters(jobID, [parName])
     if not res['OK']:
@@ -546,20 +546,21 @@ class JobMonitoringHandler(RequestHandler):
       if not res['OK']:
         return res
       parameters = res['Value']
-      if parameters:
-        # get also those from JobDB, for those jobs with parameters registered in both backends
-        # TO-DO: remove this call one day
-        res = gJobDB.getJobParameters(jobIDs, parName)
-        if not res['OK']:
-          return res
-        if res['Value']:
-          if not isinstance(jobIDs, list):
-            jobIDs = [int(jobIDs)]
-          for jobID in jobIDs:
-            if jobID in res['Value']:
-              for key, value in res['Value'][jobID].iteritems():
-                parameters.setdefault(key, value)
-        return S_OK(parameters)
+
+      # Need anyway to get also from JobDB, for those jobs with parameters registered in MySQL or in both backends
+      res = gJobDB.getJobParameters(jobIDs, parName)
+      if not res['OK']:
+        return res
+      parametersM = res['Value']
+
+      # and now combine
+      final = dict(parametersM)
+      for jobID, jobPars in parametersM.iteritems():
+        final[jobID].update(parameters.get(jobID, {}))
+      for jobID in parameters.iterkeys():
+        if jobID not in final:
+          final[jobID] = parameters[jobID]
+      return S_OK(final)
 
     return gJobDB.getJobParameters(jobIDs, parName)
 
