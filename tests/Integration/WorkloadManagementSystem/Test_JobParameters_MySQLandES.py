@@ -100,6 +100,10 @@ def test_MySQLandES_jobParameters():
   assert res['OK']
   assert res['Value'][jobID]['Status'] == 'Waiting'
 
+  res = jobMonitoringClient.getJobAttributes(jobID)
+  assert res['OK']
+  print(res)
+
   # changing to use the ES flag
   updateFlag()
   # So now we are using the ES backend
@@ -151,7 +155,7 @@ def test_MySQLandES_jobParameters():
   secondJobID = createJob()
 
   res = jobMonitoringClient.getJobParameter(secondJobID, 'ParName-fromMySQL')
-  assert res['OK'] is False
+  assert res['OK']
 
   # Now we insert (in ES)
   res = jobStateUpdateClient.setJobParameter(secondJobID, 'ParName-fromES-2', 'ParValue-fromES-2')
@@ -174,7 +178,6 @@ def test_MySQLandES_jobParameters():
   assert res['OK']
   assert res['Value'] == {jobID: {'Status': 'Running'}}
 
-
-# def test_MySQLandES_jobAttributes():
-#   """ a basic put - remove test, changing the flag in between
-#   """
+  res = jobMonitoringClient.getJobAttributes(jobID)
+  assert res['OK']
+  print(res)
