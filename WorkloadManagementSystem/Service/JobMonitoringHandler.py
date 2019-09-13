@@ -552,8 +552,13 @@ class JobMonitoringHandler(RequestHandler):
         res = gJobDB.getJobParameters(jobIDs, parName)
         if not res['OK']:
           return res
-        for key, value in res['Value'].iteritems():
-          parameters.setdefault(key, value)
+        if res['Value']:
+          if not isinstance(jobIDs, list):
+            jobIDs = [int(jobIDs)]
+          for jobID in jobIDs:
+            if jobID in res['Value']:
+              for key, value in res['Value'][jobID].iteritems():
+                parameters.setdefault(key, value)
         return S_OK(parameters)
 
     return gJobDB.getJobParameters(jobIDs, parName)

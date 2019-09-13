@@ -68,7 +68,7 @@ def updateFlag():
   time.sleep(5)
 
 
-def test_MySQLandES():
+def test_MySQLandES_jobParameters():
   """ a basic put - remove test, changing the flag in between
   """
 
@@ -125,7 +125,7 @@ def test_MySQLandES():
   # These parameters will be looked up in MySQL and in ES, and combine
   res = jobMonitoringClient.getJobParameters(jobID)
   assert res['OK']
-  assert res['Value'] == {jobID: {'ParName-fromMySQL': 'ParValue-fromMySQL',
+  assert res['Value'] == {jobID: {'ParName-fromMySQL': 'ParValue-fromMySQL', 'Status': 'Waiting',
                                   'ParName-fromES': 'ParValue-fromES'}}
 
   # this is updating an existing parameter, but in practice it will be in ES only,
@@ -147,4 +147,29 @@ def test_MySQLandES():
   assert res['OK']
   assert res['Value'][jobID]['Status'] == 'Running'
 
-  # getJobAttribute
+  # Now we create a second job
+  secondJobID = createJob()
+
+  res = jobMonitoringClient.getJobParameter(secondJobID, 'ParName-fromMySQL')
+  assert res['OK'] is False
+
+  # Now we insert (in ES)
+  res = jobStateUpdateClient.setJobParameter(secondJobID, 'ParName-fromES-2', 'ParValue-fromES-2')
+  time.sleep(2)  # sleep to give time to ES to index
+  assert res['OK']
+
+  res = jobMonitoringClient.getJobParameter(secondJobID, 'ParName-fromES-2')  # This will be in ES
+  assert res['OK']
+  assert res['Value'] == {'ParName-fromES-2': 'ParValue-fromES-2'}
+
+  # These parameters will be looked up in MySQL and in ES, and combined
+  res = jobMonitoringClient.getJobParameters([jobID, secondJobID])
+  assert res['OK']
+  assert res['Value'] == {jobID: {'ParName-fromMySQL': 'ParValue-fromMySQL', 'Status': 'Running',
+                                  'ParName-fromES': 'ParValue-fromES'},
+                          secondJobID: {'ParName-fromES-2': 'ParValue-fromES-2'}}
+
+
+# def test_MySQLandES_jobAttributes():
+#   """ a basic put - remove test, changing the flag in between
+#   """
