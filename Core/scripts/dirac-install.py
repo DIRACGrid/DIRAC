@@ -2470,28 +2470,32 @@ def checkoutFromGit(moduleName, sourceURL, tagVersion, destinationDir=None):
   codeRepo = moduleName + 'Repo'
 
   fDirName = os.path.join(cliParams.targetPath, codeRepo)
-  cmd = "git clone '%s' '%s'" % (sourceURL, fDirName)
-
-  logNOTICE("Executing: %s" % cmd)
-  if os.system(cmd):
-    return S_ERROR("Error while retrieving sources from git")
-
-  branchName = "%s-%s" % (tagVersion, os.getpid())
-
-  isTagCmd = "( cd '%s'; git tag -l | grep '%s' )" % (fDirName, tagVersion)
-  if os.system(isTagCmd):
-    # No tag found, assume branch
-    branchSource = 'origin/%s' % tagVersion
+  if os.path.isdir(sourceURL):
+    logNOTICE("Using local copy for source: %s" % sourceURL)
+    shutil.copytree(sourceURL, fDirName)
   else:
-    branchSource = tagVersion
+    cmd = "git clone '%s' '%s'" % (sourceURL, fDirName)
 
-  cmd = "( cd '%s'; git checkout -b '%s' '%s' )" % (fDirName, branchName, branchSource)
+    logNOTICE("Executing: %s" % cmd)
+    if os.system(cmd):
+      return S_ERROR("Error while retrieving sources from git")
 
-  logNOTICE("Executing: %s" % cmd)
-  exportRes = os.system(cmd)
+    branchName = "%s-%s" % (tagVersion, os.getpid())
 
-  if exportRes:
-    return S_ERROR("Error while exporting from git")
+    isTagCmd = "( cd '%s'; git tag -l | grep '%s' )" % (fDirName, tagVersion)
+    if os.system(isTagCmd):
+      # No tag found, assume branch
+      branchSource = 'origin/%s' % tagVersion
+    else:
+      branchSource = tagVersion
+
+    cmd = "( cd '%s'; git checkout -b '%s' '%s' )" % (fDirName, branchName, branchSource)
+
+    logNOTICE("Executing: %s" % cmd)
+    exportRes = os.system(cmd)
+
+    if exportRes:
+      return S_ERROR("Error while exporting from git")
 
   # replacing the code
   if os.path.exists(fDirName + '/' + moduleName):
