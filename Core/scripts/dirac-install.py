@@ -2576,10 +2576,10 @@ if __name__ == "__main__":
         if not retVal['OK']:
           logERROR("Cannot checkout %s" % retVal['Message'])
           sys.exit(1)
-        continue
-      logNOTICE("Installing %s:%s" % (modName, modVersion))
-      if not downloadAndExtractTarball(tarsURL, modName, modVersion):
-        sys.exit(1)
+      else:
+        logNOTICE("Installing %s:%s" % (modName, modVersion))
+        if not downloadAndExtractTarball(tarsURL, modName, modVersion):
+          sys.exit(1)
     logNOTICE("Deploying scripts...")
     ddeLocation = os.path.join(cliParams.targetPath, "DIRAC", "Core",
                                "scripts", "dirac-deploy-scripts.py")
