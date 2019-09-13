@@ -43,7 +43,7 @@ class JobParametersCase(JobDBTestCase):
     time.sleep(1)
     res = self.jobDB.getJobParameters(100)
     self.assertTrue(res['OK'], res.get('Message'))
-    self.assertEqual(res['Value']['DIRAC'], 'dirac@cern', msg="Got %s" % res['Value']['DIRAC'])
+    self.assertEqual(res['Value'][100]['DIRAC'], 'dirac@cern', msg="Got %s" % res['Value'][100]['DIRAC'])
     res = self.jobDB.getJobParametersAndAttributes(100)
     self.assertTrue(res['OK'], res.get('Message'))
     self.assertEqual(res['Value'][100]['Name'], 'DIRAC', msg="Got %s" % res['Value'][100]['Name'])

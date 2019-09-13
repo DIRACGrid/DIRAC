@@ -80,7 +80,7 @@ class ElasticJobDB(DB):
       except BaseException:
         resultDict[name] = value
 
-    return S_OK(resultDict)
+    return S_OK({jobID: resultDict})
 
 ############################################################################
   def getJobParametersAndAttributes(self, jobID, attribute=None, paramList=None):
