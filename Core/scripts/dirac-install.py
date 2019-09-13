@@ -1689,7 +1689,6 @@ cmdOpts = (('r:', 'release=', 'Release version to install'),
            ('  ', 'tag=', 'release version to install from git, http or local'),
            ('m:', 'module=',
             'Module to be installed. for example: -m DIRAC or -m git://github.com/DIRACGrid/DIRAC.git:DIRAC'),
-           ('s:', 'source=', 'location of the modules to be installed'),
            ('x:', 'external=', 'external version'),
            ('  ', 'cleanPYTHONPATH', 'Only use the DIRAC PYTHONPATH (for pilots installation)'),
            ('  ', 'createLink', 'create version symbolic link from the versions directory. This is equivalent to the \
