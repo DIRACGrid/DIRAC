@@ -14,6 +14,7 @@ import commands
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities import DErrno
+from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.Security import Properties
 from DIRAC.Core.Security.VOMS import VOMS
 from DIRAC.Core.Security.MyProxy import MyProxy
@@ -1386,6 +1387,7 @@ Cheers,
     return True
 
   # WARN: Old method for compatibility with older versions v7r0-
+  @deprecated("Only for DIRAC v6")
   def __storeProxyOld(self, userDN, userGroup, chain):
     """ Store user proxy into the Proxy repository for a user specified by his
         DN and group. Old method.
