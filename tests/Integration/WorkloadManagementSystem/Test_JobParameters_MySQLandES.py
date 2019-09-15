@@ -132,6 +132,12 @@ def test_MySQLandES_jobParameters():
   assert res['Value'] == {jobID: {'ParName-fromMySQL': 'ParValue-fromMySQL', 'Status': 'Waiting',
                                   'ParName-fromES': 'ParValue-fromES'}}
 
+  # Do it again
+  res = jobMonitoringClient.getJobParameters(jobID)
+  assert res['OK']
+  assert res['Value'] == {jobID: {'ParName-fromMySQL': 'ParValue-fromMySQL', 'Status': 'Waiting',
+                                  'ParName-fromES': 'ParValue-fromES'}}
+
   # this is updating an existing parameter, but in practice it will be in ES only,
   # while in MySQL the old status "Waiting" will stay
   res = jobStateUpdateClient.setJobsParameter({jobID: ['Status', 'Matched']})
