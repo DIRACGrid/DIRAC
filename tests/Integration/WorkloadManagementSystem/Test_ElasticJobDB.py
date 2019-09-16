@@ -1,6 +1,7 @@
 """ This tests only need the JobElasticDB, and connects directly to it
 """
 
+import sys
 import unittest
 import time
 
@@ -28,28 +29,36 @@ class JobParametersCase(JobDBTestCase):
   """
 
   def test_setAndGetJobFromDB(self):
-    """
-    test_setAndGetJobFromDB tests the functions setJobParameter and getJobParameters in
-    WorkloadManagementSystem/DB/JobElasticDB.py
-
-    Test Values:
-
-    100: JobID (int)
-    DIRAC: Name (basestring)
-    dirac@cern: Value (basestring)
-    """
     res = self.jobDB.setJobParameter(100, 'DIRAC', 'dirac@cern')
     self.assertTrue(res['OK'], res.get('Message'))
     time.sleep(1)
     res = self.jobDB.getJobParameters(100)
     self.assertTrue(res['OK'], res.get('Message'))
+
     self.assertEqual(res['Value'][100]['DIRAC'], 'dirac@cern', msg="Got %s" % res['Value'][100]['DIRAC'])
-    res = self.jobDB.getJobParametersAndAttributes(100)
+
+    # update it
+    res = self.jobDB.setJobParameter(100, 'DIRAC', 'dirac@cern.cern')
     self.assertTrue(res['OK'], res.get('Message'))
-    self.assertEqual(res['Value'][100]['Name'], 'DIRAC', msg="Got %s" % res['Value'][100]['Name'])
+    time.sleep(1)
+    res = self.jobDB.getJobParameters(100)
+    self.assertTrue(res['OK'], res.get('Message'))
+
+    self.assertEqual(res['Value'][100]['DIRAC'], 'dirac@cern.cern', msg="Got %s" % res['Value'][100]['DIRAC'])
+
+    # add one
+    res = self.jobDB.setJobParameter(100, 'someKey', 'someValue')
+    self.assertTrue(res['OK'], res.get('Message'))
+    time.sleep(1)
+    res = self.jobDB.getJobParameters(100)
+    self.assertTrue(res['OK'], res.get('Message'))
+
+    self.assertEqual(res['Value'][100]['DIRAC'], 'dirac@cern.cern', msg="Got %s" % res['Value'][100]['DIRAC'])
+    self.assertEqual(res['Value'][100]['someKey'], 'someValue', msg="Got %s" % res['Value'][100]['someKey'])
 
 
 if __name__ == '__main__':
 
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(JobParametersCase)
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
+  sys.exit(not testResult.wasSuccessful())

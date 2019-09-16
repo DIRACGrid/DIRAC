@@ -98,7 +98,7 @@ def test_MySQLandES_jobParameters():
 
   res = jobMonitoringClient.getJobParameters(jobID)  # This will be looked up in MySQL only
   assert res['OK']
-  assert res['Value'][jobID]['Status'] == 'Waiting'
+  assert res['Value'] == {jobID: {'ParName-fromMySQL': 'ParValue-fromMySQL', 'Status': 'Waiting'}}
 
   res = jobMonitoringClient.getJobAttributes(jobID)
   assert res['OK']
