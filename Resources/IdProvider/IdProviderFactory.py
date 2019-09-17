@@ -54,7 +54,7 @@ class IdProviderFactory(object):
     try:
       provider = pClass()
       provider.setParameters(pDict)
-    except BaseException as x:
+    except Exception as x:
       msg = 'IdProviderFactory could not instantiate %s object: %s' % (subClassName, str(x))
       self.log.exception()
       self.log.warn(msg)
