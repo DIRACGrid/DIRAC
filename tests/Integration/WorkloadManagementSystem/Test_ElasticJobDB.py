@@ -30,12 +30,26 @@ def test_setAndGetJobFromDB():
   res = elasticJobDB.getJobParameters(100)
   assert res['OK']
   assert res['Value'][100]['DIRAC'] == 'dirac@cern.cern'
+  res = elasticJobDB.getJobParameters(100, ['DIRAC'])
+  assert res['OK']
+  assert res['Value'][100]['DIRAC'] == 'dirac@cern.cern'
+  res = elasticJobDB.getJobParameters(100, 'DIRAC')
+  assert res['OK']
+  assert res['Value'][100]['DIRAC'] == 'dirac@cern.cern'
 
   # add one
   res = elasticJobDB.setJobParameter(100, 'someKey', 'someValue')
   assert res['OK']
   time.sleep(1)
   res = elasticJobDB.getJobParameters(100)
+  assert res['OK']
+  assert res['Value'][100]['DIRAC'] == 'dirac@cern.cern'
+  assert res['Value'][100]['someKey'] == 'someValue'
+  res = elasticJobDB.getJobParameters(100, ['DIRAC', 'someKey'])
+  assert res['OK']
+  assert res['Value'][100]['DIRAC'] == 'dirac@cern.cern'
+  assert res['Value'][100]['someKey'] == 'someValue'
+  res = elasticJobDB.getJobParameters(100, 'DIRAC, someKey')
   assert res['OK']
   assert res['Value'][100]['DIRAC'] == 'dirac@cern.cern'
   assert res['Value'][100]['someKey'] == 'someValue'

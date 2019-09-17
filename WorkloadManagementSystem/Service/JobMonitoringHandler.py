@@ -540,20 +540,12 @@ class JobMonitoringHandler(RequestHandler):
       parameters = {}
       for jobID in jobIDs:
         res = gElasticJobDB.getJobParameters(jobID, parName)
-
-        print('ES, %d' % int(jobID))
-        print(res)
-
         if not res['OK']:
           return res
         parameters.update(res['Value'])
 
       # Need anyway to get also from JobDB, for those jobs with parameters registered in MySQL or in both backends
       res = gJobDB.getJobParameters(jobIDs, parName)
-
-      print('MySQL, %s' % jobIDs)
-      print(res)
-
       if not res['OK']:
         return res
       parametersM = res['Value']

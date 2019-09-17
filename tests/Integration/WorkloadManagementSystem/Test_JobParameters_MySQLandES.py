@@ -181,7 +181,7 @@ def test_MySQLandES_jobParameters():
   # These parameters will be looked up in MySQL and in ES, and combined
   res = jobMonitoringClient.getJobParameters([jobID, secondJobID], 'SomeStatus')
   assert res['OK']
-  assert res['Value'] == {jobID: {'SomeStatus': 'Running'}}
+  assert res['Value'][jobID] == {'SomeStatus': 'Running'}
 
   res = jobMonitoringClient.getJobAttributes(jobID)  # these will still be all in MySQL
   assert res['OK']

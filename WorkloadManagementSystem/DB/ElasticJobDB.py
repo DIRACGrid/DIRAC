@@ -9,6 +9,8 @@
 """
 
 from __future__ import absolute_import
+import six
+
 __RCSID__ = "$Id$"
 
 from DIRAC import S_OK
@@ -32,7 +34,7 @@ class ElasticJobDB(DB):
 
     :param self: self reference
     :param int jobID: Job ID
-    :param list paramList: list of parameters to be returned
+    :param list paramList: list of parameters to be returned (also a string is treated)
 
     :return: dict with all Job Parameter values
     """
@@ -42,16 +44,14 @@ class ElasticJobDB(DB):
     resultDict = {}
 
     if paramList:
-      paramNameList = []
-
-      for x in paramList:
-        paramNameList.append(x)
+      if isinstance(paramList, six.string_types):
+        paramList = paramList.replace(' ', '').split(',')
 
       query = {
           "query": {
               "bool": {
                   "must": [
-                      {"match": {"JobID": jobID}}, {"match": {"Name": ','.join(paramNameList)}}]}},
+                      {"match": {"JobID": jobID}}, {"match": {"Name": ','.join(paramList)}}]}},
           "_source": ["Name", "Value"]}
 
     else:
@@ -71,7 +71,7 @@ class ElasticJobDB(DB):
 
       try:
         resultDict[name] = value.tostring()
-      except BaseException:
+      except Exception:
         resultDict[name] = value
 
     return S_OK({jobID: resultDict})

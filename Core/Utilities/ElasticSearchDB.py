@@ -267,7 +267,7 @@ class ElasticSearchDB(object):
     except TransportError as e:
       return S_ERROR(e)
 
-    if res.get('created') or res.get('result') == 'created' or res.get('result') == 'updated':
+    if res.get('created') or res.get('result') in ('created', 'updated'):
       # the created index exists but the value can be None.
       return S_OK(indexName)
 
