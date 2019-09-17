@@ -2,10 +2,13 @@
     Workflow class is the main container of Steps and Modules
 """
 
+from __future__ import print_function
+
 import os
 import re
 import types
 import xml.sax
+import six
 
 from DIRAC.Core.Workflow.Parameter import *
 from DIRAC.Core.Workflow.Module import *
@@ -38,7 +41,7 @@ class Workflow(AttributeCollection):
 
     elif isinstance(obj, Workflow):
       self.fromWorkflow(obj)
-    elif isinstance(obj, basestring):
+    elif isinstance(obj, six.string_types):
       self.parameters = ParameterCollection(None)
       self.step_instances = InstancesPool(self)
       self.step_definitions = DefinitionsPool(self)
@@ -112,7 +115,7 @@ class Workflow(AttributeCollection):
       if type_o not in self.module_definitions:
         self.module_definitions.append(step.module_definitions[type_o])
     self.step_definitions.append(step)
-    del step.module_definitions # we need to clean up all unwanted definitions
+    del step.module_definitions  # we need to clean up all unwanted definitions
     step.module_definitions = None
     return step
 
@@ -126,7 +129,7 @@ class Workflow(AttributeCollection):
     """
     if type_o in self.step_definitions:
       stepi = StepInstance(name, self.step_definitions[type_o])
-      self.step_instances.append( stepi )
+      self.step_instances.append(stepi)
       return stepi
     else:
       raise KeyError('Can not find StepDefinition ' + type + ' to create StepInstrance ' + name)
