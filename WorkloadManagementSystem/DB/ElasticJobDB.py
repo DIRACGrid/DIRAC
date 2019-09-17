@@ -23,7 +23,7 @@ class ElasticJobDB(DB):
     """ Standard Constructor
     """
 
-    super(ElasticJobDB, self).__init__(self, indexName, 'WorkloadManagement/ElasticJobDB')
+    super(ElasticJobDB, self).__init__(indexName, 'WorkloadManagement/ElasticJobDB')
 
   def getJobParameters(self, jobID, paramList=None):
     """ Get Job Parameters defined for jobID.
