@@ -6,7 +6,7 @@
 from __future__ import print_function
 __RCSID__ = "$Id$"
 
-import os, xml.dom.minidom, types
+import os, xml.dom.minidom
 from DIRAC import S_OK, S_ERROR
 
 class PoolFile( object ):
@@ -154,7 +154,7 @@ class PoolXMLCatalog( object ):
 
     # Get the dom representation of the catalog
     if xmlfile:
-      if type( xmlfile ) == list:
+      if isinstance(xmlfile, list):
         for xmlf in xmlfile:
           try:
             _sfile = file( xmlf, 'r' )
@@ -336,16 +336,16 @@ class PoolXMLCatalog( object ):
     for guid, pfile in self.files.items():
       for l in pfile.lfns:
         if lfn == l:
-          if self.files.has_key( guid ):
+          if guid in self.files:
             del self.files[guid]
 
   def addFile( self, fileTuple ):
     """ Add one or more files to the catalog
     """
 
-    if type( fileTuple ) == types.TupleType:
+    if isinstance(fileTuple, tuple):
       files = [fileTuple]
-    elif type( fileTuple ) == types.ListType:
+    elif isinstance(fileTuple, list):
       files = fileTuple
     else:
       return S_ERROR( 'PoolXMLCatalog.addFile: Must supply a file tuple of list of tuples' )
@@ -376,9 +376,9 @@ class PoolXMLCatalog( object ):
 
         where master = True or False
     """
-    if type( replicaTuple ) == types.TupleType:
+    if isinstance(replicaTuple, tuple):
       replicas = [replicaTuple]
-    elif type( replicaTuple ) == types.ListType:
+    elif isinstance(replicaTuple, list):
       replicas = replicaTuple
     else:
       return S_ERROR( 'PoolXMLCatalog.addReplica: Must supply a replica tuple of list of tuples' )

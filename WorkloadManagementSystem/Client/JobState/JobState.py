@@ -5,6 +5,7 @@ from __future__ import print_function, absolute_import
 
 __RCSID__ = "$Id"
 
+import six
 import datetime
 
 from DIRAC import gLogger, S_OK, S_ERROR
@@ -289,7 +290,7 @@ class JobState(object):
   right_removeOptParameters = RIGHT_GET_INFO
 
   def removeOptParameters(self, nameList):
-    if isinstance(nameList, basestring):
+    if isinstance(nameList, six.string_types):
       nameList = [nameList]
     try:
       self.__checkType(nameList, (list, tuple))

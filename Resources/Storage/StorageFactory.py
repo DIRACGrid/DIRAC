@@ -14,6 +14,7 @@
 
 __RCSID__ = "$Id$"
 
+import six
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
@@ -90,7 +91,7 @@ class StorageFactory(object):
     self.storages = []
     if pluginList is None:
       pluginList = []
-    elif isinstance(pluginList, basestring):
+    elif isinstance(pluginList, six.string_types):
       pluginList = [pluginList]
     if not self.vo:
       gLogger.warn('No VO information available')

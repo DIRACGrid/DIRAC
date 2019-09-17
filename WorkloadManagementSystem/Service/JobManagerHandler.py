@@ -12,6 +12,7 @@
 
 __RCSID__ = "$Id$"
 
+import six
 from DIRAC import gConfig, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.DISET.MessageClient import MessageClient
@@ -287,7 +288,7 @@ class JobManagerHandler(RequestHandler):
 
     if isinstance(jobInput, int):
       return [jobInput]
-    if isinstance(jobInput, basestring):
+    if isinstance(jobInput, six.string_types):
       try:
         ijob = int(jobInput)
         return [ijob]

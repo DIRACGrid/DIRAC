@@ -3,6 +3,7 @@
 
 # # custom duty
 
+import six
 import copy
 import datetime
 import errno
@@ -935,7 +936,7 @@ class StorageElementItem(object):
       protocols = self.turlProtocols
     elif isinstance(protocol, list):
       protocols = protocol
-    elif isinstance(protocol, basestring):
+    elif isinstance(protocol, six.string_types):
       protocols = [protocol]
 
     self.methodName = "getTransportURL"
@@ -1032,7 +1033,7 @@ class StorageElementItem(object):
         "Filtering plugins for %s (protocol = %s ; inputProtocol = %s)" %
         (methodName, protocols, inputProtocol))
 
-    if isinstance(protocols, basestring):
+    if isinstance(protocols, six.string_types):
       protocols = [protocols]
 
     pluginsToUse = []

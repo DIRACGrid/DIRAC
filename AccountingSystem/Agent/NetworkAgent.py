@@ -171,7 +171,7 @@ class NetworkAgent ( AgentModule ):
 
         # use existing or create a new temporary accounting
         # object to store the data in DB
-        if self.buffer.has_key( networkAccountingObjectKey ):
+        if networkAccountingObjectKey in self.buffer:
           net = self.buffer[networkAccountingObjectKey]['object']
           
           timeDifference = datetime.now() - self.buffer[networkAccountingObjectKey]['addTime']

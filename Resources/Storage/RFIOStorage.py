@@ -3,10 +3,11 @@
 
 __RCSID__ = "$Id$"
 
-import types
 import re
 import os
 import time
+
+import six
 
 from DIRAC                                      import gLogger, S_OK, S_ERROR
 from DIRAC.Resources.Storage.Utilities          import checkArgumentFormat
@@ -183,7 +184,7 @@ class RFIOStorage( StorageBase ):
         if status in ['STAGED', 'CANBEMIGR']:
           successful[pfn]['Cached'] = True
     for pfn in urls:
-      if not successful[pfn].has_key( 'Cached' ):
+      if 'Cached' not in successful[pfn]:
         successful[pfn]['Cached'] = False
 
     # Now for the files that exist get the tape segment (i.e. whether they have been migrated) and related checksum
@@ -203,7 +204,7 @@ class RFIOStorage( StorageBase ):
         successful[pfn]['Migrated'] = True
         successful[pfn]['Checksum'] = checksum
     for pfn in urls:
-      if not successful[pfn].has_key( 'Migrated' ):
+      if 'Migrated' not in successful[pfn]:
         successful[pfn]['Migrated'] = False
         
         
@@ -517,7 +518,7 @@ class RFIOStorage( StorageBase ):
     failed = {}
     requestFiles = {}
     for url, requestID in urls.items():
-      if not requestFiles.has_key( requestID ):
+      if requestID not in requestFiles:
         requestFiles[requestID] = []
       requestFiles[requestID].append( url )
     for requestID, urls in requestFiles.items():
@@ -658,7 +659,7 @@ class RFIOStorage( StorageBase ):
       errStr = "RFIOStorage.__getDir: Failed to find the supplied source directory."
       gLogger.error( errStr, srcDirectory )
       return S_ERROR( errStr )
-    if not res['Value']['Successful'].has_key( srcDirectory ):
+    if srcDirectory not in res['Value']['Successful']:
       errStr = "RFIOStorage.__getDir: Failed to find the supplied source directory."
       gLogger.error( errStr, srcDirectory )
       return S_ERROR( errStr )
@@ -676,7 +677,7 @@ class RFIOStorage( StorageBase ):
     if not res['OK']:
       errStr = "RFIOStorage.__getDir: Failed to list the source directory."
       gLogger.error( errStr, srcDirectory )
-    if not res['Value']['Successful'].has_key( srcDirectory ):
+    if srcDirectory not in res['Value']['Successful']:
       errStr = "RFIOStorage.__getDir: Failed to list the source directory."
       gLogger.error( errStr, srcDirectory )
 
@@ -693,7 +694,7 @@ class RFIOStorage( StorageBase ):
       fileDict = {surl:localPath}
       res = self.getFile( fileDict )
       if res['OK']:
-        if res['Value']['Successful'].has_key( surl ):
+        if surl in res['Value']['Successful']:
           filesGot += 1
           sizeGot += fileSize
           surlGot = True
@@ -788,7 +789,7 @@ class RFIOStorage( StorageBase ):
         fileDict = {remotePath:localPath}
         res = self.putFile( fileDict )
         if res['OK']:
-          if res['Value']['Successful'].has_key( remotePath ):
+          if remotePath in res['Value']['Successful']:
             filesPut += 1
             sizePut += res['Value']['Successful'][remotePath]
             pathSuccessful = True
@@ -836,13 +837,13 @@ class RFIOStorage( StorageBase ):
     if not res['OK']:
       return res
     if res['OK']:
-      if res['Value']['Successful'].has_key( path ):
+      if path in res['Value']['Successful']:
         if res['Value']['Successful'][path]:
           return S_OK()
         else:
           res = self.exists( pDir )
           if res['OK']:
-            if res['Value']['Successful'].has_key( pDir ):
+            if pDir in res['Value']['Successful']:
               if res['Value']['Successful'][pDir]:
                 res = self.__makeDir( path )
               else:
@@ -994,11 +995,11 @@ class RFIOStorage( StorageBase ):
   def __checkArgumentFormat( self, path ):
     """  FIXME: Can be replaced by a generic checkArgumentFormat Utility 
     """
-    if type( path ) in types.StringTypes:
+    if isinstance(path, six.string_types):
       urls = [path]
-    elif type( path ) == types.ListType:
+    elif isinstance(path, list):
       urls = path
-    elif type( path ) == types.DictType:
+    elif isinstance(path, dict):
       urls = path.keys()
     else:
       return S_ERROR( "RFIOStorage.__checkArgumentFormat: Supplied path is not of the correct format." )

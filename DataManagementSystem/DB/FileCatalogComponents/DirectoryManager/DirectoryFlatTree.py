@@ -5,6 +5,7 @@
 
 __RCSID__ = "$Id$"
 
+import six
 import os
 import stat
 
@@ -219,7 +220,7 @@ class DirectoryFlatTree(DirectoryTreeBase):
 
   def getChildren(self, path):
     """ Get child directory IDs for the given directory  """
-    if isinstance(path, basestring):
+    if isinstance(path, six.string_types):
       result = self.findDir(path)
       if not result['OK']:
         return result

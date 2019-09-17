@@ -15,6 +15,7 @@ The following options can be set for the InputDataAgent.
   :caption: InputDataAgent options
 '''
 
+from past.builtins import long
 import time
 import datetime
 

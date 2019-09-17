@@ -6,6 +6,7 @@
     defined in the production workflow.
 """
 
+import six
 from DIRAC import gLogger
 from DIRAC.Workflow.Modules.ModuleBase import ModuleBase, GracefulTermination
 
@@ -37,7 +38,7 @@ class UploadOutputs(ModuleBase):
     # this comes from Job().setOutputData(). Typical for user jobs
     if 'OutputData' in self.workflow_commons:
       self.outputData = self.workflow_commons['OutputData']
-      if isinstance(self.outputData, basestring):
+      if isinstance(self.outputData, six.string_types):
         self.outputData = [i.strip() for i in self.outputData.split(';')]
     # if not present, we use the outputList, which is instead incrementally created based on the single step outputs
     # This is more typical for production jobs, that can have many steps linked one after the other

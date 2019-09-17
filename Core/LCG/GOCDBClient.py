@@ -6,6 +6,7 @@
 __RCSID__ = "$Id$"
 
 
+import six
 import time
 import socket
 
@@ -116,7 +117,7 @@ class GOCDBClient(object):
       startDateMax = startDate + timedelta(hours=startingInHours)
 
     if startDate is not None:
-      if isinstance(startDate, basestring):
+      if isinstance(startDate, six.string_types):
         startDate_STR = startDate
         startDate = datetime(*time.strptime(startDate, "%Y-%m-%d")[0:3])
       elif isinstance(startDate, datetime):
@@ -180,7 +181,7 @@ class GOCDBClient(object):
 
       :attr:`entity` : a string. Actual name of the entity.
     """
-    assert isinstance(granularity, basestring) and isinstance(entity, basestring)
+    assert isinstance(granularity, basestring) and isinstance(entity, six.string_types)
     try:
       serviceXML = self._getServiceEndpointCurlDownload(granularity, entity)
       return S_OK(self._serviceEndpointXMLParsing(serviceXML))
@@ -277,7 +278,7 @@ class GOCDBClient(object):
     # GOCDB-PI to query
     gocdb_ep = gocdbpi_url
     if entity is not None:
-      if isinstance(entity, basestring):
+      if isinstance(entity, six.string_types):
         gocdb_ep = gocdb_ep + "&topentity=" + entity
     gocdb_ep = gocdb_ep + when + gocdbpi_startDate + "&scope="
 
@@ -300,7 +301,7 @@ class GOCDBClient(object):
 
       :attr:`entity` : a string. Actual name of the entity.
     """
-    if not isinstance(granularity, basestring) or not isinstance(entity, basestring):
+    if not isinstance(granularity, basestring) or not isinstance(entity, six.string_types):
       raise ValueError("Arguments must be strings.")
 
     # GOCDB-PI query

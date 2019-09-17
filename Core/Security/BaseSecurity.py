@@ -66,7 +66,7 @@ class BaseSecurity(object):
     return dict(os.environ)
 
   def _unlinkFiles(self, files):
-    if type(files) in (types.ListType, types.TupleType):
+    if isinstance(files, (list, tuple)):
       for fileName in files:
         self._unlinkFiles(fileName)
     else:

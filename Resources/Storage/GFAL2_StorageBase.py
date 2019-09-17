@@ -10,6 +10,8 @@
 # pylint: disable=arguments-differ
 
 # # imports
+from past.builtins import long
+import six
 import os
 import datetime
 import errno
@@ -806,7 +808,7 @@ class GFAL2_StorageBase(StorageBase):
     log = self.log.getSubLogger("GFAL2_StorageBase.__prestageSingleFileStatus")
     log.debug("Checking prestage file status for %s" % path)
     # also allow int as token - converting them to strings
-    if not isinstance(token, basestring):
+    if not isinstance(token, six.string_types):
       token = str(token)
 
     try:
@@ -934,7 +936,7 @@ class GFAL2_StorageBase(StorageBase):
     """
     log = self.log.getSubLogger("GFAL2_StorageBase.__releaseSingleFile")
     log.debug("Attempting to release single file: %s" % path)
-    if not isinstance(token, basestring):
+    if not isinstance(token, six.string_types):
       token = str(token)
     try:
       self.ctx.set_opt_boolean("BDII", "ENABLE", True)

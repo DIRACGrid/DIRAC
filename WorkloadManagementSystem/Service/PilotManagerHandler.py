@@ -4,6 +4,8 @@ This is the interface to DIRAC PilotAgentsDB.
 
 __RCSID__ = "$Id$"
 
+from past.builtins import long
+import six
 from DIRAC import gConfig, S_OK, S_ERROR
 import DIRAC.Core.Utilities.Time as Time
 
@@ -81,7 +83,7 @@ class PilotManagerHandler(RequestHandler):
     return S_OK(resultDict)
 
   ##########################################################################################
-  types_addPilotTQReference = [list, (int, long), basestring, basestring]
+  types_addPilotTQReference = [list, six.integer_types, basestring, basestring]
 
   @classmethod
   def export_addPilotTQReference(cls, pilotRef, taskQueueID, ownerDN, ownerGroup, broker='Unknown',
@@ -160,7 +162,7 @@ class PilotManagerHandler(RequestHandler):
     return result
 
   ##############################################################################
-  types_getPilotMonitorWeb = [dict, list, (int, long), [int, long]]
+  types_getPilotMonitorWeb = [dict, list, six.integer_types, [int, long]]
 
   @classmethod
   def export_getPilotMonitorWeb(cls, selectDict, sortList, startItem, maxItems):
@@ -183,7 +185,7 @@ class PilotManagerHandler(RequestHandler):
     return result
 
   ##############################################################################
-  types_getPilotSummaryWeb = [dict, list, (int, long), [int, long]]
+  types_getPilotSummaryWeb = [dict, list, six.integer_types, [int, long]]
 
   @classmethod
   def export_getPilotSummaryWeb(cls, selectDict, sortList, startItem, maxItems):
@@ -237,7 +239,7 @@ class PilotManagerHandler(RequestHandler):
     """
     # Make a list if it is not yet
     pilotRefs = list(pilotRefList)
-    if isinstance(pilotRefList, basestring):
+    if isinstance(pilotRefList, six.string_types):
       pilotRefs = [pilotRefList]
 
     # Regroup pilots per site and per owner
@@ -373,10 +375,10 @@ class PilotManagerHandler(RequestHandler):
 
   def export_deletePilots(self, pilotIDs):
 
-    if isinstance(pilotIDs, basestring):
+    if isinstance(pilotIDs, six.string_types):
       return pilotDB.deletePilot(pilotIDs)
 
-    if isinstance(pilotIDs, (int, long)):
+    if isinstance(pilotIDs, six.integer_types):
       pilotIDs = [pilotIDs, ]
 
     result = pilotDB.deletePilots(pilotIDs)
@@ -397,7 +399,7 @@ class PilotManagerHandler(RequestHandler):
     return S_OK()
 
 ##############################################################################
-  types_clearPilots = [(int, long), (int, long)]
+  types_clearPilots = [six.integer_types, six.integer_types]
 
   def export_clearPilots(self, interval=30, aborted_interval=7):
 

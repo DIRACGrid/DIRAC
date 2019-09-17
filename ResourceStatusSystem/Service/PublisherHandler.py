@@ -9,6 +9,7 @@ __RCSID__ = '$Id$'
 
 #  pylint: disable=no-self-use
 
+import six
 import types
 from datetime import datetime, timedelta
 
@@ -88,7 +89,7 @@ class PublisherHandler(RequestHandler):
         return siteNames
       siteNames = siteNames['Value']
 
-    if isinstance(siteNames, basestring):
+    if isinstance(siteNames, six.string_types):
       siteNames = [siteNames]
 
     sitesRes = {}

@@ -6,6 +6,7 @@ __RCSID__ = "$Id$"
 # pylint: disable=protected-access
 
 
+import six
 import time
 import StringIO
 import json
@@ -198,7 +199,7 @@ class RequestTasks(TaskBase):
       oRequest = Request()
       if isinstance(task['InputData'], list):
         files = task['InputData']
-      elif isinstance(task['InputData'], basestring):
+      elif isinstance(task['InputData'], six.string_types):
         files = task['InputData'].split(';')
 
       # create the operations from the json structure
@@ -254,7 +255,7 @@ class RequestTasks(TaskBase):
       if task.get('InputData'):
         if isinstance(task['InputData'], list):
           files = task['InputData']
-        elif isinstance(task['InputData'], basestring):
+        elif isinstance(task['InputData'], six.string_types):
           files = task['InputData'].split(';')
         for lfn in files:
           trFile = File()
@@ -592,7 +593,7 @@ class WorkflowTasks(TaskBase):
       # Handle Input Data
       inputData = paramsDict.get('InputData')
       if inputData:
-        if isinstance(inputData, basestring):
+        if isinstance(inputData, six.string_types):
           inputData = inputData.replace(' ', '').split(';')
         self._logVerbose('Setting input data to %s' % inputData,
                          transID=transID, method=method)
@@ -943,7 +944,7 @@ class WorkflowTasks(TaskBase):
   def submitTaskToExternal(self, job):
     """ Submits a single job (which can be a bulk one) to the WMS.
     """
-    if isinstance(job, basestring):
+    if isinstance(job, six.string_types):
       try:
         oJob = self.jobClass(job)
       except Exception as x:  # pylint: disable=broad-except

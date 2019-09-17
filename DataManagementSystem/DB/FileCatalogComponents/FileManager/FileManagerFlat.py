@@ -1,5 +1,6 @@
 __RCSID__ = "$Id$"
 
+import six
 import os
 
 from DIRAC import S_OK, S_ERROR
@@ -220,7 +221,7 @@ class FileManagerFlat(FileManagerBase):
     # TODO: This is in efficient. Should perform bulk operation
     connection = self._getConnection(connection)
     """ Check if a replica already exists """
-    if isinstance(seID, basestring):
+    if isinstance(seID, six.string_types):
       res = self.db.seManager.findSE(seID)
       if not res['OK']:
         return res
@@ -277,7 +278,7 @@ class FileManagerFlat(FileManagerBase):
     connection = self._getConnection(connection)
     deleteTuples = []
     for fileID, seID in replicaTuples:
-      if isinstance(seID, basestring):
+      if isinstance(seID, six.string_types):
         res = self.db.seManager.findSE(seID)
         if not res['OK']:
           return res
@@ -310,7 +311,7 @@ class FileManagerFlat(FileManagerBase):
 
   def _setReplicaParameter(self, fileID, seID, paramName, paramValue, connection=False):
     connection = self._getConnection(connection)
-    if isinstance(seID, basestring):
+    if isinstance(seID, six.string_types):
       res = self.db.seManager.findSE(seID)
       if not res['OK']:
         return res

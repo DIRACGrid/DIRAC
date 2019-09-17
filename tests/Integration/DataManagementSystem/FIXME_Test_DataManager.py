@@ -25,13 +25,13 @@ class ReplicaManagerTestCase(unittest.TestCase):
 
     # Check that the put was successful
     self.assertTrue(putRes['OK'])
-    self.assertTrue(putRes['Value'].has_key('Successful'))
-    self.assertTrue(putRes['Value']['Successful'].has_key(lfn))
+    self.assertTrue('Successful' in putRes['Value'])
+    self.assertTrue(lfn in putRes['Value']['Successful'])
     self.assertTrue(putRes['Value']['Successful'][lfn])
     # Check that the removal was successful
     self.assertTrue(removeRes['OK'])
-    self.assertTrue(removeRes['Value'].has_key('Successful'))
-    self.assertTrue(removeRes['Value']['Successful'].has_key(lfn))
+    self.assertTrue('Successful' in removeRes['Value'])
+    self.assertTrue(lfn in removeRes['Value']['Successful'])
     self.assertTrue(removeRes['Value']['Successful'][lfn])
 
   def test_putAndRegisterReplicate(self):
@@ -45,18 +45,18 @@ class ReplicaManagerTestCase(unittest.TestCase):
 
     # Check that the put was successful
     self.assertTrue(putRes['OK'])
-    self.assertTrue(putRes['Value'].has_key('Successful'))
-    self.assertTrue(putRes['Value']['Successful'].has_key(lfn))
+    self.assertTrue('Successful' in putRes['Value'])
+    self.assertTrue(lfn in putRes['Value']['Successful'])
     self.assertTrue(putRes['Value']['Successful'][lfn])
     # Check that the replicate was successful
     self.assertTrue(replicateRes['OK'])
-    self.assertTrue(replicateRes['Value'].has_key('Successful'))
-    self.assertTrue(replicateRes['Value']['Successful'].has_key(lfn))
+    self.assertTrue('Successful' in replicateRes['Value'])
+    self.assertTrue(lfn in replicateRes['Value']['Successful'])
     self.assertTrue(replicateRes['Value']['Successful'][lfn])
     # Check that the removal was successful
     self.assertTrue(removeRes['OK'])
-    self.assertTrue(removeRes['Value'].has_key('Successful'))
-    self.assertTrue(removeRes['Value']['Successful'].has_key(lfn))
+    self.assertTrue('Successful' in removeRes['Value'])
+    self.assertTrue(lfn in removeRes['Value']['Successful'])
     self.assertTrue(removeRes['Value']['Successful'][lfn])
 
   def test_putAndRegisterGetReplicaMetadata(self):
@@ -70,22 +70,22 @@ class ReplicaManagerTestCase(unittest.TestCase):
 
     # Check that the put was successful
     self.assertTrue(putRes['OK'])
-    self.assertTrue(putRes['Value'].has_key('Successful'))
-    self.assertTrue(putRes['Value']['Successful'].has_key(lfn))
+    self.assertTrue('Successful' in putRes['Value'])
+    self.assertTrue(lfn in putRes['Value']['Successful'])
     self.assertTrue(putRes['Value']['Successful'][lfn])
     # Check that the metadata query was successful
     self.assertTrue(metadataRes['OK'])
-    self.assertTrue(metadataRes['Value'].has_key('Successful'))
-    self.assertTrue(metadataRes['Value']['Successful'].has_key(lfn))
+    self.assertTrue('Successful' in metadataRes['Value'])
+    self.assertTrue(lfn in metadataRes['Value']['Successful'])
     self.assertTrue(metadataRes['Value']['Successful'][lfn])
     metadataDict = metadataRes['Value']['Successful'][lfn]
-    self.assertTrue(metadataDict.has_key('Cached'))
-    self.assertTrue(metadataDict.has_key('Migrated'))
-    self.assertTrue(metadataDict.has_key('Size'))
+    self.assertTrue('Cached' in metadataDict)
+    self.assertTrue('Migrated' in metadataDict)
+    self.assertTrue('Size' in metadataDict)
     # Check that the removal was successful
     self.assertTrue(removeRes['OK'])
-    self.assertTrue(removeRes['Value'].has_key('Successful'))
-    self.assertTrue(removeRes['Value']['Successful'].has_key(lfn))
+    self.assertTrue('Successful' in removeRes['Value'])
+    self.assertTrue(lfn in removeRes['Value']['Successful'])
     self.assertTrue(removeRes['Value']['Successful'][lfn])
 
 
@@ -101,18 +101,18 @@ class ReplicaManagerTestCase(unittest.TestCase):
 
     # Check that the put was successful
     self.assertTrue(putRes['OK'])
-    self.assertTrue(putRes['Value'].has_key('Successful'))
-    self.assertTrue(putRes['Value']['Successful'].has_key(lfn))
+    self.assertTrue('Successful' in putRes['Value'])
+    self.assertTrue(lfn in putRes['Value']['Successful'])
     self.assertTrue(putRes['Value']['Successful'][lfn])
     # Check that the access url was successful
     self.assertTrue(getAccessUrlRes['OK'])
-    self.assertTrue(getAccessUrlRes['Value'].has_key('Successful'))
-    self.assertTrue(getAccessUrlRes['Value']['Successful'].has_key(lfn))
+    self.assertTrue('Successful' in getAccessUrlRes['Value'])
+    self.assertTrue(lfn in getAccessUrlRes['Value']['Successful'])
     self.assertTrue(getAccessUrlRes['Value']['Successful'][lfn])
     # Check that the removal was successful
     self.assertTrue(removeRes['OK'])
-    self.assertTrue(removeRes['Value'].has_key('Successful'))
-    self.assertTrue(removeRes['Value']['Successful'].has_key(lfn))
+    self.assertTrue('Successful' in removeRes['Value'])
+    self.assertTrue(lfn in removeRes['Value']['Successful'])
     self.assertTrue(removeRes['Value']['Successful'][lfn])
 
   def test_putAndRegisterRemoveReplica(self):
@@ -126,18 +126,18 @@ class ReplicaManagerTestCase(unittest.TestCase):
 
     # Check that the put was successful
     self.assertTrue(putRes['OK'])
-    self.assertTrue(putRes['Value'].has_key('Successful'))
-    self.assertTrue(putRes['Value']['Successful'].has_key(lfn))
+    self.assertTrue('Successful' in putRes['Value'])
+    self.assertTrue(lfn in putRes['Value']['Successful'])
     self.assertTrue(putRes['Value']['Successful'][lfn])
     # Check that the replica removal was successful
     self.assertTrue(removeReplicaRes['OK'])
-    self.assertTrue(removeReplicaRes['Value'].has_key('Successful'))
-    self.assertTrue(removeReplicaRes['Value']['Successful'].has_key(lfn))
+    self.assertTrue('Successful' in removeReplicaRes['Value'])
+    self.assertTrue(lfn in removeReplicaRes['Value']['Successful'])
     self.assertTrue(removeReplicaRes['Value']['Successful'][lfn])
     # Check that the removal was successful
     self.assertTrue(removeRes['OK'])
-    self.assertTrue(removeRes['Value'].has_key('Successful'))
-    self.assertTrue(removeRes['Value']['Successful'].has_key(lfn))
+    self.assertTrue('Successful' in removeRes['Value'])
+    self.assertTrue(lfn in removeRes['Value']['Successful'])
     self.assertTrue(removeRes['Value']['Successful'][lfn])
 
   def test_registerFile(self):
@@ -153,8 +153,8 @@ class ReplicaManagerTestCase(unittest.TestCase):
 
     # Check that the file registration was done correctly
     self.assertTrue(registerRes['OK'])
-    self.assertTrue(registerRes['Value'].has_key('Successful'))
-    self.assertTrue(registerRes['Value']['Successful'].has_key(lfn))
+    self.assertTrue('Successful' in registerRes['Value'])
+    self.assertTrue(lfn in registerRes['Value']['Successful'])
     self.assertTrue(registerRes['Value']['Successful'][lfn])
     # Check that the replica removal was successful
     # self.assertTrue(removeCatalogReplicaRes['OK'])
@@ -163,8 +163,8 @@ class ReplicaManagerTestCase(unittest.TestCase):
     # self.assertTrue(removeCatalogReplicaRes['Value']['Successful'][lfn])
     # Check that the removal was successful
     self.assertTrue(removeFileRes['OK'])
-    self.assertTrue(removeFileRes['Value'].has_key('Successful'))
-    self.assertTrue(removeFileRes['Value']['Successful'].has_key(lfn))
+    self.assertTrue('Successful' in removeFileRes['Value'])
+    self.assertTrue(lfn in removeFileRes['Value']['Successful'])
     self.assertTrue(removeFileRes['Value']['Successful'][lfn])
 
   def test_registerReplica(self):
@@ -186,13 +186,13 @@ class ReplicaManagerTestCase(unittest.TestCase):
 
     # Check that the file registration was done correctly
     self.assertTrue(registerRes['OK'])
-    self.assertTrue(registerRes['Value'].has_key('Successful'))
-    self.assertTrue(registerRes['Value']['Successful'].has_key(lfn))
+    self.assertTrue('Successful' in registerRes['Value'])
+    self.assertTrue(lfn in registerRes['Value']['Successful'])
     self.assertTrue(registerRes['Value']['Successful'][lfn])
     # Check that the replica registration was successful
     self.assertTrue(registerReplicaRes['OK'])
-    self.assertTrue(registerReplicaRes['Value'].has_key('Successful'))
-    self.assertTrue(registerReplicaRes['Value']['Successful'].has_key(lfn))
+    self.assertTrue('Successful' in registerReplicaRes['Value'])
+    self.assertTrue(lfn in registerReplicaRes['Value']['Successful'])
     self.assertTrue(registerReplicaRes['Value']['Successful'][lfn])
     # Check that the replica removal was successful
     # self.assertTrue(removeCatalogReplicaRes1['OK'])
@@ -206,8 +206,8 @@ class ReplicaManagerTestCase(unittest.TestCase):
     # self.assertTrue(removeCatalogReplicaRes2['Value']['Successful'][lfn])
     # Check that the removal was successful
     self.assertTrue(removeFileRes['OK'])
-    self.assertTrue(removeFileRes['Value'].has_key('Successful'))
-    self.assertTrue(removeFileRes['Value']['Successful'].has_key(lfn))
+    self.assertTrue('Successful' in removeFileRes['Value'])
+    self.assertTrue(lfn in removeFileRes['Value']['Successful'])
     self.assertTrue(removeFileRes['Value']['Successful'][lfn])
 
   def test_putAndRegisterGet(self):
@@ -224,18 +224,18 @@ class ReplicaManagerTestCase(unittest.TestCase):
 
     # Check that the put was successful
     self.assertTrue(putRes['OK'])
-    self.assertTrue(putRes['Value'].has_key('Successful'))
-    self.assertTrue(putRes['Value']['Successful'].has_key(lfn))
+    self.assertTrue('Successful' in putRes['Value'])
+    self.assertTrue(lfn in putRes['Value']['Successful'])
     self.assertTrue(putRes['Value']['Successful'][lfn])
     # Check that the replica removal was successful
     self.assertTrue(getRes['OK'])
-    self.assertTrue(getRes['Value'].has_key('Successful'))
-    self.assertTrue(getRes['Value']['Successful'].has_key(lfn))
+    self.assertTrue('Successful' in getRes['Value'])
+    self.assertTrue(lfn in getRes['Value']['Successful'])
     self.assertEqual(getRes['Value']['Successful'][lfn],localFilePath)
     # Check that the removal was successful
     self.assertTrue(removeRes['OK'])
-    self.assertTrue(removeRes['Value'].has_key('Successful'))
-    self.assertTrue(removeRes['Value']['Successful'].has_key(lfn))
+    self.assertTrue('Successful' in removeRes['Value'])
+    self.assertTrue(lfn in removeRes['Value']['Successful'])
     self.assertTrue(removeRes['Value']['Successful'][lfn])
 
 if __name__ == '__main__':

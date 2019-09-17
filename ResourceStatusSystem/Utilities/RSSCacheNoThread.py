@@ -10,6 +10,7 @@ After that, the cache is empty.
 
 __RCSID__ = '$Id$'
 
+import six
 import itertools
 import random
 
@@ -320,7 +321,7 @@ class RSSCache(Cache):
 
     cacheKeys = validCache.keys()
 
-    if isinstance(elementNames, basestring):
+    if isinstance(elementNames, six.string_types):
       elementNames = [elementNames]
     elif elementNames is None:
       if isinstance(cacheKeys[0], (tuple, list)):
@@ -330,7 +331,7 @@ class RSSCache(Cache):
     # Remove duplicates, makes Cartesian product faster
     elementNamesSet = set(elementNames)
 
-    if isinstance(elementType, basestring):
+    if isinstance(elementType, six.string_types):
       if not elementType or elementType == 'Site':
         elementType = []
       else:
@@ -340,7 +341,7 @@ class RSSCache(Cache):
     # Remove duplicates, makes Cartesian product faster
     elementTypeSet = set(elementType)
 
-    if isinstance(statusTypes, basestring):
+    if isinstance(statusTypes, six.string_types):
       if not statusTypes:
         statusTypes = []
       else:

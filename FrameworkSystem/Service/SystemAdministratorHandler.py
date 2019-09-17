@@ -3,6 +3,7 @@
 
 __RCSID__ = "$Id$"
 
+import six
 import socket
 import os
 import re
@@ -452,7 +453,7 @@ class SystemAdministratorHandler(RequestHandler):
               for sname in result['Value'][ctype]:
                 for cname in result['Value'][ctype][sname]:
                   componentList.append('/'.join([sname, cname]))
-    elif isinstance(component, basestring):
+    elif isinstance(component, six.string_types):
       componentList = [component]
     else:
       componentList = component

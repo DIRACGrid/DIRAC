@@ -2,6 +2,7 @@
     CA credentials
 """
 
+from past.builtins import long
 import os
 import re
 import time

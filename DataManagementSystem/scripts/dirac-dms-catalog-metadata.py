@@ -54,16 +54,16 @@ print(
 for lfn in sorted( res['Value']['Successful'].keys() ):
   metadata = res['Value']['Successful'][lfn]
   checksum = ''
-  if metadata.has_key('Checksum'):
+  if 'Checksum' in metadata:
     checksum = str(metadata['Checksum'])
   size = ''
-  if metadata.has_key('Size'):
+  if 'Size' in metadata:
     size = str(metadata['Size'])
   guid = ''
-  if metadata.has_key('GUID'):
+  if 'GUID' in metadata:
     guid = str(metadata['GUID'])
   status = ''
-  if metadata.has_key('Status'):
+  if 'Status' in metadata:
     status = str(metadata['Status'])
   print('%s %s %s %s %s' % (lfn.ljust(100), size.ljust(10), guid.ljust(40), status.ljust(8), checksum.ljust(10)))
 

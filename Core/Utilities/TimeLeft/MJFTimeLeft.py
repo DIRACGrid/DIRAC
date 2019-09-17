@@ -6,7 +6,7 @@ __RCSID__ = "$Id$"
 
 import os
 import time
-import urllib
+from six.moves.urllib.request import urlopen
 
 from DIRAC import gLogger, S_OK, S_ERROR
 
@@ -51,7 +51,7 @@ class MJFTimeLeft(object):
 
     if jobFeaturesPath:
       try:
-        wallClockLimit = int(urllib.urlopen(jobFeaturesPath + '/wall_limit_secs').read())
+        wallClockLimit = int(urlopen(jobFeaturesPath + '/wall_limit_secs').read())
         self.log.verbose("wallClockLimit from JF = %d" % wallClockLimit)
       except ValueError:
         self.log.warn("/wall_limit_secs is unreadable")
@@ -60,7 +60,7 @@ class MJFTimeLeft(object):
         self.log.warn("Could not determine cpu limit from $JOBFEATURES/wall_limit_secs")
 
       try:
-        jobStartSecs = int(urllib.urlopen(jobFeaturesPath + '/jobstart_secs').read())
+        jobStartSecs = int(urlopen(jobFeaturesPath + '/jobstart_secs').read())
         self.log.verbose("jobStartSecs from JF = %d" % jobStartSecs)
       except ValueError:
         self.log.warn("/jobstart_secs is unreadable, setting a default")
@@ -71,7 +71,7 @@ class MJFTimeLeft(object):
         jobStartSecs = self.startTime
 
       try:
-        cpuLimit = int(urllib.urlopen(jobFeaturesPath + '/cpu_limit_secs').read())
+        cpuLimit = int(urlopen(jobFeaturesPath + '/cpu_limit_secs').read())
         self.log.verbose("cpuLimit from JF = %d" % cpuLimit)
       except ValueError:
         self.log.warn("/cpu_limit_secs is unreadable")
@@ -90,7 +90,7 @@ class MJFTimeLeft(object):
 
     if machineFeaturesPath and jobStartSecs:
       try:
-        shutdownTime = int(urllib.urlopen(machineFeaturesPath + '/shutdowntime').read())
+        shutdownTime = int(urlopen(machineFeaturesPath + '/shutdowntime').read())
         self.log.verbose("shutdownTime from MF = %d" % shutdownTime)
         if int(time.time()) + wallClockLimit > shutdownTime:
           # reduce wallClockLimit if would overrun shutdownTime

@@ -5,6 +5,7 @@ __RCSID__ = "$Id$"
 
 # pylint: disable=protected-access
 
+import six
 import os
 import stat
 
@@ -417,7 +418,7 @@ class FileManagerBase(object):
       originalFileID = lfnDict['FileID']
       originalDepth = lfnDict.get('AncestorDepth', 1)
       ancestors = lfnDict.get('Ancestors', [])
-      if isinstance(ancestors, basestring):
+      if isinstance(ancestors, six.string_types):
         ancestors = [ancestors]
       if lfn in ancestors:
         ancestors.remove(lfn)
@@ -712,7 +713,7 @@ class FileManagerBase(object):
     successful = {}
     for lfn in res['Value']['Successful'].keys():
       status = lfns[lfn]
-      if isinstance(status, basestring):
+      if isinstance(status, six.string_types):
         if status not in self.db.validFileStatus:
           failed[lfn] = 'Invalid file status %s' % status
           continue
@@ -876,7 +877,7 @@ class FileManagerBase(object):
       if isinstance(val, dict) and 'GUID' in val:
         # We are in the case {lfn : {PFN:.., GUID:..}}
         guidList = [lfns[lfn]['GUID'] for lfn in lfns]
-      elif isinstance(val, basestring):
+      elif isinstance(val, six.string_types):
         # We hope that it is the GUID which is given
         guidList = lfns.values()
 
@@ -1233,7 +1234,7 @@ class FileManagerBase(object):
     successful = {}
     for lfn in res['Value']['Successful'].keys():
       group = lfns[lfn]
-      if isinstance(group, basestring):
+      if isinstance(group, six.string_types):
         groupRes = self.db.ugManager.findGroup(group)
         if not groupRes['OK']:
           return groupRes
@@ -1263,7 +1264,7 @@ class FileManagerBase(object):
     successful = {}
     for lfn in res['Value']['Successful'].keys():
       owner = lfns[lfn]
-      if isinstance(owner, basestring):
+      if isinstance(owner, six.string_types):
         userRes = self.db.ugManager.findUser(owner)
         if not userRes['OK']:
           return userRes

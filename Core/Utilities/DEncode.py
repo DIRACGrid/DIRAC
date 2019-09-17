@@ -15,6 +15,8 @@ Encoding and decoding for dirac, Ids:
 from __future__ import print_function
 __RCSID__ = "$Id$"
 
+from past.builtins import long
+import six
 import types
 import datetime
 import os
@@ -343,7 +345,7 @@ def encodeDict(dValue, eList):
 
   if DIRAC_DEBUG_DENCODE_CALLSTACK:
     # If we have numbers as keys
-    if any([isinstance(x, (int, float, long)) for x in dValue]):
+    if any([isinstance(x, six.integer_types + (float,)) for x in dValue]):
       print('=' * 40, "Encoding dict with numeric keys", '=' * 40)
       printDebugCallstack()
 

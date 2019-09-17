@@ -7,6 +7,7 @@
 
 __RCSID__ = "$Id$"
 
+import six
 import os
 import errno
 import functools
@@ -20,7 +21,7 @@ def checkArgumentFormat( path, generateMap = False ):
 
   def checkArgumentDict( path ):
     """ Check and process format of the arguments to FileCatalog methods """
-    if isinstance( path, basestring ):
+    if isinstance(path, six.string_types):
       urls = {path:True}
     elif isinstance( path, list ):
       urls = {}

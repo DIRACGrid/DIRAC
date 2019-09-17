@@ -12,6 +12,7 @@
 __RCSID__ = "$Id$"
 
 # imports
+import six
 import cStringIO
 import csv
 import os
@@ -158,7 +159,7 @@ class FileCatalogHandler(RequestHandler):
     # The signature of v6r15 is (dict, str)
     # The signature of v6r14 is (str, [dict, str, list])
     # We swap the two params if the first attribute is a string
-    if isinstance(paths, basestring):
+    if isinstance(paths, six.string_types):
       paths, opType = opType, paths
 
     return gFileCatalogDB.hasAccess(opType, paths, self.getRemoteCredentials())

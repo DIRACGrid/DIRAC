@@ -148,6 +148,7 @@
 """
 
 from __future__ import print_function
+import six
 import collections
 import time
 import threading
@@ -533,7 +534,7 @@ class MySQL(object):
       return S_OK(inEscapeValues)
 
     for value in inValues:
-      if isinstance(value, basestring):
+      if isinstance(value, six.string_types):
         retDict = self.__escapeString(value)
         if not retDict['OK']:
           return retDict
@@ -853,7 +854,7 @@ class MySQL(object):
           cmdList.append('`%s` %s' % (field, thisTable['Fields'][field]))
 
         if 'PrimaryKey' in thisTable:
-          if isinstance(thisTable['PrimaryKey'], basestring):
+          if isinstance(thisTable['PrimaryKey'], six.string_types):
             cmdList.append('PRIMARY KEY ( `%s` )' % thisTable['PrimaryKey'])
           else:
             cmdList.append('PRIMARY KEY ( %s )' % ", ".join(["`%s`" % str(f) for f in thisTable['PrimaryKey']]))
@@ -1077,7 +1078,7 @@ class MySQL(object):
 
     if condDict is not None:
       for aName, attrValue in condDict.iteritems():
-        if isinstance(aName, basestring):
+        if isinstance(aName, six.string_types):
           attrName = _quotedList([aName])
         elif isinstance(aName, tuple):
           attrName = '(' + _quotedList(list(aName)) + ')'
@@ -1188,7 +1189,7 @@ class MySQL(object):
     for orderAttr in orderAttrList:
       if orderAttr is None:
         continue
-      if not isinstance(orderAttr, basestring):
+      if not isinstance(orderAttr, six.string_types):
         error = 'Invalid orderAttribute argument'
         self.log.debug('buildCondition:', error)
         raise Exception(error)
@@ -1463,7 +1464,7 @@ class MySQL(object):
     try:
       #       execStr = "call %s(%s);" % ( packageName, ",".join( map( str, parameters ) ) )
       execStr = "call %s(%s);" % (packageName, ",".join(
-          ["\"%s\"" % param if isinstance(param, basestring) else str(param) for param in parameters]))
+          ["\"%s\"" % param if isinstance(param, six.string_types) else str(param) for param in parameters]))
       cursor.execute(execStr)
       rows = cursor.fetchall()
       retDict = S_OK(rows)

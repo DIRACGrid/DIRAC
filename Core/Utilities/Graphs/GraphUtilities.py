@@ -8,6 +8,7 @@
 __RCSID__ = "$Id$"
 
 
+import six
 import os
 import time
 import datetime
@@ -56,7 +57,7 @@ def convert_to_datetime( dstring ):
       results = dstring
     else:
       results = eval( str( dstring ), {'__builtins__':None, 'time':time, 'math':math}, {} )
-    if isinstance(results, (int, float)):
+    if isinstance(results, six.integer_types + (float,)):
       results = datetime.datetime.fromtimestamp( int( results ) )
     elif isinstance( results, datetime.datetime ):
       pass

@@ -41,6 +41,8 @@
 """
 
 from __future__ import print_function, absolute_import, division
+from past.builtins import long
+import six
 from six.moves import range
 
 __RCSID__ = "$Id$"
@@ -294,7 +296,7 @@ class JobDB(DB):
 
     resultDict = {}
     if paramList:
-      if isinstance(paramList, basestring):
+      if isinstance(paramList, six.string_types):
         paramList = paramList.split(',')
       paramNameList = []
       for pn in paramList:

@@ -3,6 +3,8 @@
 
 __RCSID__ = "$Id"
 
+from past.builtins import long
+import six
 import random
 import string
 
@@ -176,10 +178,10 @@ class TaskQueueDB(DB):
       if field not in tqDefDict:
         return S_ERROR("Missing mandatory field '%s' in task queue definition" % field)
       if field in ["CPUTime"]:
-        if not isinstance(tqDefDict[field], (int, long)):
+        if not isinstance(tqDefDict[field], six.integer_types):
           return S_ERROR("Mandatory field %s value type is not valid: %s" % (field, type(tqDefDict[field])))
       else:
-        if not isinstance(tqDefDict[field], basestring):
+        if not isinstance(tqDefDict[field], six.string_types):
           return S_ERROR("Mandatory field %s value type is not valid: %s" % (field, type(tqDefDict[field])))
         result = self._escapeString(tqDefDict[field])
         if not result['OK']:
@@ -223,7 +225,7 @@ class TaskQueueDB(DB):
         continue
       fieldValue = tqMatchDict[field]
       if field in ["CPUTime"]:
-        result = travelAndCheckType(fieldValue, (int, long), escapeValues=False)
+        result = travelAndCheckType(fieldValue, six.integer_types, escapeValues=False)
       else:
         result = travelAndCheckType(fieldValue, basestring)
       if not result['OK']:

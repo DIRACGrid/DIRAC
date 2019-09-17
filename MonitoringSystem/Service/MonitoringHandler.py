@@ -3,6 +3,7 @@
 It is used to create plots using Elasticsearch
 
 """
+from past.builtins import long
 import datetime
 import os
 

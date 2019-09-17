@@ -26,6 +26,8 @@ set a timeout.
        should be used to wrap third party python functions
 
 """
+from __future__ import division
+
 from multiprocessing import Process, Manager
 import threading
 import time
@@ -469,7 +471,7 @@ class Subprocess:
         exitStatus = exitStatus[1]
 
       if exitStatus >= 256:
-        exitStatus /= 256
+        exitStatus = int(exitStatus / 256)
       return S_OK((exitStatus, self.bufferList[0][0], self.bufferList[1][0]))
     finally:
       try:

@@ -13,14 +13,15 @@
     }
 """
 
+import six
 from DIRAC import S_OK
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 
 
 class PingPongHandler(RequestHandler):
 
-  MSG_DEFINITIONS = {'Ping': {'id': (int, long)},
-                     'Pong': {'id': (int, long)}}
+  MSG_DEFINITIONS = {'Ping': {'id': six.integer_types},
+                     'Pong': {'id': six.integer_types}}
 
   auth_conn_connected = ['all']
 

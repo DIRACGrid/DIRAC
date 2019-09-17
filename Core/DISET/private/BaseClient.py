@@ -4,6 +4,7 @@
 
 __RCSID__ = "$Id$"
 
+import six
 import time
 import thread
 import DIRAC
@@ -60,7 +61,7 @@ class BaseClient(object):
       :param keepAliveLapse: Duration for keepAliveLapse (heartbeat like)
     """
 
-    if not isinstance(serviceName, basestring):
+    if not isinstance(serviceName, six.string_types):
       raise TypeError("Service name expected to be a string. Received %s type %s" %
                       (str(serviceName), type(serviceName)))
     self._destinationSrv = serviceName

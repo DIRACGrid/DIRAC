@@ -19,6 +19,8 @@ from DIRAC.Core.Utilities.Graphs.GraphData import GraphData
 from matplotlib.figure import Figure 
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 import types
+import six
+
 
 class Legend( object ):
 
@@ -27,7 +29,7 @@ class Legend( object ):
     self.text_size = 0
     self.column_width = 0
     self.labels = {}
-    if type(data) == types.DictType:
+    if isinstance(data, dict):
       for label,ddict in data.items():
         #self.labels[label] = pretty_float(max([ float(x) for x in ddict.values() if x ]) )  
         self.labels[label] = "%.1f" % max([ float(x) for x in ddict.values() if x ])   
@@ -118,7 +120,7 @@ class Legend( object ):
       if column_length > max_length:
         max_length = column_length
         if flag:
-          if type(num) == types.IntType or type(num) == types.LongType:
+          if isinstance(num, six.integer_types):
             numString = str(num)
           else:
             numString = "%.1f" % float(num)  

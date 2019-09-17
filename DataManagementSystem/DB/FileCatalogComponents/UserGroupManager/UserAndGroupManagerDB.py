@@ -3,6 +3,7 @@
 
 __RCSID__ = "$Id$"
 
+import six
 import time
 import threading
 
@@ -37,7 +38,7 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
 
   def getUserID(self, user):
     """ Get ID for a user specified by its name """
-    if isinstance(user, (int, long)):
+    if isinstance(user, six.integer_types):
       return S_OK(user)
     if user in self.db.users.keys():
       return S_OK(self.db.users[user])
@@ -145,7 +146,7 @@ class UserAndGroupManagerDB(UserAndGroupManagerBase):
 
   def getGroupID(self, group):
     """ Get ID for a group specified by its name """
-    if isinstance(group, (int, long)):
+    if isinstance(group, six.integer_types):
       return S_OK(group)
     if group in self.db.groups.keys():
       return S_OK(self.db.groups[group])
