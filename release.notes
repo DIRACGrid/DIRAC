@@ -1,8 +1,9 @@
-[v7r1-pre6]
+[v7r1-pre7]
 
 *Core
 NEW: initial support for mysql8
 NEW: (#4236) DISET - pass the client DIRAC version as part of the request description structure
+NEW: (#4274) Allow installation from a local directory
 
 *Configuration
 CHANGE: (#4157) add new helper methods for IdP/Proxy Providers, OAuthManager. Add methods that 
@@ -24,6 +25,7 @@ CHANGE: (#4243) FileCatalog - standard components are loaded using ObjectLoader 
 
 *Resources
 NEW: (#4157) ProxyProvider resources with implementation for DIRAC CA and PUSP proxy providers
+NEW: (#4276) IdProvider resources to represent external user identity providers
 
 [v7r0]
 
