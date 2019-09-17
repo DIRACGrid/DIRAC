@@ -287,7 +287,7 @@ class ReplaceDIRACCode(CommandBase):
     """ Download/unzip an archive file
     """
     from io import BytesIO
-    from six.moves.urllib.request import urlopen
+    from urllib2 import urlopen
     from zipfile import ZipFile
 
     zipresp = urlopen(self.pp.genericOption)

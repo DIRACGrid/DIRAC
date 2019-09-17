@@ -1,19 +1,15 @@
 """ A set of common tools to be used in pilot commands
 """
-from __future__ import print_function
 
 __RCSID__ = '$Id$'
 
-from past.builtins import long
-import six
 import sys
 import time
 import os
 import pickle
 import getopt
 import imp
-from six.moves.urllib.request import urlopen
-from six.moves.urllib.error import URLError, HTTPError
+import urllib2
 import signal
 
 
@@ -33,7 +29,7 @@ def pythonPathCheck():
   try:
     os.umask(18)  # 022
     pythonpath = os.getenv('PYTHONPATH', '').split(':')
-    print('Directories in PYTHONPATH:', pythonpath)
+    print 'Directories in PYTHONPATH:', pythonpath
     for p in pythonpath:
       if p == '':
         continue
@@ -42,15 +38,15 @@ def pythonPathCheck():
           # In case a given directory is twice in PYTHONPATH it has to removed only once
           sys.path.remove(os.path.normpath(p))
       except Exception as x:
-        print(x)
-        print("[EXCEPTION-info] Failing path:", p, os.path.normpath(p))
-        print("[EXCEPTION-info] sys.path:", sys.path)
+        print x
+        print "[EXCEPTION-info] Failing path:", p, os.path.normpath(p)
+        print "[EXCEPTION-info] sys.path:", sys.path
         raise x
   except Exception as x:
-    print(x)
-    print("[EXCEPTION-info] sys.executable:", sys.executable)
-    print("[EXCEPTION-info] sys.version:", sys.version)
-    print("[EXCEPTION-info] os.uname():", os.uname())
+    print x
+    print "[EXCEPTION-info] sys.executable:", sys.executable
+    print "[EXCEPTION-info] sys.version:", sys.version
+    print "[EXCEPTION-info] os.uname():", os.uname()
     raise x
 
 
@@ -68,7 +64,7 @@ def retrieveUrlTimeout(url, fileName, log, timeout=0):
     # set timeout alarm
     signal.alarm(timeout + 5)
   try:
-    remoteFD = urlopen(url)
+    remoteFD = urllib2.urlopen(url)
     expectedBytes = 0
     # Sometimes repositories do not return Content-Length parameter
     try:
@@ -93,13 +89,13 @@ def retrieveUrlTimeout(url, fileName, log, timeout=0):
     else:
       return urlData
 
-  except HTTPError as x:
+  except urllib2.HTTPError as x:
     if x.code == 404:
       log.error("URL retrieve: %s does not exist" % url)
       if timeout:
         signal.alarm(0)
       return False
-  except URLError:
+  except urllib2.URLError:
     log.error('Timeout after %s seconds on transfer request for "%s"' % (str(timeout), url))
     return False
   except Exception as x:
@@ -147,7 +143,7 @@ class ObjectLoader(object):
   def __recurseImport(self, modName, parentModule=None, hideExceptions=False):
     """ Internal function to load modules
     """
-    if isinstance(modName, six.string_types):
+    if isinstance(modName, basestring):
       modName = modName.split('.')
     try:
       if parentModule:
@@ -253,11 +249,11 @@ class Logger(object):
                                              level,
                                              self.name,
                                              _line)
-            print(outLine)
+            print outLine
             if self.out:
               outputFile.write(outLine + '\n')
           else:
-            print(_line)
+            print _line
             outputFile.write(_line + '\n')
     sys.stdout.flush()
 
