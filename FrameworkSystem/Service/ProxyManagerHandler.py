@@ -84,7 +84,7 @@ class ProxyManagerHandler(RequestHandler):
 
   # WARN: Since v7r1 requestDelegationUpload method use only first argument!
   # WARN:   Second argument for compatibility with older versions
-  types_requestDelegationUpload = [[int, long], [basestring, bool]]
+  types_requestDelegationUpload = [[int, long], [basestring, bool, type(None)]]
 
   def export_requestDelegationUpload(self, requestedUploadTime, diracGroup=None):
     """ Request a delegation. Send a delegation request to client
