@@ -485,10 +485,10 @@ class SandboxStoreHandler(RequestHandler):
         hostCertLocation, _ = Locations.getHostCertificateAndKeyLocation()
         hostCert = X509Certificate.X509Certificate()
         hostCert.loadFromFile(hostCertLocation)
-        self.hostDN = hostCert.getSubjectDN().get('Value')
+        hostDN = hostCert.getSubjectDN().get('Value')
 
         # use the host authentication to fetch the data
-        result = sandboxDB.getSandboxOwner(SEName, SEPFN, self.hostDN, 'hosts')
+        result = sandboxDB.getSandboxOwner(SEName, SEPFN, hostDN, 'hosts')
         if not result['OK']:
           return result
         _owner, ownerDN, ownerGroup = result['Value']

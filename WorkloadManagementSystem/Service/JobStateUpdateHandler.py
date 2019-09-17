@@ -52,7 +52,6 @@ class JobStateUpdateHandler(RequestHandler):
     global elasticJobDB
 
     useESForJobParametersFlag = Operations().getValue('/Services/JobMonitoring/useESForJobParametersFlag', False)
-    global elasticJobDB
     if useESForJobParametersFlag:
       elasticJobDB = ElasticJobDB()
       self.log.verbose("Using ElasticSearch for JobParameters")
@@ -330,14 +329,14 @@ class JobStateUpdateHandler(RequestHandler):
                                            str(jobsParameterDict[jobID][0]),
                                            str(jobsParameterDict[jobID][1]))
         if not res['OK']:
-          self.log.error(res['Message'])
+          self.log.error('Failed to add Job Parameter to elasticJobDB', res['Message'])
 
       else:
         res = jobDB.setJobParameter(jobID,
                                     str(jobsParameterDict[jobID][0]),
                                     str(jobsParameterDict[jobID][1]))
         if not res['OK']:
-          self.log.error(res['Message'])
+          self.log.error('Failed to add Job Parameter to MySQL', res['Message'])
 
     return S_OK()
 

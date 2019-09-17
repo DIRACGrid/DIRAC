@@ -91,7 +91,7 @@ class ElasticJobDB(DB):
     self.log.debug('Inserting data in %s:%s' % (indexName, typeName))
     self.log.debug(data)
 
-    result = self.index(indexName, typeName, data, id=str(jobID) + key)
+    result = self.index(indexName, typeName, data, docID=str(jobID) + key)
     if not result['OK']:
       self.log.error("ERROR: Couldn't insert data", result['Message'])
     return result

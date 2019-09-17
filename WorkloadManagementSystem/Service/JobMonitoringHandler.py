@@ -511,7 +511,7 @@ class JobMonitoringHandler(RequestHandler):
       if not res['OK']:
         return res
       if res['Value'].get(int(jobID)):
-        return S_OK(res['Value'][jobID])
+        return S_OK(res['Value'][int(jobID)])
 
     res = gJobDB.getJobParameters(jobID, [parName])
     if not res['OK']:
@@ -554,7 +554,7 @@ class JobMonitoringHandler(RequestHandler):
       final = dict(parametersM)
       for jobID in parametersM:
         final[jobID].update(parameters.get(jobID, {}))
-      for jobID in parameters.iterkeys():
+      for jobID in parameters:
         if jobID not in final:
           final[jobID] = parameters[jobID]
       return S_OK(final)
