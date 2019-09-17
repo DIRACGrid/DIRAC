@@ -40,6 +40,7 @@ NEW: (#4260) New dirac-wms-match command to test a given job for matching comput
 NEW: (#4260) QueueUtilities - utilities relevant to queues manipulation
 FIX: (#4265) urllib.urlopen() call with and without the 'context' parameter in Utilities/PilotWrapper.py 
      according to the version of urllib instead of the python version
+CHANGE: (#4244) Modified flag for using the JobParameters on ElasticSearch database
 
 *Core
 NEW: (#3744) Add update method to the ElasticSearchDB.py to update or if not available create the values 
@@ -86,6 +87,7 @@ NEW: (#3744) Added performance tests for ES and MySQL for WMS DB backends
 NEW: (#3744) Added miniInstallDIRAC function for Jenkins jobs
 FIX: (#4177) restored test of JobsMonitor().JobParameters
 NEW: (#4224) added a test for PilotWrapper
+NEW: (#4244) integration test for JobParameters on ElasticSearch database
 
 *Docs
 FIX: Better dirac.cfg example configuration for web
@@ -95,6 +97,7 @@ NEW: Added script (docs/Tools/UpdateDiracCFG.py) to collate the ConfigTemplate.c
 CHANGE: (#4110) updated basic tutorial for CC7 instead of SLC6.     
 NEW: (#4170) added Production system documentation
 CHANGE: (#4224) Pilot 3 is the default
+NEW: (#4244) Added a few notes on using the JobParameters on ElasticSearch database
 
 [v6r22p9]
 
