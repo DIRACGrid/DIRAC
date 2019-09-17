@@ -399,7 +399,7 @@ class StorageElementItem(object):
     # Call occupancy plugin if requested
     occupancyPlugin = self.options.get('OccupancyPlugin')
     if occupancyPlugin:
-      res = ObjectLoader().loadObject(occupancyPlugin)
+      res = ObjectLoader().loadObject('Resources.Storage.OccupancyPlugins.%s' % occupancyPlugin, occupancyPlugin)
       if not res['OK']:
         return S_ERROR(errno.EPROTONOSUPPORT, 'Failed to load occupancy plugin %s' % occupancyPlugin)
       log.verbose('Use occupancy plugin %s' % occupancyPlugin)
