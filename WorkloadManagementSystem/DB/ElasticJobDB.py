@@ -136,18 +136,27 @@ class ElasticJobDB(DB):
     else:
       return S_OK(resultDict)
 
-  def setJobParameter(self, jobID, key, value):
+  def setJobParameter(self, jobID, key, value, **kwargs):
     """
     Inserts data into specified index using data given in argument
 
     :returns: S_OK/S_ERROR as result of indexing
     """
     typeName = 'JobParameters'
+
     data = {"JobID": jobID,
             "Name": key,
             "Value": value}
 
-    self.log.debug('Inserting data in index %s' % indexName)
+    attributesDict = {"JobGroup": "00000000", "Owner": 'Unknown', "Proxy": None,
+                      "SubmissionTime": None, "RunningTime": None}
+    attributesDict.update(kwargs)
+
+    data.update(attributesDict)
+
+    self.log.debug('Inserting data in %s:%s' % (indexName, typeName))
+    self.log.debug(data)
+
     result = self.index(indexName, typeName, data, id=str(jobID) + key)
     if not result['OK']:
       self.log.error("ERROR: Couldn't insert data", result['Message'])
