@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 [v7r0]
 
 FIX: (#3962) use print function instead of print statement
@@ -98,6 +99,12 @@ CHANGE: (#4110) updated basic tutorial for CC7 instead of SLC6.
 NEW: (#4170) added Production system documentation
 CHANGE: (#4224) Pilot 3 is the default
 NEW: (#4244) Added a few notes on using the JobParameters on ElasticSearch database
+=======
+[v6r22p10]
+
+*Resources
+FIX: (#4271) StorageElement - loadObject of occupancyPlugin is called with the path to OccupancyPlugins
+>>>>>>> rel-v6r22
 
 [v6r22p9]
 
