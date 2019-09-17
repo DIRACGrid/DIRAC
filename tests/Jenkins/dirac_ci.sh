@@ -108,22 +108,7 @@ function installSite(){
   getCFGFile
 
   echo '==> Fixing install.cfg file'
-  # If DIRACOS is to be used, we remove the Lcg version from install.cfg
-  if [ -z $DIRACOSVER ]
-  then
-     echo "==> Not using DIRACOS, setting LcgVer"
-     # DIRACOS is not used
-     if [ "$LcgVer" ]
-     then
-       echo '==> Fixing LcgVer to ' $LcgVer
-       sed -i s/VAR_LcgVer/$LcgVer/g $SERVERINSTALLDIR/install.cfg
-     else
-       sed -i s/VAR_LcgVer/$externalsVersion/g $SERVERINSTALLDIR/install.cfg
-     fi
-  else
-     echo "==> Using DIRACOS, removing LcgVer"
-     sed -i '/VAR_LcgVer/d' $SERVERINSTALLDIR/install.cfg
-  fi
+
   sed -i s,VAR_TargetPath,$SERVERINSTALLDIR,g $SERVERINSTALLDIR/install.cfg
   fqdn=`hostname --fqdn`
   sed -i s,VAR_HostDN,$fqdn,g $SERVERINSTALLDIR/install.cfg
