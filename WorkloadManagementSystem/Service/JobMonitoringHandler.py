@@ -249,13 +249,6 @@ class JobMonitoringHandler(RequestHandler):
   @staticmethod
   def export_getJobOwner(jobID):
 
-    if gElasticJobDB:
-      res = gElasticJobDB.getJobParametersAndAttributes(jobID, 'Owner')
-      if not res['OK']:
-        return res
-      if res['Value'] and res['Value'] != 'Unknown':
-        return res
-
     return gJobDB.getJobAttribute(jobID, 'Owner')
 
 ##############################################################################
@@ -611,20 +604,6 @@ class JobMonitoringHandler(RequestHandler):
     """
     :param int jobID: one single Job ID
     """
-    if gElasticJobDB:
-      res = gElasticJobDB.getJobParametersAndAttributes(jobID)
-      if not res['OK']:
-        return res
-      attributes = res['Value']
-
-      # Need anyway to get also from JobDB, for those jobs with parameters registered in MySQL or in both backends
-      res = gJobDB.getJobAttributes(jobID)
-      if not res['OK']:
-        return res
-      attributesM = res['Value']
-      # and now combine
-
-      return S_OK(attributesM.update(attributes))
 
     return gJobDB.getJobAttributes(jobID)
 
@@ -637,13 +616,6 @@ class JobMonitoringHandler(RequestHandler):
     :param int jobID: one single Job ID
     :param str attribute: one single attribute name
     """
-
-    if gElasticJobDB:
-      res = gElasticJobDB.getJobParametersAndAttributes(jobID, attribute)
-      if not res['OK']:
-        return res
-      if res['Value']:
-        return res
 
     return gJobDB.getJobAttribute(jobID, attribute)
 
