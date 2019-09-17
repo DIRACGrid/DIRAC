@@ -7,6 +7,7 @@
 from __future__ import print_function
 __RCSID__ = "$Id$"
 
+import six
 import time
 import datetime
 import numpy
@@ -41,7 +42,7 @@ def get_key_type(keys):
         num_data = float(key)
       except BaseException:
         num_type = False
-    if not isinstance(key, basestring):
+    if not isinstance(key, six.string_types):
       string_type = False
 
   # Take the most restrictive type
@@ -511,7 +512,7 @@ class PlotData:
     Parse the specific data value; this is the identity.
     """
 
-    if isinstance(data, basestring) and "::" in data:
+    if isinstance(data, six.string_types) and "::" in data:
       datum, error = data.split("::")
     elif isinstance(data, tuple):
       datum, error = data

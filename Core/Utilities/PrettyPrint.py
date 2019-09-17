@@ -8,6 +8,7 @@
 from __future__ import print_function
 __RCSID__ = '$Id$'
 
+import six
 import StringIO
 
 
@@ -84,12 +85,12 @@ def printTable(fields, records, sortField='', numbering=True,
   for record in records:
     strippedRecord = []
     for fieldValue in record:
-      if isinstance(fieldValue, basestring):
+      if isinstance(fieldValue, six.string_types):
         strippedRecord.append(fieldValue.strip())
       elif isinstance(fieldValue, list):
         strippedList = []
         for ll in fieldValue:
-          if isinstance(ll, basestring):
+          if isinstance(ll, six.string_types):
             strippedList.append(ll.strip())
           elif isinstance(ll, dict):
             ll['Value'] = ll['Value'].strip()
@@ -102,7 +103,7 @@ def printTable(fields, records, sortField='', numbering=True,
         strippedRecord.append(strippedList)
       elif isinstance(fieldValue, dict):
         itemValue = fieldValue['Value']
-        if isinstance(itemValue, basestring):
+        if isinstance(itemValue, six.string_types):
           itemValue = itemValue.strip()
           fieldValue.update({'Value': itemValue})
           strippedRecord.append(fieldValue)

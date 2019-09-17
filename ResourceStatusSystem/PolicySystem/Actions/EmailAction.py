@@ -7,9 +7,11 @@
 
 __RCSID__ = '$Id$'
 
-from DIRAC import S_ERROR
-from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+import six
+
+from DIRAC import S_ERROR, S_OK
 from DIRAC.ResourceStatusSystem.PolicySystem.Actions.BaseAction import BaseAction
+from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
 from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE
 
@@ -74,7 +76,7 @@ class EmailAction(BaseAction):
       elif not siteName['Value']:
         siteName = "Unassigned Resources"
       else:
-        siteName = siteName['Value'] if isinstance(siteName['Value'], basestring) else siteName['Value'][0]
+        siteName = siteName['Value'] if isinstance(siteName['Value'], six.string_types) else siteName['Value'][0]
 
     # create record for insertion
     recordDict = {}

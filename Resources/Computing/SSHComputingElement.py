@@ -8,6 +8,7 @@
 
 __RCSID__ = "$Id$"
 
+import six
 import os
 import urllib
 import json
@@ -460,7 +461,7 @@ class SSHComputingElement(ComputingElement):
       try:
         output = urllib.unquote(output)
         result = json.loads(output)
-        if isinstance(result, basestring) and result.startswith('Exception:'):
+        if isinstance(result, six.string_types) and result.startswith('Exception:'):
           return S_ERROR(result)
         return S_OK(result)
       except BaseException:
@@ -543,7 +544,7 @@ class SSHComputingElement(ComputingElement):
   def killJob(self, jobIDList):
     """ Kill a bunch of jobs
     """
-    if isinstance(jobIDList, basestring):
+    if isinstance(jobIDList, six.string_types):
       jobIDList = [jobIDList]
     return self._killJobOnHost(jobIDList)
 

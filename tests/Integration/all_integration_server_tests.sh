@@ -28,12 +28,12 @@ python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/ResourceStatusSystem/
 
 #-------------------------------------------------------------------------------#
 echo -e '***' $(date -u)  "**** WMS TESTS ****\n"
-python $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_Client_WMS.py $WORKSPACE/TestCode/DIRAC/tests/Integration/WorkloadManagementSystem/sb.cfg >> serverTestOutputs.txt 2>&1; (( ERR |= $? ))
-python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_JobDB.py >> serverTestOutputs.txt 2>&1; (( ERR |= $? ))
-python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_JobLoggingDB.py >> serverTestOutputs.txt 2>&1; (( ERR |= $? ))
-python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_TaskQueueDB.py >> serverTestOutputs.txt 2>&1; (( ERR |= $? ))
-python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_ElasticJobDB.py >> serverTestOutputs.txt 2>&1; (( ERR |= $? ))
-
+python $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_Client_WMS.py $WORKSPACE/TestCode/DIRAC/tests/Integration/WorkloadManagementSystem/sb.cfg >> serverTestOutputs.txt 2>&1
+python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_JobDB.py >> serverTestOutputs.txt 2>&1
+python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_JobLoggingDB.py >> serverTestOutputs.txt 2>&1
+python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_TaskQueueDB.py >> serverTestOutputs.txt 2>&1
+python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_ElasticJobDB.py >> serverTestOutputs.txt 2>&1
+python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_JobParameters_MySQLandES.py >> serverTestOutputs.txt 2>&1
 
 #-------------------------------------------------------------------------------#
 echo -e '***' $(date -u)  "**** DMS TESTS ****\n"

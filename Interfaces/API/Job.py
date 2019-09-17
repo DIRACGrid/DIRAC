@@ -25,6 +25,7 @@
 
 __RCSID__ = "$Id$"
 
+import six
 import re
 import os
 import urllib
@@ -137,8 +138,8 @@ class Job(API):
        :type parameters: python:list of tuples
     """
     kwargs = {'executable': executable, 'arguments': arguments, 'logFile': logFile}
-    if not isinstance(executable, basestring) or not isinstance(arguments, basestring) or \
-       not isinstance(logFile, basestring):
+    if not isinstance(executable, basestring) or not isinstance(arguments, six.string_types) or \
+       not isinstance(logFile, six.string_types):
       return self._reportError('Expected strings for executable and arguments', **kwargs)
 
     if os.path.exists(executable):
@@ -153,7 +154,7 @@ class Job(API):
     stepName = 'RunScriptStep%s' % (self.stepCount)
 
     if logFile:
-      if isinstance(logFile, basestring):
+      if isinstance(logFile, six.string_types):
         logName = str(logFile)
     else:
       logName = "Script%s_%s" % (self.stepCount, logName)
@@ -202,7 +203,7 @@ class Job(API):
        :type jobName: string
     """
     kwargs = {'jobname': jobName}
-    if not isinstance(jobName, basestring):
+    if not isinstance(jobName, six.string_types):
       return self._reportError('Expected strings for job name', **kwargs)
     else:
       self.workflow.setName(jobName)
@@ -239,7 +240,7 @@ class Job(API):
       description = 'Input sandbox file list'
       self._addParameter(self.workflow, 'InputSandbox', 'JDL', fileList, description)
       # self.sandboxFiles=resolvedFiles
-    elif isinstance(files, basestring):
+    elif isinstance(files, six.string_types):
       resolvedFiles = self._resolveInputSandbox([files])
       fileList = ';'.join(resolvedFiles)
       description = 'Input sandbox file'
@@ -273,7 +274,7 @@ class Job(API):
       fileList = ';'.join(files)
       description = 'Output sandbox file list'
       self._addParameter(self.workflow, 'OutputSandbox', 'JDL', fileList, description)
-    elif isinstance(files, basestring):
+    elif isinstance(files, six.string_types):
       description = 'Output sandbox file'
       self._addParameter(self.workflow, 'OutputSandbox', 'JDL', files, description)
     else:
@@ -304,7 +305,7 @@ class Job(API):
       inputDataStr = ';'.join(inputData)
       description = 'List of input data specified by LFNs'
       self._addParameter(self.workflow, 'InputData', 'JDL', inputDataStr, description)
-    elif isinstance(lfns, basestring):  # single LFN
+    elif isinstance(lfns, six.string_types):  # single LFN
       description = 'Input data specified by LFN'
       self._addParameter(self.workflow, 'InputData', 'JDL', lfns, description)
     else:
@@ -334,7 +335,7 @@ class Job(API):
 
     self.parameterSeqs[name] = parameterList
     if addToWorkflow:
-      if isinstance(addToWorkflow, basestring):
+      if isinstance(addToWorkflow, six.string_types):
         self.wfArguments[name] = addToWorkflow
       else:
         self.wfArguments[name] = name
@@ -425,7 +426,7 @@ class Job(API):
       description = 'List of output data files'
       self._addParameter(self.workflow, 'OutputData',
                          'JDL', outputDataStr, description)
-    elif isinstance(lfns, basestring):
+    elif isinstance(lfns, six.string_types):
       description = 'Output data file'
       self._addParameter(self.workflow, 'OutputData', 'JDL', lfns, description)
     else:
@@ -433,7 +434,7 @@ class Job(API):
 
     if outputSE:
       description = 'User specified Output SE'
-      if isinstance(outputSE, basestring):
+      if isinstance(outputSE, six.string_types):
         outputSE = [outputSE]
       elif not isinstance(outputSE, list):
         return self._reportError('Expected string or list for OutputSE', **kwargs)
@@ -443,7 +444,7 @@ class Job(API):
 
     if outputPath:
       description = 'User specified Output Path'
-      if not isinstance(outputPath, basestring):
+      if not isinstance(outputPath, six.string_types):
         return self._reportError('Expected string for OutputPath', **kwargs)
       # Remove leading "/" that might cause problems with os.path.join
       # This will prevent to set OutputPath outside the Home of the User
@@ -462,7 +463,7 @@ class Job(API):
     """
     kwargs = {'platform': platform}
 
-    if not isinstance(platform, basestring):
+    if not isinstance(platform, six.string_types):
       return self._reportError("Expected string for platform", **kwargs)
 
     if not platform.lower() == 'any':
@@ -486,7 +487,7 @@ class Job(API):
     """
     # should add protection here for list of supported platforms
     kwargs = {'backend': backend}
-    if not isinstance(backend, basestring):
+    if not isinstance(backend, six.string_types):
       return self._reportError('Expected string for SubmitPool', **kwargs)
 
     if not backend.lower() == 'any':
@@ -536,7 +537,7 @@ class Job(API):
        :type destination: str or python:list
     """
     kwargs = {'destination': destination}
-    if isinstance(destination, basestring):
+    if isinstance(destination, six.string_types):
       destination = destination.replace(' ', '').split(',')
       description = 'User specified destination site'
     else:
@@ -630,7 +631,7 @@ class Job(API):
       bannedSites = ';'.join(sites)
       description = 'List of sites excluded by user'
       self._addParameter(self.workflow, 'BannedSites', 'JDL', bannedSites, description)
-    elif isinstance(sites, basestring):
+    elif isinstance(sites, six.string_types):
       description = 'Site excluded by user'
       self._addParameter(self.workflow, 'BannedSites', 'JDL', sites, description)
     else:
@@ -644,7 +645,7 @@ class Job(API):
 
        Normally users should always specify their immutable DIRAC nickname.
     """
-    if not isinstance(ownerProvided, basestring):
+    if not isinstance(ownerProvided, six.string_types):
       return self._reportError('Expected string for owner', **{'ownerProvided': ownerProvided})
 
     self._addParameter(self.workflow, 'Owner', 'JDL', ownerProvided, 'User specified ID')
@@ -656,7 +657,7 @@ class Job(API):
 
        Allows to force expected owner group of proxy.
     """
-    if not isinstance(ownerGroup, basestring):
+    if not isinstance(ownerGroup, six.string_types):
       return self._reportError('Expected string for job owner group', **{'ownerGroup': ownerGroup})
 
     self._addParameter(self.workflow, 'OwnerGroup', 'JDL', ownerGroup, 'User specified owner group.')
@@ -668,7 +669,7 @@ class Job(API):
 
        Allows to force expected owner DN of proxy.
     """
-    if not isinstance(ownerDN, basestring):
+    if not isinstance(ownerDN, six.string_types):
       return self._reportError('Expected string for job owner DN', **{'ownerGroup': ownerDN})
 
     self._addParameter(self.workflow, 'OwnerDN', 'JDL', ownerDN, 'User specified owner DN.')
@@ -680,7 +681,7 @@ class Job(API):
 
        Specify job type for testing purposes.
     """
-    if not isinstance(jobType, basestring):
+    if not isinstance(jobType, six.string_types):
       return self._reportError('Expected string for job type', **{'jobType': jobType})
 
     self._addParameter(self.workflow, 'JobType', 'JDL', jobType, 'User specified type')
@@ -700,7 +701,7 @@ class Job(API):
         :type tags: str or python:list
     """
 
-    if isinstance(tags, basestring):
+    if isinstance(tags, six.string_types):
       tagValue = tags
     elif isinstance(tags, list):
       tagValue = ";".join(tags)
@@ -724,7 +725,7 @@ class Job(API):
        :param jobGroup: JobGroup name
        :type jobGroup: string
     """
-    if not isinstance(jobGroup, basestring):
+    if not isinstance(jobGroup, six.string_types):
       return self._reportError('Expected string for job group name', **{'jobGroup': jobGroup})
 
     description = 'User specified job group'
@@ -748,7 +749,7 @@ class Job(API):
        :type logLevel: string
     """
     kwargs = {'logLevel': logLevel}
-    if isinstance(logLevel, basestring):
+    if isinstance(logLevel, six.string_types):
       if logLevel.upper() in gLogger.getAllPossibleLevels():
         description = 'User specified logging level'
         self.logLevel = logLevel
@@ -764,7 +765,7 @@ class Job(API):
     """Developer function. Allow to pass arbitrary settings to the payload
        configuration service environment.
     """
-    if not isinstance(cfgString, basestring):
+    if not isinstance(cfgString, six.string_types):
       return self._reportError('Expected string for DIRAC Job Config Args', **{'cfgString': cfgString})
 
     description = 'User specified cfg settings'
@@ -968,7 +969,7 @@ class Job(API):
         if pName == "InputSandbox":
           if isinstance(paramsDict[pName]['value'], list):
             paramsDict[pName]['value'].append('%%(%s)s' % pName)
-          elif isinstance(paramsDict[pName]['value'], basestring):
+          elif isinstance(paramsDict[pName]['value'], six.string_types):
             if paramsDict[pName]['value']:
               paramsDict[pName]['value'] += ';%%(%s)s' % pName
             else:
@@ -1146,7 +1147,7 @@ class Job(API):
     for name, props in paramsDict.iteritems():
       ptype = props['type']
       value = props['value']
-      if isinstance(value, basestring) and re.search(';', value):
+      if isinstance(value, six.string_types) and re.search(';', value):
         value = value.split(';')
       if name.lower() == 'requirements' and ptype == 'JDL':
         self.log.verbose('Found existing requirements: %s' % (value))
@@ -1157,9 +1158,9 @@ class Job(API):
             classadJob.insertAttributeVectorStringList(name, value)
           else:
             classadJob.insertAttributeVectorInt(name, value)
-        elif isinstance(value, basestring) and value:
+        elif isinstance(value, six.string_types) and value:
           classadJob.insertAttributeInt(name, value)
-        elif isinstance(value, (int, long, float)):
+        elif isinstance(value, six.integer_types + (float,)):
           classadJob.insertAttributeInt(name, value)
 
     if self.numberOfParameters > 0:

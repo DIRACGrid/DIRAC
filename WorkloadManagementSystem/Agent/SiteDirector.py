@@ -15,6 +15,7 @@
 
 __RCSID__ = "$Id$"
 
+import six
 import os
 import sys
 import random
@@ -333,10 +334,10 @@ class SiteDirector(AgentModule):
           # This also converts them from a string to a list if required.
           for tagFieldName in ('Tag', 'RequiredTag'):
             ceTags = ceDict.get(tagFieldName, [])
-            if isinstance(ceTags, basestring):
+            if isinstance(ceTags, six.string_types):
               ceTags = fromChar(ceTags)
             queueTags = self.queueDict[queueName]['ParametersDict'].get(tagFieldName)
-            if queueTags and isinstance(queueTags, basestring):
+            if queueTags and isinstance(queueTags, six.string_types):
               queueTags = fromChar(queueTags)
               self.queueDict[queueName]['ParametersDict'][tagFieldName] = queueTags
             if ceTags:

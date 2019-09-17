@@ -8,7 +8,7 @@
 """
 
 import os
-import urllib
+from six.moves.urllib.request import urlopen
 
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.SiteCEMapping import getQueueInfo
@@ -36,7 +36,7 @@ def __getFeatures(envVariable, items):
     fname = os.path.join(featuresDir, item)
     try:
       # Only keep features that do exist
-      features[item] = urllib.urlopen(fname).read()
+      features[item] = urlopen(fname).read()
     except IOError:
       pass
   return features

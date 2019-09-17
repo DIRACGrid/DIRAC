@@ -10,6 +10,7 @@ This module consists of DataManager and related classes.
 """
 
 # # imports
+import six
 from datetime import datetime, timedelta
 import fnmatch
 import os
@@ -119,7 +120,7 @@ class DataManager(object):
   def __hasAccess(self, opType, path):
     """  Check if we have permission to execute given operation on the given file (if exists) or its directory
     """
-    if isinstance(path, basestring):
+    if isinstance(path, six.string_types):
       paths = [path]
     else:
       paths = list(path)
@@ -145,7 +146,7 @@ class DataManager(object):
     """ Clean the logical directory from the catalog and storage
     """
     log = self.log.getSubLogger('cleanLogicalDirectory')
-    if isinstance(lfnDir, basestring):
+    if isinstance(lfnDir, six.string_types):
       lfnDir = [lfnDir]
     retDict = {"Successful": {}, "Failed": {}}
     for folder in lfnDir:
@@ -288,7 +289,7 @@ class DataManager(object):
     :param self: self reference
     :param mixed directory: list of directories or one directory
     """
-    if isinstance(directory, basestring):
+    if isinstance(directory, six.string_types):
       directories = [directory]
     else:
       directories = directory
@@ -307,7 +308,7 @@ class DataManager(object):
     :param int days: ctime days
     :param str wildcard: pattern to match
     """
-    if isinstance(directory, basestring):
+    if isinstance(directory, six.string_types):
       directories = [directory]
     else:
       directories = directory
@@ -360,7 +361,7 @@ class DataManager(object):
     log = self.log.getSubLogger('getFile')
     if isinstance(lfn, list):
       lfns = lfn
-    elif isinstance(lfn, basestring):
+    elif isinstance(lfn, six.string_types):
       lfns = [lfn]
     else:
       errStr = "Supplied lfn must be string or list of strings."
@@ -1156,7 +1157,7 @@ class DataManager(object):
     else:
       lfns = [lfn]
     for lfn in lfns:
-      if not isinstance(lfn, basestring):
+      if not isinstance(lfn, six.string_types):
         errStr = "Supplied lfns must be string or list of strings."
         log.debug(errStr)
         return S_ERROR(errStr)
@@ -1262,7 +1263,7 @@ class DataManager(object):
     else:
       lfns = set([lfn])
     for lfn in lfns:
-      if not isinstance(lfn, basestring):
+      if not isinstance(lfn, six.string_types):
         errStr = "Supplied lfns must be string or list of strings."
         log.debug(errStr)
         return S_ERROR(errStr)
@@ -1388,7 +1389,7 @@ class DataManager(object):
     else:
       lfns = [lfn]
     for lfn in lfns:
-      if not isinstance(lfn, basestring):
+      if not isinstance(lfn, six.string_types):
         errStr = "Supplied lfns must be string or list of strings."
         log.debug(errStr)
         return S_ERROR(errStr)

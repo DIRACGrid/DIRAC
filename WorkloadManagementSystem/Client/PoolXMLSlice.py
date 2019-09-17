@@ -7,7 +7,7 @@
 from DIRAC.Resources.Catalog.PoolXMLCatalog                         import PoolXMLCatalog
 from DIRAC                                                          import S_OK, S_ERROR, gLogger
 
-import os, types
+import os
 
 __RCSID__ = "$Id$"
 
@@ -34,7 +34,7 @@ class PoolXMLSlice( object ):
 
       for lfn, mdataList in dataDict.items():
         # lfn,pfn,se,guid tuple taken by POOL XML Catalogue
-        if type( mdataList ) != types.ListType:
+        if not isinstance(mdataList, list):
           mdataList = [mdataList]
         # As a file may have several replicas, set first the file, then the replicas
         poolXMLCat.addFile( ( lfn, None, None, mdataList[0]['guid'], None ) )

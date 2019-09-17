@@ -4,6 +4,8 @@
 
 __RCSID__ = "$Id$"
 
+from past.builtins import long
+import six
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Security import Properties
@@ -84,7 +86,7 @@ class ProxyManagerHandler(RequestHandler):
 
   # WARN: Since v7r1 requestDelegationUpload method use only first argument!
   # WARN:   Second argument for compatibility with older versions
-  types_requestDelegationUpload = [[int, long], [basestring, bool]]
+  types_requestDelegationUpload = [[int, long], [basestring, bool, type(None)]]
 
   def export_requestDelegationUpload(self, requestedUploadTime, diracGroup=None):
     """ Request a delegation. Send a delegation request to client
@@ -118,7 +120,7 @@ class ProxyManagerHandler(RequestHandler):
       gLogger.error("Upload request failed", "by %s:%s : %s" % (userName, userGroup, result['Message']))
     return result
 
-  types_completeDelegationUpload = [(int, long), basestring]
+  types_completeDelegationUpload = [six.integer_types, basestring]
 
   def export_completeDelegationUpload(self, requestId, pemChain):
     """ Upload result of delegation
@@ -174,7 +176,7 @@ class ProxyManagerHandler(RequestHandler):
     # Not authorized!
     return S_ERROR("You can't get proxies!")
 
-  types_getProxy = [basestring, basestring, basestring, (int, long)]
+  types_getProxy = [basestring, basestring, basestring, six.integer_types]
 
   def export_getProxy(self, userDN, userGroup, requestPem, requiredLifetime):
     """ Get a proxy for a userDN/userGroup
@@ -221,7 +223,7 @@ class ProxyManagerHandler(RequestHandler):
       return retVal
     return S_OK(retVal['Value'])
 
-  types_getVOMSProxy = [basestring, basestring, basestring, (int, long), basestring]
+  types_getVOMSProxy = [basestring, basestring, basestring, six.integer_types, basestring]
 
   def export_getVOMSProxy(self, userDN, userGroup, requestPem, requiredLifetime, vomsAttribute=None):
     """ Get a proxy for a userDN/userGroup
@@ -324,7 +326,7 @@ class ProxyManagerHandler(RequestHandler):
     self.__proxyDB.logAction("delete proxy", credDict['DN'], credDict['group'], userDN, userGroup)
     return S_OK()
 
-  types_getContents = [dict, (list, tuple), (int, long), (int, long)]
+  types_getContents = [dict, (list, tuple), six.integer_types, six.integer_types]
 
   def export_getContents(self, selDict, sortDict, start, limit):
     """ Retrieve the contents of the DB
@@ -341,7 +343,7 @@ class ProxyManagerHandler(RequestHandler):
       selDict['UserName'] = credDict['username']
     return self.__proxyDB.getProxiesContent(selDict, sortDict, start, limit)
 
-  types_getLogContents = [dict, (list, tuple), (int, long), (int, long)]
+  types_getLogContents = [dict, (list, tuple), six.integer_types, six.integer_types]
 
   def export_getLogContents(self, selDict, sortDict, start, limit):
     """ Retrieve the contents of the DB
@@ -355,7 +357,7 @@ class ProxyManagerHandler(RequestHandler):
     """
     return self.__proxyDB.getLogsContent(selDict, sortDict, start, limit)
 
-  types_generateToken = [basestring, basestring, (int, long)]
+  types_generateToken = [basestring, basestring, six.integer_types]
 
   def export_generateToken(self, requesterDN, requesterGroup, tokenUses):
     """ Generate tokens for proxy retrieval
@@ -370,7 +372,7 @@ class ProxyManagerHandler(RequestHandler):
     self.__proxyDB.logAction("generate tokens", credDict['DN'], credDict['group'], requesterDN, requesterGroup)
     return self.__proxyDB.generateToken(requesterDN, requesterGroup, numUses=tokenUses)
 
-  types_getProxyWithToken = [basestring, basestring, basestring, (int, long), basestring]
+  types_getProxyWithToken = [basestring, basestring, basestring, six.integer_types, basestring]
 
   def export_getProxyWithToken(self, userDN, userGroup, requestPem, requiredLifetime, token):
     """ Get a proxy for a userDN/userGroup
@@ -399,7 +401,7 @@ class ProxyManagerHandler(RequestHandler):
     self.__proxyDB.logAction("download proxy with token", credDict['DN'], credDict['group'], userDN, userGroup)
     return self.__getProxy(userDN, userGroup, requestPem, requiredLifetime, True)
 
-  types_getVOMSProxyWithToken = [basestring, basestring, basestring, (int, long), basestring]
+  types_getVOMSProxyWithToken = [basestring, basestring, basestring, six.integer_types, basestring]
 
   def export_getVOMSProxyWithToken(self, userDN, userGroup, requestPem, requiredLifetime, token, vomsAttribute=None):
     """ Get a proxy for a userDN/userGroup

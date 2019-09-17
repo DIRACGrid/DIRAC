@@ -19,6 +19,7 @@
 __RCSID__ = "$Id$"
 
 
+import six
 import datetime
 from sqlalchemy.orm import class_mapper
 from sqlalchemy.orm.query import Query
@@ -321,7 +322,7 @@ class ResourceStatusDB(SQLAlchemyDB):
         column_a = getattr(table_c, columnName.lower())
         if isinstance(columnValue, (list, tuple)):
           select = select.filter(column_a.in_(list(columnValue)))
-        elif isinstance(columnValue, basestring):
+        elif isinstance(columnValue, six.string_types):
           select = select.filter(column_a == columnValue)
         else:
           self.log.error("type(columnValue) == %s" % type(columnValue))
@@ -391,7 +392,7 @@ class ResourceStatusDB(SQLAlchemyDB):
         column_a = getattr(table_c, columnName.lower())
         if isinstance(columnValue, (list, tuple)):
           select = select.filter(column_a.in_(list(columnValue)))
-        elif isinstance(columnValue, basestring):
+        elif isinstance(columnValue, six.string_types):
           select = select.filter(column_a == columnValue)
         else:
           self.log.error("type(columnValue) == %s" % type(columnValue))

@@ -10,6 +10,7 @@ __RCSID__ = "$Id$"
 cfgInstallSection = 'LocalInstallation'
 cfgResourceSection = 'Resources'
 import os
+import six
 
 
 def cfgPath(*args):
@@ -31,9 +32,8 @@ def cfgPathToList(arg):
   """
   Basic method to split a cfgPath in to a list of strings
   """
-  from types import StringTypes
   listPath = []
-  if type(arg) not in StringTypes:
+  if not isinstance(arg, six.string_types):
     return listPath
   while arg.find('/') == 0:
     arg = arg[1:]

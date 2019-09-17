@@ -1,4 +1,5 @@
 
+import six
 import re
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
@@ -22,9 +23,9 @@ class UserProfileClient(object):
       return "b"
     if dataObj is None:
       return "o"
-    if isinstance(dataObj, (int, long, float)):
+    if isinstance(dataObj, six.integer_types + (float,)):
       return "n"
-    if isinstance(dataObj, basestring):
+    if isinstance(dataObj, six.string_types):
       return "s"
     # Not even trying here...
     if type(dataObj) in Time._allTypes:

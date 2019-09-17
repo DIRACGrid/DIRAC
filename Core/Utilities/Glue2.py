@@ -14,6 +14,7 @@ published information, like a foreign key pointing to non-existant entry.
 
 """
 
+import six
 from pprint import pformat
 
 from DIRAC import gLogger
@@ -117,7 +118,7 @@ def __getGlue2ShareInfo(host, shareEndpoints, shareInfoDict, cesDict):
 
   exeInfo = []
   executionEnvironments = shareInfoDict['GLUE2ComputingShareExecutionEnvironmentForeignKey']
-  if isinstance(executionEnvironments, basestring):
+  if isinstance(executionEnvironments, six.string_types):
     executionEnvironments = [executionEnvironments]
   for executionEnvironment in executionEnvironments:
     resExeInfo = __getGlue2ExecutionEnvironmentInfo(host, executionEnvironment)
@@ -143,7 +144,7 @@ def __getGlue2ShareInfo(host, shareEndpoints, shareInfoDict, cesDict):
     gLogger.debug("Failed to sort the execution environments: %s" % pformat(exeInfo))
   ceInfo.update(exeInfo[0])
 
-  if isinstance(shareEndpoints, basestring):
+  if isinstance(shareEndpoints, six.string_types):
     shareEndpoints = [shareEndpoints]
   for endpoint in shareEndpoints:
     ceType = endpoint.rsplit('.', 1)[1]

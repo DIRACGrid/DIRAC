@@ -3,6 +3,7 @@
 
 """
 
+import six
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
@@ -30,7 +31,7 @@ def resolveSEGroup(seGroupList, allSEs=None):
       return []
     allSEs = res['Value']
   seList = []
-  if isinstance(seGroupList, basestring):
+  if isinstance(seGroupList, six.string_types):
     seGroupList = [se.strip() for se in seGroupList.split(',') if se.strip()]
   for se in seGroupList:
     seConfig = gConfig.getValue('/Resources/StorageElementGroups/%s' % se, se)
@@ -58,7 +59,7 @@ def resolveSEGroup(seGroupList, allSEs=None):
 
 def siteGridName(site):
   """ Returns the Grid name for a site"""
-  if not isinstance(site, basestring):
+  if not isinstance(site, six.string_types):
     return None
   siteSplit = site.split('.')
   if len(siteSplit) < 3:
@@ -68,7 +69,7 @@ def siteGridName(site):
 
 def siteCountryName(site):
   """ Returns the Grid name for a site"""
-  if not isinstance(site, basestring):
+  if not isinstance(site, six.string_types):
     return None
   siteSplit = site.split('.')
   if len(siteSplit) < 3:
@@ -81,9 +82,9 @@ def _getConnectionIndex(connectionLevel, default=None):
   """
   if connectionLevel is None:
     connectionLevel = default
-  if isinstance(connectionLevel, (int, long)):
+  if isinstance(connectionLevel, six.integer_types):
     return connectionLevel
-  if isinstance(connectionLevel, basestring):
+  if isinstance(connectionLevel, six.string_types):
     connectionLevel = connectionLevel.upper()
   return {'LOCAL': LOCAL, 'PROTOCOL': PROTOCOL, 'DOWNLOAD': DOWNLOAD}.get(connectionLevel)
 
@@ -226,7 +227,7 @@ class DMSHelpers(object):
     if result['OK']:
       for site in self.siteSEMapping[LOCAL] if withStorage else self.siteSet:
         grid, shortSite, _country = site.split('.')
-        if isinstance(tier, (int, long)) and \
+        if isinstance(tier, six.integer_types) and \
             (grid != 'LCG' or
              gConfig.getValue('/Resources/Sites/%s/%s/MoUTierLevel' % (grid, site), 999) != tier):
           continue
@@ -252,7 +253,7 @@ class DMSHelpers(object):
           'DataManagement/SEsUsedForFailover', []))
       self.failoverSEs = resolveSEGroup(seList)
     # FIXME: remove string test at some point
-    return storageElement in self.failoverSEs or (not self.failoverSEs and isinstance(storageElement, basestring) and
+    return storageElement in self.failoverSEs or (not self.failoverSEs and isinstance(storageElement, six.string_types) and
                                                   'FAILOVER' in storageElement.upper())
 
   def isSEForJobs(self, storageElement, checkSE=True):
@@ -274,7 +275,7 @@ class DMSHelpers(object):
           'DataManagement/SEsUsedForArchive', []))
       self.archiveSEs = resolveSEGroup(seList)
     # FIXME: remove string test at some point
-    return storageElement in self.archiveSEs or (not self.archiveSEs and isinstance(storageElement, basestring) and
+    return storageElement in self.archiveSEs or (not self.archiveSEs and isinstance(storageElement, six.string_types) and
                                                  'ARCHIVE' in storageElement.upper())
 
   def getSitesForSE(self, storageElement, connectionLevel=None):

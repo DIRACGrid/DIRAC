@@ -7,6 +7,7 @@ from __future__ import print_function, absolute_import
 
 __RCSID__ = "$Id$"
 
+import six
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.Core.Base.AgentModule import AgentModule
@@ -461,7 +462,7 @@ the stalledTime limit.
       if not startTime or startTime == 'None':
         startTime = jobDict['SubmissionTime']
 
-    if isinstance(startTime, basestring):
+    if isinstance(startTime, six.string_types):
       startTime = fromString(startTime)
       if startTime is None:
         self.log.error('Wrong timestamp in DB', items[3])

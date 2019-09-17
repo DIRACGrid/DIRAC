@@ -2,7 +2,7 @@
     proxy server
 """
 
-import urllib
+from six.moves.urllib.request import urlopen
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
@@ -63,8 +63,8 @@ class PUSPProxyProvider(ProxyProvider):
               "&rfc-proxy=true&cn-label=user:%s" % (puspServiceURL, vomsVO, vomsAttribute, user)
 
     try:
-      proxy = urllib.urlopen(puspURL).read()
-    except Exception as e:
+      proxy = urlopen(puspURL).read()
+    except Exception:
       return S_ERROR('Failed to get proxy from the PUSP server')
 
     chain = X509Chain()

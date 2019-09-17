@@ -3,6 +3,7 @@
 
 __RCSID__ = "$Id$"
 
+import six
 import os
 import datetime
 
@@ -515,7 +516,7 @@ class FileManagerPs(FileManagerBase):
       fileID = lfns[lfn]['FileID']
 
       seName = lfns[lfn]['SE']
-      if isinstance(seName, basestring):
+      if isinstance(seName, six.string_types):
         seList = [seName]
       elif isinstance(seName, list):
         seList = seName

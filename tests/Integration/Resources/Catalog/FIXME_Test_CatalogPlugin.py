@@ -61,14 +61,14 @@ class CatalogPlugInTestCase(unittest.TestCase):
     self.assertTrue(res['OK'])
     self.assertTrue(res['Value'])
     self.assertTrue(res['Value']['Successful'])
-    self.assertTrue(res['Value']['Successful'].has_key(path))
+    self.assertTrue(path in res['Value']['Successful'])
     return res['Value']['Successful'][path]
 
   def parseError(self,res,path):
     self.assertTrue(res['OK'])
     self.assertTrue(res['Value'])
     self.assertTrue(res['Value']['Failed'])
-    self.assertTrue(res['Value']['Failed'].has_key(path))
+    self.assertTrue(path in res['Value']['Failed'])
     return res['Value']['Failed'][path]
 
   def cleanDirectory(self):
@@ -124,7 +124,7 @@ class FileTestCase(CatalogPlugInTestCase):
     self.assertEqual(returnValue['Size'],10000000)
     self.metadata = ['Status', 'ChecksumType', 'NumberOfLinks', 'CreationDate', 'Checksum', 'ModificationDate', 'Mode', 'GUID', 'Size']
     for key in self.metadata:
-      self.assertTrue(returnValue.has_key(key))
+      self.assertTrue(key in returnValue)
     # Test getFileMetadata for missing path
     res = self.catalog.getFileMetadata(self.files[0][:-1])
     error = self.parseError(res,self.files[0][:-1])
@@ -136,7 +136,7 @@ class FileTestCase(CatalogPlugInTestCase):
     self.assertEqual(returnValue['Size'],0)
     self.metadata = ['Status', 'ChecksumType', 'NumberOfLinks', 'CreationDate', 'Checksum', 'ModificationDate', 'Mode', 'GUID', 'Size']
     for key in self.metadata:
-      self.assertTrue(returnValue.has_key(key))
+      self.assertTrue(key in returnValue)
 
   def test_getFileSize(self):
     # Test getFileSize with a file
@@ -305,14 +305,14 @@ class DirectoryTestCase(CatalogPlugInTestCase):
     self.assertEqual(returnValue['Size'],0)
     self.assertEqual(returnValue['NumberOfSubPaths'],self.numberOfFiles)
     for key in self.dirMetadata:
-      self.assertTrue(returnValue.has_key(key))
+      self.assertTrue(key in returnValue)
     # Test getDirectoryMetadata with a file
     res = self.catalog.getDirectoryMetadata(self.files[0])
     returnValue = self.parseResult(res,self.files[0])
     self.assertEqual(returnValue['Status'],'-')
     self.assertEqual(returnValue['Size'],10000000)
     for key in self.dirMetadata:
-      self.assertTrue(returnValue.has_key(key))
+      self.assertTrue(key in returnValue)
     # Test getDirectoryMetadata for missing path
     res = self.catalog.getDirectoryMetadata(self.files[0][:-1])
     error = self.parseError(res,self.files[0][:-1])
@@ -328,11 +328,11 @@ class DirectoryTestCase(CatalogPlugInTestCase):
     self.assertEqual(sorted(returnValue['Files'].keys()),sorted(self.files))
     directoryFiles = returnValue['Files']
     for lfn,fileDict in directoryFiles.items():
-      self.assertTrue(fileDict.has_key('Replicas'))
+      self.assertTrue('Replicas' in fileDict)
       self.assertEqual(len(fileDict['Replicas']),1)
-      self.assertTrue(fileDict.has_key('MetaData'))
+      self.assertTrue('MetaData' in fileDict)
       for key in self.fileMetadata:
-        self.assertTrue(fileDict['MetaData'].has_key(key))
+        self.assertTrue(key in fileDict['MetaData'])
     # Test listDirectory for a file
     res = self.catalog.listDirectory(self.files[0],True)
     error = self.parseError(res,self.files[0])
@@ -346,7 +346,7 @@ class DirectoryTestCase(CatalogPlugInTestCase):
     # Test getDirectoryReplicas for directory
     res = self.catalog.getDirectoryReplicas(self.destDir,True)
     returnValue = self.parseResult(res,self.destDir)
-    self.assertTrue(returnValue.has_key(self.files[0]))
+    self.assertTrue(self.files[0] in returnValue)
     fileReplicas = returnValue[self.files[0]]
     self.assertEqual(fileReplicas.keys(),['DIRAC-storage'])
     self.assertEqual(fileReplicas.values(),['protocol://host:port/storage/path%s' % self.files[0]])
@@ -364,7 +364,7 @@ class DirectoryTestCase(CatalogPlugInTestCase):
     res = self.catalog.getDirectorySize(self.destDir)
     returnValue = self.parseResult(res,self.destDir)
     for key in ['Files','TotalSize','SubDirs','ClosedDirs','SiteUsage']:
-      self.assertTrue(returnValue.has_key(key))
+      self.assertTrue(key in returnValue)
     self.assertEqual(returnValue['Files'],self.numberOfFiles)
     self.assertEqual(returnValue['TotalSize'],(self.numberOfFiles*10000000))
     #TODO create a sub dir, check, close it, check

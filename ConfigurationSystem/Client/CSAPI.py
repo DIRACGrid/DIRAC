@@ -3,6 +3,7 @@
     Most of these functions can only be done by administrators
 """
 
+import six
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities import List, Time
@@ -196,7 +197,7 @@ class CSAPI(object):
     """
     if not self.__initialized['OK']:
       return self.__initialized
-    if isinstance(users, basestring):
+    if isinstance(users, six.string_types):
       users = [users]
     usersData = self.describeUsers(users)['Value']
     for username in users:

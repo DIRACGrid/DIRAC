@@ -3,6 +3,7 @@
 # File :    dirac-proxy-init.py
 # Author :  Adrian Casajus
 ########################################################################
+from __future__ import division
 
 import os
 import sys

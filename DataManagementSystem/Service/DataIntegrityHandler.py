@@ -47,7 +47,7 @@ class DataIntegrityHandler( RequestHandler ):
   def export_removeProblematic( fileID ):
     """ Remove the file with the supplied FileID from the database
     """
-    if type( fileID ) == ListType:
+    if isinstance(fileID, list):
       fileIDs = fileID
     else:
       fileIDs = [int( fileID )]

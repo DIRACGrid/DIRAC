@@ -19,7 +19,7 @@ __RCSID__ = "$Id$"
 import datetime
 import os
 import json
-from types import StringTypes
+import six
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.File import checkGuid
@@ -73,14 +73,14 @@ class File(object):
     self.initialLoading = True
 
     fromDict = fromDict if isinstance(fromDict, dict)\
-        else json.loads(fromDict) if isinstance(fromDict, StringTypes)\
+        else json.loads(fromDict) if isinstance(fromDict, six.string_types)\
         else {}
 
     for attrName, attrValue in fromDict.iteritems():
       # The JSON module forces the use of UTF-8, which is not properly
       # taken into account in DIRAC.
-      # One would need to replace all the '== str' with 'in StringTypes'
-      if type(attrValue) in StringTypes:
+      # One would need to replace all the '== str' with 'in six.string_types'
+      if isinstance(attrValue, six.string_types):
         attrValue = attrValue.encode()
       if attrValue:
         setattr(self, attrName, attrValue)
@@ -95,7 +95,7 @@ class File(object):
   @LFN.setter
   def LFN(self, value):
     """ lfn setter """
-    if type(value) not in StringTypes:
+    if not isinstance(value, six.string_types):
       raise TypeError("LFN has to be a string!")
     if not os.path.isabs(value):
       raise ValueError("LFN should be an absolute path!")
@@ -110,7 +110,7 @@ class File(object):
   def GUID(self, value):
     """ GUID setter """
     if value:
-      if type(value) not in StringTypes:
+      if not isinstance(value, six.string_types):
         raise TypeError("GUID should be a string!")
       if not checkGuid(value):
         raise ValueError("'%s' is not a valid GUID!" % str(value))

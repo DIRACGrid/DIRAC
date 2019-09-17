@@ -4,6 +4,8 @@ See the information about transformation parameters below.
 """
 
 from __future__ import print_function
+from past.builtins import long
+import six
 import types
 import json
 
@@ -117,7 +119,7 @@ class Transformation(API):
     :returns: S_OK, S_ERROR
     """
     self.item_called = "Body"
-    if isinstance(body, basestring):
+    if isinstance(body, six.string_types):
       return self.__setParam(body)
     if not isinstance(body, (list, tuple)):
       raise TypeError("Expected list or string, but %r is %s" % (body, type(body)))
@@ -127,12 +129,12 @@ class Transformation(API):
         raise TypeError("Expected tuple or list, but %r is %s" % (tup, type(tup)))
       if len(tup) != 2:
         raise TypeError("Expected 2-tuple, but %r is length %d" % (tup, len(tup)))
-      if not isinstance(tup[0], basestring):
+      if not isinstance(tup[0], six.string_types):
         raise TypeError("Expected string, but first entry in tuple %r is %s" % (tup, type(tup[0])))
       if not isinstance(tup[1], dict):
         raise TypeError("Expected dictionary, but second entry in tuple %r is %s" % (tup, type(tup[0])))
       for par, val in tup[1].iteritems():
-        if not isinstance(par, basestring):
+        if not isinstance(par, six.string_types):
           raise TypeError("Expected string, but key in dictionary %r is %s" % (par, type(par)))
         if par not in Operation.ATTRIBUTE_NAMES:
           raise ValueError("Unknown attribute for Operation: %s" % par)
@@ -157,7 +159,7 @@ class Transformation(API):
     return S_OK()
 
   def __setSE(self, seParam, seList):
-    if isinstance(seList, basestring):
+    if isinstance(seList, six.string_types):
       try:
         seList = eval(seList)
       except BaseException:

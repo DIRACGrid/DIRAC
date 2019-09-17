@@ -13,6 +13,7 @@
 
 __RCSID__ = "$Id$"
 
+import six
 import re
 import socket
 from urlparse import urlparse
@@ -295,7 +296,7 @@ def getSiteUpdates(vo, bdiiInfo=None, log=None):
                 newMaxCPUTime = str(int(0.8 * int(wallTime)))
           newSI00 = ''
           caps = queueInfo.get('GlueCECapability', [])
-          if isinstance(caps, basestring):
+          if isinstance(caps, six.string_types):
             caps = [caps]
           for cap in caps:
             if 'CPUScalingReferenceSI00' in cap:

@@ -9,6 +9,7 @@ Service handler for FT3SDB using DISET
 
 __RCSID__ = "$Id$"
 
+import six
 import json
 
 # from DIRAC
@@ -57,7 +58,7 @@ class FTS3ManagerHandler(RequestHandler):
     opObj = json.loads(opJSON, cls=FTS3JSONDecoder)
     return cls.fts3db.persistOperation(opObj)
 
-  types_getOperation = [(long, int)]
+  types_getOperation = [six.integer_types]
 
   @classmethod
   def export_getOperation(cls, operationID):
@@ -76,7 +77,7 @@ class FTS3ManagerHandler(RequestHandler):
     opJSON = getOperation.toJSON()
     return S_OK(opJSON)
 
-  types_getActiveJobs = [(long, int), [None] + [basestring], basestring]
+  types_getActiveJobs = [six.integer_types, [None] + [basestring], basestring]
 
   @classmethod
   def export_getActiveJobs(cls, limit, lastMonitor, jobAssignmentTag):
@@ -123,7 +124,7 @@ class FTS3ManagerHandler(RequestHandler):
 
     return cls.fts3db.updateJobStatus(jobStatusDict)
 
-  types_getNonFinishedOperations = [(long, int), basestring]
+  types_getNonFinishedOperations = [six.integer_types, basestring]
 
   @classmethod
   def export_getNonFinishedOperations(cls, limit, operationAssignmentTag):
@@ -144,7 +145,7 @@ class FTS3ManagerHandler(RequestHandler):
 
     return S_OK(nonFinishedOperationsJSON)
 
-  types_getOperationsFromRMSOpID = [(long, int)]
+  types_getOperationsFromRMSOpID = [six.integer_types]
 
   @classmethod
   def export_getOperationsFromRMSOpID(cls, rmsOpID):

@@ -6,11 +6,12 @@ CHANGE: (#4235) Removes locals() way of passing parameters
 *tests
 NEW: (#4179) Set up Gitlab CI pipeline using Docker containers
 
-[v7r1-pre6]
+[v7r1-pre7]
 
 *Core
 NEW: initial support for mysql8
 NEW: (#4236) DISET - pass the client DIRAC version as part of the request description structure
+NEW: (#4274) Allow installation from a local directory
 
 *Configuration
 CHANGE: (#4157) add new helper methods for IdP/Proxy Providers, OAuthManager. Add methods that 
@@ -32,6 +33,7 @@ CHANGE: (#4243) FileCatalog - standard components are loaded using ObjectLoader 
 
 *Resources
 NEW: (#4157) ProxyProvider resources with implementation for DIRAC CA and PUSP proxy providers
+NEW: (#4276) IdProvider resources to represent external user identity providers
 
 [v7r0]
 
@@ -75,6 +77,7 @@ NEW: (#4260) New dirac-wms-match command to test a given job for matching comput
 NEW: (#4260) QueueUtilities - utilities relevant to queues manipulation
 FIX: (#4265) urllib.urlopen() call with and without the 'context' parameter in Utilities/PilotWrapper.py 
      according to the version of urllib instead of the python version
+CHANGE: (#4244) Modified flag for using the JobParameters on ElasticSearch database
 
 *Core
 NEW: (#3744) Add update method to the ElasticSearchDB.py to update or if not available create the values 
@@ -121,6 +124,7 @@ NEW: (#3744) Added performance tests for ES and MySQL for WMS DB backends
 NEW: (#3744) Added miniInstallDIRAC function for Jenkins jobs
 FIX: (#4177) restored test of JobsMonitor().JobParameters
 NEW: (#4224) added a test for PilotWrapper
+NEW: (#4244) integration test for JobParameters on ElasticSearch database
 
 *Docs
 FIX: Better dirac.cfg example configuration for web
@@ -130,6 +134,12 @@ NEW: Added script (docs/Tools/UpdateDiracCFG.py) to collate the ConfigTemplate.c
 CHANGE: (#4110) updated basic tutorial for CC7 instead of SLC6.     
 NEW: (#4170) added Production system documentation
 CHANGE: (#4224) Pilot 3 is the default
+NEW: (#4244) Added a few notes on using the JobParameters on ElasticSearch database
+
+[v6r22p10]
+
+*Resources
+FIX: (#4271) StorageElement - loadObject of occupancyPlugin is called with the path to OccupancyPlugins
 
 [v6r22p9]
 

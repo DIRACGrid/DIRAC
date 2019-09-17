@@ -1,5 +1,6 @@
 """ Helper for /Registry section
 """
+import six
 import errno
 
 from DIRAC import S_OK, S_ERROR
@@ -205,13 +206,13 @@ def __matchProps(sProps, rProps):
 
 
 def groupHasProperties(groupName, propList):
-  if isinstance(propList, basestring):
+  if isinstance(propList, six.string_types):
     propList = [propList]
   return __matchProps(propList, getPropertiesForGroup(groupName))
 
 
 def hostHasProperties(hostName, propList):
-  if isinstance(propList, basestring):
+  if isinstance(propList, six.string_types):
     propList = [propList]
   return __matchProps(propList, getPropertiesForHost(hostName))
 

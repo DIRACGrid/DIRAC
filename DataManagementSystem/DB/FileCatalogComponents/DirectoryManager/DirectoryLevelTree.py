@@ -6,6 +6,7 @@
 
 __RCSID__ = "$Id$"
 
+import six
 import os
 
 from DIRAC import S_OK, S_ERROR
@@ -215,7 +216,7 @@ class DirectoryLevelTree(DirectoryTreeBase):
     """
 
     dirID = dirPathOrID
-    if isinstance(dirPathOrID, basestring):
+    if isinstance(dirPathOrID, six.string_types):
       result = self.findDir(dirPathOrID)
       if not result['OK']:
         return result
@@ -344,7 +345,7 @@ class DirectoryLevelTree(DirectoryTreeBase):
   def getChildren(self, path, connection=False):
     """ Get child directory IDs for the given directory
     """
-    if isinstance(path, basestring):
+    if isinstance(path, six.string_types):
       result = self.findDir(path, connection)
       if not result['OK']:
         return result

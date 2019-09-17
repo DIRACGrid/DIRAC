@@ -4,12 +4,13 @@ This is a DIRAC WMS administrator interface.
 
 __RCSID__ = "$Id$"
 
+from past.builtins import long
+import six
 from DIRAC import gConfig, S_OK, S_ERROR
 
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
-from DIRAC.WorkloadManagementSystem.DB.ElasticJobDB import ElasticJobDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import getGridJobOutput
 
@@ -22,7 +23,6 @@ from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import getPilotLoggingI
 
 # This is a global instance of the database classes
 jobDB = None
-elasticJobDB = None
 taskQueueDB = None
 enablePilotsLogging = False
 
@@ -44,26 +44,6 @@ def initializeWMSAdministratorHandler(serviceInfo):
 
 class WMSAdministratorHandler(RequestHandler):
 
-  def initialize(self):
-    """
-    Flags gESFlag and gMySQLFlag have bool values (True/False)
-    derived from dirac.cfg configuration file
-
-    Determines the switching of ElasticSearch and MySQL backends
-    """
-    global elasticJobDB, jobDB
-
-    gESFlag = self.srv_getCSOption('useES', False)
-    if gESFlag:
-      elasticJobDB = ElasticJobDB()
-
-    gMySQLFlag = self.srv_getCSOption('useMySQL', True)
-    if not gMySQLFlag:
-      jobDB = False
-
-    return S_OK()
-
-  ###########################################################################
   types_setSiteMask = [list]
 
   def export_setSiteMask(self, siteList):
@@ -155,7 +135,7 @@ class WMSAdministratorHandler(RequestHandler):
     """ Get the site mask logging history
     """
 
-    if isinstance(sites, basestring):
+    if isinstance(sites, six.string_types):
       sites = [sites]
 
     return jobDB.getSiteMaskLogging(sites)
@@ -219,7 +199,7 @@ class WMSAdministratorHandler(RequestHandler):
     return S_ERROR('No pilot job reference found')
 
   ##############################################################################
-  types_getSiteSummaryWeb = [dict, list, (int, long), (int, long)]
+  types_getSiteSummaryWeb = [dict, list, six.integer_types, six.integer_types]
 
   @classmethod
   def export_getSiteSummaryWeb(cls, selectDict, sortList, startItem, maxItems):
@@ -304,7 +284,7 @@ class WMSAdministratorHandler(RequestHandler):
     return S_OK(resultDict)
 
   ##########################################################################################
-  types_addPilotTQReference = [list, (int, long), basestring, basestring]
+  types_addPilotTQReference = [list, six.integer_types, basestring, basestring]
 
   @classmethod
   @deprecated("Moved to PilotManagerHandler")
@@ -391,7 +371,7 @@ class WMSAdministratorHandler(RequestHandler):
     return result
 
   ##############################################################################
-  types_getPilotMonitorWeb = [dict, list, (int, long), [int, long]]
+  types_getPilotMonitorWeb = [dict, list, six.integer_types, [int, long]]
 
   @classmethod
   @deprecated("Moved to PilotManagerHandler")
@@ -416,7 +396,7 @@ class WMSAdministratorHandler(RequestHandler):
     return result
 
   ##############################################################################
-  types_getPilotSummaryWeb = [dict, list, (int, long), [int, long]]
+  types_getPilotSummaryWeb = [dict, list, six.integer_types, [int, long]]
 
   @classmethod
   @deprecated("Moved to PilotManagerHandler")
@@ -473,7 +453,7 @@ class WMSAdministratorHandler(RequestHandler):
     """
     # Make a list if it is not yet
     pilotRefs = list(pilotRefList)
-    if isinstance(pilotRefList, basestring):
+    if isinstance(pilotRefList, six.string_types):
       pilotRefs = [pilotRefList]
 
     # Regroup pilots per site and per owner
@@ -618,10 +598,10 @@ class WMSAdministratorHandler(RequestHandler):
   @deprecated("Moved to PilotManagerHandler")
   def export_deletePilots(cls, pilotIDs):
 
-    if isinstance(pilotIDs, basestring):
+    if isinstance(pilotIDs, six.string_types):
       return PilotAgentsDB().deletePilot(pilotIDs)
 
-    if isinstance(pilotIDs, (int, long)):
+    if isinstance(pilotIDs, six.integer_types):
       pilotIDs = [pilotIDs, ]
 
     result = PilotAgentsDB().deletePilots(pilotIDs)
@@ -642,7 +622,7 @@ class WMSAdministratorHandler(RequestHandler):
     return S_OK()
 
 ##############################################################################
-  types_clearPilots = [(int, long), (int, long)]
+  types_clearPilots = [six.integer_types, six.integer_types]
 
   @classmethod
   @deprecated("Moved to PilotManagerHandler")

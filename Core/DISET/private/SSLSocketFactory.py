@@ -6,7 +6,6 @@ It will be removed in v7r1
 # $HeadURL$
 __RCSID__ = "$Id$"
 
-import types
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.Core.DISET.private.Transports.SSL.FakeSocket import FakeSocket
 from DIRAC.Core.DISET.private.Transports.SSL.pygsi.SocketInfoFactory import gSocketInfoFactory
@@ -32,7 +31,7 @@ class SSLSocketFactory:
         kwargs[ arg ] = value
 
   def createClientSocket( self, addressTuple , **kwargs ):
-    if type( addressTuple ) not in ( types.ListType, types.TupleType ):
+    if not isinstance(addressTuple, (list, tuple)):
       return S_ERROR( "hostAdress is not in a tuple form ( 'hostnameorip', port )" )
     res = gConfig.getOptionsDict( "/DIRAC/ConnConf/%s:%s" % addressTuple[0:2] )
     if res[ 'OK' ]:

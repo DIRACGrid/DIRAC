@@ -3,6 +3,7 @@
 
 __RCSID__ = "$Id$"
 
+from past.builtins import long
 import types
 import os
 import datetime

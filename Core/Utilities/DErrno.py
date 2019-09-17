@@ -37,6 +37,7 @@
                              DErrno.ERRX : ['An error message for ERRX that is specific to LHCb']}
 
 """
+import six
 import os
 import imp
 import sys
@@ -316,7 +317,7 @@ def cmpError(inErr, candidate):
       If it is a String, we use strerror to check the error string
   """
 
-  if isinstance(inErr, basestring):  # old style
+  if isinstance(inErr, six.string_types):  # old style
     # Compare error message strings
     errMsg = strerror(candidate)
     return errMsg in inErr
@@ -342,7 +343,7 @@ def includeExtensionErrors():
   def __recurseImport(modName, parentModule=None, fullName=False):
     """ Internal function to load modules
     """
-    if isinstance(modName, basestring):
+    if isinstance(modName, six.string_types):
       modName = modName.split(".")
     if not fullName:
       fullName = ".".join(modName)

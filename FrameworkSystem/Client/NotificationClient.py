@@ -4,6 +4,7 @@
 
 __RCSID__ = "$Id$"
 
+import six
 from DIRAC import gLogger, S_ERROR
 from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.Core.Utilities.Mail import Mail
@@ -30,7 +31,7 @@ class NotificationClient(Client):
                                                                                               body))
     result = S_ERROR()
 
-    addresses = [addresses] if isinstance(addresses, basestring) else list(addresses)
+    addresses = [addresses] if isinstance(addresses, six.string_types) else list(addresses)
     for address in addresses:
 
       if localAttempt:

@@ -4,6 +4,7 @@ The AgentOptionsTest can be used to check consistency of options for Agents.
 
 """
 
+import six
 import inspect
 import importlib
 import logging
@@ -28,15 +29,15 @@ def _parseOption(outDict, inDict, optionPrefix=''):
   for option, value in inDict.iteritems():
     optionName = "/".join([optionPrefix, option]).strip('/')
     LOG.info("Parsing %r with %r", optionName, value)
-    if isinstance(value, basestring) and value.lower() in ('no', 'false'):
+    if isinstance(value, six.string_types) and value.lower() in ('no', 'false'):
       outDict[optionName] = False
-    elif isinstance(value, basestring) and value.lower() in ('yes', 'true'):
+    elif isinstance(value, six.string_types) and value.lower() in ('yes', 'true'):
       outDict[optionName] = True
-    elif isinstance(value, basestring) and ',' in value:
+    elif isinstance(value, six.string_types) and ',' in value:
       outDict[optionName] = [val.strip() for val in value.split(',')]
     elif isinstance(value, dict):
       _parseOption(outDict, value, optionPrefix=optionName)
-    elif isinstance(value, basestring):
+    elif isinstance(value, six.string_types):
       outDict[optionName] = value
       if value.isdigit():
         try:

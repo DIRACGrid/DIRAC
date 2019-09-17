@@ -1,8 +1,9 @@
 # $HeadURL$
 __RCSID__ = "$Id$"
 
-import types
 from string import Template
+import six
+
 
 class Activity:
   """
@@ -152,7 +153,7 @@ class Activity:
     return self.groupLabel
 
   def getLabel(self):
-    if type( self.labelTemplate ) == types.UnicodeType:
+    if isinstance(self.labelTemplate, six.text_type):
       self.labelTemplate = self.labelTemplate.encode( "utf-8" )
     return Template( self.labelTemplate ).safe_substitute( self.templateMap )
 

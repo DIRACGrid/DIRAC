@@ -22,10 +22,11 @@
 """
 
 from __future__ import print_function
+from past.builtins import long
 import os
 import sys
 import random
-import urllib
+from six.moves.urllib.request import urlopen
 import multiprocessing
 
 version = '00.04 DB12'
@@ -148,7 +149,7 @@ def wholenodeDiracBenchmark(copies=None, iterations=1, extraIteration=False):
   # Try $MACHINEFEATURES first if not given by caller
   if copies is None and 'MACHINEFEATURES' in os.environ:
     try:
-      copies = int(urllib.urlopen(os.environ['MACHINEFEATURES'] + '/total_cpu').read())
+      copies = int(urlopen(os.environ['MACHINEFEATURES'] + '/total_cpu').read())
     except BaseException:
       pass
 
@@ -169,7 +170,7 @@ def jobslotDiracBenchmark(copies=None, iterations=1, extraIteration=False):
   # Try $JOBFEATURES first if not given by caller
   if copies is None and 'JOBFEATURES' in os.environ:
     try:
-      copies = int(urllib.urlopen(os.environ['JOBFEATURES'] + '/allocated_cpu').read())
+      copies = int(urlopen(os.environ['JOBFEATURES'] + '/allocated_cpu').read())
     except BaseException:
       pass
 

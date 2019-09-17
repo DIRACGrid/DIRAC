@@ -10,6 +10,7 @@
     The DIRAC APIs are used to create Jobs that make use of these modules.
 """
 
+import six
 import os
 import copy
 
@@ -136,11 +137,11 @@ class ModuleBase(object):
 
     # This catches everything that is voluntarily thrown within the modules, so an error
     except RuntimeError as rte:
-      if len(rte.args) > 1:  # In this case the RuntimeError is supposed to return in rte[1] an error code
-                             # (possibly from DErrno)
-        self.log.error(rte[0])
-        self.setApplicationStatus(rte[0])
-        return S_ERROR(rte[1], rte[0])  # rte[1] should be an error code
+      if len(rte.args) > 1:
+        # In this case the RuntimeError is supposed to return in rte[1] an error code (possibly from DErrno)
+        self.log.error(rte.args[0])
+        self.setApplicationStatus(rte.args[0])
+        return S_ERROR(rte.args[1], rte.args[0])  # rte[1] should be an error code
 
       # If we are here it is just a string
       self.log.error(rte)
@@ -292,7 +293,7 @@ class ModuleBase(object):
 
     if 'outputDataFileMask' in self.workflow_commons:
       self.outputDataFileMask = self.workflow_commons['outputDataFileMask']
-      if isinstance(self.outputDataFileMask, basestring):
+      if isinstance(self.outputDataFileMask, six.string_types):
         self.outputDataFileMask = [i.lower().strip()
                                    for i in self.outputDataFileMask.split(';')]  # pylint: disable=no-member
 
@@ -355,7 +356,7 @@ class ModuleBase(object):
 
     if self._checkWFAndStepStatus(noPrint=True):
       # The application status won't be updated in case the workflow or the step is failed already
-      if not isinstance(status, basestring):
+      if not isinstance(status, six.string_types):
         status = str(status)
       self.log.verbose('setJobApplicationStatus(%s, %s)' % (self.jobID, status))
       jobStatus = self.jobReport.setApplicationStatus(status, sendFlag)

@@ -20,6 +20,7 @@ __RCSID__ = "$Id $"
 # @date 2012/07/19 12:16:48
 
 ## imports 
+import six
 import unittest
 ## SUT
 from DIRAC.Core.Utilities.TypedList import TypedList, TDeque
@@ -36,7 +37,7 @@ class TypedListTestCase(unittest.TestCase):
   """
   def setUp( self ):
     """ test setup """
-    self.numericTypes = ( int, long, float )
+    self.numericTypes = six.integer_types + (float,)
     self.floatType = float 
     self.testClassType = TestClass
 

@@ -70,6 +70,7 @@
 
 """
 
+import six
 import thread
 import os
 from DIRAC import S_OK, S_ERROR, gConfig
@@ -195,7 +196,7 @@ class Operations(object):
     if not section:
       return S_ERROR("%s in Operations does not exist" % sectionPath)
     sectionCFG = section['value']
-    if isinstance(sectionCFG, basestring):
+    if isinstance(sectionCFG, six.string_types):
       return S_ERROR("%s in Operations is not a section" % sectionPath)
     return S_OK(sectionCFG)
 

@@ -18,6 +18,7 @@
 
 __RCSID__ = "$Id$"
 
+import six
 import datetime
 from sqlalchemy import desc
 from sqlalchemy.orm import sessionmaker, class_mapper
@@ -381,6 +382,7 @@ class ResourceManagementDB(SQLAlchemyDB):
     # Create required tables
     self._createTablesIfNotThere(self.tablesList)
 
+
   def addOrModify(self, table, params):
     """
     Using the PrimaryKeys of the table, it looks for the record in the database.
@@ -419,7 +421,7 @@ class ResourceManagementDB(SQLAlchemyDB):
         column_a = getattr(table_c, columnName.lower())
         if isinstance(columnValue, (list, tuple)):
           select = select.filter(column_a.in_(list(columnValue)))
-        elif isinstance(columnValue, basestring):
+        elif isinstance(columnValue, six.string_types):
           select = select.filter(column_a == columnValue)
         else:
           self.log.error("type(columnValue) == %s" % type(columnValue))

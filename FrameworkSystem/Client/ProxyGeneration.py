@@ -2,6 +2,7 @@
 # File :   ProxyGeneration.py
 # Author : Adrian Casajus
 ########################################################################
+from __future__ import division
 
 import sys
 import getpass
@@ -52,8 +53,8 @@ class CLIParams(object):
     return S_OK()
 
   def getProxyLifeTime(self):
-    hours = self.proxyLifeTime / 3600
-    mins = self.proxyLifeTime / 60 - hours * 60
+    hours = int(self.proxyLifeTime / 3600)
+    mins = int(self.proxyLifeTime / 60 - hours * 60)
     return "%s:%s" % (hours, mins)
 
   def getProxyRemainingSecs(self):
@@ -174,7 +175,7 @@ def generateProxy(params):
   retVal = testChain.loadChainFromFile(params.certLoc)
   if not retVal['OK']:
     return S_ERROR("Cannot load certificate %s: %s" % (params.certLoc, retVal['Message']))
-  timeLeft = testChain.getRemainingSecs()['Value'] / 86400
+  timeLeft = int(testChain.getRemainingSecs()['Value'] / 86400)
   if timeLeft < 30:
     gLogger.notice("\nYour certificate will expire in %d days. Please renew it!\n" % timeLeft)
 

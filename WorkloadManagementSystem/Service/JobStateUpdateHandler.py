@@ -18,6 +18,7 @@ import time
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities import Time
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.ElasticJobDB import ElasticJobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
@@ -48,15 +49,12 @@ class JobStateUpdateHandler(RequestHandler):
 
     Determines the switching of ElasticSearch and MySQL backends
     """
-    global elasticJobDB, jobDB
+    global elasticJobDB
 
-    gESFlag = self.srv_getCSOption('useES', False)
-    if gESFlag:
+    useESForJobParametersFlag = Operations().getValue('/Services/JobMonitoring/useESForJobParametersFlag', False)
+    if useESForJobParametersFlag:
       elasticJobDB = ElasticJobDB()
-
-    gMySQLFlag = self.srv_getCSOption('useMySQL', True)
-    if not gMySQLFlag:
-      jobDB = False
+      self.log.verbose("Using ElasticSearch for JobParameters")
 
     return S_OK()
 
@@ -313,12 +311,9 @@ class JobStateUpdateHandler(RequestHandler):
     """
 
     if elasticJobDB:
-      result = elasticJobDB.setJobParameter(int(jobID), name, value)
+      return elasticJobDB.setJobParameter(int(jobID), name, value)
 
-    if jobDB:
-      result = jobDB.setJobParameter(int(jobID), name, value)
-
-    return result
+    return jobDB.setJobParameter(int(jobID), name, value)
 
   ###########################################################################
   types_setJobsParameter = [dict]
@@ -330,10 +325,18 @@ class JobStateUpdateHandler(RequestHandler):
     for jobID in jobsParameterDict:
 
       if elasticJobDB:
-        elasticJobDB.setJobParameter(jobID, str(jobsParameterDict[jobID][0]), str(jobsParameterDict[jobID][1]))
+        res = elasticJobDB.setJobParameter(jobID,
+                                           str(jobsParameterDict[jobID][0]),
+                                           str(jobsParameterDict[jobID][1]))
+        if not res['OK']:
+          self.log.error('Failed to add Job Parameter to elasticJobDB', res['Message'])
 
-      if jobDB:
-        jobDB.setJobParameter(jobID, str(jobsParameterDict[jobID][0]), str(jobsParameterDict[jobID][1]))
+      else:
+        res = jobDB.setJobParameter(jobID,
+                                    str(jobsParameterDict[jobID][0]),
+                                    str(jobsParameterDict[jobID][1]))
+        if not res['OK']:
+          self.log.error('Failed to add Job Parameter to MySQL', res['Message'])
 
     return S_OK()
 

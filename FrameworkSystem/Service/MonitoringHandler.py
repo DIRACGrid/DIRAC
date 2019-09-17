@@ -3,6 +3,7 @@
 
 __RCSID__ = "$Id$"
 
+import six
 import os
 
 from DIRAC import gLogger, gConfig, rootPath, S_OK, S_ERROR
@@ -170,7 +171,7 @@ class MonitoringHandler(RequestHandler):
     return S_OK(gServiceInterface.getActivities(dbCondition))
 
   types_getActivitiesContents = [dict, (list, tuple),
-                                 (int, long), (int, long)]
+                                 six.integer_types, six.integer_types]
 
   def export_getActivitiesContents(self, selDict, sortList, start, limit):
     """

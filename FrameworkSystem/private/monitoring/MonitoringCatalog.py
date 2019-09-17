@@ -1,6 +1,7 @@
 """ Interacts with sqlite3 db
 """
 
+import six
 import sqlite3
 import os
 import hashlib
@@ -14,7 +15,7 @@ from DIRAC.Core.Utilities import Time
 
 class MonitoringCatalog(object):
   """
-  This class is used to performa all kinds queries to the sqlite3 database.
+  This class is used to perform all kinds queries to the sqlite3 database.
   """
 
   def __init__(self, dataPath):
@@ -145,7 +146,7 @@ class MonitoringCatalog(object):
       else:
         valuesList.append(dataDict[key])
         keysList.append("%s = ?" % key)
-    if isinstance(fields, basestring):
+    if isinstance(fields, six.string_types):
       fields = [fields]
     if len(keysList) > 0:
       whereCond = "WHERE %s" % (" AND ".join(keysList))
@@ -464,7 +465,7 @@ class MonitoringCatalog(object):
     :param viewId: The view id.
     :return: A list of values.
     """
-    if isinstance(viewId, basestring):
+    if isinstance(viewId, six.string_types):
       return self.__select("definition, variableFields", "views", {"name": viewId})
     else:
       return self.__select("definition, variableFields", "views", {"id": viewId})

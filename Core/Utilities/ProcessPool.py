@@ -520,7 +520,7 @@ class ProcessTask(object):
       if isinstance(self.__taskFunction, FunctionType):
         self.__taskResult = self.__taskFunction(*self.__taskArgs, **self.__taskKwArgs)
       # # or a class?
-      elif type(self.__taskFunction) in (TypeType, ClassType):
+      elif isinstance(self.__taskFunction, (type, ClassType)):
         # # create new instance
         taskObj = self.__taskFunction(*self.__taskArgs, **self.__taskKwArgs)
         # ## check if it is callable, raise TypeError if not

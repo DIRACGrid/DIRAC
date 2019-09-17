@@ -2,6 +2,7 @@
 """
 
 from __future__ import print_function
+import six
 import time
 import random
 from DIRAC import S_OK, gLogger
@@ -13,7 +14,7 @@ random.seed()
 
 class PingPongMindHandler(ExecutorMindHandler):
 
-  MSG_DEFINITIONS = {'StartReaction': {'numBounces': (int, long)}}
+  MSG_DEFINITIONS = {'StartReaction': {'numBounces': six.integer_types}}
 
   auth_msg_StartReaction = ['all']
 
