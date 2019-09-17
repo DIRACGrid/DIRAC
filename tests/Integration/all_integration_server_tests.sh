@@ -33,7 +33,7 @@ python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSys
 python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_JobLoggingDB.py >> serverTestOutputs.txt 2>&1
 python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_TaskQueueDB.py >> serverTestOutputs.txt 2>&1
 python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_ElasticJobDB.py >> serverTestOutputs.txt 2>&1
-
+python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_JobParameters_MySQLandES.py >> serverTestOutputs.txt 2>&1
 
 #-------------------------------------------------------------------------------#
 echo -e '***' $(date -u)  "**** DMS TESTS ****\n"

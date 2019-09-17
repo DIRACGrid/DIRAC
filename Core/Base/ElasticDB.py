@@ -49,7 +49,7 @@ class ElasticDB(ElasticSearchDB):
     if not self._connected:
       raise RuntimeError('Can not connect to DB %s, exiting...' % self.clusterName)
 
-    self.log.info("==================================================")
+    self.log.info("================= ElasticSearch ==================")
     self.log.info("Host: %s " % self.__dbHost)
     self.log.info("Port: %d " % self.__dbPort)
     self.log.info("Connecting with %s, %s:%s" % ('SSL' if self.__useSSL else 'no SSL',

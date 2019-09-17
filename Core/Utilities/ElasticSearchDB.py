@@ -251,21 +251,23 @@ class ElasticSearchDB(object):
 
     return S_ERROR(retVal)
 
-  def index(self, indexName, doc_type, body):
+  def index(self, indexName, doc_type, body, docID=None):
     """
-    :param str indexName: the name of the index to be used...
+    :param str indexName: the name of the index to be used
     :param str doc_type: the type of the document
-    :param dict body: the data which will be indexed
+    :param dict body: the data which will be indexed (basically the JSON)
+    :param int id: optional document id
     :return: the index name in case of success.
     """
     try:
       res = self.__client.index(index=indexName,
                                 doc_type=doc_type,
-                                body=body)
+                                body=body,
+                                id=docID)
     except TransportError as e:
       return S_ERROR(e)
 
-    if res.get('created') or res.get('result') == 'created':
+    if res.get('created') or res.get('result') in ('created', 'updated'):
       # the created index exists but the value can be None.
       return S_OK(indexName)
 

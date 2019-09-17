@@ -62,15 +62,15 @@ class JobWrapperSubmissionCase(JobWrapperTestCase):
       res = createJobWrapper(2, jobParams, resourceParams, optimizerParams, extraOptions='pilot.cfg', logLevel='DEBUG')
     else:
       res = createJobWrapper(2, jobParams, resourceParams, optimizerParams, logLevel='DEBUG')
-    self.assertTrue(res['OK'])
+    self.assertTrue(res['OK'], res.get('Message'))
     wrapperFile = res['Value']
 
     res = computingElement.submitJob(wrapperFile, self.payloadProxy)
-    self.assertTrue(res['OK'])
+    self.assertTrue(res['OK'], res.get('Message'))
 
 
 if __name__ == '__main__':
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase( JobWrapperTestCase )
-  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( JobWrapperSubmissionCase ) )
-  testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
+  suite = unittest.defaultTestLoader.loadTestsFromTestCase(JobWrapperTestCase)
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(JobWrapperSubmissionCase))
+  testResult = unittest.TextTestRunner(verbosity=2).run(suite)
   sys.exit(not testResult.wasSuccessful())

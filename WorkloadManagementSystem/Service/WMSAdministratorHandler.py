@@ -9,7 +9,6 @@ from DIRAC import gConfig, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
-from DIRAC.WorkloadManagementSystem.DB.ElasticJobDB import ElasticJobDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
 from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import getGridJobOutput
 
@@ -22,7 +21,6 @@ from DIRAC.WorkloadManagementSystem.Service.WMSUtilities import getPilotLoggingI
 
 # This is a global instance of the database classes
 jobDB = None
-elasticJobDB = None
 taskQueueDB = None
 enablePilotsLogging = False
 
@@ -44,26 +42,6 @@ def initializeWMSAdministratorHandler(serviceInfo):
 
 class WMSAdministratorHandler(RequestHandler):
 
-  def initialize(self):
-    """
-    Flags gESFlag and gMySQLFlag have bool values (True/False)
-    derived from dirac.cfg configuration file
-
-    Determines the switching of ElasticSearch and MySQL backends
-    """
-    global elasticJobDB, jobDB
-
-    gESFlag = self.srv_getCSOption('useES', False)
-    if gESFlag:
-      elasticJobDB = ElasticJobDB()
-
-    gMySQLFlag = self.srv_getCSOption('useMySQL', True)
-    if not gMySQLFlag:
-      jobDB = False
-
-    return S_OK()
-
-  ###########################################################################
   types_setSiteMask = [list]
 
   def export_setSiteMask(self, siteList):
