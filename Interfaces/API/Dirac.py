@@ -2428,7 +2428,10 @@ class Dirac(API):
     if printOutput:
       print self.pPrint.pformat(result['Value'])
 
-    return S_OK(result['Value'][jobID])
+    if jobID in result['Value']:
+      return S_OK(result['Value'][jobID])
+    else:
+      return S_ERROR('Failed to get job parameters for %s' % jobID)
 
   #############################################################################
   @deprecated("Use getJobLoggingInfo instead")
