@@ -584,9 +584,4 @@ class VOMSSecurityManager(SecurityManagerBase):
         sense with that kind of fine grain policy, we return what used to
         be returned...
     """
-
-    oldSEM = getattr(self, 'oldSecurityManager', None)
-    if oldSEM:
-      return oldSEM.getPathPermissions(paths, credDict)
-    else:
-      return super(VOMSPolicy, self).getPathPermissions(paths, credDict)
+    return super(VOMSSecurityManager, self).getPathPermissions(paths, credDict)
