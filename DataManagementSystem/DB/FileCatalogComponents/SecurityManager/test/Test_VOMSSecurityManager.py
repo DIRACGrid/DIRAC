@@ -228,7 +228,7 @@ class mock_SecurityManagerBase(object):
 
 # The mock module could not trick the inheritance mechanism, so I do it myself
 DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager.\
-  VOMSSecurityManager.VOMSSecurityManager.__bases__= (mock_SecurityManagerBase, )
+    VOMSSecurityManager.VOMSSecurityManager.__bases__ = (mock_SecurityManagerBase, )
 
 
 def mock_getAllGroups():
