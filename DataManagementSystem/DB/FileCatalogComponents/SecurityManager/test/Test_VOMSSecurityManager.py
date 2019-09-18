@@ -227,8 +227,8 @@ class mock_SecurityManagerBase(object):
 
 
 # The mock module could not trick the inheritance mechanism, so I do it myself
-DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager.VOMSSecurityManager.VOMSSecurityManager.__bases__ = (
-    mock_SecurityManagerBase, )
+DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager.\
+  VOMSSecurityManager.VOMSSecurityManager.__bases__= (mock_SecurityManagerBase, )
 
 
 def mock_getAllGroups():
@@ -269,8 +269,9 @@ class BaseCaseMixin(object):
     self.expectedExistingRet = None
     self.expectedNonExistingRet = None
 
-    # Policy object
-    self.securityManager = DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager.VOMSSecurityManager.VOMSSecurityManager()
+    # Manager object
+    self.securityManager = \
+        DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager.VOMSSecurityManager.VOMSSecurityManager()
     self.credDict = {'username': 'anon', 'group': 'grp_admin'}
 
   def callForDirectories(self, methodName):
