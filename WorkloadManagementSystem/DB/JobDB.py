@@ -52,6 +52,7 @@ from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities.DErrno import EWMSSUBM
+from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
@@ -170,6 +171,7 @@ class JobDB(DB):
                                            older=older, newer=newer, timeStamp=timeStamp)
 
 #############################################################################
+  @deprecated("Unused")
   def traceJobParameter(self, site, localID, parameter, date=None, until=None):
     ret = self.traceJobParameters(site, localID, [parameter], None, date, until)
     if not ret['OK']:
@@ -180,6 +182,7 @@ class JobDB(DB):
     return S_OK(returnDict)
 
 #############################################################################
+  @deprecated("Unused, and broken in case the job parameters are on ElasticSearch")
   def traceJobParameters(self, site, localIDs, paramList=None, attributeList=None, date=None, until=None):
     import datetime
     exactTime = False
