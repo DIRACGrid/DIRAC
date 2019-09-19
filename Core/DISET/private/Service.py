@@ -484,6 +484,8 @@ class Service(object):
     # Generate the client params
     clientParams = {'serviceStartTime': self._startTime}
     if proposalTuple:
+      # The 4th element is the client version
+      clientParams['clientVersion'] = proposalTuple[3] if len(proposalTuple) > 3 else None
       clientParams['clientSetup'] = proposalTuple[0][1]
       if len(proposalTuple[0]) < 3:
         clientParams['clientVO'] = gConfig.getValue("/DIRAC/VirtualOrganization", "unknown")
@@ -492,9 +494,6 @@ class Service(object):
     clientTransport = self._transportPool.get(trid)
     if clientTransport:
       clientParams['clientAddress'] = clientTransport.getRemoteAddress()
-    # The 4th element is the client version if available
-    if len(proposalTuple) > 3:
-      clientParams['clientVersion'] = proposalTuple[3]
     # Generate handler dict with per client info
     handlerInitDict = dict(self._serviceInfoDict)
     for key in clientParams:
