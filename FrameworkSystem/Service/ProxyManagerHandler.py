@@ -215,7 +215,7 @@ class ProxyManagerHandler(RequestHandler):
       return retVal
     chain, secsLeft = retVal['Value']
     # If possible we return a proxy 1.5 longer than requested
-    requiredLifetime = min(secsLeft, requiredLifetime * self.__maxExtraLifeFactor)
+    requiredLifetime = int(min(secsLeft, requiredLifetime * self.__maxExtraLifeFactor))
     retVal = chain.generateChainFromRequestString(requestPem,
                                                   lifetime=requiredLifetime,
                                                   requireLimited=forceLimited)
