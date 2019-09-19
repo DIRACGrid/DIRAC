@@ -134,7 +134,6 @@ You can use install.cfg configuration file::
 
 from __future__ import absolute_import, division, print_function
 
-from past.builtins import long
 import sys
 import os
 import getopt
