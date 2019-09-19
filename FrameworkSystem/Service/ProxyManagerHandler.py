@@ -223,7 +223,7 @@ class ProxyManagerHandler(RequestHandler):
       return retVal
     return S_OK(retVal['Value'])
 
-  types_getVOMSProxy = [basestring, basestring, basestring, six.integer_types, basestring]
+  types_getVOMSProxy = [basestring, basestring, basestring, six.integer_types, [basestring, type(None)]]
 
   def export_getVOMSProxy(self, userDN, userGroup, requestPem, requiredLifetime, vomsAttribute=None):
     """ Get a proxy for a userDN/userGroup
@@ -401,7 +401,7 @@ class ProxyManagerHandler(RequestHandler):
     self.__proxyDB.logAction("download proxy with token", credDict['DN'], credDict['group'], userDN, userGroup)
     return self.__getProxy(userDN, userGroup, requestPem, requiredLifetime, True)
 
-  types_getVOMSProxyWithToken = [basestring, basestring, basestring, six.integer_types, basestring]
+  types_getVOMSProxyWithToken = [basestring, basestring, basestring, six.integer_types, [basestring, type(None)]]
 
   def export_getVOMSProxyWithToken(self, userDN, userGroup, requestPem, requiredLifetime, token, vomsAttribute=None):
     """ Get a proxy for a userDN/userGroup
