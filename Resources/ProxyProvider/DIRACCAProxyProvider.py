@@ -2,8 +2,6 @@
     CA credentials
 """
 
-from past.builtins import long
-import os
 import re
 import time
 import random
@@ -310,19 +308,19 @@ class DIRACCAProxyProvider(ProxyProvider):
     # Set livetime
     validityTime = datetime.timedelta(days=400)
     notBefore = ASN1.ASN1_UTCTIME()
-    notBefore.set_time(long(time.time()))
+    notBefore.set_time(int(time.time()))
     notAfter = ASN1.ASN1_UTCTIME()
-    notAfter.set_time(long(time.time()) + long(validityTime.total_seconds()))
+    notAfter.set_time(int(time.time()) + int(validityTime.total_seconds()))
     userCert.set_not_before(notBefore)
     userCert.set_not_after(notAfter)
     # Add subject from CA
-    with open(self.parameters['CertFile']) as f:
-      caCertStr = f.read()
+    with open(self.parameters['CertFile']) as cf:
+      caCertStr = cf.read()
     caCert = X509.load_cert_string(caCertStr)
     userCert.set_issuer(caCert.get_subject())
     # Use CA key
-    with open(self.parameters['KeyFile']) as f:
-      caKeyStr = f.read()
+    with open(self.parameters['KeyFile']) as cf:
+      caKeyStr = cf.read()
     pkey = EVP.PKey()
     pkey.assign_rsa(RSA.load_key_string(caKeyStr, callback=util.no_passphrase_callback))
     # Sign
