@@ -7,7 +7,7 @@ import sys
 import shutil
 import unittest
 
-from DIRAC import gConfig, gLogger
+from DIRAC import gConfig
 from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Resources.ProxyProvider.ProxyProviderFactory import ProxyProviderFactory
