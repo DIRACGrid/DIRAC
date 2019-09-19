@@ -489,17 +489,17 @@ class Service(object):
         clientParams['clientVO'] = gConfig.getValue("/DIRAC/VirtualOrganization", "unknown")
       else:
         clientParams['clientVO'] = proposalTuple[0][2]
+      # The 4th element is the client version if available
+      if len(proposalTuple) > 3:
+        clientParams['clientVersion'] = proposalTuple[3]
     clientTransport = self._transportPool.get(trid)
     if clientTransport:
       clientParams['clientAddress'] = clientTransport.getRemoteAddress()
-    # The 4th element is the client version if available
-    if len(proposalTuple) > 3:
-      clientParams['clientVersion'] = proposalTuple[3]
     # Generate handler dict with per client info
     handlerInitDict = dict(self._serviceInfoDict)
     for key in clientParams:
       handlerInitDict[key] = clientParams[key]
-    #Instantiate and initialize
+    # Instantiate and initialize
     try:
       handlerInstance = self._handler['class'](handlerInitDict, trid)
       handlerInstance.initialize()
