@@ -39,7 +39,7 @@ class ProxyProviderFactory(object):
     ppDict['ProviderName'] = proxyProvider
     ppType = ppDict.get('ProviderType')
     if not ppType:
-      S_ERROR('Cannot found describe for %s' % proxyProvider)
+      return S_ERROR('Cannot find information for ProxyProvider %s' % proxyProvider)
     self.log.verbose('Creating ProxyProvider of %s type with the name %s' % (ppType, proxyProvider))
     subClassName = "%sProxyProvider" % (ppType)
 
