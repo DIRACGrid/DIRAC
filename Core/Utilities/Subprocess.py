@@ -34,7 +34,10 @@ import time
 import select
 import os
 import sys
-import subprocess
+try:
+  import subprocess32 as subprocess
+except ImportError:
+  import subprocess
 import signal
 # Very Important:
 #  Here we can not import directly from DIRAC, since this file it is imported

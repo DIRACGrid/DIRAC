@@ -1,0 +1,37 @@
+name: Integration tests
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Clean up GitHub actions environment
+      run: |
+        mysqladmin -u root -proot shutdown
+    - name: Prepare environment
+      run: |
+        docker run --name host -v $PWD:/repo --detach --privileged -v /var/run/docker.sock:/var/run/docker.sock --rm gitlab-registry.cern.ch/cburr/dirac/docker-compose:latest bash -c 'sleep 100000000'
+        docker exec -w /repo -e CI_PROJECT_DIR=/repo -e CI_COMMIT_REF_NAME=$GITHUB_REF -e CI_REGISTRY_IMAGE=gitlab-registry.cern.ch/cburr/dirac host \
+            bash -c 'source tests/CI/run_docker_setup.sh && prepareEnvironment'
+    - name: Install server
+      run: |
+        docker exec -w /repo -e CI_PROJECT_DIR=/repo -e CI_COMMIT_REF_NAME=$GITHUB_REF -e CI_REGISTRY_IMAGE=gitlab-registry.cern.ch/cburr/dirac host \
+            bash -c 'source tests/CI/run_docker_setup.sh && installServer'
+    - name: Install client
+      run: |
+        docker exec -w /repo -e CI_PROJECT_DIR=/repo -e CI_COMMIT_REF_NAME=$GITHUB_REF -e CI_REGISTRY_IMAGE=gitlab-registry.cern.ch/cburr/dirac host \
+            bash -c 'source tests/CI/run_docker_setup.sh && installClient'
+    - name: Server tests
+      run: |
+        docker exec -w /repo -e CI_PROJECT_DIR=/repo -e CI_COMMIT_REF_NAME=$GITHUB_REF -e CI_REGISTRY_IMAGE=gitlab-registry.cern.ch/cburr/dirac host \
+            bash -c 'source tests/CI/run_docker_setup.sh && testServer'
+    - name: Client tests
+      run: |
+        docker exec -w /repo -e CI_PROJECT_DIR=/repo -e CI_COMMIT_REF_NAME=$GITHUB_REF -e CI_REGISTRY_IMAGE=gitlab-registry.cern.ch/cburr/dirac host \
+            bash -c 'source tests/CI/run_docker_setup.sh && testClient'
+    - name: Check test status
+      run: |
+        docker exec -w /repo -e CI_PROJECT_DIR=/repo -e CI_COMMIT_REF_NAME=$GITHUB_REF -e CI_REGISTRY_IMAGE=gitlab-registry.cern.ch/cburr/dirac host \
+            bash -c 'source tests/CI/run_docker_setup.sh && checkErrors'
