@@ -3,26 +3,39 @@ name: Linting
 on: [push, pull_request]
 
 jobs:
-  shellcheck:
-    name: shellcheck
+  Check:
     runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v1
-    - name: Run shellcheck
-      run: |
-        find tests/CI -name '*.sh' -print0 | xargs -0 -n1 shellcheck --external-sources
 
-  pytest:
-    name: pytest
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: False
+      matrix:
+        command:
+          - pytest
+          - DIRAC_USE_M2CRYPTO=Yes pytest
+          - pytest Core/Security/test
+          - DIRAC_USE_M2CRYPTO=Yes pytest Core/Security/test
+          - .travis.d/checkDocs.sh
+          # TODO This should cover more than just tests/CI
+          - find tests/CI -name '*.sh' -print0 | xargs -0 -n1 shellcheck --external-source
+          - .travis.d/runPylint.sh
+          - CHECK=pylintPY3K .travis.d/runPylint.sh
+          - |
+            env
+            git remote add GH https://github.com/DIRACGrid/DIRAC.git
+            git fetch --no-tags GH ${GITHUB_BASE_REF:-${GITHUB_REF}}
+            git branch -vv
+            git diff -U0 GH/${GITHUB_BASE_REF:-${GITHUB_REF}} ':(exclude)tests/formatting/pep8_bad.py' | pycodestyle --diff
+
     steps:
     - uses: actions/checkout@v1
     - name: Prepare environment
       run: |
-        conda create --yes --name dirac-testing python=2.7
-    - name: Run pytest
+        conda env create --name dirac-testing environment.yml
+    - name: Run linter
       run: |
         source "${CONDA}/bin/activate"
+        set -euxo pipefail
         conda activate dirac-testing
         export PYTHONPATH=${PWD%/*}
-        pytest
+        ${{ matrix.command }}
+
