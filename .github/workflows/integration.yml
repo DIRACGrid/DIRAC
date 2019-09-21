@@ -3,8 +3,10 @@ name: Integration tests
 on: [push, pull_request]
 
 jobs:
-  build:
+  Integration:
     runs-on: ubuntu-latest
+    if: github.event_name != 'push' || github.repository == 'DIRACGrid/DIRAC'
+
     steps:
     - uses: actions/checkout@v1
     - name: Clean up GitHub actions environment
