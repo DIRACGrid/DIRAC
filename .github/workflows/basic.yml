@@ -6,6 +6,7 @@ jobs:
   check:
     runs-on: ubuntu-latest
     if: github.event_name != 'push' || github.repository == 'DIRACGrid/DIRAC'
+    timeout-minutes: 30
 
     strategy:
       fail-fast: False
