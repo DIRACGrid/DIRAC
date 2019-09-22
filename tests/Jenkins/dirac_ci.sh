@@ -149,25 +149,25 @@ function installSite(){
 
   if ! "$SERVERINSTALLDIR/dirac-install.py" $installOptions "$SERVERINSTALLDIR/install.cfg"; then
     echo "ERROR: dirac-install.py failed"
-    return
+    exit 1
   fi
 
   echo "==> Done installing, now configuring"
   source "$SERVERINSTALLDIR/bashrc"
   if ! dirac-configure "$SERVERINSTALLDIR/install.cfg" "$DEBUG"; then
     echo "ERROR: dirac-configure failed"
-    return
+    exit 1
   fi
 
   echo "=> The pilot flag should be False"
   if ! dirac-configure -o /Operations/Defaults/Pilot/UpdatePilotCStoJSONFile=False -FDMH "$DEBUG"; then
     echo "ERROR: dirac-configure failed"
-    return
+    exit 1
   fi
 
   if ! dirac-setup-site "$DEBUG"; then
     echo "ERROR: dirac-setup-site failed"
-    return
+    exit 1
   fi
 
   echo "==> Completed installation"
@@ -201,25 +201,25 @@ function fullInstallDIRAC(){
   #basic install, with only the CS (and ComponentMonitoring) running, together with DB InstalledComponentsDB, which is needed)
   if ! installSite; then
     echo "ERROR: installSite failed"
-    return
+    exit 1
   fi
 
   # Dealing with security stuff
   # generateCertificates
   if ! generateUserCredentials; then
     echo "ERROR: generateUserCredentials failed"
-    return
+    exit 1
   fi
 
   if ! diracCredentials; then
     echo "ERROR: diracCredentials failed"
-    return
+    exit 1
   fi
 
   #just add a site
   if ! diracAddSite; then
     echo "ERROR: diracAddSite failed"
-    return
+    exit 1
   fi
 
   #Install the Framework
@@ -227,19 +227,19 @@ function fullInstallDIRAC(){
   dropDBs
   if ! diracDBs; then
     echo "ERROR: diracDBs failed"
-    return
+    exit 1
   fi
 
   findServices 'FrameworkSystem'
   if ! diracServices; then
     echo "ERROR: diracServices failed"
-    return
+    exit 1
   fi
 
   #create groups
   if ! diracUserAndGroup; then
     echo "ERROR: diracUserAndGroup failed"
-    return
+    exit 1
   fi
 
   echo "==> Restarting Framework ProxyManager"
@@ -255,13 +255,13 @@ function fullInstallDIRAC(){
   dropDBs
   if ! diracDBs; then
     echo "ERROR: diracDBs failed"
-    return
+    exit 1
   fi
 
   #upload proxies
   if ! diracProxies; then
     echo "ERROR: diracProxies failed"
-    return
+    exit 1
   fi
 
   #fix the DBs (for the FileCatalog)
@@ -272,7 +272,7 @@ function fullInstallDIRAC(){
   findServices 'exclude' 'FrameworkSystem'
   if ! diracServices; then
     echo "ERROR: diracServices failed"
-    return
+    exit 1
   fi
 
   #fix the DFC services options
@@ -320,7 +320,7 @@ function fullInstallDIRAC(){
   findAgents
   if ! diracAgents; then
     echo "ERROR: diracAgents failed"
-    return
+    exit 1
   fi
 }
 
@@ -343,25 +343,25 @@ function miniInstallDIRAC(){
   # basic install, with only the CS (and ComponentMonitoring) running, together with DB InstalledComponentsDB, which is needed)
   if ! installSite; then
     echo "ERROR: installSite failed"
-    return
+    exit 1
   fi
 
   # Dealing with security stuff
   # generateCertificates
   if ! generateUserCredentials; then
     echo "ERROR: generateUserCredentials failed"
-    return
+    exit 1
   fi
 
   if ! diracCredentials; then
     echo "ERROR: diracCredentials failed"
-    return
+    exit 1
   fi
 
   # just add a site
   if ! diracAddSite; then
     echo "ERROR: diracAddSite failed"
-    return
+    exit 1
   fi
 
   # fix the SandboxStore and other stuff
@@ -380,11 +380,11 @@ function clean(){
   #### make sure we're using the server
   if ! cd "$SERVERINSTALLDIR"; then
     echo "ERROR: cannot change to $SERVERINSTALLDIR"
-    return
+    exit 1
   fi
   if ! source bashrc; then
     echo "ERROR: cannot source bashrc"
-    return
+    exit 1
   fi
   ####
 
@@ -431,7 +431,7 @@ function DIRACPilotInstall(){
   cwd=$PWD
   if ! cd "$PILOTINSTALLDIR"; then
     echo "ERROR: cannot change to $PILOTINSTALLDIR"
-    return
+    exit 1
   fi
 
   if [ "$GATEWAY" ]; then
@@ -458,12 +458,12 @@ function DIRACPilotInstall(){
   echo "$( eval echo Executing python dirac-pilot.py $options -X $commandList $DEBUG)"
   if ! python dirac-pilot.py $options -X "$commandList" "$DEBUG"; then
     echo "ERROR: pilot script failed"
-    return
+    exit 1
   fi
 
   if ! cd "$cwd"; then
     echo "ERROR: cannot change to $cwd"
-    return
+    exit 1
   fi
 }
 
@@ -473,25 +473,25 @@ function fullPilot(){
   #first simply install via the pilot
   if ! DIRACPilotInstall; then
     echo "ERROR: pilot installation failed"
-    return
+    exit 1
   fi
 
   #this should have been created, we source it so that we can continue
   if ! source "$PILOTINSTALLDIR/bashrc"; then
     echo "ERROR: cannot source bashrc"
-    return
+    exit 1
   fi
 
   #Adding the LocalSE and the CPUTimeLeft, for the subsequent tests
   if ! dirac-configure -FDMH --UseServerCertificate -L "$DIRACSE" "$DEBUG"; then
     echo "ERROR: cannot configure"
-    return
+    exit 1
   fi
 
   #Configure for CPUTimeLeft and more
   if ! python "$TESTCODE/DIRAC/tests/Jenkins/dirac-cfg-update.py" -o /DIRAC/Security/UseServerCertificate=True "$DEBUG"; then
     echo "ERROR: cannot update the CFG"
-    return
+    exit 1
   fi
 
   #Getting a user proxy, so that we can run jobs
@@ -499,7 +499,7 @@ function fullPilot(){
   #Set not to use the server certificate for running the jobs
   if ! dirac-configure -FDMH -o /DIRAC/Security/UseServerCertificate=False $DEBUG; then
     echo "ERROR: cannot run dirac-configure"
-    return
+    exit 1
   fi
 }
 
@@ -516,19 +516,19 @@ function submitAndMatch(){
   # This installs the DIRAC client
   if ! installDIRAC; then
     echo "ERROR: failure installing the DIRAC client"
-    return
+    exit 1
   fi
 
   # This submits the jobs
   if ! submitJob; then
     echo "ERROR: failure submitting the jobs"
-    return
+    exit 1
   fi
 
   # Then we run the full pilot, including the JobAgent, which should match the jobs we just submitted
   if ! cd "$PILOTINSTALLDIR"; then
     echo "ERROR: cannot change to $PILOTINSTALLDIR"
-    return
+    exit 1
   fi
   prepareForPilot
   default
@@ -537,13 +537,13 @@ function submitAndMatch(){
     echo -e "==> Running python dirac-pilot.py -S $DIRACSETUP -r $PILOT_VERSION -g $lcgVersion -C $CSURL -N $JENKINS_CE -Q $JENKINS_QUEUE -n $JENKINS_SITE --cert --certLocation=/home/dirac/certs/ -M 3 $DEBUG"
     if ! python dirac-pilot.py -S "$DIRACSETUP" -r "$PILOT_VERSION" -g "$lcgVersion" -C "$CSURL" -N "$JENKINS_CE" -Q "$JENKINS_QUEUE" -n "$JENKINS_SITE" --cert --certLocation=/home/dirac/certs/ -M 3 $DEBUG; then
       echo "ERROR: dirac-pilot failure"
-      return
+      exit 1
     fi
   else
     echo -e "==> Running python dirac-pilot.py -S $DIRACSETUP -g $lcgVersion -C $CSURL -N $JENKINS_CE -Q $JENKINS_QUEUE -n $JENKINS_SITE --cert --certLocation=/home/dirac/certs/ -M 3 $DEBUG"
     if ! python dirac-pilot.py -S "$DIRACSETUP" -g "$lcgVersion" -C "$CSURL" -N $"JENKINS_CE" -Q "$JENKINS_QUEUE" -n "$JENKINS_SITE" --cert --certLocation=/home/dirac/certs/ -M 3 $DEBUG; then
       echo "ERROR: dirac-pilot failure"
-      return
+      exit 1
     fi
   fi
 }
