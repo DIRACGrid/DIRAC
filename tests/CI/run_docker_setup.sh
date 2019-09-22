@@ -84,9 +84,6 @@ function prepareEnvironment() {
 }
 
 function installServer() {
-  # FIXME: This shouldn't be needed
-  docker exec -u root server yum install -y freetype fontconfig pixman libXrender htop psmisc
-
   docker exec -e TERM=xterm-color -u "$DOCKER_USER" -w "$WORKSPACE" server bash ./install_server.sh 2>&1 | tee "${BUILD_DIR}/log_server_install.txt"
 
   echo -e "\n**** $(date -u) Copying credentials and certificates ****"
