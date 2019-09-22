@@ -7,33 +7,48 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name != 'push' || github.repository == 'DIRACGrid/DIRAC'
 
+    strategy:
+      fail-fast: False
+      matrix:
+        MYSQL_VER:
+          - 5.7
+          - 8.0
+        ES_VER:
+          - 6.6.0
+          - 7.3.2
+
     steps:
     - uses: actions/checkout@v1
     - name: Clean up GitHub actions environment
       run: |
+        set -x
         mysqladmin -u root -proot shutdown
+
+        # Prepare wrapper script
+        echo "#!/usr/bin/env bash" >> run_in_container
+        echo "set -euo pipefail" >> run_in_container
+        echo "IFS=\$'\n\t'" >> run_in_container
+        echo -n "exec docker exec -w /repo " >> run_in_container
+        # Set environment variables
+        echo -n "-e CI_PROJECT_DIR=/repo " >> run_in_container
+        echo -n "-e CI_COMMIT_REF_NAME=$GITHUB_REF " >> run_in_container
+        echo -n "-e CI_REGISTRY_IMAGE=gitlab-registry.cern.ch/cburr/dirac " >> run_in_container
+        echo -n "-e MYSQL_VER=${{ matrix.MYSQL_VER }} " >> run_in_container
+        echo -n "-e ES_VER=${{ matrix.ES_VER }} " >> run_in_container
+        # Finish wrapper script
+        echo -n "host \"\$@\"" >> run_in_container
+        chmod +x run_in_container
     - name: Prepare environment
       run: |
         docker run --name host -v $PWD:/repo --detach --privileged -v /var/run/docker.sock:/var/run/docker.sock --rm gitlab-registry.cern.ch/cburr/dirac/docker-compose:latest bash -c 'sleep 100000000'
-        docker exec -w /repo -e CI_PROJECT_DIR=/repo -e CI_COMMIT_REF_NAME=$GITHUB_REF -e CI_REGISTRY_IMAGE=gitlab-registry.cern.ch/cburr/dirac host \
-            bash -c 'source tests/CI/run_docker_setup.sh && prepareEnvironment'
+        ./run_in_container bash -c 'source tests/CI/run_docker_setup.sh && prepareEnvironment'
     - name: Install server
-      run: |
-        docker exec -w /repo -e CI_PROJECT_DIR=/repo -e CI_COMMIT_REF_NAME=$GITHUB_REF -e CI_REGISTRY_IMAGE=gitlab-registry.cern.ch/cburr/dirac host \
-            bash -c 'source tests/CI/run_docker_setup.sh && installServer'
+      run: ./run_in_container bash -c 'source tests/CI/run_docker_setup.sh && installServer'
     - name: Install client
-      run: |
-        docker exec -w /repo -e CI_PROJECT_DIR=/repo -e CI_COMMIT_REF_NAME=$GITHUB_REF -e CI_REGISTRY_IMAGE=gitlab-registry.cern.ch/cburr/dirac host \
-            bash -c 'source tests/CI/run_docker_setup.sh && installClient'
+      run: ./run_in_container bash -c 'source tests/CI/run_docker_setup.sh && installClient'
     - name: Server tests
-      run: |
-        docker exec -w /repo -e CI_PROJECT_DIR=/repo -e CI_COMMIT_REF_NAME=$GITHUB_REF -e CI_REGISTRY_IMAGE=gitlab-registry.cern.ch/cburr/dirac host \
-            bash -c 'source tests/CI/run_docker_setup.sh && testServer'
+      run: ./run_in_container bash -c 'source tests/CI/run_docker_setup.sh && testServer'
     - name: Client tests
-      run: |
-        docker exec -w /repo -e CI_PROJECT_DIR=/repo -e CI_COMMIT_REF_NAME=$GITHUB_REF -e CI_REGISTRY_IMAGE=gitlab-registry.cern.ch/cburr/dirac host \
-            bash -c 'source tests/CI/run_docker_setup.sh && testClient'
+      run: ./run_in_container bash -c 'source tests/CI/run_docker_setup.sh && testClient'
     - name: Check test status
-      run: |
-        docker exec -w /repo -e CI_PROJECT_DIR=/repo -e CI_COMMIT_REF_NAME=$GITHUB_REF -e CI_REGISTRY_IMAGE=gitlab-registry.cern.ch/cburr/dirac host \
-            bash -c 'source tests/CI/run_docker_setup.sh && checkErrors'
+      run: ./run_in_container bash -c 'source tests/CI/run_docker_setup.sh && checkErrors'
