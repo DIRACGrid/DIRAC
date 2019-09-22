@@ -646,6 +646,7 @@ The integration tests which are ran on GitHub/GitLab can be ran locally using do
 To run all tests in one command, which takes around 20 minutes, use:
 
 .. code-block:: bash
+
     docker run --rm -it --privileged --name dirac-testing-host \
       -e CI_PROJECT_DIR=/repo -e CI_REGISTRY_IMAGE=gitlab-registry.cern.ch/cburr/dirac \
       -v /var/run/docker.sock:/var/run/docker.sock -v $PWD:/repo -w /repo \
@@ -657,6 +658,7 @@ This allows docker exec to be used to connect to the container for debugging.
 For example, to re-run the server and client tests:
 
 .. code-block:: bash
+
     docker exec -it -u dirac -w /home/dirac -e INSTALLROOT=/home/dirac -e INSTALLTYPE=server server \
       bash TestCode/DIRAC/tests/CI/run_tests.sh
     docker exec -it -u dirac -w /home/dirac -e INSTALLROOT=/home/dirac -e INSTALLTYPE=client client \
