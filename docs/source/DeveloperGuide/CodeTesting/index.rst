@@ -413,7 +413,7 @@ The DIRAC/tests part of DIRAC repository
 ----------------------------------------
 
 The DIRAC repository contains a tests section ``https://github.com/DIRACGrid/DIRAC/tree/integration/tests`` that holds
-integration, regression, workflow, system, and permormance tests.
+integration, regression, workflow, system, and performance tests.
 These tests are not only used for the certification process. Some of them, in fact, might be extremely useful for the developers.
 
 
@@ -484,7 +484,7 @@ There are several tools, on the free market, for so-called *Continuous Integrati
 The most used right now is probably Jenkins_, which is also our recommendation.
 If you have looked in the `DIRAC/tests <https://github.com/DIRACGrid/DIRAC/tree/integration/tests>`_ (and if you haven't yet, you should, now!) you will see also a Jenkins folder.
 
-What can Jenkins do for you? Several things, in fact: 
+What can Jenkins do for you? Several things, in fact:
 
 - it can run all the unit tests
 - it can run `Pylint <http://www.pylint.org/>`_ (of which we didn't talk about yet, but, that you should use, and for which it exists a nice documentation that you should probably read) (ah, use `this file <https://github.com/DIRACGrid/DIRAC/blob/integration/.pylintrc>`_ as configuration file.
@@ -639,6 +639,31 @@ At the same time, if you are a developer you should be able to extrapolate from 
 in case you are testing only one specific service.
 
 
+Running integration tests locally
+---------------------------------
+
+The integration tests which are ran on GitHub/GitLab can be ran locally using docker.
+To run all tests in one command, which takes around 20 minutes, use:
+
+.. code-block:: bash
+    docker run --rm -it --privileged --name dirac-testing-host \
+      -e CI_PROJECT_DIR=/repo -e CI_REGISTRY_IMAGE=gitlab-registry.cern.ch/cburr/dirac \
+      -v /var/run/docker.sock:/var/run/docker.sock -v $PWD:/repo -w /repo \
+      gitlab-registry.cern.ch/cburr/dirac/docker-compose:latest bash \
+      tests/CI/run_docker_setup.sh
+
+After exiting the docker containers for the databases, server and client will still be running.
+This allows docker exec to be used to connect to the container for debugging.
+For example, to re-run the server and client tests:
+
+.. code-block:: bash
+    docker exec -it -u dirac -w /home/dirac -e INSTALLROOT=/home/dirac -e INSTALLTYPE=server server \
+      bash TestCode/DIRAC/tests/CI/run_tests.sh
+    docker exec -it -u dirac -w /home/dirac -e INSTALLROOT=/home/dirac -e INSTALLTYPE=client client \
+      bash TestCode/DIRAC/tests/CI/run_tests.sh
+
+Once finished the containers can be removed using ``docker rm --force server client elasticsearch mysql``.
+
 
 Validation and System tests
 ---------------------------
@@ -651,21 +676,21 @@ Validation and system tests are usually coded by software testers. The DIRAC rep
 a minimal set of test jobs, but since most of the test jobs that you can run are VO specific, we suggest you to expand the list.
 
 The server `lbcertifdirac6.cern.ch <lbcertifdirac6.cern.ch:8443>`_ is used as "DIRAC certification machine".
-With "certification machine" we mean that it is a full DIRAC installation, that connects to grid resources, and through which we certify pre-production versions. 
+With "certification machine" we mean that it is a full DIRAC installation, that connects to grid resources, and through which we certify pre-production versions.
 Normally, the latest DIRAC pre-releases are installed there.
 Its access is restricted to some power users, for now, but do request access if you need to do some specific system test.
-This installation is usually not done for running private tests, but in a controlled way can be sometimes tried. 
+This installation is usually not done for running private tests, but in a controlled way can be sometimes tried.
 
 
 
 The certification process
 ============================
 
-Each DIRAC release go through a long and detailed certification process. 
+Each DIRAC release go through a long and detailed certification process.
 A certification process is a series of steps that include unit, integration, validation and system tests.
 We use detailed trello boards and slack channel. Please DO ASK to be included in such process.
 
-The template for DIRAC certification process can be found at the trello `board <https://trello.com/b/cp8ULOhQ/dirac-certification-template>`_ 
+The template for DIRAC certification process can be found at the trello `board <https://trello.com/b/cp8ULOhQ/dirac-certification-template>`_
 and the slack channel is `here <https://lhcbdirac.slack.com/messages/C3AGWCA8J/>`__
 
 

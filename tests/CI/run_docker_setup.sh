@@ -104,13 +104,13 @@ function installClient() {
 function testServer() {
   docker exec -e TERM=xterm-color -u "$DOCKER_USER" -w "$WORKSPACE" -e INSTALLROOT="$WORKSPACE" -e INSTALLTYPE=server server \
       bash TestCode/DIRAC/tests/CI/run_tests.sh || SERVER_CODE=$?
-  echo ${SERVER_CODE:-0} >> "${BUILD_DIR}/server_test_status"
+  echo ${SERVER_CODE:-0} > "${BUILD_DIR}/server_test_status"
 }
 
 function testClient() {
   docker exec -e TERM=xterm-color -u "$DOCKER_USER" -w "$WORKSPACE" -e INSTALLROOT="$WORKSPACE" -e INSTALLTYPE=client client \
       bash TestCode/DIRAC/tests/CI/run_tests.sh || CLIENT_CODE=$?
-  echo ${CLIENT_CODE:-0} >> "${BUILD_DIR}/client_test_status"
+  echo ${CLIENT_CODE:-0} > "${BUILD_DIR}/client_test_status"
 }
 
 function checkErrors() {
