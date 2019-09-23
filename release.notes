@@ -33,6 +33,10 @@ NEW: (#4276) IdProvider resources to represent external user identity providers
 CHANGE: (#4279) use VOMSSecurityManager for integration instead of PolicyBasedSecurityManager/VOMSPolicy
 FIX: (#4284) DMS client tests to use DIRAC user name, rather than the local system user name
 
+[v7r0p1]
+
+FIX: Removing some deprecated codes
+
 [v7r0]
 
 FIX: (#3962) use print function instead of print statement
@@ -133,6 +137,11 @@ CHANGE: (#4110) updated basic tutorial for CC7 instead of SLC6.
 NEW: (#4170) added Production system documentation
 CHANGE: (#4224) Pilot 3 is the default
 NEW: (#4244) Added a few notes on using the JobParameters on ElasticSearch database
+
+[v6r22p11]
+
+*Interfaces
+FIX: (#4277) Dirac.py - fix error handling in getJobParameters()
 
 [v6r22p10]
 

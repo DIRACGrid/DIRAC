@@ -249,8 +249,6 @@ class JobMonitoring(TestWMSTestCase):
 #     self.assertTrue(res['OK'], res.get('Message'))
     res = jobStateUpdate.setJobSite(jobID, 'Site')
     self.assertTrue(res['OK'], res.get('Message'))
-#     res = jobMonitor.traceJobParameter( 'Site', 1, 'Status' )
-#     self.assertTrue(res['OK'], res.get('Message'))
 
     # now checking few things
     res = jobMonitor.getJobStatus(jobID)
