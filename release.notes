@@ -1,5 +1,8 @@
 [v7r2-pre1]
 
+*Core
+FIX: (#4283) Added protection against empty certificates directory in dirac-install
+
 *ResourceStatusSystem
 CHANGE: (#4235) Removes locals() way of passing parameters
 
