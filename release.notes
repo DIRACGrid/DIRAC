@@ -1,3 +1,8 @@
+[v6r22p11]
+
+*Interfaces
+FIX: (#4277) Dirac.py - fix error handling in getJobParameters()
+
 [v6r22p10]
 
 *Resources
