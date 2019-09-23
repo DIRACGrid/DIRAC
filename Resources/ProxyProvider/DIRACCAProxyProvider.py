@@ -26,18 +26,21 @@ class DIRACCAProxyProvider(ProxyProvider):
     """ Constructor
     """
     super(DIRACCAProxyProvider, self).__init__(parameters)
-    self.__X509Name = X509.X509_Name()
     self.log = gLogger.getSubLogger(__name__)
     # Initialize
     self.maxDict = {}
     self.minDict = {}
     self.bits = 2048
     self.algoritm = 'sha256'
-    self.match, self.supplied, self.optional = [], [], []
+    self.match = []
+    self.supplied = ['CN']
+    self.optional = ['C', 'O', 'OU', 'emailAddress']
     # Add not supported distributes names
     self.fs2nid = X509.X509_Name.nid.copy()
     self.fs2nid['DC'] = -1
     self.fs2nid['domainComponent'] = -1
+    self.fs2nid['organizationalUnitName'] = 18
+    self.fs2nid['countryName'] = 14
     self.n2field = {}  # nid: most short or specidied in CS distributes name
     self.n2fields = {}  # nid: list of distributes names
     # Specify standart fields
@@ -56,20 +59,27 @@ class DIRACCAProxyProvider(ProxyProvider):
 
         :param dict parameters: provider parameters
     """
+    # If CA configuration file exist
     self.parameters = parameters
+    if parameters.get('CAConfigFile'):
+      self.supplied, self.optional = [], []
+      self.__parseCACFG()
     if 'Bits' in parameters:
       self.bits = int(parameters['Bits'])
     if 'Algoritm' in parameters:
       self.algoritm = parameters['Algoritm']
-    for field in parameters.get('Match') and parameters['Match'].replace(' ', '').split(',') or []:
-      self.match.append(self.fs2nid[field])
-    for field in parameters.get('Supplied') and parameters['Supplied'].replace(' ', '').split(',') or ['CN']:
-      self.supplied.append(self.fs2nid[field])
-    for field in parameters.get('Optional') and parameters['Optional'].replace(' ', '').split(',') or ['C',
-                                                                                                       'O',
-                                                                                                       'OU',
-                                                                                                       'emailAddress']:
-      self.optional.append(self.fs2nid[field])
+    if 'Match' in parameters:
+      self.match = []
+      for field in parameters['Match'].replace(' ', '').split(','):
+        self.match.append(self.fs2nid[field])
+    if 'Supplied' in parameters:
+      self.supplied = []
+      for field in parameters['Supplied'].replace(' ', '').split(','):
+        self.supplied.append(self.fs2nid[field])
+    if 'Optional' in parameters:
+      self.optional = []
+      for field in parameters['Optional'].replace(' ', '').split(','):
+        self.optional.append(self.fs2nid[field])
     # Set defaults for distridutes names
     self.defDict = {}
     for field, value in parameters.items():
@@ -79,9 +89,6 @@ class DIRACCAProxyProvider(ProxyProvider):
     for nid in self.n2field:
       if nid in self.defFieldByNid:
         self.n2field[nid] = self.defFieldByNid[nid]
-    # If CA file exist
-    if parameters.get('CAConfigFile'):
-      self.__parseCACFG()
     self.match.sort()
     self.supplied.sort()
 
@@ -165,6 +172,7 @@ class DIRACCAProxyProvider(ProxyProvider):
 
         :return: S_OK()/S_ERROR(), Value is the DN string
     """
+    userDict = userDict or {}
     chain = X509Chain()
     result = chain.loadChainFromFile(self.parameters['CertFile'])
     if not result['OK']:
@@ -183,7 +191,7 @@ class DIRACCAProxyProvider(ProxyProvider):
       dnFieldByNid = dict([[self.fs2nid[field], field] for field in dnDict])
       for nid in self.supplied:
         if nid not in dnFieldByNid:
-          return S_ERROR('Current DN is invalid, "%s" field must be set.' % dnFieldByNid[nid])
+          return S_ERROR('Current DN is invalid, "%s" field must be set.' % self.n2field[nid])
       for nid in dnFieldByNid:
         if nid not in self.supplied + self.match + self.optional:
           return S_ERROR('Current DN is invalid, "%s" field is not found for current CA.' % dnFieldByNid[nid])
@@ -209,13 +217,20 @@ class DIRACCAProxyProvider(ProxyProvider):
         return result
 
     # Fill DN subject name
+    if not userDict.get('FullName'):
+      return S_ERROR("Incomplete user information: no full name found")
+    if not userDict.get('Email'):
+      return S_ERROR("Incomplete user information: no email found")
+    self.__X509Name = X509.X509_Name()
     self.log.info('Creating distributes names chain')
+    # Test match fields
     for nid in self.match:
       if nid not in caFieldByNid:
         return S_ERROR('Distributes name(%s) must be present in CA certificate.' % ', '.join(self.n2fields[nid]))
       result = self.__fillX509Name(caFieldByNid[nid], caDict[caFieldByNid[nid]])
       if not result['OK']:
         return result
+    # Test supplied fields
     for nid in self.supplied:
       if self.defDict.get(self.n2field[nid]):
         result = self.__fillX509Name(self.n2field[nid], self.defDict[self.n2field[nid]])
@@ -258,8 +273,11 @@ class DIRACCAProxyProvider(ProxyProvider):
                 val = val.replace('$' + v, self.cfg[b][v])
           self.cfg[block][field] = val.strip()
 
-    self.bits = self.cfg['req'].get('default_bits') or self.bits
+    self.bits = int(self.cfg['req'].get('default_bits') or self.bits)
     self.algoritm = self.cfg[self.cfg['ca']['default_ca']].get('default_md') or self.algoritm
+    if not self.parameters.get('CertFile'):
+      self.parameters['CertFile'] = self.cfg[self.cfg['ca']['default_ca']]['certificate']
+      self.parameters['KeyFile'] = self.cfg[self.cfg['ca']['default_ca']]['private_key']
     for k, v in self.cfg[self.cfg[self.cfg['ca']['default_ca']]['policy']].items():
       nid = self.fs2nid[k]
       if k + '_default' in self.cfg['req']['distinguished_name']:
