@@ -104,7 +104,7 @@ class RequestExecutingAgent(AgentModule):
     self.log.info("Requests/cycle = %d" % self.__requestsPerCycle)
     self.__minProcess = self.am_getOption("MinProcess", self.__minProcess)
     self.log.info("ProcessPool min process = %d" % self.__minProcess)
-    self.__maxProcess = self.am_getOption("MaxProcess", 1)
+    self.__maxProcess = self.am_getOption("MaxProcess", 4)
     self.log.info("ProcessPool max process = %d" % self.__maxProcess)
     self.__queueSize = self.am_getOption("ProcessPoolQueueSize", self.__queueSize)
     self.log.info("ProcessPool queue size = %d" % self.__queueSize)
