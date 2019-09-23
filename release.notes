@@ -103,6 +103,11 @@ NEW: (#4170) added Production system documentation
 CHANGE: (#4224) Pilot 3 is the default
 NEW: (#4244) Added a few notes on using the JobParameters on ElasticSearch database
 
+[v6r22p11]
+
+*Interfaces
+FIX: (#4277) Dirac.py - fix error handling in getJobParameters()
+
 [v6r22p10]
 
 *Resources
