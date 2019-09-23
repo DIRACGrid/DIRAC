@@ -25,9 +25,11 @@ Resources
   {
     DIRAC_TEST_CA
     {
-      ProxyProviderType = DIRACCA
+      ProviderType = DIRACCA
       CAConfigFile = %s
-
+      Match =
+      Supplied = C, O, OU, CN
+      Optional = emailAddress
       C = FR
       O = DIRAC
       OU = DIRAC TEST
@@ -100,21 +102,16 @@ class DIRACCAPPTest(unittest.TestCase):
 
     self.userDictClean = {
         "FullName": "DIRAC test user",
-        "EMail": "testuser@diracgrid.org"
+        "Email": "testuser@diracgrid.org"
     }
     self.userDictCleanDN = {
-        "DN": "/C=FR/O=DIRAC/OU=DIRAC Consortium/CN=DIRAC test user/emailAddress=testuser@diracgrid.org",
-        "EMail": "testuser@diracgrid.org"
+        "DN": "/C=FR/O=DIRAC/OU=DIRAC TEST/CN=DIRAC test user/emailAddress=testuser@diracgrid.org",
+        "Email": "testuser@diracgrid.org"
     }
     self.userDictGroup = {
         "FullName": "DIRAC test user",
-        "EMail": "testuser@diracgrid.org",
+        "Email": "testuser@diracgrid.org",
         "DiracGroup": "dirac_user"
-    }
-    self.userDictNoGroup = {
-        "FullName": "DIRAC test user",
-        "EMail": "testuser@diracgrid.org",
-        "DiracGroup": "dirac_no_user"
     }
 
   def tearDown(self):
@@ -125,7 +122,7 @@ class DIRACCAPPTest(unittest.TestCase):
     result = self.pp.getProxy(self.userDictClean)
     self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
     chain = X509Chain()
-    chain.loadChainFromString(result['Value'])
+    chain.loadChainFromString(result['Value']['proxy'])
     result = chain.getCredentials()
     self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
     credDict = result['Value']
@@ -139,7 +136,7 @@ class DIRACCAPPTest(unittest.TestCase):
     result = self.pp.getProxy(self.userDictCleanDN)
     self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
     chain = X509Chain()
-    chain.loadChainFromString(result['Value'])
+    chain.loadChainFromString(result['Value']['proxy'])
     result = chain.getCredentials()
     self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
     credDict = result['Value']
@@ -153,7 +150,7 @@ class DIRACCAPPTest(unittest.TestCase):
     result = self.pp.getProxy(self.userDictGroup)
     self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
     chain = X509Chain()
-    chain.loadChainFromString(result['Value'])
+    chain.loadChainFromString(result['Value']['proxy'])
     result = chain.getCredentials()
     self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
     credDict = result['Value']
@@ -162,26 +159,21 @@ class DIRACCAPPTest(unittest.TestCase):
     self.assertEqual(credDict['group'], 'dirac_user',
                      '%s, expected %s' % (credDict['group'], 'dirac_user'))
 
-  def test_getProxyNoGroup(self):
-
-    result = self.pp.getProxy(self.userDictNoGroup)
-    self.assertFalse(result['OK'], 'Must be fail.')
-
   def test_getUserDN(self):
 
-    goodDN = {"DN": '/C=FR/O=DIRAC/OU=DIRAC TEST/CN=DIRAC test user/emailAddress=testuser@diracgrid.org'}
-    badDN_1 = {"DN": '/C=FR/OU=DIRAC TEST/CN=DIRAC test user/emailAddress=testuser@diracgrid.org'}
-    badDN_2 = {"DN": '/C=FR/O=DIRAC/OU=DIRAC TEST/emailAddress=testuser@diracgrid.org'}
-    badDN_3 = {"DN": '/C=FR/O=DIRAC/OU=DIRAC TEST/CN=DIRAC test user'}
-    result = self.pp.getUserDN(goodDN)
+    goodDN = '/C=FR/O=DIRAC/OU=DIRAC TEST/CN=DIRAC test user/emailAddress=testuser@diracgrid.org'
+    badDN_1 = '/C=FR/OU=DIRAC TEST/CN=DIRAC test user/emailAddress=testuser@diracgrid.org'
+    badDN_2 = '/C=FR/O=DIRAC/OU=DIRAC TEST/emailAddress=testuser@diracgrid.org'
+    badDN_3 = '/C=FR/O=DIRAC/OU=DIRAC TEST/CN=DIRAC test user'
+    result = self.pp.getUserDN(userDN=goodDN)
     self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
-    result = self.pp.getUserDN(badDN_1)
+    result = self.pp.getUserDN(userDN=badDN_1)
     self.assertFalse(result['OK'], 'Must be fail.')
-    result = self.pp.getUserDN(badDN_2)
+    result = self.pp.getUserDN(userDN=badDN_2)
     self.assertFalse(result['OK'], 'Must be fail.')
-    result = self.pp.getUserDN(badDN_3)
+    result = self.pp.getUserDN(userDN=badDN_3)
     self.assertFalse(result['OK'], 'Must be fail.')
-    userDict = {"FullName": "John Doe", "EMail": "john.doe@nowhere.net"}
+    userDict = {"FullName": "John Doe", "Email": "john.doe@nowhere.net"}
     result = self.pp.getUserDN(userDict)
     self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
     self.assertEqual(result['Value'], '/C=FR/O=DIRAC/OU=DIRAC TEST/CN=John Doe/emailAddress=john.doe@nowhere.net')

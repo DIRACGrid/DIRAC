@@ -9,7 +9,7 @@ CHANGE: (#4235) Removes locals() way of passing parameters
 *tests
 NEW: (#4179) Set up Gitlab CI pipeline using Docker containers
 
-[v7r1-pre7]
+[v7r1-pre8]
 
 *Core
 NEW: initial support for mysql8
@@ -33,10 +33,20 @@ FIX: (#4257) Optimize test in NotificationHandler
 
 *DMS
 CHANGE: (#4243) FileCatalog - standard components are loaded using ObjectLoader mechanism
+NEW: (#4279) FileCatalog - added VOMSSecurityManager class
+CHANGE: (#4279) FileCatalog - dropped PolicyBasedSecurityManager and VOMSPolicy classes
 
 *Resources
 NEW: (#4157) ProxyProvider resources with implementation for DIRAC CA and PUSP proxy providers
 NEW: (#4276) IdProvider resources to represent external user identity providers
+
+*tests
+CHANGE: (#4279) use VOMSSecurityManager for integration instead of PolicyBasedSecurityManager/VOMSPolicy
+FIX: (#4284) DMS client tests to use DIRAC user name, rather than the local system user name
+
+[v7r0p1]
+
+FIX: Removing some deprecated codes
 
 [v7r0]
 
@@ -138,6 +148,11 @@ CHANGE: (#4110) updated basic tutorial for CC7 instead of SLC6.
 NEW: (#4170) added Production system documentation
 CHANGE: (#4224) Pilot 3 is the default
 NEW: (#4244) Added a few notes on using the JobParameters on ElasticSearch database
+
+[v6r22p11]
+
+*Interfaces
+FIX: (#4277) Dirac.py - fix error handling in getJobParameters()
 
 [v6r22p10]
 

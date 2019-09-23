@@ -55,7 +55,6 @@ class JobCleaningAgent(AgentModule):
     AgentModule.__init__(self, *args, **kwargs)
 
     # clients
-    # FIXME: shouldn't we avoid using the DBs directly, and instead go through the service?
     self.jobDB = None
     self.taskQueueDB = None
     self.jobLoggingDB = None

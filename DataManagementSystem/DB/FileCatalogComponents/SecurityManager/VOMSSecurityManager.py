@@ -1,4 +1,4 @@
-""" VOMSPolicy class implements access permissions based on VOMS roles
+""" VOMSSecurityManager class implements access permissions based on VOMS roles
 """
 
 __RCSID__ = "$Id$"
@@ -13,13 +13,13 @@ from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager.Securit
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 
 
-class VOMSPolicy(SecurityManagerBase):
+class VOMSSecurityManager(SecurityManagerBase):
   """ This class implements a 3-level POSIX permission, wrapping up
       the DIRAC group into VOMS roles
   """
 
   def __init__(self, database=False):
-    super(VOMSPolicy, self).__init__(database=database)
+    super(VOMSSecurityManager, self).__init__(database=database)
 
     # voms role : [dirac groups that have it]
     self.vomsRoles = {}
@@ -584,9 +584,4 @@ class VOMSPolicy(SecurityManagerBase):
         sense with that kind of fine grain policy, we return what used to
         be returned...
     """
-
-    oldSEM = getattr(self, 'oldSecurityManager', None)
-    if oldSEM:
-      return oldSEM.getPathPermissions(paths, credDict)
-    else:
-      return super(VOMSPolicy, self).getPathPermissions(paths, credDict)
+    return super(VOMSSecurityManager, self).getPathPermissions(paths, credDict)

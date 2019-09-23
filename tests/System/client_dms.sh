@@ -9,7 +9,9 @@ echo " "
 echo "====== dirac-proxy-init -g dteam_user" #this is necesary to upload user files
 dirac-proxy-init -g dteam_user
 
-userdir="/dteam/user/$( echo "$USER" |cut -c 1)/$USER"
+dirac_user=$( dirac-proxy-info | awk '/^username / {print $3}' )
+#userdir="/dteam/user/$( echo "$USER" |cut -c 1)/$USER"
+userdir="/dteam/user/$( echo "$dirac_user" |cut -c 1)/$dirac_user"
 echo "this is a test file" >> DMS_Scripts_Test_File.txt
 
 echo " "
