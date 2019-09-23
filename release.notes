@@ -1,4 +1,4 @@
-[v7r1-pre7]
+[v7r1-pre8]
 
 *Core
 NEW: initial support for mysql8
@@ -22,10 +22,16 @@ FIX: (#4257) Optimize test in NotificationHandler
 
 *DMS
 CHANGE: (#4243) FileCatalog - standard components are loaded using ObjectLoader mechanism
+NEW: (#4279) FileCatalog - added VOMSSecurityManager class
+CHANGE: (#4279) FileCatalog - dropped PolicyBasedSecurityManager and VOMSPolicy classes
 
 *Resources
 NEW: (#4157) ProxyProvider resources with implementation for DIRAC CA and PUSP proxy providers
 NEW: (#4276) IdProvider resources to represent external user identity providers
+
+*tests
+CHANGE: (#4279) use VOMSSecurityManager for integration instead of PolicyBasedSecurityManager/VOMSPolicy
+FIX: (#4284) DMS client tests to use DIRAC user name, rather than the local system user name
 
 [v7r0]
 
