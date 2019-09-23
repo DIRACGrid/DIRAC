@@ -4,6 +4,7 @@
 
 __RCSID__ = "$Id$"
 
+from DIRAC import S_OK
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager.DirectorySecurityManager import \
     DirectorySecurityManager
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.SecurityManager.SecurityManagerBase import \
@@ -36,3 +37,52 @@ class DirectorySecurityManagerWithDelete(DirectorySecurityManager):
     self.opType = ''
 
     return res
+
+  def getPathPermissions(self, paths, credDict):
+    """ Get path permissions according to the policy
+    """
+
+    # If we are testing in anything else than a Delete, just return the parent methods
+    if hasattr(self, 'opType') and self.opType.lower() != 'delete':
+      return super(DirectorySecurityManagerWithDelete, self).getPathPermissions(paths, credDict)
+
+    # If the object (file or dir) does not exist, we grant the permission
+    res = self.db.dtree.exists(paths)
+    if not res['OK']:
+      return res
+
+    nonExistingDirectories = set(path for path in res['Value']['Successful'] if not res['Value']['Successful'][path])
+
+    res = self.db.fileManager.exists(paths)
+    if not res['OK']:
+      return res
+
+    nonExistingFiles = set(path for path in res['Value']['Successful'] if not res['Value']['Successful'][path])
+
+    nonExistingObjects = nonExistingDirectories & nonExistingFiles
+
+    permissions = {}
+    failed = {}
+
+    for path in nonExistingObjects:
+      permissions[path] = {'Read': True, 'Write': True, 'Execute': True}
+      # The try catch is just to protect in case there are duplicate in the paths
+      try:
+        paths.remove(path)
+      except Exception as _e:
+        try:
+          paths.pop(path)
+        except Exception as _ee:
+          pass
+
+    # For all the paths that exist, check the write permission
+    if paths:
+
+      res = super(DirectorySecurityManagerWithDelete, self).getPathPermissions(paths, credDict)
+      if not res['OK']:
+        return res
+
+      failed = res['Value']['Failed']
+      permissions.update(res['Value']['Successful'])
+
+    return S_OK({'Successful': permissions, 'Failed': failed})
