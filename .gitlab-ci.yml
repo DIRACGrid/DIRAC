@@ -13,6 +13,20 @@ build_compose_image:
   only:
     - schedules
 
+build_slc6-dirac_image:
+  stage: build_images
+  tags:
+    - docker-image-build
+  variables:
+    FROM: cern/slc6-base:latest
+    TO: ${CI_REGISTRY_IMAGE}/slc6-dirac:latest
+    # Reuse the CC7 Dockerfile with FROM and RUNIT_RPM changed
+    DOCKER_FILE: tests/CI/Docker/cc7-dirac/Dockerfile
+    BUILD_ARG: RUNIT_RPM=runit-2.1.2-1.el6.x86_64.rpm
+  script: "echo" # unused but this line is required by GitLab CI
+  only:
+    - schedules
+
 build_cc7-dirac_image:
   stage: build_images
   tags:

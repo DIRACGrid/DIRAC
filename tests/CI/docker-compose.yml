@@ -28,7 +28,7 @@ services:
       retries: 10
 
   dirac-server:
-    image: ${CI_REGISTRY_IMAGE}/cc7-dirac
+    image: ${CI_REGISTRY_IMAGE}/${HOST_OS}-dirac
     container_name: server
     hostname: server
     depends_on:
@@ -38,7 +38,7 @@ services:
         condition: service_healthy
 
   dirac-client:
-    image: ${CI_REGISTRY_IMAGE}/cc7-dirac
+    image: ${CI_REGISTRY_IMAGE}/${HOST_OS}-dirac
     container_name: client
     hostname: client
     depends_on:

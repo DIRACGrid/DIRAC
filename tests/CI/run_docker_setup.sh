@@ -20,6 +20,7 @@ IFS=$'\n\t'
 BUILD_DIR=$PWD/integration_test_results
 mkdir -p "${BUILD_DIR}"
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+export HOST_OS=${HOST_OS:-cc7}
 
 # shellcheck source=tests/CI/CONFIG
 source "$SCRIPT_DIR/CONFIG"
