@@ -1,14 +1,4 @@
 #!/usr/bin/env python
-###############################################################################
-# (c) Copyright 2019 CERN for the benefit of the LHCb Collaboration           #
-#                                                                             #
-# This software is distributed under the terms of the GNU General Public      #
-# Licence version 3 (GPL Version 3), copied verbatim in the file "LICENSE".   #
-#                                                                             #
-# In applying this licence, CERN does not waive the privileges and immunities #
-# granted to it by virtue of its status as an Intergovernmental Organization  #
-# or submit itself to any jurisdiction.                                       #
-###############################################################################
 ########################################################################
 # File :    dirac-wms-pilot-job-info
 # Author :  Philippe Charpentier
@@ -16,6 +6,9 @@
 """
   Retrieve info about jobs run by the given pilot
 """
+
+from __future__ import print_function
+
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base import Script
@@ -65,7 +58,7 @@ for gridID in args:
     effRequested = False
     for jobID in sorted(jobIDs):
       result.setdefault(jobID, {})
-      for func in (dirac.parameters, dirac.attributes):
+      for func in (dirac.getJobParameters, dirac.getJobAttributes):
         res = func(jobID)
         if not res['OK']:
           errorList.append(('Job %d' % jobID, res['Message']))
@@ -84,7 +77,7 @@ for gridID in args:
               result[jobID]['%d.%s' % (i, param)] = params[param]
       if effRequested:
         result['CPUEfficiency'] = '%s %%' % (100. * totCPU / totWall)
-    print diracAdmin.pPrint.pformat({gridID: result})
+    print(diracAdmin.pPrint.pformat({gridID: result}))
 
 for error in errorList:
-  print "ERROR %s: %s" % error
+  print("ERROR %s: %s" % error)
