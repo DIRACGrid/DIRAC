@@ -11,7 +11,7 @@ import sys
 import os
 import shutil
 import tempfile
-import subprocess
+import subprocess32 as subprocess
 import shlex
 
 from DIRAC.Core.Utilities.File import mkDir
@@ -290,7 +290,8 @@ class TarModuleCreator(object):
             foundKeyWord = fileContents.find(keyWord)
             if foundKeyWord > -1:
               po2 = subprocess.Popen("git log -n 1 %s '%s' 2>/dev/null" % (cmdArgs, fileName),
-                                     stdout=subprocess.PIPE, cwd=dirToDo, shell=True)
+                                     stdout=subprocess.PIPE, cwd=dirToDo, shell=True,
+                                     universal_newlines=True)
               po2.wait()
               if po2.returncode:
                 continue
