@@ -62,7 +62,7 @@ import re
 import glob
 import stat
 import time
-import subprocess
+import subprocess32 as subprocess
 import shutil
 
 import DIRAC
@@ -1600,7 +1600,8 @@ class ComponentInstaller(object):
       if not cmdFound:
         gLogger.notice('Starting runsvdir ...')
         with open(os.devnull, 'w') as devnull:
-            subprocess.Popen(['nohup', 'runsvdir', self.startDir, 'log:  DIRAC runsv'], stdout=devnull, stderr=devnull)
+            subprocess.Popen(['nohup', 'runsvdir', self.startDir, 'log:  DIRAC runsv'],
+                             stdout=devnull, stderr=devnull, universal_newlines=True)
 
     if ['Configuration', 'Server'] in setupServices and setupConfigurationMaster:
       # This server hosts the Master of the CS
