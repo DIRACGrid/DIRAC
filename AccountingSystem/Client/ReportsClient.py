@@ -100,11 +100,10 @@ class ReportsClient(Client):
     transferClient = self.__getTransferClient()
     try:
       destFilename = "%s/%s" % (dirDestination, plotName)
-      destFile = open(destFilename, "wb")
+      with open(destFilename, "wb") as destFile:
+        retVal = transferClient.receiveFile(destFile, plotName)
+        if not retVal['OK']:
+          return retVal
     except Exception as e:
       return S_ERROR("Can't open file %s for writing: %s" % (destFilename, str(e)))
-    retVal = transferClient.receiveFile(destFile, plotName)
-    if not retVal['OK']:
-      return retVal
-    destFile.close()
     return S_OK()

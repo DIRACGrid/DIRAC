@@ -4,7 +4,8 @@
 __RCSID__ = "$Id$"
 
 from past.builtins import long
-import types
+
+import six
 import os
 import datetime
 
@@ -28,13 +29,13 @@ class ReportGeneratorHandler(RequestHandler):
   """
 
   __acDB = None
-  __reportRequestDict = {'typeName': types.StringTypes,
-                         'reportName': types.StringTypes,
+  __reportRequestDict = {'typeName': six.string_types,
+                         'reportName': six.string_types,
                          'startTime': (datetime.datetime, datetime.date),
                          'endTime': (datetime.datetime, datetime.date),
-                         'condDict': types.DictType,
-                         'grouping': types.StringTypes,
-                         'extraArgs': types.DictType}
+                         'condDict': dict,
+                         'grouping': six.string_types,
+                         'extraArgs': dict}
 
   @classmethod
   def initializeHandler(cls, serviceInfo):
@@ -50,8 +51,8 @@ class ReportGeneratorHandler(RequestHandler):
     mkDir(dataPath)
     try:
       testFile = "%s/acc.jarl.test" % dataPath
-      fd = open(testFile, "w")
-      fd.close()
+      with open(testFile, "w"):
+        pass
       os.unlink(testFile)
     except IOError:
       gLogger.fatal("Can't write to %s" % dataPath)

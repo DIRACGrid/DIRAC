@@ -36,12 +36,10 @@ roleCache = {}
 
 def writer(filename, writerQueue, stopFlag):
   print("entering writer")
-  outputFile = open(filename, 'w')
+  with open(filename, 'w') as outputFile:
+    while not stopFlag.value or not writerQueue.empty():
+      outputFile.write(writerQueue.get())
 
-  while not stopFlag.value or not writerQueue.empty():
-    outputFile.write(writerQueue.get())
-
-  outputFile.close()
   print("exciting writer stopValue %s" % stopFlag.value)
 
 
