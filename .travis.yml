@@ -30,7 +30,8 @@ install:
 script:
   - export PYTHONPATH=${PWD%/*}
   - ls $PYTHONPATH
-  - if [[ "${CHECK}" == "pytest"  ]]; then
+  - |
+    if [[ "${CHECK}" == "pytest"  ]]; then
       pytest;
     elif [[ "${CHECK}" == "pytest_M2Crypto"  ]]; then
       DIRAC_USE_M2CRYPTO=Yes pytest ;
