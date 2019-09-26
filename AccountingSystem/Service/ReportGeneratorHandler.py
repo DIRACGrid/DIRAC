@@ -144,7 +144,7 @@ class ReportGeneratorHandler(RequestHandler):
     reportRequest['generatePlot'] = False
     return reporter.generate(reportRequest, self.getRemoteCredentials())
 
-  types_listReports = [types.StringTypes]
+  types_listReports = [six.string_types]
 
   def export_listReports(self, typeName):
     """
@@ -156,7 +156,7 @@ class ReportGeneratorHandler(RequestHandler):
     reporter = MainReporter(self.__acDB, self.serviceInfoDict['clientSetup'])
     return reporter.list(typeName)
 
-  types_listUniqueKeyValues = [types.StringTypes]
+  types_listUniqueKeyValues = [six.string_types]
 
   def export_listUniqueKeyValues(self, typeName):
     """
