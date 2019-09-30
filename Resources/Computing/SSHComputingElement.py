@@ -240,6 +240,23 @@ class SSHComputingElement(ComputingElement):
     self.outputTemplate = ''
     self.errorTemplate = ''
 
+  ############################################################################
+  def setProxy(self, proxy, valid=0):
+    """
+    Set and prepare proxy to use
+
+    :param str proxy: proxy to use
+    :param int valid: proxy validity period
+    :return:  S_OK/S_ERROR
+    """
+    ComputingElement.setProxy(self, proxy, valid)
+    if self.ceParameters.get('SSHType', 'ssh') == 'gsissh':
+      result = self._prepareProxy()
+      if not result['OK']:
+        gLogger.error('SSHComputingElement: failed to set up proxy', result['Message'])
+        return result
+    return S_OK()
+
   #############################################################################
   def _addCEConfigDefaults(self):
     """Method to make sure all necessary Configuration Parameters are defined
