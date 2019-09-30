@@ -1386,7 +1386,7 @@ class SiteDirector(AgentModule):
       if newStatus:
         self.log.info('Updating status',
                       'to %s for pilot %s' % (newStatus, pRef))
-        result = pilotAgentsDB.setPilotStatus(pRef, newStatus, statusReason='Updated by SiteDirector')
+        result = pilotAgentsDB.setPilotStatus(pRef, newStatus, '', 'Updated by SiteDirector')
         if not result['OK']:
           self.log.error(result['Message'])
         if newStatus == "Aborted":

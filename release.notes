@@ -158,6 +158,14 @@ FIX: (#4119) Not lhcb but dteam (for DIRAC certification)
 FIX: (#4139) client_dms.sh not lhcb specific
 CHANGE:(#4140) adapt transformation certification tests to dteam VO
 
+[v6r21p16]
+
+*Resources
+FIX: (#4292) SSHComputingElement - define X509_USER_PROXY in case of gsissh access
+
+*WMS
+FIX: (#4292) SiteDirector - do not use keyword arguments when making setPilotStatus call
+
 [v6r21p15]
 
 *WMS
