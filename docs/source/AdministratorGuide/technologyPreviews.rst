@@ -14,9 +14,8 @@ M2Crypto
 We aim at replacing the home made wrapper of openssl pyGSI with the standard M2Crypto library. It is by default disabled.
 You can enable it by setting the environment variable `DIRAC_USE_M2CRYPTO` to `Yes`.
 
-===============
 Possible issues
-===============
+---------------
 
 M2Crypto (or any standard tool that respects TLS..) will be stricter than PyGSI. So you may need to adapt your environment a bit. Here are a few hints:
 
