@@ -9,7 +9,7 @@ CHANGE: (#4235) Removes locals() way of passing parameters
 *tests
 NEW: (#4179) Set up Gitlab CI pipeline using Docker containers
 
-[v7r1-pre8]
+[v7r1-pre9]
 
 *Core
 NEW: initial support for mysql8
@@ -43,6 +43,17 @@ NEW: (#4276) IdProvider resources to represent external user identity providers
 *tests
 CHANGE: (#4279) use VOMSSecurityManager for integration instead of PolicyBasedSecurityManager/VOMSPolicy
 FIX: (#4284) DMS client tests to use DIRAC user name, rather than the local system user name
+
+[v7r0p2]
+
+*Accounting
+FIX: (#4290) Allow longer user and site names.
+
+*WMS
+NEW: (#4287) dirac-wms-get-wn and dirac-wms-pilot-job-info scripts (ported from LHCbDIRAC)
+
+*docs
+CHANGE: (#4266) the AdministratorGuide has been restructured
 
 [v7r0p1]
 
