@@ -1,3 +1,14 @@
+[v7r0p2]
+
+*Accounting
+FIX: (#4290) Allow longer user and site names.
+
+*WMS
+NEW: (#4287) dirac-wms-get-wn and dirac-wms-pilot-job-info scripts (ported from LHCbDIRAC)
+
+*docs
+CHANGE: (#4266) the AdministratorGuide has been restructured
+
 [v7r0p1]
 
 FIX: Removing some deprecated codes
