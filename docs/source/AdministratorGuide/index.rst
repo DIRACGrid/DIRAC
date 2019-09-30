@@ -11,23 +11,19 @@ This administration documentation refers to the "Core" DIRAC project.
 
 
 .. toctree::
+   :maxdepth: 2
+
+   Introduction/index
+   ServerInstallations/index
+   HowTo/index
+   Configuration/index
+   Resources/index
+   Tutorials/index
+   technologyPreviews
+   Systems/index
+
+.. toctree::
    :maxdepth: 1
 
-   SetupStructure/index
-   InstallingDIRACService/index
-   InstallingWebAppDIRAC/index
-   InstallingVMDIRAC/index
-   SystemAdministratorInterface/index
-   InstallingAndConfiguringBasics/index
-   Configuration/index
-   Authentication/index
-   Systems/index
-   Resources/index
-   DIRACSites/index
-   MultiVO/index
    CommandReference/index
-   scalingAndLimitations
-   technologyPreviews
-   Tutorials/index
-   centralizedLogging
-   pitExport
+   
