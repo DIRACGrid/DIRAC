@@ -1,3 +1,11 @@
+[v6r21p16]
+
+*Resources
+FIX: (#4292) SSHComputingElement - define X509_USER_PROXY in case of gsissh access
+
+*WMS
+FIX: (#4292) SiteDirector - do not use keyword arguments when making setPilotStatus call
+
 [v6r21p15]
 
 *WMS
