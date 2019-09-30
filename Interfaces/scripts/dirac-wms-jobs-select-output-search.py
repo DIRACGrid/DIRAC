@@ -1,6 +1,5 @@
 #! /usr/bin/env python
 ########################################################################
-# $HeadURL$
 # File :    dirac-wms-jobs-select-output-search
 # Author :  Vladimir Romanovsky
 ########################################################################
@@ -14,24 +13,24 @@ from shutil import rmtree
 import DIRAC
 from DIRAC.Core.Base import Script
 
-Script.registerSwitch( "", "Status=", "Primary status" )
-Script.registerSwitch( "", "MinorStatus=", "Secondary status" )
-Script.registerSwitch( "", "ApplicationStatus=", "Application status" )
-Script.registerSwitch( "", "Site=", "Execution site" )
-Script.registerSwitch( "", "Owner=", "Owner (DIRAC nickname)" )
-Script.registerSwitch( "", "JobGroup=", "Select jobs for specified job group" )
-Script.registerSwitch( "", "Date=", "Date in YYYY-MM-DD format, if not specified default is today" )
-Script.registerSwitch( "", "File=", "File name,if not specified default is std.out " )
-Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
-                                     'Usage:',
-                                     '  %s [option|cfgfile] ... String ...' % Script.scriptName,
-                                     'Arguments:',
-                                     '  String:   string to search for' ] ) )
+Script.registerSwitch("", "Status=", "Primary status")
+Script.registerSwitch("", "MinorStatus=", "Secondary status")
+Script.registerSwitch("", "ApplicationStatus=", "Application status")
+Script.registerSwitch("", "Site=", "Execution site")
+Script.registerSwitch("", "Owner=", "Owner (DIRAC nickname)")
+Script.registerSwitch("", "JobGroup=", "Select jobs for specified job group")
+Script.registerSwitch("", "Date=", "Date in YYYY-MM-DD format, if not specified default is today")
+Script.registerSwitch("", "File=", "File name,if not specified default is std.out ")
+Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
+                                  'Usage:',
+                                  '  %s [option|cfgfile] ... String ...' % Script.scriptName,
+                                  'Arguments:',
+                                  '  String:   string to search for']))
 
-Script.parseCommandLine( ignoreErrors = True )
+Script.parseCommandLine(ignoreErrors=True)
 args = Script.getPositionalArgs()
 
-#Default values
+# Default values
 status = None
 minorStatus = None
 appStatus = None
@@ -41,10 +40,10 @@ jobGroup = None
 date = None
 filename = 'std.out'
 
-if len( args ) != 1:
+if len(args) != 1:
   Script.showHelp()
 
-searchstring = str( args[0] )
+searchstring = str(args[0])
 
 for switch in Script.getUnprocessedSwitches():
   if switch[0].lower() == "status":
@@ -75,35 +74,35 @@ exitCode = 0
 errorList = []
 resultDict = {}
 
-result = dirac.selectJobs( status = status, minorStatus = minorStatus, applicationStatus = appStatus,
-                           site = site, owner = owner, jobGroup = jobGroup, date = date )
+result = dirac.selectJobs(status=status, minorStatus=minorStatus, applicationStatus=appStatus,
+                          site=site, owner=owner, jobGroup=jobGroup, date=date)
 if result['OK']:
   jobs = result['Value']
 else:
   print("Error in selectJob", result['Message'])
-  DIRAC.exit( 2 )
+  DIRAC.exit(2)
 
 for job in jobs:
 
-  result = dirac.getOutputSandbox( job )
+  result = dirac.getOutputSandbox(job)
   if result['OK']:
-    if os.path.exists( '%s' % job ):
+    if os.path.exists('%s' % job):
 
       lines = []
       try:
-        lines = open( os.path.join( job, filename ) ).readlines()
+        lines = open(os.path.join(job, filename)).readlines()
       except Exception as x:
-        errorList.append( ( job, x ) )
+        errorList.append((job, x))
       for line in lines:
-        if line.count( searchstring ):
+        if line.count(searchstring):
           resultDict[job] = line
-      rmtree( "%s" % ( job ) )
+      rmtree("%s" % (job))
   else:
-    errorList.append( ( job, result['Message'] ) )
+    errorList.append((job, result['Message']))
     exitCode = 2
 
 for result in resultDict.iteritems():
   print(result)
 
 
-DIRAC.exit( exitCode )
+DIRAC.exit(exitCode)
