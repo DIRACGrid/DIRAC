@@ -250,7 +250,7 @@ class SSHComputingElement(ComputingElement):
     :return:  S_OK/S_ERROR
     """
     ComputingElement.setProxy(self, proxy, valid)
-    if self.ceParameters.get('SSHType','ssh') == 'gsissh':
+    if self.ceParameters.get('SSHType', 'ssh') == 'gsissh':
       result = self._prepareProxy()
       if not result['OK']:
         gLogger.error('SSHComputingElement: failed to set up proxy', result['Message'])
