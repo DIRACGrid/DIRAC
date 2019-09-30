@@ -81,6 +81,7 @@ class ComputingElement(object):
     """
     self.proxy = proxy
     self.valid = dateTime() + second * valid
+    return S_OK()
 
   def _prepareProxy(self):
     """ Set the environment variable X509_USER_PROXY
