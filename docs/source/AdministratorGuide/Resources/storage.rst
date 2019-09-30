@@ -1,7 +1,8 @@
 .. _resourcesStorageElement:
 
+==============
 StorageElement
---------------
+==============
 
 
 

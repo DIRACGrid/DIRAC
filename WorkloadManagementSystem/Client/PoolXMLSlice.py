@@ -4,68 +4,69 @@
     value pairs.
 """
 
-from DIRAC.Resources.Catalog.PoolXMLCatalog                         import PoolXMLCatalog
-from DIRAC                                                          import S_OK, S_ERROR, gLogger
+from DIRAC.Resources.Catalog.PoolXMLCatalog import PoolXMLCatalog
+from DIRAC import S_OK, S_ERROR, gLogger
 
-import os, types
+import os
 
 __RCSID__ = "$Id$"
 
 COMPONENT_NAME = 'PoolXMLSlice'
 
-class PoolXMLSlice( object ):
+
+class PoolXMLSlice(object):
 
   #############################################################################
-  def __init__( self, catalogName ):
+  def __init__(self, catalogName):
     """ Standard constructor
     """
     self.fileName = catalogName
     self.name = COMPONENT_NAME
-    self.log = gLogger.getSubLogger( self.name )
+    self.log = gLogger.getSubLogger(self.name)
 
   #############################################################################
-  def execute( self, dataDict ):
+  def execute(self, dataDict):
     """ Given a dictionary of resolved input data, this will creates a POOL XML slice.
     """
     poolXMLCatName = self.fileName
     try:
       poolXMLCat = PoolXMLCatalog()
-      self.log.verbose( 'Creating POOL XML slice' )
+      self.log.verbose('Creating POOL XML slice')
 
       for lfn, mdataList in dataDict.items():
         # lfn,pfn,se,guid tuple taken by POOL XML Catalogue
-        if type( mdataList ) != types.ListType:
+        if not isinstance(mdataList, list):
           mdataList = [mdataList]
         # As a file may have several replicas, set first the file, then the replicas
-        poolXMLCat.addFile( ( lfn, None, None, mdataList[0]['guid'], None ) )
+        poolXMLCat.addFile((lfn, None, None, mdataList[0]['guid'], None))
         for mdata in mdataList:
           path = ''
           if 'path' in mdata:
             path = mdata['path']
-          elif os.path.exists( os.path.basename( mdata['pfn'] ) ):
-            path = os.path.abspath( os.path.basename( mdata['pfn'] ) )
+          elif os.path.exists(os.path.basename(mdata['pfn'])):
+            path = os.path.abspath(os.path.basename(mdata['pfn']))
           else:
             path = mdata['turl']
-          poolXMLCat.addReplica( ( lfn, path, mdata['se'], False ) )
+          poolXMLCat.addReplica((lfn, path, mdata['se'], False))
 
       xmlSlice = poolXMLCat.toXML()
-      self.log.verbose( 'POOL XML Slice is: ' )
-      self.log.verbose( xmlSlice )
-      with open( poolXMLCatName, 'w' ) as poolSlice:
-        poolSlice.write( xmlSlice )
-      self.log.info( 'POOL XML Catalogue slice written to %s' % ( poolXMLCatName ) )
+      self.log.verbose('POOL XML Slice is: ')
+      self.log.verbose(xmlSlice)
+      with open(poolXMLCatName, 'w') as poolSlice:
+        poolSlice.write(xmlSlice)
+      self.log.info('POOL XML Catalogue slice written to %s' % (poolXMLCatName))
       try:
         # Temporary solution to the problem of storing the SE in the Pool XML slice
-        poolSlice_temp = open( '%s.temp' % ( poolXMLCatName ), 'w' )
-        xmlSlice = poolXMLCat.toXML( True )
-        poolSlice_temp.write( xmlSlice )
+        poolSlice_temp = open('%s.temp' % (poolXMLCatName), 'w')
+        xmlSlice = poolXMLCat.toXML(True)
+        poolSlice_temp.write(xmlSlice)
         poolSlice_temp.close()
       except Exception as x:
-        self.log.warn( 'Attempted to write catalog also to %s.temp but this failed' % ( poolXMLCatName ) )
+        self.log.warn('Attempted to write catalog also to %s.temp but this failed' % (poolXMLCatName))
     except Exception as x:
-      self.log.error( str( x ) )
-      return S_ERROR( 'Exception during construction of POOL XML slice' )
+      self.log.error(str(x))
+      return S_ERROR('Exception during construction of POOL XML slice')
 
-    return S_OK( 'POOL XML Slice created' )
+    return S_OK('POOL XML Slice created')
 
 # EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

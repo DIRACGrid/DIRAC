@@ -1,6 +1,8 @@
-===========
-Limitations
-===========
+.. _scalingLimitations:
+
+=========================
+Dirac Service Limitations
+=========================
 
 
 DataManagement
@@ -35,9 +37,9 @@ In case of the Managers WithPkAndPs (LHCb):
 
 
 
-=======
-Scaling
-=======
+========================
+Performance Optimisation
+========================
 
 
 Servers

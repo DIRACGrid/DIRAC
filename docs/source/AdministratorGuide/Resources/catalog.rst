@@ -1,8 +1,8 @@
 .. _resourcesCatalog:
 
--------
-Catalog
--------
+========
+Catalogs
+========
 
 Catalogs represent the namespace in DIRAC. They are queried based on the LFN. Even if one is used as a reference (see `Master catalog`), you can use several catalogs in parallel. Every catalog has read and write methods.
 

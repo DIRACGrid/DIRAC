@@ -1,8 +1,8 @@
 .. _configuration_message_queues:
 
-==================
+==============
 Message Queues
-==================
+==============
 
 Message Queues are services for passing messages between DIRAC components.
 These services are not part necessarily of the DIRAC software and are provided
@@ -97,9 +97,9 @@ like described in :ref:`development_use_mq`, for example::
 
 In order not to spam the logs, the log output of Stomp is always silence, unless the environment variable `DIRAC_DEBUG_STOMP` is set to any value.
 
-====================================
+
 Message Queue nomenclature in DIRAC
-====================================
+-----------------------------------
 
 * MQ - Message Queue System e.g. RabbitMQ
 * mqMessenger - processes that send or receive messages to/from the MQ system.

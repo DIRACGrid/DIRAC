@@ -26,7 +26,7 @@ These components are combined together to form *Systems*.
 a *System* is delivering a complex functionality to the rest of DIRAC, providing a solution for a given class of tasks.
 Examples of *Systems* are Workload Management System or Configuration System or Data Management System.
 
-And then there are databses, which keep the persistent state of a *System*.
+And then there are databases, which keep the persistent state of a *System*.
 They are accessed by Services and Agents as a kind of shared memory.
 
 To achieve a functional DIRAC installation, cooperation of different *Systems* is required. 
