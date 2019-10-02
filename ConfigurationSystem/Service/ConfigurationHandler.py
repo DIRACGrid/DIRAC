@@ -3,10 +3,12 @@
 
 __RCSID__ = "$Id$"
 
-from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.private.ServiceInterface import ServiceInterface
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities import DErrno
+from DIRAC.Core.Security.Properties import CS_ADMINISTRATOR
 
 gServiceInterface = None
 gPilotSynchronizer = None
@@ -24,18 +26,21 @@ class ConfigurationHandler(RequestHandler):
 
   types_getVersion = []
 
-  def export_getVersion(self):
+  @classmethod
+  def export_getVersion(cls):
     return S_OK(gServiceInterface.getVersion())
 
   types_getCompressedData = []
 
-  def export_getCompressedData(self):
+  @classmethod
+  def export_getCompressedData(cls):
     sData = gServiceInterface.getCompressedConfigurationData()
     return S_OK(sData)
 
   types_getCompressedDataIfNewer = [basestring]
 
-  def export_getCompressedDataIfNewer(self, sClientVersion):
+  @classmethod
+  def export_getCompressedDataIfNewer(cls, sClientVersion):
     sVersion = gServiceInterface.getVersion()
     retDict = {'newestVersion': sVersion}
     if sClientVersion < sVersion:
@@ -44,7 +49,8 @@ class ConfigurationHandler(RequestHandler):
 
   types_publishSlaveServer = [basestring]
 
-  def export_publishSlaveServer(self, sURL):
+  @classmethod
+  def export_publishSlaveServer(cls, sURL):
     gServiceInterface.publishSlaveServer(sURL)
     return S_OK()
 
@@ -60,12 +66,15 @@ class ConfigurationHandler(RequestHandler):
       return res
 
     # Check the flag for updating the pilot 3 JSON file
-    updatePilotCStoJSONFileFlag = self.srv_getCSOption('UpdatePilotCStoJSONFile', False)
+    updatePilotCStoJSONFileFlag = Operations().getValue('Pilot/UpdatePilotCStoJSONFile', True)
+    if updatePilotCStoJSONFileFlag in ['no', 'No', False, 'False', 'false']:
+      updatePilotCStoJSONFileFlag = False
+
     if updatePilotCStoJSONFileFlag and gServiceInterface.isMaster():
       if gPilotSynchronizer is None:
         try:
           # This import is only needed for the Master CS service, making it conditional avoids
-          # dependency on the git client preinstalled on all the servers running CS slaves
+          # dependency on the git client pre-installed on all the servers running CS slaves
           from DIRAC.WorkloadManagementSystem.Utilities.PilotCStoJSONSynchronizer import PilotCStoJSONSynchronizer
         except ImportError as exc:
           self.log.exception("Failed to import PilotCStoJSONSynchronizer", repr(exc))
@@ -75,14 +84,27 @@ class ConfigurationHandler(RequestHandler):
 
     return res
 
+  types_forceGlobalConfigurationUpdate = []
+  auth_forceGlobalConfigurationUpdate = [CS_ADMINISTRATOR]
+
+  def export_forceGlobalConfigurationUpdate(self):
+    """
+    Attempt to request all the configured services to update their configuration
+
+    :return: S_OK, Value Successful/Failed dict with service URLs
+    """
+    return gServiceInterface.forceGlobalUpdate()
+
   types_writeEnabled = []
 
-  def export_writeEnabled(self):
+  @classmethod
+  def export_writeEnabled(cls):
     return S_OK(gServiceInterface.isMaster())
 
   types_getCommitHistory = []
 
-  def export_getCommitHistory(self, limit=100):
+  @classmethod
+  def export_getCommitHistory(cls, limit=100):
     if limit > 100:
       limit = 100
     history = gServiceInterface.getCommitHistory()
@@ -92,7 +114,8 @@ class ConfigurationHandler(RequestHandler):
 
   types_getVersionContents = [list]
 
-  def export_getVersionContents(self, versionList):
+  @classmethod
+  def export_getVersionContents(cls, versionList):
     contentsList = []
     for version in versionList:
       retVal = gServiceInterface.getVersionContents(version)

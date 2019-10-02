@@ -1,7 +1,9 @@
 """
  Set of utilities to retrieve Information from proxy
 """
+from __future__ import division
 
+import six
 import base64
 
 from DIRAC import S_OK, S_ERROR
@@ -45,7 +47,7 @@ def getProxyInfo(proxy=False, disableVOMS=False):
   else:
     if not proxy:
       proxyLocation = Locations.getProxyLocation()
-    elif isinstance(proxy, basestring):
+    elif isinstance(proxy, six.string_types):
       proxyLocation = proxy
     if not proxyLocation:
       return S_ERROR(DErrno.EPROXYFIND)
@@ -94,7 +96,7 @@ def formatProxyInfoAsString(infoDict):
   for field in ('subject', 'issuer', 'identity', 'subproxyUser', ('secondsLeft', 'timeleft'),
                 ('group', 'DIRAC group'), 'rfc', 'path', 'username', ('groupProperties', "properties"),
                 ('hasVOMS', 'VOMS'), ('VOMS', 'VOMS fqan'), ('VOMSError', 'VOMS Error')):
-    if isinstance(field, basestring):
+    if isinstance(field, six.string_types):
       dispField = field
     else:
       dispField = field[1]

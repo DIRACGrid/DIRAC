@@ -543,10 +543,10 @@ File Catalog Client $Revision: 1.17 $Date:
         print("Failed to add file to the catalog: ", end=' ')
         print(result['Message'])
       elif result['Value']['Failed']:
-        if result['Value']['Failed'].has_key(lfn):
+        if lfn in result['Value']['Failed']:
           print('Failed to add file:', result['Value']['Failed'][lfn])
       elif result['Value']['Successful']:
-        if result['Value']['Successful'].has_key(lfn):
+        if lfn in result['Value']['Successful']:
           print("File successfully added to the catalog")
     except Exception as x:
       print("add file failed: ", str(x))
@@ -924,10 +924,10 @@ File Catalog Client $Revision: 1.17 $Date:
     result =  self.fc.createDirectory(newdir)    
     if result['OK']:
       if result['Value']['Successful']:
-        if result['Value']['Successful'].has_key(newdir):
+        if newdir in result['Value']['Successful']:
           print("Successfully created directory:", newdir)
       elif result['Value']['Failed']:
-        if result['Value']['Failed'].has_key(newdir):  
+        if newdir in result['Value']['Failed']:  
           print('Failed to create directory:', result['Value']['Failed'][newdir])
     else:
       print('Failed to create directory:', result['Message'])

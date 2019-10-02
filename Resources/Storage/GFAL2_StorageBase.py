@@ -10,6 +10,8 @@
 # pylint: disable=arguments-differ
 
 # # imports
+from past.builtins import long
+import six
 import os
 import datetime
 import errno
@@ -74,9 +76,6 @@ class GFAL2_StorageBase(StorageBase):
 
     # by default turn off BDII checks
     self.ctx.set_opt_boolean("BDII", "ENABLE", False)
-
-    # FIXME: Avoid caching because of a bug in globus (https://its.cern.ch/jira/browse/DMC-853)
-    self.ctx.set_opt_boolean("GRIDFTP PLUGIN", "SESSION_REUSE", False)
 
     # Enable IPV6 for gsiftp
     self.ctx.set_opt_boolean("GRIDFTP PLUGIN", "IPV6", True)
@@ -809,7 +808,7 @@ class GFAL2_StorageBase(StorageBase):
     log = self.log.getSubLogger("GFAL2_StorageBase.__prestageSingleFileStatus")
     log.debug("Checking prestage file status for %s" % path)
     # also allow int as token - converting them to strings
-    if not isinstance(token, basestring):
+    if not isinstance(token, six.string_types):
       token = str(token)
 
     try:
@@ -937,7 +936,7 @@ class GFAL2_StorageBase(StorageBase):
     """
     log = self.log.getSubLogger("GFAL2_StorageBase.__releaseSingleFile")
     log.debug("Attempting to release single file: %s" % path)
-    if not isinstance(token, basestring):
+    if not isinstance(token, six.string_types):
       token = str(token)
     try:
       self.ctx.set_opt_boolean("BDII", "ENABLE", True)

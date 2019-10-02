@@ -25,6 +25,7 @@ __RCSID__ = "$Id$"
 # @brief Definition of RequestTests class.
 
 # # imports
+import six
 import unittest
 import datetime
 # # from DIRAC
@@ -38,7 +39,7 @@ from DIRAC.RequestManagementSystem.Client.ReqClient import printRequest
 def optimizeRequest(req, printOutput=None):
   from DIRAC import gLogger
   if printOutput:
-    if isinstance(printOutput, basestring):
+    if isinstance(printOutput, six.string_types):
       gLogger.always('Request %s:' % printOutput)
     printRequest(req)
     gLogger.always('=========== Optimized ===============')

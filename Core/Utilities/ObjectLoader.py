@@ -3,6 +3,7 @@
 
 __RCSID__ = "$Id$"
 
+import six
 import re
 import imp
 import pkgutil
@@ -81,7 +82,7 @@ class ObjectLoader(object):
   def __recurseImport(self, modName, parentModule=None, hideExceptions=False, fullName=False):
     """ Internal function to load modules
     """
-    if isinstance(modName, basestring):
+    if isinstance(modName, six.string_types):
       modName = List.fromChar(modName, ".")
     if not fullName:
       fullName = ".".join(modName)
@@ -164,7 +165,7 @@ class ObjectLoader(object):
     else:
       modules = {}
 
-    if isinstance(reFilter, basestring):
+    if isinstance(reFilter, six.string_types):
       reFilter = re.compile(reFilter)
 
     for rootModule in self.__rootModules:

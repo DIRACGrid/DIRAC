@@ -68,7 +68,7 @@ def libc_ver( executable = sys.executable, lib = '', version = '',
       elif so:
         if lib != 'glibc':
           lib = 'libc'
-          version = max( version, soversion )
+          version = max(version, soversion) if soversion else version
           if threads and version[-len( threads ):] != threads:
             version = version + threads
       pos = m.end()

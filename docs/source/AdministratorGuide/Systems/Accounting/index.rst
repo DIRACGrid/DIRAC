@@ -73,6 +73,9 @@ For instance::
     
 With the previous configuration all accounting data will be stored and retrieved from the usual database except for the _WMSHistory_ type that will be stored and retrieved from the _Acc2_ database.
 
+
+.. _datastorehelpers:
+
 DataStore Helpers
 ======================
 From DIRAC v6r17p14 there is the possibility to run multiple 'DataStore' services, where one

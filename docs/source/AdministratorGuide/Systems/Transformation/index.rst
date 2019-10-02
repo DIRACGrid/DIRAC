@@ -177,7 +177,6 @@ Configuration
           TransType = DataReconstruction
           TransType += DataStripping
           shifterProxy = DataProcessing
-          LoadName = WorkflowTaskAgent-RealData
           Module = WorkflowTaskAgent
         }
         WorkflowTaskAgent-Simulation
@@ -185,7 +184,6 @@ Configuration
           TransType = Simulation
           TransType += MCSimulation
           shifterProxy = SimulationProcessing
-          LoadName = WorkflowTaskAgent-RealData
           Module = WorkflowTaskAgent
         }
         RequestTaskAgent

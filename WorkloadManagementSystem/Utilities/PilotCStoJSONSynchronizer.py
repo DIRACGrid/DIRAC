@@ -38,7 +38,7 @@ class PilotCStoJSONSynchronizer(object):
     """
     self.jsonFile = 'pilot.json'  # default filename of the pilot json file
 
-    # domain name of the web server used to upload the pilot json file and the pilot scripts
+    # domain name of the web server(s) used to upload the pilot json file and the pilot scripts
     self.pilotFileServer = ''
 
     # pilot sync parameters
@@ -65,9 +65,9 @@ class PilotCStoJSONSynchronizer(object):
 
     self.pilotFileServer = ops.getValue("Pilot/pilotFileServer", self.pilotFileServer)
     if not self.pilotFileServer:
-      self.log.warn("The /Operations/<Setup>/Pilot/pilotFileServer option is not defined")
-      self.log.warn("Pilot 3 files won't be updated, and you won't be able to use Pilot 3")
-      self.log.warn("The Synchronization steps are anyway displayed")
+      self.log.error("The /Operations/<Setup>/Pilot/pilotFileServer option is not defined")
+      self.log.error("Pilot 3 files won't be updated, and you won't be able to send pilots")
+      return S_ERROR("The /Operations/<Setup>/Pilot/pilotFileServer option is not defined")
 
     self.log.notice('-- Synchronizing the content of the JSON file with the content of the CS --',
                     '(%s)' % self.jsonFile)
@@ -373,13 +373,14 @@ class PilotCStoJSONSynchronizer(object):
         script = psf.read()
       data = {'filename': filename, 'data': script}
 
-    resp = requests.post('https://%s/DIRAC/upload' % self.pilotFileServer,
-                         data=data,
-                         verify=self.casLocation,
-                         cert=self.certAndKeyLocation)
+    for pfServer in self.pilotFileServer.replace(' ', '').split(','):
+      resp = requests.post('https://%s/DIRAC/upload' % pfServer,
+                           data=data,
+                           verify=self.casLocation,
+                           cert=self.certAndKeyLocation)
 
-    if resp.status_code != 200:
-      return S_ERROR(resp.text)
-    else:
-      self.log.info('-- File and scripts upload done --')
-      return S_OK()
+      if resp.status_code != 200:
+        return S_ERROR(resp.text)
+
+    self.log.info('-- File and scripts upload done --')
+    return S_OK()

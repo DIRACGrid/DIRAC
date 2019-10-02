@@ -17,8 +17,9 @@ python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/Core/Test_Elasticsear
 
 #-------------------------------------------------------------------------------#
 echo -e '***' $(date -u) "**** FRAMEWORK TESTS (partially skipped) ****\n"
-python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/Framework/Test_InstalledComponentsDB.py >> serverTestOutputs.txt 2>&1
-#pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/Framework/Test_LoggingDB.py >> serverTestOutputs.txt 2>&1
+python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/Framework/Test_InstalledComponentsDB.py >> testOutputs.txt 2>&1
+python $SERVERINSTALLDIR/DIRAC/tests/Integration/Framework/Test_ProxyDB.py >> testOutputs.txt 2>&1
+#pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/Framework/Test_LoggingDB.py >> testOutputs.txt 2>&1
 
 
 #-------------------------------------------------------------------------------#
@@ -33,7 +34,7 @@ python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSys
 python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_JobLoggingDB.py >> serverTestOutputs.txt 2>&1
 python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_TaskQueueDB.py >> serverTestOutputs.txt 2>&1
 python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_ElasticJobDB.py >> serverTestOutputs.txt 2>&1
-
+python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_JobParameters_MySQLandES.py >> serverTestOutputs.txt 2>&1
 
 #-------------------------------------------------------------------------------#
 echo -e '***' $(date -u)  "**** DMS TESTS ****\n"
@@ -77,7 +78,8 @@ pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/Monitoring/Test_MonitoringRepor
 
 #-------------------------------------------------------------------------------#
 echo -e '***' $(date -u)  "**** Resources TESTS ****\n"
-python $SERVERINSTALLDIR/DIRAC/tests/Integration/Resources/Storage/Test_Resources_GFAL2StorageBase.py ProductionSandboxSE >> serverTestOutputs.txt 2>&1
+python $SERVERINSTALLDIR/DIRAC/tests/Integration/Resources/Storage/Test_Resources_GFAL2StorageBase.py ProductionSandboxSE >> testOutputs.txt 2>&1
+python $SERVERINSTALLDIR/DIRAC/tests/Integration/Resources/ProxyProvider/Test_DIRACCAProxyProvider.py >> testOutputs.txt 2>&1
 
 # Can only run if there's a Stomp MQ local... 
 # python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/Resources/MessageQueue/Test_ActiveClose.py >> serverTestOutputs.txt 2>&1

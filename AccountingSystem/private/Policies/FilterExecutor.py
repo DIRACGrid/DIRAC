@@ -1,6 +1,5 @@
-
-import types
 from DIRAC import S_OK, S_ERROR, gLogger
+
 
 class FilterExecutor:
 
@@ -29,13 +28,13 @@ class FilterExecutor:
   def addFilter( self, iD, myFilter ):
     if iD not in self.__filters:
       self.__filters[ iD ] = []
-    if type( myFilter ) in ( types.ListType, types.TupleType ):
+    if isinstance(myFilter, (list, tuple)):
       self.__filters[ iD ].extend( myFilter )
     else:
       self.__filters[ iD ].append( myFilter )
 
   def addGlobalFilter( self, myFilter ):
-    if type( myFilter ) in ( types.ListType, types.TupleType ):
+    if isinstance(myFilter, (list, tuple)):
       self.__globalFilters.extend( myFilter )
     else:
       self.__globalFilters.append( myFilter )

@@ -65,6 +65,76 @@ def helloWorld():
   return endOfAllJobs(J)
 
 
+def helloWorldCERN():
+  """ simple hello world job to CERN
+  """
+
+  J = baseToAllJobs('helloWorld')
+  try:
+    J.setInputSandbox([find_all('exe-script.py', rootPath, 'DIRAC/tests/Workflow')[0]])
+  except IndexError:  # we are in Jenkins
+    J.setInputSandbox([find_all('exe-script.py', os.environ['WORKSPACE'], 'DIRAC/tests/Workflow')[0]])
+  J.setExecutable("exe-script.py", "", "helloWorld.log")
+  J.setDestination('LCG.CERN.cern')
+  return endOfAllJobs(J)
+
+
+def helloWorldNCBJ():
+  """ simple hello world job to NCBJ
+  """
+
+  J = baseToAllJobs('helloWorld')
+  try:
+    J.setInputSandbox([find_all('exe-script.py', rootPath, 'DIRAC/tests/Workflow')[0]])
+  except IndexError:  # we are in Jenkins
+    J.setInputSandbox([find_all('exe-script.py', os.environ['WORKSPACE'], 'DIRAC/tests/Workflow')[0]])
+  J.setExecutable("exe-script.py", "", "helloWorld.log")
+  J.setDestination('LCG.NCBJ.pl')
+  return endOfAllJobs(J)
+
+
+def helloWorldGRIDKA():
+  """ simple hello world job to GRIDKA
+  """
+
+  J = baseToAllJobs('helloWorld')
+  try:
+    J.setInputSandbox([find_all('exe-script.py', rootPath, 'DIRAC/tests/Workflow')[0]])
+  except IndexError:  # we are in Jenkins
+    J.setInputSandbox([find_all('exe-script.py', os.environ['WORKSPACE'], 'DIRAC/tests/Workflow')[0]])
+  J.setExecutable("exe-script.py", "", "helloWorld.log")
+  J.setDestination('LCG.GRIDKA.de')
+  return endOfAllJobs(J)
+
+
+def helloWorldGRIF():
+  """ simple hello world job to GRIF
+  """
+
+  J = baseToAllJobs('helloWorld')
+  try:
+    J.setInputSandbox([find_all('exe-script.py', rootPath, 'DIRAC/tests/Workflow')[0]])
+  except IndexError:  # we are in Jenkins
+    J.setInputSandbox([find_all('exe-script.py', os.environ['WORKSPACE'], 'DIRAC/tests/Workflow')[0]])
+  J.setExecutable("exe-script.py", "", "helloWorld.log")
+  J.setDestination('LCG.GRIF.fr')
+  return endOfAllJobs(J)
+
+
+def helloWorldSSHBatch():
+  """ simple hello world job to DIRAC.Jenkins_SSHBatch.ch
+  """
+
+  J = baseToAllJobs('helloWorld')
+  try:
+    J.setInputSandbox([find_all('exe-script.py', rootPath, 'DIRAC/tests/Workflow')[0]])
+  except IndexError:  # we are in Jenkins
+    J.setInputSandbox([find_all('exe-script.py', os.environ['WORKSPACE'], 'DIRAC/tests/Workflow')[0]])
+  J.setExecutable("exe-script.py", "", "helloWorld.log")
+  J.setDestination('DIRAC.Jenkins_SSHBatch.ch')
+  return endOfAllJobs(J)
+
+
 def mpJob():
   """ simple hello world job, with 4Processors and MultiProcessor tags
   """

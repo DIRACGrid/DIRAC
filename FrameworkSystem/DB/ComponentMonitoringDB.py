@@ -1,6 +1,7 @@
 """ ComponentMonitoring class is a front-end to the Component monitoring Database
 """
 
+import six
 import random
 
 from DIRAC import gConfig, S_OK, S_ERROR
@@ -80,7 +81,7 @@ class ComponentMonitoringDB(DB):
     return self._createTables(tablesD)
 
   def __datetime2str(self, dt):
-    if isinstance(dt, basestring):
+    if isinstance(dt, six.string_types):
       return dt
     return "%s-%s-%s %s:%s:%s" % (dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second)
 
@@ -226,9 +227,9 @@ class ComponentMonitoringDB(DB):
     sqlWhere = []
     for field in condDict:
       val = condDict[field]
-      if isinstance(val, basestring):
+      if isinstance(val, six.string_types):
         sqlWhere.append("%s='%s'" % (field, val))
-      elif isinstance(val, (int, long, float)):
+      elif isinstance(val, six.integer_types + (float,)):
         sqlWhere.append("%s='%s'" % (field, val))
       else:
         sqlWhere.append("( %s )" % " OR ".join(["%s='%s'" % (field, v) for v in val]))

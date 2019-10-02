@@ -7,6 +7,7 @@
     for applications.
 """
 
+import six
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.ModuleFactory import ModuleFactory
@@ -101,7 +102,7 @@ class InputDataResolution(object):
     policy = self.arguments['Job'].get('InputDataPolicy', [])
     if policy:
       # In principle this can be a list of modules with the first taking precedence
-      if isinstance(policy, basestring):
+      if isinstance(policy, six.string_types):
         policy = [policy]
       self.log.info('Job has a specific policy setting: %s' % (', '.join(policy)))
     else:

@@ -2,6 +2,7 @@
 Classes and functions for easier management of the InstalledComponents database
 """
 
+import six
 import re
 import datetime
 from sqlalchemy import MetaData, Column, Integer, String, DateTime, create_engine, text
@@ -429,15 +430,15 @@ class InstalledComponentsDB(object):
         actualKey = key.replace('.smaller', '')
 
       if matchFields[key] is None:
-        sql = '%s IS NULL' % (actualKey)
+        sql = '`%s` IS NULL' % (actualKey)
       elif isinstance(matchFields[key], list):
         if len(matchFields[key]) > 0 and None not in matchFields[key]:
-          sql = '%s IN ( ' % (actualKey)
+          sql = '`%s` IN ( ' % (actualKey)
           for i, element in enumerate(matchFields[key]):
             toAppend = element
             if isinstance(toAppend, datetime.datetime):
               toAppend = toAppend.strftime("%Y-%m-%d %H:%M:%S")
-            if isinstance(toAppend, basestring):
+            if isinstance(toAppend, six.string_types):
               toAppend = '\'%s\'' % (toAppend)
             if i == 0:
               sql = '%s%s' % (sql, toAppend)
@@ -446,15 +447,15 @@ class InstalledComponentsDB(object):
           sql = '%s )' % (sql)
         else:
           continue
-      elif isinstance(matchFields[key], basestring):
-        sql = '%s %s \'%s\'' % (actualKey, comparison, matchFields[key])
+      elif isinstance(matchFields[key], six.string_types):
+        sql = '`%s` %s \'%s\'' % (actualKey, comparison, matchFields[key])
       elif isinstance(matchFields[key], datetime.datetime):
         sql = '%s %s \'%s\'' % \
             (actualKey,
              comparison,
              matchFields[key].strftime("%Y-%m-%d %H:%M:%S"))
       else:
-        sql = '%s %s %s' % (actualKey, comparison, matchFields[key])
+        sql = '`%s` %s %s' % (actualKey, comparison, matchFields[key])
 
       filteredTemp = filtered.filter(text(sql))
       try:

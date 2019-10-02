@@ -10,6 +10,7 @@
 
 __RCSID__ = "$Id$"
 
+import six
 import os
 import stat
 
@@ -38,7 +39,8 @@ class ARCComputingElement(ComputingElement):
   def __init__(self, ceUniqueID):
     """ Standard constructor.
     """
-    ComputingElement.__init__(self, ceUniqueID)
+    super(ARCComputingElement, self).__init__(ceUniqueID)
+
     self.ceType = CE_NAME
     self.submittedJobs = 0
     self.mandatoryParameters = MANDATORY_PARAMETERS
@@ -285,7 +287,7 @@ class ARCComputingElement(ComputingElement):
     self.usercfg.ProxyPath(os.environ['X509_USER_PROXY'])
 
     jobList = list(jobIDList)
-    if isinstance(jobIDList, basestring):
+    if isinstance(jobIDList, six.string_types):
       jobList = [jobIDList]
 
     gLogger.debug("Killing jobs %s" % jobIDList)
@@ -362,7 +364,7 @@ class ARCComputingElement(ComputingElement):
     self.usercfg.ProxyPath(os.environ['X509_USER_PROXY'])
 
     jobTmpList = list(jobIDList)
-    if isinstance(jobIDList, basestring):
+    if isinstance(jobIDList, six.string_types):
       jobTmpList = [jobIDList]
 
     # Pilots are stored with a DIRAC stamp (":::XXXXX") appended

@@ -5,6 +5,8 @@
 from __future__ import print_function
 __RCSID__ = "$Id"
 
+from past.builtins import long
+import six
 from stat import *
 import os
 import re
@@ -304,7 +306,7 @@ class LcgFileCatalogClient( FileCatalogClientBase ):
         failed[lfn] = res['Message']
       elif res['Value']:
         successful[lfn] = lfn
-      elif not isinstance( guid, basestring ):
+      elif not isinstance(guid, six.string_types):
         successful[lfn] = False
       else:
         res = existsGuid( guid )

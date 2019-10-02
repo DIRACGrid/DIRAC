@@ -16,8 +16,8 @@ Operation implementation
 __RCSID__ = "$Id$"
 
 import datetime
-from types import StringTypes
 import json
+import six
 # # from DIRAC
 from DIRAC import S_OK, S_ERROR
 from DIRAC.RequestManagementSystem.Client.File import File
@@ -89,7 +89,7 @@ class Operation( object ):
 
 
     fromDict = fromDict if isinstance( fromDict, dict )\
-               else json.loads( fromDict ) if isinstance( fromDict, StringTypes )\
+               else json.loads(fromDict) if isinstance(fromDict, six.string_types)\
                else {}
 
 
@@ -102,8 +102,8 @@ class Operation( object ):
     for key, value in fromDict.items():
       # The JSON module forces the use of UTF-8, which is not properly
       # taken into account in DIRAC.
-      # One would need to replace all the '== str' with 'in StringTypes'
-      if type( value ) in StringTypes:
+      # One would need to replace all the '== str' with 'in six.string_types'
+      if isinstance(value, six.string_types):
         value = value.encode()
       if value:
         setattr( self, key, value )
@@ -284,9 +284,9 @@ class Operation( object ):
   @CreationTime.setter
   def CreationTime( self, value = None ):
     """ creation time setter """
-    if type( value ) not in ( [datetime.datetime] + list( StringTypes ) ):
+    if not isinstance(value, (datetime.datetime,) + six.string_types):
       raise TypeError( "CreationTime should be a datetime.datetime!" )
-    if type( value ) in StringTypes:
+    if isinstance(value, six.string_types):
       value = datetime.datetime.strptime( value.split( "." )[0], self._datetimeFormat )
     self._CreationTime = value
 
@@ -298,9 +298,9 @@ class Operation( object ):
   @SubmitTime.setter
   def SubmitTime( self, value = None ):
     """ submit time setter """
-    if type( value ) not in ( [datetime.datetime] + list( StringTypes ) ):
+    if not isinstance(value, (datetime.datetime,) + six.string_types):
       raise TypeError( "SubmitTime should be a datetime.datetime!" )
-    if type( value ) in StringTypes:
+    if isinstance(value, six.string_types):
       value = datetime.datetime.strptime( value.split( "." )[0], self._datetimeFormat )
     self._SubmitTime = value
 
@@ -312,9 +312,9 @@ class Operation( object ):
   @LastUpdate.setter
   def LastUpdate( self, value = None ):
     """ last update setter """
-    if type( value ) not in ( [datetime.datetime] + list( StringTypes ) ):
+    if not isinstance(value, (datetime.datetime,) + six.string_types):
       raise TypeError( "LastUpdate should be a datetime.datetime!" )
-    if type( value ) in StringTypes:
+    if isinstance(value, six.string_types):
       value = datetime.datetime.strptime( value.split( "." )[0], self._datetimeFormat )
     self._LastUpdate = value
     if self._parent:

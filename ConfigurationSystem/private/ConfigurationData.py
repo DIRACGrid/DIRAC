@@ -251,6 +251,13 @@ class ConfigurationData(object):
     else:
       return True
 
+  def getAutoSlaveSync(self):
+    value = self.extractOptionFromCFG("%s/AutoSlaveSync" % self.configurationPath, self.localCFG)
+    if value and value.lower() in ("no", "false", "n"):
+      return False
+    else:
+      return True
+
   def getServers(self):
     return list(self.remoteServerList)
 

@@ -4,6 +4,7 @@ problematic file and replicas to the IntegrityDB and their status
 correctly updated in the FileCatalog.
 """
 
+import six
 from DIRAC                                                import S_OK, S_ERROR, gLogger
 from DIRAC.DataManagementSystem.Client.DataManager        import DataManager
 from DIRAC.Resources.Storage.StorageElement               import StorageElement
@@ -35,7 +36,7 @@ class DataIntegrityClient(Client):
     """
     if isinstance( lfn, list ):
       lfns = lfn
-    elif isinstance( lfn, basestring ):
+    elif isinstance(lfn, six.string_types):
       lfns = [lfn]
     else:
       errStr = "DataIntegrityClient.setFileProblematic: Supplied file info must be list or a single LFN."

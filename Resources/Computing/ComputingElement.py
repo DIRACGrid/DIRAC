@@ -27,6 +27,7 @@
 """
 
 from __future__ import print_function
+import six
 import os
 import multiprocessing
 
@@ -430,12 +431,12 @@ class ComputingElement(object):
     for option, value in self.ceParameters.iteritems():
       if isinstance(value, list):
         ceDict[option] = value
-      elif isinstance(value, basestring):
+      elif isinstance(value, six.string_types):
         try:
           ceDict[option] = int(value)
         except ValueError:
           ceDict[option] = value
-      elif isinstance(value, (int, long, float)):
+      elif isinstance(value, six.integer_types + (float,)):
         ceDict[option] = value
       else:
         self.log.warn('Type of option %s = %s not determined' % (option, value))

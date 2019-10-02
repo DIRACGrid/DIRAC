@@ -4,6 +4,7 @@
 from __future__ import print_function
 __RCSID__ = "$Id$"
 
+import six
 import os
 import sys
 import hashlib
@@ -483,7 +484,7 @@ class UserProfileDB(DB):
       pass
 
   def __profilesCondGenerator(self, value, varType, initialValue=False):
-    if isinstance(value, basestring):
+    if isinstance(value, six.string_types):
       value = [value]
     ids = []
     if initialValue:

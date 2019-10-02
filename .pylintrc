@@ -145,7 +145,7 @@ ignored-classes=SQLObject
 generated-members=REQUEST,acl_users,aq_parent
 
 # List of ignored modules
-ignored-modules = MySQLdb,numpy
+ignored-modules = MySQLdb,numpy,six.moves.urllib
 
 [VARIABLES]
 

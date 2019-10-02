@@ -8,6 +8,9 @@
     It's still under development & debugging,
 """
 
+__RCSID__ = "$Id$"
+
+import six
 import os
 import socket
 import stat
@@ -20,18 +23,15 @@ from DIRAC.Resources.Computing.SSHComputingElement import SSHComputingElement
 from DIRAC.Resources.Computing.PilotBundle import bundleProxy, writeScript
 
 
-CE_NAME = 'SSHBatch'
-
-
 class SSHBatchComputingElement(SSHComputingElement):
 
   #############################################################################
   def __init__(self, ceUniqueID):
     """ Standard constructor.
     """
-    SSHComputingElement.__init__(self, ceUniqueID)
+    super(SSHBatchComputingElement, self).__init__(ceUniqueID)
 
-    self.ceType = CE_NAME
+    self.ceType = 'SSHBatch'
     self.sshHost = []
 
   def _reset(self):
@@ -78,6 +78,7 @@ class SSHBatchComputingElement(SSHComputingElement):
     if 'RemoveOutput' in self.ceParameters:
       if self.ceParameters['RemoveOutput'].lower() in ['no', 'false', '0']:
         self.removeOutput = False
+    self.preamble = self.ceParameters.get('Preamble', '')
 
   #############################################################################
   def submitJob(self, executableFile, proxy, numberOfJobs=1):
@@ -151,7 +152,7 @@ class SSHBatchComputingElement(SSHComputingElement):
     """ Kill specified jobs
     """
     jobIDList = list(jobIDs)
-    if isinstance(jobIDs, basestring):
+    if isinstance(jobIDs, six.string_types):
       jobIDList = [jobIDs]
 
     hostDict = {}

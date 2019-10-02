@@ -9,6 +9,7 @@
 
 # pylint: disable=invalid-name
 
+import six
 import errno
 import json
 
@@ -113,7 +114,7 @@ class GFAL2_SRM2Storage(GFAL2_StorageBase):
       if not listProtocols:
         return S_ERROR(
             "GFAL2_SRM2Storage.getTransportURL: No local protocols defined and no defaults found.")
-    elif isinstance(protocols, basestring):
+    elif isinstance(protocols, six.string_types):
       listProtocols = [protocols]
     elif isinstance(protocols, list):
       listProtocols = protocols
@@ -184,7 +185,8 @@ class GFAL2_SRM2Storage(GFAL2_StorageBase):
       Out of the results, we keep totalsize, guaranteedsize, and unusedsize all in B.
     """
 
-    if self.protocolParameters['SpaceToken'] == '':
+    if not self.spaceToken:
+      self.log.info("getOccupancy: SpaceToken not defined for this SE. Falling back to the default getOccupancy.")
       return super(GFAL2_SRM2Storage, self).getOccupancy(*parms, **kws)
 
     # Gfal2 extended parameter name to query the space token occupancy

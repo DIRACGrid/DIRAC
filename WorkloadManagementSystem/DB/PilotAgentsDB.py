@@ -19,6 +19,7 @@
 
 __RCSID__ = "$Id$"
 
+import six
 import threading
 
 from DIRAC import S_OK, S_ERROR
@@ -224,7 +225,7 @@ class PilotAgentsDB(DB):
   def deletePilot(self, pilotRef, conn=False):
     """ Delete Pilot with the given reference from the PilotAgentsDB """
 
-    if isinstance(pilotRef, basestring):
+    if isinstance(pilotRef, six.string_types):
       pilotID = self.__getPilotID(pilotRef)
     else:
       pilotID = pilotRef
@@ -410,7 +411,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
     """ Get Pilot ID for the given pilot reference or a list of references
     """
 
-    if isinstance(pilotRef, basestring):
+    if isinstance(pilotRef, six.string_types):
       req = "SELECT PilotID from PilotAgents WHERE PilotJobReference='%s'" % pilotRef
       result = self._query(req)
       if not result['OK']:
@@ -648,14 +649,14 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
     site_select = []
     if 'GridSite' in selectDict:
       site_select = selectDict['GridSite']
-      if not isinstance(site_select, type([])):
+      if not isinstance(site_select, list):
         site_select = [site_select]
       del selectDict['GridSite']
 
     status_select = []
     if 'Status' in selectDict:
       status_select = selectDict['Status']
-      if not isinstance(status_select, type([])):
+      if not isinstance(status_select, list):
         status_select = [status_select]
       del selectDict['Status']
 
@@ -969,7 +970,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
       del selectDict['LastUpdateTime']
     if 'Owner' in selectDict:
       userList = selectDict['Owner']
-      if not isinstance(userList, type([])):
+      if not isinstance(userList, list):
         userList = [userList]
       dnList = []
       for uName in userList:
@@ -1033,7 +1034,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
     for pilot in pilotList:
       parList = []
       for parameter in paramNames:
-        if not isinstance(pilotDict[pilot][parameter], (int, long)):
+        if not isinstance(pilotDict[pilot][parameter], six.integer_types):
           parList.append(str(pilotDict[pilot][parameter]))
         else:
           parList.append(pilotDict[pilot][parameter])

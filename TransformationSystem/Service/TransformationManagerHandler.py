@@ -1,6 +1,8 @@
 """ DISET request handler base class for the TransformationDB.
 """
 
+from past.builtins import long
+import six
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.TransformationSystem.DB.TransformationDB import TransformationDB
@@ -194,21 +196,10 @@ class TransformationManagerHandler(RequestHandler):
       return S_OK({})
 
     statusSample = dictOfNewFilesStatus.values()[0]
-    if isinstance(statusSample, basestring):
-      # FIXME: kept for backward compatibility with old clients... Remove when no longer needed
-      # This comes from an old client, set the error flag but we must get the current status first
-      newStatusForFileIDs = {}
-      res = database.getTransformationFiles({'TransformationID': transName, 'FileID': dictOfNewFilesStatus.keys()})
-      if not res['OK']:
-        return res
-      currentStatus = dict((fileDict['FileID'], fileDict['Status']) for fileDict in res['Value'])
-      for fileID, status in dictOfNewFilesStatus.iteritems():
-        newStatus = dictOfNewFilesStatus[fileID]
-        newStatusForFileIDs[fileID] = (newStatus, self._wasFileInError(newStatus, currentStatus[fileID]))
-    elif isinstance(statusSample, (list, tuple)) and len(statusSample) == 2:
+    if isinstance(statusSample, (list, tuple)) and len(statusSample) == 2:
       newStatusForFileIDs = dictOfNewFilesStatus
     else:
-      return S_ERROR("Status field should be a string or two values")
+      return S_ERROR("Status field should be two values")
 
     res = database._getConnectionTransID(False, transName)
     if not res['OK']:

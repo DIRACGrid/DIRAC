@@ -12,7 +12,7 @@ import tempfile
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.Core.Security import Properties
+from DIRAC.Core.Security import Locations, Properties, X509Certificate
 from DIRAC.WorkloadManagementSystem.DB.SandboxMetadataDB import SandboxMetadataDB
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.DataManagementSystem.Service.StorageElementHandler import getDiskSpace
@@ -427,7 +427,7 @@ class SandboxStoreHandler(RequestHandler):
       SandboxStoreHandler.__purgeWorking = False
       return result
     sbList = result['Value']
-    gLogger.info("Got %s sandboxes to purge" % len(sbList))
+    gLogger.info("Got sandboxes to purge", "(%d)" % len(sbList))
     for sbId, SEName, SEPFN in sbList:  # pylint: disable=invalid-name
       self.__purgeSandbox(sbId, SEName, SEPFN)
 
@@ -461,13 +461,13 @@ class SandboxStoreHandler(RequestHandler):
         gLogger.error("Cannot delete local sandbox", "%s : %s" % (hdPath, repr(e).replace(',)', ')')))
       while hdPath:
         hdPath = os.path.dirname(hdPath)
-        gLogger.info("Checking if dir %s is empty" % hdPath)
+        gLogger.info("Checking if dir is empty", hdPath)
         try:
           if not os.path.isdir(hdPath):
             break
           if os.listdir(hdPath):
             break
-          gLogger.info("Trying to clean dir %s" % hdPath)
+          gLogger.info("Trying to clean dir", hdPath)
           # Empty dir!
           os.rmdir(hdPath)
         except Exception as e:
@@ -480,8 +480,23 @@ class SandboxStoreHandler(RequestHandler):
       gLogger.info("Setting deletion request")
       try:
 
+        # We need the hostDN used in order to pass these credentials to the
+        # SandboxStoreDB..
+        hostCertLocation, _ = Locations.getHostCertificateAndKeyLocation()
+        hostCert = X509Certificate.X509Certificate()
+        hostCert.loadFromFile(hostCertLocation)
+        hostDN = hostCert.getSubjectDN().get('Value')
+
+        # use the host authentication to fetch the data
+        result = sandboxDB.getSandboxOwner(SEName, SEPFN, hostDN, 'hosts')
+        if not result['OK']:
+          return result
+        _owner, ownerDN, ownerGroup = result['Value']
+
         request = Request()
         request.RequestName = "RemoteSBDeletion:%s|%s:%s" % (SEName, SEPFN, time.time())
+        request.OwnerDN = ownerDN
+        request.OwnerGroup = ownerGroup
         physicalRemoval = Operation()
         physicalRemoval.Type = "PhysicalRemoval"
         physicalRemoval.TargetSE = SEName

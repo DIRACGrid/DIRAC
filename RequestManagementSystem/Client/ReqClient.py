@@ -6,6 +6,7 @@
 
 """
 
+import six
 import os
 import time
 import random
@@ -234,7 +235,7 @@ class ReqClient(Client):
     :param self: self reference
     :param int requestID: id of the request
     """
-    if isinstance(requestID, basestring):
+    if isinstance(requestID, six.string_types):
       requestID = int(requestID)
     self.log.debug("getRequestStatus: attempting to get status for '%d' request." % requestID)
     requestStatus = self._getRPC().getRequestStatus(requestID)
@@ -435,7 +436,7 @@ def prettyPrint(mainItem, key='', offset=0):
     for item in mainItem:
       prettyPrint(item, offset=offset + 2)
     output += "%s%s\n" % (blanks, ']' if isinstance(mainItem, list) else ')')
-  elif isinstance(mainItem, basestring):
+  elif isinstance(mainItem, six.string_types):
     if '\n' in mainItem:
       prettyPrint(mainItem.strip('\n').split('\n'), offset=offset)
     else:

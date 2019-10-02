@@ -2,6 +2,7 @@
 
 __RCSID__ = "$Id$"
 
+import six
 from DIRAC                                                         import S_OK, gLogger
 from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.Core.Utilities.List                                     import breakListIntoChunks
@@ -343,10 +344,10 @@ class TransformationClient(Client):
 
     """
     # create dictionary in case newLFNsStatus is a string
-    if isinstance(newLFNsStatus, basestring):
+    if isinstance(newLFNsStatus, six.string_types):
       if not lfns:
         return S_OK({})
-      if isinstance(lfns, basestring):
+      if isinstance(lfns, six.string_types):
         lfns = [lfns]
       newLFNsStatus = dict.fromkeys(lfns, newLFNsStatus)
     if not newLFNsStatus:

@@ -7,6 +7,7 @@ from __future__ import print_function, absolute_import
 
 __RCSID__ = "$Id$"
 
+import six
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.Core.Base.AgentModule import AgentModule
@@ -353,7 +354,11 @@ the stalledTime limit.
 
       result = JobMonitoringClient().getJobParameter(jobID, 'CPUNormalizationFactor')
       if not result['OK'] or not result['Value']:
-        self.log.error('Error getting Job Parameter CPUNormalizationFactor, setting 0', result['Message'])
+        self.log.error(
+            'Error getting Job Parameter CPUNormalizationFactor, setting 0',
+            result.get(
+                'Message',
+                'No such value'))
         cpuNormalization = 0.0
       else:
         cpuNormalization = float(result['Value'].get('CPUNormalizationFactor'))
@@ -457,7 +462,7 @@ the stalledTime limit.
       if not startTime or startTime == 'None':
         startTime = jobDict['SubmissionTime']
 
-    if isinstance(startTime, basestring):
+    if isinstance(startTime, six.string_types):
       startTime = fromString(startTime)
       if startTime is None:
         self.log.error('Wrong timestamp in DB', items[3])

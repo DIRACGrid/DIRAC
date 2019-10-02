@@ -483,10 +483,17 @@ class Service(object):
   def _instantiateHandler(self, trid, proposalTuple=None):
     """
     Generate an instance of the handler for a given service
+
+    :param int trid: transport ID
+    :param tuple proposalTuple: tuple describing the proposed action
+
+    :return: S_OK/S_ERROR, Value is the handler object
     """
     # Generate the client params
     clientParams = {'serviceStartTime': self._startTime}
     if proposalTuple:
+      # The 4th element is the client version
+      clientParams['clientVersion'] = proposalTuple[3] if len(proposalTuple) > 3 else None
       clientParams['clientSetup'] = proposalTuple[0][1]
       if len(proposalTuple[0]) < 3:
         clientParams['clientVO'] = gConfig.getValue("/DIRAC/VirtualOrganization", "unknown")
@@ -499,7 +506,7 @@ class Service(object):
     handlerInitDict = dict(self._serviceInfoDict)
     for key in clientParams:
       handlerInitDict[key] = clientParams[key]
-    #Instantiate and initialize
+    # Instantiate and initialize
     try:
       handlerInstance = self._handler['class'](handlerInitDict, trid)
       handlerInstance.initialize()

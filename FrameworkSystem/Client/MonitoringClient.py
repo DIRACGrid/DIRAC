@@ -6,7 +6,8 @@
 __RCSID__ = "$Id"
 
 import time
-import types
+
+import six
 
 import DIRAC
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
@@ -79,7 +80,7 @@ class MonitoringClient(object):
   COMPONENT_WEB = "web"
   COMPONENT_SCRIPT = "script"
 
-  __validMonitoringValues = (types.IntType, types.LongType, types.FloatType)
+  __validMonitoringValues = six.integer_types + (float,)
 
   def __init__(self):
     self.sourceId = 0
@@ -236,7 +237,7 @@ class MonitoringClient(object):
     if name not in self.activitiesDefinitions:
       raise MonitoringClientActivityNotDefined("You must register activity %s before adding marks to it" % name)
       # raise Exception( "You must register activity %s before adding marks to it" % name )
-    if type(value) not in self.__validMonitoringValues:
+    if not isinstance(value, self.__validMonitoringValues):
       raise MonitoringClientActivityValueTypeError("Activity '%s' value's type (%s) is not valid" % (name, type(value)))
       # raise Exception( "Value's type %s is not valid" % value )
     self.activitiesLock.acquire()
@@ -397,7 +398,7 @@ class MonitoringClient(object):
         return False
       condVal = condDict[key]
       componentVal = component[key]
-      if type(condVal) in (types.ListType, types.TupleType):
+      if type(condVal) in (list, tuple):
         if componentVal not in condVal:
           return False
       else:

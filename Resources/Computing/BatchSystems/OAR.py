@@ -9,12 +9,12 @@
     LocalComputingElement and SSHComputingElement classes
 """
 
-__RCSID__ = "$Id$"
-
+from __future__ import print_function
 import commands
 import os
 import json
 
+__RCSID__ = "$Id$"
 
 class OAR(object):
 

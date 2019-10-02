@@ -724,7 +724,9 @@ class ComponentInstaller(object):
     compCfg = result['Value']
 
     compCfgFile = os.path.join(rootPath, 'etc', '%s_%s.cfg' % (system, component))
-    return compCfg.writeToFile(compCfgFile)
+    if compCfg.writeToFile(compCfgFile):  # this returns a True/False
+      return S_OK()
+    return S_ERROR()
 
   def addCfgToComponentCfg(self, componentType, systemName, component, cfg):
     """
@@ -1200,7 +1202,7 @@ class ComponentInstaller(object):
         if result['OK'] and result['Value']:
           stats = result['Value'][1]
           values = re.findall(r"\d*\.\d+|\d+", stats)
-          if values > 0:
+          if values:
             runDict['CPU'] = values[1]
             runDict['MEM'] = values[2]
             runDict['VSZ'] = values[3]
@@ -2262,12 +2264,9 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
 
     perms = "SELECT,INSERT,LOCK TABLES,UPDATE,DELETE,CREATE,DROP,ALTER,REFERENCES," \
             "CREATE VIEW,SHOW VIEW,INDEX,TRIGGER,ALTER ROUTINE,CREATE ROUTINE"
-    for cmd in ["GRANT %s ON `%s`.* TO '%s'@'localhost' IDENTIFIED BY '%s'" % (perms, dbName, self.mysqlUser,
-                                                                               self.mysqlPassword),
-                "GRANT %s ON `%s`.* TO '%s'@'%s' IDENTIFIED BY '%s'" % (perms, dbName, self.mysqlUser,
-                                                                        self.mysqlHost, self.mysqlPassword),
-                "GRANT %s ON `%s`.* TO '%s'@'%%' IDENTIFIED BY '%s'" % (perms, dbName, self.mysqlUser,
-                                                                        self.mysqlPassword)]:
+    for cmd in ["GRANT %s ON `%s`.* TO '%s'@'localhost'" % (perms, dbName, self.mysqlUser),
+                "GRANT %s ON `%s`.* TO '%s'@'%s'" % (perms, dbName, self.mysqlUser, self.mysqlHost),
+                "GRANT %s ON `%s`.* TO '%s'@'%%'" % (perms, dbName, self.mysqlUser)]:
       result = self.execMySQL(cmd)
       if not result['OK']:
         error = "Error executing '%s'" % cmd

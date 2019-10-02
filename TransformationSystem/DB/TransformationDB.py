@@ -6,12 +6,17 @@
     databases
 """
 
+from past.builtins import long
+import six
 import re
 import time
 import threading
 
+from errno import ENOENT
+
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
+from DIRAC.Core.Utilities.DErrno import cmpError
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.Core.Utilities.List import stringListToString, intListToString, breakListIntoChunks
@@ -266,7 +271,7 @@ class TransformationDB(DB):
     resultList = []
     for row in res['Value']:
       # Prepare the structure for the web
-      rList = [str(item) if not isinstance(item, (long, int)) else item for item in row]
+      rList = [str(item) if not isinstance(item, six.integer_types) else item for item in row]
       transDict = dict(zip(self.TRANSPARAMS, row))
       webList.append(rList)
       if extraParams:
@@ -298,7 +303,7 @@ class TransformationDB(DB):
 
   def getTransformationParameters(self, transName, parameters, connection=False):
     """ Get the requested parameters for a supplied transformation """
-    if isinstance(parameters, basestring):
+    if isinstance(parameters, six.string_types):
       parameters = [parameters]
     extraParams = bool(set(parameters) - set(self.TRANSPARAMS))
     res = self.getTransformation(transName, extraParams=extraParams, connection=connection)
@@ -369,7 +374,7 @@ class TransformationDB(DB):
       transName = long(transName)
       cmd = "SELECT TransformationID from Transformations WHERE TransformationID=%d;" % transName
     except ValueError:
-      if not isinstance(transName, basestring):
+      if not isinstance(transName, six.string_types):
         return S_ERROR("Transformation should be ID or name")
       cmd = "SELECT TransformationID from Transformations WHERE TransformationName='%s';" % transName
     res = self._query(cmd, connection)
@@ -466,7 +471,7 @@ class TransformationDB(DB):
       return S_ERROR("Failed to parse parameter value")
     paramValue = res['Value']
     paramType = 'StringType'
-    if isinstance(paramValue, (long, int)):
+    if isinstance(paramValue, six.integer_types):
       paramType = 'IntType'
     req = "INSERT INTO AdditionalParameters (%s) VALUES (%s,'%s',%s,'%s');" % (', '.join(self.ADDITIONALPARAMETERS),
                                                                                transID, paramName,
@@ -539,7 +544,7 @@ class TransformationDB(DB):
     if condDict or older or newer:
       lfns = condDict.pop('LFN', None)
       if lfns:
-        if isinstance(lfns, basestring):
+        if isinstance(lfns, six.string_types):
           lfns = [lfns]
         res = self.__getFileIDsForLfns(lfns, connection=connection)
         if not res['OK']:
@@ -575,7 +580,7 @@ class TransformationDB(DB):
         fDict = {'LFN': lfn}
         fDict.update(dict(zip(self.TRANSFILEPARAMS, row)))
         # Note: the line below is returning "None" if the item is None... This seems to work but is ugly...
-        rList = [lfn] + [str(item) if not isinstance(item, (long, int)) else item for item in row]
+        rList = [lfn] + [str(item) if not isinstance(item, six.integer_types) else item for item in row]
         webList.append(rList)
         resultList.append(fDict)
     result = S_OK(resultList)
@@ -802,7 +807,7 @@ class TransformationDB(DB):
     resultList = []
     for row in res['Value']:
       # Prepare the structure for the web
-      rList = [str(item) if not isinstance(item, (long, int)) else item for item in row]
+      rList = [str(item) if not isinstance(item, six.integer_types) else item for item in row]
       taskDict = dict(zip(self.TASKSPARAMS, row))
       webList.append(rList)
       if inputVector:
@@ -995,7 +1000,7 @@ class TransformationDB(DB):
     res = self.getTransformationMetaQuery(transID, queryType, connection=connection)
     if res['OK']:
       return S_ERROR("Meta query already exists for transformation")
-    if res['Message'] != 'No MetaQuery found for transformation':
+    if not cmpError(res, ENOENT):
       return res
 
     for parameterName in sorted(queryDict):
@@ -1004,12 +1009,12 @@ class TransformationDB(DB):
         continue
       parameterType = 'String'
       if isinstance(parameterValue, (list, tuple)):
-        if isinstance(parameterValue[0], (long, int)):
+        if isinstance(parameterValue[0], six.integer_types):
           parameterType = 'Integer'
           parameterValue = [str(x) for x in parameterValue]
         parameterValue = ';;;'.join(parameterValue)
       else:
-        if isinstance(parameterValue, (long, int)):
+        if isinstance(parameterValue, six.integer_types):
           parameterType = 'Integer'
           parameterValue = str(parameterValue)
         if isinstance(parameterValue, dict):
@@ -1051,7 +1056,14 @@ class TransformationDB(DB):
     return res
 
   def getTransformationMetaQuery(self, transName, queryType, connection=False):
-    """ Get the Meta Query for a given transformation """
+    """Get the Meta Query for a given transformation.
+
+    :param transName: transformation name or ID
+    :type transName: str or int
+    :param str queryType: 'Input' or 'Output' query
+    :param connection: DB connection
+    :returns: S_OK with query dictionary, S_ERROR, ENOENT if no query defined
+    """
     res = self._getConnectionTransID(connection, transName)
     if not res['OK']:
       return res
@@ -1078,7 +1090,7 @@ class TransformationDB(DB):
         parameterValue = eval(parameterValue)
       queryDict[parameterName] = parameterValue
     if not queryDict:
-      return S_ERROR("No MetaQuery found for transformation")
+      return S_ERROR(ENOENT, "No MetaQuery found for transformation")
     return S_OK(queryDict)
 
   ###########################################################################

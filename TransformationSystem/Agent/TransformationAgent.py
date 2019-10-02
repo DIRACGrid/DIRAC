@@ -1,6 +1,15 @@
 """  TransformationAgent processes transformations found in the transformation database.
+
+The following options can be set for the TransformationAgent.
+
+.. literalinclude:: ../ConfigTemplate.cfg
+  :start-after: ##BEGIN TransformationAgent
+  :end-before: ##END
+  :dedent: 2
+  :caption: TransformationAgent options
 """
 
+from past.builtins import long
 import time
 import Queue
 import os

@@ -4,6 +4,7 @@
 
 __RCSID__ = "$Id$"
 
+import six
 import time
 import thread
 import DIRAC
@@ -60,7 +61,7 @@ class BaseClient(object):
       :param keepAliveLapse: Duration for keepAliveLapse (heartbeat like)
     """
 
-    if not isinstance(serviceName, basestring):
+    if not isinstance(serviceName, six.string_types):
       raise TypeError("Service name expected to be a string. Received %s type %s" %
                       (str(serviceName), type(serviceName)))
     self._destinationSrv = serviceName
@@ -531,7 +532,8 @@ and this is thread %s
       return self.__initStatus
     stConnectionInfo = ((self.__URLTuple[3], self.setup, self.vo),
                         action,
-                        self.__extraCredentials)
+                        self.__extraCredentials,
+                        DIRAC.version)
 
     # Send the connection info and get the answer back
     retVal = transport.sendData(S_OK(BaseClient._serializeStConnectionInfo(stConnectionInfo)))

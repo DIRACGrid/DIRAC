@@ -33,6 +33,13 @@ def deprecated(reason, onlyOnce=False):
         @deprecated("Use otherClass instead", onlyOnce=True)
         class MyOldClass:
 
+      If used on a classmethod, it should be used after the `@classmethod` decorator
+      for example::
+
+        @classmethod
+        @deprecated("Do not put me before @classmethod")
+        def methodX(cls):
+
       Parameters
       ----------
       reason : str
@@ -70,6 +77,11 @@ def deprecated(reason, onlyOnce=False):
     """
 
     decFunc.warningEn = True
+
+    if func.__doc__ is None:
+      func.__doc__ = '\n\n**Deprecated**: ' + reason
+    else:
+      func.__doc__ += '\n\n**Deprecated**: ' + reason
 
     @functools.wraps(func)
     def innerFunc(*args, **kwargs):

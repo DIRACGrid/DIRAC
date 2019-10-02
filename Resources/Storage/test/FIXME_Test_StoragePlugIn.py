@@ -40,7 +40,7 @@ class StoragePlugInTestCase( unittest.TestCase ):
     destDir = self.storage.getCurrentURL( '' )['Value']
     res = self.storage.createDirectory( destDir )
     self.assertTrue(res['OK'])
-    self.assertTrue( res['Value']['Successful'].has_key( destDir ) )
+    self.assertTrue( destDir in res['Value']['Successful'] )
     self.assertTrue( res['Value']['Successful'][destDir] )
     self.numberOfFiles = 1
 
@@ -77,7 +77,7 @@ class DirectoryTestCase( StoragePlugInTestCase ):
 
     # Perform the checks for the put dir operation
     self.assertTrue( putDirRes['OK'] )
-    self.assertTrue( putDirRes['Value']['Successful'].has_key( remoteDir ) )
+    self.assertTrue( remoteDir in putDirRes['Value']['Successful'] )
     if putDirRes['Value']['Successful'][remoteDir]['Files']:
       self.assertEqual( putDirRes['Value']['Successful'][remoteDir]['Files'], self.numberOfFiles )
       self.assertEqual( putDirRes['Value']['Successful'][remoteDir]['Size'], self.numberOfFiles * sizeOfLocalFile )
@@ -85,7 +85,7 @@ class DirectoryTestCase( StoragePlugInTestCase ):
     self.assertTrue( type( putDirRes['Value']['Successful'][remoteDir]['Size'] ) in [LongType, IntType] )
     # Perform the checks for the remove dir operation
     self.assertTrue( removeDirRes['OK'] )
-    self.assertTrue( removeDirRes['Value']['Successful'].has_key( remoteDir ) )
+    self.assertTrue( remoteDir in removeDirRes['Value']['Successful'] )
     if removeDirRes['Value']['Successful'][remoteDir]['FilesRemoved']:
       self.assertEqual( removeDirRes['Value']['Successful'][remoteDir]['FilesRemoved'], self.numberOfFiles )
       self.assertEqual( removeDirRes['Value']['Successful'][remoteDir]['SizeRemoved'], self.numberOfFiles * sizeOfLocalFile )
@@ -104,11 +104,11 @@ class DirectoryTestCase( StoragePlugInTestCase ):
 
     # Check the is directory operation
     self.assertTrue( isDirRes['OK'] )
-    self.assertTrue( isDirRes['Value']['Successful'].has_key( destDir ) )
+    self.assertTrue( destDir in isDirRes['Value']['Successful'] )
     self.assertTrue( isDirRes['Value']['Successful'][destDir] )
     # Check the non existant directory operation
     self.assertTrue( nonExistantDirRes['OK'] )
-    self.assertTrue( nonExistantDirRes['Value']['Failed'].has_key( dummyDir ) )
+    self.assertTrue( dummyDir in nonExistantDirRes['Value']['Failed'] )
     expectedError = 'Path does not exist'
     self.assertTrue( expectedError in nonExistantDirRes['Value']['Failed'][dummyDir] )
 
@@ -142,7 +142,7 @@ class DirectoryTestCase( StoragePlugInTestCase ):
 
     # Perform the checks for the put dir operation
     self.assertTrue( putDirRes['OK'] )
-    self.assertTrue( putDirRes['Value']['Successful'].has_key( remoteDir ) )
+    self.assertTrue( remoteDir in putDirRes['Value']['Successful'] )
     if putDirRes['Value']['Successful'][remoteDir]['Files']:
       self.assertEqual( putDirRes['Value']['Successful'][remoteDir]['Files'], self.numberOfFiles )
       self.assertEqual( putDirRes['Value']['Successful'][remoteDir]['Size'], self.numberOfFiles * sizeOfLocalFile )
@@ -150,9 +150,9 @@ class DirectoryTestCase( StoragePlugInTestCase ):
     self.assertTrue( type( putDirRes['Value']['Successful'][remoteDir]['Size'] ) in [LongType, IntType] )
     # Perform the checks for the get metadata operation
     self.assertTrue( getMetadataRes['OK'] )
-    self.assertTrue( getMetadataRes['Value']['Successful'].has_key( remoteDir ) )
+    self.assertTrue( remoteDir in getMetadataRes['Value']['Successful'] )
     resDict = getMetadataRes['Value']['Successful'][remoteDir]
-    self.assertTrue( resDict.has_key( 'Mode' ) )
+    self.assertTrue( 'Mode' in resDict )
     self.assertTrue( type( resDict['Mode'] ) == IntType )
     # Perform the checks for the remove directory operation
     if removeDirRes['Value']['Successful'][remoteDir]['FilesRemoved']:
@@ -189,7 +189,7 @@ class DirectoryTestCase( StoragePlugInTestCase ):
 
     # Perform the checks for the put dir operation
     self.assertTrue( putDirRes['OK'] )
-    self.assertTrue( putDirRes['Value']['Successful'].has_key( remoteDir ) )
+    self.assertTrue( remoteDir in putDirRes['Value']['Successful'] )
     if putDirRes['Value']['Successful'][remoteDir]['Files']:
       self.assertEqual( putDirRes['Value']['Successful'][remoteDir]['Files'], self.numberOfFiles )
       self.assertEqual( putDirRes['Value']['Successful'][remoteDir]['Size'], self.numberOfFiles * sizeOfLocalFile )
@@ -197,13 +197,13 @@ class DirectoryTestCase( StoragePlugInTestCase ):
     self.assertTrue( type( putDirRes['Value']['Successful'][remoteDir]['Size'] ) in [LongType, IntType] )
     #Now perform the checks for the get directory size operation
     self.assertTrue( getDirSizeRes['OK'] )
-    self.assertTrue( getDirSizeRes['Value']['Successful'].has_key( remoteDir ) )
+    self.assertTrue( remoteDir in getDirSizeRes['Value']['Successful'] )
     resDict = getDirSizeRes['Value']['Successful'][remoteDir]
     self.assertTrue( type( resDict['Size'] ) in [LongType, IntType] )
     self.assertTrue( type( resDict['Files'] ) == IntType )
     # Perform the checks for the remove directory operation
     self.assertTrue( removeDirRes['OK'] )
-    self.assertTrue( removeDirRes['Value']['Successful'].has_key( remoteDir ) )
+    self.assertTrue( remoteDir in removeDirRes['Value']['Successful'] )
     if removeDirRes['Value']['Successful'][remoteDir]['FilesRemoved']:
       self.assertEqual( removeDirRes['Value']['Successful'][remoteDir]['FilesRemoved'], self.numberOfFiles )
       self.assertEqual( removeDirRes['Value']['Successful'][remoteDir]['SizeRemoved'], self.numberOfFiles * sizeOfLocalFile )
@@ -238,7 +238,7 @@ class DirectoryTestCase( StoragePlugInTestCase ):
 
     # Perform the checks for the put dir operation
     self.assertTrue( putDirRes['OK'] )
-    self.assertTrue( putDirRes['Value']['Successful'].has_key( remoteDir ) )
+    self.assertTrue( remoteDir in putDirRes['Value']['Successful'] )
     if putDirRes['Value']['Successful'][remoteDir]['Files']:
       self.assertEqual( putDirRes['Value']['Successful'][remoteDir]['Files'], self.numberOfFiles )
       self.assertEqual( putDirRes['Value']['Successful'][remoteDir]['Size'], self.numberOfFiles * sizeOfLocalFile )
@@ -246,14 +246,14 @@ class DirectoryTestCase( StoragePlugInTestCase ):
     self.assertTrue( type( putDirRes['Value']['Successful'][remoteDir]['Size'] ) in [LongType, IntType] )
     # Perform the checks for the list dir operation
     self.assertTrue( listDirRes['OK'] )
-    self.assertTrue( listDirRes['Value']['Successful'].has_key( remoteDir ) )
+    self.assertTrue( remoteDir in listDirRes['Value']['Successful'] )
     resDict = listDirRes['Value']['Successful'][remoteDir]
-    self.assertTrue( resDict.has_key( 'SubDirs' ) )
-    self.assertTrue( resDict.has_key( 'Files' ) )
+    self.assertTrue( 'SubDirs' in resDict )
+    self.assertTrue( 'Files' in resDict )
     self.assertEqual( len( resDict['Files'].keys() ), self.numberOfFiles )
     # Perform the checks for the remove directory operation
     self.assertTrue( removeDirRes['OK'] )
-    self.assertTrue( removeDirRes['Value']['Successful'].has_key( remoteDir ) )
+    self.assertTrue( remoteDir in removeDirRes['Value']['Successful'] )
     if removeDirRes['Value']['Successful'][remoteDir]['FilesRemoved']:
       self.assertEqual( removeDirRes['Value']['Successful'][remoteDir]['FilesRemoved'], self.numberOfFiles )
       self.assertEqual( removeDirRes['Value']['Successful'][remoteDir]['SizeRemoved'], self.numberOfFiles * sizeOfLocalFile )
@@ -290,7 +290,7 @@ class DirectoryTestCase( StoragePlugInTestCase ):
 
     # Perform the checks for the put dir operation
     self.assertTrue( putDirRes['OK'] )
-    self.assertTrue( putDirRes['Value']['Successful'].has_key( remoteDir ) )
+    self.assertTrue( remoteDir in putDirRes['Value']['Successful'] )
     if putDirRes['Value']['Successful'][remoteDir]['Files']:
       self.assertEqual( putDirRes['Value']['Successful'][remoteDir]['Files'], self.numberOfFiles )
       self.assertEqual( putDirRes['Value']['Successful'][remoteDir]['Size'], self.numberOfFiles * sizeOfLocalFile )
@@ -298,7 +298,7 @@ class DirectoryTestCase( StoragePlugInTestCase ):
     self.assertTrue( type( putDirRes['Value']['Successful'][remoteDir]['Size'] ) in [LongType, IntType] )
     # Perform the checks for the get dir operation
     self.assertTrue( getDirRes['OK'] )
-    self.assertTrue( getDirRes['Value']['Successful'].has_key( remoteDir ) )
+    self.assertTrue( remoteDir in getDirRes['Value']['Successful'] )
     resDict = getDirRes['Value']['Successful'][remoteDir]
     if resDict['Files']:
       self.assertEqual( resDict['Files'], self.numberOfFiles )
@@ -307,7 +307,7 @@ class DirectoryTestCase( StoragePlugInTestCase ):
     self.assertTrue( type( resDict['Size'] ) in [LongType, IntType] )
     # Perform the checks for the remove directory operation
     self.assertTrue( removeDirRes['OK'] )
-    self.assertTrue( removeDirRes['Value']['Successful'].has_key( remoteDir ) )
+    self.assertTrue( remoteDir in removeDirRes['Value']['Successful'] )
     if removeDirRes['Value']['Successful'][remoteDir]['FilesRemoved']:
       self.assertEqual( removeDirRes['Value']['Successful'][remoteDir]['FilesRemoved'], self.numberOfFiles )
       self.assertEqual( removeDirRes['Value']['Successful'][remoteDir]['SizeRemoved'], self.numberOfFiles * sizeOfLocalFile )
@@ -332,11 +332,11 @@ class FileTestCase( StoragePlugInTestCase ):
 
     # Check the successful put file operation
     self.assertTrue( putFileRes['OK'] )
-    self.assertTrue( putFileRes['Value']['Successful'].has_key( destFile ) )
+    self.assertTrue( destFile in putFileRes['Value']['Successful'] )
     self.assertEqual( putFileRes['Value']['Successful'][destFile], srcFileSize )
     # Check the remove file operation
     self.assertTrue( removeFileRes['OK'] )
-    self.assertTrue( removeFileRes['Value']['Successful'].has_key( destFile ) )
+    self.assertTrue( destFile in removeFileRes['Value']['Successful'] )
     self.assertTrue( removeFileRes['Value']['Successful'][destFile] )
 
   def test_putGetFile( self ):
@@ -360,15 +360,15 @@ class FileTestCase( StoragePlugInTestCase ):
 
     # Check the put operation
     self.assertTrue( putFileRes['OK'] )
-    self.assertTrue( putFileRes['Value']['Successful'].has_key( remoteFile ) )
+    self.assertTrue( remoteFile in putFileRes['Value']['Successful'] )
     self.assertEqual( putFileRes['Value']['Successful'][remoteFile], srcFileSize )
     # Check the get operation
     self.assertTrue( getFileRes['OK'] )
-    self.assertTrue( getFileRes['Value']['Successful'].has_key( remoteFile ) )
+    self.assertTrue( remoteFile in getFileRes['Value']['Successful'] )
     self.assertEqual( getFileRes['Value']['Successful'][remoteFile], srcFileSize )
     # Check the remove operation
     self.assertTrue( removeFileRes['OK'] )
-    self.assertTrue( removeFileRes['Value']['Successful'].has_key( remoteFile ) )
+    self.assertTrue( remoteFile in removeFileRes['Value']['Successful'] )
     self.assertTrue( removeFileRes['Value']['Successful'][remoteFile] )
 
   def test_putExistsFile( self ):
@@ -390,18 +390,18 @@ class FileTestCase( StoragePlugInTestCase ):
 
     # Check the put file operation
     self.assertTrue( putFileRes['OK'] )
-    self.assertTrue( putFileRes['Value']['Successful'].has_key( remoteFile ) )
+    self.assertTrue( remoteFile in putFileRes['Value']['Successful'] )
     self.assertEqual( putFileRes['Value']['Successful'][remoteFile], srcFileSize )
     # Check the exists operation
     self.assertTrue( existsFileRes['OK'] )
-    self.assertTrue( existsFileRes['Value']['Successful'].has_key( remoteFile ) )
+    self.assertTrue( remoteFile in existsFileRes['Value']['Successful'] )
     self.assertTrue( existsFileRes['Value']['Successful'][remoteFile] )
     # Check the removal operation
     self.assertTrue( removeFileRes['OK'] )
-    self.assertTrue( removeFileRes['Value']['Successful'].has_key( remoteFile ) )
+    self.assertTrue( remoteFile in removeFileRes['Value']['Successful'] )
     # Check the failed exists operation
     self.assertTrue( failedExistRes['OK'] )
-    self.assertTrue( failedExistRes['Value']['Successful'].has_key( remoteFile ) )
+    self.assertTrue( remoteFile in failedExistRes['Value']['Successful'] )
     self.assertFalse( failedExistRes['Value']['Successful'][remoteFile] )
 
   def test_putIsFile( self ):
@@ -424,19 +424,19 @@ class FileTestCase( StoragePlugInTestCase ):
 
     # Check the put file operation
     self.assertTrue( putFileRes['OK'] )
-    self.assertTrue( putFileRes['Value']['Successful'].has_key( remoteFile ) )
+    self.assertTrue( remoteFile in putFileRes['Value']['Successful'] )
     self.assertTrue( putFileRes['Value']['Successful'][remoteFile] )
     self.assertEqual( putFileRes['Value']['Successful'][remoteFile], srcFileSize )
     # Check the is file operation
     self.assertTrue( isFileRes['OK'] )
-    self.assertTrue( isFileRes['Value']['Successful'].has_key( remoteFile ) )
+    self.assertTrue( remoteFile in isFileRes['Value']['Successful'] )
     self.assertTrue( isFileRes['Value']['Successful'][remoteFile] )
     # check the remove file operation
     self.assertTrue( removeFileRes['OK'] )
-    self.assertTrue( removeFileRes['Value']['Successful'].has_key( remoteFile ) )
+    self.assertTrue( remoteFile in removeFileRes['Value']['Successful'] )
     # Check that the directory is not a file
     self.assertTrue( failedIsFileRes['OK'] )
-    self.assertTrue( failedIsFileRes['Value']['Successful'].has_key( remoteDir ) )
+    self.assertTrue( remoteDir in failedIsFileRes['Value']['Successful'] )
     self.assertFalse( failedIsFileRes['Value']['Successful'][remoteDir] )
 
   def test_putGetFileMetaData( self ):
@@ -461,27 +461,27 @@ class FileTestCase( StoragePlugInTestCase ):
 
     # Check the put file operation
     self.assertTrue( putFileRes['OK'] )
-    self.assertTrue( putFileRes['Value']['Successful'].has_key( remoteFile ) )
+    self.assertTrue( remoteFile in putFileRes['Value']['Successful'] )
     self.assertTrue( putFileRes['Value']['Successful'][remoteFile] )
     self.assertEqual( putFileRes['Value']['Successful'][remoteFile], srcFileSize )
     # Check the get metadata operation
     self.assertTrue( getMetadataRes['OK'] )
-    self.assertTrue( getMetadataRes['Value']['Successful'].has_key( remoteFile ) )
+    self.assertTrue( remoteFile in getMetadataRes['Value']['Successful'] )
     fileMetaData = getMetadataRes['Value']['Successful'][remoteFile]
     self.assertTrue( fileMetaData['Cached'] )
     self.assertFalse( fileMetaData['Migrated'] )
     self.assertEqual( fileMetaData['Size'], srcFileSize )
     # check the remove file operation
     self.assertTrue( removeFileRes['OK'] )
-    self.assertTrue( removeFileRes['Value']['Successful'].has_key( remoteFile ) )
+    self.assertTrue( remoteFile in removeFileRes['Value']['Successful'] )
     # Check the get metadata for non existant file
     self.assertTrue( failedMetadataRes['OK'] )
-    self.assertTrue( failedMetadataRes['Value']['Failed'].has_key( remoteFile ) )
+    self.assertTrue( remoteFile in failedMetadataRes['Value']['Failed'] )
     expectedError = "File does not exist"
     self.assertTrue( expectedError in failedMetadataRes['Value']['Failed'][remoteFile] )
     # Check that metadata operation with a directory
     self.assertTrue( directoryMetadataRes['OK'] )
-    self.assertTrue( directoryMetadataRes['Value']['Failed'].has_key( remoteDir ) )
+    self.assertTrue( remoteDir in directoryMetadataRes['Value']['Failed'] )
     expectedError = "Supplied path is not a file"
     self.assertTrue( expectedError in directoryMetadataRes['Value']['Failed'][remoteDir] )
 
@@ -507,24 +507,24 @@ class FileTestCase( StoragePlugInTestCase ):
 
     # Check the put file operation
     self.assertTrue( putFileRes['OK'] )
-    self.assertTrue( putFileRes['Value']['Successful'].has_key( remoteFile ) )
+    self.assertTrue( remoteFile in putFileRes['Value']['Successful'] )
     self.assertTrue( putFileRes['Value']['Successful'][remoteFile] )
     self.assertEqual( putFileRes['Value']['Successful'][remoteFile], srcFileSize )
     # Check that we got the file size correctly
     self.assertTrue( getSizeRes['OK'] )
-    self.assertTrue( getSizeRes['Value']['Successful'].has_key( remoteFile ) )
+    self.assertTrue( remoteFile in getSizeRes['Value']['Successful'] )
     self.assertEqual( getSizeRes['Value']['Successful'][remoteFile], srcFileSize )
     # check the remove file operation
     self.assertTrue( removeFileRes['OK'] )
-    self.assertTrue( removeFileRes['Value']['Successful'].has_key( remoteFile ) )
+    self.assertTrue( remoteFile in removeFileRes['Value']['Successful'] )
     # Check the get size with non existant file works properly
     self.assertTrue( failedSizeRes['OK'] )
-    self.assertTrue( failedSizeRes['Value']['Failed'].has_key( remoteFile ) )
+    self.assertTrue( remoteFile in failedSizeRes['Value']['Failed'] )
     expectedError = "File does not exist"
     self.assertTrue( expectedError in failedSizeRes['Value']['Failed'][remoteFile] )
     # Check that the passing a directory is handled correctly
     self.assertTrue( directorySizeRes['OK'] )
-    self.assertTrue( directorySizeRes['Value']['Failed'].has_key( remoteDir ) )
+    self.assertTrue( remoteDir in directorySizeRes['Value']['Failed'] )
     expectedError = "Supplied path is not a file"
     self.assertTrue( expectedError in directorySizeRes['Value']['Failed'][remoteDir] )
 
@@ -547,19 +547,19 @@ class FileTestCase( StoragePlugInTestCase ):
 
     # Check the put file operation
     self.assertTrue( putFileRes['OK'] )
-    self.assertTrue( putFileRes['Value']['Successful'].has_key( remoteFile ) )
+    self.assertTrue( remoteFile in putFileRes['Value']['Successful'] )
     self.assertTrue( putFileRes['Value']['Successful'][remoteFile] )
     self.assertEqual( putFileRes['Value']['Successful'][remoteFile], srcFileSize )
     # Check the prestage file operation
     self.assertTrue( prestageRes['OK'] )
-    self.assertTrue( prestageRes['Value']['Successful'].has_key( remoteFile ) )
+    self.assertTrue( remoteFile in prestageRes['Value']['Successful'] )
     self.assertTrue( prestageRes['Value']['Successful'][remoteFile] )
     # Check the remove file operation
     self.assertTrue( removeFileRes['OK'] )
-    self.assertTrue( removeFileRes['Value']['Successful'].has_key( remoteFile ) )
+    self.assertTrue( remoteFile in removeFileRes['Value']['Successful'] )
     # Check that pre-staging non-existant file fails
     self.assertTrue( deletedPrestageRes['OK'] )
-    self.assertTrue( deletedPrestageRes['Value']['Failed'].has_key( remoteFile ) )
+    self.assertTrue( remoteFile in deletedPrestageRes['Value']['Failed'] )
     expectedError = "No such file or directory"
     self.assertTrue( expectedError in deletedPrestageRes['Value']['Failed'][remoteFile] )
 
@@ -582,18 +582,18 @@ class FileTestCase( StoragePlugInTestCase ):
 
     # Check the put file operation
     self.assertTrue( putFileRes['OK'] )
-    self.assertTrue( putFileRes['Value']['Successful'].has_key( remoteFile ) )
+    self.assertTrue( remoteFile in putFileRes['Value']['Successful'] )
     self.assertTrue( putFileRes['Value']['Successful'][remoteFile] )
     self.assertEqual( putFileRes['Value']['Successful'][remoteFile], srcFileSize )
     # check the get turl operation
     self.assertTrue( getTurlRes['OK'] )
-    self.assertTrue( getTurlRes['Value']['Successful'].has_key( remoteFile ) )
+    self.assertTrue( remoteFile in getTurlRes['Value']['Successful'] )
     # check the remove file operation
     self.assertTrue( removeFileRes['OK'] )
-    self.assertTrue( removeFileRes['Value']['Successful'].has_key( remoteFile ) )
+    self.assertTrue( remoteFile in removeFileRes['Value']['Successful'] )
     #Check the get turl with non existant file operation
     self.assertTrue( failedGetTurlRes['OK'] )
-    self.assertTrue( failedGetTurlRes['Value']['Failed'].has_key( remoteFile ) )
+    self.assertTrue( remoteFile in failedGetTurlRes['Value']['Failed'] )
     expectedError = "File does not exist"
     self.assertTrue( expectedError in failedGetTurlRes['Value']['Failed'][remoteFile] )
 
@@ -611,7 +611,7 @@ class FileTestCase( StoragePlugInTestCase ):
     pinFileRes = self.storage.pinFile( remoteFile )
     srmID = ''
     if pinFileRes['OK']:
-      if pinFileRes['Value']['Successful'].has_key( remoteFile ):
+      if remoteFile in pinFileRes['Value']['Successful']:
         srmID = pinFileRes['Value']['Successful'][remoteFile]
     # Check that we can release the file
     releaseFileRes = self.storage.releaseFile( {remoteFile:srmID} )
@@ -620,19 +620,19 @@ class FileTestCase( StoragePlugInTestCase ):
 
     # Check the put file operation
     self.assertTrue( putFileRes['OK'] )
-    self.assertTrue( putFileRes['Value']['Successful'].has_key( remoteFile ) )
+    self.assertTrue( remoteFile in putFileRes['Value']['Successful'] )
     self.assertTrue( putFileRes['Value']['Successful'][remoteFile] )
     self.assertEqual( putFileRes['Value']['Successful'][remoteFile], srcFileSize )
     # Check the pin file operation
     self.assertTrue( pinFileRes['OK'] )
-    self.assertTrue( pinFileRes['Value']['Successful'].has_key( remoteFile ) )
+    self.assertTrue( remoteFile in pinFileRes['Value']['Successful'] )
     self.assertTrue( type( pinFileRes['Value']['Successful'][remoteFile] ) in StringTypes )
     # Check the release file operation
     self.assertTrue( releaseFileRes['OK'] )
-    self.assertTrue( releaseFileRes['Value']['Successful'].has_key( remoteFile ) )
+    self.assertTrue( remoteFile in releaseFileRes['Value']['Successful'] )
     # check the remove file operation
     self.assertTrue( removeFileRes['OK'] )
-    self.assertTrue( removeFileRes['Value']['Successful'].has_key( remoteFile ) )
+    self.assertTrue( remoteFile in removeFileRes['Value']['Successful'] )
 
   def test_putPrestageStatus( self ):
     print('\n\n#########################################################'
@@ -648,7 +648,7 @@ class FileTestCase( StoragePlugInTestCase ):
     prestageRes = self.storage.prestageFile( remoteFile )
     srmID = ''
     if prestageRes['OK']:
-      if prestageRes['Value']['Successful'].has_key( remoteFile ):
+      if remoteFile in prestageRes['Value']['Successful']:
         srmID = prestageRes['Value']['Successful'][remoteFile]
     # Take a quick break to allow the SRM to realise the file is available
     sleepTime = 10
@@ -661,21 +661,21 @@ class FileTestCase( StoragePlugInTestCase ):
 
     # Check the put file operation
     self.assertTrue( putFileRes['OK'] )
-    self.assertTrue( putFileRes['Value']['Successful'].has_key( remoteFile ) )
+    self.assertTrue( remoteFile in putFileRes['Value']['Successful'] )
     self.assertTrue( putFileRes['Value']['Successful'][remoteFile] )
     self.assertEqual( putFileRes['Value']['Successful'][remoteFile], srcFileSize )
     # Check the prestage file operation
     self.assertTrue( prestageRes['OK'] )
-    self.assertTrue( prestageRes['Value']['Successful'].has_key( remoteFile ) )
+    self.assertTrue( remoteFile in prestageRes['Value']['Successful'] )
     self.assertTrue( prestageRes['Value']['Successful'][remoteFile] )
     self.assertTrue( type( prestageRes['Value']['Successful'][remoteFile] ) in StringTypes )
     # Check the prestage status operation
     self.assertTrue( prestageStatusRes['OK'] )
-    self.assertTrue( prestageStatusRes['Value']['Successful'].has_key( remoteFile ) )
+    self.assertTrue( remoteFile in prestageStatusRes['Value']['Successful'] )
     self.assertTrue( prestageStatusRes['Value']['Successful'][remoteFile] )
     # Check the remove file operation
     self.assertTrue( removeFileRes['OK'] )
-    self.assertTrue( removeFileRes['Value']['Successful'].has_key( remoteFile ) )
+    self.assertTrue( remoteFile in removeFileRes['Value']['Successful'] )
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase( FileTestCase )

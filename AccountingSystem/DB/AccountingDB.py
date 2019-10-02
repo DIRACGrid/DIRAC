@@ -3,6 +3,7 @@
 
 __RCSID__ = "$Id$"
 
+import six
 import datetime
 import time
 import threading
@@ -500,7 +501,7 @@ class AccountingDB(DB):
       Adds a key value to a key table if not existant
     """
     # Cast to string just in case
-    if not isinstance(keyValue, basestring):
+    if not isinstance(keyValue, six.string_types):
       keyValue = str(keyValue)
     # No more than 64 chars for keys
     if len(keyValue) > 64:

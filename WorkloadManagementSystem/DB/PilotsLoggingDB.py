@@ -14,6 +14,7 @@
 __RCSID__ = "$Id$"
 
 
+import six
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
@@ -165,7 +166,7 @@ class PilotsLoggingDB(object):
   def deletePilotsLogging(self, pilotUUID):
     """Delete all logging entries for pilot"""
 
-    if isinstance(pilotUUID, basestring):
+    if isinstance(pilotUUID, six.string_types):
       pilotUUID = [pilotUUID, ]
 
     session = self.sqlalchemySession()

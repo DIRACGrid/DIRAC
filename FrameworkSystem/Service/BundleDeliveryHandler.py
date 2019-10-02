@@ -4,6 +4,7 @@
 
 __RCSID__ = "$Id$"
 
+import six
 import cStringIO
 import tarfile
 import os
@@ -110,7 +111,7 @@ class BundleDeliveryHandler(RequestHandler):
   def transfer_toClient(self, fileId, token, fileHelper):
     global gBundleManager
     version = ""
-    if isinstance(fileId, basestring):
+    if isinstance(fileId, six.string_types):
       if fileId in ['CAs', 'CRLs']:
         return self.__transferFile(fileId, fileHelper)
       else:

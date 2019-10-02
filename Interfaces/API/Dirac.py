@@ -17,6 +17,8 @@
 from __future__ import print_function
 __RCSID__ = "$Id$"
 
+from past.builtins import long
+import six
 import re
 import os
 import sys
@@ -96,7 +98,7 @@ class Dirac(API):
   def _checkFileArgument(self, fnList, prefix=None, single=False):
     if prefix is None:
       prefix = 'LFN'
-    if isinstance(fnList, basestring):
+    if isinstance(fnList, six.string_types):
       otherPrefix = 'LFN:' if prefix == 'PFN' else 'PFN:'
       if otherPrefix in fnList:
         return self._errorReport('Expected %s string, not %s') % (prefix, otherPrefix)
@@ -314,7 +316,7 @@ class Dirac(API):
     """
     self.__printInfo()
 
-    if isinstance(job, basestring):
+    if isinstance(job, six.string_types):
       if os.path.exists(job):
         self.log.verbose('Found job JDL file %s' % (job))
         with open(job, 'r') as fd:
@@ -819,7 +821,7 @@ class Dirac(API):
     sandbox = parameters.get('InputSandbox')
     if sandbox:
       self.log.verbose("Input Sandbox is %s" % sandbox)
-      if isinstance(sandbox, basestring):
+      if isinstance(sandbox, six.string_types):
         sandbox = [isFile.strip() for isFile in sandbox.split(',')]
       for isFile in sandbox:
         self.log.debug("Resolving Input Sandbox %s" % isFile)
@@ -881,7 +883,7 @@ class Dirac(API):
     variableList = parameters.get('ExecutionEnvironment')
     if variableList:
       self.log.verbose('Adding variables to execution environment')
-      if isinstance(variableList, basestring):
+      if isinstance(variableList, six.string_types):
         variableList = [variableList]
       for var in variableList:
         nameEnv = var.split('=')[0]
@@ -925,7 +927,7 @@ class Dirac(API):
       sandbox = parameters.get('OutputSandbox')
 
     if sandbox:
-      if isinstance(sandbox, basestring):
+      if isinstance(sandbox, six.string_types):
         sandbox = [osFile.strip() for osFile in sandbox.split(',')]
       for i in sandbox:
         globList = glob.glob(i)
@@ -965,7 +967,7 @@ class Dirac(API):
     """
     inputData = parameters.get('InputData')
     if inputData:
-      if isinstance(inputData, basestring):
+      if isinstance(inputData, six.string_types):
         inputData = [inputData]
     return S_OK(inputData)
 
@@ -975,7 +977,7 @@ class Dirac(API):
     """Internal callback function to return standard output when running locally.
     """
     if fd:
-      if isinstance(fd, (int, long)):
+      if isinstance(fd, six.integer_types):
         if fd == 0:
           print(message, file=sys.stdout)
         elif fd == 1:
@@ -1191,7 +1193,7 @@ class Dirac(API):
       return ret
     lfns = ret['Value']
 
-    if not isinstance(maxFilesPerJob, (int, long)):
+    if not isinstance(maxFilesPerJob, six.integer_types):
       try:
         maxFilesPerJob = int(maxFilesPerJob)
       except Exception as x:
@@ -1388,9 +1390,9 @@ class Dirac(API):
       sourceSE = ''
     if not localCache:
       localCache = ''
-    if not isinstance(sourceSE, basestring):
+    if not isinstance(sourceSE, six.string_types):
       return self._errorReport('Expected string for source SE name')
-    if not isinstance(localCache, basestring):
+    if not isinstance(localCache, six.string_types):
       return self._errorReport('Expected string for path to local cache')
 
     localFile = os.path.join(localCache, os.path.basename(lfn))
@@ -1440,7 +1442,7 @@ class Dirac(API):
     if not sourceSE:
       sourceSE = ''
 
-    if not isinstance(sourceSE, basestring):
+    if not isinstance(sourceSE, six.string_types):
       return self._errorReport('Expected string for source SE name')
 
     dm = DataManager()
@@ -1641,9 +1643,12 @@ class Dirac(API):
     try:
       os.mkdir(dirPath)
     except Exception as x:
-      return self._errorReport(str(x), 'Could not create directory in %s' % (dirPath))
+      return self._errorReport(repr(x), 'Could not create directory in %s' % (dirPath))
 
-    result = SandboxStoreClient(useCertificates=self.useCertificates).downloadSandboxForJob(jobID, 'Input', dirPath)
+    result = SandboxStoreClient(smdb=False,
+                                useCertificates=self.useCertificates).downloadSandboxForJob(jobID,
+                                                                                            'Input',
+                                                                                            dirPath)
     if not result['OK']:
       self.log.warn(result['Message'])
     else:
@@ -1689,7 +1694,10 @@ class Dirac(API):
     mkDir(dirPath)
 
     # New download
-    result = SandboxStoreClient(useCertificates=self.useCertificates).downloadSandboxForJob(jobID, 'Output', dirPath,
+    result = SandboxStoreClient(smdb=False,
+                                useCertificates=self.useCertificates).downloadSandboxForJob(jobID,
+                                                                                            'Output',
+                                                                                            dirPath,
                                                                                             inMemory=False,
                                                                                             unpack=unpack)
     if result['OK']:
@@ -1990,7 +1998,7 @@ class Dirac(API):
       return S_ERROR('No output data files found to download')
 
     if outputFiles:
-      if isinstance(outputFiles, basestring):
+      if isinstance(outputFiles, six.string_types):
         outputFiles = [os.path.basename(outputFiles)]
       elif isinstance(outputFiles, list):
         try:
@@ -2278,7 +2286,7 @@ class Dirac(API):
     """Internal function.  Writes a python object to a specified file path.
     """
     with open(fileName, 'w') as fopen:
-      if not isinstance(pObject, basestring):
+      if not isinstance(pObject, six.string_types):
         fopen.write('%s\n' % self.pPrint.pformat(pObject))
       else:
         fopen.write(pObject)
@@ -2399,7 +2407,10 @@ class Dirac(API):
     if printOutput:
       print(self.pPrint.pformat(result['Value']))
 
-    return S_OK(result['Value'][jobID])
+    if jobID in result['Value']:
+      return S_OK(result['Value'][jobID])
+    else:
+      return S_ERROR('Failed to get job parameters for %s' % jobID)
 
   #############################################################################
 
@@ -2505,7 +2516,7 @@ class Dirac(API):
        :returns: S_OK,S_ERROR
     """
 
-    if not isinstance(system, basestring) and isinstance(service, basestring) and not isinstance(url, basestring):
+    if not isinstance(system, basestring) and isinstance(service, basestring) and not isinstance(url, six.string_types):
       return self._errorReport('Expected string for system and service or a url to ping()')
     result = S_ERROR()
     try:
@@ -2576,7 +2587,7 @@ class Dirac(API):
       with open(jdl, 'r') as jdlFile:
         jdl = jdlFile.read()
 
-    if not isinstance(jdl, basestring):
+    if not isinstance(jdl, six.string_types):
       return S_ERROR("Can't read JDL")
 
     try:

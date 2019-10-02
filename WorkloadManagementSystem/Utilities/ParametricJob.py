@@ -7,6 +7,7 @@
 
 __RCSID__ = "$Id$"
 
+import six
 import re
 
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
@@ -170,7 +171,7 @@ def generateParametricJobs(jobClassAd):
         attribute = 'Parameter'
       else:
         attribute = 'Parameter.%s' % seqID
-      if isinstance(parameter, basestring) and parameter.startswith('{'):
+      if isinstance(parameter, six.string_types) and parameter.startswith('{'):
         newClassAd.insertAttributeInt(attribute, str(parameter))
       else:
         newClassAd.insertAttributeString(attribute, str(parameter))

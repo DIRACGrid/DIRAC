@@ -8,6 +8,7 @@
 
 __RCSID__ = "$Id$"
 
+import six
 import os
 import re
 import tempfile
@@ -30,7 +31,7 @@ class CREAMComputingElement(ComputingElement):
   def __init__(self, ceUniqueID):
     """ Standard constructor.
     """
-    ComputingElement.__init__(self, ceUniqueID)
+    super(CREAMComputingElement, self).__init__(ceUniqueID)
 
     self.ceType = CE_NAME
     self.submittedJobs = 0
@@ -169,7 +170,7 @@ class CREAMComputingElement(ComputingElement):
     """ Kill the specified jobs
     """
     jobList = list(jobIDList)
-    if isinstance(jobIDList, basestring):
+    if isinstance(jobIDList, six.string_types):
       jobList = [jobIDList]
 
     cmd = ['glite-ce-job-cancel', '-n', '-N'] + jobList

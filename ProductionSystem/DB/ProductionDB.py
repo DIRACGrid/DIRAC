@@ -5,6 +5,8 @@
 """
 
 # # imports
+from past.builtins import long
+import six
 import json
 import threading
 
@@ -140,7 +142,7 @@ class ProductionDB(DB):
     resultList = []
     for row in res['Value']:
       # Prepare the structure for the web
-      rList = [str(item) if not isinstance(item, (long, int)) else item for item in row]
+      rList = [str(item) if not isinstance(item, six.integer_types) else item for item in row]
       prodDict = dict(zip(self.PRODPARAMS, row))
       webList.append(rList)
       resultList.append(prodDict)
@@ -173,7 +175,7 @@ class ProductionDB(DB):
     :param str prodName: the Production name or ID
     :param str parameters: any valid production parameter in self.PRODPARAMS
     """
-    if isinstance(parameters, basestring):
+    if isinstance(parameters, six.string_types):
       parameters = [parameters]
     res = self.getProduction(prodName, connection=connection)
     if not res['OK']:
@@ -273,7 +275,7 @@ class ProductionDB(DB):
     resultList = []
     for row in res['Value']:
       # Prepare the structure for the web
-      rList = [str(item) if not isinstance(item, (long, int)) else item for item in row]
+      rList = [str(item) if not isinstance(item, six.integer_types) else item for item in row]
       transDict = dict(zip(self.TRANSPARAMS, row))
       webList.append(rList)
       resultList.append(transDict)
@@ -568,7 +570,7 @@ class ProductionDB(DB):
       prodName = long(prodName)
       cmd = "SELECT ProductionID from Productions WHERE ProductionID=%d;" % prodName
     except BaseException:
-      if not isinstance(prodName, basestring):
+      if not isinstance(prodName, six.string_types):
         return S_ERROR("Production should be ID or name")
       cmd = "SELECT ProductionID from Productions WHERE ProductionName='%s';" % prodName
     res = self._query(cmd, connection)

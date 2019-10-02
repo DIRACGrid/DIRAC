@@ -3,6 +3,7 @@
 
 # # custom duty
 
+import six
 import copy
 import datetime
 import errno
@@ -399,7 +400,7 @@ class StorageElementItem(object):
     # Call occupancy plugin if requested
     occupancyPlugin = self.options.get('OccupancyPlugin')
     if occupancyPlugin:
-      res = ObjectLoader().loadObject(occupancyPlugin)
+      res = ObjectLoader().loadObject('Resources.Storage.OccupancyPlugins.%s' % occupancyPlugin, occupancyPlugin)
       if not res['OK']:
         return S_ERROR(errno.EPROTONOSUPPORT, 'Failed to load occupancy plugin %s' % occupancyPlugin)
       log.verbose('Use occupancy plugin %s' % occupancyPlugin)
@@ -935,7 +936,7 @@ class StorageElementItem(object):
       protocols = self.turlProtocols
     elif isinstance(protocol, list):
       protocols = protocol
-    elif isinstance(protocol, basestring):
+    elif isinstance(protocol, six.string_types):
       protocols = [protocol]
 
     self.methodName = "getTransportURL"
@@ -1032,7 +1033,7 @@ class StorageElementItem(object):
         "Filtering plugins for %s (protocol = %s ; inputProtocol = %s)" %
         (methodName, protocols, inputProtocol))
 
-    if isinstance(protocols, basestring):
+    if isinstance(protocols, six.string_types):
       protocols = [protocols]
 
     pluginsToUse = []
@@ -1125,12 +1126,17 @@ class StorageElementItem(object):
         :param *args: variable amount of non-keyword arguments. SHOULD BE EMPTY
         :param **kwargs: keyword arguments
 
+        A special argument is 'protocols', which will be used by the StorageElement to filter
+        the usable plugins. Unless the method being executed is getTransportURL, this parameter
+        is removed from kwargs.
+        A special kwargs is 'inputProtocol', which can be specified for putFile. It describes
+        the protocol used as source protocol, since there is in principle only one.
+
+
         :returns: S_OK( { 'Failed': {lfn : reason} , 'Successful': {lfn : value} } )
                 The Failed dict contains the lfn only if the operation failed on all the storages
                 The Successful dict contains the value returned by the successful storages.
 
-        A special kwargs is 'inputProtocol', which can be specified for putFile. It describes
-        the protocol used as source protocol, since there is in principle only one.
     """
 
     removedArgs = {}
@@ -1187,13 +1193,19 @@ class StorageElementItem(object):
     # and avoid fake failures showing in the accounting
     inputProtocol = kwargs.pop('inputProtocol', None)
 
+    # the 'protocols' parameter is only given to the plugin when calling getTransportURL.
+    # The other methods do not expect it.
+    protocols = kwargs.get('protocols')
+    if self.methodName != 'getTransportURL':
+      kwargs.pop('protocols', None)
+
     successful = {}
     failed = {}
-    filteredPlugins = self.__filterPlugins(self.methodName, kwargs.get('protocols'), inputProtocol)
+    filteredPlugins = self.__filterPlugins(self.methodName, protocols, inputProtocol)
     if not filteredPlugins:
       return S_ERROR(errno.EPROTONOSUPPORT, "No storage plugins matching the requirements\
                                            (operation %s protocols %s inputProtocol %s)" %
-                     (self.methodName, kwargs.get('protocols'), inputProtocol))
+                     (self.methodName, protocols, inputProtocol))
     # Try all of the storages one by one
     for storage in filteredPlugins:
       # Determine whether to use this storage object

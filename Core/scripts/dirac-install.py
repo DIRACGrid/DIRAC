@@ -155,6 +155,14 @@ try:
 except ImportError:
   # Fall back to Python 2's urllib2
   from urllib2 import urlopen, HTTPError, URLError
+try:
+  long
+except NameError:
+  long = int
+try:
+  str_type = basestring
+except NameError:
+  str_type = str
 
 __RCSID__ = "$Id$"
 
@@ -741,17 +749,20 @@ class ReleaseConfig(object):
       return S_OK(sourceUrl)
     return S_ERROR("Don't know how to find the installation tarballs for project %s" % project)
 
-  def getDiracOsLocation(self, project=None):
+  def getDiracOsLocation(self, project=None, diracosDefault=False):
     """
     Returns the location of the DIRAC os binary for a given project for example: LHCb or DIRAC, etc...
 
     :param str project: the name of the project
+    :param bool diracosDefault: flag to take diracos distribution from the default location
+
+    :return: the location of the tar balls
     """
     if project is None:
       project = 'DIRAC'
 
     diracOsLoc = "Projects/%s/DIRACOS" % self.projectName
-    if self.globalDefaults.isOption(diracOsLoc):
+    if not diracosDefault and self.globalDefaults.isOption(diracOsLoc):
       # use from the VO specific configuration file
       location = self.globalDefaults.get(diracOsLoc, "")
     else:
@@ -1261,7 +1272,7 @@ def logDEBUG(msg):
   """
   if cliParams.debug:
     for line in msg.split("\n"):
-      print ("%s UTC dirac-install [DEBUG] %s" % (time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime()), line))
+      print("%s UTC dirac-install [DEBUG] %s" % (time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime()), line))
     sys.stdout.flush()
 
 
@@ -1270,7 +1281,7 @@ def logERROR(msg):
   :param str msg: error message
   """
   for line in msg.split("\n"):
-    print ("%s UTC dirac-install [ERROR] %s" % (time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime()), line))
+    print("%s UTC dirac-install [ERROR] %s" % (time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime()), line))
   sys.stdout.flush()
 
 
@@ -1279,7 +1290,7 @@ def logWARN(msg):
   :param str msg: warning message
   """
   for line in msg.split("\n"):
-    print ("%s UTC dirac-install [WARN] %s" % (time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime()), line))
+    print("%s UTC dirac-install [WARN] %s" % (time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime()), line))
   sys.stdout.flush()
 
 
@@ -1288,7 +1299,7 @@ def logNOTICE(msg):
   :param str msg: notice message
   """
   for line in msg.split("\n"):
-    print ("%s UTC dirac-install [NOTICE]  %s" % (time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime()), line))
+    print("%s UTC dirac-install [NOTICE]  %s" % (time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime()), line))
   sys.stdout.flush()
 
 
@@ -1342,7 +1353,7 @@ def urlretrieveTimeout(url, fileName='', timeout=0):
     # Sometimes repositories do not return Content-Length parameter
     try:
       expectedBytes = long(remoteFD.info()['Content-Length'])
-    except Exception as x:
+    except Exception:
       logWARN('Content-Length parameter not returned, skipping expectedBytes check')
 
     receivedBytes = 0
@@ -1357,14 +1368,14 @@ def urlretrieveTimeout(url, fileName='', timeout=0):
         urlData += data.decode('utf8', 'ignore')
       data = remoteFD.read(16384)
       if count % 20 == 0 and sys.stdout.isatty():
-        print (u'\033[1D' + ".", end=" ")
+        print(u'\033[1D' + ".", end=" ")
         sys.stdout.flush()
         progressBar = True
       count += 1
     if progressBar and sys.stdout.isatty():
       # return cursor to the beginning of the line
-      print ('\033[1K', end=" ")
-      print ('\033[1A')
+      print('\033[1K', end=" ")
+      print('\033[1A')
     if fileName:
       localFD.close()
     remoteFD.close()
@@ -1644,6 +1655,8 @@ def discoverModules(modules):
     projects[m] = {}
     if s and v:
       projects[m] = {"sourceUrl": s, "Version": v}
+    else:
+      logWARN('Unable to parse module: %s' % module)
   return projects
 
 ####
@@ -1675,7 +1688,6 @@ cmdOpts = (('r:', 'release=', 'Release version to install'),
            ('  ', 'tag=', 'release version to install from git, http or local'),
            ('m:', 'module=',
             'Module to be installed. for example: -m DIRAC or -m git://github.com/DIRACGrid/DIRAC.git:DIRAC'),
-           ('s:', 'source=', 'location of the modules to be installed'),
            ('x:', 'external=', 'external version'),
            ('  ', 'cleanPYTHONPATH', 'Only use the DIRAC PYTHONPATH (for pilots installation)'),
            ('  ', 'createLink', 'create version symbolic link from the versions directory. This is equivalent to the \
@@ -1685,12 +1697,12 @@ cmdOpts = (('r:', 'release=', 'Release version to install'),
 
 
 def usage():
-  print ("\nUsage:\n\n  %s <opts> <cfgFile>" % os.path.basename(sys.argv[0]))
-  print ("\nOptions:")
+  print("\nUsage:\n\n  %s <opts> <cfgFile>" % os.path.basename(sys.argv[0]))
+  print("\nOptions:")
   for cmdOpt in cmdOpts:
-    print ("\n  %s %s : %s" % (cmdOpt[0].ljust(3), cmdOpt[1].ljust(20), cmdOpt[2]))
+    print("\n  %s %s : %s" % (cmdOpt[0].ljust(3), cmdOpt[1].ljust(20), cmdOpt[2]))
   print()
-  print ("Known options and default values from /defaults section of releases file")
+  print("Known options and default values from /defaults section of releases file")
   for options in [('Release', cliParams.release),
                   ('Project', cliParams.project),
                   ('ModulesToInstall', []),
@@ -1702,7 +1714,7 @@ def usage():
                   ('NoAutoBuild', cliParams.noAutoBuild),
                   ('Debug', cliParams.debug),
                   ('Timeout', cliParams.timeout)]:
-    print (" %s = %s" % options)
+    print(" %s = %s" % options)
 
   sys.exit(0)
 
@@ -1757,10 +1769,6 @@ def loadConfiguration():
 
     if opName == 'installType':
       opName = 'externalsType'
-    if sys.version_info[0] < 3:
-      str_type = basestring
-    else:
-      str_type = str
     if isinstance(getattr(cliParams, opName), str_type):
       setattr(cliParams, opName, opVal)
     elif isinstance(getattr(cliParams, opName), bool):
@@ -1971,13 +1979,7 @@ def installLCGutils(releaseConfig):
   if lcgVer:
     verString = "%s-%s-python%s" % (lcgVer, cliParams.platform, cliParams.pythonVersion)
     # HACK: try to find a more elegant solution for the lcg bundles location
-    if not downloadAndExtractTarball(
-        tarsURL +
-        "/../lcgBundles",
-        "DIRAC-lcg",
-        verString,
-        False,
-            cache=True):
+    if not downloadAndExtractTarball(tarsURL + "/../lcgBundles", "DIRAC-lcg", verString, False, cache=True):
       logERROR(
           "\nThe requested LCG software version %s for the local operating system could not be downloaded." %
           verString)
@@ -2151,6 +2153,10 @@ def createBashrc():
       # Add the lines required for ARC CE support
       lines.extend(['# ARC Computing Element',
                     'export ARC_PLUGIN_PATH=$DIRACLIB/arc'])
+
+      # Add the lines required for fork support for xrootd
+      lines.extend(['# Fork support for xrootd',
+                    'export XRD_RUNFORKHANDLER=1'])
       lines.append('')
       f = open(bashrcFile, 'w')
       f.write('\n'.join(lines))
@@ -2247,6 +2253,11 @@ def createCshrc():
       # Add the lines required for ARC CE support
       lines.extend(['# ARC Computing Element',
                     'setenv ARC_PLUGIN_PATH $DIRACLIB/arc'])
+
+      # Add the lines required for fork support for xrootd
+      lines.extend(['# Fork support for xrootd',
+                    'setenv XRD_RUNFORKHANDLER 1'])
+
       lines.append('')
       f = open(cshrcFile, 'w')
       f.write('\n'.join(lines))
@@ -2311,7 +2322,19 @@ def installDiracOS(releaseConfig):
   if cliParams.installSource:
     tarsURL = cliParams.installSource
   else:
-    tarsURL = releaseConfig.getDiracOsLocation()['Value']
+    # if ":" is not present in diracos name, we take the diracos tarball from vanilla DIRAC location
+    if diracos.lower() == 'diracos':
+      retVal = releaseConfig.getDiracOsLocation(diracosDefault=True)
+      if retVal['OK']:
+        tarsURL = retVal['Value']
+      else:
+        logERROR(retVal['Message'])
+    else:
+      retVal = releaseConfig.getDiracOsLocation()
+      if retVal['OK']:
+        tarsURL = retVal['Value']
+      else:
+        logERROR(retVal['Message'])
   if not tarsURL:
     tarsURL = releaseConfig.getTarsLocation('DIRAC')['Value']
     logWARN("DIRACOS location is not specified using %s" % tarsURL)
@@ -2418,6 +2441,11 @@ def createBashrcForDiracOS():
       # Note: eventually this line should disappear as already set by diracosrc
       lines.extend(['# ARC Computing Element',
                     'export ARC_PLUGIN_PATH=$DIRACOS/usr/lib64/arc'])
+
+      # Add the lines required for fork support for xrootd
+      lines.extend(['# Fork support for xrootd',
+                    'export XRD_RUNFORKHANDLER=1'])
+
       lines.append('')
       with open(bashrcFile, 'w') as f:
         f.write('\n'.join(lines))
@@ -2442,28 +2470,32 @@ def checkoutFromGit(moduleName, sourceURL, tagVersion, destinationDir=None):
   codeRepo = moduleName + 'Repo'
 
   fDirName = os.path.join(cliParams.targetPath, codeRepo)
-  cmd = "git clone '%s' '%s'" % (sourceURL, fDirName)
-
-  logNOTICE("Executing: %s" % cmd)
-  if os.system(cmd):
-    return S_ERROR("Error while retrieving sources from git")
-
-  branchName = "%s-%s" % (tagVersion, os.getpid())
-
-  isTagCmd = "( cd '%s'; git tag -l | grep '%s' )" % (fDirName, tagVersion)
-  if os.system(isTagCmd):
-    # No tag found, assume branch
-    branchSource = 'origin/%s' % tagVersion
+  if os.path.isdir(sourceURL):
+    logNOTICE("Using local copy for source: %s" % sourceURL)
+    shutil.copytree(sourceURL, fDirName)
   else:
-    branchSource = tagVersion
+    cmd = "git clone '%s' '%s'" % (sourceURL, fDirName)
 
-  cmd = "( cd '%s'; git checkout -b '%s' '%s' )" % (fDirName, branchName, branchSource)
+    logNOTICE("Executing: %s" % cmd)
+    if os.system(cmd):
+      return S_ERROR("Error while retrieving sources from git")
 
-  logNOTICE("Executing: %s" % cmd)
-  exportRes = os.system(cmd)
+    branchName = "%s-%s" % (tagVersion, os.getpid())
 
-  if exportRes:
-    return S_ERROR("Error while exporting from git")
+    isTagCmd = "( cd '%s'; git tag -l | grep '%s' )" % (fDirName, tagVersion)
+    if os.system(isTagCmd):
+      # No tag found, assume branch
+      branchSource = 'origin/%s' % tagVersion
+    else:
+      branchSource = tagVersion
+
+    cmd = "( cd '%s'; git checkout -b '%s' '%s' )" % (fDirName, branchName, branchSource)
+
+    logNOTICE("Executing: %s" % cmd)
+    exportRes = os.system(cmd)
+
+    if exportRes:
+      return S_ERROR("Error while exporting from git")
 
   # replacing the code
   if os.path.exists(fDirName + '/' + moduleName):
@@ -2548,10 +2580,10 @@ if __name__ == "__main__":
         if not retVal['OK']:
           logERROR("Cannot checkout %s" % retVal['Message'])
           sys.exit(1)
-        continue
-      logNOTICE("Installing %s:%s" % (modName, modVersion))
-      if not downloadAndExtractTarball(tarsURL, modName, modVersion):
-        sys.exit(1)
+      else:
+        logNOTICE("Installing %s:%s" % (modName, modVersion))
+        if not downloadAndExtractTarball(tarsURL, modName, modVersion):
+          sys.exit(1)
     logNOTICE("Deploying scripts...")
     ddeLocation = os.path.join(cliParams.targetPath, "DIRAC", "Core",
                                "scripts", "dirac-deploy-scripts.py")

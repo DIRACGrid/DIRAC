@@ -4,6 +4,7 @@
 
 from __future__ import print_function
 __RCSID__ = "$Id$"
+import six
 
 
 class ClassAd(object):
@@ -161,7 +162,7 @@ class ClassAd(object):
     """
 
     if name in self.contents:
-      if isinstance(self.contents[name], (int, long)):
+      if isinstance(self.contents[name], six.integer_types):
         return str(self.contents[name])
       return self.contents[name]
     return ""

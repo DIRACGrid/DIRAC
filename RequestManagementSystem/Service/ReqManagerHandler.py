@@ -10,6 +10,8 @@
 """
 __RCSID__ = "$Id$"
 # # imports
+from past.builtins import long
+import six
 import json
 import datetime
 import math
@@ -63,14 +65,14 @@ class ReqManagerHandler(RequestHandler):
   @classmethod
   def export_getRequestIDForName(cls, requestName):
     """ get requestID for given :requestName: """
-    if isinstance(requestName, basestring):
+    if isinstance(requestName, six.string_types):
       result = cls.__requestDB.getRequestIDForName(requestName)
       if not result["OK"]:
         return result
       requestID = result["Value"]
     return S_OK(requestID)
 
-  types_cancelRequest = [(int, long)]
+  types_cancelRequest = [six.integer_types]
 
   @classmethod
   def export_cancelRequest(cls, requestID):
@@ -143,7 +145,7 @@ class ReqManagerHandler(RequestHandler):
     gLogger.info("putRequest: Attempting to set request '%s'" % requestName)
     return self.__requestDB.putRequest(request)
 
-  types_getScheduledRequest = [(int, long)]
+  types_getScheduledRequest = [six.integer_types]
 
   @classmethod
   def export_getScheduledRequest(cls, operationID):
@@ -166,7 +168,7 @@ class ReqManagerHandler(RequestHandler):
     """ Get the summary of requests in the Request DB """
     return cls.__requestDB.getDBSummary()
 
-  types_getRequest = [(long, int)]
+  types_getRequest = [six.integer_types]
 
   @classmethod
   def export_getRequest(cls, requestID=0):
@@ -211,7 +213,7 @@ class ReqManagerHandler(RequestHandler):
       return S_OK(toJSONDict)
     return S_OK()
 
-  types_peekRequest = [(long, int)]
+  types_peekRequest = [six.integer_types]
 
   @classmethod
   def export_peekRequest(cls, requestID=0):
@@ -269,7 +271,7 @@ class ReqManagerHandler(RequestHandler):
 
     return cls.__requestDB.getRequestCountersWeb(groupingAttribute, selectDict)
 
-  types_deleteRequest = [(int, long)]
+  types_deleteRequest = [six.integer_types]
 
   @classmethod
   def export_deleteRequest(cls, requestID):
@@ -317,7 +319,7 @@ class ReqManagerHandler(RequestHandler):
       requests["Value"]["Successful"][jobID] = request.toJSON()["Value"]
     return requests
 
-  types_getDigest = [(int, long)]
+  types_getDigest = [six.integer_types]
 
   @classmethod
   def export_getDigest(cls, requestID):
@@ -328,7 +330,7 @@ class ReqManagerHandler(RequestHandler):
     """
     return cls.__requestDB.getDigest(requestID)
 
-  types_getRequestStatus = [(int, long)]
+  types_getRequestStatus = [six.integer_types]
 
   @classmethod
   def export_getRequestStatus(cls, requestID):
@@ -343,7 +345,7 @@ class ReqManagerHandler(RequestHandler):
   @classmethod
   def export_getRequestFileStatus(cls, requestID, lfnList):
     """ get request file status for a given LFNs list and requestID """
-    if isinstance(lfnList, basestring):
+    if isinstance(lfnList, six.string_types):
       lfnList = [lfnList]
     res = cls.__requestDB.getRequestFileStatus(requestID, lfnList)
     if not res["OK"]:

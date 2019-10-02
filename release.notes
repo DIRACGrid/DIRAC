@@ -1,9 +1,63 @@
-[v7r0-pre21]
+[v7r1-pre9]
+
+*Core
+NEW: initial support for mysql8
+NEW: (#4236) DISET - pass the client DIRAC version as part of the request description structure
+NEW: (#4274) Allow installation from a local directory
+
+*Configuration
+CHANGE: (#4157) add new helper methods for IdP/Proxy Providers, OAuthManager. Add methods that 
+        read DN options in dirac user section
+NEW: (#4241) Slave configuration servers are automatically updated as part of the new configuration 
+     changes commit
+NEW: (#4241) Configuration Server - added forceGlobalConfigurationUpdate() interface to force all 
+     registered service to update their configuration
+NEW: (#4257) Add search emails for group method in Registry
+
+*Framework
+CHANGE: (#4157) add possibility to work with Proxy Providers and "clean" proxy without 
+        voms/dirac extensions
+NEW: (#4257) Filter of duplicate mails in Notification
+FIX: (#4257) Optimize test in NotificationHandler
+
+*DMS
+CHANGE: (#4243) FileCatalog - standard components are loaded using ObjectLoader mechanism
+NEW: (#4279) FileCatalog - added VOMSSecurityManager class
+CHANGE: (#4279) FileCatalog - dropped PolicyBasedSecurityManager and VOMSPolicy classes
+
+*Resources
+NEW: (#4157) ProxyProvider resources with implementation for DIRAC CA and PUSP proxy providers
+NEW: (#4276) IdProvider resources to represent external user identity providers
+
+*tests
+CHANGE: (#4279) use VOMSSecurityManager for integration instead of PolicyBasedSecurityManager/VOMSPolicy
+FIX: (#4284) DMS client tests to use DIRAC user name, rather than the local system user name
+
+[v7r0p2]
+
+*Accounting
+FIX: (#4290) Allow longer user and site names.
+
+*WMS
+NEW: (#4287) dirac-wms-get-wn and dirac-wms-pilot-job-info scripts (ported from LHCbDIRAC)
+
+*docs
+CHANGE: (#4266) the AdministratorGuide has been restructured
+
+[v7r0p1]
+
+FIX: Removing some deprecated codes
+
+[v7r0]
 
 FIX: (#3962) use print function instead of print statement
 FIX: (#3962) remove the usage of the long suffix to distinguish between long and int
 FIX: (#3962) convert octal literals to new syntax
 NEW: (#3962) Add pylint test to check python 3 compatibility
+
+*Configuration
+CHANGE: (#4249) The flag UpdatePilotCStoJSONFile has been moved to Operations/[]/Pilot section
+NEW: (#4255) Resources - added getStorageElements() method
 
 *Framework
 CHANGE: (#4180) Removed local MySQL handling (DIRACOS won't have install it)
@@ -30,6 +84,13 @@ CHANGE: (#3890) remove JobStateSync service
 CHANGE: (#3873) Watchdog: use Profiler instead of ProcessMonitor
 NEW: (#4163) SiteDirectors send by default Pilot3 (flag for pilot2 is still kept)
 FIX: (#4163) removed unicode_literals (messes up things with DEncode)
+NEW: (#4224) PilotWrapper can get the Pilot files from a list of locations
+CHANGE: (#4224) PilotWrapper is compatible with several python versions
+NEW: (#4260) New dirac-wms-match command to test a given job for matching computing resources
+NEW: (#4260) QueueUtilities - utilities relevant to queues manipulation
+FIX: (#4265) urllib.urlopen() call with and without the 'context' parameter in Utilities/PilotWrapper.py 
+     according to the version of urllib instead of the python version
+CHANGE: (#4244) Modified flag for using the JobParameters on ElasticSearch database
 
 *Core
 NEW: (#3744) Add update method to the ElasticSearchDB.py to update or if not available create the values 
@@ -41,16 +102,27 @@ NEW: (#3842) Add createClient decorator to add wrapper for all export_ functions
 NEW: (#3678) dirac-install can install a non released code directly from the git repository
 FIX: (#3931) AuthManager - modified to work with the case of unregistered DN in credDict
 FIX: (#4182) Add CountryName OID and be more permissive in the String type for decoding VOMSExtensions
+FIX: (#4211) change orders of @deprecated and @classmethod decorators in X509Chain
+NEW: (#4229) dirac-install defines XRD_RUNFORKHANDLER environment variable
 
 *TransformationSystem
 NEW: (#4124) InputDataQuery and OutputDataQuery parameters can be set for Transformations before 
      they are added to the transformation system. Solves #4071
+CHANGE: (#4238) TransformationDB.getTransformationMetaQuery returns ENOENT if no meta query exists
+FIX: (#4238) InputDataAgent: silence warnings about transformations not having a input data query
 
 *ProductionManagement
 NEW: (#3703) ProductionManagement system is introduced
 
 *Interfaces
 CHANGE: (#4163) removed deprecated methods from Dirac.py
+
+*Resources
+FIX: (#4229) add proxy location as a virtual user for xroot urls
+FIX: (#4234) future import in executeBatch script that prevented the pilot deployment on SSH CE, fixes #4233
+FIX: (#4231) SE __executeMethod: only pass protocols parameter to getTransportURL
+NEW: (#4255) New dirac-resource-info command to display computing and storage resources available
+     to a given VO     
 
 *ResourceStatusSystem
 CHANGE: (#4177) use the ObjectLoader for Clients, in PEP
@@ -64,6 +136,8 @@ CHANGE: (#3760) Use the above Client classes instead of invoking RPCClient()
 NEW: (#3744) Added performance tests for ES and MySQL for WMS DB backends
 NEW: (#3744) Added miniInstallDIRAC function for Jenkins jobs
 FIX: (#4177) restored test of JobsMonitor().JobParameters
+NEW: (#4224) added a test for PilotWrapper
+NEW: (#4244) integration test for JobParameters on ElasticSearch database
 
 *Docs
 FIX: Better dirac.cfg example configuration for web
@@ -72,6 +146,69 @@ NEW: Added script (docs/Tools/UpdateDiracCFG.py) to collate the ConfigTemplate.c
      files into the main dirac.cfg file
 CHANGE: (#4110) updated basic tutorial for CC7 instead of SLC6.     
 NEW: (#4170) added Production system documentation
+CHANGE: (#4224) Pilot 3 is the default
+NEW: (#4244) Added a few notes on using the JobParameters on ElasticSearch database
+
+[v6r22p11]
+
+*Interfaces
+FIX: (#4277) Dirac.py - fix error handling in getJobParameters()
+
+[v6r22p10]
+
+*Resources
+FIX: (#4271) StorageElement - loadObject of occupancyPlugin is called with the path to OccupancyPlugins
+
+[v6r22p9]
+
+*Core
+FIX: (#4269) Workflow - revert changes introduced in #4253
+
+[v6r22p8]
+
+*WMS
+FIX: (#4256) handle empty results of getJobParameter in StalledJobAgent
+
+*Resources
+NEW: (#4223) Storage - occupancy plugin for WLCG standard accounting JSON
+FIX: (#4259) SingularityComputingElement - ensure lcgBundle is installed in container if LCGBundleVersion is set.
+
+[v6r22p7]
+
+*Core
+FIX: (#4253) Workflow - accept unicode file path to workflow XML
+
+*WMS
+NEW: (#4205) Statistics of Pilot submission is sent to Accounting System by SiteDirector.
+FIX: (#4250) use host credentials to query the SandboxMetadataDB for async removal
+
+*Resources
+CHANGE: (#4242) DFC SEManagerDB: only acquire the lock if the cache needs to be modified
+FIX: (#4251) preamble attribute was missing in SSHBatchComputingElement causing an error 
+     in _submitJobHost()
+
+*DMS
+FIX: (#4248) SEManager correct order of calls at init
+
+[v6r22p6]
+
+*Core
+CHANGE: (#4203) A VO with diracos extension, must be able to install the main diracos from DIRAC repository.
+
+*TS
+CHANGE: (#4218) do not set Job type 'hospital'
+
+[v6r22p5]
+
+*WMS
+CHANGE: (#4217) Sandbox: Adding OwnerDN and OwnerGroup for DelayedExternalDeletion
+
+*DMS
+CHANGE: (#4202) relax permissions on getLFNForGUID
+
+*Resources
+FIX: (#4200) re-allow the use of the gsiftp cache in the SE
+CHANGE: (#4206) Storage - improved treatment for the case without SpaceToken in SpaceOccupancy
 
 [v6r22p4]
 
@@ -167,6 +304,25 @@ CHANGE: (#4119) added note on MultiProcessor jobs preparation
 FIX: (#4119) Not lhcb but dteam (for DIRAC certification)
 FIX: (#4139) client_dms.sh not lhcb specific
 CHANGE:(#4140) adapt transformation certification tests to dteam VO
+
+[v6r21p15]
+
+*WMS
+CHANGE: (#4214) Add an argument to the constructor of SandboxStoreClient for using in scripts 
+        that cannot use the DB directly
+
+*DMS
+NEW: (#4171) ArchiveFiles Request Operation: to create a tarball out of a list of LFNs
+NEW: (#4171) CheckMigration Request Operation to hold the request progress until the attached 
+             LFNs are migrated to tape
+NEW: (#4171) FCOnlyStorage StorageElement plugin to register LFNs without physical replica to 
+             conserve LFN metadata when they are archived, for example
+NEW: (#4171) dirac-dms-create-archive-request command to create a request to archive a list of 
+             LFNs and remove their physical copies
+NEW: (#4171) dirac-dms-create-moving-request command to move LFNs from a to b with optional 
+             "CheckMigration" step. as it uses the ReplicateAndRegister operation, transfer via 
+             FTS is also possible
+FIX: (#4171) FileCatalogClient: add "addFileAncestors" to list of "write functions"
 
 [v6r21p14]
 

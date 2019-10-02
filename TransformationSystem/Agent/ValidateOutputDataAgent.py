@@ -1,4 +1,12 @@
 """ Runs few integrity checks
+
+The following options can be set for the ValidateOutputDataAgent.
+
+.. literalinclude:: ../ConfigTemplate.cfg
+  :start-after: ##BEGIN ValidateOutputDataAgent
+  :end-before: ##END
+  :dedent: 2
+  :caption: ValidateOutputDataAgent options
 """
 
 __RCSID__ = "$Id$"

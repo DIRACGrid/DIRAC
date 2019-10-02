@@ -19,6 +19,8 @@ __RCSID__ = "$Id $"
 # @date 2012/07/19 08:21:22
 # @brief Definition of TypedList class.
 
+from past.builtins import long
+import six
 from collections import deque
 
 class Unsortable( list ):
@@ -238,7 +240,7 @@ class NumericList( TypedList ):
     :param mixed iterable: initial values
     """
 
-    TypedList.__init__( self, iterable, allowedTypes = ( int, long, float ) )
+    TypedList.__init__( self, iterable, allowedTypes = six.integer_types + (float,) )
 
 class StrList( TypedList ):
   """

@@ -14,6 +14,7 @@
 
 __RCSID__ = "$Id$"
 
+import six
 import os
 
 from DIRAC import S_OK, S_ERROR
@@ -37,7 +38,7 @@ class GlobusComputingElement(ComputingElement):
   def __init__(self, ceUniqueID):
     """ Standard constructor.
     """
-    ComputingElement.__init__(self, ceUniqueID)
+    super(GlobusComputingElement, self).__init__(ceUniqueID)
 
     self.ceType = CE_NAME
     self.submittedJobs = 0
@@ -95,7 +96,7 @@ class GlobusComputingElement(ComputingElement):
     """ Kill the specified jobs
     """
     jobList = list(jobIDList)
-    if isinstance(jobIDList, basestring):
+    if isinstance(jobIDList, six.string_types):
       jobList = [jobIDList]
     for jobID in jobList:
       cmd = ['globus-job-clean', '-f', jobID]

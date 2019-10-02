@@ -3,8 +3,10 @@
 
 __RCSID__ = "$Id$"
 
+import six
 import re
 import urlparse
+
 from distutils.version import LooseVersion  # pylint: disable=no-name-in-module,import-error
 
 from DIRAC import S_OK, S_ERROR, gConfig
@@ -143,7 +145,7 @@ def getQueues(siteList=None, ceList=None, ceTypeList=None, community=None, mode=
         continue
       if community:
         comList = gConfig.getValue('/Resources/Sites/%s/%s/VO' % (grid, site), [])
-        if comList and community not in comList:
+        if comList and community.lower() not in [cl.lower() for cl in comList]:
           continue
       siteCEParameters = {}
       result = gConfig.getOptionsDict('/Resources/Sites/%s/%s/CEs' % (grid, site))
@@ -156,7 +158,7 @@ def getQueues(siteList=None, ceList=None, ceTypeList=None, community=None, mode=
       for ce in ces:
         if mode:
           ceMode = gConfig.getValue('/Resources/Sites/%s/%s/CEs/%s/SubmissionMode' % (grid, site, ce), 'Direct')
-          if not ceMode or ceMode != mode:
+          if not ceMode or ceMode.lower() != mode.lower():
             continue
         if ceTypeList:
           ceType = gConfig.getValue('/Resources/Sites/%s/%s/CEs/%s/CEType' % (grid, site, ce), '')
@@ -166,7 +168,7 @@ def getQueues(siteList=None, ceList=None, ceTypeList=None, community=None, mode=
           continue
         if community:
           comList = gConfig.getValue('/Resources/Sites/%s/%s/CEs/%s/VO' % (grid, site, ce), [])
-          if comList and community not in comList:
+          if comList and community.lower() not in [cl.lower() for cl in comList]:
             continue
         ceOptionsDict = dict(siteCEParameters)
         result = gConfig.getOptionsDict('/Resources/Sites/%s/%s/CEs/%s' % (grid, site, ce))
@@ -180,7 +182,7 @@ def getQueues(siteList=None, ceList=None, ceTypeList=None, community=None, mode=
         for queue in queues:
           if community:
             comList = gConfig.getValue('/Resources/Sites/%s/%s/CEs/%s/Queues/%s/VO' % (grid, site, ce, queue), [])
-            if comList and community not in comList:
+            if comList and community.lower() not in [cl.lower() for cl in comList]:
               continue
           resultDict.setdefault(site, {})
           resultDict[site].setdefault(ce, ceOptionsDict)
@@ -194,10 +196,53 @@ def getQueues(siteList=None, ceList=None, ceTypeList=None, community=None, mode=
   return S_OK(resultDict)
 
 
+def getStorageElements(vo=None):
+  """
+  Get configuration of storage elements
+
+  :param str vo: select SE's for the given VO
+
+  :return: S_OK/S_ERROR, Value SE information dictionary
+  """
+
+  result = gConfig.getSections('Resources/StorageElements')
+  if not result['OK']:
+    return result
+  storageElements = result['Value']
+  baseSEs = {}
+  for se in storageElements:
+    for option in ('BaseSE', 'Alias'):
+      originalSE = gConfig.getValue('Resources/StorageElements/%s/%s' % (se, option))
+      if originalSE:
+        baseSEs.setdefault(originalSE, []).append(se)
+        break
+    else:
+      baseSEs.setdefault(se, [])
+
+  seDict = {}
+  for se in baseSEs:
+    result = gConfig.getOptionsDict('Resources/StorageElements/%s' % se)
+    if vo:
+      seVOs = gConfig.getValue('Resources/StorageElements/%s/VO' % se, [])
+      if seVOs and vo not in seVOs:
+        continue
+    seDict[se] = result['Value']
+    seDict[se]['Aliases'] = baseSEs[se]
+    protocols = []
+    result = gConfig.getSections('Resources/StorageElements/%s' % se)
+    for pluginSection in result['Value']:
+      protocol = gConfig.getValue('Resources/StorageElements/%s/%s/Protocol' % (se, pluginSection))
+      if protocol:
+        protocols.append(protocol)
+    seDict[se]['Protocols'] = protocols
+
+  return S_OK(seDict)
+
+
 def getCompatiblePlatforms(originalPlatforms):
   """ Get a list of platforms compatible with the given list
   """
-  if isinstance(originalPlatforms, basestring):
+  if isinstance(originalPlatforms, six.string_types):
     platforms = [originalPlatforms]
   else:
     platforms = list(originalPlatforms)
@@ -238,7 +283,7 @@ def getDIRACPlatform(OSList):
 
   # For backward compatibility allow a single string argument
   osList = OSList
-  if isinstance(OSList, basestring):
+  if isinstance(OSList, six.string_types):
     osList = [OSList]
 
   result = gConfig.getOptionsDict('/Resources/Computing/OSCompatibility')
@@ -301,3 +346,44 @@ def getFilterConfig(filterID):
   :params filterID: string representing a filter identifier.
   """
   return gConfig.getOptionsDict('Resources/LogFilters/%s' % filterID)
+
+
+def getInfoAboutProviders(of=None, providerName=None, option='', section=''):
+  """ Get the information about providers
+
+      :param basestring of: provider of what(Id, Proxy or etc.) need to look,
+             None, "all" to get list of instance of what this providers
+      :param basestring providerName: provider name,
+             None, "all" to get list of providers names
+      :param basestring option: option name that need to get,
+             None, "all" to get all options in a section
+      :param basestring section: section path in root section of provider,
+             "all" to get options in all sections
+
+      :return: S_OK()/S_ERROR()
+  """
+  if not of or of == "all":
+    result = gConfig.getSections(gBaseResourcesSection)
+    if not result['OK']:
+      return result
+    return S_OK([i.replace('Providers', '') for i in result['Value']])
+  if not providerName or providerName == "all":
+    return gConfig.getSections('%s/%sProviders' % (gBaseResourcesSection, of))
+  if not option or option == 'all':
+    if not section:
+      return gConfig.getOptionsDict("%s/%sProviders/%s" % (gBaseResourcesSection, of, providerName))
+    elif section == "all":
+      resDict = {}
+      relPath = "%s/%sProviders/%s/" % (gBaseResourcesSection, of, providerName)
+      result = gConfig.getConfigurationTree(relPath)
+      if not result['OK']:
+        return result
+      for key, value in result['Value'].items():
+        if value:
+          resDict[key.replace(relPath, '')] = value
+      return S_OK(resDict)
+    else:
+      return gConfig.getSections('%s/%sProviders/%s/%s/' % (gBaseResourcesSection, of, providerName, section))
+  else:
+    return S_OK(gConfig.getValue('%s/%sProviders/%s/%s/%s' % (gBaseResourcesSection, of, providerName,
+                                                              section, option)))
