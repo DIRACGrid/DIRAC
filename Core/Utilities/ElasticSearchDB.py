@@ -1,7 +1,8 @@
 """
-This class a wrapper around elasticsearch-py. It is used to query
+This class a wrapper around elasticsearch python APIs. It is used to query
 Elasticsearch database.
 
+The only direct user of this should be DIRAC.Core.Base.ElasticDB
 """
 
 from __future__ import absolute_import
@@ -40,14 +41,14 @@ class ElasticSearchDB(object):
   RESULT_SIZE = 10000
 
   ########################################################################
-  def __init__(self, host, port, user=None, password=None, indexPrefix='', useSSL=True):
+  def __init__(self, host, port=9200, user=None, password=None, indexPrefix='', useSSL=True):
     """ c'tor
 
     :param self: self reference
-    :param str host: name of the database for example: MonitoringDB
-    :param str port: The full name of the database for example: 'Monitoring/MonitoringDB'
-    :param str user: user name to access the db
-    :param str password: if the db is password protected we need to provide a password
+    :param str host: URL of the server (e.g. localhost or es-prod.cern.ch)
+    :param str port: port (default: 9200)
+    :param str user: optional user name to access the db
+    :param str password: optional: if the db is password protected we need to provide a password
     :param str indexPrefix: it is the indexPrefix used to get all indexes
     :param bool useSSL: We can disable using secure connection. By default we use secure connection.
     """
@@ -85,7 +86,7 @@ class ElasticSearchDB(object):
 
   def getIndexPrefix(self):
     """
-    It returns the DIRAC setup.
+    It returns the index prefix
     """
     return self.__indexPrefix
 
@@ -94,7 +95,7 @@ class ElasticSearchDB(object):
     """ Executes a query and returns its result (uses ES DSL language).
 
     :param self: self reference
-    :param basestring index: index name
+    :param str index: index name
     :param dict query: It is the query in ElasticSearch DSL language
 
     """
@@ -105,23 +106,23 @@ class ElasticSearchDB(object):
       return S_ERROR(re)
 
   def update(self, index, doctype, query, updateByQuery=True, id=None):
-    """ Executes a query and returns its result (uses ES DSL language).
+    """ Executes an update of a document, and returns S_OK/S_ERROR
 
     :param self: self reference
-    :param basestring index: index name
-    :param basestring doctype: type of document
-    :param dict query: It is the query in ElasticSearch DSL language
-    :param bool updateByQuery: A bool to determine updation by update by query or index values using index function.
-    :param int id: ID for the document to be created.
+    :param str index: index name
+    :param str doctype: type of document
+    :param dict query: the query in ElasticSearch DSL language, or the document body to index
+    :param bool updateByQuery: A bool to determine if to update by query, or index values using index function.
+    :param int id: ID for the document ID to be updated (using the index function)
 
     """
 
     try:
       if updateByQuery:
         esDSLQueryResult = self.__client.update_by_query(index=index, doc_type=doctype, body=query)
+        return S_OK(esDSLQueryResult)
       else:
-        esDSLQueryResult = self.__client.index(index=index, doc_type=doctype, body=query, id=id)
-      return S_OK(esDSLQueryResult)
+        return self.index(index=index, doc_type=doctype, body=query, id=id)
     except RequestError as re:
       return S_ERROR(re)
 
@@ -231,7 +232,7 @@ class ElasticSearchDB(object):
       self.__client.indices.create(fullIndex, body={'mappings': mapping})
       return S_OK(fullIndex)
     except Exception as e:  # pylint: disable=broad-except
-      gLogger.error("Can not create the index:", e)
+      gLogger.error("Can not create the index:", repr(e))
       return S_ERROR("Can not create the index")
 
   def deleteIndex(self, indexName):
@@ -282,7 +283,7 @@ class ElasticSearchDB(object):
     :param str period: We can specify which kind of indices will be created.
                        Currently only daily and monthly indexes are supported.
     """
-    gLogger.info("%d records will be insert to %s" % (len(data), doc_type))
+    gLogger.info("Bulk indexing", "%d records will be insert to %s" % (len(data), doc_type))
     if mapping is None:
       mapping = {}
 
@@ -329,7 +330,6 @@ class ElasticSearchDB(object):
       return S_OK(len(docs))
     else:
       return S_ERROR(res)
-    return res
 
   def getUniqueValue(self, indexName, key, orderBy=False):
     """
