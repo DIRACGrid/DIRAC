@@ -12,7 +12,7 @@ from DIRAC.Core.DISET.private.FileHelper import FileHelper
 
 class TransferClient( BaseClient ):
 
-  def _sendTransferHeader( self, actionName, fileInfo ):
+  def _sendTransferHeader(self, actionName, fileInfo):
     """
     Send the header of the transfer
 
@@ -23,24 +23,25 @@ class TransferClient( BaseClient ):
     :return: S_OK/S_ERROR
     """
     retVal = self._connect()
-    if not retVal[ 'OK' ]:
+    if not retVal['OK']:
       return retVal
-    trid, transport = retVal[ 'Value' ]
+    trid, transport = retVal['Value']
     try:
-      #FFC -> File from Client
-      retVal = self._proposeAction( transport, ( "FileTransfer", actionName ) )
-      if not retVal[ 'OK' ]:
+      # FFC -> File from Client
+      retVal = self._proposeAction(transport, ("FileTransfer", actionName))
+      if not retVal['OK']:
         return retVal
-      retVal = transport.sendData( S_OK( fileInfo ) )
-      if not retVal[ 'OK' ]:
+      # We need to convert to list
+      retVal = transport.sendData(S_OK(list(fileInfo)))
+      if not retVal['OK']:
         return retVal
       retVal = transport.receiveData()
-      if not retVal[ 'OK' ]:
+      if not retVal['OK']:
         return retVal
-      return S_OK( ( trid, transport ) )
+      return S_OK((trid, transport))
     except Exception as e:
-      self._disconnect( trid )
-      return S_ERROR( "Cound not request transfer: %s" % str( e ) )
+      self._disconnect(trid)
+      return S_ERROR("Cound not request transfer: %s" % str(e))
 
   def sendFile( self, filename, fileId, token = "" ):
     """

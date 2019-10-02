@@ -58,7 +58,10 @@ class InnerRPCClient( BaseClient ):
             return retVal
 
       # Send the arguments to the function
-      retVal = transport.sendData( S_OK( args ) )
+      # Note: we need to convert the arguments to list
+      # We do not need to deseralize it because variadic functions
+      # can work with list too
+      retVal = transport.sendData( S_OK( list(args) ) )
       if not retVal[ 'OK' ]:
         return retVal
 
