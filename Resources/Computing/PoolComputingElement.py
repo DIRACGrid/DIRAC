@@ -3,24 +3,29 @@
 # Author : A.T.
 ########################################################################
 
-""" The Computing Element to run several jobs simultaneously in separate processes
-    managed by a ProcessPool
+""" The Pool Computing Element is an "inner" CE (meaning it's used by a jobAgent inside a pilot)
+
+    It's used running several jobs simultaneously in separate processes, managed by a ProcessPool
 """
 
 __RCSID__ = "$Id$"
 
 import os
 
+from DIRAC import S_OK, S_ERROR, gLogger, gConfig
+from DIRAC.Core.Utilities.ProcessPool import ProcessPool
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
 from DIRAC.Resources.Computing.InProcessComputingElement import InProcessComputingElement
 from DIRAC.Resources.Computing.SudoComputingElement import SudoComputingElement
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
-from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.Core.Utilities.ProcessPool import ProcessPool
 
 MandatoryParameters = []
 # Number of unix users to run job payloads with sudo
 MAX_NUMBER_OF_SUDO_UNIX_USERS = 32
+
+# object for writing in the local (pilot) configuration
+localCfg = LocalConfiguration()
 
 
 def executeJob(executableFile, proxy, taskID, **kwargs):
@@ -126,6 +131,12 @@ class PoolComputingElement(ComputingElement):
     if self.processors - processorsInUse < requestedProcessors:
       return S_ERROR('Not enough slots: requested %d, available %d' % (requestedProcessors,
                                                                        self.processors - processorsInUse))
+
+    # Now persisiting the job limits for later use
+    jobID = int(kwargs['jobDesc']['jobID'])
+    # only NumberOfProcessors for now, but RAM can also become a subject
+    localCfg.addDefaultEntry('/Resources/Computing/JobLimits/%d/NumberOfProcessors' % jobID, self.processors)
+    gConfig.dumpLocalCFGToFile('pilot.cfg')
 
     ret = getProxyInfo()
     if not ret['OK']:

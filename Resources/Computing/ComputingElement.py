@@ -46,7 +46,9 @@ from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 
 __RCSID__ = "$Id$"
 
-INTEGER_PARAMETERS = ['CPUTime', 'NumberOfProcessors']
+INTEGER_PARAMETERS = ['CPUTime',
+                      'NumberOfProcessors', 'NumberOfPayloadProcessors', 'NumberOfJobProcessors',
+                      'MaxRAM']
 FLOAT_PARAMETERS = []
 LIST_PARAMETERS = ['Tag', 'RequiredTag']
 WAITING_TO_RUNNING_RATIO = 0.5
@@ -453,8 +455,9 @@ class ComputingElement(object):
     # the getCEStatus is implemented in the each of the specific CE classes
     result = self.getCEStatus()
     if result['OK']:
-      # This one comes only from the PoolComputingElement
-      ceDict['NumberOfProcessors'] = result.get('AvailableProcessors', 1)
+      # 'AvailableProcessors' ATM is only set by the PoolComputingElement
+      ceDict['NumberOfJobProcessors'] = result.get('AvailableProcessors',
+                                                   result.get('NumberOfProcessors', 1))
 
     return S_OK(ceDict)
 
