@@ -185,6 +185,7 @@ class JobAgent(AgentModule):
     if isinstance(result['Value'], dict):
       ceDictList = [result['Value']]
     elif isinstance(result['Value'], list):
+      # This is the case for Pool ComputingElement
       ceDictList = result['Value']
 
     for ceDict in ceDictList:
@@ -206,6 +207,8 @@ class JobAgent(AgentModule):
         self.log.info('Requirements:', requirementsDict)
 
       self.log.verbose('CE dict', ceDict)
+
+      # here finally calling the matcher
       start = time.time()
       jobRequest = MatcherClient().requestJob(ceDict)
       matchTime = time.time() - start

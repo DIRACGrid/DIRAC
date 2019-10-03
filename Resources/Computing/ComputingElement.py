@@ -424,7 +424,9 @@ class ComputingElement(object):
     return chain.dumpAllToFile(payloadProxy)
 
   def getDescription(self):
-    """ Get CE description as a dictionary
+    """ Get CE description as a dictionary.
+
+        This is called by the JobAgent for the case of "inner" CEs.
     """
 
     ceDict = {}
@@ -448,11 +450,11 @@ class ComputingElement(object):
     if project:
       ceDict['ReleaseProject'] = project
 
+    # the getCEStatus is implemented in the each of the specific CE classes
     result = self.getCEStatus()
     if result['OK']:
-      if 'AvailableProcessors' in result:
-        cores = result['AvailableProcessors']
-        ceDict['NumberOfProcessors'] = cores
+      # This one comes only from the PoolComputingElement
+      ceDict['NumberOfProcessors'] = result.get('AvailableProcessors', 1)
 
     return S_OK(ceDict)
 

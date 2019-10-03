@@ -40,7 +40,8 @@ class InProcessComputingElement(ComputingElement):
   def submitJob(self, executableFile, proxy, **kwargs):
     """ Method to submit job (overriding base method).
 
-    :param executableFile: file to execute via systemCall. Normally the JobWrapperTemplate when invoked by the JobAgent.
+    :param executableFile: file to execute via systemCall.
+                           Normally the JobWrapperTemplate when invoked by the JobAgent.
     :type executableFile: string
     :param proxy: the proxy used for running the job (the payload). It will be dumped to a file.
     :type proxy: string

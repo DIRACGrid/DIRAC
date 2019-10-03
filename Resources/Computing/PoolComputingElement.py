@@ -195,7 +195,9 @@ class PoolComputingElement(ComputingElement):
     return result
 
   def getDescription(self):
-    """ Get CE description as a dictionary
+    """ Get a list of CEs descriptions (each is a dict)
+
+        This is called by the JobAgent.
     """
     result = super(PoolComputingElement, self).getDescription()
     if not result['OK']:
@@ -234,5 +236,3 @@ class PoolComputingElement(ComputingElement):
     :param str payloadProxy: location of the payloadProxy
     """
     return self._monitorProxy(pilotProxy, payloadProxy)
-
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
