@@ -31,6 +31,7 @@ helloJ.setInputSandbox([find_all('exe-script.py', '..', '/DIRAC/tests/Workflow/'
 helloJ.setExecutable("exe-script.py", "", "helloWorld.log")
 helloJ.setCPUTime(1780)
 helloJ.setDestination('DIRAC.Jenkins.ch')
+helloJ.setLogLevel('DEBUG')
 result = dirac.submitJob(helloJ)
 gLogger.info("Hello world job: ", result)
 if not result['OK']:
@@ -45,6 +46,7 @@ helloJMP.setInputSandbox([find_all('exe-script.py', '..', '/DIRAC/tests/Workflow
 helloJMP.setExecutable("exe-script.py", "", "helloWorld.log")
 helloJMP.setCPUTime(1780)
 helloJMP.setDestination('DIRAC.Jenkins.ch')
+helloJMP.setLogLevel('DEBUG')
 helloJMP.setNumberOfProcessors(2)
 result = dirac.submitJob(helloJMP)  # this should make the difference!
 gLogger.info("Hello world job MP: ", result)

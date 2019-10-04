@@ -184,7 +184,7 @@ class JobWrapper(object):
     """ Initializes parameters and environment for job.
     """
     self.__report('Running', 'Job Initialization')
-    self.log.info('Starting Job Wrapper Initialization for Job %s' % (self.jobID))
+    self.log.info('Starting Job Wrapper Initialization for Job', self.jobID)
     self.jobArgs = arguments['Job']
     self.log.verbose(self.jobArgs)
     self.ceArgs = arguments['CE']
@@ -223,6 +223,10 @@ class JobWrapper(object):
 
     with open('job.info', 'w') as infoFile:
       infoFile.write(self.__dictAsInfoString(self.jobArgs, '/Job'))
+
+    self.log.debug("Environment used")
+    self.log.debug("================")
+    self.log.debug(json.dumps(dict(os.environ), indent=4))
 
   #############################################################################
   def __setInitialJobParameters(self):
@@ -297,8 +301,8 @@ class JobWrapper(object):
     if 'CPUTime' in self.jobArgs:
       jobCPUTime = int(self.jobArgs['CPUTime'])
     else:
-      self.log.info('Job %s has no CPU time limit specified, '
-                    'applying default of %s' % (self.jobID, self.defaultCPUTime))
+      self.log.info('Job has no CPU time limit specified, ',
+                    'applying default of %s to %s' % (self.defaultCPUTime, self.jobID))
       jobCPUTime = self.defaultCPUTime
     processors = int(self.jobArgs.get('NumberOfProcessors', 1))
 
@@ -607,7 +611,10 @@ class JobWrapper(object):
             self.log.info('File size for LFN:%s was not a long integer, setting size to 0' % (lfn))
         self.inputDataSize += lfnSize
 
-    configDict = {'JobID': self.jobID, 'LocalSEList': localSEList, 'DiskSEList': self.diskSE, 'TapeSEList': self.tapeSE}
+    configDict = {'JobID': self.jobID,
+                  'LocalSEList': localSEList,
+                  'DiskSEList': self.diskSE,
+                  'TapeSEList': self.tapeSE}
     self.log.info(configDict)
     argumentsDict = {'FileCatalog': resolvedData, 'Configuration': configDict, 'InputData': lfns, 'Job': self.jobArgs}
     self.log.info(argumentsDict)
