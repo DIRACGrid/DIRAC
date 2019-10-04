@@ -185,7 +185,7 @@ class JobAgent(AgentModule):
     if isinstance(result['Value'], dict):
       ceDictList = [result['Value']]
     elif isinstance(result['Value'], list):
-      # This is the case for Pool ComputingElement
+      # This is the case for Pool ComputingElement, and parameter 'MultiProcessorStrategy'
       ceDictList = result['Value']
 
     for ceDict in ceDictList:

@@ -47,7 +47,7 @@ from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 __RCSID__ = "$Id$"
 
 INTEGER_PARAMETERS = ['CPUTime',
-                      'NumberOfProcessors', 'NumberOfPayloadProcessors', 'NumberOfJobProcessors',
+                      'NumberOfProcessors', 'NumberOfPayloadProcessors',
                       'MaxRAM']
 FLOAT_PARAMETERS = []
 LIST_PARAMETERS = ['Tag', 'RequiredTag']

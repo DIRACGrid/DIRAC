@@ -49,7 +49,7 @@ def getNumberOfProcessors(siteName=None, gridCE=None, queue=None):
       The siteName/gridCE/queue parameters are normally not necessary.
 
       Tries to find it in this order:
-      1) from the /Resources/Computing/CEDefaults/NumberOfProcessors (which is what the pilot fill up)
+      1) from the /Resources/Computing/CEDefaults/NumberOfProcessors (which is what the pilot fills up)
       2) if not present from JobFeatures
       3) if not present looks in CS for "NumberOfProcessors" Queue or CE option
       4) if not present looks in CS for "%dProcessors" Queue or CE Tag
