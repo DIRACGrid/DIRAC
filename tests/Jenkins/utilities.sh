@@ -380,7 +380,7 @@ function installDIRAC(){
 
   if [ $modules ]
   then
-    INSTALLOPTIONS+=" --modules="$modules
+    INSTALLOPTIONS+=" --module="$modules
   fi
 
   ./dirac-install -r $DIRAC_RELEASE -t client $INSTALLOPTIONS $DEBUG
