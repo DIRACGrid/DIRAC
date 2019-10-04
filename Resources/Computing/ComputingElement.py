@@ -27,27 +27,29 @@
 """
 
 from __future__ import print_function
+
+__RCSID__ = "$Id$"
+
 import os
 import multiprocessing
 
-from DIRAC.ConfigurationSystem.Client.Config import gConfig
+from DIRAC import S_OK, S_ERROR, gLogger, version
+
+from DIRAC.Core.Security import Properties
+from DIRAC.Core.Security.VOMS import VOMS
 from DIRAC.Core.Security.ProxyFile import writeToProxyFile
 from DIRAC.Core.Security.ProxyInfo import getProxyInfoAsString
 from DIRAC.Core.Security.ProxyInfo import formatProxyInfoAsString
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
-from DIRAC.Core.Security.VOMS import VOMS
-from DIRAC.ConfigurationSystem.Client.Helpers import Registry
-from DIRAC.Core.Security import Properties
 from DIRAC.Core.Utilities.Time import dateTime, second
-from DIRAC import S_OK, S_ERROR, gLogger, version
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
+from DIRAC.ConfigurationSystem.Client.Config import gConfig
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 
-
-__RCSID__ = "$Id$"
 
 INTEGER_PARAMETERS = ['CPUTime',
-                      'NumberOfProcessors', 'NumberOfPayloadProcessors',
+                      'NumberOfProcessors', 'NumberOfPayloadProcessors', 'NumberOfJobProcessors',
                       'MaxRAM']
 FLOAT_PARAMETERS = []
 LIST_PARAMETERS = ['Tag', 'RequiredTag']

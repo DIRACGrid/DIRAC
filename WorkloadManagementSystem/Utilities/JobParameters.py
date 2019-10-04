@@ -164,7 +164,7 @@ def getNumberOfJobProcessors(jobID):
   """
 
   # from /Resources/Computing/JobLimits/jobID/NumberOfProcessors (set by PoolComputingElement)
-  numberOfProcessors = gConfig.getValue('Resources/Computing/JobLimits/%d/NumberOfProcessors' % jobID)
+  numberOfProcessors = gConfig.getValue('Resources/Computing/JobLimits/%s/NumberOfProcessors' % jobID)
   if numberOfProcessors:
     return numberOfProcessors
 
