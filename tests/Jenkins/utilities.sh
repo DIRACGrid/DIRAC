@@ -357,7 +357,6 @@ function getCFGFile(){
 ####################################################
 # This installs the DIRAC client
 # it needs a $DIRAC_RELEASE env var defined
-# if DIRACOSVER env var is defined, it will install dirac with DIRACOS
 # it also wants the env variables DIRACSETUP and CSURLS
 #
 # dirac-install also accepts a env variable $INSTALLOPTIONS (e.g. useful for extensions)
@@ -379,20 +378,12 @@ function installDIRAC(){
   cp $TESTCODE/DIRAC/Core/scripts/dirac-install.py $CLIENTINSTALLDIR/dirac-install
   chmod +x $CLIENTINSTALLDIR/dirac-install
 
-  # actually installing
-  # If DIRACOSVER is not defined, use externals
-  if [ -z $DIRACOSVER ];
+  if [ $modules ]
   then
-    echo "Installing with Externals";
-    ./dirac-install -r $DIRAC_RELEASE -t client $INSTALLOPTIONS $DEBUG
-  else
-    echo "Installing with DIRACOS $DIRACOSVER";
-    ./dirac-install -r $DIRAC_RELEASE -t client --dirac-os --dirac-os-version=$DIRACOSVER $INSTALLOPTIONS $DEBUG
+    INSTALLOPTIONS+=" --modules="$modules
   fi
 
-  # actually installing
-  echo "Installing with DIRACOS $DIRACOSVER";
-  $CLIENTINSTALLDIR/dirac-install -r $DIRAC_RELEASE -t client --dirac-os --dirac-os-version=$DIRACOSVER $DEBUG
+  ./dirac-install -r $DIRAC_RELEASE -t client $INSTALLOPTIONS $DEBUG
 
   if [ $? -ne 0 ]
   then
