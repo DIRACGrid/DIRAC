@@ -12,10 +12,10 @@ __RCSID__ = "$Id$"
 
 import os
 
-from DIRAC import S_OK, S_ERROR, gLogger, gConfig
+from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.ProcessPool import ProcessPool
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
+from DIRAC.ConfigurationSystem.private.ConfigurationData import ConfigurationData
 from DIRAC.Resources.Computing.InProcessComputingElement import InProcessComputingElement
 from DIRAC.Resources.Computing.SudoComputingElement import SudoComputingElement
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
@@ -23,9 +23,6 @@ from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 MandatoryParameters = []
 # Number of unix users to run job payloads with sudo
 MAX_NUMBER_OF_SUDO_UNIX_USERS = 32
-
-# object for writing in the local (pilot) configuration
-localCfg = LocalConfiguration()
 
 
 def executeJob(executableFile, proxy, taskID, **kwargs):
@@ -132,11 +129,17 @@ class PoolComputingElement(ComputingElement):
       return S_ERROR('Not enough slots: requested %d, available %d' % (requestedProcessors,
                                                                        self.processors - processorsInUse))
 
-    # Now persisiting the job limits for later use
+    # Now persisiting the job limits for later use in pilot.cfg file (pilot 3 default)
+    cd = ConfigurationData(loadDefaultCFG=False)
+    res = cd.loadFile('pilot.cfg')
+    if not res['OK']:
+      self.log.error("Could not load pilot.cfg", res['Message'])
+    # only NumberOfProcessors for now, but RAM (or other stuff) can also be added
     jobID = int(kwargs['jobDesc']['jobID'])
-    # only NumberOfProcessors for now, but RAM can also become a subject
-    localCfg.addDefaultEntry('/Resources/Computing/JobLimits/%d/NumberOfProcessors' % jobID, self.processors)
-    gConfig.dumpLocalCFGToFile('pilot.cfg')
+    cd.setOptionInCFG('/Resources/Computing/JobLimits/%d/NumberOfProcessors' % jobID, self.processors)
+    res = cd.dumpLocalCFGToFile('pilot.cfg')
+    if not res['OK']:
+      self.log.error("Could not dump cfg to pilot.cfg", res['Message'])
 
     ret = getProxyInfo()
     if not ret['OK']:
