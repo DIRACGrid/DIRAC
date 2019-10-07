@@ -122,7 +122,7 @@ class ElasticSearchDB(object):
         esDSLQueryResult = self.__client.update_by_query(index=index, doc_type=doctype, body=query)
         return S_OK(esDSLQueryResult)
       else:
-        return self.index(index=index, doc_type=doctype, body=query, id=id)
+        return self.index(indexName=index, doc_type=doctype, body=query, docID=id)
     except RequestError as re:
       return S_ERROR(re)
 

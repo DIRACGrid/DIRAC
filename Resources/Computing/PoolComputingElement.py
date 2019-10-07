@@ -135,7 +135,7 @@ class PoolComputingElement(ComputingElement):
     if not res['OK']:
       self.log.error("Could not load pilot.cfg", res['Message'])
     # only NumberOfProcessors for now, but RAM (or other stuff) can also be added
-    jobID = int(kwargs['jobDesc']['jobID'])
+    jobID = int(kwargs.get('jobDesc', {}).get('jobID', 0))
     cd.setOptionInCFG('/Resources/Computing/JobLimits/%d/NumberOfProcessors' % jobID, self.processors)
     res = cd.dumpLocalCFGToFile('pilot.cfg')
     if not res['OK']:
