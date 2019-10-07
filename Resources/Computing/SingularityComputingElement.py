@@ -329,9 +329,8 @@ class SingularityComputingElement(ComputingElement):
       return result
 
     result = self.__checkResult(tmpDir)
-    if not result["OK"]:
-      if renewTask:
-        gThreadScheduler.removeTask(renewTask)
+    if renewTask:
+      gThreadScheduler.removeTask(renewTask)
     self.__deleteWorkArea(baseDir)
     return result
 
