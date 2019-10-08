@@ -49,7 +49,7 @@ from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 
 
 INTEGER_PARAMETERS = ['CPUTime',
-                      'NumberOfProcessors', 'NumberOfPayloadProcessors', 'NumberOfJobProcessors',
+                      'NumberOfProcessors', 'NumberOfPayloadProcessors',
                       'MaxRAM']
 FLOAT_PARAMETERS = []
 LIST_PARAMETERS = ['Tag', 'RequiredTag']
@@ -458,8 +458,8 @@ class ComputingElement(object):
     result = self.getCEStatus()
     if result['OK']:
       # 'AvailableProcessors' ATM is only set by the PoolComputingElement
-      ceDict['NumberOfJobProcessors'] = result.get('AvailableProcessors',
-                                                   result.get('NumberOfProcessors', 1))
+      ceDict['NumberOfProcessors'] = result.get('AvailableProcessors',
+                                                result.get('NumberOfProcessors', 1))
 
     return S_OK(ceDict)
 
