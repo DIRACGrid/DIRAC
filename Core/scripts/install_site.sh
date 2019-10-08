@@ -69,4 +69,5 @@ mkdir -p $installDir || exit
 python dirac-install -t server $USE_DIRACOS $installCfg
 source $installDir/bashrc
 dirac-configure $installCfg $DEBUG
+dirac-configure -o /Operations/Defaults/Pilot/UpdatePilotCStoJSONFile=False -FDMH $DEBUG
 dirac-setup-site $DEBUG
