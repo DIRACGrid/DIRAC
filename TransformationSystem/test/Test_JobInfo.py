@@ -12,8 +12,7 @@ from DIRAC import S_OK, S_ERROR, gLogger
 import DIRAC
 
 from DIRAC.TransformationSystem.Utilities.JobInfo import TaskInfoException, JobInfo
-import ILCDIRAC
-import ILCDIRAC.Interfaces.API.DiracILC
+import DIRAC.Interfaces.API.Dirac
 
 gLogger.setLevel("DEBUG")
 
@@ -27,10 +26,10 @@ class TestJI(unittest.TestCase):
 
   def setUp(self):
     self.jbi = JobInfo(jobID=123, status="Failed", tID=1234, tType="MCReconstruction")
-    self.diracILC = Mock(name="dilcMock", spec=ILCDIRAC.Interfaces.API.DiracILC.DiracILC)
+    self.diracAPI = Mock(name="dilcMock", spec=DIRAC.Interfaces.API.Dirac.Dirac)
     self.jobMon = Mock(
         name="jobMonMock", spec=DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient.JobMonitoringClient)
-    self.diracILC.getJobJDL = Mock()
+    self.diracAPI.getJobJDL = Mock()
 
     self.jdl2 = {
         'LogTargetPath': "/ilc/prod/clic/500gev/yyveyx_o/ILD/REC/00006326/LOG/00006326_015.tar",
@@ -328,12 +327,12 @@ class TestJI(unittest.TestCase):
     pass
 
   def test_Init(self):
-    """ILCTransformation.Utilities.JobInfo init ...................................................."""
+    """Transformation.Utilities.JobInfo init ...................................................."""
     assert self.jbi.outputFiles == []
     self.assertFalse(self.jbi.pendingRequest)
 
   def test_allFilesExist(self):
-    """ILCTransformation.Utilities.JobInfo.allFilesExist............................................"""
+    """Transformation.Utilities.JobInfo.allFilesExist............................................"""
     self.jbi.outputFileStatus = ["Exists", "Exists"]
     self.assertTrue(self.jbi.allFilesExist())
     self.jbi.outputFileStatus = ["Exists", "Missing"]
@@ -346,7 +345,7 @@ class TestJI(unittest.TestCase):
     self.assertFalse(self.jbi.allFilesExist())
 
   def test_allFilesMissing(self):
-    """ILCTransformation.Utilities.JobInfo.allFilesMissing.........................................."""
+    """Transformation.Utilities.JobInfo.allFilesMissing.........................................."""
     self.jbi.outputFileStatus = ["Exists", "Exists"]
     self.assertFalse(self.jbi.allFilesMissing())
     self.jbi.outputFileStatus = ["Exists", "Missing"]
@@ -404,15 +403,15 @@ class TestJI(unittest.TestCase):
     assert expected == getattr(self.jbi, func)()
 
   def test_getJDL(self):
-    """ILCTransformation.Utilities.JobInfo.getJDL..................................................."""
+    """Transformation.Utilities.JobInfo.getJDL..................................................."""
 
-    self.diracILC.getJobJDL.return_value = S_OK(self.jdl1)
-    jdlList = self.jbi._JobInfo__getJDL(self.diracILC)
+    self.diracAPI.getJobJDL.return_value = S_OK(self.jdl1)
+    jdlList = self.jbi._JobInfo__getJDL(self.diracAPI)
     self.assertIsInstance(jdlList, dict)
 
-    self.diracILC.getJobJDL.return_value = S_ERROR("no mon")
+    self.diracAPI.getJobJDL.return_value = S_ERROR("no mon")
     with self.assertRaises(RuntimeError) as contextManagedException:
-      jdlList = self.jbi._JobInfo__getJDL(self.diracILC)
+      jdlList = self.jbi._JobInfo__getJDL(self.diracAPI)
     self.assertIn("Failed to get jobJDL", str(contextManagedException.exception))
 
   def test_getTaskInfo_1(self):
@@ -468,9 +467,9 @@ class TestJI(unittest.TestCase):
       self.jbi.getTaskInfo(tasksDict, lfnTaskDict, wit)
 
   def test_getJobInformation(self):
-    """ILCTransformation.Utilities.JobInfo.getJobInformation........................................"""
-    self.diracILC.getJobJDL.return_value = S_OK(self.jdl1)
-    self.jbi.getJobInformation(self.diracILC, self.jobMon)
+    """Transformation.Utilities.JobInfo.getJobInformation........................................"""
+    self.diracAPI.getJobJDL.return_value = S_OK(self.jdl1)
+    self.jbi.getJobInformation(self.diracAPI, self.jobMon)
     self.assertEqual(
         self.jbi.outputFiles,
         ["/ilc/prod/clic/3tev/e1e1_o/SID/SIM/00006301/010/e1e1_o_sim_6301_10256.slcio"])
@@ -479,12 +478,11 @@ class TestJI(unittest.TestCase):
 
     # empty jdl
     self.setUp()
-    self.diracILC.getJobJDL.return_value = S_OK({})
-    self.jbi.getJobInformation(self.diracILC, self.jobMon)
+    self.diracAPI.getJobJDL.return_value = S_OK({})
+    self.jbi.getJobInformation(self.diracAPI, self.jobMon)
     self.assertEqual(self.jbi.outputFiles, [])
     self.assertIsNone(self.jbi.taskID)
     self.assertEqual(self.jbi.inputFiles, [])
-
 
   def test_getOutputFiles(self):
     """Transformation.Utilities.JobInfo.getOutputFiles..........................................."""
@@ -515,8 +513,8 @@ class TestJI(unittest.TestCase):
     # broken jdl
     out = StringIO()
     sys.stdout = out
-    self.diracILC.getJobJDL.return_value = S_OK(self.jdlBrokenContent)
-    jdlList = self.jbi._JobInfo__getJDL(self.diracILC)
+    self.diracAPI.getJobJDL.return_value = S_OK(self.jdlBrokenContent)
+    jdlList = self.jbi._JobInfo__getJDL(self.diracAPI)
     with self.assertRaises(ValueError):
       self.jbi._JobInfo__getTaskID(jdlList)
 
@@ -536,7 +534,7 @@ class TestJI(unittest.TestCase):
 
 
   def test_checkFileExistence(self):
-    """ILCTransformation.Utilities.JobInfo.checkFileExistance......................................."""
+    """Transformation.Utilities.JobInfo.checkFileExistance......................................."""
     # input and output files
     repStatus = {'inputFile1': True, 'inputFile2': False, 'outputFile1': False, 'outputFile2': True}
     self.jbi.inputFiles = ['inputFile1', 'inputFile2', 'inputFile3']
@@ -582,11 +580,10 @@ class TestJI(unittest.TestCase):
       self.assertNotIn(assertStr, info)
 
   def test_TaskInfoException(self):
-    """ILCTransformation.Utilities.JobInfo.TaskInfoException........................................"""
+    """Transformation.Utilities.JobInfo.TaskInfoException........................................"""
     tie = TaskInfoException("notTasked")
     self.assertIsInstance(tie, Exception)
     self.assertIn("notTasked", str(tie))
-
 
 if __name__ == "__main__":
   SUITE = unittest.defaultTestLoader.loadTestsFromTestCase(TestJI)

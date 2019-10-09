@@ -14,7 +14,7 @@ import DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient
 from DIRAC.TransformationSystem.Utilities.JobInfo import JobInfo
 from DIRAC.TransformationSystem.Utilities.TransformationInfo import TransformationInfo
 
-from ILCDIRAC.Tests.Utilities.GeneralUtils import MatchStringWith
+from DIRAC.tests.Utilities.utils import MatchStringWith
 
 __RCSID__ = "$Id$"
 

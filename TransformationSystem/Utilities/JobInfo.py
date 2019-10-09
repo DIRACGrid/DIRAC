@@ -6,7 +6,7 @@ import inspect
 
 from DIRAC import gLogger
 
-from ILCDIRAC.Core.Utilities.Utilities import listify
+# from ILCDIRAC.Core.Utilities.Utilities import listify
 
 ASSIGNEDSTATES = ['Assigned', 'Processed']
 MAXRESET = 10
@@ -126,7 +126,7 @@ class JobInfo(object):
     LOG.notice(funcName + ':' + str(self.errorCounts))
     return any(errorCount > MAXRESET for errorCount in self.errorCounts)
 
-  def getJobInformation(self, dILC, jobMon):
+  def getJobInformation(self, diracAPI, jobMon):
     """get all the information for the job"""
 
     # # this is actually slower than just getting the jdl, because getting the jdl is one service call
@@ -145,7 +145,7 @@ class JobInfo(object):
 
     if not (self.inputFiles and self.outputFiles and self.taskID):
       LOG.verbose('Have to check JDL')
-      jdlParameters = self.__getJDL(dILC)
+      jdlParameters = self.__getJDL(diracAPI)
       # get taskID from JobName, get inputfile(s) from DownloadInputdata
       self.__getOutputFiles(jdlParameters)
       self.__getTaskID(jdlParameters)
@@ -201,9 +201,9 @@ class JobInfo(object):
       else:
         self.outputFileStatus.append('Unknown')
 
-  def __getJDL(self, dILC):
+  def __getJDL(self, diracAPI):
     """return jdlParameterDictionary for this job"""
-    res = dILC.getJobJDL(int(self.jobID))
+    res = diracAPI.getJobJDL(int(self.jobID))
     if not res['OK']:
       raise RuntimeError("Failed to get jobJDL: %s" % res['Message'])
     jdlParameters = res['Value']

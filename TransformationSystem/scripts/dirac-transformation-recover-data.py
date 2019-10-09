@@ -38,7 +38,7 @@ if __name__ == '__main__':
   # Create Data Recovery Agent and run over single production.
   from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
   from DIRAC.TransformationSystem.Agent.DataRecoveryAgent import DataRecoveryAgent
-  DRA = DataRecoveryAgent('ILCTransformation/DataRecoveryAgent', 'ILCTransformation/DataRecoveryAgent')
+  DRA = DataRecoveryAgent('Transformation/DataRecoveryAgent', 'Transformation/DataRecoveryAgent')
   DRA.jobStatus = ['Done', 'Failed']
   DRA.enabled = PARAMS.enabled
   TRANSFORMATION = TransformationClient().getTransformations(condDict={'TransformationID': PARAMS.prodID})

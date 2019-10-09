@@ -60,7 +60,7 @@ from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 
 from DIRAC.TransformationSystem.Utilities.TransformationInfo import TransformationInfo
 from DIRAC.TransformationSystem.Utilities.JobInfo import TaskInfoException
-from ILCDIRAC.Interfaces.API.DiracILC import DiracILC
+from DIRAC.Interfaces.API.Dirac import Dirac
 
 __RCSID__ = "$Id$"
 
@@ -93,7 +93,7 @@ class DataRecoveryAgent(AgentModule):
     self.fcClient = FileCatalogClient()
     self.tClient = TransformationClient()
     self.reqClient = ReqClient()
-    self.diracILC = DiracILC()
+    self.diracAPI = Dirac()
     self.inputFilesProcessed = set()
     self.todo = {'NoInputFiles':
                  [dict(Message="NoInputFiles: OutputExists: Job 'Done'",
@@ -380,7 +380,7 @@ class DataRecoveryAgent(AgentModule):
                         (counter, len(jobs), float(time.time() - jobInfoStart)))
       while True:
         try:
-          job.getJobInformation(self.diracILC, self.jobMon)
+          job.getJobInformation(self.diracAPI, self.jobMon)
           lfnCache.extend(job.inputFiles)
           lfnCache.extend(job.outputFiles)
           break
