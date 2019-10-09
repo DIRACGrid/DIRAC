@@ -1626,9 +1626,9 @@ def installExternalRequirements(extType):
   if os.path.isfile(reqScript):
     os.chmod(reqScript, executablePerms)
     logNOTICE("Executing %s..." % reqScript)
-    command = "python '%s' -t '%s' > '%s.out' 2> '%s.err'" % (reqScript, extType,
-                                                              reqScript, reqScript)
-    if os.system('bash -c "source %s; %s"' % (bashrcFile, command)):
+    command = "%s -t '%s' > '%s.out' 2> '%s.err'" % (reqScript, extType,
+                                                     reqScript, reqScript)
+    if os.system("source %s full; %s" % (bashrcFile, command)):
       logERROR("Requirements installation script %s failed. Check %s.err" % (reqScript,
                                                                              reqScript))
   return True
@@ -2362,10 +2362,15 @@ def createBashrcForDiracOS():
     logNOTICE('Creating %s' % bashrcFile)
     if not os.path.exists(bashrcFile):
       lines = ['# DIRAC bashrc file, used by service and agent run scripts to set environment',
-               'export PYTHONUNBUFFERED=yes',
-               'export PYTHONOPTIMIZE=x',
                '[ -z "$DIRAC" ] && export DIRAC=%s' % proPath,
                '[ -z "$DIRACOS" ] && export DIRACOS=$DIRAC/diracos',
+               '[ -z "$DIRACSCRIPTS" ] && export DIRACSCRIPTS=$DIRAC/scripts',
+               'if [ "$#" -lt 1 -o "x$1" != "xfull" ]; then',
+               '  ( echo $PATH | grep -q $DIRACSCRIPTS ) || export PATH=$DIRACSCRIPTS:$PATH',
+               '  return',
+               'fi',
+               'export PYTHONUNBUFFERED=yes',
+               'export PYTHONOPTIMIZE=x',
                '. $DIRACOS/diracosrc']
       if 'HOME' in os.environ:
         lines.append('[ -z "$HOME" ] && export HOME=%s' % os.environ['HOME'])
@@ -2395,10 +2400,6 @@ def createBashrcForDiracOS():
       lines.extend(
           [
               '# Some DIRAC locations',
-              'export DIRACSCRIPTS=%s' %
-              os.path.join(
-                  "$DIRAC",
-                  'scripts'),
               'export TERMINFO=%s' %
               __getTerminfoLocations(
                   os.path.join(
@@ -2414,9 +2415,6 @@ def createBashrcForDiracOS():
                   'fonts',
                   'DejaVuSansMono-Roman.ttf')])
 
-      lines.extend(['# Prepend the PATH and set the PYTHONPATH'])
-
-      lines.extend(['( echo $PATH | grep -q $DIRACSCRIPTS ) || export PATH=$DIRACSCRIPTS:$PATH'])
 
       if cliParams.cleanPYTHONPATH:
         lines.extend(['export PYTHONPATH=$DIRAC'])
@@ -2603,10 +2601,6 @@ if __name__ == "__main__":
       # as an argument to the dirac-deploy-scripts
       if not cliParams.platform:
         cliParams.platform = getPlatform()
-      if "Darwin" in cliParams.platform:
-        binaryPath = os.path.join(cliParams.targetPath, cliParams.platform)
-        logNOTICE("For MacOS (Darwin) use explicit binary path %s" % binaryPath)
-        cmd += ' %s' % binaryPath
 
       os.system(cmd)
     else:
