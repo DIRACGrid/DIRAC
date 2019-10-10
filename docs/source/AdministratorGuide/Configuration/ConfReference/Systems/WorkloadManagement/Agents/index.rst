@@ -17,7 +17,7 @@ Common options for all the agents are described in the table below:
 +---------------------+---------------------------------------+------------------------------+
 | *LogLevel*          | Log Level associated to the agent     | LogLevel = DEBUG             |
 +---------------------+---------------------------------------+------------------------------+
-| *LogBackends*       |                                       | LogBackends = stdout, server |
+| *LogBackends*       |                                       | LogBackends = stdout, ...    |
 +---------------------+---------------------------------------+------------------------------+
 | *MaxCycles*         | Maximum number of cycles made for     | MaxCycles = 500              |
 |                     | Agent                                 |                              |
