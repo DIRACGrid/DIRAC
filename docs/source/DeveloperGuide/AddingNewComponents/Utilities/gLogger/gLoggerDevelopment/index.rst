@@ -72,10 +72,7 @@ Then, to use it, we just have to add its name in the configuration as usual.
 
 The *Handler* package contains all the custom *Handler* objects created
 for a *DIRAC* use. All these *Handlers* must inherit from the standard
-*logging.Handler*. The package currently contains:
-
--  ServerHandler: used to send log records to the *SystemLogging DIRAC*
-   service
+*logging.Handler*.
 
 In order to create custom *Handler* objects, we just have to write a new class
 in this package inheriting from one of the *Handler* of the *logging* library.

@@ -10,7 +10,7 @@ presented in the following table:
 | *LogLevel*                 | Level of logs                                | LogLevel = INFO                |
 +----------------------------+----------------------------------------------+--------------------------------+
 | *LogBackends*              | Log backends                                 | LogBackends = stdout           |
-|                            |                                              | LogBackends += server          |
+|                            |                                              | LogBackends += ...             |
 +----------------------------+----------------------------------------------+--------------------------------+
 | *MaskRequestParameters*    | Request to mask the values, possible values: | MaskRequestParameters = yes    |
 |                            | yes or no                                    |                                |
@@ -43,8 +43,5 @@ Services associated with Framework system are:
    Plotting/index
    SecurityLogging/index
    SystemAdministrator/index
-   SystemLogging/index
-   SystemLoggingReport/index
    UserProfileManager/index
-   
    
