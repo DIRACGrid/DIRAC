@@ -39,10 +39,6 @@ Ordered by System / Services
 +------+----------------------+---------------------+
 | 9162 | *Framework*          | SystemAdministrator |
 +------+----------------------+---------------------+
-| 9141 | *Framework*          | SystemLogging       |
-+------+----------------------+---------------------+
-| 9144 | *Framework*          | SystemLoggingReport |
-+------+----------------------+---------------------+
 | 9155 | *Framework*          | UserProfileManager  |
 +------+----------------------+---------------------+
 | 9143 | *RequestManagement*  | RequestManager      |
@@ -78,13 +74,9 @@ Ordered by port number
 +------+----------------------+---------------------+
 | 9136 | *WorkloadManagement* | JobStateUpdate      |
 +------+----------------------+---------------------+
-| 9141 | *Framework*          | SystemLogging       |
-+------+----------------------+---------------------+
 | 9142 | *Framework*          | Monitoring          |
 +------+----------------------+---------------------+
 | 9143 | *RequestManagement*  | RequestManager      |
-+------+----------------------+---------------------+
-| 9144 | *Framework*          | SystemLoggingReport |
 +------+----------------------+---------------------+
 | 9145 | *WorkloadManagement* | WMSAdministrator    |
 +------+----------------------+---------------------+
