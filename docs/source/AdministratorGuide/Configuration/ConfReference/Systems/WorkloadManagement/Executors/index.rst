@@ -17,7 +17,7 @@ Common options for all the executors are described in the table below:
 +---------------------+---------------------------------------+------------------------------+
 | *LogLevel*          | Log Level associated to the executor  | LogLevel = DEBUG             |
 +---------------------+---------------------------------------+------------------------------+
-| *LogBackends*       |                                       | LogBackends = stdout, server |
+| *LogBackends*       |                                       | LogBackends = stdout, ...    |
 +---------------------+---------------------------------------+------------------------------+
 | *Status*            | ????Executor Status, possible values  | Status = Active              |
 |                     | Active or Inactive                    |                              |

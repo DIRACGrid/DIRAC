@@ -325,7 +325,7 @@ file. These options are :
 +===============+================================================+================================+
 | LogLevel      | Set a level to gLogger                         | All the level names            |
 +---------------+------------------------------------------------+--------------------------------+
-| LogBackends   | Add backends to *gLogger* backend list         | stdout, stderr, file, server   |
+| LogBackends   | Add backends to *gLogger* backend list         | stdout, stderr, file, ...      |
 +---------------+------------------------------------------------+--------------------------------+
 | LogShowLine   | Add information about the logger call          | True, False                    |
 +---------------+------------------------------------------------+--------------------------------+
