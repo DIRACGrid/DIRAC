@@ -33,7 +33,7 @@ simpleCopyMask = [os.path.basename(__file__),
 wrapperTemplate = """#!/bin/bash
 
 export DCOMMANDS_PPID=$PPID
-$PYTHONLOCATION$ $DIRAC/$SCRIPTLOCATION$ "$@"
+exec $PYTHONLOCATION$ $DIRAC/$SCRIPTLOCATION$ "$@"
 """
 
 # Python interpreter location can be specified as an argument
