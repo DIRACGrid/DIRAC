@@ -322,7 +322,6 @@ class TestJI(unittest.TestCase):
         'InputData': "",
     }
 
-
   def tearDown(self):
     pass
 
@@ -415,7 +414,7 @@ class TestJI(unittest.TestCase):
     self.assertIn("Failed to get jobJDL", str(contextManagedException.exception))
 
   def test_getTaskInfo_1(self):
-    ## task is only one
+    # task is only one
     wit = ['MCReconstruction']
     self.jbi.taskID = 1234
     self.jbi.inputFiles = ["lfn"]
@@ -532,7 +531,6 @@ class TestJI(unittest.TestCase):
     self.jbi._JobInfo__getInputFile({'InputData': ['/lfn1', '/lfn2']})
     self.assertEqual(self.jbi.inputFiles, ['/lfn1', '/lfn2'])
 
-
   def test_checkFileExistence(self):
     """Transformation.Utilities.JobInfo.checkFileExistance......................................."""
     # input and output files
@@ -584,6 +582,7 @@ class TestJI(unittest.TestCase):
     tie = TaskInfoException("notTasked")
     self.assertIsInstance(tie, Exception)
     self.assertIn("notTasked", str(tie))
+
 
 if __name__ == "__main__":
   SUITE = unittest.defaultTestLoader.loadTestsFromTestCase(TestJI)
