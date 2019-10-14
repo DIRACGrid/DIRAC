@@ -283,7 +283,7 @@ class TestDRA(unittest.TestCase):
     """test for DataRecoveryAgent checkAllJobs ....................................................."""
     from DIRAC.TransformationSystem.Utilities.JobInfo import JobInfo
 
-    ### test with additional task dicts
+    # test with additional task dicts
     from DIRAC.TransformationSystem.Utilities.TransformationInfo import TransformationInfo
     tInfoMock = Mock(name="tInfoMock", spec=TransformationInfo)
     mockJobs = dict([(i, self.getTestMock()) for i in xrange(11)])
@@ -297,7 +297,7 @@ class TestDRA(unittest.TestCase):
     self.dra.log.error.assert_any_call(MatchStringWith("Skip Task, due to TaskInfoException: ARG1"))
     self.dra.log.reset_mock()
 
-    ### test inputFile None
+    # test inputFile None
     mockJobs = dict([(i, self.getTestMock(nameID=i)) for i in xrange(5)])
     mockJobs[1].inputFiles = []
     mockJobs[1].getTaskInfo = Mock(side_effect=(TaskInfoException("NoInputFile"), None))
@@ -355,7 +355,6 @@ class TestDRA(unittest.TestCase):
     self.dra.log.notice.assert_any_call(MatchStringWith("Will ignore the following productions: [123, 456, 789]"))
     self.dra.log.notice.assert_any_call(MatchStringWith("Ignoring Production: 123"))
     self.dra.log.notice.assert_any_call(MatchStringWith("Running over Production: 124"))
-
 
     # Notes To Send
     self.dra.log.reset_mock()
