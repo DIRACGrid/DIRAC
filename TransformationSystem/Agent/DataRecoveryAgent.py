@@ -50,17 +50,17 @@ import time
 import itertools
 
 from DIRAC import S_OK, S_ERROR
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.List import breakListIntoChunks
-from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
+from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
+from DIRAC.Interfaces.API.Dirac import Dirac
+from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
-from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
-from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
-
-from DIRAC.TransformationSystem.Utilities.TransformationInfo import TransformationInfo
 from DIRAC.TransformationSystem.Utilities.JobInfo import TaskInfoException
-from DIRAC.Interfaces.API.Dirac import Dirac
+from DIRAC.TransformationSystem.Utilities.TransformationInfo import TransformationInfo
+from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 
 __RCSID__ = "$Id$"
 
@@ -77,15 +77,7 @@ class DataRecoveryAgent(AgentModule):
     self.name = 'DataRecoveryAgent'
     self.enabled = False
 
-    self.productionsToIgnore = self.am_getOption("TransformationsToIgnore", [])
-    self.transformationStatus = self.am_getOption("TransformationStatus", ['Active', 'Completing'])
-
-    self.transformationTypes = []
-    self.transNoInput = self.am_getOption('TransformationsNoInput', ['MCGeneration'])
-    self.transWithInput = self.am_getOption('TransformationsWithInput', ['MCReconstruction',
-                                                                         'MCSimulation',
-                                                                         'MCReconstruction_Overlay',
-                                                                         ])
+    self.__getCSOptions()
 
     self.jobStatus = ['Failed', 'Done']  # This needs to be both otherwise we cannot account for all cases
 
@@ -264,34 +256,34 @@ class DataRecoveryAgent(AgentModule):
                  ]
                  }
     self.jobCache = defaultdict(lambda: (0, 0))
-    self.printEveryNJobs = self.am_getOption('PrintEvery', 200)
     # Notification options
     self.notesToSend = ""
-    self.addressTo = self.am_getOption('MailTo', [])
-    self.addressFrom = self.am_getOption('MailFrom', "")
     self.subject = "DataRecoveryAgent"
     self.startTime = time.time()
 
     #############################################################################
 
   def beginExecution(self):
-    """Resets defaults after one cycle
-    """
-    self.enabled = self.am_getOption('EnableFlag', False)
-    self.productionsToIgnore = self.am_getOption("TransformationsToIgnore", [])
-    self.transNoInput = self.am_getOption('TransformationsNoInput', ['MCGeneration'])
-    self.transWithInput = self.am_getOption('TransformationsWithInput', ['MCReconstruction',
-                                                                         'MCSimulation',
-                                                                         'MCReconstruction_Overlay',
-                                                                         ])
-    self.transformationTypes = self.transWithInput + self.transNoInput
-    self.transformationStatus = self.am_getOption("TransformationStatus", ['Active', 'Completing'])
-    self.addressTo = self.am_getOption('MailTo', self.addressTo)
-    self.addressFrom = self.am_getOption('MailFrom', self.addressFrom)
-    self.printEveryNJobs = self.am_getOption('PrintEvery', self.printEveryNJobs)
-
+    """Resets defaults after one cycle."""
+    self.__getCSOptions()
     return S_OK()
-  #############################################################################
+
+  def __getCSOptions(self):
+    """Get agent options from the CS."""
+    self.enabled = self.am_getOption('EnableFlag', False)
+    self.productionsToIgnore = self.am_getOption('TransformationsToIgnore', [])
+    self.transformationStatus = self.am_getOption('TransformationStatus', ['Active', 'Completing'])
+    ops = Operations()
+    extendableTTypes = set(ops.getValue('Transformations/ExtendableTransfTypes', ['MCSimulation']))
+    dataProcessing = set(ops.getValue('Transformations/DataProcessing', []))
+    self.transNoInput = self.am_getOption('TransformationsNoInput', list(extendableTTypes))
+    self.transWithInput = self.am_getOption('TransformationsWithInput', list(dataProcessing - extendableTTypes))
+    self.transformationTypes = self.transWithInput + self.transNoInput
+    self.log.verbose('Will treat transformations without input files', self.transNoInput)
+    self.log.verbose('Will treat transformations with input files', self.transWithInput)
+    self.addressTo = self.am_getOption('MailTo', [])
+    self.addressFrom = self.am_getOption('MailFrom', '')
+    self.printEveryNJobs = self.am_getOption('PrintEvery', 200)
 
   def execute(self):
     """ The main execution method.

@@ -28,6 +28,10 @@ class TestDRA(unittest.TestCase):
   @patch("%s.ReqClient" % MODULE_NAME, new=Mock())
   def setUp(self):
     self.dra = DataRecoveryAgent(agentName="ILCTransformationSystem/DataRecoveryAgent", loadName="TestDRA")
+    self.dra.transNoInput = ['MCGeneration']
+    self.dra.transWithInput = ['MCSimulation', 'MCReconstruction']
+    self.dra.transformationTypes = ['MCGeneration', 'MCSimulation', 'MCReconstruction']
+
     self.dra.reqClient = Mock(name="reqMock", spec=DIRAC.RequestManagementSystem.Client.ReqClient.ReqClient)
     self.dra.tClient = Mock(
         name="transMock",
@@ -72,8 +76,14 @@ class TestDRA(unittest.TestCase):
 
   def test_beginExecution(self):
     """test for DataRecoveryAgent beginExecution...................................................."""
-    res = self.dra.beginExecution()
-    self.assertIn("MCReconstruction", self.dra.transformationTypes)
+    theOps = Mock(name='OpsInstance')
+    theOps.getValue.side_effect = [['MCGeneration'], ['MCReconstruction', 'Merge']]
+    with patch('DIRAC.TransformationSystem.Agent.DataRecoveryAgent.Operations', return_value=theOps):
+      res = self.dra.beginExecution()
+    assert isinstance(self.dra.transformationTypes, list)
+    assert set(['MCGeneration', 'MCReconstruction', 'Merge']) == set(self.dra.transformationTypes)
+    assert set(['MCGeneration']) == set(self.dra.transNoInput)
+    assert set(['MCReconstruction', 'Merge']) == set(self.dra.transWithInput)
     self.assertFalse(self.dra.enabled)
     self.assertTrue(res['OK'])
 
