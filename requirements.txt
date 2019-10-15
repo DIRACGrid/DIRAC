@@ -28,6 +28,7 @@ psutil>=4.2.0
 pyasn1>0.4.1
 pyasn1_modules
 Pygments>=1.5
+parameterized
 pylint>=1.6.5
 pyparsing>=2.0.6
 pytest>=3.6
