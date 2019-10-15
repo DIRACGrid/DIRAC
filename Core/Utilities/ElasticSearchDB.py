@@ -23,7 +23,7 @@ from DIRAC.Core.Utilities import Time, DErrno
 from DIRAC.FrameworkSystem.Client.BundleDeliveryClient import BundleDeliveryClient
 
 
-LOG = gLogger.getSubLogger(__name__)
+sLog = gLogger.getSubLogger(__name__)
 
 
 class ElasticSearchDB(object):
@@ -58,20 +58,20 @@ class ElasticSearchDB(object):
     self.__indexPrefix = indexPrefix
     self._connected = False
     if user and password:
-      LOG.debug("Specified username and password")
+      sLog.debug("Specified username and password")
       self.__url = "https://%s:%s@%s:%d" % (user, password, host, port)
     else:
-      LOG.debug("Username and password not specified")
+      sLog.debug("Username and password not specified")
       self.__url = "http://%s:%d" % (host, port)
 
-    LOG.verbose("Connecting to %s:%s, useSSL = %s" % (host, port, useSSL))
+    sLog.verbose("Connecting to %s:%s, useSSL = %s" % (host, port, useSSL))
 
     if useSSL:
       bd = BundleDeliveryClient()
       retVal = bd.getCAs()
       casFile = None
       if not retVal['OK']:
-        LOG.error("CAs file does not exists:", retVal['Message'])
+        sLog.error("CAs file does not exists:", retVal['Message'])
         casFile = certifi.where()
       else:
         casFile = retVal['Value']
@@ -119,7 +119,7 @@ class ElasticSearchDB(object):
 
     """
 
-    LOG.debug("Updating %s/%s with %s, updateByQuery=%s, id=%s" % (index, doctype, query, updateByQuery, id))
+    sLog.debug("Updating %s/%s with %s, updateByQuery=%s, id=%s" % (index, doctype, query, updateByQuery, id))
 
     if not index or not query:
       return S_ERROR("Missing index or query")
@@ -165,13 +165,13 @@ class ElasticSearchDB(object):
         # Returns True if the cluster is running, False otherwise
         result = self.__client.info()
         self.clusterName = result.get("cluster_name", " ")  # pylint: disable=no-member
-        LOG.info("Database info", result)
+        sLog.info("Database info", result)
         self._connected = True
       else:
         self._connected = False
-        LOG.error("Cannot ping ElasticsearchDB!")
+        sLog.error("Cannot ping ElasticsearchDB!")
     except ConnectionError as e:
-      LOG.error(repr(e))
+      sLog.error(repr(e))
       self._connected = False
 
   ########################################################################
@@ -191,16 +191,16 @@ class ElasticSearchDB(object):
     """
     result = []
     try:
-      LOG.debug("Getting mappings for ", indexName)
+      sLog.debug("Getting mappings for ", indexName)
       result = self.__client.indices.get_mapping(indexName)
     except Exception as e:  # pylint: disable=broad-except
-      LOG.error(e)
+      sLog.error(e)
     doctype = ''
     for indexConfig in result:
       if not result[indexConfig].get('mappings'):
         # there is a case when the mapping exits and the value is None...
         # this is usually an empty index or a corrupted index.
-        LOG.warn("Index does not have mapping %s!" % indexConfig)
+        sLog.warn("Index does not have mapping %s!" % indexConfig)
         continue
       if result[indexConfig].get('mappings'):
         doctype = result[indexConfig]['mappings']
@@ -235,11 +235,11 @@ class ElasticSearchDB(object):
       return S_OK(fullIndex)
 
     try:
-      LOG.info("Create index: ", fullIndex + str(mapping))
+      sLog.info("Create index: ", fullIndex + str(mapping))
       self.__client.indices.create(fullIndex, body={'mappings': mapping})
       return S_OK(fullIndex)
     except Exception as e:  # pylint: disable=broad-except
-      LOG.error("Can not create the index:", repr(e))
+      sLog.error("Can not create the index:", repr(e))
       return S_ERROR("Can not create the index")
 
   def deleteIndex(self, indexName):
@@ -268,7 +268,7 @@ class ElasticSearchDB(object):
     :return: the index name in case of success.
     """
 
-    LOG.debug("Indexing %s/%s with %s, id=%s" % (indexName, doc_type, body, docID))
+    sLog.debug("Indexing %s/%s with %s, id=%s" % (indexName, doc_type, body, docID))
 
     if not indexName or not body:
       return S_ERROR("Missing index or body")
@@ -296,12 +296,12 @@ class ElasticSearchDB(object):
     :param str period: We can specify which kind of indices will be created.
                        Currently only daily and monthly indexes are supported.
     """
-    LOG.verbose("Bulk indexing", "%d records will be inserted" % len(data))
+    sLog.verbose("Bulk indexing", "%d records will be inserted" % len(data))
     if mapping is None:
       mapping = {}
 
     indexName = self.generateFullIndexName(indexprefix, period)
-    LOG.debug("Bulk indexing into %s/%s of %s" % (indexName, doc_type, data))
+    sLog.debug("Bulk indexing into %s/%s of %s" % (indexName, doc_type, data))
 
     if not self.exists(indexName):
       retVal = self.createIndex(indexprefix, mapping, period)
@@ -317,7 +317,7 @@ class ElasticSearchDB(object):
       body['_source'] = row
 
       if 'timestamp' not in row:
-        LOG.warn("timestamp is not given! Note: the actual time is used!")
+        sLog.warn("timestamp is not given! Note: the actual time is used!")
 
       # if the timestamp is not provided, we use the current utc time.
       timestamp = row.get('timestamp', int(Time.toEpoch()))
@@ -331,7 +331,7 @@ class ElasticSearchDB(object):
           body['_source']['timestamp'] = timestamp * 1000
       except (TypeError, ValueError) as e:
         # in case we are not able to convert the timestamp to epoch time....
-        LOG.error("Wrong timestamp", e)
+        sLog.error("Wrong timestamp", e)
         body['_source']['timestamp'] = int(Time.toEpoch()) * 1000
       docs += [body]
     try:
@@ -381,7 +381,7 @@ class ElasticSearchDB(object):
 
     try:
       query = query.extra(size=self.RESULT_SIZE)  # do not need the raw data.
-      LOG.debug("Query", query.to_dict())
+      sLog.debug("Query", query.to_dict())
       result = query.execute()
     except TransportError as e:
       return S_ERROR(e)
@@ -390,7 +390,7 @@ class ElasticSearchDB(object):
     for bucket in result.aggregations[key].buckets:
       values += [bucket['key']]
     del query
-    LOG.debug("Nb of unique rows retrieved", len(values))
+    sLog.debug("Nb of unique rows retrieved", len(values))
     return S_OK(values)
 
   def pingDB(self):
@@ -403,7 +403,7 @@ class ElasticSearchDB(object):
     try:
       connected = self.__client.ping()
     except ConnectionError as e:
-      LOG.error("Cannot connect to the db", repr(e))
+      sLog.error("Cannot connect to the db", repr(e))
     return S_OK(connected)
 
   def deleteByQuery(self, indexName, query):
@@ -416,7 +416,7 @@ class ElasticSearchDB(object):
     try:
       self.__client.delete_by_query(index=indexName, body=query)
     except Exception as inst:
-      LOG.error("ERROR: Couldn't delete data")
+      sLog.error("ERROR: Couldn't delete data")
       return S_ERROR(inst)
     return S_OK('Successfully deleted data from index %s' % indexName)
 
@@ -431,13 +431,13 @@ class ElasticSearchDB(object):
     """
 
     if period is None:
-      LOG.warn("Daily indexes are used, because the period is not provided!")
+      sLog.warn("Daily indexes are used, because the period is not provided!")
       period = 'day'
 
     today = datetime.today().strftime("%Y-%m-%d")
     index = ''
     if period.lower() not in ['day', 'month']:  # if the period is not correct, we use daily indexes.
-      LOG.warn("Period is not correct daily indexes are used instead:", period)
+      sLog.warn("Period is not correct daily indexes are used instead:", period)
       index = "%s-%s" % (indexName, today)
     elif period.lower() == 'day':
       index = "%s-%s" % (indexName, today)
