@@ -7,9 +7,9 @@ import inspect
 from DIRAC import gLogger
 
 # from ILCDIRAC.Core.Utilities.Utilities import listify
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 ASSIGNEDSTATES = ['Assigned', 'Processed']
-MAXRESET = 10
 
 LOG = gLogger.getSubLogger(__name__)
 __RCSID__ = "$Id$"
@@ -44,6 +44,8 @@ class JobInfo(object):
 
     self.taskID = None
     self.pendingRequest = False
+
+    self.maxResetCounter = Operations().getValue('Transformations/FilesMaxResetCounter', 10)
 
   def __str__(self):
     info = "%d: %s" % (self.jobID, self.status)
@@ -121,10 +123,10 @@ class JobInfo(object):
     return bool(self.transFileStatus) and all(status == 'Deleted' for status in self.transFileStatus)
 
   def checkErrorCount(self):
-    """Check if any file is above MAXRESET error count."""
+    """Check if any file is above Operations/Transformations/FilesMaxResetCounter error count."""
     funcName = inspect.currentframe().f_code.co_name
     LOG.notice(funcName + ':' + str(self.errorCounts))
-    return any(errorCount > MAXRESET for errorCount in self.errorCounts)
+    return any(errorCount > self.maxResetCounter for errorCount in self.errorCounts)
 
   def getJobInformation(self, diracAPI, jobMon):
     """get all the information for the job"""

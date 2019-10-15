@@ -65,7 +65,6 @@ from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitor
 __RCSID__ = "$Id$"
 
 AGENT_NAME = 'Transformation/DataRecoveryAgent'
-MAXRESET = 10  # FIXME get this number from somewhere else
 
 ASSIGNEDSTATES = ['Assigned', 'Processed']
 
