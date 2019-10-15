@@ -128,6 +128,17 @@ NEW: (#4170) added Production system documentation
 CHANGE: (#4224) Pilot 3 is the default
 NEW: (#4244) Added a few notes on using the JobParameters on ElasticSearch database
 
+[v6r22p13]
+
+*Resources
+FIX: (#4299) CREAMComputingElement - possibility to defined CEQueueName to be used in the pilot submission command
+CHANGE: (#4297) SingularityCE: Delete workDir at end of job by default.
+FIX: (#4297) SingularityCE: Always stop proxy renewal thread at end of job.
+
+[v6r22p12]
+
+FIX: fixes from v6r21p16
+
 [v6r22p11]
 
 *Interfaces
@@ -283,6 +294,14 @@ CHANGE: (#4119) added note on MultiProcessor jobs preparation
 FIX: (#4119) Not lhcb but dteam (for DIRAC certification)
 FIX: (#4139) client_dms.sh not lhcb specific
 CHANGE:(#4140) adapt transformation certification tests to dteam VO
+
+[v6r21p16]
+
+*Resources
+FIX: (#4292) SSHComputingElement - define X509_USER_PROXY in case of gsissh access
+
+*WMS
+FIX: (#4292) SiteDirector - do not use keyword arguments when making setPilotStatus call
 
 [v6r21p15]
 
