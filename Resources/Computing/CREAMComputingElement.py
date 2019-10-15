@@ -96,7 +96,7 @@ class CREAMComputingElement(ComputingElement):
     return name, diracStamp
 
   def _reset(self):
-    self.queue = self.ceParameters['Queue']
+    self.queue = self.ceParameters.get("CEQueueName", self.ceParameters['Queue'])
     self.outputURL = self.ceParameters.get('OutputURL', 'gsiftp://localhost')
     if 'GridEnv' in self.ceParameters:
       self.gridEnv = self.ceParameters['GridEnv']
