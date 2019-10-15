@@ -29,6 +29,9 @@ class TestJI(unittest.TestCase):
     self.diracAPI = Mock(name="dilcMock", spec=DIRAC.Interfaces.API.Dirac.Dirac)
     self.jobMon = Mock(
         name="jobMonMock", spec=DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient.JobMonitoringClient)
+    self.jobMon.getInputData = Mock(return_value=S_OK([]))
+    self.jobMon.getJobAttribute = Mock(return_value=S_OK('0'))
+    self.jobMon.getJobParameter = Mock(return_value=S_OK({}))
     self.diracAPI.getJobJDL = Mock()
 
     self.jdl2 = {
@@ -469,9 +472,8 @@ class TestJI(unittest.TestCase):
     """Transformation.Utilities.JobInfo.getJobInformation........................................"""
     self.diracAPI.getJobJDL.return_value = S_OK(self.jdl1)
     self.jbi.getJobInformation(self.diracAPI, self.jobMon)
-    self.assertEqual(
-        self.jbi.outputFiles,
-        ["/ilc/prod/clic/3tev/e1e1_o/SID/SIM/00006301/010/e1e1_o_sim_6301_10256.slcio"])
+    self.assertEqual(self.jbi.outputFiles,
+                     ['/ilc/prod/clic/3tev/e1e1_o/SID/SIM/00006301/010/e1e1_o_sim_6301_10256.slcio'])
     self.assertEqual(10256, self.jbi.taskID)
     self.assertEqual(self.jbi.inputFiles, ["/ilc/prod/clic/3tev/e1e1_o/gen/00006300/004/e1e1_o_gen_6300_4077.stdhep"])
 

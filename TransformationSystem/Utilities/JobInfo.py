@@ -5,9 +5,8 @@ from itertools import izip_longest
 import inspect
 
 from DIRAC import gLogger
-
-# from ILCDIRAC.Core.Utilities.Utilities import listify
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.Core.Utilities.List import fromChar
 
 ASSIGNEDSTATES = ['Assigned', 'Processed']
 
@@ -128,22 +127,31 @@ class JobInfo(object):
     LOG.notice(funcName + ':' + str(self.errorCounts))
     return any(errorCount > self.maxResetCounter for errorCount in self.errorCounts)
 
-  def getJobInformation(self, diracAPI, jobMon):
-    """get all the information for the job"""
+  def getJobInformation(self, diracAPI, jobMon, jdlOnly=False):
+    """Get all the information for the job.
 
-    # # this is actually slower than just getting the jdl, because getting the jdl is one service call
-    # # this is three service calls to three different DBs
-    # resInputData = jobMon.getInputData(self.jobID)
-    # if resInputData['OK']:
-    #   self.inputFiles = resInputData['Value']
-    # resName = jobMon.getJobAttribute(self.jobID, 'JobName')
-    # if resName['OK']:
-    #   self.__getTaskID(resName['Value'])
-    # resOutput = jobMon.getJobParameter(self.jobID, 'ProductionOutputData')
-    # if resOutput['OK']:
-    #   self.outputFiles = listify(resOutput['Value'].get('ProductionOutputData', ''))
-    #   if not self.outputFiles:
-    #     LOG.verbose('Did not find outputFiles for', str(self))
+    The InputData, TaskID, OutputData can either be taken from properly filled JDL or
+
+    * inputData from jobMonitor getInputData
+    * TaskID from the name of The job via jobMonitor getJobAttribute JobName
+    * ProductionOutputData: from jobMonitor getJobParameter ProductionOutputData
+
+    This would be faster if we could do bulk calls for all of these
+    """
+    if not jdlOnly:
+      # this is actually slower than just getting the jdl, because getting the jdl is one service call
+      # this is three service calls to three different DBs
+      resInputData = jobMon.getInputData(self.jobID)
+      if resInputData['OK']:
+        self.inputFiles = resInputData['Value']
+      resName = jobMon.getJobAttribute(self.jobID, 'JobName')
+      if resName['OK'] and '_' in resName['Value']:
+        self.__getTaskID(resName['Value'])
+      resOutput = jobMon.getJobParameter(self.jobID, 'ProductionOutputData')
+      if resOutput['OK']:
+        self.outputFiles = fromChar(resOutput['Value'].get('ProductionOutputData', ''))
+        if not self.outputFiles:
+          LOG.verbose('Did not find outputFiles for', str(self))
 
     if not (self.inputFiles and self.outputFiles and self.taskID):
       LOG.verbose('Have to check JDL')

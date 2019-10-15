@@ -78,6 +78,7 @@ class DataRecoveryAgent(AgentModule):
     AgentModule.__init__(self, *args, **kwargs)
     self.name = 'DataRecoveryAgent'
     self.enabled = False
+    self.getJobInfoFromJDLOnly = False
 
     self.__getCSOptions()
 
@@ -274,6 +275,7 @@ class DataRecoveryAgent(AgentModule):
     """Get agent options from the CS."""
     self.enabled = self.am_getOption('EnableFlag', False)
     self.productionsToIgnore = self.am_getOption('TransformationsToIgnore', [])
+    self.getJobInfoFromJDLOnly = self.am_getOption('JobInfoFromJDLOnly', False)
     self.transformationStatus = self.am_getOption('TransformationStatus', ['Active', 'Completing'])
     ops = Operations()
     extendableTTypes = set(ops.getValue('Transformations/ExtendableTransfTypes', ['MCSimulation']))
@@ -374,7 +376,7 @@ class DataRecoveryAgent(AgentModule):
                         (counter, len(jobs), float(time.time() - jobInfoStart)))
       while True:
         try:
-          job.getJobInformation(self.diracAPI, self.jobMon)
+          job.getJobInformation(self.diracAPI, self.jobMon, jdlOnly=self.getJobInfoFromJDLOnly)
           lfnCache.extend(job.inputFiles)
           lfnCache.extend(job.outputFiles)
           break
