@@ -180,11 +180,14 @@ class SudoComputingElement(ComputingElement):
     os.chmod(payloadProxy, stat.S_IRUSR + stat.S_IWUSR + stat.S_IRGRP)
 
     # 2) Now recreate the copy of the proxy owned by the payload user
+    cmd = '/usr/bin/sudo -u %s sh -c "cp -f %s /tmp/x509up_u%d ; chmod 0400 /tmp/x509up_u%d"' % (payloadUsername,
+                                                                                                 payloadProxy,
+                                                                                                 payloadUID,
+                                                                                                 payloadUID)
     result = shellCall(0,
-                       '/usr/bin/sudo -u %s sh -c "cp -f %s /tmp/x509up_u%d ; chmod 0400 /tmp/x509up_u%d"'
-                       % (payloadUsername, payloadProxy, payloadUID, payloadUID),
+                       cmd,
                        callbackFunction=self.sendOutput)
+    if not result['OK']:
+      self.log.error('Could not recreate the copy of the proxy', "CMD: %s; %s" % (cmd, result['Message']))
 
     return S_OK('Proxy checked')
-
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

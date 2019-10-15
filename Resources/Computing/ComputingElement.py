@@ -27,26 +27,30 @@
 """
 
 from __future__ import print_function
+
+__RCSID__ = "$Id$"
+
 import os
 import multiprocessing
 
-from DIRAC.ConfigurationSystem.Client.Config import gConfig
+from DIRAC import S_OK, S_ERROR, gLogger, version
+
+from DIRAC.Core.Security import Properties
+from DIRAC.Core.Security.VOMS import VOMS
 from DIRAC.Core.Security.ProxyFile import writeToProxyFile
 from DIRAC.Core.Security.ProxyInfo import getProxyInfoAsString
 from DIRAC.Core.Security.ProxyInfo import formatProxyInfoAsString
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
-from DIRAC.Core.Security.VOMS import VOMS
-from DIRAC.ConfigurationSystem.Client.Helpers import Registry
-from DIRAC.Core.Security import Properties
 from DIRAC.Core.Utilities.Time import dateTime, second
-from DIRAC import S_OK, S_ERROR, gLogger, version
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
+from DIRAC.ConfigurationSystem.Client.Config import gConfig
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 
 
-__RCSID__ = "$Id$"
-
-INTEGER_PARAMETERS = ['CPUTime', 'NumberOfProcessors']
+INTEGER_PARAMETERS = ['CPUTime',
+                      'NumberOfProcessors', 'NumberOfPayloadProcessors',
+                      'MaxRAM']
 FLOAT_PARAMETERS = []
 LIST_PARAMETERS = ['Tag', 'RequiredTag']
 WAITING_TO_RUNNING_RATIO = 0.5
@@ -82,6 +86,7 @@ class ComputingElement(object):
     """
     self.proxy = proxy
     self.valid = dateTime() + second * valid
+    return S_OK()
 
   def _prepareProxy(self):
     """ Set the environment variable X509_USER_PROXY
@@ -423,7 +428,9 @@ class ComputingElement(object):
     return chain.dumpAllToFile(payloadProxy)
 
   def getDescription(self):
-    """ Get CE description as a dictionary
+    """ Get CE description as a dictionary.
+
+        This is called by the JobAgent for the case of "inner" CEs.
     """
 
     ceDict = {}
@@ -447,11 +454,12 @@ class ComputingElement(object):
     if project:
       ceDict['ReleaseProject'] = project
 
+    # the getCEStatus is implemented in the each of the specific CE classes
     result = self.getCEStatus()
     if result['OK']:
-      if 'AvailableProcessors' in result:
-        cores = result['AvailableProcessors']
-        ceDict['NumberOfProcessors'] = cores
+      # 'AvailableProcessors' ATM is only set by the PoolComputingElement
+      ceDict['NumberOfProcessors'] = result.get('AvailableProcessors',
+                                                result.get('NumberOfProcessors', 1))
 
     return S_OK(ceDict)
 
