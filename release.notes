@@ -2,6 +2,8 @@
 
 *Resources
 FIX: (#4299) CREAMComputingElement - possibility to defined CEQueueName to be used in the pilot submission command
+CHANGE: (#4297) SingularityCE: Delete workDir at end of job by default.
+FIX: (#4297) SingularityCE: Always stop proxy renewal thread at end of job.
 
 [v6r22p12]
 
