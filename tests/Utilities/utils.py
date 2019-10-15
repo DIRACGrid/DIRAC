@@ -30,3 +30,13 @@ def find_all(name, path, directory=None):
     if directory not in os.getcwd():
       return [x for x in result if directory in x]
   return result
+
+
+class MatchStringWith(str):
+  """ helper class to match sub strings in a mock.assert_called_with
+
+  >>> myMock.log.error.assert_called_with( MatchStringWith('error mess') )
+  """
+
+  def __eq__(self, other):
+    return self in str(other)

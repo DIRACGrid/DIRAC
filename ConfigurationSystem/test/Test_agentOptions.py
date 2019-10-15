@@ -50,6 +50,7 @@ AGENTS = [('DIRAC.AccountingSystem.Agent.NetworkAgent', {'IgnoreOptions': ['MaxC
           ('DIRAC.StorageManagementSystem.Agent.RequestPreparationAgent', {}),
           ('DIRAC.StorageManagementSystem.Agent.StageMonitorAgent', {}),
           ('DIRAC.StorageManagementSystem.Agent.StageRequestAgent', {'IgnoreOptions': ['PinLifetime']}),
+          ('DIRAC.TransformationSystem.Agent.DataRecoveryAgent', {}),
           ('DIRAC.TransformationSystem.Agent.InputDataAgent', {'IgnoreOptions': ['DateKey', 'TransformationTypes']}),
           ('DIRAC.TransformationSystem.Agent.MCExtensionAgent', {'IgnoreOptions': ['TransformationTypes',
                                                                                    'TasksPerIteration',
