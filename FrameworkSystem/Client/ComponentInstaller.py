@@ -62,6 +62,7 @@ import re
 import glob
 import stat
 import time
+import subprocess32 as subprocess
 import shutil
 
 import DIRAC
@@ -1598,7 +1599,9 @@ class ComponentInstaller(object):
           cmdFound = True
       if not cmdFound:
         gLogger.notice('Starting runsvdir ...')
-        os.system("runsvdir %s 'log:  DIRAC runsv' &" % self.startDir)
+        with open(os.devnull, 'w') as devnull:
+            subprocess.Popen(['nohup', 'runsvdir', self.startDir, 'log:  DIRAC runsv'],
+                             stdout=devnull, stderr=devnull, universal_newlines=True)
 
     if ['Configuration', 'Server'] in setupServices and setupConfigurationMaster:
       # This server hosts the Master of the CS
@@ -1963,7 +1966,15 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
     if not os.path.lexists(startCompDir):
       gLogger.notice('Creating startup link at', startCompDir)
       mkLink(runitCompDir, startCompDir)
-      time.sleep(10)
+
+      # Wait for the service to be recognised (can't use isfile as supervise/ok is a device)
+      start = time.time()
+      while (time.time() - 10) < start:
+        time.sleep(1)
+        if os.path.exists(os.path.join(startCompDir, 'supervise', 'ok')):
+          break
+      else:
+        return S_ERROR('Failed to find supervise/ok for component %s_%s' % (system, component))
 
     # Check the runsv status
     start = time.time()
@@ -1974,10 +1985,7 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
       if result['Value'] and result['Value']['%s_%s' % (system, component)]['RunitStatus'] == "Run":
         break
       time.sleep(1)
-
-    # Final check
-    result = self.getStartupComponentStatus([(system, component)])
-    if not result['OK']:
+    else:
       return S_ERROR('Failed to start the component %s_%s' % (system, component))
 
     resDict = {}
@@ -2276,7 +2284,7 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
         return S_ERROR(error)
     result = self.execMySQL('FLUSH PRIVILEGES')
     if not result['OK']:
-      gLogger.error('Failed to flush provileges', result['Message'])
+      gLogger.error('Failed to flush privileges', result['Message'])
       if self.exitOnError:
         exit(-1)
       return result

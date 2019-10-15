@@ -9,12 +9,16 @@ CHANGE: (#4235) Removes locals() way of passing parameters
 *tests
 NEW: (#4179) Set up Gitlab CI pipeline using Docker containers
 
-[v7r1-pre9]
+[v7r1-pre10]
+
+NEW: Add environment.yml file for preparing an environment with conda
 
 *Core
 NEW: initial support for mysql8
 NEW: (#4236) DISET - pass the client DIRAC version as part of the request description structure
 NEW: (#4274) Allow installation from a local directory
+FIX: (#4289) Use subprocess32 if possible for significantly better performance
+FIX: (#4289) TypeLoader should not be a singleton as it has a cache
 
 *Configuration
 CHANGE: (#4157) add new helper methods for IdP/Proxy Providers, OAuthManager. Add methods that 
@@ -30,6 +34,7 @@ CHANGE: (#4157) add possibility to work with Proxy Providers and "clean" proxy w
         voms/dirac extensions
 NEW: (#4257) Filter of duplicate mails in Notification
 FIX: (#4257) Optimize test in NotificationHandler
+FIX: (#4289) Avoid leaking std(in|out|err) file handles when running runsvdir
 
 *DMS
 CHANGE: (#4243) FileCatalog - standard components are loaded using ObjectLoader mechanism
@@ -43,6 +48,32 @@ NEW: (#4276) IdProvider resources to represent external user identity providers
 *tests
 CHANGE: (#4279) use VOMSSecurityManager for integration instead of PolicyBasedSecurityManager/VOMSPolicy
 FIX: (#4284) DMS client tests to use DIRAC user name, rather than the local system user name
+NEW: (#4289) CI for unit/lint/integration testing with GitHub actions
+NEW: (#4289) Start using shell linting of the test scripts
+FIX: (#4289) Exit quickly if the installation fails to make it easier to find issues
+
+*docs
+NEW: (#4289) Document how to run integration tests in docker
+
+[v7r0p3]
+
+*Core
+FIX: (#4298) install_site.sh : set UpdatePilotCStoJSONFile=False for initial installations
+
+*WMS
+FIX: (#4294) JobState - restored logic of having database clients at the class level
+
+*TS
+CHANGE: (#4308) Rename Operations option Productions/ProductionFilesMaxResetCounter to Transformations/FilesMaxResetCounter
+
+*Resources, WMS, tests
+CHANGE: (#4295) save the number of processors as jobLimits in pilot cfg
+
+*tests
+CHANGE: (#4291) removed pilot2 tests
+
+*docs
+NEW: (#4309) Added how to create a dedicated dirac file catalog
 
 [v7r0p2]
 
@@ -159,6 +190,17 @@ CHANGE: (#4110) updated basic tutorial for CC7 instead of SLC6.
 NEW: (#4170) added Production system documentation
 CHANGE: (#4224) Pilot 3 is the default
 NEW: (#4244) Added a few notes on using the JobParameters on ElasticSearch database
+
+[v6r22p13]
+
+*Resources
+FIX: (#4299) CREAMComputingElement - possibility to defined CEQueueName to be used in the pilot submission command
+CHANGE: (#4297) SingularityCE: Delete workDir at end of job by default.
+FIX: (#4297) SingularityCE: Always stop proxy renewal thread at end of job.
+
+[v6r22p12]
+
+FIX: fixes from v6r21p16
 
 [v6r22p11]
 
@@ -315,6 +357,14 @@ CHANGE: (#4119) added note on MultiProcessor jobs preparation
 FIX: (#4119) Not lhcb but dteam (for DIRAC certification)
 FIX: (#4139) client_dms.sh not lhcb specific
 CHANGE:(#4140) adapt transformation certification tests to dteam VO
+
+[v6r21p16]
+
+*Resources
+FIX: (#4292) SSHComputingElement - define X509_USER_PROXY in case of gsissh access
+
+*WMS
+FIX: (#4292) SiteDirector - do not use keyword arguments when making setPilotStatus call
 
 [v6r21p15]
 

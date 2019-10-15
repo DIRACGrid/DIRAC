@@ -206,6 +206,16 @@ class SingularityComputingElement(ComputingElement):
     ret['proxyLocation'] = proxyLoc
     return ret
 
+  def __deleteWorkArea(self, baseDir):
+    """ Deletes the container work area (baseDir path) unless 'KeepWorkArea'
+        option is set. Returns None.
+    """
+    if self.ceParameters.get('KeepWorkArea', False):
+      return
+    # We can't really do anything about errors: The tree should be fully owned
+    # by the pilot user, so we don't expect any permissions problems.
+    shutil.rmtree(baseDir, ignore_errors=True)
+
   def __getEnv(self):
     """ Gets the environment for use within the container.
         We blank almost everything to prevent contamination from the host system.
@@ -313,14 +323,15 @@ class SingularityComputingElement(ComputingElement):
     if not result["OK"]:
       if renewTask:
         gThreadScheduler.removeTask(renewTask)
+      self.__deleteWorkArea(baseDir)
       result = S_ERROR("Error running singularity command")
       result['ReschedulePayload'] = True
       return result
 
     result = self.__checkResult(tmpDir)
-    if not result["OK"]:
-      if renewTask:
-        gThreadScheduler.removeTask(renewTask)
+    if renewTask:
+      gThreadScheduler.removeTask(renewTask)
+    self.__deleteWorkArea(baseDir)
     return result
 
   def getCEStatus(self, jobIDList=None):

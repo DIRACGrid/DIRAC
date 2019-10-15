@@ -3,20 +3,22 @@
 # Author : A.T.
 ########################################################################
 
-""" The Computing Element to run several jobs simultaneously in separate processes
-    managed by a ProcessPool
+""" The Pool Computing Element is an "inner" CE (meaning it's used by a jobAgent inside a pilot)
+
+    It's used running several jobs simultaneously in separate processes, managed by a ProcessPool
 """
 
 __RCSID__ = "$Id$"
 
 import os
 
+from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC.Core.Utilities.ProcessPool import ProcessPool
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.ConfigurationSystem.private.ConfigurationData import ConfigurationData
 from DIRAC.Resources.Computing.InProcessComputingElement import InProcessComputingElement
 from DIRAC.Resources.Computing.SudoComputingElement import SudoComputingElement
 from DIRAC.Resources.Computing.ComputingElement import ComputingElement
-from DIRAC.Core.Security.ProxyInfo import getProxyInfo
-from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.Core.Utilities.ProcessPool import ProcessPool
 
 MandatoryParameters = []
 # Number of unix users to run job payloads with sudo
@@ -127,6 +129,18 @@ class PoolComputingElement(ComputingElement):
       return S_ERROR('Not enough slots: requested %d, available %d' % (requestedProcessors,
                                                                        self.processors - processorsInUse))
 
+    # Now persisiting the job limits for later use in pilot.cfg file (pilot 3 default)
+    cd = ConfigurationData(loadDefaultCFG=False)
+    res = cd.loadFile('pilot.cfg')
+    if not res['OK']:
+      self.log.error("Could not load pilot.cfg", res['Message'])
+    # only NumberOfProcessors for now, but RAM (or other stuff) can also be added
+    jobID = int(kwargs.get('jobDesc', {}).get('jobID', 0))
+    cd.setOptionInCFG('/Resources/Computing/JobLimits/%d/NumberOfProcessors' % jobID, self.processors)
+    res = cd.dumpLocalCFGToFile('pilot.cfg')
+    if not res['OK']:
+      self.log.error("Could not dump cfg to pilot.cfg", res['Message'])
+
     ret = getProxyInfo()
     if not ret['OK']:
       pilotProxy = None
@@ -195,7 +209,9 @@ class PoolComputingElement(ComputingElement):
     return result
 
   def getDescription(self):
-    """ Get CE description as a dictionary
+    """ Get a list of CEs descriptions (each is a dict)
+
+        This is called by the JobAgent.
     """
     result = super(PoolComputingElement, self).getDescription()
     if not result['OK']:
@@ -234,5 +250,3 @@ class PoolComputingElement(ComputingElement):
     :param str payloadProxy: location of the payloadProxy
     """
     return self._monitorProxy(pilotProxy, payloadProxy)
-
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

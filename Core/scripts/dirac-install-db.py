@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Create a new DB on the local MySQL server
+Create a new DB in the MySQL server
 """
 # Script initialization and parseCommandLine
 from __future__ import print_function

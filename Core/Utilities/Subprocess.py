@@ -34,7 +34,7 @@ import time
 import select
 import os
 import sys
-import subprocess
+import subprocess32 as subprocess
 import signal
 # Very Important:
 #  Here we can not import directly from DIRAC, since this file it is imported
@@ -429,7 +429,8 @@ class Subprocess:
                                     stdout=subprocess.PIPE,
                                     stderr=subprocess.PIPE,
                                     close_fds=closefd,
-                                    env=env)
+                                    env=env,
+                                    universal_newlines=True)
       self.childPID = self.child.pid
     except OSError as v:
       retDict = S_ERROR(v)

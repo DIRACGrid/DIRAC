@@ -1,6 +1,4 @@
-#!/bin/bash
-#
-#
+#!/usr/bin/env bash
 
 function usage {
   echo Usage:
@@ -18,7 +16,7 @@ function usage {
 
 DIRACVERSION='integration'
 
-while [ $1 ]
+while [ "$1" ]
 do
   case $1 in
 
@@ -38,7 +36,7 @@ do
   -v | --version )
     switch=$1
     shift
-    [ $1 ] || error_exit "Switch $switch requires a argument"
+    [ "$1" ] || error_exit "Switch $switch requires a argument"
     DIRACVERSION=$1
   ;;
 
@@ -61,12 +59,13 @@ wget --no-check-certificate -O dirac-install "https://github.com/DIRACGrid/DIRAC
 #
 # define the target Dir
 #
-installDir=`grep TargetPath $installCfg | grep -v '#' | cut -d '=' -f 2 | sed -e 's/ //g'`
+installDir=$(grep TargetPath $installCfg | grep -v '#' | cut -d '=' -f 2 | sed -e 's/ //g')
 #
-mkdir -p $installDir || exit
+mkdir -p "$installDir" || exit
 #
 
-python dirac-install -t server $USE_DIRACOS $installCfg
-source $installDir/bashrc
-dirac-configure $installCfg $DEBUG
-dirac-setup-site $DEBUG
+python dirac-install -t server "$USE_DIRACOS" "$installCfg"
+source "$installDir"/bashrc
+dirac-configure "$installCfg" "$DEBUG"
+dirac-configure -o /Operations/Defaults/Pilot/UpdatePilotCStoJSONFile=False -FDMH "$DEBUG"
+dirac-setup-site "$DEBUG"

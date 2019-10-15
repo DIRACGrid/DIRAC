@@ -5,39 +5,42 @@
 #   Requires no additional external arguments
 #
 #.........................................................
+# set -euo pipefail
+set -eo pipefail
+# IFS=$'\n\t'
+set -x
 
-set -ex
-
+# shellcheck source=tests/CI/CONFIG
 source CONFIG
 
-echo -e '***' $(date -u) "**** Getting the tests ****\n"
+echo -e "*** $(date -u) **** Getting the tests ****\n"
 
-mkdir -p $PWD/TestCode
-cd $PWD/TestCode
+mkdir -p "$PWD/TestCode"
+cd "$PWD/TestCode"
 
-if [ -d $TESTREPO ]; then
-    cp -r $TESTREPO ./DIRAC
+if [ -d "$TESTREPO" ]; then
+    cp -r "$TESTREPO" ./DIRAC
     cd DIRAC
-    echo "Using local test repository in branch $(git branch | grep \* | sed -e "s/*^* //")"
+    echo "Using local test repository in branch $(git branch | grep "\*" | sed -e "s/*^* //")"
 else
-    git clone https://github.com/$TESTREPO/DIRAC.git
+    git clone "https://github.com/$TESTREPO/DIRAC.git"
     cd DIRAC
-    git checkout $TESTBRANCH
+    git checkout "$TESTBRANCH"
     echo "Using remote test repository ${TESTREPO} in branch ${TESTBRANCH}"
 fi
 
 cd ../..
 
-echo -e '***' $(date -u) "**** Got the DIRAC tests ****\n"
+echo -e "*** $(date -u) **** Got the DIRAC tests ****\n"
 
 
-echo -e '***' $(date -u) "**** Server INSTALLATION START ****\n"
+echo -e "*** $(date -u) **** Server INSTALLATION START ****\n"
 
 sed -i "0,/\(Host = \).*/s//\1$SERVER_HOST/" TestCode/DIRAC/tests/Jenkins/install.cfg
+# shellcheck source=tests/Jenkins/dirac_ci.sh
 source TestCode/DIRAC/tests/Jenkins/dirac_ci.sh
 
 
 X509_CERT_DIR=$SERVERINSTALLDIR/etc/grid-security/certificates/ fullInstallDIRAC
 
-echo -e '***' $(date -u) "**** Server INSTALLATION DONE ****\n"
-
+echo -e "*** $(date -u) **** Server INSTALLATION DONE ****\n"
