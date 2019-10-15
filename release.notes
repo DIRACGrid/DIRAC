@@ -1,5 +1,14 @@
 [v7r0p3]
 
+*Core
+FIX: (#4298) install_site.sh : set UpdatePilotCStoJSONFile=False for initial installations
+
+*WMS
+FIX: (#4294) JobState - restored logic of having database clients at the class level
+
+*Resources, WMS, tests
+CHANGE: (#4295) save the number of processors as jobLimits in pilot cfg
+
 *tests
 CHANGE: (#4291) removed pilot2 tests
 
