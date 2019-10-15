@@ -2,6 +2,12 @@
 
 Depending on what is the status of a job and its input and output files different actions are performed.
 
+.. warning:: Before fully enabling this agent make sure that your transformation jobs fulfill the assumptions of the
+  agent.  Otherwise it might delete some of your data! Do not set ``Enable`` to True before letting the agent run
+  through a few times and read the messages it produces.
+
+.. note::  Use the :ref:`dirac-transformation-recover-data` script for checking individual transformations
+
 The agent takes the following steps
 
 - obtain list of transformation
@@ -14,8 +20,6 @@ The agent takes the following steps
   files to obtain consistent state for jobs, tasks, input and output
   files
 
-  - TODO: fill list of Checks and Actions
-
 - Send email about performed actions
 
 Requirements/Assumptions:
@@ -27,7 +31,7 @@ Requirements/Assumptions:
   - JobName of the form: TransformationID_TaskID obtained as a  JobAttribute
   - InputData from the JobMonitor.getInputData
 
-  - Or Extract that information from the JDL for the job
+  - Or Extract that information from the JDL for the job, which must also contain the ProductionOutputData fields
 
 - JobGroup equal to "%08d" % transformationID
 
@@ -35,7 +39,6 @@ Requirements/Assumptions:
 
   Transformations are only treated, if during the last pass changes
   were performed, or the number of Failed and Done jobs has changed.
-
 
 .. literalinclude:: ../ConfigTemplate.cfg
   :start-after: ##BEGIN DataRecoveryAgent

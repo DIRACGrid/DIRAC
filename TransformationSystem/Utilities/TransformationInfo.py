@@ -4,12 +4,12 @@ from collections import OrderedDict, defaultdict
 from itertools import izip_longest
 
 from DIRAC import gLogger, S_OK
+from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Utilities.Proxy import UserProxy
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
-from DIRAC.Core.Utilities.List import breakListIntoChunks
+from DIRAC.TransformationSystem.Utilities.JobInfo import JobInfo
 from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
 
-from DIRAC.TransformationSystem.Utilities.JobInfo import JobInfo
 __RCSID__ = "$Id$"
 
 

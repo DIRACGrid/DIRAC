@@ -157,7 +157,6 @@ class JobInfo(object):
   def getTaskInfo(self, tasksDict, lfnTaskDict, withInputTypes):
     """extract the task information from the taskDict"""
 
-    # FIXME: add check if inputfiles are still assigned to this task
     if not self.inputFiles and self.tType in withInputTypes:
       raise TaskInfoException('InputFiles is empty: %s' % str(self))
 
