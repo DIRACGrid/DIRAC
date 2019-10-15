@@ -5,6 +5,11 @@ FIX: (#4299) CREAMComputingElement - possibility to defined CEQueueName to be us
 CHANGE: (#4297) SingularityCE: Delete workDir at end of job by default.
 FIX: (#4297) SingularityCE: Always stop proxy renewal thread at end of job.
 
+*TS
+NEW: (#4301) DataRecoveryAgent to perform and apply consistency checks for transformations
+NEW: (#4301) dirac-transformation-recover-data : script to manually run consistency checks on 
+     individual transformations, for debugging and testing of the DataRecoveryAgent
+
 [v6r22p12]
 
 FIX: fixes from v6r21p16
