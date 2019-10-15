@@ -3,7 +3,7 @@
 import logging
 import os
 import sys
-import subprocess
+import subprocess32 as subprocess
 import shlex
 
 
@@ -92,7 +92,8 @@ def setUpReadTheDocsEnvironment(moduleName='DIRAC'):
 def runCommand(command):
   """Execute shell command, return output, catch exceptions."""
   try:
-    result = subprocess.check_output(shlex.split(command), stderr=subprocess.STDOUT)
+    result = subprocess.check_output(shlex.split(command), stderr=subprocess.STDOUT,
+                                     universal_newlines=True)
     if 'NOTICE:' in result:
       LOG.warn('NOTICE in output for: %s', command)
       return ''

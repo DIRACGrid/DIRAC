@@ -6,7 +6,7 @@ from __future__ import print_function
 import os
 import tempfile
 import shutil
-import subprocess
+import subprocess32 as subprocess
 import gzip
 import sys
 

@@ -342,14 +342,14 @@ class Operation( object ):
     for attrName in Operation.ATTRIBUTE_NAMES:
 
       # RequestID and OperationID might not be set since they are managed by SQLAlchemy
-      if not hasattr( self, attrName ):
+      if not hasattr(self, attrName):
         continue
 
-      value = getattr( self, attrName )
+      value = getattr(self, attrName)
 
-      if isinstance( value, datetime.datetime ):
+      if isinstance(value, datetime.datetime):
         # We convert date time to a string
-        jsonData[attrName] = value.strftime( self._datetimeFormat )
+        jsonData[attrName] = value.strftime(self._datetimeFormat)  # pylint: disable=no-member
       else:
         jsonData[attrName] = value
 
