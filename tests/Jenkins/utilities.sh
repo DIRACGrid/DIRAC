@@ -1125,39 +1125,6 @@ function startRunsv(){
 
 
 
-
-############################################
-# Pilot tests Utilities
-
-
-function getCertificate(){
-  echo '==> [getCertificate]'
-  # just gets a host certificate from a known location
-
-  mkdir -p $PILOTINSTALLDIR/etc/grid-security/
-  cp /root/hostcert.pem $PILOTINSTALLDIR/etc/grid-security/
-  cp /root/hostkey.pem $PILOTINSTALLDIR/etc/grid-security/
-  chmod 0600 $PILOTINSTALLDIR/etc/grid-security/hostkey.pem
-
-  echo '==> [Done getCertificate]'
-}
-
-function prepareForPilot(){
-  echo '==> [prepareForPilot]'
-
-  #cert first (host certificate)
-  #getCertificate (no need...)
-
-  #get the necessary scripts
-  cp $TESTCODE/DIRAC/Core/scripts/dirac-install.py $PILOTINSTALLDIR/
-  cp $TESTCODE/DIRAC/WorkloadManagementSystem/PilotAgent/dirac-pilot.py $PILOTINSTALLDIR/
-  cp $TESTCODE/DIRAC/WorkloadManagementSystem/PilotAgent/pilotTools.py $PILOTINSTALLDIR/
-  cp $TESTCODE/DIRAC/WorkloadManagementSystem/PilotAgent/pilotCommands.py $PILOTINSTALLDIR/
-
-  echo '==> [Done prepareForPilot]'
-}
-
-
 #.............................................................................
 #
 # downloadProxy:
