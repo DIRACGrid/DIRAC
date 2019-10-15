@@ -16,10 +16,10 @@ env:
     # since we hardode tests for both pyGSI and M2Crypto
     - CHECK=pytest_M2Crypto_security
     - CHECK=docs
+    - CHECK=shellcheck
     - CHECK=pylint
     - CHECK=pylintPY3K
     - CHECK=format
-
 
 # command to install dependencies
 install:
@@ -30,26 +30,33 @@ install:
 script:
   - export PYTHONPATH=${PWD%/*}
   - ls $PYTHONPATH
-  - if [[ "${CHECK}" == "pytest"  ]];
-    then pytest;
-    elif [[ "${CHECK}" == "pytest_M2Crypto"  ]];
-    then DIRAC_USE_M2CRYPTO=Yes pytest ;
-    elif [[ "${CHECK}" == "pytest_security"  ]];
-    then pytest Core/Security/test;
-    elif [[ "${CHECK}" == "pytest_M2Crypto_security"  ]];
-    then DIRAC_USE_M2CRYPTO=Yes pytest Core/Security/test;
-    elif [[ "${CHECK}" == "docs"  ]];
-    then .travis.d/checkDocs.sh;
-    elif [[ "${CHECK}" == "pylint"  ]];
-    then travis_wait 30 .travis.d/runPylint.sh;
-    elif [[ "${CHECK}" == "pylintPY3K"  ]];
-    then travis_wait 30 .travis.d/runPylint.sh;
-    elif [[ "${CHECK}" == "format" ]] && [[ "${TRAVIS_PULL_REQUEST}" != "false" ]];
-    then git remote add GH https://github.com/DIRACGrid/DIRAC.git; git fetch --no-tags GH ${TRAVIS_BRANCH}; git branch -vv; git diff -U0 GH/${TRAVIS_BRANCH} ':(exclude)tests/formatting/pep8_bad.py' | pycodestyle --diff;
+  - |
+    if [[ "${CHECK}" == "pytest"  ]]; then
+      pytest;
+    elif [[ "${CHECK}" == "pytest_M2Crypto"  ]]; then
+      DIRAC_USE_M2CRYPTO=Yes pytest ;
+    elif [[ "${CHECK}" == "pytest_security"  ]]; then
+      pytest Core/Security/test;
+    elif [[ "${CHECK}" == "pytest_M2Crypto_security"  ]]; then
+      DIRAC_USE_M2CRYPTO=Yes pytest Core/Security/test;
+    elif [[ "${CHECK}" == "docs"  ]]; then
+      .travis.d/checkDocs.sh;
+    elif [[ "${CHECK}" == "shellcheck"  ]]; then
+      # TODO This should cover more than just tests/CI
+      find tests/CI -name '*.sh' -print0 | xargs -0 -n1 shellcheck --external-sources
+    elif [[ "${CHECK}" == "pylint"  ]]; then
+      travis_wait 30 .travis.d/runPylint.sh;
+    elif [[ "${CHECK}" == "pylintPY3K"  ]]; then
+      travis_wait 30 .travis.d/runPylint.sh;
+    elif [[ "${CHECK}" == "format" ]] && [[ "${TRAVIS_PULL_REQUEST}" != "false" ]]; then
+      git remote add GH https://github.com/DIRACGrid/DIRAC.git; git fetch --no-tags GH ${TRAVIS_BRANCH}; git branch -vv; git diff -U0 GH/${TRAVIS_BRANCH} ':(exclude)tests/formatting/pep8_bad.py' | pycodestyle --diff;
+    else
+      echo "Unrecognised check ${CHECK}";
+      exit 42;
     fi
 
 ## ignore errors for sourcefiles "-i"
 after_success:
-  - if [[ "${CHECK}" == "pytest"  ]];
-    then codecov;
+  - if [[ "${CHECK}" == "pytest"  ]]; then
+      codecov;
     fi

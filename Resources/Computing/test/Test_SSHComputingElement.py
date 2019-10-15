@@ -5,7 +5,7 @@ tests for SSHComputingElement module
 
 import os
 import shutil
-import subprocess
+import subprocess32 as subprocess
 import shlex
 import pytest
 
@@ -61,9 +61,9 @@ def test_generateControlScript(batchSystem):
   # Test the execution of the remote control script
   cmd = 'python -m py_compile %s' % dest
   args = shlex.split(cmd)
-  process = subprocess.Popen(args)
+  process = subprocess.Popen(args, universal_newlines=True)
   process.communicate()
-  assert process.returncode is 0
+  assert process.returncode == 0
 
   # Delete the control script and the .pyc file associated
   os.remove(source)

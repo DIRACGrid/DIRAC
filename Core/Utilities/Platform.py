@@ -83,7 +83,8 @@ def getPlatformString():
   if platformTuple[0] == 'Linux':
     try:
       import subprocess
-      sp = subprocess.Popen( [ '/sbin/ldconfig', '--print-cache' ], stdout = subprocess.PIPE )
+      sp = subprocess.Popen(['/sbin/ldconfig', '--print-cache'], stdout=subprocess.PIPE,
+                            universal_newlines=True)
       spStdout = sp.stdout
     except:
       sp = None
