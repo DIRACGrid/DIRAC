@@ -44,6 +44,20 @@ FIX: (#4289) Exit quickly if the installation fails to make it easier to find is
 *docs
 NEW: (#4289) Document how to run integration tests in docker
 
+[v7r0p3]
+
+*Core
+FIX: (#4298) install_site.sh : set UpdatePilotCStoJSONFile=False for initial installations
+
+*WMS
+FIX: (#4294) JobState - restored logic of having database clients at the class level
+
+*Resources, WMS, tests
+CHANGE: (#4295) save the number of processors as jobLimits in pilot cfg
+
+*tests
+CHANGE: (#4291) removed pilot2 tests
+
 [v7r0p2]
 
 *Accounting
@@ -159,6 +173,17 @@ CHANGE: (#4110) updated basic tutorial for CC7 instead of SLC6.
 NEW: (#4170) added Production system documentation
 CHANGE: (#4224) Pilot 3 is the default
 NEW: (#4244) Added a few notes on using the JobParameters on ElasticSearch database
+
+[v6r22p13]
+
+*Resources
+FIX: (#4299) CREAMComputingElement - possibility to defined CEQueueName to be used in the pilot submission command
+CHANGE: (#4297) SingularityCE: Delete workDir at end of job by default.
+FIX: (#4297) SingularityCE: Always stop proxy renewal thread at end of job.
+
+[v6r22p12]
+
+FIX: fixes from v6r21p16
 
 [v6r22p11]
 
@@ -315,6 +340,14 @@ CHANGE: (#4119) added note on MultiProcessor jobs preparation
 FIX: (#4119) Not lhcb but dteam (for DIRAC certification)
 FIX: (#4139) client_dms.sh not lhcb specific
 CHANGE:(#4140) adapt transformation certification tests to dteam VO
+
+[v6r21p16]
+
+*Resources
+FIX: (#4292) SSHComputingElement - define X509_USER_PROXY in case of gsissh access
+
+*WMS
+FIX: (#4292) SiteDirector - do not use keyword arguments when making setPilotStatus call
 
 [v6r21p15]
 
