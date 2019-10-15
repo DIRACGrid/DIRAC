@@ -2,7 +2,6 @@
 #   Simple extension of CC7 with git, openssl and runit
 #
 #..................................................................
-
 FROM cern/cc7-base:latest
 ARG RUNIT_RPM=runit-2.1.2-1.el7.cern.x86_64.rpm
 

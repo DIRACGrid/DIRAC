@@ -322,10 +322,7 @@ function installDIRAC(){
     fi
   fi
 
-  ./dirac-install -r $DIRAC_RELEASE -t client $INSTALLOPTIONS $DEBUG
-
-  if [ $? -ne 0 ]
-  then
+  if ! ./dirac-install -r $DIRAC_RELEASE -t client $INSTALLOPTIONS $DEBUG; then
     echo 'ERROR: DIRAC client installation failed'
     exit 1
   fi
@@ -541,7 +538,6 @@ function generateUserCredentials(){
   echo '==> [generateUserCredentials]'
 
   # validity of the certificate
-
   nDays=${1:-7}
 
   USERCERTDIR=$SERVERINSTALLDIR/user
@@ -829,7 +825,7 @@ dropDBs(){
   echo '==> [dropDBs]'
 
   dbs=$(cut -d ' ' -f 2 < databases | cut -d '.' -f 1 | grep -v ^RequestDB | grep -v ^FileCatalogDB)
-  python "$TESTCODE/DIRAC/tests/Jenkins/dirac-drop-db.py" $dbs $DEBUG
+  python "$TESTCODE/DIRAC/tests/Jenkins/dirac-drop-db.py" "$dbs" "$DEBUG"
 }
 
 #-------------------------------------------------------------------------------
@@ -958,7 +954,6 @@ function startRunsv(){
 
   echo '==> [Done startRunsv]'
 }
-
 
 
 #.............................................................................
