@@ -14,7 +14,7 @@
 #
 # === environment variables (minimum set):
 #
-# DIRACBRANCH (branch of DIRAC, e.g. v6r22)
+# DIRACBRANCH (branch of DIRAC, e.g. rel-v7r0)
 #
 # === optional environment variables:
 # 
@@ -39,7 +39,6 @@
 # === a default directory structure is created:
 # ~/TestCode
 # ~/ServerInstallDIR
-# ~/PilotInstallDIR
 # ~/ClientInstallDIR
 
 
@@ -75,8 +74,6 @@ mkdir -p $WORKSPACE/ServerInstallDIR # Where servers are installed
 SERVERINSTALLDIR=$_
 mkdir -p $WORKSPACE/ClientInstallDIR # Where clients are installed
 CLIENTINSTALLDIR=$_
-mkdir -p $WORKSPACE/PilotInstallDIR # Where pilots are installed
-PILOTINSTALLDIR=$_
 
 # Location of the CFG file to be used (this can be replaced by the extensions)
 INSTALL_CFG_FILE=$TESTCODE/DIRAC/tests/Jenkins/install.cfg
@@ -444,175 +441,4 @@ function clean(){
 
   # clean all
   finalCleanup
-}
-
-############################################
-# Pilot
-############################################
-
-#...............................................................................
-#
-# MAIN function: DIRACPilotInstall:
-#
-#   This function uses the pilot code to make a DIRAC pilot installation
-#   The JobAgent is not run here
-#
-#...............................................................................
-
-function DIRACPilotInstall(){
-
-  prepareForPilot
-
-  default
-
-  findRelease
-
-  #Don't launch the JobAgent here
-  cwd=$PWD
-  cd $PILOTINSTALLDIR
-  if [ $? -ne 0 ]
-  then
-    echo 'ERROR: cannot change to ' $PILOTINSTALLDIR
-    return
-  fi
-
-  if [ $GATEWAY ]
-  then
-    GATEWAY="-W "$GATEWAY
-  fi
-
-  if [ $lcgVersion ]
-  then
-    lcgVersion="-g "$lcgVersion
-  fi
-
-  commandList="GetPilotVersion,CheckWorkerNode,InstallDIRAC,ConfigureBasics,CheckCECapabilities,CheckWNCapabilities,ConfigureSite,ConfigureArchitecture,ConfigureCPURequirements"
-  options="-S $DIRACSETUP -r $projectVersion $lcgVersion -C $CSURL -N $JENKINS_CE -Q $JENKINS_QUEUE -n $JENKINS_SITE -M 1 --cert --certLocation=/home/dirac/certs/ $GATEWAY"
-
-  if [ "$customCommands" ]
-  then
-    echo 'Using custom command list'
-    commandList=$customCommands
-  fi
-
-  if [ "$customOptions" ]
-  then
-    echo 'Using custom options'
-    options="$options -o $customOptions"
-  fi
-
-  echo $( eval echo Executing python dirac-pilot.py $options -X $commandList $DEBUG)
-  python dirac-pilot.py $options -X $commandList $DEBUG
-  if [ $? -ne 0 ]
-  then
-    echo 'ERROR: pilot script failed'
-    return
-  fi
-
-  cd $cwd
-  if [ $? -ne 0 ]
-  then
-    echo 'ERROR: cannot change to ' $cwd
-    return
-  fi
-}
-
-
-function fullPilot(){
-
-  #first simply install via the pilot
-  DIRACPilotInstall
-  if [ $? -ne 0 ]
-  then
-    echo 'ERROR: pilot installation failed'
-    return
-  fi
-
-  #this should have been created, we source it so that we can continue
-  source $PILOTINSTALLDIR/bashrc
-  if [ $? -ne 0 ]
-  then
-    echo 'ERROR: cannot source bashrc'
-    return
-  fi
-
-  #Adding the LocalSE and the CPUTimeLeft, for the subsequent tests
-  dirac-configure -FDMH --UseServerCertificate -L $DIRACSE $DEBUG
-  if [ $? -ne 0 ]
-  then
-    echo 'ERROR: cannot configure'
-    return
-  fi
-
-  #Configure for CPUTimeLeft and more
-  python $TESTCODE/DIRAC/tests/Jenkins/dirac-cfg-update.py -o /DIRAC/Security/UseServerCertificate=True $DEBUG
-  if [ $? -ne 0 ]
-  then
-    echo 'ERROR: cannot update the CFG'
-    return
-  fi
-
-  #Getting a user proxy, so that we can run jobs
-  downloadProxy
-  #Set not to use the server certificate for running the jobs
-  dirac-configure -FDMH -o /DIRAC/Security/UseServerCertificate=False $DEBUG
-  if [ $? -ne 0 ]
-  then
-    echo 'ERROR: cannot run dirac-configure'
-    return
-  fi
-}
-
-
-####################################################################################
-# submitAndMatch
-#
-# This installs a DIRAC client, then use it to submit jobs to DIRAC.Jenkins.ch,
-# then we run a pilot that should hopefully match those jobs
-
-function submitAndMatch(){
-
-  # Here we submit the jobs (to DIRAC.Jenkins.ch)
-  installDIRAC # This installs the DIRAC client
-  if [ $? -ne 0 ]
-  then
-    echo 'ERROR: failure installing the DIRAC client'
-    return
-  fi
-
-  submitJob # This submits the jobs
-  if [ $? -ne 0 ]
-  then
-    echo 'ERROR: failure submitting the jobs'
-    return
-  fi
-
-  # Then we run the full pilot, including the JobAgent, which should match the jobs we just submitted
-  cd $PILOTINSTALLDIR
-  if [ $? -ne 0 ]
-  then
-    echo 'ERROR: cannot change to ' $PILOTINSTALLDIR
-    return
-  fi
-  prepareForPilot
-  default
-
-  if [ ! -z "$PILOT_VERSION" ]
-  then
-    echo -e "==> Running python dirac-pilot.py -S $DIRACSETUP -r $PILOT_VERSION -g $lcgVersion -C $CSURL -N $JENKINS_CE -Q $JENKINS_QUEUE -n $JENKINS_SITE --cert --certLocation=/home/dirac/certs/ -M 3 $DEBUG"
-    python dirac-pilot.py -S $DIRACSETUP -r $PILOT_VERSION -g $lcgVersion -C $CSURL -N $JENKINS_CE -Q $JENKINS_QUEUE -n $JENKINS_SITE --cert --certLocation=/home/dirac/certs/ -M 3 $DEBUG
-    if [ $? -ne 0 ]
-    then
-      echo 'ERROR: dirac-pilot failure'
-      return
-    fi
-  else
-    echo -e "==> Running python dirac-pilot.py -S $DIRACSETUP -g $lcgVersion -C $CSURL -N $JENKINS_CE -Q $JENKINS_QUEUE -n $JENKINS_SITE --cert --certLocation=/home/dirac/certs/ -M 3 $DEBUG"
-    python dirac-pilot.py -S $DIRACSETUP -g $lcgVersion -C $CSURL -N $JENKINS_CE -Q $JENKINS_QUEUE -n $JENKINS_SITE --cert --certLocation=/home/dirac/certs/ -M 3 $DEBUG
-    if [ $? -ne 0 ]
-    then
-      echo 'ERROR: dirac-pilot failure'
-      return
-    fi
-  fi
 }
