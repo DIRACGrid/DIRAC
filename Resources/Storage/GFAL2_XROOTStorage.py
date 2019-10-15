@@ -15,7 +15,7 @@ from DIRAC.Resources.Storage.GFAL2_StorageBase import GFAL2_StorageBase
 from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
 from DIRAC.Core.Security.Locations import getProxyLocation
 
-LOG = gLogger.getSubLogger(__name__)
+sLog = gLogger.getSubLogger(__name__)
 
 
 class GFAL2_XROOTStorage(GFAL2_StorageBase):
@@ -46,7 +46,7 @@ class GFAL2_XROOTStorage(GFAL2_StorageBase):
     super(GFAL2_XROOTStorage, self).__init__(storageName, parameters)
     self.srmSpecificParse = False
 
-    self.log = LOG.getSubLogger(storageName)
+    self.log = sLog.getSubLogger(storageName)
 
     self.pluginName = 'GFAL2_XROOT'
 

@@ -52,11 +52,17 @@ FIX: (#4298) install_site.sh : set UpdatePilotCStoJSONFile=False for initial ins
 *WMS
 FIX: (#4294) JobState - restored logic of having database clients at the class level
 
+*TS
+CHANGE: (#4308) Rename Operations option Productions/ProductionFilesMaxResetCounter to Transformations/FilesMaxResetCounter
+
 *Resources, WMS, tests
 CHANGE: (#4295) save the number of processors as jobLimits in pilot cfg
 
 *tests
 CHANGE: (#4291) removed pilot2 tests
+
+*docs
+NEW: (#4309) Added how to create a dedicated dirac file catalog
 
 [v7r0p2]
 

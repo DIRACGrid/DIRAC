@@ -18,7 +18,7 @@ class TransformationClient(Client):
 
     Client.__init__(self, **kwargs)
     opsH = Operations()
-    self.maxResetCounter = opsH.getValue('Productions/ProductionFilesMaxResetCounter', 10)
+    self.maxResetCounter = opsH.getValue('Transformations/FilesMaxResetCounter', 10)
 
     self.setServer('Transformation/TransformationManager')
 
