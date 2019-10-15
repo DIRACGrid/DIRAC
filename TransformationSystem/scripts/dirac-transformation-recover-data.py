@@ -12,18 +12,18 @@ class Params(object):
 
   def __init__(self):
     self.enabled = False
-    self.prodID = 0
+    self.transID = 0
 
   def setEnabled(self, _):
     self.enabled = True
     return S_OK()
 
-  def setProdID(self, prodID):
-    self.prodID = int(prodID)
+  def setTransID(self, transID):
+    self.transID = int(transID)
     return S_OK()
 
   def registerSwitches(self):
-    Script.registerSwitch('P:', 'ProdID=', 'ProdID to Check/Fix', self.setProdID)
+    Script.registerSwitch('T:', 'TransID=', 'TransID to Check/Fix', self.setTransID)
     Script.registerSwitch('X', 'Enabled', 'Enable the changes', self.setEnabled)
     Script.setUsageMessage('\n'.join([__doc__,
                                       '\nUsage:',
@@ -35,13 +35,13 @@ if __name__ == '__main__':
   PARAMS.registerSwitches()
   Script.parseCommandLine(ignoreErrors=False)
 
-  # Create Data Recovery Agent and run over single production.
+  # Create Data Recovery Agent and run over single transformation.
   from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
   from DIRAC.TransformationSystem.Agent.DataRecoveryAgent import DataRecoveryAgent
   DRA = DataRecoveryAgent('Transformation/DataRecoveryAgent', 'Transformation/DataRecoveryAgent')
   DRA.jobStatus = ['Done', 'Failed']
   DRA.enabled = PARAMS.enabled
-  TRANSFORMATION = TransformationClient().getTransformations(condDict={'TransformationID': PARAMS.prodID})
+  TRANSFORMATION = TransformationClient().getTransformations(condDict={'TransformationID': PARAMS.transID})
   if not TRANSFORMATION['OK']:
     gLogger.error('Failed to find transformation: %s' % TRANSFORMATION['Message'])
     exit(1)
@@ -51,5 +51,5 @@ if __name__ == '__main__':
   TRANS_INFO_DICT = TRANSFORMATION['Value'][0]
   TRANS_INFO_DICT.pop('Body', None)
   gLogger.notice('Found transformation: %s' % TRANS_INFO_DICT)
-  DRA.treatProduction(PARAMS.prodID, TRANS_INFO_DICT)
+  DRA.treatTransformation(PARAMS.transID, TRANS_INFO_DICT)
   exit(0)

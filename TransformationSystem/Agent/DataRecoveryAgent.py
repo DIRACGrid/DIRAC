@@ -274,7 +274,7 @@ class DataRecoveryAgent(AgentModule):
   def __getCSOptions(self):
     """Get agent options from the CS."""
     self.enabled = self.am_getOption('EnableFlag', False)
-    self.productionsToIgnore = self.am_getOption('TransformationsToIgnore', [])
+    self.transformationsToIgnore = self.am_getOption('TransformationsToIgnore', [])
     self.getJobInfoFromJDLOnly = self.am_getOption('JobInfoFromJDLOnly', False)
     self.transformationStatus = self.am_getOption('TransformationStatus', ['Active', 'Completing'])
     ops = Operations()
@@ -292,21 +292,21 @@ class DataRecoveryAgent(AgentModule):
   def execute(self):
     """ The main execution method.
     """
-    self.log.notice("Will ignore the following productions: %s" % self.productionsToIgnore)
+    self.log.notice("Will ignore the following transformations: %s" % self.transformationsToIgnore)
     self.log.notice(" Job Cache: %s " % self.jobCache)
     transformations = self.getEligibleTransformations(self.transformationStatus, self.transformationTypes)
     if not transformations['OK']:
       self.log.error("Failure to get transformations", transformations['Message'])
       return S_ERROR("Failure to get transformations")
-    for prodID, transInfoDict in transformations['Value'].iteritems():
-      if prodID in self.productionsToIgnore:
-        self.log.notice("Ignoring Production: %s " % prodID)
+    for transID, transInfoDict in transformations['Value'].iteritems():
+      if transID in self.transformationsToIgnore:
+        self.log.notice('Ignoring Transformation: %s' % transID)
         continue
       self.__resetCounters()
       self.inputFilesProcessed = set()
-      self.log.notice("Running over Production: %s " % prodID)
-      self.treatProduction(int(prodID), transInfoDict)
-      self.sendNotification(prodID, transInfoDict)
+      self.log.notice('Running over Transformation: %s' % transID)
+      self.treatTransformation(int(transID), transInfoDict)
+      self.sendNotification(transID, transInfoDict)
 
     return S_OK()
 
@@ -318,21 +318,21 @@ class DataRecoveryAgent(AgentModule):
       return res
     transformations = {}
     for prod in res['Value']:
-      prodID = prod['TransformationID']
-      transformations[str(prodID)] = prod
+      transID = prod['TransformationID']
+      transformations[str(transID)] = prod
     return S_OK(transformations)
 
-  def treatProduction(self, prodID, transInfoDict):
-    """Run this thing for given production."""
-    tInfo = TransformationInfo(prodID, transInfoDict, self.enabled,
+  def treatTransformation(self, transID, transInfoDict):
+    """Run this thing for given transformation."""
+    tInfo = TransformationInfo(transID, transInfoDict, self.enabled,
                                self.tClient, self.fcClient, self.jobMon)
     jobs, nDone, nFailed = tInfo.getJobs(statusList=self.jobStatus)
 
-    if self.jobCache[prodID][0] == nDone and self.jobCache[prodID][1] == nFailed:
-      self.log.notice("Skipping production %s because nothing changed" % prodID)
+    if self.jobCache[transID][0] == nDone and self.jobCache[transID][1] == nFailed:
+      self.log.notice('Skipping transformation %s because nothing changed' % transID)
       return
 
-    self.jobCache[prodID] = (nDone, nFailed)
+    self.jobCache[transID] = (nDone, nFailed)
 
     tasksDict = None
     lfnTaskDict = None
@@ -512,10 +512,10 @@ class DataRecoveryAgent(AgentModule):
 
     return totalCount > 0
 
-  def sendNotification(self, prodID, transInfoDict):
+  def sendNotification(self, transID, transInfoDict):
     """Send notification email if something was modified for a transformation.
 
-    :param int prodID: ID of given transformation
+    :param int transID: ID of given transformation
     :param transInfoDict:
     """
     if not self.addressTo or not self.addressFrom:
@@ -524,11 +524,11 @@ class DataRecoveryAgent(AgentModule):
       return
 
     # remove from the jobCache because something happened
-    self.jobCache.pop(int(prodID), None)
+    self.jobCache.pop(int(transID), None)
     # send the email to recipients
     for address in self.addressTo:
       result = NotificationClient().sendMail(address, "%s: %s" %
-                                             (self.subject, prodID),
+                                             (self.subject, transID),
                                              self.notesToSend,
                                              self.addressFrom,
                                              localAttempt=False)

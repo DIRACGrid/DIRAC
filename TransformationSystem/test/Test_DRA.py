@@ -107,8 +107,8 @@ class TestDRA(unittest.TestCase):
     self.assertFalse(res['OK'])
     self.assertEqual("No can Do", res['Message'])
 
-  def test_treatProduction1(self):
-    """test for DataRecoveryAgent treatProduction success1.........................................."""
+  def test_treatTransformation1(self):
+    """test for DataRecoveryAgent treatTransformation success1.........................................."""
     getJobMock = Mock(name="getJobMOck")
     getJobMock.getJobs.return_value = (Mock(name="jobsMOck"), 50, 50)
     tinfoMock = Mock(name="infoMock", return_value=getJobMock)
@@ -117,13 +117,13 @@ class TestDRA(unittest.TestCase):
     transInfoDict = dict(TransformationID=1234, TransformationName="TestProd12", Type="TestProd",
                          AuthorDN='/some/cert/owner', AuthorGroup='Test_Prod')
     with patch("%s.TransformationInfo" % MODULE_NAME, new=tinfoMock):
-      self.dra.treatProduction(1234, transInfoDict)  # returns None
+      self.dra.treatTransformation(1234, transInfoDict)  # returns None
     # check we start with the summary right away
     for _name, args, _kwargs in self.dra.log.notice.mock_calls:
       self.assertNotIn('Getting Tasks:', str(args))
 
-  def test_treatProduction2(self):
-    """test for DataRecoveryAgent treatProduction success2.........................................."""
+  def test_treatTransformation2(self):
+    """test for DataRecoveryAgent treatTransformation success2.........................................."""
     getJobMock = Mock(name="getJobMOck")
     getJobMock.getJobs.return_value = (Mock(name="jobsMock"), 50, 50)
     tinfoMock = Mock(name="infoMock", return_value=getJobMock)
@@ -132,11 +132,11 @@ class TestDRA(unittest.TestCase):
     transInfoDict = dict(TransformationID=1234, TransformationName="TestProd12", Type="MCSimulation",
                          AuthorDN='/some/cert/owner', AuthorGroup='Test_Prod')
     with patch("%s.TransformationInfo" % MODULE_NAME, new=tinfoMock):
-      self.dra.treatProduction(1234, transInfoDict)  # returns None
+      self.dra.treatTransformation(1234, transInfoDict)  # returns None
     self.dra.log.notice.assert_any_call(MatchStringWith("Getting tasks..."))
 
-  def test_treatProduction3(self):
-    """test for DataRecoveryAgent treatProduction skip.............................................."""
+  def test_treatTransformation3(self):
+    """test for DataRecoveryAgent treatTransformation skip.............................................."""
     getJobMock = Mock(name="getJobMOck")
     getJobMock.getJobs.return_value = (Mock(name="jobsMock"), 50, 50)
     self.dra.checkAllJobs = Mock()
@@ -148,8 +148,8 @@ class TestDRA(unittest.TestCase):
     with patch("%s.TransformationInfo" % MODULE_NAME,
                autospec=True,
                return_value=getJobMock):
-      self.dra.treatProduction(prodID=1234, transInfoDict=transInfoDict)  # returns None
-    self.dra.log.notice.assert_called_with(MatchStringWith("Skipping production 1234"))
+      self.dra.treatTransformation(transID=1234, transInfoDict=transInfoDict)  # returns None
+    self.dra.log.notice.assert_called_with(MatchStringWith("Skipping transformation 1234"))
 
   def test_checkJob(self):
     """test for DataRecoveryAgent checkJob No inputFiles............................................."""
@@ -334,9 +334,9 @@ class TestDRA(unittest.TestCase):
 
   def test_execute(self):
     """test for DataRecoveryAgent execute .........................................................."""
-    self.dra.treatProduction = Mock()
+    self.dra.treatTransformation = Mock()
 
-    self.dra.productionsToIgnore = [123, 456, 789]
+    self.dra.transformationsToIgnore = [123, 456, 789]
     self.dra.jobCache = defaultdict(lambda: (0, 0))
     self.dra.jobCache[123] = (10, 10)
     self.dra.jobCache[124] = (10, 10)
@@ -362,9 +362,9 @@ class TestDRA(unittest.TestCase):
     self.dra.getEligibleTransformations = Mock(return_value=S_OK({123: d123, 124: d124, 125: d125}))
     res = self.dra.execute()
     self.assertTrue(res["OK"])
-    self.dra.log.notice.assert_any_call(MatchStringWith("Will ignore the following productions: [123, 456, 789]"))
-    self.dra.log.notice.assert_any_call(MatchStringWith("Ignoring Production: 123"))
-    self.dra.log.notice.assert_any_call(MatchStringWith("Running over Production: 124"))
+    self.dra.log.notice.assert_any_call(MatchStringWith("Will ignore the following transformations: [123, 456, 789]"))
+    self.dra.log.notice.assert_any_call(MatchStringWith("Ignoring Transformation: 123"))
+    self.dra.log.notice.assert_any_call(MatchStringWith("Running over Transformation: 124"))
 
     # Notes To Send
     self.dra.log.reset_mock()
@@ -376,9 +376,9 @@ class TestDRA(unittest.TestCase):
     with patch("%s.NotificationClient" % MODULE_NAME, new=notificationMock):
       res = self.dra.execute()
     self.assertTrue(res["OK"])
-    self.dra.log.notice.assert_any_call(MatchStringWith("Will ignore the following productions: [123, 456, 789]"))
-    self.dra.log.notice.assert_any_call(MatchStringWith("Ignoring Production: 123"))
-    self.dra.log.notice.assert_any_call(MatchStringWith("Running over Production: 124"))
+    self.dra.log.notice.assert_any_call(MatchStringWith("Will ignore the following transformations: [123, 456, 789]"))
+    self.dra.log.notice.assert_any_call(MatchStringWith("Ignoring Transformation: 123"))
+    self.dra.log.notice.assert_any_call(MatchStringWith("Running over Transformation: 124"))
     self.assertNotIn(124, self.dra.jobCache)  # was popped
     self.assertIn(125, self.dra.jobCache)  # was not popped
     gLogger.notice("JobCache: %s" % self.dra.jobCache)

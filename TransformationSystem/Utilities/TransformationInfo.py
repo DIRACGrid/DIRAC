@@ -201,7 +201,7 @@ class TransformationInfo(object):
     attrDict = dict(Status=status, JobGroup='%08d' % int(self.tID))
     res = self.jobMon.getJobs(attrDict)
     if res['OK']:
-      self.log.debug('Found Prod jobs: %s' % res['Value'])
+      self.log.debug('Found Trans jobs: %s' % res['Value'])
       return res
     else:
       self.log.error('Error finding jobs: ', res['Message'])
