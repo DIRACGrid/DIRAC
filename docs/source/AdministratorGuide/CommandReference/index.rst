@@ -85,10 +85,8 @@ Transformation management commands:
     dirac-transformation-clean
     dirac-transformation-cli
     dirac-transformation-get-files
-    dirac-transformation-remove-output
     dirac-transformation-recover-data
-    dirac-transformation-resolve-problematics
-    dirac-transformation-verify-outputdata
+    dirac-transformation-remove-output
     dirac-transformation-replication
     dirac-transformation-verify-outputdata
 
