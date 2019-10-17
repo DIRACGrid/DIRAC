@@ -169,7 +169,6 @@ gInstancesCount = 0
 
 __RCSID__ = "$Id$"
 
-
 MAXCONNECTRETRY = 10
 
 
@@ -431,7 +430,7 @@ class MySQL(object):
       raise x
     except MySQLdb.Error as e:
       # self.log.debug('%s: %s' % (methodName, err),
-                     '%d: %s' % (e.args[0], e.args[1]))
+      #               '%d: %s' % (e.args[0], e.args[1]))
       return S_ERROR(DErrno.EMYSQL, '%s: ( %d: %s )' % (err, e.args[0], e.args[1]))
     except BaseException as e:
       # self.log.debug('%s: %s' % (methodName, err), repr(e))
@@ -502,7 +501,7 @@ class MySQL(object):
     retDict = self._query(cmd)
     if not retDict['OK']:
       return retDict
-    if (tableName, ) in retDict['Value']:
+    if (tableName,) in retDict['Value']:
       if not force:
         # the requested exist and table creation is not force, return with error
         return S_ERROR(DErrno.EMYSQL, 'The requested table already exist')
@@ -612,9 +611,9 @@ class MySQL(object):
         res = ()
 
       # Log the result limiting it to just 10 records
-      #if len(res) <= 10:
+      # if len(res) <= 10:
       #  self.logger.debug('_query: returns', res)
-      #else:
+      # else:
       #  self.logger.debug('_query: Total %d records returned' % len(res))
       #  self.logger.debug('_query: %s ...' % str(res[:10]))
 
@@ -711,7 +710,7 @@ class MySQL(object):
                                         "OrderBy": [ "`b` DESC" ] }
     """
     if force:
-      #gLogger.debug(viewsDict)
+      # gLogger.debug(viewsDict)
 
       for viewName, viewDict in viewsDict.iteritems():
 
@@ -1429,7 +1428,7 @@ class MySQL(object):
     inValueString = '(  %s )' % inValueString
 
     # self.log.debug('insertFields:', 'inserting %s into table %s'
-                   % (inFieldString, table))
+    #               % (inFieldString, table))
 
     return self._update('INSERT INTO %s %s VALUES %s' %
                         (table, inFieldString, inValueString), conn)
