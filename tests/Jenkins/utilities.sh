@@ -825,7 +825,7 @@ dropDBs(){
   echo '==> [dropDBs]'
 
   dbs=$(cut -d ' ' -f 2 < databases | cut -d '.' -f 1 | grep -v ^RequestDB | grep -v ^FileCatalogDB)
-  python "$TESTCODE/DIRAC/tests/Jenkins/dirac-drop-db.py" "$dbs" "$DEBUG"
+  python "$TESTCODE/DIRAC/tests/Jenkins/dirac-drop-db.py" $dbs $DEBUG
 }
 
 #-------------------------------------------------------------------------------
