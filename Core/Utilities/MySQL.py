@@ -540,8 +540,8 @@ class MySQL(object):
         inEscapeValues.append(retDict['Value'])
       elif isinstance(value, (tuple, list)):
         tupleValues = []
-        for v in list(value):
-          retDict = self.__escapeString(v)
+        for val in value:
+          retDict = self.__escapeString(val)
           if not retDict['OK']:
             return retDict
           tupleValues.append(retDict['Value'])
@@ -1027,8 +1027,8 @@ class MySQL(object):
     resultList = []
     for raw in res['Value']:
       attrDict = {}
-      for i in range(len(attrList)):
-        attrDict[attrList[i]] = raw[i]
+      for ind, attr in enumerate(attrList):
+        attrDict[attr] = raw[ind]
       item = (attrDict, raw[len(attrList)])
       resultList.append(item)
     return S_OK(resultList)
