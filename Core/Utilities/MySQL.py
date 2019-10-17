@@ -396,7 +396,7 @@ class MySQL(object):
 
     # let the derived class decide what to do with if is not 1
     self._threadsafe = MySQLdb.thread_safe()
-    #self.log.debug('thread_safe = %s' % self._threadsafe)
+    # self.log.debug('thread_safe = %s' % self._threadsafe)
 
     self.__hostName = str(hostName)
     self.__userName = str(userName)
@@ -429,11 +429,11 @@ class MySQL(object):
     try:
       raise x
     except MySQLdb.Error as e:
-      #self.log.debug('%s: %s' % (methodName, err),
+      # self.log.debug('%s: %s' % (methodName, err),
                      '%d: %s' % (e.args[0], e.args[1]))
       return S_ERROR(DErrno.EMYSQL, '%s: ( %d: %s )' % (err, e.args[0], e.args[1]))
     except BaseException as e:
-      #self.log.debug('%s: %s' % (methodName, err), repr(e))
+      # self.log.debug('%s: %s' % (methodName, err), repr(e))
       return S_ERROR(DErrno.EMYSQL, '%s: (%s)' % (err, repr(e)))
 
   def __isDateTime(self, dateString):
@@ -481,14 +481,14 @@ class MySQL(object):
             if self.__isDateTime(arg2) or arg2.isalnum():
               if self.__isDateTime(arg3) or arg3.isalnum():
                 return S_OK(myString)
-          #self.log.debug('__escape_string: Could not escape string', '"%s"' % myString)
+          # self.log.debug('__escape_string: Could not escape string', '"%s"' % myString)
           return S_ERROR(DErrno.EMYSQL, '__escape_string: Could not escape string')
 
       escape_string = connection.escape_string(str(myString))
-      #self.log.debug('__escape_string: returns', '"%s"' % escape_string)
+      # self.log.debug('__escape_string: returns', '"%s"' % escape_string)
       return S_OK('"%s"' % escape_string)
     except BaseException as x:
-      #self.log.debug('__escape_string: Could not escape string', '"%s"' % myString)
+      # self.log.debug('__escape_string: Could not escape string', '"%s"' % myString)
       return self._except('__escape_string', x, 'Could not escape string')
 
   def __checkTable(self, tableName, force=False):
@@ -517,7 +517,7 @@ class MySQL(object):
     """
       Wrapper around the internal method __escapeString
     """
-    #self.log.debug('_escapeString:', '"%s"' % str(myString))
+    # self.log.debug('_escapeString:', '"%s"' % str(myString))
 
     return self.__escapeString(myString)
 
@@ -525,7 +525,7 @@ class MySQL(object):
     """
     Escapes all strings in the list of values provided
     """
-    #self.log.debug('_escapeValues:', inValues)
+    # self.log.debug('_escapeValues:', inValues)
 
     inEscapeValues = []
 
@@ -571,15 +571,15 @@ class MySQL(object):
       gLogger.error(error)
       return S_ERROR(DErrno.EMYSQL, error)
 
-    #self.log.debug('_connect:', self._connected)
+    # self.log.debug('_connect:', self._connected)
     if self._connected:
       return S_OK()
 
-    #self.log.debug('_connect: Attempting to access DB',
+    # self.log.debug('_connect: Attempting to access DB',
     #               '[%s@%s] by user %s' %
     #               (self.__dbName, self.__hostName, self.__userName))
     try:
-      #self.log.debug('_connect: Connected.')
+      # self.log.debug('_connect: Connected.')
       self._connected = True
       return S_OK()
     except Exception as x:
@@ -596,7 +596,7 @@ class MySQL(object):
     return S_ERROR upon error
     """
 
-    #self.logger.debug('_query: %s' % self._safeCmd(cmd))
+    # self.logger.debug('_query: %s' % self._safeCmd(cmd))
 
     retDict = self._getConnection()
     if not retDict['OK']:
@@ -619,7 +619,7 @@ class MySQL(object):
 
       retDict = S_OK(res)
     except BaseException as x:
-      #self.log.debug('_query: %s' % self._safeCmd(cmd))
+      # self.log.debug('_query: %s' % self._safeCmd(cmd))
       retDict = self._except('_query', x, 'Execution failed.')
 
     try:
@@ -638,7 +638,7 @@ class MySQL(object):
         return S_ERROR upon error
     """
 
-    #self.logger.debug('_update: %s' % self._safeCmd(cmd))
+    # self.logger.debug('_update: %s' % self._safeCmd(cmd))
 
     retDict = self._getConnection()
     if not retDict['OK']:
@@ -649,12 +649,12 @@ class MySQL(object):
       cursor = connection.cursor()
       res = cursor.execute(cmd)
       # connection.commit()
-      #self.log.debug('_update:', res)
+      # self.log.debug('_update:', res)
       retDict = S_OK(res)
       if cursor.lastrowid:
         retDict['lastRowId'] = cursor.lastrowid
     except Exception as x:
-      #self.log.debug('_update: %s: %s' % (self._safeCmd(cmd), str(x)))
+      # self.log.debug('_update: %s: %s' % (self._safeCmd(cmd), str(x)))
       retDict = self._except('_update', x, 'Execution failed.')
 
     try:
@@ -736,7 +736,7 @@ class MySQL(object):
 
         viewQuery.append(";")
         viewQuery = " ".join(viewQuery)
-        #self.log.debug("`%s` VIEW QUERY IS: %s" % (viewName, viewQuery))
+        # self.log.debug("`%s` VIEW QUERY IS: %s" % (viewName, viewQuery))
         createView = self._query(viewQuery)
         if not createView["OK"]:
           self.log.error('Can not create view', createView["Message"])
@@ -831,7 +831,7 @@ class MySQL(object):
                              % (key, forKey, forTable))
 
         if toBeExtracted:
-          #self.log.debug('Table %s ready to be created' % table)
+          # self.log.debug('Table %s ready to be created' % table)
           extracted = True
           tableList.remove(table)
           tableCreationList[i].append(table)
@@ -888,7 +888,7 @@ class MySQL(object):
         retDict = self._update(cmd)
         if not retDict['OK']:
           return retDict
-        #self.log.debug('Table %s created' % table)
+        # self.log.debug('Table %s created' % table)
 
     return S_OK()
 
@@ -900,10 +900,10 @@ class MySQL(object):
     """
       Wrapper to the new method for backward compatibility
     """
-    #self.log.debug('_getFields:', 'deprecation warning, use getFields methods instead of _getFields.')
+    # self.log.debug('_getFields:', 'deprecation warning, use getFields methods instead of _getFields.')
     retDict = _checkFields(inFields, inValues)
     if not retDict['OK']:
-      #self.log.debug('_getFields:', retDict['Message'])
+      # self.log.debug('_getFields:', retDict['Message'])
       return retDict
 
     condDict = {}
@@ -914,6 +914,13 @@ class MySQL(object):
         return S_ERROR(DErrno.EMYSQL, x)
 
     return self.getFields(tableName, outFields, condDict, limit, conn, older, newer, timeStamp, orderAttribute)
+
+  def _insert(self, tableName, inFields=None, inValues=None, conn=None):
+    """
+      Wrapper to the new method for backward compatibility
+    """
+    # self.log.debug('_insert:', 'deprecation warning, use insertFields methods instead of _insert.')
+    return self.insertFields(tableName, inFields, inValues, conn)
 
   def _to_value(self, param):
     """
@@ -933,7 +940,7 @@ class MySQL(object):
         it will retry MAXCONNECTRETRY to open a new connection and will return
         an error if it fails.
     """
-    #self.log.debug('_getConnection:')
+    # self.log.debug('_getConnection:')
 
     if not self.__initialized:
       error = 'DB not properly initialized'
@@ -971,7 +978,7 @@ class MySQL(object):
     table = _quotedList([table])
     if not table:
       error = 'Invalid table argument'
-      #self.log.debug('countEntries:', error)
+      # self.log.debug('countEntries:', error)
       return S_ERROR(DErrno.EMYSQL, error)
 
     try:
@@ -997,13 +1004,13 @@ class MySQL(object):
     table = _quotedList([table])
     if not table:
       error = 'Invalid table argument'
-      #self.log.debug('getCounters:', error)
+      # self.log.debug('getCounters:', error)
       return S_ERROR(DErrno.EMYSQL, error)
 
     attrNames = _quotedList(attrList)
     if attrNames is None:
       error = 'Invalid updateFields argument'
-      #self.log.debug('getCounters:', error)
+      # self.log.debug('getCounters:', error)
       return S_ERROR(DErrno.EMYSQL, error)
 
     try:
@@ -1036,13 +1043,13 @@ class MySQL(object):
     table = _quotedList([table])
     if not table:
       error = 'Invalid table argument'
-      #self.log.debug('getDistinctAttributeValues:', error)
+      # self.log.debug('getDistinctAttributeValues:', error)
       return S_ERROR(DErrno.EMYSQL, error)
 
     attributeName = _quotedList([attribute])
     if not attributeName:
       error = 'Invalid attribute argument'
-      #self.log.debug('getDistinctAttributeValues:', error)
+      # self.log.debug('getDistinctAttributeValues:', error)
       return S_ERROR(DErrno.EMYSQL, error)
 
     try:
@@ -1082,12 +1089,12 @@ class MySQL(object):
           attrName = '(' + _quotedList(list(aName)) + ')'
         if not attrName:
           error = 'Invalid condDict argument'
-          #self.log.debug('buildCondition:', error)
+          # self.log.debug('buildCondition:', error)
           raise Exception(error)
         if isinstance(attrValue, list):
           retDict = self._escapeValues(attrValue)
           if not retDict['OK']:
-            #self.log.debug('buildCondition:', retDict['Message'])
+            # self.log.debug('buildCondition:', retDict['Message'])
             raise Exception(retDict['Message'])
           else:
             escapeInValues = retDict['Value']
@@ -1100,7 +1107,7 @@ class MySQL(object):
         else:
           retDict = self._escapeValues([attrValue])
           if not retDict['OK']:
-            #self.log.debug('buildCondition:', retDict['Message'])
+            # self.log.debug('buildCondition:', retDict['Message'])
             raise Exception(retDict['Message'])
           else:
             escapeInValue = retDict['Value'][0]
@@ -1114,12 +1121,12 @@ class MySQL(object):
       timeStamp = _quotedList([timeStamp])
       if not timeStamp:
         error = 'Invalid timeStamp argument'
-        #self.log.debug('buildCondition:', error)
+        # self.log.debug('buildCondition:', error)
         raise Exception(error)
       if newer:
         retDict = self._escapeValues([newer])
         if not retDict['OK']:
-          #self.log.debug('buildCondition:', retDict['Message'])
+          # self.log.debug('buildCondition:', retDict['Message'])
           raise Exception(retDict['Message'])
         else:
           escapeInValue = retDict['Value'][0]
@@ -1131,7 +1138,7 @@ class MySQL(object):
       if older:
         retDict = self._escapeValues([older])
         if not retDict['OK']:
-          #self.log.debug('buildCondition:', retDict['Message'])
+          # self.log.debug('buildCondition:', retDict['Message'])
           raise Exception(retDict['Message'])
         else:
           escapeInValue = retDict['Value'][0]
@@ -1145,12 +1152,12 @@ class MySQL(object):
         attrName = _quotedList([attrName])
         if not attrName:
           error = 'Invalid greater argument'
-          #self.log.debug('buildCondition:', error)
+          # self.log.debug('buildCondition:', error)
           raise Exception(error)
 
         retDict = self._escapeValues([attrValue])
         if not retDict['OK']:
-          #self.log.debug('buildCondition:', retDict['Message'])
+          # self.log.debug('buildCondition:', retDict['Message'])
           raise Exception(retDict['Message'])
         else:
           escapeInValue = retDict['Value'][0]
@@ -1165,12 +1172,12 @@ class MySQL(object):
         attrName = _quotedList([attrName])
         if not attrName:
           error = 'Invalid smaller argument'
-          #self.log.debug('buildCondition:', error)
+          # self.log.debug('buildCondition:', error)
           raise Exception(error)
 
         retDict = self._escapeValues([attrValue])
         if not retDict['OK']:
-          #self.log.debug('buildCondition:', retDict['Message'])
+          # self.log.debug('buildCondition:', retDict['Message'])
           raise Exception(retDict['Message'])
         else:
           escapeInValue = retDict['Value'][0]
@@ -1189,13 +1196,13 @@ class MySQL(object):
         continue
       if not isinstance(orderAttr, basestring):
         error = 'Invalid orderAttribute argument'
-        #self.log.debug('buildCondition:', error)
+        # self.log.debug('buildCondition:', error)
         raise Exception(error)
 
       orderField = _quotedList(orderAttr.split(':')[:1])
       if not orderField:
         error = 'Invalid orderAttribute argument'
-        #self.log.debug('buildCondition:', error)
+        # self.log.debug('buildCondition:', error)
         raise Exception(error)
 
       if len(orderAttr.split(':')) == 2:
@@ -1204,7 +1211,7 @@ class MySQL(object):
           orderList.append('%s %s' % (orderField, orderType))
         else:
           error = 'Invalid orderAttribute argument'
-          #self.log.debug('buildCondition:', error)
+          # self.log.debug('buildCondition:', error)
           raise Exception(error)
       else:
         orderList.append(orderAttr)
@@ -1238,7 +1245,7 @@ class MySQL(object):
     table = _quotedList([tableName])
     if not table:
       error = 'Invalid tableName argument'
-      #self.log.debug('getFields:', error)
+      # self.log.debug('getFields:', error)
       return S_ERROR(DErrno.EMYSQL, error)
 
     quotedOutFields = '*'
@@ -1246,10 +1253,10 @@ class MySQL(object):
       quotedOutFields = _quotedList(outFields)
       if quotedOutFields is None:
         error = 'Invalid outFields arguments'
-        #self.log.debug('getFields:', error)
+        # self.log.debug('getFields:', error)
         return S_ERROR(DErrno.EMYSQL, error)
 
-    #self.log.debug('getFields:', 'selecting fields %s from table %s.' % (quotedOutFields, table))
+    # self.log.debug('getFields:', 'selecting fields %s from table %s.' % (quotedOutFields, table))
 
     if condDict is None:
       condDict = {}
@@ -1286,10 +1293,10 @@ class MySQL(object):
     table = _quotedList([tableName])
     if not table:
       error = 'Invalid tableName argument'
-      #self.log.debug('deleteEntries:', error)
+      # self.log.debug('deleteEntries:', error)
       return S_ERROR(DErrno.EMYSQL, error)
 
-    #self.log.debug('deleteEntries:', 'deleting rows from table %s.' % table)
+    # self.log.debug('deleteEntries:', 'deleting rows from table %s.' % table)
 
     try:
       condition = self.buildCondition(condDict=condDict, older=older, newer=newer,
@@ -1323,13 +1330,13 @@ class MySQL(object):
     table = _quotedList([tableName])
     if not table:
       error = 'Invalid tableName argument'
-      #self.log.debug('updateFields:', error)
+      # self.log.debug('updateFields:', error)
       return S_ERROR(DErrno.EMYSQL, error)
 
     retDict = _checkFields(updateFields, updateValues)
     if not retDict['OK']:
       error = 'Mismatch between updateFields and updateValues.'
-      #self.log.debug('updateFields:', error)
+      # self.log.debug('updateFields:', error)
       return S_ERROR(DErrno.EMYSQL, error)
 
     if updateFields is None:
@@ -1339,23 +1346,23 @@ class MySQL(object):
     if updateDict:
       if not isinstance(updateDict, dict):
         error = 'updateDict must be a of Type DictType'
-        #self.log.debug('updateFields:', error)
+        # self.log.debug('updateFields:', error)
         return S_ERROR(DErrno.EMYSQL, error)
       try:
         updateFields += updateDict.keys()
         updateValues += [updateDict[k] for k in updateDict.keys()]
       except TypeError:
         error = 'updateFields and updateValues must be a list'
-        #self.log.debug('updateFields:', error)
+        # self.log.debug('updateFields:', error)
         return S_ERROR(DErrno.EMYSQL, error)
 
     updateValues = self._escapeValues(updateValues)
     if not updateValues['OK']:
-      #self.log.debug('updateFields:', updateValues['Message'])
+      # self.log.debug('updateFields:', updateValues['Message'])
       return updateValues
     updateValues = updateValues['Value']
 
-    #self.log.debug('updateFields:', 'updating fields %s from table %s.' % (', '.join(updateFields), table))
+    # self.log.debug('updateFields:', 'updating fields %s from table %s.' % (', '.join(updateFields), table))
 
     try:
       condition = self.buildCondition(condDict=condDict, older=older, newer=newer,
@@ -1380,12 +1387,12 @@ class MySQL(object):
     table = _quotedList([tableName])
     if not table:
       error = 'Invalid tableName argument'
-      #self.log.debug('insertFields:', error)
+      # self.log.debug('insertFields:', error)
       return S_ERROR(DErrno.EMYSQL, error)
 
     retDict = _checkFields(inFields, inValues)
     if not retDict['OK']:
-      #self.log.debug('insertFields:', retDict['Message'])
+      # self.log.debug('insertFields:', retDict['Message'])
       return retDict
 
     if inFields is None:
@@ -1395,32 +1402,32 @@ class MySQL(object):
     if inDict:
       if not isinstance(inDict, dict):
         error = 'inDict must be a of Type DictType'
-        #self.log.debug('insertFields:', error)
+        # self.log.debug('insertFields:', error)
         return S_ERROR(DErrno.EMYSQL, error)
       try:
         inFields += inDict.keys()
         inValues += [inDict[k] for k in inDict.keys()]
       except TypeError:
         error = 'inFields and inValues must be a list'
-        #self.log.debug('insertFields:', error)
+        # self.log.debug('insertFields:', error)
         return S_ERROR(DErrno.EMYSQL, error)
 
     inFieldString = _quotedList(inFields)
     if inFieldString is None:
       error = 'Invalid inFields arguments'
-      #self.log.debug('insertFields:', error)
+      # self.log.debug('insertFields:', error)
       return S_ERROR(DErrno.EMYSQL, error)
 
     inFieldString = '(  %s )' % inFieldString
 
     retDict = self._escapeValues(inValues)
     if not retDict['OK']:
-      #self.log.debug('insertFields:', retDict['Message'])
+      # self.log.debug('insertFields:', retDict['Message'])
       return retDict
     inValueString = ', '.join(retDict['Value'])
     inValueString = '(  %s )' % inValueString
 
-    #self.log.debug('insertFields:', 'inserting %s into table %s'
+    # self.log.debug('insertFields:', 'inserting %s into table %s'
                    % (inFieldString, table))
 
     return self._update('INSERT INTO %s %s VALUES %s' %
