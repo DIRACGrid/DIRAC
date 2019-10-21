@@ -58,7 +58,7 @@ class JobInfo(object):
                                                                        self.errorCounts)]
       info += '\n'.join(ifInfo)
     if self.outputFiles:
-      info += "\n>>> OutputFiles: "
+      info += "\n::: OutputFiles: "
       efInfo = ["%s (%s)" % _ for _ in izip_longest(self.outputFiles, self.outputFileStatus)]
       info += ", ".join(efInfo)
     if self.pendingRequest:
