@@ -1182,7 +1182,6 @@ class SiteDirector(AgentModule):
     if self.group:
       pilotOptions.append('-G %s' % self.group)
 
-
     return pilotOptions, pilotsToSubmit
 
 ####################################################################################
