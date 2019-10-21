@@ -2,7 +2,6 @@
 
 from pprint import pformat
 from itertools import izip_longest
-import inspect
 
 from DIRAC import gLogger
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
@@ -89,42 +88,30 @@ class JobInfo(object):
 
   def allInputFilesMissing(self):
     """check if all input files are missing"""
-    funcName = inspect.currentframe().f_code.co_name
-    LOG.notice(funcName + ':' + str(self.inputFileStatus))
     if not self.inputFileStatus:
       return False
     return all('Missing' in status for status in self.inputFileStatus)
 
   def someInputFilesMissing(self):
     """check if some input files are missing and therefore some files exist """
-    funcName = inspect.currentframe().f_code.co_name
-    LOG.notice(funcName + ':' + str(self.inputFileStatus))
     if not self.inputFileStatus:
       return False
     return not (self.allInputFilesExist() or self.allInputFilesMissing())
 
   def allFilesProcessed(self):
     """Check if all input files are processed."""
-    funcName = inspect.currentframe().f_code.co_name
-    LOG.notice(funcName + ':' + str(self.transFileStatus))
     return bool(self.transFileStatus) and all('Processed' in status for status in self.transFileStatus)
 
   def allFilesAssigned(self):
     """Check if all input files are assigned."""
-    funcName = inspect.currentframe().f_code.co_name
-    LOG.notice(funcName + ':' + str(self.transFileStatus))
     return bool(self.transFileStatus) and all(status in ASSIGNEDSTATES for status in self.transFileStatus)
 
   def allTransFilesDeleted(self):
     """Check if all input files are deleted in the Transformation System."""
-    funcName = inspect.currentframe().f_code.co_name
-    LOG.notice(funcName + ':' + str(self.transFileStatus))
     return bool(self.transFileStatus) and all(status == 'Deleted' for status in self.transFileStatus)
 
   def checkErrorCount(self):
     """Check if any file is above Operations/Transformations/FilesMaxResetCounter error count."""
-    funcName = inspect.currentframe().f_code.co_name
-    LOG.notice(funcName + ':' + str(self.errorCounts))
     return any(errorCount > self.maxResetCounter for errorCount in self.errorCounts)
 
   def getJobInformation(self, diracAPI, jobMon, jdlOnly=False):
