@@ -1101,7 +1101,7 @@ class SiteDirector(AgentModule):
 
     # Pilot Logging defined?
     pilotLogging = opsHelper.getValue("Pilot/PilotLogging", "false")
-    if pilotLogging.lower() in ['true', 'yes', '1']:
+    if pilotLogging.lower() in ['true', 'yes', 'y']:
       pilotOptions.append('-z ')
 
     # Request a release
