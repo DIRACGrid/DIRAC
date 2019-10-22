@@ -78,14 +78,9 @@ class PilotCStoJSONSynchronizer(object):
     self.pilotScriptPath = ops.getValue("Pilot/pilotScriptsPath", self.pilotScriptPath)
     self.pilotVOScriptPath = ops.getValue("Pilot/pilotVOScriptsPath", self.pilotVOScriptPath)
 
-    result = self._syncJSONFile()
-    if not result['OK']:
-      self.log.error("Error uploading the pilot file", result['Message'])
-      return result
-
+    self._syncJSONFile()
     self.log.notice('-- Synchronizing the pilot scripts with the content of the repository --',
                     '(%s)' % self.pilotRepo)
-
     self._syncScripts()
 
     return S_OK()
@@ -94,12 +89,7 @@ class PilotCStoJSONSynchronizer(object):
     """ Creates the pilot dictionary from the CS, ready for encoding as JSON
     """
     pilotDict = self._getCSDict()
-
-    result = self._upload(pilotDict=pilotDict)
-    if not result['OK']:
-      self.log.error("Error uploading the pilot file", result['Message'])
-      return result
-    return S_OK()
+    self._upload(pilotDict=pilotDict)
 
   def _getCSDict(self):
     """ Gets minimal info for running a pilot, from the CS
@@ -279,9 +269,7 @@ class PilotCStoJSONSynchronizer(object):
         repo_VO.git.checkout('upstream/master', b='pilotVOScripts')
       scriptDir = (os.path.join('pilotVOLocalRepo', self.projectDir, self.pilotVOScriptPath, "*.py"))
       for fileVO in glob.glob(scriptDir):
-        result = self._upload(filename=os.path.basename(fileVO), pilotScript=fileVO)
-        if not result['OK']:
-          self.log.error("Error uploading the VO pilot script", result['Message'])
+        self._upload(filename=os.path.basename(fileVO), pilotScript=fileVO)
         tarFiles.append(fileVO)
     else:
       self.log.warn("The /Operations/<Setup>/Pilot/pilotVORepo option is not defined")
@@ -310,18 +298,13 @@ class PilotCStoJSONSynchronizer(object):
     try:
       scriptDir = os.path.join('pilotLocalRepo', self.pilotScriptPath, "*.py")
       for filename in glob.glob(scriptDir):
-        result = self._upload(filename=os.path.basename(filename),
-                              pilotScript=filename)
-        if not result['OK']:
-          self.log.error("Error uploading the pilot script", result['Message'])
+        self._upload(filename=os.path.basename(filename), pilotScript=filename)
         tarFiles.append(filename)
       if not os.path.isfile(os.path.join('pilotLocalRepo',
                                          self.pilotScriptPath,
                                          "dirac-install.py")):
-        result = self._upload(filename='dirac-install.py',
-                              pilotScript=os.path.join('pilotLocalRepo', "Core/scripts/dirac-install.py"))
-        if not result['OK']:
-          self.log.error("Error uploading dirac-install.py", result['Message'])
+        self._upload(filename='dirac-install.py',
+                     pilotScript=os.path.join('pilotLocalRepo', "Core/scripts/dirac-install.py"))
         tarFiles.append('dirac-install.py')
 
       with tarfile.TarFile(name='pilot.tar', mode='w') as tf:
@@ -330,15 +313,10 @@ class PilotCStoJSONSynchronizer(object):
           shutil.copyfile(ptf, os.path.join(pwd, os.path.basename(ptf)))
           tf.add(os.path.basename(ptf), recursive=False)
 
-      result = self._upload(filename='pilot.tar',
-                            pilotScript='pilot.tar')
-      if not result['OK']:
-        self.log.error("Error uploading pilot.tar", result['Message'])
-        return result
+      self._upload(filename='pilot.tar', pilotScript='pilot.tar')
 
     except ValueError:
-      self.log.error("Error uploading the pilot scripts", result['Message'])
-      return result
+      return S_ERROR("Error uploading the pilot scripts")
     return S_OK()
 
   def _upload(self, pilotDict=None, filename='', pilotScript=''):
@@ -355,32 +333,36 @@ class PilotCStoJSONSynchronizer(object):
     # http://docs.python-requests.org/en/master/user/advanced/#post-multiple-multipart-encoded-files
     # But well, maybe too much optimization :-)
 
-    if pilotDict:  # this is for the pilot.json file
-      if not self.pilotFileServer:
-        self.log.warn("NOT uploading the pilot JSON file, just printing it out")
+    if not self.pilotFileServer:
+      self.log.warn("No pilotFileServer, nowhere to upload")
+      if pilotDict:
         print(json.dumps(pilotDict, indent=4, sort_keys=True))  # just print here as formatting is important
-        return S_OK()
 
-      data = {'filename': self.jsonFile, 'data': json.dumps(pilotDict)}
+    else:
+      if pilotDict:  # this is for the pilot.json file
+        filename = self.jsonFile
+        script = json.dumps(pilotDict)
+        with open(filename, 'w') as jf:
+          json.dump(script, jf)
 
-    else:  # we assume the method is asked to upload the pilots scripts
-      if not self.pilotFileServer:
-        self.log.warn("NOT uploading", filename)
-        return S_OK()
+      else:  # we assume the method is asked to upload the pilots scripts
+        # ALWAYS open binary when sending a file
+        with open(pilotScript, "rb") as psf:
+          script = psf.read()
 
-      # ALWAYS open binary when sending a file
-      with open(pilotScript, "rb") as psf:
-        script = psf.read()
-      data = {'filename': filename, 'data': script}
+      for pfServer in self.pilotFileServer.replace(' ', '').split(','):
+        try:
+          data = {'filename': filename, 'data': script}
+          resp = requests.post('https://%s/DIRAC/upload' % pfServer,
+                               data=data,
+                               verify=self.casLocation,
+                               cert=self.certAndKeyLocation)
+          # This POST works iff the webserver implements the upload function
+          # Which is done in WebAppDIRAC.WebApp.handler.RooHandler.RootHandler.web_upload()
+          # So, this location is specific to DIRAC WebApp.
+          if resp.status_code != 200:
+            self.log.error("Status code != 200", "%s returned when POSTing on %s" % (resp.text, pfServer))
 
-    for pfServer in self.pilotFileServer.replace(' ', '').split(','):
-      resp = requests.post('https://%s/DIRAC/upload' % pfServer,
-                           data=data,
-                           verify=self.casLocation,
-                           cert=self.certAndKeyLocation)
-
-      if resp.status_code != 200:
-        return S_ERROR(resp.text)
-
-    self.log.info('-- File and scripts upload done --')
-    return S_OK()
+        except requests.ConnectionError:
+          # if we are here is probably because we are not trying to upload to a WS that does not have expose a POST API
+          self.log.error("Can't issue POST", "on %s" % pfServer)
