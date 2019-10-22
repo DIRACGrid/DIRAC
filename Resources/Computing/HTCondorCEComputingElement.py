@@ -317,7 +317,7 @@ Queue %(nJobs)s
       if pilotStatus == 'HELD':
         # make sure the pilot stays dead and gets taken out of the condor_q
         _rmStat, _rmOut = commands.getstatusoutput('condor_rm %s %s ' % (self.remoteScheddOptions, jobID))
-        #self.log.debug( "condor job killed: job %s, stat %s, message %s " % ( jobID, rmStat, rmOut ) )
+        # self.log.debug( "condor job killed: job %s, stat %s, message %s " % ( jobID, rmStat, rmOut ) )
         pilotStatus = 'Aborted'
 
       resultDict[job] = pilotStatus
@@ -334,7 +334,7 @@ Queue %(nJobs)s
     # FIXME: the WMSAdministrator does not know about the
     # SiteDirector WorkingDirectory, it might not even run on the
     # same machine
-    #workingDirectory = self.ceParameters.get( 'WorkingDirectory', DEFAULT_WORKINGDIRECTORY )
+    # workingDirectory = self.ceParameters.get( 'WorkingDirectory', DEFAULT_WORKINGDIRECTORY )
 
     if not self.useLocalSchedd:
       iwd = None
@@ -430,5 +430,3 @@ Queue %(nJobs)s
         findPars)
     if status:
       self.log.error("Failure during HTCondorCE __cleanup", stdout)
-
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
