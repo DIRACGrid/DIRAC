@@ -554,16 +554,21 @@ class Job(API):
     return S_OK()
 
   #############################################################################
-  def setNumberOfProcessors(self, processors):
+  def setNumberOfProcessors(self, processors, maxNumberOfPayloadProcessors=None):
     """Helper function.
 
        Example usage:
 
        >>> job = Job()
-       >>> job.setNumberOfProcessors(4)
+       >>> job.setNumberOfProcessors(2)
+
+       >>> job = Job()
+       >>> job.setNumberOfProcessors(4, 8)
 
        :param processors: number of processors required by the job
        :type processors: int
+       :param maxNumberOfPayloadProcessors: optional max number of processors the job applications can use
+       :type maxNumberOfPayloadProcessors: int
     """
     kwargs = {'processors': processors}
     if not isinstance(processors, int):
@@ -574,6 +579,14 @@ class Job(API):
 
     if processors > 1:
       self._addParameter(self.workflow, 'NumberOfProcessors', 'JDL', processors, "Number of processors requested")
+
+    if maxNumberOfPayloadProcessors:
+      self._addParameter(self.workflow, 'MaxNumberOfPayloadProcessors', 'string', maxNumberOfPayloadProcessors,
+                         "Max Number of processors the job applications may use")
+      if maxNumberOfPayloadProcessors < processors:
+        self._addParameter(self.workflow, 'NumberOfProcessors', 'JDL', maxNumberOfPayloadProcessors,
+                           "Number of processors requested")
+
     return S_OK()
 
   #############################################################################
