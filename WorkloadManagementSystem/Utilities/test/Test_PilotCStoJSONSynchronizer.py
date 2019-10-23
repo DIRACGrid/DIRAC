@@ -95,7 +95,8 @@ class PilotCStoJSONSynchronizerTestCase(unittest.TestCase):
     '''
     with open(self.testCfgFileName, 'w') as f:
       f.write(cfgContent)
-    gConfig = ConfigurationClient(fileToLoadList=[self.testCfgFileName])  # we replace the configuration by our own one.
+    # we replace the configuration by our own one.
+    gConfig = ConfigurationClient(fileToLoadList=[self.testCfgFileName])
     self.setup = gConfig.getValue('/DIRAC/Setup', '')
     self.wm = gConfig.getValue('DIRAC/Setups/' + self.setup + '/WorkloadManagement', '')
 
@@ -117,7 +118,7 @@ class Test_PilotCStoJSONSynchronizer_sync(PilotCStoJSONSynchronizerTestCase):
   def test_success(self):
     synchroniser = PilotCStoJSONSynchronizer()
     res = synchroniser._syncJSONFile()
-    self.assertTrue(res['OK'])
+    self.assertTrue(res is None)
 
 
 if __name__ == '__main__':
