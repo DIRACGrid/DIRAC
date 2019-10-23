@@ -60,14 +60,34 @@ class LogStatusAction(BaseAction):
     if reason is None:
       return S_ERROR('reason should not be None')
 
+    vo = self.enforcementResult.get('VO')
     # Truncate reason to fit in database column
     reason = (reason[:508] + '..') if len(reason) > 508 else reason
+    # VO = 'all' (non-VO aware policy) for a combined policy affects all VOs for a given site or resource,
+    if vo == 'all':
+      resSelect = self.rsClient.selectStatusElement(element, 'Status', name=name, statusType=None, vO=None,
+                                                    status=None, elementType=None, reason=None,
+                                                    dateEffective=None, lastCheckTime=None,
+                                                    tokenOwner='rs_svc', tokenExpiration=None, meta=None)
+      if not resSelect['OK']:
+        self.log.error("Could not obtain all VO rows for element: %s" % element)
+        return resSelect
+      voColumnIndex = resSelect['Columns'].index('VO')
+      for row in resSelect['Value']:
+        vo = row[voColumnIndex]
+        resLogUpdate = self.rsClient.addOrModifyStatusElement(element, 'Status',
+                                                              name=name, statusType=statusType, vO=vo,
+                                                              status=status, elementType=elementType,
+                                                              reason=reason
+                                                              )
+        self.log.debug("Update result", resLogUpdate)
 
-    resLogUpdate = self.rsClient.addOrModifyStatusElement(element, 'Status',
-                                                          name=name, statusType=statusType,
-                                                          status=status, elementType=elementType,
-                                                          reason=reason
-                                                          )
+    else:
+      resLogUpdate = self.rsClient.addOrModifyStatusElement(element, 'Status',
+                                                            name=name, statusType=statusType, vO=vo,
+                                                            status=status, elementType=elementType,
+                                                            reason=reason
+                                                            )
 
     return resLogUpdate
 

@@ -39,6 +39,7 @@ def registerSwitches():
       ('tokenOwner=', 'Owner of the token; None if default'),
       ('statusType=', 'StatusType; None if default'),
       ('status=', 'Status; None if default'),
+      ('VO=', 'Virtual organisation; None if default')
   )
 
   for switch in switches:
@@ -74,6 +75,7 @@ def parseSwitches():
   switches.setdefault('tokenOwner', None)
   switches.setdefault('statusType', None)
   switches.setdefault('status', None)
+  switches.setdefault('VO', None)
 
   if 'element' not in switches:
     subLogger.error("element Switch missing")

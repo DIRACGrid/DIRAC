@@ -417,7 +417,7 @@ class ResourceManagementClient(Client):
   # PilotCache Methods .........................................................
 
   def selectPilotCache(self, site=None, cE=None, pilotsPerJob=None,
-                       pilotJobEff=None, status=None, lastCheckTime=None, meta=None):
+                       pilotJobEff=None, status=None, lastCheckTime=None, meta=None, vO=None):
     '''
     Gets from TransferCache all rows that match the parameters given.
 
@@ -437,13 +437,13 @@ class ResourceManagementClient(Client):
        For example: meta={'columns': ['Name']} will return only the 'Name' column.
     :return: S_OK() || S_ERROR()
     '''
-    columnNames = ["Site", "CE", "PilotsPerJob", "PilotJobEff", "Status", "LastCheckTime", "Meta"]
-    columnValues = [site, cE, pilotsPerJob, pilotJobEff, status, lastCheckTime, meta]
+    columnNames = ["Site", "CE", "PilotsPerJob", "PilotJobEff", "Status", "LastCheckTime", "Meta", "VO"]
+    columnValues = [site, cE, pilotsPerJob, pilotJobEff, status, lastCheckTime, meta, vO]
 
     return self._getRPC().select('PilotCache', prepareDict(columnNames, columnValues))
 
   def deletePilotCache(self, site=None, cE=None, pilotsPerJob=None,
-                       pilotJobEff=None, status=None, lastCheckTime=None):
+                       pilotJobEff=None, status=None, lastCheckTime=None, vO=None):
     '''
     Deletes from TransferCache all rows that match the parameters given.
 
@@ -461,13 +461,13 @@ class ResourceManagementClient(Client):
     :type lastCheckTime: datetime, list
     :return: S_OK() || S_ERROR()
     '''
-    columnNames = ["Site", "CE", "PilotsPerJob", "PilotJobEff", "Status", "LastCheckTime"]
-    columnValues = [site, cE, pilotsPerJob, pilotJobEff, status, lastCheckTime]
+    columnNames = ["Site", "CE", "PilotsPerJob", "PilotJobEff", "Status", "LastCheckTime", "VO"]
+    columnValues = [site, cE, pilotsPerJob, pilotJobEff, status, lastCheckTime, vO]
 
     return self._getRPC().delete('PilotCache', prepareDict(columnNames, columnValues))
 
   def addOrModifyPilotCache(self, site=None, cE=None, pilotsPerJob=None,
-                            pilotJobEff=None, status=None, lastCheckTime=None):
+                            pilotJobEff=None, status=None, lastCheckTime=None, vO=None):
     '''
     Adds or updates-if-duplicated to PilotCache. Using `site` and `cE`
     to query the database, decides whether to insert or update the table.
@@ -480,8 +480,8 @@ class ResourceManagementClient(Client):
     :param datetime lastCheckTime: measure calculated
     :return: S_OK() || S_ERROR()
     '''
-    columnNames = ["Site", "CE", "PilotsPerJob", "PilotJobEff", "Status", "LastCheckTime"]
-    columnValues = [site, cE, pilotsPerJob, pilotJobEff, status, lastCheckTime]
+    columnNames = ["Site", "CE", "PilotsPerJob", "PilotJobEff", "Status", "LastCheckTime", "VO"]
+    columnValues = [site, cE, pilotsPerJob, pilotJobEff, status, lastCheckTime, vO]
 
     return self._getRPC().addOrModify('PilotCache', prepareDict(columnNames, columnValues))
 
@@ -489,7 +489,7 @@ class ResourceManagementClient(Client):
 
   def selectPolicyResult(self, element=None, name=None, policyName=None,
                          statusType=None, status=None, reason=None,
-                         lastCheckTime=None, meta=None):
+                         lastCheckTime=None, meta=None, vO=None):
     '''
     Gets from PolicyResult all rows that match the parameters given.
 
@@ -513,14 +513,14 @@ class ResourceManagementClient(Client):
         For example: meta={'columns': ['Name']} will return only the 'Name' column.
     :return: S_OK() || S_ERROR()
     '''
-    columnNames = ["Element", "Name", "PolicyName", "StatusType", "Status", "Reason", "LastCheckTime", "Meta"]
-    columnValues = [element, name, policyName, statusType, status, reason, lastCheckTime, meta]
+    columnNames = ["Element", "Name", "PolicyName", "StatusType", "Status", "Reason", "LastCheckTime", "Meta", "VO"]
+    columnValues = [element, name, policyName, statusType, status, reason, lastCheckTime, meta, vO]
 
     return self._getRPC().select('PolicyResult', prepareDict(columnNames, columnValues))
 
   def deletePolicyResult(self, element=None, name=None, policyName=None,
                          statusType=None, status=None, reason=None,
-                         dateEffective=None, lastCheckTime=None):
+                         dateEffective=None, lastCheckTime=None, vO=None):
     '''
     Deletes from PolicyResult all rows that match the parameters given.
 
@@ -542,14 +542,15 @@ class ResourceManagementClient(Client):
     :type lastCheckTime: datetime, list
     :return: S_OK() || S_ERROR()
     '''
-    columnNames = ["Element", "Name", "PolicyName", "StatusType", "Status", "Reason", "DateEffective", "LastCheckTime"]
-    columnValues = [element, name, policyName, statusType, status, reason, dateEffective, lastCheckTime]
+    columnNames = ["Element", "Name", "PolicyName", "StatusType", "Status", "Reason", "DateEffective",
+                   "LastCheckTime", "VO"]
+    columnValues = [element, name, policyName, statusType, status, reason, dateEffective, lastCheckTime, vO]
 
     return self._getRPC().delete('PolicyResult', prepareDict(columnNames, columnValues))
 
   def addOrModifyPolicyResult(self, element=None, name=None, policyName=None,
                               statusType=None, status=None, reason=None,
-                              dateEffective=None, lastCheckTime=None):
+                              dateEffective=None, lastCheckTime=None, vO=None):
     '''
     Adds or updates-if-duplicated to PolicyResult. Using `name`, `policyName` and
     `statusType` to query the database, decides whether to insert or update the table.
@@ -566,8 +567,9 @@ class ResourceManagementClient(Client):
     :param datetime lastCheckTime: time-stamp setting last time the policy result was checked
     :return: S_OK() || S_ERROR()
     '''
-    columnNames = ["Element", "Name", "PolicyName", "StatusType", "Status", "Reason", "DateEffective", "LastCheckTime"]
-    columnValues = [element, name, policyName, statusType, status, reason, dateEffective, lastCheckTime]
+    columnNames = ["Element", "Name", "PolicyName", "StatusType", "Status", "Reason", "DateEffective",
+                   "LastCheckTime", "VO"]
+    columnValues = [element, name, policyName, statusType, status, reason, dateEffective, lastCheckTime, vO]
 
     return self._getRPC().addOrModify('PolicyResult', prepareDict(columnNames, columnValues))
 

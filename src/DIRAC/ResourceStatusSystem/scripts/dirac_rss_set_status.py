@@ -36,6 +36,8 @@ def registerSwitches():
       ('statusType=', 'StatusType (or comma-separeted list of names), if none applies to all possible statusTypes'),
       ('status=', 'Status to be changed'),
       ('reason=', 'Reason to set the Status'),
+      ('VO=', 'VO to change a status for. Deafault: all '
+              'VO=all sets the status for all VOs not explicitly listed in the RSS'),
   )
 
   for switch in switches:
@@ -66,6 +68,7 @@ def parseSwitches():
 
   switches = dict(Script.getUnprocessedSwitches())
   switches.setdefault('statusType', None)
+  switches.setdefault('VO', 'all')
 
   for key in ('element', 'name', 'status', 'reason'):
 
@@ -178,6 +181,7 @@ def setStatus(switchDict, tokenOwner):
   elements = rssClient.selectStatusElement(switchDict['element'], 'Status',
                                            name=switchDict['name'],
                                            statusType=switchDict['statusType'],
+                                           vO=switchDict['VO'],
                                            meta={'columns': ['Status', 'StatusType']})
 
   if not elements['OK']:
@@ -185,9 +189,10 @@ def setStatus(switchDict, tokenOwner):
   elements = elements['Value']
 
   if not elements:
-    subLogger.warn('Nothing found for %s, %s, %s' % (switchDict['element'],
-                                                     switchDict['name'],
-                                                     switchDict['statusType']))
+    subLogger.warn('Nothing found for %s, %s, %s %s' % (switchDict['element'],
+                                                        switchDict['name'],
+                                                        switchDict['VO'],
+                                                        switchDict['statusType']))
     return S_OK()
 
   tomorrow = datetime.utcnow().replace(microsecond=0) + timedelta(days=1)
@@ -200,11 +205,15 @@ def setStatus(switchDict, tokenOwner):
       subLogger.notice('Status for %s (%s) is already %s. Ignoring..' % (switchDict['name'], statusType, status))
       continue
 
+    subLogger.debug('About to set status %s -> %s for %s, statusType: %s, VO: %s, reason: %s'
+                    % (status, switchDict['status'], switchDict['name'],
+                       statusType, switchDict['VO'], switchDict['reason']))
     result = rssClient.modifyStatusElement(switchDict['element'], 'Status',
                                            name=switchDict['name'],
                                            statusType=statusType,
                                            status=switchDict['status'],
                                            reason=switchDict['reason'],
+                                           vO=switchDict['VO'],
                                            tokenOwner=tokenOwner,
                                            tokenExpiration=tomorrow)
     if not result['OK']:

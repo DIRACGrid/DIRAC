@@ -115,6 +115,35 @@ class Cache(object):
 
     return S_OK(result)
 
+  def check(self, cacheKeys, vO):
+    """
+    Modified get() method. Attempts to find keys with a vO value appended or 'all'
+    value appended. The cacheKeys passed in are 'flattened' cache keys (no vO)
+    Gets values for cacheKeys given, if all are found ( present on the cache and
+    valid ), returns S_OK with the results. If any is not neither present not
+    valid, returns S_ERROR.
+
+    :Parameters:
+      **cacheKeys** - `list`
+        list of keys to be extracted from the cache
+
+    :return: S_OK | S_ERROR
+    """
+
+    result = {}
+
+    for cacheKey in cacheKeys:
+      longCacheKey = cacheKey + ('all',)
+      cacheRow = self.__cache.get(longCacheKey, validSeconds=self.__validSeconds)
+      if not cacheRow:
+        longCacheKey = cacheKey + (vO,)
+        cacheRow = self.__cache.get(longCacheKey, validSeconds=self.__validSeconds)
+        if not cacheRow:
+          return S_ERROR('Cannot get extended %s (neither for VO = %s nor for "all" Vos)' % (str(cacheKey), vO))
+      result.update({longCacheKey: cacheRow})
+
+    return S_OK(result)
+
   # Cache refreshers
 
   def refreshCache(self):
@@ -195,7 +224,7 @@ class RSSCache(Cache):
 
     self.allStatusTypes = RssConfiguration().getConfigStatusType()
 
-  def match(self, elementNames, elementType, statusTypes):
+  def match(self, elementNames, elementType, statusTypes, vO):
     """
     In first instance, if the cache is invalid, it will request a new one from
     the server.
@@ -220,14 +249,14 @@ class RSSCache(Cache):
 
     self.acquireLock()
     try:
-      return self._match(elementNames, elementType, statusTypes)
+      return self._match(elementNames, elementType, statusTypes, vO)
     finally:
       # Release lock, no matter what !
       self.releaseLock()
 
   # Private methods: NOT THREAD SAFE !!
 
-  def _match(self, elementNames, elementType, statusTypes):
+  def _match(self, elementNames, elementType, statusTypes, vO):
     """
     Method doing the actual work. It must be wrapped around locks to ensure no
     disaster happens.
@@ -251,18 +280,20 @@ class RSSCache(Cache):
 
     # Gets matched keys
     try:
-      matchKeys = self.__match(validCache, elementNames, elementType, statusTypes)
+      matchKeys = self.__match(validCache, elementNames, elementType, statusTypes, vO)
     except IndexError:
       return S_ERROR("RSS cache empty?")
 
     if not matchKeys['OK']:
       return matchKeys
-    matchKeys = matchKeys['Value']
 
     # Gets objects for matched keys. It will return S_ERROR if the cache value
     # has expired in between. It has 30 valid seconds, which means something was
     # extremely slow above.
-    cacheMatches = self.get(matchKeys)
+    if matchKeys['CheckVO']:
+      cacheMatches = self.check(matchKeys['Value'], vO)  # add an appropriate VO to the keys
+    else:
+      cacheMatches = self.get(matchKeys['Value'])
     if not cacheMatches['OK']:
       return cacheMatches
 
@@ -284,7 +315,7 @@ class RSSCache(Cache):
     valid dictionary. If the list is empty, we assume the cache is invalid or
     not filled, so we issue a cache refresh and return its data.
 
-    :return: { ( elementName, statusType ) : status, ... }
+    :return: { ( elementName, statusType, vO ) : status, ... }
     """
 
     cacheKeys = self.cacheKeys()
@@ -296,7 +327,7 @@ class RSSCache(Cache):
 
     return cache
 
-  def __match(self, validCache, elementNames, elementType, statusTypes):
+  def __match(self, validCache, elementNames, elementType, statusTypes, vO):
     """
     Obtains all keys on the cache ( should not be empty ! ).
 
@@ -319,10 +350,24 @@ class RSSCache(Cache):
       **statusTypes** - [ None, `string`, `list` ]
         name(s) of the statusTypes to be matched
 
-    :return: S_OK() || S_ERROR()
+    :return: S_OK() with a Vo check marker || S_ERROR()
     """
 
     cacheKeys = list(validCache)
+    # flatten the cache. From our VO perspective we are only want to keep:
+    # 1) keys with vO tuple element equal to our vO,
+    # 2) keys with vO tuple element equal to 'all', but only if no element described in 1) exists.
+    # a resource key is set to have 3 elements to allow a comparison with a cartesian product.
+    checkVo = False
+    if len(cacheKeys[0]) == 4:  # resource
+      checkVo = True
+      flattenedCache = {(key[0], key[1], key[2]):
+                        value for key, value in validCache.items() if key[3] == "all"}
+      flattenedCache.update({(key[0], key[1], key[2]): value
+                            for key, value in validCache.items() if key[3] == vO})
+      validCache = flattenedCache
+    else:  # site, not VO specific in SiteStatus, eventually to be upgraded there to include the VO
+      pass
 
     if isinstance(elementNames, six.string_types):
       elementNames = [elementNames]
@@ -366,12 +411,14 @@ class RSSCache(Cache):
       self.log.warn('Empty cartesian product')
       return S_ERROR('Empty cartesian product')
 
-    notInCache = list(cartesianProduct.difference(set(cacheKeys)))
+    notInCache = list(cartesianProduct.difference(set(validCache)))
     if notInCache:
       self.log.warn('Cache misses: %s' % notInCache)
       return S_ERROR('Cache misses: %s' % notInCache)
 
-    return S_OK(cartesianProduct)
+    result = S_OK(cartesianProduct)
+    result['CheckVO'] = checkVo
+    return result
 
   @staticmethod
   def __getDictFromCacheMatches(cacheMatches):
@@ -380,7 +427,7 @@ class RSSCache(Cache):
 
     :Parameters:
       **cacheMatches** - `dict`
-        cache dictionary of the form { ( elementName, elementType, statusType ) : status, ... }
+        cache dictionary of the form { ( elementName, elementType, statusType, vO ) : status, ... }
 
 
     :return: dict of the form { elementName : { statusType: status, ... }, ... }
@@ -389,7 +436,7 @@ class RSSCache(Cache):
     result = {}
 
     for cacheKey, cacheValue in cacheMatches.items():
-      elementName, _elementType, statusType = cacheKey
+      elementName, _elementType, statusType, vO = cacheKey
       result.setdefault(elementName, {})[statusType] = cacheValue
 
     return result

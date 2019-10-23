@@ -190,6 +190,21 @@ class PilotManagerHandler(RequestHandler):
     return cls.pilotAgentsDB.getPilotSummaryWeb(selectDict, sortList, startItem, maxItems)
 
   ##############################################################################
+  types_getGroupedPilotSummary = [dict, list]
+
+  @classmethod
+  def export_getGroupedPilotSummary(cls, selectDict, columnList):
+    """
+    Get pilot summary showing grouped by columns in columnList, all pilot states
+    and pilot efficiencies in a single row.
+
+    :param selectDict: additional arguments to SELECT clause
+    :param columnList: a list of columns to GROUP BY (less status column)
+    :return: a dictionary containing column names and data records
+    """
+    return cls.pilotAgentsDB.getGroupedPilotSummary(selectDict, columnList)
+
+  ##############################################################################
   types_getPilots = [six.string_types + six.integer_types]
 
   @classmethod
