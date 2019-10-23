@@ -438,13 +438,15 @@ class SiteDirector(AgentModule):
 
     if self.rssFlag:
       ceNamesList = [queue['CEName'] for queue in self.queueDict.values()]
-      result = self.rssClient.getElementStatus(ceNamesList, "ComputingElement")
+      result = self.rssClient.getElementStatus(ceNamesList, "ComputingElement", vO=self.vo)
       if not result['OK']:
         self.log.error("Can not get the status of computing elements",
                        " %s" % result['Message'])
         return result
+      # Try to get CEs which have been probed and those unprobed (vO='all').
       self.ceMaskList = [ceName for ceName in result['Value'] if result['Value'][ceName]
                          ['all'] in ('Active', 'Degraded')]
+      self.log.debug("CE list with status Active or Degraded: ", self.ceMaskList)
 
     result = self.submitPilots()
     if not result['OK']:

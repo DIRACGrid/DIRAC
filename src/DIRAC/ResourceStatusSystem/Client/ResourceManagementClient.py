@@ -417,7 +417,7 @@ class ResourceManagementClient(Client):
   # PilotCache Methods .........................................................
 
   def selectPilotCache(self, site=None, cE=None, pilotsPerJob=None,
-                       pilotJobEff=None, status=None, lastCheckTime=None, meta=None):
+                       pilotJobEff=None, status=None, lastCheckTime=None, meta=None, vO=None):
     '''
     Gets from TransferCache all rows that match the parameters given.
 
@@ -443,7 +443,7 @@ class ResourceManagementClient(Client):
     return self._getRPC().select('PilotCache', prepareDict(columnNames, columnValues))
 
   def deletePilotCache(self, site=None, cE=None, pilotsPerJob=None,
-                       pilotJobEff=None, status=None, lastCheckTime=None):
+                       pilotJobEff=None, status=None, lastCheckTime=None, vO=None):
     '''
     Deletes from TransferCache all rows that match the parameters given.
 
@@ -467,7 +467,7 @@ class ResourceManagementClient(Client):
     return self._getRPC().delete('PilotCache', prepareDict(columnNames, columnValues))
 
   def addOrModifyPilotCache(self, site=None, cE=None, pilotsPerJob=None,
-                            pilotJobEff=None, status=None, lastCheckTime=None):
+                            pilotJobEff=None, status=None, lastCheckTime=None, vO=None):
     '''
     Adds or updates-if-duplicated to PilotCache. Using `site` and `cE`
     to query the database, decides whether to insert or update the table.
@@ -489,7 +489,7 @@ class ResourceManagementClient(Client):
 
   def selectPolicyResult(self, element=None, name=None, policyName=None,
                          statusType=None, status=None, reason=None,
-                         lastCheckTime=None, meta=None):
+                         lastCheckTime=None, meta=None, vO=None):
     '''
     Gets from PolicyResult all rows that match the parameters given.
 
@@ -520,7 +520,7 @@ class ResourceManagementClient(Client):
 
   def deletePolicyResult(self, element=None, name=None, policyName=None,
                          statusType=None, status=None, reason=None,
-                         dateEffective=None, lastCheckTime=None):
+                         dateEffective=None, lastCheckTime=None, vO=None):
     '''
     Deletes from PolicyResult all rows that match the parameters given.
 
@@ -549,7 +549,7 @@ class ResourceManagementClient(Client):
 
   def addOrModifyPolicyResult(self, element=None, name=None, policyName=None,
                               statusType=None, status=None, reason=None,
-                              dateEffective=None, lastCheckTime=None):
+                              dateEffective=None, lastCheckTime=None, vO=None):
     '''
     Adds or updates-if-duplicated to PolicyResult. Using `name`, `policyName` and
     `statusType` to query the database, decides whether to insert or update the table.

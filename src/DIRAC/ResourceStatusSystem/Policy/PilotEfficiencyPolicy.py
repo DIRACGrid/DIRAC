@@ -1,10 +1,8 @@
 """ PilotEfficiencyPolicy
 
-  Policy that calculates the efficiency following the formula::
+  Policy that gets efficiency from the PilotCommand result and
+  sets the resource status. Efficiency is given in percent.
 
-    done / ( failed + aborted + done )
-
-  if the denominator is smaller than 10, it does not take any decision.
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -24,10 +22,13 @@ class PilotEfficiencyPolicy(PolicyBase):
   def _evaluate(commandResult):
     """ _evaluate
 
-    efficiency < 0.5 :: Banned
-    efficiency < 0.9 :: Degraded
+    efficiency < 50.0 :: Banned
+    efficiency < 90.0 :: Degraded
 
     """
+    # ideally,  this should be obtained from config.
+    bannedLimit = 50.0
+    degradedLimit = 90.0
 
     result = {
         'Status': None,
@@ -53,26 +54,20 @@ class PilotEfficiencyPolicy(PolicyBase):
       result['Reason'] = 'No values to take a decision'
       return S_OK(result)
 
-    aborted = commandResult['Aborted']
-    # deleted = float( commandResult[ 'Deleted' ] )
-    done = commandResult['Done']
-    failed = commandResult['Failed']
+    # Pilot efficiency is now available directly from the command result, in percent:
+    efficiency = commandResult.get('PilotJobEff', None)
+    # get the VO from the result, if present
+    result['VO'] = commandResult.get('VO', None)
 
-    # total     = aborted + deleted + done + failed
-    total = aborted + done + failed
-
-    # we want a minimum amount of pilots to take a decision ( at least 10 pilots )
-    if total < 10:
-      result['Status'] = 'Unknown'
-      result['Reason'] = 'Not enough pilots to take a decision'
+    if efficiency is None:
+      result[ 'Status' ] = 'Unknown'
+      result[ 'Reason' ] = 'Pilot efficiency value is not present in the result obtained'
       return S_OK(result)
 
-    efficiency = done / total
-
-    if efficiency <= 0.5:
-      result['Status'] = 'Banned'
-    elif efficiency <= 0.9:
-      result['Status'] = 'Degraded'
+    if efficiency <= bannedLimit:
+      result[ 'Status' ] = 'Banned'
+    elif efficiency <= degradedLimit:
+      result[ 'Status' ] = 'Degraded'
     else:
       result['Status'] = 'Active'
 

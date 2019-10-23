@@ -24,13 +24,15 @@ __RCSID__ = "$Id$"
 
 import six
 import threading
+import decimal
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
 import DIRAC.Core.Utilities.Time as Time
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN, getDNForUsername
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN, getDNForUsername, getVOForGroup
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
+from DIRAC.WorkloadManagementSystem.DB.PivotedPilotSummaryTable import PivotedPilotSummaryTable
 
 
 class PilotAgentsDB(DB):
@@ -629,6 +631,96 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
 #     return S_OK( result )
 
 ##########################################################################################
+  def getGroupedPilotSummary(self, selectDict, columnList):
+    """
+    The simplified pilot summary based on getPilotSummaryWeb method. It calculates pilot efficiency
+    based on the same algorithm as in the Web version, basically takes into account Done and
+    Aborted pilots only from the last day. The selection is done entirely in SQL.
+
+    :param selectDict: A dictionary to pass additional conditions to select statements, i.e.
+                       it allows to define start time for Done and Aborted Pilots.
+    :param columnList  a list of column to consider when grouping to calculate efficiencies.
+                       e.g. ['GridSite', 'DestinationSite'] is used to calculate efficiences
+                       for sites and  CEs. If we want to add an OwnerGroup it would be:
+                       ['GridSite', 'DestinationSite', 'OwnerGroup'].
+    :return: a dict containing the ParameterNames and Records lists.
+    """
+
+    table = PivotedPilotSummaryTable(columnList)
+    sqlQuery = table.buildSQL()
+
+    self.logger.info("SQL query : ")
+    self.logger.info("\n"+sqlQuery)
+
+    res = self._query(sqlQuery)
+    if not res['OK']:
+      return res
+    
+    self.logger.info(res)
+    # TODO add site or CE status, while looping
+    rows = []
+    columns = table.getColumnList()
+    try:
+      groupIndex = columns.index('OwnerGroup')
+      # should probably change a column name to VO here as well to avoid confusion
+    except ValueError:
+      groupIndex = None
+    result = {'ParameterNames': columns}
+    multiple = False
+    # If not grouped by CE:
+    if 'CE' not in columns:
+      multiple = True
+
+    for row in res['Value']:
+      lrow =list(row)
+      if groupIndex:
+        lrow[groupIndex] = getVOForGroup(row[groupIndex])
+      if multiple:
+        lrow.append('Multiple')
+      for index, value in enumerate(row):
+        if type(value) == decimal.Decimal:
+          lrow[index]  = float(value)
+      # get the value of the Total column
+      if 'Total' in columnList:
+        total = lrow[columnList.index('Total')]
+      else:
+        total = 0
+      if 'PilotJobEff' in columnList:
+        eff = lrow[columnList.index('PilotJobEff')]
+      else:
+        eff = 0.
+      lrow.append(self._getElementStatus(total, eff))
+      rows.append(tuple(lrow))
+# If not grouped by CE and more then 1 CE in the result:
+    if multiple:
+      columns.append('CE') # 'DestinationSite' re-mapped to 'CE' already
+    columns.append('Status')
+    result['Records'] = rows
+
+    return S_OK(result)
+
+  def _getElementStatus(self, total, eff):
+    """
+    Assign status to a site or resource based on pilot efficiency.
+    :param total: number of pilots to assign the status, otherwise 'Idle'
+    :param eff:  efficiency in %
+
+    :return: status string
+    """
+
+    # Evaluate the quality status of the Site/CE
+    if total > 10:
+      if eff < 25.:
+        return 'Bad'
+      elif eff < 60.:
+        return 'Poor'
+      elif eff < 85.:
+        return 'Fair'
+      else:
+        return 'Good'
+    else:
+      return 'Idle'
+
   def getPilotSummaryWeb(self, selectDict, sortList, startItem, maxItems):
     """ Get summary of the pilot jobs status by CE/site in a standard structure
     """
