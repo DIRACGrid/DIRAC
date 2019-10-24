@@ -53,57 +53,145 @@ def test_executeJob():
   result = ce.submitJob('testPoolCEJob_0.py', None)
   assert result['OK'] is True
   result = ce.getCEStatus()
-  assert 1 == result['UsedProcessors']
+  assert result['UsedProcessors'] == 1
 
-  jobParams = {'numberOfProcessors': 2}
+  jobParams = {'mpTag': True, 'numberOfProcessors': 2}
+  result = ce.submitJob('testPoolCEJob_1.py', None, **jobParams)
+  assert result['OK'] is True
+
+  jobParams = {'mpTag': True, 'numberOfProcessors': 2}
+  result = ce.submitJob('testPoolCEJob_1.py', None, **jobParams)
+  assert result['OK'] is False
+
+  ceParameters = {'WholeNode': True,
+                  'NumberOfProcessors': 8}
+  ce = PoolComputingElement('TestPoolCE')
+  ce.setParameters(ceParameters)
+
+  jobParams = {'mpTag': True, 'numberOfProcessors': 2, 'maxNumberOfPayloadProcessors': 2}
   result = ce.submitJob('testPoolCEJob_1.py', None, **jobParams)
   assert result['OK'] is True
   result = ce.getCEStatus()
-  assert 3 == result['UsedProcessors']
+  assert result['UsedProcessors'] == 2
 
-  jobParams = {'numberOfProcessors': 2}
+  jobParams = {'mpTag': True, 'numberOfProcessors': 1, 'maxNumberOfPayloadProcessors': 3}
+  result = ce.submitJob('testPoolCEJob_1.py', None, **jobParams)
+  assert result['OK'] is True
+  result = ce.getCEStatus()
+  assert result['UsedProcessors'] == 5
+
+  jobParams = {'numberOfProcessors': 2}  # This is same as asking for SP
+  result = ce.submitJob('testPoolCEJob_1.py', None, **jobParams)
+  assert result['OK'] is True
+  result = ce.getCEStatus()
+  assert result['UsedProcessors'] == 6
+
+  jobParams = {'mpTag': True, 'numberOfProcessors': 3}
   result = ce.submitJob('testPoolCEJob_2.py', None, **jobParams)
   assert result['OK'] is False
-  assert "Not enough slots" in result['Message']
+  assert "Not enough processors" in result['Message']
 
   _stopJob(0)
-  jobParams = {'numberOfProcessors': 2}
+
   ce = PoolComputingElement('TestPoolCE')
   ceParameters = {'WholeNode': False,
                   'NumberOfProcessors': 4}
   ce.setParameters(ceParameters)
+
+  jobParams = {'mpTag': True, 'numberOfProcessors': 2}
   result = ce.submitJob('testPoolCEJob_2.py', None, **jobParams)
   assert result['OK'] is True
   result = ce.getCEStatus()
-  assert 2 == result['UsedProcessors']
+  assert result['UsedProcessors'] == 4
 
-  for i in range(4):
+  for i in range(8):
     _stopJob(i)
   time.sleep(1)
   result = ce.getCEStatus()
-  assert 0 == result['UsedProcessors']
+  assert result['UsedProcessors'] == 0
 
   # Whole node jobs
   result = ce.submitJob('testPoolCEJob_0.py', None)
   assert result['OK'] is True
   result = ce.getCEStatus()
-  assert 1 == result['UsedProcessors']
+  assert result['UsedProcessors'] == 1
 
-  jobParams = {'wholeNode': True}
+  jobParams = {'mpTag': True, 'wholeNode': True}
   result = ce.submitJob('testPoolCEJob_1.py', None, **jobParams)
   assert result['OK'] is False
-  assert "Can not take WholeNode job" in result['Message']
+  assert "Not enough processors for the job" in result['Message']
 
   _stopJob(0)
   time.sleep(1)
 
-  jobParams = {'wholeNode': True}
+  jobParams = {'mpTag': True, 'wholeNode': True}
   result = ce.submitJob('testPoolCEJob_1.py', None, **jobParams)
   assert result['OK'] is True
+  result = ce.getCEStatus()
+  assert result['UsedProcessors'] == 4
 
   # Stop all the jobs if any, cleanup tmp files
-  for i in range(4):
+  for i in range(8):
     _stopJob(i)
     for ff in ['testPoolCEJob_%s.py' % i, 'stop_job_%s' % i]:
       if os.path.isfile(ff):
         os.unlink(ff)
+
+
+def test__getProcessorsForJobs():
+  ce = PoolComputingElement('TestPoolCE')
+  ce.processors = 16
+
+  kwargs = {}
+  res = ce._getProcessorsForJobs(kwargs)
+  assert res == 1
+
+  kwargs = {'mpTag': False}
+  res = ce._getProcessorsForJobs(kwargs)
+  assert res == 1
+
+  kwargs = {'mpTag': True}
+  res = ce._getProcessorsForJobs(kwargs)
+  assert res == 16
+
+  kwargs = {'mpTag': True, 'wholeNode': True}
+  res = ce._getProcessorsForJobs(kwargs)
+  assert res == 16
+
+  kwargs = {'mpTag': True, 'wholeNode': False}
+  res = ce._getProcessorsForJobs(kwargs)
+  assert res == 16
+
+  kwargs = {'mpTag': True, 'numberOfProcessors': 4}
+  res = ce._getProcessorsForJobs(kwargs)
+  assert res == 16
+
+  kwargs = {'mpTag': True, 'numberOfProcessors': 4, 'maxNumberOfPayloadProcessors': 8}
+  res = ce._getProcessorsForJobs(kwargs)
+  assert res == 8
+
+  kwargs = {'mpTag': True, 'numberOfProcessors': 4, 'maxNumberOfPayloadProcessors': 32}
+  res = ce._getProcessorsForJobs(kwargs)
+  assert res == 16
+
+  # something is in use
+  ce.processorsPerTask = {1: 4}
+  kwargs = {'mpTag': True, 'wholeNode': True}
+  res = ce._getProcessorsForJobs(kwargs)
+  assert res == 0
+
+  kwargs = {'mpTag': True, 'wholeNode': False}
+  res = ce._getProcessorsForJobs(kwargs)
+  assert res == 12
+
+  kwargs = {'mpTag': True, 'numberOfProcessors': 2}
+  res = ce._getProcessorsForJobs(kwargs)
+  assert res == 12
+
+  kwargs = {'mpTag': True, 'maxNumberOfPayloadProcessors': 2}
+  res = ce._getProcessorsForJobs(kwargs)
+  assert res == 2
+
+  kwargs = {'mpTag': True, 'maxNumberOfPayloadProcessors': 16}
+  res = ce._getProcessorsForJobs(kwargs)
+  assert res == 12

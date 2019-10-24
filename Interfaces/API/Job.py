@@ -561,11 +561,18 @@ class Job(API):
 
        >>> job = Job()
        >>> job.setNumberOfProcessors(2)
+       means that the job needs at least 2 processors, and that will use all the processors available
 
        >>> job = Job()
        >>> job.setNumberOfProcessors(4, 8)
+       means that the job needs at least 4 processors, and that will use at most 8 processors
 
-       :param processors: number of processors required by the job
+       >>> job = Job()
+       >>> job.setNumberOfProcessors(1)
+       means that the job can run in SP mode, and that will use all the processors available
+
+
+       :param processors: number of processors required by the job (minimum)
        :type processors: int
        :param maxNumberOfPayloadProcessors: optional max number of processors the job applications can use
        :type maxNumberOfPayloadProcessors: int
@@ -577,7 +584,7 @@ class Job(API):
       except ValueError:
         return self._reportError('Expected numerical string or int for number of processors', **kwargs)
 
-    if processors > 1:
+    if processors:
       self._addParameter(self.workflow, 'NumberOfProcessors', 'JDL', processors, "Number of processors requested")
 
     if maxNumberOfPayloadProcessors:

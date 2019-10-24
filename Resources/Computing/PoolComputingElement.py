@@ -111,23 +111,9 @@ class PoolComputingElement(ComputingElement):
 
     self.pPool.processResults()
 
-    processorsInUse = self.getProcessorsInUse()
-    if kwargs.get('wholeNode'):
-      if processorsInUse > 0:
-        return S_ERROR('Can not take WholeNode job')  # , %d/%d slots used' % (self.slotsInUse,self.slots) )
-      else:
-        requestedProcessors = self.processors
-    elif "numberOfProcessors" in kwargs:
-      requestedProcessors = int(kwargs['numberOfProcessors'])
-      if requestedProcessors > 0:
-        if (processorsInUse + requestedProcessors) > self.processors:
-          return S_ERROR('Not enough slots: requested %d, available %d' % (requestedProcessors,
-                                                                           self.processors - processorsInUse))
-    else:
-      requestedProcessors = 1
-    if self.processors - processorsInUse < requestedProcessors:
-      return S_ERROR('Not enough slots: requested %d, available %d' % (requestedProcessors,
-                                                                       self.processors - processorsInUse))
+    processorsForJob = self._getProcessorsForJobs(kwargs)
+    if not processorsForJob:
+      return S_ERROR('Not enough processors for the job')
 
     # Now persisiting the job limits for later use in pilot.cfg file (pilot 3 default)
     cd = ConfigurationData(loadDefaultCFG=False)
@@ -136,7 +122,7 @@ class PoolComputingElement(ComputingElement):
       self.log.error("Could not load pilot.cfg", res['Message'])
     # only NumberOfProcessors for now, but RAM (or other stuff) can also be added
     jobID = int(kwargs.get('jobDesc', {}).get('jobID', 0))
-    cd.setOptionInCFG('/Resources/Computing/JobLimits/%d/NumberOfProcessors' % jobID, self.processors)
+    cd.setOptionInCFG('/Resources/Computing/JobLimits/%d/NumberOfProcessors' % jobID, processorsForJob)
     res = cd.dumpLocalCFGToFile('pilot.cfg')
     if not res['OK']:
       self.log.error("Could not dump cfg to pilot.cfg", res['Message'])
@@ -162,12 +148,49 @@ class PoolComputingElement(ComputingElement):
                                            kwargs=kwargs,
                                            taskID=self.taskID,
                                            usePoolCallbacks=True)
-    self.processorsPerTask[self.taskID] = requestedProcessors
+    self.processorsPerTask[self.taskID] = processorsForJob
     self.taskID += 1
 
     self.pPool.processResults()
 
     return result
+
+  def _getProcessorsForJobs(self, kwargs):
+    """ helper function
+    """
+    processorsInUse = self.getProcessorsInUse()
+    availableProcessors = self.processors - processorsInUse
+
+    # Does this ask for MP?
+    if not kwargs.get('mpTag', False):
+      if availableProcessors:
+        return 1
+      else:
+        return 0
+
+    # From here we assume the job is asking for MP
+    if kwargs.get('wholeNode', False):
+      if processorsInUse > 0:
+        return 0
+      else:
+        requestedProcessors = self.processors
+
+    if "numberOfProcessors" in kwargs:
+      requestedProcessors = int(kwargs['numberOfProcessors'])
+    else:
+      requestedProcessors = 1
+
+    if availableProcessors < requestedProcessors:
+      return 0
+
+    # If there's a maximum number of processors allowed for the job, use that as maximum,
+    # otherwise it will use all the remaining processors
+    if 'maxNumberOfPayloadProcessors' in kwargs:
+      maxNumberOfPayloadProcessors = min(int(kwargs['maxNumberOfPayloadProcessors']), availableProcessors)
+    else:
+      maxNumberOfPayloadProcessors = availableProcessors
+
+    return maxNumberOfPayloadProcessors
 
   def finalizeJob(self, taskID, result):
     """ Finalize the job by updating the process utilisation counters
