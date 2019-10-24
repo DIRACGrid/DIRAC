@@ -968,21 +968,32 @@ class InstalledComponentsDB(object):
       session.rollback()
       session.close()
       return result
-    if result['Value'].count() != 1:
-      if result['Value'].count() > 1:
+    if result['Value'].count() == 1:
+      host = result['Value'][0]
+    elif result['Value'].count() > 1:
+      session.rollback()
+      session.close()
+      return S_ERROR('Too many Hosts match the criteria')
+    elif result['Value'].count() == 0:
+      if not forceCreate:
         session.rollback()
         session.close()
-        return S_ERROR('Too many Hosts match the criteria')
-      if result['Value'].count() < 1:
-        if not forceCreate:
-          session.rollback()
-          session.close()
-          return S_ERROR('Given host does not exist')
-        else:
-          host = Host()
-          host.fromDict(hostDict)
-    else:
-      host = result['Value'][0]
+        return S_ERROR('Given host does not exist')
+      # check if HostName exists with different CPU
+      gLogger.verbose('Host not found, looking just for hostname')
+      hostNameDict = {'HostName': hostDict['HostName']}
+      result = self.__filterFields(session, Host, hostNameDict)
+      if result['Value'].count() == 1:
+        gLogger.verbose('HostName found, updating CPU model')
+        host = result['Value'][0]
+        self.updateHosts(hostNameDict, hostDict)
+      elif result['Value'].count() > 1:
+        session.rollback()
+        session.close()
+        return S_ERROR('Too many Hosts match the HostName')
+      else:
+        host = Host()
+        host.fromDict(hostDict)
 
     if component:
       installation.installationComponent = component
