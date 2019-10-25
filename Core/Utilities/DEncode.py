@@ -64,6 +64,11 @@ def printDebugCallstack(headerMessage):
   if 'encodeDateTime' in tb[-3] or 'decodeDateTime' in tb[-3]:
     return
 
+  # The accountingDB stores a encoding of the bucketsLength
+  # this is ok for now, so silent all the AccountingDB error
+  if any(['AccountingDB' in tr for tr in reversed(tb)]):
+    return
+
   print('=' * 45, headerMessage, '=' * 45)
 
   # print the traceback that leads us here

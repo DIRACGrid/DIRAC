@@ -108,7 +108,7 @@ class FileHelper(object):
         abortTrans['AbortTransfer'] = True
         self.oTransport.sendData(abortTrans)
       else:
-        abortTrans = S_OK((False, ""))
+        abortTrans = S_OK([False, ""])
         abortTrans['AbortTransfer'] = True
         retVal = self.oTransport.sendData(abortTrans)
         if not retVal['OK']:
