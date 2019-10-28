@@ -139,6 +139,15 @@ class FTS3Job(FTS3Serializable):
       if file_state in FTS3File.FTS_FINAL_STATES:
         filesStatus[file_id]['ftsGUID'] = None
 
+      # If the file is not in a final state, but the job is, we return an error
+      # FTS can have inconsistencies where the FTS Job is in a final state
+      # but not all the files.
+      # The inconsistencies are cleaned every hour on the FTS side.
+      # https://its.cern.ch/jira/browse/FTS-1482
+      elif self.status in self.FINAL_STATES:
+        return S_ERROR(errno.EDEADLK, "Job %s in a final state (%s) while File %s is not (%s)" %
+                       (self.ftsGUID, self.status, file_id, file_state))
+
       statusSummary[file_state] = statusSummary.get(file_state, 0) + 1
 
     total = len(filesInfoList)
