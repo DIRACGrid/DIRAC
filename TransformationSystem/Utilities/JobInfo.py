@@ -50,7 +50,7 @@ class JobInfo(object):
     if self.tID and self.taskID:
       info += " %s Transformation: %d -- %d " % (self.tType, self.tID, self.taskID)
     if self.otherTasks:
-      info += ' (Last task %d)' % self.otherTasks
+      info += ' (Last task %s)' % self.otherTasks
     if self.inputFiles:
       ifInfo = ['<<< %s (%s, %s, Errors %s)' % _ for _ in izip_longest(self.inputFiles,
                                                                        self.inputFilesExist,
