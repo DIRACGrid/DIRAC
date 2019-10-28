@@ -68,13 +68,13 @@ def test_executeJob():
   ce = PoolComputingElement('TestPoolCE')
   ce.setParameters(ceParameters)
 
-  jobParams = {'mpTag': True, 'numberOfProcessors': 2, 'maxNumberOfPayloadProcessors': 2}
+  jobParams = {'mpTag': True, 'numberOfProcessors': 2, 'maxNumberOfProcessors': 2}
   result = ce.submitJob('testPoolCEJob_1.py', None, **jobParams)
   assert result['OK'] is True
   result = ce.getCEStatus()
   assert result['UsedProcessors'] == 2
 
-  jobParams = {'mpTag': True, 'numberOfProcessors': 1, 'maxNumberOfPayloadProcessors': 3}
+  jobParams = {'mpTag': True, 'numberOfProcessors': 1, 'maxNumberOfProcessors': 3}
   result = ce.submitJob('testPoolCEJob_1.py', None, **jobParams)
   assert result['OK'] is True
   result = ce.getCEStatus()
@@ -166,11 +166,11 @@ def test__getProcessorsForJobs():
   res = ce._getProcessorsForJobs(kwargs)
   assert res == 16
 
-  kwargs = {'mpTag': True, 'numberOfProcessors': 4, 'maxNumberOfPayloadProcessors': 8}
+  kwargs = {'mpTag': True, 'numberOfProcessors': 4, 'maxNumberOfProcessors': 8}
   res = ce._getProcessorsForJobs(kwargs)
   assert res == 8
 
-  kwargs = {'mpTag': True, 'numberOfProcessors': 4, 'maxNumberOfPayloadProcessors': 32}
+  kwargs = {'mpTag': True, 'numberOfProcessors': 4, 'maxNumberOfProcessors': 32}
   res = ce._getProcessorsForJobs(kwargs)
   assert res == 16
 
@@ -188,10 +188,10 @@ def test__getProcessorsForJobs():
   res = ce._getProcessorsForJobs(kwargs)
   assert res == 12
 
-  kwargs = {'mpTag': True, 'maxNumberOfPayloadProcessors': 2}
+  kwargs = {'mpTag': True, 'maxNumberOfProcessors': 2}
   res = ce._getProcessorsForJobs(kwargs)
   assert res == 2
 
-  kwargs = {'mpTag': True, 'maxNumberOfPayloadProcessors': 16}
+  kwargs = {'mpTag': True, 'maxNumberOfProcessors': 16}
   res = ce._getProcessorsForJobs(kwargs)
   assert res == 12

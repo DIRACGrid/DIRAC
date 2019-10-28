@@ -534,6 +534,8 @@ class Job(API):
 
        :param destination: site string
        :type destination: str or python:list
+
+       :return: S_OK/S_ERROR
     """
     kwargs = {'destination': destination}
     if isinstance(destination, basestring):
@@ -554,7 +556,7 @@ class Job(API):
     return S_OK()
 
   #############################################################################
-  def setNumberOfProcessors(self, processors, maxNumberOfPayloadProcessors=None):
+  def setNumberOfProcessors(self, processors, maxNumberOfProcessors=None):
     """Helper function.
 
        Example usage:
@@ -570,12 +572,17 @@ class Job(API):
        >>> job = Job()
        >>> job.setNumberOfProcessors(1)
        means that the job can run in SP mode, and that will use all the processors available
+       (so the job could run MP, but also SP)
 
+       If this function is called, with whatever input, the job will end up being scheduled with
+       at least the tag "MultiProcessor"
 
        :param processors: number of processors required by the job (minimum)
        :type processors: int
-       :param maxNumberOfPayloadProcessors: optional max number of processors the job applications can use
-       :type maxNumberOfPayloadProcessors: int
+       :param maxNumberOfProcessors: optional max number of processors the job applications can use
+       :type maxNumberOfProcessors: int
+
+       :return: S_OK/S_ERROR
     """
     kwargs = {'processors': processors}
     if not isinstance(processors, int):
@@ -587,11 +594,11 @@ class Job(API):
     if processors:
       self._addParameter(self.workflow, 'NumberOfProcessors', 'JDL', processors, "Number of processors requested")
 
-    if maxNumberOfPayloadProcessors:
-      self._addParameter(self.workflow, 'MaxNumberOfPayloadProcessors', 'string', maxNumberOfPayloadProcessors,
+    if maxNumberOfProcessors:
+      self._addParameter(self.workflow, 'MaxNumberOfProcessors', 'string', maxNumberOfProcessors,
                          "Max Number of processors the job applications may use")
-      if maxNumberOfPayloadProcessors < processors:
-        self._addParameter(self.workflow, 'NumberOfProcessors', 'JDL', maxNumberOfPayloadProcessors,
+      if maxNumberOfProcessors < processors:
+        self._addParameter(self.workflow, 'NumberOfProcessors', 'JDL', maxNumberOfProcessors,
                            "Number of processors requested")
 
     return S_OK()

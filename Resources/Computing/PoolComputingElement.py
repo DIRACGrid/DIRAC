@@ -185,12 +185,12 @@ class PoolComputingElement(ComputingElement):
 
     # If there's a maximum number of processors allowed for the job, use that as maximum,
     # otherwise it will use all the remaining processors
-    if 'maxNumberOfPayloadProcessors' in kwargs:
-      maxNumberOfPayloadProcessors = min(int(kwargs['maxNumberOfPayloadProcessors']), availableProcessors)
+    if 'maxNumberOfProcessors' in kwargs:
+      maxNumberOfProcessors = min(int(kwargs['maxNumberOfProcessors']), availableProcessors)
     else:
-      maxNumberOfPayloadProcessors = availableProcessors
+      maxNumberOfProcessors = availableProcessors
 
-    return maxNumberOfPayloadProcessors
+    return maxNumberOfProcessors
 
   def finalizeJob(self, taskID, result):
     """ Finalize the job by updating the process utilisation counters

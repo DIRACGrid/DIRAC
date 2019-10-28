@@ -325,7 +325,6 @@ class PilotCStoJSONSynchronizer(object):
         :param pilotDict: used only to upload the pilot.json, which is what it is
         :param filename: remote filename
         :param pilotScript: local path to the file to upload
-        :returns: S_OK if the upload was successful, S_ERROR otherwise
     """
     # Note: this method could clearly get a revamp... also the upload is not done in an
     # optimal way since we could send the file with request without reading it in memory,
@@ -364,5 +363,5 @@ class PilotCStoJSONSynchronizer(object):
             self.log.error("Status code != 200", "%s returned when POSTing on %s" % (resp.text, pfServer))
 
         except requests.ConnectionError:
-          # if we are here is probably because we are not trying to upload to a WS that does not have expose a POST API
+          # if we are here it is probably because we are trying to upload to a WS that does not expose a POST API
           self.log.error("Can't issue POST", "on %s" % pfServer)

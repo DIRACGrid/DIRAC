@@ -298,7 +298,7 @@ class JobAgent(AgentModule):
     # the minimum number of processors requested
     processors = int(params.get('NumberOfProcessors', 1))
     # the maximum number of processors allowed to the payload
-    maxNumberOfPayloadProcessors = int(params.get('MaxNumberOfPayloadProcessors', 0))
+    maxNumberOfProcessors = int(params.get('MaxNumberOfProcessors', 0))
     # need or not the whole node for the job
     wholeNode = 'WholeNode' in params
     mpTag = 'MultiProcessor' in params.get('Tags', [])
@@ -339,7 +339,7 @@ class JobAgent(AgentModule):
 
       self.log.debug('Before self._submitJob() (%sCE)' % (self.ceName))
       result = self._submitJob(jobID, params, ceDict, optimizerParams, proxyChain,
-                               processors, wholeNode, maxNumberOfPayloadProcessors, mpTag)
+                               processors, wholeNode, maxNumberOfProcessors, mpTag)
       if not result['OK']:
         self.__report(jobID, 'Failed', result['Message'])
         return self.__finish(result['Message'])
@@ -475,7 +475,7 @@ class JobAgent(AgentModule):
   #############################################################################
   def _submitJob(self, jobID, jobParams, resourceParams, optimizerParams,
                  proxyChain,
-                 processors=1, wholeNode=False, maxNumberOfPayloadProcessors=None, mpTag=False):
+                 processors=1, wholeNode=False, maxNumberOfProcessors=None, mpTag=False):
     """ Submit job to the Computing Element instance after creating a custom
         Job Wrapper with the available job parameters.
     """
@@ -507,7 +507,7 @@ class JobAgent(AgentModule):
     payloadProxy = proxy['Value']
     submission = self.computingElement.submitJob(wrapperFile, payloadProxy,
                                                  numberOfProcessors=processors,
-                                                 maxNumberOfPayloadProcessors=maxNumberOfPayloadProcessors,
+                                                 maxNumberOfProcessors=maxNumberOfProcessors,
                                                  wholeNode=wholeNode,
                                                  mpTag=mpTag,
                                                  jobDesc=jobDesc,
