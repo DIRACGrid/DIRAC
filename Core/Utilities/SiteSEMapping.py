@@ -22,7 +22,7 @@ def getSEParameters(seName):
   # This import is here to avoid circular imports
   from DIRAC.Resources.Storage.StorageElement import StorageElement
   se = StorageElement(seName, hideExceptions=True)
-  print " SENAME ", seName
+
   protocolsSet = set(se.localAccessProtocolList) | set(se.localWriteProtocolList)
 
   seParametersList = []
