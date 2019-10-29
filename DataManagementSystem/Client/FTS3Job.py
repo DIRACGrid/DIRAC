@@ -21,6 +21,9 @@ from DIRAC.Core.Utilities.DErrno import cmpError
 from DIRAC.DataManagementSystem.private.FTS3Utilities import FTS3Serializable
 from DIRAC.DataManagementSystem.Client.FTS3File import FTS3File
 
+# 3 days in seconds
+BRING_ONLINE_TIMEOUT = 259200
+
 
 class FTS3Job(FTS3Serializable):
   """ Abstract class to represent a job to be executed by FTS. It belongs
@@ -278,7 +281,7 @@ class FTS3Job(FTS3Serializable):
     # otherwise they will do an extra useless queue in FTS
     sourceIsTape = self.__isTapeSE(self.sourceSE)
     copy_pin_lifetime = pinTime if sourceIsTape else None
-    bring_online = 86400 if sourceIsTape else None
+    bring_online = BRING_ONLINE_TIMEOUT if sourceIsTape else None
 
     if not transfers:
       log.error("No transfer possible!")
