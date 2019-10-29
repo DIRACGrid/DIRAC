@@ -556,57 +556,57 @@ class Job(API):
     return S_OK()
 
   #############################################################################
-  def setNumberOfProcessors(self, processors=None, minNumberOfProcessors=None, maxNumberOfProcessors=None):
+  def setNumberOfProcessors(self, numberOfProcessors=None, minNumberOfProcessors=None, maxNumberOfProcessors=None):
     """Helper function.
 
        Example usage:
 
        >>> job = Job()
-       >>> job.setNumberOfProcessors(2)
+       >>> job.setNumberOfProcessors(numberOfProcessors=2)
        means that the job needs 2 processors
 
        >>> job = Job()
-       >>> job.setNumberOfProcessors(None, 4, 8)
+       >>> job.setNumberOfProcessors(minNumberOfProcessors=4, maxNumberOfProcessors=8)
        means that the job needs at least 4 processors, and that will use at most 8 processors
 
        >>> job = Job()
-       >>> job.setNumberOfProcessors(None, 2)
+       >>> job.setNumberOfProcessors(minNumberOfProcessors=2)
        means that the job needs at least 2 processors, and that will use all the processors available
 
        >>> job = Job()
-       >>> job.setNumberOfProcessors(None, 1)
+       >>> job.setNumberOfProcessors(minNumberOfProcessors=1)
        means that the job can run in SP mode, and that will use all the processors available
        (so the job could run MP, but also SP)
 
        >>> job = Job()
-       >>> job.setNumberOfProcessors(None, None, 4)
+       >>> job.setNumberOfProcessors(maxNumberOfProcessors=4)
        is equivalent to
-       >>> job.setNumberOfProcessors(None, 1, 4)
+       >>> job.setNumberOfProcessors(minNumberOfProcessors=1, maxNumberOfProcessors=4)
        and it means that the job can run in SP mode, and that will use at most 4 processors
        (so the job could run MP, but also SP)
 
        >>> job = Job()
-       >>> job.setNumberOfProcessors(None, 6, 4)
+       >>> job.setNumberOfProcessors(minNumberOfProcessors=6, maxNumberOfProcessors=4)
        is a non-sense, and will lead to consider that the job can run exactly on 4 processors
 
        >>> job = Job()
-       >>> job.setNumberOfProcessors(3, 4)
+       >>> job.setNumberOfProcessors(numberOfProcessors=3, maxNumberOfProcessors=4)
        will lead to ignore the second parameter
 
        :param processors: number of processors required by the job (exact number, unless a min/max are set)
        :type processors: int
-       :param maxNumberOfProcessors: optional min number of processors the job applications can use
-       :type maxNumberOfProcessors: int
+       :param minNumberOfProcessors: optional min number of processors the job applications can use
+       :type minNumberOfProcessors: int
        :param maxNumberOfProcessors: optional max number of processors the job applications can use
        :type maxNumberOfProcessors: int
 
        :return: S_OK/S_ERROR
     """
-    if processors:
+    if numberOfProcessors:
       if not minNumberOfProcessors:
-        nProc = processors
+        nProc = numberOfProcessors
       else:
-        nProc = min(processors, minNumberOfProcessors)
+        nProc = min(numberOfProcessors, minNumberOfProcessors)
       if nProc > 1:
         self._addParameter(self.workflow, 'NumberOfProcessors', 'JDL', nProc, "Exact number of processors requested")
       return S_OK()

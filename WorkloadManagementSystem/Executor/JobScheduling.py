@@ -426,7 +426,6 @@ class JobScheduling(OptimizerExecutor):
       jobManifest.setOption("Tags", ", ".join(tagList))
 
     reqSection = "JobRequirements"
-
     if reqSection in jobManifest:
       result = jobManifest.getSection(reqSection)
     else:
