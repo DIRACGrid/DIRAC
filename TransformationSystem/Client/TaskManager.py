@@ -830,7 +830,7 @@ class WorkflowTasks(TaskBase):
     if "Clinics" in self.opsH.getSections("Hospital")['Value']:
       clinics = self.opsH.getSections("Hospital/Clinics")['Value']
       for clinic in clinics:
-        if int(transID) in [int(x) for x in self.opsH.getValue("Hospital/%s/Transformations"%clinic, [])]
+        if int(transID) in [int(x) for x in self.opsH.getValue("Hospital/%s/Transformations"%clinic, [])]:
           hospitalSite = self.opsH.getValue("Hospital/%s/ClinicSite"%clinic, 'DIRAC.JobDebugger.ch')
           hospitalCEs = self.opsH.getValue("Hospital/%s/ClinicCEs"%clinic, [])
     if not hospitalSite:
