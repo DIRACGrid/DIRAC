@@ -154,7 +154,7 @@ class FreeDiskSpaceCommand(Command):
           gLogger.warn("Unable to calculate free/total disk space", "name: %s" % name)
           gLogger.warn(diskSpace['Message'])
           continue
-      except Exception as excp:  # pylint: disable=broad-except                                                                                                                                                                            
+      except Exception as excp:  # pylint: disable=broad-except
           gLogger.error("Failed to get SE %s FreeDiskSpace information (SE skipped) " % name)
           gLogger.exception("Operation finished  with exception: ", lException=excp)
 
