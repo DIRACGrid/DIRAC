@@ -195,6 +195,7 @@ class StorageElementItem(object):
     res = StorageFactory(useProxy=self.useProxy, vo=self.vo).getStorages(name,
                                                                          pluginList=plugins,
                                                                          hideExceptions=hideExceptions)
+
     if not res['OK']:
       self.valid = False
       self.name = name
