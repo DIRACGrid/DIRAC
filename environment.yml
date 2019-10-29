@@ -39,6 +39,7 @@ dependencies:
   - hypothesis
   - ipython
   - mock
+  - parameterized
   - pylint >=1.6.5
   - pyparsing >=2.0.6
   - pytest >=3.6
