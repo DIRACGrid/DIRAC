@@ -155,7 +155,7 @@ class FreeDiskSpaceCommand(Command):
           gLogger.warn(diskSpace['Message'])
           continue
       except Exception as excp:  # pylint: disable=broad-except
-          gLogger.error("Failed to get SE %s FreeDiskSpace information (SE skipped) " % name)
-          gLogger.exception("Operation finished  with exception: ", lException=excp)
+        gLogger.error("Failed to get SE %s FreeDiskSpace information (SE skipped) " % name)
+        gLogger.exception("Operation finished  with exception: ", lException=excp)
 
     return S_OK()
