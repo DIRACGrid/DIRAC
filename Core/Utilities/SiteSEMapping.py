@@ -76,8 +76,8 @@ def getStorageElementsHosts(seNames=None):
       if seHost['Value']:
         seHosts.extend(seHost['Value'])
     except Exception as excp:  # pylint: disable=broad-except
-          gLogger.error("Failed to get SE %s information (SE skipped) " % seName) 
-          gLogger.exception("Operation finished  with exception: ", lException=excp)
+      gLogger.error("Failed to get SE %s information (SE skipped) " % seName)
+      gLogger.exception("Operation finished  with exception: ", lException=excp)
   return S_OK(list(set(seHosts)))
 
 
