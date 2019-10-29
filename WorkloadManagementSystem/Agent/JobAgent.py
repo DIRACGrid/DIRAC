@@ -296,7 +296,7 @@ class JobAgent(AgentModule):
 
     # Job requirements for determining the number of processors
     # the minimum number of processors requested
-    processors = int(params.get('NumberOfProcessors', 1))
+    processors = int(params.get('NumberOfProcessors', int(params.get('MinNumberOfProcessors', 1))))
     # the maximum number of processors allowed to the payload
     maxNumberOfProcessors = int(params.get('MaxNumberOfProcessors', 0))
     # need or not the whole node for the job
@@ -475,7 +475,7 @@ class JobAgent(AgentModule):
   #############################################################################
   def _submitJob(self, jobID, jobParams, resourceParams, optimizerParams,
                  proxyChain,
-                 processors=1, wholeNode=False, maxNumberOfProcessors=None, mpTag=False):
+                 processors=1, wholeNode=False, maxNumberOfProcessors=0, mpTag=False):
     """ Submit job to the Computing Element instance after creating a custom
         Job Wrapper with the available job parameters.
     """

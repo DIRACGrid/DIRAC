@@ -185,7 +185,7 @@ class PoolComputingElement(ComputingElement):
 
     # If there's a maximum number of processors allowed for the job, use that as maximum,
     # otherwise it will use all the remaining processors
-    if 'maxNumberOfProcessors' in kwargs:
+    if 'maxNumberOfProcessors' in kwargs and kwargs['maxNumberOfProcessors']:
       maxNumberOfProcessors = min(int(kwargs['maxNumberOfProcessors']), availableProcessors)
     else:
       maxNumberOfProcessors = availableProcessors

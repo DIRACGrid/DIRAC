@@ -556,50 +556,82 @@ class Job(API):
     return S_OK()
 
   #############################################################################
-  def setNumberOfProcessors(self, processors, maxNumberOfProcessors=None):
+  def setNumberOfProcessors(self, processors=None, minNumberOfProcessors=None, maxNumberOfProcessors=None):
     """Helper function.
 
        Example usage:
 
        >>> job = Job()
        >>> job.setNumberOfProcessors(2)
-       means that the job needs at least 2 processors, and that will use all the processors available
+       means that the job needs 2 processors
 
        >>> job = Job()
-       >>> job.setNumberOfProcessors(4, 8)
+       >>> job.setNumberOfProcessors(None, 4, 8)
        means that the job needs at least 4 processors, and that will use at most 8 processors
 
        >>> job = Job()
-       >>> job.setNumberOfProcessors(1)
+       >>> job.setNumberOfProcessors(None, 2)
+       means that the job needs at least 2 processors, and that will use all the processors available
+
+       >>> job = Job()
+       >>> job.setNumberOfProcessors(None, 1)
        means that the job can run in SP mode, and that will use all the processors available
        (so the job could run MP, but also SP)
 
-       If this function is called, with whatever input, the job will end up being scheduled with
-       at least the tag "MultiProcessor"
+       >>> job = Job()
+       >>> job.setNumberOfProcessors(None, None, 4)
+       is equivalent to
+       >>> job.setNumberOfProcessors(None, 1, 4)
+       and it means that the job can run in SP mode, and that will use at most 4 processors
+       (so the job could run MP, but also SP)
 
-       :param processors: number of processors required by the job (minimum)
+       >>> job = Job()
+       >>> job.setNumberOfProcessors(None, 6, 4)
+       is a non-sense, and will lead to consider that the job can run exactly on 4 processors
+
+       >>> job = Job()
+       >>> job.setNumberOfProcessors(3, 4)
+       will lead to ignore the second parameter
+
+       :param processors: number of processors required by the job (exact number, unless a min/max are set)
        :type processors: int
+       :param maxNumberOfProcessors: optional min number of processors the job applications can use
+       :type maxNumberOfProcessors: int
        :param maxNumberOfProcessors: optional max number of processors the job applications can use
        :type maxNumberOfProcessors: int
 
        :return: S_OK/S_ERROR
     """
-    kwargs = {'processors': processors}
-    if not isinstance(processors, int):
-      try:
-        processors = int(processors)
-      except ValueError:
-        return self._reportError('Expected numerical string or int for number of processors', **kwargs)
-
     if processors:
-      self._addParameter(self.workflow, 'NumberOfProcessors', 'JDL', processors, "Number of processors requested")
+      if not minNumberOfProcessors:
+        nProc = processors
+      else:
+        nProc = min(processors, minNumberOfProcessors)
+      if nProc > 1:
+        self._addParameter(self.workflow, 'NumberOfProcessors', 'JDL', nProc, "Exact number of processors requested")
+      return S_OK()
 
+    if maxNumberOfProcessors and not minNumberOfProcessors:
+      minNumberOfProcessors = 1
+
+    if minNumberOfProcessors and maxNumberOfProcessors and minNumberOfProcessors >= maxNumberOfProcessors:
+      minNumberOfProcessors = maxNumberOfProcessors
+
+    if minNumberOfProcessors and maxNumberOfProcessors \
+        and minNumberOfProcessors == maxNumberOfProcessors \
+            and minNumberOfProcessors > 1:
+      self._addParameter(self.workflow, 'NumberOfProcessors', 'JDL',
+                         minNumberOfProcessors, "Exact number of processors requested")
+      return S_OK()
+
+    # By this point there should be a min
+    self._addParameter(self.workflow, 'MinNumberOfProcessors', 'JDL', minNumberOfProcessors,
+                       "Min Number of processors the job applications may use")
+
+    # If not set, will be "all"
     if maxNumberOfProcessors:
-      self._addParameter(self.workflow, 'MaxNumberOfProcessors', 'string', maxNumberOfProcessors,
+      self._addParameter(self.workflow, 'MaxNumberOfProcessors', 'JDL', maxNumberOfProcessors,
                          "Max Number of processors the job applications may use")
-      if maxNumberOfProcessors < processors:
-        self._addParameter(self.workflow, 'NumberOfProcessors', 'JDL', maxNumberOfProcessors,
-                           "Number of processors requested")
 
     return S_OK()
 
