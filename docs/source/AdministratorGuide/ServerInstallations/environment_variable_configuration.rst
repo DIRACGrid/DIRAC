@@ -24,3 +24,6 @@ DIRAC_GFAL_GRIDFTP_SESSION_REUSE
 
 DIRAC_USE_M2CRYPTO
   If ``true`` or ``yes`` DIRAC uses m2crypto instead of pyGSI for handling certificates, proxies, etc.
+
+DIRAC_VOMSES
+  Can be set to point to a folder containing VOMSES information. See :ref:`multi_vo_dirac`
