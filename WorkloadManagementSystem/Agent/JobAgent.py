@@ -294,9 +294,14 @@ class JobAgent(AgentModule):
     if 'CPUTime' not in params:
       self.log.warn('Job has no CPU requirement defined in JDL parameters')
 
-    # Job requirement for a number of processors
-    processors = int(params.get('NumberOfProcessors', 1))
+    # Job requirements for determining the number of processors
+    # the minimum number of processors requested
+    processors = int(params.get('NumberOfProcessors', int(params.get('MinNumberOfProcessors', 1))))
+    # the maximum number of processors allowed to the payload
+    maxNumberOfProcessors = int(params.get('MaxNumberOfProcessors', 0))
+    # need or not the whole node for the job
     wholeNode = 'WholeNode' in params
+    mpTag = 'MultiProcessor' in params.get('Tags', [])
 
     if self.extraOptions:
       params['Arguments'] += ' ' + self.extraOptions
@@ -332,8 +337,9 @@ class JobAgent(AgentModule):
           errorMsg = 'Failed software installation'
         return self._rescheduleFailedJob(jobID, errorMsg, self.stopOnApplicationFailure)
 
-      self.log.debug('Before %sCE submitJob()' % (self.ceName))
-      result = self._submitJob(jobID, params, ceDict, optimizerParams, proxyChain, processors, wholeNode)
+      self.log.debug('Before self._submitJob() (%sCE)' % (self.ceName))
+      result = self._submitJob(jobID, params, ceDict, optimizerParams, proxyChain,
+                               processors, wholeNode, maxNumberOfProcessors, mpTag)
       if not result['OK']:
         self.__report(jobID, 'Failed', result['Message'])
         return self.__finish(result['Message'])
@@ -468,7 +474,8 @@ class JobAgent(AgentModule):
 
   #############################################################################
   def _submitJob(self, jobID, jobParams, resourceParams, optimizerParams,
-                 proxyChain, processors, wholeNode=False):
+                 proxyChain,
+                 processors=1, wholeNode=False, maxNumberOfProcessors=0, mpTag=False):
     """ Submit job to the Computing Element instance after creating a custom
         Job Wrapper with the available job parameters.
     """
@@ -500,7 +507,9 @@ class JobAgent(AgentModule):
     payloadProxy = proxy['Value']
     submission = self.computingElement.submitJob(wrapperFile, payloadProxy,
                                                  numberOfProcessors=processors,
+                                                 maxNumberOfProcessors=maxNumberOfProcessors,
                                                  wholeNode=wholeNode,
+                                                 mpTag=mpTag,
                                                  jobDesc=jobDesc,
                                                  log=self.log,
                                                  logLevel=logLevel)

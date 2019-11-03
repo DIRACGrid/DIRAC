@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# spawns 4 processes (in theory on 4 processors...)
+
 from __future__ import print_function
 
 from multiprocessing import Process, Queue, current_process

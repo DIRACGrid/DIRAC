@@ -47,7 +47,7 @@ def purgeDelayedEMails():
 class NotificationHandler(RequestHandler):
 
   @classmethod
-  def initializeNotificationHandler(cls, serviceInfo):
+  def initializeHandler(cls, serviceInfo):
     """ Handler initialization
     """
     global gNotDB
