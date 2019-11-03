@@ -58,6 +58,12 @@ def test__getJDLParameters(mocker):
             StdOutput = "std.out";
             InputData = "";
             JobType = "User";
+            NumberOfProcessors = 16;
+            Tags =
+                {
+                    "16Processors",
+                    "MultiProcessor"
+                };
         ]
         """
 
@@ -65,6 +71,8 @@ def test__getJDLParameters(mocker):
 
   assert result['OK']
   assert result['Value']['Origin'] == 'DIRAC'
+  assert result['Value']['NumberOfProcessors'] == '16'
+  assert result['Value']['Tags'] == ['16Processors', 'MultiProcessor']
 
 
 @pytest.mark.parametrize("mockJMInput, expected", [({'OK': True}, {'OK': True, 'Value': 'Job Rescheduled'}), ({

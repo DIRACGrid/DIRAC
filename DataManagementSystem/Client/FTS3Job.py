@@ -21,6 +21,9 @@ from DIRAC.Core.Utilities.DErrno import cmpError
 from DIRAC.DataManagementSystem.private.FTS3Utilities import FTS3Serializable
 from DIRAC.DataManagementSystem.Client.FTS3File import FTS3File
 
+# 3 days in seconds
+BRING_ONLINE_TIMEOUT = 259200
+
 
 class FTS3Job(FTS3Serializable):
   """ Abstract class to represent a job to be executed by FTS. It belongs
@@ -138,6 +141,15 @@ class FTS3Job(FTS3Serializable):
       # monitoring calls
       if file_state in FTS3File.FTS_FINAL_STATES:
         filesStatus[file_id]['ftsGUID'] = None
+
+      # If the file is not in a final state, but the job is, we return an error
+      # FTS can have inconsistencies where the FTS Job is in a final state
+      # but not all the files.
+      # The inconsistencies are cleaned every hour on the FTS side.
+      # https://its.cern.ch/jira/browse/FTS-1482
+      elif self.status in self.FINAL_STATES:
+        return S_ERROR(errno.EDEADLK, "Job %s in a final state (%s) while File %s is not (%s)" %
+                       (self.ftsGUID, self.status, file_id, file_state))
 
       statusSummary[file_state] = statusSummary.get(file_state, 0) + 1
 
@@ -269,7 +281,7 @@ class FTS3Job(FTS3Serializable):
     # otherwise they will do an extra useless queue in FTS
     sourceIsTape = self.__isTapeSE(self.sourceSE)
     copy_pin_lifetime = pinTime if sourceIsTape else None
-    bring_online = 86400 if sourceIsTape else None
+    bring_online = BRING_ONLINE_TIMEOUT if sourceIsTape else None
 
     if not transfers:
       log.error("No transfer possible!")

@@ -368,36 +368,64 @@ class JobScheduling(OptimizerExecutor):
 
     return S_OK(list(filteredSites))
 
+  def _getTagsFromManifest(self, jobManifest):
+    """ helper method to add a list of tags to the TQ from the job manifest content
+    """
+
+    # Generate Tags from specific requirements
+    tagList = []
+
+    # sorting out the number of processors
+    nProcessors = 1
+    maxProcessors = 1
+
+    if "NumberOfProcessors" in jobManifest:  # this should be the exact number
+      nProcessors = jobManifest.getOption("NumberOfProcessors", 0)
+
+    else:  # is there a min? and in that case, is there a max?
+      if "MinNumberOfProcessors" in jobManifest:
+        nProcessors = jobManifest.getOption("MinNumberOfProcessors", 0)
+
+        if "MaxNumberOfProcessors" in jobManifest:
+          maxProcessors = jobManifest.getOption("MaxNumberOfProcessors", 0)
+        else:
+          maxProcessors = -1
+
+    if nProcessors > 1:
+      tagList.append("%dProcessors" % nProcessors)
+      tagList.append("MultiProcessor")
+    if maxProcessors == -1 or maxProcessors > 1:
+      tagList.append("MultiProcessor")
+
+    if "WholeNode" in jobManifest:
+      if jobManifest.getOption("WholeNode", "").lower() in ["1", "yes", "true", "y"]:
+        tagList.append("WholeNode")
+        tagList.append("MultiProcessor")
+
+    # sorting out the RAM (this should be probably coded ~same as number of processors)
+    if "MaxRAM" in jobManifest:
+      maxRAM = jobManifest.getOption("MaxRAM", 0)
+      if maxRAM:
+        tagList.append("%dGB" % maxRAM)
+
+    # other tags? Just add them
+    if "Tags" in jobManifest:
+      tagList.extend(jobManifest.getOption("Tags", []))
+    if "Tag" in jobManifest:
+      tagList.extend(jobManifest.getOption("Tag", []))
+
+    return tagList
+
   def __sendToTQ(self, jobState, jobManifest, sites, bannedSites, onlineSites=None):
     """This method sends jobs to the task queue agent and if candidate sites
        are defined, updates job JDL accordingly.
     """
 
-    # Generate Tags from specific requirements
-    tagList = []
-    if "MaxRAM" in jobManifest:
-      maxRAM = jobManifest.getOption("MaxRAM", 0)
-      if maxRAM:
-        tagList.append("%dGB" % maxRAM)
-    if "NumberOfProcessors" in jobManifest:
-      nProcessors = jobManifest.getOption("NumberOfProcessors", 0)
-      if nProcessors:
-        tagList.append("%dProcessors" % nProcessors)
-        tagList.append("MultiProcessor")
-    if "WholeNode" in jobManifest:
-      if jobManifest.getOption("WholeNode", "").lower() in ["1", "yes", "true"]:
-        tagList.append("WholeNode")
-        tagList.append("MultiProcessor")
-    if "Tags" in jobManifest:
-      tagList.extend(jobManifest.getOption("Tags", []))
-    if "Tag" in jobManifest:
-      tagList.extend(jobManifest.getOption("Tag", []))
+    tagList = self._getTagsFromManifest(jobManifest)
     if tagList:
-
       jobManifest.setOption("Tags", ", ".join(tagList))
 
     reqSection = "JobRequirements"
-
     if reqSection in jobManifest:
       result = jobManifest.getSection(reqSection)
     else:

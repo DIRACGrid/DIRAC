@@ -28,11 +28,11 @@ The environment checks can be tailored for specific needs of a particular commun
 For the users all the internal WMS/pilots machinery is completely hidden.
 They see all the DIRAC operated computing resources as single large batch system.
 
-The following picture shows a simplified view of how the system works
+The following video shows a simplified view of how the system works
 
-.. image:: WMS.png
-   :alt: WMS-Pilots.
-   :align: center
+.. raw:: html
+
+   <iframe width="560" height="315" src="https://www.youtube.com/embed/t7BAnbE4glA" frameborder="0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 
 
 The :ref:`computing resources <resourcesComputing>` that DIRAC can administer can be of different types.
@@ -50,6 +50,8 @@ You can find a presentation highlighting these concepts `here <https://indico.ce
 
 In case more than one type of resource is available, specifically VM-based resources,
 the pilots scheduling should happen with other means then SiteDirectors, as exemplified in the following picture:
+
+
 
 .. image:: WMS-Pilots2.png
    :alt: WMS-Pilots.

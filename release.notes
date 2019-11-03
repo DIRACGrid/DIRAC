@@ -55,6 +55,17 @@ FIX: (#4289) Exit quickly if the installation fails to make it easier to find is
 *docs
 NEW: (#4289) Document how to run integration tests in docker
 
+[v7r0p4]
+
+*Core
+FIX: (#4337) remove unexisting import from dirac-info
+
+*WMS
+CHANGE: (#4317) dealing with min and max number of processors from the job
+
+*docs
+CHANGE: (#4317) added WMS admin doc (job state machine)
+
 [v7r0p3]
 
 *Core
@@ -190,6 +201,29 @@ CHANGE: (#4110) updated basic tutorial for CC7 instead of SLC6.
 NEW: (#4170) added Production system documentation
 CHANGE: (#4224) Pilot 3 is the default
 NEW: (#4244) Added a few notes on using the JobParameters on ElasticSearch database
+
+[v6r22p14]
+
+*Framework
+FIX: (#4318) NotificationHandler: fix name of initializeHandler function so the 
+     handler is properly initialized and the periodicTasks are created
+CHANGE: (#4325) InstalledComponentsDB.addInstalledComponents: Instead of creating a new 
+        Host entry if only the CPU model changed, update the CPU field in the DBCHANGE: 
+        InstalledComponentsDB.addInstalledComponents: Instead of creating a new Host entry 
+        if only the CPU model changed, update the CPU field in the DB
+
+*WMS
+FIX: (#4329) Fix exception for PilotManager or PilotStatusAgent: itertems -> iteritems
+
+*DMS
+FIX: (#4327) avoid introducing inconsistencies in the DB due to the FTS inconsistencies
+
+*Resources
+CHANGE: (#4313) increase the SE logging level for plugin errors
+
+*TS
+CHANGE: (#4315) DataRecoveryAgent: Tweak information printout for email formatting; 
+        clarify use of default values; reduce logging verbosity
 
 [v6r22p13]
 

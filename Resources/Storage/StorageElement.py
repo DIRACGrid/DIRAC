@@ -1250,7 +1250,7 @@ class StorageElementItem(object):
 
         if not res['OK']:
           errStr = "Completely failed to perform %s." % self.methodName
-          log.debug(errStr, 'with plugin %s: %s' % (pluginName, res['Message']))
+          log.verbose(errStr, 'with plugin %s: %s' % (pluginName, res['Message']))
           for lfn in urlDict.values():
             if lfn not in failed:
               failed[lfn] = ''
@@ -1262,7 +1262,10 @@ class StorageElementItem(object):
               if lfn not in failed:
                 failed[lfn] = ''
               if url in res['Value']['Failed']:
-                self.log.debug(res['Value']['Failed'][url])
+                self.log.verbose(
+                    "Failure in plugin to perform %s" %
+                    self.methodName, "Plugin: %s lfn: %s error %s" %
+                    (pluginName, lfn, res['Value']['Failed'][url]))
                 failed[lfn] = "%s %s" % (failed[lfn], res['Value']['Failed'][url]
                                          ) if failed[lfn] else res['Value']['Failed'][url]
               else:

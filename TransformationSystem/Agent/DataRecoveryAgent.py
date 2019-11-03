@@ -46,6 +46,11 @@ Requirements/Assumptions:
   :dedent: 2
   :caption: DataRecoveryAgent options
 
+.. note::
+
+  For the ``TransformationsNoInput`` or ``TransformationsWithInput`` to take their default value, the options need to be
+  removed from the configuration, otherwise no transformations of this type will be treated.
+
 """
 
 from collections import defaultdict
@@ -283,8 +288,8 @@ class DataRecoveryAgent(AgentModule):
     self.transNoInput = self.am_getOption('TransformationsNoInput', list(extendableTTypes))
     self.transWithInput = self.am_getOption('TransformationsWithInput', list(dataProcessing - extendableTTypes))
     self.transformationTypes = self.transWithInput + self.transNoInput
-    self.log.verbose('Will treat transformations without input files', self.transNoInput)
-    self.log.verbose('Will treat transformations with input files', self.transWithInput)
+    self.log.notice('Will treat transformations without input files', self.transNoInput)
+    self.log.notice('Will treat transformations with input files', self.transWithInput)
     self.addressTo = self.am_getOption('MailTo', [])
     self.addressFrom = self.am_getOption('MailFrom', '')
     self.printEveryNJobs = self.am_getOption('PrintEvery', 200)
@@ -518,9 +523,11 @@ class DataRecoveryAgent(AgentModule):
     :param int transID: ID of given transformation
     :param transInfoDict:
     """
-    if not self.addressTo or not self.addressFrom:
+    if not self.addressTo or not self.addressFrom or not self.notesToSend:
       return
-    if not (self.notesToSend and self.__notOnlyKeepers(transInfoDict['Type'])):
+    if not self.__notOnlyKeepers(transInfoDict['Type']):
+      # purge notes
+      self.notesToSend = ""
       return
 
     # remove from the jobCache because something happened
