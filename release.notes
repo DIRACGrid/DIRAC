@@ -1,3 +1,14 @@
+[v7r0p4]
+
+*Core
+FIX: (#4337) remove unexisting import from dirac-info
+
+*WMS
+CHANGE: (#4317) dealing with min and max number of processors from the job
+
+*docs
+CHANGE: (#4317) added WMS admin doc (job state machine)
+
 [v7r0p3]
 
 *Core
