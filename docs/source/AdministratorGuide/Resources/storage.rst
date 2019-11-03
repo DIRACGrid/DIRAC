@@ -219,6 +219,18 @@ Default plugin options:
 * `Access`: `Remote` or `Local`. If `Local`, then this protocol can be used only if we are running at the site to which the SE is associated. Typically, if a site mounts the storage as NFS, the `file` protocol can be used.
 
 
+GRIDFTP Optimisation
+^^^^^^^^^^^^^^^^^^^^
+
+For efficiency reasons the environment variable ``DIRAC_GFAL_GRIDFTP_SESSION_REUSE`` should be exported in the server
+``bashrc`` files::
+
+  export DIRAC_GFAL_GRIDFTP_SESSION_REUSE=True
+
+This enables the session reuse for the GRIDFTP plugin. This cannot be enabled generally because it can lead to denial
+of service like attacks when thousands of jobs keep their connections to an SE alive for too long.
+
+
 Space occupancy
 ---------------
 

@@ -1,3 +1,5 @@
+.. _multi_vo_dirac:
+
 ==============
 Multi-VO DIRAC
 ==============
