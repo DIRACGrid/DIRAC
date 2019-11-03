@@ -556,9 +556,9 @@ class TestJI(unittest.TestCase):
 
   @parameterized.expand([
       param(['123: Failed MCReconstruction Transformation: 1234 -- 5678 ', 'inputFile (True, Assigned, Errors 0'], []),
-      param(['123: Failed MCReconstruction Transformation: 1234 -- 5678  (Last task 1)'], [], otherTasks=True),
+      param(['123: Failed MCReconstruction Transformation: 1234 -- 5678  (Last task [7777])'], [], otherTasks=[7777]),
       param([], ['MCReconstruction Transformation'], trID=0, taID=0),
-      param([], ['(Last task'], otherTasks=False),
+      param([], ['(Last task'], otherTasks=[]),
       param(['PENDING REQUEST IGNORE THIS JOB'], [], pendingRequest=True, ),
       param(['No Pending Requests'], [], pendingRequest=False,),
   ])
