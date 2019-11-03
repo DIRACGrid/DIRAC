@@ -35,10 +35,12 @@ class UserJobTestCase(IntegrationTest):
       self.exeScriptLocation = find_all('exe-script.py', rootPath, integration_test_dir)[0]
       self.helloWorld = find_all("helloWorld.py", rootPath, integration_test_dir)[0]
       self.mpExe = find_all('mpTest.py', rootPath, '/DIRAC/tests/Utilities')[0]
+      self.mpExeFlex = find_all('mpTest-flexible.py', rootPath, '/DIRAC/tests/Utilities')[0]
     except IndexError:  # we are in Jenkins
       self.exeScriptLocation = find_all('exe-script.py', os.environ['WORKSPACE'], integration_test_dir)[0]
       self.helloWorld = find_all("helloWorld.py", os.environ['WORKSPACE'], integration_test_dir)[0]
       self.mpExe = find_all('mpTest.py', os.environ['WORKSPACE'], '/DIRAC/tests/Utilities')[0]
+      self.mpExeFlex = find_all('mpTest-flexible.py', os.environ['WORKSPACE'], '/DIRAC/tests/Utilities')[0]
 
     gLogger.setLevel('DEBUG')
 
@@ -51,6 +53,12 @@ class HelloWorldSuccess(UserJobTestCase):
     j.setName("helloWorld-test")
     j.setExecutable(self.exeScriptLocation)
     j.setLogLevel('DEBUG')
+    try:
+      # This is the standard location in Jenkins
+      j.setInputSandbox(find_all('pilot.cfg', os.environ['WORKSPACE'] + '/PilotInstallDIR')[0])
+    except (IndexError, KeyError):
+      j.setInputSandbox(find_all('pilot.cfg', rootPath)[0])
+    j.setConfigArgs('pilot.cfg')
     res = j.runLocal(self.d)
     self.assertTrue(res['OK'])
 
@@ -82,6 +90,12 @@ class HelloWorldPlusSuccess(UserJobTestCase):
     job.setDestination('DIRAC.someSite.ch')
     job.setCPUTime(12345)
     job.setLogLevel('DEBUG')
+    try:
+      # This is the standard location in Jenkins
+      job.setInputSandbox(find_all('pilot.cfg', os.environ['WORKSPACE'] + '/PilotInstallDIR')[0])
+    except (IndexError, KeyError):
+      job.setInputSandbox(find_all('pilot.cfg', rootPath)[0])
+    job.setConfigArgs('pilot.cfg')
 
     res = job.runLocal(self.d)
     self.assertTrue(res['OK'])
@@ -108,6 +122,12 @@ class HelloWorldPlusSuccess(UserJobTestCase):
     job.setDestination('DIRAC.someSite.ch')
     job.setCPUTime(12345)
     job.setLogLevel('DEBUG')
+    try:
+      # This is the standard location in Jenkins
+      job.setInputSandbox(find_all('pilot.cfg', os.environ['WORKSPACE'] + '/PilotInstallDIR')[0])
+    except (IndexError, KeyError):
+      job.setInputSandbox(find_all('pilot.cfg', rootPath)[0])
+    job.setConfigArgs('pilot.cfg')
 
     res = job.runLocal(self.d)
     self.assertTrue(res['OK'])
@@ -123,13 +143,20 @@ class LSSuccess(UserJobTestCase):
     job.setName("ls-test")
     job.setExecutable("/bin/ls", '-l')
     job.setLogLevel('DEBUG')
+    try:
+      # This is the standard location in Jenkins
+      job.setInputSandbox(find_all('pilot.cfg', os.environ['WORKSPACE'] + '/PilotInstallDIR')[0])
+    except (IndexError, KeyError):
+      job.setInputSandbox(find_all('pilot.cfg', rootPath)[0])
+    job.setConfigArgs('pilot.cfg')
     res = job.runLocal(self.d)
     self.assertTrue(res['OK'])
 
 
 class MPSuccess(UserJobTestCase):
-  def test_execute(self):
-    """ this one tests that I can execute a job that requires multi-processing
+
+  def test_fixed(self):
+    """ this tests executes a job that requires exactly 4 processors
     """
 
     j = Job()
@@ -137,13 +164,85 @@ class MPSuccess(UserJobTestCase):
     j.setName("MP-test")
     j.setExecutable(self.mpExe)
     j.setInputSandbox(find_all('mpTest.py', rootPath, 'DIRAC/tests/Utilities')[0])
-    j.setNumberOfProcessors(4)
+    j.setNumberOfProcessors(4)  # This requires a fixed number of processors
     j.setLogLevel('DEBUG')
+    try:
+      # This is the standard location in Jenkins
+      j.setInputSandbox(find_all('pilot.cfg', os.environ['WORKSPACE'] + '/PilotInstallDIR')[0])
+    except (IndexError, KeyError):
+      j.setInputSandbox(find_all('pilot.cfg', rootPath)[0])
+    j.setConfigArgs('pilot.cfg')
     res = j.runLocal(self.d)
     if multiprocessing.cpu_count() > 1:
       self.assertTrue(res['OK'])
     else:
       self.assertFalse(res['OK'])
+
+
+class MPSuccessMinMax(UserJobTestCase):
+
+  def test_min2(self):
+    """ this tests executes a job that requires at least 2 processors
+    """
+
+    j = Job()
+
+    j.setName("MP-test-min2")
+
+    # FIXME: the number of processors should be discovered at runtime using JobParameters.getNumberOfJobProcessors()
+    # here, and later
+    j.setExecutable(self.mpExeFlex, arguments='2')
+    j.setInputSandbox(find_all('mpTest-flexible.py', rootPath, 'DIRAC/tests/Utilities')[0])
+    j.setNumberOfProcessors(minNumberOfProcessors=2)  # This requires at least 2 processors
+    j.setLogLevel('DEBUG')
+    try:
+      # This is the standard location in Jenkins
+      j.setInputSandbox(find_all('pilot.cfg', os.environ['WORKSPACE'] + '/PilotInstallDIR')[0])
+    except (IndexError, KeyError):
+      j.setInputSandbox(find_all('pilot.cfg', rootPath)[0])
+    j.setConfigArgs('pilot.cfg')
+    res = j.runLocal(self.d)
+    self.assertTrue(res['OK'])
+
+  def test_min2max4(self):
+    """ this tests executes a job that requires 2 to 4 processors
+    """
+
+    j = Job()
+
+    j.setName("MP-test-min2max4")
+    j.setExecutable(self.mpExeFlex, arguments='2')
+    j.setInputSandbox(find_all('mpTest-flexible.py', rootPath, 'DIRAC/tests/Utilities')[0])
+    j.setNumberOfProcessors(minNumberOfProcessors=2)  # This requires 2 to 4 processors
+    j.setLogLevel('DEBUG')
+    try:
+      # This is the standard location in Jenkins
+      j.setInputSandbox(find_all('pilot.cfg', os.environ['WORKSPACE'] + '/PilotInstallDIR')[0])
+    except (IndexError, KeyError):
+      j.setInputSandbox(find_all('pilot.cfg', rootPath)[0])
+    j.setConfigArgs('pilot.cfg')
+    res = j.runLocal(self.d)
+    self.assertTrue(res['OK'])
+
+  def test_min1(self):
+    """ this tests executes a job that requires at least 1 processor
+    """
+
+    j = Job()
+
+    j.setName("MP-test-min1")
+    j.setExecutable(self.mpExeFlex, arguments='2')
+    j.setInputSandbox(find_all('mpTest-flexible.py', rootPath, 'DIRAC/tests/Utilities')[0])
+    j.setNumberOfProcessors(minNumberOfProcessors=1)  # This requires 1 to infinite processors
+    j.setLogLevel('DEBUG')
+    try:
+      # This is the standard location in Jenkins
+      j.setInputSandbox(find_all('pilot.cfg', os.environ['WORKSPACE'] + '/PilotInstallDIR')[0])
+    except (IndexError, KeyError):
+      j.setInputSandbox(find_all('pilot.cfg', rootPath)[0])
+    j.setConfigArgs('pilot.cfg')
+    res = j.runLocal(self.d)
+    self.assertTrue(res['OK'])
 
 
 if __name__ == '__main__':
@@ -152,5 +251,6 @@ if __name__ == '__main__':
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(HelloWorldPlusSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(LSSuccess))
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(MPSuccess))
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(MPSuccessMinMax))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
   sys.exit(not testResult.wasSuccessful())
