@@ -523,9 +523,11 @@ class DataRecoveryAgent(AgentModule):
     :param int transID: ID of given transformation
     :param transInfoDict:
     """
-    if not self.addressTo or not self.addressFrom:
+    if not self.addressTo or not self.addressFrom or not self.notesToSend:
       return
-    if not (self.notesToSend and self.__notOnlyKeepers(transInfoDict['Type'])):
+    if not self.__notOnlyKeepers(transInfoDict['Type']):
+      # purge notes
+      self.notesToSend = ""
       return
 
     # remove from the jobCache because something happened
