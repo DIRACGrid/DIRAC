@@ -45,11 +45,13 @@ from DIRAC.Core.Utilities.PrettyPrint import printTable, printDict
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.Core.Utilities.ModuleFactory import ModuleFactory
+from Core.Utilities.Decorators import deprecated
 from DIRAC.Core.Security import Locations
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemSection, getServiceURL
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.LocalConfiguration import LocalConfiguration
 from DIRAC.Interfaces.API.JobRepository import JobRepository
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
@@ -591,6 +593,7 @@ class Dirac(API):
 
   #############################################################################
   @staticmethod
+  @deprecated("It will be removed in v7r2. Use Operations sections only!")
   def __getVOPolicyModule(module):
     """ Utility to get the VO Policy module name
     """
@@ -649,9 +652,9 @@ class Dirac(API):
 
     self.log.verbose(localSEList)
 
-    inputDataPolicy = self.__getVOPolicyModule('InputDataModule')
+    inputDataPolicy = Operations().getValue('InputDataPolicy/InputDataModule')
     if not inputDataPolicy:
-      return self._errorReport('Could not retrieve DIRAC/VOPolicy/InputDataModule for VO')
+      return self._errorReport('Could not retrieve /DIRAC/Operations/InputDataPolicy/InputDataModule for VO')
 
     self.log.info('Attempting to resolve data for %s' % siteName)
     self.log.verbose('%s' % ('\n'.join(lfns)))
@@ -764,9 +767,9 @@ class Dirac(API):
         return self._errorReport('LocalSite/LocalSE should be defined in your config file')
       localSEList = localSEList.replace(' ', '').split(',')
       self.log.debug("List of local SEs: %s" % localSEList)
-      inputDataPolicy = self.__getVOPolicyModule('InputDataModule')
+      inputDataPolicy = Operations().getValue('InputDataPolicy/InputDataModule')
       if not inputDataPolicy:
-        return self._errorReport('Could not retrieve DIRAC/VOPolicy/InputDataModule for VO')
+        return self._errorReport('Could not retrieve DIRAC/Operations/InputDataPolicy/InputDataModule for VO')
 
       self.log.info('Job has input data requirement, will attempt to resolve data for %s' % DIRAC.siteName())
       self.log.verbose('\n'.join(inputData if isinstance(inputData, (list, tuple)) else [inputData]))
