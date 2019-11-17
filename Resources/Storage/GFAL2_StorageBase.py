@@ -5,6 +5,12 @@
     .. module: python
 
     :synopsis: GFAL2 class from StorageElement using gfal2. Other modules can inherit from this use the gfal2 methods.
+
+Environment Variables
+---------------------
+
+DIRAC_GFAL_GRIDFTP_SESSION_REUSE: This should be exported and set to true in server bashrc files for efficiency reasons.
+
 """
 
 # pylint: disable=arguments-differ
@@ -74,6 +80,10 @@ class GFAL2_StorageBase(StorageBase):
 
     # by default turn off BDII checks
     self.ctx.set_opt_boolean("BDII", "ENABLE", False)
+
+    # session reuse should only be done on servers
+    self.ctx.set_opt_boolean("GRIDFTP PLUGIN", "SESSION_REUSE",
+                             os.environ.get("DIRAC_GFAL_GRIDFTP_SESSION_REUSE", "no").lower() in ["true", "yes"])
 
     # Enable IPV6 for gsiftp
     self.ctx.set_opt_boolean("GRIDFTP PLUGIN", "IPV6", True)
