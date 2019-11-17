@@ -55,6 +55,10 @@ FIX: (#4289) Exit quickly if the installation fails to make it easier to find is
 *docs
 NEW: (#4289) Document how to run integration tests in docker
 
+[v7r0p5]
+
+FIX: changes from v6r22p15 included
+
 [v7r0p4]
 
 *Core
@@ -201,6 +205,13 @@ CHANGE: (#4110) updated basic tutorial for CC7 instead of SLC6.
 NEW: (#4170) added Production system documentation
 CHANGE: (#4224) Pilot 3 is the default
 NEW: (#4244) Added a few notes on using the JobParameters on ElasticSearch database
+
+[v6r22p15]
+
+*Resources
+NEW: GFAL2_StorageBase: Disable GRIDFTP SESSION_REUSE by default. It can be enabled via 
+     an environment variable export DIRAC_GFAL_GRIDFTP_SESSION_REUSE=True. This export 
+     should be added in server bashrc files.
 
 [v6r22p14]
 
