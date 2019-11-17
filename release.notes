@@ -1,3 +1,10 @@
+[v6r22p15]
+
+*Resources
+NEW: GFAL2_StorageBase: Disable GRIDFTP SESSION_REUSE by default. It can be enabled via 
+     an environment variable export DIRAC_GFAL_GRIDFTP_SESSION_REUSE=True. This export 
+     should be added in server bashrc files.
+
 [v6r22p14]
 
 *Framework
