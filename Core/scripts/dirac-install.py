@@ -200,7 +200,6 @@ class Params(object):
     self.tag = ""
     self.modules = {}
     self.externalVersion = ""
-    self.cleanPYTHONPATH = False
     self.createLink = False
     self.scriptSymlink = False
 
@@ -1073,11 +1072,9 @@ class ReleaseConfig(object):
       Web = git://github.com/DIRACGrid/DIRACWeb.git
       VMDIRAC = git://github.com/DIRACGrid/VMDIRAC.git
       DIRAC = git://github.com/DIRACGrid/DIRAC.git
-      MPIDIRAC = git://github.com/DIRACGrid/MPIDIRAC.git
       BoincDIRAC = git://github.com/DIRACGrid/BoincDIRAC.git
       RESTDIRAC = git://github.com/DIRACGrid/RESTDIRAC.git
       COMDIRAC = git://github.com/DIRACGrid/COMDIRAC.git
-      FSDIRAC = git://github.com/DIRACGrid/FSDIRAC.git
       WebAppDIRAC = git://github.com/DIRACGrid/WebAppDIRAC.git
     }
 
@@ -1680,7 +1677,6 @@ cmdOpts = (('r:', 'release=', 'Release version to install'),
             'Module to be installed. for example: -m DIRAC or -m git://github.com/DIRACGrid/DIRAC.git:DIRAC'),
            ('s:', 'source=', 'location of the modules to be installed'),
            ('x:', 'external=', 'external version'),
-           ('  ', 'cleanPYTHONPATH', 'Only use the DIRAC PYTHONPATH (for pilots installation)'),
            ('  ', 'createLink', 'create version symbolic link from the versions directory. This is equivalent to the \
            following command: ln -s /opt/dirac/versions/vArBpC vArBpC'),
            ('  ', 'scriptSymlink', 'Symlink the scripts instead of creating wrapper')
@@ -1825,8 +1821,6 @@ def loadConfiguration():
       cliParams.modules = discoverModules(v)
     elif o in ('-x', '--external'):
       cliParams.externalVersion = v
-    elif o == '--cleanPYTHONPATH':
-      cliParams.cleanPYTHONPATH = True
     elif o == '--createLink':
       cliParams.createLink = True
     elif o == '--scriptSymlink':
@@ -2131,10 +2125,7 @@ def createBashrc():
                     '( echo $DYLD_LIBRARY_PATH | grep -q $DIRACLIB/mysql ) || \
                     export DYLD_LIBRARY_PATH=$DIRACLIB/mysql:$DYLD_LIBRARY_PATH'])
 
-      if cliParams.cleanPYTHONPATH:
-        lines.extend(['export PYTHONPATH=$DIRAC'])
-      else:
-        lines.extend(['( echo $PYTHONPATH | grep -q $DIRAC ) || export PYTHONPATH=$DIRAC:$PYTHONPATH'])
+      lines.extend(['export PYTHONPATH=$DIRAC'])
 
       lines.extend(['# new OpenSSL version require OPENSSL_CONF to point to some accessible location',
                     'export OPENSSL_CONF=/tmp'])
@@ -2233,10 +2224,7 @@ def createCshrc():
                     '( echo $DYLD_LIBRARY_PATH | grep -q $DIRACLIB/mysql ) || \
                     setenv DYLD_LIBRARY_PATH ${DIRACLIB}/mysql:$DYLD_LIBRARY_PATH'])
 
-      if cliParams.cleanPYTHONPATH:
-        lines.extend(['setenv PYTHONPATH ${DIRAC}'])
-      else:
-        lines.extend(['( echo $PYTHONPATH | grep -q $DIRAC ) || setenv PYTHONPATH ${DIRAC}:$PYTHONPATH'])
+      lines.extend(['setenv PYTHONPATH ${DIRAC}'])
 
       lines.extend(['# new OpenSSL version require OPENSSL_CONF to point to some accessible location',
                     'setenv OPENSSL_CONF /tmp'])
@@ -2417,10 +2405,7 @@ def createBashrcForDiracOS():
 
       lines.extend(['( echo $PATH | grep -q $DIRACSCRIPTS ) || export PATH=$DIRACSCRIPTS:$PATH'])
 
-      if cliParams.cleanPYTHONPATH:
-        lines.extend(['export PYTHONPATH=$DIRAC'])
-      else:
-        lines.extend(['( echo $PYTHONPATH | grep -q $DIRAC ) || export PYTHONPATH=$DIRAC:$PYTHONPATH'])
+      lines.extend(['export PYTHONPATH=$DIRAC'])
 
       lines.extend(['# new OpenSSL version require OPENSSL_CONF to point to some accessible location',
                     'export OPENSSL_CONF=/tmp'])
