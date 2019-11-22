@@ -1,15 +1,15 @@
 """ :mod: GFAL2_StorageBase
 
-    =================
+.. module: python
 
-    .. module: python
+:synopsis: GFAL2 class from StorageElement using gfal2. Other modules can inherit from this use the gfal2 methods.
 
-    :synopsis: GFAL2 class from StorageElement using gfal2. Other modules can inherit from this use the gfal2 methods.
 
-Environment Variables
----------------------
 
-DIRAC_GFAL_GRIDFTP_SESSION_REUSE: This should be exported and set to true in server bashrc files for efficiency reasons.
+Environment Variables:
+
+DIRAC_GFAL_GRIDFTP_SESSION_REUSE: This should be exported
+  and set to true in server bashrc files for efficiency reasons.
 
 """
 
