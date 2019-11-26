@@ -12,9 +12,15 @@ import os
 import time
 import threading
 
-import DIRAC
-from concurrent.futures import ThreadPoolExecutor
+# TODO: Remove ThreadPool later 
+useThreadPoolExecutor = False
+if os.getenv('DIRAC_USE_NEWTHREADPOOL', 'NO').lower() in ('yes', 'true'):
+  from concurrent.futures import ThreadPoolExecutor
+  useThreadPoolExecutor = True
+else:
+  from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 
+import DIRAC
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.DErrno import ENOAUTH
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
@@ -74,16 +80,10 @@ class Service(object):
     self.__cloneId = 0
     self.__maxFD = 0
 
-  def initMonitoring(self, worker):
-    print 'initMonitoring', worker
-    return
-    if worker not in self._monitoringProcesses:
-      self._monitoringProcesses[worker] = MonitoringClient()
-    self._initMonitoring(self._monitoringProcesses[worker])
-
   def setCloneProcessId(self, cloneId):
     self.__cloneId = cloneId
-    self._monitor.setComponentName("%s-Clone:%s" % (self._name, cloneId))
+    if not self.activityMonitoring:
+      self._monitor.setComponentName("%s-Clone:%s" % (self._name, cloneId))
 
   def _isMetaAction(self, action):
     referedAction = Service.SVC_VALID_ACTIONS[action]
@@ -104,7 +104,14 @@ class Service(object):
     self._handler = result['Value']
     # Initialize lock manager
     self._lockManager = LockManager(self._cfg.getMaxWaitingPetitions())
-    self._threadPool = ThreadPoolExecutor(max(0, self._cfg.getMaxThreads()))
+    # TODO: remove ThreadPool
+    if useThreadPoolExecutor:
+      self._threadPool = ThreadPoolExecutor(max(0, self._cfg.getMaxThreads()))
+    else:
+      self._threadPool = ThreadPool(max(1, self._cfg.getMinThreads()),
+                                    max(0, self._cfg.getMaxThreads()),
+                                    self._cfg.getMaxWaitingPetitions())
+      self._threadPool.daemonize()
     self._msgBroker = MessageBroker("%sMSB" % self._name, threadPool=self._threadPool)
     # Create static dict
     self._serviceInfoDict = {'serviceName': self._name,
@@ -314,6 +321,14 @@ class Service(object):
     return S_OK()
 
   def __reportThreadPoolContents(self):
+    # TODO: remove later 
+    if useThreadPoolExecutor:
+      pendingQueries = self._threadPool._work_queue.qsize()
+      activeQuereies = len(self._threadPool._threads)
+    else:
+      pendingQueries = self._threadPool.pendingJobs()
+      activeQuereies = self._threadPool.numWorkingThreads()
+
     if self.activityMonitoring:
       # As ES accepts raw data these monitoring fields are being sent here because they are time dependant.
       self.activityMonitoringReporter.addRecord({
@@ -322,15 +337,15 @@ class Service(object):
           'componentType': 'service',
           'component': "_".join(self._name.split("/")),
           'componentLocation': self._cfg.getURL(),
-          'PendingQueries': self._threadPool.pendingJobs(),
-          'ActiveQueries': self._threadPool.numWorkingThreads(),
+          'PendingQueries': pendingQueries,
+          'ActiveQueries': activeQuereies,
           'RunningThreads': threading.activeCount(),
           'MaxFD': self.__maxFD,
       })
     else:
-      self._monitor.addMark('PendingQueries', self._threadPool._work_queue.qsize())
+      self._monitor.addMark('PendingQueries', pendingQueries)
       self._monitor.addMark('ActiveQueries', len(self._threadPool._threads))
-      self._monitor.addMark('RunningThreads', threading.activeCount())
+      self._monitor.addMark('RunningThreads', activeQuereies)
       self._monitor.addMark('MaxFD', self.__maxFD)
     self.__maxFD = 0
 
@@ -360,7 +375,12 @@ class Service(object):
       })
     else:
       self._monitor.setComponentExtraParam('queries', self._stats['connections'])
-    self._threadPool.submit(self._processInThread, clientTransport)
+    # TODO: remove later
+    if useThreadPoolExecutor:
+      self._threadPool.submit(self._processInThread, clientTransport)
+    else:
+      self._threadPool.generateJobAndQueueIt(self._processInThread,
+                                             args=(clientTransport,))
 
   # Threaded process function
   def _processInThread(self, clientTransport):
