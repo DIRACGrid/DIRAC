@@ -191,7 +191,7 @@ class PublisherHandler(RequestHandler):
       return res
     ses = res['Value'][1].get(site, [])
 
-    sesStatus = rsClient.selectStatusElement('Resource', 'Status', name=ses,
+    sesStatus = rsClient.selectStatusElement('Resource', 'Status', name=list(ses),
                                              meta={'columns': ['Name', 'StatusType', 'Status']})
     if not sesStatus['OK']:
       return sesStatus
