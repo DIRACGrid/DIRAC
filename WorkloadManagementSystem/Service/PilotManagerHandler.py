@@ -144,7 +144,10 @@ class PilotManagerHandler(RequestHandler):
     owner = pilotDict['OwnerDN']
     group = pilotDict['OwnerGroup']
     gridType = pilotDict['GridType']
+    pilotStamp = pilotDict['PilotStamp']
 
+    # Add the pilotStamp to the pilot Reference, some CEs may need it to retrieve the logging info
+    pilotReference = pilotReference + ':::' + pilotStamp
     return getPilotLoggingInfo(gridType, pilotReference,  # pylint: disable=unexpected-keyword-arg
                                proxyUserDN=owner, proxyUserGroup=group)
 

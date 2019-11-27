@@ -43,6 +43,8 @@ from DIRAC.Core.Utilities.Subprocess import Subprocess
 
 from DIRAC.Resources.Computing.BatchSystems.Condor import parseCondorStatus, treatCondorHistory
 
+from DIRAC.Core.Utilities.Decorators import deprecated
+
 __RCSID__ = "$Id$"
 
 CE_NAME = 'HTCondorCE'
@@ -51,15 +53,61 @@ DEFAULT_WORKINGDIRECTORY = '/opt/dirac/pro/runit/WorkloadManagement/SiteDirector
 DEFAULT_DAYSTOKEEPLOGS = 15
 
 
+@deprecated("Please use condorIDAndPathToResultFromJobRef")
 def condorIDFromJobRef(jobRef):
-  """return tuple of "jobURL" and condorID from the jobRef string"""
-  jobURL = jobRef.split(":::")[0]
-  condorID = jobURL.split("/")[-1]
+  """
+  Extract tuple of jobURL and jobID from the jobRef string.
+
+  :params jobRef: PilotJobReference of the following form: htcondorce://<ceName>/<pathToResult>-<condorID>
+  :type jobRef: string
+
+  :return: tuple composed of the jobURL and the condorID of the given jobRef
+  """
+  jobURL, _, condorID = condorIDAndPathToResultFromJobRef(jobRef)
   return jobURL, condorID
 
+def condorIDAndPathToResultFromJobRef(jobRef):
+  """
+  Extract tuple of jobURL and jobID from the jobRef string.
+  The condorID as well as the path leading to the job results are also extracted from the jobID.
 
-def findFile(workingDir, fileName):
-  """ find a pilot out, err, log file """
+  :params jobRef: PilotJobReference of the following form: htcondorce://<ceName>/<condorID>:::<pilotStamp>
+  :type jobRef: string
+
+  :return: tuple composed of the jobURL, the path to the job results and the condorID of the given jobRef
+  """
+  jobURL, stamp = jobRef.split(":::")
+  _, _, ceName, condorID = jobURL.split("/")
+
+  # Reconstruct the path leading to the result (log, output)
+  # Construction of the path can be found in submitJob()
+  pathToResult = ceName + '/' + stamp[0] + '/' + stamp[1:3]
+
+  return jobURL, pathToResult, condorID
+
+def findFile(workingDir, fileName, pathToResult=None):
+  """
+  Find a file in a file system.
+
+  :params workingDir: the name of the directory containing the given file to search for
+  :type workingDir: string
+  :params fileName: the name of the file to find
+  :type fileName: string
+  :params pathToResult: the path to follow from workingDir to find the file
+  :type pathToResult: string
+
+  :return: list of paths leading to the file
+  """
+
+  # In the case pathToResult is defined, we just have to check the path exists
+  if pathToResult:
+    path = os.path.join(workingDir, pathToResult, fileName)
+    if os.path.exists(path):
+      # We put the path in a list to be consistent
+      return S_OK([path])
+
+  # In the case pathToResult is not defined or not correct
+  # We have to search for the file in workingDir and can get multiple results
   res = Subprocess().systemCall("find %s -name '%s'" % (workingDir, fileName), shell=True)
   if not res['OK']:
     return res
@@ -68,16 +116,17 @@ def findFile(workingDir, fileName):
     return S_ERROR(errno.ENOENT, "Could not find %s in directory %s" % (fileName, workingDir))
   return S_OK(paths)
 
-
 def getCondorLogFile(pilotRef):
-  """return the location of the logFile belonging to the pilot reference"""
-  _jobUrl, condorID = condorIDFromJobRef(pilotRef)
+  """ Return the location of the logFile belonging to the pilot reference.
+  """
+  _jobUrl, pathToResult, condorID = condorIDAndPathToResultFromJobRef(pilotRef)
   # FIXME: This gets called from the WMSAdministrator, so we don't have the same
   # working directory as for the SiteDirector unless we force it, there is also
   # no CE instantiated when this function is called so we can only pick this option up from one place
   workingDirectory = gConfig.getValue("Resources/Computing/HTCondorCE/WorkingDirectory",
                                       DEFAULT_WORKINGDIRECTORY)
-  resLog = findFile(workingDirectory, '%s.log' % condorID)
+
+  resLog = findFile(workingDirectory, '%s.log' % condorID, pathToResult)
   return resLog
 
 
@@ -109,18 +158,21 @@ class HTCondorCEComputingElement(ComputingElement):
     self.remoteScheddOptions = ""
 
   #############################################################################
-  def __writeSub(self, executable, nJobs):
-    """ Create the Sub File for submission
+  def __writeSub(self, executable, nJobs, location):
+    """ Create the Sub File for submission.
+
+    :params executable: name of the script to execute
+    :type executable: string
+    :params nJobs: number of desired jobs
+    :type nJobs: int
+    :params location: directory that should contain the result of the jobs
+    :type location: string
     """
 
     self.log.debug("Working directory: %s " % self.workingDirectory)
-    # We randomize the location of the pilotoutput and log, because there are just too many of them
-    pre1 = makeGuid()[:3]
-    pre2 = makeGuid()[:3]
-    mkDir(os.path.join(self.workingDirectory, pre1, pre2))
-    initialDirPrefix = "%s/%s" % (pre1, pre2)
+    mkDir(os.path.join(self.workingDirectory, location))
 
-    self.log.debug("InitialDir: %s" % os.path.join(self.workingDirectory, initialDirPrefix))
+    self.log.debug("InitialDir: %s" % os.path.join(self.workingDirectory, location))
 
     self.log.debug("ExtraSubmitString:\n### \n %s \n###" % self.extraSubmitString)
 
@@ -160,7 +212,7 @@ Queue %(nJobs)s
            nJobs=nJobs,
            ceName=self.ceName,
            extraString=self.extraSubmitString,
-           initialDir=os.path.join(self.workingDirectory, initialDirPrefix),
+           initialDir=os.path.join(self.workingDirectory, location),
            localScheddOptions=localScheddOptions,
            targetUniverse=targetUniverse,
            )
@@ -193,11 +245,19 @@ Queue %(nJobs)s
     if not os.access(executableFile, 5):
       os.chmod(executableFile, 0o755)
 
-    subName = self.__writeSub(executableFile, numberOfJobs)
-
+    # The submitted pilots are going to have a common part of the stamp to construct a path to retrieve results
+    # Then they also have an individual part to make them unique
     jobStamps = []
+    commonJobStampPart = makeGuid()[:3]
     for _i in range(numberOfJobs):
-      jobStamps.append(makeGuid()[:8])
+      jobStamp = commonJobStampPart + makeGuid()[:5]
+      jobStamps.append(jobStamp)
+
+    # We randomize the location of the pilotoutput and log, because there are just too many of them
+    directory1 = commonJobStampPart[0]
+    directory2 = commonJobStampPart[1:3]
+    location = "%s/%s/%s" % (self.ceName, directory1, directory2)
+    subName = self.__writeSub(executableFile, numberOfJobs, location)
 
     cmd = ['condor_submit', '-terse', subName]
     # the options for submit to remote are different than the other remoteScheddOptions
@@ -239,7 +299,7 @@ Queue %(nJobs)s
     self.log.verbose("KillJob jobIDList: %s" % jobIDList)
 
     for jobRef in jobIDList:
-      job, jobID = condorIDFromJobRef(jobRef)
+      job, _, jobID = condorIDAndPathToResultFromJobRef(jobRef)
       self.log.verbose("Killing pilot %s " % job)
       status, stdout = commands.getstatusoutput('condor_rm %s %s' % (self.remoteScheddOptions, jobID))
       if status != 0:
@@ -289,7 +349,7 @@ Queue %(nJobs)s
     condorIDs = {}
     # Get all condorIDs so we can just call condor_q and condor_history once
     for jobRef in jobIDList:
-      job, jobID = condorIDFromJobRef(jobRef)
+      job, _, jobID = condorIDAndPathToResultFromJobRef(jobRef)
       condorIDs[job] = jobID
 
     qList = []
@@ -330,7 +390,7 @@ Queue %(nJobs)s
     submission, so we just need to pick it up from the proper folder
     """
     self.log.verbose("Getting job output for jobID: %s " % jobID)
-    _job, condorID = condorIDFromJobRef(jobID)
+    _job, pathToResult, condorID = condorIDAndPathToResultFromJobRef(jobID)
     # FIXME: the WMSAdministrator does not know about the
     # SiteDirector WorkingDirectory, it might not even run on the
     # same machine
@@ -361,13 +421,14 @@ Queue %(nJobs)s
 
     output = ''
     error = ''
-    resOut = findFile(self.workingDirectory, '%s.out' % condorID)
+
+    resOut = findFile(self.workingDirectory, '%s.out' % condorID, pathToResult)
     if not resOut['OK']:
       self.log.error("Failed to find output file for condor job", jobID)
       return resOut
     outputfilename = resOut['Value'][0]
 
-    resErr = findFile(self.workingDirectory, '%s.err' % condorID)
+    resErr = findFile(self.workingDirectory, '%s.err' % condorID, pathToResult)
     if not resErr['OK']:
       self.log.error("Failed to find error file for condor job", jobID)
       return resErr
@@ -389,8 +450,14 @@ Queue %(nJobs)s
     return S_OK((output, error))
 
   def __getPilotReferences(self, jobString):
-    """get the references from the condor_submit output
-    cluster ids look like " 107.0 - 107.0 " or " 107.0 - 107.4 "
+    """
+    Get the references from the condor_submit output.
+    Cluster ids look like " 107.0 - 107.0 " or " 107.0 - 107.4 "
+
+    :params jobString: the output of condor_submit
+    :type jobString: string
+
+    :return: job references such as htcondorce://<CE name>/<path to result>-<clusterID>.<i>
     """
     self.log.verbose("getPilotReferences: %s" % jobString)
     clusterIDs = jobString.split('-')
@@ -408,7 +475,7 @@ Queue %(nJobs)s
     return S_OK(jobReferences)
 
   def __cleanup(self):
-    """ clean the working directory of old jobs"""
+    """ Clean the working directory of old jobs"""
 
     # FIXME: again some issue with the working directory...
     # workingDirectory = self.ceParameters.get( 'WorkingDirectory', DEFAULT_WORKINGDIRECTORY )
