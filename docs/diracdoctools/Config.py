@@ -61,6 +61,7 @@ class Configuration(object):
           pattern = listify(config.get(section, 'pattern'))
           title = config.get(section, 'title')
           manual = listify(config.get(section, 'manual'))
+          self.com_ignore_commands.extend(manual)
           exclude = listify(config.get(section, 'exclude'))
           sectionPath = config.get(section, 'sectionpath').replace(' ', '')
           indexFile = self._fullPath(config.get(section, 'indexfile')) if \
