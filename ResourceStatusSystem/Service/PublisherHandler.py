@@ -289,7 +289,7 @@ class PublisherHandler(RequestHandler):
       res = getSEHosts(name)
       if not res['OK']:
         return res
-      names = name['Value']
+      names = res['Value']
 
     return rmClient.selectDowntimeCache(element=element, name=names,
                                         meta={'columns': ['StartDate', 'EndDate',
