@@ -62,7 +62,8 @@ Authorizations
 **************
 
 
-All procedure have a list of required properties and user may have at least one property to execute the procedure. Be careful, properties are associated with groups, not directly with users!
+All procedure have a list of required Properties and user may have at least one property to execute the procedure. Be careful, properties are associated with groups, not directly with users!
+
 
 
 There are two main ways to define required properties:
@@ -77,3 +78,5 @@ If you don't want to define specific properties you can use "authenticated", "an
 - "any" and "all" have the same effect, everyone can call the procedure. It can be dangerous if you allow non-secured connections.
 
 You also have to define properties for groups of users in the configuration system at ```/DIRAC/Registry/Groups/(groupName)/Properties```.
+
+For a comprehensive list of Properties, see :py:mod:`~DIRAC.Core.Security.Properties`
