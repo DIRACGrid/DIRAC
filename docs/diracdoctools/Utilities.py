@@ -38,6 +38,14 @@ def writeLinesToFile(filename, lines):
   if os.path.exists(filename):
     with open(filename, 'r') as oldFile:
       oldContent = ''.join(oldFile.readlines())
+  # try creating the directory in case it is not there
+  # and filename is an absolute path
+  elif os.path.isabs(filename):
+    try:
+      os.makedirs(os.path.dirname(filename))
+    # the directory may already exist
+    except OSError:
+      LOG.debug('Cannot create directory %s', os.path.dirname(filename))
   if oldContent is None or oldContent != newContent:
     with open(filename, 'w') as rst:
       LOG.info('Writing new content for %s', os.path.join(os.getcwd(), filename))
