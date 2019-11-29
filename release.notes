@@ -1,3 +1,26 @@
+[v7r0p6]
+
+*Core
+NEW: Add environment.yml file for preparing an environment with conda
+CHANGE: Use subprocess32 if possible for significantly better performance
+FIX: TypeLoader should not be a singleton as it has a cache
+
+*FrameworkSystem
+FIX: Avoid leaking std(in|out|err) file handles when running runsvdir
+
+*WorkloadManagementSystem
+NEW: To activate the pilot logging mechanism the following option must be present in CS: Pilot/PilotLogging with a value set to "true", "yes" or "y".
+
+*Tests
+NEW: CI for unit/lint/integration testing with GitHub actions
+NEW: Start using shell linting of the test scripts
+FIX: Exit quickly if the installation fails to make it easier to find issues
+
+*Docs
+NEW: Document how to run integration tests in docker
+CHANGE: The options in the command reference sections: 'ignore' and 'scripts', are replaced by 'exclude' and 'manual' respectively. The entries in 'exclude' will now reject scripts that are otherwise picked up by the 'patterns'. Entries in 'manual' will be added to the indexFile, but their rst file has to be provided by hand. Fixes #4345
+
+
 [v7r0p5]
 
 FIX: changes from v6r22p15 included
