@@ -287,7 +287,7 @@ class JobDB(DB):
         return ret
       jobIDList.append(ret['Value'])
 
-    self.log.debug('JobDB.getParameters: Getting Parameters for jobs %s' % ','.join(jobIDList))
+    # self.log.debug('JobDB.getParameters: Getting Parameters for jobs %s' % ','.join(jobIDList))
 
     resultDict = {}
     if paramList:
@@ -342,7 +342,7 @@ class JobDB(DB):
       return ret
     jobID = ret['Value']
 
-    self.log.debug('JobDB.getAtticJobParameters: Getting Attic Parameters for job %s' % jobID)
+    # self.log.debug('JobDB.getAtticJobParameters: Getting Attic Parameters for job %s' % jobID)
 
     resultDict = {}
     paramCondition = ''
@@ -394,7 +394,7 @@ class JobDB(DB):
       x = "`" + ret['Value'][1:-1] + "`"
       attrNameList.append(x)
     attrNames = ','.join(attrNameList)
-    self.log.debug('JobDB.getAllJobAttributes: Getting Attributes for job = %s.' % jobID)
+    # self.log.debug('JobDB.getAllJobAttributes: Getting Attributes for job = %s.' % jobID)
 
     cmd = 'SELECT %s FROM Jobs WHERE JobID=%s' % (attrNames, jobID)
     res = self._query(cmd)
@@ -587,7 +587,7 @@ class JobDB(DB):
         number of jobs if requested.
     """
 
-    self.log.debug('JobDB.selectJobs: retrieving jobs.')
+    # self.log.debug('JobDB.selectJobs: retrieving jobs.')
 
     res = self.getFields('Jobs', ['JobID'], condDict=condDict, limit=limit,
                          older=older, newer=newer, timeStamp=timeStamp, orderAttribute=orderAttribute)
