@@ -14,7 +14,7 @@ import os
 import glob
 import shutil
 import signal
-import subprocess
+import subprocess32 as subprocess
 import stat
 import json
 import multiprocessing
@@ -96,7 +96,8 @@ exit 0
                 args],
             stdout=subprocess.PIPE,
             shell=True,
-            env=envDict)
+            env=envDict,
+            universal_newlines=True)
         pid = popenObject.communicate()[0]
       except OSError as x:
         output = str(x)

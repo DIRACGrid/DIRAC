@@ -4,7 +4,6 @@
 
 import re
 
-from DIRAC.Core.Utilities import DIRACSingleton
 from DIRAC.Core.Utilities.Plotting.ObjectLoader import loadObjects
 
 from DIRAC.AccountingSystem.Client.Types.BaseAccountingType import BaseAccountingType
@@ -16,21 +15,14 @@ __RCSID__ = "$Id$"
 
 
 class TypeLoader(object):
-
   """
   .. class:: BaseType
 
-  :param ~DIRACSingleton.DIRACSingleton metaclass: this is a singleton
   :param dict loaded: it stores the loaded classes
   :param str path: The location of the classes
   :param ~DIRAC.MonitoringSystem.Client.Types.BaseType.BaseType parentCls: it is the parent class
   :param regexp: regular expression...
   """
-  __metaclass__ = DIRACSingleton.DIRACSingleton
-  __loaded = {}
-  __path = ""
-  __parentCls = None
-  __reFilter = None
 
   ########################################################################
   def __init__(self, plottingFamily='Accounting'):

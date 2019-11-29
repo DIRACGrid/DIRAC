@@ -51,3 +51,4 @@ python-json-logger>=0.1.8
 multi-mechanize>=1.2.0
 tornado>=5.0.0
 caniusepython3
+subprocess32
