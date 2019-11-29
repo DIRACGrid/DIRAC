@@ -622,13 +622,8 @@ function generateUserCredentials(){
   echo '==> [generateUserCredentials]'
 
   # validity of the certificate
-  if [ -z ${1} ]
-  then
-    nDays=7
-  else
-    nDays=$1
-  fi
 
+  nDays=${1:-7}
 
   USERCERTDIR=$SERVERINSTALLDIR/user
   # Generate directory where to store credentials

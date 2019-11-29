@@ -2,7 +2,6 @@
 
     Uses RPC Framework/Monitoring service. Calls registerActivities exposed function
 """
-
 __RCSID__ = "$Id"
 
 import time

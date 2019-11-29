@@ -30,12 +30,11 @@ else
 fi
 
 
-DIRACSETUP=`cat tests/Jenkins/install.cfg | grep "Setup = " | cut -f5 -d " "`
+DIRACSETUP=$(< tests/Jenkins/install.cfg grep "Setup = " | cut -f5 -d " ")
 
 cd ../..
 
-
-echo -e '***' $(date -u) "**** Got the DIRAC tests ****\n"
+echo -e "*** $(date -u) **** Got the DIRAC tests ****\n"
 
 source TestCode/DIRAC/tests/Jenkins/dirac_ci.sh
 

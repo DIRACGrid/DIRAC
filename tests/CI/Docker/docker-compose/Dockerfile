@@ -4,7 +4,6 @@
 #
 #.......................................................................
 
-
 FROM docker:latest
 MAINTAINER "Anton Lu" anton.lu@cern.ch
 

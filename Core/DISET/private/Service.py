@@ -344,8 +344,8 @@ class Service(object):
       })
     else:
       self._monitor.addMark('PendingQueries', pendingQueries)
-      self._monitor.addMark('ActiveQueries', len(self._threadPool._threads))
-      self._monitor.addMark('RunningThreads', activeQuereies)
+      self._monitor.addMark('ActiveQueries', activeQuereies)
+      self._monitor.addMark('RunningThreads', threading.activeCount())
       self._monitor.addMark('MaxFD', self.__maxFD)
     self.__maxFD = 0
 
@@ -381,7 +381,6 @@ class Service(object):
     else:
       self._threadPool.generateJobAndQueueIt(self._processInThread,
                                              args=(clientTransport,))
-
   # Threaded process function
   def _processInThread(self, clientTransport):
     """
@@ -685,6 +684,7 @@ class Service(object):
   def __startReportToMonitoring(self):
     if not self.activityMonitoring:
       self._monitor.addMark("Queries")
+
     now = time.time()
     stats = os.times()
     cpuTime = stats[0] + stats[2]

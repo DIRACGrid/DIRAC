@@ -84,7 +84,7 @@ class ComponentMonitoringDB(DB):
     """
     This method converts the datetime type to a string type.
     """
-    if isinstance(dt, basestring):
+    if isinstance(dt, six.string_types):
       return dt
     return "%s-%s-%s %s:%s:%s" % (dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second)
 
@@ -327,6 +327,10 @@ class ComponentMonitoringDB(DB):
     return compDict
 
   def __componentMatchesCondition(self, compDict, requiredComponents, conditionDict={}):
+    """
+    This method uses __checkCondition method to check if the (key, field) inside component dictionary
+    are already present in condition dictionary or not.
+    """
     for key in compDict:
       if not self.__checkCondition(conditionDict, key, compDict[key]):
         return False
@@ -335,6 +339,10 @@ class ComponentMonitoringDB(DB):
   def getComponentsStatus(self, conditionDict={}):
     """
     Get the status of the defined components in the CS compared to the ones that are known in the DB
+
+    :type condDict: dictionary
+    :param condDict: The dictionary containing the conditions.
+    :return: S_OK with the requires results.
     """
     result = self.__getComponents(conditionDict)
     if not result['OK']:
