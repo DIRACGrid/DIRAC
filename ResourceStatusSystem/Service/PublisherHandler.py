@@ -190,7 +190,7 @@ class PublisherHandler(RequestHandler):
       return res
     ses = res['Value'][1].get(site, [])
 
-    sesStatus = rsClient.selectStatusElement('Resource', 'Status', name=ses,
+    sesStatus = rsClient.selectStatusElement('Resource', 'Status', name=list(ses),
                                              meta={'columns': ['Name', 'StatusType', 'Status']})
     if not sesStatus['OK']:
       return sesStatus
@@ -289,7 +289,7 @@ class PublisherHandler(RequestHandler):
       res = getSEHosts(name)
       if not res['OK']:
         return res
-      names = name['Value']
+      names = res['Value']
 
     return rmClient.selectDowntimeCache(element=element, name=names,
                                         meta={'columns': ['StartDate', 'EndDate',
