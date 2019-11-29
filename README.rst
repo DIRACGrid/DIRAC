@@ -9,12 +9,28 @@ Cite us:
 
 Status master branch (stable):
 
+.. image:: https://github.com/DIRACGrid/DIRAC/workflows/Basic%20tests/badge.svg?branch=rel-v7r0
+   :target: https://github.com/DIRACGrid/DIRAC/actions?query=workflow%3A%22Basic+tests%22+branch%3Arel-v7r0
+   :alt: Basic Tests Status
+
+.. image:: https://github.com/DIRACGrid/DIRAC/workflows/Integration%20tests/badge.svg?branch=rel-v7r0
+   :target: https://github.com/DIRACGrid/DIRAC/actions?query=workflow%3A%22Integration+tests%22+branch%3Arel-v7r0
+   :alt: Integration Tests Status
+
 .. image:: https://readthedocs.org/projects/dirac/badge/?version=latest
    :target: http://dirac.readthedocs.io/en/latest/
    :alt: Documentation Status
 
 
 Status integration branch (devel):
+
+.. image:: https://github.com/DIRACGrid/DIRAC/workflows/Basic%20tests/badge.svg?branch=integration
+   :target: https://github.com/DIRACGrid/DIRAC/actions?query=workflow%3A%22Basic+tests%22+branch%3Aintegration
+   :alt: Basic Tests Status
+
+.. image:: https://github.com/DIRACGrid/DIRAC/workflows/Integration%20tests/badge.svg?branch=integration
+   :target: https://github.com/DIRACGrid/DIRAC/actions?query=workflow%3A%22Integration+tests%22+branch%3Aintegration
+   :alt: Integration Tests Status
 
 .. image:: https://readthedocs.org/projects/dirac/badge/?version=integration
   :target: http://dirac.readthedocs.io/en/integration/
