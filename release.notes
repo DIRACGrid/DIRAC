@@ -149,6 +149,17 @@ NEW: (#4170) added Production system documentation
 CHANGE: (#4224) Pilot 3 is the default
 NEW: (#4244) Added a few notes on using the JobParameters on ElasticSearch database
 
+[v6r22p16]
+
+*Core
+CHANGE: remove many calls to gLogger.debug() of low level DB modules (in particular MySQL.py) that may slowdown services
+
+*FrameworkSystem
+FIX: PRIVATE_LIMITED_DELEGATION role can download its own proxies
+
+*ResourceStatusSystem
+FIX: PublisherHandler: Convert set to list, because set can not be serialized using DEncode.
+
 [v6r22p15]
 
 *Resources
