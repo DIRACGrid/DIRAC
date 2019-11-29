@@ -92,7 +92,7 @@ class Client(object):
     if not rpc:
       if not url:
         url = self.serverURL
-      self.__kwargs.setdefault('timeout', timeout)
+      self.__kwargs['timeout'] = timeout
       rpc = RPCClient(url, **self.__kwargs)
     return rpc
 
