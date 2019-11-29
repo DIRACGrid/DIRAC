@@ -15,10 +15,19 @@
 
 """
 
-__RCSID__ = "$id:"
 
 import sys
 import cStringIO
+import os
+
+# TODO: Remove ThreadPool later 
+useThreadPoolExecutor = False
+if os.getenv('DIRAC_USE_NEWTHREADPOOL', 'NO').lower() in ('yes', 'true'):
+  from concurrent.futures import ThreadPoolExecutor
+  useThreadPoolExecutor = True
+else:
+  from DIRAC.Core.Utilities.ThreadPool import ThreadPool
+  from DIRAC.Core.DISET.private.MessageBroker import MessageBroker, getGlobalMessageBroker
 
 import DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
@@ -26,14 +35,14 @@ from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.Core.DISET.private.FileHelper import FileHelper
-from DIRAC.Core.DISET.private.MessageBroker import MessageBroker, getGlobalMessageBroker
 from DIRAC.Core.DISET.MessageClient import MessageClient
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
-from DIRAC.Core.Utilities.ThreadPool import ThreadPool
 from DIRAC.Core.DISET.private.Service import Service
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.DISET.TransferClient import TransferClient
 from DIRAC.Core.DISET.private.BaseClient import BaseClient
+
+__RCSID__ = "$Id$"
 
 
 class GatewayService(Service):
@@ -75,10 +84,15 @@ class GatewayService(Service):
       return result
     self._handler = result['Value']
     # Discover Handler
-    self._threadPool = ThreadPool(1,
-                                  max(0, self._cfg.getMaxThreads()),
-                                  self._cfg.getMaxWaitingPetitions())
-    self._threadPool.daemonize()
+    # TODO: remove later
+    if useThreadPoolExecutor:
+      self._threadPool = ThreadPoolExecutor(max(0, self._cfg.getMaxThreads()))
+    else:
+      self._threadPool = ThreadPool(1,
+                                    max(0, self._cfg.getMaxThreads()),
+                                    self._cfg.getMaxWaitingPetitions())
+      self._threadPool.daemonize()
+
     self._msgBroker = MessageBroker("%sMSB" % GatewayService.GATEWAY_NAME, threadPool=self._threadPool)
     self._msgBroker.useMessageObjects(False)
     getGlobalMessageBroker().useMessageObjects(False)
@@ -323,7 +337,7 @@ class TransferRelay(TransferClient):
       self.errMsg("Could not send header", result['Message'])
       return result
     self.infoMsg("Starting to send data to service")
-    trid, srvTransport = result['Value']
+    _, srvTransport = result['Value']
     srvFileHelper = FileHelper(srvTransport)
     srvFileHelper.setDirection("send")
     result = srvFileHelper.BufferToNetwork(data)
@@ -343,7 +357,7 @@ class TransferRelay(TransferClient):
       self.errMsg("Could not send header", result['Message'])
       return result
     self.infoMsg("Starting to receive data from service")
-    trid, srvTransport = result['Value']
+    _, srvTransport = result['Value']
     srvFileHelper = FileHelper(srvTransport)
     srvFileHelper.setDirection("receive")
     sIO = cStringIO.StringIO()
@@ -415,7 +429,7 @@ class TransferRelay(TransferClient):
     if not result['OK']:
       self.errMsg("Could not send header", result['Message'])
       return result
-    trid, srvTransport = result['Value']
+    _, srvTransport = result['Value']
     response = srvTransport.receiveData(1048576)
     srvTransport.close()
     self.infoMsg("Sending data back to client")
@@ -476,7 +490,7 @@ class MessageForwarder(object):
         self.__byClient.pop(cliTrid)
         self.__srvToCliTrid.pop(srvTrid)
       except Exception as e:
-        gLogger.exception("This shouldn't happen!")
+        gLogger.exception("This shouldn't happen!", e)
     finally:
       self.__inOutLock.release()
 
