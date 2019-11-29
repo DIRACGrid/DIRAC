@@ -22,11 +22,12 @@ jobs:
           - .travis.d/runPylint.sh
           - CHECK=pylintPY3K .travis.d/runPylint.sh
           - |
-            env
-            git remote add upstream https://github.com/DIRACGrid/DIRAC.git
-            git fetch --no-tags upstream "${REFERENCE_BRANCH}"
-            git branch -vv
-            git diff -U0 "upstream/${REFERENCE_BRANCH}" ':(exclude)tests/formatting/pep8_bad.py' | pycodestyle --diff
+            if [[ "${REFERENCE_BRANCH}" != "" ]]; then
+                git remote add upstream https://github.com/DIRACGrid/DIRAC.git
+                git fetch --no-tags upstream "${REFERENCE_BRANCH}"
+                git branch -vv
+                git diff -U0 "upstream/${REFERENCE_BRANCH}" ':(exclude)tests/formatting/pep8_bad.py' | pycodestyle --diff
+            fi
 
     steps:
     - uses: actions/checkout@v1
