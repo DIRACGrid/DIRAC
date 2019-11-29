@@ -313,9 +313,13 @@ function installDIRAC(){
   cp "$TESTCODE/DIRAC/Core/scripts/dirac-install.py" "$CLIENTINSTALLDIR/dirac-install"
   chmod +x "$CLIENTINSTALLDIR/dirac-install"
 
-  if [ $modules ]
-  then
-    INSTALLOPTIONS+=" --module="$modules
+  if [ "$CLIENT_ALTERNATIVE_MODULES" ]; then
+    echo "Installing from non-release code"
+    if [[ -d "$CLIENT_ALTERNATIVE_MODULES" ]]; then
+      INSTALLOPTIONS+="--module=$CLIENT_ALTERNATIVE_MODULES:::DIRAC:::local"
+    else
+      INSTALLOPTIONS+="--module=$CLIENT_ALTERNATIVE_MODULES"
+    fi
   fi
 
   ./dirac-install -r $DIRAC_RELEASE -t client $INSTALLOPTIONS $DEBUG
@@ -824,7 +828,7 @@ dropDBs(){
   echo '==> [dropDBs]'
 
   dbs=$(cut -d ' ' -f 2 < databases | cut -d '.' -f 1 | grep -v ^RequestDB | grep -v ^FileCatalogDB)
-  python "$TESTCODE/DIRAC/tests/Jenkins/dirac-drop-db.py" "$dbs" "$DEBUG"
+  python "$TESTCODE/DIRAC/tests/Jenkins/dirac-drop-db.py" $dbs $DEBUG
 }
 
 #-------------------------------------------------------------------------------
