@@ -322,10 +322,7 @@ function installDIRAC(){
     fi
   fi
 
-  ./dirac-install -r $DIRAC_RELEASE -t client $INSTALLOPTIONS $DEBUG
-
-  if [ $? -ne 0 ]
-  then
+  if ! ./dirac-install -r $DIRAC_RELEASE -t client $INSTALLOPTIONS $DEBUG; then
     echo 'ERROR: DIRAC client installation failed'
     exit 1
   fi
@@ -957,7 +954,6 @@ function startRunsv(){
 
   echo '==> [Done startRunsv]'
 }
-
 
 
 #.............................................................................

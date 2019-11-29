@@ -44,6 +44,30 @@ FIX: (#4289) Exit quickly if the installation fails to make it easier to find is
 *docs
 NEW: (#4289) Document how to run integration tests in docker
 
+
+[v7r0p6]
+
+*Core
+NEW: Add environment.yml file for preparing an environment with conda
+CHANGE: Use subprocess32 if possible for significantly better performance
+FIX: TypeLoader should not be a singleton as it has a cache
+
+*FrameworkSystem
+FIX: Avoid leaking std(in|out|err) file handles when running runsvdir
+
+*WorkloadManagementSystem
+NEW: To activate the pilot logging mechanism the following option must be present in CS: Pilot/PilotLogging with a value set to "true", "yes" or "y".
+
+*Tests
+NEW: CI for unit/lint/integration testing with GitHub actions
+NEW: Start using shell linting of the test scripts
+FIX: Exit quickly if the installation fails to make it easier to find issues
+
+*Docs
+NEW: Document how to run integration tests in docker
+CHANGE: The options in the command reference sections: 'ignore' and 'scripts', are replaced by 'exclude' and 'manual' respectively. The entries in 'exclude' will now reject scripts that are otherwise picked up by the 'patterns'. Entries in 'manual' will be added to the indexFile, but their rst file has to be provided by hand. Fixes #4345
+
+
 [v7r0p5]
 
 FIX: changes from v6r22p15 included
@@ -194,6 +218,17 @@ CHANGE: (#4110) updated basic tutorial for CC7 instead of SLC6.
 NEW: (#4170) added Production system documentation
 CHANGE: (#4224) Pilot 3 is the default
 NEW: (#4244) Added a few notes on using the JobParameters on ElasticSearch database
+
+[v6r22p16]
+
+*Core
+CHANGE: remove many calls to gLogger.debug() of low level DB modules (in particular MySQL.py) that may slowdown services
+
+*FrameworkSystem
+FIX: PRIVATE_LIMITED_DELEGATION role can download its own proxies
+
+*ResourceStatusSystem
+FIX: PublisherHandler: Convert set to list, because set can not be serialized using DEncode.
 
 [v6r22p15]
 
