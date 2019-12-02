@@ -36,9 +36,9 @@ Note: you have to add sencha to the system path. Please make sure, if you type s
 ExtJs SDK
 `````````
 
-If you are using DIRAC v6r20 series or later, You can download from the following link: 
+If you are using DIRAC v6r20 series or later, You can download from the following link::
 
-curl -O http://cdn.sencha.com/ext/gpl/ext-4.2.1-gpl.zip
+  > curl -O http://cdn.sencha.com/ext/gpl/ext-4.2.1-gpl.zip
 
 otherwise:
 
@@ -66,13 +66,13 @@ The new code and patch contribution are made in the form of *Github* *Pull Reque
 The *PR* are provided by the developers and are publicly available on the Web.
 The *PR*'s should be first reviewed by the release managers as well as by other
 developers to possibly spot evident problems ( relevance of the new features,
-conventions, typos, etc ). The PRs are also reviewed by autimated tools, like Travis (not limited to).
+conventions, typos, etc ). The PRs are also reviewed by automated tools, like GitHub Actions.
 After the review the *PR* can be merged using the *Github* tools.
 After that the remote release branch is in the state ready to be tagged with the new version.
 
 
 Release notes
-``````````````
+`````````````
 
 Release notes are contained in the *release.notes* file. Each release version has a dedicated
 section in this file, for example::
@@ -214,16 +214,13 @@ Merge all the PRs targeting integration that have been approved (if any), then s
 3. Making basic verifications
 =============================
 
-There are a set of basic tests that can be done on releases.
+There are a set of basic and integration tests that can be done on releases.
 The first test can be done even before creating a release tarball.
 
-A first test is done automatically by Travis: https://travis-ci.org/DIRACGrid/DIRAC/branches
+All tests are automatically run by GitHub Actions: https://github.com/DIRACGrid/DIRAC/actions
 
-Travis also runs on all the Pull Requests, so if for all the PRs merged travis didn't show any problem,
+GitHub actions also runs on all the Pull Requests, so if for all the PRs merged GitHub Actions didn't show any problem,
 there's a good chance (but NOT the certainty) that the created tags are also sane.
-
-A second test is represented by pylint, for which you may find some more info in section :ref:`code_quality`.
-Within Travis, we run also a "pylint --errors-only" test, which should be strictly equal to 0.
 
 
 4. Deploying DIRAC tarballs

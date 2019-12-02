@@ -9,20 +9,12 @@ Cite us:
 
 Status master branch (stable):
 
-.. image:: https://travis-ci.org/DIRACGrid/DIRAC.svg?branch=master
-   :target: https://travis-ci.org/DIRACGrid/DIRAC
-   :alt: Build Status
-
 .. image:: https://readthedocs.org/projects/dirac/badge/?version=latest
    :target: http://dirac.readthedocs.io/en/latest/
    :alt: Documentation Status
 
 
 Status integration branch (devel):
-
-.. image:: https://travis-ci.org/DIRACGrid/DIRAC.svg?branch=integration
-  :target: https://travis-ci.org/DIRACGrid/DIRAC
-  :alt: Build Status
 
 .. image:: https://readthedocs.org/projects/dirac/badge/?version=integration
   :target: http://dirac.readthedocs.io/en/integration/
@@ -82,7 +74,7 @@ Each PR is a also subject to check for python 3 compatibility.
 If you are issuing PRs that are devoted to future versions of DIRAC (so, not for patch releases),
 for each of the python files touched please run (and react to)::
 
-   pylint --rcfile=.travis.d/.pylintrc3k --py3k --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" --extension-pkg-whitelist=GSI,numpy path/to/file.py
+   pylint --rcfile=tests/.pylintrc3k --py3k --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" --extension-pkg-whitelist=GSI,numpy path/to/file.py
 
 
 Testing

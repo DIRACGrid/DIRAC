@@ -7,9 +7,9 @@ __RCSID__ = "$Id$"
 
 import ast
 import os
-from itertools import izip_longest
 
 from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.Core.Utilities.Decorators import deprecated
 
 
 class Client(object):
@@ -48,6 +48,7 @@ class Client(object):
     """
     self.serverURL = url
 
+  @deprecated("Please use self._getRPC(timeout)")
   def setTimeout(self, timeout):
     """ Specify the timeout of the call. Forwarded to RPCClient
 
@@ -92,7 +93,7 @@ class Client(object):
     if not rpc:
       if not url:
         url = self.serverURL
-      self.__kwargs.setdefault('timeout', timeout)
+      self.__kwargs['timeout'] = timeout
       rpc = RPCClient(url, **self.__kwargs)
     return rpc
 
