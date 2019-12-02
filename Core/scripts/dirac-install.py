@@ -2160,6 +2160,19 @@ def createBashrc():
         for envName, envValue in cliParams.userEnvVariables.items():
           lines.extend(['export %s=%s' % (envName, envValue)])
 
+      # Add possible DIRAC environment variables
+      lines.append('')
+      lines.append('# before enabling any of these variables, please see the documentation ')
+      lines.append('# https://dirac.readthedocs.io/en/latest/AdministratorGuide/' +
+                   'ServerInstallations/environment_variable_configuration.html')
+      lines.append('# export DIRAC_DEBUG_DENCODE_CALLSTACK=1')
+      lines.append('# export DIRAC_DEBUG_STOMP=1')
+      lines.append('# export DIRAC_DEPRECATED_FAIL=1')
+      lines.append('# export DIRAC_GFAL_GRIDFTP_SESSION_REUSE=true')
+      lines.append('# export DIRAC_USE_M2CRYPTO=true')
+      lines.append('# export DIRAC_USE_NEWTHREADPOOL=yes')
+      lines.append('# export DIRAC_VOMSES=/etc/grid-security/vomsdir')
+
       lines.append('')
       f = open(bashrcFile, 'w')
       f.write('\n'.join(lines))
