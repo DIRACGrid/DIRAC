@@ -55,6 +55,13 @@ FIX: (#4289) Exit quickly if the installation fails to make it easier to find is
 *docs
 NEW: (#4289) Document how to run integration tests in docker
 
+[v7r0p7]
+
+*Core
+CHANGE: {bash,tchs,diracos}rc set the PYTHONPATH to only dirac (ignore existing PYTHONPATH)
+CHANGE: dirac-configure might work without the need of a proxy
+CHANGE: the timeout of an RPC call is always updated
+
 [v7r0p6]
 
 *Core
