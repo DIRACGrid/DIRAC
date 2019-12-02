@@ -126,6 +126,7 @@ class ServiceReactor(object):
     """
     It is used to properly stop the service when more than one process are used.
     In principle this is doing the job of runsv, becuase runsv only send a sigterm to the parent process...
+
     :param int _sig: the signal sent to the process
     :param object frame: execution frame which contains the child processes
     """
