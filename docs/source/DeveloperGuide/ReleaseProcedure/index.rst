@@ -32,17 +32,16 @@ Sencha Cmd
 
 You can download from https://www.sencha.com/products/extjs/cmd-download/
 Note: you have to add sencha to the system path. Please make sure, if you type sencha in the terminal it will work. 
+The version downloaded is not important (it does not have to be the same version of ExtJS)
 
 ExtJs SDK
 `````````
 
-If you are using DIRAC v6r20 series or later, You can download from the following link::
+If you are using DIRAC v6r20 or v6r21 series you can download from the following link::
 
   > curl -O http://cdn.sencha.com/ext/gpl/ext-4.2.1-gpl.zip
 
-otherwise:
-
-https://www.sencha.com/legal/GPL/ 
+otherwise, if for releases starting from v6r22, you need at least ExtJS 6.
 
 Note: You have to provide a valid email address and you will receive a link where the sdk can be downloaded. 
 
