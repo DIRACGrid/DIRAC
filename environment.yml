@@ -34,7 +34,6 @@ dependencies:
   # testing and development
   - autopep8
   - caniusepython3
-  - codecov
   - coverage
   - hypothesis
   - ipython
