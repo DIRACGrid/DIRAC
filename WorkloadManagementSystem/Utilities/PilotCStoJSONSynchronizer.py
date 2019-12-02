@@ -65,9 +65,9 @@ class PilotCStoJSONSynchronizer(object):
 
     self.pilotFileServer = ops.getValue("Pilot/pilotFileServer", self.pilotFileServer)
     if not self.pilotFileServer:
-      self.log.error("The /Operations/<Setup>/Pilot/pilotFileServer option is not defined")
-      self.log.error("Pilot 3 files won't be updated, and you won't be able to send pilots")
-      return S_ERROR("The /Operations/<Setup>/Pilot/pilotFileServer option is not defined")
+      self.log.fatal("The /Operations/<Setup>/Pilot/pilotFileServer option is not defined")
+      self.log.fatal("Pilot 3 files won't be updated, and you won't be able to send pilots")
+      return S_OK("The /Operations/<Setup>/Pilot/pilotFileServer option is not defined")
 
     self.log.notice('-- Synchronizing the content of the JSON file with the content of the CS --',
                     '(%s)' % self.jsonFile)
