@@ -80,7 +80,7 @@ class TestFileGrouping(unittest.TestCase):
 
     self.assertTrue(res['OK'])
 
-    uniqueSources = res['Value']
+    uniqueSources, _failedFiles = res['Value']
 
     # There should be only f1,f2 and f3
     allReturnedFiles = []

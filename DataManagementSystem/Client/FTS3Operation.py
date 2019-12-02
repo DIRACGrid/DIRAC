@@ -406,7 +406,16 @@ class FTS3TransferOperation(FTS3Operation):
       if not res['OK']:
         return res
 
-      uniqueTransfersBySource = res['Value']
+      uniqueTransfersBySource, failedFiles = res['Value']
+
+      # Treat the errors of the failed files
+      for ftsFile, errMsg in failedFiles.iteritems():
+        log.error("Error when selecting random sources", "%s, %s" % (ftsFile.lfn, errMsg))
+        # If the error is that the file does not exist in the catalog
+        # fail it !
+        if cmpError(errMsg, errno.ENOENT):
+          log.error("The file does not exist, setting it Defunct", "%s" % ftsFile.lfn)
+          ftsFile.status = 'Defunct'
 
       # We don't need to check the source, since it is already filtered by the DataManager
       for sourceSE, ftsFiles in uniqueTransfersBySource.iteritems():

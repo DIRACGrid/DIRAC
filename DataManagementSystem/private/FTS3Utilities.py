@@ -31,10 +31,12 @@ def selectUniqueRandomSource(ftsFiles, allowedSources=None):
   """
       For a list of FTS3files object, select a random source, and group the files by source.
 
+      We also return the FTS3Files for which we had problems getting replicas
+
       :param allowedSources: list of allowed sources
       :param ftsFiles: list of FTS3File object
 
-      :return:  S_OK({ sourceSE: [ FTS3Files] })
+      :return:  S_OK({ sourceSE: [ FTS3Files] }, {FTS3File: errors})
 
   """
 
@@ -52,11 +54,18 @@ def selectUniqueRandomSource(ftsFiles, allowedSources=None):
 
   filteredReplicas = res['Value']
 
+  # LFNs for which we failed to get replicas
+  failedFiles = {}
+
   for ftsFile in ftsFiles:
 
+    # If we failed to get the replicas, add the FTS3File to
+    # the dictionnary
     if ftsFile.lfn in filteredReplicas['Failed']:
-      _log.error("Failed to get active replicas", "%s,%s" %
-                 (ftsFile.lfn, filteredReplicas['Failed'][ftsFile.lfn]))
+      errMsg = filteredReplicas['Failed'][ftsFile.lfn]
+      failedFiles[ftsFile] = errMsg
+      _log.debug("Failed to get active replicas", "%s,%s" %
+                 (ftsFile.lfn, errMsg))
       continue
 
     replicaDict = filteredReplicas['Successful'][ftsFile.lfn]
@@ -72,7 +81,7 @@ def selectUniqueRandomSource(ftsFiles, allowedSources=None):
 
     groupBySource.setdefault(randSource, []).append(ftsFile)
 
-  return S_OK(groupBySource)
+  return S_OK((groupBySource, failedFiles))
 
 
 def groupFilesByTarget(ftsFiles):
