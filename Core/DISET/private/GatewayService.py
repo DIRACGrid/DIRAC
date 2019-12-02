@@ -27,7 +27,6 @@ if os.getenv('DIRAC_USE_NEWTHREADPOOL', 'NO').lower() in ('yes', 'true'):
   useThreadPoolExecutor = True
 else:
   from DIRAC.Core.Utilities.ThreadPool import ThreadPool
-  from DIRAC.Core.DISET.private.MessageBroker import MessageBroker, getGlobalMessageBroker
 
 import DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
@@ -35,6 +34,7 @@ from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.Core.DISET.private.FileHelper import FileHelper
+from DIRAC.Core.DISET.private.MessageBroker import MessageBroker, getGlobalMessageBroker
 from DIRAC.Core.DISET.MessageClient import MessageClient
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Core.DISET.private.Service import Service
