@@ -30,8 +30,7 @@ install:
 script:
   - export PYTHONPATH=${PWD%/*}
   - ls $PYTHONPATH
-  - |
-    if [[ "${CHECK}" == "pytest"  ]]; then
+  - if [[ "${CHECK}" == "pytest"  ]]; then
       pytest;
     elif [[ "${CHECK}" == "pytest_M2Crypto"  ]]; then
       DIRAC_USE_M2CRYPTO=Yes pytest ;
@@ -50,10 +49,6 @@ script:
       travis_wait 30 .travis.d/runPylint.sh;
     elif [[ "${CHECK}" == "format" ]] && [[ "${TRAVIS_PULL_REQUEST}" != "false" ]]; then
       git remote add GH https://github.com/DIRACGrid/DIRAC.git; git fetch --no-tags GH ${TRAVIS_BRANCH}; git branch -vv; git diff -U0 GH/${TRAVIS_BRANCH} ':(exclude)tests/formatting/pep8_bad.py' | pycodestyle --diff;
-    else
-      echo "Unrecognised check ${CHECK}";
-      exit 42;
-    fi
 
 ## ignore errors for sourcefiles "-i"
 after_success:
