@@ -8,7 +8,7 @@ IFS=$'\n\t'
 #
 #    The following software is required on top of Cern Centos 7 (CC7):
 #      * Docker v18+
-#      * Docker-Compose v2.4+
+#      * Docker-Compose that understands v2.4+ format
 #
 #    For the script to run, the shell must be logged into the CERN
 #    container registry at gitlab-registry.cern.ch using
