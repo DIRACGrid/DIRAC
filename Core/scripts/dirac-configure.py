@@ -485,14 +485,14 @@ if includeAllServers:
   DIRAC.gConfig.setOptionValue('/DIRAC/Configuration/Servers', ','.join(DIRAC.gConfig.getServersList()))
   DIRAC.gLogger.verbose('/DIRAC/Configuration/Servers =', ','.join(DIRAC.gConfig.getServersList()))
 
-  if useServerCert:
-    # always removing before dumping
-    Script.localCfg.deleteOption('/DIRAC/Security/UseServerCertificate')
-    Script.localCfg.deleteOption('/DIRAC/Security/SkipCAChecks')
-    Script.localCfg.deleteOption('/DIRAC/Security/SkipVOMSDownload')
+if useServerCert:
+  # always removing before dumping
+  Script.localCfg.deleteOption('/DIRAC/Security/UseServerCertificate')
+  Script.localCfg.deleteOption('/DIRAC/Security/SkipCAChecks')
+  Script.localCfg.deleteOption('/DIRAC/Security/SkipVOMSDownload')
 
-  if update:
-    DIRAC.gConfig.dumpLocalCFGToFile(outputFile)
+if update:
+  DIRAC.gConfig.dumpLocalCFGToFile(outputFile)
 
 
 # ## LAST PART: do the vomsdir/vomses magic
