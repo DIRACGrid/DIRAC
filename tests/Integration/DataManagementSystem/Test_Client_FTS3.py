@@ -12,6 +12,7 @@ import sys
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.DataManagementSystem.Client.FTS3Client import FTS3Client
 from DIRAC.DataManagementSystem.Client.FTS3Operation import FTS3Operation, FTS3TransferOperation, \
     FTS3StagingOperation
@@ -34,8 +35,9 @@ class TestClientFTS3(unittest.TestCase):
       op = FTS3TransferOperation()
     elif opType == 'Staging':
       op = FTS3StagingOperation()
-    op.username = "Pink"
-    op.userGroup = "Floyd"
+    proxyInfo = getProxyInfo()['Value']
+    op.username = proxyInfo['username']
+    op.userGroup = proxyInfo['group']
     op.sourceSEs = sources
     for _i in xrange(nbFiles * len(dests)):
       self.fileCounter += 1
@@ -164,8 +166,8 @@ class TestClientFTS3(unittest.TestCase):
     job1.ftsGUID = 'a-random-guid'
     job1.ftsServer = 'fts3'
 
-    job1.username = "Pink"
-    job1.userGroup = "Floyd"
+    job1.username = op.username
+    job1.userGroup = op.userGroup
 
     op.ftsJobs.append(job1)
 
@@ -201,8 +203,8 @@ class TestClientFTS3(unittest.TestCase):
     job1.ftsGUID = '03-racecondition-job1'
     job1.ftsServer = 'fts3'
 
-    job1.username = "Pink"
-    job1.userGroup = "Floyd"
+    job1.username = op.username
+    job1.userGroup = op.userGroup
 
     op.ftsJobs.append(job1)
 
@@ -233,8 +235,8 @@ class TestClientFTS3(unittest.TestCase):
     job2.ftsGUID = '03-racecondition-job2'
     job2.ftsServer = 'fts3'
 
-    job2.username = "Pink"
-    job2.userGroup = "Floyd"
+    job2.username = op.username
+    job2.userGroup = op.userGroup
 
     op.ftsJobs.append(job2)
     res = self.client.persistOperation(op)
@@ -280,8 +282,8 @@ class TestClientFTS3(unittest.TestCase):
     job1.ftsGUID = job1GUID
     job1.ftsServer = 'fts3'
 
-    job1.username = "Pink"
-    job1.userGroup = "Floyd"
+    job1.username = op.username
+    job1.userGroup = op.userGroup
 
     op.ftsJobs.append(job1)
 
@@ -321,8 +323,8 @@ class TestClientFTS3(unittest.TestCase):
     job2.ftsGUID = job2GUID
     job2.ftsServer = 'fts3'
 
-    job2.username = "Pink"
-    job2.userGroup = "Floyd"
+    job2.username = op.username
+    job2.userGroup = op.userGroup
 
     op.ftsJobs.append(job2)
 
@@ -358,6 +360,88 @@ class TestClientFTS3(unittest.TestCase):
     # isTotallyProcessed does not return S_OK struct
     filesToSubmit = op._getFilesToSubmit()
     self.assertEquals(filesToSubmit, [])
+
+  def test_05_cancelNotFoundJob(self):
+    """ When a job disappears from the server, we need to cancel it
+        and its files.
+
+        The scenario is as follow. Operation has 4 files.
+        Job1 is submitted for File1 and File2.
+        Job2 is submitted for File3 and File4.
+        File1 is finished, and then the job disappears.
+        We need to cancel Job1 and File2.
+        Job2, File3 and File4 are here to make sure we do not cancel wrongly other files
+    """
+    db = FTS3DB()
+    op = self.generateOperation('Transfer', 4, ['Target1'])
+
+    job1 = FTS3Job()
+    job1GUID = '05-cancelall-job1'
+    job1.ftsGUID = job1GUID
+    job1.ftsServer = 'fts3'
+
+    job1.username = op.username
+    job1.userGroup = op.userGroup
+
+    # assign the GUID to the files
+    op.ftsFiles[0].ftsGUID = job1GUID
+    op.ftsFiles[1].ftsGUID = job1GUID
+
+    # Pretend
+
+    op.ftsJobs.append(job1)
+
+    job2 = FTS3Job()
+    job2GUID = '05-cancelall-job2'
+    job2.ftsGUID = job2GUID
+    job2.ftsServer = 'fts3'
+
+    job2.username = op.username
+    job2.userGroup = op.userGroup
+
+    # assign the GUID to the files
+    op.ftsFiles[2].ftsGUID = job2GUID
+    op.ftsFiles[3].ftsGUID = job2GUID
+
+    op.ftsJobs.append(job2)
+
+    res = db.persistOperation(op)
+    opID = res['Value']
+
+    # Get back the operation to update all the IDs
+    res = db.getOperation(opID)
+    op = res['Value']
+
+    fileIds = []
+    for ftsFile in op.ftsFiles:
+      fileIds.append(ftsFile.fileID)
+
+    # Now we monitor Job1, and find that the first file has failed, the second is still ongoing
+    # And since File1 is in an FTS final status, we set its ftsGUID to None
+    file1ID = op.ftsFiles[0].fileID
+    file2ID = op.ftsFiles[1].fileID
+    fileStatusDict = {file1ID: {'status': 'Finished', 'ftsGUID': None},
+                      file2ID: {'status': 'Staging'}
+                      }
+
+    # And when updating, take care of specifying that you are updating for a given GUID
+    res = db.updateFileStatus(fileStatusDict, ftsGUID=job1GUID)
+    self.assertTrue(res['OK'])
+
+    # Now we monitor again, job one, and find out that job1 has disappeared
+    # So we cancel the job and the files
+    res = db.cancelNonExistingJob(opID, job1GUID)
+    self.assertTrue(res['OK'])
+
+    # And hopefully now File2 is Canceled, while the others are as they were
+    res = self.client.getOperation(opID)
+    op = res['Value']
+
+    self.assertTrue(op.ftsFiles[0].status == 'Finished')
+    self.assertTrue(op.ftsFiles[1].status == 'Canceled')
+    self.assertTrue(op.ftsFiles[1].ftsGUID is None)
+    self.assertTrue(op.ftsFiles[2].status == 'New')
+    self.assertTrue(op.ftsFiles[3].status == 'New')
 
   def _perf(self):
 

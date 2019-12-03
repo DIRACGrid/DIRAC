@@ -8,7 +8,7 @@ import errno
 
 # Requires at least version 3.3.3
 import fts3.rest.client.easy as fts3
-from fts3.rest.client.exceptions import FTS3ClientException
+from fts3.rest.client.exceptions import FTS3ClientException, NotFound
 from fts3.rest.client.request import Request as ftsSSLRequest
 
 from DIRAC.Resources.Storage.StorageElement import StorageElement
@@ -83,7 +83,11 @@ class FTS3Job(JSerializable):
     self.accountingDict = None
 
   def monitor(self, context=None, ftsServer=None, ucert=None):
-    """ Queries the fts server to monitor the job
+    """ Queries the fts server to monitor the job.
+        The internal state of the object is updated depending on the
+        monitoring result.
+
+        In case the job is not found on the server, the status is set to 'Failed'
 
         This method assumes that the attribute self.ftsGUID is set
 
@@ -93,7 +97,14 @@ class FTS3Job(JSerializable):
 
         :param ucert: path to the user certificate/proxy. Might be infered by the fts cli (see its doc)
 
-        :returns {FileID: { status, error } }
+        :returns: {FileID: { status, error } }
+
+                  Possible error numbers
+
+                  * errno.ESRCH: If the job does not exist on the server
+                  * errno.EDEADLK: In case the job and file status are inconsistent (see comments inside the code)
+
+
     """
 
     if not self.ftsGUID:
@@ -111,6 +122,11 @@ class FTS3Job(JSerializable):
     jobStatusDict = None
     try:
       jobStatusDict = fts3.get_job_status(context, self.ftsGUID, list_files=True)
+    # The job is not found
+    # Set its status to Failed and return
+    except NotFound as e:
+      self.status = 'Failed'
+      return S_ERROR(errno.ESRCH, "FTSGUID %s not found on %s" % (self.ftsGUID, self.ftsServer))
     except FTS3ClientException as e:
       return S_ERROR("Error getting the job status %s" % e)
 

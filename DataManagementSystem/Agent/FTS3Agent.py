@@ -15,6 +15,7 @@ It is in charge of submitting and monitoring all the transfers. It can be duplic
 
 __RCSID__ = "$Id$"
 
+import errno
 import time
 
 # from threading import current_thread
@@ -27,6 +28,7 @@ from DIRAC import S_OK, S_ERROR
 
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.Core.Base.AgentModule import AgentModule
+from DIRAC.Core.Utilities.DErrno import cmpError
 from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Core.Utilities.Time import fromString
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFTS3ServerDict
@@ -191,6 +193,11 @@ class FTS3Agent(AgentModule):
 
       if not res['OK']:
         log.error("Error monitoring job", res)
+
+        # If the job was not found on the server, update the DB
+        if cmpError(res, errno.ESRCH):
+          res = self.fts3db.cancelNonExistingJob(ftsJob.operationID, ftsJob.ftsGUID)
+
         return ftsJob, res
 
       # { fileID : { Status, Error } }
