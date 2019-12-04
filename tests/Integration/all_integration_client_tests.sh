@@ -55,12 +55,6 @@ python $CLIENTINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/create
 $CLIENTINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_dirac-jobexec.sh 2>&1 | tee -a clientTestOutputs.txt; (( ERR |= $? ))
 $CLIENTINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_TimeLeft.sh 2>&1 | tee -a clientTestOutputs.txt; (( ERR |= $? ))
 
-
-#-------------------------------------------------------------------------------#
-echo -e "*** $(date -u)  **** FTS TESTS ****\n"
-pytest $CLIENTINSTALLDIR/DIRAC/tests/Integration/DataManagementSystem/Test_Client_FTS3.py 2>&1 | tee -a clientTestOutputs.txt; (( ERR |= $? ))
-
-
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u)  **** MONITORING TESTS ****\n"
 pytest $CLIENTINSTALLDIR/DIRAC/tests/Integration/Monitoring/Test_MonitoringSystem.py 2>&1 | tee -a clientTestOutputs.txt; (( ERR |= $? ))

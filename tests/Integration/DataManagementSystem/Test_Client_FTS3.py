@@ -26,6 +26,7 @@ class TestClientFTS3(unittest.TestCase):
 
   def setUp(self):
     self.client = FTS3Client()
+    self.db = FTS3DB()
     self.fileCounter = 0
 
   def generateOperation(self, opType, nbFiles, dests, sources=None):
@@ -94,7 +95,7 @@ class TestClientFTS3(unittest.TestCase):
       fileStatusDict[fId] = {'status': 'Finished' if fId % 2 else 'Failed',
                              'error': '' if fId % 2 else 'Tough luck'}
 
-    res = self.client.updateFileStatus(fileStatusDict)
+    res = self.db.updateFileStatus(fileStatusDict)
     self.assertTrue(res['OK'])
 
     res = self.client.getOperation(opID)
@@ -123,7 +124,7 @@ class TestClientFTS3(unittest.TestCase):
     for fId in fileIds:
       fileStatusDict[fId] = {'status': FTS3File.FINAL_STATES[fId % nbFinalStates]}
 
-    res = self.client.updateFileStatus(fileStatusDict)
+    res = self.db.updateFileStatus(fileStatusDict)
     self.assertTrue(res['OK'])
 
     res = self.client.getOperation(opID)
@@ -227,7 +228,7 @@ class TestClientFTS3(unittest.TestCase):
                       file2ID: {'status': 'Staging'}
                       }
 
-    res = self.client.updateFileStatus(fileStatusDict)
+    res = self.db.updateFileStatus(fileStatusDict)
     self.assertTrue(res['OK'])
 
     # We would then submit a second job
@@ -244,14 +245,14 @@ class TestClientFTS3(unittest.TestCase):
     # Now we monitor Job2 & Job1 (in this order)
     fileStatusDictJob2 = {file1ID: {'status': 'Staging'},
                           }
-    res = self.client.updateFileStatus(fileStatusDictJob2)
+    res = self.db.updateFileStatus(fileStatusDictJob2)
     self.assertTrue(res['OK'])
 
     # And in Job1, File1 is (and will remain) failed, while File2 is still ongoing
     fileStatusDictJob1 = {file1ID: {'status': 'Failed', 'error': 'Someone made a boo-boo'},
                           file2ID: {'status': 'Staging'}
                           }
-    res = self.client.updateFileStatus(fileStatusDictJob1)
+    res = self.db.updateFileStatus(fileStatusDictJob1)
     self.assertTrue(res['OK'])
 
     # And now this is the problem, because If we check whether this operation still has
@@ -314,7 +315,7 @@ class TestClientFTS3(unittest.TestCase):
                       }
 
     # And when updating, take care of specifying that you are updating for a given GUID
-    res = self.client.updateFileStatus(fileStatusDict, ftsGUID=job1GUID)
+    res = self.db.updateFileStatus(fileStatusDict, ftsGUID=job1GUID)
     self.assertTrue(res['OK'])
 
     # We would then submit a second job
@@ -341,7 +342,7 @@ class TestClientFTS3(unittest.TestCase):
                           }
 
     # Again specify the GUID
-    res = self.client.updateFileStatus(fileStatusDictJob2, ftsGUID=job2GUID)
+    res = self.db.updateFileStatus(fileStatusDictJob2, ftsGUID=job2GUID)
     self.assertTrue(res['OK'])
 
     # And in Job1, File1 is (and will remain) failed, while File2 is still ongoing
@@ -350,7 +351,7 @@ class TestClientFTS3(unittest.TestCase):
                           }
 
     # And thanks to specifying the job GUID, File1 should not be touched !
-    res = self.client.updateFileStatus(fileStatusDictJob1, ftsGUID=job1GUID)
+    res = self.db.updateFileStatus(fileStatusDictJob1, ftsGUID=job1GUID)
     self.assertTrue(res['OK'])
 
     # And hopefully now there shouldn't be any file to submit
@@ -372,7 +373,7 @@ class TestClientFTS3(unittest.TestCase):
         We need to cancel Job1 and File2.
         Job2, File3 and File4 are here to make sure we do not cancel wrongly other files
     """
-    db = FTS3DB()
+
     op = self.generateOperation('Transfer', 4, ['Target1'])
 
     job1 = FTS3Job()
@@ -405,11 +406,11 @@ class TestClientFTS3(unittest.TestCase):
 
     op.ftsJobs.append(job2)
 
-    res = db.persistOperation(op)
+    res = self.db.persistOperation(op)
     opID = res['Value']
 
     # Get back the operation to update all the IDs
-    res = db.getOperation(opID)
+    res = self.db.getOperation(opID)
     op = res['Value']
 
     fileIds = []
@@ -425,12 +426,12 @@ class TestClientFTS3(unittest.TestCase):
                       }
 
     # And when updating, take care of specifying that you are updating for a given GUID
-    res = db.updateFileStatus(fileStatusDict, ftsGUID=job1GUID)
+    res = self.db.updateFileStatus(fileStatusDict, ftsGUID=job1GUID)
     self.assertTrue(res['OK'])
 
     # Now we monitor again, job one, and find out that job1 has disappeared
     # So we cancel the job and the files
-    res = db.cancelNonExistingJob(opID, job1GUID)
+    res = self.db.cancelNonExistingJob(opID, job1GUID)
     self.assertTrue(res['OK'])
 
     # And hopefully now File2 is Canceled, while the others are as they were
@@ -445,20 +446,19 @@ class TestClientFTS3(unittest.TestCase):
 
   def _perf(self):
 
-    db = FTS3DB()
     listOfIds = []
 
     persistStart = time.time()
     for i in xrange(1000):
       op = self.generateOperation('Transfer', i % 20 + 1, ['Dest1'])
-      res = db.persistOperation(op)
+      res = self.db.persistOperation(op)
       self.assertTrue(res['OK'])
       listOfIds.append(res['Value'])
 
     persistEnd = time.time()
 
     for opId in listOfIds:
-      res = db.getOperation(opId)
+      res = self.db.getOperation(opId)
       self.assertTrue(res['OK'])
 
     getEnd = time.time()

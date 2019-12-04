@@ -65,23 +65,6 @@ class FTS3Client(Client):
     except BaseException as e:
       return S_ERROR("Exception when decoding the active jobs json %s" % e)
 
-  def updateFileStatus(self, fileStatusDict, ftsGUID=None, **kwargs):
-    """ Update the file ftsStatus and error
-
-       :param fileStatusDict: { fileID : { status , error, ftsGUID } }
-       :param ftsGUID: if specified, only update the files having a matchign ftsGUID
-    """
-
-    return self._getRPC(**kwargs).updateFileStatus(fileStatusDict, ftsGUID)
-
-  def updateJobStatus(self, jobStatusDict, **kwargs):
-    """ Update the job Status and error
-
-       :param jobStatusDict: { jobID : { status , error } }
-    """
-
-    return self._getRPC(**kwargs).updateJobStatus(jobStatusDict)
-
   def getNonFinishedOperations(self, limit=20, operationAssignmentTag="Assigned", **kwargs):
     """ Get all the FTS3Operations that have files in New or Failed state
         (reminder: Failed is NOT terminal for files. Failed is when fts failed, but we

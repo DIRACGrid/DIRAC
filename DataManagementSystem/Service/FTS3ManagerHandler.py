@@ -148,27 +148,6 @@ class FTS3ManagerHandler(RequestHandler):
 
     return S_OK(activeJobsJSON)
 
-  types_updateFileStatus = [dict]
-  @classmethod
-  def export_updateFileStatus(cls, fileStatusDict, ftsGUID):
-    """ Update the file ftsStatus and error.
-
-       :param fileStatusDict: { fileID : { status , error } }
-       :param ftsGUID: (not mandatory) If specified, only update the rows where the ftsGUID matches this value.
-    """
-
-    return cls.fts3db.updateFileStatus(fileStatusDict, ftsGUID)
-
-  types_updateJobStatus = [dict]
-  @classmethod
-  def export_updateJobStatus(cls, jobStatusDict):
-    """ Update the job Status and error
-
-       :param jobStatusDict: { jobID : { status , error } }
-    """
-
-    return cls.fts3db.updateJobStatus(jobStatusDict)
-
   types_getNonFinishedOperations = [(long, int), basestring]
 
   @classmethod
