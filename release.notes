@@ -1,3 +1,8 @@
+[v7r0p8]
+
+*Configuration
+CHANGE: Let update the config, even if the Pilot info is not in the CS
+
 [v7r0p7]
 
 *Core
