@@ -643,7 +643,9 @@ Running integration tests locally
 ---------------------------------
 
 The integration tests which are ran on GitHub/GitLab can be ran locally using docker.
-To run all tests in one command, which takes around 20 minutes, use:
+
+To run all tests in one command, which takes around 20 minutes, 
+position yourself in the DIRAC root directory and then run:
 
 .. code-block:: bash
 
@@ -652,6 +654,10 @@ To run all tests in one command, which takes around 20 minutes, use:
       -v /var/run/docker.sock:/var/run/docker.sock -v $PWD:/repo -w /repo \
       gitlab-registry.cern.ch/cburr/dirac/docker-compose:latest bash \
       tests/CI/run_docker_setup.sh
+
+As you can see from the command above, privileged runners are needed, as the test is done by running docker in docker ("dind"). 
+The tests will be done using the (private) image `gitlab-registry.cern.ch/cburr/dirac/docker-compose:latest` 
+which already includes docker compose, which is necessary for running the tests.
 
 After exiting the docker containers for the databases, server and client will still be running.
 This allows docker exec to be used to connect to the container for debugging.
