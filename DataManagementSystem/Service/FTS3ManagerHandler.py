@@ -1,5 +1,5 @@
 """
-Service handler for FT3SDB using DISET
+Service handler for FTS3DB using DISET
 
 .. literalinclude:: ../ConfigTemplate.cfg
   :start-after: ##BEGIN FTS3Manager

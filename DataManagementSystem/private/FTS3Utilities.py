@@ -36,7 +36,7 @@ def selectUniqueRandomSource(ftsFiles, allowedSources=None):
       :param allowedSources: list of allowed sources
       :param ftsFiles: list of FTS3File object
 
-      :return:  S_OK({ sourceSE: [ FTS3Files] }, {FTS3File: errors})
+      :return:  S_OK(({ sourceSE: [ FTS3Files] }, {FTS3File: errors}))
 
   """
 

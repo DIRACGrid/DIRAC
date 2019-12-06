@@ -360,7 +360,7 @@ class FTS3Operation(JSerializable):
 
       ftsOp.activity = argumentDic['activity']
       ftsOp.priority = argumentDic['priority']
-    except BaseException as _e:
+    except Exception:
       pass
 
     return ftsOp

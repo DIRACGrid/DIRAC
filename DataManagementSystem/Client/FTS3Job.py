@@ -124,7 +124,7 @@ class FTS3Job(JSerializable):
       jobStatusDict = fts3.get_job_status(context, self.ftsGUID, list_files=True)
     # The job is not found
     # Set its status to Failed and return
-    except NotFound as e:
+    except NotFound:
       self.status = 'Failed'
       return S_ERROR(errno.ESRCH, "FTSGUID %s not found on %s" % (self.ftsGUID, self.ftsServer))
     except FTS3ClientException as e:

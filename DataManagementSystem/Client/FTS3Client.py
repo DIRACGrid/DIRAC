@@ -44,7 +44,7 @@ class FTS3Client(Client):
     try:
       opObj, _size = decode(opJSON)
       return S_OK(opObj)
-    except BaseException as e:
+    except Exception as e:
       return S_ERROR("Exception when decoding the FTS3Operation object %s" % e)
 
   def getActiveJobs(self, limit=20, lastMonitor=None, jobAssignmentTag='Assigned', ** kwargs):
@@ -62,7 +62,7 @@ class FTS3Client(Client):
     try:
       activeJobs, _size = decode(activeJobsJSON)
       return S_OK(activeJobs)
-    except BaseException as e:
+    except Exception as e:
       return S_ERROR("Exception when decoding the active jobs json %s" % e)
 
   def getNonFinishedOperations(self, limit=20, operationAssignmentTag="Assigned", **kwargs):
@@ -83,7 +83,7 @@ class FTS3Client(Client):
     try:
       operations, _size = decode(operationsJSON)
       return S_OK(operations)
-    except BaseException as e:
+    except Exception as e:
       return S_ERROR(0, "Exception when decoding the non finished operations json %s" % e)
 
   def getOperationsFromRMSOpID(self, rmsOpID, **kwargs):
@@ -100,5 +100,5 @@ class FTS3Client(Client):
     try:
       operations, _size = decode(operationsJSON)
       return S_OK(operations)
-    except BaseException as e:
+    except Exception as e:
       return S_ERROR(0, "Exception when decoding the operations json %s" % e)
