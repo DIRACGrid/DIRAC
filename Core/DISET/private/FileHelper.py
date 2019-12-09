@@ -203,7 +203,7 @@ class FileHelper(object):
       return S_ERROR("Error while sending string: %s" % str(e))
     try:
       stringIO.close()
-    except BaseException:
+    except Exception:
       pass
     return S_OK()
 
@@ -318,7 +318,7 @@ class FileHelper(object):
     if autoClose:
       try:
         filePipe.close()
-      except BaseException:
+      except Exception:
         pass
 
   def bulkToNetwork(self, fileList, compress=True, onthefly=True):
@@ -336,7 +336,7 @@ class FileHelper(object):
       try:
         fo.close()
         os.unlink(filePath)
-      except BaseException:
+      except Exception:
         pass
       return result
     else:
@@ -346,7 +346,7 @@ class FileHelper(object):
       response = self.FDToNetwork(rPipe)
       try:
         os.close(rPipe)
-      except BaseException:
+      except Exception:
         pass
       return response
 
@@ -360,14 +360,14 @@ class FileHelper(object):
         tar.extract(tarInfo, destDir)
     try:
       filePipe.close()
-    except BaseException:
+    except Exception:
       pass
 
   def __receiveToPipe(self, wPipe, retList, maxFileSize):
     retList.append(self.networkToFD(wPipe, maxFileSize=maxFileSize))
     try:
       os.close(wPipe)
-    except BaseException:
+    except Exception:
       pass
 
   def networkToBulk(self, destDir, compress=True, maxFileSize=0):
