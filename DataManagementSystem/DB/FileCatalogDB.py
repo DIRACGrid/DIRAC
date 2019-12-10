@@ -44,7 +44,6 @@ class FileCatalogDB(DB):
     self.gids = {}
     self.seNames = {}
     self.seids = {}
-    self.seDefinitions = {}
 
     # Obtain some general configuration of the database
     self.uniqueGUID = databaseConfig['UniqueGUID']
