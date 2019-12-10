@@ -986,10 +986,6 @@ class FileManagerBase(object):
         replicas[lfn] = {}
         for se, repDict in seDict.iteritems():
           pfn = repDict.get('PFN', '')
-          # if not pfn or self.db.lfnPfnConvention:
-          #  res = self._resolvePFN( lfn, se )
-          #  if res['OK']:
-          #    pfn = res['Value']
           replicas[lfn][se] = pfn
 
     result = S_OK(replicas)
@@ -1032,16 +1028,6 @@ class FileManagerBase(object):
     replicas = result['Value']
 
     return S_OK({"Successful": replicas, 'Failed': failed})
-
-  def _resolvePFN(self, lfn, se):
-    resSE = self.db.seManager.getSEDefinition(se)
-    if not resSE['OK']:
-      return resSE
-    pfnDict = dict(resSE['Value']['SEDict'])
-    if "PFNPrefix" in pfnDict:
-      return S_OK(pfnDict['PFNPrefix'] + lfn)
-    pfnDict['FileName'] = lfn
-    return pfnunparse(pfnDict)
 
   def getReplicaStatus(self, lfns, connection=False):
     """ Get replica status from the catalog """
