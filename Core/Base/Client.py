@@ -71,18 +71,18 @@ class Client(object):
         parameters of BaseClient are exposed.
 
         :param rpc: if an RPC client is passed, use that one
-        :param timeout: we can change the timeout on a per call bases. Default 120 s
+        :param timeout: we can change the timeout on a per call bases. Default is self.timeout
         :param url: We can specify which url to use
     """
     toExecute = self.call
     # Check whether 'rpc' keyword is specified
     rpc = kws.pop('rpc', False)
     # Check whether the 'timeout' keyword is specified
-    timeout = kws.pop('timeout', 120)
+    timeout = kws.pop('timeout', self.timeout)
     # Check whether the 'url' keyword is specified
     url = kws.pop('url', '')
     # Create the RPCClient
-    rpcClient = self._getRPC(rpc, url, timeout)
+    rpcClient = self._getRPC(rpc=rpc, url=url, timeout=timeout)
     # Execute the method
     return getattr(rpcClient, toExecute)(*parms)
 
