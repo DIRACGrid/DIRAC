@@ -714,8 +714,7 @@ class FileCatalogDB(DB):
       return res
     failed.update(res['Value']['Failed'])
     successful = res['Value']['Successful']
-    return S_OK({'Successful': successful, 'Failed': failed,
-                 'SEPrefixes': res['Value'].get('SEPrefixes', {})})
+    return S_OK({'Successful': successful, 'Failed': failed})
 
   def getReplicaStatus(self, lfns, credDict):
     """
@@ -964,8 +963,7 @@ class FileCatalogDB(DB):
       return res
     failed.update(res['Value']['Failed'])
     successful = res['Value']['Successful']
-    return S_OK({'Successful': successful, 'Failed': failed,
-                 'SEPrefixes': res['Value'].get('SEPrefixes', {})})
+    return S_OK({'Successful': successful, 'Failed': failed})
 
   def getDirectorySize(self, lfns, longOutput, fromFiles, credDict):
     """

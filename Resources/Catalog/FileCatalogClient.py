@@ -110,24 +110,16 @@ class FileCatalogClient(FileCatalogClientBase):
     """
     rpcClient = self._getRPC(timeout=timeout)
     result = rpcClient.getReplicas(lfns, allStatus)
-    if not result['OK']:
-      return result
-    vo = getVOfromProxyGroup().get('Value', None)
 
+    # If there is no PFN returned, just set the LFN instead
     lfnDict = result['Value']
-    seDict = result['Value'].get('SEPrefixes', {})
     for lfn in lfnDict['Successful']:
       for se in lfnDict['Successful'][lfn]:
         if not lfnDict['Successful'][lfn][se]:
-          # The PFN was not returned, construct it on the fly
-          # For some VO's the prefix can be non-standard
-          voPrefix = seDict.get("VOPrefix", {}).get(se, {}).get(vo)
-          sePrefix = seDict.get(se, '')
-          prefix = voPrefix if voPrefix else sePrefix
-
-          lfnDict['Successful'][lfn][se] = prefix + lfn
+          lfnDict['Successful'][lfn][se] = lfn
 
     return S_OK(lfnDict)
+
 
   @checkCatalogArguments
   def setReplicaProblematic(self, lfns, revert=False):
@@ -252,19 +244,25 @@ class FileCatalogClient(FileCatalogClientBase):
     """
     rpcClient = self._getRPC(timeout=timeout)
     result = rpcClient.getDirectoryReplicas(lfns, allStatus)
+
     if not result['OK']:
       return result
 
-    seDict = result['Value'].get('SEPrefixes', {})
+    # Replace just the filename with the full LFN
     for path in result['Value']['Successful']:
       pathDict = result['Value']['Successful'][path]
       for fname in pathDict.keys():
+        # Remove the file name from the directory dict
         detailsDict = pathDict.pop(fname)
+        # Build the lfn
         lfn = '%s/%s' % (path, os.path.basename(fname))
+        # Add the LFN as value for each SE which does not have a PFN
         for se in detailsDict:
-          if not detailsDict[se] and se in seDict:
-            detailsDict[se] = seDict[se] + lfn
+          if not detailsDict[se]:
+            detailsDict[se] = lfn
+        # Add the lfn entry to the directory dict
         pathDict[lfn] = detailsDict
+
     return result
 
   def findFilesByMetadata(self, metaDict, path='/', timeout=120):

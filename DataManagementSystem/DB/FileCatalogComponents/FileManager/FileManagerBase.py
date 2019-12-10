@@ -1013,16 +1013,7 @@ class FileManagerBase(object):
       return result
     replicas = result['Value']
 
-    result = S_OK({"Successful": replicas, 'Failed': failed})
-
-    if self.db.lfnPfnConvention:
-      sePrefixDict = {}
-      resSE = self.db.seManager.getSEPrefixes()
-      if resSE['OK']:
-        sePrefixDict = resSE['Value']
-      result['Value']['SEPrefixes'] = sePrefixDict
-
-    return result
+    return S_OK({"Successful": replicas, 'Failed': failed})
 
   def getReplicasByMetadata(self, metaDict, path, allStatus, credDict, connection=False):
     """ Get file replicas for files corresponding to the given metadata """
@@ -1040,16 +1031,7 @@ class FileManagerBase(object):
       return result
     replicas = result['Value']
 
-    result = S_OK({"Successful": replicas, 'Failed': failed})
-
-    if self.db.lfnPfnConvention:
-      sePrefixDict = {}
-      resSE = self.db.seManager.getSEPrefixes()
-      if resSE['OK']:
-        sePrefixDict = resSE['Value']
-      result['Value']['SEPrefixes'] = sePrefixDict
-
-    return result
+    return S_OK({"Successful": replicas, 'Failed': failed})
 
   def _resolvePFN(self, lfn, se):
     resSE = self.db.seManager.getSEDefinition(se)

@@ -191,23 +191,3 @@ class SEManagerDB(SEManagerBase):
             self.db.seDefinitions[seID]['SEDict'].setdefault("VOPrefix", {})[vo] = result['Value']
     self.db.seDefinitions[seID]['LastUpdate'] = time.time()
     return S_OK(self.db.seDefinitions[seID])
-
-  def getSEPrefixes(self, connection=False):
-
-    result = self._refreshSEs(connection)
-    if not result['OK']:
-      return result
-
-    resultDict = {}
-
-    for seID in self.db.seDefinitions:
-      resultDict[self.db.seDefinitions[seID]['SEName']] = \
-          self.db.seDefinitions[seID]['SEDict'].get('PFNPrefix', '')
-
-      # Check if some paths are specific for VO's and add these definitions
-      if self.db.seDefinitions[seID]['SEDict'].get('VOPrefix'):
-        resultDict.setdefault('VOPrefix', {})
-        resultDict['VOPrefix'][self.db.seDefinitions[seID]['SEName']] = \
-            self.db.seDefinitions[seID]['SEDict'].get('VOPrefix')
-
-    return S_OK(resultDict)
