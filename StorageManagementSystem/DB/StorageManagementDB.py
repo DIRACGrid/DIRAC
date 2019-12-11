@@ -512,7 +512,8 @@ class StorageManagementDB(DB):
     res = self._query(req, connection)
     if not res['OK']:
       return res
-    tasks = res['Value']
+    # Cast to list to be able to serialize
+    tasks = [list(row) for row in res['Value']]
     resultDict = {}
     for row in tasks:
       resultDict[row[0]] = dict(zip(self.TASKPARAMS[1:], row[1:]))
@@ -558,7 +559,8 @@ class StorageManagementDB(DB):
     res = self._query(req, connection)
     if not res['OK']:
       return res
-    cacheReplicas = res['Value']
+    # Cast to list to be able to serialize
+    cacheReplicas = [list(row) for row in res['Value']]
     resultDict = {}
     for row in cacheReplicas:
       resultDict[row[0]] = dict(zip(self.REPLICAPARAMS[1:], row[1:]))
@@ -602,7 +604,8 @@ class StorageManagementDB(DB):
     res = self._query(req, connection)
     if not res['OK']:
       return res
-    stageRequests = res['Value']
+    # Cast to list to be able to serialize
+    stageRequests = [list(row) for row in res['Value']]
     resultDict = {}
     for row in stageRequests:
       resultDict[row[0]] = dict(zip(self.STAGEPARAMS[1:], row[1:]))
