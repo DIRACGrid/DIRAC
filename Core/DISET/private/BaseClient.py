@@ -598,7 +598,7 @@ and this is thread %s
     return S_OK()
 
   def _getBaseStub(self):
-    """ Returns a tuple with (self._destinationSrv, newKwargs)
+    """ Returns a list with [self._destinationSrv, newKwargs]
         self._destinationSrv is what was given as first parameter of the init serviceName
 
         newKwargs is an updated copy of kwargs:
@@ -611,7 +611,7 @@ and this is thread %s
     # independently decide whether to use their cert or not anyway.
     if 'useCertificates' in newKwargs:
       del newKwargs['useCertificates']
-    return (self._destinationSrv, newKwargs)
+    return [self._destinationSrv, newKwargs]
 
   def __nonzero__(self):
     return True
