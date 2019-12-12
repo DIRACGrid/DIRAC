@@ -9,7 +9,7 @@ import time
 import socket
 import os
 
-# TODO: Remove ThreadPool later 
+# TODO: Remove ThreadPool later
 useThreadPoolExecutor = False
 if os.getenv('DIRAC_USE_NEWTHREADPOOL', 'NO').lower() in ('yes', 'true'):
   from concurrent.futures import ThreadPoolExecutor
@@ -185,7 +185,7 @@ class MessageBroker(object):
       self.__threadPool.submit(self.__processIncomingData, (trid, result))
     else:
       self.__threadPool.generateJobAndQueueIt(self.__processIncomingData,
-                                               args=(trid, result))
+                                              args=(trid, result))
     return S_OK()
 
   def __processIncomingData(self, trid, receivedResult):
@@ -422,7 +422,7 @@ class MessageBroker(object):
         self.__threadPool.submit(cbDisconnect, trid)
       else:
         self.__threadPool.generateJobAndQueueIt(cbDisconnect,
-                                                 args=(trid,))
+                                                args=(trid,))
 
     return S_OK()
 

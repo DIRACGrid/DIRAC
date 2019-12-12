@@ -20,7 +20,7 @@ import sys
 import cStringIO
 import os
 
-# TODO: Remove ThreadPool later 
+# TODO: Remove ThreadPool later
 useThreadPoolExecutor = False
 if os.getenv('DIRAC_USE_NEWTHREADPOOL', 'NO').lower() in ('yes', 'true'):
   from concurrent.futures import ThreadPoolExecutor

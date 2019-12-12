@@ -12,7 +12,7 @@ import os
 import time
 import threading
 
-# TODO: Remove ThreadPool later 
+# TODO: Remove ThreadPool later
 useThreadPoolExecutor = False
 if os.getenv('DIRAC_USE_NEWTHREADPOOL', 'NO').lower() in ('yes', 'true'):
   from concurrent.futures import ThreadPoolExecutor
@@ -294,7 +294,7 @@ class Service(object):
     return S_OK()
 
   def __reportThreadPoolContents(self):
-    # TODO: remove later 
+    # TODO: remove later
     if useThreadPoolExecutor:
       pendingQueries = self._threadPool._work_queue.qsize()
       activeQuereies = len(self._threadPool._threads)
