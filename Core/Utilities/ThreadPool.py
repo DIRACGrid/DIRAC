@@ -165,6 +165,7 @@ class ThreadedJob:
       else:
         self.__jobException = sys.exc_info()
 
+
 class ThreadPool(threading.Thread):
 
   def __init__(self, iMinThreads, iMaxThreads=0, iMaxQueuedRequests=0, strictLimits=True):
