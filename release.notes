@@ -67,6 +67,18 @@ CHANGE: {bash,tchs,diracos}rc set the PYTHONPATH to only dirac (ignore existing 
 CHANGE: dirac-configure might work without the need of a proxy
 CHANGE: the timeout of an RPC call is always updated
 
+[v7r0p8]
+
+*Configuration
+CHANGE: Let update the config, even if the Pilot info is not in the CS
+
+[v7r0p7]
+
+*Core
+CHANGE: {bash,tchs,diracos}rc set the PYTHONPATH to only dirac (ignore existing PYTHONPATH)
+CHANGE: dirac-configure might work without the need of a proxy
+CHANGE: the timeout of an RPC call is always updated
+
 [v7r0p6]
 
 *Core
@@ -240,6 +252,10 @@ NEW: (#4170) added Production system documentation
 CHANGE: (#4224) Pilot 3 is the default
 NEW: (#4244) Added a few notes on using the JobParameters on ElasticSearch database
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> upstream/rel-v7r1
 [v6r22p17]
 
 *CHANGE: Just update the Web version
