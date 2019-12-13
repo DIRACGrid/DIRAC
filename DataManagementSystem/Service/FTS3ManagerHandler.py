@@ -15,7 +15,7 @@ import json
 # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
-
+from DIRAC.Core.Utilities.JEncode import strToIntDict
 
 from DIRAC.DataManagementSystem.DB.FTS3DB import FTS3DB
 from DIRAC.DataManagementSystem.private.FTS3Utilities import FTS3JSONEncoder, FTS3JSONDecoder
@@ -110,7 +110,7 @@ class FTS3ManagerHandler(RequestHandler):
        :param fileStatusDict: { fileID : { status , error } }
        :param ftsGUID: (not mandatory) If specified, only update the rows where the ftsGUID matches this value.
     """
-
+    fileStatusDict = strToIntDict(fileStatusDict)
     return cls.fts3db.updateFileStatus(fileStatusDict, ftsGUID)
 
   types_updateJobStatus = [dict]
@@ -121,7 +121,7 @@ class FTS3ManagerHandler(RequestHandler):
 
        :param jobStatusDict: { jobID : { status , error } }
     """
-
+    jobStatusDict = strToIntDict(jobStatusDict)
     return cls.fts3db.updateJobStatus(jobStatusDict)
 
   types_getNonFinishedOperations = [six.integer_types, basestring]
