@@ -559,7 +559,7 @@ class WorkflowTasks(TaskBase):
     oJob.setJobGroup(transGroup)
 
     if int(transID) in [int(x) for x in self.opsH.getValue("Hospital/Transformations", [])]:
-      self._handleHospital(oJob,transID)
+      self._handleHospital(oJob, transID)
 
     # Collect per job parameters sequences
     paramSeqDict = {}
