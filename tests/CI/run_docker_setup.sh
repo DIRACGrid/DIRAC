@@ -46,25 +46,44 @@ function prepareEnvironment() {
     echo "export DIRACOSVER=${DIRACOSVER}"
   } >> "${SERVERCONFIG}"
   if [[ -n $CI_PROJECT_DIR ]]; then
-      echo "I guess we're in GitLab CI, using local repository in branch ${CI_COMMIT_REF_NAME}"
+      echo "I guess we're in GitLab CI/CD or GitHub Actions, using local repository in branch ${CI_COMMIT_REF_NAME}"
+      echo "if this is a merge request, the target is ${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}"
       export TESTREPO=$CI_PROJECT_DIR
       export ALTERNATIVE_MODULES=$CI_PROJECT_DIR
 
-      # find the latest version
+      # find the latest version, unless it's integration
       if [ "${CI_COMMIT_REF_NAME}" = 'refs/heads/integration' ]; then
-          export DIRACBRANCH=integration
+          export DIRAC_RELEASE=integration
+
+          {
+            echo "export TESTREPO=${TESTREPO}"
+            echo "export ALTERNATIVE_MODULES=${ALTERNATIVE_MODULES}"
+            echo "export DIRAC_RELEASE=${DIRAC_RELEASE}"
+          } >> "${SERVERCONFIG}"
+
+      elif [ "${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}" = 'integration' ]; then
+          export DIRAC_RELEASE=integration
+
+          {
+            echo "export TESTREPO=${TESTREPO}"
+            echo "export ALTERNATIVE_MODULES=${ALTERNATIVE_MODULES}"
+            echo "export DIRAC_RELEASE=${DIRAC_RELEASE}"
+          } >> "${SERVERCONFIG}"
+
       else
           majorVersion=$(grep "majorVersion =" "${TESTREPO}/__init__.py" | cut -d "=" -f 2)
           minorVersion=$(grep "minorVersion =" "${TESTREPO}/__init__.py" | cut -d "=" -f 2)
           export DIRACBRANCH=v${majorVersion// }r${minorVersion// }
           echo "Deduced DIRACBRANCH ${DIRACBRANCH} from __init__.py"
+
+          {
+            echo "export TESTREPO=${TESTREPO}"
+            echo "export ALTERNATIVE_MODULES=${ALTERNATIVE_MODULES}"
+            echo "export DIRACBRANCH=${DIRACBRANCH}"
+          } >> "${SERVERCONFIG}"
+
       fi
 
-      {
-        echo "export TESTREPO=${TESTREPO}"
-        echo "export ALTERNATIVE_MODULES=${ALTERNATIVE_MODULES}"
-        echo "export DIRACBRANCH=${DIRACBRANCH}"
-      } >> "${SERVERCONFIG}"
   fi
   cp "${SERVERCONFIG}" "${CLIENTCONFIG}"
 

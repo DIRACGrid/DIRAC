@@ -311,10 +311,14 @@ function installDIRAC(){
   if [ "$CLIENT_ALTERNATIVE_MODULES" ]; then
     echo "Installing from non-release code"
     if [[ -d "$CLIENT_ALTERNATIVE_MODULES" ]]; then
-      INSTALLOPTIONS+="--module=$CLIENT_ALTERNATIVE_MODULES:::DIRAC:::local"
+      INSTALLOPTIONS+=" --module=$CLIENT_ALTERNATIVE_MODULES:::DIRAC:::local"
     else
-      INSTALLOPTIONS+="--module=$CLIENT_ALTERNATIVE_MODULES"
+      INSTALLOPTIONS+=" --module=$CLIENT_ALTERNATIVE_MODULES"
     fi
+  fi
+
+  if [ "$DIRACOSVER" ]; then
+    INSTALLOPTIONS+=" --dirac-os --dirac-os-version=$DIRACOSVER "
   fi
 
   if ! ./dirac-install -r $DIRAC_RELEASE -t client $INSTALLOPTIONS $DEBUG; then

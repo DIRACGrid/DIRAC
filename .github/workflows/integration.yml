@@ -34,6 +34,7 @@ jobs:
         echo -n "-e HOST_OS=${{ matrix.HOST_OS }} " >> run_in_container
         echo -n "-e CI_PROJECT_DIR=/repo " >> run_in_container
         echo -n "-e CI_COMMIT_REF_NAME=$GITHUB_REF " >> run_in_container
+        echo -n "-e CI_MERGE_REQUEST_TARGET_BRANCH_NAME=$GITHUB_BASE_REF " >> run_in_container
         echo -n "-e CI_REGISTRY_IMAGE=diracgrid " >> run_in_container
         echo -n "-e MYSQL_VER=${{ matrix.MYSQL_VER }} " >> run_in_container
         echo -n "-e ES_VER=${{ matrix.ES_VER }} " >> run_in_container
