@@ -889,6 +889,12 @@ function killRunsv(){
 function killES(){
   echo '==> [killES]'
 
+    res=$(ps aux | grep 'elasticsearch' | grep 'lhcbci' | grep -v 'grep' | cut -f 5 -d ' ')
+
+    if [ -n "$res" ]; then
+      kill -9 $res
+    fi
+
     res=$(ps aux | grep 'elasticsearch' | grep 'lhcbci' | grep -v 'grep' | cut -f 4 -d ' ')
 
     if [ -n "$res" ]; then
