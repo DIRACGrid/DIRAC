@@ -820,14 +820,14 @@ class WorkflowTasks(TaskBase):
                          transID=transID, method='_handleRest')
           oJob._addJDLParameter(paramName, paramValue)
 
-  def _handleHospital(self, oJob, transID):
+  def _handleHospital(self, oJob, transID = None):
     """ Optional handle of hospital jobs
     """
     oJob.setInputDataPolicy('download', dataScheduling=False)
 
     hospitalSite = None
     hospitalCEs = []
-    if "Clinics" in self.opsH.getSections("Hospital")['Value']:
+    if transID and "Clinics" in self.opsH.getSections("Hospital")['Value']:
       clinics = self.opsH.getSections("Hospital/Clinics")['Value']
       for clinic in clinics:
         if int(transID) in [int(x) for x in self.opsH.getValue("Hospital/%s/Transformations"%clinic, [])]:
