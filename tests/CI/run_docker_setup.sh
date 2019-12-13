@@ -48,10 +48,14 @@ function prepareEnvironment() {
       export ALTERNATIVE_MODULES=$CI_PROJECT_DIR
 
       # find the latest version
-      majorVersion=$(grep "majorVersion =" "${TESTREPO}/__init__.py" | cut -d "=" -f 2)
-      minorVersion=$(grep "minorVersion =" "${TESTREPO}/__init__.py" | cut -d "=" -f 2)
-      export DIRACBRANCH=v${majorVersion// }r${minorVersion// }
-      echo "Deduced DIRACBRANCH ${DIRACBRANCH} from __init__.py"
+      if [ "${CI_COMMIT_REF_NAME}" = 'refs/heads/integration' ]; then
+          export DIRACBRANCH=integration
+      else
+          majorVersion=$(grep "majorVersion =" "${TESTREPO}/__init__.py" | cut -d "=" -f 2)
+          minorVersion=$(grep "minorVersion =" "${TESTREPO}/__init__.py" | cut -d "=" -f 2)
+          export DIRACBRANCH=v${majorVersion// }r${minorVersion// }
+          echo "Deduced DIRACBRANCH ${DIRACBRANCH} from __init__.py"
+      fi
 
       {
         echo "export TESTREPO=${TESTREPO}"
