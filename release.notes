@@ -44,6 +44,7 @@ FIX: (#4289) Exit quickly if the installation fails to make it easier to find is
 *docs
 NEW: (#4289) Document how to run integration tests in docker
 
+
 [v7r0p8]
 
 *Configuration
@@ -229,6 +230,7 @@ CHANGE: (#4110) updated basic tutorial for CC7 instead of SLC6.
 NEW: (#4170) added Production system documentation
 CHANGE: (#4224) Pilot 3 is the default
 NEW: (#4244) Added a few notes on using the JobParameters on ElasticSearch database
+
 
 [v6r22p17]
 
