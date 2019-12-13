@@ -184,3 +184,18 @@ def decode(encodedData):
       but it is for compatibility
   """
   return json.loads(encodedData, cls=DJSONDecoder), len(encodedData)
+
+
+def strToIntDict(inDict):
+  """ Because JSON will transform dict with int keys to str keys,
+      this utility method is just to cast it back.
+      This shows useful in cases when sending dict indexed on
+      jobID or requestID for example
+
+      :param inDict: dictionnary with string as keys e.g. {'1': 1, '2': 2}
+
+      :returns: dictionnary with int as keys e.g. {1: 1, 2: 2}
+
+  """
+
+  return dict((int(key), value) for key, value in inDict.iteritems())
