@@ -135,7 +135,7 @@ class JobReport(object):
     parameters = []
     for pname, value in self.jobParameters.items():
       pvalue, _timeStamp = value
-      parameters.append((pname, pvalue))
+      parameters.append([pname, pvalue])
 
     if parameters:
       result = JobStateUpdateClient().setJobParameters(self.jobID, parameters)
