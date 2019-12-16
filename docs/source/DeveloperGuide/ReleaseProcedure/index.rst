@@ -181,6 +181,7 @@ If this corresponds to rel-v7r0, we should make sure that this is updated::
   > git push release rel-v7r0:master
 
 Repeat the process for every "upper" release branch.
+When the release branch of the latest stable version is change, i.e. from rel-v7r0 to rel-v7r1, the URL of the CI status badge in the README should be edited.
 
 The *integration* branch is also receiving new features to go into the next release.
 The *integration* branch also contains the *releases.cfg* file, which holds all the versions of DIRAC
