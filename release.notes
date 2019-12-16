@@ -1,3 +1,9 @@
+[v6r22p18]
+
+*TS
+CHANGE: (#4331) TaskManager - give possibility to run jobs for different problematic productions at
+        different Hospital sites
+
 [v6r22p17]
 
 *CHANGE: Just update the Web version
