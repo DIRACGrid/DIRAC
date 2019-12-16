@@ -191,6 +191,9 @@ class ReqManagerHandler(RequestHandler):
   def export_getBulkRequests(cls, numberOfRequest, assigned):
     """ Get a request of given type from the database
 
+        :warning: the dictionnary may contain string keys instead of int (json serialization)
+                  Do not forget to cast it back
+
         :param numberOfRequest: size of the bulk (default 10)
         :return: S_OK( {Failed : message, Successful : list of Request.toJSON()} )
     """
@@ -303,7 +306,12 @@ class ReqManagerHandler(RequestHandler):
 
   @classmethod
   def export_getRequestIDsForJobs(cls, jobIDs):
-    """ Select the request IDs for supplied jobIDs """
+    """ Select the request IDs for supplied jobIDs
+
+        :warning: the dictionnary may contain string keys instead of int (json serialization)
+          Do not forget to cast it back
+
+    """
     return cls.__requestDB.getRequestIDsForJobs(jobIDs)
 
   types_readRequestsForJobs = [list]
