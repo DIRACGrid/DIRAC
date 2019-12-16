@@ -147,11 +147,15 @@ class FreeDiskSpaceCommand(Command):
     """
 
     for name in DMSHelpers().getStorageElements():
-      # keeping TB as default
-      diskSpace = self.doNew((name, 'MB'))
-      if not diskSpace['OK']:
-        gLogger.warn("Unable to calculate free/total disk space", "name: %s" % name)
-        gLogger.warn(diskSpace['Message'])
-        continue
+      try:
+        # keeping TB as default
+        diskSpace = self.doNew((name, 'MB'))
+        if not diskSpace['OK']:
+          gLogger.warn("Unable to calculate free/total disk space", "name: %s" % name)
+          gLogger.warn(diskSpace['Message'])
+          continue
+      except Exception as excp:  # pylint: disable=broad-except
+        gLogger.error("Failed to get SE %s FreeDiskSpace information (SE skipped) " % name)
+        gLogger.exception("Operation finished  with exception: ", lException=excp)
 
     return S_OK()

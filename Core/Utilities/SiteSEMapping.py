@@ -68,13 +68,16 @@ def getStorageElementsHosts(seNames=None):
 
   for seName in seNames:
 
-    seHost = getSEHosts(seName)
-    if not seHost['OK']:
-      gLogger.warn("Could not get SE Host", "SE: %s" % seName)
-      continue
-    if seHost['Value']:
-      seHosts.extend(seHost['Value'])
-
+    try:
+      seHost = getSEHosts(seName)
+      if not seHost['OK']:
+        gLogger.warn("Could not get SE Host", "SE: %s" % seName)
+        continue
+      if seHost['Value']:
+        seHosts.extend(seHost['Value'])
+    except Exception as excp:  # pylint: disable=broad-except
+      gLogger.error("Failed to get SE %s information (SE skipped) " % seName)
+      gLogger.exception("Operation finished  with exception: ", lException=excp)
   return S_OK(list(set(seHosts)))
 
 
