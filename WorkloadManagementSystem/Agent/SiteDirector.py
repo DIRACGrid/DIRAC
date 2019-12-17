@@ -171,6 +171,8 @@ class SiteDirector(AgentModule):
       self.voGroups = [self.group]
 
     self.pilot3 = self.am_getOption('Pilot3', self.pilot3)
+    if self.pilot3 in (False, 'No', 'no', 'false'):
+      self.pilot3 = False
 
     # Get the clients
     self.siteClient = SiteStatus()
