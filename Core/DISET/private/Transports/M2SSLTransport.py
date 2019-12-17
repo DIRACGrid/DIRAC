@@ -96,7 +96,7 @@ class SSLTransport(BaseTransport):
       except socket.error as e:
         # Other exception are probably SSL-related, in that case we
         # abort and the exception is forwarded to the caller.
-        error = e
+        error = repr(e)
 
         if self.oSocket is not None:
           self.oSocket.close()
