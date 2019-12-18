@@ -21,8 +21,11 @@ import types
 import datetime
 import os
 
+import functools
 import inspect
 import traceback
+
+from collections import defaultdict
 from pprint import pprint
 
 
@@ -30,14 +33,54 @@ from pprint import pprint
 # call stack
 DIRAC_DEBUG_DENCODE_CALLSTACK = bool(os.environ.get('DIRAC_DEBUG_DENCODE_CALLSTACK', False))
 
+# This global dictionary contains
+# {<method name> : set (<class names)}
+# (a method name can be reused in other classes)
+# DO NOT EDIT BY HAND, use ignoreEncodeWarning decorator
+DENCODE_WARNING_IGNORED_METHODS = defaultdict(set)
+
 # Depth of the stack to look for with inspect
 CONTEXT_DEPTH = 100
+
+
+def ignoreEncodeWarning(meth):
+  """ Decorator to put around method that should not anymore throw warnings
+
+      :warning: do not use around functions
+
+      :param meth: decorated method
+  """
+
+  @functools.wraps(meth)
+  def inner(*args, **kwargs):
+    """ Add the method and the class name to the DENCODE_WARNING_IGNORED_METHODS dict """
+
+    # The first parameter in args is "self"
+    # Find out the class Name
+    objInst = args[0]
+    className = objInst.__class__.__name__
+    if className == 'type':  # This happens for class method
+      className = objInst.__name__
+
+    # if the decorated method is an exported method, just remove the 'export_' bit
+    methName = meth.__name__.replace('export_', '')
+
+    # Add the method name and the object name to the dictionary
+    DENCODE_WARNING_IGNORED_METHODS[methName].add(className)
+    return meth(*args, **kwargs)
+
+  return inner
 
 
 def printDebugCallstack(headerMessage):
   """ Prints information about the current stack as well as the caller parameters.
       The purpose of this method is to track down all the places in DIRAC that might
       not survive the change to JSON encoding.
+
+      Some methods are ignored:
+
+      * all the AccountingDB method: why ?
+      * all the method in DENCODE_WARNING_IGNORED_METHODS (see ignoreEncodeWarning)
 
       :param headerMessage: message to be displayed first
       :returns: None
@@ -58,6 +101,52 @@ def printDebugCallstack(headerMessage):
   tb = traceback.format_stack()
   frames = inspect.stack(context=CONTEXT_DEPTH)
 
+  # Flag set to true only if we figure it's an RPC call
+  # In that case, we display more info
+  isRPCCall = False
+
+  # For each entry in the stack, check if the method name is in the list of method to be ignored
+  for frameRecord in reversed(frames):
+    frameFuncName = frameRecord[3]
+    # If the method is in the list of ignored method,
+    # check that the method is from the good class
+    if frameFuncName in DENCODE_WARNING_IGNORED_METHODS:
+      try:
+        # Take the frame object https://docs.python.org/2.7/reference/datamodel.html
+        frameObj = frameRecord[0]
+        # Check that the self attribute of the function points to a class which is listed
+        # as to be ignored
+        className = frameObj.f_locals['self'].__class__.__name__
+        # if that is the case, then we return
+        if className in DENCODE_WARNING_IGNORED_METHODS[frameFuncName]:
+          return
+      # Exception may be thrown when trying to get the className
+      except (KeyError, AttributeError):
+        pass
+
+    # Else, if we are answering an RPC call
+    elif frameFuncName == '_executeAction':
+      # This requires special handling because the only way to know
+      # which method was called server side is to check at the proposalTuple
+
+      frameObj = frameRecord[0]
+
+      # The _executeAction method takes as parameter the handlerObj and the proposalTuple
+
+      # Extract the method name from the proposalTuple
+      funcName = frameObj.f_locals['proposalTuple'][1][1]
+
+      # Extract the class name from the handlerObj
+      className = frameObj.f_locals['handlerObj'].__class__.__name__
+
+      if funcName in DENCODE_WARNING_IGNORED_METHODS and className in DENCODE_WARNING_IGNORED_METHODS[funcName]:
+        return
+      else:
+        # If it is not to be ignored, save the parameters to display them
+        isRPCCall = True
+        rpcDetails = "RPC call service %s method %s" % (className, funcName)
+        break
+
   # The datetime are encoded as tuple. Since datetime are taken care of
   # in JSerializer, just don't print a warning here
   # Note: -3 because we have to go past (de/encodeTuple and the Traceback module)
@@ -70,7 +159,6 @@ def printDebugCallstack(headerMessage):
     return
 
   print('=' * 45, headerMessage, '=' * 45)
-
   # print the traceback that leads us here
   # remove the last element which is the traceback module call
   for line in tb[:-1]:
@@ -93,11 +181,12 @@ def printDebugCallstack(headerMessage):
           # Take the calling frame
           frame = next(framesIter)
           print("Calling frame: %s" % (frame[1:3],))
+          if isRPCCall:
+            print(rpcDetails)
           print("With arguments ", end=' ')
           pprint(dencArgs)
           break
-
-  except BaseException:
+  except Exception:
     pass
   print("=" * 100)
   print()
