@@ -19,6 +19,7 @@ import math
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
 from DIRAC.Core.Utilities import DErrno
+from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 # # from RMS
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
@@ -188,6 +189,7 @@ class ReqManagerHandler(RequestHandler):
   types_getBulkRequests = [int, bool]
 
   @classmethod
+  @ignoreEncodeWarning
   def export_getBulkRequests(cls, numberOfRequest, assigned):
     """ Get a request of given type from the database
 
@@ -317,6 +319,7 @@ class ReqManagerHandler(RequestHandler):
   types_readRequestsForJobs = [list]
 
   @classmethod
+  @ignoreEncodeWarning
   def export_readRequestsForJobs(cls, jobIDs):
     """ read requests for jobs given list of jobIDs """
     requests = cls.__requestDB.readRequestsForJobs(jobIDs)

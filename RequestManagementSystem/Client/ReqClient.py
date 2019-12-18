@@ -18,6 +18,7 @@ from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.List import randomize, fromChar
 from DIRAC.Core.Utilities.JEncode import strToIntDict
+from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.RequestManagementSystem.Client.Request import Request
@@ -139,6 +140,7 @@ class ReqClient(Client):
       return getRequest
     return S_OK(Request(getRequest["Value"]))
 
+  @ignoreEncodeWarning
   def getBulkRequests(self, numberOfRequest=10, assigned=True):
     """ get bulk requests from RequestDB
 
@@ -375,6 +377,7 @@ class ReqClient(Client):
 
     return S_OK({'Successful': successful, 'Failed': failed})
 
+  @ignoreEncodeWarning
   def readRequestsForJobs(self, jobIDs):
     """ read requests for jobs
 
