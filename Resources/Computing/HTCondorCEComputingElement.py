@@ -171,7 +171,7 @@ Queue %(nJobs)s
   def _reset(self):
     self.queue = self.ceParameters['Queue']
     self.outputURL = self.ceParameters.get('OutputURL', 'gsiftp://localhost')
-    self.gridEnv = self.ceParameters['GridEnv']
+    self.gridEnv = self.ceParameters.get('GridEnv')
     self.daysToKeepLogs = self.ceParameters.get('DaysToKeepLogs', DEFAULT_DAYSTOKEEPLOGS)
     self.extraSubmitString = self.ceParameters.get('ExtraSubmitString', '').decode('string_escape')
     self.useLocalSchedd = self.ceParameters.get('UseLocalSchedd', self.useLocalSchedd)
