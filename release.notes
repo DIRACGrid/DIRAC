@@ -183,7 +183,7 @@ NEW: (#4255) New dirac-resource-info command to display computing and storage re
 CHANGE: (#4177) use the ObjectLoader for Clients, in PEP
 
 *Monitoring
-FIX: MonitoringReporter - make processResords() method thread safe, fixes #4193
+FIX: MonitoringReporter - make processRecords() method thread safe, fixes #4193
 
 *tests
 NEW: Add ChangeESFlag.py script to modify useES flag in dirac.cfg. To be integrated with Jenkins code.
@@ -204,10 +204,15 @@ NEW: (#4170) added Production system documentation
 CHANGE: (#4224) Pilot 3 is the default
 NEW: (#4244) Added a few notes on using the JobParameters on ElasticSearch database
 
+[v6r22p18]
+
+*TS
+CHANGE: (#4331) TaskManager - give possibility to run jobs for different problematic productions at
+        different Hospital sites>>>>>>> rel-v6r22
 
 [v6r22p17]
 
-*CHANGE: Just update the Web version
+CHANGE: Just update the Web version
 
 [v6r22p16]
 
