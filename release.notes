@@ -8,6 +8,7 @@ NEW: (#4236) DISET - pass the client DIRAC version as part of the request descri
 NEW: (#4274) Allow installation from a local directory
 FIX: (#4289) Use subprocess32 if possible for significantly better performance
 FIX: (#4289) TypeLoader should not be a singleton as it has a cache
+CHANGE: (#4362) RPC parameters are cast to list/tuples when needed
 
 *Configuration
 CHANGE: (#4157) add new helper methods for IdP/Proxy Providers, OAuthManager. Add methods that 
@@ -24,6 +25,10 @@ CHANGE: (#4157) add possibility to work with Proxy Providers and "clean" proxy w
 NEW: (#4257) Filter of duplicate mails in Notification
 FIX: (#4257) Optimize test in NotificationHandler
 FIX: (#4289) Avoid leaking std(in|out|err) file handles when running runsvdir
+CHANGE: (#4362) BundleDeliveryFramework uses list instead of tuple
+
+*WMS
+CHANGE: (#4362) SandboxStoreClient uses list instead of tuple
 
 *DMS
 CHANGE: (#4243) FileCatalog - standard components are loaded using ObjectLoader mechanism
@@ -33,6 +38,9 @@ CHANGE: (#4279) FileCatalog - dropped PolicyBasedSecurityManager and VOMSPolicy 
 *Resources
 NEW: (#4157) ProxyProvider resources with implementation for DIRAC CA and PUSP proxy providers
 NEW: (#4276) IdProvider resources to represent external user identity providers
+
+*RSS
+CHANGE: (#4362) SQL query orders using list instead of tuples
 
 *tests
 CHANGE: (#4279) use VOMSSecurityManager for integration instead of PolicyBasedSecurityManager/VOMSPolicy
