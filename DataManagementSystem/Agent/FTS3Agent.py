@@ -15,6 +15,7 @@ It is in charge of submitting and monitoring all the transfers. It can be duplic
 
 __RCSID__ = "$Id$"
 
+import errno
 import time
 
 # from threading import current_thread
@@ -27,6 +28,7 @@ from DIRAC import S_OK, S_ERROR
 
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 from DIRAC.Core.Base.AgentModule import AgentModule
+from DIRAC.Core.Utilities.DErrno import cmpError
 from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Core.Utilities.Time import fromString
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFTS3ServerDict
@@ -38,6 +40,7 @@ from DIRAC.DataManagementSystem.private import FTS3Utilities
 from DIRAC.DataManagementSystem.DB.FTS3DB import FTS3DB
 from DIRAC.DataManagementSystem.Client.FTS3Job import FTS3Job
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
+from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 
 
 # pylint: disable=attribute-defined-outside-init
@@ -190,6 +193,11 @@ class FTS3Agent(AgentModule):
 
       if not res['OK']:
         log.error("Error monitoring job", res)
+
+        # If the job was not found on the server, update the DB
+        if cmpError(res, errno.ESRCH):
+          res = self.fts3db.cancelNonExistingJob(ftsJob.operationID, ftsJob.ftsGUID)
+
         return ftsJob, res
 
       # { fileID : { Status, Error } }
@@ -323,50 +331,76 @@ class FTS3Agent(AgentModule):
       else:
         log.debug("FTS3Operation %s is not totally processed yet" % operation.operationID)
 
-        res = operation.prepareNewJobs(
-            maxFilesPerJob=self.maxFilesPerJob, maxAttemptsPerFile=self.maxAttemptsPerFile)
+        # This flag is set to False if we want to stop the ongoing processing
+        # of an operation, typically when the matching RMS Request has been
+        # canceled (see below)
+        continueOperationProcessing = True
 
-        if not res['OK']:
-          log.error("Cannot prepare new Jobs", "FTS3Operation %s : %s" %
-                    (operation.operationID, res))
-          return operation, res
+        # Check the status of the associated RMS Request.
+        # If it is canceled then we will not create new FTS3Jobs, and mark
+        # this as FTS3Operation canceled.
 
-        newJobs = res['Value']
-
-        log.debug("FTS3Operation %s: %s new jobs to be submitted" %
-                  (operation.operationID, len(newJobs)))
-
-        for ftsJob in newJobs:
-          res = self._serverPolicy.chooseFTS3Server()
+        if operation.rmsReqID:
+          res = ReqClient().getRequestStatus(operation.rmsReqID)
           if not res['OK']:
-            log.error(res)
-            continue
+            log.error("Could not get request status", res)
+            return operation, res
+          rmsReqStatus = res['Value']
 
-          ftsServer = res['Value']
-          log.debug("Use %s server" % ftsServer)
+          if rmsReqStatus == 'Canceled':
+            log.info(
+                "The RMS Request is canceled, canceling the FTS3Operation",
+                "rmsReqID: %s, FTS3OperationID: %s" %
+                (operation.rmsReqID,
+                 operation.operationID))
+            operation.status = 'Canceled'
+            continueOperationProcessing = False
 
-          ftsJob.ftsServer = ftsServer
-
-          res = self.getFTS3Context(
-              ftsJob.username, ftsJob.userGroup, ftsServer, threadID=threadID)
-
-          if not res['OK']:
-            log.error("Could not get context", res)
-            continue
-
-          context = res['Value']
-          res = ftsJob.submit(context=context, protocols=self.thirdPartyProtocols)
+        if continueOperationProcessing:
+          res = operation.prepareNewJobs(
+              maxFilesPerJob=self.maxFilesPerJob, maxAttemptsPerFile=self.maxAttemptsPerFile)
 
           if not res['OK']:
-            log.error("Could not submit FTS3Job", "FTS3Operation %s : %s" %
+            log.error("Cannot prepare new Jobs", "FTS3Operation %s : %s" %
                       (operation.operationID, res))
-            continue
+            return operation, res
 
-          operation.ftsJobs.append(ftsJob)
+          newJobs = res['Value']
 
-          submittedFileIds = res['Value']
-          log.info("FTS3Operation %s: Submitted job for %s transfers" %
-                   (operation.operationID, len(submittedFileIds)))
+          log.debug("FTS3Operation %s: %s new jobs to be submitted" %
+                    (operation.operationID, len(newJobs)))
+
+          for ftsJob in newJobs:
+            res = self._serverPolicy.chooseFTS3Server()
+            if not res['OK']:
+              log.error(res)
+              continue
+
+            ftsServer = res['Value']
+            log.debug("Use %s server" % ftsServer)
+
+            ftsJob.ftsServer = ftsServer
+
+            res = self.getFTS3Context(
+                ftsJob.username, ftsJob.userGroup, ftsServer, threadID=threadID)
+
+            if not res['OK']:
+              log.error("Could not get context", res)
+              continue
+
+            context = res['Value']
+            res = ftsJob.submit(context=context, protocols=self.thirdPartyProtocols)
+
+            if not res['OK']:
+              log.error("Could not submit FTS3Job", "FTS3Operation %s : %s" %
+                        (operation.operationID, res))
+              continue
+
+            operation.ftsJobs.append(ftsJob)
+
+            submittedFileIds = res['Value']
+            log.info("FTS3Operation %s: Submitted job for %s transfers" %
+                     (operation.operationID, len(submittedFileIds)))
 
         # new jobs are put in the DB at the same time
       res = self.fts3db.persistOperation(operation)

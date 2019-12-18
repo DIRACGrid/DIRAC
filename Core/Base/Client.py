@@ -11,6 +11,8 @@ import os
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.Decorators import deprecated
 
+DEFAULT_RPC_TIMEOUT = 600
+
 
 class Client(object):
   """ Simple class to redirect unknown actions directly to the server. Arguments
@@ -30,6 +32,7 @@ class Client(object):
     self.serverURL = None
     self.call = None  # I suppose it is initialized here to make pylint happy
     self.__kwargs = kwargs
+    self.timeout = DEFAULT_RPC_TIMEOUT
 
   def __getattr__(self, name):
     """ Store the attribute asked and call executeRPC.
@@ -48,13 +51,13 @@ class Client(object):
     """
     self.serverURL = url
 
-  @deprecated("Please use self._getRPC(timeout)")
+  @deprecated("Please use self._getRPC(timeout) or self.timeout=<value>")
   def setTimeout(self, timeout):
     """ Specify the timeout of the call. Forwarded to RPCClient
 
         :param int timeout: timeout for the RPC calls
     """
-    self.__kwargs['timeout'] = timeout
+    self.timeout = timeout
 
   def getServer(self):
     """ Getter for the server url. Useful ?
@@ -68,31 +71,35 @@ class Client(object):
         parameters of BaseClient are exposed.
 
         :param rpc: if an RPC client is passed, use that one
-        :param timeout: we can change the timeout on a per call bases. Default 120 s
+        :param timeout: we can change the timeout on a per call bases. Default is self.timeout
         :param url: We can specify which url to use
     """
     toExecute = self.call
     # Check whether 'rpc' keyword is specified
     rpc = kws.pop('rpc', False)
     # Check whether the 'timeout' keyword is specified
-    timeout = kws.pop('timeout', 120)
+    timeout = kws.pop('timeout', self.timeout)
     # Check whether the 'url' keyword is specified
     url = kws.pop('url', '')
     # Create the RPCClient
-    rpcClient = self._getRPC(rpc, url, timeout)
+    rpcClient = self._getRPC(rpc=rpc, url=url, timeout=timeout)
     # Execute the method
     return getattr(rpcClient, toExecute)(*parms)
 
-  def _getRPC(self, rpc=None, url='', timeout=600):
+  def _getRPC(self, rpc=None, url='', timeout=None):
     """ Return an RPCClient object constructed following the attributes.
 
         :param rpc: if set, returns this object
         :param url: url of the service. If not set, use self.serverURL
-        :param timeout: timeout of the call
+        :param timeout: timeout of the call. If not given, self.timeout will be used
     """
     if not rpc:
       if not url:
         url = self.serverURL
+
+      if not timeout:
+        timeout = self.timeout
+
       self.__kwargs['timeout'] = timeout
       rpc = RPCClient(url, **self.__kwargs)
     return rpc

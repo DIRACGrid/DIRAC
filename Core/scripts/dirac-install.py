@@ -1623,8 +1623,7 @@ def installExternalRequirements(extType):
   if os.path.isfile(reqScript):
     os.chmod(reqScript, executablePerms)
     logNOTICE("Executing %s..." % reqScript)
-    command = "python '%s' -t '%s' > '%s.out' 2> '%s.err'" % (reqScript, extType,
-                                                              reqScript, reqScript)
+    command = "%s -t '%s' > '%s.out' 2> '%s.err'" % (reqScript, extType, reqScript, reqScript)
     if os.system('bash -c "source %s; %s"' % (bashrcFile, command)):
       logERROR("Requirements installation script %s failed. Check %s.err" % (reqScript,
                                                                              reqScript))

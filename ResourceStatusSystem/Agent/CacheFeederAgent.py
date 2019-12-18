@@ -45,8 +45,6 @@ class CacheFeederAgent(AgentModule):
     """ Define the commands to be executed, and instantiate the clients that will be used.
     """
 
-    self.am_setOption('shifterProxy', 'DataManager')
-
     res = ObjectLoader().loadObject('DIRAC.ResourceStatusSystem.Client.ResourceStatusClient',
                                     'ResourceStatusClient')
     if not res['OK']:

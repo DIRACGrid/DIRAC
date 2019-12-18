@@ -68,6 +68,12 @@ python $SERVERINSTALLDIR/DIRAC/tests/Integration/DataManagementSystem/Test_Clien
 diracDFCDB 2>&1 | tee -a $SERVER_TEST_OUTPUT
 python $SERVERINSTALLDIR/DIRAC/tests/Integration/DataManagementSystem/Test_FileCatalogDB.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
 
+
+#-------------------------------------------------------------------------------#
+echo -e "*** $(date -u)  **** FTS TESTS ****\n"
+# I know, it says Client, but it also instaciates a DB, so it needs to be here
+pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/DataManagementSystem/Test_Client_FTS3.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
+
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u)  **** RMS TESTS ****\n"
 python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/RequestManagementSystem/Test_ReqDB.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))

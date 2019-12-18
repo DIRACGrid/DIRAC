@@ -52,6 +52,25 @@ FIX: (#4289) Exit quickly if the installation fails to make it easier to find is
 *docs
 NEW: (#4289) Document how to run integration tests in docker
 
+[v7r0p9]
+
+*Core
+CHANGE: (#4302) Simplify and convert command wrapper scripts to bash. Also removed some obsolete MacOS code.
+FIX: (#4361) restore the possibility to set a global timeout for a Client
+
+*DMS
+CHANGE: (#4353) FTS3 persistOperation method checks that the caller is allowed to do so
+CHANGE: (#4353) FTS3Manager: do not expose updateJobStatus and updateFileStatus on the service
+CHANGE: (#4353) FTS3 operation is canceled if the matching request is canceled
+CHANGE: (#4353) when a source file does not exist, defunct the FTS3File associated
+CHANGE: (#4353) use the JEncode serializer instead of the custom FTS3Serializer
+CHANGE: (#4353) cancel an FTS3Job together with its associated FTS3Files if the job is not found on the server
+
+*RSS
+CHANGE: (#4336) remove a call to shifterProxy configuration which would not work for multi VO Dirac
+
+*docs
+CHANGE: (#4378) using docker images from docker hub
 
 [v7r0p8]
 
@@ -218,7 +237,7 @@ NEW: (#4255) New dirac-resource-info command to display computing and storage re
 CHANGE: (#4177) use the ObjectLoader for Clients, in PEP
 
 *Monitoring
-FIX: MonitoringReporter - make processResords() method thread safe, fixes #4193
+FIX: MonitoringReporter - make processRecords() method thread safe, fixes #4193
 
 *tests
 NEW: Add ChangeESFlag.py script to modify useES flag in dirac.cfg. To be integrated with Jenkins code.
@@ -239,10 +258,15 @@ NEW: (#4170) added Production system documentation
 CHANGE: (#4224) Pilot 3 is the default
 NEW: (#4244) Added a few notes on using the JobParameters on ElasticSearch database
 
+[v6r22p18]
+
+*TS
+CHANGE: (#4331) TaskManager - give possibility to run jobs for different problematic productions at
+        different Hospital sites>>>>>>> rel-v6r22
 
 [v6r22p17]
 
-*CHANGE: Just update the Web version
+CHANGE: Just update the Web version
 
 [v6r22p16]
 
