@@ -443,6 +443,53 @@ class FTS3DB(object):
     finally:
       session.close()
 
+  def cancelNonExistingJob(self, operationID, ftsGUID):
+    """
+      Cancel an FTS3Job with the associated FTS3Files.
+      This is to be used when the job is not found on the server when monitoring.
+
+      The status of the job and files will be 'Canceled'.
+      The error is specifying that the job is not found.
+      The ftsGUID of the file is released as to be able to pick it up again
+
+      :param operationID: guess
+      :param ftsGUID: guess
+
+      :returns: S_OK() if successful, S_ERROR otherwise
+    """
+    session = self.dbSession()
+    try:
+
+      # We update both the rows of the Jobs and the Files tables
+      # having matching operationID and ftsGUID
+      # https://docs.sqlalchemy.org/en/13/core/tutorial.html#multiple-table-updates
+
+      # We do not need to specify that the File status should be final
+      # since they would have been updated before and the ftsGUID already removed
+      updStmt = update(FTS3Job)\
+          .values({FTS3File.status: 'Canceled',
+                   FTS3File.ftsGUID: None,
+                   FTS3File.error: 'Job %s not found' % ftsGUID,
+                   FTS3Job.status: 'Canceled',
+                   FTS3Job.error: 'Job %s not found' % ftsGUID,
+                   })\
+          .where(and_(FTS3File.operationID == FTS3Job.operationID,
+                      FTS3File.ftsGUID == FTS3Job.ftsGUID,
+                      FTS3Job.operationID == operationID,
+                      FTS3Job.ftsGUID == ftsGUID))
+
+      session.execute(updStmt)
+      session.commit()
+
+      return S_OK()
+
+    except SQLAlchemyError as e:
+      session.rollback()
+      self.log.exception("cancelNonExistingJob: unexpected exception", lException=e)
+      return S_ERROR("cancelNonExistingJob: unexpected exception %s" % e)
+    finally:
+      session.close()
+
   def getNonFinishedOperations(self, limit=20, operationAssignmentTag="Assigned"):
     """ Get all the non assigned FTS3Operations that are not yet finished, so either Active or Processed.
         An operation won't be picked if it is already assigned, or one of its job is.

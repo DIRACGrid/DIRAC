@@ -1,8 +1,6 @@
-import json
-
 from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC import S_OK, S_ERROR
-from DIRAC.DataManagementSystem.private.FTS3Utilities import FTS3JSONDecoder
+from DIRAC.Core.Utilities.JEncode import encode, decode
 
 
 @createClient('DataManagement/FTS3Manager')
@@ -28,7 +26,7 @@ class FTS3Client(Client):
     if isinstance(opObj.sourceSEs, list):
       opObj.sourceSEs = ','.join(opObj.sourceSEs)
 
-    opJSON = opObj.toJSON()
+    opJSON = encode(opObj)
     return self._getRPC(**kwargs).persistOperation(opJSON)
 
   def getOperation(self, operationID, **kwargs):
@@ -44,7 +42,7 @@ class FTS3Client(Client):
     opJSON = res['Value']
 
     try:
-      opObj = json.loads(opJSON, cls=FTS3JSONDecoder)
+      opObj, _size = decode(opJSON)
       return S_OK(opObj)
     except Exception as e:
       return S_ERROR("Exception when decoding the FTS3Operation object %s" % e)
@@ -62,27 +60,10 @@ class FTS3Client(Client):
     activeJobsJSON = res['Value']
 
     try:
-      activeJobs = json.loads(activeJobsJSON, cls=FTS3JSONDecoder)
+      activeJobs, _size = decode(activeJobsJSON)
       return S_OK(activeJobs)
     except Exception as e:
       return S_ERROR("Exception when decoding the active jobs json %s" % e)
-
-  def updateFileStatus(self, fileStatusDict, ftsGUID=None, **kwargs):
-    """ Update the file ftsStatus and error
-
-       :param fileStatusDict: { fileID : { status , error, ftsGUID } }
-       :param ftsGUID: if specified, only update the files having a matchign ftsGUID
-    """
-
-    return self._getRPC(**kwargs).updateFileStatus(fileStatusDict, ftsGUID)
-
-  def updateJobStatus(self, jobStatusDict, **kwargs):
-    """ Update the job Status and error
-
-       :param jobStatusDict: { jobID : { status , error } }
-    """
-
-    return self._getRPC(**kwargs).updateJobStatus(jobStatusDict)
 
   def getNonFinishedOperations(self, limit=20, operationAssignmentTag="Assigned", **kwargs):
     """ Get all the FTS3Operations that have files in New or Failed state
@@ -100,7 +81,7 @@ class FTS3Client(Client):
     operationsJSON = res['Value']
 
     try:
-      operations = json.loads(operationsJSON, cls=FTS3JSONDecoder)
+      operations, _size = decode(operationsJSON)
       return S_OK(operations)
     except Exception as e:
       return S_ERROR(0, "Exception when decoding the non finished operations json %s" % e)
@@ -117,7 +98,7 @@ class FTS3Client(Client):
 
     operationsJSON = res['Value']
     try:
-      operations = json.loads(operationsJSON, cls=FTS3JSONDecoder)
+      operations, _size = decode(operationsJSON)
       return S_OK(operations)
     except Exception as e:
       return S_ERROR(0, "Exception when decoding the operations json %s" % e)

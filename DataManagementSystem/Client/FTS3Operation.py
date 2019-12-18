@@ -20,7 +20,7 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.DataManagementSystem.Client.FTS3File import FTS3File
-from DIRAC.DataManagementSystem.private.FTS3Utilities import FTS3Serializable
+from DIRAC.Core.Utilities.JEncode import JSerializable
 
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.RequestManagementSystem.Client.Operation import Operation as rmsOperation
@@ -30,7 +30,7 @@ from DIRAC.RequestManagementSystem.Client.Request import Request as rmsRequest
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 
 
-class FTS3Operation(FTS3Serializable):
+class FTS3Operation(JSerializable):
   """ Abstract class to represent an operation to be executed by FTS. It is a
       container for FTSFiles, as well as for FTSJobs.
 
@@ -360,7 +360,7 @@ class FTS3Operation(FTS3Serializable):
 
       ftsOp.activity = argumentDic['activity']
       ftsOp.priority = argumentDic['priority']
-    except Exception as _e:
+    except Exception:
       pass
 
     return ftsOp
@@ -406,7 +406,16 @@ class FTS3TransferOperation(FTS3Operation):
       if not res['OK']:
         return res
 
-      uniqueTransfersBySource = res['Value']
+      uniqueTransfersBySource, failedFiles = res['Value']
+
+      # Treat the errors of the failed files
+      for ftsFile, errMsg in failedFiles.iteritems():
+        log.error("Error when selecting random sources", "%s, %s" % (ftsFile.lfn, errMsg))
+        # If the error is that the file does not exist in the catalog
+        # fail it !
+        if cmpError(errMsg, errno.ENOENT):
+          log.error("The file does not exist, setting it Defunct", "%s" % ftsFile.lfn)
+          ftsFile.status = 'Defunct'
 
       # We don't need to check the source, since it is already filtered by the DataManager
       for sourceSE, ftsFiles in uniqueTransfersBySource.iteritems():

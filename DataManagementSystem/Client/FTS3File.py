@@ -1,8 +1,8 @@
 import datetime
-from DIRAC.DataManagementSystem.private.FTS3Utilities import FTS3Serializable
+from DIRAC.Core.Utilities.JEncode import JSerializable
 
 
-class FTS3File(FTS3Serializable):
+class FTS3File(JSerializable):
   """ This class represents an a File on which a given Operation
       (Transfer, Staging) should be executed
    """
