@@ -60,8 +60,9 @@ class Configuration(object):
           LOG.info('Parsing config section: %r', section)
           pattern = listify(config.get(section, 'pattern'))
           title = config.get(section, 'title')
-          scripts = listify(config.get(section, 'scripts'))
-          ignore = listify(config.get(section, 'ignore'))
+          manual = listify(config.get(section, 'manual'))
+          self.com_ignore_commands.extend(manual)
+          exclude = listify(config.get(section, 'exclude'))
           sectionPath = config.get(section, 'sectionpath').replace(' ', '')
           indexFile = self._fullPath(config.get(section, 'indexfile')) if \
               config.has_option(section, 'indexfile') else None
@@ -70,8 +71,9 @@ class Configuration(object):
 
           self.com_MSS.append(dict(pattern=pattern,
                                    title=title,
-                                   scripts=scripts,
-                                   ignore=ignore,
+                                   scripts=[],
+                                   exclude=exclude,
+                                   manual=manual,
                                    indexFile=indexFile,
                                    prefix=prefix,
                                    sectionPath=sectionPath))

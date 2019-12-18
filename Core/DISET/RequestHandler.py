@@ -159,7 +159,9 @@ class RequestHandler(object):
     if not retVal['OK']:
       raise RequestHandler.ConnectionError("Error while receiving file description %s %s" %
                                            (self.srv_getFormattedRemoteCredentials(), retVal['Message']))
-    fileInfo = retVal['Value']
+
+    # Reconvert to tuple
+    fileInfo = tuple(retVal['Value'])
     sDirection = "%s%s" % (sDirection[0].lower(), sDirection[1:])
     if "transfer_%s" % sDirection not in dir(self):
       self.__trPool.send(self.__trid, S_ERROR("Service can't transfer files %s" % sDirection))

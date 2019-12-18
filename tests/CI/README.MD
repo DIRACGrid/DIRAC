@@ -1,17 +1,17 @@
-# Instruction manual for GitLab CI tests
+# Instruction manual for running integration tests on GitHub Actions, GitLab CI/CD, or on local, development box.
 
-The scripts in this folder aims to automate integration tests for DIRAC either in GitLab CI, or on any local computer fulfilling the prerequisites.
+The scripts in this folder aims to automate integration tests for DIRAC, either in CI tools like GitHub Actions and GitLab CI/CD, or on any local computer fulfilling the prerequisites.
 
-The main script `run_docker_setup.sh` achieves this by setting up Docker containers for MySQL, ElasticSearch, DIRAC server and DIRAC client and runs the predefined pytests in DIRAC/tests/Integration/all_integration_*_tests.sh. 
+The main script `run_docker_setup.sh` achieves this by setting up Docker containers for MySQL, ElasticSearch, DIRAC server and DIRAC client and runs the predefined pytests in `DIRAC/tests/Integration/all_integration_*_tests.sh`.
 
 
-## Running tests on GitLab CI
+## Running tests on CI tools
 
 By default, the full CI job is executed on each push to the remote. Server and client installation logs, as well as server and client test logs are saved as artifacts for 7 days. 
 
 The default test environment can be overridden with manual pipelines and following the instructions in [Overriding default configuration](#overriding-default-configuration). 
 
-*NOTE*: The version of the Docker executor must be v18, or it might not be compatible with the Docker-In-Docker image 18-dind, which is specified in `.gitlab-ci.yml`.
+*NOTE*: The version of the Docker executor must be v18, or it might not be compatible with the Docker-In-Docker image 18-dind, which for Gitlab CI/CD is specified in `.gitlab-ci.yml`.
 
 ## Running tests locally
 To run a test locally using the default configuration, make sure that the local computer fulfills the requirements [below](#system-requirements), and simply execute `run_docker_setup.sh` with *bash*. 
@@ -26,7 +26,7 @@ The officially supported operating system is CERN Centos 7 ([CC7](http://linux.w
 
 The following dependencies/softwares are required:
 * Docker v18+ (lower version should work, but no promises are made). 
-* Docker-Compose v2.4+ 
+* Docker-Compose v2.4+ format
 
 ```
 sudo yum install -y docker

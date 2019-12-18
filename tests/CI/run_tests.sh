@@ -34,7 +34,7 @@ if [ "$INSTALLTYPE" == "server" ]; then
     source "$SERVERINSTALLDIR/bashrc"
     sed -i "s/\(elHost = \).*/\1'elasticsearch'/" "$TESTCODE/DIRAC/tests/Integration/Core/Test_ElasticsearchDB.py"
     cp -r "$TESTCODE/DIRAC/tests" "$SERVERINSTALLDIR/DIRAC/"
-    # shellcheck source=tests/Integration/all_integration_client_tests.sh
+    # shellcheck source=tests/Integration/all_integration_server_tests.sh
     source "$SERVERINSTALLDIR/DIRAC/tests/Integration/all_integration_server_tests.sh"
 elif [ "$INSTALLTYPE" == "client" ]; then
     # shellcheck source=/dev/null

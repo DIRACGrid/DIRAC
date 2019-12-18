@@ -34,11 +34,11 @@ dependencies:
   # testing and development
   - autopep8
   - caniusepython3
-  - codecov
   - coverage
   - hypothesis
   - ipython
   - mock
+  - parameterized
   - pylint >=1.6.5
   - pyparsing >=2.0.6
   - pytest >=3.6

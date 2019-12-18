@@ -1099,6 +1099,11 @@ class SiteDirector(AgentModule):
     else:
       self.log.info('DIRAC project will be installed by pilots')
 
+    # Pilot Logging defined?
+    pilotLogging = opsHelper.getValue("Pilot/PilotLogging", "false")
+    if pilotLogging.lower() in ['true', 'yes', 'y']:
+      pilotOptions.append('-z ')
+
     # Request a release
     # FIXME: this can disapper at some point (when there will only be pilot 3)
     if not self.pilot3:  # in pilot 3 the version is taken from the JSON file exported from the CS

@@ -447,6 +447,14 @@ class Service(object):
       identity += "(%s)" % credDict['DN']
     return identity
 
+  @staticmethod
+  def _deserializeProposalTuple(serializedProposal):
+    """ We receive the proposalTuple as a list.
+        Turn it into a tuple again
+    """
+    proposalTuple = tuple(tuple(x) if isinstance(x, list) else x for x in serializedProposal)
+    return proposalTuple
+
   def _receiveAndCheckProposal(self, trid):
     clientTransport = self._transportPool.get(trid)
     # Get the peer credentials
@@ -458,7 +466,7 @@ class Service(object):
                                                                                      clientTransport),
                                                           retVal['Message']))
       return S_ERROR("Invalid action proposal")
-    proposalTuple = retVal['Value']
+    proposalTuple = Service._deserializeProposalTuple(retVal['Value'])
     gLogger.debug("Received action from client", "/".join(list(proposalTuple[1])))
     # Check if there are extra credentials
     if proposalTuple[2]:

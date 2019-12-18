@@ -17,7 +17,8 @@ LOG = makeLogger('CommandReference')
 TITLE = 'title'
 PATTERN = 'pattern'
 SCRIPTS = 'scripts'
-IGNORE = 'ignore'
+MANUAL = 'manual'
+EXCLUDE = 'exclude'
 SECTION_PATH = 'sectionPath'
 INDEX_FILE = 'indexFile'
 PREFIX = 'prefix'
@@ -53,7 +54,7 @@ class CommandReference(object):
 
       for mT in self.sectionDicts:
         if any(pattern in scriptPath for pattern in mT[PATTERN]) and \
-           not any(pattern in scriptPath for pattern in mT[IGNORE]):
+           not any(pattern in scriptPath for pattern in mT[EXCLUDE]):
           mT[SCRIPTS].append(scriptPath)
 
     return
@@ -83,7 +84,7 @@ class CommandReference(object):
 
     listOfScripts = []
     # these scripts use pre-existing rst files, cannot re-create them automatically
-    listOfScripts.extend(sectionDict[IGNORE])
+    listOfScripts.extend(sectionDict[MANUAL])
     sectionPath = os.path.join(self.config.docsPath, sectionDict[SECTION_PATH])
     for script in sectionDict[SCRIPTS]:
       scriptName = os.path.basename(script)
@@ -112,7 +113,7 @@ class CommandReference(object):
       commandList = indexFile.read().replace('\n', '')
 
     missingCommands = []
-    for script in sectionDict[SCRIPTS]:
+    for script in sectionDict[SCRIPTS] + sectionDict[MANUAL]:
       scriptName = os.path.basename(script)
       if scriptName.endswith('.py'):
         scriptName = scriptName[:-3]
@@ -133,7 +134,7 @@ class CommandReference(object):
     If an rst file exists for a command, we move it.
     An existing entry for a non existing rst file will create a warning when running sphinx.
     """
-    existingCommands = {os.path.basename(com).replace('.py', '') for com in sectionDict[SCRIPTS] + sectionDict[IGNORE]}
+    existingCommands = {os.path.basename(com).replace('.py', '') for com in sectionDict[SCRIPTS] + sectionDict[MANUAL]}
     sectionPath = os.path.join(self.config.docsPath, sectionDict[SECTION_PATH])
     LOG.info('Checking %r for non-existent commands', sectionPath)
     # read the script index

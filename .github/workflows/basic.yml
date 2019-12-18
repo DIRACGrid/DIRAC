@@ -16,17 +16,18 @@ jobs:
           - DIRAC_USE_M2CRYPTO=Yes pytest
           - pytest Core/Security/test
           - DIRAC_USE_M2CRYPTO=Yes pytest Core/Security/test
-          - .travis.d/checkDocs.sh
+          - tests/checkDocs.sh
           # TODO This should cover more than just tests/CI
           - find tests/CI -name '*.sh' -print0 | xargs -0 -n1 shellcheck --external-source
-          - .travis.d/runPylint.sh
-          - CHECK=pylintPY3K .travis.d/runPylint.sh
+          - tests/runPylint.sh
+          - CHECK=pylintPY3K tests/runPylint.sh
           - |
-            env
-            git remote add upstream https://github.com/DIRACGrid/DIRAC.git
-            git fetch --no-tags upstream "${REFERENCE_BRANCH}"
-            git branch -vv
-            git diff -U0 "upstream/${REFERENCE_BRANCH}" ':(exclude)tests/formatting/pep8_bad.py' | pycodestyle --diff
+            if [[ "${REFERENCE_BRANCH}" != "" ]]; then
+                git remote add upstream https://github.com/DIRACGrid/DIRAC.git
+                git fetch --no-tags upstream "${REFERENCE_BRANCH}"
+                git branch -vv
+                git diff -U0 "upstream/${REFERENCE_BRANCH}" ':(exclude)tests/formatting/pep8_bad.py' | pycodestyle --diff
+            fi
 
     steps:
     - uses: actions/checkout@v1

@@ -58,7 +58,7 @@ class BundleDeliveryClient(object):
     self.log.info("Current hash for bundle %s in dir %s is '%s'" % (bundleID, dirToSyncTo, currentHash))
     buff = cStringIO.StringIO()
     transferClient = self.__getTransferClient()
-    result = transferClient.receiveFile(buff, (bundleID, currentHash))
+    result = transferClient.receiveFile(buff, [bundleID, currentHash])
     if not result['OK']:
       self.log.error("Could not sync dir", result['Message'])
       if dirCreated:

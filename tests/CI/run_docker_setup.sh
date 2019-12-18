@@ -8,7 +8,7 @@ IFS=$'\n\t'
 #
 #    The following software is required on top of Cern Centos 7 (CC7):
 #      * Docker v18+
-#      * Docker-Compose v2.4+
+#      * Docker-Compose that understands v2.4+ format
 #
 #    For the script to run, the shell must be logged into the CERN
 #    container registry at gitlab-registry.cern.ch using
@@ -48,10 +48,14 @@ function prepareEnvironment() {
       export ALTERNATIVE_MODULES=$CI_PROJECT_DIR
 
       # find the latest version
-      majorVersion=$(grep "majorVersion =" "${TESTREPO}/__init__.py" | cut -d "=" -f 2)
-      minorVersion=$(grep "minorVersion =" "${TESTREPO}/__init__.py" | cut -d "=" -f 2)
-      export DIRACBRANCH=v${majorVersion// }r${minorVersion// }
-      echo "Deduced DIRACBRANCH ${DIRACBRANCH} from __init__.py"
+      if [ "${CI_COMMIT_REF_NAME}" = 'refs/heads/integration' ]; then
+          export DIRACBRANCH=integration
+      else
+          majorVersion=$(grep "majorVersion =" "${TESTREPO}/__init__.py" | cut -d "=" -f 2)
+          minorVersion=$(grep "minorVersion =" "${TESTREPO}/__init__.py" | cut -d "=" -f 2)
+          export DIRACBRANCH=v${majorVersion// }r${minorVersion// }
+          echo "Deduced DIRACBRANCH ${DIRACBRANCH} from __init__.py"
+      fi
 
       {
         echo "export TESTREPO=${TESTREPO}"

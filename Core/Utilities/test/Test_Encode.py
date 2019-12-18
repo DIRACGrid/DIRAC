@@ -17,9 +17,8 @@ from DIRAC.Core.Utilities.DEncode import encode as disetEncode, decode as disetD
 from DIRAC.Core.Utilities.JEncode import encode as jsonEncode, decode as jsonDecode, JSerializable
 
 from hypothesis import given
-from hypothesis.strategies import integers, lists, recursive, floats, text,\
-    booleans, none, dictionaries, tuples
-from hypothesis.searchstrategy.datetime import DatetimeStrategy
+from hypothesis.strategies import builds, integers, lists, recursive, floats, text,\
+    booleans, none, dictionaries, tuples, datetimes
 
 from pytest import mark, approx, raises
 parametrize = mark.parametrize
@@ -35,24 +34,17 @@ jsonTuple = (jsonEncode, jsonDecode)
 enc_dec_imp = (disetTuple, jsonTuple)
 
 
-# We define a custom datetime strategy in order
-# to pull date after 1900 (limitation of strftime)
-# and without microseconds
-
-class myDateTimeSearchStrategy(DatetimeStrategy):
-  """ Class to draw datetime without microseconds"""
-
-  def do_draw(self, *args, **kwargs):
-    """ Just draw from the parent class and replace microseconds with 0 """
-    return super(myDateTimeSearchStrategy, self).do_draw(*args, **kwargs).replace(microsecond=0)
-
-
 def myDatetimes():
-  """ Convenience 'constructor' like hypothesis datetimes().
-      Only pull dates after 1900
+  """We define a custom datetime strategy in order
+     to pull date after 1900 (limitation of strftime)
+     and without microseconds
   """
-  return myDateTimeSearchStrategy(datetime.datetime(
-      1900, 1, 1, 0, 0), datetime.datetime.max, none())
+  # Build a strategy by removing the microsecond from a datetimes strategy
+  # https://hypothesis.readthedocs.io/en/latest/data.html#hypothesis.strategies.builds
+  return builds(lambda inDt: inDt.replace(microsecond=0), datetimes(
+      min_value=datetime.datetime(1900, 1, 1, 0, 0),
+      max_value=datetime.datetime.max,
+      timezones=none()))
 
 
 # These initial strategies are the basic types supported by the original dEncode

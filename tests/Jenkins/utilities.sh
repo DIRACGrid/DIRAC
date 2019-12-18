@@ -313,15 +313,16 @@ function installDIRAC(){
   cp "$TESTCODE/DIRAC/Core/scripts/dirac-install.py" "$CLIENTINSTALLDIR/dirac-install"
   chmod +x "$CLIENTINSTALLDIR/dirac-install"
 
-  if [ $modules ]
-  then
-    INSTALLOPTIONS+=" --module="$modules
+  if [ "$CLIENT_ALTERNATIVE_MODULES" ]; then
+    echo "Installing from non-release code"
+    if [[ -d "$CLIENT_ALTERNATIVE_MODULES" ]]; then
+      INSTALLOPTIONS+="--module=$CLIENT_ALTERNATIVE_MODULES:::DIRAC:::local"
+    else
+      INSTALLOPTIONS+="--module=$CLIENT_ALTERNATIVE_MODULES"
+    fi
   fi
 
-  ./dirac-install -r $DIRAC_RELEASE -t client $INSTALLOPTIONS $DEBUG
-
-  if [ $? -ne 0 ]
-  then
+  if ! ./dirac-install -r $DIRAC_RELEASE -t client $INSTALLOPTIONS $DEBUG; then
     echo 'ERROR: DIRAC client installation failed'
     exit 1
   fi
@@ -825,7 +826,7 @@ dropDBs(){
   echo '==> [dropDBs]'
 
   dbs=$(cut -d ' ' -f 2 < databases | cut -d '.' -f 1 | grep -v ^RequestDB | grep -v ^FileCatalogDB)
-  python "$TESTCODE/DIRAC/tests/Jenkins/dirac-drop-db.py" "$dbs" "$DEBUG"
+  python "$TESTCODE/DIRAC/tests/Jenkins/dirac-drop-db.py" $dbs $DEBUG
 }
 
 #-------------------------------------------------------------------------------
@@ -888,6 +889,12 @@ function killRunsv(){
 
 function killES(){
   echo '==> [killES]'
+
+    res=$(ps aux | grep 'elasticsearch' | grep 'lhcbci' | grep -v 'grep' | cut -f 5 -d ' ')
+
+    if [ -n "$res" ]; then
+      kill -9 $res
+    fi
 
     res=$(ps aux | grep 'elasticsearch' | grep 'lhcbci' | grep -v 'grep' | cut -f 4 -d ' ')
 
@@ -954,7 +961,6 @@ function startRunsv(){
 
   echo '==> [Done startRunsv]'
 }
-
 
 
 #.............................................................................

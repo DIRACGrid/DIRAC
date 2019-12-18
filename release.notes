@@ -9,7 +9,7 @@ CHANGE: (#4235) Removes locals() way of passing parameters
 *tests
 NEW: (#4179) Set up Gitlab CI pipeline using Docker containers
 
-[v7r1-pre10]
+[v7r1-pre12]
 
 NEW: Add environment.yml file for preparing an environment with conda
 
@@ -19,6 +19,7 @@ NEW: (#4236) DISET - pass the client DIRAC version as part of the request descri
 NEW: (#4274) Allow installation from a local directory
 FIX: (#4289) Use subprocess32 if possible for significantly better performance
 FIX: (#4289) TypeLoader should not be a singleton as it has a cache
+CHANGE: (#4362) RPC parameters are cast to list/tuples when needed
 
 *Configuration
 CHANGE: (#4157) add new helper methods for IdP/Proxy Providers, OAuthManager. Add methods that 
@@ -35,6 +36,10 @@ CHANGE: (#4157) add possibility to work with Proxy Providers and "clean" proxy w
 NEW: (#4257) Filter of duplicate mails in Notification
 FIX: (#4257) Optimize test in NotificationHandler
 FIX: (#4289) Avoid leaking std(in|out|err) file handles when running runsvdir
+CHANGE: (#4362) BundleDeliveryFramework uses list instead of tuple
+
+*WMS
+CHANGE: (#4362) SandboxStoreClient uses list instead of tuple
 
 *DMS
 CHANGE: (#4243) FileCatalog - standard components are loaded using ObjectLoader mechanism
@@ -45,6 +50,9 @@ CHANGE: (#4279) FileCatalog - dropped PolicyBasedSecurityManager and VOMSPolicy 
 NEW: (#4157) ProxyProvider resources with implementation for DIRAC CA and PUSP proxy providers
 NEW: (#4276) IdProvider resources to represent external user identity providers
 
+*RSS
+CHANGE: (#4362) SQL query orders using list instead of tuples
+
 *tests
 CHANGE: (#4279) use VOMSSecurityManager for integration instead of PolicyBasedSecurityManager/VOMSPolicy
 FIX: (#4284) DMS client tests to use DIRAC user name, rather than the local system user name
@@ -54,6 +62,61 @@ FIX: (#4289) Exit quickly if the installation fails to make it easier to find is
 
 *docs
 NEW: (#4289) Document how to run integration tests in docker
+
+[v7r0p9]
+
+*Core
+CHANGE: (#4302) Simplify and convert command wrapper scripts to bash. Also removed some obsolete MacOS code.
+FIX: (#4361) restore the possibility to set a global timeout for a Client
+
+*DMS
+CHANGE: (#4353) FTS3 persistOperation method checks that the caller is allowed to do so
+CHANGE: (#4353) FTS3Manager: do not expose updateJobStatus and updateFileStatus on the service
+CHANGE: (#4353) FTS3 operation is canceled if the matching request is canceled
+CHANGE: (#4353) when a source file does not exist, defunct the FTS3File associated
+CHANGE: (#4353) use the JEncode serializer instead of the custom FTS3Serializer
+CHANGE: (#4353) cancel an FTS3Job together with its associated FTS3Files if the job is not found on the server
+
+*RSS
+CHANGE: (#4336) remove a call to shifterProxy configuration which would not work for multi VO Dirac
+
+*docs
+CHANGE: (#4378) using docker images from docker hub
+
+[v7r0p8]
+
+*Configuration
+CHANGE: Let update the config, even if the Pilot info is not in the CS
+
+[v7r0p7]
+
+*Core
+CHANGE: {bash,tchs,diracos}rc set the PYTHONPATH to only dirac (ignore existing PYTHONPATH)
+CHANGE: dirac-configure might work without the need of a proxy
+CHANGE: the timeout of an RPC call is always updated
+
+[v7r0p6]
+
+*Core
+NEW: Add environment.yml file for preparing an environment with conda
+CHANGE: Use subprocess32 if possible for significantly better performance
+FIX: TypeLoader should not be a singleton as it has a cache
+
+*FrameworkSystem
+FIX: Avoid leaking std(in|out|err) file handles when running runsvdir
+
+*WorkloadManagementSystem
+NEW: To activate the pilot logging mechanism the following option must be present in CS: Pilot/PilotLogging with a value set to "true", "yes" or "y".
+
+*Tests
+NEW: CI for unit/lint/integration testing with GitHub actions
+NEW: Start using shell linting of the test scripts
+FIX: Exit quickly if the installation fails to make it easier to find issues
+
+*Docs
+NEW: Document how to run integration tests in docker
+CHANGE: The options in the command reference sections: 'ignore' and 'scripts', are replaced by 'exclude' and 'manual' respectively. The entries in 'exclude' will now reject scripts that are otherwise picked up by the 'patterns'. Entries in 'manual' will be added to the indexFile, but their rst file has to be provided by hand. Fixes #4345
+
 
 [v7r0p5]
 
@@ -185,7 +248,7 @@ NEW: (#4255) New dirac-resource-info command to display computing and storage re
 CHANGE: (#4177) use the ObjectLoader for Clients, in PEP
 
 *Monitoring
-FIX: MonitoringReporter - make processResords() method thread safe, fixes #4193
+FIX: MonitoringReporter - make processRecords() method thread safe, fixes #4193
 
 *tests
 NEW: Add ChangeESFlag.py script to modify useES flag in dirac.cfg. To be integrated with Jenkins code.
@@ -205,6 +268,27 @@ CHANGE: (#4110) updated basic tutorial for CC7 instead of SLC6.
 NEW: (#4170) added Production system documentation
 CHANGE: (#4224) Pilot 3 is the default
 NEW: (#4244) Added a few notes on using the JobParameters on ElasticSearch database
+
+[v6r22p18]
+
+*TS
+CHANGE: (#4331) TaskManager - give possibility to run jobs for different problematic productions at
+        different Hospital sites>>>>>>> rel-v6r22
+
+[v6r22p17]
+
+CHANGE: Just update the Web version
+
+[v6r22p16]
+
+*Core
+CHANGE: remove many calls to gLogger.debug() of low level DB modules (in particular MySQL.py) that may slowdown services
+
+*FrameworkSystem
+FIX: PRIVATE_LIMITED_DELEGATION role can download its own proxies
+
+*ResourceStatusSystem
+FIX: PublisherHandler: Convert set to list, because set can not be serialized using DEncode.
 
 [v6r22p15]
 

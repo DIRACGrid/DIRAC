@@ -152,7 +152,7 @@ class SandboxStoreClient(object):
         bData = fd.read(10240)
 
     transferClient = self.__getTransferClient()
-    result = transferClient.sendFile(tmpFilePath, ("%s.tar.bz2" % oMD5.hexdigest(), assignTo))
+    result = transferClient.sendFile(tmpFilePath, ["%s.tar.bz2" % oMD5.hexdigest(), assignTo])
     result['SandboxFileName'] = tmpFilePath
     try:
       if result['OK']:

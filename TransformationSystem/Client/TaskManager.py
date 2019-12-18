@@ -560,7 +560,7 @@ class WorkflowTasks(TaskBase):
     oJob.setJobGroup(transGroup)
 
     if int(transID) in [int(x) for x in self.opsH.getValue("Hospital/Transformations", [])]:
-      self._handleHospital(oJob)
+      self._handleHospital(oJob, transID)
 
     # Collect per job parameters sequences
     paramSeqDict = {}
@@ -611,7 +611,8 @@ class WorkflowTasks(TaskBase):
 
       outputParameterList = []
       if self.outputDataModule:
-        res = self.getOutputData({'Job': oJob._toXML(), 'TransformationID': transID,  # pylint: disable=protected-access
+        res = self.getOutputData({'Job': oJob._toXML(),  # pylint: disable=protected-access
+                                  'TransformationID': transID,
                                   'TaskID': taskID, 'InputData': inputData})
         if not res['OK']:
           self._logError("Failed to generate output data", res['Message'],
@@ -739,7 +740,7 @@ class WorkflowTasks(TaskBase):
 
       hospitalTrans = [int(x) for x in self.opsH.getValue("Hospital/Transformations", [])]
       if int(transID) in hospitalTrans:
-        self._handleHospital(oJob)
+        self._handleHospital(oJob, transID)
 
       paramsDict['TaskObject'] = ''
       if self.outputDataModule:
@@ -821,13 +822,25 @@ class WorkflowTasks(TaskBase):
                          transID=transID, method='_handleRest')
           oJob._addJDLParameter(paramName, paramValue)
 
-  def _handleHospital(self, oJob):
+  def _handleHospital(self, oJob, transID=None):
     """ Optional handle of hospital jobs
     """
     oJob.setInputDataPolicy('download', dataScheduling=False)
-    hospitalSite = self.opsH.getValue("Hospital/HospitalSite", 'DIRAC.JobDebugger.ch')
+
+    hospitalSite = None
+    hospitalCEs = []
+    if transID and "Clinics" in self.opsH.getSections("Hospital")['Value']:
+      clinics = self.opsH.getSections("Hospital/Clinics")['Value']
+      for clinic in clinics:
+        if int(transID) in [int(x) for x in self.opsH.getValue("Hospital/%s/Transformations" % clinic, [])]:
+          hospitalSite = self.opsH.getValue("Hospital/%s/ClinicSite" % clinic, 'DIRAC.JobDebugger.ch')
+          hospitalCEs = self.opsH.getValue("Hospital/%s/ClinicCEs" % clinic, [])
+    if not hospitalSite:
+      hospitalSite = self.opsH.getValue("Hospital/HospitalSite", 'DIRAC.JobDebugger.ch')
+    if not hospitalCEs:
+      hospitalCEs = self.opsH.getValue("Hospital/HospitalCEs", [])
+
     oJob.setDestination(hospitalSite)
-    hospitalCEs = self.opsH.getValue("Hospital/HospitalCEs", [])
     if hospitalCEs:
       oJob._addJDLParameter('GridCE', hospitalCEs)
 

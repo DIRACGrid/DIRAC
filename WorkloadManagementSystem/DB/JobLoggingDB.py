@@ -138,7 +138,7 @@ class JobLoggingDB(DB):
     """ Get TimeStamps for job MajorState transitions
         return a {State:timestamp} dictionary
     """
-    self.log.debug('getWMSTimeStamps: Retrieving Timestamps for Job %d' % int(jobID))
+    # self.log.debug('getWMSTimeStamps: Retrieving Timestamps for Job %d' % int(jobID))
 
     result = {}
     cmd = 'SELECT Status,StatusTimeOrder FROM LoggingInfo WHERE JobID=%d' % int(jobID)

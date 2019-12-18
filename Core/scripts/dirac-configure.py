@@ -466,23 +466,22 @@ if not os.path.exists(outputFile):
   update = True
   DIRAC.gConfig.dumpLocalCFGToFile(outputFile)
 
-# We need user proxy or server certificate to continue
-if not useServerCert:
-  Script.enableCS()
-  result = getProxyInfo()
-  if not result['OK']:
-    DIRAC.gLogger.notice('Configuration is not completed because no user proxy is available')
-    DIRAC.gLogger.notice('Create one using dirac-proxy-init and execute again with -F option')
-    sys.exit(1)
-else:
-  Script.localCfg.deleteOption('/DIRAC/Security/UseServerCertificate')
-  # When using Server Certs CA's will be checked, the flag only disables initial download
-  # this will be replaced by the use of SkipCADownload
-  Script.localCfg.deleteOption('/DIRAC/Security/UseServerCertificate')
-  Script.localCfg.addDefaultEntry('/DIRAC/Security/UseServerCertificate', 'yes')
-  Script.enableCS()
-
 if includeAllServers:
+  # We need user proxy or server certificate to continue in order to get all the CS URLs
+  if not useServerCert:
+    Script.enableCS()
+    result = getProxyInfo()
+    if not result['OK']:
+      DIRAC.gLogger.notice('Configuration is not completed because no user proxy is available')
+      DIRAC.gLogger.notice('Create one using dirac-proxy-init and execute again with -F option')
+      sys.exit(1)
+  else:
+    Script.localCfg.deleteOption('/DIRAC/Security/UseServerCertificate')
+    # When using Server Certs CA's will be checked, the flag only disables initial download
+    # this will be replaced by the use of SkipCADownload
+    Script.localCfg.addDefaultEntry('/DIRAC/Security/UseServerCertificate', 'yes')
+    Script.enableCS()
+
   DIRAC.gConfig.setOptionValue('/DIRAC/Configuration/Servers', ','.join(DIRAC.gConfig.getServersList()))
   DIRAC.gLogger.verbose('/DIRAC/Configuration/Servers =', ','.join(DIRAC.gConfig.getServersList()))
 
