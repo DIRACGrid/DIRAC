@@ -34,11 +34,12 @@ DIRAC_DEBUG_DENCODE_CALLSTACK = bool(os.environ.get('DIRAC_DEBUG_DENCODE_CALLSTA
 CONTEXT_DEPTH = 100
 
 
-def printDebugCallstack():
+def printDebugCallstack(headerMessage):
   """ Prints information about the current stack as well as the caller parameters.
       The purpose of this method is to track down all the places in DIRAC that might
       not survive the change to JSON encoding.
 
+      :param headerMessage: message to be displayed first
       :returns: None
 
   """
@@ -56,6 +57,19 @@ def printDebugCallstack():
 
   tb = traceback.format_stack()
   frames = inspect.stack(context=CONTEXT_DEPTH)
+
+  # The datetime are encoded as tuple. Since datetime are taken care of
+  # in JSerializer, just don't print a warning here
+  # Note: -3 because we have to go past (de/encodeTuple and the Traceback module)
+  if 'encodeDateTime' in tb[-3] or 'decodeDateTime' in tb[-3]:
+    return
+
+  # The accountingDB stores a encoding of the bucketsLength
+  # this is ok for now, so silent all the AccountingDB error
+  if any(['AccountingDB' in tr for tr in reversed(tb)]):
+    return
+
+  print('=' * 45, headerMessage, '=' * 45)
 
   # print the traceback that leads us here
   # remove the last element which is the traceback module call
@@ -316,8 +330,7 @@ def encodeTuple(lValue, eList):
   """ Encoding tuple """
 
   if DIRAC_DEBUG_DENCODE_CALLSTACK:
-    print('=' * 45, "Encoding tuples", '=' * 45)
-    printDebugCallstack()
+    printDebugCallstack('Encoding tuples')
 
   eList.append("t")
   for uObject in lValue:
@@ -329,8 +342,7 @@ def decodeTuple(data, i):
   """ Decoding tuple """
 
   if DIRAC_DEBUG_DENCODE_CALLSTACK:
-    print('=' * 45, "Decoding tuples", '=' * 45)
-    printDebugCallstack()
+    printDebugCallstack('Decoding tuples')
 
   oL, i = decodeList(data, i)
   return (tuple(oL), i)
@@ -346,8 +358,7 @@ def encodeDict(dValue, eList):
   if DIRAC_DEBUG_DENCODE_CALLSTACK:
     # If we have numbers as keys
     if any([isinstance(x, six.integer_types + (float,)) for x in dValue]):
-      print('=' * 40, "Encoding dict with numeric keys", '=' * 40)
-      printDebugCallstack()
+      printDebugCallstack("Encoding dict with numeric keys")
 
   eList.append("d")
   for key in sorted(dValue):
@@ -366,8 +377,7 @@ def decodeDict(data, i):
     if DIRAC_DEBUG_DENCODE_CALLSTACK:
       # If we have numbers as keys
       if data[i] in ('i', 'I', 'f'):
-        print('=' * 40, "Decoding dict with numeric keys", '=' * 40)
-        printDebugCallstack()
+        printDebugCallstack("Decoding dict with numeric keys")
 
     k, i = g_dDecodeFunctions[data[i]](data, i)
     oD[k], i = g_dDecodeFunctions[data[i]](data, i)
