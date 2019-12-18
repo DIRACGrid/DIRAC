@@ -1,7 +1,22 @@
 [v7r0p9]
 
+*Core
+CHANGE: (#4302) Simplify and convert command wrapper scripts to bash. Also removed some obsolete MacOS code.
+FIX: (#4361) restore the possibility to set a global timeout for a Client
+
+*DMS
+CHANGE: (#4353) FTS3 persistOperation method checks that the caller is allowed to do so
+CHANGE: (#4353) FTS3Manager: do not expose updateJobStatus and updateFileStatus on the service
+CHANGE: (#4353) FTS3 operation is canceled if the matching request is canceled
+CHANGE: (#4353) when a source file does not exist, defunct the FTS3File associated
+CHANGE: (#4353) use the JEncode serializer instead of the custom FTS3Serializer
+CHANGE: (#4353) cancel an FTS3Job together with its associated FTS3Files if the job is not found on the server
+
 *RSS
 CHANGE: (#4336) remove a call to shifterProxy configuration which would not work for multi VO Dirac
+
+*docs
+CHANGE: (#4378) using docker images from docker hub
 
 [v7r0p8]
 
