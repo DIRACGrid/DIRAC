@@ -33,7 +33,7 @@ jobs:
         # Set environment variables
         echo -n "-e CI_PROJECT_DIR=/repo " >> run_in_container
         echo -n "-e CI_COMMIT_REF_NAME=$GITHUB_REF " >> run_in_container
-        echo -n "-e CI_REGISTRY_IMAGE=gitlab-registry.cern.ch/cburr/dirac " >> run_in_container
+        echo -n "-e CI_REGISTRY_IMAGE=diracgrid " >> run_in_container
         echo -n "-e MYSQL_VER=${{ matrix.MYSQL_VER }} " >> run_in_container
         echo -n "-e ES_VER=${{ matrix.ES_VER }} " >> run_in_container
         # Finish wrapper script
@@ -41,7 +41,7 @@ jobs:
         chmod +x run_in_container
     - name: Prepare environment
       run: |
-        docker run --name dirac-testing-host -v $PWD:/repo --detach --privileged -v /var/run/docker.sock:/var/run/docker.sock --rm gitlab-registry.cern.ch/cburr/dirac/docker-compose:latest bash -c 'sleep 100000000'
+        docker run --name dirac-testing-host -v $PWD:/repo --detach --privileged -v /var/run/docker.sock:/var/run/docker.sock --rm diracgrid/docker-compose-dirac:latest bash -c 'sleep 100000000'
         ./run_in_container bash -c 'source tests/CI/run_docker_setup.sh && prepareEnvironment'
     - name: Install server
       run: ./run_in_container bash -c 'source tests/CI/run_docker_setup.sh && installServer'
