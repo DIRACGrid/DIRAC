@@ -32,6 +32,7 @@ else
     echo "Using remote test repository ${TESTREPO} in branch ${TESTBRANCH}"
 fi
 
+
 DIRACSETUP=$(< tests/Jenkins/install.cfg grep "Setup = " | cut -f5 -d " ")
 
 cd ../..

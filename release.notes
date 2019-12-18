@@ -1,4 +1,4 @@
-[v7r2-pre1]
+[v7r2-pre2]
 
 *Core
 FIX: (#4283) Added protection against empty certificates directory in dirac-install
@@ -95,6 +95,18 @@ CHANGE: {bash,tchs,diracos}rc set the PYTHONPATH to only dirac (ignore existing 
 CHANGE: dirac-configure might work without the need of a proxy
 CHANGE: the timeout of an RPC call is always updated
 
+[v7r0p8]
+
+*Configuration
+CHANGE: Let update the config, even if the Pilot info is not in the CS
+
+[v7r0p7]
+
+*Core
+CHANGE: {bash,tchs,diracos}rc set the PYTHONPATH to only dirac (ignore existing PYTHONPATH)
+CHANGE: dirac-configure might work without the need of a proxy
+CHANGE: the timeout of an RPC call is always updated
+
 [v7r0p6]
 
 *Core
@@ -116,7 +128,6 @@ FIX: Exit quickly if the installation fails to make it easier to find issues
 *Docs
 NEW: Document how to run integration tests in docker
 CHANGE: The options in the command reference sections: 'ignore' and 'scripts', are replaced by 'exclude' and 'manual' respectively. The entries in 'exclude' will now reject scripts that are otherwise picked up by the 'patterns'. Entries in 'manual' will be added to the indexFile, but their rst file has to be provided by hand. Fixes #4345
-
 
 [v7r0p5]
 
@@ -273,7 +284,7 @@ NEW: (#4244) Added a few notes on using the JobParameters on ElasticSearch datab
 
 *TS
 CHANGE: (#4331) TaskManager - give possibility to run jobs for different problematic productions at
-        different Hospital sites>>>>>>> rel-v6r22
+        different Hospital sites
 
 [v6r22p17]
 
