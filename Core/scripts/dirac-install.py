@@ -1739,7 +1739,7 @@ def loadConfiguration():
 
   # at the end we load the local configuration and merge with the global cfg
   for arg in args:
-    if len(arg) > 4 and arg.find(".cfg") == len(arg) - 4:
+    if len(arg) > 4 and arg.find(".cfg") == len(arg) - 4 and ':::' not in arg:
       result = releaseConfig.loadInstallationLocalDefaults(arg)
       if not result['OK']:
         logERROR(result['Message'])
