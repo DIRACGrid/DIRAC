@@ -1135,9 +1135,9 @@ class ReleaseConfig(object):
 
   def getDiracOSVersion(self, diracOSVersion=None):
     """
-      It returns the DIRACOS version
-      :param str diracOSVersion: the OS version
-      """
+    It returns the DIRACOS version
+    :param str diracOSVersion: the OS version
+    """
 
     if diracOSVersion:
       return self.getDiracOSExtensionAndVersion(diracOSVersion)
@@ -1680,7 +1680,7 @@ cmdOpts = (('r:', 'release=', 'Release version to install'),
            ('  ', 'createLink', 'create version symbolic link from the versions directory. This is equivalent to the \
            following command: ln -s /opt/dirac/versions/vArBpC vArBpC'),
            ('  ', 'scriptSymlink', 'Symlink the scripts instead of creating wrapper'),
-           ('  ', 'userEnvVariables',
+           ('  ', 'userEnvVariables=',
             'User-requested environment variables (comma-separated, name and value separated by ":::")')
            )
 
@@ -2158,7 +2158,7 @@ def createBashrc():
       # Add the lines required for further env variables requested
       if cliParams.userEnvVariables:
         lines.extend(['# User-requested variables'])
-        for envName, envValue in cliParams.userEnvVariables:
+        for envName, envValue in cliParams.userEnvVariables.items():
           lines.extend(['export %s=%s' % (envName, envValue)])
 
       lines.append('')
@@ -2262,7 +2262,7 @@ def createCshrc():
       # Add the lines required for further env variables requested
       if cliParams.userEnvVariables:
         lines.extend(['# User-requested variables'])
-        for envName, envValue in cliParams.userEnvVariables:
+        for envName, envValue in cliParams.userEnvVariables.items():
           lines.extend(['setenv %s %s' % (envName, envValue)])
 
       lines.append('')
@@ -2453,7 +2453,7 @@ def createBashrcForDiracOS():
       # Add the lines required for further env variables requested
       if cliParams.userEnvVariables:
         lines.extend(['# User-requested variables'])
-        for envName, envValue in cliParams.userEnvVariables:
+        for envName, envValue in cliParams.userEnvVariables.items():
           lines.extend(['export %s=%s' % (envName, envValue)])
 
       lines.append('')
