@@ -40,7 +40,7 @@ class ProductionStep(object):
     if self.ParentStep:
       if isinstance(self.ParentStep, list):
         prodStepDict['parentStep'] = []
-        for parentStep in self.ParentStep:
+        for parentStep in self.ParentStep:  # pylint: disable=not-an-iterable
           if not parentStep.Name:
             return S_ERROR('Parent Step does not exist')
           prodStepDict['parentStep'].append(parentStep.Name)
