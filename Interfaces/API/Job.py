@@ -593,6 +593,10 @@ class Job(API):
        >>> job.setNumberOfProcessors(numberOfProcessors=3, maxNumberOfProcessors=4)
        will lead to ignore the second parameter
 
+       >>> job = Job()
+       >>> job.setNumberOfProcessors(numberOfProcessors=3, minNumberOfProcessors=2)
+       will lead to ignore the second parameter
+
        :param processors: number of processors required by the job (exact number, unless a min/max are set)
        :type processors: int
        :param minNumberOfProcessors: optional min number of processors the job applications can use
@@ -606,9 +610,11 @@ class Job(API):
       if not minNumberOfProcessors:
         nProc = numberOfProcessors
       else:
-        nProc = min(numberOfProcessors, minNumberOfProcessors)
+        nProc = max(numberOfProcessors, minNumberOfProcessors)
       if nProc > 1:
         self._addParameter(self.workflow, 'NumberOfProcessors', 'JDL', nProc, "Exact number of processors requested")
+        self._addParameter(self.workflow, 'MaxNumberOfProcessors', 'JDL', nProc,
+                           "Max Number of processors the job applications may use")
       return S_OK()
 
     if maxNumberOfProcessors and not minNumberOfProcessors:
@@ -622,6 +628,8 @@ class Job(API):
             and minNumberOfProcessors > 1:
       self._addParameter(self.workflow, 'NumberOfProcessors', 'JDL',
                          minNumberOfProcessors, "Exact number of processors requested")
+      self._addParameter(self.workflow, 'MaxNumberOfProcessors', 'JDL',
+                         minNumberOfProcessors, "Max Number of processors the job applications may use")
       return S_OK()
 
     # By this point there should be a min
