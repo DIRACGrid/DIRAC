@@ -9,6 +9,7 @@ jobs:
     strategy:
       fail-fast: False
       matrix:
+<<<<<<< HEAD
 	python:
 <<<<<<< HEAD
 	  - 2.6.9
@@ -19,6 +20,11 @@ jobs:
 	  - 2.7.13
 	  # - 3.6.8
 >>>>>>> added workflow for testing on different python versions
+=======
+        python:
+          - 2.7.13
+	  - 3.6.8
+>>>>>>> python 3
 
     steps:
     - uses: actions/checkout@v1
@@ -35,6 +41,7 @@ jobs:
       run: conda create -n python_${{ matrix.python }} python=${{ matrix.python }}
     - name: run pilot wrapper test
       run: |
+<<<<<<< HEAD
 	cp tests/Integration/WorkloadManagementSystem/Test_GenerateAndExecutePilotWrapper.py .
 	# cp tests/Integration/WorkloadManagementSystem/Test_GenerateAndExecutePilotWrapper.py ${{ github.workspace }}
 	# cp WorkloadManagementSystem/Utilities/PilotWrapper.py ${{ github.workspace }}
@@ -43,3 +50,7 @@ jobs:
 	ls -al ${{ github.worksspace }}
 >>>>>>> added workflow for testing on different python versions
 	python Test_GenerateAndExecutePilotWrapper.py file://${{ github.workspace }}/WorkloadManagementSystem/Utilities/PilotWrapper.py file://${{ github.workspace }}/Core/scripts/dirac-install.py
+=======
+        cp tests/Integration/WorkloadManagementSystem/Test_GenerateAndExecutePilotWrapper.py .
+        python Test_GenerateAndExecutePilotWrapper.py file://${{ github.workspace }}/WorkloadManagementSystem/Utilities/PilotWrapper.py file://${{ github.workspace }}/Core/scripts/dirac-install.py
+>>>>>>> python 3
