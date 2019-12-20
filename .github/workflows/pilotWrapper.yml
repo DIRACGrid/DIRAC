@@ -22,6 +22,8 @@ jobs:
 >>>>>>> added workflow for testing on different python versions
 =======
         python:
+	  - 2.6.9
+	  - 2.7.5
           - 2.7.13
 	  - 3.6.8
 >>>>>>> python 3
@@ -29,6 +31,7 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: prepare environment
+<<<<<<< HEAD
 <<<<<<< HEAD
       run: |
 	conda config --set add_pip_as_python_dependency false
@@ -39,6 +42,9 @@ jobs:
 	eval "$(conda shell.bash hook)" && conda activate python_${{ matrix.python }}
 =======
       run: conda create -n python_${{ matrix.python }} python=${{ matrix.python }}
+=======
+      run: conda create -c conda-forge -n python_${{ matrix.python }} python=${{ matrix.python }}
+>>>>>>> adding other python versions
     - name: run pilot wrapper test
       run: |
 <<<<<<< HEAD
@@ -52,5 +58,6 @@ jobs:
 	python Test_GenerateAndExecutePilotWrapper.py file://${{ github.workspace }}/WorkloadManagementSystem/Utilities/PilotWrapper.py file://${{ github.workspace }}/Core/scripts/dirac-install.py
 =======
         cp tests/Integration/WorkloadManagementSystem/Test_GenerateAndExecutePilotWrapper.py .
+	eval "$(conda shell.bash hook)" && conda activate python_${{ matrix.python }}
         python Test_GenerateAndExecutePilotWrapper.py file://${{ github.workspace }}/WorkloadManagementSystem/Utilities/PilotWrapper.py file://${{ github.workspace }}/Core/scripts/dirac-install.py
 >>>>>>> python 3
