@@ -10,14 +10,17 @@ jobs:
       fail-fast: False
       matrix:
         python:
+          - 2.6.9
+          - 2.7.5
           - 2.7.13
           - 3.6.8
 
     steps:
     - uses: actions/checkout@v1
     - name: prepare environment
-      run: conda create -n python_${{ matrix.python }} python=${{ matrix.python }}
+      run: conda create -c conda-forge -n python_${{ matrix.python }} python=${{ matrix.python }}
     - name: run pilot wrapper test
       run: |
         cp tests/Integration/WorkloadManagementSystem/Test_GenerateAndExecutePilotWrapper.py .
+        eval "$(conda shell.bash hook)" && conda activate python_${{ matrix.python }}
         python Test_GenerateAndExecutePilotWrapper.py file://${{ github.workspace }}/WorkloadManagementSystem/Utilities/PilotWrapper.py file://${{ github.workspace }}/Core/scripts/dirac-install.py
