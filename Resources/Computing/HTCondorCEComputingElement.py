@@ -53,26 +53,32 @@ DEFAULT_WORKINGDIRECTORY = '/opt/dirac/pro/runit/WorkloadManagement/SiteDirector
 DEFAULT_DAYSTOKEEPLOGS = 15
 
 
+def logDir(ceName, stamp):
+  """ Return path to log and output files for pilot.
+
+  :param str ceName: Name of the CE
+  :param str stamp: pilot stamp from/for jobRef
+  """
+  return os.path.join(ceName, stamp[0], stamp[1:3])
+
+
 @deprecated("Please use condorIDAndPathToResultFromJobRef")
 def condorIDFromJobRef(jobRef):
-  """
-  Extract tuple of jobURL and jobID from the jobRef string.
+  """ Extract tuple of jobURL and jobID from the jobRef string.
 
-  :params jobRef: PilotJobReference of the following form: htcondorce://<ceName>/<pathToResult>-<condorID>
-  :type jobRef: string
+  :param str jobRef: PilotJobReference of the following form: htcondorce://<ceName>/<pathToResult>-<condorID>
 
   :return: tuple composed of the jobURL and the condorID of the given jobRef
   """
   jobURL, _, condorID = condorIDAndPathToResultFromJobRef(jobRef)
   return jobURL, condorID
 
+
 def condorIDAndPathToResultFromJobRef(jobRef):
-  """
-  Extract tuple of jobURL and jobID from the jobRef string.
+  """ Extract tuple of jobURL and jobID from the jobRef string.
   The condorID as well as the path leading to the job results are also extracted from the jobID.
 
-  :params jobRef: PilotJobReference of the following form: htcondorce://<ceName>/<condorID>:::<pilotStamp>
-  :type jobRef: string
+  :param str jobRef: PilotJobReference of the following form: htcondorce://<ceName>/<condorID>:::<pilotStamp>
 
   :return: tuple composed of the jobURL, the path to the job results and the condorID of the given jobRef
   """
@@ -81,20 +87,17 @@ def condorIDAndPathToResultFromJobRef(jobRef):
 
   # Reconstruct the path leading to the result (log, output)
   # Construction of the path can be found in submitJob()
-  pathToResult = ceName + '/' + stamp[0] + '/' + stamp[1:3]
+  pathToResult = logDir(ceName, stamp)
 
   return jobURL, pathToResult, condorID
 
-def findFile(workingDir, fileName, pathToResult=None):
-  """
-  Find a file in a file system.
 
-  :params workingDir: the name of the directory containing the given file to search for
-  :type workingDir: string
-  :params fileName: the name of the file to find
-  :type fileName: string
-  :params pathToResult: the path to follow from workingDir to find the file
-  :type pathToResult: string
+def findFile(workingDir, fileName, pathToResult=None):
+  """ Find a file in a file system.
+
+  :param str workingDir: the name of the directory containing the given file to search for
+  :param str fileName: the name of the file to find
+  :param str pathToResult: the path to follow from workingDir to find the file
 
   :return: list of paths leading to the file
   """
@@ -115,6 +118,7 @@ def findFile(workingDir, fileName, pathToResult=None):
   if not paths:
     return S_ERROR(errno.ENOENT, "Could not find %s in directory %s" % (fileName, workingDir))
   return S_OK(paths)
+
 
 def getCondorLogFile(pilotRef):
   """ Return the location of the logFile belonging to the pilot reference.
@@ -161,12 +165,9 @@ class HTCondorCEComputingElement(ComputingElement):
   def __writeSub(self, executable, nJobs, location):
     """ Create the Sub File for submission.
 
-    :params executable: name of the script to execute
-    :type executable: string
-    :params nJobs: number of desired jobs
-    :type nJobs: int
-    :params location: directory that should contain the result of the jobs
-    :type location: string
+    :param str executable: name of the script to execute
+    :param int nJobs: number of desired jobs
+    :param str location: directory that should contain the result of the jobs
     """
 
     self.log.debug("Working directory: %s " % self.workingDirectory)
@@ -254,9 +255,7 @@ Queue %(nJobs)s
       jobStamps.append(jobStamp)
 
     # We randomize the location of the pilotoutput and log, because there are just too many of them
-    directory1 = commonJobStampPart[0]
-    directory2 = commonJobStampPart[1:3]
-    location = "%s/%s/%s" % (self.ceName, directory1, directory2)
+    location = logDir(self.ceName, commonJobStampPart)
     subName = self.__writeSub(executableFile, numberOfJobs, location)
 
     cmd = ['condor_submit', '-terse', subName]
@@ -450,12 +449,10 @@ Queue %(nJobs)s
     return S_OK((output, error))
 
   def __getPilotReferences(self, jobString):
-    """
-    Get the references from the condor_submit output.
+    """ Get the references from the condor_submit output.
     Cluster ids look like " 107.0 - 107.0 " or " 107.0 - 107.4 "
 
-    :params jobString: the output of condor_submit
-    :type jobString: string
+    :param str jobString: the output of condor_submit
 
     :return: job references such as htcondorce://<CE name>/<path to result>-<clusterID>.<i>
     """
