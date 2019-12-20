@@ -10,14 +10,20 @@ jobs:
       fail-fast: False
       matrix:
 	python:
+<<<<<<< HEAD
 	  - 2.6.9
 	  - 2.7.5
 	  - 2.7.13
 	  - 3.6.8
+=======
+	  - 2.7.13
+	  # - 3.6.8
+>>>>>>> added workflow for testing on different python versions
 
     steps:
     - uses: actions/checkout@v1
     - name: prepare environment
+<<<<<<< HEAD
       run: |
 	conda config --set add_pip_as_python_dependency false
 	conda create -c conda-forge -c free -n python_${{ matrix.python }} python=${{ matrix.python }}
@@ -25,4 +31,15 @@ jobs:
       run: |
 	cp tests/Integration/WorkloadManagementSystem/Test_GenerateAndExecutePilotWrapper.py .
 	eval "$(conda shell.bash hook)" && conda activate python_${{ matrix.python }}
+=======
+      run: conda create -n python_${{ matrix.python }} python=${{ matrix.python }}
+    - name: run pilot wrapper test
+      run: |
+	cp tests/Integration/WorkloadManagementSystem/Test_GenerateAndExecutePilotWrapper.py .
+	# cp tests/Integration/WorkloadManagementSystem/Test_GenerateAndExecutePilotWrapper.py ${{ github.workspace }}
+	# cp WorkloadManagementSystem/Utilities/PilotWrapper.py ${{ github.workspace }}
+	# cp Core/scripts/dirac-install.py ${{ github.workspace }}
+	# touch ${{ github.workspace }}/__init__.py
+	ls -al ${{ github.worksspace }}
+>>>>>>> added workflow for testing on different python versions
 	python Test_GenerateAndExecutePilotWrapper.py file://${{ github.workspace }}/WorkloadManagementSystem/Utilities/PilotWrapper.py file://${{ github.workspace }}/Core/scripts/dirac-install.py
