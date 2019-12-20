@@ -11,7 +11,7 @@ jobs:
       matrix:
         python:
           - 2.7.13
-          # - 3.6.8
+          - 3.6.8
 
     steps:
     - uses: actions/checkout@v1
@@ -20,9 +20,4 @@ jobs:
     - name: run pilot wrapper test
       run: |
         cp tests/Integration/WorkloadManagementSystem/Test_GenerateAndExecutePilotWrapper.py .
-        # cp tests/Integration/WorkloadManagementSystem/Test_GenerateAndExecutePilotWrapper.py ${{ github.workspace }}
-        # cp WorkloadManagementSystem/Utilities/PilotWrapper.py ${{ github.workspace }}
-        # cp Core/scripts/dirac-install.py ${{ github.workspace }}
-        # touch ${{ github.workspace }}/__init__.py
-        ls -al ${{ github.worksspace }}
         python Test_GenerateAndExecutePilotWrapper.py file://${{ github.workspace }}/WorkloadManagementSystem/Utilities/PilotWrapper.py file://${{ github.workspace }}/Core/scripts/dirac-install.py
