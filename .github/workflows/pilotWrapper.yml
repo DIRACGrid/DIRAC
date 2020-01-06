@@ -33,6 +33,7 @@ jobs:
     - name: prepare environment
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
       run: |
 	conda config --set add_pip_as_python_dependency false
 	conda create -c conda-forge -c free -n python_${{ matrix.python }} python=${{ matrix.python }}
@@ -45,6 +46,11 @@ jobs:
 =======
       run: conda create -c conda-forge -n python_${{ matrix.python }} python=${{ matrix.python }}
 >>>>>>> adding other python versions
+=======
+      run: |
+	conda config --set add_pip_as_python_dependency false
+	conda create -c conda-forge -c free -n python_${{ matrix.python }} python=${{ matrix.python }}
+>>>>>>> include free channel
     - name: run pilot wrapper test
       run: |
 <<<<<<< HEAD
