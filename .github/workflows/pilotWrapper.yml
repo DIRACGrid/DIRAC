@@ -18,7 +18,9 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: prepare environment
-      run: conda create -c conda-forge -n python_${{ matrix.python }} python=${{ matrix.python }}
+      run: |
+	conda config --set add_pip_as_python_dependency false
+	conda create -c conda-forge -c free -n python_${{ matrix.python }} python=${{ matrix.python }}
     - name: run pilot wrapper test
       run: |
 	cp tests/Integration/WorkloadManagementSystem/Test_GenerateAndExecutePilotWrapper.py .
