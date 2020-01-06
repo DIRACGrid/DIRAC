@@ -223,7 +223,7 @@ class AuthManager(object):
     :param credDict: Credentials to ckeck
     :return: Boolean with the result
     """
-    if self.KW_EXTRA_CREDENTIALS in credDict and isinstance(credDict[self.KW_EXTRA_CREDENTIALS], tuple):
+    if self.KW_EXTRA_CREDENTIALS in credDict and isinstance(credDict[self.KW_EXTRA_CREDENTIALS], (tuple, list)):
       if self.KW_DN in credDict:
         retVal = Registry.getHostnameForDN(credDict[self.KW_DN])
         if retVal['OK']:
