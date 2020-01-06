@@ -82,7 +82,7 @@ else:
 res = pilotWrapperScript(
     pilotFilesCompressedEncodedDict={'dirac-install.py': diracInstallEncoded},
     pilotOptions="--commands CheckWorkerNode,InstallDIRAC --setup=DIRAC-Certification --debug",
-    location='lbcertifdirac7.cern.ch:8443,wrong.cern.ch')
+    location='lbcertifdirac70.cern.ch,wrong.cern.ch')
 
 with open('pilot-wrapper.sh', 'wb') as pj:
   pj.write(res.encode())
