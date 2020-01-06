@@ -100,15 +100,18 @@ def pilotWrapperScript(pilotFilesCompressedEncodedDict=None,
   for pfName, encodedPf in pilotFilesCompressedEncodedDict.items():
     compressedString += """
 try:
-  with open('%(pfName)s', 'w') as fd:
-    fd.write(bz2.decompress(base64.b64decode(\"\"\"%(encodedPf)s\"\"\")))
+  with open('%(pfName)s', 'wb') as fd:
+    if sys.version_info < (3,):
+      fd.write(bz2.decompress(base64.b64decode(\"\"\"%(encodedPf)s\"\"\")))
+    else:
+      fd.write(bz2.decompress(base64.b64decode(b'%(encodedPf)s')))
   os.chmod('%(pfName)s', stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
-except BaseException as x:
+except Exception as x:
   print(x, file=sys.stderr)
   logger.error(x)
   shutil.rmtree(pilotWorkingDirectory)
-  sys.exit(-1)
-""" % {'encodedPf': encodedPf,
+  sys.exit(3)
+""" % {'encodedPf': encodedPf.decode(),
        'pfName': pfName}
 
   envVariablesString = ""
@@ -236,7 +239,7 @@ def getPilotFilesCompressedEncodedDict(pilotFiles, proxy=None):
 
   for pf in pilotFiles:
     with open(pf, "r") as fd:
-      pfContent = fd.read()
+      pfContent = fd.read().decode()
     pfContentEncoded = base64.b64encode(bz2.compress(pfContent, 9))
     pilotFilesCompressedEncodedDict[os.path.basename(pf)] = pfContentEncoded
 

@@ -75,7 +75,7 @@ diracInstall = os.path.join(os.getcwd(), 'dirac-install.py')
 with open(diracInstall, "r") as fd:
   diracInstall = fd.read()
 if sys.version_info >= (3,):
-  diracInstallEncoded = base64.b64encode(bz2.compress(bytes(diracInstall, 'UTF-8'), 9))
+  diracInstallEncoded = base64.b64encode(bz2.compress(diracInstall.encode(), 9))
 else:
   diracInstallEncoded = base64.b64encode(bz2.compress(diracInstall, 9))
 
@@ -85,7 +85,7 @@ res = pilotWrapperScript(
     location='lbcertifdirac7.cern.ch:8443,wrong.cern.ch')
 
 with open('pilot-wrapper.sh', 'wb') as pj:
-  pj.write(res)
+  pj.write(res.encode())
 
 # 3) now start it
 
