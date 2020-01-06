@@ -1212,6 +1212,9 @@ class SiteDirector(AgentModule):
       self.log.exception("Exception during pilot modules files compression", lException=be)
 
     location = Operations().getValue("Pilot/pilotFileServer", '')
+    # Do not instruct pilot to download files if Pilot3 flag is not set
+    if not self.pilot3:
+      location = ''
     localPilot = pilotWrapperScript(pilotFilesCompressedEncodedDict=pilotFilesCompressedEncodedDict,
                                     pilotOptions=pilotOptions,
                                     pilotExecDir=pilotExecDir,
