@@ -28,7 +28,7 @@ def test_scriptoptions():
                                        'someOther.py': 'someOtherContent'},
       pilotOptions="-c 123 --foo bar")
 
-  assert "with open('dirac-install.py', 'w') as fd:" in res
+  assert "with open('dirac-install.py', 'wb') as fd:" in res
   assert 'os.environ["someName"]="someValue"' not in res
 
 
@@ -62,8 +62,8 @@ def test_scriptReal():
                                        'pilotCommands.py': diracPilotCommandsEncoded},
       pilotOptions="-c 123 --foo bar")
 
-  assert "with open('dirac-pilot.py', 'w') as fd:" in res
-  assert "with open('dirac-install.py', 'w') as fd:" in res
+  assert "with open('dirac-pilot.py', 'wb') as fd:" in res
+  assert "with open('dirac-install.py', 'wb') as fd:" in res
   assert 'os.environ["someName"]="someValue"' not in res
 
 
