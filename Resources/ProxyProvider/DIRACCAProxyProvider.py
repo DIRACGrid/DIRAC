@@ -51,11 +51,15 @@ class DIRACCAProxyProvider(ProxyProvider):
         if nid not in self.n2field:
           self.n2field[nid] = field
         self.n2field[nid] = len(field) < len(self.n2field[nid]) and field or self.n2field[nid]
+    self.caDict = {}
+    self.caFieldByNid = {}
 
   def setParameters(self, parameters):
     """ Set new parameters
 
         :param dict parameters: provider parameters
+
+        :return: S_OK()/S_ERROR()
     """
     # If CA configuration file exist
     self.parameters = parameters
@@ -89,58 +93,73 @@ class DIRACCAProxyProvider(ProxyProvider):
         self.n2field[nid] = self.defFieldByNid[nid]
     self.match.sort()
     self.supplied.sort()
+    # Read CA certificate
+    chain = X509Chain()
+    result = chain.loadChainFromFile(self.parameters['CertFile'])
+    if not result['OK']:
+      return result
+    result = chain.getCredentials()
+    if not result['OK']:
+      return result
+    caDN = result['Value']['subject']
+    self.caDict = dict([field.split('=') for field in caDN.lstrip('/').split('/')])
+    self.caFieldByNid = dict([[self.fs2nid[field], field] for field in self.caDict])
+    return S_OK()
 
-  def checkStatus(self, userDict=None, sessionDict=None):
+  def checkStatus(self, userDN):
     """ Read ready to work status of proxy provider
 
-        :param dict userDict: user description dictionary with possible fields:
-                FullName, UserName, DN, Email, DiracGroup
-        :param dict sessionDict: session dictionary
+        :param basestring userDN: user DN
 
         :return: S_OK(dict)/S_ERROR() -- dictionary contain fields:
                   - 'Status' with ready to work status[ready, needToAuth]
     """
-    self.log.info('Ckecking work status of', self.parameters['ProviderName'])
-    # Evaluate full name and e-mail of the user
-    fullName = userDict.get('FullName')
-    eMail = userDict.get('Email')
+    dnDict = dict([field.split('=') for field in userDN.lstrip('/').split('/')])
+    dnFieldByNid = dict([[self.fs2nid[field], field] for field in dnDict])
+    for nid in self.supplied:
+      if nid not in dnFieldByNid:
+        return S_ERROR('Current DN is invalid, "%s" field must be set.' % self.n2field[nid])
+    for nid in dnFieldByNid:
+      if nid not in self.supplied + self.match + self.optional:
+        return S_ERROR('Current DN is invalid, "%s" field is not found for current CA.' % dnFieldByNid[nid])
+      if nid in self.match and not self.caDict[self.caFieldByNid[nid]] == dnDict[dnFieldByNid[nid]]:
+        return S_ERROR('Current DN is invalid, "%s" field must be %s.' % (dnFieldByNid[nid],
+                                                                          self.caDict[self.caFieldByNid[nid]]))
+      if nid in self.maxDict and len(dnDict[dnFieldByNid[nid]]) > self.maxDict[nid]:
+        return S_ERROR('Current DN is invalid, "%s" field must be less then %s.' % (dnDict[dnFieldByNid[nid]],
+                                                                                    self.maxDict[nid]))
+      if nid in self.minDict and len(dnDict[dnFieldByNid[nid]]) < self.minDict[nid]:
+        return S_ERROR('Current DN is invalid, "%s" field must be more then %s.' % (dnDict[dnFieldByNid[nid]],
+                                                                                    self.minDict[nid]))
+    userDict = {}
+    for k, v in dnDict.items():
+      if self.defDict.get(k):
+        self.defDict[k] = v
+      if self.fs2nid[k] == self.fs2nid['CN']:
+        userDict['FullName'] = v
+      if self.fs2nid[k] == self.fs2nid['emailAddress']:
+        userDict['Email'] = v
 
-    reqDNs = userDict.get('DN') or []
-    if not isinstance(reqDNs, list):
-      reqDNs = reqDNs.split(', ')
-    for reqDN in reqDNs:
-      # Get the DN info as a dictionary
-      result = Registry.getProxyProvidersForDN(reqDN)
-      if not result['OK']:
-        return result
-      if self.parameters['ProviderName'] not in result['Value']:
-        continue
-      dnDict = dict([field.split('=') for field in reqDN.lstrip('/').split('/')])
-      if not fullName:
-        fullName = dnDict.get('CN')
-      if not eMail:
-        eMail = dnDict.get('emailAddress')
-    self.log.info('Full name:', fullName)
-    self.log.info('Email:', eMail)
-    if not fullName:
+    if not userDict.get('FullName') or not dnDict.get('CN'):
       return S_ERROR("Incomplete user information: no full name found")
-    if not eMail:
+    if not userDict.get('Email') or not dnDict.get('emailAddress'):
       return S_ERROR("Incomplete user information: no email found")
 
     return S_OK({'Status': 'ready'})
 
-  def getProxy(self, userDict=None, sessionDict=None):
+  def getProxy(self, userDN):
     """ Generate user proxy
 
-        :param dict userDict: user description dictionary with possible fields:
-               FullName, UserName, DN, Email, DiracGroup
-        :param dict sessionDict: session dictionary
+        :param basestring userDN: user DN
 
         :return: S_OK(dict)/S_ERROR() -- dict contain 'proxy' field with is a proxy string
     """
-    result = self.getUserDN(userDict, sessionDict, userDN=userDict.get('DN'))
+    dnDict = dict([field.split('=') for field in userDN.lstrip('/').split('/')])
+    result = self.getUserDN(FullName=dnDict.get('CN'), Email=dnDict.get('emailAddress'))
     if not result['OK']:
       return result
+    if userDN != result['Value']:
+      return S_ERROR('Cannot generate proxy with %s DN.' % userDN)
 
     result = self.__createCertM2Crypto()
     if not result['OK']:
@@ -160,59 +179,20 @@ class DIRACCAProxyProvider(ProxyProvider):
       return result
     return S_OK({'proxy': result['Value']})
 
-  def getUserDN(self, userDict=None, sessionDict=None, userDN=None):
+  def getUserDN(self, **kwargs):
     """ Get DN of the user certificate that will be created
 
-        :param dict userDict: user description dictionary with possible fields:
-               FullName, UserName, DN, Email, DiracGroup
-        :param dict sessionDict: session dictionary
-        :param basestring userDN: user DN
+        :param dict kwargs: user description dictionary with possible fields:
+               - FullName, UserName to create DN
+               - set userDN to check this DN
 
         :return: S_OK()/S_ERROR(), Value is the DN string
     """
-    userDict = userDict or {}
-    chain = X509Chain()
-    result = chain.loadChainFromFile(self.parameters['CertFile'])
-    if not result['OK']:
-      return result
-    result = chain.getCredentials()
-    if not result['OK']:
-      return result
-    caDN = result['Value']['subject']
-    caDict = dict([field.split('=') for field in caDN.lstrip('/').split('/')])
-    caFieldByNid = dict([[self.fs2nid[field], field] for field in caDict])
-
-    dnDict = {}
-    if userDN:
-      self.log.info('Checking %s user DN' % userDN)
-      dnDict = dict([field.split('=') for field in userDN.lstrip('/').split('/')])
-      dnFieldByNid = dict([[self.fs2nid[field], field] for field in dnDict])
-      for nid in self.supplied:
-        if nid not in dnFieldByNid:
-          return S_ERROR('Current DN is invalid, "%s" field must be set.' % self.n2field[nid])
-      for nid in dnFieldByNid:
-        if nid not in self.supplied + self.match + self.optional:
-          return S_ERROR('Current DN is invalid, "%s" field is not found for current CA.' % dnFieldByNid[nid])
-        if nid in self.match and not caDict[caFieldByNid[nid]] == dnDict[dnFieldByNid[nid]]:
-          return S_ERROR('Current DN is invalid, "%s" field must be %s.' % (dnFieldByNid[nid],
-                                                                            caDict[caFieldByNid[nid]]))
-        if nid in self.maxDict and len(dnDict[dnFieldByNid[nid]]) > self.maxDict[nid]:
-          return S_ERROR('Current DN is invalid, "%s" field must be less then %s.' % (dnDict[dnFieldByNid[nid]],
-                                                                                      self.maxDict[nid]))
-        if nid in self.minDict and len(dnDict[dnFieldByNid[nid]]) < self.minDict[nid]:
-          return S_ERROR('Current DN is invalid, "%s" field must be more then %s.' % (dnDict[dnFieldByNid[nid]],
-                                                                                      self.minDict[nid]))
-      for k, v in dnDict.items():
-        if self.defDict.get(k):
-          self.defDict[k] = v
-        if self.fs2nid[k] == self.fs2nid['CN']:
-          userDict['FullName'] = v
-        if self.fs2nid[k] == self.fs2nid['emailAddress']:
-          userDict['Email'] = v
-    else:
-      result = self.checkStatus(userDict)
-      if not result['OK']:
-        return result
+    userDict = kwargs or {}
+    if userDict.get('userDN'):
+      dnDict = dict([field.split('=') for field in userDict['userDN'].lstrip('/').split('/')])
+      userDict['FullName'] = dnDict.get('CN')
+      userDict['Email'] = dnDict.get('emailAddress')
 
     # Fill DN subject name
     if not userDict.get('FullName'):
@@ -223,9 +203,9 @@ class DIRACCAProxyProvider(ProxyProvider):
     self.log.info('Creating distributes names chain')
     # Test match fields
     for nid in self.match:
-      if nid not in caFieldByNid:
+      if nid not in self.caFieldByNid:
         return S_ERROR('Distributes name(%s) must be present in CA certificate.' % ', '.join(self.n2fields[nid]))
-      result = self.__fillX509Name(caFieldByNid[nid], caDict[caFieldByNid[nid]])
+      result = self.__fillX509Name(self.caFieldByNid[nid], self.caDict[self.caFieldByNid[nid]])
       if not result['OK']:
         return result
     # Test supplied fields
@@ -243,8 +223,9 @@ class DIRACCAProxyProvider(ProxyProvider):
 
     # WARN: This logic not support list of distribtes name elements
     resDN = m2.x509_name_oneline(self.__X509Name.x509_name)  # pylint: disable=no-member
-    if userDN and not userDN == resDN:
-      return S_ERROR('%s not match with generated DN: %s' % (userDN, resDN))
+
+    if userDN and userDN != resDN:
+      return S_ERROR('%s not matched with created %s' % (userDN, resDN))
     return S_OK(resDN)
 
   def __parseCACFG(self):
