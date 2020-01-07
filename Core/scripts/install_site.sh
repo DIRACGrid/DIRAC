@@ -55,7 +55,7 @@ fi
 
 # Get the version of dirac-install requested - if none is requested, the version will come from integration
 #
-wget --no-check-certificate -O dirac-install "https://github.com/DIRACGrid/DIRAC/raw/$DIRACVERSION/Core/scripts/dirac-install.py" || exit
+curl -L -o dirac-install "https://github.com/DIRACGrid/DIRAC/raw/$DIRACVERSION/Core/scripts/dirac-install.py" || exit
 #
 # define the target Dir
 #
