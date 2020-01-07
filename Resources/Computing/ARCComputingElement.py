@@ -96,7 +96,10 @@ class ARCComputingElement(ComputingElement):
     # For the XRSL additional string from configuration - only done at initialisation time
     # If this string changes, the corresponding (ARC) site directors have to be restarted
     #
-    # Variable = XRSLExtraString (or XRSLMPExtraString for multi processor mode)
+    # Variable = XRSLExtraString (or
+    #
+    #
+    # for multi processor mode)
     # Default value = ''
     #   If you give a value, I think it should be of the form
     #          (aaa = "xxx")
@@ -142,9 +145,7 @@ class ARCComputingElement(ComputingElement):
         if result != '':
           xrslExtraString = result
           gLogger.debug("Found %s : %s" % (xtraVariable, xrslExtraString))
-    if xrslExtraString == '':
-      gLogger.always("No %s found in configuration for %s" % (xtraVariable, self.ceHost))
-    else:
+    if xrslExtraString:
       gLogger.always("%s : %s" % (xtraVariable, xrslExtraString))
       gLogger.always(" --- to be added to pilots going to CE : %s" % self.ceHost)
     return xrslExtraString
