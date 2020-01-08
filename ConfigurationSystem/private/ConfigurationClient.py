@@ -190,7 +190,7 @@ class ConfigurationClient(object):
     """ Get configuration sections
 
         :param basestring sectionPath: section path
-        :param boolean listOrdered: ordered
+        :param bool listOrdered: ordered
 
         :return: S_OK(list)/S_ERROR()
     """
