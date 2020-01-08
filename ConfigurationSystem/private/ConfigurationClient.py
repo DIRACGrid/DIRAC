@@ -82,7 +82,7 @@ class ConfigurationClient(object):
     """ Dump local CFG cache to file
 
         :param basestring fileName: file name
-        :param boolean raw: raw
+        :param bool raw: raw
 
         :return: S_OK(basestring)/S_ERROR()
     """
