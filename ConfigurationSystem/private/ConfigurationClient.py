@@ -240,24 +240,9 @@ class ConfigurationClient(object):
 
         :return: S_OK(dict)/S_ERROR()
     """
-    optionsDict = {}
-    result = self.getOptionsDict(sectionPath)
-    if not result['OK']:
-      return result
-    for opt, value in result['Value'].items():
-      optionsDict[opt] = value
-
-    result = self.getSections(sectionPath)
-    if not result['OK']:
-      return result
-    for section in result['Value']:
-      result = self.getOptionsDictRecursively(sectionPath + '/' + section)
-      if not result['OK']:
-        return result
-      optionsDict[section] = {}
-      for opt, value in result['Value'].items():
-        optionsDict[section][opt] = value
-    return S_OK(optionsDict)
+    if not gConfigurationData.mergedCFG.isSection(sectionPath):
+      return S_ERROR("Path %s does not exist or it's not a section" % sectionPath)
+    return S_OK(gConfigurationData.mergedCFG.getAsDict(sectionPath))
 
   def getConfigurationTree(self, root='', *filters):
     """ Create a dictionary with all sections, subsections and options
