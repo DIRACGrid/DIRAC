@@ -50,7 +50,7 @@ class SystemLoggingHandler(RequestHandler):
         :return: S_OK()/S_ERROR()
     """
     credentials = self.getRemoteCredentials()
-    userDN = credentials['DN'] if credentials.get('DN') else 'unknown'
+    userDN = credentials.get('DN', 'unknown')
     userGroup = credentials['group'] if credentials.get('group') else 'unknown'
 
     remoteAddress = self.getRemoteAddress()[0]
