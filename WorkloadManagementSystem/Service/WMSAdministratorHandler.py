@@ -234,7 +234,7 @@ class WMSAdministratorHandler(RequestHandler):
   @classmethod
   def export_getSiteSummarySelectors(cls):
     """ Get all the distinct selector values for the site summary web portal page
-    
+
         :return: S_OK(dict)/S_ERROR()
     """
     resultDict = {}

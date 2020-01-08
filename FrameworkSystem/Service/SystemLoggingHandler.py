@@ -60,7 +60,7 @@ class SystemLoggingHandler(RequestHandler):
 
   def export_addMessages(self, messagesList, site, nodeFQDN):
     """ This is the interface to the service
-        
+
         :param list messagesList: contains a list of Message Objects.
         :param basestring site: site name
         :param basestring nodeFQDN: nodeFQDN
