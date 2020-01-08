@@ -113,7 +113,7 @@ class ConfigurationClient(object):
   def useServerCertificate(self):
     """ Get using server certificate status
 
-        :return: boolean
+        :return: bool
     """
     return gConfigurationData.useServerCertificate()
 
