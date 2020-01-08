@@ -47,7 +47,7 @@ class ConfigurationClient(object):
   def forceRefresh(self, fromMaster=False):
     """ Force refresh
 
-        :param boolean fromMaster: refresh from master
+        :param bool fromMaster: refresh from master
 
         :return: S_OK()/S_ERROR()
     """
@@ -82,7 +82,7 @@ class ConfigurationClient(object):
     """ Dump local CFG cache to file
 
         :param basestring fileName: file name
-        :param boolean raw: raw
+        :param bool raw: raw
 
         :return: S_OK(basestring)/S_ERROR()
     """
@@ -113,7 +113,7 @@ class ConfigurationClient(object):
   def useServerCertificate(self):
     """ Get using server certificate status
 
-        :return: boolean
+        :return: bool
     """
     return gConfigurationData.useServerCertificate()
 
@@ -190,7 +190,7 @@ class ConfigurationClient(object):
     """ Get configuration sections
 
         :param basestring sectionPath: section path
-        :param boolean listOrdered: ordered
+        :param bool listOrdered: ordered
 
         :return: S_OK(list)/S_ERROR()
     """
@@ -205,7 +205,7 @@ class ConfigurationClient(object):
     """ Get configuration options
 
         :param basestring sectionPath: section path
-        :param boolean listOrdered: ordered
+        :param bool listOrdered: ordered
 
         :return: S_OK(list)/S_ERROR()
     """
