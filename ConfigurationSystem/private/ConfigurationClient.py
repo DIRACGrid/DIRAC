@@ -47,7 +47,7 @@ class ConfigurationClient(object):
   def forceRefresh(self, fromMaster=False):
     """ Force refresh
 
-        :param boolean fromMaster: refresh from master
+        :param bool fromMaster: refresh from master
 
         :return: S_OK()/S_ERROR()
     """
