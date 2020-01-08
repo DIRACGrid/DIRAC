@@ -37,7 +37,7 @@ class ConfigurationClient(object):
 
   def loadCFG(self, cfg):
     """ Load CFG
-       
+
        :param CFG() cfg: CFG object
 
        :return: S_OK()/S_ERROR()
@@ -232,7 +232,7 @@ class ConfigurationClient(object):
       return S_OK(optionsDict)
     else:
       return S_ERROR("Path %s does not exist or it's not a section" % sectionPath)
-  
+
   def getOptionsDictRecursively(self, sectionPath):
     """ Get configuration options in dictionary recursively
 
@@ -246,7 +246,7 @@ class ConfigurationClient(object):
       return result
     for opt, value in result['Value'].items():
       optionsDict[opt] = value
-    
+
     result = self.getSections(sectionPath)
     if not result['OK']:
       return result
