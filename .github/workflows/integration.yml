@@ -33,6 +33,7 @@ jobs:
         # Set environment variables
         echo -n "-e CI_PROJECT_DIR=/repo " >> run_in_container
         echo -n "-e CI_COMMIT_REF_NAME=$GITHUB_REF " >> run_in_container
+        echo -n "-e CI_MERGE_REQUEST_TARGET_BRANCH_NAME=${{ github.base_ref }} " >> run_in_container
         echo -n "-e CI_REGISTRY_IMAGE=diracgrid " >> run_in_container
         echo -n "-e MYSQL_VER=${{ matrix.MYSQL_VER }} " >> run_in_container
         echo -n "-e ES_VER=${{ matrix.ES_VER }} " >> run_in_container
