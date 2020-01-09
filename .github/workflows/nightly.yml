@@ -4,7 +4,7 @@
 #
 # All created images are then uploaded to GitHub packages
 
-name: Nighlies
+name: Nightlies
 
 on:
   schedule:
@@ -15,6 +15,7 @@ jobs:
   # running dirac-distribution in the proper image
   dirac-distribution-integration:
     runs-on: ubuntu-latest
+    if: github.repository == 'DIRACGrid/DIRAC'
     steps:
       - uses: actions/checkout@v1
       - name: login
