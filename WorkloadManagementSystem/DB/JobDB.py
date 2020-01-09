@@ -2092,3 +2092,37 @@ class JobDB(DB):
     if not result['OK']:
       return result
     return S_OK(((defFields + valueFields), result['Value']))
+
+  def removeInfoFromHeartBeatLogging(self, status, delTime, maxLines):
+    """Remove HeartBeatLoggingInfo from DB.
+
+    :param str status: status of the jobs
+    :param str delTime: timestamp of the age of the jobs
+    :param int maxLines: maximum number of lines to be removed
+    :returns: S_OK/S_ERROR
+    """
+    ret = self._escapeString(status)
+    if not ret['OK']:
+      return ret
+    status = ret['Value']
+
+    ret = self._escapeString(delTime)
+    if not ret['OK']:
+      return ret
+    delTime = ret['Value']
+
+    self.log.verbose('Removing HeartBeatLogginInfo for', '%r %r %r' % (status, delTime, maxLines))
+    cmd = """DELETE h FROM HeartBeatLoggingInfo AS h
+             JOIN (SELECT hi.JobID FROM HeartBeatLoggingInfo AS hi
+                LEFT JOIN Jobs j on j.JobID = hi.JobID
+                WHERE j.Status = %(status)s
+                    AND
+                  LastUpdateTime < %(delay)s
+                LIMIT %(maxLines)d) h2
+              ON h2.JobID = h.JobID""" % {'maxLines': maxLines,
+                                          'status': status,
+                                          'delay': delTime,
+                                          }
+    result = self._update(cmd)
+    self.log.verbose('Removed from HBLI', result)
+    return result
