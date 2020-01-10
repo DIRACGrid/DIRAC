@@ -29,7 +29,7 @@ class ConfigurationClient(object):
   def loadFile(self, fileName):
     """ Load file
 
-        :param basestring fileName: file name
+        :param str fileName: file name
 
         :return: S_OK()/S_ERROR()
     """
@@ -56,7 +56,7 @@ class ConfigurationClient(object):
   def dumpLocalCFGToFile(self, fileName):
     """ Dump local configuration to file
 
-        :param basestring fileName: file name
+        :param str fileName: file name
 
         :return: S_OK()/S_ERROR()
     """
@@ -65,7 +65,7 @@ class ConfigurationClient(object):
   def dumpRemoteCFGToFile(self, fileName):
     """ Dump remote configuration to file
 
-        :param basestring fileName: file name
+        :param str fileName: file name
 
         :return: S_OK()/S_ERROR()
     """
@@ -74,17 +74,17 @@ class ConfigurationClient(object):
   def addListenerToNewVersionEvent(self, functor):
     """ Add listener to new version event
 
-        :param basestring functor: functor
+        :param str functor: functor
     """
     gRefresher.addListenerToNewVersionEvent(functor)
 
   def dumpCFGAsLocalCache(self, fileName=None, raw=False):
     """ Dump local CFG cache to file
 
-        :param basestring fileName: file name
+        :param str fileName: file name
         :param bool raw: raw
 
-        :return: S_OK(basestring)/S_ERROR()
+        :return: S_OK(str)/S_ERROR()
     """
     cfg = gConfigurationData.mergedCFG.clone()
     try:
@@ -120,7 +120,7 @@ class ConfigurationClient(object):
   def getValue(self, optionPath, defaultValue=None):
     """ Get configuration value
 
-        :param basestring optionPath: option path
+        :param str optionPath: option path
         :param defaultValue: default value
 
         :return: type(defaultValue)
@@ -131,10 +131,10 @@ class ConfigurationClient(object):
   def getOption(self, optionPath, typeValue=None):
     """ Get configuration option
 
-        :param basestring optionPath: option path
+        :param str optionPath: option path
         :param typeValue: type of value
 
-        :return: S_OK(typeValue())/S_ERROR()
+        :return: S_OK()/S_ERROR()
     """
     gRefresher.refreshConfigurationIfNeeded()
     optionValue = gConfigurationData.extractOptionFromCFG(optionPath)
@@ -189,7 +189,7 @@ class ConfigurationClient(object):
   def getSections(self, sectionPath, listOrdered=True):
     """ Get configuration sections
 
-        :param basestring sectionPath: section path
+        :param str sectionPath: section path
         :param bool listOrdered: ordered
 
         :return: S_OK(list)/S_ERROR()
@@ -204,7 +204,7 @@ class ConfigurationClient(object):
   def getOptions(self, sectionPath, listOrdered=True):
     """ Get configuration options
 
-        :param basestring sectionPath: section path
+        :param str sectionPath: section path
         :param bool listOrdered: ordered
 
         :return: S_OK(list)/S_ERROR()
@@ -219,7 +219,7 @@ class ConfigurationClient(object):
   def getOptionsDict(self, sectionPath):
     """ Get configuration options in dictionary
 
-        :param basestring sectionPath: section path
+        :param str sectionPath: section path
 
         :return: S_OK(dict)/S_ERROR()
     """
@@ -236,7 +236,7 @@ class ConfigurationClient(object):
   def getOptionsDictRecursively(self, sectionPath):
     """ Get configuration options in dictionary recursively
 
-        :param basestring sectionPath: section path
+        :param str sectionPath: section path
 
         :return: S_OK(dict)/S_ERROR()
     """
@@ -248,9 +248,10 @@ class ConfigurationClient(object):
     """ Create a dictionary with all sections, subsections and options
         starting from given root. Result can be filtered.
 
-        :param basestring root: Starting point in the configuration tree.
+        :param str root: Starting point in the configuration tree.
         :param filters: Select results that contain given substrings (check full path, i.e. with option name)
-        :type filters: basestring or python:list[basestring]
+        :type filters: str or python:list[str]
+        
         :return: S_OK(dict)/S_ERROR() -- dictionary where keys are paths taken from
                  the configuration (e.g. /Systems/Configuration/...).
                  Value is "None" when path points to a section
@@ -309,7 +310,7 @@ class ConfigurationClient(object):
   def setOptionValue(self, optionPath, value):
     """ Set a value in the local configuration
 
-        :param basestring optionPath: option path
-        :param basestring value: value
+        :param str optionPath: option path
+        :param str value: value
     """
     gConfigurationData.setOptionInCFG(optionPath, value)
