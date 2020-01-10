@@ -251,7 +251,7 @@ class ConfigurationClient(object):
         :param str root: Starting point in the configuration tree.
         :param filters: Select results that contain given substrings (check full path, i.e. with option name)
         :type filters: str or python:list[str]
-        
+
         :return: S_OK(dict)/S_ERROR() -- dictionary where keys are paths taken from
                  the configuration (e.g. /Systems/Configuration/...).
                  Value is "None" when path points to a section
