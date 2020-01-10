@@ -94,7 +94,7 @@ class ARCComputingElement(ComputingElement):
     # For the XRSL additional string from configuration - only done at initialisation time
     # If this string changes, the corresponding (ARC) site directors have to be restarted
     #
-    # Variable = XRSLExtraString (or for multi processor mode)
+    # Variable = XRSLExtraString (or XRSLMPExtraString for multi processor mode)
     # Default value = ''
     #   If you give a value, I think it should be of the form
     #          (aaa = "xxx")
