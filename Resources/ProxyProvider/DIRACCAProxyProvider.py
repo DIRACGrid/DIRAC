@@ -82,6 +82,7 @@ class DIRACCAProxyProvider(ProxyProvider):
       self.optional = []
       for field in parameters['Optional'].replace(' ', '').split(','):
         self.optional.append(self.fs2nid[field])
+
     # Set defaults for distridutes names
     self.defDict = {}
     for field, value in parameters.items():
@@ -93,6 +94,7 @@ class DIRACCAProxyProvider(ProxyProvider):
         self.n2field[nid] = self.defFieldByNid[nid]
     self.match.sort()
     self.supplied.sort()
+
     # Read CA certificate
     chain = X509Chain()
     result = chain.loadChainFromFile(self.parameters['CertFile'])
@@ -109,7 +111,7 @@ class DIRACCAProxyProvider(ProxyProvider):
   def checkStatus(self, userDN):
     """ Read ready to work status of proxy provider
 
-        :param basestring userDN: user DN
+        :param str userDN: user DN
 
         :return: S_OK(dict)/S_ERROR() -- dictionary contain fields:
                   - 'Status' with ready to work status[ready, needToAuth]
@@ -150,7 +152,7 @@ class DIRACCAProxyProvider(ProxyProvider):
   def getProxy(self, userDN):
     """ Generate user proxy
 
-        :param basestring userDN: user DN
+        :param str userDN: user DN
 
         :return: S_OK(dict)/S_ERROR() -- dict contain 'proxy' field with is a proxy string
     """
@@ -275,8 +277,8 @@ class DIRACCAProxyProvider(ProxyProvider):
   def __fillX509Name(self, field, value):
     """ Fill x509_Name object by M2Crypto
 
-        :param basestring field: DN field name
-        :param basestring value: value of field
+        :param str field: DN field name
+        :param str value: value of field
 
         :return: S_OK()/S_ERROR()
     """
@@ -290,7 +292,7 @@ class DIRACCAProxyProvider(ProxyProvider):
   def __createCertM2Crypto(self):
     """ Create new certificate for user
 
-        :return: S_OK(basestring, basestring)/S_ERROR()
+        :return: S_OK(tuple)/S_ERROR() -- tuple contain certificate and pulic key as strings
     """
     # Create publik key
     userPubKey = EVP.PKey()
