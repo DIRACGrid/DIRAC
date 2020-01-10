@@ -226,8 +226,8 @@ class DIRACCAProxyProvider(ProxyProvider):
     # WARN: This logic not support list of distribtes name elements
     resDN = m2.x509_name_oneline(self.__X509Name.x509_name)  # pylint: disable=no-member
 
-    if userDN and userDN != resDN:
-      return S_ERROR('%s not matched with created %s' % (userDN, resDN))
+    if userDict.get('userDN') and userDict['userDN'] != resDN:
+      return S_ERROR('%s not matched with created %s' % (userDict['userDN'], resDN))
     return S_OK(resDN)
 
   def __parseCACFG(self):
