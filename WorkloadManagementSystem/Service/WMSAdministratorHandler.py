@@ -61,7 +61,7 @@ class WMSAdministratorHandler(RequestHandler):
   def export_getSiteMask(cls, siteState='Active'):
     """ Get the site mask
 
-        :param basestring siteState: site status
+        :param str siteState: site status
 
         :return: S_OK(list)/S_ERROR()
     """
@@ -73,9 +73,10 @@ class WMSAdministratorHandler(RequestHandler):
   def export_getSiteMaskStatus(cls, sites=None):
     """ Get the site mask of given site(s) with columns 'site' and 'status' only
 
-        :param list or basestring sites: sites in list or site
+        :param sites: list of sites or site
+        :type sites: list or str
 
-        :return: S_OK(dict or basestring)/S_ERROR()
+        :return: S_OK()/S_ERROR() -- S_OK contain dict or str
     """
     return jobDB.getSiteMaskStatus(sites)
 
@@ -96,8 +97,8 @@ class WMSAdministratorHandler(RequestHandler):
   def export_banSite(self, site, comment='No comment'):
     """ Ban the given site in the site mask
 
-        :param basestring site: site
-        :param basestring comment: comment
+        :param str site: site
+        :param str comment: comment
 
         :return: S_OK()/S_ERROR()
     """
@@ -112,8 +113,8 @@ class WMSAdministratorHandler(RequestHandler):
   def export_allowSite(self, site, comment='No comment'):
     """ Allow the given site in the site mask
 
-        :param basestring site: site
-        :param basestring comment: comment
+        :param str site: site
+        :param str comment: comment
 
         :return: S_OK()/S_ERROR()
     """
@@ -186,7 +187,7 @@ class WMSAdministratorHandler(RequestHandler):
     """ Get the pilot job standard output and standard error files for the DIRAC
         job reference
 
-        :param basestring jobID: job ID
+        :param str jobID: job ID
 
         :return: S_OK(dict)/S_ERROR()
     """
