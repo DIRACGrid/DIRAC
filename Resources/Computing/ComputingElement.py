@@ -46,7 +46,7 @@ from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 __RCSID__ = "$Id$"
 
 INTEGER_PARAMETERS = ['CPUTime', 'NumberOfProcessors']
-FLOAT_PARAMETERS = []
+FLOAT_PARAMETERS = ['WaitingToRunningRatio']
 LIST_PARAMETERS = ['Tag', 'RequiredTag']
 WAITING_TO_RUNNING_RATIO = 0.5
 MAX_WAITING_JOBS = 1
