@@ -17,9 +17,9 @@ class DB(MySQL):
   def __init__(self, dbname, fullname, debug=False):
     """ C'or
 
-        :param basestring dbname: DB name
-        :param basestring fullname: full name
-        :param boolean debug: debug mode
+        :param str dbname: database name
+        :param str fullname: full name
+        :param bool debug: debug mode
     """
     self.versionDB = 0
     self.fullname = fullname
@@ -77,10 +77,10 @@ class DB(MySQL):
   def getCSOption(self, optionName, defaultValue=None):
     """ Get option from CS
 
-        :param basestring optionName: option name
-        :param basestring,list defaultValue: default value
+        :param str optionName: option name
+        :param defaultValue: default value
 
-        :return basestring or list
+        :return: value that inherits the defaultValue type
     """
     cs_path = getDatabaseSection(self.fullname)
     return gConfig.getValue("/%s/%s" % (cs_path, optionName), defaultValue)
