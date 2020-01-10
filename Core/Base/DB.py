@@ -84,7 +84,7 @@ class DB(MySQL):
     """
     cs_path = getDatabaseSection(self.fullname)
     return gConfig.getValue("/%s/%s" % (cs_path, optionName), defaultValue)
-  
+
   def updateDBVersion(self, version):
     """ Update DB version
 
