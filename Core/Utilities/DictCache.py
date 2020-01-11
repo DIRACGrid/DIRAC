@@ -95,7 +95,7 @@ class DictCache(object):
         :param cKey: identification key of the record
         :param int validSeconds: The amount of seconds the key has to be valid for
 
-        :return: boolean
+        :return: bool
     """
     self.lock.acquire()
     try:
@@ -170,7 +170,7 @@ class DictCache(object):
   def showContentsInString(self):
     """ Return a human readable string to represent the contents
 
-        :return: basestring
+        :return: str
     """
     self.lock.acquire()
     try:
@@ -243,7 +243,7 @@ class DictCache(object):
     """ Purge all entries
         CAUTION: useLock parameter should ALWAYS be True except when called from __del__
 
-        :param boolean useLock: use lock
+        :param bool useLock: use lock
     """
     if useLock:
       self.lock.acquire()
