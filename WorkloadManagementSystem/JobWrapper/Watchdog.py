@@ -38,7 +38,8 @@ from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateU
 class Watchdog(object):
 
   #############################################################################
-  def __init__(self, pid, exeThread, spObject, jobCPUTime, memoryLimit=0, processors=1, systemFlag='linux', jobArgs={}):
+  def __init__(self, pid, exeThread, spObject, jobCPUTime,
+               memoryLimit=0, processors=1, systemFlag='linux', jobArgs={}):
     """ Constructor, takes system flag as argument.
     """
     self.stopSigStartSeconds = int(jobArgs.get('StopSigStartSeconds', 1800))  # 30 minutes
@@ -395,7 +396,7 @@ class Watchdog(object):
     """Uses os.times() to get CPU time and returns HH:MM:SS after conversion.
     """
     try:
-      result = self.profiler.getAllProcessData()
+      result = self.profiler.getAllProcessData(withChildren=True)
       if not result['OK']:
         self.log.warn('Problem while checking consumed CPU')
         return result
@@ -526,8 +527,9 @@ class Watchdog(object):
 
     wallClockTime = self.parameters['WallClockTime'][-1]
     if wallClockTime < self.sampleCPUTime:
-      self.log.info("Stopping check, wallclock time (%s) is still smaller than sample time (%s)" % (wallClockTime,
-                                                                                                    self.sampleCPUTime))
+      self.log.info("Stopping check, wallclock time (%s) is still smaller than sample time (%s)" % (
+          wallClockTime,
+          self.sampleCPUTime))
       return S_OK()
 
     intervals = max(1, int(self.sampleCPUTime / self.checkingTime))
@@ -721,7 +723,7 @@ class Watchdog(object):
     self.initialValues['MemoryUsed'] = memUsed
     self.parameters['MemoryUsed'] = []
 
-    result = self.profiler.getAllProcessData()
+    result = self.profiler.getAllProcessData(withChildren=True)
     self.log.verbose('Job Memory: %s' % (result['Value']))
     if not result['OK']:
       self.log.warn('Could not get job memory usage')

@@ -4,17 +4,12 @@
 ############################################
 
 if [ -z "$SERVERINSTALLDIR" ]; then
-  if [ -z "$DEVROOT" ]; then
-    echo 'Environmental variable "DEVROOT" is not set.'
+  if [ -z "$PILOTINSTALLDIR" ]; then
+    echo 'Environmental variable "PILOTINSTALLDIR" is not set.'
     exit 1
   else
-    SERVERINSTALLDIR=$DEVROOT
+    SERVERINSTALLDIR=$PILOTINSTALLDIR
   fi
-fi
-
-if [ "$DEVROOT" ]; then
-  # Path to ci config files
-  CI_CONFIG=$DEVROOT/DIRAC/tests/Jenkins/config/ci
 fi
 
 if [ "$TESTCODE" ]; then
