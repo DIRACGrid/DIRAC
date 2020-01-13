@@ -51,10 +51,8 @@ class ARCComputingElement(ComputingElement):
     self.usercfg = arc.common.UserConfig()
     # set the timeout to the default 20 seconds in case the UserConfig constructor did not
     self.usercfg.Timeout(20)  # pylint: disable=pointless-statement
-    if 'Host' in self.ceParameters:
-      self.ceHost = self.ceParameters['Host']
-    if 'GridEnv' in self.ceParameters:
-      self.gridEnv = self.ceParameters['GridEnv']
+    self.ceHost = self.ceParameters.get('Host', self.ceName)
+    self.gridEnv = self.ceParameters.get('GridEnv', self.gridEnv)
     # Used in getJobStatus
     self.mapStates = {'Accepted': 'Scheduled',
                       'Preparing': 'Scheduled',
