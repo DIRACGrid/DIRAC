@@ -18,6 +18,7 @@ NEW: (#4241) Slave configuration servers are automatically updated as part of th
 NEW: (#4241) Configuration Server - added forceGlobalConfigurationUpdate() interface to force all 
      registered service to update their configuration
 NEW: (#4257) Add search emails for group method in Registry
+NEW: (#4397) ConfigurationClient - added getOptionsDictRecursively method, add docs
 
 *Framework
 CHANGE: (#4157) add possibility to work with Proxy Providers and "clean" proxy without 
@@ -29,6 +30,7 @@ CHANGE: (#4362) BundleDeliveryFramework uses list instead of tuple
 
 *WMS
 CHANGE: (#4362) SandboxStoreClient uses list instead of tuple
+CHANGE: (#4396) Removed outdated PilotMonitorAgent
 
 *DMS
 CHANGE: (#4243) FileCatalog - standard components are loaded using ObjectLoader mechanism
