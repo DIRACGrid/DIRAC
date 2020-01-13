@@ -23,4 +23,12 @@ jobs:
       - name: create
 	run: |
 	  docker pull docker.pkg.github.com/diracgrid/management/dirac-distribution:latest
-	  docker run docker.pkg.github.com/diracgrid/management/dirac-distribution:latest bash -c "python3 dirac-distribution.py -r integration  | tail -n 1  > /tmp/deploy.sh && sed -i 's/lhcbprod/${{ secrets.KRB_USERNAME }}/g' /tmp/deploy.sh && cat /tmp/deploy.sh && echo ${{ secrets.KRB_PASSWORD }} | kinit ${{ secrets.KRB_USERNAME }}@CERN.CH && echo readyToUpload && export USER=${{ secrets.KRB_USERNAME }} &&  echo reallyReadyToUpload && source /tmp/deploy.sh"
+	  docker run docker.pkg.github.com/diracgrid/management/dirac-distribution:latest bash -c \
+	  "python3 dirac-distribution.py -r integration | tail -n 1  > /tmp/deploy.sh && "\
+	  "sed -i 's/lhcbprod/${{ secrets.KRB_USERNAME }}/g' /tmp/deploy.sh && "\
+	  "cat /tmp/deploy.sh && "\
+	  "echo ${{ secrets.KRB_PASSWORD }} | kinit ${{ secrets.KRB_USERNAME }}@CERN.CH && "\
+	  "echo readyToUpload && "\
+	  "export USER=${{ secrets.KRB_USERNAME }} && "\
+	  "echo reallyReadyToUpload && "\
+	  "source /tmp/deploy.sh"
