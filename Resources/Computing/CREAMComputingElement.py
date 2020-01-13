@@ -99,8 +99,7 @@ class CREAMComputingElement(ComputingElement):
   def _reset(self):
     self.queue = self.ceParameters.get("CEQueueName", self.ceParameters['Queue'])
     self.outputURL = self.ceParameters.get('OutputURL', 'gsiftp://localhost')
-    if 'GridEnv' in self.ceParameters:
-      self.gridEnv = self.ceParameters['GridEnv']
+    self.gridEnv = self.ceParameters.get('GridEnv', self.gridEnv)
 
   #############################################################################
   def submitJob(self, executableFile, proxy, numberOfJobs=1, processors=1):

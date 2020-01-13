@@ -43,6 +43,9 @@ def getPilotLoggingInfo(grid, pilotRef):
    Get LoggingInfo of a GRID job
   """
   if grid == 'CREAM':
+    # pilotRef may integrate the pilot stamp
+    # it has to be removed before being passed in parameter
+    pilotRef = pilotRef.split(':::')[0]
     cmd = ['glite-ce-job-status', '-L', '2', '%s' % pilotRef]
   elif grid == 'HTCondorCE':
     # need to import here, otherwise import errors happen

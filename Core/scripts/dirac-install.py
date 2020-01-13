@@ -210,6 +210,7 @@ class Params(object):
     self.externalVersion = ""
     self.createLink = False
     self.scriptSymlink = False
+    self.userEnvVariables = {}
 
 
 cliParams = Params()
@@ -1142,9 +1143,9 @@ class ReleaseConfig(object):
 
   def getDiracOSVersion(self, diracOSVersion=None):
     """
-      It returns the DIRACOS version
-      :param str diracOSVersion: the OS version
-      """
+    It returns the DIRACOS version
+    :param str diracOSVersion: the OS version
+    """
 
     if diracOSVersion:
       return self.getDiracOSExtensionAndVersion(diracOSVersion)
@@ -1687,7 +1688,9 @@ cmdOpts = (('r:', 'release=', 'Release version to install'),
            ('x:', 'external=', 'external version'),
            ('  ', 'createLink', 'create version symbolic link from the versions directory. This is equivalent to the \
            following command: ln -s /opt/dirac/versions/vArBpC vArBpC'),
-           ('  ', 'scriptSymlink', 'Symlink the scripts instead of creating wrapper')
+           ('  ', 'scriptSymlink', 'Symlink the scripts instead of creating wrapper'),
+           ('  ', 'userEnvVariables=',
+            'User-requested environment variables (comma-separated, name and value separated by ":::")')
            )
 
 
@@ -1745,7 +1748,7 @@ def loadConfiguration():
 
   # at the end we load the local configuration and merge with the global cfg
   for arg in args:
-    if len(arg) > 4 and arg.find(".cfg") == len(arg) - 4:
+    if len(arg) > 4 and arg.find(".cfg") == len(arg) - 4 and ':::' not in arg:
       result = releaseConfig.loadInstallationLocalDefaults(arg)
       if not result['OK']:
         logERROR(result['Message'])
@@ -1829,6 +1832,9 @@ def loadConfiguration():
       cliParams.createLink = True
     elif o == '--scriptSymlink':
       cliParams.scriptSymlink = True
+    elif o == '--userEnvVariables':
+      cliParams.userEnvVariables = dict(zip([name.split(':::')[0] for name in v.replace(' ', '').split(',')],
+                                            [value.split(':::')[1] for value in v.replace(' ', '').split(',')]))
 
   if not cliParams.release and not cliParams.modules:
     logERROR("Missing release to install")
@@ -2147,6 +2153,13 @@ def createBashrc():
       # Add the lines required for fork support for xrootd
       lines.extend(['# Fork support for xrootd',
                     'export XRD_RUNFORKHANDLER=1'])
+
+      # Add the lines required for further env variables requested
+      if cliParams.userEnvVariables:
+        lines.extend(['# User-requested variables'])
+        for envName, envValue in cliParams.userEnvVariables.items():
+          lines.extend(['export %s=%s' % (envName, envValue)])
+
       lines.append('')
       f = open(bashrcFile, 'w')
       f.write('\n'.join(lines))
@@ -2244,6 +2257,12 @@ def createCshrc():
       # Add the lines required for fork support for xrootd
       lines.extend(['# Fork support for xrootd',
                     'setenv XRD_RUNFORKHANDLER 1'])
+
+      # Add the lines required for further env variables requested
+      if cliParams.userEnvVariables:
+        lines.extend(['# User-requested variables'])
+        for envName, envValue in cliParams.userEnvVariables.items():
+          lines.extend(['setenv %s %s' % (envName, envValue)])
 
       lines.append('')
       f = open(cshrcFile, 'w')
@@ -2429,6 +2448,12 @@ def createBashrcForDiracOS():
       # Add the lines required for fork support for xrootd
       lines.extend(['# Fork support for xrootd',
                     'export XRD_RUNFORKHANDLER=1'])
+
+      # Add the lines required for further env variables requested
+      if cliParams.userEnvVariables:
+        lines.extend(['# User-requested variables'])
+        for envName, envValue in cliParams.userEnvVariables.items():
+          lines.extend(['export %s=%s' % (envName, envValue)])
 
       lines.append('')
       with open(bashrcFile, 'w') as f:

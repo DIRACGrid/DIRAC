@@ -52,7 +52,7 @@ class GlobusComputingElement(ComputingElement):
   def _reset(self):
     self.queue = self.ceParameters['Queue']
     self.outputURL = self.ceParameters.get('OutputURL', 'gsiftp://localhost')
-    self.gridEnv = self.ceParameters['GridEnv']
+    self.gridEnv = self.ceParameters.get('GridEnv', self.gridEnv)
 
   #############################################################################
   def submitJob(self, executableFile, proxy, numberOfJobs=1):
@@ -69,7 +69,7 @@ class GlobusComputingElement(ComputingElement):
       diracStamp = makeGuid()[:8]
       queueName = '%s/%s' % (self.ceName, self.queue)
       cmd = ['globus-job-submit', queueName, "-s", executableFile]
-      #cmd = ['globus-job-submit', '-r %s' % queueName, '-f %s' % jdlName ]
+      # cmd = ['globus-job-submit', '-r %s' % queueName, '-f %s' % jdlName ]
       result = executeGridCommand(self.proxy, cmd, self.gridEnv)
       self.log.verbose(result)
       if result['OK']:
