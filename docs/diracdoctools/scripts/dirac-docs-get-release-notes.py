@@ -82,7 +82,8 @@ def gitlabSetup():
   LOGGER.info('Setting up GitLab')
   try:
     from GitTokens import GITLABTOKEN
-    SESSION.headers.update({'PRIVATE-TOKEN': GITLABTOKEN})
+    if GITLABTOKEN:
+      SESSION.headers.update({'PRIVATE-TOKEN': GITLABTOKEN})
   except ImportError:
     raise ImportError(G_ERROR)
 
