@@ -213,7 +213,7 @@ class MPSuccessMinMax(UserJobTestCase):
     j.setName("MP-test-min2max4")
     j.setExecutable(self.mpExeFlex, arguments='2')
     j.setInputSandbox(find_all('mpTest-flexible.py', rootPath, 'DIRAC/tests/Utilities')[0])
-    j.setNumberOfProcessors(minNumberOfProcessors=2)  # This requires 2 to 4 processors
+    j.setNumberOfProcessors(minNumberOfProcessors=2, maxNumberOfProcessors=4)  # This requires 2 to 4 processors
     j.setLogLevel('DEBUG')
     try:
       # This is the standard location in Jenkins

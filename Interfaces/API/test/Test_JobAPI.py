@@ -3,6 +3,7 @@
 
 __RCSID__ = "$Id$"
 
+import pytest
 import StringIO
 
 from DIRAC.Interfaces.API.Job import Job
@@ -88,3 +89,30 @@ def test_SimpleParametricJob():
   assert '-o LogLevel=DEBUG' in arguments
   assert'-p JOB_ID=%(JOB_ID)s' in arguments
   assert'-p InputData=%(InputData)s' in arguments
+
+
+@pytest.mark.parametrize("proc, minProc, maxProc, expectedProc, expectedMinProc, expectedMaxProc", [
+    (4, None, None, 4, None, 4),
+    (4, 2, None, 4, None, 4),
+    (4, 2, 8, 4, None, 4),
+    (4, 8, 6, 8, None, 8),  # non-sense
+    (None, 2, 8, None, 2, 8),
+    (None, 1, None, None, 1, None),
+    (None, None, 8, None, 1, 8),
+    (None, 8, 8, 8, None, 8),
+    (None, 12, 8, 8, None, 8),  # non-sense
+])
+def test_MPJob(proc, minProc, maxProc, expectedProc, expectedMinProc, expectedMaxProc):
+
+  job = Job()
+  job.setExecutable('myExec')
+  job.setLogLevel('DEBUG')
+  job.setNumberOfProcessors(proc, minProc, maxProc)
+  jdl = job._toJDL()
+  clad = ClassAd('[' + jdl + ']')
+  processors = clad.getAttributeInt('NumberOfProcessors')
+  minProcessors = clad.getAttributeInt('MinNumberOfProcessors')
+  maxProcessors = clad.getAttributeInt('MaxNumberOfProcessors')
+  assert processors == expectedProc
+  assert minProcessors == expectedMinProc
+  assert maxProcessors == expectedMaxProc

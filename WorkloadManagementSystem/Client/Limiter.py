@@ -15,14 +15,16 @@ from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 
 class Limiter(object):
 
+  # static variables shared between all instances of this class
+  csDictCache = DictCache()
+  condCache = DictCache()
+  delayMem = {}
+
   def __init__(self, jobDB=None, opsHelper=None):
     """ Constructor
     """
     self.__runningLimitSection = "JobScheduling/RunningLimit"
     self.__matchingDelaySection = "JobScheduling/MatchingDelay"
-    self.csDictCache = DictCache()
-    self.condCache = DictCache()
-    self.delayMem = {}
 
     if jobDB:
       self.jobDB = jobDB

@@ -52,10 +52,8 @@ class ARCComputingElement(ComputingElement):
     self.usercfg = arc.common.UserConfig()
     # set the timeout to the default 20 seconds in case the UserConfig constructor did not
     self.usercfg.Timeout(20)  # pylint: disable=pointless-statement
-    if 'Host' in self.ceParameters:
-      self.ceHost = self.ceParameters['Host']
-    if 'GridEnv' in self.ceParameters:
-      self.gridEnv = self.ceParameters['GridEnv']
+    self.ceHost = self.ceParameters.get('Host', self.ceName)
+    self.gridEnv = self.ceParameters.get('GridEnv', self.gridEnv)
     # Used in getJobStatus
     self.mapStates = {'Accepted': 'Scheduled',
                       'Preparing': 'Scheduled',
@@ -97,7 +95,7 @@ class ARCComputingElement(ComputingElement):
     # For the XRSL additional string from configuration - only done at initialisation time
     # If this string changes, the corresponding (ARC) site directors have to be restarted
     #
-    # Variable = XRSLExtraString (or XRSLMPExtraString for multi processor mode)
+    # Variable = XRSLExtraString (or for multi processor mode)
     # Default value = ''
     #   If you give a value, I think it should be of the form
     #          (aaa = "xxx")
@@ -143,9 +141,7 @@ class ARCComputingElement(ComputingElement):
         if result != '':
           xrslExtraString = result
           gLogger.debug("Found %s : %s" % (xtraVariable, xrslExtraString))
-    if xrslExtraString == '':
-      gLogger.always("No %s found in configuration for %s" % (xtraVariable, self.ceHost))
-    else:
+    if xrslExtraString:
       gLogger.always("%s : %s" % (xtraVariable, xrslExtraString))
       gLogger.always(" --- to be added to pilots going to CE : %s" % self.ceHost)
     return xrslExtraString
@@ -291,10 +287,15 @@ class ARCComputingElement(ComputingElement):
       jobList = [jobIDList]
 
     gLogger.debug("Killing jobs %s" % jobIDList)
+    jobs = []
     for jobID in jobList:
-      job = self.__getARCJob(jobID)
-      if not job.Cancel():
-        gLogger.debug("Failed to kill job %s. CE(?) not reachable?" % jobID)
+      jobs.append(self.__getARCJob(jobID))
+
+    # JobSupervisor is able to aggregate jobs to perform bulk operations and thus minimizes the communication overhead
+    job_supervisor = arc.JobSupervisor(self.usercfg, jobs)
+    if not job_supervisor.Cancel():
+      errorString = ' - '.join(jobList).strip()
+      return S_ERROR('Failed to kill at least one of these jobs: %s. CE(?) not reachable?' % errorString)
 
     return S_OK()
 
@@ -376,11 +377,21 @@ class ARCComputingElement(ComputingElement):
         job = j
       jobList.append(job)
 
-    resultDict = {}
+    jobs = []
     for jobID in jobList:
+      jobs.append(self.__getARCJob(jobID))
+
+    # JobSupervisor is able to aggregate jobs to perform bulk operations and thus minimizes the communication overhead
+    job_supervisor = arc.JobSupervisor(self.usercfg, jobs)
+    job_supervisor.Update()
+    jobsUpdated = job_supervisor.GetAllJobs()
+
+    resultDict = {}
+    jobsToRenew = []
+    jobsToCancel = []
+    for job in jobsUpdated:
+      jobID = job.JobID
       gLogger.debug("Retrieving status for job %s" % jobID)
-      job = self.__getARCJob(jobID)
-      job.Update()
       arcState = job.State.GetGeneralState()
       gLogger.debug("ARC status for job %s is %s" % (jobID, arcState))
       if arcState:  # Meaning arcState is filled. Is this good python?
@@ -389,12 +400,14 @@ class ARCComputingElement(ComputingElement):
         if arcState in ("Running", "Queuing"):
           nearExpiry = arc.Time() + arc.Period(10000)  # 2 hours, 46 minutes and 40 seconds
           if job.ProxyExpirationTime < nearExpiry:
-            job.Renew()
+            # Jobs to renew are aggregated to perform bulk operations
+            jobsToRenew.append(job)
             gLogger.debug("Renewing proxy for job %s whose proxy expires at %s" % (jobID, job.ProxyExpirationTime))
         if arcState == "Hold":
+          # Jobs to cancel are aggregated to perform bulk operations
           # Cancel held jobs so they don't sit in the queue forever
+          jobsToCancel.append(job)
           gLogger.debug("Killing held job %s" % jobID)
-          job.Cancel()
       else:
         resultDict[jobID] = 'Unknown'
       # If done - is it really done? Check the exit code
@@ -403,6 +416,15 @@ class ARCComputingElement(ComputingElement):
         if exitCode:
           resultDict[jobID] = "Failed"
       gLogger.debug("DIRAC status for job %s is %s" % (jobID, resultDict[jobID]))
+
+    # JobSupervisor is able to aggregate jobs to perform bulk operations and thus minimizes the communication overhead
+    job_supervisor_renew = arc.JobSupervisor(self.usercfg, jobsToRenew)
+    if not job_supervisor_renew.Renew():
+      gLogger.warn('At least one of the jobs failed to renew its credentials')
+
+    job_supervisor_cancel = arc.JobSupervisor(self.usercfg, jobsToCancel)
+    if not job_supervisor_cancel.Cancel():
+      gLogger.warn('At least one of the jobs failed to be cancelled')
 
     if not resultDict:
       return S_ERROR('No job statuses returned')

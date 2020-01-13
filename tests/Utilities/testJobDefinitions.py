@@ -150,6 +150,36 @@ def mpJob():
   return endOfAllJobs(J)
 
 
+def mp3Job():
+  """ simple hello world job, with 2 to 4 processors
+  """
+
+  J = baseToAllJobs('min2max4Job')
+  try:
+    J.setInputSandbox([find_all('mpTest.py', rootPath, 'DIRAC/tests/Utilities')[0]])
+  except IndexError:  # we are in Jenkins
+    J.setInputSandbox([find_all('mpTest.py', os.environ['WORKSPACE'], 'DIRAC/tests/Utilities')[0]])
+
+  J.setExecutable('mpTest.py')
+  J.setNumberOfProcessors(numberOfProcessors=3)
+  return endOfAllJobs(J)
+
+
+def min2max4Job():
+  """ simple hello world job, with 2 to 4 processors
+  """
+
+  J = baseToAllJobs('min2max4Job')
+  try:
+    J.setInputSandbox([find_all('mpTest.py', rootPath, 'DIRAC/tests/Utilities')[0]])
+  except IndexError:  # we are in Jenkins
+    J.setInputSandbox([find_all('mpTest.py', os.environ['WORKSPACE'], 'DIRAC/tests/Utilities')[0]])
+
+  J.setExecutable('mpTest.py')
+  J.setNumberOfProcessors(minNumberOfProcessors=2, maxNumberOfProcessors=4)
+  return endOfAllJobs(J)
+
+
 def wholeNodeJob():
   """ simple hello world job, with WholeNode and MultiProcessor tags
   """

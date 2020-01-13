@@ -19,7 +19,7 @@
 <Parameter name="ParametricInputSandbox" type="string" linked_module="" linked_parameter="" in="True" out="False" description="Default null parametric input sandbox value"><value><![CDATA[]]></value></Parameter>
 <Parameter name="InputSandbox" type="JDL" linked_module="" linked_parameter="" in="True" out="False" description="Input sandbox file list"><value><![CDATA[pilot.cfg]]></value></Parameter>
 <Parameter name="ParametricParameters" type="string" linked_module="" linked_parameter="" in="True" out="False" description="Default null parametric input parameters value"><value><![CDATA[]]></value></Parameter>
-<Parameter name="InputSandbox" type="JDL" linked_module="" linked_parameter="" in="True" out="False" description="Input sandbox file list"><value><![CDATA[exe-script.py;helloWorld.py]]></value></Parameter>
+<Parameter name="InputSandbox" type="JDL" linked_module="" linked_parameter="" in="True" out="False" description="Input sandbox file list"><value><![CDATA[exe-script.py;helloWorld.py;pilot.cfg]]></value></Parameter>
 <Parameter name="MaxCPUTime" type="JDL" linked_module="" linked_parameter="" in="True" out="False" description="CPU time in secs"><value><![CDATA[172800]]></value></Parameter>
 <Parameter name="BannedSites" type="JDL" linked_module="" linked_parameter="" in="True" out="False" description="List of sites excluded by user"><value><![CDATA[LCG.CERN.ch;LCG.CNAF.it;LCG.GRIDKA.de;LCG.IN2P3.fr;LCG.NIKHEF.nl;LCG.PIC.es;LCG.RAL.uk;LCG.SARA.nl]]></value></Parameter>
 <ModuleDefinition>
