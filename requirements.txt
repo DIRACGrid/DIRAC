@@ -40,7 +40,8 @@ rst2pdf>=0.93
 simplejson>=3.8.1
 six>=1.10
 sqlalchemy>=1.0.9
-stomp.py>=3.1.5
+# more recent version are python 3 only
+stomp.py==4.1.22
 suds-jurko>=0.6
 sphinx
 # typing comes in via m2crypto. newer versions of typing caused an error in hypothesis
