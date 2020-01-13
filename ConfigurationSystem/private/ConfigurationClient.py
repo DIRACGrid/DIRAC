@@ -17,30 +17,75 @@ __RCSID__ = "$Id$"
 class ConfigurationClient(object):
 
   def __init__(self, fileToLoadList=None):
+    """ C'or
+
+        :param list fileToLoadList: files to load
+    """
     self.diracConfigFilePath = os.path.join(DIRAC.rootPath, "etc", "dirac.cfg")
     if fileToLoadList and isinstance(fileToLoadList, list):
       for fileName in fileToLoadList:
         gConfigurationData.loadFile(fileName)
 
   def loadFile(self, fileName):
+    """ Load file
+
+        :param str fileName: file name
+
+        :return: S_OK()/S_ERROR()
+    """
     return gConfigurationData.loadFile(fileName)
 
   def loadCFG(self, cfg):
+    """ Load CFG
+
+       :param CFG() cfg: CFG object
+
+       :return: S_OK()/S_ERROR()
+    """
     return gConfigurationData.mergeWithLocal(cfg)
 
   def forceRefresh(self, fromMaster=False):
+    """ Force refresh
+
+        :param bool fromMaster: refresh from master
+
+        :return: S_OK()/S_ERROR()
+    """
     return gRefresher.forceRefresh(fromMaster=fromMaster)
 
   def dumpLocalCFGToFile(self, fileName):
+    """ Dump local configuration to file
+
+        :param str fileName: file name
+
+        :return: S_OK()/S_ERROR()
+    """
     return gConfigurationData.dumpLocalCFGToFile(fileName)
 
   def dumpRemoteCFGToFile(self, fileName):
+    """ Dump remote configuration to file
+
+        :param str fileName: file name
+
+        :return: S_OK()/S_ERROR()
+    """
     return gConfigurationData.dumpRemoteCFGToFile(fileName)
 
   def addListenerToNewVersionEvent(self, functor):
+    """ Add listener to new version event
+
+        :param str functor: functor
+    """
     gRefresher.addListenerToNewVersionEvent(functor)
 
   def dumpCFGAsLocalCache(self, fileName=None, raw=False):
+    """ Dump local CFG cache to file
+
+        :param str fileName: file name
+        :param bool raw: raw
+
+        :return: S_OK(str)/S_ERROR()
+    """
     cfg = gConfigurationData.mergedCFG.clone()
     try:
       if not raw and cfg.isSection('DIRAC'):
@@ -59,16 +104,38 @@ class ConfigurationClient(object):
     return S_OK(strData)
 
   def getServersList(self):
+    """ Get list of servers
+
+        :return: list
+    """
     return gConfigurationData.getServers()
 
   def useServerCertificate(self):
+    """ Get using server certificate status
+
+        :return: bool
+    """
     return gConfigurationData.useServerCertificate()
 
   def getValue(self, optionPath, defaultValue=None):
+    """ Get configuration value
+
+        :param str optionPath: option path
+        :param defaultValue: default value
+
+        :return: type(defaultValue)
+    """
     retVal = self.getOption(optionPath, defaultValue)
     return retVal['Value'] if retVal['OK'] else defaultValue
 
   def getOption(self, optionPath, typeValue=None):
+    """ Get configuration option
+
+        :param str optionPath: option path
+        :param typeValue: type of value
+
+        :return: S_OK()/S_ERROR()
+    """
     gRefresher.refreshConfigurationIfNeeded()
     optionValue = gConfigurationData.extractOptionFromCFG(optionPath)
 
@@ -120,6 +187,13 @@ class ConfigurationClient(object):
             (str(typeValue), optionValue, repr(e)))
 
   def getSections(self, sectionPath, listOrdered=True):
+    """ Get configuration sections
+
+        :param str sectionPath: section path
+        :param bool listOrdered: ordered
+
+        :return: S_OK(list)/S_ERROR()
+    """
     gRefresher.refreshConfigurationIfNeeded()
     sectionList = gConfigurationData.getSectionsFromCFG(sectionPath, ordered=listOrdered)
     if isinstance(sectionList, list):
@@ -128,6 +202,13 @@ class ConfigurationClient(object):
       return S_ERROR("Path %s does not exist or it's not a section" % sectionPath)
 
   def getOptions(self, sectionPath, listOrdered=True):
+    """ Get configuration options
+
+        :param str sectionPath: section path
+        :param bool listOrdered: ordered
+
+        :return: S_OK(list)/S_ERROR()
+    """
     gRefresher.refreshConfigurationIfNeeded()
     optionList = gConfigurationData.getOptionsFromCFG(sectionPath, ordered=listOrdered)
     if isinstance(optionList, list):
@@ -136,6 +217,12 @@ class ConfigurationClient(object):
       return S_ERROR("Path %s does not exist or it's not a section" % sectionPath)
 
   def getOptionsDict(self, sectionPath):
+    """ Get configuration options in dictionary
+
+        :param str sectionPath: section path
+
+        :return: S_OK(dict)/S_ERROR()
+    """
     gRefresher.refreshConfigurationIfNeeded()
     optionsDict = {}
     optionList = gConfigurationData.getOptionsFromCFG(sectionPath)
@@ -146,20 +233,30 @@ class ConfigurationClient(object):
     else:
       return S_ERROR("Path %s does not exist or it's not a section" % sectionPath)
 
+  def getOptionsDictRecursively(self, sectionPath):
+    """ Get configuration options in dictionary recursively
+
+        :param str sectionPath: section path
+
+        :return: S_OK(dict)/S_ERROR()
+    """
+    if not gConfigurationData.mergedCFG.isSection(sectionPath):
+      return S_ERROR("Path %s does not exist or it's not a section" % sectionPath)
+    return S_OK(gConfigurationData.mergedCFG.getAsDict(sectionPath))
+
   def getConfigurationTree(self, root='', *filters):
-    """
-    Create a dictionary with all sections, subsections and options
-    starting from given root. Result can be filtered.
+    """ Create a dictionary with all sections, subsections and options
+        starting from given root. Result can be filtered.
 
-    :param str root: Starting point in the configuration tree.
-    :param filters: Select results that contain given substrings (check full path, i.e. with option name)
-    :type filters: str or python:list[str]
-    :return: Return a dictionary where keys are paths taken from
-             the configuration (e.g. /Systems/Configuration/...).
-             Value is "None" when path points to a section
-             or not "None" if path points to an option.
-    """
+        :param str root: Starting point in the configuration tree.
+        :param filters: Select results that contain given substrings (check full path, i.e. with option name)
+        :type filters: str or python:list[str]
 
+        :return: S_OK(dict)/S_ERROR() -- dictionary where keys are paths taken from
+                 the configuration (e.g. /Systems/Configuration/...).
+                 Value is "None" when path points to a section
+                 or not "None" if path points to an option.
+    """
     log = DIRAC.gLogger.getSubLogger('getConfigurationTree')
 
     # check if root is an option (special case)
@@ -211,7 +308,9 @@ class ConfigurationClient(object):
     return S_OK(result)
 
   def setOptionValue(self, optionPath, value):
-    """
-    Set a value in the local configuration
+    """ Set a value in the local configuration
+
+        :param str optionPath: option path
+        :param str value: value
     """
     gConfigurationData.setOptionInCFG(optionPath, value)
