@@ -1,3 +1,39 @@
+[v7r0p10]
+
+*Core
+FIX: (#4394) RequestHandler - fix log output for the case where the ActionTuple is actually a string
+FIX: (#4394) AuthManager - manage the case where ExtraCredentials are in a form of a list
+NEW: (#4379) dirac-install accepts userEnvVariables switch, adds user-requested env variables
+     to *rc files
+
+*WMS
+FIX: (#4404) Fix the matching delay functionality, fixes #2983
+NEW: (#4403) JobCleaningAgent: Add possibility to remove HeartBeatLoggingInfo before jobs are
+     completely removed.
+FIX: (#4394) SiteDirector - do not add downloading files ti the pilot if Pilot3 flag is False
+FIX: (#4390) Watchdog: get the CPU consumed by children processes too
+FIX: (#4370) SiteDirector: Pilot3 option easier to interpret
+CHANGE: (#4338) getStatus method in ARC CE now uses a JobSupervisor to get status of multiple pilots at once.
+CHANGE: (#4338) SiteDirector.updatePilotStatus has been parallelized using threads.
+NEW: (#4338) AvailableSlotsUpdateCycleFactor is a parameter part of the configuration allowing to control
+     the rate of the update of the available slots in the queues.
+FIX: (#4338) Revert to queueCECache being an object attribute to fix the CEs instantiation.
+
+*RMS
+CHANGE: (#4400) ReqDB: Add pool_recycle=3600 parameter for sql engine setup, might prevent
+        occasional "Mysql Server has gone away" errors
+
+*Resources
+FIX: (#4380) ComputingElement classes: use GridEnv if present
+CHANGE: (#4360) in HTCondor CEs, the pilot stamps are now used to retrieve outputs and logging info
+
+*DMS
+CHANGE: (#4400) FTS3DB: Add pool_recycle=3600 parameter for sql engine setup, might prevent
+        occasional "Mysql Server has gone away" errors
+
+*Docs
+CHANGE: (#4402) dirac-docs-get-release-notes.py does not require a GITLABTOKEN
+
 [v7r0p9]
 
 *Core
