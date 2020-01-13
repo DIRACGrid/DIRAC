@@ -21,6 +21,7 @@ import random
 import socket
 import hashlib
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import DIRAC
 from DIRAC import S_OK, gConfig
@@ -92,6 +93,8 @@ class SiteDirector(AgentModule):
     self.resourcesModule = res['Value']
 
     self.queueDict = {}
+    # self.queueCECache aims at saving CEs information over the cycles to avoid to create the exact same CEs each cycle
+    self.queueCECache = {}
     self.queueSlots = {}
     self.failedQueues = defaultdict(int)
     self.firstPass = True
@@ -110,8 +113,6 @@ class SiteDirector(AgentModule):
     self.defaultSubmitPools = ''
     self.totalSubmittedPilots = 0
 
-    self.proxy = None
-
     self.addPilotsToEmptySites = False
     self.checkPlatform = False
     self.updateStatus = True
@@ -128,7 +129,12 @@ class SiteDirector(AgentModule):
 
     self.globalParameters = {"NumberOfProcessors": 1,
                              "MaxRAM": 2048}
+    # self.failedQueueCycleFactor is the number of cycles a queue has to wait before getting pilots again
     self.failedQueueCycleFactor = 10
+    # Every N cycles, the status of the pilots are updated by the SiteDirector
+    self.pilotStatusUpdateCycleFactor = 10
+    # Every N cycles, the number of slots available in the queues is updated
+    self.availableSlotsUpdateCycleFactor = 10
     self.maxQueueLength = 86400 * 3
 
     self.pilotWaitingFlag = True
@@ -210,7 +216,10 @@ class SiteDirector(AgentModule):
     self.maxPilotsToSubmit = self.am_getOption('MaxPilotsToSubmit', self.maxPilotsToSubmit)
     self.pilotWaitingFlag = self.am_getOption('PilotWaitingFlag', self.pilotWaitingFlag)
     self.failedQueueCycleFactor = self.am_getOption('FailedQueueCycleFactor', self.failedQueueCycleFactor)
-    self.pilotStatusUpdateCycleFactor = self.am_getOption('PilotStatusUpdateCycleFactor', 10)
+    self.pilotStatusUpdateCycleFactor = self.am_getOption('PilotStatusUpdateCycleFactor',
+                                                          self.pilotStatusUpdateCycleFactor)
+    self.availableSlotsUpdateCycleFactor = self.am_getOption('AvailableSlotsUpdateCycleFactor',
+                                                             self.availableSlotsUpdateCycleFactor)
 
     # Flags
     self.addPilotsToEmptySites = self.am_getOption('AddPilotsToEmptySites', self.addPilotsToEmptySites)
@@ -302,7 +311,6 @@ class SiteDirector(AgentModule):
     self.log.debug("The resources dictionary contains %d entries" % len(resourceDict))
 
     self.queueDict = {}
-    queueCECache = {}
     ceFactory = ComputingElementFactory()
 
     for site in resourceDict:
@@ -367,18 +375,18 @@ class SiteDirector(AgentModule):
           # Generate the CE object for the queue or pick the already existing one
           # if the queue definition did not change
           queueHash = self.__generateQueueHash(ceQueueDict)
-          if queueName in queueCECache and queueCECache[queueName]['Hash'] == queueHash:
-            queueCE = queueCECache[queueName]['CE']
+          if queueName in self.queueCECache and self.queueCECache[queueName]['Hash'] == queueHash:
+            queueCE = self.queueCECache[queueName]['CE']
           else:
             result = ceFactory.getCE(ceName=ce,
                                      ceType=ceDict['CEType'],
                                      ceParametersDict=ceQueueDict)
             if not result['OK']:
               return result
-            queueCECache.setdefault(queueName, {})
-            queueCECache[queueName]['Hash'] = queueHash
-            queueCECache[queueName]['CE'] = result['Value']
-            queueCE = queueCECache[queueName]['CE']
+            self.queueCECache.setdefault(queueName, {})
+            self.queueCECache[queueName]['Hash'] = queueHash
+            self.queueCECache[queueName]['CE'] = result['Value']
+            queueCE = self.queueCECache[queueName]['CE']
 
           self.queueDict[queueName]['CE'] = queueCE
           self.queueDict[queueName]['CEName'] = ce
@@ -564,13 +572,13 @@ class SiteDirector(AgentModule):
       result = gProxyManager.getPilotProxyFromDIRACGroup(self.pilotDN, self.pilotGroup, cpuTime)
       if not result['OK']:
         return result
-      self.proxy = result['Value']
+      proxy = result['Value']
       # Check returned proxy lifetime
-      result = self.proxy.getRemainingSecs()  # pylint: disable=no-member
+      result = proxy.getRemainingSecs()  # pylint: disable=no-member
       if not result['OK']:
         return result
       lifetime_secs = result['Value']
-      ce.setProxy(self.proxy, lifetime_secs)
+      ce.setProxy(proxy, lifetime_secs)
 
       # now really submitting
       while pilotsToSubmit:  # a cycle because pilots are submitted in chunks
@@ -839,11 +847,15 @@ class SiteDirector(AgentModule):
                   "(a maximum of %d pilots to %s queue)" % (pilotsToSubmit, queue))
 
     bundleProxy = self.queueDict[queue].get('BundleProxy', False)
+    proxy = None
+    if bundleProxy:
+      proxy = ce.proxy
+
     jobExecDir = self.queueDict[queue]['ParametersDict'].get('JobExecDir', '')
     envVariables = self.queueDict[queue]['ParametersDict'].get('EnvironmentVariables', None)
 
     executable, pilotSubmissionChunk = self.getExecutable(queue, pilotsToSubmit,
-                                                          bundleProxy=bundleProxy,
+                                                          proxy=proxy,
                                                           jobExecDir=jobExecDir,
                                                           envVariables=envVariables)
 
@@ -874,6 +886,7 @@ class SiteDirector(AgentModule):
     # Add pilots to the PilotAgentsDB: assign pilots to TaskQueue proportionally to the task queue priorities
     pilotList = submitResult['Value']
     self.queueSlots[queue]['AvailableSlots'] -= len(pilotList)
+
     self.totalSubmittedPilots += len(pilotList)
     self.log.info('Submitted %d pilots to %s@%s' % (len(pilotList),
                                                     self.queueDict[queue]['QueueName'],
@@ -967,7 +980,7 @@ class SiteDirector(AgentModule):
     availableSlotsCount = self.queueSlots[queue].setdefault('AvailableSlotsCount', 0)
     waitingJobs = 1
     if totalSlots == 0:
-      if availableSlotsCount % 10 == 0:
+      if availableSlotsCount % self.availableSlotsUpdateCycleFactor == 0:
 
         # Get the list of already existing pilots for this queue
         jobIDList = None
@@ -1028,7 +1041,7 @@ class SiteDirector(AgentModule):
 
 #####################################################################################
   def getExecutable(self, queue, pilotsToSubmit,
-                    bundleProxy=True, jobExecDir='', envVariables=None,
+                    proxy=None, jobExecDir='', envVariables=None,
                     **kwargs):
     """ Prepare the full executable for queue
 
@@ -1045,9 +1058,6 @@ class SiteDirector(AgentModule):
     :rtype: basestring
     """
 
-    proxy = None
-    if bundleProxy:
-      proxy = self.proxy
     pilotOptions, pilotsSubmitted = self._getPilotOptions(queue, pilotsToSubmit, **kwargs)
     if not pilotOptions:
       self.log.warn("Pilots will be submitted without additional options")
@@ -1226,67 +1236,21 @@ class SiteDirector(AgentModule):
     return _writePilotWrapperFile(workingDirectory=workingDirectory, localPilot=localPilot)
 
   def updatePilotStatus(self):
-    """ Update status of pilots in transient states
+    """ Update status of pilots in transient and final states
     """
-    for queue in self.queueDict:
-      ce = self.queueDict[queue]['CE']
-      ceName = self.queueDict[queue]['CEName']
-      queueName = self.queueDict[queue]['QueueName']
-      ceType = self.queueDict[queue]['CEType']
-      siteName = self.queueDict[queue]['Site']
 
-      result = pilotAgentsDB.selectPilots({'DestinationSite': ceName,
-                                           'Queue': queueName,
-                                           'GridType': ceType,
-                                           'GridSite': siteName,
-                                           'Status': TRANSIENT_PILOT_STATUS,
-                                           'OwnerDN': self.pilotDN,
-                                           'OwnerGroup': self.pilotGroup})
-      if not result['OK']:
-        self.log.error('Failed to select pilots", ": %s' % result['Message'])
-        continue
-      pilotRefs = result['Value']
-      if not pilotRefs:
-        continue
+    # Generate a proxy before feeding the threads to renew the ones of the CEs to perform actions
+    result = gProxyManager.getPilotProxyFromDIRACGroup(self.pilotDN, self.pilotGroup, 23400)
+    if not result['OK']:
+      return result
+    proxy = result['Value']
 
-      result = pilotAgentsDB.getPilotInfo(pilotRefs)
-      if not result['OK']:
-        self.log.error('Failed to get pilots info from DB', result['Message'])
-        continue
-      pilotDict = result['Value']
-
-      stampedPilotRefs = []
-      for pRef in pilotDict:
-        if pilotDict[pRef]['PilotStamp']:
-          stampedPilotRefs.append(pRef + ":::" + pilotDict[pRef]['PilotStamp'])
-        else:
-          stampedPilotRefs = list(pilotRefs)
-          break
-
-      # This proxy is used for checking the pilot status and renewals
-      # We really need at least a few hours otherwise the renewed
-      # proxy may expire before we check again...
-      result = ce.isProxyValid(3 * 3600)
-      if not result['OK']:
-        result = gProxyManager.getPilotProxyFromDIRACGroup(self.pilotDN, self.pilotGroup, 23400)
-        if not result['OK']:
-          return result
-        self.proxy = result['Value']
-        ce.setProxy(self.proxy, 23300)
-
-      result = ce.getJobStatus(stampedPilotRefs)
-      if not result['OK']:
-        self.log.error('Failed to get pilots status from CE', '%s: %s' % (ceName, result['Message']))
-        continue
-      pilotCEDict = result['Value']
-
-      abortedPilots, getPilotOutput = self._updatePilotStatus(pilotRefs, pilotDict, pilotCEDict)
-      for pRef in getPilotOutput:
-        self._getPilotOutput(pRef, pilotDict, ce, ceName)
-
-      # If something wrong in the queue, make a pause for the job submission
-      if abortedPilots:
-        self.failedQueues[queue] += 1
+    # Getting the status of pilots in a queue implies the use of remote CEs and may lead to network latency
+    # Threads aim at overcoming such issues and thus 1 thread per queue is created to
+    # update the status of pilots in transient states
+    with ThreadPoolExecutor(max_workers=len(self.queueDict)) as executor:
+      for queue in self.queueDict:
+        executor.submit(self._updatePilotStatusPerQueue, queue, proxy)
 
     # The pilot can be in Done state set by the job agent check if the output is retrieved
     for queue in self.queueDict:
@@ -1296,8 +1260,8 @@ class SiteDirector(AgentModule):
         result = gProxyManager.getPilotProxyFromDIRACGroup(self.pilotDN, self.pilotGroup, 1000)
         if not result['OK']:
           return result
-        self.proxy = result['Value']
-        ce.setProxy(self.proxy, 940)
+        proxy = result['Value']
+        ce.setProxy(proxy, 940)
 
       ceName = self.queueDict[queue]['CEName']
       queueName = self.queueDict[queue]['QueueName']
@@ -1350,6 +1314,67 @@ class SiteDirector(AgentModule):
           self.log.error('Failed to send pilot agent accounting')
 
     return S_OK()
+
+  def _updatePilotStatusPerQueue(self, queue, proxy):
+    """ Update status of pilots in transient state for a given queue
+
+    :param queue: queue name
+    :param proxy: proxy to check the pilot status and renewals
+    """
+    ce = self.queueDict[queue]['CE']
+    ceName = self.queueDict[queue]['CEName']
+    queueName = self.queueDict[queue]['QueueName']
+    ceType = self.queueDict[queue]['CEType']
+    siteName = self.queueDict[queue]['Site']
+
+    result = pilotAgentsDB.selectPilots({'DestinationSite': ceName,
+                                         'Queue': queueName,
+                                         'GridType': ceType,
+                                         'GridSite': siteName,
+                                         'Status': TRANSIENT_PILOT_STATUS,
+                                         'OwnerDN': self.pilotDN,
+                                         'OwnerGroup': self.pilotGroup})
+    if not result['OK']:
+      self.log.error('Failed to select pilots", ": %s' % result['Message'])
+      return
+    pilotRefs = result['Value']
+    if not pilotRefs:
+      return
+
+    result = pilotAgentsDB.getPilotInfo(pilotRefs)
+    if not result['OK']:
+      self.log.error('Failed to get pilots info from DB', result['Message'])
+      return
+    pilotDict = result['Value']
+
+    stampedPilotRefs = []
+    for pRef in pilotDict:
+      if pilotDict[pRef]['PilotStamp']:
+        stampedPilotRefs.append(pRef + ":::" + pilotDict[pRef]['PilotStamp'])
+      else:
+        stampedPilotRefs = list(pilotRefs)
+        break
+
+    # This proxy is used for checking the pilot status and renewals
+    # We really need at least a few hours otherwise the renewed
+    # proxy may expire before we check again...
+    result = ce.isProxyValid(3 * 3600)
+    if not result['OK']:
+      ce.setProxy(proxy, 23300)
+
+    result = ce.getJobStatus(stampedPilotRefs)
+    if not result['OK']:
+      self.log.error('Failed to get pilots status from CE', '%s: %s' % (ceName, result['Message']))
+      return
+    pilotCEDict = result['Value']
+
+    abortedPilots, getPilotOutput = self._updatePilotStatus(pilotRefs, pilotDict, pilotCEDict)
+    for pRef in getPilotOutput:
+      self._getPilotOutput(pRef, pilotDict, ce, ceName)
+
+    # If something wrong in the queue, make a pause for the job submission
+    if abortedPilots:
+      self.failedQueues[queue] += 1
 
   def _updatePilotStatus(self, pilotRefs, pilotDict, pilotCEDict):
     """ Really updates the pilots status
