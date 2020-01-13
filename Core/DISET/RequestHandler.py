@@ -114,7 +114,7 @@ class RequestHandler(object):
                         of action to execute. The second position is the action itself.
     """
     actionTuple = proposalTuple[1]
-    gLogger.debug("Executing %s:%s action" % actionTuple)
+    gLogger.debug("Executing %s:%s action" % tuple(actionTuple))
     startTime = time.time()
     actionType = actionTuple[0]
     self.serviceInfoDict['actionTuple'] = actionTuple
