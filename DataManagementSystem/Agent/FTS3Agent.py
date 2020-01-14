@@ -33,7 +33,7 @@ from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Core.Utilities.Time import fromString
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getFTS3ServerDict
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations as opHelper
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsernameInGroup
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.DataManagementSystem.private import FTS3Utilities
@@ -52,20 +52,20 @@ PROXY_LIFETIME = 43200  # 12 hours
 
 
 class FTS3Agent(AgentModule):
-  """
-    This Agent is responsible of interacting with the FTS3 services.
-    Several of them can run in parallel.
-    It first treats the Operations, by creating new FTS jobs and performing
-    callback.
-    Then, it monitors the current jobs.
+  """ This Agent is responsible of interacting with the FTS3 services.
+      Several of them can run in parallel.
+      It first treats the Operations, by creating new FTS jobs and performing
+      callback.
+      Then, it monitors the current jobs.
 
-    CAUTION: This agent and the FTSAgent cannot run together.
-
+      CAUTION: This agent and the FTSAgent cannot run together.
   """
 
   def __readConf(self):
-    """ read configurations """
-
+    """ Read configurations
+    
+        :return: S_OK()/S_ERROR()
+    """
     # Getting all the possible servers
     res = getFTS3ServerDict()
     if not res['OK']:
@@ -95,8 +95,10 @@ class FTS3Agent(AgentModule):
     return S_OK()
 
   def initialize(self):
-    """ agent's initialization """
-
+    """ Agent's initialization
+    
+        :return: S_OK()/S_ERROR()
+    """
     self._globalContextCache = {}
 
     # name that will be used in DB for assignment tag
@@ -113,7 +115,10 @@ class FTS3Agent(AgentModule):
     return res
 
   def beginExecution(self):
-    """ reload configurations before start of a cycle """
+    """ Reload configurations before start of a cycle
+
+        :return: S_OK()/S_ERROR()
+    """
     return self.__readConf()
 
   def getFTS3Context(self, username, group, ftsServer, threadID):
@@ -126,14 +131,13 @@ class FTS3Agent(AgentModule):
         The proxy needs a lifetime of PROXY_LIFETIME, is cached for half an hour less,
         and the lifetime of the context is 45mn
 
-        :param username: name of the user
-        :param group: group of the user
-        :param ftsServer: address of the server
+        :param str username: name of the user
+        :param str group: group of the user
+        :param str ftsServer: address of the server
+        :param str threadID: thread ID
 
         :returns: S_OK with the context object
-
     """
-
     log = gLogger.getSubLogger("getFTS3Context", child=True)
 
     contextes = self._globalContextCache.setdefault(threadID, DictCache())
@@ -142,11 +146,12 @@ class FTS3Agent(AgentModule):
     log.debug("Getting context for %s" % (idTuple, ))
 
     if not contextes.exists(idTuple, 2700):
-      res = getDNForUsername(username)
-      if not res['OK']:
-        return res
-      # We take the first DN returned
-      userDN = res['Value'][0]
+      result = getDNForUsernameInGroup(username, group)
+      if not result['OK']:
+        return result
+      userDN = result['Value']
+      if not userDN:
+        return S_ERROR('No user DN found for %s@%s' % (username, group))
 
       log.debug("UserDN %s" % userDN)
 
@@ -155,7 +160,7 @@ class FTS3Agent(AgentModule):
       # and we cache it for half an hour less
       cacheTime = PROXY_LIFETIME - 1800
       res = gProxyManager.downloadVOMSProxyToFile(
-          userDN, group, requiredTimeLeft=PROXY_LIFETIME, cacheTime=cacheTime)
+          username, group, requiredTimeLeft=7200, cacheTime=5400)
       if not res['OK']:
         return res
 
@@ -174,10 +179,13 @@ class FTS3Agent(AgentModule):
     return S_OK(contextes.get(idTuple))
 
   def _monitorJob(self, ftsJob):
-    """
-        * query the FTS servers
+    """ * query the FTS servers
         * update the FTSFile status
         * update the FTSJob status
+
+        :param ftsJob: FTS job
+
+        :return: ftsJob, S_OK()/S_ERROR()
     """
     # General try catch to avoid that the tread dies
     try:
@@ -237,10 +245,10 @@ class FTS3Agent(AgentModule):
   @staticmethod
   def _monitorJobCallback(returnedValue):
     """ Callback when a job has been monitored
+
         :param returnedValue: value returned by the _monitorJob method
                               (ftsJob, standard dirac return struct)
     """
-
     ftsJob, res = returnedValue
     log = gLogger.getSubLogger("_monitorJobCallback/%s" % ftsJob.jobID, child=True)
     if not res['OK']:
@@ -249,11 +257,11 @@ class FTS3Agent(AgentModule):
       log.debug("Successfully updated job status")
 
   def monitorJobsLoop(self):
-    """
-        * fetch the active FTSJobs from the DB
+    """ * fetch the active FTSJobs from the DB
         * spawn a thread to monitor each of them
-    """
 
+        :return: S_OK()/S_ERROR()
+    """
     log = gLogger.getSubLogger("monitorJobs", child=True)
     log.debug("Size of the context cache %s" % len(self._globalContextCache))
 
@@ -296,7 +304,6 @@ class FTS3Agent(AgentModule):
         :param returnedValue: value returned by the _treatOperation method
                               (ftsOperation, standard dirac return struct)
     """
-
     operation, res = returnedValue
     log = gLogger.getSubLogger("_treatOperationCallback/%s" % operation.operationID, child=True)
     if not res['OK']:
@@ -309,8 +316,9 @@ class FTS3Agent(AgentModule):
           * does the callback if the operation is finished
           * generate new jobs and submits them
 
-          :param operation: the operation to treat
-          :param threadId: the id of the tread, it just has to be unique (used for the context cache)
+        :param operation: the operation to treat
+        
+        :return: operation, S_OK()/S_ERROR()
     """
     try:
       threadID = current_process().name
@@ -421,8 +429,9 @@ class FTS3Agent(AgentModule):
   def treatOperationsLoop(self):
     """ * Fetch all the FTSOperations which are not finished
         * Spawn a thread to treat each operation
-    """
 
+        :return: S_OK()/S_ERROR()
+    """
     log = gLogger.getSubLogger("treatOperations", child=True)
 
     log.debug("Size of the context cache %s" % len(self._globalContextCache))
@@ -461,8 +470,10 @@ class FTS3Agent(AgentModule):
     return S_OK()
 
   def kickOperations(self):
-    """ kick stuck operations """
-
+    """ Kick stuck operations
+    
+        :return: S_OK()/S_ERROR()
+    """
     log = gLogger.getSubLogger("kickOperations", child=True)
 
     res = self.fts3db.kickStuckOperations(limit=self.maxKick, kickDelay=self.kickDelay)
@@ -475,8 +486,10 @@ class FTS3Agent(AgentModule):
     return S_OK()
 
   def kickJobs(self):
-    """ kick stuck jobs """
-
+    """ Kick stuck jobs
+    
+        :return: S_OK()/S_ERROR()
+    """
     log = gLogger.getSubLogger("kickJobs", child=True)
 
     res = self.fts3db.kickStuckJobs(limit=self.maxKick, kickDelay=self.kickDelay)
@@ -489,8 +502,10 @@ class FTS3Agent(AgentModule):
     return S_OK()
 
   def deleteOperations(self):
-    """ delete final operations """
-
+    """ Delete final operations
+    
+        :return: S_OK()/S_ERROR()
+    """
     log = gLogger.getSubLogger("deleteOperations", child=True)
 
     res = self.fts3db.deleteFinalOperations(limit=self.maxDelete, deleteDelay=self.deleteDelay)
@@ -503,7 +518,10 @@ class FTS3Agent(AgentModule):
     return S_OK()
 
   def finalize(self):
-    """ finalize processing """
+    """ Finalize processing
+    
+        :return: S_OK()/S_ERROR()
+    """
     # Joining all the ThreadPools
     log = gLogger.getSubLogger("Finalize")
 
@@ -524,8 +542,10 @@ class FTS3Agent(AgentModule):
     return S_OK()
 
   def execute(self):
-    """ one cycle execution """
-
+    """ One cycle execution
+    
+        :return: S_OK()/S_ERROR()
+    """
     log = gLogger.getSubLogger("execute", child=True)
 
     log.info("Monitoring job")
@@ -567,11 +587,10 @@ class FTS3Agent(AgentModule):
 
   @staticmethod
   def __sendAccounting(ftsJob):
-    """ prepare and send DataOperation to AccountingDB
+    """ Prepare and send DataOperation to AccountingDB
 
         :param ftsJob: the FTS3Job from which we send the accounting info
     """
-
     dataOp = DataOperation()
     dataOp.setStartTime(fromString(ftsJob.submitTime))
     dataOp.setEndTime(fromString(ftsJob.lastUpdate))
