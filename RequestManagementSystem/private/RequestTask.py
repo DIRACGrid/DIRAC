@@ -114,21 +114,24 @@ class RequestTask(object):
       userName = shifterDict["Value"].get("User", "")
       userGroup = shifterDict["Value"].get("Group", "")
 
-      userDN = Registry.getDNForUsername(userName)
-      if not userDN["OK"]:
-        self.log.error("Cannot get DN For Username", "%s: %s" % (userName, userDN["Message"]))
+      result = Registry.getDNForUsernameInGroup(userName, userGroup)
+      if not result['OK']:
+        return result
+      userDN = result['Value']
+      if not userDN:
+        self.log.error("Cannot get DN For Username", userName)
         continue
-      userDN = userDN["Value"][0]
+      userDN = userDN["Value"]
       vomsAttr = Registry.getVOMSAttributeForGroup(userGroup)
       if vomsAttr:
         self.log.debug("getting VOMS [%s] proxy for shifter %s@%s (%s)" % (vomsAttr, userName,
                                                                            userGroup, userDN))
-        getProxy = gProxyManager.downloadVOMSProxyToFile(userDN, userGroup,
+        getProxy = gProxyManager.downloadVOMSProxyToFile(userName, userGroup,
                                                          requiredTimeLeft=1200,
                                                          cacheTime=4 * 43200)
       else:
         self.log.debug("getting proxy for shifter %s@%s (%s)" % (userName, userGroup, userDN))
-        getProxy = gProxyManager.downloadProxyToFile(userDN, userGroup,
+        getProxy = gProxyManager.downloadProxyToFile(userName, userGroup,
                                                      requiredTimeLeft=1200,
                                                      cacheTime=4 * 43200)
       if not getProxy["OK"]:
@@ -155,9 +158,13 @@ class RequestTask(object):
 
     ownerDN = self.request.OwnerDN
     ownerGroup = self.request.OwnerGroup
+    result = Registry.getUsernameForDN(ownerDN)
+    if not result['OK']:
+      return result
+    owner = result['Value']
     isShifter = []
     for shifter, creds in self.__managersDict.items():
-      if creds["ShifterDN"] == ownerDN and creds["ShifterGroup"] == ownerGroup:
+      if creds["ShifterName"] == owner and creds["ShifterGroup"] == ownerGroup:
         isShifter.append(shifter)
     if isShifter:
       proxyFile = self.__managersDict[isShifter[0]]["ProxyFile"]
@@ -165,10 +172,10 @@ class RequestTask(object):
       return S_OK({"Shifter": isShifter, "ProxyFile": proxyFile})
 
     # # if we're here owner is not a shifter at all
-    ownerProxyFile = gProxyManager.downloadVOMSProxyToFile(ownerDN, ownerGroup)
+    ownerProxyFile = gProxyManager.downloadVOMSProxyToFile(owner, ownerGroup)
     if not ownerProxyFile["OK"] or not ownerProxyFile["Value"]:
       reason = ownerProxyFile.get("Message", "No valid proxy found in ProxyManager.")
-      return S_ERROR("Change proxy error for '%s'@'%s': %s" % (ownerDN, ownerGroup, reason))
+      return S_ERROR("Change proxy error for '%s'@'%s': %s" % (owner, ownerGroup, reason))
 
     ownerProxyFile = ownerProxyFile["Value"]
     os.environ["X509_USER_PROXY"] = ownerProxyFile
