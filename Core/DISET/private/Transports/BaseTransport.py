@@ -116,11 +116,7 @@ class BaseTransport(object):
 
       Before the handshake, dictionnary is empty
     """
-    credDict = self.peerCredentials.copy()
-    forwardingCredentials(credDict)
-    initializationOfCertificate(credDict)
-    initializationOfGroup(credDict)
-    return credDict
+    return self.peerCredentials
 
   def setExtraCredentials(self, extraCredentials):
     """ Add extra credentials to peerCredentials

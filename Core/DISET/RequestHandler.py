@@ -95,7 +95,11 @@ class RequestHandler(object):
 
     :return: Credentials dictionary of remote peer.
     """
-    return self.__trPool.get(self.__trid).getConnectingCredentials()
+    credDict = self.__trPool.get(self.__trid).getConnectingCredentials()
+    forwardingCredentials(credDict)
+    initializationOfCertificate(credDict)
+    initializationOfGroup(credDict)
+    return credDict
 
   @classmethod
   def getCSOption(cls, optionName, defaultValue=False):
