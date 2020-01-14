@@ -14,8 +14,9 @@ jobs:
         command:
           - pytest
           - DIRAC_USE_M2CRYPTO=Yes pytest
-          - pytest Core/Security/test
-          - DIRAC_USE_M2CRYPTO=Yes pytest Core/Security/test
+          # Security tests are flakey due to reference counting bugs in pyGSI/src/crypto/asn1.c
+          - pytest Core/Security/test || (echo "Retrying..." pytest Core/Security/test) || (echo "Retrying again..." pytest Core/Security/test)
+          - DIRAC_USE_M2CRYPTO=Yes pytest Core/Security/test || (echo "Retrying..." DIRAC_USE_M2CRYPTO=Yes pytest Core/Security/test) || (echo "Retrying again..." DIRAC_USE_M2CRYPTO=Yes pytest Core/Security/test)
           - tests/checkDocs.sh
           # TODO This should cover more than just tests/CI
           - find tests/CI -name '*.sh' -print0 | xargs -0 -n1 shellcheck --external-source
