@@ -176,7 +176,7 @@ class AuthManager(object):
     # Read extra credentials
     if KW_EXTRA_CREDENTIALS in credDict:
       # Is it a host? and HACK TO MAINTAIN COMPATIBILITY
-      if credDict.get(KW_EXTRA_CREDENTIALS) == KW_HOSTS_GROUP or KW_GROUP not in credDict:
+      if credDict.get(KW_EXTRA_CREDENTIALS) == KW_HOSTS_GROUP:
         credDict[KW_GROUP] = credDict[KW_EXTRA_CREDENTIALS]
         del credDict[KW_EXTRA_CREDENTIALS]
       # Check if query comes though a gateway/web server
