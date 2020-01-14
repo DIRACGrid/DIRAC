@@ -23,6 +23,7 @@ from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Utilities.Proxy import executeWithUserProxy
 from DIRAC.Core.Utilities.DErrno import cmpError
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Resources.Catalog.FileCatalogClient import FileCatalogClient
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
@@ -139,55 +140,58 @@ class TransformationCleaningAgent(AgentModule):
       return S_OK('Disabled via CS flag')
 
     # Obtain the transformations in Cleaning status and remove any mention of the jobs/files
-    res = self.transClient.getTransformations({'Status': 'Cleaning',
-                                               'Type': self.transformationTypes})
-    if res['OK']:
-      for transDict in res['Value']:
+    result = self.transClient.getTransformations({'Status': 'Cleaning',
+                                                  'Type': self.transformationTypes})
+    if result['OK']:
+      for transDict in result['Value']:
         if self.shifterProxy:
           self._executeClean(transDict)
         else:
           self.log.info("Cleaning transformation %(TransformationID)s with %(AuthorDN)s, %(AuthorGroup)s" %
                         transDict)
-          executeWithUserProxy(self._executeClean)(transDict,
-                                                   proxyUserDN=transDict['AuthorDN'],
-                                                   proxyUserGroup=transDict['AuthorGroup'])
-    else:
-      self.log.error("Failed to get transformations", res['Message'])
+          result = getUsernameForDN(transDict['AuthorDN'])
+          if result['OK']:
+            executeWithUserProxy(self._executeClean)(transDict, proxyUserName=result['Value'],
+                                                     proxyUserGroup=transDict['AuthorGroup'])
+    if not result['OK']:
+      self.log.error("Failed to get transformations", result['Message'])
 
     # Obtain the transformations in RemovingFiles status and removes the output files
-    res = self.transClient.getTransformations({'Status': 'RemovingFiles',
+    result = self.transClient.getTransformations({'Status': 'RemovingFiles',
                                                'Type': self.transformationTypes})
-    if res['OK']:
-      for transDict in res['Value']:
+    if result['OK']:
+      for transDict in result['Value']:
         if self.shifterProxy:
           self._executeRemoval(transDict)
         else:
           self.log.info("Removing files for transformation %(TransformationID)s with %(AuthorDN)s, %(AuthorGroup)s" %
                         transDict)
-          executeWithUserProxy(self._executeRemoval)(transDict,
-                                                     proxyUserDN=transDict['AuthorDN'],
-                                                     proxyUserGroup=transDict['AuthorGroup'])
-    else:
-      self.log.error("Could not get the transformations", res['Message'])
+          result = getUsernameForDN(transDict['AuthorDN'])
+          if result['OK']:
+            executeWithUserProxy(self._executeRemoval)(transDict, proxyUserName=result['Value'],
+                                                       proxyUserGroup=transDict['AuthorGroup'])
+    if not result['OK']:
+      self.log.error("Could not get the transformations", result['Message'])
 
     # Obtain the transformations in Completed status and archive if inactive for X days
     olderThanTime = datetime.utcnow() - timedelta(days=self.archiveAfter)
-    res = self.transClient.getTransformations({'Status': 'Completed',
+    result = self.transClient.getTransformations({'Status': 'Completed',
                                                'Type': self.transformationTypes},
                                               older=olderThanTime,
                                               timeStamp='LastUpdate')
-    if res['OK']:
-      for transDict in res['Value']:
+    if result['OK']:
+      for transDict in result['Value']:
         if self.shifterProxy:
           self._executeArchive(transDict)
         else:
           self.log.info("Archiving files for transformation %(TransformationID)s with %(AuthorDN)s, %(AuthorGroup)s" %
                         transDict)
-          executeWithUserProxy(self._executeArchive)(transDict,
-                                                     proxyUserDN=transDict['AuthorDN'],
-                                                     proxyUserGroup=transDict['AuthorGroup'])
-    else:
-      self.log.error("Could not get the transformations", res['Message'])
+          result = getUsernameForDN(transDict['AuthorDN'])
+          if result['OK']:
+            executeWithUserProxy(self._executeArchive)(transDict, proxyUserName=result['Value'],
+                                                       proxyUserGroup=transDict['AuthorGroup'])
+    if not result['OK']:
+      self.log.error("Could not get the transformations", result['Message'])
     return S_OK()
 
   def _executeClean(self, transDict):

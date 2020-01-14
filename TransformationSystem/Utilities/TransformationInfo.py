@@ -6,6 +6,7 @@ from itertools import izip_longest
 from DIRAC import gLogger, S_OK
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.Core.Utilities.Proxy import UserProxy
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.TransformationSystem.Utilities.JobInfo import JobInfo
 from DIRAC.WorkloadManagementSystem.Client.JobStateUpdateClient import JobStateUpdateClient
@@ -144,8 +145,13 @@ class TransformationInfo(object):
     errorReasons = defaultdict(list)
     successfullyRemoved = 0
 
+    result = getUsernameForDN(self.authorDN)
+    if not result['OK']:
+      raise RuntimeError("Failed to get a proxy: %s" % result['Message'])
+    author = result['Value']
+
     for lfnList in breakListIntoChunks(filesToDelete, 200):
-      with UserProxy(proxyUserDN=self.authorDN, proxyUserGroup=self.authorGroup) as proxyResult:
+      with UserProxy(proxyUserName=author, proxyUserGroup=self.authorGroup) as proxyResult:
         if not proxyResult['OK']:
           raise RuntimeError('Failed to get a proxy: %s' % proxyResult['Message'])
         result = DataManager().removeFile(lfnList)
