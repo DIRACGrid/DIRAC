@@ -520,8 +520,8 @@ def printRequest(request, status=None, full=False, verbose=True, terse=False):
     gLogger.always("Created %s, Updated %s%s" % (request.CreationTime,
                                                  request.LastUpdate,
                                                  (", NotBefore %s" % request.NotBefore) if request.NotBefore else ""))
-    if request.OwnerDN:
-      gLogger.always("Owner: '%s', Group: %s" % (request.OwnerDN, request.OwnerGroup))
+    if request.Owner:
+      gLogger.always("Owner: '%s', Group: %s" % (request.Owner, request.OwnerGroup))
     for indexOperation in enumerate(request):
       op = indexOperation[1]
       if not terse or op.Status == 'Failed':

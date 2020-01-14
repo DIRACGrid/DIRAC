@@ -55,7 +55,8 @@ from DIRAC import gLogger, gConfig, S_ERROR, S_OK
 from DIRAC.Core.Utilities.Graph import DynamicProps
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupsWithVOMSAttribute
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupsWithVOMSAttribute,\
+     getUsernameForDN, getGroupsForUser
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
@@ -139,14 +140,6 @@ class OperationHandlerBase(object):
                                                          self.operation.Type))
 
 
-#   @classmethod
-#   def dataLoggingClient( cls ):
-#     """ DataLoggingClient getter """
-#     if not cls.__dataLoggingClient:
-#       from DIRAC.DataManagementSystem.Client.DataLoggingClient import DataLoggingClient
-#       cls.__dataLoggingClient = DataLoggingClient()
-#     return cls.__dataLoggingClient
-
   @classmethod
   def rssClient(cls):
     """ ResourceStatusClient getter """
@@ -167,19 +160,32 @@ class OperationHandlerBase(object):
     dirMeta = dirMeta["Value"]
 
     ownerRole = "/%s" % dirMeta["OwnerRole"] if not dirMeta["OwnerRole"].startswith("/") else dirMeta["OwnerRole"]
+    ownerGroup = dirMeta.get("OwnerGroup")
     ownerDN = dirMeta["OwnerDN"]
+    owner = dirMeta.get("Owner")
+
+    if not owner:
+      result = getUsernameForDN(ownerDN)
+      if not result['OK']:
+        return result
+      owner = result['Value']
+    ownerGroups = [ownerGroup]
+    if not ownerGroup:
+      result = getGroupsForUser(owner)
+      if not result['OK']:
+        return result
+      ownerGroups = result['Value']
 
     ownerProxy = None
-    for ownerGroup in getGroupsWithVOMSAttribute(ownerRole):
-      vomsProxy = gProxyManager.downloadVOMSProxy(ownerDN, ownerGroup, limited=True,
-                                                  requiredVOMSAttribute=ownerRole)
+    for ownerGroup in getGroupsWithVOMSAttribute(ownerRole, groups=ownerGroups):
+      vomsProxy = gProxyManager.downloadVOMSProxy(owner, ownerGroup, limited=True)
       if not vomsProxy["OK"]:
-        self.log.debug("getProxyForLFN: failed to get VOMS proxy for %s role=%s: %s" % (ownerDN,
-                                                                                        ownerRole,
-                                                                                        vomsProxy["Message"]))
+        self.log.debug("getProxyForLFN: failed to get VOMS proxy for %s@%s role=%s: %s" % (owner, ownerGroup
+                                                                                           ownerRole,
+                                                                                           vomsProxy["Message"]))
         continue
       ownerProxy = vomsProxy["Value"]
-      self.log.debug("getProxyForLFN: got proxy for %s@%s [%s]" % (ownerDN, ownerGroup, ownerRole))
+      self.log.debug("getProxyForLFN: got proxy for %s@%s [%s]" % (owner, ownerGroup, ownerRole))
       break
 
     if not ownerProxy:
