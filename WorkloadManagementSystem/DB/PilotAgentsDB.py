@@ -26,7 +26,7 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE, getCESiteMapping
 import DIRAC.Core.Utilities.Time as Time
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN, getDNForUsername
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN, getDNsForUsername
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 
 
@@ -311,6 +311,7 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
         pilotDict[parameters[i]] = row[i]
         if parameters[i] == 'PilotID':
           pilotIDs.append(row[i])
+      pilotDict['Owner'] = getUsernameForDN(pilotDict['OwnerDN']).get('Value') or ""
       resDict[row[0]] = pilotDict
 
     result = self.getJobsForPilot(pilotIDs)
@@ -974,8 +975,9 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
         userList = [userList]
       dnList = []
       for uName in userList:
-        uList = getDNForUsername(uName)['Value']
-        dnList += uList
+        result = getDNsForUsername(uName)
+        if result['OK']:
+          dnList += result['Value']
       selectDict['OwnerDN'] = dnList
       del selectDict['Owner']
     startDate = selectDict.get('FromDate', None)

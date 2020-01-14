@@ -7,7 +7,7 @@ __RCSID__ = "$Id$"
 import time as nativetime
 
 from DIRAC import S_OK, S_ERROR, gLogger
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNsForUsername
 from DIRAC.WorkloadManagementSystem.private.correctors.BaseCorrector import BaseCorrector
 
 
@@ -97,7 +97,7 @@ class BaseHistoryCorrector(BaseCorrector):
     if groupToUse:
       mappedData = {}
       for userName in data:
-        result = getDNForUsername(userName)
+        result = getDNsForUsername(userName)
         if not result['OK']:
           self.log.error("User does not have any DN assigned", "%s :%s" % (userName, result['Message']))
           continue
