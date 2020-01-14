@@ -21,7 +21,6 @@ class VOMSService(object):
 
     :param str vo: name of the virtual organization (community)
     """
-
     if vo is None:
       vo = getVO()
     if not vo:
@@ -56,9 +55,8 @@ class VOMSService(object):
 
     :param str dn: user DN
     :param str _ca: CA, kept for backward compatibility
-    :return:  S_OK with Value: nickname
+    :return: S_OK with Value: nickname
     """
-
     if self.userDict is None:
       result = self.getUsers()
       if not result['OK']:
@@ -72,16 +70,17 @@ class VOMSService(object):
       return S_ERROR(DErrno.EVOMS, "No nickname defined")
     return S_OK(nickname)
 
-  def getUsers(self):
+  def getUsers(self, proxyPath=None):
     """ Get all the users of the VOMS VO with their detailed information
-
+    
+    :param str proxyPath: proxy path
+    
     :return: user dictionary keyed by the user DN
     """
-
     if not self.urls:
       return S_ERROR(DErrno.ENOAUTH, "No VOMS server defined")
 
-    userProxy = getProxyLocation()
+    userProxy = proxyPath or getProxyLocation()
     caPath = getCAsLocation()
     rawUserList = []
     result = None
