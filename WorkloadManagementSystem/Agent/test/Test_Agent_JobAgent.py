@@ -120,18 +120,19 @@ def test__setupProxy(mocker, mockGCReplyInput, mockPMReplyInput, expected):
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule.__init__")
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule", side_effect=mockAM)
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.gConfig.getValue", side_effect=mockGCReply)
-  module_str = "DIRAC.WorkloadManagementSystem.Agent.JobAgent.gProxyManager.getPayloadProxyFromDIRACGroup"
+  module_str = "DIRAC.WorkloadManagementSystem.Agent.JobAgent.gProxyManager.downloadCorrectProxy"
   mocker.patch(module_str, side_effect=mockPMReply)
 
   jobAgent = JobAgent('Test', 'Test1')
 
+  owner = 'DIRAC'
   ownerDN = 'DIRAC'
   ownerGroup = 'DIRAC'
 
   jobAgent.log = gLogger
   jobAgent.log.setLevel('DEBUG')
 
-  result = jobAgent._setupProxy(ownerDN, ownerGroup)
+  result = jobAgent._setupProxy(owner, ownerGroup)
 
   assert result['OK'] == expected['OK']
 
@@ -179,18 +180,19 @@ def test__requestProxyFromProxyManager(mocker, mockGCReplyInput, mockPMReplyInpu
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule.__init__")
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.AgentModule", side_effect=mockAM)
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.JobAgent.gConfig.getValue", side_effect=mockGCReply)
-  module_str = "DIRAC.WorkloadManagementSystem.Agent.JobAgent.gProxyManager.getPayloadProxyFromDIRACGroup"
+  module_str = "DIRAC.WorkloadManagementSystem.Agent.JobAgent.gProxyManager.downloadCorrectProxy"
   mocker.patch(module_str, side_effect=mockPMReply)
 
   jobAgent = JobAgent('Test', 'Test1')
 
+  owner = 'DIRAC'
   ownerDN = 'DIRAC'
   ownerGroup = 'DIRAC'
 
   jobAgent.log = gLogger
   jobAgent.log.setLevel('DEBUG')
 
-  result = jobAgent._requestProxyFromProxyManager(ownerDN, ownerGroup)
+  result = jobAgent._requestProxyFromProxyManager(owner, ownerGroup)
 
   assert result['OK'] == expected['OK']
 
