@@ -3,14 +3,13 @@
 # File :    dirac-admin-get-proxy
 # Author :  Stuart Paterson
 ########################################################################
-"""
-  Retrieve a delegated proxy for the given user and group
+""" Retrieve a delegated proxy for the given user and group
 """
 from __future__ import print_function
 import os
 import DIRAC
 
-from DIRAC import gLogger
+from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base import Script
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
@@ -24,50 +23,68 @@ class Params(object):
   proxyPath = False
   proxyLifeTime = 86400
   enableVOMS = False
-  vomsAttr = False
 
   def setLimited(self, args):
+    """ Set limited
+
+        :param bool args: is limited
+
+        :return: S_OK()/S_ERROR()
+    """
     self.limited = True
-    return DIRAC.S_OK()
+    return S_OK()
 
   def setProxyLocation(self, args):
+    """ Set proxy location
+
+        :param str args: proxy path
+
+        :return: S_OK()/S_ERROR()
+    """
     self.proxyPath = args
-    return DIRAC.S_OK()
+    return S_OK()
 
   def setProxyLifeTime(self, arg):
+    """ Set proxy lifetime
+
+        :param int arg: lifetime in a seconds
+
+        :return: S_OK()/S_ERROR()
+    """
     try:
       fields = [f.strip() for f in arg.split(":")]
       self.proxyLifeTime = int(fields[0]) * 3600 + int(fields[1]) * 60
     except BaseException:
       gLogger.notice("Can't parse %s time! Is it a HH:MM?" % arg)
-      return DIRAC.S_ERROR("Can't parse time argument")
-    return DIRAC.S_OK()
+      return S_ERROR("Can't parse time argument")
+    return S_OK()
 
   def automaticVOMS(self, arg):
-    self.enableVOMS = True
-    return DIRAC.S_OK()
+    """ Enable VOMS
 
-  def setVOMSAttr(self, arg):
+        :param bool arg: enable VOMS
+
+        :return: S_OK()/S_ERROR()
+    """
     self.enableVOMS = True
-    self.vomsAttr = arg
-    return DIRAC.S_OK()
+    return S_OK()
 
   def registerCLISwitches(self):
+    """ Register CLI switches
+    """
     Script.registerSwitch("v:", "valid=", "Valid HH:MM for the proxy. By default is 24 hours", self.setProxyLifeTime)
     Script.registerSwitch("l", "limited", "Get a limited proxy", self.setLimited)
     Script.registerSwitch("u:", "out=", "File to write as proxy", self.setProxyLocation)
     Script.registerSwitch("a", "voms", "Get proxy with VOMS extension mapped to the DIRAC group", self.automaticVOMS)
-    Script.registerSwitch("m:", "vomsAttr=", "VOMS attribute to require", self.setVOMSAttr)
 
 params = Params()
 params.registerCLISwitches()
 
 Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
                                   'Usage:',
-                                  '  %s [option|cfgfile] ... <DN|user> group' % Script.scriptName,
+                                  '  %s [option|cfgfile] ... user group' % Script.scriptName,
                                   'Arguments:',
-                                  '  DN:       DN of the user',
-                                  '  user:     DIRAC user name (will fail if there is more than 1 DN registered)',
+                                  '  user:     DIRAC user name',
                                   '  group:    DIRAC group name']))
 
 Script.parseCommandLine(ignoreErrors=True)
@@ -77,29 +94,23 @@ if len(args) != 2:
   Script.showHelp()
 
 userGroup = str(args[1])
-userDN = str(args[0])
-userName = False
-if userDN.find("/") != 0:
-  userName = userDN
-  retVal = Registry.getDNForUsername(userName)
-  if not retVal['OK']:
-    gLogger.notice("Cannot discover DN for username %s\n\t%s" % (userName, retVal['Message']))
+
+# First argument is user name
+if str(args[0]).find("/"):
+  userName = str(args[0])
+  result = Registry.getDNForUsernameInGroup(userName, userGroup)
+  if not result['OK']:
+    gLogger.notice("Cannot discover DN for %s@%s" % (userName, userGroup))
     DIRAC.exit(2)
-  DNList = retVal['Value']
-  if len(DNList) > 1:
-    gLogger.notice("Username %s has more than one DN registered" % userName)
-    ind = 0
-    for dn in DNList:
-      gLogger.notice("%d %s" % (ind, dn))
-      ind += 1
-    inp = raw_input("Which DN do you want to download? [default 0] ")
-    if not inp:
-      inp = 0
-    else:
-      inp = int(inp)
-    userDN = DNList[inp]
-  else:
-    userDN = DNList[0]
+  userDN = result['Value']
+# Or DN
+else:
+  userDN = str(args[0])
+  result = Registry.getUsernameForDN(userDN)
+  if not result['OK']:
+    gLogger.notice("DN '%s' is not registered in DIRAC" % userDN)
+    DIRAC.exit(2)
+  userName = result['Value']
 
 if not params.proxyPath:
   if not userName:
@@ -111,11 +122,10 @@ if not params.proxyPath:
   params.proxyPath = "%s/proxy.%s.%s" % (os.getcwd(), userName, userGroup)
 
 if params.enableVOMS:
-  result = gProxyManager.downloadVOMSProxy(userDN, userGroup, limited=params.limited,
-                                           requiredTimeLeft=params.proxyLifeTime,
-                                           requiredVOMSAttribute=params.vomsAttr)
+  result = gProxyManager.downloadVOMSProxy(userName, userGroup, limited=params.limited,
+                                           requiredTimeLeft=params.proxyLifeTime)
 else:
-  result = gProxyManager.downloadProxy(userDN, userGroup, limited=params.limited,
+  result = gProxyManager.downloadProxy(userName, userGroup, limited=params.limited,
                                        requiredTimeLeft=params.proxyLifeTime)
 if not result['OK']:
   gLogger.notice('Proxy file cannot be retrieved: %s' % result['Message'])
