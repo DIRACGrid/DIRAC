@@ -29,6 +29,8 @@ from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 
 def getGridVOs():
   """ Get all the VOMS VO names served by this DIRAC service
+
+      :return: S_OK(list)/S_ERROR()
   """
   voNames = []
   result = getVOs()
@@ -45,8 +47,9 @@ def getGridVOs():
 
 def getCEsFromCS():
   """ Get all the CEs defined in the CS
-  """
 
+      :return: S_OK(list)/S_ERROR()
+  """
   knownCEs = []
   result = gConfig.getSections('/Resources/Sites')
   if not result['OK']:
@@ -69,6 +72,10 @@ def getCEsFromCS():
 
 def getSEsFromCS(protocol='srm'):
   """ Get all the SEs defined in the CS
+
+      :param str protocol: storage protocol
+
+      :return: S_OK(dict)/S_ERROR()
   """
   knownSEs = {}
   result = gConfig.getSections('/Resources/StorageElements')
@@ -95,6 +102,14 @@ def getSEsFromCS(protocol='srm'):
 
 def getGridCEs(vo, bdiiInfo=None, ceBlackList=None, hostURL=None, glue2=False):
   """ Get all the CEs available for a given VO and having queues in Production state
+
+      :param str vo: VO name
+      :param dict bddiInfo: information from BDII
+      :param list ceBlackList: CEs from black list
+      :param str hostURL: host URL
+      :param bool glue2: use glue2
+
+      :return: S_OK(set)/S_ERROR()
   """
   knownCEs = set()
   if ceBlackList is not None:
@@ -147,6 +162,12 @@ def getGridCEs(vo, bdiiInfo=None, ceBlackList=None, hostURL=None, glue2=False):
 
 def getSiteUpdates(vo, bdiiInfo=None, log=None):
   """ Get all the necessary updates for the already defined sites and CEs
+
+      :param str vo: VO name
+      :param dict bdiiInfo: information from DBII
+      :param log: logger
+
+      :result: S_OK(set)/S_ERROR()
   """
 
   def addToChangeSet(entry, changeSet):
@@ -328,6 +349,12 @@ def getSiteUpdates(vo, bdiiInfo=None, log=None):
 
 def getGridSEs(vo, bdiiInfo=None, seBlackList=None):
   """ Get all the SEs available for a given VO
+
+      :param str vo: VO name
+      :param dict bdiiInfo: information from BDII
+      :param list seBlackList: SEs from black list
+
+      :return: S_OK(dict)/S_ERROR()
   """
   seBdiiDict = bdiiInfo
   if bdiiInfo is None:
@@ -369,7 +396,15 @@ def getGridSEs(vo, bdiiInfo=None, seBlackList=None):
 
 
 def getGridSRMs(vo, bdiiInfo=None, srmBlackList=None, unUsed=False):
+  """ Get all the SRMs available for a given VO
 
+      :param str vo: VO name
+      :param dict bdiiInfo: information from BDII
+      :param list srmBlackList: SRMs from black list
+      :param bool unUsed: unused
+
+      :return: S_OK(dict)/S_ERROR()
+  """
   result = ldapService(serviceType='SRM', vo=vo)
   if not result['OK']:
     return result
@@ -426,7 +461,13 @@ def getGridSRMs(vo, bdiiInfo=None, srmBlackList=None, unUsed=False):
 
 
 def getSRMUpdates(vo, bdiiInfo=None):
+  """ Get SRM updates
 
+      :param str vo: VO name
+      :param dict bdiiInfo: information from BDII
+
+      :return: S_OK(set)/S_ERROR()
+  """
   changeSet = set()
 
   def addToChangeSet(entry, changeSet):
@@ -494,25 +535,22 @@ def getSRMUpdates(vo, bdiiInfo=None):
 
 
 def getDBParameters(fullname):
-  """
-  Retrieve Database parameters from CS
-  fullname should be of the form <System>/<DBname>
-  defaultHost is the host to return if the option is not found in the CS.
-  Not used as the method will fail if it cannot be found
-  defaultPort is the port to return if the option is not found in the CS
-  defaultUser is the user to return if the option is not found in the CS.
-  Not usePassword is the password to return if the option is not found in
-  the CS.
-  Not used as the method will fail if it cannot be found
-  defaultDB is the db to return if the option is not found in the CS.
-  Not used as the method will fail if it cannot be found
-  defaultQueueSize is the QueueSize to return if the option is not found in the
-  CS
+  """ Retrieve Database parameters from CS
+      
+      :param str fullname: should be of the form <System>/<DBname>
+             defaultHost is the host to return if the option is not found in the CS.
+             Not used as the method will fail if it cannot be found
+             defaultPort is the port to return if the option is not found in the CS
+             defaultUser is the user to return if the option is not found in the CS.
+             Not usePassword is the password to return if the option is not found in the CS.
+             Not used as the method will fail if it cannot be found
+             defaultDB is the db to return if the option is not found in the CS.
+             Not used as the method will fail if it cannot be found
+             defaultQueueSize is the QueueSize to return if the option is not found in the CS
 
-  Returns a dictionary with the keys: 'host', 'port', 'user', 'password',
-  'db' and 'queueSize'
+      :return: S_OK(dict)/S_ERROR() - dictionary with the keys: 'host', 'port', 'user', 'password',
+                                      'db' and 'queueSize'
   """
-
   cs_path = getDatabaseSection(fullname)
   parameters = {}
 
@@ -571,12 +609,12 @@ def getDBParameters(fullname):
 
 
 def getElasticDBParameters(fullname):
-  """
-  Retrieve Database parameters from CS
-  fullname should be of the form <System>/<DBname>
+  """ Retrieve Database parameters from CS
+      
+      :param str fullname: should be of the form <System>/<DBname>
 
+      :return: S_OK(dict)/S_ERROR()
   """
-
   cs_path = getDatabaseSection(fullname)
   parameters = {}
 
@@ -655,6 +693,11 @@ def getElasticDBParameters(fullname):
   return S_OK(parameters)
 
 
-def getOAuthAPI(instance):
-  """ Get OAuth API url """
-  return gConfig.getValue("/Systems/Framework/%s/URLs/OAuthAPI" % instance)
+def getAuthAPI(instance='Production'):
+  """ Get OAuth API url
+
+      :param str instance: instance
+
+      :return: str
+  """
+  return gConfig.getValue("/Systems/Framework/%s/URLs/AuthAPI" % instance)
