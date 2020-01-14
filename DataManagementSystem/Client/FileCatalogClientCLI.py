@@ -1040,7 +1040,7 @@ File Catalog Client $Revision: 1.17 $Date:
       os.chdir(localDir)
       newDir = os.getcwd()
       print("Local directory: %s" % newDir)
-    except BaseException:
+    except Exception:
       print("%s seems not a directory" % localDir)
 
   def complete_lcd(self, text, line, begidx, endidx):

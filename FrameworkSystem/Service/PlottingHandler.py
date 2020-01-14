@@ -29,8 +29,8 @@ def initializePlottingHandler(serviceInfo):
     pass
   try:
     testFile = "%s/plot__.test" % dataPath
-    fd = open(testFile, "w")
-    fd.close()
+    with open(testFile, "w"):
+      pass
     os.unlink(testFile)
   except IOError:
     gLogger.fatal("Can't write to %s" % dataPath)

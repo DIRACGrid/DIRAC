@@ -10,7 +10,9 @@
 """
 
 # imports
-from types import IntType, LongType, StringTypes
+import six
+
+from types import IntType, LongType
 # from DIRAC
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, S_OK
@@ -72,7 +74,7 @@ class DataIntegrityHandler(RequestHandler):
       gLogger.error("DataIntegrityHandler.getProblematic: Failed to get problematic file to resolve.", res['Message'])
     return res
 
-  types_getPrognosisProblematics = [StringTypes]
+  types_getPrognosisProblematics = [six.string_types]
 
   @staticmethod
   def export_getPrognosisProblematics(prognosis):
@@ -84,7 +86,7 @@ class DataIntegrityHandler(RequestHandler):
       gLogger.error("DataIntegrityHandler.getPrognosisProblematics: Failed to get prognosis files.", res['Message'])
     return res
 
-  types_setProblematicStatus = [[IntType, LongType], StringTypes]
+  types_setProblematicStatus = [[IntType, LongType], six.string_types]
 
   @staticmethod
   def export_setProblematicStatus(fileID, status):
@@ -108,7 +110,7 @@ class DataIntegrityHandler(RequestHandler):
       gLogger.error("DataIntegrityHandler.incrementProblematicRetry: Failed to increment retries.", res['Message'])
     return res
 
-  types_insertProblematic = [StringTypes, dict]
+  types_insertProblematic = [six.string_types, dict]
 
   @staticmethod
   def export_insertProblematic(source, fileMetadata):
