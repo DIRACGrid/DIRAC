@@ -26,7 +26,6 @@ class PUSPProxyProvider(ProxyProvider):
 
         :return: S_OK(basestring)/S_ERROR() -- basestring is a proxy string
     """
-
     userDN = userDict.get('DN')
     if not userDN:
       return S_ERROR('Incomplete user information')
@@ -35,11 +34,16 @@ class PUSPProxyProvider(ProxyProvider):
     if not diracGroup:
       return S_ERROR('Incomplete user information')
 
-    result = Registry.getGroupsForDN(userDN)
+    result = Registry.getUsernameForDN(userDN)
+    if not result['OK']:
+      return S_ERROR('Not redistred DN.')
+    result = Registry.getGroupsForDN(result['Value'])
     if not result['OK']:
       return result
-
     validGroups = result['Value']
+    if not validGroups:
+      return S_ERROR('No groups for %s' % userDN)
+
     if diracGroup not in validGroups:
       return S_ERROR('Invalid group %s for user' % diracGroup)
 
@@ -85,16 +89,3 @@ class PUSPProxyProvider(ProxyProvider):
       return result
     proxyString = result['Value']
     return S_OK((proxyString, timeLeft))
-
-  def getUserDN(self, userDict):
-    """ Get DN of the user certificate that will be created
-
-    :param dict userDict:
-    :return: S_OK/S_ERROR, Value is the DN string
-    """
-
-    userDN = userDict.get('DN')
-    if not userDN:
-      return S_ERROR('Incomplete user information')
-
-    return S_OK(userDN)
