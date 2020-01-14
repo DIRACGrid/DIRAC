@@ -32,7 +32,7 @@ from DIRAC import gLogger
 from DIRAC.Core.Utilities.Adler import fileAdler
 from DIRAC.Core.Utilities.File import makeGuid
 from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupsForUser, getDNForUsername
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupsForUser, getDNForUsernameInGroup
 # # from RMS and DMS
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
@@ -40,7 +40,9 @@ from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 
 ########################################################################
-class FullChainTest( object ):
+
+
+class FullChainTest(object):
   """
   .. class:: FullChainTest
 
@@ -53,9 +55,9 @@ class FullChainTest( object ):
 
   """
 
-  def buildRequest( self, owner, group, sourceSE, targetSE1, targetSE2 ):
+  def buildRequest(self, owner, group, sourceSE, targetSE1, targetSE2):
 
-    files = self.files( owner, group )
+    files = self.files(owner, group)
 
     putAndRegister = Operation()
     putAndRegister.Type = "PutAndRegister"
@@ -68,128 +70,130 @@ class FullChainTest( object ):
       putFile.ChecksumType = "adler32"
       putFile.Size = size
       putFile.GUID = guid
-      putAndRegister.addFile( putFile )
+      putAndRegister.addFile(putFile)
 
     replicateAndRegister = Operation()
     replicateAndRegister.Type = "ReplicateAndRegister"
-    replicateAndRegister.TargetSE = "%s,%s" % ( targetSE1, targetSE2 )
+    replicateAndRegister.TargetSE = "%s,%s" % (targetSE1, targetSE2)
     for fname, lfn, size, checksum, guid in files:
       repFile = File()
       repFile.LFN = lfn
       repFile.Size = size
       repFile.Checksum = checksum
       repFile.ChecksumType = "adler32"
-      replicateAndRegister.addFile( repFile )
+      replicateAndRegister.addFile(repFile)
 
     removeReplica = Operation()
     removeReplica.Type = "RemoveReplica"
     removeReplica.TargetSE = sourceSE
     for fname, lfn, size, checksum, guid in files:
-      removeReplica.addFile( File( {"LFN": lfn } ) )
+      removeReplica.addFile(File({"LFN": lfn}))
 
     removeFile = Operation()
     removeFile.Type = "RemoveFile"
     for fname, lfn, size, checksum, guid in files:
-      removeFile.addFile( File( {"LFN": lfn } ) )
+      removeFile.addFile(File({"LFN": lfn}))
 
     removeFileInit = Operation()
     removeFileInit.Type = "RemoveFile"
     for fname, lfn, size, checksum, guid in files:
-      removeFileInit.addFile( File( {"LFN": lfn } ) )
+      removeFileInit.addFile(File({"LFN": lfn}))
 
     req = Request()
-    req.addOperation( removeFileInit )
-    req.addOperation( putAndRegister )
-    req.addOperation( replicateAndRegister )
-    req.addOperation( removeReplica )
-    req.addOperation( removeFile )
+    req.addOperation(removeFileInit)
+    req.addOperation(putAndRegister)
+    req.addOperation(replicateAndRegister)
+    req.addOperation(removeReplica)
+    req.addOperation(removeFile)
     return req
 
-  def files( self, userName, userGroup ):
+  def files(self, userName, userGroup):
     """ get list of files in user domain """
     files = []
-    for i in xrange( 10 ):
+    for i in xrange(10):
       fname = "/tmp/testUserFile-%s" % i
       if userGroup == "dteam_user":
-        lfn = "/lhcb/user/%s/%s/%s" % ( userName[0], userName, fname.split( "/" )[-1] )
+        lfn = "/lhcb/user/%s/%s/%s" % (userName[0], userName, fname.split("/")[-1])
       else:
-        lfn = "/lhcb/certification/test/rmsdms/%s" % fname.split( "/" )[-1]
-      fh = open( fname, "w+" )
-      for i in xrange( 100 ):
-        fh.write( str( random.randint( 0, i ) ) )
+        lfn = "/lhcb/certification/test/rmsdms/%s" % fname.split("/")[-1]
+      fh = open(fname, "w+")
+      for i in xrange(100):
+        fh.write(str(random.randint(0, i)))
       fh.close()
-      size = os.stat( fname ).st_size
-      checksum = fileAdler( fname )
-      guid = makeGuid( fname )
-      files.append( ( fname, lfn, size, checksum, guid ) )
+      size = os.stat(fname).st_size
+      checksum = fileAdler(fname)
+      guid = makeGuid(fname)
+      files.append((fname, lfn, size, checksum, guid))
     return files
 
-  def putRequest( self, userName, userDN, userGroup, sourceSE, targetSE1, targetSE2 ):
+  def putRequest(self, userName, userDN, userGroup, sourceSE, targetSE1, targetSE2):
     """ test case for user """
 
-    req = self.buildRequest( userName, userGroup, sourceSE, targetSE1, targetSE2 )
+    req = self.buildRequest(userName, userGroup, sourceSE, targetSE1, targetSE2)
 
-    req.RequestName = "test%s-%s" % ( userName, userGroup )
+    req.RequestName = "test%s-%s" % (userName, userGroup)
     req.OwnerDN = userDN
     req.OwnerGroup = userGroup
 
-    gLogger.always( "putRequest: request '%s'" % req.RequestName )
+    gLogger.always("putRequest: request '%s'" % req.RequestName)
     for op in req:
-      gLogger.always( "putRequest: => %s %s %s" % ( op.Order, op.Type, op.TargetSE ) )
+      gLogger.always("putRequest: => %s %s %s" % (op.Order, op.Type, op.TargetSE))
       for f in op:
-        gLogger.always( "putRequest: ===> file %s" % f.LFN )
+        gLogger.always("putRequest: ===> file %s" % f.LFN)
 
     reqClient = ReqClient()
 
-    delete = reqClient.deleteRequest( req.RequestName )
+    delete = reqClient.deleteRequest(req.RequestName)
     if not delete["OK"]:
-      gLogger.error( "putRequest: %s" % delete["Message"] )
+      gLogger.error("putRequest: %s" % delete["Message"])
       return delete
-    put = reqClient.putRequest( req )
+    put = reqClient.putRequest(req)
     if not put["OK"]:
-      gLogger.error( "putRequest: %s" % put["Message"] )
+      gLogger.error("putRequest: %s" % put["Message"])
     return put
+
 
 # # test execution
 if __name__ == "__main__":
 
-  if len( sys.argv ) != 5:
-    gLogger.error( "Usage:\n python %s userGroup SourceSE TargetSE1 TargetSE2\n" )
-    sys.exit( -1 )
+  if len(sys.argv) != 5:
+    gLogger.error("Usage:\n python %s userGroup SourceSE TargetSE1 TargetSE2\n")
+    sys.exit(-1)
   userGroup = sys.argv[1]
   sourceSE = sys.argv[2]
   targetSE1 = sys.argv[3]
   targetSE2 = sys.argv[4]
 
-  gLogger.always( "will use '%s' group" % userGroup )
+  gLogger.always("will use '%s' group" % userGroup)
 
   admin = DiracAdmin()
 
   userName = admin._getCurrentUser()
   if not userName["OK"]:
-    gLogger.error( userName["Message"] )
-    sys.exit( -1 )
+    gLogger.error(userName["Message"])
+    sys.exit(-1)
   userName = userName["Value"]
-  gLogger.always( "current user is '%s'" % userName )
+  gLogger.always("current user is '%s'" % userName)
 
-  userGroups = getGroupsForUser( userName )
+  userGroups = getGroupsForUser(userName)
   if not userGroups["OK"]:
-    gLogger.error( userGroups["Message"] )
-    sys.exit( -1 )
+    gLogger.error(userGroups["Message"])
+    sys.exit(-1)
   userGroups = userGroups["Value"]
 
   if userGroup not in userGroups:
-    gLogger.error( "'%s' is not a member of the '%s' group" % ( userName, userGroup ) )
-    sys.exit( -1 )
+    gLogger.error("'%s' is not a member of the '%s' group" % (userName, userGroup))
+    sys.exit(-1)
 
-  userDN = getDNForUsername( userName )
-  if not userDN["OK"]:
-    gLogger.error( userDN["Message"] )
-    sys.exit( -1 )
-  userDN = userDN["Value"][0]
-  gLogger.always( "userDN is %s" % userDN )
+  result = getDNForUsernameInGroup(userName, userGroup)
+  if not result['OK']:
+    gLogger.error(result['Message'])
+    sys.exit(-1)
+  userDN = result['Value']
+  if not userDN:
+    gLogger.error('No user DN found for shifter %s@%s' % (userName, userGroup))
+    sys.exit(-1)
+  gLogger.always("userDN is %s" % userDN)
 
   fct = FullChainTest()
-  put = fct.putRequest( userName, userDN, userGroup, sourceSE, targetSE1, targetSE2 )
-
-
+  put = fct.putRequest(userName, userDN, userGroup, sourceSE, targetSE1, targetSE2)
