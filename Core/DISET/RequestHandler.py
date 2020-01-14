@@ -15,6 +15,7 @@ from DIRAC.Core.Utilities import Time
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 from DIRAC.Core.Security.Properties import CS_ADMINISTRATOR
+from DIRAC.Core.DISET.AuthManager import initializationOfCertificate, initializationOfGroup, forwardingCredentials
 
 
 def getServiceOption(serviceInfo, optionName, defaultValue):
