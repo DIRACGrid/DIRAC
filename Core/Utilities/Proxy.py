@@ -38,16 +38,15 @@ Utilities to execute one or more functions with a given proxy.
 import os
 
 from DIRAC import gConfig, gLogger, S_ERROR, S_OK
-from DIRAC.FrameworkSystem.Client.ProxyManagerClient     import gProxyManager
-from DIRAC.ConfigurationSystem.Client.ConfigurationData  import gConfigurationData
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry   import getVOMSAttributeForGroup, getDNForUsername
-from DIRAC.Core.Utilities.LockRing                       import LockRing
+from DIRAC.Core.Utilities.LockRing import LockRing
+from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN
+from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 
 __RCSID__ = "$Id$"
 
-def executeWithUserProxy( fcn ):
-  """
-  Decorator function to execute with a temporary user proxy
+def executeWithUserProxy(fcn):
+  """Decorator function to execute with a temporary user proxy
 
   :param fcn: function to be decorated
   :return: the result of the fcn execution
@@ -63,71 +62,71 @@ def executeWithUserProxy( fcn ):
   :param bool executionLock: flag to execute with a lock for the time of user proxy application ( default False )
   """
 
-  def wrapped_fcn( *args, **kwargs ):
+  def wrapped_fcn(*args, **kwargs):
 
-    userName = kwargs.pop( 'proxyUserName', '' )
-    userDN = kwargs.pop( 'proxyUserDN', '' )
-    userGroup = kwargs.pop( 'proxyUserGroup', '' )
-    vomsFlag = kwargs.pop( 'proxyWithVOMS', True )
-    proxyFilePath = kwargs.pop( 'proxyFilePath', False )
-    executionLockFlag = kwargs.pop( 'executionLock', False )
+    userName = kwargs.pop('proxyUserName', '')
+    userDN = kwargs.pop('proxyUserDN', '')
+    userGroup = kwargs.pop('proxyUserGroup', '')
+    vomsFlag = kwargs.pop('proxyWithVOMS', True)
+    proxyFilePath = kwargs.pop('proxyFilePath', False)
+    executionLockFlag = kwargs.pop('executionLock', False)
 
-    if ( userName or userDN ) and userGroup:
+    if (userName or userDN) and userGroup:
 
       proxyResults = _putProxy(userName=userName,
                                userDN=userDN,
                                userGroup=userGroup,
                                vomsFlag=vomsFlag,
                                proxyFilePath=proxyFilePath,
-                               executionLockFlag=executionLockFlag,
-                               )
+                               executionLockFlag=executionLockFlag)
       if not proxyResults['OK']:
         return proxyResults
       originalUserProxy, useServerCertificate, executionLock = proxyResults['Value']
 
       try:
-        return fcn( *args, **kwargs )
+        return fcn(*args, **kwargs)
       except Exception as lException:  # pylint: disable=broad-except
-        value = ','.join( [str( arg ) for arg in lException.args] )
+        value = ','.join([str(arg) for arg in lException.args])
         exceptType = lException.__class__.__name__
-        return S_ERROR( "Exception - %s: %s" % ( exceptType, value ) )
+        return S_ERROR("Exception - %s: %s" % (exceptType, value))
       finally:
         _restoreProxyState(originalUserProxy, useServerCertificate, executionLock)
     else:
       # No proxy substitution requested
-      return fcn( *args, **kwargs )
+      return fcn(*args, **kwargs)
 
   return wrapped_fcn
 
 
-def getProxy( userDNs, userGroup, vomsAttr, proxyFilePath ):
-  """ do the actual download of the proxy, trying the different DNs
+def getProxy(user, userGroup, vomsAttr, proxyFilePath):
+  """ Do the actual download of the proxy, trying the different DNs
+
+  :param str user: user name
+  :param str userGroup: group name
+  :param bool vomsAttr: if need VOMSproxy
+  :param str proxyPathFile: path to proxy file
+
+  :return: S_OK(object)/S_ERROR() -- return proxy as chain
   """
-  for userDN in userDNs:
-    if vomsAttr:
-      result = gProxyManager.downloadVOMSProxyToFile( userDN, userGroup,
-                                                      requiredVOMSAttribute = vomsAttr,
-                                                      filePath = proxyFilePath,
-                                                      requiredTimeLeft = 3600,
-                                                      cacheTime = 3600 )
-    else:
-      result = gProxyManager.downloadProxyToFile( userDN, userGroup,
-                                                  filePath = proxyFilePath,
-                                                  requiredTimeLeft = 3600,
-                                                  cacheTime = 3600 )
+  if vomsAttr:
+    result = gProxyManager.downloadVOMSProxyToFile(user, userGroup,
+                                                   filePath=proxyFilePath,
+                                                   requiredTimeLeft=3600,
+                                                   cacheTime=3600)
+  else:
+    result = gProxyManager.downloadProxyToFile(user, userGroup,
+                                               filePath=proxyFilePath,
+                                               requiredTimeLeft=3600,
+                                               cacheTime=3600)
 
-    if not result['OK']:
-      gLogger.error( "Can't download %sproxy " % ( 'VOMS' if vomsAttr else '' ),
-                     "of '%s', group %s to file: " % ( userDN, userGroup ) + result['Message'] )
-    else:
-      return result
-
-  # If proxy not found for any DN, return an error
-  return S_ERROR( "Can't download proxy" )
+  if not result['OK']:
+    gLogger.error("Can't download %sproxy " % ('VOMS' if vomsAttr else ''),
+                  "of '%s', group %s to file: " % (user, userGroup) + result['Message'])
+    return S_ERROR("Can't download proxy")
+  return result
 
 
-
-def executeWithoutServerCertificate( fcn ):
+def executeWithoutServerCertificate(fcn):
   """
   Decorator function to execute a call without the server certificate.
   This shows useful in Agents when we want to call a DIRAC service
@@ -144,30 +143,29 @@ def executeWithoutServerCertificate( fcn ):
 
   :param fcn: function to be decorated
   :return: the result of the fcn execution
-
   """
-
-  def wrapped_fcn( *args, **kwargs ):
-
+  def wrapped_fcn(*args, **kwargs):
+    """Wraped fuction
+    """
     # Get the lock and acquire it
-    executionLock = LockRing().getLock( '_UseUserProxy_', recursive = True )
+    executionLock = LockRing().getLock('_UseUserProxy_', recursive=True)
     executionLock.acquire()
 
     # Check if the caller is executing with the host certificate
     useServerCertificate = gConfig.useServerCertificate()
     if useServerCertificate:
-      gConfigurationData.setOptionInCFG( '/DIRAC/Security/UseServerCertificate', 'false' )
+      gConfigurationData.setOptionInCFG('/DIRAC/Security/UseServerCertificate', 'false')
 
     try:
-      return fcn( *args, **kwargs )
+      return fcn(*args, **kwargs)
     except Exception as lException:  # pylint: disable=broad-except
-      value = ','.join( [str( arg ) for arg in lException.args] )
+      value = ','.join([str(arg) for arg in lException.args])
       exceptType = lException.__class__.__name__
-      return S_ERROR( "Exception - %s: %s" % ( exceptType, value ) )
+      return S_ERROR("Exception - %s: %s" % (exceptType, value))
     finally:
       # Restore the default host certificate usage if necessary
       if useServerCertificate:
-        gConfigurationData.setOptionInCFG( '/DIRAC/Security/UseServerCertificate', 'true' )
+        gConfigurationData.setOptionInCFG('/DIRAC/Security/UseServerCertificate', 'true')
       # release the lock
       executionLock.release()
 
@@ -202,8 +200,7 @@ class UserProxy(object):
                               userGroup=proxyUserGroup,
                               vomsFlag=proxyWithVOMS,
                               executionLockFlag=executionLock,
-                              proxyFilePath=proxyFilePath,
-                              )
+                              proxyFilePath=proxyFilePath)
 
   def __enter__(self):
     return self.result
@@ -216,26 +213,19 @@ class UserProxy(object):
 
 
 def _putProxy(userDN=None, userName=None, userGroup=None, vomsFlag=None, proxyFilePath=None, executionLockFlag=False):
-  """Download proxy, place in a file and populate X509_USER_PROXY environment variable.
+  """ Download proxy, place in a file and populate X509_USER_PROXY environment variable.
 
-  Parameters like `userProxy` or `executeWithUserProxy`.
-  :returns: Tuple of originalUserProxy, useServerCertificate, executionLock
+      Parameters like `userProxy` or `executeWithUserProxy`.
+      :returns: Tuple of originalUserProxy, useServerCertificate, executionLock
   """
   # Setup user proxy
-  if userDN:
-    userDNs = [userDN]
-  else:
-    result = getDNForUsername(userName)
+  if not userName:
+    result = getUsernameForDN(userDN)
     if not result['OK']:
       return result
-    userDNs = result['Value']  # a same user may have more than one DN
+    userName = result['Value']
 
-  vomsAttr = ''
-  if vomsFlag:
-    vomsAttr = getVOMSAttributeForGroup(userGroup)
-
-  result = getProxy(userDNs, userGroup, vomsAttr, proxyFilePath)
-
+  result = getProxy(userName, userGroup, vomsFlag, proxyFilePath)
   if not result['OK']:
     return result
 
