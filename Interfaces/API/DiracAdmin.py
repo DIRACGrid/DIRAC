@@ -43,7 +43,7 @@ class DiracAdmin(API):
 
   #############################################################################
   def __init__(self):
-    """Internal initialization of the DIRAC Admin API.
+    """ Internal initialization of the DIRAC Admin API.
     """
     super(DiracAdmin, self).__init__()
 
@@ -60,72 +60,68 @@ class DiracAdmin(API):
 
   #############################################################################
   def uploadProxy(self):
-    """Upload a proxy to the DIRAC WMS.  This method
+    """ Upload a proxy to the DIRAC WMS.  This method
 
-       Example usage:
+        Example usage:
 
-         >>> print diracAdmin.uploadProxy('dteam_pilot')
-         {'OK': True, 'Value': 0L}
+          >>> print diracAdmin.uploadProxy('dteam_pilot')
+          {'OK': True, 'Value': 0L}
 
-       :return: S_OK,S_ERROR
+        :param bool permanent: Indefinitely update proxy
 
-       :param permanent: Indefinitely update proxy
-       :type permanent: boolean
-
+        :return: S_OK,S_ERROR
     """
     return gProxyManager.uploadProxy()
 
   #############################################################################
-  def setProxyPersistency(self, userDN, userGroup, persistent=True):
-    """Set the persistence of a proxy in the Proxy Manager
+  def setProxyPersistency(self, userName, userGroup, persistent=True):
+    """ Set the persistence of a proxy in the Proxy Manager
 
-       Example usage:
+        Example usage:
 
-         >>> gLogger.notice(diracAdmin.setProxyPersistency( 'some DN', 'dirac group', True ))
-         {'OK': True }
+          >>> gLogger.notice(diracAdmin.setProxyPersistency( 'user name', 'dirac group', True ))
+          {'OK': True }
 
-       :param userDN: User DN
-       :type userDN: string
-       :param userGroup: DIRAC Group
-       :type userGroup: string
-       :param persistent: Persistent flag
-       :type persistent: boolean
-       :return: S_OK,S_ERROR
+        :param str userName: User name
+        :param str userGroup: DIRAC Group
+        :param bool persistent: Persistent flag
+
+        :return: S_OK,S_ERROR
     """
-    return gProxyManager.setPersistency(userDN, userGroup, persistent)
+    return gProxyManager.setPersistency(userName, userGroup, persistent)
 
   #############################################################################
-  def checkProxyUploaded(self, userDN, userGroup, requiredTime):
-    """Set the persistence of a proxy in the Proxy Manager
+  def checkProxyUploaded(self, userName, userGroup, requiredTime):
+    """ Check if a user(DN-group) has a proxy in the proxy management
+        Updates internal cache if needed to minimize queries to the service
 
-       Example usage:
+        Example usage:
 
-         >>> gLogger.notice(diracAdmin.setProxyPersistency( 'some DN', 'dirac group', True ))
-         {'OK': True, 'Value' : True/False }
+          >>> gLogger.notice(diracAdmin.checkProxyUploaded('user name', 'dirac group', 0))
+          {'OK': True, 'Value' : True/False }
 
-       :param userDN: User DN
-       :type userDN: string
-       :param userGroup: DIRAC Group
-       :type userGroup: string
-       :param requiredTime: Required life time of the uploaded proxy
-       :type requiredTime: boolean
-       :return: S_OK,S_ERROR
+        :param str userName: User name
+        :param str userGroup: DIRAC Group
+        :param bool requiredTime: Required life time of the uploaded proxy
+
+        :return: S_OK,S_ERROR
     """
-    return gProxyManager.userHasProxy(userDN, userGroup, requiredTime)
+    return gProxyManager.userHasProxy(userName, userGroup, requiredTime)
 
   #############################################################################
   def getSiteMask(self, printOutput=False, status='Active'):
-    """Retrieve current site mask from WMS Administrator service.
+    """ Retrieve current site mask from WMS Administrator service.
 
-       Example usage:
+        Example usage:
 
-         >>> gLogger.notice(diracAdmin.getSiteMask())
-         {'OK': True, 'Value': 0L}
+          >>> gLogger.notice(diracAdmin.getSiteMask())
+          {'OK': True, 'Value': 0L}
 
-       :return: S_OK,S_ERROR
+        :param bool printOutput: print output
+        :param str status: site status
 
+        :return: S_OK,S_ERROR
     """
-
     result = self.sitestatus.getSites(siteState=status)
     if result['OK']:
       sites = result['Value']
@@ -138,17 +134,17 @@ class DiracAdmin(API):
 
   #############################################################################
   def getBannedSites(self, printOutput=False):
-    """Retrieve current list of banned  and probing sites.
+    """ Retrieve current list of banned  and probing sites.
 
-       Example usage:
+        Example usage:
 
-         >>> gLogger.notice(diracAdmin.getBannedSites())
-         {'OK': True, 'Value': []}
+          >>> gLogger.notice(diracAdmin.getBannedSites())
+          {'OK': True, 'Value': []}
 
-       :return: S_OK,S_ERROR
+        :param bool printOutput: print output
 
+        :return: S_OK,S_ERROR
     """
-
     bannedSites = self.sitestatus.getSites(siteState='Banned')
     if not bannedSites['OK']:
       return bannedSites
@@ -166,14 +162,17 @@ class DiracAdmin(API):
 
   #############################################################################
   def getSiteSection(self, site, printOutput=False):
-    """Simple utility to get the list of CEs for DIRAC site name.
+    """ Simple utility to get the list of CEs for DIRAC site name.
 
-       Example usage:
+        Example usage:
 
-         >>> gLogger.notice(diracAdmin.getSiteSection('LCG.CERN.ch'))
-         {'OK': True, 'Value':}
+          >>> gLogger.notice(diracAdmin.getSiteSection('LCG.CERN.ch'))
+          {'OK': True, 'Value':}
 
-       :return: S_OK,S_ERROR
+        :param str site: site
+        :param bool printOutput: print output
+
+        :return: S_OK,S_ERROR
     """
     gridType = site.split('.')[0]
     if not gConfig.getSections('/Resources/Sites/%s' % (gridType))['OK']:
@@ -186,15 +185,18 @@ class DiracAdmin(API):
 
   #############################################################################
   def allowSite(self, site, comment, printOutput=False):
-    """Adds the site to the site mask.
+    """ Adds the site to the site mask.
 
-       Example usage:
+        Example usage:
 
-         >>> gLogger.notice(diracAdmin.allowSite())
-         {'OK': True, 'Value': }
+          >>> gLogger.notice(diracAdmin.allowSite())
+          {'OK': True, 'Value': }
 
-       :return: S_OK,S_ERROR
+        :param str site: site
+        :param str comment: comment
+        :param bool printOutput: print output
 
+        :return: S_OK,S_ERROR
     """
     result = self.__checkSiteIsValid(site)
     if not result['OK']:
@@ -223,14 +225,17 @@ class DiracAdmin(API):
 
   #############################################################################
   def getSiteMaskLogging(self, site=None, printOutput=False):
-    """Retrieves site mask logging information.
+    """ Retrieves site mask logging information.
 
-       Example usage:
+        Example usage:
 
-         >>> gLogger.notice(diracAdmin.getSiteMaskLogging('LCG.AUVER.fr'))
-         {'OK': True, 'Value': }
+          >>> gLogger.notice(diracAdmin.getSiteMaskLogging('LCG.AUVER.fr'))
+          {'OK': True, 'Value': }
 
-       :return: S_OK,S_ERROR
+        :param str site: site
+        :param bool printOutput: print output
+
+        :return: S_OK,S_ERROR
     """
     result = self.__checkSiteIsValid(site)
     if not result['OK']:
@@ -267,15 +272,17 @@ class DiracAdmin(API):
 
   #############################################################################
   def banSite(self, site, comment, printOutput=False):
-    """Removes the site from the site mask.
+    """ Removes the site from the site mask.
 
-       Example usage:
+        Example usage:
 
-         >>> gLogger.notice(diracAdmin.banSite())
-         {'OK': True, 'Value': }
+          >>> gLogger.notice(diracAdmin.banSite())
+          {'OK': True, 'Value': }
+        :param str site: site
+        :param str comment: comment
+        :param bool printOutput: print output
 
-       :return: S_OK,S_ERROR
-
+        :return: S_OK,S_ERROR
     """
     result = self.__checkSiteIsValid(site)
     if not result['OK']:
@@ -304,7 +311,11 @@ class DiracAdmin(API):
 
   #############################################################################
   def __checkSiteIsValid(self, site):
-    """Internal function to check that a site name is valid.
+    """ Internal function to check that a site name is valid.
+
+        :param str site: site
+
+        :return: S_OK/S_ERROR
     """
     sites = getSiteCEMapping()
     if not sites['OK']:
@@ -317,16 +328,18 @@ class DiracAdmin(API):
 
   #############################################################################
   def getServicePorts(self, setup='', printOutput=False):
-    """Checks the service ports for the specified setup.  If not given this is
-       taken from the current installation (/DIRAC/Setup)
+    """ Checks the service ports for the specified setup.  If not given this is
+        taken from the current installation (/DIRAC/Setup)
 
-       Example usage:
+        Example usage:
 
-         >>> gLogger.notice(diracAdmin.getServicePorts())
-         {'OK': True, 'Value':''}
+          >>> gLogger.notice(diracAdmin.getServicePorts())
+          {'OK': True, 'Value':''}
 
-       :return: S_OK,S_ERROR
+        :param str setup: setup
+        :param bool printOutput: output
 
+        :return: S_OK,S_ERROR
     """
     if not setup:
       setup = gConfig.getValue('/DIRAC/Setup', '')
@@ -375,68 +388,76 @@ class DiracAdmin(API):
     return S_OK(result)
 
   #############################################################################
-  def getProxy(self, userDN, userGroup, validity=43200, limited=False):
-    """Retrieves a proxy with default 12hr validity and stores
-       this in a file in the local directory by default.
+  def getProxy(self, user, userGroup, validity=43200, limited=False):
+    """ Retrieves a proxy with default 12hr validity and stores
+        this in a file in the local directory by default.
 
-       Example usage:
+        Example usage:
 
-         >>> gLogger.notice(diracAdmin.getProxy())
-         {'OK': True, 'Value': }
+          >>> gLogger.notice(diracAdmin.getProxy())
+          {'OK': True, 'Value': }
 
-       :return: S_OK,S_ERROR
+        :param str user: user name
+        :param str userGroup: group name
+        :param int validity: proxy lifetime
+        :param bool limited: limited proxy
 
+        :return: S_OK,S_ERROR
     """
-    return gProxyManager.downloadProxy(userDN, userGroup, limited=limited,
+    return gProxyManager.downloadProxy(user, userGroup, limited=limited,
                                        requiredTimeLeft=validity)
 
   #############################################################################
-  def getVOMSProxy(self, userDN, userGroup, vomsAttr=False, validity=43200, limited=False):
-    """Retrieves a proxy with default 12hr validity and VOMS extensions and stores
-       this in a file in the local directory by default.
+  def getVOMSProxy(self, user, userGroup, validity=43200, limited=False):
+    """ Retrieves a proxy with default 12hr validity and VOMS extensions and stores
+        this in a file in the local directory by default.
 
-       Example usage:
+        Example usage:
 
-         >>> gLogger.notice(diracAdmin.getVOMSProxy())
-         {'OK': True, 'Value': }
+          >>> gLogger.notice(diracAdmin.getVOMSProxy())
+          {'OK': True, 'Value': }
 
-       :return: S_OK,S_ERROR
+        :param str user: user name
+        :param str userGroup: group name
+        :param int validity: proxy lifetime
+        :param bool limited: limited proxy
 
+        :return: S_OK,S_ERROR
     """
-    return gProxyManager.downloadVOMSProxy(userDN, userGroup, limited=limited,
-                                           requiredVOMSAttribute=vomsAttr,
-                                           requiredTimeLeft=validity)
+    return gProxyManager.downloadVOMSProxy(user, userGroup, limited=limited, requiredTimeLeft=validity)
 
   #############################################################################
-  def getPilotProxy(self, userDN, userGroup, validity=43200):
-    """Retrieves a pilot proxy with default 12hr validity and stores
-       this in a file in the local directory by default.
+  def getPilotProxy(self, userName, userGroup, validity=43200):
+    """ Retrieves a pilot proxy with default 12hr validity and stores
+        this in a file in the local directory by default.
 
-       Example usage:
+        Example usage:
 
-         >>> gLogger.notice(diracAdmin.getVOMSProxy())
-         {'OK': True, 'Value': }
+          >>> gLogger.notice(diracAdmin.getVOMSProxy())
+          {'OK': True, 'Value': }
 
-       :return: S_OK,S_ERROR
+        :param str userName: user name
+        :param str userGroup: group name
+        :param int validity: proxy lifetime
 
+        :return: S_OK,S_ERROR
     """
-
-    return gProxyManager.getPilotProxyFromDIRACGroup(userDN, userGroup, requiredTimeLeft=validity)
+    return gProxyManager.downloadCorrectProxy(userName, userGroup, requiredTimeLeft=validity)
 
   #############################################################################
   def resetJob(self, jobID):
-    """Reset a job or list of jobs in the WMS.  This operation resets the reschedule
-       counter for a job or list of jobs and allows them to run as new.
+    """ Reset a job or list of jobs in the WMS.  This operation resets the reschedule
+        counter for a job or list of jobs and allows them to run as new.
 
-       Example::
+        Example::
 
-         >>> gLogger.notice(dirac.reset(12345))
-         {'OK': True, 'Value': [12345]}
+          >>> gLogger.notice(dirac.reset(12345))
+          {'OK': True, 'Value': [12345]}
 
-       :param job: JobID
-       :type job: integer or list of integers
-       :return: S_OK,S_ERROR
-
+        :param jobID: JobID
+        :type jobID: integer or list of integers
+        
+        :return: S_OK,S_ERROR
     """
     if isinstance(jobID, six.string_types):
       try:
@@ -454,16 +475,18 @@ class DiracAdmin(API):
 
   #############################################################################
   def getJobPilotOutput(self, jobID, directory=''):
-    """Retrieve the pilot output for an existing job in the WMS.
-       The output will be retrieved in a local directory unless
-       otherwise specified.
+    """ Retrieve the pilot output for an existing job in the WMS.
+        The output will be retrieved in a local directory unless
+        otherwise specified.
 
-         >>> gLogger.notice(dirac.getJobPilotOutput(12345))
-         {'OK': True, StdOut:'',StdError:''}
+          >>> gLogger.notice(dirac.getJobPilotOutput(12345))
+          {'OK': True, StdOut:'',StdError:''}
 
-       :param job: JobID
-       :type job: integer or string
-       :return: S_OK,S_ERROR
+        :param jobID: JobID
+        :type jobID: int or str
+        :param str directory: path for output
+
+        :return: S_OK,S_ERROR
     """
     if not directory:
       directory = self.currentDir
@@ -506,14 +529,15 @@ class DiracAdmin(API):
 
   #############################################################################
   def getPilotOutput(self, gridReference, directory=''):
-    """Retrieve the pilot output  (std.out and std.err) for an existing job in the WMS.
+    """ Retrieve the pilot output  (std.out and std.err) for an existing job in the WMS.
 
-         >>> gLogger.notice(dirac.getJobPilotOutput(12345))
-         {'OK': True, 'Value': {}}
+          >>> gLogger.notice(dirac.getJobPilotOutput(12345))
+          {'OK': True, 'Value': {}}
 
-       :param job: JobID
-       :type job: integer or string
-       :return: S_OK,S_ERROR
+        :param str gridReference: Pilot Job Reference
+        :param str directory: path for output
+        
+        :return: S_OK,S_ERROR
     """
     if not isinstance(gridReference, six.string_types):
       return self._errorReport('Expected string for pilot reference')
@@ -563,14 +587,14 @@ class DiracAdmin(API):
 
   #############################################################################
   def getPilotInfo(self, gridReference):
-    """Retrieve info relative to a pilot reference
+    """ Retrieve info relative to a pilot reference
 
-         >>> gLogger.notice(dirac.getPilotInfo(12345))
-         {'OK': True, 'Value': {}}
+          >>> gLogger.notice(dirac.getPilotInfo(12345))
+          {'OK': True, 'Value': {}}
 
-       :param gridReference: Pilot Job Reference
-       :type gridReference: string
-       :return: S_OK,S_ERROR
+        :param str gridReference: Pilot Job Reference
+
+        :return: S_OK,S_ERROR
     """
     if not isinstance(gridReference, six.string_types):
       return self._errorReport('Expected string for pilot reference')
@@ -580,13 +604,14 @@ class DiracAdmin(API):
 
   #############################################################################
   def killPilot(self, gridReference):
-    """Kill the pilot specified
+    """ Kill the pilot specified
 
-         >>> gLogger.notice(dirac.getPilotInfo(12345))
-         {'OK': True, 'Value': {}}
+          >>> gLogger.notice(dirac.getPilotInfo(12345))
+          {'OK': True, 'Value': {}}
 
-       :param gridReference: Pilot Job Reference
-       :return: S_OK,S_ERROR
+        :param str gridReference: Pilot Job Reference
+
+        :return: S_OK,S_ERROR
     """
     if not isinstance(gridReference, six.string_types):
       return self._errorReport('Expected string for pilot reference')
@@ -596,14 +621,14 @@ class DiracAdmin(API):
 
   #############################################################################
   def getPilotLoggingInfo(self, gridReference):
-    """Retrieve the pilot logging info for an existing job in the WMS.
+    """ Retrieve the pilot logging info for an existing job in the WMS.
 
-         >>> gLogger.notice(dirac.getPilotLoggingInfo(12345))
-         {'OK': True, 'Value': {"The output of the command"}}
+          >>> gLogger.notice(dirac.getPilotLoggingInfo(12345))
+          {'OK': True, 'Value': {"The output of the command"}}
 
-       :param gridReference: Gridp pilot job reference Id
-       :type gridReference: string
-       :return: S_OK,S_ERROR
+        :param str gridReference: Gridp pilot job reference Id
+
+        :return: S_OK,S_ERROR
     """
     if not isinstance(gridReference, six.string_types):
       return self._errorReport('Expected string for pilot reference')
@@ -612,16 +637,16 @@ class DiracAdmin(API):
 
   #############################################################################
   def getJobPilots(self, jobID):
-    """Extract the list of submitted pilots and their status for a given
-       jobID from the WMS.  Useful information is printed to the screen.
+    """ Extract the list of submitted pilots and their status for a given
+        jobID from the WMS.  Useful information is printed to the screen.
 
-         >>> gLogger.notice(dirac.getJobPilots())
-         {'OK': True, 'Value': {PilotID:{StatusDict}}}
+          >>> gLogger.notice(dirac.getJobPilots())
+          {'OK': True, 'Value': {PilotID:{StatusDict}}}
 
-       :param job: JobID
-       :type job: integer or string
-       :return: S_OK,S_ERROR
+        :param job: JobID
+        :type job: int or str
 
+        :return: S_OK,S_ERROR
     """
     if isinstance(jobID, six.string_types):
       try:
@@ -636,15 +661,16 @@ class DiracAdmin(API):
 
   #############################################################################
   def getPilotSummary(self, startDate='', endDate=''):
-    """Retrieve the pilot output for an existing job in the WMS.  Summary is
-       printed at INFO level, full dictionary of results also returned.
+    """ Retrieve the pilot output for an existing job in the WMS.  Summary is
+        printed at INFO level, full dictionary of results also returned.
 
-         >>> gLogger.notice(dirac.getPilotSummary())
-         {'OK': True, 'Value': {CE:{Status:Count}}}
+          >>> gLogger.notice(dirac.getPilotSummary())
+          {'OK': True, 'Value': {CE:{Status:Count}}}
 
-       :param job: JobID
-       :type job: integer or string
-       :return: S_OK,S_ERROR
+        :param str startDate: start date
+        :param str endDate: end date
+
+        :return: S_OK,S_ERROR
     """
     result = PilotManagerClient().getPilotSummary(startDate, endDate)
     if not result['OK']:
@@ -674,8 +700,13 @@ class DiracAdmin(API):
 
   #############################################################################
   def setSiteProtocols(self, site, protocolsList, printOutput=False):
-    """
-    Allows to set the defined protocols for each SE for a given site.
+    """ Allows to set the defined protocols for each SE for a given site.
+
+        :param str site: site
+        :param list protocolsList: protocols
+        :param bool printOutput: output
+
+        :return: S_OK/S_ERROR
     """
     result = self.__checkSiteIsValid(site)
     if not result['OK']:
@@ -731,140 +762,177 @@ class DiracAdmin(API):
 
   #############################################################################
   def csSetOption(self, optionPath, optionValue):
-    """
-    Function to modify an existing value in the CS.
+    """ Function to modify an existing value in the CS.
+
+        :param str optionPath: option path
+        :param optionValue: value
     """
     return self.csAPI.setOption(optionPath, optionValue)
 
   #############################################################################
   def csSetOptionComment(self, optionPath, comment):
-    """
-    Function to modify an existing value in the CS.
+    """ Function to modify an existing value in the CS.
+
+        :param str optionPath: option path
+        :param str comment: comment
     """
     return self.csAPI.setOptionComment(optionPath, comment)
 
   #############################################################################
   def csModifyValue(self, optionPath, newValue):
-    """
-    Function to modify an existing value in the CS.
+    """ Function to modify an existing value in the CS.
+
+        :param str optionPath: option path
+        :param newValue: value
     """
     return self.csAPI.modifyValue(optionPath, newValue)
 
   #############################################################################
   def csRegisterUser(self, username, properties):
-    """
-    Registers a user in the CS.
+    """ Registers a user in the CS.
 
-        - username: Username of the user (easy;)
-        - properties: Dict containing:
-            - DN
-            - groups : list/tuple of groups the user belongs to
-            - <others> : More properties of the user, like mail
-
+        :param str username: user name
+        :param dict properties: containing DN, groups, etc.
+               - groups : list/tuple of groups the user belongs to
+               - <others> : More properties of the user, like mail
     """
     return self.csAPI.addUser(username, properties)
 
   #############################################################################
   def csDeleteUser(self, user):
-    """
-    Deletes a user from the CS. Can take a list of users
+    """ Deletes a user from the CS. Can take a list of users
+
+        :param str user: user name
     """
     return self.csAPI.deleteUsers(user)
 
   #############################################################################
   def csModifyUser(self, username, properties, createIfNonExistant=False):
-    """
-    Modify a user in the CS. Takes the same params as in addUser and
-    applies the changes
+    """ Modify a user in the CS. Takes the same params as in addUser and applies the changes
+
+        :param str username: user name
+        :param dict properties: containing DN, groups, etc.
+        :param bool createIfNonExistant: create user if non exist
     """
     return self.csAPI.modifyUser(username, properties, createIfNonExistant)
 
   #############################################################################
   def csListUsers(self, group=False):
-    """
-    Lists the users in the CS. If no group is specified return all users.
+    """ Lists the users in the CS. If no group is specified return all users.
+
+        :param str group: group name
+
+        :return: list
     """
     return self.csAPI.listUsers(group)
 
   #############################################################################
   def csDescribeUsers(self, mask=False):
-    """
-    List users and their properties in the CS.
-    If a mask is given, only users in the mask will be returned
+    """ List users and their properties in the CS.
+        
+        :param str mask: If a mask is given, only users in the mask will be returned
+
+        :return: list
     """
     return self.csAPI.describeUsers(mask)
 
   #############################################################################
   def csModifyGroup(self, groupname, properties, createIfNonExistant=False):
-    """
-    Modify a user in the CS. Takes the same params as in addGroup and applies
-    the changes
+    """ Modify a user in the CS. Takes the same params as in addGroup and applies the changes
+
+        :param str groupname: group name
+        :param dict properties: properties
+        :param bool createIfNonExistant: create group if non exist
     """
     return self.csAPI.modifyGroup(groupname, properties, createIfNonExistant)
 
   #############################################################################
   def csListHosts(self):
-    """
-    Lists the hosts in the CS
+    """ Lists the hosts in the CS
+
+        :return: list
     """
     return self.csAPI.listHosts()
 
   #############################################################################
   def csDescribeHosts(self, mask=False):
-    """
-    Gets extended info for the hosts in the CS
+    """ Gets extended info for the hosts in the CS
+
+        :param mask: mask
+
+        :return: list
     """
     return self.csAPI.describeHosts(mask)
 
   #############################################################################
   def csModifyHost(self, hostname, properties, createIfNonExistant=False):
-    """
-    Modify a host in the CS. Takes the same params as in addHost and applies
-    the changes
+    """ Modify a host in the CS. Takes the same params as in addHost and applies the changes
+
+        :param str hostname: host name
+        :param dict properties: properties
+        :param bool createIfNonExistant: create group if non exist
     """
     return self.csAPI.modifyHost(hostname, properties, createIfNonExistant)
 
   #############################################################################
   def csListGroups(self):
-    """
-    Lists groups in the CS
+    """ Lists groups in the CS
+
+        :return: list
     """
     return self.csAPI.listGroups()
 
   #############################################################################
   def csDescribeGroups(self, mask=False):
-    """
-    List groups and their properties in the CS.
-    If a mask is given, only groups in the mask will be returned
+    """ List groups and their properties in the CS.
+        
+        :param mask: If a mask is given, only groups in the mask will be returned
+
+        :return: list
     """
     return self.csAPI.describeGroups(mask)
 
   #############################################################################
   def csSyncUsersWithCFG(self, usersCFG):
-    """
-    Synchronize users in cfg with its contents
+    """ Synchronize users in cfg with its contents
+
+        :param object usersCFG: CFG
     """
     return self.csAPI.syncUsersWithCFG(usersCFG)
 
   #############################################################################
   def csCommitChanges(self, sortUsers=True):
-    """
-    Commit the changes in the CS
+    """ Commit the changes in the CS
+
+        :param list sortUsers: sort users
     """
     return self.csAPI.commitChanges(sortUsers=False)
 
   #############################################################################
   def sendMail(self, address, subject, body, fromAddress=None, localAttempt=True, html=False):
-    """
-    Send mail to specified address with body.
+    """ Send mail to specified address with body.
+
+        :param str address: address
+        :param str subject: subject
+        :param str body: body text
+        :param str fromAddress: address from who
+        :param bool localAttempt: local attempt
+        :param str html: html
+
+        :return: S_OK/S_ERROR
     """
     notification = NotificationClient()
     return notification.sendMail(address, subject, body, fromAddress, localAttempt, html)
 
   #############################################################################
   def sendSMS(self, userName, body, fromAddress=None):
-    """
-    Send mail to specified address with body.
+    """ Send mail to specified address with body.
+
+        :param str userName: user name
+        :param str body: body text
+        :param str fromAddress: address from who
+
+        :return: S_OK/S_ERROR
     """
     if len(body) > 160:
       return S_ERROR('Exceeded maximum SMS length of 160 characters')
@@ -873,50 +941,67 @@ class DiracAdmin(API):
 
   #############################################################################
   def getBDIISite(self, site, host=None):
-    """
-    Get information about site from BDII at host
+    """ Get information about site from BDII at host
+
+        :param str site: site name
+        :param str host: host name
     """
     return ldapSite(site, host=host)
 
   #############################################################################
   def getBDIICluster(self, ce, host=None):
-    """
-    Get information about ce from BDII at host
+    """ Get information about ce from BDII at host
+
+        :param str ce: ce name
+        :param str host: host name
     """
     return ldapCluster(ce, host=host)
 
   #############################################################################
   def getBDIICE(self, ce, host=None):
-    """
-    Get information about ce from BDII at host
+    """ Get information about ce from BDII at host
+
+        :param str ce: ce name
+        :param str host: host name
     """
     return ldapCE(ce, host=host)
 
   #############################################################################
   def getBDIIService(self, ce, host=None):
-    """
-    Get information about ce from BDII at host
+    """ Get information about ce from BDII at host
+
+        :param str ce: ce name
+        :param str host: host name
     """
     return ldapService(ce, host=host)
 
   #############################################################################
   def getBDIICEState(self, ce, useVO=voName, host=None):
-    """
-    Get information about ce state from BDII at host
+    """ Get information about ce state from BDII at host
+
+        :param str ce: ce name
+        :param str useVO: VO name
+        :param str host: host name
     """
     return ldapCEState(ce, useVO, host=host)
 
   #############################################################################
   def getBDIICEVOView(self, ce, useVO=voName, host=None):
-    """
-    Get information about ce voview from BDII at host
+    """ Get information about ce voview from BDII at host
+
+        :param str ce: CE name
+        :param str useVO: VO name
+        :param str host: host name
     """
     return ldapCEVOView(ce, useVO, host=host)
 
   #############################################################################
   def getBDIISE(self, site, useVO=voName, host=None):
-    """
-    Get information about SA  from BDII at host
+    """ Get information about SA  from BDII at host
+
+        :param str site: site
+        :param str useVO: VO name
+        :param str host: host name
     """
     return ldapSE(site, useVO, host=host)
 
