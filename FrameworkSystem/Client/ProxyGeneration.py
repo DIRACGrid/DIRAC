@@ -32,6 +32,12 @@ class CLIParams(object):
   rfc = True
 
   def setProxyLifeTime(self, arg):
+    """ Set proxy lifetime
+
+        :param str arg: arguments
+
+        :return: S_OK()/S_ERROR()
+    """
     try:
       fields = [f.strip() for f in arg.split(":")]
       self.proxyLifeTime = int(fields[0]) * 3600 + int(fields[1]) * 60
@@ -41,33 +47,73 @@ class CLIParams(object):
     return S_OK()
 
   def setRFC(self, _arg):
+    """ Set RFC
+
+        :param _arg: unuse
+
+        :return: S_OK()
+    """
     self.rfc = True
     return S_OK()
 
   def setNoRFC(self, _arg):
+    """ Unset RFC
+
+        :param _arg: unuse
+
+        :return: S_OK()
+    """
     self.rfc = False
     return S_OK()
 
   def setProxyRemainingSecs(self, arg):
+    """ Set proxy lifetime
+
+        :param int arg: lifetime in seconds
+
+        :return: S_OK()
+    """
     self.proxyLifeTime = int(arg)
     return S_OK()
 
   def getProxyLifeTime(self):
+    """ Get proxy lifetime
+
+        :return: str
+    """
     hours = int(self.proxyLifeTime / 3600)
     mins = int(self.proxyLifeTime / 60 - hours * 60)
     return "%s:%s" % (hours, mins)
 
   def getProxyRemainingSecs(self):
+    """ Get proxy livetime
+
+        :return: int
+    """
     return self.proxyLifeTime
 
   def setDIRACGroup(self, arg):
+    """ Set DIRAC group
+
+        :param str arg: arguments
+
+        :return: S_OK()
+    """
     self.diracGroup = arg
     return S_OK()
 
   def getDIRACGroup(self):
+    """ Get DIRAC group
+
+        :return: str
+    """
     return self.diracGroup
 
   def setProxyStrength(self, arg):
+    """ Get proxy strength
+
+        :return: S_OK()
+    """
     try:
       self.proxyStrength = int(arg)
     except BaseException:
@@ -76,48 +122,110 @@ class CLIParams(object):
     return S_OK()
 
   def setProxyLimited(self, _arg):
+    """ Set proxy limited
+
+        :param _arg: unuse
+
+        :return: str
+    """
     self.limitedProxy = True
     return S_OK()
 
   def setSummary(self, _arg):
+    """ Set proxy limited
+
+        :param _arg: unuse
+
+        :return: str
+    """
     gLogger.info("Enabling summary output")
     self.summary = True
     return S_OK()
 
   def setCertLocation(self, arg):
+    """ Set certificate path
+
+        :param str arg: certificate path
+
+        :return: S_OK()
+    """
     self.certLoc = arg
     return S_OK()
 
   def setKeyLocation(self, arg):
+    """ Set key path
+
+        :param str arg: key path
+
+        :return: S_OK()
+    """
     self.keyLoc = arg
     return S_OK()
 
   def setProxyLocation(self, arg):
+    """ Set proxy path
+
+        :param str arg: proxy path
+
+        :return: S_OK()
+    """
     self.proxyLoc = arg
     return S_OK()
 
   def setDisableCSCheck(self, _arg):
+    """ Disable CS check
+
+        :param _arg: unuse
+
+        :return: S_OK()
+    """
     self.checkWithCS = False
     return S_OK()
 
   def setStdinPasswd(self, _arg):
+    """ Set stdin passwd
+
+        :param _arg: unuse
+
+        :return: S_OK()
+    """
     self.stdinPasswd = True
     return S_OK()
 
   def setStrict(self, _arg):
+    """ Set strict
+
+        :param _arg: unuse
+
+        :return: S_OK()
+    """
     self.strict = True
     return S_OK()
 
   def showVersion(self, _arg):
+    """ Show version
+
+        :param _arg: unuse
+
+        :return: S_OK()
+    """
     gLogger.always("Version: %s" % __RCSID__)
     sys.exit(0)
     return S_OK()
 
   def disableClockCheck(self, _arg):
+    """ Disable clock check
+
+        :param _arg: unuse
+
+        :return: S_OK()
+    """
     self.checkClock = False
     return S_OK()
 
   def registerCLISwitches(self):
+    """ Register CLI switches
+    """
     Script.registerSwitch("v:", "valid=", "Valid HH:MM for the proxy. By default is 24 hours", self.setProxyLifeTime)
     Script.registerSwitch("g:", "group=", "DIRAC Group to embed in the proxy", self.setDIRACGroup)
     Script.registerSwitch("b:", "strength=", "Set the proxy strength in bytes", self.setProxyStrength)
@@ -141,7 +249,12 @@ from DIRAC.Core.Security import Locations
 
 
 def generateProxy(params):
+  """ Generate proxy
 
+      :param params: parameters
+
+      :return: S_OK()/S_ERROR()
+  """
   if params.checkClock:
     result = getClockDeviation()
     if result['OK']:
@@ -225,13 +338,6 @@ def generateProxy(params):
       return S_ERROR("Can't contact DIRAC CS: %s" % retVal['Message'])
     userDN = chain.getCertInChain(-1)['Value'].getSubjectDN()['Value']
 
-    if not params.diracGroup:
-      result = Registry.findDefaultGroupForDN(userDN)
-      if not result['OK']:
-        gLogger.warn("Could not get a default group for DN %s: %s" % (userDN, result['Message']))
-      else:
-        params.diracGroup = result['Value']
-        gLogger.info("Default discovered group is %s" % params.diracGroup)
     gLogger.info("Checking DN %s" % userDN)
     retVal = Registry.getUsernameForDN(userDN)
     if not retVal['OK']:
@@ -239,13 +345,20 @@ def generateProxy(params):
       return S_ERROR("DN %s is not registered" % userDN)
     username = retVal['Value']
     gLogger.info("Username is %s" % username)
+
+    if not params.diracGroup:
+      result = Registry.findDefaultGroupForUser(username)
+      if not result['OK']:
+        gLogger.warn(retVal['Message'])
+        return S_ERROR("Cannot found group for %s user. %s" % (username, result['Message']))
+      params.diracGroup = result['Value']
+      
     retVal = Registry.getGroupsForUser(username)
     if not retVal['OK']:
       gLogger.warn(retVal['Message'])
-      return S_ERROR("User %s has no groups defined" % username)
-    groups = retVal['Value']
-    if params.diracGroup not in groups:
-      return S_ERROR("Requested group %s is not valid for DN %s" % (params.diracGroup, userDN))
+      return S_ERROR("User %s has no groups defined." % username)
+    if params.diracGroup not in retVal['Value']:
+      return S_ERROR("Requested group %s is not valid for %s user" % (params.diracGroup, username))
     gLogger.info("Creating proxy for %s@%s (%s)" % (username, params.diracGroup, userDN))
   if params.summary:
     h = int(params.proxyLifeTime / 3600)
