@@ -14,7 +14,7 @@ from DIRAC.Core.Utilities import List, Network
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.PathFinder import getServiceURL, getServiceFailoverURL
-from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN
 from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import skipCACheck
 from DIRAC.Core.DISET.private.TransportPool import getGlobalTransportPool
 from DIRAC.Core.DISET.ThreadConfig import ThreadConfig
@@ -44,21 +44,22 @@ class BaseClient(object):
   __threadConfig = ThreadConfig()
 
   def __init__(self, serviceName, **kwargs):
-    """
-      :param serviceName: URL of the service (proper uri or just System/Component)
-      :param useCertificates: If set to True, use the server certificate
-      :param extraCredentials:
-      :param timeout: Timeout of the call (default 600 s)
-      :param setup: Specify the Setup
-      :param VO: Specify the VO
-      :param delegatedDN: Not clear what it can be used for.
-      :param delegatedGroup: Not clear what it can be used for.
-      :param ignoreGateways: Ignore the DIRAC Gatways settings
-      :param proxyLocation: Specify the location of the proxy
-      :param proxyString: Specify the proxy string
-      :param proxyChain: Specify the proxy chain
-      :param skipCACheck: Do not check the CA
-      :param keepAliveLapse: Duration for keepAliveLapse (heartbeat like)
+    """ Constructor
+
+        :param serviceName: URL of the service (proper uri or just System/Component)
+        :param useCertificates: If set to True, use the server certificate
+        :param extraCredentials:
+        :param timeout: Timeout of the call (default 600 s)
+        :param setup: Specify the Setup
+        :param VO: Specify the VO
+        :param delegatedDN: Not clear what it can be used for.
+        :param delegatedGroup: Not clear what it can be used for.
+        :param ignoreGateways: Ignore the DIRAC Gatways settings
+        :param proxyLocation: Specify the location of the proxy
+        :param proxyString: Specify the proxy string
+        :param proxyChain: Specify the proxy chain
+        :param skipCACheck: Do not check the CA
+        :param keepAliveLapse: Duration for keepAliveLapse (heartbeat like)
     """
 
     if not isinstance(serviceName, six.string_types):
@@ -98,9 +99,17 @@ class BaseClient(object):
     pass
 
   def getDestinationService(self):
+    """ Return service destination
+
+        :return: str
+    """
     return self._destinationSrv
 
   def getServiceName(self):
+    """ Return service name
+
+        :return: str
+    """
     return self._serviceName
 
   def __discoverSetup(self):
@@ -110,6 +119,8 @@ class BaseClient(object):
            * the ThreadConfig
            * in the CS /DIRAC/Setup
            * default to 'Test'
+        
+        :return: S_OK()/S_ERROR()
     """
     if self.KW_SETUP in self.kwargs and self.kwargs[self.KW_SETUP]:
       self.setup = str(self.kwargs[self.KW_SETUP])
@@ -125,6 +136,8 @@ class BaseClient(object):
            * kwargs of the constructor (see KW_VO)
            * in the CS /DIRAC/VirtualOrganization
            * default to 'unknown'
+        
+        :return: S_OK()/S_ERROR()
     """
     if self.KW_VO in self.kwargs and self.kwargs[self.KW_VO]:
       self.vo = str(self.kwargs[self.KW_VO])
@@ -139,6 +152,8 @@ class BaseClient(object):
           * self.serviceURL: the url (dips) selected as target using __findServiceURL
           * self.__URLTuple: a split of serviceURL obtained by Network.splitURL
           * self._serviceName: the last part of URLTuple (typically System/Component)
+
+        :return: S_OK()/S_ERROR()
     """
     # Calculate final URL
     try:
@@ -167,6 +182,8 @@ class BaseClient(object):
         with a minimum of 120 seconds.
         If unspecified, the timeout will be 600 seconds.
         The value is set in self.timeout, as well as in self.kwargs[KW_TIMEOUT]
+
+        :return: S_OK()/S_ERROR()
     """
     if self.KW_TIMEOUT in self.kwargs:
       self.timeout = self.kwargs[self.KW_TIMEOUT]
@@ -195,6 +212,7 @@ class BaseClient(object):
         * Proxy Chain
            -> if KW_PROXY_CHAIN in kwargs, we remove it and dump its string form into kwargs[KW_PROXY_STRING]
 
+        :return: S_OK()/S_ERROR()
     """
     # Use certificates?
     if self.KW_USE_CERTIFICATES in self.kwargs:
@@ -227,35 +245,26 @@ class BaseClient(object):
           -> if KW_DELEGATED_GROUP in kwargs or delegatedGroup in threadConfig, put it in self.kwargs
           -> If we have a delegated DN but not group, we find the corresponding group in the CS
 
+        :return: S_OK()/S_ERROR()
     """
     # Wich extra credentials to use?
-    if self.__useCertificates:
-      self.__extraCredentials = self.VAL_EXTRA_CREDENTIALS_HOST
-    else:
-      self.__extraCredentials = ""
+    self.__extraCredentials = self.VAL_EXTRA_CREDENTIALS_HOST if self.__useCertificates else ""
     if self.KW_EXTRA_CREDENTIALS in self.kwargs:
       self.__extraCredentials = self.kwargs[self.KW_EXTRA_CREDENTIALS]
+    
     # Are we delegating something?
-    delegatedDN, delegatedGroup = self.__threadConfig.getID()
-    if self.KW_DELEGATED_DN in self.kwargs and self.kwargs[self.KW_DELEGATED_DN]:
-      delegatedDN = self.kwargs[self.KW_DELEGATED_DN]
-    elif delegatedDN:
-      self.kwargs[self.KW_DELEGATED_DN] = delegatedDN
-    if self.KW_DELEGATED_GROUP in self.kwargs and self.kwargs[self.KW_DELEGATED_GROUP]:
-      delegatedGroup = self.kwargs[self.KW_DELEGATED_GROUP]
-    elif delegatedGroup:
-      self.kwargs[self.KW_DELEGATED_GROUP] = delegatedGroup
+    delegatedDN = self.kwargs.get(self.KW_DELEGATED_DN) or self.__threadConfig.getDN()
+    delegatedGroup = self.kwargs.get(self.KW_DELEGATED_GROUP) or self.__threadConfig.getGroup()
+    self.kwargs[self.KW_DELEGATED_DN] = delegatedDN
+    self.kwargs[self.KW_DELEGATED_GROUP] = delegatedGroup
     if delegatedDN:
-      if not delegatedGroup:
-        result = Registry.findDefaultGroupForDN(self.kwargs[self.KW_DELEGATED_DN])
-        if not result['OK']:
-          return result
-      self.__extraCredentials = (delegatedDN, delegatedGroup)
+      if not getUsernameForDN(self.kwargs[self.KW_DELEGATED_DN])['OK']:
+        return S_ERROR('%s is not registred.' % self.kwargs[self.KW_DELEGATED_DN])
+      self.__extraCredentials = (delegatedDN, delegatedGroup) 
     return S_OK()
 
   def __findServiceURL(self):
-    """
-        Discovers the URL of a service, taking into account gateways, multiple URLs, banned URLs
+    """ Discovers the URL of a service, taking into account gateways, multiple URLs, banned URLs
 
 
         If the site on which we run is configured to use gateways (/DIRAC/Gateways/<siteName>),
@@ -272,8 +281,7 @@ class BaseClient(object):
           * self.__nbOfRetry = 2 if we have more than 2 urls, otherwise 3
           * self.__bannedUrls is reinitialized if all the URLs are banned
 
-        :return: the selected URL
-
+        :return: S_OK(str)/S_ERROR() -- the selected URL
     """
     if not self.__initStatus['OK']:
       return self.__initStatus
@@ -372,13 +380,13 @@ class BaseClient(object):
     return S_OK(sURL)
 
   def __selectUrl(self, notselect, urls):
-    """In case when multiple services are running in the same host, a new url has to be in a different host
-    Note: If we do not have different host we will use the selected url...
+    """ In case when multiple services are running in the same host, a new url has to be in a different host
+        Note: If we do not have different host we will use the selected url...
 
-    :param notselect: URL that should NOT be selected
-    :param urls: list of potential URLs
+        :param notselect: URL that should NOT be selected
+        :param list urls: list of potential URLs
 
-    :return: selected URL
+        :return: str -- selected URL
     """
     url = None
     for i in urls:
@@ -392,12 +400,11 @@ class BaseClient(object):
     return url
 
   def __checkThreadID(self):
-    """
-      ..warning:: just guessing....
-      This seems to check that we are not creating a client and then using it
-      in a multithreaded environment.
-      However, it is triggered only if self.__enableThreadCheck is to True, but it is
-      hardcoded to False, and does not seem to be modified anywhere in the code.
+    """ ..warning:: just guessing....
+        This seems to check that we are not creating a client and then using it
+        in a multithreaded environment.
+        However, it is triggered only if self.__enableThreadCheck is to True, but it is
+        hardcoded to False, and does not seem to be modified anywhere in the code.
     """
     if not self.__initStatus['OK']:
       return self.__initStatus
@@ -423,6 +430,7 @@ and this is thread %s
         is called again, and _connect calls itself.
         We stop after trying self.__nbOfRetry * self.__nbOfUrls
 
+        :return: S_OK()/S_ERROR()
     """
     # Check if the useServerCertificate configuration changed
     # Note: I am not really sure that  all this block makes
@@ -494,7 +502,7 @@ and this is thread %s
   def _disconnect(self, trid):
     """ Disconnect the connection.
 
-        :param trid: Transport ID in the transportPool
+        :param str trid: Transport ID in the transportPool
     """
     getGlobalTransportPool().close(trid)
 
@@ -523,11 +531,10 @@ and this is thread %s
 
         :param transport: the Transport object returned by _connect
         :param action: tuple (<action type>, <action name>). It depends on the
-                       subclasses of BaseClient. <action type> can be for example
-                       'RPC' or 'FileTransfer'
+              subclasses of BaseClient. <action type> can be for example
+              'RPC' or 'FileTransfer'
 
-       :return: whatever the server sent back
-
+        :return: whatever the server sent back
     """
     if not self.__initStatus['OK']:
       return self.__initStatus
@@ -555,6 +562,11 @@ and this is thread %s
     """ Perform a credential delegation. This seems to be used only for the GatewayService.
         It calls the delegation mechanism of the Transport class. Note that it is not used when
         delegating credentials to the ProxyDB
+
+        :param transport: the Transport object returned by _connect
+        :param delegationRequest: delegation request
+
+        :return: S_OK()/S_ERROR()
     """
     retVal = gProtocolDict[self.__URLTuple[0]]['delegation'](delegationRequest, self.kwargs)
     if not retVal['OK']:
@@ -570,6 +582,7 @@ and this is thread %s
         It is checked at the creation of the BaseClient, and when connecting
         if the use of the certificate has changed.
 
+        :return: S_OK()/S_ERROR()
     """
     if not self.__initStatus['OK']:
       return self.__initStatus
@@ -585,6 +598,8 @@ and this is thread %s
     """ Select the maximum Keep alive lapse between
         150 seconds and what is specifind in kwargs[KW_KEEP_ALIVE_LAPSE],
         and sets it in kwargs[KW_KEEP_ALIVE_LAPSE]
+
+        :return: S_OK()/S_ERROR()
     """
     kaa = 1
     if self.KW_KEEP_ALIVE_LAPSE in self.kwargs:
@@ -605,6 +620,8 @@ and this is thread %s
           * if set, we remove the useCertificates (KW_USE_CERTIFICATES) in newKwargs
 
         This method is just used to return information in case of error in the InnerRPCClient
+
+        :return: tuple
     """
     newKwargs = dict(self.kwargs)
     # Remove useCertificates as the forwarder of the call will have to
