@@ -26,7 +26,7 @@ def forwardingCredentials(credDict):
       
       :return: bool
   """
-  if isinstance(credDict.get(KW_EXTRA_CREDENTIALS), tuple):
+  if isinstance(credDict.get(KW_EXTRA_CREDENTIALS), (tuple, list)):
     retVal = Registry.getHostnameForDN(credDict.get(KW_DN))
     if not retVal['OK']:
       gLogger.debug("The credentials forwarded not by a host:", credDict.get(KW_DN))
