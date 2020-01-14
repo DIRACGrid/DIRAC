@@ -193,7 +193,7 @@ class ReqManagerHandler(RequestHandler):
   def export_getBulkRequests(cls, numberOfRequest, assigned):
     """ Get a request of given type from the database
 
-        :warning: the dictionnary may contain string keys instead of int (json serialization)
+        :warning: the dictionary may contain string keys instead of int (json serialization)
                   Do not forget to cast it back
 
         :param numberOfRequest: size of the bulk (default 10)

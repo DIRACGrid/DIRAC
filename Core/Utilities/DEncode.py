@@ -81,7 +81,7 @@ def printDebugCallstack(headerMessage):
 
       Some methods are ignored:
 
-      * all the AccountingDB method: why ?
+      * all the AccountingDB method: https://github.com/DIRACGrid/DIRAC/issues/4319
       * all the method in DENCODE_WARNING_IGNORED_METHODS (see ignoreEncodeWarning)
 
       :param headerMessage: message to be displayed first

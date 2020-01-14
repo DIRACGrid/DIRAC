@@ -163,7 +163,7 @@ class ReqClient(Client):
 
     jsonReq = getRequests["Value"]["Successful"]
     # Do not forget to cast back str keys to int
-    reqInstances = dict((int(rId), Request(jsonReq[rId])) for rId in jsonReq)
+    reqInstances = {int(rId): Request(jsonReq[rId]) for rId in jsonReq}
     failed = strToIntDict(getRequests["Value"]["Failed"])
     return S_OK({"Successful": reqInstances, "Failed": failed})
 
@@ -392,7 +392,7 @@ class ReqClient(Client):
     ret = readReqsForJobs["Value"]
     # # create Requests out of JSONs for successful reads
     # Do not forget to cast back str keys to int
-    successful = dict((int(jobID), Request(jsonReq)) for jobID, jsonReq in ret['Successful'].iteritems())
+    successful = {int(jobID): Request(jsonReq) for jobID, jsonReq in ret['Successful'].iteritems()}
     failed = strToIntDict(ret['Failed'])
 
     return S_OK({'Successful': successful, 'Failed': failed})
@@ -457,9 +457,9 @@ def prettyPrint(mainItem, key='', offset=0):
   else:
     output += "%s%s%s\n" % (blanks, key, str(mainItem))
   output = output.replace('[\n%s{' % blanks, '[{').replace('}\n%s]' % blanks, '}]') \
-                 .replace('(\n%s{' % blanks, '({').replace('}\n%s)' % blanks, '})') \
-                 .replace('(\n%s(' % blanks, '((').replace(')\n%s)' % blanks, '))') \
-                 .replace('(\n%s[' % blanks, '[').replace(']\n%s)' % blanks, ']')
+      .replace('(\n%s{' % blanks, '({').replace('}\n%s)' % blanks, '})') \
+      .replace('(\n%s(' % blanks, '((').replace(')\n%s)' % blanks, '))') \
+      .replace('(\n%s[' % blanks, '[').replace(']\n%s)' % blanks, ']')
 
 
 def printFTSJobs(request):

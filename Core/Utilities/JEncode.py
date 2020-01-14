@@ -198,4 +198,4 @@ def strToIntDict(inDict):
 
   """
 
-  return dict((int(key), value) for key, value in inDict.iteritems())
+  return {int(key): value for key, value in inDict.iteritems()}
