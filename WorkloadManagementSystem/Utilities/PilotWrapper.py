@@ -215,10 +215,14 @@ pt.close()
 cmd = "python dirac-pilot.py %s"
 logger.info('Executing: %%s' %% cmd)
 sys.stdout.flush()
-os.system(cmd)
+ret = os.system(cmd)
 
 # and cleaning up
 shutil.rmtree(pilotWorkingDirectory)
+
+# did it fail?
+if ret:
+  sys.exit(1)
 
 EOF
 """ % pilotOptions

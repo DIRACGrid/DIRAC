@@ -89,4 +89,6 @@ with open('pilot-wrapper.sh', 'wb') as pj:
 
 # 3) now start it
 
-os.system("sh pilot-wrapper.sh")
+ret = os.system("sh pilot-wrapper.sh")
+if ret:
+  sys.exit(1)
