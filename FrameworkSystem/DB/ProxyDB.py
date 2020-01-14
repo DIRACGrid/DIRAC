@@ -862,14 +862,16 @@ class ProxyDB(DB):
         if table == 'ProxyDB_CleanProxies':
           record.insert(1, '')
           record.insert(3, False)
-        result = Registry.getGroupsForDN(record[0])
-        if result['OK']:
-          groups = result['Value']
         result = Registry.getUsernameForDN(record[0])
-        if result['OK']:
-          user = result['Value']
         if not result['OK']:
-          return result
+          gLogger.error("Stored proxy %s has no owner:" % record[0], result['Message'])
+          continue
+        user = result['Value']
+        result = Registry.getGroupsForDN(record[0])
+        if not result['OK']:
+          gLogger.error("Stored proxy %s has no groups:" % record[0], result['Message'])
+          continue
+        groups = result['Value']
         data.append({'DN': record[0],
                      'user': user,
                      'group': record[1],  # for compatibility with -v7r0
