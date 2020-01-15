@@ -138,6 +138,7 @@ def initializationOfGroup(credDict, logObj=gLogger):
 class AuthManager(object):
   """ Handle Service Authorization
   """
+  __authLogger = gLogger.getSubLogger("Authorization")
 
   def __init__(self, authSection):
     """ Constructor
@@ -166,7 +167,7 @@ class AuthManager(object):
       userString += " group=%s" % credDict[KW_GROUP]
     if KW_EXTRA_CREDENTIALS in credDict:
       userString += " extraCredentials=%s" % str(credDict[KW_EXTRA_CREDENTIALS])
-    __authLogger.debug("Trying to authenticate %s" % userString)
+    self.__authLogger.debug("Trying to authenticate %s" % userString)
 
     # Get properties
     requiredProperties = self.getValidPropertiesForMethod(methodQuery, defaultProperties)
@@ -183,8 +184,8 @@ class AuthManager(object):
         credDict[KW_GROUP] = credDict[KW_EXTRA_CREDENTIALS]
         del credDict[KW_EXTRA_CREDENTIALS]
       # Check if query comes though a gateway/web server
-      elif forwardingCredentials(credDict, logObj=__authLogger):
-        __authLogger.debug("Query comes from a gateway")
+      elif forwardingCredentials(credDict, logObj=self.__authLogger):
+        self.__authLogger.debug("Query comes from a gateway")
         return self.authQuery(methodQuery, credDict, requiredProperties)
       else:
         return False
@@ -195,10 +196,10 @@ class AuthManager(object):
     if not credDict.get(KW_USERNAME):
       if credDict.get(KW_DN):
         # With certificate
-        authorized = initializationOfCertificate(credDict, logObj=__authLogger)
+        authorized = initializationOfCertificate(credDict, logObj=self.__authLogger)
       elif credDict.get(KW_ID):
         # With IdP session
-        authorized = initializationOfSession(credDict, logObj=__authLogger)
+        authorized = initializationOfSession(credDict, logObj=self.__authLogger)
       else:
         credDict[KW_USERNAME] = "anonymous"
         credDict[KW_GROUP] = "visitor"
@@ -206,7 +207,7 @@ class AuthManager(object):
     
     # Search group
     if authorized:
-      authorized = initializationOfGroup(credDict, logObj=__authLogger)
+      authorized = initializationOfGroup(credDict, logObj=self.__authLogger)
 
     # Authorize check
     if allowAll or authorized:
@@ -215,20 +216,20 @@ class AuthManager(object):
                                                                                 'All', 'all',
                                                                                 'authenticated',
                                                                                 'Authenticated']))):
-        __authLogger.warn("Client is not authorized\nValid properties: %s\nClient: %s" %
+        self.__authLogger.warn("Client is not authorized\nValid properties: %s\nClient: %s" %
                                (requiredProperties, credDict))
         return False
       # Groups check
       elif validGroups and credDict[KW_GROUP] not in validGroups:
-        __authLogger.warn("Client is not authorized\nValid groups: %s\nClient: %s" %
+        self.__authLogger.warn("Client is not authorized\nValid groups: %s\nClient: %s" %
                                (validGroups, credDict))
         return False
       else:
         if not authorized:
-          __authLogger.debug("Accepted request from unsecure transport")
+          self.__authLogger.debug("Accepted request from unsecure transport")
         return True
     else:
-      __authLogger.debug("User is invalid or does not belong to the group it's saying")
+      self.__authLogger.debug("User is invalid or does not belong to the group it's saying")
     return False
 
   def getValidPropertiesForMethod(self, method, defaultProperties=False):
@@ -244,16 +245,16 @@ class AuthManager(object):
     if authProps:
       return authProps
     if defaultProperties:
-      __authLogger.debug("Using hardcoded properties for method %s : %s" % (method, defaultProperties))
+      self.__authLogger.debug("Using hardcoded properties for method %s : %s" % (method, defaultProperties))
       if not isinstance(defaultProperties, (list, tuple)):
         return List.fromChar(defaultProperties)
       return defaultProperties
     defaultPath = "%s/Default" % "/".join(method.split("/")[:-1])
     authProps = gConfig.getValue("%s/%s" % (self.authSection, defaultPath), [])
     if authProps:
-      __authLogger.debug("Method %s has no properties defined using %s" % (method, defaultPath))
+      self.__authLogger.debug("Method %s has no properties defined using %s" % (method, defaultPath))
       return authProps
-    __authLogger.debug("Method %s has no authorization rules defined. Allowing no properties" % method)
+    self.__authLogger.debug("Method %s has no authorization rules defined. Allowing no properties" % method)
     return []
 
   def getValidGroups(self, rawProperties):
