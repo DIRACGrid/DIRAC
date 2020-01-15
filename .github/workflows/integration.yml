@@ -31,6 +31,7 @@ jobs:
         echo "IFS=\$'\n\t'" >> run_in_container
         echo -n "exec docker exec -w /repo " >> run_in_container
         # Set environment variables
+        echo -n "-e HOST_OS=${{ matrix.HOST_OS }} " >> run_in_container
         echo -n "-e CI_PROJECT_DIR=/repo " >> run_in_container
         echo -n "-e CI_COMMIT_REF_NAME=$GITHUB_REF " >> run_in_container
         echo -n "-e CI_REGISTRY_IMAGE=diracgrid " >> run_in_container

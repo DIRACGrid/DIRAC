@@ -42,6 +42,9 @@ function prepareEnvironment() {
 
   # GitLab variables
   cp ./CONFIG "${SERVERCONFIG}"
+  {
+    echo "export DIRACOSVER=${DIRACOSVER}"
+  } >> "${SERVERCONFIG}"
   if [[ -n $CI_PROJECT_DIR ]]; then
       echo "I guess we're in GitLab CI, using local repository in branch ${CI_COMMIT_REF_NAME}"
       export TESTREPO=$CI_PROJECT_DIR
