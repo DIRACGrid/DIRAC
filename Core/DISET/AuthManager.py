@@ -112,7 +112,7 @@ def initializationOfGroup(credDict, logObj=gLogger):
     credDict[KW_PROPERTIES] = Registry.getPropertiesForHost(credDict[KW_USERNAME], [])
     return True
 
-  if not Registry.getGroupsForUser(credDict[KW_USERNAME], researchedGroup=credDict[KW_GROUP]).get('value'):
+  if not Registry.getGroupsForUser(credDict[KW_USERNAME], researchedGroup=credDict[KW_GROUP]).get('Value'):
     credDict[KW_USERNAME] = "anonymous"
     credDict[KW_GROUP] = "visitor"
     return False
