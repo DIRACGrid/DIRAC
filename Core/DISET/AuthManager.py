@@ -72,15 +72,14 @@ def initializationOfCertificate(credDict, logObj=gLogger):
   # Search host
   result = Registry.getHostnameForDN(credDict[KW_DN])
   if result['OK'] and result['Value']:
-    credDict[KW_GROUP] = KW_HOSTS_GROUP
-    result = Registry.getHostnameForDN(credDict[KW_DN])
-    if not result['OK']:
-      logObj.warn("Cannot find hostname for DN %s: %s" % (credDict[KW_DN], retVal['Message']))
-      credDict[KW_USERNAME] = "anonymous"
-      credDict[KW_GROUP] = "visitor"
-      return False
     credDict[KW_USERNAME] = result['Value']
+    credDict[KW_GROUP] = KW_HOSTS_GROUP
     return True
+  elif credDict.get(KW_GROUP) == KW_HOSTS_GROUP:
+    logObj.warn("Cannot find hostname for DN %s: %s" % (credDict[KW_DN], retVal['Message']))
+    credDict[KW_USERNAME] = "anonymous"
+    credDict[KW_GROUP] = "visitor"
+    return False
 
   # Search user
   result = Registry.getUsernameForDN(credDict[KW_DN])
@@ -113,16 +112,12 @@ def initializationOfGroup(credDict, logObj=gLogger):
     credDict[KW_PROPERTIES] = Registry.getPropertiesForHost(credDict[KW_USERNAME], [])
     return True
 
-  result = Registry.getGroupsForUser(credDict[KW_USERNAME])
-  if not result['OK']:
+  if not Registry.getGroupsForUser(credDict[KW_USERNAME], researchedGroup=credDict[KW_GROUP]).get('value'):
     credDict[KW_USERNAME] = "anonymous"
     credDict[KW_GROUP] = "visitor"
     return False
-  if credDict[KW_GROUP] not in result['Value']:
-    credDict[KW_GROUP] = "visitor"
-    return False
 
-  # Get DN for group
+  # Get DN for user/group
   result = Registry.getDNForUsernameInGroup(credDict[KW_USERNAME], credDict[KW_GROUP])
   if not result['OK']:
     logObj.error(result['Message'])

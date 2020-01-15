@@ -541,12 +541,13 @@ def getUsernameForDN(dn, usersList=None):
       return S_OK(username)
   return S_ERROR("No username found for DN %s" % dn)
 
-def getGroupsForUser(username):
-  """ Find groups for user
+def getGroupsForUser(username, researchedGroup=None):
+  """ Find groups for user or if set reseachedGroup check it for user
   
       :param str username: user name
+      :param str researchedGroup: group name
       
-      :return: S_OK(list)/S_ERROR()
+      :return: S_OK(list or bool)/S_ERROR() -- contain list of groups or status group for user
   """
   groups = []
   result = getDNsForUsername(username)
@@ -561,10 +562,12 @@ def getGroupsForUser(username):
       groups.append(group)
     elif any(ID in getGroupOption(group, 'IDs', []) for ID in userIDs):
       groups.append(group)
+    if group in groups and group == researchedGroup:
+      return S_OK(True)
   if not groups:
     return S_ERROR('No groups found for %s user' % username)
   groups.sort()
-  return S_OK(list(set(groups)))
+  return S_OK(False if researchedGroup else list(set(groups)))
 
 def findDefaultGroupForDN(dn):
   """ Search defaut group for DN
