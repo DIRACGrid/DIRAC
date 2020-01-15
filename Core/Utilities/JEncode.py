@@ -192,9 +192,9 @@ def strToIntDict(inDict):
       This shows useful in cases when sending dict indexed on
       jobID or requestID for example
 
-      :param inDict: dictionnary with strings as keys e.g. {'1': 1, '2': 2}
+      :param inDict: dictionary with strings as keys e.g. {'1': 1, '2': 2}
 
-      :returns: dictionnary with int as keys e.g. {1: 1, 2: 2}
+      :returns: dictionary with int as keys e.g. {1: 1, 2: 2}
 
   """
 
