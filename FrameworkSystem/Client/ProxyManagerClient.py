@@ -245,10 +245,8 @@ class ProxyManagerClient(object):
       return S_ERROR("Proxy %s has expired" % proxyLocation)
     if chain.getDIRACGroup().get('Value') or chain.isVOMS().get('Value'):
       return S_ERROR("Cannot upload proxy with DIRAC group or VOMS extensions")
-    if proxy:
-      rpcClient = RPCClient("Framework/ProxyManager", timeout=120, useCertificates=False, proxyChain=chain)
-    else:
-      rpcClient = RPCClient("Framework/ProxyManager", timeout=120)
+    
+    rpcClient = RPCClient("Framework/ProxyManager", timeout=120)
     # Get a delegation request
     result = rpcClient.requestDelegationUpload()
     if not result['OK']:
@@ -256,18 +254,13 @@ class ProxyManagerClient(object):
     reqDict = result['Value']
     # Generate delegated chain
     chainLifeTime = chain.getRemainingSecs()['Value'] - 60
-    if restrictLifeTime and restrictLifeTime < chainLifeTime:
-      chainLifeTime = restrictLifeTime
-    retVal = chain.generateChainFromRequestString(reqDict['request'],
-                                                  lifetime=chainLifeTime,
+    chainLifeTime = min(restrictLifeTime, chainLifeTime) if restrictLifeTime else chainLifeTime
+    retVal = chain.generateChainFromRequestString(reqDict['request'], lifetime=chainLifeTime,
                                                   rfc=rfcIfPossible)
     if not retVal['OK']:
       return retVal
     # Upload!
-    result = rpcClient.completeDelegationUpload(reqDict['id'], retVal['Value'])
-    if not result['OK']:
-      return result
-    return S_OK(result.get('proxies') or result['Value'])
+    return rpcClient.completeDelegationUpload(reqDict['id'], retVal['Value'])
 
   @gProxiesSync
   def downloadPersonalProxy(self, user, userGroup, requiredTimeLeft=1200, cacheTime=14400, vomsAttr=False):

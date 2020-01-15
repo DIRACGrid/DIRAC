@@ -213,14 +213,6 @@ class ProxyManagerHandler(RequestHandler):
       proxiesInfo[userDN][userGroup] = record[expirationIndex]
     return proxiesInfo
 
-  def __addKnownUserProxiesInfo(self, retDict):
-    """ Given a S_OK/S_ERR add a proxies entry with info of all the proxies a user has uploaded
-
-        :return: S_OK(dict)/S_ERROR()
-    """
-    retDict['proxies'] = self.__generateUserProxiesInfo()
-    return retDict
-
   auth_getUserProxiesInfo = ['authenticated']
   types_getUserProxiesInfo = []
 
@@ -232,6 +224,7 @@ class ProxyManagerHandler(RequestHandler):
     return S_OK(self.__generateUserProxiesInfo())
 
   # WARN: Since v7r1 requestDelegationUpload method not use arguments!
+  auth_requestDelegationUpload = ['authenticated']
   types_requestDelegationUpload = []
 
   def export_requestDelegationUpload(self, requestedUploadTime=None, diracGroup=None):
@@ -239,23 +232,18 @@ class ProxyManagerHandler(RequestHandler):
 
         :return: S_OK(dict)/S_ERROR() -- dict contain id and proxy as string of the request
     """
-    credDict = self.getRemoteCredentials()
-    userDN = credDict['DN']
-    userName = credDict['username']
     if diracGroup:
       # WARN: Since v7r1, DIRAC has implemented the ability to store only one proxy and
       # WARN:   dynamically add a group at the request of a proxy. This means that group extensions
       # WARN:   doesn't need for storing proxies.
       self.log.warn("Proxy with DIRAC group or VOMS extensions must be not allowed to be uploaded.")
 
-    if userName == 'anonymous':
-      return S_ERROR("User %s is not valid to upload proxy." % userName)
-
+    credDict = self.getRemoteCredentials()
     result = self.__proxyDB.generateDelegationRequest(credDict)
     if result['OK']:
-      gLogger.info("Upload request by %s:%s given id %s" % (userName, diracGroup, result['Value']['id']))
+      gLogger.info("Upload request by %s:%s given id %s" % (credDict['username'], credDict['group'], result['Value']['id']))
     else:
-      gLogger.error("Upload request failed", "by %s:%s : %s" % (userName, diracGroup, result['Message']))
+      gLogger.error("Upload request failed", "by %s:%s : %s" % (credDict['username'], credDict['group'], result['Message']))
     return result
 
   types_completeDelegationUpload = [six.integer_types, basestring]
@@ -271,12 +259,12 @@ class ProxyManagerHandler(RequestHandler):
 
     credDict = self.getRemoteCredentials()
     userId = "%s:%s" % (credDict['username'], credDict['group'])
-    retVal = self.__proxyDB.completeDelegation(requestId, pemChain)
+    retVal = self.__proxyDB.completeDelegation(requestId, credDict['DN'], pemChain)
     if not retVal['OK']:
       gLogger.error("Upload proxy failed", "id: %s user: %s message: %s" % (requestId, userId, retVal['Message']))
-      return self.__addKnownUserProxiesInfo(retVal)
+      return retVal
     gLogger.info("Upload %s by %s completed" % (requestId, userId))
-    return self.__addKnownUserProxiesInfo(S_OK())
+    return S_OK(self.__generateUserProxiesInfo())
 
   types_getRegisteredUsers = []
 

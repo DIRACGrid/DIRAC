@@ -236,10 +236,6 @@ class ProxyDB(DB):
     if not retVal['OK']:
       return retVal
     connObj = retVal['Value']
-    result = credDict['x509Chain'].getCredentials()
-    if not result['OK']:
-      return result
-    DN = result['Value']['subject']
     retVal = credDict['x509Chain'].generateProxyRequest()
     if not retVal['OK']:
       return retVal
@@ -253,7 +249,7 @@ class ProxyDB(DB):
       return retVal
     allStr = reqStr + retVal['Value']
     try:
-      sDN = self._escapeString(DN)['Value']
+      sDN = self._escapeString(credDict['DN'])['Value']
       sAllStr = self._escapeString(allStr)['Value']
     except KeyError:
       return S_ERROR("Cannot escape DN")
@@ -320,11 +316,12 @@ class ProxyDB(DB):
     cmd = "DELETE FROM `ProxyDB_Requests` WHERE Id=%s" % requestId
     return self._update(cmd)
 
-  def completeDelegation(self, requestId, delegatedPem):
+  def completeDelegation(self, requestId, userDN, delegatedPem):
     """ Complete a delegation and store it in the db
 
         :param int requestId: id of the request
-        :param basestring delegatedPem: delegated proxy as string
+        :param str userDN: DN
+        :param str delegatedPem: delegated proxy as string
 
         :return: S_OK()/S_ERROR()
     """
@@ -332,10 +329,6 @@ class ProxyDB(DB):
     retVal = chain.loadChainFromString(delegatedPem)
     if not retVal['OK']:
       return retVal
-    result = chain.getCredentials()
-    if not result['OK']:
-      return result
-    userDN = result['Value']['issuer']
     retVal = self.__retrieveDelegationRequest(requestId, userDN)
     if not retVal['OK']:
       return retVal
@@ -383,12 +376,10 @@ class ProxyDB(DB):
       # WARN: End of compatibility block
     else:
       retVal = self.__storeProxy(userDN, chain)
+
     if not retVal['OK']:
       return retVal
-    retVal = self.deleteRequest(requestId)
-    if not retVal['OK']:
-      return retVal
-    return S_OK()
+    return self.deleteRequest(requestId)
 
   def __storeProxy(self, userDN, chain):
     """ Store user proxy into the Proxy repository for a user specified by his
