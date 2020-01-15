@@ -19,21 +19,22 @@ KW_HOSTS_GROUP = 'hosts'
 KW_PROPERTIES = 'properties'
 KW_EXTRA_CREDENTIALS = 'extraCredentials'
 
-def forwardingCredentials(credDict):
+def forwardingCredentials(credDict, logObj=gLogger):
   """ Check whether the credentials are being forwarded by a valid source and extract it
 
       :param dict credDict: Credentials to ckeck
+      :param object logObj: logger
       
       :return: bool
   """
   if isinstance(credDict.get(KW_EXTRA_CREDENTIALS), (tuple, list)):
     retVal = Registry.getHostnameForDN(credDict.get(KW_DN))
     if not retVal['OK']:
-      gLogger.debug("The credentials forwarded not by a host:", credDict.get(KW_DN))
+      logObj.debug("The credentials forwarded not by a host:", credDict.get(KW_DN))
       return False
     hostname = retVal['Value']
     if Properties.TRUSTED_HOST not in Registry.getPropertiesForHost(hostname, []):
-      gLogger.debug("The credentials forwarded by a %s host, but it is not a trusted one" % hostname)
+      logObj.debug("The credentials forwarded by a %s host, but it is not a trusted one" % hostname)
       return False
     credDict[KW_DN] = credDict[KW_EXTRA_CREDENTIALS][0]
     credDict[KW_GROUP] = credDict[KW_EXTRA_CREDENTIALS][1]
@@ -41,11 +42,12 @@ def forwardingCredentials(credDict):
     return True
   return False
 
-def initializationOfSession(credDict):
+def initializationOfSession(credDict, logObj=gLogger):
   """ Discover the username associated to the authentication session. It will check if the selected group is valid.
       The username will be included in the credentials dictionary. And will discover DN for group if last not set.
 
       :param dict credDict: Credentials to check
+      :param object logObj: logger
 
       :return: bool -- specifying whether the username was found
   """
@@ -58,11 +60,12 @@ def initializationOfSession(credDict):
   credDict[KW_USERNAME] = result['Value']
   return True
 
-def initializationOfCertificate(credDict):
+def initializationOfCertificate(credDict, logObj=gLogger):
   """ Discover the username associated to the certificate DN. It will check if the selected group is valid.
       The username will be included in the credentials dictionary.
 
       :param dict credDict: Credentials to check
+      :param object logObj: logger
 
       :return: bool -- specifying whether the username was found
   """
@@ -72,7 +75,7 @@ def initializationOfCertificate(credDict):
     credDict[KW_GROUP] = KW_HOSTS_GROUP
     result = Registry.getHostnameForDN(credDict[KW_DN])
     if not result['OK']:
-      gLogger.warn("Cannot find hostname for DN %s: %s" % (credDict[KW_DN], retVal['Message']))
+      logObj.warn("Cannot find hostname for DN %s: %s" % (credDict[KW_DN], retVal['Message']))
       credDict[KW_USERNAME] = "anonymous"
       credDict[KW_GROUP] = "visitor"
       return False
@@ -88,10 +91,11 @@ def initializationOfCertificate(credDict):
   credDict[KW_USERNAME] = result['Value']
   return True
 
-def initializationOfGroup(credDict):
+def initializationOfGroup(credDict, logObj=gLogger):
   """ Check/get default group
 
       :param dict credDict: Credentials to check
+      :param object logObj: logger
 
       :return: bool -- specifying whether the username was found
   """
@@ -121,7 +125,7 @@ def initializationOfGroup(credDict):
   # Get DN for group
   result = Registry.getDNForUsernameInGroup(credDict[KW_USERNAME], credDict[KW_GROUP])
   if not result['OK']:
-    gLogger.error(result['Message'])
+    logObj.error(result['Message'])
     credDict[KW_GROUP] = "visitor"
     return False
   credDict[KW_DN] = result['Value']
@@ -134,7 +138,6 @@ def initializationOfGroup(credDict):
 class AuthManager(object):
   """ Handle Service Authorization
   """
-  __authLogger = gLogger.getSubLogger("Authorization")
 
   def __init__(self, authSection):
     """ Constructor
@@ -163,7 +166,7 @@ class AuthManager(object):
       userString += " group=%s" % credDict[KW_GROUP]
     if KW_EXTRA_CREDENTIALS in credDict:
       userString += " extraCredentials=%s" % str(credDict[KW_EXTRA_CREDENTIALS])
-    self.__authLogger.debug("Trying to authenticate %s" % userString)
+    __authLogger.debug("Trying to authenticate %s" % userString)
 
     # Get properties
     requiredProperties = self.getValidPropertiesForMethod(methodQuery, defaultProperties)
@@ -180,8 +183,8 @@ class AuthManager(object):
         credDict[KW_GROUP] = credDict[KW_EXTRA_CREDENTIALS]
         del credDict[KW_EXTRA_CREDENTIALS]
       # Check if query comes though a gateway/web server
-      elif forwardingCredentials(credDict):
-        self.__authLogger.debug("Query comes from a gateway")
+      elif forwardingCredentials(credDict, logObj=__authLogger):
+        __authLogger.debug("Query comes from a gateway")
         return self.authQuery(methodQuery, credDict, requiredProperties)
       else:
         return False
@@ -192,10 +195,10 @@ class AuthManager(object):
     if not credDict.get(KW_USERNAME):
       if credDict.get(KW_DN):
         # With certificate
-        authorized = initializationOfCertificate(credDict)
+        authorized = initializationOfCertificate(credDict, logObj=__authLogger)
       elif credDict.get(KW_ID):
         # With IdP session
-        authorized = initializationOfSession(credDict)
+        authorized = initializationOfSession(credDict, logObj=__authLogger)
       else:
         credDict[KW_USERNAME] = "anonymous"
         credDict[KW_GROUP] = "visitor"
@@ -203,7 +206,7 @@ class AuthManager(object):
     
     # Search group
     if authorized:
-      authorized = initializationOfGroup(credDict)
+      authorized = initializationOfGroup(credDict, logObj=__authLogger)
 
     # Authorize check
     if allowAll or authorized:
@@ -212,20 +215,20 @@ class AuthManager(object):
                                                                                 'All', 'all',
                                                                                 'authenticated',
                                                                                 'Authenticated']))):
-        self.__authLogger.warn("Client is not authorized\nValid properties: %s\nClient: %s" %
+        __authLogger.warn("Client is not authorized\nValid properties: %s\nClient: %s" %
                                (requiredProperties, credDict))
         return False
       # Groups check
       elif validGroups and credDict[KW_GROUP] not in validGroups:
-        self.__authLogger.warn("Client is not authorized\nValid groups: %s\nClient: %s" %
+        __authLogger.warn("Client is not authorized\nValid groups: %s\nClient: %s" %
                                (validGroups, credDict))
         return False
       else:
         if not authorized:
-          self.__authLogger.debug("Accepted request from unsecure transport")
+          __authLogger.debug("Accepted request from unsecure transport")
         return True
     else:
-      self.__authLogger.debug("User is invalid or does not belong to the group it's saying")
+      __authLogger.debug("User is invalid or does not belong to the group it's saying")
     return False
 
   def getValidPropertiesForMethod(self, method, defaultProperties=False):
@@ -241,16 +244,16 @@ class AuthManager(object):
     if authProps:
       return authProps
     if defaultProperties:
-      self.__authLogger.debug("Using hardcoded properties for method %s : %s" % (method, defaultProperties))
+      __authLogger.debug("Using hardcoded properties for method %s : %s" % (method, defaultProperties))
       if not isinstance(defaultProperties, (list, tuple)):
         return List.fromChar(defaultProperties)
       return defaultProperties
     defaultPath = "%s/Default" % "/".join(method.split("/")[:-1])
     authProps = gConfig.getValue("%s/%s" % (self.authSection, defaultPath), [])
     if authProps:
-      self.__authLogger.debug("Method %s has no properties defined using %s" % (method, defaultPath))
+      __authLogger.debug("Method %s has no properties defined using %s" % (method, defaultPath))
       return authProps
-    self.__authLogger.debug("Method %s has no authorization rules defined. Allowing no properties" % method)
+    __authLogger.debug("Method %s has no authorization rules defined. Allowing no properties" % method)
     return []
 
   def getValidGroups(self, rawProperties):
