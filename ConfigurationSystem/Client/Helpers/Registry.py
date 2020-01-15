@@ -555,19 +555,18 @@ def getGroupsForUser(username, researchedGroup=None):
     return result
   userDNs = result['Value']
   userIDs = getIDsForUsername(username)
-  for group in getAllGroups():
+  for group in [researchedGroup] if researchedGroup else getAllGroups():
     if username in getGroupOption(group, 'Users', []):
       groups.append(group)
     elif any(dn in getGroupOption(group, 'DNs', []) for dn in userDNs):
       groups.append(group)
     elif any(ID in getGroupOption(group, 'IDs', []) for ID in userIDs):
       groups.append(group)
-    if group in groups and group == researchedGroup:
-      return S_OK(True)
+
   if not groups:
-    return S_ERROR('No groups found for %s user' % username)
+    return S_OK(False) if researchedGroup else S_ERROR('No groups found for %s user' % username)
   groups.sort()
-  return S_OK(False if researchedGroup else list(set(groups)))
+  return S_OK(list(set(groups)))
 
 def findDefaultGroupForDN(dn):
   """ Search defaut group for DN
@@ -588,8 +587,8 @@ def findDefaultGroupForUser(username):
 
       :return: S_OK(str)/S_ERROR()
   """
-  userDefGroups = getUserOption(username, "DefaultGroup", [])
-  defGroups = userDefGroups + gConfig.getValue("%s/DefaultGroup" % gBaseRegistrySection, ["user"])
+  defGroups = getUserOption(username, "DefaultGroup", [])
+  defGroups += gConfig.getValue("%s/DefaultGroup" % gBaseRegistrySection, ["user"])
   result = getGroupsForUser(username)
   if not result['OK']:
     return result
@@ -680,10 +679,11 @@ def getEmailsForGroup(groupName):
     emails.append(email)
   return emails
 
-def getGroupsForDN(userDN):
+def getGroupsForDN(userDN, researchedGroup=None):
   """ Get all posible groups for DN
 
       :param str userDN: user DN
+      :param str researchedGroup: group name
 
       :return: S_OK(list)/S_ERROR() -- contain list of groups
   """
@@ -698,18 +698,23 @@ def getGroupsForDN(userDN):
   vomsRoles = userDN in vomsInfo and vomsInfo[userDN].get('VOMSRoles') or []
   for vomsRole in vomsRoles:
     groups += getGroupsWithVOMSAttribute(vomsRole)
+    if researchedGroup in groups:
+      return S_OK(True)
 
   result = getUsernameForDN(userDN)
   if not result['OK']:
     return result
   username = result['Value']
 
-  for group in getAllGroups():
+  for group in [researchedGroup] if researchedGroup else getAllGroups():
     if userDN in getGroupOption(group, 'DNs', []):
       groups.append(group)
     elif username in getGroupOption(group, 'Users', []):
       groups.append(group)
 
+  if not groups:
+    return S_OK(False) if researchedGroup else S_ERROR('No groups found for %s' % userDN)
+  groups.sort()
   return S_OK(list(set(groups)))
   
 def getDNForUsernameInGroup(username, group):

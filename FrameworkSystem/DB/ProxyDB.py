@@ -325,10 +325,6 @@ class ProxyDB(DB):
 
         :return: S_OK()/S_ERROR()
     """
-    chain = X509Chain()
-    retVal = chain.loadChainFromString(delegatedPem)
-    if not retVal['OK']:
-      return retVal
     retVal = self.__retrieveDelegationRequest(requestId, userDN)
     if not retVal['OK']:
       return retVal
@@ -359,13 +355,10 @@ class ProxyDB(DB):
       if not retVal['OK']:
         return retVal
       userGroup = retVal['Value'] or Registry.getDefaultUserGroup()
-      result = Registry.getGroupsForDN(userDN)
+      result = Registry.getGroupsForDN(userDN, researchedGroup=userGroup)
       if not result['OK']:
         return result
-      groups = result['Value']
-      if not groups:
-        return S_ERROR('No groups for %s' % userDN)
-      if userGroup not in groups:
+      if not result['Value']:
         return S_ERROR("%s group is not valid for %s" % (userGroup, userDN))
       retVal = chain.isValidProxy(ignoreDefault=True)
       if not retVal['OK'] and DErrno.cmpError(retVal, DErrno.ENOGROUP):

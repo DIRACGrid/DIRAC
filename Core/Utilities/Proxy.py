@@ -181,8 +181,7 @@ class UserProxy(object):
                proxyUserDN=None,
                proxyWithVOMS=True,
                proxyFilePath=None,
-               executionLock=False,
-               ):
+               executionLock=False):
     """Construct the context manager for a user proxy.
 
     :param str proxyUserName: the user name of the proxy to be used
