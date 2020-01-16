@@ -263,7 +263,7 @@ class ProxyManagerHandler(RequestHandler):
     """
     if personal:
       csSection = PathFinder.getServiceSection('Framework/Notification')
-      if user != credDict['username'] or userGroup != credDict['group']:
+      if requestedUsername != credDict['username'] or requestedUserGroup != credDict['group']:
         return S_ERROR("You can't get %s@%s proxy!" % (credDict['username'], credDict['group']))
       elif not gConfig.getValue('%s/downloadablePersonalProxy' % csSection, False):
         return S_ERROR("You can't get proxy, configuration settings not allow to do that.")
