@@ -86,14 +86,14 @@ class ProxyManagerHandler(RequestHandler):
         for user in voAdmins:
           # Try to get proxy for any VO admin
           result = cls.__proxyDB.getProxy(user, group, 1800)
-            if result['OK'] and result['Value'][0]:
-              # Now we have a proxy, lets dump it to file
-              result = writeChainToProxyFile(result['Value'][0], '/tmp/x509_syncTmp')
+          if result['OK'] and result['Value'][0]:
+            # Now we have a proxy, lets dump it to file
+            result = writeChainToProxyFile(result['Value'][0], '/tmp/x509_syncTmp')
+            if result['OK']:
+              # Get users from VOMS
+              result = VOMSService(vo=vo).getUsers(result['Value'])
               if result['OK']:
-                # Get users from VOMS
-                result = VOMSService(vo=vo).getUsers(result['Value'])
-                if result['OK']:
-                  break
+                break
 
       if not result['OK']:
         diracAdminsNotifyDict[vo] = result['Message']
