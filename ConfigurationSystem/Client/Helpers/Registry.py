@@ -362,10 +362,13 @@ def getVOsWithVOMS():
       :return: S_OK(list)/S_ERROR()
   """
   vos = []
-  for vo in getVOs():
+  result = getVOs()
+  if not result['OK']:
+    return result
+  for vo in result['Value']:
     if getVOOption(vo, 'VOMSName'):
       vos.append(vo)
-  return vos
+  return S_OK(vos)
 
 def getVOMSServerInfo(requestedVO=''):
   """ Get information on VOMS servers for the given VO or for all of them
