@@ -816,8 +816,9 @@ def getStatusGroupByUsername(group, username):
   if vomsRole:
     result = gProxyManager.getActualVOMSesDNs([dn])
     vomsInfo = result['Value'] if result['OK'] else {}
-    if not any(dnDict.get('VOMSRoles') for dnDict in vomsInfo.values()):
-      return S_OK({'Status': 'failed', 'Comment': 'Not found VOMS role'})
+    if not any(vomsRole in dnDict['VOMSRoles'] for dnDict in vomsInfo.values()):
+      return S_OK({'Status': 'failed',
+                   'Comment': 'You have no %s VOMS role depended for this group' % vomsRole})
     if any(vomsRole in dnDict['SuspendedRoles'] for dnDict in vomsInfo.values()):
       return S_OK({'Status': 'suspended', 'Comment': 'User suspended'})
 

@@ -130,7 +130,7 @@ class ProxyManagerClient(object):
     __VOMSesUsersCache.pop('Fresh', None)
     vomsActualDNsDict = {}
     if not __VOMSesUsersCache:
-      # I can use simulation here
+      # use simulation here for test
       return S_ERROR('VOMSes is not updated.')
     for vo, voInfo in __VOMSesUsersCache.items():
       for dn, dnDict in voInfo.items():
