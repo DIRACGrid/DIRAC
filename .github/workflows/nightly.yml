@@ -6,10 +6,12 @@
 
 name: Nightlies
 
-on:
-  schedule:
-    # every day at 6 am (so that the master of DIRACOS is already created)
-    - cron:  '0 6 * * *'
+on: push
+
+# on:
+#   schedule:
+#     # every day at 6 am (so that the master of DIRACOS is already created)
+#     - cron:  '0 6 * * *'
 
 jobs:
   # running dirac-distribution in the proper image
