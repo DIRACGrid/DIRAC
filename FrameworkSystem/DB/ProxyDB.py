@@ -934,21 +934,21 @@ class ProxyDB(DB):
     """
     where = "WHERE Pem is not NULL"
     if group and user:
-      result = Registry.getDNForUserInGroup(user, group)
+      result = Registry.getDNForUsernameInGroup(user, group)
       if not result['OK']:
         return result
       where += " AND UserDN in (%s)" % self._escapeString(str(result['Value']))['Value']
     elif user:
-      result = Registry.getDNsForUsername(username)
+      result = Registry.getDNsForUsername(user)
       if not result['OK']:
         return result
       where += " AND UserDN in (%s)" % ", ".join([self._escapeString(str(v))['Value'] for v in result['Value']])
     elif group:
-      result = Registry.getUsersForGroup(username)
+      result = Registry.getUsersInGroup(group)
       if not result['OK']:
         return result
       for user in result['Value']:
-        result = Registry.getDNsForUsername(username)
+        result = Registry.getDNsForUsername(user)
         if not result['OK']:
           return result
         where += " AND UserDN in (%s)" % ", ".join([self._escapeString(str(v))['Value'] for v in result['Value']])
