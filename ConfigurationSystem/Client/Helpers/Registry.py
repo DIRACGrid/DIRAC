@@ -633,20 +633,17 @@ def getProxyProviderForDN(userDN):
   if not provider:
     # Get providers
     result = getInfoAboutProviders(of='Proxy')
-    if not result['OK']:
-      return result
-      
-    # Try to use getUserDN method if exist
-    try:
-      ProxyProviderFactory()
-    except Exception:
-      from DIRAC.Resources.ProxyProvider.ProxyProviderFactory import ProxyProviderFactory
-    for providerName in result['Value']:
-      providerObj = ProxyProviderFactory().getProxyProvider(providerName)
-      if providerObj['OK'] and 'getUserDN' in dir(providerObj['Value']):
-        result = providerObj['Value'].getUserDN(userDN=userDN)
-        if result['OK']:
-          return S_OK(providerName)
+    if result['OK']:
+      try:
+        ProxyProviderFactory()
+      except Exception:
+        from DIRAC.Resources.ProxyProvider.ProxyProviderFactory import ProxyProviderFactory
+      for providerName in result['Value']:
+        providerObj = ProxyProviderFactory().getProxyProvider(providerName)
+        if providerObj['OK'] and 'getUserDN' in dir(providerObj['Value']):
+          result = providerObj['Value'].getUserDN(userDN=userDN)
+          if result['OK']:
+            return S_OK(providerName)
 
   return S_OK(provider or 'Certificate')
 
