@@ -748,7 +748,7 @@ class ProxyDB(DB):
           return S_ERROR("Stored proxy has already a different VOMS attribute %s than requested %s" %
                           (attrs[0], vomsAttr))
       else:
-        retVal = vomsMgr.setVOMSAttributes(chain, vomsAttr, vo=vomsVO)
+        retVal = vomsMgr.setVOMSAttributes(chain, vomsAttr, vo=Registry.getVOMSVOForGroup(userGroup))
         if not retVal['OK']:
           return S_ERROR("Cannot append voms extension: %s" % retVal['Message'])
         chain = retVal['Value']
