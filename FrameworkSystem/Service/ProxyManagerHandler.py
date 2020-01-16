@@ -66,56 +66,35 @@ class ProxyManagerHandler(RequestHandler):
         :return: S_OK()/S_ERROR()
     """    
     diracAdminsNotifyDict = {}
-    absentAdminsProxies = []
     gLogger.info('Update VOMSes information..')
     if not vos:
-      result = Registry.getVOs()  # Actualy need VOMS VOs, need to check for every VO VOMSName option exist
+      result = Registry.getVOsWithVOMS()
       if not result['OK']:
         return result
       vos = result['Value']
 
     for vo in vos:
-      DNs = []
-      # Get VO admin DNs from CS
-      for user in Registry.getVOOption(vo, "VOAdmin", []):
-        result = Registry.getDNsForUsername(user)
-        if not result['OK']:
-          gLogger.error(result['Message'])
-          continue
-        DNs += result['Value']
-      # WARN: When has been used global sync server need to get VO admin DNs there
-      if not DNs:
+      # Get VO admins
+      voAdmins = Registry.getVOOption(vo, "VOAdmin", [])
+      if not voAdmins:
         diracAdminsNotifyDict[vo] = 'Cannot found administrators for %s VOMS VO' % vo
         gLogger.error('Cannot update users from "%s" VO.' % vo, 'No admin user found.')
         continue
-
-      proxyChain = None
-      for dn in DNs:
-        # Try to get proxy for any VO admin user DN
-        # WARN: For old version of DB, in new version has been used Clean_Proxies table without group
-        result = cls.__proxyDB.getProxiesContent({'UserDN': dn, 'Group': Registry.getGroupsForVO(vo).get('Value') or []}, {})
-        if result['OK']:
-          if not result['Value']['Records']:
-            result = S_ERROR('No administrators proxies found for "%s" VO.' % vo)
-            continue
-          for record in result['Value']['Records']:
-            # WARN: For old version of DB, in new version has been used Clean_Proxies table without group
-            result = cls.__proxyDB.getProxy(record[1], record[2], 1800)
+      
+      result = S_ERROR('Need to upload admin proxy!')
+      for group in Registry.getGroupsForVO(vo).get('Value') or []:
+        for user in voAdmins:
+          # Try to get proxy for any VO admin
+          result = cls.__proxyDB.getProxy(user, group, 1800)
             if result['OK'] and result['Value'][0]:
-              proxyChain = result['Value'][0]
-              break
-        if proxyChain:
-          # Now we have a proxy, lets dump it to file
-          result = writeChainToProxyFile(proxyChain, '/tmp/x509_syncTmp')
-          if result['OK']:
-            # Get users from VOMS
-            result = VOMSService(vo=vo).getUsers(result['Value'])
-            if result['OK']:
-              break
-      if not proxyChain:
-        absentAdminsProxies.append(vo)
-        gLogger.error('Cannot update users from "%s" VO.' % vo, 'Need to upload admin proxy!')
-        continue
+              # Now we have a proxy, lets dump it to file
+              result = writeChainToProxyFile(result['Value'][0], '/tmp/x509_syncTmp')
+              if result['OK']:
+                # Get users from VOMS
+                result = VOMSService(vo=vo).getUsers(result['Value'])
+                if result['OK']:
+                  break
+
       if not result['OK']:
         diracAdminsNotifyDict[vo] = result['Message']
         gLogger.error('Cannot update users from "%s" VO.' % vo, result['Message'])
@@ -135,12 +114,6 @@ class ProxyManagerHandler(RequestHandler):
       body = pprint.pformat(diracAdminsNotifyDict)
       body += "\n------\n This is a notification from the DIRAC ProxyManager service, please do not reply."
       #cls.__notify.sendMail(Registry.getEmailsForGroup('dirac_admin'), subject, body)
-    for vo in absentAdminsProxies:
-      subject = '[DIRAC] Proxy of VO administrator is absent.'
-      body = "Dear VO administrator,"
-      body += "   please, upload your proxy."
-      body += "\n------\n This is a notification from the DIRAC ProxyManager service, please do not reply."
-      #cls.__notify.sendMail( Here need to get voadmin email or use dirac admins email , subject, body)
     return S_OK()
 
   @classmethod
@@ -195,11 +168,7 @@ class ProxyManagerHandler(RequestHandler):
     """
     proxiesInfo = {}
     credDict = self.getRemoteCredentials()
-    result = Registry.getDNsForUsername(credDict['username'])
-    if not result['OK']:
-      return result
-    selDict = {'UserDN': result['Value']}
-    result = self.__proxyDB.getProxiesContent(selDict, {})
+    result = self.__proxyDB.getProxiesContent(credDict['username'])
     if not result['OK']:
       return result
     contents = result['Value']
@@ -337,6 +306,10 @@ class ProxyManagerHandler(RequestHandler):
 
         :return: S_OK(str)/S_ERROR()
     """
+    # Test that group enable to download
+    if not Registry.isDownloadableGroup(userGroup):
+      return S_ERROR('"%s" group is disable to download.' % userGroup)
+
     # WARN: Next block for compatability
     if not user.find("/"):  # Is it DN?
       result = Registry.getUsernameForDN(user)
@@ -450,22 +423,28 @@ class ProxyManagerHandler(RequestHandler):
     self.__proxyDB.logAction("delete proxy", credDict['username'], credDict['group'], username, userGroup)
     return S_OK()
 
-  types_getContents = [dict, (list, tuple), six.integer_types, six.integer_types]
+  # WARN: Last two arguments for compatability
+  types_getContents = []
 
-  def export_getContents(self, selDict, sortDict, start, limit):
+  def export_getContents(self, user=None, group=None, start=None, end=None):
     """ Retrieve the contents of the DB
 
-        :param dict selDict: selection fields
-        :param list,tuple sortDict: sorting fields
-        :param int,long start: search limit start
-        :param int,long start: search limit amount
+        :param str user: user name
+        :param str group: group name
 
         :return: S_OK(dict)/S_ERROR() -- dict contain fields, record list, total records
     """
     credDict = self.getRemoteCredentials()
+
+    # WARN: Next block for compatability
+    if isinstance(user, dict):
+      if Properties.PROXY_MANAGEMENT not in credDict['properties']:
+        user['UserName'] = credDict['username']
+      return self.__proxyDB.getProxiesContentOld(user, group)
+
     if Properties.PROXY_MANAGEMENT not in credDict['properties']:
-      selDict['UserName'] = credDict['username']
-    return self.__proxyDB.getProxiesContent(selDict, sortDict, start, limit)
+      user = credDict['username']
+    return self.__proxyDB.getProxiesContent(user, group)
 
   types_getLogContents = [dict, (list, tuple), six.integer_types, six.integer_types]
 

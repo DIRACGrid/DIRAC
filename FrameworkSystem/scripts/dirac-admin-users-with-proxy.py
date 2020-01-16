@@ -33,7 +33,7 @@ params.registerCLISwitches()
 
 Script.parseCommandLine(ignoreErrors=True)
 args = Script.getPositionalArgs()
-result = gProxyManager.getDBContents()
+result = gProxyManager.getUploadedProxiesDetails()
 if not result['OK']:
   print("Can't retrieve list of users: %s" % result['Message'])
   DIRAC.exit(1)

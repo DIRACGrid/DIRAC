@@ -55,7 +55,7 @@ if userName in Registry.getAllUsers():
       gLogger.notice("You can only query info about yourself!")
       sys.exit(1)
   result = Registry.getDNsForUsername(userName)
-  if not result['OK']:
+  if not Registry.getDNsForUsername(userName):
     gLogger.notice("Oops %s" % result['Message'])
     sys.exit(1)
   if not result['Value']:
@@ -68,7 +68,7 @@ else:
 
 gLogger.notice("Checking for DNs %s" % " | ".join(userDNs))
 pmc = ProxyManagerClient()
-result = pmc.getDBContents({'UserDN': userDNs})
+result = pmc.getUploadedProxiesDetails(userName)
 if not result['OK']:
   gLogger.notice("Could not retrieve the proxy list: %s" % result['Value'])
   sys.exit(1)

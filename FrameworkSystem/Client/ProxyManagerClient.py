@@ -559,16 +559,6 @@ class ProxyManagerClient(object):
 
     return S_OK(chain)
 
-  def getDBContents(self, condDict={}):
-    """ Get the contents of the db
-
-        :param dict condDict: search condition
-
-        :return: S_OK(dict)/S_ERROR() -- dict contain fields, record list, total records
-    """
-    rpcClient = RPCClient("Framework/ProxyManager", timeout=120)
-    return rpcClient.getContents(condDict, [['UserDN', 'DESC']], 0, 0)
-
   def getVOMSAttributes(self, chain):
     """ Get the voms attributes for a chain
 
@@ -578,15 +568,25 @@ class ProxyManagerClient(object):
     """
     return VOMS().getVOMSAttributes(chain)
 
-  def getUploadedProxyLifeTime(self, DN, group):
+  def getUploadedProxiesDetails(self, user=None, group=None):
+    """ Get the details about an uploaded proxy
+
+        :param str user: user name
+        :param str group: group name
+
+        :return: S_OK(dict)/S_ERROR() -- dict contain fields, record list, total records
+    """
+    return RPCClient("Framework/ProxyManager", timeout=120).getContents(user, group)
+  
+  def getUploadedProxyLifeTime(self, user, group):
     """ Get the remaining seconds for an uploaded proxy
 
-        :param str DN: user DN
-        :param str group: group
+        :param str user: user name
+        :param str group: group name
 
         :return: S_OK(int)/S_ERROR()
     """
-    result = self.getDBContents({'UserDN': [DN], 'UserGroup': [group]})
+    result = self.getUploadedProxiesDetails(user, group)
     if not result['OK']:
       return result
     data = result['Value']

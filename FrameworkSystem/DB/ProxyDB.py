@@ -701,10 +701,6 @@ class ProxyDB(DB):
 
         :return: S_OK(tuple)/S_ERROR() -- tuple with proxy as chain and proxy live time in a seconds
     """
-    # Test that group enable to download
-    if not Registry.isDownloadableGroup(userGroup):
-      return S_ERROR('"%s" group is disable to download.' % userGroup)
-
     # Found DN
     result = Registry.getDNForUsernameInGroup(userName, userGroup)
     if not result['OK']:
@@ -927,8 +923,58 @@ class ProxyDB(DB):
     if not retVal['OK']:
       return retVal
     return S_OK()
+  
+  def getProxiesContent(self, user=None, group=None):
+    """ Get the contents of the db for user/group
 
-  def getProxiesContent(self, selDict, sortList, start=0, limit=0):
+        :param str user: user name
+        :param str group: group name
+
+        :return: S_OK(dict)/S_ERROR() -- dict contain fields, record list, total records
+    """
+    where = "WHERE Pem is not NULL"
+    if group and user:
+      result = Registry.getDNForUserInGroup(user, group)
+      if not result['OK']:
+        return result
+      where += " AND UserDN in (%s)" % self._escapeString(str(result['Value']))['Value']
+    elif user:
+      result = Registry.getDNsForUsername(username)
+      if not result['OK']:
+        return result
+      where += " AND UserDN in (%s)" % ", ".join([self._escapeString(str(v))['Value'] for v in result['Value']])
+    elif group:
+      result = Registry.getUsersForGroup(username)
+      if not result['OK']:
+        return result
+      for user in result['Value']:
+        result = Registry.getDNsForUsername(username)
+        if not result['OK']:
+          return result
+        where += " AND UserDN in (%s)" % ", ".join([self._escapeString(str(v))['Value'] for v in result['Value']])
+
+    data = []
+    for table, fields in [('ProxyDB_CleanProxies', ("UserDN", "ExpirationTime")),
+                          ('ProxyDB_Proxies', ("UserDN", "UserGroup", "ExpirationTime", "PersistentFlag"))]:
+      result = self._query("SELECT %s FROM `%s` %s ORDER BY UserDN DESC" % (", ".join(fields), table, where))
+      if not result['OK']:
+        return result
+      for record in result['Value']:
+        record = list(record)
+        if table == 'ProxyDB_CleanProxies':
+          record.insert(1, '')
+          record.insert(3, False)
+        record[3] = record[3] == 'True'
+        result = Registry.getUsernameForDN(record[0])
+        if not result['OK']:
+          self.log.error(result['Message'])
+          continue
+        record.insert(0, result['Value'])
+        data.append(record)
+    totalRecords = len(data)
+    return S_OK({'ParameterNames': fields, 'Records': data, 'TotalRecords': totalRecords})
+
+  def getProxiesContentOld(self, selDict, sortList, start=0, limit=0):
     """ Get the contents of the db, parameters are a filter to the db
 
         :param dict selDict: selection dict that contain fields and their posible values
