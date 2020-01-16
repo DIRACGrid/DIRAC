@@ -50,7 +50,7 @@ class ProxyDB(DB):
   def getMyProxyServer(self):
     """ Get MyProxy server from configuration
 
-        :return: basestring
+        :return: str
     """
     return gConfig.getValue("/DIRAC/VOPolicy/MyProxyServer", "myproxy.cern.ch")
 
@@ -64,7 +64,7 @@ class ProxyDB(DB):
   def getFromAddr(self):
     """ Get the From address to use in proxy expiry e-mails.
 
-        :return: basestring
+        :return: str
     """
     cs_path = getDatabaseSection(self.fullname)
     opt_path = "/%s/%s" % (cs_path, "FromAddr")
@@ -158,7 +158,7 @@ class ProxyDB(DB):
   def __addUserNameToTable(self, tableName):
     """ Add user name to the table
 
-        :param basestring tableName: table name
+        :param str tableName: table name
 
         :return: S_OK()/S_ERROR()
     """
@@ -277,9 +277,9 @@ class ProxyDB(DB):
     """ Retrieve a request from the DB
 
         :param int requestId: id of the request
-        :param basestring userDN: user DN
+        :param str userDN: user DN
 
-        :return: S_OK(basestring)/S_ERROR()
+        :return: S_OK(str)/S_ERROR()
     """
     try:
       sUserDN = self._escapeString(userDN)['Value']
@@ -378,9 +378,9 @@ class ProxyDB(DB):
     """ Store user proxy into the Proxy repository for a user specified by his
         DN and group or proxy provider.
 
-        :param basestring userDN: user DN from proxy
+        :param str userDN: user DN from proxy
         :param X509Chain() chain: proxy chain
-        :param basestring proxyProvider: proxy provider name
+        :param str proxyProvider: proxy provider name
 
         :return: S_OK()/S_ERROR()
     """
@@ -453,8 +453,8 @@ class ProxyDB(DB):
   def __getPemAndTimeLeft(self, userDN, userGroup, requiredLifeTime=None, vomsAttr=None):
     """ Get proxy from DB and add group
 
-        :param basestring userDN: user DN
-        :param basestring userGroup: required DIRAC group
+        :param str userDN: user DN
+        :param str userGroup: required DIRAC group
         :param int requiredLifeTime: required proxy live time in a seconds
         :param str vomsAttr: if need search VOMS proxy first
 
@@ -488,8 +488,8 @@ class ProxyDB(DB):
   def __generateProxyForDNGroup(self, userDN, userGroup, requiredLifeTime):
     """ Generate proxy from proxy provider and store it to DB
 
-        :param basestring userDN: user DN
-        :param basestring userGroup: required DIRAC group
+        :param str userDN: user DN
+        :param str userGroup: required DIRAC group
         :param int requiredLifeTime: required proxy live time in a seconds
 
         :return: S_OK(tuple)/S_ERROR() -- tuple with proxy as chain and proxy live time in a seconds
@@ -553,8 +553,8 @@ class ProxyDB(DB):
   def deleteProxy(self, userDN, userGroup=None):
     """ Remove proxy of the given user from the repository
 
-        :param basestring userDN: user DN
-        :param basestring userGroup: DIRAC group
+        :param str userDN: user DN
+        :param str userGroup: DIRAC group
 
         :return: S_OK()/S_ERROR()
     """
@@ -583,10 +583,10 @@ class ProxyDB(DB):
   def __getPemAndTimeLeftOld(self, userDN, userGroup, vomsAttr=None):
     """ Get proxy from database
 
-        :param basestring userDN: user DN
-        :param basestring userGroup: requested DIRAC group
-        :param basestring vomsAttr: VOMS name
-        :param basestring proxyProvider: proxy provider name
+        :param str userDN: user DN
+        :param str userGroup: requested DIRAC group
+        :param str vomsAttr: VOMS name
+        :param str proxyProvider: proxy provider name
 
         :return: S_OK(tuple)/S_ERROR() -- tuple contain proxy as string and remaining seconds
     """
@@ -622,12 +622,12 @@ class ProxyDB(DB):
   def renewFromMyProxy(self, userDN, userGroup, lifeTime=None, chain=None):
     """ Renew proxy from MyProxy
 
-        :param basestring userDN: user DN
-        :param basestring userGroup: user group
+        :param str userDN: user DN
+        :param str userGroup: user group
         :param int lifeTime: needed proxy live time in a seconds
-        :param X509Chain chain: proxy as chain
+        :param object chain: proxy as X509Chain
 
-        :return: S_OK(X509Chain/S_ERROR()
+        :return: S_OK(X509Chain)/S_ERROR()
     """
     if not lifeTime:
       lifeTime = 43200
@@ -694,10 +694,10 @@ class ProxyDB(DB):
   def getProxy(self, userName, userGroup, requiredLifeTime=None, voms=False):
     """ Get proxy string from the Proxy Repository for use with userName in the userGroup
 
-        :param basestring userName: user DN
-        :param basestring userGroup: required DIRAC group
+        :param str userName: user DN
+        :param str userGroup: required DIRAC group
         :param int requiredLifeTime: required proxy live time in a seconds
-        :param basestring voms: if need VOMS attribute
+        :param bool voms: if need VOMS attribute
 
         :return: S_OK(tuple)/S_ERROR() -- tuple with proxy as chain and proxy live time in a seconds
     """
@@ -763,12 +763,12 @@ class ProxyDB(DB):
   def __storeVOMSProxy(self, userDN, userGroup, vomsAttr, chain):
     """ Store VOMS proxy
 
-        :param basestring userDN: user DN
-        :param basestring userGroup: DIRAC group
-        :param basestring vomsAttr: VOMS attribute
-        :param X509Chain() chain: proxy as chain
+        :param str userDN: user DN
+        :param str userGroup: DIRAC group
+        :param str vomsAttr: VOMS attribute
+        :param object chain: proxy as X509Chain
 
-        :return: S_OK(basestring)/S_ERROR()
+        :return: S_OK(str)/S_ERROR()
     """
     retVal = self._getConnection()
     if not retVal['OK']:
@@ -814,7 +814,7 @@ class ProxyDB(DB):
         with valid proxies within the given validity period expressed in seconds
 
         :param int validSecondsLeft: validity period expressed in seconds
-        :param basestring userMask: user name that need to add to search filter
+        :param str userMask: user name that need to add to search filter
 
         :return: S_OK(list)/S_ERROR() -- list contain dicts with DN, group, expiration time
     """
@@ -882,8 +882,8 @@ class ProxyDB(DB):
   def setPersistencyFlag(self, userDN, userGroup, persistent=True):
     """ Set the proxy PersistentFlag to the flag value
 
-        :param basestring userDN: user DN
-        :param basestring userGroup: group name
+        :param str userDN: user DN
+        :param str userGroup: group name
         :param boolean persistent: enable persistent flag
 
         :return: S_OK()/S_ERROR()
@@ -1009,11 +1009,11 @@ class ProxyDB(DB):
   def logAction(self, action, issuerUsername, issuerGroup, targetUsername, targetGroup):
     """ Add an action to the log
 
-        :param basestring action: proxy action
-        :param basestring issuerUsername: user DN of issuer
-        :param basestring issuerGroup: DIRAC group of issuer
-        :param basestring targetUsername: user DN of target
-        :param basestring targetGroup: DIRAC group of target
+        :param str action: proxy action
+        :param str issuerUsername: user DN of issuer
+        :param str issuerGroup: DIRAC group of issuer
+        :param str targetUsername: user DN of target
+        :param str targetGroup: DIRAC group of target
 
         :return: S_ERROR()
     """
@@ -1086,8 +1086,8 @@ class ProxyDB(DB):
   def generateToken(self, requesterUsername, requesterGroup, numUses=1, lifeTime=0, retries=10):
     """ Generate and return a token and the number of uses for the token
 
-        :param basestring requesterUsername: DN of requester
-        :param basestring requesterGroup: DIRAC group of requester
+        :param str requesterUsername: DN of requester
+        :param str requesterGroup: DIRAC group of requester
         :param int numUses: number of uses
         :param int lifeTime: proxy live time in a seconds
         :param int retries: number of retries
@@ -1130,9 +1130,9 @@ class ProxyDB(DB):
   def useToken(self, token, requesterUsername, requesterGroup):
     """ Uses of token count
 
-        :param basestring token: token
-        :param basestring requesterUsername: user name of requester
-        :param basestring requesterGroup: DIRAC group of requester
+        :param str token: token
+        :param str requesterUsername: user name of requester
+        :param str requesterGroup: DIRAC group of requester
 
         :return: S_OK(boolean)/S_ERROR()
     """
@@ -1221,8 +1221,8 @@ class ProxyDB(DB):
   def _notifyProxyAboutToExpire(self, userDN, userGroup, lTime):
     """ Send notification mail about to expire
 
-        :param basestring userDN: user DN
-        :param basestring userGroup: DIRAC group
+        :param str userDN: user DN
+        :param str userGroup: DIRAC group
         :param int lTime: left proxy live time in a seconds
 
         :return: boolean

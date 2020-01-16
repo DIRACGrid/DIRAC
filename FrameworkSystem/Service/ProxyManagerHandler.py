@@ -19,6 +19,7 @@ from DIRAC.Core.Security.VOMSService import VOMSService
 from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
+from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 
@@ -281,15 +282,25 @@ class ProxyManagerHandler(RequestHandler):
       return self.__proxyDB.getUsers(validSecondsRequired, userMask=credDict['username'])
     return self.__proxyDB.getUsers(validSecondsRequired)
 
-  def __checkProperties(self, requestedUsername, requestedUserGroup):
+  def __checkProperties(self, requestedUsername, requestedUserGroup, credDict, personal):
     """ Check the properties and return if they can only download limited proxies if authorized
 
-        :param basestring requestedUsername: user name
-        :param basestring requestedUserGroup: DIRAC group
+        :param str requestedUsername: user name
+        :param str requestedUserGroup: DIRAC group
+        :param dict credDict: remote credentials
+        :param bool personal: get personal proxy
 
-        :return: S_OK(boolean)/S_ERROR()
+        :return: S_OK(bool)/S_ERROR()
     """
-    credDict = self.getRemoteCredentials()
+    if personal:
+      csSection = PathFinder.getServiceSection('Framework/Notification')
+      if user != credDict['username'] or userGroup != credDict['group']:
+        return S_ERROR("You can't get %s@%s proxy!" % (credDict['username'], credDict['group']))
+      elif not gConfig.getValue('%s/downloadablePersonalProxy' % csSection, False):
+        return S_ERROR("You can't get proxy, configuration settings not allow to do that.")
+      else:
+        return S_OK(False)
+
     if Properties.FULL_DELEGATION in credDict['properties']:
       return S_OK(False)
     if Properties.LIMITED_DELEGATION in credDict['properties']:
@@ -342,21 +353,15 @@ class ProxyManagerHandler(RequestHandler):
       if not result['Value']:
         return S_ERROR("Proxy token is invalid")
 
-    if personal:
-      # For personal proxy
-      if user != credDict['username'] or userGroup != credDict['group']:
-        return S_ERROR("You can't get %s@%s proxy!" % (credDict['username'], credDict['group']))
-      forceLimited = False
-    else:
-      result = self.__checkProperties(user, userGroup)
-      if not result['OK']:
-        return result
-      forceLimited = True if token else result['Value']
+    result = self.__checkProperties(user, userGroup, credDict, personal)
+    if not result['OK']:
+      return result
+    forceLimited = True if token else result['Value']
 
     log = "download %sproxy%s" % ('VOMS ' if vomsAttribute else '', 'with token' if token else '')
     self.__proxyDB.logAction(log, credDict['username'], credDict['group'], user, userGroup)
 
-    retVal = self.__proxyDB.getProxy(user, userGroup, requiredLifeTime=requiredLifetime, voms=bool(vomsAttribute))
+    retVal = self.__proxyDB.getProxy(user, userGroup, requiredLifeTime=requiredLifetime, voms=vomsAttribute)
     if not retVal['OK']:
       return retVal
     chain, secsLeft = retVal['Value']
@@ -372,7 +377,7 @@ class ProxyManagerHandler(RequestHandler):
 
         :param basestring user: user name
         :param basestring userGroup: DIRAC group
-        :param boolean persistentFlag: if proxy persistent
+        :param bool persistentFlag: if proxy persistent
 
         :return: S_OK()/S_ERROR()
     """
