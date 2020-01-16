@@ -1,6 +1,6 @@
 # This workflow runs every 24 hours for the following purpose:
 #
-# - Create + upload *integration* tarball
+# - Create + upload *integration* + *master* tarball
 #
 # All created images are then uploaded to GitHub packages
 
@@ -25,6 +25,26 @@ jobs:
 	  docker pull docker.pkg.github.com/diracgrid/management/dirac-distribution:latest
 	  docker run docker.pkg.github.com/diracgrid/management/dirac-distribution:latest bash -c \
 	  "python3 dirac-distribution.py -r integration | tail -n 1  > /tmp/deploy.sh && "\
+	  "sed -i 's/lhcbprod/${{ secrets.KRB_USERNAME }}/g' /tmp/deploy.sh && "\
+	  "cat /tmp/deploy.sh && "\
+	  "echo ${{ secrets.KRB_PASSWORD }} | kinit ${{ secrets.KRB_USERNAME }}@CERN.CH && "\
+	  "echo readyToUpload && "\
+	  "export USER=${{ secrets.KRB_USERNAME }} && "\
+	  "echo reallyReadyToUpload && "\
+	  "source /tmp/deploy.sh"
+
+  dirac-distribution-master:
+    runs-on: ubuntu-latest
+    if: github.repository == 'DIRACGrid/DIRAC'
+    steps:
+      - uses: actions/checkout@v1
+      - name: login
+	run: echo ${{ secrets.GITHUB_TOKEN }} | docker login docker.pkg.github.com --username ${{ github.actor }} --password-stdin
+      - name: create
+	run: |
+	  docker pull docker.pkg.github.com/diracgrid/management/dirac-distribution:latest
+	  docker run docker.pkg.github.com/diracgrid/management/dirac-distribution:latest bash -c \
+	  "python3 dirac-distribution.py -r master | tail -n 1  > /tmp/deploy.sh && "\
 	  "sed -i 's/lhcbprod/${{ secrets.KRB_USERNAME }}/g' /tmp/deploy.sh && "\
 	  "cat /tmp/deploy.sh && "\
 	  "echo ${{ secrets.KRB_PASSWORD }} | kinit ${{ secrets.KRB_USERNAME }}@CERN.CH && "\
