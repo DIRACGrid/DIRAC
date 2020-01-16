@@ -354,9 +354,18 @@ def getVOs():
       :return: S_OK(list)/S_ERROR()
   """
   voName = getVO()
-  if voName:
-    return S_OK([voName])
-  return gConfig.getSections('%s/VO' % gBaseRegistrySection)
+  return S_OK([voName]) if voName else gConfig.getSections('%s/VO' % gBaseRegistrySection)
+
+def getVOsWithVOMS():
+  """ Get all the configured VOMS VOs
+
+      :return: S_OK(list)/S_ERROR()
+  """
+  vos = []
+  for vo in getVOs():
+    if getVOOption(vo, 'VOMSName'):
+      vos.append(vo)
+  return vos
 
 def getVOMSServerInfo(requestedVO=''):
   """ Get information on VOMS servers for the given VO or for all of them
@@ -692,7 +701,7 @@ def getGroupsForDN(userDN, researchedGroup=None):
   vomsInfo = result['Value'] if result['OK'] else {}
 
   groups = []
-  vomsRoles = userDN in vomsInfo and vomsInfo[userDN].get('VOMSRoles') or []
+  vomsRoles = vomsInfo[userDN].get('VOMSRoles') if userDN in vomsInfo else []
   for vomsRole in vomsRoles:
     groups += getGroupsWithVOMSAttribute(vomsRole)
     if researchedGroup in groups:
