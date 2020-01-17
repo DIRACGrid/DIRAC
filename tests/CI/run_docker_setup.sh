@@ -44,6 +44,7 @@ function prepareEnvironment() {
   cp ./CONFIG "${SERVERCONFIG}"
   {
     echo "export DIRACOSVER=${DIRACOSVER}"
+    echo "export DIRACOS_TARBALL_PATH=${DIRACOS_TARBALL_PATH}"
   } >> "${SERVERCONFIG}"
   if [[ -n $CI_PROJECT_DIR ]]; then
       echo "I guess we're in GitLab CI/CD or GitHub Actions, using local repository in branch ${CI_COMMIT_REF_NAME}"

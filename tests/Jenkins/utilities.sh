@@ -308,6 +308,7 @@ function installDIRAC(){
   cp "$TESTCODE/DIRAC/Core/scripts/dirac-install.py" "$CLIENTINSTALLDIR/dirac-install"
   chmod +x "$CLIENTINSTALLDIR/dirac-install"
 
+  export CLIENT_ALTERNATIVE_MODULES=${CLIENT_ALTERNATIVE_MODULES:-ALTERNATIVE_MODULES}
   if [ "$CLIENT_ALTERNATIVE_MODULES" ]; then
     echo "Installing from non-release code"
     if [[ -d "$CLIENT_ALTERNATIVE_MODULES" ]]; then
@@ -321,7 +322,13 @@ function installDIRAC(){
     INSTALLOPTIONS+=" --dirac-os --dirac-os-version=$DIRACOSVER "
   fi
 
-  if ! ./dirac-install -r $DIRAC_RELEASE -t client $INSTALLOPTIONS $DEBUG; then
+  if [ "$DIRACOS_TARBALL_PATH" ]; then
+    {
+      echo "DIRACOS = $DIRACOS_TARBALL_PATH"
+    } >> "$CLIENTINSTALLDIR/dirac-ci-install.cfg"
+  fi
+
+  if ! ./dirac-install -r $DIRAC_RELEASE -t client $INSTALLOPTIONS "$CLIENTINSTALLDIR/dirac-ci-install.cfg" $DEBUG; then
     echo 'ERROR: DIRAC client installation failed'
     exit 1
   fi
