@@ -2319,24 +2319,14 @@ def installDiracOS(releaseConfig):
 
   :param str releaseConfig: the version of the DIRAC OS
   """
-  tarsURL = None
-  if cliParams.diracOSVersion and cliParams.diracOSVersion.endswith('.tar.gz'):
-    logNOTICE('Using specified DIRACOS tarball from %s' % cliParams.diracOSVersion)
-    tarsURL = os.path.dirname(cliParams.diracOSVersion)
-    tarsFnSplit = os.path.basename(cliParams.diracOSVersion)[:-len('.tar.gz')].split('-')
-    if len(tarsFnSplit) < 2:
-      logERROR('DIRACOS tarball filename should be of the form %s-%s.tar.gz!')
-      sys.exit(1)
-    diracos = tarsFnSplit[0]
-    diracOSVersion = '-'.join(tarsFnSplit[1:])
-  else:
-    diracos, diracOSVersion = releaseConfig.getDiracOSVersion(cliParams.diracOSVersion)
+  diracos, diracOSVersion = releaseConfig.getDiracOSVersion(cliParams.diracOSVersion)
   if not diracOSVersion:
     logERROR("No diracos defined")
     return False
+  tarsURL = None
   if cliParams.installSource:
     tarsURL = cliParams.installSource
-  elif not tarsURL:
+  else:
     # if ":" is not present in diracos name, we take the diracos tarball from vanilla DIRAC location
     if diracos.lower() == 'diracos':
       retVal = releaseConfig.getDiracOsLocation(diracosDefault=True)
