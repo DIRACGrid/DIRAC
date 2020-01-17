@@ -666,26 +666,34 @@ class ReleaseConfig(object):
     self.loadedCfgs.append(basePath)
     return S_OK(self.globalDefaults.getChild(basePath))
 
-  def loadInstallationLocalDefaults(self, fileName):
+  def loadInstallationLocalDefaults(self, args):
     """
     Load the configuration file from a file
 
-    :param str fileName: the configuration file name
+    :param str args: the arguments in which to look for configuration filenames
     """
-    try:
-      fd = open(fileName, "r")
-      # TODO: Merge with installation CFG
-      cfg = ReleaseConfig.CFG().parse(fd.read())
-      fd.close()
-    except Exception as excp:
-      return S_ERROR("Could not load %s: %s" % (fileName, excp))
-    self.globalDefaults.update("Installations/%s" % self.instName, cfg)
-    self.globalDefaults.update("Projects/%s" % self.instName, cfg)
-    if self.projectName:
-      # we have an extension and have a local cfg file
-      self.globalDefaults.update("Projects/%s" % self.projectName, cfg)
+    # at the end we load the local configuration and merge with the global cfg
+    for arg in args:
+      if len(arg) > 4 and arg.find(".cfg") == len(arg) - 4 and ':::' not in arg:
+        fileName = arg
 
-    return S_OK()
+      logNOTICE("Defaults for LocalInstallation are in %s" % fileName)
+      try:
+        fd = open(fileName, "r")
+        # TODO: Merge with installation CFG
+        cfg = ReleaseConfig.CFG().parse(fd.read())
+        fd.close()
+      except Exception as excp:
+        logERROR("Could not load %s: %s" % (fileName, excp))
+        continue
+
+      self.globalDefaults.update("Installations/%s" % self.instName, cfg)
+      self.globalDefaults.update("Projects/%s" % self.instName, cfg)
+      if self.projectName:
+        # we have an extension and have a local cfg file
+        self.globalDefaults.update("Projects/%s" % self.projectName, cfg)
+
+      logNOTICE("Loaded %s" % arg)
 
   def getModuleVersionFromLocalCfg(self, moduleName):
     """
@@ -750,11 +758,11 @@ class ReleaseConfig(object):
     keysToConsider = []
     if not useVanillaDiracOS:
       keysToConsider += [
-        "Projects/%s/LocalInstallation/DIRACOS" % self.projectName,
+        "Installations/%s/DIRACOS" % self.projectName,
         "Projects/%s/DIRACOS" % self.projectName,
       ]
     keysToConsider += [
-      "Projects/DIRAC/LocalInstallation/DIRACOS",
+      "Installations/DIRAC/DIRACOS",
       "Projects/DIRAC/DIRACOS",
     ]
 
@@ -1739,14 +1747,7 @@ def loadConfiguration():
   if not result['OK']:
     logERROR("Could not load defaults: %s" % result['Message'])
 
-  # at the end we load the local configuration and merge with the global cfg
-  for arg in args:
-    if len(arg) > 4 and arg.find(".cfg") == len(arg) - 4 and ':::' not in arg:
-      result = releaseConfig.loadInstallationLocalDefaults(arg)
-      if not result['OK']:
-        logERROR(result['Message'])
-      else:
-        logNOTICE("Loaded %s" % arg)
+  releaseConfig.loadInstallationLocalDefaults(args)
 
   for opName in ('release', 'externalsType', 'installType', 'pythonVersion',
                  'buildExternals', 'noAutoBuild', 'debug', 'globalDefaults',
@@ -1863,6 +1864,9 @@ def loadConfiguration():
 
   if not releaseConfig.isProjectLoaded("DIRAC"):
     return S_ERROR("DIRAC is not depended by this installation. Aborting")
+
+  # Reload the local configuration to ensure it takes prescience
+  releaseConfig.loadInstallationLocalDefaults(args)
 
   return S_OK(releaseConfig)
 
