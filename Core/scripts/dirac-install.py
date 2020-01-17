@@ -132,7 +132,7 @@ You can use install.cfg configuration file::
 
 """
 
-from __future__ import absolute_import, division, print_function
+from __future__ import unicode_literals, absolute_import, division, print_function
 
 import sys
 import os
@@ -744,10 +744,8 @@ class ReleaseConfig(object):
   def getDiracOsLocation(self, project=None, diracosDefault=False):
     """
     Returns the location of the DIRAC os binary for a given project for example: LHCb or DIRAC, etc...
-
     :param str project: the name of the project
     :param bool diracosDefault: flag to take diracos distribution from the default location
-
     :return: the location of the tar balls
     """
     if project is None:
@@ -2293,7 +2291,7 @@ def writeDefaultConfiguration():
   # Keep the default configuration file in the working directory
   filePath = "defaults-%s.cfg" % cliParams.installation
   try:
-    fd = open(filePath, "wb")
+    fd = open(filePath, "w")
     fd.write(instCFG.toString())
     fd.close()
   except Exception as excp:
