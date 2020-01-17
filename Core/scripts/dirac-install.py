@@ -758,12 +758,12 @@ class ReleaseConfig(object):
     keysToConsider = []
     if not useVanillaDiracOS:
       keysToConsider += [
-        "Installations/%s/DIRACOS" % self.projectName,
-        "Projects/%s/DIRACOS" % self.projectName,
+          "Installations/%s/DIRACOS" % self.projectName,
+          "Projects/%s/DIRACOS" % self.projectName,
       ]
     keysToConsider += [
-      "Installations/DIRAC/DIRACOS",
-      "Projects/DIRAC/DIRACOS",
+        "Installations/DIRAC/DIRACOS",
+        "Projects/DIRAC/DIRACOS",
     ]
 
     for key in keysToConsider:
