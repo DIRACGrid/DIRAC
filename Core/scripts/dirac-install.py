@@ -741,24 +741,28 @@ class ReleaseConfig(object):
       return S_OK(sourceUrl)
     return S_ERROR("Don't know how to find the installation tarballs for project %s" % project)
 
-  def getDiracOsLocation(self, project=None, diracosDefault=False):
+  def getDiracOsLocation(self, useVanillaDiracOS=False):
     """
     Returns the location of the DIRAC os binary for a given project for example: LHCb or DIRAC, etc...
-    :param str project: the name of the project
-    :param bool diracosDefault: flag to take diracos distribution from the default location
+    :param bool useVanillaDiracOS: flag to take diracos distribution from the default location
     :return: the location of the tar balls
     """
-    if project is None:
-      project = 'DIRAC'
+    keysToConsider = []
+    if not useVanillaDiracOS:
+      keysToConsider += [
+        "Projects/%s/LocalInstallation/DIRACOS" % self.projectName,
+        "Projects/%s/DIRACOS" % self.projectName,
+      ]
+    keysToConsider += [
+      "Projects/DIRAC/LocalInstallation/DIRACOS",
+      "Projects/DIRAC/DIRACOS",
+    ]
 
-    diracOsLoc = "Projects/%s/DIRACOS" % self.projectName
-    if not diracosDefault and self.globalDefaults.isOption(diracOsLoc):
-      # use from the VO specific configuration file
-      location = self.globalDefaults.get(diracOsLoc, "")
-    else:
-      # use the default OS, provided by DIRAC
-      location = self.globalDefaults.get("Projects/%s/DIRACOS" % project, "")
-    return S_OK(location)
+    for key in keysToConsider:
+      location = self.globalDefaults.get(key, "")
+      if location:
+        logDEBUG("Using DIRACOS tarball URL from configuration key %s" % key)
+        return location
 
   def getUploadCommand(self, project=None):
     """
@@ -1429,7 +1433,7 @@ def downloadAndExtractTarball(tarsURL, pkgName, pkgVer, checkHash=True, cache=Fa
         retVal = checkoutFromGit(pkgName, tarsURL, pkgVer)
         if not retVal['OK']:
           logERROR("Cannot download %s" % tarName)
-          logERROR("Cannot download %s" % retVal['Value'])
+          logERROR("Cannot download %s" % retVal['Message'])
           return False
         else:
           isSource = True
@@ -2323,23 +2327,9 @@ def installDiracOS(releaseConfig):
   if not diracOSVersion:
     logERROR("No diracos defined")
     return False
-  tarsURL = None
-  if cliParams.installSource:
-    tarsURL = cliParams.installSource
-  else:
-    # if ":" is not present in diracos name, we take the diracos tarball from vanilla DIRAC location
-    if diracos.lower() == 'diracos':
-      retVal = releaseConfig.getDiracOsLocation(diracosDefault=True)
-      if retVal['OK']:
-        tarsURL = retVal['Value']
-      else:
-        logERROR(retVal['Message'])
-    else:
-      retVal = releaseConfig.getDiracOsLocation()
-      if retVal['OK']:
-        tarsURL = retVal['Value']
-      else:
-        logERROR(retVal['Message'])
+  tarsURL = cliParams.installSource
+  if not tarsURL:
+    tarsURL = releaseConfig.getDiracOsLocation(useVanillaDiracOS=(diracos.lower() == 'diracos'))
   if not tarsURL:
     tarsURL = releaseConfig.getTarsLocation('DIRAC')['Value']
     logWARN("DIRACOS location is not specified using %s" % tarsURL)
