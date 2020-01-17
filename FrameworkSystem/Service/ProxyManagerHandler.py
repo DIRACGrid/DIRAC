@@ -139,6 +139,7 @@ class ProxyManagerHandler(RequestHandler):
     gThreadScheduler.addPeriodicTask(900, cls.__proxyDB.purgeExpiredRequests, elapsedTime=900)
     gThreadScheduler.addPeriodicTask(21600, cls.__proxyDB.purgeLogs)
     gThreadScheduler.addPeriodicTask(3600, cls.__proxyDB.purgeExpiredProxies)
+    gThreadScheduler.addPeriodicTask(3600, cls.__proxyDB.refreshCache)
     gThreadScheduler.addPeriodicTask(3600 * 24, cls.__refreshVOMSesUsersCache)
     gLogger.info("MyProxy: %s\n MyProxy Server: %s" % (useMyProxy, cls.__proxyDB.getMyProxyServer()))
     return cls.__refreshVOMSesUsersCache()
@@ -168,7 +169,7 @@ class ProxyManagerHandler(RequestHandler):
     """
     proxiesInfo = {}
     credDict = self.getRemoteCredentials()
-    result = self.__proxyDB.getProxiesContent(credDict['username'])
+    result = self.__proxyDB.getProxiesContent({'UserName': credDict['username']})
     if not result['OK']:
       return result
     contents = result['Value']
@@ -423,28 +424,30 @@ class ProxyManagerHandler(RequestHandler):
     self.__proxyDB.logAction("delete proxy", credDict['username'], credDict['group'], username, userGroup)
     return S_OK()
 
-  # WARN: Last two arguments for compatability
-  types_getContents = []
+  types_getContents = [dict, (list, tuple), six.integer_types, six.integer_types]
 
-  def export_getContents(self, user=None, group=None, start=None, end=None):
+  def export_getContents(self, selDict, userNameAndGroup, start=0, limit=0):
     """ Retrieve the contents of the DB
 
-        :param str user: user name
-        :param str group: group name
+        :param dict selDict: selection fields
+        :param str userNameAndGroup: user name
+        :param int start: search limit start
+        :param int start: search limit amount
 
         :return: S_OK(dict)/S_ERROR() -- dict contain fields, record list, total records
     """
     credDict = self.getRemoteCredentials()
 
-    # WARN: Next block for compatability
-    if isinstance(user, dict):
-      if Properties.PROXY_MANAGEMENT not in credDict['properties']:
-        user['UserName'] = credDict['username']
-      return self.__proxyDB.getProxiesContentOld(user, group)
+    if len(userNameAndGroup) == 2:
+      user, group = userNameAndGroup
+      if user and isinstance(user, str):
+        selDict['UserName'] = user
+      if group and isinstance(group, str):
+        selDict['UserGroup'] = group
 
     if Properties.PROXY_MANAGEMENT not in credDict['properties']:
-      user = credDict['username']
-    return self.__proxyDB.getProxiesContent(user, group)
+      selDict['UserName'] = credDict['username']
+    return self.__proxyDB.getProxiesContent(selDict, start=start, limit=limit)
 
   types_getLogContents = [dict, (list, tuple), six.integer_types, six.integer_types]
 

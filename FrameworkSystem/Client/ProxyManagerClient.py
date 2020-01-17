@@ -545,15 +545,19 @@ class ProxyManagerClient(object):
     """
     return VOMS().getVOMSAttributes(chain)
 
-  def getUploadedProxiesDetails(self, user=None, group=None):
+  def getUploadedProxiesDetails(self, user=None, group=None, sqlDict={}, start=0, limit=0):
     """ Get the details about an uploaded proxy
 
         :param str user: user name
         :param str group: group name
+        :param dict selDict: selection fields
+        :param int start: search limit start
+        :param int start: search limit amount
 
         :return: S_OK(dict)/S_ERROR() -- dict contain fields, record list, total records
     """
-    return RPCClient("Framework/ProxyManager", timeout=120).getContents(user, group)
+    rpcClient = RPCClient("Framework/ProxyManager", timeout=120)
+    return rpcClient.getContents(sqlDict, (user, group), start, limit)
   
   def getUploadedProxyLifeTime(self, user, group):
     """ Get the remaining seconds for an uploaded proxy

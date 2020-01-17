@@ -14,6 +14,7 @@ import commands
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities import DErrno
+from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.Security import Properties
 from DIRAC.Core.Security.VOMS import VOMS
@@ -27,8 +28,20 @@ from DIRAC.Resources.ProxyProvider.ProxyProviderFactory import ProxyProviderFact
 
 
 class ProxyDB(DB):
+  """ Proxy database
+
+      Contain __DBContentMapping cache with next structure:
+      {
+        <DN1>: {'user': <user name>,
+                'groups': <list of groups>,
+                'provider': <proxy provider name>},
+        <DN2>: { ... },
+        ...
+      }
+  """
 
   NOTIFICATION_TIMES = [2592000, 1296000]
+  __DBContentMapping = DictCache()
 
   def __init__(self,
                useMyProxy=False):
@@ -46,6 +59,31 @@ class ProxyDB(DB):
       raise Exception("Can't create tables: %s" % retVal['Message'])
     self.purgeExpiredProxies(sendNotifications=False)
     self.__checkDBVersion()
+
+  def refreshCache(self):
+    """ Refresh cache
+    """
+    DNs = []
+    for table in ['ProxyDB_CleanProxies', 'ProxyDB_Proxies']:
+      result = self._query("SELECT DISTINCT UserDN FROM `%s`" % tableName)
+      if result['OK']:
+        DNs = list(set(DNs + list(result['Value'])))
+      else:
+        gLogger.error(result['Message'])
+    for userDN in DNs:
+      mapDict = {}
+      result = Registry.getUsernameForDN(userDN)
+      if result['OK']:
+        mapDict['user'] = result['Value']
+        result = Registry.getGroupsForDN(userDN)
+        if result['OK']:
+          mapDict['groups'] = result['Value']
+          result = Registry.getProxyProviderForDN(userDN)
+          if result['OK']:
+            mapDict['provider'] = result['Value']
+            cls.__DBContentMapping.add(userDN, 3600 * 24, mapDict)
+      if not result['OK']:
+        gLogger.error('Cannot create DB cache:', result['Message'])
 
   def getMyProxyServer(self):
     """ Get MyProxy server from configuration
@@ -380,7 +418,6 @@ class ProxyDB(DB):
 
         :param str userDN: user DN from proxy
         :param X509Chain() chain: proxy chain
-        :param str proxyProvider: proxy provider name
 
         :return: S_OK()/S_ERROR()
     """
@@ -586,7 +623,6 @@ class ProxyDB(DB):
         :param str userDN: user DN
         :param str userGroup: requested DIRAC group
         :param str vomsAttr: VOMS name
-        :param str proxyProvider: proxy provider name
 
         :return: S_OK(tuple)/S_ERROR() -- tuple contain proxy as string and remaining seconds
     """
@@ -814,51 +850,16 @@ class ProxyDB(DB):
 
         :return: S_OK(list)/S_ERROR() -- list contain dicts with DN, group, expiration time
     """
-    data = []
     sqlCond = []
     if validSecondsLeft:
       try:
         validSecondsLeft = int(validSecondsLeft)
       except ValueError:
         return S_ERROR("Seconds left has to be an integer")
-      sqlCond.append("TIMESTAMPDIFF( SECOND, UTC_TIMESTAMP(), ExpirationTime ) > %d" % validSecondsLeft)
+      sqlCond.append("TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), ExpirationTime) > %d" % validSecondsLeft)
 
-    if userMask:
-      result = Registry.getDNsForUsername(userMask)
-      if not result['OK']:
-        return result
-      sqlCond.append('UserDN IN ("%s")' % '", "'.join(result['Value']))
-
-    for table, fields in [('ProxyDB_CleanProxies', ("UserDN", "ExpirationTime")),
-                          ('ProxyDB_Proxies', ("UserDN", "UserGroup", "ExpirationTime", "PersistentFlag"))]:
-      cmd = "SELECT %s FROM `%s`" % (", ".join(fields), table)
-      if sqlCond:
-        cmd += " WHERE %s" % " AND ".join(sqlCond)
-      retVal = self._query(cmd)
-      if not retVal['OK']:
-        return retVal
-      for record in retVal['Value']:
-        record = list(record)
-        if table == 'ProxyDB_CleanProxies':
-          record.insert(1, '')
-          record.insert(3, False)
-        result = Registry.getUsernameForDN(record[0])
-        if not result['OK']:
-          gLogger.error("Stored proxy %s has no owner:" % record[0], result['Message'])
-          continue
-        user = result['Value']
-        result = Registry.getGroupsForDN(record[0])
-        if not result['OK']:
-          gLogger.error("Stored proxy %s has no groups:" % record[0], result['Message'])
-          continue
-        groups = result['Value']
-        data.append({'DN': record[0],
-                     'user': user,
-                     'group': record[1],  # for compatibility with -v7r0
-                     'groups': groups,
-                     'expirationtime': record[2],
-                     'persistent': record[3] == 'True'})
-    return S_OK(data)
+    result = self.getProxiesContent({'UserName': userMask} if userMask else {}, sqlCond)
+    return S_OK(result['Value']['Dictionaries']) if result['OK'] else result
 
   def getCredentialsAboutToExpire(self, requiredSecondsLeft, onlyPersistent=True):
     """ Get credentials about to expire for MyProxy
@@ -923,77 +924,59 @@ class ProxyDB(DB):
     if not retVal['OK']:
       return retVal
     return S_OK()
-  
-  def getProxiesContent(self, user=None, group=None):
-    """ Get the contents of the db for user/group
 
-        :param str user: user name
-        :param str group: group name
-
-        :return: S_OK(dict)/S_ERROR() -- dict contain fields, record list, total records
-    """
-    where = "WHERE Pem is not NULL"
-    if group and user:
-      result = Registry.getDNForUsernameInGroup(user, group)
-      if not result['OK']:
-        return result
-      where += " AND UserDN in (%s)" % self._escapeString(str(result['Value']))['Value']
-    elif user:
-      result = Registry.getDNsForUsername(user)
-      if not result['OK']:
-        return result
-      where += " AND UserDN in (%s)" % ", ".join([self._escapeString(str(v))['Value'] for v in result['Value']])
-    elif group:
-      result = Registry.getUsersInGroup(group)
-      if not result['OK']:
-        return result
-      for user in result['Value']:
-        result = Registry.getDNsForUsername(user)
-        if not result['OK']:
-          return result
-        where += " AND UserDN in (%s)" % ", ".join([self._escapeString(str(v))['Value'] for v in result['Value']])
-
-    data = []
-    for table, fields in [('ProxyDB_CleanProxies', ("UserDN", "ExpirationTime")),
-                          ('ProxyDB_Proxies', ("UserDN", "UserGroup", "ExpirationTime", "PersistentFlag"))]:
-      result = self._query("SELECT %s FROM `%s` %s ORDER BY UserDN DESC" % (", ".join(fields), table, where))
-      if not result['OK']:
-        return result
-      for record in result['Value']:
-        record = list(record)
-        if table == 'ProxyDB_CleanProxies':
-          record.insert(1, '')
-          record.insert(3, False)
-        record[3] = record[3] == 'True'
-        result = Registry.getUsernameForDN(record[0])
-        if not result['OK']:
-          self.log.error(result['Message'])
-          continue
-        record.insert(0, result['Value'])
-        data.append(record)
-    totalRecords = len(data)
-    return S_OK({'ParameterNames': fields, 'Records': data, 'TotalRecords': totalRecords})
-
-  def getProxiesContentOld(self, selDict, sortList, start=0, limit=0):
+  def getProxiesContent(self, selDict, sqlCond=None, start=0, limit=0):
     """ Get the contents of the db, parameters are a filter to the db
 
         :param dict selDict: selection dict that contain fields and their posible values
-        :param dict sortList: dict with sorting fields
-        :param int,long start: search limit start
-        :param int,long start: search limit amount
+        :param int start: search limit start
+        :param int start: search limit amount
 
         :return: S_OK(dict)/S_ERROR() -- dict contain fields, record list, total records
     """
-    if "UserName" in selDict:
-      if not selDict.get("UserDN"):
-        selDict["UserDN"] = []
-      for username in selDict["UserName"]:
-        result = Registry.getDNsForUsername(username)
-        if result['OK']:
-          selDict["UserDN"] += result['Value']
+    if 'UserName' in selDict:
+      users = selDict['UserName']
+      if not isinstance(users, (list, tuple)):
+        users = [users]
       del selDict["UserName"]
-    data = []
-    sqlWhere = ["Pem is not NULL"]
+    if 'UserGroup' in selDict:
+      groups = selDict['UserGroup']
+      if not isinstance(groups, (list, tuple)):
+        groups = [groups]
+      del selDict["UserGroup"]
+
+    DNs = []
+    if groups and users:
+      for user in users:
+        for group in groups:
+          result = Registry.getDNForUsernameInGroup(user, group)
+          if result['OK']:
+            DNs.append(result['Value'])
+    elif users:
+      for user in users:
+        result = Registry.getDNsForUsername(user)
+        if result['OK']:
+          DNs += result['Value']
+    elif groups:
+      for group in groups:
+        result = Registry.getUsersInGroup(group)
+        if result['OK']:
+          for user in result['Value']:
+            result = Registry.getDNsForUsername(user)
+            if result['OK']:
+              DNs += result['Value']
+    
+    if DNs:
+      if "UserDN" in selDict:
+        if not isinstance(selDict["UserDN"], (list, tuple)):
+          selDict["UserDN"] = [selDict["UserDN"]]
+        selDict["UserDN"] += DNs
+      else:
+        selDict["UserDN"] = DNs
+
+    mapDict = self.__DBContentMapping.getDict()
+
+    sqlWhere = ["Pem is not NULL"] + sqlCond if isinstance(sqlCond, (list, tuple)) else [sqlCond or '']
     for table, fields in [('ProxyDB_CleanProxies', ("UserDN", "ExpirationTime")),
                           ('ProxyDB_Proxies', ("UserDN", "UserGroup", "ExpirationTime", "PersistentFlag"))]:
       cmd = "SELECT %s FROM `%s`" % (", ".join(fields), table)
@@ -1007,26 +990,8 @@ class ProxyDB(DB):
                             (field, ", ".join([self._escapeString(str(value))['Value'] for value in fVal])))
         else:
           sqlWhere.append("%s = %s" % (field, self._escapeString(str(fVal))['Value']))
-      sqlOrder = []
-      if sortList:
-        for sort in sortList:
-          if len(sort) == 1:
-            sort = (sort, "DESC")
-          elif len(sort) > 2:
-            return S_ERROR("Invalid sort %s" % sort)
-          if sort[0] not in fields:
-            if sort[0] == 'UserName':
-              continue
-            if table == 'ProxyDB_CleanProxies' and sort[0] in ['UserGroup', 'PersistentFlag']:
-              continue
-            return S_ERROR("Invalid sorting field %s" % sort[0])
-          if sort[1].upper() not in ("ASC", "DESC"):
-            return S_ERROR("Invalid sorting order %s" % sort[1])
-          sqlOrder.append("%s %s" % (sort[0], sort[1]))
-      if sqlWhere:
-        cmd = "%s WHERE %s" % (cmd, " AND ".join(sqlWhere))
-      if sqlOrder:
-        cmd = "%s ORDER BY %s" % (cmd, ", ".join(sqlOrder))
+
+      cmd = "%s WHERE %s" % (cmd, " AND ".join(sqlWhere))
       if limit:
         try:
           start = int(start)
@@ -1034,23 +999,53 @@ class ProxyDB(DB):
         except ValueError:
           return S_ERROR("start and limit have to be integers")
         cmd += " LIMIT %d,%d" % (start, limit)
-      retVal = self._query(cmd)
+      retVal = self._query(cmd + " ORDER BY UserDN DESC")
       if not retVal['OK']:
         return retVal
+
+      dataDict = []
+      dataRecords = []
       for record in retVal['Value']:
         record = list(record)
         if table == 'ProxyDB_CleanProxies':
           record.insert(1, '')
           record.insert(3, False)
+        user = mapDict[record[0]].get('user') if mapDict[record[0]] else None
+        if not user:
+          result = Registry.getUsernameForDN(record[0])
+          if not result['OK']:
+            gLogger.error("Cannot get owner %s:" % record[0], result['Message'])
+            continue
+          user = result['Value']
+        groups = mapDict[record[0]].get('groups') if mapDict[record[0]] else None
+        if not groups:
+          result = Registry.getGroupsForDN(record[0])
+          if not result['OK']:
+            gLogger.error("Cannot get groups for %s:" % record[0], result['Message'])
+            continue
+          groups = result['Value']
+        provider = mapDict[record[0]].get('provider') if mapDict[record[0]] else None
+        if not provider:
+          result = Registry.getGroupsForDN(record[0])
+          if not result['OK']:
+            gLogger.error("Cannot get provider for %s:" % record[0], result['Message'])
+            continue
+          provider = result['Value']
+
         record[3] = record[3] == 'True'
-        result = Registry.getUsernameForDN(record[0])
-        if not result['OK']:
-          self.log.error(result['Message'])
-          continue
-        record.insert(0, result['Value'])
-        data.append(record)
-    totalRecords = len(data)
-    return S_OK({'ParameterNames': fields, 'Records': data, 'TotalRecords': totalRecords})
+        dataDict.append({'DN': record[0],
+                         'user': user,
+                         'groups': [record[1]] if record[1] else groups,
+                         'expirationtime': record[2],
+                         'persistent': record[3],
+                         'provider': provider})
+
+        record.insert(0, user)
+        record.append(provider)
+        dataRecords.append(record)
+    fields = ("UserName", "UserDN", "UserGroup", "ExpirationTime", "PersistentFlag", "ProxyProvider")
+    return S_OK({'ParameterNames': fields, 'Records': dataRecords, 'TotalRecords': len(dataRecords),
+                 'Dictionaries': dataDict})
 
   def logAction(self, action, issuerUsername, issuerGroup, targetUsername, targetGroup):
     """ Add an action to the log

@@ -364,7 +364,7 @@ class testDB(ProxyDBTestCase):
     """ Testing get, store proxy
     """
     gLogger.info('\n* Check that DB is clean..')
-    result = db.getProxiesContent({'UserName': ['user_ca', 'user_1', 'user_2', 'user_3']}, {})
+    result = db.getProxiesContent({'UserName': ['user_ca', 'user_1', 'user_2', 'user_3']})
     self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
     self.assertTrue(bool(int(result['Value']['TotalRecords']) == 0), 'In DB present proxies.')
 
@@ -376,20 +376,20 @@ class testDB(ProxyDBTestCase):
     result = db._update(cmd)
     self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
     # Try to no correct getProxy requests
-    for dn, group, reqtime, log in [('/C=DN/O=DIRAC/CN=user_1', 'group_1', 9999,
-                                     'No proxy provider, set request time, not valid proxy in ProxyDB_Proxies'),
-                                    ('/C=DN/O=DIRAC/CN=user_1', 'group_1', 0,
-                                     'Not valid proxy in ProxyDB_Proxies'),
-                                    ('/C=DN/O=DIRAC/CN=no_user', 'no_valid_group', 0,
-                                     'User no exist, proxy not in DB tables'),
-                                    ('/C=DN/O=DIRAC/CN=user_1', 'no_valid_group', 0,
-                                     'Group not valid, proxy not in DB tables'),
-                                    ('/C=DN/O=DIRAC/CN=user_1', 'group_1', 0,
-                                     'No proxy provider for user, proxy not in DB tables'),
-                                    ('/C=DN/O=DIRAC/CN=user_4', 'group_2', 0,
-                                     'Group has option enableToDownload = False in CS')]:
+    for dn, group, reqtime, voms, log in [('user_1', 'group_1', 9999, False,
+                                           'No proxy provider, set request time, not valid proxy in ProxyDB_Proxies'),
+                                          ('user_1', 'group_1', 0, False,
+                                           'Not valid proxy in ProxyDB_Proxies'),
+                                          ('no_user', 'no_valid_group', 0, False,
+                                           'User not exist, proxy not in DB tables'),
+                                          ('user_1', 'no_valid_group', 0, False,
+                                           'Group not valid, proxy not in DB tables'),
+                                          ('user_1', 'group_1', 0, False,
+                                           'No proxy provider for user, proxy not in DB tables'),
+                                          ('user_4', 'group_2', 0, False,
+                                           'Group has option enableToDownload = False in CS')]:
       gLogger.info('== > %s:' % log)
-      result = db.getProxy(dn, group, reqtime)
+      result = db.getProxy(dn, group, reqtime, voms)
       self.assertFalse(result['OK'], 'Must be fail.')
       gLogger.info('Msg: %s' % result['Message'])
     # In the last case method found proxy and must to delete it as not valid
@@ -397,17 +397,16 @@ class testDB(ProxyDBTestCase):
     self.assertTrue(bool(db._query(cmd)['Value'][0][0] == 0), "GetProxy method didn't delete proxy.")
 
     gLogger.info('* Check that DB is clean..')
-    result = db.getProxiesContent({'UserName': ['user_ca', 'user_1', 'user_2', 'user_3']}, {})
+    result = db.getProxiesContent({'UserName': ['user_ca', 'user_1', 'user_2', 'user_3']})
     self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
     self.assertTrue(bool(int(result['Value']['TotalRecords']) == 0), 'In DB present proxies.')
 
     gLogger.info('* Generate proxy on the fly..')
-    result = db.getProxy('/C=DN/O=DIRACCA/OU=None/CN=user_ca/emailAddress=user_ca@diracgrid.org',
-                         'group_1', 1800)
+    result = db.getProxy('user_ca', 'group_1', 1800)
     self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
 
     gLogger.info('* Check that ProxyDB_CleanProxy contain generated proxy..')
-    result = db.getProxiesContent({'UserName': 'user_ca'}, {})
+    result = db.getProxiesContent({'UserName': 'user_ca'})
     self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
     self.assertTrue(bool(int(result['Value']['TotalRecords']) == 1), 'Generated proxy must be one.')
     for table, count in [('ProxyDB_Proxies', 0), ('ProxyDB_CleanProxies', 1)]:
@@ -416,10 +415,9 @@ class testDB(ProxyDBTestCase):
                       '%s must %s' % (table, count and 'contain proxy' or 'be empty'))
 
     gLogger.info('* Check that DB is clean..')
-    result = db.deleteProxy('/C=DN/O=DIRACCA/OU=None/CN=user_ca/emailAddress=user_ca@diracgrid.org',
-                            proxyProvider='DIRAC_CA')
+    result = db.deleteProxy('/C=DN/O=DIRACCA/OU=None/CN=user_ca/emailAddress=user_ca@diracgrid.org')
     self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
-    result = db.getProxiesContent({'UserName': ['user_ca', 'user_1', 'user_2', 'user_3']}, {})
+    result = db.getProxiesContent({'UserName': ['user_ca', 'user_1', 'user_2', 'user_3']})
     self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
     self.assertTrue(bool(int(result['Value']['TotalRecords']) == 0), 'In DB present proxies.')
 
@@ -459,7 +457,7 @@ class testDB(ProxyDBTestCase):
                       'ProxyDB_CleanProxies must %s' % (res and 'contain proxy' or 'be empty'))
 
     gLogger.info('* Check that ProxyDB_CleanProxy contain generated proxy..')
-    result = db.getProxiesContent({'UserName': 'user_1'}, {})
+    result = db.getProxiesContent({'UserName': 'user_1'})
     self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
     self.assertTrue(bool(int(result['Value']['TotalRecords']) == 1), 'Generated proxy must be one.')
     cmd = 'SELECT COUNT( * ) FROM ProxyDB_CleanProxies WHERE UserName="user_1"'
@@ -485,9 +483,9 @@ class testDB(ProxyDBTestCase):
         gLogger.info('Msg: %s' % (result['Message']))
 
     gLogger.info('* Check that DB is clean..')
-    result = db.deleteProxy('/C=DN/O=DIRAC/CN=user_1', proxyProvider='Certificate')
+    result = db.deleteProxy('/C=DN/O=DIRAC/CN=user_1')
     self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
-    result = db.getProxiesContent({'UserName': ['user_ca', 'user_1', 'user_2', 'user_3']}, {})
+    result = db.getProxiesContent({'UserName': ['user_ca', 'user_1', 'user_2', 'user_3']})
     self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
     self.assertTrue(bool(int(result['Value']['TotalRecords']) == 0), 'In DB present proxies.')
 
@@ -514,7 +512,7 @@ class testDB(ProxyDBTestCase):
     gLogger.info('* Check that DB is clean..')
     result = db.deleteProxy('/C=DN/O=DIRAC/CN=user_1')
     self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
-    result = db.getProxiesContent({'UserName': ['user_ca', 'user_1', 'user_2', 'user_3']}, {})
+    result = db.getProxiesContent({'UserName': ['user_ca', 'user_1', 'user_2', 'user_3']})
     self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
     self.assertTrue(bool(int(result['Value']['TotalRecords']) == 0), 'In DB present proxies.')
 
