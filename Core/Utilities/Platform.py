@@ -45,7 +45,7 @@ def libc_ver(executable=sys.executable, lib='', version='',
     while True:
       m = _libc_search.search(binary, pos)
       if not m:
-        binary = binary[-chunksize:] + f.read(chunksize)
+        binary = f.read(chunksize)
         if not binary:
           break
         pos = 0
