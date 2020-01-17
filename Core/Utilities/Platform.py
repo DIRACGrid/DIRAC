@@ -52,7 +52,7 @@ def libc_ver(executable=sys.executable, lib='', version='',
         continue
       libcinit, glibc, glibcversion, so, threads, soversion = m.groups()
       if libcinit and not lib:
-        lib = 'libc'
+        lib = b'libc'
       elif glibc:
         glibcversion_parts = glibcversion.split(b'.')
         for i in range(len(glibcversion_parts)):
@@ -61,21 +61,21 @@ def libc_ver(executable=sys.executable, lib='', version='',
           except ValueError:
             glibcversion_parts[i] = 0
         if libcinit and not lib:
-          lib = 'libc'
+          lib = b'libc'
         elif glibc:
-          if lib != 'glibc':
-            lib = 'glibc'
+          if lib != b'glibc':
+            lib = b'glibc'
             version = glibcversion_parts
           elif glibcversion_parts > version:
             version = glibcversion_parts
       elif so:
-        if lib != 'glibc':
-          lib = 'libc'
+        if lib != b'glibc':
+          lib = b'libc'
           version = max(version, [int(soversion)]).pop()
           if threads and version[-len(threads):] != threads:
             version = version + threads
       pos = m.end()
-  return lib, '.'.join(map(str, version))
+  return lib.decode(), '.'.join(map(str, version))
 
 # ## Command line interface
 
@@ -89,7 +89,7 @@ def getPlatformString():
       sp = subprocess.Popen(['/sbin/ldconfig', '--print-cache'], stdout=subprocess.PIPE,
                             universal_newlines=True)
       spStdout = sp.stdout
-    except:
+    except Exception:
       sp = None
       spStdout = os.popen('/sbin/ldconfig --print-cache', 'r')
     ldre = re.compile(r".*=> (.*/libc\.so\..*$)")
