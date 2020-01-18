@@ -20,7 +20,8 @@ from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client import PathFinder
-from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOsWithVOMS, getVOOption, getGroupsForVO,\
+     getVOs, getPropertiesForGroup, isDownloadableGroup, getUsernameForDN, getDNForUsernameInGroup 
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 
 
@@ -57,7 +58,7 @@ class ProxyManagerHandler(RequestHandler):
     except Exception as e:
       return S_ERROR('Cannot read saved cahe: %s' % str(e))
 
-  @classmethod
+  @classmethodgetGroupsForVO
   def __refreshVOMSesUsersCache(cls, vos=None):
     """ Update cache with information about active users from supported VOs
 
@@ -68,21 +69,21 @@ class ProxyManagerHandler(RequestHandler):
     diracAdminsNotifyDict = {}
     gLogger.info('Update VOMSes information..')
     if not vos:
-      result = Registry.getVOsWithVOMS()
+      result = getVOsWithVOMS()
       if not result['OK']:
         return result
       vos = result['Value']
 
     for vo in vos:
       # Get VO admins
-      voAdmins = Registry.getVOOption(vo, "VOAdmin", [])
+      voAdmins = getVOOption(vo, "VOAdmin", [])
       if not voAdmins:
         diracAdminsNotifyDict[vo] = 'Cannot found administrators for %s VOMS VO' % vo
         gLogger.error('Cannot update users from "%s" VO.' % vo, 'No admin user found.')
         continue
       
       result = S_ERROR('Need to upload admin proxy!')
-      for group in Registry.getGroupsForVO(vo).get('Value') or []:
+      for group in getGroupsForVO(vo).get('Value') or []:
         for user in voAdmins:
           # Try to get proxy for any VO admin
           result = cls.__proxyDB.getProxy(user, group, 1800)
@@ -113,7 +114,7 @@ class ProxyManagerHandler(RequestHandler):
       subject = '[ProxyManager] Cannot update users from %s VOMS VOs.' % ', '.join(diracAdminsNotifyDict.keys())
       body = pprint.pformat(diracAdminsNotifyDict)
       body += "\n------\n This is a notification from the DIRAC ProxyManager service, please do not reply."
-      #cls.__notify.sendMail(Registry.getEmailsForGroup('dirac_admin'), subject, body)
+      #cls.__notify.sendMail(getEmailsForGroup('dirac_admin'), subject, body)
     return S_OK()
 
   @classmethod
@@ -152,7 +153,7 @@ class ProxyManagerHandler(RequestHandler):
         :return: S_OK(dict)/S_ERROR()
     """
     VOMSesUsers = self.__VOMSesUsersCache.getDict()
-    result = Registry.getVOs()
+    result = getVOs()
     if not result['OK']:
       return result
     for vo in result['Value']:
@@ -278,7 +279,7 @@ class ProxyManagerHandler(RequestHandler):
     if Properties.PRIVATE_LIMITED_DELEGATION in credDict['properties']:
       if credDict['username'] != requestedUsername:
         return S_ERROR("You are not allowed to download any proxy")
-      if Properties.PRIVATE_LIMITED_DELEGATION not in Registry.getPropertiesForGroup(requestedUserGroup):
+      if Properties.PRIVATE_LIMITED_DELEGATION not in getPropertiesForGroup(requestedUserGroup):
         return S_ERROR("You can't download proxies for that group")
       return S_OK(True)
     # Not authorized!
@@ -308,12 +309,12 @@ class ProxyManagerHandler(RequestHandler):
         :return: S_OK(str)/S_ERROR()
     """
     # Test that group enable to download
-    if not Registry.isDownloadableGroup(userGroup):
+    if not isDownloadableGroup(userGroup):
       return S_ERROR('"%s" group is disable to download.' % userGroup)
 
     # WARN: Next block for compatability
     if not user.find("/"):  # Is it DN?
-      result = Registry.getUsernameForDN(user)
+      result = getUsernameForDN(user)
       if not result['OK']:
         return result
       user = result['Value']
@@ -358,12 +359,12 @@ class ProxyManagerHandler(RequestHandler):
     userDN = user
     # WARN: Next block for compatability
     if not user.find("/"):  # Is it DN?
-      result = Registry.getUsernameForDN(user)
+      result = getUsernameForDN(user)
       if not result['OK']:
         return result
       user = result['Value']
     else:
-      result = Registry.getDNForUsernameInGroup(user, userGroup)
+      result = getDNForUsernameInGroup(user, userGroup)
       if not result['OK']:
         return result
       userDN = result['Value']
@@ -409,7 +410,7 @@ class ProxyManagerHandler(RequestHandler):
 
         :return: S_OK()/S_ERROR()
     """
-    result = Registry.getUsernameForDN(userDN)
+    result = getUsernameForDN(userDN)
     if not result['OK']:
       return result
     username = result['Value']
@@ -476,7 +477,7 @@ class ProxyManagerHandler(RequestHandler):
     """
     # WARN: Next block for compatability
     if not requesterUsername.find("/"):  # Is it DN?
-      result = Registry.getUsernameForDN(requesterUsername)
+      result = getUsernameForDN(requesterUsername)
       if not result['OK']:
         return result
       requesterUsername = result['Value']

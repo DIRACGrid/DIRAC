@@ -979,7 +979,8 @@ class ProxyDB(DB):
     mapDict = self.__DBContentMapping.getDict()
 
     sqlWhere = ["Pem is not NULL"]
-    sqlWhere += (list(sqlCond) if isinstance(sqlCond, (list, tuple)) else [sqlCond or ''])
+    if sqlCond:
+      sqlWhere += (list(sqlCond) if isinstance(sqlCond, (list, tuple)) else [sqlCond])
     for table, fields in [('ProxyDB_CleanProxies', ("UserDN", "ExpirationTime")),
                           ('ProxyDB_Proxies', ("UserDN", "UserGroup", "ExpirationTime", "PersistentFlag"))]:
       cmd = "SELECT %s FROM `%s`" % (", ".join(fields), table)
@@ -993,8 +994,7 @@ class ProxyDB(DB):
                             (field, ", ".join([self._escapeString(str(value))['Value'] for value in fVal])))
         else:
           sqlWhere.append("%s = %s" % (field, self._escapeString(str(fVal))['Value']))
-      if sqlWhere:
-        cmd += " WHERE %s" % " AND ".join(sqlWhere)
+      cmd += " WHERE %s" % " AND ".join(sqlWhere)
       if limit:
         try:
           start = int(start)
@@ -1013,21 +1013,21 @@ class ProxyDB(DB):
         if table == 'ProxyDB_CleanProxies':
           record.insert(1, '')
           record.insert(3, False)
-        user = mapDict[record[0]].get('user') if mapDict[record[0]] else None
+        user = mapDict[record[0]].get('user') if mapDict.get(record[0]) else None
         if not user:
           result = Registry.getUsernameForDN(record[0])
           if not result['OK']:
             gLogger.error("Cannot get owner %s:" % record[0], result['Message'])
             continue
           user = result['Value']
-        groups = mapDict[record[0]].get('groups') if mapDict[record[0]] else None
+        groups = mapDict[record[0]].get('groups') if mapDict.get(record[0]) else None
         if not groups:
           result = Registry.getGroupsForDN(record[0])
           if not result['OK']:
             gLogger.error("Cannot get groups for %s:" % record[0], result['Message'])
             continue
           groups = result['Value']
-        provider = mapDict[record[0]].get('provider') if mapDict[record[0]] else None
+        provider = mapDict[record[0]].get('provider') if mapDict.get(record[0]) else None
         if not provider:
           result = Registry.getGroupsForDN(record[0])
           if not result['OK']:
