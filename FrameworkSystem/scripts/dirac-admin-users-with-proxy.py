@@ -38,31 +38,25 @@ if not result['OK']:
   print("Can't retrieve list of users: %s" % result['Message'])
   DIRAC.exit(1)
 
-keys = result['Value']['ParameterNames']
-records = result['Value']['Records']
 dataDict = {}
-now = Time.dateTime()
-for record in records:
-  expirationDate = record[3]
-  dt = expirationDate - now
+for infoDict in result['Value']['Dictionaries']:
+  user = infoDict['user']
+  del infoDict['user']
+  dt = infoDict['expirationtime'] - now
   secsLeft = dt.days * 86400 + dt.seconds
   if secsLeft > params.proxyLifeTime:
-    userName, userDN, userGroup, _, persistent = record
-    if userName not in dataDict:
-      dataDict[userName] = []
-    dataDict[userName].append((userDN, userGroup, expirationDate, persistent))
+    infoDict['expirationtime'] = Time.toString(infoDict['expirationtime'])
+    if user not in dataDict:
+      dataDict[user] = []
+    dataDict[user].append(infoDict)
 
+ln = len(max(result['Value']['Dictionaries'][0].keys() if result['Value']['Dictionaries'] else ['']))
 
-for userName in dataDict:
-  print("* %s" % userName)
-  for iP in range(len(dataDict[userName])):
-    data = dataDict[userName][iP]
-    print(" DN         : %s" % data[0])
-    print(" group      : %s" % data[1])
-    print(" not after  : %s" % Time.toString(data[2]))
-    print(" persistent : %s" % data[3])
-    if iP < len(dataDict[userName]) - 1:
-      print(" -")
-
+for user, userDicts in dataDict:
+  print("* %s" % user)
+  for userDict in userDicts:
+    for k, v in userDict:
+      print(" %s : %s" % (k + (' ' * (len(k) - ln))), v)
+  print(" -")
 
 DIRAC.exit(0)
