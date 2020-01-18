@@ -1029,7 +1029,7 @@ class ProxyDB(DB):
           groups = result['Value']
         provider = mapDict[record[0]].get('provider') if mapDict.get(record[0]) else None
         if not provider:
-          result = Registry.getGroupsForDN(record[0])
+          result = Registry.getProxyProviderForDN(record[0])
           if not result['OK']:
             gLogger.error(result['Message'])
             continue
