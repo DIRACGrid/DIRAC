@@ -50,13 +50,14 @@ for infoDict in result['Value']['Dictionaries']:
       dataDict[user] = []
     dataDict[user].append(infoDict)
 
-ln = len(max(result['Value']['Dictionaries'][0].keys() if result['Value']['Dictionaries'] else ['']))
+keys = result['Value']['Dictionaries'][0].keys() if result['Value']['Dictionaries'] else ['']
+strFormat = "{{:<{}}}".format(max(len(i) for i in keys))
 
 for user, userDicts in dataDict.items():
   print("* %s" % user)
   for userDict in userDicts:
     for k, v in userDict.items():
-      print(" %s : %s" % (k + (' ' * (len(k) - ln))), v)
+      print(" %s : %s" % (strFormat.format(k), v))
   print(" -")
 
 DIRAC.exit(0)
