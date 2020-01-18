@@ -42,7 +42,7 @@ dataDict = {}
 for infoDict in result['Value']['Dictionaries']:
   user = infoDict['user']
   del infoDict['user']
-  dt = infoDict['expirationtime'] - now
+  dt = infoDict['expirationtime'] - Time.dateTime()
   secsLeft = dt.days * 86400 + dt.seconds
   if secsLeft > params.proxyLifeTime:
     infoDict['expirationtime'] = Time.toString(infoDict['expirationtime'])
