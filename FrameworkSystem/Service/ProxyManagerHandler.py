@@ -58,7 +58,7 @@ class ProxyManagerHandler(RequestHandler):
     except Exception as e:
       return S_ERROR('Cannot read saved cahe: %s' % str(e))
 
-  @classmethodgetGroupsForVO
+  @classmethod
   def __refreshVOMSesUsersCache(cls, vos=None):
     """ Update cache with information about active users from supported VOs
 
