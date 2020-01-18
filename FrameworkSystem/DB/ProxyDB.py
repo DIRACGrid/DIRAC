@@ -978,7 +978,8 @@ class ProxyDB(DB):
 
     mapDict = self.__DBContentMapping.getDict()
 
-    sqlWhere = ["Pem is not NULL"] + list(sqlCond) if isinstance(sqlCond, (list, tuple)) else [sqlCond or '']
+    sqlWhere = ["Pem is not NULL"]
+    sqlWhere += (list(sqlCond) if isinstance(sqlCond, (list, tuple)) else [sqlCond or ''])
     for table, fields in [('ProxyDB_CleanProxies', ("UserDN", "ExpirationTime")),
                           ('ProxyDB_Proxies', ("UserDN", "UserGroup", "ExpirationTime", "PersistentFlag"))]:
       cmd = "SELECT %s FROM `%s`" % (", ".join(fields), table)
