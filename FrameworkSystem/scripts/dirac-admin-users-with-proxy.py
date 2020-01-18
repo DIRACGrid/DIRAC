@@ -52,10 +52,10 @@ for infoDict in result['Value']['Dictionaries']:
 
 ln = len(max(result['Value']['Dictionaries'][0].keys() if result['Value']['Dictionaries'] else ['']))
 
-for user, userDicts in dataDict:
+for user, userDicts in dataDict.items():
   print("* %s" % user)
   for userDict in userDicts:
-    for k, v in userDict:
+    for k, v in userDict.items():
       print(" %s : %s" % (k + (' ' * (len(k) - ln))), v)
   print(" -")
 
