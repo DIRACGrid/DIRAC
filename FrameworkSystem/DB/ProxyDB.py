@@ -996,7 +996,7 @@ class ProxyDB(DB):
                             (field, ", ".join([self._escapeString(str(value))['Value'] for value in fVal])))
         else:
           sqlWhere.append("%s = %s" % (field, self._escapeString(str(fVal))['Value']))
-      cmd += " WHERE %s" % " AND ".join(sqlWhere)
+      cmd += " WHERE %s ORDER BY UserDN DESC" % " AND ".join(sqlWhere)
       if limit:
         try:
           start = int(start)
@@ -1004,7 +1004,7 @@ class ProxyDB(DB):
         except ValueError:
           return S_ERROR("start and limit have to be integers")
         cmd += " LIMIT %d,%d" % (start, limit)
-      retVal = self._query(cmd + " ORDER BY UserDN DESC")
+      retVal = self._query(cmd)
       if not retVal['OK']:
         return retVal
 

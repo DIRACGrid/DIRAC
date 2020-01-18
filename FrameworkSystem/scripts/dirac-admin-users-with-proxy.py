@@ -57,7 +57,7 @@ for user, userDicts in dataDict.items():
   print("* %s" % user)
   for userDict in userDicts:
     for k, v in userDict.items():
-      print(" %s : %s" % (strFormat.format(k), v))
+      print(" %s : %s" % (strFormat.format(k), ','.join(v) if isinstance(v, (list, tuple)) else v ))
   print(" -")
 
 DIRAC.exit(0)
