@@ -532,10 +532,10 @@ class ProxyDB(DB):
         :return: S_OK(tuple)/S_ERROR() -- tuple with proxy as chain and proxy live time in a seconds
     """
     # Try to get proxy
-    proxyProvider = Registry.getProxyProviderForDN(userDN)
-    if not proxyProvider:
+    result = Registry.getProxyProviderForDN(userDN)
+    if not result['OK']:
       return result
-    result = ProxyProviderFactory().getProxyProvider(proxyProvider)
+    result = ProxyProviderFactory().getProxyProvider(result['Value'])
     if not result['OK']:
       return result
     providerObj = result['Value']
@@ -978,7 +978,7 @@ class ProxyDB(DB):
 
     mapDict = self.__DBContentMapping.getDict()
 
-    sqlWhere = ["Pem is not NULL"] + sqlCond if isinstance(sqlCond, (list, tuple)) else [sqlCond or '']
+    sqlWhere = ["Pem is not NULL"] + list(sqlCond) if isinstance(sqlCond, (list, tuple)) else [sqlCond or '']
     for table, fields in [('ProxyDB_CleanProxies', ("UserDN", "ExpirationTime")),
                           ('ProxyDB_Proxies', ("UserDN", "UserGroup", "ExpirationTime", "PersistentFlag"))]:
       cmd = "SELECT %s FROM `%s`" % (", ".join(fields), table)
@@ -992,8 +992,8 @@ class ProxyDB(DB):
                             (field, ", ".join([self._escapeString(str(value))['Value'] for value in fVal])))
         else:
           sqlWhere.append("%s = %s" % (field, self._escapeString(str(fVal))['Value']))
-
-      cmd = "%s WHERE %s" % (cmd, " AND ".join(sqlWhere))
+      if sqlWhere:
+        cmd += " WHERE %s" % " AND ".join(sqlWhere)
       if limit:
         try:
           start = int(start)
