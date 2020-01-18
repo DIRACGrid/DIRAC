@@ -976,6 +976,8 @@ class ProxyDB(DB):
       else:
         selDict["UserDN"] = DNs
 
+    dataDict = []
+    dataRecords = []
     mapDict = self.__DBContentMapping.getDict()
 
     sqlWhere = ["Pem is not NULL"]
@@ -1006,8 +1008,6 @@ class ProxyDB(DB):
       if not retVal['OK']:
         return retVal
 
-      dataDict = []
-      dataRecords = []
       for record in retVal['Value']:
         record = list(record)
         if table == 'ProxyDB_CleanProxies':
@@ -1017,21 +1017,21 @@ class ProxyDB(DB):
         if not user:
           result = Registry.getUsernameForDN(record[0])
           if not result['OK']:
-            gLogger.error("Cannot get owner %s:" % record[0], result['Message'])
+            gLogger.error(result['Message'])
             continue
           user = result['Value']
         groups = mapDict[record[0]].get('groups') if mapDict.get(record[0]) else None
         if not groups:
           result = Registry.getGroupsForDN(record[0])
           if not result['OK']:
-            gLogger.error("Cannot get groups for %s:" % record[0], result['Message'])
+            gLogger.error(result['Message'])
             continue
           groups = result['Value']
         provider = mapDict[record[0]].get('provider') if mapDict.get(record[0]) else None
         if not provider:
           result = Registry.getGroupsForDN(record[0])
           if not result['OK']:
-            gLogger.error("Cannot get provider for %s:" % record[0], result['Message'])
+            gLogger.error(result['Message'])
             continue
           provider = result['Value']
 
