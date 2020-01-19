@@ -47,7 +47,7 @@ class ProxyDB(DB):
                useMyProxy=False):
     DB.__init__(self, 'ProxyDB', 'Framework/ProxyDB')
     random.seed()
-    self.__version = 1
+    self.__version = 2
     self.__defaultRequestLifetime = 300  # 5min
     self.__defaultTokenLifetime = 86400 * 7  # 1 week
     self.__defaultTokenMaxUses = 50
@@ -248,7 +248,7 @@ class ProxyDB(DB):
         if not result['OK']:
           return result
 
-    if self.versionDB < 1 and self.versionDB < self.__version:
+    if self.versionDB == 0 and self.versionDB < self.__version:
       for tb, oldColumn, newColumn in [('ProxyDB_Log', 'IssuerDN', 'IssuerUsername'),
                                        ('ProxyDB_Log', 'TargetDN', 'TargetUsername'),
                                        ('ProxyDB_Tokens', 'RequesterDN', 'RequesterUsername')]:
@@ -258,6 +258,17 @@ class ProxyDB(DB):
         if not result['OK']:
           return result
       result = self.updateDBVersion(1)
+      if not result['OK']:
+        return result
+    
+    if self.versionDB == 1 and self.versionDB < self.__version:
+      for column in ['UserName', 'ProxyProvider']:
+        result = self._query("SHOW COLUMNS FROM `ProxyDB_CleanProxies` LIKE '%s'" % column)
+        if result['OK'] and len(result['Value']) > 0:
+          result = self._query('ALTER TABLE ProxyDB_CleanProxies DROP COLUMN %s' % column)
+        if not result['OK']:
+          return result
+      result = self.updateDBVersion(2)
       if not result['OK']:
         return result
     
@@ -756,7 +767,7 @@ class ProxyDB(DB):
       result = self.__getPemAndTimeLeftOld(userDN, userGroup, voms and vomsAttr)
       if not result['OK'] or requiredLifeTime and result['Value'][1] < requiredLifeTime:
 
-        errMsg = result['Message']
+        errMsg = result.get('Message') or 'Stored proxy have not enough lifetime'
         result = self.__generateProxyForDNGroup(userDN, userGroup, requiredLifeTime)
         if not result['OK']:
           return S_ERROR('%s; %s' % (errMsg, result['Message']))

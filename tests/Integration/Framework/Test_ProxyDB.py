@@ -352,7 +352,7 @@ class testDB(ProxyDBTestCase):
     self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
     for table in ['ProxyDB_Proxies', 'ProxyDB_CleanProxies', 'ProxyDB_VOMSProxies']:
       self.assertTrue(bool(db._query(isDBContainExp % table)['Value'][0][0] > 0),
-                      '%s table contain expired proxies after first cleaning.')
+                      '%s table contain expired proxies after first cleaning.' % table)
 
     # Fill table for test
     gLogger.info('\n* Fill tables for test..')
