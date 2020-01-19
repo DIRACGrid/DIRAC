@@ -873,10 +873,8 @@ class ProxyDB(DB):
 
     if userMask:
       result = Registry.getDNsForUsername(userMask)
-      if not result['OK']:
-        return result
-      if not result['Value']:
-        return S_ERROR('No found any DN for user')
+      if not result['OK'] or not result.get('Value'):
+        return S_OK([])
       selDict['UserDN'] = result['Value']
     result = self.getProxiesContent(selDict, sqlCond)
     return S_OK(result['Value']['Dictionaries']) if result['OK'] else result
