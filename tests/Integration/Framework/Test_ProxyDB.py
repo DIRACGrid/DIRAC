@@ -441,7 +441,7 @@ class testDB(ProxyDBTestCase):
     result = db.purgeExpiredProxies()
     self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
     for table in ['ProxyDB_Proxies', 'ProxyDB_CleanProxies', 'ProxyDB_VOMSProxies']:
-      self.assertTrue(bool(db._query(isDBContainExp % table)['Value'][0][0] > 0),
+      self.assertTrue(bool(db._query(isDBContainExp % table)['Value'][0][0] == 0),
                       '%s table contain expired proxies after cleaning.')
     self.assertTrue(result['Value'] == 3, '"%s" proxies cleaned instead "3"' % result['Value'])
   
