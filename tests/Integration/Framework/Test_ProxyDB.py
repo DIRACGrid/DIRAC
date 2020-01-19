@@ -263,6 +263,7 @@ class ProxyDBTestCase(unittest.TestCase):
       gLogger.debug(output)
 
   def setUp(self):
+    gLogger.debug('\n')
     if self.failed:
        self.fail(self.failed)
     for table in ['ProxyDB_Proxies', 'ProxyDB_CleanProxies', 'ProxyDB_VOMSProxies']:
@@ -270,6 +271,7 @@ class ProxyDBTestCase(unittest.TestCase):
       gLogger.debug('Proxies deleted from %s %s' % (table, 'successfuly' if result['OK'] else 'fail'))
 
   def tearDown(self):
+    gLogger.debug('\n')
     for table in ['ProxyDB_Proxies', 'ProxyDB_CleanProxies', 'ProxyDB_VOMSProxies']:
       result = db._update('DELETE FROM %s WHERE UserDN IN ("%s")' % (table, '", "'.join(DNs)))
       gLogger.debug('Proxies deleted from %s %s' % (table, 'successfuly' if result['OK'] else 'fail'))
@@ -298,9 +300,10 @@ class testDB(ProxyDBTestCase):
   def __isProxiesTablesClean(self):
     """ Helper method to check if DB is clean
     """
+    cmd = 'SELECT %%s FROM %%s WHERE UserDN in ("%%s") %s' % ''
     for table in ['ProxyDB_Proxies', 'ProxyDB_CleanProxies', 'ProxyDB_VOMSProxies']:
-      self.assertTrue(bool(db._query('SELECT COUNT( * ) FROM %s WHERE UserDN in ("%s")' % (table, ", ".join(DNs)))['Value'][0][0] > 0),
-                      '%s table contain proxies.' % table)
+      self.assertTrue(bool(db._query(cmd % ('COUNT( * )', table, ", ".join(DNs)))['Value'][0][0] > 0),
+                      '%s table contain %s' % (table, db._query(cmd % ('UserDN', table, ", ".join(DNs)))['Value'][0])
 
   def test_connectDB(self):
     """ Try to connect to the ProxyDB
