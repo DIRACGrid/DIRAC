@@ -593,5 +593,18 @@ class ProxyManagerClient(object):
     if 'rpcStub' in result:
       result.pop('rpcStub')
     return result
+  
+  def deleteProxy(self, userDN, userGroup=None, listIDs=None):
+    """ Delete proxy
+
+        :param str userDN: user DN
+        :param str userGroup: group name
+        :param list listIDs: list of (DN, group)
+
+        :return: S_OK()/S_ERROR()
+    """
+    listIDs = listIDs or []
+    listIDs.append((userDN, userGroup))
+    return RPCClient("Framework/ProxyManager", timeout=120).deleteProxyBundle(listIDs)
 
 gProxyManager = ProxyManagerClient()
