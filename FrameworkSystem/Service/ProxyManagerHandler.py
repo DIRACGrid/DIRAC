@@ -110,6 +110,7 @@ class ProxyManagerHandler(RequestHandler):
         voActiveUsersDict[dn] = dnInfo
       cls.saveVOCacheToFile(vo, voActiveUsersDict)
       cls.__VOMSesUsersCache.add(vo, 3600 * 24, voActiveUsersDict)
+
     if diracAdminsNotifyDict:
       subject = '[ProxyManager] Cannot update users from %s VOMS VOs.' % ', '.join(diracAdminsNotifyDict.keys())
       body = pprint.pformat(diracAdminsNotifyDict)
@@ -161,6 +162,9 @@ class ProxyManagerHandler(RequestHandler):
         result = self.loadVOCacheFromFile(vo)
         if result['OK']:
           VOMSesUsers[vo] = result['Value']
+      if not isinstance(VOMSesUsers[vo], dict):
+        gLogger.error('Cannot get %s information dictionary' % vo, VOMSesUsers[vo])
+        del VOMSesUsers[vo]
     return S_OK(VOMSesUsers)
 
   def __generateUserProxiesInfo(self):

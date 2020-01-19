@@ -419,7 +419,7 @@ class testDB(ProxyDBTestCase):
       result = db.getProxiesContent(sel)
       self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
       self.assertTrue(bool(int(result['Value']['TotalRecords']) == res),
-                      'Found %s proxies instead %s.' % (result['Value']['TotalRecords']), res))
+                      'Found %s proxies instead %s.' % (result['Value']['TotalRecords']), res)
   
   def test_deleteProxy(self):
     """ Test 'deleteProxy' - Try to delete proxy
