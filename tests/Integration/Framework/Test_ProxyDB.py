@@ -691,8 +691,11 @@ class testDB(ProxyDBTestCase):
       self.assertFalse(result['OK'], 'Must be fail.')
       gLogger.info('Msg: %s' % result['Message'])
     # Check stored proxies
-    for table, user, count in [('ProxyDB_Proxies', 'user_1', 1), ('ProxyDB_CleanProxies', 'user_ca', 1)]:
-      cmd = 'SELECT COUNT( * ) FROM %s WHERE UserName="%s"' % (table, user)
+    for table, count, dn in [('ProxyDB_Proxies', 1,
+                              '/C=DN/O=DIRAC/CN=user_1'),
+                             ('ProxyDB_CleanProxies', 1,
+                              '/C=DN/O=DIRACCA/OU=None/CN=user_ca/emailAddress=user_ca@diracgrid.org')]:
+      cmd = 'SELECT COUNT( * ) FROM %s WHERE UserDN="%s"' % (table, dn)
       self.assertTrue(bool(db._query(cmd)['Value'][0][0] == count))
 
     gLogger.info('* Delete proxies..')
@@ -701,7 +704,7 @@ class testDB(ProxyDBTestCase):
                        'ProxyDB_CleanProxies')]:
       result = db.deleteProxy(dn)
       self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
-      cmd = 'SELECT COUNT( * ) FROM %s WHERE UserName="user_ca"' % table
+      cmd = 'SELECT COUNT( * ) FROM %s WHERE UserDN="%s"' % (table, dn)
       self.assertTrue(bool(db._query(cmd)['Value'][0][0] == 0))
 
 
