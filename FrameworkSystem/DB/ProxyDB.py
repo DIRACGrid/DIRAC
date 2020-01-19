@@ -754,7 +754,7 @@ class ProxyDB(DB):
 
       # WARN: for compatibility
       result = self.__getPemAndTimeLeftOld(userDN, userGroup, voms and vomsAttr)
-      if not result['OK'] or requiredLifeTime and timeLeft < requiredLifeTime:
+      if not result['OK'] or requiredLifeTime and result['Value'][1] < requiredLifeTime:
 
         errMsg = result['Message']
         result = self.__generateProxyForDNGroup(userDN, userGroup, requiredLifeTime)
