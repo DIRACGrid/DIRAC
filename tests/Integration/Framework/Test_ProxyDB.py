@@ -450,7 +450,7 @@ class testDB(ProxyDBTestCase):
     result = db.deleteProxy('/C=DN/O=DIRAC/CN=user_1')
     self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
     self.assertTrue(bool(int(result['Value']['TotalRecords']) == res),
-                    'Found %s proxies instead %s.' % (result['Value']['TotalRecords']), res))
+                    'Found %s proxies instead %s.' % (result['Value']['TotalRecords']), res)
     self.__isProxiesTablesClean()
 
   def test_getProxy(self):
@@ -614,9 +614,8 @@ class testDB(ProxyDBTestCase):
     result = self.createProxy('user_1', 'group_1', 12, vo='vo_1', role='role_2')
     self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
 
-    proxyStr = result['Value'][1]
     cmd = 'INSERT INTO ProxyDB_Proxies(UserName, UserDN, UserGroup, Pem, ExpirationTime) VALUES '
-    cmd += '("user_1", "/C=DN/O=DIRAC/CN=user_1", "group_1", "%s", ' % proxyStr
+    cmd += '("user_1", "/C=DN/O=DIRAC/CN=user_1", "group_1", "%s", ' % result['Value'][1]
     cmd += 'TIMESTAMPADD(SECOND, 43200, UTC_TIMESTAMP()))'
     result = db._update(cmd)
     self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
