@@ -606,7 +606,7 @@ class testDB(ProxyDBTestCase):
       cmd = 'SELECT COUNT( * ) FROM ProxyDB_Proxies WHERE UserName="%s"' % user
       self.assertTrue(bool(db._query(cmd)['Value'][0][0] == (res and group and 1) or 0),
                       'ProxyDB_Proxies must %s' % (res and 'contain proxy' or 'be empty'))
-      cmd = 'SELECT COUNT( * ) FROM ProxyDB_CleanProxies WHERE UserName="%s"' % user
+      cmd = 'SELECT COUNT( * ) FROM ProxyDB_CleanProxies WHERE UserDN="%s"' % dn
       self.assertTrue(bool(db._query(cmd)['Value'][0][0] == (res and not group and 1) or 0),
                       'ProxyDB_CleanProxies must %s' % (res and 'contain proxy' or 'be empty'))
 
@@ -614,7 +614,7 @@ class testDB(ProxyDBTestCase):
     result = db.getProxiesContent({'UserName': 'user_1'})
     self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
     self.assertTrue(bool(int(result['Value']['TotalRecords']) == 1), 'Generated proxy must be one.')
-    cmd = 'SELECT COUNT( * ) FROM ProxyDB_CleanProxies WHERE UserName="user_1"'
+    cmd = 'SELECT COUNT( * ) FROM ProxyDB_CleanProxies WHERE UserDN="/C=DN/O=DIRAC/CN=user_1"'
     self.assertTrue(bool(db._query(cmd)['Value'][0][0] == 1), 'ProxyDB_CleanProxies must contain proxy')
 
     gLogger.info('* Get proxy that store only in ProxyDB_CleanProxies..')
