@@ -600,9 +600,10 @@ class ProxyDB(DB):
       userDN = self._escapeString(userDN)['Value']
       if userGroup:
         userGroup = self._escapeString(userGroup)['Value']
+      else:
         tables.append('ProxyDB_CleanProxies')
     except KeyError:
-      return S_ERROR("Invalid DN or group or proxy provider")
+      return S_ERROR("Invalid DN or group")
     errMsgs = []
     req = "DELETE FROM `%%s` WHERE UserDN=%s" % userDN
     for table in tables:

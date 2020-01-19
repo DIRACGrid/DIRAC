@@ -382,7 +382,8 @@ class ProxyManagerHandler(RequestHandler):
   def export_deleteProxyBundle(self, idList):
     """ Delete a list of id's
 
-        :param list,tuple idList: list of identity numbers
+        :param idList: list of identity numbers
+        :type idList: list or tuple
 
         :return: S_OK(int)/S_ERROR()
     """
