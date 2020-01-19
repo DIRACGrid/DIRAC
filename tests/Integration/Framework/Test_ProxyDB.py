@@ -297,7 +297,7 @@ class testDB(ProxyDBTestCase):
     """ Helper method to check if DB is clean
     """
     for table in ['ProxyDB_Proxies', 'ProxyDB_CleanProxies', 'ProxyDB_VOMSProxies']:
-      self.assertTrue(bool(db._query('SELECT COUNT( * ) FROM %%s WHERE UserDN in (%s)' % table)['Value'][0][0] > 0),
+      self.assertTrue(bool(db._query('SELECT COUNT( * ) FROM %s WHERE UserDN in (%s)' % (table, DNs))['Value'][0][0] > 0),
                       '%s table contain proxies.')
 
   def test_connectDB(self):
