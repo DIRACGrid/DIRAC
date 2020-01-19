@@ -338,8 +338,8 @@ class testDB(ProxyDBTestCase):
       self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
       usersList = []
       for line in result['Value']:
-        if line['Name'] in ['user_1', 'user_2', 'user_3']:
-          usersList.append(line['Name'])
+        if line['user'] in ['user_1', 'user_2', 'user_3']:
+          usersList = list(set(usersList + [line['user']]))
       self.assertEqual(set(expect), set(usersList), '%s, when expected %s' % (usersList, expect))
 
   def test_purgeExpiredProxies(self):
@@ -417,7 +417,7 @@ class testDB(ProxyDBTestCase):
       result = db.getProxiesContent(sel)
       self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
       self.assertTrue(bool(int(result['Value']['TotalRecords']) == res),
-                      'Found %s proxies instead %s.' % (result['Value']['TotalRecords']), res)
+                      'Found %s proxies instead %s.' % (result['Value']['TotalRecords'], res))
   
   def test_deleteProxy(self):
     """ Test 'deleteProxy' - Try to delete proxy
@@ -445,8 +445,6 @@ class testDB(ProxyDBTestCase):
     gLogger.info("\n* Run `deleteProxy('/C=DN/O=DIRAC/CN=user_1')`..")
     result = db.deleteProxy('/C=DN/O=DIRAC/CN=user_1')
     self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
-    self.assertTrue(bool(int(result['Value']['TotalRecords']) == res),
-                    'Found %s proxies instead %s.' % (result['Value']['TotalRecords']), res)
     self.__isProxiesTablesClean()
 
   def test_getUploadProxy(self):
