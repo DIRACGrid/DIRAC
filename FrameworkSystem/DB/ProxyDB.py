@@ -862,6 +862,7 @@ class ProxyDB(DB):
 
         :return: S_OK(list)/S_ERROR() -- list contain dicts with DN, group, expiration time
     """
+    selDict = {}
     sqlCond = []
     if validSecondsLeft:
       try:
@@ -870,7 +871,12 @@ class ProxyDB(DB):
         return S_ERROR("Seconds left has to be an integer")
       sqlCond.append("TIMESTAMPDIFF(SECOND, UTC_TIMESTAMP(), ExpirationTime) > %d" % validSecondsLeft)
 
-    result = self.getProxiesContent({'UserName': userMask} if userMask else {}, sqlCond)
+    if userMask:
+      result = Registry.getDNsForUsername(userMask)
+      if not result['OK']:
+        return result
+      selDict['UserDN'] = result['Value']
+    result = self.getProxiesContent(selDict, sqlCond)
     return S_OK(result['Value']['Dictionaries']) if result['OK'] else result
 
   def getCredentialsAboutToExpire(self, requiredSecondsLeft, onlyPersistent=True):
