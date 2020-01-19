@@ -103,6 +103,73 @@ Registry
 }
 """
 
+expiredProxy = """-----BEGIN CERTIFICATE-----
+MIIDLTCCAhWgAwIBAgIKNTM4MjA0MTM5MTANBgkqhkiG9w0BAQsFADBpMRMwEQYK
+CZImiZPyLGQBGRYDb3JnMRUwEwYKCZImiZPyLGQBGRYFdWdyaWQxDzANBgNVBAoT
+BnBlb3BsZTENMAsGA1UEChMEQklUUDEbMBkGA1UEAxMSQW5kcmV5IExpdG92Y2hl
+bmtvMB4XDTIwMDExOTIwMzcwMFoXDTIwMDExOTIwNTcwMFowfjETMBEGCgmSJomT
+8ixkARkWA29yZzEVMBMGCgmSJomT8ixkARkWBXVncmlkMQ8wDQYDVQQKEwZwZW9w
+bGUxDTALBgNVBAoTBEJJVFAxGzAZBgNVBAMTEkFuZHJleSBMaXRvdmNoZW5rbzET
+MBEGA1UEAxMKNDA5MjM4NDc3MTCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEA
+uP1Juwq9N8OzIzLRUvH/ByyPd6wsaUiJp8Rvfx4z5d9nlM+SLLl5D3IvCND4Wfp1
+cAaFmkT+lAPxv4jpNVY7a9Kg0GcPPGFzuCqNYViYbd1/NBqLha+5o9ZrH2f/HHW9
+ykN8/zwZDJImaRB9Jrd+/baN7EwJam+AvIMO/3O6k1cCAwEAAaNGMEQwDgYDVR0P
+AQH/BAQDAgSwMBMGAyoqKgQMFgpkaXJhY191c2VyMB0GCCsGAQUFBwEOAQH/BA4w
+DDAKBggrBgEFBQcVATANBgkqhkiG9w0BAQsFAAOCAQEAPkQkit9QKh+lLLGKTpHe
+knA3OJJaldgBAhUdGmcP8UbfAbp3EOQ74F15XwM1SNTNsXpUTIcUTISpm0n3nAnf
+p0psfQFC8tUl5PxzWUw3jhcwQsWBcwipvCUC5wcjuY/UaxyVcNx9qYeQLO/rspeR
+H6k8p6bdD33yTwti4zEbpdFHXT8a2i0wcfN7b6CVOBTJF/DSeFeVd7SnH5aicgLO
+wg9lK4irnYWu7JNLC97WarclRJZwtX62g6LfHy16uxc4D+Zz7tVuIEBOroY6D5Vd
+zYoVqiMwf7RSHQWElp5OSOqGO2F+K2HJexf1jkJ4Fmlm84kbrJhK2dW0JI9Mr+H+
+mQ==
+-----END CERTIFICATE-----
+-----BEGIN PRIVATE KEY-----
+MIICdwIBADANBgkqhkiG9w0BAQEFAASCAmEwggJdAgEAAoGBALj9SbsKvTfDsyMy
+0VLx/wcsj3esLGlIiafEb38eM+XfZ5TPkiy5eQ9yLwjQ+Fn6dXAGhZpE/pQD8b+I
+6TVWO2vSoNBnDzxhc7gqjWFYmG3dfzQai4WvuaPWax9n/xx1vcpDfP88GQySJmkQ
+fSa3fv22jexMCWpvgLyDDv9zupNXAgMBAAECgYEAsMUQzJQRhhUSvCLWVd17Zr6V
+BbVX5u9y4wbZyG3zB8l4cIH9W5GMdk8VVOZjO5AS4o7I4kblwkkWnIFW4Cnbsqa0
+DB75IMO8C9OX3V1CY6Z4O8PHk4YabHfGlL8hlZsTeBlQT2MB1XWXpZXyjwgOff/j
+EcgCCeJ/q+q02pIHFJkCQQDrPllYBGKswI1ArdHOp1CQYbuokLa8kK+iB2frO1lC
+kAtnW9+437PMvqFzW9VBHDTCsuHHqJCIFE/EpxGAM7bTAkEAyU/ODC4NPubdMoPj
+J59cyBkIxAyw/t4i3+Cs4XE/Ky2zKl5hX9OejXikK4AUAfZmcU+IfcPUgozTx6lo
+Og0m7QJBAJa0RcZ2YMStQpC6ClwqohktE2yk8PyScIIL3o47Yi6bW0Lm/8dPQL+d
+LI9buJ3StRY6RRyEp7sV0Bh6s2J/PtMCQFYoqsY5u3+NbWReYA0oPpyBYmgOCn66
+cfChhzxhrKh9Qa5DgKdzuetQk+ruQSHp5ERgxskU1FIfldBhZ/NYh60CQEbCniPx
+nNqtnLuSvVcz4dhJCB6lKbs8rj/vOzScaik0HfAj0AAaJGupEpyAFe/j2crZtDOD
+g9uyw1v5n6X8d1I=
+-----END PRIVATE KEY-----
+-----BEGIN CERTIFICATE-----
+MIIFNzCCAx+gAwIBAgICCr0wDQYJKoZIhvcNAQELBQAwQjETMBEGCgmSJomT8ixk
+ARkWA29yZzEVMBMGCgmSJomT8ixkARkWBXVncmlkMRQwEgYDVQQDEwtVR1JJRCBD
+QSBHMjAeFw0xOTEyMDkxNDI2MzRaFw0yMDEyMDgxNDI2MzRaMGkxEzARBgoJkiaJ
+k/IsZAEZFgNvcmcxFTATBgoJkiaJk/IsZAEZFgV1Z3JpZDEPMA0GA1UEChMGcGVv
+cGxlMQ0wCwYDVQQKEwRCSVRQMRswGQYDVQQDExJBbmRyZXkgTGl0b3ZjaGVua28w
+ggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDFSPntNprGXApTa45MfIAI
+gHX6SSLcckTRUlwLBpCRoUoyfx2rbAs1IfQqYroKkRfQTmiWSjWjkI9emxf5Vbpa
+lW385n6FanJRVA/Q19TmMKK8kK7H4NYbopEpLvd2yA2bv6IeWTuUgOSJUvThngYP
+cxPdU4M/b3UdJ65xHL6GUKl4gd1PKkKk4Zri9QL2yGIs7axZHkbsLVgjkHVh50p5
+RzDujjtBtNT88eLvPZndFteWIGVz5dutIUtIrhPabAwNWQwHMnO0eJJWZVbO97ET
+cnrCXzJ3hAraElJqdniRm9dEmeTWGfrBx0UtESNJawltjIC+NfYDi6gJLeYctzwT
+AgMBAAGjggEOMIIBCjAMBgNVHRMBAf8EAjAAMA4GA1UdDwEB/wQEAwIE8DAdBgNV
+HSUEFjAUBggrBgEFBQcDAgYIKwYBBQUHAwQwHQYDVR0OBBYEFGQ11wAe9tD1XTgx
+fGZdGg0n04HQMB8GA1UdIwQYMBaAFIx0tLcmFgDlCyS9I3Z/lIvmgbPPMBcGA1Ud
+EgQQMA6BDGNhQHVncmlkLm9yZzAkBgNVHREEHTAbgRlBbGl0b3ZjaGVua29AYml0
+cC5raWV2LnVhMC8GA1UdHwQoMCYwJKAioCCGHmh0dHA6Ly9jYS51Z3JpZC5vcmcv
+Y2EyY3JsLmRlcjAbBgNVHSAEFDASMBAGDiqGSIb3TAUEAgYBAQEFMA0GCSqGSIb3
+DQEBCwUAA4ICAQBHEX5pi3Gjxis8BgTs5sVwKON4SDjTGzrQJXSefulgu6j5qVEb
+8vzGurKsgBhYMuVNMF6lAQz788lsAmLWRpR6dbJUuYHu4g9fmOlxLB6BL1n81PyT
+FtRySjZw4lNIE4lbt4kBy1bjL8eQH6GYQZlram/zuhl8hp6+XXGVG2p09y8dISYa
+zjJ9/7BA7UlId+Fdj6pBaMuMixtcmUPuWRc/XfqQEyXQM0K3sdKVT2MrXXlq3AKG
+KSkDOdHNJZuHlpCDKU+7IhkpeOBVihe0qIhAcX1o8GSCI8yun01wN0kUOYWgqYZP
+drfNm32MNKrRNLEcE+9YssEB2v1YO/sRuOhQ+mkuBnjyXmfdBOlyagoAdJhdSOCd
+wcJ9OsftyHDW4DTejRmjbuaLBjWHIWqGiNIOu5I9trLpTc1cA5Jmxx5CtX/bFjvF
+DOOv62XjnGC1jG3HC1f4vt7FTUswY3PAq6NzIhqNgNc6Rw1oRYc61VTt9wXY81dJ
+/esD1Ov9NKVIzo6LFp9/fBRTOAVbZadUTA+5TYMgJgfzyMxRVA3/BqhGEHl7zjvP
+FW79/Bj/Tl66KCUmH//DZvF6f5e/hk1T7MZ8Nl9oWcB7wGz3Bdp6wOh0nP3wP1iQ
++kJQUWdxUjV+GiRVk6qtTzYj970OoACmIgZ45Var+t3NSd7g4fbCaszzow==
+-----END CERTIFICATE-----"""
+
 db = ProxyDB()
 
 
@@ -409,9 +476,9 @@ class testDB(ProxyDBTestCase):
     gLogger.info("\n* Run `getProxiesContent(<selection dictionary>)`..")
     for log, res, sel in [(' - Look two users where one is not in requested group', 1,
                            {'UserName': ['user_1', 'user_4'], 'UserGroup': 'group_1'}),
-                          (' - Look group where 3 users and one have expired proxy', 2,
+                          (' - Look group where 3 users and one have expired proxy', 3,
                            {'UserGroup': 'group_1'}),
-                          (' - Look all DNs where one is expired', 3,
+                          (' - Look all DNs where one is expired', 4,
                            {'UserDN': DNs})]:
       gLogger.info('%s..' % log)
       result = db.getProxiesContent(sel)
@@ -457,23 +524,23 @@ class testDB(ProxyDBTestCase):
     gLogger.info('* Check posible crashes when get proxy..')
     # Make record with not valid proxy, valid group, user and short expired time
     cmd = 'INSERT INTO ProxyDB_Proxies(UserName, UserDN, UserGroup, Pem, ExpirationTime) VALUES '
-    cmd += '("user_1", "/C=DN/O=DIRAC/CN=user_1", "group_1", "PEM", '
+    cmd += '("user_1", "/C=DN/O=DIRAC/CN=user_1", "group_1", "%s", ' % expiredProxy
     cmd += 'TIMESTAMPADD(SECOND, 1800, UTC_TIMESTAMP()));'
     result = db._update(cmd)
     self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
     # Try to no correct getProxy requests
     for user, group, reqtime, voms, log in [('user_1', 'group_1', 9999, False,
-                                           'No proxy provider, set request time, not valid proxy in ProxyDB_Proxies'),
-                                          ('user_1', 'group_1', 0, False,
-                                           'Not valid proxy in ProxyDB_Proxies'),
-                                          ('no_user', 'no_valid_group', 0, False,
-                                           'User not exist, proxy not in DB tables'),
-                                          ('user_1', 'no_valid_group', 0, False,
-                                           'Group not valid, proxy not in DB tables'),
-                                          ('user_1', 'group_1', 0, False,
-                                           'No proxy provider for user, proxy not in DB tables'),
-                                          ('user_4', 'group_2', 0, False,
-                                           'Group has option enableToDownload = False in CS')]:
+                                             'No proxy provider, set request time, not valid proxy in ProxyDB_Proxies'),
+                                            ('user_1', 'group_1', 0, False,
+                                             'Not valid proxy in ProxyDB_Proxies'),
+                                            ('no_user', 'no_valid_group', 0, False,
+                                             'User not exist, proxy not in DB tables'),
+                                            ('user_1', 'no_valid_group', 0, False,
+                                             'Group not valid, proxy not in DB tables'),
+                                            ('user_1', 'group_1', 0, False,
+                                             'No proxy provider for user, proxy not in DB tables'),
+                                            ('user_4', 'group_2', 0, False,
+                                             'Group has option enableToDownload = False in CS')]:
       gLogger.info('== > %s:' % log)
       result = db.getProxy(user, group, reqtime, voms)
       self.assertFalse(result['OK'], 'Must be fail.')
