@@ -973,12 +973,10 @@ class ProxyDB(DB):
           DNs += result['Value']
     elif groups:
       for group in groups:
-        result = Registry.getUsersInGroup(group)
-        if result['OK']:
-          for user in result['Value']:
-            result = Registry.getDNsForUsername(user)
-            if result['OK']:
-              DNs += result['Value']
+        for user in Registry.getUsersInGroup(group):
+          result = Registry.getDNsForUsername(user)
+          if result['OK']:
+            DNs += result['Value']
     
     if DNs:
       if "UserDN" in selDict:
