@@ -266,11 +266,13 @@ class ProxyDBTestCase(unittest.TestCase):
     if self.failed:
        self.fail(self.failed)
     for table in ['ProxyDB_Proxies', 'ProxyDB_CleanProxies', 'ProxyDB_VOMSProxies']:
-      db._update('DELETE FROM %s WHERE UserDN IN ("%s")' % (table, '", "'.join(DNs)))
+      result = db._update('DELETE FROM %s WHERE UserDN IN ("%s")' % (table, '", "'.join(DNs)))
+      gLogger.debug('Proxies deleted from %s %s' % (table, 'successfuly' if result['OK'] else 'fail'))
 
   def tearDown(self):
     for table in ['ProxyDB_Proxies', 'ProxyDB_CleanProxies', 'ProxyDB_VOMSProxies']:
-      db._update('DELETE FROM %s WHERE UserDN IN ("%s")' % (table, '", "'.join(DNs)))
+      result = db._update('DELETE FROM %s WHERE UserDN IN ("%s")' % (table, '", "'.join(DNs)))
+      gLogger.debug('Proxies deleted from %s %s' % (table, 'successfuly' if result['OK'] else 'fail'))
 
   @classmethod
   def tearDownClass(cls):
@@ -303,15 +305,12 @@ class testDB(ProxyDBTestCase):
   def test_connectDB(self):
     """ Try to connect to the ProxyDB
     """
-    gLogger.info('\n=== Testing conecting to ProxyDB')
     res = db._connect()
     self.assertTrue(res['OK'])
 
   def test_getUsers(self):
     """ Test 'getUsers' - try to get users from DB
     """
-    gLogger.info('\n=== Testing `getUsers`')
-
     # Fill table for test
     gLogger.info('\n* Fill tables for test..')
     field = '(%%s "/C=DN/O=DIRAC/CN=%%s", %%s "PEM", TIMESTAMPADD(SECOND, %%s, UTC_TIMESTAMP()))%s' % ''
@@ -343,8 +342,6 @@ class testDB(ProxyDBTestCase):
   def test_purgeExpiredProxies(self):
     """ Test 'purgeExpiredProxies' - try to purge expired proxies
     """
-    gLogger.info('\n=== Testing `purgeExpiredProxies`')
-
     # Purge existed proxies
     gLogger.info('\n* First cleaning..')
     isDBContainExp = 'SELECT COUNT( * ) FROM %%s WHERE ExpirationTime < UTC_TIMESTAMP()%s' % ''
@@ -381,8 +378,6 @@ class testDB(ProxyDBTestCase):
   def test_getProxiesContent(self):
     """ Test 'getProxiesContent' - Try to get proxies contant from DB
     """
-    gLogger.info('\n=== Testing `getProxiesContent`')
-
     # Checking clean DB
     gLogger.info('\n* Check if tables is clean..')
     self.__isProxiesTablesClean()
@@ -424,8 +419,6 @@ class testDB(ProxyDBTestCase):
   def test_deleteProxy(self):
     """ Test 'deleteProxy' - Try to delete proxy
     """
-    gLogger.info('\n=== Testing `deleteProxy`')
-
     # Checking clean DB
     gLogger.info('\n* Check if tables is clean..')
     self.__isProxiesTablesClean()
@@ -453,11 +446,9 @@ class testDB(ProxyDBTestCase):
                     'Found %s proxies instead %s.' % (result['Value']['TotalRecords']), res)
     self.__isProxiesTablesClean()
 
-  def test_getProxy(self):
-    """ Test 'getProxy' - Testing get, store proxy
+  def test_getUploadProxy(self):
+    """ Test 'getUploadProxy' - Testing get, store proxy
     """
-    gLogger.info('\n=== Testing `getProxy`')
-
     # Checking clean DB
     gLogger.info('\n* Check if tables is clean..')
     self.__isProxiesTablesClean()
