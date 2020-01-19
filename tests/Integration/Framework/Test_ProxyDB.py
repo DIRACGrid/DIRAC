@@ -563,7 +563,8 @@ class testDB(ProxyDBTestCase):
     self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
     self.assertTrue(bool(int(result['Value']['TotalRecords']) == 1), 'Generated proxy must be one.')
     for table, count in [('ProxyDB_Proxies', 0), ('ProxyDB_CleanProxies', 1)]:
-      cmd = 'SELECT COUNT( * ) FROM %s WHERE UserName="user_ca"' % table
+      user_ca_DN = '/C=DN/O=DIRACCA/OU=None/CN=user_ca/emailAddress=user_ca@diracgrid.org'
+      cmd = 'SELECT COUNT( * ) FROM %s WHERE UserDN="%s"' % (table, user_ca_DN)
       self.assertTrue(bool(db._query(cmd)['Value'][0][0] == count),
                       '%s must %s' % (table, count and 'contain proxy' or 'be empty'))
 
