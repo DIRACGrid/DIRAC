@@ -298,7 +298,7 @@ class testDB(ProxyDBTestCase):
     """
     for table in ['ProxyDB_Proxies', 'ProxyDB_CleanProxies', 'ProxyDB_VOMSProxies']:
       self.assertTrue(bool(db._query('SELECT COUNT( * ) FROM %s WHERE UserDN in ("%s")' % (table, ", ".join(DNs)))['Value'][0][0] > 0),
-                      '%s table contain proxies.')
+                      '%s table contain proxies.' % table)
 
   def test_connectDB(self):
     """ Try to connect to the ProxyDB
