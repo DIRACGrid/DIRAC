@@ -160,8 +160,7 @@ class ProxyManagerHandler(RequestHandler):
     for vo in result['Value']:
       if vo not in VOMSesUsers:
         result = self.loadVOCacheFromFile(vo)
-        if result['OK']:
-          VOMSesUsers[vo] = result['Value']
+        VOMSesUsers[vo] = result['Value'] if result['OK'] else result['Message']
       if not isinstance(VOMSesUsers[vo], dict):
         gLogger.error('Cannot get %s information dictionary' % vo, VOMSesUsers[vo])
         del VOMSesUsers[vo]
