@@ -300,17 +300,17 @@ class ProxyManagerClient(object):
     self.__proxiesCache.add(cacheKey, chain.getRemainingSecs()['Value'], chain)
     return S_OK(chain)
 
-  def downloadPersonalProxy(self, user, userGroup, requiredTimeLeft=1200, voms=False):
+  def downloadPersonalProxy(self, user, group, requiredTimeLeft=1200, voms=False):
     """ Get a proxy Chain from the proxy management
 
         :param str user: user name
-        :param str userGroup: user group
+        :param str group: user group
         :param int requiredTimeLeft: required proxy live time in a seconds
         :param bool voms: for VOMS proxy
 
         :return: S_OK(X509Chain)/S_ERROR()
     """
-    return self.__getProxy(user, group, limited=limited, requiredTimeLeft=requiredTimeLeft,
+    return self.__getProxy(user, group, requiredTimeLeft=requiredTimeLeft,
                            voms=voms, personal=True)
   
   def downloadProxy(self, user, group, limited=False, requiredTimeLeft=1200, cacheTime=14400,

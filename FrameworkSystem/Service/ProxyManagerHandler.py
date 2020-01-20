@@ -267,7 +267,7 @@ class ProxyManagerHandler(RequestHandler):
         :return: S_OK(bool)/S_ERROR()
     """
     if personal:
-      csSection = PathFinder.getServiceSection('Framework/Notification')
+      csSection = PathFinder.getServiceSection('Framework/ProxyManager')
       if requestedUsername != credDict['username'] or requestedUserGroup != credDict['group']:
         return S_ERROR("You can't get %s@%s proxy!" % (credDict['username'], credDict['group']))
       elif not gConfig.getValue('%s/downloadablePersonalProxy' % csSection, False):

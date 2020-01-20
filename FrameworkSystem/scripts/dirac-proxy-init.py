@@ -360,7 +360,7 @@ class ProxyInit(object):
       except requests.exceptions.Timeout:
         return S_ERROR('Time out')
       except requests.exceptions.RequestException as ex:
-        return S_ERROR(ex.message)        
+        return S_ERROR(r.content)        
       except requests.exceptions.HTTPError as ex:
         return S_ERROR('Failed: %s' % r.text or ex.message)
       except BaseException as ex:
