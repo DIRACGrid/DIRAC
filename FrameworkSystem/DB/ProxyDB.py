@@ -954,6 +954,8 @@ class ProxyDB(DB):
 
         :return: S_OK(dict)/S_ERROR() -- dict contain fields, record list, total records
     """
+    paramNames = ("UserName", "UserDN", "UserGroup", "ExpirationTime", "PersistentFlag", "ProxyProvider")
+
     users = []
     groups = []
     if 'UserName' in selDict:
@@ -986,11 +988,20 @@ class ProxyDB(DB):
           if result['OK']:
             DNs += result['Value']
     
+    if "UserDN" not in selDict and DNs:
+      selDict["UserDN"] = DNs
+    
+    if "UserDN" in selDict and DNs:
+
     if DNs:
-      if "UserDN" in selDict:
-        if not isinstance(selDict["UserDN"], (list, tuple)):
-          selDict["UserDN"] = [selDict["UserDN"]]
-        selDict["UserDN"] += DNs
+      if selDict.get("UserDN"):
+        selDNs = selDict["UserDN"] if isinstance(selDict["UserDN"], (list, tuple)) else [selDict["UserDN"]]
+        selDict["UserDN"] = []
+        for dn in selDNs:
+          if dn in DNs:
+            selDict["UserDN"].append(dn)
+        if not selDict["UserDN"]:
+          return S_OK({'ParameterNames': paramNames, 'Records': [], 'TotalRecords': 0, 'Dictionaries': []})
       else:
         selDict["UserDN"] = DNs
 
@@ -1064,8 +1075,7 @@ class ProxyDB(DB):
         record.insert(0, user)
         record.append(provider)
         dataRecords.append(record)
-    fields = ("UserName", "UserDN", "UserGroup", "ExpirationTime", "PersistentFlag", "ProxyProvider")
-    return S_OK({'ParameterNames': fields, 'Records': dataRecords, 'TotalRecords': len(dataRecords),
+    return S_OK({'ParameterNames': paramNames, 'Records': dataRecords, 'TotalRecords': len(dataRecords),
                  'Dictionaries': dataDict})
 
   def logAction(self, action, issuerUsername, issuerGroup, targetUsername, targetGroup):
