@@ -676,6 +676,8 @@ class ReleaseConfig(object):
     for arg in args:
       if len(arg) > 4 and arg.find(".cfg") == len(arg) - 4 and ':::' not in arg:
         fileName = arg
+      else:
+        continue
 
       logNOTICE("Defaults for LocalInstallation are in %s" % fileName)
       try:
