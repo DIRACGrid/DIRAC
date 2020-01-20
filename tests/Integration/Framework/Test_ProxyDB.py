@@ -694,7 +694,7 @@ class testDB(ProxyDBTestCase):
     # Check stored proxies
     for table, count, dn in [('ProxyDB_Proxies', 0,
                               '/C=DN/O=DIRAC/CN=user_1'),
-                             ('ProxyDB_VOMSProxies', 0,
+                             ('ProxyDB_VOMSProxies', 1,
                               '/C=DN/O=DIRAC/CN=user_1'),
                              ('ProxyDB_CleanProxies', 1,
                               '/C=DN/O=DIRACCA/OU=None/CN=user_ca/emailAddress=user_ca@diracgrid.org')]:
