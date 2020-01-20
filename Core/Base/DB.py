@@ -92,7 +92,9 @@ class DB(MySQL):
 
         :return: S_OK()/S_ERROR()
     """
-    result = self._update("INSERT INTO `%s_Version` (Version) VALUES (%s)" % (self.dbName, version))
+    result = self._query('DELETE FROM `%s_Version`' % self.dbName)
+    if result['OK']:
+      result = self._update("INSERT INTO `%s_Version` (Version) VALUES (%s)" % (self.dbName, version))
     if not result['OK']:
       return S_ERROR("Can not initialize %s version: %s" % (self.dbName, result['Message']))
     self.versionDB = version
