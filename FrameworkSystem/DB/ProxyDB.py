@@ -14,7 +14,6 @@ import commands
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
 from DIRAC.Core.Utilities import DErrno
-from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.Security import Properties
 from DIRAC.Core.Security.VOMS import VOMS
@@ -29,19 +28,9 @@ from DIRAC.Resources.ProxyProvider.ProxyProviderFactory import ProxyProviderFact
 
 class ProxyDB(DB):
   """ Proxy database
-
-      Contain __DBContentMapping cache with next structure:
-      {
-        <DN1>: {'user': <user name>,
-                'groups': <list of groups>,
-                'provider': <proxy provider name>},
-        <DN2>: { ... },
-        ...
-      }
   """
 
   NOTIFICATION_TIMES = [2592000, 1296000]
-  __DBContentMapping = DictCache()
 
   def __init__(self,
                useMyProxy=False):
@@ -1005,8 +994,6 @@ class ProxyDB(DB):
 
     dataDict = []
     dataRecords = []
-    mapDict = self.__DBContentMapping.getDict()
-
     sqlWhere = ["Pem is not NULL"]
     if sqlCond:
       sqlWhere += (list(sqlCond) if isinstance(sqlCond, (list, tuple)) else [sqlCond])
@@ -1040,27 +1027,21 @@ class ProxyDB(DB):
         if table == 'ProxyDB_CleanProxies':
           record.insert(1, '')
           record.insert(3, False)
-        user = mapDict[record[0]].get('user') if mapDict.get(record[0]) else None
-        if not user:
-          result = Registry.getUsernameForDN(record[0])
-          if not result['OK']:
-            gLogger.error(result['Message'])
-            continue
-          user = result['Value']
-        groups = mapDict[record[0]].get('groups') if mapDict.get(record[0]) else None
-        if not groups:
-          result = Registry.getGroupsForDN(record[0])
-          if not result['OK']:
-            gLogger.error(result['Message'])
-            continue
-          groups = result['Value']
-        provider = mapDict[record[0]].get('provider') if mapDict.get(record[0]) else None
-        if not provider:
-          result = Registry.getProxyProviderForDN(record[0])
-          if not result['OK']:
-            gLogger.error(result['Message'])
-            continue
-          provider = result['Value']
+        result = Registry.getUsernameForDN(record[0])
+        if not result['OK']:
+          gLogger.error(result['Message'])
+          continue
+        user = result['Value']
+        result = Registry.getGroupsForDN(record[0])
+        if not result['OK']:
+          gLogger.error(result['Message'])
+          continue
+        groups = result['Value']
+        result = Registry.getProxyProviderForDN(record[0])
+        if not result['OK']:
+          gLogger.error(result['Message'])
+          continue
+        provider = result['Value']
 
         record[3] = record[3] == 'True'
         dataDict.append({'DN': record[0],
