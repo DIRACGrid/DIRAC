@@ -969,26 +969,29 @@ class ProxyDB(DB):
         groups = [groups]
       del selDict["UserGroup"]
 
-    DNs = []
-    if groups and users:
-      for user in users:
-        for group in groups:
-          result = Registry.getDNForUsernameInGroup(user, group)
-          if result['OK']:
-            DNs.append(result['Value'])
-    elif users:
-      for user in users:
-        result = Registry.getDNsForUsername(user)
-        if result['OK']:
-          DNs += result['Value']
-    elif groups:
-      for group in groups:
-        for user in Registry.getUsersInGroup(group):
+    
+    if groups or users:
+      DNs = []
+      if groups and users:
+        for user in users:
+          for group in groups:
+            result = Registry.getDNForUsernameInGroup(user, group)
+            if result['OK']:
+              DNs.append(result['Value'])
+      elif users:
+        for user in users:
           result = Registry.getDNsForUsername(user)
           if result['OK']:
             DNs += result['Value']
+      elif groups:
+        for group in groups:
+          for user in Registry.getUsersInGroup(group):
+            result = Registry.getDNsForUsername(user)
+            if result['OK']:
+              DNs += result['Value']
 
-    if DNs:
+      if not DNs:
+        return S_OK({'ParameterNames': paramNames, 'Records': [], 'TotalRecords': 0, 'Dictionaries': []})
       if selDict.get("UserDN"):
         selDNs = selDict["UserDN"] if isinstance(selDict["UserDN"], (list, tuple)) else [selDict["UserDN"]]
         selDict["UserDN"] = []
