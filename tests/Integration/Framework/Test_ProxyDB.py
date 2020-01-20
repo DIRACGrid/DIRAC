@@ -83,6 +83,7 @@ Registry
     {
       Users = user_ca, user_1, user_2, user_3
       VO = vo_1
+      VOMSRole = /vo_1/Role=role_1
     }
     group_2
     {
@@ -674,13 +675,13 @@ class testDB(ProxyDBTestCase):
     result = self.createProxy('user_1', 'group_1', 12, vo='vo_1', role='role_2')
     self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
 
-    cmd = 'INSERT INTO ProxyDB_Proxies(UserName, UserDN, UserGroup, Pem, ExpirationTime) VALUES '
-    cmd += '("user_1", "/C=DN/O=DIRAC/CN=user_1", "group_1", "%s", ' % result['Value'][1]
+    cmd = 'INSERT INTO ProxyDB_VOMSProxies(UserName, UserDN, UserGroup, Pem, ExpirationTime, VOMSAttr) '
+    cmd += 'VALUES ("user_1", "/C=DN/O=DIRAC/CN=user_1", "group_1", "%s", /vo_1/Role=role_2' % result['Value'][1]
     cmd += 'TIMESTAMPADD(SECOND, 43200, UTC_TIMESTAMP()))'
     result = db._update(cmd)
     self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
     # Try to get proxy with VOMS extension
-    for user, group, role, time, log in [('user_4', 'group_2', False, 9999,
+    for user, group, role, time, log in [('user_4', 'group_2', True, 9999,
                                           'Not exist VO for current group'),
                                          ('user_1', 'group_1', True, 9999,
                                           'Stored proxy already have different VOMS extension'),
@@ -691,7 +692,9 @@ class testDB(ProxyDBTestCase):
       self.assertFalse(result['OK'], 'Must be fail.')
       gLogger.info('Msg: %s' % result['Message'])
     # Check stored proxies
-    for table, count, dn in [('ProxyDB_Proxies', 1,
+    for table, count, dn in [('ProxyDB_Proxies', 0,
+                              '/C=DN/O=DIRAC/CN=user_1'),
+                             ('ProxyDB_VOMSProxies', 0,
                               '/C=DN/O=DIRAC/CN=user_1'),
                              ('ProxyDB_CleanProxies', 1,
                               '/C=DN/O=DIRACCA/OU=None/CN=user_ca/emailAddress=user_ca@diracgrid.org')]:
