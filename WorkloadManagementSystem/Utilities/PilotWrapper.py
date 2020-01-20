@@ -155,7 +155,12 @@ import random
 random.shuffle(location)
 
 # we try from the available locations
-for loc in location:
+locs = [os.path.join('https://', loc) for loc in location]
+locations = locs + [os.path.join(loc, 'pilot') for loc in locs]
+
+for loc in locations:
+  print('Trying %%s' %% loc)
+
   # Getting the json file and the tar file
   try:
 
@@ -173,18 +178,18 @@ for loc in location:
     if 'context' in url_library_urlopen.__code__.co_varnames:
       import ssl
       context = ssl._create_unverified_context()
-      rJson = url_library_urlopen('https://' + loc + '/pilot/pilot.json',
+      rJson = url_library_urlopen(os.path.join(loc, 'pilot.json'),
                                   timeout=10,
                                   context=context)
-      rTar = url_library_urlopen('https://' + loc + '/pilot/pilot.tar',
+      rTar = url_library_urlopen(os.path.join(loc, 'pilot.tar'),
                                  timeout=10,
                                  context=context)
       break
 
     else:
-      rJson = url_library_urlopen('https://' + loc + '/pilot/pilot.json',
+      rJson = url_library_urlopen(os.path.join(loc, 'pilot.json'),
                                   timeout=10)
-      rTar = url_library_urlopen('https://' + loc + '/pilot/pilot.tar',
+      rTar = url_library_urlopen(os.path.join(loc, 'pilot.tar'),
                                  timeout=10)
       break
 
