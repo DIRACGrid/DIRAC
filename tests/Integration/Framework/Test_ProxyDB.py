@@ -675,9 +675,9 @@ class testDB(ProxyDBTestCase):
     result = self.createProxy('user_1', 'group_1', 12, vo='vo_1', role='role_2')
     self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
 
-    cmd = 'INSERT INTO ProxyDB_VOMSProxies(UserName, UserDN, UserGroup, Pem, ExpirationTime, VOMSAttr) '
-    cmd += 'VALUES ("user_1", "/C=DN/O=DIRAC/CN=user_1", "group_1", "%s", /vo_1/Role=role_2' % result['Value'][1]
-    cmd += 'TIMESTAMPADD(SECOND, 43200, UTC_TIMESTAMP()))'
+    cmd = 'INSERT INTO ProxyDB_VOMSProxies(UserName, UserDN, UserGroup, Pem, VOMSAttr, ExpirationTime) '
+    cmd += 'VALUES ("user_1", "/C=DN/O=DIRAC/CN=user_1", "group_1", "%s", "/vo_1/Role=role_2",' % result['Value'][1]
+    cmd += ' TIMESTAMPADD(SECOND, 43200, UTC_TIMESTAMP()))'
     result = db._update(cmd)
     self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
     # Try to get proxy with VOMS extension

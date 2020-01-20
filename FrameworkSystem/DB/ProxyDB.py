@@ -546,6 +546,8 @@ class ProxyDB(DB):
     result = Registry.getProxyProviderForDN(userDN)
     if not result['OK']:
       return result
+    if result['Value'] == 'Certificate':
+      return S_ERROR('No proxy provider found for this DN, need to upload proxy')
     result = ProxyProviderFactory().getProxyProvider(result['Value'])
     if not result['OK']:
       return result
