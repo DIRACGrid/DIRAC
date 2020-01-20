@@ -987,11 +987,6 @@ class ProxyDB(DB):
           result = Registry.getDNsForUsername(user)
           if result['OK']:
             DNs += result['Value']
-    
-    if "UserDN" not in selDict and DNs:
-      selDict["UserDN"] = DNs
-    
-    if "UserDN" in selDict and DNs:
 
     if DNs:
       if selDict.get("UserDN"):
