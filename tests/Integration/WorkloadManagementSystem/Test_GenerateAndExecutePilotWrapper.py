@@ -81,7 +81,7 @@ else:
 
 res = pilotWrapperScript(
     pilotFilesCompressedEncodedDict={'dirac-install.py': diracInstallEncoded},
-    pilotOptions="--setup=CI --debug",
+    pilotOptions="--setup=CI -N ce.dirac.org -Q DIRACQUEUE -n DIRAC.CI.ORG --debug",
     location='diracproject.web.cern.ch/diracproject/tars/Pilot/DIRAC/master/,wrong.cern.ch')
 
 with open('pilot-wrapper.sh', 'wb') as pj:
