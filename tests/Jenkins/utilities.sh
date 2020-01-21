@@ -299,6 +299,8 @@ function getCFGFile(){
 #   --UseServerCertificate -o /DIRAC/Security/CertFile=some/location.pem -o /DIRAC/Security/KeyFile=some/location.pem
 
 function installDIRAC(){
+  echo -n > "$CLIENTINSTALLDIR/dirac-ci-install.cfg"
+
   echo '==> Installing DIRAC client'
   if ! cd "$CLIENTINSTALLDIR"; then
     echo "ERROR: cannot change to $CLIENTINSTALLDIR"

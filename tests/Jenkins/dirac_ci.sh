@@ -100,6 +100,7 @@ function installSite(){
   generateCA
   generateCertificates
 
+  echo -n > "$SERVERINSTALLDIR/dirac-ci-install.cfg"
   getCFGFile
 
   echo "==> Fixing install.cfg file"
