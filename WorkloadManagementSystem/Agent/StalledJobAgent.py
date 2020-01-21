@@ -42,7 +42,7 @@ for the agent restart
     self.logDB = None
     self.matchedTime = 7200
     self.rescheduledTime = 600
-    self.completedTime = 86400
+    self.completingTime = 86400
     self.submittingTime = 300
 
   #############################################################################
@@ -76,7 +76,8 @@ for the agent restart
     self.submittingTime = self.am_getOption('SubmittingTime', self.submittingTime)
     self.matchedTime = self.am_getOption('MatchedTime', self.matchedTime)
     self.rescheduledTime = self.am_getOption('RescheduledTime', self.rescheduledTime)
-    self.completedTime = self.am_getOption('CompletedTime', self.completedTime)
+    # Keep CompletedTime for backward compatibility, but remove after a while...
+    self.completingTime = self.am_getOption('CompletingTime', self.am_getOption('CompletedTime', self.completingTime))
 
     self.log.verbose('StalledTime = %s cycles' % (stalledTime))
     self.log.verbose('FailedTime = %s cycles' % (failedTime))
@@ -100,7 +101,7 @@ for the agent restart
     if not result['OK']:
       self.log.error('Failed to process stalled jobs', result['Message'])
 
-    result = self._failCompletedJobs()
+    result = self._failCompletingJobs()
     if not result['OK']:
       self.log.error('Failed to process completed jobs', result['Message'])
 
@@ -125,16 +126,15 @@ for the agent restart
       return result
     if not result['Value']:
       return S_OK()
-    jobs = result['Value']
+    jobs = sorted(result['Value'])
     self.log.info('%s Running jobs will be checked for being stalled' % (len(jobs)))
-    jobs.sort()
 # jobs = jobs[:10] #for debugging
     for job in jobs:
       site = self.jobDB.getJobAttribute(job, 'site')['Value']
       if site in self.stalledJobsTolerantSites:
-        result = self.__getStalledJob(job, stalledTime + self.stalledJobsToleranceTime)
+        result = self.__checkJobStalled(job, stalledTime + self.stalledJobsToleranceTime)
       else:
-        result = self.__getStalledJob(job, stalledTime)
+        result = self.__checkJobStalled(job, stalledTime)
       if result['OK']:
         self.log.verbose('Updating status to Stalled for job %s' % (job))
         self.__updateJobStatus(job, 'Stalled')
@@ -220,7 +220,7 @@ for the agent restart
   #############################################################################
   def __getJobPilotStatus(self, jobID):
     """ Get the job pilot status
-"""
+    """
     result = JobMonitoringClient().getJobParameter(jobID, 'Pilot_Reference')
     if not result['OK']:
       return result
@@ -242,10 +242,10 @@ for the agent restart
     return S_OK(pilotStatus)
 
   #############################################################################
-  def __getStalledJob(self, job, stalledTime):
+  def __checkJobStalled(self, job, stalledTime):
     """ Compares the most recent of LastUpdateTime and HeartBeatTime against
-the stalledTime limit.
-"""
+    the stalledTime limit.
+    """
     result = self.__getLatestUpdateTime(job)
     if not result['OK']:
       return result
@@ -264,7 +264,7 @@ the stalledTime limit.
   #############################################################################
   def __getLatestUpdateTime(self, job):
     """ Returns the most recent of HeartBeatTime and LastUpdateTime
-"""
+    """
     result = self.jobDB.getJobAttributes(job, ['HeartBeatTime', 'LastUpdateTime'])
     if not result['OK']:
       self.log.error('Failed to get job attributes', result['Message'])
@@ -282,9 +282,7 @@ the stalledTime limit.
     if not result['Value']['LastUpdateTime'] or result['Value']['LastUpdateTime'] == 'None':
       self.log.verbose('LastUpdateTime is null for job %s' % job)
     else:
-      lastUpdate = toEpoch(fromString(result['Value']['LastUpdateTime']))
-      if latestUpdate < lastUpdate:
-        latestUpdate = lastUpdate
+      latestUpdate = max(latestUpdate, toEpoch(fromString(result['Value']['LastUpdateTime'])))
 
     if not latestUpdate:
       return S_ERROR('LastUpdate and HeartBeat times are null for job %s' % job)
@@ -415,7 +413,7 @@ the stalledTime limit.
 
   def __checkHeartBeat(self, jobID, jobDict):
     """ Get info from HeartBeat
-"""
+    """
     result = self.jobDB.getHeartBeatData(jobID)
     lastCPUTime = 0
     lastWallTime = 0
@@ -446,7 +444,7 @@ the stalledTime limit.
 
   def __checkLoggingInfo(self, jobID, jobDict):
     """ Get info from JobLogging
-"""
+    """
     logList = []
     result = self.logDB.getJobLoggingInfo(jobID)
     if result['OK']:
@@ -517,34 +515,20 @@ the stalledTime limit.
       return S_ERROR(message)
     return S_OK()
 
-  def _failCompletedJobs(self):
-    """ Failed Jobs stuck in Completed Status for a long time.
+  def _failCompletingJobs(self):
+    """ Failed Jobs stuck in Completing Status for a long time.
       They are due to pilots being killed during the
       finalization of the job execution.
     """
 
-    # Get old Completed Jobs
-    checkTime = str(dateTime() - self.completedTime * second)
-    result = self.jobDB.selectJobs({'Status': 'Completed'}, older=checkTime)
+    # Get old Completing Jobs
+    checkTime = str(dateTime() - self.completingTime * second)
+    result = self.jobDB.selectJobs({'Status': 'Completing'}, older=checkTime)
     if not result['OK']:
       self.log.error('Failed to select jobs', result['Message'])
       return result
 
-    jobIDs = result['Value']
-    if not jobIDs:
-      return S_OK()
-
-    # Remove those with Minor Status "Pending Requests"
-    for jobID in jobIDs:
-      result = self.jobDB.getJobAttributes(jobID, ['Status', 'MinorStatus'])
-      if not result['OK']:
-        self.log.error('Failed to get job attributes', result['Message'])
-        continue
-      if result['Value']['Status'] != "Completed":
-        continue
-      if result['Value']['MinorStatus'] == "Pending Requests":
-        continue
-
+    for jobID in result['Value']:
       result = self.__updateJobStatus(jobID, 'Failed',
                                       "Job died during finalization")
       result = self.__sendAccounting(jobID)
@@ -566,11 +550,7 @@ the stalledTime limit.
       self.log.error('Failed to select jobs', result['Message'])
       return result
 
-    jobIDs = result['Value']
-    if not jobIDs:
-      return S_OK()
-
-    for jobID in jobIDs:
+    for jobID in result['Value']:
       result = self.__updateJobStatus(jobID, 'Failed')
       if not result['OK']:
         self.log.error('Failed to update job status', result['Message'])
