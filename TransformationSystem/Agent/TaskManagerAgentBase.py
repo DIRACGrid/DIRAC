@@ -331,8 +331,8 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
 
     # Get the tasks which are in an UPDATE state
     updateStatus = self.am_getOption('TaskUpdateStatus', ['Checking', 'Deleted', 'Killed', 'Staging', 'Stalled',
-                                                          'Matched', 'Scheduled', 'Rescheduled', 'Completing', 'Completed',
-                                                          'Submitted', 'Assigned', 'Received',
+                                                          'Matched', 'Scheduled', 'Rescheduled', 'Completing',
+                                                          'Completed', 'Submitted', 'Assigned', 'Received',
                                                           'Waiting', 'Running'])
     condDict = {"TransformationID": transID, "ExternalStatus": updateStatus}
     timeStamp = str(datetime.datetime.utcnow() - datetime.timedelta(minutes=10))
