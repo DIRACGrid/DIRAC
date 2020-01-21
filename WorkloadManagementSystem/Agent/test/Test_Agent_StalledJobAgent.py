@@ -38,8 +38,8 @@ def test__failSubmittingJobs(mocker):
   assert not result['OK']
 
 
-def test__failCompletedJobs(mocker):
-  """ Testing StalledJobAgent()._failCompletedJobs()
+def test__failCompletingJobs(mocker):
+  """ Testing StalledJobAgent()._failCompletingJobs()
   """
 
   mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule.__init__")
@@ -54,7 +54,7 @@ def test__failCompletedJobs(mocker):
   stalledJobAgent.log = gLogger
   stalledJobAgent.log.setLevel('DEBUG')
 
-  result = stalledJobAgent._failCompletedJobs()
+  result = stalledJobAgent._failCompletingJobs()
 
   assert not result['OK']
 
