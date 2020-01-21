@@ -66,7 +66,7 @@ from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 #############################################################################
 
 JOB_STATES = ['Submitting', 'Received', 'Checking', 'Staging', 'Waiting', 'Matched',
-              'Running', 'Stalled', 'Done', 'Completed', 'Failed']
+              'Running', 'Stalled', 'Completing', 'Done', 'Completed', 'Failed']
 JOB_FINAL_STATES = ['Done', 'Completed', 'Failed']
 
 

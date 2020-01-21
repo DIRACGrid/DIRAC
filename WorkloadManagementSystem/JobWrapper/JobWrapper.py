@@ -57,7 +57,6 @@ from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerCli
 from DIRAC.WorkloadManagementSystem.Client.SandboxStoreClient import SandboxStoreClient
 from DIRAC.WorkloadManagementSystem.Client.JobReport import JobReport
 
-
 EXECUTION_RESULT = {}
 
 
@@ -452,12 +451,12 @@ class JobWrapper(object):
 
       if not watchdog.checkError and not status:
         self.failedFlag = False
-        self.__report('Completed', 'Application Finished Successfully', sendFlag=True)
+        self.__report('Completing', 'Application Finished Successfully', sendFlag=True)
       elif not watchdog.checkError:
-        self.__report('Completed', 'Application Finished With Errors', sendFlag=True)
+        self.__report('Completing', 'Application Finished With Errors', sendFlag=True)
         if status in (DErrno.EWMSRESC, DErrno.EWMSRESC & 255):  # the status will be truncated to 0xDE (222)
           self.log.verbose("job will be rescheduled")
-          self.__report('Completed', 'Going to reschedule job', sendFlag=True)
+          self.__report('Completing', 'Going to reschedule job', sendFlag=True)
           return S_ERROR(DErrno.EWMSRESC, 'Job will be rescheduled')
 
     else:
@@ -757,7 +756,7 @@ class JobWrapper(object):
 
     # Do not overwrite in case of Error
     if not self.failedFlag:
-      self.__report('Completed', 'Uploading Output Sandbox')
+      self.__report('Completing', 'Uploading Output Sandbox')
 
     uploadOutputDataInAnyCase = False
 
@@ -787,7 +786,7 @@ class JobWrapper(object):
       else:
         # Do not overwrite in case of Error
         if not self.failedFlag:
-          self.__report('Completed', 'Output Sandbox Uploaded')
+          self.__report('Completing', 'Output Sandbox Uploaded')
         self.log.info('Sandbox uploaded successfully')
 
     if (outputData and not self.failedFlag) or uploadOutputDataInAnyCase:
@@ -854,7 +853,7 @@ class JobWrapper(object):
     """ Performs the upload and registration in the File Catalog(s)
     """
     self.log.verbose('Uploading output data files')
-    self.__report('Completed', 'Uploading Output Data')
+    self.__report('Completing', 'Uploading Output Data')
     self.log.info('Output data files %s to be uploaded to %s SE' % (', '.join(outputData), outputSE))
     missing = []
     uploaded = []
@@ -971,7 +970,7 @@ class JobWrapper(object):
       self.__report('Failed', 'Uploading Job OutputData')
       return S_ERROR('Failed to upload OutputData')
 
-    self.__report('Completed', 'Output Data Uploaded')
+    self.__report('Completing', 'Output Data Uploaded')
     return S_OK('OutputData uploaded successfully')
 
   #############################################################################
