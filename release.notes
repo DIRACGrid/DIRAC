@@ -10,7 +10,7 @@ NEW: (#4409) Allow --dirac-os-version argument to dirac-install.py to be a path 
 FIX: (#4394) RequestHandler - fix log output for the case where the ActionTuple is actually a string
 FIX: (#4394) AuthManager - manage the case where ExtraCredentials are in a form of a list
 NEW: (#4379) dirac-install accepts userEnvVariables switch, adds user-requested env variables
-     to *rc files
+     to *rc* files
 
 *WMS
 FIX: (#4404) Fix the matching delay functionality, fixes #2983
