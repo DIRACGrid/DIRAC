@@ -96,11 +96,11 @@ class TestClientFTS3(unittest.TestCase):
                              'error': '' if fId % 2 else 'Tough luck'}
 
     res = self.db.updateFileStatus(fileStatusDict)
-    self.assertTrue(res['OK'])
+    self.assertTrue(res['OK'], res['Message'])
 
     res = self.client.getOperation(opID)
+    self.assertTrue(res['OK'], res['Message'])
     op3 = res['Value']
-    self.assertTrue(res['OK'])
 
     self.assertTrue(op3.ftsFiles)
     for ftsFile in op3.ftsFiles:
@@ -128,8 +128,8 @@ class TestClientFTS3(unittest.TestCase):
     self.assertTrue(res['OK'])
 
     res = self.client.getOperation(opID)
+    self.assertTrue(res['OK'], res['Message'])
     op4 = res['Value']
-    self.assertTrue(res['OK'])
 
     self.assertTrue(op4.ftsFiles)
     for ftsFile in op4.ftsFiles:
@@ -210,10 +210,12 @@ class TestClientFTS3(unittest.TestCase):
     op.ftsJobs.append(job1)
 
     res = self.client.persistOperation(op)
+    self.assertTrue(res['OK'], res['Message'])
     opID = res['Value']
 
     # Get back the operation to update all the IDs
     res = self.client.getOperation(opID)
+    self.assertTrue(res['OK'], res['Message'])
     op = res['Value']
 
     fileIds = []
@@ -258,6 +260,7 @@ class TestClientFTS3(unittest.TestCase):
     # And now this is the problem, because If we check whether this operation still has
     # files to submit, it will tell me yes, while all the files are being taken care of
     res = self.client.getOperation(opID)
+    self.assertTrue(res['OK'], res['Message'])
     op = res['Value']
 
     # isTotallyProcessed does not return S_OK struct
@@ -294,10 +297,12 @@ class TestClientFTS3(unittest.TestCase):
       ftsFile.ftsGUID = job1GUID
 
     res = self.client.persistOperation(op)
+    self.assertTrue(res['OK'], res['Message'])
     opID = res['Value']
 
     # Get back the operation to update all the IDs
     res = self.client.getOperation(opID)
+    self.assertTrue(res['OK'], res['Message'])
     op = res['Value']
 
     fileIds = []
@@ -356,6 +361,7 @@ class TestClientFTS3(unittest.TestCase):
 
     # And hopefully now there shouldn't be any file to submit
     res = self.client.getOperation(opID)
+    self.assertTrue(res['OK'], res['Message'])
     op = res['Value']
 
     # isTotallyProcessed does not return S_OK struct
@@ -407,10 +413,12 @@ class TestClientFTS3(unittest.TestCase):
     op.ftsJobs.append(job2)
 
     res = self.db.persistOperation(op)
+    self.assertTrue(res['OK'], res['Message'])
     opID = res['Value']
 
     # Get back the operation to update all the IDs
     res = self.db.getOperation(opID)
+    self.assertTrue(res['OK'], res['Message'])
     op = res['Value']
 
     fileIds = []
@@ -436,6 +444,7 @@ class TestClientFTS3(unittest.TestCase):
 
     # And hopefully now File2 is Canceled, while the others are as they were
     res = self.client.getOperation(opID)
+    self.assertTrue(res['OK'], res['Message'])
     op = res['Value']
 
     self.assertTrue(op.ftsFiles[0].status == 'Finished')
