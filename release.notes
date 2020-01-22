@@ -1,3 +1,14 @@
+[v6r22p19]
+
+*Framework
+CHANGE: (#4415) ComponentInstaller - do not start runsvdir if not needed
+
+*Resources
+FIX: (#4414) Enable setting of WaitingToRunningRatio from Global CE Defaults, fixes #4368
+
+*DMS
+CHANGE: (#4413) FTS3Agent - change proxy lifetime of FTS3Agent from 2 to 12 hours
+
 [v6r22p18]
 
 *TS
