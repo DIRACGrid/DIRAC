@@ -1,48 +1,23 @@
-""" DIRAC JobDB class is a front-end to the main WMS database containing
+""" The JobDB class is a front-end to the main WMS database containing
     job definitions and status information. It is used in most of the WMS
     components
 
-    The following methods are provided for public usage:
 
-    getJobAttribute()
-    getJobAttributes()
-    getAllJobAttributes()
-    getDistinctJobAttributes()
-    getAttributesForJobList()
-    getJobParameter()
-    getJobParameters()
-    getAllJobParameters()
-    getInputData()
-    getJobJDL()
+**Configuration Parameters**:
 
-    selectJobs()
-    selectJobsWithStatus()
+The following options can be set in ``Systems/WorkloadManagement/<Setup>/Databases/JobDB``
 
-    setJobAttribute()
-    setJobAttributes()
-    setJobParameter()
-    setJobParameters()
-    setJobJDL()
-    setJobStatus()
-    setInputData()
+* *MaxRescheduling*:     Set the maximum number of times a job can be rescheduled, default *3*.
+* *CompressJDLs*:        Enable compression of JDLs when they are stored in the database, default *False*.
 
-    insertNewJobIntoDB()
-    removeJobFromDB()
-
-    rescheduleJob()
-    rescheduleJobs()
-
-    getMask()
-    setMask()
-    allowSiteInMask()
-    banSiteInMask()
-
-    getCounters()
 """
 
 from __future__ import print_function, absolute_import, division
 from past.builtins import long
+
 import six
+import zlib
+
 from six.moves import range
 
 __RCSID__ = "$Id$"
@@ -83,6 +58,7 @@ class JobDB(DB):
     # data member to check if __init__ went through without error
     self.__initialized = False
     self.maxRescheduling = self.getCSOption('MaxRescheduling', 3)
+    self.compressJDLs = self.getCSOption('CompressJDLs', False)
 
     # loading the function that will be used to determine the platform (it can be VO specific)
     res = ObjectLoader().loadObject("ConfigurationSystem.Client.Helpers.Resources", 'getDIRACPlatform')
@@ -103,6 +79,7 @@ class JobDB(DB):
     self.jdl2DBParameters = ['JobName', 'JobType', 'JobGroup']
 
     self.log.info("MaxReschedule", self.maxRescheduling)
+    self.log.info("CompressJDLs", self.compressJDLs)
     self.log.info("==================================================")
     self.__initialized = True
 
@@ -892,12 +869,12 @@ class JobDB(DB):
       return ret
     jobID = ret['Value']
 
-    ret = self._escapeString(jdl)
+    ret = self._escapeString(self.__compressJDL(jdl))
     if not ret['OK']:
       return ret
     e_JDL = ret['Value']
 
-    ret = self._escapeString(originalJDL)
+    ret = self._escapeString(self.__compressJDL(originalJDL))
     if not ret['OK']:
       return ret
     e_originalJDL = ret['Value']
@@ -929,6 +906,20 @@ class JobDB(DB):
     return result
 
 #############################################################################
+  def __compressJDL(self, jdl):
+    """Return compressed JDL string."""
+    if not self.compressJDLs:
+      return jdl
+    return zlib.compress(jdl, -1).encode('base64')
+
+  def __extractJDL(self, compressedJDL):
+    """Return decompressed JDL string."""
+    # the starting bracket is guaranteeed by JobManager.submitJob
+    # we need the check to be backward compatible
+    if compressedJDL.startswith('['):
+      return compressedJDL
+    return zlib.decompress(compressedJDL.decode('base64'))
+
   def __insertNewJDL(self, jdl):
     """Insert a new JDL in the system, this produces a new JobID
     """
@@ -937,7 +928,7 @@ class JobDB(DB):
 
     result = self.insertFields('JobJDLs',
                                ['JDL', 'JobRequirements', 'OriginalJDL'],
-                               ['', '', jdl])
+                               ['', '', self.__compressJDL(jdl)])
     if not result['OK']:
       self.log.error('Can not insert New JDL', result['Message'])
       return result
@@ -952,7 +943,7 @@ class JobDB(DB):
     return S_OK(jobID)
 
 #############################################################################
-  def getJobJDL(self, jobID, original=False, status=''):
+  def getJobJDL(self, jobID, original=False):
     """ Get JDL for job specified by its jobID. By default the current job JDL
         is returned. If 'original' argument is True, original JDL is returned
     """
@@ -961,25 +952,17 @@ class JobDB(DB):
       return ret
     jobID = ret['Value']
 
-    ret = self._escapeString(status)
-    if not ret['OK']:
-      return ret
-    e_status = ret['Value']
-
     if original:
       cmd = "SELECT OriginalJDL FROM JobJDLs WHERE JobID=%s" % jobID
     else:
       cmd = "SELECT JDL FROM JobJDLs WHERE JobID=%s" % jobID
-
-    if status:
-      cmd = cmd + " AND Status=%s" % e_status
 
     result = self._query(cmd)
     if result['OK']:
       jdl = result['Value']
       if not jdl:
         return S_OK(jdl)
-      return S_OK(result['Value'][0][0])
+      return S_OK(self.__extractJDL(jdl[0][0]))
     return result
 
 #############################################################################
