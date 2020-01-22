@@ -115,11 +115,11 @@ class DIRACCAPPTest(unittest.TestCase):
         "FullName": "DIRAC test user"
     }
     self.userDictNotFull = {
-        "Email": "testuser@diracgrid.org",
+        "Email": "testuser@diracgrid.org"
     }
     self.userDictNotFullWithDN = {
         "DN": "/C=FR/O=DIRAC/OU=DIRAC TEST/CN=DIRAC test user/emailAddress=testuser@diracgrid.org",
-        "Email": "testuser@diracgrid.org",
+        "Email": "testuser@diracgrid.org"
     }
 
   def tearDown(self):
