@@ -19,7 +19,6 @@ class SEManagerBase(object):
     if self.db:
       self.db.seNames = {}
       self.db.seids = {}
-      self.db.seDefinitions = {}
     self.lock = threading.Lock()
     self.seUpdatePeriod = 600
 
@@ -30,16 +29,8 @@ class SEManagerBase(object):
   def setUpdatePeriod(self, period):
     self.seUpdatePeriod = period
 
-  def setSEDefinitions(self, seDefinitions):
-    self.db.seDefinitions = seDefinitions
-    self.seNames = {}
-    for seID, seDef in self.db.seDefinitions.iteritems():
-      seName = seDef['SEName']
-      self.seNames[seName] = seID
-
   def setDatabase(self, database):
     self.db = database
     self.db.seNames = {}
     self.db.seids = {}
-    self.db.seDefinitions = {}
     self._refreshSEs()

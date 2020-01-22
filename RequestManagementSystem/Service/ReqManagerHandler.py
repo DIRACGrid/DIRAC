@@ -19,6 +19,7 @@ import math
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
 from DIRAC.Core.Utilities import DErrno
+from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 # # from RMS
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
@@ -188,8 +189,12 @@ class ReqManagerHandler(RequestHandler):
   types_getBulkRequests = [int, bool]
 
   @classmethod
+  @ignoreEncodeWarning
   def export_getBulkRequests(cls, numberOfRequest, assigned):
     """ Get a request of given type from the database
+
+        :warning: the dictionary may contain string keys instead of int (json serialization)
+                  Do not forget to cast it back
 
         :param numberOfRequest: size of the bulk (default 10)
         :return: S_OK( {Failed : message, Successful : list of Request.toJSON()} )
@@ -303,12 +308,18 @@ class ReqManagerHandler(RequestHandler):
 
   @classmethod
   def export_getRequestIDsForJobs(cls, jobIDs):
-    """ Select the request IDs for supplied jobIDs """
+    """ Select the request IDs for supplied jobIDs
+
+        :warning: the dictionnary may contain string keys instead of int (json serialization)
+          Do not forget to cast it back
+
+    """
     return cls.__requestDB.getRequestIDsForJobs(jobIDs)
 
   types_readRequestsForJobs = [list]
 
   @classmethod
+  @ignoreEncodeWarning
   def export_readRequestsForJobs(cls, jobIDs):
     """ read requests for jobs given list of jobIDs """
     requests = cls.__requestDB.readRequestsForJobs(jobIDs)

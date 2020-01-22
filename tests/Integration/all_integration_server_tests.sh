@@ -14,33 +14,33 @@ set -o pipefail
 ERR=0
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u) **** Core TESTS ****\n"
-python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/Core/Test_ElasticsearchDB.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
+pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/Core/Test_ElasticsearchDB.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
 
 
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u) **** FRAMEWORK TESTS (partially skipped) ****\n"
-python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/Framework/Test_InstalledComponentsDB.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
+pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/Framework/Test_InstalledComponentsDB.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
 python $SERVERINSTALLDIR/DIRAC/tests/Integration/Framework/Test_ProxyDB.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
 #pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/Framework/Test_LoggingDB.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
 
 
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u)  **** RSS TESTS ****\n"
-python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/ResourceStatusSystem/Test_FullChain.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
+pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/ResourceStatusSystem/Test_FullChain.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
 
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u)  **** WMS TESTS ****\n"
 python $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_Client_WMS.py $WORKSPACE/TestCode/DIRAC/tests/Integration/WorkloadManagementSystem/sb.cfg 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
-python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_JobDB.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
-python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_JobLoggingDB.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
-python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_TaskQueueDB.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
-python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_ElasticJobDB.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
-python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_JobParameters_MySQLandES.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
+pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_JobDB.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
+pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_JobLoggingDB.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
+pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_TaskQueueDB.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
+pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_ElasticJobDB.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
+pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_JobParameters_MySQLandES.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
 
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u)  **** DMS TESTS ****\n"
 ## DFC
-python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/DataManagementSystem/Test_DataIntegrityDB.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
+pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/DataManagementSystem/Test_DataIntegrityDB.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
 
 echo "Test DFC DB" 2>&1 | tee -a $SERVER_TEST_OUTPUT
 python $SERVERINSTALLDIR/DIRAC/tests/Integration/DataManagementSystem/Test_FileCatalogDB.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
@@ -76,7 +76,7 @@ pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/DataManagementSystem/Test_Clien
 
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u)  **** RMS TESTS ****\n"
-python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/RequestManagementSystem/Test_ReqDB.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
+pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/RequestManagementSystem/Test_ReqDB.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
 
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u)  **** MONITORING TESTS ****\n"
@@ -90,4 +90,4 @@ python $SERVERINSTALLDIR/DIRAC/tests/Integration/Resources/Storage/Test_Resource
 python $SERVERINSTALLDIR/DIRAC/tests/Integration/Resources/ProxyProvider/Test_DIRACCAProxyProvider.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
 
 # Can only run if there's a Stomp MQ local...
-# python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/Resources/MessageQueue/Test_ActiveClose.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
+# pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/Resources/MessageQueue/Test_ActiveClose.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))

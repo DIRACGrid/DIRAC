@@ -23,9 +23,12 @@ FINAL_STATES = ['Done', 'Aborted', 'Cleared', 'Deleted', 'Stalled']
 
 
 def initializeWMSAdministratorHandler(serviceInfo):
-  """  WMS AdministratorService initialization
-  """
+  """ WMS AdministratorService initialization
 
+      :param dict serviceInfo: service information dictionary
+
+      :return: S_OK()/S_ERROR()
+  """
   global jobDB
   global taskQueueDB
 
@@ -41,12 +44,14 @@ class WMSAdministratorHandler(RequestHandler):
 
   def export_setSiteMask(self, siteList):
     """ Set the site mask for matching. The mask is given in a form of Classad string.
-    """
-    result = self.getRemoteCredentials()
-    dn = result['DN']
 
+        :param list siteList: site, status
+
+        :return: S_OK()/S_ERROR()
+    """
+    credDict = self.getRemoteCredentials()
     maskList = [(site, 'Active') for site in siteList]
-    result = jobDB.setSiteMask(maskList, dn, 'No comment')
+    result = jobDB.setSiteMask(maskList, credDict['DN'], 'No comment')
     return result
 
 ##############################################################################
@@ -55,6 +60,10 @@ class WMSAdministratorHandler(RequestHandler):
   @classmethod
   def export_getSiteMask(cls, siteState='Active'):
     """ Get the site mask
+
+        :param str siteState: site status
+
+        :return: S_OK(list)/S_ERROR()
     """
     return jobDB.getSiteMask(siteState)
 
@@ -63,8 +72,12 @@ class WMSAdministratorHandler(RequestHandler):
   @classmethod
   def export_getSiteMaskStatus(cls, sites=None):
     """ Get the site mask of given site(s) with columns 'site' and 'status' only
-    """
 
+        :param sites: list of sites or site
+        :type sites: list or str
+
+        :return: S_OK()/S_ERROR() -- S_OK contain dict or str
+    """
     return jobDB.getSiteMaskStatus(sites)
 
   ##############################################################################
@@ -73,6 +86,8 @@ class WMSAdministratorHandler(RequestHandler):
   @classmethod
   def export_getAllSiteMaskStatus(cls):
     """ Get all the site parameters in the site mask
+
+        :return: dict
     """
     return jobDB.getAllSiteMaskStatus()
 
@@ -81,15 +96,14 @@ class WMSAdministratorHandler(RequestHandler):
 
   def export_banSite(self, site, comment='No comment'):
     """ Ban the given site in the site mask
-    """
 
-    result = self.getRemoteCredentials()
-    dn = result['DN']
-    result = getUsernameForDN(dn)
-    if result['OK']:
-      author = result['Value']
-    else:
-      author = dn
+        :param str site: site
+        :param str comment: comment
+
+        :return: S_OK()/S_ERROR()
+    """
+    credDict = self.getRemoteCredentials()
+    author = credDict['username'] if credDict['username'] != 'anonymous' else credDict['DN']
     result = jobDB.banSiteInMask(site, author, comment)
     return result
 
@@ -98,15 +112,14 @@ class WMSAdministratorHandler(RequestHandler):
 
   def export_allowSite(self, site, comment='No comment'):
     """ Allow the given site in the site mask
-    """
 
-    result = self.getRemoteCredentials()
-    dn = result['DN']
-    result = getUsernameForDN(dn)
-    if result['OK']:
-      author = result['Value']
-    else:
-      author = dn
+        :param str site: site
+        :param str comment: comment
+
+        :return: S_OK()/S_ERROR()
+    """
+    credDict = self.getRemoteCredentials()
+    author = credDict['username'] if credDict['username'] != 'anonymous' else credDict['DN']
     result = jobDB.allowSiteInMask(site, author, comment)
     return result
 
@@ -116,8 +129,9 @@ class WMSAdministratorHandler(RequestHandler):
   @classmethod
   def export_clearMask(cls):
     """ Clear up the entire site mask
-    """
 
+        :return: S_OK()/S_ERROR()
+    """
     return jobDB.removeSiteFromMask(None)
 
   ##############################################################################
@@ -126,8 +140,11 @@ class WMSAdministratorHandler(RequestHandler):
   @classmethod
   def export_getSiteMaskLogging(cls, sites):
     """ Get the site mask logging history
-    """
 
+        :param list sites: sites
+
+        :return: S_OK(dict)/S_ERROR()
+    """
     if isinstance(sites, six.string_types):
       sites = [sites]
 
@@ -139,8 +156,9 @@ class WMSAdministratorHandler(RequestHandler):
   @classmethod
   def export_getSiteMaskSummary(cls):
     """ Get the mask status for all the configured sites
-    """
 
+        :return: S_OK(dict)/S_ERROR()
+    """
     # Get all the configured site names
     result = gConfig.getSections('/Resources/Sites')
     if not result['OK']:
@@ -168,8 +186,11 @@ class WMSAdministratorHandler(RequestHandler):
   def export_getJobPilotOutput(self, jobID):
     """ Get the pilot job standard output and standard error files for the DIRAC
         job reference
-    """
 
+        :param str jobID: job ID
+
+        :return: S_OK(dict)/S_ERROR()
+    """
     pilotReference = ''
     # Get the pilot grid reference first from the job parameters
     result = jobDB.getJobParameter(int(jobID), 'Pilot_Reference')
@@ -197,8 +218,14 @@ class WMSAdministratorHandler(RequestHandler):
   @classmethod
   def export_getSiteSummaryWeb(cls, selectDict, sortList, startItem, maxItems):
     """ Get the summary of the jobs running on sites in a generic format
-    """
 
+        :param dict selectDict: selectors
+        :param list sortList: sorting list
+        :param int startItem: start item number
+        :param int maxItems: maximum of items
+
+        :return: S_OK(dict)/S_ERROR()
+    """
     result = jobDB.getSiteSummaryWeb(selectDict, sortList, startItem, maxItems)
     return result
 
@@ -208,8 +235,9 @@ class WMSAdministratorHandler(RequestHandler):
   @classmethod
   def export_getSiteSummarySelectors(cls):
     """ Get all the distinct selector values for the site summary web portal page
-    """
 
+        :return: S_OK(dict)/S_ERROR()
+    """
     resultDict = {}
     statusList = ['Good', 'Fair', 'Poor', 'Bad', 'Idle']
     resultDict['Status'] = statusList

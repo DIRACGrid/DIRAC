@@ -132,7 +132,7 @@ You can use install.cfg configuration file::
 
 """
 
-from __future__ import absolute_import, division, print_function
+from __future__ import unicode_literals, absolute_import, division, print_function
 
 import sys
 import os
@@ -674,26 +674,36 @@ class ReleaseConfig(object):
     self.loadedCfgs.append(basePath)
     return S_OK(self.globalDefaults.getChild(basePath))
 
-  def loadInstallationLocalDefaults(self, fileName):
+  def loadInstallationLocalDefaults(self, args):
     """
     Load the configuration file from a file
 
-    :param str fileName: the configuration file name
+    :param str args: the arguments in which to look for configuration filenames
     """
-    try:
-      fd = open(fileName, "r")
-      # TODO: Merge with installation CFG
-      cfg = ReleaseConfig.CFG().parse(fd.read())
-      fd.close()
-    except Exception as excp:
-      return S_ERROR("Could not load %s: %s" % (fileName, excp))
-    self.globalDefaults.update("Installations/%s" % self.instName, cfg)
-    self.globalDefaults.update("Projects/%s" % self.instName, cfg)
-    if self.projectName:
-      # we have an extension and have a local cfg file
-      self.globalDefaults.update("Projects/%s" % self.projectName, cfg)
+    # at the end we load the local configuration and merge with the global cfg
+    for arg in args:
+      if len(arg) > 4 and arg.find(".cfg") == len(arg) - 4 and ':::' not in arg:
+        fileName = arg
+      else:
+        continue
 
-    return S_OK()
+      logNOTICE("Defaults for LocalInstallation are in %s" % fileName)
+      try:
+        fd = open(fileName, "r")
+        # TODO: Merge with installation CFG
+        cfg = ReleaseConfig.CFG().parse(fd.read())
+        fd.close()
+      except Exception as excp:
+        logERROR("Could not load %s: %s" % (fileName, excp))
+        continue
+
+      self.globalDefaults.update("Installations/%s" % self.instName, cfg)
+      self.globalDefaults.update("Projects/%s" % self.instName, cfg)
+      if self.projectName:
+        # we have an extension and have a local cfg file
+        self.globalDefaults.update("Projects/%s" % self.projectName, cfg)
+
+      logNOTICE("Loaded %s" % arg)
 
   def getModuleVersionFromLocalCfg(self, moduleName):
     """
@@ -749,26 +759,28 @@ class ReleaseConfig(object):
       return S_OK(sourceUrl)
     return S_ERROR("Don't know how to find the installation tarballs for project %s" % project)
 
-  def getDiracOsLocation(self, project=None, diracosDefault=False):
+  def getDiracOsLocation(self, useVanillaDiracOS=False):
     """
     Returns the location of the DIRAC os binary for a given project for example: LHCb or DIRAC, etc...
-
-    :param str project: the name of the project
-    :param bool diracosDefault: flag to take diracos distribution from the default location
-
+    :param bool useVanillaDiracOS: flag to take diracos distribution from the default location
     :return: the location of the tar balls
     """
-    if project is None:
-      project = 'DIRAC'
+    keysToConsider = []
+    if not useVanillaDiracOS:
+      keysToConsider += [
+          "Installations/%s/DIRACOS" % self.projectName,
+          "Projects/%s/DIRACOS" % self.projectName,
+      ]
+    keysToConsider += [
+        "Installations/DIRAC/DIRACOS",
+        "Projects/DIRAC/DIRACOS",
+    ]
 
-    diracOsLoc = "Projects/%s/DIRACOS" % self.projectName
-    if not diracosDefault and self.globalDefaults.isOption(diracOsLoc):
-      # use from the VO specific configuration file
-      location = self.globalDefaults.get(diracOsLoc, "")
-    else:
-      # use the default OS, provided by DIRAC
-      location = self.globalDefaults.get("Projects/%s/DIRACOS" % project, "")
-    return S_OK(location)
+    for key in keysToConsider:
+      location = self.globalDefaults.get(key, "")
+      if location:
+        logDEBUG("Using DIRACOS tarball URL from configuration key %s" % key)
+        return location
 
   def getUploadCommand(self, project=None):
     """
@@ -1439,7 +1451,7 @@ def downloadAndExtractTarball(tarsURL, pkgName, pkgVer, checkHash=True, cache=Fa
         retVal = checkoutFromGit(pkgName, tarsURL, pkgVer)
         if not retVal['OK']:
           logERROR("Cannot download %s" % tarName)
-          logERROR("Cannot download %s" % retVal['Value'])
+          logERROR("Cannot download %s" % retVal['Message'])
           return False
         else:
           isSource = True
@@ -1746,14 +1758,7 @@ def loadConfiguration():
   if not result['OK']:
     logERROR("Could not load defaults: %s" % result['Message'])
 
-  # at the end we load the local configuration and merge with the global cfg
-  for arg in args:
-    if len(arg) > 4 and arg.find(".cfg") == len(arg) - 4 and ':::' not in arg:
-      result = releaseConfig.loadInstallationLocalDefaults(arg)
-      if not result['OK']:
-        logERROR(result['Message'])
-      else:
-        logNOTICE("Loaded %s" % arg)
+  releaseConfig.loadInstallationLocalDefaults(args)
 
   for opName in ('release', 'externalsType', 'installType', 'pythonVersion',
                  'buildExternals', 'noAutoBuild', 'debug', 'globalDefaults',
@@ -1866,6 +1871,9 @@ def loadConfiguration():
 
   if not releaseConfig.isProjectLoaded("DIRAC"):
     return S_ERROR("DIRAC is not depended by this installation. Aborting")
+
+  # Reload the local configuration to ensure it takes prescience
+  releaseConfig.loadInstallationLocalDefaults(args)
 
   return S_OK(releaseConfig)
 
@@ -2306,7 +2314,7 @@ def writeDefaultConfiguration():
   # Keep the default configuration file in the working directory
   filePath = "defaults-%s.cfg" % cliParams.installation
   try:
-    fd = open(filePath, "wb")
+    fd = open(filePath, "w")
     fd.write(instCFG.toString())
     fd.close()
   except Exception as excp:
@@ -2338,23 +2346,9 @@ def installDiracOS(releaseConfig):
   if not diracOSVersion:
     logERROR("No diracos defined")
     return False
-  tarsURL = None
-  if cliParams.installSource:
-    tarsURL = cliParams.installSource
-  else:
-    # if ":" is not present in diracos name, we take the diracos tarball from vanilla DIRAC location
-    if diracos.lower() == 'diracos':
-      retVal = releaseConfig.getDiracOsLocation(diracosDefault=True)
-      if retVal['OK']:
-        tarsURL = retVal['Value']
-      else:
-        logERROR(retVal['Message'])
-    else:
-      retVal = releaseConfig.getDiracOsLocation()
-      if retVal['OK']:
-        tarsURL = retVal['Value']
-      else:
-        logERROR(retVal['Message'])
+  tarsURL = cliParams.installSource
+  if not tarsURL:
+    tarsURL = releaseConfig.getDiracOsLocation(useVanillaDiracOS=(diracos.lower() == 'diracos'))
   if not tarsURL:
     tarsURL = releaseConfig.getTarsLocation('DIRAC')['Value']
     logWARN("DIRACOS location is not specified using %s" % tarsURL)
