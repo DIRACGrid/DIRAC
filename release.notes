@@ -1,4 +1,4 @@
-[v7r1-pre13]
+[v7r1-pre14]
 
 NEW: Add environment.yml file for preparing an environment with conda
 
@@ -9,6 +9,9 @@ NEW: (#4274) Allow installation from a local directory
 FIX: (#4289) Use subprocess32 if possible for significantly better performance
 FIX: (#4289) TypeLoader should not be a singleton as it has a cache
 CHANGE: (#4362) RPC parameters are cast to list/tuples when needed
+FIX: (#4410) M2Crypto transport cast socket.error to strings
+CHANGE: (#4410) (JSON) rpcStub uses list instead of tuples
+NEW: (#4410) add utilities for JSON Serialization (strToIntDict and ignoreEncodeWarning)
 
 *Configuration
 CHANGE: (#4157) add new helper methods for IdP/Proxy Providers, OAuthManager. Add methods that 
@@ -27,15 +30,22 @@ NEW: (#4257) Filter of duplicate mails in Notification
 FIX: (#4257) Optimize test in NotificationHandler
 FIX: (#4289) Avoid leaking std(in|out|err) file handles when running runsvdir
 CHANGE: (#4362) BundleDeliveryFramework uses list instead of tuple
+CHANGE: (#4410) (JSON) use of list instead of tuples for SecurityLog
 
 *WMS
 CHANGE: (#4362) SandboxStoreClient uses list instead of tuple
 CHANGE: (#4396) Removed outdated PilotMonitorAgent
+CHANGE: (#4410) (JSON) use of list instead of tuples for JobReport and Watchdog
 
 *DMS
 CHANGE: (#4243) FileCatalog - standard components are loaded using ObjectLoader mechanism
 NEW: (#4279) FileCatalog - added VOMSSecurityManager class
 CHANGE: (#4279) FileCatalog - dropped PolicyBasedSecurityManager and VOMSPolicy classes
+CHANGE: (#4410) (JSON) correct casts for serialization for FTS
+CHANGE: (#4364) remove all the SE mangling in the DFC (SEPrefix, resolvePFN, SEDefinition)
+
+*RMS
+CHANGE: (#4410) (JSON) correct casts for serialization
 
 *Resources
 NEW: (#4157) ProxyProvider resources with implementation for DIRAC CA and PUSP proxy providers
@@ -43,6 +53,10 @@ NEW: (#4276) IdProvider resources to represent external user identity providers
 
 *RSS
 CHANGE: (#4362) SQL query orders using list instead of tuples
+CHANGE: (#4410) (JSON) db ordering uses list instead of tuples
+
+*StorageManagement
+CHANGE: (#4410) (JSON) use lists instead of tuples
 
 *tests
 CHANGE: (#4279) use VOMSSecurityManager for integration instead of PolicyBasedSecurityManager/VOMSPolicy
@@ -50,6 +64,7 @@ FIX: (#4284) DMS client tests to use DIRAC user name, rather than the local syst
 NEW: (#4289) CI for unit/lint/integration testing with GitHub actions
 NEW: (#4289) Start using shell linting of the test scripts
 FIX: (#4289) Exit quickly if the installation fails to make it easier to find issues
+CHANGE: (#4410) call pytest directly instead of as a module
 
 *docs
 NEW: (#4289) Document how to run integration tests in docker
