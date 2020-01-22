@@ -1,43 +1,15 @@
-""" DIRAC JobDB class is a front-end to the main WMS database containing
+""" The JobDB class is a front-end to the main WMS database containing
     job definitions and status information. It is used in most of the WMS
     components
 
-    The following methods are provided for public usage:
 
-    getJobAttribute()
-    getJobAttributes()
-    getAllJobAttributes()
-    getDistinctJobAttributes()
-    getAttributesForJobList()
-    getJobParameter()
-    getJobParameters()
-    getAllJobParameters()
-    getInputData()
-    getJobJDL()
+**Configuration Parameters**:
 
-    selectJobs()
-    selectJobsWithStatus()
+The following options can be set in ``Systems/WorkloadManagement/<Setup>/Databases/JobDB``
 
-    setJobAttribute()
-    setJobAttributes()
-    setJobParameter()
-    setJobParameters()
-    setJobJDL()
-    setJobStatus()
-    setInputData()
+* *MaxRescheduling*:     Set the maximum number of times a job can be rescheduled, default *3*.
+* *CompressJDLs*:        Enable compression of JDLs when they are stored in the database, default *False*.
 
-    insertNewJobIntoDB()
-    removeJobFromDB()
-
-    rescheduleJob()
-    rescheduleJobs()
-
-    getMask()
-    setMask()
-    allowSiteInMask()
-    banSiteInMask()
-
-    getCounters()
 """
 
 from __future__ import print_function, absolute_import, division
