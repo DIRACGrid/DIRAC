@@ -1240,7 +1240,7 @@ class SiteDirector(AgentModule):
     """
 
     # Generate a proxy before feeding the threads to renew the ones of the CEs to perform actions
-        result = gProxyManager.downloadCorrectProxy(self.pilotUser, self.pilotGroup, 23400)
+    result = gProxyManager.downloadCorrectProxy(self.pilotUser, self.pilotGroup, 23400)
     if not result['OK']:
       return result
     proxy = result['Value']

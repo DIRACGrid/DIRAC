@@ -223,7 +223,7 @@ class FileCatalogClient(FileCatalogClientBase):
     for path in result['Value']['Successful']:
       owner = result['Value']['Successful'][path]['Owner']
       group = result['Value']['Successful'][path]['OwnerGroup']
-      ownerDN = getDNForUsernameInGroup(owner, ownerGroup).get('Value') or ''
+      ownerDN = getDNForUsernameInGroup(owner, group).get('Value') or ''
       result['Value']['Successful'][path]['OwnerDN'] = ownerDN
       result['Value']['Successful'][path]['OwnerRole'] = getVOMSAttributeForGroup(group)
     return result
