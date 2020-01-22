@@ -17,6 +17,8 @@ import datetime
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.List import randomize, fromChar
+from DIRAC.Core.Utilities.JEncode import strToIntDict
+from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.RequestManagementSystem.Client.Request import Request
@@ -138,6 +140,7 @@ class ReqClient(Client):
       return getRequest
     return S_OK(Request(getRequest["Value"]))
 
+  @ignoreEncodeWarning
   def getBulkRequests(self, numberOfRequest=10, assigned=True):
     """ get bulk requests from RequestDB
 
@@ -159,8 +162,10 @@ class ReqClient(Client):
       return getRequests
 
     jsonReq = getRequests["Value"]["Successful"]
-    reqInstances = dict((rId, Request(jsonReq[rId])) for rId in jsonReq)
-    return S_OK({"Successful": reqInstances, "Failed": getRequests["Value"]["Failed"]})
+    # Do not forget to cast back str keys to int
+    reqInstances = {int(rId): Request(jsonReq[rId]) for rId in jsonReq}
+    failed = strToIntDict(getRequests["Value"]["Failed"])
+    return S_OK({"Successful": reqInstances, "Failed": failed})
 
   def peekRequest(self, requestID):
     """ peek request """
@@ -360,12 +365,19 @@ class ReqClient(Client):
                               "Failed" : { jobIDn: errMsg, jobIDm: errMsg, ...}  )
     """
     self.log.verbose("getRequestIDsForJobs: attempt to get request(s) for job %s" % jobIDs)
-    requests = self._getRPC().getRequestIDsForJobs(jobIDs)
-    if not requests["OK"]:
+    res = self._getRPC().getRequestIDsForJobs(jobIDs)
+    if not res["OK"]:
       self.log.error("getRequestIDsForJobs: unable to get request(s) for jobs",
-                     "%s: %s" % (jobIDs, requests["Message"]))
-    return requests
+                     "%s: %s" % (jobIDs, res["Message"]))
+      return res
 
+    # Cast the JobIDs back to int
+    successful = strToIntDict(res['Value']['Successful'])
+    failed = strToIntDict(res['Value']['Failed'])
+
+    return S_OK({'Successful': successful, 'Failed': failed})
+
+  @ignoreEncodeWarning
   def readRequestsForJobs(self, jobIDs):
     """ read requests for jobs
 
@@ -379,10 +391,11 @@ class ReqClient(Client):
       return readReqsForJobs
     ret = readReqsForJobs["Value"]
     # # create Requests out of JSONs for successful reads
-    if "Successful" in ret:
-      for jobID, fromJSON in ret["Successful"].items():
-        ret["Successful"][jobID] = Request(fromJSON)
-    return S_OK(ret)
+    # Do not forget to cast back str keys to int
+    successful = {int(jobID): Request(jsonReq) for jobID, jsonReq in ret['Successful'].iteritems()}
+    failed = strToIntDict(ret['Failed'])
+
+    return S_OK({'Successful': successful, 'Failed': failed})
 
   def resetFailedRequest(self, requestID, allR=False):
     """ Reset a failed request to "Waiting" status
@@ -415,7 +428,7 @@ class ReqClient(Client):
       return self.putRequest(req)
     return S_OK("Not reset")
 
-#============= Some useful functions to be shared ===========
+# ============= Some useful functions to be shared ===========
 
 
 output = ''
@@ -444,9 +457,9 @@ def prettyPrint(mainItem, key='', offset=0):
   else:
     output += "%s%s%s\n" % (blanks, key, str(mainItem))
   output = output.replace('[\n%s{' % blanks, '[{').replace('}\n%s]' % blanks, '}]') \
-                 .replace('(\n%s{' % blanks, '({').replace('}\n%s)' % blanks, '})') \
-                 .replace('(\n%s(' % blanks, '((').replace(')\n%s)' % blanks, '))') \
-                 .replace('(\n%s[' % blanks, '[').replace(']\n%s)' % blanks, ']')
+      .replace('(\n%s{' % blanks, '({').replace('}\n%s)' % blanks, '})') \
+      .replace('(\n%s(' % blanks, '((').replace(')\n%s)' % blanks, '))') \
+      .replace('(\n%s[' % blanks, '[').replace(']\n%s)' % blanks, ']')
 
 
 def printFTSJobs(request):

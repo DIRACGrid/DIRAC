@@ -19,6 +19,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getDNForUsername
 from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
 from DIRAC.Core.Security.Properties import FULL_DELEGATION, LIMITED_DELEGATION, TRUSTED_HOST
 from DIRAC.Core.Utilities import DErrno
+from DIRAC.Core.Utilities.JEncode import strToIntDict
 
 
 from DIRAC.DataManagementSystem.DB.FTS3DB import FTS3DB
@@ -159,7 +160,7 @@ class FTS3ManagerHandler(RequestHandler):
        :param fileStatusDict: { fileID : { status , error } }
        :param ftsGUID: (not mandatory) If specified, only update the rows where the ftsGUID matches this value.
     """
-
+    fileStatusDict = strToIntDict(fileStatusDict)
     return cls.fts3db.updateFileStatus(fileStatusDict, ftsGUID)
 
   types_updateJobStatus = [dict]
@@ -170,7 +171,7 @@ class FTS3ManagerHandler(RequestHandler):
 
        :param jobStatusDict: { jobID : { status , error } }
     """
-
+    jobStatusDict = strToIntDict(jobStatusDict)
     return cls.fts3db.updateJobStatus(jobStatusDict)
 
   types_getNonFinishedOperations = [six.integer_types, basestring]

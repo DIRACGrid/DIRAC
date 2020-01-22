@@ -860,7 +860,7 @@ class Watchdog(object):
       for k, v in vals.items():
         if v:
           self.log.info(str(k) + ' = ' + str(v))
-          parameters.append((k, v))
+          parameters.append([k, v])
       if report:
         self.__setJobParamList(parameters)
 

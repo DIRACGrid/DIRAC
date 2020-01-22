@@ -254,7 +254,7 @@ class ResourceStatusClientChain(TestClientResourceStatusTestCase):
     # Using also Meta
     res = rssClient.selectStatusElement('Resource', 'Log', 'TestName1234',
                                         meta={'columns': ['Status', 'StatusType'],
-                                              'newer': ('DateEffective', Datetime)})
+                                              'newer': ['DateEffective', Datetime]})
     # check if the select query was executed properly
     self.assertTrue(res['OK'])
     self.assertEqual(res['Value'][0][0], 'Banned')
@@ -270,7 +270,7 @@ class ResourceStatusClientChain(TestClientResourceStatusTestCase):
     # Using also Meta
     res = rssClient.selectStatusElement('Resource', 'Log', 'TestName1234',
                                         meta={'columns': ['Status', 'StatusType'],
-                                              'older': ('DateEffective', Datetime)})
+                                              'older': ['DateEffective', Datetime]})
     # check if the select query was executed properly
     self.assertTrue(res['OK'])
     self.assertEqual(res['Value'], [])
@@ -279,8 +279,8 @@ class ResourceStatusClientChain(TestClientResourceStatusTestCase):
     # Using Meta with order
     res = rssClient.selectStatusElement('Resource', 'Log', 'TestName1234',
                                         meta={'columns': ['Status', 'StatusType'],
-                                              'newer': ('DateEffective', Datetime),
-                                              'order': ('status', 'DESC')})
+                                              'newer': ['DateEffective', Datetime],
+                                              'order': ['status', 'DESC']})
     # check if the select query was executed properly
     self.assertTrue(res['OK'])
     self.assertEqual(res['Value'][0][0], 'Probing')
@@ -296,7 +296,7 @@ class ResourceStatusClientChain(TestClientResourceStatusTestCase):
     # Using Meta with limit
     res = rssClient.selectStatusElement('Resource', 'Log', 'TestName1234',
                                         meta={'columns': ['Status', 'StatusType'],
-                                              'newer': ('DateEffective', Datetime),
+                                              'newer': ['DateEffective', Datetime],
                                               'order': 'status',
                                               'limit': 1})
     # check if the select query was executed properly

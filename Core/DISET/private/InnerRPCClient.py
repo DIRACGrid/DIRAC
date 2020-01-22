@@ -37,7 +37,8 @@ class InnerRPCClient(BaseClient):
     retVal = self._connect()
 
     # Generate the stub which contains all the connection and call options
-    stub = (self._getBaseStub(), functionName, args)
+    # JSON: cast args to list for serialization purposes
+    stub = [self._getBaseStub(), functionName, list(args)]
     if not retVal['OK']:
       retVal['rpcStub'] = stub
       return retVal
