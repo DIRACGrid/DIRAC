@@ -51,13 +51,4 @@ if [ -z "$DIRAC_RELEASE" ]; then
     export DIRAC_RELEASE=$projectVersion
 fi
 
-if [ "$ALTERNATIVE_MODULES" ]; then
-  echo "Installing from non-release code"
-  if [[ -d $ALTERNATIVE_MODULES ]]; then
-    INSTALLOPTIONS+="--module=$ALTERNATIVE_MODULES:::DIRAC:::local"
-  else
-    INSTALLOPTIONS+="--module=$ALTERNATIVE_MODULES"
-  fi
-fi
-
 installDIRAC
