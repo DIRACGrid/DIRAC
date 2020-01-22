@@ -83,14 +83,17 @@ class Request(object):
 
     self.dmsHelper = DMSHelpers()
 
+    credDict = {}
     proxyInfo = getProxyInfo()
     if proxyInfo["OK"]:
-      proxyInfo = proxyInfo["Value"]
+      credDict['DN'] = proxyInfo["Value"]['subject']
+      credDict['group'] = proxyInfo["Value"].get('group')
+      credDict['username'] = proxyInfo["Value"].get('username')
 
-      if initializationOfCertificate(proxyInfo) and initializationOfGroup(proxyInfo):
-        self.Owner = proxyInfo["username"]
-        self.OwnerDN = proxyInfo["DN"]
-        self.OwnerGroup = proxyInfo["group"]
+      if initializationOfCertificate(credDict) and initializationOfGroup(credDict):
+        self.Owner = credDict["username"]
+        self.OwnerDN = credDict["DN"]
+        self.OwnerGroup = credDict["group"]
 
     self.__operations__ = []
 
