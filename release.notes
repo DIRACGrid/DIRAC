@@ -69,11 +69,19 @@ CHANGE: (#4410) call pytest directly instead of as a module
 *docs
 NEW: (#4289) Document how to run integration tests in docker
 
+[v7r0p11]
+
+*Core
+FIX: (#4411) Make dirac-install tool python 3 compatible
+NEW: (#4409) Allow --dirac-os-version argument to dirac-install.py to be a path or URL to a tarball
+
+[v7r0p10]
+
 *Core
 FIX: (#4394) RequestHandler - fix log output for the case where the ActionTuple is actually a string
 FIX: (#4394) AuthManager - manage the case where ExtraCredentials are in a form of a list
 NEW: (#4379) dirac-install accepts userEnvVariables switch, adds user-requested env variables
-     to *rc files
+     to *rc* files
 
 *WMS
 FIX: (#4404) Fix the matching delay functionality, fixes #2983
@@ -308,6 +316,17 @@ CHANGE: (#4110) updated basic tutorial for CC7 instead of SLC6.
 NEW: (#4170) added Production system documentation
 CHANGE: (#4224) Pilot 3 is the default
 NEW: (#4244) Added a few notes on using the JobParameters on ElasticSearch database
+
+[v6r22p19]
+
+*Framework
+CHANGE: (#4415) ComponentInstaller - do not start runsvdir if not needed
+
+*Resources
+FIX: (#4414) Enable setting of WaitingToRunningRatio from Global CE Defaults, fixes #4368
+
+*DMS
+CHANGE: (#4413) FTS3Agent - change proxy lifetime of FTS3Agent from 2 to 12 hours
 
 [v6r22p18]
 

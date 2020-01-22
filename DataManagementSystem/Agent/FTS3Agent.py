@@ -47,6 +47,9 @@ from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 
 AGENT_NAME = "DataManagement/FTS3Agent"
 
+# Lifetime in seconds of the proxy we download for submission
+PROXY_LIFETIME = 43200  # 12 hours
+
 
 class FTS3Agent(AgentModule):
   """
@@ -120,8 +123,8 @@ class FTS3Agent(AgentModule):
         per tuple (user, group, server).
         We dump the proxy of a user to a file (shared by all the threads),
         and use it to make the context.
-        The proxy needs a lifetime of at least 2h, is cached for 1.5h, and
-        the lifetime of the context is 45mn
+        The proxy needs a lifetime of PROXY_LIFETIME, is cached for half an hour less,
+        and the lifetime of the context is 45mn
 
         :param username: name of the user
         :param group: group of the user
@@ -148,10 +151,11 @@ class FTS3Agent(AgentModule):
       log.debug("UserDN %s" % userDN)
 
       # We dump the proxy to a file.
-      # It has to have a lifetime of at least 2 hours
-      # and we cache it for 1.5 hours
+      # It has to have a lifetime of PROXY_LIFETIME
+      # and we cache it for half an hour less
+      cacheTime = PROXY_LIFETIME - 1800
       res = gProxyManager.downloadVOMSProxyToFile(
-          userDN, group, requiredTimeLeft=7200, cacheTime=5400)
+          userDN, group, requiredTimeLeft=PROXY_LIFETIME, cacheTime=cacheTime)
       if not res['OK']:
         return res
 
