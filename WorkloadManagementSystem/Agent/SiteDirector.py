@@ -378,6 +378,7 @@ class SiteDirector(AgentModule):
             queueCECache[queueName]['CE'] = result['Value']
             queueCE = queueCECache[queueName]['CE']
 
+          self.queueDict[queueName]['ParametersDict'].update(queueCE.ceParameters)
           self.queueDict[queueName]['CE'] = queueCE
           self.queueDict[queueName]['CEName'] = ce
           self.queueDict[queueName]['CEType'] = ceDict['CEType']
