@@ -40,10 +40,8 @@ class SEManagerDB(SEManagerBase):
       if seName not in seNames:
         del self.db.seNames[seName]
         del self.db.seids[seId]
-        del self.db.seDefinitions[seId]
 
     for seid, seName in res['Value']:
-      self.getSEDefinition(seid)
       self.db.seNames[seName] = seid
       self.db.seids[seid] = seName
     gLogger.debug("SEManager RefreshSEs lock released. Used %.3f seconds." % (time.time() - waitTime))
@@ -79,7 +77,6 @@ class SEManagerDB(SEManagerBase):
     seid = res['lastRowId']
     self.db.seids[seid] = seName
     self.db.seNames[seName] = seid
-    self.getSEDefinition(seid)
     gLogger.debug("SEManager AddSE lock released. Used %.3f seconds. %s" % (time.time() - waitTime, seName))
     self.lock.release()
     return S_OK(seid)
@@ -100,7 +97,6 @@ class SEManagerDB(SEManagerBase):
     if seid != 'Missing':
       self.db.seNames.pop(seName)
       self.db.seids.pop(seid)
-      self.db.seDefinitions.pop(seid)
     gLogger.debug("SEManager RemoveSE lock released. Used %.3f seconds. %s" % (time.time() - waitTime, seName))
     self.lock.release()
     return S_OK()
@@ -129,85 +125,3 @@ class SEManagerDB(SEManagerBase):
     if not force:
       pass
     return self.__removeSE(seName)
-
-  def getSEDefinition(self, seID):
-    """ Get the Storage Element definition
-    """
-    if isinstance(seID, str):
-      result = self.getSEID(seID)
-      if not result['OK']:
-        return result
-      seID = result['Value']
-
-    if seID in self.db.seDefinitions:
-      if (time.time() - self.db.seDefinitions[seID]['LastUpdate']) < self.seUpdatePeriod:
-        if self.db.seDefinitions[seID]['SEDict']:
-          return S_OK(self.db.seDefinitions[seID])
-      se = self.db.seDefinitions[seID]['SEName']
-    else:
-      result = self.getSEName(seID)
-      if not result['OK']:
-        return result
-      se = result['Value']
-      self.db.seDefinitions[seID] = {}
-      self.db.seDefinitions[seID]['SEName'] = se
-      self.db.seDefinitions[seID]['SEDict'] = {}
-      self.db.seDefinitions[seID]['LastUpdate'] = 0.
-
-    # We have to refresh the SE definition from the CS
-    result = gConfig.getSections('/Resources/StorageElements/%s' % se)
-    if not result['OK']:
-      return result
-    pluginSection = result['Value'][0]
-    result = gConfig.getOptionsDict('/Resources/StorageElements/%s/%s' % (se, pluginSection))
-    if not result['OK']:
-      return result
-    seDict = result['Value']
-    self.db.seDefinitions[seID]['SEDict'] = seDict
-    # Get VO paths if any
-    voPathDict = None
-    result = gConfig.getOptionsDict('/Resources/StorageElements/%s/%s/VOPath' % (se, pluginSection))
-    if result['OK']:
-      voPathDict = result['Value']
-    if seDict:
-      # A.T. Ports can be multiple, this can be better done using the Storage plugin
-      # to provide the replica prefix to keep implementations in one place
-      if 'Port' in seDict:
-        ports = seDict['Port']
-        if ',' in ports:
-          portList = [x.strip() for x in ports.split(',')]
-          random.shuffle(portList)
-          seDict['Port'] = portList[0]
-      tmpDict = dict(seDict)
-      tmpDict['FileName'] = ''
-      result = pfnunparse(tmpDict)
-      if result['OK']:
-        self.db.seDefinitions[seID]['SEDict']['PFNPrefix'] = result['Value']
-      if voPathDict is not None:
-        for vo in voPathDict:
-          tmpDict['Path'] = voPathDict[vo]
-          result = pfnunparse(tmpDict)
-          if result['OK']:
-            self.db.seDefinitions[seID]['SEDict'].setdefault("VOPrefix", {})[vo] = result['Value']
-    self.db.seDefinitions[seID]['LastUpdate'] = time.time()
-    return S_OK(self.db.seDefinitions[seID])
-
-  def getSEPrefixes(self, connection=False):
-
-    result = self._refreshSEs(connection)
-    if not result['OK']:
-      return result
-
-    resultDict = {}
-
-    for seID in self.db.seDefinitions:
-      resultDict[self.db.seDefinitions[seID]['SEName']] = \
-          self.db.seDefinitions[seID]['SEDict'].get('PFNPrefix', '')
-
-      # Check if some paths are specific for VO's and add these definitions
-      if self.db.seDefinitions[seID]['SEDict'].get('VOPrefix'):
-        resultDict.setdefault('VOPrefix', {})
-        resultDict['VOPrefix'][self.db.seDefinitions[seID]['SEName']] = \
-            self.db.seDefinitions[seID]['SEDict'].get('VOPrefix')
-
-    return S_OK(resultDict)
