@@ -145,7 +145,7 @@ class DIRACCAPPTest(unittest.TestCase):
                              (self.userDictWithFalseUserDN, False),
                              (self.userDictNotFull, False),
                              (self.userDictNotFullWithDN, True)]:
-      result = self.pp.getUserDN(userDict)
+      result = self.pp.getUserDN(**userDict)
       if expRes:
         self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
         self.assertEqual(result['Value'], self.DN, '%s, but expected: %s' % (result['Value'], self.DN))
