@@ -1,7 +1,11 @@
-[v7r2-pre3]
+[v7r2-pre4]
 
 *Core
 FIX: (#4283) Added protection against empty certificates directory in dirac-install
+
+*WMS
+NEW: (#4367) Added option "CompressJDLs" to JobDB, which compresses JDLs before they are
+     added to the JobJDLs table
 
 *ResourceStatusSystem
 CHANGE: (#4235) Removes locals() way of passing parameters
