@@ -51,7 +51,10 @@ from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 INTEGER_PARAMETERS = ['CPUTime',
                       'NumberOfProcessors', 'NumberOfPayloadProcessors',
                       'MaxRAM']
-FLOAT_PARAMETERS = []
+FLOAT_PARAMETERS = ['WaitingToRunningRatio']
+
+__RCSID__ = "$Id$"
+
 LIST_PARAMETERS = ['Tag', 'RequiredTag']
 WAITING_TO_RUNNING_RATIO = 0.5
 MAX_WAITING_JOBS = 1

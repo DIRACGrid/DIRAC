@@ -1592,11 +1592,11 @@ class ComponentInstaller(object):
           DIRAC.exit(-1)
         return S_ERROR(result['Message'])
       processList = result['Value'][1].split('\n')
-      cmd = 'runsvdir %s' % self.startDir
-      cmdFound = False
-      for process in processList:
-        if process.find(cmd) != -1:
-          cmdFound = True
+
+      # it is pointless to look for more detailed command.
+      # Nobody uses runsvdir.... so if it is there, it is us.
+      cmdFound = any(['runsvdir' in process for process in processList])
+
       if not cmdFound:
         gLogger.notice('Starting runsvdir ...')
         with open(os.devnull, 'w') as devnull:
