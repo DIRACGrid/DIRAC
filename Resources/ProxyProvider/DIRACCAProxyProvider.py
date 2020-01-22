@@ -193,6 +193,10 @@ class DIRACCAProxyProvider(ProxyProvider):
     userDict = kwargs or {}
     if userDict.get('userDN'):
       dnDict = dict([field.split('=') for field in userDict['userDN'].lstrip('/').split('/')])
+      if userDict.get('FullName') and not userDict['FullName'] == dnDict.get('CN'):
+        return S_ERROR('CN: %s is not match for userDN: %s' % (userDict['FullName'], userDict['userDN']))
+      if userDict.get('Email') and not userDict['Email'] == dnDict.get('emailAddress'):
+        return S_ERROR('CN: %s is not match for userDN: %s' % (userDict['Email'], userDict['emailAddress']))
       userDict['FullName'] = dnDict.get('CN')
       userDict['Email'] = dnDict.get('emailAddress')
 
