@@ -105,12 +105,12 @@ class DIRACCAPPTest(unittest.TestCase):
         "Email": "testuser@diracgrid.org"
     }
     self.userDictWithUserDN = {
-        "UserDN": "/C=FR/O=DIRAC/OU=DIRAC TEST/CN=DIRAC test user/emailAddress=testuser@diracgrid.org",
+        "userDN": "/C=FR/O=DIRAC/OU=DIRAC TEST/CN=DIRAC test user/emailAddress=testuser@diracgrid.org",
         "Email": "testuser@diracgrid.org",
         "FullName": "DIRAC test user"
     }
     self.userDictWithFalseUserDN = {
-        "UserDN": "/C=FR/O=DIRAC/OU=DIRAC TEST/CN=False DIRAC user/emailAddress=testuser@diracgrid.org",
+        "userDN": "/C=FR/O=DIRAC/OU=DIRAC TEST/CN=False DIRAC user/emailAddress=testuser@diracgrid.org",
         "Email": "testuser@diracgrid.org",
         "FullName": "DIRAC test user"
     }
@@ -118,7 +118,7 @@ class DIRACCAPPTest(unittest.TestCase):
         "Email": "testuser@diracgrid.org"
     }
     self.userDictNotFullWithDN = {
-        "DN": "/C=FR/O=DIRAC/OU=DIRAC TEST/CN=DIRAC test user/emailAddress=testuser@diracgrid.org",
+        "userDN": "/C=FR/O=DIRAC/OU=DIRAC TEST/CN=DIRAC test user/emailAddress=testuser@diracgrid.org",
         "Email": "testuser@diracgrid.org"
     }
 
