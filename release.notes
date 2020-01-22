@@ -1,3 +1,9 @@
+[v7r0p11]
+
+*Core
+FIX: (#4411) Make dirac-install tool python 3 compatible
+NEW: (#4409) Allow --dirac-os-version argument to dirac-install.py to be a path or URL to a tarball
+
 [v7r0p10]
 
 *Core
