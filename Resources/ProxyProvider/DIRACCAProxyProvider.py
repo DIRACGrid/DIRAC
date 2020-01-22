@@ -188,7 +188,7 @@ class DIRACCAProxyProvider(ProxyProvider):
                - FullName, UserName to create DN
                - set userDN to check this DN
 
-        :return: S_OK()/S_ERROR(), Value is the DN string
+        :return: S_OK(str)/S_ERROR() -- contain DN
     """
     userDict = kwargs or {}
     if userDict.get('userDN'):
