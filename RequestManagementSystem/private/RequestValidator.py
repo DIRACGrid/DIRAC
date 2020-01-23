@@ -280,7 +280,7 @@ class RequestValidator(object):
     credProperties = remoteCredentials['properties']
 
     # If the owner or the group was not set, we use the one of the credentials
-    if not request.credUsername or not request.OwnerGroup:
+    if not request.Owner or not request.OwnerGroup:
       request.Owner = credUsername
       request.OwnerDN = credDN
       request.OwnerGroup = credGroup
