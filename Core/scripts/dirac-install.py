@@ -1282,7 +1282,9 @@ def logDEBUG(msg):
   """
   if cliParams.debug:
     for line in msg.split("\n"):
-      print ("%s UTC dirac-install [DEBUG] %s" % (time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime()), line))
+      print("%s UTC dirac-install [DEBUG] %s" % (time.strftime('%Y-%m-%d %H:%M:%S',
+                                                               time.gmtime()),
+                                                 line))
     sys.stdout.flush()
 
 
@@ -1291,7 +1293,9 @@ def logERROR(msg):
   :param str msg: error message
   """
   for line in msg.split("\n"):
-    print ("%s UTC dirac-install [ERROR] %s" % (time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime()), line))
+    print("%s UTC dirac-install [ERROR] %s" % (time.strftime('%Y-%m-%d %H:%M:%S',
+                                                             time.gmtime()),
+                                               line))
   sys.stdout.flush()
 
 
@@ -1300,7 +1304,9 @@ def logWARN(msg):
   :param str msg: warning message
   """
   for line in msg.split("\n"):
-    print ("%s UTC dirac-install [WARN] %s" % (time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime()), line))
+    print("%s UTC dirac-install [WARN] %s" % (time.strftime('%Y-%m-%d %H:%M:%S',
+                                                            time.gmtime()),
+                                              line))
   sys.stdout.flush()
 
 
@@ -1309,7 +1315,9 @@ def logNOTICE(msg):
   :param str msg: notice message
   """
   for line in msg.split("\n"):
-    print ("%s UTC dirac-install [NOTICE]  %s" % (time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime()), line))
+    print("%s UTC dirac-install [NOTICE]  %s" % (time.strftime('%Y-%m-%d %H:%M:%S',
+                                                               time.gmtime()),
+                                                 line))
   sys.stdout.flush()
 
 
@@ -1378,14 +1386,14 @@ def urlretrieveTimeout(url, fileName='', timeout=0):
         urlData += data.decode('utf8', 'ignore')
       data = remoteFD.read(16384)
       if count % 20 == 0 and sys.stdout.isatty():
-        print (u'\033[1D' + ".", end=" ")
+        print(u'\033[1D' + ".", end=" ")
         sys.stdout.flush()
         progressBar = True
       count += 1
     if progressBar and sys.stdout.isatty():
       # return cursor to the beginning of the line
-      print ('\033[1K', end=" ")
-      print ('\033[1A')
+      print('\033[1K', end=" ")
+      print('\033[1A')
     if fileName:
       localFD.close()
     remoteFD.close()
@@ -1706,12 +1714,12 @@ cmdOpts = (('r:', 'release=', 'Release version to install'),
 
 
 def usage():
-  print ("\nUsage:\n\n  %s <opts> <cfgFile>" % os.path.basename(sys.argv[0]))
-  print ("\nOptions:")
+  print("\nUsage:\n\n  %s <opts> <cfgFile>" % os.path.basename(sys.argv[0]))
+  print("\nOptions:")
   for cmdOpt in cmdOpts:
-    print ("\n  %s %s : %s" % (cmdOpt[0].ljust(3), cmdOpt[1].ljust(20), cmdOpt[2]))
+    print("\n  %s %s : %s" % (cmdOpt[0].ljust(3), cmdOpt[1].ljust(20), cmdOpt[2]))
   print()
-  print ("Known options and default values from /defaults section of releases file")
+  print("Known options and default values from /defaults section of releases file")
   for options in [('Release', cliParams.release),
                   ('Project', cliParams.project),
                   ('ModulesToInstall', []),
@@ -1723,7 +1731,7 @@ def usage():
                   ('NoAutoBuild', cliParams.noAutoBuild),
                   ('Debug', cliParams.debug),
                   ('Timeout', cliParams.timeout)]:
-    print (" %s = %s" % options)
+    print(" %s = %s" % options)
 
   sys.exit(0)
 
@@ -1771,10 +1779,7 @@ def loadConfiguration():
 
     if opName == 'installType':
       opName = 'externalsType'
-    if sys.version_info[0] < 3:
-      str_type = basestring
-    else:
-      str_type = str
+
     if isinstance(getattr(cliParams, opName), str_type):
       setattr(cliParams, opName, opVal)
     elif isinstance(getattr(cliParams, opName), bool):
@@ -2626,8 +2631,8 @@ if __name__ == "__main__":
 
   # we install with DIRACOS from v7rX DIRAC release
   if cliParams.diracOS \
-     or isinstance(releaseConfig.prjRelCFG['DIRAC'].keys()[0][1], str_type) \
-     or int(releaseConfig.prjRelCFG['DIRAC'].keys()[0][1]) > 6:
+     or isinstance(list(releaseConfig.prjRelCFG['DIRAC'])[0][1], str_type) \
+     or int(list(releaseConfig.prjRelCFG['DIRAC'])[0][1]) > 6:
     logNOTICE("Installing DIRAC OS %s..." % cliParams.diracOSVersion)
     if not installDiracOS(releaseConfig):
       sys.exit(1)
