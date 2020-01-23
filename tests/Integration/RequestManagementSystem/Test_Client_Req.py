@@ -134,10 +134,10 @@ class ReqClientMix(ReqClientTestCase):
     # # get summary again
     ret = self.requestClient.getDBSummary()
     self.assertTrue(ret['OK'])
-    self.assertEqual(ret['Value'],
-                     {'Operation': {'ReplicateAndRegister': {'Waiting': 2}},
-                      'Request': {'Waiting': 1, 'Assigned': 1},
-                      'File': {'Waiting': 4}})
+    expectedDict = {'Operation': {'ReplicateAndRegister': {'Waiting': 2}},
+                    'Request': {'Waiting': 1, 'Assigned': 1},
+                    'File': {'Waiting': 4}}
+    self.assertTrue(bool(all([ret['Value'][k] = v for k, v in expectedDict.items()])))
 
     delete = self.requestClient.deleteRequest(reqID)
     self.assertEqual(delete['OK'], True, delete['Message'] if 'Message' in delete else 'OK')
