@@ -45,7 +45,7 @@ from DIRAC.Core.Utilities.PrettyPrint import printTable, printDict
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.Core.Utilities.ModuleFactory import ModuleFactory
-from Core.Utilities.Decorators import deprecated
+from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.Security import Locations
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
