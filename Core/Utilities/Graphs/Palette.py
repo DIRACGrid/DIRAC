@@ -15,6 +15,7 @@ job_status_palette = {
    'Waiting':   '#004EFF',
    'Matched':   '#FEF7AA',
    'Running':   '#FDEE65',
+   'Completing':'#FFAF55',
    'Stalled':   '#BC5757',
    'Completed': '#00FF21',
    'Done':      '#238802',
@@ -81,35 +82,36 @@ country_palette = {
     'Turkey':'#B85D00'
 }
 
+
 class Palette(object):
 
-  def __init__( self, palette = {}, colors = [] ):
+  def __init__(self, palette={}, colors=[]):
 
     self.palette = country_palette
-    self.palette.update( job_status_palette )
-    self.palette.update( miscelaneous_pallette )
-    self.palette.update( job_minor_status_palette )
+    self.palette.update(job_status_palette)
+    self.palette.update(miscelaneous_pallette)
+    self.palette.update(job_minor_status_palette)
 
-  def setPalette( self, palette ):
+  def setPalette(self, palette):
     self.palette = palette
 
-  def setColor( self, label, color ):
+  def setColor(self, label, color):
     self.palette[label] = color
 
-  def addPalette( self, palette ):
-    self.palette.update( palette )
+  def addPalette(self, palette):
+    self.palette.update(palette)
 
-  def getColor( self, label ):
+  def getColor(self, label):
 
     if label in self.palette.keys():
       return self.palette[label]
     else:
-      return self.generateColor( label )
+      return self.generateColor(label)
 
-  def generateColor( self, label ):
+  def generateColor(self, label):
 
     myMD5 = hashlib.md5()
-    myMD5.update( label )
+    myMD5.update(label)
     hexstring = myMD5.hexdigest()
     color = "#" + hexstring[:6]
     return color
