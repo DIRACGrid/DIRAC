@@ -42,11 +42,12 @@ def test_PilotsDB():
   assert res['OK'] is True
   res = pilots.getPilotOutput('anotherPilot')
   assert res['OK'] is True
-  assert res['Value'] == {'OwnerDN': '/a/ownerDN',
-                                     'OwnerGroup': 'a/owner/Group',
-                                     'StdErr': 'this is an error',
-                                     'FileList': [],
-                                     'StdOut': 'This is an output'}
+  expectedDict = {'FileList': [],
+                  'OwnerDN': '/a/ownerDN',
+                  'OwnerGroup': 'a/owner/Group',
+                  'StdErr': 'this is an error',
+                  'StdOut': 'This is an output'}
+  assert all([res['Value'][k] == v for k, v in expectedDict.items()])
   res = pilots.getPilotInfo('anotherPilot')
   assert res['OK'] is True
   assert res['Value']['anotherPilot']['AccountingSent'] == 'False'
