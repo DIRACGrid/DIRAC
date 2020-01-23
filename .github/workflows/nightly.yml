@@ -22,23 +22,23 @@ jobs:
     strategy:
       fail-fast: False
       matrix:
-	branch:
-	  - master
-	  - integration
+        branch:
+          - master
+          - integration
 
     steps:
       - uses: actions/checkout@v1
       - name: login
-	run: echo ${{ secrets.GITHUB_TOKEN }} | docker login docker.pkg.github.com --username ${{ github.actor }} --password-stdin
+        run: echo ${{ secrets.GITHUB_TOKEN }} | docker login docker.pkg.github.com --username ${{ github.actor }} --password-stdin
       - name: create
-	run: |
-	  docker pull docker.pkg.github.com/diracgrid/management/dirac-distribution:latest
-	  docker run docker.pkg.github.com/diracgrid/management/dirac-distribution:latest bash -c \
-	  "python3 dirac-distribution.py -r ${{ matrix.branch }} | tail -n 1  > /tmp/deploy.sh && "\
-	  "sed -i 's/lhcbprod/${{ secrets.KRB_USERNAME }}/g' /tmp/deploy.sh && "\
-	  "cat /tmp/deploy.sh && "\
-	  "echo ${{ secrets.KRB_PASSWORD }} | kinit ${{ secrets.KRB_USERNAME }}@CERN.CH && "\
-	  "echo readyToUpload && "\
-	  "export USER=${{ secrets.KRB_USERNAME }} && "\
-	  "echo reallyReadyToUpload && "\
-	  "source /tmp/deploy.sh"
+        run: |
+          docker pull docker.pkg.github.com/diracgrid/management/dirac-distribution:latest
+          docker run docker.pkg.github.com/diracgrid/management/dirac-distribution:latest bash -c \
+          "python3 dirac-distribution.py -r ${{ matrix.branch }} | tail -n 1  > /tmp/deploy.sh && "\
+          "sed -i 's/lhcbprod/${{ secrets.KRB_USERNAME }}/g' /tmp/deploy.sh && "\
+          "cat /tmp/deploy.sh && "\
+          "echo ${{ secrets.KRB_PASSWORD }} | kinit ${{ secrets.KRB_USERNAME }}@CERN.CH && "\
+          "echo readyToUpload && "\
+          "export USER=${{ secrets.KRB_USERNAME }} && "\
+          "echo reallyReadyToUpload && "\
+          "source /tmp/deploy.sh"
