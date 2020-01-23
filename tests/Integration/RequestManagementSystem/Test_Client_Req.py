@@ -90,7 +90,7 @@ class ReqClientMix(ReqClientTestCase):
     expectedDict = {'Operation': {'ReplicateAndRegister': {'Waiting': 1}},
                     'Request': {'Waiting': 1},
                     'File': {'Waiting': 2}}
-    self.assertTrue(bool(all([ret['Value'][k] == v for k, v in expectedDict.items()])))
+    self.assertTrue(bool(all([ret['Value'][k] == v for k, v in expectedDict.items()])), ret['Value'])
 
     get = self.requestClient.getRequest(reqID)
     self.assertTrue(get['OK'])
@@ -99,7 +99,7 @@ class ReqClientMix(ReqClientTestCase):
     res = self.requestClient.getDBSummary()
     self.assertTrue(res['OK'])
     expectedDict['Request'] = {'Assigned': 1}
-    self.assertTrue(bool(all([ret['Value'][k] == v for k, v in expectedDict.items()])), res['Value'])
+    self.assertTrue(bool(all([res['Value'][k] == v for k, v in expectedDict.items()])), res['Value'])
 
     res = self.requestClient.getRequestInfo(reqID)
     self.assertEqual(res['OK'], True, res['Message'] if 'Message' in res else 'OK')
