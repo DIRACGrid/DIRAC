@@ -23,10 +23,6 @@ jobs:
         conda create -c conda-forge -c free -n python_${{ matrix.python }} python=${{ matrix.python }}
     - name: run pilot wrapper test
       run: |
-        conda config --set add_pip_as_python_dependency false
-        conda create -c conda-forge -c free -n python_${{ matrix.python }} python=${{ matrix.python }}
-    - name: run pilot wrapper test
-      run: |
         cp tests/Integration/WorkloadManagementSystem/Test_GenerateAndExecutePilotWrapper.py .
         eval "$(conda shell.bash hook)" && conda activate python_${{ matrix.python }}
         python Test_GenerateAndExecutePilotWrapper.py file://${{ github.workspace }}/WorkloadManagementSystem/Utilities/PilotWrapper.py file://${{ github.workspace }}/Core/scripts/dirac-install.py
