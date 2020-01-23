@@ -1618,9 +1618,8 @@ class ComponentInstaller(object):
         return S_ERROR(result['Message'])
       processList = result['Value'][1].split('\n')
 
-      # it is pointless to look for more detailed command.
-      # Nobody uses runsvdir.... so if it is there, it is us.
-      cmdFound = any(['runsvdir' in process for process in processList])
+      cmdFound = any(['runsvdir' in process and self.startDir in process
+                      for process in processList])
 
       if not cmdFound:
         gLogger.notice('Starting runsvdir ...')
