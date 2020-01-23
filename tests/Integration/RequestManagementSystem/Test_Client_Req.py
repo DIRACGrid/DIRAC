@@ -99,7 +99,7 @@ class ReqClientMix(ReqClientTestCase):
     res = self.requestClient.getDBSummary()
     self.assertTrue(res['OK'])
     expectedDict['Request'] = {'Assigned': 1}
-    self.assertTrue(bool(all([ret['Value'][k] == v for k, v in expectedDict.items()])))
+    self.assertTrue(bool(all([ret['Value'][k] == v for k, v in expectedDict.items()])), res['Value'])
 
     res = self.requestClient.getRequestInfo(reqID)
     self.assertEqual(res['OK'], True, res['Message'] if 'Message' in res else 'OK')
