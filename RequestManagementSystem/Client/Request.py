@@ -86,7 +86,7 @@ class Request(object):
     credDict = {}
     proxyInfo = getProxyInfo()
     if proxyInfo["OK"]:
-      credDict['DN'] = proxyInfo["Value"]['subject']
+      credDict['DN'] = proxyInfo["Value"]['issuer']
       credDict['group'] = proxyInfo["Value"].get('group')
       credDict['username'] = proxyInfo["Value"].get('username')
 
