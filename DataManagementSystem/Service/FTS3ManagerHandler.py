@@ -67,17 +67,17 @@ class FTS3ManagerHandler(RequestHandler):
     credProperties = remoteCredentials['properties']
 
     # First, get the DN matching the username
-    res = getDNForUsername(opObj.username)
+    res = getDNForUsernameInGroup(opObj.username, opObj.userGroup)
     # if we have an error, do not allow
     if not res['OK']:
-      gLogger.error("Error retrieving DN for username", res)
+      gLogger.error("Error retrieving DN for username/group", res)
       return False
 
     # List of DN matching the username
-    dnList = res['Value']
+    dn = res['Value']
 
     # If the credentials in the Request match those from the credentials, it's OK
-    if credDN in dnList and opObj.userGroup == credGroup:
+    if credDN == dn and opObj.userGroup == credGroup:
       return True
 
     # From here, something/someone is putting a request on behalf of someone else
