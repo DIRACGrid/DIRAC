@@ -63,6 +63,13 @@ POLICIESMETA = {  # DownTime POLICIES
         'args': {'unit': 'MB', 'onlyCache': True},
     },
 
+    # GGUS tickets open
+    'GGUSTickets': {
+        'description': "Open GGUS tickets",
+        'module': 'GGUSTicketsPolicy',
+        'command': ('GGUSTicketsCommand', 'GGUSTicketsCommand'),
+        'args': {'onlyCache': False}
+    },
 
     # Job POLICIES
     'JobDoneRatio': {
