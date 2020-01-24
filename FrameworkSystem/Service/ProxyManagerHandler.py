@@ -73,7 +73,7 @@ class ProxyManagerHandler(RequestHandler):
       with open(os.path.join(cls.__workDir, vo + '.pkl'), 'rb') as f:
         return S_OK(pickle.load(f))
     except Exception as e:
-      return S_ERROR('Cannot read saved cahe: %s' % str(e))
+      return S_ERROR(str(e))
   
   @classmethod
   @gVOMSFileSync
@@ -186,10 +186,10 @@ class ProxyManagerHandler(RequestHandler):
     for vo in result['Value']:
       if vo not in VOMSesUsers:
         result = self.getVOMSInfoFromFile(vo)
-        VOMSesUsers[vo] = result['Value'] if result['OK'] else result['Message']
-      if not isinstance(VOMSesUsers[vo], dict):
-        gLogger.error('Cannot get %s information dictionary' % vo, VOMSesUsers[vo])
-        del VOMSesUsers[vo]
+        if result['OK']:
+          VOMSesUsers[vo] = result['Value']
+          continue
+        VOMSesUsers[vo] = 'No information from "%s" VOMS VO' % vo
     return S_OK(VOMSesUsers)
 
   def __generateUserProxiesInfo(self):

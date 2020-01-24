@@ -20,6 +20,7 @@ __RCSID__ = "$Id$"
 
 gUsersSync = ThreadSafe.Synchronizer()
 gProxiesSync = ThreadSafe.Synchronizer()
+gVOMSUsersSync = ThreadSafe.Synchronizer()
 
 
 class ProxyManagerClient(object):
@@ -96,6 +97,7 @@ class ProxyManagerClient(object):
                               record)
     return S_OK()
   
+  @gVOMSUsersSync
   def __refreshVOMSesCache(self):
     """ Get fresh info from service about VOMSes
 
@@ -109,6 +111,7 @@ class ProxyManagerClient(object):
     self.__VOMSesUsersCache.add('Fresh', 3600 * 12, value=True)
     return result
 
+  @gVOMSUsersSync
   def getActualVOMSesDNs(self, DNs=None):
     """ Return actual/not suspended DNs from VOMSes
 
@@ -128,7 +131,7 @@ class ProxyManagerClient(object):
       # use simulation here for tests
       return S_ERROR('VOMSes is not updated.')
     for vo, voInfo in __VOMSesUsersCache.items():
-      for dn, dnDict in voInfo.items():
+      for dn, dnDict in voInfo.items() if isinstance(voInfo, dict) else {}:
         if DNs and dn not in DNs:
           continue
         if dn not in vomsActualDNsDict:
