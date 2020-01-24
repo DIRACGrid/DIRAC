@@ -175,6 +175,9 @@ class ReqClientMix(ReqClientTestCase):
     request += op
     res = self.requestClient.putRequest(request)
     credProperties = getProxyInfo()['Value']['groupProperties']
+    print('=== getProxyInfo')
+    print(getProxyInfo()['Value'])
+    print
 
     # If the proxy with which we test has delegation, it should work
     if FULL_DELEGATION in credProperties or LIMITED_DELEGATION in credProperties:
