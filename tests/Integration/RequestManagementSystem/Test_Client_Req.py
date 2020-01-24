@@ -78,6 +78,12 @@ class ReqClientTestCase(unittest.TestCase):
 class ReqClientMix(ReqClientTestCase):
 
   def test01fullChain(self):
+    ret = self.requestClient.getDBSummary()
+    self.assertTrue(ret['OK'])
+    print('==== Status before test ====')
+    print(ret['Value'])
+    print('============================')
+
     put = self.requestClient.putRequest(self.request)
     self.assertTrue(put['OK'], put)
 
