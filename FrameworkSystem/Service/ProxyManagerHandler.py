@@ -27,6 +27,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOsWithVOMS, ge
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 
 gVOMSCacheSync = ThreadSafe.Synchronizer()
+gVOMSFileSync = ThreadSafe.Synchronizer()
 
 class ProxyManagerHandler(RequestHandler):
 
@@ -38,19 +39,20 @@ class ProxyManagerHandler(RequestHandler):
 
   @classmethod
   @gVOMSCacheSync
-  def saveVOCache(cls, vo, infoDict):
+  def saveVOMSInfoToCache(cls, vo, infoDict):
     """ Save cache to file
 
-        :param basestring vo: VO name
+        :param str vo: VO name
         :param dict infoDict: dictionary with information about users
     """
     cls.__VOMSesUsersCache.add(vo, 3600 * 24, infoDict)
 
   @classmethod
-  def saveVOCacheToFile(cls, vo, infoDict):
+  @gVOMSFileSync
+  def saveVOMSInfoToFile(cls, vo, infoDict):
     """ Save cache to file
 
-        :param basestring vo: VO name
+        :param str vo: VO name
         :param dict infoDict: dictionary with information about users
     """
     if not os.path.exists(cls.__workDir):
@@ -59,10 +61,11 @@ class ProxyManagerHandler(RequestHandler):
       pickle.dump(infoDict, f, pickle.HIGHEST_PROTOCOL)
 
   @classmethod
-  def loadVOCacheFromFile(cls, vo):
+  @gVOMSFileSync
+  def getVOMSInfoFromFile(cls, vo):
     """ Load VO cache from file
 
-        :param basestring vo: VO name
+        :param str vo: VO name
         
         :return: S_OK(dict)/S_ERROR() -- dictionary with information about users
     """
@@ -71,6 +74,17 @@ class ProxyManagerHandler(RequestHandler):
         return S_OK(pickle.load(f))
     except Exception as e:
       return S_ERROR('Cannot read saved cahe: %s' % str(e))
+  
+  @classmethod
+  @gVOMSFileSync
+  def getVOMSInfoFromCache(cls, vo=None):
+    """ Load VO cache from file
+
+        :param str vo: VO name
+        
+        :return: S_OK(dict)/S_ERROR() -- dictionary with information about users
+    """
+    return cls.__VOMSesUsersCache.get(vo) if vo else cls.__VOMSesUsersCache.getDict()
 
   @classmethod
   def __refreshVOMSesUsersCache(cls, vos=None):
@@ -85,36 +99,31 @@ class ProxyManagerHandler(RequestHandler):
 
           :param str vo: vo name
       """
+      voActiveUsersDict = {}
       result = S_ERROR('Cannot found administrators for %s VOMS VO' % vo)
 
       for group in getGroupsForVO(vo).get('Value') or []:
         for user in getVOOption(vo, "VOAdmin", []):
           # Try to get proxy for any VO admin
           result = cls.__proxyDB.getProxy(user, group, 1800)
-          if result['OK'] and result['Value'][0]:
+          if result['OK']:
             # Now we have a proxy, lets dump it to file
             result = writeChainToProxyFile(result['Value'][0], '/tmp/x509_syncTmp')
             if result['OK']:
               # Get users from VOMS
               result = VOMSService(vo=vo).getUsers(result['Value'])
               if result['OK']:
-                break
-
-      if result['OK']:
-        # Parse response
-        voAllUsersDict = result['Value']
-        voActiveUsersDict = {}
-        for dn, dnInfo in voAllUsersDict.items():
-          if dnInfo['suspended']:
-            continue
-          voActiveUsersDict[dn] = dnInfo
-        
-        # Save information dictionary
-        cls.saveVOCacheToFile(vo, voActiveUsersDict)
-        cls.saveVOCache(vo, voActiveUsersDict)
-      else:
-        # TODO: add error to vo
-        gLogger.error('Cannot update users:', result['Message'])
+                # Parse response
+                for dn, dnInfo in result['Value'].items():
+                  if dnInfo['suspended']:
+                    continue
+                  voActiveUsersDict[dn] = dnInfo
+                cls.saveVOMSInfoToCache(vo, voActiveUsersDict)
+                cls.saveVOMSInfoToFile(vo, voActiveUsersDict)
+                return
+      gLogger.error(result['Message'])
+      if not isinstance(cls.getVOMSInfoFromCache(vo), dict):
+        cls.saveVOMSInfoToCache(vo, result['Message'])
       # ##### getVOInfo #############################
 
     gLogger.info('Update VOMSes information..')
@@ -170,13 +179,13 @@ class ProxyManagerHandler(RequestHandler):
 
         :return: S_OK(dict)/S_ERROR()
     """
-    VOMSesUsers = self.__VOMSesUsersCache.getDict()
+    VOMSesUsers = self.getVOMSInfoFromCache()
     result = getVOs()
     if not result['OK']:
       return result
     for vo in result['Value']:
       if vo not in VOMSesUsers:
-        result = self.loadVOCacheFromFile(vo)
+        result = self.getVOMSInfoFromFile(vo)
         VOMSesUsers[vo] = result['Value'] if result['OK'] else result['Message']
       if not isinstance(VOMSesUsers[vo], dict):
         gLogger.error('Cannot get %s information dictionary' % vo, VOMSesUsers[vo])
