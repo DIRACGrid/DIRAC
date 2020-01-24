@@ -10,12 +10,14 @@ import os
 import six
 import pickle
 import pprint
+import threading
 
 from DIRAC import gLogger, S_OK, S_ERROR, rootPath, gConfig
-from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Security import Properties
 from DIRAC.Core.Security.ProxyFile import writeChainToProxyFile
 from DIRAC.Core.Security.VOMSService import VOMSService
+from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.Core.Utilities import ThreadSafe
 from DIRAC.Core.Utilities.DictCache import DictCache
 from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
@@ -24,6 +26,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOsWithVOMS, ge
      getVOs, getPropertiesForGroup, isDownloadableGroup, getUsernameForDN, getDNForUsernameInGroup 
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 
+gVOMSCacheSync = ThreadSafe.Synchronizer()
 
 class ProxyManagerHandler(RequestHandler):
 
@@ -31,6 +34,17 @@ class ProxyManagerHandler(RequestHandler):
   __VOMSesUsersCache = DictCache()
   __maxExtraLifeFactor = 1.5
   __proxyDB = None
+
+
+  @classmethod
+  @gVOMSCacheSync
+  def saveVOCache(cls, vo, infoDict):
+    """ Save cache to file
+
+        :param basestring vo: VO name
+        :param dict infoDict: dictionary with information about users
+    """
+    cls.__VOMSesUsersCache.add(vo, 3600 * 24, infoDict)
 
   @classmethod
   def saveVOCacheToFile(cls, vo, infoDict):
@@ -65,16 +79,12 @@ class ProxyManagerHandler(RequestHandler):
         :param list vos: list of VOs that need to update, if None - update all VOs
 
         :return: S_OK()/S_ERROR()
-    """    
-    diracAdminsNotifyDict = {}
-    gLogger.info('Update VOMSes information..')
-    if not vos:
-      result = getVOsWithVOMS()
-      if not result['OK']:
-        return result
-      vos = result['Value']
+    """
+    def getVOInfo(vo):
+      """ Process to get information from VOMS
 
-    for vo in vos:
+          :param str vo: vo name
+      """
       # Get VO admins
       voAdmins = getVOOption(vo, "VOAdmin", [])
       if not voAdmins:
@@ -108,8 +118,23 @@ class ProxyManagerHandler(RequestHandler):
         if dnInfo['suspended']:
           continue
         voActiveUsersDict[dn] = dnInfo
+      
+      # Save information dictionary
       cls.saveVOCacheToFile(vo, voActiveUsersDict)
-      cls.__VOMSesUsersCache.add(vo, 3600 * 24, voActiveUsersDict)
+      cls.saveVOCache(vo, voActiveUsersDict)
+      # ##### getVOInfo #############################
+
+    diracAdminsNotifyDict = {}
+    gLogger.info('Update VOMSes information..')
+    if not vos:
+      result = getVOsWithVOMS()
+      if not result['OK']:
+        return result
+      vos = result['Value']
+
+    for vo in vos:
+      processThread = threading.Thread(target=getVOInfo, args=[vo])
+      processThread.start()
 
     if diracAdminsNotifyDict:
       subject = '[ProxyManager] Cannot update users from %s VOMS VOs.' % ', '.join(diracAdminsNotifyDict.keys())
