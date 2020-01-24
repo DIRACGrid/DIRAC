@@ -12,8 +12,9 @@ jobs:
       fail-fast: False
       matrix:
         MYSQL_VER:
+          - 5.6
           - 5.7
-          # - 8.0
+          - 8.0
         HOST_OS:
           - slc6
           - cc7
