@@ -85,16 +85,10 @@ class ProxyManagerHandler(RequestHandler):
 
           :param str vo: vo name
       """
-      # Get VO admins
-      voAdmins = getVOOption(vo, "VOAdmin", [])
-      if not voAdmins:
-        diracAdminsNotifyDict[vo] = 'Cannot found administrators for %s VOMS VO' % vo
-        gLogger.error('Cannot update users from "%s" VO.' % vo, 'No admin user found.')
-        continue
-      
-      result = S_ERROR('Need to upload admin proxy!')
+      result = S_ERROR('Cannot found administrators for %s VOMS VO' % vo)
+
       for group in getGroupsForVO(vo).get('Value') or []:
-        for user in voAdmins:
+        for user in getVOOption(vo, "VOAdmin", []):
           # Try to get proxy for any VO admin
           result = cls.__proxyDB.getProxy(user, group, 1800)
           if result['OK'] and result['Value'][0]:
@@ -106,25 +100,23 @@ class ProxyManagerHandler(RequestHandler):
               if result['OK']:
                 break
 
-      if not result['OK']:
-        diracAdminsNotifyDict[vo] = result['Message']
-        gLogger.error('Cannot update users from "%s" VO.' % vo, result['Message'])
-        continue
-      
-      # Parse response
-      voAllUsersDict = result['Value']
-      voActiveUsersDict = {}
-      for dn, dnInfo in voAllUsersDict.items():
-        if dnInfo['suspended']:
-          continue
-        voActiveUsersDict[dn] = dnInfo
-      
-      # Save information dictionary
-      cls.saveVOCacheToFile(vo, voActiveUsersDict)
-      cls.saveVOCache(vo, voActiveUsersDict)
+      if result['OK']:
+        # Parse response
+        voAllUsersDict = result['Value']
+        voActiveUsersDict = {}
+        for dn, dnInfo in voAllUsersDict.items():
+          if dnInfo['suspended']:
+            continue
+          voActiveUsersDict[dn] = dnInfo
+        
+        # Save information dictionary
+        cls.saveVOCacheToFile(vo, voActiveUsersDict)
+        cls.saveVOCache(vo, voActiveUsersDict)
+      else:
+        # TODO: add error to vo
+        gLogger.error('Cannot update users:', result['Message'])
       # ##### getVOInfo #############################
 
-    diracAdminsNotifyDict = {}
     gLogger.info('Update VOMSes information..')
     if not vos:
       result = getVOsWithVOMS()
@@ -136,11 +128,11 @@ class ProxyManagerHandler(RequestHandler):
       processThread = threading.Thread(target=getVOInfo, args=[vo])
       processThread.start()
 
-    if diracAdminsNotifyDict:
-      subject = '[ProxyManager] Cannot update users from %s VOMS VOs.' % ', '.join(diracAdminsNotifyDict.keys())
-      body = pprint.pformat(diracAdminsNotifyDict)
-      body += "\n------\n This is a notification from the DIRAC ProxyManager service, please do not reply."
-      #cls.__notify.sendMail(getEmailsForGroup('dirac_admin'), subject, body)
+    # if diracAdminsNotifyDict:
+    #   subject = '[ProxyManager] Cannot update users from %s VOMS VOs.' % ', '.join(diracAdminsNotifyDict.keys())
+    #   body = pprint.pformat(diracAdminsNotifyDict)
+    #   body += "\n------\n This is a notification from the DIRAC ProxyManager service, please do not reply."
+    #   #cls.__notify.sendMail(getEmailsForGroup('dirac_admin'), subject, body)
     return S_OK()
 
   @classmethod
