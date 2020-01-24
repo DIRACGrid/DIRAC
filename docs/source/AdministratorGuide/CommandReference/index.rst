@@ -162,7 +162,6 @@ Other commands:
     dirac-repo-monitor
 
     dirac-rss-list-status
-    dirac-rss-policy-manager
     dirac-rss-query-db
     dirac-rss-query-dtcache
     dirac-rss-set-status
