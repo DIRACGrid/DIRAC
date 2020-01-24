@@ -154,12 +154,19 @@ class ReqClientMix(ReqClientTestCase):
     ret = self.requestClient.getDBSummary()
     self.assertTrue(ret['OK'])
     self.assertEqual(ret['Value'], {'Operation': {}, 'Request': {}, 'File': {}})
+    print('==== Status after test ====')
+    print(ret['Value'])
+    print('============================')
 
   def test02Authorization(self):
     """ Test whether request sets on behalf of others are rejected, unless done with Delegation properties
         This test is kind of stupid though, since we do the same thing than the server... not a real test !
     """
-
+    ret = self.requestClient.getDBSummary()
+    self.assertTrue(ret['OK'])
+    print('==== Status before test ====')
+    print(ret['Value'])
+    print('============================')
     request = Request({"RequestName": "unauthorized"})
     request.OwnerDN = 'NotMe'
     request.OwnerDN = 'AnotherGroup'
@@ -176,6 +183,12 @@ class ReqClientMix(ReqClientTestCase):
     # otherwise no
     else:
       self.assertFalse(res['OK'], res)
+    
+    ret = self.requestClient.getDBSummary()
+    self.assertTrue(ret['OK'])
+    print('==== Status after test ====')
+    print(ret['Value'])
+    print('============================')
 
 
 if __name__ == '__main__':
