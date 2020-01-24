@@ -31,6 +31,7 @@ export TESTREPO=${TESTREPO:-antolu}
 export TESTBRANCH=${TESTBRANCH:-ci}
 
 export DIRACOSVER=${DIRACOSVER:-master}
+export DIRACOS_TARBALL_PATH=${DIRACOS_TARBALL_PATH:-}
 
 # Versions of external services
 export MYSQL_VER=${MYSQL_VER:-5.7}

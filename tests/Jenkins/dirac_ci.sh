@@ -100,6 +100,7 @@ function installSite(){
   generateCA
   generateCertificates
 
+  echo -n > "$SERVERINSTALLDIR/dirac-ci-install.cfg"
   getCFGFile
 
   echo "==> Fixing install.cfg file"
@@ -119,18 +120,14 @@ function installSite(){
 
   installOptions="$DEBUG "
 
-  # If DIRACOSVER is not defined, use LcgBundle
   if [ "$DIRACOSVER" ]; then
-    if [ "$DIRACOSVER" == True ]; then
-      echo "Installing with DIRACOS"
-      installOptions+="--dirac-os "
-    else
-      echo "Installing with DIRACOS $DIRACOSVER"
-      installOptions+="--dirac-os --dirac-os-version=$DIRACOSVER "
-    fi
-  else
-    echo "Installing using externals + lcgBundle"
-    installOptions+="-t fullserver "
+    installOptions+="--dirac-os --dirac-os-version=$DIRACOSVER "
+  fi
+
+  if [ "$DIRACOS_TARBALL_PATH" ]; then
+    {
+      echo "DIRACOS = $DIRACOS_TARBALL_PATH"
+    } >> "$SERVERINSTALLDIR/dirac-ci-install.cfg"
   fi
 
   if [ "$ALTERNATIVE_MODULES" ]; then
@@ -144,7 +141,7 @@ function installSite(){
 
   echo "==> Installing with options $installOptions $SERVERINSTALLDIR/install.cfg"
 
-  if ! "$SERVERINSTALLDIR/dirac-install.py" $installOptions "$SERVERINSTALLDIR/install.cfg"; then
+  if ! "$SERVERINSTALLDIR/dirac-install.py" $installOptions "$SERVERINSTALLDIR/install.cfg" "$SERVERINSTALLDIR/dirac-ci-install.cfg"; then
     echo "ERROR: dirac-install.py failed"
     exit 1
   fi

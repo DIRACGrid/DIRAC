@@ -132,7 +132,7 @@ You can use install.cfg configuration file::
 
 """
 
-from __future__ import absolute_import, division, print_function
+from __future__ import unicode_literals, absolute_import, division, print_function
 
 import sys
 import os
@@ -674,26 +674,36 @@ class ReleaseConfig(object):
     self.loadedCfgs.append(basePath)
     return S_OK(self.globalDefaults.getChild(basePath))
 
-  def loadInstallationLocalDefaults(self, fileName):
+  def loadInstallationLocalDefaults(self, args):
     """
     Load the configuration file from a file
 
-    :param str fileName: the configuration file name
+    :param str args: the arguments in which to look for configuration filenames
     """
-    try:
-      fd = open(fileName, "r")
-      # TODO: Merge with installation CFG
-      cfg = ReleaseConfig.CFG().parse(fd.read())
-      fd.close()
-    except Exception as excp:
-      return S_ERROR("Could not load %s: %s" % (fileName, excp))
-    self.globalDefaults.update("Installations/%s" % self.instName, cfg)
-    self.globalDefaults.update("Projects/%s" % self.instName, cfg)
-    if self.projectName:
-      # we have an extension and have a local cfg file
-      self.globalDefaults.update("Projects/%s" % self.projectName, cfg)
+    # at the end we load the local configuration and merge with the global cfg
+    for arg in args:
+      if len(arg) > 4 and arg.find(".cfg") == len(arg) - 4 and ':::' not in arg:
+        fileName = arg
+      else:
+        continue
 
-    return S_OK()
+      logNOTICE("Defaults for LocalInstallation are in %s" % fileName)
+      try:
+        fd = open(fileName, "r")
+        # TODO: Merge with installation CFG
+        cfg = ReleaseConfig.CFG().parse(fd.read())
+        fd.close()
+      except Exception as excp:
+        logERROR("Could not load %s: %s" % (fileName, excp))
+        continue
+
+      self.globalDefaults.update("Installations/%s" % self.instName, cfg)
+      self.globalDefaults.update("Projects/%s" % self.instName, cfg)
+      if self.projectName:
+        # we have an extension and have a local cfg file
+        self.globalDefaults.update("Projects/%s" % self.projectName, cfg)
+
+      logNOTICE("Loaded %s" % arg)
 
   def getModuleVersionFromLocalCfg(self, moduleName):
     """
@@ -749,26 +759,28 @@ class ReleaseConfig(object):
       return S_OK(sourceUrl)
     return S_ERROR("Don't know how to find the installation tarballs for project %s" % project)
 
-  def getDiracOsLocation(self, project=None, diracosDefault=False):
+  def getDiracOsLocation(self, useVanillaDiracOS=False):
     """
     Returns the location of the DIRAC os binary for a given project for example: LHCb or DIRAC, etc...
-
-    :param str project: the name of the project
-    :param bool diracosDefault: flag to take diracos distribution from the default location
-
+    :param bool useVanillaDiracOS: flag to take diracos distribution from the default location
     :return: the location of the tar balls
     """
-    if project is None:
-      project = 'DIRAC'
+    keysToConsider = []
+    if not useVanillaDiracOS:
+      keysToConsider += [
+          "Installations/%s/DIRACOS" % self.projectName,
+          "Projects/%s/DIRACOS" % self.projectName,
+      ]
+    keysToConsider += [
+        "Installations/DIRAC/DIRACOS",
+        "Projects/DIRAC/DIRACOS",
+    ]
 
-    diracOsLoc = "Projects/%s/DIRACOS" % self.projectName
-    if not diracosDefault and self.globalDefaults.isOption(diracOsLoc):
-      # use from the VO specific configuration file
-      location = self.globalDefaults.get(diracOsLoc, "")
-    else:
-      # use the default OS, provided by DIRAC
-      location = self.globalDefaults.get("Projects/%s/DIRACOS" % project, "")
-    return S_OK(location)
+    for key in keysToConsider:
+      location = self.globalDefaults.get(key, "")
+      if location:
+        logDEBUG("Using DIRACOS tarball URL from configuration key %s" % key)
+        return location
 
   def getUploadCommand(self, project=None):
     """
@@ -1270,7 +1282,9 @@ def logDEBUG(msg):
   """
   if cliParams.debug:
     for line in msg.split("\n"):
-      print ("%s UTC dirac-install [DEBUG] %s" % (time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime()), line))
+      print("%s UTC dirac-install [DEBUG] %s" % (time.strftime('%Y-%m-%d %H:%M:%S',
+                                                               time.gmtime()),
+                                                 line))
     sys.stdout.flush()
 
 
@@ -1279,7 +1293,9 @@ def logERROR(msg):
   :param str msg: error message
   """
   for line in msg.split("\n"):
-    print ("%s UTC dirac-install [ERROR] %s" % (time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime()), line))
+    print("%s UTC dirac-install [ERROR] %s" % (time.strftime('%Y-%m-%d %H:%M:%S',
+                                                             time.gmtime()),
+                                               line))
   sys.stdout.flush()
 
 
@@ -1288,7 +1304,9 @@ def logWARN(msg):
   :param str msg: warning message
   """
   for line in msg.split("\n"):
-    print ("%s UTC dirac-install [WARN] %s" % (time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime()), line))
+    print("%s UTC dirac-install [WARN] %s" % (time.strftime('%Y-%m-%d %H:%M:%S',
+                                                            time.gmtime()),
+                                              line))
   sys.stdout.flush()
 
 
@@ -1297,7 +1315,9 @@ def logNOTICE(msg):
   :param str msg: notice message
   """
   for line in msg.split("\n"):
-    print ("%s UTC dirac-install [NOTICE]  %s" % (time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime()), line))
+    print("%s UTC dirac-install [NOTICE]  %s" % (time.strftime('%Y-%m-%d %H:%M:%S',
+                                                               time.gmtime()),
+                                                 line))
   sys.stdout.flush()
 
 
@@ -1366,14 +1386,14 @@ def urlretrieveTimeout(url, fileName='', timeout=0):
         urlData += data.decode('utf8', 'ignore')
       data = remoteFD.read(16384)
       if count % 20 == 0 and sys.stdout.isatty():
-        print (u'\033[1D' + ".", end=" ")
+        print(u'\033[1D' + ".", end=" ")
         sys.stdout.flush()
         progressBar = True
       count += 1
     if progressBar and sys.stdout.isatty():
       # return cursor to the beginning of the line
-      print ('\033[1K', end=" ")
-      print ('\033[1A')
+      print('\033[1K', end=" ")
+      print('\033[1A')
     if fileName:
       localFD.close()
     remoteFD.close()
@@ -1439,7 +1459,7 @@ def downloadAndExtractTarball(tarsURL, pkgName, pkgVer, checkHash=True, cache=Fa
         retVal = checkoutFromGit(pkgName, tarsURL, pkgVer)
         if not retVal['OK']:
           logERROR("Cannot download %s" % tarName)
-          logERROR("Cannot download %s" % retVal['Value'])
+          logERROR("Cannot download %s" % retVal['Message'])
           return False
         else:
           isSource = True
@@ -1652,6 +1672,8 @@ def discoverModules(modules):
     projects[m] = {}
     if s and v:
       projects[m] = {"sourceUrl": s, "Version": v}
+    else:
+      logWARN('Unable to parse module: %s' % module)
   return projects
 
 ####
@@ -1694,12 +1716,12 @@ cmdOpts = (('r:', 'release=', 'Release version to install'),
 
 
 def usage():
-  print ("\nUsage:\n\n  %s <opts> <cfgFile>" % os.path.basename(sys.argv[0]))
-  print ("\nOptions:")
+  print("\nUsage:\n\n  %s <opts> <cfgFile>" % os.path.basename(sys.argv[0]))
+  print("\nOptions:")
   for cmdOpt in cmdOpts:
-    print ("\n  %s %s : %s" % (cmdOpt[0].ljust(3), cmdOpt[1].ljust(20), cmdOpt[2]))
+    print("\n  %s %s : %s" % (cmdOpt[0].ljust(3), cmdOpt[1].ljust(20), cmdOpt[2]))
   print()
-  print ("Known options and default values from /defaults section of releases file")
+  print("Known options and default values from /defaults section of releases file")
   for options in [('Release', cliParams.release),
                   ('Project', cliParams.project),
                   ('ModulesToInstall', []),
@@ -1711,7 +1733,7 @@ def usage():
                   ('NoAutoBuild', cliParams.noAutoBuild),
                   ('Debug', cliParams.debug),
                   ('Timeout', cliParams.timeout)]:
-    print (" %s = %s" % options)
+    print(" %s = %s" % options)
 
   sys.exit(0)
 
@@ -1745,14 +1767,7 @@ def loadConfiguration():
   if not result['OK']:
     logERROR("Could not load defaults: %s" % result['Message'])
 
-  # at the end we load the local configuration and merge with the global cfg
-  for arg in args:
-    if len(arg) > 4 and arg.find(".cfg") == len(arg) - 4 and ':::' not in arg:
-      result = releaseConfig.loadInstallationLocalDefaults(arg)
-      if not result['OK']:
-        logERROR(result['Message'])
-      else:
-        logNOTICE("Loaded %s" % arg)
+  releaseConfig.loadInstallationLocalDefaults(args)
 
   for opName in ('release', 'externalsType', 'installType', 'pythonVersion',
                  'buildExternals', 'noAutoBuild', 'debug', 'globalDefaults',
@@ -1766,10 +1781,7 @@ def loadConfiguration():
 
     if opName == 'installType':
       opName = 'externalsType'
-    if sys.version_info[0] < 3:
-      str_type = basestring
-    else:
-      str_type = str
+
     if isinstance(getattr(cliParams, opName), str_type):
       setattr(cliParams, opName, opVal)
     elif isinstance(getattr(cliParams, opName), bool):
@@ -1869,6 +1881,9 @@ def loadConfiguration():
 
   if not releaseConfig.isProjectLoaded("DIRAC"):
     return S_ERROR("DIRAC is not depended by this installation. Aborting")
+
+  # Reload the local configuration to ensure it takes prescience
+  releaseConfig.loadInstallationLocalDefaults(args)
 
   return S_OK(releaseConfig)
 
@@ -2200,7 +2215,8 @@ def createCshrc():
       if 'X509_CERT_DIR' in os.environ:
         certDir = os.environ['X509_CERT_DIR']
       else:
-        if os.path.isdir('/etc/grid-security/certificates'):
+        if os.path.isdir('/etc/grid-security/certificates') and \
+           os.listdir('/etc/grid-security/certificates'):
           # Assuming that, if present, it is not empty, and has correct CAs
           certDir = '/etc/grid-security/certificates'
         else:
@@ -2301,7 +2317,7 @@ def writeDefaultConfiguration():
   # Keep the default configuration file in the working directory
   filePath = "defaults-%s.cfg" % cliParams.installation
   try:
-    fd = open(filePath, "wb")
+    fd = open(filePath, "w")
     fd.write(instCFG.toString())
     fd.close()
   except Exception as excp:
@@ -2333,23 +2349,9 @@ def installDiracOS(releaseConfig):
   if not diracOSVersion:
     logERROR("No diracos defined")
     return False
-  tarsURL = None
-  if cliParams.installSource:
-    tarsURL = cliParams.installSource
-  else:
-    # if ":" is not present in diracos name, we take the diracos tarball from vanilla DIRAC location
-    if diracos.lower() == 'diracos':
-      retVal = releaseConfig.getDiracOsLocation(diracosDefault=True)
-      if retVal['OK']:
-        tarsURL = retVal['Value']
-      else:
-        logERROR(retVal['Message'])
-    else:
-      retVal = releaseConfig.getDiracOsLocation()
-      if retVal['OK']:
-        tarsURL = retVal['Value']
-      else:
-        logERROR(retVal['Message'])
+  tarsURL = cliParams.installSource
+  if not tarsURL:
+    tarsURL = releaseConfig.getDiracOsLocation(useVanillaDiracOS=(diracos.lower() == 'diracos'))
   if not tarsURL:
     tarsURL = releaseConfig.getTarsLocation('DIRAC')['Value']
     logWARN("DIRACOS location is not specified using %s" % tarsURL)
@@ -2388,7 +2390,8 @@ def createBashrcForDiracOS():
       if 'X509_CERT_DIR' in os.environ:
         certDir = os.environ['X509_CERT_DIR']
       else:
-        if os.path.isdir('/etc/grid-security/certificates'):
+        if os.path.isdir('/etc/grid-security/certificates') and \
+           os.listdir('/etc/grid-security/certificates'):
           # Assuming that, if present, it is not empty, and has correct CAs
           certDir = '/etc/grid-security/certificates'
         else:
@@ -2632,8 +2635,8 @@ if __name__ == "__main__":
 
   # we install with DIRACOS from v7rX DIRAC release
   if cliParams.diracOS \
-     or isinstance(releaseConfig.prjRelCFG['DIRAC'].keys()[0][1], str_type) \
-     or int(releaseConfig.prjRelCFG['DIRAC'].keys()[0][1]) > 6:
+     or isinstance(list(releaseConfig.prjRelCFG['DIRAC'])[0][1], str_type) \
+     or int(list(releaseConfig.prjRelCFG['DIRAC'])[0][1]) > 6:
     logNOTICE("Installing DIRAC OS %s..." % cliParams.diracOSVersion)
     if not installDiracOS(releaseConfig):
       sys.exit(1)
