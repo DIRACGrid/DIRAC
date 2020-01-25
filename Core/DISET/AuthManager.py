@@ -79,7 +79,7 @@ def initializationOfCertificate(credDict, logObj=gLogger):
     credDict[KW_GROUP] = KW_HOSTS_GROUP
     return True
   elif credDict.get(KW_GROUP) == KW_HOSTS_GROUP:
-    logObj.warn("Cannot find hostname for DN %s: %s" % (credDict[KW_DN], retVal['Message']))
+    logObj.warn("Cannot find hostname for DN %s: %s" % (credDict[KW_DN], result['Message']))
     credDict[KW_USERNAME] = "anonymous"
     credDict[KW_GROUP] = "visitor"
     return False

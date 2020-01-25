@@ -49,31 +49,6 @@ class ProxyDB(DB):
     self.purgeExpiredProxies(sendNotifications=False)
     self.__checkDBVersion()
 
-  def refreshCache(self):
-    """ Refresh cache
-    """
-    DNs = []
-    for table in ['ProxyDB_CleanProxies', 'ProxyDB_Proxies']:
-      result = self._query("SELECT DISTINCT UserDN FROM `%s`" % tableName)
-      if result['OK']:
-        DNs = list(set(DNs + list(result['Value'])))
-      else:
-        gLogger.error(result['Message'])
-    for userDN in DNs:
-      mapDict = {}
-      result = Registry.getUsernameForDN(userDN)
-      if result['OK']:
-        mapDict['user'] = result['Value']
-        result = Registry.getGroupsForDN(userDN)
-        if result['OK']:
-          mapDict['groups'] = result['Value']
-          result = Registry.getProxyProviderForDN(userDN)
-          if result['OK']:
-            mapDict['provider'] = result['Value']
-            cls.__DBContentMapping.add(userDN, 3600 * 24, mapDict)
-      if not result['OK']:
-        gLogger.error('Cannot create DB cache:', result['Message'])
-
   def getMyProxyServer(self):
     """ Get MyProxy server from configuration
 
@@ -222,10 +197,10 @@ class ProxyDB(DB):
 
         :return: S_OK()/S_ERROR()
     """
-    if self.versionDB == self.__version:
+    if self.versionDB == self.__version:  # pylint: disable=no-member
       return S_OK()
-    if self.versionDB > self.__version:
-      return S_ERROR('Already installed newer DB version "%s".' % self.versionDB)
+    if self.versionDB > self.__version:  # pylint: disable=no-member
+      return S_ERROR('Already installed newer DB version "%s".' % self.versionDB)  # pylint: disable=no-member
 
     for tableName in ("ProxyDB_Proxies", "ProxyDB_VOMSProxies"):
       result = self._query("describe `%s`" % tableName)
@@ -237,7 +212,7 @@ class ProxyDB(DB):
         if not result['OK']:
           return result
 
-    if self.versionDB == 0 and self.versionDB < self.__version:
+    if self.versionDB == 0 and self.versionDB < self.__version:  # pylint: disable=no-member
       for tb, oldColumn, newColumn in [('ProxyDB_Log', 'IssuerDN', 'IssuerUsername'),
                                        ('ProxyDB_Log', 'TargetDN', 'TargetUsername'),
                                        ('ProxyDB_Tokens', 'RequesterDN', 'RequesterUsername')]:
@@ -246,18 +221,18 @@ class ProxyDB(DB):
           result = self._query('ALTER TABLE %s CHANGE COLUMN %s %s VARCHAR(255) NOT NULL' % (tb, oldColumn, newColumn))
         if not result['OK']:
           return result
-      result = self.updateDBVersion(1)
+      result = self.updateDBVersion(1)  # pylint: disable=no-member
       if not result['OK']:
         return result
 
-    if self.versionDB == 1 and self.versionDB < self.__version:
+    if self.versionDB == 1 and self.versionDB < self.__version:  # pylint: disable=no-member
       for column in ['UserName', 'ProxyProvider']:
         result = self._query("SHOW COLUMNS FROM `ProxyDB_CleanProxies` LIKE '%s'" % column)
         if result['OK'] and len(result['Value']) > 0:
           result = self._query('ALTER TABLE ProxyDB_CleanProxies DROP COLUMN %s' % column)
         if not result['OK']:
           return result
-      result = self.updateDBVersion(2)
+      result = self.updateDBVersion(2)  # pylint: disable=no-member
       if not result['OK']:
         return result
 
@@ -1077,9 +1052,9 @@ class ProxyDB(DB):
       sTargetGroup = self._escapeString(targetGroup)['Value']
     except KeyError:
       return S_ERROR("Can't escape from death")
-    cmd = "INSERT INTO `ProxyDB_Log` (Action, IssuerUsername, IssuerGroup, TargetUsername, TargetGroup, Timestamp) VALUES "
-    cmd += "(%s, %s, %s, %s, %s, UTC_TIMESTAMP())" % (sAction,
-                                                      sIssuerUsername, sIssuerGroup, sTargetUsername, sTargetGroup)
+    cmd = "INSERT INTO `ProxyDB_Log` (Action, IssuerUsername, IssuerGroup, TargetUsername, TargetGroup, Timestamp)"
+    cmd += " VALUES (%s, %s, %s, %s, %s, UTC_TIMESTAMP())" % (sAction, sIssuerUsername, sIssuerGroup,
+                                                              sTargetUsername, sTargetGroup)
     retVal = self._update(cmd)
     if not retVal['OK']:
       self.log.error("Can't add a proxy action log: ", retVal['Message'])

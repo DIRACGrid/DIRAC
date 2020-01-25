@@ -360,10 +360,8 @@ class ProxyInit(object):
       except requests.exceptions.Timeout:
         return S_ERROR('Time out')
       except requests.exceptions.RequestException as ex:
-        return S_ERROR(r.content)
-      except requests.exceptions.HTTPError as ex:
-        return S_ERROR('Failed: %s' % r.text or ex.message)
-      except BaseException as ex:
+        return S_ERROR(r.content or ex)
+      except Exception as ex:
         return S_ERROR('Cannot read response: %s' % ex)
 
     def qrterminal(url):
@@ -374,7 +372,7 @@ class ProxyInit(object):
           :return: S_OK(str)/S_ERROR()
       """
       try:
-        import pyqrcode
+        import pyqrcode  # pylint: disable=import-error
       except Exception as ex:
         return S_ERROR('pyqrcode library is not installed.')
       __qr = '\n'

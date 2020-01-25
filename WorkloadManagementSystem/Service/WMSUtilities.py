@@ -118,7 +118,7 @@ def getGridJobOutput(pilotReference):
     return result
   ce = result['Value']
   if not getVOMSAttributeForGroup(group):
-    self.log.error("No voms attribute assigned to group %s when requested pilot proxy." % group)
+    gLogger.error("No voms attribute assigned to group %s when requested pilot proxy." % group)
     return S_ERROR("Failed to get the pilot's owner proxy")
   result = gProxyManager.downloadVOMSProxy(owner, group)
   if not result['OK']:
@@ -176,7 +176,7 @@ def killPilotsInQueues(pilotRefDict):
     # FIXME: quite hacky. Should be either removed, or based on some flag
     if gridType in ["LCG", "CREAM", "ARC", "Globus", "HTCondorCE"]:
       if not getVOMSAttributeForGroup(group):
-        self.log.error("No voms attribute assigned to group %s when requested pilot proxy." % group)
+        gLogger.error("No voms attribute assigned to group %s when requested pilot proxy." % group)
         return S_ERROR("Failed to get the pilot's owner proxy")
       ret = gProxyManager.downloadVOMSProxy(owner, group)
       if not ret['OK']:

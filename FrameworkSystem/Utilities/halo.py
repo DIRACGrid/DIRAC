@@ -9,6 +9,7 @@ import re
 import sys
 import six
 import time
+import ctypes
 import atexit
 import signal
 import codecs
@@ -230,11 +231,9 @@ class Halo(object):
     """ Done exception """
     pass
 
-  # Need for cursor
-  if os.name == 'nt':
-    import ctypes
-
-    class _CursorInfo(ctypes.Structure):
+  class _CursorInfo(ctypes.Structure):
+    # Need for cursor
+    if os.name == 'nt':
       _fields_ = [("size", ctypes.c_int), ("visible", ctypes.c_byte)]
 
   CLEAR_LINE = '\033[K'
@@ -674,7 +673,7 @@ class Halo(object):
     symbol = coloredFrame(symbol, self._color) if self._color and symbol else symbol
     text = coloredFrame(text, self._textColor) if self._textColor and text else text.strip()
     output = u'{0} {1}'.format(*[(text, symbol) if self._placement == 'right' else (symbol, text)][0])
-    output += '' if self._newline == False else '\n'
+    output += '' if self._newline is False else '\n'
     try:
       self._write(output)
     except UnicodeEncodeError:

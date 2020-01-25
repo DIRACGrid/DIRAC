@@ -25,7 +25,7 @@ gVOMSUsersSync = ThreadSafe.Synchronizer()
 
 class ProxyManagerClient(object):
   """ Proxy manager client
-      
+
       Contain __VOMSesUsersCache cache, with next structure:
       {
         <VOMSVO>: {
@@ -96,7 +96,7 @@ class ProxyManagerClient(object):
         self.__usersCache.add(cacheKey, self.__getSecondsLeftToExpiration(record['expirationtime']),
                               record)
     return S_OK()
-  
+
   @gVOMSUsersSync
   def __refreshVOMSesCache(self):
     """ Get fresh info from service about VOMSes
@@ -243,7 +243,7 @@ class ProxyManagerClient(object):
       return S_ERROR("Proxy %s has expired" % proxyLocation)
     if chain.getDIRACGroup().get('Value') or chain.isVOMS().get('Value'):
       return S_ERROR("Cannot upload proxy with DIRAC group or VOMS extensions")
-    
+
     rpcClient = RPCClient("Framework/ProxyManager", timeout=120)
     # Get a delegation request
     result = rpcClient.requestDelegationUpload()
@@ -279,7 +279,7 @@ class ProxyManagerClient(object):
     """
     if voms and not getVOMSAttributeForGroup(userGroup):
       return S_ERROR("No mapping defined for group %s in the CS" % userGroup)
-    
+
     cacheKey = (user, userGroup, voms, limited)
     if self.__proxiesCache.exists(cacheKey, requiredTimeLeft):
       return S_OK(self.__proxiesCache.get(cacheKey))
@@ -290,7 +290,7 @@ class ProxyManagerClient(object):
       rpcClient = RPCClient("Framework/ProxyManager", proxyChain=proxyToConnect, timeout=120)
     else:
       rpcClient = RPCClient("Framework/ProxyManager", timeout=120)
-    
+
     retVal = rpcClient.getProxy(user, userGroup, req.dumpRequest()['Value'],
                                 int(cacheTime + requiredTimeLeft), token, voms, personal)
     if not retVal['OK']:
@@ -315,7 +315,7 @@ class ProxyManagerClient(object):
     """
     return self.__getProxy(user, group, requiredTimeLeft=requiredTimeLeft,
                            voms=voms, personal=True)
-  
+
   def downloadProxy(self, user, group, limited=False, requiredTimeLeft=1200, cacheTime=14400,
                     proxyToConnect=None, token=None, personal=False):
     """ Get a proxy Chain from the proxy management
@@ -333,7 +333,7 @@ class ProxyManagerClient(object):
     """
     return self.__getProxy(user, group, limited=limited, requiredTimeLeft=requiredTimeLeft,
                            cacheTime=cacheTime, proxyToConnect=proxyToConnect, token=token, personal=personal)
-  
+
   def downloadProxyToFile(self, user, group, limited=False, requiredTimeLeft=1200, cacheTime=14400,
                           filePath=None, proxyToConnect=None, token=None, personal=False):
     """ Get a proxy Chain from the proxy management and write it to file
@@ -373,7 +373,7 @@ class ProxyManagerClient(object):
 
         :return: S_OK(X509Chain)/S_ERROR()
     """
-    return self.__getProxy(user, group, limited=limited, requiredTimeLeft=requiredTimeLeft, voms=voms,
+    return self.__getProxy(user, group, limited=limited, requiredTimeLeft=requiredTimeLeft, voms=True,
                            cacheTime=cacheTime, proxyToConnect=proxyToConnect, token=token, personal=personal)
 
   def downloadVOMSProxyToFile(self, user, group, limited=False, requiredTimeLeft=1200,
@@ -561,7 +561,7 @@ class ProxyManagerClient(object):
     """
     rpcClient = RPCClient("Framework/ProxyManager", timeout=120)
     return rpcClient.getContents(sqlDict, (user, group), start, limit)
-  
+
   def getUploadedProxyLifeTime(self, user, group):
     """ Get the remaining seconds for an uploaded proxy
 
@@ -573,16 +573,9 @@ class ProxyManagerClient(object):
     result = self.getUploadedProxiesDetails(user, group)
     if not result['OK']:
       return result
-    data = result['Value']
-    if len(data['Records']) == 0:
-      return S_OK(0)
-    pNames = list(data['ParameterNames'])
-    dnPos = pNames.index('UserDN')
-    groupPos = pNames.index('UserGroup')
-    expiryPos = pNames.index('ExpirationTime')
-    for row in data['Records']:
-      if DN == row[dnPos] and group == row[groupPos]:
-        td = row[expiryPos] - datetime.datetime.utcnow()
+    for proxyDict in result['Value']['Dictionaries']:
+      if user == proxyDict['user'] and group == proxyDict['group']:
+        td = proxyDict['expirationtime'] - datetime.datetime.utcnow()
         secondsLeft = td.days * 86400 + td.seconds
         return S_OK(max(0, secondsLeft))
     return S_OK(0)

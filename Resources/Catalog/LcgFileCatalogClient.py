@@ -1447,11 +1447,11 @@ class LcgFileCatalogClient(FileCatalogClientBase):
 
   def __getFileReplicas(self, lfn, allStatus):
     error, replicaObjects = lfc.lfc_getreplica(self.__fullLfn(lfn), '', '')
-    return returnCode(error or not replicaObjects,
-                      dict([(replica.host,
-                             replica.sfn) for replica in replicaObjects if allStatus or replica.status != 'P']) if not error else None,
+    rDict = dict([(replica.host,
+                   replica.sfn) for replica in replicaObjects if allStatus or replica.status != 'P'])
+    return returnCode(error or not replicaObjects, rDict if not error else None,
                       errMsg='File has zero replicas' if not error else '')
-
+                                                                                                     
   def __getFileReplicaStatus(self, lfn, se):
     error, replicaObjects = lfc.lfc_getreplica(self.__fullLfn(lfn), '', '')
     status = None
