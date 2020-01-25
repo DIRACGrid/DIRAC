@@ -80,9 +80,9 @@ class ReqClientMix(ReqClientTestCase):
   def test01fullChain(self):
     ret = self.requestClient.getDBSummary()
     self.assertTrue(ret['OK'])
-    print('==== Status before test ====')
-    print(ret['Value'])
-    print('============================')
+    gLogger.debug('==== Status before test ====')
+    gLogger.debug(ret['Value'])
+    gLogger.debug('============================')
 
     put = self.requestClient.putRequest(self.request)
     self.assertTrue(put['OK'], put)
@@ -154,9 +154,9 @@ class ReqClientMix(ReqClientTestCase):
     ret = self.requestClient.getDBSummary()
     self.assertTrue(ret['OK'])
     self.assertEqual(ret['Value'], {'Operation': {}, 'Request': {}, 'File': {}})
-    print('==== Status after test ====')
-    print(ret['Value'])
-    print('============================')
+    gLogger.debug('==== Status after test ====')
+    gLogger.debug(ret['Value'])
+    gLogger.debug('============================')
 
   def test02Authorization(self):
     """ Test whether request sets on behalf of others are rejected, unless done with Delegation properties
@@ -164,9 +164,9 @@ class ReqClientMix(ReqClientTestCase):
     """
     ret = self.requestClient.getDBSummary()
     self.assertTrue(ret['OK'])
-    print('==== Status before test ====')
-    print(ret['Value'])
-    print('============================')
+    gLogger.debug('==== Status before test ====')
+    gLogger.debug(ret['Value'])
+    gLogger.debug('============================')
     request = Request({"RequestName": "unauthorized"})
     request.OwnerDN = 'NotMe'
     request.OwnerDN = 'AnotherGroup'
@@ -175,8 +175,8 @@ class ReqClientMix(ReqClientTestCase):
     request += op
     res = self.requestClient.putRequest(request)
     credProperties = getProxyInfo()['Value']['groupProperties']
-    print('=== getProxyInfo')
-    print(getProxyInfo()['Value'])
+    gLogger.debug('=== getProxyInfo')
+    gLogger.debug(getProxyInfo()['Value'])
     print
 
     # If the proxy with which we test has delegation, it should work
@@ -189,9 +189,9 @@ class ReqClientMix(ReqClientTestCase):
     
     ret = self.requestClient.getDBSummary()
     self.assertTrue(ret['OK'])
-    print('==== Status after test ====')
-    print(ret['Value'])
-    print('============================')
+    gLogger.debug('==== Status after test ====')
+    gLogger.debug(ret['Value'])
+    gLogger.debug('============================')
 
 
 if __name__ == '__main__':

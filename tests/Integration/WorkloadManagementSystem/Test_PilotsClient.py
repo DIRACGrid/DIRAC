@@ -42,6 +42,7 @@ def test_PilotsDB():
   assert res['OK'] is True
   res = pilots.getPilotOutput('anotherPilot')
   assert res['OK'] is True
+  # Added new key Owner(used not everywhere)
   expectedDict = {'FileList': [],
                   'OwnerDN': '/a/ownerDN',
                   'OwnerGroup': 'a/owner/Group',

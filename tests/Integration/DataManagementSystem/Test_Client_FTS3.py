@@ -9,6 +9,8 @@ import unittest
 import time
 import sys
 
+from DIRAC import gLogger
+
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
@@ -95,9 +97,8 @@ class TestClientFTS3(unittest.TestCase):
       fileStatusDict[fId] = {'status': 'Finished' if fId % 2 else 'Failed',
                              'error': '' if fId % 2 else 'Tough luck'}
 
-    print('== fileStatusDict:')
-    print(fileStatusDict)
-    print
+    gLogger.debug('== fileStatusDict:')
+    gLogger.debug(fileStatusDict)
 
     res = self.db.updateFileStatus(fileStatusDict)
     self.assertTrue(res['OK'], res)
