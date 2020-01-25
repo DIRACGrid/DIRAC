@@ -119,7 +119,7 @@ class BaseClient(object):
            * the ThreadConfig
            * in the CS /DIRAC/Setup
            * default to 'Test'
-        
+
         :return: S_OK()/S_ERROR()
     """
     if self.KW_SETUP in self.kwargs and self.kwargs[self.KW_SETUP]:
@@ -136,7 +136,7 @@ class BaseClient(object):
            * kwargs of the constructor (see KW_VO)
            * in the CS /DIRAC/VirtualOrganization
            * default to 'unknown'
-        
+
         :return: S_OK()/S_ERROR()
     """
     if self.KW_VO in self.kwargs and self.kwargs[self.KW_VO]:
@@ -251,7 +251,7 @@ class BaseClient(object):
     self.__extraCredentials = self.VAL_EXTRA_CREDENTIALS_HOST if self.__useCertificates else ""
     if self.KW_EXTRA_CREDENTIALS in self.kwargs:
       self.__extraCredentials = self.kwargs[self.KW_EXTRA_CREDENTIALS]
-    
+
     # Are we delegating something?
     delegatedDN = self.kwargs.get(self.KW_DELEGATED_DN) or self.__threadConfig.getDN()
     delegatedGroup = self.kwargs.get(self.KW_DELEGATED_GROUP) or self.__threadConfig.getGroup()
@@ -260,7 +260,7 @@ class BaseClient(object):
     if delegatedDN:
       if not getUsernameForDN(self.kwargs[self.KW_DELEGATED_DN])['OK']:
         return S_ERROR('%s is not registred.' % self.kwargs[self.KW_DELEGATED_DN])
-      self.__extraCredentials = (delegatedDN, delegatedGroup) 
+      self.__extraCredentials = (delegatedDN, delegatedGroup)
     return S_OK()
 
   def __findServiceURL(self):

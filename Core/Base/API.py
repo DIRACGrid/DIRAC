@@ -17,7 +17,7 @@ COMPONENT_NAME = 'API'
 
 def _printFormattedDictList(dictList, fields, uniqueField, orderBy):
   """ Will print ordered the supplied field of a list of dictionaries
-  
+
       :param list dictList: list of dictionaries
       :param list fields: fields
       :param str uniqueField: unique field
@@ -120,7 +120,7 @@ class API(object):
 
   def _prettyPrint(self, myObject):
     """ Helper function to pretty print an object.
-    
+
         :param myObject: an object
     """
     print(self.pPrint.pformat(myObject))
@@ -156,7 +156,7 @@ class API(object):
 
         :param str message: message
         :param str name: name
-        
+
         :return: S_ERROR(str)
     """
     className = name

@@ -536,7 +536,7 @@ def getSRMUpdates(vo, bdiiInfo=None):
 
 def getDBParameters(fullname):
   """ Retrieve Database parameters from CS
-      
+
       :param str fullname: should be of the form <System>/<DBname>
              defaultHost is the host to return if the option is not found in the CS.
              Not used as the method will fail if it cannot be found
@@ -610,7 +610,7 @@ def getDBParameters(fullname):
 
 def getElasticDBParameters(fullname):
   """ Retrieve Database parameters from CS
-      
+
       :param str fullname: should be of the form <System>/<DBname>
 
       :return: S_OK(dict)/S_ERROR()

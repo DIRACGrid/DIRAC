@@ -94,7 +94,7 @@ class Params(ProxyGeneration.CLIParams):
     Script.registerSwitch("P:", "provider=", "Set provider name for authentification", self.setProvider)
     Script.registerSwitch("Q", "qrcode", "Print link as QR code", self.setQRcode)
     Script.registerSwitch("M", "VOMS", "Add voms extension", self.setVOMSExt)
-    
+
 
 class ProxyInit(object):
 
@@ -107,7 +107,7 @@ class ProxyInit(object):
 
   def getIssuerCert(self):
     """ Get certificate issuer
-        
+
         :return: str
     """
     if self.__issuerCert:
@@ -318,7 +318,7 @@ class ProxyInit(object):
     proxyAPI = None
     spinner = Halo()
     s = requests.Session()
-    
+
     # Search and load sessions cache
     try:
       with open('/tmp/cache_u%d' % os.getuid(), 'rb') as f:
@@ -348,7 +348,7 @@ class ProxyInit(object):
             __opts = '?%s=%s' % (key, kwargs[key])
           else:
             __opts += '&%s=%s' % (key, kwargs[key])
-      
+
       # Make request
       try:
         r = s.get('%s/%s%s' % (url.strip('/'), endpoint.strip('/'), __opts), verify=False)
@@ -360,7 +360,7 @@ class ProxyInit(object):
       except requests.exceptions.Timeout:
         return S_ERROR('Time out')
       except requests.exceptions.RequestException as ex:
-        return S_ERROR(r.content)        
+        return S_ERROR(r.content)
       except requests.exceptions.HTTPError as ex:
         return S_ERROR('Failed: %s' % r.text or ex.message)
       except BaseException as ex:
@@ -431,7 +431,7 @@ class ProxyInit(object):
         spinner.info(authDict['Comment'].strip())
 
       spin.result = None
-    
+
     if authDict['Status'] == 'needToAuth':
       session = authDict['Session']
       if not authDict.get('URL'):
@@ -449,7 +449,7 @@ class ProxyInit(object):
       else:
         spinner.info(authDict['URL'])
         spinner.text = 'Use upper link to continue'
-    
+
       # Try to open in default browser
       if webbrowser.open_new_tab(authDict['URL']):
         spinner.text = '%s opening in default browser..' % authDict['URL']
@@ -490,7 +490,7 @@ class ProxyInit(object):
             sys.exit(0)
           sys.exit('Authentication failed.')
         spinner.text = 'Authenticated success.'
-      
+
       if comment:
         spinner.info(comment)
 
@@ -527,13 +527,14 @@ class ProxyInit(object):
       except Exception as e:
         return S_ERROR("%s :%s" % (self.__piParams.proxyLoc, repr(e).replace(',)', ')')))
       self.__piParams.certLoc = self.__piParams.proxyLoc
-    
+
     result = Script.enableCS()
     if not result['OK']:
       return S_ERROR("Cannot contact CS to get user list")
     threading.Thread(target=self.checkCAs).start()
     gConfig.forceRefresh(fromMaster=True)
     return S_OK(self.__piParams.proxyLoc)
+
 
 if __name__ == "__main__":
   piParams = Params()

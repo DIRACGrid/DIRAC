@@ -26,6 +26,7 @@ __RCSID__ = "$Id$"
 
 gBaseRegistrySection = "/Registry"
 
+
 def getVOMSAttributeForGroup(group):
   """ Search VOMS attribute for group
 
@@ -35,6 +36,7 @@ def getVOMSAttributeForGroup(group):
   """
   return gConfig.getValue("%s/Groups/%s/VOMSRole" % (gBaseRegistrySection, group), getDefaultVOMSAttribute())
 
+
 def getIDsForUsername(username):
   """ Return IDs for DIRAC user
 
@@ -43,6 +45,7 @@ def getIDsForUsername(username):
       :return: list -- contain IDs
   """
   return gConfig.getValue("%s/Users/%s/ID" % (gBaseRegistrySection, username), [])
+
 
 def getUsernameForID(ID, usersList=None):
   """ Get user name by ID
@@ -61,6 +64,7 @@ def getUsernameForID(ID, usersList=None):
     if ID in gConfig.getValue("%s/Users/%s/ID" % (gBaseRegistrySection, username), []):
       return S_OK(username)
   return S_ERROR("No username found for ID %s" % ID)
+
 
 def __getGroupsWithAttr(attrName, value):
   """ Get all posible groups with some attribute
@@ -83,6 +87,7 @@ def __getGroupsWithAttr(attrName, value):
   groups.sort()
   return S_OK(groups)
 
+
 def getDNForHost(host):
   """ Get host DN
 
@@ -95,6 +100,7 @@ def getDNForHost(host):
     return S_OK(dnList)
   return S_ERROR("No DN found for host %s" % host)
 
+
 def getGroupsForVO(vo):
   """ Get groups for VO
 
@@ -106,6 +112,7 @@ def getGroupsForVO(vo):
     return gConfig.getSections("%s/Groups" % gBaseRegistrySection)
   return __getGroupsWithAttr('VO', vo)
 
+
 def getGroupsWithProperty(propName):
   """ Search groups by property
 
@@ -114,6 +121,7 @@ def getGroupsWithProperty(propName):
       :return: S_OK(list)/S_ERROR()
   """
   return __getGroupsWithAttr("Properties", propName)
+
 
 def getHostnameForDN(dn):
   """ Search host name for host DN
@@ -131,12 +139,14 @@ def getHostnameForDN(dn):
       return S_OK(hostname)
   return S_ERROR("No hostname found for dn %s" % dn)
 
+
 def getDefaultUserGroup():
   """ Search general default group
 
       :return: str
   """
   return gConfig.getValue("/%s/DefaultGroup" % gBaseRegistrySection, "user")
+
 
 def getAllUsers():
   """ Get all users
@@ -146,6 +156,7 @@ def getAllUsers():
   retVal = gConfig.getSections("%s/Users" % gBaseRegistrySection)
   return retVal['Value'] if retVal['OK'] else []
 
+
 def getAllGroups():
   """ Get all groups
 
@@ -153,6 +164,7 @@ def getAllGroups():
   """
   retVal = gConfig.getSections("%s/Groups" % gBaseRegistrySection)
   return retVal['Value'] if retVal['OK'] else []
+
 
 def getPropertiesForGroup(groupName, defaultValue=None):
   """ Return group properties
@@ -165,6 +177,7 @@ def getPropertiesForGroup(groupName, defaultValue=None):
   option = "%s/Groups/%s/Properties" % (gBaseRegistrySection, groupName)
   return gConfig.getValue(option, [] if defaultValue is None else defaultValue)
 
+
 def getPropertiesForHost(hostName, defaultValue=None):
   """ Return host properties
 
@@ -175,6 +188,7 @@ def getPropertiesForHost(hostName, defaultValue=None):
   """
   option = "%s/Hosts/%s/Properties" % (gBaseRegistrySection, hostName)
   return gConfig.getValue(option, [] if defaultValue is None else defaultValue)
+
 
 def getPropertiesForEntity(group, name="", dn="", defaultValue=None):
   """ Return some entity properties
@@ -196,6 +210,7 @@ def getPropertiesForEntity(group, name="", dn="", defaultValue=None):
   else:
     return getPropertiesForGroup(group, defaultValue)
 
+
 def __matchProps(sProps, rProps):
   """ Match properties
 
@@ -210,6 +225,7 @@ def __matchProps(sProps, rProps):
       foundProps.append(prop)
   return foundProps
 
+
 def groupHasProperties(groupName, propList):
   """ Match required properties with group properties
 
@@ -221,6 +237,7 @@ def groupHasProperties(groupName, propList):
   if isinstance(propList, six.string_types):
     propList = [propList]
   return __matchProps(propList, getPropertiesForGroup(groupName))
+
 
 def hostHasProperties(hostName, propList):
   """ Match required properties with host properties
@@ -234,6 +251,7 @@ def hostHasProperties(hostName, propList):
     propList = [propList]
   return __matchProps(propList, getPropertiesForHost(hostName))
 
+
 def getUserOption(username, optName, defaultValue=""):
   """ Get user option
 
@@ -244,6 +262,7 @@ def getUserOption(username, optName, defaultValue=""):
       :return: defaultValue or str
   """
   return gConfig.getValue("%s/Users/%s/%s" % (gBaseRegistrySection, username, optName), defaultValue)
+
 
 def getGroupOption(groupName, optName, defaultValue=""):
   """ Get group option
@@ -256,6 +275,7 @@ def getGroupOption(groupName, optName, defaultValue=""):
   """
   return gConfig.getValue("%s/Groups/%s/%s" % (gBaseRegistrySection, groupName, optName), defaultValue)
 
+
 def getHostOption(hostName, optName, defaultValue=""):
   """ Get host option
 
@@ -267,12 +287,14 @@ def getHostOption(hostName, optName, defaultValue=""):
   """
   return gConfig.getValue("%s/Hosts/%s/%s" % (gBaseRegistrySection, hostName, optName), defaultValue)
 
+
 def getHosts():
   """ Get all hosts
 
       :return: S_OK()/S_ERROR()
   """
   return gConfig.getSections('%s/Hosts' % gBaseRegistrySection)
+
 
 def getVOOption(voName, optName, defaultValue=""):
   """ Get VO option
@@ -285,12 +307,14 @@ def getVOOption(voName, optName, defaultValue=""):
   """
   return gConfig.getValue("%s/VO/%s/%s" % (gBaseRegistrySection, voName, optName), defaultValue)
 
+
 def getBannedIPs():
   """ Get banned IPs
 
       :return: list
   """
   return gConfig.getValue("%s/BannedIPs" % gBaseRegistrySection, [])
+
 
 def getVOForGroup(group):
   """ Search VO name for group
@@ -304,12 +328,14 @@ def getVOForGroup(group):
     return voName
   return gConfig.getValue("%s/Groups/%s/VO" % (gBaseRegistrySection, group), "")
 
+
 def getDefaultVOMSAttribute():
   """ Get default VOMS attribute
 
       :return: str
   """
   return gConfig.getValue("%s/DefaultVOMSAttribute" % gBaseRegistrySection, "")
+
 
 def getDefaultVOMSVO():
   """ Get default VOMS VO
@@ -320,6 +346,7 @@ def getDefaultVOMSVO():
   if vomsVO:
     return vomsVO
   return getVO()
+
 
 def getVOMSVOForGroup(group):
   """ Search VOMS VO for group
@@ -333,6 +360,7 @@ def getVOMSVOForGroup(group):
     vo = getVOForGroup(group)
     vomsVO = getVOOption(vo, 'VOMSName', '')
   return vomsVO
+
 
 def getGroupsWithVOMSAttribute(vomsAttr, groups=[]):
   """ Search groups with VOMS attribute
@@ -348,6 +376,7 @@ def getGroupsWithVOMSAttribute(vomsAttr, groups=[]):
       res.append(group)
   return res
 
+
 def getVOs():
   """ Get all the configured VOs
 
@@ -355,6 +384,7 @@ def getVOs():
   """
   voName = getVO()
   return S_OK([voName]) if voName else gConfig.getSections('%s/VO' % gBaseRegistrySection)
+
 
 def getVOsWithVOMS():
   """ Get all the configured VOMS VOs
@@ -369,6 +399,7 @@ def getVOsWithVOMS():
     if getVOOption(vo, 'VOMSName'):
       vos.append(vo)
   return S_OK(vos)
+
 
 def getVOMSServerInfo(requestedVO=''):
   """ Get information on VOMS servers for the given VO or for all of them
@@ -404,12 +435,13 @@ def getVOMSServerInfo(requestedVO=''):
 
   return S_OK(vomsDict)
 
+
 def getVOMSRoleGroupMapping(vo=''):
   """ Get mapping of the VOMS role to the DIRAC group
 
       :param str vo: perform the operation for the given VO
 
-      :return: S_OK(dict)/S_ERROR() -- dictionary have standard structure with two mappings: 
+      :return: S_OK(dict)/S_ERROR() -- dictionary have standard structure with two mappings:
                VOMS-DIRAC { <VOMS_Role>: [<DIRAC_Group>] },
                DIRAC-VOMS { <DIRAC_Group>: <VOMS_Role> }
                and a list of DIRAC groups without mapping
@@ -444,6 +476,7 @@ def getVOMSRoleGroupMapping(vo=''):
                "NoVOMS": noVOMSGroupList,
                "NoSyncVOMS": noVOMSSyncGroupList})
 
+
 def isDownloadableGroup(groupName):
   """ Get permission to download proxy with group in a argument
 
@@ -455,21 +488,23 @@ def isDownloadableGroup(groupName):
     return False
   return True
 
+
 def getDNsForUsernameFromSC(username):
   """ Find all DNs for DIRAC user
-  
+
       :param str username: DIRAC user
       :param bool active: if need to search only DNs with active sessions
-      
+
       :return: list -- contain DNs
   """
   return gConfig.getValue("%s/Users/%s/DN" % (gBaseRegistrySection, username), [])
+
 
 def getUsersInGroup(group):
   """ Find all users for group
 
       :param str group: group name
-  
+
       :return: list
   """
   users = getGroupOption(group, 'Users', [])
@@ -479,6 +514,7 @@ def getUsersInGroup(group):
     users += getUsernameForDN(dn)
   users.sort()
   return list(set(users))
+
 
 def getProviderForID(ID):
   """ Search identity provider for user ID
@@ -504,12 +540,13 @@ def getProviderForID(ID):
     return S_ERROR('Cannot find identity providers for %s' % ID)
   return S_OK(list(set(providers)))
 
+
 def getDNsForUsername(username, active=False):
   """ Find all DNs for DIRAC user
-  
+
       :param str username: DIRAC user
       :param bool active: if need to search only DNs with active sessions
-      
+
       :return: S_OK(list)/S_ERROR() -- contain DNs
   """
   try:
@@ -526,7 +563,7 @@ def getDNsForUsername(username, active=False):
     IdPsDict = result['Value']
   except Exception:
     IdPsDict = {}
-  
+
   DNs = getDNsForUsernameFromSC(username)
   for ID, idDict in IdPsDict.items():
     if idDict.get('DNs'):
@@ -537,12 +574,13 @@ def getDNsForUsername(username, active=False):
       DNs += idDict['DNs'].keys()
   return S_OK(list(set(DNs)))
 
+
 def getUsernameForDN(dn, usersList=None):
   """ Find DIRAC user for DN
-  
+
       :param str dn: user DN
       :param list usersList: list of posible users
-      
+
       :return: S_OK()/S_ERROR()
   """
   for username in (usersList or getAllUsers()):
@@ -553,12 +591,13 @@ def getUsernameForDN(dn, usersList=None):
       return S_OK(username)
   return S_ERROR("No username found for DN %s" % dn)
 
+
 def getGroupsForUser(username, researchedGroup=None):
   """ Find groups for user or if set reseachedGroup check it for user
-  
+
       :param str username: user name
       :param str researchedGroup: group name
-      
+
       :return: S_OK(list or bool)/S_ERROR() -- contain list of groups or status group for user
   """
   groups = []
@@ -580,6 +619,7 @@ def getGroupsForUser(username, researchedGroup=None):
   groups.sort()
   return S_OK(list(set(groups)))
 
+
 def findDefaultGroupForDN(dn):
   """ Search defaut group for DN
 
@@ -591,6 +631,7 @@ def findDefaultGroupForDN(dn):
   if not result['OK']:
     return result
   return findDefaultGroupForUser(result['Value'])
+
 
 def findDefaultGroupForUser(username):
   """ Get default group for user
@@ -609,6 +650,7 @@ def findDefaultGroupForUser(username):
     if group in userGroups:
       return S_OK(group)
   return S_OK(userGroups[0])
+
 
 def getProxyProviderForDN(userDN):
   """ Get proxy providers by user DN
@@ -641,7 +683,7 @@ def getProxyProviderForDN(userDN):
   for ID, idDict in IDsDict.items():
     if userDN in (idDict.get('DNs') or []):
       provider = idDict['DNs'][userDN].get('ProxyProvider')
-  
+
   if not provider:
     # Get providers
     result = getInfoAboutProviders(of='Proxy')
@@ -659,6 +701,7 @@ def getProxyProviderForDN(userDN):
 
   return S_OK(provider or 'Certificate')
 
+
 def getUsersInVO(vo):
   """ Search users in VO
 
@@ -675,6 +718,7 @@ def getUsersInVO(vo):
   userList.sort()
   return userList
 
+
 def getEmailsForGroup(groupName):
   """ Get email list of users in group
 
@@ -687,6 +731,7 @@ def getEmailsForGroup(groupName):
     email = getUserOption(username, 'Email', [])
     emails.append(email)
   return emails
+
 
 def getGroupsForDN(userDN, researchedGroup=None):
   """ Get all posible groups for DN
@@ -724,7 +769,8 @@ def getGroupsForDN(userDN, researchedGroup=None):
     return S_OK(False) if researchedGroup else S_ERROR('No groups found for %s' % userDN)
   groups.sort()
   return S_OK(list(set(groups)))
-  
+
+
 def getDNForUsernameInGroup(username, group):
   """ Get user DN for user in group
 
@@ -742,11 +788,12 @@ def getDNForUsernameInGroup(username, group):
       return S_OK(dn)
   return S_ERROR('For %s@%s not found DN.' % (username, group))
 
+
 def getDNsInGroup(group):
   """ Find user DNs for DIRAC group
-  
+
       :param str group: group name
-      
+
       :return: list
   """
   try:
@@ -761,7 +808,7 @@ def getDNsInGroup(group):
   for dn, infoDict in vomsInfo.items():
     if vomsRole in infoDict['VOMSRoles']:
       DNs.append(dn)
-  
+
   for username in getGroupOption(group, 'Users', []):
     result = getDNsForUsername(username)
     if not result['OK']:
@@ -771,8 +818,9 @@ def getDNsInGroup(group):
       if not result['OK']:
         return result
       DNs.append(result['Value'])
-    
+
   return list(set(DNs))
+
 
 def getGroupsStatusByUsername(username):
   """ Get status of every group for DIRAC user
@@ -792,6 +840,7 @@ def getGroupsStatusByUsername(username):
     statusDict[group] = result['Value']
   return S_OK(statusDict)
 
+
 def getStatusGroupByUsername(group, username):
   """ Get status of group for DIRAC user
 
@@ -810,7 +859,7 @@ def getStatusGroupByUsername(group, username):
     gProxyManager
   except Exception:
     from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
-  
+
   vomsRole = getGroupOption(group, 'VOMSRole')
   if vomsRole:
     result = gProxyManager.getActualVOMSesDNs([dn])
@@ -840,8 +889,9 @@ def getStatusGroupByUsername(group, username):
     if not providerRes['OK']:
       return providerRes
     return providerRes['Value'].checkStatus(dn)
-    
+
   return S_OK({'Status': 'ready', 'Comment': 'Proxy uploaded'})
+
 
 def findSomeDNToUseForGroupsThatNotNeedDN(username):
   """ This method is HACK for groups that not need DN from user, like as dirac_user, dirac_admin

@@ -4,6 +4,7 @@ import functools
 
 from DIRAC.Core.Utilities.DIRACSingleton import DIRACSingleton
 
+
 class ThreadConfig(threading.local):
   """ This class allows to contain extra information when a call is done on behalf of
       somebody else. Typically, when a host performs the request on behalf of a user.
@@ -55,7 +56,7 @@ class ThreadConfig(threading.local):
         :return: str
     """
     return self.__DN
-  
+
   def setID(self, ID):
     """ Set user ID
 
@@ -114,6 +115,7 @@ class ThreadConfig(threading.local):
     self.__DN = tp[1] or self.__DN
     self.__group = tp[2] or self.__group
     self.__setup = tp[3] or self.__setup
+
 
 def threadDeco(method):
   """ Tread decorator

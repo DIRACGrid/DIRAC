@@ -186,7 +186,7 @@ class ReqClientMix(ReqClientTestCase):
     # otherwise no
     else:
       self.assertFalse(res['OK'], res)
-    
+
     ret = self.requestClient.getDBSummary()
     self.assertTrue(ret['OK'])
     gLogger.debug('==== Status after test ====')

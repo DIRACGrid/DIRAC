@@ -7,7 +7,7 @@ __RCSID__ = "$Id$"
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Security import Properties
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupsForUser, getPropertiesForGroup, getUsersInGroup
-    
+
 RIGHT_KILL = 'Kill'
 RIGHT_RESET = 'Reset'
 RIGHT_DELETE = 'Delete'

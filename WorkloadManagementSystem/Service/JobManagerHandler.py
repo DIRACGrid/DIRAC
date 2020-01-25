@@ -228,7 +228,7 @@ class JobManagerHandler(RequestHandler):
         by the jobIDList
 
         :param list jobIDs: list of job IDs
-        
+
         :return: S_OK(list)/S_ERROR() -- confirmed job IDs
     """
     jobList = self.__getJobList(jobIDs)

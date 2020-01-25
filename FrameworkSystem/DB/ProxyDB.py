@@ -249,7 +249,7 @@ class ProxyDB(DB):
       result = self.updateDBVersion(1)
       if not result['OK']:
         return result
-    
+
     if self.versionDB == 1 and self.versionDB < self.__version:
       for column in ['UserName', 'ProxyProvider']:
         result = self._query("SHOW COLUMNS FROM `ProxyDB_CleanProxies` LIKE '%s'" % column)
@@ -260,7 +260,7 @@ class ProxyDB(DB):
       result = self.updateDBVersion(2)
       if not result['OK']:
         return result
-    
+
     return S_OK()
 
   def generateDelegationRequest(self, credDict):
@@ -470,7 +470,8 @@ class ProxyDB(DB):
     cmd = "INSERT INTO `ProxyDB_CleanProxies` (%s) VALUES (%s)" % (", ".join(dValues.keys()),
                                                                    ", ".join(dValues.values()))
     if len(data) > 0:
-      cmd = 'UPDATE `ProxyDB_CleanProxies` SET %s WHERE UserDN = %s' % (", ".join(["%s = %s" % (k, v) for k, v in dValues.items()]), sUserDN)
+      cmd = 'UPDATE `ProxyDB_CleanProxies` SET %s WHERE UserDN = %s' % (
+          ", ".join(["%s = %s" % (k, v) for k, v in dValues.items()]), sUserDN)
       pem = data[0][1]
       if pem:
         remainingSecsInDB = data[0][0]
@@ -486,7 +487,7 @@ class ProxyDB(DB):
 
     self.logAction("store proxy", userName, 'any', userName, 'any')
     return self._update(cmd)
-  
+
   def __getPemAndTimeLeft(self, userDN, userGroup, requiredLifeTime=None, vomsAttr=None):
     """ Get proxy from DB and add group
 
@@ -503,7 +504,7 @@ class ProxyDB(DB):
       # Search VOMS proxy first
       result = self._query(cmd % 'ProxyDB_VOMSProxies' + " AND VOMSAttr=%s AND UserGroup=%s" % (vomsAttr, userGroup))
       if not result['OK']:
-        result = self._query(cmd % 'ProxyDB_CleanProxies') 
+        result = self._query(cmd % 'ProxyDB_CleanProxies')
     else:
       result = self._query(cmd % 'ProxyDB_CleanProxies')
     err = "%s@%s proxy" % (userDN, userGroup)
@@ -516,7 +517,8 @@ class ProxyDB(DB):
       chain = X509Chain()
       result = chain.loadProxyFromString(data[0][0])
       if result['OK']:
-        result = chain.generateProxyToString(requiredLifeTime or min(3600 * 12, data[0][1]), diracGroup=userGroup, rfc=True)
+        result = chain.generateProxyToString(requiredLifeTime or min(
+            3600 * 12, data[0][1]), diracGroup=userGroup, rfc=True)
       if not result['OK']:
         return S_ERROR("%s exist in DB, but %s" % (err, result['Message']))
       return S_OK((result['Value'], requiredLifeTime))
@@ -560,7 +562,7 @@ class ProxyDB(DB):
     result = self.__storeProxy(userDN, chain)
     if not result['OK']:
       return result
-    
+
     # Add group
     result = chain.generateProxyToString(requiredLifeTime, diracGroup=userGroup, rfc=True)
     if not result['OK']:
@@ -646,7 +648,7 @@ class ProxyDB(DB):
     if userGroup:
       cmd += " AND UserGroup=%s" % sUserGroup
     if vomsAttr:
-        cmd += " AND VOMSAttr=%s" % sVomsAttr
+      cmd += " AND VOMSAttr=%s" % sVomsAttr
     retVal = self._query(cmd)
     if not retVal['OK']:
       return retVal
@@ -764,7 +766,7 @@ class ProxyDB(DB):
           return S_ERROR('%s; %s' % (errMsg, result['Message']))
 
     pemData, timeLeft = result['Value']
-    
+
     chain = X509Chain()
     result = chain.loadProxyFromString(pemData)
     if not result['OK']:
@@ -774,14 +776,14 @@ class ProxyDB(DB):
     if not chain.isValidProxy()['OK']:
       self.deleteProxy(userDN, userGroup)
       return S_ERROR("%s@%s has no proxy registered" % (userDN, userGroup))
-    
+
     if voms:
       vomsMgr = VOMS()
       attrs = vomsMgr.getVOMSAttributes(chain).get('Value')
       if attrs and attrs[0]:
         if vomsAttr != attrs[0]:
           return S_ERROR("Stored proxy has already a different VOMS attribute %s than requested %s" %
-                          (attrs[0], vomsAttr))
+                         (attrs[0], vomsAttr))
       else:
         retVal = vomsMgr.setVOMSAttributes(chain, vomsAttr, vo=Registry.getVOMSVOForGroup(userGroup))
         if not retVal['OK']:
@@ -793,7 +795,7 @@ class ProxyDB(DB):
         return result
       timeLeft = result['Value']
 
-    return S_OK((chain, timeLeft)) 
+    return S_OK((chain, timeLeft))
 
   def __storeVOMSProxy(self, userDN, userGroup, vomsAttr, chain):
     """ Store VOMS proxy
@@ -958,7 +960,6 @@ class ProxyDB(DB):
         groups = [groups]
       del selDict["UserGroup"]
 
-    
     if groups or users:
       DNs = []
       if groups and users:
@@ -1077,7 +1078,8 @@ class ProxyDB(DB):
     except KeyError:
       return S_ERROR("Can't escape from death")
     cmd = "INSERT INTO `ProxyDB_Log` (Action, IssuerUsername, IssuerGroup, TargetUsername, TargetGroup, Timestamp) VALUES "
-    cmd += "(%s, %s, %s, %s, %s, UTC_TIMESTAMP())" % (sAction, sIssuerUsername, sIssuerGroup, sTargetUsername, sTargetGroup)
+    cmd += "(%s, %s, %s, %s, %s, UTC_TIMESTAMP())" % (sAction,
+                                                      sIssuerUsername, sIssuerGroup, sTargetUsername, sTargetGroup)
     retVal = self._update(cmd)
     if not retVal['OK']:
       self.log.error("Can't add a proxy action log: ", retVal['Message'])

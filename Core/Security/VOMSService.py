@@ -72,9 +72,9 @@ class VOMSService(object):
 
   def getUsers(self, proxyPath=None):
     """ Get all the users of the VOMS VO with their detailed information
-    
+
     :param str proxyPath: proxy path
-    
+
     :return: user dictionary keyed by the user DN
     """
     if not self.urls:

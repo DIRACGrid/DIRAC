@@ -352,7 +352,7 @@ def generateProxy(params):
         gLogger.warn(retVal['Message'])
         return S_ERROR("Cannot found group for %s user. %s" % (username, result['Message']))
       params.diracGroup = result['Value']
-      
+
     retVal = Registry.getGroupsForUser(username)
     if not retVal['OK']:
       gLogger.warn(retVal['Message'])

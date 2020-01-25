@@ -56,7 +56,7 @@ from DIRAC.Core.Utilities.Graph import DynamicProps
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getGroupsWithVOMSAttribute,\
-     getUsernameForDN, getGroupsForUser
+    getUsernameForDN, getGroupsForUser
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
@@ -139,7 +139,6 @@ class OperationHandlerBase(object):
                                                          self.request.Order,
                                                          self.operation.Type))
 
-
   @classmethod
   def rssClient(cls):
     """ ResourceStatusClient getter """
@@ -180,7 +179,7 @@ class OperationHandlerBase(object):
     for ownerGroup in getGroupsWithVOMSAttribute(ownerRole, groups=ownerGroups):
       vomsProxy = gProxyManager.downloadVOMSProxy(owner, ownerGroup, limited=True)
       if not vomsProxy["OK"]:
-        self.log.debug("getProxyForLFN: failed to get VOMS proxy for %s@%s role=%s: %s" % (owner, ownerGroup
+        self.log.debug("getProxyForLFN: failed to get VOMS proxy for %s@%s role=%s: %s" % (owner, ownerGroup,
                                                                                            ownerRole,
                                                                                            vomsProxy["Message"]))
         continue

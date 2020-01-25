@@ -19,12 +19,13 @@ KW_HOSTS_GROUP = 'hosts'
 KW_PROPERTIES = 'properties'
 KW_EXTRA_CREDENTIALS = 'extraCredentials'
 
+
 def forwardingCredentials(credDict, logObj=gLogger):
   """ Check whether the credentials are being forwarded by a valid source and extract it
 
       :param dict credDict: Credentials to ckeck
       :param object logObj: logger
-      
+
       :return: bool
   """
   if isinstance(credDict.get(KW_EXTRA_CREDENTIALS), (tuple, list)):
@@ -41,6 +42,7 @@ def forwardingCredentials(credDict, logObj=gLogger):
     del credDict[KW_EXTRA_CREDENTIALS]
     return True
   return False
+
 
 def initializationOfSession(credDict, logObj=gLogger):
   """ Discover the username associated to the authentication session. It will check if the selected group is valid.
@@ -59,6 +61,7 @@ def initializationOfSession(credDict, logObj=gLogger):
     return False
   credDict[KW_USERNAME] = result['Value']
   return True
+
 
 def initializationOfCertificate(credDict, logObj=gLogger):
   """ Discover the username associated to the certificate DN. It will check if the selected group is valid.
@@ -89,6 +92,7 @@ def initializationOfCertificate(credDict, logObj=gLogger):
     return False
   credDict[KW_USERNAME] = result['Value']
   return True
+
 
 def initializationOfGroup(credDict, logObj=gLogger):
   """ Check/get default group
@@ -199,7 +203,7 @@ class AuthManager(object):
         credDict[KW_USERNAME] = "anonymous"
         credDict[KW_GROUP] = "visitor"
         authorized = False
-    
+
     # Search group
     if authorized:
       authorized = initializationOfGroup(credDict, logObj=self.__authLogger)
@@ -233,7 +237,7 @@ class AuthManager(object):
         :param str method: Method to test
         :param defaultProperties: default properties
         :type defaultProperties: list or tuple
-        
+
         :return: list -- List containing the allowed groups
     """
     authProps = gConfig.getValue("%s/%s" % (self.authSection, method), [])
@@ -282,7 +286,7 @@ class AuthManager(object):
         :param list validProps: List of valid properties
         :param bool caseSensitive: Map lower case properties to properties to make the check in
                lowercase but return the proper case
-        
+
         :return: bool -- specifying whether any property has matched the valid ones
     """
     if not validProps:

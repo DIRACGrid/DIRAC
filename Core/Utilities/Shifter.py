@@ -12,7 +12,8 @@ from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import findDefaultGroupForUser,\
-     getDNForUsernameInGroup, getVOMSAttributeForGroup
+    getDNForUsernameInGroup, getVOMSAttributeForGroup
+
 
 def getShifterProxy(shifterType, fileName=False):
   """ This method returns a shifter's proxy

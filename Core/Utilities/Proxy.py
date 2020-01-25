@@ -45,6 +45,7 @@ from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationDat
 
 __RCSID__ = "$Id$"
 
+
 def executeWithUserProxy(fcn):
   """Decorator function to execute with a temporary user proxy
 

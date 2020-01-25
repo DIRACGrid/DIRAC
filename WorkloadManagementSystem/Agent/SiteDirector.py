@@ -205,7 +205,11 @@ class SiteDirector(AgentModule):
     self.pilotDN = self.am_getOption("PilotDN", self.pilotDN)
     self.pilotUser = self.am_getOption("PilotUser", self.pilotUser)
     self.pilotGroup = self.am_getOption("PilotGroup", self.pilotGroup)
-    result = findGenericPilotCredentials(vo=self.vo, pilotUser=self.pilotUser, pilotDN=self.pilotDN, pilotGroup=self.pilotGroup)
+    result = findGenericPilotCredentials(
+        vo=self.vo,
+        pilotUser=self.pilotUser,
+        pilotDN=self.pilotDN,
+        pilotGroup=self.pilotGroup)
     if not result['OK']:
       return result
     self.pilotUser, self.pilotGroup, self.pilotDN = result['Value']
@@ -1509,7 +1513,6 @@ class SiteDirector(AgentModule):
                                     numTotal,
                                     numSucceeded,
                                     status):
-
     """ Send pilot submission accounting record
 
         :param str siteName:     Site name

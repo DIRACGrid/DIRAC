@@ -63,7 +63,7 @@ class FTS3Agent(AgentModule):
 
   def __readConf(self):
     """ Read configurations
-    
+
         :return: S_OK()/S_ERROR()
     """
     # Getting all the possible servers
@@ -96,7 +96,7 @@ class FTS3Agent(AgentModule):
 
   def initialize(self):
     """ Agent's initialization
-    
+
         :return: S_OK()/S_ERROR()
     """
     self._globalContextCache = {}
@@ -317,7 +317,7 @@ class FTS3Agent(AgentModule):
           * generate new jobs and submits them
 
         :param operation: the operation to treat
-        
+
         :return: operation, S_OK()/S_ERROR()
     """
     try:
@@ -471,7 +471,7 @@ class FTS3Agent(AgentModule):
 
   def kickOperations(self):
     """ Kick stuck operations
-    
+
         :return: S_OK()/S_ERROR()
     """
     log = gLogger.getSubLogger("kickOperations", child=True)
@@ -487,7 +487,7 @@ class FTS3Agent(AgentModule):
 
   def kickJobs(self):
     """ Kick stuck jobs
-    
+
         :return: S_OK()/S_ERROR()
     """
     log = gLogger.getSubLogger("kickJobs", child=True)
@@ -503,7 +503,7 @@ class FTS3Agent(AgentModule):
 
   def deleteOperations(self):
     """ Delete final operations
-    
+
         :return: S_OK()/S_ERROR()
     """
     log = gLogger.getSubLogger("deleteOperations", child=True)
@@ -519,7 +519,7 @@ class FTS3Agent(AgentModule):
 
   def finalize(self):
     """ Finalize processing
-    
+
         :return: S_OK()/S_ERROR()
     """
     # Joining all the ThreadPools
@@ -543,7 +543,7 @@ class FTS3Agent(AgentModule):
 
   def execute(self):
     """ One cycle execution
-    
+
         :return: S_OK()/S_ERROR()
     """
     log = gLogger.getSubLogger("execute", child=True)

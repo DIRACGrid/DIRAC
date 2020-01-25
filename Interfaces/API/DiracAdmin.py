@@ -456,7 +456,7 @@ class DiracAdmin(API):
 
         :param jobID: JobID
         :type jobID: integer or list of integers
-        
+
         :return: S_OK,S_ERROR
     """
     if isinstance(jobID, six.string_types):
@@ -536,7 +536,7 @@ class DiracAdmin(API):
 
         :param str gridReference: Pilot Job Reference
         :param str directory: path for output
-        
+
         :return: S_OK,S_ERROR
     """
     if not isinstance(gridReference, six.string_types):
@@ -829,7 +829,7 @@ class DiracAdmin(API):
   #############################################################################
   def csDescribeUsers(self, mask=False):
     """ List users and their properties in the CS.
-        
+
         :param str mask: If a mask is given, only users in the mask will be returned
 
         :return: list
@@ -885,7 +885,7 @@ class DiracAdmin(API):
   #############################################################################
   def csDescribeGroups(self, mask=False):
     """ List groups and their properties in the CS.
-        
+
         :param mask: If a mask is given, only groups in the mask will be returned
 
         :return: list

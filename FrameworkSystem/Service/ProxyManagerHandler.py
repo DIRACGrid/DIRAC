@@ -23,11 +23,12 @@ from DIRAC.Core.Utilities.ThreadScheduler import gThreadScheduler
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOsWithVOMS, getVOOption, getGroupsForVO,\
-     getVOs, getPropertiesForGroup, isDownloadableGroup, getUsernameForDN, getDNForUsernameInGroup 
+    getVOs, getPropertiesForGroup, isDownloadableGroup, getUsernameForDN, getDNForUsernameInGroup
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 
 gVOMSCacheSync = ThreadSafe.Synchronizer()
 gVOMSFileSync = ThreadSafe.Synchronizer()
+
 
 class ProxyManagerHandler(RequestHandler):
 
@@ -35,7 +36,6 @@ class ProxyManagerHandler(RequestHandler):
   __VOMSesUsersCache = DictCache()
   __maxExtraLifeFactor = 1.5
   __proxyDB = None
-
 
   @classmethod
   @gVOMSCacheSync
@@ -66,7 +66,7 @@ class ProxyManagerHandler(RequestHandler):
     """ Load VO cache from file
 
         :param str vo: VO name
-        
+
         :return: S_OK(dict)/S_ERROR() -- dictionary with information about users
     """
     try:
@@ -74,14 +74,14 @@ class ProxyManagerHandler(RequestHandler):
         return S_OK(pickle.load(f))
     except Exception as e:
       return S_ERROR(str(e))
-  
+
   @classmethod
   @gVOMSFileSync
   def getVOMSInfoFromCache(cls, vo=None):
     """ Load VO cache from file
 
         :param str vo: VO name
-        
+
         :return: S_OK(dict)/S_ERROR() -- dictionary with information about users
     """
     return cls.__VOMSesUsersCache.get(vo) if vo else cls.__VOMSesUsersCache.getDict()
@@ -237,9 +237,11 @@ class ProxyManagerHandler(RequestHandler):
     credDict = self.getRemoteCredentials()
     result = self.__proxyDB.generateDelegationRequest(credDict)
     if result['OK']:
-      gLogger.info("Upload request by %s:%s given id %s" % (credDict['username'], credDict['group'], result['Value']['id']))
+      gLogger.info("Upload request by %s:%s given id %s" %
+                   (credDict['username'], credDict['group'], result['Value']['id']))
     else:
-      gLogger.error("Upload request failed", "by %s:%s : %s" % (credDict['username'], credDict['group'], result['Message']))
+      gLogger.error("Upload request failed", "by %s:%s : %s" %
+                    (credDict['username'], credDict['group'], result['Message']))
     return result
 
   types_completeDelegationUpload = [six.integer_types, basestring]
@@ -311,7 +313,15 @@ class ProxyManagerHandler(RequestHandler):
 
   types_getProxy = [basestring, basestring, basestring, six.integer_types]
 
-  def export_getProxy(self, user, userGroup, requestPem, requiredLifetime, token=None, vomsAttribute=None, personal=False):
+  def export_getProxy(
+          self,
+          user,
+          userGroup,
+          requestPem,
+          requiredLifetime,
+          token=None,
+          vomsAttribute=None,
+          personal=False):
     """ Get a proxy for a user/userGroup
 
         :param str user: user name
@@ -326,7 +336,7 @@ class ProxyManagerHandler(RequestHandler):
               * FullDelegation <- permits full delegation of proxies
               * LimitedDelegation <- permits downloading only limited proxies
               * PrivateLimitedDelegation <- permits downloading only limited proxies for one self
-          
+
           * Properties for personal proxy:
               * NormalUser <- permits full delegation of proxies
 
@@ -508,7 +518,12 @@ class ProxyManagerHandler(RequestHandler):
       requesterUsername = result['Value']
 
     credDict = self.getRemoteCredentials()
-    self.__proxyDB.logAction("generate tokens", credDict['username'], credDict['group'], requesterUsername, requesterGroup)
+    self.__proxyDB.logAction(
+        "generate tokens",
+        credDict['username'],
+        credDict['group'],
+        requesterUsername,
+        requesterGroup)
     return self.__proxyDB.generateToken(requesterUsername, requesterGroup, numUses=tokenUses)
 
   types_getVOMSProxyWithToken = [basestring, basestring, basestring, six.integer_types, [basestring, type(None)]]
@@ -525,7 +540,7 @@ class ProxyManagerHandler(RequestHandler):
         :return: S_OK(str)/S_ERROR()
     """
     return self.export_getProxy(user, userGroup, requestPem, requiredLifetime, token=token, vomsAttribute=vomsAttribute)
-  
+
   types_getProxyWithToken = [basestring, basestring, basestring, six.integer_types, basestring]
 
   def export_getProxyWithToken(self, user, userGroup, requestPem, requiredLifetime, token):
