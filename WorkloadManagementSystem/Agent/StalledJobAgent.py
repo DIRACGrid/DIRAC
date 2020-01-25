@@ -154,7 +154,7 @@ for the agent restart
     """ Changes the Stalled status to Failed for jobs long in the Stalled status
     """
     # Only get jobs that have been Stalled for long enough
-    checkTime = dateTime() - failedTime
+    checkTime = dateTime() - failedTime * second
     result = self.jobDB.selectJobs({'Status': 'Stalled'}, older=checkTime)
     if not result['OK']:
       return result
