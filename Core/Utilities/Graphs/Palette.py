@@ -15,7 +15,7 @@ job_status_palette = {
    'Waiting':   '#004EFF',
    'Matched':   '#FEF7AA',
    'Running':   '#FDEE65',
-   'Completing':'#FFAF55',
+   'Completing': '#FFAF55',
    'Stalled':   '#BC5757',
    'Completed': '#00FF21',
    'Done':      '#238802',
