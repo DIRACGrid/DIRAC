@@ -19,7 +19,7 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities import Time
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
-from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
+from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB, JOB_FINAL_STATES
 from DIRAC.WorkloadManagementSystem.DB.ElasticJobDB import ElasticJobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 
@@ -27,8 +27,6 @@ from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 jobDB = False
 logDB = False
 elasticJobDB = False
-
-JOB_FINAL_STATES = ['Done', 'Completed', 'Failed']
 
 
 def initializeJobStateUpdateHandler(serviceInfo):
