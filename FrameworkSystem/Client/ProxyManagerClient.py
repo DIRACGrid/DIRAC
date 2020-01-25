@@ -137,7 +137,7 @@ class ProxyManagerClient(object):
         if dn not in vomsActualDNsDict:
           vomsActualDNsDict[dn] = {'VOMSRoles': [], 'SuspendedRoles': [], 'Emails': []}
         vomsActualDNsDict[dn]['VOMSRoles'] = list(set(vomsActualDNsDict[dn]['VOMSRoles'] + dnDict['Roles']))
-        if dnDict['certSuspended']:
+        if dnDict['certSuspended'] or dnDict['suspended']:
           vomsActualDNsDict[dn]['SuspendedRoles'] = list(set(vomsActualDNsDict[dn]['SuspendedRoles'] + dnDict['Roles']))
     return S_OK(vomsActualDNsDict)
 

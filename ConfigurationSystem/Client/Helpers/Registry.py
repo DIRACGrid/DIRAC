@@ -700,13 +700,12 @@ def getGroupsForDN(userDN, researchedGroup=None):
     gProxyManager
   except Exception:
     from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
-  result = gProxyManager.getActualVOMSesDNs(userDN)
-  vomsInfo = result['Value'] if result['OK'] else {}
+  result = gProxyManager.getActualVOMSesDNs([userDN])
+  dnDict = result['Value'].get(userDN, {}) if result['OK'] else {}
 
   groups = []
-  vomsRoles = vomsInfo[userDN].get('VOMSRoles') if userDN in vomsInfo else []
-  for vomsRole in vomsRoles:
-    groups += getGroupsWithVOMSAttribute(vomsRole)
+  for role in dnDict.get('VOMSRoles', []):
+    groups += getGroupsWithVOMSAttribute(role)
     if researchedGroup in groups:
       return S_OK(True)
 
@@ -815,11 +814,11 @@ def getStatusGroupByUsername(group, username):
   vomsRole = getGroupOption(group, 'VOMSRole')
   if vomsRole:
     result = gProxyManager.getActualVOMSesDNs([dn])
-    vomsInfo = result['Value'] if result['OK'] else {}
-    if not any(vomsRole in dnDict['VOMSRoles'] for dnDict in vomsInfo.values()):
+    dnDict = result['Value'].get(dn, {}) if result['OK'] else {}
+    if vomsRole not in dnDict.get('VOMSRoles', []):
       return S_OK({'Status': 'failed',
                    'Comment': 'You have no %s VOMS role depended for this group' % vomsRole})
-    if any(vomsRole in dnDict['SuspendedRoles'] for dnDict in vomsInfo.values()):
+    if (vomsRole in dnDict.get('SuspendedRoles', [])) or dnDict.get('suspended'):
       return S_OK({'Status': 'suspended', 'Comment': 'User suspended'})
 
   result = gProxyManager.userHasProxy(username, group)

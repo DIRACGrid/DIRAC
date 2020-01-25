@@ -99,7 +99,7 @@ class ProxyManagerHandler(RequestHandler):
 
           :param str vo: vo name
       """
-      voActiveUsersDict = {}
+      usersDict = {}
       result = S_ERROR('Cannot found administrators for %s VOMS VO' % vo)
 
       for group in getGroupsForVO(vo).get('Value') or []:
@@ -113,13 +113,8 @@ class ProxyManagerHandler(RequestHandler):
               # Get users from VOMS
               result = VOMSService(vo=vo).getUsers(result['Value'])
               if result['OK']:
-                # Parse response
-                for dn, dnInfo in result['Value'].items():
-                  if dnInfo['suspended']:
-                    continue
-                  voActiveUsersDict[dn] = dnInfo
-                cls.saveVOMSInfoToCache(vo, voActiveUsersDict)
-                cls.saveVOMSInfoToFile(vo, voActiveUsersDict)
+                cls.saveVOMSInfoToCache(vo, result['Value'])
+                cls.saveVOMSInfoToFile(vo, result['Value'])
                 return
       gLogger.error(result['Message'])
       if not isinstance(cls.getVOMSInfoFromCache(vo), dict):
