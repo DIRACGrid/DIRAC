@@ -278,6 +278,7 @@ class DiracAdmin(API):
 
           >>> gLogger.notice(diracAdmin.banSite())
           {'OK': True, 'Value': }
+
         :param str site: site
         :param str comment: comment
         :param bool printOutput: print output

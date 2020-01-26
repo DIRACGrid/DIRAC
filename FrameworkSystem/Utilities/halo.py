@@ -30,6 +30,7 @@ def coloredFrame(text, color=None, onColor=None, attrs=['bold']):
       :param basestring color: text colors -> red, green, yellow, blue, magenta, cyan, white.
       :param basestring onColor: text highlights -> on_red, on_green, on_yellow, on_blue, on_magenta, on_cyan, on_white.
       :param list attrs: attributes -> bold, dark, underline, blink, reverse, concealed.
+
       --
           coloredFrame('Hello, World!', 'red', 'on_grey', ['blue', 'blink'])
           coloredFrame('Hello, World!', 'green')
