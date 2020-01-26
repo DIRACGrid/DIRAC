@@ -81,7 +81,7 @@ class ThreadConfig(threading.local):
   def getGroup(self):
     """ Return group name
 
-        :return str
+        :return: str
     """
     return self.__group
 
