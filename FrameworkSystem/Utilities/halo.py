@@ -474,7 +474,7 @@ class Halo(object):
       for sid in [signal.SIGINT, signal.SIGTSTP]:
         signal.signal(sid, self._showCursor)
       if os.name == 'nt':
-        ci = CursorInfo()
+        ci = CursorInfo()  # pylint: disable=undefined-variable
         handle = ctypes.windll.kernel32.GetStdHandle(-11)
         ctypes.windll.kernel32.GetConsoleCursorInfo(handle, ctypes.byref(ci))
         ci.visible = False
@@ -488,7 +488,7 @@ class Halo(object):
     """
     if self._checkStream() and self._stream.isatty():
       if os.name == 'nt':
-        ci = CursorInfo()
+        ci = CursorInfo()  # pylint: disable=undefined-variable
         handle = ctypes.windll.kernel32.GetStdHandle(-11)
         ctypes.windll.kernel32.GetConsoleCursorInfo(handle, ctypes.byref(ci))
         ci.visible = True
