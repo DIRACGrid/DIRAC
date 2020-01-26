@@ -28,9 +28,10 @@ class ProxyManagerClient(object):
 
       Contain __VOMSesUsersCache cache with keys - VOMS VO name and
       value as dictionary with DN information:
-        User DN: { VOMSRoles: [ VOMS roles ],
+
+        ``User DN: { VOMSRoles: [ VOMS roles ],
                      SuspendedRoles: [ suspended roles ], ...},
-        User DN2: { ... }
+        User DN2: { ... }``
   """
   __metaclass__ = DIRACSingleton.DIRACSingleton
 
