@@ -589,7 +589,7 @@ class ProxyManagerClient(object):
     if 'rpcStub' in result:
       result.pop('rpcStub')
     return result
-  
+
   def deleteProxy(self, userDN, userGroup=None, listIDs=None):
     """ Delete proxy
 

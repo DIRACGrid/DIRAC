@@ -179,7 +179,8 @@ class OperationHandlerBase(object):
     for ownerGroup in getGroupsWithVOMSAttribute(ownerRole, groups=ownerGroups):
       vomsProxy = gProxyManager.downloadVOMSProxy(owner, ownerGroup, limited=True)
       if not vomsProxy["OK"]:
-        self.log.debug("getProxyForLFN: failed to get VOMS proxy for %s@%s role=%s: %s" % (owner, ownerGroup,
+        self.log.debug("getProxyForLFN: failed to get VOMS proxy for %s@%s role=%s: %s" % (owner,
+                                                                                           ownerGroup,
                                                                                            ownerRole,
                                                                                            vomsProxy["Message"]))
         continue
