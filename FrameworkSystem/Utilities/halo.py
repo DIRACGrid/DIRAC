@@ -231,7 +231,7 @@ class Halo(object):
     """ Done exception """
     pass
 
-  class _CursorInfo(ctypes.Structure):
+  class CursorInfo(ctypes.Structure):
     # Need for cursor
     if os.name == 'nt':
       _fields_ = [("size", ctypes.c_int), ("visible", ctypes.c_byte)]
@@ -358,6 +358,7 @@ class Halo(object):
     """
     return self._result
 
+  # pylint: disable=function-redefined
   @text.setter
   def result(self, result):
     """ Setter for result property.
@@ -473,7 +474,7 @@ class Halo(object):
       for sid in [signal.SIGINT, signal.SIGTSTP]:
         signal.signal(sid, self._showCursor)
       if os.name == 'nt':
-        ci = _CursorInfo()
+        ci = CursorInfo()
         handle = ctypes.windll.kernel32.GetStdHandle(-11)
         ctypes.windll.kernel32.GetConsoleCursorInfo(handle, ctypes.byref(ci))
         ci.visible = False
@@ -487,7 +488,7 @@ class Halo(object):
     """
     if self._checkStream() and self._stream.isatty():
       if os.name == 'nt':
-        ci = _CursorInfo()
+        ci = CursorInfo()
         handle = ctypes.windll.kernel32.GetStdHandle(-11)
         ctypes.windll.kernel32.GetConsoleCursorInfo(handle, ctypes.byref(ci))
         ci.visible = True
