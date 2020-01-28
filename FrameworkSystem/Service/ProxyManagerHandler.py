@@ -162,7 +162,6 @@ class ProxyManagerHandler(RequestHandler):
     gThreadScheduler.addPeriodicTask(900, cls.__proxyDB.purgeExpiredRequests, elapsedTime=900)
     gThreadScheduler.addPeriodicTask(21600, cls.__proxyDB.purgeLogs)
     gThreadScheduler.addPeriodicTask(3600, cls.__proxyDB.purgeExpiredProxies)
-    gThreadScheduler.addPeriodicTask(3600, cls.__proxyDB.refreshCache)
     gThreadScheduler.addPeriodicTask(3600 * 24, cls.__refreshVOMSesUsersCache)
     gLogger.info("MyProxy: %s\n MyProxy Server: %s" % (useMyProxy, cls.__proxyDB.getMyProxyServer()))
     return cls.__refreshVOMSesUsersCache()
