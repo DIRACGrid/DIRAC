@@ -522,7 +522,7 @@ class testDB(ProxyDBTestCase):
     gLogger.info('\n* Check if tables is clean..')
     self.__isProxiesTablesClean()
 
-    gLogger.info('* Check posible crashes when get proxy..')
+    gLogger.info('* Check possible crashes when get proxy..')
     # Make record with not valid proxy, valid group, user and short expired time
     cmd = 'INSERT INTO ProxyDB_Proxies(UserName, UserDN, UserGroup, Pem, ExpirationTime) VALUES '
     cmd += '("user_1", "/C=DN/O=DIRAC/CN=user_1", "group_1", "%s", ' % expiredProxy

@@ -141,8 +141,7 @@ class API(object):
       return self._errorReport('Proxy information does not contain the group', res['Message'])
     result = getDNsForUsername(proxyInfo['username'])
     if not result['OK']:
-      return self._errorReport('Failed to get proxies for user', "No DNs found for %s: %s" % (proxyInfo['username'],
-                                                                                              result['Message']))
+      return self._errorReport('Failed to get proxies for user', result['Message'])
     if not result['Value']:
       return self._errorReport('Failed to get proxies for user', "No DNs found for %s" % proxyInfo['username'])
     return S_OK(proxyInfo['username'])

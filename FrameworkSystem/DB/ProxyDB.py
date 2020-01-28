@@ -914,7 +914,7 @@ class ProxyDB(DB):
   def getProxiesContent(self, selDict, sqlCond=None, start=0, limit=0):
     """ Get the contents of the db, parameters are a filter to the db
 
-        :param dict selDict: selection dict that contain fields and their posible values
+        :param dict selDict: selection dict that contain fields and their possible values
         :param int start: search limit start
         :param int start: search limit amount
 
