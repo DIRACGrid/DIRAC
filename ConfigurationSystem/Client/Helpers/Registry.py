@@ -67,7 +67,7 @@ def getUsernameForID(ID, usersList=None):
 
 
 def __getGroupsWithAttr(attrName, value):
-  """ Get all posible groups with some attribute
+  """ Get all possible groups with some attribute
 
       :param str attrName: attribute name
       :param str value: attribute value
@@ -214,7 +214,7 @@ def getPropertiesForEntity(group, name="", dn="", defaultValue=None):
 def __matchProps(sProps, rProps):
   """ Match properties
 
-      :param sProps: submited properties
+      :param sProps: submitted properties
       :param rProps: required properties
 
       :return: list -- contain matched properties
@@ -579,7 +579,7 @@ def getUsernameForDN(dn, usersList=None):
   """ Find DIRAC user for DN
 
       :param str dn: user DN
-      :param list usersList: list of posible users
+      :param list usersList: list of possible users
 
       :return: S_OK()/S_ERROR()
   """
@@ -734,7 +734,7 @@ def getEmailsForGroup(groupName):
 
 
 def getGroupsForDN(userDN, researchedGroup=None):
-  """ Get all posible groups for DN
+  """ Get all possible groups for DN
 
       :param str userDN: user DN
       :param str researchedGroup: group name
