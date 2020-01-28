@@ -90,20 +90,33 @@ class ProxyManagerClient(object):
     return S_OK()
 
   @gVOMSUsersSync
+  def __getVOMSUsersDict(self):
+    """ Get users dictionary from cache
+    
+        :return: dict
+    """
+    return self.__VOMSesUsersCache.getDict()
+
+  @gVOMSUsersSync
+  def __setVOMSUsersDict(self, usersDict):
+    """ Set dictionary to cache
+
+        :param dict usersDict: dictionary with VOMS users
+    """
+    for vo, userInfo in usersDict.items():
+      self.__VOMSesUsersCache.add(vo, 3600 * 24, value=userInfo)
+    self.__VOMSesUsersCache.add('Fresh', 3600 * 12, value=True)
+
   def __refreshVOMSesCache(self):
     """ Get fresh info from service about VOMSes
 
         :return: S_OK()/S_ERROR()
     """
     result = RPCClient("Framework/ProxyManager", timeout=120).getVOMSesUsers()
-    if not result['OK']:
-      return result
-    for vo, userInfo in result['Value'].items():
-      self.__VOMSesUsersCache.add(vo, 3600 * 24, value=userInfo)
-    self.__VOMSesUsersCache.add('Fresh', 3600 * 12, value=True)
+    if result['OK']:
+      self.__setVOMSUsersDict(result['Value'])
     return result
 
-  @gVOMSUsersSync
   def getActualVOMSesDNs(self, DNs=None):
     """ Return actual/not suspended DNs from VOMSes
 
@@ -111,18 +124,18 @@ class ProxyManagerClient(object):
 
         :return: S_OK(dict)/S_ERROR()
     """
-    __VOMSesUsersCache = self.__VOMSesUsersCache.getDict()
-    if not __VOMSesUsersCache.get('Fresh'):
+    vomsUsers = self.__getVOMSUsersDict()
+    if not vomsUsers.get('Fresh'):
       result = self.__refreshVOMSesCache()
       if not result['OK']:
         return result
-      __VOMSesUsersCache = result['Value']
-    __VOMSesUsersCache.pop('Fresh', None)
+      vomsUsers = result['Value']
+    vomsUsers.pop('Fresh', None)
     vomsActualDNsDict = {}
-    if not __VOMSesUsersCache:
+    if not vomsUsers:
       # use simulation here for tests
       return S_ERROR('VOMSes is not updated.')
-    for vo, voInfo in __VOMSesUsersCache.items():
+    for vo, voInfo in vomsUsers.items():
       for dn, dnDict in voInfo.items() if isinstance(voInfo, dict) else {}:
         if DNs and dn not in DNs:
           continue
