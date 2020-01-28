@@ -47,10 +47,10 @@ def getIDsForUsername(username):
   return gConfig.getValue("%s/Users/%s/ID" % (gBaseRegistrySection, username), [])
 
 
-def getUsernameForID(ID, usersList=None):
+def getUsernameForID(userID, usersList=None):
   """ Get user name by ID
 
-      :param str ID: user ID
+      :param str userID: user ID
       :param list usersList: list of user names
 
       :return: S_OK(str)/S_ERROR()
@@ -61,9 +61,9 @@ def getUsernameForID(ID, usersList=None):
       return retVal
     usersList = retVal['Value']
   for username in usersList:
-    if ID in gConfig.getValue("%s/Users/%s/ID" % (gBaseRegistrySection, username), []):
+    if userID in gConfig.getValue("%s/Users/%s/ID" % (gBaseRegistrySection, username), []):
       return S_OK(username)
-  return S_ERROR("No username found for ID %s" % ID)
+  return S_ERROR("No username found for ID %s" % userID)
 
 
 def __getGroupsWithAttr(attrName, value):
@@ -508,15 +508,15 @@ def getUsersInGroup(group):
       :return: list
   """
   users = getGroupOption(group, 'Users', [])
-  for ID in getGroupOption(group, 'IDs', []):
-    users += getUsernameForID(ID)
+  for userID in getGroupOption(group, 'IDs', []):
+    users += getUsernameForID(userID)
   for dn in getGroupOption(group, 'DNs', []):
     users += getUsernameForDN(dn)
   users.sort()
   return list(set(users))
 
 
-def getProviderForID(ID):
+def getProviderForID(userID):
   """ Search identity provider for user ID
 
       :param str ID: user ID
@@ -530,14 +530,14 @@ def getProviderForID(ID):
       from OAuthDIRAC.FrameworkSystem.Client.OAuthManagerClient import gSessionManager  # pylint: disable=import-error
     except Exception as ex:
       return S_ERROR('Session manager not found:', ex)
-  result = gSessionManager.getIdPsCache([ID])
+  result = gSessionManager.getIdPsCache([userID])
   if not result['OK']:
     return result
   providers = []
-  for ID, idDict in result['Value'].items():
+  for userID, idDict in result['Value'].items():
     providers += idDict.get('Providers') or []
   if not providers:
-    return S_ERROR('Cannot find identity providers for %s' % ID)
+    return S_ERROR('Cannot find identity providers for %s' % userID)
   return S_OK(list(set(providers)))
 
 
@@ -565,11 +565,11 @@ def getDNsForUsername(username, active=False):
     IdPsDict = {}
 
   DNs = getDNsForUsernameFromSC(username)
-  for ID, idDict in IdPsDict.items():
+  for userID, idDict in IdPsDict.items():
     if idDict.get('DNs'):
       # if active:
       #   for prov in infoDict['Providers']:
-      #     if not idDict[ID][prov]:
+      #     if not idDict[userID][prov]:
       #       continue
       DNs += idDict['DNs'].keys()
   return S_OK(list(set(DNs)))
@@ -611,7 +611,7 @@ def getGroupsForUser(username, researchedGroup=None):
       groups.append(group)
     elif any(dn in getGroupOption(group, 'DNs', []) for dn in userDNs):
       groups.append(group)
-    elif any(ID in getGroupOption(group, 'IDs', []) for ID in userIDs):
+    elif any(userID in getGroupOption(group, 'IDs', []) for userID in userIDs):
       groups.append(group)
 
   if not groups:
@@ -680,7 +680,7 @@ def getProxyProviderForDN(userDN):
     IDsDict = {}
 
   provider = None
-  for ID, idDict in IDsDict.items():
+  for userID, idDict in IDsDict.items():
     if userDN in (idDict.get('DNs') or []):
       provider = idDict['DNs'][userDN].get('ProxyProvider')
 
