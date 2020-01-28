@@ -92,7 +92,7 @@ class ProxyManagerClient(object):
   @gVOMSUsersSync
   def __getVOMSUsersDict(self):
     """ Get users dictionary from cache
-    
+
         :return: dict
     """
     return self.__VOMSesUsersCache.getDict()
