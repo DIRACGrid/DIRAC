@@ -234,7 +234,6 @@ class DirectoryMetadata:
   def removeMetadata(self, dpath, metadata, credDict):
     """ Remove the specified metadata for the given directory
 
-        Remove the specified metadata for the given directory for users own VO.
         :param str dpath: directory path
         :param dict metadata: metadata dictionary
         :param dict credDict: client credential dictionary
