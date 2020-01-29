@@ -141,6 +141,7 @@ class GithubInterface(object):
     self.repo = repo
     self.branches = ['Integration', 'rel-v6r21']
     self.openPRs = False
+    self.sinceLatestTag = False
     self.startDate = str(datetime.now() - timedelta(days=14))[:10]
     self.printLevel = logging.WARNING
     logging.getLogger().setLevel(self.printLevel)
@@ -232,6 +233,9 @@ class GithubInterface(object):
     parser.add_argument("--date", action="store", default=self.startDate, dest="date",
                         help="date after which PRs are checked, default (two weeks ago): %s" % self.startDate)
 
+    parser.add_argument("--sinceLatestTag", action="store_true", dest="sinceLatestTag", default=self.sinceLatestTag,
+                        help="get release notes since latest tag (incompatible with --date)")
+
     parser.add_argument("--openPRs", action="store_true", dest="openPRs", default=self.openPRs,
                         help="get release notes for open (unmerged) PRs, for testing purposes")
 
@@ -255,8 +259,22 @@ class GithubInterface(object):
 
     self.branches = listify(parsed.branches)
     log.info('Getting PRs for: %s', self.branches)
-    self.startDate = parsed.date
-    log.info('Starting from: %s', self.startDate)
+
+    # If the date parsed does not correspond to the default,
+    # and latestTag is asked, we throw an error
+    if (parsed.date != self.startDate) and parsed.sinceLatestTag:
+      raise RuntimeError("--sinceLatestTag incompatible with --date")
+
+    self.sinceLatestTag = parsed.sinceLatestTag
+
+    if self.sinceLatestTag:
+      log.info('Starting from the latest tag')
+      self.startDate = None
+      del parsed.date
+    else:
+      self.startDate = parsed.date
+      log.info('Starting from: %s', self.startDate)
+
     self.openPRs = parsed.openPRs
     log.info('Also including openPRs?: %s', self.openPRs)
 
@@ -326,13 +344,22 @@ class GithubInterface(object):
 
     return prsToReturn
 
+  def getGitlabLatestTagDate(self):
+    """ Get the latest tag creatin date from gitlab
+
+    :returns: date of the latest tag
+    """
+    glURL = self._gitlab('repository/tags')
+    allTags = req2Json(glURL)
+
+    return max([tag['commit']['created_at'] for tag in allTags])
+
   def getNotesFromPRs(self, prs):
     """Loop over prs, get base branch, get PR comment and collate into dictionary.
 
     :returns: dict of branch:dict(#PRID, dict(comment, mergeDate))
     """
     rawReleaseNotes = defaultdict(dict)
-
     for pr in prs:
       if self.useGithub:
         baseBranch = pr['base']['label'][len(self.owner) + 1:]
@@ -358,14 +385,29 @@ class GithubInterface(object):
 
   def getReleaseNotes(self):
     """Create the release notes."""
+
+    log = LOGGER.getChild("getReleasesNotes")
+
+    # Setting up the API
     if self.useGithub:
       githubSetup()
+    elif self.useGitlab:
+      gitlabSetup()
+
+    # Check the latest tag if need be
+    if self.sinceLatestTag:
+      if self.useGithub:
+        raise NotImplementedError("Canot get latest tag date for github")
+      else:
+        self.startDate = self.getGitlabLatestTagDate()
+      log.info("Starting from date %s", self.startDate)
+
+    if self.useGithub:
       if self.openPRs:
         prs = self.getGithubPRs(state='open', mergedOnly=False)
       else:
         prs = self.getGithubPRs(state='closed', mergedOnly=True)
     elif self.useGitlab:
-      gitlabSetup()
       if self.openPRs:
         prs = self.getGitlabPRs(state='all')
       else:
