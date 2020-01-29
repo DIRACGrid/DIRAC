@@ -15,7 +15,7 @@ def getGGUSURL(vo=None, siteName=None):
   """ create the URL to get tickets relative to the site ( opened only ! ):
   """
   if vo is None:
-    gConfig.getOption('DIRAC/VirtualOrganization')
+    vo = gConfig.getOption('DIRAC/VirtualOrganization')
 
   ggusURL = 'https://ggus.eu/ws/ticket_search.php?show_columns_check[]=REQUEST_ID&'
   ggusURL += 'show_columns_check[]=TICKET_TYPE&show_columns_check[]=AFFECTED_VO&show_columns_check[]='
