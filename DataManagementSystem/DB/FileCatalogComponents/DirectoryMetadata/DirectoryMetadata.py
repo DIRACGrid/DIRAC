@@ -36,7 +36,7 @@ class DirectoryMetadata:
     if pname in result['Value'].keys():
       return S_ERROR('The metadata %s is already defined for Files' % pname)
 
-    result = self.getMetadataFields(credDict)
+    result = self._getMetadataFields(credDict)
     if not result['OK']:
       return result
     if pname in result['Value'].keys():
@@ -92,6 +92,18 @@ class DirectoryMetadata:
 
   def getMetadataFields(self, credDict):
     """ Get all the defined metadata fields
+
+        :param dict credDict: client credential dictionary
+        :return: S_OK/S_ERROR, Value is the metadata:metadata type dictionary
+    """
+
+    return self._getMetadataFields(credDict)
+
+  def _getMetadataFields(self, credDict):
+    """ Get all the defined metadata fields as they are defined in the database
+
+        :param dict credDict: client credential dictionary
+        :return: S_OK/S_ERROR, Value is the metadata:metadata type dictionary
     """
 
     req = "SELECT MetaName,MetaType FROM FC_MetaFields"
@@ -212,7 +224,14 @@ class DirectoryMetadata:
 
   def removeMetadata(self, dpath, metadata, credDict):
     """ Remove the specified metadata for the given directory
+
+        Remove the specified metadata for the given directory for users own VO.
+        :param str dpath: directory path
+        :param dict metadata: metadata dictionary
+        :param dict credDict: client credential dictionary
+        :return: standard Dirac result object
     """
+
     result = self.getMetadataFields(credDict)
     if not result['OK']:
       return result
@@ -263,7 +282,7 @@ class DirectoryMetadata:
                                   [dirID, metaName, str(metaValue)])
     return result
 
-  def getDirectoryMetaParameters(self, dpath, credDict, inherited=True, owndata=True):
+  def getDirectoryMetaParameters(self, dpath, credDict, inherited=True):
     """ Get meta parameters for the given directory
     """
     if inherited:
@@ -303,7 +322,7 @@ class DirectoryMetadata:
 
     return S_OK(metaDict)
 
-  def getDirectoryMetadata(self, path, credDict, inherited=True, owndata=True):
+  def getDirectoryMetadata(self, path, credDict, inherited=True, ownData=True):
     """ Get metadata for the given directory aggregating metadata for the directory itself
         and for all the parent directories if inherited flag is True. Get also the non-indexed
         metadata parameters.
@@ -325,7 +344,7 @@ class DirectoryMetadata:
     dirID = pathIDs[-1]
     if not inherited:
       pathIDs = pathIDs[-1:]
-    if not owndata:
+    if not ownData:
       pathIDs = pathIDs[:-1]
     pathString = ','.join([str(x) for x in pathIDs])
 
