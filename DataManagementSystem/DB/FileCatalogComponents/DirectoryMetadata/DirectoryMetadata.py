@@ -25,65 +25,74 @@ class DirectoryMetadata:
 #  Manage Metadata fields
 #
 
-  def addMetadataField(self, pname, ptype, credDict):
+  def addMetadataField(self, pName, pType, credDict):
     """ Add a new metadata parameter to the Metadata Database.
-        pname - parameter name, ptype - parameter type in the MySQL notation
+
+        :param str pName: parameter name
+        :param str pType: parameter type in the MySQL notation
+
+        :return: S_OK/S_ERROR, Value - comment on a positive result
     """
 
     result = self.db.fmeta.getFileMetadataFields(credDict)
     if not result['OK']:
       return result
-    if pname in result['Value'].keys():
-      return S_ERROR('The metadata %s is already defined for Files' % pname)
+    if pName in result['Value'].keys():
+      return S_ERROR('The metadata %s is already defined for Files' % pName)
 
     result = self._getMetadataFields(credDict)
     if not result['OK']:
       return result
-    if pname in result['Value'].keys():
-      if ptype.lower() == result['Value'][pname].lower():
+    if pName in result['Value'].keys():
+      if pType.lower() == result['Value'][pName].lower():
         return S_OK('Already exists')
       return S_ERROR('Attempt to add an existing metadata with different type: %s/%s' %
-                     (ptype, result['Value'][pname]))
+                     (pType, result['Value'][pName]))
 
-    valueType = ptype
-    if ptype.lower()[:3] == 'int':
+    valueType = pType
+    if pType.lower()[:3] == 'int':
       valueType = 'INT'
-    elif ptype.lower() == 'string':
+    elif pType.lower() == 'string':
       valueType = 'VARCHAR(128)'
-    elif ptype.lower() == 'float':
+    elif pType.lower() == 'float':
       valueType = 'FLOAT'
-    elif ptype.lower() == 'date':
+    elif pType.lower() == 'date':
       valueType = 'DATETIME'
-    elif ptype == "MetaSet":
+    elif pType == "MetaSet":
       valueType = "VARCHAR(64)"
 
     req = "CREATE TABLE FC_Meta_%s ( DirID INTEGER NOT NULL, Value %s, PRIMARY KEY (DirID), INDEX (Value) )" \
-        % (pname, valueType)
+        % (pName, valueType)
     result = self.db._query(req)
     if not result['OK']:
       return result
 
-    result = self.db.insertFields('FC_MetaFields', ['MetaName', 'MetaType'], [pname, ptype])
+    result = self.db.insertFields('FC_MetaFields', ['MetaName', 'MetaType'], [pName, pType])
     if not result['OK']:
       return result
 
     metadataID = result['lastRowId']
-    result = self.__transformMetaParameterToData(pname)
+    result = self.__transformMetaParameterToData(pName)
     if not result['OK']:
       return result
 
     return S_OK("Added new metadata: %d" % metadataID)
 
-  def deleteMetadataField(self, pname, credDict):
+  def deleteMetadataField(self, pName, credDict):
     """ Remove metadata field
+
+        :param str pName: meta parameter name
+        :param dict credDict: client credential dictionary
+
+        :return: S_OK/S_ERROR
     """
 
-    req = "DROP TABLE FC_Meta_%s" % pname
+    req = "DROP TABLE FC_Meta_%s" % pName
     result = self.db._update(req)
     error = ''
     if not result['OK']:
       error = result["Message"]
-    req = "DELETE FROM FC_MetaFields WHERE MetaName='%s'" % pname
+    req = "DELETE FROM FC_MetaFields WHERE MetaName='%s'" % pName
     result = self.db._update(req)
     if not result['OK']:
       if error:
@@ -364,7 +373,7 @@ class DirectoryMetadata:
       metaTypeDict[meta] = metaFields[meta]
 
     # Get also non-searchable data
-    result = self.getDirectoryMetaParameters(path, credDict, inherited, owndata)
+    result = self.getDirectoryMetaParameters(path, credDict, inherited, ownData)
     if result['OK']:
       metaDict.update(result['Value'])
       for meta in result['Value']:

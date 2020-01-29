@@ -78,6 +78,7 @@ class FileMetadata:
     """ Remove metadata field
 
         :param str pName: meta parameter name
+        :param dict credDict: client credential dictionary
 
         :return: S_OK/S_ERROR
     """
