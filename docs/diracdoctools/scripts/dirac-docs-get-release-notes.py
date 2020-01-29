@@ -24,6 +24,7 @@ add this section to the config file
 """
 
 from __future__ import print_function
+import os
 from collections import defaultdict
 from datetime import datetime, timedelta
 import argparse
@@ -142,6 +143,8 @@ class GithubInterface(object):
     self.branches = ['Integration', 'rel-v6r21']
     self.openPRs = False
     self.sinceLatestTag = False
+    self.headerMessage = None
+    self.footerMessage = None
     self.startDate = str(datetime.now() - timedelta(days=14))[:10]
     self.printLevel = logging.WARNING
     logging.getLogger().setLevel(self.printLevel)
@@ -236,6 +239,14 @@ class GithubInterface(object):
     parser.add_argument("--sinceLatestTag", action="store_true", dest="sinceLatestTag", default=self.sinceLatestTag,
                         help="get release notes since latest tag (incompatible with --date)")
 
+    parser.add_argument("--headerMessage", action="store", default=self.headerMessage, dest="headerMessage",
+                        help="Header message to add between the release name and the list of PR. If it is a path,\
+                         read the content of the file")
+
+    parser.add_argument("--footerMessage", action="store", default=self.footerMessage, dest="footerMessage",
+                        help="Footer message to add after the list of PR. If it is a path,\
+                      read the content of the file")
+
     parser.add_argument("--openPRs", action="store_true", dest="openPRs", default=self.openPRs,
                         help="get release notes for open (unmerged) PRs, for testing purposes")
 
@@ -277,6 +288,14 @@ class GithubInterface(object):
 
     self.openPRs = parsed.openPRs
     log.info('Also including openPRs?: %s', self.openPRs)
+
+    self.headerMessage = parsed.headerMessage
+    if self.headerMessage:
+      log.info("Using header message: %s", self.headerMessage)
+
+    self.footerMessage = parsed.footerMessage
+    if self.footerMessage:
+      log.info("Using footer message: %s", self.footerMessage)
 
     self.useGitlab = parsed.gitlab if isinstance(parsed.gitlab, bool) else parsed.gitlab.lower() == 'true'
     self.useGithub = not self.useGitlab
@@ -425,9 +444,24 @@ class GithubInterface(object):
     the branch, will print out just the base branch for now.
     """
     releaseNotes = ''
+
+    headerMessage = self.headerMessage
+    # If the headerMessage option passed is a file, read the content
+    if self.headerMessage and os.path.isfile(self.headerMessage):
+      with open(self.headerMessage, 'r') as hmf:
+        headerMessage = hmf.read()
+
+    footerMessage = self.footerMessage
+    # If the footerMessage option passed is a file, read the content
+    if self.footerMessage and os.path.isfile(self.footerMessage):
+      with open(self.footerMessage, 'r') as hmf:
+        footerMessage = hmf.read()
+
     prMarker = '#' if self.useGithub else '!'
     for baseBranch, pr in prs.iteritems():
       releaseNotes += '[%s]\n\n' % baseBranch
+      if headerMessage:
+        releaseNotes += '%s\n\n' % headerMessage
       systemChangesDict = defaultdict(list)
       for prid, content in pr.iteritems():
         notes = content['comment']
@@ -448,6 +482,9 @@ class GithubInterface(object):
         releaseNotes += "\n".join(changes)
         releaseNotes += "\n\n"
       releaseNotes += "\n"
+
+      if footerMessage:
+        releaseNotes += '\n%s\n' % footerMessage
 
     return releaseNotes
 
