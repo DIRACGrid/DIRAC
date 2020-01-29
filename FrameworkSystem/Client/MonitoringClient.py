@@ -152,7 +152,7 @@ class MonitoringClient(object):
     """
     if name in ('version', 'DIRACVersion', 'description', 'startTime', 'platform'):
       self.__compRegistrationExtraDict[name] = str(value)
-    elif name in ('cycles', 'queries'):
+    elif name in ('cycles', 'queries', 'connections'):
       self.__compCommitExtraDict[name] = str(value)
     else:
       raise MonitoringClientUnknownParameter("Unknown parameter %s" % name)

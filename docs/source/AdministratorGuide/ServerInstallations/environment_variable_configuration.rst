@@ -27,3 +27,6 @@ DIRAC_USE_M2CRYPTO
 
 DIRAC_VOMSES
   Can be set to point to a folder containing VOMSES information. See :ref:`multi_vo_dirac`
+
+DIRAC_USE_NEWTHREADPOOL
+  If this environment is set to ``true`` or ``yes``, the concurrent.futures.ThreadPoolExecutor will be used.

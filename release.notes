@@ -1,4 +1,4 @@
-[v7r2-pre4]
+[v7r2-pre5]
 
 *Core
 FIX: (#4283) Added protection against empty certificates directory in dirac-install
@@ -13,7 +13,7 @@ CHANGE: (#4235) Removes locals() way of passing parameters
 *tests
 NEW: (#4179) Set up Gitlab CI pipeline using Docker containers
 
-[v7r1-pre14]
+[v7r1-pre15]
 
 NEW: Add environment.yml file for preparing an environment with conda
 
@@ -27,6 +27,7 @@ CHANGE: (#4362) RPC parameters are cast to list/tuples when needed
 FIX: (#4410) M2Crypto transport cast socket.error to strings
 CHANGE: (#4410) (JSON) rpcStub uses list instead of tuples
 NEW: (#4410) add utilities for JSON Serialization (strToIntDict and ignoreEncodeWarning)
+CHANGE: (#4354) ThreadPool - replaced by ThreadPoolExecutor(native python)
 
 *Configuration
 CHANGE: (#4157) add new helper methods for IdP/Proxy Providers, OAuthManager. Add methods that 
