@@ -17,6 +17,9 @@ jobs:
         HOST_OS:
           - slc6
           - cc7
+        USE_NEWTHREADPOOL:
+          - default
+          - yes
 
     steps:
     - uses: actions/checkout@v1
@@ -38,6 +41,7 @@ jobs:
         echo -n "-e CI_REGISTRY_IMAGE=diracgrid " >> run_in_container
         echo -n "-e MYSQL_VER=${{ matrix.MYSQL_VER }} " >> run_in_container
         echo -n "-e ES_VER=${{ matrix.ES_VER }} " >> run_in_container
+        if [[ "${{ matrix.USE_NEWTHREADPOOL }}" != "default" ]]; then echo -n "-e DIRAC_USE_NEWTHREADPOOL=${{ matrix.USE_NEWTHREADPOOL }} " >> run_in_container; fi
         # Finish wrapper script
         echo -n "dirac-testing-host \"\$@\"" >> run_in_container
         chmod +x run_in_container

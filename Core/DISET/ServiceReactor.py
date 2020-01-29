@@ -18,11 +18,10 @@
 import select
 import time
 import socket
-
-try:
-  import multiprocessing
-except:
-  multiprocessing = False
+import signal
+import os
+import sys
+import multiprocessing
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.private.Service import Service
@@ -33,6 +32,9 @@ from DIRAC.Core.Base.private.ModuleLoader import ModuleLoader
 from DIRAC.Core.DISET.private.Protocols import gProtocolDict
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.ConfigurationSystem.Client import PathFinder
+
+
+__RCSID__ = "$Id$"
 
 
 class ServiceReactor(object):
@@ -53,6 +55,7 @@ class ServiceReactor(object):
     self.__maxFD = 0
     self.__listeningConnections = {}
     self.__stats = ReactorStats()
+    self.__processes = []
 
   def initialize(self, servicesList):
     try:
@@ -119,6 +122,25 @@ class ServiceReactor(object):
       self.__listeningConnections[serviceName]['socket'] = transport.getSocket()
     return S_OK()
 
+  def stopChildProcesses(self, _sig, frame):
+    """
+    It is used to properly stop the service when more than one process are used.
+    In principle this is doing the job of runsv, becuase runsv only send a sigterm to the parent process...
+
+    :param int _sig: the signal sent to the process
+    :param object frame: execution frame which contains the child processes
+    """
+
+    handler = frame.f_locals.get('self')
+    if handler and isinstance(handler, ServiceReactor):
+      handler.stopAllProcess()
+
+    for child in frame.f_locals.get('children', []):
+      gLogger.info("Stopping child processes: %d" % child)
+      os.kill(child, signal.SIGTERM)
+
+    sys.exit(0)
+
   def serve(self):
     result = self.__createListeners()
     if not result['OK']:
@@ -126,16 +148,35 @@ class ServiceReactor(object):
       return result
     for svcName in self.__listeningConnections:
       gLogger.always("Listening at %s" % self.__services[svcName].getConfig().getURL())
-    # Multiple clones not yet working. Disabled by default
-    if False and multiprocessing:
+
+    isMultiProcessingAllowed = False
+    for svcName in self.__listeningConnections:
+      if self.__services[svcName].getConfig().getCloneProcesses() > 0:
+        isMultiProcessingAllowed = True
+        break
+    if isMultiProcessingAllowed:
+      signal.signal(signal.SIGTERM, self.stopChildProcesses)
+      signal.signal(signal.SIGINT, self.stopChildProcesses)
       for svcName in self.__listeningConnections:
         clones = self.__services[svcName].getConfig().getCloneProcesses()
         for i in range(1, clones):
           p = multiprocessing.Process(target=self.__startCloneProcess, args=(svcName, i))
+          self.__processes.append(p)
           p.start()
           gLogger.always("Started clone process %s for %s" % (i, svcName))
+
     while self.__alive:
       self.__acceptIncomingConnection()
+
+  def stopAllProcess(self):
+    """
+    It stops all the running processes.
+    """
+    for process in self.__processes:
+      gLogger.info("Stopping: PID=%d, name=%s, parentPid=%d" % (process.pid, process.name, process._parent_pid))
+      if process.is_alive():
+        process.terminate()
+        self.__processes.remove(process)
 
   # This function runs in a different process
   def __startCloneProcess(self, svcName, i):
