@@ -248,8 +248,8 @@ def getPilotFilesCompressedEncodedDict(pilotFiles, proxy=None):
 
   for pf in pilotFiles:
     with open(pf, "r") as fd:
-      pfContent = fd.read().decode()
-    pfContentEncoded = base64.b64encode(bz2.compress(pfContent, 9))
+      pfContent = fd.read()
+    pfContentEncoded = base64.b64encode(bz2.compress(pfContent.encode(), 9))
     pilotFilesCompressedEncodedDict[os.path.basename(pf)] = pfContentEncoded
 
   if proxy is not None:
