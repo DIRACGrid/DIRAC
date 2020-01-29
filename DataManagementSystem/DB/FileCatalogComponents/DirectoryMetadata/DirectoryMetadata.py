@@ -206,7 +206,7 @@ class DirectoryMetadata:
       return S_ERROR('Path not found: %s' % dpath)
     dirID = result['Value']
 
-    dirmeta = self.getDirectoryMetadata(dpath, credDict, owndata=False)
+    dirmeta = self.getDirectoryMetadata(dpath, credDict, ownData=False)
     if not dirmeta['OK']:
       return dirmeta
 
@@ -372,7 +372,7 @@ class DirectoryMetadata:
       metaTypeDict[meta] = metaFields[meta]
 
     # Get also non-searchable data
-    result = self.getDirectoryMetaParameters(path, credDict, inherited, ownData)
+    result = self.getDirectoryMetaParameters(path, credDict, inherited)
     if result['OK']:
       metaDict.update(result['Value'])
       for meta in result['Value']:
