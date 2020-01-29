@@ -1,5 +1,4 @@
-""" DIRAC FileCatalog plugin class to manage file metadata. This contains only
-    non-indexed metadata for the moment.
+""" DIRAC FileCatalog plugin class to manage file metadata
 """
 
 __RCSID__ = "$Id$"
@@ -27,60 +26,68 @@ class FileMetadata:
 #  Manage Metadata fields
 #
 ##############################################################################
-  def addMetadataField(self, pname, ptype, credDict):
+  def addMetadataField(self, pName, pType, credDict):
     """ Add a new metadata parameter to the Metadata Database.
-        pname - parameter name, ptype - parameter type in the MySQL notation
+
+        :param str pName: parameter name
+        :param str pType: parameter type in the MySQL notation
+
+        :return: S_OK/S_ERROR, Value - comment on a positive result
     """
 
-    if pname in FILE_STANDARD_METAKEYS:
+    if pName in FILE_STANDARD_METAKEYS:
       return S_ERROR('Illegal use of reserved metafield name')
 
     result = self.db.dmeta.getMetadataFields(credDict)
     if not result['OK']:
       return result
-    if pname in result['Value'].keys():
-      return S_ERROR('The metadata %s is already defined for Directories' % pname)
+    if pName in result['Value'].keys():
+      return S_ERROR('The metadata %s is already defined for Directories' % pName)
 
     result = self.getFileMetadataFields(credDict)
     if not result['OK']:
       return result
-    if pname in result['Value'].keys():
-      if ptype.lower() == result['Value'][pname].lower():
+    if pName in result['Value'].keys():
+      if pType.lower() == result['Value'][pName].lower():
         return S_OK('Already exists')
       else:
         return S_ERROR('Attempt to add an existing metadata with different type: %s/%s' %
-                       (ptype, result['Value'][pname]))
+                       (pType, result['Value'][pName]))
 
-    valueType = ptype
-    if ptype == "MetaSet":
+    valueType = pType
+    if pType == "MetaSet":
       valueType = "VARCHAR(64)"
     req = "CREATE TABLE FC_FileMeta_%s ( FileID INTEGER NOT NULL, Value %s, PRIMARY KEY (FileID), INDEX (Value) )" \
-        % (pname, valueType)
+        % (pName, valueType)
     result = self.db._query(req)
     if not result['OK']:
       return result
 
-    result = self.db.insertFields('FC_FileMetaFields', ['MetaName', 'MetaType'], [pname, ptype])
+    result = self.db.insertFields('FC_FileMetaFields', ['MetaName', 'MetaType'], [pName, pType])
     if not result['OK']:
       return result
 
     metadataID = result['lastRowId']
-    result = self.__transformMetaParameterToData(pname)
+    result = self.__transformMetaParameterToData(pName)
     if not result['OK']:
       return result
 
     return S_OK("Added new metadata: %d" % metadataID)
 
-  def deleteMetadataField(self, pname, credDict):
+  def deleteMetadataField(self, pName, credDict):
     """ Remove metadata field
+
+        :param str pName: meta parameter name
+
+        :return: S_OK/S_ERROR
     """
 
-    req = "DROP TABLE FC_FileMeta_%s" % pname
+    req = "DROP TABLE FC_FileMeta_%s" % pName
     result = self.db._update(req)
     error = ''
     if not result['OK']:
       error = result["Message"]
-    req = "DELETE FROM FC_FileMetaFields WHERE MetaName='%s'" % pname
+    req = "DELETE FROM FC_FileMetaFields WHERE MetaName='%s'" % pName
     result = self.db._update(req)
     if not result['OK']:
       if error:
@@ -89,6 +96,18 @@ class FileMetadata:
 
   def getFileMetadataFields(self, credDict):
     """ Get all the defined metadata fields
+
+        :param dict credDict: client credential dictionary
+        :return: S_OK/S_ERROR, Value is the metadata:metadata type dictionary
+    """
+
+    return self._getFileMetadataFields(credDict)
+
+  def _getFileMetadataFields(self, credDict):
+    """ Get all the defined metadata fields as they are stored in the database
+
+        :param dict credDict: client credential dictionary
+        :return: S_OK/S_ERROR, Value is the metadata:metadata type dictionary
     """
 
     req = "SELECT MetaName,MetaType FROM FC_FileMetaFields"
@@ -108,8 +127,14 @@ class FileMetadata:
 #
 ###########################################################
 
-  def setMetadata(self, path, metadict, credDict):
+  def setMetadata(self, path, metaDict, credDict):
     """ Set the value of a given metadata field for the the given directory path
+
+        :param str path: file path
+        :param dict metaDict: dictionary with metadata
+        :param dict credDict: client credential dictionary
+
+        :return: S_OK/S_ERROR
     """
     result = self.getFileMetadataFields(credDict)
     if not result['OK']:
@@ -124,7 +149,7 @@ class FileMetadata:
     else:
       return S_ERROR('File %s not found' % path)
 
-    for metaName, metaValue in metadict.iteritems():
+    for metaName, metaValue in metaDict.iteritems():
       if metaName not in metaFields:
         result = self.__setFileMetaParameter(fileID, metaName, metaValue, credDict)
       else:
@@ -144,6 +169,12 @@ class FileMetadata:
 
   def removeMetadata(self, path, metadata, credDict):
     """ Remove the specified metadata for the given file
+
+        :param str path: file path
+        :param list metadata: list of meta parameter names
+        :param dict credDict: client credential dictionary
+
+        :return: S_OK/S_ERROR
     """
     result = self.getFileMetadataFields(credDict)
     if not result['OK']:
@@ -181,6 +212,12 @@ class FileMetadata:
       return S_OK()
 
   def __getFileID(self, path):
+    """ Get file ID for the given file name
+
+        :param str path: file path
+
+        :return: S_OK/S_ERROR, Value - file ID
+    """
 
     result = self.db.fileManager._findFiles([path])
     if not result['OK']:
@@ -194,6 +231,13 @@ class FileMetadata:
   def __setFileMetaParameter(self, fileID, metaName, metaValue, credDict):
     """ Set an meta parameter - metadata which is not used in the the data
         search operations
+
+        :param int fileID: file ID
+        :param str metaName: meta parameter name
+        :param str metaValue: meta parameter value
+        :param dict credDict: client credential dictionary
+
+        :return: S_OK/S_ERROR
     """
     result = self.db.insertFields('FC_FileMeta',
                                   ['FileID', 'MetaKey', 'MetaValue'],
@@ -201,6 +245,16 @@ class FileMetadata:
     return result
 
   def setFileMetaParameter(self, path, metaName, metaValue, credDict):
+    """ Set an meta parameter - metadata which is not used in the the data
+        search operations
+
+        :param str path: file name
+        :param str metaName: meta parameter name
+        :param str metaValue: meta parameter value
+        :param dict credDict: client credential dictionary
+
+        :return: S_OK/S_ERROR
+    """
 
     result = self.__getFileID(path)
     if not result['OK']:
@@ -210,6 +264,12 @@ class FileMetadata:
 
   def _getFileUserMetadataByID(self, fileIDList, credDict, connection=False):
     """ Get file user metadata for the list of file IDs
+
+        :param list fileIDList: list of file IDs (int)
+        :param dict credDict: client credential dictionary
+        :param obj connection: database connection object
+
+        :return: S_OK/S_ERROR, Value - dict of metadata for each input file
     """
     # First file metadata
     result = self.getFileMetadataFields(credDict)
@@ -240,6 +300,11 @@ class FileMetadata:
 
   def getFileUserMetadata(self, path, credDict):
     """ Get metadata for the given file
+
+        :param str path: file name
+        :param dict credDict: client credential dictionary
+
+        :return: S_OK/S_ERROR, Value - dict of metadata
     """
     # First file metadata
     result = self.getFileMetadataFields(credDict)
@@ -274,6 +339,13 @@ class FileMetadata:
     return result
 
   def __getFileMetaParameters(self, fileID, credDict):
+    """ Get meta parameters for the given file
+
+        :param int fileID: file ID
+        :param dict credDict: client credential dictionary
+
+        :return: S_OK/S_ERROR, Value - dict of meta parameters
+    """
 
     req = "SELECT FileID,MetaKey,MetaValue from FC_FileMeta where FileID=%d " % fileID
     result = self.db._query(req)
@@ -295,6 +367,11 @@ class FileMetadata:
 
   def getFileMetaParameters(self, path, credDict):
     """ Get meta parameters for the given file
+
+        :param str path: file name
+        :param dict credDict: client credential dictionary
+
+        :return: S_OK/S_ERROR, Value - dict of meta parameters
     """
 
     result = self.__getFileID(path)
@@ -304,12 +381,16 @@ class FileMetadata:
 
     return self.__getFileMetaParameters(fileID, credDict)
 
-  def __transformMetaParameterToData(self, metaname):
-    """ Relocate the meta parameters of all the directories to the corresponding
+  def __transformMetaParameterToData(self, metaName):
+    """ Relocate the meta parameters of all the files to the corresponding
         indexed metadata table
+
+        :param str metaName: meta parameter name
+
+        :return: S_OK/S_ERROR
     """
 
-    req = "SELECT FileID,MetaValue from FC_FileMeta WHERE MetaKey='%s'" % metaname
+    req = "SELECT FileID,MetaValue from FC_FileMeta WHERE MetaKey='%s'" % metaName
     result = self.db._query(req)
     if not result['OK']:
       return result
@@ -320,12 +401,12 @@ class FileMetadata:
     for fileID, meta in result['Value']:
       insertValueList.append("( %d,'%s' )" % (fileID, meta))
 
-    req = "INSERT INTO FC_FileMeta_%s (FileID,Value) VALUES %s" % (metaname, ', '.join(insertValueList))
+    req = "INSERT INTO FC_FileMeta_%s (FileID,Value) VALUES %s" % (metaName, ', '.join(insertValueList))
     result = self.db._update(req)
     if not result['OK']:
       return result
 
-    req = "DELETE FROM FC_FileMeta WHERE MetaKey='%s'" % metaname
+    req = "DELETE FROM FC_FileMeta WHERE MetaKey='%s'" % metaName
     result = self.db._update(req)
     return result
 
@@ -336,8 +417,12 @@ class FileMetadata:
 #########################################################################
 
   def __createMetaSelection(self, value):
-    ''' Create selection string to be used in the SQL query
-    '''
+    """ Create selection string for the given meta value to be used in the SQL query
+
+        :param float,int,str value: metadata value
+
+        :return: S_OK/S_ERROR, Value - list of SQL query selection elements
+    """
     queryList = []
     if isinstance(value, float):
       queryList.append(('=', '%f' % value))
@@ -409,7 +494,11 @@ class FileMetadata:
     return S_OK(queryList)
 
   def __buildSEQuery(self, storageElements):
-    """  Return a tuple with table and condition to locate files in a given SE
+    """ Return a tuple with table and condition to locate files in a given SE
+
+        :param list storageElements: list of storage element names
+
+        :return: S_OK/S_ERROR, Value - list of tuples (table name, SQL query elements)
     """
     if not storageElements:
       return S_OK([])
@@ -426,7 +515,11 @@ class FileMetadata:
     return S_OK([(table, query)])
 
   def __buildUserMetaQuery(self, userMetaDict):
-    """  Return a list of tuples with tables and conditions to locate files for a given user Metadata
+    """ Return a list of tuples with tables and conditions to locate files for a given user Metadata
+
+        :param dict userMetaDict: dictionary with user metadata
+
+        :return: S_OK/S_ERROR, Value - list SQL query elements
     """
     if not userMetaDict:
       return S_OK([])
@@ -448,6 +541,12 @@ class FileMetadata:
     return result
 
   def __buildStandardMetaQuery(self, standardMetaDict):
+    """ Create SQL query elements for standard file metadata
+
+        :param dict standardMetaDict: dictionary with standard file metadata
+
+        :return: S_OK/S_ERROR, Value - list SQL query elements
+    """
 
     table = 'FC_Files'
     queriesFiles = []
@@ -497,6 +596,11 @@ class FileMetadata:
   def __findFilesByMetadata(self, metaDict, dirList, credDict):
     """ Find a list of file IDs meeting the metaDict requirements and belonging
         to directories in dirList
+
+        :param dict metaDict: dictionary with the file metadata
+        :param list dirList: list of directories to look into
+
+        :return: S_OK/S_ERROR, Value - list of IDs of found files
     """
     # 1.- classify Metadata keys
     storageElements = None
