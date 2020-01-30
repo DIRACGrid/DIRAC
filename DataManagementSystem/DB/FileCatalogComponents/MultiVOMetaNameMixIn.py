@@ -33,7 +33,7 @@ class MultiVOMetaNameMixIn(MetaNameMixIn):
     :return: VO specific suffix
     """
     vo = Registry.getGroupOption(credDict['group'], 'VO')
-    return '_' + vo.replace('-', '_')
+    return '_' + vo.replace('-', '_').replace('.','')
 
   def stripSuffix(self, metaDict, credDict):
     """
