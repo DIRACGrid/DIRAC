@@ -12,7 +12,7 @@ from DIRAC.DataManagementSystem.Client.MetaQuery import FILE_STANDARD_METAKEYS, 
     FILEINFO_TABLE_METAKEYS
 
 
-class FileMetadata:
+class FileMetadata(object):
 
   def __init__(self, database=None):
 

@@ -11,7 +11,7 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.Time import queryTime
 
 
-class DirectoryMetadata:
+class DirectoryMetadata(object):
 
   def __init__(self, database=None):
 
