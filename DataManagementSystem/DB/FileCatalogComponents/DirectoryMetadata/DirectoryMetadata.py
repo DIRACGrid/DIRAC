@@ -37,13 +37,13 @@ class DirectoryMetadata:
     result = self.db.fmeta.getFileMetadataFields(credDict)
     if not result['OK']:
       return result
-    if pName in result['Value'].keys():
+    if pName in result['Value']:
       return S_ERROR('The metadata %s is already defined for Files' % pName)
 
     result = self._getMetadataFields(credDict)
     if not result['OK']:
       return result
-    if pName in result['Value'].keys():
+    if pName in result['Value']:
       if pType.lower() == result['Value'][pName].lower():
         return S_OK('Already exists')
       return S_ERROR('Attempt to add an existing metadata with different type: %s/%s' %
@@ -268,7 +268,7 @@ class DirectoryMetadata:
           failedMeta[meta] = result['Value']
 
     if failedMeta:
-      metaExample = failedMeta.keys()[0]
+      metaExample = list(failedMeta)[0]
       result = S_ERROR('Failed to remove %d metadata, e.g. %s' % (len(failedMeta), failedMeta[metaExample]))
       result['FailedMetadata'] = failedMeta
     else:
@@ -398,7 +398,7 @@ class DirectoryMetadata:
     dirDict = {}
     for dirID, meta in result['Value']:
       dirDict[dirID] = meta
-    dirList = dirDict.keys()
+    dirList = list(dirDict)
 
     # Exclude child directories from the list
     for dirID in dirList:
@@ -407,7 +407,7 @@ class DirectoryMetadata:
         return result
       if not result['Value']:
         continue
-      childIDs = result['Value'].keys()
+      childIDs = list(result['Value'])
       for childID in childIDs:
         if childID in dirList:
           del dirList[dirList.index(childID)]
@@ -612,7 +612,7 @@ class DirectoryMetadata:
 
     # Now check the meta data for the requested directory and its parents
     finalMetaDict = dict(metaDict)
-    for meta in metaDict.keys():
+    for meta in metaDict:
       result = self.__checkDirsForMetadata(meta, metaDict[meta], pathString)
       if not result['OK']:
         return result
@@ -652,7 +652,7 @@ class DirectoryMetadata:
         result = self.db.dtree.getSubdirectoriesByID(pathDirID, includeParent=True)
         if not result['OK']:
           return result
-        pathDirList = result['Value'].keys()
+        pathDirList = list(result['Value'])
 
     finalList = []
     dirSelect = False
@@ -710,7 +710,7 @@ class DirectoryMetadata:
       return result
 
     dirDict = result['Value']
-    dirList = dirDict.keys()
+    dirList = list(dirDict)
     fileList = []
     result = self.db.dtree.getFilesInDirectory(dirList, credDict)
     if not result['OK']:
@@ -815,7 +815,7 @@ class DirectoryMetadata:
       if not result['OK']:
         return result
       if result['Value']:
-        pathDirs = result['Value'].keys()
+        pathDirs = list(result['Value'])
       result = self.db.dtree.getPathIDsByID(pathDirID)
       if not result['OK']:
         return result
@@ -827,7 +827,7 @@ class DirectoryMetadata:
     if not result['OK']:
       return result
     metaFields = result['Value']
-    comFields = metaFields.keys()
+    comFields = list(metaFields)
 
     # Commented out to return compatible data also for selection metadata
     # for m in metaDict:
