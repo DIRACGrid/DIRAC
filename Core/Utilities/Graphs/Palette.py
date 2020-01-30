@@ -8,20 +8,21 @@ __RCSID__ = "$Id$"
 
 import hashlib
 
+from DIRAC.WorkloadManagementSystem.Client import JobStatus
+
 job_status_palette = {
-   'Received':  '#D9E7F8',
-   'Checking':  '#FAFAFA',
-   'Staging':   '#6190CD',
-   'Waiting':   '#004EFF',
-   'Matched':   '#FEF7AA',
-   'Running':   '#FDEE65',
-   'Completing': '#FFAF55',
-   'Stalled':   '#BC5757',
-   'Completed': '#00FF21',
-   'Done':      '#238802',
-   'Failed':    '#FF0000',
-   'failed':    '#FF0000',
-   'Killed':    '#111111'
+   JobStatus.RECEIVED:  '#D9E7F8',
+   JobStatus.CHECKING:  '#FAFAFA',
+   JobStatus.STAGING:   '#6190CD',
+   JobStatus.WAITING:   '#004EFF',
+   JobStatus.MATCHED:   '#FEF7AA',
+   JobStatus.RUNNING:   '#FDEE65',
+   JobStatus.COMPLETING: '#FFAF55',
+   JobStatus.STALLED:   '#BC5757',
+   JobStatus.COMPLETED: '#00FF21',
+   JobStatus.DONE:      '#238802',
+   JobStatus.FAILED:    '#FF0000',
+   JobStatus.KILLED:    '#111111'
 }
 
 job_minor_status_palette = {

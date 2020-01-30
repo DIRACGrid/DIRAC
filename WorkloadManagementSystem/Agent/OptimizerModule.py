@@ -15,6 +15,7 @@ from DIRAC import S_OK, S_ERROR, exit as dExit
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.AccountingSystem.Client.Types.Job import Job as AccountingJob
+from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 
@@ -39,7 +40,7 @@ class OptimizerModule(AgentModule):
     self.jobDB = None
     self.logDB = None
     self.startingMinorStatus = None
-    self.startingMajorStatus = "Checking"
+    self.startingMajorStatus = JobStatus.CHECKING
     self.failedStatus = None
     self.requiredJobInfo = 'jdl'
     self._initResult = None
@@ -59,7 +60,7 @@ class OptimizerModule(AgentModule):
     self.am_setModuleParam('optimizerName', optimizerName)
 
     self.startingMinorStatus = self.am_getModuleParam('optimizerName')
-    self.failedStatus = self.am_getOption("FailedJobStatus", 'Failed')
+    self.failedStatus = self.am_getOption("FailedJobStatus", JobStatus.FAILED)
     self.am_setOption("PollingTime", 30)
 
     return self.initializeOptimizer()

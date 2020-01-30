@@ -28,6 +28,7 @@ from DIRAC.TransformationSystem.Client.FileReport import FileReport
 from DIRAC.TransformationSystem.Client.TaskManager import WorkflowTasks
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
 from DIRAC.TransformationSystem.Agent.TransformationAgentsUtilities import TransformationAgentsUtilities
+from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
 
 AGENT_NAME = 'Transformation/TaskManagerAgentBase'
@@ -329,11 +330,23 @@ class TaskManagerAgentBase(AgentModule, TransformationAgentsUtilities):
     transID = transIDOPBody.keys()[0]
     method = 'updateTaskStatus'
 
-    # Get the tasks which are in an UPDATE state
-    updateStatus = self.am_getOption('TaskUpdateStatus', ['Checking', 'Deleted', 'Killed', 'Staging', 'Stalled',
-                                                          'Matched', 'Scheduled', 'Rescheduled', 'Completing',
-                                                          'Completed', 'Submitted', 'Assigned', 'Received',
-                                                          'Waiting', 'Running'])
+    # Get the tasks which are in an UPDATE state, i.e. job statuses + request-specific statuses
+    updateStatus = self.am_getOption('TaskUpdateStatus', [JobStatus.CHECKING,
+                                                          JobStatus.DELETED,
+                                                          JobStatus.KILLED,
+                                                          JobStatus.STAGING,
+                                                          JobStatus.STALLED,
+                                                          JobStatus.MATCHED,
+                                                          JobStatus.RESCHEDULED,
+                                                          JobStatus.COMPLETING,
+                                                          JobStatus.COMPLETED,
+                                                          JobStatus.SUBMITTED,
+                                                          JobStatus.RECEIVED,
+                                                          JobStatus.WAITING,
+                                                          JobStatus.RUNNING,
+                                                          'Scheduled',
+                                                          'Assigned'
+                                                          ])
     condDict = {"TransformationID": transID, "ExternalStatus": updateStatus}
     timeStamp = str(datetime.datetime.utcnow() - datetime.timedelta(minutes=10))
 

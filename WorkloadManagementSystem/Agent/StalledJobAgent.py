@@ -20,6 +20,7 @@ from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemInstance
 from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
+from DIRAC.WorkloadManagementSystem.Client import JobStatus
 
 
 class StalledJobAgent(AgentModule):
@@ -117,7 +118,7 @@ for the agent restart
     aliveCounter = 0
     # This is the minimum time we wait for declaring a job Stalled, therefore it is safe
     checkTime = dateTime() - stalledTime * second
-    checkedStatuses = ['Running', 'Completing']
+    checkedStatuses = [JobStatus.RUNNING, JobStatus.COMPLETING]
     # Only get jobs whose HeartBeat is older than the stalledTime
     result = self.jobDB.selectJobs({'Status': checkedStatuses},
                                    older=checkTime, timeStamp='HeartBeatTime')
@@ -145,8 +146,8 @@ for the agent restart
         self.log.verbose(result['Message'])
         aliveCounter += 1
 
-    self.log.info('Total jobs: %d, Stalled jobs: %d, alive jobs: %d' %
-                  (len(jobs), stalledCounter, aliveCounter))
+    self.log.info('Total jobs: %d, Stalled jobs: %d, %s jobs: %d' %
+                  (len(jobs), stalledCounter, '+'.join(checkedStatuses), aliveCounter))
     return S_OK()
 
   #############################################################################
@@ -155,7 +156,7 @@ for the agent restart
     """
     # Only get jobs that have been Stalled for long enough
     checkTime = dateTime() - failedTime * second
-    result = self.jobDB.selectJobs({'Status': 'Stalled'}, older=checkTime)
+    result = self.jobDB.selectJobs({'Status': JobStatus.STALLED}, older=checkTime)
     if not result['OK']:
       return result
     jobs = result['Value']
@@ -189,7 +190,7 @@ for the agent restart
         # Set the jobs Failed, send them a kill signal in case they are not really dead and send accounting info
         if setFailed:
           self.__sendKillCommand(job)
-          self.__updateJobStatus(job, 'Failed', setFailed)
+          self.__updateJobStatus(job, JobStatus.FAILED, setFailed)
           failedCounter += 1
           result = self.__sendAccounting(job)
           if not result['OK']:
@@ -198,7 +199,7 @@ for the agent restart
     recoverCounter = 0
 
     for minor in minorStalledStatuses:
-      result = self.jobDB.selectJobs({'Status': 'Failed', 'MinorStatus': minor, 'AccountedFlag': 'False'})
+      result = self.jobDB.selectJobs({'Status': JobStatus.FAILED, 'MinorStatus': minor, 'AccountedFlag': 'False'})
       if not result['OK']:
         return result
       if result['Value']:
@@ -483,7 +484,7 @@ for the agent restart
     message = ''
 
     checkTime = dateTime() - self.matchedTime * second
-    result = self.jobDB.selectJobs({'Status': 'Matched'}, older=checkTime)
+    result = self.jobDB.selectJobs({'Status': JobStatus.MATCHED}, older=checkTime)
     if not result['OK']:
       self.log.error('Failed to select jobs', result['Message'])
       return result
@@ -521,13 +522,13 @@ for the agent restart
 
     # Get old Submitting Jobs
     checkTime = dateTime() - self.submittingTime * second
-    result = self.jobDB.selectJobs({'Status': 'Submitting'}, older=checkTime)
+    result = self.jobDB.selectJobs({'Status': JobStatus.SUBMITTING}, older=checkTime)
     if not result['OK']:
       self.log.error('Failed to select jobs', result['Message'])
       return result
 
     for jobID in result['Value']:
-      result = self.__updateJobStatus(jobID, 'Failed')
+      result = self.__updateJobStatus(jobID, JobStatus.FAILED)
       if not result['OK']:
         self.log.error('Failed to update job status', result['Message'])
         continue
