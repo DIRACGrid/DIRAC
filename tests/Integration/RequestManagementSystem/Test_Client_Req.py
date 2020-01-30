@@ -80,9 +80,9 @@ class ReqClientMix(ReqClientTestCase):
   def test01fullChain(self):
     ret = self.requestClient.getDBSummary()
     self.assertTrue(ret['OK'])
-    gLogger.info('==== Status before test ====')
-    gLogger.info(ret['Value'])
-    gLogger.info('============================')
+    print('==== Status before test ====')
+    print(ret['Value'])
+    print('============================')
 
     put = self.requestClient.putRequest(self.request)
     self.assertTrue(put['OK'], put)
@@ -154,9 +154,9 @@ class ReqClientMix(ReqClientTestCase):
     ret = self.requestClient.getDBSummary()
     self.assertTrue(ret['OK'])
     self.assertEqual(ret['Value'], {'Operation': {}, 'Request': {}, 'File': {}})
-    gLogger.info('==== Status after test ====')
-    gLogger.info(ret['Value'])
-    gLogger.info('============================')
+    print('==== Status after test ====')
+    print(ret['Value'])
+    print('============================')
 
   def test02Authorization(self):
     """ Test whether request sets on behalf of others are rejected, unless done with Delegation properties
@@ -164,9 +164,9 @@ class ReqClientMix(ReqClientTestCase):
     """
     ret = self.requestClient.getDBSummary()
     self.assertTrue(ret['OK'])
-    gLogger.info('==== Status before test ====')
-    gLogger.info(ret['Value'])
-    gLogger.info('============================')
+    print('==== Status before test ====')
+    print(ret['Value'])
+    print('============================')
     request = Request({"RequestName": "unauthorized"})
     request.OwnerDN = 'NotMe'
     request.OwnerDN = 'AnotherGroup'
@@ -175,8 +175,8 @@ class ReqClientMix(ReqClientTestCase):
     request += op
     res = self.requestClient.putRequest(request)
     credProperties = getProxyInfo()['Value']['groupProperties']
-    gLogger.info('=== getProxyInfo')
-    gLogger.info(getProxyInfo()['Value'])
+    print('=== getProxyInfo')
+    print(getProxyInfo()['Value'])
 
     # If the proxy with which we test has delegation, it should work
     if FULL_DELEGATION in credProperties or LIMITED_DELEGATION in credProperties:
@@ -188,9 +188,9 @@ class ReqClientMix(ReqClientTestCase):
 
     ret = self.requestClient.getDBSummary()
     self.assertTrue(ret['OK'])
-    gLogger.info('==== Status after test ====')
-    gLogger.info(ret['Value'])
-    gLogger.info('============================')
+    print('==== Status after test ====')
+    print(ret['Value'])
+    print('============================')
 
 
 if __name__ == '__main__':
