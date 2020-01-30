@@ -128,6 +128,12 @@ class DirectoryMetadata:
 
   def addMetadataSet(self, metaSetName, metaSetDict, credDict):
     """ Add a new metadata set with the contents from metaSetDict
+
+        :param str metaSetName: metaSet name
+        :param dict metaSetDict: contents of the meta set definition
+        :param dict credDict: client credential dictionary
+
+        :return: S_OK/S_ERROR
     """
     result = self.getMetadataFields(credDict)
     if not result['OK']:
@@ -154,6 +160,12 @@ class DirectoryMetadata:
 
   def getMetadataSet(self, metaSetName, expandFlag, credDict):
     """ Get fully expanded contents of the metadata set
+
+        :param str metaSetName: metaSet name
+        :param bool expandFlag: flag to whether to expand the metaset recursively
+        :param dict credDict: client credential dictionary
+
+        :return: S_OK/S_ERROR, Value dictionary of the meta set definition contents
     """
     result = self.getMetadataFields(credDict)
     if not result['OK']:
@@ -191,34 +203,40 @@ class DirectoryMetadata:
 #
 #############################################################################################
 
-  def setMetadata(self, dpath, metadict, credDict):
+  def setMetadata(self, dPath, metaDict, credDict):
     """ Set the value of a given metadata field for the the given directory path
+
+        :param str dPath: directory path
+        :param dict metaDict: dictionary with metadata
+        :param dict credDict: client credential dictionary
+
+        :return: S_OK/S_ERROR
     """
     result = self.getMetadataFields(credDict)
     if not result['OK']:
       return result
     metaFields = result['Value']
 
-    result = self.db.dtree.findDir(dpath)
+    result = self.db.dtree.findDir(dPath)
     if not result['OK']:
       return result
     if not result['Value']:
-      return S_ERROR('Path not found: %s' % dpath)
+      return S_ERROR('Path not found: %s' % dPath)
     dirID = result['Value']
 
-    dirmeta = self.getDirectoryMetadata(dpath, credDict, ownData=False)
+    dirmeta = self.getDirectoryMetadata(dPath, credDict, ownData=False)
     if not dirmeta['OK']:
       return dirmeta
 
-    for metaName, metaValue in metadict.iteritems():
+    for metaName, metaValue in metaDict.iteritems():
       if metaName not in metaFields:
-        result = self.setMetaParameter(dpath, metaName, metaValue, credDict)
+        result = self.setMetaParameter(dPath, metaName, metaValue, credDict)
         if not result['OK']:
           return result
         continue
       # Check that the metadata is not defined for the parent directories
       if metaName in dirmeta['Value']:
-        return S_ERROR('Metadata conflict detected for %s for directory %s' % (metaName, dpath))
+        return S_ERROR('Metadata conflict detected for %s for directory %s' % (metaName, dPath))
       result = self.db.insertFields('FC_Meta_%s' % metaName, ['DirID', 'Value'], [dirID, metaValue])
       if not result['OK']:
         if result['Message'].find('Duplicate') != -1:
@@ -231,11 +249,11 @@ class DirectoryMetadata:
 
     return S_OK()
 
-  def removeMetadata(self, dpath, metadata, credDict):
+  def removeMetadata(self, dPath, metaData, credDict):
     """ Remove the specified metadata for the given directory
 
-        :param str dpath: directory path
-        :param dict metadata: metadata dictionary
+        :param str dPath: directory path
+        :param dict metaData: metadata dictionary
         :param dict credDict: client credential dictionary
         :return: standard Dirac result object
     """
@@ -245,15 +263,15 @@ class DirectoryMetadata:
       return result
     metaFields = result['Value']
 
-    result = self.db.dtree.findDir(dpath)
+    result = self.db.dtree.findDir(dPath)
     if not result['OK']:
       return result
     if not result['Value']:
-      return S_ERROR('Path not found: %s' % dpath)
+      return S_ERROR('Path not found: %s' % dPath)
     dirID = result['Value']
 
     failedMeta = {}
-    for meta in metadata:
+    for meta in metaData:
       if meta in metaFields:
         # Indexed meta case
         req = "DELETE FROM FC_Meta_%s WHERE DirID=%d" % (meta, dirID)
@@ -274,15 +292,22 @@ class DirectoryMetadata:
     else:
       return S_OK()
 
-  def setMetaParameter(self, dpath, metaName, metaValue, credDict):
+  def setMetaParameter(self, dPath, metaName, metaValue, credDict):
     """ Set an meta parameter - metadata which is not used in the the data
         search operations
+
+        :param str dPath: directory name
+        :param str metaName: meta parameter name
+        :param str metaValue: meta parameter value
+        :param dict credDict: client credential dictionary
+
+        :return: S_OK/S_ERROR
     """
-    result = self.db.dtree.findDir(dpath)
+    result = self.db.dtree.findDir(dPath)
     if not result['OK']:
       return result
     if not result['Value']:
-      return S_ERROR('Path not found: %s' % dpath)
+      return S_ERROR('Path not found: %s' % dPath)
     dirID = result['Value']
 
     result = self.db.insertFields('FC_DirMeta',
@@ -292,6 +317,11 @@ class DirectoryMetadata:
 
   def getDirectoryMetaParameters(self, dpath, credDict, inherited=True):
     """ Get meta parameters for the given directory
+
+        :param str dPath: directory name
+        :param dict credDict: client credential dictionary
+
+        :return: S_OK/S_ERROR, Value dictionary of meta parameters
     """
     if inherited:
       result = self.db.dtree.getPathIDs(dpath)
@@ -334,6 +364,13 @@ class DirectoryMetadata:
     """ Get metadata for the given directory aggregating metadata for the directory itself
         and for all the parent directories if inherited flag is True. Get also the non-indexed
         metadata parameters.
+
+        :param str path: directory name
+        :param dict credDict: client credential dictionary
+        :param bool inherited: flag to include metadata from the parent directories
+        :param bool ownData: flag to include metadata for the directory itself
+
+        :return: S_OK/S_ERROR, Value dictionary of metadata
     """
 
     result = self.db.dtree.getPathIDs(path)
@@ -383,12 +420,16 @@ class DirectoryMetadata:
     result['MetadataType'] = metaTypeDict
     return result
 
-  def __transformMetaParameterToData(self, metaname):
+  def __transformMetaParameterToData(self, metaName):
     """ Relocate the meta parameters of all the directories to the corresponding
         indexed metadata table
+
+        :param str metaName: name of the parameter to transform
+
+        :return: S_OK/S_ERROR
     """
 
-    req = "SELECT DirID,MetaValue from FC_DirMeta WHERE MetaKey='%s'" % metaname
+    req = "SELECT DirID,MetaValue from FC_DirMeta WHERE MetaKey='%s'" % metaName
     result = self.db._query(req)
     if not result['OK']:
       return result
@@ -416,12 +457,12 @@ class DirectoryMetadata:
     for dirID in dirList:
       insertValueList.append("( %d,'%s' )" % (dirID, dirDict[dirID]))
 
-    req = "INSERT INTO FC_Meta_%s (DirID,Value) VALUES %s" % (metaname, ', '.join(insertValueList))
+    req = "INSERT INTO FC_Meta_%s (DirID,Value) VALUES %s" % (metaName, ', '.join(insertValueList))
     result = self.db._update(req)
     if not result['OK']:
       return result
 
-    req = "DELETE FROM FC_DirMeta WHERE MetaKey='%s'" % metaname
+    req = "DELETE FROM FC_DirMeta WHERE MetaKey='%s'" % metaName
     result = self.db._update(req)
     return result
 
@@ -430,7 +471,14 @@ class DirectoryMetadata:
 # Find directories corresponding to the metadata
 #
 
-  def __createMetaSelection(self, meta, value, table=''):
+  def __createMetaSelection(self, value, table=''):
+    """ Create an SQL selection element for the given meta value
+
+        :param dict value: dictionary with selection instructions suitable for the database search
+        :param str table: table name
+
+        :return: selection string
+    """
 
     if isinstance(value, dict):
       selectList = []
@@ -468,18 +516,25 @@ class DirectoryMetadata:
 
     return S_OK(selectString)
 
-  def __findSubdirByMeta(self, meta, value, pathSelection='', subdirFlag=True):
-    """ Find directories for the given meta datum. If the the meta datum type is a list,
-        combine values in OR. In case the meta datum is 'Any', finds all the subdirectories
-        for which the meta datum is defined at all.
+  def __findSubdirByMeta(self, metaName, value, pathSelection='', subdirFlag=True):
+    """ Find directories for the given metaName datum. If the the metaName datum type is a list,
+        combine values in OR. In case the metaName datum is 'Any', finds all the subdirectories
+        for which the metaName datum is defined at all.
+
+        :param str metaName: metadata name
+        :param dict,list value: dictionary with selection instructions suitable for the database search
+        :param str pathSelection: directory path selection string
+        :param bool subdirFlag: fla to include subdirectories
+
+        :return: S_OK/S_ERROR, Value list of found directories
     """
 
-    result = self.__createMetaSelection(meta, value, "M.")
+    result = self.__createMetaSelection(value, "M.")
     if not result['OK']:
       return result
     selectString = result['Value']
 
-    req = " SELECT M.DirID FROM FC_Meta_%s AS M" % meta
+    req = " SELECT M.DirID FROM FC_Meta_%s AS M" % metaName
     if pathSelection:
       req += " JOIN ( %s ) AS P WHERE M.DirID=P.DirID" % pathSelection
     if selectString:
@@ -511,10 +566,15 @@ class DirectoryMetadata:
 
     return S_OK(dirList)
 
-  def __findSubdirMissingMeta(self, meta, pathSelection):
+  def __findSubdirMissingMeta(self, metaName, pathSelection):
     """ Find directories not having the given meta datum defined
+
+        :param str metaName: metadata name
+        :param str pathSelection: directory path selection string
+
+        :return: S_OK,S_ERROR , Value list of directories
     """
-    result = self.__findSubdirByMeta(meta, 'Any', pathSelection)
+    result = self.__findSubdirByMeta(metaName, 'Any', pathSelection)
     if not result['OK']:
       return result
     dirList = result['Value']
@@ -534,7 +594,12 @@ class DirectoryMetadata:
     return S_OK(dirList)
 
   def __expandMetaDictionary(self, metaDict, credDict):
-    """ Expand the dictionary with metadata query
+    """ Update the dictionary with metadata query by expand metaSet type metadata
+
+        :param dict metaDict: metaDict to be expanded
+        :param dict credDict: client credential dictionary
+
+        :return: S_OK/S_ERROR , Value dictionary of metadata
     """
     result = self.getMetadataFields(credDict)
     if not result['OK']:
@@ -565,18 +630,24 @@ class DirectoryMetadata:
     result['ExtraMetadata'] = extraDict
     return result
 
-  def __checkDirsForMetadata(self, meta, value, pathString):
+  def __checkDirsForMetadata(self, metaName, value, pathString):
     """ Check if any of the given directories conform to the given metadata
+
+        :param str metaName: matadata name
+        :param dict,list value: dictionary with selection instructions suitable for the database search
+        :param str pathString: string of comma separated directory names
+
+        :return: S_OK/S_ERROR, Value directory ID
     """
-    result = self.__createMetaSelection(meta, value, "M.")
+    result = self.__createMetaSelection(value, "M.")
     if not result['OK']:
       return result
     selectString = result['Value']
 
     if selectString:
-      req = "SELECT M.DirID FROM FC_Meta_%s AS M WHERE %s AND M.DirID IN (%s)" % (meta, selectString, pathString)
+      req = "SELECT M.DirID FROM FC_Meta_%s AS M WHERE %s AND M.DirID IN (%s)" % (metaName, selectString, pathString)
     else:
-      req = "SELECT M.DirID FROM FC_Meta_%s AS M WHERE M.DirID IN (%s)" % (meta, pathString)
+      req = "SELECT M.DirID FROM FC_Meta_%s AS M WHERE M.DirID IN (%s)" % (metaName, pathString)
     result = self.db._query(req)
     if not result['OK']:
       return result
@@ -591,6 +662,12 @@ class DirectoryMetadata:
   def findDirIDsByMetadata(self, queryDict, path, credDict):
     """ Find Directories satisfying the given metadata and being subdirectories of
         the given path
+
+        :param dict queryDict: dictionary containing query data
+        :param str path: starting directory path
+        :param dict credDict: client credential dictionary
+
+        :return: S_OK/S_ERROR, Value list of selected directory IDs
     """
 
     pathDirList = []
@@ -680,6 +757,12 @@ class DirectoryMetadata:
   def findDirectoriesByMetadata(self, queryDict, path, credDict):
     """ Find Directory names satisfying the given metadata and being subdirectories of
         the given path
+
+        :param dict queryDict: dictionary containing query data
+        :param str path: starting directory path
+        :param dict credDict: client credential dictionary
+
+        :return: S_OK/S_ERROR, Value list of selected directory paths
     """
 
     result = self.findDirIDsByMetadata(queryDict, path, credDict)
@@ -703,6 +786,12 @@ class DirectoryMetadata:
 
   def findFilesByMetadata(self, metaDict, path, credDict):
     """ Find Files satisfying the given metadata
+
+        :param dict metaDict: dictionary with the selection metadata
+        :param str path: starting directory path
+        :param dict credDict: client credential dictionary
+
+        :return: S_OK/S_ERROR, Value list files in selected directories
     """
 
     result = self.findDirectoriesByMetadata(metaDict, path, credDict)
@@ -722,6 +811,14 @@ class DirectoryMetadata:
 
   def findFileIDsByMetadata(self, metaDict, path, credDict, startItem=0, maxItems=25):
     """ Find Files satisfying the given metadata
+
+        :param dict metaDict: dictionary with the selection metadata
+        :param str path: starting directory path
+        :param dict credDict: client credential dictionary
+        :param int startItem: offset in the file list
+        :param int maxItems: max number of files to rteurn
+
+        :return: S_OK/S_ERROR, Value list file IDs in selected directories
     """
     result = self.findDirIDsByMetadata(metaDict, path, credDict)
     if not result['OK']:
@@ -734,19 +831,25 @@ class DirectoryMetadata:
 #
 # Find metadata compatible with other metadata in order to organize dynamically updated metadata selectors
 
-  def __findCompatibleDirectories(self, meta, value, fromDirs):
-    """ Find directories compatible with the given meta datum.
+  def __findCompatibleDirectories(self, metaName, value, fromDirs):
+    """ Find directories compatible with the given metaName datum.
         Optionally limit the list of compatible directories to only those in the
         fromDirs list
+
+        :param str metaName: metadata name
+        :param dict,list value: dictionary with selection instructions suitable for the database search
+        :param list fromDirs: list of directories to choose from
+
+        :return: S_OK/S_ERROR, Value list of selected directories
     """
 
-    # The directories compatible with the given meta datum are:
+    # The directories compatible with the given metaName datum are:
     # - directory for which the datum is defined
     # - all the subdirectories of the above directory
     # - all the directories in the parent hierarchy of the above directory
 
-    # Find directories defining the meta datum and their subdirectories
-    result = self.__findSubdirByMeta(meta, value, subdirFlag=False)
+    # Find directories defining the metaName datum and their subdirectories
+    result = self.__findSubdirByMeta(metaName, value, subdirFlag=False)
     if not result['OK']:
       return result
     selectedDirs = result['Value']
@@ -758,7 +861,7 @@ class DirectoryMetadata:
       return result
     subDirs = result['Value']
 
-    # Find parent directories of the directories defining the meta datum
+    # Find parent directories of the directories defining the metaName datum
     parentDirs = []
     for psub in selectedDirs:
       result = self.db.dtree.getPathIDsByID(psub)
@@ -776,6 +879,11 @@ class DirectoryMetadata:
   def __findDistinctMetadata(self, metaList, dList):
     """ Find distinct metadata values defined for the list of the input directories.
         Limit the search for only metadata in the input list
+
+        :param list metaList: list of metadata names
+        :param list dList: list of directories to limit the selection
+
+        :return: S_OK/S_ERROR, Value dictionary of metadata
     """
 
     if dList:
@@ -799,6 +907,12 @@ class DirectoryMetadata:
 
   def getCompatibleMetadata(self, queryDict, path, credDict):
     """ Get distinct metadata values compatible with the given already defined metadata
+
+        :param dict queryDict: dictionary containing query data
+        :param str path: starting directory path
+        :param dict credDict: client credential dictionary
+
+        :return: S_OK/S_ERROR, Value dictionary of metadata
     """
 
     pathDirID = 0
@@ -862,6 +976,11 @@ class DirectoryMetadata:
 
   def removeMetadataForDirectory(self, dirList, credDict):
     """ Remove all the metadata for the given directory list
+
+        :param list dirList: list of directory paths
+        :param dict credDict: client credential dictionary
+
+        :return: S_OK/S_ERROR, Value Successful/Failed dictionaries
     """
     if not dirList:
       return S_OK({'Successful': {}, 'Failed': {}})
