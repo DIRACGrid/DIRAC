@@ -150,6 +150,9 @@ class GithubInterface(object):
     logging.getLogger().setLevel(self.printLevel)
     self.useGitlab = False
     self.useGithub = True
+    self.deployRelease = False
+    self.releaseNotes = None
+    self.tagName = None
 
     self.gitlabUrl = 'https://gitlab.cern.ch'
     self.glProjectID = 0
@@ -261,6 +264,24 @@ class GithubInterface(object):
 
     parser.add_argument('-i', '--gitlabProjectID', action='store', dest='gitlabProjectID',
                         help='ID of the project in Gitlab', default='0')
+
+    parser.add_argument(
+        '--deployRelease',
+        action='store_true',
+        dest='deployRelease',
+        help='Convert an existing tag into a github/gitlab release. Requires --releaseNotes and --tagName',
+        default=self.deployRelease)
+
+    parser.add_argument('--tagName', action='store', dest='tagName',
+                        help='Name of the tag to release (with --deployRelease)', default=self.tagName)
+
+    parser.add_argument(
+        '--releaseNotes',
+        action='store',
+        dest='releaseNotes',
+        help='Path to the file containing release notes for this version (with --deployRelease)',
+        default=self.releaseNotes)
+
     parser.set_defaults(**defaults)
 
     parsed = parser.parse_args()
@@ -302,6 +323,16 @@ class GithubInterface(object):
 
     self.gitlabUrl = parsed.gitlabUrl
     self.glProjectID = int(parsed.gitlabProjectID)
+
+    self.deployRelease = parsed.deployRelease
+    self.releaseNotes = parsed.releaseNotes
+    self.tagName = parsed.tagName
+
+    if self.deployRelease:
+      if not(self.releaseNotes and self.tagName):
+        raise RuntimeError("--deployRelease requires --releaseNotes and --tagName")
+      if not os.path.isfile(self.releaseNotes):
+        raise RuntimeError("--releaseNotes should point to an existing file")
 
     repo = parsed.repo
     repos = repo.split('/')
@@ -407,12 +438,6 @@ class GithubInterface(object):
 
     log = LOGGER.getChild("getReleasesNotes")
 
-    # Setting up the API
-    if self.useGithub:
-      githubSetup()
-    elif self.useGitlab:
-      gitlabSetup()
-
     # Check the latest tag if need be
     if self.sinceLatestTag:
       if self.useGithub:
@@ -488,6 +513,62 @@ class GithubInterface(object):
 
     return releaseNotes
 
+  def setup(self):
+    """ Setup the API
+    """
+    # Setting up the API
+    if self.useGithub:
+      githubSetup()
+    elif self.useGitlab:
+      gitlabSetup()
+
+  def createGithubRelease(self):
+    """ make a release on github """
+
+    with open(self.releaseNotes, 'r') as rnf:
+      releaseNotes = rnf.read()
+
+    releaseDict = dict(tag_name=self.tagName,
+                       target_commitish="unused",
+                       name=self.tagName,
+                       body=releaseNotes,
+                       prerelease=False,
+                       draft=False,
+                       )
+
+    result = req2Json(url=self._github("releases"), parameterDict=releaseDict, requestType='POST')
+    return result
+
+  def createGitlabRelease(self):
+    """ make a release on gitlab """
+
+    log = LOGGER.getChild("createGitlabRelease")
+
+    log.info("Creating a release for gitlab")
+    with open(self.releaseNotes, 'r') as rnf:
+      releaseNotes = '\n'.join(rnf.readlines())
+
+    releaseDict = dict(id=self.glProjectID,
+                       tag_name=self.tagName,
+                       name=self.tagName,
+                       description=releaseNotes,
+                       )
+
+    log.debug("Release dict %s", releaseDict)
+
+    result = req2Json(url=self._gitlab("releases"), parameterDict=releaseDict, requestType='POST')
+
+    log.info("Result %s", result)
+    return result
+
+  def createRelease(self):
+    """ Convert an existing github/gitlab tag into a release """
+
+    if self.useGithub:
+      return self.createGithubRelease()
+    elif self.useGitlab:
+      return self.createGitlabRelease()
+
 
 if __name__ == "__main__":
 
@@ -498,8 +579,15 @@ if __name__ == "__main__":
     LOGGER.error("Error during argument parsing: %s", e)
     exit(1)
 
+  RUNNER.setup()
+
   try:
-    RUNNER.getReleaseNotes()
+    # If it is invoked to deloy the release
+    if RUNNER.deployRelease:
+      RUNNER.createRelease()
+    # or to generate the release notes
+    else:
+      RUNNER.getReleaseNotes()
   except RuntimeError as e:
     LOGGER.error("Error during runtime: %s", e)
     exit(1)
