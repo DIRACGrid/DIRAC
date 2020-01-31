@@ -135,7 +135,7 @@ class DirectoryMetadata(object):
 
         :return: S_OK/S_ERROR
     """
-    result = self.getMetadataFields(credDict)
+    result = self._getMetadataFields(credDict)
     if not result['OK']:
       return result
     metaTypeDict = result['Value']
@@ -167,7 +167,7 @@ class DirectoryMetadata(object):
 
         :return: S_OK/S_ERROR, Value dictionary of the meta set definition contents
     """
-    result = self.getMetadataFields(credDict)
+    result = self._getMetadataFields(credDict)
     if not result['OK']:
       return result
     metaTypeDict = result['Value']
@@ -212,7 +212,7 @@ class DirectoryMetadata(object):
 
         :return: S_OK/S_ERROR
     """
-    result = self.getMetadataFields(credDict)
+    result = self._getMetadataFields(credDict)
     if not result['OK']:
       return result
     metaFields = result['Value']
@@ -258,7 +258,7 @@ class DirectoryMetadata(object):
         :return: standard Dirac result object
     """
 
-    result = self.getMetadataFields(credDict)
+    result = self._getMetadataFields(credDict)
     if not result['OK']:
       return result
     metaFields = result['Value']
@@ -378,7 +378,7 @@ class DirectoryMetadata(object):
       return result
     pathIDs = result['Value']
 
-    result = self.getMetadataFields(credDict)
+    result = self._getMetadataFields(credDict)
     if not result['OK']:
       return result
     metaFields = result['Value']
@@ -601,7 +601,7 @@ class DirectoryMetadata(object):
 
         :return: S_OK/S_ERROR , Value dictionary of metadata
     """
-    result = self.getMetadataFields(credDict)
+    result = self._getMetadataFields(credDict)
     if not result['OK']:
       return result
     metaTypeDict = result['Value']
@@ -937,7 +937,7 @@ class DirectoryMetadata(object):
         pathDirs += result['Value']
 
     # Get the list of metadata fields to inspect
-    result = self.getMetadataFields(credDict)
+    result = self._getMetadataFields(credDict)
     if not result['OK']:
       return result
     metaFields = result['Value']
@@ -994,7 +994,7 @@ class DirectoryMetadata(object):
     dirListString = ','.join([str(d) for d in dirs])
 
     # Get the list of metadata fields to inspect
-    result = self.getMetadataFields(credDict)
+    result = self._getMetadataFields(credDict)
     if not result['OK']:
       return result
     metaFields = result['Value']

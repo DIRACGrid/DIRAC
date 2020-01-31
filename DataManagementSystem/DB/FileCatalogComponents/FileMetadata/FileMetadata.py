@@ -38,13 +38,13 @@ class FileMetadata(object):
     if pName in FILE_STANDARD_METAKEYS:
       return S_ERROR('Illegal use of reserved metafield name')
 
-    result = self.db.dmeta.getMetadataFields(credDict)
+    result = self.db.dmeta._getMetadataFields(credDict)
     if not result['OK']:
       return result
     if pName in result['Value']:
       return S_ERROR('The metadata %s is already defined for Directories' % pName)
 
-    result = self.getFileMetadataFields(credDict)
+    result = self._getFileMetadataFields(credDict)
     if not result['OK']:
       return result
     if pName in result['Value']:
@@ -137,7 +137,7 @@ class FileMetadata(object):
 
         :return: S_OK/S_ERROR
     """
-    result = self.getFileMetadataFields(credDict)
+    result = self._getFileMetadataFields(credDict)
     if not result['OK']:
       return result
     metaFields = result['Value']
@@ -177,7 +177,7 @@ class FileMetadata(object):
 
         :return: S_OK/S_ERROR
     """
-    result = self.getFileMetadataFields(credDict)
+    result = self._getFileMetadataFields(credDict)
     if not result['OK']:
       return result
     metaFields = result['Value']
@@ -273,7 +273,7 @@ class FileMetadata(object):
         :return: S_OK/S_ERROR, Value - dict of metadata for each input file
     """
     # First file metadata
-    result = self.getFileMetadataFields(credDict)
+    result = self._getFileMetadataFields(credDict)
     if not result['OK']:
       return result
     metaFields = result['Value']
@@ -308,7 +308,7 @@ class FileMetadata(object):
         :return: S_OK/S_ERROR, Value - dict of metadata
     """
     # First file metadata
-    result = self.getFileMetadataFields(credDict)
+    result = self._getFileMetadataFields(credDict)
     if not result['OK']:
       return result
     metaFields = result['Value']
@@ -706,7 +706,7 @@ class FileMetadata(object):
 
     # 2.- Get known file metadata fields
 #     fileMetaDict = {}
-    result = self.getFileMetadataFields(credDict)
+    result = self._getFileMetadataFields(credDict)
     if not result['OK']:
       return result
     fileMetaKeys = list(result['Value']) + list(FILE_STANDARD_METAKEYS)
