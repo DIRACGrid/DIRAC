@@ -69,18 +69,18 @@ miscelaneous_pallette = {
 }
 
 country_palette = {
-  'France':'#73C6BC',
-  'UK':'#DCAF8A',
-  'Spain':'#C2B0E1',
-  'Netherlands':'#A9BF8E',
-  'Germany':'#800000',
-  'Russia':'#00514A',
-  'Italy':'#004F00',
-  'Switzerland':'#433B00',
-  'Poland':'#528220',
-  'Hungary':'#825CE2',
-  'Portugal':'#009182',
-  'Turkey':'#B85D00'
+  'France': '#73C6BC',
+  'UK': '#DCAF8A',
+  'Spain': '#C2B0E1',
+  'Netherlands': '#A9BF8E',
+  'Germany': '#800000',
+  'Russia': '#00514A',
+  'Italy': '#004F00',
+  'Switzerland': '#433B00',
+  'Poland': '#528220',
+  'Hungary': '#825CE2',
+  'Portugal': '#009182',
+  'Turkey': '#B85D00'
 }
 
 
