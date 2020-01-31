@@ -41,13 +41,13 @@ class FileMetadata(object):
     result = self.db.dmeta.getMetadataFields(credDict)
     if not result['OK']:
       return result
-    if pName in result['Value'].keys():
+    if pName in result['Value']:
       return S_ERROR('The metadata %s is already defined for Directories' % pName)
 
     result = self.getFileMetadataFields(credDict)
     if not result['OK']:
       return result
-    if pName in result['Value'].keys():
+    if pName in result['Value']:
       if pType.lower() == result['Value'][pName].lower():
         return S_OK('Already exists')
       else:
@@ -206,7 +206,7 @@ class FileMetadata(object):
           failedMeta[meta] = result['Value']
 
     if failedMeta:
-      metaExample = failedMeta.keys()[0]
+      metaExample = list(failedMeta)[0]
       result = S_ERROR('Failed to remove %d metadata, e.g. %s' % (len(failedMeta), failedMeta[metaExample]))
       result['FailedMetadata'] = failedMeta
     else:
@@ -709,7 +709,7 @@ class FileMetadata(object):
     result = self.getFileMetadataFields(credDict)
     if not result['OK']:
       return result
-    fileMetaKeys = result['Value'].keys() + FILE_STANDARD_METAKEYS.keys()
+    fileMetaKeys = list(result['Value']) + list(FILE_STANDARD_METAKEYS)
     fileMetaDict = dict(item for item in metaDict.iteritems() if item[0] in fileMetaKeys)
 
     fileList = []
