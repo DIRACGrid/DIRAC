@@ -18,7 +18,7 @@ from DIRAC.DataManagementSystem.Client.test.mock_DM import dm_mock
 from DIRAC.Resources.Catalog.test.mock_FC import fc_mock
 
 from DIRAC.WorkloadManagementSystem.JobWrapper.JobWrapper import JobWrapper
-from DIRAC.WorkloadManagementSystem.JobWrapper.WatchdogLinux import WatchdogLinux
+from DIRAC.WorkloadManagementSystem.JobWrapper.Watchdog import Watchdog
 
 getSystemSectionMock = MagicMock()
 getSystemSectionMock.return_value = 'aValue'
@@ -69,12 +69,12 @@ class JobWrapperTestCaseSuccess(JobWrapperTestCase):
     self.assertTrue(res['OK'])
 
   def test__performChecks(self):
-    wd = WatchdogLinux(pid=os.getpid(),
-                       exeThread=MagicMock(),
-                       spObject=MagicMock(),
-                       jobCPUTime=1000,
-                       memoryLimit=1024 * 1024,
-                       jobArgs={'StopSigNumber': 10})
+    wd = Watchdog(pid=os.getpid(),
+		  exeThread=MagicMock(),
+		  spObject=MagicMock(),
+		  jobCPUTime=1000,
+		  memoryLimit=1024 * 1024,
+		  jobArgs={'StopSigNumber': 10})
     res = wd._performChecks()
     self.assertTrue(res['OK'])
 
