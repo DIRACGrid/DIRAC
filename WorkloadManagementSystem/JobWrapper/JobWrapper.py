@@ -352,7 +352,8 @@ class JobWrapper(object):
         self.log.verbose('%s = %s' % (nameEnv, valEnv))
 
     if os.path.exists(executable):
-      self.__report(JobStatus.RUNNING, 'Application', sendFlag=True)  # it's in fact not yet running: it will be in few lines
+      # it's in fact not yet running: it will be in few lines
+      self.__report(JobStatus.RUNNING, 'Application', sendFlag=True)
       spObject = Subprocess(timeout=False, bufferLimit=int(self.bufferLimit))
       command = executable
       if jobArguments:
