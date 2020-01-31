@@ -24,12 +24,16 @@ import re
 import time
 import resource
 import errno
+import socket
+import psutil
+import getpass
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities import MJF
 from DIRAC.Core.Utilities.Profiler import Profiler
 from DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft import TimeLeft
+from DIRAC.Core.Utilities.Os import getDiskSpace
 from DIRAC.Core.Utilities.Subprocess import getChildrenPIDs
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemInstance
@@ -40,7 +44,7 @@ class Watchdog(object):
 
   #############################################################################
   def __init__(self, pid, exeThread, spObject, jobCPUTime,
-               memoryLimit=0, processors=1, systemFlag='linux', jobArgs={}):
+               memoryLimit=0, processors=1, jobArgs={}):
     """ Constructor, takes system flag as argument.
     """
     self.stopSigStartSeconds = int(jobArgs.get('StopSigStartSeconds', 1800))  # 30 minutes
@@ -50,7 +54,6 @@ class Watchdog(object):
     self.stopSigSent = False
 
     self.log = gLogger.getSubLogger("Watchdog")
-    self.systemFlag = systemFlag
     self.exeThread = exeThread
     self.wrapperPID = pid
     self.appPID = self.exeThread.getCurrentPID()
@@ -120,7 +123,6 @@ class Watchdog(object):
 
     self.maxcount = loops
     self.log.verbose('Watchdog initialization')
-    self.log.info('Attempting to Initialize Watchdog for: %s' % (self.systemFlag))
     # Test control flags
     self.testWallClock = gConfig.getValue(self.section + '/CheckWallClockFlag', 1)
     self.testDiskSpace = gConfig.getValue(self.section + '/CheckDiskSpaceFlag', 1)
@@ -951,10 +953,20 @@ class Watchdog(object):
 
   #############################################################################
   def getNodeInformation(self):
-    """ Attempts to retrieve all static system information, should be overridden in a subclass"""
-    methodName = 'getNodeInformation'
-    self.log.warn('Watchdog: ' + methodName + ' method should be implemented in a subclass')
-    return S_ERROR('Watchdog: ' + methodName + ' method should be implemented in a subclass')
+    """ Retrieves all static system information
+    """
+    result = {}
+    result["HostName"] = socket.gethostname()
+    result["CPU(MHz)"] = psutil.cpu_freq()[0]
+    result["Memory(kB)"] = int(psutil.virtual_memory()[1] / 1024)
+    result["LocalAccount"] = getpass.getuser()
+
+    with open("/proc/cpuinfo", "r") as cpuinfo:
+      info = cpuinfo.readlines()
+    result["ModelName"] = [x.strip().split(":")[1] for x in info if "model name" in x][0].strip()
+    result["CacheSize(kB)"] = [x.strip().split(":")[1] for x in info if "cache size" in x][0].strip()
+
+    return result
 
   #############################################################################
   def getMemoryUsed(self):
@@ -966,9 +978,17 @@ class Watchdog(object):
 
   #############################################################################
   def getDiskSpace(self):
-    """ Attempts to get the available disk space, should be overridden in a subclass"""
-    methodName = 'getDiskSpace'
-    self.log.warn('Watchdog: ' + methodName + ' method should be implemented in a subclass')
-    return S_ERROR('Watchdog: ' + methodName + ' method should be implemented in a subclass')
+    """Obtains the disk space used.
+    """
+    result = S_OK()
+    diskSpace = getDiskSpace()
+
+    if diskSpace == -1:
+      result = S_ERROR('Could not obtain disk usage')
+      self.log.warn(' Could not obtain disk usage')
+      result['Value'] = -1
+
+    result['Value'] = float(diskSpace)
+    return result
 
 # EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
