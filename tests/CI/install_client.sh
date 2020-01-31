@@ -15,33 +15,32 @@ source CONFIG
 
 CSURL=dips://$SERVER_HOST:9135/Configuration/Server
 
-
 echo -e "*** $(date -u) **** Getting the tests ****\n"
 
 mkdir -p "$PWD/TestCode"
 cd "$PWD/TestCode"
 
-if [[ -d "$TESTREPO" ]]; then
-    cp -r "$TESTREPO" ./DIRAC
-    cd DIRAC
-    echo "Using local test repository in branch $(git branch | grep "\*" | sed -e "s/*^* //")"
-else
-    git clone "https://github.com/$TESTREPO/DIRAC.git"
-    cd DIRAC
-    git checkout "$TESTBRANCH"
-    echo "Using remote test repository ${TESTREPO} in branch ${TESTBRANCH}"
-fi
+for repo_path in "${TESTREPO[@]}"; do
+    if [[ -d "${repo_path}" ]]; then
+        cp -r "${repo_path}" "$(basename "${repo_path}")"
+        cd "$(basename "${repo_path}")"
+        echo "Using local test repository in branch $(git branch | grep "\*" | sed -e "s/*^* //")"
+        cd -
+    else
+        git clone "https://github.com/$repo_path/DIRAC.git"
+        cd "$(basename "${repo_path}")"
+        git checkout "$TESTBRANCH"
+        echo "Using remote test repository ${repo_path} in branch ${TESTBRANCH}"
+        cd -
+    fi
+done
 
-
-DIRACSETUP=$(< tests/Jenkins/install.cfg grep "Setup = " | cut -f5 -d " ")
-
-cd ../..
-
+cd ..
 
 echo -e "*** $(date -u) **** Got the DIRAC tests ****\n"
 
-# shellcheck source=tests/Jenkins/dirac_ci.sh
-source TestCode/DIRAC/tests/Jenkins/dirac_ci.sh
+source "${DIRAC_CI_SETUP_SCRIPT}"
+DIRACSETUP=$(< "${INSTALL_CFG_FILE}" grep "Setup = " | cut -f5 -d " ")
 
 echo -e "*** $(date -u) **** Client INSTALLATION START ****\n"
 
