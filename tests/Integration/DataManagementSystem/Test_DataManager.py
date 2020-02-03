@@ -1,12 +1,16 @@
 # FIXME: to be took back to life
 
 from __future__ import print_function
-import unittest, time, os
+
+import os
+import time
+import unittest
+
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.Core.Utilities.File import makeGuid
 
-class ReplicaManagerTestCase(unittest.TestCase):
-  """ Base class for the Replica Manager test cases
+class DataManagerTestCase(unittest.TestCase):
+  """ Base class for the Data Manager test cases
   """
   def setUp(self):
     self.dataManager = DataManager()
@@ -18,8 +22,8 @@ class ReplicaManagerTestCase(unittest.TestCase):
   def test_putAndRegister(self):
     print('\n\n#########################################################'
           '################\n\n\t\t\tPut and register test\n')
-    lfn = '/lhcb/test/unit-test/ReplicaManager/putAndRegister/testFile.%s' % time.time()
-    diracSE = 'GRIDKA-RAW'
+    lfn = '/Jenkins/test/unit-test/DataManager/putAndRegister/testFile.%s' % time.time()
+    diracSE = 'SE-1'
     putRes = self.dataManager.putAndRegister(lfn, self.fileName, diracSE)
     removeRes = self.dataManager.removeFile(lfn)
 
@@ -37,10 +41,10 @@ class ReplicaManagerTestCase(unittest.TestCase):
   def test_putAndRegisterReplicate(self):
     print('\n\n#########################################################'
           '################\n\n\t\t\tReplication test\n')
-    lfn = '/lhcb/test/unit-test/ReplicaManager/putAndRegisterReplicate/testFile.%s' % time.time()
-    diracSE = 'GRIDKA-RAW'
+    lfn = '/jenkins/test/unit-test/DataManager/putAndRegisterReplicate/testFile.%s' % time.time()
+    diracSE = 'SE-1'
     putRes = self.dataManager.putAndRegister(lfn, self.fileName, diracSE)
-    replicateRes = self.dataManager.replicateAndRegister(lfn,'CNAF-DST') #,sourceSE='',destPath='',localCache='')
+    replicateRes = self.dataManager.replicateAndRegister(lfn,'SE-2') #,sourceSE='',destPath='',localCache='')
     removeRes = self.dataManager.removeFile(lfn)
 
     # Check that the put was successful
@@ -62,8 +66,8 @@ class ReplicaManagerTestCase(unittest.TestCase):
   def test_putAndRegisterGetReplicaMetadata(self):
     print('\n\n#########################################################'
           '################\n\n\t\t\tGet metadata test\n')
-    lfn = '/lhcb/test/unit-test/ReplicaManager/putAndRegisterGetReplicaMetadata/testFile.%s' % time.time()
-    diracSE = 'GRIDKA-RAW'
+    lfn = '/jenkins/test/unit-test/DataManager/putAndRegisterGetReplicaMetadata/testFile.%s' % time.time()
+    diracSE = 'SE-1'
     putRes = self.dataManager.putAndRegister(lfn, self.fileName, diracSE)
     metadataRes = self.dataManager.getReplicaMetadata(lfn,diracSE)
     removeRes = self.dataManager.removeFile(lfn)
@@ -92,8 +96,8 @@ class ReplicaManagerTestCase(unittest.TestCase):
   def test_putAndRegsiterGetAccessUrl(self):
     print('\n\n#########################################################'
           '################\n\n\t\t\tGet Access Url test\n')
-    lfn = '/lhcb/test/unit-test/ReplicaManager/putAndRegisterGetAccessUrl/testFile.%s' % time.time()
-    diracSE = 'GRIDKA-RAW'
+    lfn = '/jenkins/test/unit-test/DataManager/putAndRegisterGetAccessUrl/testFile.%s' % time.time()
+    diracSE = 'SE-1'
     putRes = self.dataManager.putAndRegister(lfn, self.fileName, diracSE)
     getAccessUrlRes = self.dataManager.getReplicaAccessUrl(lfn,diracSE)
     print(getAccessUrlRes)
@@ -118,8 +122,8 @@ class ReplicaManagerTestCase(unittest.TestCase):
   def test_putAndRegisterRemoveReplica(self):
     print('\n\n#########################################################'
           '################\n\n\t\t\tRemove replica test\n')
-    lfn = '/lhcb/test/unit-test/ReplicaManager/putAndRegisterRemoveReplica/testFile.%s' % time.time()
-    diracSE = 'GRIDKA-RAW'
+    lfn = '/jenkins/test/unit-test/DataManager/putAndRegisterRemoveReplica/testFile.%s' % time.time()
+    diracSE = 'SE-1'
     putRes = self.dataManager.putAndRegister(lfn, self.fileName, diracSE)
     removeReplicaRes = self.dataManager.removeReplica(diracSE,lfn)
     removeRes = self.dataManager.removeFile(lfn)
@@ -141,7 +145,7 @@ class ReplicaManagerTestCase(unittest.TestCase):
     self.assertTrue(removeRes['Value']['Successful'][lfn])
 
   def test_registerFile(self):
-    lfn = '/lhcb/test/unit-test/ReplicaManager/registerFile/testFile.%s' % time.time()
+    lfn = '/jenkins/test/unit-test/DataManager/registerFile/testFile.%s' % time.time()
     physicalFile = 'srm://host:port/srm/managerv2?SFN=/sa/path%s' % lfn
     fileSize = 10000
     storageElementName = 'CERN-RAW'
@@ -170,14 +174,14 @@ class ReplicaManagerTestCase(unittest.TestCase):
   def test_registerReplica(self):
     print('\n\n#########################################################'
           '################\n\n\t\t\tRegister replica test\n')
-    lfn = '/lhcb/test/unit-test/ReplicaManager/registerReplica/testFile.%s' % time.time()
+    lfn = '/jenkins/test/unit-test/DataManager/registerReplica/testFile.%s' % time.time()
     physicalFile = 'srm://host:port/srm/managerv2?SFN=/sa/path%s' % lfn
     fileSize = 10000
     storageElementName = 'CERN-RAW'
     fileGuid = makeGuid()
     fileTuple = (lfn,physicalFile,fileSize,storageElementName,fileGuid)
     registerRes = self.dataManager.registerFile(fileTuple)
-    seName = 'GRIDKA-RAW'
+    seName = 'SE-1'
     replicaTuple = (lfn,physicalFile,seName)
     registerReplicaRes = self.dataManager.registerReplica(replicaTuple)
     # removeCatalogReplicaRes1 = self.dataManager.removeCatalogReplica(storageElementName,lfn)
@@ -213,8 +217,8 @@ class ReplicaManagerTestCase(unittest.TestCase):
   def test_putAndRegisterGet(self):
     print('\n\n#########################################################'
           '################\n\n\t\t\tGet file test\n')
-    lfn = '/lhcb/test/unit-test/ReplicaManager/putAndRegisterGet/testFile.%s' % time.time()
-    diracSE = 'GRIDKA-RAW'
+    lfn = '/jenkins/test/unit-test/DataManager/putAndRegisterGet/testFile.%s' % time.time()
+    diracSE = 'SE-1'
     putRes = self.dataManager.putAndRegister(lfn, self.fileName, diracSE)
     getRes = self.dataManager.getFile(lfn)
     removeRes = self.dataManager.removeFile(lfn)
@@ -239,6 +243,7 @@ class ReplicaManagerTestCase(unittest.TestCase):
     self.assertTrue(removeRes['Value']['Successful'][lfn])
 
 if __name__ == '__main__':
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase(ReplicaManagerTestCase)
+  suite = unittest.defaultTestLoader.loadTestsFromTestCase(DataManagerTestCase)
   #suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(DirectoryTestCase))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
+  exit(testResult)
