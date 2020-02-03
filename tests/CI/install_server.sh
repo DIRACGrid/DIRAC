@@ -10,7 +10,6 @@ set -eo pipefail
 # IFS=$'\n\t'
 set -x
 
-# shellcheck source=tests/CI/CONFIG
 source CONFIG
 
 echo -e "*** $(date -u) **** Getting the tests ****\n"

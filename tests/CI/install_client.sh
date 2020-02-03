@@ -13,6 +13,7 @@ set -x
 # shellcheck source=tests/CI/CONFIG
 source CONFIG
 
+# shellcheck disable=SC2034
 CSURL=dips://$SERVER_HOST:9135/Configuration/Server
 
 echo -e "*** $(date -u) **** Getting the tests ****\n"
@@ -40,6 +41,7 @@ cd ..
 echo -e "*** $(date -u) **** Got the DIRAC tests ****\n"
 
 source "${DIRAC_CI_SETUP_SCRIPT}"
+# shellcheck disable=SC2034
 DIRACSETUP=$(< "${INSTALL_CFG_FILE}" grep "Setup = " | cut -f5 -d " ")
 
 echo -e "*** $(date -u) **** Client INSTALLATION START ****\n"
@@ -47,7 +49,7 @@ echo -e "*** $(date -u) **** Client INSTALLATION START ****\n"
 findRelease
 
 if [ -z "$DIRAC_RELEASE" ]; then
-    export DIRAC_RELEASE=$projectVersion
+    export DIRAC_RELEASE=${projectVersion:?}
 fi
 
 installDIRAC

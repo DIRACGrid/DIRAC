@@ -18,7 +18,7 @@ jobs:
           - DIRAC_USE_M2CRYPTO=Yes pytest Core/Security/test
           - tests/checkDocs.sh
           # TODO This should cover more than just tests/CI
-          - find tests/CI -name '*.sh' -print0 | xargs -0 -n1 shellcheck --external-source
+          - find tests/CI -name '*.sh' -print0 | xargs -0 -n1 shellcheck --exclude=SC1090,SC1091 --external-source
           - tests/runPylint.sh
           - CHECK=pylintPY3K tests/runPylint.sh
           - |

@@ -325,7 +325,7 @@ function installDIRAC(){
         option+="${module_path},"
       fi
     done
-    INSTALLOPTIONS+=("${option: : -1}")
+    INSTALLOPTIONS+=("${option: :$((${#option} - 1))}")
   fi
 
   if [ "$DIRACOSVER" ]; then

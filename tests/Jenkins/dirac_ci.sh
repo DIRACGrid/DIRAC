@@ -143,7 +143,7 @@ function installSite(){
         option+="${module_path},"
       fi
     done
-    INSTALLOPTIONS+=("${option: : -1}")
+    INSTALLOPTIONS+=("${option: :$((${#option} - 1))}")
   fi
 
   if ! "$SERVERINSTALLDIR/dirac-install.py" "${INSTALLOPTIONS[@]}" "$SERVERINSTALLDIR/install.cfg" "$SERVERINSTALLDIR/dirac-ci-install.cfg"; then
