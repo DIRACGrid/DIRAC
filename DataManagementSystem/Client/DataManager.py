@@ -177,6 +177,11 @@ class DataManager(object):
     if not res['OK']:
       return res
 
+    if not res['Value']:
+      # folder is empty, just remove it and return
+      res = returnSingleResult(self.fileCatalog.removeDirectory(folder, recursive=True))
+      return res
+
     # create a list of folders so that empty folders are also deleted
     listOfFolders = []
     areDirs = self.fileCatalog.isDirectory(res['Value'])
