@@ -133,7 +133,7 @@ class DownloadInputData:
           if value:
             self.log.verbose('\t%s %s' % (item, value))
 
-    self.log.info('Total size of files to be downloaded" "is %s bytes' % totalSize)
+    self.log.info("Total size of files to be downloaded", "is %s bytes" % totalSize)
     for lfn in failedReplicas:
       self.log.warn('Not all file metadata (SE,PFN,Size,GUID) was available for LFN', lfn)
 
@@ -166,7 +166,7 @@ class DownloadInputData:
           failedReplicas.add(lfn)
           continue
         if lfn in result['Value']['Failed']:
-          self.log.error('Could not get Storage Metadata'
+          self.log.error('Could not get Storage Metadata',
                          'for %s at %s: %s' % (lfn, seName, result['Value']['Failed'][lfn]))
           failedReplicas.add(lfn)
           continue
