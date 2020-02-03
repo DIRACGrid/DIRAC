@@ -25,7 +25,7 @@ for repo_path in "${TESTREPO[@]}"; do
     if [[ -d "${repo_path}" ]]; then
         cp -r "${repo_path}" "$(basename "${repo_path}")"
         cd "$(basename "${repo_path}")"
-        echo "Using local test repository in branch $(git branch | grep "\*" | sed -e "s/*^* //")"
+        echo "Using local test repository in branch $(git branch | grep "\*" | sed -e "s/* //")"
         cd -
     else
         git clone "https://github.com/$repo_path/DIRAC.git"
