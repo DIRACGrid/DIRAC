@@ -2503,7 +2503,7 @@ def checkoutFromGit(moduleName, sourceURL, tagVersion, destinationDir=None):
 
   # replacing the code
   if os.path.exists(fDirName + '/' + moduleName):
-    cmd = "ln -s %s/%s" % (codeRepo, moduleName)
+    cmd = "ln -s %s/%s %s" % (codeRepo, moduleName, os.path.join(cliParams.targetPath, moduleName))
   else:
     cmd = "mv %s %s" % (fDirName, os.path.join(cliParams.targetPath, moduleName))
   logNOTICE("Executing: %s" % cmd)
