@@ -140,7 +140,7 @@ function prepareEnvironment() {
       majorVersion=$(grep "majorVersion =" "${DIRAC_BASE_DIR}/__init__.py" | cut -d "=" -f 2)
       minorVersion=$(grep "minorVersion =" "${DIRAC_BASE_DIR}/__init__.py" | cut -d "=" -f 2)
       {
-        echo "export DIRACBRANCH=${DIRACBRANCH:v${majorVersion// }r${minorVersion// }}"
+        echo "export DIRACBRANCH=${DIRACBRANCH:-v${majorVersion// }r${minorVersion// }}"
       } >> "${SERVERCONFIG}"
   fi
 

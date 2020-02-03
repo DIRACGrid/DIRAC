@@ -68,7 +68,7 @@ function findRelease(){
     # PRE='p[[:digit:]]*'
 
     if [ -n "$DIRACBRANCH" ]; then
-      echo '==> Looking for DIRAC branch ' "$DIRACBRANCH"
+      echo "==> Looking for DIRAC branch $DIRACBRANCH"
     else
       echo '==> Running on last one'
     fi
