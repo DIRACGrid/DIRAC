@@ -71,7 +71,8 @@ class JobScheduling(OptimizerExecutor):
     # Get the job manifest for the later checks
     result = jobState.getManifest()
     if not result['OK']:
-      return S_ERROR("Could not retrieve job manifest: %s" % result['Message'])
+      self.jobLog.error("Could not retrieve job manifest", result['Message'])
+      return result
     jobManifest = result['Value']
 
     # Get site requirements
@@ -83,13 +84,15 @@ class JobScheduling(OptimizerExecutor):
     # Get job type
     result = jobState.getAttribute("JobType")
     if not result['OK']:
-      return S_ERROR("Could not retrieve job type")
+      self.jobLog.error("Could not retrieve job type", result['Message'])
+      return result
     jobType = result['Value']
 
     # Get banned sites from DIRAC
     result = self.siteClient.getSites('Banned')
     if not result['OK']:
-      return S_ERROR("Cannot retrieve banned sites from JobDB")
+      self.jobLog.error("Cannot retrieve banned sites from JobDB", result['Message'])
+      return result
     wmsBannedSites = result['Value']
 
     # If the user has selected any site, filter them and hold the job if not able to run
@@ -98,7 +101,9 @@ class JobScheduling(OptimizerExecutor):
 
         result = self.siteClient.getUsableSites(userSites)
         if not result['OK']:
-          return S_ERROR("Problem checking userSites for tuple of active/banned/invalid sites")
+          self.jobLog.error("Problem checking userSites for tuple of active/banned/invalid sites",
+                            result['Message'])
+          return result
         usableSites = set(result['Value'])
         bannedSites = []
         invalidSites = []
@@ -127,11 +132,12 @@ class JobScheduling(OptimizerExecutor):
     if checkPlatform and jobPlatform:
       result = gConfig.getOptionsDict('/Resources/Computing/OSCompatibility')
       if not result['OK']:
-        return S_ERROR("Unable to get OSCompatibility list")
+        self.jobLog.error("Unable to get OSCompatibility list")
+        return result
       allPlatforms = result['Value']
       if jobPlatform not in allPlatforms:
         self.jobLog.error("Platform not supported", jobPlatform)
-        return S_ERROR("Platform %s is not supported" % jobPlatform)
+        return S_ERROR("Platform is not supported")
 
     # Filter the userSites by the platform selection (if there is one)
     if checkPlatform and userSites:
@@ -139,7 +145,7 @@ class JobScheduling(OptimizerExecutor):
         result = self.__filterByPlatform(jobPlatform, userSites)
         if not result['OK']:
           self.jobLog.error("Failed to filter job sites by platform", result['Message'])
-          return S_ERROR("Failed to filter job sites by platform")
+          return result
         userSites = result['Value']
         if not userSites:
           # No sites left after filtering -> Invalid platform/sites combination
@@ -149,8 +155,8 @@ class JobScheduling(OptimizerExecutor):
     # Check if there is input data
     result = jobState.getInputData()
     if not result['OK']:
-      self.jobLog.error("Cannot get input data", result['Message'])
-      return S_ERROR("Failed to get input data from JobDB")
+      self.jobLog.error("Failed to get input data from JobDB", result['Message'])
+      return result
 
     if not result['Value']:
       # No input data? Just send to TQ
@@ -213,7 +219,7 @@ class JobScheduling(OptimizerExecutor):
     result = self.retrieveOptimizerParam(idAgent)
     if not result['OK']:
       self.jobLog.error("Could not retrieve input data info", result['Message'])
-      return S_ERROR("Could not retrieve input data info")
+      return result
     opData = result['Value']
 
     if 'SiteCandidates' not in opData:
@@ -431,8 +437,8 @@ class JobScheduling(OptimizerExecutor):
     else:
       result = jobManifest.createSection(reqSection)
     if not result['OK']:
-      self.jobLog.error("Cannot create %s: %s" % reqSection, result['Value'])
-      return S_ERROR("Cannot create %s in the manifest" % reqSection)
+      self.jobLog.error("Cannot create jobManifest section", "%s: %s" % reqSection, result['Value'])
+      return result
     reqCfg = result['Value']
 
     if sites:
@@ -570,7 +576,6 @@ class JobScheduling(OptimizerExecutor):
 
     return S_OK(stageLFNs)
 
-
   def __requestStaging(self, jobState, stageLFNs):
     """ Actual request for staging LFNs through the StorageManagerClient
     """
@@ -686,6 +691,6 @@ class JobScheduling(OptimizerExecutor):
     result = jobState.getAttribute("OwnerGroup")
     if not result['OK']:
       self.jobLog.error("Cannot retrieve OwnerGroup from DB: %s" % result['Message'])
-      return S_ERROR("Cannot get OwnerGroup")
+      return result
     group = result['Value']
     return S_OK(Properties.STAGE_ALLOWED in Registry.getPropertiesForGroup(group))
