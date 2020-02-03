@@ -139,7 +139,13 @@ for st in ['Resources/Sites/DIRAC/',
            'Resources/Sites/DIRAC/DIRAC.Jenkins.ch',
            'Resources/Sites/DIRAC/DIRAC.Jenkins.ch/jenkins.cern.ch',
            'Resources/Sites/DIRAC/DIRAC.Jenkins.ch/jenkins.cern.ch/Queues'
-           'Resources/Sites/DIRAC/DIRAC.Jenkins.ch/jenkins.cern.ch/Queues/jenkins-queue_not_important']:
+           'Resources/Sites/DIRAC/DIRAC.Jenkins.ch/jenkins.cern.ch/Queues/jenkins-queue_not_important',
+           'Resources/StorageElements',
+           'Resources/StorageElements/SE-1',
+           'Resources/StorageElements/SE-1/DIP',
+           'Resources/StorageElements/SE-2',
+           'Resources/StorageElements/SE-2/DIP',
+           ]:
   res = csAPI.createSection(st)
 if not res['OK']:
   print(res['Message'])
@@ -151,6 +157,20 @@ csAPI.setOption(
     '200000')
 csAPI.setOption('Resources/Sites/DIRAC/DIRAC.Jenkins.ch/CEs/jenkins.cern.ch/Queues/jenkins-queue_not_important/SI00',
                 '2400')
+
+csAPI.setOption('Resources/StorageElements/SE-1/AccessProtocol', 'dips')
+csAPI.setOption('Resources/StorageElements/SE-1/DIP/Host', 'server')
+csAPI.setOption('Resources/StorageElements/SE-1/DIP/Port', '9148')
+csAPI.setOption('Resources/StorageElements/SE-1/DIP/Protocol', 'dips')
+csAPI.setOption('Resources/StorageElements/SE-1/DIP/Path', '/DataManagement/SE-1')
+csAPI.setOption('Resources/StorageElements/SE-1/DIP/Access', 'remote')
+
+csAPI.setOption('Resources/StorageElements/SE-2/AccessProtocol', 'dips')
+csAPI.setOption('Resources/StorageElements/SE-2/DIP/Host', 'server')
+csAPI.setOption('Resources/StorageElements/SE-2/DIP/Port', '9147')
+csAPI.setOption('Resources/StorageElements/SE-2/DIP/Protocol', 'dips')
+csAPI.setOption('Resources/StorageElements/SE-2/DIP/Path', '/DataManagement/SE-2')
+csAPI.setOption('Resources/StorageElements/SE-2/DIP/Access', 'remote')
 
 
 # Now setting up the following option:

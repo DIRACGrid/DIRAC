@@ -236,6 +236,12 @@ function fullInstallDIRAC(){
     exit 1
   fi
 
+  # add 2 storageelements
+  if ! diracSEs; then
+    echo "ERROR: diracSEs failed"
+    exit 1
+  fi
+
   echo "==> Restarting Framework ProxyManager"
   dirac-restart-component Framework ProxyManager $DEBUG
 
@@ -295,6 +301,10 @@ function fullInstallDIRAC(){
 
   echo "==> Restarting ResourceStatus Publisher"
   dirac-restart-component ResourceStatus Publisher $DEBUG
+
+  echo "==> Restarting DataManagement StorageElement(s)"
+  dirac-restart-component DataManagement SE-1 $DEBUG
+  dirac-restart-component DataManagement SE-2 $DEBUG
 
   # populate RSS
   echo "==> Populating RSS DB"
