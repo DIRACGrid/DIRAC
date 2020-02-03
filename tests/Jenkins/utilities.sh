@@ -63,7 +63,7 @@ function findRelease(){
      git remote add upstream https://github.com/DIRACGrid/DIRAC.git || true
      git fetch --all || true
      git branch -a
-     git show remotes/upstream/integration:releases.cfg > "$TESTCODE/releases.cfg")
+     git show remotes/upstream/integration:releases.cfg > "$TESTCODE/DIRAC/releases.cfg")
 
     # PRE='p[[:digit:]]*'
 
@@ -79,9 +79,9 @@ function findRelease(){
     # First, try to find if we are on a production tag
     if [ ! "$projectVersion" ]; then
       if [ -n "$DIRACBRANCH" ]; then
-        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]*p[[:digit:]]*' "$TESTCODE/releases.cfg" | grep "$DIRACBRANCH" | head -1 | sed 's/ //g' || echo "")
+        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]*p[[:digit:]]*' "$TESTCODE/DIRAC/releases.cfg" | grep "$DIRACBRANCH" | head -1 | sed 's/ //g' || echo "")
       else
-        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]*p[[:digit:]]*' "$TESTCODE/releases.cfg" | head -1 | sed 's/ //g')
+        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]*p[[:digit:]]*' "$TESTCODE/DIRAC/releases.cfg" | head -1 | sed 's/ //g')
       fi
       # projectVersion=$(cat releases.cfg | grep [^:]v[[:digit:]]r[[:digit:]]*$PRE | head -1 | sed 's/ //g')
     fi
@@ -89,27 +89,33 @@ function findRelease(){
     # The special case is when there's no 'p'... (e.g. version v6r15)
     if [ ! "$projectVersion" ]; then
       if [ -n "$DIRACBRANCH" ]; then
-        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]' "$TESTCODE/releases.cfg" | grep "$DIRACBRANCH" | head -1 | sed 's/ //g' || echo "")
+        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]' "$TESTCODE/DIRAC/releases.cfg" | grep "$DIRACBRANCH" | head -1 | sed 's/ //g' || echo "")
       else
-        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]' "$TESTCODE/releases.cfg" | head -1 | sed 's/ //g')
+        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]' "$TESTCODE/DIRAC/releases.cfg" | head -1 | sed 's/ //g')
       fi
     fi
 
     # In case there are no production tags for the branch, look for pre-releases in that branch
     if [ ! "$projectVersion" ]; then
       if [ -n "$DIRACBRANCH" ]; then
-        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]*'-pre'' "$TESTCODE/releases.cfg" | grep "$DIRACBRANCH" | head -1 | sed 's/ //g')
+        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]*'-pre'' "$TESTCODE/DIRAC/releases.cfg" | grep "$DIRACBRANCH" | head -1 | sed 's/ //g')
       else
-        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]*'-pre'' "$TESTCODE/releases.cfg" | head -1 | sed 's/ //g')
+        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]*'-pre'' "$TESTCODE/DIRAC/releases.cfg" | head -1 | sed 's/ //g')
       fi
     fi
 
-    # projectVersionLine=$(grep -n "$projectVersion" "$TESTCODE/releases.cfg" | cut -d ':' -f 1 | head -1)
+    # TODO: This should be made to fail to due set -u and -o pipefail
+    if [ ! "$projectVersion" ]; then
+      echo "Failed to set projectVersion"
+      exit 1
+    fi
+
+    # projectVersionLine=$(grep -n "$projectVersion" "$TESTCODE/DIRAC/releases.cfg" | cut -d ':' -f 1 | head -1)
     # # start := line number after "{"
     # start=$(( projectVersionLine+2 ))
     # # end   := line number after "}"
     # end=$(( start+2 ))
-    # versions=$(sed -n "$start,$end p" "$TESTCODE/releases.cfg")
+    # versions=$(sed -n "$start,$end p" "$TESTCODE/DIRAC/releases.cfg")
 
     # PrintOuts
     echo "DIRAC:$projectVersion" && echo "$projectVersion" > "$SERVERINSTALLDIR/dirac.version"

@@ -651,7 +651,7 @@ position yourself in the DIRAC root directory and then run:
 
     docker run --rm -it --privileged --name dirac-testing-host \
       -e CI_PROJECT_DIR=/repo/DIRAC -e CI_REGISTRY_IMAGE=diracgrid \
-      -v /var/run/docker.sock:/var/run/docker.sock -v $PWD:/repo -w /repo \
+      -v /var/run/docker.sock:/var/run/docker.sock -v $PWD:/repo/DIRAC -w /repo \
       diracgrid/docker-compose-dirac:latest bash \
       DIRAC/tests/CI/run_docker_setup.sh
 
