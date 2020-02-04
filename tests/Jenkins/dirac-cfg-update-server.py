@@ -363,4 +363,7 @@ csAPI.setOption('Registry/VO/Jenkins/VOMSName', 'myVOMS')
 
 
 # Final action: commit in CS
-csAPI.commit()
+res = csAPI.commit()
+if not res['OK']:
+  print(res['Message'])
+  exit(1)
