@@ -53,7 +53,7 @@ Other options that can be set also in the Operations part of the CS include:
 | *pilotScriptsPath*                 | Path to the code, inside the Git repository| pilotScriptsPath = Pilot                                                |
 |                                    |                                            | This value is the default                                               |
 +------------------------------------+--------------------------------------------+-------------------------------------------------------------------------+
-| *pilotVOScriptsPath*               | Path to the code, inside the Git repository| pilotScriptsVOPath = VOPilot                                            |
+| *pilotVOScriptsPath*               | Path to the code, inside the Git repository| pilotVOScriptsPath = VOPilot                                            |
 |                                    | of the pilot extension                     |                                                                         |
 +------------------------------------+--------------------------------------------+-------------------------------------------------------------------------+
 | *pilotRepoBranch*                  | Branch to use, inside the Git repository,  | pilotRepoBranch = master                                                |
