@@ -88,7 +88,7 @@ class ConfigurationClient(object):
 
     if requestedType in (list, tuple, set):
       try:
-        return S_OK(requestedType([ss.replace('__comma__',',') for ss in List.fromChar(optionValue, ',')]))
+        return S_OK(requestedType([ss.replace('__comma__', ',') for ss in List.fromChar(optionValue, ',')]))
       except Exception as e:
         return S_ERROR("Can't convert value (%s) to comma separated list \n%s" % (str(optionValue),
                                                                                   repr(e)))
@@ -112,7 +112,7 @@ class ConfigurationClient(object):
         return S_ERROR("Can't convert value (%s) to Dict \n%s" % (str(optionValue),
                                                                   repr(e)))
     else:
-      optValue = optionValue.replace('__comma__',',')
+      optValue = optionValue.replace('__comma__', ',')
       try:
         return S_OK(requestedType(optValue))
       except Exception as e:

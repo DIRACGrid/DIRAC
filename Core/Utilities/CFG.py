@@ -431,7 +431,7 @@ class CFG(object):
       except Exception:
         return defaultValue
     elif isinstance(defaultValue, basestring):
-      return optionValue.replace('__comma__',',')
+      return optionValue.replace('__comma__', ',')
     elif defaultType == bool:
       try:
         return optionValue.lower() in ("y", "yes", "true", "1")
