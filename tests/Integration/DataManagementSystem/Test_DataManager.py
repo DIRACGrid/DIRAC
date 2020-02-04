@@ -1,10 +1,11 @@
-# FIXME: to be took back to life
-
 from __future__ import print_function
 
 import os
 import time
 import unittest
+
+from DIRAC.Core.Base.Script import parseCommandLine
+parseCommandLine()
 
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.Core.Utilities.File import makeGuid
