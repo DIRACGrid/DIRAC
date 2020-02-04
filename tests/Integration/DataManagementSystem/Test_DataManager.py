@@ -10,15 +10,15 @@ parseCommandLine()
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.Core.Utilities.File import makeGuid
 
+
 class DataManagerTestCase(unittest.TestCase):
-  """ Base class for the Data Manager test cases
-  """
+  """Base class for the Data Manager test cases."""
+
   def setUp(self):
     self.dataManager = DataManager()
     self.fileName = '/tmp/temporaryLocalFile'
-    file = open(self.fileName,'w')
-    file.write("%s" % time.time())
-    file.close()
+    with open(self.fileName, 'w') as theTemp:
+      theTemp.write(str(time.time()))
 
   def test_putAndRegister(self):
     print('\n\n#########################################################'
@@ -29,14 +29,14 @@ class DataManagerTestCase(unittest.TestCase):
     removeRes = self.dataManager.removeFile(lfn)
 
     # Check that the put was successful
-    self.assertTrue(putRes['OK'])
-    self.assertTrue(putRes['Value'].has_key('Successful'))
-    self.assertTrue(putRes['Value']['Successful'].has_key(lfn))
+    self.assertTrue(putRes['OK'], putRes.get('Message', 'All OK'))
+    self.assertIn('Successful', putRes['Value'])
+    self.assertIn(lfn, putRes['Value']['Successful'])
     self.assertTrue(putRes['Value']['Successful'][lfn])
     # Check that the removal was successful
-    self.assertTrue(removeRes['OK'])
-    self.assertTrue(removeRes['Value'].has_key('Successful'))
-    self.assertTrue(removeRes['Value']['Successful'].has_key(lfn))
+    self.assertTrue(removeRes['OK'], removeRes.get('Message', 'All OK'))
+    self.assertIn('Successful', removeRes['Value'])
+    self.assertIn(lfn, removeRes['Value']['Successful'])
     self.assertTrue(removeRes['Value']['Successful'][lfn])
 
   def test_putAndRegisterReplicate(self):
