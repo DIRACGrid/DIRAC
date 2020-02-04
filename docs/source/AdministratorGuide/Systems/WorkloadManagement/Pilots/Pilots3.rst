@@ -53,8 +53,14 @@ Other options that can be set also in the Operations part of the CS include:
 | *pilotScriptsPath*                 | Path to the code, inside the Git repository| pilotScriptsPath = Pilot                                                |
 |                                    |                                            | This value is the default                                               |
 +------------------------------------+--------------------------------------------+-------------------------------------------------------------------------+
-| *pilotScriptsVOPath*               | Path to the code, inside the Git repository| pilotScriptsVOPath = VOPilot                                            |
+| *pilotVOScriptsPath*               | Path to the code, inside the Git repository| pilotScriptsVOPath = VOPilot                                            |
 |                                    | of the pilot extension                     |                                                                         |
++------------------------------------+--------------------------------------------+-------------------------------------------------------------------------+
+| *pilotRepoBranch*                  | Branch to use, inside the Git repository,  | pilotRepoBranch = master                                                |
+|                                    | of the pilot code to be used               | The value above is the default                                          |
++------------------------------------+--------------------------------------------+-------------------------------------------------------------------------+
+| *pilotVORepoBranch*                | Branch to use, inside the Git repository,  | pilotVORepoBranch = master                                              |
+|                                    | of the pilot code extension to be used     | The value above is the default                                          |
 +------------------------------------+--------------------------------------------+-------------------------------------------------------------------------+
 
 

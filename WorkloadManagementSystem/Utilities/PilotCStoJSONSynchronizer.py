@@ -53,6 +53,8 @@ class PilotCStoJSONSynchronizer(object):
     self.pilotVOScriptPath = ''
     self.pilotVersion = ''
     self.pilotVOVersion = ''
+    self.pilotRepoBranch = 'master'
+    self.pilotVORepoBranch = 'master'
     self.certAndKeyLocation = getHostCertificateAndKeyLocation()
     self.casLocation = getCAsLocation()
 
@@ -77,6 +79,8 @@ class PilotCStoJSONSynchronizer(object):
     self.projectDir = ops.getValue("Pilot/projectDir", self.projectDir)
     self.pilotScriptPath = ops.getValue("Pilot/pilotScriptsPath", self.pilotScriptPath)
     self.pilotVOScriptPath = ops.getValue("Pilot/pilotVOScriptsPath", self.pilotVOScriptPath)
+    self.pilotRepoBranch = ops.getValue("Pilot/pilotRepoBranch", self.pilotRepoBranch)
+    self.pilotVORepoBranch = ops.getValue("Pilot/pilotVORepoBranch", self.pilotVORepoBranch)
 
     self._syncJSONFile()
     self.log.notice('-- Synchronizing the pilot scripts with the content of the repository --',
@@ -266,7 +270,7 @@ class PilotCStoJSONSynchronizer(object):
       if repo_VO.tags:
         repo_VO.git.checkout(repo_VO.tags[self.pilotVOVersion], b='pilotVOScripts')
       else:
-        repo_VO.git.checkout('upstream/master', b='pilotVOScripts')
+        repo_VO.git.checkout('upstream/%s' % self.pilotVORepoBranch, b='pilotVOScripts')
       scriptDir = (os.path.join('pilotVOLocalRepo', self.projectDir, self.pilotVOScriptPath, "*.py"))
       for fileVO in glob.glob(scriptDir):
         self._upload(filename=os.path.basename(fileVO), pilotScript=fileVO)
@@ -294,7 +298,7 @@ class PilotCStoJSONSynchronizer(object):
           self.pilotVersion = lines[(lines.index(self.pilotVOVersion)) + 3].split(':')[1]
       repo.git.checkout(repo.tags[self.pilotVersion], b='pilotScripts')
     else:
-      repo.git.checkout('upstream/master', b='pilotScripts')
+      repo.git.checkout('upstream/%s' % self.pilotRepoBranch, b='pilotScripts')
     try:
       scriptDir = os.path.join('pilotLocalRepo', self.pilotScriptPath, "*.py")
       for filename in glob.glob(scriptDir):
