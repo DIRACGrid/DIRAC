@@ -10,6 +10,7 @@ import time
 import StringIO
 import json
 import copy
+import os
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
@@ -829,11 +830,13 @@ class WorkflowTasks(TaskBase):
     hospitalSite = None
     hospitalCEs = []
     if transID and "Clinics" in self.opsH.getSections("Hospital")['Value']:
-      clinics = self.opsH.getSections("Hospital/Clinics")['Value']
+      basePath = os.path.join("Hospital", "Clinics")
+      clinics = self.opsH.getSections(basePath)['Value']
       for clinic in clinics:
-        if int(transID) in [int(x) for x in self.opsH.getValue("Hospital/%s/Transformations" % clinic, [])]:
-          hospitalSite = self.opsH.getValue("Hospital/%s/ClinicSite" % clinic, 'DIRAC.JobDebugger.ch')
-          hospitalCEs = self.opsH.getValue("Hospital/%s/ClinicCEs" % clinic, [])
+        clinicPath = os.path.join(basePath, clinic)
+        if int(transID) in [int(x) for x in self.opsH.getValue(os.path.join(clinicPath, "Transformations"), [])]:
+          hospitalSite = self.opsH.getValue(os.path.join(clinicPath, "ClinicSite"), '')
+          hospitalCEs = self.opsH.getValue(os.path.join(clinicPath, "ClinicCE"), [])
     if not hospitalSite:
       hospitalSite = self.opsH.getValue("Hospital/HospitalSite", 'DIRAC.JobDebugger.ch')
     if not hospitalCEs:
