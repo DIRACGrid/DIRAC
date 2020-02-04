@@ -559,8 +559,9 @@ class WorkflowTasks(TaskBase):
                      transID=transID, method=method)
     oJob.setJobGroup(transGroup)
 
-    if int(transID) in self._getSickTransformations():
-      self._handleHospital(oJob, transID)
+    clinicPath = self._checkSickTransformations(transID)
+    if clinicPath:
+      self._handleHospital(oJob, clinicPath)
 
     # Collect per job parameters sequences
     paramSeqDict = {}
@@ -738,8 +739,9 @@ class WorkflowTasks(TaskBase):
       self._handleInputs(oJob, paramsDict)
       self._handleRest(oJob, paramsDict)
 
-      if int(transID) in self._getSickTransformations():
-        self._handleHospital(oJob, transID)
+      clinicPath = self._checkSickTransformations(transID)
+      if clinicPath:
+        self._handleHospital(oJob, clinicPath)
 
       paramsDict['TaskObject'] = ''
       if self.outputDataModule:
@@ -821,33 +823,33 @@ class WorkflowTasks(TaskBase):
                          transID=transID, method='_handleRest')
           oJob._addJDLParameter(paramName, paramValue)
 
-  def _getSickTransformations(self):
+  def _checkSickTransformations(self, transID):
     """ Get the list of transformations to be processed at Hospital or Clinic
     """
-    sickTrans = set(int(x) for x in self.opsH.getValue("Hospital/Transformations", []))
+    transID = int(transID)
+    clinicPath = "Hospital/Transformations"
+    if transID in set(int(x) for x in self.opsH.getValue(clinicPath, [])):
+      return clinicPath
     if "Clinics" in self.opsH.getSections("Hospital").get('Value', []):
       basePath = os.path.join("Hospital", "Clinics")
       clinics = self.opsH.getSections(basePath)['Value']
       for clinic in clinics:
         clinicPath = os.path.join(basePath, clinic)
-        sickTrans.update(set(int(x) for x in self.opsH.getValue(os.path.join(clinicPath, "Transformations"), [])))
-    return sorted(sickTrans)
+        if transID in set(int(x) for x in self.opsH.getValue(os.path.join(clinicPath, "Transformations"), [])):
+          return clinicPath
+    return None
 
-  def _handleHospital(self, oJob, transID=None):
-    """ Optional handle of hospital jobs
+  def _handleHospital(self, oJob, clinicPath):
+    """ Optional handle of hospital/clinic jobs
     """
+    if not clinicPath:
+      return
     oJob.setInputDataPolicy('download', dataScheduling=False)
 
-    hospitalSite = None
-    hospitalCEs = []
-    if "Clinics" in self.opsH.getSections("Hospital").get('Value', []):
-      basePath = os.path.join("Hospital", "Clinics")
-      clinics = self.opsH.getSections(basePath)['Value']
-      for clinic in clinics:
-        clinicPath = os.path.join(basePath, clinic)
-        if int(transID) in [int(x) for x in self.opsH.getValue(os.path.join(clinicPath, "Transformations"), [])]:
-          hospitalSite = self.opsH.getValue(os.path.join(clinicPath, "ClinicSite"), '')
-          hospitalCEs = self.opsH.getValue(os.path.join(clinicPath, "ClinicCE"), [])
+    # Check first for a clinic, if not it must be the general hospital
+    hospitalSite = self.opsH.getValue(os.path.join(clinicPath, "ClinicSite"), '')
+    hospitalCEs = self.opsH.getValue(os.path.join(clinicPath, "ClinicCE"), [])
+    # If not found, get the hospital parameters
     if not hospitalSite:
       hospitalSite = self.opsH.getValue("Hospital/HospitalSite", 'DIRAC.JobDebugger.ch')
     if not hospitalCEs:
