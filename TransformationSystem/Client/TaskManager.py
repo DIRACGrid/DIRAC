@@ -840,7 +840,7 @@ class WorkflowTasks(TaskBase):
 
     hospitalSite = None
     hospitalCEs = []
-    if transID and "Clinics" in self.opsH.getSections("Hospital")['Value']:
+    if "Clinics" in self.opsH.getSections("Hospital").get('Value', []):
       basePath = os.path.join("Hospital", "Clinics")
       clinics = self.opsH.getSections(basePath)['Value']
       for clinic in clinics:
