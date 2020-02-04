@@ -559,7 +559,7 @@ class WorkflowTasks(TaskBase):
                      transID=transID, method=method)
     oJob.setJobGroup(transGroup)
 
-    if int(transID) in [int(x) for x in self.opsH.getValue("Hospital/Transformations", [])]:
+    if int(transID) in self._getSickTransformations():
       self._handleHospital(oJob, transID)
 
     # Collect per job parameters sequences
@@ -738,8 +738,7 @@ class WorkflowTasks(TaskBase):
       self._handleInputs(oJob, paramsDict)
       self._handleRest(oJob, paramsDict)
 
-      hospitalTrans = [int(x) for x in self.opsH.getValue("Hospital/Transformations", [])]
-      if int(transID) in hospitalTrans:
+      if int(transID) in self._getSickTransformations():
         self._handleHospital(oJob, transID)
 
       paramsDict['TaskObject'] = ''
@@ -821,6 +820,18 @@ class WorkflowTasks(TaskBase):
           self._logDebug('Setting %s to %s' % (paramName, paramValue),
                          transID=transID, method='_handleRest')
           oJob._addJDLParameter(paramName, paramValue)
+
+  def _getSickTransformations(self):
+    """ Get the list of transformations to be processed at Hospital or Clinic
+    """
+    sickTrans = set(int(x) for x in self.opsH.getValue("Hospital/Transformations", []))
+    if "Clinics" in self.opsH.getSections("Hospital")['Value']:
+      basePath = os.path.join("Hospital", "Clinics")
+      clinics = self.opsH.getSections(basePath)['Value']
+      for clinic in clinics:
+        clinicPath = os.path.join(basePath, clinic)
+        sickTrans.update(set(int(x) for x in self.opsH.getValue(os.path.join(clinicPath, "Transformations"), [])))
+    return sorted(sickTrans)
 
   def _handleHospital(self, oJob, transID=None):
     """ Optional handle of hospital jobs
