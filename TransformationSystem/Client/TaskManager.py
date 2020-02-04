@@ -824,7 +824,7 @@ class WorkflowTasks(TaskBase):
           oJob._addJDLParameter(paramName, paramValue)
 
   def _checkSickTransformations(self, transID):
-    """ Get the list of transformations to be processed at Hospital or Clinic
+    """ Check if the transformation is in the transformations to be processed at Hospital or Clinic
     """
     transID = int(transID)
     clinicPath = "Hospital/Transformations"
