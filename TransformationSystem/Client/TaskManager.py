@@ -825,7 +825,7 @@ class WorkflowTasks(TaskBase):
     """ Get the list of transformations to be processed at Hospital or Clinic
     """
     sickTrans = set(int(x) for x in self.opsH.getValue("Hospital/Transformations", []))
-    if "Clinics" in self.opsH.getSections("Hospital")['Value']:
+    if "Clinics" in self.opsH.getSections("Hospital").get('Value', []):
       basePath = os.path.join("Hospital", "Clinics")
       clinics = self.opsH.getSections(basePath)['Value']
       for clinic in clinics:
