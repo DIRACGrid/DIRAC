@@ -427,9 +427,11 @@ class CFG(object):
 
     if defaultType == list:
       try:
-        return List.fromChar(optionValue, ',')
+        return [ss.replace('__comma__', ',') for ss in List.fromChar(optionValue, ',')]
       except Exception:
         return defaultValue
+    elif isinstance(defaultValue, basestring):
+      return optionValue.replace('__comma__',',')
     elif defaultType == bool:
       try:
         return optionValue.lower() in ("y", "yes", "true", "1")
