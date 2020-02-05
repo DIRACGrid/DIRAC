@@ -42,7 +42,7 @@ class DataManagerTestCase(unittest.TestCase):
   def test_putAndRegisterReplicate(self):
     print('\n\n#########################################################'
           '################\n\n\t\t\tReplication test\n')
-    lfn = '/jenkins/test/unit-test/DataManager/putAndRegisterReplicate/testFile.%s' % time.time()
+    lfn = '/Jenkins/test/unit-test/DataManager/putAndRegisterReplicate/testFile.%s' % time.time()
     diracSE = 'SE-1'
     putRes = self.dataManager.putAndRegister(lfn, self.fileName, diracSE)
     replicateRes = self.dataManager.replicateAndRegister(lfn, 'SE-2')  # ,sourceSE='',destPath='',localCache='')
@@ -67,7 +67,7 @@ class DataManagerTestCase(unittest.TestCase):
   def test_putAndRegisterGetReplicaMetadata(self):
     print('\n\n#########################################################'
           '################\n\n\t\t\tGet metadata test\n')
-    lfn = '/jenkins/test/unit-test/DataManager/putAndRegisterGetReplicaMetadata/testFile.%s' % time.time()
+    lfn = '/Jenkins/test/unit-test/DataManager/putAndRegisterGetReplicaMetadata/testFile.%s' % time.time()
     diracSE = 'SE-1'
     putRes = self.dataManager.putAndRegister(lfn, self.fileName, diracSE)
     metadataRes = self.dataManager.getReplicaMetadata(lfn, diracSE)
@@ -95,7 +95,7 @@ class DataManagerTestCase(unittest.TestCase):
   def test_putAndRegsiterGetAccessUrl(self):
     print('\n\n#########################################################'
           '################\n\n\t\t\tGet Access Url test\n')
-    lfn = '/jenkins/test/unit-test/DataManager/putAndRegisterGetAccessUrl/testFile.%s' % time.time()
+    lfn = '/Jenkins/test/unit-test/DataManager/putAndRegisterGetAccessUrl/testFile.%s' % time.time()
     diracSE = 'SE-1'
     putRes = self.dataManager.putAndRegister(lfn, self.fileName, diracSE)
     getAccessUrlRes = self.dataManager.getReplicaAccessUrl(lfn, diracSE)
@@ -121,7 +121,7 @@ class DataManagerTestCase(unittest.TestCase):
   def test_putAndRegisterRemoveReplica(self):
     print('\n\n#########################################################'
           '################\n\n\t\t\tRemove replica test\n')
-    lfn = '/jenkins/test/unit-test/DataManager/putAndRegisterRemoveReplica/testFile.%s' % time.time()
+    lfn = '/Jenkins/test/unit-test/DataManager/putAndRegisterRemoveReplica/testFile.%s' % time.time()
     diracSE = 'SE-1'
     putRes = self.dataManager.putAndRegister(lfn, self.fileName, diracSE)
     removeReplicaRes = self.dataManager.removeReplica(diracSE, lfn)
@@ -144,7 +144,7 @@ class DataManagerTestCase(unittest.TestCase):
     self.assertTrue(removeRes['Value']['Successful'][lfn])
 
   def test_registerFile(self):
-    lfn = '/jenkins/test/unit-test/DataManager/registerFile/testFile.%s' % time.time()
+    lfn = '/Jenkins/test/unit-test/DataManager/registerFile/testFile.%s' % time.time()
     physicalFile = 'srm://host:port/srm/managerv2?SFN=/sa/path%s' % lfn
     fileSize = 10000
     storageElementName = 'SE-1'
@@ -173,7 +173,7 @@ class DataManagerTestCase(unittest.TestCase):
   def test_registerReplica(self):
     print('\n\n#########################################################'
           '################\n\n\t\t\tRegister replica test\n')
-    lfn = '/jenkins/test/unit-test/DataManager/registerReplica/testFile.%s' % time.time()
+    lfn = '/Jenkins/test/unit-test/DataManager/registerReplica/testFile.%s' % time.time()
     physicalFile = 'srm://host:port/srm/managerv2?SFN=/sa/path%s' % lfn
     fileSize = 10000
     storageElementName = 'SE-1'
@@ -216,7 +216,7 @@ class DataManagerTestCase(unittest.TestCase):
   def test_putAndRegisterGet(self):
     print('\n\n#########################################################'
           '################\n\n\t\t\tGet file test\n')
-    lfn = '/jenkins/test/unit-test/DataManager/putAndRegisterGet/testFile.%s' % time.time()
+    lfn = '/Jenkins/test/unit-test/DataManager/putAndRegisterGet/testFile.%s' % time.time()
     diracSE = 'SE-1'
     putRes = self.dataManager.putAndRegister(lfn, self.fileName, diracSE)
     getRes = self.dataManager.getFile(lfn)
