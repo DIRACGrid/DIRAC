@@ -15,7 +15,7 @@ ERR=0
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u) **** Core TESTS ****\n"
 pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/Core/Test_ElasticsearchDB.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
-
+pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/Core/Test_MySQLDB.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
 
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u) **** FRAMEWORK TESTS (partially skipped) ****\n"
