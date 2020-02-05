@@ -142,7 +142,8 @@ class ConfigurationClient(object):
     optionList = gConfigurationData.getOptionsFromCFG(sectionPath)
     if isinstance(optionList, list):
       for option in optionList:
-        optionsDict[option] = gConfigurationData.extractOptionFromCFG("%s/%s" % (sectionPath, option))
+        optionsDict[option] = gConfigurationData.extractOptionFromCFG("%s/%s" %
+                                                                      (sectionPath, option)).replace('__comma__', ',')
       return S_OK(optionsDict)
     else:
       return S_ERROR("Path %s does not exist or it's not a section" % sectionPath)
