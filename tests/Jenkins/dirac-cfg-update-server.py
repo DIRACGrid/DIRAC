@@ -361,6 +361,9 @@ if not res['OK']:
   exit(1)
 csAPI.setOption('Registry/VO/Jenkins/VOMSName', 'myVOMS')
 
+csAPI.setOption('Registry/Groups/jenkins_fcadmin/VO', 'Jenkins')
+csAPI.setOption('Registry/Groups/jenkins_user/VO', 'Jenkins')
+
 
 # Final action: commit in CS
 res = csAPI.commit()

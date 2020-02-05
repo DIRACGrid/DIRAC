@@ -632,6 +632,16 @@ function diracUserAndGroup(){
     exit 1
   fi
 
+  if ! dirac-admin-add-group -G jenkins_fcadmin -U adminusername,ciuser,trialUser -P FileCatalogManagement,NormalUser "$DEBUG"; then
+    echo 'ERROR: dirac-admin-add-group failed'
+    exit 1
+  fi
+
+  if ! dirac-admin-add-group -G jenkins_user -U adminusername,ciuser,trialUser -P NormalUser "$DEBUG"; then
+    echo 'ERROR: dirac-admin-add-group failed'
+    exit 1
+  fi
+
   if ! dirac-admin-add-shifter DataManager adminusername prod "$DEBUG"; then
     echo 'ERROR: dirac-admin-add-shifter failed'
     exit 1
