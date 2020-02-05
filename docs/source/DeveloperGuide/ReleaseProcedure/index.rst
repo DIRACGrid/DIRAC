@@ -245,9 +245,7 @@ The above works also for DIRAC extensions, in this case just remember to specify
 
   python3 dirac-distribution.py --release v10r0-pre11 --project LHCb
 
-
-You can also pass the releases.cfg to use via command line using the *-relcfg* switch. *dirac-distribution*
-will generate a set of tarballs, release notes in *html*and md5 files.
+You can also pass the releases.cfg to use via command line using the *-relcfg* switch. *dirac-distribution* will generate a set of tarballs, release notes in *html*and md5 files.
 
 In the end of its execution, the *dirac-distribution* will print out a command that can be
 used to upload generated release files to a predefined repository ( see :ref:`dirac_projects` ).
