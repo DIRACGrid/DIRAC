@@ -132,11 +132,11 @@ class DataManagerTestCase(unittest.TestCase):
     self.assertTrue('Successful' in putRes['Value'])
     self.assertTrue(lfn in putRes['Value']['Successful'])
     self.assertTrue(putRes['Value']['Successful'][lfn])
-    # Check that the replica removal was successful
-    self.assertTrue(removeReplicaRes['OK'])
-    self.assertTrue('Successful' in removeReplicaRes['Value'])
-    self.assertTrue(lfn in removeReplicaRes['Value']['Successful'])
-    self.assertTrue(removeReplicaRes['Value']['Successful'][lfn])
+    # Check that the replica removal failed, because it is the only copy
+    self.assertTrue(removeReplicaRes['OK'], removeReplicaRes.get('Message', 'All OK'))
+    self.assertTrue('Failed' in removeReplicaRes['Value'])
+    self.assertTrue(lfn in removeReplicaRes['Value']['Failed'])
+    self.assertTrue(removeReplicaRes['Value']['Failed'][lfn])
     # Check that the removal was successful
     self.assertTrue(removeRes['OK'])
     self.assertTrue('Successful' in removeRes['Value'])
@@ -149,9 +149,9 @@ class DataManagerTestCase(unittest.TestCase):
     fileSize = 10000
     storageElementName = 'SE-1'
     fileGuid = makeGuid()
-    fileTuple = (lfn, physicalFile, fileSize, storageElementName, fileGuid)
+    checkSum = None
+    fileTuple = (lfn, physicalFile, fileSize, storageElementName, fileGuid, checkSum)
     registerRes = self.dataManager.registerFile(fileTuple)
-    # removeCatalogReplicaRes = self.dataManager.removeCatalogReplica(storageElementName,lfn)
     removeFileRes = self.dataManager.removeFile(lfn)
 
     # Check that the file registration was done correctly
@@ -159,11 +159,6 @@ class DataManagerTestCase(unittest.TestCase):
     self.assertTrue('Successful' in registerRes['Value'])
     self.assertTrue(lfn in registerRes['Value']['Successful'])
     self.assertTrue(registerRes['Value']['Successful'][lfn])
-    # Check that the replica removal was successful
-    # self.assertTrue(removeCatalogReplicaRes['OK'])
-    # self.assertTrue(removeCatalogReplicaRes['Value'].has_key('Successful'))
-    # self.assertTrue(removeCatalogReplicaRes['Value']['Successful'].has_key(lfn))
-    # self.assertTrue(removeCatalogReplicaRes['Value']['Successful'][lfn])
     # Check that the removal was successful
     self.assertTrue(removeFileRes['OK'])
     self.assertTrue('Successful' in removeFileRes['Value'])
@@ -178,7 +173,8 @@ class DataManagerTestCase(unittest.TestCase):
     fileSize = 10000
     storageElementName = 'SE-1'
     fileGuid = makeGuid()
-    fileTuple = (lfn, physicalFile, fileSize, storageElementName, fileGuid)
+    checkSum = None
+    fileTuple = (lfn, physicalFile, fileSize, storageElementName, fileGuid, checkSum)
     registerRes = self.dataManager.registerFile(fileTuple)
     seName = 'SE-1'
     replicaTuple = (lfn, physicalFile, seName)
