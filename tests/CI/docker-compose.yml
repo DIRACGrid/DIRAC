@@ -21,6 +21,8 @@ services:
       - 9200:9200
     environment:
       - discovery.type=single-node
+      # Elasticsearch allocates 1GB of memory by default. As resources are limited
+      # and elasticsearch performance isn't critical in CI, limit this to 256MB
       - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9200"]
