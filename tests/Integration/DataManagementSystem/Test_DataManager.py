@@ -8,13 +8,19 @@ from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
+from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.Core.Utilities.File import makeGuid
+from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 
 
 @pytest.fixture
 def dm():
   return DataManager()
 
+
+@pytest.fixture
+def fc():
+  return FileCatalog()
 
 @pytest.fixture
 def tempFile():
@@ -38,6 +44,14 @@ def checkMultiple(res, lfn, sub):
   assert sub in res['Value']
   assert lfn in res['Value'][sub]
   assert res['Value'][sub][lfn]
+
+
+def checkIsDir(isDir, trueOrFalse):
+  """Check if directory exists or not."""
+  assert isDir['OK'], isDir.get('Message', 'ALL OK')
+  single = returnSingleResult(isDir)
+  assert single['OK'], str(single)
+  assert single['Value'] is trueOrFalse
 
 
 def test_putAndRegister(dm, tempFile):
@@ -174,3 +188,24 @@ def test_putAndRegisterGet(dm, tempFile):
   checkMultiple(getRes, lfn, 'Successful')
   assert getRes['Value']['Successful'][lfn] == localFilePath
   checkMultiple(removeRes, lfn, 'Successful')
+
+
+def test_cleanDirectory(dm, tempFile, fc):
+  lfn = '/Jenkins/test/unit-test/DataManager/cleanDirectory/testFile.%s' % time.time()
+  diracSE = 'SE-1'
+  putRes = dm.putAndRegister(lfn, tempFile, diracSE)
+  checkPut(putRes, lfn)
+  removeRes = dm.removeFile(lfn)
+  checkMultiple(removeRes, lfn, 'Successful')
+
+  folderLFN = os.path.dirname(lfn)
+  checkIsDir(fc.isDirectory(folderLFN), True)
+  cleanRes = dm.cleanLogicalDirectory(folderLFN)
+  assert cleanRes['OK'], cleanRes.get('Message', 'All OK')
+  checkIsDir(fc.isDirectory(folderLFN), False)
+
+  baseFolder = '/Jenkins/test'
+  checkIsDir(fc.isDirectory(baseFolder), True)
+  cleanRes = dm.cleanLogicalDirectory(baseFolder)
+  assert cleanRes['OK'], cleanRes.get('Message', 'All OK')
+  checkIsDir(fc.isDirectory(baseFolder), False)
