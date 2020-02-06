@@ -1,8 +1,9 @@
 from __future__ import print_function
 
 import os
-import time
 import pytest
+import tempfile
+import time
 
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
@@ -13,32 +14,27 @@ from DIRAC.Core.Utilities.File import makeGuid
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
 
 
-@pytest.fixture
+@pytest.fixture(scope='module')
 def dm():
   return DataManager()
 
 
-@pytest.fixture
+@pytest.fixture(scope='module')
 def fc():
   return FileCatalog()
 
+
 @pytest.fixture
 def tempFile():
-  fileName = '/tmp/temporaryLocalFile'
-  with open(fileName, 'w') as theTemp:
-    theTemp.write(str(time.time()))
-  return fileName
+  """Create unique temprary file, will be cleaned up at the end."""
+  theTemp = tempfile.NamedTemporaryFile('w')
+  theTemp.write(str(time.time()))
+  theTemp.seek(0)  # write the characters to file
+  yield theTemp.name
+  theTemp.close()
 
 
-def checkPut(putRes, lfn):
-  """.Check that the put was successful."""
-  assert putRes['OK'], putRes.get('Message', 'All OK')
-  assert 'Successful' in putRes['Value']
-  assert lfn in putRes['Value']['Successful']
-  assert putRes['Value']['Successful'][lfn]
-
-
-def checkMultiple(res, lfn, sub):
+def assertResult(res, lfn, sub='Successful'):
   """Check if lfn is in Successful or Failed, given by sub."""
   assert res['OK'], res.get('Message', 'All OK')
   assert sub in res['Value']
@@ -46,7 +42,7 @@ def checkMultiple(res, lfn, sub):
   assert res['Value'][sub][lfn]
 
 
-def checkIsDir(isDir, trueOrFalse):
+def assertIsDir(isDir, trueOrFalse):
   """Check if directory exists or not."""
   assert isDir['OK'], isDir.get('Message', 'ALL OK')
   single = returnSingleResult(isDir)
@@ -63,9 +59,9 @@ def test_putAndRegister(dm, tempFile):
   removeRes = dm.removeFile(lfn)
 
   # Check that the put was successful
-  checkPut(putRes, lfn)
+  assertResult(putRes, lfn)
   # Check that the removal was successful
-  checkMultiple(removeRes, lfn, 'Successful')
+  assertResult(removeRes, lfn)
 
 
 def test_putAndRegisterReplicate(dm, tempFile):
@@ -78,11 +74,11 @@ def test_putAndRegisterReplicate(dm, tempFile):
   removeRes = dm.removeFile(lfn)
 
   # Check that the put was successful
-  checkPut(putRes, lfn)
+  assertResult(putRes, lfn)
   # Check that the replicate was successful
-  checkMultiple(replicateRes, lfn, 'Successful')
+  assertResult(replicateRes, lfn)
   # Check that the removal was successful
-  checkMultiple(removeRes, lfn, 'Successful')
+  assertResult(removeRes, lfn)
 
 
 def test_putAndRegisterGetReplicaMetadata(dm, tempFile):
@@ -95,14 +91,14 @@ def test_putAndRegisterGetReplicaMetadata(dm, tempFile):
   removeRes = dm.removeFile(lfn)
 
   # Check that the put was successful
-  checkPut(putRes, lfn)
+  assertResult(putRes, lfn)
   # Check that the metadata query was successful
-  checkMultiple(metadataRes, lfn, 'Successful')
+  assertResult(metadataRes, lfn)
   metadataDict = metadataRes['Value']['Successful'][lfn]
   for key in ['Cached', 'Migrated', 'Size']:
     assert key in metadataDict
   # Check that the removal was successful
-  checkMultiple(removeRes, lfn, 'Successful')
+  assertResult(removeRes, lfn)
 
 
 def test_putAndRegsiterGetAccessUrl(dm, tempFile):
@@ -114,9 +110,9 @@ def test_putAndRegsiterGetAccessUrl(dm, tempFile):
   getAccessUrlRes = dm.getReplicaAccessUrl(lfn, diracSE)
   print(getAccessUrlRes)
   removeRes = dm.removeFile(lfn)
-  checkPut(putRes, lfn)
-  checkMultiple(getAccessUrlRes, lfn, 'Successful')
-  checkMultiple(removeRes, lfn, 'Successful')
+  assertResult(putRes, lfn)
+  assertResult(getAccessUrlRes, lfn)
+  assertResult(removeRes, lfn)
 
 
 def test_putAndRegisterRemoveReplica(dm, tempFile):
@@ -129,11 +125,11 @@ def test_putAndRegisterRemoveReplica(dm, tempFile):
   removeRes = dm.removeFile(lfn)
 
   # Check that the put was successful
-  checkPut(putRes, lfn)
+  assertResult(putRes, lfn)
   # Check that the replica removal failed, because it is the only copy
-  checkMultiple(removeReplicaRes, lfn, 'Failed')
+  assertResult(removeReplicaRes, lfn, sub='Failed')
   # Check that the removal was successful
-  checkMultiple(removeRes, lfn, 'Successful')
+  assertResult(removeRes, lfn)
 
 
 def test_registerFile(dm, tempFile):
@@ -147,8 +143,8 @@ def test_registerFile(dm, tempFile):
   registerRes = dm.registerFile(fileTuple)
   removeFileRes = dm.removeFile(lfn)
 
-  checkMultiple(registerRes, lfn, 'Successful')
-  checkMultiple(removeFileRes, lfn, 'Successful')
+  assertResult(registerRes, lfn)
+  assertResult(removeFileRes, lfn)
 
 
 def test_registerReplica(dm, tempFile):
@@ -167,9 +163,9 @@ def test_registerReplica(dm, tempFile):
   registerReplicaRes = dm.registerReplica(replicaTuple)
   removeFileRes = dm.removeFile(lfn)
 
-  checkMultiple(registerRes, lfn, 'Successful')
-  checkMultiple(registerReplicaRes, lfn, 'Successful')
-  checkMultiple(removeFileRes, lfn, 'Successful')
+  assertResult(registerRes, lfn)
+  assertResult(registerReplicaRes, lfn)
+  assertResult(removeFileRes, lfn)
 
 
 def test_putAndRegisterGet(dm, tempFile):
@@ -184,28 +180,28 @@ def test_putAndRegisterGet(dm, tempFile):
   if os.path.exists(localFilePath):
     os.remove(localFilePath)
 
-  checkMultiple(putRes, lfn, 'Successful')
-  checkMultiple(getRes, lfn, 'Successful')
+  assertResult(putRes, lfn)
+  assertResult(getRes, lfn)
   assert getRes['Value']['Successful'][lfn] == localFilePath
-  checkMultiple(removeRes, lfn, 'Successful')
+  assertResult(removeRes, lfn)
 
 
 def test_cleanDirectory(dm, tempFile, fc):
   lfn = '/Jenkins/test/unit-test/DataManager/cleanDirectory/testFile.%s' % time.time()
   diracSE = 'SE-1'
   putRes = dm.putAndRegister(lfn, tempFile, diracSE)
-  checkPut(putRes, lfn)
+  assertResult(putRes, lfn)
   removeRes = dm.removeFile(lfn)
-  checkMultiple(removeRes, lfn, 'Successful')
+  assertResult(removeRes, lfn)
 
   folderLFN = os.path.dirname(lfn)
-  checkIsDir(fc.isDirectory(folderLFN), True)
+  assertIsDir(fc.isDirectory(folderLFN), True)
   cleanRes = dm.cleanLogicalDirectory(folderLFN)
   assert cleanRes['OK'], cleanRes.get('Message', 'All OK')
-  checkIsDir(fc.isDirectory(folderLFN), False)
+  assertIsDir(fc.isDirectory(folderLFN), False)
 
   baseFolder = '/Jenkins/test'
-  checkIsDir(fc.isDirectory(baseFolder), True)
+  assertIsDir(fc.isDirectory(baseFolder), True)
   cleanRes = dm.cleanLogicalDirectory(baseFolder)
   assert cleanRes['OK'], cleanRes.get('Message', 'All OK')
-  checkIsDir(fc.isDirectory(baseFolder), False)
+  assertIsDir(fc.isDirectory(baseFolder), False)
