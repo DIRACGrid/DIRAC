@@ -21,6 +21,7 @@ services:
       - 9200:9200
     environment:
       - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms256m -Xmx256m"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9200"]
       interval: 5s
