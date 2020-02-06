@@ -24,6 +24,22 @@ def tempFile():
   return fileName
 
 
+def checkPut(putRes, lfn):
+  """.Check that the put was successful."""
+  assert putRes['OK'], putRes.get('Message', 'All OK')
+  assert 'Successful' in putRes['Value']
+  assert lfn in putRes['Value']['Successful']
+  assert putRes['Value']['Successful'][lfn]
+
+
+def checkMultiple(res, lfn, sub):
+  """Check if lfn is in Successful or Failed, given by sub."""
+  assert res['OK'], res.get('Message', 'All OK')
+  assert sub in res['Value']
+  assert lfn in res['Value'][sub]
+  assert res['Value'][sub][lfn]
+
+
 def test_putAndRegister(dm, tempFile):
   print('\n\n#########################################################'
         '################\n\n\t\t\tPut and register test\n')
@@ -33,15 +49,9 @@ def test_putAndRegister(dm, tempFile):
   removeRes = dm.removeFile(lfn)
 
   # Check that the put was successful
-  assert putRes['OK'], putRes.get('Message', 'All OK')
-  assert 'Successful' in putRes['Value']
-  assert lfn in putRes['Value']['Successful']
-  assert putRes['Value']['Successful'][lfn]
+  checkPut(putRes, lfn)
   # Check that the removal was successful
-  assert removeRes['OK'], removeRes.get('Message', 'All OK')
-  assert 'Successful' in removeRes['Value']
-  assert lfn in removeRes['Value']['Successful']
-  assert removeRes['Value']['Successful'][lfn]
+  checkMultiple(removeRes, lfn, 'Successful')
 
 
 def test_putAndRegisterReplicate(dm, tempFile):
@@ -54,20 +64,11 @@ def test_putAndRegisterReplicate(dm, tempFile):
   removeRes = dm.removeFile(lfn)
 
   # Check that the put was successful
-  assert putRes['OK'], putRes.get('Message', 'All OK')
-  assert 'Successful' in putRes['Value']
-  assert lfn in putRes['Value']['Successful']
-  assert putRes['Value']['Successful'][lfn]
+  checkPut(putRes, lfn)
   # Check that the replicate was successful
-  assert replicateRes['OK'], replicateRes.get('Message', 'All OK')
-  assert 'Successful' in replicateRes['Value']
-  assert lfn in replicateRes['Value']['Successful']
-  assert replicateRes['Value']['Successful'][lfn]
+  checkMultiple(replicateRes, lfn, 'Successful')
   # Check that the removal was successful
-  assert removeRes['OK'], removeRes.get('Message', 'All OK')
-  assert 'Successful' in removeRes['Value']
-  assert lfn in removeRes['Value']['Successful']
-  assert removeRes['Value']['Successful'][lfn]
+  checkMultiple(removeRes, lfn, 'Successful')
 
 
 def test_putAndRegisterGetReplicaMetadata(dm, tempFile):
@@ -80,23 +81,14 @@ def test_putAndRegisterGetReplicaMetadata(dm, tempFile):
   removeRes = dm.removeFile(lfn)
 
   # Check that the put was successful
-  assert putRes['OK'], putRes.get('Message', 'All OK')
-  assert 'Successful' in putRes['Value']
-  assert lfn in putRes['Value']['Successful']
-  assert putRes['Value']['Successful'][lfn]
+  checkPut(putRes, lfn)
   # Check that the metadata query was successful
-  assert metadataRes['OK'], metadataRes.get('Message', 'All OK')
-  assert 'Successful' in metadataRes['Value']
-  assert lfn in metadataRes['Value']['Successful']
-  assert metadataRes['Value']['Successful'][lfn]
+  checkMultiple(metadataRes, lfn, 'Successful')
   metadataDict = metadataRes['Value']['Successful'][lfn]
   for key in ['Cached', 'Migrated', 'Size']:
     assert key in metadataDict
   # Check that the removal was successful
-  assert removeRes['OK'], removeRes.get('Message', 'All OK')
-  assert 'Successful' in removeRes['Value']
-  assert lfn in removeRes['Value']['Successful']
-  assert removeRes['Value']['Successful'][lfn]
+  checkMultiple(removeRes, lfn, 'Successful')
 
 
 def test_putAndRegsiterGetAccessUrl(dm, tempFile):
@@ -108,22 +100,9 @@ def test_putAndRegsiterGetAccessUrl(dm, tempFile):
   getAccessUrlRes = dm.getReplicaAccessUrl(lfn, diracSE)
   print(getAccessUrlRes)
   removeRes = dm.removeFile(lfn)
-
-  # Check that the put was successful
-  assert putRes['OK'], putRes.get('Message', 'All OK')
-  assert 'Successful' in putRes['Value']
-  assert lfn in putRes['Value']['Successful']
-  assert putRes['Value']['Successful'][lfn]
-  # Check that the access url was successful
-  assert getAccessUrlRes['OK'], getAccessUrlRes.get('Message', 'All OK')
-  assert 'Successful' in getAccessUrlRes['Value']
-  assert lfn in getAccessUrlRes['Value']['Successful']
-  assert getAccessUrlRes['Value']['Successful'][lfn]
-  # Check that the removal was successful
-  assert removeRes['OK'], removeRes.get('Message', 'All OK')
-  assert 'Successful' in removeRes['Value']
-  assert lfn in removeRes['Value']['Successful']
-  assert removeRes['Value']['Successful'][lfn]
+  checkPut(putRes, lfn)
+  checkMultiple(getAccessUrlRes, lfn, 'Successful')
+  checkMultiple(removeRes, lfn, 'Successful')
 
 
 def test_putAndRegisterRemoveReplica(dm, tempFile):
@@ -136,20 +115,11 @@ def test_putAndRegisterRemoveReplica(dm, tempFile):
   removeRes = dm.removeFile(lfn)
 
   # Check that the put was successful
-  assert putRes['OK'], putRes.get('Message', 'All OK')
-  assert 'Successful' in putRes['Value']
-  assert lfn in putRes['Value']['Successful']
-  assert putRes['Value']['Successful'][lfn]
+  checkPut(putRes, lfn)
   # Check that the replica removal failed, because it is the only copy
-  assert removeReplicaRes['OK'], removeReplicaRes.get('Message', 'All OK')
-  assert 'Failed' in removeReplicaRes['Value']
-  assert lfn in removeReplicaRes['Value']['Failed']
-  assert removeReplicaRes['Value']['Failed'][lfn]
+  checkMultiple(removeReplicaRes, lfn, 'Failed')
   # Check that the removal was successful
-  assert removeRes['OK'], removeRes.get('Message', 'All OK')
-  assert 'Successful' in removeRes['Value']
-  assert lfn in removeRes['Value']['Successful']
-  assert removeRes['Value']['Successful'][lfn]
+  checkMultiple(removeRes, lfn, 'Successful')
 
 
 def test_registerFile(dm, tempFile):
@@ -163,16 +133,8 @@ def test_registerFile(dm, tempFile):
   registerRes = dm.registerFile(fileTuple)
   removeFileRes = dm.removeFile(lfn)
 
-  # Check that the file registration was done correctly
-  assert registerRes['OK'], registerRes.get('Message', 'All OK')
-  assert 'Successful' in registerRes['Value']
-  assert lfn in registerRes['Value']['Successful']
-  assert registerRes['Value']['Successful'][lfn]
-  # Check that the removal was successful
-  assert removeFileRes['OK'], removeFileRes.get('Message', 'All OK')
-  assert 'Successful' in removeFileRes['Value']
-  assert lfn in removeFileRes['Value']['Successful']
-  assert removeFileRes['Value']['Successful'][lfn]
+  checkMultiple(registerRes, lfn, 'Successful')
+  checkMultiple(removeFileRes, lfn, 'Successful')
 
 
 def test_registerReplica(dm, tempFile):
@@ -191,21 +153,9 @@ def test_registerReplica(dm, tempFile):
   registerReplicaRes = dm.registerReplica(replicaTuple)
   removeFileRes = dm.removeFile(lfn)
 
-  # Check that the file registration was done correctly
-  assert registerRes['OK'], registerRes.get('Message', 'All OK')
-  assert 'Successful' in registerRes['Value']
-  assert lfn in registerRes['Value']['Successful']
-  assert registerRes['Value']['Successful'][lfn]
-  # Check that the replica registration was successful
-  assert registerReplicaRes['OK'], registerReplicaRes.get('Message', 'All OK')
-  assert 'Successful' in registerReplicaRes['Value']
-  assert lfn in registerReplicaRes['Value']['Successful']
-  assert registerReplicaRes['Value']['Successful'][lfn]
-  # Check that the removal was successful
-  assert removeFileRes['OK'], removeFileRes.get('Message', 'All OK')
-  assert 'Successful' in removeFileRes['Value']
-  assert lfn in removeFileRes['Value']['Successful']
-  assert removeFileRes['Value']['Successful'][lfn]
+  checkMultiple(registerRes, lfn, 'Successful')
+  checkMultiple(registerReplicaRes, lfn, 'Successful')
+  checkMultiple(removeFileRes, lfn, 'Successful')
 
 
 def test_putAndRegisterGet(dm, tempFile):
@@ -220,18 +170,7 @@ def test_putAndRegisterGet(dm, tempFile):
   if os.path.exists(localFilePath):
     os.remove(localFilePath)
 
-  # Check that the put was successful
-  assert putRes['OK'], putRes.get('Message', 'All OK')
-  assert 'Successful' in putRes['Value']
-  assert lfn in putRes['Value']['Successful']
-  assert putRes['Value']['Successful'][lfn]
-  # Check that the replica removal was successful
-  assert getRes['OK'], getRes.get('Message', 'All OK')
-  assert 'Successful' in getRes['Value']
-  assert lfn in getRes['Value']['Successful']
+  checkMultiple(putRes, lfn, 'Successful')
+  checkMultiple(getRes, lfn, 'Successful')
   assert getRes['Value']['Successful'][lfn] == localFilePath
-  # Check that the removal was successful
-  assert removeRes['OK'], removeRes.get('Message', 'All OK')
-  assert 'Successful' in removeRes['Value']
-  assert lfn in removeRes['Value']['Successful']
-  assert removeRes['Value']['Successful'][lfn]
+  checkMultiple(removeRes, lfn, 'Successful')
