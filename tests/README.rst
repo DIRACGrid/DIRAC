@@ -11,6 +11,7 @@ These folders contain:
 - A few performance tests
 
 but also:
+
 - Some files holding configuration parameters for the test themselves
 - Tools for running the tests above
 
