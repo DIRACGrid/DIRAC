@@ -437,7 +437,7 @@ class JobScheduling(OptimizerExecutor):
     else:
       result = jobManifest.createSection(reqSection)
     if not result['OK']:
-      self.jobLog.error("Cannot create jobManifest section", "(%s: %s)" % reqSection, result['Value'])
+      self.jobLog.error("Cannot create jobManifest section", "(%s: %s)" % reqSection, result['Message'])
       return result
     reqCfg = result['Value']
 
