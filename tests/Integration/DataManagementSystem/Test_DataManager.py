@@ -1,3 +1,15 @@
+"""This module contains tests for the DataManager client.
+
+The tests upload files, remove them, replicate them, check metadata calls, and cleanDirectory
+
+Requirements:
+
+* Running FileCatalog instance, containing an LFN folder '/Jenkins', writable by the jenkins_user proxy
+* Two running StorageElements SE-1 and SE-2
+* A jenkins_user proxy
+
+"""
+
 from __future__ import print_function
 
 import os
