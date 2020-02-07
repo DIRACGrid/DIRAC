@@ -310,7 +310,7 @@ function installDIRAC(){
   cp "$TESTCODE/DIRAC/Core/scripts/dirac-install.py" "$CLIENTINSTALLDIR/dirac-install"
   chmod +x "$CLIENTINSTALLDIR/dirac-install"
 
-  export CLIENT_ALTERNATIVE_MODULES=${CLIENT_ALTERNATIVE_MODULES:-ALTERNATIVE_MODULES}
+  export CLIENT_ALTERNATIVE_MODULES=${CLIENT_ALTERNATIVE_MODULES:-${ALTERNATIVE_MODULES}}
   if [ "$CLIENT_ALTERNATIVE_MODULES" ]; then
     echo "Installing from non-release code"
     if [[ -d "$CLIENT_ALTERNATIVE_MODULES" ]]; then
