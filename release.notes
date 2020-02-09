@@ -1,3 +1,22 @@
+[v7r0p12]
+
+*WMS
+FIX: (#4432) Better logging for WMS Optimizers
+NEW: (#4435) PilotCS2JSONSynchronizer: added options pilotRepoBranch and pilotVORepoBranch
+
+*DMS
+FIX: (#4436) dirac-dms-clean-directory: also works on single empty directory, fixes #4420
+
+*Framework
+FIX: (#4436) dirac-install-component: fix bug prohibiting use of the -m/--module parameter
+
+*tests
+NEW: (#4429) Allow extensions to extend the continuous integration tests
+NEW: (#4433) added README.rst for every subdirectory
+
+*docs
+FIX: (#4438) update notes for dirac-distribution (add extensions)
+
 [v7r0p11]
 
 *Core
