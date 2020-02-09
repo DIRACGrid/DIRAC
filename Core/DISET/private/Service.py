@@ -67,12 +67,12 @@ class Service(object):
     """
     self._svcData = serviceData
     self._name = serviceData['modName']
-    self._standalone = serviceData['standalone']
     self._startTime = Time.dateTime()
     self._validNames = [serviceData['modName']]
     if serviceData['loadName'] not in self._validNames:
       self._validNames.append(serviceData['loadName'])
     self._cfg = ServiceConfiguration(list(self._validNames))
+    self._standalone = serviceData['standalone']
     self.__monitorLastStatsUpdate = time.time()
     self._stats = {'queries': 0, 'connections': 0}
     self._authMgr = AuthManager("%s/Authorization" % PathFinder.getServiceSection(serviceData['loadName']))
@@ -104,7 +104,6 @@ class Service(object):
     self._handler = result['Value']
     # Initialize lock manager
     self._lockManager = LockManager(self._cfg.getMaxWaitingPetitions())
-    self._initMonitoring()
     # TODO: remove ThreadPool
     if useThreadPoolExecutor:
       self._threadPool = ThreadPoolExecutor(max(0, self._cfg.getMaxThreads()))
@@ -323,7 +322,6 @@ class Service(object):
     return S_OK()
 
   def __reportThreadPoolContents(self):
-
     # TODO: remove later
     if useThreadPoolExecutor:
       pendingQueries = self._threadPool._work_queue.qsize()
