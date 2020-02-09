@@ -133,7 +133,7 @@ class DownloadInputData:
           if value:
             self.log.verbose('\t%s %s' % (item, value))
 
-    self.log.info('Total size of files to be downloaded is %s bytes' % (totalSize))
+    self.log.info("Total size of files to be downloaded", "is %s bytes" % totalSize)
     for lfn in failedReplicas:
       self.log.warn('Not all file metadata (SE,PFN,Size,GUID) was available for LFN', lfn)
 
@@ -146,9 +146,11 @@ class DownloadInputData:
       return result
 
     if not result['Value']:
-      report = 'Not enough disk space available for download: %s / %s bytes' % (result['Value'], totalSize)
-      self.log.warn(report)
-      self.__setJobParam(COMPONENT_NAME, report)
+      self.log.warn("Not enough disk space available for download",
+                    "%s / %s bytes" % (result['Value'], totalSize))
+      self.__setJobParam(COMPONENT_NAME,
+                         "Not enough disk space available for download: %s / %s bytes" % (result['Value'],
+                                                                                          totalSize))
       return S_OK({'Failed': self.inputData, 'Successful': {}})
 
     resolvedData = {}
@@ -164,8 +166,8 @@ class DownloadInputData:
           failedReplicas.add(lfn)
           continue
         if lfn in result['Value']['Failed']:
-          self.log.error('Could not get Storage Metadata for %s at %s: %s' %
-                         (lfn, seName, result['Value']['Failed'][lfn]))
+          self.log.error('Could not get Storage Metadata',
+                         'for %s at %s: %s' % (lfn, seName, result['Value']['Failed'][lfn]))
           failedReplicas.add(lfn)
           continue
         metadata = result['Value']['Successful'][lfn]
@@ -182,7 +184,7 @@ class DownloadInputData:
           failedReplicas.add(lfn)
           continue
 
-        self.log.info('Preliminary checks OK, download %s from %s:' % (lfn, seName))
+        self.log.info('Preliminary checks OK', 'download %s from %s:' % (lfn, seName))
         result = self._downloadFromSE(lfn, seName, reps, guid)
         if not result['OK']:
           self.log.error("Download failed", "Tried downloading from SE %s: %s" % (seName, result['Message']))
@@ -268,7 +270,7 @@ class DownloadInputData:
     """ Download a local copy of a single LFN from a list of Storage Elements.
         This is used as a last resort to attempt to retrieve the file.
     """
-    self.log.verbose("Attempting to download file from all SEs (%s):" % ','.join(reps), lfn)
+    self.log.verbose("Attempting to download file from all SEs", "(%s): %s" % (','.join(reps), lfn))
     diskSEs = set()
     tapeSEs = set()
     # Sort replicas, disk first
@@ -298,13 +300,13 @@ class DownloadInputData:
     if not lfn:
       return S_ERROR("LFN not specified: assume file is not at this site")
 
-    self.log.verbose("Attempting to download file %s from %s:" % (lfn, seName))
+    self.log.verbose("Attempting to download file", "%s from %s:" % (lfn, seName))
 
     downloadDir = self.__getDownloadDir()
     fileName = os.path.basename(lfn)
     for localFile in (os.path.join(os.getcwd(), fileName), os.path.join(downloadDir, fileName)):
       if os.path.exists(localFile):
-        self.log.info("File %s already exists locally as %s" % (fileName, localFile))
+        self.log.info("File already exists locally", "%s as %s" % (fileName, localFile))
         fileDict = {'turl': 'LocalData',
                     'protocol': 'LocalData',
                     'se': seName,
@@ -316,17 +318,17 @@ class DownloadInputData:
     localFile = os.path.join(downloadDir, fileName)
     result = StorageElement(seName).getFile(lfn, localPath=downloadDir)
     if not result['OK']:
-      self.log.warn('Problem getting %s from %s:\n%s' % (lfn, seName, result['Message']))
+      self.log.warn('Problem getting lfn', '%s from %s:\n%s' % (lfn, seName, result['Message']))
       return result
     if lfn in result['Value']['Failed']:
-      self.log.warn('Problem getting %s from %s:\n%s' % (lfn, seName, result['Value']['Failed'][lfn]))
+      self.log.warn('Problem getting lfn', '%s from %s:\n%s' % (lfn, seName, result['Value']['Failed'][lfn]))
       return S_ERROR(result['Value']['Failed'][lfn])
     if lfn not in result['Value']['Successful']:
       self.log.warn("%s got from %s not in Failed nor Successful???\n" % (lfn, seName))
       return S_ERROR("Return from StorageElement.getFile() incomplete")
 
     if os.path.exists(localFile):
-      self.log.verbose("File %s successfully downloaded locally to %s" % (lfn, localFile))
+      self.log.verbose("File successfully downloaded locally", "(%s to %s)" % (lfn, localFile))
       fileDict = {'turl': 'Downloaded',
                   'protocol': 'Downloaded',
                   'se': seName,
@@ -345,10 +347,10 @@ class DownloadInputData:
     if not self.jobID:
       return S_ERROR('JobID not defined')
 
+    self.log.verbose('setting job parameters', 'setJobParameter(%s,%s,%s)' % (self.jobID, name, value))
     jobParam = JobStateUpdateClient().setJobParameter(int(self.jobID), str(name), str(value))
-    self.log.verbose('setJobParameter(%s,%s,%s)' % (self.jobID, name, value))
     if not jobParam['OK']:
-      self.log.warn(jobParam['Message'])
+      self.log.warn("Failed to set job parameters", jobParam['Message'])
 
     return jobParam
 
