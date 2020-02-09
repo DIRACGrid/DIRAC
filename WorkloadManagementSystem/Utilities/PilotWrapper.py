@@ -100,15 +100,18 @@ def pilotWrapperScript(pilotFilesCompressedEncodedDict=None,
   for pfName, encodedPf in pilotFilesCompressedEncodedDict.items():
     compressedString += """
 try:
-  with open('%(pfName)s', 'w') as fd:
-    fd.write(bz2.decompress(base64.b64decode(\"\"\"%(encodedPf)s\"\"\")))
+  with open('%(pfName)s', 'wb') as fd:
+    if sys.version_info < (3,):
+      fd.write(bz2.decompress(base64.b64decode(\"\"\"%(encodedPf)s\"\"\")))
+    else:
+      fd.write(bz2.decompress(base64.b64decode(b'%(encodedPf)s')))
   os.chmod('%(pfName)s', stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
-except BaseException as x:
+except Exception as x:
   print(x, file=sys.stderr)
   logger.error(x)
   shutil.rmtree(pilotWorkingDirectory)
-  sys.exit(-1)
-""" % {'encodedPf': encodedPf,
+  sys.exit(3)
+""" % {'encodedPf': encodedPf.decode(),
        'pfName': pfName}
 
   envVariablesString = ""
@@ -152,7 +155,12 @@ import random
 random.shuffle(location)
 
 # we try from the available locations
-for loc in location:
+locs = [os.path.join('https://', loc) for loc in location]
+locations = locs + [os.path.join(loc, 'pilot') for loc in locs]
+
+for loc in locations:
+  print('Trying %%s' %% loc)
+
   # Getting the json file and the tar file
   try:
 
@@ -170,18 +178,18 @@ for loc in location:
     if 'context' in url_library_urlopen.__code__.co_varnames:
       import ssl
       context = ssl._create_unverified_context()
-      rJson = url_library_urlopen('https://' + loc + '/pilot/pilot.json',
+      rJson = url_library_urlopen(os.path.join(loc, 'pilot.json'),
                                   timeout=10,
                                   context=context)
-      rTar = url_library_urlopen('https://' + loc + '/pilot/pilot.tar',
+      rTar = url_library_urlopen(os.path.join(loc, 'pilot.tar'),
                                  timeout=10,
                                  context=context)
       break
 
     else:
-      rJson = url_library_urlopen('https://' + loc + '/pilot/pilot.json',
+      rJson = url_library_urlopen(os.path.join(loc, 'pilot.json'),
                                   timeout=10)
-      rTar = url_library_urlopen('https://' + loc + '/pilot/pilot.tar',
+      rTar = url_library_urlopen(os.path.join(loc, 'pilot.tar'),
                                  timeout=10)
       break
 
@@ -212,10 +220,14 @@ pt.close()
 cmd = "python dirac-pilot.py %s"
 logger.info('Executing: %%s' %% cmd)
 sys.stdout.flush()
-os.system(cmd)
+ret = os.system(cmd)
 
 # and cleaning up
 shutil.rmtree(pilotWorkingDirectory)
+
+# did it fail?
+if ret:
+  sys.exit(1)
 
 EOF
 """ % pilotOptions
@@ -237,7 +249,7 @@ def getPilotFilesCompressedEncodedDict(pilotFiles, proxy=None):
   for pf in pilotFiles:
     with open(pf, "r") as fd:
       pfContent = fd.read()
-    pfContentEncoded = base64.b64encode(bz2.compress(pfContent, 9))
+    pfContentEncoded = base64.b64encode(bz2.compress(pfContent.encode(), 9))
     pilotFilesCompressedEncodedDict[os.path.basename(pf)] = pfContentEncoded
 
   if proxy is not None:

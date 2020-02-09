@@ -236,6 +236,12 @@ function fullInstallDIRAC(){
     exit 1
   fi
 
+  # add 2 storageelements
+  if ! diracSEs; then
+    echo "ERROR: diracSEs failed"
+    exit 1
+  fi
+
   echo "==> Restarting Framework ProxyManager"
   dirac-restart-component Framework ProxyManager $DEBUG
 
@@ -296,6 +302,10 @@ function fullInstallDIRAC(){
   echo "==> Restarting ResourceStatus Publisher"
   dirac-restart-component ResourceStatus Publisher $DEBUG
 
+  echo "==> Restarting DataManagement StorageElement(s)"
+  dirac-restart-component DataManagement SE-1 $DEBUG
+  dirac-restart-component DataManagement SE-2 $DEBUG
+
   # populate RSS
   echo "==> Populating RSS DB"
   dirac-rss-sync --element Site -o LogLevel=VERBOSE
@@ -309,6 +319,7 @@ function fullInstallDIRAC(){
   dirac-rss-set-status --element Resource --name JENKINS-FTS3 --status Active --reason "Why not?"
   dirac-rss-set-status --element Resource --name FileCatalog --status Active --reason "Why not?"
   dirac-rss-set-status --element Site --name DIRAC.Jenkins.ch --status Active --reason "Why not?"
+  dirac-admin-allow-se SE-1 SE-2 --All
 
   #agents
   findAgents

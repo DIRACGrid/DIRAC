@@ -231,23 +231,24 @@ codes can be created.
 You need to be in an environment where *Docutils* is installed (via pip), 
 *Sencha cmd* has been installed and *extjs* is downloaded.
 
-For releases from v6r22 and older, there's a Docker image that contains all the above dependencies in GitHub package registry::
+For releases from v6r22 and newer, there's a Docker image that contains all the above dependencies.
+It can be found in GitHub package registry or in docker hub::
 
   docker.pkg.github.com/diracgrid/management/dirac-distribution:latest (https://github.com/DIRACGrid/management/packages/79929)
+  diracgrid/dirac-distribution (https://hub.docker.com/r/diracgrid/dirac-distribution)
 
-Pull it and run inside::
+Pull it and run inside the dirac-distribution command::
 
-  python3 dirac-distribution -r v7r0p8
+  docker pull diracgrid/dirac-distribution
+  python3 dirac-distribution.py -r v7r0p8
 
-If you are not using an older release, you need a older version of extJS (what's in the image above is ExtJS 6.2.0)
+The above works also for DIRAC extensions, in this case just remember to specify the project name, e.g.::
 
-You can also pass the releases.cfg to use via command line using the *-C* switch. *dirac-distribution*
-will generate a set of tarballs, release and md5 files. Please copy those to your installation source
-so *dirac-install* can find them.
+  python3 dirac-distribution.py --release v10r0-pre11 --project LHCb
 
-The command will compile tar files as well as release notes in *html*.
+You can also pass the releases.cfg to use via command line using the *-relcfg* switch. *dirac-distribution* will generate a set of tarballs, release notes in *html* and md5 files.
+
 In the end of its execution, the *dirac-distribution* will print out a command that can be
 used to upload generated release files to a predefined repository ( see :ref:`dirac_projects` ).
 
 It's now time to advertise that new releases have been created. Use the DIRAC google forum.
-

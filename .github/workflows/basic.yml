@@ -35,7 +35,7 @@ jobs:
     - name: Prepare environment
       run: |
         conda env create --name dirac-testing environment.yml
-    - name: Run linter
+    - name: Run tests
       run: |
         source "${CONDA}/bin/activate"
         conda activate dirac-testing

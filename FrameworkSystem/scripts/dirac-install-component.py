@@ -66,6 +66,8 @@ if len(args) != 2:
 cType = None
 system = args[0]
 component = args[1]
+compOrMod = module if module else component
+
 
 result = gComponentInstaller.getSoftwareComponents(getCSExtensions())
 if not result['OK']:
@@ -75,7 +77,7 @@ else:
   availableComponents = result['Value']
 
 for compType in availableComponents:
-  if system in availableComponents[compType] and component in availableComponents[compType][system]:
+  if system in availableComponents[compType] and compOrMod in availableComponents[compType][system]:
     cType = compType[:-1].lower()
     break
 

@@ -263,7 +263,7 @@ class MySQL(object):
       try:
         conn, lastName, thid = self.__innerGet()
       except MySQLdb.MySQLError as excp:
-        if retriesLeft >= 0:
+        if retriesLeft > 0:
           return self.__getWithRetry(dbName, totalRetries, retriesLeft - 1)
         return S_ERROR(DErrno.EMYSQL, "Could not connect: %s" % excp)
 
@@ -272,7 +272,7 @@ class MySQL(object):
           self.__assigned.pop(thid)
         except KeyError:
           pass
-        if retriesLeft >= 0:
+        if retriesLeft > 0:
           return self.__getWithRetry(dbName, totalRetries, retriesLeft)
         return S_ERROR(DErrno.EMYSQL, "Could not connect")
 
@@ -280,13 +280,13 @@ class MySQL(object):
         try:
           conn.select_db(dbName)
         except MySQLdb.MySQLError as excp:
-          if retriesLeft >= 0:
+          if retriesLeft > 0:
             return self.__getWithRetry(dbName, totalRetries, retriesLeft - 1)
           return S_ERROR(DErrno.EMYSQL, "Could not select db %s: %s" % (dbName, excp))
         try:
           self.__assigned[thid][1] = dbName
         except KeyError:
-          if retriesLeft >= 0:
+          if retriesLeft > 0:
             return self.__getWithRetry(dbName, totalRetries, retriesLeft - 1)
           return S_ERROR(DErrno.EMYSQL, "Could not connect")
       return S_OK(conn)
@@ -411,7 +411,7 @@ class MySQL(object):
     self.__initialized = True
     result = self._connect()
     if not result['OK']:
-      gLogger.error("Cannot connect to to DB", " %s" % result['Message'])
+      gLogger.error("Cannot connect to the DB", " %s" % result['Message'])
 
   def __del__(self):
     global gInstancesCount
@@ -575,15 +575,12 @@ class MySQL(object):
     if self._connected:
       return S_OK()
 
-    # self.log.debug('_connect: Attempting to access DB',
-    #               '[%s@%s] by user %s' %
-    #               (self.__dbName, self.__hostName, self.__userName))
-    try:
-      # self.log.debug('_connect: Connected.')
-      self._connected = True
-      return S_OK()
-    except Exception as x:
-      return self._except('_connect', x, 'Could not connect to DB.')
+    # Test the connection to the DB
+    retDict = self._getConnection()
+    if not retDict['OK']:
+      return retDict
+    self._connected = True
+    return S_OK()
 
   def _query(self, cmd, conn=None, debug=False):
     """
@@ -933,12 +930,14 @@ class MySQL(object):
     """
     return param[0].tostring()
 
-  def _getConnection(self):
+  def _getConnection(self, retries=MAXCONNECTRETRY):
     """ Return  a new connection to the DB,
 
         Try the Queue, if it is empty add a newConnection to the Queue and retry
         it will retry MAXCONNECTRETRY to open a new connection and will return
         an error if it fails.
+
+        :param int retries: Number of time it will retry to open a connection
     """
     # self.log.debug('_getConnection:')
 
@@ -947,7 +946,7 @@ class MySQL(object):
       gLogger.error(error)
       return S_ERROR(DErrno.EMYSQL, error)
 
-    return self.__connectionPool.get(self.__dbName)
+    return self.__connectionPool.get(self.__dbName, retries)
 
 ########################################################################################
 #

@@ -20,6 +20,7 @@ from DIRAC.ConfigurationSystem.Client.PathFinder import getSystemInstance
 from DIRAC.WorkloadManagementSystem.Client.WMSClient import WMSClient
 from DIRAC.WorkloadManagementSystem.Client.JobMonitoringClient import JobMonitoringClient
 from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
+from DIRAC.WorkloadManagementSystem.Client import JobStatus
 
 
 class StalledJobAgent(AgentModule):
@@ -42,8 +43,8 @@ for the agent restart
     self.logDB = None
     self.matchedTime = 7200
     self.rescheduledTime = 600
-    self.completedTime = 86400
     self.submittingTime = 300
+    self.stalledJobsTolerantSites = []
 
   #############################################################################
   def initialize(self):
@@ -52,7 +53,6 @@ for the agent restart
     self.jobDB = JobDB()
     self.logDB = JobLoggingDB()
     self.am_setOption('PollingTime', 60 * 60)
-    self.stalledJobsTolerantSites = self.am_getOption('StalledJobsTolerantSites', [])
     if not self.am_getOption('Enable', True):
       self.log.info('Stalled Job Agent running in disabled mode')
     return S_OK()
@@ -71,12 +71,12 @@ for the agent restart
 
     stalledTime = self.am_getOption('StalledTimeHours', 2)
     failedTime = self.am_getOption('FailedTimeHours', 6)
+    self.stalledJobsTolerantSites = self.am_getOption('StalledJobsTolerantSites', [])
     self.stalledJobsToleranceTime = self.am_getOption('StalledJobsToleranceTime', 0)
 
     self.submittingTime = self.am_getOption('SubmittingTime', self.submittingTime)
     self.matchedTime = self.am_getOption('MatchedTime', self.matchedTime)
     self.rescheduledTime = self.am_getOption('RescheduledTime', self.rescheduledTime)
-    self.completedTime = self.am_getOption('CompletedTime', self.completedTime)
 
     self.log.verbose('StalledTime = %s cycles' % (stalledTime))
     self.log.verbose('FailedTime = %s cycles' % (failedTime))
@@ -100,10 +100,6 @@ for the agent restart
     if not result['OK']:
       self.log.error('Failed to process stalled jobs', result['Message'])
 
-    result = self._failCompletedJobs()
-    if not result['OK']:
-      self.log.error('Failed to process completed jobs', result['Message'])
-
     result = self._failSubmittingJobs()
     if not result['OK']:
       self.log.error('Failed to process jobs being submitted', result['Message'])
@@ -116,43 +112,51 @@ for the agent restart
 
   #############################################################################
   def _markStalledJobs(self, stalledTime):
-    """ Identifies stalled jobs running without update longer than stalledTime.
+    """ Identifies stalled jobs running or completing without update longer than stalledTime.
     """
     stalledCounter = 0
-    runningCounter = 0
-    result = self.jobDB.selectJobs({'Status': 'Running'})
+    aliveCounter = 0
+    # This is the minimum time we wait for declaring a job Stalled, therefore it is safe
+    checkTime = dateTime() - stalledTime * second
+    checkedStatuses = [JobStatus.RUNNING, JobStatus.COMPLETING]
+    # Only get jobs whose HeartBeat is older than the stalledTime
+    result = self.jobDB.selectJobs({'Status': checkedStatuses},
+                                   older=checkTime, timeStamp='HeartBeatTime')
     if not result['OK']:
       return result
     if not result['Value']:
       return S_OK()
-    jobs = result['Value']
-    self.log.info('%s Running jobs will be checked for being stalled' % (len(jobs)))
-    jobs.sort()
-# jobs = jobs[:10] #for debugging
+    jobs = sorted(result['Value'])
+    self.log.info('%d %s jobs will be checked for being stalled, heartbeat before %s' %
+                  (len(jobs), ' & '.join(checkedStatuses), str(checkTime)))
+
     for job in jobs:
+      delayTime = stalledTime
+      # Add a tolerance time for some sites if required
       site = self.jobDB.getJobAttribute(job, 'site')['Value']
       if site in self.stalledJobsTolerantSites:
-        result = self.__getStalledJob(job, stalledTime + self.stalledJobsToleranceTime)
-      else:
-        result = self.__getStalledJob(job, stalledTime)
+        delayTime += self.stalledJobsToleranceTime
+      # Check if the job is really stalled
+      result = self.__checkJobStalled(job, delayTime)
       if result['OK']:
         self.log.verbose('Updating status to Stalled for job %s' % (job))
         self.__updateJobStatus(job, 'Stalled')
         stalledCounter += 1
       else:
         self.log.verbose(result['Message'])
-        runningCounter += 1
+        aliveCounter += 1
 
-    self.log.info('Total jobs: %s, Stalled job count: %s, Running job count: %s' %
-                  (len(jobs), stalledCounter, runningCounter))
+    self.log.info('Total jobs: %d, Stalled jobs: %d, %s jobs: %d' %
+                  (len(jobs), stalledCounter, '+'.join(checkedStatuses), aliveCounter))
     return S_OK()
 
   #############################################################################
   def _failStalledJobs(self, failedTime):
     """ Changes the Stalled status to Failed for jobs long in the Stalled status
     """
-
-    result = self.jobDB.selectJobs({'Status': 'Stalled'})
+    # Only get jobs that have been Stalled for long enough
+    checkTime = dateTime() - failedTime * second
+    result = self.jobDB.selectJobs({'Status': JobStatus.STALLED}, older=checkTime)
     if not result['OK']:
       return result
     jobs = result['Value']
@@ -161,7 +165,7 @@ for the agent restart
     minorStalledStatuses = ("Job stalled: pilot not running", 'Stalling for more than %d sec' % failedTime)
 
     if jobs:
-      self.log.info('%s Stalled jobs will be checked for failure' % (len(jobs)))
+      self.log.info('%d jobs Stalled before %s will be checked for failure' % (len(jobs), str(checkTime)))
 
       for job in jobs:
         setFailed = False
@@ -174,7 +178,7 @@ for the agent restart
         if pilotStatus != "Running":
           setFailed = minorStalledStatuses[0]
         else:
-
+          # Verify that there was no sign of life for long enough
           result = self.__getLatestUpdateTime(job)
           if not result['OK']:
             self.log.error('Failed to get job update time', result['Message'])
@@ -186,7 +190,7 @@ for the agent restart
         # Set the jobs Failed, send them a kill signal in case they are not really dead and send accounting info
         if setFailed:
           self.__sendKillCommand(job)
-          self.__updateJobStatus(job, 'Failed', setFailed)
+          self.__updateJobStatus(job, JobStatus.FAILED, setFailed)
           failedCounter += 1
           result = self.__sendAccounting(job)
           if not result['OK']:
@@ -195,7 +199,7 @@ for the agent restart
     recoverCounter = 0
 
     for minor in minorStalledStatuses:
-      result = self.jobDB.selectJobs({'Status': 'Failed', 'MinorStatus': minor, 'AccountedFlag': 'False'})
+      result = self.jobDB.selectJobs({'Status': JobStatus.FAILED, 'MinorStatus': minor, 'AccountedFlag': 'False'})
       if not result['OK']:
         return result
       if result['Value']:
@@ -220,7 +224,7 @@ for the agent restart
   #############################################################################
   def __getJobPilotStatus(self, jobID):
     """ Get the job pilot status
-"""
+    """
     result = JobMonitoringClient().getJobParameter(jobID, 'Pilot_Reference')
     if not result['OK']:
       return result
@@ -242,18 +246,15 @@ for the agent restart
     return S_OK(pilotStatus)
 
   #############################################################################
-  def __getStalledJob(self, job, stalledTime):
+  def __checkJobStalled(self, job, stalledTime):
     """ Compares the most recent of LastUpdateTime and HeartBeatTime against
-the stalledTime limit.
-"""
+    the stalledTime limit.
+    """
     result = self.__getLatestUpdateTime(job)
     if not result['OK']:
       return result
 
-    currentTime = toEpoch()
-    lastUpdate = result['Value']
-
-    elapsedTime = currentTime - lastUpdate
+    elapsedTime = toEpoch() - result['Value']
     self.log.verbose('(CurrentTime-LastUpdate) = %s secs' % (elapsedTime))
     if elapsedTime > stalledTime:
       self.log.info('Job %s is identified as stalled with last update > %s secs ago' % (job, elapsedTime))
@@ -264,7 +265,7 @@ the stalledTime limit.
   #############################################################################
   def __getLatestUpdateTime(self, job):
     """ Returns the most recent of HeartBeatTime and LastUpdateTime
-"""
+    """
     result = self.jobDB.getJobAttributes(job, ['HeartBeatTime', 'LastUpdateTime'])
     if not result['OK']:
       self.log.error('Failed to get job attributes', result['Message'])
@@ -272,7 +273,6 @@ the stalledTime limit.
       self.log.error('Could not get attributes for job', '%s' % job)
       return S_ERROR('Could not get attributes for job')
 
-    self.log.verbose(result)
     latestUpdate = 0
     if not result['Value']['HeartBeatTime'] or result['Value']['HeartBeatTime'] == 'None':
       self.log.verbose('HeartBeatTime is null for job %s' % job)
@@ -282,9 +282,7 @@ the stalledTime limit.
     if not result['Value']['LastUpdateTime'] or result['Value']['LastUpdateTime'] == 'None':
       self.log.verbose('LastUpdateTime is null for job %s' % job)
     else:
-      lastUpdate = toEpoch(fromString(result['Value']['LastUpdateTime']))
-      if latestUpdate < lastUpdate:
-        latestUpdate = lastUpdate
+      latestUpdate = max(latestUpdate, toEpoch(fromString(result['Value']['LastUpdateTime'])))
 
     if not latestUpdate:
       return S_ERROR('LastUpdate and HeartBeat times are null for job %s' % job)
@@ -415,7 +413,7 @@ the stalledTime limit.
 
   def __checkHeartBeat(self, jobID, jobDict):
     """ Get info from HeartBeat
-"""
+    """
     result = self.jobDB.getHeartBeatData(jobID)
     lastCPUTime = 0
     lastWallTime = 0
@@ -446,7 +444,7 @@ the stalledTime limit.
 
   def __checkLoggingInfo(self, jobID, jobDict):
     """ Get info from JobLogging
-"""
+    """
     logList = []
     result = self.logDB.getJobLoggingInfo(jobID)
     if result['OK']:
@@ -485,8 +483,8 @@ the stalledTime limit.
 
     message = ''
 
-    checkTime = str(dateTime() - self.matchedTime * second)
-    result = self.jobDB.selectJobs({'Status': 'Matched'}, older=checkTime)
+    checkTime = dateTime() - self.matchedTime * second
+    result = self.jobDB.selectJobs({'Status': JobStatus.MATCHED}, older=checkTime)
     if not result['OK']:
       self.log.error('Failed to select jobs', result['Message'])
       return result
@@ -498,7 +496,7 @@ the stalledTime limit.
       if 'FailedJobs' in result:
         message = 'Failed to reschedule %d jobs stuck in Matched status' % len(result['FailedJobs'])
 
-    checkTime = str(dateTime() - self.rescheduledTime * second)
+    checkTime = dateTime() - self.rescheduledTime * second
     result = self.jobDB.selectJobs({'Status': 'Rescheduled'}, older=checkTime)
     if not result['OK']:
       self.log.error('Failed to select jobs', result['Message'])
@@ -517,61 +515,20 @@ the stalledTime limit.
       return S_ERROR(message)
     return S_OK()
 
-  def _failCompletedJobs(self):
-    """ Failed Jobs stuck in Completed Status for a long time.
-      They are due to pilots being killed during the
-      finalization of the job execution.
-    """
-
-    # Get old Completed Jobs
-    checkTime = str(dateTime() - self.completedTime * second)
-    result = self.jobDB.selectJobs({'Status': 'Completed'}, older=checkTime)
-    if not result['OK']:
-      self.log.error('Failed to select jobs', result['Message'])
-      return result
-
-    jobIDs = result['Value']
-    if not jobIDs:
-      return S_OK()
-
-    # Remove those with Minor Status "Pending Requests"
-    for jobID in jobIDs:
-      result = self.jobDB.getJobAttributes(jobID, ['Status', 'MinorStatus'])
-      if not result['OK']:
-        self.log.error('Failed to get job attributes', result['Message'])
-        continue
-      if result['Value']['Status'] != "Completed":
-        continue
-      if result['Value']['MinorStatus'] == "Pending Requests":
-        continue
-
-      result = self.__updateJobStatus(jobID, 'Failed',
-                                      "Job died during finalization")
-      result = self.__sendAccounting(jobID)
-      if not result['OK']:
-        self.log.error('Failed to send accounting', result['Message'])
-        continue
-
-    return S_OK()
-
   def _failSubmittingJobs(self):
     """ Failed Jobs stuck in Submitting Status for a long time.
         They are due to a failed bulk submission transaction.
     """
 
     # Get old Submitting Jobs
-    checkTime = str(dateTime() - self.submittingTime * second)
-    result = self.jobDB.selectJobs({'Status': 'Submitting'}, older=checkTime)
+    checkTime = dateTime() - self.submittingTime * second
+    result = self.jobDB.selectJobs({'Status': JobStatus.SUBMITTING}, older=checkTime)
     if not result['OK']:
       self.log.error('Failed to select jobs', result['Message'])
       return result
 
-    jobIDs = result['Value']
-    if not jobIDs:
-      return S_OK()
-
-    for jobID in jobIDs:
-      result = self.__updateJobStatus(jobID, 'Failed')
+    for jobID in result['Value']:
+      result = self.__updateJobStatus(jobID, JobStatus.FAILED)
       if not result['OK']:
         self.log.error('Failed to update job status', result['Message'])
         continue

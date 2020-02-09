@@ -1,16 +1,15 @@
 """ Base class for all the executor modules for Jobs Optimization
 """
 
-
 __RCSID__ = "$Id$"
 
 import threading
-import datetime
-# Because eval(valenc) might require it
+import datetime  # Because eval(valenc) might require it
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DEncode, List
 from DIRAC.Core.Base.ExecutorModule import ExecutorModule
 from DIRAC.WorkloadManagementSystem.Client.JobState.CachedJobState import CachedJobState
+from DIRAC.WorkloadManagementSystem.Client import JobStatus
 
 
 class OptimizerExecutor(ExecutorModule):
@@ -83,6 +82,7 @@ class OptimizerExecutor(ExecutorModule):
       # If the manifest is dirty, update it!
       result = jobState.getManifest()
       if not result['OK']:
+        self.jobLog.error("Failed to get job manifest", result['Message'])
         return result
       manifest = result['Value']
       if manifest.isDirty():
@@ -131,7 +131,7 @@ class OptimizerExecutor(ExecutorModule):
     # Keep optimizing!
     nextOp = opChain[opIndex + 1]
     self.jobLog.info("Set to Checking/%s" % nextOp)
-    return jobState.setStatus("Checking", nextOp, source=opName)
+    return jobState.setStatus(JobStatus.CHECKING, nextOp, source=opName)
 
   def storeOptimizerParam(self, name, value):
     if not self.__jobData.jobState:
@@ -171,7 +171,7 @@ class OptimizerExecutor(ExecutorModule):
     if not result['OK']:
       return S_ERROR("Could not retrieve job status for %s: %s" % (jid, result['Message']))
     status, minorStatus = result['Value']
-    if status != "Checking":
+    if status != JobStatus.CHECKING:
       self.log.info("[JID %s] Not in checking state. Avoid fast track" % jid)
       return S_OK()
     result = jobState.getOptParameter("OptimizerChain")

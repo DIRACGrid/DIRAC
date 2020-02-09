@@ -67,6 +67,7 @@ class JobPath(OptimizerExecutor):
   def optimizeJob(self, jid, jobState):
     result = jobState.getManifest()
     if not result['OK']:
+      self.jobLog.error("Failed to get job manifest", result['Message'])
       return result
     jobManifest = result['Value']
     opChain = jobManifest.getOption("JobPath", [])
@@ -90,6 +91,7 @@ class JobPath(OptimizerExecutor):
       self.jobLog.verbose('No VO specific plugin module specified')
       result = jobState.getInputData()
       if not result['OK']:
+        self.jobLog.error("Failed to get input data", result['Message'])
         return result
       if result['Value']:
         # if the returned tuple is not empty it will evaluate true
@@ -107,5 +109,6 @@ class JobPath(OptimizerExecutor):
     self.jobLog.info('Constructed path is', '%s' % "->".join(opPath))
     result = self.__setOptimizerChain(jobState, opPath)
     if not result['OK']:
+      self.jobLog.error("Failed to set optimizer chain", result['Message'])
       return result
     return self.setNextOptimizer(jobState)

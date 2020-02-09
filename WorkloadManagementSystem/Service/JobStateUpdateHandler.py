@@ -22,13 +22,12 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.ElasticJobDB import ElasticJobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
+from DIRAC.WorkloadManagementSystem.Client import JobStatus
 
 # This is a global instance of the JobDB class
 jobDB = False
 logDB = False
 elasticJobDB = False
-
-JOB_FINAL_STATES = ['Done', 'Completed', 'Failed']
 
 
 def initializeJobStateUpdateHandler(serviceInfo):
@@ -126,7 +125,7 @@ class JobStateUpdateHandler(RequestHandler):
     if not result['OK']:
       return result
 
-    if status in JOB_FINAL_STATES:
+    if status in JobStatus.JOB_FINAL_STATES:
       result = jobDB.setEndExecTime(jobID)
 
     if status == 'Running' and minorStatus == 'Application':
@@ -191,13 +190,13 @@ class JobStateUpdateHandler(RequestHandler):
       sDict = statusDict[date]
       if sDict['Status']:
         status = sDict['Status']
-        if status in JOB_FINAL_STATES:
+        if status in JobStatus.JOB_FINAL_STATES:
           endDate = date
-        if status == "Running":
-          startFlag = 'Running'
+        if status == JobStatus.RUNNING:
+          startFlag = JobStatus.RUNNING
       if sDict['MinorStatus']:
         minor = sDict['MinorStatus']
-        if minor == "Application" and startFlag == 'Running':
+        if minor == "Application" and startFlag == JobStatus.RUNNING:
           startDate = date
       if sDict['ApplicationStatus']:
         application = sDict['ApplicationStatus']

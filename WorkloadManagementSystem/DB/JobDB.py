@@ -19,10 +19,9 @@ import six
 import zlib
 
 from six.moves import range
+import operator
 
 __RCSID__ = "$Id$"
-
-import operator
 
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
@@ -37,12 +36,9 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Base.DB import DB
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
+from DIRAC.WorkloadManagementSystem.Client import JobStatus
 
 #############################################################################
-
-JOB_STATES = ['Submitting', 'Received', 'Checking', 'Staging', 'Waiting', 'Matched',
-              'Running', 'Stalled', 'Done', 'Completed', 'Failed']
-JOB_FINAL_STATES = ['Done', 'Completed', 'Failed']
 
 
 class JobDB(DB):
@@ -555,7 +551,7 @@ class JobDB(DB):
     except ValueError:
       return S_ERROR('The ' + currentOptimizer + ' not found in the chain')
 
-    result = self.setJobStatus(jobID, status="Checking", minor=nextOptimizer)
+    result = self.setJobStatus(jobID, status=JobStatus.CHECKING, minor=nextOptimizer)
     if not result['OK']:
       return result
     return S_OK(nextOptimizer)
@@ -967,7 +963,7 @@ class JobDB(DB):
 
 #############################################################################
   def insertNewJobIntoDB(self, jdl, owner, ownerDN, ownerGroup, diracSetup,
-                         initialStatus="Received",
+                         initialStatus=JobStatus.RECEIVED,
                          initialMinorStatus="Job accepted"):
     """ Insert the initial JDL into the Job database,
         Do initial JDL crosscheck,
@@ -1041,7 +1037,7 @@ class JobDB(DB):
     retVal['JobID'] = jobID
     if not classAdJob.isOK():
       jobAttrNames.append('Status')
-      jobAttrValues.append('Failed')
+      jobAttrValues.append(JobStatus.FAILED)
 
       jobAttrNames.append('MinorStatus')
       jobAttrValues.append('Error in JDL syntax')
@@ -1410,7 +1406,7 @@ class JobDB(DB):
     jobAttrValues.append(site)
 
     jobAttrNames.append('Status')
-    jobAttrValues.append('Received')
+    jobAttrValues.append(JobStatus.RECEIVED)
 
     jobAttrNames.append('MinorStatus')
     jobAttrValues.append('Job Rescheduled')
@@ -1450,7 +1446,7 @@ class JobDB(DB):
 
     retVal['InputData'] = classAdJob.lookupAttribute("InputData")
     retVal['RescheduleCounter'] = rescheduleCounter
-    retVal['Status'] = 'Received'
+    retVal['Status'] = JobStatus.RECEIVED
     retVal['MinorStatus'] = 'Job Rescheduled'
 
     return retVal
@@ -1739,7 +1735,10 @@ class JobDB(DB):
       siteDict[site]['Waiting'] = count
       totalDict['Waiting'] += count
       # Running,Stalled,Done,Failed
-      for status in ['"Running"', '"Stalled"', '"Done"', '"Failed"']:
+      for status in ['"%s"' % JobStatus.RUNNING,
+                     '"%s"' % JobStatus.STALLED,
+                     '"%s"' % JobStatus.DONE,
+                     '"%s"' % JobStatus.FAILED]:
         req = "SELECT COUNT(JobID) FROM Jobs WHERE Status=%s AND Site=%s" % (status, e_site)
         result = self._query(req)
         if result['OK']:
@@ -1758,7 +1757,7 @@ class JobDB(DB):
     """
 
     paramNames = ['Site', 'GridType', 'Country', 'Tier', 'MaskStatus']
-    paramNames += JOB_STATES
+    paramNames += JobStatus.JOB_STATES
     paramNames += ['Efficiency', 'Status']
     # FIXME: hack!!!
     siteT1List = ['CERN', 'IN2P3', 'NIKHEF', 'SARA', 'PIC', 'CNAF', 'RAL', 'GRIDKA', 'RRCKI']
@@ -1807,19 +1806,19 @@ class JobDB(DB):
         status = attDict['Status']
         if siteFullName not in resultDict:
           resultDict[siteFullName] = {}
-          for state in JOB_STATES:
+          for state in JobStatus.JOB_STATES:
             resultDict[siteFullName][state] = 0
-        if status not in JOB_FINAL_STATES:
+        if status not in JobStatus.JOB_FINAL_STATES:
           resultDict[siteFullName][status] = count
     if resultDay['OK']:
       for attDict, count in resultDay['Value']:
         siteFullName = attDict['Site']
         if siteFullName not in resultDict:
           resultDict[siteFullName] = {}
-          for state in JOB_STATES:
+          for state in JobStatus.JOB_STATES:
             resultDict[siteFullName][state] = 0
         status = attDict['Status']
-        if status in JOB_FINAL_STATES:
+        if status in JobStatus.JOB_FINAL_STATES:
           resultDict[siteFullName][status] = count
 
     # Collect records now
@@ -1838,19 +1837,19 @@ class JobDB(DB):
 
       if country not in countryCounts:
         countryCounts[country] = {}
-        for state in JOB_STATES:
+        for state in JobStatus.JOB_STATES:
           countryCounts[country][state] = 0
       rList = [siteFullName, grid, country, tier]
       if siteFullName in siteMask:
         rList.append(siteMask[siteFullName])
       else:
         rList.append('NoMask')
-      for status in JOB_STATES:
+      for status in JobStatus.JOB_STATES:
         rList.append(siteDict[status])
         countryCounts[country][status] += siteDict[status]
       efficiency = 0
       total_finished = 0
-      for state in JOB_FINAL_STATES:
+      for state in JobStatus.JOB_FINAL_STATES:
         total_finished += resultDict[siteFullName][state]
       if total_finished > 0:
         efficiency = float(siteDict['Done'] + siteDict['Completed']) / float(total_finished)

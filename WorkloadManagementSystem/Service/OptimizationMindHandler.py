@@ -1,12 +1,12 @@
 __RCSID__ = "$Id$"
 
-
 from past.builtins import long
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities import ThreadScheduler
 from DIRAC.Core.Base.ExecutorMindHandler import ExecutorMindHandler
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobState import JobState
 from DIRAC.WorkloadManagementSystem.Client.JobState.CachedJobState import CachedJobState
+from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB
@@ -32,7 +32,7 @@ def cleanTaskQueues():
     if not result['OK']:
       gLogger.error("Cannot reschedule in JobDB job %s" % jid, result['Message'])
       continue
-    result = logDB.addLoggingRecord(jid, "Received", "", "", source="JobState")
+    result = logDB.addLoggingRecord(jid, JobStatus.RECEIVED, "", "", source="JobState")
     if not result['OK']:
       gLogger.error("Cannot add logging record in JobLoggingDB %s" % jid, result['Message'])
       continue
@@ -82,12 +82,12 @@ class OptimizationMindHandler(ExecutorMindHandler):
     checkingMinors = [eType.split("/")[1] for eType in eTypes if eType != "WorkloadManagement/JobPath"]
     for opState in cls.__optimizationStates:
       # For Received states
-      if opState == "Received":
+      if opState == JobStatus.RECEIVED:
         if 'WorkloadManagement/JobPath' not in eTypes:
           continue
         jobCond = {'Status': opState}
       # For checking states
-      if opState == "Checking":
+      if opState == JobStatus.CHECKING:
         if not checkingMinors:
           continue
         jobCond = {'Status': opState, 'MinorStatus': checkingMinors}
@@ -161,7 +161,7 @@ class OptimizationMindHandler(ExecutorMindHandler):
       cls.log.info("Dispatching job %s out of optimization" % jid)
       return S_OK()
     # If received send to JobPath
-    if status == "Received":
+    if status == JobStatus.RECEIVED:
       cls.log.info("Dispatching job %s to JobPath" % jid)
       return S_OK("WorkloadManagement/JobPath")
     result = jobState.getOptParameter('OptimizerChain')

@@ -13,7 +13,7 @@ CHANGE: (#4235) Removes locals() way of passing parameters
 *tests
 NEW: (#4179) Set up Gitlab CI pipeline using Docker containers
 
-[v7r1-pre15]
+[v7r1-pre16]
 
 NEW: Add environment.yml file for preparing an environment with conda
 
@@ -28,6 +28,7 @@ FIX: (#4410) M2Crypto transport cast socket.error to strings
 CHANGE: (#4410) (JSON) rpcStub uses list instead of tuples
 NEW: (#4410) add utilities for JSON Serialization (strToIntDict and ignoreEncodeWarning)
 CHANGE: (#4354) ThreadPool - replaced by ThreadPoolExecutor(native python)
+FIX: (#4439) MySQLDB _connect method
 
 *Configuration
 CHANGE: (#4157) add new helper methods for IdP/Proxy Providers, OAuthManager. Add methods that 
@@ -52,6 +53,16 @@ CHANGE: (#4410) (JSON) use of list instead of tuples for SecurityLog
 CHANGE: (#4362) SandboxStoreClient uses list instead of tuple
 CHANGE: (#4396) Removed outdated PilotMonitorAgent
 CHANGE: (#4410) (JSON) use of list instead of tuples for JobReport and Watchdog
+CHANGE: (#4416) As explained in #4412, Completed jobs is used as major status for jobs during
+        completion while it is also used for jobs that have a pending request and require a further
+        action before being Done or Failed.
+CHANGE: (#4416) Completing jobs are treated exactly like Running jobs, i.e. set Stalled if they
+        didn't give sign of life, and are not set Failed directly as before. Jobs to be checked
+        are those that had not sent a heartbeat within the stalledTime period, in order to reduce
+        the number of jobs to check.
+NEW: (#4416) Created a file JobStatus.py for replacing the literal job statuses, and updated many
+        modules using these new variables. Note that there are still many others to change, but
+        could be done gradually...
 
 *DMS
 CHANGE: (#4243) FileCatalog - standard components are loaded using ObjectLoader mechanism
@@ -59,6 +70,8 @@ NEW: (#4279) FileCatalog - added VOMSSecurityManager class
 CHANGE: (#4279) FileCatalog - dropped PolicyBasedSecurityManager and VOMSPolicy classes
 CHANGE: (#4410) (JSON) correct casts for serialization for FTS
 CHANGE: (#4364) remove all the SE mangling in the DFC (SEPrefix, resolvePFN, SEDefinition)
+CHANGE: (#4423) FileMetadata - split getFileMetadataFields into getFileMetadataFields and _getFileMetadataFields
+CHANGE: (#4423) DirectoryMetadata - split getMetadataFields into getMetadataFields and _getMetadataFields
 
 *RMS
 CHANGE: (#4410) (JSON) correct casts for serialization
@@ -81,9 +94,31 @@ NEW: (#4289) CI for unit/lint/integration testing with GitHub actions
 NEW: (#4289) Start using shell linting of the test scripts
 FIX: (#4289) Exit quickly if the installation fails to make it easier to find issues
 CHANGE: (#4410) call pytest directly instead of as a module
+FIX: (#4426) restored system test, moved Jenkins test to appropriate location
+CHANGE: (#4439) integrate test_MySQLDB to all_integration_server_tests
 
 *docs
 NEW: (#4289) Document how to run integration tests in docker
+=======
+[v7r0p12]
+
+*WMS
+FIX: (#4432) Better logging for WMS Optimizers
+NEW: (#4435) PilotCS2JSONSynchronizer: added options pilotRepoBranch and pilotVORepoBranch
+
+*DMS
+FIX: (#4436) dirac-dms-clean-directory: also works on single empty directory, fixes #4420
+
+*Framework
+FIX: (#4436) dirac-install-component: fix bug prohibiting use of the -m/--module parameter
+
+*tests
+NEW: (#4429) Allow extensions to extend the continuous integration tests
+NEW: (#4433) added README.rst for every subdirectory
+
+*docs
+FIX: (#4438) update notes for dirac-distribution (add extensions)
+>>>>>>> rel-v7r0
 
 [v7r0p11]
 
@@ -343,6 +378,17 @@ CHANGE: (#4110) updated basic tutorial for CC7 instead of SLC6.
 NEW: (#4170) added Production system documentation
 CHANGE: (#4224) Pilot 3 is the default
 NEW: (#4244) Added a few notes on using the JobParameters on ElasticSearch database
+
+[v6r22p20]
+
+*Core
+CHANGE: (#4424) SocketInfo.py - DEFAULT_SSL_CIPHERS updated following the issue #4393
+
+*WorkloadManagement
+FIX: (#4440) ServerUtils.py - server name in ServerUtils.getPilotAgentsDB()
+
+*Transformation
+FIX: (#4434) TaskManager.py - fix bug in finding the settings for Clinics in the hospital
 
 [v6r22p19]
 

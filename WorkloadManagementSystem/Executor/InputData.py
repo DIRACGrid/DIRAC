@@ -85,7 +85,8 @@ class InputData(OptimizerExecutor):
     # Is it a production job?
     result = jobState.getAttribute("JobType")
     if not result['OK']:
-      return S_ERROR("Could not retrieve job type")
+      self.jobLog.error("Could not retrieve job type", result['Message'])
+      return result
     jobType = result['Value']
     if jobType in Operations().getValue('Transformations/DataProcessing', []):
       self.jobLog.info("Skipping optimizer, since this is a Production job")
@@ -95,7 +96,7 @@ class InputData(OptimizerExecutor):
     result = jobState.getInputData()
     if not result['OK']:
       self.jobLog.error("Cannot retrieve input data", result['Message'])
-      return S_ERROR("Cannot retrieve input data")
+      return result
     if not result['Value']:
       self.jobLog.notice("No input data. Skipping.")
       return self.setNextOptimizer()
@@ -112,11 +113,13 @@ class InputData(OptimizerExecutor):
       if self.checkWithUserProxy:
         result = jobState.getAttribute("Owner")
         if not result['OK']:
-          return S_ERROR("Could not retrieve job owner")
+          self.jobLog.error("Could not retrieve job owner", result['Message'])
+          return result
         userName = result['Value']
         result = jobState.getAttribute("OwnerGroup")
         if not result['OK']:
-          return S_ERROR("Could not retrieve job owner group")
+          self.jobLog.error("Could not retrieve job owner group", result['Message'])
+          return result
         userGroup = result['Value']
         result = self._resolveInputData(  # pylint: disable=unexpected-keyword-arg
             jobState,
@@ -142,6 +145,7 @@ class InputData(OptimizerExecutor):
 
     result = jobState.getManifest()
     if not result['OK']:
+      self.jobLog.error("Failed to get job manifest", result['Message'])
       return result
     manifest = result['Value']
     vo = manifest.getOption('VirtualOrganization')
@@ -252,6 +256,7 @@ class InputData(OptimizerExecutor):
     if seName not in self.__SEToSiteMap:
       result = DMSHelpers().getSitesForSE(seName)
       if not result['OK']:
+        self.jobLog.error("Failed to get site for SE", result['Message'])
         return result
       self.__SEToSiteMap[seName] = list(result['Value'])
     return S_OK(self.__SEToSiteMap[seName])
@@ -306,10 +311,11 @@ class InputData(OptimizerExecutor):
             continue
           siteList = result['Value']
           seObj = StorageElement(seName, vo=vo)
-          seStatus = seObj.getStatus()
-          if not seStatus['OK']:
-            return seStatus
-          seDict[seName] = {'Sites': siteList, 'Status': seStatus['Value']}
+          result = seObj.getStatus()
+          if not result['OK']:
+            self.jobLog.error("Failed to get SE status", result['Message'])
+            return result
+          seDict[seName] = {'Sites': siteList, 'Status': result['Value']}
         # Get SE info from the dict
         seData = seDict[seName]
         siteList = seData['Sites']

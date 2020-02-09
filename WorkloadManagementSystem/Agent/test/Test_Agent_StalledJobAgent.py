@@ -38,27 +38,6 @@ def test__failSubmittingJobs(mocker):
   assert not result['OK']
 
 
-def test__failCompletedJobs(mocker):
-  """ Testing StalledJobAgent()._failCompletedJobs()
-  """
-
-  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule.__init__")
-  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.AgentModule.am_getOption", side_effect=mockAM)
-  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.JobDB.__init__", side_effect=mockNone)
-  mocker.patch("DIRAC.WorkloadManagementSystem.Agent.StalledJobAgent.JobLoggingDB.__init__", side_effect=mockNone)
-
-  stalledJobAgent = StalledJobAgent()
-  stalledJobAgent._AgentModule__configDefaults = mockAM
-  stalledJobAgent.initialize()
-  stalledJobAgent.jobDB.log = gLogger
-  stalledJobAgent.log = gLogger
-  stalledJobAgent.log.setLevel('DEBUG')
-
-  result = stalledJobAgent._failCompletedJobs()
-
-  assert not result['OK']
-
-
 def test__kickStuckJobs(mocker):
   """ Testing StalledJobAgent()._kickStuckJobs()
   """

@@ -1282,7 +1282,9 @@ def logDEBUG(msg):
   """
   if cliParams.debug:
     for line in msg.split("\n"):
-      print("%s UTC dirac-install [DEBUG] %s" % (time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime()), line))
+      print("%s UTC dirac-install [DEBUG] %s" % (time.strftime('%Y-%m-%d %H:%M:%S',
+                                                               time.gmtime()),
+                                                 line))
     sys.stdout.flush()
 
 
@@ -1291,7 +1293,9 @@ def logERROR(msg):
   :param str msg: error message
   """
   for line in msg.split("\n"):
-    print("%s UTC dirac-install [ERROR] %s" % (time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime()), line))
+    print("%s UTC dirac-install [ERROR] %s" % (time.strftime('%Y-%m-%d %H:%M:%S',
+                                                             time.gmtime()),
+                                               line))
   sys.stdout.flush()
 
 
@@ -1300,7 +1304,9 @@ def logWARN(msg):
   :param str msg: warning message
   """
   for line in msg.split("\n"):
-    print("%s UTC dirac-install [WARN] %s" % (time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime()), line))
+    print("%s UTC dirac-install [WARN] %s" % (time.strftime('%Y-%m-%d %H:%M:%S',
+                                                            time.gmtime()),
+                                              line))
   sys.stdout.flush()
 
 
@@ -1309,7 +1315,9 @@ def logNOTICE(msg):
   :param str msg: notice message
   """
   for line in msg.split("\n"):
-    print("%s UTC dirac-install [NOTICE]  %s" % (time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime()), line))
+    print("%s UTC dirac-install [NOTICE]  %s" % (time.strftime('%Y-%m-%d %H:%M:%S',
+                                                               time.gmtime()),
+                                                 line))
   sys.stdout.flush()
 
 
@@ -1772,6 +1780,7 @@ def loadConfiguration():
 
     if opName == 'installType':
       opName = 'externalsType'
+
     if isinstance(getattr(cliParams, opName), str_type):
       setattr(cliParams, opName, opVal)
     elif isinstance(getattr(cliParams, opName), bool):
@@ -2517,7 +2526,7 @@ def checkoutFromGit(moduleName, sourceURL, tagVersion, destinationDir=None):
 
   # replacing the code
   if os.path.exists(fDirName + '/' + moduleName):
-    cmd = "ln -s %s/%s" % (codeRepo, moduleName)
+    cmd = "ln -s %s/%s %s" % (codeRepo, moduleName, os.path.join(cliParams.targetPath, moduleName))
   else:
     cmd = "mv %s %s" % (fDirName, os.path.join(cliParams.targetPath, moduleName))
   logNOTICE("Executing: %s" % cmd)
@@ -2631,7 +2640,9 @@ if __name__ == "__main__":
     logNOTICE("Skipping installing DIRAC")
 
   # we install with DIRACOS from v7rX DIRAC release
-  if cliParams.diracOS or int(releaseConfig.prjRelCFG['DIRAC'].keys()[0][1]) > 6:
+  if cliParams.diracOS \
+     or isinstance(list(releaseConfig.prjRelCFG['DIRAC'])[0][1], str_type) \
+     or int(list(releaseConfig.prjRelCFG['DIRAC'])[0][1]) > 6:
     logNOTICE("Installing DIRAC OS %s..." % cliParams.diracOSVersion)
     if not installDiracOS(releaseConfig):
       sys.exit(1)
