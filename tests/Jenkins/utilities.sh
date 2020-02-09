@@ -632,6 +632,16 @@ function diracUserAndGroup(){
     exit 1
   fi
 
+  if ! dirac-admin-add-group -G jenkins_fcadmin -U adminusername,ciuser,trialUser -P FileCatalogManagement,NormalUser "$DEBUG"; then
+    echo 'ERROR: dirac-admin-add-group failed'
+    exit 1
+  fi
+
+  if ! dirac-admin-add-group -G jenkins_user -U adminusername,ciuser,trialUser -P NormalUser "$DEBUG"; then
+    echo 'ERROR: dirac-admin-add-group failed'
+    exit 1
+  fi
+
   if ! dirac-admin-add-shifter DataManager adminusername prod "$DEBUG"; then
     echo 'ERROR: dirac-admin-add-shifter failed'
     exit 1
@@ -722,7 +732,7 @@ function diracAddSite(){
 diracServices(){
   echo '==> [diracServices]'
 
-  services=$(cut -d '.' -f 1 < services | grep -v PilotsLogging | grep -v IRODSStorageElementHandler | grep -v ^ConfigurationSystem | grep -v Plotting | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g')
+  services=$(cut -d '.' -f 1 < services | grep -v PilotsLogging | grep -v StorageElementHandler | grep -v ^ConfigurationSystem | grep -v Plotting | grep -v RAWIntegrity | grep -v RunDBInterface | grep -v ComponentMonitoring | sed 's/System / /g' | sed 's/Handler//g' | sed 's/ /\//g')
 
   # group proxy, will be uploaded explicitly
   #  echo '==> getting/uploading proxy for prod'
@@ -736,6 +746,29 @@ diracServices(){
     fi
   done
 }
+
+
+diracSEs(){
+  echo '==> [diracSEs]'
+
+  echo "==> Installing SE-1"
+  seDir=$SERVERINSTALLDIR/Storage/SE-1
+  mkdir -p $seDir
+  if ! dirac-install-component DataManagement SE-1 -m StorageElement -p BasePath=$seDir -p Port=9148 "$DEBUG"; then
+    echo 'ERROR: dirac-install-component failed'
+    exit 1
+  fi
+
+  echo "==> Installing SE-2"
+  seDir=$SERVERINSTALLDIR/Storage/SE-2
+  mkdir -p $seDir
+  if ! dirac-install-component DataManagement SE-2 -m StorageElement -p BasePath=$seDir -p Port=9147 "$DEBUG"; then
+    echo 'ERROR: dirac-install-component failed'
+    exit 1
+  fi
+
+}
+
 
 #-------------------------------------------------------------------------------
 # diracUninstallServices:
