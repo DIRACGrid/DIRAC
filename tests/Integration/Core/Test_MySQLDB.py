@@ -1,172 +1,261 @@
-""" This is a test code for this class, it requires access to a MySQL DB
+"""
+This is used to test the MySQLDB module.
 """
 
-from __future__ import print_function
 import os
 import sys
 import time
+import pytest
 
-from DIRAC.Core.Base.Script import parseCommandLine
-parseCommandLine()
-
-from DIRAC import gLogger
+from DIRAC import gLogger, gConfig
 from DIRAC.Core.Utilities import Time
 from DIRAC.Core.Utilities.MySQL import MySQL
 
-if 'PYTHONOPTIMIZE' in os.environ and os.environ['PYTHONOPTIMIZE']:
-  gLogger.info( 'Unset python optimization "PYTHONOPTIMIZE"' )
-  sys.exit( 0 )
 
-gLogger.info( 'Testing MySQL class...' )
+# Useful methods
 
-HOST = '127.0.0.1'
-USER = 'Dirac'
-PWD = 'Dirac'
-DB = 'AccountingDB'
+def setupDB():
+  """ Get configuration from a cfg file and instantiate a DB
+  """
+  gLogger.setLevel('DEBUG')
 
-TESTDB = MySQL( HOST, USER, PWD, DB )
-assert TESTDB._connect()['OK']
+  result = gConfig.getOption('/Systems/Databases/Host')
+  if not result['OK']:
+    result['Value'] = 'mysql'
+  host = result['Value']
 
-TESTDICT = { 'TestTable' : { 'Fields': { 'ID'      : "INTEGER UNIQUE NOT NULL AUTO_INCREMENT",
-                                         'Name'    : "VARCHAR(255) NOT NULL DEFAULT 'Yo'",
-                                         'Surname' : "VARCHAR(255) NOT NULL DEFAULT 'Tu'",
-                                         'Count'   : "INTEGER NOT NULL DEFAULT 0",
-                                         'Time'    : "DATETIME",
-                                       },
-                             'PrimaryKey': 'ID'
-                           }
-           }
+  result = gConfig.getOption('/Systems/Databases/User')
+  if not result['OK']:
+    result['Value'] = 'Dirac'
+  user = result['Value']
 
-NAME = 'TestTable'
-FIELDS = [ 'Name', 'Surname' ]
-NEWVALUES = [ 'Name2', 'Surn2' ]
-SOMEFIELDS = [ 'Name', 'Surname', 'Count' ]
-ALLFIELDS = [ 'ID', 'Name', 'Surname', 'Count', 'Time' ]
-ALLVALUES = [ 1, 'Name1', 'Surn1', 1, 'UTC_TIMESTAMP()' ]
-ALLDICT = dict( Name = 'Name1', Surname = 'Surn1', Count = 1, Time = 'UTC_TIMESTAMP()' )
-COND0 = {}
-COND10 = {'Count': range( 10 )}
+  result = gConfig.getOption('/Systems/Databases/Password')
+  if not result['OK']:
+    result['Value'] = 'Dirac'
+  password = result['Value']
 
-try:
-  RESULT = TESTDB._createTables( TESTDICT, force = True )
-  assert RESULT['OK']
-  print('Table Created')
+  result = gConfig.getOption('/Systems/Databases/Port')
+  if not result['OK']:
+    result['Value'] = 3306
+  port = int(result['Value'])
 
-  RESULT = TESTDB.getCounters( NAME, FIELDS, COND0 )
-  assert RESULT['OK']
-  assert RESULT['Value'] == []
+  return getDB(host, user, password, 'AccountingDB', port)
 
-  RESULT = TESTDB.getDistinctAttributeValues( NAME, FIELDS[0], COND0 )
-  assert RESULT['OK']
-  assert RESULT['Value'] == []
 
-  RESULT = TESTDB.getFields( NAME, FIELDS )
-  assert RESULT['OK']
-  assert RESULT['Value'] == ()
+def getDB(host, user, password, dbName, port):
+  """ Return a MySQL object
+  """
+  return MySQL(host, user, password, dbName, port)
 
-  print('Inserting')
 
-  for J in range( 100 ):
-    RESULT = TESTDB.insertFields( NAME, SOMEFIELDS, ['Name1', 'Surn1', J] )
-    assert RESULT['OK']
-    assert RESULT['Value'] == 1
-    assert RESULT['lastRowId'] == J + 1
+def setupDBCreateTableInsertFields(table, requiredFields, values):
+  """ Setup a DB, create a given table and insert values within it
+  """
+  mysqlDB = setupDB()
 
-  print('Querying')
+  result = mysqlDB._createTables(table, force=True)
+  assert result['OK']
 
-  RESULT = TESTDB.getCounters( NAME, FIELDS, COND0 )
-  assert RESULT['OK']
-  assert RESULT['Value'] == [({'Surname': 'Surn1', 'Name': 'Name1'}, 100)]
+  for j in range(len(values)):
+    value = values[j]
+    result = mysqlDB.insertFields(name, requiredFields, value)
+    assert result['OK']
+    assert result['Value'] == 1
+    assert result['lastRowId'] == j + 1
 
-  RESULT = TESTDB.getDistinctAttributeValues( NAME, FIELDS[0], COND0 )
-  assert RESULT['OK']
-  assert RESULT['Value'] == ['Name1']
+  return mysqlDB
 
-  RESULT = TESTDB.getFields( NAME, FIELDS )
-  assert RESULT['OK']
-  assert len( RESULT['Value'] ) == 100
+# Pytest values
 
-  RESULT = TESTDB.getFields( NAME, SOMEFIELDS, COND10 )
-  assert RESULT['OK']
-  assert len( RESULT['Value'] ) == 10
 
-  RESULT = TESTDB.getFields( NAME, limit = 1 )
-  assert RESULT['OK']
-  assert len( RESULT['Value'] ) == 1
+name = 'TestTable'
 
-  RESULT = TESTDB.getFields( NAME, ['Count'], orderAttribute = 'Count:DESC', limit = 1 )
-  assert RESULT['OK']
-  assert RESULT['Value'] == ( ( 99, ), )
+fields = ['Name', 'Surname']
+reqFields = ['Name', 'Surname', 'Count']
+allFields = ['Name', 'Surname', 'Count', 'Time']
 
-  RESULT = TESTDB.getFields( NAME, ['Count'], orderAttribute = 'Count:ASC', limit = 1 )
-  assert RESULT['OK']
-  assert RESULT['Value'] == ( ( 0, ), )
+cond0 = {}
+cond10 = {'Count': range(10)}
 
-  RESULT = TESTDB.getCounters( NAME, FIELDS, COND10 )
-  assert RESULT['OK']
-  assert RESULT['Value'] == [({'Surname': 'Surn1', 'Name': 'Name1'}, 10)]
+table = {'TestTable': {'Fields': {'ID': "INTEGER UNIQUE NOT NULL AUTO_INCREMENT",
+                                  'Name': "VARCHAR(255) NOT NULL DEFAULT 'Yo'",
+                                  'Surname': "VARCHAR(255) NOT NULL DEFAULT 'Tu'",
+                                  'Count': "INTEGER NOT NULL DEFAULT 0",
+                                  'Time': "DATETIME"},
+                       'PrimaryKey': 'ID'}}
 
-  RESULT = TESTDB._getFields( NAME, FIELDS, COND10.keys(), COND10.values() )
-  assert RESULT['OK']
-  assert len( RESULT['Value'] ) == 10
 
-  RESULT = TESTDB.updateFields( NAME, FIELDS, NEWVALUES, COND10 )
-  assert RESULT['OK']
-  assert RESULT['Value'] == 10
+def genVal1():
+  values = []
+  for i in range(100):
+    values.append(['name1', 'Surn1', i])
+  return values
 
-  RESULT = TESTDB.updateFields( NAME, FIELDS, NEWVALUES, COND10 )
-  assert RESULT['OK']
-  assert RESULT['Value'] == 0
 
-  print('Removing')
+def genVal2():
+  values = []
+  for i in range(2):
+    values.append(['name1', 'Surn1', 1, 'UTC_TIMESTAMP()'])
+  return values
 
-  RESULT = TESTDB.deleteEntries( NAME, COND10 )
-  assert RESULT['OK']
-  assert RESULT['Value'] == 10
+# Tests
 
-  RESULT = TESTDB.deleteEntries( NAME )
-  assert RESULT['OK']
-  assert RESULT['Value'] == 90
 
-  RESULT = TESTDB.getCounters( NAME, FIELDS, COND0 )
-  assert RESULT['OK']
-  assert RESULT['Value'] == []
+@pytest.mark.parametrize("host, user, password, dbName, port, expected", [
+    ('mysql', 'Dirac', 'Dirac', 'AccountingDB', 3306, True),
+    ('fake', 'fake', 'fake', 'FakeDB', 0000, False),
+])
+def test_connection(host, user, password, dbName, port, expected):
+  """ Try to connect to a DB
+  """
+  mysqlDB = getDB(host, user, password, dbName, port)
+  result = mysqlDB._connect()
+  assert result['OK'] is expected
+  assert mysqlDB._connected is expected
 
-  RESULT = TESTDB.insertFields( NAME, inFields = ALLFIELDS, inValues = ALLVALUES )
-  assert RESULT['OK']
-  assert RESULT['Value'] == 1
 
-  time.sleep( 1 )
+@pytest.mark.parametrize("name, fields, table, cond, expected", [
+    (name, fields, table, cond0, True),
+])
+def test_createEmptyTable(name, fields, table, cond, expected):
+  """ Create a table and check that there is no element
+  """
+  mysqlDB = setupDB()
 
-  RESULT = TESTDB.insertFields( NAME, inDict = ALLDICT )
-  assert RESULT['OK']
-  assert RESULT['Value'] == 1
+  result = mysqlDB._createTables(table, force=True)
+  assert result['OK'] is expected
 
-  time.sleep( 2 )
-  RESULT = TESTDB.getFields( NAME, older = 'UTC_TIMESTAMP()', timeStamp = 'Time' )
-  assert RESULT['OK']
-  assert len( RESULT['Value'] ) == 2
+  result = mysqlDB.getCounters(name, fields, cond0)
+  assert result['OK']
+  assert result['Value'] == []
 
-  RESULT = TESTDB.getFields( NAME, newer = 'UTC_TIMESTAMP()', timeStamp = 'Time' )
-  assert len( RESULT['Value'] ) == 0
+  result = mysqlDB.getDistinctAttributeValues(name, fields[0], cond0)
+  assert result['OK']
+  assert result['Value'] == []
 
-  RESULT = TESTDB.getFields( NAME, older = Time.toString(), timeStamp = 'Time' )
-  assert RESULT['OK']
-  assert len( RESULT['Value'] ) == 2
+  result = mysqlDB.getFields(name, fields)
+  assert result['OK']
+  assert result['Value'] == ()
 
-  RESULT = TESTDB.getFields( NAME, newer = Time.dateTime(), timeStamp = 'Time' )
-  assert RESULT['OK']
-  assert len( RESULT['Value'] ) == 0
 
-  RESULT = TESTDB.deleteEntries( NAME )
-  assert RESULT['OK']
-  assert RESULT['Value'] == 2
+@pytest.mark.parametrize("name, fields, values, table, expected", [
+    (name, allFields, ['name1', 'Surn1', 1, 'UTC_TIMESTAMP()'], table, 1)
+])
+def test_insertElements(name, fields, values, table, expected):
+  """ Create a table, insert an element
+  """
+  mysqlDB = setupDB()
 
-  print('OK')
+  result = mysqlDB._createTables(table, force=True)
+  assert result['OK']
 
-except AssertionError:
-  print('ERROR ', end=' ')
-  if not RESULT['OK']:
-    print(RESULT['Message'])
+  allDict = dict(zip(fields, values))
+
+  result = mysqlDB.insertFields(name, inFields=fields, inValues=values)
+  assert result['OK']
+  assert result['Value'] == 1
+
+  time.sleep(1)
+
+  result = mysqlDB.insertFields(name, inDict=allDict)
+  assert result['OK']
+  assert result['Value'] == 1
+
+
+@pytest.mark.parametrize("name, fields, requiredFields, values, table, cond, expected", [
+    (name, fields, reqFields, genVal1(), table, cond0, [({'Surname': 'Surn1', 'Name': 'name1'}, 100)]),
+    (name, fields, reqFields, genVal1(), table, cond10, [({'Surname': 'Surn1', 'Name': 'name1'}, 10)])
+])
+def test_getCounters(name, fields, requiredFields, values, table, cond, expected):
+  """ Create a table, insert elements, test getCounters using various conditions
+  """
+  mysqlDB = setupDBCreateTableInsertFields(table, requiredFields, values)
+
+  result = mysqlDB.getCounters(name, fields, cond)
+  assert result['OK']
+  assert result['Value'] == expected
+
+
+@pytest.mark.parametrize("name, fields, requiredFields, values, table, cond, expected", [
+    (name, fields, reqFields, genVal1(), table, cond0, ['name1'])
+])
+def test_getDistinctAttributeValues(name, fields, requiredFields, values, table, cond, expected):
+  """ Create a table, insert elements, test getDistinctAttributeValues using various conditions
+  """
+  mysqlDB = setupDBCreateTableInsertFields(table, requiredFields, values)
+
+  result = mysqlDB.getDistinctAttributeValues(name, fields[0], cond)
+  assert result['OK']
+  assert result['Value'] == expected
+
+
+@pytest.mark.parametrize("table, reqFields, values, name, args, expected, isExpectedCount", [
+    (table, reqFields, genVal1(), name,
+        {'outFields': fields}, 100, True),
+    (table, reqFields, genVal1(), name,
+        {'outFields': reqFields, 'condDict': cond10}, 10, True),
+    (table, reqFields, genVal1(), name,
+        {'limit': 1}, 1, True),
+    (table, reqFields, genVal1(), name,
+        {'outFields': ['Count'], 'orderAttribute': 'Count:DESC', 'limit': 1}, ((99,),), False),
+    (table, reqFields, genVal1(), name,
+        {'outFields': ['Count'], 'orderAttribute': 'Count:ASC', 'limit': 1}, ((0,),), False),
+    (table, allFields, genVal2(), name,
+        {'older': 'UTC_TIMESTAMP()', 'timeStamp': 'Time'}, 0, True),
+    (table, allFields, genVal2(), name,
+        {'newer': 'UTC_TIMESTAMP()', 'timeStamp': 'Time'}, 2, True),
+    (table, allFields, genVal2(), name,
+        {'older': Time.toString(), 'timeStamp': 'Time'}, 0, True),
+    (table, allFields, genVal2(), name,
+        {'newer': Time.toString(), 'timeStamp': 'Time'}, 2, True)
+])
+def test_getFields(table, reqFields, values, name, args, expected, isExpectedCount):
+  """ Create a table, insert elements, test getFields using various conditions
+  """
+  mysqlDB = setupDBCreateTableInsertFields(table, reqFields, values)
+
+  result = mysqlDB.getFields(name, **args)
+  assert result['OK']
+
+  if isExpectedCount:
+    assert len(result['Value']) == expected
   else:
-    print(RESULT)
+    assert result['Value'] == expected
+
+
+@pytest.mark.parametrize("name, fields, requiredFields, values, newValues, table, cond, expected1, expected2", [
+    (name, fields, reqFields, genVal1(), ['name2', 'Surn2'], table, cond10, 10, 0)
+])
+def test_updateFields(name, fields, requiredFields, values, newValues, table, cond, expected1, expected2):
+  """ Create a table, insert elements and update them using various conditions
+  """
+  mysqlDB = setupDBCreateTableInsertFields(table, requiredFields, values)
+
+  result = mysqlDB.updateFields(name, fields, newValues, cond)
+  assert result['OK']
+  assert result['Value'] == expected1
+
+  result = mysqlDB.updateFields(name, fields, newValues, cond)
+  assert result['OK']
+  assert result['Value'] == expected2
+
+
+@pytest.mark.parametrize("name, fields, requiredFields, values, table, cond, expected1, expected2", [
+    (name, fields, reqFields, genVal1(), table, cond10, 10, 90)
+])
+def test_deleteEntries(name, fields, requiredFields, values, table, cond, expected1, expected2):
+  """ Create a table, insert elements and delete some of them
+  """
+  mysqlDB = setupDBCreateTableInsertFields(table, requiredFields, values)
+
+  result = mysqlDB.deleteEntries(name, cond)
+  assert result['OK']
+  assert result['Value'] == expected1
+
+  result = mysqlDB.deleteEntries(name)
+  assert result['OK']
+  assert result['Value'] == expected2
+
+  result = mysqlDB.getCounters(name, fields, {})
+  assert result['OK']
+  assert result['Value'] == []
