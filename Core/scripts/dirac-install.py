@@ -155,6 +155,14 @@ try:
 except ImportError:
   # Fall back to Python 2's urllib2
   from urllib2 import urlopen, HTTPError, URLError
+try:
+  long
+except NameError:
+  long = int
+try:
+  str_type = basestring
+except NameError:
+  str_type = str
 
 __RCSID__ = "$Id$"
 
@@ -1274,7 +1282,9 @@ def logDEBUG(msg):
   """
   if cliParams.debug:
     for line in msg.split("\n"):
-      print ("%s UTC dirac-install [DEBUG] %s" % (time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime()), line))
+      print("%s UTC dirac-install [DEBUG] %s" % (time.strftime('%Y-%m-%d %H:%M:%S',
+                                                               time.gmtime()),
+                                                 line))
     sys.stdout.flush()
 
 
@@ -1283,7 +1293,9 @@ def logERROR(msg):
   :param str msg: error message
   """
   for line in msg.split("\n"):
-    print ("%s UTC dirac-install [ERROR] %s" % (time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime()), line))
+    print("%s UTC dirac-install [ERROR] %s" % (time.strftime('%Y-%m-%d %H:%M:%S',
+                                                             time.gmtime()),
+                                               line))
   sys.stdout.flush()
 
 
@@ -1292,7 +1304,9 @@ def logWARN(msg):
   :param str msg: warning message
   """
   for line in msg.split("\n"):
-    print ("%s UTC dirac-install [WARN] %s" % (time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime()), line))
+    print("%s UTC dirac-install [WARN] %s" % (time.strftime('%Y-%m-%d %H:%M:%S',
+                                                            time.gmtime()),
+                                              line))
   sys.stdout.flush()
 
 
@@ -1301,7 +1315,9 @@ def logNOTICE(msg):
   :param str msg: notice message
   """
   for line in msg.split("\n"):
-    print ("%s UTC dirac-install [NOTICE]  %s" % (time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime()), line))
+    print("%s UTC dirac-install [NOTICE]  %s" % (time.strftime('%Y-%m-%d %H:%M:%S',
+                                                               time.gmtime()),
+                                                 line))
   sys.stdout.flush()
 
 
@@ -1370,14 +1386,14 @@ def urlretrieveTimeout(url, fileName='', timeout=0):
         urlData += data.decode('utf8', 'ignore')
       data = remoteFD.read(16384)
       if count % 20 == 0 and sys.stdout.isatty():
-        print (u'\033[1D' + ".", end=" ")
+        print(u'\033[1D' + ".", end=" ")
         sys.stdout.flush()
         progressBar = True
       count += 1
     if progressBar and sys.stdout.isatty():
       # return cursor to the beginning of the line
-      print ('\033[1K', end=" ")
-      print ('\033[1A')
+      print('\033[1K', end=" ")
+      print('\033[1A')
     if fileName:
       localFD.close()
     remoteFD.close()
@@ -1656,6 +1672,8 @@ def discoverModules(modules):
     projects[m] = {}
     if s and v:
       projects[m] = {"sourceUrl": s, "Version": v}
+    else:
+      logWARN('Unable to parse module: %s' % module)
   return projects
 
 ####
@@ -1698,12 +1716,12 @@ cmdOpts = (('r:', 'release=', 'Release version to install'),
 
 
 def usage():
-  print ("\nUsage:\n\n  %s <opts> <cfgFile>" % os.path.basename(sys.argv[0]))
-  print ("\nOptions:")
+  print("\nUsage:\n\n  %s <opts> <cfgFile>" % os.path.basename(sys.argv[0]))
+  print("\nOptions:")
   for cmdOpt in cmdOpts:
-    print ("\n  %s %s : %s" % (cmdOpt[0].ljust(3), cmdOpt[1].ljust(20), cmdOpt[2]))
+    print("\n  %s %s : %s" % (cmdOpt[0].ljust(3), cmdOpt[1].ljust(20), cmdOpt[2]))
   print()
-  print ("Known options and default values from /defaults section of releases file")
+  print("Known options and default values from /defaults section of releases file")
   for options in [('Release', cliParams.release),
                   ('Project', cliParams.project),
                   ('ModulesToInstall', []),
@@ -1715,7 +1733,7 @@ def usage():
                   ('NoAutoBuild', cliParams.noAutoBuild),
                   ('Debug', cliParams.debug),
                   ('Timeout', cliParams.timeout)]:
-    print (" %s = %s" % options)
+    print(" %s = %s" % options)
 
   sys.exit(0)
 
@@ -1763,10 +1781,7 @@ def loadConfiguration():
 
     if opName == 'installType':
       opName = 'externalsType'
-    if sys.version_info[0] < 3:
-      str_type = basestring
-    else:
-      str_type = str
+
     if isinstance(getattr(cliParams, opName), str_type):
       setattr(cliParams, opName, opVal)
     elif isinstance(getattr(cliParams, opName), bool):
@@ -2200,7 +2215,8 @@ def createCshrc():
       if 'X509_CERT_DIR' in os.environ:
         certDir = os.environ['X509_CERT_DIR']
       else:
-        if os.path.isdir('/etc/grid-security/certificates'):
+        if os.path.isdir('/etc/grid-security/certificates') and \
+           os.listdir('/etc/grid-security/certificates'):
           # Assuming that, if present, it is not empty, and has correct CAs
           certDir = '/etc/grid-security/certificates'
         else:
@@ -2374,7 +2390,8 @@ def createBashrcForDiracOS():
       if 'X509_CERT_DIR' in os.environ:
         certDir = os.environ['X509_CERT_DIR']
       else:
-        if os.path.isdir('/etc/grid-security/certificates'):
+        if os.path.isdir('/etc/grid-security/certificates') and \
+           os.listdir('/etc/grid-security/certificates'):
           # Assuming that, if present, it is not empty, and has correct CAs
           certDir = '/etc/grid-security/certificates'
         else:
@@ -2617,7 +2634,9 @@ if __name__ == "__main__":
     logNOTICE("Skipping installing DIRAC")
 
   # we install with DIRACOS from v7rX DIRAC release
-  if cliParams.diracOS or int(releaseConfig.prjRelCFG['DIRAC'].keys()[0][1]) > 6:
+  if cliParams.diracOS \
+     or isinstance(list(releaseConfig.prjRelCFG['DIRAC'])[0][1], str_type) \
+     or int(list(releaseConfig.prjRelCFG['DIRAC'])[0][1]) > 6:
     logNOTICE("Installing DIRAC OS %s..." % cliParams.diracOSVersion)
     if not installDiracOS(releaseConfig):
       sys.exit(1)
