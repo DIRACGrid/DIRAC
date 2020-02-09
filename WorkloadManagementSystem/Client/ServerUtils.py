@@ -31,7 +31,7 @@ def getDBOrClient(DB, serverName):
 
 
 def getPilotAgentsDB():
-  serverName = 'WorkloadManagement/Pilots'
+  serverName = 'WorkloadManagement/PilotManager'
   PilotAgentsDB = None
   try:
     from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB

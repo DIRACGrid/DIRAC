@@ -70,3 +70,25 @@ pytest $CLIENTINSTALLDIR/DIRAC/tests/Integration/TransformationSystem/Test_Clien
 echo -e "*** $(date -u)  **** PS TESTS ****\n"
 pytest $CLIENTINSTALLDIR/DIRAC/tests/Integration/ProductionSystem/Test_Client_Production.py 2>&1 | tee -a clientTestOutputs.txt; (( ERR |= $? ))
 pytest $CLIENTINSTALLDIR/DIRAC/tests/Integration/ProductionSystem/Test_Client_TS_Prod.py 2>&1 | tee -a clientTestOutputs.txt; (( ERR |= $? ))
+
+#-------------------------------------------------------------------------------#
+echo -e "*** $(date -u) **** DataManager TESTS ****\n"
+
+echo -e "*** $(date -u)  Getting a privileged user\n" 2>&1 | tee -a clientTestOutputs.txt
+dirac-proxy-init -g jenkins_fcadmin -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key $DEBUG 2>&1 | tee -a clientTestOutputs.txt
+
+cat >> dataManager_create_folders <<EOF
+
+mkdir /Jenkins
+chgrp -R jenkins_user Jenkins
+chmod -R 774 Jenkins
+exit
+
+EOF
+
+dirac-dms-filecatalog-cli < dataManager_create_folders
+
+echo -e "*** $(date -u)  Getting a non privileged user\n" 2>&1 | tee -a clientTestOutputs.txt
+dirac-proxy-init -g jenkins_user -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key $DEBUG 2>&1 | tee -a clientTestOutputs.txt
+
+pytest $CLIENTINSTALLDIR/DIRAC/tests/Integration/DataManagementSystem/Test_DataManager.py 2>&1 | tee -a clientTestOutputs.txt; (( ERR |= $? ))

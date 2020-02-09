@@ -71,7 +71,8 @@ class JobScheduling(OptimizerExecutor):
     # Get the job manifest for the later checks
     result = jobState.getManifest()
     if not result['OK']:
-      return S_ERROR("Could not retrieve job manifest: %s" % result['Message'])
+      self.jobLog.error("Could not retrieve job manifest", result['Message'])
+      return result
     jobManifest = result['Value']
 
     # Get site requirements
@@ -83,13 +84,15 @@ class JobScheduling(OptimizerExecutor):
     # Get job type
     result = jobState.getAttribute("JobType")
     if not result['OK']:
-      return S_ERROR("Could not retrieve job type")
+      self.jobLog.error("Could not retrieve job type", result['Message'])
+      return result
     jobType = result['Value']
 
     # Get banned sites from DIRAC
     result = self.siteClient.getSites('Banned')
     if not result['OK']:
-      return S_ERROR("Cannot retrieve banned sites from JobDB")
+      self.jobLog.error("Cannot retrieve banned sites from JobDB", result['Message'])
+      return result
     wmsBannedSites = result['Value']
 
     # If the user has selected any site, filter them and hold the job if not able to run
@@ -98,7 +101,9 @@ class JobScheduling(OptimizerExecutor):
 
         result = self.siteClient.getUsableSites(userSites)
         if not result['OK']:
-          return S_ERROR("Problem checking userSites for tuple of active/banned/invalid sites")
+          self.jobLog.error("Problem checking userSites for tuple of active/banned/invalid sites",
+                            result['Message'])
+          return result
         usableSites = set(result['Value'])
         bannedSites = []
         invalidSites = []
@@ -127,11 +132,12 @@ class JobScheduling(OptimizerExecutor):
     if checkPlatform and jobPlatform:
       result = gConfig.getOptionsDict('/Resources/Computing/OSCompatibility')
       if not result['OK']:
-        return S_ERROR("Unable to get OSCompatibility list")
+        self.jobLog.error("Unable to get OSCompatibility list", result['Message'])
+        return result
       allPlatforms = result['Value']
       if jobPlatform not in allPlatforms:
         self.jobLog.error("Platform not supported", jobPlatform)
-        return S_ERROR("Platform %s is not supported" % jobPlatform)
+        return S_ERROR("Platform is not supported")
 
     # Filter the userSites by the platform selection (if there is one)
     if checkPlatform and userSites:
@@ -139,7 +145,7 @@ class JobScheduling(OptimizerExecutor):
         result = self.__filterByPlatform(jobPlatform, userSites)
         if not result['OK']:
           self.jobLog.error("Failed to filter job sites by platform", result['Message'])
-          return S_ERROR("Failed to filter job sites by platform")
+          return result
         userSites = result['Value']
         if not userSites:
           # No sites left after filtering -> Invalid platform/sites combination
@@ -149,8 +155,8 @@ class JobScheduling(OptimizerExecutor):
     # Check if there is input data
     result = jobState.getInputData()
     if not result['OK']:
-      self.jobLog.error("Cannot get input data", result['Message'])
-      return S_ERROR("Failed to get input data from JobDB")
+      self.jobLog.error("Failed to get input data from JobDB", result['Message'])
+      return result
 
     if not result['Value']:
       # No input data? Just send to TQ
@@ -213,7 +219,7 @@ class JobScheduling(OptimizerExecutor):
     result = self.retrieveOptimizerParam(idAgent)
     if not result['OK']:
       self.jobLog.error("Could not retrieve input data info", result['Message'])
-      return S_ERROR("Could not retrieve input data info")
+      return result
     opData = result['Value']
 
     if 'SiteCandidates' not in opData:
@@ -221,7 +227,7 @@ class JobScheduling(OptimizerExecutor):
 
     # Filter input data sites with user requirement
     siteCandidates = list(opData['SiteCandidates'])
-    self.jobLog.info("Site candidates are %s" % siteCandidates)
+    self.jobLog.info("Site candidates are", siteCandidates)
 
     if userSites:
       siteCandidates = list(set(siteCandidates) & set(userSites))
@@ -239,7 +245,7 @@ class JobScheduling(OptimizerExecutor):
     errorSites = set()
     for site in idSites:
       if numData != idSites[site]['disk'] + idSites[site]['tape']:
-        self.jobLog.error("Site candidate %s does not have all the input data" % site)
+        self.jobLog.error("Site candidate does not have all the input data", "(%s)" % site)
         errorSites.add(site)
     for site in errorSites:
       idSites.pop(site)
@@ -272,7 +278,7 @@ class JobScheduling(OptimizerExecutor):
 
     # Get stageSites[0] because it has already been randomized and it's as good as any in stageSites
     stageSite = stageSites[0]
-    self.jobLog.verbose(" Staging site will be %s" % (stageSite))
+    self.jobLog.verbose(" Staging site will be", stageSite)
     stageData = idSites[stageSite]
     # Set as if everything has already been staged
     stageData['disk'] += stageData['tape']
@@ -290,7 +296,7 @@ class JobScheduling(OptimizerExecutor):
     stageLFNs = result['Value']
     self.__updateSharedSESites(jobManifest, stageSite, stageLFNs, opData)
     # Save the optimizer data again
-    self.jobLog.verbose('Updating %s Optimizer Info:' % (idAgent), opData)
+    self.jobLog.verbose('Updating Optimizer Info', ": %s for %s" % (idAgent, opData))
     result = self.storeOptimizerParam(idAgent, opData)
     if not result['OK']:
       return result
@@ -313,7 +319,7 @@ class JobScheduling(OptimizerExecutor):
       self.freezeTask(delay)
     else:
       self.freezeTask(self.ex_getOption("HoldTime", 300))
-    self.jobLog.info("On hold -> %s" % holdMsg)
+    self.jobLog.info("On hold", holdMsg)
     return jobState.setAppStatus(holdMsg, source=self.ex_optimizerName())
 
   def __getSitesRequired(self, jobManifest):
@@ -325,7 +331,7 @@ class JobScheduling(OptimizerExecutor):
     if not bannedSites:
       bannedSites = jobManifest.getOption("BannedSite", [])
     if bannedSites:
-      self.jobLog.info("Banned %s sites" % ", ".join(bannedSites))
+      self.jobLog.info("Banned sites", ", ".join(bannedSites))
 
     sites = jobManifest.getOption("Site", [])
     # TODO: Only accept known sites after removing crap like ANY set in the original manifest
@@ -333,9 +339,9 @@ class JobScheduling(OptimizerExecutor):
 
     if sites:
       if len(sites) == 1:
-        self.jobLog.info("Single chosen site %s specified" % (sites[0]))
+        self.jobLog.info("Single chosen site", ": %s specified" % (sites[0]))
       else:
-        self.jobLog.info("Multiple sites requested: %s" % ','.join(sites))
+        self.jobLog.info("Multiple sites requested", ": %s" % ','.join(sites))
       sites = self._applySiteFilter(sites, banned=bannedSites)
       if not sites:
         return S_ERROR("Impossible site requirement")
@@ -350,13 +356,13 @@ class JobScheduling(OptimizerExecutor):
     for site in userSites:
       if "." not in site:
         # Invalid site name: Doesn't contain a dot!
-        self.jobLog.info("Skipped invalid site name: %s" % site)
+        self.jobLog.warn("Skipped invalid site name", site)
         continue
       grid = site.split('.')[0]
       sitePath = cfgPath(basePath, grid, site, "CEs")
       result = gConfig.getSections(sitePath)
       if not result['OK']:
-        self.jobLog.info("Failed to get CEs at site %s." % site)
+        self.jobLog.info("Failed to get CEs", "at site %s" % site)
         continue
       siteCEs = result['Value']
 
@@ -431,8 +437,8 @@ class JobScheduling(OptimizerExecutor):
     else:
       result = jobManifest.createSection(reqSection)
     if not result['OK']:
-      self.jobLog.error("Cannot create %s: %s" % reqSection, result['Value'])
-      return S_ERROR("Cannot create %s in the manifest" % reqSection)
+      self.jobLog.error("Cannot create jobManifest section", "(%s: %s)" % reqSection, result['Message'])
+      return result
     reqCfg = result['Value']
 
     if sites:
@@ -460,7 +466,7 @@ class JobScheduling(OptimizerExecutor):
     if not result['OK']:
       return result
 
-    self.jobLog.info("Done")
+    self.jobLog.verbose("Done")
     return self.setNextOptimizer(jobState)
 
   def __resolveStaging(self, inputData, idSites):
@@ -472,9 +478,9 @@ class JobScheduling(OptimizerExecutor):
       nTape = idSites[site]['tape']
       nDisk = idSites[site]['disk']
       if nTape > 0:
-        self.jobLog.verbose("%s tape replicas on site %s" % (nTape, site))
+        self.jobLog.debug("%s tape replicas on site %s" % (nTape, site))
       if nDisk > 0:
-        self.jobLog.verbose("%s disk replicas on site %s" % (nDisk, site))
+        self.jobLog.debug("%s disk replicas on site %s" % (nDisk, site))
         if nDisk == len(inputData):
           diskSites.append(site)
       if nDisk > maxOnDisk:
@@ -485,10 +491,10 @@ class JobScheduling(OptimizerExecutor):
 
     # If there are selected sites, those are disk only sites
     if diskSites:
-      self.jobLog.info("No staging required")
+      self.jobLog.verbose("No staging required")
       return (False, diskSites)
 
-    self.jobLog.info("Staging required")
+    self.jobLog.verbose("Staging required")
     if len(bestSites) > 1:
       random.shuffle(bestSites)
     return (True, bestSites)
@@ -520,7 +526,7 @@ class JobScheduling(OptimizerExecutor):
     if not tapeSEs:
       return S_ERROR("No Local SEs for site %s" % stageSite)
 
-    self.jobLog.verbose("Tape SEs are %s" % (", ".join(tapeSEs)))
+    self.jobLog.debug("Tape SEs are %s" % (", ".join(tapeSEs)))
 
     # I swear this is horrible DM code it's not mine.
     # Eternity of hell to the inventor of the Value of Value of Success of...
@@ -570,11 +576,10 @@ class JobScheduling(OptimizerExecutor):
 
     return S_OK(stageLFNs)
 
-
   def __requestStaging(self, jobState, stageLFNs):
     """ Actual request for staging LFNs through the StorageManagerClient
     """
-    self.jobLog.verbose("Stage request will be \n\t%s" % "\n\t".join(
+    self.jobLog.debug("Stage request will be \n\t%s" % "\n\t".join(
         ["%s:%s" % (lfn, stageLFNs[lfn]) for lfn in stageLFNs]))
 
     stagerClient = StorageManagerClient()
@@ -589,11 +594,11 @@ class JobScheduling(OptimizerExecutor):
                                      'updateJobFromStager@WorkloadManagement/JobStateUpdate',
                                      int(jobState.jid))
     if not result['OK']:
-      self.jobLog.error("Could not send stage request: %s" % result['Message'])
-      return S_ERROR("Problem sending staging request")
+      self.jobLog.error("Could not send stage request", ": %s" % result['Message'])
+      return result
 
     rid = str(result['Value'])
-    self.jobLog.info("Stage request %s sent" % rid)
+    self.jobLog.info("Stage request sent", "(%s)" % rid)
     self.storeOptimizerParam('StageRequest', rid)
 
     result = jobState.setStatus(self.ex_getOption('StagingStatus', 'Staging'),
@@ -613,7 +618,7 @@ class JobScheduling(OptimizerExecutor):
     for siteName in siteCandidates:
       if siteName == stageSite:
         continue
-      self.jobLog.verbose("Checking %s for shared SEs" % siteName)
+      self.jobLog.debug("Checking %s for shared SEs" % siteName)
       siteData = siteCandidates[siteName]
       result = getSEsForSite(siteName)
       if not result['OK']:
@@ -628,7 +633,7 @@ class JobScheduling(OptimizerExecutor):
         status = seStatus[seName]
         if status['Read'] and status['DiskSE']:
           diskSEs.append(seName)
-      self.jobLog.verbose("Disk SEs for %s are %s" % (siteName, ", ".join(diskSEs)))
+      self.jobLog.debug("Disk SEs for %s are %s" % (siteName, ", ".join(diskSEs)))
 
       # Hell again to the dev of this crappy value of value of successful of ...
       lfnData = opData['Value']['Value']['Successful']
@@ -637,7 +642,7 @@ class JobScheduling(OptimizerExecutor):
         if seName not in closeSEs:
           continue
         for lfn in stagedLFNs[seName]:
-          self.jobLog.verbose("Checking %s for %s" % (seName, lfn))
+          self.jobLog.debug("Checking %s for %s" % (seName, lfn))
           # I'm pretty sure that this cannot happen :P
           if lfn not in lfnData:
             continue
@@ -645,11 +650,11 @@ class JobScheduling(OptimizerExecutor):
           onDisk = False
           for siteSE in lfnData[lfn]:
             if siteSE in diskSEs:
-              self.jobLog.verbose("%s on disk for %s" % (lfn, siteSE))
+              self.jobLog.verbose("lfn on disk", ": %s at %s" % (lfn, siteSE))
               onDisk = True
           # If not on disk, then update!
           if not onDisk:
-            self.jobLog.verbose("Setting LFN to disk for %s" % (seName))
+            self.jobLog.verbose("Setting LFN to disk", "for %s" % seName)
             siteData['disk'] += 1
             siteData['tape'] -= 1
 
@@ -663,7 +668,7 @@ class JobScheduling(OptimizerExecutor):
       self.jobLog.info("Any site is candidate")
       return jobState.setAttribute("Site", "ANY")
     elif numSites == 1:
-      self.jobLog.info("Only site %s is candidate" % siteList[0])
+      self.jobLog.info("Only 1 site is candidate", ": %s" % siteList[0])
       return jobState.setAttribute("Site", siteList[0])
 
     # If the job has input data, the online sites are hosting the data
@@ -673,7 +678,7 @@ class JobScheduling(OptimizerExecutor):
     elif onlineSites:
       # More than one site with input
       siteName = "MultipleInput"
-      self.jobLog.info("Several input sites are candidate: %s" % ','.join(onlineSites))
+      self.jobLog.info("Several input sites are candidate", ": %s" % ','.join(onlineSites))
     else:
       # No input site reported (could be a user job)
       siteName = "Multiple"
@@ -685,7 +690,7 @@ class JobScheduling(OptimizerExecutor):
     """Check if the job credentials allow to stage date """
     result = jobState.getAttribute("OwnerGroup")
     if not result['OK']:
-      self.jobLog.error("Cannot retrieve OwnerGroup from DB: %s" % result['Message'])
-      return S_ERROR("Cannot get OwnerGroup")
+      self.jobLog.error("Cannot retrieve OwnerGroup from DB", ": %s" % result['Message'])
+      return result
     group = result['Value']
     return S_OK(Properties.STAGE_ALLOWED in Registry.getPropertiesForGroup(group))

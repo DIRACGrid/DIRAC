@@ -9,7 +9,7 @@
 # - 2.6.x
 # - 2.7.x (x < 9)
 # - 2.7.x (x >= 9)
-# (- 3.6.x)
+# - 3.6.x
 #
 #
 # Invoke this with:
@@ -75,18 +75,20 @@ diracInstall = os.path.join(os.getcwd(), 'dirac-install.py')
 with open(diracInstall, "r") as fd:
   diracInstall = fd.read()
 if sys.version_info >= (3,):
-  diracInstallEncoded = base64.b64encode(bz2.compress(bytes(diracInstall, 'UTF-8'), 9))
+  diracInstallEncoded = base64.b64encode(bz2.compress(diracInstall.encode(), 9))
 else:
   diracInstallEncoded = base64.b64encode(bz2.compress(diracInstall, 9))
 
 res = pilotWrapperScript(
     pilotFilesCompressedEncodedDict={'dirac-install.py': diracInstallEncoded},
-    pilotOptions="--commands CheckWorkerNode,InstallDIRAC --setup=DIRAC-Certification --debug",
-    location='lbcertifdirac7.cern.ch:8443,wrong.cern.ch')
+    pilotOptions="--setup=CI -N ce.dirac.org -Q DIRACQUEUE -n DIRAC.CI.ORG --debug",
+    location='diracproject.web.cern.ch/diracproject/tars/Pilot/DIRAC/master/,wrong.cern.ch')
 
 with open('pilot-wrapper.sh', 'wb') as pj:
-  pj.write(res)
+  pj.write(res.encode())
 
 # 3) now start it
 
-os.system("sh pilot-wrapper.sh")
+ret = os.system("sh pilot-wrapper.sh")
+if ret:
+  sys.exit(1)

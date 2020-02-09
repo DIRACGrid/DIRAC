@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 [v7r1-pre16]
 
 NEW: Add environment.yml file for preparing an environment with conda
@@ -84,6 +85,26 @@ CHANGE: (#4439) integrate test_MySQLDB to all_integration_server_tests
 
 *docs
 NEW: (#4289) Document how to run integration tests in docker
+=======
+[v7r0p12]
+
+*WMS
+FIX: (#4432) Better logging for WMS Optimizers
+NEW: (#4435) PilotCS2JSONSynchronizer: added options pilotRepoBranch and pilotVORepoBranch
+
+*DMS
+FIX: (#4436) dirac-dms-clean-directory: also works on single empty directory, fixes #4420
+
+*Framework
+FIX: (#4436) dirac-install-component: fix bug prohibiting use of the -m/--module parameter
+
+*tests
+NEW: (#4429) Allow extensions to extend the continuous integration tests
+NEW: (#4433) added README.rst for every subdirectory
+
+*docs
+FIX: (#4438) update notes for dirac-distribution (add extensions)
+>>>>>>> rel-v7r0
 
 [v7r0p11]
 
@@ -332,6 +353,17 @@ CHANGE: (#4110) updated basic tutorial for CC7 instead of SLC6.
 NEW: (#4170) added Production system documentation
 CHANGE: (#4224) Pilot 3 is the default
 NEW: (#4244) Added a few notes on using the JobParameters on ElasticSearch database
+
+[v6r22p20]
+
+*Core
+CHANGE: (#4424) SocketInfo.py - DEFAULT_SSL_CIPHERS updated following the issue #4393
+
+*WorkloadManagement
+FIX: (#4440) ServerUtils.py - server name in ServerUtils.getPilotAgentsDB()
+
+*Transformation
+FIX: (#4434) TaskManager.py - fix bug in finding the settings for Clinics in the hospital
 
 [v6r22p19]
 

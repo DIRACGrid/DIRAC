@@ -4,8 +4,7 @@
 __RCSID__ = "$Id$"
 
 import threading
-import datetime
-# Because eval(valenc) might require it
+import datetime  # Because eval(valenc) might require it
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities import DEncode, List
 from DIRAC.Core.Base.ExecutorModule import ExecutorModule
@@ -83,6 +82,7 @@ class OptimizerExecutor(ExecutorModule):
       # If the manifest is dirty, update it!
       result = jobState.getManifest()
       if not result['OK']:
+        self.jobLog.error("Failed to get job manifest", result['Message'])
         return result
       manifest = result['Value']
       if manifest.isDirty():
