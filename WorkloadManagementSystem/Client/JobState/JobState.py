@@ -10,6 +10,7 @@ import datetime
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManifest
+from DIRAC.WorkloadManagementSystem.Client import JobStatus
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
 from DIRAC.WorkloadManagementSystem.DB.JobLoggingDB import JobLoggingDB
 from DIRAC.WorkloadManagementSystem.DB.TaskQueueDB import TaskQueueDB, singleValueDefFields, multiValueDefFields
@@ -142,7 +143,7 @@ class JobState(object):
       gLogger.verbose("Logging records for %s: %s %s %s" % (self.__jid, record, updateTime, source))
       record['date'] = updateTime
       record['source'] = source
-      result = self.__retryFunction(5, JobState.__db.logDB.addLoggingRecord, (self.__jid, ), record)
+      result = self.__retryFunction(5, JobState.__db.logDB.addLoggingRecord, (self.__jid,), record)
       if not result['OK']:
         return result
 
@@ -348,7 +349,7 @@ class JobState(object):
     result = JobState.__db.jobDB.rescheduleJob(self.__jid)
     if not result['OK']:
       return S_ERROR("Cannot reschedule in JobDB job %s: %s" % (self.__jid, result['Message']))
-    JobState.__db.logDB.addLoggingRecord(self.__jid, "Received", "", "", source=source)
+    JobState.__db.logDB.addLoggingRecord(self.__jid, JobStatus.RECEIVED, "", "", source=source)
     return S_OK()
 
   right_resetJob = RIGHT_RESET
@@ -363,7 +364,7 @@ class JobState(object):
     result = JobState.__db.jobDB.rescheduleJob(self.__jid)
     if not result['OK']:
       return S_ERROR("Cannot reschedule in JobDB job %s: %s" % (self.__jid, result['Message']))
-    JobState.__db.logDB.addLoggingRecord(self.__jid, "Received", "", "", source=source)
+    JobState.__db.logDB.addLoggingRecord(self.__jid, JobStatus.RECEIVED, "", "", source=source)
     return S_OK()
 
   right_getInputData = RIGHT_GET_INFO
