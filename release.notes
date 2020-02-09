@@ -265,6 +265,17 @@ NEW: (#4170) added Production system documentation
 CHANGE: (#4224) Pilot 3 is the default
 NEW: (#4244) Added a few notes on using the JobParameters on ElasticSearch database
 
+[v6r22p20]
+
+*Core
+CHANGE: (#4424) SocketInfo.py - DEFAULT_SSL_CIPHERS updated following the issue #4393
+
+*WorkloadManagement
+FIX: (#4440) ServerUtils.py - server name in ServerUtils.getPilotAgentsDB()
+
+*Transformation
+FIX: (#4434) TaskManager.py - fix bug in finding the settings for Clinics in the hospital
+
 [v6r22p19]
 
 *Framework
