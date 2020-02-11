@@ -71,7 +71,7 @@ class BaseHistoryCorrector(BaseCorrector):
                        (timeSlice, len(self.__usageHistory[timeSlice])))
     self.log.info("Updated history knowledge")
 
-  def _getHistoryData(self, timeSpan, groupToUse):
+  def _getHistoryData(self, _timeSpan, _groupToUse):
     """ Get history data from an external source to be defined in a derived class
 
         :param int timeSpan: time span
@@ -90,7 +90,7 @@ class BaseHistoryCorrector(BaseCorrector):
     data = result['Value'].get('data', [])
     if not data:
       message = "Empty history data"
-      self.log.error(message)
+      self.log.warn(message)
       return S_ERROR(message)
 
     # Map the usernames to DNs
