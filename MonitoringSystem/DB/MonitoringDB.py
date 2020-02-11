@@ -1,5 +1,13 @@
 """
 Wrapper on top of ElasticDB. It is used to manage the DIRAC monitoring types.
+
+**Configuration Parameters**:
+
+The following options can be set in ``Systems/Monitoring/<Setup>/Databases/MonitoringDB``
+
+* *IndexPrefix*:  Prefix used to prepend to indices created in the ES instance. If this
+                  is not present in the CS, the indices are prefixed with the setup name.
+
 """
 
 __RCSID__ = "$Id$"
