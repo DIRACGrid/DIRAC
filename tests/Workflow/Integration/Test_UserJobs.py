@@ -50,6 +50,12 @@ class HelloWorldSuccess(UserJobTestCase):
     j.setName("helloWorld-test")
     j.setExecutable(self.exeScriptLocation)
     j.setLogLevel('DEBUG')
+    try:
+      # This is the standard location in Jenkins
+      j.setInputSandbox(find_all('pilot.cfg', os.environ['WORKSPACE'] + '/PilotInstallDIR')[0])
+    except (IndexError, KeyError):
+      j.setInputSandbox(find_all('pilot.cfg', rootPath)[0])
+    j.setConfigArgs('pilot.cfg')
     res = j.runLocal(self.d)
     self.assertTrue(res['OK'])
 
@@ -81,6 +87,12 @@ class HelloWorldPlusSuccess(UserJobTestCase):
     job.setDestination('DIRAC.someSite.ch')
     job.setCPUTime(12345)
     job.setLogLevel('DEBUG')
+    try:
+      # This is the standard location in Jenkins
+      job.setInputSandbox(find_all('pilot.cfg', os.environ['WORKSPACE'] + '/PilotInstallDIR')[0])
+    except (IndexError, KeyError):
+      job.setInputSandbox(find_all('pilot.cfg', rootPath)[0])
+    job.setConfigArgs('pilot.cfg')
 
     res = job.runLocal(self.d)
     self.assertTrue(res['OK'])
@@ -107,6 +119,12 @@ class HelloWorldPlusSuccess(UserJobTestCase):
     job.setDestination('DIRAC.someSite.ch')
     job.setCPUTime(12345)
     job.setLogLevel('DEBUG')
+    try:
+      # This is the standard location in Jenkins
+      job.setInputSandbox(find_all('pilot.cfg', os.environ['WORKSPACE'] + '/PilotInstallDIR')[0])
+    except (IndexError, KeyError):
+      job.setInputSandbox(find_all('pilot.cfg', rootPath)[0])
+    job.setConfigArgs('pilot.cfg')
 
     res = job.runLocal(self.d)
     self.assertTrue(res['OK'])
@@ -122,6 +140,12 @@ class LSSuccess(UserJobTestCase):
     job.setName("ls-test")
     job.setExecutable("/bin/ls", '-l')
     job.setLogLevel('DEBUG')
+    try:
+      # This is the standard location in Jenkins
+      job.setInputSandbox(find_all('pilot.cfg', os.environ['WORKSPACE'] + '/PilotInstallDIR')[0])
+    except (IndexError, KeyError):
+      job.setInputSandbox(find_all('pilot.cfg', rootPath)[0])
+    job.setConfigArgs('pilot.cfg')
     res = job.runLocal(self.d)
     self.assertTrue(res['OK'])
 
@@ -138,6 +162,12 @@ class MPSuccess(UserJobTestCase):
     j.setInputSandbox(find_all('mpTest.py', rootPath, 'DIRAC/tests/Utilities')[0])
     j.setNumberOfProcessors(4)
     j.setLogLevel('DEBUG')
+    try:
+      # This is the standard location in Jenkins
+      j.setInputSandbox(find_all('pilot.cfg', os.environ['WORKSPACE'] + '/PilotInstallDIR')[0])
+    except (IndexError, KeyError):
+      j.setInputSandbox(find_all('pilot.cfg', rootPath)[0])
+    j.setConfigArgs('pilot.cfg')
     res = j.runLocal(self.d)
     if multiprocessing.cpu_count() > 1:
       self.assertTrue(res['OK'])
