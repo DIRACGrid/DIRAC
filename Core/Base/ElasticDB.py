@@ -54,7 +54,10 @@ class ElasticDB(ElasticSearchDB):
 
     self.log.info("==================================================")
     self.log.info("Host: %s " % self.__dbHost)
-    self.log.info("Port: %d " % self.__dbPort)
+    if self.__dbPort:
+      self.log.info("Port: %d " % self.__dbPort)
+    else:
+      self.log.info("Port: Not specified, assuming URL points to right location")
     self.log.info("Connecting with %s, %s:%s" % ('SSL' if self.__useSSL else 'no SSL',
                                                  self.__user if self.__user else 'no user',
                                                  'with password' if self.__dbPassword else 'no password'))
