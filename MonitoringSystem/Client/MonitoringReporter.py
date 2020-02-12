@@ -26,7 +26,7 @@ from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Resources.MessageQueue.MQCommunication import createConsumer
 from DIRAC.Resources.MessageQueue.MQCommunication import createProducer
 from DIRAC.MonitoringSystem.Client.ServerUtils import monitoringDB
-
+from DIRAC.ConfigurationSystem.Client.Config import gConfig
 
 class MonitoringReporter(object):
 
