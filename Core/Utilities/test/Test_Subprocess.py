@@ -15,15 +15,14 @@
 
 __RCSID__ = "$Id$"
 
-##
-# @author Krzysztof.Ciba@NOSPAMgmail.com
-# @date 2012/12/11 18:04:37
-
 # imports
 import time
 import pytest
+
+from subprocess import Popen
+
 # SUT
-from DIRAC.Core.Utilities.Subprocess import systemCall, shellCall, pythonCall
+from DIRAC.Core.Utilities.Subprocess import systemCall, shellCall, pythonCall, getChildrenPIDs
 
 ########################################################################
 
@@ -48,3 +47,17 @@ def test_calls(timeout, expected):
 
   ret = pythonCall(timeout, pyfunc, 'something')
   assert ret['OK'] == expected
+
+
+def test_getChildrenPIDs():
+  import os
+  os.system("echo $PWD")
+  mainProcess = Popen(['python', 'Core/Utilities/test/ProcessesCreator.py'])
+  print mainProcess.pid
+  time.sleep(1)
+  res = getChildrenPIDs(mainProcess.pid)
+  assert len(res) == 3
+  for p in res:
+    assert isinstance(p, int)
+
+  mainProcess.wait()
