@@ -257,7 +257,6 @@ class ConfigurationClient(object):
                  Value is "None" when path points to a section
                  or not "None" if path points to an option.
     """
-    log = DIRAC.gLogger.getSubLogger('getConfigurationTree')
 
     # check if root is an option (special case)
     option = self.getOption(root)
@@ -277,8 +276,7 @@ class ConfigurationClient(object):
       # get options of current root
       options = self.getOptionsDict(root)
       if not options['OK']:
-        log.error("getOptionsDict() failed with message: %s" % options['Message'])
-        return S_ERROR('Invalid root path provided')
+        return S_ERROR("getOptionsDict() failed with message: %s" % options['Message'])
 
       for key, value in options['Value'].iteritems():
         path = cfgPath(root, key)
@@ -294,15 +292,13 @@ class ConfigurationClient(object):
       # get subsections of the root
       sections = self.getSections(root)
       if not sections['OK']:
-        log.error("getSections() failed with message: %s" % sections['Message'])
-        return S_ERROR('Invalid root path provided')
+        return S_ERROR("getSections() failed with message: %s" % sections['Message'])
 
       # recursively go through subsections and get their subsections
       for section in sections['Value']:
         subtree = self.getConfigurationTree("%s/%s" % (root, section), *filters)
         if not subtree['OK']:
-          log.error("getConfigurationTree() failed with message: %s" % sections['Message'])
-          return S_ERROR('Configuration was altered during the operation')
+          return S_ERROR("getConfigurationTree() failed with message: %s" % sections['Message'])
         result.update(subtree['Value'])
 
     return S_OK(result)

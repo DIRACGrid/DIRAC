@@ -8,10 +8,6 @@
 echo -e '****************************************'
 echo -e '*******' "integration server tests" '*******\n'
 
-SERVER_TEST_OUTPUT=serverTestOutputs.txt
-
-set -o pipefail
-ERR=0
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u) **** Core TESTS ****\n"
 pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/Core/Test_ElasticsearchDB.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
@@ -90,4 +86,9 @@ python $SERVERINSTALLDIR/DIRAC/tests/Integration/Resources/Storage/Test_Resource
 python $SERVERINSTALLDIR/DIRAC/tests/Integration/Resources/ProxyProvider/Test_DIRACCAProxyProvider.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
 
 # Can only run if there's a Stomp MQ local...
+<<<<<<< HEAD
 # pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/Resources/MessageQueue/Test_ActiveClose.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
+=======
+# TODO Enable
+# python -m pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/Resources/MessageQueue/Test_ActiveClose.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
+>>>>>>> rel-v7r0

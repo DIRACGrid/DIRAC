@@ -53,8 +53,6 @@ test:
     - git fetch --all
   script:
     - "bash tests/CI/run_docker_setup.sh"
-  after_script:
-    - "bash -c 'source tests/CI/utils.sh && getLogs'"
   artifacts:
     name: "logs_$CI_JOB_NAME"
     paths:

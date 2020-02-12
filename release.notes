@@ -100,6 +100,22 @@ CHANGE: (#4439) integrate test_MySQLDB to all_integration_server_tests
 *docs
 NEW: (#4289) Document how to run integration tests in docker
 
+[v7r0p13]
+
+*Core
+FIX: (#4448) SubProcess: rewritten function for getting child PIDs
+
+*ResourceStatusSystem
+NEW: (#4419) Backported GGUSTicketsPolicy from LHCb
+CHANGE: (#4419) removed dangerous script dirac-rss-policy-manager
+
+*tests
+NEW: (#4429) Allow extensions to extend the continuous integration tests
+
+*docs
+NEW: (#4431) dirac-doc-get-release-notes can take a sinceLatestTag option, header and footer messages,
+     and can create github/gitlab release
+
 [v7r0p12]
 
 *WMS
@@ -377,6 +393,23 @@ CHANGE: (#4110) updated basic tutorial for CC7 instead of SLC6.
 NEW: (#4170) added Production system documentation
 CHANGE: (#4224) Pilot 3 is the default
 NEW: (#4244) Added a few notes on using the JobParameters on ElasticSearch database
+
+[v6r22p21]
+
+*Core
+FIX: (#4442) If no port is set in the CS for ES assume that the URL points to right location
+
+*RSS
+FIX: (#4441) DowntimeCommand - fix typo that was preventing to update expired or deleted
+     downtimes from RSS downtime cache.
+
+*ConfigurationSystem
+FIX: (#4447) remove logging from inside getConfigurationTree
+
+*MonitoringSystem
+FIX: (#4447) add check if MQ is setup for Monitoring
+CHANGE: (#4443) Read the IndexPrefix for the CS and use this index prefix when creating ES indices,
+        if not given use the name of the setup
 
 [v6r22p20]
 

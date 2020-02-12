@@ -222,7 +222,7 @@ class DowntimeCommand(Command):
       return S_OK(None)
 
     # cleaning the Cache
-    if elementName:
+    if elementNames:
       cleanRes = self._cleanCommand(element, elementNames)
       if not cleanRes['OK']:
         return cleanRes

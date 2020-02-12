@@ -118,10 +118,13 @@ function installSite(){
 
   echo "==> Started installing"
 
-  installOptions="$DEBUG "
+  if [ -n "${DEBUG+x}" ]; then
+    INSTALLOPTIONS+=("$DEBUG")
+  fi
 
   if [ "$DIRACOSVER" ]; then
-    installOptions+="--dirac-os --dirac-os-version=$DIRACOSVER "
+    INSTALLOPTIONS+=("--dirac-os")
+    INSTALLOPTIONS+=("--dirac-os-version=$DIRACOSVER")
   fi
 
   if [ "$DIRACOS_TARBALL_PATH" ]; then
@@ -130,18 +133,20 @@ function installSite(){
     } >> "$SERVERINSTALLDIR/dirac-ci-install.cfg"
   fi
 
-  if [ "$ALTERNATIVE_MODULES" ]; then
+  if [ -n "${ALTERNATIVE_MODULES+x}" ]; then
     echo "Installing from non-release code"
-    if [[ -d "$ALTERNATIVE_MODULES" ]]; then
-      installOptions+="--module=$ALTERNATIVE_MODULES:::DIRAC:::local"
-    else
-      installOptions+="--module=$ALTERNATIVE_MODULES"
-    fi
+    option="--module="
+    for module_path in "${ALTERNATIVE_MODULES[@]}"; do
+      if [[ -d "${module_path}" ]]; then
+        option+="${module_path}:::$(basename "${module_path}"):::local,"
+      else
+        option+="${module_path},"
+      fi
+    done
+    INSTALLOPTIONS+=("${option: :$((${#option} - 1))}")
   fi
 
-  echo "==> Installing with options $installOptions $SERVERINSTALLDIR/install.cfg"
-
-  if ! "$SERVERINSTALLDIR/dirac-install.py" $installOptions "$SERVERINSTALLDIR/install.cfg" "$SERVERINSTALLDIR/dirac-ci-install.cfg"; then
+  if ! "$SERVERINSTALLDIR/dirac-install.py" "${INSTALLOPTIONS[@]}" "$SERVERINSTALLDIR/install.cfg" "$SERVERINSTALLDIR/dirac-ci-install.cfg"; then
     echo "ERROR: dirac-install.py failed"
     exit 1
   fi

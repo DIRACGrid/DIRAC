@@ -17,31 +17,35 @@ fi
 
 cd "$INSTALLROOT" || exit 1
 
-SERVERINSTALLDIR=$INSTALLROOT/ServerInstallDIR
-CLIENTINSTALLDIR=$INSTALLROOT/ClientInstallDIR
-TESTCODE=$INSTALLROOT/TestCode
-WORKSPACE=$INSTALLROOT
-
 # shellcheck source=tests/CI/CONFIG
 source CONFIG
-# shellcheck source=tests/Jenkins/dirac_ci.sh
-source "$TESTCODE/DIRAC/tests/Jenkins/dirac_ci.sh"
+source "${DIRAC_CI_SETUP_SCRIPT}"
 
 echo -e "*** $(date -u) **** Starting integration tests on ${INSTALLTYPE} ****\n"
 
 if [ "$INSTALLTYPE" == "server" ]; then
     # shellcheck source=/dev/null
-    source "$SERVERINSTALLDIR/bashrc"
-    sed -i "s/\(elHost = \).*/\1'elasticsearch'/" "$TESTCODE/DIRAC/tests/Integration/Core/Test_ElasticsearchDB.py"
-    cp -r "$TESTCODE/DIRAC/tests" "$SERVERINSTALLDIR/DIRAC/"
-    # shellcheck source=tests/Integration/all_integration_server_tests.sh
-    source "$SERVERINSTALLDIR/DIRAC/tests/Integration/all_integration_server_tests.sh"
+    source "$WORKSPACE/ServerInstallDIR/bashrc"
+    # shellcheck disable=SC2034
+    SERVER_TEST_OUTPUT=serverTestOutputs.txt
+    set -o pipefail
+    ERR=0
+    for repo_path in "${TESTREPO[@]}"; do
+        cp -r "${repo_path}/tests" "$WORKSPACE/ServerInstallDIR/$(basename "${repo_path}")"
+        if [ "$(basename "${repo_path}")" == "DIRAC" ]; then
+            sed -i "s/\(elHost = \).*/\1'elasticsearch'/" "$WORKSPACE/ServerInstallDIR/DIRAC/tests/Integration/Core/Test_ElasticsearchDB.py"
+        fi
+        source "$WORKSPACE/ServerInstallDIR/$(basename "${repo_path}")/tests/Integration/all_integration_server_tests.sh"
+    done
 elif [ "$INSTALLTYPE" == "client" ]; then
     # shellcheck source=/dev/null
-    source "$CLIENTINSTALLDIR/bashrc"
-    cp -r "$TESTCODE/DIRAC/tests" "$CLIENTINSTALLDIR/DIRAC/"
-    # shellcheck source=tests/Integration/all_integration_client_tests.sh
-    source "$CLIENTINSTALLDIR/DIRAC/tests/Integration/all_integration_client_tests.sh"
+    source "$WORKSPACE/ClientInstallDIR/bashrc"
+    set -o pipefail
+    ERR=0
+    for repo_path in "${TESTREPO[@]}"; do
+        cp -r "${repo_path}/tests" "$WORKSPACE/ClientInstallDIR/$(basename "${repo_path}")"
+        source "$WORKSPACE/ClientInstallDIR/$(basename "${repo_path}")/tests/Integration/all_integration_client_tests.sh"
+    done
 fi
 
 echo -e "*** $(date -u) **** TESTS OVER ****\n"

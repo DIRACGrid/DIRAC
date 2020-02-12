@@ -63,12 +63,12 @@ function findRelease(){
      git remote add upstream https://github.com/DIRACGrid/DIRAC.git || true
      git fetch --all || true
      git branch -a
-     git show remotes/upstream/integration:releases.cfg > "$TESTCODE/releases.cfg")
+     git show remotes/upstream/integration:releases.cfg > "$TESTCODE/DIRAC/releases.cfg")
 
     # PRE='p[[:digit:]]*'
 
     if [ -n "$DIRACBRANCH" ]; then
-      echo '==> Looking for DIRAC branch ' "$DIRACBRANCH"
+      echo "==> Looking for DIRAC branch $DIRACBRANCH"
     else
       echo '==> Running on last one'
     fi
@@ -79,9 +79,9 @@ function findRelease(){
     # First, try to find if we are on a production tag
     if [ ! "$projectVersion" ]; then
       if [ -n "$DIRACBRANCH" ]; then
-        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]*p[[:digit:]]*' "$TESTCODE/releases.cfg" | grep "$DIRACBRANCH" | head -1 | sed 's/ //g' || echo "")
+        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]*p[[:digit:]]*' "$TESTCODE/DIRAC/releases.cfg" | grep "$DIRACBRANCH" | head -1 | sed 's/ //g' || echo "")
       else
-        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]*p[[:digit:]]*' "$TESTCODE/releases.cfg" | head -1 | sed 's/ //g')
+        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]*p[[:digit:]]*' "$TESTCODE/DIRAC/releases.cfg" | head -1 | sed 's/ //g')
       fi
       # projectVersion=$(cat releases.cfg | grep [^:]v[[:digit:]]r[[:digit:]]*$PRE | head -1 | sed 's/ //g')
     fi
@@ -89,27 +89,33 @@ function findRelease(){
     # The special case is when there's no 'p'... (e.g. version v6r15)
     if [ ! "$projectVersion" ]; then
       if [ -n "$DIRACBRANCH" ]; then
-        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]' "$TESTCODE/releases.cfg" | grep "$DIRACBRANCH" | head -1 | sed 's/ //g' || echo "")
+        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]' "$TESTCODE/DIRAC/releases.cfg" | grep "$DIRACBRANCH" | head -1 | sed 's/ //g' || echo "")
       else
-        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]' "$TESTCODE/releases.cfg" | head -1 | sed 's/ //g')
+        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]' "$TESTCODE/DIRAC/releases.cfg" | head -1 | sed 's/ //g')
       fi
     fi
 
     # In case there are no production tags for the branch, look for pre-releases in that branch
     if [ ! "$projectVersion" ]; then
       if [ -n "$DIRACBRANCH" ]; then
-        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]*'-pre'' "$TESTCODE/releases.cfg" | grep "$DIRACBRANCH" | head -1 | sed 's/ //g')
+        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]*'-pre'' "$TESTCODE/DIRAC/releases.cfg" | grep "$DIRACBRANCH" | head -1 | sed 's/ //g')
       else
-        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]*'-pre'' "$TESTCODE/releases.cfg" | head -1 | sed 's/ //g')
+        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]*'-pre'' "$TESTCODE/DIRAC/releases.cfg" | head -1 | sed 's/ //g')
       fi
     fi
 
-    # projectVersionLine=$(grep -n "$projectVersion" "$TESTCODE/releases.cfg" | cut -d ':' -f 1 | head -1)
+    # TODO: This should be made to fail to due set -u and -o pipefail
+    if [ ! "$projectVersion" ]; then
+      echo "Failed to set projectVersion"
+      exit 1
+    fi
+
+    # projectVersionLine=$(grep -n "$projectVersion" "$TESTCODE/DIRAC/releases.cfg" | cut -d ':' -f 1 | head -1)
     # # start := line number after "{"
     # start=$(( projectVersionLine+2 ))
     # # end   := line number after "}"
     # end=$(( start+2 ))
-    # versions=$(sed -n "$start,$end p" "$TESTCODE/releases.cfg")
+    # versions=$(sed -n "$start,$end p" "$TESTCODE/DIRAC/releases.cfg")
 
     # PrintOuts
     echo "DIRAC:$projectVersion" && echo "$projectVersion" > "$SERVERINSTALLDIR/dirac.version"
@@ -165,6 +171,7 @@ function findDatabases(){
     echo "ERROR: cannot change to $SERVERINSTALLDIR"
     exit 1
   fi
+
   #
   # HACK ALERT:
   #
@@ -172,9 +179,9 @@ function findDatabases(){
   #  and InstalledComponentsDB which is installed at the beginning
   #
   if [ -n "$DBstoExclude" ]; then
-    find ./*DIRAC -name "*DB.sql" | grep -vE '(FileCatalogDB|FileCatalogWithFkAndPsDB|InstalledComponentsDB)' | awk -F "/" '{print $3,$5}' | grep -v "$DBstoExclude" | grep -v 'DIRAC' | sort | uniq > databases
+    find ./*DIRAC/ -name "*DB.sql" | grep -vE '(FileCatalogDB|FileCatalogWithFkAndPsDB|InstalledComponentsDB)' | awk -F "/" '{print $3,$5}' | grep -v "$DBstoExclude" | grep -v 'DIRAC' | sort | uniq > databases
   else
-    find ./*DIRAC -name "*DB.sql" | grep -vE '(FileCatalogDB|FileCatalogWithFkAndPsDB|InstalledComponentsDB)' | awk -F "/" '{print $3,$5}' | grep "$DBstoSearch" | grep -v 'DIRAC' | sort | uniq > databases
+    find ./*DIRAC/ -name "*DB.sql" | grep -vE '(FileCatalogDB|FileCatalogWithFkAndPsDB|InstalledComponentsDB)' | awk -F "/" '{print $3,$5}' | grep "$DBstoSearch" | grep -v 'DIRAC' | sort | uniq > databases
   fi
 
   echo "found $(wc -l databases)"
@@ -310,18 +317,26 @@ function installDIRAC(){
   cp "$TESTCODE/DIRAC/Core/scripts/dirac-install.py" "$CLIENTINSTALLDIR/dirac-install"
   chmod +x "$CLIENTINSTALLDIR/dirac-install"
 
-  export CLIENT_ALTERNATIVE_MODULES=${CLIENT_ALTERNATIVE_MODULES:-${ALTERNATIVE_MODULES}}
-  if [ "$CLIENT_ALTERNATIVE_MODULES" ]; then
+  if [ -n "${DEBUG+x}" ]; then
+    INSTALLOPTIONS+=("$DEBUG")
+  fi
+
+  if [ -n "${ALTERNATIVE_MODULES+x}" ]; then
     echo "Installing from non-release code"
-    if [[ -d "$CLIENT_ALTERNATIVE_MODULES" ]]; then
-      INSTALLOPTIONS+=" --module=$CLIENT_ALTERNATIVE_MODULES:::DIRAC:::local"
-    else
-      INSTALLOPTIONS+=" --module=$CLIENT_ALTERNATIVE_MODULES"
-    fi
+    option="--module="
+    for module_path in "${ALTERNATIVE_MODULES[@]}"; do
+      if [[ -d "${module_path}" ]]; then
+        option+="${module_path}:::$(basename "${module_path}"):::local,"
+      else
+        option+="${module_path},"
+      fi
+    done
+    INSTALLOPTIONS+=("${option: :$((${#option} - 1))}")
   fi
 
   if [ "$DIRACOSVER" ]; then
-    INSTALLOPTIONS+=" --dirac-os --dirac-os-version=$DIRACOSVER "
+    INSTALLOPTIONS+=("--dirac-os")
+    INSTALLOPTIONS+=("--dirac-os-version=$DIRACOSVER")
   fi
 
   if [ "$DIRACOS_TARBALL_PATH" ]; then
@@ -330,8 +345,7 @@ function installDIRAC(){
     } >> "$CLIENTINSTALLDIR/dirac-ci-install.cfg"
   fi
 
-  if ! ./dirac-install -r $DIRAC_RELEASE -t client $INSTALLOPTIONS "$CLIENTINSTALLDIR/dirac-ci-install.cfg" $DEBUG; then
-
+  if ! ./dirac-install -r $DIRAC_RELEASE -t client "${INSTALLOPTIONS[@]}" "$CLIENTINSTALLDIR/dirac-ci-install.cfg" $DEBUG; then
     echo 'ERROR: DIRAC client installation failed'
     exit 1
   fi
@@ -523,6 +537,8 @@ function generateCertificates(){
        -batch \
        -in request.csr.pem \
        -out hostcert.pem
+
+  cd -
 }
 
 

@@ -1,5 +1,13 @@
 """
 Wrapper on top of ElasticDB. It is used to manage the DIRAC monitoring types.
+
+**Configuration Parameters**:
+
+The following options can be set in ``Systems/Monitoring/<Setup>/Databases/MonitoringDB``
+
+* *IndexPrefix*:  Prefix used to prepend to indices created in the ES instance. If this
+                  is not present in the CS, the indices are prefixed with the setup name.
+
 """
 
 __RCSID__ = "$Id$"
@@ -10,6 +18,8 @@ from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Base.ElasticDB import ElasticDB
 from DIRAC.Core.Utilities.Plotting.TypeLoader import TypeLoader
 from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
+from DIRAC.ConfigurationSystem.Client.Config import gConfig
+from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 
 
 ########################################################################
@@ -18,7 +28,9 @@ class MonitoringDB(ElasticDB):
   """
 
   def __init__(self, name='Monitoring/MonitoringDB', readOnly=False):
-    super(MonitoringDB, self).__init__('MonitoringDB', name, CSGlobals.getSetup().lower())
+    section = getDatabaseSection("Monitoring/MonitoringDB")
+    indexPrefix = gConfig.getValue("%s/IndexPrefix" % section, CSGlobals.getSetup()).lower()
+    super(MonitoringDB, self).__init__('MonitoringDB', name, indexPrefix)
     self.__readonly = readOnly
     self.__documents = {}
     self.__loadIndexes()

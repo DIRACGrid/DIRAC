@@ -24,6 +24,7 @@ add this section to the config file
 """
 
 from __future__ import print_function
+import os
 from collections import defaultdict
 from datetime import datetime, timedelta
 import argparse
@@ -31,6 +32,7 @@ from pprint import pformat
 import logging
 import textwrap
 import requests
+from distutils.version import LooseVersion
 
 try:
   from configparser import ConfigParser  # python3
@@ -72,7 +74,8 @@ def githubSetup():
   LOGGER.info('Setting up GITHUB')
   try:
     from GitTokens import GITHUBTOKEN
-    SESSION.headers.update({'Authorization': 'token %s ' % GITHUBTOKEN})
+    if GITHUBTOKEN:
+      SESSION.headers.update({'Authorization': 'token %s ' % GITHUBTOKEN})
   except ImportError:
     raise ImportError(G_ERROR)
 
@@ -141,11 +144,17 @@ class GithubInterface(object):
     self.repo = repo
     self.branches = ['Integration', 'rel-v6r21']
     self.openPRs = False
+    self.sinceLatestTag = False
+    self.headerMessage = None
+    self.footerMessage = None
     self.startDate = str(datetime.now() - timedelta(days=14))[:10]
     self.printLevel = logging.WARNING
     logging.getLogger().setLevel(self.printLevel)
     self.useGitlab = False
     self.useGithub = True
+    self.deployRelease = False
+    self.releaseNotes = None
+    self.tagName = None
 
     self.gitlabUrl = 'https://gitlab.cern.ch'
     self.glProjectID = 0
@@ -232,6 +241,17 @@ class GithubInterface(object):
     parser.add_argument("--date", action="store", default=self.startDate, dest="date",
                         help="date after which PRs are checked, default (two weeks ago): %s" % self.startDate)
 
+    parser.add_argument("--sinceLatestTag", action="store_true", dest="sinceLatestTag", default=self.sinceLatestTag,
+                        help="get release notes since latest tag (incompatible with --date)")
+
+    parser.add_argument("--headerMessage", action="store", default=self.headerMessage, dest="headerMessage",
+                        help="Header message to add between the release name and the list of PR. If it is a path,\
+                         read the content of the file")
+
+    parser.add_argument("--footerMessage", action="store", default=self.footerMessage, dest="footerMessage",
+                        help="Footer message to add after the list of PR. If it is a path,\
+                      read the content of the file")
+
     parser.add_argument("--openPRs", action="store_true", dest="openPRs", default=self.openPRs,
                         help="get release notes for open (unmerged) PRs, for testing purposes")
 
@@ -246,6 +266,24 @@ class GithubInterface(object):
 
     parser.add_argument('-i', '--gitlabProjectID', action='store', dest='gitlabProjectID',
                         help='ID of the project in Gitlab', default='0')
+
+    parser.add_argument(
+        '--deployRelease',
+        action='store_true',
+        dest='deployRelease',
+        help='Convert an existing tag into a github/gitlab release. Requires --releaseNotes and --tagName',
+        default=self.deployRelease)
+
+    parser.add_argument('--tagName', action='store', dest='tagName',
+                        help='Name of the tag to release (with --deployRelease)', default=self.tagName)
+
+    parser.add_argument(
+        '--releaseNotes',
+        action='store',
+        dest='releaseNotes',
+        help='Path to the file containing release notes for this version (with --deployRelease)',
+        default=self.releaseNotes)
+
     parser.set_defaults(**defaults)
 
     parsed = parser.parse_args()
@@ -255,16 +293,48 @@ class GithubInterface(object):
 
     self.branches = listify(parsed.branches)
     log.info('Getting PRs for: %s', self.branches)
-    self.startDate = parsed.date
-    log.info('Starting from: %s', self.startDate)
+
+    # If the date parsed does not correspond to the default,
+    # and latestTag is asked, we throw an error
+    if (parsed.date != self.startDate) and parsed.sinceLatestTag:
+      raise RuntimeError("--sinceLatestTag incompatible with --date")
+
+    self.sinceLatestTag = parsed.sinceLatestTag
+
+    if self.sinceLatestTag:
+      log.info('Starting from the latest tag')
+      self.startDate = None
+      del parsed.date
+    else:
+      self.startDate = parsed.date
+      log.info('Starting from: %s', self.startDate)
+
     self.openPRs = parsed.openPRs
     log.info('Also including openPRs?: %s', self.openPRs)
+
+    self.headerMessage = parsed.headerMessage
+    if self.headerMessage:
+      log.info("Using header message: %s", self.headerMessage)
+
+    self.footerMessage = parsed.footerMessage
+    if self.footerMessage:
+      log.info("Using footer message: %s", self.footerMessage)
 
     self.useGitlab = parsed.gitlab if isinstance(parsed.gitlab, bool) else parsed.gitlab.lower() == 'true'
     self.useGithub = not self.useGitlab
 
     self.gitlabUrl = parsed.gitlabUrl
     self.glProjectID = int(parsed.gitlabProjectID)
+
+    self.deployRelease = parsed.deployRelease
+    self.releaseNotes = parsed.releaseNotes
+    self.tagName = parsed.tagName
+
+    if self.deployRelease:
+      if not(self.releaseNotes and self.tagName):
+        raise RuntimeError("--deployRelease requires --releaseNotes and --tagName")
+      if not os.path.isfile(self.releaseNotes):
+        raise RuntimeError("--releaseNotes should point to an existing file")
 
     repo = parsed.repo
     repos = repo.split('/')
@@ -326,13 +396,54 @@ class GithubInterface(object):
 
     return prsToReturn
 
+  def getGitlabLatestTagDate(self):
+    """ Get the latest tag creation date from gitlab
+
+    :returns: date of the latest tag
+    """
+    glURL = self._gitlab('repository/tags')
+    allTags = req2Json(glURL)
+
+    return max([tag['commit']['created_at'] for tag in allTags])
+
+  def getGithubLatestTagDate(self):
+    """ Get the latest tag creation date from gitlab
+
+      :warning: tags can only be sorted by name, so we assume that the tags are ordered version numbers
+
+      :returns: date of the latest tag
+    """
+    log = LOGGER.getChild('getGithubLatestTagDate')
+
+    # Get all tags
+    tags = req2Json(url=self._github("tags"))
+    if isinstance(tags, dict) and 'Not Found' in tags.get('message'):
+      raise RuntimeError("Package not found: %s" % str(self))
+
+    sortedTags = sorted(
+        tags,
+        key=lambda tag: LooseVersion(tag['name']),
+        reverse=True)
+    latestTag = sortedTags[0]
+
+    log.info("Found latest tag %s", latestTag['name'])
+
+    # Use the sha of the commit to finally retrieve the date
+    latestTagCommitSha = latestTag['commit']['sha']
+    commitInfo = req2Json(url=self._github("git/commits/%s" % latestTagCommitSha))
+
+    startDate = commitInfo['committer']['date'][:10]
+
+    log.info("Found latest tag date %s", startDate)
+
+    return startDate
+
   def getNotesFromPRs(self, prs):
     """Loop over prs, get base branch, get PR comment and collate into dictionary.
 
     :returns: dict of branch:dict(#PRID, dict(comment, mergeDate))
     """
     rawReleaseNotes = defaultdict(dict)
-
     for pr in prs:
       if self.useGithub:
         baseBranch = pr['base']['label'][len(self.owner) + 1:]
@@ -358,14 +469,23 @@ class GithubInterface(object):
 
   def getReleaseNotes(self):
     """Create the release notes."""
+
+    log = LOGGER.getChild("getReleaseNotes")
+
+    # Check the latest tag if need be
+    if self.sinceLatestTag:
+      if self.useGithub:
+        self.startDate = self.getGithubLatestTagDate()
+      else:
+        self.startDate = self.getGitlabLatestTagDate()
+      log.info("Starting from date %s", self.startDate)
+
     if self.useGithub:
-      githubSetup()
       if self.openPRs:
         prs = self.getGithubPRs(state='open', mergedOnly=False)
       else:
         prs = self.getGithubPRs(state='closed', mergedOnly=True)
     elif self.useGitlab:
-      gitlabSetup()
       if self.openPRs:
         prs = self.getGitlabPRs(state='all')
       else:
@@ -383,9 +503,24 @@ class GithubInterface(object):
     the branch, will print out just the base branch for now.
     """
     releaseNotes = ''
+
+    headerMessage = self.headerMessage
+    # If the headerMessage option passed is a file, read the content
+    if self.headerMessage and os.path.isfile(self.headerMessage):
+      with open(self.headerMessage, 'r') as hmf:
+        headerMessage = hmf.read()
+
+    footerMessage = self.footerMessage
+    # If the footerMessage option passed is a file, read the content
+    if self.footerMessage and os.path.isfile(self.footerMessage):
+      with open(self.footerMessage, 'r') as hmf:
+        footerMessage = hmf.read()
+
     prMarker = '#' if self.useGithub else '!'
     for baseBranch, pr in prs.iteritems():
       releaseNotes += '[%s]\n\n' % baseBranch
+      if headerMessage:
+        releaseNotes += '%s\n\n' % headerMessage
       systemChangesDict = defaultdict(list)
       for prid, content in pr.iteritems():
         notes = content['comment']
@@ -407,7 +542,74 @@ class GithubInterface(object):
         releaseNotes += "\n\n"
       releaseNotes += "\n"
 
+      if footerMessage:
+        releaseNotes += '\n%s\n' % footerMessage
+
     return releaseNotes
+
+  def setup(self):
+    """ Setup the API
+    """
+    # Setting up the API
+    if self.useGithub:
+      githubSetup()
+    elif self.useGitlab:
+      gitlabSetup()
+
+  def createGithubRelease(self):
+    """ make a release on github """
+
+    log = LOGGER.getChild("createGithubRelease")
+
+    log.info("Creating a release for github")
+    with open(self.releaseNotes, 'r') as rnf:
+      releaseNotes = rnf.read()
+
+    releaseDict = dict(tag_name=self.tagName,
+                       target_commitish="unused",
+                       name=self.tagName,
+                       body=releaseNotes,
+                       prerelease=False,
+                       draft=False,
+                       )
+
+    log.debug("Release dict %s", releaseDict)
+
+    result = req2Json(url=self._github("releases"), parameterDict=releaseDict, requestType='POST')
+
+    log.info("Result %s", result)
+
+    return result
+
+  def createGitlabRelease(self):
+    """ make a release on gitlab """
+
+    log = LOGGER.getChild("createGitlabRelease")
+
+    log.info("Creating a release for gitlab")
+    with open(self.releaseNotes, 'r') as rnf:
+      releaseNotes = '\n'.join(rnf.readlines())
+
+    releaseDict = dict(id=self.glProjectID,
+                       tag_name=self.tagName,
+                       name=self.tagName,
+                       description=releaseNotes,
+                       )
+
+    log.debug("Release dict %s", releaseDict)
+
+    result = req2Json(url=self._gitlab("releases"), parameterDict=releaseDict, requestType='POST')
+
+    log.info("Result %s", result)
+    return result
+
+  def createRelease(self):
+    """ Convert an existing github/gitlab tag into a release """
+
+    if self.useGithub:
+      return self.createGithubRelease()
+    elif self.useGitlab:
+      return self.createGitlabRelease()
 
 
 if __name__ == "__main__":
@@ -419,8 +621,15 @@ if __name__ == "__main__":
     LOGGER.error("Error during argument parsing: %s", e)
     exit(1)
 
+  RUNNER.setup()
+
   try:
-    RUNNER.getReleaseNotes()
+    # If it is invoked to deploy the release
+    if RUNNER.deployRelease:
+      RUNNER.createRelease()
+    # or to generate the release notes
+    else:
+      RUNNER.getReleaseNotes()
   except RuntimeError as e:
     LOGGER.error("Error during runtime: %s", e)
     exit(1)

@@ -605,8 +605,8 @@ def getElasticDBParameters(fullname):
     # No individual port number found, try at the common place
     result = gConfig.getOption('/Systems/NoSQLDatabases/Port')
     if not result['OK']:
-      gLogger.warn("Failed to get the configuration parameter: Port. Using 9200")
-      dbPort = 9200
+      gLogger.warn("No configuration parameter set for Port, assuming URL points to right location")
+      dbPort = None
     else:
       dbPort = int(result['Value'])
   else:
