@@ -32,6 +32,7 @@ from pprint import pformat
 import logging
 import textwrap
 import requests
+from distutils.version import LooseVersion
 
 try:
   from configparser import ConfigParser  # python3
@@ -73,7 +74,8 @@ def githubSetup():
   LOGGER.info('Setting up GITHUB')
   try:
     from GitTokens import GITHUBTOKEN
-    SESSION.headers.update({'Authorization': 'token %s ' % GITHUBTOKEN})
+    if GITHUBTOKEN:
+      SESSION.headers.update({'Authorization': 'token %s ' % GITHUBTOKEN})
   except ImportError:
     raise ImportError(G_ERROR)
 
@@ -395,7 +397,7 @@ class GithubInterface(object):
     return prsToReturn
 
   def getGitlabLatestTagDate(self):
-    """ Get the latest tag creatin date from gitlab
+    """ Get the latest tag creation date from gitlab
 
     :returns: date of the latest tag
     """
@@ -403,6 +405,38 @@ class GithubInterface(object):
     allTags = req2Json(glURL)
 
     return max([tag['commit']['created_at'] for tag in allTags])
+
+  def getGithubLatestTagDate(self):
+    """ Get the latest tag creation date from gitlab
+
+      :warning: tags can only be sorted by name, so we assume that the tags are ordered version numbers
+
+      :returns: date of the latest tag
+    """
+    log = LOGGER.getChild('getGithubLatestTagDate')
+
+    # Get all tags
+    tags = req2Json(url=self._github("tags"))
+    if isinstance(tags, dict) and 'Not Found' in tags.get('message'):
+      raise RuntimeError("Package not found: %s" % str(self))
+
+    sortedTags = sorted(
+        tags,
+        key=lambda tag: LooseVersion(tag['name']),
+        reverse=True)
+    latestTag = sortedTags[0]
+
+    log.info("Found latest tag %s", latestTag['name'])
+
+    # Use the sha of the commit to finally retrieve the date
+    latestTagCommitSha = latestTag['commit']['sha']
+    commitInfo = req2Json(url=self._github("git/commits/%s" % latestTagCommitSha))
+
+    startDate = commitInfo['committer']['date'][:10]
+
+    log.info("Found latest tag date %s", startDate)
+
+    return startDate
 
   def getNotesFromPRs(self, prs):
     """Loop over prs, get base branch, get PR comment and collate into dictionary.
@@ -436,12 +470,12 @@ class GithubInterface(object):
   def getReleaseNotes(self):
     """Create the release notes."""
 
-    log = LOGGER.getChild("getReleasesNotes")
+    log = LOGGER.getChild("getReleaseNotes")
 
     # Check the latest tag if need be
     if self.sinceLatestTag:
       if self.useGithub:
-        raise NotImplementedError("Canot get latest tag date for github")
+        self.startDate = self.getGithubLatestTagDate()
       else:
         self.startDate = self.getGitlabLatestTagDate()
       log.info("Starting from date %s", self.startDate)
@@ -525,6 +559,9 @@ class GithubInterface(object):
   def createGithubRelease(self):
     """ make a release on github """
 
+    log = LOGGER.getChild("createGithubRelease")
+
+    log.info("Creating a release for github")
     with open(self.releaseNotes, 'r') as rnf:
       releaseNotes = rnf.read()
 
@@ -536,7 +573,12 @@ class GithubInterface(object):
                        draft=False,
                        )
 
+    log.debug("Release dict %s", releaseDict)
+
     result = req2Json(url=self._github("releases"), parameterDict=releaseDict, requestType='POST')
+
+    log.info("Result %s", result)
+
     return result
 
   def createGitlabRelease(self):
@@ -582,7 +624,7 @@ if __name__ == "__main__":
   RUNNER.setup()
 
   try:
-    # If it is invoked to deloy the release
+    # If it is invoked to deploy the release
     if RUNNER.deployRelease:
       RUNNER.createRelease()
     # or to generate the release notes
