@@ -9,6 +9,11 @@ It provides two failover mechanism:
 
 Note: In order to not send too many rows to the db we use  __maxRecordsInABundle.
 
+**Configuration Parameters**:
+
+If the section ``/Resources/MQServices`` exists in the CS, it's assumed that
+a MQ service is available, if the MQ is not working a failover will be performed.
+
 """
 
 __RCSID__ = "$Id$"
@@ -21,7 +26,7 @@ from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Resources.MessageQueue.MQCommunication import createConsumer
 from DIRAC.Resources.MessageQueue.MQCommunication import createProducer
 from DIRAC.MonitoringSystem.Client.ServerUtils import monitoringDB
-
+from DIRAC.ConfigurationSystem.Client.Config import gConfig
 
 class MonitoringReporter(object):
 
@@ -181,9 +186,11 @@ class MonitoringReporter(object):
       MQProducer or None:
     """
     mqProducer = None
-    result = createProducer("Monitoring::Queues::%s" % self.__failoverQueueName)
-    if not result['OK']:
-      gLogger.warn("Fail to create Producer:", result['Message'])
-    else:
-      mqProducer = result['Value']
+    result = gConfig.getConfigurationTree('/Resources/MQServices')
+    if result['OK']:
+      result = createProducer("Monitoring::Queues::%s" % self.__failoverQueueName)
+      if not result['OK']:
+        gLogger.error("Fail to create Producer:", result['Message'])
+      else:
+        mqProducer = result['Value']
     return mqProducer

@@ -59,12 +59,21 @@ class ElasticSearchDB(object):
     self._connected = False
     if user and password:
       sLog.debug("Specified username and password")
-      self.__url = "https://%s:%s@%s:%d" % (user, password, host, port)
+      if port:
+        self.__url = "https://%s:%s@%s:%d" % (user, password, host, port)
+      else:
+        self.__url = "https://%s:%s@%s" % (user, password, host)
     else:
       sLog.debug("Username and password not specified")
-      self.__url = "http://%s:%d" % (host, port)
+      if port:
+        self.__url = "http://%s:%d" % (host, port)
+      else:
+        self.__url = "http://%s" % host
 
-    sLog.verbose("Connecting to %s:%s, useSSL = %s" % (host, port, useSSL))
+    if port:
+      sLog.verbose("Connecting to %s:%s, useSSL = %s" % (host, port, useSSL))
+    else:
+      sLog.verbose("Connecting to %s, useSSL = %s" % (host, useSSL))
 
     if useSSL:
       bd = BundleDeliveryClient()
