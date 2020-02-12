@@ -31,5 +31,5 @@ class BaseCorrector(object):
   def updateHistoryKnowledge(self):
     return S_OK()
 
-  def applyCorrection(self, entitiesExpectedShare):
+  def applyCorrection(self, _entitiesExpectedShare):
     return S_ERROR("applyCorrection function has not been implemented")

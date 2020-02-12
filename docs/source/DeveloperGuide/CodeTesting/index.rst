@@ -650,10 +650,10 @@ position yourself in the DIRAC root directory and then run:
 .. code-block:: bash
 
     docker run --rm -it --privileged --name dirac-testing-host \
-      -e CI_PROJECT_DIR=/repo -e CI_REGISTRY_IMAGE=diracgrid \
-      -v /var/run/docker.sock:/var/run/docker.sock -v $PWD:/repo -w /repo \
+      -e CI_PROJECT_DIR=/repo/DIRAC -e CI_REGISTRY_IMAGE=diracgrid \
+      -v /var/run/docker.sock:/var/run/docker.sock -v $PWD:/repo/DIRAC -w /repo \
       diracgrid/docker-compose-dirac:latest bash \
-      tests/CI/run_docker_setup.sh
+      DIRAC/tests/CI/run_docker_setup.sh
 
 As you can see from the command above, privileged runners are needed, as the test is done by running docker in docker ("dind"). 
 The tests will be done using the image `diracgrid/docker-compose:latest` 

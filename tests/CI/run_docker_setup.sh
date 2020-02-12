@@ -2,30 +2,48 @@
 # set -euo pipefail
 set -eo pipefail
 IFS=$'\n\t'
-#........................................................................
-#    Executable script to set up DIRAC server and client instances with
-#        ElasticSearch and MySQL services, all in docker containers.
-#
-#    The following software is required on top of Cern Centos 7 (CC7):
-#      * Docker v18+
-#      * Docker-Compose that understands v2.4+ format
-#
-#    For the script to run, the shell must be logged into the CERN
-#    container registry at gitlab-registry.cern.ch using
-#    `docker login gitlab-registry.cern.ch` and following the prompts
-#
-#    Edit environment variables (settings) in the CONFIG file
-#........................................................................
+set -x
 
 BUILD_DIR=$PWD/integration_test_results
 mkdir -p "${BUILD_DIR}"
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-export HOST_OS=${HOST_OS:-cc7}
+DIRAC_BASE_DIR=$(realpath "${SCRIPT_DIR}/../..")
 
-# shellcheck source=tests/CI/CONFIG
-source "$SCRIPT_DIR/CONFIG"
-# shellcheck source=tests/CI/utils.sh
-source "$SCRIPT_DIR/utils.sh"
+export CI_REGISTRY_IMAGE=${CI_REGISTRY_IMAGE:-diracgrid}
+export HOST_OS=${HOST_OS:-cc7}
+export MYSQL_VER=${MYSQL_VER:-5.7}
+export ES_VER=${ES_VER:-6.6.0}
+
+export DOCKER_USER=dirac
+export USER_HOME=/home/${DOCKER_USER}
+export WORKSPACE=$USER_HOME
+
+function copyLocalSource() {
+  # Copies local source and test code to docker containers, if they are directories
+  CONTAINER_NAME=$1
+  CONFIG_PATH=$2
+
+  # Drop into a subshell to avoid poluting the environment
+  (
+    source "$CONFIG_PATH"
+
+    docker exec "${CONTAINER_NAME}" mkdir -p "$WORKSPACE/LocalRepo/TestCode"
+    for repo_path in "${TESTREPO[@]}"; do
+      if [ -n "${repo_path}" ] && [ -d "${repo_path}" ]; then
+        docker cp "${repo_path}" "${CONTAINER_NAME}:$WORKSPACE/LocalRepo/TestCode/$(basename "${repo_path}")"
+        sed -i "s@\(TESTREPO+=..\)$(dirname "${repo_path}")\(/$(basename "${repo_path}")..\)@\1${WORKSPACE}/LocalRepo/TestCode\2@" "$CONFIG_PATH"
+      fi
+    done
+
+    docker exec "${CONTAINER_NAME}" mkdir -p "$WORKSPACE/LocalRepo/ALTERNATIVE_MODULES"
+    for module_path in "${ALTERNATIVE_MODULES[@]}"; do
+      if [ -n "${module_path}" ] && [ -d "${module_path}" ]; then
+        docker cp "${module_path}" "${CONTAINER_NAME}:$WORKSPACE/LocalRepo/ALTERNATIVE_MODULES/$(basename "${module_path}")"
+        sed -i "s@\(ALTERNATIVE_MODULES+=..\)$(dirname "${module_path}")\(/$(basename "${module_path}")..\)@\1${WORKSPACE}/LocalRepo/ALTERNATIVE_MODULES\2@" "$CONFIG_PATH"
+      fi
+    done
+  )
+}
 cd "$SCRIPT_DIR"
 
 function prepareEnvironment() {
@@ -34,58 +52,107 @@ function prepareEnvironment() {
       mkdir -p "$TMP"
   fi
   if [ -z "$CLIENTCONFIG" ]; then
-      CLIENTCONFIG=$PWD/CLIENTCONFIG
+      CLIENTCONFIG=${BUILD_DIR}/CLIENTCONFIG
   fi
   if [ -z "$SERVERCONFIG" ]; then
-      SERVERCONFIG=$PWD/SERVERCONFIG
+      SERVERCONFIG=${BUILD_DIR}/SERVERCONFIG
   fi
 
   # GitLab variables
-  cp ./CONFIG "${SERVERCONFIG}"
   {
-    echo "export DIRACOSVER=${DIRACOSVER}"
-    echo "export DIRACOS_TARBALL_PATH=${DIRACOS_TARBALL_PATH}"
-  } >> "${SERVERCONFIG}"
-  if [[ -n $CI_PROJECT_DIR ]]; then
-      echo "I guess we're in GitLab CI/CD or GitHub Actions, using local repository in branch ${CI_COMMIT_REF_NAME}"
-      echo "if this is a merge request, the target is ${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}"
-      export TESTREPO=$CI_PROJECT_DIR
-      export ALTERNATIVE_MODULES=$CI_PROJECT_DIR
+    echo "#!/usr/bin/env bash"
+    echo "# This file contains all the environment variables necessary to run a full integration test"
+    echo ""
+    echo "export DEBUG=${DEBUG:-True}"
+    echo ""
+    echo "# Settings for external services"
+    echo ""
+    echo "# MYSQL Settings"
+    echo "export DB_USER=${DB_USER:-Dirac}"
+    echo "export DB_PASSWORD=${DB_PASSWORD:-Dirac}"
+    echo "export DB_ROOTUSER=${DB_ROOTUSER:-root}"
+    echo "export DB_ROOTPWD=${DB_ROOTPWD:-password}"
+    echo "export DB_HOST=${DB_HOST:-mysql}"
+    echo "export DB_PORT=${DB_PORT:-3306}"
+    echo ""
+    echo "# ElasticSearch settings"
+    echo "export NoSQLDB_HOST=${NoSQLDB_HOST:-elasticsearch}"
+    echo "export NoSQLDB_PORT=${NoSQLDB_PORT:-9200}"
+    echo ""
+    echo "# Hostnames"
+    echo "export SERVER_HOST=${SERVER_HOST:-server}"
+    echo "export CLIENT_HOST=${CLIENT_HOST:-client}"
+    echo ""
+    echo "# Settings for DIRAC installation"
+    echo "export PRERELEASE=${PRERELEASE:-}"
+    echo "export DIRAC_RELEASE=${DIRAC_RELEASE:-}"
+    echo "export DIRACBRANCH=${DIRACBRANCH:-}"
+    echo ""
+    echo "# repository to get tests and install scripts from"
+    echo "export TESTBRANCH=${TESTBRANCH:-ci}"
+    echo "export DIRAC_CI_SETUP_SCRIPT=${WORKSPACE}/TestCode/${DIRAC_CI_SETUP_SCRIPT:-DIRAC/tests/Jenkins/dirac_ci.sh}"
+    echo ""
+    echo "export DIRACOSVER=${DIRACOSVER:-master}"
+    echo "export DIRACOS_TARBALL_PATH=${DIRACOS_TARBALL_PATH:-}"
+    echo ""
+    echo "# Test specific variables"
+    echo "export WORKSPACE=${WORKSPACE}"
+    echo ""
+    echo "# Optional parameters"
 
-      # find the latest version, unless it's integration
-      if [ "${CI_COMMIT_REF_NAME}" = 'refs/heads/integration' ]; then
-          export DIRAC_RELEASE=integration
+    echo "declare -a TESTREPO"
+    if [ -n "${TESTREPO+x}" ]; then
+      for repo_path in "${TESTREPO[@]}"; do
+        echo "TESTREPO+=(\"${repo_path}\")"
+      done
+    else
+      echo "TESTREPO+=(\"${DIRAC_BASE_DIR}\")"
+    fi
 
-          {
-            echo "export TESTREPO=${TESTREPO}"
-            echo "export ALTERNATIVE_MODULES=${ALTERNATIVE_MODULES}"
-            echo "export DIRAC_RELEASE=${DIRAC_RELEASE}"
-          } >> "${SERVERCONFIG}"
+    echo "declare -a ALTERNATIVE_MODULES"
+    if [ -n "${ALTERNATIVE_MODULES+x}" ]; then
+      for module_path in "${ALTERNATIVE_MODULES[@]}"; do
+        echo "ALTERNATIVE_MODULES+=(\"${module_path}\")"
+      done
+    else
+      echo "ALTERNATIVE_MODULES+=(\"${DIRAC_BASE_DIR}\")"
+    fi
 
-      elif [ "${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}" = 'integration' ]; then
-          export DIRAC_RELEASE=integration
+    echo "declare -a INSTALLOPTIONS"
+    if [ -n "${INSTALLOPTIONS+x}" ]; then
+      for option in "${INSTALLOPTIONS[@]}"; do
+        echo "INSTALLOPTIONS+=(\"${option}\")"
+      done
+    fi
+  } > "${SERVERCONFIG}"
 
-          {
-            echo "export TESTREPO=${TESTREPO}"
-            echo "export ALTERNATIVE_MODULES=${ALTERNATIVE_MODULES}"
-            echo "export DIRAC_RELEASE=${DIRAC_RELEASE}"
-          } >> "${SERVERCONFIG}"
+  # find the latest version, unless it's integration
+  if [ "${CI_COMMIT_REF_NAME}" = 'refs/heads/integration' ]; then
+      {
+        echo "export DIRAC_RELEASE=integration"
+      } >> "${SERVERCONFIG}"
 
-      else
-          majorVersion=$(grep "majorVersion =" "${TESTREPO}/__init__.py" | cut -d "=" -f 2)
-          minorVersion=$(grep "minorVersion =" "${TESTREPO}/__init__.py" | cut -d "=" -f 2)
-          export DIRACBRANCH=v${majorVersion// }r${minorVersion// }
-          echo "Deduced DIRACBRANCH ${DIRACBRANCH} from __init__.py"
-
-          {
-            echo "export TESTREPO=${TESTREPO}"
-            echo "export ALTERNATIVE_MODULES=${ALTERNATIVE_MODULES}"
-            echo "export DIRACBRANCH=${DIRACBRANCH}"
-          } >> "${SERVERCONFIG}"
-
-      fi
-
+  elif [ "${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}" = 'integration' ]; then
+      {
+        echo "export DIRAC_RELEASE=integration"
+      } >> "${SERVERCONFIG}"
+  else
+      majorVersion=$(grep "majorVersion =" "${DIRAC_BASE_DIR}/__init__.py" | cut -d "=" -f 2)
+      minorVersion=$(grep "minorVersion =" "${DIRAC_BASE_DIR}/__init__.py" | cut -d "=" -f 2)
+      {
+        echo "export DIRACBRANCH=${DIRACBRANCH:-v${majorVersion// }r${minorVersion// }}"
+      } >> "${SERVERCONFIG}"
   fi
+
+  if [ -n "${EXTRA_ENVIRONMENT_CONFIG+x}" ]; then
+    for line in "${EXTRA_ENVIRONMENT_CONFIG[@]}"; do
+      echo "${line}" >> "${SERVERCONFIG}"
+    done
+  fi
+
+  echo "Generated config file is:"
+  cat "${SERVERCONFIG}"
+  # TODO Allow different server and client config
   cp "${SERVERCONFIG}" "${CLIENTCONFIG}"
 
   docker-compose -f ./docker-compose.yml up -d
@@ -97,9 +164,13 @@ function prepareEnvironment() {
   docker exec client adduser -s /bin/bash -d "$USER_HOME" "$DOCKER_USER"
 
   # Create database user
-  docker exec mysql mysql --password=password -e "CREATE USER '${DB_USER}'@'%' IDENTIFIED BY '${DB_PASSWORD}';"
-  docker exec mysql mysql --password=password -e "CREATE USER '${DB_USER}'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';"
-  docker exec mysql mysql --password=password -e "CREATE USER '${DB_USER}'@'mysql' IDENTIFIED BY '${DB_PASSWORD}';"
+  # Run in a subshell so we can safely source ${SERVERCONFIG}
+  (
+    source "${SERVERCONFIG}"
+    docker exec mysql mysql --password=password -e "CREATE USER '${DB_USER}'@'%' IDENTIFIED BY '${DB_PASSWORD}';"
+    docker exec mysql mysql --password=password -e "CREATE USER '${DB_USER}'@'localhost' IDENTIFIED BY '${DB_PASSWORD}';"
+    docker exec mysql mysql --password=password -e "CREATE USER '${DB_USER}'@'mysql' IDENTIFIED BY '${DB_PASSWORD}';"
+  )
 
   docker cp ./install_server.sh server:"$WORKSPACE"
   docker cp ./install_client.sh client:"$WORKSPACE"
@@ -135,12 +206,14 @@ function testServer() {
   docker exec -e TERM=xterm-color -u "$DOCKER_USER" -w "$WORKSPACE" -e INSTALLROOT="$WORKSPACE" -e INSTALLTYPE=server server \
       bash TestCode/DIRAC/tests/CI/run_tests.sh || SERVER_CODE=$?
   echo ${SERVER_CODE:-0} > "${BUILD_DIR}/server_test_status"
+  docker cp server:/home/dirac/serverTestOutputs.txt "${BUILD_DIR}/log_server_tests.txt"
 }
 
 function testClient() {
   docker exec -e TERM=xterm-color -u "$DOCKER_USER" -w "$WORKSPACE" -e INSTALLROOT="$WORKSPACE" -e INSTALLTYPE=client client \
       bash TestCode/DIRAC/tests/CI/run_tests.sh || CLIENT_CODE=$?
   echo ${CLIENT_CODE:-0} > "${BUILD_DIR}/client_test_status"
+  docker cp client:/home/dirac/clientTestOutputs.txt "${BUILD_DIR}/log_client_tests.txt"
 }
 
 function checkErrors() {

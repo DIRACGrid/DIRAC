@@ -26,7 +26,6 @@ jobs:
     - uses: actions/checkout@v1
     - name: Clean up GitHub actions environment
       run: |
-        set -x
         mysqladmin -u root -proot shutdown
 
         # Prepare wrapper script
@@ -48,15 +47,15 @@ jobs:
         chmod +x run_in_container
     - name: Prepare environment
       run: |
-        docker run --name dirac-testing-host -v $PWD:/repo --detach --privileged -v /var/run/docker.sock:/var/run/docker.sock --rm diracgrid/docker-compose-dirac:latest bash -c 'sleep 100000000'
-        ./run_in_container bash -c 'source tests/CI/run_docker_setup.sh && prepareEnvironment'
+        docker run --name dirac-testing-host -v $PWD:/repo/DIRAC --detach --privileged -v /var/run/docker.sock:/var/run/docker.sock --rm diracgrid/docker-compose-dirac:latest bash -c 'sleep 100000000'
+        ./run_in_container bash -c 'source DIRAC/tests/CI/run_docker_setup.sh && prepareEnvironment'
     - name: Install server
-      run: ./run_in_container bash -c 'source tests/CI/run_docker_setup.sh && installServer'
+      run: ./run_in_container bash -c 'source DIRAC/tests/CI/run_docker_setup.sh && installServer'
     - name: Install client
-      run: ./run_in_container bash -c 'source tests/CI/run_docker_setup.sh && installClient'
+      run: ./run_in_container bash -c 'source DIRAC/tests/CI/run_docker_setup.sh && installClient'
     - name: Server tests
-      run: ./run_in_container bash -c 'source tests/CI/run_docker_setup.sh && testServer'
+      run: ./run_in_container bash -c 'source DIRAC/tests/CI/run_docker_setup.sh && testServer'
     - name: Client tests
-      run: ./run_in_container bash -c 'source tests/CI/run_docker_setup.sh && testClient'
+      run: ./run_in_container bash -c 'source DIRAC/tests/CI/run_docker_setup.sh && testClient'
     - name: Check test status
-      run: ./run_in_container bash -c 'source tests/CI/run_docker_setup.sh && checkErrors'
+      run: ./run_in_container bash -c 'source DIRAC/tests/CI/run_docker_setup.sh && checkErrors'
