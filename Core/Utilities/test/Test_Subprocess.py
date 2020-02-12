@@ -13,76 +13,38 @@
     unittest for Subprocess module
 """
 
-__RCSID__ = "$Id $"
+__RCSID__ = "$Id$"
 
 ##
 # @author Krzysztof.Ciba@NOSPAMgmail.com
 # @date 2012/12/11 18:04:37
 
 # imports
-import unittest
 import time
+import pytest
 # SUT
 from DIRAC.Core.Utilities.Subprocess import systemCall, shellCall, pythonCall
 
 ########################################################################
 
-
-class SubprocessTests(unittest.TestCase):
-  """
-  .. class:: SubprocessTests
-
-  """
-
-  def setUp(self):
-    """ test case setup
-
-    :param self: self reference
-    """
-    self.cmd = ["sleep", "10"]
-    self.timeout = 3
-
-  def testNoTimeouts(self):
-    """ tests no timeouts  """
-
-    # systemCall
-    ret = systemCall(timeout=False, cmdSeq=self.cmd)
-    self.assertEqual(ret, {'OK': True, 'Value': (0, '', '')})
-
-    # shellCall
-    ret = shellCall(timeout=False, cmdSeq=" ".join(self.cmd))
-    self.assertEqual(ret, {'OK': True, 'Value': (0, '', '')})
-
-    def pyfunc(name):
-      time.sleep(10)
-      return name
-
-    # pythonCall
-    ret = pythonCall(0, pyfunc, "Krzysztof")
-    self.assertEqual(ret, {'OK': True, 'Value': 'Krzysztof'})
-
-  def testTimeouts(self):
-    """ test timeouts """
-
-    # systemCall
-    ret = systemCall(timeout=self.timeout, cmdSeq=self.cmd)
-    self.assertFalse(ret['OK'])
-
-    # shellCall
-    ret = shellCall(timeout=self.timeout, cmdSeq=" ".join(self.cmd))
-    self.assertFalse(ret['OK'])
-
-    def pyfunc(name):
-      time.sleep(10)
-      return name
-
-    # pythonCall
-    ret = pythonCall(self.timeout, pyfunc, "Krzysztof")
-    self.assertFalse(ret['OK'])
+cmd = ["sleep", "2"]
 
 
-# tests execution
-if __name__ == "__main__":
-  gTestLoader = unittest.TestLoader()
-  gTestSuite = gTestLoader.loadTestsFromTestCase(SubprocessTests)
-  unittest.TextTestRunner(verbosity=3).run(gTestSuite)
+def pyfunc(_name):
+  time.sleep(2)
+
+
+@pytest.mark.parametrize("timeout, expected", [
+    (False, True),
+    (3, True),
+    (1, False)
+])
+def test_calls(timeout, expected):
+  ret = systemCall(timeout, cmdSeq=cmd)
+  assert ret['OK'] == expected
+
+  ret = shellCall(timeout, cmdSeq=" ".join(cmd))
+  assert ret['OK'] == expected
+
+  ret = pythonCall(timeout, pyfunc, 'something')
+  assert ret['OK'] == expected
