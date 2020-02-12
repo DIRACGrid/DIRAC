@@ -34,6 +34,8 @@ import os
 import sys
 import subprocess32 as subprocess
 import signal
+import psutil
+
 # Very Important:
 #  Here we can not import directly from DIRAC, since this file it is imported
 #  at initialization time therefore the full path is necessary
@@ -138,7 +140,7 @@ class Watchdog(object):
     return ret
 
 
-class Subprocess:
+class Subprocess(object):
   """
   .. class:: Subprocess
 
@@ -174,7 +176,7 @@ class Subprocess:
     self.timeout = int(timeout)
     if self.timeout == 0:
       self.timeout = False
-    #self.log.debug( 'Timeout set to', timeout )
+    # self.log.debug( 'Timeout set to', timeout )
 
   def __readFromFD(self, fd, baseLength=0):
     """ read from file descriptior :fd:
@@ -262,6 +264,9 @@ class Subprocess:
 
   def killChild(self, recursive=True):
     """ kill child process
+
+    FIXME: this can easily be rewritten just using this recipe:
+    https://psutil.readthedocs.io/en/latest/index.html#kill-process-tree
 
     :param boolean recursive: flag to kill all descendants
     """
@@ -585,37 +590,15 @@ def pythonCall(timeout, function, *stArgs, **stKeyArgs):
   return result
 
 
-def __getChildrenForPID(ppid):
-  """
-  Get a list of children pids for ppid
-  """
-  magicCmd = "ps --no-headers --ppid %d -o pid" % ppid
-  try:
-    import psutil
-    childrenList = []
-    for proc in psutil.process_iter():
-      if proc.ppid == ppid:
-        childrenList.append(proc.pid)
-    return childrenList
-  except Exception:
-    exc = subprocess.Popen(magicCmd,
-                           stdout=subprocess.PIPE,
-                           shell=True,
-                           close_fds=True)
-    exc.wait()
-    return [int(pid.strip()) for pid in exc.stdout.readlines() if pid.strip()]
-
-
 def getChildrenPIDs(ppid, foreachFunc=None):
   """
   Get all children recursively for a given ppid.
    Optional foreachFunc will be executed for each children pid
   """
-  cpids = __getChildrenForPID(ppid)
+  cpids = psutil.Process(ppid).children(recursive=True)
   pids = []
-  for pid in cpids:
-    pids.append(pid)
+  for proc in cpids:
+    pids.append(proc.pid)
     if foreachFunc:
-      foreachFunc(pid)
-    pids.extend(getChildrenPIDs(pid, foreachFunc))
+      foreachFunc(proc.pid)
   return pids
