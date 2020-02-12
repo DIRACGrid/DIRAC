@@ -265,6 +265,9 @@ class Subprocess(object):
   def killChild(self, recursive=True):
     """ kill child process
 
+    FIXME: this can easily be rewritten just using this recipe:
+    https://psutil.readthedocs.io/en/latest/index.html#kill-process-tree
+
     :param boolean recursive: flag to kill all descendants
     """
     if self.childPID < 1:

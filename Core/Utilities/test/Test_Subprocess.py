@@ -53,7 +53,6 @@ def test_getChildrenPIDs():
   import os
   os.system("echo $PWD")
   mainProcess = Popen(['python', 'Core/Utilities/test/ProcessesCreator.py'])
-  print mainProcess.pid
   time.sleep(1)
   res = getChildrenPIDs(mainProcess.pid)
   assert len(res) == 3
