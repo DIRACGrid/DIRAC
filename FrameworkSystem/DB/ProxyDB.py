@@ -1060,9 +1060,9 @@ class ProxyDB(DB):
       # If it's not in the db and we're removing the persistency then do nothing
       if not persistent:
         return S_OK()
-      result = Registry.getUsernameForDN( userDN )
+      result = Registry.getUsernameForDN(userDN)
       if not result['OK']:
-        self.log.error( "setPersistencyFlag: Can not retrieve username for DN", userDN )
+        self.log.error("setPersistencyFlag: Can not retrieve username for DN", userDN)
         return result
       userName = result['Value']
       cmd = "INSERT INTO `ProxyDB_Proxies` ( UserName, UserDN, UserGroup, Pem, ExpirationTime, PersistentFlag ) VALUES "
