@@ -2641,7 +2641,7 @@ if __name__ == "__main__":
 
   # we install with DIRACOS from v7rX DIRAC release
   if cliParams.diracOS \
-     or isinstance(list(releaseConfig.prjRelCFG['DIRAC'])[0][1], str_type) \
+     or list(releaseConfig.prjRelCFG['DIRAC'])[0][1] not in '0123456789' \
      or int(list(releaseConfig.prjRelCFG['DIRAC'])[0][1]) > 6:
     logNOTICE("Installing DIRAC OS %s..." % cliParams.diracOSVersion)
     if not installDiracOS(releaseConfig):
