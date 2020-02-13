@@ -192,8 +192,7 @@ class PublisherHandler(RequestHandler):
 
     sesStatus = rsClient.selectStatusElement('Resource', 'Status', name=list(ses),
                                              meta={'columns': ['Name', 'StatusType', 'Status']})
-    if not sesStatus['OK']:
-      return sesStatus
+    return sesStatus
 
     def feedTree(elementsList):
 
