@@ -194,6 +194,7 @@ class ARCComputingElement(ComputingElement):
     self.queue = self.ceParameters['Queue']
     if 'GridEnv' in self.ceParameters:
       self.gridEnv = self.ceParameters['GridEnv']
+    return S_OK()
 
   #############################################################################
   def submitJob(self, executableFile, proxy, numberOfJobs=1, processors=1):

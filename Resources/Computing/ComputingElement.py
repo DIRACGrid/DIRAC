@@ -186,7 +186,7 @@ class ComputingElement(object):
   def _reset(self):
     """ Make specific CE parameter adjustments after they are collected or added
     """
-    pass
+    return S_OK()
 
   def loadBatchSystem(self):
     """ Instantiate object representing the backend batch system
@@ -231,8 +231,7 @@ class ComputingElement(object):
       if key in FLOAT_PARAMETERS:
         self.ceParameters[key] = float(self.ceParameters[key])
 
-    self._reset()
-    return S_OK()
+    return self._reset()
 
   def getParameterDict(self):
     """  Get the CE complete parameter dictionary

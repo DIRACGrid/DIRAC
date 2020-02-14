@@ -14,6 +14,7 @@ import urllib
 import json
 import stat
 import shutil
+import errno
 from urlparse import urlparse
 
 from DIRAC import S_OK, S_ERROR
@@ -324,6 +325,7 @@ class SSHComputingElement(ComputingElement):
 
     result = self._prepareRemoteHost()
     if not result['OK']:
+      self.log.error('Failed to initialize CE', self.ceName)
       return result
 
     self.submitOptions = ''
@@ -356,15 +358,15 @@ class SSHComputingElement(ComputingElement):
     self.log.verbose('Creating working directories on %s' % self.ceParameters['SSHHost'])
     result = ssh.sshCall(30, cmd)
     if not result['OK']:
-      self.log.warn('Failed creating working directories: %s' % result['Message'][1])
+      self.log.error('Failed creating working directories', '(%s)' % result['Message'][1])
       return result
     status, output, _error = result['Value']
     if status == -1:
-      self.log.warn('Timeout while creating directories')
-      return S_ERROR('Timeout while creating directories')
+      self.log.error('Timeout while creating directories')
+      return S_ERROR(errno.ETIME, 'Timeout while creating directories')
     if "cannot" in output:
-      self.log.warn('Failed to create directories: %s' % output)
-      return S_ERROR('Failed to create directories: %s' % output)
+      self.log.error('Failed to create directories', '(%s)' % output)
+      return S_ERROR(errno.EACCES, 'Failed to create directories')
 
     # Upload the control script now
     result = self._generateControlScript()

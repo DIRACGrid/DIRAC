@@ -58,8 +58,11 @@ class ComputingElementFactory(object):
       ceDict = {'CEType': ceTypeLocal}
       if ceParametersDict:
         ceDict.update(ceParametersDict)
-      computingElement.setParameters(ceDict)
-    except BaseException as x:
+      result = computingElement.setParameters(ceDict)
+      if not result['OK']:
+        return result
+
+    except Exception as x:
       msg = 'ComputingElementFactory could not instantiate %s object: %s' % (subClassName, str(x))
       self.log.exception()
       self.log.warn(msg)
