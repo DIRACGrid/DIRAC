@@ -26,7 +26,7 @@ The class can be used as the basis for more advanced StorageElement implementati
 import os
 import stat
 import re
-from types import StringTypes, ListType
+import six
 # from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR, gConfig
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -230,7 +230,7 @@ class IRODSStorageElementHandler(RequestHandler):
       else:
         return S_ERROR('Path does not exist')
 
-  types_exists = [StringTypes]
+  types_exists = [list(six.string_types)]
 
   def export_exists(self, fileID):
     """ Check existence of the fileID """
@@ -252,7 +252,7 @@ class IRODSStorageElementHandler(RequestHandler):
         return S_OK(True)
     return S_OK(False)
 
-  types_getMetadata = [StringTypes]
+  types_getMetadata = [list(six.string_types)]
 
   def export_getMetadata(self, fileID):
     """
@@ -260,7 +260,7 @@ class IRODSStorageElementHandler(RequestHandler):
     """
     return self.__getFileStat(fileID)
 
-  types_createDirectory = [StringTypes]
+  types_createDirectory = [list(six.string_types)]
 
   def export_createDirectory(self, dir_path):
     """
@@ -282,7 +282,7 @@ class IRODSStorageElementHandler(RequestHandler):
         return S_ERROR('Failed to create directory')
     return S_OK()
 
-  types_listDirectory = [StringTypes, StringTypes]
+  types_listDirectory = [list(six.string_types), list(six.string_types)]
 
   def export_listDirectory(self, dir_path, mode):
     """
@@ -477,7 +477,7 @@ token is used for access rights confirmation.
       gLogger.error('Failed to send bulk to network', res['Message'])
     return res
 
-  types_remove = [StringTypes, StringTypes]
+  types_remove = [list(six.string_types), list(six.string_types)]
 
   def export_remove(self, fileID, token):
     """ Remove fileID from the storage. token is used for access rights confirmation. """
@@ -523,7 +523,7 @@ token is used for access rights confirmation.
     else:
       return S_ERROR('File removal %s not authorized' % fileID)
 
-  types_getDirectorySize = [StringTypes]
+  types_getDirectorySize = [list(six.string_types)]
 
   def export_getDirectorySize(self, fileID):
     """ Get the size occupied by the given directory
@@ -543,7 +543,7 @@ token is used for access rights confirmation.
     """ dummy implementation to make pylint happy"""
     raise NotImplementedError("IRODSStorageElement__getDirectorySize is not implemented ")
 
-  types_removeDirectory = [StringTypes, StringTypes]
+  types_removeDirectory = [list(six.string_types), list(six.string_types)]
 
   def export_removeDirectory(self, fileID, token):
     """ Remove the given directory from the storage
@@ -568,7 +568,7 @@ token is used for access rights confirmation.
 
     return S_ERROR()
 
-  types_removeFileList = [ListType, StringTypes]
+  types_removeFileList = [list, list(six.string_types)]
 
   def export_removeFileList(self, fileList, token):
     """ Remove files in the given list

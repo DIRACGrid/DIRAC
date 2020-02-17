@@ -386,9 +386,12 @@ class MonitoringCatalog(object):
     :param acName: name of the activity.
     :return: The last update time in string.
     """
-    retList = self.__select(", ".join(fields), 'sources, activities', selDict, 'sources.id = activities.sourceId',
-                            extraSQL)
-    return S_OK((retList, fields))
+    queryDict = {'sourceId': sourceId, "name": acName}
+    retList = self.__update('lastUpdate', "activities", queryDict)
+    if len(retList) == 0:
+      return False
+    else:
+      return retList[0]
 
   def queryField(self, field, definedFields):
     """
@@ -419,7 +422,6 @@ class MonitoringCatalog(object):
 
   def registerView(self, viewName, viewData, varFields):
     """
-<<<<<<< HEAD
     Registers a new view.
 
     :type viewName: string
@@ -429,9 +431,6 @@ class MonitoringCatalog(object):
     :type varFields: list
     :param varFields: A list of variable fields.
     :return: S_OK / S_ERROR with the corresponding error message.
-=======
-    Register a new view
->>>>>>> autopep8
     """
     retList = self.__select("id", "views", {'name': viewName})
     if len(retList) > 0:

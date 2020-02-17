@@ -12,7 +12,6 @@
 # imports
 import six
 
-from types import IntType, LongType
 # from DIRAC
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC import gLogger, S_OK
@@ -46,7 +45,7 @@ class DataIntegrityHandler(RequestHandler):
   Implementation of the Data Integrity service in the DISET framework.
   """
 
-  types_removeProblematic = [[IntType, LongType, list]]
+  types_removeProblematic = [list(six.integer_types) + [list]]
 
   @staticmethod
   def export_removeProblematic(fileID):
@@ -74,7 +73,7 @@ class DataIntegrityHandler(RequestHandler):
       gLogger.error("DataIntegrityHandler.getProblematic: Failed to get problematic file to resolve.", res['Message'])
     return res
 
-  types_getPrognosisProblematics = [six.string_types]
+  types_getPrognosisProblematics = [list(six.string_types)]
 
   @staticmethod
   def export_getPrognosisProblematics(prognosis):
@@ -86,7 +85,7 @@ class DataIntegrityHandler(RequestHandler):
       gLogger.error("DataIntegrityHandler.getPrognosisProblematics: Failed to get prognosis files.", res['Message'])
     return res
 
-  types_setProblematicStatus = [[IntType, LongType], six.string_types]
+  types_setProblematicStatus = [list(six.integer_types), list(six.string_types)]
 
   @staticmethod
   def export_setProblematicStatus(fileID, status):
@@ -98,7 +97,7 @@ class DataIntegrityHandler(RequestHandler):
       gLogger.error("DataIntegrityHandler.setProblematicStatus: Failed to set status.", res['Message'])
     return res
 
-  types_incrementProblematicRetry = [[IntType, LongType]]
+  types_incrementProblematicRetry = [list(six.integer_types)]
 
   @staticmethod
   def export_incrementProblematicRetry(fileID):
@@ -110,7 +109,7 @@ class DataIntegrityHandler(RequestHandler):
       gLogger.error("DataIntegrityHandler.incrementProblematicRetry: Failed to increment retries.", res['Message'])
     return res
 
-  types_insertProblematic = [six.string_types, dict]
+  types_insertProblematic = [list(six.string_types), dict]
 
   @staticmethod
   def export_insertProblematic(source, fileMetadata):
@@ -133,7 +132,7 @@ class DataIntegrityHandler(RequestHandler):
       gLogger.error("DataIntegrityHandler.changeProblematicPrognosis: Failed to update.", res['Message'])
     return res
 
-  types_getTransformationProblematics = [[IntType, LongType]]
+  types_getTransformationProblematics = [list(six.integer_types)]
 
   @staticmethod
   def export_getTransformationProblematics(transID):

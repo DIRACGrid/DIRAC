@@ -8,7 +8,7 @@
 """
 # imports
 import os
-from types import StringTypes, TupleType
+import six
 # from DIRAC
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
@@ -29,7 +29,7 @@ class FileCatalogProxyHandler(RequestHandler):
   .. class:: FileCatalogProxyHandler
   """
 
-  types_callProxyMethod = [StringTypes, StringTypes, TupleType, dict]
+  types_callProxyMethod = [list(six.string_types), list(six.string_types), [tuple, list], dict]
 
   def export_callProxyMethod(self, fcName, methodName, args, kargs):
     """ A generic method to call methods of the Storage Element.

@@ -185,7 +185,8 @@ class RequestDB(object):
          self.dbHost,
          self.dbPort,
          self.dbName),
-        echo=runDebug)
+        echo=runDebug,
+        pool_recycle=3600)
 
     metadata.bind = self.engine
 
