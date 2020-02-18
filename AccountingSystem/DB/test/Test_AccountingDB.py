@@ -18,7 +18,6 @@ class TestCase(unittest.TestCase):
 
     self.moduleTested = moduleTested
     self.testClass = self.moduleTested.AccountingDB
-    # self.moduleTested.OracleDB = mock_OracleDB
 
     self.moduleTested.DB = MagicMock()
     self.moduleTested.DB.fullname = 'AccountingDB'
