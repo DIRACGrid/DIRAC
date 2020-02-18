@@ -66,5 +66,3 @@ class ComputingElementFactory(object):
       return S_ERROR(msg)
 
     return S_OK(computingElement)
-
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

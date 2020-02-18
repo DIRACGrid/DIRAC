@@ -12,7 +12,7 @@ __RCSID__ = "$Id$"
 
 import os
 
-from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.ProcessPool import ProcessPool
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ConfigurationSystem.private.ConfigurationData import ConfigurationData
@@ -58,7 +58,6 @@ class PoolComputingElement(ComputingElement):
     super(PoolComputingElement, self).__init__(ceUniqueID)
 
     self.ceType = "Pool"
-    self.log = gLogger.getSubLogger('Pool')
     self.submittedJobs = 0
     self.processors = 1
     self.pPool = None
@@ -206,10 +205,11 @@ class PoolComputingElement(ComputingElement):
       self.log.error("Task failed submission", "%d, message: %s" % (taskID, result['Message']))
 
   #############################################################################
-  def getCEStatus(self, jobIDList=None):
-    """ Method to return information on running and pending jobs.
+  def getCEStatus(self):
+    """ Method to return information on running and waiting jobs,
+        as well as the number of processors (used, and available).
 
-    :return: dictionary of numbers of jobs per status
+    :return: dictionary of numbers of jobs per status and processors (used, and available)
     """
 
     if self.pPool is None:
@@ -219,13 +219,15 @@ class PoolComputingElement(ComputingElement):
 
     self.pPool.processResults()
     result = S_OK()
-    result['SubmittedJobs'] = 0
     nJobs = 0
     for _j, value in self.processorsPerTask.iteritems():
       if value > 0:
         nJobs += 1
+    result['SubmittedJobs'] = nJobs
     result['RunningJobs'] = nJobs
     result['WaitingJobs'] = 0
+
+    # dealing with processors
     processorsInUse = self.getProcessorsInUse()
     result['UsedProcessors'] = processorsInUse
     result['AvailableProcessors'] = self.processors - processorsInUse

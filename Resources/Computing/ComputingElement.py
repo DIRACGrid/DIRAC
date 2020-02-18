@@ -460,9 +460,10 @@ class ComputingElement(object):
     # the getCEStatus is implemented in the each of the specific CE classes
     result = self.getCEStatus()
     if result['OK']:
-      # 'AvailableProcessors' ATM is only set by the PoolComputingElement
       ceDict['NumberOfProcessors'] = result.get('AvailableProcessors',
                                                 result.get('NumberOfProcessors', 1))
+    else:
+      self.log.error("Failure getting CE status", "we keep going without the number of waiting and running pilots")
 
     return S_OK(ceDict)
 
@@ -481,7 +482,7 @@ class ComputingElement(object):
     return S_ERROR('ComputingElement: %s should be implemented in a subclass' % (name))
 
   #############################################################################
-  def getCEStatus(self, jobIDList=None):  # pylint: disable=unused-argument
+  def getCEStatus(self):
     """ Method to get dynamic job information, can be overridden in sub-class.
     """
     name = 'getCEStatus()'
