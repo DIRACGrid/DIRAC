@@ -130,10 +130,17 @@ class ComputingElement(object):
     """ Initialize the CE parameters after they are collected from various sources
     """
 
+    self.log.debug("Initializing the CE parameters")
+
     # Collect global defaults first
     for section in ['/Resources/Computing/CEDefaults', '/Resources/Computing/%s' % self.ceName]:
       result = gConfig.getOptionsDict(section)
-      if result['OK']:
+
+      self.log.debug(result)
+
+      if not result['OK']:
+        self.log.warn(result['Message'])
+      else:
         ceOptions = result['Value']
         for key in ceOptions:
           if key in INTEGER_PARAMETERS:

@@ -29,7 +29,10 @@ class InProcessComputingElement(ComputingElement):
     """
     super(InProcessComputingElement, self).__init__(ceUniqueID)
     self.submittedJobs = 0
-    self.processors = int(self.ceParameters.get('NumberOfProcessors', self.processors))
+
+    self.log.debug("CE parameters", self.ceParameters)
+
+    self.processors = int(self.ceParameters.get('NumberOfProcessors', 1))
     self.ceParameters['MaxTotalJobs'] = 1
 
   #############################################################################
