@@ -293,15 +293,6 @@ class SystemAdministratorHandler(RequestHandler):
 
     if rootPath and not os.path.exists(rootPath):
       return S_ERROR('Path "%s" does not exists' % rootPath)
-    # For LHCb we need to check Oracle client
-    installOracleClient = False
-    oracleFlag = gConfig.getValue('/LocalInstallation/InstallOracleClient', 'unknown')
-    if oracleFlag.lower() in ['yes', 'true', '1']:
-      installOracleClient = True
-    elif oracleFlag.lower() == "unknown":
-      result = systemCall(30, ['python', '-c', 'import cx_Oracle'])
-      if result['OK'] and result['Value'][0] == 0:
-        installOracleClient = True
 
     cmdList = ['dirac-install', '-r', version, '-t', 'server']
     if rootPath:
@@ -353,19 +344,6 @@ class SystemAdministratorHandler(RequestHandler):
       else:
         message = "Failed to update software to %s" % version
       return S_ERROR(message)
-
-    # For LHCb we need to check Oracle client
-    if installOracleClient:
-      result = systemCall(30, 'install_oracle-client.sh')
-      if not result['OK']:
-        return result
-      status = result['Value'][0]
-      if status != 0:
-        # Get error messages
-        error = result['Value'][1].split('\n')
-        error.extend(result['Value'][2].split('\n'))
-        error.append('Failed to install Oracle client module')
-        return S_ERROR('\n'.join(error))
 
     if webPortal:
       # we have a to compile the new web portal...
