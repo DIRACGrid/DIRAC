@@ -2380,8 +2380,8 @@ def createBashrcForDiracOS():
       lines = ['# DIRAC bashrc file, used by service and agent run scripts to set environment',
                'export PYTHONUNBUFFERED=yes',
                'export PYTHONOPTIMIZE=x',
-               '[ -z "$DIRAC" ] && export DIRAC=%s' % proPath,
-               '[ -z "$DIRACOS" ] && export DIRACOS=$DIRAC/diracos',
+               'export DIRAC=%s' % proPath,
+               'export DIRACOS=$DIRAC/diracos',
                '. $DIRACOS/diracosrc']
       if 'HOME' in os.environ:
         lines.append('[ -z "$HOME" ] && export HOME=%s' % os.environ['HOME'])
@@ -2447,7 +2447,7 @@ def createBashrcForDiracOS():
       # add DIRACPLAT environment variable for client installations
       if cliParams.externalsType == 'client':
         lines.extend(['# DIRAC platform',
-                      '[ -z "$DIRACPLAT" ] && export DIRACPLAT=`$DIRAC/scripts/dirac-platform`'])
+                      'export DIRACPLAT=`$DIRAC/scripts/dirac-platform`'])
       # Add the lines required for globus-* tools to use IPv6
       lines.extend(['# IPv6 support',
                     'export GLOBUS_IO_IPV6=TRUE',
