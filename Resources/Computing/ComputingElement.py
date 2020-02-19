@@ -107,7 +107,7 @@ class ComputingElement(object):
         return result
       os.environ['X509_USER_PROXY'] = result['Value']
 
-    gLogger.debug("Set proxy variable X509_USER_PROXY to %s" % os.environ['X509_USER_PROXY'])
+    self.log.debug("Set proxy variable X509_USER_PROXY to %s" % os.environ['X509_USER_PROXY'])
     return S_OK()
 
   def isProxyValid(self, valid=1000):
@@ -202,7 +202,7 @@ class ComputingElement(object):
     objectLoader = ObjectLoader()
     result = objectLoader.loadObject('Resources.Computing.BatchSystems.%s' % self.batchSystem, self.batchSystem)
     if not result['OK']:
-      gLogger.error('Failed to load batch object: %s' % result['Message'])
+      self.log.error('Failed to load batch object: %s' % result['Message'])
       return result
     batchClass = result['Value']
     self.batchModuleFile = result['ModuleFile']

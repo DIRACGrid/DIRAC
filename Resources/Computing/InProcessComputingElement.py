@@ -36,14 +36,6 @@ class InProcessComputingElement(ComputingElement):
     self.ceParameters['MaxTotalJobs'] = 1
 
   #############################################################################
-  def _addCEConfigDefaults(self):
-    """ Method to make sure all necessary Configuration Parameters are defined
-    """
-    # First assure that any global parameters are loaded
-    ComputingElement._addCEConfigDefaults(self)
-    # Now InProcess specific ones
-
-  #############################################################################
   def submitJob(self, executableFile, proxy, **kwargs):
     """ Method to submit job (overriding base method).
 

@@ -66,13 +66,6 @@ class PoolComputingElement(ComputingElement):
     self.userNumberPerTask = {}
     self.useSudo = False
 
-  #############################################################################
-  def _addCEConfigDefaults(self):
-    """Method to make sure all necessary Configuration Parameters are defined
-    """
-    # First assure that any global parameters are loaded
-    ComputingElement._addCEConfigDefaults(self)
-
   def _reset(self):
     """ Update internal variables after some extra parameters are added
 
