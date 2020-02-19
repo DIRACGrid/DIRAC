@@ -280,7 +280,7 @@ class ComputingElement(object):
     else:
       result = self.ceParameters.get('CEType')
       if result and result == 'CREAM':
-        result = self.getCEStatus(jobIDList)
+        result = self.getCEStatus(jobIDList)  # pylint: disable=too-many-function-args
       else:
         result = self.getCEStatus()
       if not result['OK']:
