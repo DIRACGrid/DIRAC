@@ -12,7 +12,7 @@ DIRAC_DEBUG_DENCODE_CALLSTACK
   If set, debug information for the encoding and decoding will be printed out
 
 DIRAC_DEBUG_STOMP
-  If set, the stomp library will print out debug information 
+  If set, the stomp library will print out debug information
 
 DIRAC_DEPRECATED_FAIL
   If set, the use of functions or objects that are marked ``@deprecated`` will fail. Useful for example in continuous
@@ -29,7 +29,8 @@ DIRAC_USE_JSON_ENCODE
   Controls the transition to JSON serialization. See the information in :ref:`jsonSerialization` page
 
 DIRAC_USE_M2CRYPTO
-  If ``true`` or ``yes`` DIRAC uses m2crypto instead of pyGSI for handling certificates, proxies, etc.
+  If anything else than ``true`` or ``yes`` (default) DIRAC will revert back to using pyGSI instead of m2crypto for handling certificates, proxies, etc.
+
 
 DIRAC_VOMSES
   Can be set to point to a folder containing VOMSES information. See :ref:`multi_vo_dirac`

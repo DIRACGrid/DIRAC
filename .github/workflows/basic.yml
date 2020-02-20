@@ -13,10 +13,10 @@ jobs:
       matrix:
         command:
           - pytest
-          - DIRAC_USE_M2CRYPTO=Yes pytest
+          - DIRAC_USE_M2CRYPTO=No pytest
           # Security tests are flakey due to reference counting bugs in pyGSI/src/crypto/asn1.c
           - pytest Core/Security/test || (echo "Retrying..."; pytest Core/Security/test) || (echo "Retrying again..."; pytest Core/Security/test)
-          - DIRAC_USE_M2CRYPTO=Yes pytest Core/Security/test || (echo "Retrying..."; DIRAC_USE_M2CRYPTO=Yes pytest Core/Security/test) || (echo "Retrying again..."; DIRAC_USE_M2CRYPTO=Yes pytest Core/Security/test)
+          - DIRAC_USE_M2CRYPTO=No pytest Core/Security/test || (echo "Retrying..."; DIRAC_USE_M2CRYPTO=No pytest Core/Security/test) || (echo "Retrying again..."; DIRAC_USE_M2CRYPTO=No pytest Core/Security/test)
           - tests/checkDocs.sh
           # TODO This should cover more than just tests/CI
           # Excluded codes related to sourcing files

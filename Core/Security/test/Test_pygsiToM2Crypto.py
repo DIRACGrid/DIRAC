@@ -60,9 +60,9 @@ def test_dynamic_import(DIRAC_USE_M2CRYPTO, x509Module, set_env):
   if DIRAC_USE_M2CRYPTO:
     os.environ['DIRAC_USE_M2CRYPTO'] = DIRAC_USE_M2CRYPTO
 
-  expectedSubPackage = 'pygsi'
-  if DIRAC_USE_M2CRYPTO == 'YES':
-    expectedSubPackage = 'm2crypto'
+  expectedSubPackage = 'm2crypto'
+  if DIRAC_USE_M2CRYPTO in ('ANY', 'NO'):
+    expectedSubPackage = 'pygsi'
 
   importlib.import_module(fullModuleName)
 
