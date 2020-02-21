@@ -81,6 +81,8 @@ class SuccessfullJobsBySiteSplittedCommand(Command):
 
     singlePlots = {}
 
+    successfulJobs['data'] = {site:strToIntDict(value) for site,value in successfulJobs['data'].iteritems()}    
+
     for site, value in successfulJobs['data'].iteritems():
       if site in sites:
         plot = {}
