@@ -122,7 +122,7 @@ def initializationOfGroup(credDict, logObj=gLogger):
     return False
 
   # Get DN for user/group
-  result = Registry.getDNForUsernameInGroup(credDict[KW_USERNAME], credDict[KW_GROUP])
+  result = Registry.getDNForUsernameInGroup(credDict[KW_USERNAME], credDict[KW_GROUP], checkStatus=True)
   if not result['OK']:
     logObj.error(result['Message'])
     credDict[KW_GROUP] = "visitor"

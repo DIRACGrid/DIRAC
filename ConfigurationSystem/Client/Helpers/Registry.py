@@ -771,11 +771,12 @@ def getGroupsForDN(userDN, researchedGroup=None):
   return S_OK(list(set(groups)))
 
 
-def getDNForUsernameInGroup(username, group):
+def getDNForUsernameInGroup(username, group, checkStatus=False):
   """ Get user DN for user in group
 
       :param str username: user name
       :param str group: group name
+      :param bool checkStatus: don't add suspended DNs
 
       :return: S_OK(str)/S_ERROR()
   """
@@ -783,16 +784,17 @@ def getDNForUsernameInGroup(username, group):
   if not result['OK']:
     return result
   userDNs = result['Value']
-  for dn in getDNsInGroup(group):
+  for dn in getDNsInGroup(group, checkStatus):
     if dn in userDNs:
       return S_OK(dn)
-  return S_ERROR('For %s@%s not found DN.' % (username, group))
+  return S_ERROR('For %s@%s not found DN%s.' % (username, group, ' or it suspended' if checkStatus else ''))
 
 
-def getDNsInGroup(group):
+def getDNsInGroup(group, checkStatus=False):
   """ Find user DNs for DIRAC group
 
       :param str group: group name
+      :param bool checkStatus: don't add suspended DNs
 
       :return: list
   """
@@ -806,6 +808,8 @@ def getDNsInGroup(group):
   DNs = getGroupOption(group, 'DNs', [])
   vomsRole = getGroupOption(group, 'VOMSRole', '')
   for dn, infoDict in vomsInfo.items():
+    if checkStatus and ((vomsRole in infoDict.get('SuspendedRoles', [])) or infoDict.get('suspended')):
+      continue
     if vomsRole in infoDict['VOMSRoles']:
       DNs.append(dn)
 
