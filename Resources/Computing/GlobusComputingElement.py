@@ -53,6 +53,7 @@ class GlobusComputingElement(ComputingElement):
     self.queue = self.ceParameters['Queue']
     self.outputURL = self.ceParameters.get('OutputURL', 'gsiftp://localhost')
     self.gridEnv = self.ceParameters.get('GridEnv', self.gridEnv)
+    return S_OK()
 
   #############################################################################
   def submitJob(self, executableFile, proxy, numberOfJobs=1):

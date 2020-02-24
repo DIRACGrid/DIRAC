@@ -93,7 +93,11 @@ import _strptime
 majorVersion = 7
 minorVersion = 2
 patchLevel = 0
+<<<<<<< HEAD
 preVersion = 5
+=======
+preVersion = 17
+>>>>>>> rel-v7r1
 
 version = "v%sr%s" % (majorVersion, minorVersion)
 buildVersion = "v%dr%d" % (majorVersion, minorVersion)

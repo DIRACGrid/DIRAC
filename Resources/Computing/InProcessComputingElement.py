@@ -3,8 +3,10 @@
 # Author : Stuart Paterson
 ########################################################################
 
-""" The simplest Computing Element instance that submits jobs locally.
-    This is also the standard "CE" invoked from the JobAgent
+""" The simplest of the "inner" CEs (meaning it's used by a jobAgent inside a pilot)
+
+    A "InProcess" CE instance submits jobs in the current process.
+    This is the standard "inner CE" invoked from the JobAgent, main alternative being the PoolCE
 """
 
 __RCSID__ = "$Id$"
@@ -28,13 +30,10 @@ class InProcessComputingElement(ComputingElement):
     super(InProcessComputingElement, self).__init__(ceUniqueID)
     self.submittedJobs = 0
 
-  #############################################################################
-  def _addCEConfigDefaults(self):
-    """ Method to make sure all necessary Configuration Parameters are defined
-    """
-    # First assure that any global parameters are loaded
-    ComputingElement._addCEConfigDefaults(self)
-    # Now InProcess specific ones
+    self.log.debug("CE parameters", self.ceParameters)
+
+    self.processors = int(self.ceParameters.get('NumberOfProcessors', 1))
+    self.ceParameters['MaxTotalJobs'] = 1
 
   #############################################################################
   def submitJob(self, executableFile, proxy, **kwargs):
@@ -113,12 +112,15 @@ class InProcessComputingElement(ComputingElement):
 
   #############################################################################
   def getCEStatus(self):
-    """ Method to return information on running and pending jobs.
+    """ Method to return information on running and waiting jobs,
+        as well as number of available processors
     """
     result = S_OK()
     result['SubmittedJobs'] = 0
     result['RunningJobs'] = 0
     result['WaitingJobs'] = 0
+    # processors
+    result['AvailableProcessors'] = self.processors
     return result
 
   #############################################################################

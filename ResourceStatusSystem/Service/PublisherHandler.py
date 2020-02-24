@@ -193,8 +193,7 @@ class PublisherHandler(RequestHandler):
 
     sesStatus = rsClient.selectStatusElement('Resource', 'Status', name=list(ses),
                                              meta={'columns': ['Name', 'StatusType', 'Status']})
-    if not sesStatus['OK']:
-      return sesStatus
+    return sesStatus
 
     def feedTree(elementsList):
 
@@ -291,6 +290,8 @@ class PublisherHandler(RequestHandler):
       if not res['OK']:
         return res
       names = res['Value']
+    else:
+      names = name
 
     return rmClient.selectDowntimeCache(element=element, name=names,
                                         meta={'columns': ['StartDate', 'EndDate',

@@ -3,7 +3,7 @@ Developing Databases
 ====================
 
 This is a quick guide about developing classes interacting with MySQL databases.
-DIRAC supports also Oracle SQL DB, and also the NoSQL database and ElasticSearch, but they are not part of this document.
+DIRAC supports also Elasticsearch NoSQL database, but it is not part of this document.
 
 Before starting developing databases, you have to make sure that MySQL is installed, as well as python-mysql,
 as explained in :ref:`editing_code`, and make sure that MySQL service is on.

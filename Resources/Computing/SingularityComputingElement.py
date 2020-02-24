@@ -334,7 +334,7 @@ class SingularityComputingElement(ComputingElement):
     self.__deleteWorkArea(baseDir)
     return result
 
-  def getCEStatus(self, jobIDList=None):
+  def getCEStatus(self):
     """ Method to return information on running and pending jobs.
     """
     result = S_OK()

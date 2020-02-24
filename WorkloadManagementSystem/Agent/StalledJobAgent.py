@@ -85,8 +85,8 @@ for the agent restart
     watchdogCycle = max(watchdogCycle, gConfig.getValue(cfgPath(wrapperSection, 'MinCheckingTime'), 20 * 60))
 
     # Add half cycle to avoid race conditions
-    stalledTime = watchdogCycle * (stalledTime + 0.5)
-    failedTime = watchdogCycle * (failedTime + 0.5)
+    stalledTime = int(watchdogCycle * (stalledTime + 0.5))
+    failedTime = int(watchdogCycle * (failedTime + 0.5))
 
     result = self._markStalledJobs(stalledTime)
     if not result['OK']:

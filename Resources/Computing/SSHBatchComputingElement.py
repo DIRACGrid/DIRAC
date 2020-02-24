@@ -70,6 +70,7 @@ class SSHBatchComputingElement(SSHComputingElement):
         self.sshHost.append(hPar.strip())
       else:
         self.log.error('Failed to initialize host', host)
+        return result
 
     self.submitOptions = ''
     if 'SubmitOptions' in self.ceParameters:
@@ -79,6 +80,8 @@ class SSHBatchComputingElement(SSHComputingElement):
       if self.ceParameters['RemoveOutput'].lower() in ['no', 'false', '0']:
         self.removeOutput = False
     self.preamble = self.ceParameters.get('Preamble', '')
+
+    return S_OK()
 
   #############################################################################
   def submitJob(self, executableFile, proxy, numberOfJobs=1):

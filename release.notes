@@ -1,4 +1,6 @@
-[v7r2-pre5]
+[v7r2-pre6]
+
+FIX: python 2-3 compatibility fixes
 
 *Core
 FIX: (#4283) Added protection against empty certificates directory in dirac-install
@@ -13,7 +15,7 @@ CHANGE: (#4235) Removes locals() way of passing parameters
 *tests
 NEW: (#4179) Set up Gitlab CI pipeline using Docker containers
 
-[v7r1-pre16]
+[v7r1-pre17]
 
 NEW: Add environment.yml file for preparing an environment with conda
 
@@ -63,6 +65,8 @@ CHANGE: (#4416) Completing jobs are treated exactly like Running jobs, i.e. set 
 NEW: (#4416) Created a file JobStatus.py for replacing the literal job statuses, and updated many
         modules using these new variables. Note that there are still many others to change, but
         could be done gradually...
+FIX: (#4451) StalledJobAgent - use int factor to the seconds time delta
+FIX: (#4451) ProxyDB - set UserName in setPersistencyFlag() if it is a first record in ProxyDB_Proxies
 
 *DMS
 CHANGE: (#4243) FileCatalog - standard components are loaded using ObjectLoader mechanism
@@ -79,6 +83,7 @@ CHANGE: (#4410) (JSON) correct casts for serialization
 *Resources
 NEW: (#4157) ProxyProvider resources with implementation for DIRAC CA and PUSP proxy providers
 NEW: (#4276) IdProvider resources to represent external user identity providers
+FIX: (#4455) discrepancy in CE._reset() methods return value in different CE implementations
 
 *RSS
 CHANGE: (#4362) SQL query orders using list instead of tuples
@@ -99,6 +104,20 @@ CHANGE: (#4439) integrate test_MySQLDB to all_integration_server_tests
 
 *docs
 NEW: (#4289) Document how to run integration tests in docker
+
+[v7r0p14]
+
+*Framework
+CHANGE: (#4458) Remove LHCb specific code used to install cx_Oracle
+
+*Core
+CHANGE: (#4460) agents exit with sys.exit(2) in case of errors
+
+*Resources
+CHANGE: (#4460) InProcess CE correctly reports number of processors available
+
+*WMS
+FIX: (#4454) PilotWrapper: try to untar also with system tar
 
 [v7r0p13]
 
@@ -393,6 +412,15 @@ CHANGE: (#4110) updated basic tutorial for CC7 instead of SLC6.
 NEW: (#4170) added Production system documentation
 CHANGE: (#4224) Pilot 3 is the default
 NEW: (#4244) Added a few notes on using the JobParameters on ElasticSearch database
+
+[v6r22p22]
+
+*Framework
+CHANGE: (#4457) Web portal compilation is done during the DIRAC distribution, it is not
+        required to compile during the installation
+
+*RSS
+FIX: (#4452) PublisherHandler - fix UnboundLocalError
 
 [v6r22p21]
 

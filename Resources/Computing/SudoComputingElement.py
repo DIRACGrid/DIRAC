@@ -24,13 +24,6 @@ class SudoComputingElement(ComputingElement):
     self.submittedJobs = 0
 
   #############################################################################
-  def _addCEConfigDefaults(self):
-    """Method to make sure all necessary Configuration Parameters are defined
-    """
-    # Assure that any global parameters are loaded
-    super(SudoComputingElement, self)._addCEConfigDefaults()
-
-  #############################################################################
   def submitJob(self, executableFile, proxy, **kwargs):
     """ Method to submit job, overridden from super-class.
     """
