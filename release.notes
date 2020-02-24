@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 [v7r1-pre17]
 
 NEW: Add environment.yml file for preparing an environment with conda
@@ -87,6 +88,21 @@ CHANGE: (#4439) integrate test_MySQLDB to all_integration_server_tests
 
 *docs
 NEW: (#4289) Document how to run integration tests in docker
+=======
+[v7r0p14]
+
+*Framework
+CHANGE: (#4458) Remove LHCb specific code used to install cx_Oracle
+
+*Core
+CHANGE: (#4460) agents exit with sys.exit(2) in case of errors
+
+*Resources
+CHANGE: (#4460) InProcess CE correctly reports number of processors available
+
+*WMS
+FIX: (#4454) PilotWrapper: try to untar also with system tar
+>>>>>>> rel-v7r0
 
 [v7r0p13]
 
@@ -370,6 +386,15 @@ CHANGE: (#4110) updated basic tutorial for CC7 instead of SLC6.
 NEW: (#4170) added Production system documentation
 CHANGE: (#4224) Pilot 3 is the default
 NEW: (#4244) Added a few notes on using the JobParameters on ElasticSearch database
+
+[v6r22p22]
+
+*Framework
+CHANGE: (#4457) Web portal compilation is done during the DIRAC distribution, it is not
+        required to compile during the installation
+
+*RSS
+FIX: (#4452) PublisherHandler - fix UnboundLocalError
 
 [v6r22p21]
 
