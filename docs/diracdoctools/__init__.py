@@ -9,7 +9,6 @@ Scripts to build code documentation, and also some mocking, etc.
 DIRAC_DOC_MOCK_LIST = ['_arc',
                        'arc',
                        'cmreslogging',
-                       'cx_Oracle',
                        'fts3',
                        'gfal2',
                        'git',
