@@ -9,7 +9,6 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base.Client import Client
 from DIRAC.Core.DISET.TransferClient import TransferClient
 from DIRAC.Core.Utilities.Plotting.FileCoding import codeRequestInFileId
-from DIRAC.Core.Utilities.JEncode import strToIntDict
 
 class ReportsClient(Client):
 
