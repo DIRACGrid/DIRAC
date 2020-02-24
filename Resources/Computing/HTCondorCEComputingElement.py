@@ -237,6 +237,7 @@ Queue %(nJobs)s
 
     self.log.debug("Using local schedd: %r " % self.useLocalSchedd)
     self.log.debug("Remote scheduler option: '%s' " % self.remoteScheddOptions)
+    return S_OK()
 
   #############################################################################
   def submitJob(self, executableFile, proxy, numberOfJobs=1):

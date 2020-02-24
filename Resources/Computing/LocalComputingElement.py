@@ -11,6 +11,7 @@ import stat
 import shutil
 import tempfile
 import getpass
+import errno
 from urlparse import urlparse
 
 from DIRAC import S_OK, S_ERROR
@@ -68,6 +69,7 @@ class LocalComputingElement(ComputingElement):
 
     result = self._prepareHost()
     if not result['OK']:
+      self.log.error('Failed to initialize CE', self.ceName)
       return result
 
     self.submitOptions = ''
@@ -123,12 +125,12 @@ class LocalComputingElement(ComputingElement):
     self.log.verbose('Creating working directories')
     result = systemCall(30, cmdTuple)
     if not result['OK']:
-      self.log.warn('Failed creating working directories: %s' % result['Message'][1])
+      self.log.error('Failed creating working directories', '(%s)' % result['Message'][1])
       return result
-    status, output, _error = result['Value']
+    status, output, error = result['Value']
     if status != 0:
-      self.log.warn('Failed to create directories: %s' % output)
-      return S_ERROR('Failed to create directories: %s' % output)
+      self.log.error('Failed to create directories', '(%s)' % error)
+      return S_ERROR(errno.EACCES, 'Failed to create directories')
 
     return S_OK()
 

@@ -83,6 +83,7 @@ class PoolComputingElement(ComputingElement):
     self.processors = int(self.ceParameters.get('NumberOfProcessors', self.processors))
     self.ceParameters['MaxTotalJobs'] = self.processors
     self.useSudo = self.ceParameters.get('SudoExecution', False)
+    return S_OK()
 
   def getProcessorsInUse(self):
     """ Get the number of currently allocated processor cores
