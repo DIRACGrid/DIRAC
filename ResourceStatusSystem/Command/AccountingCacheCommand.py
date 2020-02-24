@@ -13,6 +13,7 @@ __RCSID__ = '$Id$'
 from datetime import datetime, timedelta
 
 from DIRAC import S_OK, S_ERROR
+from DIRAC.Core.Utilities.JEncode import strToIntDict
 from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
@@ -81,7 +82,7 @@ class SuccessfullJobsBySiteSplittedCommand(Command):
 
     singlePlots = {}
 
-    successfulJobs['data'] = {site:strToIntDict(value) for site,value in successfulJobs['data'].iteritems()}    
+    successfulJobs['data'] = {site: strToIntDict(value) for site, value in successfulJobs['data'].iteritems()}
 
     for site, value in successfulJobs['data'].iteritems():
       if site in sites:
@@ -155,6 +156,8 @@ class FailedJobsBySiteSplittedCommand(Command):
       return S_ERROR('Missing data key')
     if 'granularity' not in failedJobs:
       return S_ERROR('Missing granularity key')
+
+    failedJobs['data'] = {site: strToIntDict(value) for site, value in failedJobs['data'].iteritems()}
 
     singlePlots = {}
 
@@ -231,6 +234,8 @@ class SuccessfullPilotsBySiteSplittedCommand(Command):
     if 'granularity' not in succesfulPilots:
       return S_ERROR('Missing granularity key')
 
+    succesfulPilots['data'] = {site: strToIntDict(value) for site, value in succesfulPilots['data'].iteritems()}
+
     singlePlots = {}
 
     for site, value in succesfulPilots['data'].iteritems():
@@ -305,6 +310,8 @@ class FailedPilotsBySiteSplittedCommand(Command):
       return S_ERROR('Missing data key')
     if 'granularity' not in failedPilots:
       return S_ERROR('Missing granularity key')
+
+    failedPilots['data'] = {site: strToIntDict(value)for site, value in failedPilots['data'].iteritems()}
 
     singlePlots = {}
 
@@ -383,8 +390,10 @@ class SuccessfullPilotsByCESplittedCommand(Command):
     if 'granularity' not in successfulPilots:
       return S_ERROR('Missing granularity key')
 
-    singlePlots = {}
+    successfulPilots['data'] = {site: strToIntDict(value) for site, value in successfulPilots['data'].iteritems()}
 
+    singlePlots = {}
+    
     for ce, value in successfulPilots['data'].iteritems():
       if ce in ces:
         plot = {}
@@ -467,6 +476,8 @@ class FailedPilotsByCESplittedCommand(Command):
     if 'granularity' not in failedPilots:
       return S_ERROR('Missing granularity key')
 
+    failedPilots['data'] = {site: strToIntDict(value) for site, value in failedPilots['data'].iteritems()}
+
     singlePlots = {}
 
     for ce, value in failedPilots['data'].iteritems():
@@ -546,6 +557,8 @@ class RunningJobsBySiteSplittedCommand(Command):
       return S_ERROR('Missing data key')
     if 'granularity' not in runJobs:
       return S_ERROR('Missing granularity key')
+
+    runJobs['data'] = {site: strToIntDict(value) for site, value in runJobs['data'].iteritems()}
 
     singlePlots = {}
 

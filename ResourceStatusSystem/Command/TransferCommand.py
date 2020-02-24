@@ -7,6 +7,8 @@ __RCSID__ = '$Id$'
 from datetime import datetime, timedelta
 
 from DIRAC import S_OK, S_ERROR
+from DIRAC.Core.DISET.RPCClient import RPCClient
+from DIRAC.Core.Utilities.JEncode import strToIntDict
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
@@ -22,11 +24,6 @@ class TransferCommand(Command):
   def __init__(self, args=None, clients=None):
 
     super(TransferCommand, self).__init__(args, clients)
-
-    if 'ReportsClient' in self.apis:
-      self.rClient = self.apis['ReportsClient']
-    else:
-      self.rClient = ReportsClient()
 
     if 'ResourceManagementClient' in self.apis:
       self.rmClient = self.apis['ResourceManagementClient']
@@ -123,7 +120,8 @@ class TransferCommand(Command):
 
     if 'data' not in transferResults:
       return S_ERROR('Missing data key')
-    transferResults = transferResults['data']
+
+    transferResults = {channel: strToIntDict(value) for channel, value in transferResults['data'].iteritems()} 
 
     uniformResult = []
 

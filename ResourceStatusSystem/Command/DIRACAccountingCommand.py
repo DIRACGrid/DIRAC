@@ -13,6 +13,7 @@ __RCSID__ = '$Id$'
 from datetime import datetime, timedelta
 
 from DIRAC import S_OK, S_ERROR
+from DIRAC.Core.Utilities.JEncode import strToIntDict
 from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
 from DIRAC.ResourceStatusSystem.Command.Command import Command
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
@@ -139,8 +140,8 @@ class TransferQualityCommand(Command):
     if not results['OK']:
       return results
 
-    pr_q_d = results['Value']['data']
-
+    pr_q_d = {channel: strToIntDict(value) for channel, value in results['data'].iteritems()}
+    
     # FIXME: WHAT the hell is this doing ?
     values = []
     if len(pr_q_d) == 1:
