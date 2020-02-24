@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 [v7r1-pre17]
 
 NEW: Add environment.yml file for preparing an environment with conda
@@ -88,7 +87,7 @@ CHANGE: (#4439) integrate test_MySQLDB to all_integration_server_tests
 
 *docs
 NEW: (#4289) Document how to run integration tests in docker
-=======
+
 [v7r0p14]
 
 *Framework
@@ -102,7 +101,6 @@ CHANGE: (#4460) InProcess CE correctly reports number of processors available
 
 *WMS
 FIX: (#4454) PilotWrapper: try to untar also with system tar
->>>>>>> rel-v7r0
 
 [v7r0p13]
 
