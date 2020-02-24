@@ -210,9 +210,19 @@ pt = open('pilot.tar', 'wb')
 pt.write(rTar.read())
 pt.close()
 
-pt = tarfile.open('pilot.tar', 'r')
-pt.extractall()
-pt.close()
+try:
+  pt = tarfile.open('pilot.tar', 'r')
+  pt.extractall()
+  pt.close()
+except Exception as x:
+  print("tarfile failed with message %%s" %% repr(x), file=sys.stderr)
+  logger.error("tarfile failed with message %%s" %% repr(x))
+  logger.warn("Trying tar command (tar -xvf pilot.tar)")
+  res = os.system("tar -xvf pilot.tar")
+  if res:
+    logger.error("tar failed with exit code %%d, giving up" %% int(res))
+    print("tar failed with exit code %%d, giving up" %% int(res))
+    sys.exit(2)
 """ % {'location': location}
 
   localPilot += """
