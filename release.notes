@@ -1,3 +1,12 @@
+[v6r22p22]
+
+*Framework
+CHANGE: (#4457) Web portal compilation is done during the DIRAC distribution, it is not
+        required to compile during the installation
+
+*RSS
+FIX: (#4452) PublisherHandler - fix UnboundLocalError
+
 [v6r22p21]
 
 *Core
