@@ -33,32 +33,35 @@ from DIRAC.Core.Utilities import DEncode
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 
 ########################################################################
-class ForwardDISET( OperationHandlerBase ):
+
+
+class ForwardDISET(OperationHandlerBase):
   """
   .. class:: ForwardDISET
 
   functor forwarding DISET operations
   """
-  def __init__( self, operation = None, csPath = None ):
+
+  def __init__(self, operation=None, csPath=None):
     """ c'tor
 
     :param Operation operation: an Operation instance
     :param str csPath: CS path for this handler
     """
     # # call base class c'tor
-    OperationHandlerBase.__init__( self, operation, csPath )
+    OperationHandlerBase.__init__(self, operation, csPath)
 
-  def __call__( self ):
+  def __call__(self):
     """ execute RPC stub """
     # # decode arguments
     try:
-      decode, length = DEncode.decode( self.operation.Arguments )
-      self.log.debug( "decoded len=%s val=%s" % ( length, decode ) )
-    except ValueError, error:
-      self.log.exception( error )
-      self.operation.Error = str( error )
+      decode, length = DEncode.decode(self.operation.Arguments)
+      self.log.debug("decoded len=%s val=%s" % (length, decode))
+    except ValueError as error:
+      self.log.exception(error)
+      self.operation.Error = str(error)
       self.operation.Status = "Failed"
-      return S_ERROR( str( error ) )
+      return S_ERROR(str(error))
 
     # Ensure the forwarded request is done on behalf of the request owner
     decode[0][1]['delegatedDN'] = self.request.OwnerDN
@@ -66,15 +69,15 @@ class ForwardDISET( OperationHandlerBase ):
 
     # ForwardDiset is supposed to be used with a host certificate
     useServerCertificate = gConfig.useServerCertificate()
-    gConfigurationData.setOptionInCFG( '/DIRAC/Security/UseServerCertificate', 'true' )
-    forward = executeRPCStub( decode )
+    gConfigurationData.setOptionInCFG('/DIRAC/Security/UseServerCertificate', 'true')
+    forward = executeRPCStub(decode)
     if not useServerCertificate:
-      gConfigurationData.setOptionInCFG( '/DIRAC/Security/UseServerCertificate', 'false' )
+      gConfigurationData.setOptionInCFG('/DIRAC/Security/UseServerCertificate', 'false')
 
     if not forward["OK"]:
-      self.log.error( "unable to execute operation", "'%s' : %s" % ( self.operation.Type, forward["Message"] ) )
+      self.log.error("unable to execute operation", "'%s' : %s" % (self.operation.Type, forward["Message"]))
       self.operation.Error = forward["Message"]
       return forward
-    self.log.info( "DISET forwarding done" )
+    self.log.info("DISET forwarding done")
     self.operation.Status = "Done"
     return S_OK()

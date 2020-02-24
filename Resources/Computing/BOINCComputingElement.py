@@ -41,7 +41,6 @@ class BOINCComputingElement(ComputingElement):
 #    self.ceParameters['projectURL'] = 'http://mardirac3.in2p3.fr:7788/?wsdl'
 #    self.ceParameters['Platform'] = 'Linux_x86_64_glibc-2.5'
 
-###############################################################################
   def createClient(self):
     """
     This method only can be called after the initialisation of this class. In this
@@ -63,8 +62,6 @@ class BOINCComputingElement(ComputingElement):
       except Exception as x:
         self.log.error('Creation of the soap client failed', '%s' % str(x))
         pass
-
-###############################################################################
 
   def submitJob(self, executableFile, proxy=None, numberOfJobs=1):
     """ Method to submit job
@@ -382,6 +379,3 @@ if __name__ == "__main__":
       print(outstate['Message'])
     else:
       print("Please check the directory /tmp for the output and error files of job %s" % jobID)
-
-
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

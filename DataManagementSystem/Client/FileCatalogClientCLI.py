@@ -20,7 +20,8 @@ from DIRAC.DataManagementSystem.Client.MetaQuery import MetaQuery, FILE_STANDARD
 from DIRAC.DataManagementSystem.Client.CmdDirCompletion.AbstractFileSystem import DFCFileSystem, UnixLikeFileSystem
 from DIRAC.DataManagementSystem.Client.CmdDirCompletion.DirectoryCompletion import DirectoryCompletion
 
-class FileCatalogClientCLI( CLI ):
+
+class FileCatalogClientCLI(CLI):
   """ usage: FileCatalogClientCLI.py xmlrpc-url.
 
     The URL should use HTTP protocol, and specify a port.  e.g.::
@@ -42,42 +43,42 @@ class FileCatalogClientCLI( CLI ):
   """
 
   intro = """
-File Catalog Client $Revision: 1.17 $Date: 
+File Catalog Client $Revision: 1.17 $Date:
             """
 
-  def __init__( self, client ):
-    CLI.__init__( self )
+  def __init__(self, client):
+    CLI.__init__(self)
     self.fc = client
     self.cwd = '/'
-    self.prompt = 'FC:'+self.cwd+'> '
+    self.prompt = 'FC:' + self.cwd + '> '
     self.previous_cwd = '/'
 
-    self.dfc_fs = DFCFileSystem( self.fc )
-    self.lfn_dc = DirectoryCompletion( self.dfc_fs )
+    self.dfc_fs = DFCFileSystem(self.fc)
+    self.lfn_dc = DirectoryCompletion(self.dfc_fs)
 
     self.ul_fs = UnixLikeFileSystem()
-    self.ul_dc = DirectoryCompletion( self.ul_fs )
+    self.ul_dc = DirectoryCompletion(self.ul_fs)
 
-  def getPath( self, apath ):
+  def getPath(self, apath):
 
     if apath.find('/') == 0:
       path = apath
     else:
-      path = self.cwd+'/'+apath
-    path = path.replace('//','/')
+      path = self.cwd + '/' + apath
+    path = path.replace('//', '/')
 
     return os.path.normpath(path)
-  
-  def do_register(self,args):
+
+  def do_register(self, args):
     """ Register a record to the File Catalog
-    
+
         usage:
           register file <lfn> <pfn> <size> <SE> [<guid>]  - register new file record in the catalog
           register replica <lfn> <pfn> <SE>   - register new replica in the catalog
     """
-    
+
     argss = args.split()
-    if (len(argss)==0):
+    if (len(argss) == 0):
       print(self.do_register.__doc__)
       return
     option = argss[0]
@@ -99,6 +100,7 @@ File Catalog Client $Revision: 1.17 $Date:
 
   # An Auto Completion For ``register``
   _available_register_cmd = ['file', 'replica']
+
   def complete_register(self, text, line, begidx, endidx):
     result = []
     args = line.split()
@@ -113,33 +115,33 @@ File Catalog Client $Revision: 1.17 $Date:
 
     result = [i for i in self._available_register_cmd if i.startswith(text)]
     return result
-  
-  def do_add(self,args):
+
+  def do_add(self, args):
     """ Upload a new file to a SE and register in the File Catalog
-    
+
         usage:
-        
-          add <lfn> <pfn> <SE> [<guid>] 
+
+          add <lfn> <pfn> <SE> [<guid>]
     """
-    
+
     # ToDo - adding directories
-    
+
     argss = args.split()
-    
+
     if len(argss) < 3:
       print("Error: insufficient number of arguments")
       return
-    
+
     lfn = argss[0]
     lfn = self.getPath(lfn)
     pfn = argss[1]
     se = argss[2]
     guid = None
-    if len(argss)>3:
+    if len(argss) > 3:
       guid = argss[3]
-        
+
     dirac = Dirac()
-    result = dirac.addFile(lfn,pfn,se,guid,printOutput=False)
+    result = dirac.addFile(lfn, pfn, se, guid, printOutput=False)
     if not result['OK']:
       print('Error: %s' % (result['Message']))
     else:
@@ -150,35 +152,35 @@ File Catalog Client $Revision: 1.17 $Date:
     args = line.split()
 
     # the first argument -- LFN.
-    if (1<=len(args)<=2):
+    if (1 <= len(args) <= 2):
       # If last char is ' ',
       # this can be a new parameter.
-      if (len(args) == 1) or (len(args)==2 and (not line.endswith(' '))):
+      if (len(args) == 1) or (len(args) == 2 and (not line.endswith(' '))):
         cur_path = ""
         if (len(args) == 2):
           cur_path = args[1]
         result = self.lfn_dc.parse_text_line(text, cur_path, self.cwd)
 
     return result
-      
-  def do_get(self,args):
+
+  def do_get(self, args):
     """ Download file from grid and store in a local directory
-    
+
         usage:
-        
-          get <lfn> [<local_directory>] 
+
+          get <lfn> [<local_directory>]
     """
-    
+
     argss = args.split()
-    if (len(argss)==0):
+    if (len(argss) == 0):
       print(self.do_get.__doc__)
       return
     lfn = argss[0]
     lfn = self.getPath(lfn)
     dir_ = ''
-    if len(argss)>1:
+    if len(argss) > 1:
       dir_ = argss[1]
-        
+
     dirac = Dirac()
     localCWD = ''
     if dir_:
@@ -187,7 +189,7 @@ File Catalog Client $Revision: 1.17 $Date:
     result = dirac.getFile(lfn)
     if localCWD:
       os.chdir(localCWD)
-      
+
     if not result['OK']:
       print('Error: %s' % (result['Message']))
     else:
@@ -198,10 +200,10 @@ File Catalog Client $Revision: 1.17 $Date:
     args = line.split()
 
     # the first argument -- LFN.
-    if (1<=len(args)<=2):
+    if (1 <= len(args) <= 2):
       # If last char is ' ',
       # this can be a new parameter.
-      if (len(args) == 1) or (len(args)==2 and (not line.endswith(' '))):
+      if (len(args) == 1) or (len(args) == 2 and (not line.endswith(' '))):
         cur_path = ""
         if (len(args) == 2):
           cur_path = args[1]
@@ -209,16 +211,16 @@ File Catalog Client $Revision: 1.17 $Date:
 
     return result
 
-  def do_unregister(self,args):
+  def do_unregister(self, args):
     """ Unregister records in the File Catalog
-    
+
         usage:
           unregister replica  <lfn> <se>
           unregister file <lfn>
           unregister dir <path>
-    """        
+    """
     argss = args.split()
-    if (len(argss)==0):
+    if (len(argss) == 0):
       print(self.do_unregister.__doc__)
       return
     option = argss[0]
@@ -228,7 +230,7 @@ File Catalog Client $Revision: 1.17 $Date:
         print(self.do_unregister.__doc__)
         return
       return self.removeReplica(argss)
-    elif option == 'file': 
+    elif option == 'file':
       if (len(argss) != 1):
         print(self.do_unregister.__doc__)
         return
@@ -237,12 +239,13 @@ File Catalog Client $Revision: 1.17 $Date:
       if (len(argss) != 1):
         print(self.do_unregister.__doc__)
         return
-      return self.removeDirectory(argss)    
+      return self.removeDirectory(argss)
     else:
       print("Error: illegal option %s" % option)
 
   # An Auto Completion For ``register``
   _available_unregister_cmd = ['replica', 'file', 'dir', 'directory']
+
   def complete_unregister(self, text, line, begidx, endidx):
     result = []
     args = line.split()
@@ -257,13 +260,13 @@ File Catalog Client $Revision: 1.17 $Date:
 
     result = [i for i in self._available_unregister_cmd if i.startswith(text)]
     return result
-      
-  def do_rmreplica(self,args):
+
+  def do_rmreplica(self, args):
     """ Remove LFN replica from the storage and from the File Catalog
-    
+
         usage:
           rmreplica <lfn> <se>
-    """        
+    """
     argss = args.split()
     if (len(argss) != 2):
       print(self.do_rmreplica.__doc__)
@@ -273,7 +276,7 @@ File Catalog Client $Revision: 1.17 $Date:
     print("lfn:", lfn)
     se = argss[1]
     try:
-      result =  self.fc.setReplicaStatus( {lfn:{'SE':se,'Status':'Trash'}} )
+      result = self.fc.setReplicaStatus({lfn: {'SE': se, 'Status': 'Trash'}})
       if result['OK']:
         print("Replica at", se, "moved to Trash Bin")
       else:
@@ -287,10 +290,10 @@ File Catalog Client $Revision: 1.17 $Date:
     args = line.split()
 
     # the first argument -- LFN.
-    if (1<=len(args)<=2):
+    if (1 <= len(args) <= 2):
       # If last char is ' ',
       # this can be a new parameter.
-      if (len(args) == 1) or (len(args)==2 and (not line.endswith(' '))):
+      if (len(args) == 1) or (len(args) == 2 and (not line.endswith(' '))):
         cur_path = ""
         if (len(args) == 2):
           cur_path = args[1]
@@ -298,15 +301,14 @@ File Catalog Client $Revision: 1.17 $Date:
 
     return result
 
-    
-  def do_rm(self,args):
+  def do_rm(self, args):
     """ Remove file from the storage and from the File Catalog
-    
+
         usage:
           rm <lfn>
-          
-        NB: this method is not fully implemented !    
-    """  
+
+        NB: this method is not fully implemented !
+    """
     # Not yet really implemented
     argss = args.split()
     if len(argss) != 1:
@@ -319,63 +321,63 @@ File Catalog Client $Revision: 1.17 $Date:
     args = line.split()
 
     # the first argument -- LFN.
-    if (1<=len(args)<=2):
+    if (1 <= len(args) <= 2):
       # If last char is ' ',
       # this can be a new parameter.
-      if (len(args) == 1) or (len(args)==2 and (not line.endswith(' '))):
+      if (len(args) == 1) or (len(args) == 2 and (not line.endswith(' '))):
         cur_path = ""
         if (len(args) == 2):
           cur_path = args[1]
         result = self.lfn_dc.parse_text_line(text, cur_path, self.cwd)
 
     return result
-    
-  def do_rmdir(self,args):
+
+  def do_rmdir(self, args):
     """ Remove directory from the storage and from the File Catalog
-    
+
         usage:
           rmdir <path>
-          
-        NB: this method is not fully implemented !  
-    """  
+
+        NB: this method is not fully implemented !
+    """
     # Not yet really implemented yet
     argss = args.split()
     if len(argss) != 1:
       print(self.do_rmdir.__doc__)
       return
-    self.removeDirectory(argss)  
+    self.removeDirectory(argss)
 
   def complete_rmdir(self, text, line, begidx, endidx):
     result = []
     args = line.split()
 
     # the first argument -- LFN.
-    if (1<=len(args)<=2):
+    if (1 <= len(args) <= 2):
       # If last char is ' ',
       # this can be a new parameter.
-      if (len(args) == 1) or (len(args)==2 and (not line.endswith(' '))):
+      if (len(args) == 1) or (len(args) == 2 and (not line.endswith(' '))):
         cur_path = ""
         if (len(args) == 2):
           cur_path = args[1]
         result = self.lfn_dc.parse_text_line(text, cur_path, self.cwd)
 
     return result
-          
-  def removeReplica(self,args):
+
+  def removeReplica(self, args):
     """ Remove replica from the catalog
-    """          
-    
+    """
+
     path = args[0]
     lfn = self.getPath(path)
     print("lfn:", lfn)
     rmse = args[1]
     try:
-      result =  self.fc.removeReplica( {lfn:{'SE':rmse}} )
+      result = self.fc.removeReplica({lfn: {'SE': rmse}})
       if result['OK']:
         if 'Failed' in result['Value']:
           if lfn in result['Value']['Failed']:
             print("ERROR: %s" % (result['Value']['Failed'][lfn]))
-          elif  lfn in result['Value']['Successful']:
+          elif lfn in result['Value']['Successful']:
             print("File %s at %s removed from the catalog" % (lfn, rmse))
           else:
             print("ERROR: Unexpected returned value %s" % result['Value'])
@@ -386,16 +388,16 @@ File Catalog Client $Revision: 1.17 $Date:
         print(result['Message'])
     except Exception as x:
       print("Error: rmpfn failed with exception: ", x)
-      
-  def removeFile(self,args):
+
+  def removeFile(self, args):
     """ Remove file from the catalog
-    """  
-    
+    """
+
     path = args[0]
     lfn = self.getPath(path)
     print("lfn:", lfn)
     try:
-      result =  self.fc.removeFile(lfn)
+      result = self.fc.removeFile(lfn)
       if result['OK']:
         if 'Failed' in result['Value']:
           if lfn in result['Value']['Failed']:
@@ -411,16 +413,16 @@ File Catalog Client $Revision: 1.17 $Date:
         print(result['Message'])
     except Exception as x:
       print("Error: rm failed with exception: ", x)
-      
-  def removeDirectory(self,args):
+
+  def removeDirectory(self, args):
     """ Remove file from the catalog
-    """  
-    
+    """
+
     path = args[0]
     lfn = self.getPath(path)
     print("lfn:", lfn)
     try:
-      result =  self.fc.removeDirectory(lfn)
+      result = self.fc.removeDirectory(lfn)
       if result['OK']:
         if result['Value']['Successful']:
           print("Directory", lfn, "removed from the catalog")
@@ -431,10 +433,10 @@ File Catalog Client $Revision: 1.17 $Date:
         print(result['Message'])
     except Exception as x:
       print("Error: rm failed with exception: ", x)
-      
-  def do_replicate(self,args):
+
+  def do_replicate(self, args):
     """ Replicate a given file to a given SE
-        
+
         usage:
           replicate <LFN> <SE> [<SourceSE>]
     """
@@ -446,29 +448,29 @@ File Catalog Client $Revision: 1.17 $Date:
     lfn = self.getPath(lfn)
     se = argss[1]
     sourceSE = ''
-    if len(argss)>2:
-      sourceSE=argss[2]
+    if len(argss) > 2:
+      sourceSE = argss[2]
     try:
       dirac = Dirac()
-      result = dirac.replicateFile(lfn,se,sourceSE,printOutput=True)      
+      result = dirac.replicateFile(lfn, se, sourceSE, printOutput=True)
       if not result['OK']:
         print('Error: %s' % (result['Message']))
       elif not result['Value']:
         print("Replica is already present at the target SE")
-      else:  
+      else:
         print("File %s successfully replicated to the %s SE" % (lfn, se))
     except Exception as x:
       print("Error: replicate failed with exception: ", x)
-      
+
   def complete_replicate(self, text, line, begidx, endidx):
     result = []
     args = line.split()
 
     # the first argument -- LFN.
-    if (1<=len(args)<=2):
+    if (1 <= len(args) <= 2):
       # If last char is ' ',
       # this can be a new parameter.
-      if (len(args) == 1) or (len(args)==2 and (not line.endswith(' '))):
+      if (len(args) == 1) or (len(args) == 2 and (not line.endswith(' '))):
         cur_path = ""
         if (len(args) == 2):
           cur_path = args[1]
@@ -476,7 +478,7 @@ File Catalog Client $Revision: 1.17 $Date:
 
     return result
 
-  def do_replicas(self,args):
+  def do_replicas(self, args):
     """ Get replicas for the given file specified by its LFN
 
         usage: replicas <lfn>
@@ -489,10 +491,10 @@ File Catalog Client $Revision: 1.17 $Date:
     path = self.getPath(apath)
     print("lfn:", path)
     try:
-      result =  self.fc.getReplicas(path)    
+      result = self.fc.getReplicas(path)
       if result['OK']:
         if result['Value']['Successful']:
-          for se,entry in result['Value']['Successful'][path].items():
+          for se, entry in result['Value']['Successful'][path].items():
             print(se.ljust(15), entry)
       else:
         print("Replicas: ", result['Message'])
@@ -504,23 +506,23 @@ File Catalog Client $Revision: 1.17 $Date:
     args = line.split()
 
     # the first argument -- LFN.
-    if (1<=len(args)<=2):
+    if (1 <= len(args) <= 2):
       # If last char is ' ',
       # this can be a new parameter.
-      if (len(args) == 1) or (len(args)==2 and (not line.endswith(' '))):
+      if (len(args) == 1) or (len(args) == 2 and (not line.endswith(' '))):
         cur_path = ""
         if (len(args) == 2):
           cur_path = args[1]
         result = self.lfn_dc.parse_text_line(text, cur_path, self.cwd)
 
     return result
-        
-  def registerFile(self,args):
-    """ Add a file to the catatlog 
+
+  def registerFile(self, args):
+    """ Add a file to the catatlog
 
         usage: add <lfn> <pfn> <size> <SE> [<guid>]
-    """      
-       
+    """
+
     path = args[0]
     infoDict = {}
     lfn = self.getPath(path)
@@ -530,15 +532,15 @@ File Catalog Client $Revision: 1.17 $Date:
     if len(args) == 5:
       guid = args[4]
     else:
-      _status,guid = commands.getstatusoutput('uuidgen')
+      _status, guid = commands.getstatusoutput('uuidgen')
     infoDict['GUID'] = guid
-    infoDict['Checksum'] = ''    
-      
+    infoDict['Checksum'] = ''
+
     fileDict = {}
-    fileDict[lfn] = infoDict  
-      
+    fileDict[lfn] = infoDict
+
     try:
-      result = self.fc.addFile(fileDict)         
+      result = self.fc.addFile(fileDict)
       if not result['OK']:
         print("Failed to add file to the catalog: ", end=' ')
         print(result['Message'])
@@ -550,12 +552,12 @@ File Catalog Client $Revision: 1.17 $Date:
           print("File successfully added to the catalog")
     except Exception as x:
       print("add file failed: ", str(x))
-    
-  def registerReplica(self,args):
-    """ Add a file to the catatlog 
 
-        usage: addpfn <lfn> <pfn> <SE> 
-    """      
+  def registerReplica(self, args):
+    """ Add a file to the catatlog
+
+        usage: addpfn <lfn> <pfn> <SE>
+    """
     path = args[0]
     infoDict = {}
     lfn = self.getPath(path)
@@ -563,12 +565,12 @@ File Catalog Client $Revision: 1.17 $Date:
     if infoDict['PFN'] == "''" or infoDict['PFN'] == '""':
       infoDict['PFN'] = ''
     infoDict['SE'] = args[2]
-      
+
     repDict = {}
-    repDict[lfn] = infoDict    
-      
+    repDict[lfn] = infoDict
+
     try:
-      result = self.fc.addReplica(repDict)                    
+      result = self.fc.addReplica(repDict)
       if not result['OK']:
         print("Failed to add replica to the catalog: ", end=' ')
         print(result['Message'])
@@ -578,17 +580,17 @@ File Catalog Client $Revision: 1.17 $Date:
         print("Replica added successfully:", result['Value']['Successful'][lfn])
     except Exception as x:
       print("add pfn failed: ", str(x))
-      
-  def do_ancestorset(self,args):
+
+  def do_ancestorset(self, args):
     """ Set ancestors for the given file
-    
+
         usage: ancestorset <lfn> <ancestor_lfn> [<ancestor_lfn>...]
-    """            
-    
-    argss = args.split()    
+    """
+
+    argss = args.split()
     if (len(argss) == 0):
       print(self.do_ancestorset.__doc__)
-      return 
+      return
     lfn = argss[0]
     if lfn[0] != '/':
       lfn = self.cwd + '/' + lfn
@@ -598,10 +600,10 @@ File Catalog Client $Revision: 1.17 $Date:
       if a[0] != '/':
         a = self.cwd + '/' + a
       tmpList.append(a)
-    ancestors = tmpList       
-    
+    ancestors = tmpList
+
     try:
-      result = self.fc.addFileAncestors({lfn:{'Ancestors':ancestors}})
+      result = self.fc.addFileAncestors({lfn: {'Ancestors': ancestors}})
       if not result['OK']:
         print("Failed to add file ancestors to the catalog: ", end=' ')
         print(result['Message'])
@@ -612,14 +614,14 @@ File Catalog Client $Revision: 1.17 $Date:
         print("Added %d ancestors to file %s" % (len(ancestors), lfn))
     except Exception as x:
       print("Exception while adding ancestors: ", str(x))
-                         
+
   def complete_ancestorset(self, text, line, begidx, endidx):
 
     args = line.split()
 
-    if ( len(args) == 1 ):
+    if (len(args) == 1):
       cur_path = ""
-    elif ( len(args) > 1 ):
+    elif (len(args) > 1):
       # If the line ends with ' '
       # this means a new parameter begin.
       if line.endswith(' '):
@@ -630,13 +632,13 @@ File Catalog Client $Revision: 1.17 $Date:
     result = self.lfn_dc.parse_text_line(text, cur_path, self.cwd)
 
     return result
-      
-  def do_ancestor(self,args):
+
+  def do_ancestor(self, args):
     """ Get ancestors of the given file
-    
+
         usage: ancestor <lfn> [depth]
-    """            
-    
+    """
+
     argss = args.split()
     if (len(argss) == 0):
       print(self.do_ancestor.__doc__)
@@ -647,10 +649,10 @@ File Catalog Client $Revision: 1.17 $Date:
     depth = [1]
     if len(argss) > 1:
       depth = int(argss[1])
-      depth = range(1,depth+1)
-        
-    try:      
-      result = self.fc.getFileAncestors([lfn],depth)
+      depth = range(1, depth + 1)
+
+    try:
+      result = self.fc.getFileAncestors([lfn], depth)
       if not result['OK']:
         print("ERROR: Failed to get ancestors: ", end=' ')
         print(result['Message'])
@@ -658,18 +660,17 @@ File Catalog Client $Revision: 1.17 $Date:
         print("Failed to get ancestors: ", end=' ')
         print(result['Value']['Failed'][lfn])
       else:
-        depthDict = {}  
-        depSet = set()    
-        for lfn,ancestorDict in  result['Value']['Successful'].items():
-          for ancestor,dep in ancestorDict.items():     
-            depthDict.setdefault(dep,[])
+        depthDict = {}
+        depSet = set()
+        for lfn, ancestorDict in result['Value']['Successful'].items():
+          for ancestor, dep in ancestorDict.items():
+            depthDict.setdefault(dep, [])
             depthDict[dep].append(ancestor)
             depSet.add(dep)
-        depList = list(depSet)
-        depList.sort()
+        depList = sorted(depSet)
         print(lfn)
         for dep in depList:
-          for lfn in depthDict[dep]:      
+          for lfn in depthDict[dep]:
             print(dep, ' ' * dep * 5, lfn)
     except Exception as x:
       print("Exception while getting ancestors: ", str(x))
@@ -679,23 +680,23 @@ File Catalog Client $Revision: 1.17 $Date:
     args = line.split()
 
     # the first argument -- LFN.
-    if (1<=len(args)<=2):
+    if (1 <= len(args) <= 2):
       # If last char is ' ',
       # this can be a new parameter.
-      if (len(args) == 1) or (len(args)==2 and (not line.endswith(' '))):
+      if (len(args) == 1) or (len(args) == 2 and (not line.endswith(' '))):
         cur_path = ""
         if (len(args) == 2):
           cur_path = args[1]
         result = self.lfn_dc.parse_text_line(text, cur_path, self.cwd)
 
     return result
-                                                                     
-  def do_descendent(self,args):
+
+  def do_descendent(self, args):
     """ Get descendents of the given file
-    
+
         usage: descendent <lfn> [depth]
-    """            
-    
+    """
+
     argss = args.split()
     if (len(argss) == 0):
       print(self.do_descendent.__doc__)
@@ -706,10 +707,10 @@ File Catalog Client $Revision: 1.17 $Date:
     depth = [1]
     if len(argss) > 1:
       depth = int(argss[1])
-      depth = range(1,depth+1)
-        
+      depth = range(1, depth + 1)
+
     try:
-      result = self.fc.getFileDescendents([lfn],depth)
+      result = self.fc.getFileDescendents([lfn], depth)
       if not result['OK']:
         print("ERROR: Failed to get descendents: ", end=' ')
         print(result['Message'])
@@ -717,18 +718,17 @@ File Catalog Client $Revision: 1.17 $Date:
         print("Failed to get descendents: ", end=' ')
         print(result['Value']['Failed'][lfn])
       else:
-        depthDict = {}  
-        depSet = set()    
-        for lfn,descDict in  result['Value']['Successful'].items():
-          for desc,dep in descDict.items():     
-            depthDict.setdefault(dep,[])
+        depthDict = {}
+        depSet = set()
+        for lfn, descDict in result['Value']['Successful'].items():
+          for desc, dep in descDict.items():
+            depthDict.setdefault(dep, [])
             depthDict[dep].append(desc)
             depSet.add(dep)
-        depList = list(depSet)
-        depList.sort()
+        depList = sorted(depSet)
         print(lfn)
         for dep in depList:
-          for lfn in depthDict[dep]:      
+          for lfn in depthDict[dep]:
             print(dep, ' ' * dep * 5, lfn)
     except Exception as x:
       print("Exception while getting descendents: ", str(x))
@@ -738,59 +738,60 @@ File Catalog Client $Revision: 1.17 $Date:
     args = line.split()
 
     # the first argument -- LFN.
-    if (1<=len(args)<=2):
+    if (1 <= len(args) <= 2):
       # If last char is ' ',
       # this can be a new parameter.
-      if (len(args) == 1) or (len(args)==2 and (not line.endswith(' '))):
+      if (len(args) == 1) or (len(args) == 2 and (not line.endswith(' '))):
         cur_path = ""
         if (len(args) == 2):
           cur_path = args[1]
         result = self.lfn_dc.parse_text_line(text, cur_path, self.cwd)
 
     return result
-      
+
 #######################################################################################
-# User and group methods      
-      
-  def do_user(self,args):
+# User and group methods
+
+  def do_user(self, args):
     """ User related commands
-    
+
         usage:
           user add <username>  - register new user in the catalog
           user delete <username>  - delete user from the catalog
           user show - show all users registered in the catalog
-    """    
+    """
     argss = args.split()
-    if (len(argss)==0):
+    if (len(argss) == 0):
       print(self.do_user.__doc__)
       return
     option = argss[0]
     del argss[0]
     if option == 'add':
-      if (len(argss)!=1):
+      if (len(argss) != 1):
         print(self.do_user.__doc__)
         return
-      return self.registerUser(argss) 
+      return self.registerUser(argss)
     elif option == 'delete':
-      if (len(argss)!=1):
+      if (len(argss) != 1):
         print(self.do_user.__doc__)
         return
-      return self.deleteUser(argss) 
+      return self.deleteUser(argss)
     elif option == "show":
       result = self.fc.getUsers()
       if not result['OK']:
         print(("Error: %s" % result['Message']))
-      else:  
+      else:
         if not result['Value']:
           print("No entries found")
-        else:  
-          for user,id_ in result['Value'].items():
+        else:
+          for user, id_ in result['Value'].items():
             print(user.rjust(20), ':', id_)
     else:
       print("Unknown option:", option)
 
   # completion for ``user``
   _available_user_cmd = ['add', 'delete', 'show']
+
   def complete_user(self, text, line, begidx, endidx):
     result = []
     args = line.split()
@@ -801,46 +802,47 @@ File Catalog Client $Revision: 1.17 $Date:
 
     result = [i for i in self._available_user_cmd if i.startswith(text)]
     return result
-    
-  def do_group(self,args):
+
+  def do_group(self, args):
     """ Group related commands
-    
+
         usage:
           group add <groupname>  - register new group in the catalog
           group delete <groupname>  - delete group from the catalog
           group show - how all groups registered in the catalog
-    """    
+    """
     argss = args.split()
-    if (len(argss)==0):
+    if (len(argss) == 0):
       print(self.do_group.__doc__)
       return
     option = argss[0]
     del argss[0]
     if option == 'add':
-      if (len(argss)!=1):
+      if (len(argss) != 1):
         print(self.do_group.__doc__)
         return
-      return self.registerGroup(argss) 
+      return self.registerGroup(argss)
     elif option == 'delete':
-      if (len(argss)!=1):
+      if (len(argss) != 1):
         print(self.do_group.__doc__)
         return
-      return self.deleteGroup(argss) 
+      return self.deleteGroup(argss)
     elif option == "show":
       result = self.fc.getGroups()
       if not result['OK']:
         print(("Error: %s" % result['Message']))
-      else:  
+      else:
         if not result['Value']:
           print("No entries found")
-        else:  
-          for user,id_ in result['Value'].items():
+        else:
+          for user, id_ in result['Value'].items():
             print(user.rjust(20), ':', id_)
     else:
       print("Unknown option:", option)
-  
+
   # completion for ``group``
   _available_group_cmd = ['add', 'delete', 'show']
+
   def complete_group(self, text, line, begidx, endidx):
     result = []
     args = line.split()
@@ -851,83 +853,84 @@ File Catalog Client $Revision: 1.17 $Date:
 
     result = [i for i in self._available_group_cmd if i.startswith(text)]
     return result
-  def registerUser(self,argss):
+
+  def registerUser(self, argss):
     """ Add new user to the File Catalog
-    
+
         usage: adduser <user_name>
     """
- 
-    username = argss[0] 
-    
-    result =  self.fc.addUser(username)
+
+    username = argss[0]
+
+    result = self.fc.addUser(username)
     if not result['OK']:
       print(("Error: %s" % result['Message']))
     else:
       print("User ID:", result['Value'])
-      
-  def deleteUser(self,args):
+
+  def deleteUser(self, args):
     """ Delete user from the File Catalog
-    
+
         usage: deleteuser <user_name>
     """
- 
-    username = args[0] 
-    
-    result =  self.fc.deleteUser(username)
+
+    username = args[0]
+
+    result = self.fc.deleteUser(username)
     if not result['OK']:
       print(("Error: %s" % result['Message']))
-      
-  def registerGroup(self,argss):
+
+  def registerGroup(self, argss):
     """ Add new group to the File Catalog
-    
+
         usage: addgroup <group_name>
     """
- 
-    gname = argss[0] 
-    
-    result =  self.fc.addGroup(gname)
+
+    gname = argss[0]
+
+    result = self.fc.addGroup(gname)
     if not result['OK']:
       print(("Error: %s" % result['Message']))
     else:
       print("Group ID:", result['Value'])
-      
-  def deleteGroup(self,args):
+
+  def deleteGroup(self, args):
     """ Delete group from the File Catalog
-    
+
         usage: deletegroup <group_name>
     """
- 
-    gname = args[0] 
-    
-    result =  self.fc.deleteGroup(gname)
+
+    gname = args[0]
+
+    result = self.fc.deleteGroup(gname)
     if not result['OK']:
       print(("Error: %s" % result['Message']))
-         
-  def do_mkdir(self,args):
+
+  def do_mkdir(self, args):
     """ Make directory
-    
+
         usage: mkdir <path>
     """
-    
+
     argss = args.split()
-    if (len(argss)==0):
+    if (len(argss) == 0):
       print(self.do_mkdir.__doc__)
       return
-    path = argss[0] 
+    path = argss[0]
     if path.find('/') == 0:
       newdir = path
     else:
       newdir = self.cwd + '/' + path
-      
+
     newdir = self.getPath(newdir)
-    
-    result =  self.fc.createDirectory(newdir)    
+
+    result = self.fc.createDirectory(newdir)
     if result['OK']:
       if result['Value']['Successful']:
         if newdir in result['Value']['Successful']:
           print("Successfully created directory:", newdir)
       elif result['Value']['Failed']:
-        if newdir in result['Value']['Failed']:  
+        if newdir in result['Value']['Failed']:
           print('Failed to create directory:', result['Value']['Failed'][newdir])
     else:
       print('Failed to create directory:', result['Message'])
@@ -937,10 +940,10 @@ File Catalog Client $Revision: 1.17 $Date:
     args = line.split()
 
     # the first argument -- LFN.
-    if (1<=len(args)<=2):
+    if (1 <= len(args) <= 2):
       # If last char is ' ',
       # this can be a new parameter.
-      if (len(args) == 1) or (len(args)==2 and (not line.endswith(' '))):
+      if (len(args) == 1) or (len(args) == 2 and (not line.endswith(' '))):
         cur_path = ""
         if (len(args) == 2):
           cur_path = args[1]
@@ -948,34 +951,34 @@ File Catalog Client $Revision: 1.17 $Date:
 
     return result
 
-  def do_cd(self,args):
+  def do_cd(self, args):
     """ Change directory to <path>
-    
+
         usage: cd <path>
                cd -
     """
- 
+
     argss = args.split()
     if len(argss) == 0:
       path = '/'
-    else:  
-      path = argss[0] 
-      
+    else:
+      path = argss[0]
+
     if path == '-':
       path = self.previous_cwd
-      
+
     newcwd = self.getPath(path)
-    if len(newcwd)>1 and not newcwd.find('..') == 0 :
-      newcwd=newcwd.rstrip("/")
-    
-    result =  self.fc.isDirectory(newcwd)        
+    if len(newcwd) > 1 and not newcwd.find('..') == 0:
+      newcwd = newcwd.rstrip("/")
+
+    result = self.fc.isDirectory(newcwd)
     if result['OK']:
       if result['Value']['Successful']:
         if result['Value']['Successful'][newcwd]:
-        #if result['Type'] == "Directory":
+          # if result['Type'] == "Directory":
           self.previous_cwd = self.cwd
           self.cwd = newcwd
-          self.prompt = 'FC:'+self.cwd+'>'
+          self.prompt = 'FC:' + self.cwd + '>'
         else:
           print(newcwd, 'does not exist or is not a directory')
       else:
@@ -988,18 +991,18 @@ File Catalog Client $Revision: 1.17 $Date:
     args = line.split()
 
     # the first argument -- LFN.
-    if (1<=len(args)<=2):
+    if (1 <= len(args) <= 2):
       # If last char is ' ',
       # this can be a new parameter.
-      if (len(args) == 1) or (len(args)==2 and (not line.endswith(' '))):
+      if (len(args) == 1) or (len(args) == 2 and (not line.endswith(' '))):
         cur_path = ""
         if (len(args) == 2):
           cur_path = args[1]
         result = self.lfn_dc.parse_text_line(text, cur_path, self.cwd)
 
     return result
-      
-  def do_id(self,args):
+
+  def do_id(self, args):
     """ Get user identity
     """
     result = getProxyInfo()
@@ -1017,17 +1020,17 @@ File Catalog Client $Revision: 1.17 $Date:
     if not result['OK']:
       print("Error: %s" % result['Message'])
       return
-    groupDict = result['Value']    
-    idUser = userDict.get(user,0)
-    idGroup = groupDict.get(group,0)
+    groupDict = result['Value']
+    idUser = userDict.get(user, 0)
+    idGroup = groupDict.get(group, 0)
     print("user=%d(%s) group=%d(%s)" % (idUser, user, idGroup, group))
-      
-  def do_lcd(self,args):
+
+  def do_lcd(self, args):
     """ Change local directory
-    
+
         usage:
           lcd <local_directory>
-    """    
+    """
     argss = args.split()
     if (len(argss) != 1):
       print(self.do_lcd.__doc__)
@@ -1037,7 +1040,7 @@ File Catalog Client $Revision: 1.17 $Date:
       os.chdir(localDir)
       newDir = os.getcwd()
       print("Local directory: %s" % newDir)
-    except:
+    except Exception:
       print("%s seems not a directory" % localDir)
 
   def complete_lcd(self, text, line, begidx, endidx):
@@ -1046,26 +1049,26 @@ File Catalog Client $Revision: 1.17 $Date:
     args = line.split()
 
     # the first argument -- LFN.
-    if (1<=len(args)<=2):
+    if (1 <= len(args) <= 2):
       # If last char is ' ',
       # this can be a new parameter.
-      if (len(args) == 1) or (len(args)==2 and (not line.endswith(' '))):
+      if (len(args) == 1) or (len(args) == 2 and (not line.endswith(' '))):
         cur_path = ""
         if (len(args) == 2):
           cur_path = args[1]
         result = self.ul_dc.parse_text_line(text, cur_path, self.cwd)
 
     return result
-          
-  def do_pwd(self,args):
+
+  def do_pwd(self, args):
     """ Print out the current directory
-    
+
         usage: pwd
     """
     print(self.cwd)
 
-  def do_ls(self,args):
-    """ Lists directory entries at <path> 
+  def do_ls(self, args):
+    """ Lists directory entries at <path>
 
         usage: ls [-ltrnSh] <path>
 
@@ -1077,7 +1080,7 @@ File Catalog Client $Revision: 1.17 $Date:
      -H  --human-readable      : Print sizes in human readable format (e.g., 1Ki, 20Mi);
                                  powers of 2 are used (1Mi = 2^20 B).
     """
-    
+
     argss = args.split()
     # Get switches
     _long = False
@@ -1087,19 +1090,19 @@ File Catalog Client $Revision: 1.17 $Date:
     sizeorder = False
     humanread = False
     shortopts = 'ltrnSH'
-    longopts = ['long','timeorder','reverse','numericid','sizeorder','human-readable']
+    longopts = ['long', 'timeorder', 'reverse', 'numericid', 'sizeorder', 'human-readable']
     path = self.cwd
     if len(argss) > 0:
       try:
-        optlist, arguments = getopt.getopt(argss,shortopts,longopts)
-      except getopt.GetoptError, e:
+        optlist, arguments = getopt.getopt(argss, shortopts, longopts)
+      except getopt.GetoptError as e:
         print(str(e))
         print(self.do_ls.__doc__)
         return
       # Duplicated options are allowed: later options have precedence, e.g.,
       # '-ltSt' will be order by time
       # '-ltStS' will be order by size
-      options = [ opt for (opt, arg) in optlist]
+      options = [opt for (opt, arg) in optlist]
       for opt in options:
         if opt in ['-l', '--long']:
           _long = True
@@ -1108,15 +1111,15 @@ File Catalog Client $Revision: 1.17 $Date:
         elif opt in ['-t', '--timeorder']:
           timeorder = True
         elif opt in ['-n', '--numericid']:
-          numericid = True  
+          numericid = True
         elif opt in ['-S', '--sizeorder']:
           sizeorder = True
         elif opt in ['-H', '--human-readable']:
           humanread = True
 
       if timeorder and sizeorder:
-        options = [w.replace('--sizeorder','-S') for w in options]
-        options = [w.replace('--human-readable','-H') for w in options]
+        options = [w.replace('--sizeorder', '-S') for w in options]
+        options = [w.replace('--human-readable', '-H') for w in options]
         options.reverse()
         # The last ['-S','-t'] provided is the one we use: reverse order
         # means that the last provided has the smallest index.
@@ -1124,8 +1127,8 @@ File Catalog Client $Revision: 1.17 $Date:
           timeorder = False
         else:
           sizeorder = False
-        
-      # Get path    
+
+      # Get path
       if arguments:
         inputpath = False
         while arguments or not inputpath:
@@ -1135,25 +1138,25 @@ File Catalog Client $Revision: 1.17 $Date:
             path = tmparg
             inputpath = True
             if path[0] != '/':
-              path = self.cwd+'/'+path
+              path = self.cwd + '/' + path
     path = self.getPath(path)
-    
+
     # Check if the target path is a file
-    result =  self.fc.isFile(path)          
+    result = self.fc.isFile(path)
     if not result['OK']:
       print("Error: can not verify path")
       return
     elif path in result['Value']['Successful'] and result['Value']['Successful'][path]:
-      result = self.fc.getFileMetadata(path)      
+      result = self.fc.getFileMetadata(path)
       dList = DirectoryListing()
       fileDict = result['Value']['Successful'][path]
-      dList.addFile(os.path.basename(path),fileDict,{},numericid)
-      dList.printListing(reverse,timeorder,sizeorder,humanread)
-      return         
-    
+      dList.addFile(os.path.basename(path), fileDict, {}, numericid)
+      dList.printListing(reverse, timeorder, sizeorder, humanread)
+      return
+
     # Get directory contents now
     try:
-      result =  self.fc.listDirectory(path,_long)                   
+      result = self.fc.listDirectory(path, _long)
       dList = DirectoryListing()
       if result['OK']:
         if result['Value']['Successful']:
@@ -1163,37 +1166,37 @@ File Catalog Client $Revision: 1.17 $Date:
             # fname = entry.replace(self.cwd,'').replace('/','')
             if _long:
               fileDict = result['Value']['Successful'][path]['Files'][entry]['MetaData']
-              repDict = result['Value']['Successful'][path]['Files'][entry].get( "Replicas", {} )
+              repDict = result['Value']['Successful'][path]['Files'][entry].get("Replicas", {})
               if fileDict:
-                dList.addFile(fname,fileDict,repDict,numericid)
-            else:  
+                dList.addFile(fname, fileDict, repDict, numericid)
+            else:
               dList.addSimpleFile(fname)
           for entry in result['Value']['Successful'][path]['SubDirs']:
             dname = entry.split('/')[-1]
             # print entry, dname
-            # dname = entry.replace(self.cwd,'').replace('/','')  
+            # dname = entry.replace(self.cwd,'').replace('/','')
             if _long:
               dirDict = result['Value']['Successful'][path]['SubDirs'][entry]
               if dirDict:
-                dList.addDirectory(dname,dirDict,numericid)
-            else:    
+                dList.addDirectory(dname, dirDict, numericid)
+            else:
               dList.addSimpleFile(dname)
-          
+
           for entry in result['Value']['Successful'][path]['Links']:
             pass
-          
+
           if 'Datasets' in result['Value']['Successful'][path]:
             for entry in result['Value']['Successful'][path]['Datasets']:
-              dname = os.path.basename( entry )    
+              dname = os.path.basename(entry)
               if _long:
-                dsDict = result['Value']['Successful'][path]['Datasets'][entry]['Metadata']  
+                dsDict = result['Value']['Successful'][path]['Datasets'][entry]['Metadata']
                 if dsDict:
-                  dList.addDataset(dname,dsDict,numericid)
-              else:    
+                  dList.addDataset(dname, dsDict, numericid)
+              else:
                 dList.addSimpleFile(dname)
-              
+
           if _long:
-            dList.printListing(reverse,timeorder,sizeorder,humanread)
+            dList.printListing(reverse, timeorder, sizeorder, humanread)
           else:
             dList.printOrdered()
       else:
@@ -1208,27 +1211,27 @@ File Catalog Client $Revision: 1.17 $Date:
     index_cnt = 0
 
     if (len(args) > 1):
-      if ( args[1][0] == "-"):
+      if (args[1][0] == "-"):
         index_cnt = 1
 
     # the first argument -- LFN.
-    if (1+index_cnt<=len(args)<=2+index_cnt):
+    if (1 + index_cnt <= len(args) <= 2 + index_cnt):
       # If last char is ' ',
       # this can be a new parameter.
-      if (len(args) == 1+index_cnt) or (len(args)==2+index_cnt and (not line.endswith(' '))):
+      if (len(args) == 1 + index_cnt) or (len(args) == 2 + index_cnt and (not line.endswith(' '))):
         cur_path = ""
-        if (len(args) == 2+index_cnt):
-          cur_path = args[1+index_cnt]
+        if (len(args) == 2 + index_cnt):
+          cur_path = args[1 + index_cnt]
         result = self.lfn_dc.parse_text_line(text, cur_path, self.cwd)
 
     return result
-      
-  def do_chown(self,args):
+
+  def do_chown(self, args):
     """ Change owner of the given path
 
-        usage: chown [-R] <owner> <path> 
-    """         
-    
+        usage: chown [-R] <owner> <path>
+    """
+
     argss = args.split()
     recursive = False
     if (len(argss) == 0):
@@ -1245,15 +1248,15 @@ File Catalog Client $Revision: 1.17 $Date:
     lfn = self.getPath(path)
     pathDict = {}
     pathDict[lfn] = owner
-    
+
     try:
-      result = self.fc.changePathOwner( pathDict, recursive )        
+      result = self.fc.changePathOwner(pathDict, recursive)
       if not result['OK']:
         print("Error:", result['Message'])
         return
       if lfn in result['Value']['Failed']:
         print("Error:", result['Value']['Failed'][lfn])
-        return  
+        return
     except Exception as x:
       print("Exception:", str(x))
 
@@ -1261,29 +1264,29 @@ File Catalog Client $Revision: 1.17 $Date:
     result = []
     args = line.split()
 
-    index_counter = 0+1
+    index_counter = 0 + 1
 
     if '-R' in args:
-      index_counter = 1+1
+      index_counter = 1 + 1
 
     # the first argument -- LFN.
-    if ((1+index_counter) <=len(args)<= (2+index_counter)):
+    if ((1 + index_counter) <= len(args) <= (2 + index_counter)):
       # If last char is ' ',
       # this can be a new parameter.
-      if (len(args) == 1+index_counter) or (len(args)==2+index_counter and (not line.endswith(' '))):
+      if (len(args) == 1 + index_counter) or (len(args) == 2 + index_counter and (not line.endswith(' '))):
         cur_path = ""
-        if (len(args) == 2+index_counter):
-          cur_path = args[1+index_counter]
+        if (len(args) == 2 + index_counter):
+          cur_path = args[1 + index_counter]
         result = self.lfn_dc.parse_text_line(text, cur_path, self.cwd)
 
     return result
-      
-  def do_chgrp(self,args):
+
+  def do_chgrp(self, args):
     """ Change group of the given path
 
-        usage: chgrp [-R] <group> <path> 
-    """         
-    
+        usage: chgrp [-R] <group> <path>
+    """
+
     argss = args.split()
     recursive = False
     if (len(argss) == 0):
@@ -1300,15 +1303,15 @@ File Catalog Client $Revision: 1.17 $Date:
     lfn = self.getPath(path)
     pathDict = {}
     pathDict[lfn] = group
-    
+
     try:
-      result = self.fc.changePathGroup( pathDict, recursive )         
+      result = self.fc.changePathGroup(pathDict, recursive)
       if not result['OK']:
         print("Error:", result['Message'])
         return
       if lfn in result['Value']['Failed']:
         print("Error:", result['Value']['Failed'][lfn])
-        return  
+        return
     except Exception as x:
       print("Exception:", str(x))
 
@@ -1316,28 +1319,28 @@ File Catalog Client $Revision: 1.17 $Date:
     result = []
     args = line.split()
 
-    index_counter = 0+1
+    index_counter = 0 + 1
 
     if '-R' in args:
-      index_counter = 1+1
+      index_counter = 1 + 1
 
     # the first argument -- LFN.
-    if ((1+index_counter) <=len(args)<= (2+index_counter)):
+    if ((1 + index_counter) <= len(args) <= (2 + index_counter)):
       # If last char is ' ',
       # this can be a new parameter.
-      if (len(args) == 1+index_counter) or (len(args)==2+index_counter and (not line.endswith(' '))):
+      if (len(args) == 1 + index_counter) or (len(args) == 2 + index_counter and (not line.endswith(' '))):
         cur_path = ""
-        if (len(args) == 2+index_counter):
-          cur_path = args[1+index_counter]
+        if (len(args) == 2 + index_counter):
+          cur_path = args[1 + index_counter]
         result = self.lfn_dc.parse_text_line(text, cur_path, self.cwd)
 
     return result
-      
-  def do_chmod(self,args):
+
+  def do_chmod(self, args):
     """ Change permissions of the given path
-        usage: chmod [-R] <mode> <path> 
-    """         
-    
+        usage: chmod [-R] <mode> <path>
+    """
+
     argss = args.split()
     recursive = False
     if (len(argss) < 2):
@@ -1350,52 +1353,52 @@ File Catalog Client $Revision: 1.17 $Date:
     path = argss[1]
     lfn = self.getPath(path)
     pathDict = {}
-    # treat mode as octal 
-    pathDict[lfn] = eval('0'+mode)
-    
+    # treat mode as octal
+    pathDict[lfn] = eval('0' + mode)
+
     try:
-      result = self.fc.changePathMode( pathDict, recursive )             
+      result = self.fc.changePathMode(pathDict, recursive)
       if not result['OK']:
         print("Error:", result['Message'])
         return
       if lfn in result['Value']['Failed']:
         print("Error:", result['Value']['Failed'][lfn])
-        return  
+        return
     except Exception as x:
       print("Exception:", str(x))
-      
+
   def complete_chmod(self, text, line, begidx, endidx):
     result = []
     args = line.split()
 
-    index_counter = 0+1
+    index_counter = 0 + 1
 
     if '-R' in args:
-      index_counter = 1+1
+      index_counter = 1 + 1
 
     # the first argument -- LFN.
-    if ((1+index_counter) <=len(args)<= (2+index_counter)):
+    if ((1 + index_counter) <= len(args) <= (2 + index_counter)):
       # If last char is ' ',
       # this can be a new parameter.
-      if (len(args) == 1+index_counter) or (len(args)==2+index_counter and (not line.endswith(' '))):
+      if (len(args) == 1 + index_counter) or (len(args) == 2 + index_counter and (not line.endswith(' '))):
         cur_path = ""
-        if (len(args) == 2+index_counter):
-          cur_path = args[1+index_counter]
+        if (len(args) == 2 + index_counter):
+          cur_path = args[1 + index_counter]
         result = self.lfn_dc.parse_text_line(text, cur_path, self.cwd)
 
     return result
-      
-  def do_size(self,args):
+
+  def do_size(self, args):
     """ Get file or directory size. If -l switch is specified, get also the total
-        size per Storage Element 
+        size per Storage Element
 
         usage: size [-l] [-f] <lfn>|<dir_path>
-        
+
         Switches:
            -l  long output including per SE report
-           -f  use raw file information and not the storage tables  
-    """      
-    
+           -f  use raw file information and not the storage tables
+    """
+
     argss = args.split()
     _long = False
     fromFiles = False
@@ -1406,24 +1409,24 @@ File Catalog Client $Revision: 1.17 $Date:
     if len(argss) > 0:
       if argss[0] == '-f':
         fromFiles = True
-        del argss[0]    
-        
+        del argss[0]
+
     if len(argss) == 1:
       path = argss[0]
       if path == '.':
-        path = self.cwd    
+        path = self.cwd
     else:
       path = self.cwd
     path = self.getPath(path)
-    
+
     try:
       result = self.fc.isFile(path)
       if not result['OK']:
         print("Error:", result['Message'])
       if result['Value']['Successful']:
-        if result['Value']['Successful'][path]:  
+        if result['Value']['Successful'][path]:
           print("lfn:", path)
-          result =  self.fc.getFileSize(path)
+          result = self.fc.getFileSize(path)
           if result['OK']:
             if result['Value']['Successful']:
               print("Size:", result['Value']['Successful'][path])
@@ -1433,29 +1436,29 @@ File Catalog Client $Revision: 1.17 $Date:
             print("File size failed:", result['Message'])
         else:
           print("directory:", path)
-          result =  self.fc.getDirectorySize( path, _long, fromFiles )          
+          result = self.fc.getDirectorySize(path, _long, fromFiles)
           if result['OK']:
             if result['Value']['Successful']:
               print("Logical Size:", int_with_commas(result['Value']['Successful'][path]['LogicalSize']),
-                    "Files:",result['Value']['Successful'][path]['LogicalFiles'], \
+                    "Files:", result['Value']['Successful'][path]['LogicalFiles'],
                     "Directories:", result['Value']['Successful'][path]['LogicalDirectories'])
               if _long:
-                fields = ['StorageElement','Size','Replicas']
+                fields = ['StorageElement', 'Size', 'Replicas']
                 values = []
                 if "PhysicalSize" in result['Value']['Successful'][path]:
                   print()
                   totalSize = result['Value']['Successful'][path]['PhysicalSize']['TotalSize']
-                  totalFiles = result['Value']['Successful'][path]['PhysicalSize']['TotalFiles'] 
-                  for se,sdata in result['Value']['Successful'][path]['PhysicalSize'].items():
+                  totalFiles = result['Value']['Successful'][path]['PhysicalSize']['TotalFiles']
+                  for se, sdata in result['Value']['Successful'][path]['PhysicalSize'].items():
                     if not se.startswith("Total"):
                       size = sdata['Size']
                       nfiles = sdata['Files']
                       #print se.rjust(20),':',int_with_commas(size).ljust(25),"Files:",nfiles
-                      values.append( (se, int_with_commas(size), str(nfiles)) )
+                      values.append((se, int_with_commas(size), str(nfiles)))
                   #print '='*60
                   #print 'Total'.rjust(20),':',int_with_commas(totalSize).ljust(25),"Files:",totalFiles
-                  values.append( ('Total', int_with_commas(totalSize), str(totalFiles)) )
-                  printTable(fields,values)  
+                  values.append(('Total', int_with_commas(totalSize), str(totalFiles)))
+                  printTable(fields, values)
               if "QueryTime" in result['Value']:
                 print("Query time %.2f sec" % result['Value']['QueryTime'])
             else:
@@ -1477,23 +1480,23 @@ File Catalog Client $Revision: 1.17 $Date:
       index_counter = 1
 
     # the first argument -- LFN.
-    if ((1+index_counter) <=len(args)<= (2+index_counter)):
+    if ((1 + index_counter) <= len(args) <= (2 + index_counter)):
       # If last char is ' ',
       # this can be a new parameter.
-      if (len(args) == 1+index_counter) or (len(args)==2+index_counter and (not line.endswith(' '))):
+      if (len(args) == 1 + index_counter) or (len(args) == 2 + index_counter and (not line.endswith(' '))):
         cur_path = ""
-        if (len(args) == 2+index_counter):
-          cur_path = args[1+index_counter]
+        if (len(args) == 2 + index_counter):
+          cur_path = args[1 + index_counter]
         result = self.lfn_dc.parse_text_line(text, cur_path, self.cwd)
 
     return result
-      
-  def do_guid(self,args):
-    """ Get the file GUID 
 
-        usage: guid <lfn> 
-    """      
-    
+  def do_guid(self, args):
+    """ Get the file GUID
+
+        usage: guid <lfn>
+    """
+
     argss = args.split()
     if (len(argss) == 0):
       print(self.do_guid.__doc__)
@@ -1501,7 +1504,7 @@ File Catalog Client $Revision: 1.17 $Date:
     path = argss[0]
     path = self.getPath(path)
     try:
-      result =  self.fc.getFileMetadata(path)
+      result = self.fc.getFileMetadata(path)
       if result['OK']:
         if result['Value']['Successful']:
           print("GUID:", result['Value']['Successful'][path]['GUID'])
@@ -1517,10 +1520,10 @@ File Catalog Client $Revision: 1.17 $Date:
     args = line.split()
 
     # the first argument -- LFN.
-    if (1<=len(args)<=2):
+    if (1 <= len(args) <= 2):
       # If last char is ' ',
       # this can be a new parameter.
-      if (len(args) == 1) or (len(args)==2 and (not line.endswith(' '))):
+      if (len(args) == 1) or (len(args) == 2 and (not line.endswith(' '))):
         cur_path = ""
         if (len(args) == 2):
           cur_path = args[1]
@@ -1530,10 +1533,10 @@ File Catalog Client $Revision: 1.17 $Date:
 
 ##################################################################################
 #  Metadata methods
-      
-  def do_meta(self,args):
+
+  def do_meta(self, args):
     """ Metadata related operations
-    
+
         Usage:
           meta index [-d|-f|-r] <metaname> [<metatype>]  - add new metadata index. Possible types are:
                                                            'int', 'float', 'string', 'date';
@@ -1543,30 +1546,30 @@ File Catalog Client $Revision: 1.17 $Date:
           meta set <path> <metaname> <metavalue> [<metaname> <metavalue> ...]- set metadata values for directory or file
           meta remove <path> <metaname> [<metaname> ...] - remove metadata values for directory or file
           meta get [-e] [<path>] - get metadata for the given directory or file
-          meta tags <path> <metaname> where <meta_selection> - get values (tags) of the given metaname compatible with 
+          meta tags <path> <metaname> where <meta_selection> - get values (tags) of the given metaname compatible with
                                                         the metadata selection
           meta show - show all defined metadata indice
-    
-    """    
+
+    """
     argss = args.split()
-    if (len(argss)==0):
+    if (len(argss) == 0):
       print(self.do_meta.__doc__)
       return
     option = argss[0]
     del argss[0]
     if option == 'set':
-      if (len(argss) < 3 or len(argss)%2 != 1):
+      if (len(argss) < 3 or len(argss) % 2 != 1):
         print(self.do_meta.__doc__)
         return
       return self.setMeta(argss)
     elif option == 'get':
-      return self.getMeta(argss)  
+      return self.getMeta(argss)
     elif option[:3] == 'tag':
       # TODO
       if (len(argss) == 0):
         print(self.do_meta.__doc__)
         return
-      return self.metaTag(argss)    
+      return self.metaTag(argss)
     elif option == 'index':
       if (len(argss) < 1):
         print(self.do_meta.__doc__)
@@ -1584,17 +1587,18 @@ File Catalog Client $Revision: 1.17 $Date:
       if (len(argss) < 2):
         print(self.do_meta.__doc__)
         return
-      return self.removeMeta(argss) 
+      return self.removeMeta(argss)
     else:
       print("Unknown option:", option)
 
   # auto completion for ``meta``
   # TODO: what's the doc for metaset?
-  _available_meta_cmd = ["set", "get", "tag", "tags", 
-                         "index", "metaset","show",
+  _available_meta_cmd = ["set", "get", "tag", "tags",
+                         "index", "metaset", "show",
                          "rm", "remove"]
   _meta_cmd_need_lfn = ["set", "get",
                         "rm", "remove"]
+
   def complete_meta(self, text, line, begidx, endidx):
     result = []
     args = line.split()
@@ -1612,67 +1616,67 @@ File Catalog Client $Revision: 1.17 $Date:
             cur_path = ""
           else:
             cur_path = args[-1]
-          
+
         result = self.lfn_dc.parse_text_line(text, cur_path, self.cwd)
         pass
       return result
 
     result = [i for i in self._available_meta_cmd if i.startswith(text)]
     return result
-            
-  def removeMeta(self,argss):
+
+  def removeMeta(self, argss):
     """ Remove the specified metadata for a directory or file
-    """    
+    """
     apath = argss[0]
     path = self.getPath(apath)
     if len(argss) < 2:
       print("Error: no metadata is specified for removal")
       return
-    
+
     metadata = argss[1:]
-    metaDict = {path:metadata}
+    metaDict = {path: metadata}
     result = self.fc.removeMetadata(metaDict)
     if not result['OK']:
       print("Error:", result['Message'])
       if "FailedMetadata" in result:
-        for meta,error in result['FailedMetadata']:
+        for meta, error in result['FailedMetadata']:
           print(meta, ';', error)
-     
-  def setMeta(self,argss):
+
+  def setMeta(self, argss):
     """ Set metadata value for a directory
-    """      
-    if (len(argss) < 3 or len(argss)%2 != 1):
+    """
+    if (len(argss) < 3 or len(argss) % 2 != 1):
       print("Error: command requires at least 3 arguments (or odd number of arguments > 3), %d given" % len(argss))
       return
     path = argss[0]
     if path == '.':
       path = self.cwd
     elif path[0] != '/':
-      path = self.cwd+'/'+path  
+      path = self.cwd + '/' + path
     path = self.getPath(path)
     del argss[0]
     meta = argss[::2]
     value = argss[1::2]
-    metadict = { meta[n]:value[n] for n in range(len(meta)) }
+    metadict = {meta[n]: value[n] for n in range(len(meta))}
     print(path, metadict)
-    result = self.fc.setMetadata(path,metadict)
+    result = self.fc.setMetadata(path, metadict)
     if not result['OK']:
       print(("Error: %s" % result['Message']))
-      
-  def getMeta(self,argss):
+
+  def getMeta(self, argss):
     """ Get metadata for the given directory
-    """            
+    """
     expandFlag = False
     dirFlag = True
     if len(argss) == 0:
-      path ='.'
-    else:  
+      path = '.'
+    else:
       if argss[0] == "-e":
         expandFlag = True
         del argss[0]
       if len(argss) == 0:
-        path ='.'  
-      else:  
+        path = '.'
+      else:
         path = argss[0]
         dirFlag = False
     if path == '.':
@@ -1680,8 +1684,8 @@ File Catalog Client $Revision: 1.17 $Date:
     elif path[0] != '/':
       path = self.getPath(path)
 
-    path = path.rstrip( '/' )
-      
+    path = path.rstrip('/')
+
     if not dirFlag:
       # Have to decide if it is a file or not
       result = self.fc.isFile(path)
@@ -1689,9 +1693,9 @@ File Catalog Client $Revision: 1.17 $Date:
         print("ERROR: Failed to contact the catalog")
       if not result['Value']['Successful']:
         print("ERROR: Path not found")
-      dirFlag = not result['Value']['Successful'][path]        
-        
-    if dirFlag:    
+      dirFlag = not result['Value']['Successful'][path]
+
+    if dirFlag:
       result = self.fc.getDirectoryUserMetadata(path)
       if not result['OK']:
         print(("Error: %s" % result['Message']))
@@ -1713,39 +1717,39 @@ File Catalog Client $Revision: 1.17 $Date:
           else:
             print(meta.rjust(20), ':', value)
           if setFlag and expandFlag:
-            result = self.fc.getMetadataSet(value,expandFlag)
+            result = self.fc.getMetadataSet(value, expandFlag)
             if not result['OK']:
               print(("Error: %s" % result['Message']))
               return
-            for m,v in result['Value'].items():
+            for m, v in result['Value'].items():
               print(" " * 10, m.rjust(20), ':', v)
       else:
         print("No metadata defined for directory")
     else:
-      result = self.fc.getFileUserMetadata(path)      
+      result = self.fc.getFileUserMetadata(path)
       if not result['OK']:
         print(("Error: %s" % result['Message']))
         return
-      if result['Value']:      
-        for meta,value in result['Value'].items():
+      if result['Value']:
+        for meta, value in result['Value'].items():
           print(meta.rjust(20), ':', value)
       else:
         print("No metadata found")
-      
-  def metaTag(self,argss):
+
+  def metaTag(self, argss):
     """ Get values of a given metadata tag compatible with the given selection
-    """    
-    path =  argss[0]
+    """
+    path = argss[0]
     del argss[0]
     tag = argss[0]
     del argss[0]
     path = self.getPath(path)
-    
+
     # Evaluate the selection dictionary
     metaDict = {}
     if argss:
       if argss[0].lower() == 'where':
-        result = self.fc.getMetadataFields()        
+        result = self.fc.getMetadataFields()
         if not result['OK']:
           print(("Error: %s" % result['Message']))
           return
@@ -1755,13 +1759,12 @@ File Catalog Client $Revision: 1.17 $Date:
         typeDictfm = result['Value']['FileMetaFields']
         typeDict = result['Value']['DirectoryMetaFields']
 
-        
         del argss[0]
         for arg in argss:
           try:
-            name,value = arg.split('=')
-            if not name in typeDict:
-              if not name in typeDictfm:
+            name, value = arg.split('=')
+            if name not in typeDict:
+              if name not in typeDictfm:
                 print("Error: metadata field %s not defined" % name)
               else:
                 print('No support for meta data at File level yet: %s' % name)
@@ -1773,14 +1776,14 @@ File Catalog Client $Revision: 1.17 $Date:
             if mtype[0:5].lower() == 'float':
               mvalue = float(value)
             metaDict[name] = mvalue
-          except Exception,x:
+          except Exception as x:
             print("Error:", str(x))
-            return  
+            return
       else:
         print("Error: WHERE keyword is not found after the metadata tag name")
         return
-      
-    result = self.fc.getCompatibleMetadata( metaDict, path )  
+
+    result = self.fc.getCompatibleMetadata(metaDict, path)
     if not result['OK']:
       print(("Error: %s" % result['Message']))
       return
@@ -1796,18 +1799,18 @@ File Catalog Client $Revision: 1.17 $Date:
   def showMeta(self):
     """ Show defined metadata indices
     """
-    result = self.fc.getMetadataFields()  
+    result = self.fc.getMetadataFields()
     if not result['OK']:
       print(("Error: %s" % result['Message']))
     else:
       if not result['Value']:
         print("No entries found")
-      else:  
-        for meta,_type in result['Value'].items():
+      else:
+        for meta, _type in result['Value'].items():
           print(meta.rjust(20), ':', _type)
 
-  def registerMeta(self,argss):
-    """ Add metadata field. 
+  def registerMeta(self, argss):
+    """ Add metadata field.
     """
 
     if len(argss) < 2:
@@ -1816,7 +1819,7 @@ File Catalog Client $Revision: 1.17 $Date:
 
     fdType = '-d'
     removeFlag = False
-    if argss[0].lower() in ['-d','-f']:
+    if argss[0].lower() in ['-d', '-f']:
       fdType = argss[0]
       del argss[0]
     if argss[0].lower() == '-r':
@@ -1852,43 +1855,43 @@ File Catalog Client $Revision: 1.17 $Date:
       print("Error: illegal metadata type %s" % mtype)
       return
 
-    result =  self.fc.addMetadataField(mname,rtype,fdType)
+    result = self.fc.addMetadataField(mname, rtype, fdType)
     if not result['OK']:
       print(("Error: %s" % result['Message']))
     else:
       print("Added metadata field %s of type %s" % (mname, mtype))
- 
-  def registerMetaset(self,argss):
+
+  def registerMetaset(self, argss):
     """ Add metadata set
     """
-    
+
     setDict = {}
     setName = argss[0]
     del argss[0]
     for arg in argss:
-      key,value = arg.split('=')
+      key, value = arg.split('=')
       setDict[key] = value
-      
-    result =  self.fc.addMetadataSet(setName,setDict)
+
+    result = self.fc.addMetadataSet(setName, setDict)
     if not result['OK']:
       print(("Error: %s" % result['Message']))
     else:
       print("Added metadata set %s" % setName)
-    
-  def do_find(self,args):
-    """ Find all files satisfying the given metadata information 
-    
+
+  def do_find(self, args):
+    """ Find all files satisfying the given metadata information
+
         usage: find [-q] [-D] <path> <meta_name>=<meta_value> [<meta_name>=<meta_value>]
-    """   
+    """
 
     argss = args.split()
     if (len(argss) < 1):
       print(self.do_find.__doc__)
       return
-    
+
     verbose = True
     if argss[0] == "-q":
-      verbose  = False
+      verbose = False
       del argss[0]
 
     dirsOnly = False
@@ -1899,25 +1902,25 @@ File Catalog Client $Revision: 1.17 $Date:
     path = argss[0]
     path = self.getPath(path)
     del argss[0]
- 
+
     if argss:
       if argss[0][0] == '{':
         metaDict = eval(argss[0])
-      else:  
+      else:
         result = self.__createQuery(' '.join(argss))
         if not result['OK']:
           print("Illegal metaQuery:", ' '.join(argss), result['Message'])
           return
         metaDict = result['Value']
     else:
-      metaDict = {}    
+      metaDict = {}
     if verbose:
       print("Query:", metaDict)
 
     result = self.fc.findFilesByMetadata(metaDict, path)
     if not result['OK']:
       print(("Error: %s" % result['Message']))
-      return 
+      return
 
     if result['Value']:
 
@@ -1947,20 +1950,20 @@ File Catalog Client $Revision: 1.17 $Date:
         del args[1]
 
     # the first argument -- LFN.
-    if (1<=len(args)<=2):
+    if (1 <= len(args) <= 2):
       # If last char is ' ',
       # this can be a new parameter.
-      if (len(args) == 1) or (len(args)==2 and (not line.endswith(' '))):
+      if (len(args) == 1) or (len(args) == 2 and (not line.endswith(' '))):
         cur_path = ""
         if (len(args) == 2):
           cur_path = args[1]
         result = self.lfn_dc.parse_text_line(text, cur_path, self.cwd)
 
     return result
-      
-  def __createQuery(self,args):
+
+  def __createQuery(self, args):
     """ Create the metadata query out of the command line arguments
-    """    
+    """
     argss = args.split()
     result = self.fc.getMetadataFields()
 
@@ -1972,114 +1975,114 @@ File Catalog Client $Revision: 1.17 $Date:
       return None
     typeDict = result['Value']['FileMetaFields']
     typeDict.update(result['Value']['DirectoryMetaFields'])
-    
+
     # Special meta tags
-    typeDict.update( FILE_STANDARD_METAKEYS )
+    typeDict.update(FILE_STANDARD_METAKEYS)
 
-    mq = MetaQuery( typeDict = typeDict )
-    return mq.setMetaQuery( argss )
+    mq = MetaQuery(typeDict=typeDict)
+    return mq.setMetaQuery(argss)
 
-  def do_dataset( self, args ):
+  def do_dataset(self, args):
     """ A set of dataset manipulation commands
-    
+
         Usage:
-          
+
           dataset add <dataset_name> <meta_query>          - add a new dataset definition
           dataset annotate <dataset_name> <annotation>     - add annotation to a dataset
           dataset show [-l] [<dataset_name>]               - show existing datasets
           dataset status <dataset_name>                    - display the dataset status
-          dataset files <dataset_name>                     - show dataset files     
+          dataset files <dataset_name>                     - show dataset files
           dataset rm <dataset_name>                        - remove dataset
-          dataset check <dataset_name>                     - check if the dataset parameters are still valid     
+          dataset check <dataset_name>                     - check if the dataset parameters are still valid
           dataset update <dataset_name>                    - update the dataset parameters
-          dataset freeze <dataset_name>                    - fix the current contents of the dataset     
+          dataset freeze <dataset_name>                    - fix the current contents of the dataset
           dataset release <dataset_name>                   - release the dynamic dataset
     """
     argss = args.split()
-    if (len(argss)==0):
+    if (len(argss) == 0):
       print(self.do_dataset.__doc__)
       return
     command = argss[0]
     del argss[0]
     if command == "add":
-      self.dataset_add( argss )
+      self.dataset_add(argss)
     elif command == "annotate":
-      self.dataset_annotate( argss )    
+      self.dataset_annotate(argss)
     elif command == "show":
-      self.dataset_show( argss )  
+      self.dataset_show(argss)
     elif command == "files":
-      self.dataset_files( argss )
+      self.dataset_files(argss)
     elif command == "rm":
-      self.dataset_rm( argss )   
+      self.dataset_rm(argss)
     elif command == "check":
-      self.dataset_check( argss )
+      self.dataset_check(argss)
     elif command == "update":
-      self.dataset_update( argss )     
+      self.dataset_update(argss)
     elif command == "freeze":
-      self.dataset_freeze( argss )
+      self.dataset_freeze(argss)
     elif command == "release":
-      self.dataset_release( argss )      
+      self.dataset_release(argss)
     elif command == "status":
-      self.dataset_status( argss )        
+      self.dataset_status(argss)
 
-  def dataset_add( self, argss ):
+  def dataset_add(self, argss):
     """ Add a new dataset
     """
     datasetName = argss[0]
-    metaSelections = ' '.join( argss[1:] )
-    result = self.__createQuery( metaSelections )
+    metaSelections = ' '.join(argss[1:])
+    result = self.__createQuery(metaSelections)
     if not result['OK']:
       print("Illegal metaQuery:", metaSelections)
       return
     metaDict = result['Value']
-    datasetName = self.getPath( datasetName )
-    
-    result = returnSingleResult( self.fc.addDataset( { datasetName: metaDict } ) )
+    datasetName = self.getPath(datasetName)
+
+    result = returnSingleResult(self.fc.addDataset({datasetName: metaDict}))
     if not result['OK']:
       print("ERROR: failed to add dataset:", result['Message'])
     else:
       print("Successfully added dataset", datasetName)
 
-  def dataset_annotate( self, argss ):
+  def dataset_annotate(self, argss):
     """ Add a new dataset
     """
     datasetName = argss[0]
-    annotation = ' '.join( argss[1:] )
-    datasetName = self.getPath( datasetName )
-    
-    result = returnSingleResult( self.fc.addDatasetAnnotation( {datasetName: annotation} ) )
+    annotation = ' '.join(argss[1:])
+    datasetName = self.getPath(datasetName)
+
+    result = returnSingleResult(self.fc.addDatasetAnnotation({datasetName: annotation}))
     if not result['OK']:
       print("ERROR: failed to add annotation:", result['Message'])
     else:
       print("Successfully added annotation to", datasetName)
 
-  def dataset_status( self, argss ):
+  def dataset_status(self, argss):
     """ Display the dataset status
     """
     datasetName = argss[0]
-    result = returnSingleResult( self.fc.getDatasetParameters( datasetName ) )
+    result = returnSingleResult(self.fc.getDatasetParameters(datasetName))
     if not result['OK']:
       print("ERROR: failed to get status of dataset:", result['Message'])
     else:
       parDict = result['Value']
-      for par,value in parDict.items():
+      for par, value in parDict.items():
         print(par.rjust(20), ':', value)
 
-  def dataset_rm( self, argss ):
+  def dataset_rm(self, argss):
     """ Remove the given dataset
     """
     datasetName = argss[0]
-    result = returnSingleResult( self.fc.removeDataset( datasetName ) )
+    result = returnSingleResult(self.fc.removeDataset(datasetName))
     if not result['OK']:
       print("ERROR: failed to remove dataset:", result['Message'])
     else:
       print("Successfully removed dataset", datasetName)
 
-  def dataset_check( self, argss ):
+  def dataset_check(self, argss):
     """ check if the dataset parameters are still valid
     """
     datasetName = argss[0]
-    result = returnSingleResult( self.fc.checkDataset( datasetName ) )
+    result = returnSingleResult(self.fc.checkDataset(datasetName))
     if not result['OK']:
       print("ERROR: failed to check dataset:", result['Message'])
     else:
@@ -2090,42 +2093,42 @@ File Catalog Client $Revision: 1.17 $Date:
         print("Dataset changed:")
         for par in changeDict:
           print("   ", par, ': ', changeDict[par][0], '->', changeDict[par][1])
-          
-  def dataset_update( self, argss ):
+
+  def dataset_update(self, argss):
     """ Update the given dataset parameters
     """
     datasetName = argss[0]
-    result = returnSingleResult( self.fc.updateDataset( datasetName ) )
+    result = returnSingleResult(self.fc.updateDataset(datasetName))
     if not result['OK']:
       print("ERROR: failed to update dataset:", result['Message'])
     else:
       print("Successfully updated dataset", datasetName)
 
-  def dataset_freeze( self, argss ):
+  def dataset_freeze(self, argss):
     """ Freeze the given dataset
     """
     datasetName = argss[0]
-    result = returnSingleResult( self.fc.freezeDataset( datasetName ) )
+    result = returnSingleResult(self.fc.freezeDataset(datasetName))
     if not result['OK']:
       print("ERROR: failed to freeze dataset:", result['Message'])
     else:
       print("Successfully frozen dataset", datasetName)
 
-  def dataset_release( self, argss ):
+  def dataset_release(self, argss):
     """ Release the given dataset
     """
     datasetName = argss[0]
-    result = returnSingleResult( self.fc.releaseDataset( datasetName ) )
+    result = returnSingleResult(self.fc.releaseDataset(datasetName))
     if not result['OK']:
       print("ERROR: failed to release dataset:", result['Message'])
     else:
       print("Successfully released dataset", datasetName)
 
-  def dataset_files( self, argss ):
+  def dataset_files(self, argss):
     """ Get the given dataset files
     """
     datasetName = argss[0]
-    result = returnSingleResult( self.fc.getDatasetFiles( datasetName ) )
+    result = returnSingleResult(self.fc.getDatasetFiles(datasetName))
     if not result['OK']:
       print("ERROR: failed to get files for dataset:", result['Message'])
     else:
@@ -2133,7 +2136,7 @@ File Catalog Client $Revision: 1.17 $Date:
       for lfn in lfnList:
         print(lfn)
 
-  def dataset_show( self, argss ):
+  def dataset_show(self, argss):
     """ Show existing requested datasets
     """
     long_ = False
@@ -2141,10 +2144,10 @@ File Catalog Client $Revision: 1.17 $Date:
       long_ = True
       del argss[argss.index('-l')]
     datasetName = '*'
-    if len( argss ) > 0:
+    if len(argss) > 0:
       datasetName = argss[0]
 
-    result = returnSingleResult( self.fc.getDatasets( datasetName ) )
+    result = returnSingleResult(self.fc.getDatasets(datasetName))
     if not result['OK']:
       print("ERROR: failed to get datasets")
       return
@@ -2154,83 +2157,84 @@ File Catalog Client $Revision: 1.17 $Date:
       for dName in datasetDict.keys():
         print(dName)
     else:
-      fields = ['Key','Value']
+      fields = ['Key', 'Value']
       datasets = datasetDict.keys()
       dsAnnotations = {}
-      resultAnno = returnSingleResult( self.fc.getDatasetAnnotation( datasets ) )
+      resultAnno = returnSingleResult(self.fc.getDatasetAnnotation(datasets))
       if resultAnno['OK']:
         dsAnnotations = resultAnno['Value']
       for dName in datasets:
         records = []
         print('\n' + dName + ":")
         print('=' * (len(dName) + 1))
-        for key,value in datasetDict[dName].items():
-          records.append( [key,str( value )] )
+        for key, value in datasetDict[dName].items():
+          records.append([key, str(value)])
         if dName in dsAnnotations:
-          records.append( [ 'Annotation',dsAnnotations[dName] ] )  
-        printTable( fields, records )  
+          records.append(['Annotation', dsAnnotations[dName]])
+        printTable(fields, records)
 
-  def do_stats( self, args ):
+  def do_stats(self, args):
     """ Get the catalog statistics
-    
+
         Usage:
           stats
     """
-    
+
     try:
       result = self.fc.getCatalogCounters()
-    except AttributeError, x:
+    except AttributeError as x:
       print("Error: no statistics available for this type of catalog:", str(x))
       return
-      
+
     if not result['OK']:
       print(("Error: %s" % result['Message']))
-      return 
-    fields = ['Counter','Number']
+      return
+    fields = ['Counter', 'Number']
     records = []
-    for key,value in result['Value'].items():
-      records.append( ( key, str(value) ) )
+    for key, value in result['Value'].items():
+      records.append((key, str(value)))
       #print key.rjust(15),':',result['Value'][key]
-    printTable( fields, records )    
-      
-  def do_rebuild( self, args ):
+    printTable(fields, records)
+
+  def do_rebuild(self, args):
     """ Rebuild auxiliary tables
-    
+
         Usage:
            rebuild <option>
     """
-    
+
     argss = args.split()
     _option = argss[0]
     start = time.time()
-    result = self.fc.rebuildDirectoryUsage( timeout = 300 )
+    result = self.fc.rebuildDirectoryUsage(timeout=300)
     if not result['OK']:
       print("Error:", result['Message'])
-      return 
-      
+      return
+
     total = time.time() - start
     print("Directory storage info rebuilt in %.2f sec", total)
-    
-  def do_repair( self, args ):
+
+  def do_repair(self, args):
     """ Repair catalog inconsistencies
-    
+
         Usage:
            repair catalog
     """
-    
+
     argss = args.split()
     _option = argss[0]
     start = time.time()
     result = self.fc.repairCatalog()
     if not result['OK']:
       print("Error:", result['Message'])
-      return 
-      
+      return
+
     total = time.time() - start
     print("Catalog repaired in %.2f sec" % total)
-      
+
+
 if __name__ == "__main__":
-  
+
   if len(sys.argv) > 2:
     print(FileCatalogClientCLI.__doc__)
     sys.exit(2)
@@ -2238,10 +2242,9 @@ if __name__ == "__main__":
   from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
   catalogs = None
   if len(sys.argv) == 2:
-    catalogs = [ sys.argv[1] ]
-  fc = FileCatalog( catalogs = catalogs )
-  cli = FileCatalogClientCLI( fc )
+    catalogs = [sys.argv[1]]
+  fc = FileCatalog(catalogs=catalogs)
+  cli = FileCatalogClientCLI(fc)
   if catalogs:
     print("Starting %s file catalog client", catalogs[0])
   cli.cmdloop()
-      

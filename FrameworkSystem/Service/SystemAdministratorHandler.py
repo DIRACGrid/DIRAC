@@ -467,14 +467,12 @@ class SystemAdministratorHandler(RequestHandler):
       startDir = gComponentInstaller.startDir
       currentLog = startDir + '/' + system + '_' + cname + '/log/current'
       try:
-        logFile = file(currentLog, 'r')
+        with open(currentLog, 'r') as logFile:
+          logLines = logFile.readlines()
       except IOError as err:
         gLogger.error("File does not exists:", currentLog)
         resultDict[comp] = {'ErrorsHour': -1, 'ErrorsDay': -1, 'LastError': currentLog + '::' + repr(err)}
         continue
-
-      logLines = logFile.readlines()
-      logFile.close()
 
       errors_1 = 0
       errors_24 = 0

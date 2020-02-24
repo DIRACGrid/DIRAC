@@ -82,9 +82,8 @@ class X509CRL(object):
         os.write(fd, str(self))
         os.close(fd)
       else:
-        fd = file(filename, "w")
-        fd.write(str(self))
-        fd.close()
+        with open(filename, "w") as fd:
+          fd.write(str(self))
     except Exception as e:
       return S_ERROR(DErrno.EWF, "%s: %s" % (filename, repr(e).replace(',)', ')')))
     try:

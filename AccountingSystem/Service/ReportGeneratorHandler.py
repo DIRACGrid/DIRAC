@@ -4,7 +4,8 @@
 __RCSID__ = "$Id$"
 
 from past.builtins import long
-import types
+
+import six
 import os
 import datetime
 
@@ -28,13 +29,13 @@ class ReportGeneratorHandler(RequestHandler):
   """
 
   __acDB = None
-  __reportRequestDict = {'typeName': types.StringTypes,
-                         'reportName': types.StringTypes,
+  __reportRequestDict = {'typeName': six.string_types,
+                         'reportName': six.string_types,
                          'startTime': (datetime.datetime, datetime.date),
                          'endTime': (datetime.datetime, datetime.date),
-                         'condDict': types.DictType,
-                         'grouping': types.StringTypes,
-                         'extraArgs': types.DictType}
+                         'condDict': dict,
+                         'grouping': six.string_types,
+                         'extraArgs': dict}
 
   @classmethod
   def initializeHandler(cls, serviceInfo):
@@ -50,15 +51,16 @@ class ReportGeneratorHandler(RequestHandler):
     mkDir(dataPath)
     try:
       testFile = "%s/acc.jarl.test" % dataPath
-      fd = file(testFile, "w")
-      fd.close()
+      with open(testFile, "w"):
+        pass
       os.unlink(testFile)
     except IOError:
       gLogger.fatal("Can't write to %s" % dataPath)
       return S_ERROR("Data location is not writable")
     gDataCache.setGraphsLocation(dataPath)
     gMonitor.registerActivity("plotsDrawn", "Drawn plot images", "Accounting reports", "plots", gMonitor.OP_SUM)
-    gMonitor.registerActivity("reportsRequested", "Generated reports", "Accounting reports", "reports", gMonitor.OP_SUM)
+    gMonitor.registerActivity("reportsRequested", "Generated reports", "Accounting reports",
+                              "reports", gMonitor.OP_SUM)
     return S_OK()
 
   def __checkPlotRequest(self, reportRequest):
@@ -98,7 +100,7 @@ class ReportGeneratorHandler(RequestHandler):
 
     return S_OK(reportRequest)
 
-  types_generatePlot = [types.DictType]
+  types_generatePlot = [dict]
 
   def export_generatePlot(self, reportRequest):
     """
@@ -120,7 +122,7 @@ class ReportGeneratorHandler(RequestHandler):
     reportRequest['generatePlot'] = True
     return reporter.generate(reportRequest, self.getRemoteCredentials())
 
-  types_getReport = [types.DictType]
+  types_getReport = [dict]
 
   def export_getReport(self, reportRequest):
     """
@@ -142,7 +144,7 @@ class ReportGeneratorHandler(RequestHandler):
     reportRequest['generatePlot'] = False
     return reporter.generate(reportRequest, self.getRemoteCredentials())
 
-  types_listReports = [types.StringTypes]
+  types_listReports = [six.string_types]
 
   def export_listReports(self, typeName):
     """
@@ -154,7 +156,7 @@ class ReportGeneratorHandler(RequestHandler):
     reporter = MainReporter(self.__acDB, self.serviceInfoDict['clientSetup'])
     return reporter.list(typeName)
 
-  types_listUniqueKeyValues = [types.StringTypes]
+  types_listUniqueKeyValues = [six.string_types]
 
   def export_listUniqueKeyValues(self, typeName):
     """

@@ -58,9 +58,8 @@ class PlotCache(object):
   def getPlotData(self, plotFileName):
     filename = "%s/%s" % (self.plotsLocation, plotFileName)
     try:
-      fd = file(filename, "rb")
-      data = fd.read()
-      fd.close()
+      with open(filename, "rb") as fd:
+        data = fd.read()
     except Exception as v:
       return S_ERROR("Can't open file %s: %s" % (plotFileName, str(v)))
     return S_OK(data)

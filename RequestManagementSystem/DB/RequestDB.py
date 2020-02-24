@@ -174,14 +174,19 @@ class RequestDB(object):
 
     self.log = gLogger.getSubLogger('RequestDB')
     # Initialize the connection info
-    self.__getDBConnectionInfo( 'RequestManagement/ReqDB' )
 
+    self.__getDBConnectionInfo('RequestManagement/ReqDB')
 
-
-    runDebug = ( gLogger.getLevel() == 'DEBUG' )
-    self.engine = create_engine('mysql://%s:%s@%s:%s/%s' %
-                                (self.dbUser, self.dbPass, self.dbHost, self.dbPort, self.dbName),
-                                echo=runDebug, pool_recycle=3600)
+    runDebug = (gLogger.getLevel() == 'DEBUG')
+    self.engine = create_engine(
+        'mysql://%s:%s@%s:%s/%s' %
+        (self.dbUser,
+         self.dbPass,
+         self.dbHost,
+         self.dbPort,
+         self.dbName),
+        echo=runDebug,
+        pool_recycle=3600)
 
     metadata.bind = self.engine
 

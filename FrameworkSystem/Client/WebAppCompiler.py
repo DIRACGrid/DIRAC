@@ -167,7 +167,7 @@ class WebAppCompiler(object):
     if not os.path.isdir(buildDir):
       try:
         os.makedirs(buildDir)
-      except IOError, excp:
+      except IOError as excp:
         return S_ERROR("Can't create build dir %s" % excp)
     outFile = os.path.join(buildDir, "index.html")
     compressedJsFile = os.path.join(buildDir, appName + '.js')
@@ -311,14 +311,14 @@ class WebAppCompiler(object):
 
     try:
       self.__cmd(["sencha"])
-    except OSError, _:
+    except OSError:
       try:
         path = os.path.join(self.__senchacmddir, self.__senchaVersion)
         if os.path.exists(path):
           sys.path.append(path)
           syspath = os.environ['PATH']
           os.environ['PATH'] = path + os.pathsep + syspath
-      except OSError, _:
+      except OSError:
         raise OSError("sencha cmd is not installed!")
 
   def getAppDependencies(self):
@@ -357,7 +357,7 @@ class WebAppCompiler(object):
         continue
       try:
         modCFG = CFG().loadFromFile(cfgPath)
-      except Exception, excp:
+      except Exception as excp:
         gLogger.error("Could not load %s: %s" % (cfgPath, excp))
         continue
       gLogger.verbose("Loaded %s" % cfgPath)
@@ -370,7 +370,7 @@ class WebAppCompiler(object):
           gLogger.verbose("%s:%s is an absolute definition" % (modName, current))
           try:
             webCFG.deleteKey(current)
-          except:
+          except Exception:
             pass
           modCFG.deleteKey("%s/AbsoluteDefinition" % current)
         else:

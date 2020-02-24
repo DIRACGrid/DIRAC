@@ -7,7 +7,6 @@
 """
 
 import six
-import types
 import traceback
 from DIRAC.Core.Utilities.DErrno import strerror
 
@@ -61,7 +60,7 @@ def S_OK(value=None):
 
 def isReturnStructure(unk):
 
-  if not isinstance(unk, types.DictType):
+  if not isinstance(unk, dict):
     return False
   if 'OK' not in unk:
     return False

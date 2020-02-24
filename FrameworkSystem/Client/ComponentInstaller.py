@@ -1089,9 +1089,8 @@ class ComponentInstaller(object):
       for component in components:
         try:
           runFile = os.path.join(systemDir, component, 'run')
-          rfile = open(runFile, 'r')
-          body = rfile.read()
-          rfile.close()
+          with open(runFile, 'r') as rfile:
+            body = rfile.read()
 
           for cType in self.componentTypes:
             if body.find('dirac-%s' % (cType)) != -1:
@@ -1124,9 +1123,8 @@ class ComponentInstaller(object):
     for component in componentList:
       try:
         runFile = os.path.join(self.startDir, component, 'run')
-        rfile = open(runFile, 'r')
-        body = rfile.read()
-        rfile.close()
+        with open(runFile, 'r') as rfile:
+          body = rfile.read()
 
         for cType in self.componentTypes:
           if body.find('dirac-%s' % (cType)) != -1:
@@ -1461,9 +1459,8 @@ class ComponentInstaller(object):
       if not os.path.exists(logFileName):
         retDict[compName] = 'No log file found'
       else:
-        logFile = open(logFileName, 'r')
-        lines = [line.strip() for line in logFile.readlines()]
-        logFile.close()
+        with open(logFileName, 'r') as logFile:
+          lines = [line.strip() for line in logFile.readlines()]
 
         if len(lines) < length:
           retDict[compName] = '\n'.join(lines)
@@ -1898,8 +1895,8 @@ class ComponentInstaller(object):
       self._createRunitLog(runitCompDir)
 
       runFile = os.path.join(runitCompDir, 'run')
-      fd = open(runFile, 'w')
-      fd.write(
+      with open(runFile, 'w') as fd:
+        fd.write(
           """#!/bin/bash
   rcfile=%(bashrc)s
   [ -e $rcfile ] && source $rcfile
@@ -1916,7 +1913,6 @@ class ComponentInstaller(object):
               'system': system,
               'component': component,
               'componentCfg': componentCfg})
-      fd.close()
 
       os.chmod(runFile, self.gDefaultPerms)
 
