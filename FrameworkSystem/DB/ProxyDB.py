@@ -1036,6 +1036,7 @@ class ProxyDB(DB):
 
         :return: S_OK()/S_ERROR()
     """
+
     try:
       sUserDN = self._escapeString(userDN)['Value']
       sUserGroup = self._escapeString(userGroup)['Value']
@@ -1059,8 +1060,13 @@ class ProxyDB(DB):
       # If it's not in the db and we're removing the persistency then do nothing
       if not persistent:
         return S_OK()
-      cmd = "INSERT INTO `ProxyDB_Proxies` ( UserDN, UserGroup, Pem, ExpirationTime, PersistentFlag ) VALUES "
-      cmd += "( %s, %s, '', UTC_TIMESTAMP(), 'True' )" % (sUserDN, sUserGroup)
+      result = Registry.getUsernameForDN(userDN)
+      if not result['OK']:
+        self.log.error("setPersistencyFlag: Can not retrieve username for DN", userDN)
+        return result
+      userName = result['Value']
+      cmd = "INSERT INTO `ProxyDB_Proxies` ( UserName, UserDN, UserGroup, Pem, ExpirationTime, PersistentFlag ) VALUES "
+      cmd += "( %s, %s, %s, '', UTC_TIMESTAMP(), 'True' )" % (userName, sUserDN, sUserGroup)
     else:
       cmd = "UPDATE `ProxyDB_Proxies` SET PersistentFlag='%s' WHERE UserDN=%s AND UserGroup=%s" % (sqlFlag,
                                                                                                    sUserDN,
