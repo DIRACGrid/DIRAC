@@ -10,6 +10,7 @@ from DIRAC.Core.Base.Client import Client
 from DIRAC.Core.DISET.TransferClient import TransferClient
 from DIRAC.Core.Utilities.Plotting.FileCoding import codeRequestInFileId
 
+
 class ReportsClient(Client):
 
   def __init__(self, transferClient=None, **kwargs):
