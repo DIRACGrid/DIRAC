@@ -1,4 +1,4 @@
-[v7r1-pre16]
+[v7r1-pre17]
 
 NEW: Add environment.yml file for preparing an environment with conda
 
@@ -48,6 +48,8 @@ CHANGE: (#4416) Completing jobs are treated exactly like Running jobs, i.e. set 
 NEW: (#4416) Created a file JobStatus.py for replacing the literal job statuses, and updated many
         modules using these new variables. Note that there are still many others to change, but
         could be done gradually...
+FIX: (#4451) StalledJobAgent - use int factor to the seconds time delta
+FIX: (#4451) ProxyDB - set UserName in setPersistencyFlag() if it is a first record in ProxyDB_Proxies
 
 *DMS
 CHANGE: (#4243) FileCatalog - standard components are loaded using ObjectLoader mechanism
@@ -64,6 +66,7 @@ CHANGE: (#4410) (JSON) correct casts for serialization
 *Resources
 NEW: (#4157) ProxyProvider resources with implementation for DIRAC CA and PUSP proxy providers
 NEW: (#4276) IdProvider resources to represent external user identity providers
+FIX: (#4455) discrepancy in CE._reset() methods return value in different CE implementations
 
 *RSS
 CHANGE: (#4362) SQL query orders using list instead of tuples
