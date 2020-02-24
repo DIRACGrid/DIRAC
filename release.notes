@@ -295,6 +295,15 @@ NEW: (#4170) added Production system documentation
 CHANGE: (#4224) Pilot 3 is the default
 NEW: (#4244) Added a few notes on using the JobParameters on ElasticSearch database
 
+[v6r22p22]
+
+*Framework
+CHANGE: (#4457) Web portal compilation is done during the DIRAC distribution, it is not
+        required to compile during the installation
+
+*RSS
+FIX: (#4452) PublisherHandler - fix UnboundLocalError
+
 [v6r22p21]
 
 *Core

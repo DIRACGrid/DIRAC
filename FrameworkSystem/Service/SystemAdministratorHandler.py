@@ -345,21 +345,6 @@ class SystemAdministratorHandler(RequestHandler):
         message = "Failed to update software to %s" % version
       return S_ERROR(message)
 
-    if webPortal:
-      # we have a to compile the new web portal...
-      webappCompileScript = os.path.join(
-          gComponentInstaller.instancePath, 'pro', "WebAppDIRAC/scripts", "dirac-webapp-compile.py")
-      outfile = "%s.out" % webappCompileScript
-      err = "%s.err" % webappCompileScript
-      result = systemCall(False, ['dirac-webapp-compile', ' > ', outfile, ' 2> ', err])
-      if not result['OK']:
-        return result
-      if result['Value'][0] != 0:
-        error = result['Value'][1].split('\n')
-        error.extend(result['Value'][2].split('\n'))
-        error.append('Failed to compile the java script!')
-        return S_ERROR('\n'.join(error))
-
     return S_OK()
 
   types_revertSoftware = []

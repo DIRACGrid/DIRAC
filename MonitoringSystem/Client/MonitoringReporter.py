@@ -193,4 +193,6 @@ class MonitoringReporter(object):
         gLogger.error("Fail to create Producer:", result['Message'])
       else:
         mqProducer = result['Value']
+    else:
+      gLogger.warn("No MQ setup for Monitoring in CS. You are running Monitoring without failover:", result['Message'])
     return mqProducer
