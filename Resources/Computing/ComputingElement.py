@@ -107,7 +107,7 @@ class ComputingElement(object):
         return result
       os.environ['X509_USER_PROXY'] = result['Value']
 
-    gLogger.debug("Set proxy variable X509_USER_PROXY to %s" % os.environ['X509_USER_PROXY'])
+    self.log.debug("Set proxy variable X509_USER_PROXY to %s" % os.environ['X509_USER_PROXY'])
     return S_OK()
 
   def isProxyValid(self, valid=1000):
@@ -130,10 +130,17 @@ class ComputingElement(object):
     """ Initialize the CE parameters after they are collected from various sources
     """
 
+    self.log.debug("Initializing the CE parameters")
+
     # Collect global defaults first
     for section in ['/Resources/Computing/CEDefaults', '/Resources/Computing/%s' % self.ceName]:
       result = gConfig.getOptionsDict(section)
-      if result['OK']:
+
+      self.log.debug(result)
+
+      if not result['OK']:
+        self.log.warn(result['Message'])
+      else:
         ceOptions = result['Value']
         for key in ceOptions:
           if key in INTEGER_PARAMETERS:
@@ -195,7 +202,7 @@ class ComputingElement(object):
     objectLoader = ObjectLoader()
     result = objectLoader.loadObject('Resources.Computing.BatchSystems.%s' % self.batchSystem, self.batchSystem)
     if not result['OK']:
-      gLogger.error('Failed to load batch object: %s' % result['Message'])
+      self.log.error('Failed to load batch object: %s' % result['Message'])
       return result
     batchClass = result['Value']
     self.batchModuleFile = result['ModuleFile']
@@ -273,7 +280,7 @@ class ComputingElement(object):
     else:
       result = self.ceParameters.get('CEType')
       if result and result == 'CREAM':
-        result = self.getCEStatus(jobIDList)
+        result = self.getCEStatus(jobIDList)  # pylint: disable=too-many-function-args
       else:
         result = self.getCEStatus()
       if not result['OK']:
@@ -460,9 +467,10 @@ class ComputingElement(object):
     # the getCEStatus is implemented in the each of the specific CE classes
     result = self.getCEStatus()
     if result['OK']:
-      # 'AvailableProcessors' ATM is only set by the PoolComputingElement
       ceDict['NumberOfProcessors'] = result.get('AvailableProcessors',
                                                 result.get('NumberOfProcessors', 1))
+    else:
+      self.log.error("Failure getting CE status", "we keep going without the number of waiting and running pilots")
 
     return S_OK(ceDict)
 
@@ -481,7 +489,7 @@ class ComputingElement(object):
     return S_ERROR('ComputingElement: %s should be implemented in a subclass' % (name))
 
   #############################################################################
-  def getCEStatus(self, jobIDList=None):  # pylint: disable=unused-argument
+  def getCEStatus(self):
     """ Method to get dynamic job information, can be overridden in sub-class.
     """
     name = 'getCEStatus()'

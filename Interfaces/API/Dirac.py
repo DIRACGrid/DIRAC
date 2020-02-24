@@ -462,7 +462,6 @@ class Dirac(API):
     localCfg.addDefaultEntry('ControlDirectory', os.getcwd())
     localCfg.addDefaultEntry('MaxCycles', 1)
     localCfg.addDefaultEntry('/LocalSite/WorkingDirectory', os.getcwd())
-    localCfg.addDefaultEntry('/LocalSite/MaxCPUTime', 300000)
     localCfg.addDefaultEntry('/LocalSite/CPUTime', 300000)
     localCfg.addDefaultEntry('/LocalSite/OwnerGroup', self.__getCurrentGroup())
     # Running twice in the same process, the second time it use the initial JobID.

@@ -421,6 +421,11 @@ class JobWrapper(object):
           self.__setJobParam('ApplicationError', 'None reported', sendFlag=True)
       else:
         outputs = threadResult['Value']
+    else:  # if the execution thread didn't complete
+      self.log.error('Application thread did not complete')
+      self.__report('Failed', 'Application thread did not complete', sendFlag=True)
+      self.__setJobParam('ApplicationError', 'Application thread did not complete', sendFlag=True)
+      return S_ERROR('No outputs generated from job execution')
 
     if 'CPU' in EXECUTION_RESULT:
       cpuString = ' '.join(['%.2f' % x for x in EXECUTION_RESULT['CPU']])
