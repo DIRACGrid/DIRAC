@@ -1,3 +1,17 @@
+[v7r0p14]
+
+*Framework
+CHANGE: (#4458) Remove LHCb specific code used to install cx_Oracle
+
+*Core
+CHANGE: (#4460) agents exit with sys.exit(2) in case of errors
+
+*Resources
+CHANGE: (#4460) InProcess CE correctly reports number of processors available
+
+*WMS
+FIX: (#4454) PilotWrapper: try to untar also with system tar
+
 [v7r0p13]
 
 *Core
