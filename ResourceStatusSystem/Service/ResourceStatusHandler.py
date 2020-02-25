@@ -9,12 +9,10 @@
 __RCSID__ = '$Id$'
 
 from DIRAC import gLogger, S_OK
-from DIRAC.Core.DISET.RequestHandler import RequestHandler
-from DIRAC.ResourceStatusSystem.DB.ResourceStatusDB import ResourceStatusDB
-
+from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
+from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 
 db = None
-
 
 def convert(table, params):
   """ Conversion utility for backward compatibility
@@ -44,15 +42,48 @@ def convert(table, params):
 
   return params, table
 
+def loadResourceStatusComponent(moduleName, className):
+  """
+  Create an object of a given database component.
 
-def initializeResourceStatusHandler(_serviceInfo):
-  '''
-    Handler initialization, where we set the ResourceStatusDB as global db, and
-    we instantiate the synchronizer.
-  '''
+  :param moduleName: module name to be loaded
+  :param className: class name
+  :return: object instance wrapped in a standard Dirac return object.
+  """
+
+  objectLoader = ObjectLoader()
+  componentModule = 'ResourceStatusSystem.DB.%s' % (moduleName,)
+  result = objectLoader.loadObject(componentModule, className)
+  if not result['OK']:
+    gLogger.error('Failed to load RSS component', '%s: %s' % (moduleName, result['Message']))
+    return result
+  componentClass = result['Value']
+  component = componentClass()
+  return S_OK(component)
+
+def initializeResourceStatusHandler(serviceInfo):
+  """
+    Handler initialization, where we:
+      dynamically load ResourceStatus database plugin module, as advised by the config,
+      (assumes that the module name and a class name are the same)
+      set the ResourceManagementDB as global db.
+
+      :param serviceInfo: service info dictionary
+      :return: standard Dirac return object
+
+  """
+
+  gLogger.debug("Initializing ResourceStatus Service with the following DB component:")
+  defaultOption, defaultClass = 'ResourceStatusDB', 'ResourceStatusDB'
+  configValue = getServiceOption(serviceInfo, defaultOption, defaultClass)
+  gLogger.info("Option:%-20s Class: %-20s" % (str(defaultOption), str(configValue)))
+  result = loadResourceStatusComponent(configValue, configValue)
+
+  if not result['OK']:
+    return result
 
   global db
-  db = ResourceStatusDB()
+  db = result['Value']
 
   return S_OK()
 
