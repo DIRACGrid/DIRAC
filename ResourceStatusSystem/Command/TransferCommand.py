@@ -7,7 +7,6 @@ __RCSID__ = '$Id$'
 from datetime import datetime, timedelta
 
 from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
@@ -28,13 +27,6 @@ class TransferCommand(Command):
       self.rClient = self.apis['ReportsClient']
     else:
       self.rClient = ReportsClient()
-
-    if 'ReportGenerator' in self.apis:
-      self.rgClient = self.apis['ReportGenerator']
-    else:
-      self.rgClient = RPCClient('Accounting/ReportGenerator')
-
-    self.rClient.rpcClient = self.rgClient
 
     if 'ResourceManagementClient' in self.apis:
       self.rmClient = self.apis['ResourceManagementClient']

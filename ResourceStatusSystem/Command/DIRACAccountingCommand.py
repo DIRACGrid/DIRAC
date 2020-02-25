@@ -14,7 +14,6 @@ from datetime import datetime, timedelta
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
-from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.ResourceStatusSystem.Command.Command import Command
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 
@@ -28,17 +27,10 @@ class DIRACAccountingCommand(Command):
 
     super(DIRACAccountingCommand, self).__init__(args, clients)
 
-    if 'ReportGenerator' in self.apis:
-      self.rgClient = self.apis['ReportGenerator']
-    else:
-      self.rgClient = RPCClient('Accounting/ReportGenerator')
-
     if 'ReportsClient' in self.apis:
       self.rClient = self.apis['ReportsClient']
     else:
       self.rClient = ReportsClient()
-
-    self.rClient.rpcClient = self.rgClient
 
   def doCommand(self):
     """
@@ -102,11 +94,6 @@ class TransferQualityCommand(Command):
   def __init__(self, args=None, clients=None):
 
     super(TransferQualityCommand, self).__init__(args, clients)
-
-    if 'ReportGenerator' in self.apis:
-      self.rgClient = self.apis['ReportGenerator']
-    else:
-      self.rgClient = RPCClient('Accounting/ReportGenerator')
 
     if 'ReportsClient' in self.apis:
       self.rClient = self.apis['ReportsClient']

@@ -19,6 +19,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 from DIRAC.ResourceStatusSystem.Command.Command import Command
 from DIRAC.ResourceStatusSystem.Utilities import CSHelpers
 
+
 class SuccessfullJobsBySiteSplittedCommand(Command):
 
   def __init__(self, args=None, clients=None):
@@ -29,13 +30,6 @@ class SuccessfullJobsBySiteSplittedCommand(Command):
       self.rClient = self.apis['ReportsClient']
     else:
       self.rClient = ReportsClient()
-
-    if 'ReportGenerator' in self.apis:
-      self.rgClient = self.apis['ReportGenerator']
-    else:
-      self.rgClient = RPCClient('Accounting/ReportGenerator')
-
-    self.rClient.rpcClient = self.rgClient
 
   def doCommand(self):
     """
@@ -110,13 +104,6 @@ class FailedJobsBySiteSplittedCommand(Command):
       self.rClient = self.apis['ReportsClient']
     else:
       self.rClient = ReportsClient()
-
-    if 'ReportGenerator' in self.apis:
-      self.rgClient = self.apis['ReportGenerator']
-    else:
-      self.rgClient = RPCClient('Accounting/ReportGenerator')
-
-    self.rClient.rpcClient = self.rgClient
 
   def doCommand(self):
     """
@@ -193,13 +180,6 @@ class SuccessfullPilotsBySiteSplittedCommand(Command):
     else:
       self.rClient = ReportsClient()
 
-    if 'ReportGenerator' in self.apis:
-      self.rgClient = self.apis['ReportGenerator']
-    else:
-      self.rgClient = RPCClient('Accounting/ReportGenerator')
-
-    self.rClient.rpcClient = self.rgClient
-
   def doCommand(self):
     """
     Returns successfull pilots using the DIRAC accounting system for every site
@@ -275,13 +255,6 @@ class FailedPilotsBySiteSplittedCommand(Command):
     else:
       self.rClient = ReportsClient()
 
-    if 'ReportGenerator' in self.apis:
-      self.rgClient = self.apis['ReportGenerator']
-    else:
-      self.rgClient = RPCClient('Accounting/ReportGenerator')
-
-    self.rClient.rpcClient = self.rgClient
-
   def doCommand(self):
     """
     Returns failed jobs using the DIRAC accounting system for every site
@@ -356,13 +329,6 @@ class SuccessfullPilotsByCESplittedCommand(Command):
       self.rClient = self.apis['ReportsClient']
     else:
       self.rClient = ReportsClient()
-
-    if 'ReportGenerator' in self.apis:
-      self.rgClient = self.apis['ReportGenerator']
-    else:
-      self.rgClient = RPCClient('Accounting/ReportGenerator')
-
-    self.rClient.rpcClient = self.rgClient
 
   def doCommand(self):
     """
