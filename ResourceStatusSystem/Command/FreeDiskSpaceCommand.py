@@ -15,7 +15,7 @@ import errno
 
 from datetime import datetime
 
-from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.File import convertSizeUnits
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.ResourceStatusSystem.Command.Command import Command
@@ -151,11 +151,47 @@ class FreeDiskSpaceCommand(Command):
         # keeping TB as default
         diskSpace = self.doNew((name, 'MB'))
         if not diskSpace['OK']:
-          gLogger.warn("Unable to calculate free/total disk space", "name: %s" % name)
-          gLogger.warn(diskSpace['Message'])
+          self.log.warn("Unable to calculate free/total disk space", "name: %s" % name)
+          self.log.warn(diskSpace['Message'])
           continue
       except Exception as excp:  # pylint: disable=broad-except
-        gLogger.error("Failed to get SE %s FreeDiskSpace information (SE skipped) " % name)
-        gLogger.exception("Operation finished  with exception: ", lException=excp)
+        self.log.error("Failed to get SE FreeDiskSpace information ==> SE skipped", name)
+        self.log.exception("Operation finished with exception: ", lException=excp)
+
+    return S_OK()
+
+  def _clean(self, toDelete=None):
+    """ Clean the spaceTokenOccupancy table from old endpoints
+
+        :param tuple toDelete: endpoint to remove (endpoint, storage_element_name),
+                               e.g. ('httpg://srm-lhcb.cern.ch:8443/srm/managerv2', CERN-RAW)
+    """
+    if not toDelete:
+      toDelete = []
+
+      res = self.rmClient.selectSpaceTokenOccupancyCache()
+      if not res['OK']:
+        return res
+      storedSEsSet = set([(sse[0], sse[1]) for sse in res['Value']])
+
+      currentSEsSet = set()
+      currentSEs = DMSHelpers().getStorageElements()
+      for cse in currentSEs:
+        res = CSHelpers.getStorageElementEndpoint(cse)
+        if not res['OK']:
+          self.log.warn("Could not get endpoint", res['Message'])
+          continue
+        endpoint = res['Value'][0]
+
+        currentSEsSet.add((endpoint, cse))
+      toDelete = list(storedSEsSet - currentSEsSet)
+
+    else:
+      toDelete = [toDelete]
+
+    for ep in toDelete:
+      res = self.rmClient.deleteSpaceTokenOccupancyCache(ep[0], ep[1])
+      if not res['OK']:
+        self.log.warn("Could not delete entry from SpaceTokenOccupancyCache", res['Message'])
 
     return S_OK()
