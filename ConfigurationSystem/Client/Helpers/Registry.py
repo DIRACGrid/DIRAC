@@ -806,13 +806,6 @@ def getDNsInGroup(group, checkStatus=False):
   vomsInfo = result['Value'] if result['OK'] else {}
 
   DNs = getGroupOption(group, 'DNs', [])
-  vomsRole = getGroupOption(group, 'VOMSRole', '')
-  for dn, infoDict in vomsInfo.items():
-    if checkStatus and ((vomsRole in infoDict.get('SuspendedRoles', [])) or infoDict.get('suspended')):
-      continue
-    if vomsRole in infoDict['VOMSRoles']:
-      DNs.append(dn)
-
   for username in getGroupOption(group, 'Users', []):
     result = getDNsForUsername(username)
     if not result['OK']:
@@ -822,6 +815,14 @@ def getDNsInGroup(group, checkStatus=False):
       if not result['OK']:
         return result
       DNs.append(result['Value'])
+
+  DNs = list(set(DNs))
+  vomsRole = getGroupOption(group, 'VOMSRole', '')
+  for dn, infoDict in vomsInfo.items():
+    if checkStatus and dn in DNs and ((vomsRole in infoDict.get('SuspendedRoles', [])) or infoDict.get('suspended')):
+      DNs.remove(dn)
+    elif vomsRole in infoDict['VOMSRoles']:
+      DNs.append(dn)
 
   return list(set(DNs))
 
