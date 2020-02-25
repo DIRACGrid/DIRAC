@@ -158,9 +158,12 @@ class FreeDiskSpaceCommand(Command):
         self.log.error("Failed to get SE FreeDiskSpace information ==> SE skipped", name)
         self.log.exception("Operation finished with exception: ", lException=excp)
 
+    # Clear the cache
+    self._cleanCommand()
+
     return S_OK()
 
-  def _clean(self, toDelete=None):
+  def _cleanCommand(self, toDelete=None):
     """ Clean the spaceTokenOccupancy table from old endpoints
 
         :param tuple toDelete: endpoint to remove (endpoint, storage_element_name),
