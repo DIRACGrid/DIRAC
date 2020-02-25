@@ -76,7 +76,7 @@ def initializeResourceStatusHandler(serviceInfo):
   gLogger.debug("Initializing ResourceStatus Service with the following DB component:")
   defaultOption, defaultClass = 'ResourceStatusDB', 'ResourceStatusDB'
   configValue = getServiceOption(serviceInfo, defaultOption, defaultClass)
-  gLogger.info("Option:%-20s Class: %-20s" % (str(defaultOption), str(configValue)))
+  gLogger.debug("Option:%-20s Class: %-20s" % (str(defaultOption), str(configValue)))
   result = loadResourceStatusComponent(configValue, configValue)
 
   if not result['OK']:

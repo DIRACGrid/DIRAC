@@ -27,7 +27,7 @@ def initializeResourceManagementHandler(serviceInfo):
   gLogger.debug("Initializing ResourceManagement Service with the following DB component:")
   defaultOption, defaultClass = 'ResourceManagementDB', 'ResourceManagementDB'
   configValue = getServiceOption(serviceInfo, defaultOption, defaultClass)
-  gLogger.info("Option:%-20s Class:%-20s" % (str(defaultOption), str(configValue)))
+  gLogger.debug("Option:%-20s Class:%-20s" % (str(defaultOption), str(configValue)))
   result = loadResourceStatusComponent(configValue, configValue)
 
   if not result['OK']:
