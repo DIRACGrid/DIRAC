@@ -14,6 +14,7 @@ from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 
 db = None
 
+
 def convert(table, params):
   """ Conversion utility for backward compatibility
   """
@@ -42,6 +43,7 @@ def convert(table, params):
 
   return params, table
 
+
 def loadResourceStatusComponent(moduleName, className):
   """
   Create an object of a given database component.
@@ -60,6 +62,7 @@ def loadResourceStatusComponent(moduleName, className):
   componentClass = result['Value']
   component = componentClass()
   return S_OK(component)
+
 
 def initializeResourceStatusHandler(serviceInfo):
   """

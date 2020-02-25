@@ -11,6 +11,7 @@ from DIRAC.ResourceStatusSystem.Service.ResourceStatusHandler import loadResourc
 
 __RCSID__ = '$Id$'
 
+
 def initializeResourceManagementHandler(serviceInfo):
   """
     Handler initialization, where we:
