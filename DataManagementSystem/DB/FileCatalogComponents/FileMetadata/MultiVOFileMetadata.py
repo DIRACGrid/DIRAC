@@ -100,7 +100,7 @@ class MultiVOFileMetadata(FileMetadata):
         :return: standard Dirac result object
     """
     fName = _getMetaName(metaName, credDict)
-    return super(MultiVOFileMetadata, self).setMetaParameter(path, fName, metaValue, credDict)
+    return super(MultiVOFileMetadata, self).setFileMetaParameter(path, fName, metaValue, credDict)
 
   def getFileUserMetadata(self, path, credDict):
     """
