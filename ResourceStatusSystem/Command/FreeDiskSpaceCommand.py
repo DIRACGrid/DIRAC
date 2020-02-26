@@ -17,6 +17,8 @@ from datetime import datetime
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.File import convertSizeUnits
+from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
+from DIRAC.AccountingSystem.Client.Types.StorageOccupancy import StorageOccupancy
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.ResourceStatusSystem.Command.Command import Command
 from DIRAC.ResourceStatusSystem.Utilities import CSHelpers
@@ -102,13 +104,54 @@ class FreeDiskSpaceCommand(Command):
     return S_OK({'Free': free, 'Total': total})
 
   def _storeCommand(self, results):
-    """ Here purely for extensibility
     """
-    return self.rmClient.addOrModifySpaceTokenOccupancyCache(endpoint=results['Endpoint'],
-                                                             lastCheckTime=datetime.utcnow(),
-                                                             free=results['Free'],
-                                                             total=results['Total'],
-                                                             token=results['ElementName'])
+    Stores the results in the cache (SpaceTokenOccupancyCache),
+    and adds records to the StorageOccupancy accounting.
+
+    :param dict results: something like {'ElementName': 'CERN-HIST-EOS',
+                                         'Endpoint': 'httpg://srm-eoslhcb-bis.cern.ch:8443/srm/v2/server',
+                                         'Free': 3264963586.10073,
+                                         'Total': 8000000000.0,
+                                         'SpaceReservation': 'LHCb-Disk'}
+    :returns: S_OK/S_ERROR dict
+    """
+
+    # Stores in cache
+    res = self.rmClient.addOrModifySpaceTokenOccupancyCache(endpoint=results['Endpoint'],
+                                                            lastCheckTime=datetime.utcnow(),
+                                                            free=results['Free'],
+                                                            total=results['Total'],
+                                                            token=results['ElementName'])
+    if not res['OK']:
+      self.log.error("Error calling addOrModifySpaceTokenOccupancyCache", res['Message'])
+      return res
+
+    # Now proceed with the accounting
+    siteRes = DMSHelpers().getLocalSiteForSE(results['ElementName'])
+    if not siteRes['OK']:
+      return siteRes
+
+    accountingDict = {
+        'StorageElement': results['ElementName'],
+        'Endpoint': results['Endpoint'],
+        'Site': siteRes['Value'] if siteRes['Value'] else 'unassigned'
+    }
+
+    results['Used'] = results['Total'] - results['Free']
+
+    for sType in ['Total', 'Free', 'Used']:
+      spaceTokenAccounting = StorageOccupancy()
+      spaceTokenAccounting.setNowAsStartAndEndTime()
+      spaceTokenAccounting.setValuesFromDict(accountingDict)
+      spaceTokenAccounting.setValueByKey('SpaceType', sType)
+      spaceTokenAccounting.setValueByKey('Space', int(convertSizeUnits(results[sType], 'MB', 'B')))
+
+      res = gDataStoreClient.addRegister(spaceTokenAccounting)
+      if not res['OK']:
+        self.log.warn("Could not commit register", res['Message'])
+        continue
+
+    return gDataStoreClient.commit()
 
   def doCache(self):
     """
@@ -159,9 +202,7 @@ class FreeDiskSpaceCommand(Command):
         self.log.exception("Operation finished with exception: ", lException=excp)
 
     # Clear the cache
-    self._cleanCommand()
-
-    return S_OK()
+    return self._cleanCommand()
 
   def _cleanCommand(self, toDelete=None):
     """ Clean the spaceTokenOccupancy table from old endpoints
