@@ -7,7 +7,8 @@ __RCSID__ = "$Id$"
 from DIRAC import S_OK
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.FileMetadata.FileMetadata import FileMetadata
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryMetadata.MultiVODirectoryMetadata import \
-  _getMetaName, _getMetaNameDict, _stripSuffix
+    _getMetaName, _getMetaNameDict, _stripSuffix
+
 
 class MultiVOFileMetadata(FileMetadata):
   """
@@ -39,7 +40,7 @@ class MultiVOFileMetadata(FileMetadata):
         :param dict credDict: client credential dictionary
         :return: standard Dirac result object
     """
-    fname = _getMetaName( pName, credDict )
+    fname = _getMetaName(pName, credDict)
     return super(MultiVOFileMetadata, self).deleteMetadataField(fname, credDict)
 
   def getFileMetadataFields(self, credDict):
@@ -65,9 +66,9 @@ class MultiVOFileMetadata(FileMetadata):
         :return: standard Dirac result object
     """
     fMetaDict = _getMetaNameDict(metaDict, credDict)
-    return super( MultiVOFileMetadata, self ).setMetadata(dPath, fMetaDict, credDict)
+    return super(MultiVOFileMetadata, self).setMetadata(dPath, fMetaDict, credDict)
 
-  def removeMetadata( self, dPath, metaList, credDict ):
+  def removeMetadata(self, dPath, metaList, credDict):
     """
     Remove the specified metadata for the given directory for users own VO.
 
@@ -78,7 +79,7 @@ class MultiVOFileMetadata(FileMetadata):
     """
 
     metaList = [_getMetaName(meta, credDict) for meta in metaList]
-    result = super( MultiVOFileMetadata, self ).removeMetadata(dPath, metaList, credDict)
+    result = super(MultiVOFileMetadata, self).removeMetadata(dPath, metaList, credDict)
     if not result['OK']:
       if "FailedMetadata" in result:
         failedDict = _stripSuffix(result['FailedMetadata'], credDict)
@@ -99,7 +100,7 @@ class MultiVOFileMetadata(FileMetadata):
         :return: standard Dirac result object
     """
     fName = _getMetaName(metaName, credDict)
-    return super( MultiVOFileMetadata, self ).setMetaParameter(path, fName, metaValue, credDict)
+    return super(MultiVOFileMetadata, self).setMetaParameter(path, fName, metaValue, credDict)
 
   def getFileUserMetadata(self, path, credDict):
     """
@@ -110,11 +111,11 @@ class MultiVOFileMetadata(FileMetadata):
     :return: standard Dirac result object
     """
 
-    result = super(MultiVOFileMetadata, self).getFileUserMetadata( path, credDict)
+    result = super(MultiVOFileMetadata, self).getFileUserMetadata(path, credDict)
     if not result['OK']:
       return result
 
-    result['Value'] = _stripSuffix( result['Value'], credDict )
+    result['Value'] = _stripSuffix(result['Value'], credDict)
     return result
 
   def findFilesByMetadata(self, metaDict, path, credDict):
@@ -127,5 +128,5 @@ class MultiVOFileMetadata(FileMetadata):
         :return: S_OK/S_ERROR, Value ID:LFN dictionary of selected files
     """
 
-    fMetaDict = _getMetaNameDict( metaDict, credDict )
-    return super( MultiVOFileMetadata, self ).findFilesByMetadata(fMetaDict, path, credDict)
+    fMetaDict = _getMetaNameDict(metaDict, credDict)
+    return super(MultiVOFileMetadata, self).findFilesByMetadata(fMetaDict, path, credDict)

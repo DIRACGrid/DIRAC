@@ -11,6 +11,8 @@ from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryMetadata.Direc
 VO_SUFFIX_SEPARATOR = "___"
 
 # Metadata names mangling utilities
+
+
 def _getMetaName(meta, credDict):
   """
   Return a fully-qualified metadata name based on client-supplied metadata name and
@@ -22,6 +24,7 @@ def _getMetaName(meta, credDict):
   """
 
   return meta + _getMetaNameSuffix(credDict)
+
 
 def _getMetaNameDict(metaDict, credDict):
   """
@@ -38,6 +41,7 @@ def _getMetaNameDict(metaDict, credDict):
     fMetaDict[_getMetaName(meta, credDict)] = value
   return fMetaDict
 
+
 def _getMetaNameSuffix(credDict):
   """
   Get a VO specific suffix from user credentials.
@@ -46,7 +50,8 @@ def _getMetaNameSuffix(credDict):
   :return: VO specific suffix
   """
   vo = Registry.getGroupOption(credDict['group'], 'VO')
-  return VO_SUFFIX_SEPARATOR + vo.replace('-', '_').replace('.','_')
+  return VO_SUFFIX_SEPARATOR + vo.replace('-', '_').replace('.', '_')
+
 
 def _stripSuffix(metaDict, credDict):
   """
@@ -93,7 +98,7 @@ class MultiVODirectoryMetadata(DirectoryMetadata):
         :param dict credDict: client credential dictionary
         :return: standard Dirac result object
     """
-    fname = _getMetaName( pName, credDict )
+    fname = _getMetaName(pName, credDict)
     return super(MultiVODirectoryMetadata, self).deleteMetadataField(fname, credDict)
 
   def getMetadataFields(self, credDict):
@@ -119,9 +124,9 @@ class MultiVODirectoryMetadata(DirectoryMetadata):
         :return: standard Dirac result object
     """
     fMetaDict = _getMetaNameDict(metaDict, credDict)
-    return super( MultiVODirectoryMetadata, self ).setMetadata(dPath, fMetaDict, credDict)
+    return super(MultiVODirectoryMetadata, self).setMetadata(dPath, fMetaDict, credDict)
 
-  def removeMetadata( self, dPath, metaList, credDict ):
+  def removeMetadata(self, dPath, metaList, credDict):
     """
     Remove the specified metadata for the given directory for users own VO.
 
@@ -132,7 +137,7 @@ class MultiVODirectoryMetadata(DirectoryMetadata):
     """
 
     metaList = [_getMetaName(meta) for meta in metaList]
-    result = super( MultiVODirectoryMetadata, self ).removeMetadata(dPath, metaList, credDict)
+    result = super(MultiVODirectoryMetadata, self).removeMetadata(dPath, metaList, credDict)
     if not result['OK']:
       if "FailedMetadata" in result:
         failedDict = _stripSuffix(result['FailedMetadata'], credDict)
@@ -153,7 +158,7 @@ class MultiVODirectoryMetadata(DirectoryMetadata):
         :return: standard Dirac result object
     """
     fname = _getMetaName(metaName, credDict)
-    return super( MultiVODirectoryMetadata, self ).setMetaParameter(dPath, fname, metaValue, credDict)
+    return super(MultiVODirectoryMetadata, self).setMetaParameter(dPath, fname, metaValue, credDict)
 
   def getDirectoryMetadata(self, path, credDict, inherited=True, ownData=True):
     """
@@ -168,14 +173,14 @@ class MultiVODirectoryMetadata(DirectoryMetadata):
     :return: standard Dirac result object
     """
 
-    result = super( MultiVODirectoryMetadata, self ).getDirectoryMetadata(path, credDict, inherited, ownData)
+    result = super(MultiVODirectoryMetadata, self).getDirectoryMetadata(path, credDict, inherited, ownData)
     if not result['OK']:
       return result
 
     # Strip off the VO suffix
     result['Value'] = _stripSuffix(result['Value'], credDict)
-    result['MetadataOwner'] = _stripSuffix( result['MetadataOwner'], credDict )
-    result['MetadataType'] = _stripSuffix( result['MetadataType'], credDict )
+    result['MetadataOwner'] = _stripSuffix(result['MetadataOwner'], credDict)
+    result['MetadataType'] = _stripSuffix(result['MetadataType'], credDict)
 
     return result
 
@@ -185,4 +190,3 @@ class MultiVODirectoryMetadata(DirectoryMetadata):
     """
     fMetaDict = _getMetaNameDict(metaDict, credDict)
     return super(MultiVODirectoryMetadata, self).findDirIDsByMetadata(fMetaDict, dPath, credDict)
-
