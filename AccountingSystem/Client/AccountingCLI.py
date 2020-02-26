@@ -11,7 +11,7 @@ import sys
 from DIRAC import gLogger
 from DIRAC.Core.Base.CLI import CLI, colorize
 from DIRAC.Core.Utilities import ExitCallback
-from DIRAC.Accounting.Client.DataStoreClient import DataStoreClient
+from DIRAC.AccountingSystem.Client.DataStoreClient import DataStoreClient
 
 
 class AccountingCLI(CLI):

@@ -100,8 +100,6 @@ class TransferQualityCommand(Command):
     else:
       self.rClient = ReportsClient()
 
-    self.rClient.rpcClient = self.rgClient
-
   def doCommand(self):
     """
     Return getQuality from DIRAC's accounting ReportsClient
