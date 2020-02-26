@@ -8,6 +8,7 @@ from mock import MagicMock as Mock, patch
 
 from DIRAC import S_OK, S_ERROR
 import DIRAC
+from DIRAC import gConfig
 from DIRAC.Core.Utilities.CFG import CFG
 import DIRAC.TransformationSystem.Client.TransformationClient
 import DIRAC.Resources.Catalog.FileCatalogClient
