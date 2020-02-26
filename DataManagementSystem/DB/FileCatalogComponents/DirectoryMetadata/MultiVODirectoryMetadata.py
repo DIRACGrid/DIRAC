@@ -136,7 +136,7 @@ class MultiVODirectoryMetadata(DirectoryMetadata):
     :return: standard Dirac result object
     """
 
-    metaList = [_getMetaName(meta) for meta in metaList]
+    metaList = [_getMetaName(meta, credDict) for meta in metaList]
     result = super(MultiVODirectoryMetadata, self).removeMetadata(dPath, metaList, credDict)
     if not result['OK']:
       if "FailedMetadata" in result:
