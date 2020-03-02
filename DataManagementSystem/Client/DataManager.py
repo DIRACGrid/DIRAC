@@ -495,6 +495,13 @@ class DataManager(object):
       errStr = "Supplied file does not exist."
       log.debug(errStr, fileName)
       return S_ERROR(errStr)
+    # check if a catalog enforces a non standard path
+    if not path:
+      pfn = self.fileCatalog.getPfnFromLfn(lfn, diracSE)
+      if pfn['OK']:
+        path = pfn['Value'] if pfn['Value'] else None
+      else:
+        path = None
     # If the path is not provided then use the LFN path
     if not path:
       path = os.path.dirname(lfn)
