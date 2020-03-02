@@ -186,7 +186,7 @@ class JobState(object):
     if not source:
       source = self.__source
     return JobState.__db.logDB.addLoggingRecord(self.__jid, majorStatus, minorStatus, appStatus,
-                                       date=updateTime, source=source)
+                                                date=updateTime, source=source)
 
   right_getMinorStatus = RIGHT_GET_INFO
 
@@ -202,7 +202,7 @@ class JobState(object):
     if not source:
       source = self.__source
     return JobState.__db.logDB.addLoggingRecord(self.__jid, minor=minorStatus,
-                                       date=updateTime, source=source)
+                                                date=updateTime, source=source)
 
   def getStatus(self):
     result = JobState.__db.jobDB.getJobAttributes(self.__jid, ['Status', 'MinorStatus'])
@@ -227,7 +227,7 @@ class JobState(object):
     if not source:
       source = self.__source
     return JobState.__db.logDB.addLoggingRecord(self.__jid, application=appStatus,
-                                       date=updateTime, source=source)
+                                                date=updateTime, source=source)
 
   right_getAppStatus = RIGHT_GET_INFO
 
