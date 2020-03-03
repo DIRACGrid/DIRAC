@@ -307,6 +307,11 @@ NEW: (#4170) added Production system documentation
 CHANGE: (#4224) Pilot 3 is the default
 NEW: (#4244) Added a few notes on using the JobParameters on ElasticSearch database
 
+[v6r22p23]
+
+*DMS
+CHANGE: (#4472) DM.getFile only checks metadata of files with replicas
+
 [v6r22p22]
 
 *Framework
