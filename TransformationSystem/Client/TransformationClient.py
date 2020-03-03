@@ -2,12 +2,9 @@
 
 __RCSID__ = "$Id$"
 
-<<<<<<< HEAD
 import six
-from DIRAC                                                         import S_OK, gLogger
-=======
+
 from DIRAC import S_OK, gLogger
->>>>>>> rel-v7r0
 from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations

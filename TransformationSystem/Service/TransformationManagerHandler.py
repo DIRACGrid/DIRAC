@@ -1,13 +1,7 @@
 """ DISET request handler base class for the TransformationDB.
 """
 
-<<<<<<< HEAD
-from past.builtins import long
-import six
-from DIRAC import gLogger, S_OK, S_ERROR
-=======
 from DIRAC import S_OK, S_ERROR
->>>>>>> rel-v7r0
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.TransformationSystem.DB.TransformationDB import TransformationDB
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
