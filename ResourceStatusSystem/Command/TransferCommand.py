@@ -25,6 +25,11 @@ class TransferCommand(Command):
 
     super(TransferCommand, self).__init__(args, clients)
 
+    if 'ReportsClient' in self.apis:
+      self.rClient = self.apis['ReportsClient']
+    else:
+      self.rClient = ReportsClient()
+
     if 'ResourceManagementClient' in self.apis:
       self.rmClient = self.apis['ResourceManagementClient']
     else:
