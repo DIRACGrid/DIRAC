@@ -13,7 +13,6 @@ __RCSID__ = '$Id$'
 
 from DIRAC import S_OK
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.LCG.GOCDBClient import GOCDBClient
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
 from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
@@ -91,7 +90,6 @@ class CacheFeederAgent(AgentModule):
 
     # Reuse clients for the commands
     self.clients['GOCDBClient'] = GOCDBClient()
-    self.clients['ReportGenerator'] = RPCClient('Accounting/ReportGenerator')
     self.clients['ReportsClient'] = ReportsClient()
     self.clients['ResourceStatusClient'] = rsClass()
     self.clients['ResourceManagementClient'] = rmClass()

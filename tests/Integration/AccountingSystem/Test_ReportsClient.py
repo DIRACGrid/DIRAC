@@ -20,33 +20,16 @@ from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
 
+from DIRAC.tests.Integration.AccountingSystem.Test_DataStoreClient import createDataOperationAccountingRecord,\
+    createStorageOccupancyAccountingRecord
+
 gLogger.setLevel('DEBUG')
 
 
-def createAccountingRecord():
-  accountingDict = {}
-  accountingDict['OperationType'] = 'putAndRegister'
-  accountingDict['User'] = 'system'
-  accountingDict['Protocol'] = 'DataManager'
-  accountingDict['RegistrationTime'] = 0.0
-  accountingDict['RegistrationOK'] = 0
-  accountingDict['RegistrationTotal'] = 0
-  accountingDict['Destination'] = 'se'
-  accountingDict['TransferTotal'] = 1
-  accountingDict['TransferOK'] = 1
-  accountingDict['TransferSize'] = 1
-  accountingDict['TransferTime'] = 0.0
-  accountingDict['FinalStatus'] = 'Successful'
-  accountingDict['Source'] = 'testSite'
-  oDataOperation = DataOperation()
-  oDataOperation.setValuesFromDict(accountingDict)
-  return oDataOperation
-
-
-def test_addAndRemove():
+def test_addAndRemoveDataOperation():
 
   # just inserting one record
-  record = createAccountingRecord()
+  record = createDataOperationAccountingRecord()
   record.setStartTime()
   record.setEndTime()
   res = gDataStoreClient.addRegister(record)
@@ -65,6 +48,35 @@ def test_addAndRemove():
   res = rc.getReport('DataOperation', 'Successful transfers',
                      datetime.datetime.utcnow(), datetime.datetime.utcnow(),
                      {}, 'Destination')
+  assert res['OK']
+
+  # now removing that record
+  res = gDataStoreClient.remove(record)
+  assert res['OK']
+
+
+def test_addAndRemoveStorageOccupancy():
+
+  # just inserting one record
+  record = createStorageOccupancyAccountingRecord()
+  record.setStartTime()
+  record.setEndTime()
+  res = gDataStoreClient.addRegister(record)
+  assert res['OK']
+  res = gDataStoreClient.commit()
+  assert res['OK']
+
+  rc = ReportsClient()
+
+  res = rc.listReports('StorageOccupancy')
+  assert res['OK']
+
+  res = rc.listUniqueKeyValues('StorageOccupancy')
+  assert res['OK']
+
+  res = rc.getReport('StorageOccupancy', 'Free and Used Space',
+                     datetime.datetime.utcnow(), datetime.datetime.utcnow(),
+                     {}, 'StorageElement')
   assert res['OK']
 
   # now removing that record
