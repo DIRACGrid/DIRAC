@@ -1,3 +1,15 @@
+[v7r0p15]
+
+*Accounting
+NEW: (#4464) StorageOccupancy accounting
+
+*RSS
+NEW: (#4464) FreeDiskSpaceCommand used to fill the StorageOccupancy accounting
+CHANGE: (#4464) FreeDiskSpaceCommand can clean the from not-anymore-existing SEs
+
+*WMS
+CHANGE: (#4471) Optimizer: treat input sandboxes uploaded as LFNs ad Input Data
+
 [v7r0p14]
 
 *Framework
