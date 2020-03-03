@@ -141,7 +141,7 @@ class TransferQualityCommand(Command):
       return results
 
     pr_q_d = {channel: strToIntDict(value) for channel, value in results['data'].iteritems()}
-    
+
     # FIXME: WHAT the hell is this doing ?
     values = []
     if len(pr_q_d) == 1:
