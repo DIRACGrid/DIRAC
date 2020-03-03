@@ -93,7 +93,7 @@ class InputData(OptimizerExecutor):
       return self.setNextOptimizer()
 
     # Is there input data or not?
-    result = jobState.getInputData()
+    result = self._getInputs(jobState)
     if not result['OK']:
       self.jobLog.error("Cannot retrieve input data", result['Message'])
       return result
@@ -137,9 +137,41 @@ class InputData(OptimizerExecutor):
 
   #############################################################################
 
+  def _getInputs(self, jobState):
+    """ Return the input, if present
+
+        :param JobState jobState: the JobState object
+        :returns: S_OK/S_ERROR structure with list of LFNs
+    """
+    # Start with standard input data
+    result = jobState.getInputData()
+    if not result['OK']:
+      return result
+    inputData = result['Value']
+
+    # Check if the InputSandbox contains LFNs, and in that case treat them as input data
+    result = jobState.getManifest()
+    if not result['OK']:
+      return result
+    manifest = result['Value']
+    # isb below will look something horrible like "['/an/lfn/1.txt', 'another/one.boo' ]"
+    isb = manifest.getOption('InputSandbox')
+    if not isb:
+      return S_OK(inputData)
+    isbList = [li.replace('[', '').replace(']', '').replace("'", '') for li in isb.replace(' ', '').split(',')]
+    for li in isbList:
+      if li.startswith('LFN:'):
+        inputData.append(li.replace('LFN:', ''))
+    return S_OK(inputData)
+
   @executeWithUserProxy
   def _resolveInputData(self, jobState, inputData):
     """ This method checks the file catalog for replica information.
+
+        :param JobState jobState: JobState object
+        :param list inputData: list of LFNs
+
+        :returns: S_OK/S_ERROR structure with resolved input data info
     """
     lfns = inputData
 

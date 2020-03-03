@@ -1,5 +1,5 @@
 
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK
 from DIRAC.AccountingSystem.private.Plotters.BaseReporter import BaseReporter
 from DIRAC.AccountingSystem.Client.Types.PilotSubmission import PilotSubmission
 

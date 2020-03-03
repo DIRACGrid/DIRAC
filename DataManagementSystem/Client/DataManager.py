@@ -364,6 +364,7 @@ class DataManager(object):
         'lfn' is the logical file name for the desired file
     """
     log = self.log.getSubLogger('getFile')
+    fileMetadata = {}
     if isinstance(lfn, list):
       lfns = lfn
     elif isinstance(lfn, six.string_types):
@@ -378,11 +379,13 @@ class DataManager(object):
       return res
     failed = res['Value']['Failed']
     lfnReplicas = res['Value']['Successful']
-    res = self.fileCatalog.getFileMetadata(lfnReplicas.keys())
-    if not res['OK']:
-      return res
-    failed.update(res['Value']['Failed'])
-    fileMetadata = res['Value']['Successful']
+    # If some files have replicas, check their metadata
+    if lfnReplicas:
+      res = self.fileCatalog.getFileMetadata(lfnReplicas.keys())
+      if not res['OK']:
+        return res
+      failed.update(res['Value']['Failed'])
+      fileMetadata = res['Value']['Successful']
     successful = {}
     for lfn in fileMetadata:
       res = self.__getFile(
