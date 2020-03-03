@@ -184,16 +184,37 @@ for loc in locations:
       rTar = url_library_urlopen(os.path.join(loc, 'pilot.tar'),
                                  timeout=10,
                                  context=context)
-      break
 
     else:
       rJson = url_library_urlopen(os.path.join(loc, 'pilot.json'),
                                   timeout=10)
       rTar = url_library_urlopen(os.path.join(loc, 'pilot.tar'),
                                  timeout=10)
-      break
 
-  except url_library_URLError:
+    pj = open('pilot.json', 'wb')
+    pj.write(rJson.read())
+    pj.close()
+
+    pt = open('pilot.tar', 'wb')
+    pt.write(rTar.read())
+    pt.close()
+
+    try:
+      pt = tarfile.open('pilot.tar', 'r')
+      pt.extractall()
+      pt.close()
+    except Exception as x:
+      print("tarfile failed with message %%s" %% repr(x), file=sys.stderr)
+      logger.error("tarfile failed with message %%s" %% repr(x))
+      logger.warn("Trying tar command (tar -xvf pilot.tar)")
+      res = os.system("tar -xvf pilot.tar")
+      if res:
+        logger.error("tar failed with exit code %%d, giving up" %% int(res))
+        print("tar failed with exit code %%d, giving up" %% int(res))
+        continue
+
+    break
+  except (url_library_URLError, Exception) as e:
     print('%%s unreacheable' %% loc, file=sys.stderr)
     logger.error('%%s unreacheable' %% loc)
 
@@ -202,27 +223,6 @@ else:
   logger.error("None of the locations of the pilot files is reachable")
   sys.exit(-1)
 
-pj = open('pilot.json', 'wb')
-pj.write(rJson.read())
-pj.close()
-
-pt = open('pilot.tar', 'wb')
-pt.write(rTar.read())
-pt.close()
-
-try:
-  pt = tarfile.open('pilot.tar', 'r')
-  pt.extractall()
-  pt.close()
-except Exception as x:
-  print("tarfile failed with message %%s" %% repr(x), file=sys.stderr)
-  logger.error("tarfile failed with message %%s" %% repr(x))
-  logger.warn("Trying tar command (tar -xvf pilot.tar)")
-  res = os.system("tar -xvf pilot.tar")
-  if res:
-    logger.error("tar failed with exit code %%d, giving up" %% int(res))
-    print("tar failed with exit code %%d, giving up" %% int(res))
-    sys.exit(2)
 """ % {'location': location}
 
   localPilot += """
