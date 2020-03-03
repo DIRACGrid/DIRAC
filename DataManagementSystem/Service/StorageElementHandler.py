@@ -74,7 +74,7 @@ def getDiskSpace(path, total=False):
   return S_OK(round(result, 4))
 
 
-def getTotalDiskSpace():
+def getTotalDiskSpace(ignoreMaxStorageSize=True):
   """  Returns the total maximum volume of the SE storage in B. The total volume
        can be limited either by the amount of the available disk space or by the
        MAX_STORAGE_SIZE value.
@@ -89,7 +89,10 @@ def getTotalDiskSpace():
   if not result['OK']:
     return result
   totalSpace = result['Value']
-  maxTotalSpace = min(totalSpace, MAX_STORAGE_SIZE) if MAX_STORAGE_SIZE else totalSpace
+  if ignoreMaxStorageSize:
+    maxTotalSpace = totalSpace
+  else:
+    maxTotalSpace = min(totalSpace, MAX_STORAGE_SIZE) if MAX_STORAGE_SIZE else totalSpace
   return S_OK(maxTotalSpace)
 
 
