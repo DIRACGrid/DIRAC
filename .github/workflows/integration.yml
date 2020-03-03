@@ -17,6 +17,12 @@ jobs:
         HOST_OS:
           - slc6
           - cc7
+        SERVER_USE_M2CRYPTO:
+          - Yes
+          - No
+        CLIENT_USE_M2CRYPTO:
+          - Yes
+          - No
 
     steps:
     - uses: actions/checkout@v1
@@ -37,6 +43,8 @@ jobs:
         echo -n "-e CI_REGISTRY_IMAGE=diracgrid " >> run_in_container
         echo -n "-e MYSQL_VER=${{ matrix.MYSQL_VER }} " >> run_in_container
         echo -n "-e ES_VER=${{ matrix.ES_VER }} " >> run_in_container
+        echo -n "-e SERVER_USE_M2CRYPTO=${{ matrix.SERVER_USE_M2CRYPTO }} " >> run_in_container
+        echo -n "-e CLIENT_USE_M2CRYPTO=${{ matrix.CLIENT_USE_M2CRYPTO }} " >> run_in_container
         # Finish wrapper script
         echo -n "dirac-testing-host \"\$@\"" >> run_in_container
         chmod +x run_in_container
