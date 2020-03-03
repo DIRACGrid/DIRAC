@@ -1,7 +1,7 @@
 """ DISET request handler base class for the TransformationDB.
 """
 
-from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.TransformationSystem.DB.TransformationDB import TransformationDB
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
@@ -39,7 +39,7 @@ class TransformationManagerHandler(RequestHandler):
 
   def _parseRes(self, res):
     if not res['OK']:
-      gLogger.error('TransformationManager failure', res['Message'])
+      self.log.error('TransformationManager failure', res['Message'])
     return res
 
   def setDatabase(self, oDatabase):
@@ -86,7 +86,7 @@ class TransformationManagerHandler(RequestHandler):
                                      inputMetaQuery=inputMetaQuery,
                                      outputMetaQuery=outputMetaQuery)
     if res['OK']:
-      gLogger.info("Added transformation %d" % res['Value'])
+      self.log.info("Added transformation", res['Value'])
     return self._parseRes(res)
 
   types_deleteTransformation = [transTypes]
@@ -330,8 +330,8 @@ class TransformationManagerHandler(RequestHandler):
   types_getTransformationMetaQuery = [transTypes, basestring]
 
   def export_getTransformationMetaQuery(self, transName, queryType):
-    res = database.getTransformationMetaQuery(transName, queryType)
-    return self._parseRes(res)
+    # Here not calling _parseRes of the result because it should not log an error
+    return database.getTransformationMetaQuery(transName, queryType)
 
   ####################################################################
   #
@@ -448,7 +448,7 @@ class TransformationManagerHandler(RequestHandler):
       transID = transDict['TransformationID']
       res = database.getTransformationTaskStats(transID)
       if not res['OK']:
-        gLogger.warn('Failed to get job statistics for transformation %d' % transID)
+        self.log.warn('Failed to get job statistics for transformation', transID)
         continue
       transDict['JobStats'] = res['Value']
       res = database.getTransformationStats(transID)
@@ -489,7 +489,7 @@ class TransformationManagerHandler(RequestHandler):
                                     selectColumns=tableSelections[table], timeStamp=tableTimeStamps[table],
                                     statusColumn=tableStatusColumn[table])
     if not res['OK']:
-      gLogger.error("Failed to get Summary for table", "%s %s" % (table, res['Message']))
+      self.log.error("Failed to get Summary for table", "%s %s" % (table, res['Message']))
       return self._parseRes(res)
     resDict[table] = res['Value']
     selections = res['Value']['Selections']
@@ -507,7 +507,7 @@ class TransformationManagerHandler(RequestHandler):
                                       selectColumns=tableSelections[table], timeStamp=tableTimeStamps[table],
                                       statusColumn=tableStatusColumn[table])
       if not res['OK']:
-        gLogger.error("Failed to get Summary for table", "%s %s" % (table, res['Message']))
+        self.log.error("Failed to get Summary for table", "%s %s" % (table, res['Message']))
         return self._parseRes(res)
       resDict[table] = res['Value']
     return S_OK(resDict)
