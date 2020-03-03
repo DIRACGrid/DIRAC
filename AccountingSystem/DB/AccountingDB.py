@@ -428,7 +428,10 @@ class AccountingDB(DB):
     keyTables = []
     sqlCond = []
     mainTable = "`%s`" % _getTableName("bucket", typeName)
-    typeKeysList = self.dbCatalog[typeName]['keys']
+    try:
+      typeKeysList = self.dbCatalog[typeName]['keys']
+    except KeyError:
+      return S_ERROR("Please select a category")
 
     for keyName in condDict:
       if keyName in typeKeysList:
