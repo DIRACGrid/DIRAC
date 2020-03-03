@@ -15,11 +15,12 @@ from DIRAC import gLogger
 
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
 from DIRAC.AccountingSystem.Client.Types.DataOperation import DataOperation
+from DIRAC.AccountingSystem.Client.Types.StorageOccupancy import StorageOccupancy
 
 gLogger.setLevel('DEBUG')
 
 
-def createAccountingRecord():
+def createDataOperationAccountingRecord():
   accountingDict = {}
   accountingDict['OperationType'] = 'putAndRegister'
   accountingDict['User'] = 'system'
@@ -39,17 +40,43 @@ def createAccountingRecord():
   return oDataOperation
 
 
-def test_addAndRemove():
+def createStorageOccupancyAccountingRecord():
+  accountingDict = {}
+  accountingDict['Site'] = 'LCG.PIPPO.it'
+  accountingDict['Endpoint'] = 'somewhere.in.topolinea.it'
+  accountingDict['StorageElement'] = 'PIPPO-SE'
+  accountingDict['SpaceType'] = 'Total'
+  accountingDict['Space'] = 123456
+  oSO = StorageOccupancy()
+  oSO.setValuesFromDict(accountingDict)
+  return oSO
+
+
+def test_addAndRemoveDataperation():
 
   # just inserting one record
-  record = createAccountingRecord()
+  record = createDataOperationAccountingRecord()
   record.setStartTime()
   record.setEndTime()
   res = gDataStoreClient.addRegister(record)
   assert res['OK']
   res = gDataStoreClient.commit()
   assert res['OK']
+  # now removing that record
+  res = gDataStoreClient.remove(record)
+  assert res['OK']
 
+
+def test_addAndRemoveStorageOccupancy():
+
+  # just inserting one record
+  record = createStorageOccupancyAccountingRecord()
+  record.setStartTime()
+  record.setEndTime()
+  res = gDataStoreClient.addRegister(record)
+  assert res['OK']
+  res = gDataStoreClient.commit()
+  assert res['OK']
   # now removing that record
   res = gDataStoreClient.remove(record)
   assert res['OK']

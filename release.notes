@@ -88,6 +88,18 @@ CHANGE: (#4439) integrate test_MySQLDB to all_integration_server_tests
 *docs
 NEW: (#4289) Document how to run integration tests in docker
 
+[v7r0p15]
+
+*Accounting
+NEW: (#4464) StorageOccupancy accounting
+
+*RSS
+NEW: (#4464) FreeDiskSpaceCommand used to fill the StorageOccupancy accounting
+CHANGE: (#4464) FreeDiskSpaceCommand can clean the from not-anymore-existing SEs
+
+*WMS
+CHANGE: (#4471) Optimizer: treat input sandboxes uploaded as LFNs ad Input Data
+
 [v7r0p14]
 
 *Framework
@@ -384,6 +396,11 @@ CHANGE: (#4110) updated basic tutorial for CC7 instead of SLC6.
 NEW: (#4170) added Production system documentation
 CHANGE: (#4224) Pilot 3 is the default
 NEW: (#4244) Added a few notes on using the JobParameters on ElasticSearch database
+
+[v6r22p23]
+
+*DMS
+CHANGE: (#4472) DM.getFile only checks metadata of files with replicas
 
 [v6r22p22]
 
