@@ -7,7 +7,6 @@ __RCSID__ = '$Id$'
 from datetime import datetime, timedelta
 
 from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.JEncode import strToIntDict
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient

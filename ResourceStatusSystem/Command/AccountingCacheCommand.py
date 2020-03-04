@@ -393,7 +393,7 @@ class SuccessfullPilotsByCESplittedCommand(Command):
     successfulPilots['data'] = {site: strToIntDict(value) for site, value in successfulPilots['data'].iteritems()}
 
     singlePlots = {}
-    
+
     for ce, value in successfulPilots['data'].iteritems():
       if ce in ces:
         plot = {}
