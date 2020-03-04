@@ -43,7 +43,7 @@ from DIRAC.Core.Utilities.Adler import fileAdler
 from DIRAC.Resources.Storage.StorageBase import StorageBase
 
 
-BASE_PATH = ""
+BASE_PATH = "/"
 
 # This is in bytes, but in MB in the CS
 MAX_STORAGE_SIZE = 0
@@ -90,10 +90,9 @@ def getTotalDiskSpace(ignoreMaxStorageSize=False):
     return result
   totalSpace = result['Value']
   if ignoreMaxStorageSize:
-    maxTotalSpace = totalSpace
+    return S_OK(totalSpace)
   else:
-    maxTotalSpace = min(totalSpace, MAX_STORAGE_SIZE) if MAX_STORAGE_SIZE else totalSpace
-  return S_OK(maxTotalSpace)
+    return S_OK(min(totalSpace, MAX_STORAGE_SIZE) if MAX_STORAGE_SIZE else totalSpace)
 
 
 def getFreeDiskSpace(ignoreMaxStorageSize=False):
@@ -106,21 +105,14 @@ def getFreeDiskSpace(ignoreMaxStorageSize=False):
   global MAX_STORAGE_SIZE
   global BASE_PATH
 
-  result = getDiskSpace(BASE_PATH)
+  result = getDiskSpace(BASE_PATH)  # free
   if not result['OK']:
     return result
   freeSpace = result['Value']
-  result = getTotalDiskSpace(ignoreMaxStorageSize)
-  if not result['OK']:
-    return result
-  totalSpace = result['Value']
   if ignoreMaxStorageSize:
-    maxTotalSpace = totalSpace
-  else:
-    maxTotalSpace = min(totalSpace, MAX_STORAGE_SIZE) if MAX_STORAGE_SIZE else totalSpace
-  occupiedSpace = totalSpace - freeSpace
-  freeSpace = maxTotalSpace - occupiedSpace
-  return S_OK(freeSpace)
+    return S_OK(freeSpace)
+
+  return S_OK(min(freeSpace, MAX_STORAGE_SIZE) if MAX_STORAGE_SIZE else freeSpace)
 
 
 def initializeStorageElementHandler(serviceInfo):
@@ -274,15 +266,14 @@ class StorageElementHandler(RequestHandler):
     """
     return getFreeDiskSpace(ignoreMaxStorageSize)
 
-  types_getTotalDiskSpace = []
+  types_getTotalDiskSpace = [bool]
 
-  @staticmethod
-  def export_getTotalDiskSpace():
+  def export_getTotalDiskSpace(self, ignoreMaxStorageSize):
     """ Get the total disk space of the storage element
 
         :return: S_OK/S_ERROR, Value is the max total volume of the SE storage in B
     """
-    return getTotalDiskSpace()
+    return getTotalDiskSpace(ignoreMaxStorageSize)
 
   types_createDirectory = [basestring]
 

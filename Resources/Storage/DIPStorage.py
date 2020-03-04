@@ -535,11 +535,11 @@ class DIPStorage(StorageBase):
 
     rpc = RPCClient(self.url, timeout=120)
 
-    free = rpc.getFreeDiskSpace(True)
+    free = rpc.getFreeDiskSpace(False)
     if not free['OK']:
       return free
 
-    total = rpc.getTotalDiskSpace(True)
+    total = rpc.getTotalDiskSpace(False)
     if not total['OK']:
       return total
 
