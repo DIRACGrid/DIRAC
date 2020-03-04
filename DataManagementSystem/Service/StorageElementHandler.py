@@ -74,7 +74,7 @@ def getDiskSpace(path, total=False):
   return S_OK(round(result, 4))
 
 
-def getTotalDiskSpace(ignoreMaxStorageSize=True):
+def getTotalDiskSpace(ignoreMaxStorageSize=False):
   """  Returns the total maximum volume of the SE storage in B. The total volume
        can be limited either by the amount of the available disk space or by the
        MAX_STORAGE_SIZE value.
@@ -96,7 +96,7 @@ def getTotalDiskSpace(ignoreMaxStorageSize=True):
   return S_OK(maxTotalSpace)
 
 
-def getFreeDiskSpace(ignoreMaxStorageSize=True):
+def getFreeDiskSpace(ignoreMaxStorageSize=False):
   """ Returns the free disk space still available for writing taking into account
       the total available disk space and the MAX_STORAGE_SIZE limitation
 
@@ -110,7 +110,7 @@ def getFreeDiskSpace(ignoreMaxStorageSize=True):
   if not result['OK']:
     return result
   freeSpace = result['Value']
-  result = getTotalDiskSpace()
+  result = getTotalDiskSpace(ignoreMaxStorageSize)
   if not result['OK']:
     return result
   totalSpace = result['Value']
@@ -265,15 +265,14 @@ class StorageElementHandler(RequestHandler):
     """
     return self.__getFileStat(self.__resolveFileID(fileID))
 
-  types_getFreeDiskSpace = []
+  types_getFreeDiskSpace = [bool]
 
-  @staticmethod
-  def export_getFreeDiskSpace():
+  def export_getFreeDiskSpace(self, ignoreMaxStorageSize):
     """ Get the free disk space of the storage element
 
         :return: S_OK/S_ERROR, Value is the free space on the SE storage in B
     """
-    return getFreeDiskSpace()
+    return getFreeDiskSpace(ignoreMaxStorageSize)
 
   types_getTotalDiskSpace = []
 
