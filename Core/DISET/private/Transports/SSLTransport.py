@@ -12,10 +12,7 @@ from DIRAC.Core.Security.X509Certificate import X509Certificate  # pylint: disab
 
 # Eventhough SSLTransport is not used in this file, it is imported in other module from there,
 # so do not remove these imports !
-if os.getenv('DIRAC_USE_M2CRYPTO', 'yes').lower() in ('yes', 'true'):
-  from DIRAC.Core.DISET.private.Transports.M2SSLTransport import SSLTransport
-else:
-  from DIRAC.Core.DISET.private.Transports.GSISSLTransport import SSLTransport
+from DIRAC.Core.DISET.private.Transports.M2SSLTransport import SSLTransport
 
 
 def delegate(delegationRequest, kwargs):

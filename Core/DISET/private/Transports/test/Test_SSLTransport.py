@@ -13,7 +13,7 @@ from DIRAC.Core.Security.test.x509TestUtilities import CERTDIR, USERCERT, getCer
 
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.Core.Utilities.CFG import CFG
-from DIRAC.Core.DISET.private.Transports import PlainTransport, GSISSLTransport, M2SSLTransport
+from DIRAC.Core.DISET.private.Transports import PlainTransport, M2SSLTransport
 
 # TODO: Expired hostcert
 # TODO: Expired usercert
@@ -42,13 +42,9 @@ PORT_NUMBER = 50000
 
 # Transports are now tested in pairs:
 # "Server-Client"
-# This allows for interoperatbility tests between GSI and M2 versions.
 # Each pair is defined as a string.
 TRANSPORTTESTS = ("Plain-Plain",
-                  "M2-M2",
-                  "M2-GSI",
-                  "GSI-GSI",
-                  "GSI-M2")
+                  "M2-M2")
 
 
 # https://www.ibm.com/developerworks/linux/library/l-openssl/index.html
@@ -131,8 +127,6 @@ def transportByName(transport):
     return PlainTransport.PlainTransport
   elif transport.lower() == "m2":
     return M2SSLTransport.SSLTransport
-  elif transport.lower() == "gsi":
-    return GSISSLTransport.SSLTransport
   raise RuntimeError("Unknown Transport Name: %s" % transport)
 
 

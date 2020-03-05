@@ -21,16 +21,15 @@ from .x509TestUtilities import deimportDIRAC, CERTS, CERTCONTENTS, getCertOption
 from pytest import mark, fixture, skip
 parametrize = mark.parametrize
 
-X509CERTTYPES = ('M2_X509Certificate', 'GSI_X509Certificate')
+X509CERTTYPES = ('M2_X509Certificate',)
 
-
-# This fixture will return a pyGSI or M2Crypto X509Certificate class
+# This fixture will return a X509Certificate class
 # https://docs.pytest.org/en/latest/fixture.html#automatic-grouping-of-tests-by-fixture-instances
 
 
 @fixture(scope="function", params=X509CERTTYPES)
 def get_X509Certificate_class(request):
-  """ Fixture to return either the pyGSI or M2Crypto X509Certificate class.
+  """ Fixture to return the X509Certificate class.
       It also 'de-import' DIRAC before and after
   """
   # Clean before
@@ -38,10 +37,10 @@ def get_X509Certificate_class(request):
 
   x509Class = request.param
 
-  if x509Class == 'GSI_X509Certificate':
-    from DIRAC.Core.Security.pygsi.X509Certificate import X509Certificate
-  else:
+  if x509Class == 'M2_X509Certificate':
     from DIRAC.Core.Security.m2crypto.X509Certificate import X509Certificate
+  else:
+    raise NotImplementedError()
 
   yield X509Certificate
 
@@ -251,9 +250,6 @@ def test_getSerialNumber(cert_file, get_X509Certificate_class):
   """" Load a valid certificate and check its public key"""
 
   x509Cert = get_X509Certificate_class()
-
-  if 'pygsi' in get_X509Certificate_class.__module__:
-    skip("Getting serial is buggy in pyGSI")
 
   x509Cert.load(cert_file)
 

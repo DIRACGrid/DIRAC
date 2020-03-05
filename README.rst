@@ -108,7 +108,7 @@ Each PR is a also subject to check for python 3 compatibility.
 If you are issuing PRs that are devoted to future versions of DIRAC (so, not for patch releases),
 for each of the python files touched please run (and react to)::
 
-   pylint --rcfile=tests/.pylintrc3k --py3k --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" --extension-pkg-whitelist=GSI,numpy path/to/file.py
+   pylint --rcfile=tests/.pylintrc3k --py3k --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" --extension-pkg-whitelist=numpy path/to/file.py
 
 
 Testing

@@ -23,10 +23,9 @@ that you have created with *virtualenv* as explained in :ref:`editing_code`.
 
 .. code-block:: python
 
-   In [1]: import GSI
-   In [2]: import pyparsing
-   In [3]: import MySQLdb
-   In [4]: import DIRAC
+   In [1]: import pyparsing
+   In [2]: import MySQLdb
+   In [3]: import DIRAC
 
 Were these imports OK? If not, then you should probably hit the "previous" button of this guide,
 or check the *pip install* log.

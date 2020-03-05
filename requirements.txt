@@ -1,6 +1,5 @@
 # From repo
 fts3-rest
-git+https://github.com/DIRACGrid/pyGSI.git#egg=GSI
 
 # From pypi
 boto3
