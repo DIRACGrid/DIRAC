@@ -51,11 +51,15 @@ class DIRACCAProxyProvider(ProxyProvider):
         if nid not in self.n2field:
           self.n2field[nid] = field
         self.n2field[nid] = len(field) < len(self.n2field[nid]) and field or self.n2field[nid]
+    self.caDict = {}
+    self.caFieldByNid = {}
 
   def setParameters(self, parameters):
     """ Set new parameters
 
         :param dict parameters: provider parameters
+
+        :return: S_OK()/S_ERROR()
     """
     # If CA configuration file exist
     self.parameters = parameters
@@ -78,6 +82,7 @@ class DIRACCAProxyProvider(ProxyProvider):
       self.optional = []
       for field in parameters['Optional'].replace(' ', '').split(','):
         self.optional.append(self.fs2nid[field])
+
     # Set defaults for distridutes names
     self.defDict = {}
     for field, value in parameters.items():
@@ -179,8 +184,8 @@ class DIRACCAProxyProvider(ProxyProvider):
     if not result['OK']:
       return result
     caDN = result['Value']['subject']
-    caDict = dict([field.split('=') for field in caDN.lstrip('/').split('/')])
-    caFieldByNid = dict([[self.fs2nid[field], field] for field in caDict])
+    self.caDict = dict([field.split('=') for field in caDN.lstrip('/').split('/')])
+    self.caFieldByNid = dict([[self.fs2nid[field], field] for field in self.caDict])
 
     dnDict = {}
     if userDN:
@@ -193,9 +198,9 @@ class DIRACCAProxyProvider(ProxyProvider):
       for nid in dnFieldByNid:
         if nid not in self.supplied + self.match + self.optional:
           return S_ERROR('Current DN is invalid, "%s" field is not found for current CA.' % dnFieldByNid[nid])
-        if nid in self.match and not caDict[caFieldByNid[nid]] == dnDict[dnFieldByNid[nid]]:
+        if nid in self.match and not self.caDict[self.caFieldByNid[nid]] == dnDict[dnFieldByNid[nid]]:
           return S_ERROR('Current DN is invalid, "%s" field must be %s.' % (dnFieldByNid[nid],
-                                                                            caDict[caFieldByNid[nid]]))
+                                                                            self.caDict[self.caFieldByNid[nid]]))
         if nid in self.maxDict and len(dnDict[dnFieldByNid[nid]]) > self.maxDict[nid]:
           return S_ERROR('Current DN is invalid, "%s" field must be less then %s.' % (dnDict[dnFieldByNid[nid]],
                                                                                       self.maxDict[nid]))
@@ -223,9 +228,9 @@ class DIRACCAProxyProvider(ProxyProvider):
     self.log.info('Creating distributes names chain')
     # Test match fields
     for nid in self.match:
-      if nid not in caFieldByNid:
+      if nid not in self.caFieldByNid:
         return S_ERROR('Distributes name(%s) must be present in CA certificate.' % ', '.join(self.n2fields[nid]))
-      result = self.__fillX509Name(caFieldByNid[nid], caDict[caFieldByNid[nid]])
+      result = self.__fillX509Name(self.caFieldByNid[nid], self.caDict[self.caFieldByNid[nid]])
       if not result['OK']:
         return result
     # Test supplied fields
@@ -243,8 +248,9 @@ class DIRACCAProxyProvider(ProxyProvider):
 
     # WARN: This logic not support list of distribtes name elements
     resDN = m2.x509_name_oneline(self.__X509Name.x509_name)  # pylint: disable=no-member
+
     if userDN and not userDN == resDN:
-      return S_ERROR('%s not match with generated DN: %s' % (userDN, resDN))
+      return S_ERROR('%s not matched with created %s' % (userDN, resDN))
     return S_OK(resDN)
 
   def __parseCACFG(self):
@@ -294,8 +300,8 @@ class DIRACCAProxyProvider(ProxyProvider):
   def __fillX509Name(self, field, value):
     """ Fill x509_Name object by M2Crypto
 
-        :param basestring field: DN field name
-        :param basestring value: value of field
+        :param str field: DN field name
+        :param str value: value of field
 
         :return: S_OK()/S_ERROR()
     """
@@ -306,10 +312,12 @@ class DIRACCAProxyProvider(ProxyProvider):
         return S_ERROR('Cannot set "%s" field.' % field)
     return S_OK()
 
-  def __createCertM2Crypto(self):
+  def __createCertM2Crypto(self, extensions=None):
     """ Create new certificate for user
-
-        :return: S_OK(basestring, basestring)/S_ERROR()
+        
+        :param list extensions: list of X509.new_extension()
+        
+        :return: S_OK(tuple)/S_ERROR() -- tuple contain certificate and pulic key as strings
     """
     # Create publik key
     userPubKey = EVP.PKey()
@@ -320,9 +328,11 @@ class DIRACCAProxyProvider(ProxyProvider):
     userCert.set_version(2)
     userCert.set_subject(self.__X509Name)
     userCert.set_serial_number(int(random.random() * 10 ** 10))
-    # Add extentionals
+    # Add extensions
     userCert.add_ext(X509.new_extension('basicConstraints', 'CA:' + str(False).upper()))
     userCert.add_ext(X509.new_extension('extendedKeyUsage', 'clientAuth', critical=1))
+    for ext in extensions or []:
+      userCert.add_ext(ext)
     # Set livetime
     validityTime = datetime.timedelta(days=400)
     notBefore = ASN1.ASN1_UTCTIME()
@@ -347,3 +357,32 @@ class DIRACCAProxyProvider(ProxyProvider):
     userCertStr = userCert.as_pem()
     userPubKeyStr = userPubKey.as_pem(cipher=None, callback=util.no_passphrase_callback)
     return S_OK((userCertStr, userPubKeyStr))
+
+  def getFakeProxy(self, dn, time, vo=None, group=None, **kwargs):
+    """ Get fake proxy for tests
+        :param str dn: fake DN
+        :param int time: expired time in a seconds
+        :param str vo: fake VOMS VO name
+        :param str group: if need to add fake DIRAC group
+        :param dict kwargs: fake VO description dictionary with possible fields:
+               - Expired time
+               - Role, etc..
+        :return: S_OK(dict)/S_ERROR() -- dict contain 'proxy' field with is a fake proxy string
+    """
+    self.__X509Name = X509.X509_Name()
+    for field, value in [field.split('=') for field in dn.lstrip('/').split('/')]:
+      result = self.__fillX509Name(field, value)
+      if not result['OK']:
+        return result
+
+    result = self.__createCertM2Crypto([X509.new_extension('vomsExtensions', vo)] if vo else [])
+    if result['OK']:
+      certStr, keyStr = result['Value']
+      chain = X509Chain()
+      if chain.loadChainFromString(certStr)['OK'] and chain.loadKeyFromString(keyStr)['OK']:
+        result = chain.generateProxyToString(time, rfc=True, diracGroup=group)
+    if not result['OK']:
+      return result
+    chain = X509Chain()
+    chain.loadProxyFromString(result['Value'])
+    return S_OK((chain, result['Value']))
