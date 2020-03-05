@@ -119,6 +119,20 @@ def _decodeASN1String(rdnNameAttrValue):
   raise PyAsn1Error("Could not find a correct decoding type")
 
 
+def hasVOMSExtension(m2cert):
+  """ Utility fonction to check if the certificate has VOMS extensions
+
+      :param m2cert: M2Crypto X509 object, a certificate
+
+      :returns: boolean
+  """
+  try:
+    retrieveExtension(m2cert, VOMS_EXTENSION_OID)
+    return True
+  except LookupError:
+    return False
+
+
 def decodeVOMSExtension(m2cert):
   """ Decode the content of the VOMS extension
 
