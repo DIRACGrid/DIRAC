@@ -21,7 +21,8 @@ from .x509TestUtilities import deimportDIRAC, CERTS, CERTCONTENTS, getCertOption
 from pytest import mark, fixture, skip
 parametrize = mark.parametrize
 
-X509CERTTYPES = ('GSI_X509Certificate', 'M2_X509Certificate')
+X509CERTTYPES = ('M2_X509Certificate', 'GSI_X509Certificate')
+
 
 # This fixture will return a pyGSI or M2Crypto X509Certificate class
 # https://docs.pytest.org/en/latest/fixture.html#automatic-grouping-of-tests-by-fixture-instances
@@ -343,6 +344,7 @@ def test_getExtensions_on_cert(cert_file, get_X509Certificate_class):
 
 ###########################################################################
 # Temporary. For the time being, we need a real proxy !
+
 def test_getVOMSData(get_X509Certificate_class):
   """" Load a valid certificate and check the output is a positive integer"""
 
@@ -352,3 +354,13 @@ def test_getVOMSData(get_X509Certificate_class):
   res = x509Cert.getVOMSData()
   assert res['OK']
   assert res['Value'] == VOMS_PROXY_ATTR
+
+
+def test_hasVOMSExtensions(get_X509Certificate_class):
+  """" Load a certificate generated with voms-proxy-fake and check hasVOMSExtension is True"""
+
+  x509Cert = get_X509Certificate_class()
+  x509Cert.load(VOMSPROXY)
+  res = x509Cert.hasVOMSExtensions()
+  assert res['OK']
+  assert res['Value']
