@@ -4,7 +4,6 @@
 """
   Utilities for managing DIRAC configuration:
 
-  getCEsFromCS
   getUnusedGridCEs
   getUnusedGridSEs
   getSiteUpdates
@@ -19,7 +18,6 @@ import socket
 from urlparse import urlparse
 
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities import List
 from DIRAC.Core.Utilities.Grid import getBdiiCEInfo, getBdiiSEInfo, ldapService
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getDIRACSiteName, getDIRACSesForHostName
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
@@ -41,30 +39,6 @@ def getGridVOs():
       if vomsVO:
         voNames.append(vomsVO)
   return S_OK(voNames)
-
-
-def getCEsFromCS():
-  """ Get all the CEs defined in the CS
-  """
-
-  knownCEs = []
-  result = gConfig.getSections('/Resources/Sites')
-  if not result['OK']:
-    return result
-  grids = result['Value']
-
-  for grid in grids:
-    result = gConfig.getSections('/Resources/Sites/%s' % grid)
-    if not result['OK']:
-      return result
-    sites = result['Value']
-
-    for site in sites:
-      opt = gConfig.getOptionsDict('/Resources/Sites/%s/%s' % (grid, site))['Value']
-      ces = List.fromChar(opt.get('CE', ''))
-      knownCEs += ces
-
-  return S_OK(knownCEs)
 
 
 def getSEsFromCS(protocol='srm'):

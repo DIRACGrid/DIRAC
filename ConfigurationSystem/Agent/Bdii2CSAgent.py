@@ -19,9 +19,9 @@ from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOs, getVOOption
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSitesCEsMapping, getCESiteMapping
 from DIRAC.ConfigurationSystem.Client.Utilities import getGridCEs, getSiteUpdates, getSRMUpdates, \
-    getCEsFromCS, getSEsFromCS, getGridSRMs
+    getSEsFromCS, getGridSRMs
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.Grid import getBdiiCEInfo, getBdiiSEInfo
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
@@ -133,10 +133,13 @@ class Bdii2CSAgent(AgentModule):
     """
 
     bannedCEs = self.am_getOption('BannedCEs', [])
-    result = getCEsFromCS()
-    if not result['OK']:
-      return result
-    knownCEs = set(result['Value'])
+    res = getSitesCEsMapping()
+    if not res['OK']:
+      return res
+    knownCEs = set()
+    for site in res['Value']:
+      knownCEs = knownCEs.union(set(res['Value'][site]))
+
     knownCEs = knownCEs.union(set(bannedCEs))
 
     for vo in self.voName:
