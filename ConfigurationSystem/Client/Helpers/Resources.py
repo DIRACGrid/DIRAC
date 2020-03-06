@@ -51,6 +51,18 @@ def getSitesCEsMapping():
   return S_OK(sitesCEsMapping)
 
 
+def getCESiteMapping():
+  res = getSitesCEsMapping()
+  if not res['OK']:
+    return res
+  sitesCEs = res['Value']
+  ceSiteMapping = {}
+  for site in sitesCEs:
+    for ce in sitesCEs[site]:
+      ceSiteMapping[ce] = site
+  return S_OK(ceSiteMapping)
+
+
 def getFTS3Servers(hostOnly=False):
   """ get list of FTS3 servers that are in CS
 

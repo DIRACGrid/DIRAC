@@ -24,8 +24,9 @@ import threading
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
-from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE, getCESiteMapping
+from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE
 import DIRAC.Core.Utilities.Time as Time
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN, getDNForUsername
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
 

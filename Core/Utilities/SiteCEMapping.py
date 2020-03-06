@@ -11,31 +11,6 @@ from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 
 
-def getCESiteMapping(gridName=None):
-  """ Returns a dictionary of all CEs and their associated site, e.g.
-      {'ce101.cern.ch':'LCG.CERN.ch', ...]}
-      Assumes CS structure of: /Resources/Sites/<GRIDNAME>/<SITENAME>
-  """
-  sites = getSites(gridName=gridName)
-  if not sites['OK']:
-    return sites
-
-  ceSiteMapping = {}
-  for candidate in sites['Value']:
-    grid = candidate.split('.')[0]
-    siteCEs = gConfig.getValue('/Resources/Sites/%s/%s/CE' % (grid, candidate), [])
-    for ce in siteCEs:
-      if ce in ceSiteMapping:
-        current = ceSiteMapping[ce]
-        gLogger.error('CE %s already has a defined site %s but it is also defined for %s' % (ce, current, candidate))
-      else:
-        ceSiteMapping[ce] = candidate
-
-  return S_OK(ceSiteMapping)
-
-#############################################################################
-
-
 def getSiteForCE(computingElement):
   """ Given a Grid CE name this method returns the DIRAC site name.
 
