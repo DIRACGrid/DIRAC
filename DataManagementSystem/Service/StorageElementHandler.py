@@ -43,10 +43,8 @@ from DIRAC.Core.Utilities.Adler import fileAdler
 from DIRAC.Resources.Storage.StorageBase import StorageBase
 
 
-BASE_PATH = "/"
-
-# This is in bytes, but in MB in the CS
-MAX_STORAGE_SIZE = 0
+BASE_PATH = "/"  # This is not a constant and it will be set initializeStorageElementHandler() function
+MAX_STORAGE_SIZE = 0  # This is in bytes, but in MB in the CS
 USE_TOKENS = False
 
 
@@ -123,13 +121,13 @@ def initializeStorageElementHandler(serviceInfo):
   global USE_TOKENS
   global MAX_STORAGE_SIZE
 
-  BASE_PATH = getServiceOption(serviceInfo, "BasePath", BASE_PATH)
+  BASE_PATH = getServiceOption(serviceInfo, "BasePath", '')
   if not BASE_PATH:
     gLogger.error('Failed to get the base path')
     return S_ERROR('Failed to get the base path')
   mkDir(BASE_PATH)
 
-  USE_TOKENS = getServiceOption(serviceInfo, "%UseTokens", USE_TOKENS)
+  USE_TOKENS = getServiceOption(serviceInfo, "UseTokens", USE_TOKENS)
   MAX_STORAGE_SIZE = convertSizeUnits(getServiceOption(serviceInfo, "MaxStorageSize", MAX_STORAGE_SIZE), 'MB', 'B')
 
   gLogger.info('Starting DIRAC Storage Element')
