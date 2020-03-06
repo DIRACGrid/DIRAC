@@ -16,11 +16,11 @@ import stat
 
 import arc  # Has to work if this module is called #pylint: disable=import-error
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
 from DIRAC.Core.Utilities.Subprocess import shellCall
-from DIRAC.Resources.Computing.ComputingElement import ComputingElement
-from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE
 from DIRAC.Core.Utilities.File import makeGuid
 from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
+from DIRAC.Resources.Computing.ComputingElement import ComputingElement
 
 # Uncomment the following 5 lines for getting verbose ARC api output (debugging)
 # import sys
@@ -106,13 +106,11 @@ class ARCComputingElement(ComputingElement):
     # Default         : Resources/Computing/CEDefaults/XRSLExtraString
     #
     xrslExtraString = ''  # Start with the default value
-    result = getSiteForCE(self.ceHost)
-    self.site = ''
-    if result['OK']:
-      self.site = result['Value']
-    else:
-      gLogger.error("Unknown Site ...")
+    result = getCESiteMapping(self.ceHost)
+    if not result['OK'] or not result['Value']:
+      gLogger.error("Unknown CE ...")
       return
+    self.site = result['Value'][self.ceHost]
     # Now we know the site. Get the grid
     grid = self.site.split(".")[0]
     # The different possibilities that we have agreed upon

@@ -51,7 +51,13 @@ def getSitesCEsMapping():
   return S_OK(sitesCEsMapping)
 
 
-def getCESiteMapping():
+def getCESiteMapping(ceName=''):
+  """ Returns a mapping of CE -> site
+      It assumes that the ce names are unique (as they should be)
+
+      :param str siteName: optional CE name. If not present, the whole mapping will be returned
+      :return: S_OK/S_ERROR structure
+  """
   res = getSitesCEsMapping()
   if not res['OK']:
     return res
@@ -59,6 +65,9 @@ def getCESiteMapping():
   ceSiteMapping = {}
   for site in sitesCEs:
     for ce in sitesCEs[site]:
+      if ceName:
+	if ce != ceName:
+	  continue
       ceSiteMapping[ce] = site
   return S_OK(ceSiteMapping)
 

@@ -16,15 +16,15 @@ The following options can be set for the Bdii2CSAgent.
 __RCSID__ = "$Id$"
 
 from DIRAC import S_OK, S_ERROR, gConfig
-from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.Core.Utilities.Grid import getBdiiCEInfo, getBdiiSEInfo
-from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOs, getVOOption
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
 from DIRAC.ConfigurationSystem.Client.Utilities import getGridCEs, getSiteUpdates, getSRMUpdates, \
     getCEsFromCS, getSEsFromCS, getGridSRMs
-from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE
+from DIRAC.Core.Base.AgentModule import AgentModule
+from DIRAC.Core.Utilities.Grid import getBdiiCEInfo, getBdiiSEInfo
+from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
 
 
 class Bdii2CSAgent(AgentModule):
@@ -287,14 +287,15 @@ class Bdii2CSAgent(AgentModule):
       if not ces:
         self.log.error("No CE information for site:", site)
         continue
-      diracSiteName = getSiteForCE(ces[0])
-      if not diracSiteName['OK']:
-        self.log.error("Failed to get DIRAC site name for ce", "%s: %s" % (ces[0], diracSiteName['Message']))
+      res = getCESiteMapping(ces[0])
+      if not res['OK']:
+	self.log.error("Failed to get DIRAC site name for ce", "%s: %s" % (ces[0], res['Message']))
         continue
-      self.log.debug("Checking site %s (%s), aka %s" % (site, ces, diracSiteName['Value']))
-      if diracSiteName['Value'] in self.selectedSites:
+      siteInCS = res['Value'][ces[0]]
+      self.log.debug("Checking site %s (%s), aka %s" % (site, ces, siteInCS))
+      if siteInCS in self.selectedSites:
         continue
-      self.log.info("Dropping site %s, aka %s" % (site, diracSiteName))
+      self.log.info("Dropping site %s, aka %s" % (site, siteInCS))
       ceBdiiDict.pop(site)
     return
 

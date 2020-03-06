@@ -8,28 +8,7 @@
 __RCSID__ = "$Id$"
 
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
-
-
-def getSiteForCE(computingElement):
-  """ Given a Grid CE name this method returns the DIRAC site name.
-
-      WARNING: if two or more sites happen to have the same ceName/queueName, then only the first found is returned
-  """
-  sites = getSites()
-  if not sites['OK']:
-    return sites
-
-  for candidate in sites['Value']:
-    grid = candidate.split('.')[0]
-    siteCEs = gConfig.getValue('/Resources/Sites/%s/%s/CE' % (grid, candidate), [])
-    if computingElement in siteCEs:
-      finalSite = candidate
-      return S_OK(finalSite)
-  # FIXME: this is strange but this was how it was coded
-  return S_OK('')
-
-#############################################################################
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
 
 
 def getQueueInfo(ceUniqueID, diracSiteName=''):
@@ -48,10 +27,10 @@ def getQueueInfo(ceUniqueID, diracSiteName=''):
 
     if not diracSiteName:
       gLogger.debug("Can't find LocalSite name, looking in CS")
-      result = getSiteForCE(subClusterUniqueID)
+      result = getCESiteMapping(subClusterUniqueID)
       if not result['OK']:
         return result
-      diracSiteName = result['Value']
+      diracSiteName = result['Value'][subClusterUniqueID]
 
       if not diracSiteName:
         gLogger.error('Can not find corresponding Site in CS')

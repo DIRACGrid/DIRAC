@@ -24,7 +24,6 @@ import threading
 
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
-from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE
 import DIRAC.Core.Utilities.Time as Time
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getUsernameForDN, getDNForUsername
@@ -97,10 +96,9 @@ class PilotAgentsDB(DB):
     if destination:
       setList.append("DestinationSite='%s'" % destination)
       if not gridSite:
-        result = getSiteForCE(destination)
-        if result['OK']:
-          gridSite = result['Value']
-          setList.append("GridSite='%s'" % gridSite)
+	res = getCESiteMapping(destination)
+	if res['OK'] and res['Value']:
+	  setList.append("GridSite='%s'" % res['Value'][destination])
 
     set_string = ','.join(setList)
     req = "UPDATE PilotAgents SET " + set_string + " WHERE PilotJobReference='%s'" % pilotRef
@@ -336,17 +334,13 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
     """
 
     gridSite = 'Unknown'
-    result = getSiteForCE(destination)
-    if result['OK']:
-      gridSite = result['Value']
-
-    if not gridSite:
-      gridSite = 'Unknown'
+    res = getCESiteMapping(destination)
+    if res['OK'] and res['Value']:
+      gridSite = res['Value'][destination]
 
     req = "UPDATE PilotAgents SET DestinationSite='%s', GridSite='%s' WHERE PilotJobReference='%s'"
     req = req % (destination, gridSite, pilotRef)
-    result = self._update(req, conn=conn)
-    return result
+    return self._update(req, conn=conn)
 
 ##########################################################################################
   def setPilotBenchmark(self, pilotRef, mark):
@@ -1048,9 +1042,9 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
       # If the Grid Site is unknown try to recover it in the last moment
       if gridSite == "Unknown":
         ce = pilotDict[pilot]['DestinationSite']
-        result = getSiteForCE(ce)
+	result = getCESiteMapping(ce)
         if result['OK']:
-          gridSite = result['Value']
+	  gridSite = result['Value'][ce]
           del parList[-1]
           parList.append(gridSite)
       records.append(parList)
