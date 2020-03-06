@@ -79,7 +79,7 @@ def checkUnusedCEs():
     DIRACExit(-1)
   knownCEs = []
   for site in res['Value']:
-    knownCEs = knownCEs.update(res['Value'][site])
+    knownCEs = knownCEs + res['Value'][site]
 
   result = getGridCEs(vo, ceBlackList=knownCEs, hostURL=hostURL, glue2=glue2)
   if not result['OK']:
