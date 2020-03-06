@@ -7,8 +7,6 @@
 
 __RCSID__ = "$Id$"
 
-import re
-
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 
@@ -55,17 +53,6 @@ def getSiteForCE(computingElement):
       return S_OK(finalSite)
   # FIXME: this is strange but this was how it was coded
   return S_OK('')
-
-#############################################################################
-
-
-def getCEsForSite(siteName):
-  """ Given a DIRAC site name this method returns a list of corresponding CEs.
-  """
-  if not re.search('.', siteName):
-    return S_ERROR('%s is not a valid site name' % siteName)
-  gridName = siteName.split('.')[0]
-  return S_OK(gConfig.getValue('/Resources/Sites/%s/%s/CE' % (gridName, siteName), []))
 
 #############################################################################
 

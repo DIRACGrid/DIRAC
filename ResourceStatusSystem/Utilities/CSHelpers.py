@@ -141,26 +141,6 @@ def getComputingElements():
   return S_OK(ces)
 
 
-def getSiteComputingElements(siteName):
-  """
-    Gets all computing elements from /Resources/Sites/<>/<siteName>/CE
-  """
-
-  _basePath = 'Resources/Sites'
-
-  domainNames = gConfig.getSections(_basePath)
-  if not domainNames['OK']:
-    return domainNames
-  domainNames = domainNames['Value']
-
-  for domainName in domainNames:
-    ces = gConfig.getValue('%s/%s/%s/CE' % (_basePath, domainName, siteName), '')
-    if ces:
-      return ces.split(', ')
-
-  return []
-
-
 def getSiteElements(siteName):
   """
     Gets all the computing and storage elements for a given site

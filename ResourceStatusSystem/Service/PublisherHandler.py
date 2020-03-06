@@ -17,10 +17,10 @@ from datetime import datetime, timedelta
 from DIRAC import gLogger, S_OK, gConfig, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.SiteSEMapping import getSEHosts, getStorageElementsHosts
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites, getSitesCEsMapping
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
-from DIRAC.ResourceStatusSystem.Utilities import CSHelpers, Utils
+from DIRAC.ResourceStatusSystem.Utilities import Utils
 ResourceManagementClient = getattr(
     Utils.voimport('DIRAC.ResourceStatusSystem.Client.ResourceManagementClient'),
     'ResourceManagementClient')
@@ -96,8 +96,11 @@ class PublisherHandler(RequestHandler):
 
     for siteName in siteNames:
 
+      result = getSitesCEsMapping()
+      if not result['OK']:
+	return result
       res = {}
-      res['ces'] = CSHelpers.getSiteComputingElements(siteName)
+      res['ces'] = result['Value'](siteName)
       # Convert StorageElements to host names
       res = DMSHelpers().getSiteSEMapping()
       if not res['OK']:
@@ -180,7 +183,10 @@ class PublisherHandler(RequestHandler):
 
     tree = {site: {'statusTypes': dict(siteStatus['Value'])}}
 
-    ces = CSHelpers.getSiteComputingElements(site)
+    result = getSitesCEsMapping()
+    if not result['OK']:
+      return result
+    ces = result['Value'][site]
     cesStatus = rsClient.selectStatusElement('Resource', 'Status', name=ces,
                                              meta={'columns': ['Name', 'StatusType', 'Status']})
     if not cesStatus['OK']:
