@@ -432,8 +432,10 @@ if ceName or siteName:
     if not siteName:
       if ceName:
         for site in sites:
-          siteCEs = DIRAC.gConfig.getValue('/Resources/Sites/%s/%s/CE' % (grid, site), [])
-          if ceName in siteCEs:
+	  res = DIRAC.gConfig.getSections('/Resources/Sites/%s/%s/CEs/' % (grid, site), [])
+	  if not res['OK']:
+	    DIRAC.gLogger.warn('Could not get %s CEs list' % site)
+	  if ceName in res['Value']:
             siteName = site
             break
     if siteName:
