@@ -40,10 +40,11 @@ from DIRAC.Core.Workflow.Workflow import Workflow
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.Core.Utilities.List import uniqueElements
-from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE, getSites
+from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 from DIRAC.Interfaces.API.Dirac import Dirac
 from DIRAC.Workflow.Utilities.Utils import getStepDefinition, addStepToWorkflow
 
