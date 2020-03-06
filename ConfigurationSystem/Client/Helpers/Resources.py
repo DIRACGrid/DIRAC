@@ -4,7 +4,6 @@
 __RCSID__ = "$Id$"
 
 import six
-import re
 import urlparse
 
 from distutils.version import LooseVersion  # pylint: disable=no-name-in-module,import-error
@@ -32,6 +31,24 @@ def getSites():
     sites += result['Value']
 
   return S_OK(sites)
+
+
+def getSitesCEsMapping():
+  """ :returns: dict of site: list of CEs
+  """
+  res = getSites()
+  if not res['OK']:
+    return res
+  sites = res['Value']
+  sitesCEsMapping = {}
+  for site in sites:
+    res = sitesCEsMapping[site] = gConfig.getSections(cfgPath(gBaseResourcesSection, 'Sites',
+							      site.split('.')[0], site, 'CEs'),
+						      [])
+    if not res['OK']:
+      return res
+    sitesCEsMapping[site] = res['Value']
+  return S_OK(sitesCEsMapping)
 
 
 def getFTS3Servers(hostOnly=False):

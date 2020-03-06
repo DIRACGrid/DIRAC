@@ -109,7 +109,7 @@ def getFileCatalogs():
 
 def getComputingElements():
   """
-    Gets all computing elements from /Resources/Sites/<>/<>/CE
+    Gets all computing elements from /Resources/Sites/<>/<>/CEs
   """
   _basePath = 'Resources/Sites'
 
@@ -181,7 +181,7 @@ def getSiteElements(siteName):
 
 def getQueuesRSS():
   """
-    Gets all computing elements from /Resources/Sites/<>/<>/CE/Queues
+    Gets all queues from /Resources/Sites/<>/<>/CEs/<>/Queues
   """
   _basePath = 'Resources/Sites'
 

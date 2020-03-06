@@ -10,64 +10,7 @@ __RCSID__ = "$Id$"
 import re
 
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
-
-
-def __getGridTypes(gridName=None):
-  gridTypes = gConfig.getSections('Resources/Sites/', [])
-  if not gridTypes['OK']:
-    gLogger.error('Problem retrieving sections in /Resources/Sites')
-    return gridTypes
-  gridTypes = gridTypes['Value']
-  if gridName:
-    if gridName not in gridTypes:
-      errMsg = 'Could not get sections for /Resources/Sites/%s' % gridName
-      gLogger.error(errMsg)
-      return S_ERROR(errMsg)
-    gridTypes = [gridName]
-  return S_OK(gridTypes)
-
-#############################################################################
-
-
-def getSites(gridName=None):
-  gridTypes = __getGridTypes(gridName)
-  if not gridTypes['OK']:
-    return gridTypes
-  gridTypes = gridTypes['Value']
-
-  siteList = []
-  for grid in gridTypes:
-    sites = gConfig.getSections('/Resources/Sites/%s' % grid, [])
-    if not sites['OK']:
-      gLogger.error('Problem retrieving /Resources/Sites/%s section' % grid, sites['Message'])
-      return sites
-    siteList += sites['Value']
-  return S_OK(siteList)
-
-#############################################################################
-
-
-def getSiteCEMapping(gridName=None):
-  """ Returns a dictionary of all sites and their CEs as a list, e.g.
-      {'LCG.CERN.ch':['ce101.cern.ch',...]}
-      If gridName is specified, result is restricted to that Grid type.
-  """
-  sites = getSites(gridName=gridName)
-  if not sites['OK']:
-    return sites
-
-  siteCEMapping = {}
-  for candidate in sites['Value']:
-    grid = candidate.split('.')[0]
-    candidateCEs = gConfig.getValue('/Resources/Sites/%s/%s/CE' % (grid, candidate), [])
-    if candidateCEs:
-      siteCEMapping[candidate] = candidateCEs
-    else:
-      gLogger.debug('No CEs defined for site %s' % candidate)
-
-  return S_OK(siteCEMapping)
-
-#############################################################################
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 
 
 def getCESiteMapping(gridName=None):
