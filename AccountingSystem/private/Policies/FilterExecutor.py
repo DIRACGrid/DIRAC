@@ -1,7 +1,7 @@
 from DIRAC import S_OK, S_ERROR, gLogger
 
 
-class FilterExecutor:
+class FilterExecutor(object):
 
   ALLKW = "all"
 
