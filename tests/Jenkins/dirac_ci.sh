@@ -227,6 +227,9 @@ function fullInstallDIRAC(){
     exit 1
   fi
 
+  echo "==> Restarting Configuration Server"
+  dirac-restart-component Configuration Server $DEBUG
+
   #Install the Framework
   findDatabases 'FrameworkSystem'
   dropDBs
@@ -344,6 +347,9 @@ function fullInstallDIRAC(){
 
   echo 'Content of etc/Production.cfg:'
   cat "$SERVERINSTALLDIR/etc/Production.cfg"
+
+  echo "==> Restarting Configuration Server"
+  dirac-restart-component Configuration Server $DEBUG
 
 }
 

@@ -17,8 +17,9 @@
 Cleaning HeartBeatLoggingInfo
 -----------------------------
 
-If the HeartBeatLoggingInfo table of the JobDB is too large, the information for finished jobs can be removed (including
-for transformation related jobs). In vanilla DIRAC the HeartBeatLoggingInfo is only used by the StalledJobAgent. For
+If the HeartBeatLoggingInfo table of the JobDB is too large, the information for finished jobs can be removed
+(including for transformation related jobs).
+In vanilla DIRAC the HeartBeatLoggingInfo is only used by the StalledJobAgent. For
 this purpose the options MaxHBJobsAtOnce and RemoveStatusDelayHB/[Done|Killed|Failed] should be set to values larger
 than 0.
 
@@ -30,7 +31,7 @@ __RCSID__ = "$Id$"
 import time
 import os
 
-from DIRAC import S_OK, gLogger
+from DIRAC import S_OK
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
@@ -92,7 +93,7 @@ class JobCleaningAgent(AgentModule):
     else:
       self.prodTypes = Operations().getValue(
           'Transformations/DataProcessing', ['MCSimulation', 'Merge'])
-    gLogger.info("Will exclude the following Production types from cleaning %s" % (
+    self.log.info("Will exclude the following Production types from cleaning %s" % (
         ', '.join(self.prodTypes)))
     self.maxJobsAtOnce = self.am_getOption('MaxJobsAtOnce', 500)
     self.jobByJob = self.am_getOption('JobByJob', False)
@@ -154,7 +155,7 @@ class JobCleaningAgent(AgentModule):
       delTime = str(Time.dateTime() - delay * Time.day)
       result = self.removeJobsByStatus(condDict, delTime)
       if not result['OK']:
-        gLogger.warn('Failed to remove jobs in status %s' % status)
+	self.log.warn('Failed to remove jobs in status %s' % status)
 
     if self.maxHBJobsAtOnce > 0:
       for status, delay in self.removeStatusDelayHB.items():
@@ -167,10 +168,10 @@ class JobCleaningAgent(AgentModule):
     """ Remove deleted jobs
     """
     if delay:
-      gLogger.verbose("Removing jobs with %s and older than %s day(s)" % (condDict, delay))
+      self.log.verbose("Removing jobs with %s and older than %s day(s)" % (condDict, delay))
       result = self.jobDB.selectJobs(condDict, older=delay, limit=self.maxJobsAtOnce)
     else:
-      gLogger.verbose("Removing jobs with %s " % condDict)
+      self.log.verbose("Removing jobs with %s " % condDict)
       result = self.jobDB.selectJobs(condDict, limit=self.maxJobsAtOnce)
 
     if not result['OK']:
@@ -188,12 +189,12 @@ class JobCleaningAgent(AgentModule):
     error_count = 0
     result = SandboxStoreClient(useCertificates=True).unassignJobs(jobList)
     if not result['OK']:
-      gLogger.error("Cannot unassign jobs to sandboxes", result['Message'])
+      self.log.error("Cannot unassign jobs to sandboxes", result['Message'])
       return result
 
     result = self.deleteJobOversizedSandbox(jobList)
     if not result['OK']:
-      gLogger.error(
+      self.log.error(
           "Cannot schedule removal of oversized sandboxes", result['Message'])
       return result
 
@@ -211,13 +212,13 @@ class JobCleaningAgent(AgentModule):
         resultLogDB = self.jobLoggingDB.deleteJob(jobID)
         errorFlag = False
         if not resultJobDB['OK']:
-          gLogger.warn('Failed to remove job %d from JobDB' % jobID, result['Message'])
+	  self.log.warn('Failed to remove job %d from JobDB' % jobID, result['Message'])
           errorFlag = True
         if not resultTQ['OK']:
-          gLogger.warn('Failed to remove job %d from TaskQueueDB' % jobID, result['Message'])
+	  self.log.warn('Failed to remove job %d from TaskQueueDB' % jobID, result['Message'])
           errorFlag = True
         if not resultLogDB['OK']:
-          gLogger.warn('Failed to remove job %d from JobLoggingDB' % jobID, result['Message'])
+	  self.log.warn('Failed to remove job %d from JobLoggingDB' % jobID, result['Message'])
           errorFlag = True
         if errorFlag:
           error_count += 1
@@ -228,26 +229,26 @@ class JobCleaningAgent(AgentModule):
     else:
       result = self.jobDB.removeJobFromDB(jobList)
       if not result['OK']:
-        gLogger.error('Failed to delete %d jobs from JobDB' % len(jobList))
+	self.log.error('Failed to delete %d jobs from JobDB' % len(jobList))
       else:
-        gLogger.info('Deleted %d jobs from JobDB' % len(jobList))
+	self.log.info('Deleted %d jobs from JobDB' % len(jobList))
 
       for jobID in jobList:
         resultTQ = self.taskQueueDB.deleteJob(jobID)
         if not resultTQ['OK']:
-          gLogger.warn('Failed to remove job %d from TaskQueueDB' % jobID, resultTQ['Message'])
+	  self.log.warn('Failed to remove job %d from TaskQueueDB' % jobID, resultTQ['Message'])
           error_count += 1
         else:
           count += 1
 
       result = self.jobLoggingDB.deleteJob(jobList)
       if not result['OK']:
-        gLogger.error('Failed to delete %d jobs from JobLoggingDB' % len(jobList))
+	self.log.error('Failed to delete %d jobs from JobLoggingDB' % len(jobList))
       else:
-        gLogger.info('Deleted %d jobs from JobLoggingDB' % len(jobList))
+	self.log.info('Deleted %d jobs from JobLoggingDB' % len(jobList))
 
     if count > 0 or error_count > 0:
-      gLogger.info('Deleted %d jobs from JobDB, %d errors' % (count, error_count))
+      self.log.info('Deleted %d jobs from JobDB, %d errors' % (count, error_count))
     return S_OK()
 
   def deleteJobOversizedSandbox(self, jobIDList):
@@ -264,6 +265,7 @@ class JobCleaningAgent(AgentModule):
     if not osLFNList:
       return S_OK({'Successful': successful, 'Failed': failed})
 
+    self.log.verbose("Deleting oversized sandboxes", osLFNList)
     # Schedule removal of the LFNs now
     for jobID, outputSandboxLFNdict in osLFNList.iteritems():
       lfn = outputSandboxLFNdict['OutputSandboxLFN']
@@ -313,11 +315,11 @@ class JobCleaningAgent(AgentModule):
     :param int delayDays: number of days after which information is removed
     :returns: None
     """
-    gLogger.info("Removing HeartBeatLoggingInfo for Jobs with %s and older than %s day(s)" % (status, delayDays))
+    self.log.info("Removing HeartBeatLoggingInfo for Jobs with %s and older than %s day(s)" % (status, delayDays))
     delTime = str(Time.dateTime() - delayDays * Time.day)
     result = self.jobDB.removeInfoFromHeartBeatLogging(status, delTime, self.maxHBJobsAtOnce)
     if not result['OK']:
-      gLogger.error('Failed to delete from HeartBeatLoggingInfo', result['Message'])
+      self.log.error('Failed to delete from HeartBeatLoggingInfo', result['Message'])
     else:
-      gLogger.info('Deleted HeartBeatLogging info')
+      self.log.info('Deleted HeartBeatLogging info')
     return
