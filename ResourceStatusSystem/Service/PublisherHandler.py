@@ -71,7 +71,7 @@ class PublisherHandler(RequestHandler):
     gLogger.info('getSites')
     return getSites()
 
-  types_getSitesResources = [(basestring, list, types.NoneType)]
+  types_getSitesResources = [(six.string_types, list, types.NoneType)]
 
   def export_getSitesResources(self, siteNames):
     """
@@ -81,13 +81,14 @@ class PublisherHandler(RequestHandler):
     :return: S_OK( { site1 : { ces : [ ces ], 'ses' : [ ses  ] },... } ) | S_ERROR
     """
 
-    gLogger.info('getSitesResources')
+    gLogger.verbose('getSitesResources')
 
     if siteNames is None:
-      siteNames = getSites()
-      if not siteNames['OK']:
-        return siteNames
-      siteNames = siteNames['Value']
+      res = getSites()
+      if not res['OK']:
+	self.log.error("Error getting sites", res['Message'])
+	return res
+      siteNames = res['Value']
 
     if isinstance(siteNames, six.string_types):
       siteNames = [siteNames]
@@ -98,27 +99,33 @@ class PublisherHandler(RequestHandler):
 
       result = getSitesCEsMapping()
       if not result['OK']:
+	self.log.error("Error getting sites/CEs mapping", result['Message'])
 	return result
       res = {}
       res['ces'] = result['Value'](siteName)
       # Convert StorageElements to host names
-      res = DMSHelpers().getSiteSEMapping()
-      if not res['OK']:
-        return res
-      ses = res['Value'][1].get(siteName, [])
-      sesHosts = getStorageElementsHosts(ses)
-      if not sesHosts['OK']:
-        return sesHosts
+      result = DMSHelpers().getSiteSEMapping()
+      if not result['OK']:
+	self.log.error("Error getting sites/SEs mapping", result['Message'])
+	return res
+      ses = result['Value'][1].get(siteName, [])
+      result = getStorageElementsHosts(ses)
+      if not result['OK']:
+	self.log.error("Error getting storage element hosts", result['Message'])
+	return result
       # Remove duplicates
-      res['ses'] = list(set(sesHosts['Value']))
+      res['ses'] = list(set(result['Value']))
 
       sitesRes[siteName] = res
 
     return S_OK(sitesRes)
 
-  types_getElementStatuses = [basestring, (basestring, list, types.NoneType), (basestring, list, types.NoneType),
-                              (basestring, list, types.NoneType), (basestring, list, types.NoneType),
-                              (basestring, list, types.NoneType)]
+  types_getElementStatuses = [six.string_types,
+			      (six.string_types, list, types.NoneType),
+			      (six.string_types, list, types.NoneType),
+			      (six.string_types, list, types.NoneType),
+			      (six.string_types, list, types.NoneType),
+			      (six.string_types, list, types.NoneType)]
 
   def export_getElementStatuses(self, element, name, elementType, statusType, status, tokenOwner):
     """
@@ -130,8 +137,10 @@ class PublisherHandler(RequestHandler):
                                         statusType=statusType, status=status,
                                         tokenOwner=tokenOwner)
 
-  types_getElementHistory = [basestring, (basestring, list, types.NoneType), (basestring, list, types.NoneType),
-                             (basestring, list, types.NoneType)]
+  types_getElementHistory = [six.string_types,
+			     (six.string_types, list, types.NoneType),
+			     (six.string_types, list, types.NoneType),
+			     (six.string_types, list, types.NoneType)]
 
   def export_getElementHistory(self, element, name, elementType, statusType):
     """
@@ -144,7 +153,9 @@ class PublisherHandler(RequestHandler):
                                         statusType=statusType,
                                         meta={'columns': columns})
 
-  types_getElementPolicies = [basestring, (basestring, list, types.NoneType), (basestring, list, types.NoneType)]
+  types_getElementPolicies = [six.string_types,
+			      (six.string_types, list, types.NoneType),
+			      (six.string_types, list, types.NoneType)]
 
   def export_getElementPolicies(self, element, name, statusType):
     """
@@ -162,7 +173,7 @@ class PublisherHandler(RequestHandler):
   def export_getNodeStatuses(self):
     return rsClient.selectStatusElement('Node', 'Status')
 
-  types_getTree = [basestring, basestring]
+  types_getTree = [six.string_types, six.string_types]
 
   def export_getTree(self, elementType, elementName):
     """
@@ -218,7 +229,7 @@ class PublisherHandler(RequestHandler):
 
     return S_OK(tree)
 
-  types_setToken = [basestring] * 7
+  types_setToken = [six.string_types] * 7
 
   def export_setToken(self, element, name, statusType, token, elementType, username, lastCheckTime):
 
@@ -287,7 +298,7 @@ class PublisherHandler(RequestHandler):
 
   # ResourceManagementClient ...................................................
 
-  types_getDowntimes = [basestring, basestring, basestring]
+  types_getDowntimes = [six.string_types, six.string_types, six.string_types]
 
   def export_getDowntimes(self, element, elementType, name):
 
@@ -304,10 +315,10 @@ class PublisherHandler(RequestHandler):
                                                           'Link', 'Description',
                                                           'Severity']})
 
-  types_getCachedDowntimes = [(basestring, types.NoneType, list),
-                              (basestring, types.NoneType, list),
-                              (basestring, types.NoneType, list),
-                              (basestring, types.NoneType, list)]
+  types_getCachedDowntimes = [(six.string_types, types.NoneType, list),
+			      (six.string_types, types.NoneType, list),
+			      (six.string_types, types.NoneType, list),
+			      (six.string_types, types.NoneType, list)]
 
   def export_getCachedDowntimes(self, element, elementType, name, severity):
 
@@ -324,6 +335,7 @@ class PublisherHandler(RequestHandler):
     res = rmClient.selectDowntimeCache(element=element, name=names, severity=severity,
                                        meta={'columns': columns})
     if not res['OK']:
+      self.log.error("Error selecting downtime cache", res['Message'])
       return res
 
     result = S_OK(res['Value'])
@@ -331,7 +343,7 @@ class PublisherHandler(RequestHandler):
 
     return result
 
-  types_setStatus = [basestring] * 7
+  types_setStatus = [six.string_types] * 7
 
   def export_setStatus(self, element, name, statusType, status, elementType, username, lastCheckTime):
 
@@ -346,6 +358,7 @@ class PublisherHandler(RequestHandler):
                                                elementType=elementType,
                                                lastCheckTime=lastCheckTime)
     if not elementInDB['OK']:
+      self.log.error("Error selecting status elements", elementInDB['Message'])
       return elementInDB
     elif not elementInDB['Value']:
       return S_ERROR('Your selection has been modified. Please refresh.')
@@ -361,6 +374,7 @@ class PublisherHandler(RequestHandler):
                                                   tokenOwner=username,
                                                   tokenExpiration=tokenExpiration)
     if not newStatus['OK']:
+      self.log.error("Error setting status", newStatus['Message'])
       return newStatus
 
     return S_OK(reason)
