@@ -314,9 +314,9 @@ class DIRACCAProxyProvider(ProxyProvider):
 
   def __createCertM2Crypto(self, extensions=None):
     """ Create new certificate for user
-        
+
         :param list extensions: list of X509.new_extension()
-        
+
         :return: S_OK(tuple)/S_ERROR() -- tuple contain certificate and pulic key as strings
     """
     # Create publik key
@@ -360,6 +360,7 @@ class DIRACCAProxyProvider(ProxyProvider):
 
   def getFakeProxy(self, dn, time, vo=None, group=None, **kwargs):
     """ Get fake proxy for tests
+
         :param str dn: fake DN
         :param int time: expired time in a seconds
         :param str vo: fake VOMS VO name
@@ -367,6 +368,7 @@ class DIRACCAProxyProvider(ProxyProvider):
         :param dict kwargs: fake VO description dictionary with possible fields:
                - Expired time
                - Role, etc..
+
         :return: S_OK(dict)/S_ERROR() -- dict contain 'proxy' field with is a fake proxy string
     """
     self.__X509Name = X509.X509_Name()
