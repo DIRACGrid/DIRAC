@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 ########################################################################
 # File :   dirac-admin-add-site
-# Author : Andrew C. Smith
+# Author : Federico Stagni
 ########################################################################
 """
   Add a new DIRAC SiteName to DIRAC Configuration, including one or more CEs.
@@ -11,26 +11,25 @@
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base import Script
-from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC import exit as DIRACExit, gLogger
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import addSite, addCEtoSite
 from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getDIRACSiteName
 
 if __name__ == "__main__":
 
   Script.setUsageMessage(
       '\n'.join(
-          [
-              __doc__.split('\n')[1],
-              'Usage:',
-	      '  %s [option|cfgfile] ... DIRACSiteName GridSiteName ...' %
-              Script.scriptName,
-              'Arguments:',
-              '  DIRACSiteName: Name of the site for DIRAC in the form GRID.LOCATION.COUNTRY (ie:LCG.CERN.ch)',
-	      '  GridSiteName: Name of the site in the Grid (ie: CERN-PROD)']))
+	  [
+	      __doc__.split('\n')[1],
+	      'Usage:',
+	      '  %s [option|cfgfile] ... DIRACSiteName GridSiteName CE [CE] ...' %
+	      Script.scriptName,
+	      'Arguments:',
+	      '  DIRACSiteName: Name of the site for DIRAC in the form GRID.LOCATION.COUNTRY (ie:LCG.CERN.ch)',
+	      '  GridSiteName: Name of the site in the Grid (ie: CERN-PROD)',
+	      '  CE: Name of the CE to be included in the site (ie: ce111.cern.ch)']))
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
-
-  csAPI = CSAPI()
 
   if len(args) < 3:
     Script.showHelp()
@@ -38,6 +37,7 @@ if __name__ == "__main__":
 
   diracSiteName = args[0]
   gridSiteName = args[1]
+  ces = args[2:]
   try:
     diracGridType, place, country = diracSiteName.split('.')
   except ValueError:
@@ -74,15 +74,14 @@ if __name__ == "__main__":
 
   cfgBase = "/Resources/Sites/%s/%s" % (diracGridType, diracSiteName)
   change = False
-  if newSite:
-    gLogger.notice("Adding new site to CS: %s" % diracSiteName)
-    csAPI.setOption("%s/Name" % cfgBase, gridSiteName)
-    change = True
-  if change:
-    res = csAPI.commitChanges()
+  gLogger.notice("Site to CS: %s" % diracSiteName)
+  res = addSite(diracSiteName, {"Name": gridSiteName})
+  if not res['OK']:
+    gLogger.error("Failed adding site to CS", res['Message'])
+    DIRACExit(1)
+  gLogger.notice("Adding CEs: %s" % ','.join(ces))
+  for ce in ces:
+    res = addCEtoSite(diracSiteName, ce)
     if not res['OK']:
-      gLogger.error("Failed to commit changes to CS", res['Message'])
-      DIRACExit(-1)
-    gLogger.notice(
-	"Successfully added site %s to the CS with name %s" %
-	(diracSiteName, gridSiteName))
+      gLogger.error("Failed adding CE %s to CS" % ce, res['Message'])
+      DIRACExit(2)
