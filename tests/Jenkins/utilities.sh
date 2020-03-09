@@ -726,14 +726,14 @@ function diracRefreshCS(){
 #
 # diracSite:
 #
-#   add a site (the CS has the running)
+#   add a site (the CS has to be running)
 #
 #.............................................................................
 
 function diracAddSite(){
   echo '==> [diracAddSite]'
 
-  if ! dirac-admin-add-site DIRAC.Jenkins.ch aNameWhatSoEver jenkins.cern.ch; then
+  if ! dirac-admin-add-site DIRAC.Jenkins.ch aNameWhatSoEver jenkins.cern.ch "$DEBUG"; then
     echo 'ERROR: dirac-admin-add-site failed'
     exit 1
   fi

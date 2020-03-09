@@ -203,6 +203,12 @@ function fullInstallDIRAC(){
     exit 1
   fi
 
+  echo 'Content of etc/dirac.cfg:'
+  cat "$SERVERINSTALLDIR/etc/dirac.cfg"
+
+  echo 'Content of etc/Production.cfg (just after installSite):'
+  cat "$SERVERINSTALLDIR/etc/Production.cfg"
+
   # Dealing with security stuff
   # generateCertificates
   if ! generateUserCredentials; then
@@ -246,6 +252,9 @@ function fullInstallDIRAC(){
     echo "ERROR: diracSEs failed"
     exit 1
   fi
+
+  echo 'Content of etc/Production.cfg:'
+  cat "$SERVERINSTALLDIR/etc/Production.cfg"
 
   echo "==> Restarting Framework ProxyManager"
   dirac-restart-component Framework ProxyManager $DEBUG
@@ -332,6 +341,10 @@ function fullInstallDIRAC(){
     echo "ERROR: diracAgents failed"
     exit 1
   fi
+
+  echo 'Content of etc/Production.cfg:'
+  cat "$SERVERINSTALLDIR/etc/Production.cfg"
+
 }
 
 
