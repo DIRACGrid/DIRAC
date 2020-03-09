@@ -13,6 +13,11 @@ echo -e "*** $(date -u)  Getting a non privileged user\n" 2>&1 | tee -a clientTe
 dirac-proxy-init -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key $DEBUG 2>&1 | tee -a clientTestOutputs.txt; (( ERR |= $? ))
 
 #-------------------------------------------------------------------------------#
+echo -e "*** $(date -u) **** Configuration TESTS ****\n"
+pytest $CLIENTINSTALLDIR/DIRAC/tests/Integration/ConfigurationSystem/Test_Helpers.py 2>&1 | tee -a clientTestOutputs.txt; (( ERR |= $? ))
+
+
+#-------------------------------------------------------------------------------#
 echo -e "*** $(date -u) **** Accounting TESTS ****\n"
 pytest $CLIENTINSTALLDIR/DIRAC/tests/Integration/AccountingSystem/Test_DataStoreClient.py 2>&1 | tee -a clientTestOutputs.txt; (( ERR |= $? ))
 pytest $CLIENTINSTALLDIR/DIRAC/tests/Integration/AccountingSystem/Test_ReportsClient.py 2>&1 | tee -a clientTestOutputs.txt; (( ERR |= $? ))
