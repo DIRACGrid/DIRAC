@@ -1,87 +1,65 @@
-import unittest
-import importlib
-from mock import Mock
+import pytest
+from mock import MagicMock
 
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getDIRACPlatform, getCompatiblePlatforms
 
-class HelpersTestCase( unittest.TestCase ):
-  """ Base class for the Helpers test cases
-  """
-  def setUp( self ):
-    self.gConfigMock = Mock()
-    self.resourcesHelper = importlib.import_module( 'DIRAC.ConfigurationSystem.Client.Helpers.Resources' )
-    self.resourcesHelper.gConfig = self.gConfigMock
 
-  def tearDown( self ):
-
-    del self.resourcesHelper
+mockGCReply = MagicMock()
 
 
-class ResourcesSuccess( HelpersTestCase ):
+@pytest.mark.parametrize("mockGCReplyInput, requested, expectedRes, expectedValue", [
+    ({'OK': False, 'Message': 'error'}, 'plat', False, None),
+    ({'OK': True, 'Value': ''}, 'plat', False, None),
+    ({'OK': True, 'Value': {'plat1': 'OS1, OS2,  OS3',
+			    'plat2': 'OS4, OS5',
+			    'plat3': 'OS1, OS4'}}, 'plat', False, None),
+    ({'OK': True, 'Value': {'plat1': 'OS1, OS2,  OS3',
+			    'plat2': 'OS4, OS5',
+			    'plat3': 'OS1, OS4'}}, 'OS1', True, ['plat1', 'plat3']),
+    ({'OK': True, 'Value': {'plat1': 'OS1, OS2,  OS3',
+			    'plat2': 'OS4, OS5',
+			    'plat3': 'OS1, OS4'}}, 'OS2', True, ['plat1']),
+    ({'OK': True, 'Value': {'plat1': 'OS1, OS2,  OS3',
+			    'plat2': 'OS4, OS5',
+			    'plat3': 'OS1, OS4'}}, 'OS3', True, ['plat1']),
+    ({'OK': True, 'Value': {'plat1': 'OS1, OS2,  OS3',
+			    'plat2': 'OS4, OS5',
+			    'plat3': 'OS1, OS4'}}, 'OS4', True, ['plat2', 'plat3']),
+    ({'OK': True, 'Value': {'plat1': 'OS1, OS2,  OS3',
+			    'plat2': 'OS4, OS5',
+			    'plat3': 'OS1, OS4'}}, 'OS5', True, ['plat2']),
+    ({'OK': True, 'Value': {'plat1': 'OS1, OS2,  OS3',
+			    'plat2': 'OS4, OS5',
+			    'plat3': 'OS1, OS4'}}, 'plat1', True, ['plat1']),
+])
+def test_getDIRACPlatform(mocker, mockGCReplyInput, requested, expectedRes, expectedValue):
 
-  def test_getDIRACPlatform( self ):
-    self.gConfigMock.getOptionsDict.return_value = {'OK':False, 'Value':''}
-    res = getDIRACPlatform( 'plat' )
-    self.assertFalse( res['OK'] )
+  mockGCReply.return_value = mockGCReplyInput
 
-    self.gConfigMock.getOptionsDict.return_value = {'OK':True, 'Value':''}
-    res = getDIRACPlatform( 'plat' )
-    self.assertFalse( res['OK'] )
+  mocker.patch('DIRAC.Interfaces.API.Dirac.gConfig.getOptionsDict', side_effect=mockGCReply)
 
-    self.gConfigMock.getOptionsDict.return_value = {'OK':True, 'Value':{'plat1': 'OS1, OS2,  OS3',
-                                                                        'plat2': 'OS4, OS5',
-                                                                        'plat3': 'OS1, OS4'}}
-    res = getDIRACPlatform( 'plat' )
-    self.assertFalse( res['OK'] )
-
-    res = getDIRACPlatform( 'OS1' )
-    self.assertTrue(res['OK'])
-    self.assertEqual( res['Value'], ['plat3', 'plat1'] )
-
-    res = getDIRACPlatform( 'OS2' )
-    self.assertTrue(res['OK'])
-    self.assertEqual( res['Value'], ['plat1'] )
-
-    res = getDIRACPlatform( 'OS3' )
-    self.assertTrue(res['OK'])
-    self.assertEqual( res['Value'], ['plat1'] )
-
-    res = getDIRACPlatform( 'OS4' )
-    self.assertTrue(res['OK'])
-    self.assertEqual( res['Value'], ['plat3', 'plat2'] )
-
-    res = getDIRACPlatform( 'OS5' )
-    self.assertTrue(res['OK'])
-    self.assertEqual( res['Value'], ['plat2'] )
-
-    res = getDIRACPlatform( 'plat1' )
-    self.assertTrue( res['OK'] )
-
-  def test_getCompatiblePlatforms( self ):
-    self.gConfigMock.getOptionsDict.return_value = {'OK':False, 'Value':''}
-    res = getCompatiblePlatforms( 'plat' )
-    self.assertFalse( res['OK'] )
-
-    self.gConfigMock.getOptionsDict.return_value = {'OK':True, 'Value':''}
-    res = getCompatiblePlatforms( 'plat' )
-    self.assertFalse( res['OK'] )
-
-    self.gConfigMock.getOptionsDict.return_value = {'OK':True, 'Value':{'plat1': 'xOS1, xOS2,  xOS3',
-                                                                        'plat2': 'sys2, xOS4, xOS5',
-                                                                        'plat3': 'sys1, xOS1, xOS4'}}
-    res = getCompatiblePlatforms( 'plat' )
-    self.assertTrue( res['OK'] )
-    self.assertEqual( res['Value'], ['plat'] )
-
-    res = getCompatiblePlatforms( 'plat1' )
-    self.assertTrue(res['OK'])
-    self.assertEqual( res['Value'], ['plat1', 'xOS1', 'xOS2', 'xOS3'] )
+  res = getDIRACPlatform(requested)
+  assert res['OK'] is expectedRes, res
+  if expectedRes:
+    assert set(res['Value']) == set(expectedValue), res['Value']
 
 
+@pytest.mark.parametrize("mockGCReplyInput, requested, expectedRes, expectedValue", [
+    ({'OK': False, 'Message': 'error'}, 'plat', False, None),
+    ({'OK': True, 'Value': ''}, 'plat', False, None),
+    ({'OK': True, 'Value': {'plat1': 'xOS1, xOS2,  xOS3',
+			    'plat2': 'sys2, xOS4, xOS5',
+			    'plat3': 'sys1, xOS1, xOS4'}}, 'plat', True, ['plat']),
+    ({'OK': True, 'Value': {'plat1': 'xOS1, xOS2,  xOS3',
+			    'plat2': 'sys2, xOS4, xOS5',
+			    'plat3': 'sys1, xOS1, xOS4'}}, 'plat1', True, ['plat1', 'xOS1', 'xOS2', 'xOS3'])
+])
+def test_getCompatiblePlatforms(mocker, mockGCReplyInput, requested, expectedRes, expectedValue):
+  mockGCReply.return_value = mockGCReplyInput
 
-if __name__ == '__main__':
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase( HelpersTestCase )
-  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( ResourcesSuccess ) )
-  testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
+  mocker.patch('DIRAC.Interfaces.API.Dirac.gConfig.getOptionsDict', side_effect=mockGCReply)
 
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
+  res = getCompatiblePlatforms(requested)
+  assert res['OK'] is expectedRes, res
+  if expectedRes:
+    assert set(res['Value']) == set(expectedValue), res['Value']
