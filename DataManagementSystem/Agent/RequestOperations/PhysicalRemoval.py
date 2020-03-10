@@ -1,5 +1,4 @@
 ########################################################################
-# $HeadURL $
 # File: PhysicalRemoval.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/04/02 11:56:10
@@ -30,99 +29,101 @@ import os
 # # from DIRAC
 from DIRAC import S_OK
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
-from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase  import DMSRequestOperationsBase
+from DIRAC.DataManagementSystem.Agent.RequestOperations.DMSRequestOperationsBase import DMSRequestOperationsBase
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 
 ########################################################################
-class PhysicalRemoval( DMSRequestOperationsBase ):
+
+
+class PhysicalRemoval(DMSRequestOperationsBase):
   """
   .. class:: PhysicalRemoval
 
   """
 
-  def __init__( self, operation = None, csPath = None ):
+  def __init__(self, operation=None, csPath=None):
     """c'tor
 
     :param self: self reference
     :param ~DIRAC.RequestManagementSystem.Client.Operation.Operation operation: Operation instance
     :param str csPath: cs config path
     """
-    DMSRequestOperationsBase.__init__( self, operation, csPath )
+    DMSRequestOperationsBase.__init__(self, operation, csPath)
     # # gMonitor stuff
-    gMonitor.registerActivity( "PhysicalRemovalAtt", "Physical file removals attempted",
-                               "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "PhysicalRemovalOK", "Successful file physical removals",
-                               "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "PhysicalRemovalFail", "Failed file physical removals",
-                               "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM )
-    gMonitor.registerActivity( "PhysicalRemovalSize", "Physically removed size",
-                               "RequestExecutingAgent", "Bytes", gMonitor.OP_ACUM )
+    gMonitor.registerActivity("PhysicalRemovalAtt", "Physical file removals attempted",
+                              "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
+    gMonitor.registerActivity("PhysicalRemovalOK", "Successful file physical removals",
+                              "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
+    gMonitor.registerActivity("PhysicalRemovalFail", "Failed file physical removals",
+                              "RequestExecutingAgent", "Files/min", gMonitor.OP_SUM)
+    gMonitor.registerActivity("PhysicalRemovalSize", "Physically removed size",
+                              "RequestExecutingAgent", "Bytes", gMonitor.OP_ACUM)
 
-  def __call__( self ):
+  def __call__(self):
     """ perform physical removal operation """
-    bannedTargets = self.checkSEsRSS( access = 'RemoveAccess' )
+    bannedTargets = self.checkSEsRSS(access='RemoveAccess')
     if not bannedTargets['OK']:
-      gMonitor.addMark( "PhysicalRemovalAtt" )
-      gMonitor.addMark( "PhysicalRemovalFail" )
+      gMonitor.addMark("PhysicalRemovalAtt")
+      gMonitor.addMark("PhysicalRemovalFail")
       return bannedTargets
 
     if bannedTargets['Value']:
-      return S_OK( "%s targets are banned for removal" % ",".join( bannedTargets['Value'] ) )
+      return S_OK("%s targets are banned for removal" % ",".join(bannedTargets['Value']))
 
     # # get waiting files
     waitingFiles = self.getWaitingFilesList()
     # # prepare lfn dict
-    toRemoveDict = dict( ( opFile.LFN, opFile ) for opFile in waitingFiles )
+    toRemoveDict = dict((opFile.LFN, opFile) for opFile in waitingFiles)
 
     targetSEs = self.operation.targetSEList
-    gMonitor.addMark( "PhysicalRemovalAtt", len( toRemoveDict ) * len( targetSEs ) )
+    gMonitor.addMark("PhysicalRemovalAtt", len(toRemoveDict) * len(targetSEs))
 
     # # keep errors dict
-    removalStatus = dict.fromkeys( toRemoveDict.keys(), None )
+    removalStatus = dict.fromkeys(toRemoveDict.keys(), None)
     for lfn in removalStatus:
-      removalStatus[lfn] = dict.fromkeys( targetSEs, "" )
+      removalStatus[lfn] = dict.fromkeys(targetSEs, "")
 
     for targetSE in targetSEs:
 
-      self.log.info( "removing files from %s" % targetSE )
+      self.log.info("removing files from %s" % targetSE)
 
       # # 1st - bulk removal
-      bulkRemoval = self.bulkRemoval( toRemoveDict, targetSE )
+      bulkRemoval = self.bulkRemoval(toRemoveDict, targetSE)
       if not bulkRemoval["OK"]:
-        self.log.error( 'Failed bulk removal', bulkRemoval["Message"] )
+        self.log.error('Failed bulk removal', bulkRemoval["Message"])
         self.operation.Error = bulkRemoval["Message"]
         return bulkRemoval
 
       bulkRemoval = bulkRemoval["Value"]
 
       for lfn, opFile in toRemoveDict.items():
-        removalStatus[lfn][targetSE] = bulkRemoval["Failed"].get( lfn, "" )
+        removalStatus[lfn][targetSE] = bulkRemoval["Failed"].get(lfn, "")
         opFile.Error = removalStatus[lfn][targetSE]
 
       # # 2nd - single file removal
-      toRetry = dict( ( lfn, opFile ) for lfn, opFile in toRemoveDict.items() if lfn in bulkRemoval["Failed"] )
+      toRetry = dict((lfn, opFile) for lfn, opFile in toRemoveDict.items() if lfn in bulkRemoval["Failed"])
       for lfn, opFile in toRetry.items():
-        self.singleRemoval( opFile, targetSE )
+        self.singleRemoval(opFile, targetSE)
         if not opFile.Error:
           removalStatus[lfn][targetSE] = ""
         else:
-          gMonitor.addMark( "PhysicalRemovalFail", 1 )
+          gMonitor.addMark("PhysicalRemovalFail", 1)
           removalStatus[lfn][targetSE] = opFile.Error
 
     # # update file status for waiting files
     failed = 0
     for opFile in self.operation:
       if opFile.Status == "Waiting":
-        errors = [ error for error in removalStatus[opFile.LFN].values() if error.strip() ]
+        errors = [error for error in removalStatus[opFile.LFN].values() if error.strip()]
         if errors:
           failed += 1
-          opFile.Error = ",".join( errors )
+          opFile.Error = ",".join(errors)
           if "Write access not permitted for this credential" in opFile.Error:
             opFile.Status = "Failed"
-            gMonitor.addMark( "PhysicalRemovalFail", len( errors ) )
+            gMonitor.addMark("PhysicalRemovalFail", len(errors))
           continue
-        gMonitor.addMark( "PhysicalRemovalOK", len( targetSEs ) )
-        gMonitor.addMark( "PhysicalRemovalSize", opFile.Size * len( targetSEs ) )
+        gMonitor.addMark("PhysicalRemovalOK", len(targetSEs))
+        gMonitor.addMark("PhysicalRemovalSize", opFile.Size * len(targetSEs))
         opFile.Status = "Done"
 
     if failed:
@@ -130,18 +131,17 @@ class PhysicalRemoval( DMSRequestOperationsBase ):
 
     return S_OK()
 
-  def bulkRemoval( self, toRemoveDict, targetSE ):
+  def bulkRemoval(self, toRemoveDict, targetSE):
     """ bulk removal of lfns from :targetSE:
 
     :param dict toRemoveDict: { lfn : opFile, ... }
     :param str targetSE: target SE name
     """
 
-
-    bulkRemoval = StorageElement( targetSE ).removeFile( toRemoveDict )
+    bulkRemoval = StorageElement(targetSE).removeFile(toRemoveDict)
     return bulkRemoval
 
-  def singleRemoval( self, opFile, targetSE ):
+  def singleRemoval(self, opFile, targetSE):
     """ remove single file from :targetSE: """
     proxyFile = None
     if "Write access not permitted for this credential" in opFile.Error:
@@ -155,12 +155,12 @@ class PhysicalRemoval( DMSRequestOperationsBase ):
         # #  you're a data manager - save current proxy and get a new one for LFN and retry
         saveProxy = os.environ["X509_USER_PROXY"]
         try:
-          proxyFile = self.getProxyForLFN( opFile.LFN )
+          proxyFile = self.getProxyForLFN(opFile.LFN)
           if not proxyFile["OK"]:
             opFile.Error = proxyFile["Message"]
           else:
             proxyFile = proxyFile["Value"]
-            removeFile = StorageElement( targetSE ).removeFile( opFile.LFN )
+            removeFile = StorageElement(targetSE).removeFile(opFile.LFN)
             if not removeFile["OK"]:
               opFile.Error = removeFile["Message"]
             else:
@@ -172,7 +172,7 @@ class PhysicalRemoval( DMSRequestOperationsBase ):
                 opFile.Error = ""
         finally:
           if proxyFile:
-            os.unlink( proxyFile )
+            os.unlink(proxyFile)
           # # put back request owner proxy to env
           os.environ["X509_USER_PROXY"] = saveProxy
-    return S_OK( opFile )
+    return S_OK(opFile)

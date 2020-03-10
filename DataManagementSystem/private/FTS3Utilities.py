@@ -1,14 +1,11 @@
 """ Some utilities for FTS3...
 """
 
-import json
-import datetime
 import random
 import threading
 
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
-from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 

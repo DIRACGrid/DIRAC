@@ -2,7 +2,7 @@
 """ Create a DIRAC RemoveReplica|RemoveFile request to be executed by the RMS
 """
 from __future__ import print_function
-__RCSID__ = "ea64b42 (2012-07-29 16:45:05 +0200) ricardo <Ricardo.Graciani@gmail.com>"
+__RCSID__ = "Id"
 
 import os
 from hashlib import md5
@@ -10,46 +10,46 @@ import time
 from DIRAC.Core.Base import Script
 from DIRAC.Core.Utilities.List import breakListIntoChunks
 
-Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[0],
-                                     __doc__.split( '\n' )[1],
-                                     'Usage:',
-                                     '  %s [option|cfgfile] ... SE LFN ...' % Script.scriptName,
-                                     'Arguments:',
-                                     '  SE:       StorageElement|All',
-                                     '  LFN:      LFN or file containing a List of LFNs' ] ) )
+Script.setUsageMessage('\n'.join([__doc__.split('\n')[0],
+                                  __doc__.split('\n')[1],
+                                  'Usage:',
+                                  '  %s [option|cfgfile] ... SE LFN ...' % Script.scriptName,
+                                  'Arguments:',
+                                  '  SE:       StorageElement|All',
+                                  '  LFN:      LFN or file containing a List of LFNs']))
 
-Script.parseCommandLine( ignoreErrors = False )
+Script.parseCommandLine(ignoreErrors=False)
 
 args = Script.getPositionalArgs()
-if len( args ) < 2:
+if len(args) < 2:
   Script.showHelp()
 
-targetSE = args.pop( 0 )
+targetSE = args.pop(0)
 
 lfns = []
 for inputFileName in args:
-  if os.path.exists( inputFileName ):
-    inputFile = open( inputFileName, 'r' )
+  if os.path.exists(inputFileName):
+    inputFile = open(inputFileName, 'r')
     string = inputFile.read()
     inputFile.close()
-    lfns.extend( [ lfn.strip() for lfn in string.splitlines() ] )
+    lfns.extend([lfn.strip() for lfn in string.splitlines()])
   else:
-    lfns.append( inputFileName )
+    lfns.append(inputFileName)
 
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 import DIRAC
 # Check is provided SE is OK
 if targetSE != 'All':
-  se = StorageElement( targetSE )
+  se = StorageElement(targetSE)
   if not se.valid:
     print(se.errorReason)
     print()
     Script.showHelp()
 
-from DIRAC.RequestManagementSystem.Client.Request           import Request
-from DIRAC.RequestManagementSystem.Client.Operation         import Operation
-from DIRAC.RequestManagementSystem.Client.File              import File
-from DIRAC.RequestManagementSystem.Client.ReqClient         import ReqClient
+from DIRAC.RequestManagementSystem.Client.Request import Request
+from DIRAC.RequestManagementSystem.Client.Operation import Operation
+from DIRAC.RequestManagementSystem.Client.File import File
+from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
 from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 
@@ -60,20 +60,20 @@ requestOperation = 'RemoveReplica'
 if targetSE == 'All':
   requestOperation = 'RemoveFile'
 
-for lfnList in breakListIntoChunks( lfns, 100 ):
+for lfnList in breakListIntoChunks(lfns, 100):
 
   oRequest = Request()
-  requestName = "%s_%s" % ( md5( repr( time.time() ) ).hexdigest()[:16], md5( repr( time.time() ) ).hexdigest()[:16] )
+  requestName = "%s_%s" % (md5(repr(time.time())).hexdigest()[:16], md5(repr(time.time())).hexdigest()[:16])
   oRequest.RequestName = requestName
 
   oOperation = Operation()
   oOperation.Type = requestOperation
   oOperation.TargetSE = targetSE
 
-  res = fc.getFileMetadata( lfnList )
+  res = fc.getFileMetadata(lfnList)
   if not res['OK']:
     print("Can't get file metadata: %s" % res['Message'])
-    DIRAC.exit( 1 )
+    DIRAC.exit(1)
   if res['Value']['Failed']:
     print("Could not get the file metadata of the following, so skipping them:")
     for fFile in res['Value']['Failed']:
@@ -88,16 +88,16 @@ for lfnList in breakListIntoChunks( lfns, 100 ):
     rarFile.Checksum = lfnMetadata[lfn]['Checksum']
     rarFile.GUID = lfnMetadata[lfn]['GUID']
     rarFile.ChecksumType = 'ADLER32'
-    oOperation.addFile( rarFile )
+    oOperation.addFile(rarFile)
 
-  oRequest.addOperation( oOperation )
+  oRequest.addOperation(oOperation)
 
-  isValid = RequestValidator().validate( oRequest )
+  isValid = RequestValidator().validate(oRequest)
   if not isValid['OK']:
     print("Request is not valid: ", isValid['Message'])
-    DIRAC.exit( 1 )
+    DIRAC.exit(1)
 
-  result = reqClient.putRequest( oRequest )
+  result = reqClient.putRequest(oRequest)
   if result['OK']:
     print('Request %d Submitted' % result['Value'])
   else:
