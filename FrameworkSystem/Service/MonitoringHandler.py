@@ -63,18 +63,21 @@ class MonitoringHandler(RequestHandler):
 
     :param int sourceId: component id
     :param dict activitiesDict: the key is the metrice, the value is a dictionary with timestamp and value
-                                for example: {u'CPU': {1583244000: 10.6055594906},
+                                for example::
+
+                                             {u'CPU': {1583244000: 10.6055594906},
                                               u'Iteration': {1583244420: 1,
-                                                              1583244480: 1,
-                                                              1583244540: 1,
-                                                              1583244600: 1,
-                                                              1583244660: 1},
+                                                             1583244480: 1,
+                                                             1583244540: 1,
+                                                             1583244600: 1,
+                                                             1583244660: 1},
                                               u'MEM': {1583244000: 49.03515625},
                                               u'Processed': {1583244420: 5,
-                                                              1583244480: 5,
-                                                              1583244540: 5,
-                                                              1583244600: 5,
-                                                              1583244660: 6}}
+                                                             1583244480: 5,
+                                                             1583244540: 5,
+                                                             1583244600: 5,
+                                                             1583244660: 6}}
+
     :param dict componentExtraInfo: extra information
     """
 
