@@ -107,6 +107,17 @@ csAPI.setOption('Resources/FileCatalogs/TSCatalog/AccessType', 'Write')
 csAPI.setOption('Resources/FileCatalogs/TSCatalog/Status', 'Active')
 csAPI.setOption('Resources/FileCatalogs/TSCatalog/CatalogURL', 'Transformation/TransformationManager')
 
+res = csAPI.createSection('Resources/FileCatalogs/MultiVOFileCatalog')
+if not res['OK']:
+  print(res['Message'])
+  exit(1)
+
+csAPI.setOption('Resources/FileCatalogs/MultiVOFileCatalog/CatalogType', 'FileCatalog')
+csAPI.setOption('Resources/FileCatalogs/MultiVOFileCatalog/AccessType', 'Read-Write')
+csAPI.setOption('Resources/FileCatalogs/MultiVOFileCatalog/Status', 'Active')
+csAPI.setOption('Resources/FileCatalogs/MultiVOFileCatalog/Master', 'True')
+csAPI.setOption('Resources/FileCatalogs/MultiVOFileCatalog/CatalogURL', 'DataManagement/MultiVOFileCatalog')
+
 # Now setting up the following option:
 #     Resources
 #     {
@@ -311,7 +322,7 @@ csAPI.setOption('Operations/Defaults/ResourceStatus/Policies/AlwaysBannedForSite
 #     {
 #       Catalogs
 #       {
-#         CatalogList = FileCatalog, TSCatalog
+#         CatalogList = FileCatalog, TSCatalog, MultiVOFileCatalog
 #       }
 #     }
 
@@ -327,7 +338,8 @@ res = csAPI.createSection('Operations/Defaults/Services/Catalogs/CatalogList')
 if not res['OK']:
   print(res['Message'])
   exit(1)
-csAPI.setOption('Operations/Defaults/Services/Catalogs/CatalogList', 'FileCatalog, TSCatalog')
+csAPI.setOption('Operations/Defaults/Services/Catalogs/CatalogList',
+                'FileCatalog, TSCatalog, MultiVOFileCatalog')
 
 
 # Now setting the Registry section

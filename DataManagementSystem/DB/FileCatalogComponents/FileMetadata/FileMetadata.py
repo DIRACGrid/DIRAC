@@ -43,7 +43,6 @@ class FileMetadata(object):
       return result
     if pName in result['Value']:
       return S_ERROR('The metadata %s is already defined for Directories' % pName)
-
     result = self._getFileMetadataFields(credDict)
     if not result['OK']:
       return result
@@ -53,7 +52,6 @@ class FileMetadata(object):
       else:
         return S_ERROR('Attempt to add an existing metadata with different type: %s/%s' %
                        (pType, result['Value'][pName]))
-
     valueType = pType
     if pType == "MetaSet":
       valueType = "VARCHAR(64)"
@@ -71,7 +69,6 @@ class FileMetadata(object):
     result = self.__transformMetaParameterToData(pName)
     if not result['OK']:
       return result
-
     return S_OK("Added new metadata: %d" % metadataID)
 
   def deleteMetadataField(self, pName, credDict):

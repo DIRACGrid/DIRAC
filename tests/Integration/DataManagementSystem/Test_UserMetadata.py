@@ -7,13 +7,16 @@ import unittest
 import os
 import sys
 import os.path
+import traceback
 
 from DIRAC.Core.Base.Script import parseCommandLine
 
 parseCommandLine()
 
 from DIRAC.Interfaces.API.Dirac import Dirac
+from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
+from DIRAC import gConfig
 
 
 def random_dd(outfile, size_mb):
@@ -23,116 +26,134 @@ def random_dd(outfile, size_mb):
       f.write(os.urandom(512))
 
 
-class TestUserMetadataTestCase(unittest.TestCase):
+class TestUserMetadataBasicTestCase(unittest.TestCase):
   def setUp(self):
     self.dirac = Dirac()
-    self.fc = FileCatalog()
+    csAPI = CSAPI()
 
-    self.lfn5 = '/gridpp/user/m/martynia/FC_test/test_file_10MB_v5.bin'
+    self.lfn5 = '/Jenkins/test/unit-test/FC-user-metadata/test_file_10MB_v5.bin'
     self.dir5 = os.path.dirname(self.lfn5)
     # local file, for now:
-    self.fullPath = 'test_file_10MB.bin'
-    random_dd(self.fullPath, 10)
-    diracSE = 'UKI-LT2-IC-HEP-disk'
+    self.fname = os.path.basename(self.lfn5)
+    random_dd(self.fname, 10)
+    self.diracSE = 'SE-1'
+    try:
+      self.fc = FileCatalog(['MultiVOFileCatalog'])
+    except Exception:
+      self.fail(" FileCatalog(['MultiVOFileCatalog']) raised Exception unexpectedly!\n" + traceback.format_exc())
+      return
     # add a replica
-    result = self.dirac.addFile(self.lfn5, self.fullPath, diracSE)
-    self.assertTrue(result['OK'])
+    self.fileadded = self.dirac.addFile(self.lfn5, self.fname, self.diracSE)
+    self.assertTrue(self.fileadded['OK'])
 
   def tearDown(self):
     # meta index -r
-    result = self.fc.deleteMetadataField('JMMetaInt6')
+    result = self.fc.deleteMetadataField('MetaInt6')
+    self.assertTrue(result['OK'])
+    result = self.fc.deleteMetadataField('TestDirectory6')
+    self.assertTrue(result['OK'])
+    # remove the MultiVOFileCatalog
+    self.fc.removeCatalog('MultiVOFileCatalog')
     # delete a sole replica: dirac-dms-remove-files
     result = self.dirac.removeFile(self.lfn5)
     self.assertTrue(result['OK'])
-    os.remove(self.fullPath)
+    os.remove(self.fname)
 
 
-class testMetadata(TestUserMetadataTestCase):
-  def test_AddQueryRemove(self):
+class testMetadata(TestUserMetadataBasicTestCase):
+  def test_verifyCatalogConfiguration(self):
+    fileMetadataOption = gConfig.getOption('Systems/DataManagement/Production/Services/MultiVOFileCatalog/FileMetadata')
+    dirMetadataOption = gConfig.getOption(
+        'Systems/DataManagement/Production/Services/MultiVOFileCatalog/DirectoryMetadata')
+    masterOption = gConfig.getOption('Resources/FileCatalogs/MultiVOFileCatalog/Master')
+    self.assertTrue(fileMetadataOption['OK'])
+    self.assertEqual(fileMetadataOption['Value'], 'MultiVOFileMetadata')
+    self.assertTrue(dirMetadataOption['OK'])
+    self.assertEqual(dirMetadataOption['Value'], 'MultiVODirectoryMetadata')
+    self.assertTrue(masterOption['OK'])
+    self.assertEqual(masterOption['Value'], 'True')
+    # the default catalog is not a master anymore...
+    dmasterOption = gConfig.getOption('Resources/FileCatalogs/FileCatalog/Master')
+    self.assertTrue(dmasterOption['OK'])
+    self.assertEqual(dmasterOption['Value'], 'False')
+
+  def test_fileCatalogClient(self):
+    try:
+      #  MultiVOFileCatalog instantiation test only
+      fc = FileCatalog(['MultiVOFileCatalog'])
+    except Exception:
+      self.fail(" FileCatalog(['MultiVOFileCatalog']) raised ExceptionType unexpectedly!")
+
+  def test_isFileAdded(self):
+    self.assertTrue(self.fileadded['OK'])
     result = self.dirac.getLfnMetadata(self.lfn5)
     self.assertTrue(result['OK'])
     self.assertTrue(self.lfn5 in result['Value']['Successful'])
     self.assertEqual(result['Value']['Failed'], {})
 
+  def test_metaIndex(self):
     # meta index -f
-    result = self.fc.addMetadataField('JMMetaInt6', 'INT', metaType='-f')
+    result = self.fc.addMetadataField('MetaInt6', 'INT', metaType='-f')
+    print("Result: ", result, " type ", type(result))
     self.assertTrue(result['OK'])
     self.assertNotEqual(result['Value'], 'Already exists')
     self.assertTrue(result['Value'].startswith('Added new metadata:'))
 
-    # meta index -d
-    result = self.fc.addMetadataField('JMTestDirectory6', 'INT', metaType='-d')
+   # meta index -d
+    result = self.fc.addMetadataField('TestDirectory6', 'INT', metaType='-d')
     self.assertTrue(result['OK'])
     self.assertNotEqual(result['Value'], 'Already exists')
     self.assertTrue(result['Value'].startswith('Added new metadata:'))
 
-    # meta show
+   # meta show
     result = self.fc.getMetadataFields()
     self.assertTrue(result['OK'])
-    self.assertDictContainsSubset({'JMMetaInt6': 'INT'}, result['Value']['FileMetaFields'])
-    self.assertDictContainsSubset({'JMTestDirectory6': 'INT'}, result['Value']['DirectoryMetaFields'])
+    self.assertDictContainsSubset({'MetaInt6': 'INT'}, result['Value']['FileMetaFields'])
+    self.assertDictContainsSubset({'TestDirectory6': 'INT'}, result['Value']['DirectoryMetaFields'])
 
-    # meta set
-    metaDict6 = {'JMMetaInt6': 13}
+   # meta set
+    metaDict6 = {'MetaInt6': 13}
     result = self.fc.setMetadata(self.lfn5, metaDict6)
     self.assertTrue(result['OK'])
 
-    metaDirDict6 = {'JMTestDirectory6': 126}
+    metaDirDict6 = {'TestDirectory6': 126}
     result = self.fc.setMetadata(self.dir5, metaDirDict6)
     self.assertTrue(result['OK'])
 
-    # find
+    # find (files)
     result = self.fc.findFilesByMetadata(metaDict6)
     self.assertTrue(result['OK'])
     self.assertIn(self.lfn5, result['Value'])
 
-    # find
-    metaDirDict = {'JMTestDirectory6': 126}
-    result = self.fc.findDirectoriesByMetadata(metaDirDict, path='/')
+    # find (directories)
+    result = self.fc.findDirectoriesByMetadata(metaDirDict6, path='/')
     self.assertTrue(result['OK'])
     self.assertIn(self.dir5, result['Value'].values())
 
     # API call only
     result = self.fc.getFileUserMetadata(self.lfn5)
     self.assertTrue(result['OK'])
-    self.assertDictContainsSubset({'JMMetaInt6': 13}, result['Value'])
-    # file: return  enclosing directory
+    self.assertDictContainsSubset({'MetaInt6': 13}, result['Value'])
+    # file: expect a failure
     result = self.fc.getDirectoryUserMetadata(self.lfn5)
-    self.assertTrue(result['OK'])
-    self.assertDictContainsSubset({'JMTestDirectory6': 126}, result['Value'])
-    # directory only
+    self.assertFalse(result['OK'])
+
+    # directory
     result = self.fc.getDirectoryUserMetadata(self.dir5)
     self.assertTrue(result['OK'])
-    self.assertDictContainsSubset({'JMTestDirectory6': 126}, result['Value'])
-    # replicas
-    # metaDict6={'JMMetaInt6':13}
-    # result = self.fc.getReplicasByMetadata(metaDict, path='/')
-    # print result
-    # self.assertTrue(result['OK'])
-    #
-    # meta remove lfn5  JMMetaInt6
+    self.assertDictContainsSubset({'TestDirectory6': 126}, result['Value'])
+
+    # finally remove
+    # meta remove lfn5 MetaInt6
     path = self.lfn5
-    metadata = ['JMMetaInt6']
+    metadata = ['MetaInt6']
     metaDict = {path: metadata}
     result = self.fc.removeMetadata(metaDict)
     self.assertTrue(result['OK'])
 
-    # meta index -r JMMetaInt6
-    result = self.fc.deleteMetadataField('JMMetaInt6')
-    self.assertTrue(result['OK'])
-
-    result = self.fc.deleteMetadataField('JMTestDirectory6')
-    self.assertTrue(result['OK'])
-
-  @unittest.expectedFailure
-  def test_ReplicasByMetadata(self):
-    metaDict6 = {'JMMetaInt6': 13}
-    result = self.fc.getReplicasByMetadata(metaDict6, path='/')
-    self.assertTrue(result['OK'])
-
 
 if __name__ == '__main__':
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestUserMetadataTestCase)
+  suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestUserMetadataBasicTestCase)
   suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(testMetadata))
   testResult = unittest.TextTestRunner(verbosity=2).run(suite)
   sys.exit(not testResult.wasSuccessful())
