@@ -81,6 +81,18 @@ Registry
         }
       }
     }
+    user_1
+    {
+      DN = /O=DN/O=DIRAC/CN=user_1
+      DNProperties
+      {
+        -O_DN-O_DIRAC-OU_user_1
+        {
+          ProxyProviders =
+          Groups = dirac_user
+        }
+      }
+    }
     user_2
     {
       DN = /O=DN/O=DIRAC/CN=user_2
@@ -105,7 +117,7 @@ Registry
   {
     group_1
     {
-      Users = user_ca, user, user_2, user_3
+      Users = user_ca, user, user_1, user_2, user_3
       VO = vo_1
     }
     group_2
@@ -237,7 +249,7 @@ class ProxyDBTestCase(unittest.TestCase):
     cls.userDir = tempfile.mkdtemp(dir=certsPath)
 
     # Create user certificates
-    for userName in ['no_user', 'user', 'user_2', 'user_3']:
+    for userName in ['no_user', 'user', 'user_1', 'user_2', 'user_3']:
       userConf = """[ req ]
         default_bits           = 4096
         encrypt_key            = yes
@@ -291,12 +303,12 @@ class ProxyDBTestCase(unittest.TestCase):
     gLogger.debug('\n')
     if self.failed:
        self.fail(self.failed)
-    db._update('DELETE FROM ProxyDB_Proxies WHERE UserName IN ("user_ca", "user", "user_2", "user_3")')
-    db._update('DELETE FROM ProxyDB_CleanProxies WHERE UserName IN ("user_ca", "user", "user_2", "user_3")')
+    db._update('DELETE FROM ProxyDB_Proxies WHERE UserName IN ("user_ca", "user", "user_1", "user_2", "user_3")')
+    db._update('DELETE FROM ProxyDB_CleanProxies WHERE UserName IN ("user_ca", "user", "user_1", "user_2", "user_3")')
 
   def tearDown(self):
-    db._update('DELETE FROM ProxyDB_Proxies WHERE UserName IN ("user_ca", "user", "user_2", "user_3")')
-    db._update('DELETE FROM ProxyDB_CleanProxies WHERE UserName IN ("user_ca", "user", "user_2", "user_3")')
+    db._update('DELETE FROM ProxyDB_Proxies WHERE UserName IN ("user_ca", "user", "user_1", "user_2", "user_3")')
+    db._update('DELETE FROM ProxyDB_CleanProxies WHERE UserName IN ("user_ca", "user", "user_1", "user_2", "user_3")')
 
   @classmethod
   def tearDownClass(cls):
@@ -376,7 +388,7 @@ class testDB(ProxyDBTestCase):
     """ Testing get, store proxy
     """
     gLogger.info('\n* Check that DB is clean..')
-    result = db.getProxiesContent({'UserName': ['user_ca', 'user', 'user_2', 'user_3']}, {})
+    result = db.getProxiesContent({'UserName': ['user_ca', 'user', 'user_1' 'user_2', 'user_3']}, {})
     self.assertTrue(result['OK'], '\n' + result.get('Message', 'Error message is absent.'))
     self.assertTrue(bool(int(result['Value']['TotalRecords']) == 0), 'In DB present proxies.')
 
@@ -409,7 +421,7 @@ class testDB(ProxyDBTestCase):
     self.assertTrue(bool(db._query(cmd)['Value'][0][0] == 0), "GetProxy method didn't delete the last proxy.")
 
     gLogger.info('* Check that DB is clean..')
-    result = db.getProxiesContent({'UserName': ['user_ca', 'user', 'user_2', 'user_3']}, {})
+    result = db.getProxiesContent({'UserName': ['user_ca', 'user', 'user_1', 'user_2', 'user_3']}, {})
     self.assertTrue(result['OK'], '\n' + result.get('Message', 'Error message is absent.'))
     self.assertTrue(bool(int(result['Value']['TotalRecords']) == 0), 'In DB present proxies.')
 
@@ -431,7 +443,7 @@ class testDB(ProxyDBTestCase):
     result = db.deleteProxy('/C=DN/O=DIRACCA/OU=None/CN=user_ca/emailAddress=user_ca@diracgrid.org',
                             proxyProvider='DIRAC_CA')
     self.assertTrue(result['OK'], '\n' + result.get('Message', 'Error message is absent.'))
-    result = db.getProxiesContent({'UserName': ['user_ca', 'user', 'user_2', 'user_3']}, {})
+    result = db.getProxiesContent({'UserName': ['user_ca', 'user', 'user_1', 'user_2', 'user_3']}, {})
     self.assertTrue(result['OK'], '\n' + result.get('Message', 'Error message is absent.'))
     self.assertTrue(bool(int(result['Value']['TotalRecords']) == 0), 'In DB present proxies.')
 
@@ -439,6 +451,8 @@ class testDB(ProxyDBTestCase):
     for user, dn, group, vo, time, res, log in [("user", '/O=DN/O=DIRAC/CN=user', "group_1", False, 12,
                                                  True, 'With group extension'),
                                                 ("user", '/O=DN/O=DIRAC/CN=user', False, "vo_1", 12,
+                                                 False, 'With voms extension'),
+                                                ("user_1", '/O=DN/O=DIRAC/CN=user_1', False, "vo_1", 12,
                                                  False, 'With voms extension'),
                                                 ("user", '/O=DN/O=DIRAC/CN=user', False, False, 0,
                                                  False, 'Expired proxy'),
@@ -448,6 +462,8 @@ class testDB(ProxyDBTestCase):
                                                  True, 'Valid proxy')]:
       for table in ['ProxyDB_Proxies', 'ProxyDB_CleanProxies']:
         result = db._update('DELETE FROM %s WHERE UserName = "user"' % table)
+        self.assertTrue(result['OK'], '\n' + result.get('Message', 'Error message is absent.'))
+        result = db._update('DELETE FROM %s WHERE UserName = "user_1"' % table)
         self.assertTrue(result['OK'], '\n' + result.get('Message', 'Error message is absent.'))
       self.assertTrue(result['OK'], '\n' + result.get('Message', 'Error message is absent.'))
       gLogger.info('== > %s:' % log)
@@ -543,28 +559,30 @@ class testDB(ProxyDBTestCase):
     self.assertTrue(bool(int(result['Value']['TotalRecords']) == 0), 'In DB present proxies.')
 
     gLogger.info('* Get VOMS proxy..')
-    # Create proxy with VOMS extension
-    result = self.createProxy('user', 'group_1', 12, vo='vo_1', role='role_2')
-    if not result['OK']:
-      result = ca.getFakeProxy('/O=DN/O=DIRAC/CN=user', 12 * 3600, group='group_1', vo='vo_1', role='role_2')
-    self.assertTrue(result['OK'], '\n' + result.get('Message', 'Error message is absent.'))
-    chain, proxyStr = result['Value']
+    for vomsuser in ['user', 'user_1']:
+      # Create proxy with VOMS extension
+      result = self.createProxy(vomsuser, 'group_1', 12, vo='vo_1', role='role_2')
+      if not result['OK']:
+        result = ca.getFakeProxy('/O=DN/O=DIRAC/CN=%s' % vomsuser, 12 * 3600, group='group_1', vo='vo_1', role='role_2')
+      self.assertTrue(result['OK'], '\n' + result.get('Message', 'Error message is absent.'))
+      chain, proxyStr = result['Value']
 
-    # Assert VOMSProxy
-    self.assertTrue(bool(chain.isVOMS().get('Value')), 'Cannot create proxy with VOMS extension')
+      # Assert VOMSProxy
+      self.assertTrue(bool(chain.isVOMS().get('Value')), 'Cannot create proxy with VOMS extension')
 
-    cmd = 'INSERT INTO ProxyDB_Proxies(UserName, UserDN, UserGroup, Pem, ExpirationTime) VALUES '
-    cmd += '("user", "/O=DN/O=DIRAC/CN=user", "group_1", "%s", ' % proxyStr
-    cmd += 'TIMESTAMPADD(SECOND, 43200, UTC_TIMESTAMP()))'
-    result = db._update(cmd)
-    self.assertTrue(result['OK'], '\n' + result.get('Message', 'Error message is absent.'))
-    vomsCase = ('/O=DN/O=DIRAC/CN=user', 'group_1', 'role_1', 9999,
-                'Stored proxy already have different VOMS extension')
-    if not chain.isVOMS().get('Value'):
-      vomsCase = (False, False, False, False, False)
+      cmd = 'INSERT INTO ProxyDB_Proxies(UserName, UserDN, UserGroup, Pem, ExpirationTime) VALUES '
+      cmd += '("%s", "/O=DN/O=DIRAC/CN=%s", "group_1", "%s", ' % (vomsuser, vomsuser, proxyStr)
+      cmd += 'TIMESTAMPADD(SECOND, 43200, UTC_TIMESTAMP()))'
+      result = db._update(cmd)
+      self.assertTrue(result['OK'], '\n' + result.get('Message', 'Error message is absent.'))
+
     # Try to get proxy with VOMS extension
     for dn, group, role, time, log in [('/O=DN/O=DIRAC/CN=user_4', 'group_2', False, 9999,
-                                        'Not exist VO for current group'), vomsCase,
+                                        'Not exist VO for current group'), 
+                                       ('/O=DN/O=DIRAC/CN=user', 'group_1', 'role_1', 9999,
+                                        'Stored proxy already have different VOMS extension'), 
+                                       ('/O=DN/O=DIRAC/CN=user_1', 'group_1', 'role_1', 9999,
+                                        'Stored proxy already have different VOMS extension'),
                                        ('/C=DN/O=DIRACCA/OU=None/CN=user_ca/emailAddress=user_ca@diracgrid.org',
                                         'group_1', 'role_1', 9999, 'Not correct VO configuration')]:
       gLogger.info('== > %s:' % log)

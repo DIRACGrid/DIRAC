@@ -51,7 +51,6 @@ class DIRACCAProxyProvider(ProxyProvider):
         if nid not in self.n2field:
           self.n2field[nid] = field
         self.n2field[nid] = len(field) < len(self.n2field[nid]) and field or self.n2field[nid]
-    caDict = {}
     self.caFieldByNid = {}
 
   def setParameters(self, parameters):
