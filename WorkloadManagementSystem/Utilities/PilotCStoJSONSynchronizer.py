@@ -85,7 +85,9 @@ class PilotCStoJSONSynchronizer(object):
     self.pilotRepoBranch = ops.getValue("Pilot/pilotRepoBranch", self.pilotRepoBranch)
     self.pilotVORepoBranch = ops.getValue("Pilot/pilotVORepoBranch", self.pilotVORepoBranch)
 
-    self._syncJSONFile()
+    res = self._syncJSONFile()
+    if not res['OK']:
+      return res
     self.log.notice('-- Synchronizing the pilot scripts with the content of the repository --',
                     '(%s)' % self.pilotRepo)
     self._syncScripts()
@@ -96,13 +98,17 @@ class PilotCStoJSONSynchronizer(object):
   def _syncJSONFile(self):
     """ Creates the pilot dictionary from the CS, ready for encoding as JSON
     """
-    pilotDict = self._getCSDict()
+    res = self._getCSDict()
+    if not res['OK']:
+      return res
+    pilotDict = res['Value']
     self._upload(pilotDict=pilotDict)
+    return S_OK()
 
   def _getCSDict(self):
     """ Gets minimal info for running a pilot, from the CS
     :returns: pilotDict (containing pilots run info)
-    :rtype: dict
+    :rtype: S_OK, S_ERROR, value is pilotDict
     """
 
     pilotDict = {'Setups': {}, 'CEs': {}, 'GenericPilotDNs': []}
@@ -180,7 +186,7 @@ class PilotCStoJSONSynchronizer(object):
 
     self.log.debug("Got pilotDict", str(pilotDict))
 
-    return pilotDict
+    return S_OK(pilotDict)
 
   def _getPilotOptionsPerSetup(self, setup, pilotDict):
     """ Given a setup, returns its pilot options in a dictionary
