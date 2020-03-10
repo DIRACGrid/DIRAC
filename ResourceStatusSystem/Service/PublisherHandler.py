@@ -14,7 +14,7 @@ import types
 from datetime import datetime, timedelta
 
 # DIRAC
-from DIRAC import gLogger, S_OK, gConfig, S_ERROR
+from DIRAC import S_OK, gConfig, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.SiteSEMapping import getSEHosts, getStorageElementsHosts
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites, getSitesCEsMapping
@@ -68,7 +68,6 @@ class PublisherHandler(RequestHandler):
     :return: S_OK( [ sites ] ) | S_ERROR
     """
 
-    gLogger.info('getSites')
     return getSites()
 
   types_getSitesResources = [(six.string_types, list, types.NoneType)]
@@ -81,8 +80,6 @@ class PublisherHandler(RequestHandler):
     :return: S_OK( { site1 : { ces : [ ces ], 'ses' : [ ses  ] },... } ) | S_ERROR
     """
 
-    gLogger.verbose('getSitesResources')
-
     if siteNames is None:
       res = getSites()
       if not res['OK']:
@@ -94,7 +91,6 @@ class PublisherHandler(RequestHandler):
       siteNames = [siteNames]
 
     sitesRes = {}
-
     for siteName in siteNames:
 
       result = getSitesCEsMapping()
@@ -102,12 +98,13 @@ class PublisherHandler(RequestHandler):
 	self.log.error("Error getting sites/CEs mapping", result['Message'])
 	return result
       res = {}
-      res['ces'] = result['Value'](siteName)
+      res['ces'] = result['Value'][siteName]
       # Convert StorageElements to host names
       result = DMSHelpers().getSiteSEMapping()
       if not result['OK']:
 	self.log.error("Error getting sites/SEs mapping", result['Message'])
-	return res
+	sitesRes[siteName] = res
+	continue
       ses = result['Value'][1].get(siteName, [])
       result = getStorageElementsHosts(ses)
       if not result['OK']:
@@ -132,7 +129,6 @@ class PublisherHandler(RequestHandler):
     Returns element statuses from the ResourceStatusDB
     """
 
-    gLogger.info('getElementStatuses')
     return rsClient.selectStatusElement(element, 'Status', name=name, elementType=elementType,
                                         statusType=statusType, status=status,
                                         tokenOwner=tokenOwner)
@@ -147,7 +143,6 @@ class PublisherHandler(RequestHandler):
     Returns element history from ResourceStatusDB
     """
 
-    gLogger.info('getElementHistory')
     columns = ['Status', 'DateEffective', 'Reason']
     return rsClient.selectStatusElement(element, 'History', name=name, elementType=elementType,
                                         statusType=statusType,
@@ -162,7 +157,6 @@ class PublisherHandler(RequestHandler):
     Returns policies for a given element
     """
 
-    gLogger.info('getElementPolicies')
     columns = ['Status', 'PolicyName', 'DateEffective', 'LastCheckTime', 'Reason']
     return rmClient.selectPolicyResult(element=element, name=name,
                                        statusType=statusType,
@@ -180,8 +174,6 @@ class PublisherHandler(RequestHandler):
     Given an element type and name,
     finds its parent site and returns all descendants of that site.
     """
-
-    gLogger.info('getTree')
 
     site = self.getSite(elementType, elementName)
     if not site:
@@ -205,12 +197,11 @@ class PublisherHandler(RequestHandler):
 
     res = DMSHelpers().getSiteSEMapping()
     if not res['OK']:
-      return res
+      self.log.error('Could not get site to SE mapping', res['Message'])
+      return S_OK()
     ses = res['Value'][1].get(site, [])
-
-    sesStatus = rsClient.selectStatusElement('Resource', 'Status', name=list(ses),
-                                             meta={'columns': ['Name', 'StatusType', 'Status']})
-    return sesStatus
+    return rsClient.selectStatusElement('Resource', 'Status', name=list(ses),
+					meta={'columns': ['Name', 'StatusType', 'Status']})
 
     def feedTree(elementsList):
 
@@ -236,7 +227,7 @@ class PublisherHandler(RequestHandler):
     lastCheckTime = datetime.strptime(lastCheckTime, '%Y-%m-%d %H:%M:%S')
 
     credentials = self.getRemoteCredentials()
-    gLogger.info(credentials)
+    self.log.info(credentials)
 
     elementInDB = rsClient.selectStatusElement(element, 'Status', name=name,
                                                statusType=statusType,
@@ -350,7 +341,7 @@ class PublisherHandler(RequestHandler):
     lastCheckTime = datetime.strptime(lastCheckTime, '%Y-%m-%d %H:%M:%S')
 
     credentials = self.getRemoteCredentials()
-    gLogger.info(credentials)
+    self.log.info(credentials)
 
     elementInDB = rsClient.selectStatusElement(element, 'Status', name=name,
                                                statusType=statusType,
