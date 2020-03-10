@@ -10,6 +10,8 @@ from DIRAC.ConfigurationSystem.private.ConfigurationClient import ConfigurationC
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 from DIRAC.Core.Utilities.CFG import CFG
 
+# pylint: disable=protected-access
+
 
 class PilotCStoJSONSynchronizerTestCase(unittest.TestCase):
   """ Base class for the PilotCStoJSONSynchronizer test cases
@@ -137,24 +139,30 @@ class PilotCStoJSONSynchronizerTestCase(unittest.TestCase):
 
 class Test_PilotCStoJSONSynchronizer_sync(PilotCStoJSONSynchronizerTestCase):
 
+  @patch('DIRAC.WorkloadManagementSystem.Utilities.PilotCStoJSONSynchronizer.requests', new=Mock())
   def test_success(self):
     synchroniser = PilotCStoJSONSynchronizer()
     synchroniser.pilotFileServer = 'value'
-    with patch('DIRAC.WorkloadManagementSystem.Utilities.PilotCStoJSONSynchronizer.requests',
-               new=Mock()):
-      res = synchroniser._syncJSONFile()
-      self.assertTrue(res is None)
+    res = synchroniser._syncJSONFile()
+    self.assertTrue(res is None)
+    # ensure pilot.json was "uploaded"
     assert 'pilot.json' in synchroniser._checksumDict
 
+  @patch('DIRAC.WorkloadManagementSystem.Utilities.PilotCStoJSONSynchronizer.requests', new=Mock())
   def test_syncchecksum(self):
     expectedHash = '00e67a2d45e2c2508a935500a4765e1a5f1ce661f23c1fb329987c8211bde754ed' + \
                    '79f6b02cdeabd429979a82014c474c5ce2f46a879f17e2a6ce4bcac683e2e4'
     synchroniser = PilotCStoJSONSynchronizer()
+    synchroniser.pilotFileServer = 'value'
     synchroniser._checksumFile(self.testCfgFileName)
+    res = synchroniser._syncJSONFile()
+    assert res is None
     synchroniser._syncChecksum()
     assert self.testCfgFileName in synchroniser._checksumDict
     assert synchroniser._checksumDict[self.testCfgFileName] == expectedHash
-    assert open('checksums.sha512', 'rb').read() == '%s: %s' % (expectedHash, self.testCfgFileName)
+    assert open('checksums.sha512', 'rb').read().split('\n')[1] == '%s: %s' % (expectedHash, self.testCfgFileName)
+    # this tests if the checksums file was also "uploaded"
+    assert 'checksums.sha512' in list(synchroniser._checksumDict)
 
 
 if __name__ == '__main__':

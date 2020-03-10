@@ -387,6 +387,6 @@ class PilotCStoJSONSynchronizer(object):
   def _syncChecksum(self):
     """Upload the checksum file to the fileservers."""
     with open('checksums.sha512', 'wb') as chksums:
-      for filename, chksum in self._checksumDict.items():
-        chksums.write('%s: %s' % (chksum, filename))
-    self._upload(filename='checksums.sha512')
+      for filename, chksum in sorted(self._checksumDict.items()):
+        chksums.write('%s: %s\n' % (chksum, filename))
+    self._upload(filename='checksums.sha512', pilotScript='checksums.sha512')
