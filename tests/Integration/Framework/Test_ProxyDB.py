@@ -578,9 +578,9 @@ class testDB(ProxyDBTestCase):
 
     # Try to get proxy with VOMS extension
     for dn, group, role, time, log in [('/O=DN/O=DIRAC/CN=user_4', 'group_2', False, 9999,
-                                        'Not exist VO for current group'), 
+                                        'Not exist VO for current group'),
                                        ('/O=DN/O=DIRAC/CN=user', 'group_1', 'role_1', 9999,
-                                        'Stored proxy already have different VOMS extension'), 
+                                        'Stored proxy already have different VOMS extension'),
                                        ('/O=DN/O=DIRAC/CN=user_1', 'group_1', 'role_1', 9999,
                                         'Stored proxy already have different VOMS extension'),
                                        ('/C=DN/O=DIRACCA/OU=None/CN=user_ca/emailAddress=user_ca@diracgrid.org',
