@@ -51,7 +51,7 @@ class DIRACCAProxyProvider(ProxyProvider):
         if nid not in self.n2field:
           self.n2field[nid] = field
         self.n2field[nid] = len(field) < len(self.n2field[nid]) and field or self.n2field[nid]
-    self.caDict = {}
+    caDict = {}
     self.caFieldByNid = {}
 
   def setParameters(self, parameters):
@@ -184,8 +184,8 @@ class DIRACCAProxyProvider(ProxyProvider):
     if not result['OK']:
       return result
     caDN = result['Value']['subject']
-    self.caDict = dict([field.split('=') for field in caDN.lstrip('/').split('/')])
-    self.caFieldByNid = dict([[self.fs2nid[field], field] for field in self.caDict])
+    caDict = dict([field.split('=') for field in caDN.lstrip('/').split('/')])
+    self.caFieldByNid = dict([[self.fs2nid[field], field] for field in caDict])
 
     dnDict = {}
     if userDN:
@@ -198,9 +198,9 @@ class DIRACCAProxyProvider(ProxyProvider):
       for nid in dnFieldByNid:
         if nid not in self.supplied + self.match + self.optional:
           return S_ERROR('Current DN is invalid, "%s" field is not found for current CA.' % dnFieldByNid[nid])
-        if nid in self.match and not self.caDict[self.caFieldByNid[nid]] == dnDict[dnFieldByNid[nid]]:
+        if nid in self.match and not caDict[self.caFieldByNid[nid]] == dnDict[dnFieldByNid[nid]]:
           return S_ERROR('Current DN is invalid, "%s" field must be %s.' % (dnFieldByNid[nid],
-                                                                            self.caDict[self.caFieldByNid[nid]]))
+                                                                            caDict[self.caFieldByNid[nid]]))
         if nid in self.maxDict and len(dnDict[dnFieldByNid[nid]]) > self.maxDict[nid]:
           return S_ERROR('Current DN is invalid, "%s" field must be less then %s.' % (dnDict[dnFieldByNid[nid]],
                                                                                       self.maxDict[nid]))
@@ -230,7 +230,7 @@ class DIRACCAProxyProvider(ProxyProvider):
     for nid in self.match:
       if nid not in self.caFieldByNid:
         return S_ERROR('Distributes name(%s) must be present in CA certificate.' % ', '.join(self.n2fields[nid]))
-      result = self.__fillX509Name(self.caFieldByNid[nid], self.caDict[self.caFieldByNid[nid]])
+      result = self.__fillX509Name(self.caFieldByNid[nid], caDict[self.caFieldByNid[nid]])
       if not result['OK']:
         return result
     # Test supplied fields
