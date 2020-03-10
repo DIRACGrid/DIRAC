@@ -10,6 +10,7 @@ __RCSID__ = '$Id$'
 
 import json
 
+import hashlib
 import shutil
 import os
 import glob
@@ -57,6 +58,7 @@ class PilotCStoJSONSynchronizer(object):
     self.pilotVORepoBranch = 'master'
     self.certAndKeyLocation = getHostCertificateAndKeyLocation()
     self.casLocation = getCAsLocation()
+    self._checksumDict = {}
 
     self.log = gLogger.getSubLogger(__name__)
 
@@ -64,6 +66,7 @@ class PilotCStoJSONSynchronizer(object):
     """ Main synchronizer method.
     """
     ops = Operations()
+    self._checksumDict = {}
 
     self.pilotFileServer = ops.getValue("Pilot/pilotFileServer", self.pilotFileServer)
     if not self.pilotFileServer:
@@ -86,6 +89,7 @@ class PilotCStoJSONSynchronizer(object):
     self.log.notice('-- Synchronizing the pilot scripts with the content of the repository --',
                     '(%s)' % self.pilotRepo)
     self._syncScripts()
+    self._syncChecksum()
 
     return S_OK()
 
@@ -360,6 +364,7 @@ class PilotCStoJSONSynchronizer(object):
                                data=data,
                                verify=self.casLocation,
                                cert=self.certAndKeyLocation)
+          self._checksumFile(pilotScript if pilotScript else filename)
           # This POST works iff the webserver implements the upload function
           # Which is done in WebAppDIRAC.WebApp.handler.RooHandler.RootHandler.web_upload()
           # So, this location is specific to DIRAC WebApp.
@@ -369,3 +374,19 @@ class PilotCStoJSONSynchronizer(object):
         except requests.ConnectionError:
           # if we are here it is probably because we are trying to upload to a WS that does not expose a POST API
           self.log.error("Can't issue POST", "on %s" % pfServer)
+
+  def _checksumFile(self, filePath):
+    """Calculate the checksum for the file and add to self._checkSumDict.
+
+    :param str filePath: path to the file for which to calculate the checksum
+    :returns None:
+    """
+    filename = os.path.basename(filePath)
+    self._checksumDict[filename] = hashlib.sha512(open(filePath, 'rb').read()).hexdigest()
+
+  def _syncChecksum(self):
+    """Upload the checksum file to the fileservers."""
+    with open('checksums.sha512', 'wb') as chksums:
+      for filename, chksum in self._checksumDict.items():
+        chksums.write('%s: %s' % (chksum, filename))
+    self._upload(filename='checksums.sha512')

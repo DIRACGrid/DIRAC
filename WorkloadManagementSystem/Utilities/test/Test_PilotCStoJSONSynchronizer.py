@@ -3,6 +3,7 @@
 
 import unittest
 import os
+from mock import patch, MagicMock as Mock
 
 from DIRAC.WorkloadManagementSystem.Utilities.PilotCStoJSONSynchronizer import PilotCStoJSONSynchronizer
 from DIRAC.ConfigurationSystem.private.ConfigurationClient import ConfigurationClient
@@ -47,7 +48,8 @@ class PilotCStoJSONSynchronizerTestCase(unittest.TestCase):
         }
       }
     }
-    Operations{
+    Operations
+    {
       Defaults
       {
         Pilot
@@ -92,6 +94,25 @@ class PilotCStoJSONSynchronizerTestCase(unittest.TestCase):
         }
       }
     }
+    Resources
+    {
+      Sites
+      {
+        Tests
+        {
+           Tests.Testing.tst
+           {
+             CEs
+             {
+                test1.Testing.tst
+                {
+                  CEType = Tester
+                }
+             }
+           }
+        }
+      }
+    }
     '''
     with open(self.testCfgFileName, 'w') as f:
       f.write(cfgContent)
@@ -101,10 +122,11 @@ class PilotCStoJSONSynchronizerTestCase(unittest.TestCase):
     self.wm = gConfig.getValue('DIRAC/Setups/' + self.setup + '/WorkloadManagement', '')
 
   def tearDown(self):
-    try:
-      os.remove(self.testCfgFileName)
-    except OSError:
-      pass
+    for aFile in [self.testCfgFileName, 'checksums.sha512', 'pilot.json']:
+      try:
+        os.remove(aFile)
+      except OSError:
+        pass
     # SUPER UGLY: one must recreate the CFG objects of gConfigurationData
     # not to conflict with other tests that might be using a local dirac.cfg
     gConfigurationData.localCFG = CFG()
@@ -117,8 +139,22 @@ class Test_PilotCStoJSONSynchronizer_sync(PilotCStoJSONSynchronizerTestCase):
 
   def test_success(self):
     synchroniser = PilotCStoJSONSynchronizer()
-    res = synchroniser._syncJSONFile()
-    self.assertTrue(res is None)
+    synchroniser.pilotFileServer = 'value'
+    with patch('DIRAC.WorkloadManagementSystem.Utilities.PilotCStoJSONSynchronizer.requests',
+               new=Mock()):
+      res = synchroniser._syncJSONFile()
+      self.assertTrue(res is None)
+    assert 'pilot.json' in synchroniser._checksumDict
+
+  def test_syncchecksum(self):
+    expectedHash = '00e67a2d45e2c2508a935500a4765e1a5f1ce661f23c1fb329987c8211bde754ed' + \
+                   '79f6b02cdeabd429979a82014c474c5ce2f46a879f17e2a6ce4bcac683e2e4'
+    synchroniser = PilotCStoJSONSynchronizer()
+    synchroniser._checksumFile(self.testCfgFileName)
+    synchroniser._syncChecksum()
+    assert self.testCfgFileName in synchroniser._checksumDict
+    assert synchroniser._checksumDict[self.testCfgFileName] == expectedHash
+    assert open('checksums.sha512', 'rb').read() == '%s: %s' % (expectedHash, self.testCfgFileName)
 
 
 if __name__ == '__main__':
