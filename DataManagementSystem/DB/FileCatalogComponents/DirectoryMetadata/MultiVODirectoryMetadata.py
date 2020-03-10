@@ -170,7 +170,8 @@ class MultiVODirectoryMetadata(DirectoryMetadata):
     :param dict credDict: client credential dictionary
     :param bool inherited: include parent directories if True
     :param bool ownData:
-    :return: standard Dirac result object
+    :return: standard Dirac result object + additional MetadataOwner and MetadataType dict entries
+    the operation is successful.
     """
 
     result = super(MultiVODirectoryMetadata, self).getDirectoryMetadata(path, credDict, inherited, ownData)
