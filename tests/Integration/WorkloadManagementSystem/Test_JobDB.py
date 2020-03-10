@@ -63,63 +63,70 @@ jobDB.getDIRACPlatform = fakegetDIRACPlatform
 def test_insertAndRemoveJobIntoDB():
 
   res = jobDB.insertNewJobIntoDB(jdl, 'owner', '/DN/OF/owner', 'ownerGroup', 'someSetup')
-  assert res['OK'] is True
+  assert res['OK'] is True, res['Message']
   jobID = res['JobID']
   res = jobDB.getJobAttribute(jobID, 'Status')
-  assert res['OK'] is True
+  assert res['OK'] is True, res['Message']
   assert res['Value'] == 'Received'
   res = jobDB.getJobAttribute(jobID, 'MinorStatus')
-  assert res['OK'] is True
+  assert res['OK'] is True, res['Message']
   assert res['Value'] == 'Job accepted'
   res = jobDB.getJobOptParameters(jobID)
-  assert res['OK'] is True
+  assert res['OK'] is True, res['Message']
   assert res['Value'] == {}
 
   res = jobDB.selectJobs({})
-  assert res['OK'] is True
+  assert res['OK'] is True, res['Message']
   jobs = res['Value']
   for job in jobs:
     res = jobDB.removeJobFromDB(job)
-    assert res['OK'] is True
+    assert res['OK'] is True, res['Message']
 
 
 def test_rescheduleJob():
 
   res = jobDB.insertNewJobIntoDB(jdl, 'owner', '/DN/OF/owner', 'ownerGroup', 'someSetup')
-  assert res['OK'] is True
+  assert res['OK'] is True, res['Message']
   jobID = res['JobID']
 
   res = jobDB.rescheduleJob(jobID)
-  assert res['OK'] is True
+  assert res['OK'] is True, res['Message']
 
   res = jobDB.getJobAttribute(jobID, 'Status')
-  assert res['OK'] is True
+  assert res['OK'] is True, res['Message']
   assert res['Value'] == 'Received'
   res = jobDB.getJobAttribute(jobID, 'MinorStatus')
-  assert res['OK'] is True
+  assert res['OK'] is True, res['Message']
   assert res['Value'] == 'Job Rescheduled'
+
+  res = jobDB.selectJobs({})
+  assert res['OK'] is True, res['Message']
+  jobs = res['Value']
+  for job in jobs:
+    res = jobDB.removeJobFromDB(job)
+    assert res['OK'] is True, res['Message']
 
 
 def test_getCounters():
 
   res = jobDB.getCounters('Jobs', ['Status', 'MinorStatus'], {}, '2007-04-22 00:00:00')
-  assert res['OK'] is True
+  assert res['OK'] is True, res['Message']
 
 
 def test_heartBeatLogging():
 
   res = jobDB.insertNewJobIntoDB(jdl, 'owner', '/DN/OF/owner', 'ownerGroup', 'someSetup')
-  assert res['OK'] is True
+  assert res['OK'] is True, res['Message']
   jobID = res['JobID']
 
   res = jobDB.setJobStatus(jobID, status='Running')
-  assert res['OK'] is True
+  assert res['OK'] is True, res['Message']
   res = jobDB.setHeartBeatData(jobID, staticDataDict={}, dynamicDataDict={'CPU': 2345})
-  assert res['OK'] is True
+  assert res['OK'] is True, res['Message']
   res = jobDB.setHeartBeatData(jobID, staticDataDict={}, dynamicDataDict={'Memory': 5555})
-  assert res['OK'] is True
+  assert res['OK'] is True, res['Message']
   res = jobDB.getHeartBeatData(jobID)
-  assert res['OK'] is True
+  assert res['OK'] is True, res['Message']
   assert len(res['Value']) == 2, str(res)
 
   for name, value, _hbt in res['Value']:
@@ -131,13 +138,45 @@ def test_heartBeatLogging():
       assert False, 'Unknown entry: %s: %s' % (name, value)
 
   res = jobDB.setJobStatus(jobID, status='Done')
-  assert res['OK'] is True
+  assert res['OK'] is True, res['Message']
 
   tomorrow = datetime.today() + timedelta(1)
   delTime = datetime.strftime(tomorrow, '%Y-%m-%d')
   res = jobDB.removeInfoFromHeartBeatLogging(status='Done', delTime=delTime, maxLines=100)
-  assert res['OK'] is True, str(res)
+  assert res['OK'] is True, res['Message']
 
   res = jobDB.getHeartBeatData(jobID)
-  assert res['OK'] is True, str(res)
+  assert res['OK'] is True, res['Message']
   assert not res['Value'], str(res)
+
+  res = jobDB.selectJobs({})
+  assert res['OK'] is True, res['Message']
+  jobs = res['Value']
+  for job in jobs:
+    res = jobDB.removeJobFromDB(job)
+    assert res['OK'] is True, res['Message']
+
+
+def test_jobParameters():
+  res = jobDB.insertNewJobIntoDB(jdl, 'owner', '/DN/OF/owner', 'ownerGroup', 'someSetup')
+  assert res['OK'] is True, res['Message']
+  jobID = res['JobID']
+
+  res = jobDB.getJobParameters(jobID)
+  assert res['OK'] is True, res['Message']
+  assert res['Value'] == {}, res['Value']
+
+  res = jobDB.getJobParameters([jobID])
+  assert res['OK'] is True, res['Message']
+  assert res['Value'] == {}, res['Value']
+
+  res = jobDB.getJobParameters(jobID, 'not')
+  assert res['OK'] is True, res['Message']
+  assert res['Value'] == {}, res['Value']
+
+  res = jobDB.selectJobs({})
+  assert res['OK'] is True, res['Message']
+  jobs = res['Value']
+  for job in jobs:
+    res = jobDB.removeJobFromDB(job)
+    assert res['OK'] is True, res['Message']

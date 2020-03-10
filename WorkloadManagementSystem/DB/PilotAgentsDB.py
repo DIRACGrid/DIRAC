@@ -1041,12 +1041,12 @@ AND SubmissionTime < DATE_SUB(UTC_TIMESTAMP(),INTERVAL %d DAY)" %
 
       # If the Grid Site is unknown try to recover it in the last moment
       if gridSite == "Unknown":
-        ce = pilotDict[pilot]['DestinationSite']
+	ce = pilotDict[pilot]['DestinationSite']
 	result = getCESiteMapping(ce)
-        if result['OK']:
-	  gridSite = result['Value'][ce]
-          del parList[-1]
-          parList.append(gridSite)
+	if result['OK']:
+	  gridSite = result['Value'].get(ce)
+	  del parList[-1]
+	  parList.append(gridSite)
       records.append(parList)
 
     resultDict['ParameterNames'] = paramNames

@@ -4,7 +4,7 @@
     - PilotAgentsDB
 
     And the following services should also be on:
-    - Pilots
+    - PilotManager
 
    this is pytest!
 

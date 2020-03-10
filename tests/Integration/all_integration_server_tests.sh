@@ -28,7 +28,7 @@ python $SERVERINSTALLDIR/DIRAC/tests/Integration/Framework/Test_ProxyDB.py 2>&1 
 echo -e "*** $(date -u)  **** RSS TESTS ****\n"
 pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/ResourceStatusSystem/Test_FullChain.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
 # client test but needing to read from CS
-pytest $CLIENTINSTALLDIR/DIRAC/tests/Integration/ResourceStatusSystem/Test_Publisher.py 2>&1 | tee -a clientTestOutputs.txt; (( ERR |= $? ))
+pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/ResourceStatusSystem/Test_Publisher.py 2>&1 | tee -a clientTestOutputs.txt; (( ERR |= $? ))
 
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u)  **** WMS TESTS ****\n"
@@ -94,4 +94,5 @@ python $SERVERINSTALLDIR/DIRAC/tests/Integration/Resources/Storage/Test_Resource
 python $SERVERINSTALLDIR/DIRAC/tests/Integration/Resources/ProxyProvider/Test_DIRACCAProxyProvider.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
 
 # Can only run if there's a Stomp MQ local...
+# TODO Enable
 # pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/Resources/MessageQueue/Test_ActiveClose.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))

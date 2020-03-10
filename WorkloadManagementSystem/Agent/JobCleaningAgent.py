@@ -261,13 +261,14 @@ class JobCleaningAgent(AgentModule):
     result = JobMonitoringClient().getJobParameters(jobIDList, 'OutputSandboxLFN')
     if not result['OK']:
       return result
-    osLFNList = result['Value']
-    if not osLFNList:
+    osLFNDict = result['Value']
+    if not osLFNDict:
       return S_OK({'Successful': successful, 'Failed': failed})
+    osLFNDict = dict(osLFN for osLFN in osLFNDict.items() if osLFN[1])
 
-    self.log.verbose("Deleting oversized sandboxes", osLFNList)
+    self.log.verbose("Deleting oversized sandboxes", osLFNDict)
     # Schedule removal of the LFNs now
-    for jobID, outputSandboxLFNdict in osLFNList.iteritems():
+    for jobID, outputSandboxLFNdict in osLFNDict.iteritems():
       lfn = outputSandboxLFNdict['OutputSandboxLFN']
       result = self.jobDB.getJobAttributes(jobID, ['OwnerDN', 'OwnerGroup'])
       if not result['OK']:
