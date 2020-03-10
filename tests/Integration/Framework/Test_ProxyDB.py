@@ -554,7 +554,7 @@ class testDB(ProxyDBTestCase):
     gLogger.info('* Check that DB is clean..')
     result = db.deleteProxy('/O=DN/O=DIRAC/CN=user')
     self.assertTrue(result['OK'], '\n' + result.get('Message', 'Error message is absent.'))
-    result = db.getProxiesContent({'UserName': ['user_ca', 'user', 'user_2', 'user_3']}, {})
+    result = db.getProxiesContent({'UserName': ['user_ca', 'user', 'user_1', 'user_2', 'user_3']}, {})
     self.assertTrue(result['OK'], '\n' + result.get('Message', 'Error message is absent.'))
     self.assertTrue(bool(int(result['Value']['TotalRecords']) == 0), 'In DB present proxies.')
 
