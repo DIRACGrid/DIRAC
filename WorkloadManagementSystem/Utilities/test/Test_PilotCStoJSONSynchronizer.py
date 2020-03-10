@@ -160,7 +160,7 @@ class Test_PilotCStoJSONSynchronizer_sync(PilotCStoJSONSynchronizerTestCase):
     synchroniser._syncChecksum()
     assert self.testCfgFileName in synchroniser._checksumDict
     assert synchroniser._checksumDict[self.testCfgFileName] == expectedHash
-    assert open('checksums.sha512', 'rb').read().split('\n')[1] == '%s: %s' % (expectedHash, self.testCfgFileName)
+    assert open('checksums.sha512', 'rb').read().split('\n')[1] == '%s  %s' % (expectedHash, self.testCfgFileName)
     # this tests if the checksums file was also "uploaded"
     assert 'checksums.sha512' in list(synchroniser._checksumDict)
 
