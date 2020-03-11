@@ -7,6 +7,7 @@ __RCSID__ = '$Id$'
 from datetime import datetime, timedelta
 
 from DIRAC import S_OK, S_ERROR
+from DIRAC.Core.Utilities.JEncode import strToIntDict
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 from DIRAC.AccountingSystem.Client.ReportsClient import ReportsClient
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
@@ -123,7 +124,8 @@ class TransferCommand(Command):
 
     if 'data' not in transferResults:
       return S_ERROR('Missing data key')
-    transferResults = transferResults['data']
+
+    transferResults = {channel: strToIntDict(value) for channel, value in transferResults['data'].iteritems()}
 
     uniformResult = []
 

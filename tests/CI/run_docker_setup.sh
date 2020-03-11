@@ -152,8 +152,15 @@ function prepareEnvironment() {
 
   echo "Generated config file is:"
   cat "${SERVERCONFIG}"
-  # TODO Allow different server and client config
   cp "${SERVERCONFIG}" "${CLIENTCONFIG}"
+
+  if [ -n "${SERVER_USE_M2CRYPTO+x}" ]; then
+    echo "export DIRAC_USE_M2CRYPTO=${SERVER_USE_M2CRYPTO}" >> "${SERVERCONFIG}"
+  fi
+
+  if [ -n "${CLIENT_USE_M2CRYPTO+x}" ]; then
+    echo "export DIRAC_USE_M2CRYPTO=${CLIENT_USE_M2CRYPTO}" >> "${CLIENTCONFIG}"
+  fi
 
   docker-compose -f ./docker-compose.yml up -d
 

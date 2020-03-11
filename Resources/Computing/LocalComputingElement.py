@@ -72,13 +72,14 @@ class LocalComputingElement(ComputingElement):
       self.log.error('Failed to initialize CE', self.ceName)
       return result
 
-    self.submitOptions = ''
-    if 'SubmitOptions' in self.ceParameters:
-      self.submitOptions = self.ceParameters['SubmitOptions']
     self.removeOutput = True
     if 'RemoveOutput' in self.ceParameters:
       if self.ceParameters['RemoveOutput'].lower() in ['no', 'false', '0']:
         self.removeOutput = False
+
+    self.submitOptions = self.ceParameters.get('SubmitOptions', '')
+    self.numberOfProcessors = self.ceParameters.get('NumberOfProcessors', 1)
+    self.wholeNode = self.ceParameters.get('WholeNode', False)
 
     return S_OK()
 
@@ -143,6 +144,8 @@ class LocalComputingElement(ComputingElement):
     # otherwise a wrapper script is needed to get the proxy to the execution node
     # The wrapper script makes debugging more complicated and thus it is
     # recommended to transfer a proxy inside the executable if possible.
+    if self.proxy and not proxy:
+      proxy = self.proxy
     if proxy:
       self.log.verbose('Setting up proxy for payload')
       wrapperContent = bundleProxy(executableFile, proxy)
@@ -162,7 +165,9 @@ class LocalComputingElement(ComputingElement):
                  'SubmitOptions': self.submitOptions,
                  'ExecutionContext': self.execution,
                  'JobStamps': jobStamps,
-                 'Queue': self.queue}
+                 'Queue': self.queue,
+                 'WholeNode': self.wholeNode,
+                 'NumberOfProcessors': self.numberOfProcessors}
     resultSubmit = self.batch.submitJob(**batchDict)
     if proxy:
       os.remove(submitFile)
@@ -217,20 +222,29 @@ class LocalComputingElement(ComputingElement):
   def getJobStatus(self, jobIDList):
     """ Get the status information for the given list of jobs
     """
-    stampList = []
+    resultDict = {}
+    jobDict = {}
+
+    # Extract the batch job ID from the full DIRAC job ID
     for job in jobIDList:
       stamp = os.path.basename(urlparse(job).path)
-      stampList.append(stamp)
+      jobDict[stamp] = job
+    stampList = list(jobDict)
+
+    # Get the status for a given batch job ID
     batchDict = {'JobIDList': stampList,
                  'User': self.userName,
                  'Queue': self.queue}
     resultGet = self.batch.getJobStatus(**batchDict)
-    if resultGet['Status'] == 0:
-      result = S_OK(resultGet['Jobs'])
-    else:
-      result = S_ERROR(resultGet['Message'])
 
-    return result
+    if resultGet['Status'] != 0:
+      return S_ERROR(resultGet['Message'])
+
+    # Construct the dictionary to return: resultDict[dirac job ID] = status
+    for stamp, status in resultGet['Jobs'].items():
+      resultDict[jobDict[stamp]] = status
+
+    return S_OK(resultDict)
 
   def getJobOutput(self, jobID, localDir=None):
     """ Get the specified job standard output and error files. If the localDir is provided,

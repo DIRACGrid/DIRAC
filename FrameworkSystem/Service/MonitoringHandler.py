@@ -9,6 +9,7 @@ import os
 from DIRAC import gLogger, gConfig, rootPath, S_OK, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities import DEncode, Time
+from DIRAC.Core.Utilities.JEncode import strToIntDict
 from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.FrameworkSystem.private.monitoring.ServiceInterface import gServiceInterface
@@ -63,7 +64,29 @@ class MonitoringHandler(RequestHandler):
   def export_commitMarks(self, sourceId, activitiesDict, componentExtraInfo={}):
     """
     Adds marks for activities
+
+    :param int sourceId: component id
+    :param dict activitiesDict: the key is the metrice, the value is a dictionary with timestamp and value
+                                for example::
+
+                                             {u'CPU': {1583244000: 10.6055594906},
+                                              u'Iteration': {1583244420: 1,
+                                                             1583244480: 1,
+                                                             1583244540: 1,
+                                                             1583244600: 1,
+                                                             1583244660: 1},
+                                              u'MEM': {1583244000: 49.03515625},
+                                              u'Processed': {1583244420: 5,
+                                                             1583244480: 5,
+                                                             1583244540: 5,
+                                                             1583244600: 5,
+                                                             1583244660: 6}}
+
+    :param dict componentExtraInfo: extra information
     """
+
+    # we have to cast the dictionary keys, because they are timestamps
+    activitiesDict = {metric: strToIntDict(value) for metric, value in activitiesDict.iteritems()}
     nowEpoch = Time.toEpoch()
     maxEpoch = nowEpoch + 7200
     minEpoch = nowEpoch - 86400
