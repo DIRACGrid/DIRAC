@@ -1,3 +1,20 @@
+[v7r0p16]
+
+*Core
+CHANGE: (#4482) TimeLeft modules become ResourceUsage and inherit from an abstract module called ResourceUsage
+NEW: (#4482) TimeLeft/SLURMResourceUsage module to get resource usage from a SLURM installation
+CHANGE: (#4482) Move TimeLeft from Core/Utilities to Resources/Computing/BatchSystems
+
+*WMS
+NEW: (#4493) Add checksum calculation for PilotCSToJsonSynchroniser
+NEW: (#4493) Add checksum checks to PilotWrapper
+FIX: (#4493) Fix download checks in PilotWrapper in case the webserver does not return 404 but not the expected file content either.
+
+*Resources
+FIX: (#4482) LocalCE: proxy submission and getJobStatus
+FIX: (#4482) Slurm getJobStatus() making use of sacct
+FIX: (#4466) Stomp reconnection only reconnect the connection that dropped
+
 [v7r0p15]
 
 *Accounting
