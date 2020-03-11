@@ -1,3 +1,8 @@
+[v6r22p24]
+
+*Core
+FIX: (#4477) Try to untar using system tar in case tarfile module is failing
+
 [v6r22p23]
 
 *DMS
