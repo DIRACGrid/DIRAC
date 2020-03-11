@@ -33,6 +33,7 @@ import bz2
 import logging
 import time
 import tarfile
+import hashlib
 
 # setting up the logging
 formatter = logging.Formatter(fmt='%%(asctime)s UTC %%(levelname)-8s %%(message)s', datefmt='%%Y-%%m-%%d %%H:%%M:%%S')
@@ -161,7 +162,7 @@ locations = locs + [os.path.join(loc, 'pilot') for loc in locs]
 for loc in locations:
   print('Trying %%s' %% loc)
 
-  # Getting the json file and the tar file
+  # Getting the json, tar, and checksum file
   try:
 
     # urllib is different between python 2 and 3
@@ -172,47 +173,41 @@ for loc in locations:
       from urllib.request import urlopen as url_library_urlopen
       from urllib.error import URLError as url_library_URLError
 
-    # needs to distinguish wether urlopen method contains the 'context' param
-    # in theory, it should be available from python 2.7.9
-    # in practice, some prior versions may be composed of recent urllib version containing the param
-    if 'context' in url_library_urlopen.__code__.co_varnames:
-      import ssl
-      context = ssl._create_unverified_context()
-      rJson = url_library_urlopen(os.path.join(loc, 'pilot.json'),
-                                  timeout=10,
-                                  context=context)
-      rTar = url_library_urlopen(os.path.join(loc, 'pilot.tar'),
-                                 timeout=10,
-                                 context=context)
+    for fileName in ['pilot.json', 'pilot.tar', 'checksums.sha512']:
+      # needs to distinguish whether urlopen method contains the 'context' param
+      # in theory, it should be available from python 2.7.9
+      # in practice, some prior versions may be composed of recent urllib version containing the param
+      if 'context' in url_library_urlopen.__code__.co_varnames:
+        import ssl
+        context = ssl._create_unverified_context()
+        remoteFile = url_library_urlopen(os.path.join(loc, fileName),
+                                         timeout=10,
+                                         context=context)
 
-    else:
-      rJson = url_library_urlopen(os.path.join(loc, 'pilot.json'),
-                                  timeout=10)
-      rTar = url_library_urlopen(os.path.join(loc, 'pilot.tar'),
-                                 timeout=10)
+      else:
+        remoteFile = url_library_urlopen(os.path.join(loc, fileName),
+                                         timeout=10)
 
-    pj = open('pilot.json', 'wb')
-    pj.write(rJson.read())
-    pj.close()
+      localFile = open(fileName, 'wb')
+      localFile.write(remoteFile.read())
+      localFile.close()
 
-    pt = open('pilot.tar', 'wb')
-    pt.write(rTar.read())
-    pt.close()
-
-    try:
-      pt = tarfile.open('pilot.tar', 'r')
-      pt.extractall()
-      pt.close()
-    except Exception as x:
-      print("tarfile failed with message %%s" %% repr(x), file=sys.stderr)
-      logger.error("tarfile failed with message %%s" %% repr(x))
-      logger.warn("Trying tar command (tar -xvf pilot.tar)")
-      res = os.system("tar -xvf pilot.tar")
-      if res:
-        logger.error("tar failed with exit code %%d, giving up" %% int(res))
-        print("tar failed with exit code %%d, giving up" %% int(res))
+      if fileName != 'pilot.tar':
         continue
-
+      try:
+        pt = tarfile.open('pilot.tar', 'r')
+        pt.extractall()
+        pt.close()
+      except Exception as x:
+        print("tarfile failed with message %%s" %% repr(x), file=sys.stderr)
+        logger.error("tarfile failed with message %%s" %% repr(x))
+        logger.warn("Trying tar command (tar -xvf pilot.tar)")
+        res = os.system("tar -xvf pilot.tar")
+        if res:
+          logger.error("tar failed with exit code %%d, giving up" %% int(res))
+          print("tar failed with exit code %%d, giving up" %% int(res), file=sys.stderr)
+          raise
+    # if we get here we break out of the loop of locations
     break
   except (url_library_URLError, Exception) as e:
     print('%%s unreacheable' %% loc, file=sys.stderr)
@@ -222,6 +217,26 @@ else:
   print("None of the locations of the pilot files is reachable", file=sys.stderr)
   logger.error("None of the locations of the pilot files is reachable")
   sys.exit(-1)
+
+# download was successful, now we check checksums
+if os.path.exists('checksums.sha512'):
+  checksumDict = {}
+  chkSumFile = open('checksums.sha512', 'rt')
+  for line in chkSumFile.read().split('\\n'):
+    if not line.strip():  ## empty lines are ignored
+      continue
+    expectedHash, fileName = line.split('  ', 1)
+    if not os.path.exists(fileName):
+      continue
+    logger.info('Checking %%r for checksum', fileName)
+    fileHash = hashlib.sha512(open(fileName, 'rb').read()).hexdigest()
+    if fileHash != expectedHash:
+      print('Checksum mismatch for file %%r' %% fileName, file=sys.stderr)
+      print('Expected %%r, found %%r' %%(expectedHash, fileHash), file=sys.stderr)
+      logger.error('Checksum mismatch for file %%r', fileName)
+      logger.error('Expected %%r, found %%r', expectedHash, fileHash)
+      sys.exit(-1)
+    logger.debug('Checksum matched')
 
 """ % {'location': location}
 
