@@ -1,4 +1,4 @@
-[v7r1-pre18]
+[v7r1-pre19]
 
 NEW: Add environment.yml file for preparing an environment with conda
 
@@ -71,6 +71,10 @@ FIX: (#4455) discrepancy in CE._reset() methods return value in different CE imp
 *RSS
 CHANGE: (#4362) SQL query orders using list instead of tuples
 CHANGE: (#4410) (JSON) db ordering uses list instead of tuples
+FIX: (#4462) convert the dictionary keys to number, when it is required.
+CHANGE: (#4463) Dynamically load database handlers for ResourceStatus and ResourceManagement modules in
+         preparation for a schema changes needed by multi-VO versions of these.
+
 
 *StorageManagement
 CHANGE: (#4410) (JSON) use lists instead of tuples
