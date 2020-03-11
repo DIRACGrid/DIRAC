@@ -38,6 +38,7 @@ echo -e "*** $(date -u)  **** RSS TESTS ****\n"
 pytest $CLIENTINSTALLDIR/DIRAC/tests/Integration/ResourceStatusSystem/Test_ResourceManagement.py 2>&1 | tee -a clientTestOutputs.txt; (( ERR |= $? ))
 pytest $CLIENTINSTALLDIR/DIRAC/tests/Integration/ResourceStatusSystem/Test_ResourceStatus.py 2>&1 | tee -a clientTestOutputs.txt; (( ERR |= $? ))
 pytest $CLIENTINSTALLDIR/DIRAC/tests/Integration/ResourceStatusSystem/Test_SiteStatus.py 2>&1 | tee -a clientTestOutputs.txt; (( ERR |= $? ))
+pytest $CLIENTINSTALLDIR/DIRAC/tests/Integration/ResourceStatusSystem/Test_Publisher.py 2>&1 | tee -a clientTestOutputs.txt; (( ERR |= $? ))
 
 
 #-------------------------------------------------------------------------------#
@@ -45,6 +46,9 @@ echo -e "*** $(date -u)  **** WMS TESTS ****\n"
 # pytest $CLIENTINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_PilotsLoggingClient.py 2>&1 | tee -a clientTestOutputs.txt
 python $CLIENTINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_SandboxStoreClient.py $WORKSPACE/TestCode/DIRAC/tests/Integration/WorkloadManagementSystem/sb.cfg 2>&1 | tee -a clientTestOutputs.txt; (( ERR |= $? ))
 pytest $CLIENTINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_JobWrapper.py 2>&1 | tee -a clientTestOutputs.txt; (( ERR |= $? ))
+python $CLIENTINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_Client_WMS.py $WORKSPACE/TestCode/DIRAC/tests/Integration/WorkloadManagementSystem/sb.cfg 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
+pytest $CLIENTINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_PilotsClient.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
+
 ## no real tests
 python $CLIENTINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/createJobXMLDescriptions.py 2>&1 | tee -a clientTestOutputs.txt; (( ERR |= $? ))
 $CLIENTINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_dirac-jobexec.sh 2>&1 | tee -a clientTestOutputs.txt; (( ERR |= $? ))

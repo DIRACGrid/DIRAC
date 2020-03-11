@@ -1,9 +1,10 @@
 """ This is an integration test using both the TSCatalog and the FileCatalog plugins
 
-    It supposes that the TransformationDB and the FileCatalogDB to be present
+    It supposes that the TransformationDB and the FileCatalogDB are present
     It supposes the TransformationManager and that DataManagement/FileCatalog services running
 
-    The TSCatalog and FileCatalog plugins must be configured in the Resources section and set in the Operations CatalogList, e.g.:
+    The TSCatalog and FileCatalog plugins must be configured
+    in the Resources section and set in the Operations CatalogList, e.g.:
 
     Operations
     {
@@ -11,34 +12,35 @@
         {
             Catalogs
             {
-            CatalogList = FileCatalog, TSCatalog
-            FileCatalog
-            {
-            CatalogType = FileCatalog
-            AccessType = Read-Write
-            Status = Active
-            CatalogURL = DataManagement/FileCatalog
+		CatalogList = FileCatalog, TSCatalog
+		FileCatalog
+		{
+		    CatalogType = FileCatalog
+		    AccessType = Read-Write
+		    Status = Active
+		    CatalogURL = DataManagement/FileCatalog
+		}
+		TSCatalog
+		{
+		    CatalogType = TSCatalog
+		    AccessType = Write
+		    Status = Active
+		    CatalogURL = Transformation/TransformationManager
+		}
             }
-            TSCatalog
-            {
-            CatalogType = TSCatalog
-            AccessType = Write
-            Status = Active
-            CatalogURL = Transformation/TransformationManager
-            }
-
-        ...
+	}
+    }
 """
 
 # pylint: disable=invalid-name,wrong-import-position
 
+import unittest
+import os
+import sys
+
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
-import unittest
-import os
-import json
-import sys
 
 from DIRAC import gLogger
 from DIRAC.TransformationSystem.Client.TransformationClient import TransformationClient
@@ -55,16 +57,13 @@ class TestTSDFCCatalogTestCase(unittest.TestCase):
     self.metaCatalog = 'FileCatalog'
     gLogger.setLevel('DEBUG')
 
-  def tearDown(self):
-    pass
-
 
 class TransformationClientChainID(TestTSDFCCatalogTestCase):
 
   def test_inputDataQueries(self):
     # ## Add metadata fields to the DFC (directory level)
     MDFieldDict = {'particle': 'VARCHAR(128)', 'zenith': 'int'}
-    for MDField in MDFieldDict.keys():
+    for MDField in MDFieldDict:
       MDFieldType = MDFieldDict[MDField]
       res = self.fc.addMetadataField(MDField, MDFieldType)
       self.assertTrue(res['OK'])
@@ -149,7 +148,7 @@ class TransformationClientChainID(TestTSDFCCatalogTestCase):
       self.assertNotEqual(ires['LFN'], lfn3)
 
     # Delete the transformation
-    re = self.transClient.deleteTransformation(transID)
+    res = self.transClient.deleteTransformation(transID)
     self.assertTrue(res['OK'])
 
     # Create another transformation having a query not matching none of the files added to the DFC
@@ -214,7 +213,7 @@ class TransformationClientChainID(TestTSDFCCatalogTestCase):
     self.assertTrue(res['OK'])
 
     # Remove metadata fields from DFC
-    for MDField in MDFieldDict.keys():
+    for MDField in MDFieldDict:
       res = self.fc.deleteMetadataField(MDField)
       self.assertTrue(res['OK'])
 

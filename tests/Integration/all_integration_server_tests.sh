@@ -27,8 +27,6 @@ python $SERVERINSTALLDIR/DIRAC/tests/Integration/Framework/Test_ProxyDB.py 2>&1 
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u)  **** RSS TESTS ****\n"
 pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/ResourceStatusSystem/Test_FullChain.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
-# client test but needing to read from CS
-pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/ResourceStatusSystem/Test_Publisher.py 2>&1 | tee -a clientTestOutputs.txt; (( ERR |= $? ))
 
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u)  **** WMS TESTS ****\n"
@@ -37,9 +35,6 @@ pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_J
 pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_TaskQueueDB.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
 pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_ElasticJobDB.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
 pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_JobParameters_MySQLandES.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
-# client tests but needing to read from CS
-python $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_Client_WMS.py $WORKSPACE/TestCode/DIRAC/tests/Integration/WorkloadManagementSystem/sb.cfg 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
-pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_PilotsClient.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
 
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u)  **** DMS TESTS ****\n"
