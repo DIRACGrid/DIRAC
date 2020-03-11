@@ -275,7 +275,7 @@ def deimportDIRAC():
       sys.modules.pop(mod)
 
 
-X509CHAINTYPES = ('GSI_X509Chain', 'M2_X509Chain')
+X509CHAINTYPES = ('M2_X509Chain', 'GSI_X509Chain')
 
 # This fixture will return a pyGSI or M2Crypto X509Chain class
 # https://docs.pytest.org/en/latest/fixture.html#automatic-grouping-of-tests-by-fixture-instances
@@ -302,7 +302,7 @@ def get_X509Chain_class(request):
   deimportDIRAC()
 
 
-X509REQUESTTYPES = ('GSI_X509Request', 'M2_X509Request')
+X509REQUESTTYPES = ('M2_X509Request', 'GSI_X509Request')
 
 # This fixture will return a pyGSI or M2Crypto X509Request class
 # https://docs.pytest.org/en/latest/fixture.html#automatic-grouping-of-tests-by-fixture-instances
