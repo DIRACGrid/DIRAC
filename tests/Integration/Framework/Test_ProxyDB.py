@@ -585,7 +585,7 @@ class testDB(ProxyDBTestCase):
                                         'Stored proxy already have different VOMS extension'),
                                        ('/C=DN/O=DIRACCA/OU=None/CN=user_ca/emailAddress=user_ca@diracgrid.org',
                                         'group_1', 'role_1', 9999, 'Not correct VO configuration')]:
-      gLogger.info('== > %s:' % log)
+      gLogger.info('== > %s(DN: %s):' % (log, dn))
       if not any([dn, group, role, time, log]):
         gLogger.info('voms-proxy-fake command not working as expected, proxy have no VOMS extention, go to the next..')
         continue
