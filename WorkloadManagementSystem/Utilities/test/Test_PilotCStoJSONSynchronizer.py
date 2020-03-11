@@ -144,7 +144,7 @@ class Test_PilotCStoJSONSynchronizer_sync(PilotCStoJSONSynchronizerTestCase):
     synchroniser = PilotCStoJSONSynchronizer()
     synchroniser.pilotFileServer = 'value'
     res = synchroniser._syncJSONFile()
-    assert res['OK']
+    assert res['OK'], res['Message']
     # ensure pilot.json was "uploaded"
     assert 'pilot.json' in synchroniser._checksumDict
 
@@ -156,7 +156,7 @@ class Test_PilotCStoJSONSynchronizer_sync(PilotCStoJSONSynchronizerTestCase):
     synchroniser.pilotFileServer = 'value'
     synchroniser._checksumFile(self.testCfgFileName)
     res = synchroniser._syncJSONFile()
-    assert res['OK']
+    assert res['OK'], res['Message']
     synchroniser._syncChecksum()
     assert self.testCfgFileName in synchroniser._checksumDict
     assert synchroniser._checksumDict[self.testCfgFileName] == expectedHash
