@@ -8,23 +8,23 @@ import os
 import time
 import urllib
 
-from DIRAC import gLogger, S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR
+from DIRAC.Resources.Computing.BatchSystems.TimeLeft.ResourceUsage import ResourceUsage
 
 
-class MJFTimeLeft(object):
-  """ Class for creating objects that deal with MJF
+class MJFResourceUsage(ResourceUsage):
+  """
+   This is the MJF plugin of the TimeLeft Utility
   """
 
   #############################################################################
   def __init__(self):
     """ Standard constructor
     """
-    self.log = gLogger.getSubLogger('MJFTimeLeft')
+    super(MJFResourceUsage, self).__init__('MJF', 'JOB_ID')
 
-    self.jobID = os.environ.get('JOB_ID')
     self.queue = os.environ.get('QUEUE')
-    self.cpuLimit = None
-    self.wallClockLimit = None
+
     self.log.verbose('jobID=%s, queue=%s' % (self.jobID, self.queue))
     self.startTime = time.time()
 
@@ -110,5 +110,3 @@ class MJFTimeLeft(object):
     retVal = S_ERROR('Could not determine some parameters')
     retVal['Value'] = consumed
     return retVal
-
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
