@@ -25,7 +25,6 @@ class TimeLeft(object):
   """ This generally does not run alone
   """
 
-  #############################################################################
   def __init__(self):
     """ Standard constructor
     """
@@ -51,8 +50,8 @@ class TimeLeft(object):
       self.batchError = result['Message']
 
   def getScaledCPU(self, processors=1):
-    """Returns the current CPU Time spend (according to batch system) scaled according
-       to /LocalSite/CPUScalingFactor
+    """ Returns the current CPU Time spend (according to batch system) scaled according
+        to /LocalSite/CPUScalingFactor
     """
     # Quit if no scale factor available
     if not self.scaleFactor:
@@ -73,10 +72,9 @@ class TimeLeft(object):
 
     return 0
 
-  #############################################################################
   def getTimeLeft(self, cpuConsumed=0.0, processors=1):
-    """Returns the CPU Time Left for supported batch systems.  The CPUConsumed
-       is the current raw total CPU.
+    """ Returns the CPU Time Left for supported batch systems.  The CPUConsumed
+        is the current raw total CPU.
     """
     # Quit if no scale factor available
     if not self.scaleFactor:
@@ -122,7 +120,8 @@ class TimeLeft(object):
         # there is a Normalization set for the current CPU
         # use that value to renormalize the values returned by the batch system
         # NOTE: cpuConsumed is non-zero for call by the JobAgent and 0 for call by the watchdog
-        # cpuLimit and cpu may be in the units of the batch system, not real seconds... (in this case the other case won't work)
+        # cpuLimit and cpu may be in the units of the batch system, not real seconds...
+        # (in this case the other case won't work)
         # therefore renormalise it using cpuConsumed (which is in real seconds)
         timeLeft = (cpuLimit - cpu) * self.normFactor * cpuConsumed / cpu
       elif self.normFactor:
@@ -140,7 +139,6 @@ class TimeLeft(object):
     else:
       return S_ERROR('No time left for slot')
 
-  #############################################################################
   def __getBatchSystemPlugin(self):
     """ Using the name of the batch system plugin, will return an instance of the plugin class.
     """
@@ -148,7 +146,8 @@ class TimeLeft(object):
         'LSF': 'LSB_JOBID',
         'PBS': 'PBS_JOBID',
         'BQS': 'QSUB_REQNAME',
-        'SGE': 'SGE_TASK_ID'}  # more to be added later
+        'SGE': 'SGE_TASK_ID',
+        'SLURM': 'SLURM_JOB_ID'}  # more to be added later
     name = None
     for batchSystem, envVar in batchSystems.items():
       if envVar in os.environ:
@@ -165,11 +164,11 @@ class TimeLeft(object):
 
     self.log.debug('Creating plugin for %s batch system' % (name))
     try:
-      batchSystemName = "%sTimeLeft" % (name)
-      batchPlugin = __import__('DIRAC.Core.Utilities.TimeLeft.%s' %  # pylint: disable=unused-variable
+      batchSystemName = "%sResourceUsage" % (name)
+      batchPlugin = __import__('DIRAC.Resources.Computing.BatchSystems.TimeLeft.%s' %  # pylint: disable=unused-variable
                                batchSystemName, globals(), locals(), [batchSystemName])
     except ImportError as x:
-      msg = 'Could not import DIRAC.Core.Utilities.TimeLeft.%s' % (batchSystemName)
+      msg = 'Could not import DIRAC.Resources.Computing.BatchSystems.TimeLeft.%s' % (batchSystemName)
       self.log.warn(x)
       self.log.warn(msg)
       return S_ERROR(msg)
@@ -189,7 +188,7 @@ class TimeLeft(object):
 
 
 def runCommand(cmd, timeout=120):
-  """Wrapper around systemCall to return S_OK(stdout) or S_ERROR(message)
+  """ Wrapper around systemCall to return S_OK(stdout) or S_ERROR(message)
   """
   result = systemCall(timeout=timeout, cmdSeq=shlex.split(cmd))
   if not result['OK']:
@@ -234,6 +233,3 @@ def enoughTimeLeft(cpu, cpuLimit, wallClock, wallClockLimit, cpuMargin, wallCloc
         'Remaining CPU %.02f%% or WallClock %.02f%% fractions < margin (%s%% and %s%%) so no time left' %
         fractionTuple)
     return False
-
-
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

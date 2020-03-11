@@ -21,6 +21,12 @@ jobs:
         USE_NEWTHREADPOOL:
           - default
           - yes
+        SERVER_USE_M2CRYPTO:
+          - Yes
+          - No
+        CLIENT_USE_M2CRYPTO:
+          - Yes
+          - No
 
     steps:
     - uses: actions/checkout@v1
@@ -42,6 +48,8 @@ jobs:
         echo -n "-e MYSQL_VER=${{ matrix.MYSQL_VER }} " >> run_in_container
         echo -n "-e ES_VER=${{ matrix.ES_VER }} " >> run_in_container
         if [[ "${{ matrix.USE_NEWTHREADPOOL }}" != "default" ]]; then echo -n "-e DIRAC_USE_NEWTHREADPOOL=${{ matrix.USE_NEWTHREADPOOL }} " >> run_in_container; fi
+        echo -n "-e SERVER_USE_M2CRYPTO=${{ matrix.SERVER_USE_M2CRYPTO }} " >> run_in_container
+        echo -n "-e CLIENT_USE_M2CRYPTO=${{ matrix.CLIENT_USE_M2CRYPTO }} " >> run_in_container
         # Finish wrapper script
         echo -n "dirac-testing-host \"\$@\"" >> run_in_container
         chmod +x run_in_container

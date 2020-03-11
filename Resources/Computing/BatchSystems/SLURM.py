@@ -56,7 +56,10 @@ class SLURM(object):
     for _i in range(nJobs):
       jid = ''
       cmd = '%s; ' % preamble if preamble else ''
-      cmd += "sbatch -o %s/%%j.out --partition=%s -n %s %s %s " % (
+      # By default, all the environment variables of the submitter node are propagated to the workers
+      # It can create conflicts during the installation of the pilots
+      # --export restricts the propagation to the PATH variable to get a clean environment in the workers
+      cmd += "sbatch --export=PATH -o %s/%%j.out --partition=%s -n %s %s %s " % (
           outputDir, queue, numberOfProcessors, submitOptions, executable)
       status, output = commands.getstatusoutput(cmd)
 
@@ -130,36 +133,25 @@ class SLURM(object):
 
     resultDict = {}
 
-    MANDATORY_PARAMETERS = ['JobIDList', 'Queue']
-    for argument in MANDATORY_PARAMETERS:
-      if argument not in kwargs:
-        resultDict['Status'] = -1
-        resultDict['Message'] = 'No %s' % argument
-        return resultDict
-
-    jobIDList = kwargs['JobIDList']
-    if not jobIDList:
+    if 'JobIDList' not in kwargs or not kwargs['JobIDList']:
       resultDict['Status'] = -1
       resultDict['Message'] = 'Empty job list'
       return resultDict
 
-    user = kwargs.get('User')
-    if not user:
-      user = os.environ.get('USER')
-    if not user:
-      resultDict['Status'] = -1
-      resultDict['Message'] = 'No user name'
-      return resultDict
+    jobIDList = kwargs['JobIDList']
 
-    queue = kwargs['Queue']
+    jobIDs = ""
+    for jobID in jobIDList:
+      jobIDs += jobID + ","
 
-#    cmd = "squeue --partition=%s --user=%s --format='%%j %%T' " % ( queue, user )
-    cmd = "squeue --partition=%s --user=%s --format='%%i %%T' " % (queue, user)
+    # displays accounting data for all jobs in the Slurm job accounting log or Slurm database
+    cmd = "sacct -j %s -o JobID,STATE" % jobIDs
     status, output = commands.getstatusoutput(cmd)
 
     if status != 0:
       resultDict['Status'] = 1
       resultDict['Message'] = output
+      return resultDict
 
     statusDict = {}
     lines = output.split('\n')
@@ -186,7 +178,6 @@ class SLURM(object):
       statusDict[jid] = 'Unknown'
 
     # Final output
-    status = 0
     resultDict['Status'] = 0
     resultDict['Jobs'] = statusDict
     return resultDict
