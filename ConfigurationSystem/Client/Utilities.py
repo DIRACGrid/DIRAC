@@ -632,3 +632,37 @@ def getElasticDBParameters(fullname):
 def getOAuthAPI(instance):
   """ Get OAuth API url """
   return gConfig.getValue("/Systems/Framework/%s/URLs/OAuthAPI" % instance)
+
+
+def getDIRACGOCDictionary():
+  """
+  Create a dictionary containing DIRAC site names and GOCDB site names
+  using a configuration provided by CS.
+
+  :return:  A dictionary of DIRAC site names (key) and GOCDB site names (value).
+  """
+
+  log = gLogger.getSubLogger('getDIRACGOCDictionary')
+  log.debug('Begin function ...')
+
+  result = gConfig.getConfigurationTree('/Resources/Sites', 'Name')
+  if not result['OK']:
+    log.error("getConfigurationTree() failed with message: %s" % result['Message'])
+    return S_ERROR('Configuration is corrupted')
+  siteNamesTree = result['Value']
+
+  dictionary = dict()
+  PATHELEMENTS = 6  # site names have 6 elements in the path, i.e.:
+  #    /Resource/Sites/<GRID NAME>/<DIRAC SITE NAME>/Name
+  # [0]/[1]     /[2]  /[3]        /[4]              /[5]
+
+  for path, gocdbSiteName in siteNamesTree.iteritems():
+    elements = path.split('/')
+    if len(elements) != PATHELEMENTS:
+      continue
+
+    diracSiteName = elements[PATHELEMENTS - 2]
+    dictionary[diracSiteName] = gocdbSiteName
+
+  log.debug('End function.')
+  return S_OK(dictionary)

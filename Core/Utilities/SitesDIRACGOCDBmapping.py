@@ -16,17 +16,16 @@ from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 
 def getGOCSiteName(diracSiteName):
   """
-  Get GOC DB site name, given the DIRAC site name, as it stored in the CS
+  Get GOC DB site name, given the DIRAC site name, as it is stored in the CS
 
-  :params:
-    :attr:`diracSiteName` - string: DIRAC site name (e.g. 'LCG.CERN.ch')
+  :param str`diracSiteName: DIRAC site name (e.g. 'LCG.CERN.ch')
+  :returns S_OK/S_ERROR structure
   """
   gocDBName = gConfig.getValue('/Resources/Sites/%s/%s/Name' % (diracSiteName.split('.')[0],
                                                                 diracSiteName))
   if not gocDBName:
     return S_ERROR("No GOC site name for %s in CS (Not a grid site ?)" % diracSiteName)
-  else:
-    return S_OK(gocDBName)
+  return S_OK(gocDBName)
 
 
 def getGOCSites(diracSites=None):
@@ -52,16 +51,15 @@ def getGOCFTSName(diracFTSName):
   """
   Get GOC DB FTS server URL, given the DIRAC FTS server name, as it stored in the CS
 
-  :params:
-    :attr:`diracFTSName` - string: DIRAC FTS server name (e.g. 'CERN-FTS3')
+  :param str diracFTSName: DIRAC FTS server name (e.g. 'CERN-FTS3')
+  :returns S_OK/S_ERROR structure
   """
 
   csPath = "/Resources/FTSEndpoints/FTS3"
   gocFTSName = gConfig.getValue("%s/%s" % (csPath, diracFTSName))
   if not gocFTSName:
     return S_ERROR("No GOC FTS server name for %s in CS (Not a grid site ?)" % diracFTSName)
-  else:
-    return S_OK(gocFTSName)
+  return S_OK(gocFTSName)
 
 
 #############################################################################
@@ -70,8 +68,8 @@ def getDIRACSiteName(gocSiteName):
   """
   Get DIRAC site name, given the GOC DB site name, as it stored in the CS
 
-  :params:
-    :attr:`gocSiteName` - string: GOC DB site name (e.g. 'CERN-PROD')
+  :params str gocSiteName: GOC DB site name (e.g. 'CERN-PROD')
+  :returns S_OK/S_ERROR structure
   """
   res = getSites()
   if not res['OK']:
@@ -92,7 +90,6 @@ def getDIRACSesForHostName(hostName):
   """ returns the DIRAC SEs that share the same hostName
 
       :param str hostName: host name, e.g. 'storm-fe-lhcb.cr.cnaf.infn.it'
-
       :return: S_OK with list of DIRAC SE names, or S_ERROR
   """
 
@@ -107,39 +104,5 @@ def getDIRACSesForHostName(hostName):
       resultDIRACSEs.extend(seName)
 
   return S_OK(resultDIRACSEs)
-
-
-def getDIRACGOCDictionary():
-  """
-  Create a dictionary containing DIRAC site names and GOCDB site names
-  using a configuration provided by CS.
-
-  :return:  A dictionary of DIRAC site names (key) and GOCDB site names (value).
-  """
-
-  log = gLogger.getSubLogger('getDIRACGOCDictionary')
-  log.debug('Begin function ...')
-
-  result = gConfig.getConfigurationTree('/Resources/Sites', 'Name')
-  if not result['OK']:
-    log.error("getConfigurationTree() failed with message: %s" % result['Message'])
-    return S_ERROR('Configuration is corrupted')
-  siteNamesTree = result['Value']
-
-  dictionary = dict()
-  PATHELEMENTS = 6  # site names have 6 elements in the path, i.e.:
-  #    /Resource/Sites/<GRID NAME>/<DIRAC SITE NAME>/Name
-  # [0]/[1]     /[2]  /[3]        /[4]              /[5]
-
-  for path, gocdbSiteName in siteNamesTree.iteritems():
-    elements = path.split('/')
-    if len(elements) != PATHELEMENTS:
-      continue
-
-    diracSiteName = elements[PATHELEMENTS - 2]
-    dictionary[diracSiteName] = gocdbSiteName
-
-  log.debug('End function.')
-  return S_OK(dictionary)
 
 # EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

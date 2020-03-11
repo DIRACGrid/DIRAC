@@ -18,7 +18,7 @@ __RCSID__ = "$Id$"
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.LCG.GOCDBClient import GOCDBClient
-from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getDIRACGOCDictionary
+from DIRAC.ConfigurationSystem.Client.Utilities import getDIRACGOCDictionary
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
