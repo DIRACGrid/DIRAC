@@ -200,8 +200,10 @@ class PublisherHandler(RequestHandler):
       self.log.error('Could not get site to SE mapping', res['Message'])
       return S_OK()
     ses = res['Value'][1].get(site, [])
-    return rsClient.selectStatusElement('Resource', 'Status', name=list(ses),
-					meta={'columns': ['Name', 'StatusType', 'Status']})
+    sesStatus = rsClient.selectStatusElement('Resource', 'Status', name=list(ses),
+					     meta={'columns': ['Name', 'StatusType', 'Status']})
+    if not sesStatus['OK']:
+      return sesStatus
 
     def feedTree(elementsList):
 
