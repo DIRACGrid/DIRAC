@@ -3,10 +3,10 @@
 
 __RCSID__ = "$Id$"
 
-import six
 import urlparse
-
 from distutils.version import LooseVersion  # pylint: disable=no-name-in-module,import-error
+
+import six
 
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
@@ -157,8 +157,11 @@ def getGOCSiteName(diracSiteName):
   :param str`diracSiteName: DIRAC site name (e.g. 'LCG.CERN.ch')
   :returns S_OK/S_ERROR structure
   """
-  gocDBName = gConfig.getValue('/Resources/Sites/%s/%s/Name' % (diracSiteName.split('.')[0],
-								diracSiteName))
+  gocDBName = gConfig.getValue(cfgPath(gBaseResourcesSection,
+				       'Sites',
+				       diracSiteName.split('.')[0],
+				       diracSiteName,
+				       'Name'))
   if not gocDBName:
     return S_ERROR("No GOC site name for %s in CS (Not a grid site ?)" % diracSiteName)
   return S_OK(gocDBName)
@@ -195,8 +198,12 @@ def getDIRACSiteName(gocSiteName):
     return res
   sitesList = res['Value']
 
-  tmpList = [(site, gConfig.getValue("/Resources/Sites/%s/%s/Name" % (site.split('.')[0],
-								      site))) for site in sitesList]
+  tmpList = [(site, gConfig.getValue(cfgPath(gBaseResourcesSection,
+					     'Sites',
+					     site.split('.')[0],
+					     site,
+					     'Name'))) for site in sitesList]
+
   diracSites = [dirac for (dirac, goc) in tmpList if goc == gocSiteName]
 
   if diracSites:
@@ -213,8 +220,7 @@ def getGOCFTSName(diracFTSName):
   :returns S_OK/S_ERROR structure
   """
 
-  csPath = "/Resources/FTSEndpoints/FTS3"
-  gocFTSName = gConfig.getValue("%s/%s" % (csPath, diracFTSName))
+  gocFTSName = gConfig.getValue(cfgPath(gBaseResourcesSection, 'FTSEndpoints', 'FTS3', diracFTSName))
   if not gocFTSName:
     return S_ERROR("No GOC FTS server name for %s in CS (Not a grid site ?)" % diracFTSName)
   return S_OK(gocFTSName)
