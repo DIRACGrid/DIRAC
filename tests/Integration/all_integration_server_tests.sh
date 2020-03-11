@@ -35,6 +35,7 @@ pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_J
 pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_TaskQueueDB.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
 pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_ElasticJobDB.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
 pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_JobParameters_MySQLandES.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
+python $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_Client_WMS.py $WORKSPACE/TestCode/DIRAC/tests/Integration/WorkloadManagementSystem/sb.cfg 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
 
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u)  **** DMS TESTS ****\n"
