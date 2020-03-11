@@ -111,7 +111,7 @@ def getSites():
   return S_OK(sites)
 
 
-def getSitesCEsMapping():
+def getSiteCEMapping():
   """ :returns: dict of site: list of CEs
   """
   res = getSites()
@@ -136,7 +136,7 @@ def getCESiteMapping(ceName=''):
       :param str siteName: optional CE name. If not present, the whole mapping will be returned
       :return: S_OK/S_ERROR structure
   """
-  res = getSitesCEsMapping()
+  res = getSiteCEMapping()
   if not res['OK']:
     return res
   sitesCEs = res['Value']

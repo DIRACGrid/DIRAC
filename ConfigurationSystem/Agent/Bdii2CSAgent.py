@@ -19,7 +19,7 @@ from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOs, getVOOption
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSitesCEsMapping, getCESiteMapping
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSiteCEMapping, getCESiteMapping
 from DIRAC.ConfigurationSystem.Client.Utilities import getGridCEs, getSiteUpdates, getSRMUpdates, \
     getSEsFromCS, getGridSRMs
 from DIRAC.Core.Base.AgentModule import AgentModule
@@ -133,7 +133,7 @@ class Bdii2CSAgent(AgentModule):
     """
 
     bannedCEs = self.am_getOption('BannedCEs', [])
-    res = getSitesCEsMapping()
+    res = getSiteCEMapping()
     if not res['OK']:
       return res
     knownCEs = set()

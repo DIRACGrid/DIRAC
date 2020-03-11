@@ -23,7 +23,7 @@ from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getDIRACSiteName
 from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSitesCEsMapping
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSiteCEMapping
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOs, getVOOption
 
 
@@ -73,7 +73,7 @@ def checkUnusedCEs():
 
   gLogger.notice('looking for new computing resources in the BDII database...')
 
-  res = getSitesCEsMapping()
+  res = getSiteCEMapping()
   if not res['OK']:
     gLogger.error('ERROR: failed to get CEs from CS', res['Message'])
     DIRACExit(-1)

@@ -17,7 +17,7 @@ from datetime import datetime, timedelta
 from DIRAC import S_OK, gConfig, S_ERROR
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.Utilities.SiteSEMapping import getSEHosts, getStorageElementsHosts
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites, getSitesCEsMapping
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites, getSiteCEMapping
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Utilities import Utils
@@ -93,7 +93,7 @@ class PublisherHandler(RequestHandler):
     sitesRes = {}
     for siteName in siteNames:
 
-      result = getSitesCEsMapping()
+      result = getSiteCEMapping()
       if not result['OK']:
 	self.log.error("Error getting sites/CEs mapping", result['Message'])
 	return result
@@ -186,7 +186,7 @@ class PublisherHandler(RequestHandler):
 
     tree = {site: {'statusTypes': dict(siteStatus['Value'])}}
 
-    result = getSitesCEsMapping()
+    result = getSiteCEMapping()
     if not result['OK']:
       return result
     ces = result['Value'][site]

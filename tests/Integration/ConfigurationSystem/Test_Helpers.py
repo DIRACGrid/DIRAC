@@ -35,7 +35,7 @@ def test_ResourcesGetters():
   assert res['OK'] is True, res['Message']
   assert res['Value'] == ['DIRAC.Jenkins.ch'], res['Value']
 
-  res = Resources.getSitesCEsMapping()
+  res = Resources.getSiteCEMapping()
   assert res['OK'] is True, res['Message']
   assert res['Value'] == {'DIRAC.Jenkins.ch': ['jenkins.cern.ch']}, res['Value']
 
