@@ -10,8 +10,8 @@ __RCSID__ = '$Id$'
 import urllib2
 
 from DIRAC import S_ERROR, S_OK
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getGOCSiteName, getGOCSites
 from DIRAC.Core.LCG.GGUSTicketsClient import GGUSTicketsClient
-from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getGOCSiteName, getGOCSites
 from DIRAC.ResourceStatusSystem.Client.ResourceManagementClient import ResourceManagementClient
 from DIRAC.ResourceStatusSystem.Command.Command import Command
 

@@ -12,17 +12,20 @@
 
 __RCSID__ = "$Id$"
 
-import six
 import re
 import socket
 from urlparse import urlparse
 
+import six
+
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities.Grid import getBdiiCEInfo, getBdiiSEInfo, ldapService
-from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getDIRACSiteName, getDIRACSesForHostName
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOs, getVOOption
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getDIRACSiteName
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
+from DIRAC.Core.Utilities.Grid import getBdiiCEInfo, getBdiiSEInfo, ldapService
+from DIRAC.Core.Utilities.SiteSEMapping import getSEHosts
+from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 
 
 def getGridVOs():
@@ -340,6 +343,26 @@ def getGridSEs(vo, bdiiInfo=None, seBlackList=None):
   result = S_OK(siteDict)
   result['BdiiInfo'] = seBdiiDict
   return result
+
+
+def getDIRACSesForHostName(hostName):
+  """ returns the DIRAC SEs that share the same hostName
+
+      :param str hostName: host name, e.g. 'storm-fe-lhcb.cr.cnaf.infn.it'
+      :return: S_OK with list of DIRAC SE names, or S_ERROR
+  """
+
+  seNames = DMSHelpers().getStorageElements()
+
+  resultDIRACSEs = []
+  for seName in seNames:
+    res = getSEHosts(seName)
+    if not res['OK']:
+      return res
+    if hostName in res['Value']:
+      resultDIRACSEs.extend(seName)
+
+  return S_OK(resultDIRACSEs)
 
 
 def getGridSRMs(vo, bdiiInfo=None, srmBlackList=None, unUsed=False):

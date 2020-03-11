@@ -12,8 +12,7 @@ __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base import Script
 from DIRAC import exit as DIRACExit, gLogger
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import addSite, addCEtoSite
-from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getDIRACSiteName
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import addSite, addCEtoSite, getDIRACSiteName
 
 if __name__ == "__main__":
 

@@ -19,11 +19,10 @@ from DIRAC.Core.Base import Script
 from DIRAC import gLogger, exit as DIRACExit, S_OK
 from DIRAC.ConfigurationSystem.Client.Utilities import getGridCEs, getSiteUpdates, \
     getGridSRMs, getSRMUpdates
-from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getDIRACSiteName
 from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSiteCEMapping
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSiteCEMapping, getDIRACSiteName
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOs, getVOOption
 
 
