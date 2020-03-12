@@ -154,8 +154,8 @@ def getGOCSiteName(diracSiteName):
   """
   Get GOC DB site name, given the DIRAC site name, as it is stored in the CS
 
-  :param str`diracSiteName: DIRAC site name (e.g. 'LCG.CERN.ch')
-  :returns S_OK/S_ERROR structure
+  :param str diracSiteName: DIRAC site name (e.g. 'LCG.CERN.ch')
+  :returns: S_OK/S_ERROR structure
   """
   gocDBName = gConfig.getValue(cfgPath(gBaseResourcesSection,
 				       'Sites',
@@ -191,7 +191,7 @@ def getDIRACSiteName(gocSiteName):
   Get DIRAC site name, given the GOC DB site name, as it stored in the CS
 
   :params str gocSiteName: GOC DB site name (e.g. 'CERN-PROD')
-  :returns S_OK/S_ERROR structure
+  :returns: S_OK/S_ERROR structure
   """
   res = getSites()
   if not res['OK']:
@@ -217,7 +217,7 @@ def getGOCFTSName(diracFTSName):
   Get GOC DB FTS server URL, given the DIRAC FTS server name, as it stored in the CS
 
   :param str diracFTSName: DIRAC FTS server name (e.g. 'CERN-FTS3')
-  :returns S_OK/S_ERROR structure
+  :returns: S_OK/S_ERROR structure
   """
 
   gocFTSName = gConfig.getValue(cfgPath(gBaseResourcesSection, 'FTSEndpoints', 'FTS3', diracFTSName))
