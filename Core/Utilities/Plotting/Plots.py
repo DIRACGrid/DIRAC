@@ -3,7 +3,7 @@ It used used to create different plots.
 """
 import cStringIO
 import errno
-from DIRAC.Core.Utilities.Graphs import barGraph, lineGraph, pieGraph, qualityGraph, textGraph
+from DIRAC.Core.Utilities.Graphs import barGraph, lineGraph, pieGraph, qualityGraph, textGraph, histogram
 
 from DIRAC import S_OK, S_ERROR
 
@@ -146,6 +146,22 @@ def generatePiePlot(fileName, data, metadata):
     with open(fileName, "wb") as fn:
       checkMetadata(metadata)
       pieGraph(data, fn, **metadata)
+  except IOError as e:
+    return S_ERROR(errno.EIO, e)
+  return S_OK()
+
+def generateHistogram(filename, data, metadata):
+  """
+  It is used to create histograms.
+
+  :param str fileName: the nanme of the file
+  :param list data: the data which is used to create the plot
+  :param dict metadata: extra information used to create the plot.
+  """
+  try:
+    with open(filename, "wb") as fn:
+      checkMetadata(metadata)
+      histogram(data, fn, **metadata)
   except IOError as e:
     return S_ERROR(errno.EIO, e)
   return S_OK()

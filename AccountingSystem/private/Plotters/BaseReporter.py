@@ -9,7 +9,8 @@ from DIRAC.Core.Utilities.Plotting.Plots import generateNoDataPlot,\
     generateQualityPlot,\
     generateCumulativePlot,\
     generatePiePlot,\
-    generateStackedLinePlot
+    generateStackedLinePlot,\
+    generateHistogram
 
 
 class BaseReporter(DBUtils):
@@ -399,3 +400,6 @@ class BaseReporter(DBUtils):
 
   def _generateStackedLinePlot(self, filename, dataDict, metadata):
     return self.__plotData(filename, dataDict, metadata, generateStackedLinePlot)
+
+  def _generateHistogram(self, filename, dataDict, metadata):
+    return self.__plotData(filename, dataDict, metadata, generateHistogram)

@@ -11,8 +11,11 @@ __RCSID__ = "$Id$"
 # Make sure the the Agg backend is used despite arbitrary configuration
 import matplotlib
 matplotlib.use('agg')
+<<<<<<< HEAD
+=======
 
 from matplotlib.pyplot import hist
+>>>>>>> add histogram support to DIRAC
 
 import DIRAC
 
@@ -111,9 +114,14 @@ graph_thumbnail_prefs = {
     'tight_bars': True
 }
 
+<<<<<<< HEAD
 
 def graph(data, fileName, *args, **kw):
 
+=======
+def graph(data, fileName, *args, **kw):
+
+>>>>>>> add histogram support to DIRAC
   prefs = evalPrefs(*args, **kw)
   graph_size = prefs.get('graph_size', 'normal')
 
@@ -130,44 +138,87 @@ def graph(data, fileName, *args, **kw):
   graph.makeGraph(data, common_prefs, defaults, prefs)
   graph.writeGraph(fileName, 'PNG')
   return DIRAC.S_OK({'plot': fileName})
+<<<<<<< HEAD
 
+=======
+>>>>>>> add histogram support to DIRAC
 
 def __checkKW(kw):
   if 'watermark' not in kw:
     kw['watermark'] = "%s/DIRAC/Core/Utilities/Graphs/Dwatermark.png" % DIRAC.rootPath
   return kw
 
+<<<<<<< HEAD
+
+=======
+>>>>>>> add histogram support to DIRAC
 def barGraph(data, fileName, *args, **kw):
   kw = __checkKW(kw)
   graph(data, fileName, plot_type='BarGraph', statistics_line=True, *args, **kw)
 
+<<<<<<< HEAD
+
+=======
+>>>>>>> add histogram support to DIRAC
 def lineGraph(data, fileName, *args, **kw):
   kw = __checkKW(kw)
   graph(data, fileName, plot_type='LineGraph', statistics_line=True, *args, **kw)
 
+<<<<<<< HEAD
+
+=======
+>>>>>>> add histogram support to DIRAC
 def curveGraph(data, fileName, *args, **kw):
   kw = __checkKW(kw)
   graph(data, fileName, plot_type='CurveGraph', statistics_line=False, *args, **kw)
 
+<<<<<<< HEAD
+
+=======
+>>>>>>> add histogram support to DIRAC
 def cumulativeGraph(data, fileName, *args, **kw):
   kw = __checkKW(kw)
   graph(data, fileName, plot_type='LineGraph', cumulate_data=True, *args, **kw)
 
+<<<<<<< HEAD
+
+=======
+>>>>>>> add histogram support to DIRAC
 def pieGraph(data, fileName, *args, **kw):
   kw = __checkKW(kw)
   prefs = {'xticks': False, 'yticks': False, 'legend_position': 'right'}
   graph(data, fileName, prefs, plot_type='PieGraph', *args, **kw)
 
+<<<<<<< HEAD
+
+=======
+>>>>>>> add histogram support to DIRAC
 def qualityGraph(data, fileName, *args, **kw):
   kw = __checkKW(kw)
   prefs = {'plot_axis_grid': False}
   graph(data, fileName, prefs, plot_type='QualityMapGraph', *args, **kw)
 
+<<<<<<< HEAD
+
+=======
+>>>>>>> add histogram support to DIRAC
 def textGraph(text, fileName, *args, **kw):
   kw = __checkKW(kw)
   prefs = {'text_image': text}
   graph({}, fileName, prefs, *args, **kw)
 
+<<<<<<< HEAD
+
+def histogram(data, fileName, bins, *args, **kw):
+  try:
+    from pylab import hist
+  except BaseException:
+    print("No pylab module available")
+    return
+  kw = __checkKW(kw)
+  values, vbins, _patches = hist(data, bins)
+  histo = dict(zip(vbins, values))
+=======
 def histogram(data, fileName, bins=None, *args, **kw):
   kw = __checkKW(kw)
   if bins is None:
@@ -177,6 +228,7 @@ def histogram(data, fileName, bins=None, *args, **kw):
   if vbins.size:
     # Note: if no bins is given, it will be automaticaly calculated.
     bins = len(vbins)
+>>>>>>> add histogram support to DIRAC
   span = (max(data) - min(data)) / float(bins) * 0.95
   kw = __checkKW(kw)
   graph(histo, fileName, plot_type='BarGraph', span=span, statistics_line=True, *args, **kw)
