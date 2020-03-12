@@ -25,8 +25,20 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getDIRACSiteName
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
 from DIRAC.Core.Utilities.Grid import getBdiiCEInfo, getBdiiSEInfo, ldapService
 from DIRAC.Core.Utilities.SiteSEMapping import getSEHosts
+from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 
+
+@deprecated("Use DIRAC.ConfigurationSystem.Client.Helpers.Resources.getSiteCEMapping")
+def getCEsFromCS():
+  from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSiteCEMapping
+  res = getSiteCEMapping()
+  if not res['OK']:
+    return res
+  knownCEs = []
+  for site in res['Value']:
+    knownCEs = knownCEs + res['Value'][site]
+  return S_OK(knownCEs)
 
 def getGridVOs():
   """ Get all the VOMS VO names served by this DIRAC service
