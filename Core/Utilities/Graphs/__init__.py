@@ -137,36 +137,44 @@ def __checkKW(kw):
     kw['watermark'] = "%s/DIRAC/Core/Utilities/Graphs/Dwatermark.png" % DIRAC.rootPath
   return kw
 
+
 def barGraph(data, fileName, *args, **kw):
   kw = __checkKW(kw)
   graph(data, fileName, plot_type='BarGraph', statistics_line=True, *args, **kw)
+
 
 def lineGraph(data, fileName, *args, **kw):
   kw = __checkKW(kw)
   graph(data, fileName, plot_type='LineGraph', statistics_line=True, *args, **kw)
 
+
 def curveGraph(data, fileName, *args, **kw):
   kw = __checkKW(kw)
   graph(data, fileName, plot_type='CurveGraph', statistics_line=False, *args, **kw)
 
+
 def cumulativeGraph(data, fileName, *args, **kw):
   kw = __checkKW(kw)
   graph(data, fileName, plot_type='LineGraph', cumulate_data=True, *args, **kw)
+
 
 def pieGraph(data, fileName, *args, **kw):
   kw = __checkKW(kw)
   prefs = {'xticks': False, 'yticks': False, 'legend_position': 'right'}
   graph(data, fileName, prefs, plot_type='PieGraph', *args, **kw)
 
+
 def qualityGraph(data, fileName, *args, **kw):
   kw = __checkKW(kw)
   prefs = {'plot_axis_grid': False}
   graph(data, fileName, prefs, plot_type='QualityMapGraph', *args, **kw)
 
+
 def textGraph(text, fileName, *args, **kw):
   kw = __checkKW(kw)
   prefs = {'text_image': text}
   graph({}, fileName, prefs, *args, **kw)
+
 
 def histogram(data, fileName, bins=None, *args, **kw):
   kw = __checkKW(kw)
