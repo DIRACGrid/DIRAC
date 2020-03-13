@@ -13,6 +13,7 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.ConfigurationSystem.Client.Helpers import cfgPath
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 
+
 def getShifterProxy(shifterType, fileName=False):
   """
   This method returns a shifter's proxy

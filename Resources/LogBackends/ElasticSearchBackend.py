@@ -9,6 +9,7 @@ from cmreslogging.handlers import CMRESHandler
 
 from DIRAC.Resources.LogBackends.AbstractBackend import AbstractBackend
 
+
 class ElasticSearchBackend(AbstractBackend):
   """
   ElasticsearchBackend is used to create an abstraction of the handler and the formatter concepts from logging.

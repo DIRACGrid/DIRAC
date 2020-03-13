@@ -33,7 +33,6 @@ def substitute(param, variable, value):
   return eval(tmp_string)
 
 
-
 def resolveVariables(varDict):
   """ Resolve variables defined in terms of others within the same dictionary
   """

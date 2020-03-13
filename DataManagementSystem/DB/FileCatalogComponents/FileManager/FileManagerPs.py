@@ -15,6 +15,8 @@ from DIRAC.Core.Utilities.List import stringListToString, \
 
 # The logic of some methods is basically a copy/paste from the FileManager class,
 # so I could have inherited from it. However, I did not want to depend on it
+
+
 class FileManagerPs(FileManagerBase):
 
   def __init__(self, database=None):

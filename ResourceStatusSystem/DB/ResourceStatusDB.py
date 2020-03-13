@@ -88,6 +88,7 @@ class ResourceStatusCache(rssBase):
 
     return [self.id, self.sitename, self.name, self.status, self.previousstatus, self.statustype, self.time]
 
+
 class ElementStatusBase(object):
   """ Prototype for tables
   """

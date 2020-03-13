@@ -10,17 +10,17 @@ import DIRAC.ResourceStatusSystem.Policy.CEAvailabilityPolicy as moduleTested
 
 ################################################################################
 
-class CEAvailabilityPolicy_TestCase( unittest.TestCase ):
+class CEAvailabilityPolicy_TestCase(unittest.TestCase):
 
-  def setUp( self ):
+  def setUp(self):
     '''
     Setup
     '''
 
     self.moduleTested = moduleTested
-    self.testClass    = self.moduleTested.CEAvailabilityPolicy
-    
-  def tearDown( self ):
+    self.testClass = self.moduleTested.CEAvailabilityPolicy
+
+  def tearDown(self):
     '''
     TearDown
     '''
@@ -30,16 +30,17 @@ class CEAvailabilityPolicy_TestCase( unittest.TestCase ):
 ################################################################################
 # Tests
 
-class CEAvailabilityPolicy_Success( CEAvailabilityPolicy_TestCase ):
-  
-  def test_instantiate( self ):
+
+class CEAvailabilityPolicy_Success(CEAvailabilityPolicy_TestCase):
+
+  def test_instantiate(self):
     ''' tests that we can instantiate one object of the tested class
-    '''  
+    '''
 
     policy = self.testClass()
-    self.assertEqual( 'CEAvailabilityPolicy', policy.__class__.__name__ )  
-  
-  def test_evaluate( self ):
+    self.assertEqual('CEAvailabilityPolicy', policy.__class__.__name__)
+
+  def test_evaluate(self):
     ''' tests the evaluate method
     '''
 
@@ -49,31 +50,32 @@ class CEAvailabilityPolicy_Success( CEAvailabilityPolicy_TestCase ):
                                'Status': 'Production',
                                'cccreamceli05.in2p3.fr:8443/cream-sge-long': 'Production',
                                'cccreamceli05.in2p3.fr:8443/cream-sge-verylong': 'Production'
-                              }
-                    }
-    res = policy._evaluate(commandResult)
-    
-    self.assertTrue(res['OK'])
-    self.assertEqual( 'Active', res[ 'Value' ][ 'Status' ] )
-    
-    commandResult = {'OK': True,
-                    'Value': {
-                      'Reason': "All queues in 'Production'",
-                      'Status': 'Degraded',
-                      'cccreamceli05.in2p3.fr:8443/cream-sge-long': 'Production',
-                      'cccreamceli05.in2p3.fr:8443/cream-sge-verylong': 'Production'
-                      }
-                    }
+                               }
+                     }
     res = policy._evaluate(commandResult)
 
     self.assertTrue(res['OK'])
-    self.assertEqual( 'Banned', res[ 'Value' ][ 'Status' ] )
+    self.assertEqual('Active', res['Value']['Status'])
+
+    commandResult = {'OK': True,
+                     'Value': {
+                         'Reason': "All queues in 'Production'",
+                         'Status': 'Degraded',
+                         'cccreamceli05.in2p3.fr:8443/cream-sge-long': 'Production',
+                         'cccreamceli05.in2p3.fr:8443/cream-sge-verylong': 'Production'
+                     }
+                     }
+    res = policy._evaluate(commandResult)
+
+    self.assertTrue(res['OK'])
+    self.assertEqual('Banned', res['Value']['Status'])
 
 ################################################################################
 
-if __name__ == '__main__':
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase( CEAvailabilityPolicy_TestCase )
-  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( CEAvailabilityPolicy_Success ) )
-  testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
 
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
+if __name__ == '__main__':
+  suite = unittest.defaultTestLoader.loadTestsFromTestCase(CEAvailabilityPolicy_TestCase)
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(CEAvailabilityPolicy_Success))
+  testResult = unittest.TextTestRunner(verbosity=2).run(suite)
+
+# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

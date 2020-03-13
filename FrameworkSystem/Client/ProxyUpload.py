@@ -13,6 +13,7 @@ from DIRAC.Core.Base import Script
 
 __RCSID__ = "$Id$"
 
+
 class CLIParams(object):
 
   proxyLifeTime = 2592000
@@ -91,6 +92,7 @@ class CLIParams(object):
     Script.registerSwitch("p", "pwstdin", "Get passwd from stdin", self.setStdinPasswd)
     Script.registerSwitch("i", "version", "Print version", self.showVersion)
     Script.addDefaultOptionValue("LogLevel", "always")
+
 
 from DIRAC import S_ERROR
 from DIRAC.Core.Security import Locations

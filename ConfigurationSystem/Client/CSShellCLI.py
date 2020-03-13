@@ -7,21 +7,22 @@ __RCSID__ = "$Id$"
 import cmd
 import os
 
-from DIRAC.Core.Base.CLI                                import CLI, colorize
+from DIRAC.Core.Base.CLI import CLI, colorize
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
-from DIRAC.ConfigurationSystem.private.Modificator      import Modificator
-from DIRAC.Core.DISET.RPCClient                         import RPCClient
+from DIRAC.ConfigurationSystem.private.Modificator import Modificator
+from DIRAC.Core.DISET.RPCClient import RPCClient
 
-class CSShellCLI( CLI ):
+
+class CSShellCLI(CLI):
 
   def __init__(self):
     CLI.__init__(self)
-    self.serverURL   = ""
-    self.serverName  = ""
+    self.serverURL = ""
+    self.serverName = ""
     self.modificator = None
-    self.connected   = False
-    self.dirty       = False
-    self.root        = "/"
+    self.connected = False
+    self.dirty = False
+    self.root = "/"
 
     self.do_connect("")
 
@@ -38,20 +39,20 @@ class CSShellCLI( CLI ):
            connect       (Connect to the default CS URL of your config)
     """
     if line == "":
-      self.serverURL  = gConfigurationData.getMasterServer()
+      self.serverURL = gConfigurationData.getMasterServer()
       self.serverName = gConfigurationData.getName()
     else:
-      self.serverURL  = self.serverName = line
+      self.serverURL = self.serverName = line
 
-    if self.serverURL == None:
+    if self.serverURL is None:
       print("Unable to connect to the default server. Maybe you don't have a proxy ?")
       return self.do_disconnect("")
 
     print("Trying to connect to " + self.serverURL + "...", end=' ')
 
     self.modificator = Modificator(RPCClient(self.serverURL))
-    rv               = self.modificator.loadFromRemote()
-    rv2              = self.modificator.loadCredentials()
+    rv = self.modificator.loadFromRemote()
+    rv2 = self.modificator.loadCredentials()
 
     if rv['OK'] == False or rv2['OK'] == False:
       print("failed: ", end=' ')
@@ -203,7 +204,7 @@ class CSShellCLI( CLI ):
     if line == "EOF":
       if self.prompt:
         print()
-      return self.do_quit( line )
+      return self.do_quit(line)
     else:
       cmd.Cmd.default(self, line)
 
@@ -211,4 +212,4 @@ class CSShellCLI( CLI ):
     """quit
     Quit"""
     self.do_disconnect("")
-    CLI.do_quit( self, _line )
+    CLI.do_quit(self, _line)

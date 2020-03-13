@@ -33,49 +33,51 @@ from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.RequestManagementSystem.Agent.RequestOperations.ForwardDISET import ForwardDISET
 
 ########################################################################
-class ForwardDISETTests( unittest.TestCase ):
+
+
+class ForwardDISETTests(unittest.TestCase):
   """
   .. class:: ForwardDISETTests
 
   """
-  def setUp( self ):
+
+  def setUp(self):
     """ test set up """
 
-    self.hiArgs = ( ( "RequestManagement/RequestManager",
-                      { "keepAliveLapse": 10, "timeout": 5 } ),
-                      "foo",
-                      ( 12345, { "Hi": "There!" } ) )
-    self.req = Request( { "RequestName": "testRequest" } )
-    self.op = Operation( { "Type": "ForwardDISET",
-                           "Arguments": DEncode.encode( self.hiArgs ) } )
+    self.hiArgs = (("RequestManagement/RequestManager",
+                    {"keepAliveLapse": 10, "timeout": 5}),
+                   "foo",
+                   (12345, {"Hi": "There!"}))
+    self.req = Request({"RequestName": "testRequest"})
+    self.op = Operation({"Type": "ForwardDISET",
+                         "Arguments": DEncode.encode(self.hiArgs)})
     self.req += self.op
 
-  def tearDown( self ):
+  def tearDown(self):
     """ tear down """
     del self.hiArgs
     del self.op
     del self.req
 
-  def testCase( self ):
+  def testCase(self):
     """ ctor and functionality """
     forwardDISET = None
     try:
       forwardDISET = ForwardDISET()
-    except:
+    except BaseException:
       pass
-    self.assertEqual( isinstance( forwardDISET, ForwardDISET ), True, "construction error" )
+    self.assertEqual(isinstance(forwardDISET, ForwardDISET), True, "construction error")
 
-    forwardDISET.setOperation( self.op )
-    self.assertEqual( isinstance( forwardDISET.operation, Operation ), True, "setOperation error" )
+    forwardDISET.setOperation(self.op)
+    self.assertEqual(isinstance(forwardDISET.operation, Operation), True, "setOperation error")
 
     call = forwardDISET()
     # # should be failing right now
-    self.assertEqual( call["OK"], False, "call failed" )
+    self.assertEqual(call["OK"], False, "call failed")
+
 
 if __name__ == "__main__":
   testLoader = unittest.TestLoader()
-  forwardDISETTests = testLoader.loadTestsFromTestCase( ForwardDISETTests )
-  suite = unittest.TestSuite( [ forwardDISETTests ] )
-  unittest.TextTestRunner( verbosity = 3 ).run( suite )
-
-
+  forwardDISETTests = testLoader.loadTestsFromTestCase(ForwardDISETTests)
+  suite = unittest.TestSuite([forwardDISETTests])
+  unittest.TextTestRunner(verbosity=3).run(suite)

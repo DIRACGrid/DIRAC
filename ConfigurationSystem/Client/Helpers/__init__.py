@@ -1,6 +1,6 @@
 # $HeadURL$
 """
-   DIRAC.ConfigurationSystem.Client.Helpers package  
+   DIRAC.ConfigurationSystem.Client.Helpers package
 """
 __RCSID__ = "$Id$"
 

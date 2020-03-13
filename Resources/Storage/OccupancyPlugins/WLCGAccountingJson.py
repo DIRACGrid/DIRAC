@@ -19,6 +19,7 @@ class WLCGAccountingJson(object):
 
   Occupancy plugin to return the space information given by WLCG Accouting Json
   """
+
   def __init__(self, se):
     self.se = se
     self.log = se.log.getSubLogger('WLCGAccountingJson')

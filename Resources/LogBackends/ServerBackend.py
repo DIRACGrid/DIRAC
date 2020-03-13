@@ -13,10 +13,10 @@ from DIRAC.FrameworkSystem.private.standardLogging.LogLevels import LogLevels
 
 class ServerBackend(AbstractBackend):
   """
-  ServerBackend is used to create an abstraction of the handler and the formatter concepts from logging. 
-  Here, we gather a ServerHandler object and a BaseFormatter. 
+  ServerBackend is used to create an abstraction of the handler and the formatter concepts from logging.
+  Here, we gather a ServerHandler object and a BaseFormatter.
 
-  - ServerHandler is a custom handler object, created for DIRAC because it has no equivalent: 
+  - ServerHandler is a custom handler object, created for DIRAC because it has no equivalent:
     it is used to write log messages in a server DIRAC service: SystemLogging from FrameworkSystem.
     You can find it in FrameworkSystem/private/standardLogging/Handler
 

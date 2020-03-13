@@ -6,14 +6,14 @@ __RCSID__ = "$Id$"
 
 from DIRAC.Core.DISET.private.InnerRPCClient import InnerRPCClient
 
-class _MagicMethod( object ):
+
+class _MagicMethod(object):
   """ This object allows to bundle together a function calling
       an RPC and the remote function name.
       When this object is called (__call__), the call is performed.
   """
 
-
-  def __init__( self, doRPCFunc, remoteFuncName ):
+  def __init__(self, doRPCFunc, remoteFuncName):
     """ Constructor
 
         :param doRPCFunc: the function actually performing the RPC call
@@ -22,30 +22,29 @@ class _MagicMethod( object ):
     self.__doRPCFunc = doRPCFunc
     self.__remoteFuncName = remoteFuncName
 
-  def __getattr__( self, remoteFuncName ):
+  def __getattr__(self, remoteFuncName):
     """ I really do not understand when this would be called.
         I can only imagine it being called by dir, or things like that.
         In any case, it recursively return a MagicMethod object
         where the new remote function name is the old one to which
         we append the new called attribute.
     """
-    return  _MagicMethod( self.__doRPCFunc, "%s.%s" % ( self.__remoteFuncName, remoteFuncName ) )
+    return _MagicMethod(self.__doRPCFunc, "%s.%s" % (self.__remoteFuncName, remoteFuncName))
 
-
-
-  def __call__(self, *args ):
+  def __call__(self, *args):
     """ Triggers the call.
         it uses the RPC calling function given by RPCClient,
         and gives as argument the remote function name and whatever
         arguments given.
     """
 
-    return self.__doRPCFunc( self.__remoteFuncName, args )
+    return self.__doRPCFunc(self.__remoteFuncName, args)
 
-  def __str__( self ):
+  def __str__(self):
     return "<RPCClient method %s>" % self.__remoteFuncName
 
-class RPCClient( object ):
+
+class RPCClient(object):
   """ This class contains the mechanism to convert normal calls to RPC calls.
 
       When instanciated, it creates a :class:`~DIRAC.Core.DISET.private.InnerRPCClient.InnerRPCClient`
@@ -66,8 +65,7 @@ class RPCClient( object ):
 
   """
 
-
-  def __init__( self, *args, **kwargs ):
+  def __init__(self, *args, **kwargs):
     """
       Constructor
       The arguments are just passed on to InnerRPCClient.
@@ -76,10 +74,9 @@ class RPCClient( object ):
         * args: has to be the service name or URL
         * kwargs: all the arguments InnerRPCClient and BaseClient accept as configuration
     """
-    self.__innerRPCClient = InnerRPCClient( *args, **kwargs )
+    self.__innerRPCClient = InnerRPCClient(*args, **kwargs)
 
-
-  def __doRPC( self, sFunctionName, args ):
+  def __doRPC(self, sFunctionName, args):
     """
       Execute the RPC action. This is given as an attribute
       to MagicMethod
@@ -87,11 +84,9 @@ class RPCClient( object ):
       :param sFunctionName: name of the remote function
       :param args: arguments to pass to the function
     """
-    return self.__innerRPCClient.executeRPC( sFunctionName, args )
+    return self.__innerRPCClient.executeRPC(sFunctionName, args)
 
-
-
-  def __getattr__( self, attrName ):
+  def __getattr__(self, attrName):
     """ Function for emulating the existance of functions.
 
            In literature this is usually called a "stub function".
@@ -99,17 +94,18 @@ class RPCClient( object ):
          otherwise we create a _MagicMethod instance
 
     """
-    if attrName in dir( self.__innerRPCClient ):
-      return getattr( self.__innerRPCClient, attrName )
-    return _MagicMethod( self.__doRPC, attrName )
+    if attrName in dir(self.__innerRPCClient):
+      return getattr(self.__innerRPCClient, attrName)
+    return _MagicMethod(self.__doRPC, attrName)
 
-def executeRPCStub( rpcStub ):
+
+def executeRPCStub(rpcStub):
   """
   Playback a stub
   """
-  #Generate a RPCClient with the same parameters
-  rpcClient = RPCClient( rpcStub[0][0], **rpcStub[0][1] )
-  #Get a functor to execute the RPC call
-  rpcFunc = getattr( rpcClient, rpcStub[1] )
-  #Reproduce the call
-  return rpcFunc( *rpcStub[2] )
+  # Generate a RPCClient with the same parameters
+  rpcClient = RPCClient(rpcStub[0][0], **rpcStub[0][1])
+  # Get a functor to execute the RPC call
+  rpcFunc = getattr(rpcClient, rpcStub[1])
+  # Reproduce the call
+  return rpcFunc(*rpcStub[2])

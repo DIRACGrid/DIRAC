@@ -20,6 +20,7 @@ __RCSID__ = '$Id$'
 
 AGENT_NAME = 'ResourceStatus/EmailAgent'
 
+
 class EmailAgent(AgentModule):
 
   def __init__(self, *args, **kwargs):

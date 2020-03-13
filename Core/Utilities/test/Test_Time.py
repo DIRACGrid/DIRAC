@@ -10,79 +10,86 @@ import unittest
 # sut
 from DIRAC.Core.Utilities.Time import timeThis
 
+
 class logClass(object):
-  def __init__( self ):
+  def __init__(self):
     self._systemName = 'aSystemName'
     self._subName = 'sSubName'
+
 
 @timeThis
 def myMethod():
   print('boh')
 
+
 class myClass(object):
-  def __init__( self ):
+  def __init__(self):
     self.log = logClass()
 
   @timeThis
-  def myMethodInAClass( self ):
+  def myMethodInAClass(self):
     print('boh')
 
-class myBetterClass( object ):
-  def __init__( self ):
+
+class myBetterClass(object):
+  def __init__(self):
     self.log = logClass()
     self.log._subName = 'anotherSubName'
 
   @timeThis
-  def myMethodInAClass( self ):
+  def myMethodInAClass(self):
     print('boh')
 
-class myEvenBetterClass( object ):
-  def __init__( self ):
+
+class myEvenBetterClass(object):
+  def __init__(self):
     self.log = logClass()
     self.transString = 'this is a transString'
 
   @timeThis
-  def myMethodInAClass( self, a, b = None ):
+  def myMethodInAClass(self, a, b=None):
     print('boh')
 
 
-class TimeTestCase( unittest.TestCase ):
+class TimeTestCase(unittest.TestCase):
   """ Base class for the Agents test cases
   """
-  def setUp( self ):
+
+  def setUp(self):
     pass
 
-  def tearDown( self ):
+  def tearDown(self):
     pass
 
 
-class TimeSuccess( TimeTestCase ):
+class TimeSuccess(TimeTestCase):
 
-  def test_timeThis( self ):
+  def test_timeThis(self):
 
-    self.assertIsNone( myMethod() )
-    self.assertIsNone( myClass().myMethodInAClass() )
-    self.assertIsNone( myBetterClass().myMethodInAClass() )
+    self.assertIsNone(myMethod())
+    self.assertIsNone(myClass().myMethodInAClass())
+    self.assertIsNone(myBetterClass().myMethodInAClass())
     a1 = ['aa', 'bb']
     a2 = 'bb'
-    self.assertIsNone( myEvenBetterClass().myMethodInAClass( a1, b = a2 ) )
+    self.assertIsNone(myEvenBetterClass().myMethodInAClass(a1, b=a2))
     a1 = 'aa'
-    a2 = {'a':'aa', 'b': 'bb'}
-    self.assertIsNone( myEvenBetterClass().myMethodInAClass( a1, b = a2 ) )
+    a2 = {'a': 'aa', 'b': 'bb'}
+    self.assertIsNone(myEvenBetterClass().myMethodInAClass(a1, b=a2))
     a1 = 'aa'
-    a2 = {'a':'aa', 'b': 'bb'}
-    self.assertIsNone( myEvenBetterClass().myMethodInAClass( a = a1, b = a2 ) )
+    a2 = {'a': 'aa', 'b': 'bb'}
+    self.assertIsNone(myEvenBetterClass().myMethodInAClass(a=a1, b=a2))
     a1 = 'aa'
-    a2 = {'a':'aa', 'b': 'bb', 'c':'cc'}
-    self.assertIsNone( myEvenBetterClass().myMethodInAClass( a = a2, b = a2 ) )
+    a2 = {'a': 'aa', 'b': 'bb', 'c': 'cc'}
+    self.assertIsNone(myEvenBetterClass().myMethodInAClass(a=a2, b=a2))
 
 #############################################################################
 # Test Suite run
 #############################################################################
 
+
 if __name__ == '__main__':
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase( TimeTestCase )
-  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( TimeSuccess ) )
-  testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
+  suite = unittest.defaultTestLoader.loadTestsFromTestCase(TimeTestCase)
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(TimeSuccess))
+  testResult = unittest.TextTestRunner(verbosity=2).run(suite)
 
 # EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#

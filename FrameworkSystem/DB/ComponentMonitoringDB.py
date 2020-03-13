@@ -409,6 +409,7 @@ class StatusSet:
   This class is used to set component status as required and this method is used only by the
   ComponentMonitoringDB class.
   """
+
   def __init__(self, dbRecordsList=[]):
     self.__requiredSet = {}
     self.__requiredFields = ('Setup', 'Type', 'ComponentName')

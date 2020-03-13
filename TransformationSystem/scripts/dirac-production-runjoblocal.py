@@ -16,18 +16,18 @@ __RCSID__ = "$Id$"
 import os
 import shutil
 
-from DIRAC.Core.Base      import Script
-Script.parseCommandLine( ignoreErrors = False )
+from DIRAC.Core.Base import Script
+Script.parseCommandLine(ignoreErrors=False)
 
-Script.registerSwitch( 'D:', 'Download='    , 'Defines data acquisition as DownloadInputData'   )
-Script.registerSwitch( 'P:', 'Protocol='    , 'Defines data acquisition as InputDataByProtocol' )
+Script.registerSwitch('D:', 'Download=', 'Defines data acquisition as DownloadInputData')
+Script.registerSwitch('P:', 'Protocol=', 'Defines data acquisition as InputDataByProtocol')
 
-Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
-                                     '\nUsage:',
-                                     'dirac-production-runjoblocal [Data imput mode] [job ID]'
-                                     '\nArguments:',
-                                     '  Download (Job ID): Defines data aquisition as DownloadInputData',
-                                     '  Protocol (Job ID): Defines data acquisition as InputDataByProtocol\n'] ) )
+Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
+                                  '\nUsage:',
+                                  'dirac-production-runjoblocal [Data imput mode] [job ID]'
+                                  '\nArguments:',
+                                  '  Download (Job ID): Defines data aquisition as DownloadInputData',
+                                  '  Protocol (Job ID): Defines data acquisition as InputDataByProtocol\n']))
 
 from DIRAC import S_OK
 from DIRAC.Core.Utilities.File import mkDir
@@ -37,12 +37,13 @@ _downloadinputdata = False
 _jobID = None
 
 for switch in Script.getUnprocessedSwitches():
-  if switch [ 0 ] in ( 'D', 'Download' ):
+  if switch[0] in ('D', 'Download'):
     _downloadinputdata = True
     _jobID = switch[1]
-  if switch [ 0 ] in ( 'I', 'Protocol' ):
+  if switch[0] in ('I', 'Protocol'):
     _downloadinputdata = False
     _jobID = switch[1]
+
 
 def __runSystemDefaults(jobID, vo):
   """
@@ -51,12 +52,12 @@ def __runSystemDefaults(jobID, vo):
 
   """
 
-
   tempdir = str(vo) + "job" + str(jobID) + "temp"
 
   mkDir(tempdir)
   basepath = os.getcwd()
   return basepath + os.path.sep + tempdir + os.path.sep
+
 
 def __downloadJobDescriptionXML(jobID, basepath):
   """
@@ -67,6 +68,7 @@ def __downloadJobDescriptionXML(jobID, basepath):
   from DIRAC.Interfaces.API.Dirac import Dirac
   jdXML = Dirac()
   jdXML.getInputSandbox(jobID, basepath)
+
 
 def __modifyJobDescription(jobID, basepath, downloadinputdata):
   """
@@ -89,9 +91,25 @@ def __downloadPilotScripts(basepath, diracpath):
   Downloads the scripts necessary to configure the pilot
 
   """
-  shutil.copyfile(str(diracpath) + os.path.sep + "WorkloadManagementSystem/PilotAgent/dirac-pilot.py"   , basepath + "dirac-pilot.py")
-  shutil.copyfile(str(diracpath) + os.path.sep + "WorkloadManagementSystem/PilotAgent/pilotCommands.py" , basepath + "pilotCommands.py")
-  shutil.copyfile(str(diracpath) + os.path.sep + "WorkloadManagementSystem/PilotAgent/pilotTools.py"    , basepath + "pilotTools.py")
+  shutil.copyfile(
+      str(diracpath) +
+      os.path.sep +
+      "WorkloadManagementSystem/PilotAgent/dirac-pilot.py",
+      basepath +
+      "dirac-pilot.py")
+  shutil.copyfile(
+      str(diracpath) +
+      os.path.sep +
+      "WorkloadManagementSystem/PilotAgent/pilotCommands.py",
+      basepath +
+      "pilotCommands.py")
+  shutil.copyfile(
+      str(diracpath) +
+      os.path.sep +
+      "WorkloadManagementSystem/PilotAgent/pilotTools.py",
+      basepath +
+      "pilotTools.py")
+
 
 def __configurePilot(basepath, vo):
   """
@@ -100,16 +118,20 @@ def __configurePilot(basepath, vo):
   about othe VOs is needed to make it more general.
   """
 
-  from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals    import getVO, getSetup
-  from DIRAC.ConfigurationSystem.Client.ConfigurationData    import gConfigurationData
-
-
+  from DIRAC.ConfigurationSystem.Client.Helpers.CSGlobals import getVO, getSetup
+  from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
 
   vo = getVO()
   currentSetup = getSetup()
   masterCS = gConfigurationData.getMasterServer()
 
-  os.system("python " + basepath + "dirac-pilot.py -S %s -l %s -C %s -N ce.debug.ch -Q default -n DIRAC.JobDebugger.ch -dd" %(currentSetup, vo, masterCS))
+  os.system(
+      "python " +
+      basepath +
+      "dirac-pilot.py -S %s -l %s -C %s -N ce.debug.ch -Q default -n DIRAC.JobDebugger.ch -dd" %
+      (currentSetup,
+       vo,
+       masterCS))
 
   diracdir = os.path.expanduser('~') + os.path.sep
   try:
@@ -117,6 +139,7 @@ def __configurePilot(basepath, vo):
   except OSError:
     pass
   shutil.copyfile(diracdir + 'pilot.cfg', diracdir + '.dirac.cfg')
+
 
 def __runJobLocally(jobID, basepath, vo):
   """
@@ -126,8 +149,8 @@ def __runJobLocally(jobID, basepath, vo):
   ipr = __import__(str(vo) + 'DIRAC.Interfaces.API.' + str(vo) + 'Job', globals(), locals(), [str(vo) + 'Job'], -1)
   voJob = getattr(ipr, str(vo) + 'Job')
   localJob = voJob(basepath + "InputSandbox" + str(jobID) + os.path.sep + "jobDescription.xml")
-  localJob.setInputSandbox(os.getcwd()+ os.path.sep+"pilot.cfg")
-  localJob.setConfigArgs(os.getcwd()+ os.path.sep+"pilot.cfg")
+  localJob.setInputSandbox(os.getcwd() + os.path.sep + "pilot.cfg")
+  localJob.setConfigArgs(os.getcwd() + os.path.sep + "pilot.cfg")
   os.chdir(basepath)
   localJob.runLocal()
 

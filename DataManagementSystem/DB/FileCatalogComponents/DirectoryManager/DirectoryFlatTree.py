@@ -13,6 +13,7 @@ from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.List import stringListToString, intListToString
 from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryManager.DirectoryTreeBase import DirectoryTreeBase
 
+
 class DirectoryFlatTree(DirectoryTreeBase):
 
   def __init__(self, database=None):

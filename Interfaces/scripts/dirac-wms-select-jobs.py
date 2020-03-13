@@ -79,7 +79,6 @@ conditions = {'Status': status,
               'Date': selDate}
 
 
-
 from DIRAC.Interfaces.API.Dirac import Dirac
 
 dirac = Dirac()
@@ -111,7 +110,6 @@ else:
     jobs.extend(res['Value'])
   else:
     gLogger.error("Can't select jobs: ", res['Message'])
-
 
 
 conds = ['%s = %s' % (n, v) for n, v in conditions.iteritems() if v]

@@ -222,6 +222,6 @@ def __getGlue2ExecutionEnvironmentInfo(host, executionEnvironment):
               'GlueHostArchitecturePlatformType': architecture,
               'GlueHostBenchmarkSI00': '2500',  # needed for the queue to be used by the sitedirector
               'MANAGER': manager,  # to create the ARC QueueName mostly
-             }
+              }
 
   return S_OK(infoDict)

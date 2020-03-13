@@ -19,18 +19,17 @@ import numpy
 
 from matplotlib.ticker import ScalarFormatter
 from matplotlib.dates import AutoDateLocator, AutoDateFormatter, DateFormatter, RRuleLocator, \
-                             rrulewrapper, HOURLY, MINUTELY, SECONDLY, YEARLY, MONTHLY, DAILY
+    rrulewrapper, HOURLY, MINUTELY, SECONDLY, YEARLY, MONTHLY, DAILY
 from dateutil.relativedelta import relativedelta
 
 
-
-def evalPrefs( *args, **kw ):
+def evalPrefs(*args, **kw):
   """ Interpret arguments as preferencies dictionaries or key-value pairs. The overriding order
       is right most - most important one. Returns a single dictionary of preferencies
   """
 
   prefs = {}
-  for pDict in list( args ) + [kw]:
+  for pDict in list(args) + [kw]:
     if isinstance(pDict, dict):
       for key in pDict:
         if key == "metadata":
@@ -41,61 +40,64 @@ def evalPrefs( *args, **kw ):
 
   return prefs
 
-def pixelToPoint( size, dpi ):
+
+def pixelToPoint(size, dpi):
   """ Convert size expressed in pixels into points for a given dpi resolution
   """
 
-  return float( size ) * 100. / float( dpi )
+  return float(size) * 100. / float(dpi)
 
 
 datestrings = ['%x %X', '%x', '%Y-%m-%d %H:%M:%S']
 
-def convert_to_datetime( dstring ):
-  orig_string = str( dstring )
+
+def convert_to_datetime(dstring):
+  orig_string = str(dstring)
   try:
-    if isinstance( dstring, datetime.datetime ):
+    if isinstance(dstring, datetime.datetime):
       results = dstring
     else:
-      results = eval( str( dstring ), {'__builtins__':None, 'time':time, 'math':math}, {} )
+      results = eval(str(dstring), {'__builtins__': None, 'time': time, 'math': math}, {})
     if isinstance(results, six.integer_types + (float,)):
-      results = datetime.datetime.fromtimestamp( int( results ) )
-    elif isinstance( results, datetime.datetime ):
+      results = datetime.datetime.fromtimestamp(int(results))
+    elif isinstance(results, datetime.datetime):
       pass
     else:
-      raise ValueError( "Unknown datetime type!" )
+      raise ValueError("Unknown datetime type!")
   except Exception as e:
     t = None
     for dateformat in datestrings:
       try:
         t = time.strptime(dstring, dateformat)
-        timestamp = calendar.timegm( t ) #-time.timezone
-        results = datetime.datetime.fromtimestamp( timestamp )
+        timestamp = calendar.timegm(t)  # -time.timezone
+        results = datetime.datetime.fromtimestamp(timestamp)
         break
-      except:
+      except BaseException:
         pass
     if t is None:
       try:
         dstring = dstring.split('.', 1)[0]
         t = time.strptime(dstring, dateformat)
-        timestamp = time.mktime( t ) #-time.timezone
-        results = datetime.datetime.fromtimestamp( timestamp )
-      except:
-        raise ValueError( "Unable to create time from string!\nExpecting " \
-            "format of: '12/06/06 12:54:67'\nRecieved:%s" % orig_string )
+        timestamp = time.mktime(t)  # -time.timezone
+        results = datetime.datetime.fromtimestamp(timestamp)
+      except BaseException:
+        raise ValueError("Unable to create time from string!\nExpecting "
+                         "format of: '12/06/06 12:54:67'\nRecieved:%s" % orig_string)
   return results
 
-def to_timestamp( val ):
+
+def to_timestamp(val):
 
   try:
-    v = float( val )
+    v = float(val)
     if v > 1000000000 and v < 1900000000:
       return v
-  except:
+  except BaseException:
     pass
 
-  val = convert_to_datetime( val )
-  #return calendar.timegm( val.timetuple() )
-  return time.mktime( val.timetuple() )
+  val = convert_to_datetime(val)
+  # return calendar.timegm( val.timetuple() )
+  return time.mktime(val.timetuple())
 
 
 # If the graph has more than `hour_switch` minutes, we print
@@ -110,7 +112,8 @@ day_switch = 7
 # out the weeks in the subtitle.
 week_switch = 7
 
-def add_time_to_title( begin, end, metadata = {} ):
+
+def add_time_to_title(begin, end, metadata={}):
   """ Given a title and two times, adds the time info to the title.
       Example results::
 
@@ -133,8 +136,8 @@ def add_time_to_title( begin, end, metadata = {} ):
   if 'span' in metadata:
     interval = metadata['span']
   else:
-    interval = time_interval( begin, end )
-  formatting_interval = time_interval( begin, end )
+    interval = time_interval(begin, end)
+  formatting_interval = time_interval(begin, end)
   if formatting_interval == 600:
     format_str = '%H:%M:%S'
   elif formatting_interval == 3600:
@@ -164,18 +167,19 @@ def add_time_to_title( begin, end, metadata = {} ):
     format_name = 'Seconds'
     time_slice = 1
 
-  begin_tuple = time.localtime( begin )
-  end_tuple = time.localtime( end )
-  added_title = '%i %s from ' % ( int( ( end - begin ) / time_slice ), format_name )
-  added_title += time.strftime( '%s to' % format_str, begin_tuple )
+  begin_tuple = time.localtime(begin)
+  end_tuple = time.localtime(end)
+  added_title = '%i %s from ' % (int((end - begin) / time_slice), format_name)
+  added_title += time.strftime('%s to' % format_str, begin_tuple)
   if time_slice < 86400:
     add_utc = ' UTC'
   else:
     add_utc = ''
-  added_title += time.strftime( ' %s%s' % ( format_str, add_utc ), end_tuple )
+  added_title += time.strftime(' %s%s' % (format_str, add_utc), end_tuple)
   return added_title
 
-def time_interval( begin, end ):
+
+def time_interval(begin, end):
   """
   Determine the appropriate time interval based upon the length of
   time as indicated by the `starttime` and `endtime` keywords.
@@ -190,22 +194,25 @@ def time_interval( begin, end ):
   else:
     return 86400 * 7
 
-def comma_format( x_orig ):
-  x = float( x_orig )
+
+def comma_format(x_orig):
+  x = float(x_orig)
   if x >= 1000:
     after_comma = x % 1000
-    before_comma = int( x ) / 1000
-    return '%s,%03g' % ( comma_format( before_comma ), after_comma )
+    before_comma = int(x) / 1000
+    return '%s,%03g' % (comma_format(before_comma), after_comma)
   else:
-    return str( x_orig )
+    return str(x_orig)
 
-class PrettyScalarFormatter( ScalarFormatter ):
 
-  def _set_orderOfMagnitude( self, range ):
+class PrettyScalarFormatter(ScalarFormatter):
+
+  def _set_orderOfMagnitude(self, range):
     # if scientific notation is to be used, find the appropriate exponent
     # if using an numerical offset, find the exponent after applying the offset
-    locs = numpy.absolute( self.locs )
-    if self.offset: oom = math.floor( math.log10( range ) )
+    locs = numpy.absolute(self.locs)
+    if self.offset:
+      oom = math.floor(math.log10(range))
     else:
       if locs[0] > locs[-1]:
         val = locs[0]
@@ -214,7 +221,7 @@ class PrettyScalarFormatter( ScalarFormatter ):
       if val == 0:
         oom = 0
       else:
-        oom = math.floor( math.log10( val ) )
+        oom = math.floor(math.log10(val))
     if oom <= -7:
       self.orderOfMagnitude = oom
     elif oom >= 9:
@@ -222,50 +229,52 @@ class PrettyScalarFormatter( ScalarFormatter ):
     else:
       self.orderOfMagnitude = 0
 
-  def pprint_val( self, x ):
-    pstring = ScalarFormatter.pprint_val( self, x )
-    return comma_format( pstring )
+  def pprint_val(self, x):
+    pstring = ScalarFormatter.pprint_val(self, x)
+    return comma_format(pstring)
 
-class PrettyDateFormatter( AutoDateFormatter ):
+
+class PrettyDateFormatter(AutoDateFormatter):
   """ This class provides a formatter which conforms to the
       desired date formates for the Phedex system.
   """
 
-  def __init__( self, locator ):
-    tz = pytz.timezone( 'UTC' )
-    AutoDateFormatter.__init__( self, locator, tz = tz )
+  def __init__(self, locator):
+    tz = pytz.timezone('UTC')
+    AutoDateFormatter.__init__(self, locator, tz=tz)
 
-  def __call__( self, x, pos = 0 ):
-    scale = float( self._locator._get_unit() )
+  def __call__(self, x, pos=0):
+    scale = float(self._locator._get_unit())
     if scale == 365.0:
-      self._formatter = DateFormatter( "%Y", self._tz )
+      self._formatter = DateFormatter("%Y", self._tz)
     elif scale == 30.0:
-      self._formatter = DateFormatter( "%b %Y", self._tz )
-    elif ( scale >= 1.0 ) and ( scale <= 7.0 ):
-      self._formatter = DateFormatter( "%Y-%m-%d", self._tz )
-    elif scale == ( 1.0 / 24.0 ):
-      self._formatter = DateFormatter( "%H:%M", self._tz )
-    elif scale == ( 1.0 / ( 24 * 60 ) ):
-      self._formatter = DateFormatter( "%H:%M", self._tz )
-    elif scale == ( 1.0 / ( 24 * 3600 ) ):
-      self._formatter = DateFormatter( "%H:%M:%S", self._tz )
+      self._formatter = DateFormatter("%b %Y", self._tz)
+    elif (scale >= 1.0) and (scale <= 7.0):
+      self._formatter = DateFormatter("%Y-%m-%d", self._tz)
+    elif scale == (1.0 / 24.0):
+      self._formatter = DateFormatter("%H:%M", self._tz)
+    elif scale == (1.0 / (24 * 60)):
+      self._formatter = DateFormatter("%H:%M", self._tz)
+    elif scale == (1.0 / (24 * 3600)):
+      self._formatter = DateFormatter("%H:%M:%S", self._tz)
     else:
-      self._formatter = DateFormatter( "%b %d %Y %H:%M:%S", self._tz )
+      self._formatter = DateFormatter("%b %d %Y %H:%M:%S", self._tz)
 
-    return self._formatter( x, pos )
+    return self._formatter(x, pos)
 
-class PrettyDateLocator( AutoDateLocator ):
 
-  def get_locator( self, dmin, dmax ):
+class PrettyDateLocator(AutoDateLocator):
+
+  def get_locator(self, dmin, dmax):
     'pick the best locator based on a distance'
 
-    delta = relativedelta( dmax, dmin )
-    numYears = ( delta.years * 1.0 )
-    numMonths = ( numYears * 12.0 ) + delta.months
-    numDays = ( numMonths * 31.0 ) + delta.days
-    numHours = ( numDays * 24.0 ) + delta.hours
-    numMinutes = ( numHours * 60.0 ) + delta.minutes
-    numSeconds = ( numMinutes * 60.0 ) + delta.seconds
+    delta = relativedelta(dmax, dmin)
+    numYears = (delta.years * 1.0)
+    numMonths = (numYears * 12.0) + delta.months
+    numDays = (numMonths * 31.0) + delta.days
+    numHours = (numDays * 24.0) + delta.hours
+    numMinutes = (numHours * 60.0) + delta.minutes
+    numSeconds = (numMinutes * 60.0) + delta.seconds
 
     numticks = 5
 
@@ -281,26 +290,26 @@ class PrettyDateLocator( AutoDateLocator ):
       self._freq = YEARLY
     elif numMonths >= numticks:
       self._freq = MONTHLY
-      bymonth = range( 1, 13 )
-      if ( 0 <= numMonths ) and ( numMonths <= 14 ):
+      bymonth = range(1, 13)
+      if (0 <= numMonths) and (numMonths <= 14):
         interval = 1      # show every month
-      elif ( 15 <= numMonths ) and ( numMonths <= 29 ):
+      elif (15 <= numMonths) and (numMonths <= 29):
         interval = 3      # show every 3 months
-      elif ( 30 <= numMonths ) and ( numMonths <= 44 ):
+      elif (30 <= numMonths) and (numMonths <= 44):
         interval = 4      # show every 4 months
       else:   # 45 <= numMonths <= 59
         interval = 6      # show every 6 months
     elif numDays >= numticks:
       self._freq = DAILY
       bymonth = None
-      bymonthday = range( 1, 32 )
-      if ( 0 <= numDays ) and ( numDays <= 9 ):
+      bymonthday = range(1, 32)
+      if (0 <= numDays) and (numDays <= 9):
         interval = 1      # show every day
-      elif ( 10 <= numDays ) and ( numDays <= 19 ):
+      elif (10 <= numDays) and (numDays <= 19):
         interval = 2      # show every 2 days
-      elif ( 20 <= numDays ) and ( numDays <= 35 ):
+      elif (20 <= numDays) and (numDays <= 35):
         interval = 3      # show every 3 days
-      elif ( 36 <= numDays ) and ( numDays <= 80 ):
+      elif (36 <= numDays) and (numDays <= 80):
         interval = 7      # show every 1 week
       else:   # 100 <= numDays <= ~150
         interval = 14     # show every 2 weeks
@@ -308,16 +317,16 @@ class PrettyDateLocator( AutoDateLocator ):
       self._freq = HOURLY
       bymonth = None
       bymonthday = None
-      byhour = range( 0, 24 )      # show every hour
-      if ( 0 <= numHours ) and ( numHours <= 14 ):
+      byhour = range(0, 24)      # show every hour
+      if (0 <= numHours) and (numHours <= 14):
         interval = 1      # show every hour
-      elif ( 15 <= numHours ) and ( numHours <= 30 ):
+      elif (15 <= numHours) and (numHours <= 30):
         interval = 2      # show every 2 hours
-      elif ( 30 <= numHours ) and ( numHours <= 45 ):
+      elif (30 <= numHours) and (numHours <= 45):
         interval = 3      # show every 3 hours
-      elif ( 45 <= numHours ) and ( numHours <= 68 ):
+      elif (45 <= numHours) and (numHours <= 68):
         interval = 4      # show every 4 hours
-      elif ( 68 <= numHours ) and ( numHours <= 90 ):
+      elif (68 <= numHours) and (numHours <= 90):
         interval = 6      # show every 6 hours
       else:   # 90 <= numHours <= 120
         interval = 12     # show every 12 hours
@@ -326,8 +335,8 @@ class PrettyDateLocator( AutoDateLocator ):
       bymonth = None
       bymonthday = None
       byhour = None
-      byminute = range( 0, 60 )
-      if numMinutes > ( 10.0 * numticks ):
+      byminute = range(0, 60)
+      if numMinutes > (10.0 * numticks):
         interval = 10
       # end if
     elif numSeconds >= numticks:
@@ -336,8 +345,8 @@ class PrettyDateLocator( AutoDateLocator ):
       bymonthday = None
       byhour = None
       byminute = None
-      bysecond = range( 0, 60 )
-      if numSeconds > ( 10.0 * numticks ):
+      bysecond = range(0, 60)
+      if numSeconds > (10.0 * numticks):
         interval = 10
       # end if
     else:
@@ -345,121 +354,124 @@ class PrettyDateLocator( AutoDateLocator ):
       #   microseconds as floats, but floats from what reference point?
       pass
 
-    rrule = rrulewrapper( self._freq, interval = interval, \
-                          dtstart = dmin, until = dmax, \
-                          bymonth = bymonth, bymonthday = bymonthday, \
-                          byhour = byhour, byminute = byminute, \
-                          bysecond = bysecond )
+    rrule = rrulewrapper(self._freq, interval=interval,
+                         dtstart=dmin, until=dmax,
+                         bymonth=bymonth, bymonthday=bymonthday,
+                         byhour=byhour, byminute=byminute,
+                         bysecond=bysecond)
 
-    locator = RRuleLocator( rrule, self.tz )
-    locator.set_axis( self.axis )
+    locator = RRuleLocator(rrule, self.tz)
+    locator.set_axis(self.axis)
 
-    locator.set_view_interval( *self.axis.get_view_interval() )
-    locator.set_data_interval( *self.axis.get_data_interval() )
+    locator.set_view_interval(*self.axis.get_view_interval())
+    locator.set_data_interval(*self.axis.get_data_interval())
     return locator
 
 
-def pretty_float( num ):
+def pretty_float(num):
 
   if num > 1000:
-    return comma_format( int( num ) )
+    return comma_format(int(num))
 
   try:
-    floats = int( max( 2 - max( numpy.floor( numpy.log( abs( num ) + 1e-3 ) / numpy.log( 10. ) ), 0 ), 0 ) )
-  except:
+    floats = int(max(2 - max(numpy.floor(numpy.log(abs(num) + 1e-3) / numpy.log(10.)), 0), 0))
+  except BaseException:
     floats = 2
-  format = "%." + str( floats ) + "f"
+  format = "%." + str(floats) + "f"
   if isinstance(num, tuple):
-    return format % float( num[0] )
+    return format % float(num[0])
   else:
     try:
-      retval = format % float( num )
-    except:
-      raise Exception( "Unable to convert %s into a float." % ( str( num ) ) )
+      retval = format % float(num)
+    except BaseException:
+      raise Exception("Unable to convert %s into a float." % (str(num)))
     return retval
 
-def statistics( results, span = None, is_timestamp = False ):
-  results = dict( results )
-  if span != None:
+
+def statistics(results, span=None, is_timestamp=False):
+  results = dict(results)
+  if span is not None:
     parsed_data = {}
-    min_key = min( results.keys() )
-    max_key = max( results.keys() )
-    for i in range( min_key, max_key + span, span ):
+    min_key = min(results.keys())
+    max_key = max(results.keys())
+    for i in range(min_key, max_key + span, span):
       if i in results:
         parsed_data[i] = results[i]
         del results[i]
       else:
         parsed_data[i] = 0.0
-    if len( results ) > 0:
-      raise Exception( "Unable to use all the values for the statistics" )
+    if len(results) > 0:
+      raise Exception("Unable to use all the values for the statistics")
   else:
     parsed_data = results
   values = parsed_data.values()
-  data_min = min( values )
-  data_max = max( values )
-  data_avg = numpy.average( values )
+  data_min = min(values)
+  data_max = max(values)
+  data_avg = numpy.average(values)
   if is_timestamp:
-    current_time = max( parsed_data.keys() )
-    data_current = parsed_data[ current_time ]
+    current_time = max(parsed_data.keys())
+    data_current = parsed_data[current_time]
     return data_min, data_max, data_avg, data_current
   else:
     return data_min, data_max, data_avg
 
-def makeDataFromCSV( csv ):
+
+def makeDataFromCSV(csv):
   """ Generate plot data dictionary from a csv file or string
   """
 
-  if os.path.exists( csv ):
-    with open( csv, 'r' ) as fdata:
+  if os.path.exists(csv):
+    with open(csv, 'r') as fdata:
       flines = fdata.readlines()
   else:
-    flines = csv.split( '\n' )
+    flines = csv.split('\n')
 
   graph_data = {}
-  labels = flines[0].strip().split( ',' )
-  if len( labels ) == 2:
+  labels = flines[0].strip().split(',')
+  if len(labels) == 2:
     # simple plot data
     for line in flines:
       line = line.strip()
       if line[0] != '#':
-        key, value = line.split( ',' )
+        key, value = line.split(',')
         graph_data[key] = value
 
-  elif len( flines ) == 2:
-    values = flines[1].strip().split( ',' )
-    for key,value in zip(labels,values):
+  elif len(flines) == 2:
+    values = flines[1].strip().split(',')
+    for key, value in zip(labels, values):
       graph_data[key] = value
 
-  elif len( labels ) > 2:
+  elif len(labels) > 2:
     # stacked graph data
     del labels[0]
     del flines[0]
     for label in labels:
       plot_data = {}
-      index = labels.index( label ) + 1
+      index = labels.index(label) + 1
       for line in flines:
-        values = line.strip().split( ',' )
+        values = line.strip().split(',')
         value = values[index].strip()
-        #if value:
+        # if value:
         plot_data[values[0]] = values[index]
-        #else:
-          #plot_data[values[0]] = '0.'
-          #pass
-      graph_data[label] = dict( plot_data )
+        # else:
+        #plot_data[values[0]] = '0.'
+        # pass
+      graph_data[label] = dict(plot_data)
 
   return graph_data
 
-def darkenColor( color, factor=2 ):
 
-  c1 = int( color[1:3], 16 )
-  c2 = int( color[3:5], 16 )
-  c3 = int( color[5:7], 16 )
+def darkenColor(color, factor=2):
+
+  c1 = int(color[1:3], 16)
+  c2 = int(color[3:5], 16)
+  c3 = int(color[5:7], 16)
 
   c1 /= factor
   c2 /= factor
   c3 /= factor
 
-  result = '#' + (str( hex( c1) ).replace( '0x', '' ).zfill( 2 ) +
-                  str( hex( c2) ).replace( '0x', '' ).zfill( 2 ) +
-                  str( hex( c3) ).replace( '0x', '' ).zfill( 2 ) )
+  result = '#' + (str(hex(c1)).replace('0x', '').zfill(2) +
+                  str(hex(c2)).replace('0x', '').zfill(2) +
+                  str(hex(c3)).replace('0x', '').zfill(2))
   return result

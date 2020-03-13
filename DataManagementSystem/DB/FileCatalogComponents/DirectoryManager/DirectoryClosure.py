@@ -19,7 +19,7 @@ from DIRAC.DataManagementSystem.DB.FileCatalogComponents.DirectoryManager.Direct
 __RCSID__ = "$Id$"
 
 
-class DirectoryClosure( DirectoryTreeBase ):
+class DirectoryClosure(DirectoryTreeBase):
   """ Class managing Directory Tree with a closure table
     http://technobytz.com/closure_table_store_hierarchical_data.html
     http://fungus.teststation.com/~jon/treehandling/TreeHandling.htm
@@ -27,13 +27,12 @@ class DirectoryClosure( DirectoryTreeBase ):
     http://dirtsimple.org/2010/11/simplest-way-to-do-tree-based-queries.html
   """
 
-  def __init__( self, database = None ):
-    DirectoryTreeBase.__init__( self, database )
+  def __init__(self, database=None):
+    DirectoryTreeBase.__init__(self, database)
     self.directoryTable = 'FC_DirectoryList'
     self.closureTable = 'FC_DirectoryClosure'
 
-
-  def findDir( self, path, connection = False ):
+  def findDir(self, path, connection=False):
     """  Find directory ID for the given path
 
       :param path: path of the directory
@@ -41,20 +40,19 @@ class DirectoryClosure( DirectoryTreeBase ):
       :returns: S_OK(id) and res['Level'] as the depth
     """
 
-    dpath = os.path.normpath( path )
-    result = self.db.executeStoredProcedure( 'ps_find_dir', ( dpath, 'ret1', 'ret2' ), outputIds = [1, 2] )
+    dpath = os.path.normpath(path)
+    result = self.db.executeStoredProcedure('ps_find_dir', (dpath, 'ret1', 'ret2'), outputIds=[1, 2])
     if not result['OK']:
       return result
 
     if not result['Value']:
-      return S_OK( 0 )
+      return S_OK(0)
 
-    res = S_OK( result['Value'][0] )
+    res = S_OK(result['Value'][0])
     res['Level'] = result['Value'][1]
     return res
 
-
-  def findDirs( self, paths, connection = False ):
+  def findDirs(self, paths, connection=False):
     """ Find DirIDs for the given path list
 
         :param paths: list of path
@@ -64,17 +62,17 @@ class DirectoryClosure( DirectoryTreeBase ):
 
     dirDict = {}
     if not paths:
-      return S_OK( dirDict )
-    dpaths = stringListToString( [os.path.normpath( path ) for path in paths ] )
-    result = self.db.executeStoredProcedureWithCursor( 'ps_find_dirs', ( dpaths, ) )
+      return S_OK(dirDict)
+    dpaths = stringListToString([os.path.normpath(path) for path in paths])
+    result = self.db.executeStoredProcedureWithCursor('ps_find_dirs', (dpaths, ))
     if not result['OK']:
       return result
     for dirName, dirID in result['Value']:
       dirDict[dirName] = dirID
 
-    return S_OK( dirDict )
+    return S_OK(dirDict)
 
-  def removeDir( self, path ):
+  def removeDir(self, path):
     """ Remove directory
 
         Removing a non existing directory is successful. In that case, DirID is 0
@@ -85,7 +83,7 @@ class DirectoryClosure( DirectoryTreeBase ):
     """
 
     # Find the directory ID
-    result = self.findDir( path )
+    result = self.findDir(path)
     if not result['OK']:
       return result
 
@@ -96,16 +94,14 @@ class DirectoryClosure( DirectoryTreeBase ):
       return res
 
     dirId = result['Value']
-    result = self.db.executeStoredProcedure( 'ps_remove_dir', ( dirId, ), outputIds = [] )
+    result = self.db.executeStoredProcedure('ps_remove_dir', (dirId, ), outputIds=[])
     if not result['OK']:
       return result
 
     result['DirID'] = dirId
     return result
 
-
-
-  def existsDir( self, path ):
+  def existsDir(self, path):
     """ Check the existence of a directory at the specified path
 
       :param path: directory path
@@ -114,16 +110,15 @@ class DirectoryClosure( DirectoryTreeBase ):
                 S_OK( { 'Exists' : True, 'DirID' : directory id  } ) if the directory exists
     """
 
-    result = self.findDir( path )
+    result = self.findDir(path)
     if not result['OK']:
       return result
     if not result['Value']:
-      return S_OK( {"Exists":False} )
+      return S_OK({"Exists": False})
     else:
-      return S_OK( {"Exists":True, "DirID":result['Value']} )
+      return S_OK({"Exists": True, "DirID": result['Value']})
 
-
-  def getDirectoryPath( self, dirID ):
+  def getDirectoryPath(self, dirID):
     """ Get directory name by directory ID
 
         :param dirID: directory ID
@@ -132,18 +127,18 @@ class DirectoryClosure( DirectoryTreeBase ):
 
     """
 
-    result = self.db.executeStoredProcedure( 'ps_get_dirName_from_id', ( dirID, 'out' ), outputIds = [1] )
+    result = self.db.executeStoredProcedure('ps_get_dirName_from_id', (dirID, 'out'), outputIds=[1])
     if not result['OK']:
       return result
 
     dirName = result['Value'][0]
 
     if not dirName:
-      return S_ERROR( 'Directory with id %d not found' % int( dirID ) )
+      return S_ERROR('Directory with id %d not found' % int(dirID))
 
-    return S_OK( dirName )
+    return S_OK(dirName)
 
-  def getDirectoryPaths( self, dirIDList ):
+  def getDirectoryPaths(self, dirIDList):
     """ Get directory names by directory ID list
 
         :param dirIDList: list of dirIds
@@ -151,26 +146,23 @@ class DirectoryClosure( DirectoryTreeBase ):
     """
 
     dirs = dirIDList
-    if not isinstance( dirIDList, list ):
+    if not isinstance(dirIDList, list):
       dirs = [dirIDList]
-
 
     dirDict = {}
 
     # Format the list
-    dIds = intListToString( dirs )
-    result = self.db.executeStoredProcedureWithCursor( 'ps_get_dirNames_from_ids', ( dIds, ) )
+    dIds = intListToString(dirs)
+    result = self.db.executeStoredProcedureWithCursor('ps_get_dirNames_from_ids', (dIds, ))
     if not result['OK']:
       return result
 
     for dirId, dirName in result['Value']:
       dirDict[dirId] = dirName
 
-    return S_OK( dirDict )
+    return S_OK(dirDict)
 
-
-
-  def getPathIDs( self, path ):
+  def getPathIDs(self, path):
     """ Get IDs of all the directories in the parent hierarchy for a directory
         specified by its path, including itself
 
@@ -179,19 +171,17 @@ class DirectoryClosure( DirectoryTreeBase ):
         :returns: S_OK( list of ids ), S_ERROR if not found
     """
 
-    result = self.findDir( path )
+    result = self.findDir(path)
     if not result['OK']:
       return result
     if not result['Value']:
-      return S_ERROR( 'Directory %s not found' % path )
+      return S_ERROR('Directory %s not found' % path)
 
     dirID = result['Value']
 
     return self.getPathIDsByID(dirID)
 
-
-
-  def getPathIDsByID( self, dirID ):
+  def getPathIDsByID(self, dirID):
     """ Get IDs of all the directories in the parent hierarchy for a directory
         specified by its ID, including itself
 
@@ -201,37 +191,35 @@ class DirectoryClosure( DirectoryTreeBase ):
 
     """
 
-    result = self.db.executeStoredProcedureWithCursor( 'ps_get_parentIds_from_id', ( dirID, ) )
+    result = self.db.executeStoredProcedureWithCursor('ps_get_parentIds_from_id', (dirID, ))
 
     if not result['OK']:
       return result
 
-    return S_OK( [dId[0] for dId in result['Value']] )
+    return S_OK([dId[0] for dId in result['Value']])
 
-
-
-  def getChildren( self, path, connection = False ):
+  def getChildren(self, path, connection=False):
     """ Get child directory IDs for the given directory
     """
     if isinstance(path, six.string_types):
-      result = self.findDir( path, connection )
+      result = self.findDir(path, connection)
       if not result['OK']:
         return result
       if not result['Value']:
-        return S_ERROR( 'Directory does not exist: %s' % path )
+        return S_ERROR('Directory does not exist: %s' % path)
       dirID = result['Value']
     else:
       dirID = path
 
-    result = self.db.executeStoredProcedureWithCursor( 'ps_get_direct_children', ( dirID, ) )
+    result = self.db.executeStoredProcedureWithCursor('ps_get_direct_children', (dirID, ))
     if not result['OK']:
       return result
     if not result['Value']:
-      return S_OK( [] )
+      return S_OK([])
 
-    return S_OK( [ x[0] for x in result['Value'] ] )
+    return S_OK([x[0] for x in result['Value']])
 
-  def getSubdirectoriesByID( self, dirID, requestString = False, includeParent = False ):
+  def getSubdirectoriesByID(self, dirID, requestString=False, includeParent=False):
     """ Get all the subdirectories of the given directory at a given level
 
         :param dirID: id of the directory
@@ -247,18 +235,17 @@ class DirectoryClosure( DirectoryTreeBase ):
       reqStr = "SELECT ChildID FROM FC_DirectoryClosure WHERE ParentID = %s" % dirID
       if not includeParent:
         reqStr += " AND Depth != 0"
-      return S_OK( reqStr )
+      return S_OK(reqStr)
 
-    result = self.db.executeStoredProcedureWithCursor( 'ps_get_sub_directories', ( dirID, includeParent) )
+    result = self.db.executeStoredProcedureWithCursor('ps_get_sub_directories', (dirID, includeParent))
     if not result['OK']:
       return result
     if not result['Value']:
-      return S_OK( {} )
+      return S_OK({})
 
-    return S_OK( dict( ( x[0], x[1] ) for x in result['Value'] ) )
+    return S_OK(dict((x[0], x[1]) for x in result['Value']))
 
-
-  def getAllSubdirectoriesByID( self, dirIdList ):
+  def getAllSubdirectoriesByID(self, dirIdList):
     """ Get IDs of all the subdirectories of directories in a given list
 
         :param dirList: list of dir Ids
@@ -266,21 +253,19 @@ class DirectoryClosure( DirectoryTreeBase ):
     """
 
     dirs = dirIdList
-    if not isinstance( dirIdList, list ):
+    if not isinstance(dirIdList, list):
       dirs = [dirIdList]
 
-    dIds = intListToString( dirs )
-    result = self.db.executeStoredProcedureWithCursor( 'ps_get_multiple_sub_directories', ( dIds, ) )
+    dIds = intListToString(dirs)
+    result = self.db.executeStoredProcedureWithCursor('ps_get_multiple_sub_directories', (dIds, ))
 
     if not result['OK']:
       return result
 
     resultList = [dirId[0] for dirId in result['Value']]
-    return S_OK( resultList )
+    return S_OK(resultList)
 
-
-
-  def getSubdirectories( self, path ):
+  def getSubdirectories(self, path):
     """ Get subdirectories of the given directory
 
         :param path: path of the directory
@@ -288,18 +273,17 @@ class DirectoryClosure( DirectoryTreeBase ):
         :returns: S_OK ( { dirID, depth } )
     """
 
-    result = self.findDir( path )
+    result = self.findDir(path)
     if not result['OK']:
       return result
     if not result['Value']:
-      return S_OK( {} )
+      return S_OK({})
 
     dirID = result['Value']
-    result = self.getSubdirectoriesByID( dirID )
+    result = self.getSubdirectoriesByID(dirID)
     return result
 
-
-  def countSubdirectories(self, dirId, includeParent = True):
+  def countSubdirectories(self, dirId, includeParent=True):
     """ Count the number of subdirectories
 
         :param dirID: id of the directory
@@ -308,15 +292,14 @@ class DirectoryClosure( DirectoryTreeBase ):
         :returns: S_OK(value)
     """
 
-    result = self.db.executeStoredProcedure( 'ps_count_sub_directories',
-                                             ( dirId, includeParent, 'ret1' ),
-                                             outputIds = [2] )
+    result = self.db.executeStoredProcedure('ps_count_sub_directories',
+                                            (dirId, includeParent, 'ret1'),
+                                            outputIds=[2])
     if not result['OK']:
       return result
 
-    res = S_OK( result['Value'][0] )
+    res = S_OK(result['Value'][0])
     return res
-
 
 
 ########################################################################################################
@@ -335,8 +318,7 @@ class DirectoryClosure( DirectoryTreeBase ):
 #
 ########################################################################################################
 
-
-  def makeDirectory( self, path, credDict, status = 1 ):
+  def makeDirectory(self, path, credDict, status=1):
     """ Create a directory
 
         :param path: has to be an absolute path. The parent dir has to exist
@@ -348,21 +330,21 @@ class DirectoryClosure( DirectoryTreeBase ):
     """
 
     if path[0] != '/':
-      return S_ERROR( 'Not an absolute path' )
+      return S_ERROR('Not an absolute path')
 
     # Strip off the trailing slash if necessary
-    dpath = os.path.normpath( path )
-    parentDir = os.path.dirname( dpath )
+    dpath = os.path.normpath(path)
+    parentDir = os.path.dirname(dpath)
 
     # Try to see if the dir exists
-    result = self.findDir( path )
+    result = self.findDir(path)
     if not result['OK']:
       return result
 
     # if it does, we return it's id, with a flag NewDirectory to false
     dirID = result['Value']
     if dirID:
-      result = S_OK( dirID )
+      result = S_OK(dirID)
       result['NewDirectory'] = False
       return result
 
@@ -372,13 +354,13 @@ class DirectoryClosure( DirectoryTreeBase ):
       l_gid = 1
     else:
       # get the uid/gid of the owner
-      result = self.db.ugManager.getUserAndGroupID( credDict )
+      result = self.db.ugManager.getUserAndGroupID(credDict)
       if not result['OK']:
         return result
-      ( l_uid, l_gid ) = result['Value']
+      (l_uid, l_gid) = result['Value']
 
     # Find the ID of the parent
-    res = self.findDir( parentDir )
+    res = self.findDir(parentDir)
     if not res['OK']:
       return res
 
@@ -386,24 +368,22 @@ class DirectoryClosure( DirectoryTreeBase ):
 
     # We only insert if there is a parent or if it is the root '/'
     if parentDirId or path == '/':
-      result = self.db.executeStoredProcedureWithCursor( packageName = 'ps_insert_dir',
-                                                         parameters = ( parentDirId, dpath, l_uid,
-                                                                        l_gid, self.db.umask, status ) )
+      result = self.db.executeStoredProcedureWithCursor(packageName='ps_insert_dir',
+                                                        parameters=(parentDirId, dpath, l_uid,
+                                                                    l_gid, self.db.umask, status))
 
       if not result['OK']:
         return result
 
       dirId = result['Value'][0][0]
 
-      result = S_OK( dirId )
+      result = S_OK(dirId)
       result['NewDirectory'] = True
       return result
     else:
-      return S_ERROR( 'Cannot create directory without parent' )
+      return S_ERROR('Cannot create directory without parent')
 
-
-
-  def isEmpty( self, path ):
+  def isEmpty(self, path):
     """ Find out if the given directory is empty
 
       Rem: the speed could be enhanced if we were joining the FC_Files and FC_Directory* in the query.
@@ -414,38 +394,37 @@ class DirectoryClosure( DirectoryTreeBase ):
       :returns: S_OK(true) if there are no file nor directorie, S_OK(False) otherwise
     """
 
-    result = self.findDir( path )
+    result = self.findDir(path)
     if not result['OK']:
       return result
     dirId = result['Value']
 
     if not dirId:
-      return S_ERROR( "Directory does not exist %s" % path )
+      return S_ERROR("Directory does not exist %s" % path)
 
     # Check if there are subdirectories
-    result = self.countSubdirectories( dirId, includeParent = False )
+    result = self.countSubdirectories(dirId, includeParent=False)
     if not result['OK']:
       return result
 
     subDirCount = result['Value']
     if subDirCount:
-      return S_OK( False )
+      return S_OK(False)
 
     # Check if there are files in it
-    result = self.db.fileManager.countFilesInDir( dirId )
+    result = self.db.fileManager.countFilesInDir(dirId)
     if not result['OK']:
       return result
 
     fileCount = result['Value']
 
     if fileCount:
-      return S_OK( False )
+      return S_OK(False)
 
     # If no files or subdir, it's empty
-    return S_OK( True )
+    return S_OK(True)
 
-
-  def getDirectoryParameters( self, pathOrDirId ):
+  def getDirectoryParameters(self, pathOrDirId):
     """ Get parameters of the given directory
 
       :param pathOrDirID: the path or the id of the directory
@@ -459,12 +438,12 @@ class DirectoryClosure( DirectoryTreeBase ):
     if isinstance(pathOrDirId, six.string_types):
       psName = 'ps_get_all_directory_info'
     # it is the dirId
-    elif isinstance( pathOrDirId, (list, long) ):
+    elif isinstance(pathOrDirId, (list, long)):
       psName = 'ps_get_all_directory_info_from_id'
     else:
-      return S_ERROR( "Unknown type of pathOrDirId %s" % type( pathOrDirId ) )
+      return S_ERROR("Unknown type of pathOrDirId %s" % type(pathOrDirId))
 
-    result = self.db.executeStoredProcedureWithCursor( psName, ( pathOrDirId, ) )
+    result = self.db.executeStoredProcedureWithCursor(psName, (pathOrDirId, ))
     if not result['OK']:
       return result
 
@@ -472,18 +451,16 @@ class DirectoryClosure( DirectoryTreeBase ):
     fieldNames = ["DirID", "UID", "Owner", "GID", "OwnerGroup", "Status", "Mode", "CreationDate", "ModificationDate"]
 
     if not result['Value']:
-      return S_ERROR( "Directory does not exist %s" % pathOrDirId )
+      return S_ERROR("Directory does not exist %s" % pathOrDirId)
 
     row = result['Value'][0]
 
     # Create a dictionary from the fieldNames
-    rowDict = dict( zip( fieldNames, row ) )
+    rowDict = dict(zip(fieldNames, row))
 
+    return S_OK(rowDict)
 
-    return S_OK( rowDict )
-
-
-  def _setDirectoryParameter( self, path, pname, pvalue, recursive = False ):
+  def _setDirectoryParameter(self, path, pname, pvalue, recursive=False):
     """ Set a numerical directory parameter
 
 
@@ -499,13 +476,13 @@ class DirectoryClosure( DirectoryTreeBase ):
     """
 
     # The PS associated with a given parameter
-    psNames = {'UID' : 'ps_set_dir_uid',
-               'GID' : 'ps_set_dir_gid',
-               'Status' : 'ps_set_dir_status',
-               'Mode' : 'ps_set_dir_mode',
-              }
+    psNames = {'UID': 'ps_set_dir_uid',
+               'GID': 'ps_set_dir_gid',
+               'Status': 'ps_set_dir_status',
+               'Mode': 'ps_set_dir_mode',
+               }
 
-    psName = psNames.get( pname, None )
+    psName = psNames.get(pname, None)
 
     # If we have a recursive procedure and it is wanted, call it
     if recursive and pname in ['UID', 'GID', 'Mode'] and psName:
@@ -513,112 +490,102 @@ class DirectoryClosure( DirectoryTreeBase ):
 
     # If there is an associated procedure, we go for it
     if psName:
-      result = self.db.executeStoredProcedureWithCursor( psName, ( path, pvalue ) )
+      result = self.db.executeStoredProcedureWithCursor(psName, (path, pvalue))
 
       if not result['OK']:
         return result
 
       errno, affected, errMsg = result['Value'][0]
       if errno:
-        return S_ERROR( errMsg )
+        return S_ERROR(errMsg)
 
       if not affected:
         # Either there were no changes, or the directory does not exist
-        exists = self.existsDir( path ).get( 'Value', {} ).get( 'Exists' )
+        exists = self.existsDir(path).get('Value', {}).get('Exists')
         if not exists:
-          return S_ERROR( errno.ENOENT, 'Directory does not exist: %s' % path )
+          return S_ERROR(errno.ENOENT, 'Directory does not exist: %s' % path)
         affected = 1
 
-      return S_OK( affected )
-
+      return S_OK(affected)
 
     # In case this is a 'new' parameter, we have a fallback solution, but we should add a specific ps for it
     else:
-      return DirectoryTreeBase._setDirectoryParameter( self, path, pname, pvalue )
+      return DirectoryTreeBase._setDirectoryParameter(self, path, pname, pvalue)
 
-
-
-
-  def _setDirectoryGroup( self, path, gname, recursive = False ):
+  def _setDirectoryGroup(self, path, gname, recursive=False):
     """ Set the directory owner
     """
 
-
-    result = self.db.ugManager.findGroup( gname )
+    result = self.db.ugManager.findGroup(gname)
     if not result['OK']:
       return result
 
     gid = result['Value']
 
-    return self._setDirectoryParameter( path, 'GID', gid, recursive = recursive )
+    return self._setDirectoryParameter(path, 'GID', gid, recursive=recursive)
 
-  def _setDirectoryOwner( self, path, owner, recursive = False ):
+  def _setDirectoryOwner(self, path, owner, recursive=False):
     """ Set the directory owner
     """
 
-    result = self.db.ugManager.findUser( owner )
+    result = self.db.ugManager.findUser(owner)
     if not result['OK']:
       return result
 
     uid = result['Value']
 
-    return self._setDirectoryParameter( path, 'UID', uid, recursive = recursive )
+    return self._setDirectoryParameter(path, 'UID', uid, recursive=recursive)
 
-  def _setDirectoryMode( self, path, mode, recursive = False ):
+  def _setDirectoryMode(self, path, mode, recursive=False):
     """ set the directory mode
 
         :param mixed path: directory path as a string or int or list of ints or select statement
         :param int mode: new mode
     """
-    return self._setDirectoryParameter( path, 'Mode', mode, recursive = recursive )
+    return self._setDirectoryParameter(path, 'Mode', mode, recursive=recursive)
 
-  def __getLogicalSize( self, lfns, ps_name, connection ):
+  def __getLogicalSize(self, lfns, ps_name, connection):
     paths = lfns.keys()
     successful = {}
     failed = {}
     for path in paths:
-      result = self.findDir( path )
+      result = self.findDir(path)
       if not result['OK'] or not result['Value']:
         failed[path] = "Directory not found"
         continue
 
       dirID = result['Value']
-      result = self.db.executeStoredProcedureWithCursor( ps_name, ( dirID, ) )
+      result = self.db.executeStoredProcedureWithCursor(ps_name, (dirID, ))
 
       if not result['OK']:
         failed[path] = result['Message']
 
       elif result['Value']:
-        successful[path] = {"LogicalSize":int( result['Value'][0][0] ),
-                            "LogicalFiles":int( result['Value'][0][1] )}
+        successful[path] = {"LogicalSize": int(result['Value'][0][0]),
+                            "LogicalFiles": int(result['Value'][0][1])}
 
-        result = self.countSubdirectories( dirID, includeParent = False )
+        result = self.countSubdirectories(dirID, includeParent=False)
         if result['OK']:
           successful[path]['LogicalDirectories'] = result['Value']
         else:
           successful[path]['LogicalDirectories'] = -1
 
-
       else:
-        successful[path] = {"LogicalSize":0, "LogicalFiles":0, 'LogicalDirectories':0}
+        successful[path] = {"LogicalSize": 0, "LogicalFiles": 0, 'LogicalDirectories': 0}
 
-    return S_OK( {'Successful':successful, 'Failed':failed} )
+    return S_OK({'Successful': successful, 'Failed': failed})
 
-
-  def _getDirectoryLogicalSizeFromUsage( self, lfns, connection ):
+  def _getDirectoryLogicalSizeFromUsage(self, lfns, connection):
     """ Get the total "logical" size of the requested directories
     """
-    return self.__getLogicalSize( lfns, 'ps_get_dir_logical_size', connection )
+    return self.__getLogicalSize(lfns, 'ps_get_dir_logical_size', connection)
 
-
-
-  def _getDirectoryLogicalSize( self, lfns, connection ):
+  def _getDirectoryLogicalSize(self, lfns, connection):
     """ Get the total "logical" size of the requested directories
     """
-    return self.__getLogicalSize( lfns, 'ps_calculate_dir_logical_size', connection )
+    return self.__getLogicalSize(lfns, 'ps_calculate_dir_logical_size', connection)
 
-
-  def __getPhysicalSize( self, lfns, ps_name, connection ):
+  def __getPhysicalSize(self, lfns, ps_name, connection):
     """ Get the total size of the requested directories
     """
 
@@ -626,7 +593,7 @@ class DirectoryClosure( DirectoryTreeBase ):
     successful = {}
     failed = {}
     for path in paths:
-      result = self.findDir( path )
+      result = self.findDir(path)
       if not result['OK']:
         failed[path] = "Directory not found"
         continue
@@ -635,45 +602,43 @@ class DirectoryClosure( DirectoryTreeBase ):
         continue
       dirID = result['Value']
 
-
-      result = self.db.executeStoredProcedureWithCursor( ps_name, ( dirID, ) )
+      result = self.db.executeStoredProcedureWithCursor(ps_name, (dirID, ))
 
       if not result['OK']:
         failed[path] = result['Message']
         continue
-
 
       if result['Value']:
         seDict = {}
         totalSize = 0
         totalFiles = 0
         for seName, seSize, seFiles in result['Value']:
-          seDict[seName] = {'Size':int( seSize ), 'Files':int( seFiles )}
+          seDict[seName] = {'Size': int(seSize), 'Files': int(seFiles)}
           totalSize += seSize
           totalFiles += seFiles
-        seDict['TotalSize'] = int( totalSize )
-        seDict['TotalFiles'] = int( totalFiles )
+        seDict['TotalSize'] = int(totalSize)
+        seDict['TotalFiles'] = int(totalFiles)
         successful[path] = seDict
 
       else:
         successful[path] = {}
 
-    return S_OK( {'Successful':successful, 'Failed':failed} )
+    return S_OK({'Successful': successful, 'Failed': failed})
 
-  def _getDirectoryPhysicalSizeFromUsage( self, lfns, connection ):
+  def _getDirectoryPhysicalSizeFromUsage(self, lfns, connection):
     """ Get the total size of the requested directories
     """
-    return self.__getPhysicalSize( lfns, 'ps_get_dir_physical_size', connection )
+    return self.__getPhysicalSize(lfns, 'ps_get_dir_physical_size', connection)
 
-  def _getDirectoryPhysicalSize( self, lfns, connection ):
+  def _getDirectoryPhysicalSize(self, lfns, connection):
     """ Get the total size of the requested directories
     """
-    return self.__getPhysicalSize( lfns, 'ps_calculate_dir_physical_size', connection )
+    return self.__getPhysicalSize(lfns, 'ps_calculate_dir_physical_size', connection)
 
-  def _changeDirectoryParameter( self, paths,
-                                 directoryFunction,
-                                 _fileFunction,
-                                 recursive = False ):
+  def _changeDirectoryParameter(self, paths,
+                                directoryFunction,
+                                _fileFunction,
+                                recursive=False):
     """ Bulk setting of the directory parameter with recursion for all the subdirectories and files
 
         :param dict paths: dictionary < lfn : value >, where value is the value of parameter to be set
@@ -686,10 +651,10 @@ class DirectoryClosure( DirectoryTreeBase ):
     successful = {}
     failed = {}
     for path, attribute in arguments.iteritems():
-      result = directoryFunction( path, attribute, recursive = recursive )
+      result = directoryFunction(path, attribute, recursive=recursive)
       if not result['OK']:
         failed[path] = result['Message']
       else:
         successful[path] = True
 
-    return S_OK( {'Successful':successful, 'Failed':failed} )
+    return S_OK({'Successful': successful, 'Failed': failed})

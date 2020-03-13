@@ -8,6 +8,7 @@ import os.path
 from DIRAC.DataManagementSystem.Client.CmdDirCompletion.AbstractFileSystem import UnixLikeFileSystem
 from DIRAC.DataManagementSystem.Client.CmdDirCompletion.DirectoryCompletion import DirectoryCompletion
 
+
 class DirCompletion(cmd.Cmd):
 
   ulfs = UnixLikeFileSystem()
@@ -25,7 +26,7 @@ class DirCompletion(cmd.Cmd):
   def _ls(self, args):
     try:
       return self._listdir(args)
-    except:
+    except BaseException:
       return []
 
   def do_ls(self, args):
@@ -33,23 +34,21 @@ class DirCompletion(cmd.Cmd):
     print(" ".join(self._ls(args)))
 
   def complete_ls(self, text, line, begidx, endidx):
-    #print
+    # print
     result = []
 
     cur_input_line = line.split()
     cur_path = "."
     if (len(cur_input_line) == 2):
       cur_path = cur_input_line[1]
-      #print "cur_path:", cur_path
+      # print "cur_path:", cur_path
 
-    result = self.dc.parse_text_line(text, cur_path, os.getcwd() )
+    result = self.dc.parse_text_line(text, cur_path, os.getcwd())
 
     return result
 
 
-
 if __name__ == "__main__":
-
 
   cli = DirCompletion()
   cli.cmdloop()

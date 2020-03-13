@@ -10,15 +10,15 @@ import DIRAC.ResourceStatusSystem.Policy.Configurations as moduleTested
 
 ################################################################################
 
-class Configurations_TestCase( unittest.TestCase ):
-  def setUp( self ):
+class Configurations_TestCase(unittest.TestCase):
+  def setUp(self):
     """
     Setup
     """
 
     self.moduleTested = moduleTested
 
-  def tearDown( self ):
+  def tearDown(self):
     """
     TearDown
     """
@@ -27,27 +27,28 @@ class Configurations_TestCase( unittest.TestCase ):
 ################################################################################
 # Tests
 
-class Configurations_Success( Configurations_TestCase ):
 
-  def test_policiesMeta( self ):
+class Configurations_Success(Configurations_TestCase):
+
+  def test_policiesMeta(self):
     """ tests that the configuration does not have any funny key
     """
 
-    self.assertEqual( True, hasattr( self.moduleTested, 'POLICIESMETA' ) )
+    self.assertEqual(True, hasattr(self.moduleTested, 'POLICIESMETA'))
 
     policiesMeta = self.moduleTested.POLICIESMETA
 
     for _policyName, policyMeta in policiesMeta.items():
-      self.assertEqual( [ 'args', 'command', 'description', 'module' ], policyMeta.keys() )
-
+      self.assertEqual(['args', 'command', 'description', 'module'], policyMeta.keys())
 
 
 ################################################################################
 ################################################################################
+
 
 if __name__ == '__main__':
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase( Configurations_TestCase )
-  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase( Configurations_Success ) )
-  testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
+  suite = unittest.defaultTestLoader.loadTestsFromTestCase(Configurations_TestCase)
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(Configurations_Success))
+  testResult = unittest.TextTestRunner(verbosity=2).run(suite)
 
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
+# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

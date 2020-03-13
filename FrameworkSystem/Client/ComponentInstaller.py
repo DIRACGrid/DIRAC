@@ -1597,8 +1597,8 @@ class ComponentInstaller(object):
       if not cmdFound:
         gLogger.notice('Starting runsvdir ...')
         with open(os.devnull, 'w') as devnull:
-            subprocess.Popen(['nohup', 'runsvdir', self.startDir, 'log:  DIRAC runsv'],
-                             stdout=devnull, stderr=devnull, universal_newlines=True)
+          subprocess.Popen(['nohup', 'runsvdir', self.startDir, 'log:  DIRAC runsv'],
+                           stdout=devnull, stderr=devnull, universal_newlines=True)
 
     if ['Configuration', 'Server'] in setupServices and setupConfigurationMaster:
       # This server hosts the Master of the CS
@@ -1897,7 +1897,7 @@ class ComponentInstaller(object):
       runFile = os.path.join(runitCompDir, 'run')
       with open(runFile, 'w') as fd:
         fd.write(
-          """#!/bin/bash
+            """#!/bin/bash
   rcfile=%(bashrc)s
   [ -e $rcfile ] && source $rcfile
   #
@@ -1908,11 +1908,11 @@ class ComponentInstaller(object):
   #
   exec python $DIRAC/DIRAC/Core/scripts/dirac-%(componentType)s.py %(system)s/%(component)s %(componentCfg)s < /dev/null
   """ % {'bashrc': os.path.join(self.instancePath, 'bashrc'),
-              'bashVariables': bashVars,
-              'componentType': componentType,
-              'system': system,
-              'component': component,
-              'componentCfg': componentCfg})
+                'bashVariables': bashVars,
+                'componentType': componentType,
+                'system': system,
+                'component': component,
+                'componentCfg': componentCfg})
 
       os.chmod(runFile, self.gDefaultPerms)
 

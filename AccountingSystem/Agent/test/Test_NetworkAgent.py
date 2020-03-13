@@ -22,26 +22,25 @@ SITE2_HOST1 = 'perfsonar.diractoremove.net'
 SITE3_HOST1 = 'perfsonar.diractoadd.org'
 
 INITIAL_CONFIG = \
-{
-  '%s/LCG/%s/Network/%s/Enabled' % ( ROOT_PATH, SITE1, SITE1_HOST1 ): 'True',
-  '%s/LCG/%s/Network/%s/Enabled' % ( ROOT_PATH, SITE1, SITE1_HOST2 ): 'True',
-  '%s/LCG/%s/Network/%s/Enabled' % ( ROOT_PATH, SITE2, SITE2_HOST1 ): 'True'
-}
+    {
+        '%s/LCG/%s/Network/%s/Enabled' % (ROOT_PATH, SITE1, SITE1_HOST1): 'True',
+        '%s/LCG/%s/Network/%s/Enabled' % (ROOT_PATH, SITE1, SITE1_HOST2): 'True',
+        '%s/LCG/%s/Network/%s/Enabled' % (ROOT_PATH, SITE2, SITE2_HOST1): 'True'
+    }
 
 UPDATED_CONFIG = \
-{
-  '%s/LCG/%s/Network/%s/Enabled' % ( ROOT_PATH, SITE1, SITE1_HOST1 ): 'True',
-  '%s/LCG/%s/Network/%s/Enabled' % ( ROOT_PATH, SITE1, SITE1_HOST2 ): 'False',
-  '%s/LCG/%s/Network/%s/Enabled' % ( ROOT_PATH, SITE3, SITE3_HOST1 ): 'True'
-}
+    {
+        '%s/LCG/%s/Network/%s/Enabled' % (ROOT_PATH, SITE1, SITE1_HOST1): 'True',
+        '%s/LCG/%s/Network/%s/Enabled' % (ROOT_PATH, SITE1, SITE1_HOST2): 'False',
+        '%s/LCG/%s/Network/%s/Enabled' % (ROOT_PATH, SITE3, SITE3_HOST1): 'True'
+    }
 
 
-
-class NetworkAgentSuccessTestCase( unittest.TestCase ):
+class NetworkAgentSuccessTestCase(unittest.TestCase):
   """ Test class to check success scenarios.
   """
 
-  def setUp( self ):
+  def setUp(self):
 
     # external dependencies
     module.datetime = MagicMock()
@@ -57,8 +56,8 @@ class NetworkAgentSuccessTestCase( unittest.TestCase ):
     module.createConsumer = MagicMock()
 
     # prepare test object
-    module.NetworkAgent.__init__ = MagicMock( return_value = None )
-    module.NetworkAgent.am_getOption = MagicMock( return_value = 100 )  # buffer timeout
+    module.NetworkAgent.__init__ = MagicMock(return_value=None)
+    module.NetworkAgent.am_getOption = MagicMock(return_value=100)  # buffer timeout
 
     self.agent = module.NetworkAgent()
     self.agent.initialize()
@@ -67,48 +66,48 @@ class NetworkAgentSuccessTestCase( unittest.TestCase ):
   def tearDownClass(cls):
     sys.modules.pop('DIRAC.AccountingSystem.Agent.NetworkAgent')
 
-  def test_updateNameDictionary( self ):
+  def test_updateNameDictionary(self):
 
     module.gConfig.getConfigurationTree.side_effect = [
-                                                        {'OK': True, 'Value': INITIAL_CONFIG },
-                                                        {'OK': True, 'Value': UPDATED_CONFIG },
-                                                      ]
+        {'OK': True, 'Value': INITIAL_CONFIG},
+        {'OK': True, 'Value': UPDATED_CONFIG},
+    ]
 
     # check if name dictionary is empty
-    self.assertFalse( self.agent.nameDictionary )
+    self.assertFalse(self.agent.nameDictionary)
 
     self.agent.updateNameDictionary()
-    self.assertEqual( self.agent.nameDictionary[SITE1_HOST1], SITE1 )
-    self.assertEqual( self.agent.nameDictionary[SITE1_HOST2], SITE1 )
-    self.assertEqual( self.agent.nameDictionary[SITE2_HOST1], SITE2 )
+    self.assertEqual(self.agent.nameDictionary[SITE1_HOST1], SITE1)
+    self.assertEqual(self.agent.nameDictionary[SITE1_HOST2], SITE1)
+    self.assertEqual(self.agent.nameDictionary[SITE2_HOST1], SITE2)
 
     self.agent.updateNameDictionary()
-    self.assertEqual( self.agent.nameDictionary[SITE1_HOST1], SITE1 )
-    self.assertEqual( self.agent.nameDictionary[SITE3_HOST1], SITE3 )
+    self.assertEqual(self.agent.nameDictionary[SITE1_HOST1], SITE1)
+    self.assertEqual(self.agent.nameDictionary[SITE3_HOST1], SITE3)
 
     # check if hosts were removed form dictionary
-    self.assertRaises( KeyError, lambda: self.agent.nameDictionary[SITE1_HOST2] )
-    self.assertRaises( KeyError, lambda: self.agent.nameDictionary[SITE2_HOST1] )
+    self.assertRaises(KeyError, lambda: self.agent.nameDictionary[SITE1_HOST2])
+    self.assertRaises(KeyError, lambda: self.agent.nameDictionary[SITE2_HOST1])
 
-  def test_agentExecute( self ):
+  def test_agentExecute(self):
 
-    module.NetworkAgent.am_getOption.return_value = '%s, %s' % ( MQURI1, MQURI2 )
-    module.gConfig.getConfigurationTree.return_value = {'OK': True, 'Value': INITIAL_CONFIG }
+    module.NetworkAgent.am_getOption.return_value = '%s, %s' % (MQURI1, MQURI2)
+    module.gConfig.getConfigurationTree.return_value = {'OK': True, 'Value': INITIAL_CONFIG}
 
     # first run
     result = self.agent.execute()
-    self.assertTrue( result['OK'] )
+    self.assertTrue(result['OK'])
 
     # second run (simulate new messages)
     self.agent.messagesCount += 10
     result = self.agent.execute()
-    self.assertTrue( result['OK'] )
+    self.assertTrue(result['OK'])
 
     # third run (no new messages - restart consumers)
     result = self.agent.execute()
-    self.assertTrue( result['OK'] )
+    self.assertTrue(result['OK'])
 
 
 if __name__ == '__main__':
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase( NetworkAgentSuccessTestCase )
-  testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
+  suite = unittest.defaultTestLoader.loadTestsFromTestCase(NetworkAgentSuccessTestCase)
+  testResult = unittest.TextTestRunner(verbosity=2).run(suite)

@@ -3,11 +3,12 @@ import unittest
 from mock import MagicMock
 
 from DIRAC import gLogger
-from DIRAC.ResourceStatusSystem.PolicySystem.PEP          import PEP
+from DIRAC.ResourceStatusSystem.PolicySystem.PEP import PEP
 # from DIRAC.ResourceStatusSystem.PolicySystem.PDP          import PDP
 # from DIRAC.ResourceStatusSystem.PolicySystem.PolicyCaller import PolicyCaller
 
 #############################################################################
+
 
 class PolicySystemTestCase(unittest.TestCase):
   """ Base class for the PDP - PEP test cases
@@ -15,51 +16,52 @@ class PolicySystemTestCase(unittest.TestCase):
 #############################################################################
 
   def setUp(self):
-    gLogger.setLevel( 'DEBUG' )
+    gLogger.setLevel('DEBUG')
 
     self.RSMock = MagicMock()
     self.RMMock = MagicMock()
-    self.RMMock.selectStatusElement.return_value = {'OK':True, 'Value': 'bla'}
+    self.RMMock.selectStatusElement.return_value = {'OK': True, 'Value': 'bla'}
     self.mockPDP = MagicMock()
 
 #############################################################################
 
+
 class PEPSuccess(PolicySystemTestCase):
 
-#############################################################################
+  #############################################################################
 
   def test_enforce(self):
 
-    pep = PEP( {'ResourceStatusClient':self.RSMock, 'ResourceManagementClient': self.RMMock, 'SiteStatus': self.RMMock} )
+    pep = PEP({'ResourceStatusClient': self.RSMock, 'ResourceManagementClient': self.RMMock, 'SiteStatus': self.RMMock})
     pep.pdp = self.mockPDP
-    res = pep.enforce( None )
+    res = pep.enforce(None)
     self.assertTrue(res['OK'])
 
     decisionParams = {}
-    res = pep.enforce( decisionParams )
+    res = pep.enforce(decisionParams)
     self.assertTrue(res['OK'])
 
-    decisionParams = {'element':'Site', 'name': 'Site1'}
+    decisionParams = {'element': 'Site', 'name': 'Site1'}
     decParamsPDP = dict(decisionParams)
     decParamsPDP['active'] = 'active'
-    self.mockPDP.takeDecision.return_value = {'OK':True,
-                                              'Value':{'policyCombinedResult': {'PolicyType':['', ''],
-                                                                                'PolicyAction':[( 'aa', 'bb' )],
-                                                                                'Status':'S',
-                                                                                'Reason':'testReason'},
-                                                       'singlePolicyResults': [{'Status': 'Active',
-                                                                                'PolicyName': 'SAM_CE_Policy',
-                                                                                'Reason': 'SAM:ok'},
-                                                                               {'Status': 'Banned',
-                                                                                'PolicyName': 'DT_Policy_Scheduled',
-                                                                                'Reason': 'DT:OUTAGE in 1 hours',
-                                                                                'EndDate': '2010-02-16 15:00:00'}],
-                                                       'decisionParams':decParamsPDP}}
-    res = pep.enforce( decisionParams )
+    self.mockPDP.takeDecision.return_value = {'OK': True,
+                                              'Value': {'policyCombinedResult': {'PolicyType': ['', ''],
+                                                                                 'PolicyAction': [('aa', 'bb')],
+                                                                                 'Status': 'S',
+                                                                                 'Reason': 'testReason'},
+                                                        'singlePolicyResults': [{'Status': 'Active',
+                                                                                 'PolicyName': 'SAM_CE_Policy',
+                                                                                 'Reason': 'SAM:ok'},
+                                                                                {'Status': 'Banned',
+                                                                                 'PolicyName': 'DT_Policy_Scheduled',
+                                                                                 'Reason': 'DT:OUTAGE in 1 hours',
+                                                                                 'EndDate': '2010-02-16 15:00:00'}],
+                                                        'decisionParams': decParamsPDP}}
+    res = pep.enforce(decisionParams)
     self.assertTrue(res['OK'])
 
-    decisionParams = {'element':'Resource', 'name': 'StorageElement', 'statusType': 'ReadAccess'}
-    res = pep.enforce( decisionParams )
+    decisionParams = {'element': 'Resource', 'name': 'StorageElement', 'statusType': 'ReadAccess'}
+    res = pep.enforce(decisionParams)
     self.assertTrue(res['OK'])
 
 # class PDPSuccess(PolicySystemTestCase):
@@ -267,6 +269,7 @@ class PEPSuccess(PolicySystemTestCase):
 # #       self.assertRaises(Exception, self.pi.evaluatePolicy)
 
 #############################################################################
+
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(PolicySystemTestCase)

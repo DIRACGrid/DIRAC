@@ -129,6 +129,7 @@ class PilotAgentsDB(DB):
 
 
 ##########################################################################################
+
   def selectPilots(self, condDict, older=None, newer=None, timeStamp='SubmissionTime',
                    orderAttribute=None, limit=None):
     """ Select pilot references according to the provided criteria. "newer" and "older"
@@ -164,6 +165,7 @@ class PilotAgentsDB(DB):
 
 
 ##########################################################################################
+
   def countPilots(self, condDict, older=None, newer=None, timeStamp='SubmissionTime'):
     """ Select pilot references according to the provided criteria. "newer" and "older"
         specify the time interval in minutes
@@ -182,6 +184,7 @@ class PilotAgentsDB(DB):
 
 
 ##########################################################################################
+
   def getPilotGroups(self, groupList=['Status', 'OwnerDN', 'OwnerGroup', 'GridType'], condDict={}):
     """
      Get all exisiting combinations of groupList Values

@@ -28,6 +28,7 @@ def prepareDict(columnNames, columnValues):
 
   return paramsDict
 
+
 class ResourceManagementClient(Client):
   """
   The :class:`ResourceManagementClient` class exposes the :mod:`DIRAC.ResourceManagement`

@@ -4,23 +4,25 @@ Test cases for DIRAC.Core.Utilities.DAG module.
 
 """
 
-#pylint: disable=protected-access,invalid-name,missing-docstring
+# pylint: disable=protected-access,invalid-name,missing-docstring
 
 import unittest
 
 # sut
-from  DIRAC.Core.Utilities.Mail import Mail
+from DIRAC.Core.Utilities.Mail import Mail
 
 __RCSID__ = "$Id $"
 
 ########################################################################
+
+
 class MailTestCase(unittest.TestCase):
   """ Test case for DIRAC.Core.Utilities.Mail module
   """
   pass
 
-class MailEQ(MailTestCase):
 
+class MailEQ(MailTestCase):
 
   def test_createEmail(self):
     """ test _create
@@ -81,5 +83,5 @@ class MailEQ(MailTestCase):
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(MailTestCase)
-  suite.addTest( unittest.defaultTestLoader.loadTestsFromTestCase(MailEQ))
-  testResult = unittest.TextTestRunner( verbosity = 2 ).run( suite )
+  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(MailEQ))
+  testResult = unittest.TextTestRunner(verbosity=2).run(suite)

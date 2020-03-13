@@ -28,7 +28,7 @@ bodyTestApp = """class TestAppModule:
         return 1"""
 
 md1 = ModuleDefinition('TestAppModule')
-md1.addParameter( Parameter("enable","True","bool","","",True,False,"If False execution is disabled"))
+md1.addParameter(Parameter("enable", "True", "bool", "", "", True, False, "If False execution is disabled"))
 md1.setBody(bodyTestApp)
 md1.setDescrShort('Empty Module')
 md1.setDescription('Empty Module to do some testing')
@@ -41,7 +41,7 @@ sd1.addModule(md1)
 mi1 = sd1.createModuleInstance('TestAppModule', 'testappmod1')
 wf1 = Workflow('TestAppWF')
 wf1.addStep(sd1)
-si1 = wf1.createStepInstance('TestAppStep','testappstep1')
+si1 = wf1.createStepInstance('TestAppStep', 'testappstep1')
 print(wf1.createCode())
-#eval(compile(wf1.createCode(),'<string>','exec'))
+# eval(compile(wf1.createCode(),'<string>','exec'))
 wf1.execute()

@@ -6,7 +6,7 @@ from DIRAC import gLogger
 from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
 
 
-class GFAL2_GSIFTPStorage( GFAL2_StorageBase ):
+class GFAL2_GSIFTPStorage(GFAL2_StorageBase):
 
   """ .. class:: GFAL2_GSIFTPStorage
 
@@ -15,22 +15,21 @@ class GFAL2_GSIFTPStorage( GFAL2_StorageBase ):
   _INPUT_PROTOCOLS = ['file', 'gsiftp']
   _OUTPUT_PROTOCOLS = ['gsiftp']
 
-  def __init__( self, storageName, parameters ):
+  def __init__(self, storageName, parameters):
     """ c'tor
     """
     # # init base class
-    super( GFAL2_GSIFTPStorage, self ).__init__( storageName, parameters )
+    super(GFAL2_GSIFTPStorage, self).__init__(storageName, parameters)
     self.srmSpecificParse = False
 
-    self.log = gLogger.getSubLogger( "GFAL2_GSIFTPStorage" )
+    self.log = gLogger.getSubLogger("GFAL2_GSIFTPStorage")
 
     self.pluginName = 'GFAL2_GSIFTP'
-
 
     # We don't need extended attributes for metadata
     self._defaultExtendedAttributes = None
 
-  def __addDoubleSlash( self, res ):
+  def __addDoubleSlash(self, res):
     """ Utilities to add the double slash between the host(:port) and the path
 
         :param res: DIRAC return structure which contains an URL if S_OK
@@ -39,21 +38,21 @@ class GFAL2_GSIFTPStorage( GFAL2_StorageBase ):
     if not res['OK']:
       return res
     url = res['Value']
-    res = pfnparse( url, srmSpecific = self.srmSpecificParse )
+    res = pfnparse(url, srmSpecific=self.srmSpecificParse)
     if not res['OK']:
       return res
     urlDict = res['Value']
     urlDict['Path'] = '/' + urlDict['Path']
-    return pfnunparse( urlDict, srmSpecific = self.srmSpecificParse )
+    return pfnunparse(urlDict, srmSpecific=self.srmSpecificParse)
 
-  def getURLBase( self, withWSUrl = False ):
+  def getURLBase(self, withWSUrl=False):
     """ Overwrite to add the double slash """
-    return self.__addDoubleSlash( super( GFAL2_GSIFTPStorage, self ).getURLBase( withWSUrl = withWSUrl ) )
+    return self.__addDoubleSlash(super(GFAL2_GSIFTPStorage, self).getURLBase(withWSUrl=withWSUrl))
 
-  def constructURLFromLFN( self, lfn, withWSUrl = False ):
+  def constructURLFromLFN(self, lfn, withWSUrl=False):
     """ Overwrite to add the double slash """
-    return self.__addDoubleSlash( super( GFAL2_GSIFTPStorage, self ).constructURLFromLFN( lfn = lfn, withWSUrl = withWSUrl ) )
+    return self.__addDoubleSlash(super(GFAL2_GSIFTPStorage, self).constructURLFromLFN(lfn=lfn, withWSUrl=withWSUrl))
 
-  def getCurrentURL( self, fileName ):
+  def getCurrentURL(self, fileName):
     """ Overwrite to add the double slash """
-    return self.__addDoubleSlash( super( GFAL2_GSIFTPStorage, self ).getCurrentURL( fileName ) )
+    return self.__addDoubleSlash(super(GFAL2_GSIFTPStorage, self).getCurrentURL(fileName))

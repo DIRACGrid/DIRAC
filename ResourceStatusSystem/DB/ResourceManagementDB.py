@@ -382,7 +382,6 @@ class ResourceManagementDB(SQLAlchemyDB):
     # Create required tables
     self._createTablesIfNotThere(self.tablesList)
 
-
   def addOrModify(self, table, params):
     """
     Using the PrimaryKeys of the table, it looks for the record in the database.

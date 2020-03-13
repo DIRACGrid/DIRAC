@@ -23,27 +23,29 @@ from DIRAC.RequestManagementSystem.private.RequestTask import RequestTask
 
 # # request client
 from DIRAC.RequestManagementSystem.Client.ReqClient import ReqClient
-ReqClient = Mock( spec = ReqClient )
+ReqClient = Mock(spec=ReqClient)
 # # from DIRAC
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.Client.Operation import Operation
 
 ########################################################################
-class RequestTaskTests( unittest.TestCase ):
+
+
+class RequestTaskTests(unittest.TestCase):
   """
   .. class:: RequestTaskTests
 
   """
 
-  def setUp( self ):
+  def setUp(self):
     """ test case set up """
-    self.handlersDict = { "ForwardDISET" : "DIRAC/RequestManagementSystem/private/ForwardDISET" }
+    self.handlersDict = {"ForwardDISET": "DIRAC/RequestManagementSystem/private/ForwardDISET"}
     self.req = Request()
     self.req.RequestName = "foobarbaz"
     self.req.OwnerGroup = "lhcb_user"
     self.req.OwnerDN = "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=chaen/CN=705305/CN=Christophe Haen"
-    self.op = Operation( { "Type": "ForwardDISET", "Arguments" : "tts10:helloWorldee" } )
-    self.req.addOperation( self.op )
+    self.op = Operation({"Type": "ForwardDISET", "Arguments": "tts10:helloWorldee"})
+    self.req.addOperation(self.op)
     self.task = None
     self.mockRC = MagicMock()
 
@@ -56,28 +58,31 @@ class RequestTaskTests( unittest.TestCase ):
     self.mockOps = MagicMock()
     self.mockOps.return_value = self.mockObjectOps
 
-
-  def tearDown( self ):
+  def tearDown(self):
     """ test case tear down """
     del self.req
     del self.op
     del self.task
 
-  def testAPI( self ):
+  def testAPI(self):
     """ test API
     """
-    rt = importlib.import_module( 'DIRAC.RequestManagementSystem.private.RequestTask' )
+    rt = importlib.import_module('DIRAC.RequestManagementSystem.private.RequestTask')
     rt.gMonitor = MagicMock()
     rt.Operations = self.mockOps
     rt.CS = MagicMock()
 
-    self.task = RequestTask( self.req.toJSON()["Value"], self.handlersDict, 'csPath', 'RequestManagement/RequestExecutingAgent',
-                             requestClient = self.mockRC )
-    self.task.requestClient = Mock( return_value = Mock( spec = ReqClient ) )
+    self.task = RequestTask(
+        self.req.toJSON()["Value"],
+        self.handlersDict,
+        'csPath',
+        'RequestManagement/RequestExecutingAgent',
+        requestClient=self.mockRC)
+    self.task.requestClient = Mock(return_value=Mock(spec=ReqClient))
     self.task.requestClient().updateRequest = Mock()
-    self.task.requestClient().updateRequest.return_value = { "OK" : True, "Value" : None }
+    self.task.requestClient().updateRequest.return_value = {"OK": True, "Value": None}
     ret = self.task()
-    self.assertEqual( ret["OK"], True , "call failed" )
+    self.assertEqual(ret["OK"], True, "call failed")
 
     ret = self.task.setupProxy()
     print(ret)
@@ -86,6 +91,6 @@ class RequestTaskTests( unittest.TestCase ):
 # # tests execution
 if __name__ == "__main__":
   testLoader = unittest.TestLoader()
-  requestTaskTests = testLoader.loadTestsFromTestCase( RequestTaskTests )
-  suite = unittest.TestSuite( [ requestTaskTests ] )
-  unittest.TextTestRunner( verbosity = 3 ).run( suite )
+  requestTaskTests = testLoader.loadTestsFromTestCase(RequestTaskTests)
+  suite = unittest.TestSuite([requestTaskTests])
+  unittest.TextTestRunner(verbosity=3).run(suite)

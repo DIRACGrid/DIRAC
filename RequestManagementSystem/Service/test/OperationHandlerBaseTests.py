@@ -31,45 +31,47 @@ from DIRAC.RequestManagementSystem.Client.Operation import Operation
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 
 ########################################################################
-class OperationHandlerBaseTests( unittest.TestCase ):
+
+
+class OperationHandlerBaseTests(unittest.TestCase):
   """
   .. class:: OperationHandlerBaseTests
 
   """
 
-  def setUp( self ):
+  def setUp(self):
     """ test set up """
     self.req = Request()
     self.req.RequestName = "testRequest"
-    self.op = Operation( {"Type" : "ForwardDISET", "Arguments" : "foobar" } )
-    self.req.addOperation( self.op )
+    self.op = Operation({"Type": "ForwardDISET", "Arguments": "foobar"})
+    self.req.addOperation(self.op)
     self.baseOp = OperationHandlerBase()
 
-  def tearDown( self ):
+  def tearDown(self):
     """ test tear down """
     del self.baseOp
     del self.op
     del self.req
 
-  def testOperationHandlerBase( self ):
+  def testOperationHandlerBase(self):
     """ base op test """
-    self.baseOp.setOperation( self.op )
+    self.baseOp.setOperation(self.op)
 
     # # log is there
-    self.assertEqual( "log" in dir( self.baseOp ), True, "log missing" )
+    self.assertEqual("log" in dir(self.baseOp), True, "log missing")
     # # operation is there
-    self.assertEqual( "operation" in dir( self.baseOp ), True, "operation is missing" )
+    self.assertEqual("operation" in dir(self.baseOp), True, "operation is missing")
     # # request is there
-    self.assertEqual( "request" in dir( self.baseOp ), True, "request is missing" )
+    self.assertEqual("request" in dir(self.baseOp), True, "request is missing")
     # # __call__ not implemented
-    self.assertRaises( NotImplementedError, self.baseOp )
+    self.assertRaises(NotImplementedError, self.baseOp)
     # # replica manager
-    self.assertEqual( isinstance( self.baseOp.dm, DataManager ), True, "DataManager is missing" )
+    self.assertEqual(isinstance(self.baseOp.dm, DataManager), True, "DataManager is missing")
+
 
 # # tests execution
 if __name__ == "__main__":
   testLoader = unittest.TestLoader()
-  OperationHandlerBaseTests = testLoader.loadTestsFromTestCase( OperationHandlerBaseTests )
-  suite = unittest.TestSuite( [ OperationHandlerBaseTests ] )
-  unittest.TextTestRunner( verbosity = 3 ).run( suite )
-
+  OperationHandlerBaseTests = testLoader.loadTestsFromTestCase(OperationHandlerBaseTests)
+  suite = unittest.TestSuite([OperationHandlerBaseTests])
+  unittest.TextTestRunner(verbosity=3).run(suite)

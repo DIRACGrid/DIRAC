@@ -71,7 +71,6 @@ class TestMoving(unittest.TestCase):
     self.assertTrue(ret['OK'], ret.get('Message', ''))
     self.assertEqual(ret['Value'].getPlugin().get('Value'), 'Broadcast')
 
-
   def test_createRepl_Dry(self):
     """ test creating transformation """
     tSE = "Target-SRM"
