@@ -1064,9 +1064,12 @@ class ProxyDB(DB):
       if not result['OK']:
         self.log.error("setPersistencyFlag: Can not retrieve username for DN", userDN)
         return result
-      userName = result['Value']
+      try:
+        sUserName = self._escapeString(result['Value'])['Value']
+      except KeyError:
+        return S_ERROR("Can't escape user name")
       cmd = "INSERT INTO `ProxyDB_Proxies` ( UserName, UserDN, UserGroup, Pem, ExpirationTime, PersistentFlag ) VALUES "
-      cmd += "( '%s', %s, %s, '', UTC_TIMESTAMP(), 'True' )" % (userName, sUserDN, sUserGroup)
+      cmd += "( %s, %s, %s, '', UTC_TIMESTAMP(), 'True' )" % (sUserName, sUserDN, sUserGroup)
     else:
       cmd = "UPDATE `ProxyDB_Proxies` SET PersistentFlag='%s' WHERE UserDN=%s AND UserGroup=%s" % (sqlFlag,
                                                                                                    sUserDN,
