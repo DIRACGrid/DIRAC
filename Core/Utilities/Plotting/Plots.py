@@ -150,6 +150,7 @@ def generatePiePlot(fileName, data, metadata):
     return S_ERROR(errno.EIO, e)
   return S_OK()
 
+
 def generateHistogram(filename, data, metadata):
   """
   It is used to create histograms.
