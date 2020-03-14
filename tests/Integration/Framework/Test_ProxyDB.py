@@ -467,9 +467,8 @@ class testDB(ProxyDBTestCase):
         self.assertTrue(result['OK'], '\n' + result.get('Message', 'Error message is absent.'))
       self.assertTrue(result['OK'], '\n' + result.get('Message', 'Error message is absent.'))
       gLogger.info('== > %s:' % log)
+
       result = self.createProxy(user, group, time, vo=vo)
-      if not result['OK']:
-        result = ca.getFakeProxy(dn, time * 3600, vo=vo, group=group)
       self.assertTrue(result['OK'], '\n' + result.get('Message', 'Error message is absent.'))
       chain = result['Value'][0]
 
@@ -562,8 +561,6 @@ class testDB(ProxyDBTestCase):
     for vomsuser in ['user', 'user_1']:
       # Create proxy with VOMS extension
       result = self.createProxy(vomsuser, 'group_1', 12, vo='vo_1', role='role_2')
-      if not result['OK']:
-        result = ca.getFakeProxy('/O=DN/O=DIRAC/CN=%s' % vomsuser, 12 * 3600, group='group_1', vo='vo_1', role='role_2')
       self.assertTrue(result['OK'], '\n' + result.get('Message', 'Error message is absent.'))
       chain, proxyStr = result['Value']
 
