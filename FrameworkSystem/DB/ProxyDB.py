@@ -714,7 +714,7 @@ class ProxyDB(DB):
     if not result['OK']:
       return result
     pp = result['Value']
-    result = pp.getProxy({"DN": userDN})
+    result = pp.getProxy(userDN)
     if not result['OK']:
       return result
     proxyStr = result['Value']['proxy']
