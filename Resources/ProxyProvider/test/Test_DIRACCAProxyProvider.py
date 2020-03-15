@@ -10,7 +10,7 @@ import commands
 import unittest
 
 from DIRAC.Core.Base.Script import parseCommandLine
-parseCommandLine()
+parseCommandLine(ignoreErrors=True)
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.CFG import CFG
@@ -160,7 +160,7 @@ class testDIRACCAProvider(DIRACCAProviderTestCase):
 
           result = ca.getProxy(userDN)
           text = 'Must be ended %s%s' % ('successful' if res else 'with error',
-                                        ': %s' % result.get('Message', 'Error message is absent.'))
+                                         ': %s' % result.get('Message', 'Error message is absent.'))
           self.assertEqual(result['OK'], res, text)
           if not res:
             gLogger.info('Msg: %s' % (result['Message']))

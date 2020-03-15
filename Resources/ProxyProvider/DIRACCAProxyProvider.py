@@ -92,7 +92,7 @@ class DIRACCAProxyProvider(ProxyProvider):
       if self.fields2nid[field] not in self.optional + self.supplied + self.match:
         del self.parameters[field]
       elif not isinstance(self.parameters[field], list):
-        self.parameters[field] = self.parameters[field].replace(', ', ',').split(',')        
+        self.parameters[field] = self.parameters[field].replace(', ', ',').split(',')
 
     self.defDict = {}
     for field, value in parameters.items():
