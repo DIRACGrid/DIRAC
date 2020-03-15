@@ -8,6 +8,7 @@ import sys
 import shutil
 import commands
 import unittest
+import tempfile
 
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine(ignoreErrors=True)
@@ -17,13 +18,12 @@ from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Resources.ProxyProvider.ProxyProviderFactory import ProxyProviderFactory
 
-# For Jenkins
-for f in ['', 'TestCode', os.environ.get('DIRAC'), '../../../../']:
-  certsPath = os.path.join(f, 'DIRAC/Core/Security/test/certs')
-  if os.path.exists(certsPath):
-    break
 
-testCAPath = '/tmp/testCA'
+thisPath = os.path.dirname(os.path.abspath(__file__)).split('/')
+rootPath = thisPath[:len(thisPath) - 3]
+certsPath = os.path.join('/'.join(rootPath), 'Core/Security/test/certs')
+
+testCAPath = os.path.join(tempfile.mkdtemp(dir='/tmp'), 'ca')
 testCAConfigFile = os.path.join(testCAPath, 'openssl_config_ca.cnf')
 
 diracTestCACFG = """
@@ -52,7 +52,7 @@ Resources
 }
 """ % (os.path.join(certsPath, 'ca/ca.cert.pem'),
        os.path.join(certsPath, 'ca/ca.key.pem'),
-       os.path.join(testCAPath, 'openssl_config_ca.cnf'))
+       testCAConfigFile)
 
 
 class DIRACCAProviderTestCase(unittest.TestCase):
