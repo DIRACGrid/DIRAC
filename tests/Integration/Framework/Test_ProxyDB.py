@@ -43,6 +43,7 @@ Resources
       KeyFile = %s
       Supplied = C, O, OU, CN
       Optional = emailAddress
+      DNOrder = C, O, OU, CN, emailAddress
       OU = None
       C = DN
       O = DIRACCA
