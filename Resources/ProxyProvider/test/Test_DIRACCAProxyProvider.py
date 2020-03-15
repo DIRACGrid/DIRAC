@@ -14,7 +14,6 @@ from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine(ignoreErrors=True)
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
-# from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Resources.ProxyProvider.DIRACCAProxyProvider import DIRACCAProxyProvider
 
@@ -39,33 +38,6 @@ diracCADict = {'ProviderType': 'DIRACCA',
 diracCAConf = {'ProviderType': 'DIRACCA',
                'CAConfigFile': testCAConfigFile,
                'ProviderName': 'DIRAC_CA_CFG'}
-# diracTestCACFG = """
-# Resources
-# {
-#   ProxyProviders
-#   {
-#     DIRAC_CA
-#     {
-#       ProviderType = DIRACCA
-#       CertFile = %s
-#       KeyFile = %s
-#       Supplied = O, OU, CN
-#       DNOrder = O, OU, CN, emailAddress
-#       Optional = emailAddress
-#       OU = CA
-#       C = DN
-#       O = DIRACCA
-#     }
-#     DIRAC_CA_CFG
-#     {
-#       ProviderType = DIRACCA
-#       CAConfigFile = %s
-#     }
-#   }
-# }
-# """ % (os.path.join(certsPath, 'ca/ca.cert.pem'),
-#        os.path.join(certsPath, 'ca/ca.key.pem'),
-#        testCAConfigFile)
 
 
 class DIRACCAProviderTestCase(unittest.TestCase):
@@ -73,11 +45,6 @@ class DIRACCAProviderTestCase(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
     cls.failed = False
-
-    # Add configuration
-    # cfg = CFG()
-    # cfg.loadFromBuffer(diracTestCACFG)
-    # gConfig.loadCFG(cfg)
 
     shutil.copytree(os.path.join(certsPath, 'ca'), testCAPath)
 
@@ -152,9 +119,7 @@ class testDIRACCAProvider(DIRACCAProviderTestCase):
       gLogger.info('\n* Try proxy provider that %s..' % log)
       ca = DIRACCAProxyProvider()
       result = ca.setParameters(proxyProvider)
-      #result = ProxyProviderFactory().getProxyProvider(proxyProvider)
       self.assertTrue(result['OK'], '\n' + result.get('Message', 'Error message is absent.'))
-      # ca = result['Value']
 
       gLogger.info('* Get proxy using FullName and Email of user..')
       for name, email, res in [('MrUser', 'good@mail.com', True),
