@@ -18,7 +18,7 @@ from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-er
 from DIRAC.Resources.ProxyProvider.ProxyProviderFactory import ProxyProviderFactory
 
 # For Jenkins
-for f in ['', 'TestCode', os.environ['DIRAC']]:
+for f in ['', 'TestCode', os.environ.get('DIRAC'), '../../../../']:
   certsPath = os.path.join(f, 'DIRAC/Core/Security/test/certs')
   if os.path.exists(certsPath):
     break
