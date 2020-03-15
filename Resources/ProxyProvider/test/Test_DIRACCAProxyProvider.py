@@ -14,9 +14,9 @@ from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine(ignoreErrors=True)
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
-from DIRAC.Core.Utilities.CFG import CFG
+# from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
-from DIRAC.Resources.ProxyProvider.ProxyProviderFactory import ProxyProviderFactory
+from DIRAC.Resources.ProxyProvider.DIRACCAProxyProvider import DIRACCAProxyProvider
 
 
 thisPath = os.path.dirname(os.path.abspath(__file__)).split('/')
@@ -26,33 +26,46 @@ certsPath = os.path.join('/'.join(rootPath), 'Core/Security/test/certs')
 testCAPath = os.path.join(tempfile.mkdtemp(dir='/tmp'), 'ca')
 testCAConfigFile = os.path.join(testCAPath, 'openssl_config_ca.cnf')
 
-diracTestCACFG = """
-Resources
-{
-  ProxyProviders
-  {
-    DIRAC_CA
-    {
-      ProviderType = DIRACCA
-      CertFile = %s
-      KeyFile = %s
-      Supplied = O, OU, CN
-      DNOrder = O, OU, CN, emailAddress
-      Optional = emailAddress
-      OU = CA
-      C = DN
-      O = DIRACCA
-    }
-    DIRAC_CA_CFG
-    {
-      ProviderType = DIRACCA
-      CAConfigFile = %s
-    }
-  }
-}
-""" % (os.path.join(certsPath, 'ca/ca.cert.pem'),
-       os.path.join(certsPath, 'ca/ca.key.pem'),
-       testCAConfigFile)
+diracCADict = {'ProviderType': 'DIRACCA',
+               'CertFile': os.path.join(certsPath, 'ca/ca.cert.pem'),
+               'KeyFile': os.path.join(certsPath, 'ca/ca.key.pem'),
+               'Supplied': ['O', 'OU', 'CN'],
+               'Optional': ['emailAddress'],
+               'DNOrder': ['O', 'OU', 'CN', 'emailAddress'],
+               'OU': 'CA',
+               'C': 'DN',
+               'O': 'DIRACCA',
+               'ProviderName': 'DIRAC_CA'}
+diracCAConf = {'ProviderType': 'DIRACCA',
+               'CAConfigFile': testCAConfigFile,
+               'ProviderName': 'DIRAC_CA_CFG'}
+# diracTestCACFG = """
+# Resources
+# {
+#   ProxyProviders
+#   {
+#     DIRAC_CA
+#     {
+#       ProviderType = DIRACCA
+#       CertFile = %s
+#       KeyFile = %s
+#       Supplied = O, OU, CN
+#       DNOrder = O, OU, CN, emailAddress
+#       Optional = emailAddress
+#       OU = CA
+#       C = DN
+#       O = DIRACCA
+#     }
+#     DIRAC_CA_CFG
+#     {
+#       ProviderType = DIRACCA
+#       CAConfigFile = %s
+#     }
+#   }
+# }
+# """ % (os.path.join(certsPath, 'ca/ca.cert.pem'),
+#        os.path.join(certsPath, 'ca/ca.key.pem'),
+#        testCAConfigFile)
 
 
 class DIRACCAProviderTestCase(unittest.TestCase):
@@ -62,9 +75,9 @@ class DIRACCAProviderTestCase(unittest.TestCase):
     cls.failed = False
 
     # Add configuration
-    cfg = CFG()
-    cfg.loadFromBuffer(diracTestCACFG)
-    gConfig.loadCFG(cfg)
+    # cfg = CFG()
+    # cfg.loadFromBuffer(diracTestCACFG)
+    # gConfig.loadCFG(cfg)
 
     shutil.copytree(os.path.join(certsPath, 'ca'), testCAPath)
 
@@ -134,12 +147,14 @@ class testDIRACCAProvider(DIRACCAProviderTestCase):
                      chain.isRFC()]:
         self.assertTrue(result['OK'], '\n' + result.get('Message', 'Error message is absent.'))
 
-    for proxyProvider, log in [('DIRAC_CA', 'configuring only in DIRAC CFG'),
-                               ('DIRAC_CA_CFG', 'read configuration file')]:
+    for proxyProvider, log in [(diracCADict, 'configuring only in DIRAC CFG'),
+                               (diracCAConf, 'read configuration file')]:
       gLogger.info('\n* Try proxy provider that %s..' % log)
-      result = ProxyProviderFactory().getProxyProvider(proxyProvider)
+      ca = DIRACCAProxyProvider()
+      result = ca.setParameters(proxyProvider)
+      #result = ProxyProviderFactory().getProxyProvider(proxyProvider)
       self.assertTrue(result['OK'], '\n' + result.get('Message', 'Error message is absent.'))
-      ca = result['Value']
+      # ca = result['Value']
 
       gLogger.info('* Get proxy using FullName and Email of user..')
       for name, email, res in [('MrUser', 'good@mail.com', True),
@@ -165,7 +180,7 @@ class testDIRACCAProvider(DIRACCAProviderTestCase):
           if not res:
             gLogger.info('Msg: %s' % (result['Message']))
           else:
-            check(result['Value']['proxy'], proxyProvider, name)
+            check(result['Value']['proxy'], proxyProvider['ProviderName'], name)
 
       gLogger.info('\n* Get proxy using user DN..')
       for dn, name, res in [('/O=DIRAC/OU=DIRAC CA/CN=user_3/emailAddress=some@mail.org', 'user_3', True),
@@ -179,6 +194,7 @@ class testDIRACCAProvider(DIRACCAProviderTestCase):
         try:
           result = ca.getProxy(dn)
         except Exception as e:
+          result['Message'] = str(e)
           self.assertFalse(res, e)
         text = 'Must be ended %s%s' % ('successful' if res else 'with error',
                                        ': %s' % result.get('Message', 'Error message is absent.'))
@@ -186,7 +202,7 @@ class testDIRACCAProvider(DIRACCAProviderTestCase):
         if not res:
           gLogger.info('Msg: %s' % (result['Message']))
         else:
-          check(result['Value']['proxy'], proxyProvider, name)
+          check(result['Value']['proxy'], proxyProvider['ProviderName'], name)
 
 
 if __name__ == '__main__':
