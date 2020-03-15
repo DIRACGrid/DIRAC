@@ -81,7 +81,7 @@ class DIRACCAProviderTestCase(unittest.TestCase):
     # Write modified conf. file
     with open(testCAConfigFile, "w") as caCFG:
       caCFG.writelines(lines)
-    
+
     # Result
     status, output = commands.getstatusoutput('ls -al %s' % testCAPath)
     if status:

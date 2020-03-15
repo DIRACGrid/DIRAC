@@ -245,7 +245,7 @@ class DIRACCAProxyProvider(ProxyProvider):
         result = self.__fillX509Name(field, value)
         if not result['OK']:
           return result
-    
+
     # WARN: This logic not support list of distribtes name elements
     resDN = m2.x509_name_oneline(self.__X509Name.x509_name)  # pylint: disable=no-member
 
