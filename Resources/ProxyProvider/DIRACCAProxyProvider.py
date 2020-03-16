@@ -7,7 +7,7 @@
     Required parameters in the DIRAC configuration for its implementation::
 
     <Provider Name> section::
-    
+
       *  ProviderType = DIRACCA,
       *  CertFile = <CA sertificate path>,
       *  KeyFile = <CA key path>,
