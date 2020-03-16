@@ -144,8 +144,7 @@ class DIPStorage(StorageBase):
       os.unlink(src_file)
     if res['OK']:
       return S_OK(sourceSize)
-    else:
-      return res
+    return res
 
   def getFile(self, path, localPath=False):
     """Get a local copy in the current directory of a physical file specified by its path
