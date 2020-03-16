@@ -44,7 +44,12 @@ class Synchronizer(object):
     self.defaultStatus = defaultStatus
 
     self.rssConfig = RssConfiguration()
+
+    # this just sets the main owner, "rs_svc" just mean "RSS service"
     self.tokenOwner = "rs_svc"
+
+    # if we are running this script as a user (from a CLI),
+    # the username found the proxy will be used as tokenOwner
     result = getProxyInfo()
     if result['OK']:
       self.tokenOwner = result['Value']['username']

@@ -15,7 +15,7 @@ CHANGE: (#4235) Removes locals() way of passing parameters
 *tests
 NEW: (#4179) Set up Gitlab CI pipeline using Docker containers
 
-[v7r1-pre19]
+[v7r1-pre20]
 
 NEW: Add environment.yml file for preparing an environment with conda
 
@@ -108,6 +108,18 @@ CHANGE: (#4439) integrate test_MySQLDB to all_integration_server_tests
 
 *docs
 NEW: (#4289) Document how to run integration tests in docker
+
+[v7r0p17]
+
+*WMS
+FIX: (#4496) PilotCS2Json: fix writing of local pilot.json file, which is used to calculate the hash
+FIX: (#4496) PilotCS2Json: write checksum file in text mode
+
+*DMS
+FIX: (#4476) StorageElementHandler: removed ignoreMaxStorageSize flag from getTotalDiskSpace and getFreeDiskSpace
+
+*Resources
+FIX: (#4499) Slurm Resource Usage
 
 [v7r0p16]
 

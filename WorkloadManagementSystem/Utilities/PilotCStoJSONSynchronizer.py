@@ -356,7 +356,7 @@ class PilotCStoJSONSynchronizer(object):
         filename = self.jsonFile
         script = json.dumps(pilotDict)
         with open(filename, 'w') as jf:
-          json.dump(script, jf)
+          jf.write(script)
 
       else:  # we assume the method is asked to upload the pilots scripts
         # ALWAYS open binary when sending a file
@@ -392,7 +392,7 @@ class PilotCStoJSONSynchronizer(object):
 
   def _syncChecksum(self):
     """Upload the checksum file to the fileservers."""
-    with open('checksums.sha512', 'wb') as chksums:
+    with open('checksums.sha512', 'wt') as chksums:
       for filename, chksum in sorted(self._checksumDict.items()):
         # same as the output from sha512sum commands
         chksums.write('%s  %s\n' % (chksum, filename))
