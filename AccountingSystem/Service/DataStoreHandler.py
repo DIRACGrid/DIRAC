@@ -157,9 +157,9 @@ class DataStoreHandler(RequestHandler):
         return S_ERROR("Invalid records")
       for i, _ in enumerate(entry):
         if not isinstance(entry[i], expectedTypes[i]):
-	  self.log.error("Unexpected type in report",
-			 ": field %d in the records should be %s (and it is %s)" % (i, expectedTypes[i],
-										    type(entry[i])))
+          self.log.error("Unexpected type in report",
+                         ": field %d in the records should be %s (and it is %s)" % (i, expectedTypes[i],
+                                                                                    type(entry[i])))
           return S_ERROR("Unexpected type in report")
     records = []
     for entry in entriesList:

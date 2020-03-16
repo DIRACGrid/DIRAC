@@ -43,7 +43,7 @@ from DIRAC.Core.Utilities.Adler import fileAdler
 from DIRAC.Resources.Storage.StorageBase import StorageBase
 
 
-BASE_PATH = "/"  # This is not a constant and it will be set initializeStorageElementHandler() function
+BASE_PATH = "/"  # This is not a constant and it will be set in initializeStorageElementHandler() function
 MAX_STORAGE_SIZE = 0  # This is in bytes, but in MB in the CS
 USE_TOKENS = False
 
@@ -72,7 +72,7 @@ def getDiskSpace(path, total=False):
   return S_OK(round(result, 4))
 
 
-def getTotalDiskSpace(ignoreMaxStorageSize=False):
+def getTotalDiskSpace():
   """  Returns the total maximum volume of the SE storage in B. The total volume
        can be limited either by the amount of the available disk space or by the
        MAX_STORAGE_SIZE value.
@@ -87,13 +87,11 @@ def getTotalDiskSpace(ignoreMaxStorageSize=False):
   if not result['OK']:
     return result
   totalSpace = result['Value']
-  if ignoreMaxStorageSize:
-    return S_OK(totalSpace)
-  else:
-    return S_OK(min(totalSpace, MAX_STORAGE_SIZE) if MAX_STORAGE_SIZE else totalSpace)
+  maxTotalSpace = min(totalSpace, MAX_STORAGE_SIZE) if MAX_STORAGE_SIZE else totalSpace
+  return S_OK(maxTotalSpace)
 
 
-def getFreeDiskSpace(ignoreMaxStorageSize=False):
+def getFreeDiskSpace():
   """ Returns the free disk space still available for writing taking into account
       the total available disk space and the MAX_STORAGE_SIZE limitation
 
@@ -107,10 +105,14 @@ def getFreeDiskSpace(ignoreMaxStorageSize=False):
   if not result['OK']:
     return result
   freeSpace = result['Value']
-  if ignoreMaxStorageSize:
-    return S_OK(freeSpace)
-
-  return S_OK(min(freeSpace, MAX_STORAGE_SIZE) if MAX_STORAGE_SIZE else freeSpace)
+  result = getTotalDiskSpace()
+  if not result['OK']:
+    return result
+  totalSpace = result['Value']
+  maxTotalSpace = min(totalSpace, MAX_STORAGE_SIZE) if MAX_STORAGE_SIZE else totalSpace
+  occupiedSpace = totalSpace - freeSpace
+  freeSpace = maxTotalSpace - occupiedSpace
+  return S_OK(freeSpace)
 
 
 def initializeStorageElementHandler(serviceInfo):
@@ -156,24 +158,11 @@ class StorageElementHandler(RequestHandler):
         :param int size: size of a new file to store in the StorageElement
         :return: S_OK/S_ERROR, Value is boolean flag True if enough space is available
     """
-    result = getFreeDiskSpace(ignoreMaxStorageSize=False)
+    result = getFreeDiskSpace()
     if not result['OK']:
       return result
     freeSpace = result['Value']
-    spaceFlag = freeSpace > size
-    if spaceFlag:
-      return S_OK(spaceFlag)
-
-    # We do not have enough space taking into account MAX_STORAGE_SIZE limit
-    # check if the total disk space is enough however
-    result = getFreeDiskSpace(ignoreMaxStorageSize=True)
-    if not result['OK']:
-      return result
-    freeSpace = result['Value']
-    spaceFlag = freeSpace > size
-    if spaceFlag:
-      gLogger.warn('Space limited by MAX_STORAGE_SIZE is not enough to store file')
-    return S_OK(spaceFlag)
+    return S_OK(freeSpace > size)
 
   def __resolveFileID(self, fileID):
     """ get path to file for a given :fileID: """
@@ -255,23 +244,25 @@ class StorageElementHandler(RequestHandler):
     """
     return self.__getFileStat(self.__resolveFileID(fileID))
 
-  types_getFreeDiskSpace = [bool]
+  types_getFreeDiskSpace = []
 
-  def export_getFreeDiskSpace(self, ignoreMaxStorageSize):
+  @staticmethod
+  def export_getFreeDiskSpace():
     """ Get the free disk space of the storage element
 
         :return: S_OK/S_ERROR, Value is the free space on the SE storage in B
     """
-    return getFreeDiskSpace(ignoreMaxStorageSize)
+    return getFreeDiskSpace()
 
-  types_getTotalDiskSpace = [bool]
+  types_getTotalDiskSpace = []
 
-  def export_getTotalDiskSpace(self, ignoreMaxStorageSize):
+  @staticmethod
+  def export_getTotalDiskSpace():
     """ Get the total disk space of the storage element
 
         :return: S_OK/S_ERROR, Value is the max total volume of the SE storage in B
     """
-    return getTotalDiskSpace(ignoreMaxStorageSize)
+    return getTotalDiskSpace()
 
   types_createDirectory = [basestring]
 
