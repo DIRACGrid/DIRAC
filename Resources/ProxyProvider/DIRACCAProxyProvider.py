@@ -3,8 +3,9 @@
 
     This class is a simple, limited CA, its main purpose is to generate a simple proxy for DIRAC users
     who do not have any certificate register on the fly.
-    
-    Required parameters in the DIRAC configuration for its implementation:
+
+    Required parameters in the DIRAC configuration for its implementation::
+
     <Provider Name> {
       ProviderType = DIRACCA,
       CertFile = <CA sertificate path>,
@@ -18,9 +19,10 @@
 
     Also, as an additional feature, this class can read properties from a simple openssl CA configuration file.
     To do this, just set the path to an existing configuration file as a CAConfigFile parameter. In this case,
-    the distinguished names order in the created proxy will be the same as in the configuration file policy block. 
+    the distinguished names order in the created proxy will be the same as in the configuration file policy block.
 
-    The Proxy provider supports the next distinguished names(https://www.cryptosys.net/pki/manpki/pki_distnames.html):
+    The Proxy provider supports the next distinguished names(https://www.cryptosys.net/pki/manpki/pki_distnames.html)::
+
       SN(surname)
       GN(givenName)
       C(countryName)
@@ -31,6 +33,7 @@
       OU(organizationUnitName)
       SP,ST(stateOrProvinceName)
       SERIALNUMBER(serialNumber)
+
 """
 
 import re
