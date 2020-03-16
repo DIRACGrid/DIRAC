@@ -32,7 +32,7 @@ jobs:
     - uses: actions/checkout@v1
     - name: Clean up GitHub actions environment
       run: |
-        mysqladmin -u root -proot shutdown
+        mysqladmin -u root -proot shutdown || true
 
         # Prepare wrapper script
         echo "#!/usr/bin/env bash" >> run_in_container
