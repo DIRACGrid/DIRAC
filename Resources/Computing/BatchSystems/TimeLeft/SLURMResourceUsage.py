@@ -29,9 +29,9 @@ class SLURMResourceUsage(ResourceUsage):
     """
     # sacct displays accounting data for all jobs and job steps
     # -j is the given job, -o the information of interest, -X to get rid of intermediate steps
-    # -P to make the output parseable (remove tabs, spaces, columns)
+    # -n to remove the header, -P to make the output parseable (remove tabs, spaces, columns)
     # --delimiter to specify character that splits the fields
-    cmd = 'sacct -j %s -o JobID,CPUTimeRAW,AllocCPUS,ElapsedRaw,Timelimit -X -P --delimiter=,' % (self.jobID)
+    cmd = 'sacct -j %s -o JobID,CPUTimeRAW,AllocCPUS,ElapsedRaw,Timelimit -X -n -P --delimiter=,' % (self.jobID)
     result = runCommand(cmd)
     if not result['OK']:
       return result
