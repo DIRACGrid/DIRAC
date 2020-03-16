@@ -1,5 +1,36 @@
 """ ProxyProvider implementation for the proxy generation using local (DIRAC)
     CA credentials
+
+    This class is a simple, limited CA, its main purpose is to generate a simple proxy for DIRAC users
+    who do not have any certificate register on the fly.
+    
+    Required parameters in the DIRAC configuration for its implementation:
+    <Provider Name> {
+      ProviderType = DIRACCA,
+      CertFile = <CA sertificate path>,
+      KeyFile = <CA key path>,
+      Match = <Match DNs>,  # For ex.: 'Match = O, OU'
+      Supplied = <Supplied DNs>,
+      Optional = <Optional DNs>,
+      DNOrder = <Preferred DNs order as list>,  # For ex.: 'Match = O, OU, CN, emailAddress'
+      <Some distinguished name type>: <Default value>,  # For ex.: 'OU = CA'
+    }
+
+    Also, as an additional feature, this class can read properties from a simple openssl CA configuration file.
+    To do this, just set the path to an existing configuration file as a CAConfigFile parameter. In this case,
+    the distinguished names order in the created proxy will be the same as in the configuration file policy block. 
+
+    The Proxy provider supports the next distinguished names(https://www.cryptosys.net/pki/manpki/pki_distnames.html):
+      SN(surname)
+      GN(givenName)
+      C(countryName)
+      CN(commonName)
+      L(localityName)
+      Email(emailAddress)
+      O(organizationName)
+      OU(organizationUnitName)
+      SP,ST(stateOrProvinceName)
+      SERIALNUMBER(serialNumber)
 """
 
 import re
@@ -32,14 +63,15 @@ class DIRACCAProxyProvider(ProxyProvider):
     self.supplied = ['CN']
     self.optional = ['C', 'O', 'OU', 'emailAddress']
     self.dnList = ['C', 'O', 'OU', 'CN', 'emailAddress']
-    # Add not supported distributes names
+    # Distinguished names
     self.fields2nid = X509.X509_Name.nid.copy()
-    self.fields2nid['DC'] = -1
-    self.fields2nid['domainComponent'] = -1
-    self.fields2nid['organizationalUnitName'] = 18
-    self.fields2nid['countryName'] = 14
-    self.nid2field = {}  # nid: most short or specidied in CS distributes name
-    self.nid2fields = {}  # nid: list of distributes names
+    self.fields2nid['DC'] = -1  # Add DN that is not liested in X509.X509_Name
+    self.fields2nid['domainComponent'] = -1  # Add DN description that is not liested in X509.X509_Name
+    self.fields2nid['organizationalUnitName'] = 18  # Add 'OU' description
+    self.fields2nid['countryName'] = 14  # Add 'C' description
+    self.fields2nid['SERIALNUMBER'] = 105  # Add 'SERIALNUMBER' distinguished name
+    self.nid2field = {}  # nid: most short or specidied in CS distinguished name
+    self.nid2fields = {}  # nid: list of distinguished names
     # Specify standart fields
     for field in self.fields2nid:
       if self.fields2nid[field] not in self.nid2fields:
@@ -222,7 +254,7 @@ class DIRACCAProxyProvider(ProxyProvider):
       kwargs['emailAddress'] = [kwargs['Email']]
 
     self.__X509Name = X509.X509_Name()
-    self.log.info('Creating distributes names chain')
+    self.log.info('Creating distinguished names chain')
 
     for nid in self.supplied:
       if nid not in [self.fields2nid[f] for f in self.dnList]:
