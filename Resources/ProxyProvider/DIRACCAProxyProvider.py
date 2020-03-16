@@ -14,7 +14,7 @@
       *  Match = <Match DNs>,  # For ex.: 'Match = O, OU'
       *  Supplied = <Supplied DNs>,
       *  Optional = <Optional DNs>,
-      *  DNOrder = <Preferred DNs order as list>,  # For ex.: 'Match = O, OU, CN, emailAddress'
+      *  DNOrder = <Preferred DNs order as list>,  # For ex.: 'DNOrder = O, OU, CN, emailAddress'
       *  <Some distinguished name type>: <Default value>,  # For ex.: 'OU = CA'
 
     Also, as an additional feature, this class can read properties from a simple openssl CA configuration file.
