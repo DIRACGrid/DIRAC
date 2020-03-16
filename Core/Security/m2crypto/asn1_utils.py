@@ -90,10 +90,15 @@ def decodeDIRACGroup(m2cert):
 
 def _decodeASN1String(rdnNameAttrValue):
   """ Tries to decode a string encoded with the following type:
-      * UTF8String
-      * PrintableString
+      * BMPString
       * IA5String
+      * PrintableString
+      * TeletexString
+      * UTF8String
 
+      Most of these types come from the definition of the issuer field in RFC3280:
+      * The basic attributes, defined as DirectoryString (4.1.2.4  Issuer)
+      * the optional attributes (Appendix A.  Psuedo-ASN.1 Structures and OIDs)
 
       This utility function is needed for 2 reasons:
       * Not all the attributes are encoded the same way, and as we do not want to bother
@@ -107,7 +112,12 @@ def _decodeASN1String(rdnNameAttrValue):
 
       :returns: the decoded value or raises PyAsn1Error if nothing worked
   """
-  for decodeType in (asn1char.UTF8String, asn1char.PrintableString, asn1char.IA5String):
+  for decodeType in (
+          asn1char.UTF8String,
+          asn1char.PrintableString,
+          asn1char.IA5String,
+          asn1char.TeletexString,
+          asn1char.BMPString):
     try:
       attrValStr, _rest = der_decode(rdnNameAttrValue, decodeType())
     # Decoding error, try the next type
@@ -117,6 +127,20 @@ def _decodeASN1String(rdnNameAttrValue):
       # If the decoding worked, return it
       return attrValStr
   raise PyAsn1Error("Could not find a correct decoding type")
+
+
+def hasVOMSExtension(m2cert):
+  """ Utility fonction to check if the certificate has VOMS extensions
+
+      :param m2cert: M2Crypto X509 object, a certificate
+
+      :returns: boolean
+  """
+  try:
+    retrieveExtension(m2cert, VOMS_EXTENSION_OID)
+    return True
+  except LookupError:
+    return False
 
 
 def decodeVOMSExtension(m2cert):

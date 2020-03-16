@@ -4,23 +4,39 @@
 '''
 
 from DIRAC import gConfig, S_OK, gLogger
-from DIRAC.Core.DISET.RequestHandler import RequestHandler
+from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption
 from DIRAC.ResourceStatusSystem.Utilities import Synchronizer
 from DIRAC.ResourceStatusSystem.Service.ResourceStatusHandler import convert
-from DIRAC.ResourceStatusSystem.DB.ResourceManagementDB import ResourceManagementDB
-
+from DIRAC.ResourceStatusSystem.Service.ResourceStatusHandler import loadResourceStatusComponent
 
 __RCSID__ = '$Id$'
 
 
-def initializeResourceManagementHandler(_serviceInfo):
-  '''
-    Handler initialization, where we set the ResourceManagementDB as global db.
-  '''
+def initializeResourceManagementHandler(serviceInfo):
+  """
+    Handler initialization, where we:
+      dynamically load ResourceManagement database plugin module, as advised by the config,
+      (assumes that the module name and a class name are the same)
+      set the ResourceManagementDB as global db.
+
+      :param _serviceInfo: service info dictionary
+      :return: standard Dirac return object
+
+  """
+
+  gLogger.debug("ServiceInfo", serviceInfo)
+  gLogger.debug("Initializing ResourceManagement Service with the following DB component:")
+  defaultOption, defaultClass = 'ResourceManagementDB', 'ResourceManagementDB'
+  configValue = getServiceOption(serviceInfo, defaultOption, defaultClass)
+  gLogger.debug("Option:%-20s Class:%-20s" % (str(defaultOption), str(configValue)))
+  result = loadResourceStatusComponent(configValue, configValue)
+
+  if not result['OK']:
+    return result
 
   global db
-  db = ResourceManagementDB()
 
+  db = result['Value']
   syncObject = Synchronizer.Synchronizer()
   gConfig.addListenerToNewVersionEvent(syncObject.sync)
 

@@ -2,7 +2,6 @@
     current CPU consumed, as well as its limit.
 """
 
-from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import os
@@ -10,38 +9,37 @@ import re
 import time
 import socket
 
-from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities.TimeLeft.TimeLeft import runCommand
+from DIRAC import S_OK, S_ERROR
+from DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft import runCommand
+from DIRAC.Resources.Computing.BatchSystems.TimeLeft.ResourceUsage import ResourceUsage
 
 
-class SGETimeLeft( object ):
+class SGEResourceUsage(ResourceUsage):
   """
    This is the SGE plugin of the TimeLeft Utility
   """
 
   #############################################################################
-  def __init__( self ):
+  def __init__(self):
     """ Standard constructor
     """
-    self.log = gLogger.getSubLogger( 'SGETimeLeft' )
-    self.jobID = os.environ.get( 'JOB_ID' )
-    self.queue = os.environ.get( 'QUEUE' )
-    pbsPath = os.environ.get( 'SGE_BINARY_PATH' )
+    super(SGEResourceUsage, self).__init__('SGE', 'JOB_ID')
+
+    self.queue = os.environ.get('QUEUE')
+    pbsPath = os.environ.get('SGE_BINARY_PATH')
     if pbsPath:
       os.environ['PATH'] += ':' + pbsPath
 
-    self.cpuLimit = None
-    self.wallClockLimit = None
-    self.log.verbose( 'JOB_ID=%s, QUEUE=%s' % ( self.jobID, self.queue ) )
+    self.log.verbose('JOB_ID=%s, QUEUE=%s' % (self.jobID, self.queue))
     self.startTime = time.time()
 
   #############################################################################
-  def getResourceUsage( self ):
+  def getResourceUsage(self):
     """Returns a dictionary containing CPUConsumed, CPULimit, WallClockConsumed
        and WallClockLimit for current slot.  All values returned in seconds.
     """
-    cmd = 'qstat -f -j %s' % ( self.jobID )
-    result = runCommand( cmd )
+    cmd = 'qstat -f -j %s' % (self.jobID)
+    result = runCommand(cmd)
     if not result['OK']:
       return result
 
@@ -50,29 +48,29 @@ class SGETimeLeft( object ):
     wallClock = None
     wallClockLimit = None
 
-    lines = str( result['Value'] ).split( '\n' )
+    lines = str(result['Value']).split('\n')
     for line in lines:
-      if re.search( 'usage.*cpu.*', line ):
-        match = re.search( 'cpu=([\d,:]*),', line )
+      if re.search('usage.*cpu.*', line):
+        match = re.search(r'cpu=([\d,:]*),', line)
         if match:
-          cpuList = match.groups()[0].split( ':' )
+          cpuList = match.groups()[0].split(':')
         try:
           newcpu = 0.
-          if len( cpuList ) == 3:
-            newcpu = ( float( cpuList[0] ) * 60 + float( cpuList[1] ) ) * 60 + float( cpuList[2] )
-          elif len( cpuList ) == 4:
-            newcpu = ( ( float( cpuList[0] ) * 24 + float( cpuList[1] ) ) * 60 + float( cpuList[2] ) ) * 60 + float( cpuList[3] )
+          if len(cpuList) == 3:
+            newcpu = (float(cpuList[0]) * 60 + float(cpuList[1])) * 60 + float(cpuList[2])
+          elif len(cpuList) == 4:
+            newcpu = ((float(cpuList[0]) * 24 + float(cpuList[1])) * 60 + float(cpuList[2])) * 60 + float(cpuList[3])
           if not cpu or newcpu > cpu:
             cpu = newcpu
         except ValueError:
-          self.log.warn( 'Problem parsing "%s" for CPU consumed' % line )
-      elif re.search( 'hard resource_list.*cpu.*', line ):
-        match = re.search( '_cpu=(\d*)', line )
+          self.log.warn('Problem parsing "%s" for CPU consumed' % line)
+      elif re.search('hard resource_list.*cpu.*', line):
+        match = re.search(r'_cpu=(\d*)', line)
         if match:
-          cpuLimit = float( match.groups()[0] )
-        match = re.search( '_rt=(\d*)', line )
+          cpuLimit = float(match.groups()[0])
+        match = re.search(r'_rt=(\d*)', line)
         if match:
-          wallClockLimit = float( match.groups()[0] )
+          wallClockLimit = float(match.groups()[0])
 
     # Some SGE batch systems apply CPU scaling factor to the CPU consumption figures
     if cpu:
@@ -80,16 +78,16 @@ class SGETimeLeft( object ):
       if factor:
         cpu = cpu / factor
 
-    consumed = {'CPU':cpu, 'CPULimit':cpuLimit, 'WallClock':wallClock, 'WallClockLimit':wallClockLimit}
+    consumed = {'CPU': cpu, 'CPULimit': cpuLimit, 'WallClock': wallClock, 'WallClockLimit': wallClockLimit}
 
     if None not in consumed.values():
       # This cannot happen as we can't get wallClock from anywhere
-      self.log.debug( "TimeLeft counters complete:", str( consumed ) )
-      return S_OK( consumed )
+      self.log.debug("TimeLeft counters complete:", str(consumed))
+      return S_OK(consumed)
     else:
       missed = [key for key, val in consumed.items() if val is None]
-      self.log.info( 'Could not determine parameter', ','.join( missed ) )
-      self.log.debug( 'This is the stdout from the batch system call\n%s' % ( result['Value'] ) )
+      self.log.info('Could not determine parameter', ','.join(missed))
+      self.log.debug('This is the stdout from the batch system call\n%s' % (result['Value']))
 
     if cpuLimit or wallClockLimit:
       # We have got a partial result from SGE
@@ -102,20 +100,21 @@ class SGETimeLeft( object ):
         consumed['CPU'] = time.time() - self.startTime
       if not wallClock:
         consumed['WallClock'] = time.time() - self.startTime
-      self.log.debug( "TimeLeft counters restored:", str( consumed ) )
-      return S_OK( consumed )
+      self.log.debug("TimeLeft counters restored:", str(consumed))
+      return S_OK(consumed)
     else:
       msg = 'Could not determine some parameters'
-      self.log.info( msg, ':\nThis is the stdout from the batch system call\n%s' % ( result['Value'] ) )
-      retVal = S_ERROR( msg )
+      self.log.info(msg, ':\nThis is the stdout from the batch system call\n%s' % (result['Value']))
+      retVal = S_ERROR(msg)
       retVal['Value'] = consumed
       return retVal
+
 
 def _getCPUScalingFactor():
 
   host = socket.getfqdn()
   cmd = 'qconf -se %s' % host
-  result = runCommand( cmd )
+  result = runCommand(cmd)
   if not result['OK']:
     return None
   _example = """Example of output for qconf -se ccwsge0640
@@ -153,18 +152,10 @@ usage_scaling         cpu=11.350000,acct_cpu=11.350000
 report_variables      NONE
 
 """
-  lines = str( result['Value'] ).split( '\n' )
+  lines = str(result['Value']).split('\n')
   for line in lines:
-    if re.search( 'usage_scaling', line ):
-      match = re.search( 'cpu=([\d,\.]*),', line )
+    if re.search('usage_scaling', line):
+      match = re.search(r'cpu=([\d,\.]*),', line)
       if match:
-        return float( match.groups()[0] )
+        return float(match.groups()[0])
   return None
-
-if __name__ == '__main__':
-  from DIRAC.Core.Base.Script import parseCommandLine
-  parseCommandLine()
-  print(SGETimeLeft().getResourceUsage())
-
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
-

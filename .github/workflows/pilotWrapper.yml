@@ -16,7 +16,7 @@ jobs:
           - 3.6.8
 
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: prepare environment
       run: |
         conda config --set add_pip_as_python_dependency false

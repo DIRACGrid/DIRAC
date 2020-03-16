@@ -8,10 +8,10 @@ __RCSID__ = "$Id$"
 
 import sys
 
+from DIRAC import gLogger
 from DIRAC.Core.Base.CLI import CLI, colorize
 from DIRAC.Core.Utilities import ExitCallback
-from DIRAC.Core.DISET.RPCClient import RPCClient
-from DIRAC import gLogger
+from DIRAC.AccountingSystem.Client.DataStoreClient import DataStoreClient
 
 
 class AccountingCLI(CLI):
@@ -29,7 +29,7 @@ class AccountingCLI(CLI):
       gLogger.error("Client is not connected")
     try:
       self.cmdloop()
-    except KeyboardInterrupt as v:
+    except KeyboardInterrupt:
       gLogger.warn("Received a keyboard interrupt.")
       self.do_quit("")
 
@@ -41,7 +41,7 @@ class AccountingCLI(CLI):
     gLogger.info("Trying to connect to server")
     self.connected = False
     self.prompt = "(%s)> " % colorize("Not connected", "red")
-    acClient = RPCClient("Accounting/DataStore")
+    acClient = DataStoreClient()
     retVal = acClient.ping()
     if retVal['OK']:
       self.prompt = "(%s)> " % colorize("Connected", "green")
@@ -85,7 +85,7 @@ class AccountingCLI(CLI):
         return
       gLogger.info("Loaded type %s" % typeClass.__name__)
       typeDef = typeClass().getDefinition()
-      acClient = RPCClient("Accounting/DataStore")
+      acClient = DataStoreClient()
       retVal = acClient.registerType(*typeDef)
       if retVal['OK']:
         gLogger.info("Type registered successfully")
@@ -119,7 +119,7 @@ class AccountingCLI(CLI):
         return
       gLogger.info("Loaded type %s" % typeClass.__name__)
       typeDef = typeClass().getDefinition()
-      acClient = RPCClient("Accounting/DataStore")
+      acClient = DataStoreClient()
       retVal = acClient.setBucketsLength(typeDef[0], typeDef[3])
       if retVal['OK']:
         gLogger.info("Type registered successfully")
@@ -153,7 +153,7 @@ class AccountingCLI(CLI):
         return
       gLogger.info("Loaded type %s" % typeClass.__name__)
       typeDef = typeClass().getDefinition()
-      acClient = RPCClient("Accounting/DataStore")
+      acClient = DataStoreClient()
       retVal = acClient.regenerateBuckets(typeDef[0])
       if retVal['OK']:
         gLogger.info("Buckets recalculated!")
@@ -168,7 +168,7 @@ class AccountingCLI(CLI):
       Usage : showRegisteredTypes
     """
     try:
-      acClient = RPCClient("Accounting/DataStore")
+      acClient = DataStoreClient()
       retVal = acClient.getRegisteredTypes()
 
       print(retVal)
@@ -207,7 +207,7 @@ class AccountingCLI(CLI):
         else:
           print("Delete aborted")
           return
-      acClient = RPCClient("Accounting/DataStore")
+      acClient = DataStoreClient()
       retVal = acClient.deleteType(typeName)
       if not retVal['OK']:
         gLogger.error("Error: %s" % retVal['Message'])
@@ -222,7 +222,7 @@ class AccountingCLI(CLI):
       Usage : compactBuckets
     """
     try:
-      acClient = RPCClient("Accounting/DataStore")
+      acClient = DataStoreClient()
       retVal = acClient.compactDB()
       if not retVal['OK']:
         gLogger.error("Error: %s" % retVal['Message'])

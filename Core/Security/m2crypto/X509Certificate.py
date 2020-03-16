@@ -356,13 +356,19 @@ class X509Certificate(object):
 
       :returns: S_OK(bool) if voms extensions are found
     """
-    try:
-      self.__certObj.get_ext('vomsExtensions')
-      return S_OK(True)
-    except LookupError:
-      # no extension found
-      pass
-    return S_OK(False)
+
+    # `get_ext` would be the correct thing to do.
+    # However, it does not work for the moment, as the extension
+    # is not registered with an alias
+    # https://gitlab.com/m2crypto/m2crypto/issues/231
+    # try:
+    #   self.__certObj.get_ext('vomsExtensions')
+    #   return S_OK(True)
+    # except LookupError:
+    #   # no extension found
+    #   pass
+
+    return S_OK(asn1_utils.hasVOMSExtension(self.__certObj))
 
   @executeOnlyIfCertLoaded
   def getVOMSData(self):

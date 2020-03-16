@@ -21,7 +21,7 @@ import datetime
 
 from errno import ENOENT
 
-from DIRAC import S_OK, gLogger
+from DIRAC import S_OK
 from DIRAC.FrameworkSystem.Client.MonitoringClient import gMonitor
 from DIRAC.Core.Base.AgentModule import AgentModule
 from DIRAC.Core.Utilities.DErrno import cmpError
@@ -85,19 +85,20 @@ class InputDataAgent(AgentModule):
     result = self.transClient.getTransformations({'Status': 'Active',
                                                   'Type': self.transformationTypes})
     if not result['OK']:
-      gLogger.error("InputDataAgent.execute: Failed to get transformations.", result['Message'])
+      self.log.error("InputDataAgent.execute: Failed to get transformations.", result['Message'])
       return S_OK()
 
     # Process each transformation
     for transDict in result['Value']:
-      transID = long( transDict['TransformationID'] )
+      transID = long(transDict['TransformationID'])
       # res = self.transClient.getTransformationInputDataQuery( transID )
       res = self.transClient.getTransformationMetaQuery(transID, 'Input')
       if not res['OK']:
         if cmpError(res, ENOENT):
-          gLogger.info("InputDataAgent.execute: No input data query found for transformation %d" % transID)
+          self.log.info("InputDataAgent.execute: No input data query found for transformation", transID)
         else:
-          gLogger.error("InputDataAgent.execute: Failed to get input data query for %d" % transID, res['Message'])
+          self.log.error("InputDataAgent.execute: Failed to get input data query",
+                         "for %d: %s" % (transID, res['Message']))
         continue
       inputDataQuery = res['Value']
 
@@ -113,7 +114,7 @@ class InputDataAgent(AgentModule):
                 inputDataQuery[self.dateKey] = (timeStamp -
                                                 datetime.timedelta(seconds=10)).strftime('%Y-%m-%d %H:%M:%S')
               else:
-                gLogger.error("DateKey was not set in the CS, cannot use the RefreshOnly")
+                self.log.error("DateKey was not set in the CS, cannot use the RefreshOnly")
             else:
               self.fullTimeLog[transID] = datetime.datetime.utcnow()
         self.timeLog[transID] = datetime.datetime.utcnow()
@@ -121,41 +122,42 @@ class InputDataAgent(AgentModule):
           self.fullTimeLog[transID] = datetime.datetime.utcnow()
 
       # Perform the query to the metadata catalog
-      gLogger.verbose("Using input data query for transformation %d: %s" % (transID, str(inputDataQuery)))
+      self.log.verbose("Using input data query for transformation", "%d: %s" % (transID, str(inputDataQuery)))
       start = time.time()
       result = self.metadataClient.findFilesByMetadata(inputDataQuery)
       rtime = time.time() - start
-      gLogger.verbose("Metadata catalog query time: %.2f seconds." % (rtime))
+      self.log.verbose("Metadata catalog query time", ": %.2f seconds." % (rtime))
       if not result['OK']:
-        gLogger.error("InputDataAgent.execute: Failed to get response from the metadata catalog", result['Message'])
+        self.log.error("InputDataAgent.execute: Failed to get response from the metadata catalog", result['Message'])
         continue
       lfnList = result['Value']
 
       # Check if the number of files has changed since the last cycle
       nlfns = len(lfnList)
-      gLogger.info("%d files returned for transformation %d from the metadata catalog" % (nlfns, int(transID)))
+      self.log.info("files returned for transformation from the metadata catalog: ",
+                    "%d -> %d" % (int(transID), nlfns))
       if nlfns == self.fileLog.get(transID):
-        gLogger.verbose('No new files in metadata catalog since last check')
+        self.log.verbose('No new files in metadata catalog since last check')
       self.fileLog[transID] = nlfns
 
       # Add any new files to the transformation
       addedLfns = []
       if lfnList:
-        gLogger.verbose('Processing %d lfns for transformation %d' % (len(lfnList), transID))
+        self.log.verbose('Processing lfns for transformation:', "%d -> %d" % (transID, len(lfnList)))
         # Add the files to the transformation
-        gLogger.verbose('Adding %d lfns for transformation %d' % (len(lfnList), transID))
+        self.log.verbose('Adding lfns for transformation:', "%d -> %d" % (transID, len(lfnList)))
         result = self.transClient.addFilesToTransformation(transID, sorted(lfnList))
         if not result['OK']:
-          gLogger.warn("InputDataAgent.execute: failed to add lfns to transformation", result['Message'])
+          self.log.warn("InputDataAgent.execute: failed to add lfns to transformation", result['Message'])
           self.fileLog[transID] = 0
         else:
           if result['Value']['Failed']:
             for lfn, error in res['Value']['Failed'].items():
-              gLogger.warn("InputDataAgent.execute: Failed to add %s to transformation" % lfn, error)
+              self.log.warn("InputDataAgent.execute: Failed to add to transformation:", "%s: %s" % (lfn, error))
           if result['Value']['Successful']:
             for lfn, status in result['Value']['Successful'].items():
               if status == 'Added':
                 addedLfns.append(lfn)
-            gLogger.info("InputDataAgent.execute: Added %d files to transformation" % len(addedLfns))
+            self.log.info("InputDataAgent.execute: Added files to transformation", "(%d)" % len(addedLfns))
 
     return S_OK()

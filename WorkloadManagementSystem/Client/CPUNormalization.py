@@ -12,7 +12,7 @@ from six.moves.urllib.request import urlopen
 
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Utilities.SiteCEMapping import getQueueInfo
-from DIRAC.Core.Utilities.TimeLeft.TimeLeft import TimeLeft
+from DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft import TimeLeft
 from DIRAC.WorkloadManagementSystem.Client.DIRACbenchmark import singleDiracBenchmark
 
 __RCSID__ = "$Id$"
