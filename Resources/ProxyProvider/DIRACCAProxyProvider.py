@@ -6,16 +6,16 @@
 
     Required parameters in the DIRAC configuration for its implementation::
 
-    <Provider Name> {
-      ProviderType = DIRACCA,
-      CertFile = <CA sertificate path>,
-      KeyFile = <CA key path>,
-      Match = <Match DNs>,  # For ex.: 'Match = O, OU'
-      Supplied = <Supplied DNs>,
-      Optional = <Optional DNs>,
-      DNOrder = <Preferred DNs order as list>,  # For ex.: 'Match = O, OU, CN, emailAddress'
-      <Some distinguished name type>: <Default value>,  # For ex.: 'OU = CA'
-    }
+    <Provider Name> section::
+    
+      *  ProviderType = DIRACCA,
+      *  CertFile = <CA sertificate path>,
+      *  KeyFile = <CA key path>,
+      *  Match = <Match DNs>,  # For ex.: 'Match = O, OU'
+      *  Supplied = <Supplied DNs>,
+      *  Optional = <Optional DNs>,
+      *  DNOrder = <Preferred DNs order as list>,  # For ex.: 'Match = O, OU, CN, emailAddress'
+      *  <Some distinguished name type>: <Default value>,  # For ex.: 'OU = CA'
 
     Also, as an additional feature, this class can read properties from a simple openssl CA configuration file.
     To do this, just set the path to an existing configuration file as a CAConfigFile parameter. In this case,
