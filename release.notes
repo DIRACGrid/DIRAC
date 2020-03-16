@@ -1,4 +1,4 @@
-[v7r1-pre17]
+[v7r1-pre20]
 
 NEW: Add environment.yml file for preparing an environment with conda
 
@@ -71,6 +71,10 @@ FIX: (#4455) discrepancy in CE._reset() methods return value in different CE imp
 *RSS
 CHANGE: (#4362) SQL query orders using list instead of tuples
 CHANGE: (#4410) (JSON) db ordering uses list instead of tuples
+FIX: (#4462) convert the dictionary keys to number, when it is required.
+CHANGE: (#4463) Dynamically load database handlers for ResourceStatus and ResourceManagement modules in
+         preparation for a schema changes needed by multi-VO versions of these.
+
 
 *StorageManagement
 CHANGE: (#4410) (JSON) use lists instead of tuples
@@ -87,6 +91,47 @@ CHANGE: (#4439) integrate test_MySQLDB to all_integration_server_tests
 
 *docs
 NEW: (#4289) Document how to run integration tests in docker
+
+[v7r0p17]
+
+*WMS
+FIX: (#4496) PilotCS2Json: fix writing of local pilot.json file, which is used to calculate the hash
+FIX: (#4496) PilotCS2Json: write checksum file in text mode
+
+*DMS
+FIX: (#4476) StorageElementHandler: removed ignoreMaxStorageSize flag from getTotalDiskSpace and getFreeDiskSpace
+
+*Resources
+FIX: (#4499) Slurm Resource Usage
+
+[v7r0p16]
+
+*Core
+CHANGE: (#4482) TimeLeft modules become ResourceUsage and inherit from an abstract module called ResourceUsage
+NEW: (#4482) TimeLeft/SLURMResourceUsage module to get resource usage from a SLURM installation
+CHANGE: (#4482) Move TimeLeft from Core/Utilities to Resources/Computing/BatchSystems
+
+*WMS
+NEW: (#4493) Add checksum calculation for PilotCSToJsonSynchroniser
+NEW: (#4493) Add checksum checks to PilotWrapper
+FIX: (#4493) Fix download checks in PilotWrapper in case the webserver does not return 404 but not the expected file content either.
+
+*Resources
+FIX: (#4482) LocalCE: proxy submission and getJobStatus
+FIX: (#4482) Slurm getJobStatus() making use of sacct
+FIX: (#4466) Stomp reconnection only reconnect the connection that dropped
+
+[v7r0p15]
+
+*Accounting
+NEW: (#4464) StorageOccupancy accounting
+
+*RSS
+NEW: (#4464) FreeDiskSpaceCommand used to fill the StorageOccupancy accounting
+CHANGE: (#4464) FreeDiskSpaceCommand can clean the from not-anymore-existing SEs
+
+*WMS
+CHANGE: (#4471) Optimizer: treat input sandboxes uploaded as LFNs ad Input Data
 
 [v7r0p14]
 
@@ -384,6 +429,16 @@ CHANGE: (#4110) updated basic tutorial for CC7 instead of SLC6.
 NEW: (#4170) added Production system documentation
 CHANGE: (#4224) Pilot 3 is the default
 NEW: (#4244) Added a few notes on using the JobParameters on ElasticSearch database
+
+[v6r22p24]
+
+*Core
+FIX: (#4477) Try to untar using system tar in case tarfile module is failing
+
+[v6r22p23]
+
+*DMS
+CHANGE: (#4472) DM.getFile only checks metadata of files with replicas
 
 [v6r22p22]
 

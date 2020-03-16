@@ -10,6 +10,7 @@ __RCSID__ = '$Id$'
 
 import json
 
+import hashlib
 import shutil
 import os
 import glob
@@ -57,6 +58,7 @@ class PilotCStoJSONSynchronizer(object):
     self.pilotVORepoBranch = 'master'
     self.certAndKeyLocation = getHostCertificateAndKeyLocation()
     self.casLocation = getCAsLocation()
+    self._checksumDict = {}
 
     self.log = gLogger.getSubLogger(__name__)
 
@@ -64,6 +66,7 @@ class PilotCStoJSONSynchronizer(object):
     """ Main synchronizer method.
     """
     ops = Operations()
+    self._checksumDict = {}
 
     self.pilotFileServer = ops.getValue("Pilot/pilotFileServer", self.pilotFileServer)
     if not self.pilotFileServer:
@@ -82,23 +85,30 @@ class PilotCStoJSONSynchronizer(object):
     self.pilotRepoBranch = ops.getValue("Pilot/pilotRepoBranch", self.pilotRepoBranch)
     self.pilotVORepoBranch = ops.getValue("Pilot/pilotVORepoBranch", self.pilotVORepoBranch)
 
-    self._syncJSONFile()
+    res = self._syncJSONFile()
+    if not res['OK']:
+      return res
     self.log.notice('-- Synchronizing the pilot scripts with the content of the repository --',
                     '(%s)' % self.pilotRepo)
     self._syncScripts()
+    self._syncChecksum()
 
     return S_OK()
 
   def _syncJSONFile(self):
     """ Creates the pilot dictionary from the CS, ready for encoding as JSON
     """
-    pilotDict = self._getCSDict()
+    res = self._getCSDict()
+    if not res['OK']:
+      return res
+    pilotDict = res['Value']
     self._upload(pilotDict=pilotDict)
+    return S_OK()
 
   def _getCSDict(self):
     """ Gets minimal info for running a pilot, from the CS
     :returns: pilotDict (containing pilots run info)
-    :rtype: dict
+    :rtype: S_OK, S_ERROR, value is pilotDict
     """
 
     pilotDict = {'Setups': {}, 'CEs': {}, 'GenericPilotDNs': []}
@@ -176,7 +186,7 @@ class PilotCStoJSONSynchronizer(object):
 
     self.log.debug("Got pilotDict", str(pilotDict))
 
-    return pilotDict
+    return S_OK(pilotDict)
 
   def _getPilotOptionsPerSetup(self, setup, pilotDict):
     """ Given a setup, returns its pilot options in a dictionary
@@ -346,7 +356,7 @@ class PilotCStoJSONSynchronizer(object):
         filename = self.jsonFile
         script = json.dumps(pilotDict)
         with open(filename, 'w') as jf:
-          json.dump(script, jf)
+          jf.write(script)
 
       else:  # we assume the method is asked to upload the pilots scripts
         # ALWAYS open binary when sending a file
@@ -360,6 +370,7 @@ class PilotCStoJSONSynchronizer(object):
                                data=data,
                                verify=self.casLocation,
                                cert=self.certAndKeyLocation)
+          self._checksumFile(pilotScript if pilotScript else filename)
           # This POST works iff the webserver implements the upload function
           # Which is done in WebAppDIRAC.WebApp.handler.RooHandler.RootHandler.web_upload()
           # So, this location is specific to DIRAC WebApp.
@@ -369,3 +380,20 @@ class PilotCStoJSONSynchronizer(object):
         except requests.ConnectionError:
           # if we are here it is probably because we are trying to upload to a WS that does not expose a POST API
           self.log.error("Can't issue POST", "on %s" % pfServer)
+
+  def _checksumFile(self, filePath):
+    """Calculate the checksum for the file and add to self._checkSumDict.
+
+    :param str filePath: path to the file for which to calculate the checksum
+    :returns None:
+    """
+    filename = os.path.basename(filePath)
+    self._checksumDict[filename] = hashlib.sha512(open(filePath, 'rb').read()).hexdigest()
+
+  def _syncChecksum(self):
+    """Upload the checksum file to the fileservers."""
+    with open('checksums.sha512', 'wt') as chksums:
+      for filename, chksum in sorted(self._checksumDict.items()):
+        # same as the output from sha512sum commands
+        chksums.write('%s  %s\n' % (chksum, filename))
+    self._upload(filename='checksums.sha512', pilotScript='checksums.sha512')

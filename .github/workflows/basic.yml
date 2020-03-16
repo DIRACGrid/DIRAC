@@ -34,7 +34,7 @@ jobs:
             fi
 
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Prepare environment
       run: |
         conda env create --name dirac-testing environment.yml
