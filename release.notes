@@ -5,7 +5,7 @@ FIX: (#4496) PilotCS2Json: fix writing of local pilot.json file, which is used t
 FIX: (#4496) PilotCS2Json: write checksum file in text mode
 
 *DMS
-FIX: StorageElementHandler: removed ignoreMaxStorageSize flag from getTotalDiskSpace and getFreeDiskSpace
+FIX: (#4476) StorageElementHandler: removed ignoreMaxStorageSize flag from getTotalDiskSpace and getFreeDiskSpace
 
 *Resources
 FIX: (#4499) Slurm Resource Usage
