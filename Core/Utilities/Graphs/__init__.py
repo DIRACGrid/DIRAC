@@ -180,11 +180,23 @@ def histogram(data, fileName, bins=None, *args, **kw):
   kw = __checkKW(kw)
   if bins is None:
     bins = 'auto'
-  values, vbins, _patches = hist(data, bins)
-  histo = dict(zip(vbins, values))
-  if vbins.size:
-    # Note: if no bins is given, it will be automaticaly calculated.
-    bins = len(vbins)
-  span = (max(data) - min(data)) / float(bins) * 0.95
+  histograms = []
+  spans = []
+  if isinstance(data, list):
+    if isinstance(data[0], dict):
+      for plots in data:
+        for plot in plots:
+          values, vbins, _patches = hist(plots[plot], bins)
+          histograms.append({plot: dict(zip(vbins, values))})
+          if vbins.size:
+            bins = len(vbins)
+            spans.append((max(plots[plot]) - min(plots[plot])) / float(bins) * 0.95)
+    else:
+      values, vbins, _patches = hist(data, bins)
+      histograms = dict(zip(vbins, values))
+      if vbins.size:
+        bins = len(vbins)
+      spans = [(max(data) - min(data)) / float(bins) * 0.95]
   kw = __checkKW(kw)
-  graph(histo, fileName, plot_type='BarGraph', span=span, statistics_line=True, *args, **kw)
+  span = max(spans)
+  graph(histograms, fileName, plot_type='BarGraph', span=span, statistics_line=True, *args, **kw)
