@@ -735,13 +735,14 @@ class Dirac(API):
       self.log.error("Could not extract job parameters from job")
       return res
     parameters = res['Value']
+    self.log.debug("Extracted job parameters from JDL", parameters)
 
     arguments = parameters.get('Arguments', '')
 
     # Replace argument placeholders for parametric jobs
     # if we have Parameters then we have a parametric job
     if 'Parameters' in parameters:
-      for par, value in parameters.iteritems():
+      for par, value in parameters.items():
         if par.startswith('Parameters.'):
           # we just use the first entry in all lists to run one job
           parameters[par[len('Parameters.'):]] = value[0]
@@ -815,6 +816,7 @@ class Dirac(API):
     else:
       self.log.verbose('Could not retrieve DIRAC/VOPolicy/SoftwareDistModule for VO')
 
+    self.log.debug("Looking for resolving the input sandbox, if it is present")
     sandbox = parameters.get('InputSandbox')
     if sandbox:
       self.log.verbose("Input Sandbox is %s" % sandbox)
@@ -873,6 +875,13 @@ class Dirac(API):
     else:
       return self._errorReport('Missing job "Executable"')
 
+    if '-o LogLevel' in arguments:
+      dArguments = arguments.split()
+      logLev = dArguments.index('-o') + 1
+      dArguments[logLev] = 'LogLevel=DEBUG'
+      arguments = ' '.join(dArguments)
+    else:
+      arguments += ' -o LogLevel=DEBUG'
     command = '%s %s' % (executable, arguments)
 
     self.log.info('Executing: %s' % command)
@@ -2578,9 +2587,12 @@ class Dirac(API):
     :param jdl: a JDL
     :type jdl: ~DIRAC.Interfaces.API.Job.Job or str or file
     """
+    self.log.debug("in __getJDLParameters")
     if hasattr(jdl, '_toJDL'):
+      self.log.debug("jdl has a _toJDL method")
       jdl = jdl._toJDL()
     elif os.path.exists(jdl):
+      self.log.debug("jdl %s is a file" % jdl)
       with open(jdl, 'r') as jdlFile:
         jdl = jdlFile.read()
 
