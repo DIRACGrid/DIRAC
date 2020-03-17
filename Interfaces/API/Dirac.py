@@ -897,9 +897,7 @@ class Dirac(API):
         executionEnv[nameEnv] = valEnv
         self.log.verbose('%s = %s' % (nameEnv, valEnv))
 
-    cbFunction = self.__printOutput
-
-    result = systemCall(0, cmdSeq=shlex.split(command), env=executionEnv, callbackFunction=cbFunction)
+    result = systemCall(0, cmdSeq=shlex.split(command), env=executionEnv, callbackFunction=self.__printOutput)
     if not result['OK']:
       return result
 
@@ -958,8 +956,8 @@ class Dirac(API):
         shutil.rmtree(destDir)
       shutil.copytree(tmpdir, destDir)
 
-    self.log.verbose('Cleaning up %s...' % tmpdir)
-    self.__cleanTmp(tmpdir)
+    # self.log.verbose('Cleaning up %s...' % tmpdir)
+    # self.__cleanTmp(tmpdir)
 
     if status:
       return S_ERROR('Execution completed with non-zero status %s' % (status))
