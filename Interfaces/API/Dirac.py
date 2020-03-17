@@ -449,8 +449,6 @@ class Dirac(API):
     """ This internal method runs a tailored job agent for the local execution
         of a previously submitted WMS job. The type of CEUniqueID can be overidden
         via the configuration.
-
-        Currently must unset CMTPROJECTPATH to get this to work.
     """
     agentName = 'WorkloadManagement/JobAgent'
     self.log.verbose('In case being booted from a DIRAC script,'
@@ -709,6 +707,9 @@ class Dirac(API):
   def runLocal(self, job):
     """ Internal function.  This method is called by DIRAC API function submitJob(job,mode='Local').
         All output files are written to the local directory.
+
+        This is a method for running local tests. It skips the creation of a JobWrapper,
+        but preparing an environment that mimicks it.
 
     :param job: a job object
     :type job: ~DIRAC.Interfaces.API.Job.Job
