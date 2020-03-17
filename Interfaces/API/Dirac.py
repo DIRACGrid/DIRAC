@@ -862,14 +862,6 @@ class Dirac(API):
 
     self.log.info('Attempting to submit job to local site: %s' % DIRAC.siteName())
 
-    # If not set differently in the CS use the root from the current DIRAC installation
-    siteRoot = gConfig.getValue('/LocalSite/Root', DIRAC.rootPath)
-
-    os.environ['DIRACROOT'] = siteRoot
-    self.log.verbose('DIRACROOT = %s' % (siteRoot))
-    os.environ['DIRACPYTHON'] = sys.executable
-    self.log.verbose('DIRACPYTHON = %s' % (sys.executable))
-
     if 'Executable' in parameters:
       executable = os.path.expandvars(parameters['Executable'])
     else:
@@ -951,13 +943,13 @@ class Dirac(API):
 
     if status:  # if it fails, copy content of execution dir in current directory
       destDir = os.path.join(curDir, os.path.basename(os.path.dirname(tmpdir)))
-      self.log.debug("Copying outputs from %s to %s" % (tmpdir, destDir))
+      self.log.verbose("Copying outputs from %s to %s" % (tmpdir, destDir))
       if os.path.exists(destDir):
         shutil.rmtree(destDir)
       shutil.copytree(tmpdir, destDir)
 
-    # self.log.verbose('Cleaning up %s...' % tmpdir)
-    # self.__cleanTmp(tmpdir)
+    self.log.verbose('Cleaning up %s...' % tmpdir)
+    self.__cleanTmp(tmpdir)
 
     if status:
       return S_ERROR('Execution completed with non-zero status %s' % (status))
