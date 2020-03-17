@@ -863,6 +863,11 @@ class Dirac(API):
 
     self.log.info('Attempting to submit job to local site: %s' % DIRAC.siteName())
 
+    # DIRACROOT is used for finding dirac-jobexec (it is normally set by the JobWrapper)
+    # We don't use DIRAC.rootPath as we assume that a DIRAC installation is already done at this point
+    os.environ['DIRACROOT'] = os.environ['DIRAC']
+    self.log.verbose('DIRACROOT = %s' % (os.environ['DIRACROOT']))
+
     if 'Executable' in parameters:
       executable = os.path.expandvars(parameters['Executable'])
     else:
