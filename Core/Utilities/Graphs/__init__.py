@@ -145,6 +145,7 @@ def barGraph(data, fileName, *args, **kw):
 
 def lineGraph(data, fileName, *args, **kw):
   kw = __checkKW(kw)
+  print(data)
   graph(data, fileName, plot_type='LineGraph', statistics_line=True, *args, **kw)
 
 
@@ -160,6 +161,7 @@ def cumulativeGraph(data, fileName, *args, **kw):
 
 def pieGraph(data, fileName, *args, **kw):
   kw = __checkKW(kw)
+  print(data)
   prefs = {'xticks': False, 'yticks': False, 'legend_position': 'right'}
   graph(data, fileName, prefs, plot_type='PieGraph', *args, **kw)
 
