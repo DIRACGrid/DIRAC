@@ -35,7 +35,7 @@ CREATE TABLE Transformations (
     AgentType CHAR(32) DEFAULT 'Manual',
     Status  CHAR(32) DEFAULT 'New',
     FileMask VARCHAR(255),
-    TransformationGroup varchar(64) NOT NULL default 'General',
+    TransformationGroup varchar(255) NOT NULL default 'General',
     TransformationFamily varchar(64) default '0',
     GroupSize INT NOT NULL DEFAULT 1,
     InheritedFrom INTEGER DEFAULT 0,
