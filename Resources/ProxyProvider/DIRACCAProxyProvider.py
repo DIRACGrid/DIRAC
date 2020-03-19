@@ -216,6 +216,10 @@ class DIRACCAProxyProvider(ProxyProvider):
         if any([True if len(values[i]) < self.minDict[nid][i] else False for i in rangeMin]):
           return S_ERROR('%s values must be more then %s.' % (err, ', '.join(self.minDict[nid])))
 
+      result = self.__fillX509Name(field, values)
+      if not result['OK']:
+        return result
+
     return S_OK({'Status': 'ready'})
 
   def getProxy(self, userDN):
@@ -225,6 +229,7 @@ class DIRACCAProxyProvider(ProxyProvider):
 
         :return: S_OK(dict)/S_ERROR() -- dict contain 'proxy' field with is a proxy string
     """
+    self.__X509Name = X509.X509_Name()
     result = self.checkStatus(userDN)
     if result['OK']:
       result = self.__createCertM2Crypto()
@@ -282,10 +287,9 @@ class DIRACCAProxyProvider(ProxyProvider):
       if not values and nid in self.supplied:
         return S_ERROR('No values set for "%s" DN' % field)
 
-      for value in values:
-        result = self.__fillX509Name(field, value)
-        if not result['OK']:
-          return result
+      result = self.__fillX509Name(field, values)
+      if not result['OK']:
+        return result
 
     # WARN: This logic not support list of distribtes name elements
     resDN = m2.x509_name_oneline(self.__X509Name.x509_name)  # pylint: disable=no-member
@@ -365,19 +369,20 @@ class DIRACCAProxyProvider(ProxyProvider):
         dnInfoDict[f].append(v)
     return S_OK(dnInfoDict)
 
-  def __fillX509Name(self, field, value):
+  def __fillX509Name(self, field, values):
     """ Fill x509_Name object by M2Crypto
 
         :param str field: DN field name
-        :param str value: value of field
+        :param list values: values of field, order important
 
         :return: S_OK()/S_ERROR()
     """
-    if value and m2.x509_name_set_by_nid(self.__X509Name.x509_name,  # pylint: disable=no-member
-                                         self.fields2nid[field], value) == 0:
-      if not self.__X509Name.add_entry_by_txt(field=field, type=ASN1.MBSTRING_ASC,
-                                              entry=value, len=-1, loc=-1, set=0) == 1:
-        return S_ERROR('Cannot set "%s" field.' % field)
+    for value in values:
+      if value and m2.x509_name_set_by_nid(self.__X509Name.x509_name,  # pylint: disable=no-member
+                                           self.fields2nid[field], value) == 0:
+        if not self.__X509Name.add_entry_by_txt(field=field, type=ASN1.MBSTRING_ASC,
+                                                entry=value, len=-1, loc=-1, set=0) == 1:
+          return S_ERROR('Cannot set "%s" field.' % field)
     return S_OK()
 
   def __createCertM2Crypto(self):
