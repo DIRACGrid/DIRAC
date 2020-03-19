@@ -437,7 +437,7 @@ class DIRACCAProxyProvider(ProxyProvider):
         :return: S_OK(dict)/S_ERROR() -- dict contain 'proxy' field with is a fake proxy string
     """
     self.__X509Name = X509.X509_Name()
-    result = self.__parseDN(userDN)
+    result = self.__parseDN(dn)
     if not result['OK']:
       return result
     dnInfoDict = result['Value']
