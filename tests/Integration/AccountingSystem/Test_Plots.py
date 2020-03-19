@@ -22,7 +22,7 @@ import operator
 from PIL import Image
 
 from DIRAC.Core.Utilities.Plotting.Plots import generateHistogram, generateStackedLinePlot, \
-                                                generatePiePlot, generateCumulativePlot
+    generatePiePlot, generateCumulativePlot, generateQualityPlot
 
 from functools import reduce
 
@@ -173,6 +173,37 @@ class PlotsTestCase(unittest.TestCase):
     self.assertEqual(res['OK'], True)
 
     res = compare(self.filename, os.path.join(plots_directory, 'cumulativeplot.png'))
+    self.assertEqual(0.0, res)
+
+  def test_qualityplot(self):
+    """
+    Test quality plot
+    """
+
+    res = generateQualityPlot(self.filename, {
+        'User': {
+            1584543600: 37.5,
+            1584547200: 37.5,
+            1584619200L: 33.33333333333333,
+            1584601200: 36.53846153846153}}, {})
+    self.assertEqual(res['OK'], True)
+
+    res = compare(self.filename, os.path.join(plots_directory, 'qualityplot1.png'))
+    self.assertEqual(0.0, res)
+
+    res = generateQualityPlot(self.filename, {
+        'User': {
+            1584543600: 37.5,
+            1584547200: 37.5,
+            1584619200: 33.33333333333333,
+            1584601200: 36.53846153846153}},
+        {'endtime': 1584627764,
+         'span': 3600,
+         'starttime': 1584541364,
+         'title': 'Job CPU efficiency by JobType'})
+    self.assertEqual(res['OK'], True)
+
+    res = compare(self.filename, os.path.join(plots_directory, 'qualityplot2.png'))
     self.assertEqual(0.0, res)
 
 
