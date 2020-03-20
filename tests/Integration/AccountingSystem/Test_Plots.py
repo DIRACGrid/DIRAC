@@ -22,7 +22,8 @@ import operator
 from PIL import Image
 
 from DIRAC.Core.Utilities.Plotting.Plots import generateHistogram, generateStackedLinePlot, \
-    generatePiePlot, generateCumulativePlot, generateQualityPlot
+    generatePiePlot, generateCumulativePlot, generateQualityPlot, generateTimedStackedBarPlot, \
+    generateNoDataPlot, generateErrorMessagePlot
 
 from functools import reduce
 
@@ -184,7 +185,7 @@ class PlotsTestCase(unittest.TestCase):
         'User': {
             1584543600: 37.5,
             1584547200: 37.5,
-            1584619200L: 33.33333333333333,
+            1584619200: 33.33333333333333,
             1584601200: 36.53846153846153}}, {})
     self.assertEqual(res['OK'], True)
 
@@ -206,6 +207,93 @@ class PlotsTestCase(unittest.TestCase):
     res = compare(self.filename, os.path.join(plots_directory, 'qualityplot2.png'))
     self.assertEqual(0.0, res)
 
+  def test_timestackedbarplot(self):
+    """
+    test timed stacked bar plot
+    """
+    res = generateTimedStackedBarPlot(self.filename,
+                                      {'LCG.Cern.cern': {1584662400: 0.0,
+                                                         1584691200: 0.0,
+                                                         1584637200: 15.9593220339,
+                                                         1584666000: 0.0,
+                                                         1584694800: 0.0,
+                                                         1584626400: 31.867945823900005,
+                                                         1584669600: 0.0,
+                                                         1584644400: 0.0,
+                                                         1584615600: 0.0,
+                                                         1584673200: 0.0,
+                                                         1584633600: 14.0406779661,
+                                                         1584676800: 0.0,
+                                                         1584684000: 0.0,
+                                                         1584651600: 0.0,
+                                                         1584680400: 0.0,
+                                                         1584612000: 0.0,
+                                                         1584640800: 0.0,
+                                                         1584655200: 0.0,
+                                                         1584622800: 23.2293933044,
+                                                         1584698400: 0.0,
+                                                         1584630000: 9.5970654628,
+                                                         1584658800: 0.0,
+                                                         1584648000: 0.0,
+                                                         1584687600: 12.0,
+                                                         1584619200: 10.3055954089},
+                                       'LCG.NCBJ.pl': {1584691200: 0.0,
+                                                       1584662400: 0.0,
+                                                       1584651600: 0.0,
+                                                       1584637200: 0.0,
+                                                       1584694800: 0.0,
+                                                       1584626400: 0.0,
+                                                       1584669600: 0.0,
+                                                       1584655200: 0.0,
+                                                       1584644400: 0.0,
+                                                       1584615600: 0.0,
+                                                       1584673200: 0.0,
+                                                       1584633600: 0.0,
+                                                       1584676800: 0.0,
+                                                       1584698400: 0.0,
+                                                       1584622800: 0.0,
+                                                       1584680400: 0.0,
+                                                       1584612000: 0.0,
+                                                       1584640800: 0.0,
+                                                       1584684000: 0.0,
+                                                       1584666000: 0.0,
+                                                       1584630000: 0.0,
+                                                       1584658800: 0.0,
+                                                       1584648000: 0.0,
+                                                       1584687600: 0.0,
+                                                       1584619200: 0.0}},
+                                      {'ylabel': 'jobs / hour',
+                                       'endtime': 1584700844,
+                                       'span': 3600,
+                                       'starttime': 1584614444,
+                                       'title': 'Jobs by Site'})
+    self.assertEqual(res['OK'], True)
+
+    res = compare(self.filename, os.path.join(plots_directory, 'timedstackedbarplot.png'))
+    self.assertEqual(0.0, res)
+
+  def test_nodataplot(self):
+    """
+    Test no data plot
+    """
+
+    res = generateNoDataPlot(self.filename, {}, {'title': 'Test plot'})
+    self.assertEqual(res['OK'], True)
+    res = compare(self.filename, os.path.join(plots_directory, 'nodata.png'))
+    self.assertEqual(0.0, res)
+
+  def test_error(self):
+    """
+    Test error message plot
+    """
+
+    res = generateErrorMessagePlot("testing error message")
+    self.assertEqual(res['OK'], True)
+    with open(self.filename, 'w') as out:
+      out.write(res['Value'])
+    
+    res = compare(self.filename, os.path.join(plots_directory, 'error.png'))
+    self.assertEqual(0.0, res)
 
 #############################################################################
 # Test Suite run
