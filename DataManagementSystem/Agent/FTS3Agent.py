@@ -91,6 +91,8 @@ class FTS3Agent(AgentModule):
     self.maxKick = self.am_getOption("KickLimitPerCycle", 100)
     self.deleteDelay = self.am_getOption("DeleteGraceDays", 180)
     self.maxDelete = self.am_getOption("DeleteLimitPerCycle", 100)
+    # lifetime of the proxy we download to delegate to FTS
+    self.proxyLifetime = self.am_getOption("ProxyLifetime", PROXY_LIFETIME)
 
     return S_OK()
 
@@ -123,7 +125,7 @@ class FTS3Agent(AgentModule):
         per tuple (user, group, server).
         We dump the proxy of a user to a file (shared by all the threads),
         and use it to make the context.
-        The proxy needs a lifetime of PROXY_LIFETIME, is cached for half an hour less,
+        The proxy needs a lifetime of self.proxyLifetime, is cached for half an hour less,
         and the lifetime of the context is 45mn
 
         :param username: name of the user
@@ -151,11 +153,11 @@ class FTS3Agent(AgentModule):
       log.debug("UserDN %s" % userDN)
 
       # We dump the proxy to a file.
-      # It has to have a lifetime of PROXY_LIFETIME
+      # It has to have a lifetime of self.proxyLifetime
       # and we cache it for half an hour less
-      cacheTime = PROXY_LIFETIME - 1800
+      cacheTime = self.proxyLifetime - 1800
       res = gProxyManager.downloadVOMSProxyToFile(
-          userDN, group, requiredTimeLeft=PROXY_LIFETIME, cacheTime=cacheTime)
+          userDN, group, requiredTimeLeft=self.proxyLifetime, cacheTime=cacheTime)
       if not res['OK']:
         return res
 
@@ -164,7 +166,8 @@ class FTS3Agent(AgentModule):
 
       # We generate the context
       # The lifetime of the delegated proxy will be the same as the cache time
-      res = FTS3Job.generateContext(ftsServer, proxyFile, lifetime = cacheTime)
+      res = FTS3Job.generateContext(ftsServer, proxyFile, lifetime=cacheTime)
+
       if not res['OK']:
         return res
       context = res['Value']

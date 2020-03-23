@@ -577,7 +577,7 @@ class FTS3Job(JSerializable):
           ucert=ucert,
           request_class=ftsSSLRequest,
           verify=False)
-          
+
       # Explicitely delegate to be sure we have the lifetime we want
       # Note: the delegation will re-happen only when the FTS server
       # decides that there is not enough timeleft.
