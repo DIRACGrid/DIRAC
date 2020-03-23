@@ -110,7 +110,7 @@ class DIRACCAPPTest(unittest.TestCase):
 
   def test_generateProxyDN(self):
 
-    userDict = {"FullName": "John Doe", 
+    userDict = {"FullName": "John Doe",
                 "Email": "john.doe@nowhere.net",
                 "O": 'DIRAC',
                 'OU': 'DIRAC TEST',
