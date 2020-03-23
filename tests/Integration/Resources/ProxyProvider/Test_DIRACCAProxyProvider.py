@@ -12,11 +12,12 @@ from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Resources.ProxyProvider.ProxyProviderFactory import ProxyProviderFactory
 
-# For Jenkins
-for f in ['', 'TestCode', os.environ['DIRAC']]:
-  certsPath = os.path.join(f, 'DIRAC/Core/Security/test/certs')
-  if os.path.exists(certsPath):
-    break
+thisPath = os.path.dirname(os.path.abspath(__file__)).split('/')
+rootPath = thisPath[:len(thisPath) - 3]
+certsPath = os.path.join('/'.join(rootPath), 'Core/Security/test/certs')
+
+testCAPath = os.path.join(tempfile.mkdtemp(dir='/tmp'), 'ca')
+testCAConfigFile = os.path.join(testCAPath, 'openssl_config_ca.cnf')
 
 diracTestCACFG = """
 Resources
@@ -26,17 +27,19 @@ Resources
     DIRAC_TEST_CA
     {
       ProviderType = DIRACCA
-      CAConfigFile = %s
+      CertFile = %s
+      KeyFile = %s
       Match =
       Supplied = C, O, OU, CN
       Optional = emailAddress
+      DNOrder = C, O, OU, CN, emailAddress
       C = FR
       O = DIRAC
       OU = DIRAC TEST
     }
   }
 }
-""" % os.path.join(certsPath, 'ca/openssl_config_ca.cnf')
+""" % (os.path.join(certsPath, 'ca/ca.cert.pem'), os.path.join(certsPath, 'ca/ca.key.pem'))
 
 userCFG = """
 Registry
@@ -69,24 +72,11 @@ class DIRACCAPPTest(unittest.TestCase):
 
   @classmethod
   def setUpClass(cls):
-    __caPath = os.path.join(certsPath, 'ca')
-    cls.caConfigFile = os.path.join(__caPath, 'openssl_config_ca.cnf')
-
-    # Save original configuration file
-    lines = []
-    shutil.copyfile(cls.caConfigFile, cls.caConfigFile + 'bak')
-    with open(cls.caConfigFile, "r") as caCFG:
-      for line in caCFG:
-        if re.findall('=', re.sub(r'#.*', '', line)):
-          field = re.sub(r'#.*', '', line).replace(' ', '').rstrip().split('=')[0]
-          line = 'dir = %s #PUT THE RIGHT DIR HERE!\n' % (__caPath) if field == 'dir' else line
-        lines.append(line)
-    with open(cls.caConfigFile, "w") as caCFG:
-      caCFG.writelines(lines)
+    pass
 
   @classmethod
   def tearDownClass(cls):
-    shutil.move(cls.caConfigFile + 'bak', cls.caConfigFile)
+    pass
 
   def setUp(self):
 
@@ -100,83 +90,44 @@ class DIRACCAPPTest(unittest.TestCase):
     self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
     self.pp = result['Value']
 
-    self.userDictClean = {
-        "FullName": "DIRAC test user",
-        "Email": "testuser@diracgrid.org"
-    }
-    self.userDictCleanDN = {
-        "DN": "/C=FR/O=DIRAC/OU=DIRAC TEST/CN=DIRAC test user/emailAddress=testuser@diracgrid.org",
-        "Email": "testuser@diracgrid.org"
-    }
-    self.userDictGroup = {
-        "FullName": "DIRAC test user",
-        "Email": "testuser@diracgrid.org",
-        "DiracGroup": "dirac_user"
-    }
-
   def tearDown(self):
     pass
 
   def test_getProxy(self):
+    for dn, res in [('/C=FR/O=DIRAC/OU=DIRAC TEST/CN=DIRAC test user/emailAddress=testuser@diracgrid.org', True),
+                    ('/C=FR/OU=DIRAC TEST/emailAddress=testuser@diracgrid.org', False),
+                    ('/C=FR/OU=DIRAC/O=DIRAC TEST/emailAddress=testuser@diracgrid.org', False),
+                    ('/C=FR/O=DIRAC/BADFIELD=DIRAC TEST/CN=DIRAC test user', False)]:
+      result = self.pp.getProxy(self.userDict['DN'])
+      text = 'Must be ended %s%s' % ('successful' if res else 'with error',
+                                     ': %s' % result.get('Message', 'Error message is absent.'))
+      self.assertEqual(result['OK'], res, text)
+      if res:
+        chain = X509Chain()
+        chain.loadChainFromString(result['Value']['proxy'])
+        result = chain.getCredentials()
+        self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
+        credDict = result['Value']
+        self.assertEqual(credDict['username'], 'testuser',
+                         '%s, expected %s' % (credDict['username'], 'testuser'))
 
-    result = self.pp.getProxy(self.userDictClean)
+  def test_generateProxyDN(self):
+
+    userDict = {"FullName": "John Doe", 
+                "Email": "john.doe@nowhere.net",
+                "O": 'DIRAC',
+                'OU': 'DIRAC TEST',
+                'C': 'FR'}
+    result = self.pp.generateDN(userDict)
+    self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
+    result = self.pp.getUserDN(result['Value'])
     self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
     chain = X509Chain()
     chain.loadChainFromString(result['Value']['proxy'])
     result = chain.getCredentials()
     self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
-    credDict = result['Value']
-    self.assertEqual(credDict['username'], 'testuser',
-                     '%s, expected %s' % (credDict['username'], 'testuser'))
-    self.assertEqual(credDict['group'], 'dirac_user',
-                     '%s, expected %s' % (credDict['group'], 'dirac_user'))
-
-  def test_getProxyDN(self):
-
-    result = self.pp.getProxy(self.userDictCleanDN)
-    self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
-    chain = X509Chain()
-    chain.loadChainFromString(result['Value']['proxy'])
-    result = chain.getCredentials()
-    self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
-    credDict = result['Value']
-    self.assertEqual(credDict['username'], 'testuser',
-                     '%s, expected %s' % (credDict['username'], 'testuser'))
-    self.assertEqual(credDict['group'], 'dirac_user',
-                     '%s, expected %s' % (credDict['group'], 'dirac_user'))
-
-  def test_getProxyGroup(self):
-
-    result = self.pp.getProxy(self.userDictGroup)
-    self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
-    chain = X509Chain()
-    chain.loadChainFromString(result['Value']['proxy'])
-    result = chain.getCredentials()
-    self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
-    credDict = result['Value']
-    self.assertEqual(credDict['username'], 'testuser',
-                     '%s, expected %s' % (credDict['username'], 'testuser'))
-    self.assertEqual(credDict['group'], 'dirac_user',
-                     '%s, expected %s' % (credDict['group'], 'dirac_user'))
-
-  def test_getUserDN(self):
-
-    goodDN = '/C=FR/O=DIRAC/OU=DIRAC TEST/CN=DIRAC test user/emailAddress=testuser@diracgrid.org'
-    badDN_1 = '/C=FR/OU=DIRAC TEST/CN=DIRAC test user/emailAddress=testuser@diracgrid.org'
-    badDN_2 = '/C=FR/O=DIRAC/OU=DIRAC TEST/emailAddress=testuser@diracgrid.org'
-    badDN_3 = '/C=FR/O=DIRAC/OU=DIRAC TEST/CN=DIRAC test user'
-    result = self.pp.getUserDN(userDN=goodDN)
-    self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
-    result = self.pp.getUserDN(userDN=badDN_1)
-    self.assertFalse(result['OK'], 'Must be fail.')
-    result = self.pp.getUserDN(userDN=badDN_2)
-    self.assertFalse(result['OK'], 'Must be fail.')
-    result = self.pp.getUserDN(userDN=badDN_3)
-    self.assertFalse(result['OK'], 'Must be fail.')
-    userDict = {"FullName": "John Doe", "Email": "john.doe@nowhere.net"}
-    result = self.pp.getUserDN(userDict)
-    self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
-    self.assertEqual(result['Value'], '/C=FR/O=DIRAC/OU=DIRAC TEST/CN=John Doe/emailAddress=john.doe@nowhere.net')
+    issuer = result['Value']['issuer']
+    self.assertEqual(issuer, '/C=FR/O=DIRAC/OU=DIRAC TEST/CN=John Doe/emailAddress=john.doe@nowhere.net')
 
 
 if __name__ == '__main__':
