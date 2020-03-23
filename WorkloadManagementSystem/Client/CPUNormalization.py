@@ -249,7 +249,7 @@ def getQueueInfo(ceUniqueID, diracSiteName=''):
   try:
     subClusterUniqueID = ceUniqueID.split('/')[0].split(':')[0]
     queueID = ceUniqueID.split('/')[1]
-  except BaseException:
+  except IndexError:
     return S_ERROR('Wrong full queue Name')
 
   if not diracSiteName:
