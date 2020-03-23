@@ -25,7 +25,6 @@ dependencies:
   - python-json-logger >=0.1.8
   - pytz >=2015.7
   - requests >=2.9.1
-  - rst2pdf >=0.93
   - six >=1.10
   - sqlalchemy >=1.0.9
   - subprocess32

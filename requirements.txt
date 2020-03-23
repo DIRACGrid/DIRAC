@@ -36,7 +36,6 @@ pytest-mock
 pytz>=2015.7
 readline>=6.2.4
 requests>=2.9.1
-rst2pdf>=0.93
 simplejson>=3.8.1
 six>=1.10
 sqlalchemy>=1.0.9
