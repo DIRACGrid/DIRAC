@@ -13,11 +13,8 @@ from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-er
 from DIRAC.Resources.ProxyProvider.ProxyProviderFactory import ProxyProviderFactory
 
 thisPath = os.path.dirname(os.path.abspath(__file__)).split('/')
-rootPath = thisPath[:len(thisPath) - 3]
+rootPath = thisPath[:len(thisPath) - 4]
 certsPath = os.path.join('/'.join(rootPath), 'Core/Security/test/certs')
-
-testCAPath = os.path.join(tempfile.mkdtemp(dir='/tmp'), 'ca')
-testCAConfigFile = os.path.join(testCAPath, 'openssl_config_ca.cnf')
 
 diracTestCACFG = """
 Resources
@@ -98,7 +95,7 @@ class DIRACCAPPTest(unittest.TestCase):
                     ('/C=FR/OU=DIRAC TEST/emailAddress=testuser@diracgrid.org', False),
                     ('/C=FR/OU=DIRAC/O=DIRAC TEST/emailAddress=testuser@diracgrid.org', False),
                     ('/C=FR/O=DIRAC/BADFIELD=DIRAC TEST/CN=DIRAC test user', False)]:
-      result = self.pp.getProxy(self.userDict['DN'])
+      result = self.pp.getProxy(dn)
       text = 'Must be ended %s%s' % ('successful' if res else 'with error',
                                      ': %s' % result.get('Message', 'Error message is absent.'))
       self.assertEqual(result['OK'], res, text)
@@ -118,9 +115,9 @@ class DIRACCAPPTest(unittest.TestCase):
                 "O": 'DIRAC',
                 'OU': 'DIRAC TEST',
                 'C': 'FR'}
-    result = self.pp.generateDN(userDict)
+    result = self.pp.generateDN(**userDict)
     self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
-    result = self.pp.getUserDN(result['Value'])
+    result = self.pp.getProxy(result['Value'])
     self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
     chain = X509Chain()
     chain.loadChainFromString(result['Value']['proxy'])

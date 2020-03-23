@@ -175,7 +175,7 @@ class DIRACCAProxyProvider(ProxyProvider):
 
     try:
       userNIDs = [self.fields2nid[f.split('=')[0]] for f in userDN.lstrip('/').split('/')]
-    except ValueError as e:
+    except (ValueError, KeyError) as e:
       return S_ERROR('Unknown DN field in used DN: %s' % e)
     nidOrder = [self.fields2nid[f] for f in self.dnList]
     for index, nid in enumerate(userNIDs):
@@ -187,13 +187,13 @@ class DIRACCAProxyProvider(ProxyProvider):
         try:
           if userNIDs.index(nidOrder[i]) > index:
             return S_ERROR('Bad DNs order')
-        except ValueError:
+        except (ValueError, KeyError):
           continue
       for i in range(nidOrder.index(nid) + 1, len(nidOrder)):
         try:
           if userNIDs.index(nidOrder[i]) < index:
             return S_ERROR('Bad DNs order')
-        except ValueError:
+        except (ValueError, KeyError):
           continue
 
     for nid in self.supplied:
