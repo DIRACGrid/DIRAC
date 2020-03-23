@@ -163,7 +163,8 @@ class FTS3Agent(AgentModule):
       log.debug("Proxy file %s" % proxyFile)
 
       # We generate the context
-      res = FTS3Job.generateContext(ftsServer, proxyFile)
+      # The lifetime of the delegated proxy will be the same as the cache time
+      res = FTS3Job.generateContext(ftsServer, proxyFile, lifetime = cacheTime)
       if not res['OK']:
         return res
       context = res['Value']
