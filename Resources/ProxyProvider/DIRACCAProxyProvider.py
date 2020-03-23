@@ -40,6 +40,7 @@ import re
 import time
 import random
 import datetime
+import collections
 
 from M2Crypto import m2, util, X509, ASN1, EVP, RSA
 
@@ -359,7 +360,7 @@ class DIRACCAProxyProvider(ProxyProvider):
 
         :return: list -- contain tuple with positionOfField.fieldName, fieldNID, fieldValue
     """
-    dnInfoDict = {}
+    dnInfoDict = collections.OrderedDict()
     for f, v in [f.split('=') for f in dn.lstrip('/').split('/')]:
       if not v:
         return S_ERROR('No value set for "%s"' % f)
@@ -442,7 +443,7 @@ class DIRACCAProxyProvider(ProxyProvider):
       return result
     dnInfoDict = result['Value']
 
-    for field, values in dnInfoDict:
+    for field, values in dnInfoDict.items():
       result = self.__fillX509Name(field, values)
       if not result['OK']:
         return result
