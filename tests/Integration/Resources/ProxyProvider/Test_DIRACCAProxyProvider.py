@@ -12,7 +12,7 @@ from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Resources.ProxyProvider.ProxyProviderFactory import ProxyProviderFactory
 
-certsPath = os.path.join(os.environ['DIRAC'], 'Core/Security/test/certs')
+certsPath = os.path.join(os.environ['DIRAC'], 'DIRAC/Core/Security/test/certs')
 
 diracTestCACFG = """
 Resources
