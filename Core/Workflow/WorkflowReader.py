@@ -76,8 +76,11 @@ class WorkflowXMLHandler(ContentHandler):
       self.stack.append(obj)
 
     # TEMPORARY CODE
-    elif name == "origin" or name == "version" or name == "name" or name == "type" or name == "value" or\
-            name == "required" or name == "descr_short" or name == "name" or name == "type" or name == "description" or name == "body":
+    # 2020-03-27: this is temporary code since 2007-06-26
+    elif name == "origin" or name == "version" or name == "name"\
+            or name == "type" or name == "value"\
+            or name == "required" or name == "descr_short"\
+            or name == "name" or name == "type" or name == "description" or name == "body":
       pass
     else:
       print("UNTREATED! startElement name=", name, "attr=", attrs.getLength(), attrs.getNames())

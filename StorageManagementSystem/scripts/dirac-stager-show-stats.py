@@ -53,7 +53,7 @@ if stagerInfo:
     outStr += "  %s\n" % (str(info['SumFiles']).ljust(20))
 else:
   outStr += "  %s" % ("Nothing to see here...Bye")
-outStr += "  %s" % ("\nWARNING: the Size for files with Status=New is not yet determined at the point of selection!\n\n")
+outStr += "  %s" % ("\nWARNING: the Size for files with Status=New is not yet determined at the point of selection!\n")
 outStr += "--------------------- current status of the SE Caches from the DB-----------"
 res = client.getSubmittedStagePins()
 if not res['OK']:

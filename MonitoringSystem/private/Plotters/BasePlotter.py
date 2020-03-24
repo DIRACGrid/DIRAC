@@ -6,7 +6,8 @@ import copy
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.Plotting import gDataCache
-from DIRAC.Core.Utilities.Plotting.Plots import generateNoDataPlot, generateTimedStackedBarPlot, generateQualityPlot, generateCumulativePlot, generatePiePlot, generateStackedLinePlot
+from DIRAC.Core.Utilities.Plotting.Plots import generateNoDataPlot, generateTimedStackedBarPlot, generateQualityPlot,\
+    generateCumulativePlot, generatePiePlot, generateStackedLinePlot
 
 from DIRAC.MonitoringSystem.private.DBUtils import DBUtils
 
@@ -87,8 +88,10 @@ class BasePlotter(DBUtils):
            (10 ** 6) / 3600.0,
            1))}
 
-  _UNITS = {'time': (('seconds', 1, 24), ('hours', 3600, 24), ('days', 86400, 15), ('weeks', 86400 * 7, 10), ('months', 86400 * 30, 12), ('years', 86400 * 365, 1)),
-            'cpupower': (('HS06 hours', 3600, 24), ('HS06 days', 86400, 750), ('kHS06 days', 86400 * 1000, 750), ('MHS06 days', 86400 * 10 ** 6, 1)),
+  _UNITS = {'time': (('seconds', 1, 24), ('hours', 3600, 24), ('days', 86400, 15), ('weeks', 86400 * 7, 10),
+                     ('months', 86400 * 30, 12), ('years', 86400 * 365, 1)),
+            'cpupower': (('HS06 hours', 3600, 24), ('HS06 days', 86400, 750), ('kHS06 days', 86400 * 1000, 750),
+                         ('MHS06 days', 86400 * 10 ** 6, 1)),
             'bytes': (('MB', 10 ** 6, 1000), ('GB', 10 ** 9, 1000), ('TB', 10 ** 12, 1000), ('PB', 10 ** 15, 1)),
             'jobs': (('jobs', 1, 1000), ('kjobs', 10 ** 3, 1000), ('Mjobs', 10 ** 6, 1)),
             'files': (('files', 1, 1000), ('kfiles', 10 ** 3, 1000), ('Mfiles', 10 ** 6, 1))

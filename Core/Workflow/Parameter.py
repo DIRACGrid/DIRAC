@@ -92,7 +92,8 @@ class Parameter(object):
     elif type == 'bool':
       self.value = bool(value)
     else:
-      #raise TypeError('Can not assing value '+value+' of unknown type '+ self.type + ' to the Parameter '+ str(self.name))
+      # raise TypeError('Can not assing value '+value+' of unknown type '\
+      # + self.type + ' to the Parameter '+ str(self.name))
       # print 'WARNING: we do not have established conversion algorithm to
       # assing value ',value,' of unknown type ',self.type, ' to the Parameter
       # ', str(self.name)
@@ -187,7 +188,8 @@ class Parameter(object):
       return False
 
   def __str__(self):
-    return str(type(self)) + ": name=" + self.name + " value=" + str(self.getValueTypeCorrected()) + " type=" + str(self.type)\
+    return str(type(self)) + ": name=" + self.name + " value=" \
+        + str(self.getValueTypeCorrected()) + " type=" + str(self.type)\
         + " linked_module=" + str(self.linked_module) + " linked_parameter=" + str(self.linked_parameter)\
         + " in=" + str(self.typein) + " out=" + str(self.typeout)\
         + " description=" + str(self.description)
@@ -514,10 +516,10 @@ class ParameterCollection(list):
     return - 1
 
   def getParametersNames(self):
-    l = []
+    li = []
     for v in self:
-      l.append(v.getName())
-    return l
+      li.append(v.getName())
+    return li
 
   def compare(self, s):
     # we comparing parameters only, the attributes will be compared in hierarhy above

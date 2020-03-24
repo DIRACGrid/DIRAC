@@ -85,7 +85,7 @@ def getAllUsers():
   # Also only non-empty users are proceeded further.
   # Empty users can appear, cause every new line was
   # treated as a new user.
-  users = [re.sub('\\t\[\w*\]$', '', u) for u in users if u]
+  users = [re.sub(r'\\t\[\w*\]$', '', u) for u in users if u]
   return S_OK(users)
 
 

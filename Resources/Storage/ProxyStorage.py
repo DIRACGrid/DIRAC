@@ -76,7 +76,8 @@ class ProxyStorage(StorageBase):
     client = RPCClient(self.url)
 
     if sourceSize:
-      gLogger.debug("ProxyStorage.putFile: The client has provided the source file size implying a replication is requested.")
+      gLogger.debug("ProxyStorage.putFile: The client has provided the source file size implying\
+         a replication is requested.")
       return client.callProxyMethod(self.name, 'putFile', [path], {'sourceSize': sourceSize})
 
     gLogger.debug("ProxyStorage.putFile: No source size was provided therefore a simple put will be performed.")

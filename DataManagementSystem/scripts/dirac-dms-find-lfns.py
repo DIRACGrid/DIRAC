@@ -21,7 +21,8 @@ if __name__ == "__main__":
               '  %s [options] metaspec [metaspec ...]' %
               Script.scriptName,
               'Arguments:',
-              ' metaspec:    metadata index specification (of the form: "meta=value" or "meta<value", "meta!=value", etc.)',
+              ' metaspec:    metadata index specification \
+              (of the form: "meta=value" or "meta<value", "meta!=value", etc.)',
               '',
               'Examples:',
               '  $ dirac-dms-find-lfns Path=/lhcb/user "Size>1000" "CreationDate<2015-05-15"',

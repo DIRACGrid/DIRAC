@@ -60,7 +60,8 @@ class FCConditionParser(object):
 
     # This is the boolean operation to apply
     # Could be None, but it should be callable
-    def evalop(_x): return None
+    def evalop(_x):
+      return None
 
     def __init__(self, token):
       """

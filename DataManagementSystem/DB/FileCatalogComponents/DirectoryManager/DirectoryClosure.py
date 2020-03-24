@@ -301,7 +301,6 @@ class DirectoryClosure(DirectoryTreeBase):
     res = S_OK(result['Value'][0])
     return res
 
-
 ########################################################################################################
 #
 #  We overwrite some methods from the base class because of the new DB constraints or perf reasons

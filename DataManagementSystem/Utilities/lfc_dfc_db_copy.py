@@ -66,10 +66,12 @@ in the Catalog setter of RequestManagementSystem/Client/Operation.py and would l
     if value == "LcgFileCatalogCombined":
       value = "FileCatalog,LcgFileCatalogCombined"
 
-Note that for jobs that already have the new configuration, they will create 2 operations, one targeted at the DFC, the other
-one at the LFC. But with this fix, you will end up with one targeted at the DFC, the other one target at the LFC and the DFC.
-However, it should do no harm. But remember it when debugging... Anyway, this is only useful for Requests that were created
-during or before the downtime, or by job started with the old configuration. So a relatively limited amount of time...
+Note that for jobs that already have the new configuration, they will create 2 operations,
+one targeted at the DFC, the other one at the LFC.
+But with this fix, you will end up with one targeted at the DFC, the other one target at the LFC and the DFC.
+However, it should do no harm. But remember it when debugging... Anyway, this is only useful for Requests
+that were created during or before the downtime, or by job started with the old configuration.
+So a relatively limited amount of time...
 
 GOOD LUCK !
 
@@ -718,7 +720,7 @@ def updateAdminID():
   logfile = open(os.path.join(logDir, "worker%s.txt" % workerId), 'w')
 
   updateQueries = {"Update FC_Files": "Update FC_Files set UID = 1, GID = 1 where UID = 0 and GID = 0",
-                   "Update FC_DirectoryList": "Update FC_DirectoryList set UID = 1, GID = 1 where UID = 0 and GID = 0", }
+                   "Update FC_DirectoryList": "Update FC_DirectoryList set UID = 1, GID = 1 where UID = 0 and GID = 0"}
 
   for desc, query in updateQueries.items():
     print("worker %s : %s (%s)" % (workerId, desc, query))

@@ -454,7 +454,7 @@ def makeDataFromCSV(csv):
         # if value:
         plot_data[values[0]] = values[index]
         # else:
-        #plot_data[values[0]] = '0.'
+        # plot_data[values[0]] = '0.'
         # pass
       graph_data[label] = dict(plot_data)
 

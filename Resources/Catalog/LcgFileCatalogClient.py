@@ -1088,7 +1088,8 @@ class LcgFileCatalogClient(FileCatalogClientBase):
     # lfns {'L2': {'S1': 'P3'}, 'L3': {'S3': 'P5', 'S2': 'P4', 'S4': 'P6'}, 'L1': {'S2': 'P2', 'S1': 'P1'}}
     #
     # loop1: lfnSEs {'L2': ['S1'], 'L3': ['S3', 'S2', 'S4'], 'L1': ['S2', 'S1']}
-    # loop1 : batch {'L2': {'Status': 'P', 'SE': 'S1', 'PFN': 'P3'}, 'L3': {'Status': 'P', 'SE': 'S4', 'PFN': 'P6'}, 'L1': {'Status': 'P', 'SE': 'S1', 'PFN': 'P1'}}
+    # loop1 : batch {'L2': {'Status': 'P', 'SE': 'S1', 'PFN': 'P3'}, 'L3': {'Status': 'P', 'SE': 'S4', 'PFN': 'P6'},
+    #                'L1': {'Status': 'P', 'SE': 'S1', 'PFN': 'P1'}}
     #
     # loop2: lfnSEs {'L2': [], 'L3': ['S3', 'S2'], 'L1': ['S2']}
     # loop2 : batch {'L3': {'Status': 'P', 'SE': 'S2', 'PFN': 'P4'}, 'L1': {'Status': 'P', 'SE': 'S2', 'PFN': 'P2'}}
@@ -1449,7 +1450,8 @@ class LcgFileCatalogClient(FileCatalogClientBase):
     error, replicaObjects = lfc.lfc_getreplica(self.__fullLfn(lfn), '', '')
     return returnCode(error or not replicaObjects,
                       dict([(replica.host,
-                             replica.sfn) for replica in replicaObjects if allStatus or replica.status != 'P']) if not error else None,
+                             replica.sfn) for replica in replicaObjects if allStatus or replica.status != 'P'])
+                      if not error else None,
                       errMsg='File has zero replicas' if not error else '')
 
   def __getFileReplicaStatus(self, lfn, se):

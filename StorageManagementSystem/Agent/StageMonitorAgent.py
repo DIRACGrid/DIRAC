@@ -95,7 +95,7 @@ class StageMonitorAgent(AgentModule):
     res = StorageElement(storageElement, plugins=self.storagePlugins).getFileMetadata(lfnRepIDs)
     if not res['OK']:
       gLogger.error(
-          "StageMonitor.__monitorStorageElementStageRequests: Completely failed to monitor stage requests for replicas.",
+          "StageMonitor.__monitorStorageElementStageRequests: Completely failed to monitor stage requests for replicas",
           res['Message'])
       return
     prestageStatus = res['Value']
@@ -180,7 +180,9 @@ class StageMonitorAgent(AgentModule):
     return accountingDict
 
   def __getStageSubmittedReplicas(self):
-    """ This obtains the StageSubmitted replicas from the Replicas table and the RequestID from the StageRequests table """
+    """ This obtains the StageSubmitted replicas from the Replicas table and the RequestID
+        from the StageRequests table
+    """
     res = self.stagerClient.getCacheReplicas({'Status': 'StageSubmitted'})
     if not res['OK']:
       gLogger.error(

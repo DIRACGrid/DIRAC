@@ -45,7 +45,9 @@ class DynamicProps(type):
       if hasattr(self, "_" + name) or hasattr(self, name):
         raise AttributeError("_%s or %s is already defined as a member" % (name, name))
 
-      def fget(self): return self._getProperty(name)
+      def fget(self):
+        return self._getProperty(name)
+
       fset = None if readOnly else lambda self, value: self._setProperty(name, value)
       setattr(self, '_' + name, value)
       setattr(self.__class__, name, property(fget=fget, fset=fset))

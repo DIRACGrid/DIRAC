@@ -34,7 +34,8 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 
 from DIRAC.Resources.Storage.StorageBase import StorageBase
 
-from irods import rcConnect, rcDisconnect, clientLoginWithPassword, irodsCollection, irodsOpen, getResources, getResource  # pylint: disable=import-error
+from irods import rcConnect, rcDisconnect, clientLoginWithPassword, irodsCollection,\
+    irodsOpen, getResources, getResource  # pylint: disable=import-error
 
 __RCSID__ = "$Id$"
 
@@ -142,8 +143,8 @@ class IRODSStorageElementHandler(RequestHandler):
   def __checkForDiskSpace(self, path, size):
     """ Check if iRods resource has enough space
 """
-## dsize = ( getDiskSpace( dpath ) - 1 ) * 1024 * 1024
-## maxStorageSizeBytes = MAX_STORAGE_SIZE * 1024 * 1024
+# dsize = ( getDiskSpace( dpath ) - 1 ) * 1024 * 1024
+# maxStorageSizeBytes = MAX_STORAGE_SIZE * 1024 * 1024
 # return ( min( dsize, maxStorageSizeBytes ) > size )
     return True
 

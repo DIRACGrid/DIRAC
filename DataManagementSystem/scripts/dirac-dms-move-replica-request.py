@@ -11,7 +11,7 @@ from DIRAC.Core.Base import Script
 Script.setUsageMessage('\n'.join([__doc__.split('\n')[0],
                                   __doc__.split('\n')[1],
                                   'Usage:',
-                                  '  %s [option|cfgfile] ... sourceSE LFN targetSE1 [targetSE2 ...]' % Script.scriptName,
+                                  '  %s [option|cfgfile] ... sourceSE LFN targetSE1 [targetSE2...]' % Script.scriptName,
                                   'Arguments:',
                                   '  sourceSE:   source SE',
                                   '  targetSE: target SE',

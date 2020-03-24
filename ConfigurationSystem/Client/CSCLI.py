@@ -107,19 +107,6 @@ class CSCLI(CLI):
       print("Changes written to %s.cfg" % self.backupFilename)
     sys.exit(0)
 
-
-#  def retrieveData( self ):
-#    if not self.connected:
-#      return False
-#    response = self.rpcClient.dumpCompressed()
-#    if response[ 'Status' ] == 'OK':
-#      self.cDataHolder.loadFromCompressedSource( response[ 'Value' ] )
-#      gLogger.info( "Data retrieved from server." )
-#      return True
-#    else:
-#      gLogger.error( "Can't retrieve updated data from server." )
-#      return False
-
   def _setStatus(self, connected=True):
     if not connected:
       self.masterURL = "unset"

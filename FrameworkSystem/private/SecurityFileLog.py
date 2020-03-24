@@ -41,7 +41,8 @@ class SecurityFileLog(threading.Thread):
       logFile = "%s/%s%02d%02d.security.log.csv" % (path, msgTime.year, msgTime.month, msgTime.day)
       if not os.path.isfile(logFile):
         fd = open(logFile, "w")
-        fd.write("Time, Success, Source IP, Source Port, source Identity, destinationIP, destinationPort, destinationService, action\n")
+        fd.write("Time, Success, Source IP, Source Port, source Identity, destinationIP,\
+           destinationPort, destinationService, action\n")
       else:
         fd = open(logFile, "a")
       fd.write("%s\n" % ", ".join([str(item) for item in secMsg]))
@@ -51,12 +52,12 @@ class SecurityFileLog(threading.Thread):
     nowEpoch = time.time()
     self.__walkOldLogs(self.__basePath,
                        nowEpoch,
-                       re.compile("^\d*\.security\.log\.csv$"),
+                       re.compile(r"^\d*\.security\.log\.csv$"),
                        86400 * 3,
                        self.__zipOldLog)
     self.__walkOldLogs(self.__basePath,
                        nowEpoch,
-                       re.compile("^\d*\.security\.log\.csv\.gz$"),
+                       re.compile(r"^\d*\.security\.log\.csv\.gz$"),
                        self.__secsToLog,
                        self.__unlinkOldLog)
 

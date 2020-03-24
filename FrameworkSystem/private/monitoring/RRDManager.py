@@ -99,7 +99,7 @@ class RRDManager(object):
       cf = "AVERAGE"
     cmd += " DS:value:%s:%s:U:U" % (dst, bucketLength * 10)
     # 1m res for 1 month
-    #cmd += " RRA:%s:0.9:1:43200" % cf
+    # cmd += " RRA:%s:0.9:1:43200" % cf
     # 1m red for 1 year
     cmd += " RRA:%s:0.999:1:%s" % (cf, 31536000 / bucketLength)
     return self.__exec(cmd, rrdFilePath)
@@ -186,9 +186,9 @@ class RRDManager(object):
     return varStr
 
   def __graphTimeComment(self, fromEpoch, toEpoch):
-    comStr = " 'COMMENT:Generated on %s UTC'" % Time.toString().replace(":", "\:").split(".")[0]
+    comStr = " 'COMMENT:Generated on %s UTC'" % Time.toString().replace(":", r"\:").split(".")[0]
     comStr += " 'COMMENT:%s'" % ("From %s to %s" % (Time.fromEpoch(fromEpoch),
-                                                    Time.fromEpoch(toEpoch))).replace(":", "\:")
+                                                    Time.fromEpoch(toEpoch))).replace(":", r"\:")
     return comStr
 
   def __getYScalingFactor(self, timeSpan, bucketLength, plotWidth):
@@ -222,9 +222,9 @@ class RRDManager(object):
       rrdCmd += " %s" % self.__generateRRDGraphVar(idActivity, activity, plotTimeSpan, self.__sizesList[size][0])
       if stackActivities:
         rrdCmd += " 'AREA:%s#%s:%s:STACK'" % (idActivity, colorGen.getHexColor(),
-                                              activity.getLabel().replace(":", "\:"))
+                                              activity.getLabel().replace(":", r"\:"))
       else:
-        rrdCmd += " 'LINE1:%s#%s:%s'" % (idActivity, colorGen.getHexColor(), activity.getLabel().replace(":", "\:"))
+        rrdCmd += " 'LINE1:%s#%s:%s'" % (idActivity, colorGen.getHexColor(), activity.getLabel().replace(":", r"\:"))
     rrdCmd += self.__graphTimeComment(fromSecs, toSecs)
     retVal = self.__exec(rrdCmd)
     if not retVal['OK']:

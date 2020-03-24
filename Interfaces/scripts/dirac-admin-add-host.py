@@ -37,7 +37,7 @@ Script.setUsageMessage('\n'.join(['Add or Modify a Host info in DIRAC',
                                   '\nUsage:\n',
                                   '  %s [option|cfgfile] ... Property=<Value> ...' % Script.scriptName,
                                   '\nArguments:\n',
-                                  '  Property=<Value>: Other properties to be added to the User like (Responsible=XXXX)',
+                                  '  Property=<Value>: Other properties to be added to the User like (Responsible=XXX)',
                                   ]))
 
 Script.registerSwitch('H:', 'HostName:', 'Name of the Host (Mandatory)', setHostName)

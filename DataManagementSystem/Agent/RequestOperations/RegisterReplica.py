@@ -70,7 +70,6 @@ class RegisterReplica(DMSRequestOperationsBase):
       if not registerReplica["OK"] or lfn in registerReplica["Value"]["Failed"]:
         # There have been some errors
         gMonitor.addMark("RegisterReplicaFail", 1)
-#        self.dataLoggingClient().addFileRecord( lfn, "RegisterReplicaFail", ','.join( catalogs ) if catalogs else "all catalogs", "", "RegisterReplica" )
 
         reason = registerReplica.get("Message", registerReplica.get("Value", {}).get("Failed", {}).get(lfn, 'Unknown'))
         errorStr = "failed to register LFN %s: %s" % (lfn, str(reason))
@@ -93,7 +92,8 @@ class RegisterReplica(DMSRequestOperationsBase):
           if isinstance(reason, dict):
             from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
             for failedCatalog in reason:
-              catMaster = catMaster and FileCatalog()._getCatalogConfigDetails(failedCatalog).get('Value', {}).get('Master', False)
+              catMaster = catMaster and FileCatalog()._getCatalogConfigDetails(failedCatalog)\
+                  .get('Value', {}).get('Master', False)
           # If one targets explicitly a catalog and it fails or if it fails on the master catalog
           if (
                   catalogs or catMaster) and (
@@ -112,7 +112,6 @@ class RegisterReplica(DMSRequestOperationsBase):
       else:
         # All is OK
         gMonitor.addMark("RegisterReplicaOK", 1)
-#        self.dataLoggingClient().addFileRecord( lfn, "RegisterReplicaOK", ','.join( catalogs ) if catalogs else "all catalogs", "", "RegisterReplica" )
 
         self.log.info("Replica %s has been registered at %s" %
                       (lfn, ','.join(catalogs) if catalogs else "all catalogs"))

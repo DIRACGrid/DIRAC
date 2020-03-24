@@ -107,7 +107,7 @@ def getType(fileNames, directory=''):
 def _getPoolCatalogs(directory=''):
 
   patterns = ['*.xml', '*.xml*gz']
-  omissions = ['\.bak$']  # to be ignored for production files
+  omissions = [r'\.bak$']  # to be ignored for production files
 
   # First obtain valid list of unpacked catalog files in directory
   poolCatalogList = []
