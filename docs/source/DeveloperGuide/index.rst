@@ -18,9 +18,7 @@ Detailed instructions on how to develop various types of DIRAC components are gi
 are discussed as well. More detailes on the available interfaces can be found in the
 :ref:`code_documentation` part.
 
-For every question, or comment, regarding specific development activities,
-including suggestion and comments to the `RFC <https://github.com/DIRACGrid/DIRAC/wiki/DIRAC-Requests-For-Comments-%28RFC%29>`_,
-the correct forum for is the `dirac-develop <https://groups.google.com/forum/#!forum/diracgrid-develop>`_ google group.
+For every question, or comment, please open a `GitHub issue <https://github.com/DIRACGrid/DIRAC/issues>`_.
 For everything operational, instead, you can write on the `dirac-grid <https://groups.google.com/forum/#!forum/diracgrid-forum>`_
 group.
 
