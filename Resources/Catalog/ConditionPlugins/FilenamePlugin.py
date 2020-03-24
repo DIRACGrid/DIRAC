@@ -6,12 +6,12 @@ __RCSID__ = "$Id $"
 from DIRAC.Resources.Catalog.ConditionPlugins.FCConditionBasePlugin import FCConditionBasePlugin
 
 
-class FilenamePlugin( FCConditionBasePlugin ):
+class FilenamePlugin(FCConditionBasePlugin):
   """
      This plugin is to be used when filtering based on the LFN name
   """
 
-  def __init__( self, conditions ):
+  def __init__(self, conditions):
     """ the condition can be any method of the python string object that can be evaluated
         as True or False:
 
@@ -33,28 +33,24 @@ class FilenamePlugin( FCConditionBasePlugin ):
         Filename=istitle()
 
     """
-    super( FilenamePlugin, self ).__init__( conditions )
+    super(FilenamePlugin, self).__init__(conditions)
 
-
-  def eval( self, **kwargs ):
+  def eval(self, **kwargs):
     """ evaluate the parameters. The lfn argument is mandatory
     """
 
-    lfn = kwargs.get( 'lfn' )
+    lfn = kwargs.get('lfn')
 
     if not lfn:
       return False
 
-    evalStr = "'%s'.%s" % ( lfn, self.conditions )
+    evalStr = "'%s'.%s" % (lfn, self.conditions)
     try:
-      ret = eval( evalStr )
+      ret = eval(evalStr)
       # Special case of 'find' which returns -1 if the pattern does not exist
-      if self.conditions.startswith( 'find(' ):
+      if self.conditions.startswith('find('):
         ret = False if ret == -1 else True
 
       return ret
-    except:
+    except BaseException:
       return False
-    
-
-      

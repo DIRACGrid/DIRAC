@@ -10,15 +10,16 @@ Verbosity:
     -o LogLevel=LEVEL     NOTICE by default, levels available: INFO, DEBUG, VERBOSE..
 """
 
-from DIRAC                                     import gLogger, exit as DIRACExit, version
-from DIRAC.Core.Base                           import Script
-from DIRAC.ResourceStatusSystem.Client         import ResourceStatusClient
-from DIRAC.Core.Utilities.PrettyPrint          import printTable
+from DIRAC import gLogger, exit as DIRACExit, version
+from DIRAC.Core.Base import Script
+from DIRAC.ResourceStatusSystem.Client import ResourceStatusClient
+from DIRAC.Core.Utilities.PrettyPrint import printTable
 
-__RCSID__  = '$Id:$'
+__RCSID__ = '$Id:$'
 
-subLogger  = None
+subLogger = None
 switchDict = {}
+
 
 def registerSwitches():
   '''
@@ -27,16 +28,17 @@ def registerSwitches():
   '''
 
   switches = (
-      ( 'element=',     'Element family to be Synchronized ( Site, Resource or Node )' ),
-      ( 'elementType=', 'ElementType narrows the search; None if default' ),
-      ( 'name=',        'ElementName; None if default' ),
-      ( 'tokenOwner=',  'Owner of the token; None if default' ),
-      ( 'statusType=',  'StatusType; None if default' ),
-      ( 'status=',      'Status; None if default' ),
+      ('element=', 'Element family to be Synchronized ( Site, Resource or Node )'),
+      ('elementType=', 'ElementType narrows the search; None if default'),
+      ('name=', 'ElementName; None if default'),
+      ('tokenOwner=', 'Owner of the token; None if default'),
+      ('statusType=', 'StatusType; None if default'),
+      ('status=', 'Status; None if default'),
   )
 
   for switch in switches:
-    Script.registerSwitch( '', switch[ 0 ], switch[ 1 ] )
+    Script.registerSwitch('', switch[0], switch[1])
+
 
 def registerUsageMessage():
   '''
@@ -45,47 +47,49 @@ def registerUsageMessage():
   usageMessage = '  DIRAC %s\n' % version
   usageMessage += __doc__
 
-  Script.setUsageMessage( usageMessage )
+  Script.setUsageMessage(usageMessage)
+
 
 def parseSwitches():
   '''
     Parses the arguments passed by the user
   '''
 
-  Script.parseCommandLine( ignoreErrors = True )
+  Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
   if args:
-    subLogger.error( "Found the following positional args '%s', but we only accept switches" % args )
-    subLogger.error( "Please, check documentation below" )
+    subLogger.error("Found the following positional args '%s', but we only accept switches" % args)
+    subLogger.error("Please, check documentation below")
     Script.showHelp()
-    DIRACExit( 1 )
+    DIRACExit(1)
 
-  switches = dict( Script.getUnprocessedSwitches() )
+  switches = dict(Script.getUnprocessedSwitches())
   # Default values
-  switches.setdefault( 'elementType',  None )
-  switches.setdefault( 'name',         None )
-  switches.setdefault( 'tokenOwner',   None )
-  switches.setdefault( 'statusType',   None )
-  switches.setdefault( 'status',       None )
+  switches.setdefault('elementType', None)
+  switches.setdefault('name', None)
+  switches.setdefault('tokenOwner', None)
+  switches.setdefault('statusType', None)
+  switches.setdefault('status', None)
 
   if 'element' not in switches:
-    subLogger.error( "element Switch missing" )
-    subLogger.error( "Please, check documentation below" )
+    subLogger.error("element Switch missing")
+    subLogger.error("Please, check documentation below")
     Script.showHelp()
-    DIRACExit( 1 )
+    DIRACExit(1)
 
-  if not switches[ 'element' ] in ( 'Site', 'Resource', 'Node' ):
-    subLogger.error( "Found %s as element switch" % switches[ 'element' ] )
-    subLogger.error( "Please, check documentation below" )
+  if not switches['element'] in ('Site', 'Resource', 'Node'):
+    subLogger.error("Found %s as element switch" % switches['element'])
+    subLogger.error("Please, check documentation below")
     Script.showHelp()
-    DIRACExit( 1 )
+    DIRACExit(1)
 
-  subLogger.debug( "The switches used are:" )
-  map( subLogger.debug, switches.iteritems() )
+  subLogger.debug("The switches used are:")
+  map(subLogger.debug, switches.iteritems())
 
   return switches
 
 #...............................................................................
+
 
 def getElements():
   '''
@@ -95,47 +99,49 @@ def getElements():
 
   rssClient = ResourceStatusClient.ResourceStatusClient()
 
-  meta = { 'columns' : [] }
-  for key in ( 'Name', 'StatusType', 'Status', 'ElementType', 'TokenOwner' ):
-    #Transforms from upper lower case to lower upper case
-    if switchDict[ key[0].lower() + key[1:] ] is None:
-      meta[ 'columns' ].append( key )
+  meta = {'columns': []}
+  for key in ('Name', 'StatusType', 'Status', 'ElementType', 'TokenOwner'):
+    # Transforms from upper lower case to lower upper case
+    if switchDict[key[0].lower() + key[1:]] is None:
+      meta['columns'].append(key)
 
   elements = rssClient.selectStatusElement(
-      switchDict[ 'element' ], 'Status',
-      name        = switchDict[ 'name' ].split(',') if switchDict['name'] else None,
-      statusType  = switchDict[ 'statusType' ].split(',') if switchDict['statusType'] else None,
-      status      = switchDict[ 'status' ].split(',') if switchDict['status'] else None,
-      elementType = switchDict[ 'elementType' ].split(',') if switchDict['elementType'] else None,
-      tokenOwner  = switchDict[ 'tokenOwner' ].split(',') if switchDict['tokenOwner'] else None,
-      meta = meta )
+      switchDict['element'], 'Status',
+      name=switchDict['name'].split(',') if switchDict['name'] else None,
+      statusType=switchDict['statusType'].split(',') if switchDict['statusType'] else None,
+      status=switchDict['status'].split(',') if switchDict['status'] else None,
+      elementType=switchDict['elementType'].split(',') if switchDict['elementType'] else None,
+      tokenOwner=switchDict['tokenOwner'].split(',') if switchDict['tokenOwner'] else None,
+      meta=meta)
 
   return elements
 
-def tabularPrint( elementsList ):
+
+def tabularPrint(elementsList):
   '''
     Prints the list of elements on a tabular
   '''
 
-  subLogger.notice( '' )
-  subLogger.notice( 'Selection parameters:' )
-  subLogger.notice( '  %s: %s' % ( 'element'.ljust( 15 ), switchDict[ 'element' ] ) )
+  subLogger.notice('')
+  subLogger.notice('Selection parameters:')
+  subLogger.notice('  %s: %s' % ('element'.ljust(15), switchDict['element']))
   titles = []
-  for key in ( 'Name', 'StatusType', 'Status', 'ElementType', 'TokenOwner' ):
+  for key in ('Name', 'StatusType', 'Status', 'ElementType', 'TokenOwner'):
 
-    #Transforms from upper lower case to lower upper case
+    # Transforms from upper lower case to lower upper case
     keyT = key[0].lower() + key[1:]
 
-    if switchDict[ keyT ] is None:
-      titles.append( key )
+    if switchDict[keyT] is None:
+      titles.append(key)
     else:
-      subLogger.notice( '  %s: %s' % ( key.ljust( 15 ), switchDict[ keyT ] ) )
-  subLogger.notice( '' )
+      subLogger.notice('  %s: %s' % (key.ljust(15), switchDict[keyT]))
+  subLogger.notice('')
 
-  subLogger.notice( printTable( titles, elementsList, printOut = False,
-                                numbering = False, columnSeparator = ' | ' ) )
+  subLogger.notice(printTable(titles, elementsList, printOut=False,
+                              numbering=False, columnSeparator=' | '))
 
 #...............................................................................
+
 
 def run():
   '''
@@ -143,29 +149,30 @@ def run():
   '''
 
   elements = getElements()
-  if not elements[ 'OK' ]:
-    subLogger.error( elements )
-    DIRACExit( 1 )
-  elements = elements[ 'Value' ]
+  if not elements['OK']:
+    subLogger.error(elements)
+    DIRACExit(1)
+  elements = elements['Value']
 
-  tabularPrint( elements )
+  tabularPrint(elements)
 
 #...............................................................................
 
+
 if __name__ == "__main__":
 
-  subLogger  = gLogger.getSubLogger( __file__ )
+  subLogger = gLogger.getSubLogger(__file__)
 
-  #Script initialization
+  # Script initialization
   registerSwitches()
   registerUsageMessage()
   switchDict = parseSwitches()
 
-  #Run script
+  # Run script
   run()
 
-  #Bye
-  DIRACExit( 0 )
+  # Bye
+  DIRACExit(0)
 
 ################################################################################
-#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF
+# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF

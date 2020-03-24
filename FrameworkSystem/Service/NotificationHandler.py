@@ -30,6 +30,7 @@ gNotDB = None
 gMailSet = set()
 gMailCache = DictCache()
 
+
 def purgeDelayedEMails():
   """ Purges the emails accumulated in gMailSet
   """

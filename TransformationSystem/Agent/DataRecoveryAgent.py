@@ -79,6 +79,7 @@ ASSIGNEDSTATES = ['Assigned', 'Processed']
 
 class DataRecoveryAgent(AgentModule):
   """Data Recovery Agent"""
+
   def __init__(self, *args, **kwargs):
     AgentModule.__init__(self, *args, **kwargs)
     self.name = 'DataRecoveryAgent'

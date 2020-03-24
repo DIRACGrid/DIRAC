@@ -8,18 +8,19 @@ from DIRAC import gLogger
 
 __RCSID__ = "$Id $"
 
-class DAG( object ):
+
+class DAG(object):
   """ a Direct Acyclic Graph (DAG)
 
       Represented as a dictionary whose keys are nodes, and values are sets holiding their dependencies
   """
 
-  def __init__( self ):
+  def __init__(self):
     """ Defines graph variable holding the dag representation
     """
     self.graph = {}
 
-  def addNode( self, node ):
+  def addNode(self, node):
     """ add a node to graph
 
         Args:
@@ -29,7 +30,7 @@ class DAG( object ):
     if node not in self.graph:
       self.graph[node] = set()
 
-  def addEdge( self, fromNode, toNode ):
+  def addEdge(self, fromNode, toNode):
     """ add an edge (checks if both nodes exist)
 
         Args:
@@ -40,20 +41,20 @@ class DAG( object ):
     toNode = checkNode(toNode)
 
     if fromNode not in self.graph:
-      gLogger.error( "Missing node from where the edge start" )
+      gLogger.error("Missing node from where the edge start")
       return
     if toNode not in self.graph:
-      gLogger.error( "Missing node to where the edge lands" )
+      gLogger.error("Missing node to where the edge lands")
       return
 
     for node, toNodes in self.graph.iteritems():
-      #This is clearly not enough to assure that it's really acyclic...
+      # This is clearly not enough to assure that it's really acyclic...
       if toNode == node and fromNode in toNodes:
-        gLogger.error( "Can't insert this edge" )
+        gLogger.error("Can't insert this edge")
         return
-    self.graph[fromNode].add( toNode )
+    self.graph[fromNode].add(toNode)
 
-  def getIndexNodes( self ):
+  def getIndexNodes(self):
     """ Return a list of index nodes
     """
     notIndexNodes = set()
@@ -62,7 +63,7 @@ class DAG( object ):
     indexNodes = list(set(self.graph.keys()) - notIndexNodes)
     return [unHashNode(inu) for inu in indexNodes]
 
-  def getList( self ):
+  def getList(self):
     """ Returns a list out of the DAG, if possible
     """
     cDAG = copy.deepcopy(self)
@@ -84,21 +85,23 @@ class DAG( object ):
 
     return l
 
-def checkNode( node ):
+
+def checkNode(node):
   """ Returns a hashable version of node
   """
   try:
     node.__hash__()
     return node
-  except TypeError: #nodeName is not hashable, so it can't be a key in the graph (which is a dictionary)
+  except TypeError:  # nodeName is not hashable, so it can't be a key in the graph (which is a dictionary)
     return makeFrozenSet(node)
 
-def unHashNode( node ):
+
+def unHashNode(node):
   """ Returns a dict or list, if node is frozenset
   """
   if isinstance(node, frozenset):
     try:
-      return dict(node) # Is it a dictionary?
+      return dict(node)  # Is it a dictionary?
     except TypeError:
       return list(node)
     except ValueError:
@@ -107,7 +110,7 @@ def unHashNode( node ):
     return node
 
 
-def makeFrozenSet( ob ):
+def makeFrozenSet(ob):
   """
   Makes a hash from a dictionary, list, tuple or set to any level, that contains
   only other hashable types (including any lists, tuples, sets, and dictionaries).

@@ -3,19 +3,19 @@
 from __future__ import print_function
 __RCSID__ = "$Id$"
 
-from DIRAC           import exit as DIRACExit
+from DIRAC import exit as DIRACExit
 from DIRAC.Core.Base import Script
 
 
 if __name__ == "__main__":
 
-  Script.setUsageMessage( """
+  Script.setUsageMessage("""
 Remove the given file replica or a list of file replicas from the File Catalog
 and from the storage.
 
 Usage:
    %s <LFN | fileContainingLFNs> SE [SE]
-""" % Script.scriptName )
+""" % Script.scriptName)
 
   Script.parseCommandLine()
 
@@ -29,26 +29,26 @@ Usage:
 
   if len(args) < 2:
     Script.showHelp()
-    DIRACExit( 1 )
+    DIRACExit(1)
   else:
     inputFileName = args[0]
     storageElementNames = args[1:]
 
-  if os.path.exists( inputFileName ):
-    inputFile = open( inputFileName, 'r' )
+  if os.path.exists(inputFileName):
+    inputFile = open(inputFileName, 'r')
     string = inputFile.read()
-    lfns = [ lfn.strip() for lfn in string.splitlines() ]
+    lfns = [lfn.strip() for lfn in string.splitlines()]
     inputFile.close()
   else:
     lfns = [inputFileName]
-  for lfnList in breakListIntoChunks( sorted( lfns, reverse=True ), 500 ):
+  for lfnList in breakListIntoChunks(sorted(lfns, reverse=True), 500):
     for storageElementName in storageElementNames:
-      res = dm.removeReplica( storageElementName, lfnList )
+      res = dm.removeReplica(storageElementName, lfnList)
       if not res['OK']:
         print('Error:', res['Message'])
         continue
-      for lfn in sorted( res['Value']['Successful'] ):
+      for lfn in sorted(res['Value']['Successful']):
         print('Successfully removed %s replica of %s' % (storageElementName, lfn))
-      for lfn in sorted( res['Value']['Failed'] ):
+      for lfn in sorted(res['Value']['Failed']):
         message = res['Value']['Failed'][lfn]
         print('Error: failed to remove %s replica of %s: %s' % (storageElementName, lfn, message))

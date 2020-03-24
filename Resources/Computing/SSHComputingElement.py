@@ -433,7 +433,7 @@ class SSHComputingElement(ComputingElement):
       with open(controlScript, "a") as cs:
         cs.write(executeBatchContent)
     except IOError:
-        return S_ERROR('IO Error trying to generate control script')
+      return S_ERROR('IO Error trying to generate control script')
 
     return S_OK('%s' % controlScript)
 

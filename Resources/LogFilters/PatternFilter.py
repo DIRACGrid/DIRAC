@@ -31,6 +31,7 @@ class PatternFilter(object):
   Only print log lines matching words in Accept and reject lines which contains words in Reject.
   A line must both be accepted and not rejected to be passed!
   """
+
   def __init__(self, optionDict):
     """Contruct the object, set the base LogLevel to DEBUG, and parse the options."""
 

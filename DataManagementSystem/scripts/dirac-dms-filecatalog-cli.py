@@ -4,25 +4,25 @@ from __future__ import print_function
 import sys
 
 from DIRAC.Core.Base import Script
-Script.setUsageMessage( """
+Script.setUsageMessage("""
 Launch the File Catalog shell
 
 Usage:
    %s [option]
-""" % Script.scriptName )
+""" % Script.scriptName)
 
 fcType = 'FileCatalog'
-Script.registerSwitch( "f:", "file-catalog=", "   Catalog client type to use (default %s)" % fcType )
-Script.parseCommandLine( ignoreErrors = False )
+Script.registerSwitch("f:", "file-catalog=", "   Catalog client type to use (default %s)" % fcType)
+Script.parseCommandLine(ignoreErrors=False)
 
 from DIRAC import gConfig, exit as dexit
 from DIRAC.Resources.Catalog.FileCatalogFactory import FileCatalogFactory
 
 __RCSID__ = "$Id$"
 
-fcType = gConfig.getValue("/LocalSite/FileCatalog","")
+fcType = gConfig.getValue("/LocalSite/FileCatalog", "")
 
-res = gConfig.getSections("/Resources/FileCatalogs",listOrdered = True)
+res = gConfig.getSections("/Resources/FileCatalogs", listOrdered=True)
 if not res['OK']:
   dexit(1)
 fcList = res['Value']
@@ -50,5 +50,5 @@ if not result['OK']:
   sys.exit(1)
 print("Starting %s client" % fcType)
 catalog = result['Value']
-cli = FileCatalogClientCLI( catalog )
+cli = FileCatalogClientCLI(catalog)
 cli.cmdloop()

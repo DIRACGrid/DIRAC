@@ -3,37 +3,38 @@ __RCSID__ = "$Id$"
 
 import threading
 
+
 class LockManager:
 
-  def __init__( self, iMaxThreads = None ):
+  def __init__(self, iMaxThreads=None):
     self.iMaxThreads = iMaxThreads
     if iMaxThreads:
-      self.oGlobalLock = threading.Semaphore( iMaxThreads )
+      self.oGlobalLock = threading.Semaphore(iMaxThreads)
     else:
       self.oGlobalLock = False
     self.dLocks = {}
     self.dSubManagers = {}
 
-  def createLock( self, sLockName, iMaxThreads ):
+  def createLock(self, sLockName, iMaxThreads):
     if sLockName in self.dLocks.keys():
-      raise RuntimeError( "%s lock already exists" % sLockName )
+      raise RuntimeError("%s lock already exists" % sLockName)
     if iMaxThreads < 1:
       return
-    self.dLocks[ sLockName ] = threading.Semaphore( iMaxThreads )
-    self.dLocks[ sLockName ].release()
+    self.dLocks[sLockName] = threading.Semaphore(iMaxThreads)
+    self.dLocks[sLockName].release()
 
-  def lockGlobal( self ):
+  def lockGlobal(self):
     if self.oGlobalLock:
       self.oGlobalLock.acquire()
 
-  def unlockGlobal( self ):
+  def unlockGlobal(self):
     if self.oGlobalLock:
       self.oGlobalLock.release()
 
-  def lock( self, sLockName ):
+  def lock(self, sLockName):
     if sLockName in self.dLocks:
-      self.dLocks[ sLockName ].acquire()
+      self.dLocks[sLockName].acquire()
 
-  def unlock( self, sLockName ):
+  def unlock(self, sLockName):
     if sLockName in self.dLocks:
-      self.dLocks[ sLockName ].release()
+      self.dLocks[sLockName].release()

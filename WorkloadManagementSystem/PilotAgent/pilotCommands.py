@@ -426,7 +426,10 @@ class CheckCECapabilities(CommandBase):
 
     # If MaxNumberOfProcessors not defined check for NumberOfProcessors
     if self.pp.maxNumberOfProcessors == 0:
-      self.pp.maxNumberOfProcessors = int(resourceDict.get("MaxNumberOfProcessors", resourceDict.get("NumberOfProcessors", 0)))
+      self.pp.maxNumberOfProcessors = int(
+          resourceDict.get(
+              "MaxNumberOfProcessors", resourceDict.get(
+                  "NumberOfProcessors", 0)))
 
     # Tags must be added to already defined tags if any
     if resourceDict.get('Tag'):

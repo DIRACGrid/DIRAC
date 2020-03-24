@@ -225,7 +225,6 @@ class ProxyInit(object):
         if self.__piParams.strict:
           return resultProxyUpload
 
-
     return S_OK()
 
 

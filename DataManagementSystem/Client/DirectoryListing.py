@@ -235,4 +235,3 @@ class DirectoryListing(object):
     self.entries.sort()
     for entry in self.entries:
       print(entry)
-

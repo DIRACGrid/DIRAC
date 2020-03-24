@@ -43,7 +43,7 @@ Script.parseCommandLine()
 
 from DIRAC import gConfig, gLogger
 result = gConfig.dumpCFGAsLocalCache(fileName, raw)
-if not result[ 'OK' ]:
+if not result['OK']:
   print("Error: %s" % result['Message'])
   sys.exit(1)
 

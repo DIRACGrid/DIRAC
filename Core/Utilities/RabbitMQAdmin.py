@@ -4,9 +4,10 @@
 """
 from __future__ import print_function
 import re
-from DIRAC import S_OK , S_ERROR
+from DIRAC import S_OK, S_ERROR
 import errno
 from DIRAC.Core.Utilities import Subprocess
+
 
 def executeRabbitmqctl(arg, *argv):
   """Executes RabbitMQ administration command.
@@ -21,22 +22,23 @@ def executeRabbitmqctl(arg, *argv):
 
   :rtype: S_OK or S_ERROR
   :type argv: python:list
-  
+
   """
-  command =['sudo','/usr/sbin/rabbitmqctl','-q', arg] + list(argv)
+  command = ['sudo', '/usr/sbin/rabbitmqctl', '-q', arg] + list(argv)
   timeOut = 30
-  result = Subprocess.systemCall(timeout = timeOut, cmdSeq = command)
+  result = Subprocess.systemCall(timeout=timeOut, cmdSeq=command)
   if result['OK']:
     errorcode, cmd_out, cmd_err = result['Value']
   else:
     return S_ERROR(errno.EPERM, "%r failed, status code: %s stdout: %r stderr: %r" %
-                                (command, errorcode, cmd_out, cmd_err) )
+                                (command, errorcode, cmd_out, cmd_err))
   if errorcode:
     # No idea what errno code should be used here.
     # Maybe we should define some specific for rabbitmqctl
     return S_ERROR(errno.EPERM, "%r failed, status code: %s stdout: %r stderr: %r" %
-                                (command, errorcode, cmd_out, cmd_err) )
+                                (command, errorcode, cmd_out, cmd_err))
   return S_OK(cmd_out)
+
 
 def addUserWithoutPassword(user):
   '''Adds user to the internal RabbitMQ database
@@ -50,7 +52,8 @@ def addUserWithoutPassword(user):
     return ret
   return clearUserPassword(user)
 
-def addUser(user, password = 'password'):
+
+def addUser(user, password='password'):
   '''Adds user to the internal RabbitMQ database
     Function also sets user password.
     User still cannot access to any resources, without
@@ -58,10 +61,12 @@ def addUser(user, password = 'password'):
   '''
   return executeRabbitmqctl('add_user', user, password)
 
+
 def deleteUser(user):
   '''Removes the user from the internal RabbitMQ database.
   '''
   return executeRabbitmqctl('delete_user', user)
+
 
 def getAllUsers():
   '''Returns all existing users in the internal RabbitMQ database.
@@ -80,11 +85,13 @@ def getAllUsers():
   # Also only non-empty users are proceeded further.
   # Empty users can appear, cause every new line was
   # treated as a new user.
-  users = [ re.sub('\\t\[\w*\]$','',u) for u in users if u]
+  users = [re.sub('\\t\[\w*\]$', '', u) for u in users if u]
   return S_OK(users)
 
+
 def setUserPermission(user):
-  return executeRabbitmqctl('set_permissions','-p','/', user, '\".*\"','\".*\"','\".*\"')
+  return executeRabbitmqctl('set_permissions', '-p', '/', user, '\".*\"', '\".*\"', '\".*\"')
+
 
 def clearUserPassword(user):
   '''Clears users password for the internal RabbitMQ
@@ -93,6 +100,7 @@ def clearUserPassword(user):
      connect via SSL if given permission.
   '''
   return executeRabbitmqctl('clear_password', user)
+
 
 def setUsersPermissions(users):
   successful = {}
@@ -103,8 +111,9 @@ def setUsersPermissions(users):
       successful[u] = ret['Value']
     else:
       print("Problem with permissions:%s" % ret['Message'])
-      failed[u] = "Permission not set because of:%s"% ret['Message']
+      failed[u] = "Permission not set because of:%s" % ret['Message']
   return S_OK({'Successful': successful, 'Failed': failed})
+
 
 def addUsersWithoutPasswords(users):
   successful = {}
@@ -117,6 +126,7 @@ def addUsersWithoutPasswords(users):
       print("Problem with adding user:%s" % ret['Message'])
       failed[u] = "User not added"
   return S_OK({'Successful': successful, 'Failed': failed})
+
 
 def addUsers(users):
   """Adds users to the RabbitMQ internal database.
@@ -132,6 +142,7 @@ def addUsers(users):
       failed[u] = "User not added"
   return S_OK({'Successful': successful, 'Failed': failed})
 
+
 def deleteUsers(users):
   """Deletes users from the RabbitMQ internal database.
   """
@@ -145,4 +156,3 @@ def deleteUsers(users):
       print("Problem with adding user:%s" % ret['Message'])
       failed[u] = "User not added"
   return S_OK({'Successful': successful, 'Failed': failed})
-

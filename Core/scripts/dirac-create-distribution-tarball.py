@@ -540,7 +540,7 @@ class TarModuleCreator(object):
     if False and not cliParams.relNotes:
       try:
         os.unlink(relNotesRST)
-      except:
+      except BaseException:
         pass
     return S_OK()
 

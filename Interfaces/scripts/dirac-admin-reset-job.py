@@ -12,19 +12,19 @@ __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
 
-Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
-                                     'Usage:',
-                                     '  %s [option|cfgfile] ... JobID ...' % Script.scriptName,
-                                     'Arguments:',
-                                     '  JobID:    DIRAC ID of the Job' ] ) )
-Script.parseCommandLine( ignoreErrors = True )
+Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
+                                  'Usage:',
+                                  '  %s [option|cfgfile] ... JobID ...' % Script.scriptName,
+                                  'Arguments:',
+                                  '  JobID:    DIRAC ID of the Job']))
+Script.parseCommandLine(ignoreErrors=True)
 
 args = Script.getPositionalArgs()
 
-if len( args ) < 1:
+if len(args) < 1:
   Script.showHelp()
 
-from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
+from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 diracAdmin = DiracAdmin()
 exitCode = 0
 errorList = []
@@ -32,20 +32,20 @@ errorList = []
 for job in args:
 
   try:
-    job = int( job )
+    job = int(job)
   except Exception as x:
-    errorList.append( ( 'Expected integer for jobID', job ) )
+    errorList.append(('Expected integer for jobID', job))
     exitCode = 2
     continue
 
-  result = diracAdmin.resetJob( job )
+  result = diracAdmin.resetJob(job)
   if result['OK']:
     print('Reset Job %s' % (job))
   else:
-    errorList.append( ( job, result['Message'] ) )
+    errorList.append((job, result['Message']))
     exitCode = 2
 
 for error in errorList:
   print("ERROR %s: %s" % error)
 
-DIRAC.exit( exitCode )
+DIRAC.exit(exitCode)

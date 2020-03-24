@@ -24,7 +24,6 @@ _libc_search = re.compile(b'(__libc_init)'
 
 def libc_ver(executable=sys.executable, lib='', version='',
              chunksize=2048):
-
   """ Tries to determine the libc version that the file executable
       (which defaults to the Python interpreter) is linked against.
 

@@ -46,4 +46,4 @@ for record in records:
       val = str(record[i])
       line.append("%s%s" % (val, " " * (fieldLengths[i] - len(val))))
   print("|".join(line))
-  #print sepLine
+  # print sepLine

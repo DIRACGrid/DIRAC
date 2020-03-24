@@ -28,6 +28,7 @@ from DIRAC.Resources.MessageQueue.MQCommunication import createProducer
 from DIRAC.MonitoringSystem.Client.ServerUtils import monitoringDB
 from DIRAC.ConfigurationSystem.Client.Config import gConfig
 
+
 class MonitoringReporter(object):
 
   """
