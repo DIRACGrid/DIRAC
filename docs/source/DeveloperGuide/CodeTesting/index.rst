@@ -509,7 +509,7 @@ How do I do that?
 - you need a ElasticSearch instance running somewhere, empty, to be used only for testing purposes (in GitHub Actions and GitLab-CI a docker container is instantiated for the purpose)
 - if you have tests that need to access other DBs, you should also have them ready, again used for testing purposes.
 
-The files DIRAC.Integration.all_integration_client_tests.sh and DIRAC.Integration.all_integration_server_tests.sh
+The files ``DIRAC/tests/Integration/all_integration_client_tests.sh`` and ``DIRAC/tests/Integration/all_integration_server_tests.sh``
 contain all the integration tests that will be executed. 
 
 If you are a developer you should be able to extrapolate from the above those parts that you need,
