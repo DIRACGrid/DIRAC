@@ -34,8 +34,9 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 
 from DIRAC.Resources.Storage.StorageBase import StorageBase
 
-from irods import rcConnect, rcDisconnect, clientLoginWithPassword, irodsCollection,\
-    irodsOpen, getResources, getResource  # pylint: disable=import-error
+# pylint: disable=import-error
+from irods import rcConnect, rcDisconnect, clientLoginWithPassword, irodsCollection, \
+    irodsOpen, getResources, getResource
 
 __RCSID__ = "$Id$"
 

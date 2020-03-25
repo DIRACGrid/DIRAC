@@ -60,6 +60,7 @@ class FCConditionParser(object):
 
     # This is the boolean operation to apply
     # Could be None, but it should be callable
+    @staticmethod
     def evalop(_x):
       return None
 
