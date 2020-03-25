@@ -189,6 +189,8 @@ def test_getDistinctAttributeValues(name, fields, requiredFields, values, table,
   assert result['Value'] == expected
 
 
+# use time.toString and call it inside the tests as to have the value of it
+# when it is executed
 @pytest.mark.parametrize("table, reqFields, values, name, args, expected, isExpectedCount", [
     (table, reqFields, genVal1(), name,
         {'outFields': fields}, 100, True),
@@ -201,18 +203,29 @@ def test_getDistinctAttributeValues(name, fields, requiredFields, values, table,
     (table, reqFields, genVal1(), name,
         {'outFields': ['Count'], 'orderAttribute': 'Count:ASC', 'limit': 1}, ((0,),), False),
     (table, allFields, genVal2(), name,
-        {'older': 'UTC_TIMESTAMP()', 'timeStamp': 'Time'}, 0, True),
+        {'older': 'UTC_TIMESTAMP()', 'timeStamp': 'Time'}, 2, True),
     (table, allFields, genVal2(), name,
-        {'newer': 'UTC_TIMESTAMP()', 'timeStamp': 'Time'}, 2, True),
+        {'newer': 'UTC_TIMESTAMP()', 'timeStamp': 'Time'}, 0, True),
     (table, allFields, genVal2(), name,
-        {'older': Time.toString(), 'timeStamp': 'Time'}, 0, True),
+        {'older': Time.toString, 'timeStamp': 'Time'}, 2, True),
     (table, allFields, genVal2(), name,
-        {'newer': Time.toString(), 'timeStamp': 'Time'}, 2, True)
+        {'newer': Time.toString, 'timeStamp': 'Time'}, 0, True)
 ])
 def test_getFields(table, reqFields, values, name, args, expected, isExpectedCount):
   """ Create a table, insert elements, test getFields using various conditions
   """
   mysqlDB = setupDBCreateTableInsertFields(table, reqFields, values)
+
+  # Sleep one second to make sure that there is no race condition
+  # when running with UTC_TIMESTAMP
+  time.sleep(1)
+
+  # If the newer or older parameter is a callable
+  # (so typically Time.toString), evaluate it now
+  for timeCmp in ('newer', 'older'):
+    timeCmpArg = args.get(timeCmp)
+    if callable(timeCmpArg):
+      args[timeCmp] = timeCmpArg()
 
   result = mysqlDB.getFields(name, **args)
   assert result['OK']
