@@ -2099,7 +2099,7 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
   #
   exec python %(DIRAC)s/WebAppDIRAC/scripts/dirac-webapp-run.py -p < /dev/null
   """ % {'bashrc': os.path.join(self.instancePath, 'bashrc'),
-		  'DIRAC': self.linkedRootPath})
+                  'DIRAC': self.linkedRootPath})
 
         os.chmod(runFile, self.gDefaultPerms)
       except Exception:
