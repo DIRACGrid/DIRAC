@@ -1511,7 +1511,6 @@ class SiteDirector(AgentModule):
                                     numTotal,
                                     numSucceeded,
                                     status):
-
     """ Send pilot submission accounting record
 
         :param str siteName:     Site name

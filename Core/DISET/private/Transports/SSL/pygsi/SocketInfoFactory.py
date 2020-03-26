@@ -184,4 +184,5 @@ class SocketInfoFactory(object):
     socketInfo.setSSLSocket(sslSocket)
     return S_OK(socketInfo)
 
+
 gSocketInfoFactory = SocketInfoFactory()

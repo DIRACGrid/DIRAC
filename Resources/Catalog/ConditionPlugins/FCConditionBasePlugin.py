@@ -4,13 +4,14 @@
 """
 __RCSID__ = "$Id$"
 
-class FCConditionBasePlugin( object ):
+
+class FCConditionBasePlugin(object):
   """Base class to give baseline for all the FCCondition plugins.
      It is important to note that in the FCConditionParser, the plugin is called for each
      and every lfn. This greatly simplifies the development of the plugin.
   """
 
-  def __init__( self, conditions ):
+  def __init__(self, conditions):
     """ Gives the parameter of the evaluation to be done.
         The expression is defined as
 
@@ -22,8 +23,8 @@ class FCConditionBasePlugin( object ):
 
     self.conditions = conditions
 
-  def eval( self, **kwargs ):
+  def eval(self, **kwargs):
     """ eval evaluates param of the plugins against all the info given
         and returns True or False.
     """
-    raise NotImplementedError( "to be implemented in the derived class" )
+    raise NotImplementedError("to be implemented in the derived class")

@@ -120,7 +120,6 @@ class FileCatalogClient(FileCatalogClientBase):
 
     return S_OK(lfnDict)
 
-
   @checkCatalogArguments
   def setReplicaProblematic(self, lfns, revert=False):
     """

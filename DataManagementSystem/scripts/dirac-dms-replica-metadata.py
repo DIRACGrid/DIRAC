@@ -5,15 +5,15 @@
 from __future__ import print_function
 __RCSID__ = "$Id$"
 
-from DIRAC           import exit as DIRACExit
+from DIRAC import exit as DIRACExit
 from DIRAC.Core.Base import Script
 
-Script.setUsageMessage( """
+Script.setUsageMessage("""
 Get the given file replica metadata from the File Catalog
 
 Usage:
    %s <LFN | fileContainingLFNs> SE
-""" % Script.scriptName )
+""" % Script.scriptName)
 
 Script.parseCommandLine()
 
@@ -21,25 +21,25 @@ from DIRAC import gLogger
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 import os
 args = Script.getPositionalArgs()
-if not len( args ) == 2:
+if not len(args) == 2:
   Script.showHelp()
-  DIRACExit( -1 )
+  DIRACExit(-1)
 else:
   inputFileName = args[0]
   storageElement = args[1]
 
-if os.path.exists( inputFileName ):
-  inputFile = open( inputFileName, 'r' )
+if os.path.exists(inputFileName):
+  inputFile = open(inputFileName, 'r')
   string = inputFile.read()
-  lfns = [ lfn.strip() for lfn in string.splitlines() ]
+  lfns = [lfn.strip() for lfn in string.splitlines()]
   inputFile.close()
 else:
   lfns = [inputFileName]
 
-res = DataManager().getReplicaMetadata( lfns, storageElement )
+res = DataManager().getReplicaMetadata(lfns, storageElement)
 if not res['OK']:
   print('Error:', res['Message'])
-  DIRACExit( 1 )
+  DIRACExit(1)
 
 print('%s %s %s %s' % ('File'.ljust(100), 'Migrated'.ljust(8), 'Cached'.ljust(8), 'Size (bytes)'.ljust(10)))
 for lfn, metadata in res['Value']['Successful'].items():

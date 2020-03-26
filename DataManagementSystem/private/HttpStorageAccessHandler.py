@@ -4,7 +4,7 @@
 ########################################################################
 
 """  The HttpStorageAccessHandler is a http server request handler to provide a secure http
-     access to the DIRAC StorageElement and StorageElementProxy. It is derived from the 
+     access to the DIRAC StorageElement and StorageElementProxy. It is derived from the
      SimpleHTTPRequestHandler standard python handler
 """
 
@@ -17,8 +17,9 @@ import random
 
 from DIRAC.Core.Utilities.DictCache import DictCache
 
+
 class HttpStorageAccessHandler(BaseHTTPServer.BaseHTTPRequestHandler):
-  
+
   register = DictCache()
   basePath = ''
 
@@ -34,21 +35,21 @@ class HttpStorageAccessHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     cache_path = self.register.get(key)
     fileList = os.listdir(cache_path)
     if len(fileList) == 1:
-      path = os.path.join(cache_path,fileList[0])
+      path = os.path.join(cache_path, fileList[0])
     else:
       # multiple files, make archive
-      unique = str( random.getrandbits( 24 ) )
+      unique = str(random.getrandbits(24))
       fileString = ' '.join(fileList)
-      os.system( 'tar -cf %s/dirac_data_%s.tar --remove-files -C %s %s' % (cache_path,unique,cache_path,fileString) )
-      path = os.path.join(cache_path,'dirac_data_%s.tar' % unique)
+      os.system('tar -cf %s/dirac_data_%s.tar --remove-files -C %s %s' % (cache_path, unique, cache_path, fileString))
+      path = os.path.join(cache_path, 'dirac_data_%s.tar' % unique)
 
-    f = self.send_head( path )
+    f = self.send_head(path)
     if f:
       shutil.copyfileobj(f, self.wfile)
       f.close()
       self.register.delete(key)
 
-  def send_head(self,path):
+  def send_head(self, path):
     """ Prepare headers for the file download
     """
     #path = self.translate_path(self.path)
@@ -68,6 +69,6 @@ class HttpStorageAccessHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     self.send_header("Last-Modified", self.date_time_string(fs.st_mtime))
     fname = os.path.basename(path)
     self.send_header("Last-Modified", self.date_time_string(fs.st_mtime))
-    self.send_header("Content-Disposition","filename=%s" % fname)
+    self.send_header("Content-Disposition", "filename=%s" % fname)
     self.end_headers()
     return f

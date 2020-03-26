@@ -253,8 +253,8 @@ class DMSHelpers(object):
           'DataManagement/SEsUsedForFailover', []))
       self.failoverSEs = resolveSEGroup(seList)
     # FIXME: remove string test at some point
-    return storageElement in self.failoverSEs or (not self.failoverSEs and isinstance(storageElement, six.string_types) and
-                                                  'FAILOVER' in storageElement.upper())
+    return storageElement in self.failoverSEs or (not self.failoverSEs and isinstance(
+        storageElement, six.string_types) and 'FAILOVER' in storageElement.upper())
 
   def isSEForJobs(self, storageElement, checkSE=True):
     """ Is this SE suitable for making jobs """
@@ -275,8 +275,8 @@ class DMSHelpers(object):
           'DataManagement/SEsUsedForArchive', []))
       self.archiveSEs = resolveSEGroup(seList)
     # FIXME: remove string test at some point
-    return storageElement in self.archiveSEs or (not self.archiveSEs and isinstance(storageElement, six.string_types) and
-                                                 'ARCHIVE' in storageElement.upper())
+    return storageElement in self.archiveSEs or (not self.archiveSEs and isinstance(
+        storageElement, six.string_types) and 'ARCHIVE' in storageElement.upper())
 
   def getSitesForSE(self, storageElement, connectionLevel=None):
     """ Get the (list of) sites for a given SE and a given connctivity """
