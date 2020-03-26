@@ -1,3 +1,11 @@
+[v7r0p18]
+
+*Interfaces
+CHANGE: (#4502) run jobs locally: use $DIRAC for $DIRACROOT
+
+*Docs
+NEW: (#4513) add recommonmark extension to allow use of markdown files in the documenation
+
 [v7r0p17]
 
 *WMS
