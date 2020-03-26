@@ -67,7 +67,7 @@ The dirac-configure command can take as input a .cfg file whose content can be, 
 
    LocalInstallation
    {
-     ConfigurationServer = dips://lbcertifdirac6.cern.ch:9135/Configuration/Server
+     ConfigurationServer = dips://lbcertifdirac70.cern.ch:9135/Configuration/Server
      Setup = Dirac-Certification
    }
 

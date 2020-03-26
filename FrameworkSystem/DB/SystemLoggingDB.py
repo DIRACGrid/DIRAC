@@ -388,8 +388,8 @@ class SystemLoggingDB(DB):
     messageName = message.getName()
     messageSubSystemName = message.getSubSystemName()
 
-    fieldsList = ['MessageTime', 'VariableText']
-    messageList = [messageDate, message.getVariableMessage()]
+    fieldsList = [ 'MessageTime', 'VariableText' ]
+    messageList = [messageDate, message.getVariableMessage()[:255]]
 
     inValues = [userDN, userGroup]
     inFields = ['OwnerDN', 'OwnerGroup']

@@ -202,6 +202,9 @@ class ModuleLoader(object):
     return S_OK()
 
   def __recurseImport(self, modName, parentModule=None, hideExceptions=False):
+    gLogger.debug("importing recursively %s, parentModule=%s, hideExceptions=%s" % (modName,
+                                                                                    parentModule,
+                                                                                    hideExceptions))
     if isinstance(modName, six.string_types):
       modName = List.fromChar(modName, ".")
     try:

@@ -14,11 +14,11 @@ The DIRACGrid project includes several repositories, all hosted in `Github <http
   - `WebAppDIRAC <https://github.com/DIRACGrid/WebAppDIRAC>`_ is the repository for the web portal
   - `Pilot <https://github.com/DIRACGrid/Pilot>`_ is *not* a DIRAC extension, but a new version of the DIRAC pilots (dubbed Pilots 3.0)
   - `DIRACOS <https://github.com/DIRACGrid/DIRACOS>`_ is the repository for the DIRAC dependencies
-  - `Externals <https://github.com/DIRACGrid/Externals>`_ is the OLD repository for the DIRAC dependencies, going to be superseded by DIRACOS
   - `VMDIRAC <https://github.com/DIRACGrid/VMDIRAC>`_ is a DIRAC extension for using cloud sites
   - `COMDIRAC <https://github.com/DIRACGrid/COMDIRAC>`_ is a DIRAC extension of its CLI
-  - `RESTDIRAC <https://github.com/DIRACGrid/RESTDIRAC>`_ is a DIRAC extension that creates a REST layer for DIRAC services
   - `DB12 <https://github.com/DIRACGrid/DB12>`_ is *not* a DIRAC extension, but a self-contained quick benchmark
+  - `management <https://github.com/DIRACGrid/management>`_ is *not* a DIRAC extension, but a repository for creating docker images used for tests and for creating releases
+  - `diraccfg <https://github.com/DIRACGrid/diraccfg>`_ is a stand-alone utility for parsing DIRAC cfg files
 
 The content of the other repositories at `https://github.com/DIRACGrid` have either been included in those above, or became obsolete.
 
