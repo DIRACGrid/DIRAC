@@ -319,10 +319,6 @@ class SSHComputingElement(ComputingElement):
     if not self.workArea.startswith('/'):
       self.workArea = os.path.join(self.sharedArea, self.workArea)
 
-    result = self._prepareRemoteHost()
-    if not result['OK']:
-      return result
-
     self.submitOptions = ''
     if 'SubmitOptions' in self.ceParameters:
       self.submitOptions = self.ceParameters['SubmitOptions']
@@ -331,6 +327,10 @@ class SSHComputingElement(ComputingElement):
       if self.ceParameters['RemoveOutput'].lower() in ['no', 'false', '0']:
         self.removeOutput = False
     self.preamble = self.ceParameters.get('Preamble', '')
+
+    result = self._prepareRemoteHost()
+    if not result['OK']:
+      return result
 
     return S_OK()
 
