@@ -1115,10 +1115,18 @@ class JobWrapper(object):
     """Perform any final actions to clean up after job execution.
     """
     self.log.info('Running JobWrapper finalization')
+
     # find if there are pending failover requests
     requests = self.__getRequestFiles()
     outputDataRequest = self.failoverTransfer.getRequest()
-    requestFlag = len(requests) > 0 or not outputDataRequest.isEmpty()
+
+    # try to send the failover request
+    res = self.sendFailoverRequest()
+    if not res['OK']:  # This means that the request could not be set
+      self.failedFlag = True
+    failoverRequests = res.get('Value')
+
+    requestFlag = failoverRequests or len(requests) > 0 or not outputDataRequest.isEmpty()
 
     if self.failedFlag and requestFlag:
       self.log.info('Job finished with errors and there are pending requests.')
@@ -1133,7 +1141,6 @@ class JobWrapper(object):
       self.log.info('Job finished successfully with no pending requests.')
       self.__report(JobStatus.DONE, 'Execution Complete')
 
-    self.sendFailoverRequest()
     self.__cleanUp()
     if self.failedFlag:
       return 1
@@ -1263,16 +1270,18 @@ class JobWrapper(object):
       isValid = RequestValidator().validate(request)
       if not isValid["OK"]:
         self.log.error("Failover request is not valid", isValid["Message"])
-        self.__report(status=JobStatus.FAILED, minorStatus='Failover Request Failed')
         self.log.error("Job will fail, first trying to print out the content of the request")
         reqToJSON = request.toJSON()
         if reqToJSON['OK']:
           print(str(reqToJSON['Value']))
         else:
           self.log.error("Something went wrong creating the JSON from request", reqToJSON['Message'])
+	return S_ERROR(request)
       else:
-        # We try several times to put the request before failing the job: it's very important that requests go through,
-        # or the job will be in an unclear status (workflow ok, but, e.g., the output files won't be registered).
+	# We try several times to put the request before failing the job:
+	# it is very important that requests go through,
+	# or the job will be in an unclear status
+	# (workflow ok, but, e.g., the output files won't be registered).
         # It's a poor man solution, but I don't see fancy alternatives
         for counter in range(10):
           requestClient = ReqClient()
@@ -1281,7 +1290,7 @@ class JobWrapper(object):
             resDigest = request.getDigest()
             digest = resDigest['Value']
             self.jobReport.setJobParameter('PendingRequest', digest)
-            break
+	    return S_OK(request)
           else:
             self.log.error('Failed to set failover request',
                            '%d: %s. Re-trying...' % (counter, result['Message']))
@@ -1289,7 +1298,9 @@ class JobWrapper(object):
             time.sleep(counter ** 3)
 
         if not result['OK']:
-          self.__report(status=JobStatus.FAILED, minorStatus='Failover Request Failed')
+	  return result
+
+    return S_OK()
 
   #############################################################################
   def __getRequestFiles(self):
