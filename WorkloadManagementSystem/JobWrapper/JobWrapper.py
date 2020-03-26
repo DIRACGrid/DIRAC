@@ -1276,7 +1276,7 @@ class JobWrapper(object):
           print(str(reqToJSON['Value']))
         else:
           self.log.error("Something went wrong creating the JSON from request", reqToJSON['Message'])
-	return S_ERROR(request)
+	return S_ERROR()
       else:
 	# We try several times to put the request before failing the job:
 	# it is very important that requests go through,

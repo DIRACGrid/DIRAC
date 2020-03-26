@@ -341,7 +341,6 @@ class JobAgent(AgentModule):
       result = self._submitJob(jobID, params, ceDict, optimizerParams, proxyChain,
                                processors, wholeNode, maxNumberOfProcessors, mpTag)
       if not result['OK']:
-        self.__report(jobID, 'Failed', result['Message'])
         return self.__finish(result['Message'])
       elif 'PayloadFailed' in result:
         # Do not keep running and do not overwrite the Payload error
@@ -530,8 +529,10 @@ class JobAgent(AgentModule):
         return S_OK()  # Without this, the job is marked as failed
       else:
         if 'Value' in submission:
-          self.log.error('Error in DIRAC JobWrapper:', 'exit code = %s' % (str(submission['Value'])))
-      return S_ERROR('%s CE Error: %s' % (self.ceName, submission['Message']))
+	  self.log.error('Error in DIRAC JobWrapper or inner CE execution:',
+			 'exit code = %s' % (str(submission['Value'])))
+      self.log.error("CE Error", "%s : %s" % (self.ceName, submission['Message']))
+      return submission
 
     return ret
 
