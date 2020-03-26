@@ -2,9 +2,9 @@
 
 
 helpmessage="\n\nScript usage:\n\n
-\t\t ./random_file_creator.sh <--option=value> \n\n
-e.g.\t  ./random_file_creator.sh --Files=12 --Name='Pippo_files_' \n
-e.g.\t  ./random_file_creator.sh --Path=/path/to/directory/i/want/ \n
+\t\t ./random_files_creator.sh <--option=value> \n\n
+e.g.\t  ./random_files_creator.sh --Files=12 --Name='Pippo_files_' \n
+e.g.\t  ./random_files_creator.sh --Path=/path/to/directory/i/want/ \n
 \n
 Options:
 \n\n

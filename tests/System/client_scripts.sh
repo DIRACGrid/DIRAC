@@ -46,14 +46,6 @@ then
 fi
 echo " "
 
-echo "======  dirac-admin-site-info LCG.CERN.cern"
-dirac-admin-site-info LCG.CERN.cern
-if [ $? -ne 0 ]
-then
-   exit $?
-fi
-echo " "
-
 echo " "
 echo " "
 echo " ########################## RMS #############################"

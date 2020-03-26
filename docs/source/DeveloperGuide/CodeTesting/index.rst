@@ -481,10 +481,15 @@ Continuous Integration software
 -------------------------------
 
 There are several tools, on the free market, for so-called *Continuous Integration*, or simply CI_.
-The most used right now is probably Jenkins_, which is also our recommendation.
-If you have looked in the `DIRAC/tests <https://github.com/DIRACGrid/DIRAC/tree/integration/tests>`_ (and if you haven't yet, you should, now!) you will see also a Jenkins folder.
+One possibility is to use Jenkins, but today (from branch *rel-v7r0*) all DIRAC integration tests are run
+by `GitHub Actions <https://github.com/DIRACGrid/DIRAC/actions?query=workflow%3A%22Integration+tests%22>`_
 
-What can Jenkins do for you? Several things, in fact:
+If you have looked in the `DIRAC/tests <https://github.com/DIRACGrid/DIRAC/tree/integration/tests>`_ 
+(and if you haven't yet, you should, now!) you will see also a folder called Jenkins, and one called CI.
+These 2 folders together are used for running all the integration tests. 
+Such tests can be run on GitHub Actions, on GitLab-CI, and on Jenkins.
+
+What can a tool like GitHub Actions, GitLab-CI, and Jenkins do for you? Several things, in fact:
 
 - it can run all the unit tests
 - it can run `Pylint <http://www.pylint.org/>`_ (of which we didn't talk about yet, but, that you should use, and for which it exists a nice documentation that you should probably read) (ah, use `this file <https://github.com/DIRACGrid/DIRAC/blob/integration/.pylintrc>`_ as configuration file.
@@ -494,148 +499,20 @@ What can Jenkins do for you? Several things, in fact:
 For example, the DIRAC.tests.Jenkins.dirac_ci.sh adds some nice stuff, like:
 
 - a function to install DIRAC (yes, fully), configure it, install all the databases, install all the services, and run them!
-- a function that runs the Pilot, so that a Jenkins node will look exactly like a Grid WN. Just, it will not start running the JobAgent
+- a function that runs the Pilot, so that a worker node will look exactly like a Grid WN. Just, it will not start running the JobAgent
 
 What can you do with those above? You can run the Integration tests you read above!
 
 How do I do that?
 
-- you need a MySQL DB somewhere, empty, to be used only for testing purposes.
+- you need a MySQL DB somewhere, empty, to be used only for testing purposes (in GitHub Actions and GitLab-CI a docker container is instantiated for the purpose)
+- you need a ElasticSearch instance running somewhere, empty, to be used only for testing purposes (in GitHub Actions and GitLab-CI a docker container is instantiated for the purpose)
 - if you have tests that need to access other DBs, you should also have them ready, again used for testing purposes.
-- you need to configure the Jenkins jobs. What follows is an example of Jenkins job for system tests::
 
+The files ``DIRAC/tests/Integration/all_integration_client_tests.sh`` and ``DIRAC/tests/Integration/all_integration_server_tests.sh``
+contain all the integration tests that will be executed. 
 
-   #!/bin/bash
-
-   export DIRACBRANCH=v6r20 # the branch of DIRAC that will be checkout
-
-   export PRERELEASE=True # if you want to test a DIRAC pre-release
-   export DEBUG=True
-
-   export DB_USER=Dirac # Normally it's always "Dirac"
-   export DB_PASSWORD=password # replace it with what you need --- in Jenkins you can inject passwords
-   export DB_ROOTUSER=admin  # replace it with what you need - either "root" or "admin"
-   export DB_ROOTPWD=password # replace it with what you need --- in Jenkins you can inject passwords
-   export DB_HOST=db-test.example.org # may also be localhost if needed
-   export DB_PORT=5501 # replace it with what you need
-   export NoSQLDB_HOST=localhost # elasticsearch will be installed locally
-   export NoSQLDB_PORT=9200 # default
-
-   # moving into TestCode directory for convenience
-   mkdir -p $PWD/TestCode
-   cd $PWD/TestCode
-
-   git clone git://github.com/DIRACGrid/DIRAC.git
-   cd DIRAC
-   git checkout rel-$DIRACBRANCH
-
-   # moving to base dir
-   cd ../..
-
-   set -e # may be removed
-   source TestCode/DIRAC/tests/Jenkins/dirac_ci.sh
-
-   # now we start installing the server
-
-   X509_CERT_DIR=$SERVERINSTALLDIR/etc/grid-security/certificates/ fullInstallDIRAC # this will install EVERYTHING!!! ---> will be long!
-
-   unset PYTHONOPTIMIZE
-
-
-   echo "**** INSTALLATION DONE ****"
-   echo "**** STARTING INTEGRATION TESTS ****"
-
-   cp -r $TESTCODE/DIRAC/tests/ $SERVERINSTALLDIR/DIRAC/
-
-   echo -e "*** $(date -u) **** Core TESTS ****\n"
-   pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/Test_ElasticsearchDB.py >> testOutputs.txt 2>&1
-
-   echo -e "*** $(date -u) **** Accounting TESTS ****\n"
-   pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/AccountingSystem/Test_DataStoreClient.py >> testOutputs.txt 2>&1
-
-   echo -e "*** $(date -u) **** FRAMEWORK TESTS (partially skipped) ****\n"
-   pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/Framework/Test_InstalledComponentsDB.py >> testOutputs.txt 2>&1
-   #pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/Framework/Test_LoggingDB.py >> testOutputs.txt 2>&1
-
-   echo -e "*** $(date -u)  **** RMS TESTS ****\n"
-   pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/RequestManagementSystem/Test_Client_Req.py >> testOutputs.txt 2>&1
-
-   echo -e "*** $(date -u)  **** RSS TESTS ****\n"
-   pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/ResourceStatusSystem/Test_FullChain.py >> testOutputs.txt 2>&1
-   pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/ResourceStatusSystem/Test_Publisher.py >> testOutputs.txt 2>&1
-   pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/ResourceStatusSystem/Test_ResourceManagement.py >> testOutputs.txt 2>&1
-   pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/ResourceStatusSystem/Test_ResourceStatus.py >> testOutputs.txt 2>&1
-   pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/ResourceStatusSystem/Test_SiteStatus.py >> testOutputs.txt 2>&1
-
-
-   echo -e "*** $(date -u)  **** WMS TESTS ****\n"
-   pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_JobDB.py >> testOutputs.txt 2>&1
-   pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_JobLoggingDB.py >> testOutputs.txt 2>&1
-   pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_TaskQueueDB.py >> testOutputs.txt 2>&1
-   python $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_Client_WMS.py $WORKSPACE/TestCode/DIRAC/tests/Integration/WorkloadManagementSystem/sb.cfg >> testOutputs.txt 2>&1
-   python $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_SandboxStoreClient.py $WORKSPACE/TestCode/DIRAC/tests/Integration/WorkloadManagementSystem/sb.cfg >> testOutputs.txt 2>&1
-   pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_JobWrapper.py >> testOutputs.txt 2>&1
-   python $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/createJobXMLDescriptions.py >> testOutputs.txt 2>&1
-   $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_dirac-jobexec.sh >> testOutputs.txt 2>&1
-   $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_TimeLeft.sh >> testOutputs.txt 2>&1
-
-   echo -e "*** $(date -u)  **** DMS TESTS ****\n"
-   ## DFC
-   echo "Test DFC DB" >> testOutputs.txt 2>&1
-   python $SERVERINSTALLDIR/DIRAC/tests/Integration/DataManagementSystem/Test_FileCatalogDB.py >> testOutputs.txt 2>&1
-
-   echo -e "*** $(date -u)  Reinitialize the DFC DB\n" >> testOutputs.txt 2>&1
-   diracDFCDB >> testOutputs.txt 2>&1
-
-   echo -e "*** $(date -u)  Run the DFC client tests as user without admin privileges" >> testOutputs.txt 2>&1
-   echo -e "*** $(date -u)  Getting a non privileged user\n" >> testOutputs.txt 2>&1
-   dirac-proxy-init -C $WORKSPACE/ServerInstallDIR/user/client.pem -K $WORKSPACE/ServerInstallDIR/user/client.key $DEBUG
-   python $SERVERINSTALLDIR/DIRAC/tests/Integration/DataManagementSystem/Test_Client_DFC.py >> testOutputs.txt 2>&1
-   #diracDFCDB
-   #python $SERVERINSTALLDIR/DIRAC/tests/Integration/DataManagementSystem/Test_FileCatalogDB.py >> testOutputs.txt 2>&1
-
-   echo "Reinitialize the DFC DB" >> testOutputs.txt 2>&1
-   diracDFCDB >> testOutputs.txt 2>&1
-
-   echo -e "*** $(date -u)  Restart the DFC service\n" &>> testOutputs.txt
-   dirac-restart-component DataManagement FileCatalog $DEBUG &>> testOutputs.txt
-
-   echo -e "*** $(date -u)  Run it with the admin privileges" >> testOutputs.txt 2>&1
-   echo -e "*** $(date -u)  getting the prod role again\n" >> testOutputs.txt 2>&1
-   dirac-proxy-init -g prod -C $WORKSPACE/ServerInstallDIR/user/client.pem -K $WORKSPACE/ServerInstallDIR/user/client.key $DEBUG >> testOutputs.txt 2>&1
-   python $SERVERINSTALLDIR/DIRAC/tests/Integration/DataManagementSystem/Test_Client_DFC.py >> testOutputs.txt 2>&1
-   diracDFCDB
-   python $SERVERINSTALLDIR/DIRAC/tests/Integration/DataManagementSystem/Test_FileCatalogDB.py >> testOutputs.txt 2>&1
-
-   echo -e "*** $(date -u)  **** FTS TESTS ****\n"
-   pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/DataManagementSystem/Test_Client_FTS3.py >> testOutputs.txt 2>&1
-
-   echo -e "*** $(date -u)  **** MONITORING TESTS ****\n"
-   pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/Monitoring/Test_MonitoringReporter.py >> testOutputs.txt 2>&1
-   pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/Monitoring/Test_MonitoringSystem.py >> testOutputs.txt 2>&1
-
-   echo -e "*** $(date -u)  **** TS TESTS ****\n"
-   pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/TransformationSystem/Test_Client_Transformation.py >> testOutputs.txt 2>&1
-
-   echo -e "*** $(date -u)  **** Resources TESTS ****\n"
-   python $SERVERINSTALLDIR/DIRAC/tests/Integration/Resources/Storage/Test_Resources_GFAL2StorageBase.py ProductionSandboxSE >> testOutputs.txt 2>&1
-
-
-   echo -e "*** $(date -u) **** TESTS OVER ****\n"
-
-   cp testOutputs.txt $WORKSPACE/
-
-   echo -e "*** $(date -u) **** Now stopping/removing stuff ****\n"
-
-   clean
-
-   echo -e "*** $(date -u) *** DONE ****\n"
-
-
-This test is VERY complete, as you can see. If you are only testing locally, it may be too much,
-but as it is it's perfect for a job running in Jenkins.
-
-At the same time, if you are a developer you should be able to extrapolate from the above those parts that you need,
+If you are a developer you should be able to extrapolate from the above those parts that you need,
 in case you are testing only one specific service.
 
 
@@ -683,7 +560,7 @@ Examples of a system test might be: send jobs on the Grid, and expecting them to
 Validation and system tests are usually coded by software testers. The DIRAC repository contains, in the *tests* `package <https://github.com/DIRACGrid/DIRAC/tree/integration/tests/System>`_
 a minimal set of test jobs, but since most of the test jobs that you can run are VO specific, we suggest you to expand the list.
 
-The server `lbcertifdirac6.cern.ch <lbcertifdirac6.cern.ch:8443>`_ is used as "DIRAC certification machine".
+The server `lbcertifdirac70.cern.ch <lbcertifdirac70.cern.ch>`_ is used as "DIRAC certification machine".
 With "certification machine" we mean that it is a full DIRAC installation, that connects to grid resources, and through which we certify pre-production versions.
 Normally, the latest DIRAC pre-releases are installed there.
 Its access is restricted to some power users, for now, but do request access if you need to do some specific system test.
