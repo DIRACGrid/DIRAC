@@ -344,6 +344,21 @@ NEW: (#4170) added Production system documentation
 CHANGE: (#4224) Pilot 3 is the default
 NEW: (#4244) Added a few notes on using the JobParameters on ElasticSearch database
 
+[v6r22p25]
+
+*Framework
+FIX: (#4503) SystemLoggingDB: reduce too long messages to 255 characters (see also #1780 ?)
+
+*WMS
+FIX: (#4503) JobLoggingDB: Limit StatusSource to 32 characters
+
+*TS
+CHANGE: (#4503) TransformationDB.Transformations TransformationGroup column increased to 255 characters
+        (ALTER TABLE Transformations MODIFY TransformationGroup VARCHAR(255) NOT NULL default 'General';)
+
+*Resources
+FIX: (#4511) Moved _prepareRemoteHost in SSHComputingElement
+
 [v6r22p24]
 
 *Core
