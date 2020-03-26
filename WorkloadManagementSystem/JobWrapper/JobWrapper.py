@@ -284,8 +284,6 @@ class JobWrapper(object):
     os.environ['DIRACJOBID'] = str(self.jobID)
     os.environ['DIRACROOT'] = self.localSiteRoot
     self.log.verbose('DIRACROOT = %s' % (self.localSiteRoot))
-    os.environ['DIRACPYTHON'] = sys.executable
-    self.log.verbose('DIRACPYTHON = %s' % (sys.executable))
     os.environ['DIRACSITE'] = DIRAC.siteName()
     self.log.verbose('DIRACSITE = %s' % (DIRAC.siteName()))
 
