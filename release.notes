@@ -1,6 +1,7 @@
-[v7r1-pre20]
+[v7r1-pre21]
 
 NEW: Add environment.yml file for preparing an environment with conda
+CHANGE: (#4507) autopep8 for the entire code stack
 
 *Core
 NEW: initial support for mysql8
