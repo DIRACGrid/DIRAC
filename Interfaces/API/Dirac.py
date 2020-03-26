@@ -449,8 +449,6 @@ class Dirac(API):
     """ This internal method runs a tailored job agent for the local execution
         of a previously submitted WMS job. The type of CEUniqueID can be overidden
         via the configuration.
-
-        Currently must unset CMTPROJECTPATH to get this to work.
     """
     agentName = 'WorkloadManagement/JobAgent'
     self.log.verbose('In case being booted from a DIRAC script,'
@@ -710,6 +708,9 @@ class Dirac(API):
     """ Internal function.  This method is called by DIRAC API function submitJob(job,mode='Local').
         All output files are written to the local directory.
 
+        This is a method for running local tests. It skips the creation of a JobWrapper,
+        but preparing an environment that mimicks it.
+
     :param job: a job object
     :type job: ~DIRAC.Interfaces.API.Job.Job
     """
@@ -735,13 +736,14 @@ class Dirac(API):
       self.log.error("Could not extract job parameters from job")
       return res
     parameters = res['Value']
+    self.log.debug("Extracted job parameters from JDL", parameters)
 
     arguments = parameters.get('Arguments', '')
 
     # Replace argument placeholders for parametric jobs
     # if we have Parameters then we have a parametric job
     if 'Parameters' in parameters:
-      for par, value in parameters.iteritems():
+      for par, value in parameters.items():
         if par.startswith('Parameters.'):
           # we just use the first entry in all lists to run one job
           parameters[par[len('Parameters.'):]] = value[0]
@@ -815,6 +817,7 @@ class Dirac(API):
     else:
       self.log.verbose('Could not retrieve DIRAC/VOPolicy/SoftwareDistModule for VO')
 
+    self.log.debug("Looking for resolving the input sandbox, if it is present")
     sandbox = parameters.get('InputSandbox')
     if sandbox:
       self.log.verbose("Input Sandbox is %s" % sandbox)
@@ -860,19 +863,23 @@ class Dirac(API):
 
     self.log.info('Attempting to submit job to local site: %s' % DIRAC.siteName())
 
-    # If not set differently in the CS use the root from the current DIRAC installation
-    siteRoot = gConfig.getValue('/LocalSite/Root', DIRAC.rootPath)
-
-    os.environ['DIRACROOT'] = siteRoot
-    self.log.verbose('DIRACROOT = %s' % (siteRoot))
-    os.environ['DIRACPYTHON'] = sys.executable
-    self.log.verbose('DIRACPYTHON = %s' % (sys.executable))
+    # DIRACROOT is used for finding dirac-jobexec (it is normally set by the JobWrapper)
+    # We don't use DIRAC.rootPath as we assume that a DIRAC installation is already done at this point
+    os.environ['DIRACROOT'] = os.environ['DIRAC']
+    self.log.verbose('DIRACROOT = %s' % (os.environ['DIRACROOT']))
 
     if 'Executable' in parameters:
       executable = os.path.expandvars(parameters['Executable'])
     else:
       return self._errorReport('Missing job "Executable"')
 
+    if '-o LogLevel' in arguments:
+      dArguments = arguments.split()
+      logLev = dArguments.index('-o') + 1
+      dArguments[logLev] = 'LogLevel=DEBUG'
+      arguments = ' '.join(dArguments)
+    else:
+      arguments += ' -o LogLevel=DEBUG'
     command = '%s %s' % (executable, arguments)
 
     self.log.info('Executing: %s' % command)
@@ -888,9 +895,7 @@ class Dirac(API):
         executionEnv[nameEnv] = valEnv
         self.log.verbose('%s = %s' % (nameEnv, valEnv))
 
-    cbFunction = self.__printOutput
-
-    result = systemCall(0, cmdSeq=shlex.split(command), env=executionEnv, callbackFunction=cbFunction)
+    result = systemCall(0, cmdSeq=shlex.split(command), env=executionEnv, callbackFunction=self.__printOutput)
     if not result['OK']:
       return result
 
@@ -944,7 +949,7 @@ class Dirac(API):
 
     if status:  # if it fails, copy content of execution dir in current directory
       destDir = os.path.join(curDir, os.path.basename(os.path.dirname(tmpdir)))
-      self.log.debug("Copying outputs from %s to %s" % (tmpdir, destDir))
+      self.log.verbose("Copying outputs from %s to %s" % (tmpdir, destDir))
       if os.path.exists(destDir):
         shutil.rmtree(destDir)
       shutil.copytree(tmpdir, destDir)
@@ -2578,9 +2583,12 @@ class Dirac(API):
     :param jdl: a JDL
     :type jdl: ~DIRAC.Interfaces.API.Job.Job or str or file
     """
+    self.log.debug("in __getJDLParameters")
     if hasattr(jdl, '_toJDL'):
+      self.log.debug("jdl has a _toJDL method")
       jdl = jdl._toJDL()
     elif os.path.exists(jdl):
+      self.log.debug("jdl %s is a file" % jdl)
       with open(jdl, 'r') as jdlFile:
         jdl = jdlFile.read()
 

@@ -13,6 +13,7 @@ pyasn1>0.4.1
 pyasn1_modules
 pyparsing
 pytz
+recommonmark
 sqlalchemy
 subprocess32
 suds

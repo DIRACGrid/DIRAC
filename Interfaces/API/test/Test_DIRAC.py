@@ -35,8 +35,7 @@ def job():
   job = Job(stdout='printer', stderr='/dev/null')
   job.setInputSandbox(['LFN:/vo/user/i/initial/important.tar.gz',
                        '/abspath/absfile.xml',
-                       'file_in_pwd.xml',
-                       ])
+                       'file_in_pwd.xml'])
   return job
 
 
@@ -44,6 +43,7 @@ def job():
 def osmock():
   os = MagicMock(return_value=False, name="OS")
   os.environ = dict()
+  os.environ['DIRAC'] = '/root/dirac'
 
   def expandMock(*args, **kwargs):
     if 'DIRACROOT' in os.environ and \
@@ -122,7 +122,7 @@ def test_runLocal(dirac, job, mocker, osmock, confMock):
   LOG.info("dirac log calls: %s", dirac.log.call_args_list)
   LOG.info("CallStack: %s", pformat(ret.get('CallStack', {})))
   assert sysMock.call_args_list[0][1]['cmdSeq'] == ['/root/dirac/scripts/dirac-jobexec',
-                                                    'jobDescription.xml', '-o', 'LogLevel=info']
+                                                    'jobDescription.xml', '-o', 'LogLevel=DEBUG']
   assert ret.get('Message', None) is None
   assert ret['OK']
   assert call('/abspath/absfile.xml', '/pwd/tempFolder/') in shMock.copy.call_args_list
