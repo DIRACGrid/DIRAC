@@ -24,6 +24,7 @@ dependencies:
   - pygsi
   - python-json-logger >=0.1.8
   - pytz >=2015.7
+  - recommonmark
   - requests >=2.9.1
   - rst2pdf >=0.93
   - six >=1.10
