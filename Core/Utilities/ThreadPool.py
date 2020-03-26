@@ -77,7 +77,7 @@ import Queue
 import threading
 try:
   from DIRAC.FrameworkSystem.Client.Logger import gLogger
-except:
+except BaseException:
   gLogger = False
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 
@@ -301,12 +301,15 @@ class ThreadPool(threading.Thread):
 
 
 gThreadPool = False
+
+
 def getGlobalThreadPool():
   global gThreadPool
   if not gThreadPool:
     gThreadPool = ThreadPool(1, 500)
     gThreadPool.daemonize()
   return gThreadPool
+
 
 if __name__ == "__main__":
   import random
@@ -318,10 +321,10 @@ if __name__ == "__main__":
       raise Exception("TEST EXCEPTION")
     return fResult
 
-  def showResult( oTJ, fResult ):
+  def showResult(oTJ, fResult):
     print("Result %s from %s" % (fResult, oTJ))
 
-  def showException( oTJ, exc_info ):
+  def showException(oTJ, exc_info):
     print("Exception %s from %s" % (exc_info[1], oTJ))
 
   OTP = ThreadPool(5, 10)
@@ -341,7 +344,7 @@ if __name__ == "__main__":
   while True:
     time.sleep(1)
     gIResult = OTP.processResults()
-    gINew = gIResult + random.randint( -3, 2 )
+    gINew = gIResult + random.randint(-3, 2)
     print("Processed %s, generating %s.." % (gIResult, gINew))
-    generateWork( gINew )
+    generateWork(gINew)
     print("Threads %s" % OTP.numWorkingThreads(), OTP.pendingJobs())

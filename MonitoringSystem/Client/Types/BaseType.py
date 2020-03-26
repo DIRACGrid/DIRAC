@@ -6,7 +6,9 @@ Helper class for configuring the monitoring service.
 __RCSID__ = "$Id$"
 
 ########################################################################
-class BaseType( object ):
+
+
+class BaseType(object):
 
   """
   .. class:: BaseType
@@ -22,40 +24,39 @@ class BaseType( object ):
                        Note: If you do not want to be analysed a string, you have to set the mapping
   :param str period: We can configure the elasticsearch index type. By default we use daily indexes. But we can use monthly indexes.
                      Supported values: day, month
-  
+
   """
 
-
   ########################################################################
-  def __init__( self ):
+  def __init__(self):
     """ c'tor
 
     :param self: self reference
     """
     self.doc_type = None
     self.keyFields = []
-    self.mapping = {} #by default we do not have mapping
-    self.timeType = {'properties' : {'timestamp': {'type': 'date'} } }  #we use timestamp for all monitoring types.
+    self.mapping = {}  # by default we do not have mapping
+    self.timeType = {'properties': {'timestamp': {'type': 'date'}}}  # we use timestamp for all monitoring types.
     self.period = 'day'
     self.monitoringFields = ["Value"]
     self.index = None
     self.index = self._getIndex()
-    
+
     # we only keep the last month of the data.
     self.dataToKeep = -1
 
   ########################################################################
-  def checkType( self ):
+  def checkType(self):
     """
     The mandatory fields has to be present
     """
     if not self.keyFields:
-      raise Exception( "keyFields has to be provided!" )
+      raise Exception("keyFields has to be provided!")
     if not self.monitoringFields:
-      raise Exception( "monitoringFields has to be provided!" )
+      raise Exception("monitoringFields has to be provided!")
 
   ########################################################################
-  def _getIndex ( self ):
+  def _getIndex(self):
     """It returns and index based on the name of the type.
     For example: WMSMonitorType the type the index will be wmsmonitor
     """
@@ -68,7 +69,7 @@ class BaseType( object ):
     return index
 
   ########################################################################
-  def _getDocType( self ):
+  def _getDocType(self):
     """
     It returns the corresponding category. The type of a document.
     """
@@ -80,8 +81,8 @@ class BaseType( object ):
       doctype = self.doc_type
     return doctype
 
-
   ########################################################################
+
   def addMapping(self, mapping):
     """
     :param dict mapping: the mapping used by elasticsearch

@@ -13,11 +13,11 @@ from DIRAC.FrameworkSystem.private.standardLogging.Formatter.BaseFormatter impor
 
 class FileBackend(AbstractBackend):
   """
-  FileBackend is used to create an abstraction of the handler and the formatter concepts from logging. 
-  Here, we gather a FileHandler object and a BaseFormatter. 
+  FileBackend is used to create an abstraction of the handler and the formatter concepts from logging.
+  Here, we gather a FileHandler object and a BaseFormatter.
 
   - FileHandler is from the standard logging library: it is used to write log messages in a desired file
-    so it needs a filename. 
+    so it needs a filename.
 
   - BaseFormatter is a custom Formatter object, created for DIRAC in order to get the appropriate display.
     You can find it in FrameworkSystem/private/standardLogging/Formatter
@@ -25,7 +25,7 @@ class FileBackend(AbstractBackend):
 
   def __init__(self):
     """
-    :params __filename: string representing the default name of the file. 
+    :params __filename: string representing the default name of the file.
                         The default name come from the old gLogger.
     """
     super(FileBackend, self).__init__(None, BaseFormatter)

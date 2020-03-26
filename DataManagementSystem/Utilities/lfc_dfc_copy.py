@@ -33,7 +33,6 @@ globalStart = time.time()
 dnCache = {}
 roleCache = {}
 
-
 def writer(filename, writerQueue, stopFlag):
   print("entering writer")
   with open(filename, 'w') as outputFile:

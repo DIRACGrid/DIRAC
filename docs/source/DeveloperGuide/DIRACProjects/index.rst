@@ -96,9 +96,32 @@ that can evolve independently. By defining releases as groups of modules with th
 ensure that a release is consistent for its modules. DIRAC uses this mechanism to ensure that the DIRAC 
 Web will always be installed with a DIRAC version that it works with.
 
-The *Sources* section defines where to extract the source code from for each module. *dirac-distribution* 
-will assume that there's a tag in that source origin with the same name as the version of the module to be 
-released. *dirac-distribution* knows how to handle several types of VCS. The ones supported are:
+The *Sources* section defines where to extract the source code from for each module. 
+
+The releases are created using the *dirac-distribution* docker image, which can be found in GitHub package registry or in docker hub::
+
+  docker.pkg.github.com/diracgrid/management/dirac-distribution:latest (https://github.com/DIRACGrid/management/packages/79929)
+  diracgrid/dirac-distribution (https://hub.docker.com/r/diracgrid/dirac-distribution)
+
+Pull it and run inside the dirac-distribution command::
+
+  docker pull diracgrid/dirac-distribution
+  python3 dirac-distribution.py -r v7r0p8
+
+The above works also for DIRAC extensions, in this case just remember to specify the project name, e.g.::
+
+  python3 dirac-distribution.py --release v10r0-pre11 --project LHCb
+
+The *dirac-distribution* image is re-created weekly starting from the
+`management repository <https://github.com/DIRACGrid/management>`_
+
+You can also pass the releases.cfg to use via command line using the *-relcfg* switch. 
+*dirac-distribution* will generate a set of tarballs, release notes in *html* and md5 files.
+
+In the end of its execution, the *dirac-distribution* will print out a command that can be
+used to upload generated release files to a predefined repository, as you read above.
+
+*dirac-distribution* knows how to handle several types of VCS. The ones supported are:
 
 file
  A directory in the filesystem. *dirac-distribution* will assume that the directory especified contains 
@@ -133,9 +156,6 @@ If a project is given, all modules inside that *releases.cfg* have to start with
 For instance, if *dirac-install* is going to install project LHCb, all modules inside LHCb's *releases.cfg* 
 have to start with LHCb. 
 
-*dirac-distribution* will generate a set of tarballs, *md5* files and a ``release-<projectName>-<version>.cfg``. 
-Once generated, they have to be upload to the install project source of tarballs where *dirac-install* will try 
-to pick them up.
 
 How to define how to make a project distribution
 ------------------------------------------------

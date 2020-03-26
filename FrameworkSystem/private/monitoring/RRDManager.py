@@ -14,6 +14,7 @@ __RCSID__ = "$Id$"
 
 
 class RRDManager(object):
+
   __sizesList = [[200, 50], [400, 100], [600, 150], [800, 200]]
   __logRRDCommands = False
 
@@ -100,6 +101,7 @@ class RRDManager(object):
     # Understanding this method it basically takes in the activity data which is sent from the client i.e. the gMonitor
     # object and checks if the file is created by the MonitoringCatalog as it creates an .rrd file using the
     # registerActivity method within it.
+
     rrdFilePath = "%s/%s" % (self.rrdLocation, rrdFile)
     if os.path.isfile(rrdFilePath):
       return S_OK()
@@ -120,7 +122,7 @@ class RRDManager(object):
       cf = "AVERAGE"
     cmd += " DS:value:%s:%s:U:U" % (dst, bucketLength * 10)
     # 1m res for 1 month
-    #cmd += " RRA:%s:0.9:1:43200" % cf
+    # cmd += " RRA:%s:0.9:1:43200" % cf
     # 1m red for 1 year
     cmd += " RRA:%s:0.999:1:%s" % (cf, 31536000 / bucketLength)
     return self.__exec(cmd, rrdFilePath)

@@ -25,6 +25,7 @@ class PlotCache(object):
   # This class is basically used to cache the graphs that are generated once so if the user tries to generate them again
   # the entire process of graph generation using RRDManager is not performed instead a cached version of the graph is
   # returned to reduce the response time.
+
   def __init__(self, rrdManager=None):
     if rrdManager is None:
       self.rrdManager = RRDManager

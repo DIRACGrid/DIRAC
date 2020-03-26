@@ -20,6 +20,9 @@ import sys
 
 sys.path.insert(0, ".")
 
+import recommonmark
+from recommonmark.transform import AutoStructify
+
 import diracdoctools
 import diracdoctools.cmd
 from diracdoctools import fakeEnvironment, environmentSetup, DIRAC_DOC_MOCK_LIST
@@ -76,13 +79,27 @@ extensions = ['sphinx.ext.autodoc', 'sphinx.ext.autosummary',
               'sphinx.ext.intersphinx',
               'sphinx.ext.napoleon',
               'sphinx.ext.graphviz',
+              'recommonmark',
               ]
+
+
+def setup(app):
+  app.add_config_value('recommonmark_config',
+                       {'enable_eval_rst': True,
+                        'auto_toc_tree_section': 'Contents',
+                        },
+                       True)
+  app.add_transform(AutoStructify)
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
 # The suffix of source filenames.
-source_suffix = '.rst'
+source_suffix = {'.rst': 'restructuredtext',
+                 '.txt': 'ma',
+                 '.md': 'markdown',
+                 }
+
 
 # The encoding of source files.
 #source_encoding = 'utf-8'

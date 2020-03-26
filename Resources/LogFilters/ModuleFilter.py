@@ -38,6 +38,7 @@ class ModuleFilter(object):
   needs to be DEBUG (e.g., -ddd for commands)
 
   """
+
   def __init__(self, optionDict):
     """Contruct the object, set the base LogLevel to DEBUG, and parse the options."""
     self._configDict = {'dirac': {LEVEL: LogLevels.DEBUG}}

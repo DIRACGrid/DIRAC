@@ -8,17 +8,18 @@ readline.set_completer_delims(' \t\n`~!@#$%^&*()=+[{]}\\|;:\'",<>/?')
 
 import os.path
 
+
 class DirectoryCompletion(object):
   def __init__(self, fs):
     self.fs = fs
 
   def parse_text_line(self, text, line, cwd):
-    """ Here, the text and line is from the 
+    """ Here, the text and line is from the
         complete_xxx(self, text, line, begidx, endidx).
 
         text is the word. line is the whole sentence.
 
-        such as 
+        such as
 
         /home/ihep/work/initrd.lz[]
 
@@ -34,13 +35,13 @@ class DirectoryCompletion(object):
     dirname = self.get_dirname(path)
     filename = self.get_filename(path, dirname)
 
-    result = list( self.fs.list_dir(dirname) )
+    result = list(self.fs.list_dir(dirname))
 
-    text = filename #+ text
+    text = filename  # + text
 
     result = [i for i in result if i.startswith(text)]
 
-    return result 
+    return result
 
   # check absolute path
   def check_absolute(self, path):
@@ -55,7 +56,7 @@ class DirectoryCompletion(object):
       pass
     else:
       path = os.path.join(cwd, path)
-    return path 
+    return path
 
   # get the parent directory or the current directory
   # Using the last char "/" to determine
@@ -63,21 +64,22 @@ class DirectoryCompletion(object):
     if self.check_absolute(path):
       # if it is the absolute path,
       # return dirname
-      if (path.endswith( self.fs.seq )):
-        path = os.path.normpath( path ) + self.fs.seq
+      if (path.endswith(self.fs.seq)):
+        path = os.path.normpath(path) + self.fs.seq
       else:
-        path = os.path.normpath( os.path.dirname(path) ) + self.fs.seq
+        path = os.path.normpath(os.path.dirname(path)) + self.fs.seq
     path = path.replace('//', '/')
     return path
 
   def get_filename(self, path, dirname):
     if self.check_absolute(path):
-      if (path.endswith( self.fs.seq )):
+      if (path.endswith(self.fs.seq)):
         path = ""
       else:
-        path = os.path.normpath( os.path.basename(path) ) 
+        path = os.path.normpath(os.path.basename(path))
     path = path.replace('//', '/')
     return path
+
 
 if __name__ == "__main__":
   from AbstractFileSystem import UnixLikeFileSystem

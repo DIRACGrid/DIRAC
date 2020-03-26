@@ -22,7 +22,7 @@ from DIRAC.FrameworkSystem.private.monitoring.MonitoringCatalog import Monitorin
 class ServiceInterface(object):
   """
   The gServiceInterface singleton object which is used by the MonitoringHandle to register activities and
-  commit the data is inhertied from this class.
+  commit the data is inherited from this class.
   """
 
   __sourceToComponentIdMapping = {}
@@ -570,7 +570,7 @@ class ServiceInterface(object):
 
   def __cmdb_registerComponent(self, sourceId, sourceDict, componentExtraInfo):
     """
-    Writes all the basic component information to the ComponentMontoringDB.
+    Writes all the basic component information to the ComponentMonitoringDB.
 
     :type sourceId: string
     :param sourceId: the source id.
@@ -606,6 +606,7 @@ class ServiceInterface(object):
     :param componentExtraInfo: The dictionary containing extra information.
     :return: True / False
     """
+    # Component heartbeat
     if sourceId not in ServiceInterface.__sourceToComponentIdMapping:
       if not self.__cmdb__loadComponentFromActivityDB(sourceId):
         return False

@@ -999,7 +999,7 @@ class LcgFileCatalogClient(FileCatalogClientBase):
         lfns[lfn]["PFN"] = lfnrep[lfns[lfn]['SE']]
     failed = {}
     for lfn, message in res['Value']['Failed'].items():
-      if "PFN" not in lfns[lfn]:  # Change only if PFN not in there
+      if "PFN" not in lfns[lfn]:  # Change only if PFN is not there
         failed[lfn] = message  # The replicas are not available, mark the lfn as failed
         lfns.pop(lfn)  # and remove them
     successful = {}
@@ -1088,8 +1088,7 @@ class LcgFileCatalogClient(FileCatalogClientBase):
     # lfns {'L2': {'S1': 'P3'}, 'L3': {'S3': 'P5', 'S2': 'P4', 'S4': 'P6'}, 'L1': {'S2': 'P2', 'S1': 'P1'}}
     #
     # loop1: lfnSEs {'L2': ['S1'], 'L3': ['S3', 'S2', 'S4'], 'L1': ['S2', 'S1']}
-    # loop1 : batch {'L2': {'Status': 'P', 'SE': 'S1', 'PFN': 'P3'},
-    #                'L3': {'Status': 'P', 'SE': 'S4', 'PFN': 'P6'},
+    # loop1 : batch {'L2': {'Status': 'P', 'SE': 'S1', 'PFN': 'P3'}, 'L3': {'Status': 'P', 'SE': 'S4', 'PFN': 'P6'},
     #                'L1': {'Status': 'P', 'SE': 'S1', 'PFN': 'P1'}}
     #
     # loop2: lfnSEs {'L2': [], 'L3': ['S3', 'S2'], 'L1': ['S2']}
@@ -1375,7 +1374,7 @@ class LcgFileCatalogClient(FileCatalogClientBase):
       # but... not touching this black magic
       try:
         guidLFN[guid] = self.__getLfnForGUID(guid)['Value']
-      except Exception:
+      except Exception as _e:
         failed[guid] = "GUID does not exist"
     return S_OK({"Successful": guidLFN, "Failed": failed})
 
@@ -1451,8 +1450,8 @@ class LcgFileCatalogClient(FileCatalogClientBase):
     error, replicaObjects = lfc.lfc_getreplica(self.__fullLfn(lfn), '', '')
     return returnCode(error or not replicaObjects,
                       dict([(replica.host,
-                             replica.sfn) for replica in replicaObjects
-                            if allStatus or replica.status != 'P']) if not error else None,
+                             replica.sfn) for replica in replicaObjects if allStatus or replica.status != 'P'])
+                      if not error else None,
                       errMsg='File has zero replicas' if not error else '')
 
   def __getFileReplicaStatus(self, lfn, se):

@@ -311,14 +311,14 @@ class WebAppCompiler(object):
 
     try:
       self.__cmd(["sencha"])
-    except OSError:
+    except OSError as _:
       try:
         path = os.path.join(self.__senchacmddir, self.__senchaVersion)
         if os.path.exists(path):
           sys.path.append(path)
           syspath = os.environ['PATH']
           os.environ['PATH'] = path + os.pathsep + syspath
-      except OSError:
+      except OSError as _:
         raise OSError("sencha cmd is not installed!")
 
   def getAppDependencies(self):
@@ -370,7 +370,7 @@ class WebAppCompiler(object):
           gLogger.verbose("%s:%s is an absolute definition" % (modName, current))
           try:
             webCFG.deleteKey(current)
-          except Exception:
+          except BaseException:
             pass
           modCFG.deleteKey("%s/AbsoluteDefinition" % current)
         else:

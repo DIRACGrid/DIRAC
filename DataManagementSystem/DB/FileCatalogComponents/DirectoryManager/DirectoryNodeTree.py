@@ -34,9 +34,9 @@ class DirectoryNodeTree(DirectoryTreeBase):
       else:
         req += "SELECT DirID from FC_DirectoryTreeM WHERE Level=%d AND DirName='%s'" % (level, elements[level - 1])
     req += ")" * (len(elements) - 1)
-    #print req
+    # print req
     result = self.db._query(req)
-    #print "in findDir",result
+    # print "in findDir",result
     if not result['OK']:
       return result
     if not result['Value']:

@@ -219,8 +219,8 @@ class Job(API):
        or a directory may be uploaded to Grid storage, see C{dirac.uploadSandbox()}.
 
        Paths to the options file and (if required) 'lib/' directory of the DLLs
-       are specified here. Default is local directory.  CMT requirements files or
-       executables may be placed in the lib/ directory if desired. The lib/ directory
+       are specified here. Default is local directory.
+       Executables may be placed in the lib/ directory if desired. The lib/ directory
        is transferred to the Grid Worker Node before the job executes.
 
        Files / directories can be specified using the `*` character e.g. `*.txt`  these

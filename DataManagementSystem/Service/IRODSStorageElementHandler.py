@@ -146,6 +146,7 @@ class IRODSStorageElementHandler(RequestHandler):
     # dsize = ( getDiskSpace( dpath ) - 1 ) * 1024 * 1024
     # maxStorageSizeBytes = MAX_STORAGE_SIZE * 1024 * 1024
     # return ( min( dsize, maxStorageSizeBytes ) > size )
+
     return True
 
   def __resolveFileID(self, fileID, userDict):

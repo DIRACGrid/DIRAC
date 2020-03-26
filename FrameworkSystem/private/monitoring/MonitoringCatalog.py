@@ -16,7 +16,7 @@ from DIRAC.Core.Utilities import Time
 class MonitoringCatalog(object):
   """
   This class is used to perform all kinds queries to the sqlite3 database.
-  """
+  """1
 
   def __init__(self, dataPath):
     """
@@ -55,7 +55,7 @@ class MonitoringCatalog(object):
         else:
           cursor.execute(query)
         executed = True
-      except Exception:
+      except BaseException:
         time.sleep(0.01)
     return cursor
 
@@ -279,8 +279,9 @@ class MonitoringCatalog(object):
       filePath = m.hexdigest()
       filePath = "%s/%s.rrd" % (filePath[:2], filePath)
       self.log.info("Registering activity", str(acDict))
-      # This is bascially called by the ServiceInterface inside registerActivities method and then all the activity
+      # This is basically called by the ServiceInterface inside registerActivities method and then all the activity
       # information is stored in the sqlite3 db using the __insert method.
+
       if self.__insert("activities", {'id': 'NULL',
                                       'filename': "'%s'" % filePath,
                                       },

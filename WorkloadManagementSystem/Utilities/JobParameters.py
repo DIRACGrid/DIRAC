@@ -98,12 +98,12 @@ def getNumberOfProcessors(siteName=None, gridCE=None, queue=None):
   gLogger.info("Getting number of processors" "from tags for %s: %s: %s" % (siteName, gridCE, queue))
   # Tags of the CE
   tags = fromChar(gConfig.getValue('/Resources/Sites/%s/%s/CEs/%s/Tag' % (siteName.split('.')[0], siteName, gridCE),
-                  ''))
+                                   ''))
   # Tags of the Queue
   tags += fromChar(gConfig.getValue('/Resources/Sites/%s/%s/CEs/%s/Queues/%s/Tag' % (siteName.split('.')[0],
                                                                                      siteName,
                                                                                      gridCE, queue),
-                   ''))
+                                    ''))
   for tag in tags:
     numberOfProcessorsTag = re.search('[0-9]Processors', tag)
     if numberOfProcessorsTag:
@@ -140,12 +140,12 @@ def getNumberOfPayloadProcessors(siteName=None, gridCE=None, queue=None):
   # 2) Checks if 'Whole' is one of the used tags
   # Tags of the CE
   tags = fromChar(gConfig.getValue('/Resources/Sites/%s/%s/CEs/%s/Tag' % (siteName.split('.')[0], siteName, gridCE),
-                  ''))
+                                   ''))
   # Tags of the Queue
   tags += fromChar(gConfig.getValue('/Resources/Sites/%s/%s/CEs/%s/Queues/%s/Tag' % (siteName.split('.')[0],
                                                                                      siteName,
                                                                                      gridCE, queue),
-                   ''))
+                                    ''))
 
   if 'WholeNode' in tags:
     return getNumberOfProcessors()

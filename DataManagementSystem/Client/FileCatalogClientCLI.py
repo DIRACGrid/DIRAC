@@ -1453,10 +1453,7 @@ File Catalog Client $Revision: 1.17 $Date:
                     if not se.startswith("Total"):
                       size = sdata['Size']
                       nfiles = sdata['Files']
-                      #print se.rjust(20),':',int_with_commas(size).ljust(25),"Files:",nfiles
                       values.append((se, int_with_commas(size), str(nfiles)))
-                  #print '='*60
-                  #print 'Total'.rjust(20),':',int_with_commas(totalSize).ljust(25),"Files:",totalFiles
                   values.append(('Total', int_with_commas(totalSize), str(totalFiles)))
                   printTable(fields, values)
               if "QueryTime" in result['Value']:
@@ -2193,7 +2190,6 @@ File Catalog Client $Revision: 1.17 $Date:
     records = []
     for key, value in result['Value'].items():
       records.append((key, str(value)))
-      #print key.rjust(15),':',result['Value'][key]
     printTable(fields, records)
 
   def do_rebuild(self, args):

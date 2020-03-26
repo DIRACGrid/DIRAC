@@ -10,14 +10,14 @@ __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base import Script
 
-Script.setUsageMessage( """
+Script.setUsageMessage("""
 Get the list of sites enabled in the mask for job submission
 
 Usage:
    %s [options]
-""" % Script.scriptName )
+""" % Script.scriptName)
 
-Script.parseCommandLine( ignoreErrors = True )
+Script.parseCommandLine(ignoreErrors=True)
 
 from DIRAC import exit as DIRACExit, gLogger
 from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
@@ -28,7 +28,7 @@ gLogger.setLevel('ALWAYS')
 
 result = diracAdmin.getSiteMask(printOutput=True, status="Active")
 if result['OK']:
-  DIRACExit( 0 )
+  DIRACExit(0)
 else:
   print(result['Message'])
-  DIRACExit( 2 )
+  DIRACExit(2)

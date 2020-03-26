@@ -35,7 +35,7 @@ from DIRAC.RequestManagementSystem.Client.File import File
 from DIRAC.ConfigurationSystem.Client.Utilities import getDBParameters
 
 
-__RCSID__ = "$Id $"
+__RCSID__ = "$Id$"
 
 
 # Metadata instance that is used to bind the engine, Object and tables
@@ -174,19 +174,12 @@ class RequestDB(object):
 
     self.log = gLogger.getSubLogger('RequestDB')
     # Initialize the connection info
-
     self.__getDBConnectionInfo('RequestManagement/ReqDB')
 
     runDebug = (gLogger.getLevel() == 'DEBUG')
-    self.engine = create_engine(
-        'mysql://%s:%s@%s:%s/%s' %
-        (self.dbUser,
-         self.dbPass,
-         self.dbHost,
-         self.dbPort,
-         self.dbName),
-        echo=runDebug,
-        pool_recycle=3600)
+    self.engine = create_engine('mysql://%s:%s@%s:%s/%s' %
+                                (self.dbUser, self.dbPass, self.dbHost, self.dbPort, self.dbName),
+                                echo=runDebug, pool_recycle=3600)
 
     metadata.bind = self.engine
 

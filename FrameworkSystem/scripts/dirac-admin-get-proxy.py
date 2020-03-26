@@ -59,6 +59,7 @@ class Params(object):
     Script.registerSwitch("a", "voms", "Get proxy with VOMS extension mapped to the DIRAC group", self.automaticVOMS)
     Script.registerSwitch("m:", "vomsAttr=", "VOMS attribute to require", self.setVOMSAttr)
 
+
 params = Params()
 params.registerCLISwitches()
 

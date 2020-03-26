@@ -17,6 +17,7 @@ class BDIIOccupancy(object):
   Occupancy plugin to return the space information given by BDII
   Assuming the protocol is SRM
   """
+
   def __init__(self, se):
     # flag to show initalization status of the plugin
     self.log = se.log.getSubLogger('BDIIOccupancy')
