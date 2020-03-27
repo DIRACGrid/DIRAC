@@ -422,7 +422,7 @@ class ReqClient(Client):
       return self.putRequest(req)
     return S_OK("Not reset")
 
-#============= Some useful functions to be shared ===========
+# ============= Some useful functions to be shared ===========
 
 
 output = ''
