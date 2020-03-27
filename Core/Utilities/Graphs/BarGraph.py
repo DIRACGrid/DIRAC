@@ -13,8 +13,8 @@ from matplotlib.dates import date2num
 
 from DIRAC.Core.Utilities.Graphs.PlotBase import PlotBase
 from DIRAC.Core.Utilities.Graphs.GraphUtilities import to_timestamp, pixelToPoint, \
-                                                       PrettyDateLocator, PrettyDateFormatter, \
-                                                       PrettyScalarFormatter
+    PrettyDateLocator, PrettyDateFormatter, \
+    PrettyScalarFormatter
 
 
 __RCSID__ = "$Id$"
@@ -120,13 +120,13 @@ class BarGraph(PlotBase):
         tmp_y.append(0.001)
         tmp_t.append(float(value) + tmp_b[ind])
         ind += 1
-      seq_t = list(zip(tmp_x,tmp_y))
-      seq = seq_t+seq_b
-      poly = Polygon( seq, facecolor=color, fill=True,
-                      linewidth=pixelToPoint(0.2,dpi),
-                      zorder=zorder)
-      self.ax.add_patch( poly )
-      self.polygons.append( poly )
+      seq_t = list(zip(tmp_x, tmp_y))
+      seq = seq_t + seq_b
+      poly = Polygon(seq, facecolor=color, fill=True,
+                     linewidth=pixelToPoint(0.2, dpi),
+                     zorder=zorder)
+      self.ax.add_patch(poly)
+      self.polygons.append(poly)
       tmp_b = list(tmp_t)
       zorder -= 0.1
 
@@ -144,7 +144,7 @@ class BarGraph(PlotBase):
     if 'log_yaxis' in self.prefs:
       ymin = 0.001
     else:
-      ymin = min( min(tmp_b), 0. )
+      ymin = min(min(tmp_b), 0.)
       ymin *= 1.1
 
     xmax = max(tmp_x)

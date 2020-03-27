@@ -66,7 +66,6 @@ def generateTimedStackedBarPlot(fileName, data, metadata):
   :param list data: the data which is used to create the plot
   :param dict metadata: extra information used to create the plot.
   """
-  print(data, metadata)
   try:
     with open(fileName, "wb") as fn:
       checkMetadata(metadata)

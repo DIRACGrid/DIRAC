@@ -30,11 +30,11 @@ class Legend(object):
     self.column_width = 0
     self.labels = {}
     if isinstance(data, dict):
-      for label,ddict in data.items():
-        #self.labels[label] = pretty_float(max([ float(x) for x in ddict.values() if x ]) )  
-        self.labels[label] = "%.1f" % max([ float(x) for x in ddict.values() if x ])   
+      for label, ddict in data.items():
+        #self.labels[label] = pretty_float(max([ float(x) for x in ddict.values() if x ]) )
+        self.labels[label] = "%.1f" % max([float(x) for x in ddict.values() if x])
     elif isinstance(data, GraphData):
-      self.labels = data.getLabels()    
+      self.labels = data.getLabels()
     else:
       self.labels = data
     # self.labels.reverse()
@@ -86,17 +86,17 @@ class Legend(object):
       nColumns = min(self.prefs['legend_max_columns'], int(legend_width / self.column_width))
       nLabels = len(self.labels)
       maxRows = self.prefs['legend_max_rows']
-      nRows_ax = int(legend_height/1.6/self.prefs['text_size'])
-      nRows_label = nLabels/nColumns + (nLabels%nColumns != 0)
-      nRows = int(max(1,min(min(nRows_label,maxRows),nRows_ax )))
-      text_padding = self.prefs['text_padding']    
-      text_padding = pixelToPoint(text_padding,self.prefs['dpi'])    
-      legend_height = int(min(legend_height,(nRows*(self.text_size+text_padding)+text_padding)))
-      legend_max_height = int(nLabels*(self.text_size+text_padding))
-    return legend_width,legend_height,legend_max_height  
-  
+      nRows_ax = int(legend_height / 1.6 / self.prefs['text_size'])
+      nRows_label = nLabels / nColumns + (nLabels % nColumns != 0)
+      nRows = int(max(1, min(min(nRows_label, maxRows), nRows_ax)))
+      text_padding = self.prefs['text_padding']
+      text_padding = pixelToPoint(text_padding, self.prefs['dpi'])
+      legend_height = int(min(legend_height, (nRows * (self.text_size + text_padding) + text_padding)))
+      legend_max_height = int(nLabels * (self.text_size + text_padding))
+    return legend_width, legend_height, legend_max_height
+
   def __get_legend_text_size(self):
-    
+
     text_size = self.prefs['text_size']
     text_padding = self.prefs['text_padding']
     legend_text_size = self.prefs.get('legend_text_size', text_size)
@@ -132,16 +132,16 @@ class Legend(object):
     figure = Figure()
     canvas = FigureCanvasAgg(figure)
     dpi = self.prefs['dpi']
-    figure.set_dpi( dpi ) 
-    l_size, _ = self.__get_legend_text_size()   
-    self.text_size = pixelToPoint(l_size,dpi)         
-    text = Text(0.,0.,text=max_column_text,size=self.text_size)
+    figure.set_dpi(dpi)
+    l_size, _ = self.__get_legend_text_size()
+    self.text_size = pixelToPoint(l_size, dpi)
+    text = Text(0., 0., text=max_column_text, size=self.text_size)
     text.set_figure(figure)
     bbox = text.get_window_extent(canvas.get_renderer())
-    columnwidth = bbox.width+6*l_size
+    columnwidth = bbox.width + 6 * l_size
     # make sure the legend fit in the box
     self.column_width = columnwidth if columnwidth <= self.prefs['legend_width'] else self.prefs['legend_width'] - 6 * l_size
-        
+
   def draw(self):
 
     dpi = self.prefs['dpi']
@@ -151,11 +151,11 @@ class Legend(object):
     nColumns = min(self.prefs['legend_max_columns'], int(ax_xsize / self.column_width))
 
     maxRows = self.prefs['legend_max_rows']
-    nRows_ax = int(ax_ysize/1.6/self.prefs['text_size'])
-    nRows_label = nLabels/nColumns + (nLabels%nColumns != 0)
-    nRows = max(1,min(min(nRows_label,maxRows),nRows_ax ))
-    self.ax.set_xlim(0.,float(ax_xsize))
-    self.ax.set_ylim(-float(ax_ysize),0.)
+    nRows_ax = int(ax_ysize / 1.6 / self.prefs['text_size'])
+    nRows_label = nLabels / nColumns + (nLabels % nColumns != 0)
+    nRows = max(1, min(min(nRows_label, maxRows), nRows_ax))
+    self.ax.set_xlim(0., float(ax_xsize))
+    self.ax.set_ylim(-float(ax_ysize), 0.)
 
     legend_text_size, legend_text_padding = self.__get_legend_text_size()
     legend_text_size_point = pixelToPoint(legend_text_size, dpi)
@@ -177,26 +177,26 @@ class Legend(object):
       else:
         num = None
       color = self.palette.getColor(label)
-      row = int(nc%nRows) 
-      column = int(nc/nRows)    
-      if row == nRows-1 and column == nColumns-1 and nc != nLabels-1:
-        last_text = '... plus %d more' % (nLabels-nc)
-        self.ax.text(float(column*self.column_width)+legend_offset,-float(row*1.6*box_width),
-                     last_text,horizontalalignment='left',
-                     verticalalignment='top',size=legend_text_size_point)  
-        break   
+      row = int(nc % nRows)
+      column = int(nc / nRows)
+      if row == nRows - 1 and column == nColumns - 1 and nc != nLabels - 1:
+        last_text = '... plus %d more' % (nLabels - nc)
+        self.ax.text(float(column * self.column_width) + legend_offset, -float(row * 1.6 * box_width),
+                     last_text, horizontalalignment='left',
+                     verticalalignment='top', size=legend_text_size_point)
+        break
       else:
-        self.ax.text(float(column*self.column_width)+2.*box_width+legend_offset,-row*1.6*box_width,
-                     str(label),horizontalalignment='left',
-                     verticalalignment='top',size=legend_text_size_point)
+        self.ax.text(float(column * self.column_width) + 2. * box_width + legend_offset, -row * 1.6 * box_width,
+                     str(label), horizontalalignment='left',
+                     verticalalignment='top', size=legend_text_size_point)
         if num is not None:
-          self.ax.text(float((column+1)*self.column_width)-2*box_width+legend_offset,-float(row*1.6*box_width),
-                       str(num),horizontalalignment='right',
-                       verticalalignment='top',size=legend_text_size_point)             
-        box = Rectangle((float(column*self.column_width)+legend_offset,-float(row*1.6*box_width)-box_width),
-                        box_width,box_width)            
+          self.ax.text(float((column + 1) * self.column_width) - 2 * box_width + legend_offset, -float(row * 1.6 * box_width),
+                       str(num), horizontalalignment='right',
+                       verticalalignment='top', size=legend_text_size_point)
+        box = Rectangle((float(column * self.column_width) + legend_offset, -float(row * 1.6 * box_width) - box_width),
+                        box_width, box_width)
         box.set_ec('black')
-        box.set_linewidth(pixelToPoint(0.5,dpi))
+        box.set_linewidth(pixelToPoint(0.5, dpi))
         box.set_fc(color)
         self.ax.add_patch(box)
         nc += 1
