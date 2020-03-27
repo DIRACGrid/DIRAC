@@ -40,6 +40,7 @@ def getCEsFromCS():
     knownCEs = knownCEs + res['Value'][site]
   return S_OK(knownCEs)
 
+
 def getGridVOs():
   """ Get all the VOMS VO names served by this DIRAC service
   """
@@ -333,12 +334,6 @@ def getGridSEs(vo, bdiiInfo=None, seBlackList=None):
   for site in seBdiiDict:
     for gridSE in seBdiiDict[site]['SEs']:
       seDict = seBdiiDict[site]['SEs'][gridSE]
-
-      # if "lhcb" in seDict['GlueSAName']:
-      #  print '+'*80
-      #  print gridSE
-      #  for k,v in seDict.items():
-      #    print k,'\t',v
 
       if gridSE not in knownSEs:
         siteDict.setdefault(site, {})

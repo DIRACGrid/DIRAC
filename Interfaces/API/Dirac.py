@@ -618,7 +618,7 @@ class Dirac(API):
 
        Example usage:
 
-       >>> print print d.getInputDataCatalog('/lhcb/production/DC06/phys-v2-lumi5/00001680/DST/0000/00001680_00000490_5.dst',None,'myCat.xml')
+       >>> print print d.getInputDataCatalog('/lhcb/a/b/c/00001680_00000490_5.dst',None,'myCat.xml')
        {'Successful': {'<LFN>': {'pfntype': 'ROOT_All', 'protocol': 'SRM2',
         'pfn': '<PFN>', 'turl': '<TURL>', 'guid': '3E3E097D-0AC0-DB11-9C0A-00188B770645',
         'se': 'CERN-disk'}}, 'Failed': [], 'OK': True, 'Value': ''}
@@ -745,7 +745,7 @@ class Dirac(API):
     # Replace argument placeholders for parametric jobs
     # if we have Parameters then we have a parametric job
     if 'Parameters' in parameters:
-      for par, value in parameters.items():
+      for par, value in parameters.iteritems():
         if par.startswith('Parameters.'):
           # we just use the first entry in all lists to run one job
           parameters[par[len('Parameters.'):]] = value[0]
@@ -1207,7 +1207,8 @@ class Dirac(API):
     if not replicaDict['OK']:
       return replicaDict
     if not replicaDict['Value']['Successful']:
-      return self._errorReport(replicaDict['Value']['Failed'].items()[0], 'Failed to get replica information')
+      return self._errorReport(list(replicaDict['Value']['Failed'].iteritems())[0],
+			       'Failed to get replica information')
     siteLfns = {}
     for lfn, reps in replicaDict['Value']['Successful'].iteritems():
       possibleSites = set(site for se in reps for site in (

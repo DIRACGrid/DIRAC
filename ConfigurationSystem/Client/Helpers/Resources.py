@@ -133,7 +133,7 @@ def getCESiteMapping(ceName=''):
   """ Returns a mapping of CE -> site
       It assumes that the ce names are unique (as they should be)
 
-      :param str siteName: optional CE name. If not present, the whole mapping will be returned
+      :param str ceName: optional CE name. If not present, the whole mapping will be returned
       :return: S_OK/S_ERROR structure
   """
   res = getSiteCEMapping()
@@ -570,7 +570,7 @@ def getInfoAboutProviders(of=None, providerName=None, option='', section=''):
       result = gConfig.getConfigurationTree(relPath)
       if not result['OK']:
         return result
-      for key, value in result['Value'].items():
+      for key, value in result['Value'].iteritems():
         if value:
           resDict[key.replace(relPath, '')] = value
       return S_OK(resDict)

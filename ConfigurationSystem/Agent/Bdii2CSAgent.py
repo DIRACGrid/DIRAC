@@ -313,7 +313,7 @@ class Bdii2CSAgent(AgentModule):
         queueVODict[section] = queueVODict[section].union(set(new_value.split(',')))
       else:
         changeSet.add(entry)
-    for section, VOs in queueVODict.items():
+    for section, VOs in queueVODict.iteritems():
       changeSet.add((section, 'VO', '', ','.join(VOs)))
 
     if changeSet:
