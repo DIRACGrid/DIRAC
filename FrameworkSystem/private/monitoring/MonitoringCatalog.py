@@ -16,7 +16,7 @@ from DIRAC.Core.Utilities import Time
 class MonitoringCatalog(object):
   """
   This class is used to perform all kinds queries to the sqlite3 database.
-  """1
+  """
 
   def __init__(self, dataPath):
     """
