@@ -23,6 +23,7 @@ from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
+from DIRAC.WorkloadManagementSystem.Client import JobStatus
 
 
 @createClient('RequestManagement/ReqManager')
@@ -316,13 +317,14 @@ class ReqClient(Client):
       jobMinorStatus = res["Value"]["MinorStatus"]
       jobAppStatus = ''
       newJobStatus = ''
-      if jobStatus == 'Stalled':
+      if jobStatus == JobStatus.STALLED:
         # If job is stalled, find the previous status from the logging info
         res = monitorServer.getJobLoggingInfo(int(jobID))
         if not res['OK']:
           self.log.error("finalizeRequest: Failed to get job logging info", "JobID: %d" % jobID)
           return S_ERROR("finalizeRequest: Failed to get job %d logging info" % jobID)
-        if len(res['Value']) >= 2:
+        # Check the last status was Stalled and get the one before
+        if len(res['Value']) >= 2 and res['Value'][-1][0] == JobStatus.STALLED:
           jobStatus, jobMinorStatus, jobAppStatus = res['Value'][-2][:3]
           newJobStatus = jobStatus
 
@@ -340,7 +342,7 @@ class ReqClient(Client):
       else:
         self.log.error("finalizeRequest: Failed to get request digest for %s: %s" % (requestID,
                                                                                      digest["Message"]))
-      if jobStatus == 'Completed':
+      if jobStatus == JobStatus.COMPLETED:
         # What to do? Depends on what we have in the minorStatus
         if jobMinorStatus == "Pending Requests":
           newJobStatus = 'Done'
