@@ -155,13 +155,12 @@ class JobStateUpdateHandler(RequestHandler):
         as a key and status information dictionary as values
     """
 
-    status = ""
-    minor = ""
-    application = ""
-    appCounter = ""
+    status = ''
+    minor = ''
+    application = ''
+    appCounter = ''
     endDate = ''
     startDate = ''
-    startFlag = ''
     jobID = int(jobID)
 
     result = jobDB.getJobAttributes(jobID, ['Status'])
@@ -171,10 +170,9 @@ class JobStateUpdateHandler(RequestHandler):
     if not result['Value']:
       # if there is no matching Job it returns an empty dictionary
       return S_ERROR('No Matching Job')
-
-    new_status = result['Value']['Status']
-    if new_status == "Stalled":
-      status = 'Running'
+    # If the current status is Stalled and we get an update, it should probably be "Running"
+    if result['Value']['Status'] == JobStatus.STALLED:
+      status = JobStatus.RUNNING
 
     # Get the latest WN time stamps of status updates
     result = logDB.getWMSTimeStamps(int(jobID))
@@ -183,61 +181,51 @@ class JobStateUpdateHandler(RequestHandler):
     lastTime = max([float(t) for s, t in result['Value'].items() if s != 'LastTime'])
     lastTime = Time.toString(Time.fromEpoch(lastTime))
 
-    # Get the last status values
     dates = sorted(statusDict)
     # We should only update the status if its time stamp is more recent than the last update
-    for date in [date for date in dates if date >= lastTime]:
-      sDict = statusDict[date]
-      if sDict['Status']:
-        status = sDict['Status']
+    if dates[-1] >= lastTime:
+      # Get the last status values
+      for date in [date for date in dates if date >= lastTime]:
+        sDict = statusDict[date]
+        status = sDict.get('Status', status)
         if status in JobStatus.JOB_FINAL_STATES:
           endDate = date
-        if status == JobStatus.RUNNING:
-          startFlag = JobStatus.RUNNING
-      if sDict['MinorStatus']:
-        minor = sDict['MinorStatus']
-        if minor == "Application" and startFlag == JobStatus.RUNNING:
+        minor = sDict.get('MinorStatus', minor)
+        # Pick up the start date
+        if minor == "Application" and status == JobStatus.RUNNING and not startDate:
           startDate = date
-      if sDict['ApplicationStatus']:
-        application = sDict['ApplicationStatus']
-      counter = sDict.get('ApplicationCounter')
-      if counter:
-        appCounter = counter
-    attrNames = []
-    attrValues = []
-    if status:
-      attrNames.append('Status')
-      attrValues.append(status)
-    if minor:
-      attrNames.append('MinorStatus')
-      attrValues.append(minor)
-    if application:
-      attrNames.append('ApplicationStatus')
-      attrValues.append(application)
-    if appCounter:
-      attrNames.append('ApplicationCounter')
-      attrValues.append(appCounter)
-    result = jobDB.setJobAttributes(jobID, attrNames, attrValues, update=True)
-    if not result['OK']:
-      return result
+        application = sDict.get('ApplicationStatus', application)
+        appCounter = sDict.get('ApplicationCounter', appCounter)
 
-    if endDate:
-      result = jobDB.setEndExecTime(jobID, endDate)
-    if startDate:
-      result = jobDB.setStartExecTime(jobID, startDate)
+      attrNames = []
+      attrValues = []
+      if status:
+        attrNames.append('Status')
+        attrValues.append(status)
+      if minor:
+        attrNames.append('MinorStatus')
+        attrValues.append(minor)
+      if application:
+        attrNames.append('ApplicationStatus')
+        attrValues.append(application)
+      if appCounter:
+        attrNames.append('ApplicationCounter')
+        attrValues.append(appCounter)
+      result = jobDB.setJobAttributes(jobID, attrNames, attrValues, update=True)
+      if not result['OK']:
+        return result
+
+      if endDate:
+        result = jobDB.setEndExecTime(jobID, endDate)
+      if startDate:
+        result = jobDB.setStartExecTime(jobID, startDate)
 
     # Update the JobLoggingDB records
     for date in dates:
       sDict = statusDict[date]
-      status = sDict['Status']
-      if not status:
-        status = 'idem'
-      minor = sDict['MinorStatus']
-      if not minor:
-        minor = 'idem'
-      application = sDict['ApplicationStatus']
-      if not application:
-        application = 'idem'
+      status = sDict['Status'] if sDict['Status'] else 'idem'
+      minor = sDict['MinorStatus'] if sDict['MinorStatus'] else 'idem'
+      application = sDict['ApplicationStatus'] if sDict['ApplicationStatus'] else 'idem'
       source = sDict['Source']
       result = logDB.addLoggingRecord(jobID, status, minor, application, date, source)
       if not result['OK']:
