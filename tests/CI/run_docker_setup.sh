@@ -190,8 +190,8 @@ function prepareEnvironment() {
 
   # if the DIRACOS_TARBALL_PATH is a local directory, copy it over
   if [ -d "${DIRACOS_TARBALL_PATH}" ]; then
-    docker cp ${DIRACOS_TARBALL_PATH} server:${DIRACOS_TARBALL_PATH}
-    docker cp ${DIRACOS_TARBALL_PATH} client:${DIRACOS_TARBALL_PATH}
+    docker cp "${DIRACOS_TARBALL_PATH}" server:"${DIRACOS_TARBALL_PATH}"
+    docker cp "${DIRACOS_TARBALL_PATH}" client:"${DIRACOS_TARBALL_PATH}"
   fi
     
 }

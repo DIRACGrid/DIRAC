@@ -3,7 +3,7 @@ fts3-rest
 git+https://github.com/DIRACGrid/pyGSI.git#egg=GSI
 
 # From pypi
-
+boto3
 #asn1
 M2Crypto==0.32
 autopep8==1.3.3
