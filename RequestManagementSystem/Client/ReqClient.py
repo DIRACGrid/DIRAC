@@ -6,6 +6,7 @@
 
 """
 
+import six
 import os
 import time
 import random
@@ -16,12 +17,15 @@ import datetime
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.DISET.RPCClient import RPCClient
 from DIRAC.Core.Utilities.List import randomize, fromChar
+from DIRAC.Core.Utilities.JEncode import strToIntDict
+from DIRAC.Core.Utilities.DEncode import ignoreEncodeWarning
 from DIRAC.ConfigurationSystem.Client import PathFinder
-from DIRAC.Core.Base.Client import Client
+from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
 
 
+@createClient('RequestManagement/ReqManager')
 class ReqClient(Client):
   """ReqClient is a class manipulating and operation on Requests.
 
@@ -29,7 +33,6 @@ class ReqClient(Client):
   :param dict requestProxiesDict: RPC client to ReqestProxy
   :param ~DIRAC.RequestManagementSystem.private.RequestValidator.RequestValidator requestValidator: RequestValidator instance
   """
-
   __requestProxiesDict = {}
   __requestValidator = None
 
@@ -137,6 +140,7 @@ class ReqClient(Client):
       return getRequest
     return S_OK(Request(getRequest["Value"]))
 
+  @ignoreEncodeWarning
   def getBulkRequests(self, numberOfRequest=10, assigned=True):
     """ get bulk requests from RequestDB
 
@@ -158,8 +162,10 @@ class ReqClient(Client):
       return getRequests
 
     jsonReq = getRequests["Value"]["Successful"]
-    reqInstances = dict((rId, Request(jsonReq[rId])) for rId in jsonReq)
-    return S_OK({"Successful": reqInstances, "Failed": getRequests["Value"]["Failed"]})
+    # Do not forget to cast back str keys to int
+    reqInstances = {int(rId): Request(jsonReq[rId]) for rId in jsonReq}
+    failed = strToIntDict(getRequests["Value"]["Failed"])
+    return S_OK({"Successful": reqInstances, "Failed": failed})
 
   def peekRequest(self, requestID):
     """ peek request """
@@ -234,7 +240,7 @@ class ReqClient(Client):
     :param self: self reference
     :param int requestID: id of the request
     """
-    if isinstance(requestID, basestring):
+    if isinstance(requestID, six.string_types):
       requestID = int(requestID)
     self.log.debug("getRequestStatus: attempting to get status for '%d' request." % requestID)
     requestStatus = self._getRPC().getRequestStatus(requestID)
@@ -298,7 +304,7 @@ class ReqClient(Client):
 
     # The request is 'Done', let's update the job status. If we fail, we should re-try later
     monitorServer = RPCClient("WorkloadManagement/JobMonitoring", useCertificates=useCertificates)
-    res = monitorServer.getJobSummary(int(jobID))
+    res = monitorServer.getJobPrimarySummary(int(jobID))
     if not res["OK"]:
       self.log.error("finalizeRequest: Failed to get job status", "JobID: %d" % jobID)
       return S_ERROR("finalizeRequest: Failed to get job %d status" % jobID)
@@ -306,19 +312,9 @@ class ReqClient(Client):
       self.log.info("finalizeRequest: job %d does not exist (anymore): finalizing" % jobID)
       return S_OK()
     else:
-      jobStatus = res["Value"]['Status']
+      jobStatus = res["Value"]["Status"]
+      newJobStatus = jobStatus
       jobMinorStatus = res["Value"]["MinorStatus"]
-      jobAppStatus = ''
-      newJobStatus = ''
-      if jobStatus == 'Stalled':
-        # If job is stalled, find the previous status from the logging info
-        res = monitorServer.getJobLoggingInfo(int(jobID))
-        if not res['OK']:
-          self.log.error("finalizeRequest: Failed to get job logging info", "JobID: %d" % jobID)
-          return S_ERROR("finalizeRequest: Failed to get job %d logging info" % jobID)
-        if len(res['Value']) >= 2:
-          jobStatus, jobMinorStatus, jobAppStatus = res['Value'][-2][:3]
-          newJobStatus = jobStatus
 
       # update the job pending request digest in any case since it is modified
       self.log.info("finalizeRequest: Updating request digest for job %d" % jobID)
@@ -334,25 +330,27 @@ class ReqClient(Client):
       else:
         self.log.error("finalizeRequest: Failed to get request digest for %s: %s" % (requestID,
                                                                                      digest["Message"]))
+      stateUpdate = None
       if jobStatus == 'Completed':
         # What to do? Depends on what we have in the minorStatus
         if jobMinorStatus == "Pending Requests":
           newJobStatus = 'Done'
+
         elif jobMinorStatus == "Application Finished With Errors":
           newJobStatus = 'Failed'
 
-      if newJobStatus:
+      if newJobStatus != jobStatus:
         self.log.info("finalizeRequest: Updating job status for %d to %s/Requests done" % (jobID, newJobStatus))
+        stateUpdate = stateServer.setJobStatus(jobID, newJobStatus, "Requests done", "")
       else:
         self.log.info(
-            "finalizeRequest: Updating job minor status for %d to Requests done (current status is %s)" %
+            "finalizeRequest: Updating job minor status for %d to Requests done (status is %s)" %
             (jobID, jobStatus))
-      stateUpdate = stateServer.setJobStatus(jobID, newJobStatus, "Requests done", "", 'RMS')
-      if jobAppStatus and stateUpdate['OK']:
-        stateUpdate = stateServer.setJobApplicationStatus(jobID, jobAppStatus, 'RMS')
+        stateUpdate = stateServer.setJobStatus(jobID, jobStatus, "Requests done", "")
+
       if not stateUpdate["OK"]:
         self.log.error("finalizeRequest: Failed to set job status",
-                       "JobID: %d, error: %s" % (jobID, stateUpdate['Message']))
+                       "JobID: %d status: %s" % (jobID, stateUpdate['Message']))
         return stateUpdate
 
     return S_OK(newJobStatus)
@@ -367,12 +365,19 @@ class ReqClient(Client):
                               "Failed" : { jobIDn: errMsg, jobIDm: errMsg, ...}  )
     """
     self.log.verbose("getRequestIDsForJobs: attempt to get request(s) for job %s" % jobIDs)
-    requests = self._getRPC().getRequestIDsForJobs(jobIDs)
-    if not requests["OK"]:
+    res = self._getRPC().getRequestIDsForJobs(jobIDs)
+    if not res["OK"]:
       self.log.error("getRequestIDsForJobs: unable to get request(s) for jobs",
-                     "%s: %s" % (jobIDs, requests["Message"]))
-    return requests
+                     "%s: %s" % (jobIDs, res["Message"]))
+      return res
 
+    # Cast the JobIDs back to int
+    successful = strToIntDict(res['Value']['Successful'])
+    failed = strToIntDict(res['Value']['Failed'])
+
+    return S_OK({'Successful': successful, 'Failed': failed})
+
+  @ignoreEncodeWarning
   def readRequestsForJobs(self, jobIDs):
     """ read requests for jobs
 
@@ -386,10 +391,11 @@ class ReqClient(Client):
       return readReqsForJobs
     ret = readReqsForJobs["Value"]
     # # create Requests out of JSONs for successful reads
-    if "Successful" in ret:
-      for jobID, fromJSON in ret["Successful"].items():
-        ret["Successful"][jobID] = Request(fromJSON)
-    return S_OK(ret)
+    # Do not forget to cast back str keys to int
+    successful = {int(jobID): Request(jsonReq) for jobID, jsonReq in ret['Successful'].iteritems()}
+    failed = strToIntDict(ret['Failed'])
+
+    return S_OK({'Successful': successful, 'Failed': failed})
 
   def resetFailedRequest(self, requestID, allR=False):
     """ Reset a failed request to "Waiting" status
@@ -422,7 +428,7 @@ class ReqClient(Client):
       return self.putRequest(req)
     return S_OK("Not reset")
 
-#============= Some useful functions to be shared ===========
+# ============= Some useful functions to be shared ===========
 
 
 output = ''
@@ -443,7 +449,7 @@ def prettyPrint(mainItem, key='', offset=0):
     for item in mainItem:
       prettyPrint(item, offset=offset + 2)
     output += "%s%s\n" % (blanks, ']' if isinstance(mainItem, list) else ')')
-  elif isinstance(mainItem, basestring):
+  elif isinstance(mainItem, six.string_types):
     if '\n' in mainItem:
       prettyPrint(mainItem.strip('\n').split('\n'), offset=offset)
     else:
@@ -451,9 +457,9 @@ def prettyPrint(mainItem, key='', offset=0):
   else:
     output += "%s%s%s\n" % (blanks, key, str(mainItem))
   output = output.replace('[\n%s{' % blanks, '[{').replace('}\n%s]' % blanks, '}]') \
-                 .replace('(\n%s{' % blanks, '({').replace('}\n%s)' % blanks, '})') \
-                 .replace('(\n%s(' % blanks, '((').replace(')\n%s)' % blanks, '))') \
-                 .replace('(\n%s[' % blanks, '[').replace(']\n%s)' % blanks, ']')
+      .replace('(\n%s{' % blanks, '({').replace('}\n%s)' % blanks, '})') \
+      .replace('(\n%s(' % blanks, '((').replace(')\n%s)' % blanks, '))') \
+      .replace('(\n%s[' % blanks, '[').replace(']\n%s)' % blanks, ']')
 
 
 def printFTSJobs(request):
@@ -488,27 +494,10 @@ def printFTSJobs(request):
                    job.status) for job in associatedFTS3Jobs))
         return
 
-      # If we are here, the attempt with the new FTS3 system did not work, let's try the old FTS system
-      gLogger.debug("Could not instantiate FTS3Client", res)
-      from DIRAC.DataManagementSystem.Client.FTSClient import FTSClient
-      ftsClient = FTSClient()
-      res = ftsClient.ping()
-      if not res['OK']:
-        gLogger.debug("Could not instantiate FtsClient", res)
-        return
-
-      res = ftsClient.getFTSJobsForRequest(request.RequestID)
-      if res['OK']:
-        ftsJobs = res['Value']
-        if ftsJobs:
-          gLogger.always('         FTS jobs associated: %s' % ','.join('%s (%s)' % (job.FTSGUID, job.Status)
-                                                                       for job in ftsJobs))
-
-  # ImportError can be thrown for the old client
   # AttributeError can be thrown because the deserialization will not have
   # happened correctly on the new fts3 (CC7 typically), and the error is not
   # properly propagated
-  except (ImportError, AttributeError) as err:
+  except AttributeError as err:
     gLogger.debug("Could not instantiate FtsClient because of Exception", repr(err))
 
 
