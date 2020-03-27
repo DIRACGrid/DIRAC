@@ -1,7 +1,12 @@
 """
 It used used to create different plots.
 """
-import cStringIO
+
+try:
+  from StringIO import StringIO
+except ImportError:
+  from io import BytesIO as StringIO
+
 import errno
 from DIRAC.Core.Utilities.Graphs import barGraph, lineGraph, pieGraph, qualityGraph, textGraph, histogram
 
@@ -46,7 +51,7 @@ def generateErrorMessagePlot(msgText):
   :param str msgText: the text which will appear on the plot.
   :return: the plot.
   """
-  fn = cStringIO.StringIO()
+  fn = StringIO()
   textGraph(msgText, fn, {})
   data = fn.getvalue()
   fn.close()

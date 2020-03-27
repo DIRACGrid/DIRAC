@@ -25,7 +25,7 @@ common_prefs = {
     'plot_grid': '1:1',
     'plot_padding': 0,
     'frame': 'On',
-    'font': 'Lucida Grande',
+    'font' : 'DejaVu Sans',
     'font_family': 'sans-serif',
     'dpi': 100,
     'legend': True,

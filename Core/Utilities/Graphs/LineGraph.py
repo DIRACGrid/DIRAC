@@ -86,7 +86,7 @@ class LineGraph(PlotBase):
         tmp_x.append(key)
         tmp_y.append(float(value) + tmp_b[ind])
         ind += 1
-      seq_t = zip(tmp_x, tmp_y)
+      seq_t = list(zip(tmp_x, tmp_y))
       seq = seq_t + seq_b
       poly = Polygon(seq, facecolor=color, fill=True, linewidth=.2, zorder=zorder)
       self.ax.add_patch(poly)
@@ -96,7 +96,7 @@ class LineGraph(PlotBase):
 
     ymax = max(tmp_b)
     ymax *= 1.1
-    ymin = min(tmp_b, 0.)
+    ymin = min(min(tmp_b), 0.)
     ymin *= 1.1
     if 'log_yaxis' in self.prefs:
       ymin = 0.001
@@ -125,7 +125,8 @@ class LineGraph(PlotBase):
       reverse_smap = {}
       for key, val in smap.items():
         reverse_smap[val] = key
-      ticks = sorted(smap.values())
+      ticks = smap.values()
+      ticks.sort()
       ax.set_xticks([i + .5 for i in ticks])
       ax.set_xticklabels([reverse_smap[i] for i in ticks])
       ax.grid(False)

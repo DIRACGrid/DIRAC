@@ -1,24 +1,20 @@
-########################################################################
-# $HeadURL$
-########################################################################
-
 """ PieGraph represents a pie graph
-
+    
     The DIRAC Graphs package is derived from the GraphTool plotting package of the
     CMS/Phedex Project by ... <to be added>
 """
 
 from __future__ import print_function
-__RCSID__ = "$Id$"
 
 import numpy
 import math
 import time
 from matplotlib.patches import Wedge, Shadow
-from matplotlib.cbook import is_string_like
 from DIRAC.Core.Utilities.Graphs.PlotBase import PlotBase
 from DIRAC.Core.Utilities.Graphs.GraphData import GraphData
 from DIRAC.Core.Utilities.Graphs.GraphUtilities import *
+
+__RCSID__ = "$Id$"
 
 
 class PieGraph(PlotBase):
@@ -49,7 +45,7 @@ class PieGraph(PlotBase):
       except Exception as x:
         print("PieGraph Error: can not interpret data for the plot")
 
-    # labels.reverse()
+    #labels.reverse()
     values = [l[1] for l in labels]
     x = numpy.array(values, numpy.float64)
     self.legendData = labels
@@ -93,7 +89,7 @@ class PieGraph(PlotBase):
         # add_patch so the figure and transform props will be
         # set
         shad = Shadow(w, -0.02, -0.02,
-                      # props={'facecolor':w.get_facecolor()}
+                      #props={'facecolor':w.get_facecolor()}
                       )
         shad.set_zorder(0.9 * w.get_zorder())
         self.ax.add_patch(shad)
@@ -133,7 +129,7 @@ class PieGraph(PlotBase):
         if autopct is not None:
           xt = x + pctdistance * radius * math.cos(thetam)
           yt = y + pctdistance * radius * math.sin(thetam)
-          if is_string_like(autopct):
+          if isinstance(autopct, str):
             s = autopct % (100. * frac)
           elif callable(autopct):
             s = autopct(100. * frac)

@@ -76,7 +76,7 @@ class PlotsTestCase(unittest.TestCase):
 
     res = compare(self.filename, os.path.join(plots_directory, 'histogram2.png'))
     self.assertEqual(0.0, res)
-
+    
   def test_stackedlineplots(self):
     """
     test stacked line plot
@@ -237,18 +237,18 @@ class PlotsTestCase(unittest.TestCase):
                                                          1584648000: 0.0,
                                                          1584687600: 12.0,
                                                          1584619200: 10.3055954089},
-                                       'LCG.NCBJ.pl': {1584691200: 0.0,
-                                                       1584662400: 0.0,
+                                       'LCG.NCBJ.pl': {1584691200: 0.1,
+                                                       1584662400: 2.0,
                                                        1584651600: 0.0,
                                                        1584637200: 0.0,
-                                                       1584694800: 0.0,
+                                                       1584694800: 4.0,
                                                        1584626400: 0.0,
-                                                       1584669600: 0.0,
+                                                       1584669600: 6.0,
                                                        1584655200: 0.0,
                                                        1584644400: 0.0,
                                                        1584615600: 0.0,
                                                        1584673200: 0.0,
-                                                       1584633600: 0.0,
+                                                       1584633600: 9.0,
                                                        1584676800: 0.0,
                                                        1584698400: 0.0,
                                                        1584622800: 0.0,
@@ -281,7 +281,7 @@ class PlotsTestCase(unittest.TestCase):
     self.assertEqual(res['OK'], True)
     res = compare(self.filename, os.path.join(plots_directory, 'nodata.png'))
     self.assertEqual(0.0, res)
-
+  
   def test_error(self):
     """
     Test error message plot
@@ -289,11 +289,12 @@ class PlotsTestCase(unittest.TestCase):
 
     res = generateErrorMessagePlot("testing error message")
     self.assertEqual(res['OK'], True)
-    with open(self.filename, 'w') as out:
+    with open(self.filename, 'wb') as out:
       out.write(res['Value'])
-    
+
     res = compare(self.filename, os.path.join(plots_directory, 'error.png'))
     self.assertEqual(0.0, res)
+
 
 #############################################################################
 # Test Suite run

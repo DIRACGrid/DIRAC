@@ -277,9 +277,12 @@ class Graph(object):
       plot_type = plot_prefs[i]['plot_type']
       try:
         exec("import %s" % plot_type)
-      except ImportError as x:
-        print("Failed to import graph type %s: %s" % (plot_type, str(x)))
-        return None
+      except:
+        try:
+          exec("from . import  %s" % plot_type)
+        except ImportError as x:
+          print("Failed to import graph type %s: %s" % (plot_type, str(x)))
+          return None
 
       ax = plot_axes[i]
       plot = eval("%s.%s(graphData[i],ax,plot_prefs[i])" % (plot_type, plot_type))
