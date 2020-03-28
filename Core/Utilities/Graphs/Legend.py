@@ -31,7 +31,7 @@ class Legend(object):
     self.labels = {}
     if isinstance(data, dict):
       for label, ddict in data.items():
-        #self.labels[label] = pretty_float(max([ float(x) for x in ddict.values() if x ]) )
+        # self.labels[label] = pretty_float(max([ float(x) for x in ddict.values() if x ]) )
         self.labels[label] = "%.1f" % max([float(x) for x in ddict.values() if x])
     elif isinstance(data, GraphData):
       self.labels = data.getLabels()
@@ -140,7 +140,8 @@ class Legend(object):
     bbox = text.get_window_extent(canvas.get_renderer())
     columnwidth = bbox.width + 6 * l_size
     # make sure the legend fit in the box
-    self.column_width = columnwidth if columnwidth <= self.prefs['legend_width'] else self.prefs['legend_width'] - 6 * l_size
+    self.column_width = columnwidth if columnwidth <= self.prefs['legend_width'] else \
+      self.prefs['legend_width'] - 6 * l_size
 
   def draw(self):
 
@@ -190,7 +191,8 @@ class Legend(object):
                      str(label), horizontalalignment='left',
                      verticalalignment='top', size=legend_text_size_point)
         if num is not None:
-          self.ax.text(float((column + 1) * self.column_width) - 2 * box_width + legend_offset, -float(row * 1.6 * box_width),
+          self.ax.text(float((column + 1) * self.column_width) - 2 * box_width + legend_offset,
+                       -float(row * 1.6 * box_width),
                        str(num), horizontalalignment='right',
                        verticalalignment='top', size=legend_text_size_point)
         box = Rectangle((float(column * self.column_width) + legend_offset, -float(row * 1.6 * box_width) - box_width),
@@ -200,3 +202,4 @@ class Legend(object):
         box.set_fc(color)
         self.ax.add_patch(box)
         nc += 1
+ 

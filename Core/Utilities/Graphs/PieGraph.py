@@ -45,7 +45,7 @@ class PieGraph(PlotBase):
       except Exception as x:
         print("PieGraph Error: can not interpret data for the plot")
 
-    #labels.reverse()
+    # labels.reverse()
     values = [l[1] for l in labels]
     x = numpy.array(values, numpy.float64)
     self.legendData = labels
@@ -89,7 +89,7 @@ class PieGraph(PlotBase):
         # add_patch so the figure and transform props will be
         # set
         shad = Shadow(w, -0.02, -0.02,
-                      #props={'facecolor':w.get_facecolor()}
+                      # props={'facecolor':w.get_facecolor()}
                       )
         shad.set_zorder(0.9 * w.get_zorder())
         self.ax.add_patch(shad)
@@ -183,3 +183,4 @@ class PieGraph(PlotBase):
     if nLabels > 0:
       explode[0] = 0.1
     self.wedges, text_labels, percent = self.pie(explode=explode, autopct=my_display)
+   

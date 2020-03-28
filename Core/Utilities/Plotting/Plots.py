@@ -81,7 +81,7 @@ def generateTimedStackedBarPlot(fileName, data, metadata):
 def generateQualityPlot(fileName, data, metadata):
   """
   It is used to create 2D plots.
-  
+
   :param str fileName: the name of the file
   :param list data: the data which is used to create the plot
   :param dict metadata: extra information used to create the plot.
@@ -90,13 +90,13 @@ def generateQualityPlot(fileName, data, metadata):
     with open(fileName, "wb") as fn:
       checkMetadata(metadata)
       metadata['legend'] = False
-      #HACK: Pad a bit to the left until the proper padding is calculated
+      # HACK: Pad a bit to the left until the proper padding is calculated
       maxKeyLength = max([len(key) for key in data])
       metadata['sort_labels'] = 'alpha'
       metadata['plot_left_padding'] = int(maxKeyLength * 2.5)
       qualityGraph(data, fn, **metadata)
   except IOError as e:
-    return S_ERROR( errno.EIO, e )
+    return S_ERROR(errno.EIO, e)
   return S_OK()
 
 

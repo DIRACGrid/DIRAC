@@ -76,7 +76,7 @@ class PlotsTestCase(unittest.TestCase):
 
     res = compare(self.filename, os.path.join(plots_directory, 'histogram2.png'))
     self.assertEqual(0.0, res)
-    
+
   def test_stackedlineplots(self):
     """
     test stacked line plot
@@ -281,7 +281,7 @@ class PlotsTestCase(unittest.TestCase):
     self.assertEqual(res['OK'], True)
     res = compare(self.filename, os.path.join(plots_directory, 'nodata.png'))
     self.assertEqual(0.0, res)
-  
+
   def test_error(self):
     """
     Test error message plot
