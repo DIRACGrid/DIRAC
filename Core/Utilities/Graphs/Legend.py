@@ -141,7 +141,7 @@ class Legend(object):
     columnwidth = bbox.width + 6 * l_size
     # make sure the legend fit in the box
     self.column_width = columnwidth if columnwidth <= self.prefs['legend_width'] else \
-      self.prefs['legend_width'] - 6 * l_size
+                        self.prefs['legend_width'] - 6 * l_size
 
   def draw(self):
 
@@ -202,4 +202,3 @@ class Legend(object):
         box.set_fc(color)
         self.ax.add_patch(box)
         nc += 1
- 

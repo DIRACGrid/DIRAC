@@ -28,8 +28,7 @@ class PieGraph(PlotBase):
           colors=None,
           autopct=None,
           pctdistance=0.6,
-          shadow=False
-          ):
+          shadow=False):
 
     start = time.time()
     labels = self.pdata.getLabels()
@@ -57,8 +56,8 @@ class PieGraph(PlotBase):
     labels = [l[0] for l in labels]
     if explode is None:
       explode = [0] * len(x)
-    assert(len(x) == len(labels))
-    assert(len(x) == len(explode))
+    assert len(x) == len(labels)
+    assert len(x) == len(explode)
     plot_axis_labels = self.prefs.get('plot_axis_labels', True)
 
     center = 0, 0
@@ -88,9 +87,7 @@ class PieGraph(PlotBase):
         # make sure to add a shadow after the call to
         # add_patch so the figure and transform props will be
         # set
-        shad = Shadow(w, -0.02, -0.02,
-                      # props={'facecolor':w.get_facecolor()}
-                      )
+        shad = Shadow(w, -0.02, -0.02)
         shad.set_zorder(0.9 * w.get_zorder())
         self.ax.add_patch(shad)
 
@@ -183,4 +180,4 @@ class PieGraph(PlotBase):
     if nLabels > 0:
       explode[0] = 0.1
     self.wedges, text_labels, percent = self.pie(explode=explode, autopct=my_display)
-   
+  

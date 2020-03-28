@@ -56,7 +56,7 @@ def get_key_type(keys):
   return key_type
 
 
-class GraphData:
+class GraphData(object):
 
   def __init__(self, data={}):
 
@@ -373,7 +373,7 @@ class GraphData:
     return resultString
 
 
-class PlotData:
+class PlotData(object):
   """ PlotData class is a container for a one dimensional plot data
   """
 
