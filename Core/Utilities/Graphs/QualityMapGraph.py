@@ -155,7 +155,7 @@ class QualityMapGraph(PlotBase):
     dpi = self.prefs.get('dpi', 100)
     setp(self.bars, linewidth=pixelToPoint(0.5, dpi), edgecolor='#AAAAAA')
 
-    #pivots = keys
+    # pivots = keys
     # for idx in range(len(pivots)):
     #    self.coords[ pivots[idx] ] = self.bars[idx]
 
@@ -180,10 +180,10 @@ class QualityMapGraph(PlotBase):
     cb.draw_all()
     # cb = self.ax.colorbar( self.mapper, format="%d%%",
     #  orientation='horizontal', fraction=0.04, pad=0.1, aspect=40  )
-    #setp( cb.outline, linewidth=.5 )
-    #setp( cb.ax.get_xticklabels(), size=10 )
-    #setp( cb.ax.get_xticklabels(), family=self.prefs['font_family'] )
-    #setp( cb.ax.get_xticklabels(), fontname = self.prefs['font'] )
+    # setp( cb.outline, linewidth=.5 )
+    # setp( cb.ax.get_xticklabels(), size=10 )
+    # setp( cb.ax.get_xticklabels(), family=self.prefs['font_family'] )
+    # setp( cb.ax.get_xticklabels(), fontname = self.prefs['font'] )
 
   def getQualityColor(self, value):
 
@@ -204,7 +204,7 @@ class QualityMapGraph(PlotBase):
       ticks = sorted(smap.values())
       ax.set_xticks([i + .5 for i in ticks])
       ax.set_xticklabels([reverse_smap[i] for i in ticks])
-      #labels = ax.get_xticklabels()
+      # labels = ax.get_xticklabels()
       ax.grid(False)
       if self.log_xaxis:
         xmin = 0.001
@@ -213,7 +213,7 @@ class QualityMapGraph(PlotBase):
       ax.set_xlim(xmin=xmin, xmax=len(ticks))
     elif self.gdata.key_type == "time":
 
-      #ax.set_xlim( xmin=self.begin_num,xmax=self.end_num )
+      # ax.set_xlim( xmin=self.begin_num,xmax=self.end_num )
       dl = PrettyDateLocator()
       df = PrettyDateFormatter(dl)
       ax.xaxis.set_major_locator(dl)
@@ -221,7 +221,7 @@ class QualityMapGraph(PlotBase):
       ax.xaxis.set_clip_on(False)
       sf = PrettyScalarFormatter()
       ax.yaxis.set_major_formatter(sf)
-      #labels = ax.get_xticklabels()
+      # labels = ax.get_xticklabels()
 
     else:
       return None

@@ -54,7 +54,7 @@ class BarGraph(PlotBase):
     # Evaluate the bar width
     width = float(self.width)
     if self.gdata.key_type == 'time':
-      #width = (1 - self.bar_graph_space) * width / 86400.0
+      # width = (1 - self.bar_graph_space) * width / 86400.0
       width = width / 86400.0
       offset = 0
     elif self.gdata.key_type == 'string':
@@ -109,14 +109,14 @@ class BarGraph(PlotBase):
           value = 0.
 
         tmp_x.append(offset + key)
-        #tmp_y.append( ymin )
+        # tmp_y.append(ymin)
         tmp_y.append(0.001)
         tmp_x.append(offset + key)
         tmp_y.append(float(value) + tmp_b[ind])
         tmp_x.append(offset + key + width)
         tmp_y.append(float(value) + tmp_b[ind])
         tmp_x.append(offset + key + width)
-        #tmp_y.append( ymin )
+        # tmp_y.append(ymin)
         tmp_y.append(0.001)
         tmp_t.append(float(value) + tmp_b[ind])
         ind += 1
@@ -134,7 +134,7 @@ class BarGraph(PlotBase):
     if tight_bars_flag:
       setp(self.polygons, linewidth=0.)
 
-    #pivots = keys
+    # pivots = keys
     # for idx in range(len(pivots)):
     #    self.coords[ pivots[idx] ] = self.bars[idx]
 
@@ -184,7 +184,7 @@ class BarGraph(PlotBase):
       ax.set_xlim(xmin=xmin, xmax=len(ticks))
     elif self.gdata.key_type == "time":
 
-      #ax.set_xlim( xmin=self.begin_num,xmax=self.end_num )
+      # ax.set_xlim( xmin=self.begin_num,xmax=self.end_num )
       dl = PrettyDateLocator()
       df = PrettyDateFormatter(dl)
       ax.xaxis.set_major_locator(dl)
@@ -192,7 +192,7 @@ class BarGraph(PlotBase):
       ax.xaxis.set_clip_on(False)
       sf = PrettyScalarFormatter()
       ax.yaxis.set_major_formatter(sf)
-      #labels = ax.get_xticklabels()
+      # labels = ax.get_xticklabels()
 
     else:
       return None

@@ -192,16 +192,15 @@ class PlotsTestCase(unittest.TestCase):
     res = compare(self.filename, os.path.join(plots_directory, 'qualityplot1.png'))
     self.assertEqual(0.0, res)
 
-    res = generateQualityPlot(self.filename, {
-        'User': {
-            1584543600: 37.5,
-            1584547200: 37.5,
-            1584619200: 33.33333333333333,
-            1584601200: 36.53846153846153}},
-            {'endtime': 1584627764,
-            'span': 3600,
-            'starttime': 1584541364,
-            'title': 'Job CPU efficiency by JobType'})
+    res = generateQualityPlot(self.filename,
+                              {'User': {1584543600: 37.5,
+                                        1584547200: 37.5,
+                                        1584619200: 33.33333333333333,
+                                        1584601200: 36.53846153846153}},
+                              {'endtime': 1584627764,
+                               'span': 3600,
+                               'starttime': 1584541364,
+                               'title': 'Job CPU efficiency by JobType'})
     self.assertEqual(res['OK'], True)
 
     res = compare(self.filename, os.path.join(plots_directory, 'qualityplot2.png'))

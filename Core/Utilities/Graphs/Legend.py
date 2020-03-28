@@ -140,8 +140,8 @@ class Legend(object):
     bbox = text.get_window_extent(canvas.get_renderer())
     columnwidth = bbox.width + 6 * l_size
     # make sure the legend fit in the box
-    self.column_width = columnwidth if columnwidth <= self.prefs['legend_width'] else \
-                        self.prefs['legend_width'] - 6 * l_size
+    self.column_width = columnwidth if columnwidth <= self.prefs['legend_width']\
+        else self.prefs['legend_width'] - 6 * l_size
 
   def draw(self):
 
