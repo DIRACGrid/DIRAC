@@ -109,7 +109,7 @@ class HTCondorCEComputingElement(ComputingElement):
     self.remoteScheddOptions = ""
 
   #############################################################################
-  def __writeSub(self, executable, nJobs):
+  def __writeSub(self, executable, nJobs, processors):
     """ Create the Sub File for submission
     """
 
@@ -147,7 +147,7 @@ environment = "HTCONDOR_JOBID=$(Cluster).$(Process)"
 initialdir = %(initialDir)s
 grid_resource = condor %(ceName)s %(ceName)s:9619
 transfer_output_files = ""
-
++xcount = %(processors)s
 %(localScheddOptions)s
 
 kill_sig=SIGTERM
@@ -158,6 +158,7 @@ Queue %(nJobs)s
 
 """ % dict(executable=executable,
            nJobs=nJobs,
+           processors=processors,
            ceName=self.ceName,
            extraString=self.extraSubmitString,
            initialDir=os.path.join(self.workingDirectory, initialDirPrefix),
@@ -185,7 +186,7 @@ Queue %(nJobs)s
     self.log.debug("Remote scheduler option: '%s' " % self.remoteScheddOptions)
 
   #############################################################################
-  def submitJob(self, executableFile, proxy, numberOfJobs=1):
+  def submitJob(self, executableFile, proxy, numberOfJobs=1, processors=1):
     """ Method to submit job
     """
 
@@ -193,7 +194,7 @@ Queue %(nJobs)s
     if not os.access(executableFile, 5):
       os.chmod(executableFile, 0o755)
 
-    subName = self.__writeSub(executableFile, numberOfJobs)
+    subName = self.__writeSub(executableFile, numberOfJobs, processors)
 
     jobStamps = []
     for _i in range(numberOfJobs):
