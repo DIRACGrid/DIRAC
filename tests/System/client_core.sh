@@ -58,8 +58,8 @@ then
 fi
 
 echo " "
-echo "dirac-proxy-init -g dirac_prod"
-dirac-proxy-init -g dirac_prod
+echo "dirac-proxy-init"
+dirac-proxy-init
 if [ $? -ne 0 ]
 then
    exit $?
