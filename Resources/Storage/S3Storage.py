@@ -546,7 +546,7 @@ class S3Storage(StorageBase):
 
     for url, presignedURL in presignedURLs.items():
       try:
-        response = requests.get(presignedURL)
+        response = requests.head(presignedURL)
         if not response.ok:
           raise Exception(response.reason)
 
