@@ -3,10 +3,10 @@ Service handler for generating pre-signed URLs for S3 storages.
 Permissions to request a URL for a given action are mapped against FC permissions
 
 .. literalinclude:: ../ConfigTemplate.cfg
-  :start-after: ##BEGIN S3GW
+  :start-after: ##BEGIN S3Gateway
   :end-before: ##END
   :dedent: 2
-  :caption: S3GW options
+  :caption: S3Gateway options
 
 """
 
@@ -35,9 +35,9 @@ from DIRAC.Resources.Storage.StorageElement import StorageElement
 LOG = gLogger.getSubLogger(__name__)
 
 
-class S3GWHandler(RequestHandler):
+class S3GatewayHandler(RequestHandler):
   """
-  .. class:: S3GWHandler
+  .. class:: S3GatewayHandler
 
   """
 
@@ -80,7 +80,7 @@ class S3GWHandler(RequestHandler):
           log.debug("Add %s to the list of usable S3 storages" % seName)
           break
 
-    log.info("S3GW initialized storages", "%s" % cls._S3Storages.keys())
+    log.info("S3Gateway initialized storages", "%s" % cls._S3Storages.keys())
 
     cls._fc = FileCatalog()
 

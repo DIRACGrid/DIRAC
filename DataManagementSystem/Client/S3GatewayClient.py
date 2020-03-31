@@ -1,18 +1,18 @@
-""" Client to interact with the S3GW  """
+""" Client to interact with the S3Gateway  """
 
 from DIRAC.Core.Base.Client import Client, createClient
 
 
-@createClient('DataManagement/S3GW')
-class S3GWClient(Client):
-  """ Client code to the S3GW
+@createClient('DataManagement/S3Gateway')
+class S3GatewayClient(Client):
+  """ Client code to the S3Gateway
   """
 
   def __init__(self, url=None, **kwargs):
     """ Constructor function.
     """
     Client.__init__(self, **kwargs)
-    self.setServer('DataManagement/S3GW')
+    self.setServer('DataManagement/S3Gateway')
     if url:
       self.setServer(url)
 

@@ -18,7 +18,7 @@ SecureConnection: true if https, false otherwise
 Aws_access_key_id
 Aws_secret_access_key
 
-if the Aws variables are not defined, it will try to go throught the S3GW
+if the Aws variables are not defined, it will try to go throught the S3Gateway
 
 """
 __RCSID__ = "$Id$"
@@ -37,7 +37,7 @@ from botocore.exceptions import ClientError
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.Adler import fileAdler
 from DIRAC.Core.Utilities.Pfn import pfnparse
-from DIRAC.DataManagementSystem.Client.S3GWClient import S3GWClient
+from DIRAC.DataManagementSystem.Client.S3GatewayClient import S3GatewayClient
 from DIRAC.Resources.Storage.StorageBase import StorageBase
 
 
@@ -128,9 +128,9 @@ class S3Storage(StorageBase):
     self.pluginName = 'S3'
 
     # if we have the credentials loaded, we can perform direct access
-    # otherwise we have to go through the S3GW
+    # otherwise we have to go through the S3Gateway
     self.directAccess = aws_access_key_id and aws_secret_access_key
-    self.s3GWClient = S3GWClient()
+    self.S3GatewayClient = S3GatewayClient()
 
   # @_extractKeyFromS3Path
   # def direct_exists(self, keys):
@@ -164,7 +164,7 @@ class S3Storage(StorageBase):
   #     # and perform it with requests
   #     for key in keys:
   #       try:
-  #         res = self.s3GWClient.createPresignedUrl(self.name, 'head_object', key)
+  #         res = self.S3GatewayClient.createPresignedUrl(self.name, 'head_object', key)
   #         if not res['OK']:
   #           failed[key] = res['Message']
   #           continue
@@ -239,7 +239,7 @@ class S3Storage(StorageBase):
     successful = {}
     failed = {}
 
-    res = self.s3GWClient.createPresignedUrl(self.name, 'head_object', urls)
+    res = self.S3GatewayClient.createPresignedUrl(self.name, 'head_object', urls)
     if not res['OK']:
       return res
 
@@ -339,7 +339,7 @@ class S3Storage(StorageBase):
     failed = {}
     successful = {}
 
-    res = self.s3GWClient.createPresignedUrl(self.name, 'get_object', urls)
+    res = self.S3GatewayClient.createPresignedUrl(self.name, 'get_object', urls)
     if not res['OK']:
       return res
 
@@ -449,7 +449,7 @@ class S3Storage(StorageBase):
     # it needs to be passed to createPresignedUrl
     urlAdlers = {url: {'x-amz-meta-checksum': fileAdler(src_file)} for url, src_file in urls.items()}
 
-    res = self.s3GWClient.createPresignedUrl(self.name, 'put_object', urlAdlers)
+    res = self.S3GatewayClient.createPresignedUrl(self.name, 'put_object', urlAdlers)
     if not res['OK']:
       return res
 
@@ -541,7 +541,7 @@ class S3Storage(StorageBase):
     failed = {}
     successful = {}
 
-    res = self.s3GWClient.createPresignedUrl(self.name, 'head_object', urls)
+    res = self.S3GatewayClient.createPresignedUrl(self.name, 'head_object', urls)
     if not res['OK']:
       return res
 
@@ -626,7 +626,7 @@ class S3Storage(StorageBase):
     failed = {}
     successful = {}
 
-    res = self.s3GWClient.createPresignedUrl(self.name, 'delete_object', urls)
+    res = self.S3GatewayClient.createPresignedUrl(self.name, 'delete_object', urls)
     if not res['OK']:
       return res
 

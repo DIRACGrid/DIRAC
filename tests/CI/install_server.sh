@@ -67,6 +67,6 @@ Resources
 }
 EOL
 
-dirac-restart-component DataManagement S3GW "$DEBUG"
+dirac-restart-component DataManagement S3Gateway "$DEBUG"
 
 echo -e "*** $(date -u) **** DONE Adding S3-INDIRECT SERVER CONFIGURATION"
