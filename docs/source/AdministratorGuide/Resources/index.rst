@@ -20,6 +20,7 @@ contributing with their computing and storage capacity, available as conventiona
    computingelements
    messagequeues
    storage
+   agents2CS
 
 
 
