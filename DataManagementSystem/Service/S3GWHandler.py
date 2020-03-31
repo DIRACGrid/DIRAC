@@ -104,11 +104,15 @@ class S3GWHandler(RequestHandler):
 
         :param storageName: SE name
         :param s3_method: name of the S3 client method we want to perform.
-        :param urls: urls
+        :param urls: Iterable of urls. If s3_method is put_object, it must be a dict <url:fields> where fields
+                     is a dictionary (see ~DIRAC.Resources.Storage.S3Storage.S3Storage.createPresignedUrl)
         :param expiration: duration of the token
     """
 
     log = LOG.getSubLogger('createPresignedUrl')
+
+    if s3_method == 'put_object' and not isinstance(urls, dict):
+      return S_ERROR(errno.EINVAL, "urls has to be a dict <url:fields>")
 
     # Fetch the remote credentials, and set them in the ThreadConfig
     # This allows to perform the FC operations on behalf of the user
@@ -152,7 +156,8 @@ class S3GWHandler(RequestHandler):
           failed[url] = "Permission denied"
           continue
 
-        res = returnSingleResult(s3Plugin.createPresignedUrl({url: False}, s3_method, expiration=expiration))
+        res = returnSingleResult(s3Plugin.createPresignedUrl(
+            {url: urls.get('Fields')}, s3_method, expiration=expiration))
 
         log.debug("Presigned URL for %s: %s" % (url, res))
         if res['OK']:

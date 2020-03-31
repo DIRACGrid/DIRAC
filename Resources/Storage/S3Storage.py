@@ -445,12 +445,17 @@ class S3Storage(StorageBase):
     failed = {}
     successful = {}
 
-    res = self.s3GWClient.createPresignedUrl(self.name, 'put_object', urls)
+    # Construct a dict <url:{x-amz-meta-checksum: adler32}>
+    # it needs to be passed to createPresignedUrl
+    urlAdlers = {url: {'x-amz-meta-checksum': fileAdler(src_file)} for url, src_file in urls.items()}
+
+    res = self.s3GWClient.createPresignedUrl(self.name, 'put_object', urlAdlers)
     if not res['OK']:
       return res
 
     failed.update(res['Value']['Failed'])
 
+    # Contains <url: presignedResponse>
     presignedResponses = res['Value']['Successful']
 
     for dest_url, presignedResponse in presignedResponses.items():
@@ -709,11 +714,13 @@ class S3Storage(StorageBase):
   #   return S_OK(resDict)
 
   @_extractKeyFromS3Path
-  def createPresignedUrl(self, urls, methodName, expiration=3600):
+  def createPresignedUrl(self, urls, s3_method, expiration=3600):
     """Generate a presigned URL to share an S3 object
 
-    :param urls: urls for which to generate a presigned URL
-    :param methodName: name of the method for which to generate a presigned URL
+    :param urls: urls for which to generate a presigned URL. If s3_method is put_object, it must be a dict <url:Fields>
+                  where fields are the metadata of the file
+                  (see https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.generate_presigned_post) # pylint: disable=line-too-long # noqa
+    :param s3_method: name of the method for which to generate a presigned URL
     :param expiration: Time in seconds for the presigned URL to remain valid
     :return: Presigned URL as string. If error, returns None.
     """
@@ -729,13 +736,16 @@ class S3Storage(StorageBase):
 
     for key in keys:
       try:
-        if methodName != 'put_object':
-          response = self.s3_client.generate_presigned_url(ClientMethod=methodName,
+        if s3_method != 'put_object':
+          response = self.s3_client.generate_presigned_url(ClientMethod=s3_method,
                                                            Params={'Bucket': self.bucketName,
                                                                    'Key': key},
                                                            ExpiresIn=expiration)
         else:
-          response = self.s3_client.generate_presigned_post(self.bucketName, key, ExpiresIn=expiration)
+          fields = keys.get(key)
+          if not isinstance(fields, dict):
+            fields = None
+          response = self.s3_client.generate_presigned_post(self.bucketName, key, Fields=fields, ExpiresIn=expiration)
 
         successful[key] = response
       except ClientError as e:
