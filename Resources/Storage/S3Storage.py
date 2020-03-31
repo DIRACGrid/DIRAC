@@ -110,9 +110,12 @@ class S3Storage(StorageBase):
 
     aws_access_key_id = parameters.get('Aws_access_key_id')
     aws_secret_access_key = parameters.get('Aws_secret_access_key')
-    secureConnection = (parameters.get('SecureConnection', False) == 'True')
+    secureConnection = (parameters.get('SecureConnection', True) == 'True')
     proto = 'https' if secureConnection else 'http'
-    endpoint_url = '%s://%s:%s' % (proto, parameters['Host'], parameters.get('Port', 443))
+    port = int(parameters.get('Port'))
+    if not port:
+      port = 443 if secureConnection else 80
+    endpoint_url = '%s://%s:%s' % (proto, parameters['Host'], port)
     self.bucketName = parameters['Path']
 
     self.s3_client = boto3.client(
