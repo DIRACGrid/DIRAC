@@ -17,6 +17,7 @@ __RCSID__ = "$Id$"
 
 
 import copy
+import errno
 import functools
 
 import os
@@ -28,6 +29,7 @@ from botocore.exceptions import ClientError
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.Adler import fileAdler
+from DIRAC.Core.Utilities.DErrno import cmpError
 from DIRAC.Core.Utilities.Pfn import pfnparse
 from DIRAC.DataManagementSystem.Client.S3GatewayClient import S3GatewayClient
 from DIRAC.Resources.Storage.StorageBase import StorageBase
@@ -92,6 +94,8 @@ class S3Storage(StorageBase):
 
   pluginName = 'S3'
 
+  _OUTPUT_PROTOCOLS = ['file', 's3', 'http', 'https']
+
   def __init__(self, storageName, parameters):
 
     super(S3Storage, self).__init__(storageName, parameters)
@@ -100,11 +104,11 @@ class S3Storage(StorageBase):
 
     aws_access_key_id = parameters.get('Aws_access_key_id')
     aws_secret_access_key = parameters.get('Aws_secret_access_key')
-    secureConnection = (parameters.get('SecureConnection', 'True') == 'True')
-    proto = 'https' if secureConnection else 'http'
+    self.secureConnection = (parameters.get('SecureConnection', 'True') == 'True')
+    proto = 'https' if self.secureConnection else 'http'
     port = int(parameters.get('Port'))
     if not port:
-      port = 443 if secureConnection else 80
+      port = 443 if self.secureConnection else 80
     endpoint_url = '%s://%s:%s' % (proto, parameters['Host'], port)
     self.bucketName = parameters['Path']
 
@@ -709,31 +713,38 @@ class S3Storage(StorageBase):
   listDirectory = isDirectory = getDirectory = removeDirectory = getDirectorySize \
       = getDirectoryMetadata = putDirectory = notAvailable
 
-  # def getTransportURL(self, pathDict, protocols):
-  #   """ Get a transport URL for a given URL. For a simple storage plugin
-  #   it is just returning input URL if the plugin protocol is one of the
-  #   requested protocols
+  def getTransportURL(self, urls, protocols):
+    """ Get a transport URL for given urls
+        If http/https is requested, the URLs will be valid for 24hours
 
-  #   :param dict pathDict: URL obtained from File Catalog or constructed according
-  #                   to convention
-  #   :param protocols: a list of acceptable transport protocols in priority order
-  #   :type protocols: `python:list`
-  #   """
-  #   res = checkArgumentFormat(pathDict)
-  #   if not res['OK']:
-  #     return res
-  #   urls = res['Value']
-  #   successful = {}
-  #   failed = {}
+    :param dict urls: s3 urls
+    :param list protocols: a list of acceptable transport protocols in priority order.
+                      In practice, besides 's3', it can only be:
 
-  #   if protocols and not self.protocolParameters['Protocol'] in protocols:
-  #     return S_ERROR('No native protocol requested')
+                      * 'https' if secureConnection is True
+                      * 'http' othewise
 
-  #   for url in urls:
-  #     successful[url] = url
+    :returns: succ/failed dict url with required protocol
 
-  #   resDict = {'Failed': failed, 'Successful': successful}
-  #   return S_OK(resDict)
+    """
+
+    res = super(S3Storage, self).getTransportURL(urls, protocols)
+    # if the result is OK or the error different than errno.EPROTONOSUPPORT
+    # we just return
+    if not cmpError(res, errno.EPROTONOSUPPORT):
+      return res
+
+    # We support only http if it is an insecured connection and https if it is a secured connection
+    if (self.secureConnection and 'https' not in protocols):
+      return S_ERROR(errno.EPROTONOSUPPORT, 'Only https protocol is supported')
+    elif (not self.secureConnection and 'http' not in protocols):
+      return S_ERROR(errno.EPROTONOSUPPORT, 'Only http protocol is supported')
+
+    # Make the presigned URLs valid for 24h
+    if self.directAccess:
+      return self.createPresignedUrl(urls, 'get_object', expiration=60 * 60 * 24)
+
+    return self.S3GatewayClient.createPresignedUrl(self.name, 'get_object', urls, expiration=60 * 60 * 24)
 
   @_extractKeyFromS3Path
   def createPresignedUrl(self, urls, s3_method, expiration=3600):
