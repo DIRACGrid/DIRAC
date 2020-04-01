@@ -46,9 +46,10 @@ try:
 
   proxyInfo = res['Value']
   username = proxyInfo['username']
-  vo = ''
-  if 'group' in proxyInfo:
-    vo = getVOForGroup(proxyInfo['group'])
+  vo = getVOForGroup(proxyInfo['group'])
+
+  if not vo:
+    raise ValueError("Proxy has no VO")
 
   DESTINATION_PATH = '/%s/test/unit-test/DataManager/' % vo
 

@@ -4,9 +4,9 @@
 Configuration of an S3 storage
 Like others, but in protocol S3 add:
 
-SecureConnection: true if https, false otherwise
-Aws_access_key_id
-Aws_secret_access_key
+* SecureConnection: true if https, false otherwise
+* Aws_access_key_id
+* Aws_secret_access_key
 
 if the Aws variables are not defined, it will try to go throught the S3Gateway
 
@@ -100,7 +100,7 @@ class S3Storage(StorageBase):
 
     aws_access_key_id = parameters.get('Aws_access_key_id')
     aws_secret_access_key = parameters.get('Aws_secret_access_key')
-    secureConnection = (parameters.get('SecureConnection', True) == 'True')
+    secureConnection = (parameters.get('SecureConnection', 'True') == 'True')
     proto = 'https' if secureConnection else 'http'
     port = int(parameters.get('Port'))
     if not port:
@@ -288,9 +288,9 @@ class S3Storage(StorageBase):
     In practice, if the object exists, it is necessarily a file
 
     :param urls: list of urls to be checked
-    :returns: Failed dict: {path : error message}
-              Successful dict: {path : bool}
-              S_ERROR in case of argument problems
+    :returns: * Failed dict: {path : error message}
+              * Successful dict: {path : bool}
+              * S_ERROR in case of argument problems
 
     """
 
@@ -301,9 +301,9 @@ class S3Storage(StorageBase):
 
     :param  urls: list of urls on the storage
     :param localPath: destination folder. Default is from current directory
-    :returns: Successful dict: {path : size}
-              Failed dict: {path : errorMessage}
-              S_ERROR in case of argument problems
+    :returns: * Successful dict: {path : size}
+              * Failed dict: {path : errorMessage}
+              * S_ERROR in case of argument problems
     """
 
     if self.directAccess:
@@ -316,9 +316,9 @@ class S3Storage(StorageBase):
 
     :param  urls: list of urls  on storage
     :param localPath: destination folder. Default is from current directory
-    :returns: Successful dict: {path : size}
-              Failed dict: {path : errorMessage}
-              S_ERROR in case of argument problems
+    :returns: * Successful dict: {path : size}
+              * Failed dict: {path : errorMessage}
+              * S_ERROR in case of argument problems
     """
 
     log = LOG.getSubLogger('getFile')
@@ -348,9 +348,9 @@ class S3Storage(StorageBase):
 
     :param  urls: list of urls  on storage
     :param localPath: destination folder. Default is from current directory
-    :returns: Successful dict: {path : size}
-              Failed dict: {path : errorMessage}
-              S_ERROR in case of argument problems
+    :returns: * Successful dict: {path : size}
+              * Failed dict: {path : errorMessage}
+              * S_ERROR in case of argument problems
     """
 
     log = LOG.getSubLogger('getFile')
@@ -389,15 +389,16 @@ class S3Storage(StorageBase):
 
   def putFile(self, urls, sourceSize=0):
     """ Upload a local file.
-        :warning: no 3rd party copy possible
+
+        ..warning:: no 3rd party copy possible
 
         :param urls: dictionary { urls : localFile }
         :param sourceSize: size of the file in byte. Mandatory for third party copy (WHY ???)
                              Also, this parameter makes it essentially a non bulk operation for
                              third party copy, unless all files have the same size...
-        :returns: Successful dict: { path : size }
-                  Failed dict: { path : error message }
-                  S_ERROR in case of argument problems
+        :returns: * Successful dict: { path : size }
+                  * Failed dict: { path : error message }
+                  * S_ERROR in case of argument problems
     """
     if self.directAccess:
       return self._direct_putFile(urls, sourceSize=sourceSize)
@@ -406,15 +407,16 @@ class S3Storage(StorageBase):
   @_extractKeyFromS3Path
   def _direct_putFile(self, urls, sourceSize=0):
     """ Upload a local file.
-        :warning: no 3rd party copy possible
+
+        ..warning:: no 3rd party copy possible
 
         :param urls: dictionary { urls : localFile }
         :param sourceSize: size of the file in byte. Mandatory for third party copy (WHY ???)
                              Also, this parameter makes it essentially a non bulk operation for
                              third party copy, unless all files have the same size...
-        :returns: Successful dict: { path : size }
-                  Failed dict: { path : error message }
-                  S_ERROR in case of argument problems
+        :returns: * Successful dict: { path : size }
+                  * Failed dict: { path : error message }
+                  * S_ERROR in case of argument problems
     """
 
     log = LOG.getSubLogger('putFile')
@@ -448,15 +450,16 @@ class S3Storage(StorageBase):
 
   def _presigned_putFile(self, urls, sourceSize=0):
     """ Upload a local file.
-        :warning: no 3rd party copy possible
+
+        ..warning:: no 3rd party copy possible
 
         :param urls: dictionary { urls : localFile }
         :param sourceSize: size of the file in byte. Mandatory for third party copy (WHY ???)
                              Also, this parameter makes it essentially a non bulk operation for
                              third party copy, unless all files have the same size...
-        :returns: Successful dict: { path : size }
-                  Failed dict: { path : error message }
-                  S_ERROR in case of argument problems
+        :returns: * Successful dict: { path : size }
+                  * Failed dict: { path : error message }
+                  * S_ERROR in case of argument problems
     """
 
     log = LOG.getSubLogger('putFile')
@@ -508,9 +511,9 @@ class S3Storage(StorageBase):
     """ Get metadata associated to the file(s)
 
     :param  urls: list of urls on the storage
-    :returns: successful dict { path : metadata }
-             failed dict { path : error message }
-             S_ERROR in case of argument problems
+    :returns: * successful dict { path : metadata }
+              * failed dict { path : error message }
+              * S_ERROR in case of argument problems
     """
     if self.directAccess:
       return self._direct_getFileMetadata(urls)
@@ -521,9 +524,9 @@ class S3Storage(StorageBase):
     """ Get metadata associated to the file(s)
 
     :param  urls: list of urls on the storage
-    :returns: successful dict { path : metadata }
-             failed dict { path : error message }
-             S_ERROR in case of argument problems
+    :returns: * successful dict { path : metadata }
+              * failed dict { path : error message }
+              * S_ERROR in case of argument problems
     """
 
     # the @_extractKeyFromS3Path transformed URL into keys
@@ -552,9 +555,9 @@ class S3Storage(StorageBase):
     """ Get metadata associated to the file(s)
 
     :param  urls: list of urls on the storage
-    :returns: successful dict { path : metadata }
-             failed dict { path : error message }
-             S_ERROR in case of argument problems
+    :returns: * successful dict { path : metadata }
+              * failed dict { path : error message }
+              * S_ERROR in case of argument problems
     """
 
     failed = {}
@@ -595,9 +598,9 @@ class S3Storage(StorageBase):
     A non existing file will be considered as successfully removed
 
     :param urls: list of urls on the storage
-    :returns: Successful dict {path : True}
-               Failed dict {path : error message}
-               S_ERROR in case of argument problems
+    :returns: * Successful dict {path : True}
+              * Failed dict {path : error message}
+              * S_ERROR in case of argument problems
     """
 
     if self.directAccess:
@@ -611,9 +614,9 @@ class S3Storage(StorageBase):
     A non existing file will be considered as successfully removed
 
     :param urls: list of urls on the storage
-    :returns: Successful dict {path : True}
-               Failed dict {path : error message}
-               S_ERROR in case of argument problems
+    :returns: * Successful dict {path : True}
+              * Failed dict {path : error message}
+              * S_ERROR in case of argument problems
     """
 
     failed = {}
@@ -637,9 +640,9 @@ class S3Storage(StorageBase):
     A non existing file will be considered as successfully removed
 
     :param urls: list of urls on the storage
-    :returns: Successful dict {path : True}
-               Failed dict {path : error message}
-               S_ERROR in case of argument problems
+    :returns: * Successful dict {path : True}
+              * Failed dict {path : error message}
+              * S_ERROR in case of argument problems
     """
 
     failed = {}
@@ -669,9 +672,9 @@ class S3Storage(StorageBase):
     """Get the physical size of the given file
 
       :param urls: list of urls on the storage
-      :returns: Successful dict {path : size}
-             Failed dict {path : error message }
-             S_ERROR in case of argument problem
+      :returns: * Successful dict {path : size}
+                * Failed dict {path : error message }
+                * S_ERROR in case of argument problem
     """
 
     res = self.getFileMetadata(urls)

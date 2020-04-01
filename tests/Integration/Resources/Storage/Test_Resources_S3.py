@@ -2,7 +2,7 @@
 This integration tests will perform basic operations on S3 storage with direct access
 It creates a local hierarchy, and then tries to upload, download, remove, get metadata etc
 
-.. warn::
+.. warning::
 
   The storage element you test is supposed to be called 'S3-DIRECT' and 'S3-INDIRECT.
   (pytest does not play friendly with command line params...)
