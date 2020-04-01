@@ -32,6 +32,7 @@ group.
    DevelopmentEnvironment/index
    Overview/index
    CodingConvention/index
+   Python3Migration/index
    AddingNewComponents/index
    CodeDocumenting/index
    CodeTesting/index
