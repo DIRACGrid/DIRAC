@@ -1,15 +1,5 @@
 # https://docs.aws.amazon.com/AmazonS3/latest/API/API_Operations.html
-# https://pypi.org/project/requests-aws/
 # https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Client.list_objects
-
-# docker run --rm -it --privileged --name dirac-testing-host \
-#   -v /home/chaen/dirac/diracostar:/diracostar \
-#   -e DIRACOS_TARBALL_PATH=/diracostar \
-#   -e CI_PROJECT_DIR=/repo/DIRAC -e CI_REGISTRY_IMAGE=diracgrid \
-#   -v /var/run/docker.sock:/var/run/docker.sock -v $PWD:/repo/DIRAC -w /repo \
-#   diracgrid/docker-compose-dirac:latest bash \
-#   DIRAC/tests/CI/run_docker_setup.sh
-
 """
 Configuration of an S3 storage
 Like others, but in protocol S3 add:
@@ -19,6 +9,8 @@ Aws_access_key_id
 Aws_secret_access_key
 
 if the Aws variables are not defined, it will try to go throught the S3Gateway
+
+The key of the objects are the LFN without trailing path
 
 """
 __RCSID__ = "$Id$"
@@ -64,14 +56,12 @@ def _extractKeyFromS3Path(meth):
 
     if extractKeys:
       for url in urls:
-        res = pfnparse(url, srmSpecific=False)
+        res = self._getKeyFromURL(url)  # pylint: disable=protected-access
         if not res['OK']:
           failed[url] = res['Message']
           continue
 
-        splitURL = res['Value']
-        path = splitURL['Path'].lstrip('/')
-        key = os.path.join(path, splitURL['FileName'])
+        key = res['Value']
         keysToUrls[key] = url
         keyArgs[key] = urls[url]
     else:
@@ -131,6 +121,35 @@ class S3Storage(StorageBase):
     # otherwise we have to go through the S3Gateway
     self.directAccess = aws_access_key_id and aws_secret_access_key
     self.S3GatewayClient = S3GatewayClient()
+
+  def _getKeyFromURL(self, url):
+    """  Extract the Key from the URL.
+    The key is basically the LFN without trailing slash
+
+    I despise such path mangling, expecially after all the efforts to
+    get ride of such method. However, since in the case of S3 we need
+    to go back and forth between URL and LFN (for finding keys, checking
+    accesses in the gw, etc), there is no other option...
+
+    :param url: s3 url
+    :returns: S_OK(key) / S_ERROR
+    """
+
+    res = pfnparse(url, srmSpecific=False)
+    if not res['OK']:
+      return res
+
+    splitURL = res['Value']
+
+    # The path originally looks like '/bucket/lhcb/user/c/chaen
+    # We remove the trailing slash, and get the relative path
+    # of bucket/lhcb/user/c/chaen starting from bucket,
+    # which gives you basically the LFN without trailing slash
+    path = os.path.relpath(splitURL['Path'].lstrip('/'), start=self.bucketName)
+
+    key = os.path.join(path, splitURL['FileName'])
+
+    return S_OK(key)
 
   # @_extractKeyFromS3Path
   # def direct_exists(self, keys):

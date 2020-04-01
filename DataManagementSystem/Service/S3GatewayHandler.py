@@ -134,15 +134,14 @@ class S3GatewayHandler(RequestHandler):
             (storageName, s3_method, url, expiration))
 
         # Finding the LFN to query the FC
-        res = pfnparse(url, srmSpecific=False)
+        # I absolutely hate doing such path mangling but well....
+        res = s3Plugin._getKeyFromURL(url)  # pylint: disable=protected-access
         if not res['OK']:
           failed[url] = res['Message']
           log.debug("Could not parse the url %s %s" % (url, res))
           continue
 
-        splitURL = res['Value']
-        path = splitURL['Path']
-        lfn = os.path.join(path, splitURL['FileName'])
+        lfn = '/' + res['Value']
 
         log.debug("URL: %s -> LFN %s" % (url, lfn))
 
