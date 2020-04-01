@@ -77,6 +77,12 @@ class PlotsTestCase(unittest.TestCase):
     res = compare(self.filename, os.path.join(plots_directory, 'histogram2.png'))
     self.assertEqual(0.0, res)
 
+    res = generateHistogram(self.filename, [{'a': [1]}, {'b': [2, 3, 3, 5, 5]}], {})
+    self.assertEqual(res['OK'], True)
+
+    res = compare(self.filename, os.path.join(plots_directory, 'histogram3.png'))
+    self.assertEqual(0.0, res)
+
   def test_stackedlineplots(self):
     """
     test stacked line plot

@@ -180,17 +180,26 @@ def histogram(data, fileName, bins=None, *args, **kw):
   kw = __checkKW(kw)
   if bins is None:
     bins = 'auto'
-  histograms = []
+  histograms = None
   spans = []
   if isinstance(data, list):
     if isinstance(data[0], dict):
       for plots in data:
         for plot in plots:
           values, vbins, _patches = hist(plots[plot], bins)
-          histograms.append({plot: dict(zip(vbins, values))})
+          # we can have multiple plots in a figure, although we
+          # are not using it, but still it is good to have in histograms as well.
+          if 'plot_grid' in kw and kw['plot_grid'] not in '1:1':
+            if not histograms:
+              histograms = []
+            histograms.append({plot: dict(zip(vbins, values))})
+          else:
+            if not histograms:
+              histograms = {}
+            histograms[plot] = dict(zip(vbins, values))
           if vbins.size:
             bins = len(vbins)
-            spans.append((max(plots[plot]) - min(plots[plot])) / float(bins) * 0.95)
+            spans.append((max(plots[plot]) - min(plots[plot]) + 0.1) / float(bins) * 0.95)
     else:
       values, vbins, _patches = hist(data, bins)
       histograms = dict(zip(vbins, values))
