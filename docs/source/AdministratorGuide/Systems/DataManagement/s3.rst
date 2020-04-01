@@ -1,0 +1,53 @@
+.. _s3_support:
+
+-------------------
+S3 support in DIRAC
+-------------------
+
+.. versionadded:: v7r0p19
+
+.. contents:: Table of contents
+   :depth: 2
+
+
+DIRAC can be instrumented to work with S3 technology like AWS or CEPH. This technology relies on username/password authentication, so there are two ways of accessing files:
+
+    * If the credentials are available, we perform a direct access
+    * If not, we ask the DIRAC service ``S3Gateway`` for a presigned URL
+
+Thus, in order to have a fully functionnal system, you need to configure your storage and install the ``S3Gateway``.
+
+Do not forget to add ``s3`` to the appropriate lists of protocols (:ref:`multiProtocol`)
+
+.. warning:: 
+    ``S3`` is not a third party capable protocol, so you should never add it there.
+    If you try replicating a file from/to S3, DIRAC will make an intermediate local copy
+
+Storage configuration
+---------------------
+
+The S3 storage is configured like any other SE (see :ref:`resourcesStorageElement`), but needs 3 more parameters in the protocol section:
+
+    * ``SecureConnection``: if True, connect with https (default)
+    * ``Aws_access_key_id``: the access id
+    * ``Aws_secret_access_key``: the access password
+
+If the Aws variables are not defined, a presigned URL will be requested to the ``S3Gateway``. The recommended way to set up your storage is to define all it's configuration in the central CS except the Aws parameters, and define just these specific parameters in the servers local ``dirac.cfg``.
+
+DIRAC expects that there is one bucket per SE, whose name corresponds to the ``Path`` parameter of its configuration.
+
+
+S3Gateway
+---------
+
+This installs like any service::
+
+  dirac-admin-sysadmin-cli -H diracserver034.institute.tld
+  > install service DataManagement S3Gateway
+
+
+Upon starting, the gateway will check all the available S3 SEs defined and load the credentials. This means that one ``S3Gateway`` can serve presigned URL for all the S3 storages you may have, and that it can be duplicated at will.
+
+Before returning the URL, the ``S3Gateway`` queries the `FileCatalog` to check permissions.
+
+The URLs are normally valid for 1 hour, except when asking for a URL to be given to an external application (``dirac-dms-lfn-accessURL`` usecase).

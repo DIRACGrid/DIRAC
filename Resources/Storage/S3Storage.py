@@ -10,7 +10,8 @@ Like others, but in protocol S3 add:
 
 if the Aws variables are not defined, it will try to go throught the S3Gateway
 
-The key of the objects are the LFN without trailing path
+The key of the objects are the LFN without trailing path.
+The Path should be the BucketName
 
 """
 __RCSID__ = "$Id$"

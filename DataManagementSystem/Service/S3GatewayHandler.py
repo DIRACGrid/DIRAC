@@ -1,6 +1,8 @@
 """
 Service handler for generating pre-signed URLs for S3 storages.
 Permissions to request a URL for a given action are mapped against FC permissions
+This service can serve presigned URL for any S3 storage it has the credentials for.
+
 
 .. literalinclude:: ../ConfigTemplate.cfg
   :start-after: ##BEGIN S3Gateway
