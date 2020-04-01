@@ -208,7 +208,7 @@ This sections contains some details that are particularly relevant to DIRAC.
     my_number = 1000000000000000000000000000000000L
 
     # Good: Will behave the same way in both Python 2 and Python 3
-    my_number = 1000000000000000000000000000000000L
+    my_number = 1000000000000000000000000000000000
 
 **Classes**
   In Python 2.2 "new-style" classes were introduced which should always inherit from ``object``.
