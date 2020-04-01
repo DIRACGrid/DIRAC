@@ -9,10 +9,11 @@ RedHat will continue to provide support of their CentOS 8 RPM until June 2024 ho
 This also complicates any migration to Python 3 as it becomes necessary to make major updates to dependencies at the same time.
 In addition, DIRACOS has two dependencies which might cause issues as a result of being deprecated:
 
- - CentOS 6 source RPMs are used and these will stop being supported in November 2020.
- - The maintainers of the Python Package Index and pip have said they will drop support if either:
-     - bugs in Python 2.7 itself make this necessary (which is unlikely)
-     - Python 2 usage reduces to a level where pip maintainers feel it is OK to drop support
+- CentOS 6 source RPMs are used and these will stop being supported in November 2020.
+- The maintainers of the Python Package Index and pip have said they will drop support if either:
+
+  - bugs in Python 2.7 itself make this necessary (which is unlikely)
+  - Python 2 usage reduces to a level where pip maintainers feel it is OK to drop support
 
 While neither of these are likely to affect DIRAC in the immediate future, DIRAC has a relatively slow release cycle and therefore Python 2 will still be used for several years after the migration begins.
 
@@ -36,11 +37,11 @@ Once it becomes possible to run some DIRAC services with a client that uses Pyth
 This will be DIRACOS version 2 and the ``--dirac-os-version=v2rX`` flag to `dirac-install` becomes the way to create a Python 3 based DIRAC installation.
 This will be based upon `conda-forge <https://conda-forge.org/>`_ and `conda-pack <https://conda.github.io/conda-pack/>`_ and provides several benefits over DIRACOS version 1 while maintaining bit-for-bit reproducibility:
 
- - **Faster:** Creating a new build will take under ten minutes instead of the multiple hours currently required.
- - **Distribution independent:** The binaries provided by conda-forge are independent of the Linux distribution allowing DIRAC to only have a minimum ``glibc`` requirement.
- - **Alternative architectures:** There is already a small demand for running DIRAC on alternative architectures such as ARM and POWER PC and these platforms are already supported by conda-forge.
- - **Easier to extend:** Extensions will be able to contain any additional packages, even if it contains significant compiled code.
- - **Greater flexibility:** Currently it is time consuming to modify or add new packages to DIRACOS, especially if a CentOS 6 SRPM doesn't exist. With a conda based DIRACOS it will be possible to make significant changes quickly, such as trying a higher performance `PyPy <https://www.pypy.org/features.html>`_ based build.
+- **Faster:** Creating a new build will take under ten minutes instead of the multiple hours currently required.
+- **Distribution independent:** The binaries provided by conda-forge are independent of the Linux distribution allowing DIRAC to only have a minimum ``glibc`` requirement.
+- **Alternative architectures:** There is already a small demand for running DIRAC on alternative architectures such as ARM and POWER PC and these platforms are already supported by conda-forge.
+- **Easier to extend:** Extensions will be able to contain any additional packages, even if it contains significant compiled code.
+- **Greater flexibility:** Currently it is time consuming to modify or add new packages to DIRACOS, especially if a CentOS 6 SRPM doesn't exist. With a conda based DIRACOS it will be possible to make significant changes quickly, such as trying a higher performance `PyPy <https://www.pypy.org/features.html>`_ based build.
 
 2to3
 ^^^^
@@ -56,8 +57,8 @@ Further reading
 
 The following links contain useful information about migrating to Python 3:
 
- - `The Conservative Python 3 Porting Guide <https://portingguide.readthedocs.io/en/latest/index.html>`_
- - `Mercurial's Journey to and Reflections on Python 3 <https://gregoryszorc.com/blog/2020/01/13/mercurial%27s-journey-to-and-reflections-on-python-3/>`_
+- `The Conservative Python 3 Porting Guide <https://portingguide.readthedocs.io/en/latest/index.html>`_
+- `Mercurial's Journey to and Reflections on Python 3 <https://gregoryszorc.com/blog/2020/01/13/mercurial%27s-journey-to-and-reflections-on-python-3/>`_
 
 
 Recommendations for code
