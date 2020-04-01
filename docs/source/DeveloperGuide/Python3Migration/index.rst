@@ -97,10 +97,10 @@ This sections contains some details that are particularly relevant to DIRAC.
     if type(my_variable) == str:
 
     # Bad: basestring does not exist in Python 3
-    if instance(my_variable, basestring):
+    if isinstance(my_variable, basestring):
 
     # Good: Supports both Python 2 and 3
-    if instance(my_variable, six.string_types):
+    if isinstance(my_variable, six.string_types):
 
   **Reading files:**
 
