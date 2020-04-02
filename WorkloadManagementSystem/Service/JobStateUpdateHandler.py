@@ -159,11 +159,9 @@ class JobStateUpdateHandler(RequestHandler):
     minor = ''
     application = ''
     appCounter = ''
-    endDate = ''
-    startDate = ''
     jobID = int(jobID)
 
-    result = jobDB.getJobAttributes(jobID, ['Status'])
+    result = jobDB.getJobAttributes(jobID, ['Status', 'StartExecTime', 'EndExecTime'])
     if not result['OK']:
       return result
 
@@ -173,6 +171,8 @@ class JobStateUpdateHandler(RequestHandler):
     # If the current status is Stalled and we get an update, it should probably be "Running"
     if result['Value']['Status'] == JobStatus.STALLED:
       status = JobStatus.RUNNING
+    startTime = result['Value'].get('StartExecTime', '')
+    endTime = result['Value'].get('EndExecTime', '')
 
     # Get the latest WN time stamps of status updates
     result = logDB.getWMSTimeStamps(int(jobID))
@@ -182,18 +182,24 @@ class JobStateUpdateHandler(RequestHandler):
     lastTime = Time.toString(Time.fromEpoch(lastTime))
 
     dates = sorted(statusDict)
+    # Pick up start and end times from all updates, if they don't exist
+    for date in dates:
+      sDict = statusDict[date]
+      status = sDict.get('Status', status)
+      if status in JobStatus.JOB_FINAL_STATES and not endTime:
+        endTime = date
+      minor = sDict.get('MinorStatus', minor)
+      # Pick up the start date
+      if minor == "Application" and status == JobStatus.RUNNING and not startTime:
+        startTime = date
+
     # We should only update the status if its time stamp is more recent than the last update
     if dates[-1] >= lastTime:
       # Get the last status values
       for date in [date for date in dates if date >= lastTime]:
         sDict = statusDict[date]
         status = sDict.get('Status', status)
-        if status in JobStatus.JOB_FINAL_STATES:
-          endDate = date
         minor = sDict.get('MinorStatus', minor)
-        # Pick up the start date
-        if minor == "Application" and status == JobStatus.RUNNING and not startDate:
-          startDate = date
         application = sDict.get('ApplicationStatus', application)
         appCounter = sDict.get('ApplicationCounter', appCounter)
 
@@ -215,10 +221,11 @@ class JobStateUpdateHandler(RequestHandler):
       if not result['OK']:
         return result
 
-      if endDate:
-        result = jobDB.setEndExecTime(jobID, endDate)
-      if startDate:
-        result = jobDB.setStartExecTime(jobID, startDate)
+    # Update start and end time if needed
+    if endTime:
+      result = jobDB.setEndExecTime(jobID, endTime)
+    if startTime:
+      result = jobDB.setStartExecTime(jobID, startTime)
 
     # Update the JobLoggingDB records
     for date in dates:
