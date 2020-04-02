@@ -1,5 +1,6 @@
 """ ProxyProvider base class for various proxy providers
 """
+from DIRAC import S_OK, S_ERROR
 
 __RCSID__ = "$Id$"
 
