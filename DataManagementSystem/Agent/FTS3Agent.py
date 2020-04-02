@@ -91,6 +91,8 @@ class FTS3Agent(AgentModule):
     self.maxKick = self.am_getOption("KickLimitPerCycle", 100)
     self.deleteDelay = self.am_getOption("DeleteGraceDays", 180)
     self.maxDelete = self.am_getOption("DeleteLimitPerCycle", 100)
+    # lifetime of the proxy we download to delegate to FTS
+    self.proxyLifetime = self.am_getOption("ProxyLifetime", PROXY_LIFETIME)
 
     return S_OK()
 
@@ -123,8 +125,10 @@ class FTS3Agent(AgentModule):
         per tuple (user, group, server).
         We dump the proxy of a user to a file (shared by all the threads),
         and use it to make the context.
-        The proxy needs a lifetime of PROXY_LIFETIME, is cached for half an hour less,
+        The proxy needs a lifetime of self.proxyLifetime, is cached for cacheTime = (2*lifeTime/3) - 10mn,
         and the lifetime of the context is 45mn
+        The reason for cacheTime to be what it is is because the FTS3 server will ask for a new proxy
+        after 2/3rd of the existing proxy has expired, so we renew it just before
 
         :param username: name of the user
         :param group: group of the user
@@ -141,7 +145,9 @@ class FTS3Agent(AgentModule):
     idTuple = (username, group, ftsServer)
     log.debug("Getting context for %s" % (idTuple, ))
 
-    if not contextes.exists(idTuple, 2700):
+    # We keep a context in the cache for 45 minutes
+    # (so it needs to be valid at least 15 since we add it for one hour)
+    if not contextes.exists(idTuple, 15 * 60):
       res = getDNForUsername(username)
       if not res['OK']:
         return res
@@ -151,11 +157,12 @@ class FTS3Agent(AgentModule):
       log.debug("UserDN %s" % userDN)
 
       # We dump the proxy to a file.
-      # It has to have a lifetime of PROXY_LIFETIME
-      # and we cache it for half an hour less
-      cacheTime = PROXY_LIFETIME - 1800
+      # It has to have a lifetime of self.proxyLifetime
+      # Because the FTS3 servers cache it for 2/3rd of the lifetime
+      # we should make our cache a bit less than 2/3rd of the lifetime
+      cacheTime = int(2 * self.proxyLifetime / 3) - 600
       res = gProxyManager.downloadVOMSProxyToFile(
-          userDN, group, requiredTimeLeft=PROXY_LIFETIME, cacheTime=cacheTime)
+          userDN, group, requiredTimeLeft=self.proxyLifetime, cacheTime=cacheTime)
       if not res['OK']:
         return res
 
@@ -163,7 +170,13 @@ class FTS3Agent(AgentModule):
       log.debug("Proxy file %s" % proxyFile)
 
       # We generate the context
-      res = FTS3Job.generateContext(ftsServer, proxyFile)
+      # In practice, the lifetime will be less than proxyLifetime
+      # because we reuse a cached proxy. However, the cached proxy will
+      # never forced a redelegation, because it is recent enough for FTS3 servers.
+      # The delegation is forced when 2/3 rd of the lifetime are left, and we get a fresh
+      # one just before. So no problem
+      res = FTS3Job.generateContext(ftsServer, proxyFile, lifetime=self.proxyLifetime)
+
       if not res['OK']:
         return res
       context = res['Value']
