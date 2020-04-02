@@ -312,7 +312,7 @@ class DIRACCAProxyProvider(ProxyProvider):
     for k, v in self.cfg[self.cfg[self.cfg['ca']['default_ca']]['policy']].items():
       nid = self.fields2nid[k]
       self.parameters[nid], self.minDict[nid], self.maxDict[nid] = [], [], []
-      for k in ['0.' + k, k]:
+      for k in ['%s.%s' % (i, k) for i in range(0,10)] + [k]:
         if k + '_default' in self.cfg['req']['distinguished_name']:
           self.parameters[nid].append(self.cfg['req']['distinguished_name'][k + '_default'])
         if k + '_min' in self.cfg['req']['distinguished_name']:
