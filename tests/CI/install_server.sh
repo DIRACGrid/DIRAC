@@ -45,3 +45,28 @@ sed -i "0,/\(Host = \).*/s//\1$SERVER_HOST/" "${INSTALL_CFG_FILE}"
 X509_CERT_DIR=$SERVERINSTALLDIR/etc/grid-security/certificates/ fullInstallDIRAC
 
 echo -e "*** $(date -u) **** Server INSTALLATION DONE ****\n"
+
+echo -e "*** $(date -u) **** Adding S3-INDIRECT SERVER CONFIGURATION"
+
+
+# This specific configuration has to be local to the server only
+cat >> "$SERVERINSTALLDIR"/etc/dirac.cfg <<EOL
+Resources
+{
+  StorageElements
+  {
+    S3-INDIRECT
+    {
+      S3
+      {
+        Aws_access_key_id = fakeId 
+        Aws_secret_access_key = fakeKey
+      }
+    }
+  }
+}
+EOL
+
+dirac-restart-component DataManagement S3Gateway "$DEBUG"
+
+echo -e "*** $(date -u) **** DONE Adding S3-INDIRECT SERVER CONFIGURATION"

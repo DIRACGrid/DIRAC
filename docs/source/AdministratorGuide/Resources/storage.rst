@@ -201,10 +201,10 @@ These are the plugins that you should define in the `PluginName` option of your 
 
   - DIP: used for dips, the DIRAC custom protocol (useful for example for DIRAC SEs).
   - File: offers an abstraction of the local access as an SE.
-  - SRM2 (deprecated): for the srm protocol, using the deprecated gfal libraries.
   - RFIO (deprecated): for the rfio protocol.
   - Proxy: to be used with the StorageElementProxy.
-  - XROOT (deprecated): for the xroot protocol, using the python xroot binding (http://xrootd.org/doc/python/xrootd-python-0.1.0/#).
+  - S3: for S3 (e.g. AWS, CEPH) support (see :ref:`s3_support`)
+
 
 There are also a set of plugins based on the gfal2 libraries (https://dmc.web.cern.ch/projects).
 

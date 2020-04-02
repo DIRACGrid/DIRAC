@@ -35,6 +35,7 @@ These are the methods for getting information about the Storage:
 """
 __RCSID__ = "$Id$"
 
+import errno
 import json
 import os
 import shutil
@@ -338,7 +339,7 @@ class StorageBase(object):
     failed = {}
 
     if protocols and not self.protocolParameters['Protocol'] in protocols:
-      return S_ERROR('No native protocol requested')
+      return S_ERROR(errno.EPROTONOSUPPORT, 'No native protocol requested')
 
     for url in urls:
       successful[url] = url
