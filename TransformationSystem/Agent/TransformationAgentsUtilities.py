@@ -20,64 +20,45 @@ class TransformationAgentsUtilities(object):
     self.transInThread = {}
     self.debug = False
 
-  def __threadForTrans(self, transID):
+  def __prefixForLogging(self, transID, method, reftime):
     """ get the thread number """
+    if reftime is not None:
+      method += " (%.1f seconds)" % (time.time() - reftime)
     try:
-      return self.transInThread.get(transID, ' [None] [%s] ' % transID) + AGENT_NAME + '.'
+      return self.transInThread.get(transID, ' [None] [%s] ' % transID) + AGENT_NAME + '.' + method
     except NameError:
       return ''
 
   def _logVerbose(self, message, param='', method="execute", transID='None', reftime=None):
     """ verbose """
-    if reftime is not None:
-      method += " (%.1f seconds)" % (time.time() - reftime)
-    prefix = '(V) ' if self.debug else '' + self.__threadForTrans(transID) + method
     if self.debug:
-      gLogger.getSubLogger(prefix).info(message, param)
+      gLogger.getSubLogger('(V) ' + self.__prefixForLogging(transID, method, reftime)).info(message, param)
     else:
-      gLogger.getSubLogger(prefix).verbose(message, param)
+      gLogger.getSubLogger(self.__prefixForLogging(transID, method, reftime)).verbose(message, param)
 
   def _logDebug(self, message, param='', method="execute", transID='None', reftime=None):
     """ debug """
-    if reftime is not None:
-      method += " (%.1f seconds)" % (time.time() - reftime)
-    prefix = self.__threadForTrans(transID) + method
-    gLogger.getSubLogger(prefix).debug(message, param)
+    gLogger.getSubLogger(self.__prefixForLogging(transID, method, reftime)).debug(message, param)
 
   def _logInfo(self, message, param='', method="execute", transID='None', reftime=None):
     """ info """
-    if reftime is not None:
-      method += " (%.1f seconds)" % (time.time() - reftime)
-    prefix = self.__threadForTrans(transID) + method
-    gLogger.getSubLogger(prefix).info(message, param)
+    gLogger.getSubLogger(self.__prefixForLogging(transID, method, reftime)).info(message, param)
 
   def _logWarn(self, message, param='', method="execute", transID='None', reftime=None):
     """ warn """
-    if reftime is not None:
-      method += " (%.1f seconds)" % (time.time() - reftime)
-    prefix = self.__threadForTrans(transID) + method
-    gLogger.getSubLogger(prefix).warn(message, param)
+    gLogger.getSubLogger(self.__prefixForLogging(transID, method, reftime)).warn(message, param)
 
   def _logError(self, message, param='', method="execute", transID='None', reftime=None):
     """ error """
-    if reftime is not None:
-      method += " (%.1f seconds)" % (time.time() - reftime)
-    prefix = self.__threadForTrans(transID) + method
-    gLogger.getSubLogger(prefix).error(message, param)
+    gLogger.getSubLogger(self.__prefixForLogging(transID, method, reftime)).error(message, param)
 
   def _logException(self, message, param='', lException=False, method="execute", transID='None', reftime=None):
     """ exception """
-    if reftime is not None:
-      method += " (%.1f seconds)" % (time.time() - reftime)
-    prefix = self.__threadForTrans(transID) + method
-    gLogger.getSubLogger(prefix).exception(message, param, lException)
+    gLogger.getSubLogger(self.__prefixForLogging(transID, method, reftime)).exception(message, param, lException)
 
   def _logFatal(self, message, param='', method="execute", transID='None', reftime=None):
     """ error """
-    if reftime is not None:
-      method += " (%.1f seconds)" % (time.time() - reftime)
-    prefix = self.__threadForTrans(transID) + method
-    gLogger.getSubLogger(prefix).fatal(message, param)
+    gLogger.getSubLogger(self.__prefixForLogging(transID, method, reftime)).fatal(message, param)
 
   def _transTaskName(self, transID, taskID):  # pylint: disable=no-self-use
     """ Construct the task name from the transformation and task ID """
