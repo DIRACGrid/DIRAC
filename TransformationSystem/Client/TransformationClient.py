@@ -230,26 +230,24 @@ class TransformationClient(Client):
     prod = transDict['TransformationID']
     parentProd = int(transDict.get('InheritedFrom', 0))
     movedFiles = {}
+    log = gLogger.getSubLogger("[None] [%d] .moveFilesToDerivedTransformation:" % prod)
     if not parentProd:
-      gLogger.warn("[None] [%d] .moveFilesToDerivedTransformation: Transformation was not derived..." % prod)
+      log.warn("Transformation was not derived...")
       return S_OK((parentProd, movedFiles))
     # get the lfns in status Unused/MaxReset of the parent production
     res = self.getTransformationFiles(condDict={'TransformationID': parentProd, 'Status': ['Unused', 'MaxReset']})
     if not res['OK']:
-      gLogger.error("[None] [%d] .moveFilesToDerivedTransformation:"
-                    " Error getting Unused files from transformation %s:" % (prod, parentProd), res['Message'])
+      log.error(" Error getting Unused files from transformation", "%d: %s" % (parentProd, res['Message']))
       return res
     parentFiles = res['Value']
     lfns = [lfnDict['LFN'] for lfnDict in parentFiles]
     if not lfns:
-      gLogger.info("[None] [%d] .moveFilesToDerivedTransformation:"
-                   " No files found to be moved from transformation %d" % (prod, parentProd))
+      log.info(" No files found to be moved from transformation", "%d" % parentProd)
       return S_OK((parentProd, movedFiles))
     # get the lfns of the derived production that were Unused/MaxReset in the parent one
     res = self.getTransformationFiles(condDict={'TransformationID': prod, 'LFN': lfns})
     if not res['OK']:
-      gLogger.error("[None] [%d] .moveFilesToDerivedTransformation:"
-                    " Error getting files from derived transformation" % prod, res['Message'])
+      log.error(" Error getting files from derived transformation:", res['Message'])
       return res
     derivedFiles = res['Value']
     derivedStatusDict = dict((derivedDict['LFN'], derivedDict['Status']) for derivedDict in derivedFiles)
@@ -284,36 +282,31 @@ class TransformationClient(Client):
           parentStatusFiles.setdefault('Moved', []).append(lfn)
 
     for status, count in badStatusFiles.iteritems():
-      gLogger.warn('[None] [%d] .moveFilesToDerivedTransformation:'
-                   ' Files found in an unexpected status in derived transformation' % prod, '%s: %d' % (status, count))
+      log.warn('Files found in an unexpected status in derived transformation',
+               ': %d files in status %s' % (count, status))
     # Set the status in the parent transformation first
     for status, lfnList in parentStatusFiles.iteritems():
       for lfnChunk in breakListIntoChunks(lfnList, 5000):
         res = self.setFileStatusForTransformation(parentProd, status, lfnChunk)
         if not res['OK']:
-          gLogger.error("[None] [%d] .moveFilesToDerivedTransformation:"
-                        " Error setting status %s for %d files in transformation %d "
-                        % (prod, status, len(lfnList), parentProd),
-                        res['Message'])
+          log.error(" Error setting status in transformation",
+                    "%d: status %s for %d files - %s" % (parentProd, status, len(lfnList), res['Message']))
 
     # Set the status in the new transformation
     for (status, oldStatus), lfnList in newStatusFiles.iteritems():
       for lfnChunk in breakListIntoChunks(lfnList, 5000):
         res = self.setFileStatusForTransformation(prod, status, lfnChunk)
         if not res['OK']:
-          gLogger.error("[None] [%d] .moveFilesToDerivedTransformation:"
-                        " Error setting status %s for %d files; resetting them %s in transformation %d"
-                        % (prod, status, len(lfnChunk), oldStatus, parentProd),
-                        res['Message'])
+          log.error(" Error setting status in transformation",
+                    "%d: status %s for %d files; resetting them %s - %s" %
+                    (parentProd, status, len(lfnChunk), oldStatus, res['Message']))
           res = self.setFileStatusForTransformation(parentProd, oldStatus, lfnChunk)
           if not res['OK']:
-            gLogger.error("[None] [%d] .moveFilesToDerivedTransformation:"
-                          " Error setting status %s for %d files in transformation %d"
-                          % (prod, oldStatus, len(lfnChunk), parentProd),
-                          res['Message'])
+            log.error(" Error setting status in transformation",
+                      " %d: status %s for %d files - %s" %
+                      (parentProd, oldStatus, len(lfnChunk), res['Message']))
         else:
-          gLogger.info("[None] [%d] .moveFilesToDerivedTransformation:"
-                       " Successfully moved %d files from %s to %s" % (prod, len(lfnChunk), oldStatus, status))
+          log.info('Successfully moved files', ": %d files from %s to %s" % (len(lfnChunk), oldStatus, status))
 
     # If files were Assigned or Unused at the time of derivation, try and update them as jobs may have run since then
     res = self.getTransformationFiles(condDict={'TransformationID': prod,
@@ -329,11 +322,10 @@ class TransformationClient(Client):
           if processedLfns:
             res = self.setFileStatusForTransformation(prod, 'Processed-inherited', processedLfns)
             if res['OK']:
-              gLogger.info("[None] [%d] .moveFilesToDerivedTransformation: set %d files to status %s" %
-                           (prod, len(processedLfns), 'Processed-inherited'))
+              log.info('Successfully set files status',
+                       ": %d files to status %s" % (len(processedLfns), 'Processed-inherited'))
     if not res['OK']:
-      gLogger.error("[None] [%d] .moveFilesToDerivedTransformation: Error setting status for Assigned derived files" %
-                    prod, res['Message'])
+      log.error("Error setting status for Assigned derived files", res['Message'])
 
     return S_OK((parentProd, movedFiles))
 
