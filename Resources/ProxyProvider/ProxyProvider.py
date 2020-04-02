@@ -26,7 +26,7 @@ class ProxyProvider(object):
                   - 'Status' with ready to work status[ready, needToAuth]
     """
     return S_OK({'Status': 'ready'})
-  
+
   def generateDN(self, **kwargs):
     """ Generate new DN
 

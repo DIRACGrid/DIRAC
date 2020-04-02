@@ -104,18 +104,19 @@ class DIRACCAProxyProvider(ProxyProvider):
       self.supplied = [self.fields2nid[f] for f in parameters['Supplied']]
     if 'Optional' in parameters:
       self.optional = [self.fields2nid[f] for f in parameters['Optional']]
+    allFields = self.optional + self.supplied + self.match
     if 'DNOrder' in parameters:
       self.dnList = []
-      if not any([any([f in parameters['DNOrder'] for f in self.nid2fields[n]]) for n in self.optional + self.supplied + self.match]):
+      if not any([any([f in parameters['DNOrder'] for f in self.nid2fields[n]]) for n in allFields]):
         return S_ERROR('DNOrder must contain all configured fields.')
       for field in parameters['DNOrder']:
-        if self.fields2nid[field] in self.optional + self.supplied + self.match:
+        if self.fields2nid[field] in allFields:
           self.dnList.append(field)
 
     # Set defaults for distridutes names
     self.nid2defField = {}
     for field, value in self.parameters.items():
-      if field in self.fields2nid and self.fields2nid[field] in self.optional + self.supplied + self.match:
+      if field in self.fields2nid and self.fields2nid[field] in allFields:
         self.parameters[self.fields2nid[field]] = value
         self.nid2defField[self.fields2nid[field]] = field
 
