@@ -3,6 +3,14 @@
     present in the CS and notifies the administrators.
     For the CEs and SEs already present in the CS, the agent is updating
     if necessary settings which were changed in the BDII recently
+
+The following options can be set for the Bdii2CSAgent.
+
+.. literalinclude:: ../ConfigTemplate.cfg
+  :start-after: ##BEGIN Bdii2CSAgent
+  :end-before: ##END
+  :dedent: 2
+  :caption: Bdii2CSAgent options
 """
 
 __RCSID__ = "$Id$"
