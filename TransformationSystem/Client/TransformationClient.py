@@ -10,7 +10,50 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 
 @createClient('Transformation/TransformationManager')
 class TransformationClient(Client):
-  """Exposes the functionality available in the DIRAC/TransformationManagerHandler."""
+  """ Exposes the functionality available in the DIRAC/TransformationManagerHandler
+
+      This inherits the DIRAC base Client for direct execution of server functionality.
+      The following methods are available (although not visible here).
+
+      Transformation (table) manipulation
+
+          deleteTransformation(transName)
+          getTransformationParameters(transName,paramNames)
+          getTransformationWithStatus(status)
+          setTransformationParameter(transName,paramName,paramValue)
+          deleteTransformationParameter(transName,paramName)
+
+      TransformationFiles table manipulation
+
+          addFilesToTransformation(transName,lfns)
+          addTaskForTransformation(transName,lfns=[],se='Unknown')
+          getTransformationStats(transName)
+
+      TransformationTasks table manipulation
+
+          setTaskStatus(transName, taskID, status)
+          setTaskStatusAndWmsID(transName, taskID, status, taskWmsID)
+          getTransformationTaskStats(transName)
+          deleteTasks(transName, taskMin, taskMax)
+          extendTransformation( transName, nTasks)
+          getTasksToSubmit(transName,numTasks,site='')
+
+      TransformationLogging table manipulation
+
+          getTransformationLogging(transName)
+
+      File/directory manipulation methods (the remainder of the interface can be found below)
+
+          getFileSummary(lfns)
+          exists(lfns)
+
+      Web monitoring tools
+
+          getDistinctAttributeValues(attribute, selectDict)
+          getTransformationStatusCounters()
+          getTransformationSummary()
+          getTransformationSummaryWeb(selectDict, sortList, startItem, maxItems)
+    """
 
   def __init__(self, **kwargs):
     """ Simple constructor
@@ -43,23 +86,9 @@ class TransformationClient(Client):
     """ add a new transformation
     """
     rpcClient = self._getRPC(timeout=timeout)
-    return rpcClient.addTransformation(
-        transName,
-        description,
-        longDescription,
-        transType,
-        plugin,
-        agentType,
-        fileMask,
-        transformationGroup,
-        groupSize,
-        inheritedFrom,
-        body,
-        maxTasks,
-        eventsPerTask,
-        addFiles,
-        inputMetaQuery,
-        outputMetaQuery)
+    return rpcClient.addTransformation(transName, description, longDescription, transType, plugin,
+                                       agentType, fileMask, transformationGroup, groupSize, inheritedFrom,
+                                       body, maxTasks, eventsPerTask, addFiles, inputMetaQuery, outputMetaQuery)
 
   def getTransformations(self, condDict=None, older=None, newer=None, timeStamp=None,
                          orderAttribute=None, limit=100, extraParams=False):
@@ -106,12 +135,28 @@ class TransformationClient(Client):
     if timeStamp is None:
       timeStamp = 'LastUpdate'
     # getting transformationFiles - incrementally
+    if 'LFN' in condDict:
+      # If a list of LFNs is given, use chunks of 1000 only
+      lfnList = sorted(condDict['LFN'])
+      limit = limit if limit else 1000
+    else:
+      # By default get by chunks of 10000 files
+      lfnList = []
+      limit = limit if limit else 10000
+    transID = condDict.get('TransformationID', 'Unknown')
     offsetToApply = offset
     retries = 5
-    limit = limit if limit else 10000
-    transID = condDict.get('TransformationID', 'Unknown')
     while True:
-      res = rpcClient.getTransformationFiles(condDict, older, newer, timeStamp, orderAttribute, limit, offsetToApply)
+      if lfnList:
+        # If list is exhausted, exit
+        if offsetToApply >= len(lfnList):
+          break
+        # Apply the offset to the list of LFNs
+        condDict['LFN'] = lfnList[offsetToApply:offsetToApply + limit]
+        # No limit and no offset as the list is limited already
+        res = rpcClient.getTransformationFiles(condDict, older, newer, timeStamp, orderAttribute, None, None)
+      else:
+        res = rpcClient.getTransformationFiles(condDict, older, newer, timeStamp, orderAttribute, limit, offsetToApply)
       if not res['OK']:
         gLogger.error("Error getting files for transformation %s (offset %d), %s" %
                       (str(transID), offsetToApply,
@@ -121,7 +166,6 @@ class TransformationClient(Client):
           continue
         return res
       else:
-        retries = 5
         condDictStr = str(condDict)
         log = gLogger.debug if len(condDictStr) > 100 else gLogger.verbose
         if not log("For conditions %s: result for limit %d, offset %d: %d files" %
@@ -132,10 +176,16 @@ class TransformationClient(Client):
         if res['Value']:
           transformationFiles += res['Value']
           offsetToApply += limit
-          if maxfiles and offsetToApply >= offset + maxfiles:
+          # Limit the number of files returned
+          if maxfiles and len(transformationFiles) >= maxfiles:
+            transformationFiles = transformationFiles[:maxfiles]
             break
-        if len(res['Value']) < limit:
+        # Less data than requested, exit only if LFNs were not given
+        if not lfnList and len(res['Value']) < limit:
           break
+        # Reset number of retries for next chunk
+        retries = 5
+
     return S_OK(transformationFiles)
 
   def getTransformationTasks(self, condDict=None, older=None, newer=None, timeStamp=None,
@@ -212,29 +262,24 @@ class TransformationClient(Client):
     prod = transDict['TransformationID']
     parentProd = int(transDict.get('InheritedFrom', 0))
     movedFiles = {}
+    log = gLogger.getSubLogger("[None] [%d] .moveFilesToDerivedTransformation:" % prod)
     if not parentProd:
-      gLogger.warn("[None] [%d] .moveFilesToDerivedTransformation: Transformation was not derived..." % prod)
+      log.warn("Transformation was not derived...")
       return S_OK((parentProd, movedFiles))
     # get the lfns in status Unused/MaxReset of the parent production
     res = self.getTransformationFiles(condDict={'TransformationID': parentProd, 'Status': ['Unused', 'MaxReset']})
     if not res['OK']:
-      gLogger.error(
-          "[None] [%d] .moveFilesToDerivedTransformation: Error getting Unused files from transformation %s:" %
-          (prod, parentProd), res['Message'])
+      log.error(" Error getting Unused files from transformation", "%d: %s" % (parentProd, res['Message']))
       return res
     parentFiles = res['Value']
     lfns = [lfnDict['LFN'] for lfnDict in parentFiles]
     if not lfns:
-      gLogger.info(
-          "[None] [%d] .moveFilesToDerivedTransformation: No files found to be moved from transformation %d" %
-          (prod, parentProd))
+      log.info(" No files found to be moved from transformation", "%d" % parentProd)
       return S_OK((parentProd, movedFiles))
     # get the lfns of the derived production that were Unused/MaxReset in the parent one
     res = self.getTransformationFiles(condDict={'TransformationID': prod, 'LFN': lfns})
     if not res['OK']:
-      gLogger.error(
-          "[None] [%d] .moveFilesToDerivedTransformation: Error getting files from derived transformation" %
-          prod, res['Message'])
+      log.error(" Error getting files from derived transformation:", res['Message'])
       return res
     derivedFiles = res['Value']
     derivedStatusDict = dict((derivedDict['LFN'], derivedDict['Status']) for derivedDict in derivedFiles)
@@ -269,48 +314,35 @@ class TransformationClient(Client):
           parentStatusFiles.setdefault('Moved', []).append(lfn)
 
     for status, count in badStatusFiles.iteritems():
-      gLogger.warn(
-          '[None] [%d] .moveFilesToDerivedTransformation: '
-          'Files found in an unexpected status in derived transformation' %
-          prod, '%s: %d' %
-          (status, count))
+      log.warn('Files found in an unexpected status in derived transformation',
+               ': %d files in status %s' % (count, status))
     # Set the status in the parent transformation first
     for status, lfnList in parentStatusFiles.iteritems():
       for lfnChunk in breakListIntoChunks(lfnList, 5000):
         res = self.setFileStatusForTransformation(parentProd, status, lfnChunk)
         if not res['OK']:
-          gLogger.error(
-              "[None] [%d] .moveFilesToDerivedTransformation: "
-              "Error setting status %s for %d files in transformation %d " %
-              (prod, status, len(lfnList), parentProd), res['Message'])
+          log.error(" Error setting status in transformation",
+                    "%d: status %s for %d files - %s" % (parentProd, status, len(lfnList), res['Message']))
 
     # Set the status in the new transformation
     for (status, oldStatus), lfnList in newStatusFiles.iteritems():
       for lfnChunk in breakListIntoChunks(lfnList, 5000):
         res = self.setFileStatusForTransformation(prod, status, lfnChunk)
         if not res['OK']:
-          gLogger.error(
-              "[None] [%d] .moveFilesToDerivedTransformation: "
-              "Error setting status %s for %d files; resetting them %s in transformation %d" %
-              (prod, status, len(lfnChunk), oldStatus, parentProd), res['Message'])
+          log.error(" Error setting status in transformation",
+                    "%d: status %s for %d files; resetting them %s" %
+                    (parentProd, status, len(lfnChunk), oldStatus), res['Message'])
           res = self.setFileStatusForTransformation(parentProd, oldStatus, lfnChunk)
           if not res['OK']:
-            gLogger.error(
-                "[None] [%d] .moveFilesToDerivedTransformation: "
-                "Error setting status %s for %d files in transformation %d" %
-                (prod, oldStatus, len(lfnChunk), parentProd), res['Message'])
+            log.error(" Error setting status in transformation",
+                      " %d: status %s for %d files" %
+                      (parentProd, oldStatus, len(lfnChunk)), res['Message'])
         else:
-          gLogger.info(
-              "[None] [%d] .moveFilesToDerivedTransformation: Successfully moved %d files from %s to %s" %
-              (prod, len(lfnChunk), oldStatus, status))
+          log.info('Successfully moved files', ": %d files from %s to %s" % (len(lfnChunk), oldStatus, status))
 
     # If files were Assigned or Unused at the time of derivation, try and update them as jobs may have run since then
-    res = self.getTransformationFiles(
-        condDict={
-            'TransformationID': prod,
-            'Status': [
-                'Assigned-inherited',
-                'Unused-inherited']})
+    res = self.getTransformationFiles(condDict={'TransformationID': prod,
+                                                'Status': ['Assigned-inherited', 'Unused-inherited']})
     if res['OK']:
       assignedFiles = res['Value']
       if assignedFiles:
@@ -322,13 +354,10 @@ class TransformationClient(Client):
           if processedLfns:
             res = self.setFileStatusForTransformation(prod, 'Processed-inherited', processedLfns)
             if res['OK']:
-              gLogger.info(
-                  "[None] [%d] .moveFilesToDerivedTransformation: set %d files to status %s" %
-                  (prod, len(processedLfns), 'Processed-inherited'))
+              log.info('Successfully set files status',
+                       ": %d files to status %s" % (len(processedLfns), 'Processed-inherited'))
     if not res['OK']:
-      gLogger.error(
-          "[None] [%d] .moveFilesToDerivedTransformation: Error setting status for Assigned derived files" %
-          prod, res['Message'])
+      log.error("Error setting status for Assigned derived files", res['Message'])
 
     return S_OK((parentProd, movedFiles))
 
@@ -362,11 +391,8 @@ class TransformationClient(Client):
     newStatuses = {}
     if tsFiles:
       # for convenience, makes a small dictionary out of the tsFiles, with the lfn as key
-      tsFilesAsDict = dict(
-          (tsFile['LFN'],
-           (tsFile['Status'],
-            tsFile['ErrorCount'],
-              tsFile['FileID'])) for tsFile in tsFiles)
+      tsFilesAsDict = dict((tsFile['LFN'], (tsFile['Status'], tsFile['ErrorCount'], tsFile['FileID']))
+                           for tsFile in tsFiles)
 
       # applying the state machine to the proposed status
       newStatuses = self._applyTransformationFilesStateMachine(tsFilesAsDict, newLFNsStatus, force)

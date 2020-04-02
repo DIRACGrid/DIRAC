@@ -356,6 +356,16 @@ NEW: (#4170) added Production system documentation
 CHANGE: (#4224) Pilot 3 is the default
 NEW: (#4244) Added a few notes on using the JobParameters on ElasticSearch database
 
+[v6r22p26]
+
+*Resources
+FIX: (#4518) HTCondorCE - added missing multicore option
+
+*Transformation
+FIX: (#4523) when getTransformationFiles was called with a large list
+     of LFNs, the DB couldn't cope. This fix truncates the list of
+     LFNs in chunks such that each call to the DB is fast enough.
+
 [v6r22p25]
 
 *Framework
