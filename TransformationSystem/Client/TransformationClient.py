@@ -115,13 +115,12 @@ class TransformationClient(Client):
     while True:
       res = rpcClient.getTransformationFiles(condDict, older, newer, timeStamp, orderAttribute, limit, offsetToApply)
       if not res['OK']:
+        retries -= 1
         gLogger.error("Error getting files for transformation %s (offset %d), %s" %
                       (str(transID), offsetToApply,
-                       ('retry %d times' % retries) if retries else 'give up'), res['Message'])
-        retries -= 1
-        if retries:
-          continue
-        return res
+                       ('retry %d more times' % retries) if retries else 'give up'), res['Message'])
+        if not retries:
+          return res
       else:
         retries = 5
         condDictStr = str(condDict)
