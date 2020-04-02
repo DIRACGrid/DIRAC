@@ -1,3 +1,15 @@
+[v7r0p19]
+
+*DMS
+CHANGE: (#4505) explicitly delegate the proxy to FTS3 with a configurable lifetime
+NEW: (#4519) S3 storage support
+
+*RSS
+FIX: (#4520) correct verbosity (avoid non-necessary warnings)
+
+*docs
+NEW: (#4520) Minimal documentation on Bdii2CSAgent and GOCDB2CSAgent
+
 [v7r0p18]
 
 *Interfaces
