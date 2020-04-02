@@ -308,7 +308,7 @@ class ReqClient(Client):
     res = monitorServer.getJobSummary(int(jobID))
     if not res["OK"]:
       self.log.error("finalizeRequest: Failed to get job status", "JobID: %d" % jobID)
-      return S_ERROR("finalizeRequest: Failed to get job %d status" % jobID)
+      return res
     elif not res['Value']:
       self.log.info("finalizeRequest: job %d does not exist (anymore): finalizing" % jobID)
       return S_OK()
@@ -322,7 +322,7 @@ class ReqClient(Client):
         res = monitorServer.getJobLoggingInfo(int(jobID))
         if not res['OK']:
           self.log.error("finalizeRequest: Failed to get job logging info", "JobID: %d" % jobID)
-          return S_ERROR("finalizeRequest: Failed to get job %d logging info" % jobID)
+          return res
         # Check the last status was Stalled and get the one before
         if len(res['Value']) >= 2 and res['Value'][-1][0] == JobStatus.STALLED:
           jobStatus, jobMinorStatus, jobAppStatus = res['Value'][-2][:3]
@@ -353,8 +353,8 @@ class ReqClient(Client):
         self.log.info("finalizeRequest: Updating job status for %d to %s/Requests done" % (jobID, newJobStatus))
       else:
         self.log.info(
-            "finalizeRequest: Updating job minor status for %d to Requests done (current status is %s)" %
-            (jobID, jobStatus))
+            "finalizeRequest: Updating job minor status",
+            "for %d to Requests done (current status is %s)" % (jobID, jobStatus))
       stateUpdate = stateServer.setJobStatus(jobID, newJobStatus, "Requests done", "", 'RMS')
       if jobAppStatus and stateUpdate['OK']:
         stateUpdate = stateServer.setJobApplicationStatus(jobID, jobAppStatus, 'RMS')
