@@ -10,10 +10,7 @@ import commands
 import unittest
 import tempfile
 
-from DIRAC.Core.Base.Script import parseCommandLine
-parseCommandLine(ignoreErrors=True)
-
-from DIRAC import gLogger, gConfig, S_OK, S_ERROR
+from DIRAC import gLogger
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Resources.ProxyProvider.DIRACCAProxyProvider import DIRACCAProxyProvider
 

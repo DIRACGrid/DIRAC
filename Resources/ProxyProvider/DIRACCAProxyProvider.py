@@ -87,8 +87,8 @@ class DIRACCAProxyProvider(ProxyProvider):
 
         :return: S_OK()/S_ERROR()
     """
-    for k, v in parameters:
-      if not isinstance(v, list) and k in ['Match', 'Supplied', 'Optional', 'DNOrder'] + self.fields2nid:
+    for k, v in parameters.items():
+      if not isinstance(v, list) and k in ['Match', 'Supplied', 'Optional', 'DNOrder'] + self.fields2nid.keys():
         parameters[k] = v.replace(', ', ',').split(',')
     self.parameters = parameters
     # If CA configuration file exist
@@ -110,7 +110,7 @@ class DIRACCAProxyProvider(ProxyProvider):
         return S_ERROR('DNOrder must contain all configured fields.')
       for field in parameters['DNOrder']:
         if self.fields2nid[field] in self.optional + self.supplied + self.match:
-          self.dnList.append(parameters['DNOrder'])
+          self.dnList.append(field)
 
     # Set defaults for distridutes names
     self.nid2defField = {}
