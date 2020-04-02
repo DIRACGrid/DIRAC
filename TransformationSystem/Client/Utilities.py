@@ -67,7 +67,7 @@ class PluginUtilities(object):
       self.transInThread = transInThread
 
     self.log = gLogger.getSubLogger(self.plugin +
-                                    self.transInThread.get(self.transID, ' [NoThread] [%d] ' % self.transID))
+                                    self.transInThread.get(self.transID, ' [NoThread] [%s] ' % self.transID))
 
   def logVerbose(self, message, param=''):
     """ logger helper """
