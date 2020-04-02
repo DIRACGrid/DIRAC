@@ -401,14 +401,16 @@ class DIRACCAProxyProvider(ProxyProvider):
     userPubKeyStr = userPubKey.as_pem(cipher=None, callback=util.no_passphrase_callback)
     return S_OK((userCertStr, userPubKeyStr))
 
-  def getFakeProxy(self, dn, time, group=None):
-    """ Get fake proxy for tests
+  def _forceGenerateProxyForDN(self, dn, time, group=None):
+    """ An additional helper method for creating a proxy without any substantial validation,
+        it can be used for a specific case(such as testing) where just need to generate a proxy
+        with specific DN on the fly.
 
-        :param str dn: fake DN
+        :param str dn: requested proxy DN
         :param int time: expired time in a seconds
-        :param str group: if need to add fake DIRAC group
+        :param str group: if need to add DIRAC group
 
-        :return: S_OK(dict)/S_ERROR() -- dict contain 'proxy' field with is a fake proxy string
+        :return: S_OK(tuple)/S_ERROR() -- contain proxy as chain and as string
     """
     self.__X509Name = X509.X509_Name()
     result = self.__parseDN(dn)
