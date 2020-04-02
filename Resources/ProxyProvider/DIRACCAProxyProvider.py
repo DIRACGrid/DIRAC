@@ -103,24 +103,28 @@ class DIRACCAProxyProvider(ProxyProvider):
       self.bits = int(parameters['Bits'])
     if 'Algoritm' in parameters:
       self.algoritm = parameters['Algoritm']
+
     if 'Match' in parameters:
       self.match = []
       if not isinstance(parameters['Match'], list):
         parameters['Match'] = parameters['Match'].replace(', ', ',').split(',')
       for field in parameters['Match']:
         self.match.append(self.fields2nid[field])
+    
     if 'Supplied' in parameters:
       self.supplied = []
       if not isinstance(parameters['Supplied'], list):
         parameters['Supplied'] = parameters['Supplied'].replace(', ', ',').split(',')
       for field in parameters['Supplied']:
         self.supplied.append(self.fields2nid[field])
+    
     if 'Optional' in parameters:
       self.optional = []
       if not isinstance(parameters['Optional'], list):
         parameters['Optional'] = parameters['Optional'].replace(', ', ',').split(',')
       for field in parameters['Optional']:
         self.optional.append(self.fields2nid[field])
+    
     if 'DNOrder' in parameters:
       if isinstance(parameters['DNOrder'], list):
         self.dnList = parameters['DNOrder']
@@ -244,9 +248,7 @@ class DIRACCAProxyProvider(ProxyProvider):
           if result['OK']:
             result = chain.generateProxyToString(365 * 24 * 3600, rfc=True)
 
-    if not result['OK']:
-      return result
-    return S_OK({'proxy': result['Value']})
+    return S_OK({'proxy': result['Value']}) if result['OK'] else result
 
   def generateDN(self, **kwargs):
     """ Get DN of the user certificate that will be created
