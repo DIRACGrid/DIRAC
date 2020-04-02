@@ -74,18 +74,10 @@ class DIRACCAProxyProvider(ProxyProvider):
     self.fields2nid['organizationalUnitName'] = 18  # Add 'OU' description
     self.fields2nid['countryName'] = 14  # Add 'C' description
     self.fields2nid['SERIALNUMBER'] = 105  # Add 'SERIALNUMBER' distinguished name
-    self.nid2field = {}  # nid: most short or specidied in CS distinguished name
     self.nid2fields = {}  # nid: list of distinguished names
     # Specify standart fields
-    for field in self.fields2nid:
-      if self.fields2nid[field] not in self.nid2fields:
-        self.nid2fields[self.fields2nid[field]] = []
-      self.nid2fields[self.fields2nid[field]].append(field)
-    for nid in self.nid2fields:
-      for field in self.nid2fields[nid]:
-        if nid not in self.nid2field:
-          self.nid2field[nid] = field
-        self.nid2field[nid] = len(field) < len(self.nid2field[nid]) and field or self.nid2field[nid]
+    for field, nid in self.fields2nid.items():
+      self.nid2fields.setdefault(nid, []).append(field)
     self.dnInfoDictCA = {}
 
   def setParameters(self, parameters):
@@ -95,61 +87,37 @@ class DIRACCAProxyProvider(ProxyProvider):
 
         :return: S_OK()/S_ERROR()
     """
-    # If CA configuration file exist
+    for k, v in parameters:
+      if not isinstance(v, list) and k in ['Match', 'Supplied', 'Optional', 'DNOrder'] + self.fields2nid:
+        parameters[k] = v.replace(', ', ',').split(',')
     self.parameters = parameters
+    # If CA configuration file exist
     if parameters.get('CAConfigFile'):
       self.__parseCACFG()
     if 'Bits' in parameters:
       self.bits = int(parameters['Bits'])
     if 'Algoritm' in parameters:
       self.algoritm = parameters['Algoritm']
-
     if 'Match' in parameters:
-      self.match = []
-      if not isinstance(parameters['Match'], list):
-        parameters['Match'] = parameters['Match'].replace(', ', ',').split(',')
-      for field in parameters['Match']:
-        self.match.append(self.fields2nid[field])
-    
+      self.match = [self.fields2nid[f] for f in parameters['Match']]
     if 'Supplied' in parameters:
-      self.supplied = []
-      if not isinstance(parameters['Supplied'], list):
-        parameters['Supplied'] = parameters['Supplied'].replace(', ', ',').split(',')
-      for field in parameters['Supplied']:
-        self.supplied.append(self.fields2nid[field])
-    
+      self.supplied = [self.fields2nid[f] for f in parameters['Supplied']]
     if 'Optional' in parameters:
-      self.optional = []
-      if not isinstance(parameters['Optional'], list):
-        parameters['Optional'] = parameters['Optional'].replace(', ', ',').split(',')
-      for field in parameters['Optional']:
-        self.optional.append(self.fields2nid[field])
-    
+      self.optional = [self.fields2nid[f] for f in parameters['Optional']]
     if 'DNOrder' in parameters:
-      if isinstance(parameters['DNOrder'], list):
-        self.dnList = parameters['DNOrder']
-      else:
-        self.dnList = parameters['DNOrder'].replace(', ', ',').split(',')
+      self.dnList = []
+      if not any([any([f in parameters['DNOrder'] for f in self.nid2fields[n]]) for n in self.optional + self.supplied + self.match]):
+        return S_ERROR('DNOrder must contain all configured fields.')
+      for field in parameters['DNOrder']:
+        if self.fields2nid[field] in self.optional + self.supplied + self.match:
+          self.dnList.append(parameters['DNOrder'])
 
     # Set defaults for distridutes names
+    self.nid2defField = {}
     for field, value in self.parameters.items():
-      if field not in self.fields2nid:
-        continue
-      if self.fields2nid[field] not in self.optional + self.supplied + self.match:
-        del self.parameters[field]
-      elif not isinstance(self.parameters[field], list):
-        self.parameters[field] = self.parameters[field].replace(', ', ',').split(',')
-
-    self.defDict = {}
-    for field, value in parameters.items():
-      if field in self.fields2nid:
-        self.defDict[field] = value
-    self.defFieldByNid = dict([[self.fields2nid[field], field] for field in self.defDict])
-    for nid in self.nid2field:
-      if nid in self.defFieldByNid:
-        self.nid2field[nid] = self.defFieldByNid[nid]
-    self.match.sort()
-    self.supplied.sort()
+      if field in self.fields2nid and self.fields2nid[field] in self.optional + self.supplied + self.match:
+        self.parameters[self.fields2nid[field]] = value
+        self.nid2defField[self.fields2nid[field]] = field
 
     # Read CA certificate
     chain = X509Chain()
@@ -184,7 +152,8 @@ class DIRACCAProxyProvider(ProxyProvider):
     nidOrder = [self.fields2nid[f] for f in self.dnList]
     for index, nid in enumerate(userNIDs):
       if nid not in nidOrder:
-        return S_ERROR('"%s" field not found in order.' % self.nid2field[nid])
+        return S_ERROR('"%s" field not found in order.' %
+                       self.nid2defField.get(nid, min(self.nid2fields[nid], key=len)))
       if index > nidOrder.index(nid):
         return S_ERROR('Bad DNs order')
       for i in range(nidOrder.index(nid) - 1):
@@ -202,7 +171,8 @@ class DIRACCAProxyProvider(ProxyProvider):
 
     for nid in self.supplied:
       if nid not in [self.fields2nid[f] for f in dnInfoDict]:
-        return S_ERROR('Current DN is invalid, "%s" field must be set.' % self.nid2field[nid])
+        return S_ERROR('Current DN is invalid, "%s" field must be set.' %
+                       self.nid2defField.get(nid, min(self.nid2fields[nid], key=len)))
 
     for field, values in dnInfoDict.items():
       nid = self.fields2nid[field]
@@ -269,7 +239,8 @@ class DIRACCAProxyProvider(ProxyProvider):
 
     for nid in self.supplied:
       if nid not in [self.fields2nid[f] for f in self.dnList]:
-        return S_ERROR('DNs order list does not contain supplied DN "%s"' % self.nid2field[nid])
+        return S_ERROR('DNs order list does not contain supplied DN "%s"' %
+                       self.nid2defField.get(nid, min(self.nid2fields[nid], key=len)))
 
     for field in self.dnList:
       values = []
@@ -283,12 +254,11 @@ class DIRACCAProxyProvider(ProxyProvider):
       for field in self.nid2fields[nid]:
         if kwargs.get(field):
           values = kwargs[field] if isinstance(kwargs[field], list) else [kwargs[field]]
-      if not values:
-        for field in self.nid2fields[nid]:
-          if self.parameters.get(field):
-            values = self.parameters[field]
       if not values and nid in self.supplied:
-        return S_ERROR('No values set for "%s" DN' % field)
+        # Search default value
+        if nid not in self.nid2defField:
+          return S_ERROR('No values set for "%s" DN' % min(self.nid2fields[nid], key=len))
+        values = self.parameters[nid]
 
       result = self.__fillX509Name(field, values)
       if not result['OK']:
