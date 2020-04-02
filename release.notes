@@ -1,3 +1,13 @@
+[v6r22p26]
+
+*Resources
+FIX: (#4518) HTCondorCE - added missing multicore option
+
+*Transformation
+FIX: (#4523) when getTransformationFiles was called with a large list
+     of LFNs, the DB couldn't cope. This fix truncates the list of
+     LFNs in chunks such that each call to the DB is fast enough.
+
 [v6r22p25]
 
 *Framework
