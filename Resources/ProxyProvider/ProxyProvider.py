@@ -25,7 +25,7 @@ class ProxyProvider(object):
         :return: S_OK(dict)/S_ERROR() -- dictionary contain fields:
                   - 'Status' with ready to work status[ready, needToAuth]
     """
-    return return S_OK({'Status': 'ready'})
+    return S_OK({'Status': 'ready'})
   
   def generateDN(self, **kwargs):
     """ Generate new DN
