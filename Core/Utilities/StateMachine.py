@@ -1,12 +1,10 @@
 ########################################################################
-# $HeadURL $
-# File: State.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/07/03 10:33:02
 ########################################################################
-""" 
-:mod: State 
- 
+"""
+:mod: State
+
 .. module: State
 
 
@@ -17,113 +15,104 @@
 state machine
 """
 __RCSID__ = "$Id: $"
-##
-# @file State.py
-# @author Krzysztof.Ciba@NOSPAMgmail.com
-# @date 2013/07/03 10:33:07
-# @brief Definition of State class.
 
-## imports 
 
-#from DIRACSingleton import DIRACSingleton
-
-########################################################################
-class State( object ):
+class State(object):
   """
   .. class:: State
-  
+
   single state
   """
-  def __str__( self ):
+
+  def __str__(self):
     """ str() op """
     return self.__class__.__name__
 
-class StateMachine( object ):
+
+class StateMachine(object):
   """
   .. class:: StateMachine
 
   simple state machine
-  
+
   """
-  def __init__( self, state = None, transTable=None ):
+
+  def __init__(self, state=None, transTable=None):
     """ c'tor
 
     :param self: self reference
     :param mixed state: initial state
     :param dict transTable: transition table
     """
-    
-    if not issubclass( state.__class__, State ):
+
+    if not issubclass(state.__class__, State):
       raise TypeError("state should be inherited from State")
     self.__state = state
-    self.transTable = transTable if type(transTable) == dict else {}
+    self.transTable = transTable if isinstance(transTable, dict) else {}
 
-  def setState( self, state ):
+  def setState(self, state):
     """ set state """
-    assert issubclass( state.__class__, State )
+    assert issubclass(state.__class__, State)
     self.__state = state
 
-  def addTransition( self, fromState, toState, condition ):
+  def addTransition(self, fromState, toState, condition):
     """ add transtion rule from :fromState: to :toState: upon condition :condition: """
-    if not callable( condition ):
-      raise TypeError("condition should be callable" )
-    if not issubclass( fromState.__class__, State ):
-      raise TypeError("fromState should be inherited from State" )
-    if not issubclass( toState.__class__, State ):
-      raise TypeError("toState should be inherited from State" )
-    
+    if not callable(condition):
+      raise TypeError("condition should be callable")
+    if not issubclass(fromState.__class__, State):
+      raise TypeError("fromState should be inherited from State")
+    if not issubclass(toState.__class__, State):
+      raise TypeError("toState should be inherited from State")
+
     if fromState not in self.transTable:
       self.transTable[fromState] = {}
     self.transTable[fromState][toState] = condition
 
-  def next( self, *args, **kwargs ):
-    """ make transition to the next state 
-    
+  def next(self, *args, **kwargs):
+    """ make transition to the next state
+
     :param tuple args: args passed to condition
-    :param dict kwargs: kwargs passed to condition 
+    :param dict kwargs: kwargs passed to condition
     """
     for nextState, condition in self.transTable[self.__state].items():
-      if condition( *args, **kwargs ):
+      if condition(*args, **kwargs):
         self.__state = nextState
         break
 
   @property
-  def state( self ):
+  def state(self):
     """ get current state """
     return self.__state
 
   @state.setter
-  def state( self, state ):
-    assert issubclass( state.__class__, State ) 
+  def state(self, state):
+    assert issubclass(state.__class__, State)
     self.__state = state
 
 
-
-
-#class Waiting( State ):
-#  pass
-  
-#class Done( State ):
+# class Waiting( State ):
 #  pass
 
-#class Failed( State ):
+# class Done( State ):
 #  pass
 
-#class Scheduled( State ):
+# class Failed( State ):
 #  pass
 
-#waiting = Waiting()
-#done = Done()
-#failed = Failed()
-#scheduled = Scheduled()
+# class Scheduled( State ):
+#  pass
 
-#def toDone( slist ):
+# waiting = Waiting()
+# done = Done()
+# failed = Failed()
+# scheduled = Scheduled()
+
+# def toDone( slist ):
 #  return list(set(slist)) == [ "Done" ]
 
-#def toFailed( slist ):
+# def toFailed( slist ):
 #  return "Failed" in slist
-
-#def toWaiting( slist ):
+# def toWaiting( slist ):
 #  for st in slist:
 #    if st == "Done":
 #      continue
@@ -132,8 +121,7 @@ class StateMachine( object ):
 #    if st == "Waiting":
 #      return True
 #  return False
-
-#def toScheduled( slist ):
+# def toScheduled( slist ):
 #  for st in slist:
 #    if st == "Done":
 #      continue
@@ -143,21 +131,21 @@ class StateMachine( object ):
 #      return True
 #  return False
 """
-tr = { waiting: { done: toDone, 
-                  failed: toFailed, 
-                  scheduled: toScheduled, 
+tr = { waiting: { done: toDone,
+                  failed: toFailed,
+                  scheduled: toScheduled,
                   waiting: toWaiting },
-       scheduled: { failed: toFailed, 
-                    waiting: toWaiting, 
-                    done: toDone, 
+       scheduled: { failed: toFailed,
+                    waiting: toWaiting,
+                    done: toDone,
                     scheduled: toScheduled },
-       done: { waiting: toWaiting, 
+       done: { waiting: toWaiting,
                failed: toFailed,
-               scheduled: toScheduled, 
+               scheduled: toScheduled,
                done: toDone },
-       failed: { waiting: toWaiting, 
-                 scheduled: toScheduled, 
-                 done: toDone, 
+       failed: { waiting: toWaiting,
+                 scheduled: toScheduled,
+                 done: toDone,
                  failed: toFailed } }
 
 sm = StateMachine( waiting, tr )
@@ -178,5 +166,5 @@ print sm.state
 sm.next( slist = [ "Done", "Done", "Done", "Failed" ] )
 print sm.state
 
-  
+
 """
