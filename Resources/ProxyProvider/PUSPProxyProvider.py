@@ -28,7 +28,7 @@ class PUSPProxyProvider(ProxyProvider):
     """
     if not userDN.split(":")[-1]:
       return S_ERROR('Can not found user label for DN: %s' % userDN)
-    if not puspServiceURL:
+    if not self.parameters.get('ServiceURL'):
       return S_ERROR('Can not determine PUSP service URL')
 
     return S_OK({'Status': 'ready'})
@@ -44,7 +44,7 @@ class PUSPProxyProvider(ProxyProvider):
     if not result['OK']:
       return result
 
-    puspURL = self.parameters.get('ServiceURL')
+    puspURL = self.parameters['ServiceURL']
     puspURL += "?proxy-renewal=false&disable-voms-proxy=true&rfc-proxy=true"
     puspURL += "&cn-label=user:%s" % userDN.split(":")[-1]
 
