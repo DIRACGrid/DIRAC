@@ -667,7 +667,7 @@ class Job(API):
     if not diracSite:
       res = getCESiteMapping(ceName)
       if not res['OK']:
-	return self._reportError(res['Message'], **kwargs)
+        return self._reportError(res['Message'], **kwargs)
       if not res['Value']:
         return self._reportError('No DIRAC site name found for CE %s' % (ceName), **kwargs)
       diracSite = res['Value'][ceName]

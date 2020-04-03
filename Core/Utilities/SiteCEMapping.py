@@ -85,10 +85,10 @@ def getCESiteMapping(gridName=None):
     siteCEs = gConfig.getValue('/Resources/Sites/%s/%s/CE' % (grid, candidate), [])
     for ce in siteCEs:
       if ce in ceSiteMapping:
-	current = ceSiteMapping[ce]
-	gLogger.error('CE %s already has a defined site %s but it is also defined for %s' % (ce, current, candidate))
+        current = ceSiteMapping[ce]
+        gLogger.error('CE %s already has a defined site %s but it is also defined for %s' % (ce, current, candidate))
       else:
-	ceSiteMapping[ce] = candidate
+        ceSiteMapping[ce] = candidate
 
   return S_OK(ceSiteMapping)
 

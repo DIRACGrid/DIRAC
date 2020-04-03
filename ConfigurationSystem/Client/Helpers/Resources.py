@@ -9,89 +9,11 @@ from distutils.version import LooseVersion  # pylint: disable=no-name-in-module,
 import six
 
 from DIRAC import S_OK, S_ERROR, gConfig
-from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
 from DIRAC.Core.Utilities.List import uniqueElements, fromChar
 
 
 gBaseResourcesSection = "/Resources"
-
-
-def addSite(siteName, optionsDict=None):
-  """ Adds a new site to the CS.
-      A site is a container for services, so after calling this function,
-      at least addCEtoSite() should be called.
-
-      :param str siteName: FQN of the site (e.g. LCG.CERN.ch)
-      :param dict optionsDict: optional dictionary of options
-      :returns: S_OK/S_ERROR structure
-  """
-  csAPI = CSAPI()
-  # CSAPI.createSection() always returns S_OK even if the section already exists
-  csAPI.createSection(cfgPath(gBaseResourcesSection, 'Sites'))
-  csAPI.createSection(cfgPath(gBaseResourcesSection, 'Sites', siteName.split('.')[0]))
-  csAPI.createSection(cfgPath(gBaseResourcesSection, 'Sites', siteName.split('.')[0], siteName))
-  # add options if requested
-  if optionsDict is not None:
-    for option, optionValue in optionsDict.items():
-      csAPI.setOption(cfgPath(gBaseResourcesSection, 'Sites', siteName.split('.')[0], option), optionValue)
-  return csAPI.commit()
-
-
-def addCEtoSite(siteName, ceName, optionsDict=None):
-  """ Adds a new CE to a site definition in the CS.
-      A CE normally has queues, so addQueueToCE should be called after this one.
-
-      :param str siteName: FQN of the site (e.g. LCG.CERN.ch)
-      :param str ceName: FQN of the CE (e.g. ce503.cern.ch)
-      :param dict optionsDict: optional dictionary of options
-      :returns: S_OK/S_ERROR structure
-  """
-  res = getSites()
-  if not res['OK']:
-    return res
-  if siteName not in res['Value']:
-    res = addSite(siteName)
-    if not res['OK']:
-      return res
-
-  csAPI = CSAPI()
-  # CSAPI.createSection() always returns S_OK even if the section already exists
-  csAPI.createSection(cfgPath(gBaseResourcesSection, 'Sites', siteName.split('.')[0], siteName, 'CEs'))
-  csAPI.createSection(cfgPath(gBaseResourcesSection, 'Sites', siteName.split('.')[0], siteName, 'CEs', ceName))
-  # add options if requested
-  if optionsDict is not None:
-    for option, optionValue in optionsDict.items():
-      csAPI.setOption(cfgPath(gBaseResourcesSection, 'Sites', siteName.split('.')[0],
-			      siteName, 'CEs', ceName, option), optionValue)
-  return csAPI.commit()
-
-
-def addQueueToCE(ceName, queueName, optionsDict=None):
-  """ Adds a new queue to a CE definition in the CS.
-
-      :param str ceName: FQN of the CE (e.g. ce503.cern.ch)
-      :param str queueName: name of the queue (e.g. ce503.cern.ch-condor)
-      :param dict optionsDict: optional dictionary of options
-      :returns: S_OK/S_ERROR structure
-  """
-  res = getCESiteMapping(ceName)
-  if not res['OK']:
-    return res
-  if ceName not in res['Value']:
-    return S_ERROR("CE does not exist")
-  siteName = res['Value'][ceName]
-
-  csAPI = CSAPI()
-  # CSAPI.createSection() always returns S_OK even if the section already exists
-  csAPI.createSection(cfgPath(gBaseResourcesSection, 'Sites', siteName.split('.')[0],
-			      siteName, 'CEs', ceName, 'Queues', queueName))
-  # add options if requested
-  if optionsDict is not None:
-    for option, optionValue in optionsDict.items():
-      csAPI.setOption(cfgPath(gBaseResourcesSection, 'Sites', siteName.split('.')[0],
-			      siteName, 'CEs', ceName, 'Queues', queueName, option), optionValue)
-  return csAPI.commit()
 
 
 def getSites():
@@ -121,8 +43,8 @@ def getSiteCEMapping():
   sitesCEsMapping = {}
   for site in sites:
     res = sitesCEsMapping[site] = gConfig.getSections(cfgPath(gBaseResourcesSection, 'Sites',
-							      site.split('.')[0], site, 'CEs'),
-						      [])
+                                                              site.split('.')[0], site, 'CEs'),
+                                                      [])
     if not res['OK']:
       return res
     sitesCEsMapping[site] = res['Value']
@@ -144,8 +66,8 @@ def getCESiteMapping(ceName=''):
   for site in sitesCEs:
     for ce in sitesCEs[site]:
       if ceName:
-	if ce != ceName:
-	  continue
+        if ce != ceName:
+          continue
       ceSiteMapping[ce] = site
   return S_OK(ceSiteMapping)
 
@@ -158,10 +80,10 @@ def getGOCSiteName(diracSiteName):
   :returns: S_OK/S_ERROR structure
   """
   gocDBName = gConfig.getValue(cfgPath(gBaseResourcesSection,
-				       'Sites',
-				       diracSiteName.split('.')[0],
-				       diracSiteName,
-				       'Name'))
+                                       'Sites',
+                                       diracSiteName.split('.')[0],
+                                       diracSiteName,
+                                       'Name'))
   if not gocDBName:
     return S_ERROR("No GOC site name for %s in CS (Not a grid site ?)" % diracSiteName)
   return S_OK(gocDBName)
@@ -199,10 +121,10 @@ def getDIRACSiteName(gocSiteName):
   sitesList = res['Value']
 
   tmpList = [(site, gConfig.getValue(cfgPath(gBaseResourcesSection,
-					     'Sites',
-					     site.split('.')[0],
-					     site,
-					     'Name'))) for site in sitesList]
+                                             'Sites',
+                                             site.split('.')[0],
+                                             site,
+                                             'Name'))) for site in sitesList]
 
   diracSites = [dirac for (dirac, goc) in tmpList if goc == gocSiteName]
 

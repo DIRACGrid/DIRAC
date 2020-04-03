@@ -12,23 +12,23 @@
         {
             Catalogs
             {
-		CatalogList = FileCatalog, TSCatalog
-		FileCatalog
-		{
-		    CatalogType = FileCatalog
-		    AccessType = Read-Write
-		    Status = Active
-		    CatalogURL = DataManagement/FileCatalog
-		}
-		TSCatalog
-		{
-		    CatalogType = TSCatalog
-		    AccessType = Write
-		    Status = Active
-		    CatalogURL = Transformation/TransformationManager
-		}
+                CatalogList = FileCatalog, TSCatalog
+                FileCatalog
+                {
+                    CatalogType = FileCatalog
+                    AccessType = Read-Write
+                    Status = Active
+                    CatalogURL = DataManagement/FileCatalog
+                }
+                TSCatalog
+                {
+                    CatalogType = TSCatalog
+                    AccessType = Write
+                    Status = Active
+                    CatalogURL = Transformation/TransformationManager
+                }
             }
-	}
+        }
     }
 """
 

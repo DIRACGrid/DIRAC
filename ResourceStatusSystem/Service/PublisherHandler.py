@@ -83,8 +83,8 @@ class PublisherHandler(RequestHandler):
     if siteNames is None:
       res = getSites()
       if not res['OK']:
-	self.log.error("Error getting sites", res['Message'])
-	return res
+        self.log.error("Error getting sites", res['Message'])
+        return res
       siteNames = res['Value']
 
     if isinstance(siteNames, six.string_types):
@@ -95,21 +95,21 @@ class PublisherHandler(RequestHandler):
 
       result = getSiteCEMapping()
       if not result['OK']:
-	self.log.error("Error getting sites/CEs mapping", result['Message'])
-	return result
+        self.log.error("Error getting sites/CEs mapping", result['Message'])
+        return result
       res = {}
       res['ces'] = result['Value'][siteName]
       # Convert StorageElements to host names
       result = DMSHelpers().getSiteSEMapping()
       if not result['OK']:
-	self.log.error("Error getting sites/SEs mapping", result['Message'])
-	sitesRes[siteName] = res
-	continue
+        self.log.error("Error getting sites/SEs mapping", result['Message'])
+        sitesRes[siteName] = res
+        continue
       ses = result['Value'][1].get(siteName, [])
       result = getStorageElementsHosts(ses)
       if not result['OK']:
-	self.log.error("Error getting storage element hosts", result['Message'])
-	return result
+        self.log.error("Error getting storage element hosts", result['Message'])
+        return result
       # Remove duplicates
       res['ses'] = list(set(result['Value']))
 
@@ -118,11 +118,11 @@ class PublisherHandler(RequestHandler):
     return S_OK(sitesRes)
 
   types_getElementStatuses = [six.string_types,
-			      (six.string_types, list, types.NoneType),
-			      (six.string_types, list, types.NoneType),
-			      (six.string_types, list, types.NoneType),
-			      (six.string_types, list, types.NoneType),
-			      (six.string_types, list, types.NoneType)]
+                              (six.string_types, list, types.NoneType),
+                              (six.string_types, list, types.NoneType),
+                              (six.string_types, list, types.NoneType),
+                              (six.string_types, list, types.NoneType),
+                              (six.string_types, list, types.NoneType)]
 
   def export_getElementStatuses(self, element, name, elementType, statusType, status, tokenOwner):
     """
@@ -134,9 +134,9 @@ class PublisherHandler(RequestHandler):
                                         tokenOwner=tokenOwner)
 
   types_getElementHistory = [six.string_types,
-			     (six.string_types, list, types.NoneType),
-			     (six.string_types, list, types.NoneType),
-			     (six.string_types, list, types.NoneType)]
+                             (six.string_types, list, types.NoneType),
+                             (six.string_types, list, types.NoneType),
+                             (six.string_types, list, types.NoneType)]
 
   def export_getElementHistory(self, element, name, elementType, statusType):
     """
@@ -149,8 +149,8 @@ class PublisherHandler(RequestHandler):
                                         meta={'columns': columns})
 
   types_getElementPolicies = [six.string_types,
-			      (six.string_types, list, types.NoneType),
-			      (six.string_types, list, types.NoneType)]
+                              (six.string_types, list, types.NoneType),
+                              (six.string_types, list, types.NoneType)]
 
   def export_getElementPolicies(self, element, name, statusType):
     """
@@ -201,7 +201,7 @@ class PublisherHandler(RequestHandler):
       return S_OK()
     ses = res['Value'][1].get(site, [])
     sesStatus = rsClient.selectStatusElement('Resource', 'Status', name=list(ses),
-					     meta={'columns': ['Name', 'StatusType', 'Status']})
+                                             meta={'columns': ['Name', 'StatusType', 'Status']})
     if not sesStatus['OK']:
       return sesStatus
 
@@ -309,9 +309,9 @@ class PublisherHandler(RequestHandler):
                                                           'Severity']})
 
   types_getCachedDowntimes = [(six.string_types, types.NoneType, list),
-			      (six.string_types, types.NoneType, list),
-			      (six.string_types, types.NoneType, list),
-			      (six.string_types, types.NoneType, list)]
+                              (six.string_types, types.NoneType, list),
+                              (six.string_types, types.NoneType, list),
+                              (six.string_types, types.NoneType, list)]
 
   def export_getCachedDowntimes(self, element, elementType, name, severity):
 

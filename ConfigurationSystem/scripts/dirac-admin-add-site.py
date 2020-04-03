@@ -12,21 +12,23 @@ __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base import Script
 from DIRAC import exit as DIRACExit, gLogger
-from DIRAC.ConfigurationSystem.Client.Helpers.Resources import addSite, addCEtoSite, getDIRACSiteName
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getDIRACSiteName
+from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
+
 
 if __name__ == "__main__":
 
   Script.setUsageMessage(
       '\n'.join(
-	  [
-	      __doc__.split('\n')[1],
-	      'Usage:',
-	      '  %s [option|cfgfile] ... DIRACSiteName GridSiteName CE [CE] ...' %
-	      Script.scriptName,
-	      'Arguments:',
-	      '  DIRACSiteName: Name of the site for DIRAC in the form GRID.LOCATION.COUNTRY (ie:LCG.CERN.ch)',
-	      '  GridSiteName: Name of the site in the Grid (ie: CERN-PROD)',
-	      '  CE: Name of the CE to be included in the site (ie: ce111.cern.ch)']))
+          [
+              __doc__.split('\n')[1],
+              'Usage:',
+              '  %s [option|cfgfile] ... DIRACSiteName GridSiteName CE [CE] ...' %
+              Script.scriptName,
+              'Arguments:',
+              '  DIRACSiteName: Name of the site for DIRAC in the form GRID.LOCATION.COUNTRY (ie:LCG.CERN.ch)',
+              '  GridSiteName: Name of the site in the Grid (ie: CERN-PROD)',
+              '  CE: Name of the CE to be included in the site (ie: ce111.cern.ch)']))
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
 
@@ -74,13 +76,19 @@ if __name__ == "__main__":
   cfgBase = "/Resources/Sites/%s/%s" % (diracGridType, diracSiteName)
   change = False
   gLogger.notice("Site to CS: %s" % diracSiteName)
-  res = addSite(diracSiteName, {"Name": gridSiteName})
+  csAPI = CSAPI()
+  res = csAPI.addSite(diracSiteName, {"Name": gridSiteName})
   if not res['OK']:
     gLogger.error("Failed adding site to CS", res['Message'])
     DIRACExit(1)
   gLogger.notice("Adding CEs: %s" % ','.join(ces))
   for ce in ces:
-    res = addCEtoSite(diracSiteName, ce)
+    res = csAPI.addCEtoSite(diracSiteName, ce)
     if not res['OK']:
       gLogger.error("Failed adding CE %s to CS" % ce, res['Message'])
       DIRACExit(2)
+  res = csAPI.commit()
+  if not res['OK']:
+    gLogger.error("Failure committing to CS", res['Message'])
+    DIRACExit(3)
+  gLogger.always("Success")

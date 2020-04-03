@@ -260,12 +260,12 @@ def getQueueInfo(ceUniqueID, diracSiteName=''):
       gLogger.debug("Can't find LocalSite name, looking in CS")
       result = getCESiteMapping(subClusterUniqueID)
       if not result['OK']:
-	return result
+        return result
       diracSiteName = result['Value'][subClusterUniqueID]
 
       if not diracSiteName:
-	gLogger.error('Can not find corresponding Site in CS')
-	return S_ERROR('Can not find corresponding Site in CS')
+        gLogger.error('Can not find corresponding Site in CS')
+        return S_ERROR('Can not find corresponding Site in CS')
 
   gridType = diracSiteName.split('.')[0]
 
@@ -273,10 +273,10 @@ def getQueueInfo(ceUniqueID, diracSiteName=''):
   queueCSSection = '%s/Queues/%s' % (siteCSSEction, queueID)
 
   resultDict = {'SubClusterUniqueID': subClusterUniqueID,
-		'QueueID': queueID,
-		'SiteName': diracSiteName,
-		'Grid': gridType,
-		'SiteCSSEction': siteCSSEction,
-		'QueueCSSection': queueCSSection}
+                'QueueID': queueID,
+                'SiteName': diracSiteName,
+                'Grid': gridType,
+                'SiteCSSEction': siteCSSEction,
+                'QueueCSSection': queueCSSection}
 
   return S_OK(resultDict)

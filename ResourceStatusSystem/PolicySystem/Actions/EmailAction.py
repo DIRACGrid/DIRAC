@@ -67,10 +67,10 @@ class EmailAction(BaseAction):
       if elementType == 'StorageElement':
         siteName = getSitesForSE(name)
       elif elementType == 'ComputingElement':
-	res = getCESiteMapping(name)
-	if not res['OK']:
-	  return res
-	siteName = S_OK(res['Value'][name])
+        res = getCESiteMapping(name)
+        if not res['OK']:
+          return res
+        siteName = S_OK(res['Value'][name])
       else:
         siteName = {'OK': True, 'Value': 'Unassigned'}
 

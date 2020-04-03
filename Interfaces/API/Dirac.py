@@ -333,7 +333,7 @@ class Dirac(API):
         formulationErrors = {}
 
       if formulationErrors:
-	for method, errorList in formulationErrors.items():  # can be an iterator
+        for method, errorList in formulationErrors.items():  # can be an iterator
           self.log.error('>>>> Error in %s() <<<<\n%s' % (method, '\n'.join(errorList)))
         return S_ERROR(formulationErrors)
 
@@ -700,7 +700,7 @@ class Dirac(API):
       for key, value in catalogFailed.items():  # can be an iterator
         self.log.error('%s %s' % (key, value))
       if 'Failed' in result:
-	result['Failed'] = list(catalogFailed)
+        result['Failed'] = list(catalogFailed)
 
     return result
 
@@ -1054,7 +1054,7 @@ class Dirac(API):
       records = []
       for lfn in repsResult['Value']['Successful']:
         lfnPrint = lfn
-	for se, url in repsResult['Value']['Successful'][lfn].items():  # can be an iterator
+        for se, url in repsResult['Value']['Successful'][lfn].items():  # can be an iterator
           records.append((lfnPrint, se, url))
           lfnPrint = ''
       for lfn in repsResult['Value']['Failed']:
@@ -1103,7 +1103,7 @@ class Dirac(API):
       records = []
       for lfn in repsResult['Value']['Successful']:
         lfnPrint = lfn
-	for se, url in repsResult['Value']['Successful'][lfn].items():  # can be an iterator
+        for se, url in repsResult['Value']['Successful'][lfn].items():  # can be an iterator
           records.append((lfnPrint, se, url))
           lfnPrint = ''
       for lfn in repsResult['Value']['Failed']:
@@ -1208,11 +1208,11 @@ class Dirac(API):
       return replicaDict
     if not replicaDict['Value']['Successful']:
       return self._errorReport(list(replicaDict['Value']['Failed'].iteritems())[0],
-			       'Failed to get replica information')
+                               'Failed to get replica information')
     siteLfns = {}
     for lfn, reps in replicaDict['Value']['Successful'].items():  # can be an iterator
       possibleSites = set(site for se in reps for site in (
-	  sitesForSE[se] if se in sitesForSE else sitesForSE.setdefault(se, getSitesForSE(se).get('Value', []))))
+          sitesForSE[se] if se in sitesForSE else sitesForSE.setdefault(se, getSitesForSE(se).get('Value', []))))
       siteLfns.setdefault(','.join(sorted(possibleSites)), []).append(lfn)
 
     if '' in siteLfns:
@@ -2166,10 +2166,10 @@ class Dirac(API):
         for i in headers:
           line += i.ljust(35)
         fopen.write(line + '\n')
-	for jobID, params in summary.items():  # can be an iterator
+        for jobID, params in summary.items():  # can be an iterator
           line = str(jobID).ljust(12)
           for header in headers:
-	    for key, value in params.items():  # can be an iterator
+            for key, value in params.items():  # can be an iterator
               if header == key:
                 line += value.ljust(35)
           fopen.write(line + '\n')

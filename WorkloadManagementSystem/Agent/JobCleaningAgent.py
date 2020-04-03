@@ -155,7 +155,7 @@ class JobCleaningAgent(AgentModule):
       delTime = str(Time.dateTime() - delay * Time.day)
       result = self.removeJobsByStatus(condDict, delTime)
       if not result['OK']:
-	self.log.warn('Failed to remove jobs in status %s' % status)
+        self.log.warn('Failed to remove jobs in status %s' % status)
 
     if self.maxHBJobsAtOnce > 0:
       for status, delay in self.removeStatusDelayHB.items():
@@ -212,13 +212,13 @@ class JobCleaningAgent(AgentModule):
         resultLogDB = self.jobLoggingDB.deleteJob(jobID)
         errorFlag = False
         if not resultJobDB['OK']:
-	  self.log.warn('Failed to remove job %d from JobDB' % jobID, result['Message'])
+          self.log.warn('Failed to remove job %d from JobDB' % jobID, result['Message'])
           errorFlag = True
         if not resultTQ['OK']:
-	  self.log.warn('Failed to remove job %d from TaskQueueDB' % jobID, result['Message'])
+          self.log.warn('Failed to remove job %d from TaskQueueDB' % jobID, result['Message'])
           errorFlag = True
         if not resultLogDB['OK']:
-	  self.log.warn('Failed to remove job %d from JobLoggingDB' % jobID, result['Message'])
+          self.log.warn('Failed to remove job %d from JobLoggingDB' % jobID, result['Message'])
           errorFlag = True
         if errorFlag:
           error_count += 1
@@ -229,23 +229,23 @@ class JobCleaningAgent(AgentModule):
     else:
       result = self.jobDB.removeJobFromDB(jobList)
       if not result['OK']:
-	self.log.error('Failed to delete %d jobs from JobDB' % len(jobList))
+        self.log.error('Failed to delete %d jobs from JobDB' % len(jobList))
       else:
-	self.log.info('Deleted %d jobs from JobDB' % len(jobList))
+        self.log.info('Deleted %d jobs from JobDB' % len(jobList))
 
       for jobID in jobList:
         resultTQ = self.taskQueueDB.deleteJob(jobID)
         if not resultTQ['OK']:
-	  self.log.warn('Failed to remove job %d from TaskQueueDB' % jobID, resultTQ['Message'])
+          self.log.warn('Failed to remove job %d from TaskQueueDB' % jobID, resultTQ['Message'])
           error_count += 1
         else:
           count += 1
 
       result = self.jobLoggingDB.deleteJob(jobList)
       if not result['OK']:
-	self.log.error('Failed to delete %d jobs from JobLoggingDB' % len(jobList))
+        self.log.error('Failed to delete %d jobs from JobLoggingDB' % len(jobList))
       else:
-	self.log.info('Deleted %d jobs from JobLoggingDB' % len(jobList))
+        self.log.info('Deleted %d jobs from JobLoggingDB' % len(jobList))
 
     if count > 0 or error_count > 0:
       self.log.info('Deleted %d jobs from JobDB, %d errors' % (count, error_count))

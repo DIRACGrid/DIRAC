@@ -21,7 +21,7 @@ def getGOCSiteName(diracSiteName):
     :attr:`diracSiteName` - string: DIRAC site name (e.g. 'LCG.CERN.ch')
   """
   gocDBName = gConfig.getValue('/Resources/Sites/%s/%s/Name' % (diracSiteName.split('.')[0],
-								diracSiteName))
+                                                                diracSiteName))
   if not gocDBName:
     return S_ERROR("No GOC site name for %s in CS (Not a grid site ?)" % diracSiteName)
   else:

@@ -310,7 +310,7 @@ class DiracAdmin(API):
     if isinstance(site, (list, set, dict)):
       site = set(site) - self._siteSet
       if not site:
-	return S_OK()
+        return S_OK()
     elif site in self._siteSet:
       return S_OK()
     return S_ERROR('Specified site %s is not in list of defined sites' % str(site))

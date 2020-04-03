@@ -1467,7 +1467,7 @@ class SiteDirector(AgentModule):
       pA.setValueByKey('UserGroup', pilotDict[pRef]['OwnerGroup'])
       result = getCESiteMapping(pilotDict[pRef]['DestinationSite'])
       if result['OK'] and result['Value'].strip():
-	pA.setValueByKey('Site', result['Value'][pilotDict[pRef]['DestinationSite']].strip())
+        pA.setValueByKey('Site', result['Value'][pilotDict[pRef]['DestinationSite']].strip())
       else:
         pA.setValueByKey('Site', 'Unknown')
       pA.setValueByKey('GridCE', pilotDict[pRef]['DestinationSite'])

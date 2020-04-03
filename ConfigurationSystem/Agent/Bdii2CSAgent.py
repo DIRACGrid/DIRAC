@@ -292,7 +292,7 @@ class Bdii2CSAgent(AgentModule):
         continue
       res = getCESiteMapping(ces[0])
       if not res['OK']:
-	self.log.error("Failed to get DIRAC site name for ce", "%s: %s" % (ces[0], res['Message']))
+        self.log.error("Failed to get DIRAC site name for ce", "%s: %s" % (ces[0], res['Message']))
         continue
       siteInCS = res['Value'][ces[0]]
       self.log.debug("Checking site %s (%s), aka %s" % (site, ces, siteInCS))
