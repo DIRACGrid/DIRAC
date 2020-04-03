@@ -99,7 +99,7 @@ class DIRACCAPPTest(unittest.TestCase):
       self.assertEqual(result['OK'], res, text)
       if res:
         chain = X509Chain()
-        chain.loadChainFromString(result['Value']['proxy'])
+        chain.loadChainFromString(result['Value'])
         result = chain.getCredentials()
         self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
         credDict = result['Value']
@@ -118,7 +118,7 @@ class DIRACCAPPTest(unittest.TestCase):
     result = self.pp.getProxy(result['Value'])
     self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
     chain = X509Chain()
-    chain.loadChainFromString(result['Value']['proxy'])
+    chain.loadChainFromString(result['Value'])
     result = chain.getCredentials()
     self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
     issuer = result['Value']['issuer']

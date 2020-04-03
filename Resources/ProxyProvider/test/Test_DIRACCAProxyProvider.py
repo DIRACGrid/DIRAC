@@ -142,7 +142,7 @@ class testDIRACCAProvider(DIRACCAProviderTestCase):
           if not res:
             gLogger.info('Msg: %s' % (result['Message']))
           else:
-            check(result['Value']['proxy'], proxyProvider['ProviderName'], name)
+            check(result['Value'], proxyProvider['ProviderName'], name)
 
       gLogger.info('\n* Get proxy using user DN..')
       for dn, name, res in [('/O=DIRAC/OU=DIRAC CA/CN=user_3/emailAddress=some@mail.org', 'user_3', True),
@@ -164,7 +164,7 @@ class testDIRACCAProvider(DIRACCAProviderTestCase):
         if not res:
           gLogger.info('Msg: %s' % (result['Message']))
         else:
-          check(result['Value']['proxy'], proxyProvider['ProviderName'], name)
+          check(result['Value'], proxyProvider['ProviderName'], name)
 
 
 if __name__ == '__main__':

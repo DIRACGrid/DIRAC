@@ -12,21 +12,20 @@ class ProxyProvider(object):
     self.parameters = parameters
     self.name = None
     if parameters:
-      self.name = parameters.get('ProxyProviderName')
+      self.name = parameters.get('ProviderName')
 
   def setParameters(self, parameters):
     self.parameters = parameters
-    self.name = parameters.get('ProxyProviderName')
+    self.name = parameters.get('ProviderName')
 
   def checkStatus(self, userDN):
     """ Read ready to work status of proxy provider
 
         :param str userDN: user DN
 
-        :return: S_OK(dict)/S_ERROR() -- dictionary contain fields:
-                  - 'Status' with ready to work status[ready, needToAuth]
+        :return: S_OK()/S_ERROR()
     """
-    return S_OK({'Status': 'ready'})
+    return S_OK()
 
   def generateDN(self, **kwargs):
     """ Generate new DN
@@ -35,4 +34,4 @@ class ProxyProvider(object):
 
         :return: S_OK(str)/S_ERROR() -- contain DN
     """
-    return S_ERROR('%s work only with ready user DN.')
+    return S_ERROR('%s work only with ready user DN.' % self.name)

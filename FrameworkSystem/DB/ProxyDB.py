@@ -717,7 +717,7 @@ class ProxyDB(DB):
     result = pp.getProxy(userDN)
     if not result['OK']:
       return result
-    proxyStr = result['Value']['proxy']
+    proxyStr = result['Value']
     chain = X509Chain()
     result = chain.loadProxyFromString(proxyStr)
     if not result['OK']:

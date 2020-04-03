@@ -23,22 +23,22 @@ class PUSPProxyProvider(ProxyProvider):
 
         :param str userDN: user DN
 
-        :return: S_OK(dict)/S_ERROR() -- dictionary contain fields:
-                  - 'Status' with ready to work status[ready, needToAuth]
+        :return: S_OK()/S_ERROR()
     """
+    # Search a unique identifier(username) to use as cn-label to generate PUSP
     if not userDN.split(":")[-1]:
       return S_ERROR('Can not found user label for DN: %s' % userDN)
     if not self.parameters.get('ServiceURL'):
       return S_ERROR('Can not determine PUSP service URL')
 
-    return S_OK({'Status': 'ready'})
+    return S_OK()
 
   def getProxy(self, userDN):
     """ Generate user proxy
 
         :param str userDN: user DN
 
-        :return: S_OK(dict)/S_ERROR() -- dict contain 'proxy' field with is a proxy string
+        :return: S_OK()/S_ERROR() -- contain a proxy string
     """
     result = self.checkStatus(userDN)
     if not result['OK']:
@@ -64,6 +64,4 @@ class PUSPProxyProvider(ProxyProvider):
     if credDict['identity'] != userDN:
       return S_ERROR('Requested DN does not match the obtained one in the PUSP proxy')
 
-    result = chain.generateProxyToString(lifeTime=credDict['secondsLeft'])
-
-    return S_OK({'proxy': result['Value']}) if result['OK'] else result
+    return chain.generateProxyToString(lifeTime=credDict['secondsLeft'])
