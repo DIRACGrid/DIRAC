@@ -686,7 +686,7 @@ def getDIRACGOCDictionary():
   #    /Resource/Sites/<GRID NAME>/<DIRAC SITE NAME>/Name
   # [0]/[1]     /[2]  /[3]        /[4]              /[5]
 
-  for path, gocdbSiteName in siteNamesTree.iteritems():
+  for path, gocdbSiteName in siteNamesTree.items():  # can be an iterator
     elements = path.split('/')
     if len(elements) != PATHELEMENTS:
       continue

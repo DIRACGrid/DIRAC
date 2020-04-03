@@ -445,8 +445,8 @@ def getCompatiblePlatforms(originalPlatforms):
   if not (result['OK'] and result['Value']):
     return S_ERROR("OS compatibility info not found")
 
-  platformsDict = dict((k, v.replace(' ', '').split(',')) for k, v in result['Value'].iteritems())
-  for k, v in platformsDict.iteritems():
+  platformsDict = dict((k, v.replace(' ', '').split(',')) for k, v in result['Value'].items())  # can be an iterator
+  for k, v in platformsDict.items():  # can be an iterator
     if k not in v:
       v.append(k)
 
@@ -482,14 +482,14 @@ def getDIRACPlatform(OSList):
   if not (result['OK'] and result['Value']):
     return S_ERROR("OS compatibility info not found")
 
-  platformsDict = dict((k, v.replace(' ', '').split(',')) for k, v in result['Value'].iteritems())
-  for k, v in platformsDict.iteritems():
+  platformsDict = dict((k, v.replace(' ', '').split(',')) for k, v in result['Value'].items())  # can be an iterator
+  for k, v in platformsDict.items():  # can be an iterator
     if k not in v:
       v.append(k)
 
   # making an OS -> platforms dict
   os2PlatformDict = dict()
-  for platform, osItems in platformsDict.iteritems():
+  for platform, osItems in platformsDict.items():  # can be an iterator
     for osItem in osItems:
       if os2PlatformDict.get(osItem):
         os2PlatformDict[osItem].append(platform)
@@ -570,7 +570,7 @@ def getInfoAboutProviders(of=None, providerName=None, option='', section=''):
       result = gConfig.getConfigurationTree(relPath)
       if not result['OK']:
         return result
-      for key, value in result['Value'].iteritems():
+      for key, value in result['Value'].items():  # can be an iterator
         if value:
           resDict[key.replace(relPath, '')] = value
       return S_OK(resDict)
