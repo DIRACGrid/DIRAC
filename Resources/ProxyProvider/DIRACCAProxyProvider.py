@@ -137,8 +137,7 @@ class DIRACCAProxyProvider(ProxyProvider):
 
         :param str userDN: user DN
 
-        :return: S_OK(dict)/S_ERROR() -- dictionary contain fields:
-                  - 'Status' with ready to work status[ready, needToAuth]
+        :return: S_OK()/S_ERROR()
     """
     self.log.debug('Ckecking work status of', self.parameters['ProviderName'])
     result = self.__parseDN(userDN)
@@ -196,14 +195,14 @@ class DIRACCAProxyProvider(ProxyProvider):
       if not result['OK']:
         return result
 
-    return S_OK({'Status': 'ready'})
+    return S_OK()
 
   def getProxy(self, userDN):
     """ Generate user proxy
 
         :param str userDN: user DN
 
-        :return: S_OK(dict)/S_ERROR() -- dict contain 'proxy' field with is a proxy string
+        :return: S_OK(str)/S_ERROR() -- contain a proxy string
     """
     self.__X509Name = X509.X509_Name()
     result = self.checkStatus(userDN)
@@ -219,7 +218,7 @@ class DIRACCAProxyProvider(ProxyProvider):
           if result['OK']:
             result = chain.generateProxyToString(365 * 24 * 3600, rfc=True)
 
-    return S_OK({'proxy': result['Value']}) if result['OK'] else result
+    return result
 
   def generateDN(self, **kwargs):
     """ Get DN of the user certificate that will be created

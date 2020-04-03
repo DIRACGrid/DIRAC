@@ -38,7 +38,7 @@ class PUSPProxyProvider(ProxyProvider):
 
         :param str userDN: user DN
 
-        :return: S_OK()/S_ERROR() -- contain a proxy string
+        :return: S_OK(str)/S_ERROR() -- contain a proxy string
     """
     result = self.checkStatus(userDN)
     if not result['OK']:
