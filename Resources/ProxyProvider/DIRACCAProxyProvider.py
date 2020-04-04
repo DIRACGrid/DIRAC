@@ -21,7 +21,8 @@
     To do this, just set the path to an existing configuration file as a CAConfigFile parameter. In this case,
     the distinguished names order in the created proxy will be the same as in the configuration file policy block.
 
-    The Proxy provider supports the following distinguished names(https://www.cryptosys.net/pki/manpki/pki_distnames.html)::
+    The Proxy provider supports the following distinguished names
+    (https://www.cryptosys.net/pki/manpki/pki_distnames.html)::
 
       SN(surname)
       GN(givenName)
