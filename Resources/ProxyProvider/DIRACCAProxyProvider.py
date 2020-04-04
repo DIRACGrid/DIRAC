@@ -21,7 +21,7 @@
     To do this, just set the path to an existing configuration file as a CAConfigFile parameter. In this case,
     the distinguished names order in the created proxy will be the same as in the configuration file policy block.
 
-    The Proxy provider supports the next distinguished names(https://www.cryptosys.net/pki/manpki/pki_distnames.html)::
+    The Proxy provider supports the following distinguished names(https://www.cryptosys.net/pki/manpki/pki_distnames.html)::
 
       SN(surname)
       GN(givenName)
@@ -363,7 +363,7 @@ class DIRACCAProxyProvider(ProxyProvider):
 
         :return: S_OK(tuple)/S_ERROR() -- tuple contain certificate and pulic key as strings
     """
-    # Create publik key
+    # Create public key
     userPubKey = EVP.PKey()
     userPubKey.assign_rsa(RSA.gen_key(self.bits, 65537, util.quiet_genparam_callback))
     # Create certificate
