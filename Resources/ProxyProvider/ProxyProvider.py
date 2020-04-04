@@ -34,4 +34,4 @@ class ProxyProvider(object):
 
         :return: S_OK(str)/S_ERROR() -- contain DN
     """
-    return S_ERROR('%s work only with ready user DN.' % self.name)
+    return S_ERROR("Not implemented in %s", self.name)
