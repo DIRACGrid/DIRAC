@@ -188,12 +188,11 @@ function prepareEnvironment() {
   docker cp "$SERVERCONFIG" server:"$WORKSPACE/CONFIG"
   docker cp "$CLIENTCONFIG" client:"$WORKSPACE/CONFIG"
 
-  # if the DIRACOS_TARBALL_PATH is a local directory, copy it over
-  if [ -d "${DIRACOS_TARBALL_PATH}" ]; then
+  # Copy DIRACOS_TARBALL_PATH if it is a local directory containing a DIRACOS tarball
+  if ls "${DIRACOS_TARBALL_PATH}"/diracos-*.tar.gz 1> /dev/null 2>&1; then
     docker cp "${DIRACOS_TARBALL_PATH}" server:"${DIRACOS_TARBALL_PATH}"
     docker cp "${DIRACOS_TARBALL_PATH}" client:"${DIRACOS_TARBALL_PATH}"
   fi
-    
 }
 
 function installServer() {
