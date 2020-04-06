@@ -142,7 +142,17 @@ def test__setupProxy(mocker, mockGCReplyInput, mockPMReplyInput, expected):
     assert result['Message'] == expected['Message']
 
 
-def test__getCPUTimeLeft(mocker):
+@pytest.mark.parametrize("initTimeLeft, cpuFactor, cpuConsumed, addCpuConsumed, expected1, expected2", [
+    (30000, 10, 5, 0, 29950, 29950),
+    (30000, 10, 5, 5, 29950, 29900),
+    (30000, 10, 60, 5, 29400, 29350),
+    (30000, 10, 60, 77, 29400, 28630),
+    (30000, 24, 5, 0, 29880, 29880),
+    (30000, 24, 5, 5, 29880, 29760),
+    (30000, 24, 60, 5, 28560, 28440),
+    (30000, 24, 60, 77, 28560, 26712),
+    (1000, 10, 99, 1, 10, 0)])
+def test__getCPUTimeLeft(mocker, initTimeLeft, cpuFactor, cpuConsumed, addCpuConsumed, expected1, expected2):
   """ Testing JobAgent()._getCPUTimeLeft()
   """
 
@@ -153,9 +163,26 @@ def test__getCPUTimeLeft(mocker):
   jobAgent.log = gLogger
   jobAgent.log.setLevel('DEBUG')
 
-  result = jobAgent._getCPUTimeLeft()
+  # initTimeLeft (hepspec06 seconds) is generally computed before launching the JobAgent
+  jobAgent.initTimeLeft = initTimeLeft
+  jobAgent.timeLeft = initTimeLeft
+  # cpuFactor is the key to convert seconds in hepspec06 seconds
+  jobAgent.cpuFactor = cpuFactor
+  # cpuConsumed is cpu time (processor seconds), and represent time spend since the beginning of the JobAgent execution
+  cpuConsumed = cpuConsumed
 
-  assert 0 == result
+  # The result is in hepsec06 seconds
+  result = jobAgent._getCPUTimeLeft(cpuConsumed)
+  assert result['OK']
+  jobAgent.timeLeft = result['Value']
+  assert expected1 == jobAgent.timeLeft
+
+  # Increase cpuConsumed to study the behavior of the JobAgent
+  cpuConsumed += addCpuConsumed
+  result = jobAgent._getCPUTimeLeft(cpuConsumed)
+  assert result['OK']
+  jobAgent.timeLeft = result['Value']
+  assert expected2 == jobAgent.timeLeft
 
 
 @pytest.mark.parametrize(

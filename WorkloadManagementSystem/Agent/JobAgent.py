@@ -47,7 +47,8 @@ class JobAgent(AgentModule):
 
     self.ceName = 'InProcess'
     self.computingElement = None
-    self.timeLeft = 0.0
+    self.initTimeLeft = 0.0
+    self.timeLeft = self.initTimeLeft
 
     self.initTimes = os.times()
     # Localsite options
@@ -101,8 +102,9 @@ class JobAgent(AgentModule):
       ceDict = result['Value'][0]
     else:
       ceDict = result['Value']
-    self.timeLeft = ceDict.get('CPUTime', self.timeLeft)
-    self.timeLeft = gConfig.getValue('/Resources/Computing/CEDefaults/MaxCPUTime', self.timeLeft)
+    self.initTimeLeft = ceDict.get('CPUTime', self.timeLeft)
+    self.initTimeLeft = gConfig.getValue('/Resources/Computing/CEDefaults/MaxCPUTime', self.timeLeft)
+    self.timeLeft = self.initTimeLeft
 
     self.initTimes = os.times()
     # Localsite options
@@ -130,36 +132,12 @@ class JobAgent(AgentModule):
       # Temporary mechanism to pass a shutdown message to the agent
       if os.path.exists('/var/lib/dirac_drain'):
         return self.__finish('Node is being drained by an operator')
-      # Only call timeLeft utility after a job has been picked up
-      self.log.info('Attempting to check CPU time left for filling mode')
-      if self.fillingMode:
-        if self.timeLeftError:
-          self.log.warn("Disabling filling mode as errors calculating time left", self.timeLeftError)
-          return self.__finish(self.timeLeftError)
-        self.log.info('normalized CPU units remaining in slot', self.timeLeft)
-        if self.timeLeft <= self.minimumTimeLeft:
-          return self.__finish('No more time left')
-        # Need to update the Configuration so that the new value is published in the next matching request
-        result = self.computingElement.setCPUTimeLeft(cpuTimeLeft=self.timeLeft)
-        if not result['OK']:
-          return self.__finish(result['Message'])
 
-        # Update local configuration to be used by submitted job wrappers
-        localCfg = CFG()
-        if self.extraOptions:
-          localConfigFile = os.path.join('.', self.extraOptions)
-        else:
-          localConfigFile = os.path.join(rootPath, "etc", "dirac.cfg")
-        localCfg.loadFromFile(localConfigFile)
-        if not localCfg.isSection('/LocalSite'):
-          localCfg.createNewSection('/LocalSite')
-        localCfg.setOption('/LocalSite/CPUTimeLeft', self.timeLeft)
-        localCfg.writeToFile(localConfigFile)
-
-      else:
+      if not self.fillingMode:
         return self.__finish('Filling Mode is Disabled')
 
     self.log.verbose('Job Agent execution loop')
+
     result = self.computingElement.available()
     if not result['OK']:
       self.log.info('Resource is not available', result['Message'])
@@ -187,6 +165,24 @@ class JobAgent(AgentModule):
     elif isinstance(result['Value'], list):
       # This is the case for Pool ComputingElement, and parameter 'MultiProcessorStrategy'
       ceDictList = result['Value']
+
+    # CPU time left can depend on wall-clock time left
+    # To get the most accurate value, we compute it before fetching a new job
+    result = self._computeTimeLeft()
+    if not result['OK']:
+      return self.__finish(result['Message'])
+
+    self.timeLeft = result['Value']
+    self.log.info('normalized CPU units remaining in slot', self.timeLeft)
+    if self.timeLeft <= self.minimumTimeLeft:
+      return self.__finish('No more time left')
+
+    # Need to update the Configuration so that the new value is published in the next matching request
+    result = self.computingElement.setCPUTimeLeft(cpuTimeLeft=self.timeLeft)
+    if not result['OK']:
+      return self.__finish(result['Message'])
+    # Update local configuration to be used by submitted job wrappers
+    self._updateLocalConfigWithTimeLeft()
 
     for ceDict in ceDictList:
 
@@ -356,19 +352,6 @@ class JobAgent(AgentModule):
       self.log.exception("Exception in submission", "", lException=subExcept, lExcInfo=True)
       return self._rescheduleFailedJob(jobID, 'Job processing failed with exception', self.stopOnApplicationFailure)
 
-    # Sum all times but the last one (elapsed_time) and remove times at init (is this correct?)
-    cpuTime = sum(os.times()[:-1]) - sum(self.initTimes[:-1])
-
-    result = self.timeLeftUtil.getTimeLeft(cpuTime, processors)
-    if result['OK']:
-      self.timeLeft = result['Value']
-    else:
-      if result['Message'] != 'Current batch system is not supported':
-        self.timeLeftError = result['Message']
-      else:
-        # if the batch system is not defined, use the process time and the CPU normalization defined locally
-        self.timeLeft = self._getCPUTimeLeft()
-
     return S_OK('Job Agent cycle complete')
 
   #############################################################################
@@ -384,15 +367,48 @@ class JobAgent(AgentModule):
     jdlFile.close()
 
   #############################################################################
-  def _getCPUTimeLeft(self):
-    """Return the TimeLeft as estimated by DIRAC using the Normalization Factor in the Local Config.
+  def _computeTimeLeft(self):
+    """ Compute CPU Time Left in hepspec06 seconds
+
+    :return: timeLeft in hepspec06 seconds
     """
-    cpuTime = sum(os.times()[:-1])
-    self.log.info('Current raw CPU time consumed is %s' % cpuTime)
+    # Get user+system time seconds: time effectively used by the processors since the beginning of the execution of the JobAgent
+    # Sum all times but the last one (elapsed_time) and remove times at init (is this correct?)
+    cpuTime = sum(os.times()[:-1]) - sum(self.initTimes[:-1])
+    result = self.timeLeftUtil.getTimeLeft(cpuTime, processors)
+    if result['OK']:
+      return result
+    else:
+      if result['Message'] != 'Current batch system is not supported':
+        return result
+      else:
+        # if the batch system is not defined, use the process time and the CPU normalization defined locally
+        return self._getCPUTimeLeft(cpuTime)
+
+  def _getCPUTimeLeft(self, cpuConsumed):
+    """ Return the TimeLeft as estimated by DIRAC using the Normalization Factor in the Local Config.
+
+    :param cpuConsumed: CPU Time in seconds consumed since the beginning of the execution of the JobAgent
+    """
+    self.log.info('Current raw CPU time consumed is %s' % cpuConsumed)
     timeleft = self.timeLeft
     if self.cpuFactor:
-      timeleft -= cpuTime * self.cpuFactor
-    return timeleft
+      timeleft = self.initTimeLeft - cpuConsumed * self.cpuFactor
+    return S_OK(timeleft)
+
+  def _updateLocalConfigWithTimeLeft(self):
+    """ Update local configuration file with the TimeLeft value
+    """
+    localCfg = CFG()
+    if self.extraOptions:
+      localConfigFile = os.path.join('.', self.extraOptions)
+    else:
+      localConfigFile = os.path.join(rootPath, "etc", "dirac.cfg")
+    localCfg.loadFromFile(localConfigFile)
+    if not localCfg.isSection('/LocalSite'):
+      localCfg.createNewSection('/LocalSite')
+    localCfg.setOption('/LocalSite/CPUTimeLeft', self.timeLeft)
+    localCfg.writeToFile(localConfigFile)
 
   #############################################################################
   def _setupProxy(self, ownerDN, ownerGroup):
@@ -541,7 +557,6 @@ class JobAgent(AgentModule):
     """
     try:
       parameters = {}
-#      print jdl
       if not re.search(r'\[', jdl):
         jdl = '[' + jdl + ']'
       classAdJob = ClassAd(jdl)
