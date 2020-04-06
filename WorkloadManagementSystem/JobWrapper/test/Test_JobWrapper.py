@@ -83,21 +83,21 @@ class JobWrapperTestCaseSuccess(JobWrapperTestCase):
   def test_execute(self, _patch1, _patch2):
     jw = JobWrapper()
     jw.jobArgs = {'Executable': '/bin/ls'}
-    res = jw.execute('')
+    res = jw.execute()
     print('jw.execute() returns', str(res))
     self.assertTrue(res['OK'])
 
     shutil.copy('WorkloadManagementSystem/JobWrapper/test/script-OK.sh', 'script-OK.sh')
     jw = JobWrapper()
     jw.jobArgs = {'Executable': 'script-OK.sh'}
-    res = jw.execute('')
+    res = jw.execute()
     self.assertTrue(res['OK'])
     os.remove('script-OK.sh')
 
     shutil.copy('WorkloadManagementSystem/JobWrapper/test/script.sh', 'script.sh')
     jw = JobWrapper()
     jw.jobArgs = {'Executable': 'script.sh', 'Arguments': '111'}
-    res = jw.execute('')
+    res = jw.execute()
     self.assertTrue(res['OK'])  # In this case the application finished with errors,
     # but the JobWrapper executed successfully
     os.remove('script.sh')
@@ -105,7 +105,7 @@ class JobWrapperTestCaseSuccess(JobWrapperTestCase):
     shutil.copy('WorkloadManagementSystem/JobWrapper/test/script-RESC.sh', 'script-RESC.sh')  # this will reschedule
     jw = JobWrapper()
     jw.jobArgs = {'Executable': 'script-RESC.sh'}
-    res = jw.execute('')
+    res = jw.execute()
     if res['OK']:  # FIXME: This may happen depending on the shell - not the best test admittedly!
       print("We should not be here, unless the 'Execution thread status' is equal to 1")
       self.assertTrue(res['OK'])
