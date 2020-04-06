@@ -269,7 +269,7 @@ class JobWrapper(object):
       if isinstance(value, dict):
         infoString = self.__dictAsInfoString(value, infoString, "%s/%s" % (currentBase, key))
       elif isinstance(value, (list, tuple)):
-	if value and value[0] == '[':
+        if value and value[0] == '[':
           infoString += "%s/%s = %s\n" % (currentBase, key, " ".join(value))
         else:
           infoString += "%s/%s = %s\n" % (currentBase, key, ", ".join(value))
@@ -446,7 +446,7 @@ class JobWrapper(object):
 
     if watchdog.currentStats:
       self.log.info('Statistics collected by the Watchdog:\n ',
-		    '\n  '.join(['%s: %s' % items for items in watchdog.currentStats.items()]))  # can be an iterator
+                    '\n  '.join(['%s: %s' % items for items in watchdog.currentStats.items()]))  # can be an iterator
     if outputs:
       status = threadResult['Value'][0]  # the status of the payload execution
       # Send final heartbeat of a configurable number of lines here
@@ -609,12 +609,12 @@ class JobWrapper(object):
     for lfn, mdata in resolvedData['Value']['Successful'].items():  # can be an iterator
       if 'Size' in mdata:
         lfnSize = mdata['Size']
-	if not isinstance(lfnSize, six.integer_types):
+        if not isinstance(lfnSize, six.integer_types):
           try:
-	    lfnSize = int(lfnSize)
-	  except ValueError as x:
+            lfnSize = int(lfnSize)
+          except ValueError as x:
             lfnSize = 0
-	    self.log.info('File size for LFN was not an integer, setting size to 0', lfn)
+            self.log.info('File size for LFN was not an integer, setting size to 0', lfn)
         self.inputDataSize += lfnSize
 
     configDict = {'JobID': self.jobID,
@@ -845,7 +845,7 @@ class JobWrapper(object):
     for i in outputSandbox:
       if i not in okFiles:
         if not '%s.tar' % i in okFiles:
-	  if not re.search(r'\*', i):
+          if not re.search(r'\*', i):
             if i not in missing:
               missing.append(i)
 
@@ -1121,28 +1121,32 @@ class JobWrapper(object):
 
     # try to send the failover request
     res = self.sendFailoverRequest()
-    if not res['OK']:  # This means that the request could not be set
-      self.failedFlag = True
-    failoverRequests = res.get('Value')
+    if not res['OK']:  # This means that the request could not be set (this should "almost never" happen)
+      self.__report(JobStatus.FAILED, minorStatus='Failed sending requests')
+      self.__cleanUp()
+      return 1
 
-    requestFlag = failoverRequests or len(requests) > 0 or not outputDataRequest.isEmpty()
+    requestFlag = res['Value'] or len(requests) > 0 or not outputDataRequest.isEmpty()
+    if requestFlag:
+      self.log.info("Job finished with pending requests")
+      self.__report(minorStatus='Pending Requests')
+    else:
+      self.log.info("Job finished with no pending requests")
 
-    if self.failedFlag and requestFlag:
-      self.log.info('Job finished with errors and there are pending requests.')
-      self.__report(JobStatus.FAILED, 'Pending Requests')
-    elif not self.failedFlag and requestFlag:
-      self.log.info('Job finished successfully with pending requests.')
-      self.__report(JobStatus.COMPLETED, 'Pending Requests')
-    elif self.failedFlag and not requestFlag:
-      self.log.info('Job finished with errors with no pending requests.')
+    if self.failedFlag:
+      self.log.info("Job finished with errors")
       self.__report(JobStatus.FAILED)
-    elif not self.failedFlag and not requestFlag:
-      self.log.info('Job finished successfully with no pending requests.')
-      self.__report(JobStatus.DONE, 'Execution Complete')
+      self.__cleanUp()
+      return 1
+
+    self.log.info("Job finished successfully")
+    if requestFlag:
+      self.__report(JobStatus.COMPLETED)
+    else:
+      self.__report(minorStatus='Execution Complete')
+      self.__report(JobStatus.DONE)
 
     self.__cleanUp()
-    if self.failedFlag:
-      return 1
     return 0
 
   #############################################################################
@@ -1275,12 +1279,12 @@ class JobWrapper(object):
           print(str(reqToJSON['Value']))
         else:
           self.log.error("Something went wrong creating the JSON from request", reqToJSON['Message'])
-	return S_ERROR()
+        return S_ERROR()
       else:
-	# We try several times to put the request before failing the job:
-	# it is very important that requests go through,
-	# or the job will be in an unclear status
-	# (workflow ok, but, e.g., the output files won't be registered).
+        # We try several times to put the request before failing the job:
+        # it is very important that requests go through,
+        # or the job will be in an unclear status
+        # (workflow ok, but, e.g., the output files won't be registered).
         # It's a poor man solution, but I don't see fancy alternatives
         for counter in range(10):
           requestClient = ReqClient()
@@ -1289,7 +1293,7 @@ class JobWrapper(object):
             resDigest = request.getDigest()
             digest = resDigest['Value']
             self.jobReport.setJobParameter('PendingRequest', digest)
-	    return S_OK(request)
+            return S_OK(request)
           else:
             self.log.error('Failed to set failover request',
                            '%d: %s. Re-trying...' % (counter, result['Message']))
@@ -1297,7 +1301,7 @@ class JobWrapper(object):
             time.sleep(counter ** 3)
 
         if not result['OK']:
-	  return result
+          return result
 
     return S_OK()
 

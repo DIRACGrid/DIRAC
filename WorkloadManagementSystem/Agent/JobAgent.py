@@ -529,8 +529,8 @@ class JobAgent(AgentModule):
         return S_OK()  # Without this, the job is marked as failed
       else:
         if 'Value' in submission:
-	  self.log.error('Error in DIRAC JobWrapper or inner CE execution:',
-			 'exit code = %s' % (str(submission['Value'])))
+          self.log.error('Error in DIRAC JobWrapper or inner CE execution:',
+                         'exit code = %s' % (str(submission['Value'])))
       self.log.error("CE Error", "%s : %s" % (self.ceName, submission['Message']))
       return submission
 

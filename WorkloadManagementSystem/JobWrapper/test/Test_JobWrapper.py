@@ -115,6 +115,12 @@ class JobWrapperTestCaseSuccess(JobWrapperTestCase):
       # so in this case the "execute" is considered an error
     os.remove('script-RESC.sh')
 
+  def test_finalize(self):
+    jw = JobWrapper()
+    jw.jobArgs = {'Executable': '/bin/ls'}
+    res = jw.finalize()
+    self.assertTrue(res == 1)  # by default failed flag is True
+
 
 #############################################################################
 # Test Suite run
