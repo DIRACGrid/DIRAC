@@ -15,6 +15,7 @@ from DIRAC import gLogger, S_OK, S_ERROR
 
 __RCSID__ = "$Id$"
 
+
 class Mail(object):
 
   def __init__(self):
@@ -52,9 +53,9 @@ class Mail(object):
         return S_ERROR("Subject and body empty. Mail not sent")
 
     if self._html:
-      mail = MIMEText(self._message , "html")
+      mail = MIMEText(self._message, "html")
     else:
-      mail = MIMEText(self._message , "plain")
+      mail = MIMEText(self._message, "plain")
 
     msg = MIMEMultipart()
     msg.attach(mail)
