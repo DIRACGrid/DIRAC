@@ -160,7 +160,7 @@ def formatProxyStepsInfoAsString(infoList):
           try:
             value = base64.b16encode(value)
           except Exception as e:
-            gLogger.error('Cannot read serial:', e)
+            gLogger.exception("Could not read serial:", lException=e)
         if key == 'lifetime':
           secs = value
           hours = int(secs / 3600)
