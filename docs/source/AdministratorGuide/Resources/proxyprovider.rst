@@ -57,7 +57,7 @@ The Proxy provider supports the following distinguished names (more details abou
 
 
 PUSP proxy provider
-----------------------
+-------------------
 
 ProxyProvider implementation for a Per-User Sub-Proxy(PUSP) proxy generation using PUSP proxy server. More details about PUSP here: https://wiki.egi.eu/wiki/Usage_of_the_per_user_sub_proxy_in_EGI. Required parameters in the DIRAC configuration for its implementation::
 
@@ -77,3 +77,9 @@ Configuration options are:
 
 * ``ProviderType``: main option, to show which proxy provider type you want to register. In the case of the PUSP proxy provider you must type ``PUSP``.
 * ``ServiceURL``: PUSP service URL.
+
+
+Usage
+^^^^^
+
+The ProxyProvider is typically used by the ProxyManager to provide a proxy for a DIRAC user/group in the case the proxy in the proxyDB is expired or is absent.
