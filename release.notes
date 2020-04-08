@@ -90,6 +90,9 @@ CHANGE: (#4410) call pytest directly instead of as a module
 FIX: (#4426) restored system test, moved Jenkins test to appropriate location
 CHANGE: (#4439) integrate test_MySQLDB to all_integration_server_tests
 
+*tests
+FIX: (#4469) ProxyDB integration tests fixed for the M2Crypto case
+
 *docs
 NEW: (#4289) Document how to run integration tests in docker
 
