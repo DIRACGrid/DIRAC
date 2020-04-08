@@ -1,3 +1,17 @@
+[v7r0p20]
+
+*Core
+FIX: (#4531) Mail.py - add SMTP parameters
+
+*DMS
+CHANGE: (#4528) FTS3 - failoverTransfer sleep & retries in case of FC unavailability
+
+*Resources
+NEW: (#4529) WLCGAccountingHTTPJson occupancy plugin
+
+*TS
+CHANGE: (#4525) clean the DataFiles table when cleaning a Transformation
+
 [v7r0p19]
 
 *DMS
