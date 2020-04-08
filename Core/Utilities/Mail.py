@@ -28,9 +28,17 @@ class Mail(object):
     self._attachments = []
     self.esmtp_features = {}
     self._smtpPtcl = None
+    self._smtpHost = None
+    self._smtpPort = None
+    self._smtpLogin = None
+    self._smtpPasswd = None
 
   def _create(self, addresses):
     """ create a mail object
+
+        :param list addresses: addresses
+
+        :return: S_OK(object)/S_ERROR() -- contain MIMEMultipart object
     """
     if not isinstance(addresses, list):
       addresses = [addresses]
@@ -63,6 +71,7 @@ class Mail(object):
           part = MIMEApplication(fil.read(),
                                  Name=os.path.basename(attachment)
                                  )
+
           part['Content-Disposition'] = 'attachment; filename="%s"' % os.path.basename(attachment)
           msg.attach(part)
       except IOError as e:
@@ -72,6 +81,10 @@ class Mail(object):
 
   def _send(self, msg=None):
     """ send a single email message. If msg is in input, it is expected to be of email type, otherwise it will create it.
+
+        :param msg object: MIMEMultipart object
+
+        :return: S_OK()/S_ERROR()
     """
 
     if msg is None:
@@ -84,17 +97,24 @@ class Mail(object):
         return result
       msg = result['Value']
 
-    if self._smtpPtcl in ('SSL', 'TLS'):
+    if self._smtpPtcl == 'SSL':
       smtp = SMTP_SSL()
     else:
       smtp = SMTP()
     smtp.set_debuglevel(0)
     try:
-      smtp.connect()
-      smtp.ehlo()
-      if self._smtpPtcl in ('SSL', 'TLS'):
+      connParams = {}
+      if self._smtpHost:
+        connParams['host'] = self._smtpHost
+      if self._smtpPort:
+        connParams['port'] = int(self._smtpPort)
+      smtp.connect(**connParams)
+      smtp.ehlo_or_helo_if_needed()
+      if self._smtpPtcl == 'TLS':
         smtp.starttls()
-        smtp.ehlo()
+      if self._smtpLogin and self._smtpPasswd:
+        smtp.login(self._smtpLogin, self._smtpPasswd)
+      smtp.ehlo_or_helo_if_needed()
       smtp.sendmail(self._fromAddress, addresses, msg.as_string())
     except Exception as x:
       return S_ERROR("Sending mail failed %s" % str(x))

@@ -3,6 +3,8 @@
   https://twiki.cern.ch/twiki/bin/view/LCG/AccountingTaskForce#Storage_Space_Accounting
   https://twiki.cern.ch/twiki/pub/LCG/AccountingTaskForce/storage_service_v4.txt
   https://docs.google.com/document/d/1yzCvKpxsbcQC5K9MyvXc-vBF1HGPBk4vhjw3MEXoXf8
+
+  When this is used, the OccupancyLFN has to be the full path on the storage, and not just the LFN
 """
 import json
 import os
@@ -25,6 +27,30 @@ class WLCGAccountingJson(object):
     self.log = se.log.getSubLogger('WLCGAccountingJson')
     self.name = self.se.name
 
+  def _downloadJsonFile(self, occupancyLFN, filePath):
+    """ Download the json file at the location
+
+        :param occupancyLFN: lfn for the file
+        :param filePath: destination path for the file
+
+    """
+    for storage in self.se.storages:
+      try:
+        ctx = gfal2.creat_context()
+        params = ctx.transfer_parameters()
+        params.overwrite = True
+        res = storage.updateURL(occupancyLFN)
+        if not res['OK']:
+          continue
+        occupancyURL = res['Value']
+        ctx.filecopy(params, occupancyURL, 'file://' + filePath)
+        return
+      except gfal2.GError as e:
+        detailMsg = "Failed to copy file %s to destination url %s: [%d] %s" % (
+            occupancyURL, filePath, e.code, e.message)
+        self.log.debug("Exception while copying", detailMsg)
+        continue
+
   def getOccupancy(self, **kwargs):
     """ Returns the space information given by WLCG Accouting Json
 
@@ -38,25 +64,7 @@ class WLCGAccountingJson(object):
     tmpDirName = tempfile.mkdtemp()
     filePath = os.path.join(tmpDirName, os.path.basename(occupancyLFN))
 
-    for storage in self.se.storages:
-      try:
-        ctx = gfal2.creat_context()
-        params = ctx.transfer_parameters()
-        params.overwrite = True
-        res = storage.updateURL(occupancyLFN)
-        if not res['OK']:
-          continue
-        occupancyURL = res['Value']
-        ctx.filecopy(params, occupancyURL, 'file://' + filePath)
-
-      except gfal2.GError as e:
-        detailMsg = "Failed to copy file %s to destination url %s: [%d] %s" % (
-            occupancyURL, filePath, e.code, e.message)
-        self.log.debug("Exception while copying", detailMsg)
-        continue
-
-      else:
-        break
+    self._downloadJsonFile(occupancyLFN, filePath)
 
     if not os.path.isfile(filePath):
       return S_ERROR('No WLCGAccountingJson file of %s is downloaded.' % (self.name))

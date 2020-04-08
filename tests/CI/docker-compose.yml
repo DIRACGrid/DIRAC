@@ -30,6 +30,17 @@ services:
       timeout: 2s
       retries: 10
 
+  # Mock of an S3 storage
+  s3-direct:
+    image: adobe/s3mock
+    container_name: s3-direct
+    hostname: s3-direct
+    ports:
+      - 9090
+      - 9191
+    environment:
+      - initialBuckets=myFirstBucket
+
   dirac-server:
     image: ${CI_REGISTRY_IMAGE}/${HOST_OS}-dirac
     container_name: server
@@ -46,5 +57,4 @@ services:
     hostname: client
     depends_on:
       - dirac-server
-
 

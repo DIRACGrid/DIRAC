@@ -18,49 +18,35 @@ class PUSPProxyProvider(ProxyProvider):
 
     super(PUSPProxyProvider, self).__init__(parameters)
 
-  def getProxy(self, userDict):
+  def checkStatus(self, userDN):
+    """ Read ready to work status of proxy provider
+
+        :param str userDN: user DN
+
+        :return: S_OK()/S_ERROR()
+    """
+    # Search a unique identifier(username) to use as cn-label to generate PUSP
+    if not userDN.split(":")[-1]:
+      return S_ERROR('Can not found user label for DN: %s' % userDN)
+    if not self.parameters.get('ServiceURL'):
+      return S_ERROR('Can not determine PUSP service URL')
+
+    return S_OK()
+
+  def getProxy(self, userDN):
     """ Generate user proxy
 
-        :param dict userDict: user description dictionary with possible fields:
-               FullName, UserName, DN, Email, DiracGroup
+        :param str userDN: user DN
 
-        :return: S_OK(basestring)/S_ERROR() -- basestring is a proxy string
+        :return: S_OK(str)/S_ERROR() -- contain a proxy string
     """
-
-    userDN = userDict.get('DN')
-    if not userDN:
-      return S_ERROR('Incomplete user information')
-
-    diracGroup = userDict.get('DiracGroup')
-    if not diracGroup:
-      return S_ERROR('Incomplete user information')
-
-    result = Registry.getGroupsForDN(userDN)
+    result = self.checkStatus(userDN)
     if not result['OK']:
       return result
 
-    validGroups = result['Value']
-    if diracGroup not in validGroups:
-      return S_ERROR('Invalid group %s for user' % diracGroup)
-
-    voName = Registry.getVOForGroup(diracGroup)
-    if not voName:
-      return S_ERROR('Can not determine VO for group %s' % diracGroup)
-
-    csVOMSMapping = Registry.getVOMSAttributeForGroup(diracGroup)
-    if not csVOMSMapping:
-      return S_ERROR("No VOMS mapping defined for group %s in the CS" % diracGroup)
-    vomsAttribute = csVOMSMapping
-    vomsVO = Registry.getVOMSVOForGroup(diracGroup)
-
-    puspServiceURL = self.parameters.get('ServiceURL')
-    if not puspServiceURL:
-      return S_ERROR('Can not determine PUSP service URL for VO %s' % voName)
-
-    user = userDN.split(":")[-1]
-
-    puspURL = "%s?voms=%s:%s&proxy-renewal=false&disable-voms-proxy=false" \
-              "&rfc-proxy=true&cn-label=user:%s" % (puspServiceURL, vomsVO, vomsAttribute, user)
+    puspURL = self.parameters['ServiceURL']
+    puspURL += "?proxy-renewal=false&disable-voms-proxy=true&rfc-proxy=true"
+    puspURL += "&cn-label=user:%s" % userDN.split(":")[-1]
 
     try:
       proxy = urlopen(puspURL).read()
@@ -77,24 +63,5 @@ class PUSPProxyProvider(ProxyProvider):
     credDict = result['Value']
     if credDict['identity'] != userDN:
       return S_ERROR('Requested DN does not match the obtained one in the PUSP proxy')
-    timeLeft = credDict['secondsLeft']
 
-    result = chain.generateProxyToString(lifeTime=timeLeft,
-                                         diracGroup=diracGroup)
-    if not result['OK']:
-      return result
-    proxyString = result['Value']
-    return S_OK((proxyString, timeLeft))
-
-  def getUserDN(self, userDict):
-    """ Get DN of the user certificate that will be created
-
-    :param dict userDict:
-    :return: S_OK/S_ERROR, Value is the DN string
-    """
-
-    userDN = userDict.get('DN')
-    if not userDN:
-      return S_ERROR('Incomplete user information')
-
-    return S_OK(userDN)
+    return chain.generateProxyToString(lifeTime=credDict['secondsLeft'])

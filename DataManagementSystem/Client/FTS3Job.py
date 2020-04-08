@@ -561,11 +561,13 @@ class FTS3Job(JSerializable):
     return S_OK(fileIDsInTheJob)
 
   @staticmethod
-  def generateContext(ftsServer, ucert):
+  def generateContext(ftsServer, ucert, lifetime=25200):
     """ This method generates an fts3 context
 
         :param ftsServer: address of the fts3 server
         :param ucert: the path to the certificate to be used
+        :param lifetime: duration (in sec) of the delegation to the FTS3 server
+                        (default is 7h, like FTS3 default)
 
         :returns: an fts3 context
     """
@@ -575,6 +577,22 @@ class FTS3Job(JSerializable):
           ucert=ucert,
           request_class=ftsSSLRequest,
           verify=False)
+
+      # Explicitely delegate to be sure we have the lifetime we want
+      # Note: the delegation will re-happen only when the FTS server
+      # decides that there is not enough timeleft.
+      # At the moment, this is 1 hour, which effectively means that if you do
+      # not submit a job for more than 1h, you have no valid proxy in FTS servers
+      # anymore. In future release of FTS3, the delegation will be triggered when
+      # one third of the lifetime will be left.
+      # Also, the proxy given as parameter might have less than "lifetime" left
+      # since it is cached, but it does not matter, because in the FTS3Agent
+      # we make sure that we renew it often enough
+      # Finally, FTS3 has an issue with handling the lifetime of the proxy,
+      # because it does not check all the chain. This is under discussion
+      # https://its.cern.ch/jira/browse/FTS-1575
+      fts3.delegate(context, lifetime=datetime.timedelta(seconds=lifetime))
+
       return S_OK(context)
     except FTS3ClientException as e:
       gLogger.exception("Error generating context", repr(e))

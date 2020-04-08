@@ -15,7 +15,7 @@ CHANGE: (#4235) Removes locals() way of passing parameters
 *tests
 NEW: (#4179) Set up Gitlab CI pipeline using Docker containers
 
-[v7r1-pre21]
+[v7r1-pre22]
 
 NEW: Add environment.yml file for preparing an environment with conda
 CHANGE: (#4507) autopep8 for the entire code stack
@@ -107,8 +107,37 @@ CHANGE: (#4410) call pytest directly instead of as a module
 FIX: (#4426) restored system test, moved Jenkins test to appropriate location
 CHANGE: (#4439) integrate test_MySQLDB to all_integration_server_tests
 
+*tests
+FIX: (#4469) ProxyDB integration tests fixed for the M2Crypto case
+
 *docs
 NEW: (#4289) Document how to run integration tests in docker
+
+[v7r0p20]
+
+*Core
+FIX: (#4531) Mail.py - add SMTP parameters
+
+*DMS
+CHANGE: (#4528) FTS3 - failoverTransfer sleep & retries in case of FC unavailability
+
+*Resources
+NEW: (#4529) WLCGAccountingHTTPJson occupancy plugin
+
+*TS
+CHANGE: (#4525) clean the DataFiles table when cleaning a Transformation
+
+[v7r0p19]
+
+*DMS
+CHANGE: (#4505) explicitly delegate the proxy to FTS3 with a configurable lifetime
+NEW: (#4519) S3 storage support
+
+*RSS
+FIX: (#4520) correct verbosity (avoid non-necessary warnings)
+
+*docs
+NEW: (#4520) Minimal documentation on Bdii2CSAgent and GOCDB2CSAgent
 
 [v7r0p18]
 
@@ -466,6 +495,16 @@ CHANGE: (#4110) updated basic tutorial for CC7 instead of SLC6.
 NEW: (#4170) added Production system documentation
 CHANGE: (#4224) Pilot 3 is the default
 NEW: (#4244) Added a few notes on using the JobParameters on ElasticSearch database
+
+[v6r22p26]
+
+*Resources
+FIX: (#4518) HTCondorCE - added missing multicore option
+
+*Transformation
+FIX: (#4523) when getTransformationFiles was called with a large list
+     of LFNs, the DB couldn't cope. This fix truncates the list of
+     LFNs in chunks such that each call to the DB is fast enough.
 
 [v6r22p25]
 

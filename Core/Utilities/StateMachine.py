@@ -1,6 +1,4 @@
 ########################################################################
-# $HeadURL $
-# File: State.py
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/07/03 10:33:02
 ########################################################################
@@ -16,19 +14,8 @@
 
 state machine
 """
-__RCSID__ = "$Id: $"
-##
-# @file State.py
-# @author Krzysztof.Ciba@NOSPAMgmail.com
-# @date 2013/07/03 10:33:07
-# @brief Definition of State class.
 
-# imports
-
-#from DIRACSingleton import DIRACSingleton
-
-########################################################################
-
+__RCSID__ = "$Id$"
 
 class State(object):
   """
@@ -115,10 +102,10 @@ class StateMachine(object):
 # class Scheduled( State ):
 #  pass
 
-#waiting = Waiting()
-#done = Done()
-#failed = Failed()
-#scheduled = Scheduled()
+# waiting = Waiting()
+# done = Done()
+# failed = Failed()
+# scheduled = Scheduled()
 
 # def toDone( slist ):
 #  return list(set(slist)) == [ "Done" ]
@@ -135,7 +122,6 @@ class StateMachine(object):
 #    if st == "Waiting":
 #      return True
 #  return False
-
 
 # def toScheduled( slist ):
 #  for st in slist:

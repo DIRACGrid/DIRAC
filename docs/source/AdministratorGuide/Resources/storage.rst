@@ -10,6 +10,7 @@ DIRAC provides an abstraction of a SE interface that allows to access different 
 
     CERN-USER
     {
+      OccupancyPlugin = WLCGAccountingJson
       OccupancyLFN = /lhcb/spaceReport.json
       SpaceReservation = LHCb_USER
       ReadAccess = Active
@@ -54,6 +55,7 @@ Configuration options are:
 * ``CheckAccess``: default `True`. Allowed for Check if no RSS enabled
 * ``RemoveAccess``: default `True`. Allowed for Remove if no RSS enabled
 * ``OccupancyLFN``: default (`/<vo>/occupancy.json`). LFN where the json file containing the space reporting is to be found
+* ``OccupancyPlugin``: default (`empty`). Plugin to find the occupancy of a given storage.
 * ``SpaceReservation``: just a name of a zone of the physical storage which can have some space reserved. Extends the SRM ``SpaceToken`` concept.
 
 VO specific paths
@@ -201,10 +203,10 @@ These are the plugins that you should define in the `PluginName` option of your 
 
   - DIP: used for dips, the DIRAC custom protocol (useful for example for DIRAC SEs).
   - File: offers an abstraction of the local access as an SE.
-  - SRM2 (deprecated): for the srm protocol, using the deprecated gfal libraries.
   - RFIO (deprecated): for the rfio protocol.
   - Proxy: to be used with the StorageElementProxy.
-  - XROOT (deprecated): for the xroot protocol, using the python xroot binding (http://xrootd.org/doc/python/xrootd-python-0.1.0/#).
+  - S3: for S3 (e.g. AWS, CEPH) support (see :ref:`s3_support`)
+
 
 There are also a set of plugins based on the gfal2 libraries (https://dmc.web.cern.ch/projects).
 
@@ -252,6 +254,13 @@ For example::
 The LFN of this file is by default `/<vo>/occupancy.json`, but can be overwritten with the `OccupancyLFN` option of the SE.
 
 The ``SpaceReservation`` option allows to specify a physical zone of the storage which would have space reservation (for example ``LHCb_USER``, ``LHCb_PROD``, etc). It extends the concept of ``SpaceToken`` that SRM has. This option is only used if the StoragePlugin does not return itself a ``SpaceReservation`` value.
+
+The ``OccupancyPlugin`` allows to change the way space occupancy is measured. Several plugins are available (please refer to the module documentation):
+
+* BDIIOccupancy: :py:mod:`~DIRAC.Resources.Storage.OccupancyPlugins.BDIIOccupancy`
+* WLCGAccountingJson: :py:mod:`~DIRAC.Resources.Storage.OccupancyPlugins.WLCGAccountingJson`
+* WLCGAccountingHTTPJson: :py:mod:`~DIRAC.Resources.Storage.OccupancyPlugins.WLCGAccountingHTTPJson` (likely to become the default in the future)
+
 
 
 .. _multiProtocol:
