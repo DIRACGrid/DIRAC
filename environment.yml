@@ -7,6 +7,7 @@ dependencies:
   # runtime
   - python =2.7
   - pip
+  - boto3
   - certifi
   - cmreshandler >1.0.0b4
   - elasticsearch-dsl ~=6.3.1

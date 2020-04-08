@@ -118,16 +118,16 @@ class StateMachine(object):
       return -1
     return self.states[state].level
 
-  def setState(self, candidateState):
+  def setState(self, candidateState, noWarn=False):
     """ Makes sure the state is either None or known to the machine, and that it is a valid state to move into.
         Final states are also checked.
 
     examples:
-      >>> sm0.setState( None )[ 'OK' ]
+      >>> sm0.setState(None)['OK']
           True
-      >>> sm0.setState( 'Nirvana' )[ 'OK' ]
+      >>> sm0.setState('Nirvana')['OK']
           True
-      >>> sm0.setState( 'AnotherState' )[ 'OK' ]
+      >>> sm0.setState('AnotherState')['OK']
           False
 
     :param state: state which will be set as current state of the StateMachine
@@ -140,9 +140,11 @@ class StateMachine(object):
 
     if candidateState is None:
       self.state = candidateState
-    elif candidateState in self.states.keys():
+    elif candidateState in self.states:
       if not self.states[self.state].stateMap:
-        gLogger.warn("Final state, won't move")
+        if not noWarn:
+          gLogger.warn("Final state, won't move",
+                       "(%s, asked to move to %s)" % (self.state, candidateState))
         return S_OK(self.state)
       if candidateState not in self.states[self.state].stateMap:
         gLogger.warn("Can't move from %s to %s, choosing a good one" % (self.state, candidateState))

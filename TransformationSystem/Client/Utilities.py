@@ -66,40 +66,44 @@ class PluginUtilities(object):
     else:
       self.transInThread = transInThread
 
-    self.log = gLogger.getSubLogger(plugin)
+    self.log = gLogger.getSubLogger(self.plugin +
+                                    self.transInThread.get(self.transID, ' [NoThread] [%s] ' % self.transID))
 
   def logVerbose(self, message, param=''):
     """ logger helper """
     if self.debug:
-      self.log.info('(V)' + self.transString + message, param)
+      log = gLogger.getSubLogger(self.plugin + ' (V)' +
+                                 self.transInThread.get(self.transID, ' [NoThread] [%d] ' % self.transID))
+      log.info(message, param)
     else:
-      self.log.verbose(self.transString + message, param)
+      self.log.verbose(message, param)
 
   def logDebug(self, message, param=''):
     """ logger helper """
-    self.log.debug(self.transString + message, param)
+    self.log.debug(message, param)
 
   def logInfo(self, message, param=''):
     """ logger helper """
-    self.log.info(self.transString + message, param)
+    self.log.info(message, param)
 
   def logWarn(self, message, param=''):
     """ logger helper """
-    self.log.warn(self.transString + message, param)
+    self.log.warn(message, param)
 
   def logError(self, message, param=''):
     """ logger helper """
-    self.log.error(self.transString + message, param)
+    self.log.error(message, param)
 
   def logException(self, message, param='', lException=False):
     """ logger helper """
-    self.log.exception(self.transString + message, param, lException)
+    self.log.exception(message, param, lException)
 
   def setParameters(self, params):
     """ Set the transformation parameters and extract transID """
     self.params = params
     self.transID = params['TransformationID']
-    self.transString = self.transInThread.get(self.transID, ' [NoThread] [%d] ' % self.transID)
+    self.log = gLogger.getSubLogger(self.plugin +
+                                    self.transInThread.get(self.transID, ' [NoThread] [%d] ' % self.transID))
 
   # @timeThis
   def groupByReplicas(self, files, status):

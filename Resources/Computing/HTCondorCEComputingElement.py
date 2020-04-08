@@ -163,12 +163,13 @@ class HTCondorCEComputingElement(ComputingElement):
     self.remoteScheddOptions = ""
 
   #############################################################################
-  def __writeSub(self, executable, nJobs, location):
+  def __writeSub(self, executable, nJobs, location, processors):
     """ Create the Sub File for submission.
 
     :param str executable: name of the script to execute
     :param int nJobs: number of desired jobs
     :param str location: directory that should contain the result of the jobs
+    :param int processors: number of CPU cores to allocate
     """
 
     self.log.debug("Working directory: %s " % self.workingDirectory)
@@ -201,7 +202,7 @@ environment = "HTCONDOR_JOBID=$(Cluster).$(Process)"
 initialdir = %(initialDir)s
 grid_resource = condor %(ceName)s %(ceName)s:9619
 transfer_output_files = ""
-
++xcount = %(processors)s
 %(localScheddOptions)s
 
 kill_sig=SIGTERM
@@ -212,6 +213,7 @@ Queue %(nJobs)s
 
 """ % dict(executable=executable,
            nJobs=nJobs,
+           processors=processors,
            ceName=self.ceName,
            extraString=self.extraSubmitString,
            initialDir=os.path.join(self.workingDirectory, location),
@@ -240,7 +242,7 @@ Queue %(nJobs)s
     return S_OK()
 
   #############################################################################
-  def submitJob(self, executableFile, proxy, numberOfJobs=1):
+  def submitJob(self, executableFile, proxy, numberOfJobs=1, processors=1):
     """ Method to submit job
     """
 
@@ -256,9 +258,9 @@ Queue %(nJobs)s
       jobStamp = commonJobStampPart + makeGuid()[:5]
       jobStamps.append(jobStamp)
 
-    # We randomize the location of the pilotoutput and log, because there are just too many of them
+    # We randomize the location of the pilot output and log, because there are just too many of them
     location = logDir(self.ceName, commonJobStampPart)
-    subName = self.__writeSub(executableFile, numberOfJobs, location)
+    subName = self.__writeSub(executableFile, numberOfJobs, location, processors)
 
     cmd = ['condor_submit', '-terse', subName]
     # the options for submit to remote are different than the other remoteScheddOptions

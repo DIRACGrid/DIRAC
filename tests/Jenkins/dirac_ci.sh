@@ -324,7 +324,7 @@ function fullInstallDIRAC(){
   dirac-rss-set-status --element Resource --name JENKINS-FTS3 --status Active --reason "Why not?"
   dirac-rss-set-status --element Resource --name FileCatalog --status Active --reason "Why not?"
   dirac-rss-set-status --element Site --name DIRAC.Jenkins.ch --status Active --reason "Why not?"
-  dirac-admin-allow-se SE-1 SE-2 --All
+  dirac-admin-allow-se SE-1 SE-2 S3-DIRECT S3-INDIRECT --All
 
   #agents
   findAgents

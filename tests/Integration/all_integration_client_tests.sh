@@ -91,3 +91,7 @@ echo -e "*** $(date -u)  Getting a non privileged user\n" 2>&1 | tee -a clientTe
 dirac-proxy-init -g jenkins_user -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key $DEBUG 2>&1 | tee -a clientTestOutputs.txt
 
 pytest $CLIENTINSTALLDIR/DIRAC/tests/Integration/DataManagementSystem/Test_DataManager.py 2>&1 | tee -a clientTestOutputs.txt; (( ERR |= $? ))
+
+
+echo -e "*** $(date -u) **** S3 TESTS ****\n"
+pytest $CLIENTINSTALLDIR/DIRAC/tests/Integration/Resources/Storage/Test_Resources_S3.py 2>&1 | tee -a clientTestOutputs.txt; (( ERR |= $? ))
