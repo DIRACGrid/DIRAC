@@ -20,7 +20,7 @@ from hypothesis import given
 from hypothesis.strategies import builds, integers, lists, recursive, floats, text,\
     booleans, none, dictionaries, tuples, datetimes
 
-from pytest import mark, approx, raises
+from pytest import mark, approx, raises, fixture
 parametrize = mark.parametrize
 
 
@@ -32,6 +32,7 @@ disetTuple = (disetEncode, disetDecode)
 jsonTuple = (jsonEncode, jsonDecode)
 
 enc_dec_imp = (disetTuple, jsonTuple)
+enc_dec_ids = ('disetTuple', 'jsonTuple')
 
 
 def myDatetimes():
@@ -104,14 +105,21 @@ def agnosticTestFunction(enc_dec, data):
   return decodedData
 
 
-@parametrize('enc_dec', enc_dec_imp)
+@fixture(scope="function", params=enc_dec_imp, ids=enc_dec_ids)
+def enc_dec(request):
+  """ Fixture to generate the (encoding, decoding) tuple """
+
+  return request.param
+
+
+# @parametrize('enc_dec', enc_dec_imp)
 @given(data=booleans())
 def test_BaseType_Bool(enc_dec, data):
   """ Test for boolean"""
   agnosticTestFunction(enc_dec, data)
 
 
-@parametrize('enc_dec', enc_dec_imp)
+# @parametrize('enc_dec', enc_dec_imp)
 @given(data=myDatetimes())
 def test_BaseType_DateTime(enc_dec, data):
   """ Test for data time"""
@@ -127,7 +135,7 @@ def test_BaseType_Dict(enc_dec, data):
   agnosticTestFunction(enc_dec, data)
 
 
-@parametrize('enc_dec', enc_dec_imp)
+# @parametrize('enc_dec', enc_dec_imp)
 @given(data=integers(max_value=sys.maxsize))
 def test_BaseType_Int(enc_dec, data):
   """ Test for integer"""
@@ -136,7 +144,7 @@ def test_BaseType_Int(enc_dec, data):
 # CAUTION: DEncode is not precise for floats !!
 
 
-@parametrize('enc_dec', enc_dec_imp)
+# @parametrize('enc_dec', enc_dec_imp)
 @given(data=floats(allow_nan=False))
 def test_BaseType_Float(enc_dec, data):
   """ Test that float is approximatly stable"""
@@ -147,27 +155,27 @@ def test_BaseType_Float(enc_dec, data):
   assert lenData == len(encodedData)
 
 
-@parametrize('enc_dec', enc_dec_imp)
+# @parametrize('enc_dec', enc_dec_imp)
 @given(data=lists(integers()))
 def test_BaseType_List(enc_dec, data):
   """ Test for List """
   agnosticTestFunction(enc_dec, data)
 
 
-@parametrize('enc_dec', enc_dec_imp)
+# @parametrize('enc_dec', enc_dec_imp)
 @given(data=integers(min_value=sys.maxsize + 1))
 def test_BaseType_Long(enc_dec, data):
   """ Test long type"""
   agnosticTestFunction(enc_dec, data)
 
 
-@parametrize('enc_dec', enc_dec_imp)
+# @parametrize('enc_dec', enc_dec_imp)
 def test_BaseType_None(enc_dec, ):
   """ Test None case """
   agnosticTestFunction(enc_dec, None)
 
 
-@parametrize('enc_dec', enc_dec_imp)
+# @parametrize('enc_dec', enc_dec_imp)
 @given(data=text(printable))
 def test_BaseType_String(enc_dec, data):
   """ Test basic strings"""
@@ -184,7 +192,7 @@ def test_BaseType_Tuple(enc_dec, data):
   agnosticTestFunction(enc_dec, data)
 
 
-@parametrize('enc_dec', enc_dec_imp)
+# @parametrize('enc_dec', enc_dec_imp)
 @given(data=text())
 def test_BaseType_Unicode(enc_dec, data):
   """ Test unicode data """
@@ -201,7 +209,7 @@ def test_nestedStructure(enc_dec, data):
 
 # DEncode raises KeyError.....
 # Others raise TypeError
-@parametrize('enc_dec', enc_dec_imp)
+# @parametrize('enc_dec', enc_dec_imp)
 def test_NonSerializable(enc_dec):
   """ Test that a class that does not inherit from the serializable class
       raises TypeError
