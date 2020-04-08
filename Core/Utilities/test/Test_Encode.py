@@ -15,6 +15,7 @@ import sys
 
 from DIRAC.Core.Utilities.DEncode import encode as disetEncode, decode as disetDecode, g_dEncodeFunctions
 from DIRAC.Core.Utilities.JEncode import encode as jsonEncode, decode as jsonDecode, JSerializable
+from DIRAC.Core.Utilities.MixedEncode import encode as mixEncode, decode as mixDecode
 
 from hypothesis import given
 from hypothesis.strategies import builds, integers, lists, recursive, floats, text,\
@@ -30,9 +31,21 @@ parametrize = mark.parametrize
 
 disetTuple = (disetEncode, disetDecode)
 jsonTuple = (jsonEncode, jsonDecode)
+mixTuple = (mixEncode, mixDecode)
 
-enc_dec_imp = (disetTuple, jsonTuple)
-enc_dec_ids = ('disetTuple', 'jsonTuple')
+enc_dec_imp = (disetTuple, jsonTuple, (mixTuple, 'No', 'No'), (mixTuple, 'Yes', 'No'), (mixTuple, 'Yes', 'Yes'))
+enc_dec_ids = (
+    'disetTuple',
+    'jsonTuple',
+    'mixTuple',
+    'mixTuple (DIRAC_USE_JSON_DECODE=Yes)',
+    'mixTuple (DIRAC_USE_JSON_ENCODE=Yes')
+
+enc_dec_imp_without_json = (disetTuple, (mixTuple, 'No', 'No'), (mixTuple, 'Yes', 'No'))
+enc_dec_ids_without_json = (
+    'disetTuple',
+    'mixTuple',
+    'mixTuple (DIRAC_USE_JSON_DECODE=Yes)')
 
 
 def myDatetimes():
@@ -88,14 +101,14 @@ def test_everyBaseTypeIsTested():
     getattr(current_module, testFuncName)
 
 
-def agnosticTestFunction(enc_dec, data):
+def agnosticTestFunction(enc_dec_tuple, data):
   """ Function called by all the other to test that
       decode(encode) returns the original data
 
       :param enc_dec: tuple of function (encoding, decoding)
       :param data: data to be worked on
   """
-  encode, decode = enc_dec
+  encode, decode = enc_dec_tuple
   encodedData = encode(data)
   decodedData, lenData = decode(encodedData)
 
@@ -105,21 +118,41 @@ def agnosticTestFunction(enc_dec, data):
   return decodedData
 
 
+def base_enc_dec(request, monkeypatch):
+  """ base function to generate the (encoding, decoding) tuple and potentially setting the environment variables
+
+      :param request: fixture request. Will contain either an encoding/decoding tuple, or the same tuple plus two env variables to be set
+  """
+
+  if len(request.param) == 2:
+    return request.param
+
+  enc_dec_tuple, use_json_decode, use_json_encode = request.param
+  monkeypatch.setenv("DIRAC_USE_JSON_DECODE", use_json_decode)
+  monkeypatch.setenv("DIRAC_USE_JSON_ENCODE", use_json_encode)
+  return enc_dec_tuple
+
+
 @fixture(scope="function", params=enc_dec_imp, ids=enc_dec_ids)
-def enc_dec(request):
-  """ Fixture to generate the (encoding, decoding) tuple """
+def enc_dec(request, monkeypatch):
+  """ Fixture to generate the (encoding, decoding) tuple for all the serialization types"""
+  return base_enc_dec(request, monkeypatch)
 
-  return request.param
+
+@fixture(scope="function", params=enc_dec_imp_without_json, ids=enc_dec_ids_without_json)
+def enc_dec_without_json(request, monkeypatch):
+  """ Fixture to generate the (encoding, decoding) tuple for all the serialization types which
+      do not involve json encoding
+  """
+  return base_enc_dec(request, monkeypatch)
 
 
-# @parametrize('enc_dec', enc_dec_imp)
 @given(data=booleans())
 def test_BaseType_Bool(enc_dec, data):
   """ Test for boolean"""
   agnosticTestFunction(enc_dec, data)
 
 
-# @parametrize('enc_dec', enc_dec_imp)
 @given(data=myDatetimes())
 def test_BaseType_DateTime(enc_dec, data):
   """ Test for data time"""
@@ -128,14 +161,12 @@ def test_BaseType_DateTime(enc_dec, data):
 
 
 # Json does not serialize keys as integers but as string
-@parametrize('enc_dec', [disetTuple])
 @given(data=dictionaries(integers(), integers()))
-def test_BaseType_Dict(enc_dec, data):
+def test_BaseType_Dict(enc_dec_without_json, data):
   """ Test for basic dict"""
-  agnosticTestFunction(enc_dec, data)
+  agnosticTestFunction(enc_dec_without_json, data)
 
 
-# @parametrize('enc_dec', enc_dec_imp)
 @given(data=integers(max_value=sys.maxsize))
 def test_BaseType_Int(enc_dec, data):
   """ Test for integer"""
@@ -144,7 +175,6 @@ def test_BaseType_Int(enc_dec, data):
 # CAUTION: DEncode is not precise for floats !!
 
 
-# @parametrize('enc_dec', enc_dec_imp)
 @given(data=floats(allow_nan=False))
 def test_BaseType_Float(enc_dec, data):
   """ Test that float is approximatly stable"""
@@ -155,27 +185,23 @@ def test_BaseType_Float(enc_dec, data):
   assert lenData == len(encodedData)
 
 
-# @parametrize('enc_dec', enc_dec_imp)
 @given(data=lists(integers()))
 def test_BaseType_List(enc_dec, data):
   """ Test for List """
   agnosticTestFunction(enc_dec, data)
 
 
-# @parametrize('enc_dec', enc_dec_imp)
 @given(data=integers(min_value=sys.maxsize + 1))
 def test_BaseType_Long(enc_dec, data):
   """ Test long type"""
   agnosticTestFunction(enc_dec, data)
 
 
-# @parametrize('enc_dec', enc_dec_imp)
 def test_BaseType_None(enc_dec, ):
   """ Test None case """
   agnosticTestFunction(enc_dec, None)
 
 
-# @parametrize('enc_dec', enc_dec_imp)
 @given(data=text(printable))
 def test_BaseType_String(enc_dec, data):
   """ Test basic strings"""
@@ -185,14 +211,12 @@ def test_BaseType_String(enc_dec, data):
 
 
 # Tuple are not serialized in JSON
-@parametrize('enc_dec', [disetTuple])
 @given(data=tuples(integers()))
-def test_BaseType_Tuple(enc_dec, data):
+def test_BaseType_Tuple(enc_dec_without_json, data):
   """ Test basic tuple """
-  agnosticTestFunction(enc_dec, data)
+  agnosticTestFunction(enc_dec_without_json, data)
 
 
-# @parametrize('enc_dec', enc_dec_imp)
 @given(data=text())
 def test_BaseType_Unicode(enc_dec, data):
   """ Test unicode data """
@@ -200,11 +224,10 @@ def test_BaseType_Unicode(enc_dec, data):
 
 
 # Json will not pass this because of tuples and integers as dict keys
-@parametrize('enc_dec', [disetTuple])
 @given(data=nestedStrategy)
-def test_nestedStructure(enc_dec, data):
+def test_nestedStructure(enc_dec_without_json, data):
   """ Test nested structure """
-  agnosticTestFunction(enc_dec, data)
+  agnosticTestFunction(enc_dec_without_json, data)
 
 
 # DEncode raises KeyError.....
