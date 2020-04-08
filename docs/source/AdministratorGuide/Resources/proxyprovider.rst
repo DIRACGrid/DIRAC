@@ -4,7 +4,7 @@
 ProxyProvider
 ==============
 
-This resource type provide interface to obtain proxy certificate on the fly. The following proxy providers are represented here: ``DIRACCA``, ``PUSP``.
+This resource type provide interface to obtain proxy certificate using user indentifier. The following proxy providers are represented here: ``DIRACCA``, ``PUSP``.
 
 
 DIRACCA proxy provider
