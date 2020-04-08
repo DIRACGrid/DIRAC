@@ -1,18 +1,52 @@
 """ ProxyProvider implementation for the proxy generation using local (DIRAC)
     CA credentials
+
+    This class is a simple, limited CA, its main purpose is to generate a simple proxy for DIRAC users
+    who do not have any certificate register on the fly.
+
+    Required parameters in the DIRAC configuration for its implementation::
+
+    <Provider Name> section:
+
+    *  ProviderType = DIRACCA,
+    *  CertFile = <CA sertificate path>,
+    *  KeyFile = <CA key path>,
+    *  Match = <Match DNs>,  # For ex.: 'Match = O, OU'
+    *  Supplied = <Supplied DNs>,
+    *  Optional = <Optional DNs>,
+    *  DNOrder = <Preferred DNs order as list>,  # For ex.: 'DNOrder = O, OU, CN, emailAddress'
+    *  <Some distinguished name type>: <Default value>,  # For ex.: 'OU = CA'
+
+    Also, as an additional feature, this class can read properties from a simple openssl CA configuration file.
+    To do this, just set the path to an existing configuration file as a CAConfigFile parameter. In this case,
+    the distinguished names order in the created proxy will be the same as in the configuration file policy block.
+
+    The Proxy provider supports the following distinguished names
+    (https://www.cryptosys.net/pki/manpki/pki_distnames.html)::
+
+      SN(surname)
+      GN(givenName)
+      C(countryName)
+      CN(commonName)
+      L(localityName)
+      Email(emailAddress)
+      O(organizationName)
+      OU(organizationUnitName)
+      SP,ST(stateOrProvinceName)
+      SERIALNUMBER(serialNumber)
+
 """
 
 import re
 import time
 import random
 import datetime
+import collections
 
 from M2Crypto import m2, util, X509, ASN1, EVP, RSA
 
 from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
-from DIRAC.Core.Security.X509Certificate import X509Certificate  # pylint: disable=import-error
-from DIRAC.ConfigurationSystem.Client.Helpers import Registry
 from DIRAC.Resources.ProxyProvider.ProxyProvider import ProxyProvider
 
 __RCSID__ = "$Id$"
@@ -33,218 +67,210 @@ class DIRACCAProxyProvider(ProxyProvider):
     self.match = []
     self.supplied = ['CN']
     self.optional = ['C', 'O', 'OU', 'emailAddress']
-    # Add not supported distributes names
-    self.fs2nid = X509.X509_Name.nid.copy()
-    self.fs2nid['DC'] = -1
-    self.fs2nid['domainComponent'] = -1
-    self.fs2nid['organizationalUnitName'] = 18
-    self.fs2nid['countryName'] = 14
-    self.n2field = {}  # nid: most short or specidied in CS distributes name
-    self.n2fields = {}  # nid: list of distributes names
+    self.dnList = ['C', 'O', 'OU', 'CN', 'emailAddress']
+    # Distinguished names
+    self.fields2nid = X509.X509_Name.nid.copy()
+    self.fields2nid['DC'] = -1  # Add DN that is not liested in X509.X509_Name
+    self.fields2nid['domainComponent'] = -1  # Add DN description that is not liested in X509.X509_Name
+    self.fields2nid['organizationalUnitName'] = 18  # Add 'OU' description
+    self.fields2nid['countryName'] = 14  # Add 'C' description
+    self.fields2nid['SERIALNUMBER'] = 105  # Add 'SERIALNUMBER' distinguished name
+    self.nid2fields = {}  # nid: list of distinguished names
     # Specify standart fields
-    for field in self.fs2nid:
-      if self.fs2nid[field] not in self.n2fields:
-        self.n2fields[self.fs2nid[field]] = []
-      self.n2fields[self.fs2nid[field]].append(field)
-    for nid in self.n2fields:
-      for field in self.n2fields[nid]:
-        if nid not in self.n2field:
-          self.n2field[nid] = field
-        self.n2field[nid] = len(field) < len(self.n2field[nid]) and field or self.n2field[nid]
+    for field, nid in self.fields2nid.items():
+      self.nid2fields.setdefault(nid, []).append(field)
+    self.dnInfoDictCA = {}
 
   def setParameters(self, parameters):
     """ Set new parameters
 
         :param dict parameters: provider parameters
+
+        :return: S_OK()/S_ERROR()
     """
-    # If CA configuration file exist
+    for k, v in parameters.items():
+      if not isinstance(v, list) and k in ['Match', 'Supplied', 'Optional', 'DNOrder'] + self.fields2nid.keys():
+        parameters[k] = v.replace(', ', ',').split(',')
     self.parameters = parameters
+    # If CA configuration file exist
     if parameters.get('CAConfigFile'):
-      self.supplied, self.optional = [], []
       self.__parseCACFG()
     if 'Bits' in parameters:
       self.bits = int(parameters['Bits'])
     if 'Algoritm' in parameters:
       self.algoritm = parameters['Algoritm']
     if 'Match' in parameters:
-      self.match = []
-      for field in parameters['Match'].replace(' ', '').split(','):
-        self.match.append(self.fs2nid[field])
+      self.match = [self.fields2nid[f] for f in parameters['Match']]
     if 'Supplied' in parameters:
-      self.supplied = []
-      for field in parameters['Supplied'].replace(' ', '').split(','):
-        self.supplied.append(self.fs2nid[field])
+      self.supplied = [self.fields2nid[f] for f in parameters['Supplied']]
     if 'Optional' in parameters:
-      self.optional = []
-      for field in parameters['Optional'].replace(' ', '').split(','):
-        self.optional.append(self.fs2nid[field])
+      self.optional = [self.fields2nid[f] for f in parameters['Optional']]
+    allFields = self.optional + self.supplied + self.match
+    if 'DNOrder' in parameters:
+      self.dnList = []
+      if not any([any([f in parameters['DNOrder'] for f in self.nid2fields[n]]) for n in allFields]):
+        return S_ERROR('DNOrder must contain all configured fields.')
+      for field in parameters['DNOrder']:
+        if self.fields2nid[field] in allFields:
+          self.dnList.append(field)
+
     # Set defaults for distridutes names
-    self.defDict = {}
-    for field, value in parameters.items():
-      if field in self.fs2nid:
-        self.defDict[field] = value
-    self.defFieldByNid = dict([[self.fs2nid[field], field] for field in self.defDict])
-    for nid in self.n2field:
-      if nid in self.defFieldByNid:
-        self.n2field[nid] = self.defFieldByNid[nid]
-    self.match.sort()
-    self.supplied.sort()
+    self.nid2defField = {}
+    for field, value in self.parameters.items():
+      if field in self.fields2nid and self.fields2nid[field] in allFields:
+        self.parameters[self.fields2nid[field]] = value
+        self.nid2defField[self.fields2nid[field]] = field
 
-  def checkStatus(self, userDict=None, sessionDict=None):
-    """ Read ready to work status of proxy provider
-
-        :param dict userDict: user description dictionary with possible fields:
-                FullName, UserName, DN, Email, DiracGroup
-        :param dict sessionDict: session dictionary
-
-        :return: S_OK(dict)/S_ERROR() -- dictionary contain fields:
-                  - 'Status' with ready to work status[ready, needToAuth]
-    """
-    self.log.info('Ckecking work status of', self.parameters['ProviderName'])
-    # Evaluate full name and e-mail of the user
-    fullName = userDict.get('FullName')
-    eMail = userDict.get('Email')
-
-    reqDNs = userDict.get('DN') or []
-    if not isinstance(reqDNs, list):
-      reqDNs = reqDNs.split(', ')
-    for reqDN in reqDNs:
-      # Get the DN info as a dictionary
-      result = Registry.getProxyProvidersForDN(reqDN)
-      if not result['OK']:
-        return result
-      if self.parameters['ProviderName'] not in result['Value']:
-        continue
-      dnDict = dict([field.split('=') for field in reqDN.lstrip('/').split('/')])
-      if not fullName:
-        fullName = dnDict.get('CN')
-      if not eMail:
-        eMail = dnDict.get('emailAddress')
-    self.log.info('Full name:', fullName)
-    self.log.info('Email:', eMail)
-    if not fullName:
-      return S_ERROR("Incomplete user information: no full name found")
-    if not eMail:
-      return S_ERROR("Incomplete user information: no email found")
-
-    return S_OK({'Status': 'ready'})
-
-  def getProxy(self, userDict=None, sessionDict=None):
-    """ Generate user proxy
-
-        :param dict userDict: user description dictionary with possible fields:
-               FullName, UserName, DN, Email, DiracGroup
-        :param dict sessionDict: session dictionary
-
-        :return: S_OK(dict)/S_ERROR() -- dict contain 'proxy' field with is a proxy string
-    """
-    result = self.getUserDN(userDict, sessionDict, userDN=userDict.get('DN'))
-    if not result['OK']:
-      return result
-
-    result = self.__createCertM2Crypto()
-    if not result['OK']:
-      return result
-    certStr, keyStr = result['Value']
-
-    chain = X509Chain()
-    result = chain.loadChainFromString(certStr)
-    if not result['OK']:
-      return result
-    result = chain.loadKeyFromString(keyStr)
-    if not result['OK']:
-      return result
-
-    result = chain.generateProxyToString(365 * 24 * 3600, rfc=True)
-    if not result['OK']:
-      return result
-    return S_OK({'proxy': result['Value']})
-
-  def getUserDN(self, userDict=None, sessionDict=None, userDN=None):
-    """ Get DN of the user certificate that will be created
-
-        :param dict userDict: user description dictionary with possible fields:
-               FullName, UserName, DN, Email, DiracGroup
-        :param dict sessionDict: session dictionary
-        :param basestring userDN: user DN
-
-        :return: S_OK()/S_ERROR(), Value is the DN string
-    """
-    userDict = userDict or {}
+    # Read CA certificate
     chain = X509Chain()
     result = chain.loadChainFromFile(self.parameters['CertFile'])
+    if result['OK']:
+      result = chain.getCredentials()
+      if result['OK']:
+        result = self.__parseDN(result['Value']['subject'])
     if not result['OK']:
       return result
-    result = chain.getCredentials()
+    self.dnInfoDictCA = result['Value']
+    return S_OK()
+
+  def checkStatus(self, userDN):
+    """ Read ready to work status of proxy provider
+
+        :param str userDN: user DN
+
+        :return: S_OK()/S_ERROR()
+    """
+    self.log.debug('Ckecking work status of', self.parameters['ProviderName'])
+    result = self.__parseDN(userDN)
     if not result['OK']:
       return result
-    caDN = result['Value']['subject']
-    caDict = dict([field.split('=') for field in caDN.lstrip('/').split('/')])
-    caFieldByNid = dict([[self.fs2nid[field], field] for field in caDict])
+    dnInfoDict = result['Value']
 
-    dnDict = {}
-    if userDN:
-      self.log.info('Checking %s user DN' % userDN)
-      dnDict = dict([field.split('=') for field in userDN.lstrip('/').split('/')])
-      dnFieldByNid = dict([[self.fs2nid[field], field] for field in dnDict])
-      for nid in self.supplied:
-        if nid not in dnFieldByNid:
-          return S_ERROR('Current DN is invalid, "%s" field must be set.' % self.n2field[nid])
-      for nid in dnFieldByNid:
-        if nid not in self.supplied + self.match + self.optional:
-          return S_ERROR('Current DN is invalid, "%s" field is not found for current CA.' % dnFieldByNid[nid])
-        if nid in self.match and not caDict[caFieldByNid[nid]] == dnDict[dnFieldByNid[nid]]:
-          return S_ERROR('Current DN is invalid, "%s" field must be %s.' % (dnFieldByNid[nid],
-                                                                            caDict[caFieldByNid[nid]]))
-        if nid in self.maxDict and len(dnDict[dnFieldByNid[nid]]) > self.maxDict[nid]:
-          return S_ERROR('Current DN is invalid, "%s" field must be less then %s.' % (dnDict[dnFieldByNid[nid]],
-                                                                                      self.maxDict[nid]))
-        if nid in self.minDict and len(dnDict[dnFieldByNid[nid]]) < self.minDict[nid]:
-          return S_ERROR('Current DN is invalid, "%s" field must be more then %s.' % (dnDict[dnFieldByNid[nid]],
-                                                                                      self.minDict[nid]))
-      for k, v in dnDict.items():
-        if self.defDict.get(k):
-          self.defDict[k] = v
-        if self.fs2nid[k] == self.fs2nid['CN']:
-          userDict['FullName'] = v
-        if self.fs2nid[k] == self.fs2nid['emailAddress']:
-          userDict['Email'] = v
-    else:
-      result = self.checkStatus(userDict)
-      if not result['OK']:
-        return result
+    try:
+      userNIDs = [self.fields2nid[f.split('=')[0]] for f in userDN.lstrip('/').split('/')]
+    except (ValueError, KeyError) as e:
+      return S_ERROR('Unknown DN field in used DN: %s' % e)
+    nidOrder = [self.fields2nid[f] for f in self.dnList]
+    for index, nid in enumerate(userNIDs):
+      if nid not in nidOrder:
+        return S_ERROR('"%s" field not found in order.' %
+                       self.nid2defField.get(nid, min(self.nid2fields[nid], key=len)))
+      if index > nidOrder.index(nid):
+        return S_ERROR('Bad DNs order')
+      for i in range(nidOrder.index(nid) - 1):
+        try:
+          if userNIDs.index(nidOrder[i]) > index:
+            return S_ERROR('Bad DNs order')
+        except (ValueError, KeyError):
+          continue
+      for i in range(nidOrder.index(nid) + 1, len(nidOrder)):
+        try:
+          if userNIDs.index(nidOrder[i]) < index:
+            return S_ERROR('Bad DNs order')
+        except (ValueError, KeyError):
+          continue
 
-    # Fill DN subject name
-    if not userDict.get('FullName'):
-      return S_ERROR("Incomplete user information: no full name found")
-    if not userDict.get('Email'):
-      return S_ERROR("Incomplete user information: no email found")
-    self.__X509Name = X509.X509_Name()
-    self.log.info('Creating distributes names chain')
-    # Test match fields
-    for nid in self.match:
-      if nid not in caFieldByNid:
-        return S_ERROR('Distributes name(%s) must be present in CA certificate.' % ', '.join(self.n2fields[nid]))
-      result = self.__fillX509Name(caFieldByNid[nid], caDict[caFieldByNid[nid]])
-      if not result['OK']:
-        return result
-    # Test supplied fields
     for nid in self.supplied:
-      if self.defDict.get(self.n2field[nid]):
-        result = self.__fillX509Name(self.n2field[nid], self.defDict[self.n2field[nid]])
-        if not result['OK']:
-          return result
-    for nid, value in [(self.fs2nid['CN'], userDict['FullName']),
-                       (self.fs2nid['emailAddress'], userDict['Email'])]:
-      if nid in self.supplied + self.optional:
-        result = self.__fillX509Name(self.n2field[nid], value)
-        if not result['OK']:
-          return result
+      if nid not in [self.fields2nid[f] for f in dnInfoDict]:
+        return S_ERROR('Current DN is invalid, "%s" field must be set.' %
+                       self.nid2defField.get(nid, min(self.nid2fields[nid], key=len)))
+
+    for field, values in dnInfoDict.items():
+      nid = self.fields2nid[field]
+      err = 'Current DN is invalid, "%s" field' % field
+      if nid not in self.supplied + self.match + self.optional:
+        return S_ERROR('%s is not found for current CA.' % err)
+      if nid in self.match and not self.dnInfoDictCA[field] == values:
+        return S_ERROR('%s must be /%s=%s.' % (err, field,
+                                               ('/%s=' % field).joing(self.dnInfoDictCA[field])))
+      if nid in self.maxDict:
+        rangeMax = range(min(len(values), len(self.maxDict[nid])))
+        if any([True if len(values[i]) > self.maxDict[nid][i] else False for i in rangeMax]):
+          return S_ERROR('%s values must be less then %s.' % (err, ', '.join(self.maxDict[nid])))
+      if nid in self.minDict:
+        rangeMin = range(min(len(values), len(self.minDict[nid])))
+        if any([True if len(values[i]) < self.minDict[nid][i] else False for i in rangeMin]):
+          return S_ERROR('%s values must be more then %s.' % (err, ', '.join(self.minDict[nid])))
+
+      result = self.__fillX509Name(field, values)
+      if not result['OK']:
+        return result
+
+    return S_OK()
+
+  def getProxy(self, userDN):
+    """ Generate user proxy
+
+        :param str userDN: user DN
+
+        :return: S_OK(str)/S_ERROR() -- contain a proxy string
+    """
+    self.__X509Name = X509.X509_Name()
+    result = self.checkStatus(userDN)
+    if result['OK']:
+      result = self.__createCertM2Crypto()
+      if result['OK']:
+        certStr, keyStr = result['Value']
+
+        chain = X509Chain()
+        result = chain.loadChainFromString(certStr)
+        if result['OK']:
+          result = chain.loadKeyFromString(keyStr)
+          if result['OK']:
+            result = chain.generateProxyToString(365 * 24 * 3600, rfc=True)
+
+    return result
+
+  def generateDN(self, **kwargs):
+    """ Get DN of the user certificate that will be created
+
+        :param dict kwargs: user description dictionary with possible fields:
+               - FullName or CN
+               - Email or emailAddress
+
+        :return: S_OK(str)/S_ERROR() -- contain DN
+    """
+    if kwargs.get('FullName'):
+      kwargs['CN'] = [kwargs['FullName']]
+    if kwargs.get('Email'):
+      kwargs['emailAddress'] = [kwargs['Email']]
+
+    self.__X509Name = X509.X509_Name()
+    self.log.info('Creating distinguished names chain')
+
+    for nid in self.supplied:
+      if nid not in [self.fields2nid[f] for f in self.dnList]:
+        return S_ERROR('DNs order list does not contain supplied DN "%s"' %
+                       self.nid2defField.get(nid, min(self.nid2fields[nid], key=len)))
+
+    for field in self.dnList:
+      values = []
+      nid = self.fields2nid[field]
+      if nid in self.match:
+        for field in self.nid2fields[nid]:
+          if field in self.dnInfoDictCA:
+            values = self.dnInfoDictCA[field]
+        if not values:
+          return S_ERROR('Not found "%s" match DN in CA' % field)
+      for field in self.nid2fields[nid]:
+        if kwargs.get(field):
+          values = kwargs[field] if isinstance(kwargs[field], list) else [kwargs[field]]
+      if not values and nid in self.supplied:
+        # Search default value
+        if nid not in self.nid2defField:
+          return S_ERROR('No values set for "%s" DN' % min(self.nid2fields[nid], key=len))
+        values = self.parameters[nid]
+
+      result = self.__fillX509Name(field, values)
+      if not result['OK']:
+        return result
 
     # WARN: This logic not support list of distribtes name elements
     resDN = m2.x509_name_oneline(self.__X509Name.x509_name)  # pylint: disable=no-member
-    if userDN and not userDN == resDN:
-      return S_ERROR('%s not match with generated DN: %s' % (userDN, resDN))
+
+    result = self.checkStatus(resDN)
+    if not result['OK']:
+      return result
     return S_OK(resDN)
 
   def __parseCACFG(self):
@@ -252,8 +278,10 @@ class DIRACCAProxyProvider(ProxyProvider):
     """
     block = ''
     self.cfg = {}
+    self.supplied, self.optional, self.match, self.dnList = [], [], [], []
     with open(self.parameters['CAConfigFile'], "r") as caCFG:
       for line in caCFG:
+        # Ignore comments
         line = re.sub(r'#.*', '', line)
         if re.findall(r"\[([A-Za-z0-9_]+)\]", line.replace(' ', '')):
           block = ''.join(re.findall(r"\[([A-Za-z0-9_]+)\]", line.replace(' ', '')))
@@ -269,6 +297,10 @@ class DIRACCAProxyProvider(ProxyProvider):
             for b in self.cfg:
               if v in self.cfg[b]:
                 val = val.replace('$' + v, self.cfg[b][v])
+          if 'default_ca' in self.cfg.get('ca', {}):
+            if 'policy' in self.cfg.get(self.cfg['ca']['default_ca'], {}):
+              if block == self.cfg[self.cfg['ca']['default_ca']]['policy']:
+                self.dnList.append(field)
           self.cfg[block][field] = val.strip()
 
     self.bits = int(self.cfg['req'].get('default_bits') or self.bits)
@@ -276,14 +308,17 @@ class DIRACCAProxyProvider(ProxyProvider):
     if not self.parameters.get('CertFile'):
       self.parameters['CertFile'] = self.cfg[self.cfg['ca']['default_ca']]['certificate']
       self.parameters['KeyFile'] = self.cfg[self.cfg['ca']['default_ca']]['private_key']
+    # Read distinguished names
     for k, v in self.cfg[self.cfg[self.cfg['ca']['default_ca']]['policy']].items():
-      nid = self.fs2nid[k]
-      if k + '_default' in self.cfg['req']['distinguished_name']:
-        self.parameters[nid] = self.cfg['req']['distinguished_name'][k + '_default']
-      if k + '_min' in self.cfg['req']['distinguished_name']:
-        self.minDict[nid] = self.cfg['req']['distinguished_name'][k + '_min']
-      if k + '_max' in self.cfg['req']['distinguished_name']:
-        self.maxDict[nid] = self.cfg['req']['distinguished_name'][k + '_max']
+      nid = self.fields2nid[k]
+      self.parameters[nid], self.minDict[nid], self.maxDict[nid] = [], [], []
+      for k in ['%s.%s' % (i, k) for i in range(0, 5)] + [k]:
+        if k + '_default' in self.cfg['req']['distinguished_name']:
+          self.parameters[nid].append(self.cfg['req']['distinguished_name'][k + '_default'])
+        if k + '_min' in self.cfg['req']['distinguished_name']:
+          self.minDict[nid].append(self.cfg['req']['distinguished_name'][k + '_min'])
+        if k + '_max' in self.cfg['req']['distinguished_name']:
+          self.maxDict[nid].append(self.cfg['req']['distinguished_name'][k + '_max'])
       if v == 'supplied':
         self.supplied.append(nid)
       elif v == 'optional':
@@ -291,27 +326,45 @@ class DIRACCAProxyProvider(ProxyProvider):
       elif v == 'match':
         self.match.append(nid)
 
-  def __fillX509Name(self, field, value):
+  def __parseDN(self, dn):
+    """ Return DN fields
+
+        :param str dn: DN
+
+        :return: list -- contain tuple with positionOfField.fieldName, fieldNID, fieldValue
+    """
+    dnInfoDict = collections.OrderedDict()
+    for f, v in [f.split('=') for f in dn.lstrip('/').split('/')]:
+      if not v:
+        return S_ERROR('No value set for "%s"' % f)
+      if f not in dnInfoDict:
+        dnInfoDict[f] = [v]
+      else:
+        dnInfoDict[f].append(v)
+    return S_OK(dnInfoDict)
+
+  def __fillX509Name(self, field, values):
     """ Fill x509_Name object by M2Crypto
 
-        :param basestring field: DN field name
-        :param basestring value: value of field
+        :param str field: DN field name
+        :param list values: values of field, order important
 
         :return: S_OK()/S_ERROR()
     """
-    if value and m2.x509_name_set_by_nid(self.__X509Name.x509_name,  # pylint: disable=no-member
-                                         self.fs2nid[field], value) == 0:
-      if not self.__X509Name.add_entry_by_txt(field=field, type=ASN1.MBSTRING_ASC,
-                                              entry=value, len=-1, loc=-1, set=0) == 1:
-        return S_ERROR('Cannot set "%s" field.' % field)
+    for value in values:
+      if value and m2.x509_name_set_by_nid(self.__X509Name.x509_name,  # pylint: disable=no-member
+                                           self.fields2nid[field], value) == 0:
+        if not self.__X509Name.add_entry_by_txt(field=field, type=ASN1.MBSTRING_ASC,
+                                                entry=value, len=-1, loc=-1, set=0) == 1:
+          return S_ERROR('Cannot set "%s" field.' % field)
     return S_OK()
 
   def __createCertM2Crypto(self):
     """ Create new certificate for user
 
-        :return: S_OK(basestring, basestring)/S_ERROR()
+        :return: S_OK(tuple)/S_ERROR() -- tuple contain certificate and pulic key as strings
     """
-    # Create publik key
+    # Create public key
     userPubKey = EVP.PKey()
     userPubKey.assign_rsa(RSA.gen_key(self.bits, 65537, util.quiet_genparam_callback))
     # Create certificate
@@ -347,3 +400,37 @@ class DIRACCAProxyProvider(ProxyProvider):
     userCertStr = userCert.as_pem()
     userPubKeyStr = userPubKey.as_pem(cipher=None, callback=util.no_passphrase_callback)
     return S_OK((userCertStr, userPubKeyStr))
+
+  def _forceGenerateProxyForDN(self, dn, time, group=None):
+    """ An additional helper method for creating a proxy without any substantial validation,
+        it can be used for a specific case(such as testing) where just need to generate a proxy
+        with specific DN on the fly.
+
+        :param str dn: requested proxy DN
+        :param int time: expired time in a seconds
+        :param str group: if need to add DIRAC group
+
+        :return: S_OK(tuple)/S_ERROR() -- contain proxy as chain and as string
+    """
+    self.__X509Name = X509.X509_Name()
+    result = self.__parseDN(dn)
+    if not result['OK']:
+      return result
+    dnInfoDict = result['Value']
+
+    for field, values in dnInfoDict.items():
+      result = self.__fillX509Name(field, values)
+      if not result['OK']:
+        return result
+
+    result = self.__createCertM2Crypto()
+    if result['OK']:
+      certStr, keyStr = result['Value']
+      chain = X509Chain()
+      if chain.loadChainFromString(certStr)['OK'] and chain.loadKeyFromString(keyStr)['OK']:
+        result = chain.generateProxyToString(time, rfc=True, diracGroup=group)
+    if not result['OK']:
+      return result
+    chain = X509Chain()
+    chain.loadProxyFromString(result['Value'])
+    return S_OK((chain, result['Value']))

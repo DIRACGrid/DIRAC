@@ -6,7 +6,7 @@ from __future__ import division
 import six
 import base64
 
-from DIRAC import S_OK, S_ERROR
+from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities import DErrno
 from DIRAC.Core.Security.X509Chain import X509Chain  # pylint: disable=import-error
 from DIRAC.Core.Security.VOMS import VOMS
@@ -157,7 +157,10 @@ def formatProxyStepsInfoAsString(infoList):
       if key in stepInfo:
         value = stepInfo[key]
         if key == 'serial':
-          value = base64.b16encode(value)
+          try:
+            value = base64.b16encode(value)
+          except Exception as e:
+            gLogger.exception("Could not read serial:", lException=e)
         if key == 'lifetime':
           secs = value
           hours = int(secs / 3600)
