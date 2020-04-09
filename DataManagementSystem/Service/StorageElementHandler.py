@@ -104,15 +104,15 @@ def getFreeDiskSpace():
   result = getDiskSpace(BASE_PATH)  # free
   if not result['OK']:
     return result
-  freeSpace = result['Value']
-  result = getTotalDiskSpace()
+  totalFreeSpace = result['Value']
+  result = getDiskSpace(BASE_PATH, total=True)  # total
   if not result['OK']:
     return result
   totalSpace = result['Value']
+  totalOccupiedSpace = totalSpace - totalFreeSpace
   maxTotalSpace = min(totalSpace, MAX_STORAGE_SIZE) if MAX_STORAGE_SIZE else totalSpace
-  occupiedSpace = totalSpace - freeSpace
-  freeSpace = maxTotalSpace - occupiedSpace
-  return S_OK(freeSpace)
+  freeSpace = maxTotalSpace - totalOccupiedSpace
+  return S_OK(freeSpace if freeSpace > 0 else 0)
 
 
 def initializeStorageElementHandler(serviceInfo):
