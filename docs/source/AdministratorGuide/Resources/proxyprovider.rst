@@ -43,7 +43,7 @@ Configuration options are:
 
 Also, as an additional feature, this class can read properties from a simple openssl CA configuration file. To do this, just set the path to an existing openssl configuration file as a CAConfigFile parameter. In this case, the distinguished names order in the created proxy will be the same as in the configuration file policy block.
 
-The Proxy provider supports the following distinguished names (more details about distinguished names here: https://www.cryptosys.net/pki/manpki/pki_distnames.html):
+The Proxy provider supports the following distinguished names, more details `here <https://www.cryptosys.net/pki/manpki/pki_distnames.html>`_:
 * SN(surname)
 * GN(givenName)
 * C(countryName)
@@ -59,7 +59,7 @@ The Proxy provider supports the following distinguished names (more details abou
 PUSP proxy provider
 -------------------
 
-ProxyProvider implementation for a Per-User Sub-Proxy(PUSP) proxy generation using PUSP proxy server. More details about PUSP here: https://wiki.egi.eu/wiki/Usage_of_the_per_user_sub_proxy_in_EGI. Required parameters in the DIRAC configuration for its implementation::
+ProxyProvider implementation for a Per-User Sub-Proxy(PUSP) proxy generation using PUSP proxy server. More details about PUSP `here <https://wiki.egi.eu/wiki/Usage_of_the_per_user_sub_proxy_in_EGI>`_. Required parameters in the DIRAC configuration for its implementation::
 
     Resources
     {
