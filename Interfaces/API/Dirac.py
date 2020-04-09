@@ -333,7 +333,7 @@ class Dirac(API):
         formulationErrors = {}
 
       if formulationErrors:
-        for method, errorList in formulationErrors.iteritems():
+        for method, errorList in formulationErrors.items():  # can be an iterator
           self.log.error('>>>> Error in %s() <<<<\n%s' % (method, '\n'.join(errorList)))
         return S_ERROR(formulationErrors)
 
@@ -618,7 +618,7 @@ class Dirac(API):
 
        Example usage:
 
-       >>> print print d.getInputDataCatalog('/lhcb/production/DC06/phys-v2-lumi5/00001680/DST/0000/00001680_00000490_5.dst',None,'myCat.xml')
+       >>> print print d.getInputDataCatalog('/lhcb/a/b/c/00001680_00000490_5.dst',None,'myCat.xml')
        {'Successful': {'<LFN>': {'pfntype': 'ROOT_All', 'protocol': 'SRM2',
         'pfn': '<PFN>', 'turl': '<TURL>', 'guid': '3E3E097D-0AC0-DB11-9C0A-00188B770645',
         'se': 'CERN-disk'}}, 'Failed': [], 'OK': True, 'Value': ''}
@@ -663,7 +663,7 @@ class Dirac(API):
     guidDict = self.getLfnMetadata(lfns)
     if not guidDict['OK']:
       return guidDict
-    for lfn, reps in replicaDict['Value']['Successful'].iteritems():
+    for lfn, reps in replicaDict['Value']['Successful'].items():  # can be an iterator
       guidDict['Value']['Successful'][lfn].update(reps)
     resolvedData = guidDict
     diskSE = gConfig.getValue(self.section + '/DiskSE', ['-disk', '-DST', '-USER', '-FREEZER'])
@@ -697,10 +697,10 @@ class Dirac(API):
 
     if catalogFailed:
       self.log.error('Replicas not found for the following files:')
-      for key, value in catalogFailed.iteritems():
+      for key, value in catalogFailed.items():  # can be an iterator
         self.log.error('%s %s' % (key, value))
       if 'Failed' in result:
-        result['Failed'] = catalogFailed.keys()
+        result['Failed'] = list(catalogFailed)
 
     return result
 
@@ -745,7 +745,7 @@ class Dirac(API):
     # Replace argument placeholders for parametric jobs
     # if we have Parameters then we have a parametric job
     if 'Parameters' in parameters:
-      for par, value in parameters.items():
+      for par, value in parameters.items():  # can be an iterator
         if par.startswith('Parameters.'):
           # we just use the first entry in all lists to run one job
           parameters[par[len('Parameters.'):]] = value[0]
@@ -776,7 +776,7 @@ class Dirac(API):
       guidDict = self.getLfnMetadata(inputData)
       if not guidDict['OK']:
         return guidDict
-      for lfn, reps in replicaDict['Value']['Successful'].iteritems():
+      for lfn, reps in replicaDict['Value']['Successful'].items():  # can be an iterator
         guidDict['Value']['Successful'][lfn].update(reps)
       resolvedData = guidDict
       diskSE = gConfig.getValue(self.section + '/DiskSE', ['-disk', '-DST', '-USER', '-FREEZER'])
@@ -1004,7 +1004,7 @@ class Dirac(API):
   #     directory = directory[:-1]
   #
   #   if printOutput:
-  #     for fileKey, metaDict in listing['Value']['Successful'][directory]['Files'].iteritems():
+  #     for fileKey, metaDict in listing['Value']['Successful'][directory]['Files'].items():  # can be an iterator
   #       print '#' * len( fileKey )
   #       print fileKey
   #       print '#' * len( fileKey )
@@ -1054,7 +1054,7 @@ class Dirac(API):
       records = []
       for lfn in repsResult['Value']['Successful']:
         lfnPrint = lfn
-        for se, url in repsResult['Value']['Successful'][lfn].iteritems():
+        for se, url in repsResult['Value']['Successful'][lfn].items():  # can be an iterator
           records.append((lfnPrint, se, url))
           lfnPrint = ''
       for lfn in repsResult['Value']['Failed']:
@@ -1103,7 +1103,7 @@ class Dirac(API):
       records = []
       for lfn in repsResult['Value']['Successful']:
         lfnPrint = lfn
-        for se, url in repsResult['Value']['Successful'][lfn].iteritems():
+        for se, url in repsResult['Value']['Successful'][lfn].items():  # can be an iterator
           records.append((lfnPrint, se, url))
           lfnPrint = ''
       for lfn in repsResult['Value']['Failed']:
@@ -1207,9 +1207,10 @@ class Dirac(API):
     if not replicaDict['OK']:
       return replicaDict
     if not replicaDict['Value']['Successful']:
-      return self._errorReport(replicaDict['Value']['Failed'].items()[0], 'Failed to get replica information')
+      return self._errorReport(list(replicaDict['Value']['Failed'].iteritems())[0],
+                               'Failed to get replica information')
     siteLfns = {}
-    for lfn, reps in replicaDict['Value']['Successful'].iteritems():
+    for lfn, reps in replicaDict['Value']['Successful'].items():  # can be an iterator
       possibleSites = set(site for se in reps for site in (
           sitesForSE[se] if se in sitesForSE else sitesForSE.setdefault(se, getSitesForSE(se).get('Value', []))))
       siteLfns.setdefault(','.join(sorted(possibleSites)), []).append(lfn)
@@ -1882,15 +1883,15 @@ class Dirac(API):
 
     result = {}
     repoDict = {}
-    for job, vals in statusDict['Value'].iteritems():
+    for job, vals in statusDict['Value'].items():  # can be an iterator
       result[job] = vals
       if self.jobRepo:
         repoDict[job] = {'State': vals['Status']}
     if self.jobRepo:
       self.jobRepo.updateJobs(repoDict)
-    for job, vals in siteDict['Value'].iteritems():
+    for job, vals in siteDict['Value'].items():  # can be an iterator
       result[job].update(vals)
-    for job, vals in minorStatusDict['Value'].iteritems():
+    for job, vals in minorStatusDict['Value'].items():  # can be an iterator
       result[job].update(vals)
     for job in result:
       result[job].pop('JobID', None)
@@ -2165,10 +2166,10 @@ class Dirac(API):
         for i in headers:
           line += i.ljust(35)
         fopen.write(line + '\n')
-        for jobID, params in summary.iteritems():
+        for jobID, params in summary.items():  # can be an iterator
           line = str(jobID).ljust(12)
           for header in headers:
-            for key, value in params.iteritems():
+            for key, value in params.items():  # can be an iterator
               if header == key:
                 line += value.ljust(35)
           fopen.write(line + '\n')
@@ -2603,7 +2604,7 @@ class Dirac(API):
         jdl = '[' + jdl + ']'
       classAdJob = ClassAd(jdl)
       paramsDict = classAdJob.contents
-      for param, value in paramsDict.iteritems():
+      for param, value in paramsDict.items():  # can be an iterator
         if re.search('{', value):
           self.log.debug('Found list type parameter %s' % (param))
           rawValues = value.replace('{', '').replace('}', '').replace('"', '').replace('LFN:', '').split()

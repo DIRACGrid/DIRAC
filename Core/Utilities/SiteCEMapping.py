@@ -1,8 +1,4 @@
-"""  The SiteCEMapping module performs the necessary CS gymnastics to
-     resolve site and CE combinations.  These manipulations are necessary
-     in several components.
-
-     Assumes CS structure of: /Resources/Sites/<GRIDNAME>/<SITENAME>
+"""  DEPRECATED DEPRECATED DEPRECATED DEPRECATED DEPRECATED
 """
 
 __RCSID__ = "$Id$"
@@ -10,6 +6,7 @@ __RCSID__ = "$Id$"
 import re
 
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
+from DIRAC.Core.Utilities.Decorators import deprecated
 
 
 def __getGridTypes(gridName=None):
@@ -29,6 +26,7 @@ def __getGridTypes(gridName=None):
 #############################################################################
 
 
+@deprecated("Use DIRAC.ConfigurationSystem.Client.Helpers.Resources.getSites")
 def getSites(gridName=None):
   gridTypes = __getGridTypes(gridName)
   if not gridTypes['OK']:
@@ -47,6 +45,7 @@ def getSites(gridName=None):
 #############################################################################
 
 
+@deprecated("Use DIRAC.ConfigurationSystem.Client.Helpers.Resources.getSiteCEMapping")
 def getSiteCEMapping(gridName=None):
   """ Returns a dictionary of all sites and their CEs as a list, e.g.
       {'LCG.CERN.ch':['ce101.cern.ch',...]}
@@ -70,6 +69,7 @@ def getSiteCEMapping(gridName=None):
 #############################################################################
 
 
+@deprecated("Use DIRAC.ConfigurationSystem.Client.Helpers.Resources.getCESiteMapping")
 def getCESiteMapping(gridName=None):
   """ Returns a dictionary of all CEs and their associated site, e.g.
       {'ce101.cern.ch':'LCG.CERN.ch', ...]}
@@ -95,6 +95,7 @@ def getCESiteMapping(gridName=None):
 #############################################################################
 
 
+@deprecated("Use DIRAC.ConfigurationSystem.Client.Helpers.Resources.getCESiteMapping")
 def getSiteForCE(computingElement):
   """ Given a Grid CE name this method returns the DIRAC site name.
 
@@ -116,6 +117,7 @@ def getSiteForCE(computingElement):
 #############################################################################
 
 
+@deprecated("Use DIRAC.ConfigurationSystem.Client.Helpers.Resources.getSiteCEMapping")
 def getCEsForSite(siteName):
   """ Given a DIRAC site name this method returns a list of corresponding CEs.
   """
@@ -123,45 +125,3 @@ def getCEsForSite(siteName):
     return S_ERROR('%s is not a valid site name' % siteName)
   gridName = siteName.split('.')[0]
   return S_OK(gConfig.getValue('/Resources/Sites/%s/%s/CE' % (gridName, siteName), []))
-
-#############################################################################
-
-
-def getQueueInfo(ceUniqueID, diracSiteName=''):
-  """
-    Extract information from full CE Name including associate DIRAC Site
-  """
-  try:
-    subClusterUniqueID = ceUniqueID.split('/')[0].split(':')[0]
-    queueID = ceUniqueID.split('/')[1]
-  except BaseException:
-    return S_ERROR('Wrong full queue Name')
-
-  if not diracSiteName:
-    gLogger.debug("SiteName not given, looking in /LocaSite/Site")
-    diracSiteName = gConfig.getValue('/LocalSite/Site', '')
-
-    if not diracSiteName:
-      gLogger.debug("Can't find LocalSite name, looking in CS")
-      result = getSiteForCE(subClusterUniqueID)
-      if not result['OK']:
-        return result
-      diracSiteName = result['Value']
-
-      if not diracSiteName:
-        gLogger.error('Can not find corresponding Site in CS')
-        return S_ERROR('Can not find corresponding Site in CS')
-
-  gridType = diracSiteName.split('.')[0]
-
-  siteCSSEction = '/Resources/Sites/%s/%s/CEs/%s' % (gridType, diracSiteName, subClusterUniqueID)
-  queueCSSection = '%s/Queues/%s' % (siteCSSEction, queueID)
-
-  resultDict = {'SubClusterUniqueID': subClusterUniqueID,
-                'QueueID': queueID,
-                'SiteName': diracSiteName,
-                'Grid': gridType,
-                'SiteCSSEction': siteCSSEction,
-                'QueueCSSection': queueCSSection}
-
-  return S_OK(resultDict)

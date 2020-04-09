@@ -40,10 +40,10 @@ from DIRAC.Core.Workflow.Workflow import Workflow
 from DIRAC.Core.Utilities.ClassAd.ClassAdLight import ClassAd
 from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.Core.Utilities.List import uniqueElements
-from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE, getSites
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
-from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites, getCESiteMapping
 from DIRAC.Interfaces.API.Dirac import Dirac
 from DIRAC.Workflow.Utilities.Utils import getStepDefinition, addStepToWorkflow
 
@@ -665,12 +665,12 @@ class Job(API):
     kwargs = {'ceName': ceName}
 
     if not diracSite:
-      diracSite = getSiteForCE(ceName)
-      if not diracSite['OK']:
-        return self._reportError(diracSite['Message'], **kwargs)
-      if not diracSite['Value']:
+      res = getCESiteMapping(ceName)
+      if not res['OK']:
+        return self._reportError(res['Message'], **kwargs)
+      if not res['Value']:
         return self._reportError('No DIRAC site name found for CE %s' % (ceName), **kwargs)
-      diracSite = diracSite['Value']
+      diracSite = res['Value'][ceName]
 
     self.setDestination(diracSite)
     # Keep GridRequiredCEs for backward compatibility

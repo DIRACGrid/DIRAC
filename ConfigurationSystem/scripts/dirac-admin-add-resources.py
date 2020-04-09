@@ -17,12 +17,12 @@ from urlparse import urlparse
 
 from DIRAC.Core.Base import Script
 from DIRAC import gLogger, exit as DIRACExit, S_OK
-from DIRAC.ConfigurationSystem.Client.Utilities import getGridCEs, getSiteUpdates, getCEsFromCS, \
+from DIRAC.ConfigurationSystem.Client.Utilities import getGridCEs, getSiteUpdates, \
     getGridSRMs, getSRMUpdates
-from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getDIRACSiteName
 from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSiteCEMapping, getDIRACSiteName
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOs, getVOOption
 
 
@@ -72,11 +72,13 @@ def checkUnusedCEs():
 
   gLogger.notice('looking for new computing resources in the BDII database...')
 
-  result = getCEsFromCS()
-  if not result['OK']:
-    gLogger.error('ERROR: failed to get CEs from CS', result['Message'])
+  res = getSiteCEMapping()
+  if not res['OK']:
+    gLogger.error('ERROR: failed to get CEs from CS', res['Message'])
     DIRACExit(-1)
-  knownCEs = result['Value']
+  knownCEs = []
+  for site in res['Value']:
+    knownCEs = knownCEs + res['Value'][site]
 
   result = getGridCEs(vo, ceBlackList=knownCEs, hostURL=hostURL, glue2=glue2)
   if not result['OK']:

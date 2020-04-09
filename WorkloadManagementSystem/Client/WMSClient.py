@@ -150,6 +150,7 @@ class WMSClient(object):
 
     jdlString = jdlString.strip()
 
+    gLogger.debug("Submitting JDL", jdlString)
     # Strip of comments in the jdl string
     newJdlList = []
     for line in jdlString.split('\n'):

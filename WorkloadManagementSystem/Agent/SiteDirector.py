@@ -22,18 +22,18 @@ import random
 import socket
 import hashlib
 from collections import defaultdict
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor
 
 import DIRAC
 from DIRAC import S_OK, gConfig
+from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals, Registry
+from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
 from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE
 from DIRAC.Core.Utilities.Time import dateTime, second
 from DIRAC.Core.Utilities.List import fromChar
 from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.Utilities.ObjectLoader import ObjectLoader
-from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals, Registry
-from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.AccountingSystem.Client.Types.Pilot import Pilot as PilotAccounting
 from DIRAC.AccountingSystem.Client.Types.PilotSubmission import PilotSubmission as PilotSubmissionAccounting
@@ -1465,9 +1465,9 @@ class SiteDirector(AgentModule):
         userName = retVal['Value']
       pA.setValueByKey('User', userName)
       pA.setValueByKey('UserGroup', pilotDict[pRef]['OwnerGroup'])
-      result = getSiteForCE(pilotDict[pRef]['DestinationSite'])
+      result = getCESiteMapping(pilotDict[pRef]['DestinationSite'])
       if result['OK'] and result['Value'].strip():
-        pA.setValueByKey('Site', result['Value'].strip())
+        pA.setValueByKey('Site', result['Value'][pilotDict[pRef]['DestinationSite']].strip())
       else:
         pA.setValueByKey('Site', 'Unknown')
       pA.setValueByKey('GridCE', pilotDict[pRef]['DestinationSite'])

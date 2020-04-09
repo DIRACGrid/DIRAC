@@ -10,13 +10,13 @@ from __future__ import absolute_import
 __RCSID__ = "$Id$"
 
 from DIRAC import S_OK, S_ERROR, gConfig
-from DIRAC.Core.Base.AgentModule import AgentModule
-from DIRAC.Core.Utilities import Time
-from DIRAC.ConfigurationSystem.Client.Helpers import Registry
-from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE
-from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 from DIRAC.AccountingSystem.Client.Types.Pilot import Pilot as PilotAccounting
 from DIRAC.AccountingSystem.Client.DataStoreClient import gDataStoreClient
+from DIRAC.ConfigurationSystem.Client.Helpers import Registry
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
+from DIRAC.Core.Base.AgentModule import AgentModule
+from DIRAC.Core.Utilities import Time
+from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 from DIRAC.WorkloadManagementSystem.DB.PilotAgentsDB import PilotAgentsDB
 from DIRAC.WorkloadManagementSystem.DB.JobDB import JobDB
@@ -273,9 +273,9 @@ class PilotStatusAgent(AgentModule):
         userName = retVal['Value']
       pA.setValueByKey('User', userName)
       pA.setValueByKey('UserGroup', pData['OwnerGroup'])
-      result = getSiteForCE(pData['DestinationSite'])
+      result = getCESiteMapping(pData['DestinationSite'])
       if result['OK'] and result['Value'].strip():
-        pA.setValueByKey('Site', result['Value'].strip())
+        pA.setValueByKey('Site', result['Value'][pData['DestinationSite']].strip())
       else:
         pA.setValueByKey('Site', 'Unknown')
       pA.setValueByKey('GridCE', pData['DestinationSite'])

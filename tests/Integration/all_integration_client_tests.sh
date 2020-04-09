@@ -47,6 +47,7 @@ echo -e "*** $(date -u)  **** WMS TESTS ****\n"
 python $CLIENTINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_SandboxStoreClient.py $WORKSPACE/TestCode/DIRAC/tests/Integration/WorkloadManagementSystem/sb.cfg 2>&1 | tee -a clientTestOutputs.txt; (( ERR |= $? ))
 pytest $CLIENTINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_JobWrapper.py 2>&1 | tee -a clientTestOutputs.txt; (( ERR |= $? ))
 pytest $CLIENTINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_PilotsClient.py 2>&1 | tee -a clientTestOutputs.txt; (( ERR |= $? ))
+
 ## no real tests
 python $CLIENTINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/createJobXMLDescriptions.py 2>&1 | tee -a clientTestOutputs.txt; (( ERR |= $? ))
 $CLIENTINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_dirac-jobexec.sh 2>&1 | tee -a clientTestOutputs.txt; (( ERR |= $? ))

@@ -1,7 +1,7 @@
 from DIRAC import S_OK, S_ERROR, gLogger
 
 
-class FilterExecutor:
+class FilterExecutor(object):
 
   ALLKW = "all"
 
@@ -20,7 +20,7 @@ class FilterExecutor:
         if not retVal['OK']:
           gLogger.info("Filter %s for %s failed: %s" % (myFilter.__name__, iD, retVal['Message']))
           return retVal
-      except BaseException:
+      except Exception:
         gLogger.exception("Exception while applying filter", "%s for %s" % (myFilter.__name__, iD))
         return S_ERROR("Exception while applying filters")
     return S_OK()

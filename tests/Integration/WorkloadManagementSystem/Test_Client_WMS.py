@@ -82,7 +82,7 @@ class TestWMSTestCase(unittest.TestCase):
   def setUp(self):
     self.maxDiff = None
 
-    gLogger.setLevel('VERBOSE')
+    gLogger.setLevel('DEBUG')
 
   def tearDown(self):
     """ use the JobCleaningAgent method to remove the jobs in status 'deleted' and 'Killed'

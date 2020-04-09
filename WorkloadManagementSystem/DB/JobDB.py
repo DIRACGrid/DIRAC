@@ -1292,8 +1292,7 @@ class JobDB(DB):
 
     result = S_OK()
     if failedTablesList:
-      result = S_ERROR('Errors while job removal')
-      result['FailedTables'] = failedTablesList
+      result = S_ERROR('Errors while job removal (tables %s)' % ','.join(failedTablesList))
 
     return result
 

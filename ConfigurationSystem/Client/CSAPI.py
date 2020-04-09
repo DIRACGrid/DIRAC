@@ -12,6 +12,8 @@ from DIRAC.Core.Security import Locations
 from DIRAC.ConfigurationSystem.private.Modificator import Modificator
 from DIRAC.ConfigurationSystem.Client.Helpers import CSGlobals
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites, getCESiteMapping
+from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
 
 __RCSID__ = "$Id$"
 
@@ -26,6 +28,7 @@ class CSAPI(object):
     """
     self.csModified = False
     self.__baseSecurity = "/Registry"
+    self.__baseResources = "/Resources"
 
     self.__userDN = ''
     self.__userGroup = ''
@@ -103,6 +106,91 @@ class CSAPI(object):
     self.csModified = False
     self.__csMod.updateGConfigurationData()
     return S_OK()
+
+  # Resources-related methods
+  #########################################
+
+  def addSite(self, siteName, optionsDict=None):
+    """ Adds a new site to the CS.
+      A site is a container for services, so after calling this function,
+      at least addCEtoSite() should be called.
+
+      :param str siteName: FQN of the site (e.g. LCG.CERN.ch)
+      :param dict optionsDict: optional dictionary of options
+      :returns: S_OK/S_ERROR structure
+    """
+
+    if not self.__initialized['OK']:
+      return self.__initialized
+
+    self.__csMod.createSection(cfgPath(self.__baseResources, 'Sites'))
+    self.__csMod.createSection(cfgPath(self.__baseResources, 'Sites', siteName.split('.')[0]))
+    self.__csMod.createSection(cfgPath(self.__baseResources, 'Sites', siteName.split('.')[0], siteName))
+    # add options if requested
+    if optionsDict is not None:
+      for option, optionValue in optionsDict.items():  # can be an iterator
+        self.__csMod.setOptionValue(cfgPath(self.__baseResources, 'Sites', siteName.split('.')[0], option),
+                                    optionValue)
+    self.csModified = True
+    return S_OK(True)
+
+  def addCEtoSite(self, siteName, ceName, optionsDict=None):
+    """ Adds a new CE to a site definition in the CS.
+        A CE normally has queues, so addQueueToCE should be called after this one.
+
+        :param str siteName: FQN of the site (e.g. LCG.CERN.ch)
+        :param str ceName: FQN of the CE (e.g. ce503.cern.ch)
+        :param dict optionsDict: optional dictionary of options
+        :returns: S_OK/S_ERROR structure
+    """
+    res = getSites()
+    if not res['OK']:
+      return res
+    if siteName not in res['Value']:
+      res = self.addSite(siteName)
+      if not res['OK']:
+        return res
+
+    # CSAPI.createSection() always returns S_OK even if the section already exists
+    self.__csMod.createSection(cfgPath(self.__baseResources, 'Sites', siteName.split('.')[0], siteName, 'CEs'))
+    self.__csMod.createSection(cfgPath(self.__baseResources, 'Sites', siteName.split('.')[0], siteName, 'CEs', ceName))
+    # add options if requested
+    if optionsDict is not None:
+      for option, optionValue in optionsDict.items():  # can be an iterator
+        self.__csMod.setOptionValue(cfgPath(self.__baseResources, 'Sites', siteName.split('.')[0],
+                                            siteName, 'CEs', ceName, option), optionValue)
+    self.csModified = True
+    return S_OK(True)
+
+  def addQueueToCE(self, ceName, queueName, optionsDict=None):
+    """ Adds a new queue to a CE definition in the CS.
+
+        :param str ceName: FQN of the CE (e.g. ce503.cern.ch)
+        :param str queueName: name of the queue (e.g. ce503.cern.ch-condor)
+        :param dict optionsDict: optional dictionary of options
+        :returns: S_OK/S_ERROR structure
+    """
+    res = getCESiteMapping(ceName)
+    if not res['OK']:
+      return res
+    if ceName not in res['Value']:
+      return S_ERROR("CE does not exist")
+    siteName = res['Value'][ceName]
+
+    # CSAPI.createSection() always returns S_OK even if the section already exists
+    self.__csMod.createSection(cfgPath(self.__baseResources, 'Sites', siteName.split('.')[0],
+                                       siteName, 'CEs', ceName, 'Queues', queueName))
+    # add options if requested
+    if optionsDict is not None:
+      for option, optionValue in optionsDict.items():  # can be an iterator
+        self.__csMod.setOptionValue(cfgPath(self.__baseResources, 'Sites', siteName.split('.')[0],
+                                            siteName, 'CEs', ceName, 'Queues', queueName, option),
+                                    optionValue)
+    self.csModified = True
+    return S_OK(True)
+
+  # Registry-related methods
+  #########################################
 
   def listUsers(self, group=False):
     if not self.__initialized['OK']:
