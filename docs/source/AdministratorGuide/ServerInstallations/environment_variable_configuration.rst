@@ -22,6 +22,12 @@ DIRAC_GFAL_GRIDFTP_SESSION_REUSE
   If set to ``true`` or ``yes`` the GRIDFT SESSION RESUSE option will be set to True, should be set on server
   installations. See the information in the :ref:`resourcesStorageElement` page.
 
+DIRAC_USE_JSON_DECODE
+  Controls the transition to JSON serialization. See the information in :ref:`jsonSerialization` page
+
+DIRAC_USE_JSON_ENCODE
+  Controls the transition to JSON serialization. See the information in :ref:`jsonSerialization` page
+
 DIRAC_USE_M2CRYPTO
   If ``true`` or ``yes`` DIRAC uses m2crypto instead of pyGSI for handling certificates, proxies, etc.
 

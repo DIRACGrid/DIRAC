@@ -94,7 +94,6 @@ class testMetadata(TestUserMetadataBasicTestCase):
   def test_metaIndex(self):
     # meta index -f
     result = self.fc.addMetadataField('MetaInt6', 'INT', metaType='-f')
-    print("Result: ", result, " type ", type(result))
     self.assertTrue(result['OK'])
     self.assertNotEqual(result['Value'], 'Already exists')
     self.assertTrue(result['Value'].startswith('Added new metadata:'))

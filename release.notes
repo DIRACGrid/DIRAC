@@ -15,7 +15,7 @@ CHANGE: (#4235) Removes locals() way of passing parameters
 *tests
 NEW: (#4179) Set up Gitlab CI pipeline using Docker containers
 
-[v7r1-pre23]
+[v7r1-pre24]
 
 NEW: Add environment.yml file for preparing an environment with conda
 CHANGE: (#4507) autopep8 for the entire code stack
@@ -34,6 +34,7 @@ CHANGE: (#4354) ThreadPool - replaced by ThreadPoolExecutor(native python)
 FIX: (#4439) MySQLDB _connect method
 NEW: (#4510) Removed dirac-distribution (use docker image)
 CHANGE: (#4491) Streamline of CS helpers for sites and computing elements
+NEW: (#4538) MixedEncode - allows for json serialization transition
 
 *Configuration
 CHANGE: (#4157) add new helper methods for IdP/Proxy Providers, OAuthManager. Add methods that 
@@ -70,6 +71,8 @@ NEW: (#4416) Created a file JobStatus.py for replacing the literal job statuses,
         could be done gradually...
 FIX: (#4451) StalledJobAgent - use int factor to the seconds time delta
 FIX: (#4451) ProxyDB - set UserName in setPersistencyFlag() if it is a first record in ProxyDB_Proxies
+FIX: (#4514) JobWrapper: try to send the failover requests BEFORE declaring the job status
+FIX: (#4514) JobAgent: do not override the job status after the job has finished
 
 *DMS
 CHANGE: (#4243) FileCatalog - standard components are loaded using ObjectLoader mechanism
@@ -81,7 +84,7 @@ CHANGE: (#4423) FileMetadata - split getFileMetadataFields into getFileMetadataF
 CHANGE: (#4423) DirectoryMetadata - split getMetadataFields into getMetadataFields and _getMetadataFields
 NEW: (#4465) FileCatalog - a FileMetadata and DirectoryMetadata multi VO targeted plug-in wrappers for
      user metadata operations.
-
+FIX: (#4535) StorageElement - do not return negative values in getFreeDiskSpace()
 
 *RMS
 CHANGE: (#4410) (JSON) correct casts for serialization
