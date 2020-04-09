@@ -10,8 +10,6 @@
 from __future__ import print_function
 __RCSID__ = "$Id$"
 
-from past.builtins import long
-import six
 import os
 import stat
 import re
@@ -23,6 +21,8 @@ import tarfile
 import glob
 import urllib
 import json
+
+import six
 
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
@@ -269,7 +269,7 @@ class JobWrapper(object):
       if isinstance(value, dict):
         infoString = self.__dictAsInfoString(value, infoString, "%s/%s" % (currentBase, key))
       elif isinstance(value, (list, tuple)):
-        if len(value) and value[0] == '[':
+        if value and value[0] == '[':
           infoString += "%s/%s = %s\n" % (currentBase, key, " ".join(value))
         else:
           infoString += "%s/%s = %s\n" % (currentBase, key, ", ".join(value))
@@ -279,7 +279,7 @@ class JobWrapper(object):
     return infoString
 
   #############################################################################
-  def execute(self, arguments):
+  def execute(self):
     """The main execution method of the Job Wrapper
     """
     self.log.info('Job Wrapper is starting execution phase for job %s' % (self.jobID))
@@ -446,7 +446,7 @@ class JobWrapper(object):
 
     if watchdog.currentStats:
       self.log.info('Statistics collected by the Watchdog:\n ',
-                    '\n  '.join(['%s: %s' % items for items in watchdog.currentStats.iteritems()]))
+                    '\n  '.join(['%s: %s' % items for items in watchdog.currentStats.items()]))  # can be an iterator
     if outputs:
       status = threadResult['Value'][0]  # the status of the payload execution
       # Send final heartbeat of a configurable number of lines here
@@ -606,15 +606,15 @@ class JobWrapper(object):
       resolvedData = result
 
     # add input data size to accounting report (since resolution successful)
-    for lfn, mdata in resolvedData['Value']['Successful'].iteritems():
+    for lfn, mdata in resolvedData['Value']['Successful'].items():  # can be an iterator
       if 'Size' in mdata:
         lfnSize = mdata['Size']
-        if not isinstance(lfnSize, long):
+        if not isinstance(lfnSize, six.integer_types):
           try:
-            lfnSize = long(lfnSize)
-          except Exception as x:
+            lfnSize = int(lfnSize)
+          except ValueError as x:
             lfnSize = 0
-            self.log.info('File size for LFN:%s was not a long integer, setting size to 0' % (lfn))
+            self.log.info('File size for LFN was not an integer, setting size to 0', lfn)
         self.inputDataSize += lfnSize
 
     configDict = {'JobID': self.jobID,
@@ -657,7 +657,7 @@ class JobWrapper(object):
     self.log.verbose(replicas)
 
     failedGUIDs = []
-    for lfn, reps in replicas['Value']['Successful'].iteritems():
+    for lfn, reps in replicas['Value']['Successful'].items():  # can be an iterator
       if 'GUID' not in reps:
         failedGUIDs.append(lfn)
 
@@ -666,8 +666,7 @@ class JobWrapper(object):
 
     if failedGUIDs:
       return S_ERROR('File metadata is not available')
-    else:
-      return replicas
+    return replicas
 
   #############################################################################
   def __getReplicaMetadata(self, lfns):
@@ -687,11 +686,11 @@ class JobWrapper(object):
     badLFNs = []
     catalogResult = repsResult['Value']
 
-    for lfn, cause in catalogResult.get('Failed', {}).iteritems():
+    for lfn, cause in catalogResult.get('Failed', {}).items():  # can be an iterator
       badLFNCount += 1
       badLFNs.append('LFN:%s Problem: %s' % (lfn, cause))
 
-    for lfn, replicas in catalogResult.get('Successful', {}).iteritems():
+    for lfn, replicas in catalogResult.get('Successful', {}).items():  # can be an iterator
       if not replicas:
         badLFNCount += 1
         badLFNs.append('LFN:%s Problem: Null replica value' % (lfn))
@@ -719,7 +718,7 @@ class JobWrapper(object):
       self.log.warn(failed)
       return S_ERROR('Missing GUIDs')
 
-    for lfn, reps in repsResult['Value']['Successful'].iteritems():
+    for lfn, reps in repsResult['Value']['Successful'].items():  # can be an iterator
       guidDict['Value']['Successful'][lfn].update(reps)
 
     catResult = guidDict
@@ -846,7 +845,7 @@ class JobWrapper(object):
     for i in outputSandbox:
       if i not in okFiles:
         if not '%s.tar' % i in okFiles:
-          if not re.search('\*', i):
+          if not re.search(r'\*', i):
             if i not in missing:
               missing.append(i)
 
@@ -874,7 +873,7 @@ class JobWrapper(object):
 
     # Check whether list of outputData has a globbable pattern
     globbedOutputList = List.uniqueElements(getGlobbedFiles(nonlfnList))
-    if not globbedOutputList == nonlfnList and globbedOutputList:
+    if globbedOutputList != nonlfnList and globbedOutputList:
       self.log.info('Found a pattern in the output data file list, files to upload are:',
                     ', '.join(globbedOutputList))
       nonlfnList = globbedOutputList
@@ -1100,7 +1099,7 @@ class JobWrapper(object):
           with tarfile.open(possibleTarFile, 'r') as tarFile:
             for member in tarFile.getmembers():
               tarFile.extract(member, os.getcwd())
-      except BaseException as x:
+      except Exception as x:
         return S_ERROR('Could not untar %s with exception %s' % (possibleTarFile, str(x)))
 
     if userFiles:
@@ -1115,28 +1114,39 @@ class JobWrapper(object):
     """Perform any final actions to clean up after job execution.
     """
     self.log.info('Running JobWrapper finalization')
+
     # find if there are pending failover requests
     requests = self.__getRequestFiles()
     outputDataRequest = self.failoverTransfer.getRequest()
-    requestFlag = len(requests) > 0 or not outputDataRequest.isEmpty()
 
-    if self.failedFlag and requestFlag:
-      self.log.info('Job finished with errors and there are pending requests.')
-      self.__report(JobStatus.FAILED, 'Pending Requests')
-    elif not self.failedFlag and requestFlag:
-      self.log.info('Job finished successfully with pending requests.')
-      self.__report(JobStatus.COMPLETED, 'Pending Requests')
-    elif self.failedFlag and not requestFlag:
-      self.log.info('Job finished with errors with no pending requests.')
-      self.__report(JobStatus.FAILED)
-    elif not self.failedFlag and not requestFlag:
-      self.log.info('Job finished successfully with no pending requests.')
-      self.__report(JobStatus.DONE, 'Execution Complete')
-
-    self.sendFailoverRequest()
-    self.__cleanUp()
-    if self.failedFlag:
+    # try to send the failover request
+    res = self.sendFailoverRequest()
+    if not res['OK']:  # This means that the request could not be set (this should "almost never" happen)
+      self.__report(JobStatus.FAILED, minorStatus='Failed sending requests')
+      self.__cleanUp()
       return 1
+
+    requestFlag = res['Value'] or len(requests) > 0 or not outputDataRequest.isEmpty()
+    if requestFlag:
+      self.log.info("Job finished with pending requests")
+      self.__report(minorStatus='Pending Requests')
+    else:
+      self.log.info("Job finished with no pending requests")
+
+    if self.failedFlag:
+      self.log.info("Job finished with errors")
+      self.__report(JobStatus.FAILED)
+      self.__cleanUp()
+      return 1
+
+    self.log.info("Job finished successfully")
+    if requestFlag:
+      self.__report(JobStatus.COMPLETED)
+    else:
+      self.__report(minorStatus='Execution Complete')
+      self.__report(JobStatus.DONE)
+
+    self.__cleanUp()
     return 0
 
   #############################################################################
@@ -1158,7 +1168,7 @@ class JobWrapper(object):
       self.log.info('EXECUTION_RESULT[CPU] missing in sendJobAccounting')
       finalStat = os.times()
       EXECUTION_RESULT['CPU'] = []
-      for i in range(len(finalStat)):
+      for i, _ in enumerate(finalStat):
         EXECUTION_RESULT['CPU'].append(finalStat[i] - self.initialTiming[i])
 
     cpuString = ' '.join(['%.2f' % x for x in EXECUTION_RESULT['CPU']])
@@ -1263,16 +1273,18 @@ class JobWrapper(object):
       isValid = RequestValidator().validate(request)
       if not isValid["OK"]:
         self.log.error("Failover request is not valid", isValid["Message"])
-        self.__report(status=JobStatus.FAILED, minorStatus='Failover Request Failed')
         self.log.error("Job will fail, first trying to print out the content of the request")
         reqToJSON = request.toJSON()
         if reqToJSON['OK']:
           print(str(reqToJSON['Value']))
         else:
           self.log.error("Something went wrong creating the JSON from request", reqToJSON['Message'])
+        return S_ERROR()
       else:
-        # We try several times to put the request before failing the job: it's very important that requests go through,
-        # or the job will be in an unclear status (workflow ok, but, e.g., the output files won't be registered).
+        # We try several times to put the request before failing the job:
+        # it is very important that requests go through,
+        # or the job will be in an unclear status
+        # (workflow ok, but, e.g., the output files won't be registered).
         # It's a poor man solution, but I don't see fancy alternatives
         for counter in range(10):
           requestClient = ReqClient()
@@ -1281,7 +1293,7 @@ class JobWrapper(object):
             resDigest = request.getDigest()
             digest = resDigest['Value']
             self.jobReport.setJobParameter('PendingRequest', digest)
-            break
+            return S_OK(request)
           else:
             self.log.error('Failed to set failover request',
                            '%d: %s. Re-trying...' % (counter, result['Message']))
@@ -1289,7 +1301,9 @@ class JobWrapper(object):
             time.sleep(counter ** 3)
 
         if not result['OK']:
-          self.__report(status=JobStatus.FAILED, minorStatus='Failover Request Failed')
+          return result
+
+    return S_OK()
 
   #############################################################################
   def __getRequestFiles(self):
@@ -1391,7 +1405,7 @@ class ExecutionThread(threading.Thread):
     EXECUTION_RESULT['Timing'] = timing
     finalStat = os.times()
     EXECUTION_RESULT['CPU'] = []
-    for i in range(len(finalStat)):
+    for i, _ in enumerate(finalStat):
       EXECUTION_RESULT['CPU'].append(finalStat[i] - initialStat[i])
     cpuString = ' '.join(['%.2f' % x for x in EXECUTION_RESULT['CPU']])
     log.info('EXECUTION_RESULT[CPU] after Execution of spObject.systemCall', cpuString)

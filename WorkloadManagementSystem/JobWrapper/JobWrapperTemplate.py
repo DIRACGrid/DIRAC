@@ -44,6 +44,7 @@ class JobWrapperError(Exception):
 
   def __init__(self, value):
     self.value = value
+    super(JobWrapperError, self).__init__()
 
   def __str__(self):
     return str(self.value)
@@ -139,7 +140,7 @@ def execute(arguments):
   gJobReport.commit()
 
   try:
-    result = job.execute(arguments)
+    result = job.execute()
     if not result['OK']:
       gLogger.error('Failed to execute job', result['Message'])
       raise JobWrapperError((result['Message'], result['Errno']))
