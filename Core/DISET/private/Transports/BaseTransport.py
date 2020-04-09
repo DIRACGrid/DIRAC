@@ -27,11 +27,11 @@ from hashlib import md5
 
 from DIRAC.Core.Utilities.ReturnValues import S_ERROR, S_OK
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
-from DIRAC.Core.Utilities import DEncode
+from DIRAC.Core.Utilities import MixedEncode
 
 
 class BaseTransport(object):
-  """ Invokes DEncode for marshaling/unmarshaling of data calls in transit
+  """ Invokes MixedEncode for marshaling/unmarshaling of data calls in transit
   """
 
   bAllowReuseAddress = True
@@ -159,7 +159,7 @@ class BaseTransport(object):
 
   def sendData(self, uData, prefix=False):
     self.__updateLastActionTimestamp()
-    sCodedData = DEncode.encode(uData)
+    sCodedData = MixedEncode.encode(uData)
     if prefix:
       dataToSend = "%s%s:%s" % (prefix, len(sCodedData), sCodedData)
     else:
@@ -250,7 +250,7 @@ class BaseTransport(object):
           data = pkgMem.read(pkgSize)
           self.byteStream = pkgMem.read()
       try:
-        data = DEncode.decode(data)[0]
+        data = MixedEncode.decode(data)[0]
       except Exception as e:
         return S_ERROR("Could not decode received data: %s" % str(e))
       if idleReceive:
