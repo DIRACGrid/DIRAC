@@ -455,7 +455,7 @@ class FileCatalogHandler(RequestHandler):
   # Metadata Catalog Operations
   #
 
-  types_addMetadataField = [StringTypes, StringTypes]
+  types_addMetadataField = [StringTypes, StringTypes, StringTypes]
 
   def export_addMetadataField(self, fieldName, fieldType, metaType='-d'):
     """ Add a new metadata field of the given type
