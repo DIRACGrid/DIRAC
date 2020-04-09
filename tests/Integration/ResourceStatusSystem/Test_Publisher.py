@@ -5,53 +5,34 @@
 
 # pylint: disable=invalid-name,wrong-import-position
 
-import unittest
-import sys
-
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
 
 from DIRAC import gLogger
 from DIRAC.ResourceStatusSystem.Client.PublisherClient import PublisherClient
 
-
-class TestPublisherTestCase(unittest.TestCase):
-
-  def setUp(self):
-    self.publisher = PublisherClient()
-    gLogger.setLevel('DEBUG')
-
-  def tearDown(self):
-    pass
+publisher = PublisherClient()
+gLogger.setLevel('DEBUG')
 
 
-class PublisherGet(TestPublisherTestCase):
+def test_Get():
+  res = publisher.getSites()
+  assert res['OK'] is True, res['Message']
 
-  def test_get(self):
-    res = self.publisher.getSites()
-    self.assertTrue(res['OK'])
+  res = publisher.getSitesResources(None)
+  assert res['OK'] is True, res['Message']
 
-    res = self.publisher.getSitesResources(None)
-    self.assertTrue(res['OK'])
+  res = publisher.getElementStatuses('Site', None, None, None, None, None)
+  assert res['OK'] is True, res['Message']
 
-    res = self.publisher.getElementStatuses('Site', None, None, None, None, None)
-    self.assertTrue(res['OK'])
+  res = publisher.getElementHistory('Site', None, None, None)
+  assert res['OK'] is True, res['Message']
 
-    res = self.publisher.getElementHistory('Site', None, None, None)
-    self.assertTrue(res['OK'])
+  res = publisher.getElementPolicies('Site', None, None)
+  assert res['OK'] is True, res['Message']
 
-    res = self.publisher.getElementPolicies('Site', None, None)
-    self.assertTrue(res['OK'])
+  res = publisher.getNodeStatuses()
+  assert res['OK'] is True, res['Message']
 
-    res = self.publisher.getNodeStatuses()
-    self.assertTrue(res['OK'])
-
-    res = self.publisher.getTree('', '')
-    self.assertTrue(res['OK'])
-
-
-if __name__ == '__main__':
-  suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestPublisherTestCase)
-  suite.addTest(unittest.defaultTestLoader.loadTestsFromTestCase(PublisherGet))
-  testResult = unittest.TextTestRunner(verbosity=2).run(suite)
-  sys.exit(not testResult.wasSuccessful())
+  res = publisher.getTree('', '')
+  assert res['OK'] is True, res['Message']

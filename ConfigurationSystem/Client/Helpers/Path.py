@@ -7,10 +7,11 @@ Some Helper class to build CFG paths from tuples
 """
 __RCSID__ = "$Id$"
 
-cfgInstallSection = 'LocalInstallation'
-cfgResourceSection = 'Resources'
 import os
 import six
+
+cfgInstallSection = 'LocalInstallation'
+cfgResourceSection = 'Resources'
 
 
 def cfgPath(*args):

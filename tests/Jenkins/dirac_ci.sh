@@ -203,6 +203,12 @@ function fullInstallDIRAC(){
     exit 1
   fi
 
+  echo 'Content of etc/dirac.cfg:'
+  cat "$SERVERINSTALLDIR/etc/dirac.cfg"
+
+  echo 'Content of etc/Production.cfg (just after installSite):'
+  cat "$SERVERINSTALLDIR/etc/Production.cfg"
+
   # Dealing with security stuff
   # generateCertificates
   if ! generateUserCredentials; then
@@ -220,6 +226,9 @@ function fullInstallDIRAC(){
     echo "ERROR: diracAddSite failed"
     exit 1
   fi
+
+  echo "==> Restarting Configuration Server"
+  dirac-restart-component Configuration Server $DEBUG
 
   #Install the Framework
   findDatabases 'FrameworkSystem'
@@ -247,6 +256,9 @@ function fullInstallDIRAC(){
     exit 1
   fi
 
+  echo 'Content of etc/Production.cfg:'
+  cat "$SERVERINSTALLDIR/etc/Production.cfg"
+
   echo "==> Restarting Framework ProxyManager"
   dirac-restart-component Framework ProxyManager $DEBUG
 
@@ -269,8 +281,9 @@ function fullInstallDIRAC(){
     exit 1
   fi
 
-  #fix the DBs (for the FileCatalog)
+  #fix the DBs (for the FileCatalog and MultiVOFileCatalog)
   diracDFCDB
+  diracMVDFCDB
   python "$TESTCODE/DIRAC/tests/Jenkins/dirac-cfg-update-dbs.py" "$DEBUG"
 
   #services (not looking for FrameworkSystem already installed)
@@ -280,6 +293,12 @@ function fullInstallDIRAC(){
     exit 1
   fi
 
+  # install an additional FileCatalog service for multi VO metadata tests
+  echo "==> calling dirac-install-component DataManagement MultiVOFileCatalog -m FileCatalog -p Port=9198 -p Database=MultiVOFileCatalogDB $DEBUG"
+  if ! dirac-install-component DataManagement MultiVOFileCatalog -m FileCatalog -p Port=9198 -p Database=MultiVOFileCatalogDB "$DEBUG"; then
+      echo 'ERROR: dirac-install-component failed'
+      exit 1
+  fi
   #fix the DFC services options
   python "$TESTCODE/DIRAC/tests/Jenkins/dirac-cfg-update-services.py" "$DEBUG"
 
@@ -294,6 +313,9 @@ function fullInstallDIRAC(){
 
   echo "==> Restarting DataManagement FileCatalog"
   dirac-restart-component DataManagement FileCatalog $DEBUG
+
+  echo "==> Restarting DataManagement MultiVOFileCatalog"
+  dirac-restart-component DataManagement MultiVOFileCatalog $DEBUG
 
   echo "==> Restarting Configuration Server"
   dirac-restart-component Configuration Server $DEBUG
@@ -332,6 +354,13 @@ function fullInstallDIRAC(){
     echo "ERROR: diracAgents failed"
     exit 1
   fi
+
+  echo 'Content of etc/Production.cfg:'
+  cat "$SERVERINSTALLDIR/etc/Production.cfg"
+
+  echo "==> Restarting Configuration Server"
+  dirac-restart-component Configuration Server $DEBUG
+
 }
 
 

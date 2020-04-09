@@ -10,6 +10,7 @@ __RCSID__ = '$Id$'
 
 from DIRAC import gConfig, gLogger, S_OK
 from DIRAC.Core.Utilities.SiteSEMapping import getSEParameters
+from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getQueues
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.ResourceStatusSystem.Utilities import Utils
@@ -109,7 +110,7 @@ def getFileCatalogs():
 
 def getComputingElements():
   """
-    Gets all computing elements from /Resources/Sites/<>/<>/CE
+    Gets all computing elements from /Resources/Sites/<>/<>/CEs
   """
   _basePath = 'Resources/Sites'
 
@@ -141,24 +142,13 @@ def getComputingElements():
   return S_OK(ces)
 
 
+@deprecated("Use DIRAC.ConfigurationSystem.Client.Helpers.Resources.getSiteCEMapping")
 def getSiteComputingElements(siteName):
-  """
-    Gets all computing elements from /Resources/Sites/<>/<siteName>/CE
-  """
-
-  _basePath = 'Resources/Sites'
-
-  domainNames = gConfig.getSections(_basePath)
-  if not domainNames['OK']:
-    return domainNames
-  domainNames = domainNames['Value']
-
-  for domainName in domainNames:
-    ces = gConfig.getValue('%s/%s/%s/CE' % (_basePath, domainName, siteName), '')
-    if ces:
-      return ces.split(', ')
-
-  return []
+  from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSiteCEMapping
+  res = getSiteCEMapping()
+  if not res['OK']:
+    return res
+  return res['Value'][siteName]
 
 
 def getSiteElements(siteName):
@@ -181,7 +171,7 @@ def getSiteElements(siteName):
 
 def getQueuesRSS():
   """
-    Gets all computing elements from /Resources/Sites/<>/<>/CE/Queues
+    Gets all queues from /Resources/Sites/<>/<>/CEs/<>/Queues
   """
   _basePath = 'Resources/Sites'
 

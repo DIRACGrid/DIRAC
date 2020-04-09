@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 ########################################################################
 # File :   dirac-admin-add-site
-# Author : Andrew C. Smith
+# Author : Federico Stagni
 ########################################################################
 """
   Add a new DIRAC SiteName to DIRAC Configuration, including one or more CEs.
@@ -11,9 +11,10 @@
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base import Script
+from DIRAC import exit as DIRACExit, gLogger
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getDIRACSiteName
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
-from DIRAC import exit as DIRACExit, gConfig, gLogger
-from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getDIRACSiteName
+
 
 if __name__ == "__main__":
 
@@ -30,8 +31,6 @@ if __name__ == "__main__":
               '  CE: Name of the CE to be included in the site (ie: ce111.cern.ch)']))
   Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
-
-  csAPI = CSAPI()
 
   if len(args) < 3:
     Script.showHelp()
@@ -76,31 +75,20 @@ if __name__ == "__main__":
 
   cfgBase = "/Resources/Sites/%s/%s" % (diracGridType, diracSiteName)
   change = False
-  if newSite:
-    gLogger.notice("Adding new site to CS: %s" % diracSiteName)
-    csAPI.setOption("%s/Name" % cfgBase, gridSiteName)
-    gLogger.notice("Adding CEs: %s" % ','.join(ces))
-    csAPI.setOption("%s/CE" % cfgBase, ','.join(ces))
-    change = True
-  else:
-    cesCS = set(gConfig.getValue("%s/CE" % cfgBase, []))
-    ces = set(ces)
-    newCEs = ces - cesCS
-    if newCEs:
-      cesCS = cesCS.union(ces)
-      gLogger.notice("Adding CEs %s" % ','.join(newCEs))
-      cesCS = cesCS.union(ces)
-      csAPI.modifyValue("%s/CE" % cfgBase, ','.join(cesCS))
-      change = True
-  if change:
-    res = csAPI.commitChanges()
+  gLogger.notice("Site to CS: %s" % diracSiteName)
+  csAPI = CSAPI()
+  res = csAPI.addSite(diracSiteName, {"Name": gridSiteName})
+  if not res['OK']:
+    gLogger.error("Failed adding site to CS", res['Message'])
+    DIRACExit(1)
+  gLogger.notice("Adding CEs: %s" % ','.join(ces))
+  for ce in ces:
+    res = csAPI.addCEtoSite(diracSiteName, ce)
     if not res['OK']:
-      gLogger.error("Failed to commit changes to CS", res['Message'])
-      DIRACExit(-1)
-    else:
-      if newSite:
-        gLogger.notice(
-            "Successfully added site %s to the CS with name %s and CEs: %s" %
-            (diracSiteName, gridSiteName, ','.join(ces)))
-      else:
-        gLogger.notice("Successfully added new CEs to site %s: %s" % (diracSiteName, ','.join(newCEs)))
+      gLogger.error("Failed adding CE %s to CS" % ce, res['Message'])
+      DIRACExit(2)
+  res = csAPI.commit()
+  if not res['OK']:
+    gLogger.error("Failure committing to CS", res['Message'])
+    DIRACExit(3)
+  gLogger.always("Success")

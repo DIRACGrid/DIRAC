@@ -11,7 +11,7 @@ import os
 from six.moves.urllib.request import urlopen
 
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities.SiteCEMapping import getQueueInfo
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
 from DIRAC.Resources.Computing.BatchSystems.TimeLeft.TimeLeft import TimeLeft
 from DIRAC.WorkloadManagementSystem.Client.DIRACbenchmark import singleDiracBenchmark
 
@@ -240,3 +240,43 @@ def getCPUTime(cpuNormalizationFactor):
           gLogger.warn("Can't find maxCPUTime for %s, defaulting CPUTime to %f" % (queueCSSection, cpuTimeLeft))
 
   return int(cpuTimeLeft)
+
+
+def getQueueInfo(ceUniqueID, diracSiteName=''):
+  """
+    Extract information from full CE Name including associate DIRAC Site
+  """
+  try:
+    subClusterUniqueID = ceUniqueID.split('/')[0].split(':')[0]
+    queueID = ceUniqueID.split('/')[1]
+  except IndexError:
+    return S_ERROR('Wrong full queue Name')
+
+  if not diracSiteName:
+    gLogger.debug("SiteName not given, looking in /LocaSite/Site")
+    diracSiteName = gConfig.getValue('/LocalSite/Site', '')
+
+    if not diracSiteName:
+      gLogger.debug("Can't find LocalSite name, looking in CS")
+      result = getCESiteMapping(subClusterUniqueID)
+      if not result['OK']:
+        return result
+      diracSiteName = result['Value'][subClusterUniqueID]
+
+      if not diracSiteName:
+        gLogger.error('Can not find corresponding Site in CS')
+        return S_ERROR('Can not find corresponding Site in CS')
+
+  gridType = diracSiteName.split('.')[0]
+
+  siteCSSEction = '/Resources/Sites/%s/%s/CEs/%s' % (gridType, diracSiteName, subClusterUniqueID)
+  queueCSSection = '%s/Queues/%s' % (siteCSSEction, queueID)
+
+  resultDict = {'SubClusterUniqueID': subClusterUniqueID,
+                'QueueID': queueID,
+                'SiteName': diracSiteName,
+                'Grid': gridType,
+                'SiteCSSEction': siteCSSEction,
+                'QueueCSSection': queueCSSection}
+
+  return S_OK(resultDict)

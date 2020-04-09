@@ -3,11 +3,10 @@
 
 __RCSID__ = "$Id$"
 
-import six
-import re
 import urlparse
-
 from distutils.version import LooseVersion  # pylint: disable=no-name-in-module,import-error
+
+import six
 
 from DIRAC import S_OK, S_ERROR, gConfig
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
@@ -32,6 +31,121 @@ def getSites():
     sites += result['Value']
 
   return S_OK(sites)
+
+
+def getSiteCEMapping():
+  """ :returns: dict of site: list of CEs
+  """
+  res = getSites()
+  if not res['OK']:
+    return res
+  sites = res['Value']
+  sitesCEsMapping = {}
+  for site in sites:
+    res = sitesCEsMapping[site] = gConfig.getSections(cfgPath(gBaseResourcesSection, 'Sites',
+                                                              site.split('.')[0], site, 'CEs'),
+                                                      [])
+    if not res['OK']:
+      return res
+    sitesCEsMapping[site] = res['Value']
+  return S_OK(sitesCEsMapping)
+
+
+def getCESiteMapping(ceName=''):
+  """ Returns a mapping of CE -> site
+      It assumes that the ce names are unique (as they should be)
+
+      :param str ceName: optional CE name. If not present, the whole mapping will be returned
+      :return: S_OK/S_ERROR structure
+  """
+  res = getSiteCEMapping()
+  if not res['OK']:
+    return res
+  sitesCEs = res['Value']
+  ceSiteMapping = {}
+  for site in sitesCEs:
+    for ce in sitesCEs[site]:
+      if ceName:
+        if ce != ceName:
+          continue
+      ceSiteMapping[ce] = site
+  return S_OK(ceSiteMapping)
+
+
+def getGOCSiteName(diracSiteName):
+  """
+  Get GOC DB site name, given the DIRAC site name, as it is stored in the CS
+
+  :param str diracSiteName: DIRAC site name (e.g. 'LCG.CERN.ch')
+  :returns: S_OK/S_ERROR structure
+  """
+  gocDBName = gConfig.getValue(cfgPath(gBaseResourcesSection,
+                                       'Sites',
+                                       diracSiteName.split('.')[0],
+                                       diracSiteName,
+                                       'Name'))
+  if not gocDBName:
+    return S_ERROR("No GOC site name for %s in CS (Not a grid site ?)" % diracSiteName)
+  return S_OK(gocDBName)
+
+
+def getGOCSites(diracSites=None):
+
+  if diracSites is None:
+    diracSites = getSites()
+    if not diracSites['OK']:
+      return diracSites
+    diracSites = diracSites['Value']
+
+  gocSites = []
+
+  for diracSite in diracSites:
+    gocSite = getGOCSiteName(diracSite)
+    if not gocSite['OK']:
+      continue
+    gocSites.append(gocSite['Value'])
+
+  return S_OK(list(set(gocSites)))
+
+
+def getDIRACSiteName(gocSiteName):
+  """
+  Get DIRAC site name, given the GOC DB site name, as it stored in the CS
+
+  :params str gocSiteName: GOC DB site name (e.g. 'CERN-PROD')
+  :returns: S_OK/S_ERROR structure
+  """
+  res = getSites()
+  if not res['OK']:
+    return res
+  sitesList = res['Value']
+
+  tmpList = [(site, gConfig.getValue(cfgPath(gBaseResourcesSection,
+                                             'Sites',
+                                             site.split('.')[0],
+                                             site,
+                                             'Name'))) for site in sitesList]
+
+  diracSites = [dirac for (dirac, goc) in tmpList if goc == gocSiteName]
+
+  if diracSites:
+    return S_OK(diracSites)
+
+  return S_ERROR("There's no site with GOCDB name = %s in DIRAC CS" % gocSiteName)
+
+
+def getGOCFTSName(diracFTSName):
+  """
+  Get GOC DB FTS server URL, given the DIRAC FTS server name, as it stored in the CS
+
+  :param str diracFTSName: DIRAC FTS server name (e.g. 'CERN-FTS3')
+  :returns: S_OK/S_ERROR structure
+  """
+
+  gocFTSName = gConfig.getValue(cfgPath(gBaseResourcesSection, 'FTSEndpoints', 'FTS3', diracFTSName))
+  if not gocFTSName:
+    return S_ERROR("No GOC FTS server name for %s in CS (Not a grid site ?)" % diracFTSName)
+  return S_OK(gocFTSName)
 
 
 def getFTS3Servers(hostOnly=False):
@@ -253,8 +367,8 @@ def getCompatiblePlatforms(originalPlatforms):
   if not (result['OK'] and result['Value']):
     return S_ERROR("OS compatibility info not found")
 
-  platformsDict = dict((k, v.replace(' ', '').split(',')) for k, v in result['Value'].iteritems())
-  for k, v in platformsDict.iteritems():
+  platformsDict = dict((k, v.replace(' ', '').split(',')) for k, v in result['Value'].items())  # can be an iterator
+  for k, v in platformsDict.items():  # can be an iterator
     if k not in v:
       v.append(k)
 
@@ -290,14 +404,14 @@ def getDIRACPlatform(OSList):
   if not (result['OK'] and result['Value']):
     return S_ERROR("OS compatibility info not found")
 
-  platformsDict = dict((k, v.replace(' ', '').split(',')) for k, v in result['Value'].iteritems())
-  for k, v in platformsDict.iteritems():
+  platformsDict = dict((k, v.replace(' ', '').split(',')) for k, v in result['Value'].items())  # can be an iterator
+  for k, v in platformsDict.items():  # can be an iterator
     if k not in v:
       v.append(k)
 
   # making an OS -> platforms dict
   os2PlatformDict = dict()
-  for platform, osItems in platformsDict.iteritems():
+  for platform, osItems in platformsDict.items():  # can be an iterator
     for osItem in osItems:
       if os2PlatformDict.get(osItem):
         os2PlatformDict[osItem].append(platform)
@@ -378,7 +492,7 @@ def getInfoAboutProviders(of=None, providerName=None, option='', section=''):
       result = gConfig.getConfigurationTree(relPath)
       if not result['OK']:
         return result
-      for key, value in result['Value'].items():
+      for key, value in result['Value'].items():  # can be an iterator
         if value:
           resDict[key.replace(relPath, '')] = value
       return S_OK(resDict)

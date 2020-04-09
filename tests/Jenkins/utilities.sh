@@ -726,14 +726,14 @@ function diracRefreshCS(){
 #
 # diracSite:
 #
-#   add a site (the CS has the running)
+#   add a site (the CS has to be running)
 #
 #.............................................................................
 
 function diracAddSite(){
   echo '==> [diracAddSite]'
 
-  if ! dirac-admin-add-site DIRAC.Jenkins.ch aNameWhatSoEver jenkins.cern.ch; then
+  if ! dirac-admin-add-site DIRAC.Jenkins.ch aNameWhatSoEver jenkins.cern.ch "$DEBUG"; then
     echo 'ERROR: dirac-admin-add-site failed'
     exit 1
   fi
@@ -878,6 +878,15 @@ diracDFCDB(){
   mysql -u"$DB_ROOTUSER" -p"$DB_ROOTPWD" -h"$DB_HOST" -P"$DB_PORT" < "$SERVERINSTALLDIR/DIRAC/DataManagementSystem/DB/FileCatalogWithFkAndPsDB.sql"
 }
 
+# Drop, then manually install the DFC for MultiVOFileCatalog
+diracMVDFCDB(){
+  echo '==> [diracMVDFCDB]'
+
+  cp $SERVERINSTALLDIR/DIRAC/DataManagementSystem/DB/FileCatalogWithFkAndPsDB.sql $SERVERINSTALLDIR/DIRAC/DataManagementSystem/DB/MultiVOFileCatalogWithFkAndPsDB.sql
+  sed -i 's/FileCatalogDB/MultiVOFileCatalogDB/g' $SERVERINSTALLDIR/DIRAC/DataManagementSystem/DB/MultiVOFileCatalogWithFkAndPsDB.sql
+  mysql -u"$DB_ROOTUSER" -p"$DB_ROOTPWD" -h"$DB_HOST" -P"$DB_PORT" -e "DROP DATABASE IF EXISTS MultiVOFileCatalogDB;"
+  mysql -u"$DB_ROOTUSER" -p"$DB_ROOTPWD" -h"$DB_HOST" -P"$DB_PORT" < "$SERVERINSTALLDIR/DIRAC/DataManagementSystem/DB/MultiVOFileCatalogWithFkAndPsDB.sql"
+}
 
 dropDBs(){
   echo '==> [dropDBs]'

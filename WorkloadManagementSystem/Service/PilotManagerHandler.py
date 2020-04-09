@@ -173,8 +173,7 @@ class PilotManagerHandler(RequestHandler):
         pilot monitor in a generic format
     """
 
-    result = pilotDB.getPilotMonitorWeb(selectDict, sortList, startItem, maxItems)
-    return result
+    return pilotDB.getPilotMonitorWeb(selectDict, sortList, startItem, maxItems)
 
   ##############################################################################
   types_getPilotMonitorSelectors = []

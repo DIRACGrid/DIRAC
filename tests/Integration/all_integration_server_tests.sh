@@ -9,6 +9,10 @@ echo -e '****************************************'
 echo -e '*******' "integration server tests" '*******\n'
 
 #-------------------------------------------------------------------------------#
+echo -e "*** $(date -u) **** Configuration TESTS ****\n"
+pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/ConfigurationSystem/Test_Helpers.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
+
+#-------------------------------------------------------------------------------#
 echo -e "*** $(date -u) **** Core TESTS ****\n"
 pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/Core/Test_ElasticsearchDB.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
 pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/Core/Test_MySQLDB.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
@@ -26,12 +30,12 @@ pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/ResourceStatusSystem/Test_FullC
 
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u)  **** WMS TESTS ****\n"
-python $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_Client_WMS.py $WORKSPACE/TestCode/DIRAC/tests/Integration/WorkloadManagementSystem/sb.cfg 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
 pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_JobDB.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
 pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_JobLoggingDB.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
 pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_TaskQueueDB.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
 pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_ElasticJobDB.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
 pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_JobParameters_MySQLandES.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
+python $SERVERINSTALLDIR/DIRAC/tests/Integration/WorkloadManagementSystem/Test_Client_WMS.py $WORKSPACE/TestCode/DIRAC/tests/Integration/WorkloadManagementSystem/sb.cfg 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
 
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u)  **** DMS TESTS ****\n"
@@ -86,4 +90,5 @@ python $SERVERINSTALLDIR/DIRAC/tests/Integration/Resources/Storage/Test_Resource
 python $SERVERINSTALLDIR/DIRAC/tests/Integration/Resources/ProxyProvider/Test_DIRACCAProxyProvider.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))
 
 # Can only run if there's a Stomp MQ local...
+# TODO Enable
 # pytest $SERVERINSTALLDIR/DIRAC/tests/Integration/Resources/MessageQueue/Test_ActiveClose.py 2>&1 | tee -a $SERVER_TEST_OUTPUT; (( ERR |= $? ))

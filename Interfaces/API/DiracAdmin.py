@@ -15,19 +15,19 @@ from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.PromptUser import promptUser
 from DIRAC.Core.Base.API import API
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI
-from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.Core.Utilities.Grid import ldapSite, ldapCluster, ldapCE, ldapService
+from DIRAC.Core.Utilities.Grid import ldapCEState, ldapCEVOView, ldapSE
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
-from DIRAC.Core.Utilities.SiteCEMapping import getSiteCEMapping
 from DIRAC.FrameworkSystem.Client.NotificationClient import NotificationClient
-from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
-from DIRAC.WorkloadManagementSystem.Client.WMSAdministratorClient import WMSAdministratorClient
-from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
 from DIRAC.ResourceStatusSystem.Client.ResourceStatus import ResourceStatus
 from DIRAC.ResourceStatusSystem.Client.SiteStatus import SiteStatus
-from DIRAC.Core.Utilities.Grid import ldapSite, ldapCluster, ldapCE, ldapService
-from DIRAC.Core.Utilities.Grid import ldapCEState, ldapCEVOView, ldapSE
+from DIRAC.WorkloadManagementSystem.Client.JobManagerClient import JobManagerClient
+from DIRAC.WorkloadManagementSystem.Client.WMSAdministratorClient import WMSAdministratorClient
+from DIRAC.WorkloadManagementSystem.Client.PilotManagerClient import PilotManagerClient
 
 voName = ''
 ret = getProxyInfo(disableVOMS=True)
@@ -57,6 +57,7 @@ class DiracAdmin(API):
     self.currentDir = os.getcwd()
     self.rssFlag = ResourceStatus().rssFlag
     self.sitestatus = SiteStatus()
+    self._siteSet = set(getSites().get('Value', []))
 
   #############################################################################
   def uploadProxy(self):
@@ -306,14 +307,13 @@ class DiracAdmin(API):
   def __checkSiteIsValid(self, site):
     """Internal function to check that a site name is valid.
     """
-    sites = getSiteCEMapping()
-    if not sites['OK']:
-      return S_ERROR('Could not get site CE mapping')
-    siteList = sites['Value'].keys()
-    if site not in siteList:
-      return S_ERROR('Specified site %s is not in list of defined sites' % site)
-
-    return S_OK('%s is valid' % site)
+    if isinstance(site, (list, set, dict)):
+      site = set(site) - self._siteSet
+      if not site:
+        return S_OK()
+    elif site in self._siteSet:
+      return S_OK()
+    return S_ERROR('Specified site %s is not in list of defined sites' % str(site))
 
   #############################################################################
   def getServicePorts(self, setup='', printOutput=False):

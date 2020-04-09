@@ -2062,15 +2062,6 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
     Install runit directories for the Web Portal
     """
 
-    result = self.execCommand(False, ["pip", "install", "tornado"])
-    if not result['OK']:
-      error = "Tornado can not be installed:%s" % result['Value']
-      gLogger.error(error)
-      DIRAC.exit(-1)
-      return error
-    else:
-      gLogger.notice("Tornado is installed successfully!")
-
     # Check that the software for the Web Portal is installed
     error = ''
     webDir = os.path.join(self.linkedRootPath, 'WebAppDIRAC')
@@ -2080,20 +2071,6 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
         gLogger.error(error)
         DIRAC.exit(-1)
       return S_ERROR(error)
-
-    # compile the JS code
-    prodMode = ""
-    webappCompileScript = os.path.join(self.linkedRootPath, "WebAppDIRAC/scripts", "dirac-webapp-compile.py")
-    if os.path.isfile(webappCompileScript):
-      os.chmod(webappCompileScript, self.gDefaultPerms)
-      gLogger.notice("Executing %s..." % webappCompileScript)
-      if os.system("python '%s' > '%s.out' 2> '%s.err'" % (webappCompileScript,
-                                                           webappCompileScript,
-                                                           webappCompileScript)):
-        gLogger.error("Compile script %s failed. Check %s.err" % (webappCompileScript,
-                                                                  webappCompileScript))
-      else:
-        prodMode = "-p"
 
     # Check if the component is already installed
     runitWebAppDir = os.path.join(self.runitDir, 'Web', 'WebApp')
@@ -2116,10 +2093,9 @@ touch %(controlDir)s/%(system)s/%(component)s/stop_%(type)s
   #
   exec 2>&1
   #
-  exec python %(DIRAC)s/WebAppDIRAC/scripts/dirac-webapp-run.py %(prodMode)s < /dev/null
+  exec python %(DIRAC)s/WebAppDIRAC/scripts/dirac-webapp-run.py -p < /dev/null
   """ % {'bashrc': os.path.join(self.instancePath, 'bashrc'),
-                  'DIRAC': self.linkedRootPath,
-                  'prodMode': prodMode})
+                  'DIRAC': self.linkedRootPath})
 
         os.chmod(runFile, self.gDefaultPerms)
       except Exception:

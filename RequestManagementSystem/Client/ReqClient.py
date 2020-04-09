@@ -23,6 +23,7 @@ from DIRAC.ConfigurationSystem.Client import PathFinder
 from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.RequestManagementSystem.Client.Request import Request
 from DIRAC.RequestManagementSystem.private.RequestValidator import RequestValidator
+from DIRAC.WorkloadManagementSystem.Client import JobStatus
 
 
 @createClient('RequestManagement/ReqManager')
@@ -304,17 +305,28 @@ class ReqClient(Client):
 
     # The request is 'Done', let's update the job status. If we fail, we should re-try later
     monitorServer = RPCClient("WorkloadManagement/JobMonitoring", useCertificates=useCertificates)
-    res = monitorServer.getJobPrimarySummary(int(jobID))
+    res = monitorServer.getJobSummary(int(jobID))
     if not res["OK"]:
       self.log.error("finalizeRequest: Failed to get job status", "JobID: %d" % jobID)
-      return S_ERROR("finalizeRequest: Failed to get job %d status" % jobID)
+      return res
     elif not res['Value']:
       self.log.info("finalizeRequest: job %d does not exist (anymore): finalizing" % jobID)
       return S_OK()
     else:
-      jobStatus = res["Value"]["Status"]
-      newJobStatus = jobStatus
+      jobStatus = res["Value"]['Status']
       jobMinorStatus = res["Value"]["MinorStatus"]
+      jobAppStatus = ''
+      newJobStatus = ''
+      if jobStatus == JobStatus.STALLED:
+        # If job is stalled, find the previous status from the logging info
+        res = monitorServer.getJobLoggingInfo(int(jobID))
+        if not res['OK']:
+          self.log.error("finalizeRequest: Failed to get job logging info", "JobID: %d" % jobID)
+          return res
+        # Check the last status was Stalled and get the one before
+        if len(res['Value']) >= 2 and res['Value'][-1][0] == JobStatus.STALLED:
+          jobStatus, jobMinorStatus, jobAppStatus = res['Value'][-2][:3]
+          newJobStatus = jobStatus
 
       # update the job pending request digest in any case since it is modified
       self.log.info("finalizeRequest: Updating request digest for job %d" % jobID)
@@ -330,27 +342,25 @@ class ReqClient(Client):
       else:
         self.log.error("finalizeRequest: Failed to get request digest for %s: %s" % (requestID,
                                                                                      digest["Message"]))
-      stateUpdate = None
-      if jobStatus == 'Completed':
+      if jobStatus == JobStatus.COMPLETED:
         # What to do? Depends on what we have in the minorStatus
         if jobMinorStatus == "Pending Requests":
           newJobStatus = 'Done'
-
         elif jobMinorStatus == "Application Finished With Errors":
           newJobStatus = 'Failed'
 
-      if newJobStatus != jobStatus:
+      if newJobStatus:
         self.log.info("finalizeRequest: Updating job status for %d to %s/Requests done" % (jobID, newJobStatus))
-        stateUpdate = stateServer.setJobStatus(jobID, newJobStatus, "Requests done", "")
       else:
         self.log.info(
-            "finalizeRequest: Updating job minor status for %d to Requests done (status is %s)" %
-            (jobID, jobStatus))
-        stateUpdate = stateServer.setJobStatus(jobID, jobStatus, "Requests done", "")
-
+            "finalizeRequest: Updating job minor status",
+            "for %d to Requests done (current status is %s)" % (jobID, jobStatus))
+      stateUpdate = stateServer.setJobStatus(jobID, newJobStatus, "Requests done", "", 'RMS')
+      if jobAppStatus and stateUpdate['OK']:
+        stateUpdate = stateServer.setJobApplicationStatus(jobID, jobAppStatus, 'RMS')
       if not stateUpdate["OK"]:
         self.log.error("finalizeRequest: Failed to set job status",
-                       "JobID: %d status: %s" % (jobID, stateUpdate['Message']))
+                       "JobID: %d, error: %s" % (jobID, stateUpdate['Message']))
         return stateUpdate
 
     return S_OK(newJobStatus)

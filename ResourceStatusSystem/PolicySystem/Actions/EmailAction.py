@@ -10,10 +10,10 @@ __RCSID__ = '$Id$'
 import six
 
 from DIRAC import S_ERROR, S_OK
-from DIRAC.ResourceStatusSystem.PolicySystem.Actions.BaseAction import BaseAction
 from DIRAC.ResourceStatusSystem.Client.ResourceStatusClient import ResourceStatusClient
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getCESiteMapping
 from DIRAC.Core.Utilities.SiteSEMapping import getSitesForSE
-from DIRAC.Core.Utilities.SiteCEMapping import getSiteForCE
+from DIRAC.ResourceStatusSystem.PolicySystem.Actions.BaseAction import BaseAction
 
 
 class EmailAction(BaseAction):
@@ -66,7 +66,10 @@ class EmailAction(BaseAction):
       if elementType == 'StorageElement':
         siteName = getSitesForSE(name)
       elif elementType == 'ComputingElement':
-        siteName = getSiteForCE(name)
+        res = getCESiteMapping(name)
+        if not res['OK']:
+          return res
+        siteName = S_OK(res['Value'][name])
       else:
         siteName = {'OK': True, 'Value': 'Unassigned'}
 

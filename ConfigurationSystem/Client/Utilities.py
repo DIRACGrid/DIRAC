@@ -4,7 +4,6 @@
 """
   Utilities for managing DIRAC configuration:
 
-  getCEsFromCS
   getUnusedGridCEs
   getUnusedGridSEs
   getSiteUpdates
@@ -13,18 +12,33 @@
 
 __RCSID__ = "$Id$"
 
-import six
 import re
 import socket
 from urlparse import urlparse
 
+import six
+
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities import List
-from DIRAC.Core.Utilities.Grid import getBdiiCEInfo, getBdiiSEInfo, ldapService
-from DIRAC.Core.Utilities.SitesDIRACGOCDBmapping import getDIRACSiteName, getDIRACSesForHostName
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgPath
 from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOs, getVOOption
+from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getDIRACSiteName
 from DIRAC.ConfigurationSystem.Client.PathFinder import getDatabaseSection
+from DIRAC.Core.Utilities.Grid import getBdiiCEInfo, getBdiiSEInfo, ldapService
+from DIRAC.Core.Utilities.SiteSEMapping import getSEHosts
+from DIRAC.Core.Utilities.Decorators import deprecated
+from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
+
+
+@deprecated("Use DIRAC.ConfigurationSystem.Client.Helpers.Resources.getSiteCEMapping")
+def getCEsFromCS():
+  from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSiteCEMapping
+  res = getSiteCEMapping()
+  if not res['OK']:
+    return res
+  knownCEs = []
+  for site in res['Value']:
+    knownCEs = knownCEs + res['Value'][site]
+  return S_OK(knownCEs)
 
 
 def getGridVOs():
@@ -41,30 +55,6 @@ def getGridVOs():
       if vomsVO:
         voNames.append(vomsVO)
   return S_OK(voNames)
-
-
-def getCEsFromCS():
-  """ Get all the CEs defined in the CS
-  """
-
-  knownCEs = []
-  result = gConfig.getSections('/Resources/Sites')
-  if not result['OK']:
-    return result
-  grids = result['Value']
-
-  for grid in grids:
-    result = gConfig.getSections('/Resources/Sites/%s' % grid)
-    if not result['OK']:
-      return result
-    sites = result['Value']
-
-    for site in sites:
-      opt = gConfig.getOptionsDict('/Resources/Sites/%s/%s' % (grid, site))['Value']
-      ces = List.fromChar(opt.get('CE', ''))
-      knownCEs += ces
-
-  return S_OK(knownCEs)
 
 
 def getSEsFromCS(protocol='srm'):
@@ -345,12 +335,6 @@ def getGridSEs(vo, bdiiInfo=None, seBlackList=None):
     for gridSE in seBdiiDict[site]['SEs']:
       seDict = seBdiiDict[site]['SEs'][gridSE]
 
-      # if "lhcb" in seDict['GlueSAName']:
-      #  print '+'*80
-      #  print gridSE
-      #  for k,v in seDict.items():
-      #    print k,'\t',v
-
       if gridSE not in knownSEs:
         siteDict.setdefault(site, {})
         if isinstance(seDict['GlueSAAccessControlBaseRule'], list):
@@ -366,6 +350,26 @@ def getGridSEs(vo, bdiiInfo=None, seBlackList=None):
   result = S_OK(siteDict)
   result['BdiiInfo'] = seBdiiDict
   return result
+
+
+def getDIRACSesForHostName(hostName):
+  """ returns the DIRAC SEs that share the same hostName
+
+      :param str hostName: host name, e.g. 'storm-fe-lhcb.cr.cnaf.infn.it'
+      :return: S_OK with list of DIRAC SE names, or S_ERROR
+  """
+
+  seNames = DMSHelpers().getStorageElements()
+
+  resultDIRACSEs = []
+  for seName in seNames:
+    res = getSEHosts(seName)
+    if not res['OK']:
+      return res
+    if hostName in res['Value']:
+      resultDIRACSEs.extend(seName)
+
+  return S_OK(resultDIRACSEs)
 
 
 def getGridSRMs(vo, bdiiInfo=None, srmBlackList=None, unUsed=False):
@@ -658,3 +662,37 @@ def getElasticDBParameters(fullname):
 def getOAuthAPI(instance):
   """ Get OAuth API url """
   return gConfig.getValue("/Systems/Framework/%s/URLs/OAuthAPI" % instance)
+
+
+def getDIRACGOCDictionary():
+  """
+  Create a dictionary containing DIRAC site names and GOCDB site names
+  using a configuration provided by CS.
+
+  :return:  A dictionary of DIRAC site names (key) and GOCDB site names (value).
+  """
+
+  log = gLogger.getSubLogger('getDIRACGOCDictionary')
+  log.debug('Begin function ...')
+
+  result = gConfig.getConfigurationTree('/Resources/Sites', 'Name')
+  if not result['OK']:
+    log.error("getConfigurationTree() failed with message: %s" % result['Message'])
+    return S_ERROR('Configuration is corrupted')
+  siteNamesTree = result['Value']
+
+  dictionary = dict()
+  PATHELEMENTS = 6  # site names have 6 elements in the path, i.e.:
+  #    /Resource/Sites/<GRID NAME>/<DIRAC SITE NAME>/Name
+  # [0]/[1]     /[2]  /[3]        /[4]              /[5]
+
+  for path, gocdbSiteName in siteNamesTree.items():  # can be an iterator
+    elements = path.split('/')
+    if len(elements) != PATHELEMENTS:
+      continue
+
+    diracSiteName = elements[PATHELEMENTS - 2]
+    dictionary[diracSiteName] = gocdbSiteName
+
+  log.debug('End function.')
+  return S_OK(dictionary)

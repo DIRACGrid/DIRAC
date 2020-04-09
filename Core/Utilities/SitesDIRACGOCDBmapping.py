@@ -1,12 +1,10 @@
-"""  The SitesDIRACGOCDBmapping module performs the necessary CS gymnastics to
-     resolve sites DIRAC-GOCDB names.
-
-     Assumes CS structure of: /Resources/Sites/<GRIDNAME>/<SITENAME>
+"""  DEPRECATED DEPRECATED DEPRECATED DEPRECATED DEPRECATED
 """
 __RCSID__ = "$Id$"
 
 from DIRAC import gLogger, gConfig, S_OK, S_ERROR
 from DIRAC.Core.Utilities.SiteSEMapping import getSEHosts
+from DIRAC.Core.Utilities.Decorators import deprecated
 from DIRAC.ConfigurationSystem.Client.Helpers.Resources import getSites
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 
@@ -14,6 +12,7 @@ from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 #############################################################################
 
 
+@deprecated("Use DIRAC.ConfigurationSystem.Client.Helpers.Resources.getGOCSiteName")
 def getGOCSiteName(diracSiteName):
   """
   Get GOC DB site name, given the DIRAC site name, as it stored in the CS
@@ -29,6 +28,7 @@ def getGOCSiteName(diracSiteName):
     return S_OK(gocDBName)
 
 
+@deprecated("Use DIRAC.ConfigurationSystem.Client.Helpers.Resources.getGOCSites")
 def getGOCSites(diracSites=None):
 
   if diracSites is None:
@@ -48,6 +48,7 @@ def getGOCSites(diracSites=None):
   return S_OK(list(set(gocSites)))
 
 
+@deprecated("Use DIRAC.ConfigurationSystem.Client.Helpers.Resources.getGOCFTSName")
 def getGOCFTSName(diracFTSName):
   """
   Get GOC DB FTS server URL, given the DIRAC FTS server name, as it stored in the CS
@@ -66,6 +67,7 @@ def getGOCFTSName(diracFTSName):
 
 #############################################################################
 
+@deprecated("Use DIRAC.ConfigurationSystem.Client.Helpers.Resources.getDIRACSiteName")
 def getDIRACSiteName(gocSiteName):
   """
   Get DIRAC site name, given the GOC DB site name, as it stored in the CS
@@ -92,6 +94,7 @@ def getDIRACSiteName(gocSiteName):
   return S_ERROR("There's no site with GOCDB name = %s in DIRAC CS" % gocSiteName)
 
 
+@deprecated("Use DIRAC.ConfigurationSystem.Client.Utilities.getDIRACSiteName")
 def getDIRACSesForHostName(hostName):
   """ returns the DIRAC SEs that share the same hostName
 
@@ -113,6 +116,7 @@ def getDIRACSesForHostName(hostName):
   return S_OK(resultDIRACSEs)
 
 
+@deprecated("Use DIRAC.ConfigurationSystem.Client.Utilities.getDIRACGOCDictionary")
 def getDIRACGOCDictionary():
   """
   Create a dictionary containing DIRAC site names and GOCDB site names
@@ -145,5 +149,3 @@ def getDIRACGOCDictionary():
 
   log.debug('End function.')
   return S_OK(dictionary)
-
-# EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#EOF#
