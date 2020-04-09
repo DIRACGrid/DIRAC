@@ -10,7 +10,7 @@ This resource type provides an interface to obtain proxy certificates using a us
 DIRACCA proxy provider
 ----------------------
 
-ProxyProvider implementation for the proxy generation using local CA credentials. This class is a simple CA, it's main purpose is to generate a simple proxy on the fly for DIRAC users who do not have any certificate register. To use it need to have CA certificate and key localy. Required parameters in the DIRAC configuration for its implementation::
+ProxyProvider implementation for the proxy generation using local Certification Authority (CA) credentials. This class is a simple CA, its main purpose is to generate a proxy on the fly for DIRAC users who do not have a certificate registered in DIRAC registry. To use it need to have CA certificate and key locally. Required parameters in the DIRAC configuration for its implementation::
 
     Resources
     {
