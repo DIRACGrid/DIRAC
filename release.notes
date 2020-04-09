@@ -1,4 +1,4 @@
-[v7r1-pre22]
+[v7r1-pre23]
 
 NEW: Add environment.yml file for preparing an environment with conda
 CHANGE: (#4507) autopep8 for the entire code stack
@@ -15,6 +15,8 @@ CHANGE: (#4410) (JSON) rpcStub uses list instead of tuples
 NEW: (#4410) add utilities for JSON Serialization (strToIntDict and ignoreEncodeWarning)
 CHANGE: (#4354) ThreadPool - replaced by ThreadPoolExecutor(native python)
 FIX: (#4439) MySQLDB _connect method
+NEW: (#4510) Removed dirac-distribution (use docker image)
+CHANGE: (#4491) Streamline of CS helpers for sites and computing elements
 
 *Configuration
 CHANGE: (#4157) add new helper methods for IdP/Proxy Providers, OAuthManager. Add methods that 
@@ -60,9 +62,14 @@ CHANGE: (#4410) (JSON) correct casts for serialization for FTS
 CHANGE: (#4364) remove all the SE mangling in the DFC (SEPrefix, resolvePFN, SEDefinition)
 CHANGE: (#4423) FileMetadata - split getFileMetadataFields into getFileMetadataFields and _getFileMetadataFields
 CHANGE: (#4423) DirectoryMetadata - split getMetadataFields into getMetadataFields and _getMetadataFields
+NEW: (#4465) FileCatalog - a FileMetadata and DirectoryMetadata multi VO targeted plug-in wrappers for
+     user metadata operations.
+
 
 *RMS
 CHANGE: (#4410) (JSON) correct casts for serialization
+FIX: (#4517) When finalising the request, one should take into account the fact that if the job is
+     Stalled one must find its previous status. This is fixed in ReqClient
 
 *Resources
 NEW: (#4157) ProxyProvider resources with implementation for DIRAC CA and PUSP proxy providers
