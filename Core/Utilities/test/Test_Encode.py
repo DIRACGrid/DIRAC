@@ -17,7 +17,7 @@ from DIRAC.Core.Utilities.DEncode import encode as disetEncode, decode as disetD
 from DIRAC.Core.Utilities.JEncode import encode as jsonEncode, decode as jsonDecode, JSerializable
 from DIRAC.Core.Utilities.MixedEncode import encode as mixEncode, decode as mixDecode
 
-from hypothesis import given
+from hypothesis import given, settings, HealthCheck
 from hypothesis.strategies import builds, integers, lists, recursive, floats, text,\
     booleans, none, dictionaries, tuples, datetimes
 
@@ -121,7 +121,8 @@ def agnosticTestFunction(enc_dec_tuple, data):
 def base_enc_dec(request, monkeypatch):
   """ base function to generate the (encoding, decoding) tuple and potentially setting the environment variables
 
-      :param request: fixture request. Will contain either an encoding/decoding tuple, or the same tuple plus two env variables to be set
+      :param request: fixture request. Will contain either an encoding/decoding tuple,
+       or the same tuple plus two env variables to be set
   """
 
   if len(request.param) == 2:
@@ -259,6 +260,7 @@ class Serializable(JSerializable):
     return all([getattr(self, attr) == getattr(other, attr) for attr in self._attrToSerialize])
 
 
+@settings(suppress_health_check=(HealthCheck.too_slow,))
 @given(data=nestedStrategyJson)
 def test_Serializable(data):
   """ Test if a simple serializable class with one random argument
