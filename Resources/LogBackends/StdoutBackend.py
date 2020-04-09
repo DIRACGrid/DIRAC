@@ -27,13 +27,16 @@ class StdoutBackend(AbstractBackend):
     You can find it in FrameworkSystem/private/standardLogging/Formatter
   """
 
-  def __init__(self):
-    super(StdoutBackend, self).__init__(None, ColoredBaseFormatter)
+  def __init__(self, backendParams=None):
+    super(StdoutBackend, self).__init__(logging.StreamHandler, ColoredBaseFormatter, backendParams)
 
-  def createHandler(self, parameters=None):
+  def _setHandlerParameters(self, backendParams=None):
     """
-    Each backend can initialize its attributes and create its handler with them.
+    Get the handler parameters from the backendParams.
+    The keys of handlerParams should correspond to the parameter names of the associated handler.
+    The method should be overridden in every backend that needs handler parameters.
+    The method should be called before creating the handler object.
 
-    :params parameters: dictionary of parameters. ex: {'FileName': file.log}
+    :param dict parameters: parameters of the backend. ex: {'FileName': file.log}
     """
-    self._handler = logging.StreamHandler(sys.stdout)
+    self._handlerParams['stream'] = sys.stdout

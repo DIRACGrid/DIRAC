@@ -7,10 +7,13 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
+from pythonjsonlogger.jsonlogger import JsonFormatter as libJsonFormatter
+
 from DIRAC.FrameworkSystem.private.standardLogging.Handler.MessageQueueHandler import MessageQueueHandler
 from DIRAC.FrameworkSystem.private.standardLogging.LogLevels import LogLevels
 from DIRAC.Resources.LogBackends.AbstractBackend import AbstractBackend
-from DIRAC.FrameworkSystem.private.standardLogging.Formatter.JsonFormatter import JsonFormatter
+
+DEFAULT_MQ_LEVEL = 'verbose'
 
 
 class MessageQueueBackend(AbstractBackend):
@@ -25,27 +28,26 @@ class MessageQueueBackend(AbstractBackend):
     You can find it in FrameworkSystem/private/standardLogging/Formatter
   """
 
-  def __init__(self):
+  def __init__(self, backendParams=None):
     """
     Initialization of the MessageQueueBackend
     """
-    super(MessageQueueBackend, self).__init__(None, JsonFormatter)
-    self.__queue = ''
+    super(MessageQueueBackend, self).__init__(MessageQueueHandler,
+                                              libJsonFormatter,
+                                              backendParams,
+                                              level=DEFAULT_MQ_LEVEL)
 
-  def createHandler(self, parameters=None):
+  def _setHandlerParameters(self, backendParams=None):
     """
-    Each backend can initialize its attributes and create its handler with them.
+    Get the handler parameters from the backendParams.
+    The keys of handlerParams should correspond to the parameter names of the associated handler.
+    The method should be overridden in every backend that needs handler parameters.
+    The method should be called before creating the handler object.
 
-    :params parameters: dictionary of parameters. ex: {'FileName': file.log}
+    :param dict parameters: parameters of the backend. ex: {'FileName': file.log}
     """
-    if parameters is not None:
-      self.__queue = parameters.get("MsgQueue", self.__queue)
-    self._handler = MessageQueueHandler(self.__queue)
-    self._handler.setLevel(LogLevels.VERBOSE)
+    # default values
+    self._handlerParams['queue'] = ''
 
-  def setLevel(self, level):
-    """
-    No possibility to set the level of the MessageQueue handler.
-    It is not set by default so it can send all Log Records of all levels to the MessageQueue.
-    """
-    pass
+    if backendParams is not None:
+      self._handlerParams['queue'] = backendParams.get('MsgQueue', self._handlerParams['queue'])

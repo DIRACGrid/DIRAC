@@ -27,22 +27,6 @@ Here is a snippet presenting the creation of the tree seen above:
 Set a child level
 -----------------
 
-The truth about the levels
-~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-In the basic part, we talked about the different ways to set a *Logging*
-level. Only the *gLogger* level was allowed to be set.
-
-This is because, in truth, *Logging* objects have two different levels:
-their own level, set to *debug* and unchangeable, and the level of its
-*Backend* objects. Thus, when we want to change the *Logging* level, we
-change the *Backend* objects level of this *Logging* in reality.
-
-In this way, every log records of every levels are created by every
-*Logging* objects and can be send to a central logging server. The other
-*Backend* objects can sort the log records according to the level
-choosen by the user to send them or not to the output.
-
 The level propagation
 ~~~~~~~~~~~~~~~~~~~~~
 
@@ -57,7 +41,7 @@ children levels:
     print logger.getLevel()
     # > NOTICE
 
-While the children levels are not define by the user, they are modified
+While the children levels are not defined by the user, they are modified
 according to the parent level:
 
 ::
@@ -124,16 +108,6 @@ Nevertheless, the propagation is still existing for the children of
 To summarize, a *Logging* receives its parent level until the user sets
 its level with the *setLevel* method.
 
-The *setLevel* utility
-~~~~~~~~~~~~~~~~~~~~~~
-
-As we said before, the *setLevel* method modifies the *Backend* objects
-level of the current *Logging* so if this last mentionned have no
-*Backend* objects, set its level become useless.
-
-Furthermore, the *setLevel* method is useful only if we add it some
-*Backend* objects.
-
 Add a *Backend* object on a child *Logging*
 -------------------------------------------
 
@@ -183,14 +157,6 @@ will appears multiple times in this case. Here is an example:
 
 We can also notice that the log records do not go down in the tree.
 
-The truth about the returned value of the level methods
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-The boolean contained in the level methods seen in the :ref:`gLogger_gLogger_basics` part indicates, in reality,
-if the log record will appear or not in the *Backend* objects of the
-current *Logging*. Thus, the boolean can be at *False* and the log
-record can appear in one of its parent anyway.
-
 The *registerBackend(s)* utility
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -219,21 +185,18 @@ snippet of this example:
 Modify a display for different *Logging* objects
 ------------------------------------------------
 
-*showThreadIDs* and *showHeaders* propagation
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*showHeaders/TimeStamps/Contexts/ThreadIDs* propagation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Now that it is possible to add *Backend* objects to any *Logging*, we
-have also the possibility to modify their display formats. To do such an
-operation, we have to use the *showThreadIDs* and *showHeaders* methods
-in a child. Of course, this child must contain at least one *Backend* to
-be efficient.
+We also have the possibility to modify the log format by calling the methods
+from any existing *Logging* object methods.
 
 Thus, these methods function exactly as the *setLevel* method, so they
-can be propagate in the children if the options are not modified by the
+can be propagated in the children if the options are not modified by the
 user.
 
-*showThreadIDs* and *showHeaders* utility
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*showHeaders/TimeStamps/Contexts/ThreadIDs* utility
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Here, the utility is to modify the display format of the isolate log
 records from a specific *Logging* to not be embarrassed with extra
@@ -243,18 +206,13 @@ information that we do not want for example:
 
     # gLogger: stdout Backend, NOTICE level, showHeaders at True
     logger = gLogger.getSubLogger("logger")
-    logger.registerBackend('file', {'FileName': 'file.log'})
     logger.setLevel("error")
-    logger.showHeaders(False)
+    logger.showHeaders(True)
+    logger.showTimeStamps(False)
+    logger.showContexts(False)
     logger.verbose("appears only in stdout")
-    logger.notice("appears only in stdout")
-    logger.error("appears in stdout and in file.log")
     # in stdout:
-    # > ... UTC Framework/Atom/logger VERBOSE: appears only in stdout
-    # > ... UTC Framework/Atom/logger NOTICE: appears only in stdout
-    # > ... UTC Framework/Atom/logger ERROR: appears in stdout, in file.log
-    # in file.log:
-    # > appears in stdout, in file.log
+    # > VERBOSE: appears only in stdout
 
 The *LogColor* case
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

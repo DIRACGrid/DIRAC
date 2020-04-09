@@ -7,6 +7,8 @@ from __future__ import print_function
 
 __RCSID__ = "$Id$"
 
+from DIRAC.FrameworkSystem.private.standardLogging.LogLevels import LogLevels
+
 
 class AbstractBackend(object):
   """
@@ -30,25 +32,33 @@ class AbstractBackend(object):
   and to set the format of the handler when the display must be changed.
   """
 
-  def __init__(self, handler, formatter):
+  def __init__(self, handlerType, formatterType, backendParams=None, level='debug'):
     """
     Initialization of the backend.
     _handler and _formatter can be custom objects. If it is the case, you can find them
     in FrameworkSystem/private/standardLogging/Formatter or Handler.
 
-    :params _handler: handler object from 'logging'. Ex: StreamHandler(), FileHandler()...
-    :params _formatter: the name of a formatter object from logging. Ex: BaseFormatter
-    """
-    self._handler = handler
-    self._formatter = formatter
+    :param _handler: handler object from 'logging'. Ex: StreamHandler(), FileHandler()...
+    :param _formatter: the name of a formatter object from logging. Ex: BaseFormatter
+    :param dict backendParams: parameters to set up the backend
+    :param str _datefmt: parameters to set up the formatter (e.g. fmt, the format, and datefmt, the date format)
+    :param str _level: level of the handler
 
-  def createHandler(self, parameters=None):
     """
-    Each backend can initialize its attributes and create its handler with them.
+    # get handler parameters from the backendParams and instantiate the handler
+    self._handlerParams = {}
+    self._setHandlerParameters(backendParams)
+    self._setHandler(handlerType)
 
-    :params parameters: dictionary of parameters. ex: {'FileName': file.log}
-    """
-    raise NotImplementedError("setParameter not implemented")
+    # get formatter parameters from the backendParams, instantiate and attach the formatter to the handler
+    self._formatterParams = {}
+    self._setFormatterParameters(backendParams)
+    self._setFormatter(formatterType)
+
+    # set the level: can also be defined in the backendParams
+    if backendParams:
+      level = backendParams.get('LogLevel', level)
+    self.setLevel(level)
 
   def getHandler(self):
     """
@@ -56,40 +66,58 @@ class AbstractBackend(object):
     """
     return self._handler
 
-  def setFormat(self, fmt, datefmt, options):
+  def _setHandler(self, handlerType):
     """
-    Each backend give a format to their formatters and attach them to their handlers.
+    Instantiate a handler from the given handlerType.
 
-    :params fmt: string representing the log format
-    :params datefmt: string representing the date format
-    :params component: string represented as "system/component"
-    :params options: dictionary of logging options. ex: {'Color': True}
+    :param str handlerType: the handler type (e.g. logging.StreamHandler)
     """
-    self._handler.setFormatter(self._formatter(fmt, datefmt, options))
+    self._handler = handlerType(**self._handlerParams)
 
-  def setLevel(self, level):
+  def _setHandlerParameters(self, backendParams=None):
+    """
+    Get the handler parameters from the backendParams.
+    The keys of handlerParams should correspond to the parameter names of the associated handler.
+    The method should be overridden in every backend that needs handler parameters.
+    The method should be called before creating the handler object.
+
+    :param dict parameters: parameters of the backend. ex: {'FileName': file.log}
+    """
+    pass
+
+  def _setFormatter(self, formatterType):
+    """
+    Instantiate a formatter from the given formatterType and attach it to the handler.
+
+    :param str formatterType: the formatter type (e.g. BaseFormatter)
+    """
+    self._handler.setFormatter(formatterType(**self._formatterParams))
+
+  def _setFormatterParameters(self, backendParams=None):
+    """
+    Get the formatting option from the backendParams
+
+    :param dict backendParams: parameters of the backend
+    """
+    # Default values
+    self._formatterParams['fmt'] = None
+    self._formatterParams['datefmt'] = None
+
+    # Get values from formatterParameters
+    if backendParams is not None:
+      self._formatterParams['fmt'] = backendParams.get('Format')
+      self._formatterParams['datefmt'] = backendParams.get('DateFormat')
+
+  def setLevel(self, levelName):
     """
     Configure the level of the handler associated to the backend.
+    Make sure the handler has been created before calling the method.
 
-    :params level: integer representing a level
+    :param int level: a level
     """
-    self._handler.setLevel(level)
-
-  @staticmethod
-  def createFormat(options):
-    """
-    Create a format from the options given in parameters.
-
-    :params options: dictionary of options of the Logging which wants a new format
-    :params level: integer representing the level of the Logging object which wants a new format
-    :return: tuple containing two strings: a format and a date format
-    """
-    fmt = ''
-    datefmt = '%Y-%m-%d %H:%M:%S'
-    if options['headerIsShown']:
-      fmt += '%(asctime)s UTC %(componentname)s%(customname)s'
-      if options['threadIDIsShown']:
-        fmt += ' [%(thread)d]'
-      fmt += ' %(levelname)s: '
-    fmt += '%(message)s%(spacer)s%(varmessage)s'
-    return (datefmt, fmt)
+    result = False
+    if levelName.upper() in LogLevels.getLevelNames():
+      self._handler.setLevel(LogLevels.getLevelValue(levelName))
+      self._level = levelName
+      result = True
+    return result

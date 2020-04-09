@@ -254,10 +254,10 @@ it a string representing a level like this:
 In this example, the level of *logger* is set to *info*. By the way, we
 recommend you to not use this method for a basic use.
 
-Get the level attaching to a specific *Logging*
+Get the level attached to a specific *Logging*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-We can obviously get a level associate to a *Logging* via the *getLevel*
+We can obviously get a level associated to a *Logging* via the *getLevel*
 method. This method returns a string representing a level. Here is an
 example of use:
 
@@ -374,8 +374,8 @@ an example with the boolean at *True*:
 
 ::
 
-    [Date] UTC [System]/[Component]/[Log][Thread] [Level]: [Message]
-    2017-04-25 15:51:01 UTC Framework/Atom/log[140218144]ALWAYS: message
+    [Date] UTC [System]/[Component]/[Log] [Thread] [Level]: [Message]
+    2017-04-25 15:51:01 UTC Framework/Atom/log [140218144]ALWAYS: message
 
 We can see the thread ID between the *Logging* name and the level:
 [140218144]. Nevertheless, set the boolean value is not the only
@@ -402,6 +402,35 @@ A second way to set the boolean is to use the command line argument
 
 We can find a complete table containing all the effects of the command
 line arguments in the `Summary of the command line argument configuration`_ part.
+
+Hide the timestamp in the log record
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+It is possible to hide the timestamp from the log records via the
+*showTimeStamps* method which modifies the boolean *timeStampIsShown* value.
+As the *showHeaders* method, it takes a boolean in parameter to set
+*timeStampIsShown*. This attribute is set to *False* by default. Here is
+an example with the boolean at *False*:
+
+::
+
+    [System]/[Component]/[Log] [Level]: [Message]
+    Framework/Atom/log ALWAYS: message
+
+Hide the context in the log record
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We can also hide the context (compoenent name and logger name) from the log records via the
+*showContexts* method which modifies the boolean *contextIsShown* value.
+As the *showHeaders* method, it takes a boolean in parameter to set
+*contextIsShown*. This attribute is set to *False* by default. Here is
+an example with the boolean at *False*:
+
+::
+
+    [Date] UTC [Level]: [Message]
+    2017-04-25 15:51:01 UTC ALWAYS: message
+
 
 Remove colors on the log records
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

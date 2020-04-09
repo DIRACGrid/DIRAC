@@ -241,18 +241,13 @@ a propagation:
     # gLogger has a stdout Backend, DEBUG level
     gLogger.showHeaders(True)
     log = gLogger.getSubLogger('log')
-    log.registerBackends(['stderr'])
     log.verbose("message")
     # stdout
-    # > ...VERBOSE: message
-    # stderr
     # > ...VERBOSE: message
 
     gLogger.showHeaders(False)
     log.verbose("message")
     # stdout
-    # > message
-    # stderr
     # > message
 
 It is possible to limit this propagation setting the format of a
@@ -265,20 +260,54 @@ will stay the same:
     # gLogger has a stdout Backend, DEBUG level
     gLogger.showHeaders(True)
     log = gLogger.getSubLogger('log')
-    log.registerBackends(['stderr'])
     log.showHeaders(True)
     log.verbose("message")
     # stdout
-    # > VERBOSE: message
-    # stderr
-    # > VERBOSE: message
+    # > ...VERBOSE: message
 
     gLogger.showHeaders(False)
     log.verbose("message")
     # stdout
-    # > message
-    # stderr
+    # > ...VERBOSE: message
+
+New display options: *showTimeStamps* and *showContexts*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+As *showThreadIDs*, these two new methods are applied when *showHeaders* is enabled:
+
+- *showTimeStamps* is on by default and allow to display or hide the timestamp from the logs.
+- *showContexts* is also on by default and allow to display or hide the component and the logger name.
+
+Here is an example:
+
+::
+
+    # gLogger has a stdout Backend, DEBUG level
+    gLogger.showHeaders(True)
+    gLogger.verbose("message")
+    # stdout
+    # > <time> UTC Component VERBOSE: message
+    gLogger.showTimeStamps(False)
+    gLogger.verbose("message")
+    # stdout
+    # > Component VERBOSE: message
+    gLogger.showContext(False)
+    gLogger.verbose("message")
+    # stdout
     # > VERBOSE: message
+    gLogger.showTimeStamp(True)
+    gLogger.verbose("message")
+    # stdout
+    # > <time> UTC VERBOSE: message
+    gLogger.showThreadIDs(True)
+    gLogger.verbose("message")
+    # stdout
+    # > [<threadID>] VERBOSE: message
+    gLogger.showHeaders(False)
+    gLogger.verbose("message")
+    # stdout
+    # > message
+
 
 *Backend* configuration
 -----------------------

@@ -62,6 +62,8 @@ In order to create custom *Backend* objects, we just
 have to make a new class named *[Backendname]Backend* in
 this package inheriting from *AbstractBackend*.
 For instance, the class name of the *stdout Backend* is *StdoutBackend*.
+We may also need to override *setHandlerParameters*, to get the Backend parameters
+and pass them to the handler.
 
 Then, to use it, we just have to add its name in the configuration as usual.
 
