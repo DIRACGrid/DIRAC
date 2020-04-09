@@ -15,7 +15,7 @@ CHANGE: (#4235) Removes locals() way of passing parameters
 *tests
 NEW: (#4179) Set up Gitlab CI pipeline using Docker containers
 
-[v7r1-pre24]
+[v7r1]
 
 NEW: Add environment.yml file for preparing an environment with conda
 CHANGE: (#4507) autopep8 for the entire code stack
