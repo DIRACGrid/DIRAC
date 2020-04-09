@@ -442,6 +442,7 @@ class MessageSender(object):
   def createMessage(self, msgName):
     return self.__msgBroker.__msgFactory.createMessage(self.__serviceName, msgName)
 
+
 gMessageBroker = False
 
 

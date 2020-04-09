@@ -83,7 +83,9 @@ exit
 
 EOF
 
-dirac-dms-filecatalog-cli < dataManager_create_folders
+# the filecatalog-cli script sorts alphabetically all the defined catalog and takes the first one....
+# which of course does not work if your catalog is called Bookkeeping... so force to use the real DFC
+dirac-dms-filecatalog-cli -f FileCatalog < dataManager_create_folders
 
 echo -e "*** $(date -u)  Getting a non privileged user\n" 2>&1 | tee -a clientTestOutputs.txt
 dirac-proxy-init -g jenkins_user -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key $DEBUG 2>&1 | tee -a clientTestOutputs.txt
@@ -106,3 +108,6 @@ python $CLIENTINSTALLDIR/DIRAC/tests/Jenkins/dirac-cfg-update-filecatalog.py  2>
 dirac-proxy-init -g jenkins_user -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key $DEBUG 2>&1 | tee -a clientTestOutputs.txt
 echo -e "*** $(date -u) **** MultiVO User Metadata TESTS ****\n"
 python -m pytest $CLIENTINSTALLDIR/DIRAC/tests/Integration/DataManagementSystem/Test_UserMetadata.py 2>&1 | tee -a clientTestOutputs.txt; (( ERR |= $? ))
+
+echo -e "*** $(date -u) **** S3 TESTS ****\n"
+pytest $CLIENTINSTALLDIR/DIRAC/tests/Integration/Resources/Storage/Test_Resources_S3.py 2>&1 | tee -a clientTestOutputs.txt; (( ERR |= $? ))

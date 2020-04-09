@@ -14,29 +14,30 @@ import functools
 
 from DIRAC import S_OK, S_ERROR
 
-def checkArgumentFormat( path, generateMap = False ):
+
+def checkArgumentFormat(path, generateMap=False):
   """ Bring the various possible form of arguments to FileCatalog methods to
       the standard dictionary form
   """
 
-  def checkArgumentDict( path ):
+  def checkArgumentDict(path):
     """ Check and process format of the arguments to FileCatalog methods """
     if isinstance(path, six.string_types):
-      urls = {path:True}
-    elif isinstance( path, list ):
+      urls = {path: True}
+    elif isinstance(path, list):
       urls = {}
       for url in path:
         urls[url] = True
-    elif isinstance( path, dict ):
+    elif isinstance(path, dict):
       urls = path
     else:
-      return S_ERROR( errno.EINVAL, "Utils.checkArgumentFormat: Supplied path is not of the correct format." )
-    return S_OK( urls )
+      return S_ERROR(errno.EINVAL, "Utils.checkArgumentFormat: Supplied path is not of the correct format.")
+    return S_OK(urls)
 
   if not path:
-    return S_ERROR( errno.EINVAL, 'Empty input: %s' % str( path ) )
+    return S_ERROR(errno.EINVAL, 'Empty input: %s' % str(path))
 
-  result = checkArgumentDict( path )
+  result = checkArgumentDict(path)
   if not result['OK']:
     return result
 
@@ -50,38 +51,39 @@ def checkArgumentFormat( path, generateMap = False ):
     if not url:
       continue
     mUrl = url
-    if url.lower().startswith( 'lfn:' ):
+    if url.lower().startswith('lfn:'):
       mUrl = url[4:]
     # Strip off the leading /grid prefix as required for the LFC
     if mUrl.startswith('/grid/'):
       uList = mUrl.split('/')
-      uList.pop( 1 )
-      mUrl = '/'.join( uList )
-    normPath = os.path.normpath( mUrl )
+      uList.pop(1)
+      mUrl = '/'.join(uList)
+    normPath = os.path.normpath(mUrl)
     urls[normPath] = pathDict[url]
     if normPath != url:
       urlMap[normPath] = url
   if generateMap:
-    return S_OK( ( urls, urlMap ) )
+    return S_OK((urls, urlMap))
   else:
-    return S_OK( urls )
+    return S_OK(urls)
 
-def checkCatalogArguments( f ):
+
+def checkCatalogArguments(f):
   """ Decorator to check arguments of FileCatalog calls in the clients
   """
   @functools.wraps(f)
   def processWithCheckingArguments(*args, **kwargs):
 
-    checkFlag = kwargs.pop( 'LFNChecking', True )
+    checkFlag = kwargs.pop('LFNChecking', True)
     if checkFlag:
-      argList = list( args )
+      argList = list(args)
       lfnArgument = argList[1]
-      result = checkArgumentFormat( lfnArgument, generateMap = True )
+      result = checkArgumentFormat(lfnArgument, generateMap=True)
       if not result['OK']:
         return result
       checkedLFNDict, lfnMap = result['Value']
       argList[1] = checkedLFNDict
-      argTuple = tuple( argList )
+      argTuple = tuple(argList)
     else:
       argTuple = args
     result = f(*argTuple, **kwargs)
@@ -96,11 +98,11 @@ def checkCatalogArguments( f ):
     failed = {}
     successful = {}
     for lfn in result['Value']['Failed']:
-      failed[lfnMap.get( lfn, lfn )] = result['Value']['Failed'][lfn]
+      failed[lfnMap.get(lfn, lfn)] = result['Value']['Failed'][lfn]
     for lfn in result['Value']['Successful']:
-      successful[lfnMap.get( lfn, lfn )] = result['Value']['Successful'][lfn]
+      successful[lfnMap.get(lfn, lfn)] = result['Value']['Successful'][lfn]
 
-    result['Value'].update( { "Successful": successful, "Failed": failed } )
+    result['Value'].update({"Successful": successful, "Failed": failed})
     return result
 
   return processWithCheckingArguments

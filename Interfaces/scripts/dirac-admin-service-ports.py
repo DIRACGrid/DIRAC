@@ -12,24 +12,23 @@ __RCSID__ = "$Id$"
 import DIRAC
 from DIRAC.Core.Base import Script
 
-Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
-                                     'Usage:',
-                                     '  %s [option|cfgfile] ... [Setup]' % Script.scriptName,
-                                     'Arguments:',
-                                     '  Setup:    Name of the setup' ] ) )
-Script.parseCommandLine( ignoreErrors = True )
+Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
+                                  'Usage:',
+                                  '  %s [option|cfgfile] ... [Setup]' % Script.scriptName,
+                                  'Arguments:',
+                                  '  Setup:    Name of the setup']))
+Script.parseCommandLine(ignoreErrors=True)
 args = Script.getPositionalArgs()
 
 setup = ''
 if args:
   setup = args[0]
 
-from DIRAC.Interfaces.API.DiracAdmin                         import DiracAdmin
+from DIRAC.Interfaces.API.DiracAdmin import DiracAdmin
 diracAdmin = DiracAdmin()
-result = diracAdmin.getServicePorts( setup, printOutput = True )
+result = diracAdmin.getServicePorts(setup, printOutput=True)
 if result['OK']:
-  DIRAC.exit( 0 )
+  DIRAC.exit(0)
 else:
   print(result['Message'])
-  DIRAC.exit( 2 )
-
+  DIRAC.exit(2)

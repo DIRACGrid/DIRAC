@@ -612,4 +612,5 @@ class ProxyManagerClient(object):
       result.pop('rpcStub')
     return result
 
+
 gProxyManager = ProxyManagerClient()

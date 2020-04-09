@@ -104,7 +104,7 @@ def date(myDateTime=None):
   Return current UTC date, as datetime.date object
   if a _dateTimeType is pass as argument its associated date is returned
   """
-  if type(myDateTime) == _dateTimeType:
+  if isinstance(myDateTime, _dateTimeType):
     return myDateTime.date()
   return dateTime().date()
 
@@ -114,7 +114,7 @@ def time(myDateTime=None):
   Return current UTC time, as datetime.time object
   if a _dateTimeType is pass as argument its associated time is returned
   """
-  if not type(myDateTime) == _dateTimeType:
+  if not isinstance(myDateTime, _dateTimeType):
     myDateTime = dateTime()
   return myDateTime - datetime.datetime(myDateTime.year, myDateTime.month, myDateTime.day)
 
@@ -169,13 +169,13 @@ def toString(myDate=None):
     where min, sec, microsec are alwys positive intergers and hour carries the
     sign.
   """
-  if type(myDate) == _dateTimeType:
+  if isinstance(myDate, _dateTimeType):
     return str(myDate)
 
-  elif type(myDate) == _dateType:
+  elif isinstance(myDate, _dateType):
     return str(myDate)
 
-  elif type(myDate) == _timeType:
+  elif isinstance(myDate, _timeType):
     return '%02d:%02d:%02d.%06d' % (myDate.days * 24 + myDate.seconds / 3600,
                                     myDate.seconds % 3600 / 60,
                                     myDate.seconds % 60,
@@ -203,7 +203,7 @@ def fromString(myDate=None):
                 fromString(dateTimeTuple[1]))
         # return dt.combine( fromString( dateTimeTuple[0] ),
         #                                   fromString( dateTimeTuple[1] ) )
-      except:
+      except BaseException:
         try:
           return (datetime.datetime(year=int(dateTuple[0]),
                                     month=int(dateTuple[1]),
@@ -231,13 +231,13 @@ def fromString(myDate=None):
             return None
         else:
           return None
-      except:
+      except BaseException:
         return None
     elif myDate.find('-') > 0:
       dateTuple = myDate.split('-')
       try:
         return datetime.date(int(dateTuple[0]), int(dateTuple[1]), int(dateTuple[2]))
-      except:
+      except BaseException:
         return None
 
   return None
@@ -257,8 +257,8 @@ class timeInterval:
        If not properly initialized an error flag is set, and subsequent calls
        to any method will return None
     """
-    if (type(initialDateTime) != _dateTimeType or
-            type(intervalTimeDelta) != _timeType):
+    if (not isinstance(initialDateTime, _dateTimeType) or
+            not isinstance(intervalTimeDelta, _timeType)):
       self.__error = True
       return None
     self.__error = False
@@ -274,7 +274,7 @@ class timeInterval:
     """
     if self.__error:
       return None
-    if type(myDateTime) != _dateTimeType:
+    if not isinstance(myDateTime, _dateTimeType):
       return None
     if myDateTime < self.__startDateTime:
       return False

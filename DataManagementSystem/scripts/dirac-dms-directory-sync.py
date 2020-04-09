@@ -17,27 +17,27 @@ import os
 import DIRAC
 from DIRAC.Core.Base import Script
 
-Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
-                                     'Usage:',
-                                     '  %s Source Destination' % Script.scriptName,
-                                     ' ',
-                                     ' e.g.: Download',
-                                     '   %s LFN Path' % Script.scriptName,
-                                     '  or Upload',
-                                     '   %s Path LFN SE' % Script.scriptName,
-                                     'Arguments:',
-                                     '  LFN:           Logical File Name (Path to directory)',
-                                     '  Path:          Local path to the file (Path to directory)',
-                                     '  SE:            DIRAC Storage Element']
+Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
+                                  'Usage:',
+                                  '  %s Source Destination' % Script.scriptName,
+                                  ' ',
+                                  ' e.g.: Download',
+                                  '   %s LFN Path' % Script.scriptName,
+                                  '  or Upload',
+                                  '   %s Path LFN SE' % Script.scriptName,
+                                  'Arguments:',
+                                  '  LFN:           Logical File Name (Path to directory)',
+                                  '  Path:          Local path to the file (Path to directory)',
+                                  '  SE:            DIRAC Storage Element']
                                  )
-                      )
+                       )
 
-Script.registerSwitch( "D" , "sync" , "Make target directory identical to source" )
-Script.registerSwitch( "j:" , "parallel=" , "Multithreaded download and upload" )
-Script.parseCommandLine( ignoreErrors = False )
+Script.registerSwitch("D", "sync", "Make target directory identical to source")
+Script.registerSwitch("j:", "parallel=", "Multithreaded download and upload")
+Script.parseCommandLine(ignoreErrors=False)
 
 args = Script.getPositionalArgs()
-if len( args ) < 1 or len( args ) > 3:
+if len(args) < 1 or len(args) > 3:
   Script.showHelp()
 
 sync = False
@@ -61,7 +61,7 @@ from DIRAC.Resources.Storage.StorageElement import StorageElement
 __RCSID__ = "$Id$"
 
 
-def getSetOfLocalDirectoriesAndFiles( path ):
+def getSetOfLocalDirectoriesAndFiles(path):
   """Return a set of all directories and subdirectories and a set of
   files contained therein for a given local path
   """
@@ -75,28 +75,29 @@ def getSetOfLocalDirectoriesAndFiles( path ):
   files = set()
 
   for dirname, dirnames, filenames in os.walk(path):
-  # add path to all subdirectories first.
+    # add path to all subdirectories first.
     for subdirname in dirnames:
-      fullSubdirname = os.path.join(dirname,subdirname)
+      fullSubdirname = os.path.join(dirname, subdirname)
       fullSubdirname = os.path.abspath(fullSubdirname)
-      fullSubdirname = fullSubdirname.replace(fullPath,'').lstrip('/')
+      fullSubdirname = fullSubdirname.replace(fullPath, '').lstrip('/')
       directories.add(fullSubdirname)
   # add path to all filenames.
     for filename in filenames:
-      fullFilename = os.path.join(dirname,filename)
+      fullFilename = os.path.join(dirname, filename)
       fullFilename = os.path.abspath(fullFilename)
-      fullFilename = fullFilename.replace(fullPath,'').lstrip('/')
-      fileSize = os.path.getsize(fullPath + "/" +  fullFilename)
+      fullFilename = fullFilename.replace(fullPath, '').lstrip('/')
+      fileSize = os.path.getsize(fullPath + "/" + fullFilename)
       if fileSize > 0:
-        files.add((fullFilename,long(fileSize)))
+        files.add((fullFilename, long(fileSize)))
 
   tree = {}
-  tree["Directories"]=directories
-  tree["Files"]=files
+  tree["Directories"] = directories
+  tree["Files"] = files
 
   return S_OK(tree)
 
-def getSetOfRemoteSubDirectoriesAndFiles(path,fc,directories,files):
+
+def getSetOfRemoteSubDirectoriesAndFiles(path, fc, directories, files):
   """
   Recursively traverses all the subdirectories of a directory and returns a set of directories and files
   """
@@ -105,10 +106,10 @@ def getSetOfRemoteSubDirectoriesAndFiles(path,fc,directories,files):
     if result['Value']['Successful']:
       for entry in result['Value']['Successful'][path]['Files']:
         size = result['Value']['Successful'][path]['Files'][entry]['MetaData']['Size']
-        files.add((entry,size))
+        files.add((entry, size))
       for entry in result['Value']['Successful'][path]['SubDirs']:
         directories.add(entry)
-        res = getSetOfRemoteSubDirectoriesAndFiles(entry,fc,directories,files)
+        res = getSetOfRemoteSubDirectoriesAndFiles(entry, fc, directories, files)
         if not res['OK']:
           return S_ERROR('Error: ' + res['Message'])
       return S_OK()
@@ -117,6 +118,7 @@ def getSetOfRemoteSubDirectoriesAndFiles(path,fc,directories,files):
   else:
     return S_ERROR("Error:" + result['Message'])
 
+
 def getSetOfRemoteDirectoriesAndFiles(fc, path):
   """
   Return a set of all directories and subdirectories and the therein contained files for a given LFN
@@ -124,7 +126,7 @@ def getSetOfRemoteDirectoriesAndFiles(fc, path):
   directories = set()
   files = set()
 
-  res = getSetOfRemoteSubDirectoriesAndFiles(path,fc,directories,files)
+  res = getSetOfRemoteSubDirectoriesAndFiles(path, fc, directories, files)
   if not res['OK']:
     return S_ERROR('Could not list remote directory: ' + res['Message'])
 
@@ -132,18 +134,19 @@ def getSetOfRemoteDirectoriesAndFiles(fc, path):
   return_files = set()
 
   for myfile in files:
-    return_files.add((myfile[0].replace(path,'').lstrip('/'),myfile[1]))
+    return_files.add((myfile[0].replace(path, '').lstrip('/'), myfile[1]))
 
   for mydirectory in directories:
-    return_directories.add(mydirectory.replace(path,'').lstrip('/'))
+    return_directories.add(mydirectory.replace(path, '').lstrip('/'))
 
   tree = {}
-  tree["Directories"]=return_directories
-  tree["Files"]=return_files
+  tree["Directories"] = return_directories
+  tree["Files"] = return_files
 
   return S_OK(tree)
 
-def isInFileCatalog(fc, path ):
+
+def isInFileCatalog(fc, path):
   """
   Check if the file is in the File Catalog
   """
@@ -156,6 +159,7 @@ def isInFileCatalog(fc, path ):
       return S_ERROR()
   else:
     return S_ERROR()
+
 
 def getContentToSync(upload, fc, source_dir, dest_dir):
   """
@@ -188,16 +192,16 @@ def getContentToSync(upload, fc, source_dir, dest_dir):
     from_dirs = res['Value']['Directories']
     from_files = res['Value']['Files']
 
-  #Create list of directories to delete
+  # Create list of directories to delete
   dirs_delete = list(to_dirs - from_dirs)
-  #Sort the list by depth of directory tree
-  dirs_delete.sort(key = lambda s: -s.count('/'))
-  #Create list of directories to create
+  # Sort the list by depth of directory tree
+  dirs_delete.sort(key=lambda s: -s.count('/'))
+  # Create list of directories to create
   dirs_create = list(from_dirs - to_dirs)
-  #Sort the list by depth of directory tree
-  dirs_create.sort(key = lambda s: s.count('/'))
+  # Sort the list by depth of directory tree
+  dirs_create.sort(key=lambda s: s.count('/'))
 
-  #Flatten the list of pairs (filename, size) to list of filename
+  # Flatten the list of pairs (filename, size) to list of filename
   files_delete = [pair[0] for pair in list(to_files - from_files)]
   files_create = [pair[0] for pair in list(from_files - to_files)]
 
@@ -210,20 +214,20 @@ def getContentToSync(upload, fc, source_dir, dest_dir):
   delete["Files"] = files_delete
 
   tree = {}
-  tree["Create"]=create
-  tree["Delete"]=delete
+  tree["Create"] = create
+  tree["Delete"] = delete
 
   return S_OK(tree)
 
 
-def removeRemoteFiles(dm,lfns):
+def removeRemoteFiles(dm, lfns):
   """
   Remove file from the catalog
   """
-  for lfnList in breakListIntoChunks( lfns, 100 ):
-    res = dm.removeFile( lfnList )
+  for lfnList in breakListIntoChunks(lfns, 100):
+    res = dm.removeFile(lfnList)
     if not res['OK']:
-      return S_ERROR( "Failed to remove files:" + lfnList + res['Message'] )
+      return S_ERROR("Failed to remove files:" + lfnList + res['Message'])
     else:
       return S_OK()
 
@@ -232,61 +236,64 @@ def uploadLocalFile(dm, lfn, localfile, storage):
   """
   Upload a local file to a storage element
   """
-  res = dm.putAndRegister( lfn, localfile, storage, None )
+  res = dm.putAndRegister(lfn, localfile, storage, None)
   if not res['OK']:
-    return S_ERROR( 'Error: failed to upload %s to %s' % ( lfn, storage ) )
+    return S_ERROR('Error: failed to upload %s to %s' % (lfn, storage))
   else:
-    return S_OK( 'Successfully uploaded file to %s' % storage )
+    return S_OK('Successfully uploaded file to %s' % storage)
+
 
 def downloadRemoteFile(dm, lfn, destination):
   """
   Download a file from the system
   """
-  res = dm.getFile( lfn, destination )
+  res = dm.getFile(lfn, destination)
   if not res['OK']:
-    return S_ERROR( 'Error: failed to download %s ' % lfn )
+    return S_ERROR('Error: failed to download %s ' % lfn)
   else:
-    return S_OK( 'Successfully uploaded file %s' % lfn )
+    return S_OK('Successfully uploaded file %s' % lfn)
 
-def removeStorageDirectoryFromSE( directory, storageElement ):
+
+def removeStorageDirectoryFromSE(directory, storageElement):
   """
   Delete directory on selected storage element
   """
 
-  se = StorageElement( storageElement, False )
-  res = returnSingleResult( se.exists( directory ) )
+  se = StorageElement(storageElement, False)
+  res = returnSingleResult(se.exists(directory))
 
   if not res['OK']:
-    return S_ERROR( "Failed to obtain existence of directory" + res['Message'] )
+    return S_ERROR("Failed to obtain existence of directory" + res['Message'])
 
   exists = res['Value']
   if not exists:
-    return S_OK( "The directory %s does not exist at %s " % ( directory, storageElement ) )
+    return S_OK("The directory %s does not exist at %s " % (directory, storageElement))
 
-  res = returnSingleResult( se.removeDirectory( directory, recursive = True ) )
+  res = returnSingleResult(se.removeDirectory(directory, recursive=True))
   if not res['OK']:
-    return S_ERROR( "Failed to remove storage directory" + res['Message'] )
+    return S_ERROR("Failed to remove storage directory" + res['Message'])
 
   return S_OK()
 
-def removeRemoteDirectory(fc,lfn):
+
+def removeRemoteDirectory(fc, lfn):
   """
   Remove file from the catalog
   """
-  storageElements = gConfig.getValue( 'Resources/StorageElementGroups/SE_Cleaning_List', [] )
+  storageElements = gConfig.getValue('Resources/StorageElementGroups/SE_Cleaning_List', [])
 
-  for storageElement in sorted( storageElements ):
-    res = removeStorageDirectoryFromSE( lfn, storageElement )
+  for storageElement in sorted(storageElements):
+    res = removeStorageDirectoryFromSE(lfn, storageElement)
     if not res['OK']:
-      return S_ERROR( "Failed to clean storage directory at all SE:" + res['Message'] )
-  res = returnSingleResult( fc.removeDirectory( lfn, recursive = True ) )
+      return S_ERROR("Failed to clean storage directory at all SE:" + res['Message'])
+  res = returnSingleResult(fc.removeDirectory(lfn, recursive=True))
   if not res['OK']:
-    return S_ERROR( "Failed to clean storage directory at all SE:" + res['Message'] )
+    return S_ERROR("Failed to clean storage directory at all SE:" + res['Message'])
 
   return S_OK("Successfully removed directory")
 
 
-def createRemoteDirectory(fc,newdir):
+def createRemoteDirectory(fc, newdir):
   """
   Create directory in file catalog
   """
@@ -299,6 +306,7 @@ def createRemoteDirectory(fc,newdir):
   else:
     return S_ERROR('Failed to create directory:' + result['Message'])
 
+
 def createLocalDirectory(directory):
   """
   Create local directory
@@ -307,6 +315,7 @@ def createLocalDirectory(directory):
   if not os.path.exists(directory):
     return S_ERROR('Directory creation failed')
   return S_OK('Created directory successfully')
+
 
 def removeLocalFile(path):
   """
@@ -321,6 +330,7 @@ def removeLocalFile(path):
     return S_ERROR('File deleting failed')
   return S_OK('Removed file successfully')
 
+
 def removeLocaDirectory(path):
   """
   Remove local directory
@@ -334,51 +344,59 @@ def removeLocaDirectory(path):
     return S_ERROR('Directory deleting failed')
   return S_OK('Removed directory successfully')
 
+
 def doUpload(fc, dm, result, source_dir, dest_dir, storage, delete, nthreads):
   """
   Wrapper for uploading files
   """
   if delete:
-    lfns = [dest_dir+"/"+filename for filename in result['Value']['Delete']['Files']]
-    if len(lfns)>0:
-      res = removeRemoteFiles(dm,lfns)
+    lfns = [dest_dir + "/" + filename for filename in result['Value']['Delete']['Files']]
+    if len(lfns) > 0:
+      res = removeRemoteFiles(dm, lfns)
       if not res['OK']:
-        gLogger.fatal('Deleting of files: ' + lfns + " -X- [FAILED]" +res['Message'])
-        DIRAC.exit( 1 )
+        gLogger.fatal('Deleting of files: ' + lfns + " -X- [FAILED]" + res['Message'])
+        DIRAC.exit(1)
       else:
-        gLogger.notice("Deleting "+ ', '.join(lfns) + " -> [DONE]")
+        gLogger.notice("Deleting " + ', '.join(lfns) + " -> [DONE]")
 
     for directoryname in result['Value']['Delete']['Directories']:
       res = removeRemoteDirectory(fc, dest_dir + "/" + directoryname)
       if not res['OK']:
         gLogger.fatal('Deleting of directory: ' + directoryname + " -X- [FAILED] " + res['Message'])
-        DIRAC.exit( 1 )
+        DIRAC.exit(1)
       else:
-        gLogger.notice("Deleting "+ directoryname + " -> [DONE]")
-
+        gLogger.notice("Deleting " + directoryname + " -> [DONE]")
 
   for directoryname in result['Value']['Create']['Directories']:
-    res = createRemoteDirectory(fc, dest_dir+"/"+ directoryname)
+    res = createRemoteDirectory(fc, dest_dir + "/" + directoryname)
     if not res['OK']:
       gLogger.fatal('Creation of directory: ' + directoryname + " -X- [FAILED] " + res['Message'])
-      DIRAC.exit( 1 )
+      DIRAC.exit(1)
     else:
       gLogger.notice("Creating " + directoryname + " -> [DONE]")
 
   listOfFiles = result['Value']['Create']['Files']
-  #Chech that we do not have to many threads
+  # Chech that we do not have to many threads
   if nthreads > len(listOfFiles):
     nthreads = len(listOfFiles)
 
   if nthreads == 0:
     return S_OK('Upload finished successfully')
 
-  listOfListOfFiles = chunkList( listOfFiles, nthreads )
-  res = runInParallel(arguments=[dm, source_dir, dest_dir, storage], listOfLists=listOfListOfFiles, function=uploadListOfFiles )
+  listOfListOfFiles = chunkList(listOfFiles, nthreads)
+  res = runInParallel(
+      arguments=[
+          dm,
+          source_dir,
+          dest_dir,
+          storage],
+      listOfLists=listOfListOfFiles,
+      function=uploadListOfFiles)
   if not res['OK']:
     return S_ERROR("Upload of files failed")
 
   return S_OK('Upload finished successfully')
+
 
 def uploadListOfFiles(dm, source_dir, dest_dir, storage, listOfFiles, tID):
   """
@@ -387,12 +405,13 @@ def uploadListOfFiles(dm, source_dir, dest_dir, storage, listOfFiles, tID):
   log = gLogger.getSubLogger("[Thread %s] " % tID)
   threadLine = "[Thread %s]" % tID
   for filename in listOfFiles:
-    res = uploadLocalFile(dm, dest_dir+"/"+filename, source_dir+"/"+filename, storage)
+    res = uploadLocalFile(dm, dest_dir + "/" + filename, source_dir + "/" + filename, storage)
     if not res['OK']:
       log.fatal(threadLine + ' Uploading ' + filename + ' -X- [FAILED] ' + res['Message'])
-      DIRAC.exit( 1 )
+      DIRAC.exit(1)
     else:
-      log.notice(threadLine+ " Uploading " + filename + " -> [DONE]")
+      log.notice(threadLine + " Uploading " + filename + " -> [DONE]")
+
 
 def doDownload(dm, result, source_dir, dest_dir, delete, nthreads):
   """
@@ -400,44 +419,45 @@ def doDownload(dm, result, source_dir, dest_dir, delete, nthreads):
   """
   if delete:
     for filename in result['Value']['Delete']['Files']:
-      res = removeLocalFile(dest_dir+"/"+ filename)
+      res = removeLocalFile(dest_dir + "/" + filename)
       if not res['OK']:
         gLogger.fatal('Deleting of file: ' + filename + ' -X- [FAILED] ' + res['Message'])
-        DIRAC.exit( 1 )
+        DIRAC.exit(1)
       else:
-        gLogger.notice("Deleting "+ filename + " -> [DONE]")
+        gLogger.notice("Deleting " + filename + " -> [DONE]")
 
     for directoryname in result['Value']['Delete']['Directories']:
-      res = removeLocaDirectory( dest_dir + "/" + directoryname )
+      res = removeLocaDirectory(dest_dir + "/" + directoryname)
       if not res['OK']:
         gLogger.fatal('Deleting of directory: ' + directoryname + ' -X- [FAILED] ' + res['Message'])
-        DIRAC.exit( 1 )
+        DIRAC.exit(1)
       else:
-        gLogger.notice("Deleting "+ directoryname + " -> [DONE]")
+        gLogger.notice("Deleting " + directoryname + " -> [DONE]")
 
   for directoryname in result['Value']['Create']['Directories']:
-    res = createLocalDirectory( dest_dir+"/"+ directoryname )
+    res = createLocalDirectory(dest_dir + "/" + directoryname)
     if not res['OK']:
       gLogger.fatal('Creation of directory: ' + directoryname + ' -X- [FAILED] ' + res['Message'])
-      DIRAC.exit( 1 )
+      DIRAC.exit(1)
     else:
       gLogger.notice("Creating " + directoryname + " -> [DONE]")
 
   listOfFiles = result['Value']['Create']['Files']
-  #Chech that we do not have to many threads
+  # Chech that we do not have to many threads
   if nthreads > len(listOfFiles):
     nthreads = len(listOfFiles)
 
-  if nthreads==0:
+  if nthreads == 0:
     return S_OK('Upload finished successfully')
 
-  listOfListOfFiles = chunkList( listOfFiles, nthreads )
-  res = runInParallel(arguments=[dm, source_dir, dest_dir], listOfLists=listOfListOfFiles, function=downloadListOfFiles )
+  listOfListOfFiles = chunkList(listOfFiles, nthreads)
+  res = runInParallel(arguments=[dm, source_dir, dest_dir], listOfLists=listOfListOfFiles, function=downloadListOfFiles)
 
   if not res['OK']:
     return S_ERROR("Download of files failed")
 
   return S_OK('Upload finished successfully')
+
 
 def chunkList(alist, nchunks):
   """
@@ -453,6 +473,7 @@ def chunkList(alist, nchunks):
 
   return out
 
+
 def downloadListOfFiles(dm, source_dir, dest_dir, listOfFiles, tID):
   """
   Wrapper for multithreaded downloading of a list of files
@@ -463,9 +484,10 @@ def downloadListOfFiles(dm, source_dir, dest_dir, listOfFiles, tID):
     res = downloadRemoteFile(dm, source_dir + "/" + filename, dest_dir + ("/" + filename).rsplit("/", 1)[0])
     if not res['OK']:
       log.fatal(threadLine + ' Downloading ' + filename + ' -X- [FAILED] ' + res['Message'])
-      DIRAC.exit( 1 )
+      DIRAC.exit(1)
     else:
-      log.notice(threadLine+ " Downloading " + filename + " -> [DONE]")
+      log.notice(threadLine + " Downloading " + filename + " -> [DONE]")
+
 
 def runInParallel(arguments, listOfLists, function):
   """
@@ -474,7 +496,7 @@ def runInParallel(arguments, listOfLists, function):
   from multiprocessing import Process
   processes = []
   for tID, alist in enumerate(listOfLists):
-    argums = arguments+[alist]+[tID]
+    argums = arguments + [alist] + [tID]
     pro = Process(target=function, args=argums)
     pro.start()
     processes.append(pro)
@@ -486,7 +508,8 @@ def runInParallel(arguments, listOfLists, function):
       return S_ERROR()
   return S_OK()
 
-def syncDestinations(upload, source_dir, dest_dir, storage, delete, nthreads ):
+
+def syncDestinations(upload, source_dir, dest_dir, storage, delete, nthreads):
   """
   Top level wrapper to execute functions
   """
@@ -494,7 +517,7 @@ def syncDestinations(upload, source_dir, dest_dir, storage, delete, nthreads ):
   fc = FileCatalog()
   dm = DataManager()
 
-  result = getContentToSync(upload,fc,source_dir,dest_dir)
+  result = getContentToSync(upload, fc, source_dir, dest_dir)
   if not result['OK']:
     return S_ERROR(result['Message'])
 
@@ -509,7 +532,8 @@ def syncDestinations(upload, source_dir, dest_dir, storage, delete, nthreads ):
 
   return S_OK('Mirroring successfully finished')
 
-def run( parameters , delete, nthreads ):
+
+def run(parameters, delete, nthreads):
   """
   The main user interface
   """
@@ -519,33 +543,34 @@ def run( parameters , delete, nthreads ):
   upload = False
   storage = None
 
-  if len( parameters ) == 3:
+  if len(parameters) == 3:
     storage = parameters[2]
     source_dir = os.path.abspath(source_dir)
     dest_dir = dest_dir.rstrip('/')
     upload = True
     if not os.path.isdir(source_dir):
       gLogger.fatal("Source directory does not exist")
-      DIRAC.exit( 1 )
+      DIRAC.exit(1)
 
-  if len (parameters ) == 2:
+  if len(parameters) == 2:
     dest_dir = os.path.abspath(dest_dir)
     source_dir = source_dir.rstrip('/')
     if not os.path.isdir(dest_dir):
       gLogger.fatal("Destination directory does not exist")
-      DIRAC.exit( 1 )
+      DIRAC.exit(1)
 
-  res = syncDestinations( upload, source_dir, dest_dir, storage, delete, nthreads )
+  res = syncDestinations(upload, source_dir, dest_dir, storage, delete, nthreads)
   if not res['OK']:
     return S_ERROR(res['Message'])
 
   return S_OK("Successfully mirrored " + source_dir + " into " + dest_dir)
 
+
 if __name__ == "__main__":
-  returnValue = run( args , sync, parallel )
+  returnValue = run(args, sync, parallel)
   if not returnValue['OK']:
     gLogger.fatal(returnValue['Message'])
-    DIRAC.exit( 1 )
+    DIRAC.exit(1)
   else:
     gLogger.notice(returnValue['Value'])
-    DIRAC.exit( 0 )
+    DIRAC.exit(0)

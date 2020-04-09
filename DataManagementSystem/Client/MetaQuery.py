@@ -15,41 +15,41 @@ import DIRAC.Core.Utilities.Time as Time
 
 import json
 
-FILE_STANDARD_METAKEYS = { 'SE': 'VARCHAR',
-                           'CreationDate': 'DATETIME',
-                           'ModificationDate': 'DATETIME',
-                           'LastAccessDate': 'DATETIME',
-                           'User': 'VARCHAR',
-                           'Group': 'VARCHAR',
-                           'Path': 'VARCHAR',
-                           'Name': 'VARCHAR',
-                           'FileName': 'VARCHAR',
-                           'CheckSum': 'VARCHAR',
-                           'GUID': 'VARCHAR',
-                           'UID': 'INTEGER',
-                           'GID': 'INTEGER',
-                           'Size': 'INTEGER',
-                           'Status': 'VARCHAR' }
+FILE_STANDARD_METAKEYS = {'SE': 'VARCHAR',
+                          'CreationDate': 'DATETIME',
+                          'ModificationDate': 'DATETIME',
+                          'LastAccessDate': 'DATETIME',
+                          'User': 'VARCHAR',
+                          'Group': 'VARCHAR',
+                          'Path': 'VARCHAR',
+                          'Name': 'VARCHAR',
+                          'FileName': 'VARCHAR',
+                          'CheckSum': 'VARCHAR',
+                          'GUID': 'VARCHAR',
+                          'UID': 'INTEGER',
+                          'GID': 'INTEGER',
+                          'Size': 'INTEGER',
+                          'Status': 'VARCHAR'}
 
-FILES_TABLE_METAKEYS = { 'Name': 'FileName',
-                         'FileName': 'FileName',
-                         'Size': 'Size',
-                         'User': 'UID',
-                         'Group': 'GID',
-                         'UID': 'UID',
-                         'GID': 'GID',
-                         'Status': 'Status' }
+FILES_TABLE_METAKEYS = {'Name': 'FileName',
+                        'FileName': 'FileName',
+                        'Size': 'Size',
+                        'User': 'UID',
+                        'Group': 'GID',
+                        'UID': 'UID',
+                        'GID': 'GID',
+                        'Status': 'Status'}
 
-FILEINFO_TABLE_METAKEYS = { 'GUID': 'GUID',
-                            'CheckSum': 'CheckSum',
-                            'CreationDate': 'CreationDate',
-                            'ModificationDate': 'ModificationDate',
-                            'LastAccessDate': 'LastAccessDate' }
+FILEINFO_TABLE_METAKEYS = {'GUID': 'GUID',
+                           'CheckSum': 'CheckSum',
+                           'CreationDate': 'CreationDate',
+                           'ModificationDate': 'ModificationDate',
+                           'LastAccessDate': 'LastAccessDate'}
 
 
-class MetaQuery( object ):
+class MetaQuery(object):
 
-  def __init__( self, queryDict = None, typeDict = None ):
+  def __init__(self, queryDict=None, typeDict=None):
 
     self.__metaQueryDict = {}
     if queryDict is not None:
@@ -58,7 +58,7 @@ class MetaQuery( object ):
     if typeDict is not None:
       self.__metaTypeDict = typeDict
 
-  def setMetaQuery( self, queryList, metaTypeDict = None ):
+  def setMetaQuery(self, queryList, metaTypeDict=None):
     """ Create the metadata query out of the command line arguments
     """
     if metaTypeDict is not None:
@@ -69,21 +69,21 @@ class MetaQuery( object ):
     for arg in queryList:
       if not contMode:
         operation = ''
-        for op in ['>=','<=','>','<','!=','=']:
+        for op in ['>=', '<=', '>', '<', '!=', '=']:
           if op in arg:
             operation = op
             break
         if not operation:
-          return S_ERROR( 'Illegal query element %s' % arg )
+          return S_ERROR('Illegal query element %s' % arg)
 
-        name,value = arg.split(operation)
-        if not name in self.__metaTypeDict:
-          return S_ERROR( "Metadata field %s not defined" % name )
+        name, value = arg.split(operation)
+        if name not in self.__metaTypeDict:
+          return S_ERROR("Metadata field %s not defined" % name)
 
         mtype = self.__metaTypeDict[name]
       else:
         value += ' ' + arg
-        value = value.replace(contMode,'')
+        value = value.replace(contMode, '')
         contMode = False
 
       if value[0] in ['"', "'"] and value[-1] not in ['"', "'"]:
@@ -91,154 +91,154 @@ class MetaQuery( object ):
         continue
 
       if ',' in value:
-        valueList = [ x.replace("'","").replace('"','') for x in value.split(',') ]
+        valueList = [x.replace("'", "").replace('"', '') for x in value.split(',')]
         mvalue = valueList
         if mtype[0:3].lower() == 'int':
-          mvalue = [ int(x) for x in valueList if not x in ['Missing','Any'] ]
-          mvalue += [ x for x in valueList if x in ['Missing','Any'] ]
+          mvalue = [int(x) for x in valueList if x not in ['Missing', 'Any']]
+          mvalue += [x for x in valueList if x in ['Missing', 'Any']]
         if mtype[0:5].lower() == 'float':
-          mvalue = [ float(x) for x in valueList if not x in ['Missing','Any'] ]
-          mvalue += [ x for x in valueList if x in ['Missing','Any'] ]
+          mvalue = [float(x) for x in valueList if x not in ['Missing', 'Any']]
+          mvalue += [x for x in valueList if x in ['Missing', 'Any']]
         if operation == "=":
           operation = 'in'
         if operation == "!=":
           operation = 'nin'
-        mvalue = {operation:mvalue}
+        mvalue = {operation: mvalue}
       else:
-        mvalue = value.replace("'","").replace('"','')
-        if not value in ['Missing','Any']:
+        mvalue = value.replace("'", "").replace('"', '')
+        if value not in ['Missing', 'Any']:
           if mtype[0:3].lower() == 'int':
             mvalue = int(value)
           if mtype[0:5].lower() == 'float':
             mvalue = float(value)
         if operation != '=':
-          mvalue = {operation:mvalue}
+          mvalue = {operation: mvalue}
 
       if name in metaDict:
-        if isinstance( metaDict[name], dict ):
-          if isinstance( mvalue, dict ):
-            op,value = mvalue.items()[0]
+        if isinstance(metaDict[name], dict):
+          if isinstance(mvalue, dict):
+            op, value = mvalue.items()[0]
             if op in metaDict[name]:
-              if isinstance( metaDict[name][op], list ):
-                if isinstance( value, list ):
-                  metaDict[name][op] = list( set( metaDict[name][op] + value) )
+              if isinstance(metaDict[name][op], list):
+                if isinstance(value, list):
+                  metaDict[name][op] = list(set(metaDict[name][op] + value))
                 else:
-                  metaDict[name][op] = list( set( metaDict[name][op].append( value ) ) )
+                  metaDict[name][op] = list(set(metaDict[name][op].append(value)))
               else:
-                if isinstance( value, list ):
-                  metaDict[name][op] = list( set( [metaDict[name][op]] + value) )
+                if isinstance(value, list):
+                  metaDict[name][op] = list(set([metaDict[name][op]] + value))
                 else:
-                  metaDict[name][op] = list( set( [metaDict[name][op],value]) )
+                  metaDict[name][op] = list(set([metaDict[name][op], value]))
             else:
               metaDict[name].update(mvalue)
           else:
-            if isinstance( mvalue, list ):
-              metaDict[name].update({'in':mvalue})
+            if isinstance(mvalue, list):
+              metaDict[name].update({'in': mvalue})
             else:
-              metaDict[name].update({'=':mvalue})
-        elif isinstance( metaDict[name], list ):
-          if isinstance( mvalue, dict ):
-            metaDict[name] = {'in':metaDict[name]}
+              metaDict[name].update({'=': mvalue})
+        elif isinstance(metaDict[name], list):
+          if isinstance(mvalue, dict):
+            metaDict[name] = {'in': metaDict[name]}
             metaDict[name].update(mvalue)
-          elif isinstance( mvalue, list ):
-            metaDict[name] = list( set( (metaDict[name] + mvalue ) ) )
+          elif isinstance(mvalue, list):
+            metaDict[name] = list(set((metaDict[name] + mvalue)))
           else:
-            metaDict[name] = list( set( metaDict[name].append( mvalue ) ) )
+            metaDict[name] = list(set(metaDict[name].append(mvalue)))
         else:
-          if isinstance( mvalue, dict ):
-            metaDict[name] = {'=':metaDict[name]}
+          if isinstance(mvalue, dict):
+            metaDict[name] = {'=': metaDict[name]}
             metaDict[name].update(mvalue)
-          elif isinstance( mvalue, list ):
-            metaDict[name] = list( set( [metaDict[name]] + mvalue ) )
+          elif isinstance(mvalue, list):
+            metaDict[name] = list(set([metaDict[name]] + mvalue))
           else:
-            metaDict[name] = list( set( [metaDict[name],mvalue] ) )
+            metaDict[name] = list(set([metaDict[name], mvalue]))
       else:
         metaDict[name] = mvalue
 
     self.__metaQueryDict = metaDict
-    return S_OK( metaDict )
+    return S_OK(metaDict)
 
-  def getMetaQuery( self ):
+  def getMetaQuery(self):
 
     return self.__metaQueryDict
 
-  def getMetaQueryAsJson( self ):
+  def getMetaQueryAsJson(self):
 
-    return json.dumps( self.__metaQueryDict )
+    return json.dumps(self.__metaQueryDict)
 
-  def applyQuery( self, userMetaDict ):
+  def applyQuery(self, userMetaDict):
     """  Return a list of tuples with tables and conditions to locate files for a given user Metadata
     """
-    def getOperands( value ):
-      if isinstance( value, list ):
-        return [ ('in', value) ]
-      elif isinstance( value, dict ):
+    def getOperands(value):
+      if isinstance(value, list):
+        return [('in', value)]
+      elif isinstance(value, dict):
         resultList = []
         for operation, operand in value.items():
-          resultList.append( ( operation, operand ) )
+          resultList.append((operation, operand))
         return resultList
       else:
-        return [ ("=", value) ]
+        return [("=", value)]
 
-    def getTypedValue( value, mtype ):
+    def getTypedValue(value, mtype):
       if mtype[0:3].lower() == 'int':
-        return int( value )
+        return int(value)
       elif mtype[0:5].lower() == 'float':
-        return float( value )
+        return float(value)
       elif mtype[0:4].lower() == 'date':
-        return Time.fromString( value )
+        return Time.fromString(value)
       else:
         return value
 
     for meta, value in self.__metaQueryDict.items():
 
       # Check if user dict contains all the requested meta data
-      userValue = userMetaDict.get( meta, None )
+      userValue = userMetaDict.get(meta, None)
       if userValue is None:
-        if str( value ).lower() == 'missing':
+        if str(value).lower() == 'missing':
           continue
         else:
-          return S_OK( False )
-      elif str( value ).lower() == 'any':
+          return S_OK(False)
+      elif str(value).lower() == 'any':
         continue
 
       mtype = self.__metaTypeDict[meta]
       try:
-        userValue = getTypedValue( userValue, mtype )
+        userValue = getTypedValue(userValue, mtype)
       except ValueError:
-        return S_ERROR( 'Illegal type for metadata %s: %s in user data' % ( meta, str( userValue ) ) )
+        return S_ERROR('Illegal type for metadata %s: %s in user data' % (meta, str(userValue)))
 
       # Check operations
-      for operation, operand in getOperands( value ):
+      for operation, operand in getOperands(value):
         try:
-          if isinstance( operand, list ):
-            typedValue = [ getTypedValue( x, mtype ) for x in operand ]
+          if isinstance(operand, list):
+            typedValue = [getTypedValue(x, mtype) for x in operand]
           else:
-            typedValue = getTypedValue( operand, mtype )
+            typedValue = getTypedValue(operand, mtype)
         except ValueError:
-          return S_ERROR( 'Illegal type for metadata %s: %s in filter' % ( meta, str( operand ) ) )
+          return S_ERROR('Illegal type for metadata %s: %s in filter' % (meta, str(operand)))
 
         # Apply query operation
         if operation in ['>', '<', '>=', '<=']:
-          if isinstance( typedValue, list ):
-            return S_ERROR( 'Illegal query: list of values for comparison operation' )
+          if isinstance(typedValue, list):
+            return S_ERROR('Illegal query: list of values for comparison operation')
           elif operation == '>' and typedValue >= userValue:
-            return S_OK( False )
+            return S_OK(False)
           elif operation == '<' and typedValue <= userValue:
-            return S_OK( False )
+            return S_OK(False)
           elif operation == '>=' and typedValue > userValue:
-            return S_OK( False )
+            return S_OK(False)
           elif operation == '<=' and typedValue < userValue:
-            return S_OK( False )
+            return S_OK(False)
         elif operation == 'in' or operation == "=":
-          if isinstance( typedValue, list ) and not userValue in typedValue:
-            return S_OK( False )
-          elif not isinstance( typedValue, list ) and userValue != typedValue:
-            return S_OK( False )
+          if isinstance(typedValue, list) and userValue not in typedValue:
+            return S_OK(False)
+          elif not isinstance(typedValue, list) and userValue != typedValue:
+            return S_OK(False)
         elif operation == 'nin' or operation == "!=":
-          if isinstance( typedValue, list ) and userValue in typedValue:
-            return S_OK( False )
-          elif not isinstance( typedValue, list ) and userValue == typedValue:
-            return S_OK( False )
+          if isinstance(typedValue, list) and userValue in typedValue:
+            return S_OK(False)
+          elif not isinstance(typedValue, list) and userValue == typedValue:
+            return S_OK(False)
 
-    return S_OK( True )
+    return S_OK(True)

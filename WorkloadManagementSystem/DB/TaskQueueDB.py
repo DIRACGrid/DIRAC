@@ -821,7 +821,7 @@ WHERE `tq_Jobs`.TQId = %s ORDER BY RAND() / `tq_Jobs`.RealPriority ASC LIMIT 1"
                                                                                     fullTableN,
                                                                                     fullTableN),
                                                    b_fv,
-                         boolOp='OR'))
+                                                   boolOp='OR'))
 
     # Add extra negative conditions
     if negativeCond:

@@ -9,19 +9,23 @@
 """
 _RCSID__ = "$Id$"
 from DIRAC.Core.Base import Script
-from DIRAC                                     import gConfig, gLogger, exit as DIRACExit, S_OK, version
+from DIRAC import gConfig, gLogger, exit as DIRACExit, S_OK, version
 
 subLogger = None
 
-Script.setUsageMessage( '\n'.join( [ __doc__.split( '\n' )[1],
-                                     'Usage:',
-                                     '  %s  [--status=<Status>] [--se=<SE>] [--limit=<integer>] [--showJobs=YES] ...' % Script.scriptName,
-                                     'Arguments:',
-                                     '  status: file status=(New, Offline, Waiting, Failed, StageSubmitted, Staged).',
-                                     '  se: storage element',
-                                     '  showJobs: whether to ALSO list the jobs asking for these files to be staged',
-                                     '     WARNING: Query may be heavy, please use --limit switch!'
-                                       ] ) )
+Script.setUsageMessage(
+    '\n'.join(
+        [
+            __doc__.split('\n')[1],
+            'Usage:',
+            '  %s  [--status=<Status>] [--se=<SE>] [--limit=<integer>] [--showJobs=YES] ...' %
+            Script.scriptName,
+            'Arguments:',
+            '  status: file status=(New, Offline, Waiting, Failed, StageSubmitted, Staged).',
+            '  se: storage element',
+            '  showJobs: whether to ALSO list the jobs asking for these files to be staged',
+            '     WARNING: Query may be heavy, please use --limit switch!']))
+
 
 def registerSwitches():
   '''
@@ -37,39 +41,42 @@ def registerSwitches():
               )
 
   for switch in switches:
-    Script.registerSwitch( '', switch[ 0 ], switch[ 1 ] )
+    Script.registerSwitch('', switch[0], switch[1])
+
 
 def parseSwitches():
   '''
     Parses the arguments passed by the user
   '''
 
-  Script.parseCommandLine( ignoreErrors = True )
+  Script.parseCommandLine(ignoreErrors=True)
   args = Script.getPositionalArgs()
   if args:
-    subLogger.error( "Found the following positional args '%s', but we only accept switches" % args )
-    subLogger.error( "Please, check documentation below" )
+    subLogger.error("Found the following positional args '%s', but we only accept switches" % args)
+    subLogger.error("Please, check documentation below")
     Script.showHelp()
-    DIRACExit( 1 )
+    DIRACExit(1)
 
-  switches = dict( Script.getUnprocessedSwitches() )
+  switches = dict(Script.getUnprocessedSwitches())
 
-  for key in ( 'status', 'se', 'limit' ):
+  for key in ('status', 'se', 'limit'):
     if key not in switches:
-      subLogger.warn( "You're not using switch --%s, query may take long!" % key )
+      subLogger.warn("You're not using switch --%s, query may take long!" % key)
 
-  if 'status' in  switches and switches[ 'status' ] not in ( 'New', 'Offline', 'Waiting', 'Failed', 'StageSubmitted', 'Staged' ):
-    subLogger.error( "Found \"%s\" as Status value. Incorrect value used!" % switches[ 'status' ] )
-    subLogger.error( "Please, check documentation below" )
+  if 'status' in switches and switches['status'] not in (
+          'New', 'Offline', 'Waiting', 'Failed', 'StageSubmitted', 'Staged'):
+    subLogger.error("Found \"%s\" as Status value. Incorrect value used!" % switches['status'])
+    subLogger.error("Please, check documentation below")
     Script.showHelp()
-    DIRACExit( 1 )
+    DIRACExit(1)
 
-  subLogger.debug( "The switches used are:" )
-  map( subLogger.debug, switches.iteritems() )
+  subLogger.debug("The switches used are:")
+  map(subLogger.debug, switches.iteritems())
 
   return switches
 
 # ...............................................................................
+
 
 def run():
 
@@ -78,76 +85,76 @@ def run():
   queryDict = {}
 
   if 'status' in switchDict:
-    queryDict['Status'] = str( switchDict['status'] )
-
+    queryDict['Status'] = str(switchDict['status'])
 
   if 'se' in switchDict:
-    queryDict['SE'] = str( switchDict['se'] );
+    queryDict['SE'] = str(switchDict['se'])
 
   # weird: if there are no switches (dictionary is empty), then the --limit is ignored!!
   # must FIX that in StorageManagementDB.py!
   # ugly fix:
   newer = '1903-08-02 06:24:38'  # select newer than
   if 'limit' in switchDict:
-    gLogger.notice( "Query limited to %s entries" % switchDict['limit'] )
-    res = client.getCacheReplicas( queryDict, None, newer, None, None, int( switchDict['limit'] ) )
+    gLogger.notice("Query limited to %s entries" % switchDict['limit'])
+    res = client.getCacheReplicas(queryDict, None, newer, None, None, int(switchDict['limit']))
   else:
-    res = client.getCacheReplicas( queryDict )
+    res = client.getCacheReplicas(queryDict)
 
   if not res['OK']:
-    gLogger.error( res['Message'] )
+    gLogger.error(res['Message'])
   outStr = "\n"
   if res['Records']:
     replicas = res['Value']
-    outStr += " %s" % ( "Status".ljust( 15 ) )
-    outStr += " %s" % ( "LastUpdate".ljust( 20 ) )
-    outStr += " %s" % ( "LFN".ljust( 80 ) )
-    outStr += " %s" % ( "SE".ljust( 10 ) )
-    outStr += " %s" % ( "Reason".ljust( 10 ) )
+    outStr += " %s" % ("Status".ljust(15))
+    outStr += " %s" % ("LastUpdate".ljust(20))
+    outStr += " %s" % ("LFN".ljust(80))
+    outStr += " %s" % ("SE".ljust(10))
+    outStr += " %s" % ("Reason".ljust(10))
     if 'showJobs' in switchDict:
-      outStr += " %s" % ( "Jobs".ljust( 10 ) )
-    outStr += " %s" % ( "PinExpiryTime".ljust( 15 ) )
-    outStr += " %s" % ( "PinLength(sec)".ljust( 15 ) )
+      outStr += " %s" % ("Jobs".ljust(10))
+    outStr += " %s" % ("PinExpiryTime".ljust(15))
+    outStr += " %s" % ("PinLength(sec)".ljust(15))
     outStr += "\n"
 
     for crid, info in replicas.iteritems():
-      outStr += " %s" % ( info['Status'].ljust( 15 ) )
-      outStr += " %s" % ( str( info['LastUpdate'] ).ljust( 20 ) )
-      outStr += " %s" % ( info['LFN'].ljust( 30 ) )
-      outStr += " %s" % ( info['SE'].ljust( 15 ) )
-      outStr += " %s" % ( str( info['Reason'] ).ljust( 10 ) )
+      outStr += " %s" % (info['Status'].ljust(15))
+      outStr += " %s" % (str(info['LastUpdate']).ljust(20))
+      outStr += " %s" % (info['LFN'].ljust(30))
+      outStr += " %s" % (info['SE'].ljust(15))
+      outStr += " %s" % (str(info['Reason']).ljust(10))
 
       # Task info
       if 'showJobs' in switchDict:
-        resTasks = client.getTasks( {'ReplicaID':crid} )
+        resTasks = client.getTasks({'ReplicaID': crid})
         if resTasks['OK']:
           if resTasks['Value']:
             tasks = resTasks['Value']
             jobs = []
             for tid in tasks:
-              jobs.append( tasks[tid]['SourceTaskID'] )
-            outStr += ' %s ' % ( str( jobs ).ljust( 10 ) )
+              jobs.append(tasks[tid]['SourceTaskID'])
+            outStr += ' %s ' % (str(jobs).ljust(10))
         else:
-          outStr += ' %s ' % ( " --- ".ljust( 10 ) )
+          outStr += ' %s ' % (" --- ".ljust(10))
       # Stage request info
       # what if there's no request to the site yet?
-      resStageRequests = client.getStageRequests( {'ReplicaID':crid} )
+      resStageRequests = client.getStageRequests({'ReplicaID': crid})
       if not resStageRequests['OK']:
-        gLogger.error( resStageRequests['Message'] )
+        gLogger.error(resStageRequests['Message'])
       if resStageRequests['Records']:
         stageRequests = resStageRequests['Value']
         for info in stageRequests.itervalues():
-          outStr += " %s" % ( str( info['PinExpiryTime'] ).ljust( 20 ) )
-          outStr += " %s" % ( str( info['PinLength'] ).ljust( 10 ) )
+          outStr += " %s" % (str(info['PinExpiryTime']).ljust(20))
+          outStr += " %s" % (str(info['PinLength']).ljust(10))
       outStr += "\n"
 
-    gLogger.notice( outStr )
+    gLogger.notice(outStr)
   else:
-    gLogger.notice( "No entries" )
+    gLogger.notice("No entries")
+
 
 if __name__ == "__main__":
 
-  subLogger = gLogger.getSubLogger( __file__ )
+  subLogger = gLogger.getSubLogger(__file__)
 
   registerSwitches()
 
@@ -155,7 +162,7 @@ if __name__ == "__main__":
   run()
 
   # Bye
-  DIRACExit( 0 )
+  DIRACExit(0)
 ''' Example:
 dirac-stager-show-requests.py --status=Staged --se=GRIDKA-RDST --limit=10 --showJobs=YES
 Query limited to 10 entries
@@ -173,4 +180,3 @@ Query limited to 10 entries
  Staged        2013-06-07 03:19:26 /lhcb/LHCb/Collision12/FULL.DST/00020846/0002/00020846_00022323_1.full.dst GRIDKA-RDST None    ['48515600']  2013-06-07 04:19:26  43200
  '''
 ################################################################################
-

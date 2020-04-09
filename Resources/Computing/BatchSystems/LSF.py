@@ -48,10 +48,10 @@ class LSF(object):
     for _i in xrange(int(nJobs)):
       cmd = '%s; ' % preamble if preamble else ''
       cmd += "bsub -o %s -e %s -q %s -J DIRACPilot %s %s" % (outputDir,
-                                                            errorDir,
-                                                            queue,
-                                                            submitOptions,
-                                                            executable)
+                                                             errorDir,
+                                                             queue,
+                                                             submitOptions,
+                                                             executable)
       status, output = commands.getstatusoutput(cmd)
       if status == 0:
         outputs.append(output)

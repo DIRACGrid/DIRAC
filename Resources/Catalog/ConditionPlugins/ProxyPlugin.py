@@ -9,12 +9,13 @@ import re
 from DIRAC.Resources.Catalog.ConditionPlugins.FCConditionBasePlugin import FCConditionBasePlugin
 from DIRAC.Core.Security.ProxyInfo import getProxyInfo
 
-class ProxyPlugin( FCConditionBasePlugin ):
+
+class ProxyPlugin(FCConditionBasePlugin):
   """
      This plugin is to be used when filtering based on the user contained in the proxy
   """
 
-  def __init__( self, conditions ):
+  def __init__(self, conditions):
     """ This plugin allows to perform tests on the proxy.
         Supported conditions are:
 
@@ -41,41 +42,38 @@ class ProxyPlugin( FCConditionBasePlugin ):
         If there is no proxy, all conditions are evaluated to False
 
     """
-    super( ProxyPlugin, self ).__init__( conditions )
+    super(ProxyPlugin, self).__init__(conditions)
 
     # the conditions have the form
     # attribute.predicate(value)
     condition_pattern = r'^(\w+)\.(\w+)\((.+)\)$'
-    regex = re.compile( condition_pattern )
-    match = regex.search( conditions )
+    regex = re.compile(condition_pattern)
+    match = regex.search(conditions)
     self.attr, self.predicate, self.value = match.groups()
 
     # To cover the case where the names would be surrounded by (single) quotes
-    self.value = self.value.replace( "'", "" ).replace( '"', '' ).replace( ' ', '' )
+    self.value = self.value.replace("'", "").replace('"', '').replace(' ', '')
 
     self._checkCondition()
-    self.proxyInfo = getProxyInfo().get( 'Value' )
+    self.proxyInfo = getProxyInfo().get('Value')
 
-
-  def _checkCondition( self ):
+  def _checkCondition(self):
     """ Checks that the actual condition makes sense
         if not, raises a RuntimeError exception
     """
 
-    excp = RuntimeError( "Incorrect condition format %s" % self.conditions )
+    excp = RuntimeError("Incorrect condition format %s" % self.conditions)
 
     if self.attr in ['username', 'group']:
       if self.predicate not in ['in', 'not_in']:
         raise excp
-    elif self.attr in[ 'property', 'voms']:
+    elif self.attr in['property', 'voms']:
       if self.predicate not in ['has', 'has_not']:
         raise excp
     else:
       raise excp
 
-
-
-  def eval( self, **kwargs ):
+  def eval(self, **kwargs):
     """ evaluate the parameters.
     """
 
@@ -86,19 +84,16 @@ class ProxyPlugin( FCConditionBasePlugin ):
     listToLookInto = []
 
     if self.attr in ['username', 'group']:
-      valueToLookFor = self.proxyInfo.get( self.attr )
-      listToLookInto = self.value.split( ',' )
+      valueToLookFor = self.proxyInfo.get(self.attr)
+      listToLookInto = self.value.split(',')
     elif self.attr == 'property':
       valueToLookFor = self.value
-      listToLookInto = self.proxyInfo.get( 'groupProperties', [] )
+      listToLookInto = self.proxyInfo.get('groupProperties', [])
     elif self.attr == 'voms':
-      valueToLookFor = self.value.replace( '->', '=' )
-      listToLookInto = self.proxyInfo.get( 'VOMS', [] )
+      valueToLookFor = self.value.replace('->', '=')
+      listToLookInto = self.proxyInfo.get('VOMS', [])
 
     if 'not' in self.predicate:
       return valueToLookFor not in listToLookInto
     else:
       return valueToLookFor in listToLookInto
-
-
-

@@ -9,12 +9,13 @@ import socket
 #
 ##############################################################
 
+
 class FakeSocket:
 
   def __getattr__(self, name):
-    return getattr( self.sock, name )
+    return getattr(self.sock, name)
 
-  def __init__(self, sock, copies = 0):
+  def __init__(self, sock, copies=0):
     self.iCopies = copies
     self.sock = sock
 
@@ -27,4 +28,4 @@ class FakeSocket:
 
   def makefile(self, mode, bufsize=None):
     self.iCopies += 1
-    return socket._fileobject( self.sock, mode, bufsize)
+    return socket._fileobject(self.sock, mode, bufsize)

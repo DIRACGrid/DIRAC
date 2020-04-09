@@ -276,7 +276,7 @@ class PDP(object):
 
     # We set the rssMachine on the current state ( ensures it is a valid one )
     # FIXME: probably this check can be done at takeDecision
-    machineStatus = self.rssMachine.setState(self.decisionParams['status'])
+    machineStatus = self.rssMachine.setState(self.decisionParams['status'], noWarn=True)
     if not machineStatus['OK']:
       return machineStatus
 

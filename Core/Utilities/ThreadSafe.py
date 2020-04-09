@@ -4,19 +4,20 @@ __RCSID__ = "$Id$"
 
 import threading
 
+
 class Synchronizer:
   """ Class encapsulating a lock
   allowing it to be used as a synchronizing
   decorator making the call thread-safe"""
 
-  def __init__( self, lockName = "", recursive = False ):
+  def __init__(self, lockName="", recursive=False):
     from DIRAC.Core.Utilities.LockRing import LockRing
     self.__lockName = lockName
     self.__lr = LockRing()
-    self.__lock = self.__lr.getLock( lockName, recursive = recursive )
+    self.__lock = self.__lr.getLock(lockName, recursive=recursive)
 
-  def __call__( self, funcToCall ):
-    def lockedFunc( *args, **kwargs ):
+  def __call__(self, funcToCall):
+    def lockedFunc(*args, **kwargs):
       try:
         if self.__lockName:
           print("LOCKING", self.__lockName)
@@ -35,23 +36,24 @@ class Synchronizer:
     return self.__lock.release()
 
 
-#FIXME: not used
+# FIXME: not used
 class WORM:
   """
   Write One - Read Many
   """
-  def __init__( self, maxReads = 10 ):
+
+  def __init__(self, maxReads=10):
     from DIRAC.Core.Utilities.LockRing import LockRing
     self.__lr = LockRing()
     self.__lock = self.__lr.getLock()
     self.__maxReads = maxReads
-    self.__semaphore = threading.Semaphore( maxReads )
+    self.__semaphore = threading.Semaphore(maxReads)
 
-  def write( self, funcToCall ):
+  def write(self, funcToCall):
     """
     Write decorator
     """
-    def __doWriteLock( *args, **kwargs ):
+    def __doWriteLock(*args, **kwargs):
       try:
         self.__startWriteZone()
         return funcToCall(*args, **kwargs)
@@ -59,11 +61,11 @@ class WORM:
         self.__endWriteZone()
     return __doWriteLock
 
-  def read( self, funcToCall ):
+  def read(self, funcToCall):
     """
     Read decorator
     """
-    def __doReadLock( *args, **kwargs ):
+    def __doReadLock(*args, **kwargs):
       try:
         self.__startReadZone()
         return funcToCall(*args, **kwargs)
@@ -78,7 +80,7 @@ class WORM:
     PRIVATE USE
     """
     self.__lock.acquire()
-    for i in range( self.__maxReads ):
+    for i in range(self.__maxReads):
       self.__semaphore.acquire()
     self.__lock.release()
 
@@ -87,7 +89,7 @@ class WORM:
     Unlocks Event.
     PRIVATE USE
     """
-    for i in range( self.__maxReads ):
+    for i in range(self.__maxReads):
       self.__semaphore.release()
 
   def __startReadZone(self):
@@ -98,7 +100,7 @@ class WORM:
     """
     self.__semaphore.acquire()
 
-  def __endReadZone( self ):
+  def __endReadZone(self):
     """
     End of danger zone.
     PRIVATE USE

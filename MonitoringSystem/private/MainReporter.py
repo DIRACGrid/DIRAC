@@ -12,45 +12,47 @@ from DIRAC.Core.Utilities.Plotting.ObjectLoader import loadObjects
 
 __RCSID__ = "$Id$"
 
-class PlottersList( object ):
+
+class PlottersList(object):
 
   """
   Used to determine all available plotters used to create the plots
 
   :param dict __plotters: stores the available plotters
   """
-  def __init__( self ):
 
+  def __init__(self):
     """ c'tor
 
     :param self: self reference
     """
 
-    objectsLoaded = loadObjects( 'MonitoringSystem/private/Plotters',
-                                 re.compile( r".*[a-z1-9]Plotter\.py$" ),
-                                 myBasePlotter )
+    objectsLoaded = loadObjects('MonitoringSystem/private/Plotters',
+                                re.compile(r".*[a-z1-9]Plotter\.py$"),
+                                myBasePlotter)
     self.__plotters = {}
     for objName in objectsLoaded:
-      self.__plotters[ objName[:-7] ] = objectsLoaded[ objName ]
+      self.__plotters[objName[:-7]] = objectsLoaded[objName]
 
-  def getPlotterClass( self, typeName ):
+  def getPlotterClass(self, typeName):
     """
     It returns the plotter class for a given monitoring type
     """
     try:
-      return S_OK ( self.__plotters[ typeName ] )
+      return S_OK(self.__plotters[typeName])
     except KeyError:
       return S_ERROR()
 
 
-class MainReporter( object ):
+class MainReporter(object):
   """
   :param object __db: database object
   :param str __setup: DIRAC setup
   :param str __csSection: CS section used to configure some parameters.
   :param list __plotterList: available plotters
   """
-  def __init__( self, db, setup ):
+
+  def __init__(self, db, setup):
     """ c'tor
 
     :param self: self reference
@@ -59,10 +61,10 @@ class MainReporter( object ):
     """
     self.__db = db
     self.__setup = setup
-    self.__csSection = getServiceSection( "Monitoring/Monitoring", setup = setup )
+    self.__csSection = getServiceSection("Monitoring/Monitoring", setup=setup)
     self.__plotterList = PlottersList()
 
-  def __calculateReportHash( self, reportRequest ):
+  def __calculateReportHash(self, reportRequest):
     """
     It creates an unique identifier
 
@@ -70,17 +72,17 @@ class MainReporter( object ):
     :return: an unique value
     :rtype: str
     """
-    requestToHash = dict( reportRequest )
-    granularity = gConfig.getValue( "%s/CacheTimeGranularity" % self.__csSection, 300 )
-    for key in ( 'startTime', 'endTime' ):
-      epoch = requestToHash[ key ]
-      requestToHash[ key ] = epoch - epoch % granularity
+    requestToHash = dict(reportRequest)
+    granularity = gConfig.getValue("%s/CacheTimeGranularity" % self.__csSection, 300)
+    for key in ('startTime', 'endTime'):
+      epoch = requestToHash[key]
+      requestToHash[key] = epoch - epoch % granularity
     md5Hash = hashlib.md5()
-    md5Hash.update( repr( requestToHash ) )
-    md5Hash.update( self.__setup )
+    md5Hash.update(repr(requestToHash))
+    md5Hash.update(self.__setup)
     return md5Hash.hexdigest()
 
-  def generate( self, reportRequest, credDict ):
+  def generate(self, reportRequest, credDict):
     """
     It is used to create a plot.
 
@@ -90,24 +92,24 @@ class MainReporter( object ):
 
     :return: dict S_OK/S_ERROR the values used to create the plot
     """
-    typeName = reportRequest[ 'typeName' ]
-    plotterClass = self.__plotterList.getPlotterClass( typeName )
+    typeName = reportRequest['typeName']
+    plotterClass = self.__plotterList.getPlotterClass(typeName)
     if not plotterClass['OK']:
-      return S_ERROR( "There's no reporter registered for type %s" % typeName )
+      return S_ERROR("There's no reporter registered for type %s" % typeName)
 
-    reportRequest[ 'hash' ] = self.__calculateReportHash( reportRequest )
-    plotter = plotterClass['Value']( self.__db, self.__setup, reportRequest[ 'extraArgs' ] )
-    return plotter.generate( reportRequest )
+    reportRequest['hash'] = self.__calculateReportHash(reportRequest)
+    plotter = plotterClass['Value'](self.__db, self.__setup, reportRequest['extraArgs'])
+    return plotter.generate(reportRequest)
 
-  def list( self, typeName ):
+  def list(self, typeName):
     """
     It returns the available plots
 
     :param str typeName: monitoring type
     :return: dict S_OK/S_ERROR list of available reports (plots)
     """
-    plotterClass = self.__plotterList.getPlotterClass( typeName )
+    plotterClass = self.__plotterList.getPlotterClass(typeName)
     if not plotterClass['OK']:
-      return S_ERROR( "There's no plotter registered for type %s" % typeName )
-    plotter = plotterClass['Value']( self.__db, self.__setup )
-    return S_OK( plotter.plotsList() )
+      return S_ERROR("There's no plotter registered for type %s" % typeName)
+    plotter = plotterClass['Value'](self.__db, self.__setup)
+    return S_OK(plotter.plotsList())

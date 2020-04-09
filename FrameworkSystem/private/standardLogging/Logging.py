@@ -481,7 +481,6 @@ class Logging(object):
       return retDictRessources['Value']
     return {}
 
-
   def getSubLogger(self, subName, child=True):
     """
     Create a new Logging object, child of this Logging, if it does not exists.

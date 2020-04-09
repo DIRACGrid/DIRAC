@@ -323,11 +323,6 @@ class SSHComputingElement(ComputingElement):
     if not self.workArea.startswith('/'):
       self.workArea = os.path.join(self.sharedArea, self.workArea)
 
-    result = self._prepareRemoteHost()
-    if not result['OK']:
-      self.log.error('Failed to initialize CE', self.ceName)
-      return result
-
     self.submitOptions = ''
     if 'SubmitOptions' in self.ceParameters:
       self.submitOptions = self.ceParameters['SubmitOptions']
@@ -336,6 +331,10 @@ class SSHComputingElement(ComputingElement):
       if self.ceParameters['RemoveOutput'].lower() in ['no', 'false', '0']:
         self.removeOutput = False
     self.preamble = self.ceParameters.get('Preamble', '')
+
+    result = self._prepareRemoteHost()
+    if not result['OK']:
+      return result
 
     return S_OK()
 
@@ -433,7 +432,7 @@ class SSHComputingElement(ComputingElement):
       with open(controlScript, "a") as cs:
         cs.write(executeBatchContent)
     except IOError:
-        return S_ERROR('IO Error trying to generate control script')
+      return S_ERROR('IO Error trying to generate control script')
 
     return S_OK('%s' % controlScript)
 

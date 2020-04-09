@@ -86,7 +86,7 @@ class LoggingRoot(Logging):
     self.__configureLevel()
     self._generateBackendFormat()
 
-  def initialize(self, systemName, cfgPath, forceInit= False):
+  def initialize(self, systemName, cfgPath, forceInit=False):
     """
     Configure the root Logging.
     It can be possible to :

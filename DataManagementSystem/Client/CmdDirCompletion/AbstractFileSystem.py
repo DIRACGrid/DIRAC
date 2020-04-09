@@ -3,6 +3,8 @@
 # author: lintao
 
 from __future__ import print_function
+
+
 class HelperReadOnly(object):
   def __init__(self, val):
     self.val = val
@@ -12,6 +14,7 @@ class HelperReadOnly(object):
 
   def __set__(self, obj, val):
     raise AttributeError("can't modify attribute")
+
 
 class AbsFileSystem(object):
   fs_name = HelperReadOnly("AbsFileSystem")
@@ -26,6 +29,8 @@ class AbsFileSystem(object):
 
 import os
 import os.path
+
+
 class UnixLikeFileSystem(AbsFileSystem):
   fs_name = HelperReadOnly("UnixLikeFileSystem")
   seq = HelperReadOnly("/")
@@ -34,12 +39,14 @@ class UnixLikeFileSystem(AbsFileSystem):
     if not self.is_dir(path):
       raise StopIteration
     for entry in os.listdir(path):
-      if self.is_dir( os.path.join(path, entry) ):
+      if self.is_dir(os.path.join(path, entry)):
         entry += self.seq
       yield entry
+
   def is_dir(self, path):
     return os.path.isdir(path)
   pass
+
 
 class DFCFileSystem(AbsFileSystem):
   fs_name = HelperReadOnly("DFCFileSystem")
@@ -76,11 +83,10 @@ class DFCFileSystem(AbsFileSystem):
     subdn = dn
     if dn.startswith(parent_dn):
       # remove the prefix
-      subdn = dn[ len(parent_dn): ]
+      subdn = dn[len(parent_dn):]
       if subdn.startswith("/"):
         subdn = subdn[1:]
-    return subdn 
-
+    return subdn
 
   def is_dir(self, path):
     if path.endswith('/'):
@@ -91,6 +97,7 @@ class DFCFileSystem(AbsFileSystem):
       return False
     return result['Value']['Successful'].get(path, False)
 
+
 if __name__ == "__main__":
   ulfs = UnixLikeFileSystem()
   print("FS", ulfs.fs_name)
@@ -98,5 +105,3 @@ if __name__ == "__main__":
 
   print(list(ulfs.list_dir("/")))
   print(list(ulfs.list_dir("/bad")))
-
-  

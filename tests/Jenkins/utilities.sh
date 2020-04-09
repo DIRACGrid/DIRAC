@@ -345,7 +345,7 @@ function installDIRAC(){
     } >> "$CLIENTINSTALLDIR/dirac-ci-install.cfg"
   fi
 
-  if ! ./dirac-install -r $DIRAC_RELEASE -t client "${INSTALLOPTIONS[@]}" "$CLIENTINSTALLDIR/dirac-ci-install.cfg" $DEBUG; then
+  if ! ./dirac-install -r $DIRAC_RELEASE -t client "${INSTALLOPTIONS[@]}" "$CLIENTINSTALLDIR/dirac-ci-install.cfg"; then
     echo 'ERROR: DIRAC client installation failed'
     exit 1
   fi

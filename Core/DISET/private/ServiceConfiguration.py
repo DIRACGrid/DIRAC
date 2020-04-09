@@ -58,43 +58,43 @@ class ServiceConfiguration:
   def getMaxThreads(self):
     try:
       return int(self.getOption("MaxThreads"))
-    except:
+    except BaseException:
       return 15
 
   def getMinThreads(self):
     try:
       return int(self.getOption("MinThreads"))
-    except:
+    except BaseException:
       return 1
 
   def getMaxWaitingPetitions(self):
     try:
       return int(self.getOption("MaxWaitingPetitions"))
-    except:
+    except BaseException:
       return 500
 
   def getMaxMessagingConnections(self):
     try:
       return int(self.getOption("MaxMessagingConnections"))
-    except:
+    except BaseException:
       return 20
 
   def getMaxThreadsForMethod(self, actionType, method):
     try:
       return int(self.getOption("ThreadLimit/%s/%s" % (actionType, method)))
-    except:
+    except BaseException:
       return 15
 
   def getCloneProcesses(self):
     try:
       return int(self.getOption("CloneProcesses"))
-    except:
+    except BaseException:
       return 0
 
   def getPort(self):
     try:
       return int(self.getOption("Port"))
-    except:
+    except BaseException:
       return 9876
 
   def getProtocol(self):
@@ -139,5 +139,5 @@ class ServiceConfiguration:
     optionValue = self.getOption("ContextLifeTime")
     try:
       return int(optionValue)
-    except:
+    except BaseException:
       return 21600

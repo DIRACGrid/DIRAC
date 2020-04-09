@@ -759,8 +759,22 @@ class TransformationDB(DB):
     return res
 
   def __deleteTransformationFiles(self, transID, connection=False):
-    """ Remove the files associated to a transformation """
-    req = "DELETE FROM TransformationFiles WHERE TransformationID = %d;" % transID
+    """ Remove the files associated to a transformation.
+        It also tries to remove the associated DataFiles.
+        If these DataFiles are still used by other transformations, they
+        will be kept thanks to the ForeignKey constraint.
+        In the very unlikely event of removing a file that was juuuuuuuust about to be
+        used by another transformation, well, tough luck, but the other transformation
+        will succeed at the next attempt to insert the file.
+    """
+    # The IGNORE keyword will make sure we do not abort the full removal
+    # on a foreign key error
+    # https://dev.mysql.com/doc/refman/5.7/en/sql-mode.html#ignore-strict-comparison
+    req = "DELETE IGNORE tf, df \
+           FROM TransformationFiles tf \
+           JOIN DataFiles df \
+           ON tf.FileID=df.FileID \
+           WHERE TransformationID = %d;" % transID
     res = self._update(req, connection)
     if not res['OK']:
       gLogger.error("Failed to delete transformation files", res['Message'])

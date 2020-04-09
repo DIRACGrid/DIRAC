@@ -19,9 +19,12 @@
 
 __RCSID__ = "$Id$"
 
+import time
+
 from DIRAC import S_OK, S_ERROR, gLogger
 
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
+from DIRAC.Core.Utilities.DErrno import cmpError, EFCERR
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
 from DIRAC.RequestManagementSystem.Client.Request import Request
@@ -72,18 +75,33 @@ class FailoverTransfer(object):
     fileChecksum = fileMetaDict.get("Checksum", None)
 
     for se in destinationSEList:
-      self.log.info("Attempting dm.putAndRegister",
-                    "('%s','%s','%s',guid='%s',catalog='%s', checksum = '%s')" %
-                    (lfn, localPath, se, fileGUID, fileCatalog, fileChecksum))
 
-      result = DataManager(
-          catalogs=fileCatalog,
-          masterCatalogOnly=masterCatalogOnly).putAndRegister(lfn,
-                                                              localPath,
-                                                              se,
-                                                              guid=fileGUID,
-                                                              checksum=fileChecksum)
-      self.log.verbose(result)
+      # We put here some retry in case the problem comes from the FileCatalog
+      # being unavailable. If it is, then the `hasAccess` call would fail,
+      # and we would not make any failover request. So the only way is to wait a bit
+      # This keeps the WN busy for a while, but at least we do not lose all the processing
+      # time we just spent
+      for sleeptime in (10, 60, 300, 600):
+        self.log.info("Attempting dm.putAndRegister",
+                      "('%s','%s','%s',guid='%s',catalog='%s', checksum = '%s')" %
+                      (lfn, localPath, se, fileGUID, fileCatalog, fileChecksum))
+
+        result = DataManager(
+            catalogs=fileCatalog,
+            masterCatalogOnly=masterCatalogOnly).putAndRegister(lfn,
+                                                                localPath,
+                                                                se,
+                                                                guid=fileGUID,
+                                                                checksum=fileChecksum)
+        self.log.verbose(result)
+
+        # If the FC is unavailable, we stay in the loop and retry
+        # otherwise we continue without retrying
+        if result['OK'] or not cmpError(result, EFCERR):
+          break
+        self.log.error("transferAndRegisterFile: FC unavailable, retry")
+        time.sleep(sleeptime)
+
       if not result['OK']:
         self.log.error('dm.putAndRegister failed with message', result['Message'])
         errorList.append(result['Message'])

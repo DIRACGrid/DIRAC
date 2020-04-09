@@ -16,6 +16,7 @@ import os
 import pytest
 import tempfile
 import time
+import sys
 
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
@@ -24,6 +25,8 @@ from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
 from DIRAC.Core.Utilities.File import makeGuid
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
+from DIRAC.Core.Security.ProxyInfo import getProxyInfo
+from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 
 
 @pytest.fixture(scope='module')
@@ -34,6 +37,25 @@ def dm():
 @pytest.fixture(scope='module')
 def fc():
   return FileCatalog()
+
+
+try:
+  res = getProxyInfo()
+  if not res['OK']:
+    raise Exception(res['Message'])
+
+  proxyInfo = res['Value']
+  username = proxyInfo['username']
+  vo = getVOForGroup(proxyInfo['group'])
+
+  if not vo:
+    raise ValueError("Proxy has no VO")
+
+  DESTINATION_PATH = '/%s/test/unit-test/DataManager/' % vo
+
+except Exception as e:  # pylint: disable=broad-except
+  print(repr(e))
+  sys.exit(2)
 
 
 @pytest.fixture
@@ -65,7 +87,7 @@ def assertIsDir(isDir, trueOrFalse):
 def test_putAndRegister(dm, tempFile):
   print('\n\n#########################################################'
         '################\n\n\t\t\tPut and register test\n')
-  lfn = '/Jenkins/test/unit-test/DataManager/putAndRegister/testFile.%s' % time.time()
+  lfn = os.path.join(DESTINATION_PATH, 'putAndRegister/testFile.%s' % time.time())
   diracSE = 'SE-1'
   putRes = dm.putAndRegister(lfn, tempFile, diracSE)
   removeRes = dm.removeFile(lfn)
@@ -79,7 +101,7 @@ def test_putAndRegister(dm, tempFile):
 def test_putAndRegisterReplicate(dm, tempFile):
   print('\n\n#########################################################'
         '################\n\n\t\t\tReplication test\n')
-  lfn = '/Jenkins/test/unit-test/DataManager/putAndRegisterReplicate/testFile.%s' % time.time()
+  lfn = os.path.join(DESTINATION_PATH, 'putAndRegisterReplicate/testFile.%s' % time.time())
   diracSE = 'SE-1'
   putRes = dm.putAndRegister(lfn, tempFile, diracSE)
   replicateRes = dm.replicateAndRegister(lfn, 'SE-2')  # ,sourceSE='',destPath='',localCache='')
@@ -96,7 +118,7 @@ def test_putAndRegisterReplicate(dm, tempFile):
 def test_putAndRegisterGetReplicaMetadata(dm, tempFile):
   print('\n\n#########################################################'
         '################\n\n\t\t\tGet metadata test\n')
-  lfn = '/Jenkins/test/unit-test/DataManager/putAndRegisterGetReplicaMetadata/testFile.%s' % time.time()
+  lfn = os.path.join(DESTINATION_PATH, 'putAndRegisterGetReplicaMetadata/testFile.%s' % time.time())
   diracSE = 'SE-1'
   putRes = dm.putAndRegister(lfn, tempFile, diracSE)
   metadataRes = dm.getReplicaMetadata(lfn, diracSE)
@@ -116,7 +138,7 @@ def test_putAndRegisterGetReplicaMetadata(dm, tempFile):
 def test_putAndRegsiterGetAccessUrl(dm, tempFile):
   print('\n\n#########################################################'
         '################\n\n\t\t\tGet Access Url test\n')
-  lfn = '/Jenkins/test/unit-test/DataManager/putAndRegisterGetAccessUrl/testFile.%s' % time.time()
+  lfn = os.path.join(DESTINATION_PATH, 'putAndRegisterGetAccessUrl/testFile.%s' % time.time())
   diracSE = 'SE-1'
   putRes = dm.putAndRegister(lfn, tempFile, diracSE)
   getAccessUrlRes = dm.getReplicaAccessUrl(lfn, diracSE)
@@ -130,7 +152,7 @@ def test_putAndRegsiterGetAccessUrl(dm, tempFile):
 def test_putAndRegisterRemoveReplica(dm, tempFile):
   print('\n\n#########################################################'
         '################\n\n\t\t\tRemove replica test\n')
-  lfn = '/Jenkins/test/unit-test/DataManager/putAndRegisterRemoveReplica/testFile.%s' % time.time()
+  lfn = os.path.join(DESTINATION_PATH, 'putAndRegisterRemoveReplica/testFile.%s' % time.time())
   diracSE = 'SE-1'
   putRes = dm.putAndRegister(lfn, tempFile, diracSE)
   removeReplicaRes = dm.removeReplica(diracSE, lfn)
@@ -145,7 +167,7 @@ def test_putAndRegisterRemoveReplica(dm, tempFile):
 
 
 def test_registerFile(dm, tempFile):
-  lfn = '/Jenkins/test/unit-test/DataManager/registerFile/testFile.%s' % time.time()
+  lfn = os.path.join(DESTINATION_PATH, 'registerFile/testFile.%s' % time.time())
   physicalFile = 'srm://host:port/srm/managerv2?SFN=/sa/path%s' % lfn
   fileSize = 10000
   storageElementName = 'SE-1'
@@ -162,7 +184,7 @@ def test_registerFile(dm, tempFile):
 def test_registerReplica(dm, tempFile):
   print('\n\n#########################################################'
         '################\n\n\t\t\tRegister replica test\n')
-  lfn = '/Jenkins/test/unit-test/DataManager/registerReplica/testFile.%s' % time.time()
+  lfn = os.path.join(DESTINATION_PATH, 'registerReplica/testFile.%s' % time.time())
   physicalFile = 'srm://host:port/srm/managerv2?SFN=/sa/path%s' % lfn
   fileSize = 10000
   storageElementName = 'SE-1'
@@ -183,7 +205,7 @@ def test_registerReplica(dm, tempFile):
 def test_putAndRegisterGet(dm, tempFile):
   print('\n\n#########################################################'
         '################\n\n\t\t\tGet file test\n')
-  lfn = '/Jenkins/test/unit-test/DataManager/putAndRegisterGet/testFile.%s' % time.time()
+  lfn = os.path.join(DESTINATION_PATH, 'putAndRegisterGet/testFile.%s' % time.time())
   diracSE = 'SE-1'
   putRes = dm.putAndRegister(lfn, tempFile, diracSE)
   getRes = dm.getFile(lfn)
@@ -199,7 +221,7 @@ def test_putAndRegisterGet(dm, tempFile):
 
 
 def test_cleanDirectory(dm, tempFile, fc):
-  lfn = '/Jenkins/test/unit-test/DataManager/cleanDirectory/testFile.%s' % time.time()
+  lfn = os.path.join(DESTINATION_PATH, 'cleanDirectory/testFile.%s' % time.time())
   diracSE = 'SE-1'
   putRes = dm.putAndRegister(lfn, tempFile, diracSE)
   assertResult(putRes, lfn)

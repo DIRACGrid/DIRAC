@@ -3,7 +3,7 @@ fts3-rest
 git+https://github.com/DIRACGrid/pyGSI.git#egg=GSI
 
 # From pypi
-
+boto3
 #asn1
 M2Crypto==0.32
 autopep8==1.3.3
@@ -33,8 +33,9 @@ pyparsing>=2.0.6
 pytest>=3.6
 pytest-cov>=2.2.0
 pytest-mock
-pytz>=2015.7
+pytz
 readline>=6.2.4
+recommonmark
 requests>=2.9.1
 rst2pdf>=0.93
 simplejson>=3.8.1

@@ -20,7 +20,7 @@ class ServerHandler(logging.Handler, threading.Thread):
   Here, this handler send log messages to a DIRAC service: SystemLogging which store log messages in a database.
 
   This handler send only log messages superior to WARN. It works in a thread, and send messages every 'sleepTime'.
-  When a message must be emit, it is added to queue before sending.  
+  When a message must be emit, it is added to queue before sending.
   """
 
   def __init__(self, sleepTime, interactive, site):
@@ -66,7 +66,7 @@ class ServerHandler(logging.Handler, threading.Thread):
     Prepare the log to the sending.
     This method create a tuple based on the record and add it to the bundle for the sending.
 
-    A tuple is necessary for because the service manage messages under this form. 
+    A tuple is necessary for because the service manage messages under this form.
     """
     while not self.__logQueue.empty():
       bundle = []
