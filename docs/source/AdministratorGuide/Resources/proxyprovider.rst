@@ -63,7 +63,7 @@ Configuration options are:
 * ``DNOrder``: order of the distinguished name fields in a created user certificate. If this parameter is not specified, the distinguished names order in the created proxy will be the same as in the configuration file policy block.
 
 
-The Proxy provider supports the following distinguished names, more details `here <https://www.cryptosys.net/pki/manpki/pki_distnames.html>`_:
+The Proxy provider supports the following distinguished names, `more details here <https://www.cryptosys.net/pki/manpki/pki_distnames.html>`_:
 
 * SN(surname)
 * GN(givenName)
@@ -80,7 +80,7 @@ The Proxy provider supports the following distinguished names, more details `her
 PUSP proxy provider
 -------------------
 
-ProxyProvider implementation for a Per-User Sub-Proxy(PUSP) proxy generation using PUSP proxy server. More details about PUSP `here <https://wiki.egi.eu/wiki/Usage_of_the_per_user_sub_proxy_in_EGI>`_. Required parameters in the DIRAC configuration for its implementation::
+ProxyProvider implementation for a Per-User Sub-Proxy(PUSP) proxy generation using PUSP proxy server. `More details about PUSP here <https://wiki.egi.eu/wiki/Usage_of_the_per_user_sub_proxy_in_EGI>`_. Required parameters in the DIRAC configuration for its implementation::
 
     Resources
     {
