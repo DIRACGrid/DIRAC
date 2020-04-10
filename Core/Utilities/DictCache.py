@@ -35,21 +35,18 @@ class MockLockRing(object):
 
 
 class DictCache(object):
-  """
-    DictCache is a generic cache implementation.
-    The user can decide whether this cache should be shared among the threads or not, but it is always thread safe
-    Note that when shared, the access to the cache is protected by a lock, but not necessarily the
-    object you are retrieving from it.
+  """ DictCache is a generic cache implementation.
+      The user can decide whether this cache should be shared among the threads or not, but it is always thread safe
+      Note that when shared, the access to the cache is protected by a lock, but not necessarily the
+      object you are retrieving from it.
   """
 
   def __init__(self, deleteFunction=False, threadLocal=False):
-    """
-    Initialize the dict cache.
+    """ Initialize the dict cache.
 
-      :param deleteFunction: if not False, invoked when deleting a cached object
-      :param threadLocal: if False, the cache will be shared among all the threads, otherwise,
-                          each thread gets its own cache.
-
+        :param deleteFunction: if not False, invoked when deleting a cached object
+        :param threadLocal: if False, the cache will be shared among all the threads, otherwise,
+                            each thread gets its own cache.
     """
 
     self.__threadLocal = threadLocal
@@ -95,11 +92,12 @@ class DictCache(object):
     return self.__sharedCache
 
   def exists(self, cKey, validSeconds=0):
-    """
-      Returns True/False if the key exists for the given number of seconds
+    """ Returns True/False if the key exists for the given number of seconds
 
-      :param cKey: identification key of the record
-      :param validSeconds: The amount of seconds the key has to be valid for
+        :param cKey: identification key of the record
+        :param int validSeconds: The amount of seconds the key has to be valid for
+
+        :return: bool
     """
     self.lock.acquire()
     try:
@@ -117,10 +115,9 @@ class DictCache(object):
       self.lock.release()
 
   def delete(self, cKey):
-    """
-    Delete a key from the cache
+    """ Delete a key from the cache
 
-    :param cKey: identification key of the record
+        :param cKey: identification key of the record
     """
     self.lock.acquire()
     try:
@@ -133,12 +130,11 @@ class DictCache(object):
       self.lock.release()
 
   def add(self, cKey, validSeconds, value=None):
-    """
-    Add a record to the cache
+    """ Add a record to the cache
 
-    :param cKey: identification key of the record
-    :param validSeconds: valid seconds of this record
-    :param value: value of the record
+        :param cKey: identification key of the record
+        :param int validSeconds: valid seconds of this record
+        :param value: value of the record
     """
     if max(0, validSeconds) == 0:
       return
@@ -151,11 +147,12 @@ class DictCache(object):
       self.lock.release()
 
   def get(self, cKey, validSeconds=0):
-    """
-    Get a record from the cache
+    """ Get a record from the cache
 
-    :param cKey: identification key of the record
-    :param validSeconds: The amount of seconds the key has to be valid for
+        :param cKey: identification key of the record
+        :param int validSeconds: The amount of seconds the key has to be valid for
+
+        :return: None or value of key
     """
     self.lock.acquire()
     try:
@@ -173,8 +170,9 @@ class DictCache(object):
       self.lock.release()
 
   def showContentsInString(self):
-    """
-    Return a human readable string to represent the contents
+    """ Return a human readable string to represent the contents
+
+        :return: str
     """
     self.lock.acquire()
     try:
@@ -189,8 +187,11 @@ class DictCache(object):
       self.lock.release()
 
   def getKeys(self, validSeconds=0):
-    """
-    Get keys for all contents
+    """ Get keys for all contents
+
+        :param int validSeconds: valid time in seconds
+
+        :return: list
     """
     self.lock.acquire()
     try:
@@ -204,8 +205,9 @@ class DictCache(object):
       self.lock.release()
 
   def purgeExpired(self, expiredInSeconds=0):
-    """
-    Purge all entries that are expired or will be expired in <expiredInSeconds>
+    """ Purge all entries that are expired or will be expired in <expiredInSeconds>
+
+        :param int expiredInSeconds: expired time in a seconds
     """
     self.lock.acquire()
     try:
@@ -222,9 +224,10 @@ class DictCache(object):
       self.lock.release()
 
   def purgeAll(self, useLock=True):
-    """
-    Purge all entries
-    CAUTION: useLock parameter should ALWAYS be True except when called from __del__
+    """ Purge all entries
+        CAUTION: useLock parameter should ALWAYS be True except when called from __del__
+
+        :param bool useLock: use lock
     """
     if useLock:
       self.lock.acquire()
