@@ -10,7 +10,7 @@ from __future__ import print_function
 import os
 import DIRAC
 
-from DIRAC import gLogger
+from DIRAC import gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base import Script
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import gProxyManager
 from DIRAC.ConfigurationSystem.Client.Helpers import Registry
@@ -27,32 +27,62 @@ class Params(object):
   vomsAttr = False
 
   def setLimited(self, args):
+    """ Set limited
+
+        :param bool args: is limited
+
+        :return: S_OK()/S_ERROR()
+    """
     self.limited = True
-    return DIRAC.S_OK()
+    return S_OK()
 
   def setProxyLocation(self, args):
+    """ Set proxy location
+
+        :param str args: proxy path
+
+        :return: S_OK()/S_ERROR()
+    """
     self.proxyPath = args
-    return DIRAC.S_OK()
+    return S_OK()
 
   def setProxyLifeTime(self, arg):
+    """ Set proxy lifetime
+
+        :param int arg: lifetime in a seconds
+
+        :return: S_OK()/S_ERROR()
+    """
     try:
       fields = [f.strip() for f in arg.split(":")]
       self.proxyLifeTime = int(fields[0]) * 3600 + int(fields[1]) * 60
     except BaseException:
       gLogger.notice("Can't parse %s time! Is it a HH:MM?" % arg)
-      return DIRAC.S_ERROR("Can't parse time argument")
-    return DIRAC.S_OK()
+      return S_ERROR("Can't parse time argument")
+    return S_OK()
 
   def automaticVOMS(self, arg):
+    """ Enable VOMS
+
+        :param bool arg: enable VOMS
+
+        :return: S_OK()/S_ERROR()
+    """
     self.enableVOMS = True
-    return DIRAC.S_OK()
+    return S_OK()
 
   def setVOMSAttr(self, arg):
+    """ Register CLI switches
+
+        :param str arg: VOMS attribute
+    """
     self.enableVOMS = True
     self.vomsAttr = arg
-    return DIRAC.S_OK()
+    return S_OK()
 
   def registerCLISwitches(self):
+    """ Register CLI switches
+    """
     Script.registerSwitch("v:", "valid=", "Valid HH:MM for the proxy. By default is 24 hours", self.setProxyLifeTime)
     Script.registerSwitch("l", "limited", "Get a limited proxy", self.setLimited)
     Script.registerSwitch("u:", "out=", "File to write as proxy", self.setProxyLocation)
