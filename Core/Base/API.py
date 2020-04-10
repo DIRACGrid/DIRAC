@@ -16,7 +16,13 @@ COMPONENT_NAME = 'API'
 
 
 def _printFormattedDictList(dictList, fields, uniqueField, orderBy):
-  """ Will print ordered the supplied field of a list of dictionaries """
+  """ Will print ordered the supplied field of a list of dictionaries
+
+      :param list dictList: list of dictionaries
+      :param list fields: fields
+      :param str uniqueField: unique field
+      :param str orderBy: ordered
+  """
   orderDict = {}
   fieldWidths = {}
   dictFields = {}
@@ -97,7 +103,13 @@ class API(object):
   #############################################################################
 
   def _errorReport(self, error, message=None):
-    """Internal function to return errors and exit with an S_ERROR() """
+    """ Internal function to return errors and exit with an S_ERROR()
+
+        :param str error: error
+        :param str message: message
+
+        :return: S_ERROR(str)
+    """
     if not message:
       message = error
 
@@ -107,12 +119,19 @@ class API(object):
   #############################################################################
 
   def _prettyPrint(self, myObject):
-    """Helper function to pretty print an object. """
+    """ Helper function to pretty print an object.
+
+        :param myObject object: an object to pring
+    """
     print(self.pPrint.pformat(myObject))
 
   #############################################################################
 
   def _getCurrentUser(self):
+    """ Get current user
+
+        :return: S_OK(dict)/S_ERROR()
+    """
     res = getProxyInfo(False, False)
     if not res['OK']:
       return self._errorReport('No proxy found in local environment', res['Message'])
@@ -128,9 +147,14 @@ class API(object):
   #############################################################################
 
   def _reportError(self, message, name='', **kwargs):
-    """Internal Function. Gets caller method name and arguments, formats the
-       information and adds an error to the global error dictionary to be
-       returned to the user.
+    """ Internal Function. Gets caller method name and arguments, formats the
+        information and adds an error to the global error dictionary to be
+        returned to the user.
+
+        :param str message: message
+        :param str name: name
+
+        :return: S_ERROR(str)
     """
     className = name
     if not name:
