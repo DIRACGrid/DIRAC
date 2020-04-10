@@ -13,6 +13,14 @@ def findGenericPilotCredentials(vo=False, group=False, pilotDN='', pilotGroup=''
       Then check if the user has a registered proxy in ProxyManager.
 
       if pilotDN or pilotGroup are specified, use them
+
+      :param str vo: VO name
+      :param str group: group name
+      :param str pilotDN: pilot DN
+      :param str pilotGroup: pilot group
+      :param str pilotUser: pilot user
+
+      :return: S_OK(tuple)/S_ERROR()
   """
   if not group and not vo:
     return S_ERROR("Need a group or a VO to determine the Generic pilot credentials")
