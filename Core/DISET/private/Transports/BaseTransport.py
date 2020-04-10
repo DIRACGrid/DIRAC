@@ -118,8 +118,13 @@ class BaseTransport(object):
     """
     return self.peerCredentials
 
-  def setExtraCredentials(self, group):
-    self.peerCredentials['extraCredentials'] = group
+  def setExtraCredentials(self, extraCredentials):
+    """ Add extra credentials to peerCredentials
+
+        :param extraCredentials: group or tuple with DN and group
+        :type extraCredentials: str or tuple
+    """
+    self.peerCredentials['extraCredentials'] = extraCredentials
 
   def serverMode(self):
     return self.bServerMode
