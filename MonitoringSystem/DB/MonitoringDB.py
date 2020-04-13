@@ -177,7 +177,7 @@ class MonitoringDB(ElasticDB):
     s = self._Search(indexName)
     s = s.filter('bool', must=q)
 
-    for i,field in enumerate(selectFields):
+    for i, field in enumerate(selectFields):
       a1 = self._A('terms', field=grouping, size=self.RESULT_SIZE)
       a2 = self._A('terms', field='timestamp')
 
@@ -205,11 +205,11 @@ class MonitoringDB(ElasticDB):
 
     result = {}
 #    for i in retVal.aggregations['2'].buckets:
-    for i,field in enumerate(selectFields):
+    for i, field in enumerate(selectFields):
       for j in retVal.aggregations[str(i)].buckets:
         if isAvgAgg:
           if j.key not in result:
-            if len(selectFields) == 1: # for backword compatibility
+            if len(selectFields) == 1:  # for backword compatibility
               result[j.key] = j.avg_total_jobs.value
             else:
               result[j.key] = [j.avg_total_jobs.value]
@@ -221,7 +221,7 @@ class MonitoringDB(ElasticDB):
             result[site] = {}
           for k in j.end_data.buckets:
             if (k.key / 1000) not in result[site]:
-              if len(selectFields) == 1: # for backword compatibility
+              if len(selectFields) == 1:  # for backword compatibility
                 result[site][k.key / 1000] = k.avg_monthly_sales.value
               else:
                 result[site][k.key / 1000] = [k.avg_monthly_sales.value]
