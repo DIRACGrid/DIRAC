@@ -10,10 +10,11 @@ from DIRAC.Core.Utilities.Plotting.Plots import generateNoDataPlot, generateTime
 
 from DIRAC.MonitoringSystem.private.DBUtils import DBUtils
 
-__RCSID__ = "$Id$"
+__RCSID__ = "2c57d3b (2016-10-21 14:22:17 +0200) Federico Stagni <federico.stagni@cern.ch>"
 
 class BasePlotter( DBUtils ):
 
+  _PARAM_CONSOLIDATION_FUNCTION = "consolidationFunction"
 
   _EA_THUMBNAIL = 'thumbnail'
   _EA_WIDTH = 'width'
@@ -197,7 +198,23 @@ class BasePlotter( DBUtils ):
       return retVal
     dataDict = retVal[ 'Value' ]
 
+    for keyField in dataDict:
+      if self._PARAM_CONSOLIDATION_FUNCTION in metadataDict:
+        dataDict[keyField] = self._executeConsolidation(
+            metadataDict[self._PARAM_CONSOLIDATION_FUNCTION], dataDict[keyField])
+
     return S_OK( ( dataDict, granularity ) )
+
+  def _executeConsolidation(self, functor, dataDict):
+    for timeKey in dataDict:
+      dataDict[timeKey] = functor(*dataDict[timeKey])
+    return dataDict
+
+  def _efficiencyConsolidation(self, total, count):
+    if not count:
+      return -1
+    else:
+      return (float(total) / float(count)) * 100.0
 
   def _getSummaryData( self, startTime, endTime, selectFields, preCondDict, metadataDict = None ):
     """
