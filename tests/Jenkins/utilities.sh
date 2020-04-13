@@ -1063,7 +1063,7 @@ function downloadProxy(){
     fi
   fi
 
-  if [[ $? -ne 0 ]]; then
+  if [[ "${?}" -ne 0 ]]; then
     echo 'ERROR: cannot download proxy'
     exit 1
   fi

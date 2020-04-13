@@ -21,8 +21,8 @@ fi
 
 echo "dirac-proxy-init -g dirac_prod"
 dirac-proxy-init -g dirac_prod
-if [[ $? -ne 0 ]]; then
-   exit $?
+if [[ "${?}" -ne 0 ]]; then
+   exit "${?}"
 fi
 echo " "
 
@@ -90,7 +90,7 @@ cat TransformationSystemTest/LFNlist.txt | awk '{print $1}' | sort > ./LFNstoTS.
 echo "Checking if files have been uploaded"
 dirac-dms-lfn-replicas ./LFNstoTS.txt | grep "No such file"
 # grep returns 1 if it cannot find anything, if we cannot find "No such file" we successfully uploaded all files
-if [[ $? -ne 1 ]]; then
+if [[ "${?}" -ne 1 ]]; then
     echo "Failed to upload all files, please check"
     exit 1
 fi
@@ -99,8 +99,8 @@ fi
 echo ""
 echo "Submitting test production"
 python $DIRAC/DIRAC/tests/System/dirac-test-production.py -ddd $directory  --UseFilter=$TestFilter
-if [[ $? -ne 0 ]]; then
-   exit $?
+if [[ "${?}" -ne 0 ]]; then
+   exit "${?}"
 fi
 
 transID=`cat TransformationID`
@@ -110,8 +110,8 @@ if [[ $TestFilter == "False" ]]; then
   echo "Adding the files to the test production"
   dirac-transformation-add-files $transID LFNstoTS.txt
 
-  if [[ $? -ne 0 ]]; then
-    exit $?
+  if [[ "${?}" -ne 0 ]]; then
+    exit "${?}"
   fi
 fi
 
@@ -119,9 +119,9 @@ echo ""
 echo "Checking if the files have been added to the transformation"
 dirac-transformation-get-files $transID | sort > ./transLFNs.txt
 diff --ignore-space-change LFNstoTS.txt transLFNs.txt
-if [[ $? -ne 0 ]]; then
+if [[ "${?}" -ne 0 ]]; then
   echo 'Error: files have not been  added to the transformation'
-  exit $?
+  exit "${?}"
 else
   echo 'Successful check'
 fi
