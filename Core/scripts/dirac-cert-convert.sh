@@ -17,7 +17,7 @@ function usage {
   exit 1
 }
 
-if [ $# = 0 ]; then
+if [[ $# = 0 ]]; then
   echo User Certificate P12 file is not given.
   usage
 fi
@@ -31,36 +31,36 @@ USERKEY_PEM=$GLOBUS/userkey.pem
 OPENSSL=$(which openssl)
 DATE=$(/bin/date +%F-%H:%M)
 
-if [ ! -f "$USERCERT_P12_ORIG" ]; then
+if [[ ! -f "$USERCERT_P12_ORIG" ]]; then
   echo file "$USERCERT_P12_ORIG" does not exist
   usage
 fi
 
-if [ ! -d "$GLOBUS" ]; then
+if [[ ! -d "$GLOBUS" ]]; then
   echo "Creating globus directory"
   mkdir "$GLOBUS"
 fi
-if [ -f "$USERCERT_P12" ]; then
+if [[ -f "$USERCERT_P12" ]]; then
   echo "Back up $USERCERT_P12 file"
   cp "$USERCERT_P12" "$USERCERT_P12"."$DATE"
 fi
 cp "$USERCERT_P12_ORIG" "$USERCERT_P12"
 
 echo "Converting p12 key to pem format"
-if [ -f "$USERKEY_PEM" ]; then
+if [[ -f "$USERKEY_PEM" ]]; then
   echo "Back up $USERKEY_PEM file"
   mv "$USERKEY_PEM" "$USERKEY_PEM"."$DATE"
 fi
-while [ ! -s "$USERKEY_PEM" ]; do
+while [[ ! -s "$USERKEY_PEM" ]]; do
  $OPENSSL pkcs12 -nocerts -in "$USERCERT_P12" -out "$USERKEY_PEM"
 done
 
 echo "Converting p12 certificate to pem format"
-if [ -f "$USERCERT_PEM" ]; then
+if [[ -f "$USERCERT_PEM" ]]; then
   echo "Back up $USERCERT_PEM file"
   mv "$USERCERT_PEM" "$USERCERT_PEM"."$DATE"
 fi
-while [ ! -s "$USERCERT_PEM" ]; do
+while [[ ! -s "$USERCERT_PEM" ]]; do
   $OPENSSL pkcs12 -clcerts -nokeys -in "$USERCERT_P12" -out "$USERCERT_PEM"
 done
 

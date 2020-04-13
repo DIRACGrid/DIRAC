@@ -6,7 +6,7 @@ allF="/opt/dirac/etc/grid-security/crls.pem"
 
 narg=$#
 nar=0
-while [ $nar -lt "$narg" ] ; do
+while [[ $nar -lt "$narg" ]]; do
   case "$1" in
     -h )
       echo "Usage : $0 [-h] [-i] [-o] "
@@ -18,7 +18,7 @@ while [ $nar -lt "$narg" ] ; do
     -i )
       shift
       gsCerts=$1
-      if [ ! -d "$gsCerts" ] ; then
+      if [[ ! -d "$gsCerts" ]]; then
         echo "$gsCerts does not exist"
         exit
       fi
@@ -27,14 +27,14 @@ while [ $nar -lt "$narg" ] ; do
     -o )
       shift
       allF=$1
-      if [ ! -d "$allF" ] ; then
+      if [[ ! -d "$allF" ]]; then
         mkdir "$allF"
       fi
       allF=$allF/crls.pem
       shift
       ;;
   esac
-  if [ $nar -lt "$narg" ] ; then
+  if [[ $nar -lt "$narg" ]]; then
     nar=$(( ++nar ))
   else
     break

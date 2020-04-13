@@ -45,20 +45,20 @@
 
 # Def of environment variables:
 
-if [ "$DEBUG" ]; then
+if [[ "$DEBUG" ]]; then
   echo "==> Running in DEBUG mode"
   DEBUG='-ddd'
 else
   echo "==> Running in non-DEBUG mode"
 fi
 
-if [ "$WORKSPACE" ]; then
+if [[ "$WORKSPACE" ]]; then
   echo "==> We are in Jenkins I guess"
 else
   WORKSPACE=$PWD
 fi
 
-if [ "$DIRACBRANCH" ]; then
+if [[ "$DIRACBRANCH" ]]; then
   echo "==> Working on DIRAC branch $DIRACBRANCH"
 else
   DIRACBRANCH='integration'
@@ -118,22 +118,22 @@ function installSite(){
 
   echo "==> Started installing"
 
-  if [ -n "${DEBUG+x}" ]; then
+  if [[ -n "${DEBUG+x}" ]]; then
     INSTALLOPTIONS+=("$DEBUG")
   fi
 
-  if [ "$DIRACOSVER" ]; then
+  if [[ "$DIRACOSVER" ]]; then
     INSTALLOPTIONS+=("--dirac-os")
     INSTALLOPTIONS+=("--dirac-os-version=$DIRACOSVER")
   fi
 
-  if [ "$DIRACOS_TARBALL_PATH" ]; then
+  if [[ "$DIRACOS_TARBALL_PATH" ]]; then
     {
       echo "DIRACOS = $DIRACOS_TARBALL_PATH"
     } >> "$SERVERINSTALLDIR/dirac-ci-install.cfg"
   fi
 
-  if [ -n "${ALTERNATIVE_MODULES+x}" ]; then
+  if [[ -n "${ALTERNATIVE_MODULES+x}" ]]; then
     echo "Installing from non-release code"
     option="--module="
     for module_path in "${ALTERNATIVE_MODULES[@]}"; do

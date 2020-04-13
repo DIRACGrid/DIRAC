@@ -3,8 +3,8 @@
 # General utility functions
 ############################################
 
-if [ -z "$SERVERINSTALLDIR" ]; then
-  if [ -z "$PILOTINSTALLDIR" ]; then
+if [[ -z "$SERVERINSTALLDIR" ]]; then
+  if [[ -z "$PILOTINSTALLDIR" ]]; then
     echo 'Environmental variable "PILOTINSTALLDIR" is not set.'
     exit 1
   else
@@ -12,7 +12,7 @@ if [ -z "$SERVERINSTALLDIR" ]; then
   fi
 fi
 
-if [ "$TESTCODE" ]; then
+if [[ "$TESTCODE" ]]; then
   # Path to ci config files
   CI_CONFIG=$TESTCODE/DIRAC/tests/Jenkins/config/ci
 fi
@@ -21,15 +21,15 @@ fi
 
 function default(){
 
-  if [ -z "$JENKINS_SITE" ]; then
+  if [[ -z "$JENKINS_SITE" ]]; then
     JENKINS_SITE='DIRAC.Jenkins.ch'
   fi
 
-  if [ -z "$JENKINS_CE" ]; then
+  if [[ -z "$JENKINS_CE" ]]; then
     JENKINS_CE='jenkins.cern.ch'
   fi
 
-  if [ -z "$JENKINS_QUEUE" ]; then
+  if [[ -z "$JENKINS_QUEUE" ]]; then
     JENKINS_QUEUE='jenkins-queue_not_important'
   fi
 }
@@ -47,11 +47,12 @@ function default(){
 #
 #.............................................................................
 
+# FIXME: use diraccfg
 function findRelease(){
   echo '==> [findRelease]'
 
 
-  if [ -n "$DIRAC_RELEASE" ]; then
+  if [[ -n "$DIRAC_RELEASE" ]]; then
     echo '==> Specified release'
     echo "$DIRAC_RELEASE"
     projectVersion=$DIRAC_RELEASE
@@ -67,7 +68,7 @@ function findRelease(){
 
     # PRE='p[[:digit:]]*'
 
-    if [ -n "$DIRACBRANCH" ]; then
+    if [[ -n "$DIRACBRANCH" ]]; then
       echo "==> Looking for DIRAC branch $DIRACBRANCH"
     else
       echo '==> Running on last one'
@@ -77,8 +78,8 @@ function findRelease(){
 
     # If I don't specify a DIRACBRANCH, it will get the latest "production" release
     # First, try to find if we are on a production tag
-    if [ ! "$projectVersion" ]; then
-      if [ -n "$DIRACBRANCH" ]; then
+    if [[ ! "$projectVersion" ]]; then
+      if [[ -n "$DIRACBRANCH" ]]; then
         projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]*p[[:digit:]]*' "$TESTCODE/DIRAC/releases.cfg" | grep "$DIRACBRANCH" | head -1 | sed 's/ //g' || echo "")
       else
         projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]*p[[:digit:]]*' "$TESTCODE/DIRAC/releases.cfg" | head -1 | sed 's/ //g')
@@ -87,8 +88,8 @@ function findRelease(){
     fi
 
     # The special case is when there's no 'p'... (e.g. version v6r15)
-    if [ ! "$projectVersion" ]; then
-      if [ -n "$DIRACBRANCH" ]; then
+    if [[ ! "$projectVersion" ]]; then
+      if [[ -n "$DIRACBRANCH" ]]; then
         projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]' "$TESTCODE/DIRAC/releases.cfg" | grep "$DIRACBRANCH" | head -1 | sed 's/ //g' || echo "")
       else
         projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]' "$TESTCODE/DIRAC/releases.cfg" | head -1 | sed 's/ //g')
@@ -96,8 +97,8 @@ function findRelease(){
     fi
 
     # In case there are no production tags for the branch, look for pre-releases in that branch
-    if [ ! "$projectVersion" ]; then
-      if [ -n "$DIRACBRANCH" ]; then
+    if [[ ! "$projectVersion" ]]; then
+      if [[ -n "$DIRACBRANCH" ]]; then
         projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]*'-pre'' "$TESTCODE/DIRAC/releases.cfg" | grep "$DIRACBRANCH" | head -1 | sed 's/ //g')
       else
         projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]*'-pre'' "$TESTCODE/DIRAC/releases.cfg" | head -1 | sed 's/ //g')
@@ -105,7 +106,7 @@ function findRelease(){
     fi
 
     # TODO: This should be made to fail to due set -u and -o pipefail
-    if [ ! "$projectVersion" ]; then
+    if [[ ! "$projectVersion" ]]; then
       echo "Failed to set projectVersion"
       exit 1
     fi
@@ -156,9 +157,9 @@ function findSystems(){
 function findDatabases(){
   echo '==> [findDatabases]'
 
-  if [ -n "$1" ]; then
+  if [[ -n "$1" ]]; then
     DBstoSearch=$1
-    if [ "$DBstoSearch" = "exclude" ]; then
+    if [[ "$DBstoSearch" = "exclude" ]]; then
       echo "==> excluding $2"
       DBstoExclude=$2
       DBstoSearch=' '
@@ -178,7 +179,7 @@ function findDatabases(){
   # We are avoiding, FileCatalogDB FileCatalogWithFkAndPsDB that is installed in other ways
   #  and InstalledComponentsDB which is installed at the beginning
   #
-  if [ -n "$DBstoExclude" ]; then
+  if [[ -n "$DBstoExclude" ]]; then
     find ./*DIRAC/ -name "*DB.sql" | grep -vE '(FileCatalogDB|FileCatalogWithFkAndPsDB|InstalledComponentsDB)' | awk -F "/" '{print $3,$5}' | grep -v "$DBstoExclude" | grep -v 'DIRAC' | sort | uniq > databases
   else
     find ./*DIRAC/ -name "*DB.sql" | grep -vE '(FileCatalogDB|FileCatalogWithFkAndPsDB|InstalledComponentsDB)' | awk -F "/" '{print $3,$5}' | grep "$DBstoSearch" | grep -v 'DIRAC' | sort | uniq > databases
@@ -200,9 +201,9 @@ findServices(){
   echo '==> [findServices]'
 
 
-  if [ -n "$1" ]; then
+  if [[ -n "$1" ]]; then
     ServicestoSearch=$1
-    if [ "$ServicestoSearch" = "exclude" ]; then
+    if [[ "$ServicestoSearch" = "exclude" ]]; then
       echo "==> excluding $2"
       ServicestoExclude=$2
       ServicestoSearch=' '
@@ -215,7 +216,7 @@ findServices(){
     echo 'ERROR: cannot change to ' "$SERVERINSTALLDIR"
     exit 1
   fi
-  if [ -n "$ServicestoExclude" ]; then
+  if [[ -n "$ServicestoExclude" ]]; then
     find ./*DIRAC/*/Service/ -name "*Handler.py" | grep -v test | awk -F "/" '{print $3,$5}' | grep -v "$ServicestoExclude" | sort | uniq > services
   else
     find ./*DIRAC/*/Service/ -name "*Handler.py" | grep -v test | awk -F "/" '{print $3,$5}' | grep "$ServicestoSearch" | sort | uniq > services
@@ -227,9 +228,9 @@ findServices(){
 findAgents(){
   echo '==> [findAgents]'
 
-  if [ -n "$1" ]; then
+  if [[ -n "$1" ]]; then
     ServicestoSearch=$1
-    if [ "$AgentstoSearch" = "exclude" ]; then
+    if [[ "$AgentstoSearch" = "exclude" ]]; then
       echo "==> excluding $2"
       AgentstoExclude=$2
       AgentstoSearch=' '
@@ -242,7 +243,7 @@ findAgents(){
     echo 'ERROR: cannot change to ' "$SERVERINSTALLDIR"
     exit 1
   fi
-  if [ -n "$AgentstoExclude" ]; then
+  if [[ -n "$AgentstoExclude" ]]; then
     find ./*DIRAC/*/Agent/ -name "*Agent.py" | grep -v test | awk -F "/" '{print $3,$5}' | grep -v "$AgentstoExclude" | sort | uniq > agents
   else
     find ./*DIRAC/*/Agent/ -name "*Agent.py" | grep -v test | awk -F "/" '{print $3,$5}' | grep "$AgentstoSearch" | sort | uniq > agents
@@ -317,11 +318,11 @@ function installDIRAC(){
   cp "$TESTCODE/DIRAC/Core/scripts/dirac-install.py" "$CLIENTINSTALLDIR/dirac-install"
   chmod +x "$CLIENTINSTALLDIR/dirac-install"
 
-  if [ -n "${DEBUG+x}" ]; then
+  if [[ -n "${DEBUG+x}" ]]; then
     INSTALLOPTIONS+=("$DEBUG")
   fi
 
-  if [ -n "${ALTERNATIVE_MODULES+x}" ]; then
+  if [[ -n "${ALTERNATIVE_MODULES+x}" ]]; then
     echo "Installing from non-release code"
     option="--module="
     for module_path in "${ALTERNATIVE_MODULES[@]}"; do
@@ -334,12 +335,12 @@ function installDIRAC(){
     INSTALLOPTIONS+=("${option: :$((${#option} - 1))}")
   fi
 
-  if [ "$DIRACOSVER" ]; then
+  if [[ "$DIRACOSVER" ]]; then
     INSTALLOPTIONS+=("--dirac-os")
     INSTALLOPTIONS+=("--dirac-os-version=$DIRACOSVER")
   fi
 
-  if [ "$DIRACOS_TARBALL_PATH" ]; then
+  if [[ "$DIRACOS_TARBALL_PATH" ]]; then
     {
       echo "DIRACOS = $DIRACOS_TARBALL_PATH"
     } >> "$CLIENTINSTALLDIR/dirac-ci-install.cfg"
@@ -927,13 +928,13 @@ function killRunsv(){
 
   runsvdir=$(ps aux | grep 'runsvdir ' | grep -v 'grep')
 
-  if [ -n "$runsvdir" ]; then
+  if [[ -n "$runsvdir" ]]; then
     killall runsvdir
   fi
 
   runsv=$(ps aux | grep 'runsv ' | grep -v 'grep')
 
-  if [ -n "$runsv" ]; then
+  if [[ -n "$runsv" ]]; then
     killall runsv
   fi
 
@@ -958,13 +959,13 @@ function killES(){
 
     res=$(ps aux | grep 'elasticsearch' | grep 'lhcbci' | grep -v 'grep' | cut -f 5 -d ' ')
 
-    if [ -n "$res" ]; then
+    if [[ -n "$res" ]]; then
       kill -9 $res
     fi
 
     res=$(ps aux | grep 'elasticsearch' | grep 'lhcbci' | grep -v 'grep' | cut -f 4 -d ' ')
 
-    if [ -n "$res" ]; then
+    if [[ -n "$res" ]]; then
       kill -9 $res
     fi
 
@@ -1042,8 +1043,8 @@ function downloadProxy(){
 
   cp $TESTCODE/DIRAC/tests/Jenkins/dirac-proxy-download.py .
 
-  if [ $PILOTCFG ]; then
-    if [ -e $CLIENTINSTALLDIR/etc/dirac.cfg ] # called from the client directory
+  if [[ $PILOTCFG ]]; then
+    if [[ -e $CLIENTINSTALLDIR/etc/dirac.cfg ]] # called from the client directory
     then
       echo $( eval echo Executing python dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $CLIENTINSTALLDIR/etc/dirac.cfg $PILOTINSTALLDIR/$PILOTCFG "$DEBUG")
       python dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $CLIENTINSTALLDIR/etc/dirac.cfg $PILOTINSTALLDIR/$PILOTCFG "$DEBUG"
@@ -1052,7 +1053,7 @@ function downloadProxy(){
       python dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $PILOTINSTALLDIR/$PILOTCFG "$DEBUG"
     fi
   else
-    if [ -e $CLIENTINSTALLDIR/etc/dirac.cfg ] # called from the client directory
+    if [[ -e $CLIENTINSTALLDIR/etc/dirac.cfg ]] # called from the client directory
     then
       echo $( eval echo Executing python dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $CLIENTINSTALLDIR/etc/dirac.cfg "$DEBUG")
       python dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $CLIENTINSTALLDIR/etc/dirac.cfg "$DEBUG"
@@ -1062,7 +1063,7 @@ function downloadProxy(){
     fi
   fi
 
-  if [ $? -ne 0 ]; then
+  if [[ $? -ne 0 ]]; then
     echo 'ERROR: cannot download proxy'
     exit 1
   fi

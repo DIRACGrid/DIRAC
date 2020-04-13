@@ -11,7 +11,7 @@ SPHINXOPTS=-wsphinxWarnings make htmlall || { echo "Failed to build documentatio
 grep --color -nH -e :param -e :return -r build/html/CodeDocumentation/ >> sphinxWarnings
 
 # Check that sphinxWarnings is not empty
-if [ -s sphinxWarnings ]; then
+if [[ -s sphinxWarnings ]]; then
     echo "********************************************************************************"
     echo "Warnings When Creating Doc:"
     echo "********************************************************************************"

@@ -48,7 +48,7 @@ do
   shift
 done
 
-if [ -z "$installCfg" ]; then
+if [[ -z "$installCfg" ]]; then
   usage
   exit 1
 fi
