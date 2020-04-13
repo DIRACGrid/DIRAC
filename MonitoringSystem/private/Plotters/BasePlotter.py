@@ -14,7 +14,6 @@ __RCSID__ = "$ID$"
 
 class BasePlotter( DBUtils ):
 
-
   _PARAM_CONSOLIDATION_FUNCTION = "consolidationFunction"
 
   _EA_THUMBNAIL = 'thumbnail'
@@ -197,7 +196,6 @@ class BasePlotter( DBUtils ):
 
     if not retVal[ 'OK' ]:
       return retVal
-    
     dataDict = retVal[ 'Value' ]
 
     for keyField in dataDict:
@@ -214,7 +212,7 @@ class BasePlotter( DBUtils ):
 
   def _efficiencyConsolidation(self, total, count):
     if not count:
-      return -1 
+      return -1
     else:
       return (float(total) / float(count)) * 100.0
 
