@@ -22,7 +22,7 @@ fi
 echo "dirac-proxy-init -g dirac_prod"
 dirac-proxy-init -g dirac_prod
 if [[ "${?}" -ne 0 ]]; then
-   exit "${?}"
+   exit 1
 fi
 echo " "
 
@@ -100,7 +100,7 @@ echo ""
 echo "Submitting test production"
 python $DIRAC/DIRAC/tests/System/dirac-test-production.py -ddd $directory  --UseFilter=$TestFilter
 if [[ "${?}" -ne 0 ]]; then
-   exit "${?}"
+   exit 1
 fi
 
 transID=`cat TransformationID`
@@ -111,7 +111,7 @@ if [[ $TestFilter == "False" ]]; then
   dirac-transformation-add-files $transID LFNstoTS.txt
 
   if [[ "${?}" -ne 0 ]]; then
-    exit "${?}"
+    exit 1
   fi
 fi
 
@@ -121,7 +121,7 @@ dirac-transformation-get-files $transID | sort > ./transLFNs.txt
 diff --ignore-space-change LFNstoTS.txt transLFNs.txt
 if [[ "${?}" -ne 0 ]]; then
   echo 'Error: files have not been  added to the transformation'
-  exit "${?}"
+  exit 1
 else
   echo 'Successful check'
 fi

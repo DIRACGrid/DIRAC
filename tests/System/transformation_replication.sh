@@ -25,7 +25,7 @@ fi
 echo "dirac-proxy-init -g dirac_prod"
 dirac-proxy-init -g dirac_prod --VOMS
 if [[ "${?}" -ne 0 ]]; then
-   exit "${?}"
+   exit 1
 fi
 
 echo " "
@@ -103,7 +103,7 @@ echo "Submitting test production"
 dirac-transformation-replication 0 ${TARGET_SE} -G 2 -ddd -N replication_${version}_${tdate}_${stime} --Enable | tee TransformationSystemTest/trans.log
 if [[ "${?}" -ne 0 ]]; then
     echo "Failed to create transformation"
-    exit "${?}"
+    exit 1
 fi
 
 transID=$(grep "Created transformation" TransformationSystemTest/trans.log | sed "s/.*Created transformation //")
@@ -113,7 +113,7 @@ if [[ $TestFilter == "False" ]]; then
   echo "Adding the files to the test production"
   dirac-transformation-add-files $transID LFNstoTS.txt
   if [[ "${?}" -ne 0 ]]; then
-    exit "${?}"
+    exit 1
   fi
 fi
 
@@ -124,7 +124,7 @@ diff --ignore-space-change LFNstoTS.txt transLFNs.txt
 if [[ "${?}" -ne 0 ]
 then
   echo 'Error: files have not been  added to the transformation'
-  exit "${?}"
+  exit 1
 else
   echo 'Successful check'
 fi

@@ -77,7 +77,7 @@ fi
 cd $temporaryPath
 if [[ "${?}" -ne 0 ]]; then
   echo $(tput setaf 1)"ERROR: cannot change to directory: " $temporaryPath$(tput sgr 0)
-  exit "${?}"
+  exit 1
 fi
 
 echo ""
