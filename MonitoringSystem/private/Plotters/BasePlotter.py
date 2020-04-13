@@ -10,7 +10,7 @@ from DIRAC.Core.Utilities.Plotting.Plots import generateNoDataPlot, generateTime
 
 from DIRAC.MonitoringSystem.private.DBUtils import DBUtils
 
-__RCSID__ = "2c57d3b (2016-10-21 14:22:17 +0200) Federico Stagni <federico.stagni@cern.ch>"
+__RCSID__ = "$Id$"
 
 class BasePlotter( DBUtils ):
 
