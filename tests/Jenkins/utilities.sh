@@ -926,17 +926,8 @@ function killRunsv(){
     set +e
   fi
 
-  runsvdir=$(ps aux | grep 'runsvdir ' | grep -v 'grep')
-
-  if [[ -n "$runsvdir" ]]; then
-    killall runsvdir
-  fi
-
-  runsv=$(ps aux | grep 'runsv ' | grep -v 'grep')
-
-  if [[ -n "$runsv" ]]; then
-    killall runsv
-  fi
+  pkill runsvdir
+  pkill runsv
 
   if [[ "${save}" =~ e ]]; then
     set -e
@@ -956,19 +947,7 @@ function killRunsv(){
 
 function killES(){
   echo '==> [killES]'
-
-    res=$(ps aux | grep 'elasticsearch' | grep 'lhcbci' | grep -v 'grep' | cut -f 5 -d ' ')
-
-    if [[ -n "${res}" ]]; then
-      kill -9 "${res}"
-    fi
-
-    res=$(ps aux | grep 'elasticsearch' | grep 'lhcbci' | grep -v 'grep' | cut -f 4 -d ' ')
-
-    if [[ -n "${res}" ]]; then
-      kill -9 "${res}"
-    fi
-
+  pkill -u lhcbci elasticsearch
   echo '==> [Done killES]'
 }
 
@@ -1046,19 +1025,15 @@ function downloadProxy(){
   if [[ "${PILOTCFG}" ]]; then
     if [[ -e "${CLIENTINSTALLDIR}/etc/dirac.cfg" ]] # called from the client directory
     then
-      echo $( eval echo Executing python dirac-proxy-download.py "${DIRACUSERDN}" -R "${DIRACUSERROLE}" -o /DIRAC/Security/UseServerCertificate=True "${CLIENTINSTALLDIR}/etc/dirac.cfg" "${PILOTINSTALLDIR}/$PILOTCFG" "${DEBUG}")
       python dirac-proxy-download.py "${DIRACUSERDN}" -R "${DIRACUSERROLE}" -o /DIRAC/Security/UseServerCertificate=True "${CLIENTINSTALLDIR}/etc/dirac.cfg" "${PILOTINSTALLDIR}/$PILOTCFG" "${DEBUG}"
     else # assuming it's the pilot
-      echo $( eval echo Executing python dirac-proxy-download.py "${DIRACUSERDN}" -R "${DIRACUSERROLE}" -o /DIRAC/Security/UseServerCertificate=True "${PILOTINSTALLDIR}/$PILOTCFG" "${DEBUG}")
       python dirac-proxy-download.py "${DIRACUSERDN}" -R "${DIRACUSERROLE}" -o /DIRAC/Security/UseServerCertificate=True "${PILOTINSTALLDIR}/$PILOTCFG" "${DEBUG}"
     fi
   else
     if [[ -e "${CLIENTINSTALLDIR}/etc/dirac.cfg" ]] # called from the client directory
     then
-      echo $( eval echo Executing python dirac-proxy-download.py "${DIRACUSERDN}" -R "${DIRACUSERROLE}" -o /DIRAC/Security/UseServerCertificate=True "${CLIENTINSTALLDIR}/etc/dirac.cfg" "${DEBUG}")
       python dirac-proxy-download.py "${DIRACUSERDN}" -R "${DIRACUSERROLE}" -o /DIRAC/Security/UseServerCertificate=True "${CLIENTINSTALLDIR}/etc/dirac.cfg" "${DEBUG}"
     else # assuming it's the pilot
-      echo $( eval echo Executing python dirac-proxy-download.py "${DIRACUSERDN}" -R "${DIRACUSERROLE}" -o /DIRAC/Security/UseServerCertificate=True "${PILOTINSTALLDIR}/etc/dirac.cfg" "${DEBUG}")
       python dirac-proxy-download.py "${DIRACUSERDN}" -R "${DIRACUSERROLE}" -o /DIRAC/Security/UseServerCertificate=True "${PILOTINSTALLDIR}/etc/dirac.cfg" "${DEBUG}"
     fi
   fi
