@@ -45,7 +45,7 @@
 
 # Def of environment variables:
 
-if [[ "$DEBUG" ]]; then
+if [[ "${DEBUG}" ]]; then
   echo "==> Running in DEBUG mode"
   DEBUG='-ddd'
 else
@@ -65,19 +65,19 @@ else
 fi
 
 # Creating default structure
-mkdir -p $WORKSPACE/TestCode # Where the test code resides
-TESTCODE=$_
-mkdir -p $WORKSPACE/ServerInstallDIR # Where servers are installed
-SERVERINSTALLDIR=$_
-mkdir -p $WORKSPACE/ClientInstallDIR # Where clients are installed
-CLIENTINSTALLDIR=$_
+mkdir -p "$WORKSPACE/TestCode" # Where the test code resides
+TESTCODE=${_}
+mkdir -p "$WORKSPACE/ServerInstallDIR" # Where servers are installed
+SERVERINSTALLDIR=${_}
+mkdir -p "$WORKSPACE/ClientInstallDIR" # Where clients are installed
+CLIENTINSTALLDIR=${_}
 
 # Location of the CFG file to be used (this can be replaced by the extensions)
-INSTALL_CFG_FILE=$TESTCODE/DIRAC/tests/Jenkins/install.cfg
+INSTALL_CFG_FILE="${TESTCODE}/DIRAC/tests/Jenkins/install.cfg"
 
 # Sourcing utility file
 # shellcheck source=tests/Jenkins/utilities.sh
-source "$TESTCODE/DIRAC/tests/Jenkins/utilities.sh"
+source "${TESTCODE}/DIRAC/tests/Jenkins/utilities.sh"
 
 
 
@@ -100,37 +100,37 @@ function installSite(){
   generateCA
   generateCertificates
 
-  echo -n > "$SERVERINSTALLDIR/dirac-ci-install.cfg"
+  echo -n > "${SERVERINSTALLDIR}/dirac-ci-install.cfg"
   getCFGFile
 
   echo "==> Fixing install.cfg file"
-  sed -i "s,VAR_TargetPath,$SERVERINSTALLDIR,g" "$SERVERINSTALLDIR/install.cfg"
-  sed -i "s,VAR_HostDN,$(hostname --fqdn),g" "$SERVERINSTALLDIR/install.cfg"
+  sed -i "s,VAR_TargetPath,${SERVERINSTALLDIR},g" "${SERVERINSTALLDIR}/install.cfg"
+  sed -i "s,VAR_HostDN,$(hostname --fqdn),g" "${SERVERINSTALLDIR}/install.cfg"
 
-  sed -i "s/VAR_DB_User/$DB_USER/g" "$SERVERINSTALLDIR/install.cfg"
-  sed -i "s/VAR_DB_Password/$DB_PASSWORD/g" "$SERVERINSTALLDIR/install.cfg"
-  sed -i "s/VAR_DB_RootUser/$DB_ROOTUSER/g" "$SERVERINSTALLDIR/install.cfg"
-  sed -i "s/VAR_DB_RootPwd/$DB_ROOTPWD/g" "$SERVERINSTALLDIR/install.cfg"
-  sed -i "s/VAR_DB_Host/$DB_HOST/g" "$SERVERINSTALLDIR/install.cfg"
-  sed -i "s/VAR_DB_Port/$DB_PORT/g" "$SERVERINSTALLDIR/install.cfg"
-  sed -i "s/VAR_NoSQLDB_Host/$NoSQLDB_HOST/g" "$SERVERINSTALLDIR/install.cfg"
-  sed -i "s/VAR_NoSQLDB_Port/$NoSQLDB_PORT/g" "$SERVERINSTALLDIR/install.cfg"
+  sed -i "s/VAR_DB_User/${DB_USER}/g" "${SERVERINSTALLDIR}/install.cfg"
+  sed -i "s/VAR_DB_Password/${DB_PASSWORD}/g" "${SERVERINSTALLDIR}/install.cfg"
+  sed -i "s/VAR_DB_RootUser/${DB_ROOTUSER}/g" "${SERVERINSTALLDIR}/install.cfg"
+  sed -i "s/VAR_DB_RootPwd/${DB_ROOTPWD}/g" "${SERVERINSTALLDIR}/install.cfg"
+  sed -i "s/VAR_DB_Host/${DB_HOST}/g" "${SERVERINSTALLDIR}/install.cfg"
+  sed -i "s/VAR_DB_Port/${DB_PORT}/g" "${SERVERINSTALLDIR}/install.cfg"
+  sed -i "s/VAR_NoSQLDB_Host/${NoSQLDB_HOST}/g" "${SERVERINSTALLDIR}/install.cfg"
+  sed -i "s/VAR_NoSQLDB_Port/${NoSQLDB_PORT}/g" "${SERVERINSTALLDIR}/install.cfg"
 
   echo "==> Started installing"
 
   if [[ -n "${DEBUG+x}" ]]; then
-    INSTALLOPTIONS+=("$DEBUG")
+    INSTALLOPTIONS+=("${DEBUG}")
   fi
 
-  if [[ "$DIRACOSVER" ]]; then
+  if [[ "${DIRACOSVER}" ]]; then
     INSTALLOPTIONS+=("--dirac-os")
-    INSTALLOPTIONS+=("--dirac-os-version=$DIRACOSVER")
+    INSTALLOPTIONS+=("--dirac-os-version=${DIRACOSVER}")
   fi
 
   if [[ "$DIRACOS_TARBALL_PATH" ]]; then
     {
       echo "DIRACOS = $DIRACOS_TARBALL_PATH"
-    } >> "$SERVERINSTALLDIR/dirac-ci-install.cfg"
+    } >> "${SERVERINSTALLDIR}/dirac-ci-install.cfg"
   fi
 
   if [[ -n "${ALTERNATIVE_MODULES+x}" ]]; then
@@ -146,25 +146,25 @@ function installSite(){
     INSTALLOPTIONS+=("${option: :$((${#option} - 1))}")
   fi
 
-  if ! "$SERVERINSTALLDIR/dirac-install.py" "${INSTALLOPTIONS[@]}" "$SERVERINSTALLDIR/install.cfg" "$SERVERINSTALLDIR/dirac-ci-install.cfg"; then
+  if ! "${SERVERINSTALLDIR}/dirac-install.py" "${INSTALLOPTIONS[@]}" "${SERVERINSTALLDIR}/install.cfg" "${SERVERINSTALLDIR}/dirac-ci-install.cfg"; then
     echo "ERROR: dirac-install.py failed"
     exit 1
   fi
 
   echo "==> Done installing, now configuring"
-  source "$SERVERINSTALLDIR/bashrc"
-  if ! dirac-configure "$SERVERINSTALLDIR/install.cfg" "$DEBUG"; then
+  source "${SERVERINSTALLDIR}/bashrc"
+  if ! dirac-configure "${SERVERINSTALLDIR}/install.cfg" "${DEBUG}"; then
     echo "ERROR: dirac-configure failed"
     exit 1
   fi
 
   echo "=> The pilot flag should be False"
-  if ! dirac-configure -o /Operations/Defaults/Pilot/UpdatePilotCStoJSONFile=False -FDMH "$DEBUG"; then
+  if ! dirac-configure -o /Operations/Defaults/Pilot/UpdatePilotCStoJSONFile=False -FDMH "${DEBUG}"; then
     echo "ERROR: dirac-configure failed"
     exit 1
   fi
 
-  if ! dirac-setup-site "$DEBUG"; then
+  if ! dirac-setup-site "${DEBUG}"; then
     echo "ERROR: dirac-setup-site failed"
     exit 1
   fi
@@ -204,10 +204,10 @@ function fullInstallDIRAC(){
   fi
 
   echo 'Content of etc/dirac.cfg:'
-  cat "$SERVERINSTALLDIR/etc/dirac.cfg"
+  cat "${SERVERINSTALLDIR}/etc/dirac.cfg"
 
   echo 'Content of etc/Production.cfg (just after installSite):'
-  cat "$SERVERINSTALLDIR/etc/Production.cfg"
+  cat "${SERVERINSTALLDIR}/etc/Production.cfg"
 
   # Dealing with security stuff
   # generateCertificates
@@ -228,7 +228,7 @@ function fullInstallDIRAC(){
   fi
 
   echo "==> Restarting Configuration Server"
-  dirac-restart-component Configuration Server $DEBUG
+  dirac-restart-component Configuration Server ${DEBUG}
 
   #Install the Framework
   findDatabases 'FrameworkSystem'
@@ -257,13 +257,13 @@ function fullInstallDIRAC(){
   fi
 
   echo 'Content of etc/Production.cfg:'
-  cat "$SERVERINSTALLDIR/etc/Production.cfg"
+  cat "${SERVERINSTALLDIR}/etc/Production.cfg"
 
   echo "==> Restarting Framework ProxyManager"
-  dirac-restart-component Framework ProxyManager $DEBUG
+  dirac-restart-component Framework ProxyManager ${DEBUG}
 
   echo "==> Restarting Framework ComponentMonitoring"
-  dirac-restart-component Framework ComponentMonitoring $DEBUG
+  dirac-restart-component Framework ComponentMonitoring ${DEBUG}
 
   #Now all the rest
 
@@ -284,7 +284,7 @@ function fullInstallDIRAC(){
   #fix the DBs (for the FileCatalog and MultiVOFileCatalog)
   diracDFCDB
   diracMVDFCDB
-  python "$TESTCODE/DIRAC/tests/Jenkins/dirac-cfg-update-dbs.py" "$DEBUG"
+  python "${TESTCODE}/DIRAC/tests/Jenkins/dirac-cfg-update-dbs.py" "${DEBUG}"
 
   #services (not looking for FrameworkSystem already installed)
   findServices 'exclude' 'FrameworkSystem'
@@ -294,44 +294,44 @@ function fullInstallDIRAC(){
   fi
 
   # install an additional FileCatalog service for multi VO metadata tests
-  echo "==> calling dirac-install-component DataManagement MultiVOFileCatalog -m FileCatalog -p Port=9198 -p Database=MultiVOFileCatalogDB $DEBUG"
-  if ! dirac-install-component DataManagement MultiVOFileCatalog -m FileCatalog -p Port=9198 -p Database=MultiVOFileCatalogDB "$DEBUG"; then
+  echo "==> calling dirac-install-component DataManagement MultiVOFileCatalog -m FileCatalog -p Port=9198 -p Database=MultiVOFileCatalogDB ${DEBUG}"
+  if ! dirac-install-component DataManagement MultiVOFileCatalog -m FileCatalog -p Port=9198 -p Database=MultiVOFileCatalogDB "${DEBUG}"; then
       echo 'ERROR: dirac-install-component failed'
       exit 1
   fi
   #fix the DFC services options
-  python "$TESTCODE/DIRAC/tests/Jenkins/dirac-cfg-update-services.py" "$DEBUG"
+  python "${TESTCODE}/DIRAC/tests/Jenkins/dirac-cfg-update-services.py" "${DEBUG}"
 
   #fix the SandboxStore and other stuff
-  python "$TESTCODE/DIRAC/tests/Jenkins/dirac-cfg-update-server.py" dirac-JenkinsSetup "$DEBUG"
+  python "${TESTCODE}/DIRAC/tests/Jenkins/dirac-cfg-update-server.py" dirac-JenkinsSetup "${DEBUG}"
 
   echo "==> Restarting WorkloadManagement SandboxStore"
-  dirac-restart-component WorkloadManagement SandboxStore $DEBUG
+  dirac-restart-component WorkloadManagement SandboxStore ${DEBUG}
 
   echo "==> Restarting WorkloadManagement Matcher"
-  dirac-restart-component WorkloadManagement Matcher $DEBUG
+  dirac-restart-component WorkloadManagement Matcher ${DEBUG}
 
   echo "==> Restarting DataManagement FileCatalog"
-  dirac-restart-component DataManagement FileCatalog $DEBUG
+  dirac-restart-component DataManagement FileCatalog ${DEBUG}
 
   echo "==> Restarting DataManagement MultiVOFileCatalog"
-  dirac-restart-component DataManagement MultiVOFileCatalog $DEBUG
+  dirac-restart-component DataManagement MultiVOFileCatalog ${DEBUG}
 
   echo "==> Restarting Configuration Server"
-  dirac-restart-component Configuration Server $DEBUG
+  dirac-restart-component Configuration Server ${DEBUG}
 
   echo "==> Restarting ResourceStatus ResourceStatus"
-  dirac-restart-component ResourceStatus ResourceStatus $DEBUG
+  dirac-restart-component ResourceStatus ResourceStatus ${DEBUG}
 
   echo "==> Restarting ResourceStatus ResourceManagement"
-  dirac-restart-component ResourceStatus ResourceManagement $DEBUG
+  dirac-restart-component ResourceStatus ResourceManagement ${DEBUG}
 
   echo "==> Restarting ResourceStatus Publisher"
-  dirac-restart-component ResourceStatus Publisher $DEBUG
+  dirac-restart-component ResourceStatus Publisher ${DEBUG}
 
   echo "==> Restarting DataManagement StorageElement(s)"
-  dirac-restart-component DataManagement SE-1 $DEBUG
-  dirac-restart-component DataManagement SE-2 $DEBUG
+  dirac-restart-component DataManagement SE-1 ${DEBUG}
+  dirac-restart-component DataManagement SE-2 ${DEBUG}
 
   # populate RSS
   echo "==> Populating RSS DB"
@@ -356,10 +356,10 @@ function fullInstallDIRAC(){
   fi
 
   echo 'Content of etc/Production.cfg:'
-  cat "$SERVERINSTALLDIR/etc/Production.cfg"
+  cat "${SERVERINSTALLDIR}/etc/Production.cfg"
 
   echo "==> Restarting Configuration Server"
-  dirac-restart-component Configuration Server $DEBUG
+  dirac-restart-component Configuration Server ${DEBUG}
 
 }
 
@@ -404,10 +404,10 @@ function miniInstallDIRAC(){
   fi
 
   # fix the SandboxStore and other stuff
-  python "$TESTCODE/DIRAC/tests/Jenkins/dirac-cfg-update-server.py" dirac-JenkinsSetup "$DEBUG"
+  python "${TESTCODE}/DIRAC/tests/Jenkins/dirac-cfg-update-server.py" dirac-JenkinsSetup "${DEBUG}"
 
   echo "==> Restarting Configuration Server"
-  dirac-restart-component Configuration Server $DEBUG
+  dirac-restart-component Configuration Server ${DEBUG}
 }
 
 
@@ -417,8 +417,8 @@ function clean(){
   echo "==> [clean]"
 
   #### make sure we're using the server
-  if ! cd "$SERVERINSTALLDIR"; then
-    echo "ERROR: cannot change to $SERVERINSTALLDIR"
+  if ! cd "${SERVERINSTALLDIR}"; then
+    echo "ERROR: cannot change to ${SERVERINSTALLDIR}"
     exit 1
   fi
   if ! source bashrc; then
