@@ -12,6 +12,7 @@ thisPath = os.path.dirname(os.path.abspath(__file__)).split('/')
 rootPath = thisPath[:len(thisPath) - 3]
 certsPath = os.path.join('/'.join(rootPath), 'Core/Security/test/certs')
 
+
 def sf_getInfoAboutProviders(of, providerName, option, section):
   if of == 'Proxy' and option == 'all' and section == 'all':
     if providerName == 'MY_DIRACCA':
@@ -57,4 +58,4 @@ class ProxyProviderFactoryTest(unittest.TestCase):
 
 if __name__ == '__main__':
   suite = unittest.defaultTestLoader.loadTestsFromTestCase(ProxyProviderFactoryTest)
-  testResult = unittest.TextTestRunner(verbosity = 3).run(suite)
+  testResult = unittest.TextTestRunner(verbosity=3).run(suite)
