@@ -102,7 +102,9 @@ def getFreeDiskSpace():
   global BASE_PATH
 
   result = getDiskSpace(BASE_PATH)  # free
-  if not MAX_STORAGE_SIZE or not result['OK']:
+  if not result['OK']:
+    return result
+  if not MAX_STORAGE_SIZE:
     return result
 
   totalFreeSpace = result['Value']
