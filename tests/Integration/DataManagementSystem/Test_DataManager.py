@@ -13,10 +13,11 @@ Requirements:
 from __future__ import print_function
 
 import os
-import pytest
 import tempfile
 import time
 import sys
+
+import pytest
 
 from DIRAC.Core.Base.Script import parseCommandLine
 parseCommandLine()
