@@ -229,7 +229,7 @@ findAgents(){
   echo '==> [findAgents]'
 
   if [[ -n "$1" ]]; then
-    ServicestoSearch=$1
+    AgentstoSearch=$1
     if [[ "${AgentstoSearch}" = "exclude" ]]; then
       echo "==> excluding $2"
       AgentstoExclude=$2
