@@ -104,14 +104,16 @@ def getFreeDiskSpace():
   result = getDiskSpace(BASE_PATH)  # free
   if not result['OK']:
     return result
+  if not MAX_STORAGE_SIZE:
+    return result
+
   totalFreeSpace = result['Value']
   result = getDiskSpace(BASE_PATH, total=True)  # total
   if not result['OK']:
     return result
   totalSpace = result['Value']
   totalOccupiedSpace = totalSpace - totalFreeSpace
-  maxTotalSpace = min(totalSpace, MAX_STORAGE_SIZE) if MAX_STORAGE_SIZE else totalSpace
-  freeSpace = maxTotalSpace - totalOccupiedSpace
+  freeSpace = min(totalSpace, MAX_STORAGE_SIZE) - totalOccupiedSpace
   return S_OK(freeSpace if freeSpace > 0 else 0)
 
 
@@ -309,8 +311,7 @@ class StorageElementHandler(RequestHandler):
         if result['OK']:
           resultDict[fname] = result['Value']
           return S_OK(resultDict)
-        else:
-          return S_ERROR('Failed to get the file stat info')
+        return S_ERROR('Failed to get the file stat info')
       else:
         failed_list = []
         one_OK = False
@@ -444,8 +445,7 @@ class StorageElementHandler(RequestHandler):
         if str(error).find('No such file') >= 0:
           # File does not exist anyway
           return S_OK()
-        else:
-          return S_ERROR('Failed to remove file %s' % fileID)
+        return S_ERROR('Failed to remove file %s' % fileID)
     else:
       return S_ERROR('File removal %s not authorized' % fileID)
 

@@ -73,22 +73,25 @@ if __name__ == "__main__":
         gLogger.error('ERROR: Site with GOC name %s is already defined as %s' % (gridSiteName, diracCSSite))
         DIRACExit(-1)
 
-  cfgBase = "/Resources/Sites/%s/%s" % (diracGridType, diracSiteName)
-  change = False
-  gLogger.notice("Site to CS: %s" % diracSiteName)
-  csAPI = CSAPI()
-  res = csAPI.addSite(diracSiteName, {"Name": gridSiteName})
-  if not res['OK']:
-    gLogger.error("Failed adding site to CS", res['Message'])
-    DIRACExit(1)
-  gLogger.notice("Adding CEs: %s" % ','.join(ces))
+  if newSite:
+    gLogger.notice("Site to CS: %s" % diracSiteName)
+    csAPI = CSAPI()
+    res = csAPI.addSite(diracSiteName, {"Name": gridSiteName})
+    if not res['OK']:
+      gLogger.error("Failed adding site to CS", res['Message'])
+      DIRACExit(1)
+    res = csAPI.commit()
+    if not res['OK']:
+      gLogger.error("Failure committing to CS", res['Message'])
+      DIRACExit(3)
+
   for ce in ces:
+    gLogger.notice("Adding CE %s" % ce)
     res = csAPI.addCEtoSite(diracSiteName, ce)
     if not res['OK']:
       gLogger.error("Failed adding CE %s to CS" % ce, res['Message'])
       DIRACExit(2)
-  res = csAPI.commit()
-  if not res['OK']:
-    gLogger.error("Failure committing to CS", res['Message'])
-    DIRACExit(3)
-  gLogger.always("Success")
+    res = csAPI.commit()
+    if not res['OK']:
+      gLogger.error("Failure committing to CS", res['Message'])
+      DIRACExit(3)
