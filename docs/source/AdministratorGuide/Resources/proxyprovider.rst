@@ -12,7 +12,7 @@ DIRACCA proxy provider
 
 ProxyProvider implementation for the proxy generation using local Certification Authority (CA) credentials. DIRACCA type of the proxy provider is a simple CA, its main purpose is to generate a proxy on the fly for DIRAC users who do not have a certificate registered in DIRAC registry. To use it need to have CA certificate and key locally. Here are two ways to set up this type of proxy provider in the DIRAC configuration:
 
-Recomended way to set all required parameters in the DIRAC configuration::
+Recommended way to set all required parameters in the DIRAC configuration::
 
     Resources
     {
