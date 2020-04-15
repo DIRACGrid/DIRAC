@@ -8,25 +8,36 @@ jobs:
     if: github.event_name != 'push' || github.repository == 'DIRACGrid/DIRAC'
     timeout-minutes: 30
 
+    env:
+      MATRIX_DEFAULT_MYSQL_VER: 5.7
+      MATRIX_DEFAULT_HOST_OS: cc7
+      MATRIX_DEFAULT_USE_NEWTHREADPOOL: default
+      MATRIX_DEFAULT_SERVER_USE_M2CRYPTO: Yes
+      MATRIX_DEFAULT_CLIENT_USE_M2CRYPTO: Yes
+
     strategy:
       fail-fast: False
       matrix:
-        MYSQL_VER:
-          - 5.6
-          - 5.7
-          - 8.0
-        HOST_OS:
-          - slc6
-          - cc7
-        USE_NEWTHREADPOOL:
-          - default
-          - yes
-        SERVER_USE_M2CRYPTO:
-          - Yes
-          - No
-        CLIENT_USE_M2CRYPTO:
-          - Yes
-          - No
+        include:
+          ###### MySQL versions
+          - MYSQL_VER: 5.6
+          # IMPLICIT: - MYSQL_VER: 5.7
+          - MYSQL_VER: 8.0
+          ###### Host OS
+          - HOST_OS: slc6
+          # IMPLICIT: - HOST_OS: cc7
+          ###### Thread pool
+          # IMPLICIT: - USE_NEWTHREADPOOL: default
+          - USE_NEWTHREADPOOL: yes
+          ###### M2Crypto
+          # IMPLICIT: - SERVER_USE_M2CRYPTO: Yes
+          #             CLIENT_USE_M2CRYPTO: Yes
+          - SERVER_USE_M2CRYPTO: Yes
+            CLIENT_USE_M2CRYPTO: No
+          - SERVER_USE_M2CRYPTO: No
+            CLIENT_USE_M2CRYPTO: Yes
+          - SERVER_USE_M2CRYPTO: No
+            CLIENT_USE_M2CRYPTO: No
 
     steps:
     - uses: actions/checkout@v2
@@ -38,19 +49,22 @@ jobs:
         echo "IFS=\$'\n\t'" >> run_in_container
         echo -n "exec docker exec -w /repo " >> run_in_container
         # Set environment variables
-        echo -n "-e HOST_OS=${{ matrix.HOST_OS }} " >> run_in_container
+        echo -n "-e HOST_OS=${{ matrix.HOST_OS || env.MATRIX_DEFAULT_HOST_OS }} " >> run_in_container
         echo -n "-e CI_PROJECT_DIR=/repo " >> run_in_container
         echo -n "-e CI_COMMIT_REF_NAME=$GITHUB_REF " >> run_in_container
         echo -n "-e CI_MERGE_REQUEST_TARGET_BRANCH_NAME=$GITHUB_BASE_REF " >> run_in_container
         echo -n "-e CI_REGISTRY_IMAGE=diracgrid " >> run_in_container
-        echo -n "-e MYSQL_VER=${{ matrix.MYSQL_VER }} " >> run_in_container
-        echo -n "-e ES_VER=${{ matrix.ES_VER }} " >> run_in_container
-        if [[ "${{ matrix.USE_NEWTHREADPOOL }}" != "default" ]]; then echo -n "-e DIRAC_USE_NEWTHREADPOOL=${{ matrix.USE_NEWTHREADPOOL }} " >> run_in_container; fi
-        echo -n "-e SERVER_USE_M2CRYPTO=${{ matrix.SERVER_USE_M2CRYPTO }} " >> run_in_container
-        echo -n "-e CLIENT_USE_M2CRYPTO=${{ matrix.CLIENT_USE_M2CRYPTO }} " >> run_in_container
+        echo -n "-e MYSQL_VER=${{ matrix.MYSQL_VER || env.MATRIX_DEFAULT_MYSQL_VER }} " >> run_in_container
+        echo -n "-e ES_VER=${{ matrix.ES_VER || env.MATRIX_DEFAULT_ES_VER }} " >> run_in_container
+        if [[ "${{ matrix.USE_NEWTHREADPOOL || env.MATRIX_DEFAULT_USE_NEWTHREADPOOL }}" != "default" ]]; then echo -n "-e DIRAC_USE_NEWTHREADPOOL=${{ matrix.USE_NEWTHREADPOOL || env.MATRIX_DEFAULT_USE_NEWTHREADPOOL }} " >> run_in_container; fi
+        echo -n "-e SERVER_USE_M2CRYPTO=${{ matrix.SERVER_USE_M2CRYPTO || env.MATRIX_DEFAULT_SERVER_USE_M2CRYPTO }} " >> run_in_container
+        echo -n "-e CLIENT_USE_M2CRYPTO=${{ matrix.CLIENT_USE_M2CRYPTO || env.MATRIX_DEFAULT_CLIENT_USE_M2CRYPTO }} " >> run_in_container
         # Finish wrapper script
         echo -n "dirac-testing-host \"\$@\"" >> run_in_container
         chmod +x run_in_container
+        # Show the run in container script
+        echo "Run in container script is"
+        cat run_in_container
     - name: Prepare environment
       run: |
         docker run --name dirac-testing-host -v $PWD:/repo/DIRAC --detach --privileged -v /var/run/docker.sock:/var/run/docker.sock --rm diracgrid/docker-compose-dirac:latest bash -c 'sleep 100000000'
