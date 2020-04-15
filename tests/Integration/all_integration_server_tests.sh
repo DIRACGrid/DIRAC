@@ -14,8 +14,8 @@ pytest "${SERVERINSTALLDIR}/DIRAC/tests/Integration/ConfigurationSystem/Test_Hel
 
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u) **** Core TESTS ****\n"
-pytest "${SERVERINSTALLDIR}/DIRAC/tests/Integration/Core/Test_ElasticsearchDB.py 2>&1" | tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
-pytest "${SERVERINSTALLDIR}/DIRAC/tests/Integration/Core/Test_MySQLDB.py 2>&1" | tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
+pytest "${SERVERINSTALLDIR}/DIRAC/tests/Integration/Core/Test_ElasticsearchDB.py" 2>&1 | tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
+pytest "${SERVERINSTALLDIR}/DIRAC/tests/Integration/Core/Test_MySQLDB.py" 2>&1 | tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
 
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u) **** FRAMEWORK TESTS (partially skipped) ****\n"
@@ -86,7 +86,7 @@ pytest "${SERVERINSTALLDIR}/DIRAC/tests/Integration/Monitoring/Test_MonitoringRe
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u)  **** Resources TESTS ****\n"
 
-python "${SERVERINSTALLDIR}/DIRAC/tests/Integration/Resources/Storage/Test_Resources_GFAL2StorageBase.py ProductionSandboxSE" 2>&1 | tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
+python "${SERVERINSTALLDIR}/DIRAC/tests/Integration/Resources/Storage/Test_Resources_GFAL2StorageBase.py" ProductionSandboxSE 2>&1 | tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
 python "${SERVERINSTALLDIR}/DIRAC/tests/Integration/Resources/ProxyProvider/Test_DIRACCAProxyProvider.py" 2>&1 | tee -a "${SERVER_TEST_OUTPUT}"; (( ERR |= "${?}" ))
 
 # Can only run if there's a Stomp MQ local...

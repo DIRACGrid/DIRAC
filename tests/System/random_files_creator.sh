@@ -53,7 +53,7 @@ if [[ $# -gt 0 ]]; then
 
         -p=*|--Path=*)
         temporaryPath="${i#*=}"
-	if [[ ! -d "$temporaryPath" ]]; then
+        if [[ ! -d "$temporaryPath" ]]; then
           mkdir -p $temporaryPath
         fi
         shift # past argument=value

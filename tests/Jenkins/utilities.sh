@@ -80,9 +80,9 @@ function findRelease(){
     # First, try to find if we are on a production tag
     if [[ ! "${projectVersion}" ]]; then
       if [[ -n "${DIRACBRANCH}" ]]; then
-	projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]*p[[:digit:]]*' "${TESTCODE}/DIRAC/releases.cfg" | grep "${DIRACBRANCH}" | head -1 | sed 's/ //g' || echo "")
+        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]*p[[:digit:]]*' "${TESTCODE}/DIRAC/releases.cfg" | grep "${DIRACBRANCH}" | head -1 | sed 's/ //g' || echo "")
       else
-	projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]*p[[:digit:]]*' "${TESTCODE}/DIRAC/releases.cfg" | head -1 | sed 's/ //g')
+        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]*p[[:digit:]]*' "${TESTCODE}/DIRAC/releases.cfg" | head -1 | sed 's/ //g')
       fi
       # projectVersion=$(cat releases.cfg | grep [^:]v[[:digit:]]r[[:digit:]]*$PRE | head -1 | sed 's/ //g')
     fi
@@ -90,18 +90,18 @@ function findRelease(){
     # The special case is when there's no 'p'... (e.g. version v6r15)
     if [[ ! "${projectVersion}" ]]; then
       if [[ -n "${DIRACBRANCH}" ]]; then
-	projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]' "${TESTCODE}/DIRAC/releases.cfg" | grep "${DIRACBRANCH}" | head -1 | sed 's/ //g' || echo "")
+        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]' "${TESTCODE}/DIRAC/releases.cfg" | grep "${DIRACBRANCH}" | head -1 | sed 's/ //g' || echo "")
       else
-	projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]' "${TESTCODE}/DIRAC/releases.cfg" | head -1 | sed 's/ //g')
+        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]' "${TESTCODE}/DIRAC/releases.cfg" | head -1 | sed 's/ //g')
       fi
     fi
 
     # In case there are no production tags for the branch, look for pre-releases in that branch
     if [[ ! "${projectVersion}" ]]; then
       if [[ -n "${DIRACBRANCH}" ]]; then
-	projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]*'-pre'' "${TESTCODE}/DIRAC/releases.cfg" | grep "${DIRACBRANCH}" | head -1 | sed 's/ //g')
+        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]*'-pre'' "${TESTCODE}/DIRAC/releases.cfg" | grep "${DIRACBRANCH}" | head -1 | sed 's/ //g')
       else
-	projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]*'-pre'' "${TESTCODE}/DIRAC/releases.cfg" | head -1 | sed 's/ //g')
+        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]*'-pre'' "${TESTCODE}/DIRAC/releases.cfg" | head -1 | sed 's/ //g')
       fi
     fi
 
@@ -589,7 +589,7 @@ function generateUserCredentials(){
   chmod 400 client.key
 
   openssl req -config "${USERCERTDIR}/openssl_config_user.cnf" \
-	      -key "${USERCERTDIR}/client.key" \
+              -key "${USERCERTDIR}/client.key" \
               -new \
               -out "$USERCERTDIR/client.req"
 

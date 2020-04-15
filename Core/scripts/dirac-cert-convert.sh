@@ -25,14 +25,14 @@ fi
 export OPENSSL_CONF="${HOME}"/.globus
 GLOBUS="${HOME}"/.globus
 USERCERT_P12_ORIG=$1
-USERCERT_P12="${GLOBUS}"/$(basename "${USERCERT_P12}_ORIG")
+USERCERT_P12="${GLOBUS}"/$(basename "${USERCERT_P12_ORIG}")
 USERCERT_PEM="${GLOBUS}"/usercert.pem
 USERKEY_PEM="${GLOBUS}"/userkey.pem
 OPENSSL=$(which openssl)
 DATE=$(/bin/date +%F-%H:%M)
 
-if [[ ! -f "${USERCERT_P12}_ORIG" ]]; then
-  echo file "${USERCERT_P12}_ORIG" does not exist
+if [[ ! -f "${USERCERT_P12_ORIG}" ]]; then
+  echo file "${USERCERT_P12_ORIG}" does not exist
   usage
 fi
 
@@ -44,7 +44,7 @@ if [[ -f "${USERCERT_P12}" ]]; then
   echo "Back up ${USERCERT_P12} file"
   cp "${USERCERT_P12}" "${USERCERT_P12}"."$DATE"
 fi
-cp "${USERCERT_P12}_ORIG" "${USERCERT_P12}"
+cp "${USERCERT_P12_ORIG}" "${USERCERT_P12}"
 
 echo 'Converting p12 key to pem format'
 if [[ -f "${USERKEY_PEM}" ]]; then

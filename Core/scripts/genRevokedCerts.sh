@@ -28,7 +28,7 @@ while [[ $nar -lt "${narg}" ]]; do
       shift
       allF=$1
       if [[ ! -d "${allF}" ]]; then
-	mkdir "${allF}"
+        mkdir "${allF}"
       fi
       allF=${allF}/crls.pem
       shift

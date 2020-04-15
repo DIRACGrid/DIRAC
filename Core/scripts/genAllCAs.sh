@@ -19,7 +19,7 @@ while [[ ${nar} -lt "${narg}" ]]; do
       shift
       gsCerts=$1
       if [[ ! -d "${gsCerts}" ]]; then
-	echo "${gsCerts} does not exist"
+        echo "${gsCerts} does not exist"
         exit
       fi
       shift
@@ -28,7 +28,7 @@ while [[ ${nar} -lt "${narg}" ]]; do
       shift
       allF=$1
       if [[ ! -d "${allF}" ]]; then
-	mkdir "${allF}"
+        mkdir "${allF}"
       fi
       allF=${allF}/cas.pem
       shift
