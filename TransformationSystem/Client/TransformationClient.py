@@ -178,6 +178,8 @@ class TransformationClient(Client):
           if maxfiles and len(transformationFiles) >= maxfiles:
             transformationFiles = transformationFiles[:maxfiles]
             break
+        else:
+          break
         # Less data than requested, exit only if LFNs were not given
         if not lfnList and len(res['Value']) < limit:
           break
