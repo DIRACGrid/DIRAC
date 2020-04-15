@@ -4,7 +4,7 @@
 ProxyProvider
 ==============
 
-This resource type provides an interface to obtain proxy certificates using a user identifier. The following proxy providers are presented here: ``DIRACCA``, ``PUSP``.
+This resource type provides an interface to obtain proxy certificates using a user identifier. The following proxy providers are presented here: ``DIRACCA``, ``PUSP``. When all users upload their proxies to proxy manager manually, you do not need to deploy these resources.
 
 
 DIRACCA proxy provider
@@ -53,6 +53,7 @@ Also, as an additional feature, this class can read properties from a simple ope
           ProviderType = DIRACCA
           CAConfigFile = /opt/dirac/pro/etc/openssl_config_ca.cnf
           DNOrder = O, OU, CN, emailAddress
+        }
       }
     }
 
