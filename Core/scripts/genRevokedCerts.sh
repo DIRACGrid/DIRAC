@@ -6,7 +6,7 @@ allF="/opt/dirac/etc/grid-security/crls.pem"
 
 narg=$#
 nar=0
-while [[ $nar -lt "$narg" ]]; do
+while [[ $nar -lt "${narg}" ]]; do
   case "$1" in
     -h )
       echo "Usage : $0 [-h] [-i] [-o] "
@@ -27,14 +27,14 @@ while [[ $nar -lt "$narg" ]]; do
     -o )
       shift
       allF=$1
-      if [[ ! -d "$allF" ]]; then
-        mkdir "$allF"
+      if [[ ! -d "${allF}" ]]; then
+	mkdir "${allF}"
       fi
-      allF=$allF/crls.pem
+      allF=${allF}/crls.pem
       shift
       ;;
   esac
-  if [[ $nar -lt "$narg" ]]; then
+  if [[ $nar -lt "${narg}" ]]; then
     nar=$(( ++nar ))
   else
     break
@@ -42,11 +42,11 @@ while [[ $nar -lt "$narg" ]]; do
 done
 
 copiedCAs=0
-echo "Copying revoked certificates ($gsCerts) into $allF"
-for cert in $gsCerts/*.r0
+echo "Copying revoked certificates (${gsCerts}) into ${allF}"
+for cert in "${gsCerts}"/*.r0
 do
-   openssl crl -in "${cert}" >> "$allF".gen
-   copiedCAs=$(expr "${copiedCAs}" + "1")
+   openssl crl -in "${cert}" >> "${allF}".gen
+   copiedCAs=$(( "${copiedCAs}" + "1" ))
 done
-echo " + Copied ${copiedCAs} revoked certificates into $allF"
-mv "$allF".gen "$allF"
+echo " + Copied ${copiedCAs} revoked certificates into ${allF}"
+mv "${allF}".gen "${allF}"
