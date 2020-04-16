@@ -22,7 +22,7 @@ be included are mandatory and others are considered as helpers:
 DNProperties - subsection
 -------------------------
 
-In `Registry / Users / <DIRAC_USER_NAME> / DNProperties` subsection describes the properties associated with each DN. It contains a sections with any name, that contains the DN name attribute and properties associated with that DN.
+The `Registry/Users/<DIRAC_USER_NAME>/DNProperties` subsection describes the properties associated with each DN attribute.
 
 +-----------------------------------+-------------------------------------------------+--------------------------------------------------------------+
 | **Name**                          | **Description**                                 | **Example**                                                  |
