@@ -39,6 +39,4 @@ JOB_STATES = [SUBMITTING,
 
 JOB_FINAL_STATES = [DONE,
                     COMPLETED,
-                    FAILED,
-                    DELETED,
-                    KILLED]
+                    FAILED]
