@@ -258,7 +258,7 @@ def getDNsInGroup(groupName):
 
 
 def getPropertiesForGroup(groupName, defaultValue=None):
-    """ Return group properties
+  """ Return group properties
 
       :param str groupName: group name
       :param defaultValue: default value
