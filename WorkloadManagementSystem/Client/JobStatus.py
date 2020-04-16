@@ -50,7 +50,9 @@ JOB_STATES = [SUBMITTING,
               COMPLETING,
               DONE,
               COMPLETED,
-              FAILED]
+              FAILED,
+              DELETED,
+              KILLED]
 
 #: Job States when the payload work has finished
 JOB_FINAL_STATES = [DONE,
