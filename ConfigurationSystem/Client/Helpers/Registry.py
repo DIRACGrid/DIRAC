@@ -218,7 +218,7 @@ def getUsersInVO(vo, defaultValue=None):
   """
   result = getGroupsForVO(vo)
   if not result['OK'] or not result['Value']:
-    return [] if defaultValue is None else defaultValue 
+    return [] if defaultValue is None else defaultValue
   groups = result['Value']
 
   userList = []
