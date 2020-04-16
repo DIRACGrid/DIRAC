@@ -58,8 +58,9 @@ Registry
       DN = /C=DN/O=DIRACCA/OU=None/CN=user_ca/emailAddress=user_ca@diracgrid.org
       DNProperties
       {
-        -C_DN-O_DIRACCA-OU_None-CN_user_ca-emailAddress_user_ca@diracgrid.org
+        DN.1
         {
+          DN = /C=DN/O=DIRACCA/OU=None/CN=user_ca/emailAddress=user_ca@diracgrid.org
           ProxyProviders = DIRAC_CA
           Groups = dirac_user
         }
@@ -70,8 +71,9 @@ Registry
       DN = /C=CC/O=DN/O=DIRAC/CN=user
       DNProperties
       {
-        -C_CC-O_DN-O_DIRAC-CN_user
+        DN.1
         {
+          DN = /C=CC/O=DN/O=DIRAC/CN=user
           ProxyProviders =
           Groups = dirac_user
         }
@@ -82,8 +84,9 @@ Registry
       DN = /C=CC/O=DN/O=DIRAC/CN=user_1
       DNProperties
       {
-        -C_CC-O_DN-O_DIRAC-CN_user_1
+        DN.1
         {
+          DN = /C=CC/O=DN/O=DIRAC/CN=user_1
           ProxyProviders =
           Groups = dirac_user
         }
@@ -92,12 +95,6 @@ Registry
     user_2
     {
       DN = /C=CC/O=DN/O=DIRAC/CN=user_2
-      DNProperties
-      {
-        -C_CC-O_DN-O_DIRAC-CN_user_2
-        {
-        }
-      }
     }
     user_3
     {

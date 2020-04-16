@@ -393,18 +393,6 @@ def getCAForUsername(username):
   return S_ERROR("No CA found for user %s" % username)
 
 
-def __getDNSectionName(userDN):
-  """ Change user DN string by replacing special symbol that not used in
-      a section names, e.g.: "/O=O_test/OU=OU_test/F=F_test"
-      will replace to:       "-O_O_test-OU_OU_test-F_F_test"
-
-      :param basestring userDN: user DN
-
-      :return: basestring that can be use as a section name
-  """
-  return userDN.replace('/', '-').replace('=', '_')
-
-
 def getDNProperty(userDN, value):
   """ Get property from DNProperties section by user DN
 
@@ -414,11 +402,15 @@ def getDNProperty(userDN, value):
       :return: S_OK(basestring,list)/S_ERROR() -- basestring or list that contain option value
   """
   result = getUsernameForDN(userDN)
-  if not result['OK']:
-    return result
-  secDN = __getDNSectionName(userDN)
-  return S_OK(gConfig.getValue("%s/Users/%s/DNProperties/%s/%s" %
-                               (gBaseRegistrySection, result['Value'], secDN, value)))
+  if result['OK']:
+    result = gConfig.getSections("%s/Users/%s/DNProperties" % (gBaseRegistrySection, result['Value']))
+    if result['OK']:
+      for section in "%s/Users/%s/DNProperties/%s" % (gBaseRegistrySection, user, result['Value']):
+        if userDN == gConfig.getValue("%s/DN" % section):
+          return S_OK(gConfig.getValue("%s/%s" % (section, value)))
+
+  return S_ERROR('No properties found for %s%s' %
+                 (userDN, '' if result['OK'] else ': %s' % result['Message']))
 
 
 def getProxyProvidersForDN(userDN):
@@ -432,9 +424,7 @@ def getProxyProvidersForDN(userDN):
   if not result['OK']:
     return result
   ppList = result['Value'] or []
-  if not isinstance(ppList, list):
-    ppList = ppList.split()
-  return S_OK(ppList)
+  return S_OK(ppList if isinstance(ppList, list) else ppList.split())
 
 
 def getDNFromProxyProviderForUserID(proxyProvider, userID):
