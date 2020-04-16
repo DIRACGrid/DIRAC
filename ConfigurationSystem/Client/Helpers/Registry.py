@@ -404,12 +404,13 @@ def getDNProperty(userDN, value):
   result = getUsernameForDN(userDN)
   if not result['OK']:
     return result
-  result = gConfig.getSections("%s/Users/%s/DNProperties" % (gBaseRegistrySection, result['Value']))
+  pathDNProperties = "%s/Users/%s/DNProperties" % (gBaseRegistrySection, result['Value'])
+  result = gConfig.getSections(pathDNProperties)
   if not result['OK']:
     return result
-  for section in "%s/Users/%s/DNProperties/%s" % (gBaseRegistrySection, user, result['Value']):
-    if userDN == gConfig.getValue("%s/DN" % section):
-      return S_OK(gConfig.getValue("%s/%s" % (section, value)))
+  for section in result['Value']:
+    if userDN == gConfig.getValue("%s/%s/DN" % (pathDNProperties, section):
+      return S_OK(gConfig.getValue("%s/%s/%s" % (pathDNProperties, section, value)))
 
   return S_ERROR('No properties found for %s' % userDN)
 
