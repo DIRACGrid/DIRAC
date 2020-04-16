@@ -396,10 +396,10 @@ def getCAForUsername(username):
 def getDNProperty(userDN, value):
   """ Get property from DNProperties section by user DN
 
-      :param basestring userDN: user DN
-      :param basestring value: option that need to get
+      :param str userDN: user DN
+      :param str value: option that need to get
 
-      :return: S_OK(basestring,list)/S_ERROR() -- basestring or list that contain option value
+      :return: S_OK(str,list)/S_ERROR() -- str or list that contain option value
   """
   result = getUsernameForDN(userDN)
   if not result['OK']:
