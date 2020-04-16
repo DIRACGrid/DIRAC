@@ -121,7 +121,7 @@ class API(object):
   def _prettyPrint(self, myObject):
     """ Helper function to pretty print an object.
 
-        :param myObject object: an object to pring
+        :param object myObject: an object to pring
     """
     print(self.pPrint.pformat(myObject))
 

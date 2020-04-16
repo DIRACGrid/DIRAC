@@ -154,7 +154,7 @@ def getSiteUpdates(vo, bdiiInfo=None, log=None):
 
       :param str vo: VO name
       :param dict bdiiInfo: information from DBII
-      :param log object: logger
+      :param object log: logger
 
       :result: S_OK(set)/S_ERROR()
   """
