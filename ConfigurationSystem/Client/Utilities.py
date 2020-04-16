@@ -698,7 +698,7 @@ def getElasticDBParameters(fullname):
   return S_OK(parameters)
 
 
-def getOAuthAPI(instance):
+def getOAuthAPI(instance='Production'):
   """ Get OAuth API url
 
       :param str instance: instance
