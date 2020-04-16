@@ -402,15 +402,16 @@ def getDNProperty(userDN, value):
       :return: S_OK(basestring,list)/S_ERROR() -- basestring or list that contain option value
   """
   result = getUsernameForDN(userDN)
-  if result['OK']:
-    result = gConfig.getSections("%s/Users/%s/DNProperties" % (gBaseRegistrySection, result['Value']))
-    if result['OK']:
-      for section in "%s/Users/%s/DNProperties/%s" % (gBaseRegistrySection, user, result['Value']):
-        if userDN == gConfig.getValue("%s/DN" % section):
-          return S_OK(gConfig.getValue("%s/%s" % (section, value)))
+  if not result['OK']:
+    return result
+  result = gConfig.getSections("%s/Users/%s/DNProperties" % (gBaseRegistrySection, result['Value']))
+  if not result['OK']:
+    return result
+  for section in "%s/Users/%s/DNProperties/%s" % (gBaseRegistrySection, user, result['Value']):
+    if userDN == gConfig.getValue("%s/DN" % section):
+      return S_OK(gConfig.getValue("%s/%s" % (section, value)))
 
-  return S_ERROR('No properties found for %s%s' %
-                 (userDN, '' if result['OK'] else ': %s' % result['Message']))
+  return S_ERROR('No properties found for %s' % userDN)
 
 
 def getProxyProvidersForDN(userDN):
