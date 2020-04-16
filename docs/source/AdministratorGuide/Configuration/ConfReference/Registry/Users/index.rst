@@ -30,6 +30,6 @@ In `Registry / Users / <DIRAC_USER_NAME> / DNProperties` subsection describes th
 | *<DN_SUBSECTION>/DN*              | Distinguish name obtained from user certificate | DN = /O=GRID-FR/C=FR/O=CNRS/OU=CPPM/CN=Andrei Tsaregorodtsev |
 |                                   | (Mandatory)                                     |                                                              |
 +-----------------------------------+-------------------------------------------------+--------------------------------------------------------------+
-| *<DN_SUBSECTION>/ProxyProviders*  | Proxy provider that can genarate the proxy      | ProxyProviders = MY_DIRACCA                                  |
+| *<DN_SUBSECTION>/ProxyProviders*  | Proxy provider that can generate the proxy      | ProxyProviders = MY_DIRACCA                                  |
 |                                   | certificate with DN in DN attribute.            |                                                              |
 +-----------------------------------+-------------------------------------------------+--------------------------------------------------------------+
