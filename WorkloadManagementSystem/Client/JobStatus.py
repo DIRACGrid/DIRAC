@@ -33,7 +33,12 @@ JOB_STATES = [SUBMITTING,
               COMPLETING,
               DONE,
               COMPLETED,
-              FAILED]
+              FAILED,
+              DELETED,
+              KILLED]
+
 JOB_FINAL_STATES = [DONE,
                     COMPLETED,
-                    FAILED]
+                    FAILED,
+                    DELETED,
+                    KILLED]
