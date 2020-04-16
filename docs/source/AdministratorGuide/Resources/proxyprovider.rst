@@ -4,7 +4,7 @@
 ProxyProvider
 ==============
 
-This resource type provides an interface to obtain proxy certificates using a user identifier. The following proxy providers are presented here: ``DIRACCA``, ``PUSP``. When all users upload their proxies to proxy manager manually, you do not need to deploy these resources.
+This resource type provides an interface to obtain proxy certificates using a user identifier. The following proxy providers are presented here: ``DIRACCA``, ``PUSP``. When all users upload their proxies to proxy manager manually, you do not need to deploy these resources. The :ref:`registryUsers` section describes how to specify a proxy provifer for a user's DN.
 
 
 DIRACCA proxy provider
