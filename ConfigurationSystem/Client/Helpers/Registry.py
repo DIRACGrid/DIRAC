@@ -409,7 +409,7 @@ def getDNProperty(userDN, value):
   if not result['OK']:
     return result
   for section in result['Value']:
-    if userDN == gConfig.getValue("%s/%s/DN" % (pathDNProperties, section):
+    if userDN == gConfig.getValue("%s/%s/DN" % (pathDNProperties, section)):
       return S_OK(gConfig.getValue("%s/%s/%s" % (pathDNProperties, section, value)))
 
   return S_ERROR('No properties found for %s' % userDN)
