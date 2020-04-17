@@ -8,7 +8,7 @@ from DIRAC import S_OK, S_ERROR, gLogger, rootPath
 from DIRAC.Resources.ProxyProvider.ProxyProviderFactory import ProxyProviderFactory
 
 
-certsPath = os.path.join('/'.join(rootPath), 'Core/Security/test/certs')
+certsPath = os.path.join(rootPath, 'Core/Security/test/certs')
 
 
 def sf_getInfoAboutProviders(of, providerName, option, section):
