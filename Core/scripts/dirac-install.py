@@ -2473,6 +2473,19 @@ def createBashrcForDiracOS():
       lines.extend(['# Fork support for xrootd',
                     'export XRD_RUNFORKHANDLER=1'])
 
+      # Add possible DIRAC environment variables
+      lines.append('')
+      lines.append('# before enabling any of these variables, please see the documentation ')
+      lines.append('# https://dirac.readthedocs.io/en/latest/AdministratorGuide/' +
+                   'ServerInstallations/environment_variable_configuration.html')
+      lines.append('# export DIRAC_DEBUG_DENCODE_CALLSTACK=1')
+      lines.append('# export DIRAC_DEBUG_STOMP=1')
+      lines.append('# export DIRAC_DEPRECATED_FAIL=1')
+      lines.append('# export DIRAC_GFAL_GRIDFTP_SESSION_REUSE=true')
+      lines.append('# export DIRAC_USE_M2CRYPTO=true')
+      lines.append('# export DIRAC_USE_NEWTHREADPOOL=yes')
+      lines.append('# export DIRAC_VOMSES=$DIRAC/etc/grid-security/vomses')
+
       # Add the lines required for further env variables requested
       if cliParams.userEnvVariables:
         lines.extend(['# User-requested variables'])
