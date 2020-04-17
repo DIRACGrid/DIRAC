@@ -40,3 +40,4 @@ group.
    WebAppDIRAC/index
    Internals/index
    WorkloadManagementSystem/index
+   Externals/index
