@@ -4,12 +4,10 @@ import os
 import mock
 import unittest
 
-from DIRAC import S_OK, S_ERROR, gLogger
+from DIRAC import S_OK, S_ERROR, gLogger, rootPath
 from DIRAC.Resources.ProxyProvider.ProxyProviderFactory import ProxyProviderFactory
 
 
-thisPath = os.path.dirname(os.path.abspath(__file__)).split('/')
-rootPath = thisPath[:len(thisPath) - 3]
 certsPath = os.path.join('/'.join(rootPath), 'Core/Security/test/certs')
 
 
@@ -40,7 +38,7 @@ class ProxyProviderFactoryTest(unittest.TestCase):
     """
     for provider, resultOfGenerateDN in [('MY_DIRACCA', True), ('MY_PUSP', False)]:
       result = ProxyProviderFactory().getProxyProvider(provider)
-      self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
+      self.assertTrue(result['OK'], '\n%s' % result.get('Message', 'Error message is absent.'))
       proxyProviderObj = result['Value']
       result = proxyProviderObj.generateDN(FullName='test', Email='email@test.org')
       text = 'Must be ended %s%s' % ('successful' if resultOfGenerateDN else 'with error',
@@ -49,11 +47,11 @@ class ProxyProviderFactoryTest(unittest.TestCase):
       if not resultOfGenerateDN:
         gLogger.info('Msg: %s' % (result['Message']))
       else:
-        self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
+        self.assertTrue(result['OK'], '\n%s' % result.get('Message', 'Error message is absent.'))
         userDN = result['Value']
         gLogger.info('Created DN:', userDN)
         result = proxyProviderObj.getProxy(userDN)
-        self.assertTrue(result['OK'], '\n%s' % result.get('Message') or 'Error message is absent.')
+        self.assertTrue(result['OK'], '\n%s' % result.get('Message', 'Error message is absent.'))
 
 
 if __name__ == '__main__':
