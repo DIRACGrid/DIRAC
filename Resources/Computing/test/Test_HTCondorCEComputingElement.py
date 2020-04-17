@@ -94,7 +94,7 @@ class HTCondorCETests( unittest.TestCase ):
          patch( MODNAME+".tempfile.mkstemp", new=Mock( return_value=("os", "pilotName"))), \
          patch( MODNAME+".mkDir", new=Mock()):
 
-      htce._HTCondorCEComputingElement__writeSub( "dirac-install", 42 ) #pylint: disable=E1101
+      htce._HTCondorCEComputingElement__writeSub("dirac-install", 42, 1)  # pylint: disable=E1101
       for option in [ "ShouldTransferFiles = YES", "WhenToTransferOutput = ON_EXIT_OR_EVICT", "universe = grid"]:
         # the three [0] are: call_args_list[firstCall][ArgsArgumentsTuple][FirstArgsArgument]
         self.assertIn( option, subFileMock.write.call_args_list[0][0][0] )
@@ -108,7 +108,7 @@ class HTCondorCETests( unittest.TestCase ):
          patch( MODNAME+".tempfile.mkstemp", new=Mock( return_value=("os", "pilotName"))), \
          patch( MODNAME+".mkDir", new=Mock()):
 
-      htce._HTCondorCEComputingElement__writeSub( "dirac-install", 42 ) #pylint: disable=E1101
+      htce._HTCondorCEComputingElement__writeSub("dirac-install", 42, 1)  # pylint: disable=E1101
       for option in [ "ShouldTransferFiles = YES", "WhenToTransferOutput = ON_EXIT_OR_EVICT" ]:
         self.assertNotIn( option, subFileMock.write.call_args_list[0][0][0] )
       for option in [ "universe = vanilla"]:
