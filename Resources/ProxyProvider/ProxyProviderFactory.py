@@ -26,7 +26,7 @@ class ProxyProviderFactory(object):
     """ This method returns a ProxyProvider instance corresponding to the supplied
         name.
 
-        :param basestring proxyProvider: the name of the Proxy Provider
+        :param str proxyProvider: the name of the Proxy Provider
 
         :return: S_OK(ProxyProvider)/S_ERROR()
     """
