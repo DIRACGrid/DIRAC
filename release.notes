@@ -18,6 +18,7 @@ FIX: (#4439) MySQLDB _connect method
 NEW: (#4510) Removed dirac-distribution (use docker image)
 CHANGE: (#4491) Streamline of CS helpers for sites and computing elements
 NEW: (#4538) MixedEncode - allows for json serialization transition
+CHANGE: (#4461) use M2Crypto by default
 
 *Configuration
 CHANGE: (#4157) add new helper methods for IdP/Proxy Providers, OAuthManager. Add methods that 
@@ -28,6 +29,7 @@ NEW: (#4241) Configuration Server - added forceGlobalConfigurationUpdate() inter
      registered service to update their configuration
 NEW: (#4257) Add search emails for group method in Registry
 NEW: (#4397) ConfigurationClient - added getOptionsDictRecursively method, add docs
+CHANGE: (#4551) Registry - change search DN properties logic
 
 *Framework
 CHANGE: (#4157) add possibility to work with Proxy Providers and "clean" proxy without 
@@ -78,6 +80,8 @@ FIX: (#4517) When finalising the request, one should take into account the fact 
 NEW: (#4157) ProxyProvider resources with implementation for DIRAC CA and PUSP proxy providers
 NEW: (#4276) IdProvider resources to represent external user identity providers
 FIX: (#4455) discrepancy in CE._reset() methods return value in different CE implementations
+NEW: (#4546) add Test_ProxyProviderFactory, docs
+
 
 *RSS
 CHANGE: (#4362) SQL query orders using list instead of tuples
@@ -102,9 +106,11 @@ CHANGE: (#4439) integrate test_MySQLDB to all_integration_server_tests
 
 *tests
 FIX: (#4469) ProxyDB integration tests fixed for the M2Crypto case
+FIX: (#4551) align ProxyDB test to current changes
 
 *docs
 NEW: (#4289) Document how to run integration tests in docker
+NEW: (#4551) add DNProperties description to Registry/Users subsection
 
 [v7r0p20]
 
