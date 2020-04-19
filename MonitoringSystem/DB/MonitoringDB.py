@@ -174,25 +174,29 @@ class MonitoringDB(ElasticDB):
           query = self._Q('match', **kwargs)
       q += [query]
 
-    a1 = self._A('terms', field=grouping, size=self.RESULT_SIZE)
-    a2 = self._A('terms', field='timestamp')
-    a2.metric('total_jobs', 'sum', field=selectFields[0])
-    a1.bucket('end_data',
-              'date_histogram',
-              field='timestamp',
-              interval=interval).metric('tt', a2).pipeline('avg_monthly_sales',
-                                                           'avg_bucket',
-                                                           buckets_path='tt>total_jobs',
-                                                           gap_policy='insert_zeros')
-    if isAvgAgg:
-      a1.pipeline('avg_total_jobs',
-                  'avg_bucket',
-                  buckets_path='end_data>avg_monthly_sales',
-                  gap_policy='insert_zeros')
-
     s = self._Search(indexName)
     s = s.filter('bool', must=q)
-    s.aggs.bucket('2', a1)
+
+    for i, field in enumerate(selectFields):
+      a1 = self._A('terms', field=grouping, size=self.RESULT_SIZE)
+      a2 = self._A('terms', field='timestamp')
+
+      a2.metric('total_jobs', 'sum', field=field)
+      a1.bucket('end_data',
+                'date_histogram',
+                field='timestamp',
+                interval=interval).metric('tt', a2).pipeline('avg_monthly_sales',
+                                                             'avg_bucket',
+                                                             buckets_path='tt>total_jobs',
+                                                             gap_policy='insert_zeros')
+      if isAvgAgg:
+        a1.pipeline('avg_total_jobs',
+                    'avg_bucket',
+                    buckets_path='end_data>avg_monthly_sales',
+                    gap_policy='insert_zeros')
+
+      s.aggs.bucket(str(i), a1)
+
     #  s.fields( ['timestamp'] + selectFields )
     gLogger.debug('Query:', s.to_dict())
     retVal = s.execute()
@@ -200,16 +204,32 @@ class MonitoringDB(ElasticDB):
     gLogger.debug("Query result", len(retVal))
 
     result = {}
-    for i in retVal.aggregations['2'].buckets:
-      if isAvgAgg:
-        result[i.key] = i.avg_total_jobs.value
-      else:
-        site = i.key
-        dp = {}
-        for j in i.end_data.buckets:
-          dp[j.key / 1000] = j.avg_monthly_sales.value
-        result[site] = dp
-    # the result format is { 'grouping':{timestamp:value, timestamp:value} for example :
+#    for i in retVal.aggregations['2'].buckets:
+    for i, field in enumerate(selectFields):
+      for j in retVal.aggregations[str(i)].buckets:
+        if isAvgAgg:
+          if j.key not in result:
+            if len(selectFields) == 1:  # for backword compatibility
+              result[j.key] = j.avg_total_jobs.value
+            else:
+              result[j.key] = [j.avg_total_jobs.value]
+          else:
+            result[j.key].append(j.avg_total_jobs.value)
+        else:
+          site = j.key
+          if site not in result:
+            result[site] = {}
+          for k in j.end_data.buckets:
+            if (k.key / 1000) not in result[site]:
+              if len(selectFields) == 1:  # for backword compatibility
+                result[site][k.key / 1000] = k.avg_monthly_sales.value
+              else:
+                result[site][k.key / 1000] = [k.avg_monthly_sales.value]
+            else:
+              result[site][k.key / 1000].append(k.avg_monthly_sales.value)
+
+    # the result format is { 'grouping':{timestamp:value, timestamp:value}:
+    # value is list if more than one value exist. for example :
     # {u'Bookkeeping_BookkeepingManager': {1474300800: 4.0, 1474344000: 4.0, 1474331400: 4.0, 1
     # 474302600: 4.0, 1474365600: 4.0, 1474304400: 4.0, 1474320600: 4.0, 1474360200: 4.0,
     # 1474306200: 4.0, 1474356600: 4.0, 1474336800: 4.0, 1474326000: 4.0, 1474315200: 4.0,
