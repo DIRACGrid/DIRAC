@@ -202,6 +202,7 @@ class MonitoringDB(ElasticDB):
     retVal = s.execute()
 
     gLogger.debug("Query result", len(retVal))
+
     result = {}
 #    for i in retVal.aggregations['2'].buckets:
     for i, field in enumerate(selectFields):
