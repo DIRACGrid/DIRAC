@@ -68,6 +68,8 @@ class PluginUtilities(object):
 
     self.log = gLogger.getSubLogger(self.plugin +
                                     self.transInThread.get(self.transID, ' [NoThread] [%s] ' % self.transID))
+    # FIXME: This doesn't work (yet) but should soon, will allow scripts to get the context
+    self.log.showHeaders(True)
 
   def logVerbose(self, message, param=''):
     """ logger helper """

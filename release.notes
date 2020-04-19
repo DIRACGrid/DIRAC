@@ -378,6 +378,16 @@ NEW: (#4170) added Production system documentation
 CHANGE: (#4224) Pilot 3 is the default
 NEW: (#4244) Added a few notes on using the JobParameters on ElasticSearch database
 
+[v6r22p27]
+
+*Monitoring
+CHANGE: (#4543) Allow to retrieve multiple variables from Monitoring DB.
+        Add functions to calculate efficiency.
+
+*TS
+FIX: (#4550) infinite loop when a file was requested an it was not in the TS
+CHANGE: (#4550) show headers in Utilities sub logger (but this is not effective yet)
+
 [v6r22p26]
 
 *Resources

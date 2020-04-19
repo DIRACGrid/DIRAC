@@ -175,7 +175,6 @@ class TransformationClient(Client):
                            limit, offsetToApply, len(res['Value'])))
         if res['Value']:
           transformationFiles += res['Value']
-          offsetToApply += limit
           # Limit the number of files returned
           if maxfiles and len(transformationFiles) >= maxfiles:
             transformationFiles = transformationFiles[:maxfiles]
@@ -183,6 +182,7 @@ class TransformationClient(Client):
         # Less data than requested, exit only if LFNs were not given
         if not lfnList and len(res['Value']) < limit:
           break
+        offsetToApply += limit
         # Reset number of retries for next chunk
         retries = 5
 
