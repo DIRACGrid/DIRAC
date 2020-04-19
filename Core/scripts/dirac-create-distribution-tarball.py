@@ -531,11 +531,6 @@ class TarModuleCreator(object):
           fd.write(parts['whole'])
       except Exception as excp:
         return S_ERROR("Could not write %s: %s" % (htmlFileName, repr(excp).replace(',)', ')')))
-      # To pdf
-      pdfCmd = "rst2pdf '%s' -o '%s.pdf'" % (relNotesRST, baseFileName)
-      gLogger.verbose("Executing %s" % pdfCmd)
-      if os.system(pdfCmd):
-        gLogger.warn("Could not generate PDF version of %s" % baseNotesPath)
     # Unlink if not necessary
     if False and not cliParams.relNotes:
       try:
