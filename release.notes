@@ -1,3 +1,11 @@
+[v7r0p21]
+
+*Core
+CHANGE: (#4506) remove rst2pdf from dirac-create-distribution-tarball
+
+*Framework
+CHANGE: (#4536) Don't loop forever if a query does not work in the MonitoringCatalog
+
 [v7r0p20]
 
 *Core
