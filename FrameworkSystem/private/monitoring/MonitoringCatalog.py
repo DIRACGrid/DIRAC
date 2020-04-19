@@ -39,15 +39,19 @@ class MonitoringCatalog(object):
     cursor = self.dbConn.cursor()  # pylint: disable=no-member
     self.log.debug("Executing %s" % query)
     executed = False
-    while not executed:
+    retry = 0
+    while not executed and retry < 10:
+      retry += 1
       try:
         if values:
           cursor.execute(query, values)
         else:
           cursor.execute(query)
         executed = True
-      except BaseException:
+      except Exception as e:
+        self.log.exception("Exception executing statement", "query: %s, values: %s" % (query, values))
         time.sleep(0.01)
+    self.log.error("Could not execute query, big mess ahead", "query: %s, values: %s" % (query, values))
     return cursor
 
   def __createTables(self):

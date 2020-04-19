@@ -10,6 +10,7 @@ dependencies:
   - boto3
   - certifi
   - cmreshandler >1.0.0b4
+  - docutils
   - elasticsearch-dsl ~=6.3.1
   - fts-rest
   - future
@@ -19,6 +20,7 @@ dependencies:
   - mysql-connector-c  # Included as it's a dependency of MySQL-python which is installed with pip
   - numpy >=1.10.1,<1.16  # Limit to 1.15 as Python 2 pylint has bugs with numpy 1.16
   - pexpect >=4.0.1
+  - pillow
   - psutil >=4.2.0
   - pyasn1 >0.4.1
   - pyasn1-modules
@@ -27,7 +29,6 @@ dependencies:
   - pytz >=2015.7
   - recommonmark
   - requests >=2.9.1
-  - rst2pdf >=0.93
   - six >=1.10
   - sqlalchemy >=1.0.9
   - subprocess32
