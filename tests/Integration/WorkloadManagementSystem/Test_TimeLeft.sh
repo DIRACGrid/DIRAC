@@ -7,8 +7,7 @@
 
 echo "\n======> Test_TimeLeft <======\n"
 
-if [ ! -z "$DEBUG" ]
-then
+if [[ ! -z "$DEBUG" ]]; then
   echo '==> Running in DEBUG mode'
   DEBUG='-ddd'
 else
@@ -22,8 +21,7 @@ fi
 
 $DIRACSCRIPTS/dirac-wms-get-queue-cpu-time $DIRAC/DIRAC/tests/Integration/WorkloadManagementSystem/pilot.cfg $DEBUG
 
-if [ $? -eq 0 ]
-then
+if [[ "${?}" -eq 0 ]]; then
   echo -e "\nSuccess\n\n"
 else
   echo -e "\nSomething wrong!\n\n"
@@ -39,8 +37,7 @@ export JOBFEATURES=$DIRAC/DIRAC/tests/Integration/WorkloadManagementSystem/sb.cf
 
 $DIRACSCRIPTS/dirac-wms-get-queue-cpu-time $DIRAC/DIRAC/tests/Integration/WorkloadManagementSystem/pilot.cfg $DEBUG
 
-if [ $? -eq 0 ]
-then
+if [[ "${?}" -eq 0 ]]; then
   echo -e "\nSuccess\n\n"
 else
   echo -e "\nSomething wrong!\n\n"
@@ -56,8 +53,7 @@ export JOBFEATURES=$DIRAC/DIRAC/tests/Integration/WorkloadManagementSystem/MJF/
 
 $DIRACSCRIPTS/dirac-wms-get-queue-cpu-time $DIRAC/DIRAC/tests/Integration/WorkloadManagementSystem/pilot.cfg $DEBUG
 
-if [ $? -eq 0 ]
-then
+if [[ "${?}" -eq 0 ]]; then
   echo -e "\nSuccess\n\n"
 else
   echo -e "\nSomething wrong!\n\n"

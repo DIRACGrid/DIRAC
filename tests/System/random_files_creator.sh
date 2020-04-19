@@ -24,16 +24,14 @@ Options:
 #Default values
 numberOfFiles=10
 filesName="random_content_"
-if [ $DIRAC ]
-then
+if [[ $DIRAC ]]; then
   diracDir=$DIRAC
 else
   diracDir=$PWD
 fi
 
 # Parsing arguments
-if [ $# -gt 0 ]
-then
+if [[ $# -gt 0 ]]; then
   for i in "$@"
     do
       case $i in
@@ -55,8 +53,7 @@ then
 
         -p=*|--Path=*)
         temporaryPath="${i#*=}"
-        if [ ! -d "$temporaryPath" ]
-          then
+        if [[ ! -d "$temporaryPath" ]]; then
           mkdir -p $temporaryPath
         fi
         shift # past argument=value
@@ -72,17 +69,15 @@ then
 fi
 
 # Default temporary path
-if [ -z "$temporaryPath" ]
-  then
+if [[ -z "$temporaryPath" ]]; then
   temporaryPath=$(mktemp -d)
 fi
 
 # Move to a tmp directory
 cd $temporaryPath
-if [ $? -ne 0 ]
-  then
+if [[ "${?}" -ne 0 ]]; then
   echo $(tput setaf 1)"ERROR: cannot change to directory: " $temporaryPath$(tput sgr 0)
-    exit $?
+  exit 1
 fi
 
 echo ""

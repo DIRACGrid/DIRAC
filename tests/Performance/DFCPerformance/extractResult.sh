@@ -3,7 +3,7 @@
 # The name of the server where the DFC service is running
 machineName='volhcb38'
 
-if [ $# -ne 1 ];
+if [[ $# -ne 1 ]];
 then
   echo "usage: extractResult.sh <jobName>"
   exit 1
@@ -11,7 +11,7 @@ fi
 
 dir=$1
 
-if [ ! -d "$dir" ]; then
+if [[ ! -d "$dir" ]]; then
   echo "$dir does not exist"
   exit 1
 fi

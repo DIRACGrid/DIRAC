@@ -11,8 +11,8 @@ This page keeps a list of such technologies.
 M2Crypto
 ========
 
-We aim at replacing the home made wrapper of openssl pyGSI with the standard M2Crypto library. It is by default disabled.
-You can enable it by setting the environment variable `DIRAC_USE_M2CRYPTO` to `Yes`.
+We aim at replacing the home made wrapper of openssl pyGSI with the standard M2Crypto library. It is by default enabled.
+You can disable it by setting the environment variable `DIRAC_USE_M2CRYPTO` to `No`.
 
 Possible issues
 ---------------

@@ -29,7 +29,7 @@ function copyLocalSource() {
 
     docker exec "${CONTAINER_NAME}" mkdir -p "$WORKSPACE/LocalRepo/TestCode"
     for repo_path in "${TESTREPO[@]}"; do
-      if [ -n "${repo_path}" ] && [ -d "${repo_path}" ]; then
+      if [[ -n "${repo_path}" ]] && [[ -d "${repo_path}" ]]; then
         docker cp "${repo_path}" "${CONTAINER_NAME}:$WORKSPACE/LocalRepo/TestCode/$(basename "${repo_path}")"
         sed -i "s@\(TESTREPO+=..\)$(dirname "${repo_path}")\(/$(basename "${repo_path}")..\)@\1${WORKSPACE}/LocalRepo/TestCode\2@" "$CONFIG_PATH"
       fi
@@ -37,7 +37,7 @@ function copyLocalSource() {
 
     docker exec "${CONTAINER_NAME}" mkdir -p "$WORKSPACE/LocalRepo/ALTERNATIVE_MODULES"
     for module_path in "${ALTERNATIVE_MODULES[@]}"; do
-      if [ -n "${module_path}" ] && [ -d "${module_path}" ]; then
+      if [[ -n "${module_path}" ]] && [[ -d "${module_path}" ]]; then
         docker cp "${module_path}" "${CONTAINER_NAME}:$WORKSPACE/LocalRepo/ALTERNATIVE_MODULES/$(basename "${module_path}")"
         sed -i "s@\(ALTERNATIVE_MODULES+=..\)$(dirname "${module_path}")\(/$(basename "${module_path}")..\)@\1${WORKSPACE}/LocalRepo/ALTERNATIVE_MODULES\2@" "$CONFIG_PATH"
       fi
@@ -47,14 +47,14 @@ function copyLocalSource() {
 cd "$SCRIPT_DIR"
 
 function prepareEnvironment() {
-  if [ -z "$TMP" ]; then
+  if [[ -z "$TMP" ]]; then
       TMP=/tmp/DIRAC_CI_$(date +"%Y%m%d%I%M%p")
       mkdir -p "$TMP"
   fi
-  if [ -z "$CLIENTCONFIG" ]; then
+  if [[ -z "$CLIENTCONFIG" ]]; then
       CLIENTCONFIG=${BUILD_DIR}/CLIENTCONFIG
   fi
-  if [ -z "$SERVERCONFIG" ]; then
+  if [[ -z "$SERVERCONFIG" ]]; then
       SERVERCONFIG=${BUILD_DIR}/SERVERCONFIG
   fi
 
@@ -101,7 +101,7 @@ function prepareEnvironment() {
     echo "# Optional parameters"
 
     echo "declare -a TESTREPO"
-    if [ -n "${TESTREPO+x}" ]; then
+    if [[ -n "${TESTREPO+x}" ]]; then
       for repo_path in "${TESTREPO[@]}"; do
         echo "TESTREPO+=(\"${repo_path}\")"
       done
@@ -110,7 +110,7 @@ function prepareEnvironment() {
     fi
 
     echo "declare -a ALTERNATIVE_MODULES"
-    if [ -n "${ALTERNATIVE_MODULES+x}" ]; then
+    if [[ -n "${ALTERNATIVE_MODULES+x}" ]]; then
       for module_path in "${ALTERNATIVE_MODULES[@]}"; do
         echo "ALTERNATIVE_MODULES+=(\"${module_path}\")"
       done
@@ -119,7 +119,7 @@ function prepareEnvironment() {
     fi
 
     echo "declare -a INSTALLOPTIONS"
-    if [ -n "${INSTALLOPTIONS+x}" ]; then
+    if [[ -n "${INSTALLOPTIONS+x}" ]]; then
       for option in "${INSTALLOPTIONS[@]}"; do
         echo "INSTALLOPTIONS+=(\"${option}\")"
       done
@@ -127,12 +127,12 @@ function prepareEnvironment() {
   } > "${SERVERCONFIG}"
 
   # find the latest version, unless it's integration
-  if [ "${CI_COMMIT_REF_NAME}" = 'refs/heads/integration' ]; then
+  if [[ "${CI_COMMIT_REF_NAME}" = 'refs/heads/integration' ]]; then
       {
         echo "export DIRAC_RELEASE=integration"
       } >> "${SERVERCONFIG}"
 
-  elif [ "${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}" = 'integration' ]; then
+  elif [[ "${CI_MERGE_REQUEST_TARGET_BRANCH_NAME}" = 'integration' ]]; then
       {
         echo "export DIRAC_RELEASE=integration"
       } >> "${SERVERCONFIG}"
@@ -144,7 +144,7 @@ function prepareEnvironment() {
       } >> "${SERVERCONFIG}"
   fi
 
-  if [ -n "${EXTRA_ENVIRONMENT_CONFIG+x}" ]; then
+  if [[ -n "${EXTRA_ENVIRONMENT_CONFIG+x}" ]]; then
     for line in "${EXTRA_ENVIRONMENT_CONFIG[@]}"; do
       echo "${line}" >> "${SERVERCONFIG}"
     done
@@ -154,11 +154,11 @@ function prepareEnvironment() {
   cat "${SERVERCONFIG}"
   cp "${SERVERCONFIG}" "${CLIENTCONFIG}"
 
-  if [ -n "${SERVER_USE_M2CRYPTO+x}" ]; then
+  if [[ -n "${SERVER_USE_M2CRYPTO+x}" ]]; then
     echo "export DIRAC_USE_M2CRYPTO=${SERVER_USE_M2CRYPTO}" >> "${SERVERCONFIG}"
   fi
 
-  if [ -n "${CLIENT_USE_M2CRYPTO+x}" ]; then
+  if [[ -n "${CLIENT_USE_M2CRYPTO+x}" ]]; then
     echo "export DIRAC_USE_M2CRYPTO=${CLIENT_USE_M2CRYPTO}" >> "${CLIENTCONFIG}"
   fi
 
@@ -234,10 +234,10 @@ function checkErrors() {
   EXIT_CODE=0
 
   # Server
-  if [ ! -f "${BUILD_DIR}/server_test_status" ]; then
+  if [[ ! -f "${BUILD_DIR}/server_test_status" ]]; then
     echo "ERROR: Server integration have not been ran"
     EXIT_CODE=1
-  elif [ "$(cat "${BUILD_DIR}/server_test_status")" = "0" ]; then
+  elif [[ "$(cat "${BUILD_DIR}/server_test_status")" = "0" ]]; then
     echo "Server integration tests passed"
   else
     echo "ERROR: Server integration tests failed with $(cat "${BUILD_DIR}/server_test_status")"
@@ -245,10 +245,10 @@ function checkErrors() {
   fi
 
   # Client
-  if [ ! -f "${BUILD_DIR}/client_test_status" ]; then
+  if [[ ! -f "${BUILD_DIR}/client_test_status" ]]; then
     echo "ERROR: Client integration have not been ran"
     EXIT_CODE=1
-  elif [ "$(cat "${BUILD_DIR}/client_test_status")" = "0" ]; then
+  elif [[ "$(cat "${BUILD_DIR}/client_test_status")" = "0" ]]; then
     echo "Client integration tests passed"
   else
     echo "ERROR: Client integration tests failed with $(cat "${BUILD_DIR}/client_test_status")"
@@ -258,7 +258,7 @@ function checkErrors() {
   exit $EXIT_CODE
 }
 
-if [ "${0}" = "${BASH_SOURCE[0]}" ]; then
+if [[ "${0}" = "${BASH_SOURCE[0]}" ]]; then
   prepareEnvironment
   installServer
   installClient

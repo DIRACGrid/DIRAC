@@ -11,16 +11,14 @@ echo " "
 
 echo "dirac-proxy-init -g dirac_prod"
 dirac-proxy-init -g dirac_prod
-if [ $? -ne 0 ]
-then
-   exit $?
+if [[ "${?}" -ne 0 ]]; then
+   exit 1
 fi
 echo " "
 echo "======  dirac-proxy-info"
 dirac-proxy-info
-if [ $? -ne 0 ]
-then
-   exit $?
+if [[ "${?}" -ne 0 ]]; then
+   exit 1
 fi
 echo " "
 
@@ -32,17 +30,15 @@ echo " "
 
 echo "======  dirac-admin-show-task-queues"
 dirac-admin-show-task-queues
-if [ $? -ne 0 ]
-then
-   exit $?
+if [[ "${?}" -ne 0 ]]; then
+   exit 1
 fi
 echo " "
 
 echo "======  dirac-wms-get-wn-parameters --Site=LCG.CERN.cern --Name=ce503.cern.ch --Queue=condor"
 dirac-wms-get-wn-parameters --Site=LCG.CERN.cern --Name=ce503.cern.ch --Queue=condor
-if [ $? -ne 0 ]
-then
-   exit $?
+if [[ "${?}" -ne 0 ]]; then
+   exit 1
 fi
 echo " "
 
@@ -54,17 +50,15 @@ echo " "
 
 echo "======  dirac-rms-reqdb-summary"
 dirac-rms-reqdb-summary
-if [ $? -ne 0 ]
-then
-   exit $?
+if [[ "${?}" -ne 0 ]]; then
+   exit 1
 fi
 echo " "
 
 echo "======  dirac-rms-list-req-cache"
 dirac-rms-list-req-cache
-if [ $? -ne 0 ]
-then
-   exit $?
+if [[ "${?}" -ne 0 ]]; then
+   exit 1
 fi
 echo " "
 

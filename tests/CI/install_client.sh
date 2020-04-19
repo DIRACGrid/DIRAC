@@ -48,7 +48,7 @@ echo -e "*** $(date -u) **** Client INSTALLATION START ****\n"
 
 findRelease
 
-if [ -z "$DIRAC_RELEASE" ]; then
+if [[ -z "$DIRAC_RELEASE" ]]; then
     export DIRAC_RELEASE=${projectVersion:?}
 fi
 

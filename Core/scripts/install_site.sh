@@ -36,7 +36,7 @@ do
   -v | --version )
     switch=$1
     shift
-    [ "$1" ] || error_exit "Switch $switch requires a argument"
+    [ "$1" ] || error_exit "Switch ${switch} requires a argument"
     DIRACVERSION=$1
   ;;
 
@@ -48,24 +48,24 @@ do
   shift
 done
 
-if [ -z "$installCfg" ]; then
+if [[ -z "${installCfg}" ]]; then
   usage
   exit 1
 fi
 
 # Get the version of dirac-install requested - if none is requested, the version will come from integration
 #
-curl -L -o dirac-install "https://github.com/DIRACGrid/DIRAC/raw/$DIRACVERSION/Core/scripts/dirac-install.py" || exit
+curl -L -o dirac-install "https://github.com/DIRACGrid/DIRAC/raw/${DIRACVERSION}/Core/scripts/dirac-install.py" || exit
 #
 # define the target Dir
 #
-installDir=$(grep TargetPath $installCfg | grep -v '#' | cut -d '=' -f 2 | sed -e 's/ //g')
+installDir=$(grep TargetPath "${installCfg}" | grep -v '#' | cut -d '=' -f 2 | sed -e 's/ //g')
 #
-mkdir -p "$installDir" || exit
+mkdir -p "${installDir}" || exit
 #
 
-python dirac-install -t server "$USE_DIRACOS" "$installCfg"
-source "$installDir"/bashrc
-dirac-configure "$installCfg" "$DEBUG"
-dirac-configure -o /Operations/Defaults/Pilot/UpdatePilotCStoJSONFile=False -FDMH "$DEBUG"
-dirac-setup-site "$DEBUG"
+python dirac-install -t server "$USE_DIRACOS" "${installCfg}"
+source "${installDir}"/bashrc
+dirac-configure "${installCfg}" "$DEBUG"
+dirac-configure -o /Operations/Defaults/Pilot/UpdatePilotCStoJSONFile=False -FDMH "${DEBUG}"
+dirac-setup-site "${DEBUG}"
