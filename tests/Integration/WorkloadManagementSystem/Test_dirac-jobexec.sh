@@ -7,8 +7,7 @@
 
 echo "\n======> Test_dirac-jobexec <======\n"
 
-if [ ! -z "$DEBUG" ]
-then
+if [[ ! -z "$DEBUG" ]]; then
   echo '==> Running in DEBUG mode'
   DEBUG='-ddd'
 else
@@ -23,8 +22,7 @@ python $DIRAC/DIRAC/tests/Integration/WorkloadManagementSystem/createJobXMLDescr
 
 # OK
 $DIRACSCRIPTS/dirac-jobexec jobDescription-OK.xml $DIRAC/DIRAC/tests/Integration/WorkloadManagementSystem/pilot.cfg $DEBUG
-if [ $? -eq 0 ]
-then
+if [[ "${?}" -eq 0 ]]; then
   echo -e "\nSuccess\n\n"
 else
   echo -e "\nSomething wrong!\n\n"
@@ -33,8 +31,7 @@ fi
 
 # OK2
 $DIRACSCRIPTS/dirac-jobexec jobDescription-OK-multiSteps.xml $DIRAC/DIRAC/tests/Integration/WorkloadManagementSystem/pilot.cfg $DEBUG
-if [ $? -eq 0 ]
-then
+if [[ "${?}" -eq 0 ]]; then
   echo -e "\nSuccess\n\n"
 else
   echo -e "\nSomething wrong!\n\n"
@@ -44,8 +41,7 @@ fi
 
 # FAIL
 $DIRACSCRIPTS/dirac-jobexec jobDescription-FAIL.xml $DIRAC/DIRAC/tests/Integration/WorkloadManagementSystem/pilot.cfg $DEBUG
-if [ $? -eq 111 ]
-then
+if [[ "${?}" -eq 111 ]]; then
   echo -e "\nSuccess\n\n"
 else
   echo -e "\nSomething wrong!\n\n"
@@ -54,8 +50,7 @@ fi
 
 # FAIL2
 $DIRACSCRIPTS/dirac-jobexec jobDescription-FAIL-multiSteps.xml $DIRAC/DIRAC/tests/Integration/WorkloadManagementSystem/pilot.cfg $DEBUG
-if [ $? -eq 111 ]
-then
+if [[ "${?}" -eq 111 ]]; then
   echo -e "\nSuccess\n\n"
 else
   echo -e "\nSomething wrong!\n\n"
@@ -65,8 +60,7 @@ fi
 
 # FAIL with exit code > 255
 $DIRACSCRIPTS/dirac-jobexec jobDescription-FAIL1502.xml $DIRAC/DIRAC/tests/Integration/WorkloadManagementSystem/pilot.cfg $DEBUG
-if [ $? -eq 222 ] # This is 1502 & 255 (0xDE)
-then
+if [[ "${?}" -eq 222 ]]; then # This is 1502 & 255 (0xDE)
   echo -e "\nSuccess\n\n"
 else
   echo -e "\nSomething wrong!\n\n"

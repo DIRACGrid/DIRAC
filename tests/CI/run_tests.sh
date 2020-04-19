@@ -23,7 +23,7 @@ source "${DIRAC_CI_SETUP_SCRIPT}"
 
 echo -e "*** $(date -u) **** Starting integration tests on ${INSTALLTYPE} ****\n"
 
-if [ "$INSTALLTYPE" == "server" ]; then
+if [[ "$INSTALLTYPE" == "server" ]]; then
     # shellcheck source=/dev/null
     source "$WORKSPACE/ServerInstallDIR/bashrc"
     # shellcheck disable=SC2034
@@ -32,12 +32,12 @@ if [ "$INSTALLTYPE" == "server" ]; then
     ERR=0
     for repo_path in "${TESTREPO[@]}"; do
         cp -r "${repo_path}/tests" "$WORKSPACE/ServerInstallDIR/$(basename "${repo_path}")"
-        if [ "$(basename "${repo_path}")" == "DIRAC" ]; then
+        if [[ "$(basename "${repo_path}")" == "DIRAC" ]]; then
             sed -i "s/\(elHost = \).*/\1'elasticsearch'/" "$WORKSPACE/ServerInstallDIR/DIRAC/tests/Integration/Core/Test_ElasticsearchDB.py"
         fi
         source "$WORKSPACE/ServerInstallDIR/$(basename "${repo_path}")/tests/Integration/all_integration_server_tests.sh"
     done
-elif [ "$INSTALLTYPE" == "client" ]; then
+elif [[ "$INSTALLTYPE" == "client" ]]; then
     # shellcheck source=/dev/null
     source "$WORKSPACE/ClientInstallDIR/bashrc"
     set -o pipefail
@@ -50,10 +50,10 @@ fi
 
 echo -e "*** $(date -u) **** TESTS OVER ****\n"
 
-if [ -z "$ERR" ]; then
+if [[ -z "$ERR" ]]; then
     echo "WARN: Variable \$ERR not defined, check the test logs for possible failed tests"
     exit 0
-elif [ "$ERR" != "0" ]; then
+elif [[ "$ERR" != "0" ]]; then
    echo "ERROR: At least one unit test in ${INSTALLTYPE} failed !!!"
    exit "$ERR"
 else

@@ -3,33 +3,33 @@
 # General utility functions
 ############################################
 
-if [ -z "$SERVERINSTALLDIR" ]; then
-  if [ -z "$PILOTINSTALLDIR" ]; then
+if [[ -z "${SERVERINSTALLDIR}" ]]; then
+  if [[ -z "${PILOTINSTALLDIR}" ]]; then
     echo 'Environmental variable "PILOTINSTALLDIR" is not set.'
     exit 1
   else
-    SERVERINSTALLDIR=$PILOTINSTALLDIR
+    SERVERINSTALLDIR=${PILOTINSTALLDIR}
   fi
 fi
 
-if [ "$TESTCODE" ]; then
+if [[ "${TESTCODE}" ]]; then
   # Path to ci config files
-  CI_CONFIG=$TESTCODE/DIRAC/tests/Jenkins/config/ci
+  CI_CONFIG=${TESTCODE}/DIRAC/tests/Jenkins/config/ci
 fi
 
 # default: this function fixes some default values
 
 function default(){
 
-  if [ -z "$JENKINS_SITE" ]; then
+  if [[ -z "${JENKINS_SITE}" ]]; then
     JENKINS_SITE='DIRAC.Jenkins.ch'
   fi
 
-  if [ -z "$JENKINS_CE" ]; then
+  if [[ -z "${JENKINS_CE}" ]]; then
     JENKINS_CE='jenkins.cern.ch'
   fi
 
-  if [ -z "$JENKINS_QUEUE" ]; then
+  if [[ -z "${JENKINS_QUEUE}" ]]; then
     JENKINS_QUEUE='jenkins-queue_not_important'
   fi
 }
@@ -43,32 +43,33 @@ function default(){
 #
 #   It reads from releases.cfg and picks the latest version
 #   which is written to {dirac,externals}.version
-#   Unless variable $projectVersion is set: in this case, we use the specified DIRAC relese.
+#   Unless variable ${projectVersion} is set: in this case, we use the specified DIRAC relese.
 #
 #.............................................................................
 
+# FIXME: use diraccfg
 function findRelease(){
   echo '==> [findRelease]'
 
 
-  if [ -n "$DIRAC_RELEASE" ]; then
+  if [[ -n "$DIRAC_RELEASE" ]]; then
     echo '==> Specified release'
     echo "$DIRAC_RELEASE"
     projectVersion=$DIRAC_RELEASE
-    echo DIRAC:"$projectVersion" && echo "$projectVersion" > "$SERVERINSTALLDIR/dirac.version"
+    echo DIRAC:"${projectVersion}" && echo "${projectVersion}" > "${SERVERINSTALLDIR}/dirac.version"
   else
     # get the releases.cfg file from integration
-    (cd "$TESTCODE/DIRAC/" || (echo 'ERROR: cannot change to ' "$TESTCODE/DIRAC" && exit 42);
+    (cd "${TESTCODE}/DIRAC/" || (echo 'ERROR: cannot change to ' "${TESTCODE}/DIRAC" && exit 42);
      git remote -v
      git remote add upstream https://github.com/DIRACGrid/DIRAC.git || true
      git fetch --all || true
      git branch -a
-     git show remotes/upstream/integration:releases.cfg > "$TESTCODE/DIRAC/releases.cfg")
+     git show remotes/upstream/integration:releases.cfg > "${TESTCODE}/DIRAC/releases.cfg")
 
     # PRE='p[[:digit:]]*'
 
-    if [ -n "$DIRACBRANCH" ]; then
-      echo "==> Looking for DIRAC branch $DIRACBRANCH"
+    if [[ -n "${DIRACBRANCH}" ]]; then
+      echo "==> Looking for DIRAC branch ${DIRACBRANCH}"
     else
       echo '==> Running on last one'
     fi
@@ -77,48 +78,48 @@ function findRelease(){
 
     # If I don't specify a DIRACBRANCH, it will get the latest "production" release
     # First, try to find if we are on a production tag
-    if [ ! "$projectVersion" ]; then
-      if [ -n "$DIRACBRANCH" ]; then
-        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]*p[[:digit:]]*' "$TESTCODE/DIRAC/releases.cfg" | grep "$DIRACBRANCH" | head -1 | sed 's/ //g' || echo "")
+    if [[ ! "${projectVersion}" ]]; then
+      if [[ -n "${DIRACBRANCH}" ]]; then
+        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]*p[[:digit:]]*' "${TESTCODE}/DIRAC/releases.cfg" | grep "${DIRACBRANCH}" | head -1 | sed 's/ //g' || echo "")
       else
-        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]*p[[:digit:]]*' "$TESTCODE/DIRAC/releases.cfg" | head -1 | sed 's/ //g')
+        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]*p[[:digit:]]*' "${TESTCODE}/DIRAC/releases.cfg" | head -1 | sed 's/ //g')
       fi
       # projectVersion=$(cat releases.cfg | grep [^:]v[[:digit:]]r[[:digit:]]*$PRE | head -1 | sed 's/ //g')
     fi
 
     # The special case is when there's no 'p'... (e.g. version v6r15)
-    if [ ! "$projectVersion" ]; then
-      if [ -n "$DIRACBRANCH" ]; then
-        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]' "$TESTCODE/DIRAC/releases.cfg" | grep "$DIRACBRANCH" | head -1 | sed 's/ //g' || echo "")
+    if [[ ! "${projectVersion}" ]]; then
+      if [[ -n "${DIRACBRANCH}" ]]; then
+        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]' "${TESTCODE}/DIRAC/releases.cfg" | grep "${DIRACBRANCH}" | head -1 | sed 's/ //g' || echo "")
       else
-        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]' "$TESTCODE/DIRAC/releases.cfg" | head -1 | sed 's/ //g')
+        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]' "${TESTCODE}/DIRAC/releases.cfg" | head -1 | sed 's/ //g')
       fi
     fi
 
     # In case there are no production tags for the branch, look for pre-releases in that branch
-    if [ ! "$projectVersion" ]; then
-      if [ -n "$DIRACBRANCH" ]; then
-        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]*'-pre'' "$TESTCODE/DIRAC/releases.cfg" | grep "$DIRACBRANCH" | head -1 | sed 's/ //g')
+    if [[ ! "${projectVersion}" ]]; then
+      if [[ -n "${DIRACBRANCH}" ]]; then
+        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]*'-pre'' "${TESTCODE}/DIRAC/releases.cfg" | grep "${DIRACBRANCH}" | head -1 | sed 's/ //g')
       else
-        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]*'-pre'' "$TESTCODE/DIRAC/releases.cfg" | head -1 | sed 's/ //g')
+        projectVersion=$(grep '^\s*v[[:digit:]]*r[[:digit:]]*'-pre'' "${TESTCODE}/DIRAC/releases.cfg" | head -1 | sed 's/ //g')
       fi
     fi
 
     # TODO: This should be made to fail to due set -u and -o pipefail
-    if [ ! "$projectVersion" ]; then
+    if [[ ! "${projectVersion}" ]]; then
       echo "Failed to set projectVersion"
       exit 1
     fi
 
-    # projectVersionLine=$(grep -n "$projectVersion" "$TESTCODE/DIRAC/releases.cfg" | cut -d ':' -f 1 | head -1)
+    # projectVersionLine=$(grep -n "${projectVersion}" "${TESTCODE}/DIRAC/releases.cfg" | cut -d ':' -f 1 | head -1)
     # # start := line number after "{"
     # start=$(( projectVersionLine+2 ))
     # # end   := line number after "}"
     # end=$(( start+2 ))
-    # versions=$(sed -n "$start,$end p" "$TESTCODE/DIRAC/releases.cfg")
+    # versions=$(sed -n "$start,$end p" "${TESTCODE}/DIRAC/releases.cfg")
 
     # PrintOuts
-    echo "DIRAC:$projectVersion" && echo "$projectVersion" > "$SERVERINSTALLDIR/dirac.version"
+    echo "DIRAC:${projectVersion}" && echo "${projectVersion}" > "${SERVERINSTALLDIR}/dirac.version"
   fi
 }
 
@@ -134,8 +135,8 @@ function findRelease(){
 function findSystems(){
   echo '==> [findSystems]'
 
-  if ! cd "$TESTCODE"; then
-    echo "ERROR: cannot change to $TESTCODE"
+  if ! cd "${TESTCODE}"; then
+    echo "ERROR: cannot change to ${TESTCODE}"
     exit 1
   fi
   find ./*DIRAC/ -name "*System"  | cut -d '/' -f 2 | sort | uniq > systems
@@ -156,9 +157,9 @@ function findSystems(){
 function findDatabases(){
   echo '==> [findDatabases]'
 
-  if [ -n "$1" ]; then
+  if [[ -n "$1" ]]; then
     DBstoSearch=$1
-    if [ "$DBstoSearch" = "exclude" ]; then
+    if [[ "${DBstoSearch}" = "exclude" ]]; then
       echo "==> excluding $2"
       DBstoExclude=$2
       DBstoSearch=' '
@@ -167,8 +168,8 @@ function findDatabases(){
     DBstoExclude='notExcluding'
   fi
 
-  if ! cd "$SERVERINSTALLDIR"; then
-    echo "ERROR: cannot change to $SERVERINSTALLDIR"
+  if ! cd "${SERVERINSTALLDIR}"; then
+    echo "ERROR: cannot change to ${SERVERINSTALLDIR}"
     exit 1
   fi
 
@@ -178,10 +179,10 @@ function findDatabases(){
   # We are avoiding, FileCatalogDB FileCatalogWithFkAndPsDB that is installed in other ways
   #  and InstalledComponentsDB which is installed at the beginning
   #
-  if [ -n "$DBstoExclude" ]; then
-    find ./*DIRAC/ -name "*DB.sql" | grep -vE '(FileCatalogDB|FileCatalogWithFkAndPsDB|InstalledComponentsDB)' | awk -F "/" '{print $3,$5}' | grep -v "$DBstoExclude" | grep -v 'DIRAC' | sort | uniq > databases
+  if [[ -n "${DBstoExclude}" ]]; then
+    find ./*DIRAC/ -name "*DB.sql" | grep -vE '(FileCatalogDB|FileCatalogWithFkAndPsDB|InstalledComponentsDB)' | awk -F "/" '{print $3,$5}' | grep -v "${DBstoExclude}" | grep -v 'DIRAC' | sort | uniq > databases
   else
-    find ./*DIRAC/ -name "*DB.sql" | grep -vE '(FileCatalogDB|FileCatalogWithFkAndPsDB|InstalledComponentsDB)' | awk -F "/" '{print $3,$5}' | grep "$DBstoSearch" | grep -v 'DIRAC' | sort | uniq > databases
+    find ./*DIRAC/ -name "*DB.sql" | grep -vE '(FileCatalogDB|FileCatalogWithFkAndPsDB|InstalledComponentsDB)' | awk -F "/" '{print $3,$5}' | grep "${DBstoSearch}" | grep -v 'DIRAC' | sort | uniq > databases
   fi
 
   echo "found $(wc -l databases)"
@@ -200,9 +201,9 @@ findServices(){
   echo '==> [findServices]'
 
 
-  if [ -n "$1" ]; then
+  if [[ -n "$1" ]]; then
     ServicestoSearch=$1
-    if [ "$ServicestoSearch" = "exclude" ]; then
+    if [[ "${ServicestoSearch}" = "exclude" ]]; then
       echo "==> excluding $2"
       ServicestoExclude=$2
       ServicestoSearch=' '
@@ -211,14 +212,14 @@ findServices(){
     ServicestoExclude='notExcluding'
   fi
 
-  if ! cd "$SERVERINSTALLDIR" -ne 0; then
-    echo 'ERROR: cannot change to ' "$SERVERINSTALLDIR"
+  if ! cd "${SERVERINSTALLDIR}" -ne 0; then
+    echo 'ERROR: cannot change to ' "${SERVERINSTALLDIR}"
     exit 1
   fi
-  if [ -n "$ServicestoExclude" ]; then
-    find ./*DIRAC/*/Service/ -name "*Handler.py" | grep -v test | awk -F "/" '{print $3,$5}' | grep -v "$ServicestoExclude" | sort | uniq > services
+  if [[ -n "${ServicestoExclude}" ]]; then
+    find ./*DIRAC/*/Service/ -name "*Handler.py" | grep -v test | awk -F "/" '{print $3,$5}' | grep -v "${ServicestoExclude}" | sort | uniq > services
   else
-    find ./*DIRAC/*/Service/ -name "*Handler.py" | grep -v test | awk -F "/" '{print $3,$5}' | grep "$ServicestoSearch" | sort | uniq > services
+    find ./*DIRAC/*/Service/ -name "*Handler.py" | grep -v test | awk -F "/" '{print $3,$5}' | grep "${ServicestoSearch}" | sort | uniq > services
   fi
 
   echo "found $(wc -l services)"
@@ -227,9 +228,9 @@ findServices(){
 findAgents(){
   echo '==> [findAgents]'
 
-  if [ -n "$1" ]; then
-    ServicestoSearch=$1
-    if [ "$AgentstoSearch" = "exclude" ]; then
+  if [[ -n "$1" ]]; then
+    AgentstoSearch=$1
+    if [[ "${AgentstoSearch}" = "exclude" ]]; then
       echo "==> excluding $2"
       AgentstoExclude=$2
       AgentstoSearch=' '
@@ -238,14 +239,14 @@ findAgents(){
     AgentstoExclude='notExcluding'
   fi
 
-  if ! cd "$SERVERINSTALLDIR"; then
-    echo 'ERROR: cannot change to ' "$SERVERINSTALLDIR"
+  if ! cd "${SERVERINSTALLDIR}"; then
+    echo 'ERROR: cannot change to ' "${SERVERINSTALLDIR}"
     exit 1
   fi
-  if [ -n "$AgentstoExclude" ]; then
-    find ./*DIRAC/*/Agent/ -name "*Agent.py" | grep -v test | awk -F "/" '{print $3,$5}' | grep -v "$AgentstoExclude" | sort | uniq > agents
+  if [[ -n "${AgentstoExclude}" ]]; then
+    find ./*DIRAC/*/Agent/ -name "*Agent.py" | grep -v test | awk -F "/" '{print $3,$5}' | grep -v "${AgentstoExclude}" | sort | uniq > agents
   else
-    find ./*DIRAC/*/Agent/ -name "*Agent.py" | grep -v test | awk -F "/" '{print $3,$5}' | grep "$AgentstoSearch" | sort | uniq > agents
+    find ./*DIRAC/*/Agent/ -name "*Agent.py" | grep -v test | awk -F "/" '{print $3,$5}' | grep "${AgentstoSearch}" | sort | uniq > agents
   fi
 
   echo "found $(wc -l agents)"
@@ -290,8 +291,8 @@ finalCleanup(){
 function getCFGFile(){
   echo '==> [getCFGFile]'
 
-  cp "$INSTALL_CFG_FILE" "$SERVERINSTALLDIR/"
-  sed -i "s/VAR_Release/$projectVersion/g" "$SERVERINSTALLDIR/install.cfg"
+  cp "$INSTALL_CFG_FILE" "${SERVERINSTALLDIR}/"
+  sed -i "s/VAR_Release/${projectVersion}/g" "${SERVERINSTALLDIR}/install.cfg"
 }
 
 
@@ -306,22 +307,22 @@ function getCFGFile(){
 #   --UseServerCertificate -o /DIRAC/Security/CertFile=some/location.pem -o /DIRAC/Security/KeyFile=some/location.pem
 
 function installDIRAC(){
-  echo -n > "$CLIENTINSTALLDIR/dirac-ci-install.cfg"
+  echo -n > "${CLIENTINSTALLDIR}/dirac-ci-install.cfg"
 
   echo '==> Installing DIRAC client'
-  if ! cd "$CLIENTINSTALLDIR"; then
-    echo "ERROR: cannot change to $CLIENTINSTALLDIR"
+  if ! cd "${CLIENTINSTALLDIR}"; then
+    echo "ERROR: cannot change to ${CLIENTINSTALLDIR}"
     exit 1
   fi
 
-  cp "$TESTCODE/DIRAC/Core/scripts/dirac-install.py" "$CLIENTINSTALLDIR/dirac-install"
-  chmod +x "$CLIENTINSTALLDIR/dirac-install"
+  cp "${TESTCODE}/DIRAC/Core/scripts/dirac-install.py" "${CLIENTINSTALLDIR}/dirac-install"
+  chmod +x "${CLIENTINSTALLDIR}/dirac-install"
 
-  if [ -n "${DEBUG+x}" ]; then
-    INSTALLOPTIONS+=("$DEBUG")
+  if [[ -n "${DEBUG+x}" ]]; then
+    INSTALLOPTIONS+=("${DEBUG}")
   fi
 
-  if [ -n "${ALTERNATIVE_MODULES+x}" ]; then
+  if [[ -n "${ALTERNATIVE_MODULES+x}" ]]; then
     echo "Installing from non-release code"
     option="--module="
     for module_path in "${ALTERNATIVE_MODULES[@]}"; do
@@ -334,18 +335,18 @@ function installDIRAC(){
     INSTALLOPTIONS+=("${option: :$((${#option} - 1))}")
   fi
 
-  if [ "$DIRACOSVER" ]; then
+  if [[ "${DIRACOSVER}" ]]; then
     INSTALLOPTIONS+=("--dirac-os")
-    INSTALLOPTIONS+=("--dirac-os-version=$DIRACOSVER")
+    INSTALLOPTIONS+=("--dirac-os-version=${DIRACOSVER}")
   fi
 
-  if [ "$DIRACOS_TARBALL_PATH" ]; then
+  if [[ "$DIRACOS_TARBALL_PATH" ]]; then
     {
       echo "DIRACOS = $DIRACOS_TARBALL_PATH"
-    } >> "$CLIENTINSTALLDIR/dirac-ci-install.cfg"
+    } >> "${CLIENTINSTALLDIR}/dirac-ci-install.cfg"
   fi
 
-  if ! ./dirac-install -r $DIRAC_RELEASE -t client "${INSTALLOPTIONS[@]}" "$CLIENTINSTALLDIR/dirac-ci-install.cfg"; then
+  if ! ./dirac-install -r "${DIRAC_RELEASE}" -t client "${INSTALLOPTIONS[@]}" "${CLIENTINSTALLDIR}/dirac-ci-install.cfg"; then
     echo 'ERROR: DIRAC client installation failed'
     exit 1
   fi
@@ -355,13 +356,13 @@ function installDIRAC(){
   echo "$PATH"
 
   # now configuring
-  if ! dirac-configure -S "$DIRACSETUP" -C "$CSURL" --SkipCAChecks $CONFIGUREOPTIONS "$DEBUG"; then
+  if ! dirac-configure -S "${DIRACSETUP}" -C "${CSURL}" --SkipCAChecks "${CONFIGUREOPTIONS}" "${DEBUG}"; then
     echo 'ERROR: dirac-configure failed'
     exit 1
   fi
 
   echo 'Content of etc/dirac.cfg:'
-  cat "$CLIENTINSTALLDIR/etc/dirac.cfg"
+  cat "${CLIENTINSTALLDIR}/etc/dirac.cfg"
 
   echo '==> Done installDIRAC'
 }
@@ -369,25 +370,25 @@ function installDIRAC(){
 ##############################################################################
 # This function submits a job or more (it assumes a DIRAC client is installed)
 # it needs the following environment variables:
-# $DIRACUSERDN for the DN of the user used to submit the job
-# $DIRACUSERROLE for the role of the proxy of the user used to submit the job
+# ${DIRACUSERDN} for the DN of the user used to submit the job
+# ${DIRACUSERROLE} for the role of the proxy of the user used to submit the job
 # $DIRACSETUP for the setup
 
 function submitJob(){
   echo -e "==> Submitting a simple job"
-  #This has to be executed from the $CLIENTINSTALLDIR
-  if ! cd "$CLIENTINSTALLDIR"; then
-    echo 'ERROR: cannot change to ' $CLIENTINSTALLDIR
+  #This has to be executed from the ${CLIENTINSTALLDIR}
+  if ! "cd ${CLIENTINSTALLDIR}"; then
+    echo "ERROR: cannot change to ${CLIENTINSTALLDIR}"
     exit 1
   fi
 
-  export PYTHONPATH=$TESTCODE:$PYTHONPATH
+  export PYTHONPATH=${TESTCODE}:${PYTHONPATH}
   #Get a proxy and submit the job: this job will go to the certification setup, so we suppose the JobManager there is accepting jobs
   getUserProxy #this won't really download the proxy, so that's why the next command is needed
-  cp "$TESTCODE/DIRAC/tests/Jenkins/dirac-proxy-download.py" "."
-  python dirac-proxy-download.py "$DIRACUSERDN" -R "$DIRACUSERROLE" -o /DIRAC/Security/UseServerCertificate=True -o /DIRAC/Security/CertFile=/home/dirac/certs/hostcert.pem -o /DIRAC/Security/KeyFile=/home/dirac/certs/hostkey.pem -o /DIRAC/Setup=$DIRACSETUP -ddd
-  cp "$TESTCODE/DIRAC/tests/Jenkins/dirac-test-job.py" "."
-  python dirac-test-job.py -o "/DIRAC/Setup=$DIRACSETUP" "$DEBUG"
+  cp "${TESTCODE}/DIRAC/tests/Jenkins/dirac-proxy-download.py" "."
+  python dirac-proxy-download.py "${DIRACUSERDN}" -R "${DIRACUSERROLE}" -o /DIRAC/Security/UseServerCertificate=True -o /DIRAC/Security/CertFile=/home/dirac/certs/hostcert.pem -o /DIRAC/Security/KeyFile=/home/dirac/certs/hostkey.pem -o /DIRAC/Setup="${DIRACSETUP}" -ddd
+  cp "${TESTCODE}/DIRAC/tests/Jenkins/dirac-test-job.py" "."
+  python dirac-test-job.py -o "/DIRAC/Setup=${DIRACSETUP}" "${DEBUG}"
 
   echo '==> Done submitJob'
 }
@@ -396,8 +397,8 @@ function getUserProxy(){
 
   echo '==> Started getUserProxy'
 
-  cp "$TESTCODE/DIRAC/tests/Jenkins/dirac-cfg-update.py" "."
-  if ! python dirac-cfg-update.py -S "$DIRACSETUP" "$CLIENTINSTALLDIR/etc/dirac.cfg" -F "$CLIENTINSTALLDIR/etc/dirac.cfg" -o /DIRAC/Security/UseServerCertificate=True -o /DIRAC/Security/CertFile=/home/dirac/certs/hostcert.pem -o /DIRAC/Security/KeyFile=/home/dirac/certs/hostkey.pem "$DEBUG"; then
+  cp "${TESTCODE}/DIRAC/tests/Jenkins/dirac-cfg-update.py" "."
+  if ! python dirac-cfg-update.py -S "${DIRACSETUP}" "${CLIENTINSTALLDIR}/etc/dirac.cfg" -F "${CLIENTINSTALLDIR}/etc/dirac.cfg" -o /DIRAC/Security/UseServerCertificate=True -o /DIRAC/Security/CertFile=/home/dirac/certs/hostcert.pem -o /DIRAC/Security/KeyFile=/home/dirac/certs/hostkey.pem "${DEBUG}"; then
     echo 'ERROR: dirac-cfg-update failed'
     exit 1
   fi
@@ -424,8 +425,8 @@ function prepareForServer(){
   echo '==> [prepareForServer]'
 
   #get the necessary scripts: dirac-install.py file
-  cp "$TESTCODE/DIRAC/Core/scripts/dirac-install.py" "$SERVERINSTALLDIR/"
-  chmod +x "$SERVERINSTALLDIR/dirac-install.py"
+  cp "${TESTCODE}/DIRAC/Core/scripts/dirac-install.py" "${SERVERINSTALLDIR}/"
+  chmod +x "${SERVERINSTALLDIR}/dirac-install.py"
 }
 
 
@@ -441,10 +442,10 @@ function prepareForServer(){
 function generateCA(){
    echo '==> [generateCA]'
 
-   mkdir -p "$SERVERINSTALLDIR/etc/grid-security/certificates"
-   mkdir -p "$SERVERINSTALLDIR/etc/grid-security/ca/"
-   if ! cd "$SERVERINSTALLDIR/etc/grid-security/ca"; then
-     echo "ERROR: cannot change to $SERVERINSTALLDIR/etc/grid-security/ca"
+   mkdir -p "${SERVERINSTALLDIR}/etc/grid-security/certificates"
+   mkdir -p "${SERVERINSTALLDIR}/etc/grid-security/ca/"
+   if ! cd "${SERVERINSTALLDIR}/etc/grid-security/ca"; then
+     echo "ERROR: cannot change to ${SERVERINSTALLDIR}/etc/grid-security/ca"
      exit 1
    fi
 
@@ -461,8 +462,8 @@ function generateCA(){
 
    # Prepare OpenSSL config file, it contains extensions to put into place,
    # DN configuration, etc..
-   cp "$CI_CONFIG/openssl_config_ca.cnf" "openssl_config_ca.cnf"
-   sed -i "s|#GRIDSECURITY#|$SERVERINSTALLDIR/etc/grid-security|g" openssl_config_ca.cnf
+   cp "${CI_CONFIG}/openssl_config_ca.cnf" "openssl_config_ca.cnf"
+   sed -i "s|#GRIDSECURITY#|${SERVERINSTALLDIR}/etc/grid-security|g" openssl_config_ca.cnf
 
 
    # Generate the CA certificate
@@ -475,11 +476,11 @@ function generateCA(){
                -out ca.cert.pem
 
    # Copy the CA to the list of trusted CA
-   cp ca.cert.pem "$SERVERINSTALLDIR/etc/grid-security/certificates/"
+   cp ca.cert.pem "${SERVERINSTALLDIR}/etc/grid-security/certificates/"
 
    # Generate the hash link file required by openSSL to index CA certificates
    caHash=$(openssl x509 -in ca.cert.pem -noout -hash)
-   ln -s "$SERVERINSTALLDIR/etc/grid-security/certificates/ca.cert.pem" "$SERVERINSTALLDIR/etc/grid-security/certificates/$caHash.0"
+   ln -s "${SERVERINSTALLDIR}/etc/grid-security/certificates/ca.cert.pem" "${SERVERINSTALLDIR}/etc/grid-security/certificates/$caHash.0"
 }
 
 #.............................................................................
@@ -502,9 +503,9 @@ function generateCertificates(){
   echo '==> [generateCertificates]'
   nDays=${1:-7}
 
-  mkdir -p "$SERVERINSTALLDIR/etc/grid-security/"
-  if ! cd "$SERVERINSTALLDIR/etc/grid-security/"; then
-    echo "ERROR: cannot change to $SERVERINSTALLDIR/etc/grid-security/"
+  mkdir -p "${SERVERINSTALLDIR}/etc/grid-security/"
+  if ! cd "${SERVERINSTALLDIR}/etc/grid-security/"; then
+    echo "ERROR: cannot change to ${SERVERINSTALLDIR}/etc/grid-security/"
     exit 1
   fi
 
@@ -514,7 +515,7 @@ function generateCertificates(){
 
   # Prepare OpenSSL config file, it contains extensions to put into place,
   # DN configuration, etc..
-  cp "$CI_CONFIG/openssl_config_host.cnf" "openssl_config_host.cnf"
+  cp "${CI_CONFIG}/openssl_config_host.cnf" "openssl_config_host.cnf"
 
   # man hostname to see why we use --all-fqdns
   # Note: if there's no dns entry for the localhost, the fqdns will be empty
@@ -531,7 +532,7 @@ function generateCertificates(){
               -out request.csr.pem
 
   # Sign it using the self generated CA
-  openssl ca -config "$SERVERINSTALLDIR/etc/grid-security/ca/openssl_config_ca.cnf" \
+  openssl ca -config "${SERVERINSTALLDIR}/etc/grid-security/ca/openssl_config_ca.cnf" \
        -days "$nDays" \
        -extensions server_cert \
        -batch \
@@ -549,7 +550,7 @@ function generateCertificates(){
 #   Given we know the "CA" certificates, we can use them to sign a randomly
 #   generated key / host certificate. This function is very similar to
 #   generateCertificates. User credentials will be stored at:
-#     $SERVERINSTALLDIR/user
+#     ${SERVERINSTALLDIR}/user
 #   The user will be called "ciuser". Do not confuse with the admin user,
 #   which is "ci".
 #   The argument that can be passed is the validity of the certificate
@@ -565,11 +566,11 @@ function generateUserCredentials(){
   # validity of the certificate
   nDays=${1:-7}
 
-  USERCERTDIR=$SERVERINSTALLDIR/user
+  USERCERTDIR=${SERVERINSTALLDIR}/user
   # Generate directory where to store credentials
-  mkdir -p "$USERCERTDIR"
-  if ! cd "$USERCERTDIR"; then
-    echo "ERROR: cannot change to $USERCERTDIR"
+  mkdir -p "${USERCERTDIR}"
+  if ! cd "${USERCERTDIR}"; then
+    echo "ERROR: cannot change to ${USERCERTDIR}"
     exit 1
   fi
 
@@ -579,7 +580,7 @@ function generateUserCredentials(){
     set +e
   fi
 
-  cp "$CI_CONFIG/openssl_config_user.cnf" "$USERCERTDIR/openssl_config_user.cnf"
+  cp "${CI_CONFIG}/openssl_config_user.cnf" "${USERCERTDIR}/openssl_config_user.cnf"
   if [[ $save =~ e ]]; then
     set -e
   fi
@@ -587,12 +588,12 @@ function generateUserCredentials(){
   openssl genrsa -out client.key 2048 2>&1 /dev/null
   chmod 400 client.key
 
-  openssl req -config "$USERCERTDIR/openssl_config_user.cnf" \
-              -key "$USERCERTDIR/client.key" \
+  openssl req -config "${USERCERTDIR}/openssl_config_user.cnf" \
+              -key "${USERCERTDIR}/client.key" \
               -new \
               -out "$USERCERTDIR/client.req"
 
-  openssl ca -config "$SERVERINSTALLDIR/etc/grid-security/ca/openssl_config_ca.cnf" \
+  openssl ca -config "${SERVERINSTALLDIR}/etc/grid-security/ca/openssl_config_ca.cnf" \
              -extensions usr_cert \
              -batch \
              -days "$nDays" \
@@ -613,12 +614,12 @@ function generateUserCredentials(){
 function diracCredentials(){
   echo '==> [diracCredentials]'
 
-  sed -i 's/commitNewData = CSAdministrator/commitNewData = authenticated/g' "$SERVERINSTALLDIR/etc/Configuration_Server.cfg"
-  if ! dirac-proxy-init -g dirac_admin -C "$SERVERINSTALLDIR/user/client.pem" -K "$SERVERINSTALLDIR/user/client.key" "$DEBUG" --rfc; then
+  sed -i 's/commitNewData = CSAdministrator/commitNewData = authenticated/g' "${SERVERINSTALLDIR}/etc/Configuration_Server.cfg"
+  if ! dirac-proxy-init -g dirac_admin -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" "${DEBUG}" --rfc; then
     echo 'ERROR: dirac-proxy-init failed'
     exit 1
   fi
-  sed -i 's/commitNewData = authenticated/commitNewData = CSAdministrator/g' "$SERVERINSTALLDIR/etc/Configuration_Server.cfg"
+  sed -i 's/commitNewData = authenticated/commitNewData = CSAdministrator/g' "${SERVERINSTALLDIR}/etc/Configuration_Server.cfg"
 }
 
 
@@ -634,47 +635,47 @@ function diracCredentials(){
 function diracUserAndGroup(){
   echo '==> [diracUserAndGroup]'
 
-  if ! dirac-admin-add-user -N ciuser -D /C=ch/O=DIRAC/OU=DIRAC\ CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch -M lhcb-dirac-ci@cern.ch -G dirac_user "$DEBUG"; then
+  if ! dirac-admin-add-user -N ciuser -D /C=ch/O=DIRAC/OU=DIRAC\ CI/CN=ciuser/emailAddress=lhcb-dirac-ci@cern.ch -M lhcb-dirac-ci@cern.ch -G dirac_user "${DEBUG}"; then
     echo 'ERROR: dirac-admin-add-user failed'
     exit 1
   fi
 
-  if ! dirac-admin-add-user -N trialUser -D /C=ch/O=DIRAC/OU=DIRAC\ CI/CN=trialUser/emailAddress=lhcb-dirac-ci@cern.ch -M lhcb-dirac-ci@cern.ch -G dirac_user "$DEBUG"; then
+  if ! dirac-admin-add-user -N trialUser -D /C=ch/O=DIRAC/OU=DIRAC\ CI/CN=trialUser/emailAddress=lhcb-dirac-ci@cern.ch -M lhcb-dirac-ci@cern.ch -G dirac_user "${DEBUG}"; then
     echo 'ERROR: dirac-admin-add-user failed'
     exit 1
   fi
 
-  if ! dirac-admin-add-group -G prod -U adminusername,ciuser,trialUser -P Operator,FullDelegation,ProxyManagement,ServiceAdministrator,JobAdministrator,CSAdministrator,AlarmsManagement,FileCatalogManagement,SiteManager,NormalUser "$DEBUG"; then
+  if ! dirac-admin-add-group -G prod -U adminusername,ciuser,trialUser -P Operator,FullDelegation,ProxyManagement,ServiceAdministrator,JobAdministrator,CSAdministrator,AlarmsManagement,FileCatalogManagement,SiteManager,NormalUser "${DEBUG}"; then
     echo 'ERROR: dirac-admin-add-group failed'
     exit 1
   fi
 
-  if ! dirac-admin-add-group -G jenkins_fcadmin -U adminusername,ciuser,trialUser -P FileCatalogManagement,NormalUser "$DEBUG"; then
+  if ! dirac-admin-add-group -G jenkins_fcadmin -U adminusername,ciuser,trialUser -P FileCatalogManagement,NormalUser "${DEBUG}"; then
     echo 'ERROR: dirac-admin-add-group failed'
     exit 1
   fi
 
-  if ! dirac-admin-add-group -G jenkins_user -U adminusername,ciuser,trialUser -P NormalUser "$DEBUG"; then
+  if ! dirac-admin-add-group -G jenkins_user -U adminusername,ciuser,trialUser -P NormalUser "${DEBUG}"; then
     echo 'ERROR: dirac-admin-add-group failed'
     exit 1
   fi
 
-  if ! dirac-admin-add-shifter DataManager adminusername prod "$DEBUG"; then
+  if ! dirac-admin-add-shifter DataManager adminusername prod "${DEBUG}"; then
     echo 'ERROR: dirac-admin-add-shifter failed'
     exit 1
   fi
 
-  if ! dirac-admin-add-shifter TestManager adminusername prod "$DEBUG"; then
+  if ! dirac-admin-add-shifter TestManager adminusername prod "${DEBUG}"; then
     echo 'ERROR: dirac-admin-add-shifter failed'
     exit 1
   fi
 
-  if ! dirac-admin-add-shifter ProductionManager adminusername prod "$DEBUG"; then
+  if ! dirac-admin-add-shifter ProductionManager adminusername prod "${DEBUG}"; then
     echo 'ERROR: dirac-admin-add-shifter failed'
     exit 1
   fi
 
-  if ! dirac-admin-add-shifter LHCbPR adminusername prod "$DEBUG"; then
+  if ! dirac-admin-add-shifter LHCbPR adminusername prod "${DEBUG}"; then
     echo 'ERROR: dirac-admin-add-shifter failed'
     exit 1
   fi
@@ -692,12 +693,12 @@ function diracUserAndGroup(){
 function diracProxies(){
   echo '==> [diracProxies]'
   # User proxy, should be uploaded anyway
-  if ! dirac-proxy-init -U -C "$SERVERINSTALLDIR/user/client.pem" -K "$SERVERINSTALLDIR/user/client.key" --rfc "$DEBUG"; then
+  if ! dirac-proxy-init -U -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" --rfc "${DEBUG}"; then
     echo 'ERROR: dirac-proxy-init failed'
     exit 1
   fi
   # group proxy, will be uploaded explicitly
-  if ! dirac-proxy-init -U -g prod -C "$SERVERINSTALLDIR/user/client.pem" -K "$SERVERINSTALLDIR/user/client.key" --rfc "$DEBUG"; then
+  if ! dirac-proxy-init -U -g prod -C "${SERVERINSTALLDIR}/user/client.pem" -K "${SERVERINSTALLDIR}/user/client.key" --rfc "${DEBUG}"; then
     echo 'ERROR: dirac-proxy-init failed'
     exit 1
   fi
@@ -713,7 +714,7 @@ function diracProxies(){
 
 function diracRefreshCS(){
   echo '==> [diracRefreshCS]'
-  if ! python "$TESTCODE/DIRAC/tests/Jenkins/dirac-refresh-cs.py" "$DEBUG"; then
+  if ! python "${TESTCODE}/DIRAC/tests/Jenkins/dirac-refresh-cs.py" "${DEBUG}"; then
     echo 'ERROR: dirac-refresh-cs failed'
     exit 1
   fi
@@ -733,7 +734,7 @@ function diracRefreshCS(){
 function diracAddSite(){
   echo '==> [diracAddSite]'
 
-  if ! dirac-admin-add-site DIRAC.Jenkins.ch aNameWhatSoEver jenkins.cern.ch "$DEBUG"; then
+  if ! dirac-admin-add-site DIRAC.Jenkins.ch aNameWhatSoEver jenkins.cern.ch "${DEBUG}"; then
     echo 'ERROR: dirac-admin-add-site failed'
     exit 1
   fi
@@ -753,11 +754,11 @@ diracServices(){
 
   # group proxy, will be uploaded explicitly
   #  echo '==> getting/uploading proxy for prod'
-  #  dirac-proxy-init -U -g prod -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key --rfc "$DEBUG"
+  #  dirac-proxy-init -U -g prod -C ${SERVERINSTALLDIR}/user/client.pem -K ${SERVERINSTALLDIR}/user/client.key --rfc "${DEBUG}"
 
   for serv in $services; do
-    echo "==> calling dirac-install-component $serv $DEBUG"
-    if ! dirac-install-component "$serv" "$DEBUG"; then
+    echo "==> calling dirac-install-component $serv ${DEBUG}"
+    if ! dirac-install-component "$serv" "${DEBUG}"; then
       echo 'ERROR: dirac-install-component failed'
       exit 1
     fi
@@ -769,17 +770,17 @@ diracSEs(){
   echo '==> [diracSEs]'
 
   echo "==> Installing SE-1"
-  seDir=$SERVERINSTALLDIR/Storage/SE-1
-  mkdir -p $seDir
-  if ! dirac-install-component DataManagement SE-1 -m StorageElement -p BasePath=$seDir -p Port=9148 "$DEBUG"; then
+  seDir=${SERVERINSTALLDIR}/Storage/SE-1
+  mkdir -p "${seDir}"
+  if ! dirac-install-component DataManagement SE-1 -m StorageElement -p BasePath="${seDir}" -p Port=9148 "${DEBUG}"; then
     echo 'ERROR: dirac-install-component failed'
     exit 1
   fi
 
   echo "==> Installing SE-2"
-  seDir=$SERVERINSTALLDIR/Storage/SE-2
-  mkdir -p $seDir
-  if ! dirac-install-component DataManagement SE-2 -m StorageElement -p BasePath=$seDir -p Port=9147 "$DEBUG"; then
+  seDir=${SERVERINSTALLDIR}/Storage/SE-2
+  mkdir -p "${seDir}"
+  if ! dirac-install-component DataManagement SE-2 -m StorageElement -p BasePath="${seDir}" -p Port=9147 "${DEBUG}"; then
     echo 'ERROR: dirac-install-component failed'
     exit 1
   fi
@@ -803,7 +804,7 @@ diracUninstallServices(){
 
   # group proxy, will be uploaded explicitly
   #  echo '==> getting/uploading proxy for prod'
-  #  dirac-proxy-init -U -g prod -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key --rfc "$DEBUG"
+  #  dirac-proxy-init -U -g prod -C ${SERVERINSTALLDIR}/user/client.pem -K ${SERVERINSTALLDIR}/user/client.key --rfc "${DEBUG}"
 
   # check if errexit mode is set and disabling as the component may not exist
   save=$-
@@ -812,8 +813,8 @@ diracUninstallServices(){
   fi
 
   for serv in $services; do
-    echo '==> calling dirac-uninstall-component' "$serv" "$DEBUG"
-    dirac-uninstall-component -f "$serv" "$DEBUG"
+    echo '==> calling dirac-uninstall-component' "$serv" "${DEBUG}"
+    dirac-uninstall-component -f "$serv" "${DEBUG}"
   done
 
   if [[ $save =~ e ]]; then
@@ -840,9 +841,9 @@ diracAgents(){
       echo '==> '
     else
       echo "==> calling dirac-cfg-add-option agent $agent"
-      python "$TESTCODE/DIRAC/tests/Jenkins/dirac-cfg-add-option.py" "agent" "$agent"
-      echo "==> calling dirac-agent $agent -o MaxCycles=1 $DEBUG"
-      if ! dirac-agent "$agent"  -o MaxCycles=1 "$DEBUG"; then
+      python "${TESTCODE}/DIRAC/tests/Jenkins/dirac-cfg-add-option.py" "agent" "$agent"
+      echo "==> calling dirac-agent $agent -o MaxCycles=1 ${DEBUG}"
+      if ! dirac-agent "$agent"  -o MaxCycles=1 "${DEBUG}"; then
         echo 'ERROR: dirac-agent failed'
         exit 1
       fi
@@ -863,7 +864,7 @@ diracDBs(){
 
   dbs=$(cut -d ' ' -f 2 < databases | cut -d '.' -f 1 | grep -v ^RequestDB | grep -v ^FileCatalogDB | grep -v ^InstalledComponentsDB)
   for db in $dbs; do
-    if ! dirac-install-db "$db" "$DEBUG"; then
+    if ! dirac-install-db "$db" "${DEBUG}"; then
       echo 'ERROR: dirac-install-db failed'
       exit 1
     fi
@@ -875,24 +876,24 @@ diracDFCDB(){
   echo '==> [diracDFCDB]'
 
   mysql -u"$DB_ROOTUSER" -p"$DB_ROOTPWD" -h"$DB_HOST" -P"$DB_PORT" -e "DROP DATABASE IF EXISTS FileCatalogDB;"
-  mysql -u"$DB_ROOTUSER" -p"$DB_ROOTPWD" -h"$DB_HOST" -P"$DB_PORT" < "$SERVERINSTALLDIR/DIRAC/DataManagementSystem/DB/FileCatalogWithFkAndPsDB.sql"
+  mysql -u"$DB_ROOTUSER" -p"$DB_ROOTPWD" -h"$DB_HOST" -P"$DB_PORT" < "${SERVERINSTALLDIR}/DIRAC/DataManagementSystem/DB/FileCatalogWithFkAndPsDB.sql"
 }
 
 # Drop, then manually install the DFC for MultiVOFileCatalog
 diracMVDFCDB(){
   echo '==> [diracMVDFCDB]'
 
-  cp $SERVERINSTALLDIR/DIRAC/DataManagementSystem/DB/FileCatalogWithFkAndPsDB.sql $SERVERINSTALLDIR/DIRAC/DataManagementSystem/DB/MultiVOFileCatalogWithFkAndPsDB.sql
-  sed -i 's/FileCatalogDB/MultiVOFileCatalogDB/g' $SERVERINSTALLDIR/DIRAC/DataManagementSystem/DB/MultiVOFileCatalogWithFkAndPsDB.sql
+  cp "${SERVERINSTALLDIR}/DIRAC/DataManagementSystem/DB/FileCatalogWithFkAndPsDB.sql" "${SERVERINSTALLDIR}/DIRAC/DataManagementSystem/DB/MultiVOFileCatalogWithFkAndPsDB.sql"
+  sed -i 's/FileCatalogDB/MultiVOFileCatalogDB/g' "${SERVERINSTALLDIR}/DIRAC/DataManagementSystem/DB/MultiVOFileCatalogWithFkAndPsDB.sql"
   mysql -u"$DB_ROOTUSER" -p"$DB_ROOTPWD" -h"$DB_HOST" -P"$DB_PORT" -e "DROP DATABASE IF EXISTS MultiVOFileCatalogDB;"
-  mysql -u"$DB_ROOTUSER" -p"$DB_ROOTPWD" -h"$DB_HOST" -P"$DB_PORT" < "$SERVERINSTALLDIR/DIRAC/DataManagementSystem/DB/MultiVOFileCatalogWithFkAndPsDB.sql"
+  mysql -u"$DB_ROOTUSER" -p"$DB_ROOTPWD" -h"$DB_HOST" -P"$DB_PORT" < "${SERVERINSTALLDIR}/DIRAC/DataManagementSystem/DB/MultiVOFileCatalogWithFkAndPsDB.sql"
 }
 
 dropDBs(){
   echo '==> [dropDBs]'
 
   dbs=$(cut -d ' ' -f 2 < databases | cut -d '.' -f 1 | grep -v ^RequestDB | grep -v ^FileCatalogDB)
-  python "$TESTCODE/DIRAC/tests/Jenkins/dirac-drop-db.py" $dbs $DEBUG
+  python "${TESTCODE}/DIRAC/tests/Jenkins/dirac-drop-db.py" "$dbs" "${DEBUG}"
 }
 
 #-------------------------------------------------------------------------------
@@ -921,23 +922,14 @@ function killRunsv(){
 
   # check if errexit mode is set
   save=$-
-  if [[ $save =~ e ]]; then
+  if [[ "${save}" =~ e ]]; then
     set +e
   fi
 
-  runsvdir=$(ps aux | grep 'runsvdir ' | grep -v 'grep')
+  pkill runsvdir
+  pkill runsv
 
-  if [ -n "$runsvdir" ]; then
-    killall runsvdir
-  fi
-
-  runsv=$(ps aux | grep 'runsv ' | grep -v 'grep')
-
-  if [ -n "$runsv" ]; then
-    killall runsv
-  fi
-
-  if [[ $save =~ e ]]; then
+  if [[ "${save}" =~ e ]]; then
     set -e
   fi
 
@@ -955,19 +947,7 @@ function killRunsv(){
 
 function killES(){
   echo '==> [killES]'
-
-    res=$(ps aux | grep 'elasticsearch' | grep 'lhcbci' | grep -v 'grep' | cut -f 5 -d ' ')
-
-    if [ -n "$res" ]; then
-      kill -9 $res
-    fi
-
-    res=$(ps aux | grep 'elasticsearch' | grep 'lhcbci' | grep -v 'grep' | cut -f 4 -d ' ')
-
-    if [ -n "$res" ]; then
-      kill -9 $res
-    fi
-
+  pkill -u lhcbci elasticsearch
   echo '==> [Done killES]'
 }
 
@@ -984,9 +964,9 @@ function stopRunsv(){
 
   # Let's try to be a bit more delicate than the function above
 
-  source "$SERVERINSTALLDIR/bashrc"
-  runsvctrl d "$SERVERINSTALLDIR/startup/"*
-  runsvstat "$SERVERINSTALLDIR/startup/"*
+  source "${SERVERINSTALLDIR}/bashrc"
+  runsvctrl d "${SERVERINSTALLDIR}/startup/"*
+  runsvstat "${SERVERINSTALLDIR}/startup/"*
 
   # If does not work, let's kill it.
   killRunsv
@@ -1008,8 +988,8 @@ function startRunsv(){
 
   # Let's try to be a bit more delicate than the function above
 
-  source "$SERVERINSTALLDIR/bashrc"
-  runsvdir -P "$SERVERINSTALLDIR/startup" &
+  source "${SERVERINSTALLDIR}/bashrc"
+  runsvdir -P "${SERVERINSTALLDIR}/startup" &
 
   # Gives some time to the components to start
   sleep 10
@@ -1018,12 +998,12 @@ function startRunsv(){
   if [[ $save =~ e ]]; then
     set +e
   fi
-  runsvctrl u "$SERVERINSTALLDIR/startup/"*
+  runsvctrl u "${SERVERINSTALLDIR}/startup/"*
   if [[ $save =~ e ]]; then
     set -e
   fi
 
-  runsvstat "$SERVERINSTALLDIR/startup/"*
+  runsvstat "${SERVERINSTALLDIR}/startup/"*
 
   echo '==> [Done startRunsv]'
 }
@@ -1040,29 +1020,25 @@ function startRunsv(){
 function downloadProxy(){
   echo '==> [downloadProxy]'
 
-  cp $TESTCODE/DIRAC/tests/Jenkins/dirac-proxy-download.py .
+  cp "${TESTCODE}/DIRAC/tests/Jenkins/dirac-proxy-download.py" .
 
-  if [ $PILOTCFG ]; then
-    if [ -e $CLIENTINSTALLDIR/etc/dirac.cfg ] # called from the client directory
+  if [[ "${PILOTCFG}" ]]; then
+    if [[ -e "${CLIENTINSTALLDIR}/etc/dirac.cfg" ]] # called from the client directory
     then
-      echo $( eval echo Executing python dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $CLIENTINSTALLDIR/etc/dirac.cfg $PILOTINSTALLDIR/$PILOTCFG "$DEBUG")
-      python dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $CLIENTINSTALLDIR/etc/dirac.cfg $PILOTINSTALLDIR/$PILOTCFG "$DEBUG"
+      python dirac-proxy-download.py "${DIRACUSERDN}" -R "${DIRACUSERROLE}" -o /DIRAC/Security/UseServerCertificate=True "${CLIENTINSTALLDIR}/etc/dirac.cfg" "${PILOTINSTALLDIR}/$PILOTCFG" "${DEBUG}"
     else # assuming it's the pilot
-      echo $( eval echo Executing python dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $PILOTINSTALLDIR/$PILOTCFG "$DEBUG")
-      python dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $PILOTINSTALLDIR/$PILOTCFG "$DEBUG"
+      python dirac-proxy-download.py "${DIRACUSERDN}" -R "${DIRACUSERROLE}" -o /DIRAC/Security/UseServerCertificate=True "${PILOTINSTALLDIR}/$PILOTCFG" "${DEBUG}"
     fi
   else
-    if [ -e $CLIENTINSTALLDIR/etc/dirac.cfg ] # called from the client directory
+    if [[ -e "${CLIENTINSTALLDIR}/etc/dirac.cfg" ]] # called from the client directory
     then
-      echo $( eval echo Executing python dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $CLIENTINSTALLDIR/etc/dirac.cfg "$DEBUG")
-      python dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $CLIENTINSTALLDIR/etc/dirac.cfg "$DEBUG"
+      python dirac-proxy-download.py "${DIRACUSERDN}" -R "${DIRACUSERROLE}" -o /DIRAC/Security/UseServerCertificate=True "${CLIENTINSTALLDIR}/etc/dirac.cfg" "${DEBUG}"
     else # assuming it's the pilot
-      echo $( eval echo Executing python dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $PILOTINSTALLDIR/etc/dirac.cfg "$DEBUG")
-      python dirac-proxy-download.py $DIRACUSERDN -R $DIRACUSERROLE -o /DIRAC/Security/UseServerCertificate=True $PILOTINSTALLDIR/etc/dirac.cfg "$DEBUG"
+      python dirac-proxy-download.py "${DIRACUSERDN}" -R "${DIRACUSERROLE}" -o /DIRAC/Security/UseServerCertificate=True "${PILOTINSTALLDIR}/etc/dirac.cfg" "${DEBUG}"
     fi
   fi
 
-  if [ $? -ne 0 ]; then
+  if [[ "${?}" -ne 0 ]]; then
     echo 'ERROR: cannot download proxy'
     exit 1
   fi
