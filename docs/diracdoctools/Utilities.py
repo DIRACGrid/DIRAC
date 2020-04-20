@@ -1,5 +1,9 @@
 """Utilities used by the documentation scripts."""
 
+from __future__ import absolute_import
+
+from builtins import open
+
 import logging
 import os
 import sys
