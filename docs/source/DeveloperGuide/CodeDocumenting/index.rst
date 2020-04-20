@@ -169,4 +169,4 @@ CFG File
 
 If you developed your own systems, you can concatenate all the settings defined
 in ``ConfigTemplate.cfg`` files into one large file. You need a base
-``dirac.cfg`` file and a location were to put the final result
+``dirac.cfg`` file and a location where to put the final result
