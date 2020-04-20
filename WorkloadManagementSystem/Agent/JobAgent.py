@@ -173,9 +173,8 @@ class JobAgent(AgentModule):
       if runningJobs:
         self.log.info('No available slots', '%d running jobs' % runningJobs)
         return S_OK('Job Agent cycle complete with %d running jobs' % runningJobs)
-      else:
-        self.log.info('CE is not available')
-        return self.__finish('CE Not Available')
+      self.log.info('CE is not available')
+      return self.__finish('CE Not Available')
 
     result = self.computingElement.getDescription()
     if not result['OK']:
@@ -323,7 +322,8 @@ class JobAgent(AgentModule):
       jobReport.setJobStatus('Matched', 'Job Received by Agent')
       result = self._setupProxy(ownerDN, jobGroup)
       if not result['OK']:
-        return self._rescheduleFailedJob(jobID, result['Message'], self.stopOnApplicationFailure)
+        self.__report(jobID, 'Failed', result['Message'])
+        return self.__finish(result['Message'])
       proxyChain = result.get('Value')
 
       # Save the job jdl for external monitoring
@@ -598,8 +598,7 @@ class JobAgent(AgentModule):
                     'with message "%s", execution complete.' % message)
       self.am_stopExecution()
       return S_ERROR(message)
-    else:
-      return S_OK(message)
+    return S_OK(message)
 
   #############################################################################
   def _rescheduleFailedJob(self, jobID, message, stop=True):
