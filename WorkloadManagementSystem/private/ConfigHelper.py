@@ -18,7 +18,6 @@ def findGenericPilotCredentials(vo=False, group=False, pilotDN='', pilotGroup=''
       :param str group: group name
       :param str pilotDN: pilot DN
       :param str pilotGroup: pilot group
-      :param str pilotUser: pilot user
 
       :return: S_OK(tuple)/S_ERROR()
   """

@@ -322,7 +322,7 @@ class JobManagerHandler(RequestHandler):
     """  Reschedule a single job. If the optional proxy parameter is given
          it will be used to refresh the proxy in the Proxy Repository
 
-         :param list jobIDList: list of job IDs
+         :param list jobIDs: list of job IDs
 
          :return: S_OK()/S_ERROR() -- confirmed job IDs
     """
