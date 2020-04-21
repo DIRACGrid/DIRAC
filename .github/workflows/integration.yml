@@ -77,5 +77,7 @@ jobs:
       run: ./run_in_container bash -c 'source DIRAC/tests/CI/run_docker_setup.sh && testServer'
     - name: Client tests
       run: ./run_in_container bash -c 'source DIRAC/tests/CI/run_docker_setup.sh && testClient'
+    - name: Elasticsearch logs
+      run: ./run_in_container bash -c 'source DIRAC/tests/CI/run_docker_setup.sh && docker logs elasticsearch'
     - name: Check test status
       run: ./run_in_container bash -c 'source DIRAC/tests/CI/run_docker_setup.sh && checkErrors'
