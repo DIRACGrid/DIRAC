@@ -593,7 +593,7 @@ class Dirac(API):
 
   #############################################################################
   @staticmethod
-  @deprecated("It will be removed in v7r2. Use Operations sections only!")
+  @deprecated("It will be removed after v7r2. Use Operations sections only!")
   def __getVOPolicyModule(module):
     """ Utility to get the VO Policy module name
     """
