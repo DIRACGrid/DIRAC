@@ -1,4 +1,14 @@
 """ The CS! (Configuration Service)
+
+
+The following options can be set for the Configuration Service.
+
+.. literalinclude:: ../ConfigTemplate.cfg
+  :start-after: ##BEGIN Server
+  :end-before: ##END
+  :dedent: 2
+  :caption: Service options
+
 """
 
 __RCSID__ = "$Id$"
