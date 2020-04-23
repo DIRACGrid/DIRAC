@@ -31,7 +31,7 @@ simpleCopyMask = [os.path.basename(__file__),
                   'dirac_platform.py']
 
 wrapperTemplate = """#!/bin/bash
-
+source "$DIRAC/bashrc"
 export DCOMMANDS_PPID=$PPID
 exec $PYTHONLOCATION$ $DIRAC/$SCRIPTLOCATION$ "$@"
 """
