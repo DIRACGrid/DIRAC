@@ -49,6 +49,9 @@ LOG.info('DiracDocTools location %r', diracdoctools.cmd.__file__)
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 
+# diracdoctools are taken from integration, we need to specify this in rel-v7r0
+os.environ['DIRAC_USE_M2CRYPTO'] = 'Yes'
+
 # AUTO SETUP START
 if os.environ.get('READTHEDOCS') == 'True':
   setUpReadTheDocsEnvironment(moduleName='DIRAC')
