@@ -1,3 +1,18 @@
+[v7r0p22]
+
+*Core:
+CHANGE: (#4554) dirac-install: remove empty lines between options in dirac-install --help
+
+*Configuration
+CHANGE: (#4563) move documentation to ConfigTemplate, Module docstrings
+
+*Accounting
+CHANGE: (#4564) Move documentation about agent and services configuration to module docstrings, ConfigTemplate
+
+*Docs
+CHANGE: (#4554) Small restructuring in the DeveloperGuide: merge sections on testing, add note about generating command references
+NEW: (#4554) DeveloperGuide: add section about DIRACOS and link to diracos.readthedocs.io
+
 [v7r0p21]
 
 *Core
