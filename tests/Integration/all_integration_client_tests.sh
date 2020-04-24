@@ -71,14 +71,22 @@ pytest $CLIENTINSTALLDIR/DIRAC/tests/Integration/ProductionSystem/Test_Client_TS
 #-------------------------------------------------------------------------------#
 echo -e "*** $(date -u) **** DataManager TESTS ****\n"
 
+
+echo -e "*** $(date -u)  Getting a non privileged user to find its VO dynamically\n" 2>&1 | tee -a clientTestOutputs.txt
+dirac-proxy-init -g jenkins_user -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key $DEBUG 2>&1 | tee -a clientTestOutputs.txt
+
+userVO=$(python -c "from DIRAC.Core.Base.Script import parseCommandLine; parseCommandLine(); from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup; print getVOfromProxyGroup().get('Value','')")
+userVO="${userVO:-Jenkins}"
+echo -e "*** $(date -u) VO is "${userVO}"\n" 2>&1 | tee -a clientTestOutputs.txt
+
 echo -e "*** $(date -u)  Getting a privileged user\n" 2>&1 | tee -a clientTestOutputs.txt
 dirac-proxy-init -g jenkins_fcadmin -C $SERVERINSTALLDIR/user/client.pem -K $SERVERINSTALLDIR/user/client.key $DEBUG 2>&1 | tee -a clientTestOutputs.txt
 
 cat >> dataManager_create_folders <<EOF
 
-mkdir /Jenkins
-chgrp -R jenkins_user Jenkins
-chmod -R 774 Jenkins
+mkdir /${userVO}
+chgrp -R jenkins_user ${userVO}
+chmod -R 774 ${userVO}
 exit
 
 EOF

@@ -934,8 +934,8 @@ class DataManager(object):
           if not DErrno.cmpError(res, errno.ENOENT):
             log.debug("Cannot get destURL", res['Message'])
             continue
-        else:
           log.debug("File does not exist: Expected error for TargetSE !!")
+        else:
           destURL = res['Value']
 
         if sourceURL == destURL:

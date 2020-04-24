@@ -9,6 +9,8 @@ parseCommandLine()
 from DIRAC import gLogger
 from DIRAC.WorkloadManagementSystem.DB.ElasticJobDB import ElasticJobDB
 
+#  Add a time delay to allow updating the modified index before querying it.
+SLEEP_DELAY = 2
 
 gLogger.setLevel('DEBUG')
 elasticJobDB = ElasticJobDB()
@@ -17,7 +19,7 @@ elasticJobDB = ElasticJobDB()
 def test_setAndGetJobFromDB():
   res = elasticJobDB.setJobParameter(100, 'DIRAC', 'dirac@cern')
   assert res['OK']
-  time.sleep(1)
+  time.sleep(SLEEP_DELAY)
 
   res = elasticJobDB.getJobParameters(100)
   assert res['OK']
@@ -26,7 +28,7 @@ def test_setAndGetJobFromDB():
   # update it
   res = elasticJobDB.setJobParameter(100, 'DIRAC', 'dirac@cern.cern')
   assert res['OK']
-  time.sleep(1)
+  time.sleep(SLEEP_DELAY)
   res = elasticJobDB.getJobParameters(100)
   assert res['OK']
   assert res['Value'][100]['DIRAC'] == 'dirac@cern.cern'
@@ -40,7 +42,7 @@ def test_setAndGetJobFromDB():
   # add one
   res = elasticJobDB.setJobParameter(100, 'someKey', 'someValue')
   assert res['OK']
-  time.sleep(1)
+  time.sleep(SLEEP_DELAY)
   res = elasticJobDB.getJobParameters(100)
   assert res['OK']
   assert res['Value'][100]['DIRAC'] == 'dirac@cern.cern'
