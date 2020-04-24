@@ -64,7 +64,10 @@ class FTS3Agent(AgentModule):
   """
 
   def __readConf(self):
-    """ read configurations """
+    """ Read configurations
+
+        :return: S_OK()/S_ERROR()
+    """
 
     # Getting all the possible servers
     res = getFTS3ServerDict()
@@ -97,7 +100,10 @@ class FTS3Agent(AgentModule):
     return S_OK()
 
   def initialize(self):
-    """ agent's initialization """
+    """ Agent's initialization
+
+        :return: S_OK()/S_ERROR()
+    """
 
     self._globalContextCache = {}
 
@@ -115,7 +121,10 @@ class FTS3Agent(AgentModule):
     return res
 
   def beginExecution(self):
-    """ reload configurations before start of a cycle """
+    """ Reload configurations before start of a cycle
+
+        :return: S_OK()/S_ERROR()
+    """
     return self.__readConf()
 
   def getFTS3Context(self, username, group, ftsServer, threadID):
@@ -130,9 +139,10 @@ class FTS3Agent(AgentModule):
         The reason for cacheTime to be what it is is because the FTS3 server will ask for a new proxy
         after 2/3rd of the existing proxy has expired, so we renew it just before
 
-        :param username: name of the user
-        :param group: group of the user
-        :param ftsServer: address of the server
+        :param str username: name of the user
+        :param str group: group of the user
+        :param str ftsServer: address of the server
+        :param str threadID: thread ID
 
         :returns: S_OK with the context object
 
@@ -187,10 +197,13 @@ class FTS3Agent(AgentModule):
     return S_OK(contextes.get(idTuple))
 
   def _monitorJob(self, ftsJob):
-    """
-        * query the FTS servers
+    """ * query the FTS servers
         * update the FTSFile status
         * update the FTSJob status
+
+        :param ftsJob: FTS job
+
+        :return: ftsJob, S_OK()/S_ERROR()
     """
     # General try catch to avoid that the tread dies
     try:
@@ -262,9 +275,10 @@ class FTS3Agent(AgentModule):
       log.debug("Successfully updated job status")
 
   def monitorJobsLoop(self):
-    """
-        * fetch the active FTSJobs from the DB
+    """ * fetch the active FTSJobs from the DB
         * spawn a thread to monitor each of them
+
+        :return: S_OK()/S_ERROR()
     """
 
     log = gLogger.getSubLogger("monitorJobs", child=True)
@@ -322,8 +336,9 @@ class FTS3Agent(AgentModule):
           * does the callback if the operation is finished
           * generate new jobs and submits them
 
-          :param operation: the operation to treat
-          :param threadId: the id of the tread, it just has to be unique (used for the context cache)
+        :param operation: the operation to treat
+
+        :return: operation, S_OK()/S_ERROR()
     """
     try:
       threadID = current_process().name
@@ -434,6 +449,8 @@ class FTS3Agent(AgentModule):
   def treatOperationsLoop(self):
     """ * Fetch all the FTSOperations which are not finished
         * Spawn a thread to treat each operation
+
+        :return: S_OK()/S_ERROR()
     """
 
     log = gLogger.getSubLogger("treatOperations", child=True)
@@ -474,7 +491,10 @@ class FTS3Agent(AgentModule):
     return S_OK()
 
   def kickOperations(self):
-    """ kick stuck operations """
+    """ Kick stuck operations
+
+        :return: S_OK()/S_ERROR()
+    """
 
     log = gLogger.getSubLogger("kickOperations", child=True)
 
@@ -488,7 +508,10 @@ class FTS3Agent(AgentModule):
     return S_OK()
 
   def kickJobs(self):
-    """ kick stuck jobs """
+    """ Kick stuck jobs
+
+        :return: S_OK()/S_ERROR()
+    """
 
     log = gLogger.getSubLogger("kickJobs", child=True)
 
@@ -502,7 +525,10 @@ class FTS3Agent(AgentModule):
     return S_OK()
 
   def deleteOperations(self):
-    """ delete final operations """
+    """ Delete final operations
+
+        :return: S_OK()/S_ERROR()
+    """
 
     log = gLogger.getSubLogger("deleteOperations", child=True)
 
@@ -516,7 +542,10 @@ class FTS3Agent(AgentModule):
     return S_OK()
 
   def finalize(self):
-    """ finalize processing """
+    """ Finalize processing
+
+        :return: S_OK()/S_ERROR()
+    """
     # Joining all the ThreadPools
     log = gLogger.getSubLogger("Finalize")
 
@@ -537,7 +566,10 @@ class FTS3Agent(AgentModule):
     return S_OK()
 
   def execute(self):
-    """ one cycle execution """
+    """ One cycle execution
+
+        :return: S_OK()/S_ERROR()
+    """
 
     log = gLogger.getSubLogger("execute", child=True)
 

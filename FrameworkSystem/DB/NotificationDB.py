@@ -292,7 +292,7 @@ class NotificationDB(DB):
     try:
       alarmId = int(updateReq['id'])
     except BaseException:
-      return S_ERROR("Oops, Alarm id is not valid! (bad boy...)")
+      return S_ERROR("Oops, Alarm id is not valid!")
     result = self._query("SELECT AlarmId FROM `ntf_Alarms` WHERE AlarmId=%d" % alarmId)
     if not result['OK']:
       return result
