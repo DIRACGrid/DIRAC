@@ -21,7 +21,7 @@ contributing with their computing and storage capacity, available as conventiona
    messagequeues
    storage
    agents2CS
-
+   proxyprovider
 
 
 Site Names
