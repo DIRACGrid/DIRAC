@@ -1,3 +1,5 @@
+.. _registry_vo:
+
 Registry / VO - Subsections
 ==============================
 

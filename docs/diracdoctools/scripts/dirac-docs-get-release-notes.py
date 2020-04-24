@@ -590,6 +590,9 @@ class GithubInterface(object):
     with open(self.releaseNotes, 'r') as rnf:
       releaseNotes = '\n'.join(rnf.readlines())
 
+    if not releaseNotes:
+      releaseNotes = "No changes"
+
     releaseDict = dict(id=self.glProjectID,
                        tag_name=self.tagName,
                        name=self.tagName,
