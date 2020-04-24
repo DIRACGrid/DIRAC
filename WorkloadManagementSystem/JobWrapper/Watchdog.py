@@ -25,8 +25,8 @@ import time
 import resource
 import errno
 import socket
-import psutil
 import getpass
+import psutil
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities import Time
@@ -247,7 +247,7 @@ class Watchdog(object):
     if (int(time.time()) > jobstartSeconds + self.stopSigStartSeconds) and \
        (wallClockSecondsLeft < self.stopSigFinishSeconds + self.wallClockCheckSeconds):
       # Need to send the signal! Assume it works to avoid sending the signal more than once
-      self.log.info('Sending signal %d to JobWrapper children' % self.stopSigNumber)
+      self.log.info('Sending signal to JobWrapper children', "(%s)" % self.stopSigNumber)
       self.stopSigSent = True
 
       try:
@@ -265,7 +265,7 @@ class Watchdog(object):
             os.kill(childPid, self.stopSigNumber)
 
       except Exception as e:
-        self.log.error('Failed to send signals to JobWrapper children! (%s)' % str(e))
+        self.log.error("Failed to send signals to JobWrapper children!", repr(e))
 
     return S_OK()
 
@@ -358,8 +358,7 @@ class Watchdog(object):
         result = self.__peek()
         if result['OK']:
           outputList = result['Value']
-          size = len(outputList)
-          self.log.info('Last %s lines of available application output:' % (size))
+          self.log.info('Last lines of available application output:')
           self.log.info('================START================')
           for line in outputList:
             self.log.info(line)
@@ -455,7 +454,7 @@ class Watchdog(object):
         self.log.info('The following control signal was sent but not understood by the watchdog:')
         self.log.info(signalDict)
     else:
-      self.log.info('Expected dictionary for control signal, received:\n%s' % (signalDict))
+      self.log.info("Expected dictionary for control signal", "received:\n%s" % (signalDict))
 
     return S_OK()
 
@@ -488,7 +487,8 @@ class Watchdog(object):
     if self.testLoadAvg:
       result = self.__checkLoadAverage()
       if not result['OK']:
-        self.log.warn("Check of load average failed, but won't fail because of that: %s" % result['Message'])
+        self.log.warn("Check of load average failed, but won't fail because of that",
+                      ": %s" % result['Message'])
         report += 'LoadAverage: ERROR, '
         return S_OK()
       report += 'LoadAverage: OK, '
@@ -545,14 +545,13 @@ class Watchdog(object):
 
     wallClockTime = self.parameters['WallClockTime'][-1]
     if wallClockTime < self.sampleCPUTime:
-      self.log.info("Stopping check, wallclock time (%s) is still smaller than sample time (%s)" % (
-          wallClockTime,
-          self.sampleCPUTime))
+      self.log.info("Stopping check, wallclock time is still smaller than sample time",
+                    "(%s) < (%s)" % (wallClockTime, self.sampleCPUTime))
       return S_OK()
 
     intervals = max(1, int(self.sampleCPUTime / self.checkingTime))
     if len(self.parameters['CPUConsumed']) < intervals + 1:
-      self.log.info("Not enough snapshots to calculate, there are %s and we need %s" %
+      self.log.info("Not enough snapshots to calculate", "there are %s and we need %s" %
                     (len(self.parameters['CPUConsumed']), intervals + 1))
       return S_OK()
 
@@ -636,16 +635,16 @@ class Watchdog(object):
       cpuConsumed = float(currentCPU)
       if cpuConsumed > limit:
         self.log.info(
-            'Job has consumed more than the specified CPU limit with an additional %s%% margin' %
+            'Job has consumed more than the specified CPU limit', 'with an additional %s%% margin' %
             (self.jobCPUMargin))
         return S_ERROR('Job has exceeded maximum CPU time limit')
-      else:
-        return S_OK('Job within CPU limit')
-    elif not currentCPU:
+      return S_OK('Job within CPU limit')
+
+    if not currentCPU:
       self.log.verbose('Both initial and current CPU consumed are null')
       return S_OK('CPU consumed is not measurable yet')
-    else:
-      return S_OK('Not possible to determine CPU consumed')
+
+    return S_OK('Not possible to determine CPU consumed')
 
   def __checkMemoryLimit(self):
     """ Checks that the job memory consumption is within a limit
@@ -671,10 +670,8 @@ class Watchdog(object):
       if availSpace >= 0 and availSpace < self.minDiskSpace:
         self.log.info('Not enough local disk space for job to continue, defined in CS as %s MB' % (self.minDiskSpace))
         return S_ERROR('Job has insufficient disk space to continue')
-      else:
-        return S_OK('Job has enough disk space available')
-    else:
-      return S_ERROR('Available disk space could not be established')
+      return S_OK('Job has enough disk space available')
+    return S_ERROR('Available disk space could not be established')
 
   #############################################################################
   def __checkWallClockTime(self):
@@ -686,10 +683,8 @@ class Watchdog(object):
       if time.time() - startTime > self.maxWallClockTime:
         self.log.info('Job has exceeded maximum wall clock time of %s seconds' % (self.maxWallClockTime))
         return S_ERROR('Job has exceeded maximum wall clock time')
-      else:
-        return S_OK('Job within maximum wall clock time')
-    else:
-      return S_ERROR('Job start time could not be established')
+      return S_OK('Job within maximum wall clock time')
+    return S_ERROR('Job start time could not be established')
 
   #############################################################################
   def __checkLoadAverage(self):
@@ -700,10 +695,8 @@ class Watchdog(object):
       if loadAvg > float(self.loadAvgLimit):
         self.log.info('Maximum load average exceeded, defined in CS as %s ' % (self.loadAvgLimit))
         return S_ERROR('Job exceeded maximum load average')
-      else:
-        return S_OK('Job running with normal load average')
-    else:
-      return S_ERROR('Job load average not established')
+      return S_OK('Job running with normal load average')
+    return S_ERROR('Job load average not established')
 
   #############################################################################
   def __peek(self):
@@ -963,7 +956,7 @@ class Watchdog(object):
 
     with open("/proc/cpuinfo", "r") as cpuinfo:
       info = cpuinfo.readlines()
-    result["ModelName"] = [x.strip().split(":")[1] for x in info if "model name" in x][0].strip()
+    result["ModelName"] = info[4].split(':')[1].replace(' ', '').replace('\n', '')
     result["CacheSize(kB)"] = [x.strip().split(":")[1] for x in info if "cache size" in x][0].strip()
 
     return result
@@ -978,7 +971,7 @@ class Watchdog(object):
 
   #############################################################################
   def getDiskSpace(self):
-    """Obtains the disk space used.
+    """Obtains the available disk space.
     """
     result = S_OK()
     diskSpace = getDiskSpace()
@@ -986,7 +979,8 @@ class Watchdog(object):
     if diskSpace == -1:
       result = S_ERROR('Could not obtain disk usage')
       self.log.warn(' Could not obtain disk usage')
-      result['Value'] = -1
+      result['Value'] = float(-1)
+      return result
 
     result['Value'] = float(diskSpace)
     return result
