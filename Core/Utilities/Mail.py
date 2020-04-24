@@ -82,7 +82,7 @@ class Mail(object):
   def _send(self, msg=None):
     """ send a single email message. If msg is in input, it is expected to be of email type, otherwise it will create it.
 
-        :param msg object: MIMEMultipart object
+        :param object msg: MIMEMultipart object
 
         :return: S_OK()/S_ERROR()
     """

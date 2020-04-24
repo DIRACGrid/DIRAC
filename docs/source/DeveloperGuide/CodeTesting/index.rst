@@ -4,6 +4,12 @@
 Testing (VO)DIRAC
 ====================
 
+.. contents::
+
+
+Introduction
+````````````
+
 
 Who should read this document
 ==============================
@@ -59,9 +65,9 @@ for regression tests the responsible person should be a complete subsystem (i.e.
 while certification tests should be prepared and performed by release managers.
 
 
-=====================
+
 Tools and methodology
-=====================
+`````````````````````
 
 Unit tests
 ==========

@@ -235,7 +235,7 @@ def test_cleanDirectory(dm, tempFile, fc):
   assert cleanRes['OK'], cleanRes.get('Message', 'All OK')
   assertIsDir(fc.isDirectory(folderLFN), False)
 
-  baseFolder = '/Jenkins/test'
+  baseFolder = '/%s/test' % vo
   assertIsDir(fc.isDirectory(baseFolder), True)
   cleanRes = dm.cleanLogicalDirectory(baseFolder)
   assert cleanRes['OK'], cleanRes.get('Message', 'All OK')

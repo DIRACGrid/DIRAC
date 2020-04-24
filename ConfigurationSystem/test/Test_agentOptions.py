@@ -6,11 +6,11 @@ import pytest
 from DIRAC.tests.Utilities.assertingUtils import AgentOptionsTest
 from DIRAC import S_OK
 
-AGENTS = [('DIRAC.AccountingSystem.Agent.NetworkAgent', {'IgnoreOptions': ['MaxCycles', 'MessageQueueURI',
-                                                                           'BufferTimeout']}),
+AGENTS = [('DIRAC.AccountingSystem.Agent.NetworkAgent', {'IgnoreOptions': ['MessageQueueURI']}),
           ('DIRAC.ConfigurationSystem.Agent.Bdii2CSAgent', {'IgnoreOptions': ['BannedCEs', 'BannedSEs', 'DryRun',
                                                                               'AlternativeBDIIs', 'VO']}),
-          ('DIRAC.ConfigurationSystem.Agent.GOCDB2CSAgent', {'IgnoreOptions': ['Cycles', 'DryRun']}),
+          ('DIRAC.ConfigurationSystem.Agent.GOCDB2CSAgent', {'IgnoreOptions': ['Cycles', 'DryRun',
+                                                                               'UpdatePerfSONARS']}),
           ('DIRAC.ConfigurationSystem.Agent.VOMS2CSAgent', {'IgnoreOptions': ['VO']}),
           ('DIRAC.DataManagementSystem.Agent.FTS3Agent', {}),
           ('DIRAC.FrameworkSystem.Agent.CAUpdateAgent', {}),

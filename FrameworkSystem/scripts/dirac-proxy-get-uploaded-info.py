@@ -9,7 +9,7 @@ import sys
 
 import DIRAC
 
-from DIRAC import gLogger
+from DIRAC import gLogger, S_OK
 from DIRAC.Core.Base import Script
 from DIRAC.FrameworkSystem.Client.ProxyManagerClient import ProxyManagerClient
 from DIRAC.Core.Security import Properties
@@ -22,9 +22,15 @@ userName = False
 
 
 def setUser(arg):
+  """ Set user
+
+      :param basestring arg: user name
+
+      :return: S_OK()
+  """
   global userName
   userName = arg
-  return DIRAC.S_OK()
+  return S_OK()
 
 
 Script.registerSwitch("u:", "user=", "User to query (by default oneself)", setUser)

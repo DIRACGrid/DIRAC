@@ -36,6 +36,7 @@ NEW: (#4510) Removed dirac-distribution (use docker image)
 CHANGE: (#4491) Streamline of CS helpers for sites and computing elements
 NEW: (#4538) MixedEncode - allows for json serialization transition
 CHANGE: (#4461) use M2Crypto by default
+CHANGE: (#4565) Source bashrc in wrapper script
 
 *Configuration
 CHANGE: (#4157) add new helper methods for IdP/Proxy Providers, OAuthManager. Add methods that 
@@ -128,6 +129,25 @@ FIX: (#4551) align ProxyDB test to current changes
 *docs
 NEW: (#4289) Document how to run integration tests in docker
 NEW: (#4551) add DNProperties description to Registry/Users subsection
+
+[v7r0p22]
+
+*Core:
+CHANGE: (#4554) dirac-install: remove empty lines between options in dirac-install --help
+
+*Configuration
+CHANGE: (#4563) move documentation to ConfigTemplate, Module docstrings
+
+*Accounting
+CHANGE: (#4564) Move documentation about agent and services configuration to module docstrings, ConfigTemplate
+
+*Docs
+CHANGE: (#4554) Small restructuring in the DeveloperGuide: merge sections on testing, add note about generating command references
+NEW: (#4554) DeveloperGuide: add section about DIRACOS and link to diracos.readthedocs.io
+CHANGE: (#4560) allow release notes to be empty in dirac-docs-get-release-notes
+
+*Tests
+FIX: (#4560) DataManager tests check VO dynamically
 
 [v7r0p21]
 

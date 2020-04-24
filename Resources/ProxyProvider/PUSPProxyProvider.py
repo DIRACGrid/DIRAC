@@ -1,5 +1,6 @@
-""" ProxyProvider implementation for the proxy generation using local a PUSP
-    proxy server
+""" ProxyProvider implementation for a per-user sub-proxy(PUSP) proxy generation using
+    PUSP proxy server.
+    More details about PUSP here: https://wiki.egi.eu/wiki/Usage_of_the_per_user_sub_proxy_in_EGI
 """
 
 from six.moves.urllib.request import urlopen

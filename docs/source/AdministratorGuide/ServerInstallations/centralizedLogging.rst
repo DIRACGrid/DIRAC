@@ -233,3 +233,8 @@ And the ElasticSearch template ``lhcb-dirac-logs_default`` looks like::
       }
     }
   }
+
+Kibana dashboard
+================
+
+A dashboard for the logs can be found `here <https://github.com/DIRACGrid/DIRAC/tree/integration/dashboards/>`_

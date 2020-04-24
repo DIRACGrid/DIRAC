@@ -1,6 +1,13 @@
 """ DataStore is the service for inserting accounting reports (rows) in the Accounting DB
 
     This service CAN be duplicated iff the first is a "master" and all the others are slaves.
+    See the information about :ref`datastorehelpers`.
+
+.. literalinclude:: ../ConfigTemplate.cfg
+  :start-after: ##BEGIN DataStore
+  :end-before: ##END
+  :dedent: 2
+  :caption: DataStore options
 """
 
 

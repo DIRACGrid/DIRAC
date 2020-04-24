@@ -65,9 +65,9 @@ class JobPolicy(object):
       if 'UserGroup' in condDict:
         del(condDict['UserGroup'])
       if 'User' == groupingField:
-        return S_ERROR("You can't group plots by users! Bad boy!")
+        return S_ERROR("You can't group plots by users!")
       if 'UserGroup' == groupingField:
-        return S_ERROR("You can't group plots by user groups! Bad boy!")
+        return S_ERROR("You can't group plots by user groups!")
 
     return S_OK()
 

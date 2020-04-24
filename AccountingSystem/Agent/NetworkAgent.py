@@ -1,5 +1,12 @@
 """
 Accounting agent to consume perfSONAR network metrics received via a message queue.
+
+.. literalinclude:: ../ConfigTemplate.cfg
+  :start-after: ##BEGIN NetworkAgent
+  :end-before: ##END
+  :dedent: 2
+  :caption: NetworkAgent options
+
 """
 
 from datetime import datetime
@@ -20,8 +27,9 @@ class NetworkAgent (AgentModule):
   Results are stored in the accounting database.
   """
 
-  BUFFER_TIMEOUT = 3600  # default number of seconds after which network accounting
-  # objects are removed form the the temporary buffer
+  #: default number of seconds after which network accounting
+  #: objects are removed from the temporary buffer
+  BUFFER_TIMEOUT = 3600
 
   def initialize(self):
 

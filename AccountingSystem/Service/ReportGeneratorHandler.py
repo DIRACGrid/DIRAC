@@ -1,4 +1,10 @@
 """ Module that holds the ReportGeneratorHandler class
+
+.. literalinclude:: ../ConfigTemplate.cfg
+  :start-after: ##BEGIN ReportGenerator
+  :end-before: ##END
+  :dedent: 2
+  :caption: ReportGenerator options
 """
 
 __RCSID__ = "$Id$"
