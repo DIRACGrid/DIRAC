@@ -31,13 +31,6 @@ from diracdoctools.Utilities import setUpReadTheDocsEnvironment
 logging.basicConfig(level=logging.INFO, format='%(name)25s: %(levelname)8s: %(message)s')
 LOG = logging.getLogger('conf.py')
 
-diracRelease = os.environ.get('DIRACVERSION', 'integration')
-if os.environ.get('READTHEDOCS') == 'True':
-  diracRelease = os.path.basename(os.path.abspath("../../"))
-  if diracRelease.startswith("rel-"):
-    diracRelease = diracRelease[4:]
-LOG.info('DIRACVERSION is %r', diracRelease)
-
 LOG.info('Current location %r', os.getcwd())
 LOG.info('DiracDocTools location %r', diracdoctools.__file__)
 LOG.info('DiracDocTools location %r', diracdoctools.Utilities.__file__)
@@ -73,6 +66,25 @@ if os.environ.get('READTHEDOCS') == 'True':
   updateCompleteDiracCFG(configFile='../docs.conf')
 
 # AUTO SETUP END
+
+# get the dirac version
+try:
+  from DIRAC import version
+  LOG.info('Found dirac version %r', version)
+except ImportError as e:
+  LOG.info('Failed to import DIRAC.version: %s', e)
+  version = 'integration'
+diracRelease = version
+# on rtd we use (parts of) the branch, unless "branch" is latest
+if os.environ.get('READTHEDOCS') == 'True':
+  diracRelease = os.path.basename(os.path.abspath('../../'))
+  if diracRelease.startswith('rel-'):
+    # basically version without patch number
+    diracRelease = diracRelease[4:]
+  elif diracRelease == 'latest':
+    diracRelease = version
+
+LOG.info('DIRACVERSION is %r', diracRelease)
 
 # -- General configuration -----------------------------------------------------
 
