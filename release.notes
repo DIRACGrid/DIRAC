@@ -19,6 +19,7 @@ NEW: (#4510) Removed dirac-distribution (use docker image)
 CHANGE: (#4491) Streamline of CS helpers for sites and computing elements
 NEW: (#4538) MixedEncode - allows for json serialization transition
 CHANGE: (#4461) use M2Crypto by default
+CHANGE: (#4565) Source bashrc in wrapper script
 
 *Configuration
 CHANGE: (#4157) add new helper methods for IdP/Proxy Providers, OAuthManager. Add methods that 
