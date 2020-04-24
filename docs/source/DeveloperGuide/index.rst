@@ -34,10 +34,10 @@ group.
    CodingConvention/index
    AddingNewComponents/index
    CodeDocumenting/index
-   CodeDocumenting/BuildingDocumentation
    CodeTesting/index
    Systems/index
    REST/index
    WebAppDIRAC/index
    Internals/index
    WorkloadManagementSystem/index
+   Externals/index
