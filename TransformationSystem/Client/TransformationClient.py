@@ -172,7 +172,7 @@ class TransformationClient(Client):
         if not log("For conditions %s: result for limit %d, offset %d: %d files" %
                    (condDictStr, limit, offsetToApply, len(res['Value']))):
           gLogger.verbose("For condition keys %s (trans %s): result for limit %d, offset %d: %d files" %
-                          (str(condDict.keys()), condDict.get('TransformationID', 'None'),
+                          (str(sorted(condDict)), condDict.get('TransformationID', 'None'),
                            limit, offsetToApply, len(res['Value'])))
         if res['Value']:
           transformationFiles += res['Value']
@@ -355,7 +355,7 @@ class TransformationClient(Client):
 
     rpcClient = self._getRPC()
     # gets current status, errorCount and fileID
-    tsFiles = self.getTransformationFiles({'TransformationID': transName, 'LFN': newLFNsStatus.keys()})
+    tsFiles = self.getTransformationFiles({'TransformationID': transName, 'LFN': list(newLFNsStatus)})
     if not tsFiles['OK']:
       return tsFiles
     tsFiles = tsFiles['Value']
