@@ -1,4 +1,4 @@
-"""Additional docstring for the DErrno module."""
+"""Additional docstring for the Transformation module."""
 
 import textwrap
 
