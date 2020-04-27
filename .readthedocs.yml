@@ -18,3 +18,7 @@ python:
   version: 3.7
   install:
     - requirements: docs/requirements_py3.txt
+    - method: pip
+      path: docs/
+      extra_requirements:
+        - diracdoctools
