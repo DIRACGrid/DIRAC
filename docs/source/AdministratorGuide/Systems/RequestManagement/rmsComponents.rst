@@ -55,13 +55,9 @@ Operations are normally retried several times in case they fail. There is a dela
 CleanReqDBAgent
 ---------------
 
-This agent cleans the DB from old Requests in final state. Special configuration options are
+This agent cleans the DB from old Requests in final state.
 
-* `DeleteGraceDays`: (default 60)  Delay after which Requests are removed
-* `DeleteLimit`: (default 100)  Maximum number of Requests to remove per cycle
-* `DeleteFailed`: (default False)  Whether to delete also Failed request
-* `KickGraceHours`: (default 1)  After how long we should kick the Requests in `Assigned`
-* `KickLimit`: (default 10000)  Maximum number of requests kicked by cycle
+Configuration options are described :mod:`here <DIRAC.RequestManagementSystem.Agent.CleanReqDBAgent>`.
 
 .. _reqProxy:
 

@@ -4,19 +4,18 @@
 # Author: Krzysztof.Ciba@NOSPAMgmail.com
 # Date: 2013/05/17 08:31:26
 ########################################################################
-""" :mod: CleanReqDBAgent
+"""Cleaning the RequestDB from obsolete records and kicking assigned requests
 
-    =====================
+.. literalinclude:: ../ConfigTemplate.cfg
+  :start-after: ##BEGIN CleanReqDBAgent
+  :end-before: ##END
+  :dedent: 2
+  :caption: CleanReqDBAgent options
 
-    .. module: CleanReqDBAgent
+.. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    :synopsis: cleaning RequestDB from obsolete records and kicking assigned requests
-
-    .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
-
-    cleaning ReqDB from obsolete records and kicking assigned requests
 """
-__RCSID__ = "$Id: $"
+__RCSID__ = "$Id$"
 # #
 # @file CleanReqDBAgent.py
 # @author Krzysztof.Ciba@NOSPAMgmail.com
