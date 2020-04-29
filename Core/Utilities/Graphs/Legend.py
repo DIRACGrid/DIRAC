@@ -178,7 +178,7 @@ class Legend(object):
       else:
         num = None
       color = self.palette.getColor(label)
-      row = int(nc % nRows)
+      row = nc % nRows
       column = int(nc / nRows)
       if row == nRows - 1 and column == nColumns - 1 and nc != nLabels - 1:
         last_text = '... plus %d more' % (nLabels - nc)
