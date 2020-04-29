@@ -85,7 +85,7 @@ class GraphData(object):
 
   def initialize(self, key_type=None):
 
-    keys = list(self.data.keys())
+    keys = list(self.data)
     if not keys:
       print("GraphData Error: empty data")
     start = time.time()
@@ -146,13 +146,13 @@ class GraphData(object):
         self.label_values = [self.plotdata.parsed_data[l] for l in self.labels]
     else:
       if sort_type == 'max_value':
-        pairs = list(zip(self.subplots.keys(), self.subplots.values()))
+        pairs = list(zip(list(self.subplots), self.subplots.values()))
         reverse = not reverse_order
         pairs.sort(key=lambda x: x[1].max_value, reverse=reverse)
         self.labels = [x[0] for x in pairs]
         self.label_values = [x[1].max_value for x in pairs]
       elif sort_type == 'last_value':
-        pairs = list(zip(self.subplots.keys(), self.subplots.values()))
+        pairs = list(zip(list(self.subplots), self.subplots.values()))
         reverse = not reverse_order
         pairs.sort(key=lambda x: x[1].last_value, reverse=reverse)
         self.labels = [x[0] for x in pairs]
@@ -166,19 +166,19 @@ class GraphData(object):
         self.labels = [x[0] for x in pairs]
         self.label_values = [x[1] for x in pairs]
       elif sort_type == 'alpha':
-        self.labels = list(self.subplots.keys())
+        self.labels = list(self.subplots)
         self.labels.sort()
         if reverse_order:
           self.labels.reverse()
         self.label_values = [self.subplots[x].sum_value for x in self.labels]
       elif sort_type == 'avg_nozeros':
-        pairs = list(zip(self.subplots.keys(), self.subplots.values()))
+        pairs = list(zip(list(self.subplots), self.subplots.values()))
         reverse = not reverse_order
         pairs.sort(key=lambda x: x[1].avg_nozeros, reverse=reverse)
         self.labels = [x[0] for x in pairs]
         self.label_values = [x[1].avg_nozeros for x in pairs]
       else:
-        self.labels = list(self.subplots.keys())
+        self.labels = list(self.subplots)
         if reverse_order:
           self.labels.reverse()
 
@@ -470,7 +470,7 @@ class PlotData(object):
     if self.sorted_keys:
       return self.sorted_keys
     if sort_type == 'weight':
-      pairs = list(zip(self.parsed_data.keys(), self.parsed_data.values()))
+      pairs = list(zip(list(self.parsed_data), self.parsed_data.values()))
       pairs.sort(key=lambda x: x[1], reverse=True)
       self.sorted_keys = [x[0] for x in pairs]
     elif sort_type == 'alpha':
