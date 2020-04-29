@@ -3,13 +3,10 @@
 
 __RCSID__ = "$Id$"
 
-import os
-import glob
 import time
-from six.moves.urllib.request import urlopen
 import random
 import hashlib
-import commands
+from six.moves.urllib.request import urlopen
 
 from DIRAC import gConfig, gLogger, S_OK, S_ERROR
 from DIRAC.Core.Base.DB import DB
@@ -250,7 +247,7 @@ class ProxyDB(DB):
     if not retVal['OK']:
       return retVal
     data = retVal['Value']
-    if len(data) == 0:
+    if not data:
       return S_ERROR("Insertion of the request in the db didn't work as expected")
     userGroup = proxyChain.getDIRACGroup().get('Value') or "unset"
     self.logAction("request upload", userDN, userGroup, userDN, "any")
@@ -427,7 +424,7 @@ class ProxyDB(DB):
     # Check if there is a previous ticket for the DN
     data = result['Value']
     sqlInsert = True
-    if len(data) > 0:
+    if data:
       sqlInsert = False
       pem = data[0][1]
       if pem:
@@ -897,7 +894,7 @@ class ProxyDB(DB):
       retVal = self.getProxy(userDN, userGroup, requiredLifeTime)
       if not retVal['OK']:
         return retVal
-      chain, secsLeft = retVal['Value']
+      chain, _secsLeft = retVal['Value']
 
       vomsMgr = VOMS()
       attrs = vomsMgr.getVOMSAttributes(chain).get('Value') or ['']
@@ -993,7 +990,8 @@ class ProxyDB(DB):
       sqlCond.append('UserName = %s' % sUserName)
 
     for table, fields in [('ProxyDB_CleanProxies', ("UserName", "UserDN", "ExpirationTime")),
-                          ('ProxyDB_Proxies', ("UserName", "UserDN", "UserGroup", "ExpirationTime", "PersistentFlag"))]:
+                          ('ProxyDB_Proxies', ("UserName", "UserDN", "UserGroup",
+                                               "ExpirationTime", "PersistentFlag"))]:
       cmd = "SELECT %s FROM `%s`" % (", ".join(fields), table)
       if sqlCond:
         cmd += " WHERE %s" % " AND ".join(sqlCond)
@@ -1068,8 +1066,8 @@ class ProxyDB(DB):
         sUserName = self._escapeString(result['Value'])['Value']
       except KeyError:
         return S_ERROR("Can't escape user name")
-      cmd = "INSERT INTO `ProxyDB_Proxies` ( UserName, UserDN, UserGroup, Pem, ExpirationTime, PersistentFlag ) VALUES "
-      cmd += "( %s, %s, %s, '', UTC_TIMESTAMP(), 'True' )" % (sUserName, sUserDN, sUserGroup)
+      cmd = "INSERT INTO `ProxyDB_Proxies` ( UserName, UserDN, UserGroup, Pem, ExpirationTime, PersistentFlag ) "
+      cmd += " VALUES( %s, %s, %s, '', UTC_TIMESTAMP(), 'True' )" % (sUserName, sUserDN, sUserGroup)
     else:
       cmd = "UPDATE `ProxyDB_Proxies` SET PersistentFlag='%s' WHERE UserDN=%s AND UserGroup=%s" % (sqlFlag,
                                                                                                    sUserDN,
@@ -1092,7 +1090,8 @@ class ProxyDB(DB):
     data = []
     sqlWhere = ["Pem is not NULL"]
     for table, fields in [('ProxyDB_CleanProxies', ("UserName", "UserDN", "ExpirationTime")),
-                          ('ProxyDB_Proxies', ("UserName", "UserDN", "UserGroup", "ExpirationTime", "PersistentFlag"))]:
+                          ('ProxyDB_Proxies', ("UserName", "UserDN", "UserGroup",
+                                               "ExpirationTime", "PersistentFlag"))]:
       cmd = "SELECT %s FROM `%s`" % (", ".join(fields), table)
       for field in selDict:
         if field not in fields:
@@ -1325,7 +1324,7 @@ class ProxyDB(DB):
         if notKey in notifDone and notifDone[notKey] <= notifLimit:
           # Already notified for this notification limit
           break
-        if not self._notifyProxyAboutToExpire(userDN, group, lTime):
+        if not self._notifyProxyAboutToExpire(userDN, lTime):
           # Cannot send notification, retry later
           break
         try:
@@ -1349,11 +1348,10 @@ class ProxyDB(DB):
         notifDone[notKey] = notifLimit
     return S_OK(sent)
 
-  def _notifyProxyAboutToExpire(self, userDN, userGroup, lTime):
+  def _notifyProxyAboutToExpire(self, userDN, lTime):
     """ Send notification mail about to expire
 
         :param basestring userDN: user DN
-        :param basestring userGroup: DIRAC group
         :param int lTime: left proxy live time in a seconds
 
         :return: boolean
@@ -1375,19 +1373,18 @@ Dear %s,
   information is:
 
   DN:    %s
-  Group: %s
 
   If you plan on keep using this credentials please upload a newer proxy to
   DIRAC by executing:
 
-  $ dirac-proxy-init -P -g %s --rfc
+  $ dirac-proxy-init --upload
 
   If you have been issued different certificate, please make sure you have a
   proxy uploaded with that certificate.
 
 Cheers,
  DIRAC's Proxy Manager
-""" % (userName, daysLeft, userDN, userGroup, userGroup)
+""" % (userName, daysLeft, userDN)
     fromAddr = self.getFromAddr()
     result = self.__notifClient.sendMail(userEMail, msgSubject, msgBody, fromAddress=fromAddr)
     if not result['OK']:
@@ -1462,7 +1459,7 @@ Cheers,
     # check if there is a previous ticket for the DN
     data = result['Value']
     sqlInsert = True
-    if len(data) > 0:
+    if data:
       sqlInsert = False
       pem = data[0][1]
       if pem:
