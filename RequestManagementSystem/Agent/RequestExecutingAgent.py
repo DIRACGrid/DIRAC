@@ -4,17 +4,21 @@
 # Date: 2013/03/12 15:36:47
 ########################################################################
 
-""" :mod: RequestExecutingAgent
+"""Agent processing the requests
 
-    ===========================
+ .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
 
-    .. module: RequestExecutingAgent
+See also the information about the :ref:`requestManagementSystem`.
 
-    :synopsis: request executing agent
+The following options can be set for the RequestExecutingAgent. The configuration also includes the
+``OperationHandlers`` available in DIRAC.
 
-    .. moduleauthor:: Krzysztof.Ciba@NOSPAMgmail.com
+.. literalinclude:: ../ConfigTemplate.cfg
+  :start-after: ##BEGIN RequestExecutingAgent
+  :end-before: ##END
+  :dedent: 2
+  :caption: RequestExecutingAgent options
 
-    request processing agent
 """
 
 __RCSID__ = '$Id$'
@@ -84,8 +88,6 @@ class RequestExecutingAgent(AgentModule):
   __fileTimeout = 300
   # # operation timeout
   __operationTimeout = 300
-  # # ProcessTask default timeout in seconds
-  __taskTimeout = 900
   # # ProcessPool finalization timeout
   __poolTimeout = 900
   # # ProcessPool sleep time

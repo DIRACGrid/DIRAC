@@ -37,21 +37,7 @@ At the end of the execution, if the Request comes from a job, we set the job to 
 
 The RequestExecutingAgent is one of the few that can be duplicated. There are protections to make sure that a Request is only processed by one REA at the time.
 
-=====================
-Configuration options
-=====================
-
-On top of the standard agent options, the REA accepts the following configuration
-
-
-* `BulkRequest` (default 0): If a positive integer `n` is given, we fetch `n` requests at once from the DB. Otherwise, one by one
-* `MinProcess` (default 2): minimum number of workers process in the `ProcessPool`
-* `MaxProcess` (default 4): maximum number of workers process in the `ProcessPool`
-* `OperationHandlers`: There should be in this section one section per OperationHandler (see :ref:`rmsOpType`)
-* `ProcessPoolQueueSize` (default 20): queue depth of the `ProcessPool`
-* `ProcessPoolTimeout` (default 900 seconds): timeout for the `ProcessPool` finalization
-* `ProcessPoolSleep` (default 5 seconds): sleep time before retrying to get a free slot in the `ProcessPool`
-* `RequestsPerCycle` (default 100): number of Requests to execute per cycle
+Configuration options are described :mod:`here <DIRAC.RequestManagementSystem.Agent.RequestExecutingAgent>`.
 
 ==============
 Retry strategy
