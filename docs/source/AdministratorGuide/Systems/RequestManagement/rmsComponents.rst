@@ -21,7 +21,7 @@ ReqManager
 
 This is the service in front of the DB. It has the following special configuration options:
 
-* `constantRequestDelay`: (default 0 minut) if not 0, this is the constant retry delay we add when putting a Request back to the DB
+* ``ConstantRequestDelay``: (default 0 minutes) if not 0, this is the constant retry delay we add when putting a Request back to the DB
 
 .. _RequestExecutinAgent:
 
@@ -45,7 +45,7 @@ Retry strategy
 
 Operations are normally retried several times in case they fail. There is a delay between each execution, depending on the case:
 
-* If the option `constantRequestDelay` is set in the :ref:`ReqManager`, then we apply that one
+* If the option ``ConstantRequestDelay`` is set in the :ref:`ReqManager`, then we apply that one
 * If one of the StorageElement (source or target) is banned, then we wait 1 hour (except if the SE is always banned, then we fail the Operation)
 * Otherwise the delay increases following a logarithmic scale with the number of attempts
 
