@@ -79,9 +79,9 @@ class RequestExecutingAgent(AgentModule):
   # # requests/cycle
   __requestsPerCycle = 100
   # # minimal nb of subprocess running
-  __minProcess = 2
+  __minProcess = 20
   # # maximal nb of subprocess executed same time
-  __maxProcess = 4
+  __maxProcess = 20
   # # ProcessPool queue size
   __queueSize = 20
   # # file timeout
