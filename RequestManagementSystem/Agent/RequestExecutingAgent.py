@@ -106,7 +106,7 @@ class RequestExecutingAgent(AgentModule):
     self.log.info("Requests/cycle = %d" % self.__requestsPerCycle)
     self.__minProcess = self.am_getOption("MinProcess", self.__minProcess)
     self.log.info("ProcessPool min process = %d" % self.__minProcess)
-    self.__maxProcess = self.am_getOption("MaxProcess", 4)
+    self.__maxProcess = self.am_getOption("MaxProcess", self.__maxProcess)
     self.log.info("ProcessPool max process = %d" % self.__maxProcess)
     self.__queueSize = self.am_getOption("ProcessPoolQueueSize", self.__queueSize)
     self.log.info("ProcessPool queue size = %d" % self.__queueSize)
@@ -114,7 +114,7 @@ class RequestExecutingAgent(AgentModule):
     self.log.info("ProcessPool timeout = %d seconds" % self.__poolTimeout)
     self.__poolSleep = int(self.am_getOption("ProcessPoolSleep", self.__poolSleep))
     self.log.info("ProcessPool sleep time = %d seconds" % self.__poolSleep)
-    self.__bulkRequest = self.am_getOption("BulkRequest", 0)
+    self.__bulkRequest = self.am_getOption("BulkRequest", self.__bulkRequest)
     self.log.info("Bulk request size = %d" % self.__bulkRequest)
 
     # # keep config path and agent name
