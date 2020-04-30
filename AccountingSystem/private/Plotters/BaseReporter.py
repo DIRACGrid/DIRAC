@@ -319,10 +319,10 @@ class BaseReporter(DBUtils):
     if not retVal['OK']:
       return retVal
     dataDict = self._groupByField(0, retVal['Value'])
+    data = {}
     # convert values to the correct format
-    data = {key: float(i[0]) for key, i in dataDict.items()}
-    #for key, values in dataDict.items():
-    #  data[key] = [float(i[0]) for i in values]
+    for key, values in dataDict.items():
+      data[key] = [float(i[0]) for i in values]
     return S_OK(data)
 
   def _getSelectStringForGrouping(self, groupingFields):
