@@ -37,6 +37,7 @@ class PilotCStoJSONSynchronizer(object):
     """ c'tor
         Just setting defaults
     """
+    self.workDir = ''  # Working directory where the files are going to be stored
     self.jsonFile = 'pilot.json'  # default filename of the pilot json file
 
     # domain name of the web server(s) used to upload the pilot json file and the pilot scripts
@@ -73,6 +74,13 @@ class PilotCStoJSONSynchronizer(object):
       self.log.fatal("The /Operations/<Setup>/Pilot/pilotFileServer option is not defined")
       self.log.fatal("Pilot 3 files won't be updated, and you won't be able to send pilots")
       return S_OK("The /Operations/<Setup>/Pilot/pilotFileServer option is not defined")
+
+    self.workDir = ops.getValue("Pilot/workDir", self.workDir)
+    if self.workDir:
+      try:
+        os.mkdir(self.workDir)
+      except OSError:
+        pass
 
     self.log.notice('-- Synchronizing the content of the JSON file with the content of the CS --',
                     '(%s)' % self.jsonFile)
@@ -270,10 +278,12 @@ class PilotCStoJSONSynchronizer(object):
 
     # Extension, if it exists
     if self.pilotVORepo:
-      if os.path.isdir('pilotVOLocalRepo'):
-        shutil.rmtree('pilotVOLocalRepo')
-      os.mkdir('pilotVOLocalRepo')
-      repo_VO = Repo.init('pilotVOLocalRepo')
+
+      pilotVOLocalRepo = os.path.join(self.workDir, 'pilotVOLocalRepo')
+      if os.path.isdir(pilotVOLocalRepo):
+        shutil.rmtree(pilotVOLocalRepo)
+      os.mkdir(pilotVOLocalRepo)
+      repo_VO = Repo.init(pilotVOLocalRepo)
       upstream = repo_VO.create_remote('upstream', self.pilotVORepo)
       upstream.fetch()
       upstream.pull(upstream.refs[0].remote_head)
@@ -281,7 +291,7 @@ class PilotCStoJSONSynchronizer(object):
         repo_VO.git.checkout(repo_VO.tags[self.pilotVOVersion], b='pilotVOScripts')
       else:
         repo_VO.git.checkout('upstream/%s' % self.pilotVORepoBranch, b='pilotVOScripts')
-      scriptDir = (os.path.join('pilotVOLocalRepo', self.projectDir, self.pilotVOScriptPath, "*.py"))
+      scriptDir = (os.path.join(pilotVOLocalRepo, self.projectDir, self.pilotVOScriptPath, "*.py"))
       for fileVO in glob.glob(scriptDir):
         self._upload(filename=os.path.basename(fileVO), pilotScript=fileVO)
         tarFiles.append(fileVO)
@@ -289,18 +299,19 @@ class PilotCStoJSONSynchronizer(object):
       self.log.warn("The /Operations/<Setup>/Pilot/pilotVORepo option is not defined")
 
     # DIRAC repo
-    if os.path.isdir('pilotLocalRepo'):
-      shutil.rmtree('pilotLocalRepo')
-    os.mkdir('pilotLocalRepo')
-    repo = Repo.init('pilotLocalRepo')
+    pilotLocalRepo = os.path.join(self.workDir, 'pilotLocalRepo')
+    if os.path.isdir(pilotLocalRepo):
+      shutil.rmtree(pilotLocalRepo)
+    os.mkdir(pilotLocalRepo)
+    repo = Repo.init(pilotLocalRepo)
     upstream = repo.create_remote('upstream', self.pilotRepo)
     upstream.fetch()
     upstream.pull(upstream.refs[0].remote_head)
     if repo.tags:
       if self.pilotVORepo:
-        localRepo = 'pilotVOLocalRepo'
+        localRepo = pilotVOLocalRepo
       else:
-        localRepo = 'pilotLocalRepo'
+        localRepo = pilotLocalRepo
       with open(os.path.join(localRepo, self.projectDir, 'releases.cfg'), 'r') as releasesFile:
         lines = [line.rstrip('\n') for line in releasesFile]
         lines = [s.strip() for s in lines]
@@ -310,24 +321,24 @@ class PilotCStoJSONSynchronizer(object):
     else:
       repo.git.checkout('upstream/%s' % self.pilotRepoBranch, b='pilotScripts')
     try:
-      scriptDir = os.path.join('pilotLocalRepo', self.pilotScriptPath, "*.py")
+      scriptDir = os.path.join(pilotLocalRepo, self.pilotScriptPath, "*.py")
       for filename in glob.glob(scriptDir):
         self._upload(filename=os.path.basename(filename), pilotScript=filename)
         tarFiles.append(filename)
-      if not os.path.isfile(os.path.join('pilotLocalRepo',
+      if not os.path.isfile(os.path.join(pilotLocalRepo,
                                          self.pilotScriptPath,
                                          "dirac-install.py")):
         self._upload(filename='dirac-install.py',
-                     pilotScript=os.path.join('pilotLocalRepo', "Core/scripts/dirac-install.py"))
+                     pilotScript=os.path.join(pilotLocalRepo, "Core/scripts/dirac-install.py"))
         tarFiles.append('dirac-install.py')
 
-      with tarfile.TarFile(name='pilot.tar', mode='w') as tf:
-        pwd = os.getcwd()
+      tarPath = os.path.join(self.workDir, 'pilot.tar')
+      with tarfile.TarFile(name=tarPath, mode='w') as tf:
         for ptf in tarFiles:
-          shutil.copyfile(ptf, os.path.join(pwd, os.path.basename(ptf)))
+          shutil.copyfile(ptf, os.path.join(self.workDir, os.path.basename(ptf)))
           tf.add(os.path.basename(ptf), recursive=False)
 
-      self._upload(filename='pilot.tar', pilotScript='pilot.tar')
+      self._upload(filename='pilot.tar', pilotScript=tarPath)
 
     except ValueError:
       return S_ERROR("Error uploading the pilot scripts")
@@ -355,7 +366,7 @@ class PilotCStoJSONSynchronizer(object):
       if pilotDict:  # this is for the pilot.json file
         filename = self.jsonFile
         script = json.dumps(pilotDict)
-        with open(filename, 'w') as jf:
+        with open(os.path.join(self.workDir, filename), 'w') as jf:
           jf.write(script)
 
       else:  # we assume the method is asked to upload the pilots scripts
@@ -392,8 +403,9 @@ class PilotCStoJSONSynchronizer(object):
 
   def _syncChecksum(self):
     """Upload the checksum file to the fileservers."""
-    with open('checksums.sha512', 'wt') as chksums:
+    cksPath = os.path.join(self.workDir, 'checksums.sha512')
+    with open(cksPath, 'wt') as chksums:
       for filename, chksum in sorted(self._checksumDict.items()):
         # same as the output from sha512sum commands
         chksums.write('%s  %s\n' % (chksum, filename))
-    self._upload(filename='checksums.sha512', pilotScript='checksums.sha512')
+    self._upload(filename='checksums.sha512', pilotScript=cksPath)
