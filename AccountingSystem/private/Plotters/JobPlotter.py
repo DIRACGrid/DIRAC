@@ -710,9 +710,7 @@ class JobPlotter(BaseReporter):
     retVal = self._getBucketData(reportRequest['startTime'],
                                  reportRequest['endTime'],
                                  selectFields,
-                                 reportRequest['condDict'],
-                                 reportRequest['groupingFields'],
-                                 {})
+                                 reportRequest['condDict'])
     if not retVal['OK']:
       return retVal
     dataDict = retVal['Value']

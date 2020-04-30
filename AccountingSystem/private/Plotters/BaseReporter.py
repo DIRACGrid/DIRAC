@@ -295,7 +295,7 @@ class BaseReporter(DBUtils):
       dataDict[key] = float(dataDict[key])
     return S_OK(dataDict)
 
-  def _getBucketData(self, startTime, endTime, selectFields, preCondDict, groupingFields, metadataDict):
+  def _getBucketData(self, startTime, endTime, selectFields, preCondDict):
     """
     It retrieves data for histogram.
 
@@ -303,7 +303,6 @@ class BaseReporter(DBUtils):
     :param int endTime: epoch time
     :param list selectFields: the value being plotted
     :param dict preCondDict: plot attributes (conditions)
-    :param dict metadataDict: extra arguments used to create the plot.
 
     """
 
@@ -320,10 +319,10 @@ class BaseReporter(DBUtils):
     if not retVal['OK']:
       return retVal
     dataDict = self._groupByField(0, retVal['Value'])
-    data = {}
     # convert values to the correct format
-    for key, values in dataDict.items():
-      data[key] = [float(i[0]) for i in values]
+    data = {key: float(i[0]) for key, i in dataDict.items()}
+    #for key, values in dataDict.items():
+    #  data[key] = [float(i[0]) for i in values]
     return S_OK(data)
 
   def _getSelectStringForGrouping(self, groupingFields):
