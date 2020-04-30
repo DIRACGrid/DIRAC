@@ -69,16 +69,7 @@ Other options that can be set also in the Operations part of the CS include:
 |                                    | files will be downloaded before the upload | There is no default (so /opt/dirac/runit/Configuration/Server)          |
 +------------------------------------+--------------------------------------------+-------------------------------------------------------------------------+
 
-Starting the old Pilot 2 via SiteDirectors
-==========================================
-
 Since DIRAC v7r0, SiteDirectors will send by default "pilots3".
-To still send Pilot 2 type of pilots, the Pilot3 flag should be set explicitely to False
-(see :mod:`~DIRAC.WorkloadManagementSystem.Agent.SiteDirector`).
-
-It should be anyway noted that "Pilot 2" are not maintained anymore, and that their code will be removed in a future version of DIRAC.
-
-In this case, the option ``Operations/[Defaults | Setup]/Pilot/UpdatePilotCStoJSONFile`` could be also set to False.
 
 
 Pilot logging

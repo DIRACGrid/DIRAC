@@ -40,17 +40,17 @@ def test_scriptReal():
     diracInstall = fd.read()
   diracInstallEncoded = base64.b64encode(bz2.compress(diracInstall, 9))
 
-  diracPilot = os.path.join(os.getcwd(), 'WorkloadManagementSystem/PilotAgent/dirac-pilot.py')
+  diracPilot = os.path.join(os.getcwd(), 'Core/scripts/dirac-install.py')  # just some random file
   with open(diracPilot, "r") as fd:
     diracPilot = fd.read()
   diracPilotEncoded = base64.b64encode(bz2.compress(diracPilot, 9))
 
-  diracPilotTools = os.path.join(os.getcwd(), 'WorkloadManagementSystem/PilotAgent/pilotTools.py')
+  diracPilotTools = os.path.join(os.getcwd(), 'Core/scripts/dirac-install.py')  # just some random file
   with open(diracPilotTools, "r") as fd:
     diracPilotTools = fd.read()
   diracPilotToolsEncoded = base64.b64encode(bz2.compress(diracPilotTools, 9))
 
-  diracPilotCommands = os.path.join(os.getcwd(), 'WorkloadManagementSystem/PilotAgent/pilotCommands.py')
+  diracPilotCommands = os.path.join(os.getcwd(), 'Core/scripts/dirac-install.py')  # just some random file
   with open(diracPilotCommands, "r") as fd:
     diracPilotCommands = fd.read()
   diracPilotCommandsEncoded = base64.b64encode(bz2.compress(diracPilotCommands, 9))
