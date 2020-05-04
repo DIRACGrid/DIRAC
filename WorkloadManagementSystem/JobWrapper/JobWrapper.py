@@ -444,7 +444,7 @@ class JobWrapper(object):
 
     if watchdog.currentStats:
       self.log.info('Statistics collected by the Watchdog:\n ',
-                    '\n  '.join(['%s: %s' % items for items in watchdog.currentStats.items()]))
+                    '\n  '.join(['%s: %s' % items for items in watchdog.currentStats.items()]))  # can be an iterator
     if outputs:
       status = threadResult['Value'][0]  # the status of the payload execution
       # Send final heartbeat of a configurable number of lines here
@@ -604,7 +604,7 @@ class JobWrapper(object):
       resolvedData = result
 
     # add input data size to accounting report (since resolution successful)
-    for lfn, mdata in resolvedData['Value']['Successful'].items():
+    for lfn, mdata in resolvedData['Value']['Successful'].items():  # can be an iterator
       if 'Size' in mdata:
         lfnSize = mdata['Size']
         if not isinstance(lfnSize, long):
@@ -655,7 +655,7 @@ class JobWrapper(object):
     self.log.verbose(replicas)
 
     failedGUIDs = []
-    for lfn, reps in replicas['Value']['Successful'].items():
+    for lfn, reps in replicas['Value']['Successful'].items():  # can be an iterator
       if 'GUID' not in reps:
         failedGUIDs.append(lfn)
 
@@ -685,11 +685,11 @@ class JobWrapper(object):
     badLFNs = []
     catalogResult = repsResult['Value']
 
-    for lfn, cause in catalogResult.get('Failed', {}).items():
+    for lfn, cause in catalogResult.get('Failed', {}).items():  # can be an iterator
       badLFNCount += 1
       badLFNs.append('LFN:%s Problem: %s' % (lfn, cause))
 
-    for lfn, replicas in catalogResult.get('Successful', {}).items():
+    for lfn, replicas in catalogResult.get('Successful', {}).items():  # can be an iterator
       if not replicas:
         badLFNCount += 1
         badLFNs.append('LFN:%s Problem: Null replica value' % (lfn))
@@ -717,7 +717,7 @@ class JobWrapper(object):
       self.log.warn(failed)
       return S_ERROR('Missing GUIDs')
 
-    for lfn, reps in repsResult['Value']['Successful'].items():
+    for lfn, reps in repsResult['Value']['Successful'].items():  # can be an iterator
       guidDict['Value']['Successful'][lfn].update(reps)
 
     catResult = guidDict
