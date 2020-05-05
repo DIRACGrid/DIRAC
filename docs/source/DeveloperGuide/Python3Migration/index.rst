@@ -73,6 +73,26 @@ Recommendations for code
 The "The Conservative Python 3 Porting Guide" linked above is an excellent source of information.
 This sections contains some details that are particularly relevant to DIRAC.
 
+**\_\_future\_\_ imports**
+  Since Python 2.1 the ``__future__`` module has been used to allow the behaviour of newer Python versions to be accessed from older interpreters.
+  For the Python 3 migration there are three particularly useful ones which should be applied to all new files in DIRAC.
+
+  - ``from __future__ import print_function``:
+    Replaces the Python 2 style print statement with Python 3's print function.
+    This is already used widely in DIRAC and should be safe to apply to any file.
+    If it is applied to a file which uses the old style function it is an easy to detect ``SyntaxError`` that will be noticed by any commonly used linter.
+  - ``from __future__ import absolute_import``:
+    In Python 3 all imports are absolute by default.
+    This means that if using ``import my_module`` will not find files called ``my_module.py`` that are next to the current file.
+    If a relative import is desired this must be explicit using ``from . import my_module``.
+  - ``from __future__ import division``:
+    In Python 3 division of integers returns a float when necessary, i.e. ``1 / 2 == 0`` in Python 2 but ``1 / 2 == 0.5`` in Python 3.
+    The Python 2 behaviour was a common source of bugs and it is likely safe to use this import in most modules.
+    After this import is included, both Python versions will have the same behaviour with ``1 / 2 == 0.5`` however some fixes my be required to use the integer division operator ``1 // 2 == 0`` that is available in both Python versions regardless of if the future import is used.
+
+  These three are all confined to only affecting the current file making it easy to progressively add them to individual files without unexpected side effects in other parts of DIRAC.
+  While ``from __future__ import unicode_literals`` also exists, this tends to result in unexpected side effects from ``unicode`` objects being passed to functions that weren't designed to handle them and as a result it is not expected to be useful for DIRAC's Python 3 migration.
+
 **bytes vs str**
   The most difficult change when moving Python 3 is the splitting of the `str` type one for text and one for true binary data.
   This exposes subtle issues in Python 2 that were likely never noticed and an automatic conversion to fix this is inherently impossible.
