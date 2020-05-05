@@ -17,6 +17,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - name: Fail-fast for outdated pipelines
+      run: .github/workflows/fail-fast.sh
     - name: prepare environment
       run: |
         conda config --set add_pip_as_python_dependency false
