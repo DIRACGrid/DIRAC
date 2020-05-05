@@ -8,6 +8,7 @@ __RCSID__ = "$Id$"
 import os
 import socket
 from M2Crypto import SSL, threading as M2Threading
+from M2Crypto.SSL.Checker import SSLVerificationError
 
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 from DIRAC.Core.DISET.private.Transports.BaseTransport import BaseTransport
@@ -93,10 +94,8 @@ class SSLTransport(BaseTransport):
         self.remoteAddress = self.oSocket.getpeername()
 
         return S_OK()
-      except socket.error as e:
-        # Other exception are probably SSL-related, in that case we
-        # abort and the exception is forwarded to the caller.
-        error = e
+      except (socket.error, SSLVerificationError, SSL.SSLError) as e:
+        error = "%s:%s" % (e, repr(e))
 
         if self.oSocket is not None:
           self.oSocket.close()
@@ -174,10 +173,13 @@ class SSLTransport(BaseTransport):
 
         :returns: S_OK(SSLTransport object)
     """
-    oClient, _ = self.oSocket.accept()
-    oClientTrans = SSLTransport(self.stServerAddress, ctx=self.__ctx)
-    oClientTrans.setClientSocket(oClient)
-    return S_OK(oClientTrans)
+    try:
+      oClient, _ = self.oSocket.accept()
+      oClientTrans = SSLTransport(self.stServerAddress, ctx=self.__ctx)
+      oClientTrans.setClientSocket(oClient)
+      return S_OK(oClientTrans)
+    except (SSL.SSLError, SSLVerificationError) as e:
+      return S_ERROR("Error in acceptConnection: %s %s" % (e, repr(e)))
 
   def _read(self, bufSize=4096, skipReadyCheck=False):
     """ Read bufSize bytes from the buffer.
@@ -188,8 +190,11 @@ class SSLTransport(BaseTransport):
 
         :returns: S_OK(number of byte read)
     """
-    read = self.oSocket.read(bufSize)
-    return S_OK(read)
+    try:
+      read = self.oSocket.read(bufSize)
+      return S_OK(read)
+    except (socket.error, SSL.SSLError, SSLVerificationError) as e:
+      return S_ERROR("Error in _read: %s %s" % (e, repr(e)))
 
   def isLocked(self):
     """ Returns if this instance is locked.
@@ -207,5 +212,8 @@ class SSLTransport(BaseTransport):
 
         :returns: S_OK(number of bytes written)
     """
-    wrote = self.oSocket.write(buf)
-    return S_OK(wrote)
+    try:
+      wrote = self.oSocket.write(buf)
+      return S_OK(wrote)
+    except (socket.error, SSL.SSLError, SSLVerificationError) as e:
+      return S_ERROR("Error in _write: %s %s" % (e, repr(e)))
