@@ -21,6 +21,7 @@ jobs:
           #     SC1091: Not following sourced file
           - find tests/CI -name '*.sh' -print0 | xargs -0 -n1 shellcheck --exclude=SC1090,SC1091 --external-source
           - tests/runPylint.sh
+          - tests/py3Check.sh
           - CHECK=pylintPY3K tests/runPylint.sh
           - |
             if [[ "${REFERENCE_BRANCH}" != "" ]]; then
