@@ -13,9 +13,9 @@ import os
 from pprint import pformat
 
 from mock import patch, call, MagicMock as Mock
+from diraccfg import CFG
 
 import DIRAC
-from DIRAC.Core.Utilities.CFG import CFG
 
 LOG = logging.getLogger(__name__)
 

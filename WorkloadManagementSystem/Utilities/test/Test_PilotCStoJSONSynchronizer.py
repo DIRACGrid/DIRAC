@@ -4,11 +4,11 @@
 import unittest
 import os
 from mock import patch, MagicMock as Mock
+from diraccfg import CFG
 
 from DIRAC.WorkloadManagementSystem.Utilities.PilotCStoJSONSynchronizer import PilotCStoJSONSynchronizer
 from DIRAC.ConfigurationSystem.private.ConfigurationClient import ConfigurationClient
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
-from DIRAC.Core.Utilities.CFG import CFG
 
 # pylint: disable=protected-access
 

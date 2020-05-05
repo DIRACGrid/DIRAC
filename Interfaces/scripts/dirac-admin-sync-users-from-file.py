@@ -9,9 +9,10 @@
 """
 from __future__ import print_function
 __RCSID__ = "$Id$"
+from diraccfg import CFG
 import DIRAC
 from DIRAC.Core.Base import Script
-from DIRAC.Core.Utilities.CFG import CFG
+
 
 Script.registerSwitch("t", "test", "Only test. Don't commit changes")
 Script.setUsageMessage(

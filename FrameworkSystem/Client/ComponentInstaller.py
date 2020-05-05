@@ -65,6 +65,8 @@ import time
 import subprocess32 as subprocess
 import shutil
 
+from diraccfg import CFG
+
 import DIRAC
 from DIRAC import rootPath
 from DIRAC import gConfig
@@ -72,7 +74,6 @@ from DIRAC import gLogger
 from DIRAC.Core.Utilities.Subprocess import systemCall
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
 
-from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.Core.Utilities.Version import getVersion
 from DIRAC.Core.Utilities.File import mkDir, mkLink
 from DIRAC.ConfigurationSystem.Client.CSAPI import CSAPI

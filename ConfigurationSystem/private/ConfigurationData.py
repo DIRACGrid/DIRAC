@@ -9,10 +9,10 @@ import thread
 import time
 import DIRAC
 
+from diraccfg import CFG
 from DIRAC.Core.Utilities.File import mkDir
 from DIRAC.Core.Utilities import List, Time
 from DIRAC.Core.Utilities.ReturnValues import S_OK, S_ERROR
-from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.Core.Utilities.LockRing import LockRing
 from DIRAC.FrameworkSystem.Client.Logger import gLogger
 

@@ -3,8 +3,8 @@
 
 import unittest
 
+from diraccfg import CFG
 from DIRAC import gConfig
-from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.Core.DISET.AuthManager import AuthManager
 
 __RCSID__ = "$Id$"

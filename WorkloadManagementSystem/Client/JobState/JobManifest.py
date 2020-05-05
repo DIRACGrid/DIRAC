@@ -2,8 +2,9 @@
 """
 
 from past.builtins import long
+from diraccfg import CFG
+
 from DIRAC import S_OK, S_ERROR
-from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.Core.Utilities import List
 from DIRAC.ConfigurationSystem.Client.Helpers.Operations import Operations
 from DIRAC.Core.Utilities.JDL import loadJDLAsCFG, dumpCFGAsJDL

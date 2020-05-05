@@ -10,11 +10,11 @@ import sys
 
 from diracdoctools.Config import Configuration
 from diracdoctools.Utilities import makeLogger
+from diraccfg import CFG
 
 # Try/except for python3 compatibility to ignore errors in ``import DIRAC`` while they last
 # ultimate protection against not having the symbols imported is also done in the ``run`` function
 try:
-  from DIRAC.Core.Utilities.CFG import CFG
   from DIRAC import S_OK, S_ERROR
 except ImportError:
   pass

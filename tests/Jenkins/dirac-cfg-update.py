@@ -5,6 +5,8 @@
 from __future__ import print_function
 import os
 
+from diraccfg import CFG
+
 from DIRAC.Core.Base import Script
 Script.setUsageMessage('\n'.join([__doc__.split('\n')[1],
                                   'Usage:',
@@ -34,8 +36,6 @@ for unprocSw in Script.getUnprocessedSwitches():
     sMod = unprocSw[1]
   if unprocSw[0] in ("S", "setup"):
     setup = unprocSw[1]
-
-from DIRAC.Core.Utilities.CFG import CFG
 
 localCfg = CFG()
 if cFile:

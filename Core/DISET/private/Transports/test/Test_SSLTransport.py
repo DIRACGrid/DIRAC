@@ -8,11 +8,9 @@ import threading
 from pytest import fixture
 
 
+from diraccfg import CFG
 from DIRAC.Core.Security.test.x509TestUtilities import CERTDIR, USERCERT, getCertOption
-
-
 from DIRAC.ConfigurationSystem.Client.ConfigurationData import gConfigurationData
-from DIRAC.Core.Utilities.CFG import CFG
 from DIRAC.Core.DISET.private.Transports import PlainTransport, M2SSLTransport
 
 # TODO: Expired hostcert

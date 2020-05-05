@@ -7,8 +7,8 @@ Some Helper class to access Default options for Different Resources (CEs, SEs, C
 """
 
 from __future__ import print_function
+from diraccfg import CFG
 from DIRAC.ConfigurationSystem.Client.Helpers.Path import cfgResourceSection, cfgPath, cfgInstallPath, cfgPathToList
-from DIRAC.Core.Utilities.CFG import CFG
 
 __RCSID__ = "$Id$"
 

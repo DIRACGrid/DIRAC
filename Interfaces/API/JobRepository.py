@@ -2,8 +2,9 @@
 
 __RCSID__ = "$Id$"
 
+from diraccfg import CFG
+
 from DIRAC import gLogger, S_OK, S_ERROR
-from DIRAC.Core.Utilities.CFG import CFG
 
 import os
 import time

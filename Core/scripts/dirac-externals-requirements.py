@@ -14,11 +14,11 @@ import os
 import sys
 import commands
 
+from diraccfg import CFG
 from DIRAC.Core.Base import Script
 Script.disableCS()
 
 from DIRAC import gLogger, rootPath, S_OK
-from DIRAC.Core.Utilities.CFG import CFG
 
 __RCSID__ = "$Id$"
 
