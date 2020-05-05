@@ -195,6 +195,7 @@ This sections contains some details that are particularly relevant to DIRAC.
   The main issue with using ``int`` instead of ``long`` is that type checks may fail as shown here:
 
   .. code-block:: python
+
     # Bad: Original Python 3 incompatible code
     my_number = long(my_number)
     if isinstance(my_number, long)
