@@ -12,6 +12,9 @@ DIRAC_GFAL_GRIDFTP_SESSION_REUSE: This should be exported
   and set to true in server bashrc files for efficiency reasons.
 
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 # pylint: disable=arguments-differ
 

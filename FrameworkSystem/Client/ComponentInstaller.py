@@ -56,6 +56,7 @@ If a Master Configuration Server is being installed the following Options can be
 """
 
 from __future__ import print_function, absolute_import
+from __future__ import division
 
 import os
 import io

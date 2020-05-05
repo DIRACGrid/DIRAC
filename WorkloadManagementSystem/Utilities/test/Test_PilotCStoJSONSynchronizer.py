@@ -1,5 +1,8 @@
 """ This is a test of the creation of the json dump file
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 import unittest
 import os

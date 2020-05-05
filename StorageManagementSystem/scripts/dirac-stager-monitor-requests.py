@@ -7,6 +7,9 @@
 """
   Report the details of file staging requests, based on selection filters
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 _RCSID__ = "$Id$"
 from DIRAC.Core.Base import Script
 from DIRAC import gConfig, gLogger, exit as DIRACExit, S_OK, version

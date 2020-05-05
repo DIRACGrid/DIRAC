@@ -7,6 +7,9 @@
 
   if the denominator is smaller than 10, it does not take any decision.
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 from DIRAC import S_OK
 from DIRAC.ResourceStatusSystem.PolicySystem.PolicyBase import PolicyBase

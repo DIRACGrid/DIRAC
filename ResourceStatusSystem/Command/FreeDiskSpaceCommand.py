@@ -7,6 +7,9 @@
     For the moment, when you see "token" or "space token" here, just read "StorageElement".
 
 '''
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = '$Id$'
 

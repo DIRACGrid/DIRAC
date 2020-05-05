@@ -5,6 +5,9 @@ It uses the local host certificate
 The target is specified as ""<port>/System/Service"
 The script does not print anything, and just exists with 0 in case of success,
 or 1 in case of error """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

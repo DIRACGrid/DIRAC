@@ -7,6 +7,9 @@ There are also details available about Per-User Sub-Proxies (PUSP)
 here: https://wiki.egi.eu/wiki/Usage_of_the_per_user_sub_proxy_in_EGI
 
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import six

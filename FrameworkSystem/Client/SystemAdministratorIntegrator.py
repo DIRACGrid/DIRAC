@@ -1,6 +1,9 @@
 """ The SystemAdministratorIntegrator is a class integrating access to all the
     SystemAdministrator services configured in the system
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

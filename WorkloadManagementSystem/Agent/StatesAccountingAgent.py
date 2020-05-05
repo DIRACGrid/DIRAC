@@ -6,6 +6,9 @@
 """  StatesAccountingAgent sends periodically numbers of jobs in various states for various
      sites to the Monitoring system to create historical plots.
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 

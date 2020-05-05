@@ -1,5 +1,8 @@
 """ DIRAC FileCatalog mix-in class to manage users and groups from the CS Registry
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

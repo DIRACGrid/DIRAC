@@ -1,5 +1,8 @@
 """ MQConsumer
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 import Queue
 from DIRAC import S_ERROR, S_OK, gLogger

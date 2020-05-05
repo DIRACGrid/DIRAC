@@ -2,6 +2,9 @@
 
   Module that allows users to access the ResourceManagementDB remotely.
 '''
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 from DIRAC import gConfig, S_OK, gLogger
 from DIRAC.Core.DISET.RequestHandler import RequestHandler, getServiceOption

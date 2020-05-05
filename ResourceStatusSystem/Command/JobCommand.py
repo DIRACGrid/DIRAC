@@ -3,6 +3,9 @@
   The JobCommand class is a command class to know about present jobs efficiency
 
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = '$Id$'
 

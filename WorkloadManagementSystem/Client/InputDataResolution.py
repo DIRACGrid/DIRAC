@@ -6,6 +6,9 @@
     result and in principle has all the necessary information to resolve input data
     for applications.
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 import six
 import DIRAC

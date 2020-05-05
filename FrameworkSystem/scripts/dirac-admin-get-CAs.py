@@ -12,6 +12,9 @@ Usage:
 
   dirac-admin-get-CAs (<options>|<cfgFile>)*
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 import DIRAC
 from DIRAC.Core.Base import Script

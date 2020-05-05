@@ -1,6 +1,9 @@
 """
 ComponentMonitoring type used to monitor DIRAC components.
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 from DIRAC.MonitoringSystem.Client.Types.BaseType import BaseType
 

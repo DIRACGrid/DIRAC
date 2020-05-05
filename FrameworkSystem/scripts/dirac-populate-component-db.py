@@ -5,6 +5,9 @@ Populates the database with the current installations of components
 This script assumes that the InstalledComponentsDB, the
 ComponentMonitoring service and the Notification service are installed and running
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 
 from datetime import datetime

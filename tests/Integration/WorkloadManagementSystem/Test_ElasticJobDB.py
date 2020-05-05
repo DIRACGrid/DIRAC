@@ -1,5 +1,8 @@
 """ This tests only need the JobElasticDB, and connects directly to it
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 import time
 

@@ -4,6 +4,9 @@ Script that facilitates the modification of a element through the command line.
 However, the usage of this script will set the element token to the command
 issuer with a duration of 1 day.
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = '$Id$'
 

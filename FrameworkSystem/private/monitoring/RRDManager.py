@@ -1,6 +1,9 @@
 """ This class is a wrap around the rrdtool as it is a command line based tool within this class there are
     several methods which take in some parameters required by the corresponding rrd command and executes it.
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 import os.path
 import hashlib

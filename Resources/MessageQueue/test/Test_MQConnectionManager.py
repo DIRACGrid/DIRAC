@@ -1,6 +1,9 @@
 """Unit tests of MQConnectionManager in the DIRAC.Resources.MessageQueue.MConnectionManager
    Also, test of internal functions for mq connection storage.
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 # ignore use of __functions, _functions
 # pylint: disable=no-member, protected-access

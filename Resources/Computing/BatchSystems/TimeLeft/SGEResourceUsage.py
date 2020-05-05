@@ -1,6 +1,9 @@
 """ The SGE TimeLeft utility interrogates the SGE batch system for the
     current CPU consumed, as well as its limit.
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

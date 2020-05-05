@@ -1,5 +1,8 @@
 """ GGUSTicketsClient class is a client for the GGUS Tickets DB.
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 import urllib2
 

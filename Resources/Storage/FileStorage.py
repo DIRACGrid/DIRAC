@@ -1,6 +1,9 @@
 """
  This is the File StorageClass, only meant to be used localy
  """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

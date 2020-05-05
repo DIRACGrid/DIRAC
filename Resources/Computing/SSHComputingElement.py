@@ -5,6 +5,9 @@
 
 """ SSH (Virtual) Computing Element: For a given IP/host it will send jobs directly through ssh
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

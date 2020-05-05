@@ -17,6 +17,9 @@ Careful with that axe, Eugene! Some 'transfer' requests are using local fs
 and they never should be forwarded to the central RequestManager.
 
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

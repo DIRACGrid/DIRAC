@@ -1,5 +1,8 @@
 #!/bin/env python
 """Script to call the DataRecoveryAgent functionality by hand."""
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 from DIRAC import S_OK, gLogger
 from DIRAC.Core.Base import Script
 

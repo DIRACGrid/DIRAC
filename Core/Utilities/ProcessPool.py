@@ -96,6 +96,9 @@ so you probably want to handle them differently depending on their results, whil
 executing same type of callables in subprocesses and  hence you are expecting the same type of results
 everywhere.
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

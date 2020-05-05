@@ -11,6 +11,9 @@ This is a multi-line docstring. Paragraphs are separated with blank lines.
 Normally we should have a limit of a 79 according to pep8, but in DIRAC we allow 120. I am writting a very long line on purpose, but it will not be split
 
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 # I am writting a very long line on purpose, and contrary to the very long
 # line in the docstring, this comment will be split

@@ -14,6 +14,9 @@ The following options can be set for the InputDataAgent.
   :dedent: 2
   :caption: InputDataAgent options
 '''
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 from past.builtins import long
 import time

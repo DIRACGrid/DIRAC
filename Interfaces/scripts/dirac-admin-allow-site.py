@@ -8,6 +8,8 @@
   Add Site to Active mask for current Setup
 """
 from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import division
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base import Script

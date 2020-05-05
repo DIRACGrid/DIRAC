@@ -1,5 +1,8 @@
 """ Test case for DIRAC.Core.Utilities.File module
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 ##
 # @author Krzysztof.Ciba@NOSPAMgmail.com

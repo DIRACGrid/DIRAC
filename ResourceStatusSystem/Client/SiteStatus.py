@@ -3,6 +3,9 @@
   Provides methods to easily interact with the CS and/or RSS to get the site status
 
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = '$Id$'
 

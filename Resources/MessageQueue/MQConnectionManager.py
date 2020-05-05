@@ -11,6 +11,9 @@
         blabal.cern.ch:     {'MQConnector':None,           'destinations':{'/queue/test2':['consumer2', 'producer2',]}}
       }
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 from DIRAC import S_OK, S_ERROR, gLogger
 from DIRAC.Core.Utilities.LockRing import LockRing

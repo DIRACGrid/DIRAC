@@ -13,6 +13,9 @@ Print outs with "SCHEMA PROBLEM" point -- in my opinion -- to errors in the
 published information, like a foreign key pointing to non-existant entry.
 
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 import six
 from pprint import pformat

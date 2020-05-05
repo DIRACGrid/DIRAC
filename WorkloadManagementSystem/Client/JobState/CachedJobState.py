@@ -3,6 +3,9 @@
     IIUC this is a wrapper around the JobState object. It basically tries to cache
     everything locally instead of going to the DB.
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 import six
 import copy

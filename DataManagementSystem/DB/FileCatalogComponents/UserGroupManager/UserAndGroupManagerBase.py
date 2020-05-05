@@ -1,5 +1,8 @@
 """ DIRAC FileCatalog base class for mix-in classes to manage users and groups
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

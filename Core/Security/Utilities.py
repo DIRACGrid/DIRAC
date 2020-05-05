@@ -29,6 +29,9 @@ or::
 Note: If you wan to make sure that the CA is up to date, better to use the BundleDeliveryClient.
 
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 import os
 import tempfile
 

@@ -4,6 +4,9 @@
   StateMachine ). And the RSS implementation of it, using its own states map.
 
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 from DIRAC import S_OK, S_ERROR, gLogger
 

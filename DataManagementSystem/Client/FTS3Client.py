@@ -1,3 +1,6 @@
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC import S_OK, S_ERROR
 from DIRAC.Core.Utilities.JEncode import encode, decode

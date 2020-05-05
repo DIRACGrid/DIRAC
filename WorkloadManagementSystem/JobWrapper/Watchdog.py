@@ -16,6 +16,9 @@
      - Still to implement:
           - CPU normalization for correct comparison with job limit
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

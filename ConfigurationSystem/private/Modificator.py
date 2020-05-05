@@ -1,5 +1,8 @@
 """ This is the guy that actually modifies the content of the CS
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 import zlib
 import difflib

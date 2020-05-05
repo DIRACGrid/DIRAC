@@ -8,6 +8,8 @@
   Retrieve info about pilots that have matched a given Job
 """
 from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import division
 __RCSID__ = "$Id$"
 
 # pylint: disable=wrong-import-position

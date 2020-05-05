@@ -1,6 +1,9 @@
 """ X509CRL is a class for managing X509CRL
 This class is used to manage the revoked certificates....
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 

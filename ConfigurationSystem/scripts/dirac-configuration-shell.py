@@ -3,6 +3,9 @@
 """
 Script that emulates the behaviour of a shell to edit the CS config.
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 import sys
 
 from DIRAC.Core.Base import Script

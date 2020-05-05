@@ -5,6 +5,9 @@ Create a production to replicate files from some storage elements to others
 :since:  May 31, 2018
 :author: A. Sailer
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 from DIRAC.Core.Base import Script
 from DIRAC import gLogger, exit as dexit
 from DIRAC.TransformationSystem.Utilities.ReplicationCLIParameters import Params

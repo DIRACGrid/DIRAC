@@ -6,6 +6,9 @@ This test assumes that there is a DIRAC master server running on the local machi
 This test assumes that the Notification service is not installed
 This test assumes that the FTS3DB database is not installed and doesn't exist in MySQL
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 # pylint: disable=invalid-name,wrong-import-position
 

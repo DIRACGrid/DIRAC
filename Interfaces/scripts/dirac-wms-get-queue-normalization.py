@@ -8,6 +8,8 @@
   Report Normalization Factor applied by Site to the given Queue
 """
 from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import division
 __RCSID__ = "$Id$"
 
 import DIRAC

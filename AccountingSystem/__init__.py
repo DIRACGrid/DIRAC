@@ -13,4 +13,7 @@ DIRAC Accounting uses a number of predefined Types that must include:
  - bucket definition to set the granularity of the reports
 
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 __package__ = 'DIRAC.AccountingSystem'

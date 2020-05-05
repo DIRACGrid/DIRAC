@@ -10,6 +10,9 @@ This script can help to discover discrepancies in the configuration:
 This script should be run by dirac administrators after major updates.
 
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

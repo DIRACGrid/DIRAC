@@ -1,6 +1,9 @@
 """
   This module manages is a client for the TS and manages the transformations associated to the productions
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = "$Id $"
 

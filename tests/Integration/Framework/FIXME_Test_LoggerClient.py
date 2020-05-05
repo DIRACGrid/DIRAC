@@ -2,6 +2,8 @@
 
 
 from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import division
 from DIRAC.Core.Base.Script import parseCommandLine
 from DIRAC.FrameworkSystem.Client.LoggerClient import LoggerClient
 

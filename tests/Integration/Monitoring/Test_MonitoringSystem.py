@@ -3,6 +3,9 @@ It is used to test client->db-> service.
   It requires the  Monitoring service to be running and installed (so discoverable in the .cfg),
   and this monitoring service should be connecting to an ElasticSeach instance
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 # pylint: disable=invalid-name,wrong-import-position
 

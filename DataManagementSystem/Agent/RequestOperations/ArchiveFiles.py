@@ -11,6 +11,9 @@ This operation requires the following arguments:
  * RegisterDescendent: If True the tarball will be registered as a descendent of the LFNs
 
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 import os
 import shutil

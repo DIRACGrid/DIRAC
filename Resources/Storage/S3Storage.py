@@ -14,6 +14,9 @@ The key of the objects are the LFN without trailing path.
 The Path should be the BucketName
 
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 

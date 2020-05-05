@@ -5,6 +5,9 @@
     This class is typically used as a base class for more specific data processing
     databases
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 from past.builtins import long
 import six

@@ -27,6 +27,8 @@ set a timeout.
 
 """
 from __future__ import division
+from __future__ import absolute_import
+from __future__ import print_function
 
 from multiprocessing import Process, Manager
 import threading

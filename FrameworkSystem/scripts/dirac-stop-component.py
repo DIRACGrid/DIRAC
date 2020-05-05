@@ -3,6 +3,8 @@
 Do the initial installation and configuration of the DIRAC MySQL server
 """
 from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import division
 from DIRAC.Core.Base import Script
 Script.disableCS()
 Script.setUsageMessage('\n'.join(['Stop DIRAC component using runsvctrl utility',

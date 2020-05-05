@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 """ Submission of test jobs for use by Jenkins
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 # pylint: disable=wrong-import-position,unused-wildcard-import,wildcard-import
 

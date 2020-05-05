@@ -8,6 +8,9 @@
   If site is already in the CS with another name, error message will be produced.
   If site is already in the CS with the right name, only new CEs will be added.
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base import Script

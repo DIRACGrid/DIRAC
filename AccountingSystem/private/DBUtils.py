@@ -1,5 +1,8 @@
 """ Class that collects utilities used in Accounting and Monitoring systems
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 from DIRAC.Core.Utilities import Time
 

@@ -17,6 +17,9 @@
 
     request processing task to be used inside ProcessTask created in RequesteExecutingAgent
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 __RCSID__ = "$Id $"
 # #
 # @file RequestTask.py

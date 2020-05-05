@@ -9,6 +9,9 @@ The following options can be set in ``Systems/Monitoring/<Setup>/Databases/Monit
                   is not present in the CS, the indices are prefixed with the setup name.
 
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

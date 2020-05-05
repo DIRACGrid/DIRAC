@@ -7,6 +7,9 @@
 
     It's used running several jobs simultaneously in separate processes, managed by a ProcessPool
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

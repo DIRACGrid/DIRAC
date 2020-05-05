@@ -1,6 +1,9 @@
 """ DIRAC FileCatalog Security Manager mix-in class for access check only on the directory level
     with a special treatment of the Delete operation
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

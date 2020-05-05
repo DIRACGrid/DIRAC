@@ -3,6 +3,9 @@
     Production database is used to collect and serve the necessary information
     in order to automate the task of transformation preparation for high level productions.
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 # # imports
 from past.builtins import long

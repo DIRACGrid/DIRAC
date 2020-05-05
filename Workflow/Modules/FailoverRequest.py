@@ -6,6 +6,9 @@
       * accounting
       * request (for failover)
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 from DIRAC import gLogger
 from DIRAC.Workflow.Modules.ModuleBase import ModuleBase, GracefulTermination

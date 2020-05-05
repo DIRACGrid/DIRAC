@@ -5,6 +5,9 @@
 """
 Set the status of the replicas of given files at the provided SE
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 from DIRAC.Core.Base import Script

@@ -2,6 +2,9 @@
 This module is used to create an appropriate object which can be used to insert records to the Monitoring system.
 It always try to insert the records directly. In case of failure the monitoring client is used...
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

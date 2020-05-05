@@ -1,4 +1,7 @@
 """Ensure the files have been migrated to tape."""
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 import datetime
 from pprint import pformat

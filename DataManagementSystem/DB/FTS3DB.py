@@ -1,5 +1,8 @@
 """ Frontend to FTS3 MySQL DB. Written using sqlalchemy
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 # We disable the no-member error because
 # they are constructed by SQLAlchemy for all

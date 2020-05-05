@@ -15,6 +15,9 @@ If the section ``/Resources/MQServices`` exists in the CS, it's assumed that
 a MQ service is available, if the MQ is not working a failover will be performed.
 
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

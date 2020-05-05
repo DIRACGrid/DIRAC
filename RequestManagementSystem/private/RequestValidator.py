@@ -51,6 +51,9 @@
 
     Notice that all validators should always return S_ERROR/S_OK, no exceptions from that whatsoever!
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 __RCSID__ = "$Id$"
 # #
 # @file RequestValidator.py

@@ -1,5 +1,8 @@
 """ Within this module is defined the class from which all other accounting types are defined
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

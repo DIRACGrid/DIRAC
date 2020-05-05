@@ -3,6 +3,9 @@
      of checking that they conform with DIRAC style. Reviewer option
      contains the list of users to be notified.
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

@@ -1,6 +1,9 @@
 """ BaseHistoryCorrector is a base class for correctors of user shares within
     a given group based on the history of the resources consumption
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

@@ -9,6 +9,9 @@
 
     The DIRAC APIs are used to create Jobs that make use of these modules.
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 import six
 import os

@@ -33,6 +33,9 @@ These are the methods for getting information about the Storage:
       getOccupancy()
 
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 import errno

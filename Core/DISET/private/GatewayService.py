@@ -14,6 +14,9 @@
     which is different from "my.site.org" or whatever is set in the option above, to avoid initialization loops.
 
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 
 import sys

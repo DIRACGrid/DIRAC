@@ -1,12 +1,14 @@
 """
 It used used to create different plots.
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 try:
   from StringIO import StringIO
 except ImportError:
   from io import BytesIO as StringIO
-
 import errno
 from DIRAC.Core.Utilities.Graphs import barGraph, lineGraph, pieGraph, qualityGraph, textGraph, histogram
 

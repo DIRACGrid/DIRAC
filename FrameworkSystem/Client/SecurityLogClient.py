@@ -1,5 +1,8 @@
 """ For reporting messages to security log service
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 import syslog
 

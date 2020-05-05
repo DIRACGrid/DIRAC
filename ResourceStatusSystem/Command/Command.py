@@ -1,6 +1,9 @@
 """ Command module contains the base "Command" class, base for all RSS commands
 
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = '$Id$'
 

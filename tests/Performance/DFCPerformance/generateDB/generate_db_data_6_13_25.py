@@ -12,6 +12,8 @@
 
 
 from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import division
 import random
 import config
 #4(1 + 4( 1 + 4(1+4(1+4(1+4(1+4(1+4(1+4(1+4(1+4(1+4)))))))))) ) = 22 369 620

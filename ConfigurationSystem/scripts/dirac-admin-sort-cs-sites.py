@@ -18,6 +18,9 @@
   Example: dirac-admin-sort-cs-sites -C DIRAC
   Sort sites in subsection /Resources/Sites/DIRAC by country postfix
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 __RCSID__ = "$Id$"
 
 from DIRAC import gLogger, exit as DIRACExit

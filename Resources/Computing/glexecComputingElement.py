@@ -1,6 +1,9 @@
 """ A computing element class that attempts to use glexec if available then
     defaults to the standard InProcess Computing Element behaviour.
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 import os
 import stat

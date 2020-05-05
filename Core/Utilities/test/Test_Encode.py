@@ -6,6 +6,9 @@ Typically, we know JSON cannot serialize tuples, or integers as dictionary keys.
 On the other hand, it can serialize some objects, while DISET cannot.
 
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 
 from string import printable

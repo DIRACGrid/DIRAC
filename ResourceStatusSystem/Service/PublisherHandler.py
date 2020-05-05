@@ -4,6 +4,9 @@ This service has been built to provide the RSS web views with all the informatio
 they need. NO OTHER COMPONENT THAN Web controllers should make use of it.
 
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = '$Id$'
 

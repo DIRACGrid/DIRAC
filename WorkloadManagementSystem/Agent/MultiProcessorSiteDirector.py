@@ -1,6 +1,9 @@
 """ The Multi Processor Site Director is an agent performing pilot job submission to particular sites.
     It is able to handle multicore jobs.
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

@@ -11,6 +11,9 @@
    to be set or open ports 20000 to 25000 (needs to be confirmed)
 
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

@@ -4,6 +4,9 @@
     getParameterVectorLength() - to get the total size of the bunch of parametric jobs
     generateParametricJobs() - to get a list of expanded descriptions of all the jobs
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 
 __RCSID__ = "$Id$"
 

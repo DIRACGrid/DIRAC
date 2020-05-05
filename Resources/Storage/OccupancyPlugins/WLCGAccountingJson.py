@@ -6,6 +6,9 @@
 
   When this is used, the OccupancyLFN has to be the full path on the storage, and not just the LFN
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 import json
 import os
 import tempfile
