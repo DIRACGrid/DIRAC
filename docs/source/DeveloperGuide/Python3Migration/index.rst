@@ -52,6 +52,12 @@ Running ``2to3`` at install time isn't ideal as it make it hard to map line numb
 Instead the strategy used by almost every project has been to move to a code base which is compatible with both Python 2 and Python 3 at the same time.
 This is not inherently an additional burden as the "modern" style of Python 2 code is compatible with Python 3 so it is beneficial when using both Python versions.
 
+Linting
+^^^^^^^
+
+Linters can be very useful for finding some compatibility problems however there will initially be too many issues for them to be included in the CI.
+To avoid this and allow the progressive inclusion of fixes, the directories listed in ``tests/py3CheckDirs.txt`` will be linted for Python 3 compatibility in the CI.
+
 Further reading
 ---------------
 
