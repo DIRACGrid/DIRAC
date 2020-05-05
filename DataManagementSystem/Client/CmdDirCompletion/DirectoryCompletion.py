@@ -84,7 +84,7 @@ class DirectoryCompletion(object):
 
 
 if __name__ == "__main__":
-  from AbstractFileSystem import UnixLikeFileSystem
+  from AbstractFileSystem import UnixLikeFileSystem  # pylint: disable=import-error
   ulfs = UnixLikeFileSystem()
   dc = DirectoryCompletion(ulfs)
 

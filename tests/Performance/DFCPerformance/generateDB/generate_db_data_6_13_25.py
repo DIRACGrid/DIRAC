@@ -15,7 +15,7 @@ from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
 import random
-import config
+import config  # pylint: disable=import-error
 #4(1 + 4( 1 + 4(1+4(1+4(1+4(1+4(1+4(1+4(1+4(1+4(1+4)))))))))) ) = 22 369 620
 
 #d = [ 4 ]*12

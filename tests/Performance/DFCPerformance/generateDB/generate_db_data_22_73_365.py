@@ -16,7 +16,7 @@ from __future__ import absolute_import
 from __future__ import division
 import os
 import random
-import config
+import config  # pylint: disable=import-error
 
 # At each level, we have 4 subdirectories
 # With a depth of 12, it makes 22 M directories

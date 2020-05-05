@@ -104,7 +104,7 @@ def _mul(txt):
       reach the expected file size, and add a bit of random to have
       different file sizes
   """
-  return txt * (max(1, FILE_SIZE / len(txt) + random.randint(0, 5)))
+  return txt * (max(1, FILE_SIZE // len(txt) + random.randint(0, 5)))
 
 
 def clearDirectory(se, local_path, target_path):
