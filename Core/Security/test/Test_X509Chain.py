@@ -48,7 +48,7 @@ NO_LATER_THAN_2050_IN_SEC = int((datetime.strptime("2049-12-31", "%Y-%M-%d") - d
 
 @fixture(scope="function", params=X509CHAINTYPES)
 def get_proxy(request):
-  """ Fixture to return either the pyGSI or M2Crypto generated proxy string.
+  """ Fixture to return either the proxy string.
       It also 'de-import' DIRAC before and after
   """
   # Clean before
@@ -61,10 +61,10 @@ def get_proxy(request):
     deimportDIRAC()
   x509Class = request.param
 
-  if x509Class == 'GSI_X509Chain':
-    from DIRAC.Core.Security.pygsi.X509Chain import X509Chain
-  else:
+  if x509Class == 'M2_X509Chain':
     from DIRAC.Core.Security.m2crypto.X509Chain import X509Chain
+  else:
+    raise NotImplementedError()
 
   def _generateProxy(certFile, lifetime=3600, **kwargs):
     """ Generate the proxyString and return it as an X509Chain object
@@ -163,12 +163,7 @@ def test_privatekey_without_password(key_file, get_X509Chain_class):
   # Get the key and check the number of bits
   res = X509Chain.getPKeyObj()
   assert res['OK']
-  try:
-    # This works only for PyGSI
-    assert res['Value'].bits() == 4096
-  except AttributeError:
-    # must be m2Crypto then
-    assert res['Value'].size() == 512
+  assert res['Value'].size() == 512
 
   # Check that the content of the object is correct.
   # CAUTION ! The object is PKCS8, while the file contains PKCS1.
@@ -185,12 +180,7 @@ def test_privatekey_with_password(get_X509Chain_class):
   # Get the key and check the number of bits
   res = X509Chain.getPKeyObj()
   assert res['OK']
-  try:
-    # This works only for PyGSI
-    assert res['Value'].bits() == 4096
-  except AttributeError:
-    # must be m2Crypto then
-    assert res['Value'].size() == 512
+  assert res['Value'].size() == 512
 
 
 def test_privatekey_with_wrong_password(get_X509Chain_class):
@@ -247,8 +237,7 @@ def test_certProperties(cert_file, get_X509Chain_class):
   assert x509Chain.isLimitedProxy()['Value'] is False
   assert x509Chain.isVOMS()['Value'] is False
 
-  # PyGSI implementation has a bug somewhere, since it returns None...
-  assert x509Chain.isRFC()['Value'] in (None, False)
+  assert x509Chain.isRFC()['Value'] is False
 
   from DIRAC.Core.Utilities.DErrno import ENOCHAIN
 
@@ -460,10 +449,6 @@ def test_tooLong_proxyLifetime(get_proxy, lifetime):
 
   proxyChain = get_proxy(USERCERT, lifetime=lifetime)
 
-  # Skipping for pygsi because buggy
-  if 'pygsi' in proxyChain.__class__.__module__:
-    skip("getNotAfterDate buggy with long duration in pygsi")
-
   res = proxyChain.getNotAfterDate()
   assert res['OK']
 
@@ -498,13 +483,9 @@ def test_diracGroup(get_proxy, diracGroup):
 
 @parametrize('isLimited', (True, False))
 def test_limitedProxy(get_proxy, isLimited):
-  """ Generate limited and non limited proxy. PyGSI is buggy"""
+  """ Generate limited and non limited proxy"""
   # A group is needed to be limited
   proxyChain = get_proxy(USERCERT, diracGroup='anyGroup', limited=isLimited)
-
-  # The attribute being checked is not the good one
-  if isLimited and 'pygsi' in proxyChain.__class__.__module__:
-    skip("isLimited is broken with PyGSI")
 
   res = proxyChain.isLimitedProxy()
   assert res['OK']
@@ -536,7 +517,7 @@ def test_getIssuerCert(get_proxy):
 def test_delegation(get_X509Request, get_proxy, diracGroup, lifetime):
   """
       Test the delegation mechanism.
-      Generate a proxy request (pyGSI or M2Crypto) and generate the proxy from there (PyGSI or M2Crypto)
+      Generate a proxy request and generate the proxy from there
       NOTE: DO NOT CHANGE THE NAME OF THIS TEST FUNCTION ! See get_proxy code for details
 
       :param diracGroup: group of the initial proxy
@@ -592,8 +573,4 @@ def test_delegation(get_X509Request, get_proxy, diracGroup, lifetime):
   # The groups should be the same
   assert proxyChain.getDIRACGroup(ignoreDefault=True) == delegatedProxy.getDIRACGroup(ignoreDefault=True)
 
-  # The lifetime should be smaller or equal in the delegatedProxy
-  # But this is buggy in PyGSI X509Request
-  # Skipping for pygsi because buggy
-  if 'pygsi' not in x509Req.__class__.__module__:
-    assert proxyChain.getNotAfterDate()['Value'] >= delegatedProxy.getNotAfterDate()['Value']
+  assert proxyChain.getNotAfterDate()['Value'] >= delegatedProxy.getNotAfterDate()['Value']

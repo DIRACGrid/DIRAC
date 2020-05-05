@@ -30,7 +30,7 @@ DIRAC_USE_JSON_ENCODE
 
 DIRAC_USE_M2CRYPTO
   If anything else than ``true`` or ``yes`` (default) DIRAC will revert back to using pyGSI instead of m2crypto for handling certificates, proxies, etc.
-
+  Unused since v7r2.
 
 DIRAC_VOMSES
   Can be set to point to a folder containing VOMSES information. See :ref:`multi_vo_dirac`
