@@ -13,7 +13,6 @@ from DIRAC.WorkloadManagementSystem.Client.JobState.JobManifest import JobManife
 from DIRAC.WorkloadManagementSystem.Executor.JobScheduling import JobScheduling
 from DIRAC.WorkloadManagementSystem.Executor.InputData import InputData
 
-mockReply = MagicMock()
 mockNone = MagicMock()
 mockNone.return_value = None
 
@@ -64,43 +63,24 @@ def test__getTagsFromManifest(manifestOptions, expected):
   assert set(tagList) == set(expected)
 
 
-@pytest.mark.parametrize("mockReplyInput, manifestOptions, expected", [
-    ({'OK': True, 'Value': []}, {}, []),
-    ({'OK': True, 'Value': []}, {'InputSandbox': 'SB:ProductionSandboxSE|/SandBox/l/lhcb_mc/4c7.bof'}, []),
-    ({'OK': True, 'Value': ['/bim/bum/bam']}, {}, ['/bim/bum/bam']),
-    ({'OK': True, 'Value': ['/bim/bum/bam']},
-        {'InputSandbox': 'LFN:/l/lhcb_mc/4c7.bof'},
-        ['/bim/bum/bam', '/l/lhcb_mc/4c7.bof']),
-    ({'OK': True, 'Value': []},
-        {'InputSandbox': ['LFN:/l/lhcb_mc/4c7.bof']},
-        ['/l/lhcb_mc/4c7.bof']),
-    ({'OK': True, 'Value': []},
-        {'InputSandbox': ['SB:ProductionSandboxSE|/SandBox/l/lhcb_mc/4c7.bof',
-                          'LFN:/l/lhcb_mc/4c7.bof']},
-        ['/l/lhcb_mc/4c7.bof']),
-    ({'OK': True, 'Value': []},
-        {'InputSandbox': ['SB:ProductionSandboxSE|/SandBox/l/lhcb_mc/4c7.bof',
-                          'bif:/l/lhcb_mc/4c7.bof']},
-        []),
-    ({'OK': True, 'Value': []},
-        {'InputSandbox': ['LFN:/l/lhcb_mc/4c8.bof',
-                          'LFN:/l/lhcb_mc/4c7.bof']},
-        ['/l/lhcb_mc/4c8.bof',
-         '/l/lhcb_mc/4c7.bof']),
-    ({'OK': True, 'Value': ['/bim/bum/bam', 'another/one']},
-        {'InputSandbox': ['LFN:/l/lhcb_mc/4c8.bof',
-                          'LFN:/l/lhcb_mc/4c7.bof']},
-        ['/bim/bum/bam',
-         'another/one',
-         '/l/lhcb_mc/4c8.bof',
-         '/l/lhcb_mc/4c7.bof'])
+@pytest.mark.parametrize("manifestOptions, expected", [
+    ({}, []),
+    ({'InputSandbox': 'SB:ProductionSandboxSE|/SandBox/l/lhcb_mc/4c7.bof'}, []),
+    ({'InputSandbox': 'LFN:/l/lhcb_mc/4c7.bof'},
+     ['/l/lhcb_mc/4c7.bof']),
+    ({'InputSandbox': ['SB:ProductionSandboxSE|/SandBox/l/lhcb_mc/4c7.bof',
+                       'LFN:/l/lhcb_mc/4c7.bof']},
+     ['/l/lhcb_mc/4c7.bof']),
+    ({'InputSandbox': ['SB:ProductionSandboxSE|/SandBox/l/lhcb_mc/4c7.bof',
+                       'bif:/l/lhcb_mc/4c7.bof']},
+     []),
+    ({'InputSandbox': ['LFN:/l/lhcb_mc/4c8.bof',
+                       'LFN:/l/lhcb_mc/4c7.bof']},
+     ['/l/lhcb_mc/4c8.bof',
+      '/l/lhcb_mc/4c7.bof']),
 ])
-def test__getInputs(mocker, mockReplyInput, manifestOptions, expected):
+def test__getInputSandbox(mocker, manifestOptions, expected):
 
-  mockReply.return_value = mockReplyInput
-
-  module_str = "DIRAC.WorkloadManagementSystem.Client.JobState.JobState.JobDB.getInputData"
-  mocker.patch(module_str, side_effect=mockReply)
   mocker.patch("DIRAC.WorkloadManagementSystem.Client.JobState.JobState.JobDB.__init__", side_effect=mockNone)
   mocker.patch("DIRAC.WorkloadManagementSystem.Client.JobState.JobState.JobLoggingDB.__init__", side_effect=mockNone)
   mocker.patch("DIRAC.WorkloadManagementSystem.Client.JobState.JobState.TaskQueueDB.__init__", side_effect=mockNone)
@@ -114,6 +94,6 @@ def test__getInputs(mocker, mockReplyInput, manifestOptions, expected):
     manifest.setOption(varName, varValue)
 
   js.setManifest(manifest)
-  res = inputData._getInputs(js)
+  res = inputData._getInputSandbox(js)
   assert res['OK'] is True
   assert res['Value'] == expected
