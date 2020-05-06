@@ -364,9 +364,9 @@ class PilotCStoJSONSynchronizer(object):
 
     else:
       if pilotDict:  # this is for the pilot.json file
-        filename = self.jsonFile
+        filename = os.path.join(self.workDir, self.jsonFile)
         script = json.dumps(pilotDict)
-        with open(os.path.join(self.workDir, filename), 'w') as jf:
+        with open(filename, 'w') as jf:
           jf.write(script)
 
       else:  # we assume the method is asked to upload the pilots scripts
