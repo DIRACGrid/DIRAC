@@ -212,6 +212,7 @@ for loc in locations:
   except (url_library_URLError, Exception) as e:
     print('%%s unreacheable' %% loc, file=sys.stderr)
     logger.error('%%s unreacheable' %% loc)
+    logger.exception(e)
 
 else:
   print("None of the locations of the pilot files is reachable", file=sys.stderr)
