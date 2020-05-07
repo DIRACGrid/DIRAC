@@ -4,6 +4,7 @@
 M2Crypto==0.32
 Sphinx>=1.8.0
 boto3
+diraccfg
 elasticsearch_dsl
 future
 futures
