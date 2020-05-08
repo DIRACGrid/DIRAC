@@ -425,6 +425,11 @@ NEW: (#4170) added Production system documentation
 CHANGE: (#4224) Pilot 3 is the default
 NEW: (#4244) Added a few notes on using the JobParameters on ElasticSearch database
 
+[v6r22p28]
+
+*TS
+FIX: (#4569) TransformationClient - allow "LFN" cindition as a string to be compatible with the service
+
 [v6r22p27]
 
 *Monitoring

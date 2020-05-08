@@ -138,8 +138,11 @@ class TransformationClient(Client):
       timeStamp = 'LastUpdate'
     # getting transformationFiles - incrementally
     if 'LFN' in condDict:
+      if isinstance(condDict['LFN'], basestring):
+        lfnList = [condDict['LFN']]
+      else:
+        lfnList = sorted(condDict['LFN'])
       # If a list of LFNs is given, use chunks of 1000 only
-      lfnList = sorted(condDict['LFN'])
       limit = limit if limit else 1000
     else:
       # By default get by chunks of 10000 files
@@ -173,7 +176,7 @@ class TransformationClient(Client):
         if not log("For conditions %s: result for limit %d, offset %d: %d files" %
                    (condDictStr, limit, offsetToApply, len(res['Value']))):
           gLogger.verbose("For condition keys %s (trans %s): result for limit %d, offset %d: %d files" %
-                          (str(list(condDict)), condDict.get('TransformationID', 'None'),
+                          (str(sorted(condDict)), condDict.get('TransformationID', 'None'),
                            limit, offsetToApply, len(res['Value'])))
         if res['Value']:
           transformationFiles += res['Value']
