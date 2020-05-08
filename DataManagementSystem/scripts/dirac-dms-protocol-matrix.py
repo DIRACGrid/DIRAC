@@ -173,3 +173,4 @@ if __name__ == '__main__':
       for dst in targetSE:
         srcRow.append(tpMatrix[src].get(dst, 'NA'))
       csvWriter.writerow(srcRow)
+  gLogger.notice('Wrote Matrix to', outputFile)
