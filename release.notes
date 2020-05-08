@@ -1,3 +1,10 @@
+[v7r1p1]
+
+Changes from v6r22p28 patch
+
+*Framework
+CHANGE: (#4572) removed group from proxy expiration notification
+
 [v7r1]
 
 NEW: Add environment.yml file for preparing an environment with conda
