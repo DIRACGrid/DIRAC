@@ -58,6 +58,7 @@ if __name__ == '__main__':
   from DIRAC import gConfig, gLogger
   from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
   from DIRAC.Resources.Storage.StorageElement import StorageElement
+  from DIRAC.Core.Security.ProxyInfo import getVOfromProxyGroup
 
   fromSE = []
   targetSE = []
@@ -129,7 +130,15 @@ if __name__ == '__main__':
   ses = {}
   for se in set(fromSE + targetSE):
     ses[se] = StorageElement(seForSeBases[se])
-  lfn = '/lhcb/toto.xml'
+
+  ret = getVOfromProxyGroup()
+  if not ret['OK'] or not ret.get('Value', ''):
+    gLogger.error('Aborting, Bad Proxy:', ret.get('Message', 'Proxy does not belong to a VO!'))
+    exit(1)
+  vo = ret['Value']
+  gLogger.notice('Using the Virtual Organization:', vo)
+  # dummy LFN, still has to follow lfn convention
+  lfn = '/%s/toto.xml' % vo
 
   # Create a matrix of protocol src/dest
 
