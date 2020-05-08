@@ -1,5 +1,9 @@
 """Utilities used by the documentation scripts."""
 
+from __future__ import absolute_import
+
+from builtins import open
+
 import logging
 import os
 import sys
@@ -49,6 +53,14 @@ def writeLinesToFile(filename, lines):
   if oldContent is None or oldContent != newContent:
     with open(filename, 'w') as rst:
       LOG.info('Writing new content for %s', os.path.join(os.getcwd(), filename))
+      try:  # decode only needed/possible in python2
+        newContent = newContent.decode('utf-8')
+      except AttributeError:
+        # ignore decode if newContent is python3 str
+        pass
+      except (UnicodeDecodeError) as e:
+        LOG.error('Failed to decode newContent with "utf-8": %r', e)
+        raise
       rst.write(newContent)
   else:
     LOG.debug('Not updating file content for %s', os.path.join(os.getcwd(), filename))
