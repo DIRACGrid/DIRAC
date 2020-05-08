@@ -1,11 +1,15 @@
 #####################################################################
 # File: ReqManagerHandler.py
 ########################################################################
-"""
-:mod: ReqManagerHandler
+"""Implementation of the RequestDB service in the DISET framework
 
-.. module: ReqManagerHandler
-  :synopsis: Implementation of the RequestDB service in the DISET framework
+
+.. literalinclude:: ../ConfigTemplate.cfg
+  :start-after: ##BEGIN ReqManager
+  :end-before: ##END
+  :dedent: 2
+  :caption: ReqManager options
+
 
 """
 __RCSID__ = "$Id$"
