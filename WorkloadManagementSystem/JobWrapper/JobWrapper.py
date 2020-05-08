@@ -21,6 +21,7 @@ import tarfile
 import glob
 import urllib
 import json
+import six
 
 import DIRAC
 from DIRAC import S_OK, S_ERROR, gConfig, gLogger
@@ -339,7 +340,7 @@ class JobWrapper(object):
     if 'ExecutionEnvironment' in self.jobArgs:
       self.log.verbose('Adding variables to execution environment')
       variableList = self.jobArgs['ExecutionEnvironment']
-      if isinstance(variableList, basestring):
+      if isinstance(variableList, six.string_types):
         variableList = [variableList]
       for var in variableList:
         nameEnv = var.split('=')[0]
@@ -443,7 +444,7 @@ class JobWrapper(object):
 
     if watchdog.currentStats:
       self.log.info('Statistics collected by the Watchdog:\n ',
-                    '\n  '.join(['%s: %s' % items for items in watchdog.currentStats.iteritems()]))
+                    '\n  '.join(['%s: %s' % items for items in watchdog.currentStats.items()]))  # can be an iterator
     if outputs:
       status = threadResult['Value'][0]  # the status of the payload execution
       # Send final heartbeat of a configurable number of lines here
@@ -549,7 +550,7 @@ class JobWrapper(object):
       self.log.error(msg)
       return S_ERROR(msg)
     else:
-      if isinstance(inputData, basestring):
+      if isinstance(inputData, six.string_types):
         inputData = [inputData]
       lfns = [fname.replace('LFN:', '') for fname in inputData]
       self.log.verbose('Job input data requirement is \n%s' % ',\n'.join(lfns))
@@ -563,7 +564,7 @@ class JobWrapper(object):
     if not localSEList:
       self.log.warn("Job has input data requirement but no site LocalSE defined")
     else:
-      if isinstance(localSEList, basestring):
+      if isinstance(localSEList, six.string_types):
         localSEList = List.fromChar(localSEList)
       self.log.info("Site has the following local SEs: %s" % ', '.join(localSEList))
 
@@ -603,7 +604,7 @@ class JobWrapper(object):
       resolvedData = result
 
     # add input data size to accounting report (since resolution successful)
-    for lfn, mdata in resolvedData['Value']['Successful'].iteritems():
+    for lfn, mdata in resolvedData['Value']['Successful'].items():  # can be an iterator
       if 'Size' in mdata:
         lfnSize = mdata['Size']
         if not isinstance(lfnSize, long):
@@ -654,7 +655,7 @@ class JobWrapper(object):
     self.log.verbose(replicas)
 
     failedGUIDs = []
-    for lfn, reps in replicas['Value']['Successful'].iteritems():
+    for lfn, reps in replicas['Value']['Successful'].items():  # can be an iterator
       if 'GUID' not in reps:
         failedGUIDs.append(lfn)
 
@@ -684,11 +685,11 @@ class JobWrapper(object):
     badLFNs = []
     catalogResult = repsResult['Value']
 
-    for lfn, cause in catalogResult.get('Failed', {}).iteritems():
+    for lfn, cause in catalogResult.get('Failed', {}).items():  # can be an iterator
       badLFNCount += 1
       badLFNs.append('LFN:%s Problem: %s' % (lfn, cause))
 
-    for lfn, replicas in catalogResult.get('Successful', {}).iteritems():
+    for lfn, replicas in catalogResult.get('Successful', {}).items():  # can be an iterator
       if not replicas:
         badLFNCount += 1
         badLFNs.append('LFN:%s Problem: Null replica value' % (lfn))
@@ -716,7 +717,7 @@ class JobWrapper(object):
       self.log.warn(failed)
       return S_ERROR('Missing GUIDs')
 
-    for lfn, reps in repsResult['Value']['Successful'].iteritems():
+    for lfn, reps in repsResult['Value']['Successful'].items():  # can be an iterator
       guidDict['Value']['Successful'][lfn].update(reps)
 
     catResult = guidDict
@@ -729,12 +730,12 @@ class JobWrapper(object):
 
     # first iteration of this, no checking of wildcards or oversize sandbox files etc.
     outputSandbox = self.jobArgs.get('OutputSandbox', [])
-    if isinstance(outputSandbox, basestring):
+    if isinstance(outputSandbox, six.string_types):
       outputSandbox = [outputSandbox]
     if outputSandbox:
       self.log.verbose('OutputSandbox files are: %s' % ', '.join(outputSandbox))
     outputData = self.jobArgs.get('OutputData', [])
-    if outputData and isinstance(outputData, basestring):
+    if outputData and isinstance(outputData, six.string_types):
       outputData = outputData.split(';')
     if outputData:
       self.log.verbose('OutputData files are: %s' % ', '.join(outputData))
@@ -795,11 +796,11 @@ class JobWrapper(object):
       # Do not upload outputdata if the job has failed.
       # The exception is when the outputData is what was the OutputSandbox, which should be uploaded in any case
       outputSE = self.jobArgs.get('OutputSE', self.defaultOutputSE)
-      if isinstance(outputSE, basestring):
+      if isinstance(outputSE, six.string_types):
         outputSE = [outputSE]
 
       outputPath = self.jobArgs.get('OutputPath', self.defaultOutputPath)
-      if not isinstance(outputPath, basestring):
+      if not isinstance(outputPath, six.string_types):
         outputPath = self.defaultOutputPath
 
       if not outputSE and not self.defaultFailoverSE:
@@ -1204,7 +1205,7 @@ class JobWrapper(object):
     if 'JobName' in self.jobArgs:
       # To make the request names more appealing for users
       jobName = self.jobArgs['JobName']
-      if isinstance(jobName, basestring) and jobName:
+      if isinstance(jobName, six.string_types) and jobName:
         jobName = jobName.replace(' ', '').replace('(', '').replace(')', '').replace('"', '')
         jobName = jobName.replace('.', '').replace('{', '').replace('}', '').replace(':', '')
         requestName = '%s_%s' % (jobName, requestName)

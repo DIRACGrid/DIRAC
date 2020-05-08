@@ -231,7 +231,7 @@ class PluginUtilities(object):
         (len(files), self.groupSize, flush))
 
     # Get the file sizes
-    res = self._getFileSize(files.keys())
+    res = self._getFileSize(list(files))
     if not res['OK']:
       return res
     fileSizes = res['Value']
@@ -516,7 +516,7 @@ def sortExistingSEs(lfnSEs, lfns=None):
   seFrequency = {}
   archiveSEs = []
   if not lfns:
-    lfns = lfnSEs.keys()
+    lfns = list(lfnSEs)
   else:
     lfns = [lfn for lfn in lfns if lfn in lfnSEs]
   for lfn in lfns:
@@ -524,7 +524,7 @@ def sortExistingSEs(lfnSEs, lfns=None):
     archiveSEs += [s for s in existingSEs if isArchive(s) and s not in archiveSEs]
     for se in [s for s in existingSEs if not isFailover(s) and s not in archiveSEs]:
       seFrequency[se] = seFrequency.setdefault(se, 0) + 1
-  sortedSEs = seFrequency.keys()
+  sortedSEs = list(seFrequency)
   # sort SEs in reverse order of frequency
   sortedSEs.sort(key=seFrequency.get, reverse=True)
   # add the archive SEs at the end

@@ -2,6 +2,8 @@
 
 __RCSID__ = "$Id$"
 
+import six
+
 from DIRAC import S_OK, gLogger
 from DIRAC.Core.Base.Client import Client, createClient
 from DIRAC.Core.Utilities.List import breakListIntoChunks
@@ -171,7 +173,7 @@ class TransformationClient(Client):
         if not log("For conditions %s: result for limit %d, offset %d: %d files" %
                    (condDictStr, limit, offsetToApply, len(res['Value']))):
           gLogger.verbose("For condition keys %s (trans %s): result for limit %d, offset %d: %d files" %
-                          (str(condDict.keys()), condDict.get('TransformationID', 'None'),
+                          (str(list(condDict)), condDict.get('TransformationID', 'None'),
                            limit, offsetToApply, len(res['Value'])))
         if res['Value']:
           transformationFiles += res['Value']
@@ -313,11 +315,11 @@ class TransformationClient(Client):
         else:
           parentStatusFiles.setdefault('Moved', []).append(lfn)
 
-    for status, count in badStatusFiles.iteritems():
+    for status, count in badStatusFiles.items():  # can be an iterator
       log.warn('Files found in an unexpected status in derived transformation',
                ': %d files in status %s' % (count, status))
     # Set the status in the parent transformation first
-    for status, lfnList in parentStatusFiles.iteritems():
+    for status, lfnList in parentStatusFiles.items():  # can be an iterator
       for lfnChunk in breakListIntoChunks(lfnList, 5000):
         res = self.setFileStatusForTransformation(parentProd, status, lfnChunk)
         if not res['OK']:
@@ -325,7 +327,7 @@ class TransformationClient(Client):
                     "%d: status %s for %d files - %s" % (parentProd, status, len(lfnList), res['Message']))
 
     # Set the status in the new transformation
-    for (status, oldStatus), lfnList in newStatusFiles.iteritems():
+    for (status, oldStatus), lfnList in newStatusFiles.items():  # can be an iterator
       for lfnChunk in breakListIntoChunks(lfnList, 5000):
         res = self.setFileStatusForTransformation(prod, status, lfnChunk)
         if not res['OK']:
@@ -373,10 +375,10 @@ class TransformationClient(Client):
 
     """
     # create dictionary in case newLFNsStatus is a string
-    if isinstance(newLFNsStatus, basestring):
+    if isinstance(newLFNsStatus, six.string_types):
       if not lfns:
         return S_OK({})
-      if isinstance(lfns, basestring):
+      if isinstance(lfns, six.string_types):
         lfns = [lfns]
       newLFNsStatus = dict.fromkeys(lfns, newLFNsStatus)
     if not newLFNsStatus:
@@ -384,7 +386,7 @@ class TransformationClient(Client):
 
     rpcClient = self._getRPC()
     # gets current status, errorCount and fileID
-    tsFiles = self.getTransformationFiles({'TransformationID': transName, 'LFN': newLFNsStatus.keys()})
+    tsFiles = self.getTransformationFiles({'TransformationID': transName, 'LFN': list(newLFNsStatus)})
     if not tsFiles['OK']:
       return tsFiles
     tsFiles = tsFiles['Value']
@@ -425,7 +427,7 @@ class TransformationClient(Client):
     """
     newStatuses = {}
 
-    for lfn, newStatus in dictOfProposedLFNsStatus.iteritems():
+    for lfn, newStatus in dictOfProposedLFNsStatus.items():  # can be an iterator
       if lfn in tsFilesAsDict:
         currentStatus = tsFilesAsDict[lfn][0].lower()
         # Apply optional corrections
@@ -486,7 +488,7 @@ class TransformationClient(Client):
 
         It returns the new status (the standard is just doing nothing: everything is possible)
     """
-    return dictOfProposedstatus.values()[0]
+    return list(dictOfProposedstatus.values())[0]
 
   def isOK(self):
     return self.valid

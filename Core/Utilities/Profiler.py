@@ -132,10 +132,21 @@ class Profiler(object):
     Returns the percentage of cpu used by the process
     """
     cpuUsageUser = self.process.cpu_times().user
+    childrenUser = 0
+    oldChildrenUser = 0
     if withChildren:
+      # This is the CPU consumed by all terminated children of the root process
+      oldChildrenUser += self.process.cpu_times().children_user
+      # Now look at the active children
       for child in self.process.children(recursive=True):
-        cpuUsageUser += child.cpu_times().user
-    return S_OK(cpuUsageUser)
+        # Sum up the child CPU as well as the CPU of its terminated children
+        childrenUser += child.cpu_times().user + child.cpu_times().children_user
+      gLogger.debug(
+          "CPU user (process, old children, alive children)", "(%.1fs, %.1fs, %.1fs)" %
+          (cpuUsageUser, oldChildrenUser, childrenUser))
+    else:
+      gLogger.debug("CPU user", "%.1fs" % cpuUsageUser)
+    return S_OK(cpuUsageUser + childrenUser + oldChildrenUser)
 
   @checkInvocation
   def cpuUsageSystem(self, withChildren=False):
@@ -143,10 +154,21 @@ class Profiler(object):
     Returns the percentage of cpu used by the process
     """
     cpuUsageSystem = self.process.cpu_times().system
+    childrenSystem = 0
+    oldChildrenSystem = 0
     if withChildren:
+      # This is the CPU consumed by all terminated children of the root process
+      oldChildrenSystem += self.process.cpu_times().children_system
+      # Sum up the child CPU as well as the CPU of its terminated children
       for child in self.process.children(recursive=True):
-        cpuUsageSystem += child.cpu_times().system
-    return S_OK(cpuUsageSystem)
+        # Sum up the child CPU as well as the CPU of its terminated children
+        childrenSystem += child.cpu_times().system + child.cpu_times().children_system
+      gLogger.debug(
+          "CPU system (process, old children, alive children)", "(%.1fs, %.1fs, %.1fs)" %
+          (cpuUsageSystem, oldChildrenSystem, childrenSystem))
+    else:
+      gLogger.debug("CPU system", "%.1fs" % cpuUsageSystem)
+    return S_OK(cpuUsageSystem + childrenSystem + oldChildrenSystem)
 
   def getAllProcessData(self, withChildren=False):
     """
