@@ -5,6 +5,7 @@ tests for HTCondorCEComputingElement module
 
 import unittest
 from mock import MagicMock as Mock, patch
+from parameterized import parameterized, param
 
 from DIRAC.Resources.Computing import HTCondorCEComputingElement as HTCE
 from DIRAC.Resources.Computing.BatchSystems import Condor
@@ -154,6 +155,28 @@ class HTCondorCETests(unittest.TestCase):
     self.assertTrue(result['OK'], result.get('Message'))
     remotePoolList = " ".join(['-pool', '%s:9619' % ceName, '-remote', ceName])
     self.assertIn(remotePoolList, " ".join(execMock.call_args_list[0][0][1]))
+
+  @parameterized.expand([param([], ''),
+                         param('', ''),
+                         param(['htcondorce://condorce.foo.arg/123.0:::abc321'], '123.0'),
+                         param('htcondorce://condorce.foo.arg/123.0:::abc321', '123.0'),
+                         param('htcondorce://condorce.foo.arg/123.0:::abc321', '123.0', ret=1, success=False),
+                         param(['htcondorce://condorce.foo.arg/333.3'], '333.3'),
+                         param('htcondorce://condorce.foo.arg/333.3', '333.3', local=False),
+                         ])
+  def test_killJob(self, jobIDList, jobID, ret=0, success=True, local=True):
+    mock = Mock(return_value=(ret, ''))
+    htce = HTCE.HTCondorCEComputingElement(12345)
+    htce.ceName = 'condorce.foo.arg'
+    htce.useLocalSchedd = local
+    htce.ceParameters = self.ceParameters
+    htce._reset()
+    with patch(MODNAME + ".commands.getstatusoutput", new=mock):
+      ret = htce.killJob(jobIDList=jobIDList)
+
+    assert ret['OK'] == success
+    if jobID:
+      mock.assert_called_with('condor_rm %s %s' % (htce.remoteScheddOptions, jobID))
 
 
 class BatchCondorTest(unittest.TestCase):
