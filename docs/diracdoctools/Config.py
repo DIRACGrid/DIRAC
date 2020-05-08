@@ -1,5 +1,7 @@
 """Configuration for the documentation scripts."""
 
+from __future__ import absolute_import
+
 import argparse
 import logging
 import os

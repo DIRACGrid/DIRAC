@@ -11,8 +11,13 @@ import sys
 from diracdoctools.Config import Configuration
 from diracdoctools.Utilities import makeLogger
 
-from DIRAC.Core.Utilities.CFG import CFG
-from DIRAC import S_OK, S_ERROR
+# Try/except for python3 compatibility to ignore errors in ``import DIRAC`` while they last
+# ultimate protection against not having the symbols imported is also done in the ``run`` function
+try:
+  from DIRAC.Core.Utilities.CFG import CFG
+  from DIRAC import S_OK, S_ERROR
+except ImportError:
+  pass
 
 
 LOG = makeLogger('ConcatCFG')
@@ -121,10 +126,12 @@ def run(configFile='docs.conf', logLevel=logging.INFO, debug=False):
   :param bool debug: unused
   :returns: return value 1 or 0
   """
-  logging.getLogger().setLevel(logLevel)
-  concat = ConcatCFG(configFile=configFile)
-  return concat.updateCompleteDiracCFG()
-
+  try:
+    logging.getLogger().setLevel(logLevel)
+    concat = ConcatCFG(configFile=configFile)
+    return concat.updateCompleteDiracCFG()
+  except (ImportError, NameError):
+    return 1
 
 if __name__ == '__main__':
   sys.exit(run())

@@ -75,10 +75,6 @@ class FreeDiskSpaceCommand(Command):
         return params
       elementName, unit = params['Value']
 
-    endpointResult = CSHelpers.getStorageElementEndpoint(elementName)
-    if not endpointResult['OK']:
-      return endpointResult
-
     se = StorageElement(elementName)
     occupancyResult = se.getOccupancy(unit=unit)
     if not occupancyResult['OK']:
@@ -86,16 +82,17 @@ class FreeDiskSpaceCommand(Command):
     occupancy = occupancyResult['Value']
     free = occupancy['Free']
     total = occupancy['Total']
-    spaceReservation = occupancy.get('SpaceReservation', '')
-    # We only take the first one, in case there are severals.
-    # Most probably not ideal, because it would be nice to stay
-    # consistent, but well...
+
+    endpointResult = CSHelpers.getStorageElementEndpoint(elementName)
+    if not endpointResult['OK']:
+      return endpointResult
+    # We only take the first endpoint, in case there are severals of them (which is normal).
+    # Most probably not ideal, because it would be nice to stay consistent, but well...
     endpoint = endpointResult['Value'][0]
 
     results = {'Endpoint': endpoint,
                'Free': free,
                'Total': total,
-               'SpaceReservation': spaceReservation,
                'ElementName': elementName}
     result = self._storeCommand(results)
     if not result['OK']:
@@ -111,8 +108,7 @@ class FreeDiskSpaceCommand(Command):
     :param dict results: something like {'ElementName': 'CERN-HIST-EOS',
                                          'Endpoint': 'httpg://srm-eoslhcb-bis.cern.ch:8443/srm/v2/server',
                                          'Free': 3264963586.10073,
-                                         'Total': 8000000000.0,
-                                         'SpaceReservation': 'LHCb-Disk'}
+                                         'Total': 8000000000.0}
     :returns: S_OK/S_ERROR dict
     """
 

@@ -1,6 +1,6 @@
 .. raw:: html
 
-    <style> .subtitle { font-size:150%; line-height:2.0em; } 
+    <style> .subtitle { font-size:150%; line-height:2.0em; }
             p.first { background-color:lightgray; }
     </style>
 
@@ -10,7 +10,7 @@
 Job Description Language Reference
 =========================================
 
-In this section all the attributes that can be used in the DIRAC JDL job descriptions are presented.   
+In this section all the attributes that can be used in the DIRAC JDL job descriptions are presented.
 
 +---------------------+---------------------------------------------+-----------------------------------------------+
 |                                                                                                                   |
@@ -20,21 +20,21 @@ In this section all the attributes that can be used in the DIRAC JDL job descrip
 +---------------------+---------------------------------------------+-----------------------------------------------+
 | **Attribute Name**  | **Description**                             | **Example**                                   |
 +---------------------+---------------------------------------------+-----------------------------------------------+
-| *Executable*        | Name of the executable file                 | Executable = "/bin/ls";                       |
+| *Executable*        | Name of the executable file                 | Executable = ``"/bin/ls";``                   |
 |                     |                                             |                                               |
 +---------------------+---------------------------------------------+-----------------------------------------------+
-| *Arguments*         | String of arguments for the job             | Arguments = "-ltr";                           |
+| *Arguments*         | String of arguments for the job             | Arguments = ``"-ltr";``                       |
 |                     | executable                                  |                                               |
 +---------------------+---------------------------------------------+-----------------------------------------------+
-| *StdError*          | Name of the file to get the standard error  | StdError = "std.err";                         |      
+| *StdError*          | Name of the file to get the standard error  | StdError = ``"std.err";``                     |
 |                     | stream of the user application              |                                               |
 +---------------------+---------------------------------------------+-----------------------------------------------+
-| *StdOutput*         | Name of the file to get the standard output | StdOutput = "std.out";                        |      
+| *StdOutput*         | Name of the file to get the standard output | StdOutput = ``"std.out";``                    |
 |                     | stream of the user application              |                                               |
 +---------------------+---------------------------------------------+-----------------------------------------------+
-| *InputSandbox*      | A list of input sandbox files               | InputSandbox = {"jobScript.sh"};              |
+| *InputSandbox*      | A list of input sandbox files               | InputSandbox = ``{"jobScript.sh"};``          |
 +---------------------+---------------------------------------------+-----------------------------------------------+
-| *OutputSandbox*     | A list of output sandbox files              | OutputSandbox = {"std.err","std.out"};        |
+| *OutputSandbox*     | A list of output sandbox files              | OutputSandbox = ``{"std.err","std.out"};``    |
 +---------------------+---------------------------------------------+-----------------------------------------------+
 |                                                                                                                   |
 |  :subtitle:`Job Requirements`                                                                                     |
@@ -46,11 +46,11 @@ In this section all the attributes that can be used in the DIRAC JDL job descrip
 | *CPUTime*           | Max CPU time required by the job in         |   CPUTime = 18000;                            |
 |                     | HEPSPEC06 seconds                           |                                               |
 +---------------------+---------------------------------------------+-----------------------------------------------+
-| *Site*              | Job destination site                        | Site = {"EGI.CPPM.fr"};                       |
+| *Site*              | Job destination site                        | Site = ``{"EGI.CPPM.fr"};``                   |
 +---------------------+---------------------------------------------+-----------------------------------------------+
-| *BannedSites*       | Sites where the job must not go             | BannedSites = {"EGI.LAPP.fr","EGI.M3PEC.fr"}; |
+| *BannedSites*       | Sites where the job must not go             | BannedSites = ``{"EGI.LAPP.fr"};``            |
 +---------------------+---------------------------------------------+-----------------------------------------------+
-| *Platform*          | Target Operating System                     | Platform = "Linux_x86_64_glibc-2.5";          |
+| *Platform*          | Target Operating System                     | Platform = ``"Linux_x86_64_glibc-2.5";``      |
 +---------------------+---------------------------------------------+-----------------------------------------------+
 |                                                                                                                   |
 | :subtitle:`Data`                                                                                                  |
@@ -59,14 +59,14 @@ In this section all the attributes that can be used in the DIRAC JDL job descrip
 +---------------------+---------------------------------------------+-----------------------------------------------+
 | **Attribute Name**  | **Description**                             | **Example**                                   |
 +---------------------+---------------------------------------------+-----------------------------------------------+
-| *InputData*         | Job input data files                        | InputData = {"/dirac/user/a/atsareg/data1",   |
-|                     |                                             | "/dirac/user/a/atsareg/data1"};               |
+| *InputData*         | Job input data files                        | InputData = ``{"/dirac/user/a/atsareg/data1", |
+|                     |                                             | "/dirac/user/a/atsareg/data1"};``             |
 +---------------------+---------------------------------------------+-----------------------------------------------+
-| *OutputData*        | Job output data files                       | OutputData = {"output1","output2"};           |
+| *OutputData*        | Job output data files                       | OutputData = ``{"output1","output2"};``       |
 +---------------------+---------------------------------------------+-----------------------------------------------+
-| *OutputPath*        | The output data path in the File Catalog    | OutputPath = {"/myjobs/output"};              |
+| *OutputPath*        | The output data path in the File Catalog    | OutputPath = ``{"/myjobs/output"};``          |
 +---------------------+---------------------------------------------+-----------------------------------------------+
-| *OutputSE*          | The output data Storage Element             | OutputSE = {"DIRAC-USER"};                    |
+| *OutputSE*          | The output data Storage Element             | OutputSE = ``{"DIRAC-USER"};``                |
 +---------------------+---------------------------------------------+-----------------------------------------------+
 |                                                                                                                   |
 |  :subtitle:`Parametric Jobs`                                                                                      |

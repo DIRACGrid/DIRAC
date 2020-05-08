@@ -9,7 +9,7 @@ future
 futures
 matplotlib
 mock
-mysql-python
+mysqlclient  # replacing mysql-python
 psutil
 pyasn1>0.4.1
 pyasn1_modules
@@ -18,4 +18,4 @@ pytz
 recommonmark
 sqlalchemy
 subprocess32
-suds
+suds-community  # replacing suds-jurko

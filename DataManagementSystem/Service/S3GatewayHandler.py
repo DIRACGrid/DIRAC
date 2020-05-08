@@ -15,22 +15,14 @@ This service can serve presigned URL for any S3 storage it has the credentials f
 __RCSID__ = "$Id$"
 
 import errno
-import os
 # from DIRAC
 from DIRAC import S_OK, S_ERROR, gLogger
 
 from DIRAC.Core.DISET.RequestHandler import RequestHandler
 from DIRAC.Core.DISET.ThreadConfig import ThreadConfig
-from DIRAC.Core.Utilities.Pfn import pfnparse, pfnunparse
 from DIRAC.Core.Utilities.ReturnValues import returnSingleResult
-
-
-from DIRAC.Core.Security.Properties import FULL_DELEGATION, LIMITED_DELEGATION, TRUSTED_HOST
-from DIRAC.Core.Utilities import DErrno
 from DIRAC.DataManagementSystem.Utilities.DMSHelpers import DMSHelpers
-
 from DIRAC.Resources.Catalog.FileCatalog import FileCatalog
-
 from DIRAC.Resources.Storage.StorageElement import StorageElement
 ########################################################################
 
@@ -82,7 +74,7 @@ class S3GatewayHandler(RequestHandler):
           log.debug("Add %s to the list of usable S3 storages" % seName)
           break
 
-    log.info("S3Gateway initialized storages", "%s" % cls._S3Storages.keys())
+    log.info("S3Gateway initialized storages", "%s" % list(cls._S3Storages))
 
     cls._fc = FileCatalog()
 

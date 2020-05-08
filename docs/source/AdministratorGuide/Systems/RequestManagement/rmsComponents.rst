@@ -21,7 +21,7 @@ ReqManager
 
 This is the service in front of the DB. It has the following special configuration options:
 
-* `constantRequestDelay`: (default 0 minut) if not 0, this is the constant retry delay we add when putting a Request back to the DB
+* ``ConstantRequestDelay``: (default 0 minutes) if not 0, this is the constant retry delay we add when putting a Request back to the DB
 
 .. _RequestExecutinAgent:
 
@@ -37,21 +37,7 @@ At the end of the execution, if the Request comes from a job, we set the job to 
 
 The RequestExecutingAgent is one of the few that can be duplicated. There are protections to make sure that a Request is only processed by one REA at the time.
 
-=====================
-Configuration options
-=====================
-
-On top of the standard agent options, the REA accepts the following configuration
-
-
-* `BulkRequest` (default 0): If a positive integer `n` is given, we fetch `n` requests at once from the DB. Otherwise, one by one
-* `MinProcess` (default 2): minimum number of workers process in the `ProcessPool`
-* `MaxProcess` (default 4): maximum number of workers process in the `ProcessPool`
-* `OperationHandlers`: There should be in this section one section per OperationHandler (see :ref:`rmsOpType`)
-* `ProcessPoolQueueSize` (default 20): queue depth of the `ProcessPool`
-* `ProcessPoolTimeout` (default 900 seconds): timeout for the `ProcessPool` finalization
-* `ProcessPoolSleep` (default 5 seconds): sleep time before retrying to get a free slot in the `ProcessPool`
-* `RequestsPerCycle` (default 100): number of Requests to execute per cycle
+Configuration options are described :mod:`here <DIRAC.RequestManagementSystem.Agent.RequestExecutingAgent>`.
 
 ==============
 Retry strategy
@@ -59,7 +45,7 @@ Retry strategy
 
 Operations are normally retried several times in case they fail. There is a delay between each execution, depending on the case:
 
-* If the option `constantRequestDelay` is set in the :ref:`ReqManager`, then we apply that one
+* If the option ``ConstantRequestDelay`` is set in the :ref:`ReqManager`, then we apply that one
 * If one of the StorageElement (source or target) is banned, then we wait 1 hour (except if the SE is always banned, then we fail the Operation)
 * Otherwise the delay increases following a logarithmic scale with the number of attempts
 
@@ -69,13 +55,9 @@ Operations are normally retried several times in case they fail. There is a dela
 CleanReqDBAgent
 ---------------
 
-This agent cleans the DB from old Requests in final state. Special configuration options are
+This agent cleans the DB from old Requests in final state.
 
-* `DeleteGraceDays`: (default 60)  Delay after which Requests are removed
-* `DeleteLimit`: (default 100)  Maximum number of Requests to remove per cycle
-* `DeleteFailed`: (default False)  Whether to delete also Failed request
-* `KickGraceHours`: (default 1)  After how long we should kick the Requests in `Assigned`
-* `KickLimit`: (default 10000)  Maximum number of requests kicked by cycle
+Configuration options are described :mod:`here <DIRAC.RequestManagementSystem.Agent.CleanReqDBAgent>`.
 
 .. _reqProxy:
 

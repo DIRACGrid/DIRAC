@@ -69,7 +69,10 @@ class CodeReference(object):
     LOG.info('Looking for custom strings in %s', customizedPath)
     for filename in glob.glob(customizedPath):
       LOG.info('Found customization: %s', filename)
-      exec(open(filename).read(), globals())  # pylint: disable=exec-used
+      try:
+        exec(open(filename).read(), globals())  # pylint: disable=exec-used
+      except Exception as e:
+        LOG.error('Failed to parse customdocs: %r', e)
 
   def mkPackageRst(self, filename, modulename, fullmodulename, subpackages=None, modules=None):
     """Make a rst file for module containing other modules."""
@@ -367,15 +370,17 @@ def run(configFile='docs.conf', logLevel=logging.INFO, debug=False, buildType='f
   :param bool clean: Remove rst files and exit
   :returns: return value 1 or 0
   """
-  logging.getLogger().setLevel(logLevel)
-  code = CodeReference(configFile=configFile)
-  if clean:
-    code.cleanDoc()
-    return 0
-  retVal = code.checkBuildTypeAndRun(buildType=buildType)
-  code.end()
-  return retVal
-
+  try:
+    logging.getLogger().setLevel(logLevel)
+    code = CodeReference(configFile=configFile)
+    if clean:
+      code.cleanDoc()
+      return 0
+    retVal = code.checkBuildTypeAndRun(buildType=buildType)
+    code.end()
+    return retVal
+  except ImportError:
+    return 1
 
 if __name__ == '__main__':
   sys.exit(run(**(CLParser().optionDict())))
