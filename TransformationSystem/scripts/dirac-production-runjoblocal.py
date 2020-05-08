@@ -13,8 +13,17 @@
 
 __RCSID__ = "$Id$"
 
+import sys
 import os
 import shutil
+import ssl
+
+if sys.version_info < (3,):
+  from urllib2 import urlopen as url_library_urlopen
+  from urllib2 import URLError as url_library_URLError
+else:
+  from urllib.request import urlopen as url_library_urlopen
+  from urllib.error import URLError as url_library_URLError
 
 from DIRAC.Core.Base import Script
 Script.parseCommandLine(ignoreErrors=False)
@@ -91,24 +100,17 @@ def __downloadPilotScripts(basepath, diracpath):
   Downloads the scripts necessary to configure the pilot
 
   """
-  shutil.copyfile(
-      str(diracpath) +
-      os.path.sep +
-      "WorkloadManagementSystem/PilotAgent/dirac-pilot.py",
-      basepath +
-      "dirac-pilot.py")
-  shutil.copyfile(
-      str(diracpath) +
-      os.path.sep +
-      "WorkloadManagementSystem/PilotAgent/pilotCommands.py",
-      basepath +
-      "pilotCommands.py")
-  shutil.copyfile(
-      str(diracpath) +
-      os.path.sep +
-      "WorkloadManagementSystem/PilotAgent/pilotTools.py",
-      basepath +
-      "pilotTools.py")
+
+  context = ssl._create_unverified_context()
+  for fileName in ['dirac-pilot.py', 'dirac-install.py',
+		   'pilotCommands.py', 'pilotTools',
+		   'MessageSender', 'PilotLogger.py', 'PilotLoggerTools.py']:
+    remoteFile = url_library_urlopen(
+	os.path.join('https://raw.githubusercontent.com/DIRACGrid/Pilot/master/Pilot/', fileName),
+	timeout=10,
+	context=context)
+    with open(fileName, 'wb') as localFile:
+      localFile.write(remoteFile.read())
 
 
 def __configurePilot(basepath, vo):
