@@ -266,7 +266,7 @@ def getCertOption(cert, optionName):
 def deimportDIRAC():
   """ clean all what has already been imported from DIRAC.
 
-      This method is extremely fragile, but hopefuly, we can get ride of all these
+      This method is extremely fragile, but hopefully, we can get ride of all these
       messy tests soon, when PyGSI has gone.
   """
   for mod in list(sys.modules):
@@ -275,7 +275,7 @@ def deimportDIRAC():
       sys.modules.pop(mod)
 
 
-X509CHAINTYPES = ('M2_X509Chain', 'GSI_X509Chain')
+X509CHAINTYPES = ('M2_X509Chain',)
 
 # This fixture will return a pyGSI or M2Crypto X509Chain class
 # https://docs.pytest.org/en/latest/fixture.html#automatic-grouping-of-tests-by-fixture-instances
@@ -283,7 +283,7 @@ X509CHAINTYPES = ('M2_X509Chain', 'GSI_X509Chain')
 
 @fixture(scope="function", params=X509CHAINTYPES)
 def get_X509Chain_class(request):
-  """ Fixture to return either the pyGSI or M2Crypto X509Certificate class.
+  """ Fixture to return either the X509Certificate class.
       It also 'de-import' DIRAC before and after
   """
   # Clean before
@@ -291,10 +291,10 @@ def get_X509Chain_class(request):
 
   x509Class = request.param
 
-  if x509Class == 'GSI_X509Chain':
-    from DIRAC.Core.Security.pygsi.X509Chain import X509Chain
-  else:
+  if x509Class == 'M2_X509Chain':
     from DIRAC.Core.Security.m2crypto.X509Chain import X509Chain
+  else:
+    raise NotImplementedError()
 
   yield X509Chain
 
@@ -302,15 +302,15 @@ def get_X509Chain_class(request):
   deimportDIRAC()
 
 
-X509REQUESTTYPES = ('M2_X509Request', 'GSI_X509Request')
+X509REQUESTTYPES = ('M2_X509Request',)
 
-# This fixture will return a pyGSI or M2Crypto X509Request class
+# This fixture will return a X509Request class
 # https://docs.pytest.org/en/latest/fixture.html#automatic-grouping-of-tests-by-fixture-instances
 
 
 @fixture(scope="function", params=X509REQUESTTYPES)
 def get_X509Request(request):
-  """ Fixture to return either the pyGSI or M2Crypto X509Request instance.
+  """ Fixture to return either the X509Request instance.
       It also 'de-import' DIRAC before and after
   """
   # Clean before
@@ -318,10 +318,10 @@ def get_X509Request(request):
 
   x509Class = request.param
 
-  if x509Class == 'GSI_X509Request':
-    from DIRAC.Core.Security.pygsi.X509Request import X509Request
-  else:
+  if x509Class == 'M2_X509Request':
     from DIRAC.Core.Security.m2crypto.X509Request import X509Request
+  else:
+    raise NotImplementedError()
 
   def _generateX509Request():
     """ Instanciate the object
@@ -336,7 +336,7 @@ def get_X509Request(request):
 
 
 def get_X509Chain_from_X509Request(x509ReqObj):
-  """ This returns an X509Chain class from the same "type" (PyGSI/M2Crypto) as the X509Request
+  """ This returns an X509Chain class from the same "type" as the X509Request
       object given as param
 
       :param x509ReqObj: instance of a X509Request object
@@ -345,9 +345,9 @@ def get_X509Chain_from_X509Request(x509ReqObj):
   """
 
   # In principle, we should deimport Dirac everywhere, but I am not even sure it makes any difference
-  if 'pygsi' in x509ReqObj.__class__.__module__:
-    from DIRAC.Core.Security.pygsi.X509Chain import X509Chain
-  else:
+  if 'm2crypto' in x509ReqObj.__class__.__module__:
     from DIRAC.Core.Security.m2crypto.X509Chain import X509Chain
+  else:
+    raise NotImplementedError()
 
   return X509Chain
