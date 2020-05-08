@@ -517,7 +517,7 @@ class JobAgent(AgentModule):
 
     if submission['OK']:
       batchID = submission['Value']
-      self.log.info('Job submitted', '%s as %s' % (jobID, batchID))
+      self.log.info('Job submitted', '(DIRAC JobID: %s; Batch ID: %s' % (jobID, batchID))
       if 'PayloadFailed' in submission:
         ret['PayloadFailed'] = submission['PayloadFailed']
         return ret

@@ -78,16 +78,16 @@ def pilotWrapperScript(pilotFilesCompressedEncodedDict=None,
                         the proxy can be part of this, and of course the pilot files
      :type pilotFilesCompressedEncodedDict: dict
      :param pilotOptions: options with which to start the pilot
-     :type pilotOptions: basestring
+     :type pilotOptions: string
      :param pilotExecDir: pilot execution directory
-     :type pilotExecDir: basestring
+     :type pilotExecDir: string
      :param envVariables: dictionary of environment variables
      :type envVariables: dict
      :param location: location where to get the pilot files
-     :type location: basestring
+     :type location: string
 
      :returns: content of the pilot wrapper
-     :rtype: basestring
+     :rtype: string
   """
 
   if pilotFilesCompressedEncodedDict is None:
@@ -212,6 +212,7 @@ for loc in locations:
   except (url_library_URLError, Exception) as e:
     print('%%s unreacheable' %% loc, file=sys.stderr)
     logger.error('%%s unreacheable' %% loc)
+    logger.exception(e)
 
 else:
   print("None of the locations of the pilot files is reachable", file=sys.stderr)
@@ -288,12 +289,12 @@ def _writePilotWrapperFile(workingDirectory=None, localPilot=''):
   """ write the localPilot string to a file, rurn the file name
 
      :param workingDirectory: the directory where to store the pilot wrapper file
-     :type workingDirectory: basestring
+     :type workingDirectory: string
      :param localPilot: content of the pilot wrapper
-     :type localPilot: basestring
+     :type localPilot: string
 
      :returns: file name of the pilot wrapper
-     :rtype: basestring
+     :rtype: string
   """
 
   fd, name = tempfile.mkstemp(suffix='_pilotwrapper.py', prefix='DIRAC_', dir=workingDirectory)
