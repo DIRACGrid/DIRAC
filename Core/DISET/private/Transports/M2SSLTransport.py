@@ -23,9 +23,6 @@ M2Threading.init()
 # to M2Crypto: Quite a few functions will need mapping through from OpenSSL to
 # allow the CRL stack to be set on the X509 CTX used for verification.
 
-# TODO: Catch exceptions (from M2 itself and my M2Utils module) and convert them
-# into proper DIRAC style errors.
-
 # TODO: Log useful messages to the logger
 
 
@@ -147,14 +144,61 @@ class SSLTransport(BaseTransport):
     self.__ctx = getM2SSLContext(self.__ctx, **self.__kwargs)
     return S_OK()
 
-  def handshake(self):
+  def handshake_singleStep(self):
     """ Used to perform SSL handshakes.
         These are now done automatically.
     """
     # This isn't used any more, the handshake is done inside the M2Crypto library
     return S_OK()
 
-  def setClientSocket(self, oSocket):
+  def handshake_multipleSteps(self):
+    """ Perform SSL handshakes.
+        This has to be called after the connection was accepted (acceptConnection_multipleSteps)
+
+        The remote credentials are gathered here
+    """
+    try:
+      # M2Crypto does not provide public method to
+      # accept and handshake in two steps.
+      # So we have to do it manually
+      # The following lines are basically a copy/paste
+      # of the end of SSL.Connection.accept method
+      self.oSocket.setup_ssl()
+      self.oSocket.set_accept_state()
+      self.oSocket.accept_ssl()
+      check = getattr(self.oSocket, 'postConnectionCheck',
+                      self.oSocket.serverPostConnectionCheck)
+      if check is not None:
+        if not check(self.oSocket.get_peer_cert(), self.oSocket.addr[0]):
+          raise SSL.Checker.SSLVerificationError(
+              'post connection check failed')
+
+      self.peerCredentials = getM2PeerInfo(self.oSocket)
+
+      return S_OK()
+    except (socket.error, SSL.SSLError, SSLVerificationError) as e:
+      return S_ERROR("Error in handhsake: %s %s" % (e, repr(e)))
+
+  def setClientSocket_singleStep(self, oSocket):
+    """ Set the inner socket (i.e. SSL.Connection object) of this instance
+        to the value of oSocket.
+        We also gather the remote peer credentials
+        This method is intended to be used to create client connection objects
+        from a server and should be considered to be an internal function.
+
+        :param oSocket: client socket SSL.Connection object
+
+    """
+
+    # TODO: The calling method (ServiceReactor.__acceptIncomingConnection) expects
+    # socket.error to be thrown in case of issue. Maybe we should catch the M2Crypto
+    # errors here and raise socket.error instead
+
+    self.oSocket = oSocket
+    self.remoteAddress = self.oSocket.getpeername()
+    self.peerCredentials = getM2PeerInfo(self.oSocket)
+
+  def setClientSocket_multipleSteps(self, oSocket):
     """ Set the inner socket (i.e. SSL.Connection object) of this instance
         to the value of oSocket.
         This method is intended to be used to create client connection objects
@@ -163,13 +207,40 @@ class SSLTransport(BaseTransport):
         :param oSocket: client socket SSL.Connection object
 
     """
+    # warning: do NOT catch socket.error here, because for who knows what reason
+    # exceptions are actually properly used for once, and the calling method
+    # relies on it (ServiceReactor.__acceptIncomingConnection)
     self.oSocket = oSocket
     self.remoteAddress = self.oSocket.getpeername()
-    self.peerCredentials = getM2PeerInfo(self.oSocket)
 
-  def acceptConnection(self):
+  def acceptConnection_multipleSteps(self):
     """ Accept a new client, returns a new SSLTransport object representing
         the client connection.
+
+        The connection is accepted, but no SSL handshake is performed
+
+        :returns: S_OK(SSLTransport object)
+    """
+    # M2Crypto does not provide public method to
+    # accept and handshake in two steps.
+    # So we have to do it manually
+    # The following lines are basically a copy/paste
+    # of the begining of SSL.Connection.accept method
+    try:
+      sock, addr = self.oSocket.socket.accept()
+      oClient = SSL.Connection(self.oSocket.ctx, sock)
+      oClient.addr = addr
+      oClientTrans = SSLTransport(self.stServerAddress, ctx=self.__ctx)
+      oClientTrans.setClientSocket(oClient)
+      return S_OK(oClientTrans)
+    except (socket.error, SSL.SSLError, SSLVerificationError) as e:
+      return S_ERROR("Error in acceptConnection: %s %s" % (e, repr(e)))
+
+  def acceptConnection_singleStep(self):
+    """ Accept a new client, returns a new SSLTransport object representing
+        the client connection.
+
+        The SSL handshake is performed here.
 
         :returns: S_OK(SSLTransport object)
     """
@@ -178,8 +249,19 @@ class SSLTransport(BaseTransport):
       oClientTrans = SSLTransport(self.stServerAddress, ctx=self.__ctx)
       oClientTrans.setClientSocket(oClient)
       return S_OK(oClientTrans)
-    except (SSL.SSLError, SSLVerificationError) as e:
+    except (socket.error, SSL.SSLError, SSLVerificationError) as e:
       return S_ERROR("Error in acceptConnection: %s %s" % (e, repr(e)))
+
+  # Depending on the DIRAC_M2CRYPTO_SPLIT_HANDSHAKE we either do the
+  # handshake separately or not
+  if os.getenv('DIRAC_M2CRYPTO_SPLIT_HANDSHAKE', 'NO').lower() in ('yes', 'true'):
+    acceptConnection = acceptConnection_multipleSteps
+    handshake = handshake_multipleSteps
+    setClientSocket = setClientSocket_multipleSteps
+  else:
+    acceptConnection = acceptConnection_singleStep
+    handshake = handshake_singleStep
+    setClientSocket = setClientSocket_singleStep
 
   def _read(self, bufSize=4096, skipReadyCheck=False):
     """ Read bufSize bytes from the buffer.
