@@ -19,11 +19,11 @@ import shutil
 import ssl
 
 if sys.version_info < (3,):
-  from urllib2 import urlopen as url_library_urlopen
-  from urllib2 import URLError as url_library_URLError
+  from urllib2 import urlopen as url_library_urlopen  # pylint: disable=no-name-in-module,import-error
+  from urllib2 import URLError as url_library_URLError  # pylint: disable=no-name-in-module,import-error
 else:
-  from urllib.request import urlopen as url_library_urlopen
-  from urllib.error import URLError as url_library_URLError
+  from urllib.request import urlopen as url_library_urlopen  # pylint: disable=no-name-in-module,import-error
+  from urllib.error import URLError as url_library_URLError  # pylint: disable=no-name-in-module,import-error
 
 from DIRAC.Core.Base import Script
 Script.parseCommandLine(ignoreErrors=False)
