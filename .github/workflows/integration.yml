@@ -26,6 +26,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - name: Fail-fast for outdated pipelines
+      run: .github/workflows/fail-fast.sh
     - name: Clean up GitHub actions environment
       run: |
         # Prepare wrapper script
