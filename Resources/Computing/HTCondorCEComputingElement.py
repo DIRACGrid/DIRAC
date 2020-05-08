@@ -82,12 +82,14 @@ def condorIDAndPathToResultFromJobRef(jobRef):
 
   :return: tuple composed of the jobURL, the path to the job results and the condorID of the given jobRef
   """
-  jobURL, stamp = jobRef.split(":::")
+  splits = jobRef.split(":::")
+  jobURL = splits[0]
+  stamp = splits[1] if len(splits) > 1 else ''
   _, _, ceName, condorID = jobURL.split("/")
 
   # Reconstruct the path leading to the result (log, output)
   # Construction of the path can be found in submitJob()
-  pathToResult = logDir(ceName, stamp)
+  pathToResult = logDir(ceName, stamp) if len(stamp) >= 3 else ''
 
   return jobURL, pathToResult, condorID
 
@@ -294,6 +296,8 @@ Queue %(nJobs)s
   def killJob(self, jobIDList):
     """ Kill the specified jobs
     """
+    if not jobIDList:
+      return S_OK()
     if isinstance(jobIDList, basestring):
       jobIDList = [jobIDList]
 
