@@ -5,6 +5,10 @@ Systems configuration
 
 Each DIRAC system has its corresponding section in the Configuration namespace.
 
+.. note:: The configuration options for services and agents are being moved to the :ref:`Code
+          Documentation <code_documentation>`. You can find the options for each service and agent
+          on the individual documentation page of the respective agent or service.
+
 .. toctree::
    :maxdepth: 1
 
@@ -12,7 +16,7 @@ Each DIRAC system has its corresponding section in the Configuration namespace.
    Configuration/index
    DataManagement/index
    WorkloadManagement/index
-   RequestManagement/index
+   /CodeDocumentation/RequestManagementSystem/RequestManagementSystem_Module
    Framework/index
    StorageManagement/index
    Transformation/index

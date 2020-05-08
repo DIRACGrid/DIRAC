@@ -16,6 +16,7 @@ import fnmatch
 import os
 import time
 import errno
+import six
 
 # # from DIRAC
 import DIRAC
@@ -195,7 +196,7 @@ class DataManager(object):
     res = self.removeFile(res['Value'])
     if not res['OK']:
       return res
-    for lfn, reason in res['Value']['Failed'].iteritems():
+    for lfn, reason in res['Value']['Failed'].items():  # can be an iterator
       log.error("Failed to remove file found in the catalog",
                 "%s %s" % (lfn, reason))
     res = returnSingleResult(self.removeFile(['%s/dirac_directory' % folder]))
@@ -302,7 +303,7 @@ class DataManager(object):
     if not res['OK']:
       return res
     allReplicas = dict((lfn, metadata['Replicas'])
-                       for lfn, metadata in res['Value'].iteritems())
+                       for lfn, metadata in res['Value'].items())   # can be an iterator
     return S_OK(allReplicas)
 
   def getFilesFromDirectory(self, directory, days=0, wildcard='*'):
@@ -381,7 +382,7 @@ class DataManager(object):
     lfnReplicas = res['Value']['Successful']
     # If some files have replicas, check their metadata
     if lfnReplicas:
-      res = self.fileCatalog.getFileMetadata(lfnReplicas.keys())
+      res = self.fileCatalog.getFileMetadata(list(lfnReplicas))
       if not res['OK']:
         return res
       failed.update(res['Value']['Failed'])
@@ -1106,7 +1107,7 @@ class DataManager(object):
       seDict.setdefault(storageElementName, []).append((lfn, url))
     failed = {}
     replicaTuples = []
-    for storageElementName, replicaTuple in seDict.iteritems():
+    for storageElementName, replicaTuple in seDict.items():  # can be an iterator
       destStorageElement = StorageElement(storageElementName, vo=self.voName)
       res = destStorageElement.isValid()
       if not res['OK']:
@@ -1209,7 +1210,7 @@ class DataManager(object):
           return res
         lfnDict = res['Value']['Successful']
 
-        for lfn, reason in res['Value']['Failed'].iteritems():
+        for lfn, reason in res['Value']['Failed'].items():  # can be an iterator
           # Ignore files missing in FC if force is set
           if reason == 'No such file or directory' and force:
             successful[lfn] = True
@@ -1245,7 +1246,7 @@ class DataManager(object):
         for lfn in lfns:
           failed[lfn] = failed.setdefault(lfn, '') + " %s" % errStr
       else:
-        for lfn, errStr in res['Value']['Failed'].iteritems():
+        for lfn, errStr in res['Value']['Failed'].items():  # can be an iterator
           failed[lfn] = failed.setdefault(lfn, '') + " %s" % errStr
 
     completelyRemovedFiles = set(lfnDict) - set(failed)
@@ -1304,7 +1305,7 @@ class DataManager(object):
       failed.update(res['Value']['Failed'])
       replicaDict = res['Value']['Successful']
       lfnsToRemove = set()
-      for lfn, repDict in replicaDict.iteritems():
+      for lfn, repDict in replicaDict.items():  # can be an iterator
         if storageElementName not in repDict:
           # The file doesn't exist at the storage element so don't have to
           # remove it
@@ -1414,13 +1415,13 @@ class DataManager(object):
       return res
     failed = {}
     successful = {}
-    for lfn, reason in res['Value']['Failed'].iteritems():
+    for lfn, reason in res['Value']['Failed'].items():  # can be an iterator
       if reason in ('No such file or directory', 'File has zero replicas'):
         successful[lfn] = True
       else:
         failed[lfn] = reason
     replicaTuples = []
-    for lfn, repDict in res['Value']['Successful'].iteritems():
+    for lfn, repDict in res['Value']['Successful'].items():  # can be an iterator
       if storageElementName not in repDict:
         # The file doesn't exist at the storage element so don't have to remove
         # it
@@ -1462,10 +1463,10 @@ class DataManager(object):
 
     success = res['Value']['Successful']
     failed = res['Value']['Failed']
-    for lfn, error in failed.items():
+    for lfn, error in list(failed.items()):
       # Ignore error if file doesn't exist
       # This assumes all catalogs return an error as { catalog : error }
-      for catalog, err in error.items():
+      for catalog, err in list(error.items()):
         if 'no such file' in err.lower():
           success.setdefault(lfn, {}).update({catalog: True})
           error.pop(catalog)
@@ -1517,7 +1518,7 @@ class DataManager(object):
       gDataStoreClient.addRegister(oDataOperation)
       log.debug("Failed to remove replicas.", res['Message'])
     else:
-      for lfn, value in res['Value']['Failed'].items():
+      for lfn, value in list(res['Value']['Failed'].items()):
         if 'No such file or directory' in value:
           res['Value']['Successful'][lfn] = lfn
           res['Value']['Failed'].pop(lfn)
@@ -1611,13 +1612,13 @@ class DataManager(object):
     The input argument is modified
     """
     seList = set(
-        se for ses in replicaDict['Successful'].itervalues() for se in ses)
+        se for ses in replicaDict['Successful'].values() for se in ses)  # can be an iterator
     # Get a cache of SE statuses for long list of replicas
     seStatus = dict((se,
                      (self.__checkSEStatus(se, status='DiskSE'),
                       self.__checkSEStatus(se, status='TapeSE'))) for se in seList)
     # Beware, there is a del below
-    for lfn, replicas in replicaDict['Successful'].items():
+    for lfn, replicas in list(replicaDict['Successful'].items()):
       self.__filterTapeSEs(replicas, diskOnly=diskOnly, seStatus=seStatus)
       # If diskOnly, one may not have any replica in the end, set Failed
       if diskOnly and not replicas:
@@ -1630,14 +1631,14 @@ class DataManager(object):
     The input argument is modified
     """
     seList = set(
-        se for ses in replicaDict['Successful'].itervalues() for se in ses)
+        se for ses in replicaDict['Successful'].values() for se in ses)  # can be an iterator
     # Get a cache of SE statuses for long list of replicas
     seStatus = dict((se, (self.dmsHelper.isSEForJobs(
         se), self.dmsHelper.isSEArchive(se))) for se in seList)
     # Beware, there is a del below
-    for lfn, replicas in replicaDict['Successful'].items():
+    for lfn, replicas in list(replicaDict['Successful'].items()):
       otherThanArchive = set(se for se in replicas if not seStatus[se][1])
-      for se in replicas.keys():
+      for se in list(replicas):
         # Remove the SE if it should not be used for jobs or if it is an
         # archive and there are other SEs
         if not seStatus[se][0] or (otherThanArchive and seStatus[se][1]):
@@ -1662,7 +1663,7 @@ class DataManager(object):
       # First find a disk replica, otherwise do nothing unless diskOnly is set
       if diskOnly or seStatus[se][0]:
         # There is one disk replica, remove tape replicas and exit loop
-        for se in replicas.keys():  # Beware: there is a pop below
+        for se in list(replicas):  # Beware: there is a pop below
           if seStatus[se][1]:
             replicas.pop(se)
         return
@@ -1682,7 +1683,7 @@ class DataManager(object):
         return S_ERROR('Wrong argument type %s, expected a dictionary' % type(replicaDict[key]))
 
     activeDict = {'Successful': {}, 'Failed': replicaDict['Failed'].copy()}
-    for lfn, replicas in replicaDict['Successful'].iteritems():
+    for lfn, replicas in replicaDict['Successful'].items():  # can be an iterator
       if not isinstance(replicas, dict):
         activeDict['Failed'][lfn] = 'Wrong replica info'
       else:
@@ -1696,12 +1697,12 @@ class DataManager(object):
     The input dict is modified, no returned value
     """
     seList = set(
-        se for ses in replicaDict['Successful'].itervalues() for se in ses)
+        se for ses in replicaDict['Successful'].values() for se in ses)  # can be an iterator
     # Get a cache of SE statuses for long list of replicas
     seStatus = dict((se, self.__checkSEStatus(se, status='Read'))
                     for se in seList)
-    for replicas in replicaDict['Successful'].itervalues():
-      for se in replicas.keys():  # Beware: there is a pop below
+    for replicas in replicaDict['Successful'].values():  # can be an iterator
+      for se in list(replicas):  # Beware: there is a pop below
         if not seStatus[se]:
           replicas.pop(se)
     return
@@ -1791,14 +1792,14 @@ class DataManager(object):
     retDict = {"Failed": res["Value"]["Failed"],
                "Successful": {}}
     # # print errors
-    for lfn, reason in retDict["Failed"].iteritems():
+    for lfn, reason in retDict["Failed"].items():  # can be an iterator
       log.error("_callReplicaSEFcn: Failed to get replicas for file.",
                 "%s %s" % (lfn, reason))
     # # good replicas
     lfnReplicas = res["Value"]["Successful"]
     # # store PFN to LFN mapping
     lfnList = []
-    for lfn, replicas in lfnReplicas.iteritems():
+    for lfn, replicas in lfnReplicas.items():  # can be an iterator
       if storageElementName in replicas:
         lfnList.append(lfn)
       else:

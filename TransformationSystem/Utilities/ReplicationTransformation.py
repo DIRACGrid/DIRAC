@@ -57,7 +57,7 @@ def createDataTransformation(flavour, targetSE, sourceSE,
 
   trans.setTransformationName(transName)
   description = '%s files for %s %s to %s' % (transVerb, metaKey, str(metaValue), ",".join(targetSE))
-  trans.setDescription(description)
+  trans.setDescription(description[:255])
   trans.setLongDescription(description)
   trans.setType('Replication')
   trans.setTransformationGroup(transGroup)

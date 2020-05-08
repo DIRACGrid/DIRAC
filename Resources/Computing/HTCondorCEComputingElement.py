@@ -83,12 +83,14 @@ def condorIDAndPathToResultFromJobRef(jobRef):
 
   :return: tuple composed of the jobURL, the path to the job results and the condorID of the given jobRef
   """
-  jobURL, stamp = jobRef.split(":::")
+  splits = jobRef.split(":::")
+  jobURL = splits[0]
+  stamp = splits[1] if len(splits) > 1 else ''
   _, _, ceName, condorID = jobURL.split("/")
 
   # Reconstruct the path leading to the result (log, output)
   # Construction of the path can be found in submitJob()
-  pathToResult = logDir(ceName, stamp)
+  pathToResult = logDir(ceName, stamp) if len(stamp) >= 3 else ''
 
   return jobURL, pathToResult, condorID
 
@@ -296,6 +298,8 @@ Queue %(nJobs)s
   def killJob(self, jobIDList):
     """ Kill the specified jobs
     """
+    if not jobIDList:
+      return S_OK()
     if isinstance(jobIDList, six.string_types):
       jobIDList = [jobIDList]
 
@@ -490,8 +494,9 @@ Queue %(nJobs)s
     if status:
       self.log.error("Failure during HTCondorCE __cleanup", stdout)
 
-    # remove all out/err/log files older than "DaysToKeepLogs" days
-    findPars = dict(workDir=self.workingDirectory, days=self.daysToKeepLogs)
+    # remove all out/err/log files older than "DaysToKeepLogs" days in the CE part of the working Directory
+    workDir = os.path.join(self.workingDirectory, self.ceName)
+    findPars = dict(workDir=workDir, days=self.daysToKeepLogs)
     # remove all out/err/log files older than "DaysToKeepLogs" days
     status, stdout = commands.getstatusoutput(
         r'find %(workDir)s -mtime +%(days)s -type f \( -name "*.out" -o -name "*.err" -o -name "*.log" \) -delete ' %

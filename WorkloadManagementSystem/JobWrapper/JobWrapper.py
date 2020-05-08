@@ -21,6 +21,7 @@ import tarfile
 import glob
 import urllib
 import json
+import six
 
 import six
 

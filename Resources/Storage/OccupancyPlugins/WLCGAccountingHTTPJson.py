@@ -43,6 +43,6 @@ class WLCGAccountingHTTPJson(WLCGAccountingJson):
       with open(filePath, 'wt') as fd:
         res = requests.get(occupancyLFN)
         res.raise_for_status()
-        fd.write(res.content())
+        fd.write(res.content)
     except Exception as e:
       self.log.debug("Exception while copying", repr(e))

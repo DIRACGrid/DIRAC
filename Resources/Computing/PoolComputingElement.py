@@ -154,6 +154,9 @@ class PoolComputingElement(ComputingElement):
     processorsInUse = self.getProcessorsInUse()
     availableProcessors = self.processors - processorsInUse
 
+    self.log.verbose("Processors (total, in use, available)",
+                     "(%d, %d, %d)" % (self.processors, processorsInUse, availableProcessors))
+
     # Does this ask for MP?
     if not kwargs.get('mpTag', False):
       if availableProcessors:

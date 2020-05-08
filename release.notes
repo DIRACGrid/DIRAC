@@ -120,6 +120,34 @@ FIX: (#4551) align ProxyDB test to current changes
 NEW: (#4289) Document how to run integration tests in docker
 NEW: (#4551) add DNProperties description to Registry/Users subsection
 
+[v7r0p23]
+
+*Core
+FIX: (#4580) The CPU for the jobWrapper process group was incorrectly calculated as
+     it was not including former children of the JobWrapper.
+
+*Framework
+FIX: (#4570) MonitoringCatalog only prints an error when there is really one
+
+*WMS
+NEW: (#4576) add a workDir to PilotCStoJSONSynchronizer
+FIX: (#4591) Fix exception when calling HTCondorCE killJob, used when killing pilots
+     with dirac-admin-kill-pilot for example. Fixes #4590
+
+*DMS
+FIX: (#4591) allow dirac-dms-protocol-matrix be run for non LHCb VOs
+
+*RMS
+CHANGE: (#4573) Add include from ConfigTemplate to CleanReqDBAgent, RequestExecutingAgent, ReqManager
+CHANGE: (#4573) align defaults in ConfigTemplate with those in the Code
+
+*Resources
+FIX: (#4588) HTCondorCE cleanup only the pilots files related to the CE
+
+*Docs:
+NEW: (#4571) the DiracDocTools are now also compatible with python3
+NEW: (#4571) added ".readthedocs.yml" config
+
 [v7r0p22]
 
 *Core:
@@ -518,6 +546,11 @@ CHANGE: (#4110) updated basic tutorial for CC7 instead of SLC6.
 NEW: (#4170) added Production system documentation
 CHANGE: (#4224) Pilot 3 is the default
 NEW: (#4244) Added a few notes on using the JobParameters on ElasticSearch database
+
+[v6r22p28]
+
+*TS
+FIX: (#4569) TransformationClient - allow "LFN" cindition as a string to be compatible with the service
 
 [v6r22p27]
 
