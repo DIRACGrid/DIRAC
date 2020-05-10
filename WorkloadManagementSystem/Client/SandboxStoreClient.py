@@ -25,29 +25,16 @@ from DIRAC.ConfigurationSystem.Client.Helpers.Registry import getVOForGroup
 class SandboxStoreClient(object):
 
   __validSandboxTypes = ('Input', 'Output')
-  __smdb = None
 
-  def __init__(self, rpcClient=None, transferClient=None, smdb=None, **kwargs):
+  def __init__(self, rpcClient=None, transferClient=None, **kwargs):
 
     self.__serviceName = "WorkloadManagement/SandboxStore"
     self.__rpcClient = rpcClient
     self.__transferClient = transferClient
     self.__kwargs = kwargs
     self.__vo = None
-    SandboxStoreClient.__smdb = smdb
     if 'delegatedGroup' in kwargs:
       self.__vo = getVOForGroup(kwargs['delegatedGroup'])
-    if SandboxStoreClient.__smdb is None:
-      try:
-        from DIRAC.WorkloadManagementSystem.DB.SandboxMetadataDB import SandboxMetadataDB
-        SandboxStoreClient.__smdb = SandboxMetadataDB()
-        result = SandboxStoreClient.__smdb._getConnection()  # pylint: disable=protected-access
-        if not result['OK']:
-          SandboxStoreClient.__smdb = False
-        else:
-          result['Value'].close()
-      except (ImportError, RuntimeError, AttributeError):
-        SandboxStoreClient.__smdb = False
 
   def __getRPCClient(self):
     """ Get an RPC client for SB service """
@@ -240,14 +227,6 @@ class SandboxStoreClient(object):
     """ Download job sandbox """
     return self.__getSandboxesForEntity("Job:%s" % jobId)
 
-  def assignSandboxesToJob(self, jobId, sbList, ownerName="", ownerGroup="", eSetup=""):
-    """ Assign SB to a job """
-    return self.__assignSandboxesToEntity("Job:%s" % jobId, sbList, ownerName, ownerGroup, eSetup)
-
-  def assignSandboxToJob(self, jobId, sbLocation, sbType, ownerName="", ownerGroup="", eSetup=""):
-    """ Assign SB to a job """
-    return self.__assignSandboxToEntity("Job:%s" % jobId, sbLocation, sbType, ownerName, ownerGroup, eSetup)
-
   def unassignJobs(self, jobIdList):
     """ Unassign SB to a job """
     if isinstance(jobIdList, (int, long)):
@@ -286,14 +265,6 @@ class SandboxStoreClient(object):
     """ Get SB for a pilot """
     return self.__getSandboxesForEntity("Pilot:%s" % pilotId)
 
-  def assignSandboxesToPilot(self, pilotId, sbList, ownerName="", ownerGroup="", eSetup=""):
-    """ Assign SB to a pilot """
-    return self.__assignSandboxesToEntity("Pilot:%s" % pilotId, sbList, ownerName, ownerGroup, eSetup)
-
-  def assignSandboxToPilot(self, pilotId, sbLocation, sbType, ownerName="", ownerGroup="", eSetup=""):
-    """ Assign SB to a pilot """
-    return self.__assignSandboxToEntity("Pilot:%s" % pilotId, sbLocation, sbType, ownerName, ownerGroup, eSetup)
-
   def unassignPilots(self, pilotIdIdList):
     """ Unassign SB to a pilot """
     if isinstance(pilotIdIdList, (int, long)):
@@ -330,29 +301,6 @@ class SandboxStoreClient(object):
     rpcClient = self.__getRPCClient()
     return rpcClient.getSandboxesAssignedToEntity(eId)
 
-  def __assignSandboxesToEntity(self, eId, sbList, ownerName="", ownerGroup="", eSetup=""):
-    """
-    Assign sandboxes to a job.
-    sbList must be a list of sandboxes and relation types
-      sbList = [ ( "SB:SEName|SEPFN", "Input" ), ( "SB:SEName|SEPFN", "Output" ) ]
-    """
-    for sbT in sbList:
-      if sbT[1] not in self.__validSandboxTypes:
-        return S_ERROR("Invalid Sandbox type %s" % sbT[1])
-    if SandboxStoreClient.__smdb and ownerName and ownerGroup:
-      if not eSetup:
-        eSetup = gConfig.getValue("/DIRAC/Setup", "Production")
-      return SandboxStoreClient.__smdb.assignSandboxesToEntities({eId: sbList}, ownerName, ownerGroup, eSetup)
-    rpcClient = self.__getRPCClient()
-    return rpcClient.assignSandboxesToEntities({eId: sbList}, ownerName, ownerGroup, eSetup)
-
-  def __assignSandboxToEntity(self, eId, sbLocation, sbType, ownerName="", ownerGroup="", eSetup=""):
-    """
-    Assign a sandbox to a job
-      sbLocation is "SEName:SEPFN"
-      sbType is Input or Output
-    """
-    return self.__assignSandboxesToEntity(eId, [(sbLocation, sbType)], ownerName, ownerGroup, eSetup)
 
   def __unassignEntities(self, eIdList):
     """
