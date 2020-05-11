@@ -137,11 +137,17 @@ function prepareEnvironment() {
         echo "export DIRAC_RELEASE=integration"
       } >> "${SERVERCONFIG}"
   else
-      majorVersion=$(grep "majorVersion =" "${DIRAC_BASE_DIR}/__init__.py" | cut -d "=" -f 2)
-      minorVersion=$(grep "minorVersion =" "${DIRAC_BASE_DIR}/__init__.py" | cut -d "=" -f 2)
-      {
-        echo "export DIRACBRANCH=${DIRACBRANCH:-v${majorVersion// }r${minorVersion// }}"
-      } >> "${SERVERCONFIG}"
+      majorVersion=$(grep "majorVersion =" "${DIRAC_BASE_DIR}/__init__.py" | cut -d "=" -f 2 | cut -d " " -f 2 | cut -d "'" -f 2)
+      if [[ "$majorVersion" = "integration" ]]; then
+        {
+          echo "export DIRAC_RELEASE=integration"
+        } >> "${SERVERCONFIG}"
+      else
+        minorVersion=$(grep "minorVersion =" "${DIRAC_BASE_DIR}/__init__.py" | cut -d "=" -f 2 | cut -d " " -f 2 | cut -d "'" -f 2)
+        {
+          echo "export DIRACBRANCH=${DIRACBRANCH:-v${majorVersion// }r${minorVersion// }}"
+        } >> "${SERVERCONFIG}"
+      fi
   fi
 
   if [[ -n "${EXTRA_ENVIRONMENT_CONFIG+x}" ]]; then
