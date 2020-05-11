@@ -241,7 +241,9 @@ class GithubInterface(object):
                         help="branches to get release notes for")
 
     parser.add_argument("--date", action="store", default=self.startDate, dest="date",
-                        help="date after which PRs are checked, default (two weeks ago): %s" % self.startDate)
+                        help="date and optionally time after which PRs are checked (ISO 8601),\
+                         accepting 2020-01-08 or 2018-05-20T15:23:45Z,\
+                         default (two weeks ago): %s" % self.startDate)
 
     parser.add_argument("--sinceLatestTag", action="store_true", dest="sinceLatestTag", default=self.sinceLatestTag,
                         help="get release notes since latest tag (incompatible with --date)")
