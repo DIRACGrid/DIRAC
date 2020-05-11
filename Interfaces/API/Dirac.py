@@ -1647,8 +1647,7 @@ class Dirac(API):
     except Exception as x:
       return self._errorReport(repr(x), 'Could not create directory in %s' % (dirPath))
 
-    result = SandboxStoreClient(smdb=False,
-                                useCertificates=self.useCertificates).downloadSandboxForJob(jobID,
+    result = SandboxStoreClient(useCertificates=self.useCertificates).downloadSandboxForJob(jobID,
                                                                                             'Input',
                                                                                             dirPath)
     if not result['OK']:
@@ -1696,8 +1695,7 @@ class Dirac(API):
     mkDir(dirPath)
 
     # New download
-    result = SandboxStoreClient(smdb=False,
-                                useCertificates=self.useCertificates).downloadSandboxForJob(jobID,
+    result = SandboxStoreClient(useCertificates=self.useCertificates).downloadSandboxForJob(jobID,
                                                                                             'Output',
                                                                                             dirPath,
                                                                                             inMemory=False,
