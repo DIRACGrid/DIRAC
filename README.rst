@@ -9,6 +9,22 @@ Cite us:
 
 Status master branch (stable):
 
+.. image:: https://github.com/DIRACGrid/DIRAC/workflows/Basic%20tests/badge.svg?branch=rel-v7r0
+   :target: https://github.com/DIRACGrid/DIRAC/actions?query=workflow%3A%22Basic+tests%22+branch%3Arel-v7r0
+   :alt: Basic Tests Status
+
+.. image:: https://github.com/DIRACGrid/DIRAC/workflows/dirac-install/badge.svg?branch=rel-v7r0
+   :target: https://github.com/DIRACGrid/DIRAC/actions?query=workflow%3A%22dirac-install%22+branch%3Arel-v7r0
+   :alt: Dirac Install Status
+
+.. image:: https://github.com/DIRACGrid/DIRAC/workflows/pilot%20wrapper/badge.svg?branch=rel-v7r0
+   :target: https://github.com/DIRACGrid/DIRAC/actions?query=workflow%3A%22pilot+wrapper%22+branch%3Arel-v7r0
+   :alt: Pilot Wrapper Status
+
+.. image:: https://github.com/DIRACGrid/DIRAC/workflows/Integration%20tests/badge.svg?branch=rel-v7r0
+   :target: https://github.com/DIRACGrid/DIRAC/actions?query=workflow%3A%22Integration+tests%22+branch%3Arel-v7r0
+   :alt: Integration Tests Status
+
 .. image:: https://readthedocs.org/projects/dirac/badge/?version=latest
    :target: http://dirac.readthedocs.io/en/latest/
    :alt: Documentation Status
@@ -16,16 +32,34 @@ Status master branch (stable):
 
 Status integration branch (devel):
 
+.. image:: https://github.com/DIRACGrid/DIRAC/workflows/Basic%20tests/badge.svg?branch=integration
+   :target: https://github.com/DIRACGrid/DIRAC/actions?query=workflow%3A%22Basic+tests%22+branch%3Aintegration
+   :alt: Basic Tests Status
+
+.. image:: https://github.com/DIRACGrid/DIRAC/workflows/dirac-install/badge.svg?branch=rel-v7r0
+   :target: https://github.com/DIRACGrid/DIRAC/actions?query=workflow%3A%22dirac-install%22+branch%3Aintegration
+   :alt: Dirac Install Status
+
+.. image:: https://github.com/DIRACGrid/DIRAC/workflows/pilot%20wrapper/badge.svg?branch=rel-v7r0
+   :target: https://github.com/DIRACGrid/DIRAC/actions?query=workflow%3A%22pilot+wrapper%22+branch%3Aintegration
+   :alt: Pilot Wrapper Status
+
+.. image:: https://github.com/DIRACGrid/DIRAC/workflows/Integration%20tests/badge.svg?branch=integration
+   :target: https://github.com/DIRACGrid/DIRAC/actions?query=workflow%3A%22Integration+tests%22+branch%3Aintegration
+   :alt: Integration Tests Status
+
 .. image:: https://readthedocs.org/projects/dirac/badge/?version=integration
-  :target: http://dirac.readthedocs.io/en/integration/
-  :alt: Documentation Status
+   :target: http://dirac.readthedocs.io/en/integration/
+   :alt: Documentation Status
 
 
 
 DIRAC
 =====
 
-DIRAC (Distributed Infrastructure with Remote Agent Control) INTERWARE is a software framework for distributed computing providing a complete solution to one or more user community requiring access to distributed resources. DIRAC builds a layer between the users and the resources offering a common interface to a number of heterogeneous providers, integrating them in a seamless manner, providing interoperability, at the same time as an optimized, transparent and reliable usage of the resources.
+DIRAC is an interware, meaning a software framework for distributed computing.
+
+DIRAC provides a complete solution to one or more user community requiring access to distributed resources. DIRAC builds a layer between the users and the resources offering a common interface to a number of heterogeneous providers, integrating them in a seamless manner, providing interoperability, at the same time as an optimized, transparent and reliable usage of the resources.
 
 DIRAC has been started by the `LHCb collaboration <https://lhcb.web.cern.ch/lhcb/>`_ who still maintains it. It is now used by several communities (AKA VO=Virtual Organizations) for their distributed computing workflows.
 
@@ -74,7 +108,7 @@ Each PR is a also subject to check for python 3 compatibility.
 If you are issuing PRs that are devoted to future versions of DIRAC (so, not for patch releases),
 for each of the python files touched please run (and react to)::
 
-   pylint --rcfile=tests/.pylintrc3k --py3k --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" --extension-pkg-whitelist=GSI,numpy path/to/file.py
+   pylint --rcfile=tests/.pylintrc3k --py3k --msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}" --extension-pkg-whitelist=numpy path/to/file.py
 
 
 Testing
