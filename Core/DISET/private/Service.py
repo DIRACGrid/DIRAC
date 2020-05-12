@@ -14,7 +14,7 @@ import threading
 
 # TODO: Remove ThreadPool later
 useThreadPoolExecutor = False
-if os.getenv('DIRAC_USE_NEWTHREADPOOL', 'NO').lower() in ('yes', 'true'):
+if os.getenv('DIRAC_USE_NEWTHREADPOOL', 'YES').lower() in ('yes', 'true'):
   from concurrent.futures import ThreadPoolExecutor
   useThreadPoolExecutor = True
 else:

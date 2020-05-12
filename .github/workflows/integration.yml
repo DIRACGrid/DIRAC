@@ -28,7 +28,7 @@ jobs:
           # IMPLICIT: - HOST_OS: cc7
           ###### Thread pool
           # IMPLICIT: - USE_NEWTHREADPOOL: default
-          - USE_NEWTHREADPOOL: yes
+          - USE_NEWTHREADPOOL: No
           ###### M2Crypto
           # IMPLICIT: - SERVER_USE_M2CRYPTO: Yes
           #             CLIENT_USE_M2CRYPTO: Yes
