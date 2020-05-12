@@ -32,7 +32,7 @@ class JobSanity(OptimizerExecutor):
   def initializeOptimizer(cls):
     """Initialize specific parameters for JobSanityAgent.
     """
-    cls.sandboxClient = SandboxStoreClient(useCertificates=True)
+    cls.sandboxClient = SandboxStoreClient(useCertificates=True, smdb=True)
     return S_OK()
 
   def optimizeJob(self, jid, jobState):

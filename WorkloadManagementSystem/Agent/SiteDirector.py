@@ -98,6 +98,8 @@ class SiteDirector(AgentModule):
     self.queueCECache = {}
     self.queueSlots = {}
     self.failedQueues = defaultdict(int)
+    # failedPilotOutput stores the number of times the Site Director failed to get a given pilot output
+    self.failedPilotOutput = defaultdict(int)
     self.firstPass = True
     self.maxJobsInFillMode = MAX_JOBS_IN_FILLMODE
     self.maxPilotsToSubmit = MAX_PILOTS_TO_SUBMIT
@@ -137,6 +139,8 @@ class SiteDirector(AgentModule):
     # Every N cycles, the number of slots available in the queues is updated
     self.availableSlotsUpdateCycleFactor = 10
     self.maxQueueLength = 86400 * 3
+    # Maximum number of times the Site Director is going to try to get a pilot output before stopping
+    self.maxRetryGetPilotOutput = 3
 
     self.pilotWaitingFlag = True
     self.pilotLogLevel = 'INFO'
@@ -221,6 +225,7 @@ class SiteDirector(AgentModule):
                                                           self.pilotStatusUpdateCycleFactor)
     self.availableSlotsUpdateCycleFactor = self.am_getOption('AvailableSlotsUpdateCycleFactor',
                                                              self.availableSlotsUpdateCycleFactor)
+    self.maxRetryGetPilotOutput = self.am_getOption('MaxRetryGetPilotOutput', self.maxRetryGetPilotOutput)
 
     # Flags
     self.addPilotsToEmptySites = self.am_getOption('AddPilotsToEmptySites', self.addPilotsToEmptySites)
@@ -1429,24 +1434,35 @@ class SiteDirector(AgentModule):
   def _getPilotOutput(self, pRef, pilotDict, ce, ceName):
     """ Retrieves the pilot output for a pilot and stores it in the pilotAgentsDB
     """
-
     self.log.info('Retrieving output for pilot %s' % pRef)
+    output = None
+    error = None
+
     pilotStamp = pilotDict[pRef]['PilotStamp']
     pRefStamp = pRef
     if pilotStamp:
       pRefStamp = pRef + ':::' + pilotStamp
+
     result = ce.getJobOutput(pRefStamp)
     if not result['OK']:
-      self.log.error('Failed to get pilot output',
-                     '%s: %s' % (ceName, result['Message']))
+      self.failedPilotOutput[pRefStamp] += 1
+      self.log.error('Failed to get pilot output', '%s: %s' % (ceName, result['Message']))
+      self.log.verbose('Retries left: %d' % max(0, self.maxRetryGetPilotOutput - self.failedPilotOutput[pRefStamp]))
+
+      if (self.maxRetryGetPilotOutput - self.failedPilotOutput[pRefStamp]) <= 0:
+        output = 'Output is no longer available'
+        error = 'Error is no longer available'
+      else:
+        return
     else:
       output, error = result['Value']
-      if output:
-        result = pilotAgentsDB.storePilotOutput(pRef, output, error)
-        if not result['OK']:
-          self.log.error('Failed to store pilot output', result['Message'])
-      else:
-        self.log.warn('Empty pilot output not stored to PilotDB')
+
+    if output:
+      result = pilotAgentsDB.storePilotOutput(pRef, output, error)
+      if not result['OK']:
+        self.log.error('Failed to store pilot output', result['Message'])
+    else:
+      self.log.warn('Empty pilot output not stored to PilotDB')
 
   def sendPilotAccounting(self, pilotDict):
     """ Send pilot accounting record
