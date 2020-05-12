@@ -27,7 +27,16 @@ class SandboxStoreClient(object):
   __validSandboxTypes = ('Input', 'Output')
   __smdb = None
 
-  def __init__(self, rpcClient=None, transferClient=None, smdb=None, **kwargs):
+  def __init__(self, rpcClient=None, transferClient=None, smdb=False, **kwargs):
+    """ Constructor
+
+        :param object rpcClient: SandboxStore service client (None by default)
+        :param object transferClient: client to upload/download sandboxes (None by default)
+        :param object smdb: SandboxMetadataDB object, or
+                            True if SandboxMetadataDB is to be instantiated for direct access or
+                            False if no direct access to the SandboxMetadataDB is done (default)
+
+    """
 
     self.__serviceName = "WorkloadManagement/SandboxStore"
     self.__rpcClient = rpcClient
@@ -37,7 +46,7 @@ class SandboxStoreClient(object):
     SandboxStoreClient.__smdb = smdb
     if 'delegatedGroup' in kwargs:
       self.__vo = getVOForGroup(kwargs['delegatedGroup'])
-    if SandboxStoreClient.__smdb is None:
+    if SandboxStoreClient.__smdb is True:
       try:
         from DIRAC.WorkloadManagementSystem.DB.SandboxMetadataDB import SandboxMetadataDB
         SandboxStoreClient.__smdb = SandboxMetadataDB()
