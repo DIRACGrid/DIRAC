@@ -942,10 +942,13 @@ class X509Chain(object):
     return S_OK(False)
 
   @needCertList
-  def getCredentials(self, ignoreDefault=False):
+  def getCredentials(self, ignoreDefault=False, withRegistryInfo=True):
     """ Returns a summary of the credentials contained in the current chain
 
         :params ignoreDefault: (default False) If True and if no DIRAC group is found in the proxy, lookup the CS
+        :params withRegistryInfo: (default True) if set to True, will enhance the returned dict with info
+                                  from the registry
+
 
         :returns: S_OK with the credential dict. Some parameters of the dict are always there, other depends
                 on the nature of the Chain
@@ -963,13 +966,13 @@ class X509Chain(object):
                 Only for proxy:
                   * identity: If it is a normal proxy, it is the DN of the certificate.
                               If it is a PUSP, it contains the identity as in :py:meth:`.isPUSP`
-                  * username: DIRAC username associated to the DN
+                  * username: DIRAC username associated to the DN (needs withRegistryInfo)
                               (see :py:func:`DIRAC.ConfigurationSystem.Client.Helpers.Registry.getUsernameForDN`)
                   * group: DIRAC group, depending on ignoreDefault param(see :py:meth:`.getDIRACGroup`)
                   * validGroup: True if the group found is in the list of groups the user belongs to
                   * groupProperty: (only if validGroup) get the properties of the group
 
-                For Host certificate:
+                For Host certificate (needs withRegistryInfo):
                   * group: always `hosts`
                   * hostname: name of the host as registered in the CS
                              (see :py:func:`DIRAC.ConfigurationSystem.Client.Helpers.Registry.getHostnameForDN`)
@@ -977,7 +980,7 @@ class X509Chain(object):
                   * groupProperties: host options
                                     (see :py:func:`DIRAC.ConfigurationSystem.Client.Helpers.Registry.getHostOption`)
 
-                If it is a user certificate:
+                If it is a user certificate (needs withRegistryInfo):
                   * username: like for proxy
                   * validDN: like proxy
     """
@@ -997,20 +1000,22 @@ class X509Chain(object):
         credDict['identity'] = result['Identity']
         credDict['subproxyUser'] = result['SubproxyUser']
 
-      retVal = Registry.getUsernameForDN(credDict['identity'])
-      if not retVal['OK']:
-        return S_OK(credDict)
-      credDict['username'] = retVal['Value']
-      credDict['validDN'] = True
+      if withRegistryInfo:
+        retVal = Registry.getUsernameForDN(credDict['identity'])
+        if not retVal['OK']:
+          return S_OK(credDict)
+        credDict['username'] = retVal['Value']
+        credDict['validDN'] = True
       retVal = self.getDIRACGroup(ignoreDefault=ignoreDefault)
       if retVal['OK']:
         diracGroup = retVal['Value']
         credDict['group'] = diracGroup
-        retVal = Registry.getGroupsForUser(credDict['username'])
-        if retVal['OK'] and diracGroup in retVal['Value']:
-          credDict['validGroup'] = True
-          credDict['groupProperties'] = Registry.getPropertiesForGroup(diracGroup)
-    else:
+        if withRegistryInfo:
+          retVal = Registry.getGroupsForUser(credDict['username'])
+          if retVal['OK'] and diracGroup in retVal['Value']:
+            credDict['validGroup'] = True
+            credDict['groupProperties'] = Registry.getPropertiesForGroup(diracGroup)
+    elif withRegistryInfo:
       retVal = Registry.getHostnameForDN(credDict['subject'])
       if retVal['OK']:
         credDict['group'] = 'hosts'

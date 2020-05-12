@@ -189,19 +189,8 @@ Reload the configuration and restart::
 Server Certificates
 -------------------
 
-Server certificates are used for validating the identity of the host a given client is connecting to. By default
-grid host certificate include host/ in the CN (common name) field. This is not a problem for DIRAC components
-since DISET only keeps the host name after the **/** if present.
-
-However if the certificate is used for the Web Portal, the client validating the certificate is your browser. All browsers
-will rise a security alarm if the host name in the url does not match the CN field in the certificate presented by the server.
-In particular this means that *host/*, or other similar parts should nto be present, and that it is preferable to use
-DNS aliases and request a certificate under this alias in order to be able to migrate the server to a new host without
-having to change your URLs. DIRAC will accept both real host names and any valid aliases without complains.
-
-Finally, you will have to instruct you users on the procedure to upload the public key of the CA signing the certificate
-of the host where the Web Portal is running. This depends from CA to CA, but typically only means clicking on a certain
-link on the web portal of the CA.
+Server certificates are used for validating the identity of the host a given client is connecting to. We follow the RFC 6125.
+Basically, that means that the DNS name used to contact the host must be present in the ``SubjectAlternativeName``. 
 
 -----------------
 Using your own CA

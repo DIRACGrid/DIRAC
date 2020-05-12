@@ -405,19 +405,24 @@ Queue %(nJobs)s
 
     if not self.useLocalSchedd:
       iwd = None
-      status, stdout_q = commands.getstatusoutput('condor_q %s %s -af SUBMIT_Iwd' % (self.remoteScheddOptions,
-                                                                                     condorID))
-      self.log.verbose('condor_q:', stdout_q)
-      if status != 0:
-        return S_ERROR(stdout_q)
-      if self.workingDirectory in stdout_q:
-        iwd = stdout_q
-        try:
-          os.makedirs(iwd)
-        except OSError as e:
-          self.log.verbose(str(e))
+      if pathToResult:
+        iwd = os.path.join(self.workingDirectory, pathToResult)
+      else:
+        status, stdout_q = commands.getstatusoutput('condor_q %s %s -af SUBMIT_Iwd' % (self.remoteScheddOptions,
+                                                                                       condorID))
+        self.log.verbose('condor_q:', stdout_q)
+        if status != 0:
+          return S_ERROR(stdout_q)
+        if self.workingDirectory in stdout_q:
+          iwd = stdout_q
+
       if iwd is None:
         return S_ERROR("Failed to find condor job %s" % condorID)
+
+      try:
+        os.makedirs(iwd)
+      except OSError as e:
+        self.log.verbose(str(e))
 
       cmd = ['condor_transfer_data', '-pool', '%s:9619' % self.ceName, '-name', self.ceName, condorID]
       result = executeGridCommand(self.proxy, cmd, self.gridEnv)

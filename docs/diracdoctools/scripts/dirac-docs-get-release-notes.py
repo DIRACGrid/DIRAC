@@ -26,7 +26,9 @@ add this section to the config file
 from __future__ import print_function
 import os
 from collections import defaultdict
-from datetime import datetime, timedelta
+import datetime
+import dateutil.parser
+import pytz
 import argparse
 from pprint import pformat
 import logging
@@ -147,7 +149,7 @@ class GithubInterface(object):
     self.sinceLatestTag = False
     self.headerMessage = None
     self.footerMessage = None
-    self.startDate = str(datetime.now() - timedelta(days=14))[:10]
+    self.startDate = datetime.datetime.now() - datetime.timedelta(days=14)
     self.printLevel = logging.WARNING
     logging.getLogger().setLevel(self.printLevel)
     self.useGitlab = False
@@ -239,7 +241,9 @@ class GithubInterface(object):
                         help="branches to get release notes for")
 
     parser.add_argument("--date", action="store", default=self.startDate, dest="date",
-                        help="date after which PRs are checked, default (two weeks ago): %s" % self.startDate)
+                        help="date and optionally time after which PRs are checked (ISO 8601),\
+                         accepting 2020-01-08 or 2018-05-20T15:23:45Z,\
+                         default (two weeks ago): %s" % self.startDate)
 
     parser.add_argument("--sinceLatestTag", action="store_true", dest="sinceLatestTag", default=self.sinceLatestTag,
                         help="get release notes since latest tag (incompatible with --date)")
@@ -306,7 +310,12 @@ class GithubInterface(object):
       self.startDate = None
       del parsed.date
     else:
-      self.startDate = parsed.date
+      if not isinstance(parsed.date, datetime.date):
+        parsed.date = dateutil.parser.isoparse(parsed.date)
+      if parsed.date.tzinfo is None or parsed.date.tzinfo.utcoffset(parsed.date) is None:
+        self.startDate = pytz.utc.localize(parsed.date)
+      else:
+        self.startDate = parsed.date
       log.info('Starting from: %s', self.startDate)
 
     self.openPRs = parsed.openPRs
@@ -403,8 +412,8 @@ class GithubInterface(object):
     """
     glURL = self._gitlab('repository/tags')
     allTags = req2Json(glURL)
-
-    return max([tag['commit']['created_at'] for tag in allTags])
+    lastTag = max([tag['commit']['created_at'] for tag in allTags])
+    return dateutil.parser.isoparse(lastTag)
 
   def getGithubLatestTagDate(self):
     """ Get the latest tag creation date from gitlab
@@ -432,7 +441,7 @@ class GithubInterface(object):
     latestTagCommitSha = latestTag['commit']['sha']
     commitInfo = req2Json(url=self._github("git/commits/%s" % latestTagCommitSha))
 
-    startDate = commitInfo['committer']['date'][:10]
+    startDate = dateutil.parser.isoparse(commitInfo['committer']['date'])
 
     log.info("Found latest tag date %s", startDate)
 
@@ -461,7 +470,8 @@ class GithubInterface(object):
 
       mergeDate = pr.get('merged_at', None)
       mergeDate = mergeDate if mergeDate is not None else '9999-99-99'
-      if mergeDate[:10] < self.startDate:
+      mergeDate = dateutil.parser.isoparse(mergeDate)
+      if mergeDate < self.startDate:
         continue
       rawReleaseNotes[baseBranch].update({prID: dict(comment=comment, mergeDate=mergeDate)})
 

@@ -124,6 +124,28 @@ FIX: (#4551) align ProxyDB test to current changes
 NEW: (#4289) Document how to run integration tests in docker
 NEW: (#4551) add DNProperties description to Registry/Users subsection
 
+[v7r0p24]
+
+*Core
+FIX: (#4584) M2SSLTransport catch exceptions and convert them into S_ERROR
+CHANGE: (#4584) M2SSLTransport: allow to do the SSL handshake in threads
+CHANGE: (#4584) Do not query the Registry when doing the handshake
+
+*WMS
+CHANGE: (#4587) Check LFN InputSandbox separately from InputData
+NEW: (#4593) option to only retry to get pilot outputs a limited number of times
+CHANGE: (#4594) SandboxStoreClient - remove direct access to SandboxMetadataDB by default
+CHANGE: (#4594) JobSanity - instantiate SandboxStoreClient with direct access to SandboxMetadataDB
+
+*Resources
+CHANGE: (#4593) retrieve pilot output paths in getJobOutput using the pilot IDs instead of calling condor
+
+*Interfaces
+Change: (#4594) Dirac - instantiate SandboxStoreClient without smdb=False which is now a default
+
+*docs
+FIX: (#4598) Use also time in addition to date to get list of PRs since last tag
+
 [v7r0p23]
 
 *Core
