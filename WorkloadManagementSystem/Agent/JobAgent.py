@@ -304,7 +304,7 @@ class JobAgent(AgentModule):
     mpTag = 'MultiProcessor' in params.get('Tags', [])
 
     if self.extraOptions:
-      params['Arguments'] += ' ' + self.extraOptions
+      params['Arguments'] = (params.get('Arguments', '') + ' ' + self.extraOptions).strip()
       params['ExtraOptions'] = self.extraOptions
 
     self.log.verbose('Job request successful: \n', jobRequest['Value'])
