@@ -104,7 +104,7 @@ class JobWrapper(object):
     if result['OK']:
       self.diracVersion = result['Value']
     else:
-      self.diracVersion = 'DIRAC version %s' % DIRAC.buildVersion
+      self.diracVersion = 'DIRAC version %s' % DIRAC.version
     self.maxPeekLines = gConfig.getValue(self.section + '/MaxJobPeekLines', 20)
     if self.maxPeekLines < 0:
       self.maxPeekLines = 0

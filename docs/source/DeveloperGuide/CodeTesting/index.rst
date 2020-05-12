@@ -553,7 +553,7 @@ For example, to re-run the server and client tests:
     docker exec -it -u dirac -w /home/dirac -e INSTALLROOT=/home/dirac -e INSTALLTYPE=client client \
       bash TestCode/DIRAC/tests/CI/run_tests.sh
 
-Once finished the containers can be removed using ``docker rm --force server client elasticsearch mysql``.
+Once finished the containers can be removed using ``docker rm --force server client elasticsearch mysql s3-direct``.
 
 
 Validation and System tests
