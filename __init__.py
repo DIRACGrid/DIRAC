@@ -89,10 +89,10 @@ import _strptime
 
 # Define Version
 
-majorVersion = 'integration'
-minorVersion = 0
+majorVersion = 7
+minorVersion = 2
 patchLevel = 0
-preVersion = 7
+preVersion = 8
 
 version = "v%sr%s" % (majorVersion, minorVersion)
 if patchLevel:

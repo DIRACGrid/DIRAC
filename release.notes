@@ -1,9 +1,10 @@
-[v7r2-pre7]
+[v7r2-pre8]
 
 FIX: python 2-3 compatibility fixes
 
 *Core
 FIX: (#4283) Added protection against empty certificates directory in dirac-install
+CHANGE: (#4582) Use concurrent.future.ThreadPoolExecutor by default.
 
 *WMS
 NEW: (#4367) Added option "CompressJDLs" to JobDB, which compresses JDLs before they are
