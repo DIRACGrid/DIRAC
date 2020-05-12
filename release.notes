@@ -136,6 +136,7 @@ CHANGE: (#4587) Check LFN InputSandbox separately from InputData
 NEW: (#4593) option to only retry to get pilot outputs a limited number of times
 CHANGE: (#4594) SandboxStoreClient - remove direct access to SandboxMetadataDB by default
 CHANGE: (#4594) JobSanity - instantiate SandboxStoreClient with direct access to SandboxMetadataDB
+FIX: (#4601) JobAgent: check if there are arguments
 
 *Resources
 CHANGE: (#4593) retrieve pilot output paths in getJobOutput using the pilot IDs instead of calling condor
