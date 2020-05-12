@@ -156,10 +156,12 @@ function prepareEnvironment() {
 
   if [ -n "${SERVER_USE_M2CRYPTO+x}" ]; then
     echo "export DIRAC_USE_M2CRYPTO=${SERVER_USE_M2CRYPTO}" >> "${SERVERCONFIG}"
+    echo "export DIRAC_M2CRYPTO_SPLIT_HANDSHAKE=Yes" >> "${SERVERCONFIG}"
   fi
 
   if [ -n "${CLIENT_USE_M2CRYPTO+x}" ]; then
     echo "export DIRAC_USE_M2CRYPTO=${CLIENT_USE_M2CRYPTO}" >> "${CLIENTCONFIG}"
+    echo "export DIRAC_M2CRYPTO_SPLIT_HANDSHAKE=Yes" >> "${CLIENTCONFIG}"
   fi
 
   docker-compose -f ./docker-compose.yml up -d
