@@ -1,3 +1,4 @@
 FROM cern/slc6-base:latest
 
 COPY ["./resources/setupDIRACClient.sh", "./resources/install.cfg", "./resources/runsvdir-start", "./resources/runsvdir.conf", "./resources/setupDIRAC.sh", "./resources/setupCA.sh", "/resources/"]
+HEALTHCHECK --interval=400s
