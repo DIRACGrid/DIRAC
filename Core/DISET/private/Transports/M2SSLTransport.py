@@ -91,7 +91,10 @@ class SSLTransport(BaseTransport):
         self.remoteAddress = self.oSocket.getpeername()
 
         return S_OK()
-      except (socket.error, SSLVerificationError, SSL.SSLError) as e:
+      # warning: do NOT catch SSL related error here
+      # They should be propagated upwards and caught by the BaseClient
+      # not to enter the retry loop
+      except socket.error as e:
         error = "%s:%s" % (e, repr(e))
 
         if self.oSocket is not None:
