@@ -159,9 +159,8 @@ class JobDescription(object):
     result = self.__checkMaxInputData(maxInputData)
     if not result['OK']:
       return result
-    userJobTypes = Operations().getValue("Transformations/UserJobType", ['User'])
     transformationTypes = Operations().getValue("Transformations/DataProcessing", [])
-    result = self.__checkMultiChoiceInDescription("JobType", ['Test', 'Hospital'] + userJobTypes + transformationTypes)
+    result = self.__checkMultiChoiceInDescription("JobType", ['User', 'Test', 'Hospital'] + transformationTypes)
     return S_OK()
 
   def setVar(self, varName, varValue):

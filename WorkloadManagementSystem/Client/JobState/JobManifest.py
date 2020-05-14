@@ -184,9 +184,10 @@ class JobManifest(object):
     if not result['OK']:
       return result
 
-    userJobTypes = Operations().getValue("Transformations/UserJobType", ['User'])
-    transformationTypes = Operations().getValue("Transformations/DataProcessing", [])
-    result = self.__checkMultiChoice("JobType", ['Test', 'Hospital'] + userJobTypes + transformationTypes)
+    operation = Operations(group=self.__manifest['OwnerGroup'])
+    allowedJobTypes = operation.getValue("JobDescription/AllowedJobTypes", ['User', 'Test', 'Hospital'])
+    transformationTypes = operation.getValue("Transformations/DataProcessing", [])
+    result = self.__checkMultiChoice("JobType", allowedJobTypes + transformationTypes)
     if not result['OK']:
       return result
     return S_OK()
