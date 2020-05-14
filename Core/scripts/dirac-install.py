@@ -1328,7 +1328,7 @@ def alarmTimeoutHandler(*args):
   raise Exception('Timeout')
 
 
-def urlretrieveTimeout(url, fileName='', timeout=0):
+def urlretrieveTimeout(url, fileName='', timeout=0, retries=3):
   """
    Retrieve remote url to local file, with timeout wrapper
 
@@ -1367,6 +1367,7 @@ def urlretrieveTimeout(url, fileName='', timeout=0):
       # the keyword 'context' is present from 2.7.9+
     except AttributeError:
       remoteFD = urlopen(url)
+
     expectedBytes = 0
     # Sometimes repositories do not return Content-Length parameter
     try:
@@ -1406,6 +1407,15 @@ def urlretrieveTimeout(url, fileName='', timeout=0):
       if timeout:
         signal.alarm(0)
       return False
+    else:
+      logWARN('Status code accessing URL %s was %s' % (url, x.getcode()))
+      if retries:
+        logWARN('Will retry after 30 seconds, %s retries remaining' % retries)
+        time.sleep(30)
+        return urlretrieveTimeout(url, fileName=fileName, timeout=timeout, retries=retries - 1)
+      else:
+        logERROR("No retries remaining for %s" % url)
+        sys.exit(1)
   except URLError:
     logERROR('Timeout after %s seconds on transfer request for "%s"' % (str(timeout), url))
   except Exception as x:
