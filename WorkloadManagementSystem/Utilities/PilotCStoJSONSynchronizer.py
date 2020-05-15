@@ -61,6 +61,11 @@ class PilotCStoJSONSynchronizer(object):
     self.casLocation = getCAsLocation()
     self._checksumDict = {}
 
+    # If this is set to True, we will attempt to upload the files
+    # to all the servers in the list. Obviously, it will only work
+    # for the DIRAC web servers (see _upload)
+    self.uploadToWebApp = True
+
     self.log = gLogger.getSubLogger(__name__)
 
   def sync(self):
@@ -92,6 +97,7 @@ class PilotCStoJSONSynchronizer(object):
     self.pilotVOScriptPath = ops.getValue("Pilot/pilotVOScriptsPath", self.pilotVOScriptPath)
     self.pilotRepoBranch = ops.getValue("Pilot/pilotRepoBranch", self.pilotRepoBranch)
     self.pilotVORepoBranch = ops.getValue("Pilot/pilotVORepoBranch", self.pilotVORepoBranch)
+    self.uploadToWebApp = ops.getValue("Pilot/uploadToWebApp", True)
 
     res = self._syncJSONFile()
     if not res['OK']:
@@ -358,6 +364,10 @@ class PilotCStoJSONSynchronizer(object):
     # or even send multiple files:
     # http://docs.python-requests.org/en/master/user/advanced/#post-multiple-multipart-encoded-files
     # But well, maybe too much optimization :-)
+
+    if not self.uploadToWebApp:
+      self.log.verbose("Skipping upload")
+      return
 
     if not self.pilotFileServer:
       self.log.warn("No pilotFileServer, nowhere to upload")
