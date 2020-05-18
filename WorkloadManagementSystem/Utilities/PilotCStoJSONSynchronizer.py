@@ -335,8 +335,10 @@ class PilotCStoJSONSynchronizer(object):
       tarPath = os.path.join(self.workDir, 'pilot.tar')
       with tarfile.TarFile(name=tarPath, mode='w') as tf:
         for ptf in tarFiles:
+          # This copy makes sure that all the files in the tarball are accessible
+          # in the work directory. It should be kept
           shutil.copyfile(ptf, os.path.join(self.workDir, os.path.basename(ptf)))
-          tf.add(os.path.basename(ptf), recursive=False)
+          tf.add(ptf, arcname=os.path.basename(ptf), recursive=False)
 
       self._upload(filename='pilot.tar', pilotScript=tarPath)
 
@@ -376,7 +378,7 @@ class PilotCStoJSONSynchronizer(object):
 
       for pfServer in self.pilotFileServer.replace(' ', '').split(','):
         try:
-          data = {'filename': filename, 'data': script}
+          data = {'filename': os.path.basename(filename), 'data': script}
           resp = requests.post('https://%s/DIRAC/upload' % pfServer,
                                data=data,
                                verify=self.casLocation,
