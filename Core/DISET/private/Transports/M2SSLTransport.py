@@ -275,7 +275,7 @@ class SSLTransport(BaseTransport):
 
   # Depending on the DIRAC_M2CRYPTO_SPLIT_HANDSHAKE we either do the
   # handshake separately or not
-  if os.getenv('DIRAC_M2CRYPTO_SPLIT_HANDSHAKE', 'NO').lower() in ('yes', 'true'):
+  if os.getenv('DIRAC_M2CRYPTO_SPLIT_HANDSHAKE', 'Yes').lower() in ('yes', 'true'):
     acceptConnection = acceptConnection_multipleSteps
     handshake = handshake_multipleSteps
     setClientSocket = setClientSocket_multipleSteps
