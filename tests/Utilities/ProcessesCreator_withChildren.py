@@ -1,6 +1,10 @@
 # Creating 3 processes, for tests,
 # that consume some CPU and that have children
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import time
 from multiprocessing import Pool, Process, current_process
 
