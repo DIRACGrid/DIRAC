@@ -30,9 +30,9 @@ if not res['OK']:
 properties = res['Value'].get( 'groupProperties', [] )
 
 if not allowUsers:
-  if not 'FileCatalogManagement' in properties:
-    gLogger.error( "You need to use a proxy from a group with FileCatalogManagement" )
-    dexit( 5 )
+  if 'FileCatalogManagement' not in properties:
+    gLogger.error("You need to use a proxy from a group with FileCatalogManagement")
+    dexit(5)
 
 from DIRAC.DataManagementSystem.Client.DataManager import DataManager
 dm = DataManager()
