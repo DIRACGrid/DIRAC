@@ -16,9 +16,9 @@ function usage {
 
 DIRACVERSION='integration'
 
-while [ "$1" ]
+while [ "${1}" ]
 do
-  case $1 in
+  case "${1}" in
 
   -h | --help )
     usage
@@ -34,14 +34,14 @@ do
   ;;
 
   -v | --version )
-    switch=$1
+    switch=${1}
     shift
-    [ "$1" ] || error_exit "Switch ${switch} requires a argument"
-    DIRACVERSION=$1
+    [ "${1}" ] || error_exit "Switch ${switch} requires a argument"
+    DIRACVERSION=${1}
   ;;
 
   * )
-    installCfg=$1
+    installCfg=${1}
   ;;
 
   esac
