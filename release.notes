@@ -1,7 +1,18 @@
+[v6r22p29]
+
+*WorkloadManagementSystem
+CHANGE: (#4603) Updated to customize the JobType of user jobs in JobDescription and JobManifest
+
+*DataManagementSystem
+CHANGE: (#4618) dirac-dms-remove-catalog-files and dirac-dms-remove-catalog-files use
+        Operations/.../DataManagement/AllowUserReplicaManagement to allow users perform
+        direct File Catalog operations
+
+
 [v6r22p28]
 
 *TS
-FIX: (#4569) TransformationClient - allow "LFN" cindition as a string to be compatible with the service
+FIX: (#4569) TransformationClient - allow "LFN" condition as a string to be compatible with the service
 
 [v6r22p27]
 
